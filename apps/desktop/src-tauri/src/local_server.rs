@@ -1845,6 +1845,10 @@ pub fn hold_stopped(app: &AppHandle, minutes: Option<u64>) {
 
 /// Start, by the person (the popover, Preferences, the menus): any hold ends.
 pub fn start_by_hand(app: &AppHandle) {
+    // A menu built before an erase may still offer Start: nothing to start without the app's own install.
+    if !folder(app).is_some_and(|f| installed(&f) == Installed::App) {
+        return;
+    }
     if state(app).here.hold.is_some() {
         set_hold(app, None);
     }
@@ -2485,6 +2489,13 @@ pub fn erase_refusal(installed: Installed, setting_up: bool, moving: bool) -> Op
     }
 }
 
+/// A start, an update or the exit watcher may be copying or moving its files with no server process to stop: a start
+/// before its child exists (`launching`), an update's database move, or a restart's wait and its go-back to the
+/// previous version's database.
+pub fn files_moving(launching: bool, pid: Option<u32>, phase: Option<Phase>) -> bool {
+    launching || (pid.is_none() && matches!(phase, Some(Phase::Updating | Phase::Restarting)))
+}
+
 /// Where an erased folder goes: a visible folder in `home` named with the day (`YYYY-MM-DD`), with a number after it
 /// when that name is `taken`. None once 99 of them are there.
 pub fn erased_folder(home: &Path, date: &str, taken: impl Fn(&Path) -> bool) -> Option<PathBuf> {
@@ -2514,16 +2525,25 @@ fn move_away(folder: &Path, home: &Path, date: &str) -> io::Result<PathBuf> {
 }
 
 /// The erase's order: it stops, its folder moves away, and only once the folder moved does anything else go. A folder
-/// that didn't move leaves it stopped with its data where it was (`move`).
-fn erase_in_order(
+/// that didn't move leaves it stopped with its data where it was.
+fn erase_in_order<E>(
     stop: impl FnOnce(),
-    move_folder: impl FnOnce() -> io::Result<PathBuf>,
+    move_folder: impl FnOnce() -> Result<PathBuf, E>,
     clean_up: impl FnOnce(),
-) -> Result<PathBuf, String> {
+) -> Result<PathBuf, E> {
     stop();
-    let to = move_folder().map_err(|_| "move".to_string())?;
+    let to = move_folder()?;
     clean_up();
     Ok(to)
+}
+
+/// Clears `erasing` when the erase ends, a panic included: left set, it would refuse every start until the app quits.
+struct Erasing<'a>(&'a AtomicBool);
+
+impl Drop for Erasing<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, SeqCst);
+    }
 }
 
 /// The server here's addresses in the list: its public one and its loopback one (read from its folder's `.env`).
@@ -2539,6 +2559,8 @@ fn leave_list(app: &AppHandle, addresses: &[String]) {
     for origin in addresses {
         crate::servers::remove(app, origin);
     }
+    // Its workspaces leave the window's list now, not at the next minute's read.
+    crate::workspaces::trigger(app);
     match crate::servers::current(app) {
         Some(url) => {
             let _ = crate::main_window::show_url(app, url);
@@ -2553,14 +2575,16 @@ fn leave_list(app: &AppHandle, addresses: &[String]) {
 
 /// "Erase and start over": it stops, its folder moves whole to a dated one in the home folder (kept, so its data can
 /// still be brought back), then what the app kept about it goes: its host homes, its addresses in the list and the
-/// main window's cookies there, and `local-server.json`. The welcome window then opens on a new setup. Where its data
-/// went. Called with `erasing` set, so nothing starts it meanwhile.
+/// main window's cookies there, and `local-server.json`. The welcome window then opens on a new setup. Ok: where its
+/// data went. Err: why it didn't run (`erase_refusal`), or why the folder didn't move: `held` (another server holds
+/// its lock), `running` (it started again meanwhile), `move` (the rename failed). Called with `erasing` set, so
+/// nothing starts it meanwhile.
 fn erase(app: &AppHandle) -> Result<String, String> {
     let folder = folder(app).ok_or("no folder")?;
     let home = folder.0.parent().ok_or("no home folder")?.to_path_buf();
     let (moving, was_run) = {
         let inner = state(app);
-        (inner.launching || (inner.pid.is_none() && inner.phase == Some(Phase::Updating)), inner.here.run)
+        (files_moving(inner.launching, inner.pid, inner.phase), inner.here.run)
     };
     if let Some(why) = erase_refusal(installed(&folder), setting_up(app), moving) {
         return Err(why.into());
@@ -2580,10 +2604,12 @@ fn erase(app: &AppHandle) -> Result<String, String> {
                 inner.pid.is_none() && !inner.launching
             };
             if !idle {
-                return Err(io::Error::other("it still runs"));
+                return Err(("running", "it started again".to_string()));
             }
-            not_held(&folder)?;
-            move_away(&folder.0, &home, &today())
+            if let Err(err) = not_held(&folder) {
+                return Err(("held", err.to_string()));
+            }
+            move_away(&folder.0, &home, &today()).map_err(|err| ("move", err.to_string()))
         },
         || {
             let runners = app.state::<crate::runners::Runners>();
@@ -2621,16 +2647,16 @@ fn erase(app: &AppHandle) -> Result<String, String> {
             let _ = crate::present(app, "welcome");
             Ok(to)
         }
-        Err(why) => {
-            note(app, format!("erase: the folder didn't move, it stays in {}", folder.0.display()));
-            if was_run {
+        Err((why, cause)) => {
+            note(app, format!("erase: the folder didn't move ({cause}), it stays in {}", folder.0.display()));
+            if was_run && why != "running" {
                 // As after Stop: stopped until Start, and a page of it on screen offers Start.
                 set_hold(app, Some(Hold { until: None }));
                 crate::cover::over_server_here(app);
             } else {
                 emit_status(app);
             }
-            Err(why)
+            Err(why.to_string())
         }
     }
 }
@@ -2783,9 +2809,8 @@ pub async fn local_server_erase(app: AppHandle, webview: tauri::Webview) -> Resu
         let server = app.state::<LocalServer>();
         let _busy = server.busy.lock().unwrap_or_else(|e| e.into_inner());
         server.erasing.store(true, SeqCst);
-        let result = erase(&app);
-        server.erasing.store(false, SeqCst);
-        result
+        let _erasing = Erasing(&server.erasing);
+        erase(&app)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -3104,6 +3129,16 @@ mod tests {
         assert_eq!(erase_refusal(Installed::Terminal, true, false), Some("setting up"));
         // A start copying files, or an update moving its database, with no server to stop yet.
         assert_eq!(erase_refusal(Installed::App, false, true), Some("starting"));
+        assert!(files_moving(true, None, Some(Phase::Starting)));
+        assert!(files_moving(false, None, Some(Phase::Updating)));
+        // The exit watcher's wait before it starts again, and its go-back copying the previous database.
+        assert!(files_moving(false, None, Some(Phase::Restarting)));
+        // A server process to stop first, or nothing under way.
+        assert!(!files_moving(false, Some(42), Some(Phase::Updating)));
+        assert!(!files_moving(false, Some(42), Some(Phase::Running)));
+        assert!(!files_moving(false, None, Some(Phase::Stopped)));
+        assert!(!files_moving(false, None, Some(Phase::Failing)));
+        assert!(!files_moving(false, None, None));
     }
 
     #[test]
@@ -3150,7 +3185,7 @@ mod tests {
             || steps.borrow_mut().push("stop"),
             || {
                 steps.borrow_mut().push("move");
-                Ok(PathBuf::from("/home/ana/agentes.chat erased 2026-11-14"))
+                Ok::<_, &str>(PathBuf::from("/home/ana/agentes.chat erased 2026-11-14"))
             },
             || steps.borrow_mut().push("clean up"),
         );
@@ -3161,11 +3196,11 @@ mod tests {
             || steps.borrow_mut().push("stop"),
             || {
                 steps.borrow_mut().push("move");
-                Err(io::Error::new(io::ErrorKind::PermissionDenied, "busy"))
+                Err("held")
             },
             || steps.borrow_mut().push("clean up"),
         );
-        assert_eq!(failed, Err("move".to_string()));
+        assert_eq!(failed, Err("held"));
         assert_eq!(*steps.borrow(), vec!["stop", "move"], "a folder that didn't move leaves everything else");
     }
 

@@ -539,8 +539,10 @@ pub fn app_homes(root: &std::path::Path, own_server: Option<&str>) -> Vec<(Strin
     out
 }
 
-/// The homes on disk that the server here at `server` (its loopback address) wrote for itself, by id and folder
-/// (`host_sync::is_host_home`): what erasing it leaves behind. Never a terminal install's.
+/// The homes on disk that a server's own host wrote for `server` (its loopback address), by id and folder
+/// (`host_sync::is_host_home`: `managedBy: "host"` and that exact address, port included): what erasing the server
+/// here leaves behind. Homes signed in by hand, Cloud workspaces' and those of a server at another address never
+/// match; a host home of another server that once ran at this same address would.
 pub fn host_homes(app: &AppHandle, server: &str) -> Vec<(String, PathBuf)> {
     orgs_root(app).map(|root| host_homes_in(&root, server)).unwrap_or_default()
 }

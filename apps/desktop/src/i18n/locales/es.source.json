@@ -1137,7 +1137,7 @@
     "value": "Erase agentes.chat on this {{device}}?"
   },
   "server.eraseBody": {
-    "value": "Its workspaces go for everyone who uses them, on every device. Everything it holds moves to {{path}} and stays there whole. Then you set it up again with a new owner account."
+    "value": "Its workspaces go for everyone who uses them, on every device. Everything it holds moves to {{path}} and stays there whole. The agents' files in ~/agentes are yours and stay where they are. Then you set it up again with a new owner account."
   },
   "server.eraseConfirm": {
     "value": "Erase it"
@@ -1147,6 +1147,9 @@
   },
   "server.eraseMoveFailed": {
     "value": "Its data couldn't be moved, so nothing was erased and it stays in {{path}}. It's stopped until you start it again."
+  },
+  "server.eraseHeld": {
+    "value": "Another agentes.chat server is using its folder, so nothing was erased. Stop that server, then try again."
   },
   "server.noPassword": {
     "value": "Add a password to sign in from your phone and other computers."

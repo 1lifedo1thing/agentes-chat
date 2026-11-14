@@ -216,8 +216,9 @@ export interface Host {
   restoreLocalServer(file: string): Promise<void>;
   /**
    * "Erase and start over": it stops, its folder moves whole to `eraseTo`, the app forgets it and the welcome window
-   * opens. Resolves with where its data went; rejects with `move` when the folder couldn't move (it stays stopped, its
-   * data where it was).
+   * opens. Resolves with where its data went; when the folder couldn't move (its data stays where it was), rejects with
+   * `held` (another server uses the folder), `move` (the move itself failed; it stays stopped) or `running` (it started
+   * again meanwhile).
    */
   eraseLocalServer(): Promise<string>;
   /** Automatic login and start after a power failure (macOS). */

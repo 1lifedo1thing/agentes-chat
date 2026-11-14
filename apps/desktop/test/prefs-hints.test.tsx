@@ -238,7 +238,31 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
       },
     ));
 
-  test("Servers: Erase and start over… waits while it starts or updates, since its files are being copied", () =>
+  test("Servers: another server holding its folder: the line names it and says to stop it first", () =>
+    pane(
+      "here",
+      <Servers />,
+      (el) => eraseButton(el),
+      async (el) => {
+        await act(async () => eraseButton(el)?.click());
+        await until(() => document.querySelector('[role="dialog"]'));
+        const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+        expect(dialog.textContent).toContain("The agents' files in ~/agentes are yours and stay where they are.");
+        await act(async () => buttonIn(dialog, "Erase it")?.click());
+        await until(() => document.querySelector(".dk-toast")?.textContent?.includes("Another"));
+        expect(document.querySelector(".dk-toast")?.textContent).toContain(
+          "Another agentes.chat server is using its folder, so nothing was erased. Stop that server, then try again.",
+        );
+        expect(eraseButton(el)).toBeTruthy();
+      },
+      {
+        host: (host) => {
+          host.eraseLocalServer = () => Promise.reject("held");
+        },
+      },
+    ));
+
+  test("Servers: Erase and start over… waits while it starts, updates or restarts, since its files are being copied", () =>
     pane(
       "here",
       <Servers />,

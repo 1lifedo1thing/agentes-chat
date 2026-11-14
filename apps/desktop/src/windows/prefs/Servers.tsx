@@ -798,7 +798,7 @@ function HereServer({ local, current }: { local: LocalServerStatus; current: str
   );
 }
 
-/** A start or an update copies or moves its files: an erase waits until it runs or stops. */
+/** A start, an update or a restart copies or moves its files: an erase waits until it runs or stops (`files_moving`). */
 const MOVING: ReadonlySet<LocalServerStatus["phase"]> = new Set(["starting", "updating", "restarting"]);
 
 /**
@@ -818,9 +818,11 @@ function EraseHere({ local, disabled }: { local: LocalServerStatus; disabled: bo
         toast(t("desktop.server.erased", { path: shortPath(to) }), "check");
       } catch (e) {
         toast(
-          e === "move"
-            ? t("desktop.server.eraseMoveFailed", { path: shortPath(local.dir) })
-            : t("desktop.common.error"),
+          e === "held"
+            ? t("desktop.server.eraseHeld")
+            : e === "move"
+              ? t("desktop.server.eraseMoveFailed", { path: shortPath(local.dir) })
+              : t("desktop.common.error"),
           "alert",
         );
       } finally {
