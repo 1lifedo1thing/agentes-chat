@@ -70,14 +70,29 @@ describe("web app serving", () => {
       "/robots.txt",
       "/sitemap.xml",
       "/sitemap_index.xml",
+      "/sitemap-index.xml",
       "/llms.txt",
       "/llms-full.txt",
       "/ads.txt",
+      "/app-ads.txt",
+      "/humans.txt",
       "/security.txt",
     ]) {
       const res = await app.request(path);
       expect(res.status).toBe(404);
       expect(await res.text()).not.toContain('<div id="root">');
+    }
+  });
+
+  test("a well-known file the build does ship is served", async () => {
+    writeFileSync(join(dir, "llms.txt"), "# agentes.chat");
+    try {
+      const res = await app.request("/llms.txt");
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe("# agentes.chat");
+      expect(res.headers.get("x-robots-tag")).toBeNull();
+    } finally {
+      rmSync(join(dir, "llms.txt"));
     }
   });
 
