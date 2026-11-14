@@ -214,6 +214,8 @@ export function AuthPage({
   // In the app, until it said whether this is its own server: the provider buttons wait, never shown then taken away.
   const [placeKnown, setPlaceKnown] = useState(!desktop);
   const [ownerPending, setOwnerPending] = useState(false);
+  // The server's owner deleted their account: Continue on this Mac signs nobody in, so it is offered no more.
+  const [ownerGone, setOwnerGone] = useState(false);
   // The server the app runs on this computer: its owner signs in with Continue on this Mac, and a provider's sign-in
   // needs an address registered with that provider, which a computer's own server doesn't have.
   const offeredProviders = local || !placeKnown ? [] : allProviders;
@@ -233,6 +235,7 @@ export function AuthPage({
       await thisMac.signIn();
     } catch (e) {
       setError(t(ownerRefusal(e) ?? "common.unknownError"));
+      setOwnerGone(e === "owner_gone");
       setOwnerPending(false);
     }
   };
@@ -250,6 +253,7 @@ export function AuthPage({
       setOwnerPending(false);
       const why = ownerRefusal(e);
       if (why) setError(t(why));
+      setOwnerGone(e === "owner_gone");
     });
   }, [ownerAgain, t]);
 
@@ -599,7 +603,7 @@ export function AuthPage({
             <Locked when={pending || ownerPending}>
               {who}
 
-              {local && (step === "email" || step === "noPassword") && (
+              {local && !ownerGone && (step === "email" || step === "noPassword") && (
                 <>
                   <Button
                     type="button"
@@ -696,7 +700,7 @@ export function AuthPage({
                 <div className="auth-last-host">
                   <Button
                     type="submit"
-                    variant={local && step === "email" ? "default" : "primary"}
+                    variant={local && !ownerGone && step === "email" ? "default" : "primary"}
                     size="lg"
                     block
                     kbd={["↵"]}

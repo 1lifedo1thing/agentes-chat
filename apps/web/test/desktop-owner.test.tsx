@@ -67,6 +67,8 @@ describe("Entrar no servidor que o app roda neste computador", () => {
       "O dono deste servidor apagou a conta, então Continuar neste Mac não consegue entrar com ninguém. Entre com o seu próprio e-mail.",
     );
     expect(screen().getByLabelText("E-mail")).toBeTruthy();
+    // The button that can sign nobody in is gone: the address field is the one way in.
+    expect(continueHere()).toBeNull();
   });
 
   test("no account left: Continue on this Mac points to the window the app opened; anything else stays general", async () => {
