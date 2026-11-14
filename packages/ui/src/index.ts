@@ -213,7 +213,7 @@ export {
 } from "./components/FilterChip";
 export { FoldRow } from "./components/FoldRow";
 export { GroupHeading } from "./components/GroupHeading";
-export { type Hosting, HostingScene } from "./components/HostingScene";
+export { type Hosting, HostingScene, type Place, PlaceScene } from "./components/HostingScene";
 export { HintLine, type HintLineProps, InfoHint, type InfoHintProps } from "./components/InfoHint";
 export { isApple, Kbd, modKey, shortcut } from "./components/Kbd";
 export { Logo, LogoMark, type LogoProps } from "./components/Logo";
