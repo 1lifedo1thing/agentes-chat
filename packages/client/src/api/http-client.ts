@@ -916,6 +916,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         }),
       makeDefaultCredential: (orgId, id) =>
         request<Credential>(`${org(orgId)}/credentials/${enc(id)}/make-default`, { json: {} }),
+      removeCredentialCopies: (orgId, id) =>
+        request<{ removed: number }>(`${org(orgId)}/credentials/${enc(id)}/remove-copies`, { json: {} }),
       checkCredential: (orgId, id) =>
         request<{ check: "ok" | "unchecked" }>(`${org(orgId)}/credentials/${enc(id)}/check`, { json: {} }),
       platformKeyAvailable: async (orgId) =>
@@ -1415,10 +1417,10 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
           signal: upload?.signal,
           onUploadProgress: upload?.onProgress,
         }),
-      importPicked: async (orgId, url, paths, forAgentId) =>
+      importPicked: async (orgId, url, paths, forAgentId, personal) =>
         (
           await request<{ skills: SkillDetail[] }>(`${org(orgId)}/skills/import`, {
-            json: { url, paths, ...(forAgentId ? { forAgentId } : {}) },
+            json: { url, paths, ...(forAgentId ? { forAgentId } : {}), ...(personal ? { personal } : {}) },
           })
         ).skills,
       update: (orgId, id, patch) =>

@@ -732,6 +732,12 @@ export interface Credential {
   usedBy?: { id: string; name: string }[];
   /** On a key just saved: `ok` a real call passed, `unchecked` the provider didn't say. */
   check?: "ok" | "unchecked";
+  /** On a key just saved: the workspace already had it, so that key was updated instead of adding a copy. */
+  reused?: boolean;
+  /** In a list of keys: how many other saved keys are this same key ("Remover cópias" folds them into it). */
+  copies?: number;
+  /** In a list of keys: the key this one is a copy of, the row shown for both. */
+  copyOf?: string;
   createdAt: string;
   revokedAt: string | null;
 }
@@ -981,7 +987,7 @@ export interface Team {
 /** `Agent.brain`: shown next to its name instead of the API model when a computer thinks. */
 export interface AgentBrainLine {
   kind: BrainKind;
-  /** A computer brain's model ("Sonnet"); null for the model brain. */
+  /** A computer brain's model ("Sonnet 5.5"); null for the model brain. */
   model: string | null;
   computer?: string;
   /** A plan account's provider (`zai`, `kimi`…), whose mark replaces the brain's; absent for the CLI's own sign-in. */
@@ -1219,7 +1225,10 @@ export interface Model {
   outputUsdPerMTok: number;
   /** The workspace can use it (has a key for the provider). Expected from the backend; derived until then. */
   available?: boolean;
-  /** In a long list (OpenRouter's): `true` is a good pick, shown first. Absent: a catalog model. */
+  /**
+   * `false`: offered only to a workspace with its provider's key (OpenRouter's long list, Command Code's).
+   * `true`: a long list's good pick, greyed without a key. Absent: a catalog model.
+   */
   pick?: boolean;
   /** The size Automático uses it for on its provider's key, by default. */
   tier?: ModelTier;
@@ -4479,6 +4488,13 @@ export interface Skill {
   /** `agent`: made from an agent's own how-tos (older servers leave it out). */
   origin?: "person" | "agent";
   ownerAgentId?: string | null;
+  /**
+   * A personal skill's person: only they read and change it, and agents use it only when that person asks. Someone
+   * else's comes with its name and agents only. Null (older servers leave it out): the team's.
+   */
+  ownerUserId?: string | null;
+  /** How many active agents have it on (the library's list). */
+  agentsCount?: number;
   /** Agents can't change it; never archived for disuse. */
   locked?: boolean;
   useCount?: number;
@@ -4611,6 +4627,8 @@ export interface SkillInput {
   description: string;
   body: string;
   defaultForNewAgents?: boolean;
+  /** The person's own skill, not the team's. */
+  personal?: boolean;
 }
 
 /** An edit (new version unless only the flag changes). */
