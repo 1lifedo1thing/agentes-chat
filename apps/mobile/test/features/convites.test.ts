@@ -468,7 +468,7 @@ describe("Convidar pessoas on the phone", () => {
   });
 
   test("Link mode: the workspace's link renewed as the mode opens, any other choice makes its own", () => {
-    expect(invite).toMatch(/renew\s*\.mutateAsync\(\)\s*\.then\(setWorkspace,/);
+    expect(invite).toMatch(/renew\s*\.mutateAsync\(PLAIN_LINK\)\s*\.then\(setWorkspace,/);
     expect(invite).toContain("const link = await make.mutateAsync(choices);");
     expect(invite).toContain('label={t("members.link.make")}');
   });
@@ -477,7 +477,7 @@ describe("Convidar pessoas on the phone", () => {
     // The list is read while E-mail shows; renewing keeps the address, only "Vale até" changes.
     expect(invite).toContain("const links = useInviteLinks(orgId).data;");
     expect(invite).toContain("listed={listedPlainLink(links)}");
-    expect(invite).toContain("(plain ? (workspace ?? listed ?? null) : null)");
+    expect(invite).toContain("(plain ? (workspace ?? (renew.isError ? null : (listed ?? null))) : null)");
     // From the first frame, before the renewal starts.
     expect(invite).toContain("const renewing = plain && !shown && (renew.isIdle || renew.isPending);");
     expect(invite).toContain('const ADDRESS_PENDING = "…\\n\\u00a0\\n\\u00a0";');
@@ -486,8 +486,14 @@ describe("Convidar pessoas on the phone", () => {
     expect(src("features/members/InviteEdit.tsx")).toContain('<GroupedRow icon="link" label={url} labelLines={0} />');
     // Never "Crie o link para copiar." while no Criar link row is there.
     expect(invite).toMatch(/: renewing\s*\? "\\u00a0"\s*: t\("invites\.link\.makeFirst"\)/);
-    // A listed link that fails to renew still works until its date: no failure toast then.
-    expect(invite).toContain("if (!known) toast(");
+    // Opening renews the workspace's link to 30 days: only the defaults renew it, an empty body returns it as it is.
+    expect(invite).toContain("renew.mutateAsync(PLAIN_LINK)");
+    expect(invite).not.toContain("renew.mutateAsync()");
+    // A refused renewal hides the listed link and says why, as the web does.
+    expect(invite).not.toContain("if (!known) toast(");
+    // The listed link may have been revoked since it was read: Copiar and Compartilhar wait for the renewal.
+    expect(invite).toContain("const unconfirmed = !shown || shown === listed;");
+    expect(invite.match(/disabled=\{unconfirmed\}/g)?.length).toBe(2);
   });
 });
 

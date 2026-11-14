@@ -444,24 +444,27 @@ function LinkMode({
   const choices: LinkChoices = { ...start.send, expiresIn: draft.expiresIn ?? "30d", maxUses: draft.maxUses };
   const plain = sameChoices(choices, PLAIN_LINK);
   const failedText = (e: unknown) => t("invites.link.failed", { cause: errorText(t, e, i18n.language) });
-  // The workspace's link: asked once per visit, the first time the choices are at the defaults.
+  // The workspace's link: asked once per visit, the first time the choices are at the defaults. The defaults are sent
+  // because they renew it to 30 days at the same address; an empty body only returns it as it is.
   const asked = useRef(false);
   useEffect(() => {
     if (!plain || asked.current) return;
     asked.current = true;
-    // A listed link still works until its own date if renewing it fails: then there is nothing to say.
-    const known = Boolean(listed);
-    renew.mutateAsync().then(setWorkspace, (e: unknown) => {
-      if (!known) toast({ title: t("invites.link.failed", { cause: errorText(t, e, i18n.language) }), icon: "x" });
+    // A refusal can mean the link itself is closed (a workspace being deleted, a hold): say why, as the web does.
+    renew.mutateAsync(PLAIN_LINK).then(setWorkspace, (e: unknown) => {
+      toast({ title: t("invites.link.failed", { cause: errorText(t, e, i18n.language) }), icon: "x" });
     });
-  }, [plain, renew, toast, t, i18n.language, listed]);
+  }, [plain, renew, toast, t, i18n.language]);
   useEffect(() => {
     if (!copied) return;
     const timer = setTimeout(() => setCopied(false), COPIED_MS);
     return () => clearTimeout(timer);
   }, [copied]);
   const shown =
-    (made && sameChoices(made.choices, choices) ? made.link : null) ?? (plain ? (workspace ?? listed ?? null) : null);
+    (made && sameChoices(made.choices, choices) ? made.link : null) ??
+    (plain ? (workspace ?? (renew.isError ? null : (listed ?? null))) : null);
+  // The listed link may have been revoked since the list was read: it copies once the renewal confirms it.
+  const unconfirmed = !shown || shown === listed;
   // Idle too: the first frame, before the renewal starts, already holds the address's place.
   const renewing = plain && !shown && (renew.isIdle || renew.isPending);
   const create = async () => {
@@ -496,7 +499,7 @@ function LinkMode({
                 key="copy"
                 icon={copied ? "check" : "copy"}
                 label={copied ? t("common.copied") : t("members.copyLink")}
-                disabled={!shown}
+                disabled={unconfirmed}
                 onPress={() =>
                   shown
                     ? void copyText(shown.url).then((ok) => {
@@ -511,7 +514,7 @@ function LinkMode({
                 key="share"
                 icon="share"
                 label={t("mobile.joinRequests.share")}
-                disabled={!shown}
+                disabled={unconfirmed}
                 onPress={() =>
                   shown
                     ? void Share.share({
