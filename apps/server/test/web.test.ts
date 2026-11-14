@@ -61,7 +61,15 @@ describe("web app serving", () => {
   });
 
   test("a well-known file this build doesn't ship is a 404, never index.html", async () => {
-    for (const path of ["/robots.txt", "/sitemap.xml", "/sitemap_index.xml", "/llms.txt", "/llms-full.txt", "/ads.txt", "/security.txt"]) {
+    for (const path of [
+      "/robots.txt",
+      "/sitemap.xml",
+      "/sitemap_index.xml",
+      "/llms.txt",
+      "/llms-full.txt",
+      "/ads.txt",
+      "/security.txt",
+    ]) {
       const res = await app.request(path);
       expect(res.status).toBe(404);
       expect(await res.text()).not.toContain('<div id="root">');
@@ -69,7 +77,12 @@ describe("web app serving", () => {
   });
 
   test("an app address that ends like a file still gets index.html", async () => {
-    for (const path of ["/org/abc/wiki/notes.md", "/org/abc/wiki/robots.txt", "/org/acme.example/c/def", "/invite/a.b.c"]) {
+    for (const path of [
+      "/org/abc/wiki/notes.md",
+      "/org/abc/wiki/robots.txt",
+      "/org/acme.example/c/def",
+      "/invite/a.b.c",
+    ]) {
       const res = await app.request(path);
       expect(res.status).toBe(200);
       expect(await res.text()).toContain('<div id="root">');
