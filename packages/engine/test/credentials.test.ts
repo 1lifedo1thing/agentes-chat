@@ -436,7 +436,14 @@ describe("copies saved before", () => {
         credentialId: copy.id,
       })
       .returning();
+    const agentSetup = { brain: "model" as const, model: customModelId(copy.id, "m-2"), key: copy.id };
+    await f.db
+      .insert(schema.organizationSettings)
+      .values({ orgId: f.org.id, agentSetup })
+      .onConflictDoUpdate({ target: schema.organizationSettings.orgId, set: { agentSetup } });
     expect(await removeCredentialCopies(f.db, [f.keyWrapper], f.owner.id, f.org.id, kept.id)).toEqual({ removed: 1 });
+    const [settings] = await f.db.select().from(schema.organizationSettings);
+    expect(settings?.agentSetup).toMatchObject({ model: customModelId(kept.id, "m-2"), key: kept.id });
     const [agent] = await f.db
       .select()
       .from(schema.agents)
