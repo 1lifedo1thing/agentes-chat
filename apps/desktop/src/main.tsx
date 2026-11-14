@@ -36,6 +36,7 @@ const fakeHost = inTauri()
           reach: params.get("reach") === "1",
           back: params.get("back"),
           run: params.get("run") !== "0",
+          owner: params.get("owner") !== "0",
           usage: params.get("usage") !== "0",
           tailscale: (params.get("tailscale") as Tailnet["state"] | null) ?? undefined,
           installed: params.get("installed") === "terminal" ? "terminal" : undefined,

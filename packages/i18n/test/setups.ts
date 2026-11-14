@@ -174,6 +174,9 @@ export const SHOWN_ONLY: Record<Condition, readonly string[]> = {
     // and the link's refusals.
     "auth.forgotHere.",
     "errors.passwordLink.",
+    // Continue on this Mac's refusals: only on the server the desktop app runs on the person's computer.
+    "auth.desktopOwner.gone",
+    "auth.desktopOwner.none",
     // The catalog's line for a server without Composio (`composioOffText`): the Cloud always has its key.
     "connectors.composio.off_one",
     "connectors.composio.off_other",

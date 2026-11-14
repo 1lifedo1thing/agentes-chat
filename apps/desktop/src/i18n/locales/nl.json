@@ -195,6 +195,7 @@
     "title": "agentes.chat draaien op deze {{device}}",
     "how": "Het draait in deze app, met een eigen ingebouwde database, en bewaart alles in één map op deze {{device}}.",
     "again": "Het draaide hier al eerder, en de gegevens staan nog in {{path}}.",
+    "ownerNone": "Er is geen account meer over. De gegevens staan nog in {{path}}, en met je naam en e-mail word je de nieuwe eigenaar.",
     "name": "Je naam",
     "nameNeeded": "Schrijf je naam.",
     "email": "Je e-mail",

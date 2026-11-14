@@ -59,6 +59,7 @@ import {
   failedStep,
   hereView,
   type LocalServerStatus,
+  ownerless,
   type ReachStage,
   type SetupStep,
   type StepChange,
@@ -193,15 +194,22 @@ export function FirstRun() {
   }, [host]);
   useEffect(takeMode, [takeMode]);
 
-  useEffect(() => {
-    void host
-      .localServer()
-      .then((s) => {
-        setCanRunHere(s.bundled);
-        setLocal(s);
-      })
-      .catch(() => {});
-  }, [host]);
+  // No account left on the server the app runs: straight to Run here's form, which makes the new owner.
+  const readLocal = useCallback(
+    () =>
+      void host
+        .localServer()
+        .then((s) => {
+          setCanRunHere(s.bundled);
+          setLocal(s);
+          if (!ownerless(s)) return;
+          setTrail(["choose", ownServerScreen(true)]);
+          setScreen("here");
+        })
+        .catch(() => {}),
+    [host],
+  );
+  useEffect(readLocal, [readLocal]);
   const own = ownAddresses(local?.run || local?.installed === "terminal" ? local : null);
 
   // A link waiting when the window opens, and any that arrives while it's open.
@@ -225,6 +233,7 @@ export function FirstRun() {
     setTrail([]);
     setScreen("choose");
     setAddress("");
+    readLocal();
   });
 
   useEffect(() => {
@@ -917,7 +926,11 @@ function RunHere({
       <BackLink label={t("desktop.own.title")} onClick={onBack} />
       <h1 className="dk-fr__h1sm">{t("desktop.here.title")}</h1>
       <p className="dk-lead dk-fr__wide">
-        {view.ask ? t("desktop.here.how") : t("desktop.here.again", { path: shortPath(status.dir) })}
+        {!view.ask
+          ? t("desktop.here.again", { path: shortPath(status.dir) })
+          : ownerless(status)
+            ? t("desktop.here.ownerNone", { path: shortPath(status.dir) })
+            : t("desktop.here.how")}
       </p>
       <form className="dk-fr__here" onSubmit={submit} noValidate>
         {view.ask && (

@@ -711,7 +711,9 @@
     },
     "desktopOwner": {
       "continue": "Continuar en esta {{device}}",
-      "text": "Configuraste agentes.chat en esta {{device}}: no hace falta contraseña."
+      "text": "Configuraste agentes.chat en esta {{device}}: no hace falta contraseña.",
+      "gone": "El propietario de este servidor eliminó su cuenta, así que «Continuar en esta {{device}}» no puede iniciar sesión con nadie. Entra con tu propio correo.",
+      "none": "Ya no queda ninguna cuenta en el agentes.chat de esta {{device}}. Crea su nuevo propietario en la ventana que se abrió."
     },
     "server": {
       "into": "Entrando en <b>{{server}}</b>",

@@ -89,6 +89,13 @@ const STEP_ACTIONS: Partial<Record<Step, HumanAction>> = {
 const REDEEM_EVERY_MS = 2000;
 const REDEEM_FOR_MS = 10 * 60_000;
 
+/**
+ * Continue on this Mac refused for a reason the page can name (`sign_in_window` in the desktop app): the server's
+ * owner deleted their account, or no account is left and the app opened its own window to make the new owner.
+ */
+const ownerRefusal = (e: unknown) =>
+  e === "owner_gone" ? "auth.desktopOwner.gone" : e === "owner_none" ? "auth.desktopOwner.none" : undefined;
+
 /** Help under a new password, live: what's missing, or "Senha ok." */
 export function passwordHelp(t: TFunction, password: string) {
   const state = passwordState(password);
@@ -224,8 +231,8 @@ export function AuthPage({
     try {
       // The app moves this window to the sign-in it made; nothing to do here after.
       await thisMac.signIn();
-    } catch {
-      setError(t("common.unknownError"));
+    } catch (e) {
+      setError(t(ownerRefusal(e) ?? "common.unknownError"));
       setOwnerPending(false);
     }
   };
@@ -239,8 +246,12 @@ export function AuthPage({
     ownerTried.current = true;
     setOwnerPending(true);
     // Refused (too soon after another, the server not up yet): the screen stays, its button one click away.
-    void thisMac.signIn().catch(() => setOwnerPending(false));
-  }, [ownerAgain]);
+    void thisMac.signIn().catch((e) => {
+      setOwnerPending(false);
+      const why = ownerRefusal(e);
+      if (why) setError(t(why));
+    });
+  }, [ownerAgain, t]);
 
   // "Add account": whoever is signed in stays so, one click back.
   const stays = useQuery({ ...meQuery(api), enabled: adding }).data ?? null;

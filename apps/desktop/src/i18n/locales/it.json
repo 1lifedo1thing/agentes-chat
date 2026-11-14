@@ -198,6 +198,7 @@
     "title": "Esegui agentes.chat su questo {{device}}",
     "how": "Gira dentro questa app, con un database integrato, e tiene tutto in una cartella su questo {{device}}.",
     "again": "Era già stato eseguito qui e i suoi dati sono ancora in {{path}}.",
+    "ownerNone": "Non è rimasto nessun account. I suoi dati sono ancora in {{path}}, e con il tuo nome e la tua email ne diventi il nuovo proprietario.",
     "name": "Il tuo nome",
     "nameNeeded": "Scrivi il tuo nome.",
     "email": "La tua email",

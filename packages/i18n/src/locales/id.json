@@ -683,7 +683,9 @@
     },
     "desktopOwner": {
       "continue": "Lanjutkan di {{device}} ini",
-      "text": "Kamu memasang agentes.chat di {{device}} ini: tidak perlu kata sandi."
+      "text": "Kamu memasang agentes.chat di {{device}} ini: tidak perlu kata sandi.",
+      "gone": "Pemilik server ini menghapus akunnya, jadi Lanjutkan di {{device}} ini tidak bisa memasukkan siapa pun. Masuk dengan emailmu sendiri.",
+      "none": "Tidak ada akun yang tersisa di agentes.chat pada {{device}} ini. Buat pemilik barunya di jendela yang terbuka."
     },
     "server": {
       "into": "Masuk ke <b>{{server}}</b>",

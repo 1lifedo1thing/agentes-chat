@@ -198,6 +198,7 @@
     "title": "Ejecutar agentes.chat en esta {{device}}",
     "how": "Se ejecuta dentro de esta app, con su propia base de datos incluida, y guarda todo en una carpeta de esta {{device}}.",
     "again": "Ya se ejecutó aquí antes, y sus datos siguen en {{path}}.",
+    "ownerNone": "Ya no queda ninguna cuenta en él. Sus datos siguen en {{path}}, y con tu nombre y tu correo pasas a ser su nuevo propietario.",
     "name": "Tu nombre",
     "nameNeeded": "Escribe tu nombre.",
     "email": "Tu correo",

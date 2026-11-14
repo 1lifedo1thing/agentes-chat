@@ -208,6 +208,8 @@ export const desktopPtBR = {
     title: "Rodar o agentes.chat neste {{device}}",
     how: "Ele roda dentro deste app, com um banco de dados embutido, e guarda tudo numa pasta deste {{device}}.",
     again: "Ele já rodou aqui, e os dados continuam em {{path}}.",
+    ownerNone:
+      "Não sobrou nenhuma conta nele. Os dados continuam em {{path}}, e com seu nome e e-mail você vira o novo dono.",
     name: "Seu nome",
     nameNeeded: "Escreva o seu nome.",
     email: "Seu e-mail",

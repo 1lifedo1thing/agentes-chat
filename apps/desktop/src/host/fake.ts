@@ -15,7 +15,7 @@
  * noowner.tail1234.ts.net waits for its owner; old.example.com is too old; chat.example.com doesn't answer;
  * anything else isn't agentes.chat. `?found=0` makes discovery find nothing.
  * The server here: `?phase=` (starting, updating, stopped, failing), `?reach=1`, `?back=<version>` (an update
- * went back), `?run=0` (it stopped running here, its data kept), `?usage=0` (usage statistics off),
+ * went back), `?run=0` (it stopped running here, its data kept), `?owner=0` (it runs with no account left), `?usage=0` (usage statistics off),
  * `?tailscale=` (on, off, missing), `?installed=terminal` (one from the terminal; `&claim=1` waits for its owner,
  * `&serving=0` isn't running), `?fail=` (database, start, account, reach: that setup step fails), `?hold=<step>`
  * (setting up stops there). Cancel ends a setup at once, held or not (it rejects with "cancelled", as the app's
@@ -53,6 +53,8 @@ export interface HereOptions {
   reach?: boolean;
   back?: string | null;
   run?: boolean;
+  /** False: it runs, but its owner deleted their account and nobody else has one. */
+  owner?: boolean;
   usage?: boolean;
   tailscale?: Tailnet["state"];
   installed?: "terminal";
@@ -175,7 +177,7 @@ export function createFakeHost(
       ? {
           installed: "app" as const,
           run: running,
-          owner: true,
+          owner: here.owner !== false,
           phase: running ? (here.phase ?? "running") : "off",
           url: LOCAL_URL,
           publicUrl: here.reach ? TAILNET_URL : LOCAL_URL,

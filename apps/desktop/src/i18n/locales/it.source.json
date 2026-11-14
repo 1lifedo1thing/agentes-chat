@@ -524,6 +524,9 @@
   "here.again": {
     "value": "It ran here before, and its data is still in {{path}}."
   },
+  "here.ownerNone": {
+    "value": "No account is left on it. Its data is still in {{path}}, and your name and email make you its new owner."
+  },
   "here.name": {
     "value": "Your name"
   },

@@ -206,6 +206,8 @@ export const desktopEn = {
     title: "Run agentes.chat on this {{device}}",
     how: "It runs inside this app, with its own database built in, and keeps everything in one folder on this {{device}}.",
     again: "It ran here before, and its data is still in {{path}}.",
+    ownerNone:
+      "No account is left on it. Its data is still in {{path}}, and your name and email make you its new owner.",
     name: "Your name",
     nameNeeded: "Write your name.",
     email: "Your email",

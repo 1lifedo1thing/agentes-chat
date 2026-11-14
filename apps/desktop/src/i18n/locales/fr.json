@@ -198,6 +198,7 @@
     "title": "Faire tourner agentes.chat sur ce {{device}}",
     "how": "Il tourne dans cette app, avec sa propre base de données intégrée, et garde tout dans un seul dossier sur ce {{device}}.",
     "again": "Il a déjà tourné ici, et ses données sont toujours dans {{path}}.",
+    "ownerNone": "Il n’y reste plus aucun compte. Ses données sont toujours dans {{path}}, et avec votre nom et votre e-mail vous en devenez le nouveau propriétaire.",
     "name": "Votre nom",
     "nameNeeded": "Écrivez votre nom.",
     "email": "Votre e-mail",

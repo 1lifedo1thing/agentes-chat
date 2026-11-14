@@ -201,6 +201,7 @@
     "title": "Uruchom agentes.chat na tym urządzeniu ({{device}})",
     "how": "Działa w tej aplikacji, z wbudowaną własną bazą danych, i trzyma wszystko w jednym folderze na tym urządzeniu ({{device}}).",
     "again": "Działało tu już wcześniej, a jego dane wciąż są w {{path}}.",
+    "ownerNone": "Nie zostało tu żadne konto. Dane wciąż są w {{path}}, a z Twoim imieniem i e-mailem zostajesz nowym właścicielem.",
     "name": "Twoje imię",
     "nameNeeded": "Wpisz swoje imię.",
     "email": "Twój e-mail",

@@ -697,7 +697,9 @@
     },
     "desktopOwner": {
       "continue": "Auf diesem {{device}} weitermachen",
-      "text": "Du hast agentes.chat auf diesem {{device}} eingerichtet: Kein Passwort nötig."
+      "text": "Du hast agentes.chat auf diesem {{device}} eingerichtet: Kein Passwort nötig.",
+      "gone": "Der Inhaber dieses Servers hat sein Konto gelöscht, daher kann „Auf diesem {{device}} weitermachen“ niemanden anmelden. Melde dich stattdessen mit deiner eigenen E-Mail an.",
+      "none": "Im agentes.chat auf diesem {{device}} ist kein Konto mehr übrig. Lege seinen neuen Inhaber im Fenster an, das sich geöffnet hat."
     },
     "server": {
       "into": "Anmeldung bei <b>{{server}}</b>",

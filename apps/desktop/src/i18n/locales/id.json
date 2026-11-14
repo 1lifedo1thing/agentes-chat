@@ -192,6 +192,7 @@
     "title": "Jalankan agentes.chat di {{device}} ini",
     "how": "Berjalan di dalam aplikasi ini, dengan database bawaannya sendiri, dan menyimpan semuanya di satu folder di {{device}} ini.",
     "again": "Pernah berjalan di sini, dan datanya masih ada di {{path}}.",
+    "ownerNone": "Tidak ada akun yang tersisa di sini. Datanya masih ada di {{path}}, dan dengan nama dan emailmu kamu menjadi pemilik barunya.",
     "name": "Namamu",
     "nameNeeded": "Tulis namamu.",
     "email": "Emailmu",

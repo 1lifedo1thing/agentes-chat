@@ -195,6 +195,7 @@
     "title": "agentes.chat'i bu {{device}} üzerinde çalıştırın",
     "how": "Bu uygulamanın içinde, yerleşik kendi veritabanıyla çalışır ve her şeyi bu {{device}} üzerinde tek bir klasörde tutar.",
     "again": "Daha önce burada çalıştı ve verileri hâlâ {{path}} konumunda.",
+    "ownerNone": "Burada hiç hesap kalmadı. Verileri hâlâ {{path}} konumunda, adınız ve e-postanızla yeni sahibi siz olursunuz.",
     "name": "Adınız",
     "nameNeeded": "Adınızı yazın.",
     "email": "E-postanız",
