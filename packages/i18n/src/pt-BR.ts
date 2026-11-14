@@ -8676,6 +8676,7 @@ export const ptBR = {
       waiting_budget_late: "Perdeu o horário: o orçamento renovou tarde demais",
       stopped: "Parada por alguém",
       stoppedBy: "Parada por {{name}}",
+      stalled: "Liberada: nada andou nela por 15 minutos",
       no_report: "Terminou sem contar o resultado",
       handoff_blocked: "Não pôde contar: a rotina foi pausada ou quem criou não pode mais falar ali",
       deleted: "Parou: a rotina foi apagada",
