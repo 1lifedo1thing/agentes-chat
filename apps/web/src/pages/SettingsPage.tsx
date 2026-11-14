@@ -70,6 +70,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { type ComponentProps, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AboutSection } from "@/components/AboutSettings";
+import { AppsDownloadSection } from "@/components/AppsDownload";
 import { AccessMatrixSection } from "@/components/AccessLevels";
 import { AccountSection } from "@/components/AccountSettings";
 import { AiAppsSection } from "@/components/AiApps";
@@ -260,6 +261,7 @@ function Settings({
         )}
       {current === "account" && <AccountSection />}
       {current === "notifications" && <NoticePrefsSection />}
+      {current === "download" && <AppsDownloadSection />}
       {current === "approvals" && <ApprovalsSection />}
       {current === "apps" && <AiAppsSection />}
       {current === "general" && <GeneralSection />}

@@ -2204,6 +2204,17 @@ export const ptBR = {
       people: "Você já fixou 5 pessoas. Tire uma do topo para fixar esta.",
     },
   },
+  /** Configurações › Apps do agentes.chat (`AppsDownload.tsx`): the desktop app for this computer and the phone apps. */
+  appsDownload: {
+    computer: "Computador",
+    computerText: "O workspace numa janela própria, com os avisos do sistema.",
+    inApp: "Você já está no app do computador.",
+    howTo: "Como instalar",
+    phone: "Celular",
+    phoneText: "Os avisos no bolso, para responder de qualquer lugar.",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+  },
   openOnPhone: {
     qr: "QR code para entrar no app agentes",
     making: "Gerando o código…",
@@ -15734,6 +15745,7 @@ export const ptBR = {
     section: {
       account: "Sua conta",
       notifications: "Notificações",
+      download: "Apps do agentes.chat",
       general: "Geral",
       right_hand: "Braço direito",
       members: "Membros",
@@ -15764,6 +15776,7 @@ export const ptBR = {
     sectionText: {
       account: "Seu perfil e como o app fica para você.",
       notifications: "O que chega como aviso neste workspace. A caixa guarda tudo.",
+      download: "O mesmo workspace no computador e no celular, com a sua conta.",
       general: "Nome, fuso e o que todo agente sabe do workspace.",
       right_hand: "O assistente que monta o time com cada pessoa, na DM dela.",
       members: "Quem está no workspace.",

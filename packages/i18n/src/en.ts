@@ -2298,6 +2298,17 @@ export const en = {
       people: "You already pinned 5 people. Unpin one to pin this one.",
     },
   },
+  /** Settings › agentes.chat apps (`AppsDownload.tsx`): the desktop app for this computer and the phone apps. */
+  appsDownload: {
+    computer: "Computer",
+    computerText: "Your workspace in a window of its own, with the system's notifications.",
+    inApp: "You're already in the computer app.",
+    howTo: "How to install",
+    phone: "Phone",
+    phoneText: "Notifications in your pocket, to answer from anywhere.",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+  },
   openOnPhone: {
     qr: "QR code to sign in to the agentes app",
     making: "Making the code…",
@@ -15772,6 +15783,7 @@ export const en = {
     section: {
       account: "Your account",
       notifications: "Notifications",
+      download: "agentes.chat apps",
       general: "General",
       right_hand: "Right hand",
       members: "Members",
@@ -15808,6 +15820,7 @@ export const en = {
     sectionText: {
       account: "Your profile and how the app looks for you.",
       notifications: "What reaches you as an alert here. The inbox keeps everything.",
+      download: "The same workspace on your computer and your phone, with your account.",
       general: "Name, time zone and what every agent knows about the workspace.",
       right_hand: "The assistant that builds the team with each person, in their DM.",
       members: "Who is in the workspace.",
