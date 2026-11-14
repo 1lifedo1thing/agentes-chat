@@ -1,5 +1,5 @@
 {
-  "id": "574cc66d-297e-4360-ad46-98be8e81c9cc",
+  "id": "02c7f1a4-6701-4ee7-9ead-79de7d2ee32b",
   "prevId": "9f1f3c87-6556-4cbb-a394-7432ef6e350e",
   "version": "7",
   "dialect": "postgresql",
@@ -4847,12 +4847,6 @@
         "composio_account_id": {
           "name": "composio_account_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "header_names": {
-          "name": "header_names",
-          "type": "text[]",
           "primaryKey": false,
           "notNull": false
         },
@@ -19706,6 +19700,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "source_by_folder": {
+          "name": "source_by_folder",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "version": {
           "name": "version",
