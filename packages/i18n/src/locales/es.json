@@ -7558,6 +7558,7 @@
     "role": "Rol",
     "roleHint": "Lo que la persona puede hacer. Los roles suman a lo que Todos pueden. Vale solo para personas.",
     "rolePersonal": "Puede",
+    "rolesFoot": "Los roles suman a lo que Todos pueden. Los canales y los agentes del rol vienen marcados.",
     "channels": "Canales",
     "channelsPersonal": "Conversaciones",
     "channelsHint": "Donde la persona ya entra. Los canales del rol vienen marcados.",
@@ -7601,6 +7602,7 @@
       "channelGone": "Uno de los canales ya no existe. Quita el marcado para enviar.",
       "agentGone": "{{name}} salió del equipo. Quítalo de la invitación para enviar.",
       "agentLocked": "Ya no puedes habilitar a {{name}}. Quítalo de la invitación para enviar.",
+      "agentUnnamed": "Uno de los agentes salió del equipo. Quita el marcado para enviar.",
       "role": "Ya no puedes dar el rol {{role}}. Elige otro.",
       "roleMany": "Ya no puedes dar uno de estos roles. Elige otros."
     },
@@ -7612,6 +7614,8 @@
     "validFor": "Vale {{ttl}} desde que se crea.",
     "expiresIn": "Validez",
     "maxUses": "Máximo de personas",
+    "onJoin": "Al entrar",
+    "theLink": "El enlace",
     "ttl": {
       "30m": "30 minutos",
       "1h": "1 hora",
@@ -7631,6 +7635,7 @@
     "invitationTitle": "Invitación de {{email}}",
     "invitationSaved": "Invitación de {{email}} actualizada.",
     "invitationExpired": "Esta invitación venció. Renuévala para cambiar lo que da.",
+    "editInvitation": "Editar invitación",
     "search": "Buscar correo o rol",
     "type": "Tipo",
     "types": {
@@ -7662,7 +7667,9 @@
     "neverEnds": "no vence",
     "by": "de {{name}}",
     "edit": "Editar",
-    "turnOff": "Desactivar enlace"
+    "turnOff": "Desactivar enlace",
+    "editLink": "Editar enlace",
+    "linkTurnedOff": "Enlace desactivado."
   },
   "empty": {
     "thread": {
@@ -10342,6 +10349,15 @@
     "agentsImprove": "Los agentes mejoran las habilidades solos",
     "agentsImproveHelp": "Cuando un agente ve que una habilidad está mal o le falta un paso, la corrige al momento: una versión nueva que puedes deshacer, y quien hizo la habilidad se entera.",
     "agentsImproveThis": "Los agentes mejoran esta habilidad solos",
+    "personal": {
+      "note": "Solo tú ves estas habilidades. Tus agentes las usan cuando tú lo pides.",
+      "emptyTitle": "Guarda tus propias habilidades",
+      "emptyText": "Solo tú las ves, y tus agentes las usan cuando tú lo pides.",
+      "others": "Habilidades personales de otras personas",
+      "of": "Personal de {{name}}",
+      "forWhom": "Para quién",
+      "teamLocked": "Solo quien gestiona agentes añade habilidades del equipo."
+    },
     "agentChange": "{{agent}} la cambió {{when}}",
     "undoAgentChange": "Deshacer cambio",
     "undo": "Deshacer",

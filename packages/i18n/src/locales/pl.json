@@ -7854,6 +7854,7 @@
     "role": "Rola",
     "roleHint": "Co ta osoba może robić. Role dodają się do tego, co mogą Wszyscy. Dotyczy tylko osób.",
     "rolePersonal": "Może",
+    "rolesFoot": "Role dodają się do tego, co mogą Wszyscy. Kanały i agenci roli są już zaznaczeni.",
     "channels": "Kanały",
     "channelsPersonal": "Rozmowy",
     "channelsHint": "Gdzie ta osoba od razu dołącza. Kanały roli są już zaznaczone.",
@@ -7899,6 +7900,7 @@
       "channelGone": "Jeden z kanałów już nie istnieje. Usuń zaznaczony, aby wysłać.",
       "agentGone": "{{name}} odszedł z zespołu. Usuń go z zaproszenia, aby wysłać.",
       "agentLocked": "Nie możesz już udostępnić: {{name}}. Usuń go z zaproszenia, aby wysłać.",
+      "agentUnnamed": "Jednego z agentów nie ma już w zespole. Usuń zaznaczonego, żeby wysłać.",
       "role": "Nie możesz już nadać roli {{role}}. Wybierz inną.",
       "roleMany": "Nie możesz już nadać jednej z tych ról. Wybierz inne."
     },
@@ -7910,6 +7912,8 @@
     "validFor": "Działa {{ttl}} od utworzenia.",
     "expiresIn": "Ważność",
     "maxUses": "Maksymalna liczba osób",
+    "onJoin": "Po dołączeniu",
+    "theLink": "Link",
     "ttl": {
       "30m": "30 minut",
       "1h": "1 godzina",
@@ -7931,6 +7935,7 @@
     "invitationTitle": "Zaproszenie dla {{email}}",
     "invitationSaved": "Zaktualizowano zaproszenie dla {{email}}.",
     "invitationExpired": "To zaproszenie wygasło. Odnów je, aby zmienić to, co daje.",
+    "editInvitation": "Edytuj zaproszenie",
     "search": "Szukaj e-maila lub roli",
     "type": "Rodzaj",
     "types": {
@@ -7966,7 +7971,9 @@
     "neverEnds": "nie wygasa",
     "by": "od {{name}}",
     "edit": "Edytuj",
-    "turnOff": "Wyłącz link"
+    "turnOff": "Wyłącz link",
+    "editLink": "Edytuj link",
+    "linkTurnedOff": "Link wyłączony."
   },
   "empty": {
     "thread": {
@@ -10747,6 +10754,15 @@
     "agentsImprove": "Agenci sami ulepszają umiejętności",
     "agentsImproveHelp": "Gdy agent zauważy, że umiejętność jest błędna albo brakuje w niej kroku, od razu ją poprawia: nowa wersja, którą możesz cofnąć, a osoba, która ją utworzyła, dostaje informację.",
     "agentsImproveThis": "Agenci sami ulepszają tę umiejętność",
+    "personal": {
+      "note": "Tylko ty widzisz te umiejętności. Twoi agenci używają ich, gdy poprosisz.",
+      "emptyTitle": "Zachowaj własne umiejętności",
+      "emptyText": "Tylko ty je widzisz, a twoi agenci używają ich, gdy poprosisz.",
+      "others": "Osobiste umiejętności innych osób",
+      "of": "Osobiste: {{name}}",
+      "forWhom": "Dla kogo",
+      "teamLocked": "Umiejętności zespołu dodają tylko osoby zarządzające agentami."
+    },
     "agentChange": "{{agent}}: zmiana {{when}}",
     "undoAgentChange": "Cofnij zmianę",
     "undo": "Cofnij",

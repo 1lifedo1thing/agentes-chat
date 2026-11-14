@@ -7610,6 +7610,7 @@
     "role": "Rôle",
     "roleHint": "Ce que la personne peut faire. Les rôles s'ajoutent à ce que Tout le monde peut. Seulement pour les personnes.",
     "rolePersonal": "Peut",
+    "rolesFoot": "Les rôles s'ajoutent à ce que Tout le monde peut faire. Les canaux et les agents du rôle sont déjà cochés.",
     "channels": "Canaux",
     "channelsPersonal": "Conversations",
     "channelsHint": "Là où la personne arrive. Les canaux du rôle sont déjà cochés.",
@@ -7653,6 +7654,7 @@
       "channelGone": "Un des canaux n'existe plus. Retirez celui qui est marqué pour envoyer.",
       "agentGone": "{{name}} a quitté l'équipe. Retirez-le de l'invitation pour envoyer.",
       "agentLocked": "Vous ne pouvez plus ouvrir {{name}}. Retirez-le de l'invitation pour envoyer.",
+      "agentUnnamed": "Un des agents a quitté l'équipe. Retirez celui qui est marqué pour envoyer.",
       "role": "Vous ne pouvez plus donner le rôle {{role}}. Choisissez-en un autre.",
       "roleMany": "Vous ne pouvez plus donner un de ces rôles. Choisissez-en d'autres."
     },
@@ -7664,6 +7666,8 @@
     "validFor": "Valable {{ttl}} après sa création.",
     "expiresIn": "Validité",
     "maxUses": "Nombre maximum de personnes",
+    "onJoin": "En rejoignant",
+    "theLink": "Le lien",
     "ttl": {
       "30m": "30 minutes",
       "1h": "1 heure",
@@ -7683,6 +7687,7 @@
     "invitationTitle": "Invitation de {{email}}",
     "invitationSaved": "Invitation de {{email}} mise à jour.",
     "invitationExpired": "Cette invitation a expiré. Renouvelez-la pour changer ce qu'elle donne.",
+    "editInvitation": "Modifier l'invitation",
     "search": "Rechercher un e-mail ou un rôle",
     "type": "Type",
     "types": {
@@ -7714,7 +7719,9 @@
     "neverEnds": "n'expire jamais",
     "by": "de {{name}}",
     "edit": "Modifier",
-    "turnOff": "Désactiver le lien"
+    "turnOff": "Désactiver le lien",
+    "editLink": "Modifier le lien",
+    "linkTurnedOff": "Lien désactivé."
   },
   "empty": {
     "thread": {
@@ -10394,6 +10401,15 @@
     "agentsImprove": "Les agents améliorent les compétences eux-mêmes",
     "agentsImproveHelp": "Quand un agent trouve une compétence fausse ou incomplète, il la corrige tout de suite : une nouvelle version que vous pouvez annuler, et la personne qui l'a créée est prévenue.",
     "agentsImproveThis": "Les agents améliorent cette compétence eux-mêmes",
+    "personal": {
+      "note": "Vous seul voyez ces compétences. Vos agents les utilisent quand vous le demandez.",
+      "emptyTitle": "Gardez vos propres compétences",
+      "emptyText": "Vous seul les voyez, et vos agents les utilisent quand vous le demandez.",
+      "others": "Compétences personnelles des autres",
+      "of": "Personnel de {{name}}",
+      "forWhom": "Pour qui",
+      "teamLocked": "Seules les personnes qui gèrent les agents ajoutent des compétences d’équipe."
+    },
     "agentChange": "{{agent}} l'a modifiée {{when}}",
     "undoAgentChange": "Annuler la modification",
     "undo": "Annuler",

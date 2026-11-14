@@ -7796,6 +7796,8 @@ export const en = {
     role: "Role",
     roleHint: "What the person can do. Roles add to what Everyone can. Only for people.",
     rolePersonal: "Can",
+    /** Under the phone's Role list. */
+    rolesFoot: "Roles add to what Everyone can. The role's channels and agents come ticked.",
     channels: "Channels",
     channelsPersonal: "Conversations",
     channelsHint: "Where the person starts. The role's channels come ticked.",
@@ -7840,6 +7842,7 @@ export const en = {
       channelGone: "One of the channels no longer exists. Remove the marked one to send.",
       agentGone: "{{name}} left the team. Remove them from the invitation to send.",
       agentLocked: "You can no longer let people talk to {{name}}. Remove them from the invitation to send.",
+      agentUnnamed: "One of the agents left the team. Take out the marked one to send.",
       role: "You can no longer give the {{role}} role. Pick another.",
       roleMany: "You can no longer give one of these roles. Pick others.",
     },
@@ -7851,6 +7854,9 @@ export const en = {
     validFor: "Works for {{ttl}} once made.",
     expiresIn: "Expires after",
     maxUses: "Most people",
+    /** The phone's groups in Link mode and Edit link: what the person gets, then the link's own limits. */
+    onJoin: "On joining",
+    theLink: "The link",
     ttl: {
       "30m": "30 minutes",
       "1h": "1 hour",
@@ -7868,6 +7874,7 @@ export const en = {
     invitationTitle: "Invitation for {{email}}",
     invitationSaved: "Invitation for {{email}} updated.",
     invitationExpired: "This invitation expired. Renew it to change what it gives.",
+    editInvitation: "Edit invite",
     // The Invitations tab.
     search: "Search email or role",
     type: "Type",
@@ -7894,6 +7901,8 @@ export const en = {
     by: "by {{name}}",
     edit: "Edit",
     turnOff: "Turn off link",
+    editLink: "Edit link",
+    linkTurnedOff: "Link turned off.",
   },
   empty: {
     thread: { title: "Threads", text: "Thread replies will show up here, without taking over the channel." },
@@ -10342,6 +10351,16 @@ export const en = {
     agentsImproveHelp:
       "When an agent finds a skill wrong or missing a step, it fixes it right away: a new version you can undo, and whoever made the skill is told.",
     agentsImproveThis: "Agents improve this skill by themselves",
+    /** Skills split as the Vault does (ADR 0144): the team's and each person's. */
+    personal: {
+      note: "Only you see these skills. Your agents use them when you ask.",
+      emptyTitle: "Keep your own skills",
+      emptyText: "Only you see them, and your agents use them when you ask.",
+      others: "Others' personal skills",
+      of: "{{name}}'s personal",
+      forWhom: "Who it's for",
+      teamLocked: "Only people who manage agents add team skills.",
+    },
     agentChange: "{{agent}} changed it {{when}}",
     undoAgentChange: "Undo change",
     undo: "Undo",

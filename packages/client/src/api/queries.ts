@@ -1,6 +1,7 @@
 import {
   type InfiniteData,
   mutationOptions,
+  notifyManager,
   type QueryClient,
   queryOptions,
   useInfiniteQuery,
@@ -10,7 +11,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { moveInGroups } from "../lib/agent-groups";
 import { artifactRefs } from "../lib/artifacts";
 import { newerBlockState, stateChanges, stateForPage } from "../lib/blocks";
@@ -27,7 +28,7 @@ import {
   XCODE_FIX_POLL_MS,
   xcodeFixLive,
 } from "../lib/devices";
-import { answerWithin, noAnswer, sendFailureOf, sendWaits } from "../lib/errors";
+import { answerWithin, noAnswer, sendFailureOf, sendWaits, sessionEnded } from "../lib/errors";
 import { ISSUES_VIEW_DEFAULT, type IssuesViewChange, withIssuesView } from "../lib/issues-view";
 import { CLI_INSTALL_POLL_MS, LoginReadError, loginReadPasses } from "../lib/machines";
 import { GIF_PAGE, isMediaAfterReply, messageMediaOf, postedMedia } from "../lib/media";
@@ -69,7 +70,7 @@ import { readUnknownMembers, setOrgDeletion } from "../realtime/machines";
 import type { ApiClient } from "./client";
 import { type AgentReactionEffect, useAgentReaction, useApi, useCardVia } from "./context";
 import { ApiError, type UploadOptions } from "./http";
-import { keys } from "./keys";
+import { keys, ME_HASH } from "./keys";
 import { keepSending, outbox } from "./outbox";
 import type {
   AdminAsk,
@@ -260,7 +261,31 @@ export const invitationStateQuery = (api: ApiClient, token: string) =>
 
 // ── Account ─────────────────────────────────────────────────────────────────
 
-export const useMe = () => useQuery(meQuery(useApi()));
+/**
+ * The signed-in person. `qc.clear()` (a sign-in, a sign-out, a session that ended) takes `me` out of the cache without
+ * telling who reads it, so a reader renders again whenever the cache's `me` is removed or made anew: `useQuery` reads
+ * the one in the cache on that render. Without it, a screen drawn from `me` outlasts its session.
+ */
+export function useMe() {
+  const result = useQuery(meQuery(useApi()));
+  const cache = useQueryClient().getQueryCache();
+  const current = () => cache.get(ME_HASH);
+  useSyncExternalStore(
+    useCallback(
+      (changed: () => void) => {
+        // After the render in course, never during it: the first reader to render makes the query, which says `added`.
+        const later = notifyManager.batchCalls(changed);
+        return cache.subscribe((e) => {
+          if (e.query.queryHash === ME_HASH && (e.type === "added" || e.type === "removed")) later();
+        });
+      },
+      [cache],
+    ),
+    current,
+    current,
+  );
+  return result;
+}
 export const useAuthConfig = () => useQuery(authConfigQuery(useApi()));
 export const useHealth = () => {
   const api = useApi();
@@ -383,13 +408,19 @@ export const CLOSING_POLL_MS = 30_000;
 export const useClosingMe = () =>
   useQuery({ ...meQuery(useApi()), refetchInterval: CLOSING_POLL_MS, refetchOnWindowFocus: "always" });
 
-/** Brings my account back; `GET /me` then opens its workspaces again. */
+/**
+ * Brings my account back; `GET /me` then opens its workspaces again. Refused for no session (deleting the account
+ * ended them all): nobody is signed in, as `GET /me` says with the same answer, so the screen that offered it yields.
+ */
 export function useRestoreAccount() {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => api.account.restore(),
     onSuccess: () => qc.refetchQueries({ queryKey: keys.me }),
+    onError: (error) => {
+      if (sessionEnded(error)) qc.setQueryData(keys.me, null);
+    },
   });
 }
 
@@ -4755,10 +4786,12 @@ export function useSkillAction(orgId: string, { silent = false } = {}) {
       action:
         | {
             type: "import";
-            input: { url: string; list?: boolean; forAgentId?: string } | { zipBase64: string };
+            input: ({ url: string; list?: boolean; forAgentId?: string } | { zipBase64: string }) & {
+              personal?: boolean;
+            };
             upload?: UploadOptions;
           }
-        | { type: "importPicked"; url: string; paths: string[]; forAgentId?: string }
+        | { type: "importPicked"; url: string; paths: string[]; forAgentId?: string; personal?: boolean }
         | { type: "create"; input: SkillInput }
         | { type: "update"; id: string; patch: SkillPatch }
         | { type: "reimport"; id: string }
@@ -4773,7 +4806,7 @@ export function useSkillAction(orgId: string, { silent = false } = {}) {
         case "import":
           return api.skills.import(orgId, action.input, action.upload);
         case "importPicked":
-          return api.skills.importPicked(orgId, action.url, action.paths, action.forAgentId);
+          return api.skills.importPicked(orgId, action.url, action.paths, action.forAgentId, action.personal);
         case "create":
           return api.skills.create(orgId, action.input);
         case "update":

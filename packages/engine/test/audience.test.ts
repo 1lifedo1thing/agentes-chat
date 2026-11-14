@@ -711,7 +711,7 @@ describe("who sees every agent in Equipe's lists (view_all_agents)", () => {
     f = await setup();
     await everyoneWithout(f.db, f.org.id, "view_all_agents");
     const migration = sql.raw(
-      await Bun.file(new URL("../../db/migrations/0274_view_all_agents.sql", import.meta.url)).text(),
+      await Bun.file(new URL("../../db/migrations/0275_view_all_agents.sql", import.meta.url)).text(),
     );
     await f.db.execute(migration);
     await f.db.execute(migration);

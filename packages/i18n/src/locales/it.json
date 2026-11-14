@@ -7617,6 +7617,7 @@
     "role": "Ruolo",
     "roleHint": "Cosa può fare la persona. I ruoli si aggiungono a quello che può fare Tutti. Vale solo per le persone.",
     "rolePersonal": "Può",
+    "rolesFoot": "I ruoli si sommano a quello che Tutti possono fare. I canali e gli agenti del ruolo sono già spuntati.",
     "channels": "Canali",
     "channelsPersonal": "Conversazioni",
     "channelsHint": "Dove la persona entra subito. I canali del ruolo sono già spuntati.",
@@ -7660,6 +7661,7 @@
       "channelGone": "Uno dei canali non esiste più. Togli quello segnato per inviare.",
       "agentGone": "{{name}} ha lasciato il team. Toglilo dall'invito per inviare.",
       "agentLocked": "Non puoi più sbloccare {{name}}. Toglilo dall'invito per inviare.",
+      "agentUnnamed": "Uno degli agenti ha lasciato il team. Togli quello segnato per inviare.",
       "role": "Non puoi più dare il ruolo {{role}}. Scegline un altro.",
       "roleMany": "Non puoi più dare uno di questi ruoli. Scegline altri."
     },
@@ -7671,6 +7673,8 @@
     "validFor": "Vale {{ttl}} dalla creazione.",
     "expiresIn": "Validità",
     "maxUses": "Massimo di persone",
+    "onJoin": "All'ingresso",
+    "theLink": "Il link",
     "ttl": {
       "30m": "30 minuti",
       "1h": "1 ora",
@@ -7690,6 +7694,7 @@
     "invitationTitle": "Invito di {{email}}",
     "invitationSaved": "Invito di {{email}} aggiornato.",
     "invitationExpired": "Questo invito è scaduto. Rinnovalo per cambiare cosa dà.",
+    "editInvitation": "Modifica invito",
     "search": "Cerca email o ruolo",
     "type": "Tipo",
     "types": {
@@ -7721,7 +7726,9 @@
     "neverEnds": "non scade",
     "by": "di {{name}}",
     "edit": "Modifica",
-    "turnOff": "Disattiva il link"
+    "turnOff": "Disattiva il link",
+    "editLink": "Modifica link",
+    "linkTurnedOff": "Link disattivato."
   },
   "empty": {
     "thread": {
@@ -10410,6 +10417,15 @@
     "agentsImprove": "Gli agenti migliorano le skill da soli",
     "agentsImproveHelp": "Quando un agente trova una skill sbagliata o a cui manca un passo, la corregge subito: una nuova versione che puoi annullare, e chi ha creato la skill viene avvisato.",
     "agentsImproveThis": "Gli agenti migliorano questa skill da soli",
+    "personal": {
+      "note": "Solo tu vedi queste skill. I tuoi agenti le usano quando lo chiedi tu.",
+      "emptyTitle": "Tieni le tue skill",
+      "emptyText": "Solo tu le vedi, e i tuoi agenti le usano quando lo chiedi tu.",
+      "others": "Skill personali di altre persone",
+      "of": "Personale di {{name}}",
+      "forWhom": "Per chi",
+      "teamLocked": "Solo chi gestisce gli agenti aggiunge skill del team."
+    },
     "agentChange": "{{agent}} l'ha modificata {{when}}",
     "undoAgentChange": "Annulla modifica",
     "undo": "Annulla",

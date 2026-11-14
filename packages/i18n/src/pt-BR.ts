@@ -7782,6 +7782,7 @@ export const ptBR = {
     role: "Cargo",
     roleHint: "O que a pessoa pode fazer. Cargos somam ao que Todos podem. Vale só para pessoas.",
     rolePersonal: "Pode",
+    rolesFoot: "Cargos somam ao que Todos podem. Os canais e os agentes do cargo vêm marcados.",
     channels: "Canais",
     channelsPersonal: "Conversas",
     channelsHint: "Onde a pessoa já entra. Os canais do cargo vêm marcados.",
@@ -7829,6 +7830,7 @@ export const ptBR = {
       agentGone_female: "A {{name}} saiu do time. Tire do convite para enviar.",
       agentLocked: "Você não pode mais liberar o {{name}}. Tire do convite para enviar.",
       agentLocked_female: "Você não pode mais liberar a {{name}}. Tire do convite para enviar.",
+      agentUnnamed: "Um dos agentes saiu do time. Tire o marcado para enviar.",
       role: "Você não pode mais dar o cargo {{role}}. Escolha outro.",
       roleMany: "Você não pode mais dar um desses cargos. Escolha outros.",
     },
@@ -7840,6 +7842,8 @@ export const ptBR = {
     validFor: "Vale {{ttl}} depois de criado.",
     expiresIn: "Validade",
     maxUses: "Máximo de pessoas",
+    onJoin: "Ao entrar",
+    theLink: "O link",
     ttl: {
       "30m": "30 minutos",
       "1h": "1 hora",
@@ -7857,6 +7861,7 @@ export const ptBR = {
     invitationTitle: "Convite de {{email}}",
     invitationSaved: "Convite de {{email}} atualizado.",
     invitationExpired: "Este convite expirou. Renove para mudar o que ele dá.",
+    editInvitation: "Editar convite",
     // The Convites tab.
     search: "Buscar e-mail ou cargo",
     type: "Tipo",
@@ -7883,6 +7888,8 @@ export const ptBR = {
     by: "de {{name}}",
     edit: "Editar",
     turnOff: "Desativar link",
+    editLink: "Editar link",
+    linkTurnedOff: "Link desativado.",
   },
   empty: {
     thread: {
@@ -10347,6 +10354,16 @@ export const ptBR = {
     agentsImproveHelp:
       "Quando um agente acha uma skill errada ou faltando um passo, ele corrige na hora: uma versão nova que dá para desfazer, e quem fez a skill fica sabendo.",
     agentsImproveThis: "Agentes melhoram esta skill sozinhos",
+    /** Skills split as the Vault does (ADR 0144): the team's and each person's. */
+    personal: {
+      note: "Só você vê estas skills. Seus agentes usam quando você pede.",
+      emptyTitle: "Guarde suas skills",
+      emptyText: "Só você vê, e seus agentes usam quando você pede.",
+      others: "Pessoais de outras pessoas",
+      of: "Pessoal de {{name}}",
+      forWhom: "Para quem",
+      teamLocked: "Só quem gerencia agentes adiciona skills da equipe.",
+    },
     agentChange: "{{agent}} mudou {{when}}",
     undoAgentChange: "Desfazer mudança",
     undo: "Desfazer",

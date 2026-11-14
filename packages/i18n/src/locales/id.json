@@ -7108,6 +7108,7 @@
     "role": "Peran",
     "roleHint": "Apa yang bisa dilakukan orang ini. Peran menambah apa yang bisa dilakukan Semua orang. Hanya untuk orang.",
     "rolePersonal": "Bisa",
+    "rolesFoot": "Peran menambah apa yang bisa dilakukan Semua. Kanal dan agen dari peran sudah dicentang.",
     "channels": "Kanal",
     "channelsPersonal": "Percakapan",
     "channelsHint": "Tempat orang ini langsung masuk. Kanal dari peran sudah dicentang.",
@@ -7147,6 +7148,7 @@
       "channelGone": "Salah satu kanal sudah tidak ada. Hapus yang ditandai untuk mengirim.",
       "agentGone": "{{name}} sudah keluar dari tim. Hapus dari undangan untuk mengirim.",
       "agentLocked": "Kamu tidak bisa lagi membuka {{name}}. Hapus dari undangan untuk mengirim.",
+      "agentUnnamed": "Salah satu agen sudah keluar dari tim. Hapus yang ditandai untuk mengirim.",
       "role": "Kamu tidak bisa lagi memberi peran {{role}}. Pilih yang lain.",
       "roleMany": "Kamu tidak bisa lagi memberi salah satu peran ini. Pilih yang lain."
     },
@@ -7158,6 +7160,8 @@
     "validFor": "Berlaku {{ttl}} sejak dibuat.",
     "expiresIn": "Masa berlaku",
     "maxUses": "Jumlah orang maksimum",
+    "onJoin": "Saat bergabung",
+    "theLink": "Tautannya",
     "ttl": {
       "30m": "30 menit",
       "1h": "1 jam",
@@ -7173,6 +7177,7 @@
     "invitationTitle": "Undangan untuk {{email}}",
     "invitationSaved": "Undangan untuk {{email}} diperbarui.",
     "invitationExpired": "Undangan ini sudah kedaluwarsa. Perbarui untuk mengubah apa yang diberikannya.",
+    "editInvitation": "Edit undangan",
     "search": "Cari email atau peran",
     "type": "Jenis",
     "types": {
@@ -7196,7 +7201,9 @@
     "neverEnds": "tidak kedaluwarsa",
     "by": "dari {{name}}",
     "edit": "Edit",
-    "turnOff": "Matikan tautan"
+    "turnOff": "Matikan tautan",
+    "editLink": "Edit tautan",
+    "linkTurnedOff": "Tautan dimatikan."
   },
   "empty": {
     "thread": {
@@ -9666,6 +9673,15 @@
     "agentsImprove": "Agen memperbaiki skill sendiri",
     "agentsImproveHelp": "Saat agen menemukan skill yang salah atau kurang satu langkah, agen langsung memperbaikinya: versi baru yang bisa kamu urungkan, dan pembuat skill diberi tahu.",
     "agentsImproveThis": "Agen memperbaiki skill ini sendiri",
+    "personal": {
+      "note": "Hanya kamu yang melihat skill ini. Agenmu memakainya saat kamu meminta.",
+      "emptyTitle": "Simpan skill milikmu sendiri",
+      "emptyText": "Hanya kamu yang melihatnya, dan agenmu memakainya saat kamu meminta.",
+      "others": "Skill pribadi orang lain",
+      "of": "Pribadi milik {{name}}",
+      "forWhom": "Untuk siapa",
+      "teamLocked": "Hanya orang yang mengelola agen yang menambahkan skill tim."
+    },
     "agentChange": "{{agent}} mengubahnya {{when}}",
     "undoAgentChange": "Urungkan perubahan",
     "undo": "Urungkan",
