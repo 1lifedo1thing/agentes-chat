@@ -116,3 +116,78 @@ export const START_WORDS: Record<AppLocale, StartWords> = {
     tip: "Введите адрес в строке выше",
   },
 };
+
+export interface CrashWords {
+  stopped: string;
+  memory: string;
+  told: string;
+}
+
+export const CRASH_WORDS: Record<AppLocale, CrashWords> = {
+  en: { stopped: "The page stopped working", memory: "The page ran out of memory", told: "The agent will be told." },
+  "pt-BR": {
+    stopped: "A página parou de funcionar",
+    memory: "A página ficou sem memória",
+    told: "O agente será avisado.",
+  },
+  es: {
+    stopped: "La página dejó de funcionar",
+    memory: "La página se quedó sin memoria",
+    told: "Se avisará al agente.",
+  },
+  fr: {
+    stopped: "La page a cessé de fonctionner",
+    memory: "La page a manqué de mémoire",
+    told: "L'agent sera prévenu.",
+  },
+  de: {
+    stopped: "Die Seite funktioniert nicht mehr",
+    memory: "Der Seite ist der Speicher ausgegangen",
+    told: "Der Agent wird benachrichtigt.",
+  },
+  it: {
+    stopped: "La pagina ha smesso di funzionare",
+    memory: "La pagina ha esaurito la memoria",
+    told: "L'agente verrà avvisato.",
+  },
+  nl: {
+    stopped: "De pagina werkt niet meer",
+    memory: "De pagina heeft geen geheugen meer",
+    told: "De agent krijgt het te horen.",
+  },
+  ja: {
+    stopped: "ページが動作しなくなりました",
+    memory: "ページのメモリが不足しました",
+    told: "エージェントに伝えます。",
+  },
+  ko: {
+    stopped: "페이지가 작동을 멈췄어요",
+    memory: "페이지의 메모리가 부족해요",
+    told: "에이전트에게 알려 줄게요.",
+  },
+  "zh-Hans": {
+    stopped: "页面已停止运行",
+    memory: "页面内存不足",
+    told: "会告知智能体。",
+  },
+  id: {
+    stopped: "Halaman berhenti berfungsi",
+    memory: "Halaman kehabisan memori",
+    told: "Agen akan diberi tahu.",
+  },
+  tr: {
+    stopped: "Sayfa çalışmayı durdurdu",
+    memory: "Sayfanın belleği tükendi",
+    told: "Ajana haber verilecek.",
+  },
+  pl: {
+    stopped: "Strona przestała działać",
+    memory: "Stronie zabrakło pamięci",
+    told: "Agent zostanie powiadomiony.",
+  },
+  ru: {
+    stopped: "Страница перестала работать",
+    memory: "Странице не хватило памяти",
+    told: "Агенту сообщат.",
+  },
+};
