@@ -109,6 +109,20 @@ test("clearing the cache (sign-out, sign-in, 401) drops the snapshot", async () 
   stop();
 });
 
+test("an account waiting for its deletion is never kept: its screen is the server's to say, and what was saved goes", async () => {
+  const qc = new QueryClient();
+  const store = memory();
+  qc.setQueryData(keys.me, me("u1"));
+  const snapshot = createSnapshot(qc, store);
+  await snapshot.flush();
+  expect(store.value()).not.toBeNull();
+  const waiting = me("u1");
+  waiting.user.deletion = { dueAt: "2026-11-18T10:00:00.000Z", requestedAt: "2026-11-11T10:00:00.000Z" };
+  qc.setQueryData(keys.me, waiting);
+  await snapshot.flush();
+  expect(store.value()).toBeNull();
+});
+
 test("someone else on this device: the snapshot and the previous person's workspace data go", async () => {
   const qc = new QueryClient();
   const store = memory();
