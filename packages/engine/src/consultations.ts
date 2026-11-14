@@ -67,10 +67,10 @@ export const CONSULTATION_TTL_MS = 15 * 60_000;
 export const CONSULTATION_HUNG_MS = 2 * 3600_000;
 /**
  * The most a wait known to end by itself may hold a question or a hand-off (`stuckOn`): a line on a computer that is
- * online, a plan's limit. A plan's known reset ends it sooner, at the reset and `RESET_MARGIN_MS` more.
+ * online, a plan's limit. A plan's known reset ends it sooner: when its run resumes and `RESET_MARGIN_MS` more.
  */
 export const CONSULTATION_KNOWN_WAIT_MS = 24 * 3600_000;
-/** After a known reset, the time a plan's line takes to start again (its runs go 60 s apart). */
+/** After a parked run's own resume time (`waitingForBrain.until`), the time its resumed turn takes to start. */
 const RESET_MARGIN_MS = 30 * 60_000;
 /**
  * Agents already in a chain before one more may be asked (a lead → a dev → a reviewer → a specialist → one more).
@@ -396,7 +396,7 @@ function createTellAgentTool(deps: { pubsub?: PubSub; ai?: AiCheck; judge?: Judg
         const outcome = held.get(target.id);
         waitsForRoom = outcome === "later";
         if (!outcome) await startNoteRun(db, sent.message, target.id);
-        else if (outcome !== "later") {
+        else if (outcome === "linked" || outcome === "loop") {
           await db
             .update(agentConsultations)
             .set({ status: "answered", answer: HELD_WORDS[outcome], answeredAt: new Date(), reportedAt: new Date() })
@@ -449,11 +449,9 @@ export async function peopleSee(db: Executor, run: AgentRun, here: { kind: strin
     : { channelId: run.channelId, threadId: replyThreadOf(run) };
 }
 
-/** What the sender reads when the brakes held its note (ADR 0131 §4–6). */
-const HELD_WORDS: Record<Exclude<BrakeOutcome, "later">, string> = {
+/** What the sender reads when the brakes held its note (ADR 0131 §4 and §6). */
+const HELD_WORDS: Record<Exclude<BrakeOutcome, "later" | "digest">, string> = {
   linked: "is already working on this same item: your note joined that work, nothing new started.",
-  digest:
-    "didn't start on it: it looks known or harmless, so it goes into a summary for a person instead. Don't send it again.",
   loop: "stopped working on this item on its own: it came back too often today, and a person was asked how to handle it. Don't send it again.",
 };
 
@@ -1946,6 +1944,7 @@ function stuckOn(
     outage: boolean;
     waitingMachineId: string | null;
     resetsAt: string | null;
+    until: string | null;
     computerOnline: boolean;
   },
   started: number,
@@ -1964,7 +1963,11 @@ function stuckOn(
   if (target.code === null) return null;
   if (target.code === "work_queue") return hung("it stayed behind its own long work");
   if (USAGE_WAIT_CODES.has(target.code)) {
-    const reset = target.resetsAt ? Date.parse(target.resetsAt) - started + RESET_MARGIN_MS : Number.NaN;
+    // A run deep in its plan's line resumes well past the reset (`waitForUsage`: 60 s apart), at its own `until`.
+    const resumes = target.resetsAt
+      ? Math.max(Date.parse(target.resetsAt), Date.parse(target.until ?? "") || 0)
+      : Number.NaN;
+    const reset = resumes - started + RESET_MARGIN_MS;
     const after = Number.isFinite(reset)
       ? Math.min(Math.max(reset, CONSULTATION_HUNG_MS), CONSULTATION_KNOWN_WAIT_MS)
       : CONSULTATION_KNOWN_WAIT_MS;
@@ -1996,6 +1999,7 @@ export async function expireConsultations(deps: { db: Database; pubsub?: PubSub 
       handedOn: handedOnSql,
       code: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'code'`,
       resetsAt: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'resetsAt'`,
+      until: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'until'`,
       outage: outageParkedSql,
       waitingMachineId: agentRuns.waitingMachineId,
       machine: { online: machines.online, lastSeenAt: machines.lastSeenAt, deletedAt: machines.deletedAt },
@@ -2014,13 +2018,13 @@ export async function expireConsultations(deps: { db: Database; pubsub?: PubSub 
     .limit(200);
   let closed = 0;
   const announced = new Set<string>();
-  for (const { row, target, handedOn, code, resetsAt, outage, waitingMachineId, machine, since, wake } of rows) {
+  for (const { row, target, handedOn, code, resetsAt, until, outage, waitingMachineId, machine, since, wake } of rows) {
     const started = target ? Number(since) : row.createdAt.getTime();
     const computerOnline = machine ? machineOnline(machine, now) : false;
     const stuck =
       target || wake
         ? stuckOn(
-            { status: target, code, outage: Boolean(outage), waitingMachineId, resetsAt, computerOnline },
+            { status: target, code, outage: Boolean(outage), waitingMachineId, resetsAt, until, computerOnline },
             started,
           )
         : null;

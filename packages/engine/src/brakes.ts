@@ -688,10 +688,14 @@ async function brakeOne(
   return null;
 }
 
+/** Unrequested runs an agent may hold open at once, parked ones included, per slot of its cap (`maxUnrequested`). */
+export const UNREQUESTED_OPEN_PER_SLOT = 5;
+
 /**
- * Whether an agent already has as many unrequested runs going as its settings allow. Only runs at work count: one
- * parked (waiting on a person, an approval, its plan or its computer) holds no capacity, so other work goes on. The
- * stretch's limits (`STRETCH`) still bound how many runs agents start on their own and what they spend.
+ * Whether an agent already has as many unrequested runs going as its settings allow. The cap bounds runs at work
+ * (queued or running): one parked on a person, an approval, its plan or its computer doesn't block the next item. Parked
+ * ones still count toward a looser ceiling (`UNREQUESTED_OPEN_PER_SLOT`), so a burst of distinct items can't open a card
+ * for a person each. Separate items each root their own stretch, so the stretch limits don't bound this.
  */
 async function unrequestedAtCap(db: Executor, orgId: string, agentId: string) {
   const [agent] = await db
@@ -700,7 +704,10 @@ async function unrequestedAtCap(db: Executor, orgId: string, agentId: string) {
     .where(and(eq(agents.orgId, orgId), eq(agents.id, agentId)));
   const max = autonomySettings(agent?.autonomy).maxUnrequested;
   const [row] = await db
-    .select({ n: sql<number>`count(distinct ${agentRuns.id})::int` })
+    .select({
+      working: sql<number>`count(distinct ${agentRuns.id}) filter (where ${agentRuns.status} in ('queued', 'running'))::int`,
+      open: sql<number>`count(distinct ${agentRuns.id})::int`,
+    })
     .from(autonomySignals)
     .innerJoin(
       agentRuns,
@@ -711,10 +718,10 @@ async function unrequestedAtCap(db: Executor, orgId: string, agentId: string) {
         eq(autonomySignals.orgId, orgId),
         eq(autonomySignals.agentId, agentId),
         eq(autonomySignals.kind, "wake"),
-        inArray(agentRuns.status, ["queued", "running"]),
+        inArray(agentRuns.status, [...ACTIVE_RUN_STATUSES]),
       ),
     );
-  return Number(row?.n ?? 0) >= max;
+  return Number(row?.working ?? 0) >= max || Number(row?.open ?? 0) >= max * UNREQUESTED_OPEN_PER_SLOT;
 }
 
 /** The person who hears about an agent's unrequested work: its owner. */

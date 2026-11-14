@@ -29,6 +29,7 @@ import {
   speakerFor,
   type ToolDefinition,
   teammatesFor,
+  UNREQUESTED_OPEN_PER_SLOT,
   updateAgent,
   wakeFollowUp,
 } from "../src";
@@ -549,6 +550,27 @@ describe("one item is worked once, noise waits for a digest, repeats stop (ยง4โ€
       const next = await alert(f.agent.id, `Fila de e-mails parada (${status})`);
       expect((await brakeWakes({ db: f.db, judge: fakeJudge(0) }, next, [ada.id])).wake).toEqual([ada.id]);
     }
+  });
+
+  test("parked runs of work nobody asked for still meet a ceiling: a burst of items can't each open a card", async () => {
+    f = await setup();
+    const ada = await agentOf("Ada", "ada", { maxUnrequested: 1 });
+    const items = [
+      "Deploy falhou",
+      "Fila de e-mails parada",
+      "Disco cheio",
+      "Certificado expirando",
+      "Backup atrasado",
+    ];
+    expect(items).toHaveLength(UNREQUESTED_OPEN_PER_SLOT);
+    for (const body of items) {
+      const item = await alert(f.agent.id, body);
+      expect((await brakeWakes({ db: f.db, judge: fakeJudge(0) }, item, [ada.id])).wake).toEqual([ada.id]);
+      const run = await working(ada.id, item.id);
+      await f.db.update(agentRuns).set({ status: "waiting_approval" }).where(eq(agentRuns.id, run.id));
+    }
+    const next = await alert(f.agent.id, "Webhook de pagamentos falhando");
+    expect((await brakeWakes({ db: f.db, judge: fakeJudge(0) }, next, [ada.id])).held.get(ada.id)).toBe("later");
   });
 
   test("work an agent handed on on purpose is never set aside as noise", async () => {

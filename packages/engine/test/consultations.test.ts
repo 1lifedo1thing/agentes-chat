@@ -1087,6 +1087,21 @@ describe("ask_agent", () => {
     expect(lastText(f.provider.calls.at(-1)?.request as ModelRequest)).toContain("plan's or budget's limit");
   });
 
+  test("deep in its plan's line, the wait holds until its own turn to resume, not just the reset", async () => {
+    f = await setup({ askAgent: true, reply: consultReply(() => answer("never sent")) });
+    const { target } = await asked();
+    const now = Date.now();
+    const reset = now + 5 * 3600_000;
+    const resetsAt = new Date(reset).toISOString();
+    const until = new Date(reset + 40 * 60_000).toISOString();
+    const wait = { kind: "claude_code", machineId: "", code: "plan_limit", waitId: "w", since: now, resetsAt, until };
+    await park(target.id, { waitingForBrain: wait });
+    expect(await expireConsultations({ db: f.db }, new Date(reset + 31 * 60_000))).toBe(0);
+    expect((await runs()).find((r) => r.id === target.id)?.status).toBe("waiting_input");
+    expect(await expireConsultations({ db: f.db }, new Date(Date.parse(until) + 31 * 60_000))).toBe(1);
+    expect((await consultations())[0]?.answer).toContain("it stayed at its plan's or budget's limit for over 6 hours");
+  });
+
   test("a plan wait whose reset was never said ends after a day", async () => {
     f = await setup({ askAgent: true, reply: consultReply(() => answer("never sent")) });
     const { target } = await asked();
