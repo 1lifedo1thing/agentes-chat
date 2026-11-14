@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { nameIsPassword } from "@agenteschat/client/lib/text";
 import type { Config } from "@agenteschat/config";
-import { type Database, eq, schema, sql } from "@agenteschat/db";
+import { type Database, schema, sql } from "@agenteschat/db";
 import { onUserCreated, pinnedOwner, recordSignUp, safeEqual, sha256 } from "@agenteschat/engine";
 import type { BetterAuthPlugin } from "better-auth";
 import { APIError, createAuthEndpoint, formCsrfMiddleware } from "better-auth/api";
@@ -54,9 +54,6 @@ export interface OwnerSignInDeps {
 
 export function ownerSignIn(deps: OwnerSignInDeps) {
   const { db, config, log } = deps;
-
-  const userExists = async (id: string) =>
-    (await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.id, id))).length > 0;
 
   /** Writes the owner, with a password hash or none; throws `OwnerExists` when an account is there. */
   async function createOwner(input: { id: string; name: string; email: string; passwordHash: string | null }) {
@@ -136,7 +133,7 @@ export function ownerSignIn(deps: OwnerSignInDeps) {
           }
           let ownerId = await pinnedOwner(db);
           // Pinned but deleted, while other accounts remain: the key never passes to them (`pinnedOwner`).
-          if (ownerId && !(await userExists(ownerId))) {
+          if (ownerId && !(await ctx.context.internalAdapter.findUserById(ownerId))) {
             throw new APIError("CONFLICT", { code: OWNER_GONE, message: "This server's owner deleted their account" });
           }
           if (!ownerId) {

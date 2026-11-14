@@ -167,7 +167,7 @@ describe("Run agentes.chat on this Mac", () => {
       async ({ el, press, until }) => {
         await until(() => el.querySelector("form.dk-fr__here"));
         expect(el.querySelector(".dk-lead")?.textContent).toBe(
-          "No account is left on it. Its data is still in ~/.agentes, and your name and email make you its new owner.",
+          "No account is left on it. Your name and email make you its new owner.",
         );
         const [name, email] = [...el.querySelectorAll(".dk-fr__who input")];
         await act(async () => typeInto(name ?? null, "Carla Dias"));
@@ -191,11 +191,13 @@ describe("Run agentes.chat on this Mac", () => {
 
   test("open already when the app finds no account left: shown again, it goes to the form", () => {
     let gone = false;
+    let mode: "owner" | null = null;
     return firstRun(
       "here",
       async ({ el, host, until }) => {
         await until(() => el.querySelector(".dk-fr")?.getAttribute("data-screen") === "choose");
         gone = true;
+        mode = "owner";
         await act(async () => host.showWindow("welcome"));
         await until(() => el.querySelector("form.dk-fr__here .dk-fr__who"));
         expect(el.querySelector(".dk-lead")?.textContent).toStartWith("No account is left on it.");
@@ -204,10 +206,32 @@ describe("Run agentes.chat on this Mac", () => {
         host: (host) => {
           const read = host.localServer;
           host.localServer = async () => ({ ...(await read()), ...(gone ? { owner: false } : {}) });
+          host.welcomeMode = async () => {
+            const taken = mode;
+            mode = null;
+            return taken;
+          };
         },
       },
     );
   });
+
+  test("no account left, but opened for something else: the window starts where it always does", () =>
+    firstRun(
+      "here",
+      async ({ el, host, until }) => {
+        await until(() => el.querySelector(".dk-fr")?.getAttribute("data-screen") === "choose");
+        await act(async () => host.addWorkspace());
+        await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
+        expect(el.querySelector(".dk-fr")?.getAttribute("data-screen")).toBe("choose");
+      },
+      {
+        host: (host) => {
+          const read = host.localServer;
+          host.localServer = async () => ({ ...(await read()), owner: false });
+        },
+      },
+    ));
 
   test("running here already: one sentence, never its address", () =>
     firstRun("here", async ({ el, press, until }) => {

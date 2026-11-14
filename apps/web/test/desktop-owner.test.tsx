@@ -79,6 +79,8 @@ describe("Entrar no servidor que o app roda neste computador", () => {
     expect(screen().getByRole("alert").textContent).toBe(
       "Não sobrou nenhuma conta no agentes.chat deste Mac. Crie o novo dono na janela que abriu.",
     );
+    // The refusal says nothing against the address field.
+    expect(screen().getByLabelText("E-mail").getAttribute("aria-invalid")).toBeNull();
     cleanup();
     inTheApp({ orgs: [], agentsHere: false, local: true }, "too_soon");
     await renderApp("/login", { api: signedOut() });

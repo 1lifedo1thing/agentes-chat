@@ -267,6 +267,8 @@ export function AuthPage({
   // address, and on a server that emails, a new password is a click away. Never a new confirmation: that would keep
   // the password of whoever made the account (ADR 0006).
   const providerRefused = refusal !== null && error === refusal;
+  // Nor does Continue on this Mac's refusal: no address typed here makes its owner sign in.
+  const ownerRefused = error === t("auth.desktopOwner.gone") || error === t("auth.desktopOwner.none");
   const offerReset = providerRefused && refused === ACCOUNT_NOT_LINKED && canReset && isEmail(email);
 
   const fail = (e: unknown) =>
@@ -629,7 +631,7 @@ export function AuthPage({
                     placeholder={t("auth.flow.emailPlaceholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    invalid={error !== null && !providerRefused}
+                    invalid={error !== null && !providerRefused && !ownerRefused}
                     autoFocus
                   />
                   {fix && (

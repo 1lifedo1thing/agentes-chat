@@ -1871,8 +1871,8 @@ fn open_signed_in(app: &AppHandle, origin: &str, token: &str) -> Result<(), Stri
 }
 
 /// The site's sign-in asked to sign the owner in ("Continue on this Mac", `this_mac` `signIn`). Refused with
-/// `owner_gone` or `owner_none`, which the page explains; with no account left, the welcome window's account step
-/// comes back to make the new owner (the data stays, and setting up again over it only adds the owner).
+/// `owner_gone` or `owner_none`, which the page explains; with no account left, the welcome window opens on the
+/// account step to make the new owner (setting up again over the same folder only adds the owner).
 pub fn sign_in_window(app: &AppHandle, origin: &str) -> Result<(), String> {
     if !answers_within(app, origin, Duration::ZERO) {
         return Err("not running".into());
@@ -1882,21 +1882,34 @@ pub fn sign_in_window(app: &AppHandle, origin: &str) -> Result<(), String> {
     let token = match owner_sign_in(&folder, port, None) {
         Ok(token) => token,
         Err((_, Some(code))) => {
-            if code == "owner_none" {
-                let here = {
-                    let mut inner = state(app);
-                    inner.here.owner = false;
-                    inner.here.clone()
-                };
-                save_here(app, &here);
-                emit_status(app);
+            // A setup on screen makes the owner itself: its account step may be under way.
+            if code == "owner_none" && !setting_up(app) {
+                save_owner(app, false);
+                *app.state::<crate::workspaces::WelcomeMode>().0.lock().unwrap_or_else(|e| e.into_inner()) =
+                    Some("owner");
                 let _ = crate::present(app, "welcome");
             }
             return Err(code.into());
         }
         Err((status, None)) => return Err(format!("sign-in refused ({status})")),
     };
+    // The key signs in, so there is an owner, whatever was saved (a setup that made one, then stopped).
+    save_owner(app, true);
     open_signed_in(app, origin, &token)
+}
+
+/// Whether the server here has an owner, saved and told to the windows when it changed.
+fn save_owner(app: &AppHandle, owner: bool) {
+    let here = {
+        let mut inner = state(app);
+        if inner.here.owner == owner {
+            return;
+        }
+        inner.here.owner = owner;
+        inner.here.clone()
+    };
+    save_here(app, &here);
+    emit_status(app);
 }
 
 fn notify(app: &AppHandle, title: &str, body: &str, version: Option<&str>) {

@@ -15,7 +15,8 @@
  * noowner.tail1234.ts.net waits for its owner; old.example.com is too old; chat.example.com doesn't answer;
  * anything else isn't agentes.chat. `?found=0` makes discovery find nothing.
  * The server here: `?phase=` (starting, updating, stopped, failing), `?reach=1`, `?back=<version>` (an update
- * went back), `?run=0` (it stopped running here, its data kept), `?owner=0` (it runs with no account left), `?usage=0` (usage statistics off),
+ * went back), `?run=0` (it stopped running here, its data kept), `?owner=0` (it runs with no account left, and the
+ * welcome window opens on Run here's form), `?usage=0` (usage statistics off),
  * `?tailscale=` (on, off, missing), `?installed=terminal` (one from the terminal; `&claim=1` waits for its owner,
  * `&serving=0` isn't running), `?fail=` (database, start, account, reach: that setup step fails), `?hold=<step>`
  * (setting up stops there). Cancel ends a setup at once, held or not (it rejects with "cancelled", as the app's
@@ -161,6 +162,8 @@ export function createFakeHost(
   let version = "0.6.0";
   const platform: Platform = scenario === "windows" ? "windows" : scenario === "linux" ? "linux" : "mac";
   const here = options.here ?? {};
+  // With no account left, the app opens the welcome window on Run here's form once.
+  let ownerMode = here.owner === false;
   const tailnet: Tailnet =
     here.tailscale === "missing"
       ? { state: "missing" }
@@ -359,7 +362,12 @@ export function createFakeHost(
       };
     },
     askToPair: async () => true,
-    welcomeMode: async () => (options.welcomeAdd ? "add" : null),
+    welcomeMode: async () => {
+      if (options.welcomeAdd) return "add";
+      if (!ownerMode) return null;
+      ownerMode = false;
+      return "owner";
+    },
     addWorkspace: async () => {
       options.welcomeAdd = true;
       await host.showWindow("welcome");

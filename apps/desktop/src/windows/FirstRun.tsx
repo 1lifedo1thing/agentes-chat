@@ -185,7 +185,14 @@ export function FirstRun() {
   const takeMode = useCallback(() => {
     void host
       .welcomeMode()
-      .then((mode) => setAdding(mode === "add"))
+      .then((mode) => {
+        setAdding(mode === "add");
+        // No account left on the server the app runs: straight to Run here's form, which makes the new owner.
+        const at = screenRef.current;
+        if (mode !== "owner" || at === "link" || at === "pair" || settingUp.current) return;
+        setTrail(["choose", ownServerScreen(true)]);
+        setScreen("here");
+      })
       .catch(() => setAdding(false));
     void host
       .workspaces()
@@ -194,22 +201,15 @@ export function FirstRun() {
   }, [host]);
   useEffect(takeMode, [takeMode]);
 
-  // No account left on the server the app runs: straight to Run here's form, which makes the new owner.
-  const readLocal = useCallback(
-    () =>
-      void host
-        .localServer()
-        .then((s) => {
-          setCanRunHere(s.bundled);
-          setLocal(s);
-          if (!ownerless(s)) return;
-          setTrail(["choose", ownServerScreen(true)]);
-          setScreen("here");
-        })
-        .catch(() => {}),
-    [host],
-  );
-  useEffect(readLocal, [readLocal]);
+  useEffect(() => {
+    void host
+      .localServer()
+      .then((s) => {
+        setCanRunHere(s.bundled);
+        setLocal(s);
+      })
+      .catch(() => {});
+  }, [host]);
   const own = ownAddresses(local?.run || local?.installed === "terminal" ? local : null);
 
   // A link waiting when the window opens, and any that arrives while it's open.
@@ -233,7 +233,6 @@ export function FirstRun() {
     setTrail([]);
     setScreen("choose");
     setAddress("");
-    readLocal();
   });
 
   useEffect(() => {
@@ -929,7 +928,7 @@ function RunHere({
         {!view.ask
           ? t("desktop.here.again", { path: shortPath(status.dir) })
           : ownerless(status)
-            ? t("desktop.here.ownerNone", { path: shortPath(status.dir) })
+            ? t("desktop.here.ownerNone")
             : t("desktop.here.how")}
       </p>
       <form className="dk-fr__here" onSubmit={submit} noValidate>
