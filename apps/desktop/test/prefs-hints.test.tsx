@@ -196,8 +196,11 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
           "Erase it",
         ]);
         await act(async () => buttonIn(dialog, "Erase it")?.click());
-        // While it erases, nothing else can be pressed in its dialog.
+        // While it erases, nothing else can be pressed in its dialog, and it stays up once the server stopped.
         expect((buttonIn(dialog, "Cancel") as HTMLButtonElement).disabled).toBe(true);
+        expect((await host.localServer()).phase).toBe("stopped");
+        await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+        expect(document.querySelector('[role="dialog"]')).toBe(dialog);
         await until(() => !eraseButton(el) && !document.querySelector('[role="dialog"]'));
         expect(el.textContent).not.toContain("agentes.chat on this Mac");
         expect(document.querySelector(".dk-toast")?.textContent).toContain(
@@ -223,7 +226,7 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
         await act(async () => buttonIn(document.querySelector('[role="dialog"]') as HTMLElement, "Erase it")?.click());
         await until(() => document.querySelector(".dk-toast")?.textContent?.includes("couldn't be moved"));
         expect(document.querySelector(".dk-toast")?.textContent).toContain(
-          "Its data couldn't be moved, so nothing was erased and it stays in ~/.agentes. It's stopped until you choose Start it here.",
+          "Its data couldn't be moved, so nothing was erased and it stays in ~/.agentes. It's stopped until you start it again.",
         );
         expect(eraseButton(el)).toBeTruthy();
       },
@@ -233,6 +236,17 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
           host.eraseLocalServer = () => Promise.reject("move");
         },
       },
+    ));
+
+  test("Servers: Erase and start over… waits while it starts or updates, since its files are being copied", () =>
+    pane(
+      "here",
+      <Servers />,
+      (el) => eraseButton(el),
+      (el) => {
+        expect((eraseButton(el) as HTMLButtonElement).disabled).toBe(true);
+      },
+      { here: { phase: "updating" } },
     ));
 
   test("Folders: the note under the list is a link to how folders work, opened in the browser", () =>

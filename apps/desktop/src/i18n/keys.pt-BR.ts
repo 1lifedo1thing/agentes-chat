@@ -449,11 +449,11 @@ export const desktopPtBR = {
     erase: "Apagar e começar de novo…",
     eraseTitle: "Apagar o agentes.chat neste {{device}}?",
     eraseBody:
-      "Ele para, e tudo o que ele guarda vai para {{path}}, onde você ainda pode recuperar. Depois você configura de novo do começo, com uma nova conta de dono.",
+      "Os workspaces dele somem para todos que os usam, em qualquer aparelho. Tudo o que ele guarda vai para {{path}} e fica lá inteiro. Depois você configura de novo, com uma nova conta de dono.",
     eraseConfirm: "Apagar",
     erased: "Apagado. Os dados antigos estão em {{path}}.",
     eraseMoveFailed:
-      "Não deu para mover os dados, então nada foi apagado e eles continuam em {{path}}. Ele fica parado até você escolher Iniciar aqui.",
+      "Não deu para mover os dados, então nada foi apagado e eles continuam em {{path}}. Ele fica parado até você iniciar de novo.",
     noPassword: "Crie uma senha para entrar pelo celular e por outros computadores.",
     addPassword: "Criar uma senha",
     keep: "Manter funcionando",

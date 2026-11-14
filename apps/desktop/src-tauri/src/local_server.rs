@@ -980,6 +980,8 @@ struct Inner {
     backup_problem: Option<&'static str>,
     /// The night (`YYYY-MM-DD`) a nightly backup was last tried: once a night, even when it fails.
     nightly_tried: Option<String>,
+    /// Where "Erase and start over" moved its folder.
+    erased: Option<String>,
 }
 
 #[derive(Default)]
@@ -991,6 +993,8 @@ pub struct LocalServer {
     cancel: AtomicBool,
     /// The person stopped waiting for HTTPS to be allowed in their tailnet.
     reach_stop: AtomicBool,
+    /// "Erase and start over" runs: nothing starts the server on the folder it is moving.
+    erasing: AtomicBool,
 }
 
 fn state(app: &AppHandle) -> std::sync::MutexGuard<'_, Inner> {
@@ -1003,6 +1007,10 @@ pub fn cancelled(app: &AppHandle) -> bool {
 
 pub fn setting_up(app: &AppHandle) -> bool {
     state(app).setting_up.is_some()
+}
+
+fn erasing(app: &AppHandle) -> bool {
+    app.state::<LocalServer>().erasing.load(SeqCst)
 }
 
 pub fn folder(app: &AppHandle) -> Option<Folder> {
@@ -1161,6 +1169,8 @@ pub struct Status {
     awake: bool,
     /// Where "Erase and start over" would move its folder today (the app's own install only, not the welcome window).
     erase_to: Option<String>,
+    /// Where an erase in this app session moved its folder, until a new setup makes one again.
+    erased: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -1203,9 +1213,17 @@ fn system_name() -> Option<String> {
 }
 
 pub fn status(app: &AppHandle, welcome: bool) -> Status {
-    let (here, phase, back_to, tailnet_down, backup_problem, awake) = {
+    let (here, phase, back_to, tailnet_down, backup_problem, awake, erased) = {
         let inner = state(app);
-        (inner.here.clone(), inner.phase, inner.back_to.clone(), inner.tailnet_down, inner.backup_problem, inner.awake.is_some())
+        (
+            inner.here.clone(),
+            inner.phase,
+            inner.back_to.clone(),
+            inner.tailnet_down,
+            inner.backup_problem,
+            inner.awake.is_some(),
+            inner.erased.clone(),
+        )
     };
     let folder = folder(app);
     let env = folder.as_ref().map(read_env).unwrap_or_default();
@@ -1272,6 +1290,7 @@ pub fn status(app: &AppHandle, welcome: bool) -> Status {
             .and_then(|f| f.0.parent())
             .and_then(|home| erased_folder(home, &today(), taken))
             .map(|p| p.to_string_lossy().into_owned()),
+        erased: erased.filter(|_| installed == Installed::None),
     }
 }
 
@@ -1311,7 +1330,8 @@ fn launch_of(app: &AppHandle) -> Option<Launch> {
 pub fn start(app: &AppHandle) {
     {
         let mut inner = state(app);
-        if inner.pid.is_some() || inner.launching {
+        // Read under `inner`, as `erase` reads `launching`: one of the two always sees the other.
+        if inner.pid.is_some() || inner.launching || erasing(app) {
             return;
         }
         inner.launching = true;
@@ -2451,10 +2471,13 @@ fn diagnostics(app: &AppHandle) -> String {
 // ───────────────────────────── erase and start over ─────────────────────────────
 
 /// Why "Erase and start over" can't run now: only on the folder the app made (a terminal install's is the person's
-/// own), and never while a setup may be making that folder's database.
-pub fn erase_refusal(installed: Installed, setting_up: bool) -> Option<&'static str> {
+/// own), never while a setup may be making that folder's database, and never while a start or an update copies or
+/// moves files in it with no server to stop yet (`moving`).
+pub fn erase_refusal(installed: Installed, setting_up: bool, moving: bool) -> Option<&'static str> {
     if setting_up {
         Some("setting up")
+    } else if moving {
+        Some("starting")
     } else if installed != Installed::App {
         Some("not set up here")
     } else {
@@ -2530,24 +2553,44 @@ fn leave_list(app: &AppHandle, addresses: &[String]) {
 
 /// "Erase and start over": it stops, its folder moves whole to a dated one in the home folder (kept, so its data can
 /// still be brought back), then what the app kept about it goes: its host homes, its addresses in the list and the
-/// main window's cookies there, and `local-server.json`. The welcome window then offers a new setup. Where its data
-/// went.
+/// main window's cookies there, and `local-server.json`. The welcome window then opens on a new setup. Where its data
+/// went. Called with `erasing` set, so nothing starts it meanwhile.
 fn erase(app: &AppHandle) -> Result<String, String> {
     let folder = folder(app).ok_or("no folder")?;
     let home = folder.0.parent().ok_or("no home folder")?.to_path_buf();
-    if let Some(why) = erase_refusal(installed(&folder), setting_up(app)) {
+    let (moving, was_run) = {
+        let inner = state(app);
+        (inner.launching || (inner.pid.is_none() && inner.phase == Some(Phase::Updating)), inner.here.run)
+    };
+    if let Some(why) = erase_refusal(installed(&folder), setting_up(app), moving) {
         return Err(why.into());
     }
     // Read while the folder is there: they live in its `.env`.
     let addresses = addresses(app);
     let local = port_of(&folder).map(loopback_url);
     let result = erase_in_order(
-        || stop_by_hand(app, true),
-        || move_away(&folder.0, &home, &today()),
+        // Not forgotten yet: until the folder moved, it is still the server here that stopped.
+        || {
+            stop_by_hand(app, false);
+            stop_leftover(app, &folder);
+        },
+        || {
+            let idle = {
+                let inner = state(app);
+                inner.pid.is_none() && !inner.launching
+            };
+            if !idle {
+                return Err(io::Error::other("it still runs"));
+            }
+            not_held(&folder)?;
+            move_away(&folder.0, &home, &today())
+        },
         || {
             let runners = app.state::<crate::runners::Runners>();
-            for id in local.as_deref().map(|s| crate::runners::host_homes(app, s)).unwrap_or_default() {
+            for (id, dir) in local.as_deref().map(|s| crate::runners::host_homes(app, s)).unwrap_or_default() {
                 let _ = runners.remove(app, &id);
+                // Gone from the runners' list once the server stopped, so `remove` alone leaves it on disk.
+                let _ = fs::remove_dir_all(dir);
             }
             // The loopback one's too, although a server at another port here shares them: its sign-in is asked
             // again once, where the old session would otherwise meet a new server.
@@ -2569,14 +2612,24 @@ fn erase(app: &AppHandle) -> Result<String, String> {
             save_here(app, &HereFile::default());
         },
     );
-    emit_status(app);
     match result {
         Ok(to) => {
+            let to = to.to_string_lossy().into_owned();
+            state(app).erased = Some(to.clone());
+            emit_status(app);
+            *app.state::<crate::workspaces::WelcomeMode>().0.lock().unwrap_or_else(|e| e.into_inner()) = Some("owner");
             let _ = crate::present(app, "welcome");
-            Ok(to.to_string_lossy().into_owned())
+            Ok(to)
         }
         Err(why) => {
             note(app, format!("erase: the folder didn't move, it stays in {}", folder.0.display()));
+            if was_run {
+                // As after Stop: stopped until Start, and a page of it on screen offers Start.
+                set_hold(app, Some(Hold { until: None }));
+                crate::cover::over_server_here(app);
+            } else {
+                emit_status(app);
+            }
             Err(why)
         }
     }
@@ -2673,6 +2726,9 @@ pub fn local_server_start(app: AppHandle, webview: tauri::Webview) -> Result<(),
     if !folder(&app).is_some_and(|f| installed(&f) == Installed::App) {
         return Err("not set up here".into());
     }
+    if erasing(&app) {
+        return Err("erasing".into());
+    }
     {
         let mut inner = state(&app);
         inner.here.run = true;
@@ -2726,7 +2782,10 @@ pub async fn local_server_erase(app: AppHandle, webview: tauri::Webview) -> Resu
     tauri::async_runtime::spawn_blocking(move || {
         let server = app.state::<LocalServer>();
         let _busy = server.busy.lock().unwrap_or_else(|e| e.into_inner());
-        erase(&app)
+        server.erasing.store(true, SeqCst);
+        let result = erase(&app);
+        server.erasing.store(false, SeqCst);
+        result
     })
     .await
     .map_err(|e| e.to_string())?
@@ -3037,12 +3096,14 @@ mod tests {
     }
 
     #[test]
-    fn erase_runs_only_on_the_app_s_own_folder_and_never_during_a_setup() {
-        assert_eq!(erase_refusal(Installed::App, false), None);
-        assert_eq!(erase_refusal(Installed::Terminal, false), Some("not set up here"));
-        assert_eq!(erase_refusal(Installed::None, false), Some("not set up here"));
-        assert_eq!(erase_refusal(Installed::App, true), Some("setting up"));
-        assert_eq!(erase_refusal(Installed::Terminal, true), Some("setting up"));
+    fn erase_runs_only_on_the_app_s_own_folder_and_never_during_a_setup_or_a_start() {
+        assert_eq!(erase_refusal(Installed::App, false, false), None);
+        assert_eq!(erase_refusal(Installed::Terminal, false, false), Some("not set up here"));
+        assert_eq!(erase_refusal(Installed::None, false, false), Some("not set up here"));
+        assert_eq!(erase_refusal(Installed::App, true, false), Some("setting up"));
+        assert_eq!(erase_refusal(Installed::Terminal, true, false), Some("setting up"));
+        // A start copying files, or an update moving its database, with no server to stop yet.
+        assert_eq!(erase_refusal(Installed::App, false, true), Some("starting"));
     }
 
     #[test]

@@ -798,6 +798,9 @@ function HereServer({ local, current }: { local: LocalServerStatus; current: str
   );
 }
 
+/** A start or an update copies or moves its files: an erase waits until it runs or stops. */
+const MOVING: ReadonlySet<LocalServerStatus["phase"]> = new Set(["starting", "updating", "restarting"]);
+
 /**
  * "Erase and start over…": one question, then the server here stops, its folder moves whole to `eraseTo` (its data
  * kept there) and the welcome window offers a new setup. A folder that couldn't move leaves it stopped, data in place.
@@ -830,7 +833,7 @@ function EraseHere({ local, disabled }: { local: LocalServerStatus; disabled: bo
         size="sm"
         variant="ghost"
         className="dk-danger-text"
-        disabled={disabled || !local.eraseTo}
+        disabled={disabled || !local.eraseTo || MOVING.has(local.phase)}
         onClick={() => setAsking(true)}
       >
         {t("desktop.server.erase")}

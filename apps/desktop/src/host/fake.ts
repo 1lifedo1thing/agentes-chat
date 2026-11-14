@@ -616,10 +616,13 @@ export function createFakeHost(
       setLocal({ phase: "running" });
     },
     eraseLocalServer: async () => {
+      // As the app does: it stops first, still the server here, and only then its folder moves.
+      if (local.run) setLocal({ phase: "stopped", awake: false });
       await wait(600);
       const to = local.eraseTo ?? "";
       for (const server of new Set([local.publicUrl, local.url])) if (server) await host.removeServer(server);
-      setLocal({ ...NO_SERVER, bundled: true, dir: local.dir, systemName: "Ana Souza" });
+      setLocal({ ...NO_SERVER, bundled: true, dir: local.dir, systemName: "Ana Souza", erased: to });
+      ownerMode = true;
       await host.showWindow("welcome");
       return to;
     },

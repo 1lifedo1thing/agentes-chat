@@ -457,11 +457,11 @@ export const desktopEn = {
     erase: "Erase and start over…",
     eraseTitle: "Erase agentes.chat on this {{device}}?",
     eraseBody:
-      "It stops, and everything it holds moves to {{path}}, where you can still get it back. Then you set it up again from the start, with a new owner account.",
+      "Its workspaces go for everyone who uses them, on every device. Everything it holds moves to {{path}} and stays there whole. Then you set it up again with a new owner account.",
     eraseConfirm: "Erase it",
     erased: "Erased. Its old data is in {{path}}.",
     eraseMoveFailed:
-      "Its data couldn't be moved, so nothing was erased and it stays in {{path}}. It's stopped until you choose Start it here.",
+      "Its data couldn't be moved, so nothing was erased and it stays in {{path}}. It's stopped until you start it again.",
     noPassword: "Add a password to sign in from your phone and other computers.",
     addPassword: "Add a password",
     keep: "Keep it running",

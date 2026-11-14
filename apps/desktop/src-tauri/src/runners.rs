@@ -382,17 +382,19 @@ impl Runners {
         }
     }
 
-    /// Leaving an organization: stop its runner and delete its home, also one that isn't running (the server
-    /// here's, once it stopped). The agents' workspace (`~/agentes/<org>`) lives outside the home and stays on disk.
+    /// Leaving an organization: stop its runner and delete its home. The agents' workspace
+    /// (`~/agentes/<org>`) lives outside the home and stays on disk.
     pub fn remove(&self, app: &AppHandle, home_id: &str) -> Result<(), String> {
         if !valid_id(home_id) {
             return Err("bad home id".into());
         }
         self.stop(home_id);
-        let root = orgs_root(app)?;
-        let dir = self.lock().remove(home_id).map(|r| r.dir).unwrap_or_else(|| root.join(home_id));
-        if dir.starts_with(&root) && dir != root {
-            let _ = fs::remove_dir_all(&dir);
+        let dir = self.lock().remove(home_id).map(|r| r.dir);
+        if let Some(dir) = dir {
+            let root = orgs_root(app)?;
+            if dir.starts_with(&root) && dir != root {
+                let _ = fs::remove_dir_all(&dir);
+            }
         }
         emit_state(app, home_id, false, true);
         Ok(())
@@ -537,17 +539,16 @@ pub fn app_homes(root: &std::path::Path, own_server: Option<&str>) -> Vec<(Strin
     out
 }
 
-/// The homes on disk that the server here at `server` (its loopback address) wrote for itself, by id
-/// (`host_sync::is_host_home`): what erasing it leaves behind.
-pub fn host_homes(app: &AppHandle, server: &str) -> Vec<String> {
+/// The homes on disk that the server here at `server` (its loopback address) wrote for itself, by id and folder
+/// (`host_sync::is_host_home`): what erasing it leaves behind. Never a terminal install's.
+pub fn host_homes(app: &AppHandle, server: &str) -> Vec<(String, PathBuf)> {
     orgs_root(app).map(|root| host_homes_in(&root, server)).unwrap_or_default()
 }
 
-fn host_homes_in(root: &std::path::Path, server: &str) -> Vec<String> {
+fn host_homes_in(root: &std::path::Path, server: &str) -> Vec<(String, PathBuf)> {
     app_homes(root, Some(server))
         .into_iter()
         .filter(|(_, dir)| home_config(dir).is_some_and(|c| crate::host_sync::is_host_home(&c, Some(server))))
-        .map(|(id, _)| id)
         .collect()
 }
 
@@ -660,7 +661,7 @@ mod tests {
             std::fs::create_dir_all(root.join(id)).unwrap();
             std::fs::write(root.join(id).join("config.json"), config).unwrap();
         }
-        assert_eq!(host_homes_in(&root, "http://127.0.0.1:4310"), vec![own.to_string()]);
+        assert_eq!(host_homes_in(&root, "http://127.0.0.1:4310"), vec![(own.to_string(), root.join(own))]);
         assert!(host_homes_in(&root, "http://127.0.0.1:4311").is_empty());
         std::fs::remove_dir_all(&root).unwrap();
     }
