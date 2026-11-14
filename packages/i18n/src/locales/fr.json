@@ -3465,6 +3465,8 @@
     "agent": "Pour quel agent",
     "keyLocked": "Seul un admin peut ajouter une clé API.",
     "accountsLocked": "Seul {{name}} peut connecter un abonnement sur {{computer}}.",
+    "connectMine": "Connecter mon ordinateur",
+    "makeAgent": "Créer un agent avec ce forfait",
     "later": "Connecter plus tard"
   },
   "keyGuard": {

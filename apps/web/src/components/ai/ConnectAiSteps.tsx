@@ -850,7 +850,7 @@ export function PlanWithoutAgent({
           {elsewhere && onComputer && (
             <span>
               <Button size="sm" variant="primary" onClick={onComputer}>
-                {t("aiAccounts.connect.addComputer")}
+                {t("connectAi.connectMine")}
               </Button>
             </span>
           )}

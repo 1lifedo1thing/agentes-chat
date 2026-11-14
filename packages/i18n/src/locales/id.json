@@ -3229,6 +3229,8 @@
     "agent": "Untuk agen mana",
     "keyLocked": "Hanya Admin yang bisa menambahkan kunci API.",
     "accountsLocked": "Hanya {{name}} yang bisa menghubungkan paket di {{computer}}.",
+    "connectMine": "Hubungkan komputer saya",
+    "makeAgent": "Buat agen dengan paket ini",
     "later": "Hubungkan nanti"
   },
   "keyGuard": {

@@ -3613,6 +3613,10 @@ export const en = {
     agent: "For which agent",
     keyLocked: "Only an admin adds an API key.",
     accountsLocked: "Only {{name}} connects a plan on {{computer}}.",
+    /** Under `accountsLocked` (self-hosted servers): a computer of the person's own, where they sign their plan in. */
+    connectMine: "Connect my computer",
+    /** At the end, after a plan connected by someone who owns no agent yet. */
+    makeAgent: "Create an agent with this plan",
     later: "Connect later",
   },
   keyGuard: {

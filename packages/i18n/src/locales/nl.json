@@ -3348,6 +3348,8 @@
     "agent": "Voor welke agent",
     "keyLocked": "Alleen een beheerder voegt een API-sleutel toe.",
     "accountsLocked": "Alleen {{name}} koppelt een abonnement op {{computer}}.",
+    "connectMine": "Mijn computer koppelen",
+    "makeAgent": "Een agent maken met dit abonnement",
     "later": "Later koppelen"
   },
   "keyGuard": {

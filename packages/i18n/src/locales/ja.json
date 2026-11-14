@@ -3219,6 +3219,8 @@
     "agent": "どのエージェント用か",
     "keyLocked": "APIキーを追加できるのは管理者だけです。",
     "accountsLocked": "{{computer}}でプランを接続できるのは{{name}}だけです。",
+    "connectMine": "自分のコンピューターを接続",
+    "makeAgent": "このプランでエージェントを作成",
     "later": "あとで接続"
   },
   "keyGuard": {

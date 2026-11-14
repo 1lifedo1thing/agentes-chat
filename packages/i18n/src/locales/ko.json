@@ -3217,6 +3217,8 @@
     "agent": "대상 에이전트",
     "keyLocked": "API 키는 관리자만 추가할 수 있어요.",
     "accountsLocked": "{{computer}}에서는 {{name}}만 요금제를 연결할 수 있어요.",
+    "connectMine": "내 컴퓨터 연결",
+    "makeAgent": "이 요금제로 에이전트 만들기",
     "later": "나중에 연결"
   },
   "keyGuard": {

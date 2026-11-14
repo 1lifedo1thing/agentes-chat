@@ -3467,6 +3467,8 @@
     "agent": "Per quale agente",
     "keyLocked": "Solo un admin aggiunge una chiave API.",
     "accountsLocked": "Solo {{name}} collega un piano sul {{computer}}.",
+    "connectMine": "Collega il mio computer",
+    "makeAgent": "Crea un agente con questo piano",
     "later": "Collega più tardi"
   },
   "keyGuard": {

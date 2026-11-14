@@ -8215,6 +8215,12 @@
   "connectAi.accountsLocked": {
     "value": "Only {{name}} connects a plan on {{computer}}."
   },
+  "connectAi.connectMine": {
+    "value": "Connect my computer"
+  },
+  "connectAi.makeAgent": {
+    "value": "Create an agent with this plan"
+  },
   "connectAi.later": {
     "value": "Connect later"
   },

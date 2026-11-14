@@ -3334,6 +3334,8 @@
     "agent": "Hangi ajan için",
     "keyLocked": "API anahtarını yalnızca bir yönetici ekler.",
     "accountsLocked": "{{computer}} üzerinde planı yalnızca {{name}} bağlar.",
+    "connectMine": "Bilgisayarımı bağla",
+    "makeAgent": "Bu planla bir ajan oluştur",
     "later": "Sonra bağla"
   },
   "keyGuard": {

@@ -3460,6 +3460,8 @@
     "agent": "Para qué agente",
     "keyLocked": "Solo un admin agrega una clave de API.",
     "accountsLocked": "Solo {{name}} conecta un plan en {{computer}}.",
+    "connectMine": "Conectar mi computadora",
+    "makeAgent": "Crear un agente con este plan",
     "later": "Conectar después"
   },
   "keyGuard": {
