@@ -111,6 +111,24 @@ describe("desktop strings", () => {
     }
   });
 
+  test("the Windows installer has our words in each language it lists", async () => {
+    const tauri = join(import.meta.dir, "../src-tauri");
+    const config = await Bun.file(join(tauri, "tauri.windows.conf.json")).json();
+    const nsi = await Bun.file(join(tauri, "installer/installer.nsi")).text();
+    const lines = [...nsi.matchAll(/^LangString (\w+) \$\{LANG_(\w+)\} "[^"]+"$/gm)];
+    const keysOf = (lang: string) =>
+      lines
+        .filter((m) => m[2] === lang)
+        .map((m) => m[1])
+        .sort();
+    const listed: string[] = config.bundle.windows.nsis.languages;
+    // A LangString for a language the config leaves out fails makensis (its LANG_ constant is undefined).
+    expect([...new Set(lines.map((m) => m[2]))].sort()).toEqual(listed.map((l) => l.toUpperCase()).sort());
+    const english = keysOf("ENGLISH");
+    expect(english.length).toBe(11);
+    for (const lang of listed) expect({ lang, keys: keysOf(lang.toUpperCase()) }).toEqual({ lang, keys: english });
+  });
+
   test("a window loads only its language and English, and the next one when picked", async () => {
     const i18n = await loadDesktopI18n("pt-BR", "windows");
     expect(i18n.t("desktop.own.here")).toBe("Rodar o agentes.chat neste PC");
