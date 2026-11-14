@@ -414,6 +414,12 @@ export const en = {
       short: "talk",
       say: "talks to the agents",
     },
+    view_all_agents: {
+      title: "See all agents",
+      desc: "On Team and in the sidebar. Without it, only the ones that answer them.",
+      short: "see all agents",
+      say: "sees all agents",
+    },
     assign_work: {
       title: "Give agents missions",
       desc: "Ask for long work that carries on by itself.",

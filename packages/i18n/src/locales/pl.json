@@ -416,6 +416,12 @@
       "short": "rozmowa",
       "say": "rozmawia z agentami"
     },
+    "view_all_agents": {
+      "title": "Widok wszystkich agentów",
+      "desc": "W Zespole i na pasku bocznym. Bez tego tylko ci, którzy odpowiadają tej osobie.",
+      "short": "widok wszystkich agentów",
+      "say": "widzi wszystkich agentów"
+    },
     "assign_work": {
       "title": "Zlecanie agentom misji",
       "desc": "Zlecanie długiej pracy, która toczy się sama.",

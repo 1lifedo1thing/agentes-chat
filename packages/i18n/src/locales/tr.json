@@ -390,6 +390,12 @@
       "short": "konuşma",
       "say": "ajanlarla konuşur"
     },
+    "view_all_agents": {
+      "title": "Tüm ajanları görme",
+      "desc": "Ekip'te ve kenar çubuğunda. Bu olmadan yalnızca kişiye yanıt verenler.",
+      "short": "tüm ajanları görme",
+      "say": "tüm ajanları görür"
+    },
     "assign_work": {
       "title": "Ajanlara misyon verme",
       "desc": "Kendi kendine süren uzun işler isteme.",

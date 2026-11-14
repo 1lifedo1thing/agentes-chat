@@ -971,6 +971,18 @@
   "permissions.talk_to_agents.say": {
     "value": "talks to the agents"
   },
+  "permissions.view_all_agents.title": {
+    "value": "See all agents"
+  },
+  "permissions.view_all_agents.desc": {
+    "value": "On Team and in the sidebar. Without it, only the ones that answer them."
+  },
+  "permissions.view_all_agents.short": {
+    "value": "see all agents"
+  },
+  "permissions.view_all_agents.say": {
+    "value": "sees all agents"
+  },
   "permissions.assign_work.title": {
     "value": "Give agents missions"
   },

@@ -403,6 +403,12 @@
       "short": "parlare",
       "say": "parla con gli agenti"
     },
+    "view_all_agents": {
+      "title": "Vedere tutti gli agenti",
+      "desc": "In Team e nella barra laterale. Senza, solo quelli che rispondono alla persona.",
+      "short": "vedere tutti gli agenti",
+      "say": "vede tutti gli agenti"
+    },
     "assign_work": {
       "title": "Affidare missioni agli agenti",
       "desc": "Chiedere lavori lunghi che vanno avanti da soli.",

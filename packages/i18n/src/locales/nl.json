@@ -390,6 +390,12 @@
       "short": "praten",
       "say": "praat met de agents"
     },
+    "view_all_agents": {
+      "title": "Alle agents zien",
+      "desc": "In Team en de zijbalk. Zonder dit alleen de agents die de persoon antwoorden.",
+      "short": "alle agents zien",
+      "say": "ziet alle agents"
+    },
     "assign_work": {
       "title": "Agents missies geven",
       "desc": "Vragen om lang werk dat vanzelf doorloopt.",
