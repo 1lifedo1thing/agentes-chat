@@ -4,14 +4,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import { titledWithUnread } from "@agenteschat/client/lib/unread";
-import {
-  chooseLocale,
-  createI18n,
-  detectedLocale,
-  readLocaleState,
-  savedLocale,
-  translateTabTitle,
-} from "../src/i18n";
+import { chooseLocale, createI18n, detectedLocale, readLocaleState, savedLocale, translateTabTitle } from "../src/i18n";
 
 beforeEach(() => localStorage.clear());
 
