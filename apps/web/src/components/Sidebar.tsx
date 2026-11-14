@@ -2536,7 +2536,7 @@ function WorkspaceMenuOptions({ onDone }: { onDone: () => void }) {
   const overview = useOverview(org.id);
   const managesAgents = can(org, "manage_agents");
   const connections = useConnections(org.id);
-  const skills = useSkills(org.id, managesAgents);
+  const skills = useSkills(org.id);
   const invite = useInviteDialog();
   const go = (section?: SettingsSection) => () => {
     onDone();
@@ -2600,16 +2600,9 @@ function WorkspaceMenuOptions({ onDone }: { onDone: () => void }) {
             {t("settings.section.access")}
           </MenuOverlayItem>
         )}
-        {managesAgents && (
-          <MenuOverlayItem
-            icon="book"
-            shortcut={next()}
-            count={skills.data?.length || undefined}
-            onSelect={go("skills")}
-          >
-            {t("settings.section.skills")}
-          </MenuOverlayItem>
-        )}
+        <MenuOverlayItem icon="book" shortcut={next()} count={skills.data?.length || undefined} onSelect={go("skills")}>
+          {t("settings.section.skills")}
+        </MenuOverlayItem>
         <MenuOverlayItem icon="settings" shortcut={next()} onSelect={go()}>
           {t("shell.workspaceSettings")}
         </MenuOverlayItem>

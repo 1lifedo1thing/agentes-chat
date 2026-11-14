@@ -84,6 +84,7 @@ describe("finding the settings", () => {
     expect(within(menu).getAllByRole("menuitem").map(itemName)).toEqual([
       "Membros",
       "Conectores e MCPs",
+      "Skills",
       "Configurações do workspace",
     ]);
   });

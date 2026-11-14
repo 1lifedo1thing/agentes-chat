@@ -380,7 +380,7 @@ function OthersPersonal({ skills }: { skills: Skill[] }) {
   return (
     <section className="skill-others" aria-labelledby="skill-others">
       <h3 id="skill-others" className="ac-eyebrow">
-        {t("skills.personal.others")} <span className="tabular">{skills.length}</span>
+        {t("skills.personal.others")} · <span className="tabular">{skills.length}</span>
       </h3>
       <List aria-labelledby="skill-others">
         {skills.map((s) => (
