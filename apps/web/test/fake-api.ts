@@ -4357,9 +4357,9 @@ export function fakeAgentBrain(agentId: string, patch: Partial<AgentBrain> = {})
         kind: "claude_code",
         available: true,
         models: [
-          { value: "opus", label: "Opus", modelId: "claude-opus-5-5" },
-          { value: "sonnet", label: "Sonnet", modelId: "claude-sonnet-5-5", recommended: true },
-          { value: "haiku", label: "Haiku", modelId: "claude-haiku-5-5" },
+          { value: "opus", label: "Opus 5.5", modelId: "claude-opus-5-5" },
+          { value: "sonnet", label: "Sonnet 5.5", modelId: "claude-sonnet-5-5", recommended: true },
+          { value: "haiku", label: "Haiku 5.5", modelId: "claude-haiku-5-5" },
         ],
         defaultModel: "sonnet",
       },
