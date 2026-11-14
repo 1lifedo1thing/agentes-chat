@@ -37,7 +37,7 @@ import {
   toolPolicy,
   wakeFollowUp,
 } from "../src";
-import { advance, decideTurnEnd, HELD_WORDING_POSTED, type TurnEnd, toolsNamed } from "../src/continuation";
+import { advance, decideTurnEnd, type TurnEnd, toolsNamed } from "../src/continuation";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /**
@@ -1096,25 +1096,73 @@ describe("a reply that names its own tools to a person", () => {
     expect((stopped[0]?.meta.canceled as { text?: string } | undefined)?.text).toStartWith(NAMED);
   });
 
-  test("held for its wording, it goes out before the run parks on an outage, and the rewrite reads that it did", async () => {
+  /** Drains `rounds` times, each retry and resume due at once. */
+  const drainDue = async (fx: Fixture, rounds: number) => {
+    for (let i = 0; i < rounds; i++) {
+      await drainOutbox(fx.db, fx.handlers);
+      await fx.db
+        .update(schema.outbox)
+        .set({ nextAttemptAt: new Date(0) })
+        .where(and(eq(schema.outbox.kind, "agent_run.execute"), eq(schema.outbox.status, "pending")));
+    }
+  };
+
+  test("held for its wording, it waits out an outage on the run: the rewrite is posted on resume, never both", async () => {
+    const rewrite = "Te mandei um campo seguro para a senha do painel.";
+    let down = true;
+    f = await setup({
+      toolSources: [secrets],
+      reply: (_request, call) =>
+        call === 1 ? { chunks: [NAMED] } : down ? new ProviderError("overloaded", true, 529) : { chunks: [rewrite] },
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainDue(f, 5);
+    const parked = await runRow(f);
+    expect(parked?.status).toBe("waiting_input");
+    expect((parked?.transcript as { heldWording?: string } | undefined)?.heldWording).toBe(NAMED);
+    expect(await bodiesOf(f)).not.toContain(NAMED);
+
+    down = false;
+    await drainDue(f, 2);
+    expect((await runRow(f))?.status).toBe("done");
+    const bodies = await bodiesOf(f);
+    expect(bodies.filter((b) => b === rewrite)).toHaveLength(1);
+    expect(bodies).not.toContain(NAMED);
+  });
+
+  test("held for its wording on a parked run, it is what the person gets when they stop it", async () => {
     f = await setup({
       toolSources: [secrets],
       reply: (_request, call) => (call === 1 ? { chunks: [NAMED] } : new ProviderError("overloaded", true, 529)),
     });
     await ask(f, "@dev entra no painel da Northwind");
-    for (let i = 0; i < 5; i++) {
-      await drainOutbox(f.db, f.handlers);
-      await f.db
-        .update(schema.outbox)
-        .set({ nextAttemptAt: new Date(0) })
-        .where(and(eq(schema.outbox.kind, "agent_run.execute"), eq(schema.outbox.status, "pending")));
-    }
+    await drainDue(f, 5);
+    const parked = await runRow(f);
+    expect(parked?.status).toBe("waiting_input");
+    await cancelRun({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, parked?.id ?? "");
     const run = await runRow(f);
-    expect(run?.status).toBe("waiting_input");
-    expect((await bodiesOf(f)).filter((b) => b === NAMED)).toHaveLength(1);
-    const t = run?.transcript as { heldWording?: string; messages: { role: string; content: unknown }[] };
-    expect(t.heldWording).toBeUndefined();
-    expect(JSON.stringify(t.messages.at(-1)?.content)).toContain(HELD_WORDING_POSTED);
+    expect(run?.status).toBe("canceled");
+    expect(run?.transcript).not.toHaveProperty("heldWording");
+    const stopped = (await agentMessages(f)).filter((m) => m.meta.canceled);
+    expect(stopped).toHaveLength(1);
+    expect(stopped[0]?.body).toStartWith(NAMED);
+    expect((await bodiesOf(f)).filter((b) => b.startsWith(NAMED))).toHaveLength(1);
+  });
+
+  test("held for its wording, an emoji that only repeats the rewrite's reaction doesn't replace it", async () => {
+    f = await setup({
+      react: true,
+      toolSources: [secrets],
+      reply: (_request, call): FakeReply =>
+        call === 1
+          ? { chunks: [NAMED] }
+          : call === 2
+            ? { chunks: [], toolUses: [{ name: "react", input: { emoji: "👍" } }] }
+            : { chunks: ["👍"] },
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, f.handlers);
+    expect(await bodiesOf(f)).toEqual([NAMED]);
   });
 
   test("a card is its next step: a reply held for its wording no longer stands in for an answer", async () => {

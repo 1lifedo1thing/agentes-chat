@@ -129,6 +129,10 @@ describe("a path on the agent's computer", () => {
       "out/",
       "docs/",
     ]);
+    // A name with one more suffix is another file: "precos.md.bak" isn't "precos.md".
+    expect(
+      localPathsCited("Salvei em notas/precos.md.", "", { touched: '{"path":"notas/precos.md.bak"}', shared: "" }),
+    ).toEqual([]);
     // The person named it as a whole word only: asking about "anotas" names no "notas/".
     expect(
       localPathsCited("Está em notas/.", "o que tem nas anotas?", { touched: '{"path":"notas/a.md"}', shared: "" }),

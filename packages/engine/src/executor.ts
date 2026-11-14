@@ -171,7 +171,6 @@ import {
   computerWork,
   continuationVerdict,
   decideTurnEnd,
-  HELD_WORDING_POSTED,
   heldNudge,
   heldReplyRead,
   type LearnSignal,
@@ -569,8 +568,9 @@ export interface Transcript {
   held?: string;
   /**
    * A reply held for its wording (`tool_names`, `local_paths`), always one the run would otherwise have posted: unseen,
-   * and never merged into its next words. It goes out wherever the run ends or parks before any (an empty rewrite, a
-   * pass, a failure, the step limit, a stop, a wait, the restart sweep); a pause card drops it.
+   * and never merged into its next words. It goes out wherever the run ends before any (an empty rewrite, a pass, a
+   * failure, the step limit, a stop, the restart sweep); a run that parks keeps it until it resumes or ends, and a
+   * pause card drops it.
    */
   heldWording?: string;
   /** What replies once streamed counted their pieces with: read by nothing now, kept on old runs' transcripts. */
@@ -2473,7 +2473,6 @@ async function executeRunInner(
     const since = t.outage?.since ?? Date.now();
     const n = t.outage?.n ?? 0;
     if (Date.now() - since >= OUTAGE_PARK.maxMs) return false;
-    await postHeldWording();
     const waitId = Bun.randomUUIDv7();
     const people = Boolean(t.roomPeople) || (!run.background && run.hop <= 1 && viaRoutine === null);
     const step = OUTAGE_PARK.ladderMinutes[Math.min(n, OUTAGE_PARK.ladderMinutes.length - 1)] ?? 60;
@@ -3091,33 +3090,6 @@ async function executeRunInner(
   }
 
   /**
-   * A reply held for its wording (`heldWording`) is a finished answer: posted before the run parks (a usage or budget
-   * wait, an outage, its computer), or it would stay unseen until the run resumes. The next turn reads that it went out.
-   */
-  const postHeldWording = async () => {
-    const t = transcript as Transcript;
-    const words = t.heldWording;
-    if (!words || run.background) return;
-    const held = t.held;
-    const m = await db.transaction(async (tx) => {
-      const m = await post(tx, replyThreadId, words, withFallback(t, takeMemoryUpdates(t)));
-      t.postedCount++;
-      await addRunStep(tx, run, "message", { messageId: m.id, held: true });
-      return m;
-    });
-    // `post` clears every held reply: a give-up held after it (`held`) still waits for the run's next words.
-    if (held) t.held = held;
-    if (plan.kind === "model") {
-      if (t.messages.at(-1)?.role === "user") appendUserText(t, HELD_WORDING_POSTED);
-    } else {
-      if (nextPrompt) nextPrompt = `${nextPrompt}\n\n${HELD_WORDING_POSTED}`;
-      if (carried) carried = `${carried}\n\n${HELD_WORDING_POSTED}`;
-    }
-    const [view] = await withWikiLinks(db, run.orgId, [messageView(m)]);
-    if (view) await publishMessageCreated(deps.pubsub, view);
-  };
-
-  /**
    * Ends the run with a closing line the server writes (`code`), with what it changed (its receipts) and its cards. A
    * reply it held back (`held`) goes out first: it is still what it has to say. No `code`: `text` is its own words.
    */
@@ -3380,7 +3352,6 @@ async function executeRunInner(
       return "failed";
     }
     if (!machineId || !UNAVAILABLE_CODES.has(u.code)) return "no";
-    await postHeldWording();
     const busy = u.code === "busy";
     // Still no room since an earlier refusal: the same wait goes on (no new step, the same deadline).
     const stillBusy = busy && t.roomWaitSince !== undefined;
@@ -3696,7 +3667,6 @@ async function executeRunInner(
     early: boolean,
   ) => {
     await deferred;
-    await postHeldWording();
     const t = transcript as Transcript;
     const prev = t.interruptedTurn;
     const earlyDrops = (prev?.early ?? 0) + (early && !serverStop ? 1 : 0);
@@ -3844,7 +3814,6 @@ async function executeRunInner(
     scope?: ModelScope;
   }) => {
     await deferred;
-    await postHeldWording();
     const t = transcript as Transcript;
     const now = Date.now();
     const scope = u.code === "plan_limit" ? u.scope : undefined;
@@ -5300,8 +5269,12 @@ async function executeRunInner(
         (!held && Boolean(transcript.mediaSent) && !said && noCards) ||
         (Boolean(transcript.reported) && noCards);
       // Its own words: this turn's, with the reply it held back, or that reply alone when this turn adds nothing. A
-      // reply held for its wording is the answer when its rewrite writes nothing (a tool call alone, an empty turn).
-      const words = silent ? said : (await heldWords(said)) || (transcript.heldWording ?? "");
+      // reply held for its wording is the answer when its rewrite writes nothing (a tool call alone, an empty turn, an
+      // emoji repeating its reaction).
+      const words = silent
+        ? said
+        : (await heldWords(transcript.heldWording && transcript.reacted && restatesReaction(said) ? "" : said)) ||
+          (transcript.heldWording ?? "");
       // The message is the final answer only: the last model call's text. Without it, a short closing line.
       const written = silent
         ? ""

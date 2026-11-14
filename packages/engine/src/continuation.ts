@@ -290,17 +290,14 @@ export function localPathsCited(reply: string, request: string, work: ComputerWo
 
 const WORD_CHAR = /[\p{L}\p{N}_]/u;
 
-/** `word` in `text` as a whole word: the folder `out` isn't in "stdout", nor `docs` in "mydocs". */
+/** `word` in `text` as a whole word: the folder `out` isn't in "stdout", nor `precos.md` in "precos.md.bak". */
 function hasWord(text: string, word: string) {
   if (!word) return false;
   for (let i = text.indexOf(word); i >= 0; i = text.indexOf(word, i + 1))
-    if (!WORD_CHAR.test(text[i - 1] ?? "") && !WORD_CHAR.test(text[i + word.length] ?? "")) return true;
+    if (!WORD_CHAR.test(text[i - 1] ?? "") && !/^(?:[\p{L}\p{N}_]|\.[\p{L}\p{N}])/u.test(text.slice(i + word.length)))
+      return true;
   return false;
 }
-
-/** What a run reads when a reply held for its wording went out as it was while the run waited (`heldWording`). */
-export const HELD_WORDING_POSTED =
-  "Your reply held back above was posted as it was while you waited. Don't write it again: go on with what is left, or end without a word.";
 
 /** What a run reads, once, when its reply cites files on its computer to people (`localPathsCited`): not posted. */
 export function localPathsNudge(paths: string[]) {
