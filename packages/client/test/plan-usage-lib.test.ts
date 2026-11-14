@@ -70,6 +70,7 @@ test("the compact line names a window short; a known label in the app's words, a
   expect(text.short({ kind: "other", label: "Extra usage" })).toBe("aiAccounts.usage.short.extraUsage");
   expect(text.window({ kind: "other", label: "OAuth apps" })).toBe("aiAccounts.usage.window.oauthApps");
   expect(text.window({ kind: "other", label: "Fable" })).toBe("Fable");
+  expect(text.window({ kind: "other", label: "constructor" })).toBe("constructor");
   expect(text.short({ kind: "other" })).toBe("aiAccounts.usage.short.other");
   expect(text.window({ kind: "seven_day" })).toBe("aiAccounts.usage.window.seven_day");
 });
