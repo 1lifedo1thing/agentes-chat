@@ -118,7 +118,7 @@ export function DeleteAccountDialog({ open, onClose }: { open: boolean; onClose:
           if (ready && proof.ready && !del.isPending) del.mutate(proof.input);
         }}
       >
-        <Locked when={del.isPending}>
+        <Locked when={del.isPending || proof.thisMac.pending}>
           <DialogBody>
             {plan.isError ? (
               <ErrorState error={plan.error} onRetry={() => void plan.refetch()} />
