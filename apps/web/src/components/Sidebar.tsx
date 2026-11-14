@@ -40,7 +40,14 @@ import {
 } from "@agenteschat/client";
 import { agentSections, groupOf } from "@agenteschat/client/lib/agent-groups";
 import { WORK_TICK_MS, workLine } from "@agenteschat/client/lib/agent-work";
-import { audienceChip, audienceNames, audienceNotice, canTalk, hiddenAgentIds } from "@agenteschat/client/lib/audience";
+import {
+  audienceChip,
+  audienceNames,
+  audienceNotice,
+  canTalk,
+  hiddenAgentIds,
+  listsAllAgents,
+} from "@agenteschat/client/lib/audience";
 import { workspaceNotes } from "@agenteschat/client/lib/deletion";
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
 import { errorText } from "@agenteschat/client/lib/errors";
@@ -762,7 +769,7 @@ export function Sidebar() {
             </SidebarSection>
           );
         })}
-        {team.length > shownAgents.length && (
+        {listsAllAgents(org) && team.length > shownAgents.length && (
           <Link to="/org/$orgId/team" params={{ orgId }} className="sidebar__item sidebar__see-all">
             <Icon name="agent" />
             <span className="sidebar__item-label">
