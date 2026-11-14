@@ -3157,7 +3157,7 @@
       "closed": "Kunci API terbuka bersama paket agentes.chat workspace.",
       "notPlan": "Kunci paket coding dimasukkan di opsinya sendiri di atas.",
       "billing": "Aktifkan penagihan untuk proyek kunci ini. Tanpa penagihan, Google bisa memakai apa yang dikirim agenmu.",
-      "privacy": "{{provider}} meneruskan apa yang dikirim agen Anda ke perusahaan yang membuat atau menghosting model, sesuai ketentuan dan pengaturan privasi {{provider}}."
+      "privacy": "{{provider}} meneruskan apa yang dikirim agenmu ke perusahaan yang membuat atau menghosting model, sesuai ketentuan dan pengaturan privasi {{provider}}."
     },
     "wait": {
       "signIn": "Kamu bisa masuk di sini begitu komputernya siap.",
