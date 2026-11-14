@@ -152,11 +152,14 @@ describe("the sheet that connects a server by address", () => {
     expect(failed).toContain('setMode("key");');
     expect(failed).toContain("setHeadersOpen(true);");
     // Saved ones that can't be read: remembered, never removed for the person. A second Conectar is refused again.
-    expect(failed).toContain("if (savedHeadersUnreadable(error)) setUnreadable(refusal);");
+    // Only where the saved names are on screen: without them the refusal shows under the rows, never nowhere.
+    expect(failed).toContain("if (savedHeadersUnreadable(error) && savedHeaders.length > 0) setUnreadable(refusal);");
     expect(failed).toContain("else setRefused(refusal);");
     expect(failed).not.toContain("setDropSaved");
     // Until the sheet closes: nothing else sets it, so no change forgets it.
     expect(sheet.split("setUnreadable(").length - 1).toBe(1);
+    // Removing is the person's choice alone: only the form's own change sets it.
+    expect(sheet.split("setDropSaved(").length - 1).toBe(1);
     expect(sheet).toContain("unreadable={unreadable}");
   });
 

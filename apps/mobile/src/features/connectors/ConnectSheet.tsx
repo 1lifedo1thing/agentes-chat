@@ -605,7 +605,9 @@ function ConnectStep({
     setHeadersOpen(true);
     // Its words stand where the saved names were said to stay. Nothing is removed for the person: connecting again
     // is refused again until they type the headers or choose Remover.
-    if (savedHeadersUnreadable(error)) setUnreadable(refusal);
+    // With no saved names in this form (its list is older than the account's headers) they have no line to stand in:
+    // they show under the rows, as any refusal does.
+    if (savedHeadersUnreadable(error) && savedHeaders.length > 0) setUnreadable(refusal);
     else setRefused(refusal);
   };
   /** The browser round trip: open, wait for the answer, finish with the app's session. */

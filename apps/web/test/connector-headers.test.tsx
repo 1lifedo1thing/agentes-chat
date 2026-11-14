@@ -370,11 +370,36 @@ describe("Reconectar and the server's row", () => {
     expect(within(flow()).getByLabelText("Chave de API")).toBeTruthy();
     await click(within(disclosure()).getByRole("button", { name: "Remover" }));
     // The key's own button would only answer that a key is missing.
-    expect(within(flow()).queryByRole("button", { name: "Conectar com a chave" })).toBeNull();
+    expect(within(flow()).queryByRole("button", { name: "Conectar com a chave" }) === null).toBe(true);
     await click(within(flow()).getByRole("button", { name: "Conectar" }));
     await settle(4);
     expect(connectCalls(state)).toEqual([expect.objectContaining({ apiKey: undefined, headers: [] })]);
     expect(flow().textContent).not.toContain("Cole a chave de API");
+  });
+
+  test("a refusal about saved headers this form never listed still shows, under the rows", async () => {
+    // The list the form opened on is older than the account's headers: it knows an account with a key and none.
+    const state = seedState();
+    const api = createFakeApi(state);
+    await api.customConnectors.connect(ORG_ID, {
+      serverUrl: ADDRESS,
+      label: "Suporte",
+      apiKey: "test-key-1",
+      returnTo: "/",
+    });
+    api.customConnectors.connect = async () => {
+      throw new ApiError(400, "connector.headers_unreadable", "The saved headers couldn't be read");
+    };
+    await renderApp(`/org/${ORG_ID}/settings/connectors`, { api });
+    await settle(8);
+    await click(within(await rowMenu("Suporte")).getByRole("menuitem", { name: "Reconectar" }));
+    await settle(2);
+    await click(within(flow()).getByRole("button", { name: "Conectar" }));
+    await settle(4);
+    expect(disclosure().hasAttribute("open")).toBe(true);
+    expect(disclosure().querySelector('[role="alert"]')?.textContent).toBe(
+      "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.",
+    );
   });
 
   test("saved headers that can't be read any more: the refusal takes their line, with Remover at its end, and nothing goes unless chosen", async () => {
@@ -405,7 +430,7 @@ describe("Reconectar and the server's row", () => {
     expect(disclosure().hasAttribute("open")).toBe(true);
     expect(alert()?.textContent).toBe(said);
     // With many rows it would land below what the dialog shows.
-    expect(shown).toContain(alert() as Element);
+    expect(shown.includes(alert() as Element)).toBe(true);
     // Once, in the headers: no toast and no second line says it again.
     expect(document.body.textContent?.split(said)).toHaveLength(2);
     // Nothing says they stay or that they go, and "ou remova" has its control right after it, in its own line.
@@ -486,7 +511,7 @@ describe("worst cases", () => {
     const alert = flow().querySelector('.cflow__hrows > li:last-child [role="alert"]');
     expect(alert?.textContent).toBe(`${LONG.at(-1)} está na lista duas vezes. Remova um deles.`);
     // Under ten rows it is below what the dialog shows: the refused row's own words are brought into sight.
-    expect(shown).toContain(alert as Element);
+    expect(shown.includes(alert as Element)).toBe(true);
     snapshot();
     await showIn(app.services, "en");
     expect(flow().textContent).toContain("A server takes at most 10 headers. Remove one to add another.");
