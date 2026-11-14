@@ -2,6 +2,9 @@
   "app.name": {
     "value": "agentes"
   },
+  "app.tabTitle": {
+    "value": "agentes.chat · Your team and your agents, in the same conversation"
+  },
   "common.close": {
     "value": "Close"
   },
@@ -3611,6 +3614,9 @@
   "onboarding.keyInvalid.openrouter": {
     "value": "OpenRouter keys start with sk-or-v1-. Check it and paste it again."
   },
+  "onboarding.keyInvalid.commandcode": {
+    "value": "Paste the whole Command Code key, with no spaces. Check it and paste it again."
+  },
   "onboarding.keyFromOther": {
     "value": "Is it from another provider?"
   },
@@ -5350,6 +5356,30 @@
   },
   "sidebarPins.full.people": {
     "value": "You already pinned 5 people. Unpin one to pin this one."
+  },
+  "appsDownload.computer": {
+    "value": "Computer"
+  },
+  "appsDownload.computerText": {
+    "value": "Your workspace in a window of its own, with the system's notifications."
+  },
+  "appsDownload.inApp": {
+    "value": "You're already in the computer app."
+  },
+  "appsDownload.howTo": {
+    "value": "How to install"
+  },
+  "appsDownload.phone": {
+    "value": "Phone"
+  },
+  "appsDownload.phoneText": {
+    "value": "Notifications in your pocket, to answer from anywhere."
+  },
+  "appsDownload.appStore": {
+    "value": "App Store"
+  },
+  "appsDownload.googlePlay": {
+    "value": "Google Play"
   },
   "openOnPhone.qr": {
     "value": "QR code to sign in to the agentes app"
@@ -8054,7 +8084,7 @@
     "value": "Turn on billing for the key's project. Without billing, Google may use what your agents send."
   },
   "connectAi.key.privacy": {
-    "value": "Your OpenRouter privacy settings decide which providers may keep what your agents send."
+    "value": "{{provider}} passes what your agents send to the company that makes or hosts the model, under {{provider}}'s privacy terms and settings."
   },
   "connectAi.wait.signIn": {
     "value": "You sign in here as soon as the computer is ready."
@@ -8214,6 +8244,12 @@
   },
   "connectAi.accountsLocked": {
     "value": "Only {{name}} connects a plan on {{computer}}."
+  },
+  "connectAi.connectMine": {
+    "value": "Connect my computer"
+  },
+  "connectAi.makeAgent": {
+    "value": "Create an agent with this plan"
   },
   "connectAi.later": {
     "value": "Connect later"
@@ -8920,6 +8956,9 @@
   "agentActions.skill.created": {
     "value": "Turned what I learned into the skill <b>{{name}}</b>"
   },
+  "agentActions.skill.created_asked": {
+    "value": "Created the skill <b>{{name}}</b>"
+  },
   "agentActions.skill.updated": {
     "value": "Fixed the skill <b>{{name}}</b>"
   },
@@ -9162,6 +9201,9 @@
   },
   "agentActions.several.skill.created": {
     "value": "Turned what I learned into the skills {{refs}}"
+  },
+  "agentActions.several.skill.created_asked": {
+    "value": "Created the skills {{refs}}"
   },
   "agentActions.several.skill.updated": {
     "value": "Fixed the skills {{refs}}"
@@ -17955,6 +17997,9 @@
   "invites.rolePersonal": {
     "value": "Can"
   },
+  "invites.rolesFoot": {
+    "value": "Roles add to what Everyone can. The role's channels and agents come ticked."
+  },
   "invites.channels": {
     "value": "Channels"
   },
@@ -18069,6 +18114,9 @@
   "invites.refused.agentLocked": {
     "value": "You can no longer let people talk to {{name}}. Remove them from the invitation to send."
   },
+  "invites.refused.agentUnnamed": {
+    "value": "One of the agents left the team. Take out the marked one to send."
+  },
   "invites.refused.role": {
     "value": "You can no longer give the {{role}} role. Pick another."
   },
@@ -18098,6 +18146,12 @@
   },
   "invites.maxUses": {
     "value": "Most people"
+  },
+  "invites.onJoin": {
+    "value": "On joining"
+  },
+  "invites.theLink": {
+    "value": "The link"
   },
   "invites.ttl.30m": {
     "value": "30 minutes"
@@ -18143,6 +18197,9 @@
   },
   "invites.invitationExpired": {
     "value": "This invitation expired. Renew it to change what it gives."
+  },
+  "invites.editInvitation": {
+    "value": "Edit invite"
   },
   "invites.search": {
     "value": "Search email or role"
@@ -18219,6 +18276,12 @@
   },
   "invites.turnOff": {
     "value": "Turn off link"
+  },
+  "invites.editLink": {
+    "value": "Edit link"
+  },
+  "invites.linkTurnedOff": {
+    "value": "Link turned off."
   },
   "empty.thread.title": {
     "value": "Threads"
@@ -24371,6 +24434,27 @@
   "skills.agentsImproveThis": {
     "value": "Agents improve this skill by themselves"
   },
+  "skills.personal.note": {
+    "value": "Only you see these skills. Your agents use them when you ask."
+  },
+  "skills.personal.emptyTitle": {
+    "value": "Keep your own skills"
+  },
+  "skills.personal.emptyText": {
+    "value": "Only you see them, and your agents use them when you ask."
+  },
+  "skills.personal.others": {
+    "value": "Others' personal skills"
+  },
+  "skills.personal.of": {
+    "value": "{{name}}'s personal"
+  },
+  "skills.personal.forWhom": {
+    "value": "Who it's for"
+  },
+  "skills.personal.teamLocked": {
+    "value": "Only people who manage agents add team skills."
+  },
   "skills.agentChange": {
     "value": "{{agent}} changed it {{when}}"
   },
@@ -25042,6 +25126,12 @@
   "aiAccounts.usage.window.other": {
     "value": "Other limit"
   },
+  "aiAccounts.usage.window.extraUsage": {
+    "value": "Extra usage"
+  },
+  "aiAccounts.usage.window.oauthApps": {
+    "value": "OAuth apps"
+  },
   "aiAccounts.usage.short.five_hour": {
     "value": "5h"
   },
@@ -25059,6 +25149,12 @@
   },
   "aiAccounts.usage.short.other": {
     "value": "other"
+  },
+  "aiAccounts.usage.short.extraUsage": {
+    "value": "extra usage"
+  },
+  "aiAccounts.usage.short.oauthApps": {
+    "value": "OAuth apps"
   },
   "aiAccounts.usage.resetsAt": {
     "value": "resets at {{time}}"
@@ -37900,6 +37996,9 @@
   "settings.section.notifications": {
     "value": "Notifications"
   },
+  "settings.section.download": {
+    "value": "agentes.chat apps"
+  },
   "settings.section.general": {
     "value": "General"
   },
@@ -37983,6 +38082,9 @@
   },
   "settings.sectionText.notifications": {
     "value": "What reaches you as an alert here. The inbox keeps everything."
+  },
+  "settings.sectionText.download": {
+    "value": "The same workspace on your computer and your phone, with your account."
   },
   "settings.sectionText.general": {
     "value": "Name, time zone and what every agent knows about the workspace."
@@ -40176,6 +40278,9 @@
   "chat.work.step.updatingSkills": {
     "value": "Updated skills"
   },
+  "chat.work.step.creatingSkill": {
+    "value": "Created a skill"
+  },
   "chat.work.step.offeringInvites": {
     "value": "Offered to invite people"
   },
@@ -40523,6 +40628,9 @@
   },
   "chat.activity.updatingSkills": {
     "value": "updating skills"
+  },
+  "chat.activity.creatingSkill": {
+    "value": "creating a skill"
   },
   "chat.activity.offeringInvites": {
     "value": "getting invitations ready"
@@ -41342,6 +41450,12 @@
   },
   "builtinTools.update_skill.description": {
     "value": "Fixes a skill it loaded. A person's skill becomes a proposal."
+  },
+  "builtinTools.create_skill.label": {
+    "value": "Create skill"
+  },
+  "builtinTools.create_skill.description": {
+    "value": "Turns what it did into a skill of its own when a person asks. Shows in Skills, with Undo."
   },
   "builtinTools.schedule_reminder.label": {
     "value": "Create reminder"

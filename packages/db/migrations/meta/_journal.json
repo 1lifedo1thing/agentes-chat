@@ -1896,7 +1896,14 @@
       "idx": 272,
       "version": "7",
       "when": 1794756800000,
-      "tag": "0274_mcp_request_headers",
+      "tag": "0274_personal_skills",
+      "breakpoints": true
+    },
+    {
+      "idx": 273,
+      "version": "7",
+      "when": 1794756900000,
+      "tag": "0275_mcp_request_headers",
       "breakpoints": true
     }
   ]

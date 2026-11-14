@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Twój zespół i twoi agenci w jednej rozmowie"
   },
   "common": {
     "close": "Zamknij",
@@ -1569,7 +1570,8 @@
       "moonshot": "Klucze Kimi zaczynają się od sk-. Sprawdź go i wklej ponownie.",
       "zai": "Wklej cały klucz Z.ai, bez spacji. Sprawdź go i wklej ponownie.",
       "minimax": "Wklej cały klucz MiniMax, bez spacji. Klucze zaczynające się od sk-cp- należą do planu i tu nie działają.",
-      "openrouter": "Klucze OpenRouter zaczynają się od sk-or-v1-. Sprawdź go i wklej ponownie."
+      "openrouter": "Klucze OpenRouter zaczynają się od sk-or-v1-. Sprawdź go i wklej ponownie.",
+      "commandcode": "Wklej cały klucz Command Code, bez spacji. Sprawdź go i wklej ponownie."
     },
     "keyFromOther": "Jest od innego dostawcy?",
     "anthropicWorkspace": "ID przestrzeni roboczej w Claude Console",
@@ -2279,6 +2281,16 @@
       "channels": "Masz już 5 przypiętych kanałów. Odepnij jeden, aby przypiąć ten.",
       "people": "Masz już 5 przypiętych osób. Odepnij jedną, aby przypiąć tę."
     }
+  },
+  "appsDownload": {
+    "computer": "Komputer",
+    "computerText": "Twój workspace we własnym oknie, z powiadomieniami systemu.",
+    "inApp": "Już korzystasz z aplikacji na komputerze.",
+    "howTo": "Jak zainstalować",
+    "phone": "Telefon",
+    "phoneText": "Powiadomienia w kieszeni, by odpowiadać z każdego miejsca.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
   },
   "openOnPhone": {
     "qr": "Kod QR do logowania w aplikacji agentes",
@@ -3510,7 +3522,7 @@
       "closed": "Klucze API otwierają się z planem agentes.chat workspace'u.",
       "notPlan": "Klucz planu do kodowania wpisz w jego własnej opcji powyżej.",
       "billing": "Włącz rozliczenia dla projektu tego klucza. Bez rozliczeń Google może wykorzystywać to, co wysyłają twoi agenci.",
-      "privacy": "Ustawienia prywatności OpenRouter decydują, którzy dostawcy mogą przechowywać to, co wysyłają twoi agenci."
+      "privacy": "{{provider}} przekazuje to, co wysyłają twoi agenci, firmie, która tworzy lub hostuje model, zgodnie z warunkami i ustawieniami prywatności {{provider}}."
     },
     "wait": {
       "signIn": "Zalogujesz się tutaj, gdy tylko komputer będzie gotowy.",
@@ -3581,6 +3593,8 @@
     "agent": "Dla którego agenta",
     "keyLocked": "Klucz API może dodać tylko administrator.",
     "accountsLocked": "Plan na komputerze {{computer}} może połączyć tylko {{name}}.",
+    "connectMine": "Połącz mój komputer",
+    "makeAgent": "Utwórz agenta z tym planem",
     "later": "Połącz później"
   },
   "keyGuard": {
@@ -3899,6 +3913,7 @@
     },
     "skill": {
       "created": "Zamieniono zdobytą wiedzę w umiejętność <b>{{name}}</b>",
+      "created_asked": "Utworzono umiejętność <b>{{name}}</b>",
       "updated": "Poprawiono umiejętność <b>{{name}}</b>"
     },
     "agent": {
@@ -4005,6 +4020,7 @@
       },
       "skill": {
         "created": "Zamieniono zdobytą wiedzę w umiejętności {{refs}}",
+        "created_asked": "Utworzono umiejętności {{refs}}",
         "updated": "Poprawiono umiejętności {{refs}}"
       },
       "agent": {
@@ -7846,6 +7862,7 @@
     "role": "Rola",
     "roleHint": "Co ta osoba może robić. Role dodają się do tego, co mogą Wszyscy. Dotyczy tylko osób.",
     "rolePersonal": "Może",
+    "rolesFoot": "Role dodają się do tego, co mogą Wszyscy. Kanały i agenci roli są już zaznaczeni.",
     "channels": "Kanały",
     "channelsPersonal": "Rozmowy",
     "channelsHint": "Gdzie ta osoba od razu dołącza. Kanały roli są już zaznaczone.",
@@ -7891,6 +7908,7 @@
       "channelGone": "Jeden z kanałów już nie istnieje. Usuń zaznaczony, aby wysłać.",
       "agentGone": "{{name}} odszedł z zespołu. Usuń go z zaproszenia, aby wysłać.",
       "agentLocked": "Nie możesz już udostępnić: {{name}}. Usuń go z zaproszenia, aby wysłać.",
+      "agentUnnamed": "Jednego z agentów nie ma już w zespole. Usuń zaznaczonego, żeby wysłać.",
       "role": "Nie możesz już nadać roli {{role}}. Wybierz inną.",
       "roleMany": "Nie możesz już nadać jednej z tych ról. Wybierz inne."
     },
@@ -7902,6 +7920,8 @@
     "validFor": "Działa {{ttl}} od utworzenia.",
     "expiresIn": "Ważność",
     "maxUses": "Maksymalna liczba osób",
+    "onJoin": "Po dołączeniu",
+    "theLink": "Link",
     "ttl": {
       "30m": "30 minut",
       "1h": "1 godzina",
@@ -7923,6 +7943,7 @@
     "invitationTitle": "Zaproszenie dla {{email}}",
     "invitationSaved": "Zaktualizowano zaproszenie dla {{email}}.",
     "invitationExpired": "To zaproszenie wygasło. Odnów je, aby zmienić to, co daje.",
+    "editInvitation": "Edytuj zaproszenie",
     "search": "Szukaj e-maila lub roli",
     "type": "Rodzaj",
     "types": {
@@ -7958,7 +7979,9 @@
     "neverEnds": "nie wygasa",
     "by": "od {{name}}",
     "edit": "Edytuj",
-    "turnOff": "Wyłącz link"
+    "turnOff": "Wyłącz link",
+    "editLink": "Edytuj link",
+    "linkTurnedOff": "Link wyłączony."
   },
   "empty": {
     "thread": {
@@ -10739,6 +10762,15 @@
     "agentsImprove": "Agenci sami ulepszają umiejętności",
     "agentsImproveHelp": "Gdy agent zauważy, że umiejętność jest błędna albo brakuje w niej kroku, od razu ją poprawia: nowa wersja, którą możesz cofnąć, a osoba, która ją utworzyła, dostaje informację.",
     "agentsImproveThis": "Agenci sami ulepszają tę umiejętność",
+    "personal": {
+      "note": "Tylko ty widzisz te umiejętności. Twoi agenci używają ich, gdy poprosisz.",
+      "emptyTitle": "Zachowaj własne umiejętności",
+      "emptyText": "Tylko ty je widzisz, a twoi agenci używają ich, gdy poprosisz.",
+      "others": "Osobiste umiejętności innych osób",
+      "of": "Osobiste: {{name}}",
+      "forWhom": "Dla kogo",
+      "teamLocked": "Umiejętności zespołu dodają tylko osoby zarządzające agentami."
+    },
     "agentChange": "{{agent}}: zmiana {{when}}",
     "undoAgentChange": "Cofnij zmianę",
     "undo": "Cofnij",
@@ -11047,7 +11079,9 @@
         "seven_day_opus": "Tydzień · Opus",
         "seven_day_sonnet": "Tydzień · Sonnet",
         "monthly": "Miesiąc",
-        "other": "Inny limit"
+        "other": "Inny limit",
+        "extraUsage": "Dodatkowe użycie",
+        "oauthApps": "Aplikacje OAuth"
       },
       "short": {
         "five_hour": "5 godz.",
@@ -11055,7 +11089,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "miesiąc",
-        "other": "inny"
+        "other": "inny",
+        "extraUsage": "dodatkowe użycie",
+        "oauthApps": "aplikacje OAuth"
       },
       "resetsAt": "odnawia się o {{time}}",
       "resetsOn": "odnawia się {{day}} o {{time}}",
@@ -16589,6 +16625,7 @@
     "section": {
       "account": "Twoje konto",
       "notifications": "Powiadomienia",
+      "download": "Aplikacje agentes.chat",
       "general": "Ogólne",
       "right_hand": "Prawa ręka",
       "members": "Członkowie",
@@ -16621,6 +16658,7 @@
     "sectionText": {
       "account": "Twój profil i wygląd aplikacji dla ciebie.",
       "notifications": "Co dociera do ciebie tutaj jako powiadomienie. Skrzynka zachowuje wszystko.",
+      "download": "Ten sam workspace na komputerze i telefonie, z twoim kontem.",
       "general": "Nazwa, strefa czasowa i to, co każdy agent wie o przestrzeni roboczej.",
       "right_hand": "Asystent, który buduje zespół z każdą osobą, w jej DM.",
       "members": "Kto jest w przestrzeni roboczej.",
@@ -17539,6 +17577,7 @@
         "offeringConnectApp": "Zaproponowano połączenie aplikacji",
         "offeringSkill": "Zaproponowano instalację umiejętności",
         "updatingSkills": "Zaktualizowano umiejętności",
+        "creatingSkill": "Utworzono umiejętność",
         "offeringInvites": "Zaproponowano zaproszenie osób",
         "proposingAgent": "Zaproponowano agenta",
         "askingAgent": "Zapytano innego agenta",
@@ -17658,6 +17697,7 @@
       "offeringConnectApp": "przygotowywanie połączenia aplikacji",
       "offeringSkill": "przygotowywanie instalacji umiejętności",
       "updatingSkills": "aktualizowanie umiejętności",
+      "creatingSkill": "tworzenie umiejętności",
       "offeringInvites": "przygotowywanie zaproszeń",
       "proposingAgent": "proponowanie agenta",
       "askingAgent": "pytanie innego agenta",
@@ -18008,6 +18048,10 @@
     "update_skill": {
       "label": "Popraw umiejętność",
       "description": "Poprawia wczytaną umiejętność. Umiejętność należąca do człowieka staje się propozycją."
+    },
+    "create_skill": {
+      "label": "Utwórz umiejętność",
+      "description": "Na prośbę osoby zamienia to, co zrobił, we własną umiejętność. Widać ją w Umiejętnościach, z Cofnij."
     },
     "schedule_reminder": {
       "label": "Utwórz przypomnienie",

@@ -7,7 +7,11 @@ import type { LocaleStrings } from "./plurals";
  * no exclamation marks, buttons start with a verb, "agentes" in lower case.
  */
 export const ptBR = {
-  app: { name: "agentes" },
+  app: {
+    name: "agentes",
+    /** The browser tab's title on every screen that doesn't set its own. */
+    tabTitle: "agentes.chat · Seu time e seus agentes, na mesma conversa",
+  },
   common: {
     close: "Fechar",
     joinSentences: "{{a}} {{b}}",
@@ -1527,6 +1531,7 @@ export const ptBR = {
       minimax:
         "Cole a chave inteira da MiniMax, sem espaços. As que começam com sk-cp- são do plano e não servem aqui.",
       openrouter: "As chaves da OpenRouter começam com sk-or-v1-. Confira e cole de novo.",
+      commandcode: "Cole a chave inteira do Command Code, sem espaços. Confira e cole de novo.",
     },
     keyFromOther: "É de outro provedor?",
     anthropicWorkspace: "ID do workspace no Claude Console",
@@ -2203,6 +2208,17 @@ export const ptBR = {
       channels: "Você já fixou 5 canais. Tire um do topo para fixar este.",
       people: "Você já fixou 5 pessoas. Tire uma do topo para fixar esta.",
     },
+  },
+  /** Configurações › Apps do agentes.chat (`AppsDownload.tsx`): the desktop app for this computer and the phone apps. */
+  appsDownload: {
+    computer: "Computador",
+    computerText: "O workspace numa janela própria, com os avisos do sistema.",
+    inApp: "Você já está no app do computador.",
+    howTo: "Como instalar",
+    phone: "Celular",
+    phoneText: "Os avisos no bolso, para responder de qualquer lugar.",
+    appStore: "App Store",
+    googlePlay: "Google Play",
   },
   openOnPhone: {
     qr: "QR code para entrar no app agentes",
@@ -3444,7 +3460,7 @@ export const ptBR = {
       notPlan: "A chave de um plano de código vai na opção dele, acima.",
       billing: "Ative o faturamento no projeto da chave. Sem faturamento, o Google pode usar o que os agentes enviam.",
       privacy:
-        "As configurações de privacidade da OpenRouter decidem quais provedores podem guardar o que seus agentes enviam.",
+        "O que seus agentes enviam é repassado por {{provider}} à empresa que faz ou hospeda o modelo, sob os termos e as configurações de privacidade de {{provider}}.",
     },
     wait: {
       signIn: "Você entra aqui assim que o computador ficar pronto.",
@@ -3520,6 +3536,10 @@ export const ptBR = {
     agent: "Para qual agente",
     keyLocked: "Uma chave de API, só um admin adiciona.",
     accountsLocked: "Só {{name}} conecta um plano no {{computer}}.",
+    /** Under `accountsLocked` (self-hosted servers): a computer of the person's own, where they sign their plan in. */
+    connectMine: "Conectar meu computador",
+    /** At the end, after a plan connected by someone who owns no agent yet. */
+    makeAgent: "Criar um agente com este plano",
     later: "Conectar depois",
   },
   /** An API key pasted in a message, before it goes out. */
@@ -3844,6 +3864,7 @@ export const ptBR = {
     },
     skill: {
       created: "Transformei o que aprendi na skill <b>{{name}}</b>",
+      created_asked: "Criei a skill <b>{{name}}</b>",
       updated: "Corrigi a skill <b>{{name}}</b>",
     },
     agent: {
@@ -3955,6 +3976,7 @@ export const ptBR = {
       },
       skill: {
         created: "Transformei o que aprendi nas skills {{refs}}",
+        created_asked: "Criei as skills {{refs}}",
         updated: "Corrigi as skills {{refs}}",
       },
       agent: {
@@ -7774,6 +7796,7 @@ export const ptBR = {
     role: "Cargo",
     roleHint: "O que a pessoa pode fazer. Cargos somam ao que Todos podem. Vale só para pessoas.",
     rolePersonal: "Pode",
+    rolesFoot: "Cargos somam ao que Todos podem. Os canais e os agentes do cargo vêm marcados.",
     channels: "Canais",
     channelsPersonal: "Conversas",
     channelsHint: "Onde a pessoa já entra. Os canais do cargo vêm marcados.",
@@ -7821,6 +7844,7 @@ export const ptBR = {
       agentGone_female: "A {{name}} saiu do time. Tire do convite para enviar.",
       agentLocked: "Você não pode mais liberar o {{name}}. Tire do convite para enviar.",
       agentLocked_female: "Você não pode mais liberar a {{name}}. Tire do convite para enviar.",
+      agentUnnamed: "Um dos agentes saiu do time. Tire o marcado para enviar.",
       role: "Você não pode mais dar o cargo {{role}}. Escolha outro.",
       roleMany: "Você não pode mais dar um desses cargos. Escolha outros.",
     },
@@ -7832,6 +7856,8 @@ export const ptBR = {
     validFor: "Vale {{ttl}} depois de criado.",
     expiresIn: "Validade",
     maxUses: "Máximo de pessoas",
+    onJoin: "Ao entrar",
+    theLink: "O link",
     ttl: {
       "30m": "30 minutos",
       "1h": "1 hora",
@@ -7849,6 +7875,7 @@ export const ptBR = {
     invitationTitle: "Convite de {{email}}",
     invitationSaved: "Convite de {{email}} atualizado.",
     invitationExpired: "Este convite expirou. Renove para mudar o que ele dá.",
+    editInvitation: "Editar convite",
     // The Convites tab.
     search: "Buscar e-mail ou cargo",
     type: "Tipo",
@@ -7875,6 +7902,8 @@ export const ptBR = {
     by: "de {{name}}",
     edit: "Editar",
     turnOff: "Desativar link",
+    editLink: "Editar link",
+    linkTurnedOff: "Link desativado.",
   },
   empty: {
     thread: {
@@ -10339,6 +10368,16 @@ export const ptBR = {
     agentsImproveHelp:
       "Quando um agente acha uma skill errada ou faltando um passo, ele corrige na hora: uma versão nova que dá para desfazer, e quem fez a skill fica sabendo.",
     agentsImproveThis: "Agentes melhoram esta skill sozinhos",
+    /** Skills split as the Vault does (ADR 0144): the team's and each person's. */
+    personal: {
+      note: "Só você vê estas skills. Seus agentes usam quando você pede.",
+      emptyTitle: "Guarde suas skills",
+      emptyText: "Só você vê, e seus agentes usam quando você pede.",
+      others: "Pessoais de outras pessoas",
+      of: "Pessoal de {{name}}",
+      forWhom: "Para quem",
+      teamLocked: "Só quem gerencia agentes adiciona skills da equipe.",
+    },
     agentChange: "{{agent}} mudou {{when}}",
     undoAgentChange: "Desfazer mudança",
     undo: "Desfazer",
@@ -10649,6 +10688,9 @@ export const ptBR = {
         seven_day_sonnet: "Semana · Sonnet",
         monthly: "Mês",
         other: "Outro limite",
+        /** Rows the plan reports by an English label ("Extra usage", "OAuth apps"), in the person's language. */
+        extraUsage: "Uso extra",
+        oauthApps: "Apps OAuth",
       },
       short: {
         five_hour: "5h",
@@ -10657,6 +10699,8 @@ export const ptBR = {
         seven_day_sonnet: "Sonnet",
         monthly: "mês",
         other: "outro",
+        extraUsage: "uso extra",
+        oauthApps: "apps OAuth",
       },
       resetsAt: "renova às {{time}}",
       resetsOn: "renova {{day}} às {{time}}",
@@ -15751,6 +15795,7 @@ export const ptBR = {
     section: {
       account: "Sua conta",
       notifications: "Notificações",
+      download: "Apps do agentes.chat",
       general: "Geral",
       right_hand: "Braço direito",
       members: "Membros",
@@ -15781,6 +15826,7 @@ export const ptBR = {
     sectionText: {
       account: "Seu perfil e como o app fica para você.",
       notifications: "O que chega como aviso neste workspace. A caixa guarda tudo.",
+      download: "O mesmo workspace no computador e no celular, com a sua conta.",
       general: "Nome, fuso e o que todo agente sabe do workspace.",
       right_hand: "O assistente que monta o time com cada pessoa, na DM dela.",
       members: "Quem está no workspace.",
@@ -16719,6 +16765,7 @@ export const ptBR = {
         offeringConnectApp: "Ofereceu conectar um app",
         offeringSkill: "Ofereceu instalar uma skill",
         updatingSkills: "Atualizou skills",
+        creatingSkill: "Criou uma skill",
         offeringInvites: "Ofereceu convidar pessoas",
         proposingAgent: "Propôs um agente",
         askingAgent: "Perguntou a outro agente",
@@ -16838,6 +16885,7 @@ export const ptBR = {
       offeringConnectApp: "preparando a conexão de um app",
       offeringSkill: "preparando a instalação de uma skill",
       updatingSkills: "atualizando skills",
+      creatingSkill: "criando uma skill",
       offeringInvites: "preparando os convites",
       proposingAgent: "propondo um agente",
       askingAgent: "perguntando a outro agente",
@@ -17220,6 +17268,10 @@ export const ptBR = {
     update_skill: {
       label: "Corrigir skill",
       description: "Corrige uma skill que carregou. A skill de uma pessoa vira proposta.",
+    },
+    create_skill: {
+      label: "Criar skill",
+      description: "Transforma o que fez numa skill própria quando uma pessoa pede. Aparece em Skills, com Desfazer.",
     },
     schedule_reminder: {
       label: "Criar lembrete",

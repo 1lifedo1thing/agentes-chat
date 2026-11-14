@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Votre équipe et vos agents, dans la même conversation"
   },
   "common": {
     "close": "Fermer",
@@ -1522,7 +1523,8 @@
       "moonshot": "Les clés Kimi commencent par sk-. Vérifiez-la et collez-la de nouveau.",
       "zai": "Collez la clé Z.ai entière, sans espaces. Vérifiez-la et collez-la de nouveau.",
       "minimax": "Collez la clé MiniMax entière, sans espaces. Les clés qui commencent par sk-cp- appartiennent à l'abonnement et ne fonctionnent pas ici.",
-      "openrouter": "Les clés OpenRouter commencent par sk-or-v1-. Vérifiez-la et collez-la de nouveau."
+      "openrouter": "Les clés OpenRouter commencent par sk-or-v1-. Vérifiez-la et collez-la de nouveau.",
+      "commandcode": "Collez la clé Command Code entière, sans espaces. Vérifiez-la et collez-la de nouveau."
     },
     "keyFromOther": "Elle vient d'un autre fournisseur ?",
     "anthropicWorkspace": "ID d'espace de travail de la Claude Console",
@@ -2216,6 +2218,16 @@
       "channels": "Vous avez déjà épinglé 5 canaux. Désépinglez-en un pour épingler celui-ci.",
       "people": "Vous avez déjà épinglé 5 personnes. Désépinglez-en une pour épingler celle-ci."
     }
+  },
+  "appsDownload": {
+    "computer": "Ordinateur",
+    "computerText": "Votre workspace dans une fenêtre à lui, avec les notifications du système.",
+    "inApp": "Vous êtes déjà dans l'app de l'ordinateur.",
+    "howTo": "Comment l'installer",
+    "phone": "Téléphone",
+    "phoneText": "Les notifications dans la poche, pour répondre de partout.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
   },
   "openOnPhone": {
     "qr": "QR code pour vous connecter à l'app agentes",
@@ -3392,7 +3404,7 @@
       "closed": "Les clés API s'ouvrent avec l'abonnement agentes.chat du workspace.",
       "notPlan": "La clé d'un abonnement de code va dans sa propre option ci-dessus.",
       "billing": "Activez la facturation pour le projet de la clé. Sans facturation, Google peut utiliser ce que vos agents envoient.",
-      "privacy": "Vos paramètres de confidentialité OpenRouter décident quels fournisseurs peuvent conserver ce que vos agents envoient."
+      "privacy": "{{provider}} transmet ce que vos agents envoient à l'entreprise qui crée ou héberge le modèle, selon les conditions et les paramètres de confidentialité de {{provider}}."
     },
     "wait": {
       "signIn": "Vous vous connectez ici dès que l'ordinateur est prêt.",
@@ -3465,6 +3477,8 @@
     "agent": "Pour quel agent",
     "keyLocked": "Seul un admin peut ajouter une clé API.",
     "accountsLocked": "Seul {{name}} peut connecter un abonnement sur {{computer}}.",
+    "connectMine": "Connecter mon ordinateur",
+    "makeAgent": "Créer un agent avec ce forfait",
     "later": "Connecter plus tard"
   },
   "keyGuard": {
@@ -3778,6 +3792,7 @@
     },
     "skill": {
       "created": "J'ai fait de ce que j'ai appris la compétence <b>{{name}}</b>",
+      "created_asked": "J'ai créé la compétence <b>{{name}}</b>",
       "updated": "J'ai corrigé la compétence <b>{{name}}</b>"
     },
     "agent": {
@@ -3883,6 +3898,7 @@
       },
       "skill": {
         "created": "J'ai fait de ce que j'ai appris les compétences {{refs}}",
+        "created_asked": "J'ai créé les compétences {{refs}}",
         "updated": "J'ai corrigé les compétences {{refs}}"
       },
       "agent": {
@@ -7602,6 +7618,7 @@
     "role": "Rôle",
     "roleHint": "Ce que la personne peut faire. Les rôles s'ajoutent à ce que Tout le monde peut. Seulement pour les personnes.",
     "rolePersonal": "Peut",
+    "rolesFoot": "Les rôles s'ajoutent à ce que Tout le monde peut faire. Les canaux et les agents du rôle sont déjà cochés.",
     "channels": "Canaux",
     "channelsPersonal": "Conversations",
     "channelsHint": "Là où la personne arrive. Les canaux du rôle sont déjà cochés.",
@@ -7645,6 +7662,7 @@
       "channelGone": "Un des canaux n'existe plus. Retirez celui qui est marqué pour envoyer.",
       "agentGone": "{{name}} a quitté l'équipe. Retirez-le de l'invitation pour envoyer.",
       "agentLocked": "Vous ne pouvez plus ouvrir {{name}}. Retirez-le de l'invitation pour envoyer.",
+      "agentUnnamed": "Un des agents a quitté l'équipe. Retirez celui qui est marqué pour envoyer.",
       "role": "Vous ne pouvez plus donner le rôle {{role}}. Choisissez-en un autre.",
       "roleMany": "Vous ne pouvez plus donner un de ces rôles. Choisissez-en d'autres."
     },
@@ -7656,6 +7674,8 @@
     "validFor": "Valable {{ttl}} après sa création.",
     "expiresIn": "Validité",
     "maxUses": "Nombre maximum de personnes",
+    "onJoin": "En rejoignant",
+    "theLink": "Le lien",
     "ttl": {
       "30m": "30 minutes",
       "1h": "1 heure",
@@ -7675,6 +7695,7 @@
     "invitationTitle": "Invitation de {{email}}",
     "invitationSaved": "Invitation de {{email}} mise à jour.",
     "invitationExpired": "Cette invitation a expiré. Renouvelez-la pour changer ce qu'elle donne.",
+    "editInvitation": "Modifier l'invitation",
     "search": "Rechercher un e-mail ou un rôle",
     "type": "Type",
     "types": {
@@ -7706,7 +7727,9 @@
     "neverEnds": "n'expire jamais",
     "by": "de {{name}}",
     "edit": "Modifier",
-    "turnOff": "Désactiver le lien"
+    "turnOff": "Désactiver le lien",
+    "editLink": "Modifier le lien",
+    "linkTurnedOff": "Lien désactivé."
   },
   "empty": {
     "thread": {
@@ -10386,6 +10409,15 @@
     "agentsImprove": "Les agents améliorent les compétences eux-mêmes",
     "agentsImproveHelp": "Quand un agent trouve une compétence fausse ou incomplète, il la corrige tout de suite : une nouvelle version que vous pouvez annuler, et la personne qui l'a créée est prévenue.",
     "agentsImproveThis": "Les agents améliorent cette compétence eux-mêmes",
+    "personal": {
+      "note": "Vous seul voyez ces compétences. Vos agents les utilisent quand vous le demandez.",
+      "emptyTitle": "Gardez vos propres compétences",
+      "emptyText": "Vous seul les voyez, et vos agents les utilisent quand vous le demandez.",
+      "others": "Compétences personnelles des autres",
+      "of": "Personnel de {{name}}",
+      "forWhom": "Pour qui",
+      "teamLocked": "Seules les personnes qui gèrent les agents ajoutent des compétences d’équipe."
+    },
     "agentChange": "{{agent}} l'a modifiée {{when}}",
     "undoAgentChange": "Annuler la modification",
     "undo": "Annuler",
@@ -10679,7 +10711,9 @@
         "seven_day_opus": "Semaine · Opus",
         "seven_day_sonnet": "Semaine · Sonnet",
         "monthly": "Mois",
-        "other": "Autre limite"
+        "other": "Autre limite",
+        "extraUsage": "Usage supplémentaire",
+        "oauthApps": "Apps OAuth"
       },
       "short": {
         "five_hour": "5 h",
@@ -10687,7 +10721,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "mois",
-        "other": "autre"
+        "other": "autre",
+        "extraUsage": "usage supplémentaire",
+        "oauthApps": "apps OAuth"
       },
       "resetsAt": "se réinitialise à {{time}}",
       "resetsOn": "se réinitialise {{day}} à {{time}}",
@@ -16058,6 +16094,7 @@
     "section": {
       "account": "Votre compte",
       "notifications": "Notifications",
+      "download": "Apps agentes.chat",
       "general": "Général",
       "right_hand": "Bras droit",
       "members": "Membres",
@@ -16090,6 +16127,7 @@
     "sectionText": {
       "account": "Votre profil et l'apparence de l'app pour vous.",
       "notifications": "Ce qui vous parvient en notification ici. La boîte de réception garde tout.",
+      "download": "Le même workspace sur l'ordinateur et le téléphone, avec votre compte.",
       "general": "Nom, fuseau horaire et ce que chaque agent sait de l'espace de travail.",
       "right_hand": "L'assistant qui construit l'équipe avec chaque personne, dans son DM.",
       "members": "Qui fait partie de l'espace de travail.",
@@ -16996,6 +17034,7 @@
         "offeringConnectApp": "A proposé de connecter une app",
         "offeringSkill": "A proposé d'installer une compétence",
         "updatingSkills": "A mis à jour des compétences",
+        "creatingSkill": "A créé une compétence",
         "offeringInvites": "A proposé d'inviter des personnes",
         "proposingAgent": "A proposé un agent",
         "askingAgent": "A interrogé un autre agent",
@@ -17115,6 +17154,7 @@
       "offeringConnectApp": "préparation de la connexion d'une app",
       "offeringSkill": "préparation de l'installation d'une compétence",
       "updatingSkills": "mise à jour des compétences",
+      "creatingSkill": "création d'une compétence",
       "offeringInvites": "préparation des invitations",
       "proposingAgent": "proposition d'un agent",
       "askingAgent": "question à un autre agent",
@@ -17461,6 +17501,10 @@
     "update_skill": {
       "label": "Corriger une compétence",
       "description": "Corrige une compétence qu'il a chargée. La compétence d'une personne devient une proposition."
+    },
+    "create_skill": {
+      "label": "Créer une compétence",
+      "description": "Fait de ce qu'il a fait une compétence à lui quand une personne le demande. Apparaît dans Compétences, avec Annuler."
     },
     "schedule_reminder": {
       "label": "Créer un rappel",

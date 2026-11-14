@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · チームとエージェントが、同じ会話で"
   },
   "common": {
     "close": "閉じる",
@@ -1428,7 +1429,8 @@
       "moonshot": "Kimiのキーはsk-で始まります。確認してもう一度貼り付けてください。",
       "zai": "Z.aiのキー全体を、スペースなしで貼り付けてください。確認してもう一度貼り付けてください。",
       "minimax": "MiniMaxのキー全体を、スペースなしで貼り付けてください。sk-cp-で始まるキーはプラン用で、ここでは使えません。",
-      "openrouter": "OpenRouterのキーはsk-or-v1-で始まります。確認してもう一度貼り付けてください。"
+      "openrouter": "OpenRouterのキーはsk-or-v1-で始まります。確認してもう一度貼り付けてください。",
+      "commandcode": "Command Codeのキー全体を、スペースなしで貼り付けてください。確認してもう一度貼り付けてください。"
     },
     "keyFromOther": "別のプロバイダーのキーですか？",
     "anthropicWorkspace": "Claude ConsoleのワークスペースID",
@@ -2090,6 +2092,16 @@
       "channels": "すでにチャンネルを 5 件固定しています。固定するには 1 件解除してください。",
       "people": "すでにメンバーを 5 人固定しています。固定するには 1 人解除してください。"
     }
+  },
+  "appsDownload": {
+    "computer": "パソコン",
+    "computerText": "ワークスペースを専用のウィンドウで。システムの通知も届きます。",
+    "inApp": "すでにパソコンのアプリを使っています。",
+    "howTo": "インストール方法",
+    "phone": "スマートフォン",
+    "phoneText": "通知をポケットに。どこからでも返信できます。",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
   },
   "openOnPhone": {
     "qr": "agentesアプリにログインするためのQRコード",
@@ -3148,7 +3160,7 @@
       "closed": "APIキーはワークスペースのagentes.chatプランとともに使えるようになります。",
       "notPlan": "コーディングプランのキーは、上の専用の項目に入力してください。",
       "billing": "キーのプロジェクトで課金を有効にしてください。課金がないと、エージェントが送った内容をGoogleが利用する場合があります。",
-      "privacy": "エージェントが送った内容をどのプロバイダーが保存できるかは、OpenRouterのプライバシー設定で決まります。"
+      "privacy": "{{provider}}は、エージェントが送る内容を、モデルを開発またはホストする会社に渡します。{{provider}}のプライバシー規約と設定に従います。"
     },
     "wait": {
       "signIn": "コンピューターの準備ができしだい、ここでログインします。",
@@ -3219,6 +3231,8 @@
     "agent": "どのエージェント用か",
     "keyLocked": "APIキーを追加できるのは管理者だけです。",
     "accountsLocked": "{{computer}}でプランを接続できるのは{{name}}だけです。",
+    "connectMine": "自分のコンピューターを接続",
+    "makeAgent": "このプランでエージェントを作成",
     "later": "あとで接続"
   },
   "keyGuard": {
@@ -3518,6 +3532,7 @@
     },
     "skill": {
       "created": "学んだことをスキル<b>{{name}}</b>にまとめました",
+      "created_asked": "スキル<b>{{name}}</b>を作りました",
       "updated": "スキル<b>{{name}}</b>を修正しました"
     },
     "agent": {
@@ -3621,6 +3636,7 @@
       },
       "skill": {
         "created": "学んだことをスキルにまとめました: {{refs}}",
+        "created_asked": "スキルを作りました: {{refs}}",
         "updated": "スキルを修正しました: {{refs}}"
       },
       "agent": {
@@ -7072,6 +7088,7 @@
     "role": "ロール",
     "roleHint": "その人ができること。ロールは全員ができることに加わります。人にだけ適用されます。",
     "rolePersonal": "できること",
+    "rolesFoot": "ロールは「全員」ができることに加わります。ロールのチャンネルとエージェントにはチェックが入っています。",
     "channels": "チャンネル",
     "channelsPersonal": "会話",
     "channelsHint": "その人が最初から入る場所です。ロールのチャンネルはチェック済みです。",
@@ -7111,6 +7128,7 @@
       "channelGone": "チャンネルの1つがなくなりました。送信するには印の付いたものを外してください。",
       "agentGone": "{{name}}はチームを離れました。送信するには招待から外してください。",
       "agentLocked": "{{name}}を許可できなくなりました。送信するには招待から外してください。",
+      "agentUnnamed": "エージェントの1つがチームを離れました。印の付いたものを外してから送信してください。",
       "role": "ロール「{{role}}」はもう付与できません。別のロールを選んでください。",
       "roleMany": "これらのロールのいずれかはもう付与できません。別のロールを選んでください。"
     },
@@ -7122,6 +7140,8 @@
     "validFor": "作成から{{ttl}}有効です。",
     "expiresIn": "有効期間",
     "maxUses": "最大人数",
+    "onJoin": "参加時",
+    "theLink": "リンク",
     "ttl": {
       "30m": "30分",
       "1h": "1時間",
@@ -7137,6 +7157,7 @@
     "invitationTitle": "{{email}}への招待",
     "invitationSaved": "{{email}}への招待を更新しました。",
     "invitationExpired": "この招待は期限切れです。内容を変えるには更新してください。",
+    "editInvitation": "招待を編集",
     "search": "メールまたはロールを検索",
     "type": "種類",
     "types": {
@@ -7160,7 +7181,9 @@
     "neverEnds": "無期限",
     "by": "作成: {{name}}",
     "edit": "編集",
-    "turnOff": "リンクを無効にする"
+    "turnOff": "リンクを無効にする",
+    "editLink": "リンクを編集",
+    "linkTurnedOff": "リンクをオフにしました。"
   },
   "empty": {
     "thread": {
@@ -9609,6 +9632,15 @@
     "agentsImprove": "エージェントがスキルを自分で改善",
     "agentsImproveHelp": "スキルが間違っていたり手順が抜けていたりすると、エージェントがすぐに直します。新しいバージョンは元に戻せて、スキルを作った人に通知されます。",
     "agentsImproveThis": "エージェントがこのスキルを自分で改善",
+    "personal": {
+      "note": "これらのスキルはあなただけに見えます。エージェントはあなたが頼んだときに使います。",
+      "emptyTitle": "自分だけのスキルを保存",
+      "emptyText": "あなただけに見え、エージェントはあなたが頼んだときに使います。",
+      "others": "ほかの人の個人スキル",
+      "of": "{{name}}の個人用",
+      "forWhom": "対象",
+      "teamLocked": "チームのスキルを追加できるのはエージェントを管理する人だけです。"
+    },
     "agentChange": "{{agent}}が{{when}}に変更",
     "undoAgentChange": "変更を元に戻す",
     "undo": "元に戻す",
@@ -9869,7 +9901,9 @@
         "seven_day_opus": "週 · Opus",
         "seven_day_sonnet": "週 · Sonnet",
         "monthly": "月",
-        "other": "その他の上限"
+        "other": "その他の上限",
+        "extraUsage": "追加使用量",
+        "oauthApps": "OAuthアプリ"
       },
       "short": {
         "five_hour": "5時間",
@@ -9877,7 +9911,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "月",
-        "other": "その他"
+        "other": "その他",
+        "extraUsage": "追加使用量",
+        "oauthApps": "OAuthアプリ"
       },
       "resetsAt": "{{time}}にリセット",
       "resetsOn": "{{day}} {{time}}にリセット",
@@ -14983,6 +15019,7 @@
     "section": {
       "account": "アカウント",
       "notifications": "通知",
+      "download": "agentes.chatのアプリ",
       "general": "一般",
       "right_hand": "右腕",
       "members": "メンバー",
@@ -15015,6 +15052,7 @@
     "sectionText": {
       "account": "あなたのプロフィールと、アプリの表示設定。",
       "notifications": "ここで通知として届くもの。受信トレイにはすべてが残ります。",
+      "download": "パソコンでもスマートフォンでも、同じアカウントで同じワークスペース。",
       "general": "名前、タイムゾーン、そしてすべてのエージェントがワークスペースについて知っていること。",
       "right_hand": "一人ひとりとDMでチームを作るアシスタント。",
       "members": "ワークスペースにいる人。",
@@ -15874,6 +15912,7 @@
         "offeringConnectApp": "アプリの接続を提案しました",
         "offeringSkill": "スキルのインストールを提案しました",
         "updatingSkills": "スキルを更新しました",
+        "creatingSkill": "スキルを作りました",
         "offeringInvites": "メンバーの招待を提案しました",
         "proposingAgent": "エージェントを提案しました",
         "askingAgent": "別のエージェントに質問しました",
@@ -15993,6 +16032,7 @@
       "offeringConnectApp": "アプリの接続を準備中",
       "offeringSkill": "スキルのインストールを準備中",
       "updatingSkills": "スキルを更新中",
+      "creatingSkill": "スキルを作成中",
       "offeringInvites": "招待を準備中",
       "proposingAgent": "エージェントを提案中",
       "askingAgent": "別のエージェントに質問中",
@@ -16330,6 +16370,10 @@
     "update_skill": {
       "label": "スキルを修正",
       "description": "読み込んだスキルを修正します。人が作ったスキルの場合は提案になります。"
+    },
+    "create_skill": {
+      "label": "スキルを作成",
+      "description": "頼まれたときに、やったことを自分のスキルにします。スキルに表示され、元に戻せます。"
     },
     "schedule_reminder": {
       "label": "リマインダーを作成",

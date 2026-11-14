@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Timmu dan agenmu, dalam percakapan yang sama"
   },
   "common": {
     "close": "Tutup",
@@ -1428,7 +1429,8 @@
       "moonshot": "Kunci Kimi diawali sk-. Periksa lalu tempel lagi.",
       "zai": "Tempel seluruh kunci Z.ai, tanpa spasi. Periksa lalu tempel lagi.",
       "minimax": "Tempel seluruh kunci MiniMax, tanpa spasi. Kunci yang diawali sk-cp- milik paket dan tidak berfungsi di sini.",
-      "openrouter": "Kunci OpenRouter diawali sk-or-v1-. Periksa lalu tempel lagi."
+      "openrouter": "Kunci OpenRouter diawali sk-or-v1-. Periksa lalu tempel lagi.",
+      "commandcode": "Tempel seluruh kunci Command Code, tanpa spasi. Periksa lalu tempel lagi."
     },
     "keyFromOther": "Dari penyedia lain?",
     "anthropicWorkspace": "ID ruang kerja Claude Console",
@@ -2090,6 +2092,16 @@
       "channels": "Kamu sudah menyematkan 5 kanal. Lepaskan satu untuk menyematkan yang ini.",
       "people": "Kamu sudah menyematkan 5 orang. Lepaskan satu untuk menyematkan yang ini."
     }
+  },
+  "appsDownload": {
+    "computer": "Komputer",
+    "computerText": "Workspace-mu di jendela sendiri, dengan notifikasi dari sistem.",
+    "inApp": "Kamu sudah di aplikasi komputer.",
+    "howTo": "Cara memasang",
+    "phone": "Ponsel",
+    "phoneText": "Notifikasi di saku, untuk membalas dari mana saja.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
   },
   "openOnPhone": {
     "qr": "Kode QR untuk masuk ke aplikasi agentes",
@@ -3156,7 +3168,7 @@
       "closed": "Kunci API terbuka bersama paket agentes.chat workspace.",
       "notPlan": "Kunci paket coding dimasukkan di opsinya sendiri di atas.",
       "billing": "Aktifkan penagihan untuk proyek kunci ini. Tanpa penagihan, Google bisa memakai apa yang dikirim agenmu.",
-      "privacy": "Pengaturan privasi OpenRouter-mu menentukan penyedia mana yang boleh menyimpan apa yang dikirim agenmu."
+      "privacy": "{{provider}} meneruskan apa yang dikirim agenmu ke perusahaan yang membuat atau menghosting model, sesuai ketentuan dan pengaturan privasi {{provider}}."
     },
     "wait": {
       "signIn": "Kamu bisa masuk di sini begitu komputernya siap.",
@@ -3229,6 +3241,8 @@
     "agent": "Untuk agen mana",
     "keyLocked": "Hanya Admin yang bisa menambahkan kunci API.",
     "accountsLocked": "Hanya {{name}} yang bisa menghubungkan paket di {{computer}}.",
+    "connectMine": "Hubungkan komputer saya",
+    "makeAgent": "Buat agen dengan paket ini",
     "later": "Hubungkan nanti"
   },
   "keyGuard": {
@@ -3529,6 +3543,7 @@
     },
     "skill": {
       "created": "Mengubah yang aku pelajari menjadi skill <b>{{name}}</b>",
+      "created_asked": "Membuat skill <b>{{name}}</b>",
       "updated": "Memperbaiki skill <b>{{name}}</b>"
     },
     "agent": {
@@ -3632,6 +3647,7 @@
       },
       "skill": {
         "created": "Mengubah yang aku pelajari menjadi skill {{refs}}",
+        "created_asked": "Membuat skill {{refs}}",
         "updated": "Memperbaiki skill {{refs}}"
       },
       "agent": {
@@ -7100,6 +7116,7 @@
     "role": "Peran",
     "roleHint": "Apa yang bisa dilakukan orang ini. Peran menambah apa yang bisa dilakukan Semua orang. Hanya untuk orang.",
     "rolePersonal": "Bisa",
+    "rolesFoot": "Peran menambah apa yang bisa dilakukan Semua. Kanal dan agen dari peran sudah dicentang.",
     "channels": "Kanal",
     "channelsPersonal": "Percakapan",
     "channelsHint": "Tempat orang ini langsung masuk. Kanal dari peran sudah dicentang.",
@@ -7139,6 +7156,7 @@
       "channelGone": "Salah satu kanal sudah tidak ada. Hapus yang ditandai untuk mengirim.",
       "agentGone": "{{name}} sudah keluar dari tim. Hapus dari undangan untuk mengirim.",
       "agentLocked": "Kamu tidak bisa lagi membuka {{name}}. Hapus dari undangan untuk mengirim.",
+      "agentUnnamed": "Salah satu agen sudah keluar dari tim. Hapus yang ditandai untuk mengirim.",
       "role": "Kamu tidak bisa lagi memberi peran {{role}}. Pilih yang lain.",
       "roleMany": "Kamu tidak bisa lagi memberi salah satu peran ini. Pilih yang lain."
     },
@@ -7150,6 +7168,8 @@
     "validFor": "Berlaku {{ttl}} sejak dibuat.",
     "expiresIn": "Masa berlaku",
     "maxUses": "Jumlah orang maksimum",
+    "onJoin": "Saat bergabung",
+    "theLink": "Tautannya",
     "ttl": {
       "30m": "30 menit",
       "1h": "1 jam",
@@ -7165,6 +7185,7 @@
     "invitationTitle": "Undangan untuk {{email}}",
     "invitationSaved": "Undangan untuk {{email}} diperbarui.",
     "invitationExpired": "Undangan ini sudah kedaluwarsa. Perbarui untuk mengubah apa yang diberikannya.",
+    "editInvitation": "Edit undangan",
     "search": "Cari email atau peran",
     "type": "Jenis",
     "types": {
@@ -7188,7 +7209,9 @@
     "neverEnds": "tidak kedaluwarsa",
     "by": "dari {{name}}",
     "edit": "Edit",
-    "turnOff": "Matikan tautan"
+    "turnOff": "Matikan tautan",
+    "editLink": "Edit tautan",
+    "linkTurnedOff": "Tautan dimatikan."
   },
   "empty": {
     "thread": {
@@ -9658,6 +9681,15 @@
     "agentsImprove": "Agen memperbaiki skill sendiri",
     "agentsImproveHelp": "Saat agen menemukan skill yang salah atau kurang satu langkah, agen langsung memperbaikinya: versi baru yang bisa kamu urungkan, dan pembuat skill diberi tahu.",
     "agentsImproveThis": "Agen memperbaiki skill ini sendiri",
+    "personal": {
+      "note": "Hanya kamu yang melihat skill ini. Agenmu memakainya saat kamu meminta.",
+      "emptyTitle": "Simpan skill milikmu sendiri",
+      "emptyText": "Hanya kamu yang melihatnya, dan agenmu memakainya saat kamu meminta.",
+      "others": "Skill pribadi orang lain",
+      "of": "Pribadi milik {{name}}",
+      "forWhom": "Untuk siapa",
+      "teamLocked": "Hanya orang yang mengelola agen yang menambahkan skill tim."
+    },
     "agentChange": "{{agent}} mengubahnya {{when}}",
     "undoAgentChange": "Urungkan perubahan",
     "undo": "Urungkan",
@@ -9918,7 +9950,9 @@
         "seven_day_opus": "Minggu · Opus",
         "seven_day_sonnet": "Minggu · Sonnet",
         "monthly": "Bulan",
-        "other": "Batas lain"
+        "other": "Batas lain",
+        "extraUsage": "Penggunaan ekstra",
+        "oauthApps": "Aplikasi OAuth"
       },
       "short": {
         "five_hour": "5j",
@@ -9926,7 +9960,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "bulan",
-        "other": "lainnya"
+        "other": "lainnya",
+        "extraUsage": "penggunaan ekstra",
+        "oauthApps": "aplikasi OAuth"
       },
       "resetsAt": "direset pukul {{time}}",
       "resetsOn": "direset {{day}} pukul {{time}}",
@@ -15037,6 +15073,7 @@
     "section": {
       "account": "Akunmu",
       "notifications": "Notifikasi",
+      "download": "Aplikasi agentes.chat",
       "general": "Umum",
       "right_hand": "Tangan kanan",
       "members": "Anggota",
@@ -15069,6 +15106,7 @@
     "sectionText": {
       "account": "Profilmu dan tampilan aplikasi untukmu.",
       "notifications": "Apa yang sampai padamu sebagai notifikasi di sini. Kotak masuk menyimpan semuanya.",
+      "download": "Workspace yang sama di komputer dan ponsel, dengan akunmu.",
       "general": "Nama, zona waktu, dan apa yang diketahui setiap agen tentang ruang kerja.",
       "right_hand": "Asisten yang menyusun tim bersama setiap orang, di DM mereka.",
       "members": "Siapa saja yang ada di ruang kerja.",
@@ -15928,6 +15966,7 @@
         "offeringConnectApp": "Menawarkan menghubungkan aplikasi",
         "offeringSkill": "Menawarkan memasang skill",
         "updatingSkills": "Memperbarui skill",
+        "creatingSkill": "Membuat skill",
         "offeringInvites": "Menawarkan mengundang orang",
         "proposingAgent": "Mengusulkan agen",
         "askingAgent": "Bertanya ke agen lain",
@@ -16047,6 +16086,7 @@
       "offeringConnectApp": "menyiapkan aplikasi untuk dihubungkan",
       "offeringSkill": "menyiapkan skill untuk dipasang",
       "updatingSkills": "memperbarui skill",
+      "creatingSkill": "membuat skill",
       "offeringInvites": "menyiapkan undangan",
       "proposingAgent": "mengusulkan agen",
       "askingAgent": "bertanya ke agen lain",
@@ -16384,6 +16424,10 @@
     "update_skill": {
       "label": "Perbaiki skill",
       "description": "Memperbaiki skill yang dimuatnya. Skill milik orang menjadi usulan."
+    },
+    "create_skill": {
+      "label": "Buat skill",
+      "description": "Mengubah yang dikerjakannya menjadi skill miliknya saat seseorang meminta. Muncul di Skill, dengan Urungkan."
     },
     "schedule_reminder": {
       "label": "Buat pengingat",

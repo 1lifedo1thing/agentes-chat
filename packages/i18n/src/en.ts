@@ -7,7 +7,11 @@ import type { Widen } from "./widen";
  * no exclamation marks, buttons start with a verb, "agentes" in lower case.
  */
 export const en = {
-  app: { name: "agentes" },
+  app: {
+    name: "agentes",
+    /** The browser tab's title on every screen that doesn't set its own. */
+    tabTitle: "agentes.chat · Your team and your agents, in the same conversation",
+  },
   common: {
     close: "Close",
     joinSentences: "{{a}} {{b}}",
@@ -1603,6 +1607,7 @@ export const en = {
       minimax:
         "Paste the whole MiniMax key, with no spaces. Keys starting with sk-cp- belong to the plan and don't work here.",
       openrouter: "OpenRouter keys start with sk-or-v1-. Check it and paste it again.",
+      commandcode: "Paste the whole Command Code key, with no spaces. Check it and paste it again.",
     },
     keyFromOther: "Is it from another provider?",
     anthropicWorkspace: "Claude Console workspace ID",
@@ -2297,6 +2302,17 @@ export const en = {
       channels: "You already pinned 5 channels. Unpin one to pin this one.",
       people: "You already pinned 5 people. Unpin one to pin this one.",
     },
+  },
+  /** Settings › agentes.chat apps (`AppsDownload.tsx`): the desktop app for this computer and the phone apps. */
+  appsDownload: {
+    computer: "Computer",
+    computerText: "Your workspace in a window of its own, with the system's notifications.",
+    inApp: "You're already in the computer app.",
+    howTo: "How to install",
+    phone: "Phone",
+    phoneText: "Notifications in your pocket, to answer from anywhere.",
+    appStore: "App Store",
+    googlePlay: "Google Play",
   },
   openOnPhone: {
     qr: "QR code to sign in to the agentes app",
@@ -3540,7 +3556,9 @@ export const en = {
       closed: "API keys open with the workspace's agentes.chat plan.",
       notPlan: "A coding plan's key goes in its own option above.",
       billing: "Turn on billing for the key's project. Without billing, Google may use what your agents send.",
-      privacy: "Your OpenRouter privacy settings decide which providers may keep what your agents send.",
+      /** Under the key field or in the step's ⓘ, for a provider that passes calls on (OpenRouter, Command Code). */
+      privacy:
+        "{{provider}} passes what your agents send to the company that makes or hosts the model, under {{provider}}'s privacy terms and settings.",
     },
     wait: {
       signIn: "You sign in here as soon as the computer is ready.",
@@ -3613,6 +3631,10 @@ export const en = {
     agent: "For which agent",
     keyLocked: "Only an admin adds an API key.",
     accountsLocked: "Only {{name}} connects a plan on {{computer}}.",
+    /** Under `accountsLocked` (self-hosted servers): a computer of the person's own, where they sign their plan in. */
+    connectMine: "Connect my computer",
+    /** At the end, after a plan connected by someone who owns no agent yet. */
+    makeAgent: "Create an agent with this plan",
     later: "Connect later",
   },
   keyGuard: {
@@ -3943,6 +3965,8 @@ export const en = {
     },
     skill: {
       created: "Turned what I learned into the skill <b>{{name}}</b>",
+      /** Made when a person asked (`create_skill`), not from its how-tos. */
+      created_asked: "Created the skill <b>{{name}}</b>",
       updated: "Fixed the skill <b>{{name}}</b>",
     },
     /** A teammate's settings changed from the right hand's card, by the person who clicked Aplicar (ADR 0137). */
@@ -4057,6 +4081,7 @@ export const en = {
       },
       skill: {
         created: "Turned what I learned into the skills {{refs}}",
+        created_asked: "Created the skills {{refs}}",
         updated: "Fixed the skills {{refs}}",
       },
       agent: {
@@ -7787,6 +7812,8 @@ export const en = {
     role: "Role",
     roleHint: "What the person can do. Roles add to what Everyone can. Only for people.",
     rolePersonal: "Can",
+    /** Under the phone's Role list. */
+    rolesFoot: "Roles add to what Everyone can. The role's channels and agents come ticked.",
     channels: "Channels",
     channelsPersonal: "Conversations",
     channelsHint: "Where the person starts. The role's channels come ticked.",
@@ -7831,6 +7858,7 @@ export const en = {
       channelGone: "One of the channels no longer exists. Remove the marked one to send.",
       agentGone: "{{name}} left the team. Remove them from the invitation to send.",
       agentLocked: "You can no longer let people talk to {{name}}. Remove them from the invitation to send.",
+      agentUnnamed: "One of the agents left the team. Take out the marked one to send.",
       role: "You can no longer give the {{role}} role. Pick another.",
       roleMany: "You can no longer give one of these roles. Pick others.",
     },
@@ -7842,6 +7870,9 @@ export const en = {
     validFor: "Works for {{ttl}} once made.",
     expiresIn: "Expires after",
     maxUses: "Most people",
+    /** The phone's groups in Link mode and Edit link: what the person gets, then the link's own limits. */
+    onJoin: "On joining",
+    theLink: "The link",
     ttl: {
       "30m": "30 minutes",
       "1h": "1 hour",
@@ -7859,6 +7890,7 @@ export const en = {
     invitationTitle: "Invitation for {{email}}",
     invitationSaved: "Invitation for {{email}} updated.",
     invitationExpired: "This invitation expired. Renew it to change what it gives.",
+    editInvitation: "Edit invite",
     // The Invitations tab.
     search: "Search email or role",
     type: "Type",
@@ -7885,6 +7917,8 @@ export const en = {
     by: "by {{name}}",
     edit: "Edit",
     turnOff: "Turn off link",
+    editLink: "Edit link",
+    linkTurnedOff: "Link turned off.",
   },
   empty: {
     thread: { title: "Threads", text: "Thread replies will show up here, without taking over the channel." },
@@ -10333,6 +10367,16 @@ export const en = {
     agentsImproveHelp:
       "When an agent finds a skill wrong or missing a step, it fixes it right away: a new version you can undo, and whoever made the skill is told.",
     agentsImproveThis: "Agents improve this skill by themselves",
+    /** Skills split as the Vault does (ADR 0144): the team's and each person's. */
+    personal: {
+      note: "Only you see these skills. Your agents use them when you ask.",
+      emptyTitle: "Keep your own skills",
+      emptyText: "Only you see them, and your agents use them when you ask.",
+      others: "Others' personal skills",
+      of: "{{name}}'s personal",
+      forWhom: "Who it's for",
+      teamLocked: "Only people who manage agents add team skills.",
+    },
     agentChange: "{{agent}} changed it {{when}}",
     undoAgentChange: "Undo change",
     undo: "Undo",
@@ -10624,6 +10668,9 @@ export const en = {
         seven_day_sonnet: "Week · Sonnet",
         monthly: "Month",
         other: "Other limit",
+        /** Rows the plan reports by an English label ("Extra usage", "OAuth apps"), in the person's language. */
+        extraUsage: "Extra usage",
+        oauthApps: "OAuth apps",
       },
       short: {
         five_hour: "5h",
@@ -10632,6 +10679,8 @@ export const en = {
         seven_day_sonnet: "Sonnet",
         monthly: "month",
         other: "other",
+        extraUsage: "extra usage",
+        oauthApps: "OAuth apps",
       },
       resetsAt: "resets at {{time}}",
       resetsOn: "resets {{day}} at {{time}}",
@@ -15800,6 +15849,7 @@ export const en = {
     section: {
       account: "Your account",
       notifications: "Notifications",
+      download: "agentes.chat apps",
       general: "General",
       right_hand: "Right hand",
       members: "Members",
@@ -15836,6 +15886,7 @@ export const en = {
     sectionText: {
       account: "Your profile and how the app looks for you.",
       notifications: "What reaches you as an alert here. The inbox keeps everything.",
+      download: "The same workspace on your computer and your phone, with your account.",
       general: "Name, time zone and what every agent knows about the workspace.",
       right_hand: "The assistant that builds the team with each person, in their DM.",
       members: "Who is in the workspace.",
@@ -16766,6 +16817,7 @@ export const en = {
         offeringConnectApp: "Offered to connect an app",
         offeringSkill: "Offered to install a skill",
         updatingSkills: "Updated skills",
+        creatingSkill: "Created a skill",
         offeringInvites: "Offered to invite people",
         proposingAgent: "Proposed an agent",
         askingAgent: "Asked another agent",
@@ -16886,6 +16938,7 @@ export const en = {
       offeringConnectApp: "getting an app ready to connect",
       offeringSkill: "getting a skill ready to install",
       updatingSkills: "updating skills",
+      creatingSkill: "creating a skill",
       offeringInvites: "getting invitations ready",
       proposingAgent: "proposing an agent",
       askingAgent: "asking another agent",
@@ -17271,6 +17324,10 @@ export const en = {
     update_skill: {
       label: "Fix skill",
       description: "Fixes a skill it loaded. A person's skill becomes a proposal.",
+    },
+    create_skill: {
+      label: "Create skill",
+      description: "Turns what it did into a skill of its own when a person asks. Shows in Skills, with Undo.",
     },
     schedule_reminder: {
       label: "Create reminder",
