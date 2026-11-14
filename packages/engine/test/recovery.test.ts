@@ -562,6 +562,24 @@ describe("server restarts", () => {
     expect(timeline.at(-1)?.body).toContain(INTERRUPTED_BY_RESTART);
   });
 
+  test("a reply held for its wording wins over the working text its rewrite wrote with a tool call since", async () => {
+    // Its first step wrote "Trabalhando nisso." with a tool call, after the held reply, and was never posted.
+    const { run } = await interruptedRun();
+    await orphan(run.id);
+    await f.db
+      .update(schema.agentRuns)
+      .set({
+        heartbeatAt: new Date(Date.now() - RESUME_MAX_AGE_MS - 60_000),
+        transcript: sql`${schema.agentRuns.transcript} || '{"heldWording": "O relatório está pronto."}'::jsonb`,
+      })
+      .where(eq(schema.agentRuns.id, run.id));
+
+    expect((await recoverStaleRuns({ db: f.db, pubsub: f.pubsub })).failed).toEqual([run.id]);
+    const last = (await listMessages(f.db, f.owner.id, f.org.id, f.general.id)).at(-1)?.body ?? "";
+    expect(last).toStartWith("O relatório está pronto.\n\n");
+    expect(last).not.toContain("Trabalhando nisso.");
+  });
+
   test("an orphan cut in the middle of a tool call fails with the notice, keeps its text, and the app hears it", async () => {
     const { run } = await interruptedRun();
     await orphan(run.id);

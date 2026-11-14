@@ -185,13 +185,18 @@ const NOT_PROSE = new RegExp(
  * The run's own tools its reply names (bare, in backticks, or behind a computer brain's `mcp__agentes__`) and the
  * person's message doesn't: people can't see or use them. Only names with an underscore, so a one-word tool
  * (`remember`, `react`) reads as the word it is, and only in prose: `def read_file(path)` in a code block is code, and
- * so is that name around it. Tool names are `[A-Za-z0-9_-]`, nothing to escape.
+ * so is that name around it, and in inline code that holds more than a name (`client.send_email(to)`). Never a file
+ * (`send_email.py`) nor an address's path (`/api/create_issue`). Tool names are `[A-Za-z0-9_-]`, nothing to escape.
  */
 export function toolsNamed(reply: string, tools: Iterable<string>, request: string): string[] {
-  const prose = reply.replace(NOT_PROSE, " ");
-  const code = reply.match(/```[\s\S]*?```/g)?.join("\n") ?? "";
+  const inProse = reply.replace(NOT_PROSE, " ");
+  const expressions = [...inProse.matchAll(/`([^`\n]+)`/g)]
+    .map((m) => m[1] ?? "")
+    .filter((s) => !/^(?:mcp__agentes__)?[\w-]+(?:\(\))?$/.test(s));
+  const prose = inProse.replace(/`([^`\n]+)`/g, (span, inner: string) => (expressions.includes(inner) ? " " : span));
+  const code = [...(reply.match(/```[\s\S]*?```/g) ?? []), ...expressions].join("\n");
   const says = (text: string, name: string) =>
-    text.includes(name) && new RegExp(`(?:(?<=mcp__agentes__)|(?<![\\w-]))${name}(?![\\w-])`).test(text);
+    text.includes(name) && new RegExp(`(?:(?<=mcp__agentes__)|(?<![\\w/-]))${name}(?![\\w/-]|\\.\\w)`).test(text);
   return [...new Set(tools)].filter(
     (n) => /^[\w-]*_[\w-]*$/.test(n) && says(prose, n) && !says(request, n) && !says(code, n),
   );
@@ -267,16 +272,35 @@ export function computerWork(messages: ModelMessage[], computer: ReadonlySet<str
  * in a cloud drive, a wiki or the person's own computer is theirs to open. None when the person's message writes a
  * path or code itself, or the reply names source code: then it is code talk. Nor one the person named.
  */
-export function localPathsCited(reply: string, request: string, work: ComputerWork): string[] {
-  if (request.includes("```") || slashedWords(request).length > 0) return [];
+export function localPathsCited(reply: string, request: string, work: ComputerWork | (() => ComputerWork)): string[] {
+  // A date or a pair in the request ("de 01/11 a 14/11", "e/ou") writes no path.
+  const writesPath = (w: string) => namesFile(w) || w.startsWith("/") || CODE_FILE.test(w);
+  if (request.includes("```") || slashedWords(request).some(writesPath)) return [];
   const words = slashedWords(reply);
   if (words.some((w) => CODE_FILE.test(w) && !UNDER_HOME.test(w))) return [];
+  const candidates = [...new Set(words.filter(namesFile))];
+  if (candidates.length === 0) return [];
+  const { touched, shared } = typeof work === "function" ? work() : work;
   const asked = request.toLowerCase();
-  return [...new Set(words.filter(namesFile))].filter((p) => {
+  return candidates.filter((p) => {
     const name = p.split("/").filter(Boolean).at(-1) ?? "";
-    return work.touched.includes(name) && !work.shared.includes(name) && !asked.includes(name.toLowerCase());
+    return hasWord(touched, name) && !hasWord(shared, name) && !hasWord(asked, name.toLowerCase());
   });
 }
+
+const WORD_CHAR = /[\p{L}\p{N}_]/u;
+
+/** `word` in `text` as a whole word: the folder `out` isn't in "stdout", nor `docs` in "mydocs". */
+function hasWord(text: string, word: string) {
+  if (!word) return false;
+  for (let i = text.indexOf(word); i >= 0; i = text.indexOf(word, i + 1))
+    if (!WORD_CHAR.test(text[i - 1] ?? "") && !WORD_CHAR.test(text[i + word.length] ?? "")) return true;
+  return false;
+}
+
+/** What a run reads when a reply held for its wording went out as it was while the run waited (`heldWording`). */
+export const HELD_WORDING_POSTED =
+  "Your reply held back above was posted as it was while you waited. Don't write it again: go on with what is left, or end without a word.";
 
 /** What a run reads, once, when its reply cites files on its computer to people (`localPathsCited`): not posted. */
 export function localPathsNudge(paths: string[]) {
@@ -569,25 +593,57 @@ export type TurnEndDecision = {
 };
 
 /**
- * Decides how a turn that reached its final answer ends (rules in order, the first that applies wins). The caller
- * applies it: posts and goes on with the nudge, turns the reply into a question card, or ends the run, and records
- * the decision as the run's `continuation` step.
+ * Decides how a turn that reached its final answer ends (rules in order, the first that applies wins, and the wording
+ * rules only once the reply would be posted, after the judgment when one is asked). The caller applies it: posts and
+ * goes on with the nudge, turns the reply into a question card, or ends the run, and records the decision as the
+ * run's `continuation` step.
  */
 export async function decideTurnEnd(t: TurnEnd): Promise<TurnEndDecision> {
+  const d = await answerTurnEnd(t);
+  return (!UNPOSTED.has(d.rule) && wordingHold(t)) || d;
+}
+
+/**
+ * Rules whose reply is not posted as the turn's answer: a bound past which no rewrite fits, a quiet turn, a widget's,
+ * one with no words, a reply held for what it says (an untried give-up, a secret asked in the chat, an unbacked claim),
+ * or one posted only by its own rule's cap. A reply held for its wording (`wordingHold`) is posted if the rewrite never
+ * comes, so only a reply about to be posted can be held for it.
+ */
+const UNPOSTED = new Set([
+  "stuck",
+  "step_limit",
+  "widget",
+  "quiet",
+  "decision",
+  "answer",
+  "untried",
+  "secret",
+  "secret_cap",
+  "unbacked",
+  "unbacked_cap",
+  "ask_elsewhere",
+]);
+
+/** A person's conversation only: another agent may use a tool's name, or read its computer's shared folder. */
+function wordingHold(t: TurnEnd): TurnEndDecision | null {
+  if (t.kind !== "conversation") return null;
+  if (t.localPaths?.length && !t.state.pathsNudged)
+    return { outcome: "continue", rule: "local_paths", nudge: localPathsNudge(t.localPaths) };
+  if (t.namedTools?.length && !t.state.toolsNudged)
+    return { outcome: "continue", rule: "tool_names", nudge: toolNamesNudge(t.namedTools) };
+  return null;
+}
+
+/** The decision without the wording rules (`wordingHold`). */
+async function answerTurnEnd(t: TurnEnd): Promise<TurnEndDecision> {
   const max = t.kind === "routine" ? CONTINUE.routineMaxPerRun : CONTINUE.maxPerRun;
   const canNudge = t.state.count < max;
   if (t.bound) return { outcome: "done", rule: t.bound };
   // Quiet or not, a widget's run speaks only through update_widget: without it, nobody gets anything.
   if (t.widgetOwed && canNudge) return { outcome: "continue", rule: "widget", nudge: WIDGET_NUDGE };
   if (t.quiet) return { outcome: "done", rule: "quiet" };
-  // Only a person's conversation: another agent may read its computer's shared folder.
-  if (t.kind === "conversation" && t.localPaths?.length && !t.state.pathsNudged)
-    return { outcome: "continue", rule: "local_paths", nudge: localPathsNudge(t.localPaths) };
   if (t.decided && canNudge) return { outcome: "continue", rule: "decision", nudge: decisionNudge(t.decided) };
   if (t.unanswered && canNudge) return { outcome: "continue", rule: "answer", nudge: ANSWER_NUDGE };
-  // Only a person's conversation: another agent reading a tool's name can use it.
-  if (t.kind === "conversation" && t.namedTools?.length && !t.state.toolsNudged)
-    return { outcome: "continue", rule: "tool_names", nudge: toolNamesNudge(t.namedTools) };
   if (t.openRequest && !t.state.requestNudged)
     return { outcome: "continue", rule: "open_request", nudge: t.openRequest };
   if (!t.judged || !t.verdict) return { outcome: "done", rule: t.verdict ? "nothing_to_judge" : "no_judge" };

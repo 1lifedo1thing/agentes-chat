@@ -94,6 +94,14 @@ describe("a path on the agent's computer", () => {
     // They named the file without its folder.
     expect(cited("O total em notas/precos.md é R$ 300.", "qual o total do precos.md?")).toEqual([]);
     expect(cited("The total in notes/Prices.csv is $300.", "what's the total in prices.csv?")).toEqual([]);
+    // A date, a pair or a ratio in the message writes no path: the check stays on.
+    for (const request of [
+      "faz o relatório de 01/11 a 14/11",
+      "make the report for 11/01-11/14",
+      "manda por e-mail e/ou no chat, 24/7",
+      "o plano custa R$ 49/mês?",
+    ])
+      expect({ request, cited: cited(reply, request) }).toEqual({ request, cited: ["notas/planos.md", "~/backup/"] });
   });
 
   test("only what its computer worked on in this run, and never what it already shared", () => {
@@ -113,6 +121,31 @@ describe("a path on the agent's computer", () => {
     const work = { touched: '{"path":"notas/planos.md"}\nWrote out/precos.csv', shared: "" };
     expect(localPathsCited(reply, "", work)).toEqual(["notas/planos.md", "out/precos.csv"]);
     expect(localPathsCited(reply, "", { ...work, shared: '{"path":"out/precos.csv"}' })).toEqual(["notas/planos.md"]);
+    // A whole name only: "out" isn't in "stdout", nor "docs" in "mydocs", nor "data" in "metadata".
+    const folders = "Salvei em out/, docs/ e data/.";
+    const words = { touched: '{"code":"print(1)"}\nstdout: ok\nmydocs about metadata', shared: "" };
+    expect(localPathsCited(folders, "", words)).toEqual([]);
+    expect(localPathsCited(folders, "", { touched: '{"path":"out/a.csv"}\nls docs', shared: "" })).toEqual([
+      "out/",
+      "docs/",
+    ]);
+    // The person named it as a whole word only: asking about "anotas" names no "notas/".
+    expect(
+      localPathsCited("Está em notas/.", "o que tem nas anotas?", { touched: '{"path":"notas/a.md"}', shared: "" }),
+    ).toEqual(["notas/"]);
+  });
+
+  test("what its computer did is read only when the reply has a path to check", () => {
+    let read = 0;
+    const work = () => {
+      read++;
+      return { touched: '{"path":"notas/planos.md"}', shared: "" };
+    };
+    expect(localPathsCited("Pronto, o Básico custa US$ 9 por mês.", "", work)).toEqual([]);
+    expect(localPathsCited("Use e/ou, 24/7 e veja example.com/precos.", "", work)).toEqual([]);
+    expect(read).toBe(0);
+    expect(localPathsCited("Salvei em notas/planos.md.", "", work)).toEqual(["notas/planos.md"]);
+    expect(read).toBe(1);
   });
 
   test("its computer's work: its calls and their results, what it shared apart, nothing from other tools", () => {
@@ -181,6 +214,41 @@ describe("a path on the agent's computer", () => {
     expect(await decideTurnEnd(turn({ state: { count: 2 } }))).toMatchObject({ rule: "local_paths" });
     expect(await decideTurnEnd(turn({ kind: "agents_dm" }))).toMatchObject({ outcome: "done", rule: "judged" });
     expect(await decideTurnEnd(turn({ bound: "stuck" }))).toMatchObject({ outcome: "done", rule: "stuck" });
+  });
+
+  test("only a reply about to be posted is held for its wording: after the judgment, never over a hold of its own", async () => {
+    let judged = 0;
+    const verdict = (v: "done" | "secret" | "unbacked" | "untried" | "continue" | "ask") => async () => {
+      judged++;
+      return v;
+    };
+    // Judged first: a secret asked in the chat, an unbacked claim or a give-up is held by its own rule.
+    expect(await decideTurnEnd(turn({ verdict: verdict("secret") }))).toMatchObject({ rule: "secret" });
+    expect(await decideTurnEnd(turn({ verdict: verdict("unbacked") }))).toMatchObject({ rule: "unbacked" });
+    expect(await decideTurnEnd(turn({ verdict: verdict("untried") }))).toMatchObject({ rule: "untried" });
+    // Past their own nudge they are posted as written, and still never held for their wording.
+    const spent = { count: 3, secretNudged: true };
+    expect(await decideTurnEnd(turn({ state: spent, verdict: verdict("secret") }))).toMatchObject({
+      rule: "secret_cap",
+    });
+    expect(await decideTurnEnd(turn({ state: spent, verdict: verdict("unbacked") }))).toMatchObject({
+      rule: "unbacked_cap",
+    });
+    expect(judged).toBe(5);
+    // Posted otherwise (done, a promise, an ask): held, with the judgment already made, never a second one.
+    judged = 0;
+    expect(await decideTurnEnd(turn({ verdict: verdict("done") }))).toMatchObject({ rule: "local_paths" });
+    expect(await decideTurnEnd(turn({ verdict: verdict("continue") }))).toMatchObject({ rule: "local_paths" });
+    expect(await decideTurnEnd(turn({ verdict: verdict("ask") }))).toMatchObject({ rule: "local_paths" });
+    expect(judged).toBe(3);
+    // A turn with no words, a quiet one, a decision to report: nothing to hold.
+    expect(await decideTurnEnd(turn({ quiet: true }))).toMatchObject({ rule: "quiet" });
+    expect(await decideTurnEnd(turn({ unanswered: true, judged: "" }))).toMatchObject({ rule: "answer" });
+    // Both rules on one reply: the path first.
+    expect(await decideTurnEnd(turn({ namedTools: ["upload_file"] }))).toMatchObject({ rule: "local_paths" });
+    expect(
+      await decideTurnEnd(turn({ namedTools: ["upload_file"], state: { count: 0, pathsNudged: true } })),
+    ).toMatchObject({ rule: "tool_names" });
   });
 });
 
@@ -323,5 +391,18 @@ describe("a run that cites one to people", () => {
     await ask(f, "@dev monta de novo");
     await drainOutbox(f.db, f.handlers);
     expect(f.provider.calls.length).toBe(5);
+  });
+
+  test("on the server's own computer, its owner can't open the path either: written again", async () => {
+    f = await withComputer("~/out/planos.csv", "Salvei a planilha em ~/out/planos.csv.");
+    const [host] = await f.db
+      .insert(schema.machines)
+      .values({ orgId: f.org.id, name: "", kind: "host", pairedByUserId: f.owner.id })
+      .returning();
+    await f.db.update(schema.agents).set({ machineId: host?.id }).where(eq(schema.agents.id, f.agent.id));
+    await ask(f, "@dev monta a planilha dos planos");
+    await drainOutbox(f.db, f.handlers);
+    expect(f.provider.calls.length).toBe(3);
+    expect(await nudged(f)).toBe(1);
   });
 });

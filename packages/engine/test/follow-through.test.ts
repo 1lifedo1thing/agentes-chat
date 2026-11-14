@@ -9,10 +9,12 @@ import {
   CANCEL_FOLLOW_UP_TOOL,
   canceledReturns,
   cancelFollowUp,
+  cancelRun,
   createAgent,
   createAgentRuns,
   createIssue,
   createJobHandlers,
+  createPassToolSource,
   drainOutbox,
   FOLLOW_UP_JOB,
   FOLLOW_UP_TOOL,
@@ -35,7 +37,7 @@ import {
   toolPolicy,
   wakeFollowUp,
 } from "../src";
-import { advance, decideTurnEnd, type TurnEnd, toolsNamed } from "../src/continuation";
+import { advance, decideTurnEnd, HELD_WORDING_POSTED, type TurnEnd, toolsNamed } from "../src/continuation";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /**
@@ -923,6 +925,18 @@ describe("a reply that names its own tools to a person", () => {
     expect(toolsNamed("Write to ops_team@example.com or task_status@example.com.", own, "")).toEqual([]);
     // Outside the code, still a name.
     expect(toolsNamed("```\nls\n```\nThen I run it with `run_code`.", own, "")).toEqual(["run_code"]);
+    // A file, the person's own code in inline code, or an address's path with no host.
+    const mine = ["send_email", "create_issue", "request_secret"];
+    expect(toolsNamed("Rode o send_email.py de novo e veja o log.", mine, "")).toEqual([]);
+    expect(toolsNamed("Na sua função `client.send_email(to)`, o send_email recebe o destinatário.", mine, "")).toEqual(
+      [],
+    );
+    expect(toolsNamed("O endpoint /api/create_issue respondeu 500, e /v2/send_email/ também.", mine, "")).toEqual([]);
+    expect(toolsNamed("Use request_secret to send me the password.", mine, "")).toEqual(["request_secret"]);
+    expect(toolsNamed("Chamei `request_secret()` e `create_issue`.", mine, "")).toEqual([
+      "create_issue",
+      "request_secret",
+    ]);
   });
 
   const turn = (over: Partial<TurnEnd> = {}): TurnEnd => ({
@@ -999,21 +1013,188 @@ describe("a reply that names its own tools to a person", () => {
     expect(steps.filter((s) => s.data.nudged === "tool_names").length).toBe(1);
   });
 
-  test("held, it is never posted later as the closing line of a turn that writes nothing", async () => {
+  const NAMED = "Me envie a senha do painel por `request_secret`.";
+  const bodiesOf = async (fx: Fixture) => (await agentMessages(fx)).map((m) => m.body);
+  const runRow = async (fx: Fixture) => (await fx.db.select().from(schema.agentRuns))[0];
+  /** The secure way asked by a judge that reads a secret asked in the chat (`secret`), anything else as done. */
+  const secretJudge = (asksInChat: string) => (kind: string, _id: string, state: Record<string, unknown>) =>
+    kind === "follow_through" ? (String(state.reply).includes(asksInChat) ? "secret" : "done") : undefined;
+
+  test("held for its wording, it is the answer when its rewrite only calls a tool and writes nothing", async () => {
     f = await setup({
       toolSources: [secrets],
       reply: (_request, call): FakeReply =>
         call === 1
-          ? { chunks: ["Me envie a senha do painel por `request_secret`."] }
+          ? { chunks: [NAMED] }
           : call === 2
             ? { chunks: [], toolUses: [{ name: "request_secret", input: {} }] }
             : { chunks: [] },
     });
     await ask(f, "@dev entra no painel da Northwind");
     await drainOutbox(f.db, f.handlers);
-    const bodies = (await agentMessages(f)).map((m) => m.body);
-    expect(bodies).toHaveLength(1);
-    expect(bodies[0]).not.toContain("request_secret");
+    expect(await bodiesOf(f)).toEqual([NAMED]);
+    expect((await runRow(f))?.transcript).not.toHaveProperty("heldWording");
+  });
+
+  test("held for its wording, it is the answer when its rewrite is empty: no nudge to answer on top", async () => {
+    f = await setup({ toolSources: [secrets], reply: (_request, call) => ({ chunks: call === 1 ? [NAMED] : [] }) });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, f.handlers);
+    expect(f.provider.calls.length).toBe(2);
+    expect(await bodiesOf(f)).toEqual([NAMED]);
+  });
+
+  test("held for its wording, it is the answer when its rewrite passes", async () => {
+    f = await setup({
+      toolSources: [secrets, createPassToolSource()],
+      reply: (_request, call): FakeReply =>
+        call === 1
+          ? { chunks: [NAMED] }
+          : { chunks: [], toolUses: [{ name: "pass", input: { reason: "já respondi" } }] },
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    // Brought in by the router: it may stay quiet.
+    await f.db.update(schema.agentRuns).set({ trigger: "router" });
+    await drainOutbox(f.db, f.handlers);
+    expect(f.provider.calls.length).toBe(2);
+    expect(await bodiesOf(f)).toEqual([NAMED]);
+  });
+
+  test("held for its wording, it goes out before the step limit's line when the rewrite runs out of steps", async () => {
+    f = await setup({
+      toolSources: [secrets],
+      reply: (_request, call): FakeReply =>
+        call === 1 ? { chunks: [NAMED] } : { chunks: [], toolUses: [{ name: "request_secret", input: {} }] },
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, createJobHandlers({ ...f.jobDeps, maxToolTurns: 3 }));
+    const messages = await agentMessages(f);
+    expect(messages.map((m) => m.body)).toEqual([NAMED, "I ran out of steps before finishing."]);
+    expect(messages[1]?.meta.stepLimit).toBeDefined();
+  });
+
+  test("held for its wording, it is part of what a run stopped during its rewrite wrote", async () => {
+    f = await setup({
+      toolSources: [secrets],
+      reply: (_request, call) => {
+        if (call === 2) {
+          const stopped = f.db
+            .select()
+            .from(schema.agentRuns)
+            .then(([run]) => run && cancelRun({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, run.id));
+          return { chunks: ["Vou te mandar ", "um campo seguro."], hold: stopped };
+        }
+        return { chunks: [NAMED] };
+      },
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, f.handlers);
+    expect((await runRow(f))?.status).toBe("canceled");
+    const stopped = (await agentMessages(f)).filter((m) => m.meta.canceled);
+    expect(stopped).toHaveLength(1);
+    expect(stopped[0]?.body).toStartWith(NAMED);
+    expect((stopped[0]?.meta.canceled as { text?: string } | undefined)?.text).toStartWith(NAMED);
+  });
+
+  test("held for its wording, it goes out before the run parks on an outage, and the rewrite reads that it did", async () => {
+    f = await setup({
+      toolSources: [secrets],
+      reply: (_request, call) => (call === 1 ? { chunks: [NAMED] } : new ProviderError("overloaded", true, 529)),
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    for (let i = 0; i < 5; i++) {
+      await drainOutbox(f.db, f.handlers);
+      await f.db
+        .update(schema.outbox)
+        .set({ nextAttemptAt: new Date(0) })
+        .where(and(eq(schema.outbox.kind, "agent_run.execute"), eq(schema.outbox.status, "pending")));
+    }
+    const run = await runRow(f);
+    expect(run?.status).toBe("waiting_input");
+    expect((await bodiesOf(f)).filter((b) => b === NAMED)).toHaveLength(1);
+    const t = run?.transcript as { heldWording?: string; messages: { role: string; content: unknown }[] };
+    expect(t.heldWording).toBeUndefined();
+    expect(JSON.stringify(t.messages.at(-1)?.content)).toContain(HELD_WORDING_POSTED);
+  });
+
+  test("a card is its next step: a reply held for its wording no longer stands in for an answer", async () => {
+    f = await setup({
+      askUser: true,
+      toolSources: [secrets],
+      reply: (_request, call): FakeReply =>
+        call === 1
+          ? { chunks: [NAMED] }
+          : {
+              chunks: [],
+              toolUses: [
+                {
+                  name: "ask_user",
+                  input: {
+                    why: "I need a person's answer before I go on: only they know which account to use.",
+                    question: "Qual conta do painel?",
+                    choices: ["financeiro", "vendas"],
+                  },
+                },
+              ],
+            },
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, f.handlers);
+    const run = await runRow(f);
+    expect(run?.status).toBe("waiting_input");
+    expect(run?.transcript).not.toHaveProperty("heldWording");
+    expect(await bodiesOf(f)).not.toContain(NAMED);
+  });
+
+  test("a reply held as a secret asked in the chat is never posted, even when the rewrite writes nothing", async () => {
+    const inChat = "Cole aqui a senha do painel, ou use `request_secret`.";
+    f = await setup({
+      judge: secretJudge("Cole aqui"),
+      toolSources: [secrets],
+      reply: (_request, call): FakeReply =>
+        call === 1
+          ? { chunks: [inChat] }
+          : call === 2
+            ? { chunks: [], toolUses: [{ name: "request_secret", input: {} }] }
+            : { chunks: [] },
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, f.handlers);
+    expect((await bodiesOf(f)).join("\n")).not.toContain("Cole aqui");
+    expect((await f.db.select().from(schema.agentRunSteps)).filter((s) => s.data.nudged === "secret")).toHaveLength(1);
+  });
+
+  test("a secret asked in the chat that also names a tool is held as a secret, never as wording a failure would post", async () => {
+    const inChat = "Cole aqui a senha do painel, ou use `request_secret`.";
+    f = await setup({
+      judge: secretJudge("Cole aqui"),
+      toolSources: [secrets],
+      reply: (_request, call) => (call === 1 ? { chunks: [inChat] } : new ProviderError("overloaded", false, 529)),
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, f.handlers);
+    expect((await bodiesOf(f)).join("\n")).not.toContain("Cole aqui");
+    const steps = await f.db.select().from(schema.agentRunSteps);
+    expect(steps.filter((s) => s.data.nudged === "secret")).toHaveLength(1);
+    expect(steps.filter((s) => s.data.nudged === "tool_names")).toEqual([]);
+  });
+
+  test("held for its wording, then its rewrite held as a secret, then a failure: only the first reply is posted", async () => {
+    const inChat = "Cole aqui a senha do painel.";
+    f = await setup({
+      judge: secretJudge("Cole aqui"),
+      toolSources: [secrets],
+      reply: (_request, call) =>
+        call === 1
+          ? { chunks: [NAMED] }
+          : call === 2
+            ? { chunks: [inChat] }
+            : new ProviderError("overloaded", false, 529),
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, f.handlers);
+    expect(f.provider.calls.length).toBe(3);
+    expect(await bodiesOf(f)).toEqual([NAMED]);
   });
 
   test("its rewrite failing, the held reply is still the answer: posted, never lost", async () => {
