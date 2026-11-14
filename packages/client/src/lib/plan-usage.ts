@@ -49,7 +49,10 @@ export interface MeterSegment {
 
 const WINDOW_NAMES = ["five_hour", "seven_day", "seven_day_opus", "seven_day_sonnet", "monthly"] as const;
 /** `other` windows the runner labels in English (apps/server/runner/plan-usage.ts); any other label shows as is. */
-const LABEL_NAMES: Record<string, string> = { "Extra usage": "extraUsage", "OAuth apps": "oauthApps" };
+const LABEL_NAMES: Record<string, "extraUsage" | "oauthApps" | undefined> = {
+  "Extra usage": "extraUsage",
+  "OAuth apps": "oauthApps",
+};
 
 /** When a window resets, in the viewer's time zone: the time today, the weekday this week, else the date. */
 function resetWhen(locale: string, iso: string, now: Date): { day: string | null; time: string } {
