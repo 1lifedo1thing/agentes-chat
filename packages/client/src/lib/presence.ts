@@ -4,6 +4,7 @@ import type {
   AgentStatus,
   AgentStatusKind,
   AgentStatusLine,
+  AiStatus,
   Availability,
   MemberPresence,
   MemberStatus,
@@ -203,6 +204,32 @@ export function agentPresenceShown(status: AgentStatus | undefined, hasAi: boole
   if (!hasAi && !atWork) return "offline";
   if (status?.work?.state === "you") return "waiting";
   return atWork ? "working" : "online";
+}
+
+/**
+ * An agent's face and whether it has no AI, from the shared lists: the one rule every row that draws the face and
+ * every list that groups by it follow. `ai` is its state in `…/ai-status`; `working`, a run of its this app hears.
+ */
+export function agentFaceOf(
+  status: AgentStatus | undefined,
+  ai: AiStatus["agents"][number]["state"] | null | undefined,
+  working = false,
+): { presence: AgentFace; noAi: boolean } {
+  // At work it has an AI, whatever the AIs' list reads for this person (the right hand's is each person's own).
+  const noAi = ai === "no_ai" && !working && status?.working !== true;
+  return { presence: agentPresenceShown(status, !noAi, working), noAi };
+}
+
+/** Off for now: out of office, held, or with no AI. A members list puts it under Offline with the people there. */
+export const isAgentOff = (face: AgentFace) => face === "out" || face === "offline";
+
+/**
+ * Why an agent's face says what it says (`presence.agentWhy.*`): no AI, out of office, held; null for its work (the
+ * work's own words say it, `workDetail`) and while it is free (ADR 0084 addendum of 2026-11-13).
+ */
+export function agentWhyKey(face: AgentFace, noAi: boolean): "out" | "offline" | "noAi" | null {
+  if (noAi) return "noAi";
+  return isAgentOff(face) ? face : null;
 }
 
 /** An agent's face in a word: "Disponível", "Trabalhando", "Esperando você", "Fora do escritório", "Offline". */

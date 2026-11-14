@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import type { MemberPresence, OrgRole } from "../src/api/types";
-import { memberGroups } from "../src/lib/member-groups";
+import type { AgentStatus, MemberPresence, OrgRole } from "../src/api/types";
+import { memberGroups, sheetGroups } from "../src/lib/member-groups";
+import { agentFaceOf, agentWhyKey, isAgentOff } from "../src/lib/presence";
 
 const role = (id: string, position: number, hoist = true): OrgRole => ({
   id,
@@ -89,5 +90,89 @@ describe("memberGroups", () => {
     const groups = group({ agents: [], roles: [role("quiet", 0, false), { ...everyone, hoist: true }] });
     expect(groups.map((g) => g.key)).toEqual(["owner", "online", "offline"]);
     expect(ids(groups[1] as (typeof groups)[number])).toEqual(["bia", "caio", "walter"]);
+  });
+});
+
+describe("an agent off for now", () => {
+  test("sits under Offline with the people there, by name, and leaves Agentes", () => {
+    const groups = group({ agentOff: (id) => id === "rui" || id === "ada" });
+    expect(groups.map((g) => [g.key, ids(g)])).toEqual([
+      ["owner", ["heitor"]],
+      ["role:admin", ["caio", "walter"]],
+      ["agents", ["theo"]],
+      ["online", ["bia"]],
+      ["offline", ["ada", "davi", "ivo", "lara", "rui"]],
+    ]);
+  });
+
+  test("every agent off: no Agentes group", () => {
+    expect(group({ agentOff: () => true }).map((g) => g.key)).toEqual(["owner", "role:admin", "online", "offline"]);
+  });
+
+  test("off is out of office or offline (held, or no AI); at work, waiting on you or free is not", () => {
+    expect(isAgentOff("out")).toBe(true);
+    expect(isAgentOff("offline")).toBe(true);
+    for (const face of ["working", "waiting", "online"] as const) expect(isAgentOff(face)).toBe(false);
+  });
+
+  const status = (presence: AgentStatus["presence"], working?: boolean): AgentStatus => ({
+    agentId: "ada",
+    presence,
+    status: null,
+    activeAt: null,
+    ...(working === undefined ? {} : { working }),
+  });
+  const off = (...args: Parameters<typeof agentFaceOf>) => isAgentOff(agentFaceOf(...args).presence);
+
+  test("one rule for the row's face and the list's group: a run in progress is never off", () => {
+    // Out of office, paused or with no AI, idle: off.
+    expect(off(status("out"), "ready")).toBe(true);
+    expect(off(status("offline"), "ready")).toBe(true);
+    expect(off(status("online"), "no_ai")).toBe(true);
+    expect(agentFaceOf(status("online"), "no_ai")).toEqual({ presence: "offline", noAi: true });
+    // A run this app hears, or one the server says thinks: at work, whatever its plan or AI reads.
+    expect(off(status("out"), "ready", true)).toBe(false);
+    expect(off(status("online"), "no_ai", true)).toBe(false);
+    expect(off(status("online", true), "no_ai")).toBe(false);
+    expect(agentFaceOf(status("out"), "ready", true)).toEqual({ presence: "working", noAi: false });
+    // Its computer away is not "no AI".
+    expect(off(status("online"), "waiting")).toBe(false);
+    expect(off(undefined, undefined)).toBe(false);
+  });
+
+  test("why its face says what it says: no AI, out of office, held; nothing for its work or while free", () => {
+    expect(agentWhyKey("working", false)).toBeNull();
+    expect(agentWhyKey("waiting", false)).toBeNull();
+    expect(agentWhyKey("online", false)).toBeNull();
+    expect(agentWhyKey("out", false)).toBe("out");
+    expect(agentWhyKey("offline", false)).toBe("offline");
+    expect(agentWhyKey("offline", true)).toBe("noAi");
+  });
+});
+
+describe("the phone's members sheet", () => {
+  const w = (name: string, kind: "person" | "agent") => ({ name, kind });
+  const all = [w("Theo", "agent"), w("Rui", "agent"), w("Lara", "person"), w("Ada", "agent"), w("Bia", "person")];
+  const offNames = new Set(["Rui", "Lara", "Ada"]);
+  const off = (x: { name: string }) => offNames.has(x.name);
+  const names = (rows: { name: string }[]) => rows.map((r) => r.name);
+
+  test("agents and people here, then everyone off by name; counts leave the off ones out", () => {
+    const groups = sheetGroups(all, all, off);
+    expect(groups.map((g) => [g.key, g.count, names(g.rows)])).toEqual([
+      ["agents", 1, ["Theo"]],
+      ["people", 1, ["Bia"]],
+      ["offline", 3, ["Ada", "Lara", "Rui"]],
+    ]);
+  });
+
+  test("a search filters all three groups and keeps the counts", () => {
+    const found = all.filter((x) => x.name.includes("a"));
+    const groups = sheetGroups(all, found, off);
+    expect(groups.map((g) => [g.key, g.count, names(g.rows)])).toEqual([
+      ["agents", 1, []],
+      ["people", 1, ["Bia"]],
+      ["offline", 3, ["Ada", "Lara"]],
+    ]);
   });
 });

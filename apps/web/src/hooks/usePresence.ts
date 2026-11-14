@@ -10,7 +10,7 @@ import type {
 } from "@agenteschat/client";
 import { agentStateIn, agentWorkingIn, keys, useApi } from "@agenteschat/client";
 import { agentWork } from "@agenteschat/client/lib/agent-work";
-import { type AgentFace, agentPresenceShown, agentStatusText } from "@agenteschat/client/lib/presence";
+import { type AgentFace, agentFaceOf, agentStatusText, isAgentOff } from "@agenteschat/client/lib/presence";
 import { useQuery } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import { useCallback, useMemo } from "react";
@@ -118,11 +118,9 @@ export function useAgentPresence(agentId: string | null | undefined): AgentShown
     agentId && agentStateIn(s, agentId) !== "idle" ? agentWorkingIn(s, agentId) : null,
   );
   if (!on || status === undefined) return null;
-  const working = workingIn !== null;
-  // At work it has an AI, whatever the AIs' list reads for this person (the right hand's is each person's own).
-  const noAi = ai === "no_ai" && !working && status?.working !== true;
+  const { presence, noAi } = agentFaceOf(status ?? undefined, ai, workingIn !== null);
   return {
-    presence: agentPresenceShown(status ?? undefined, !noAi, working),
+    presence,
     line: noAi ? null : live(status?.status),
     work: agentWork(status, workingIn ? { channelId: workingIn } : null),
     activeAt: status?.activeAt ?? null,
@@ -150,6 +148,36 @@ export function useAgentsWorking(): ReadonlySet<string> {
       select: workingIdsOf,
     }).data ?? "";
   return useMemo(() => new Set(key ? key.split(",") : []), [key]);
+}
+
+const statusesById = (list: AgentStatus[]) => new Map(list.map((s) => [s.agentId, s]));
+const aisById = (status: AiStatus) => new Map(status.agents.map((a) => [a.agentId, a.state]));
+
+/**
+ * Whether an agent is off now (`isAgentOff`: out of office, held, or no AI) by the rule its face is drawn by
+ * (`agentFaceOf`), so a list that groups by it never disagrees with its row. `working`: a run of its this tab hears.
+ * Nobody is off while the list loads.
+ */
+export function useAgentOff(): (agentId: string, working: boolean) => boolean {
+  const { org } = useOrg();
+  const api = useApi();
+  const on = org.id.length > 0;
+  const statuses = useQuery({
+    queryKey: keys.agentStatus(org.id),
+    queryFn: () => api.agents.statuses(org.id),
+    staleTime: 15_000,
+    enabled: on,
+    select: statusesById,
+  }).data;
+  const ais = useQuery({
+    queryKey: keys.aiStatus(org.id),
+    queryFn: () => api.agents.aiStatus(org.id),
+    staleTime: 30_000,
+    enabled: on,
+    select: aisById,
+  }).data;
+  return (agentId, working) =>
+    statuses !== undefined && isAgentOff(agentFaceOf(statuses.get(agentId), ais?.get(agentId), working).presence);
 }
 
 const linesOf = (list: AgentStatus[]) => new Map(list.map((s) => [s.agentId, live(s.status)]));
