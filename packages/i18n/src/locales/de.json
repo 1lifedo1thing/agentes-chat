@@ -391,6 +391,12 @@
       "short": "sprechen",
       "say": "spricht mit den Agenten"
     },
+    "view_all_agents": {
+      "title": "Alle Agenten sehen",
+      "desc": "Im Team und in der Seitenleiste. Ohne das nur die, die der Person antworten.",
+      "short": "alle Agenten sehen",
+      "say": "sieht alle Agenten"
+    },
     "assign_work": {
       "title": "Agenten Missionen geben",
       "desc": "Längere Arbeit anfragen, die von selbst weiterläuft.",

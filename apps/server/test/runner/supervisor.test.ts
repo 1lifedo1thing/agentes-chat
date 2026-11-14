@@ -4311,14 +4311,15 @@ test.if(posix)("a turn dropped on purpose ends now: its CLI isn't taken for cras
   ana.hello();
   const stop = answersAsWorker(ana, "/home/ag-a1b2c3d4/ana-a1b2c3d4");
   await waitFor(() => h.brains.brains.hosts("run-00000001"));
-  await waitFor(() => existsSync(h.log));
+  // The log exists from the CLI's open, before its line is written: a drop then kills it with the line unwritten.
+  await waitFor(() => existsSync(h.log) && readFileSync(h.log, "utf8").endsWith("\n"));
   h.brains.dropTurns(new RunnerError("dropped", "Not this agent."), BIA.id);
   expect(h.brains.brains.hosts("run-00000001")).toBe(true);
   h.brains.dropTurns(new RunnerError("dropped", "This computer was paused."));
   expect(await errorCode(() => run)).toBe("dropped");
   await sleep(100);
   stop();
-  // The fake CLI may still be writing its last line when the turn ends: read the log once every line is whole.
+  // A CLI started again may still be writing its line: read the log once every line is whole.
   await waitFor(() => readFileSync(h.log, "utf8").endsWith("\n"));
   const started = readFileSync(h.log, "utf8")
     .trim()
