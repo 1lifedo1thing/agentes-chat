@@ -873,6 +873,34 @@ describe("People › Convites", () => {
     ]);
   });
 
+  test("Editar convite while the cargos load: taking out a channel sends that alone, the agents stay", async () => {
+    const state = withSupport();
+    state.invitations.push(
+      invitation({ id: "inv-sup", email: "sup@example.com", channelIds: [SUPORTE_CH], agentIds: [MAX_ID] }),
+    );
+    const api = createFakeApi(state);
+    const roles = hold(api.roles.list);
+    api.roles.list = roles.run;
+    await members(state, "invites", api);
+    await openFrom(
+      within(screen().getByRole("group", { name: "Convite para sup@example.com" })).getByRole("button", {
+        name: "Mais ações para sup@example.com",
+      }),
+    );
+    await click(screen().getByRole("menuitem", { name: "Editar" }));
+    await settle(4);
+    const edit = screen().getByRole("dialog", { name: "Convite de sup@example.com" });
+    await click(within(edit).getByRole("button", { name: "Remover #suporte" }));
+    await click(within(edit).getByRole("button", { name: "Salvar" }));
+    await settle(6);
+    expect(state.calls.find((c) => c.method === "orgs.updateInvitation")?.args).toEqual([
+      ORG_ID,
+      "inv-sup",
+      { channelIds: [] },
+    ]);
+    await roles.release();
+  });
+
   test("past 8 rows: a search by e-mail or cargo and the kind of row; nothing open says so with a way to invite", async () => {
     const state = withSupport();
     for (let i = 0; i < 9; i++) state.invitations.push(invitation({ id: `inv-${i}`, email: `pessoa${i}@example.com` }));

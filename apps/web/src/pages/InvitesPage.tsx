@@ -293,8 +293,9 @@ function WaitingRequests({
   const full = membersFull(useWorkspaceLimits(org.id).data) !== null;
   const cargos = useRoles(org.id);
   const orgRoles = cargos.data?.roles ?? [];
-  // A request starts on the link's cargos the approver may give: until those load it would read as none.
-  const cargosLoaded = cargos.isSuccess;
+  // A request starts on the link's cargos the approver may give: until those load it would read as none. A failed
+  // refetch keeps the cargos already loaded (and marks the query failed), so it's their presence that counts.
+  const cargosLoaded = cargos.data !== undefined;
   const [roles, setRoles] = useState<Record<string, string[]>>({});
   const [denying, setDenying] = useState<JoinRequest | null>(null);
   const [reason, setReason] = useState("");
