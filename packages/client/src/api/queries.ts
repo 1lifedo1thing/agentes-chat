@@ -4786,10 +4786,12 @@ export function useSkillAction(orgId: string, { silent = false } = {}) {
       action:
         | {
             type: "import";
-            input: { url: string; list?: boolean; forAgentId?: string } | { zipBase64: string };
+            input: ({ url: string; list?: boolean; forAgentId?: string } | { zipBase64: string }) & {
+              personal?: boolean;
+            };
             upload?: UploadOptions;
           }
-        | { type: "importPicked"; url: string; paths: string[]; forAgentId?: string }
+        | { type: "importPicked"; url: string; paths: string[]; forAgentId?: string; personal?: boolean }
         | { type: "create"; input: SkillInput }
         | { type: "update"; id: string; patch: SkillPatch }
         | { type: "reimport"; id: string }
@@ -4804,7 +4806,7 @@ export function useSkillAction(orgId: string, { silent = false } = {}) {
         case "import":
           return api.skills.import(orgId, action.input, action.upload);
         case "importPicked":
-          return api.skills.importPicked(orgId, action.url, action.paths, action.forAgentId);
+          return api.skills.importPicked(orgId, action.url, action.paths, action.forAgentId, action.personal);
         case "create":
           return api.skills.create(orgId, action.input);
         case "update":

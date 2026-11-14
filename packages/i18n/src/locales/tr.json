@@ -9964,6 +9964,15 @@
     "agentsImprove": "Ajanlar becerileri kendileri geliştirir",
     "agentsImproveHelp": "Bir ajan bir becerinin yanlış olduğunu ya da bir adımının eksik olduğunu görünce hemen düzeltir: geri alabileceğiniz yeni bir sürüm olur ve beceriyi oluşturan kişiye haber verilir.",
     "agentsImproveThis": "Ajanlar bu beceriyi kendileri geliştirir",
+    "personal": {
+      "note": "Bu becerileri yalnızca sen görürsün. Ajanların onları sen istediğinde kullanır.",
+      "emptyTitle": "Kendi becerilerini sakla",
+      "emptyText": "Yalnızca sen görürsün ve ajanların onları sen istediğinde kullanır.",
+      "others": "Başkalarının kişisel becerileri",
+      "of": "{{name}} kişisel",
+      "forWhom": "Kimin için",
+      "teamLocked": "Ekip becerilerini yalnızca ajanları yönetenler ekler."
+    },
     "agentChange": "{{agent}} {{when}} değiştirdi",
     "undoAgentChange": "Değişikliği geri al",
     "undo": "Geri al",

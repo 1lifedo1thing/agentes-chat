@@ -10345,6 +10345,16 @@ export const en = {
     agentsImproveHelp:
       "When an agent finds a skill wrong or missing a step, it fixes it right away: a new version you can undo, and whoever made the skill is told.",
     agentsImproveThis: "Agents improve this skill by themselves",
+    /** Skills split as the Vault does (ADR 0144): the team's and each person's. */
+    personal: {
+      note: "Only you see these skills. Your agents use them when you ask.",
+      emptyTitle: "Keep your own skills",
+      emptyText: "Only you see them, and your agents use them when you ask.",
+      others: "Others' personal skills",
+      of: "{{name}}'s personal",
+      forWhom: "Who it's for",
+      teamLocked: "Only people who manage agents add team skills.",
+    },
     agentChange: "{{agent}} changed it {{when}}",
     undoAgentChange: "Undo change",
     undo: "Undo",

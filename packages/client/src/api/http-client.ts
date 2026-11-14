@@ -1415,10 +1415,10 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
           signal: upload?.signal,
           onUploadProgress: upload?.onProgress,
         }),
-      importPicked: async (orgId, url, paths, forAgentId) =>
+      importPicked: async (orgId, url, paths, forAgentId, personal) =>
         (
           await request<{ skills: SkillDetail[] }>(`${org(orgId)}/skills/import`, {
-            json: { url, paths, ...(forAgentId ? { forAgentId } : {}) },
+            json: { url, paths, ...(forAgentId ? { forAgentId } : {}), ...(personal ? { personal } : {}) },
           })
         ).skills,
       update: (orgId, id, patch) =>

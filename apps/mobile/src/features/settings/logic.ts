@@ -94,13 +94,8 @@ export const SETTINGS_SECTIONS: readonly SettingsEntry[] = [
   // they see, in tokens and percentages; money only for who has `view_usage`. It leads to the AI accounts screen.
   { id: "usage", group: "ai", icon: "chart", href: "/usage", allowed: () => true },
   { id: "connectors", group: "connectors", icon: "join", href: "/connectors", allowed: () => true },
-  {
-    id: "skills",
-    group: "connectors",
-    icon: "sparkle",
-    href: "/settings/skills",
-    allowed: (o) => can(o, "manage_agents"),
-  },
+  // Every member keeps skills of their own there, as on the web; the team's library is changed by who manages agents.
+  { id: "skills", group: "connectors", icon: "sparkle", href: "/settings/skills", allowed: (o) => can(o, "read") },
   // The Vault (ADR 0144): every member keeps their own logins and keys there and sees the team's shared with them.
   { id: "vault", group: "connectors", icon: "key", href: "/settings/vault", allowed: (o) => can(o, "read") },
   {

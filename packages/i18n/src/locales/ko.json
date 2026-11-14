@@ -9612,6 +9612,15 @@
     "agentsImprove": "에이전트가 스킬을 스스로 개선해요",
     "agentsImproveHelp": "에이전트가 스킬이 틀렸거나 단계가 빠진 걸 발견하면 바로 고쳐요. 새 버전은 실행 취소할 수 있고, 스킬을 만든 사람에게 알려요.",
     "agentsImproveThis": "에이전트가 이 스킬을 스스로 개선해요",
+    "personal": {
+      "note": "이 스킬은 나만 볼 수 있어요. 에이전트는 내가 요청할 때 사용해요.",
+      "emptyTitle": "나만의 스킬을 보관하세요",
+      "emptyText": "나만 볼 수 있고, 에이전트는 내가 요청할 때 사용해요.",
+      "others": "다른 사람의 개인 스킬",
+      "of": "{{name}}의 개인 스킬",
+      "forWhom": "대상",
+      "teamLocked": "팀 스킬은 에이전트를 관리하는 사람만 추가할 수 있어요."
+    },
     "agentChange": "{{agent}}이(가) {{when}} 변경함",
     "undoAgentChange": "변경 실행 취소",
     "undo": "실행 취소",

@@ -64,7 +64,7 @@ describe("the list", () => {
     if (state.me?.organizations[0]) state.me.organizations[0].role = "member";
     await go("settings/connectors", state);
     expect(rows()).toEqual(["Sua conta", "Pessoas", "IA e uso", "Conectores", "Dispositivos"]);
-    expect(tabs()).toEqual(["Conectores e MCPs", "Cofre"]);
+    expect(tabs()).toEqual(["Conectores e MCPs", "Skills", "Cofre"]);
   });
 
   test("the tile grid is gone from Geral", async () => {

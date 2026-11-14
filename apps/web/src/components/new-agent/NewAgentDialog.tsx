@@ -17,6 +17,7 @@ import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { addsAgentsTo, can } from "@agenteschat/client/lib/permissions";
 import { connectorName, scopeText } from "@agenteschat/client/lib/scopes";
+import { skillsToGive } from "@agenteschat/client/lib/skills";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import {
   type AgentAppearance,
@@ -476,7 +477,7 @@ function NewAgentDialog({
 
   // Its skills: what its starting point suggests that the library has, and the ones on for new agents; hidden where
   // the library is empty or this server has none.
-  const lib = library.data ?? [];
+  const lib = skillsToGive(library.data ?? [], me.user.id);
   const skillsShown = library.isSuccess && lib.length > 0;
   const suggestedSkills = (pick: Pick) => {
     const titles = (SKILL_SUGGESTIONS[pick] ?? []).flatMap((k) => [k, norm(tt(`teamTemplates.skills.${k}.name`))]);
