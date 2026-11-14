@@ -44,6 +44,7 @@ import {
   useAiStatus,
   useApproval,
   useApprovals,
+  useCachedMessages,
   useCardApprovals,
   useChannelCategories,
   useChannelMembers,
@@ -4243,7 +4244,6 @@ export const TimelineMessage = memo(function TimelineMessage({
 }) {
   const { t, i18n } = useTranslation();
   const { org, me } = useOrg();
-  const qc = useQueryClient();
   const dismissRun = useDismissRun();
   const liveFailed = live?.status === "failed";
   const failedWhy = liveFailed ? runErrorText(t, live?.errorCode, live?.errorParams) : null;
@@ -4275,25 +4275,22 @@ export const TimelineMessage = memo(function TimelineMessage({
   // it answers on demand (that report's own line folds into this message).
   const routine = routineReplyOf(m);
   const [reportOpen, setReportOpen] = useState(false);
-  const report = routine?.noticeId
-    ? routineReportText(
-        [
-          ...(qc.getQueryData<MessageType[]>(keys.messages(org.id, m.channelId)) ?? []),
-          ...((m.threadId && qc.getQueryData<MessageType[]>(keys.thread(org.id, m.channelId, m.threadId))) || []),
-        ],
-        routine.noticeId,
-      )
-    : null;
+  // The other messages it shows a piece of: its routine's report, and the messages its run read (`steerNote`).
+  const shownIds = useMemo(
+    () => [
+      ...(routine?.noticeId ? [routine.noticeId] : []),
+      ...[...(live?.work ?? []), ...(seenLive?.work ?? [])].flatMap((w) => (w.kind === "steer" ? [w.messageId] : [])),
+    ],
+    [routine?.noticeId, live?.work, seenLive?.work],
+  );
+  const shown = useCachedMessages(org.id, m.channelId, m.threadId, shownIds);
+  const report = routine?.noticeId ? routineReportText(shown, routine.noticeId) : null;
   // A short reply it gave while its task kept working (the talker): its message, "enquanto trabalha".
   const talker = m.author.type === "agent" && isTalkerReply(m.meta);
   const wikiLink = useWikiLinkRenderer();
   /** A message that went into this run's work, as the well inside it shows it. */
   const steerNote = (messageId: string): SteerNote | undefined => {
-    const lists = [
-      qc.getQueryData<MessageType[]>(keys.messages(org.id, m.channelId)),
-      m.threadId ? qc.getQueryData<MessageType[]>(keys.thread(org.id, m.channelId, m.threadId)) : undefined,
-    ];
-    const found = lists.flatMap((l) => l ?? []).find((x) => x.id === messageId);
+    const found = shown.find((x) => x.id === messageId);
     if (!found) return undefined;
     return {
       author: dir.authorName(found.author),

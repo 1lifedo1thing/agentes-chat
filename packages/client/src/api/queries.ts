@@ -1,8 +1,10 @@
 import {
+  hashKey,
   type InfiniteData,
   mutationOptions,
   notifyManager,
   type QueryCache,
+  type QueryCacheNotifyEvent,
   type QueryClient,
   queryOptions,
   useInfiniteQuery,
@@ -272,37 +274,44 @@ export function useMe() {
   const cache = useQueryClient().getQueryCache();
   const current = () => cache.get(ME_HASH);
   useSyncExternalStore(
-    useCallback((changed: () => void) => onMeReplaced(cache, changed), [cache]),
+    useCallback((changed: () => void) => onQueryEvent(cache, ME_HASH, ["added", "removed"], changed), [cache]),
     current,
     current,
   );
   return result;
 }
 
+type QueryEventType = QueryCacheNotifyEvent["type"];
+type QueryReader = { types: readonly QueryEventType[]; changed: () => void };
+
 /**
- * One cache listener for every reader of `me`: the cache calls each listener on each of its events (every observer a
- * row adds included), and a long conversation has hundreds of readers.
+ * One cache listener for every reader of one query (`useMe`, `useCachedMessages`): the cache calls each listener on
+ * each of its events (every observer a row adds included), and a long conversation has hundreds of readers.
  */
-const meReaders = new WeakMap<QueryCache, { readers: Set<() => void>; stop: () => void }>();
-function onMeReplaced(cache: QueryCache, changed: () => void) {
-  let entry = meReaders.get(cache);
+const queryReaders = new WeakMap<QueryCache, { byHash: Map<string, Set<QueryReader>>; stop: () => void }>();
+function onQueryEvent(cache: QueryCache, hash: string, types: readonly QueryEventType[], changed: () => void) {
+  let entry = queryReaders.get(cache);
   if (!entry) {
-    const readers = new Set<() => void>();
+    const byHash = new Map<string, Set<QueryReader>>();
     const stop = cache.subscribe((e) => {
-      if (e.query.queryHash === ME_HASH && (e.type === "added" || e.type === "removed")) for (const r of readers) r();
+      for (const r of byHash.get(e.query.queryHash) ?? []) if (r.types.includes(e.type)) r.changed();
     });
-    entry = { readers, stop };
-    meReaders.set(cache, entry);
+    entry = { byHash, stop };
+    queryReaders.set(cache, entry);
   }
-  const { readers, stop } = entry;
+  const { byHash, stop } = entry;
+  const readers = byHash.get(hash) ?? new Set<QueryReader>();
+  byHash.set(hash, readers);
   // After the render in course, never during it: the first reader to render makes the query, which says `added`.
-  const reader = notifyManager.batchCalls(changed);
+  const reader = { types, changed: notifyManager.batchCalls(changed) };
   readers.add(reader);
   return () => {
     readers.delete(reader);
     if (readers.size > 0) return;
+    if (byHash.get(hash) === readers) byHash.delete(hash);
+    if (byHash.size > 0) return;
     stop();
-    meReaders.delete(cache);
+    queryReaders.delete(cache);
   };
 }
 export const useAuthConfig = () => useQuery(authConfigQuery(useApi()));
@@ -1346,6 +1355,51 @@ export const useMessages = (orgId: string, channelId: string, enabled = true) =>
   const api = useApi();
   return useQuery({ ...messagesQuery(api, orgId, channelId), enabled });
 };
+
+const NO_MESSAGES: readonly Message[] = [];
+
+/**
+ * These messages as their conversation's cached lists hold them (its channel's latest page and, in a thread, the
+ * thread's), for a row that shows a piece of another message. The reader draws again when one of them arrives or
+ * changes, never for the rest of the list; with no ids it listens to nothing.
+ */
+export function useCachedMessages(
+  orgId: string,
+  channelId: string,
+  threadId: string | null | undefined,
+  ids: readonly string[],
+): readonly Message[] {
+  const cache = useQueryClient().getQueryCache();
+  const wanted = ids.join(" ");
+  const hashes = useMemo(
+    () => [
+      hashKey(keys.messages(orgId, channelId)),
+      ...(threadId ? [hashKey(keys.thread(orgId, channelId, threadId))] : []),
+    ],
+    [orgId, channelId, threadId],
+  );
+  const subscribe = useCallback(
+    (changed: () => void) => {
+      if (!wanted) return () => {};
+      const stops = hashes.map((h) => onQueryEvent(cache, h, ["added", "updated", "removed"], changed));
+      return () => {
+        for (const stop of stops) stop();
+      };
+    },
+    [cache, hashes, wanted],
+  );
+  const last = useRef(NO_MESSAGES);
+  const read = () => {
+    if (!wanted) return NO_MESSAGES;
+    const set = new Set(wanted.split(" "));
+    const found = hashes.flatMap((h) => (cache.get<Message[]>(h)?.state.data ?? []).filter((m) => set.has(m.id)));
+    const before = last.current;
+    if (found.length === before.length && found.every((m, i) => m === before[i])) return before;
+    last.current = found;
+    return found;
+  };
+  return useSyncExternalStore(subscribe, read, read);
+}
 
 /** Sidebar hover/focus: load a conversation before the click. */
 export function usePrefetchMessages(orgId: string) {
