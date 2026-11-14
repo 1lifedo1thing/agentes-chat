@@ -974,6 +974,18 @@
   "permissions.talk_to_agents.say": {
     "value": "talks to the agents"
   },
+  "permissions.view_all_agents.title": {
+    "value": "See all agents"
+  },
+  "permissions.view_all_agents.desc": {
+    "value": "On Team and in the sidebar. Without it, only the ones that answer them."
+  },
+  "permissions.view_all_agents.short": {
+    "value": "see all agents"
+  },
+  "permissions.view_all_agents.say": {
+    "value": "sees all agents"
+  },
   "permissions.assign_work.title": {
     "value": "Give agents missions"
   },
@@ -36156,7 +36168,10 @@
     "value": "This skill has {{files}} files, and the limit is {{max}}."
   },
   "errors.skill.repoTooLarge": {
-    "value": "The repository is too large to download (max {{max}} MB). Upload the skill's folder as a .zip instead."
+    "value": "The repository is too large to download (max {{max}} MB)."
+  },
+  "errors.skill.linkTooLarge": {
+    "value": "That link's folder has too many files to read. Paste the link of the skill's own folder."
   },
   "errors.skill.noFrontmatter": {
     "value": "The SKILL.md needs a block at the top with its name and description, between two --- lines."

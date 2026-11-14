@@ -404,6 +404,12 @@
       "short": "hablar",
       "say": "habla con los agentes"
     },
+    "view_all_agents": {
+      "title": "Ver todos los agentes",
+      "desc": "En Equipo y en la barra lateral. Sin esto, solo los que le responden a la persona.",
+      "short": "ver todos los agentes",
+      "say": "ve todos los agentes"
+    },
     "assign_work": {
       "title": "Dar misiones a los agentes",
       "desc": "Pedir trabajo largo que sigue solo.",
@@ -15148,7 +15154,8 @@
       "invalidDescription": "La descripción debe tener de 1 a {{max}} caracteres.",
       "tooLarge": "Esta habilidad tiene {{size}} MB de texto y scripts, y el límite es {{max}} MB.",
       "tooManyFiles": "Esta habilidad tiene {{files}} archivos, y el límite es {{max}}.",
-      "repoTooLarge": "El repositorio es demasiado grande para descargarlo (máx. {{max}} MB). Sube la carpeta de la habilidad en un .zip.",
+      "repoTooLarge": "El repositorio es demasiado grande para descargarlo (máx. {{max}} MB).",
+      "linkTooLarge": "La carpeta de ese enlace tiene demasiados archivos para leerla. Pega el enlace de la carpeta propia de la habilidad.",
       "noFrontmatter": "El SKILL.md necesita arriba un bloque con el nombre y la descripción, entre dos líneas ---.",
       "bodyTooLong": "El SKILL.md es demasiado largo (máx. {{max}} caracteres).",
       "noSkillMdZip": "No hay SKILL.md en la parte superior de la carpeta del zip.",

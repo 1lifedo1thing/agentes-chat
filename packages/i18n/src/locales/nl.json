@@ -391,6 +391,12 @@
       "short": "praten",
       "say": "praat met de agents"
     },
+    "view_all_agents": {
+      "title": "Alle agents zien",
+      "desc": "In Team en de zijbalk. Zonder dit alleen de agents die de persoon antwoorden.",
+      "short": "alle agents zien",
+      "say": "ziet alle agents"
+    },
     "assign_work": {
       "title": "Agents missies geven",
       "desc": "Vragen om lang werk dat vanzelf doorloopt.",
@@ -14782,7 +14788,8 @@
       "invalidDescription": "De beschrijving moet 1 tot {{max}} tekens hebben.",
       "tooLarge": "Deze skill heeft {{size}} MB aan tekst en scripts, en de limiet is {{max}} MB.",
       "tooManyFiles": "Deze skill heeft {{files}} bestanden, en de limiet is {{max}}.",
-      "repoTooLarge": "De repository is te groot om te downloaden (max. {{max}} MB). Upload de map van de skill als .zip.",
+      "repoTooLarge": "De repository is te groot om te downloaden (max. {{max}} MB).",
+      "linkTooLarge": "De map van die link heeft te veel bestanden om te lezen. Plak de link van de eigen map van de skill.",
       "noFrontmatter": "De SKILL.md heeft bovenaan een blok nodig met naam en beschrijving, tussen twee regels met ---.",
       "bodyTooLong": "De SKILL.md is te lang (max. {{max}} tekens).",
       "noSkillMdZip": "Geen SKILL.md bovenin de map van de zip.",

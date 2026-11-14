@@ -418,6 +418,12 @@ export const en = {
       short: "talk",
       say: "talks to the agents",
     },
+    view_all_agents: {
+      title: "See all agents",
+      desc: "On Team and in the sidebar. Without it, only the ones that answer them.",
+      short: "see all agents",
+      say: "sees all agents",
+    },
     assign_work: {
       title: "Give agents missions",
       desc: "Ask for long work that carries on by itself.",
@@ -14908,8 +14914,8 @@ export const en = {
       invalidDescription: "The description must have 1 to {{max}} characters.",
       tooLarge: "This skill has {{size}} MB of text and scripts, and the limit is {{max}} MB.",
       tooManyFiles: "This skill has {{files}} files, and the limit is {{max}}.",
-      repoTooLarge:
-        "The repository is too large to download (max {{max}} MB). Upload the skill's folder as a .zip instead.",
+      repoTooLarge: "The repository is too large to download (max {{max}} MB).",
+      linkTooLarge: "That link's folder has too many files to read. Paste the link of the skill's own folder.",
       noFrontmatter: "The SKILL.md needs a block at the top with its name and description, between two --- lines.",
       bodyTooLong: "The SKILL.md is too long (max {{max}} characters).",
       noSkillMdZip: "No SKILL.md at the top of the zip's folder.",
