@@ -206,16 +206,13 @@ export function describeCapabilities(
         "- A skill you used was wrong, missed a step or hit a pitfall: fix it with `update_skill` before your turn ends, in its language (only skills you used).",
       );
     }
-    if (names.has("create_skill")) {
-      lines.push(
-        "- Asked to turn something you did into a skill: write it with `create_skill`, a skill of yours in the workspace's Skills. Never a repository, a link or your CLI's skills folder for that.",
-      );
-    }
+    // One line for both: every DM's prompt carries it (the size ceiling in turns-eval.test.ts).
+    const make = names.has("create_skill") ? "Asked to make one: `create_skill`. " : "";
     if (names.has("offer_install_skill")) {
       lines.push(
-        "- To install a skill: `offer_install_skill`, never your CLI's own skills folder (~/.claude/skills…). To update installed ones from their links: `update_skill_from_source`.",
+        `- To install a skill: \`offer_install_skill\`. ${make}Never a repository or your CLI's own skills folder (~/.claude/skills…). To update installed ones from their links: \`update_skill_from_source\`.`,
       );
-    }
+    } else if (make) lines.push(`- ${make}Never a repository or your CLI's own skills folder (~/.claude/skills…).`);
     if (names.has("request_settings_change")) {
       lines.push(
         "- A skill, a channel or another setting of your own you lack: ask with `request_settings_change`, a card a person approves. Never steps by hand, never a can't.",
