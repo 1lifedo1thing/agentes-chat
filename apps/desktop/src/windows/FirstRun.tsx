@@ -186,7 +186,7 @@ export function FirstRun() {
         // No account left on the server the app runs: straight to Run here's form, which makes the new owner.
         const at = screenRef.current;
         if (mode !== "owner" || at === "link" || at === "pair" || settingUp.current) return;
-        setTrail(["choose", ownServerScreen(true)]);
+        setTrail(["choose"]);
         setScreen("here");
       })
       .catch(() => setAdding(false));

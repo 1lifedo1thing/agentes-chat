@@ -177,7 +177,7 @@ describe("Run agentes.chat on this Mac", () => {
         const [name, email] = [...el.querySelectorAll(".dk-fr__who input")];
         await act(async () => typeInto(name ?? null, "Carla Dias"));
         await act(async () => typeInto(email ?? null, "carla@example.com"));
-        await press("Start agentes.chat");
+        await press("Start");
         await until(() => sent.length > 0);
         expect(sent[0]).toMatchObject({ name: "Carla Dias", email: "carla@example.com" });
       },
