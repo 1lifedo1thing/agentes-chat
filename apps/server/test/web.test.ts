@@ -80,8 +80,12 @@ describe("web app serving", () => {
     for (const path of [
       "/org/abc/wiki/notes.md",
       "/org/abc/wiki/robots.txt",
+      "/org/abc/wiki/sitemap.xml",
       "/org/acme.example/c/def",
       "/invite/a.b.c",
+      "/invite/sitemap.xml",
+      "/robots.txt.bak",
+      "/my-sitemap.xml",
     ]) {
       const res = await app.request(path);
       expect(res.status).toBe(200);

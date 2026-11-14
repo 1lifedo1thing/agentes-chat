@@ -415,10 +415,21 @@ export function createApp(options: AppOptions) {
     // and `vite:preloadError` then load the new version. No CDN keeps the 404.
     app.get("/assets/*", (c) => c.text("Not found", 404, { "cache-control": "no-store" }));
     // Files crawlers and agents ask every site for: one this build doesn't ship is a 404, never index.html with a 200.
-    // Only these names at the root, since an address inside a workspace may end like a file (a wiki page's slug).
-    app.get("/:file{(?:robots|llms|llms-full|ads|app-ads|humans|security)\\.txt|sitemap(?:[_-]index)?\\.xml}", (c) =>
-      c.text("Not found", 404),
-    );
+    // Exact addresses at the root, never a pattern: an address inside a workspace may end like a file (a wiki page's
+    // slug), and the router tests a pattern against the rest of the path, not one segment.
+    const crawlerFiles = [
+      "/robots.txt",
+      "/llms.txt",
+      "/llms-full.txt",
+      "/ads.txt",
+      "/app-ads.txt",
+      "/humans.txt",
+      "/security.txt",
+      "/sitemap.xml",
+      "/sitemap_index.xml",
+      "/sitemap-index.xml",
+    ];
+    app.on("GET", crawlerFiles, (c) => c.text("Not found", 404));
     app.get("/*", (c, next) => (isApi(c.req.path) ? next() : spa(c, next)));
   }
 
