@@ -1,5 +1,5 @@
 import { useChannels, useRoles } from "@agenteschat/client";
-import type { InviteRefusal } from "@agenteschat/client/lib/invite-start";
+import type { InviteLists, RefusedPick } from "@agenteschat/client/lib/invite-start";
 import { can } from "@agenteschat/client/lib/permissions";
 import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { everyoneOf, sortRoles } from "@agenteschat/client/lib/roles";
@@ -23,7 +23,7 @@ export interface StartFields {
   /** The lines under the list: a person who won't talk to agents, an Administrador, restricted agents opening. */
   lines: string[];
   /** What goes out, past #general and the right hand (everyone joins and has them). */
-  send: { roleIds: string[]; channelIds: string[]; agentIds: string[] };
+  send: InviteLists;
 }
 
 /** The choices pushed over a form (`app/(app)/invite-pick.tsx`), writing to the form's draft. */
@@ -43,7 +43,7 @@ const more = (count: number) => `+${count}`;
 export function useStartFields(
   key: string,
   draft: InviteDraft | null,
-  opts: { refused?: InviteRefusal | null; readOnly?: boolean } = {},
+  opts: { refused?: RefusedPick | null; readOnly?: boolean } = {},
 ): StartFields {
   const { t } = useTranslation();
   const { orgId, org } = useOrg();
@@ -64,8 +64,8 @@ export function useStartFields(
   const picked = sortRoles(roles.filter((r) => d.roleIds.includes(r.id)));
   const refused = opts.refused ?? null;
   const open = (what: InvitePick) => (opts.readOnly ? undefined : () => openPick(key, what));
-  const roleLabel = personal ? t("invites.can") : t("members.role");
-  const channelLabel = personal ? t("shell.channelsPersonal") : t("members.dialog.where.label");
+  const roleLabel = personal ? t("invites.rolePersonal") : t("members.role");
+  const channelLabel = personal ? t("shell.channelsPersonal") : t("invites.channels");
   const agentLabel = t("members.agents");
   const shownChannels = start.channelIds.flatMap((id) => {
     const ch = channels.find((x) => x.id === id);
@@ -84,7 +84,7 @@ export function useStartFields(
       key="cargo"
       stacked
       label={roleLabel}
-      hint={{ name: t("common.about", { label: roleLabel }), text: t("invites.hint.roles") }}
+      hint={{ name: t("common.about", { label: roleLabel }), text: t("invites.roleHint") }}
       {...(open("cargo") ? { onPress: open("cargo") } : {})}
     >
       <View style={styles.cargos}>
@@ -114,7 +114,7 @@ export function useStartFields(
             key="channels"
             stacked
             label={channelLabel}
-            hint={{ name: t("common.about", { label: channelLabel }), text: t("invites.hint.channels") }}
+            hint={{ name: t("common.about", { label: channelLabel }), text: t("invites.channelsHint") }}
             {...(open("channels") ? { onPress: open("channels") } : {})}
           >
             <TokenWrap lines={2} more={more}>
@@ -137,7 +137,7 @@ export function useStartFields(
       key="agents"
       stacked
       label={agentLabel}
-      hint={{ name: t("common.about", { label: agentLabel }), text: t("invites.hint.agents") }}
+      hint={{ name: t("common.about", { label: agentLabel }), text: t("invites.agentsHint") }}
       {...(open("agents") && !talk.off ? { onPress: open("agents") } : {})}
     >
       <TokenWrap lines={2} more={more}>

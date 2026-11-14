@@ -286,8 +286,11 @@
       "install.scene.downloads",
       "devices.armBuild",
       "devices.iphone.xcodeFix.ok",
-      "invites.how.link",
-      "invites.tab.links"
+      "invites.byLink",
+      "invites.link",
+      "invites.types.links",
+      "invites.links",
+      "invites.linkLabel"
     ],
     "es": [
       "devices.iphone.path.general",
@@ -782,6 +785,7 @@
       "palette.agent",
       "palette.agentRole",
       "palette.page",
+      "palette.agents",
       "permissions.areas.agents",
       "permissions.areas.chat",
       "photo.label",
@@ -947,10 +951,15 @@
       "machines.oneClick.tools.opencode",
       "machines.oneClick.tools.grok",
       "machines.oneClick.tools.antigravity",
-      "invites.ttl.30m",
       "rolesPage.tabs.agents",
       "rolesPage.reach.agents",
-      "rolesPage.reach.baseAgents"
+      "rolesPage.reach.baseAgents",
+      "settings.section.invites",
+      "invites.channelsPersonal",
+      "invites.agents",
+      "invites.ttl.30m",
+      "invites.type",
+      "invites.typesCount"
     ],
     "de": [
       "devices.iphone.steps.account",
@@ -1388,10 +1397,13 @@
       "machines.oneClick.tools.grok",
       "machines.oneClick.tools.antigravity",
       "followUps.inTime",
-      "invites.how.link",
-      "invites.tab.links",
       "rolesPage.computer.short.browser",
-      "rolesPage.computer.short.computer"
+      "rolesPage.computer.short.computer",
+      "invites.byLink",
+      "invites.link",
+      "invites.types.links",
+      "invites.links",
+      "invites.linkLabel"
     ],
     "it": [
       "shell.email.label",
@@ -1750,9 +1762,12 @@
       "agentWork.later",
       "agentWork.laterShort",
       "threads.status.later",
-      "invites.how.link",
       "rolesPage.computer.short.browser",
-      "rolesPage.computer.short.computer"
+      "rolesPage.computer.short.computer",
+      "invites.byEmail",
+      "invites.byLink",
+      "invites.link",
+      "invites.linkLabel"
     ],
     "nl": [
       "calendar.moreRuns",
@@ -2082,6 +2097,7 @@
       "outage.region",
       "palette.agent",
       "palette.agentRole",
+      "palette.agents",
       "permissions.areas.agents",
       "presence.agent.routine",
       "presence.lower.offline",
@@ -2333,13 +2349,17 @@
       "machines.oneClick.tools.opencode",
       "machines.oneClick.tools.grok",
       "machines.oneClick.tools.antigravity",
-      "invites.how.link",
-      "invites.tab.links",
       "rolesPage.computer.short.browser",
       "rolesPage.computer.short.computer",
       "rolesPage.tabs.agents",
       "rolesPage.reach.agents",
-      "rolesPage.reach.baseAgents"
+      "rolesPage.reach.baseAgents",
+      "invites.byLink",
+      "invites.agents",
+      "invites.link",
+      "invites.types.links",
+      "invites.links",
+      "invites.linkLabel"
     ],
     "ja": [
       "channel.tooLong.fileName",
@@ -3111,7 +3131,7 @@
       "machines.oneClick.tools.antigravity",
       "machines.oneClick.tools.browser",
       "machines.oneClick.tools.terminal",
-      "invites.how.email",
+      "invites.byEmail",
       "invites.edit"
     ],
     "tr": [
@@ -3585,9 +3605,11 @@
       "agentWork.later",
       "agentWork.laterShort",
       "threads.status.later",
-      "invites.how.link",
       "rolesPage.reach.agents",
-      "rolesPage.reach.baseAgents"
+      "rolesPage.reach.baseAgents",
+      "invites.byLink",
+      "invites.link",
+      "invites.linkLabel"
     ],
     "ru": [
       "channel.tooLong.fileName",

@@ -1,5 +1,5 @@
 import type { InviteLinkTtl } from "@agenteschat/client";
-import type { InviteStart } from "@agenteschat/client/lib/invite-start";
+import { INVITE_LINK_TTL, type InviteStart } from "@agenteschat/client/lib/invite-start";
 import { INVITE_NOTE_MAX } from "@agenteschat/client/lib/join-requests";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { InviteAddress } from "./logic";
@@ -36,7 +36,7 @@ export const EMPTY_INVITE: InviteDraft = {
   added: NONE,
   removed: NONE,
   note: "",
-  expiresIn: "30d",
+  expiresIn: INVITE_LINK_TTL,
   maxUses: null,
 };
 

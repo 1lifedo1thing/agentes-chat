@@ -786,13 +786,21 @@ export const en = {
     from: "Invited by {{name}}",
     crew_one: "{{names}} works there",
     crew_other: "{{names}} work there",
+    /** An invitation that starts the person with agents (ADR 0184): them, by name. */
+    crewYours_one: "{{names}} will work with you",
+    crewYours_other: "{{names}} will work with you",
     hello: "Hi. {{name}} invited you to {{org}}.",
     helloNoName: "Hi. {{org}} invited you.",
+    /** The roles the invitation gives (ADR 0184), as the email names them. */
+    helloAs: "Hi. {{name}} invited you to {{org}}, as {{roles}}.",
+    helloAsNoName: "Hi. {{org}} invited you, as {{roles}}.",
     nameLead: "First: what does the team call you?",
     newPasswordLead: "You'll use it to get into {{org}} now and every time after.",
     enter: "Join {{org}}",
     calledYou: "{{name}} invited you to {{org}}.",
     calledYouNoName: "{{org}} invited you.",
+    calledYouAs: "{{name}} invited you to {{org}}, as {{roles}}.",
+    calledYouAsNoName: "{{org}} invited you, as {{roles}}.",
     signedInLead: "You're signed in as {{email}}. Just join.",
     passwordLead: "{{name}} invited you to {{org}}. Your password, and you're in.",
     passwordLeadNoName: "{{org}} invited you. Your password, and you're in.",
@@ -877,6 +885,10 @@ export const en = {
       reasonSaid: "<b>Their note:</b> “{{reason}}”",
       closedTitle: "This link no longer works",
       closedText: "Ask whoever sent it for a new one.",
+      // A link that took all the people it may (ADR 0184).
+      fullTitle: "This link already took everyone it could.",
+      fullLead: "Ask {{name}} for a new link.",
+      fullLeadNoName: "Ask whoever sent it for a new link.",
       // Signed out where email goes out: one question per screen, then the page waits for the answer (ADR 0090).
       hello: "Hi. This is {{org}}'s invitation.",
       emailLead: "What's your email? An admin approves each new person.",
@@ -912,94 +924,6 @@ export const en = {
       openPersonal: "Open",
       approvedInPersonal: "Approved. You're in.",
       deniedTextPersonal: "If you think it's a mistake, ask whoever sent you the link to invite you.",
-    },
-  },
-  // Inviting (ADR 0184): Invite people, the links, Invites and its edit screens, on the web and the phone. The invited
-  // person's side is `invite`.
-  invites: {
-    how: { email: "Email", link: "Link" },
-    to: "To",
-    /** A personal workspace's Role field (ADR 0159 §4): "Uses the agents" or "Helps you run it". */
-    can: "Can",
-    edit: "Edit",
-    /** Each field's ⓘ. To's is `members.dialog.pasteHelp`. */
-    hint: {
-      roles: "What the person can do. Roles add to what Everyone can. Only for people.",
-      channels: "Where the person starts. The role's channels come ticked.",
-      agents: "Who the person works with. They sit at the top of their list. A restricted agent starts answering them.",
-    },
-    rolesFoot: "Roles add to what Everyone can. The role's channels and agents come ticked.",
-    /** What the picked roles bring, as a group's name. */
-    fromRole: "From the {{role}} role",
-    fromRoles: "From the {{roles}} roles",
-    byRole: "Through the {{role}} role",
-    /** How each agent would go with an invitation. */
-    agent: {
-      everyone: "Everyone has {{name}}",
-      opens: "Restricted · you let people in",
-      locked: "Restricted · only {{name}} lets people in",
-      lockedAdmins: "Restricted · only agent editors let people in",
-      mailbox: "Reads {{names}}'s email",
-      plan: "Only answers {{name}}",
-    },
-    line: {
-      noTalk: "With this role, the person doesn't talk to agents.",
-      admin: "With {{role}}, the person sees every agent.",
-      opens_one: "{{names}} will answer whoever joins with this invite.",
-      opens_other: "{{names}} will answer whoever joins with this invite.",
-    },
-    agentsNone: "No other agents yet.",
-    onJoin: "On joining",
-    theLink: "The link",
-    ttl: {
-      label: "Valid for",
-      "30m": "30 minutes",
-      "1h": "1 hour",
-      "1d": "1 day",
-      "7d": "7 days",
-      "30d": "30 days",
-      never: "Never expires",
-      /** Edit link's first choice: the link as it is. */
-      keep: "Until {{date}}",
-    },
-    max: {
-      label: "Maximum people",
-      count_one: "{{count}} person",
-      count_other: "{{count}} people",
-      none: "No limit",
-      used_one: "{{count}} already joined",
-      used_other: "{{count}} already joined",
-    },
-    link: {
-      /** How full a link is: "0 of 1 person". */
-      uses_one: "{{uses}} of {{count}} person",
-      uses_other: "{{uses}} of {{count}} people",
-      joined_one: "{{count}} joined",
-      joined_other: "{{count}} joined",
-      /** Who made a link, when it isn't the person looking. */
-      by: "by {{name}}",
-      edit: "Edit link",
-      saved: "Link saved. The address is the same.",
-      failed: "Couldn't make the link. {{cause}}",
-      makeFirst: "Make the link to copy it.",
-      turnOff: "Turn off link",
-      turnedOff: "Link turned off.",
-    },
-    tab: { links: "Links", emails: "Email invites" },
-    invitation: {
-      edit: "Edit invite",
-      saved: "Invite for {{email}} updated.",
-      expired: "This invite expired. Renew it to change what it gives.",
-    },
-    request: { viaLinkOf: "Asked through {{name}}'s link {{when}}" },
-    /** A pick the server turned down when sending, with the way on. */
-    refused: {
-      archived: "#{{channel}} was archived. Take it out to send.",
-      left: "You're no longer in #{{channel}}. Take it out to send.",
-      gone: "One of the channels no longer exists. Take out the marked one to send.",
-      agentGone: "{{name}} left the team. Take them out of the invite to send.",
-      agentLocked: "You can no longer let people talk to {{name}}. Take them out of the invite to send.",
-      agentUnnamed: "One of the agents left the team. Take out the marked one to send.",
     },
   },
   onboarding: {
@@ -1985,6 +1909,22 @@ export const en = {
     failed: "Couldn't change the icon. Try again.",
     /** Over the open workspace's agents in the picker (web and desktop only). */
     agentsOf: "Agents in {{org}}",
+    /** On the phone, the name of an icon the person made (its sky, color and face or accessory). */
+    yours: "Your icon",
+    /** Under a ready-made icon's name, where a made one says its sky and face. */
+    readyOne: "Ready-made",
+    use: "Use this icon",
+    /** The same button when the icon shown is the one in use. */
+    inUse: "In use",
+    /** The made icon's parts. */
+    sky: "Background",
+    expression: "Expression",
+    /** Over the icons that come ready. */
+    ready: "Ready-made",
+    /** Under the accessories: an icon has a face or an accessory, never both. */
+    oneOrOther: "With an accessory, the expression stays the plain one.",
+    /** The expressions besides the agents' eye styles (`look.eyesNames`). */
+    faces: { wink: "Winking", heart: "Hearts", star: "Stars", surprised: "Surprised", angry: "Angry" },
     names: {
       night: "Night",
       moon: "Moon",
@@ -7629,7 +7569,7 @@ export const en = {
       done: "{{name}} is no longer part of {{org}}.",
       left: "You left {{org}}.",
       goneTitle: "You're no longer part of {{org}}",
-      goneText: "Your access to this workspace ended. To come back, ask someone there for a new invite.",
+      goneText: "Your access ended. To come back, ask for a new invitation.",
     },
     // Addresses as chips, in the invite dialog and the onboarding's Team step (ADR 0090).
     chips: {
@@ -7646,9 +7586,6 @@ export const en = {
       title: "Invite to {{org}}",
       // A personal workspace's words (ADR 0159): its name ("Personal") reads oddly in a sentence.
       titlePersonal: "Invite someone to your workspace",
-      /** Under the title: the step out of four, and its name. */
-      stepOf: "Step {{n}} of {{total}} · {{step}}",
-      steps: { who: "Who", role: "Role", where: "Where they start", note: "Note" },
       emails: "Emails",
       moreEmails: "More emails…",
       checkMarked: "Check the marked emails: they won't get an invitation.",
@@ -7662,36 +7599,20 @@ export const en = {
       notePlaceholder: "Hi. Come join {{org}}: the team and the agents are all here.",
       notePlaceholderPersonal: "Hi. Come join me here: my agents can help you too.",
       or: "or send the link",
-      /** The first step's button with more than one address (with one, "Continue"). */
-      continueWith: "Continue with {{count}}",
       send_one: "Invite {{count}} person",
       send_other: "Invite {{count}} people",
       sent: "Invitation sent to {{email}}.",
       sentMany: "{{count}} invitations sent.",
       alsoIn: "They also join {{channels}}.",
-      // What the host asks on each step. `name`: the address's first word, capitalized ("Julia" from julia.m@…), so
-      // nothing here may need to know the person's gender.
-      who: {
-        title: "Who do you want to bring in?",
-        lead: "Give me their emails. Each person gets an invitation and joins directly.",
-      },
       orLink: {
         title: "Rather send a link?",
         text: "Whoever opens it asks to join, and you approve.",
         open: "See the link",
       },
       role: {
-        titleOne: "What role does {{name}} join with?",
-        titleMany: "What role do these people join with?",
-        lead: "The role says what each person can do. You can change it later.",
-        each: "A role for each person",
-        same: "The same role for everyone",
         // A personal workspace asks it plainly (ADR 0159): two choices, each one of the workspace's roles.
         titleOnePersonal: "What can {{name}} do here?",
-        titleManyPersonal: "What can they do here?",
         leadPersonal: "You can change it later.",
-        eachPersonal: "A choice for each person",
-        samePersonal: "The same for everyone",
         /** A member with no role of their own. */
         uses: "Uses the agents",
         usesText: "Talks to the agents and uses what's shared with them.",
@@ -7700,62 +7621,10 @@ export const en = {
         helpsText:
           "Can change agents, settings and who's here, as you can. Sees everything shared here, except your direct messages.",
       },
-      /**
-       * A personal workspace's role step (ADR 0159): the agents every member may talk to, which answer whoever joins.
-       * `<agents/>` is their names, joined as a list ("Leo and Bia"), each one a link.
-       */
-      reach: {
-        line_one: "<agents/> will answer whoever joins.",
-        line_other: "<agents/> will answer whoever joins.",
-      },
       where: {
-        titleOne: "Which channels does {{name}} join right away?",
-        titleMany: "Which channels do these people join right away?",
-        /** A personal workspace calls its channels group conversations. */
-        titleOnePersonal: "Which group conversations does {{name}} join right away?",
-        titleManyPersonal: "Which group conversations do these people join right away?",
-        lead: "Everyone starts in #{{channel}}. You pick the others.",
-        label: "Channels",
-        labelPersonal: "Group conversations",
-        everyone: "Everyone joins",
         private: "Private · you're in it",
         people_one: "{{count}} person",
         people_other: "{{count}} people",
-        fromChannel: "#{{channel}} comes checked: you invited from there.",
-      },
-      noteStep: {
-        title: "Want me to say something in the invitation?",
-        lead: "It goes in the email. If not, I'll send it as it is.",
-      },
-      /** Over the email as it arrives: the first names it goes to. */
-      mailFor: "This is how it reaches {{names}}",
-      // The invitation email in the words the server sends it in (packages/engine/src/email/words): keep them alike.
-      mail: {
-        from: "agentes.chat · to {{to}}",
-        toMany: "{{email}} and {{count}} more",
-        subject: "You're invited to a workspace on agentes.chat",
-        headline: "You're invited to a workspace",
-        body: "<b>{{name}}</b> ({{email}}) invited you to join <b>{{org}}</b> as a member.",
-        noteFrom: "<b>{{name}}:</b> “{{note}}”",
-        what: "agentes.chat is where people and AI agents work together.",
-        button: "Accept invitation",
-        small: "The invitation works for 7 days. Accept it with this email address.",
-      },
-      // The host's answer once the invitations went: `channels` is where they start ("#general and #eng").
-      done: {
-        title: "Done, I sent the invitation to {{names}}.",
-        leadOne: "When {{name}} joins, I'll greet them in {{channels}} and let you know.",
-        leadMany: "When each person joins, I'll greet them in {{channels}} and let you know.",
-        none: "No invitation went out this time.",
-        noneLead: "Each address's reason is below.",
-      },
-      /** Each address after the send: sent, or why not (as `members.batch` says it). */
-      result: {
-        invited: "Sent",
-        already_member: "already in {{org}}",
-        already_memberPersonal: "already here",
-        already_invited: "already had an invitation",
-        invalid_email: "invalid email",
       },
       again: "Invite more people",
       finish: "Done",
@@ -7822,9 +7691,9 @@ export const en = {
       who: "Who they are",
       whoPlaceholder: "Design freelancer, helping with the new site.",
       send: "Send to the admins",
-      sent_one: "Suggestion sent. {{names}} sees it in Members and invitations.",
-      sent_other: "Suggestion sent. {{names}} see it in Members and invitations.",
-      sentNoNames: "Suggestion sent. Whoever invites sees it in Members and invitations.",
+      sent_one: "Suggestion sent. {{names}} sees it in Invitations.",
+      sent_other: "Suggestion sent. {{names}} see it in Invitations.",
+      sentNoNames: "Suggestion sent. Whoever invites sees it in Invitations.",
       refused: {
         invalid: "Check the email: something like name@company.com.",
         member: "{{email}} is already in {{org}}.",
@@ -7842,11 +7711,11 @@ export const en = {
     arrival: {
       title: "Welcome to {{org}}, {{name}}",
       lead: "Here the team and the agents work together: write in #{{channel}} or call an agent by name.",
+      /** After the lead: the other channels the invitation started them in (ADR 0184). */
+      alsoIn: "You're also in {{channels}}.",
       sayHi: "Say hi in #{{channel}}",
       talkTo: "Talk to {{name}}",
       team: "See the team",
-      /** The channels an invitation put them in besides #general (ADR 0184). */
-      alsoIn: "You're also in {{channels}}.",
     },
     people: "People",
     seen: "Active {{when}}",
@@ -7908,6 +7777,124 @@ export const en = {
     budgetLine: "{{percent}} of the {{month}} budget",
     noAgents: "No agents yet.",
   },
+  // One screen to invite (ADR 0184): Email or Link, then To, Role, Channels and Agents; the Invitations tab of People,
+  // with the requests waiting, the links and the email invitations; Edit link and Edit invitation.
+  invites: {
+    how: "How to invite",
+    byEmail: "Email",
+    byLink: "Link",
+    to: "To",
+    role: "Role",
+    roleHint: "What the person can do. Roles add to what Everyone can. Only for people.",
+    rolePersonal: "Can",
+    /** Under the phone's Role list. */
+    rolesFoot: "Roles add to what Everyone can. The role's channels and agents come ticked.",
+    channels: "Channels",
+    channelsPersonal: "Conversations",
+    channelsHint: "Where the person starts. The role's channels come ticked.",
+    channelsHintPersonal: "Where the person starts.",
+    agents: "Agents",
+    agentsHint:
+      "Who the person works with. They sit at the top of their list. A restricted agent starts answering them.",
+    addChannel: "Add a channel…",
+    addChannelPersonal: "Add a conversation…",
+    addAgent: "Add an agent…",
+    noChannel: "No channel matches “{{query}}”.",
+    noChannels: "No other channels yet.",
+    noAgent: "No agent matches “{{query}}”.",
+    noAgents: "No other agents yet.",
+    general: "Everyone joins #{{channel}}.",
+    rightHand: "Everyone has {{name}}.",
+    fromRole: "Comes with the {{role}} role.",
+    fromChannel: "You invited from here.",
+    groupRole_one: "From the {{roles}} role",
+    groupRole_other: "From the {{roles}} roles",
+    /** Why an agent can or can't go with an invitation, on its row in the list. */
+    agent: {
+      byRole: "Through the {{role}} role",
+      opens: "Restricted · you let them in",
+      locked: "Restricted · only {{name}} lets people in",
+      lockedNoOwner: "Restricted · only admins let people in",
+      mailbox: "Reads {{names}}'s email",
+      mailboxHint: "Opening it to more people takes that access away. Decide on the agent's page.",
+      plan: "Only answers {{name}}",
+      planMine: "Only answers you",
+      rightHand: "Everyone has {{name}}",
+    },
+    opens_one: "{{names}} starts answering whoever joins through this invitation.",
+    opens_other: "{{names}} start answering whoever joins through this invitation.",
+    noTalk: "With this role, the person doesn't talk to agents.",
+    admin: "With {{role}}, the person sees every agent.",
+    offline: "Couldn't reach the server. Nothing was sent.",
+    /** A send the server refused for something the sender may no longer give: the cause and the way out. */
+    refused: {
+      channelArchived: "#{{channel}} was archived. Remove the channel to send.",
+      channelLeft: "You're no longer in #{{channel}}. Remove the channel to send.",
+      channelGone: "One of the channels no longer exists. Remove the marked one to send.",
+      agentGone: "{{name}} left the team. Remove them from the invitation to send.",
+      agentLocked: "You can no longer let people talk to {{name}}. Remove them from the invitation to send.",
+      agentUnnamed: "One of the agents left the team. Take out the marked one to send.",
+      role: "You can no longer give the {{role}} role. Pick another.",
+      roleMany: "You can no longer give one of these roles. Pick others.",
+    },
+    link: "Link",
+    linkEmpty: "Make the link to copy it",
+    linkFailed: "Couldn't make the link. {{cause}}",
+    never: "Never expires",
+    untilDate: "Until {{date}}",
+    validFor: "Works for {{ttl}} once made.",
+    expiresIn: "Expires after",
+    maxUses: "Most people",
+    /** The phone's groups in Link mode and Edit link: what the person gets, then the link's own limits. */
+    onJoin: "On joining",
+    theLink: "The link",
+    ttl: {
+      "30m": "30 minutes",
+      "1h": "1 hour",
+      "1d": "1 day",
+      "7d": "7 days",
+      "30d": "30 days",
+      never: "Never expires",
+    },
+    people_one: "{{count}} person",
+    people_other: "{{count}} people",
+    noLimit: "No limit",
+    usedSoFar_one: "{{count}} already joined",
+    usedSoFar_other: "{{count}} already joined",
+    linkSaved: "Link saved. The address stays the same.",
+    invitationTitle: "Invitation for {{email}}",
+    invitationSaved: "Invitation for {{email}} updated.",
+    invitationExpired: "This invitation expired. Renew it to change what it gives.",
+    editInvitation: "Edit invite",
+    // The Invitations tab.
+    search: "Search email or role",
+    type: "Type",
+    types: { requests: "Requests", links: "Links", emails: "Emails" },
+    typesCount_one: "{{count}} type",
+    typesCount_other: "{{count}} types",
+    noMatch: "No invitation matches “{{query}}”.",
+    links: "Links",
+    emails: "Email invitations",
+    viaLinkOf: "Asked through {{name}}'s link {{when}}",
+    withLink: "With the link: {{gives}}.",
+    /** A request's link gives a role above the approver's: approving leaves it out (ADR 0184 §8). */
+    roleLeftOut_one: "{{roles}} is left out: it's above your role.",
+    roleLeftOut_other: "{{roles}} are left out: they're above your role.",
+    linkLabel: "Link {{name}}",
+    linkMore: "More actions for the {{name}} link",
+    usesOf_one: "{{uses}} of {{count}} person",
+    usesOf_other: "{{uses}} of {{count}} people",
+    joined_zero: "Nobody joined yet",
+    joined_one: "{{count}} person joined",
+    joined_other: "{{count}} people joined",
+    expiresLeft: "expires in {{left}}",
+    neverEnds: "never expires",
+    by: "by {{name}}",
+    edit: "Edit",
+    turnOff: "Turn off link",
+    editLink: "Edit link",
+    linkTurnedOff: "Link turned off.",
+  },
   empty: {
     thread: { title: "Threads", text: "Thread replies will show up here, without taking over the channel." },
     dm: {
@@ -7929,7 +7916,8 @@ export const en = {
     notFoundText: "The address doesn't exist or has changed.",
     goHome: "Back to start",
     noOrgTitle: "You're not part of this workspace",
-    noOrgText: "Ask someone in the workspace for an invitation, or go back to yours.",
+    noOrgText: "Ask someone there for an invitation.",
+    noOrgBack: "Back to your workspaces",
     crashTitle: "Something went wrong",
     crashText: "Reload the page to carry on.",
     crashCode: "If you ask for help, give the code {{id}}.",
@@ -10953,6 +10941,20 @@ export const en = {
     page: "page",
     newConversation: "new conversation",
     askLabel: "{{name}}, {{text}}",
+    agents: "Agents",
+    settingsGroup: "Settings",
+    agentOption: "{{name}} · {{what}}",
+    agentPage: "Agent page",
+    changeModel: "Change AI model",
+    changeModelKeywords: "model ai intelligence who thinks brain plan claude codex chatgpt api effort",
+    agentKeywords: "agent options settings",
+    settingsKeywords: "settings preferences options",
+    keysKeywords: "model ai api key plan claude codex chatgpt provider",
+    themeOption: "Theme: {{theme}}",
+    themeKeywords: "theme appearance light dark night mode",
+    accountKeywords: "theme appearance light dark night mode language idioma",
+    newChannel: "New channel",
+    createKeywords: "create new add",
     empty: "Nothing for “{{q}}”.",
   },
   code: {
@@ -15769,8 +15771,8 @@ export const en = {
       notifications: "Notifications",
       general: "General",
       right_hand: "Right hand",
-      members: "Members and invitations",
-      invites: "Invites",
+      members: "Members",
+      invites: "Invitations",
       roles: "Roles",
       /** The feature's name: it stays “Vault” in every language. */
       vault: "Vault",
@@ -15805,8 +15807,8 @@ export const en = {
       notifications: "What reaches you as an alert here. The inbox keeps everything.",
       general: "Name, time zone and what every agent knows about the workspace.",
       right_hand: "The assistant that builds the team with each person, in their DM.",
-      members: "Who is in the workspace, and invitations.",
-      invites: "Who can join and what they get.",
+      members: "Who is in the workspace.",
+      invites: "Who can come in and what they get.",
       roles: "Each role adds permissions, channels and agents.",
       vault: "Your agents' passwords, keys and contacts. They never see a password.",
       access: "What each agent can use: one level per connector.",
@@ -15825,7 +15827,7 @@ export const en = {
       generalPersonal: "What your agents know about you, and how this workspace works.",
       usagePersonal: "How much AI your agents use, and your plan.",
       connectorsPersonal: "Your apps and MCP servers, connected once for your agents.",
-      membersPersonal: "Who's here with you, and invitations.",
+      membersPersonal: "Who's here with you.",
       rolesPersonal: "What each person here can do. The owner can do everything.",
     },
     /**

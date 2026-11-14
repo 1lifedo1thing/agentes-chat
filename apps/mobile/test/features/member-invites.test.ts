@@ -269,7 +269,7 @@ describe("Invite people in a personal workspace (ADR 0159 §4)", () => {
     expect(invite).toContain('t(switches ? "personalMode.invite.workText" : "personalMode.invite.workLocked")');
     // Its Cargo field is "Pode", in the plain words.
     const fields = src("InviteFields.tsx");
-    expect(fields).toContain('const roleLabel = personal ? t("invites.can") : t("members.role");');
+    expect(fields).toContain('const roleLabel = personal ? t("invites.rolePersonal") : t("members.role");');
     expect(fields).toContain("cargoWords(t, roles, d.roleIds, true)");
   });
 

@@ -10,7 +10,7 @@ import {
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { formatShortDate } from "@agenteschat/client/lib/format";
-import { type InviteRefusal, inviteRefusal, inviteRefusalText } from "@agenteschat/client/lib/invite-start";
+import { changedLists, inviteRefusal, inviteRefusalText, type RefusedPick } from "@agenteschat/client/lib/invite-start";
 import { sendsEmail } from "@agenteschat/client/lib/join-requests";
 import { can } from "@agenteschat/client/lib/permissions";
 import { useLocalSearchParams, usePreventRemove } from "expo-router";
@@ -25,19 +25,19 @@ import { Gap, SettingsPage } from "../settings/parts";
 import { copyText, errorHaptic, goBack, successHaptic } from "../shared/parts";
 import { EMPTY_INVITE, useDraftStart, useInviteDraft } from "./draft";
 import { openPick, useStartFields } from "./InviteFields";
-import { draftFrom, invitationExpired, linkChanges, maxWord, startChanges, ttlWord } from "./logic";
+import { draftFrom, invitationExpired, linkChanges, maxWord, ttlWord } from "./logic";
 
 /** How long "Copiado" stays on the copy row. */
 const COPIED_MS = 1800;
 
-/** A form's refusal: its line, its token marked, and a haptic; anything else goes back to the caller. */
+/** A form's refused pick: its line, its token marked, and a haptic; anything else goes back to the caller. */
 function useRefusal() {
-  const [refused, setRefused] = useState<InviteRefusal | null>(null);
+  const [refused, setRefused] = useState<RefusedPick | null>(null);
   return {
     refused,
     take: (e: unknown) => {
       const r = inviteRefusal(e);
-      if (!r) return false;
+      if (!r || r.kind === "role") return false;
       errorHaptic();
       setRefused(r);
       return true;
@@ -46,7 +46,7 @@ function useRefusal() {
 }
 
 /** The lines under a form's fields: a refused pick (danger) first, then Agentes' own lines. */
-function Lines({ refused, lines }: { refused: InviteRefusal | null; lines: readonly string[] }) {
+function Lines({ refused, lines }: { refused: RefusedPick | null; lines: readonly string[] }) {
   const { t } = useTranslation();
   return (
     <>
@@ -116,7 +116,7 @@ export function EditLinkScreen() {
     try {
       await edit.mutateAsync({ id, ...changes });
       successHaptic();
-      toast({ title: t("invites.link.saved") });
+      toast({ title: t("invites.linkSaved") });
       leaving.current = true;
       goBack();
     } catch (e) {
@@ -126,7 +126,7 @@ export function EditLinkScreen() {
   const off = async () => {
     try {
       await turnOff.mutateAsync(id);
-      toast({ title: t("invites.link.turnedOff") });
+      toast({ title: t("invites.linkTurnedOff") });
       leaving.current = true;
       goBack();
     } catch (e) {
@@ -138,7 +138,7 @@ export function EditLinkScreen() {
       { text: t("mobile.common.cancel"), style: "cancel" },
       { text: t("members.link.turnOff"), style: "destructive", onPress: () => void off() },
     ]);
-  const title = t("invites.link.edit");
+  const title = t("invites.editLink");
   if (!link || !draft)
     return (
       <SettingsPage title={title}>
@@ -188,26 +188,26 @@ export function EditLinkScreen() {
       <GroupedHeader>{t("invites.theLink")}</GroupedHeader>
       <GroupedList>
         <GroupedRow
-          label={t("invites.ttl.label")}
+          label={t("invites.expiresIn")}
           value={
             draft.expiresIn
               ? ttlWord(t, draft.expiresIn)
-              : t("invites.ttl.keep", { date: formatShortDate(i18n.language, link.expiresAt) })
+              : t("invites.untilDate", { date: formatShortDate(i18n.language, link.expiresAt) })
           }
           chevron
           onPress={() => openPick(key, "ttl")}
         />
         <GroupedRow
-          label={t("invites.max.label")}
+          label={t("invites.maxUses")}
           value={maxWord(t, draft.maxUses)}
           chevron
           onPress={() => openPick(key, "max")}
         />
       </GroupedList>
-      {uses > 0 ? <GroupedFooter>{t("invites.max.used", { count: uses })}</GroupedFooter> : null}
+      {uses > 0 ? <GroupedFooter>{t("invites.usedSoFar", { count: uses })}</GroupedFooter> : null}
       <Gap />
       <GroupedList>
-        <GroupedRow icon="x" label={t("invites.link.turnOff")} danger disabled={busy} onPress={confirmOff} />
+        <GroupedRow icon="x" label={t("invites.turnOff")} danger disabled={busy} onPress={confirmOff} />
       </GroupedList>
     </SettingsPage>
   );
@@ -241,7 +241,7 @@ export function EditInvitationScreen() {
     if (leaving.current) repeat();
   });
   const expired = Boolean(inv && invitationExpired(inv) && !renewed);
-  const changes = inv ? startChanges(inv, start.send) : {};
+  const changes = inv ? changedLists(inv, start.send) : {};
   const changed = Object.keys(changes).length > 0;
   const failed = (e: unknown) => toast({ title: errorText(t, e, i18n.language), icon: "x" });
   const save = async () => {
@@ -249,7 +249,7 @@ export function EditInvitationScreen() {
     try {
       await update.mutateAsync({ id, ...changes });
       successHaptic();
-      toast({ title: t("invites.invitation.saved", { email: inv.email }) });
+      toast({ title: t("invites.invitationSaved", { email: inv.email }) });
       leaving.current = true;
       goBack();
     } catch (e) {
@@ -269,7 +269,7 @@ export function EditInvitationScreen() {
       failed(e);
     }
   };
-  const title = t("invites.invitation.edit");
+  const title = t("invites.editInvitation");
   if (!inv || !draft)
     return (
       <SettingsPage title={title}>
@@ -299,7 +299,7 @@ export function EditInvitationScreen() {
       {expired ? (
         <>
           <View style={styles.note}>
-            <Note icon="clock">{t("invites.invitation.expired")}</Note>
+            <Note icon="clock">{t("invites.invitationExpired")}</Note>
           </View>
           <GroupedList>
             <GroupedRow icon="replay" label={t("members.invitations.renew")} onPress={() => void renew()} />

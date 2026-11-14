@@ -22,7 +22,10 @@ import {
   timeLeft,
 } from "@agenteschat/client/lib/format";
 import {
+  changedLists,
+  INVITE_LINK_TTL,
   type InviteAgentCase,
+  type InviteLists,
   type InviteStart,
   inviteAgentCase,
   invitePickable,
@@ -284,7 +287,7 @@ export function linkChoicesOf(
   roles: readonly Pick<OrgRole, "id" | "channelIds" | "agentIds">[],
   d: InviteDraft,
 ): LinkChoices {
-  return { roleIds: d.roleIds, ...startOf(roles, d), expiresIn: d.expiresIn ?? "30d", maxUses: d.maxUses };
+  return { roleIds: d.roleIds, ...startOf(roles, d), expiresIn: d.expiresIn ?? INVITE_LINK_TTL, maxUses: d.maxUses };
 }
 
 /**
@@ -322,32 +325,17 @@ export function flipStart(
   };
 }
 
-const sameIds = (a: readonly string[], b: readonly string[]) =>
-  a.length === b.length && a.every((id) => b.includes(id));
-
 /**
- * What Editar link or Editar convite saves: only what changed from what it gives now, so a part left as it was is
- * never checked again for whoever edits it (a private channel they aren't in stays where its maker put it).
+ * Editar link's changes: the lists that changed (`changedLists`), then the maximum and a new Validade (null keeps its
+ * own date).
  */
-export function startChanges(
-  before: { roleIds?: readonly string[]; channelIds?: readonly string[]; agentIds?: readonly string[] },
-  after: { roleIds: string[]; channelIds: string[]; agentIds: string[] },
-): { roleIds?: string[]; channelIds?: string[]; agentIds?: string[] } {
-  return {
-    ...(sameIds(before.roleIds ?? [], after.roleIds) ? {} : { roleIds: after.roleIds }),
-    ...(sameIds(before.channelIds ?? [], after.channelIds) ? {} : { channelIds: after.channelIds }),
-    ...(sameIds(before.agentIds ?? [], after.agentIds) ? {} : { agentIds: after.agentIds }),
-  };
-}
-
-/** Editar link's changes: `startChanges`, then the maximum and a new Validade (null keeps its own date). */
 export function linkChanges(
   link: Pick<InviteLink, "roleIds" | "channelIds" | "agentIds" | "maxUses" | "neverExpires">,
-  after: { roleIds: string[]; channelIds: string[]; agentIds: string[] },
+  after: InviteLists,
   draft: Pick<InviteDraft, "expiresIn" | "maxUses">,
 ): InviteLinkChoices {
   return {
-    ...startChanges(link, after),
+    ...changedLists(link, after),
     ...(draft.maxUses === (link.maxUses ?? null) ? {} : { maxUses: draft.maxUses }),
     // A link that never ends, left at "Não expira", keeps its own date too.
     ...(draft.expiresIn === null || (link.neverExpires === true && draft.expiresIn === "never")
@@ -361,7 +349,7 @@ export const ttlWord = (t: TFunction, ttl: InviteLinkTtl) => t(`invites.ttl.${tt
 
 /** "Máximo de pessoas"'s words for a choice ("10 pessoas", "Sem limite"). */
 export const maxWord = (t: TFunction, max: number | null) =>
-  max === null ? t("invites.max.none") : t("invites.max.count", { count: max });
+  max === null ? t("invites.noLimit") : t("invites.people", { count: max });
 
 /** What a link, an invitation or a request gives past #general and the right hand: "Suporte · #suporte · Max". */
 export function givesLine(
@@ -391,8 +379,8 @@ export const linkTitle = (t: TFunction, roles: readonly OrgRole[], link: Pick<In
   cargoWords(t, roles, link.roleIds ?? [], false);
 
 /**
- * A link's state on Convites: the people it took ("0 de 1 pessoa", "4 entraram"), when it ends ("expira em 6 dias",
- * "não expira") and who made it when that isn't the viewer ("de Ana").
+ * A link's state on Convites, as the web's row says it: the people it took ("0 de 1 pessoa", "4 pessoas entraram"),
+ * when it ends ("expira em 6 dias", "não expira") and who made it when that isn't the viewer ("de Ana").
  */
 export function linkLine(
   t: TFunction,
@@ -404,14 +392,12 @@ export function linkLine(
   const uses = link.uses ?? 0;
   const took =
     link.maxUses != null
-      ? t("invites.link.uses", { uses: formatInt(locale, uses), count: link.maxUses })
-      : uses > 0
-        ? t("invites.link.joined", { count: uses })
-        : null;
+      ? t("invites.usesOf", { uses: formatInt(locale, uses), count: link.maxUses })
+      : t("invites.joined", { count: uses });
   const ends = link.neverExpires
     ? t("invites.ttl.never")
     : t("members.invitations.expires", { left: timeLeft(t, link.expiresAt, now) ?? "" });
-  const by = link.createdBy && link.createdByUserId !== meId ? t("invites.link.by", { name: link.createdBy }) : null;
+  const by = link.createdBy && link.createdByUserId !== meId ? t("invites.by", { name: link.createdBy }) : null;
   return [took, lowerFirst(ends, locale), by].filter(Boolean).join(" · ");
 }
 
@@ -432,9 +418,7 @@ export function cargoPicks(t: TFunction, roles: readonly OrgRole[], roleIds: rea
 /** "Do cargo Suporte", "Dos cargos Suporte e Financeiro": the group of what the picked cargos bring. */
 export function fromCargosTitle(t: TFunction, roles: readonly OrgRole[], roleIds: readonly string[]) {
   const names = sortRoles(roles.filter((r) => roleIds.includes(r.id))).map((r) => r.name);
-  return names.length === 1
-    ? t("invites.fromRole", { role: names[0] })
-    : t("invites.fromRoles", { roles: joinNames(names, t) });
+  return t("invites.groupRole", { count: names.length, roles: joinNames(names, t) });
 }
 
 export interface ChannelPick {
@@ -478,9 +462,9 @@ export function channelPicks(
     const general = c.name === "general";
     const cargo = c.visibility === "private" && !c.isMember ? viaCargo(c) : undefined;
     const sub = general
-      ? t("members.dialog.where.everyone")
+      ? t("invites.general", { channel: c.name })
       : cargo
-        ? t("invites.byRole", { role: cargo.name })
+        ? t("invites.agent.byRole", { role: cargo.name })
         : c.visibility === "private"
           ? t("members.dialog.where.private")
           : undefined;
@@ -538,14 +522,14 @@ export function agentPicks(
       kind === "everyone"
         ? a.role
         : kind === "cargo"
-          ? t("invites.byRole", { role: picked.find((r) => r.agentIds?.includes(a.id))?.name ?? "" })
+          ? t("invites.agent.byRole", { role: picked.find((r) => r.agentIds?.includes(a.id))?.name ?? "" })
           : kind === "opens"
             ? t("invites.agent.opens")
             : kind === "mailbox"
               ? t("invites.agent.mailbox", { names: joinNames([...(owners ?? [])], t) })
               : owner
                 ? t(kind === "plan" ? "invites.agent.plan" : "invites.agent.locked", { name: owner })
-                : t("invites.agent.lockedAdmins");
+                : t("invites.agent.lockedNoOwner");
     const isOn = on.includes(a.id);
     const waiting = kind === "opens" && owners === undefined;
     const opens =
@@ -594,7 +578,7 @@ export function agentLines(
   if (!everyone) return { off: false, lines: [] };
   const picked = sortRoles(args.roles.filter((r) => args.roleIds.includes(r.id)));
   const talks = [everyone, ...picked].some((r) => grants(r.permissions).has("talk_to_agents"));
-  if (!talks) return { off: true, lines: [t("invites.line.noTalk")] };
+  if (!talks) return { off: true, lines: [t("invites.noTalk")] };
   const admin = picked.find((r) => r.permissions.includes("administrator"));
   const own = inviteStart(args.roles, args.roleIds, NO_START, NO_START).agentIds;
   const opened = args.agentIds.flatMap((id) => {
@@ -604,8 +588,8 @@ export function agentLines(
   return {
     off: false,
     lines: [
-      ...(admin ? [t("invites.line.admin", { role: admin.name })] : []),
-      ...(opened.length ? [t("invites.line.opens", { count: opened.length, names: joinNames(opened, t) })] : []),
+      ...(admin ? [t("invites.admin", { role: admin.name })] : []),
+      ...(opened.length ? [t("invites.opens", { count: opened.length, names: joinNames(opened, t) })] : []),
     ],
   };
 }
@@ -625,7 +609,7 @@ export function requestLine(
   const how = r.suggestedBy
     ? t("members.requests.suggested", { name: r.suggestedBy, when })
     : r.link?.createdBy
-      ? t("invites.request.viaLinkOf", { name: r.link.createdBy, when })
+      ? t("invites.viaLinkOf", { name: r.link.createdBy, when })
       : t("members.requests.viaLink", { when });
   return [how, ...gives].join(" · ");
 }

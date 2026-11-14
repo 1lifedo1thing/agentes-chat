@@ -14,7 +14,7 @@ import {
 import { settingsFrozen } from "@agenteschat/client/lib/deletion";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { formatInt } from "@agenteschat/client/lib/format";
-import { linkStanding } from "@agenteschat/client/lib/invite-start";
+import { linkNeedsAttention } from "@agenteschat/client/lib/invite-start";
 import { can } from "@agenteschat/client/lib/permissions";
 import { everyoneOf, sortRoles } from "@agenteschat/client/lib/roles";
 import { useState } from "react";
@@ -198,7 +198,7 @@ function Invites() {
             ) : null}
             {linkList.length > 0 ? (
               <>
-                <GroupedHeader>{`${t("invites.tab.links")} · ${formatInt(i18n.language, linkList.length)}`}</GroupedHeader>
+                <GroupedHeader>{`${t("invites.links")} · ${formatInt(i18n.language, linkList.length)}`}</GroupedHeader>
                 <GroupedList>
                   {linkList.map((l) => (
                     <LinkRow key={l.id} link={l} onPress={() => sheet.open(<LinkSheet link={l} />, { solid: true })} />
@@ -208,7 +208,7 @@ function Invites() {
             ) : null}
             {sent.length > 0 ? (
               <>
-                <GroupedHeader>{`${t("invites.tab.emails")} · ${formatInt(i18n.language, sent.length)}`}</GroupedHeader>
+                <GroupedHeader>{`${t("invites.emails")} · ${formatInt(i18n.language, sent.length)}`}</GroupedHeader>
                 <GroupedList>
                   {sent.map((inv) => (
                     <GroupedRow
@@ -243,7 +243,6 @@ function LinkRow({ link, onPress }: { link: InviteLink; onPress: () => void }) {
   const meId = useMeId();
   const roles = useRoles(orgId).data?.roles ?? [];
   const first = sortRoles(roles.filter((r) => (link.roleIds ?? []).includes(r.id)))[0] ?? everyoneOf(roles);
-  const { full, soon } = linkStanding(link);
   const line = linkLine(t, i18n.language, link, meId);
   return (
     <GroupedRow
@@ -252,7 +251,7 @@ function LinkRow({ link, onPress }: { link: InviteLink; onPress: () => void }) {
       labelLines={0}
       sub={line}
       subLines={0}
-      subTone={full || soon ? "amber" : "faint"}
+      subTone={linkNeedsAttention(link) ? "amber" : "faint"}
       media
       chevron
       onPress={onPress}
@@ -281,7 +280,7 @@ function LinkSheet({ link }: { link: InviteLink }) {
     sheet.close();
     try {
       await turnOff.mutateAsync(link.id);
-      toast({ title: t("invites.link.turnedOff") });
+      toast({ title: t("invites.linkTurnedOff") });
     } catch (e) {
       failed(e);
     }

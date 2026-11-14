@@ -1,9 +1,11 @@
 import type { TFunction } from "i18next";
 import { ApiError } from "../api/http";
-import type { Agent, InviteLink, InviteLinkTtl, OrgRole } from "../api/types";
+import type { Agent, Channel, InviteLink, InviteLinkTtl, OrgRole } from "../api/types";
+import { sameList } from "./agent-edit";
 import { answersOthers, audienceOf, modeOf } from "./audience";
 import { engineOfBrain } from "./brain";
 import { agentGrammar } from "./grammar";
+import { grants } from "./roles";
 
 /** What an invitation starts someone with besides #general and the right hand (ADR 0184), as its chips show it. */
 export interface InviteStart {
@@ -65,70 +67,150 @@ export function inviteAgentCase(
 /** The cases an invitation may pick. */
 export const invitePickable = (c: InviteAgentCase) => c === "everyone" || c === "cargo" || c === "opens";
 
-/** "Validade" (ADR 0184): how long a link works, in the order the choice lists them. */
+/** What the picked cargos give with Todos: whether the person may talk to agents, and whether one is Administrador. */
+export function inviteReach(roles: readonly Pick<OrgRole, "id" | "kind" | "permissions">[], picked: readonly string[]) {
+  const held = roles.filter((r) => r.kind === "everyone" || picked.includes(r.id));
+  const keys = grants(held.flatMap((r) => r.permissions));
+  return {
+    talks: keys.has("talk_to_agents"),
+    admin: roles.some((r) => picked.includes(r.id) && r.permissions.includes("administrator")),
+  };
+}
+
+/**
+ * The channels an invitation may start someone in besides #general, the server's rule (`channelVerdicts`,
+ * packages/engine/src/invite-choices.ts): a public one, one the viewer is in, or a private one limited to a picked
+ * cargo. One an administrator only sees (ADR 0151) is none of these.
+ */
+export function invitableChannels<
+  C extends Pick<Channel, "id" | "name" | "visibility" | "isMember" | "audienceRoleIds">,
+>(channels: readonly C[], picked: readonly string[]): C[] {
+  return channels.filter(
+    (c) =>
+      c.name !== "general" &&
+      (c.visibility === "public" || c.isMember || (c.audienceRoleIds ?? []).some((r) => picked.includes(r))),
+  );
+}
+
+/** How long a link works (ADR 0184), shortest first: the dialog's Validade, 30 days to start. */
 export const INVITE_LINK_TTLS: readonly InviteLinkTtl[] = ["30m", "1h", "1d", "7d", "30d", "never"];
-/** "Máximo de pessoas": the people a link takes, then no limit (null). The server's `INVITE_LINK_MAX_USES`. */
+export const INVITE_LINK_TTL = "30d" satisfies InviteLinkTtl;
+/** How many people a link takes (ADR 0184): the dialog's Máximo de pessoas; null, no limit (to start). */
 export const INVITE_LINK_MAX_USES: readonly (number | null)[] = [1, 5, 10, 25, 50, 100, null];
 
-/** What a link gives and how long it works, as a form holds it. */
-export interface LinkChoices extends InviteStart {
+/** A link's choices in the dialog. */
+export interface LinkChoices {
   roleIds: string[];
+  channelIds: string[];
+  agentIds: string[];
   expiresIn: InviteLinkTtl;
   maxUses: number | null;
 }
 
-/** The workspace's plain link: nothing past #general and the right hand, 30 days, no limit (the server's `atDefaults`). */
-export const PLAIN_LINK: LinkChoices = { roleIds: [], channelIds: [], agentIds: [], expiresIn: "30d", maxUses: null };
+/**
+ * The choices that make the workspace's own link (`plainLink`). Sent as Link opens, they renew it to 30 days at the
+ * same address; an empty body only returns it as it is.
+ */
+export const INVITE_LINK_DEFAULTS: LinkChoices = {
+  roleIds: [],
+  channelIds: [],
+  agentIds: [],
+  expiresIn: INVITE_LINK_TTL,
+  maxUses: null,
+};
 
-const sameIds = (a: readonly string[], b: readonly string[]) =>
-  a.length === b.length && a.every((id) => b.includes(id));
+/**
+ * Whether a link's choices are the workspace's own link (no cargo, no channel or agent besides #general and the right
+ * hand, 30 days, no limit): the server answers those with that link, renewed (`createInviteLink`'s `atDefaults`).
+ */
+export const plainLink = (c: LinkChoices) =>
+  c.roleIds.length === 0 &&
+  c.channelIds.length === 0 &&
+  c.agentIds.length === 0 &&
+  c.maxUses === null &&
+  c.expiresIn === INVITE_LINK_TTL;
 
-/** Whether two sets of choices make the same link: the same picks in any order, the same time and maximum. */
-export const sameChoices = (a: LinkChoices, b: LinkChoices) =>
-  sameIds(a.roleIds, b.roleIds) &&
-  sameIds(a.channelIds, b.channelIds) &&
-  sameIds(a.agentIds, b.agentIds) &&
-  a.expiresIn === b.expiresIn &&
-  a.maxUses === b.maxUses;
+/** Two links' choices alike: the one made still is what the fields say. */
+export const sameChoices = (a: LinkChoices, b: LinkChoices) => {
+  const same = (x: readonly string[], y: readonly string[]) =>
+    x.length === y.length && [...x].sort().join() === [...y].sort().join();
+  return (
+    same(a.roleIds, b.roleIds) &&
+    same(a.channelIds, b.channelIds) &&
+    same(a.agentIds, b.agentIds) &&
+    a.expiresIn === b.expiresIn &&
+    a.maxUses === b.maxUses
+  );
+};
+
+/** Whether a link took all its people: approving through it is refused until its maximum grows. */
+export const linkFull = (link: Pick<InviteLink, "maxUses" | "uses">) =>
+  link.maxUses !== null && link.maxUses !== undefined && (link.uses ?? 0) >= link.maxUses;
 
 const DAY_MS = 86_400_000;
 
-/** Where a link stands on Convites: it took all its people (`full`), or it has less than a day left (`soon`). */
-export function linkStanding(
-  link: Pick<InviteLink, "uses" | "maxUses" | "expiresAt" | "neverExpires">,
+/** A link Convites shows in the attention tone: it took all its people, or it has less than a day left. */
+export const linkNeedsAttention = (
+  link: Pick<InviteLink, "maxUses" | "uses" | "expiresAt" | "neverExpires">,
   now = new Date(),
-): { full: boolean; soon: boolean } {
-  const max = link.maxUses ?? null;
+) => linkFull(link) || (!link.neverExpires && new Date(link.expiresAt).getTime() - now.getTime() < DAY_MS);
+
+/** What a link or an invitation gives: its cargos, and the channels and agents past #general and the right hand. */
+export interface InviteLists extends InviteStart {
+  roleIds: string[];
+}
+
+/**
+ * What Editar link or Editar convite saves: only the lists that changed from what it gives now, each compared as the
+ * form would send it. The server checks every id it gets for whoever edits, so a list left as someone higher made it
+ * (a cargo above theirs, a channel they aren't in) stays as it is instead of refusing the save.
+ */
+export function changedLists(
+  was: { roleIds?: readonly string[]; channelIds?: readonly string[]; agentIds?: readonly string[] },
+  now: InviteLists,
+): Partial<InviteLists> {
   return {
-    full: max !== null && (link.uses ?? 0) >= max,
-    soon: !link.neverExpires && new Date(link.expiresAt).getTime() - now.getTime() < DAY_MS,
+    ...(sameList(now.roleIds, was.roleIds ?? []) ? {} : { roleIds: now.roleIds }),
+    ...(sameList(now.channelIds, was.channelIds ?? []) ? {} : { channelIds: now.channelIds }),
+    ...(sameList(now.agentIds, was.agentIds ?? []) ? {} : { agentIds: now.agentIds }),
   };
 }
 
-/** A send or a link the server refused for one of its picks, gone or no longer the sender's to give (ADR 0184). */
+/**
+ * Why the server refused a send, a link or an approval for one of its picks (ADR 0184): a channel or an agent gone or
+ * no longer the sender's to give (`invitation.channel`, `invitation.agent`, naming it), or a cargo they may no longer
+ * give.
+ */
 export type InviteRefusal =
   | { kind: "channel"; id: string; name: string | null; why: "archived" | "left" | "gone" }
-  | { kind: "agent"; id: string; name: string | null; why: "gone" | "locked" };
+  | { kind: "agent"; id: string; name: string | null; why: "gone" | "locked" }
+  | { kind: "role" };
 
-/** The pick an `invitation.channel` or `invitation.agent` refusal names, from its params; null for any other error. */
+/** A refused channel or agent: its token is marked and `inviteRefusalText` says why. */
+export type RefusedPick = Exclude<InviteRefusal, { kind: "role" }>;
+
+const ROLE_REFUSALS = new Set(["role.unknown", "role.above_you", "role.grant_forbidden"]);
+
+/** The pick an error refuses, from its code and params; null for any other error. */
 export function inviteRefusal(error: unknown): InviteRefusal | null {
   if (!(error instanceof ApiError)) return null;
   const p = error.params ?? {};
   const name = typeof p.name === "string" && p.name ? p.name : null;
-  if (error.code === "invitation.channel" && typeof p.channelId === "string") {
-    if (p.why === "archived" || p.why === "left" || p.why === "gone")
-      return { kind: "channel", id: p.channelId, name, why: p.why };
-  }
-  if (error.code === "invitation.agent" && typeof p.agentId === "string") {
-    if (p.why === "gone" || p.why === "locked") return { kind: "agent", id: p.agentId, name, why: p.why };
-  }
-  return null;
+  if (error.code === "invitation.channel" && typeof p.channelId === "string")
+    return { kind: "channel", id: p.channelId, name, why: p.why === "archived" || p.why === "left" ? p.why : "gone" };
+  if (error.code === "invitation.agent" && typeof p.agentId === "string")
+    return { kind: "agent", id: p.agentId, name, why: p.why === "locked" ? "locked" : "gone" };
+  return ROLE_REFUSALS.has(error.code) ? { kind: "role" } : null;
 }
 
-/** A refusal's line: what happened to the pick, and taking it out as the way on. */
-export function inviteRefusalText(t: TFunction, r: InviteRefusal): string {
+/** A refused pick's line: what happened to it, and taking it out as the way on. */
+export function inviteRefusalText(t: TFunction, r: RefusedPick): string {
   if (r.kind === "channel")
-    return r.why === "gone" || !r.name ? t("invites.refused.gone") : t(`invites.refused.${r.why}`, { channel: r.name });
+    return r.why === "gone" || !r.name
+      ? t("invites.refused.channelGone")
+      : t(r.why === "archived" ? "invites.refused.channelArchived" : "invites.refused.channelLeft", {
+          channel: r.name,
+        });
   if (!r.name) return t("invites.refused.agentUnnamed");
   return t(r.why === "gone" ? "invites.refused.agentGone" : "invites.refused.agentLocked", agentGrammar(r.name));
 }

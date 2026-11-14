@@ -8,7 +8,7 @@ import {
   useWorkspaceLimits,
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { type InviteRefusal, inviteRefusal, inviteRefusalText } from "@agenteschat/client/lib/invite-start";
+import { changedLists, inviteRefusal, inviteRefusalText, type RefusedPick } from "@agenteschat/client/lib/invite-start";
 import { approvalNews, JOIN_REASON_MAX } from "@agenteschat/client/lib/join-requests";
 import { membersFull } from "@agenteschat/client/lib/limits";
 import { can } from "@agenteschat/client/lib/permissions";
@@ -36,7 +36,7 @@ import { errorHaptic, successHaptic, useSurface } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { EMPTY_INVITE, useDraftStart, useInviteDraft } from "./draft";
 import { useStartFields } from "./InviteFields";
-import { draftFrom, focusedFirst, requestChips, startChanges } from "./logic";
+import { draftFrom, focusedFirst, requestChips } from "./logic";
 import { MembersFullNote } from "./MembersFullNote";
 
 const REASON_LIMIT = { max: JOIN_REASON_MAX };
@@ -172,7 +172,7 @@ function RequestCard({
   useDraftStart(key, opening);
   // The link's choices from the first frame, before the draft is in place: nothing jumps.
   const draft = useInviteDraft(key) ?? opening?.() ?? null;
-  const [refused, setRefused] = useState<InviteRefusal | null>(null);
+  const [refused, setRefused] = useState<RefusedPick | null>(null);
   const start = useStartFields(key, draft, { refused });
   const [denying, setDenying] = useState(false);
   const [reason, setReason] = useState("");
@@ -182,7 +182,7 @@ function RequestCard({
   const failed = (e: unknown) => {
     errorHaptic();
     const pick = inviteRefusal(e);
-    if (pick) setRefused(pick);
+    if (pick && pick.kind !== "role") setRefused(pick);
     else toast({ title: errorText(t, e, i18n.language), icon: "x" });
   };
 
@@ -193,7 +193,7 @@ function RequestCard({
       // Only roles still offered (one may have gone since it was picked); channels and agents only when changed, so
       // the link's own go as the server finds them now.
       const offered = start.send.roleIds.filter((id) => roles.some((x) => x.id === id && x.givable));
-      const changed = startChanges(
+      const changed = changedLists(
         { channelIds: r.link?.channelIds ?? [], agentIds: r.link?.agentIds ?? [] },
         { ...start.send, roleIds: [] },
       );

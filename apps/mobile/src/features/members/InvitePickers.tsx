@@ -106,7 +106,7 @@ function CargoPick({ draft, change }: PickProps) {
     }));
   return (
     <SettingsPage
-      title={personal ? t("invites.can") : t("members.role")}
+      title={personal ? t("invites.rolePersonal") : t("members.role")}
       action={{ label: t("mobile.invitePeople.ok"), onPress: goBack }}
     >
       {picks.length > ROLES_SEARCH_FROM ? (
@@ -152,7 +152,7 @@ function ChannelsPick({ draft, change }: PickProps) {
   const flip = (id: string) => change((d) => ({ ...d, ...flipStart(roles, d, "channelIds", id) }));
   return (
     <SettingsPage
-      title={isPersonal(org) ? t("shell.channelsPersonal") : t("members.dialog.where.label")}
+      title={isPersonal(org) ? t("shell.channelsPersonal") : t("invites.channels")}
       action={{ label: t("mobile.invitePeople.ok"), onPress: goBack }}
     >
       {all.flatMap((g) => g.picks).length > ROLES_SEARCH_FROM ? (
@@ -270,7 +270,7 @@ function AgentsPick({ draft, change }: PickProps) {
                 key={rightShown.id}
                 leading={<AgentFace agentId={rightShown.id} size={30} live={false} />}
                 label={rightShown.name}
-                sub={t("invites.agent.everyone", agentGrammar(rightShown.name))}
+                sub={t("invites.agent.rightHand", agentGrammar(rightShown.name))}
                 checked
                 faint
                 disabled
@@ -280,7 +280,7 @@ function AgentsPick({ draft, change }: PickProps) {
           </GroupedList>
         </>
       ) : null}
-      {listed.length === 0 ? <GroupedFooter>{t("invites.agentsNone")}</GroupedFooter> : null}
+      {listed.length === 0 ? <GroupedFooter>{t("invites.noAgents")}</GroupedFooter> : null}
       {query && !rightShown && fromCargo.length + others.length === 0 ? (
         <NoMatch text={t("rolesPage.agents.noMatch", { q: query.trim() })} clear={() => setQuery("")} />
       ) : null}
@@ -299,13 +299,13 @@ function TtlPick({ draft, change }: PickProps) {
     goBack();
   };
   return (
-    <SettingsPage title={t("invites.ttl.label")}>
+    <SettingsPage title={t("invites.expiresIn")}>
       <Gap />
       <GroupedList>
         {draft.until ? (
           <GroupedRow
             key="keep"
-            label={t("invites.ttl.keep", { date: formatShortDate(i18n.language, draft.until) })}
+            label={t("invites.untilDate", { date: formatShortDate(i18n.language, draft.until) })}
             checked={draft.expiresIn === null}
             onPress={() => choose(null)}
           />
@@ -328,7 +328,7 @@ function MaxPick({ draft, change }: PickProps) {
     goBack();
   };
   return (
-    <SettingsPage title={t("invites.max.label")}>
+    <SettingsPage title={t("invites.maxUses")}>
       <Gap />
       <GroupedList>
         {INVITE_LINK_MAX_USES.filter((max) => max === null || max >= uses).map((max) => (
@@ -340,7 +340,7 @@ function MaxPick({ draft, change }: PickProps) {
           />
         ))}
       </GroupedList>
-      {uses > 0 ? <GroupedFooter>{t("invites.max.used", { count: uses })}</GroupedFooter> : null}
+      {uses > 0 ? <GroupedFooter>{t("invites.usedSoFar", { count: uses })}</GroupedFooter> : null}
     </SettingsPage>
   );
 }

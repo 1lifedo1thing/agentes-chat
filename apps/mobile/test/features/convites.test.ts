@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Agent, InviteLink, JoinRequest, OrgRole } from "@agenteschat/client";
-import { linkStanding, PLAIN_LINK, sameChoices } from "@agenteschat/client/lib/invite-start";
+import { changedLists, linkFull, linkNeedsAttention, plainLink } from "@agenteschat/client/lib/invite-start";
 import { arrivalOf } from "../../src/features/chat/logic";
 import { EMPTY_INVITE, type InviteDraft } from "../../src/features/members/draft";
 import {
@@ -22,7 +22,6 @@ import {
   listedPlainLink,
   maxWord,
   requestLine,
-  startChanges,
   startOf,
   ttlWord,
 } from "../../src/features/members/logic";
@@ -116,10 +115,10 @@ describe("a form's cargos bring their channels and agents (ADR 0184)", () => {
   });
 
   test("Link mode: the workspace's own link at the defaults, a link of its own past them", () => {
-    expect(sameChoices(linkChoicesOf(ROLES, draft()), PLAIN_LINK)).toBe(true);
-    expect(sameChoices(linkChoicesOf(ROLES, draft({ roleIds: ["suporte"] })), PLAIN_LINK)).toBe(false);
-    expect(sameChoices(linkChoicesOf(ROLES, draft({ expiresIn: "1d" })), PLAIN_LINK)).toBe(false);
-    expect(sameChoices(linkChoicesOf(ROLES, draft({ maxUses: 5 })), PLAIN_LINK)).toBe(false);
+    expect(plainLink(linkChoicesOf(ROLES, draft()))).toBe(true);
+    expect(plainLink(linkChoicesOf(ROLES, draft({ roleIds: ["suporte"] })))).toBe(false);
+    expect(plainLink(linkChoicesOf(ROLES, draft({ expiresIn: "1d" })))).toBe(false);
+    expect(plainLink(linkChoicesOf(ROLES, draft({ maxUses: 5 })))).toBe(false);
     // Editar link's "Até 13 de dez." reads as the 30 days a new link would have.
     expect(linkChoicesOf(ROLES, draft({ expiresIn: null })).expiresIn).toBe("30d");
   });
@@ -127,7 +126,7 @@ describe("a form's cargos bring their channels and agents (ADR 0184)", () => {
   test("Editar link and Editar convite save only what changed", () => {
     const link = { roleIds: ["suporte"], channelIds: ["c-suporte"], agentIds: ["max"], maxUses: 10 };
     const same = { roleIds: ["suporte"], channelIds: ["c-suporte"], agentIds: ["max"] };
-    expect(startChanges(link, same)).toEqual({});
+    expect(changedLists(link, same)).toEqual({});
     expect(linkChanges(link, same, { expiresIn: null, maxUses: 10 })).toEqual({});
     expect(linkChanges(link, { ...same, channelIds: [] }, { expiresIn: "7d", maxUses: null })).toEqual({
       channelIds: [],
@@ -137,7 +136,7 @@ describe("a form's cargos bring their channels and agents (ADR 0184)", () => {
     // A link that never ends, left at "Não expira", keeps its date.
     expect(linkChanges({ ...link, neverExpires: true }, same, { expiresIn: "never", maxUses: 10 })).toEqual({});
     // The picks compare in any order.
-    expect(startChanges({ roleIds: ["a", "b"] }, { roleIds: ["b", "a"], channelIds: [], agentIds: [] })).toEqual({});
+    expect(changedLists({ roleIds: ["a", "b"] }, { roleIds: ["b", "a"], channelIds: [], agentIds: [] })).toEqual({});
   });
 });
 
@@ -168,11 +167,17 @@ describe("Convites' rows (ADR 0184)", () => {
     expect(linkLine(pt, "pt-BR", link({ maxUses: 10, uses: 10 }), "u-ana", NOW)).toBe(
       "10 de 10 pessoas · expira em 6 dias",
     );
-    expect(linkLine(pt, "pt-BR", link({ uses: 4, neverExpires: true }), "u-ana", NOW)).toBe("4 entraram · não expira");
-    expect(linkLine(pt, "pt-BR", link({ expiresAt: later(20 / 24) }), "u-ana", NOW)).toBe("expira em 20 h");
+    expect(linkLine(pt, "pt-BR", link({ uses: 4, neverExpires: true }), "u-ana", NOW)).toBe(
+      "4 pessoas entraram · não expira",
+    );
+    expect(linkLine(pt, "pt-BR", link({ expiresAt: later(20 / 24) }), "u-ana", NOW)).toBe(
+      "Ninguém entrou ainda · expira em 20 h",
+    );
     // Full, or less than a day left: the row says it in amber.
-    expect(linkStanding(link({ maxUses: 10, uses: 10 }), NOW).full).toBe(true);
-    expect(linkStanding(link({ expiresAt: later(20 / 24) }), NOW).soon).toBe(true);
+    expect(linkFull(link({ maxUses: 10, uses: 10 }))).toBe(true);
+    expect(linkNeedsAttention(link({ maxUses: 10, uses: 10 }), NOW)).toBe(true);
+    expect(linkNeedsAttention(link({ expiresAt: later(20 / 24) }), NOW)).toBe(true);
+    expect(linkNeedsAttention(link(), NOW)).toBe(false);
     const en = await translator("en");
     expect(linkLine(en, "en", link({ maxUses: 5, uses: 1 }), "u-me", NOW)).toBe(
       "1 of 5 people · expires in 6 days · by Ana Souza",
@@ -316,7 +321,7 @@ describe("the choices pushed over a form", () => {
       [
         null,
         [
-          ["general", true, true, "Todo mundo entra"],
+          ["general", true, true, "Todo mundo entra no #general."],
           ["diretoria", false, false, "Privado · você está nele"],
         ],
       ],
@@ -444,7 +449,7 @@ describe("Convidar pessoas on the phone", () => {
   test("E-mail or Link on top, full width; a server that sends no e-mail has links only", () => {
     expect(invite).toContain("{byLink ? null : (");
     expect(invite).toMatch(/<Segmented\s+wide\s+items=\{\[/);
-    expect(invite).toContain('{ key: "email", label: t("invites.how.email"), icon: "mail" }');
+    expect(invite).toContain('{ key: "email", label: t("invites.byEmail"), icon: "mail" }');
   });
 
   test("each label over its field, the field at the row's whole width, as the app's forms", () => {
@@ -468,7 +473,7 @@ describe("Convidar pessoas on the phone", () => {
   });
 
   test("Link mode: the workspace's link renewed as the mode opens, any other choice makes its own", () => {
-    expect(invite).toMatch(/renew\s*\.mutateAsync\(PLAIN_LINK\)\s*\.then\(setWorkspace,/);
+    expect(invite).toMatch(/renew\s*\.mutateAsync\(INVITE_LINK_DEFAULTS\)\s*\.then\(setWorkspace,/);
     expect(invite).toContain("const link = await make.mutateAsync(choices);");
     expect(invite).toContain('label={t("members.link.make")}');
   });
@@ -485,9 +490,9 @@ describe("Convidar pessoas on the phone", () => {
     expect(invite).toContain("label={shown?.url ?? ADDRESS_PENDING} labelLines={0}");
     expect(src("features/members/InviteEdit.tsx")).toContain('<GroupedRow icon="link" label={url} labelLines={0} />');
     // Never "Crie o link para copiar." while no Criar link row is there.
-    expect(invite).toMatch(/: renewing\s*\? "\\u00a0"\s*: t\("invites\.link\.makeFirst"\)/);
+    expect(invite).toMatch(/: renewing\s*\? "\\u00a0"\s*: t\("invites\.linkEmpty"\)/);
     // Opening renews the workspace's link to 30 days: only the defaults renew it, an empty body returns it as it is.
-    expect(invite).toContain("renew.mutateAsync(PLAIN_LINK)");
+    expect(invite).toContain("renew.mutateAsync(INVITE_LINK_DEFAULTS)");
     expect(invite).not.toContain("renew.mutateAsync()");
     // A refused renewal hides the listed link and says why, as the web does.
     expect(invite).not.toContain("if (!known) toast(");
@@ -600,7 +605,7 @@ describe("the worst case (break-ui): long names, one of each, a thousand of them
     const pt = await translator("pt-BR");
     const one = { uses: 1, maxUses: 1, expiresAt: later(1 / 48), createdBy: null, createdByUserId: null };
     expect(linkLine(pt, "pt-BR", one, "u-me", NOW)).toBe("1 de 1 pessoa · expira em 30 min");
-    expect(linkLine(pt, "pt-BR", { ...one, maxUses: null }, "u-me", NOW)).toBe("1 entrou · expira em 30 min");
+    expect(linkLine(pt, "pt-BR", { ...one, maxUses: null }, "u-me", NOW)).toBe("1 pessoa entrou · expira em 30 min");
     expect(maxWord(pt, 1)).toBe("1 pessoa");
     expect(areaValues(pt, "pt-BR", { waiting: 1284 }).invites).toBe("1.284");
     const convites = src("features/members/InvitesScreen.tsx");

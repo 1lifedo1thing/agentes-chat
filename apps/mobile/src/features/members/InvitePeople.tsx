@@ -16,11 +16,13 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { formatShortDate } from "@agenteschat/client/lib/format";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import {
-  type InviteRefusal,
+  INVITE_LINK_DEFAULTS,
+  INVITE_LINK_TTL,
   inviteRefusal,
   inviteRefusalText,
   type LinkChoices,
-  PLAIN_LINK,
+  plainLink,
+  type RefusedPick,
   sameChoices,
 } from "@agenteschat/client/lib/invite-start";
 import { sendsEmail } from "@agenteschat/client/lib/join-requests";
@@ -143,7 +145,7 @@ function InviteForm() {
   const input = useRef<TextInputInstance | null>(null);
   const [typed, setTyped] = useState("");
   // A pick the server turned down (gone, or no longer the sender's to give): its token and its line until it's out.
-  const [refused, setRefused] = useState<InviteRefusal | null>(null);
+  const [refused, setRefused] = useState<RefusedPick | null>(null);
   // An agent's invite card opens it with its addresses (`?emails=a@x,b@y`), a channel's add sheet with that channel, a
   // cargo's "Convidar com este cargo" with that cargo, which brings its channels and agents.
   const { emails, channel, role } = useLocalSearchParams<{ emails?: string; channel?: string; role?: string }>();
@@ -211,7 +213,7 @@ function InviteForm() {
   };
   const refusedBy = (e: unknown) => {
     const r = inviteRefusal(e);
-    if (!r) return false;
+    if (!r || r.kind === "role") return false;
     errorHaptic();
     setRefused(r);
     return true;
@@ -301,8 +303,8 @@ function InviteForm() {
           <Segmented
             wide
             items={[
-              { key: "email", label: t("invites.how.email"), icon: "mail" },
-              { key: "link", label: t("invites.how.link"), icon: "link" },
+              { key: "email", label: t("invites.byEmail"), icon: "mail" },
+              { key: "link", label: t("invites.byLink"), icon: "link" },
             ]}
             value={mode}
             onChange={(key) => setMode(key === "link" ? "link" : "email")}
@@ -394,13 +396,13 @@ function InviteForm() {
           <GroupedHeader>{t("invites.theLink")}</GroupedHeader>
           <GroupedList>
             <GroupedRow
-              label={t("invites.ttl.label")}
-              value={ttlWord(t, draft.expiresIn ?? "30d")}
+              label={t("invites.expiresIn")}
+              value={ttlWord(t, draft.expiresIn ?? INVITE_LINK_TTL)}
               chevron
               onPress={() => openPick(KEY, "ttl")}
             />
             <GroupedRow
-              label={t("invites.max.label")}
+              label={t("invites.maxUses")}
               value={maxWord(t, draft.maxUses)}
               chevron
               onPress={() => openPick(KEY, "max")}
@@ -441,9 +443,9 @@ function LinkMode({
   const [workspace, setWorkspace] = useState<InviteLinkMade | null>(null);
   const [made, setMade] = useState<{ choices: LinkChoices; link: InviteLinkMade } | null>(null);
   const [copied, setCopied] = useState(false);
-  const choices: LinkChoices = { ...start.send, expiresIn: draft.expiresIn ?? "30d", maxUses: draft.maxUses };
-  const plain = sameChoices(choices, PLAIN_LINK);
-  const failedText = (e: unknown) => t("invites.link.failed", { cause: errorText(t, e, i18n.language) });
+  const choices: LinkChoices = { ...start.send, expiresIn: draft.expiresIn ?? INVITE_LINK_TTL, maxUses: draft.maxUses };
+  const plain = plainLink(choices);
+  const failedText = (e: unknown) => t("invites.linkFailed", { cause: errorText(t, e, i18n.language) });
   // The workspace's link: asked once per visit, the first time the choices are at the defaults. The defaults are sent
   // because they renew it to 30 days at the same address; an empty body only returns it as it is.
   const asked = useRef(false);
@@ -451,8 +453,8 @@ function LinkMode({
     if (!plain || asked.current) return;
     asked.current = true;
     // A refusal can mean the link itself is closed (a workspace being deleted, a hold): say why, as the web does.
-    renew.mutateAsync(PLAIN_LINK).then(setWorkspace, (e: unknown) => {
-      toast({ title: t("invites.link.failed", { cause: errorText(t, e, i18n.language) }), icon: "x" });
+    renew.mutateAsync(INVITE_LINK_DEFAULTS).then(setWorkspace, (e: unknown) => {
+      toast({ title: t("invites.linkFailed", { cause: errorText(t, e, i18n.language) }), icon: "x" });
     });
   }, [plain, renew, toast, t, i18n.language]);
   useEffect(() => {
@@ -483,13 +485,13 @@ function LinkMode({
       : t("members.link.until", { date: formatShortDate(i18n.language, shown.expiresAt) })
     : renewing
       ? "\u00a0"
-      : t("invites.link.makeFirst");
+      : t("invites.linkEmpty");
   return (
     <>
       <GroupedHeader
-        hint={{ name: t("common.about", { label: t("invites.how.link") }), text: t("members.dialog.orLink.text") }}
+        hint={{ name: t("common.about", { label: t("invites.byLink") }), text: t("members.dialog.orLink.text") }}
       >
-        {t("invites.how.link")}
+        {t("invites.byLink")}
       </GroupedHeader>
       <GroupedList>
         {shown || renewing
