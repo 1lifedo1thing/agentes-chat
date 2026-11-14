@@ -1903,7 +1903,14 @@
       "idx": 273,
       "version": "7",
       "when": 1794756900000,
-      "tag": "0275_mcp_request_headers",
+      "tag": "0275_view_all_agents",
+      "breakpoints": true
+    },
+    {
+      "idx": 274,
+      "version": "7",
+      "when": 1794757000000,
+      "tag": "0276_mcp_request_headers",
       "breakpoints": true
     }
   ]

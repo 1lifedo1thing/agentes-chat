@@ -1,5 +1,5 @@
 {
-  "id": "574cc66d-297e-4360-ad46-98be8e81c9cc",
+  "id": "9f1f3c87-6556-4cbb-a394-7432ef6e350e",
   "prevId": "abbcd4f0-181d-436f-99f6-2cd6c199f750",
   "version": "7",
   "dialect": "postgresql",
@@ -4847,12 +4847,6 @@
         "composio_account_id": {
           "name": "composio_account_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "header_names": {
-          "name": "header_names",
-          "type": "text[]",
           "primaryKey": false,
           "notNull": false
         },

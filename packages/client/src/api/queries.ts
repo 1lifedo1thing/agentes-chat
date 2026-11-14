@@ -3206,6 +3206,21 @@ export function useRemoveCredential(orgId: string) {
   });
 }
 
+/** "Remover cópias": the copies' agents now think with the kept key. */
+export function useRemoveCredentialCopies(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.agents.removeCredentialCopies(orgId, id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
+      void qc.invalidateQueries({ queryKey: keys.agentPages(orgId) });
+      void qc.invalidateQueries({ queryKey: keys.models });
+      return qc.invalidateQueries({ queryKey: keys.credentials(orgId) });
+    },
+  });
+}
+
 export const useAgentDetail = (orgId: string, agentId: string) => {
   const api = useApi();
   return useQuery({

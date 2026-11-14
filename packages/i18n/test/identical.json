@@ -3068,6 +3068,8 @@
       "taskManager.program.browser",
       "taskManager.program.terminal",
       "timezone.group.Asia",
+      "toolNames.label.deploy_edge_function",
+      "toolNames.label.merge_merge_request",
       "toolNames.verb.deploy",
       "toolNames.verb.merge",
       "toolNames.verb.transfer",
