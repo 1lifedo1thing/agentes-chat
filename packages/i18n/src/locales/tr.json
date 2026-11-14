@@ -2155,6 +2155,16 @@
       "people": "Zaten 5 kişi sabitlediniz. Bunu sabitlemek için birini kaldırın."
     }
   },
+  "appsDownload": {
+    "computer": "Bilgisayar",
+    "computerText": "Workspace'iniz kendi penceresinde, sistemin bildirimleriyle.",
+    "inApp": "Zaten bilgisayardaki uygulamadasınız.",
+    "howTo": "Nasıl kurulur",
+    "phone": "Telefon",
+    "phoneText": "Bildirimler cebinizde, her yerden yanıt vermek için.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "agentes uygulamasına giriş yapmak için QR kodu",
     "making": "Kod oluşturuluyor…",
@@ -15477,6 +15487,7 @@
     "section": {
       "account": "Hesabınız",
       "notifications": "Bildirimler",
+      "download": "agentes.chat uygulamaları",
       "general": "Genel",
       "right_hand": "Sağ kol",
       "members": "Üyeler",
@@ -15509,6 +15520,7 @@
     "sectionText": {
       "account": "Profiliniz ve uygulamanın size nasıl göründüğü.",
       "notifications": "Burada size bildirim olarak ulaşanlar. Gelen kutusu her şeyi saklar.",
+      "download": "Bilgisayarda ve telefonda aynı workspace, hesabınızla.",
       "general": "Ad, saat dilimi ve her ajanın çalışma alanı hakkında bildikleri.",
       "right_hand": "Her kişiyle kendi DM'inde ekibi kuran asistan.",
       "members": "Çalışma alanında kimler var.",

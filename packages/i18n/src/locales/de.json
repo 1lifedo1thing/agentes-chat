@@ -2155,6 +2155,16 @@
       "people": "Du hast schon 5 Personen angeheftet. Löse eine, um diese anzuheften."
     }
   },
+  "appsDownload": {
+    "computer": "Rechner",
+    "computerText": "Dein Workspace in einem eigenen Fenster, mit den Benachrichtigungen des Systems.",
+    "inApp": "Du bist schon in der App auf dem Rechner.",
+    "howTo": "So installierst du sie",
+    "phone": "Handy",
+    "phoneText": "Benachrichtigungen in der Tasche, um von überall zu antworten.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "QR-Code zum Anmelden in der agentes-App",
     "making": "Code wird erstellt…",
@@ -15540,6 +15550,7 @@
     "section": {
       "account": "Dein Konto",
       "notifications": "Benachrichtigungen",
+      "download": "Apps von agentes.chat",
       "general": "Allgemein",
       "right_hand": "Rechte Hand",
       "members": "Mitglieder",
@@ -15572,6 +15583,7 @@
     "sectionText": {
       "account": "Dein Profil und wie die App für dich aussieht.",
       "notifications": "Was dich hier als Benachrichtigung erreicht. Der Posteingang behält alles.",
+      "download": "Derselbe Workspace auf Rechner und Handy, mit deinem Konto.",
       "general": "Name, Zeitzone und was jeder Agent über den Workspace weiß.",
       "right_hand": "Der Assistent, der mit jeder Person das Team aufbaut, in ihrer DM.",
       "members": "Wer im Workspace ist.",

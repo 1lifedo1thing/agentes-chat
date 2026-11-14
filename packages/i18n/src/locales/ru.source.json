@@ -5357,6 +5357,30 @@
   "sidebarPins.full.people": {
     "value": "You already pinned 5 people. Unpin one to pin this one."
   },
+  "appsDownload.computer": {
+    "value": "Computer"
+  },
+  "appsDownload.computerText": {
+    "value": "Your workspace in a window of its own, with the system's notifications."
+  },
+  "appsDownload.inApp": {
+    "value": "You're already in the computer app."
+  },
+  "appsDownload.howTo": {
+    "value": "How to install"
+  },
+  "appsDownload.phone": {
+    "value": "Phone"
+  },
+  "appsDownload.phoneText": {
+    "value": "Notifications in your pocket, to answer from anywhere."
+  },
+  "appsDownload.appStore": {
+    "value": "App Store"
+  },
+  "appsDownload.googlePlay": {
+    "value": "Google Play"
+  },
   "openOnPhone.qr": {
     "value": "QR code to sign in to the agentes app"
   },
@@ -37903,6 +37927,9 @@
   "settings.section.notifications": {
     "value": "Notifications"
   },
+  "settings.section.download": {
+    "value": "agentes.chat apps"
+  },
   "settings.section.general": {
     "value": "General"
   },
@@ -37986,6 +38013,9 @@
   },
   "settings.sectionText.notifications": {
     "value": "What reaches you as an alert here. The inbox keeps everything."
+  },
+  "settings.sectionText.download": {
+    "value": "The same workspace on your computer and your phone, with your account."
   },
   "settings.sectionText.general": {
     "value": "Name, time zone and what every agent knows about the workspace."

@@ -2219,6 +2219,16 @@
       "people": "Vous avez déjà épinglé 5 personnes. Désépinglez-en une pour épingler celle-ci."
     }
   },
+  "appsDownload": {
+    "computer": "Ordinateur",
+    "computerText": "Votre workspace dans une fenêtre à lui, avec les notifications du système.",
+    "inApp": "Vous êtes déjà dans l'app de l'ordinateur.",
+    "howTo": "Comment l'installer",
+    "phone": "Téléphone",
+    "phoneText": "Les notifications dans la poche, pour répondre de partout.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "QR code pour vous connecter à l'app agentes",
     "making": "Création du code…",
@@ -16059,6 +16069,7 @@
     "section": {
       "account": "Votre compte",
       "notifications": "Notifications",
+      "download": "Apps agentes.chat",
       "general": "Général",
       "right_hand": "Bras droit",
       "members": "Membres",
@@ -16091,6 +16102,7 @@
     "sectionText": {
       "account": "Votre profil et l'apparence de l'app pour vous.",
       "notifications": "Ce qui vous parvient en notification ici. La boîte de réception garde tout.",
+      "download": "Le même workspace sur l'ordinateur et le téléphone, avec votre compte.",
       "general": "Nom, fuseau horaire et ce que chaque agent sait de l'espace de travail.",
       "right_hand": "L'assistant qui construit l'équipe avec chaque personne, dans son DM.",
       "members": "Qui fait partie de l'espace de travail.",

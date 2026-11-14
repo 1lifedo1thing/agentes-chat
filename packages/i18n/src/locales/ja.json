@@ -2093,6 +2093,16 @@
       "people": "すでにメンバーを 5 人固定しています。固定するには 1 人解除してください。"
     }
   },
+  "appsDownload": {
+    "computer": "パソコン",
+    "computerText": "ワークスペースを専用のウィンドウで。システムの通知も届きます。",
+    "inApp": "すでにパソコンのアプリを使っています。",
+    "howTo": "インストール方法",
+    "phone": "スマートフォン",
+    "phoneText": "通知をポケットに。どこからでも返信できます。",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "agentesアプリにログインするためのQRコード",
     "making": "コードを作成中…",
@@ -14986,6 +14996,7 @@
     "section": {
       "account": "アカウント",
       "notifications": "通知",
+      "download": "agentes.chatのアプリ",
       "general": "一般",
       "right_hand": "右腕",
       "members": "メンバー",
@@ -15018,6 +15029,7 @@
     "sectionText": {
       "account": "あなたのプロフィールと、アプリの表示設定。",
       "notifications": "ここで通知として届くもの。受信トレイにはすべてが残ります。",
+      "download": "パソコンでもスマートフォンでも、同じアカウントで同じワークスペース。",
       "general": "名前、タイムゾーン、そしてすべてのエージェントがワークスペースについて知っていること。",
       "right_hand": "一人ひとりとDMでチームを作るアシスタント。",
       "members": "ワークスペースにいる人。",

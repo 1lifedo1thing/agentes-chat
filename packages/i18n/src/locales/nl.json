@@ -2155,6 +2155,16 @@
       "people": "Je hebt al 5 mensen vastgezet. Maak er een los om deze vast te zetten."
     }
   },
+  "appsDownload": {
+    "computer": "Computer",
+    "computerText": "Je workspace in een eigen venster, met de meldingen van het systeem.",
+    "inApp": "Je zit al in de app op de computer.",
+    "howTo": "Zo installeer je hem",
+    "phone": "Telefoon",
+    "phoneText": "Meldingen op zak, om overal te antwoorden.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "QR-code om in te loggen in de agentes-app",
     "making": "Code maken…",
@@ -15604,6 +15614,7 @@
     "section": {
       "account": "Je account",
       "notifications": "Meldingen",
+      "download": "Apps van agentes.chat",
       "general": "Algemeen",
       "right_hand": "Rechterhand",
       "members": "Leden",
@@ -15636,6 +15647,7 @@
     "sectionText": {
       "account": "Je profiel en hoe de app er voor jou uitziet.",
       "notifications": "Wat je hier als melding bereikt. De inbox bewaart alles.",
+      "download": "Dezelfde workspace op je computer en je telefoon, met je account.",
       "general": "Naam, tijdzone en wat elke agent over de werkruimte weet.",
       "right_hand": "De assistent die met ieder het team opbouwt, in hun DM.",
       "members": "Wie er in de werkruimte zit.",

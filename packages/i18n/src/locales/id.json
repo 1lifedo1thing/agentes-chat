@@ -2093,6 +2093,16 @@
       "people": "Kamu sudah menyematkan 5 orang. Lepaskan satu untuk menyematkan yang ini."
     }
   },
+  "appsDownload": {
+    "computer": "Komputer",
+    "computerText": "Workspace-mu di jendela sendiri, dengan notifikasi dari sistem.",
+    "inApp": "Kamu sudah di aplikasi komputer.",
+    "howTo": "Cara memasang",
+    "phone": "Ponsel",
+    "phoneText": "Notifikasi di saku, untuk membalas dari mana saja.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "Kode QR untuk masuk ke aplikasi agentes",
     "making": "Membuat kode…",
@@ -15040,6 +15050,7 @@
     "section": {
       "account": "Akunmu",
       "notifications": "Notifikasi",
+      "download": "Aplikasi agentes.chat",
       "general": "Umum",
       "right_hand": "Tangan kanan",
       "members": "Anggota",
@@ -15072,6 +15083,7 @@
     "sectionText": {
       "account": "Profilmu dan tampilan aplikasi untukmu.",
       "notifications": "Apa yang sampai padamu sebagai notifikasi di sini. Kotak masuk menyimpan semuanya.",
+      "download": "Workspace yang sama di komputer dan ponsel, dengan akunmu.",
       "general": "Nama, zona waktu, dan apa yang diketahui setiap agen tentang ruang kerja.",
       "right_hand": "Asisten yang menyusun tim bersama setiap orang, di DM mereka.",
       "members": "Siapa saja yang ada di ruang kerja.",

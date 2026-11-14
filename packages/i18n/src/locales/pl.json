@@ -2282,6 +2282,16 @@
       "people": "Masz już 5 przypiętych osób. Odepnij jedną, aby przypiąć tę."
     }
   },
+  "appsDownload": {
+    "computer": "Komputer",
+    "computerText": "Twój workspace we własnym oknie, z powiadomieniami systemu.",
+    "inApp": "Już korzystasz z aplikacji na komputerze.",
+    "howTo": "Jak zainstalować",
+    "phone": "Telefon",
+    "phoneText": "Powiadomienia w kieszeni, by odpowiadać z każdego miejsca.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "Kod QR do logowania w aplikacji agentes",
     "making": "Tworzę kod…",
@@ -16586,6 +16596,7 @@
     "section": {
       "account": "Twoje konto",
       "notifications": "Powiadomienia",
+      "download": "Aplikacje agentes.chat",
       "general": "Ogólne",
       "right_hand": "Prawa ręka",
       "members": "Członkowie",
@@ -16618,6 +16629,7 @@
     "sectionText": {
       "account": "Twój profil i wygląd aplikacji dla ciebie.",
       "notifications": "Co dociera do ciebie tutaj jako powiadomienie. Skrzynka zachowuje wszystko.",
+      "download": "Ten sam workspace na komputerze i telefonie, z twoim kontem.",
       "general": "Nazwa, strefa czasowa i to, co każdy agent wie o przestrzeni roboczej.",
       "right_hand": "Asystent, który buduje zespół z każdą osobą, w jej DM.",
       "members": "Kto jest w przestrzeni roboczej.",

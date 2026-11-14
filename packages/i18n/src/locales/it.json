@@ -2219,6 +2219,16 @@
       "people": "Hai già fissato 5 persone. Toglierne una per fissare questa."
     }
   },
+  "appsDownload": {
+    "computer": "Computer",
+    "computerText": "Il tuo workspace in una finestra tutta sua, con le notifiche del sistema.",
+    "inApp": "Sei già nell'app del computer.",
+    "howTo": "Come installarla",
+    "phone": "Telefono",
+    "phoneText": "Le notifiche in tasca, per rispondere da ovunque.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "Codice QR per accedere all'app agentes",
     "making": "Creazione del codice…",
@@ -16071,6 +16081,7 @@
     "section": {
       "account": "Il tuo account",
       "notifications": "Notifiche",
+      "download": "App di agentes.chat",
       "general": "Generali",
       "right_hand": "Braccio destro",
       "members": "Membri",
@@ -16103,6 +16114,7 @@
     "sectionText": {
       "account": "Il tuo profilo e come appare l'app per te.",
       "notifications": "Cosa ti arriva come notifica qui. La posta in arrivo conserva tutto.",
+      "download": "Lo stesso workspace sul computer e sul telefono, con il tuo account.",
       "general": "Nome, fuso orario e ciò che ogni agente sa dello spazio di lavoro.",
       "right_hand": "L'assistente che costruisce il team con ogni persona, nella sua DM.",
       "members": "Chi fa parte dello spazio di lavoro.",
