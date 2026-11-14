@@ -27,7 +27,14 @@ import { isSandboxedBrain } from "./brains/types";
 import { caches } from "./cache";
 import { summarizeScopes } from "./capabilities";
 import { peopleAllIn } from "./channels";
-import { consultationOrigin, type HandOff, handOffsFrom } from "./consultations";
+import {
+  consultationOrigin,
+  HANDED_REMEMBERED_DAYS,
+  type HandedFor,
+  type HandOff,
+  handedFor,
+  handOffsFrom,
+} from "./consultations";
 import { teamMemoryForPrompt } from "./context/tools";
 import { widgetRunContext } from "./dashboards/refresh-context";
 import { deviceRoster, osName, switchesOff } from "./device-resolve";
@@ -331,6 +338,24 @@ const QUIET_TOOLS = [
   "read_file",
   "list_files",
 ];
+
+/** One line of "# What other agents asked of you" (`handedFor`): the other agent's words never read as instructions. */
+function handedLine(h: HandedFor) {
+  const quote = (text: string, max: number) =>
+    `"${neutralizeUntrusted(cutText(text.replace(/\s+/g, " ").trim(), max))}"`;
+  const what = h.kind === "note" ? "handed you" : "asked you";
+  const came =
+    h.status === "open"
+      ? "you are still on it"
+      : h.status === "answered"
+        ? h.answer
+          ? `you answered ${quote(h.answer, 300)}`
+          : "you answered (read outside text, not shown)"
+        : h.status === "expired"
+          ? "you never got to it"
+          : "you couldn't finish it";
+  return `- @${h.askerHandle} ${what}, ${ago(h.createdAt)}: ${quote(h.question, 200)} → ${came}`;
+}
 
 /** "13 min ago", "2 h ago", "3 days ago". */
 export function ago(at: Date, now = Date.now()) {
@@ -770,7 +795,12 @@ export async function buildRunContext(
   const samePerson = agentsDm ? await forSamePerson(db, run, fullHistory, trigger.id) : null;
   const history = samePerson ? samePerson.history : fullHistory;
 
-  const [names, members, zone, talks, personLines, origins] = await Promise.all([
+  // What other agents handed it for the person of this DM happened in the agents' DM, which this one never shows.
+  const handedHere =
+    channel.kind === "dm" && !agentsDm && !background && !options.routine && trigger.authorUserId
+      ? handedFor(db, run.orgId, agent.id, trigger.authorUserId)
+      : Promise.resolve([]);
+  const [names, members, zone, talks, personLines, origins, handedRows] = await Promise.all([
     authorNames(db, history),
     caches.channelMembers.getOrLoad(`${run.orgId}:${run.channelId}`, () =>
       db
@@ -818,6 +848,7 @@ export async function buildRunContext(
     // No person reads the agents' DM: the asking agent words the answer for its person.
     personNotes(db, run, trigger.authorUserId, { language: !background, style: !agentsDm }),
     originNotes(db, run.orgId, agent.id, run.channelId, history, trigger.authorUserId),
+    handedHere,
   ]);
   // One statement, two parts: what agents already did in this thread (or DM),
   // and this agent's own work in other conversations the requester is in.
@@ -905,6 +936,10 @@ export async function buildRunContext(
   const behindName = behind ? (names.get(behind) ?? (await userNameOf(db, behind)) ?? "a person") : null;
   // `ask_user` reaches them only where its card goes (`consultedFor`): none when this agent answers agents only for them.
   const asksBehind = !!behind && !!(await consultationOrigin(db, run.orgId, run.id));
+  // Work handed over (`tell_agent`, an @mention), not a question or news for an agent outside the request: the person
+  // hears what came of it from this agent too, in its DM with them.
+  const note = trigger.meta?.agentNote as { headsUp?: unknown } | undefined;
+  const handedNote = asksBehind && !!note && note.headsUp !== true;
   const workElsewhere = collapseRepeats(
     actionRows
       .filter((r) => r.elsewhere)
@@ -920,6 +955,8 @@ export async function buildRunContext(
       }),
     WORK_ELSEWHERE_MAX,
   );
+  // Only where that person is the one reading: never into a DM with someone else in it.
+  const handed = members.every((m) => !m.userId || m.userId === requester) ? handedRows.map(handedLine) : [];
   // What the other agents here can do, so this one never answers for them.
   const others = members.filter((m) => m.agentId && m.agentId !== agent.id);
   const here = new Set(others.map((m) => m.agentId as string));
@@ -1147,6 +1184,18 @@ export async function buildRunContext(
           },
         ]
       : []),
+    ...(handed.length > 0
+      ? [
+          {
+            found: true,
+            text: [
+              `# What other agents asked of you for ${requesterName}`,
+              `In your private conversations with other agents, in the last ${HANDED_REMEMBERED_DAYS} days, latest first. It is your own work for this person: when they ask about it, answer from it as yours.`,
+              ...handed,
+            ].join("\n"),
+          },
+        ]
+      : []),
     ...(range
       ? [
           {
@@ -1230,7 +1279,7 @@ export async function buildRunContext(
         : agentsDm
           ? [
               "# Where you are",
-              `A private conversation between agents: ${memberList}. Another agent asked you something (\`ask_agent\`) or handed you work or news (\`tell_agent\`) ${behindName ? `for ${behindName}` : "on its own, for no person"}. Your last message is your answer: it goes back up to that agent, and on to ${behindName ?? "the people"}. No person reads this conversation. Don't also answer where ${behindName ?? "they"} asked, and never ask another agent to pass something on to a person.${asksBehind ? ` When ${behindName} should hear something from you directly, \`send_dm\` reaches them, even unasked.` : ""} You see only the exchanges here made for ${behindName ?? "no person"}.`,
+              `A private conversation between agents: ${memberList}. Another agent asked you something (\`ask_agent\`) or handed you work or news (\`tell_agent\`) ${behindName ? `for ${behindName}` : "on its own, for no person"}. Your last message is your answer: it goes back up to that agent, and on to ${behindName ?? "the people"}. No person reads this conversation. Don't also answer where ${behindName ?? "they"} asked, and never ask another agent to pass something on to a person.${asksBehind ? (handedNote ? ` This is work handed to you: once it is done, tell ${behindName} what came of it yourself with \`send_dm\`, then answer here in one line.` : ` When ${behindName} should hear something from you directly, \`send_dm\` reaches them, even unasked.`) : ""} You see only the exchanges here made for ${behindName ?? "no person"}.`,
               "- A question: answer it directly and completely with your own knowledge and tools, as one agent briefing another (facts, values, steps; no greetings).",
               "- Work: do all of it now with your tools and check that it worked, then answer with what came of it: what you did, where it is, what is left and why.",
               "- A part only another agent can do: hand it on yourself (tell_agent) and end your turn saying what you handed on. What comes of it goes back with your answer. News for an agent outside this request goes with `heads_up: true`: your answer then neither waits for it nor carries its reply.",

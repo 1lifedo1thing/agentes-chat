@@ -47,7 +47,7 @@ import { untrustedBlock } from "./untrusted";
 import { USAGE_WAIT_CODES } from "./usage-pause";
 import { inWorkspaceWords } from "./workspace-mode";
 
-const { agentConsultations, agentRuns, agents, channels, messages, outbox, users } = schema;
+const { agentConsultations, agentRuns, agents, channelMembers, channels, messages, outbox, users } = schema;
 
 export const ASK_AGENT_TOOL = "ask_agent";
 export const TELL_AGENT_TOOL = "tell_agent";
@@ -2243,4 +2243,70 @@ export async function consultedFor(
 ): Promise<string | null> {
   if (!ctx.runId || !(await consultationOrigin(ctx.db, ctx.orgId, ctx.runId))) return null;
   return personBehindCall(ctx);
+}
+
+/** How far back, and how many, of what other agents handed an agent for a person it remembers in their DM. */
+export const HANDED_REMEMBERED_DAYS = 14;
+const HANDED_REMEMBERED = 6;
+
+export interface HandedFor {
+  id: string;
+  kind: AgentConsultationRow["kind"];
+  status: AgentConsultationRow["status"];
+  question: string;
+  /** People's words of it (`answerForPeople`); null while open, or when its run read outside content. */
+  answer: string | null;
+  askerHandle: string;
+  createdAt: Date;
+}
+
+/**
+ * What other agents asked or handed `agentId` for `personId` lately, latest first. That work happened in the agents'
+ * DM, which no person reads and which its DM with that person never shows: without this, the agent asked about it
+ * there doesn't know what they mean. "For the person" as its reads in the agents' DM count it: the person behind the
+ * run that asked (a routine's work never counts).
+ */
+export async function handedFor(db: Executor, orgId: string, agentId: string, personId: string): Promise<HandedFor[]> {
+  const rows = await db
+    .select({ row: agentConsultations, askerHandle: agents.handle })
+    .from(agentConsultations)
+    .innerJoin(agents, eq(agents.id, agentConsultations.askerAgentId))
+    .where(
+      and(
+        eq(agentConsultations.orgId, orgId),
+        // By its DMs with other agents: the (org, channel) index, not every consultation of the workspace.
+        inArray(
+          agentConsultations.channelId,
+          db
+            .select({ id: channelMembers.channelId })
+            .from(channelMembers)
+            .innerJoin(channels, eq(channels.id, channelMembers.channelId))
+            .where(
+              and(eq(channelMembers.agentId, agentId), eq(channels.kind, "dm"), sql`${channels.dmKey} not like '%u:%'`),
+            ),
+        ),
+        eq(agentConsultations.targetAgentId, agentId),
+        gte(agentConsultations.createdAt, new Date(Date.now() - HANDED_REMEMBERED_DAYS * 86_400_000)),
+      ),
+    )
+    .orderBy(desc(agentConsultations.createdAt))
+    .limit(HANDED_REMEMBERED * 3);
+  const behind = await Promise.all(
+    rows.map(async ({ row }) => (await runAuthorityById(db, orgId, row.askerRunId)).personId),
+  );
+  const mine = rows.filter((_, i) => behind[i] === personId).slice(0, HANDED_REMEMBERED);
+  return Promise.all(
+    mine.map(async ({ row, askerHandle }) => ({
+      id: row.id,
+      kind: row.kind,
+      status: row.status,
+      question: row.question,
+      answer:
+        row.status === "answered" && row.answer && !(await answerReadOutside(db, row))
+          ? answerForPeople(row.answer)
+          : null,
+      askerHandle,
+      createdAt: row.createdAt,
+    })),
+  );
 }
