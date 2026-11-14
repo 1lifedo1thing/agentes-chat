@@ -291,7 +291,10 @@ function WaitingRequests({
   const approve = useApproveJoinRequest(org.id);
   const deny = useDenyJoinRequest(org.id);
   const full = membersFull(useWorkspaceLimits(org.id).data) !== null;
-  const orgRoles = useRoles(org.id).data?.roles ?? [];
+  const cargos = useRoles(org.id);
+  const orgRoles = cargos.data?.roles ?? [];
+  // A request starts on the link's cargos the approver may give: until those load it would read as none.
+  const cargosLoaded = cargos.isSuccess;
   const [roles, setRoles] = useState<Record<string, string[]>>({});
   const [denying, setDenying] = useState<JoinRequest | null>(null);
   const [reason, setReason] = useState("");
@@ -304,7 +307,7 @@ function WaitingRequests({
   const shown = useShown(requests);
 
   useEffect(() => {
-    if (!focus || opened.current === focus || !list.data) return;
+    if (!focus || opened.current === focus || !list.data || !cargosLoaded) return;
     opened.current = focus;
     const request = list.data.find((r) => r.id === focus);
     if (!request) return setGone(true);
@@ -315,7 +318,7 @@ function WaitingRequests({
     const button = approveButtons.current.get(request.id);
     button?.scrollIntoView({ block: "center" });
     button?.focus();
-  }, [focus, action, list.data]);
+  }, [focus, action, list.data, cargosLoaded]);
 
   // Approving gives what the approver picks (ADR 0184 §8): a link's cargo above theirs starts out, and the row says so.
   const rolesOf = (r: JoinRequest) => roles[r.id] ?? approvalCargos(orgRoles, r.link?.roleIds ?? []).given;
@@ -401,7 +404,7 @@ function WaitingRequests({
                       value={rolesOf(r)}
                       onChange={(ids) => setRoles((prev) => ({ ...prev, [r.id]: ids }))}
                       label={t("members.requests.roleOf", { name: r.name })}
-                      disabled={answering}
+                      disabled={answering || !cargosLoaded}
                     />
                     <Button
                       ref={(el) => {
@@ -410,7 +413,7 @@ function WaitingRequests({
                       }}
                       size="sm"
                       variant="primary"
-                      disabled={answering || full || linkIsFull}
+                      disabled={answering || full || linkIsFull || !cargosLoaded}
                       loading={approve.isPending && approve.variables?.id === r.id}
                       onClick={() => approveOne(r)}
                     >
