@@ -127,8 +127,8 @@ describe("the workspace's settings on the phone: who opens what (the web's sub-n
     expect(visibleSections(as("owner", all)).length).toBe(SETTINGS_SECTIONS.length);
     // No Geral (what the agents know of the workspace) or GIFs: those are the workspace's, for admins. Uso stays:
     // their own plans' meters, in percentages (ADR 0063).
-    // The Vault is every member's (ADR 0144): their own items, and the team's shared with them.
-    expect(ids(["read", "post"])).toEqual(["members", "usage", "connectors", "vault", "apps", "computers"]);
+    // The Vault and Skills are every member's (ADR 0144): their own items, and the team's shared with them.
+    expect(ids(["read", "post"])).toEqual(["members", "usage", "connectors", "skills", "vault", "apps", "computers"]);
     expect(ids(["read", "manage_agents"])).toEqual([
       "members",
       "usage",
@@ -210,9 +210,9 @@ describe("a personal workspace's settings on the phone (ADR 0159 §3): one short
   test("only where a section is listed changes: a family member opens the same sections as in a team's", () => {
     const member = { id: "o", name: "Pessoal", role: "member" as const, permissions: ["read", "post"] };
     const { main, advanced } = personalSections({ ...member, mode: "personal" }, 1);
-    // No About you (the workspace's context is who configures it), and Skills isn't theirs.
+    // No About you (the workspace's context is who configures it).
     expect(ids(main)).toEqual(["members", "usage", "connectors", "vault", "computers"]);
-    expect(ids(advanced)).toEqual(["apps"]);
+    expect(ids(advanced)).toEqual(["skills", "apps"]);
     expect(new Set([...ids(main), ...ids(advanced)])).toEqual(
       new Set(ids(visibleSections({ ...member, mode: "personal" }))),
     );
