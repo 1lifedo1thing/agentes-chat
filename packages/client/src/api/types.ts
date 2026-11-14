@@ -737,6 +737,12 @@ export interface Credential {
   usedBy?: { id: string; name: string }[];
   /** On a key just saved: `ok` a real call passed, `unchecked` the provider didn't say. */
   check?: "ok" | "unchecked";
+  /** On a key just saved: the workspace already had it, so that key was updated instead of adding a copy. */
+  reused?: boolean;
+  /** In a list of keys: how many other saved keys are this same key ("Remover cópias" folds them into it). */
+  copies?: number;
+  /** In a list of keys: the key this one is a copy of, the row shown for both. */
+  copyOf?: string;
   createdAt: string;
   revokedAt: string | null;
 }
