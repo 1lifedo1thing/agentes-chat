@@ -817,6 +817,7 @@ export function PlanWithoutAgent({
   const steps = gate.state === "ready" || gate.state === "preparing" || (gate.state === "offline" && signingIn);
   // Only whoever connected the computers there signs a plan in on them: a computer of their own is the way on.
   const elsewhere = gate.state === "locked" && !cloud;
+  const pairsOwn = elsewhere && can(org, "pair_computers");
   return (
     <Card as="section" className="ai-panel ai-panel--plan" aria-label={title}>
       <PanelHead
@@ -847,7 +848,7 @@ export function PlanWithoutAgent({
             onKey={onKey}
             onComputer={onComputer}
           />
-          {elsewhere && onComputer && (
+          {pairsOwn && onComputer && (
             <span>
               <Button size="sm" variant="primary" onClick={onComputer}>
                 {t("connectAi.connectMine")}

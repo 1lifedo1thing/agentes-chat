@@ -417,6 +417,24 @@ describe("no AI connected: above the composer", () => {
     expect(within(box).getByRole("region", { name: "Chave de API" })).toBeTruthy();
   });
 
+  test("no agent, only someone else's computer, and no way to connect one: no Conectar meu computador", async () => {
+    const { box } = await bareDialog(
+      (machines) => {
+        const mac = machines.pair({ name: "MacBook da Ana", pairedBy: { id: "u-ana", name: "Ana Souza" } });
+        return { accounts: [], computers: [{ ...SERVER, machineId: mac.id, name: "MacBook da Ana", canAdd: false }] };
+      },
+      (s) => {
+        meWithRole(s, ["create_agents"]);
+        for (const role of s.roles ?? []) role.permissions = role.permissions.filter((p) => p !== "pair_computers");
+      },
+    );
+    await chooseAi(box, "Claude");
+    await settle(4);
+    const panel = within(box).getByRole("region", { name: "Seu plano do Claude" });
+    expect(panel.textContent).toContain("Só Ana conecta um plano no MacBook da Ana.");
+    expect(within(panel).queryByRole("button", { name: "Conectar meu computador" })).toBeNull();
+  });
+
   test("a DM with an agent that has none says so for that agent; an organization with AI shows nothing in channels", async () => {
     const state = seedState({ aiStatus: aiStatus(true, ADA_ID) });
     await open(state, `dm/agent/${ADA_ID}`);

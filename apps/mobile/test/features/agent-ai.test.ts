@@ -1152,7 +1152,8 @@ describe("the agent's AI", () => {
     expect(route).toContain('accountId={typeof account === "string" && account ? account : null}');
     // That account wins over the workspace's last setup; a pick made on the screen still wins over it.
     expect(screen).toContain("connectedHere ?? picked ?? askedPlan ??");
-    // Someone else's computer: a computer of their own is the way on.
+    // Someone else's computer: a computer of their own is the way on, for whoever may connect one.
+    expect(steps).toContain('elsewhere && can(org, "pair_computers") ?');
     expect(steps).toContain('label={t("connectAi.connectMine")} onPress={onComputer}');
   });
 });
