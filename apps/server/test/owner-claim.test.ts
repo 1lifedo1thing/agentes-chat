@@ -126,7 +126,9 @@ describe("the desktop app's owner key (OWNER_KEY_SHA256)", () => {
   test("makes the owner with no password, then a one-time sign-in for them on every call", async () => {
     t = await createTestServer({ env: { OWNER_KEY_SHA256: sha256(KEY) } });
     expect((await ownerKey({ key: "y".repeat(43), name: "Ana", email: "ana@example.com" })).status).toBe(401);
-    expect((await ownerKey({ key: KEY })).status).toBe(400);
+    const none = await ownerKey({ key: KEY });
+    expect(none.status).toBe(409);
+    expect(await none.json()).toMatchObject({ code: "OWNER_NONE" });
     const signup = await browser(t)("/api/auth/sign-up/email", {
       json: { name: "Eve", email: "eve@example.com", password: PASSWORD },
     });
@@ -182,7 +184,7 @@ describe("the desktop app's owner key (OWNER_KEY_SHA256)", () => {
     expect((await signIn("another one entirely")).status).toBe(200);
   });
 
-  test("the key follows the pinned owner, not whoever is oldest after a deletion", async () => {
+  test("the key follows the pinned owner: once she deleted her account it answers OWNER_GONE, never Bia", async () => {
     t = await createTestServer({ env: { OWNER_KEY_SHA256: sha256(KEY), ALLOW_SIGNUP: "true" } });
     expect((await ownerKey({ key: KEY, name: "Ana", email: "ana@example.com" })).status).toBe(200);
     const [ana] = await t.db.select().from(schema.users);
@@ -190,17 +192,31 @@ describe("the desktop app's owner key (OWNER_KEY_SHA256)", () => {
     // A newer account, then the owner deletes hers (deleteAccount pins the owner first, so it stays Ana once gone).
     await signUp(browser(t), "bia@example.com");
     await deleteAccount(t.db, ana.id);
-    // The owner key must never sign in as Bia, the now-oldest account.
-    const later = await ownerKey({ key: KEY });
-    const token = ((await later.json()) as { token?: string }).token;
-    let email: string | null = null;
-    if (token) {
-      const { res, window } = await trade(token);
-      if (res.status === 200) {
-        const me = await window("/api/app/me");
-        if (me.status === 200) email = ((await me.json()) as { user: { email: string } }).user.email;
-      }
-    }
-    expect(email).not.toBe("bia@example.com");
+    expect((await ownerKey({ key: "y".repeat(43) })).status).toBe(401);
+    const later = await ownerKey({ key: KEY, name: "Carla", email: "carla@example.com" });
+    expect(later.status).toBe(409);
+    const body = (await later.json()) as { code?: string; token?: string };
+    expect(body.code).toBe("OWNER_GONE");
+    expect(body.token).toBeUndefined();
+    expect(await t.db.select().from(schema.users)).toHaveLength(1);
+  });
+
+  test("the only account deleted: the key alone answers OWNER_NONE, with a name and email it makes the new owner", async () => {
+    t = await createTestServer({ env: { OWNER_KEY_SHA256: sha256(KEY) } });
+    expect((await ownerKey({ key: KEY, name: "Ana", email: "ana@example.com" })).status).toBe(200);
+    const [ana] = await t.db.select().from(schema.users);
+    if (!ana) throw new Error("no owner account");
+    await deleteAccount(t.db, ana.id);
+    const none = await ownerKey({ key: KEY });
+    expect(none.status).toBe(409);
+    expect(await none.json()).toMatchObject({ code: "OWNER_NONE" });
+
+    const made = await ownerKey({ key: KEY, name: "Carla", email: "carla@example.com" });
+    expect(made.status).toBe(200);
+    const { token, userId } = (await made.json()) as { token: string; userId: string };
+    const { res, window } = await trade(token);
+    expect(res.status).toBe(200);
+    const me = (await (await window("/api/app/me")).json()) as { user: { id: string; email: string } };
+    expect(me.user).toMatchObject({ id: userId, email: "carla@example.com" });
   });
 });
