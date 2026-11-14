@@ -39661,6 +39661,9 @@
   "chat.consultPair.labelMany": {
     "value": "{{from}}'s talks with {{to}}"
   },
+  "chat.consultPair.askedHere": {
+    "value": "asked"
+  },
   "chat.consultPanel.label": {
     "value": "Conversation between {{from}} and {{to}}"
   },
@@ -39732,6 +39735,9 @@
   },
   "chat.notice.agentNoteAnon": {
     "value": "Note from another agent"
+  },
+  "chat.notice.handOff": {
+    "value": "{{from}} asked {{to}}"
   },
   "chat.notice.waitResult": {
     "value": "What {{name}} was waiting for came in"

@@ -16259,7 +16259,8 @@
       "noAnswer": "hat nicht geantwortet",
       "notFinished": "nicht fertig geworden",
       "someAnswered": "{{done}} von {{total}} haben geantwortet",
-      "labelMany": "Gespräche von {{from}} mit {{to}}"
+      "labelMany": "Gespräche von {{from}} mit {{to}}",
+      "askedHere": "bat"
     },
     "consultPanel": {
       "label": "Unterhaltung zwischen {{from}} und {{to}}",
@@ -16288,6 +16289,7 @@
       "consultReplyAnon": "Ein anderer Agent hat geantwortet",
       "agentNote": "Notiz von {{from}}",
       "agentNoteAnon": "Notiz von einem anderen Agenten",
+      "handOff": "{{from}} hat {{to}} um etwas gebeten",
       "waitResult": "Worauf {{name}} gewartet hat, ist da",
       "other": "Hinweis für {{name}}",
       "wakeSkipped": "Die Erwähnung von {{name}} hat {{agents}} nicht erreicht",

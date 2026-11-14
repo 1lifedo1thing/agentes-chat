@@ -16325,7 +16325,8 @@
       "noAnswer": "gaf geen antwoord",
       "notFinished": "niet afgemaakt",
       "someAnswered": "{{done}} van {{total}} gaven antwoord",
-      "labelMany": "Gesprekken van {{from}} met {{to}}"
+      "labelMany": "Gesprekken van {{from}} met {{to}}",
+      "askedHere": "vroeg"
     },
     "consultPanel": {
       "label": "Gesprek tussen {{from}} en {{to}}",
@@ -16357,6 +16358,7 @@
       "consultReplyAnon": "Een andere agent heeft geantwoord",
       "agentNote": "Notitie van {{from}}",
       "agentNoteAnon": "Notitie van een andere agent",
+      "handOff": "{{from}} vroeg {{to}} iets",
       "waitResult": "Waar {{name}} op wachtte, is binnen",
       "other": "Melding voor {{name}}",
       "wakeSkipped": "De vermelding van {{name}} bereikte {{agents}} niet",

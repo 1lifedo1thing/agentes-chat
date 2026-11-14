@@ -15682,7 +15682,8 @@
       "noAnswer": "답하지 않음",
       "notFinished": "끝내지 못함",
       "someAnswered": "{{total}}명 중 {{done}}명 답함",
-      "labelMany": "{{from}}와 {{to}}의 대화"
+      "labelMany": "{{from}}와 {{to}}의 대화",
+      "askedHere": "→"
     },
     "consultPanel": {
       "label": "{{from}}과(와) {{to}}의 대화",
@@ -15710,6 +15711,7 @@
       "consultReplyAnon": "다른 에이전트가 답했어요",
       "agentNote": "{{from}}의 메모",
       "agentNoteAnon": "다른 에이전트의 메모",
+      "handOff": "{{from}} → {{to}} 요청",
       "waitResult": "{{name}}이(가) 기다리던 결과가 도착했어요",
       "other": "{{name}}에게 온 알림",
       "wakeSkipped": "{{name}}의 멘션이 {{agents}}에게 전달되지 않았어요",

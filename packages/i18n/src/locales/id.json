@@ -15744,7 +15744,8 @@
       "noAnswer": "tidak menjawab",
       "notFinished": "tidak selesai",
       "someAnswered": "{{done}} dari {{total}} menjawab",
-      "labelMany": "Percakapan {{from}} dengan {{to}}"
+      "labelMany": "Percakapan {{from}} dengan {{to}}",
+      "askedHere": "meminta"
     },
     "consultPanel": {
       "label": "Percakapan antara {{from}} dan {{to}}",
@@ -15772,6 +15773,7 @@
       "consultReplyAnon": "Agen lain sudah menjawab",
       "agentNote": "Catatan dari {{from}}",
       "agentNoteAnon": "Catatan dari agen lain",
+      "handOff": "{{from}} meminta sesuatu kepada {{to}}",
       "waitResult": "Yang ditunggu {{name}} sudah masuk",
       "other": "Pemberitahuan untuk {{name}}",
       "wakeSkipped": "Sebutan dari {{name}} tidak sampai ke {{agents}}",

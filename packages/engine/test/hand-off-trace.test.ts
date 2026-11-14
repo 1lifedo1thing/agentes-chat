@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
-import { schema } from "@agenteschat/db";
+import { eq, schema } from "@agenteschat/db";
 import type { ModelRequest } from "@agenteschat/providers";
 import { systemText } from "@agenteschat/providers";
-import { createAgent, drainOutbox, openDm, postPersonMessage } from "../src";
+import { addChannelMember, createAgent, drainOutbox, handedConversation, openDm, postPersonMessage } from "../src";
+import { isQuietNotice } from "../src/notices";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /**
@@ -109,5 +110,78 @@ describe("work handed between agents, for a person", () => {
     expect(theirs).not.toBe("");
     expect(theirs).not.toContain("# What other agents asked of you");
     expect(theirs).not.toContain("Vendas/Outubro");
+  });
+});
+
+/** The hand-off rows (`hand_off` notices) in the workspace, with where they are. */
+const traces = async () =>
+  (await f.db.select().from(schema.messages)).flatMap((m) => {
+    const n = (m.meta as { notice?: { kind: string; refs: Record<string, string> } }).notice;
+    return n?.kind === "hand_off" ? [{ message: m, refs: n.refs }] : [];
+  });
+
+describe("its trace in the DM of the agent that got it", () => {
+  test("one quiet row in that agent's DM with the person, settled in place once the work ends", async () => {
+    const { ada } = await handOff("tell_agent");
+    const dm = await openDm(f.db, f.owner.id, f.org.id, { agentId: ada.id });
+    const [consultation] = await f.db.select().from(schema.agentConsultations);
+    const rows = await traces();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.message).toMatchObject({ channelId: dm.id, authorAgentId: ada.id });
+    expect(rows[0]?.refs).toMatchObject({
+      consultationId: consultation?.id,
+      askerAgentId: f.agent.id,
+      agentId: ada.id,
+      kind: "note",
+      status: "answered",
+      question: "Faz o relatório de vendas de outubro.",
+    });
+    expect(Date.parse(rows[0]?.refs.answeredAt ?? "")).toBeGreaterThanOrEqual(
+      Date.parse(rows[0]?.refs.createdAt ?? ""),
+    );
+    // Quiet: no unread, no preview, no notification.
+    expect(isQuietNotice(rows[0]?.message.meta)).toBe(true);
+    const notified = await f.db.select().from(schema.notifications);
+    expect(notified.filter((n) => (n.source as { channelId?: string }).channelId === dm.id)).toEqual([]);
+    // It woke nobody: Ada ran once, in the agents' DM.
+    const adaRuns = (await f.db.select().from(schema.agentRuns)).filter((r) => r.agentId === ada.id);
+    expect(adaRuns.map((r) => r.channelId)).toEqual([consultation?.channelId ?? ""]);
+  });
+
+  test("it opens the exchange for the person who reads where it was handed off, never for someone who doesn't", async () => {
+    const { ada } = await handOff("ask_agent");
+    const dm = await openDm(f.db, f.owner.id, f.org.id, { agentId: ada.id });
+    const [consultation] = await f.db.select().from(schema.agentConsultations);
+    const id = consultation?.id ?? "";
+    const opened = await handedConversation(f.db, f.org.id, dm.id, id, f.owner.id);
+    expect(opened?.consultation).toMatchObject({ id, consultedAgentId: ada.id, status: "answered" });
+    expect(opened?.messages.map((m) => m.body)).toContain("Onde está o relatório de vendas de outubro?");
+    // Someone who doesn't read #general, where it was asked.
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    expect(await handedConversation(f.db, f.org.id, dm.id, id, bia.id)).toBeNull();
+    // A DM it left no trace in.
+    const biaDm = await openDm(f.db, bia.id, f.org.id, { agentId: ada.id });
+    expect(await handedConversation(f.db, f.org.id, biaDm.id, id, f.owner.id)).toBeNull();
+  });
+
+  test("none when the person may not talk to the agent that got it", async () => {
+    const { ada } = await handOff("tell_agent");
+    expect(await traces()).toHaveLength(1);
+    await f.db.delete(schema.messages).where(eq(schema.messages.id, (await traces())[0]?.message.id ?? ""));
+    // The same note within the hour is dropped unless the first one never got done.
+    await f.db.update(schema.agentConsultations).set({ status: "expired" });
+    // Only its owner now: work handed to it for anyone else leaves no trace.
+    const lia = await addMember(f.db, f.org.id, "member", "lia");
+    await f.db
+      .update(schema.agents)
+      .set({ ownerUserId: f.owner.id, audienceMode: "owner" })
+      .where(eq(schema.agents.id, ada.id));
+    await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { userId: lia.id });
+    await postPersonMessage({ db: f.db, pubsub: f.pubsub }, lia.id, f.org.id, f.general.id, {
+      body: "@dev pede pra Ada o relatório de vendas de outubro",
+    });
+    await drainOutbox(f.db, f.handlers);
+    expect((await f.db.select().from(schema.agentConsultations)).length).toBe(2);
+    expect(await traces()).toEqual([]);
   });
 });
