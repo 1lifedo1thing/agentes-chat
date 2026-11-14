@@ -1283,32 +1283,40 @@ function ChannelView({
     el.scrollTop = el.scrollHeight - a.height + a.top;
   }, [older]);
 
-  // The channel's messages: only what was said in the channel (agents asked there answer there).
   // Every thread with replies is one line under its root; its replies live in the panel.
-  const channelList = useMemo(() => {
-    if (thread) return null;
-    const top = [...older, ...(channelMessages.data ?? [])];
-    const hidden = hiddenByThreads(threadList, top);
-    // My replies from the panel wait in the channel's page until sent: they belong to the thread.
-    const visible = top.filter((m) => !m.threadId && !hidden(m));
+  const threadLines = useMemo(() => {
     const lines = new Map<string, { thread: ThreadInfo; count: number }>();
     for (const x of threadList) {
       // A range thread has its marker, a mission its card, a closed thread its own line.
       if (x.state !== "open" || x.context || x.mission || x.replyCount === 0) continue;
       lines.set(x.id, { thread: x, count: x.replyCount });
     }
-    return { visible, lines };
-  }, [thread, older, channelMessages.data, threadList]);
-  // The channel's threads as the timeline draws them (none in a thread view).
+    return lines;
+  }, [threadList]);
+  // The channel's messages: only what was said in the channel (agents asked there answer there).
+  const channelList = useMemo(() => {
+    if (thread) return null;
+    const top = [...older, ...(channelMessages.data ?? [])];
+    const hidden = hiddenByThreads(threadList, top);
+    // My replies from the panel wait in the channel's page until sent: they belong to the thread.
+    const visible = top.filter((m) => !m.threadId && !hidden(m));
+    return { visible, lines: threadLines };
+  }, [thread, older, channelMessages.data, threadList, threadLines]);
+  // The channel's threads as the timeline draws them (none in a thread view). Every row reads this context, so it
+  // must not change with the messages: a new message or an older page would draw every row again.
   const threadsView = useMemo<ChannelThreadsView | null>(() => {
-    if (thread || !channelList) return null;
+    if (thread) return null;
     return {
       byId: new Map(threadList.filter((x) => x.state !== "archived").map((x) => [x.id, x])),
-      marks: contextMarks(threadList, [...older, ...(channelMessages.data ?? [])], channel.id),
       open: panel?.id ?? null,
-      lines: channelList.lines,
+      lines: threadLines,
     };
-  }, [thread, channelList, threadList, older, channelMessages.data, channel.id, panel?.id]);
+  }, [thread, threadList, threadLines, panel?.id]);
+  // Messages that are a thread's context and still in the channel: the gutter mark.
+  const contextMarkIds = useMemo(
+    () => (thread ? NO_MARKS : contextMarks(threadList, [...older, ...(channelMessages.data ?? [])], channel.id)),
+    [thread, threadList, older, channelMessages.data, channel.id],
+  );
   const timeline = useMemo(() => {
     if (thread) {
       // The thread's conversation. One made from a range: not its root (the channel's marker) nor the
@@ -2669,6 +2677,7 @@ function ChannelView({
                                   dmPersonId={thread ? undefined : chrome?.dmPersonId}
                                   consultGroups={consultGroups}
                                   seenId={thread ? null : seenId}
+                                  marks={contextMarkIds}
                                 />
                                 {/* A thread's root is on screen from the channel: only its replies are loading. */}
                                 {thread && messages.isPlaceholderData && thread.replyCount > 0 && (
@@ -3138,6 +3147,7 @@ const Timeline = memo(function Timeline({
   dmPersonId,
   consultGroups,
   seenId = null,
+  marks,
 }: {
   items: ReturnType<typeof buildTimeline>;
   /** The first page loaded: rows from then on slide in. */
@@ -3157,6 +3167,8 @@ const Timeline = memo(function Timeline({
   consultGroups: ConsultGroups;
   /** My message they read last: their face is its receipt. */
   seenId?: string | null;
+  /** Messages that are a thread's context and still in the channel: the gutter mark. */
+  marks: ReadonlySet<string>;
 }) {
   const { t, i18n } = useTranslation();
   const models = useModels();
@@ -3322,7 +3334,7 @@ const Timeline = memo(function Timeline({
           grouped={grouped}
           entering={false}
           modelLabels={modelLabels}
-          contextMark={threadsView?.marks.has(m.id)}
+          contextMark={marks.has(m.id)}
           replyContext={item.context}
           lastOfRun={lastByRun.get(m.agentRunId) === item.key}
           run={run}
@@ -3334,7 +3346,7 @@ const Timeline = memo(function Timeline({
           grouped={grouped}
           entering={entering}
           modelLabels={modelLabels}
-          contextMark={threadsView?.marks.has(m.id)}
+          contextMark={marks.has(m.id)}
           replyContext={item.context}
           lastOfRun={Boolean(m.agentRunId && lastByRun.get(m.agentRunId) === item.key)}
           dmPersonId={dmPersonId}
@@ -3400,6 +3412,7 @@ const HELD_RECENT_MS = 12 * 60 * 60_000;
 
 /** Model names for the rows of "Ajustar trecho" (no usage line is shown there). */
 const NO_LABELS = new Map<string, string>();
+const NO_MARKS: ReadonlySet<string> = new Set();
 
 /** The live run as a message, while it has none (the block's header comes from the run): from when it started. */
 function liveMessageOf(r: LiveRun): MessageType {
