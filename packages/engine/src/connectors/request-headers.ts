@@ -16,7 +16,8 @@ const VALUE = /^[\t\x20-\x7E]{1,2000}$/;
 /**
  * Names a person can't set: the ones the HTTP client decides for each request, and the ones the MCP SDK's streamable
  * HTTP transport sets itself (`mcp-session-id`, `mcp-protocol-version`, `last-event-id`, with `accept` and
- * `content-type`), where a typed one would be overwritten or sent twice.
+ * `content-type`), where a typed one would be overwritten or sent twice. `__proto__` is a valid name that a plain
+ * object of headers can't hold: it would be named as sent and never sent.
  */
 const RESERVED: ReadonlySet<string> = new Set([
   "host",
@@ -34,6 +35,7 @@ const RESERVED: ReadonlySet<string> = new Set([
   "mcp-session-id",
   "mcp-protocol-version",
   "last-event-id",
+  "__proto__",
 ]);
 
 /**

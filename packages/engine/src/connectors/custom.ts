@@ -782,9 +782,12 @@ export async function connectCustomServer(
     return beginComposioConnect(deps, actorId, orgId, input);
   }
   const url = await assertPublicHttpsUrl(input.serverUrl.trim(), deps.resolveHost);
-  const serverUrl = url.toString();
+  // Composio's address spelled another way (its port, a query) is still Composio's: nothing is sent or kept there.
+  if (composioToolkitOf(`${url.origin}${url.pathname}`)) throw signInOnly();
   // Checked before anyone signs in for nothing.
-  const target = input.connectionId ? await reconnectTarget(deps.db, orgId, input.connectionId, serverUrl) : null;
+  const target = input.connectionId ? await reconnectTarget(deps.db, orgId, input.connectionId, url.toString()) : null;
+  // Reconectar asks at the account's own address, however it was typed again: what it keeps goes nowhere else.
+  const serverUrl = target?.serverUrl ?? url.toString();
   const label = input.label?.trim() || presetForServer(serverUrl)?.label || url.hostname;
   const apiKey = input.apiKey?.trim();
   // The account's own secret is opened only to carry its headers over; a list in the request replaces them unread.

@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { createMemoryBlobStore } from "@agenteschat/adapters";
 import { eq, schema } from "@agenteschat/db";
+import { StreamableHTTPError } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import {
   allowPrivateOutbound,
   type CustomDeps,
@@ -53,11 +54,13 @@ const depsOf = (fx: Fixture, extra: Partial<CustomDeps> = {}): CustomDeps => ({
 
 const headersOf = (init?: RequestInit) => Object.fromEntries(new Headers(init?.headers).entries());
 
-/** A server that answers whatever it is asked: the headers each probe and each MCP session came with. */
+/** A server that answers whatever it is asked: where each probe went, and the headers it and each MCP session came with. */
 function recorder() {
+  const asked: string[] = [];
   const probes: Record<string, string>[] = [];
   const sessions: Record<string, string>[] = [];
-  const http = (async (_url: string | URL | Request, init?: RequestInit) => {
+  const http = (async (url: string | URL | Request, init?: RequestInit) => {
+    asked.push(String(url));
     probes.push(headersOf(init));
     return new Response("{}", { status: 200 });
   }) as unknown as typeof fetch;
@@ -69,7 +72,7 @@ function recorder() {
       close: async () => {},
     };
   };
-  return { probes, sessions, http, connect };
+  return { asked, probes, sessions, http, connect };
 }
 
 async function connected(fx: Fixture, deps: CustomDeps, input: Parameters<typeof connectCustomServer>[3]) {
@@ -137,6 +140,7 @@ test("what is accepted: each refusal has its own code and names the header, neve
     "mcp-session-id",
     "mcp-protocol-version",
     "last-event-id",
+    "__proto__",
   ];
   for (const name of reserved) {
     for (const typed of [name, name.toUpperCase()]) {
@@ -312,6 +316,51 @@ test("a redirect on the server's own origin keeps them; one to another origin ge
   ]);
 });
 
+test("a server that repeats what it was sent in its refusal: no error, answer, row or log line holds a value", async () => {
+  const fx = await setup();
+  f = fx;
+  // The real transport: its errors are the server's own words.
+  allowPrivateOutbound();
+  globalThis.fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
+    const got = new Headers(init?.headers);
+    const said = `gateway: X-API-Key "${got.get("x-api-key")}" with key ${got.get("authorization")?.slice(7)} is not allowed here`;
+    return new Response(said, { status: 403 });
+  }) as unknown as typeof fetch;
+  const refused = await connectOverHttp(
+    { serverUrl: SERVER },
+    { "x-api-key": VALUE, authorization: "Bearer test-key" },
+  ).catch((error: unknown) => error);
+  // Still the server's own error: a 401 is read by its class and code.
+  expect(refused).toBeInstanceOf(StreamableHTTPError);
+  expect(refused).toMatchObject({ code: 403 });
+  const words = `${(refused as Error).message} ${(refused as Error).stack}`;
+  expect(words).toContain('gateway: X-API-Key "••••" with key •••• is not allowed here');
+  expect(words).not.toContain(VALUE);
+  expect(words).not.toContain("test-key");
+
+  const logged: unknown[] = [];
+  const deps = depsOf(fx, { connect: connectOverHttp, log: { warn: (...line: unknown[]) => logged.push(line) } });
+  const { server } = await connected(fx, deps, {
+    serverUrl: SERVER,
+    apiKey: "test-key",
+    headers: [h("X-API-Key", VALUE)],
+  });
+  expect(server.toolsError).toContain("gateway: X-API-Key");
+  expect(logged).toHaveLength(1);
+  const said = JSON.stringify([server, logged, await fx.db.select().from(schema.connectorConnections)]);
+  expect(said).not.toContain(VALUE);
+  expect(said).not.toContain("test-key");
+
+  // A failure with nothing to hide is thrown as it came: a time limit's error can't be written to.
+  const timedOut = new DOMException("The operation timed out.", "TimeoutError");
+  globalThis.fetch = (async () => {
+    throw timedOut;
+  }) as unknown as typeof fetch;
+  expect(await connectOverHttp({ serverUrl: SERVER }, { "x-api-key": VALUE }).catch((error: unknown) => error)).toBe(
+    timedOut,
+  );
+});
+
 test("a server that asks for a sign-in: refused, and only the question to the server itself carried them", async () => {
   const fx = await setup();
   f = fx;
@@ -475,6 +524,11 @@ test("Reconectar keeps the account's headers, replaces them with a list and remo
   expect(r.probes.at(-1)).toMatchObject({ "x-api-key": VALUE, "x-team": TEAM });
   expect(r.sessions.at(-1)).toEqual({ "x-api-key": VALUE, "x-team": TEAM });
 
+  // Its address typed again in another spelling: the ones it keeps still go to its own address, and nowhere else.
+  await connected(fx, deps, { serverUrl: "https://tickets.example.com/MCP//", connectionId: first.server.id });
+  expect(r.asked.at(-1)).toBe(SERVER);
+  expect(r.probes.at(-1)).toMatchObject({ "x-api-key": VALUE, "x-team": TEAM });
+
   // A list replaces them all.
   const replaced = await again({ headers: [h("Authorization", `Token ${VALUE}`)] });
   expect(replaced.server.headerNames).toEqual(["Authorization"]);
@@ -505,6 +559,13 @@ test("refused where a key is: a service through Composio, and a sign-in-only ser
   await expect(start(self, "https://backend.composio.dev/api/v3.1/toolkits/googledrive")).rejects.toMatchObject({
     code: "connector.oauth_only",
   });
+  // Composio's address with its port written out is the same address: neither headers nor a key go or stay there.
+  const spelled = "https://backend.composio.dev:443/api/v3.1/toolkits/googledrive";
+  await expect(start(self, spelled)).rejects.toMatchObject({ code: "connector.oauth_only" });
+  await expect(
+    connectCustomServer(self, fx.owner.id, fx.org.id, { serverUrl: spelled, apiKey: "test-key" }),
+  ).rejects.toMatchObject({ code: "connector.oauth_only" });
+  expect(await fx.db.select().from(schema.connectorConnections)).toEqual([]);
   const intercom = mcpPreset("intercom")?.serverUrl ?? "";
   await expect(start({ ...self, publicUrl: "https://agentes.chat" }, intercom)).rejects.toMatchObject({
     code: "connector.oauth_only",

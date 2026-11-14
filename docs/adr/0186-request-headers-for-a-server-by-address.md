@@ -4,12 +4,13 @@
 - Date: 2026-11-14
 - Code: engine `packages/engine/src/connectors/request-headers.ts` (`checkRequestHeaders`), `connections.ts`
   (`ConnectionSecret.headers`, `secretHeaders`, `connectionHeaders`), `custom.ts` (`connectCustomServer`,
-  `storeCustomConnection`, `CustomServerView.headerNames`), `oauth-mcp.ts` (`probeMcpServer`); schema
+  `storeCustomConnection`, `CustomServerView.headerNames`), `oauth-mcp.ts` (`probeMcpServer`), `mcp.ts`
+  (`connectOverHttp`); schema
   `packages/db/src/schema/connectors.ts` (`header_names`, migration 0274); route
   `apps/server/src/routes/app/connectors-custom.ts`; client `packages/client/src/api/{types,client}.ts`,
   `lib/request-headers.ts`, the refusals' words in `lib/errors.ts`; web `apps/web/src/components/ConnectFlow.tsx`
   (`HeaderRows`, `HeaderNames`), `Connectors.tsx`; phone `apps/mobile/src/features/connectors/RequestHeaders.tsx`,
-  `ConnectSheet.tsx`, `ConnectionScreen.tsx`, `logic.ts` (`headerRefused`, `headerNamesText`); tests
+  `ConnectSheet.tsx`, `ConnectionScreen.tsx`, `logic.ts` (`headerNamesText`); tests
   `packages/engine/test/connector-headers.test.ts`, `apps/server/test/connectors.test.ts`,
   `apps/web/test/connector-headers.test.tsx`, `packages/client/test/request-headers-lib.test.ts`,
   `apps/mobile/test/features/connector-headers.test.ts`
@@ -31,6 +32,10 @@ An admin may type request headers for a server by address. They are sent with ev
    error, audit row or tool error holds one. The names alone are also kept readable, in `header_names` on
    `connector_connections`, in the order typed.
 
+   A server may repeat what it was sent in its refusal, and that text is kept as the connection's last error, logged
+   and handed to the agent. So a session over HTTP masks, in every error it throws, each header value it was opened
+   with (`connectOverHttp`): the typed ones, and the key or the sign-in's token with them.
+
    Why the names and not the values: a screen has to say what a server is sent ("also sends: X-API-Key") and what
    Reconectar will keep, and a listing never opens a secret. A header's name says how a server is reached, as its
    address does; its value is the credential. The names go to whoever manages connectors, as the whole address
@@ -41,7 +46,9 @@ An admin may type request headers for a server by address. They are sent with ev
    the server's origin (`outboundFetch`'s `ownRedirects` where the address is pinned, the MCP transport's own rule
    where it isn't), so they never reach another host. They never go to a protected resource's or an authorization
    server's metadata, to a client registration, to a token endpoint (the exchange or a refresh), to a server's icon,
-   to a provider's own API, or to Composio.
+   to a provider's own API, or to Composio. Reconectar asks at the address the account has, however its address
+   was typed again (addresses match without their case or a last slash), so the headers an account keeps are never
+   sent to an address a request chose.
 
    One function builds what a stored secret sends, `secretHeaders`: the typed headers, then the key's or the
    sign-in's `authorization` on top. Everything that talks to a stored connection goes through it
@@ -56,7 +63,8 @@ An admin may type request headers for a server by address. They are sent with ev
    - a name can't be there twice, in any case;
    - names the HTTP client or the MCP transport set for every request are refused: `Host`, `Content-Length`,
      `Content-Type`, `Accept`, `Connection`, `Keep-Alive`, `Transfer-Encoding`, `Upgrade`, `TE`, `Trailer`,
-     `Proxy-Authorization`, `Proxy-Connection`, `Mcp-Session-Id`, `Mcp-Protocol-Version`, `Last-Event-ID`;
+     `Proxy-Authorization`, `Proxy-Connection`, `Mcp-Session-Id`, `Mcp-Protocol-Version`, `Last-Event-ID`; and
+     `__proto__`, a valid token that a plain object of headers can't hold, so it would be named and never sent;
    - `Authorization` may be typed when no key is (another scheme), and is refused beside a key, which is sent as
      that header.
 
@@ -72,7 +80,8 @@ An admin may type request headers for a server by address. They are sent with ev
      refuses still answers `needs_key`. One that asks for a sign-in is refused, `connector.headers_with_sign_in`: a
      sign-in's token would be stored in their place, and they would be gone without a word.
    - A service through Composio, and a server that only signs in on the Cloud (ADR 0107), refuse headers as they
-     refuse a key (`connector.oauth_only`).
+     refuse a key (`connector.oauth_only`). Composio's address spelled another way (its port written out, a query)
+     is refused the same, with headers or a key.
    - Reconectar (`connectionId`): no `headers` keeps the ones the account has, whatever else changes; `[]` removes
      them; a list replaces them all. The account's secret is opened only in the first case, and only when its row
      names headers. An account that keeps an `Authorization` header can't take a key until that header is replaced
@@ -87,8 +96,9 @@ An admin may type request headers for a server by address. They are sent with ev
    server names (`index`), in the person's language, each code with its own line and its way out; no toast repeats
    it. With headers typed and no key, the button connects by them alone instead of asking for a key. Reconectar
    opens the disclosure on the saved names: left alone, the request says nothing about headers, so they stay;
-   "Remover" sends `[]`; a typed row replaces them all. A server's row in Conectores says what it also sends, by
-   name, with Reconectar as the way to change it.
+   "Remover" sends `[]`; a typed row replaces them all, and the line about the saved ones then says they go, with
+   no link that would keep them. A name's field takes the 64 characters a name may have. A server's row in
+   Conectores says what it also sends, by name, with Reconectar as the way to change it.
 
    The phone has the same in its sheet, under the key: one line that opens the rows. A sheet shows one way in at a
    time, so an account that has headers opens on the key's side, and a refusal about headers brings that side back
