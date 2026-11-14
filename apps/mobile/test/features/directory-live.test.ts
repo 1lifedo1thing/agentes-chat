@@ -33,3 +33,16 @@ test("adding to a channel: the ones being added keep their rows, and nobody read
     /const inChannel = useHeldWhile\(\s*new Set\(\(roster\.data \?\? \[\]\)[^;]*\),\s*add\.isPending \|\| add\.isSuccess,\s*\);/,
   );
 });
+
+test("the channel's members: agents out of office, paused or with no AI and people not here sit under Offline, faded", () => {
+  const sheet = src("features/chat/ChannelMembers.tsx");
+  // The shared rules: who is off (`isAgentOff`, `isConnected`), the groups and their counts (`sheetGroups`).
+  expect(sheet).toContain("isAgentOff(a.presence)");
+  expect(sheet).toContain("!isConnected(p.presence)");
+  expect(sheet).toContain("sheetGroups(all, shown, off)");
+  expect(sheet).toContain('t("presence.offline")');
+  expect(sheet).toContain("faded={off(w)}");
+  // Why it is off, in place of how it answers here.
+  expect(sheet).toContain("presence.agentWhy.");
+  expect(src("ui/Row.tsx")).toContain("opacity: faded ? FADED : 1");
+});
