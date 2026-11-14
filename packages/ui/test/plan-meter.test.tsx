@@ -17,6 +17,7 @@ import {
   planState,
   planWindows,
 } from "../src";
+import { planBinding } from "../src/plan-state";
 
 afterEach(() => cleanup());
 
@@ -360,4 +361,33 @@ test("at the limit, the owner's other free accounts of the same kind and maker, 
   // One made for all of the owner's agents there is offered though another agent thinks with it.
   const all = account("all", { usedBy: ["Infra"], usage: usage(1), shared: true });
   expect(limitOffers([...accounts, all], "claude_code", "now", NOW)[0]?.account.id).toBe("all");
+});
+
+test("a model group's own quota (Antigravity's Claude and GPT week at 0%) binds only its models, never the account", () => {
+  const usage: PlanMeterUsage & { at: string } = {
+    windows: [
+      { kind: "seven_day", usedPercent: 2, resetsAt: at(7 * 24 * HOUR) },
+      { kind: "five_hour", usedPercent: 3, resetsAt: at(5 * HOUR) },
+      { kind: "other", label: "Claude and GPT models · 7d", usedPercent: 100, resetsAt: at(60 * HOUR) },
+      { kind: "other", label: "Gemini 4 Argon · 7d", usedPercent: 1, resetsAt: at(7 * 24 * HOUR) },
+    ],
+    at: at(0),
+  };
+  // The account still has its Gemini quota: not at its limit, and its own windows lead the line.
+  expect(planState(usage, NOW)).toEqual({ state: "ok", until: null, used: 3 });
+  expect(planWindows(usage, NOW).map((w) => w.label ?? w.kind)).toEqual([
+    "five_hour",
+    "seven_day",
+    "Claude and GPT models · 7d",
+    "Gemini 4 Argon · 7d",
+  ]);
+  // Each group's quota counts for its own models.
+  expect(planBinding(usage, { model: "claude-opus-5-5-high", now: NOW })?.used).toBe(100);
+  expect(planBinding(usage, { model: "gpt-oss-120b-medium", now: NOW })?.used).toBe(100);
+  expect(planBinding(usage, { model: "gemini-4-argon-high", now: NOW })?.used).toBe(3);
+  expect(planBinding(usage, { model: "gemini-3.8-flash-low", now: NOW })?.used).toBe(3);
+  // A model's own week alone at its limit is still that model's, never the account's.
+  expect(planState({ windows: [{ kind: "other", label: "Fable", usedPercent: 100 }], at: at(0) }, NOW).state).toBe(
+    "ok",
+  );
 });

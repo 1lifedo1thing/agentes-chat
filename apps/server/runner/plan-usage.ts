@@ -489,9 +489,14 @@ export function resetFromWords(text: string, now = Date.now()): string | undefin
 /**
  * The Antigravity CLI's `/usage` report (ADR 0143), printed in print mode: per model group, its "Five Hour Limit
  * Remaining" and "Weekly Limit Remaining" as percentages left (antigravity.google/docs/models' View Usage panel, read
- * 2026-11-04), with when each refreshes where it says. The first group's (Gemini's) are the plan's windows; another
- * group's ("Claude and GPT models") come as `other` with its name.
- * ponytail: read from the docs' panel, not a real report; the probe drops what it can't read.
+ * 2026-11-04), with when each refreshes where it says. The first group's (Gemini's) are the plan's windows; every
+ * other group's ("Claude and GPT models", "Gemini 4 Argon") come as `other` named `<group> · 5h|7d`: a model group's
+ * own quota, which binds only that group's models (`planBinding`), never the whole account (`planState`).
+ *
+ * Two shapes: the CLI's (1.5.6, read 2026-11-14), one tab-separated row per quota (`Gemini Models\tWeekly Limit
+ * Remaining\t98%\t2026-11-21T21:48:50Z`, the percent `disabled` where the plan has none, its reset an ISO time); and
+ * the docs' panel, the group on a line of its own above its quotas, a reset in words. Every Antigravity quota is a
+ * percentage left, whether its row says "Remaining" or not ("Gemini 4 Argon Weekly Limit\t99%").
  */
 export function antigravityUsage(text: string, source: PlanUsage["source"], now = Date.now()): PlanUsage | null {
   const lines = text
@@ -502,30 +507,40 @@ export function antigravityUsage(text: string, source: PlanUsage["source"], now 
   const windows: PlanWindow[] = [];
   let group = "";
   let first: string | undefined;
+  const add = (where: string, quota: string, left: string, at: string | undefined) => {
+    const which = /five[- ]hour/i.test(quota) ? "five_hour" : "seven_day";
+    first ??= where;
+    windows.push({
+      ...(where !== first && where
+        ? { kind: "other" as const, label: label(`${where} · ${which === "five_hour" ? "5h" : "7d"}`) }
+        : { kind: which }),
+      usedPercent: percent(100 - Number(left)),
+      ...(at ? { resetsAt: at } : {}),
+    });
+  };
+  const isQuota = (s: string) => /five[- ]hour|weekly|seven[- ]day/i.test(s);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? "";
-    const which = /five[- ]hour/i.test(line) ? "five_hour" : /weekly|seven[- ]day/i.test(line) ? "seven_day" : null;
-    if (!which) {
+    const cells = line.split("\t").map((c) => c.trim());
+    if (cells.length >= 3 && isQuota(cells[1] ?? "")) {
+      // The CLI's row: a quota that's `disabled` (no number) is no window.
+      const left = /^(\d{1,3}(?:\.\d+)?)\s*%$/.exec(cells[2] ?? "");
+      const at = cells[3] && !Number.isNaN(Date.parse(cells[3])) ? resetIso(cells[3]) : undefined;
+      if (left?.[1]) add(cells[0] ?? "", cells[1] ?? "", left[1], at);
+      continue;
+    }
+    if (!isQuota(line)) {
       if (/\bmodels?\b/i.test(line) && !/%/.test(line) && line.length <= 60) {
         group = line.replace(/[:]+$/, "");
       }
       continue;
     }
-    const near = `${line} ${lines[i + 1] ?? ""}`;
+    // The docs' panel: the percent on this line or the next, never on the next quota's.
+    const next = lines[i + 1] ?? "";
+    const near = isQuota(next) ? line : `${line} ${next}`;
     const left = /(\d{1,3}(?:\.\d+)?)\s*%/.exec(near);
     if (!left?.[1]) continue;
-    const remaining = /remaining|left/i.test(line);
-    const used = remaining ? 100 - Number(left[1]) : Number(left[1]);
-    const at = resetFromWords(`${near} ${lines[i + 2] ?? ""}`, now);
-    first ??= group;
-    const other = group !== first && group;
-    windows.push({
-      ...(other
-        ? { kind: "other" as const, label: label(`${group} · ${which === "five_hour" ? "5h" : "7d"}`) }
-        : { kind: which }),
-      usedPercent: percent(used),
-      ...(at ? { resetsAt: at } : {}),
-    });
+    add(group, line, left[1], resetFromWords(`${near} ${isQuota(next) ? "" : (lines[i + 2] ?? "")}`, now));
   }
   return snapshot(windows, source, now);
 }
