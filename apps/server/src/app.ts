@@ -414,6 +414,11 @@ export function createApp(options: AppOptions) {
     // A build file that isn't here (asked by a page from before a deploy) is a 404, never index.html: the boot fallback
     // and `vite:preloadError` then load the new version. No CDN keeps the 404.
     app.get("/assets/*", (c) => c.text("Not found", 404, { "cache-control": "no-store" }));
+    // Files crawlers and agents ask every site for: one this build doesn't ship is a 404, never index.html with a 200.
+    // Only these names at the root, since an address inside a workspace may end like a file (a wiki page's slug).
+    app.get("/:file{(?:robots|llms|llms-full|ads|app-ads|humans|security)\\.txt|sitemap(?:[_-]index)?\\.xml}", (c) =>
+      c.text("Not found", 404),
+    );
     app.get("/*", (c, next) => (isApi(c.req.path) ? next() : spa(c, next)));
   }
 
