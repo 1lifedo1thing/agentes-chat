@@ -140,6 +140,12 @@ export function createSnapshot(qc: QueryClient, storage: SnapshotStorage) {
         await wipe();
         return false;
       }
+      const saved = snapshot.state.queries.find((q) => q.queryHash === ME_HASH)?.state.data as Me | null | undefined;
+      // `save` keeps no account that waits for its deletion, but a snapshot an older version of the app wrote can.
+      if (saved?.user.deletion) {
+        await wipe();
+        return false;
+      }
       owner = snapshot.owner;
       hydrate(qc, snapshot.state);
       return true;

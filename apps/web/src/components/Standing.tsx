@@ -330,10 +330,10 @@ export function AccountDeletingScreen({ dueAt }: { dueAt: string | null }) {
               },
               onError: (error) => {
                 if (!sessionEnded(error)) return toast.show(errorText(t, error), "error");
-                // Deleting the account ended its sessions, and this screen can outlast the one it was drawn with:
-                // the sign-in brings it back with a session that can restore.
+                // Deleting the account ended its sessions, and this screen can outlast the one it was drawn with.
+                // The app takes an ended session to the sign-in and says why, except at the sign-in's own address,
+                // where it does nothing: there the screen yields (`useRestoreAccount`) and these words say why.
                 toast.show(t("common.signedOut"));
-                void navigate({ to: "/login" });
               },
             })
           }

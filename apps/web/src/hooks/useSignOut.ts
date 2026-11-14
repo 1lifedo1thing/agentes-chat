@@ -16,17 +16,17 @@ export async function signOutByHand(auth: AuthClient, qc: QueryClient) {
   qc.clear();
 }
 
-/** Sair, wherever it is offered: `signOutByHand`, then the sign-in (with `search`, when it should lead somewhere). */
+/** Sair, wherever it is offered: `signOutByHand`, then the sign-in. */
 export function useSignOut() {
   const auth = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [pending, setPending] = useState(false);
-  const signOut = async (search?: { redirect?: string; email?: string; add?: boolean }) => {
+  const signOut = async () => {
     setPending(true);
     try {
       await signOutByHand(auth, qc);
-      await navigate({ to: "/login", search });
+      await navigate({ to: "/login" });
     } finally {
       setPending(false);
     }

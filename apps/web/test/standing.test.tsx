@@ -360,6 +360,9 @@ describe("suspended: a screen of its own", () => {
     expect(screen().getByRole("combobox", { name: "Mensagem para #eng" })).toBeTruthy();
   });
 
+  // Sair marks this browser as signed out by hand: the next app starts without it.
+  afterEach(() => localStorage.removeItem("agentes.signedOut"));
+
   /** Acme suspended, with Beta to go to. */
   const suspended = () => {
     const state = seedState();
@@ -380,7 +383,6 @@ describe("suspended: a screen of its own", () => {
     await act(async () => fireEvent.click(screen().getByRole("button", { name: "Sair" })));
     await settle(8);
     expect(localStorage.getItem("agentes.signedOut")).toBe("1");
-    localStorage.removeItem("agentes.signedOut");
     expect(router.state.location.pathname).toBe("/login");
     expect(screen().getByLabelText("E-mail")).toBeTruthy();
   });
@@ -393,16 +395,19 @@ describe("suspended: a screen of its own", () => {
       new Promise<void>((done) => {
         answer = done;
       });
-    await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(state), auth });
+    const { router } = await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(state), auth });
     await settle(8);
     const out = screen().getByRole("button", { name: "Sair" });
     await act(async () => fireEvent.click(out));
     expect(out.getAttribute("aria-busy")).toBe("true");
     expect(out.hasAttribute("disabled")).toBe(true);
-    expect(screen().getByRole("link", { name: "Beta" }).getAttribute("aria-disabled")).toBe("true");
+    const here = router.state.location.pathname;
+    await act(async () => fireEvent.click(screen().getByRole("link", { name: "Beta" })));
+    await settle(8);
+    expect(router.state.location.pathname).toBe(here);
     state.me = null;
     await act(async () => answer());
     await settle(8);
-    localStorage.removeItem("agentes.signedOut");
+    expect(router.state.location.pathname).toBe("/login");
   });
 });

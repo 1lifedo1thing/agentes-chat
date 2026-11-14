@@ -847,7 +847,7 @@ describe("an account waiting for its deletion", () => {
     expect(localStorage.getItem("agentes.signedOut")).toBe("1");
   });
 
-  test("a sign-out the server never answered leaves all the same", async () => {
+  test("an auth client whose sign-out fails leaves all the same", async () => {
     const state = waiting(soon(6));
     const { auth } = createFakeAuth();
     auth.signOut = async () => {
@@ -897,8 +897,25 @@ describe("an account waiting for its deletion", () => {
     expect(waits()).toBe(false);
     expect(screen().getByLabelText("E-mail")).toBeTruthy();
     expect(toasts()).toEqual(["Sua sessão terminou. Entre de novo para continuar."]);
+    // The sign-in leads back to where the screen was.
+    expect(router.state.location.search).toEqual({ redirect: "/onboarding" });
     // Nobody signed out by hand.
     expect(localStorage.getItem("agentes.signedOut")).toBeNull();
+  });
+
+  // Adding an account beside one that waits: the app's own answer to an ended session does nothing at this address.
+  test("Restaurar after the session ended, at the sign-in's address: the sign-in shows, with the same words once", async () => {
+    const state = waiting(soon(6));
+    const { router } = await renderApp("/login?add=1", { api: createFakeApi(state) });
+    await settle(8);
+    expect(waits()).toBe(true);
+    state.me = null;
+    await click(screen().getByRole("button", { name: "Restaurar conta" }));
+    await settle(8);
+    expect(router.state.location.pathname).toBe("/login");
+    expect(waits()).toBe(false);
+    expect(screen().getByLabelText("E-mail")).toBeTruthy();
+    expect(toasts()).toEqual(["Sua sessão terminou. Entre de novo para continuar."]);
   });
 
   test("a restore the server refuses for no session leaves nobody signed in, for every screen that reads it", async () => {
