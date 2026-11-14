@@ -103,7 +103,11 @@ export function createSnapshot(qc: QueryClient, storage: SnapshotStorage) {
     if (!who) return;
     owner = who;
     const picked = new Set(pickSnapshotQueries(qc.getQueryCache().getAll()).map((q) => q.queryHash));
-    const state = dehydrate(qc, { shouldDehydrateQuery: (q) => picked.has(q.queryHash) });
+    const state = dehydrate(qc, {
+      shouldDehydrateQuery: (q) => picked.has(q.queryHash),
+      // A request that waits for the network holds what it carries (a typed key, a header's value): never written.
+      shouldDehydrateMutation: () => false,
+    });
     for (const q of state.queries) {
       if (chatPart(q.queryKey)?.part === "messages" && Array.isArray(q.state.data)) {
         q.state = { ...q.state, data: trimMessages(q.state.data as Message[]) };
