@@ -10,7 +10,7 @@ import { AppProvider } from "../src/app";
 import type { Tailnet } from "../src/control/local-server";
 import { DesktopStore } from "../src/control/store";
 import type { UpdateCheck } from "../src/hooks";
-import { createFakeHost, type FakeHost, type Scenario } from "../src/host/fake";
+import { createFakeHost, type FakeHost, type HereOptions, type Scenario } from "../src/host/fake";
 import { createDesktopI18n } from "../src/i18n";
 import { ToastProvider } from "../src/ui/Toast";
 import { Advanced } from "../src/windows/prefs/Advanced";
@@ -32,9 +32,9 @@ async function pane(
   view: ReactNode,
   ready: (el: HTMLElement) => unknown,
   check: (el: HTMLElement, host: FakeHost, opened: string[]) => Promise<void> | void,
-  options: { someCommands?: boolean; host?: (host: FakeHost) => void } = {},
+  options: { someCommands?: boolean; here?: HereOptions; host?: (host: FakeHost) => void } = {},
 ) {
-  const host = createFakeHost("prefs", scenario, { someCommands: options.someCommands });
+  const host = createFakeHost("prefs", scenario, { someCommands: options.someCommands, here: options.here });
   options.host?.(host);
   const opened: string[] = [];
   host.openExternal = async (url) => {
@@ -84,6 +84,9 @@ const rows = (root: ParentNode) =>
     };
   });
 const row = (root: ParentNode, title: string) => rows(root).find((r) => r.title === title);
+const buttonIn = (root: ParentNode, text: string) =>
+  [...root.querySelectorAll("button")].find((b) => b.textContent === text);
+const eraseButton = (root: ParentNode) => buttonIn(root, "Erase and start over…");
 
 describe("Preferences: a setting's explanation behind its ⓘ", () => {
   test("General: no lead, and each behavior on one line, its ⓘ where it has something to say", () =>
@@ -175,6 +178,62 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
       },
     );
   });
+
+  test("Servers: Erase and start over… asks once, then the server here's card goes and a line says where its data went", () =>
+    pane(
+      "here",
+      <Servers />,
+      (el) => eraseButton(el),
+      async (el, host) => {
+        expect(eraseButton(el)?.closest(".dk-here__end")?.textContent).toContain("Stop running it here…");
+        await act(async () => eraseButton(el)?.click());
+        await until(() => document.querySelector('[role="dialog"]'));
+        const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+        expect(dialog.textContent).toContain("Erase agentes.chat on this Mac?");
+        expect(dialog.textContent).toContain("~/agentes.chat erased 2026-11-14");
+        expect([...dialog.querySelectorAll("button")].map((b) => b.textContent).filter(Boolean)).toEqual([
+          "Cancel",
+          "Erase it",
+        ]);
+        await act(async () => buttonIn(dialog, "Erase it")?.click());
+        // While it erases, nothing else can be pressed in its dialog.
+        expect((buttonIn(dialog, "Cancel") as HTMLButtonElement).disabled).toBe(true);
+        await until(() => !eraseButton(el) && !document.querySelector('[role="dialog"]'));
+        expect(el.textContent).not.toContain("agentes.chat on this Mac");
+        expect(document.querySelector(".dk-toast")?.textContent).toContain(
+          "Erased. Its old data is in ~/agentes.chat erased 2026-11-14.",
+        );
+        expect(host.window).toBe("welcome");
+        expect(await host.localServer()).toMatchObject({ installed: "none", run: false });
+      },
+    ));
+
+  test("Servers: on the stopped card too; a folder that couldn't move says its data stays and how to start it", () =>
+    pane(
+      "here",
+      <Servers />,
+      (el) => eraseButton(el),
+      async (el) => {
+        // Under the card, as on the running one: the line about its data keeps its width.
+        expect(eraseButton(el)?.closest(".dk-crow")).toBeNull();
+        expect(eraseButton(el)?.closest(".dk-here__end")).toBeTruthy();
+        expect(el.textContent).toContain("Start it here");
+        await act(async () => eraseButton(el)?.click());
+        await until(() => document.querySelector('[role="dialog"]'));
+        await act(async () => buttonIn(document.querySelector('[role="dialog"]') as HTMLElement, "Erase it")?.click());
+        await until(() => document.querySelector(".dk-toast")?.textContent?.includes("couldn't be moved"));
+        expect(document.querySelector(".dk-toast")?.textContent).toContain(
+          "Its data couldn't be moved, so nothing was erased and it stays in ~/.agentes. It's stopped until you choose Start it here.",
+        );
+        expect(eraseButton(el)).toBeTruthy();
+      },
+      {
+        here: { run: false },
+        host: (host) => {
+          host.eraseLocalServer = () => Promise.reject("move");
+        },
+      },
+    ));
 
   test("Folders: the note under the list is a link to how folders work, opened in the browser", () =>
     pane(

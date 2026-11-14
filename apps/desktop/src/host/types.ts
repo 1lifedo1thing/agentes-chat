@@ -213,6 +213,12 @@ export interface Host {
   setLocalBackups(nightly: boolean, copyTo: string | null): Promise<void>;
   /** The server here goes back to one of its backups; rejects with `start` when that backup didn't start. */
   restoreLocalServer(file: string): Promise<void>;
+  /**
+   * "Erase and start over": it stops, its folder moves whole to `eraseTo`, the app forgets it and the welcome window
+   * opens. Resolves with where its data went; rejects with `move` when the folder couldn't move (it stays stopped, its
+   * data where it was).
+   */
+  eraseLocalServer(): Promise<string>;
   /** Automatic login and start after a power failure (macOS). */
   keepRunning(): Promise<KeepRunning>;
   /** System Settings at Users & Groups or Energy (macOS). */

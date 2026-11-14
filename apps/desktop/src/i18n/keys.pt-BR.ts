@@ -446,6 +446,14 @@ export const desktopPtBR = {
     restored: "Backup de {{time}} restaurado",
     restoreFailed: "Esse backup não iniciou, então o agentes.chat voltou como estava. Tente o outro backup.",
     restoreUnreadable: "Esse backup não abre. Tente o outro.",
+    erase: "Apagar e começar de novo…",
+    eraseTitle: "Apagar o agentes.chat neste {{device}}?",
+    eraseBody:
+      "Ele para, e tudo o que ele guarda vai para {{path}}, onde você ainda pode recuperar. Depois você configura de novo do começo, com uma nova conta de dono.",
+    eraseConfirm: "Apagar",
+    erased: "Apagado. Os dados antigos estão em {{path}}.",
+    eraseMoveFailed:
+      "Não deu para mover os dados, então nada foi apagado e eles continuam em {{path}}. Ele fica parado até você escolher Iniciar aqui.",
     noPassword: "Crie uma senha para entrar pelo celular e por outros computadores.",
     addPassword: "Criar uma senha",
     keep: "Manter funcionando",

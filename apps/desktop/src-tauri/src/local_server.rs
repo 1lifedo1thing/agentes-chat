@@ -1159,6 +1159,8 @@ pub struct Status {
     backups: Backups,
     /// `caffeinate` keeps this Mac awake for it now.
     awake: bool,
+    /// Where "Erase and start over" would move its folder today (the app's own install only, not the welcome window).
+    erase_to: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -1264,6 +1266,12 @@ pub fn status(app: &AppHandle, welcome: bool) -> Status {
             problem: backup_problem,
         },
         awake,
+        erase_to: folder
+            .as_ref()
+            .filter(|_| installed == Installed::App && !welcome)
+            .and_then(|f| f.0.parent())
+            .and_then(|home| erased_folder(home, &today(), taken))
+            .map(|p| p.to_string_lossy().into_owned()),
     }
 }
 
@@ -2440,6 +2448,140 @@ fn diagnostics(app: &AppHandle) -> String {
     )
 }
 
+// ───────────────────────────── erase and start over ─────────────────────────────
+
+/// Why "Erase and start over" can't run now: only on the folder the app made (a terminal install's is the person's
+/// own), and never while a setup may be making that folder's database.
+pub fn erase_refusal(installed: Installed, setting_up: bool) -> Option<&'static str> {
+    if setting_up {
+        Some("setting up")
+    } else if installed != Installed::App {
+        Some("not set up here")
+    } else {
+        None
+    }
+}
+
+/// Where an erased folder goes: a visible folder in `home` named with the day (`YYYY-MM-DD`), with a number after it
+/// when that name is `taken`. None once 99 of them are there.
+pub fn erased_folder(home: &Path, date: &str, taken: impl Fn(&Path) -> bool) -> Option<PathBuf> {
+    (1..100)
+        .map(|n| match n {
+            1 => home.join(format!("agentes.chat erased {date}")),
+            n => home.join(format!("agentes.chat erased {date} {n}")),
+        })
+        .find(|p| !taken(p))
+}
+
+/// Something is at `path`, a link that leads nowhere included.
+fn taken(path: &Path) -> bool {
+    path.symlink_metadata().is_ok()
+}
+
+/// Today on this computer's clock, `YYYY-MM-DD`.
+fn today() -> String {
+    local_stamp().and_then(|s| s.get(..10).map(str::to_string)).unwrap_or_else(stamp)
+}
+
+/// The data folder moves whole to `erased_folder`'s place in `home`: a rename, so nothing is copied or deleted.
+fn move_away(folder: &Path, home: &Path, date: &str) -> io::Result<PathBuf> {
+    let to = erased_folder(home, date, taken).ok_or_else(|| io::Error::new(io::ErrorKind::AlreadyExists, "no free name"))?;
+    fs::rename(folder, &to)?;
+    Ok(to)
+}
+
+/// The erase's order: it stops, its folder moves away, and only once the folder moved does anything else go. A folder
+/// that didn't move leaves it stopped with its data where it was (`move`).
+fn erase_in_order(
+    stop: impl FnOnce(),
+    move_folder: impl FnOnce() -> io::Result<PathBuf>,
+    clean_up: impl FnOnce(),
+) -> Result<PathBuf, String> {
+    stop();
+    let to = move_folder().map_err(|_| "move".to_string())?;
+    clean_up();
+    Ok(to)
+}
+
+/// The server here's addresses in the list: its public one and its loopback one (read from its folder's `.env`).
+fn addresses(app: &AppHandle) -> Vec<String> {
+    let mut all: Vec<String> = public_url(app).into_iter().chain(folder(app).and_then(|f| port_of(&f)).map(loopback_url)).collect();
+    all.dedup();
+    all
+}
+
+/// The server here's addresses leave the list, and the main window goes to the server open now, or hides when none is
+/// left.
+fn leave_list(app: &AppHandle, addresses: &[String]) {
+    for origin in addresses {
+        crate::servers::remove(app, origin);
+    }
+    match crate::servers::current(app) {
+        Some(url) => {
+            let _ = crate::main_window::show_url(app, url);
+        }
+        None => {
+            if let Some(window) = app.get_window(crate::main_window::LABEL) {
+                let _ = window.hide();
+            }
+        }
+    }
+}
+
+/// "Erase and start over": it stops, its folder moves whole to a dated one in the home folder (kept, so its data can
+/// still be brought back), then what the app kept about it goes: its host homes, its addresses in the list and the
+/// main window's cookies there, and `local-server.json`. The welcome window then offers a new setup. Where its data
+/// went.
+fn erase(app: &AppHandle) -> Result<String, String> {
+    let folder = folder(app).ok_or("no folder")?;
+    let home = folder.0.parent().ok_or("no home folder")?.to_path_buf();
+    if let Some(why) = erase_refusal(installed(&folder), setting_up(app)) {
+        return Err(why.into());
+    }
+    // Read while the folder is there: they live in its `.env`.
+    let addresses = addresses(app);
+    let local = port_of(&folder).map(loopback_url);
+    let result = erase_in_order(
+        || stop_by_hand(app, true),
+        || move_away(&folder.0, &home, &today()),
+        || {
+            let runners = app.state::<crate::runners::Runners>();
+            for id in local.as_deref().map(|s| crate::runners::host_homes(app, s)).unwrap_or_default() {
+                let _ = runners.remove(app, &id);
+            }
+            // The loopback one's too, although a server at another port here shares them: its sign-in is asked
+            // again once, where the old session would otherwise meet a new server.
+            for origin in &addresses {
+                crate::servers::drop_cookies(app, origin);
+            }
+            leave_list(app, &addresses);
+            {
+                let mut inner = state(app);
+                inner.here = HereFile::default();
+                inner.phase = None;
+                inner.failed = 0;
+                inner.back_to = None;
+                inner.update_from = None;
+                inner.https_url = None;
+                inner.tailnet_down = false;
+                inner.backup_problem = None;
+            }
+            save_here(app, &HereFile::default());
+        },
+    );
+    emit_status(app);
+    match result {
+        Ok(to) => {
+            let _ = crate::present(app, "welcome");
+            Ok(to.to_string_lossy().into_owned())
+        }
+        Err(why) => {
+            note(app, format!("erase: the folder didn't move, it stays in {}", folder.0.display()));
+            Err(why)
+        }
+    }
+}
+
 // ───────────────────────────── commands ─────────────────────────────
 
 fn app_window(webview: &tauri::Webview, allowed: &[&str]) -> Result<(), String> {
@@ -2569,26 +2711,25 @@ pub async fn local_server_stop(
             hold_stopped(&app, minutes);
         }
         if forget {
-            if let Some(origin) = public_url(&app) {
-                crate::servers::remove(&app, &origin);
-            }
-            if let Some(local) = folder(&app).and_then(|f| port_of(&f)).map(loopback_url) {
-                crate::servers::remove(&app, &local);
-            }
-            match crate::servers::current(&app) {
-                Some(url) => {
-                    let _ = crate::main_window::show_url(&app, url);
-                }
-                None => {
-                    if let Some(window) = app.get_window(crate::main_window::LABEL) {
-                        let _ = window.hide();
-                    }
-                }
-            }
+            leave_list(&app, &addresses(&app));
         }
     })
     .await
     .map_err(|e| e.to_string())
+}
+
+/// "Erase and start over…": where its data went, or `move` when its folder couldn't move (it stays stopped, its data
+/// where it was).
+#[tauri::command]
+pub async fn local_server_erase(app: AppHandle, webview: tauri::Webview) -> Result<String, String> {
+    app_window(&webview, &["prefs"])?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let server = app.state::<LocalServer>();
+        let _busy = server.busy.lock().unwrap_or_else(|e| e.into_inner());
+        erase(&app)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -2893,6 +3034,78 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir
+    }
+
+    #[test]
+    fn erase_runs_only_on_the_app_s_own_folder_and_never_during_a_setup() {
+        assert_eq!(erase_refusal(Installed::App, false), None);
+        assert_eq!(erase_refusal(Installed::Terminal, false), Some("not set up here"));
+        assert_eq!(erase_refusal(Installed::None, false), Some("not set up here"));
+        assert_eq!(erase_refusal(Installed::App, true), Some("setting up"));
+        assert_eq!(erase_refusal(Installed::Terminal, true), Some("setting up"));
+    }
+
+    #[test]
+    fn an_erased_folder_is_named_with_the_day_and_a_number_when_that_name_is_taken() {
+        let home = Path::new("/home/ana");
+        let first = home.join("agentes.chat erased 2026-11-14");
+        assert_eq!(erased_folder(home, "2026-11-14", |_| false), Some(first.clone()));
+        let second = home.join("agentes.chat erased 2026-11-14 2");
+        assert_eq!(erased_folder(home, "2026-11-14", |p| p == first), Some(second.clone()));
+        assert_eq!(
+            erased_folder(home, "2026-11-14", |p| p == first || p == second),
+            Some(home.join("agentes.chat erased 2026-11-14 3"))
+        );
+        assert_eq!(erased_folder(home, "2026-11-14", |_| true), None);
+    }
+
+    #[test]
+    fn erasing_moves_the_folder_whole_and_never_over_another() {
+        let home = temp("erase");
+        let data = home.join(".agentes");
+        fs::create_dir_all(data.join("db")).unwrap();
+        fs::write(data.join("owner-key"), "k").unwrap();
+        let to = move_away(&data, &home, "2026-11-14").unwrap();
+        assert_eq!(to, home.join("agentes.chat erased 2026-11-14"));
+        assert!(!data.exists());
+        assert_eq!(fs::read_to_string(to.join("owner-key")).unwrap(), "k");
+        assert!(to.join("db").is_dir());
+        // A second one the same day keeps the first.
+        fs::create_dir_all(&data).unwrap();
+        fs::write(data.join("owner-key"), "k2").unwrap();
+        let again = move_away(&data, &home, "2026-11-14").unwrap();
+        assert_eq!(again, home.join("agentes.chat erased 2026-11-14 2"));
+        assert_eq!(fs::read_to_string(to.join("owner-key")).unwrap(), "k");
+        // No folder to move: an error, and nothing made.
+        assert!(move_away(&data, &home, "2026-11-15").is_err());
+        assert!(!home.join("agentes.chat erased 2026-11-15").exists());
+        let _ = fs::remove_dir_all(&home);
+    }
+
+    #[test]
+    fn erasing_stops_first_and_cleans_up_only_once_the_folder_moved() {
+        let steps = std::cell::RefCell::new(Vec::new());
+        let done = erase_in_order(
+            || steps.borrow_mut().push("stop"),
+            || {
+                steps.borrow_mut().push("move");
+                Ok(PathBuf::from("/home/ana/agentes.chat erased 2026-11-14"))
+            },
+            || steps.borrow_mut().push("clean up"),
+        );
+        assert_eq!(done, Ok(PathBuf::from("/home/ana/agentes.chat erased 2026-11-14")));
+        assert_eq!(*steps.borrow(), vec!["stop", "move", "clean up"]);
+        steps.borrow_mut().clear();
+        let failed = erase_in_order(
+            || steps.borrow_mut().push("stop"),
+            || {
+                steps.borrow_mut().push("move");
+                Err(io::Error::new(io::ErrorKind::PermissionDenied, "busy"))
+            },
+            || steps.borrow_mut().push("clean up"),
+        );
+        assert_eq!(failed, Err("move".to_string()));
+        assert_eq!(*steps.borrow(), vec!["stop", "move"], "a folder that didn't move leaves everything else");
     }
 
     #[test]

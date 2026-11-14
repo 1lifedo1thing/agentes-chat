@@ -1130,6 +1130,24 @@
   "server.restoreUnreadable": {
     "value": "That backup can't be opened. Try the other one."
   },
+  "server.erase": {
+    "value": "Erase and start over…"
+  },
+  "server.eraseTitle": {
+    "value": "Erase agentes.chat on this {{device}}?"
+  },
+  "server.eraseBody": {
+    "value": "It stops, and everything it holds moves to {{path}}, where you can still get it back. Then you set it up again from the start, with a new owner account."
+  },
+  "server.eraseConfirm": {
+    "value": "Erase it"
+  },
+  "server.erased": {
+    "value": "Erased. Its old data is in {{path}}."
+  },
+  "server.eraseMoveFailed": {
+    "value": "Its data couldn't be moved, so nothing was erased and it stays in {{path}}. It's stopped until you choose Start it here."
+  },
   "server.noPassword": {
     "value": "Add a password to sign in from your phone and other computers."
   },

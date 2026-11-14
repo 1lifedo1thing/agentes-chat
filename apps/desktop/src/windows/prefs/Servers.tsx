@@ -300,36 +300,44 @@ function StoppedHere({ local }: { local: LocalServerStatus }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   return (
-    <PrefCard>
-      <PrefRow
-        lead={<ServerTile kind="here" />}
-        title={t("desktop.server.title")}
-        desc={t("desktop.server.notHere", { path: shortPath(local.dir) })}
-        end={
-          <Button
-            size="sm"
-            icon="play"
-            loading={busy}
-            onClick={() => {
-              setBusy(true);
-              void host
-                .startLocalServer()
-                .catch(() => toast(t("desktop.common.error"), "alert"))
-                .finally(() => setBusy(false));
-            }}
-          >
-            {t("desktop.server.startHere")}
-          </Button>
-        }
-      />
-    </PrefCard>
+    <>
+      <PrefCard>
+        <PrefRow
+          lead={<ServerTile kind="here" />}
+          title={t("desktop.server.title")}
+          desc={t("desktop.server.notHere", { path: shortPath(local.dir) })}
+          end={
+            <Button
+              size="sm"
+              icon="play"
+              loading={busy}
+              onClick={() => {
+                setBusy(true);
+                void host
+                  .startLocalServer()
+                  .catch(() => toast(t("desktop.common.error"), "alert"))
+                  .finally(() => setBusy(false));
+              }}
+            >
+              {t("desktop.server.startHere")}
+            </Button>
+          }
+        />
+      </PrefCard>
+      {/* Under the card, where the running card has it: beside Start it would squeeze the line about its data. */}
+      <div className="dk-under-card dk-here__acts">
+        <span className="dk-here__end">
+          <EraseHere local={local} disabled={busy} />
+        </span>
+      </div>
+    </>
   );
 }
 
 /**
  * agentes.chat on this computer (the app runs it): its state and address, reach from the person's other
  * devices (Tailscale) and the phone's QR code with it, the usage-statistics switch, the way to Jev's key, its
- * version, data and backups, Restart and Stop, and "Stop running it here…" (its data stays).
+ * version, data and backups, Restart and Stop, "Stop running it here…" (its data stays) and "Erase and start over…".
  */
 function HereServer({ local, current }: { local: LocalServerStatus; current: string | null }) {
   const { t, i18n } = useTranslation();
@@ -660,7 +668,8 @@ function HereServer({ local, current }: { local: LocalServerStatus; current: str
             {t("desktop.server.start")}
           </Button>
         )}
-        <span className="dk-here__end">
+        <span className="dk-here__end dk-here__acts">
+          <EraseHere local={local} disabled={busy !== null} />
           <Button size="sm" variant="ghost" className="dk-danger-text" onClick={() => setStopping(true)}>
             {t("desktop.server.stopHere")}
           </Button>
@@ -782,6 +791,64 @@ function HereServer({ local, current }: { local: LocalServerStatus; current: str
             }
           >
             {t("desktop.server.stopHereConfirm")}
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </>
+  );
+}
+
+/**
+ * "Erase and start over…": one question, then the server here stops, its folder moves whole to `eraseTo` (its data
+ * kept there) and the welcome window offers a new setup. A folder that couldn't move leaves it stopped, data in place.
+ */
+function EraseHere({ local, disabled }: { local: LocalServerStatus; disabled: boolean }) {
+  const { t } = useTranslation();
+  const host = useHost();
+  const toast = useToast();
+  const [asking, setAsking] = useState(false);
+  const [busy, run] = usePending<"erase">();
+  const erase = () =>
+    run("erase", async () => {
+      try {
+        const to = await host.eraseLocalServer();
+        toast(t("desktop.server.erased", { path: shortPath(to) }), "check");
+      } catch (e) {
+        toast(
+          e === "move"
+            ? t("desktop.server.eraseMoveFailed", { path: shortPath(local.dir) })
+            : t("desktop.common.error"),
+          "alert",
+        );
+      } finally {
+        setAsking(false);
+      }
+    });
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="dk-danger-text"
+        disabled={disabled || !local.eraseTo}
+        onClick={() => setAsking(true)}
+      >
+        {t("desktop.server.erase")}
+      </Button>
+      <Dialog
+        open={asking}
+        onOpenChange={(o) => !o && busy === null && setAsking(false)}
+        title={t("desktop.server.eraseTitle")}
+        description={t("desktop.server.eraseBody", { path: shortPath(local.eraseTo ?? "") })}
+        closeLabel={t("desktop.common.close")}
+        width={440}
+      >
+        <DialogFooter bar>
+          <Button variant="ghost" onClick={() => setAsking(false)} disabled={busy !== null}>
+            {t("desktop.common.cancel")}
+          </Button>
+          <Button variant="danger" loading={busy !== null} onClick={() => void erase()}>
+            {t("desktop.server.eraseConfirm")}
           </Button>
         </DialogFooter>
       </Dialog>

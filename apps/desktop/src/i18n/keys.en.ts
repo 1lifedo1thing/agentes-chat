@@ -453,6 +453,15 @@ export const desktopEn = {
     restored: "Restored the backup from {{time}}",
     restoreFailed: "That backup didn't start, so agentes.chat is back as it was. Try the other backup.",
     restoreUnreadable: "That backup can't be opened. Try the other one.",
+    /** Preferences › Servers: it stops, its folder moves whole to a dated folder in the home folder, and a new setup starts. */
+    erase: "Erase and start over…",
+    eraseTitle: "Erase agentes.chat on this {{device}}?",
+    eraseBody:
+      "It stops, and everything it holds moves to {{path}}, where you can still get it back. Then you set it up again from the start, with a new owner account.",
+    eraseConfirm: "Erase it",
+    erased: "Erased. Its old data is in {{path}}.",
+    eraseMoveFailed:
+      "Its data couldn't be moved, so nothing was erased and it stays in {{path}}. It's stopped until you choose Start it here.",
     noPassword: "Add a password to sign in from your phone and other computers.",
     addPassword: "Add a password",
     keep: "Keep it running",
