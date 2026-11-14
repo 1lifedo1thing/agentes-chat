@@ -14074,7 +14074,7 @@
       "cancel_reminder": "Annulla promemoria",
       "list_reminders": "Elenca promemoria",
       "follow_up": "Riprendi il discorso più tardi",
-      "cancel_follow_up": "Annulla ripresa",
+      "cancel_follow_up": "Annulla follow-up",
       "create_wiki_page": "Crea pagina wiki",
       "update_wiki_page": "Modifica pagina wiki",
       "read_wiki_page": "Leggi pagina wiki",
@@ -14109,7 +14109,7 @@
       "vault_list": "Elenca password",
       "vault_delete": "Elimina password",
       "vault_make_password": "Crea password",
-      "get_my_usage": "Vedi il mio uso",
+      "get_my_usage": "Vedi il mio utilizzo",
       "send_feedback": "Invia feedback",
       "offer_feedback": "Offri di segnalare un problema"
     }

@@ -14033,7 +14033,7 @@
       "request_permission": "Demander un accès",
       "request_secret": "Demander une clé",
       "request_review": "Demander une revue",
-      "request_folder_access": "Demander une accès à un dossier",
+      "request_folder_access": "Demander l'accès à un dossier",
       "create_artifact": "Créer un fichier dans Drive",
       "update_artifact": "Modifier un fichier dans Drive",
       "read_artifact": "Lire un fichier dans Drive",

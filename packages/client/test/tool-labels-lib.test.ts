@@ -45,7 +45,7 @@ describe("the catalog of tool names", () => {
   test("every key is a name as written once its app is off; every label a verb phrase in plain copy", () => {
     const bad = KEYS.filter((key) => toolKey(key).key !== key).map((key) => `${key}: key reads as ${toolKey(key).key}`);
     for (const code of LOCALE_CODES) {
-      // Japanese and Korean may open with a term kept in Latin letters ("pull request").
+      // Chinese, Japanese and Korean have no capitals.
       const cased = localeInfo(code).script !== "cjk";
       for (const [key, label] of Object.entries(labelsOf(code))) {
         if (cased && !/^\p{Lu}/u.test(label)) bad.push(`${code} ${key}: "${label}" starts in lower case`);
@@ -105,8 +105,8 @@ describe("the catalog of tool names", () => {
       ["de", "Pull Request mergen", "Repository erstellen", "Nachricht senden"],
       ["it", "Unisci una pull request", "Crea repository", "Invia messaggio"],
       ["nl", "Pull request mergen", "Repository maken", "Bericht sturen"],
-      ["ja", "pull requestをマージ", "リポジトリを作成", "メッセージを送信"],
-      ["ko", "pull request 병합", "저장소 생성", "메시지 보내기"],
+      ["ja", "プルリクエストをマージ", "リポジトリを作成", "メッセージを送信"],
+      ["ko", "풀 리퀘스트 병합", "저장소 생성", "메시지 보내기"],
       ["zh-Hans", "合并 PR", "创建仓库", "发送消息"],
       ["id", "Merge pull request", "Buat repositori", "Kirim pesan"],
       ["tr", "Pull request'i birleştir", "Depo oluştur", "Mesaj gönder"],
