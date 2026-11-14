@@ -91,12 +91,12 @@ function PathCode({ path }: { path: string }) {
   return <code style={{ fontSize: 12.5, overflowWrap: "anywhere" }}>{softBreaks(path)}</code>;
 }
 
-/** A service's mark on a tile, as the connectors catalog shows one; "Other" on a neutral tile. */
+/** A service's mark on a tile, as the connectors catalog shows one; "Other" our database icon on the same tile. */
 function ProviderTile({ provider }: { provider: StorageProvider }) {
   const { t } = useTranslation();
   if (provider === "other") {
     return (
-      <span className="connector-icon connector-icon--mono" aria-hidden="true">
+      <span className="connector-icon connector-icon--brand" aria-hidden="true">
         <Icon name="database" />
       </span>
     );
@@ -346,9 +346,13 @@ function ConnectDialog({
 }) {
   const { t } = useTranslation();
   const [provider, setProvider] = useState<StorageProvider | null>(null);
-  // Fresh each time it opens: a new connection starts at the list, an edit on the saved service.
+  // Each opening is a fresh form, even on the same service: a new connection starts at the list, an edit on the
+  // saved service with its saved settings.
+  const [opening, setOpening] = useState(0);
   useEffect(() => {
-    if (open) setProvider(editing ? (config.s3?.provider ?? "other") : null);
+    if (!open) return;
+    setOpening((n) => n + 1);
+    setProvider(editing ? (config.s3?.provider ?? "other") : null);
   }, [open, editing, config.s3?.provider]);
   if (!provider) {
     return (
@@ -382,8 +386,8 @@ function ConnectDialog({
   }
   return (
     <ProviderSteps
-      // Another service is another form: nothing typed for one carries over to the next.
-      key={provider}
+      // Another service or another opening is another form: nothing typed before carries over.
+      key={`${opening}:${provider}`}
       open={open}
       onOpenChange={onOpenChange}
       provider={provider}
@@ -432,7 +436,9 @@ function ProviderSteps({
   const set = <K extends StorageField>(k: K, v: StorageForm[K]) => setForm((f) => ({ ...f, [k]: v }));
   const errorOf = (k: StorageField) => {
     if (!touched || !missing.includes(k)) return undefined;
-    return k === "accessKeyId" || k === "secretAccessKey" ? t("storage.keysRequired") : t("storage.required");
+    if (k !== "accessKeyId" && k !== "secretAccessKey") return t("storage.required");
+    // "Other" keeps today's field names (Access key, Secret); the services' steps say "both keys".
+    return provider === "other" ? t("storage.keysRequired") : t("storage.connect.stepError.keysRequired");
   };
   const runTest = () => {
     setTouched(true);
