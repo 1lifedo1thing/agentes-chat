@@ -230,9 +230,9 @@ export const listsAllAgents = (membership: Pick<Membership, "permissions"> | nul
   can(membership, "view_all_agents") || can(membership, "manage_agents");
 
 /**
- * Whether those lists name the agent for this person: every agent with `listsAllAgents`, else only the ones they
- * see how work. It narrows lists only: the agent's public card and its messages in shared channels still show.
- * `audienceSql` is the same rule as SQL for who doesn't list all.
+ * Whether those lists name the agent for this person: every agent with `listsAllAgents`, else only the ones whose
+ * workings they see (`seesAgentDetails`). It narrows lists only: the agent's public card and its messages in shared
+ * channels still show. `audienceSql` is the same rule as SQL for who doesn't list all.
  */
 export const listsAgentTo = (
   a: AudienceFields,
