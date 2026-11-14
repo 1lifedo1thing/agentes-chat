@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · 你的团队和智能体，在同一对话中"
   },
   "common": {
     "close": "关闭",
@@ -9663,6 +9664,15 @@
     "agentsImprove": "智能体自行改进技能",
     "agentsImproveHelp": "智能体发现技能有误或缺少步骤时，会立即修正：生成一个可撤销的新版本，并通知技能的创建者。",
     "agentsImproveThis": "智能体自行改进此技能",
+    "personal": {
+      "note": "只有你能看到这些技能。你的智能体在你提出请求时使用它们。",
+      "emptyTitle": "保存你自己的技能",
+      "emptyText": "只有你能看到，你的智能体在你提出请求时使用它们。",
+      "others": "其他人的个人技能",
+      "of": "{{name}} 的个人技能",
+      "forWhom": "适用对象",
+      "teamLocked": "只有管理智能体的人才能添加团队技能。"
+    },
     "agentChange": "{{agent}} {{when}}修改了它",
     "undoAgentChange": "撤销修改",
     "undo": "撤销",
@@ -9932,7 +9942,9 @@
         "seven_day_opus": "每周 · Opus",
         "seven_day_sonnet": "每周 · Sonnet",
         "monthly": "每月",
-        "other": "其他限额"
+        "other": "其他限额",
+        "extraUsage": "额外用量",
+        "oauthApps": "OAuth 应用"
       },
       "short": {
         "five_hour": "5 小时",
@@ -9940,7 +9952,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "月",
-        "other": "其他"
+        "other": "其他",
+        "extraUsage": "额外用量",
+        "oauthApps": "OAuth 应用"
       },
       "resetsAt": "{{time}} 重置",
       "resetsOn": "{{day}} {{time}} 重置",

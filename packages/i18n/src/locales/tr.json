@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Ekibin ve ajanların aynı sohbette"
   },
   "common": {
     "close": "Kapat",
@@ -9964,6 +9965,15 @@
     "agentsImprove": "Ajanlar becerileri kendileri geliştirir",
     "agentsImproveHelp": "Bir ajan bir becerinin yanlış olduğunu ya da bir adımının eksik olduğunu görünce hemen düzeltir: geri alabileceğiniz yeni bir sürüm olur ve beceriyi oluşturan kişiye haber verilir.",
     "agentsImproveThis": "Ajanlar bu beceriyi kendileri geliştirir",
+    "personal": {
+      "note": "Bu becerileri yalnızca sen görürsün. Ajanların onları sen istediğinde kullanır.",
+      "emptyTitle": "Kendi becerilerini sakla",
+      "emptyText": "Yalnızca sen görürsün ve ajanların onları sen istediğinde kullanır.",
+      "others": "Başkalarının kişisel becerileri",
+      "of": "{{name}} kişisel",
+      "forWhom": "Kimin için",
+      "teamLocked": "Ekip becerilerini yalnızca ajanları yönetenler ekler."
+    },
     "agentChange": "{{agent}} {{when}} değiştirdi",
     "undoAgentChange": "Değişikliği geri al",
     "undo": "Geri al",
@@ -10237,7 +10247,9 @@
         "seven_day_opus": "Hafta · Opus",
         "seven_day_sonnet": "Hafta · Sonnet",
         "monthly": "Ay",
-        "other": "Diğer sınır"
+        "other": "Diğer sınır",
+        "extraUsage": "Ek kullanım",
+        "oauthApps": "OAuth uygulamaları"
       },
       "short": {
         "five_hour": "5 sa",
@@ -10245,7 +10257,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "ay",
-        "other": "diğer"
+        "other": "diğer",
+        "extraUsage": "ek kullanım",
+        "oauthApps": "OAuth uygulamaları"
       },
       "resetsAt": "{{time}} saatinde sıfırlanır",
       "resetsOn": "{{day}}, {{time}} saatinde sıfırlanır",

@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Il tuo team e i tuoi agenti, nella stessa conversazione"
   },
   "common": {
     "close": "Chiudi",
@@ -10411,6 +10412,15 @@
     "agentsImprove": "Gli agenti migliorano le skill da soli",
     "agentsImproveHelp": "Quando un agente trova una skill sbagliata o a cui manca un passo, la corregge subito: una nuova versione che puoi annullare, e chi ha creato la skill viene avvisato.",
     "agentsImproveThis": "Gli agenti migliorano questa skill da soli",
+    "personal": {
+      "note": "Solo tu vedi queste skill. I tuoi agenti le usano quando lo chiedi tu.",
+      "emptyTitle": "Tieni le tue skill",
+      "emptyText": "Solo tu le vedi, e i tuoi agenti le usano quando lo chiedi tu.",
+      "others": "Skill personali di altre persone",
+      "of": "Personale di {{name}}",
+      "forWhom": "Per chi",
+      "teamLocked": "Solo chi gestisce gli agenti aggiunge skill del team."
+    },
     "agentChange": "{{agent}} l'ha modificata {{when}}",
     "undoAgentChange": "Annulla modifica",
     "undo": "Annulla",
@@ -10705,7 +10715,9 @@
         "seven_day_opus": "Settimana · Opus",
         "seven_day_sonnet": "Settimana · Sonnet",
         "monthly": "Mese",
-        "other": "Altro limite"
+        "other": "Altro limite",
+        "extraUsage": "Utilizzo extra",
+        "oauthApps": "App OAuth"
       },
       "short": {
         "five_hour": "5h",
@@ -10713,7 +10725,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "mese",
-        "other": "altro"
+        "other": "altro",
+        "extraUsage": "utilizzo extra",
+        "oauthApps": "app OAuth"
       },
       "resetsAt": "si azzera alle {{time}}",
       "resetsOn": "si azzera {{day}} alle {{time}}",

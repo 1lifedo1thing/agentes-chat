@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Twój zespół i twoi agenci w jednej rozmowie"
   },
   "common": {
     "close": "Zamknij",
@@ -10748,6 +10749,15 @@
     "agentsImprove": "Agenci sami ulepszają umiejętności",
     "agentsImproveHelp": "Gdy agent zauważy, że umiejętność jest błędna albo brakuje w niej kroku, od razu ją poprawia: nowa wersja, którą możesz cofnąć, a osoba, która ją utworzyła, dostaje informację.",
     "agentsImproveThis": "Agenci sami ulepszają tę umiejętność",
+    "personal": {
+      "note": "Tylko ty widzisz te umiejętności. Twoi agenci używają ich, gdy poprosisz.",
+      "emptyTitle": "Zachowaj własne umiejętności",
+      "emptyText": "Tylko ty je widzisz, a twoi agenci używają ich, gdy poprosisz.",
+      "others": "Osobiste umiejętności innych osób",
+      "of": "Osobiste: {{name}}",
+      "forWhom": "Dla kogo",
+      "teamLocked": "Umiejętności zespołu dodają tylko osoby zarządzające agentami."
+    },
     "agentChange": "{{agent}}: zmiana {{when}}",
     "undoAgentChange": "Cofnij zmianę",
     "undo": "Cofnij",
@@ -11056,7 +11066,9 @@
         "seven_day_opus": "Tydzień · Opus",
         "seven_day_sonnet": "Tydzień · Sonnet",
         "monthly": "Miesiąc",
-        "other": "Inny limit"
+        "other": "Inny limit",
+        "extraUsage": "Dodatkowe użycie",
+        "oauthApps": "Aplikacje OAuth"
       },
       "short": {
         "five_hour": "5 godz.",
@@ -11064,7 +11076,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "miesiąc",
-        "other": "inny"
+        "other": "inny",
+        "extraUsage": "dodatkowe użycie",
+        "oauthApps": "aplikacje OAuth"
       },
       "resetsAt": "odnawia się o {{time}}",
       "resetsOn": "odnawia się {{day}} o {{time}}",

@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Timmu dan agenmu, dalam percakapan yang sama"
   },
   "common": {
     "close": "Tutup",
@@ -9667,6 +9668,15 @@
     "agentsImprove": "Agen memperbaiki skill sendiri",
     "agentsImproveHelp": "Saat agen menemukan skill yang salah atau kurang satu langkah, agen langsung memperbaikinya: versi baru yang bisa kamu urungkan, dan pembuat skill diberi tahu.",
     "agentsImproveThis": "Agen memperbaiki skill ini sendiri",
+    "personal": {
+      "note": "Hanya kamu yang melihat skill ini. Agenmu memakainya saat kamu meminta.",
+      "emptyTitle": "Simpan skill milikmu sendiri",
+      "emptyText": "Hanya kamu yang melihatnya, dan agenmu memakainya saat kamu meminta.",
+      "others": "Skill pribadi orang lain",
+      "of": "Pribadi milik {{name}}",
+      "forWhom": "Untuk siapa",
+      "teamLocked": "Hanya orang yang mengelola agen yang menambahkan skill tim."
+    },
     "agentChange": "{{agent}} mengubahnya {{when}}",
     "undoAgentChange": "Urungkan perubahan",
     "undo": "Urungkan",
@@ -9927,7 +9937,9 @@
         "seven_day_opus": "Minggu · Opus",
         "seven_day_sonnet": "Minggu · Sonnet",
         "monthly": "Bulan",
-        "other": "Batas lain"
+        "other": "Batas lain",
+        "extraUsage": "Penggunaan ekstra",
+        "oauthApps": "Aplikasi OAuth"
       },
       "short": {
         "five_hour": "5j",
@@ -9935,7 +9947,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "bulan",
-        "other": "lainnya"
+        "other": "lainnya",
+        "extraUsage": "penggunaan ekstra",
+        "oauthApps": "aplikasi OAuth"
       },
       "resetsAt": "direset pukul {{time}}",
       "resetsOn": "direset {{day}} pukul {{time}}",

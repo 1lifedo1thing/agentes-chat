@@ -7,7 +7,11 @@ import type { LocaleStrings } from "./plurals";
  * no exclamation marks, buttons start with a verb, "agentes" in lower case.
  */
 export const ptBR = {
-  app: { name: "agentes" },
+  app: {
+    name: "agentes",
+    /** The browser tab's title on every screen that doesn't set its own. */
+    tabTitle: "agentes.chat · Seu time e seus agentes, na mesma conversa",
+  },
   common: {
     close: "Fechar",
     joinSentences: "{{a}} {{b}}",
@@ -10348,6 +10352,16 @@ export const ptBR = {
     agentsImproveHelp:
       "Quando um agente acha uma skill errada ou faltando um passo, ele corrige na hora: uma versão nova que dá para desfazer, e quem fez a skill fica sabendo.",
     agentsImproveThis: "Agentes melhoram esta skill sozinhos",
+    /** Skills split as the Vault does (ADR 0144): the team's and each person's. */
+    personal: {
+      note: "Só você vê estas skills. Seus agentes usam quando você pede.",
+      emptyTitle: "Guarde suas skills",
+      emptyText: "Só você vê, e seus agentes usam quando você pede.",
+      others: "Pessoais de outras pessoas",
+      of: "Pessoal de {{name}}",
+      forWhom: "Para quem",
+      teamLocked: "Só quem gerencia agentes adiciona skills da equipe.",
+    },
     agentChange: "{{agent}} mudou {{when}}",
     undoAgentChange: "Desfazer mudança",
     undo: "Desfazer",
@@ -10658,6 +10672,9 @@ export const ptBR = {
         seven_day_sonnet: "Semana · Sonnet",
         monthly: "Mês",
         other: "Outro limite",
+        /** Rows the plan reports by an English label ("Extra usage", "OAuth apps"), in the person's language. */
+        extraUsage: "Uso extra",
+        oauthApps: "Apps OAuth",
       },
       short: {
         five_hour: "5h",
@@ -10666,6 +10683,8 @@ export const ptBR = {
         seven_day_sonnet: "Sonnet",
         monthly: "mês",
         other: "outro",
+        extraUsage: "uso extra",
+        oauthApps: "apps OAuth",
       },
       resetsAt: "renova às {{time}}",
       resetsOn: "renova {{day}} às {{time}}",

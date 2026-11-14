@@ -4485,6 +4485,13 @@ export interface Skill {
   /** `agent`: made from an agent's own how-tos (older servers leave it out). */
   origin?: "person" | "agent";
   ownerAgentId?: string | null;
+  /**
+   * A personal skill's person: only they read and change it, and agents use it only when that person asks. Someone
+   * else's comes with its name and agents only. Null (older servers leave it out): the team's.
+   */
+  ownerUserId?: string | null;
+  /** How many active agents have it on (the library's list). */
+  agentsCount?: number;
   /** Agents can't change it; never archived for disuse. */
   locked?: boolean;
   useCount?: number;
@@ -4617,6 +4624,8 @@ export interface SkillInput {
   description: string;
   body: string;
   defaultForNewAgents?: boolean;
+  /** The person's own skill, not the team's. */
+  personal?: boolean;
 }
 
 /** An edit (new version unless only the flag changes). */

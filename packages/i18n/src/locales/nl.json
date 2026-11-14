@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Je team en je agents, in hetzelfde gesprek"
   },
   "common": {
     "close": "Sluiten",
@@ -10065,6 +10066,15 @@
     "agentsImprove": "Agents verbeteren skills zelf",
     "agentsImproveHelp": "Vindt een agent een skill fout of mist er een stap, dan verbetert hij die meteen: een nieuwe versie die je ongedaan kunt maken, en wie de skill maakte hoort het.",
     "agentsImproveThis": "Agents verbeteren deze skill zelf",
+    "personal": {
+      "note": "Alleen jij ziet deze skills. Je agents gebruiken ze als jij erom vraagt.",
+      "emptyTitle": "Bewaar je eigen skills",
+      "emptyText": "Alleen jij ziet ze, en je agents gebruiken ze als jij erom vraagt.",
+      "others": "Persoonlijke skills van anderen",
+      "of": "Persoonlijk van {{name}}",
+      "forWhom": "Voor wie",
+      "teamLocked": "Alleen wie agents beheert voegt teamskills toe."
+    },
     "agentChange": "{{agent}} heeft hem gewijzigd {{when}}",
     "undoAgentChange": "Wijziging ongedaan maken",
     "undo": "Ongedaan maken",
@@ -10347,7 +10357,9 @@
         "seven_day_opus": "Week · Opus",
         "seven_day_sonnet": "Week · Sonnet",
         "monthly": "Maand",
-        "other": "Andere limiet"
+        "other": "Andere limiet",
+        "extraUsage": "Extra gebruik",
+        "oauthApps": "OAuth-apps"
       },
       "short": {
         "five_hour": "5u",
@@ -10355,7 +10367,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "maand",
-        "other": "overig"
+        "other": "overig",
+        "extraUsage": "extra gebruik",
+        "oauthApps": "OAuth-apps"
       },
       "resetsAt": "reset om {{time}}",
       "resetsOn": "reset {{day}} om {{time}}",

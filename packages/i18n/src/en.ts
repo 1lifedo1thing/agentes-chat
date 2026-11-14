@@ -7,7 +7,11 @@ import type { Widen } from "./widen";
  * no exclamation marks, buttons start with a verb, "agentes" in lower case.
  */
 export const en = {
-  app: { name: "agentes" },
+  app: {
+    name: "agentes",
+    /** The browser tab's title on every screen that doesn't set its own. */
+    tabTitle: "agentes.chat · Your team and your agents, in the same conversation",
+  },
   common: {
     close: "Close",
     joinSentences: "{{a}} {{b}}",
@@ -10345,6 +10349,16 @@ export const en = {
     agentsImproveHelp:
       "When an agent finds a skill wrong or missing a step, it fixes it right away: a new version you can undo, and whoever made the skill is told.",
     agentsImproveThis: "Agents improve this skill by themselves",
+    /** Skills split as the Vault does (ADR 0144): the team's and each person's. */
+    personal: {
+      note: "Only you see these skills. Your agents use them when you ask.",
+      emptyTitle: "Keep your own skills",
+      emptyText: "Only you see them, and your agents use them when you ask.",
+      others: "Others' personal skills",
+      of: "{{name}}'s personal",
+      forWhom: "Who it's for",
+      teamLocked: "Only people who manage agents add team skills.",
+    },
     agentChange: "{{agent}} changed it {{when}}",
     undoAgentChange: "Undo change",
     undo: "Undo",
@@ -10636,6 +10650,9 @@ export const en = {
         seven_day_sonnet: "Week · Sonnet",
         monthly: "Month",
         other: "Other limit",
+        /** Rows the plan reports by an English label ("Extra usage", "OAuth apps"), in the person's language. */
+        extraUsage: "Extra usage",
+        oauthApps: "OAuth apps",
       },
       short: {
         five_hour: "5h",
@@ -10644,6 +10661,8 @@ export const en = {
         seven_day_sonnet: "Sonnet",
         monthly: "month",
         other: "other",
+        extraUsage: "extra usage",
+        oauthApps: "OAuth apps",
       },
       resetsAt: "resets at {{time}}",
       resetsOn: "resets {{day}} at {{time}}",

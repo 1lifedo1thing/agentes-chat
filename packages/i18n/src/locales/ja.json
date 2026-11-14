@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · チームとエージェントが、同じ会話で"
   },
   "common": {
     "close": "閉じる",
@@ -9618,6 +9619,15 @@
     "agentsImprove": "エージェントがスキルを自分で改善",
     "agentsImproveHelp": "スキルが間違っていたり手順が抜けていたりすると、エージェントがすぐに直します。新しいバージョンは元に戻せて、スキルを作った人に通知されます。",
     "agentsImproveThis": "エージェントがこのスキルを自分で改善",
+    "personal": {
+      "note": "これらのスキルはあなただけに見えます。エージェントはあなたが頼んだときに使います。",
+      "emptyTitle": "自分だけのスキルを保存",
+      "emptyText": "あなただけに見え、エージェントはあなたが頼んだときに使います。",
+      "others": "ほかの人の個人スキル",
+      "of": "{{name}}の個人用",
+      "forWhom": "対象",
+      "teamLocked": "チームのスキルを追加できるのはエージェントを管理する人だけです。"
+    },
     "agentChange": "{{agent}}が{{when}}に変更",
     "undoAgentChange": "変更を元に戻す",
     "undo": "元に戻す",
@@ -9878,7 +9888,9 @@
         "seven_day_opus": "週 · Opus",
         "seven_day_sonnet": "週 · Sonnet",
         "monthly": "月",
-        "other": "その他の上限"
+        "other": "その他の上限",
+        "extraUsage": "追加使用量",
+        "oauthApps": "OAuthアプリ"
       },
       "short": {
         "five_hour": "5時間",
@@ -9886,7 +9898,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "月",
-        "other": "その他"
+        "other": "その他",
+        "extraUsage": "追加使用量",
+        "oauthApps": "OAuthアプリ"
       },
       "resetsAt": "{{time}}にリセット",
       "resetsOn": "{{day}} {{time}}にリセット",
