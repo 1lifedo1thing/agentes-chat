@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Twój zespół i twoi agenci w jednej rozmowie"
   },
   "common": {
     "close": "Zamknij",
@@ -1569,7 +1570,8 @@
       "moonshot": "Klucze Kimi zaczynają się od sk-. Sprawdź go i wklej ponownie.",
       "zai": "Wklej cały klucz Z.ai, bez spacji. Sprawdź go i wklej ponownie.",
       "minimax": "Wklej cały klucz MiniMax, bez spacji. Klucze zaczynające się od sk-cp- należą do planu i tu nie działają.",
-      "openrouter": "Klucze OpenRouter zaczynają się od sk-or-v1-. Sprawdź go i wklej ponownie."
+      "openrouter": "Klucze OpenRouter zaczynają się od sk-or-v1-. Sprawdź go i wklej ponownie.",
+      "commandcode": "Wklej cały klucz Command Code, bez spacji. Sprawdź go i wklej ponownie."
     },
     "keyFromOther": "Jest od innego dostawcy?",
     "anthropicWorkspace": "ID przestrzeni roboczej w Claude Console",
@@ -3510,7 +3512,7 @@
       "closed": "Klucze API otwierają się z planem agentes.chat workspace'u.",
       "notPlan": "Klucz planu do kodowania wpisz w jego własnej opcji powyżej.",
       "billing": "Włącz rozliczenia dla projektu tego klucza. Bez rozliczeń Google może wykorzystywać to, co wysyłają twoi agenci.",
-      "privacy": "Ustawienia prywatności OpenRouter decydują, którzy dostawcy mogą przechowywać to, co wysyłają twoi agenci."
+      "privacy": "{{provider}} przekazuje to, co wysyłają twoi agenci, firmie, która tworzy lub hostuje model, zgodnie z warunkami i ustawieniami prywatności {{provider}}."
     },
     "wait": {
       "signIn": "Zalogujesz się tutaj, gdy tylko komputer będzie gotowy.",
@@ -3581,6 +3583,8 @@
     "agent": "Dla którego agenta",
     "keyLocked": "Klucz API może dodać tylko administrator.",
     "accountsLocked": "Plan na komputerze {{computer}} może połączyć tylko {{name}}.",
+    "connectMine": "Połącz mój komputer",
+    "makeAgent": "Utwórz agenta z tym planem",
     "later": "Połącz później"
   },
   "keyGuard": {
@@ -11065,7 +11069,9 @@
         "seven_day_opus": "Tydzień · Opus",
         "seven_day_sonnet": "Tydzień · Sonnet",
         "monthly": "Miesiąc",
-        "other": "Inny limit"
+        "other": "Inny limit",
+        "extraUsage": "Dodatkowe użycie",
+        "oauthApps": "Aplikacje OAuth"
       },
       "short": {
         "five_hour": "5 godz.",
@@ -11073,7 +11079,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "miesiąc",
-        "other": "inny"
+        "other": "inny",
+        "extraUsage": "dodatkowe użycie",
+        "oauthApps": "aplikacje OAuth"
       },
       "resetsAt": "odnawia się o {{time}}",
       "resetsOn": "odnawia się {{day}} o {{time}}",

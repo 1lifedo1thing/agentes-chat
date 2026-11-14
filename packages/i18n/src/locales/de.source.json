@@ -2,6 +2,9 @@
   "app.name": {
     "value": "agentes"
   },
+  "app.tabTitle": {
+    "value": "agentes.chat · Your team and your agents, in the same conversation"
+  },
   "common.close": {
     "value": "Close"
   },
@@ -3610,6 +3613,9 @@
   },
   "onboarding.keyInvalid.openrouter": {
     "value": "OpenRouter keys start with sk-or-v1-. Check it and paste it again."
+  },
+  "onboarding.keyInvalid.commandcode": {
+    "value": "Paste the whole Command Code key, with no spaces. Check it and paste it again."
   },
   "onboarding.keyFromOther": {
     "value": "Is it from another provider?"
@@ -8054,7 +8060,7 @@
     "value": "Turn on billing for the key's project. Without billing, Google may use what your agents send."
   },
   "connectAi.key.privacy": {
-    "value": "Your OpenRouter privacy settings decide which providers may keep what your agents send."
+    "value": "{{provider}} passes what your agents send to the company that makes or hosts the model, under {{provider}}'s privacy terms and settings."
   },
   "connectAi.wait.signIn": {
     "value": "You sign in here as soon as the computer is ready."
@@ -8214,6 +8220,12 @@
   },
   "connectAi.accountsLocked": {
     "value": "Only {{name}} connects a plan on {{computer}}."
+  },
+  "connectAi.connectMine": {
+    "value": "Connect my computer"
+  },
+  "connectAi.makeAgent": {
+    "value": "Create an agent with this plan"
   },
   "connectAi.later": {
     "value": "Connect later"
@@ -25090,6 +25102,12 @@
   "aiAccounts.usage.window.other": {
     "value": "Other limit"
   },
+  "aiAccounts.usage.window.extraUsage": {
+    "value": "Extra usage"
+  },
+  "aiAccounts.usage.window.oauthApps": {
+    "value": "OAuth apps"
+  },
   "aiAccounts.usage.short.five_hour": {
     "value": "5h"
   },
@@ -25107,6 +25125,12 @@
   },
   "aiAccounts.usage.short.other": {
     "value": "other"
+  },
+  "aiAccounts.usage.short.extraUsage": {
+    "value": "extra usage"
+  },
+  "aiAccounts.usage.short.oauthApps": {
+    "value": "OAuth apps"
   },
   "aiAccounts.usage.resetsAt": {
     "value": "resets at {{time}}"

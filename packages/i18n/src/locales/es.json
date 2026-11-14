@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Tu equipo y tus agentes, en la misma conversación"
   },
   "common": {
     "close": "Cerrar",
@@ -1521,7 +1522,8 @@
       "moonshot": "Las claves de Kimi empiezan con sk-. Revísala y pégala de nuevo.",
       "zai": "Pega la clave completa de Z.ai, sin espacios. Revísala y pégala de nuevo.",
       "minimax": "Pega la clave completa de MiniMax, sin espacios. Las claves que empiezan con sk-cp- son del plan y no funcionan aquí.",
-      "openrouter": "Las claves de OpenRouter empiezan con sk-or-v1-. Revísala y pégala de nuevo."
+      "openrouter": "Las claves de OpenRouter empiezan con sk-or-v1-. Revísala y pégala de nuevo.",
+      "commandcode": "Pega la clave completa de Command Code, sin espacios. Revísala y pégala de nuevo."
     },
     "keyFromOther": "¿Es de otro proveedor?",
     "anthropicWorkspace": "ID del espacio de trabajo de Claude Console",
@@ -3387,7 +3389,7 @@
       "closed": "Las claves de API se abren con el plan de agentes.chat del workspace.",
       "notPlan": "La clave de un plan de programación va en su propia opción, arriba.",
       "billing": "Activa la facturación del proyecto de la clave. Sin facturación, Google puede usar lo que envían tus agentes.",
-      "privacy": "Tu configuración de privacidad de OpenRouter decide qué proveedores pueden guardar lo que envían tus agentes."
+      "privacy": "{{provider}} pasa lo que envían tus agentes a la empresa que crea o aloja el modelo, según los términos y la configuración de privacidad de {{provider}}."
     },
     "wait": {
       "signIn": "Inicias sesión aquí en cuanto la computadora esté lista.",
@@ -3460,6 +3462,8 @@
     "agent": "Para qué agente",
     "keyLocked": "Solo un admin agrega una clave de API.",
     "accountsLocked": "Solo {{name}} conecta un plan en {{computer}}.",
+    "connectMine": "Conectar mi computadora",
+    "makeAgent": "Crear un agente con este plan",
     "later": "Conectar después"
   },
   "keyGuard": {
@@ -10638,7 +10642,9 @@
         "seven_day_opus": "Semana · Opus",
         "seven_day_sonnet": "Semana · Sonnet",
         "monthly": "Mes",
-        "other": "Otro límite"
+        "other": "Otro límite",
+        "extraUsage": "Uso extra",
+        "oauthApps": "Apps OAuth"
       },
       "short": {
         "five_hour": "5 h",
@@ -10646,7 +10652,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "mes",
-        "other": "otro"
+        "other": "otro",
+        "extraUsage": "uso extra",
+        "oauthApps": "apps OAuth"
       },
       "resetsAt": "se renueva a las {{time}}",
       "resetsOn": "se renueva el {{day}} a las {{time}}",

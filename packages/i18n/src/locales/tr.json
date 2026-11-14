@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Ekibin ve ajanların aynı sohbette"
   },
   "common": {
     "close": "Kapat",
@@ -1474,7 +1475,8 @@
       "moonshot": "Kimi anahtarları sk- ile başlar. Kontrol edip tekrar yapıştırın.",
       "zai": "Z.ai anahtarının tamamını boşluksuz yapıştırın. Kontrol edip tekrar yapıştırın.",
       "minimax": "MiniMax anahtarının tamamını boşluksuz yapıştırın. sk-cp- ile başlayan anahtarlar plana aittir ve burada çalışmaz.",
-      "openrouter": "OpenRouter anahtarları sk-or-v1- ile başlar. Kontrol edip tekrar yapıştırın."
+      "openrouter": "OpenRouter anahtarları sk-or-v1- ile başlar. Kontrol edip tekrar yapıştırın.",
+      "commandcode": "Command Code anahtarının tamamını boşluksuz yapıştırın. Kontrol edip tekrar yapıştırın."
     },
     "keyFromOther": "Başka bir sağlayıcıdan mı?",
     "anthropicWorkspace": "Claude Console çalışma alanı kimliği",
@@ -3263,7 +3265,7 @@
       "closed": "API anahtarları çalışma alanının agentes.chat planıyla açılır.",
       "notPlan": "Bir kodlama planının anahtarı yukarıdaki kendi seçeneğine girilir.",
       "billing": "Anahtarın projesi için faturalandırmayı açın. Faturalandırma olmadan Google, ajanlarınızın gönderdiklerini kullanabilir.",
-      "privacy": "Ajanlarınızın gönderdiklerini hangi sağlayıcıların saklayabileceğine OpenRouter gizlilik ayarlarınız karar verir."
+      "privacy": "{{provider}}, ajanlarınızın gönderdiklerini modeli yapan veya barındıran şirkete iletir. Bu, {{provider}} gizlilik koşullarına ve ayarlarına göre olur."
     },
     "wait": {
       "signIn": "Bilgisayar hazır olur olmaz burada giriş yaparsınız.",
@@ -3334,6 +3336,8 @@
     "agent": "Hangi ajan için",
     "keyLocked": "API anahtarını yalnızca bir yönetici ekler.",
     "accountsLocked": "{{computer}} üzerinde planı yalnızca {{name}} bağlar.",
+    "connectMine": "Bilgisayarımı bağla",
+    "makeAgent": "Bu planla bir ajan oluştur",
     "later": "Sonra bağla"
   },
   "keyGuard": {
@@ -10246,7 +10250,9 @@
         "seven_day_opus": "Hafta · Opus",
         "seven_day_sonnet": "Hafta · Sonnet",
         "monthly": "Ay",
-        "other": "Diğer sınır"
+        "other": "Diğer sınır",
+        "extraUsage": "Ek kullanım",
+        "oauthApps": "OAuth uygulamaları"
       },
       "short": {
         "five_hour": "5 sa",
@@ -10254,7 +10260,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "ay",
-        "other": "diğer"
+        "other": "diğer",
+        "extraUsage": "ek kullanım",
+        "oauthApps": "OAuth uygulamaları"
       },
       "resetsAt": "{{time}} saatinde sıfırlanır",
       "resetsOn": "{{day}}, {{time}} saatinde sıfırlanır",

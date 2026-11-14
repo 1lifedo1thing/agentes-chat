@@ -7,7 +7,11 @@ import type { LocaleStrings } from "./plurals";
  * no exclamation marks, buttons start with a verb, "agentes" in lower case.
  */
 export const ptBR = {
-  app: { name: "agentes" },
+  app: {
+    name: "agentes",
+    /** The browser tab's title on every screen that doesn't set its own. */
+    tabTitle: "agentes.chat · Seu time e seus agentes, na mesma conversa",
+  },
   common: {
     close: "Fechar",
     joinSentences: "{{a}} {{b}}",
@@ -1527,6 +1531,7 @@ export const ptBR = {
       minimax:
         "Cole a chave inteira da MiniMax, sem espaços. As que começam com sk-cp- são do plano e não servem aqui.",
       openrouter: "As chaves da OpenRouter começam com sk-or-v1-. Confira e cole de novo.",
+      commandcode: "Cole a chave inteira do Command Code, sem espaços. Confira e cole de novo.",
     },
     keyFromOther: "É de outro provedor?",
     anthropicWorkspace: "ID do workspace no Claude Console",
@@ -3444,7 +3449,7 @@ export const ptBR = {
       notPlan: "A chave de um plano de código vai na opção dele, acima.",
       billing: "Ative o faturamento no projeto da chave. Sem faturamento, o Google pode usar o que os agentes enviam.",
       privacy:
-        "As configurações de privacidade da OpenRouter decidem quais provedores podem guardar o que seus agentes enviam.",
+        "O que seus agentes enviam é repassado por {{provider}} à empresa que faz ou hospeda o modelo, sob os termos e as configurações de privacidade de {{provider}}.",
     },
     wait: {
       signIn: "Você entra aqui assim que o computador ficar pronto.",
@@ -3520,6 +3525,10 @@ export const ptBR = {
     agent: "Para qual agente",
     keyLocked: "Uma chave de API, só um admin adiciona.",
     accountsLocked: "Só {{name}} conecta um plano no {{computer}}.",
+    /** Under `accountsLocked` (self-hosted servers): a computer of the person's own, where they sign their plan in. */
+    connectMine: "Conectar meu computador",
+    /** At the end, after a plan connected by someone who owns no agent yet. */
+    makeAgent: "Criar um agente com este plano",
     later: "Conectar depois",
   },
   /** An API key pasted in a message, before it goes out. */
@@ -10668,6 +10677,9 @@ export const ptBR = {
         seven_day_sonnet: "Semana · Sonnet",
         monthly: "Mês",
         other: "Outro limite",
+        /** Rows the plan reports by an English label ("Extra usage", "OAuth apps"), in the person's language. */
+        extraUsage: "Uso extra",
+        oauthApps: "Apps OAuth",
       },
       short: {
         five_hour: "5h",
@@ -10676,6 +10688,8 @@ export const ptBR = {
         seven_day_sonnet: "Sonnet",
         monthly: "mês",
         other: "outro",
+        extraUsage: "uso extra",
+        oauthApps: "apps OAuth",
       },
       resetsAt: "renova às {{time}}",
       resetsOn: "renova {{day}} às {{time}}",

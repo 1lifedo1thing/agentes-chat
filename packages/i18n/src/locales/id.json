@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Timmu dan agenmu, dalam percakapan yang sama"
   },
   "common": {
     "close": "Tutup",
@@ -1428,7 +1429,8 @@
       "moonshot": "Kunci Kimi diawali sk-. Periksa lalu tempel lagi.",
       "zai": "Tempel seluruh kunci Z.ai, tanpa spasi. Periksa lalu tempel lagi.",
       "minimax": "Tempel seluruh kunci MiniMax, tanpa spasi. Kunci yang diawali sk-cp- milik paket dan tidak berfungsi di sini.",
-      "openrouter": "Kunci OpenRouter diawali sk-or-v1-. Periksa lalu tempel lagi."
+      "openrouter": "Kunci OpenRouter diawali sk-or-v1-. Periksa lalu tempel lagi.",
+      "commandcode": "Tempel seluruh kunci Command Code, tanpa spasi. Periksa lalu tempel lagi."
     },
     "keyFromOther": "Dari penyedia lain?",
     "anthropicWorkspace": "ID ruang kerja Claude Console",
@@ -3156,7 +3158,7 @@
       "closed": "Kunci API terbuka bersama paket agentes.chat workspace.",
       "notPlan": "Kunci paket coding dimasukkan di opsinya sendiri di atas.",
       "billing": "Aktifkan penagihan untuk proyek kunci ini. Tanpa penagihan, Google bisa memakai apa yang dikirim agenmu.",
-      "privacy": "Pengaturan privasi OpenRouter-mu menentukan penyedia mana yang boleh menyimpan apa yang dikirim agenmu."
+      "privacy": "{{provider}} meneruskan apa yang dikirim agenmu ke perusahaan yang membuat atau menghosting model, sesuai ketentuan dan pengaturan privasi {{provider}}."
     },
     "wait": {
       "signIn": "Kamu bisa masuk di sini begitu komputernya siap.",
@@ -3229,6 +3231,8 @@
     "agent": "Untuk agen mana",
     "keyLocked": "Hanya Admin yang bisa menambahkan kunci API.",
     "accountsLocked": "Hanya {{name}} yang bisa menghubungkan paket di {{computer}}.",
+    "connectMine": "Hubungkan komputer saya",
+    "makeAgent": "Buat agen dengan paket ini",
     "later": "Hubungkan nanti"
   },
   "keyGuard": {
@@ -9936,7 +9940,9 @@
         "seven_day_opus": "Minggu · Opus",
         "seven_day_sonnet": "Minggu · Sonnet",
         "monthly": "Bulan",
-        "other": "Batas lain"
+        "other": "Batas lain",
+        "extraUsage": "Penggunaan ekstra",
+        "oauthApps": "Aplikasi OAuth"
       },
       "short": {
         "five_hour": "5j",
@@ -9944,7 +9950,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "bulan",
-        "other": "lainnya"
+        "other": "lainnya",
+        "extraUsage": "penggunaan ekstra",
+        "oauthApps": "aplikasi OAuth"
       },
       "resetsAt": "direset pukul {{time}}",
       "resetsOn": "direset {{day}} pukul {{time}}",
