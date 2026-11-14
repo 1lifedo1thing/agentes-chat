@@ -96,6 +96,21 @@ describe("desktop strings", () => {
     );
   });
 
+  test("the Mac's permission prompts in every language, each file in the bundle", async () => {
+    const tauri = join(import.meta.dir, "../src-tauri");
+    const plist = await Bun.file(join(tauri, "Info.plist")).text();
+    const prompts = [...plist.matchAll(/<key>(NS\w+UsageDescription)<\/key>/g)].map((m) => m[1]).sort();
+    expect(prompts.length).toBe(5);
+    const config = await Bun.file(join(tauri, "tauri.macos.conf.json")).json();
+    const files: Record<string, string> = config.bundle.macOS.files;
+    for (const { code } of LOCALES.filter((l) => l.ready && l.code !== "en")) {
+      const path = `locales/${code}.lproj/InfoPlist.strings`;
+      expect({ code, mapped: files[`Resources/${code}.lproj/InfoPlist.strings`] }).toEqual({ code, mapped: path });
+      const strings = [...(await Bun.file(join(tauri, path)).text()).matchAll(/^"(\w+)" = "([^"]+)";$/gm)];
+      expect({ code, keys: strings.map((m) => m[1]).sort() }).toEqual({ code, keys: prompts });
+    }
+  });
+
   test("a window loads only its language and English, and the next one when picked", async () => {
     const i18n = await loadDesktopI18n("pt-BR", "windows");
     expect(i18n.t("desktop.own.here")).toBe("Rodar o agentes.chat neste PC");

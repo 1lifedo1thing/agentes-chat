@@ -1,0 +1,5 @@
+"NSMicrophoneUsageDescription" = "O agentes.chat usa o microfone para gravar mensagens de voz.";
+"NSDesktopFolderUsageDescription" = "Permite que os agentes que trabalham neste Mac abram arquivos na sua Mesa.";
+"NSDocumentsFolderUsageDescription" = "Permite que os agentes que trabalham neste Mac abram arquivos na sua pasta Documentos.";
+"NSDownloadsFolderUsageDescription" = "Permite que os agentes que trabalham neste Mac abram arquivos na sua pasta Downloads.";
+"NSLocalNetworkUsageDescription" = "Permite que os agentes que trabalham neste Mac encontrem celulares Android no seu Wi-Fi e se conectem a eles.";

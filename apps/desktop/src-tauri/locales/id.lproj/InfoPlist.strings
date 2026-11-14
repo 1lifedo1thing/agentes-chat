@@ -1,0 +1,5 @@
+"NSMicrophoneUsageDescription" = "agentes.chat memakai mikrofon untuk merekam pesan suara.";
+"NSDesktopFolderUsageDescription" = "Memungkinkan agen yang bekerja di Mac ini membuka file di Desktop Anda.";
+"NSDocumentsFolderUsageDescription" = "Memungkinkan agen yang bekerja di Mac ini membuka file di folder Dokumen Anda.";
+"NSDownloadsFolderUsageDescription" = "Memungkinkan agen yang bekerja di Mac ini membuka file di folder Unduhan Anda.";
+"NSLocalNetworkUsageDescription" = "Memungkinkan agen yang bekerja di Mac ini menemukan dan terhubung ke ponsel Android di Wi-Fi Anda.";
