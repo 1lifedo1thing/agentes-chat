@@ -1026,15 +1026,16 @@ describe("Conectar uma IA: one picker, plans first", () => {
   });
 
   test("self-host with no computer for the agent: plans dim, the key comes first, and a plan's panel says to connect one", async () => {
-    const { dialog, router } = await connect({ computers: [], brain: { computer: null, machines: [] } });
+    const { dialog } = await connect({ computers: [], brain: { computer: null, machines: [] } });
     expect(payWith(dialog, "Com chave de API").getAttribute("aria-checked")).toBe("true");
     await click(payWith(dialog, "Com um plano"));
     expect(aiSelect(dialog).querySelector(".ac-brand--off")).not.toBeNull();
     expect(dialog.textContent).toContain("As contas ficam num computador conectado. Conecte um seu primeiro.");
     await click(within(dialog).getByRole("button", { name: "Conectar um computador" }));
     await settle(4);
-    expect(screen().queryByRole("dialog")).toBeNull();
-    expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/settings/devices`);
+    // In place, over the plan's panel, which signs in there once the computer pairs.
+    expect(screen().getByRole("dialog", { name: "Conectar um dispositivo" })).toBeTruthy();
+    expect(dialog.isConnected).toBe(true);
   });
 
   test("before the server says which edition this is: a wait, never a computer to connect", async () => {

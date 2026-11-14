@@ -1032,8 +1032,8 @@ function PlanWithoutAgent({
         signingIn={signingIn}
         onComputer={onComputer}
       />
-      {elsewhere ? (
-        <Button variant="primary" wide label={t("aiAccounts.connect.addComputer")} onPress={onComputer} />
+      {elsewhere && can(org, "pair_computers") ? (
+        <Button variant="primary" wide label={t("connectAi.connectMine")} onPress={onComputer} />
       ) : null}
       {(offersKeyNow(gate, holdText(t, org?.standing) !== null) || (elsewhere && mayAddKey)) && !signingIn ? (
         <Button variant="ghost" wide label={t("connectAi.wait.useKey")} onPress={onKey} />

@@ -17,7 +17,7 @@ import {
   noAiLockedLine,
   PLAN_CHOICES,
 } from "@agenteschat/client/lib/no-ai";
-import { can } from "@agenteschat/client/lib/permissions";
+import { can, makesAgents } from "@agenteschat/client/lib/permissions";
 import {
   keyLooksValid,
   type ProviderId,
@@ -213,7 +213,10 @@ export function ConnectAiSheet() {
   const [accountAdded, setAccountAdded] = useState(false);
   // Or one of that plan they already have, which the plan's page says is connected.
   const ai = useAiAccounts(orgId, bare);
-  const hasPlan = bare && view.page === "plan" && freePlanAccount(ai.data?.accounts, view.choice) !== undefined;
+  const planAccount = bare && view.page === "plan" ? freePlanAccount(ai.data?.accounts, view.choice) : undefined;
+  const hasPlan = planAccount !== undefined;
+  // That plan's next step is an agent that thinks with it, for whoever may make one (never over one being made).
+  const makeWith = planAccount && params.forNew !== "1" && makesAgents(org) ? planAccount : undefined;
   // Someone else's agent: who connects a plan instead.
   const owner = one?.ownerUserId ? dir.memberById.get(one.ownerUserId)?.name : undefined;
   const locked =
@@ -327,7 +330,15 @@ export function ConnectAiSheet() {
       {done ? (
         // The last step's one button, at the screen's foot.
         <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: c.grouped }]}>
-          <Button variant="primary" wide label={t("connectAi.done")} onPress={close} />
+          {makeWith ? (
+            <Button
+              variant="primary"
+              wide
+              label={t("connectAi.makeAgent")}
+              onPress={() => router.replace(`/new-agent?account=${encodeURIComponent(makeWith.id)}` as never)}
+            />
+          ) : null}
+          <Button variant={makeWith ? "secondary" : "primary"} wide label={t("connectAi.done")} onPress={close} />
         </View>
       ) : null}
     </View>
@@ -339,5 +350,5 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 16, paddingTop: 4 },
   head: { gap: 2, paddingHorizontal: 4, paddingTop: 10, paddingBottom: 16 },
   loading: { marginTop: 24 },
-  foot: { paddingHorizontal: 16, paddingTop: 12 },
+  foot: { gap: 8, paddingHorizontal: 16, paddingTop: 12 },
 });

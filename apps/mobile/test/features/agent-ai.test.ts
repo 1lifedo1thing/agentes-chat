@@ -1136,6 +1136,26 @@ describe("the agent's AI", () => {
     expect(screen).toContain("(proposed || start ? null : (ownPlan ?? null))");
     expect(screen).toContain("const ownPlan = planAccountOption(brainOptions);");
   });
+
+  test("a plan connected with no agent yet: Criar um agente com este plano opens Criar agente thinking with it", async () => {
+    const read = (path: string) => Bun.file(new URL(`../../${path}`, import.meta.url).pathname).text();
+    const [sheet, route, screen, steps] = await Promise.all([
+      read("src/features/ai/ConnectAi.tsx"),
+      read("app/(app)/new-agent.tsx"),
+      read("src/features/agents/NewAgentScreen.tsx"),
+      read("src/features/ai/ConnectAiSteps.tsx"),
+    ]);
+    // For whoever may make agents, never over one being made.
+    expect(sheet).toContain('params.forNew !== "1" && makesAgents(org) ? planAccount');
+    expect(sheet).toContain("/new-agent?account=");
+    expect(sheet).toContain("encodeURIComponent(makeWith.id)");
+    expect(route).toContain('accountId={typeof account === "string" && account ? account : null}');
+    // That account wins over the workspace's last setup; a pick made on the screen still wins over it.
+    expect(screen).toContain("connectedHere ?? picked ?? askedPlan ??");
+    // Someone else's computer: a computer of their own is the way on, for whoever may connect one.
+    expect(steps).toContain('elsewhere && can(org, "pair_computers") ?');
+    expect(steps).toContain('label={t("connectAi.connectMine")} onPress={onComputer}');
+  });
 });
 
 test("a Cursor sign-in on the phone: its own steps, or its API key when chosen, never Claude's code", async () => {

@@ -3346,6 +3346,8 @@
     "agent": "Für welchen Agent",
     "keyLocked": "Nur ein Admin fügt einen API-Schlüssel hinzu.",
     "accountsLocked": "Nur {{name}} verbindet ein Abo auf {{computer}}.",
+    "connectMine": "Meinen Computer verbinden",
+    "makeAgent": "Einen Agenten mit diesem Abo erstellen",
     "later": "Später verbinden"
   },
   "keyGuard": {

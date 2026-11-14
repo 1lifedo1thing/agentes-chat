@@ -662,21 +662,13 @@ describe("Criar agente: what gets created", () => {
     await click(screen().getByRole("button", { name: "Conectar uma IA" }));
     await settle(6);
     const box = screen().getByRole("dialog", { name: "Conectar uma IA" });
-    // A plan for the agent being made (never one of theirs): a computer to connect opens beside the draft.
+    // A plan for the agent being made (never one of theirs): a computer to connect opens in place, over the draft.
     await chooseAi(box, "Claude");
     const panel = within(box).getByRole("region", { name: "Seu plano do Claude" });
-    const opened: unknown[][] = [];
-    const realOpen = window.open;
-    window.open = ((...args: unknown[]) => {
-      opened.push(args);
-      return null;
-    }) as typeof window.open;
-    try {
-      await click(within(panel).getByRole("button", { name: "Conectar um computador" }));
-    } finally {
-      window.open = realOpen;
-    }
-    expect(opened).toEqual([[`/org/${ORG_ID}/settings/devices`, "_blank", "noopener"]]);
+    await click(within(panel).getByRole("button", { name: "Conectar um computador" }));
+    const pairing = screen().getByRole("dialog", { name: "Conectar um dispositivo" });
+    await click(within(pairing).getByRole("button", { name: "Fechar" }));
+    expect(screen().queryByRole("dialog", { name: "Conectar um dispositivo" })).toBeNull();
     await click(payWith(box, "Com chave de API"));
     await act(async () =>
       fireEvent.change(within(box).getByLabelText("Cole aqui"), {

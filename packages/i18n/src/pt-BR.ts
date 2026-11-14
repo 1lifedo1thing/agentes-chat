@@ -3524,6 +3524,10 @@ export const ptBR = {
     agent: "Para qual agente",
     keyLocked: "Uma chave de API, só um admin adiciona.",
     accountsLocked: "Só {{name}} conecta um plano no {{computer}}.",
+    /** Under `accountsLocked` (self-hosted servers): a computer of the person's own, where they sign their plan in. */
+    connectMine: "Conectar meu computador",
+    /** At the end, after a plan connected by someone who owns no agent yet. */
+    makeAgent: "Criar um agente com este plano",
     later: "Conectar depois",
   },
   /** An API key pasted in a message, before it goes out. */

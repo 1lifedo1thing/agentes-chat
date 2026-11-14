@@ -3223,6 +3223,8 @@
     "agent": "用于哪个智能体",
     "keyLocked": "只有管理员可以添加 API 密钥。",
     "accountsLocked": "只有 {{name}} 可以在 {{computer}} 上连接套餐。",
+    "connectMine": "连接我的电脑",
+    "makeAgent": "用此套餐创建智能体",
     "later": "稍后连接"
   },
   "keyGuard": {

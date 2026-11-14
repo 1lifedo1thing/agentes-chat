@@ -3582,6 +3582,8 @@
     "agent": "Dla którego agenta",
     "keyLocked": "Klucz API może dodać tylko administrator.",
     "accountsLocked": "Plan na komputerze {{computer}} może połączyć tylko {{name}}.",
+    "connectMine": "Połącz mój komputer",
+    "makeAgent": "Utwórz agenta z tym planem",
     "later": "Połącz później"
   },
   "keyGuard": {
