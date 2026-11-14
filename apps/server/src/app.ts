@@ -403,10 +403,15 @@ export function createApp(options: AppOptions) {
     });
     // Hashed build files never change: the browser (and the Mac app's window) opens them from disk.
     // index.html is always revalidated, so a new deploy shows on the next open.
+    // No page of the app belongs in a search engine's index, whatever its status: sign-in pages and made-up
+    // addresses all answer with the same page. A header, never a robots.txt: a crawler kept out can't read it.
     app.use("/*", async (c, next) => {
       await next();
-      if (isApi(c.req.path) || !c.res.ok || c.res.headers.has("cache-control")) return;
-      if (c.res.headers.get("content-type")?.startsWith("text/html")) c.res.headers.set("cache-control", "no-cache");
+      if (isApi(c.req.path)) return;
+      const html = c.res.headers.get("content-type")?.startsWith("text/html");
+      if (html) c.res.headers.set("x-robots-tag", "noindex");
+      if (!c.res.ok || c.res.headers.has("cache-control")) return;
+      if (html) c.res.headers.set("cache-control", "no-cache");
       else if (c.req.path.startsWith("/assets/"))
         c.res.headers.set("cache-control", "public, max-age=31536000, immutable");
     });
