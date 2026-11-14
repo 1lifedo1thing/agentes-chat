@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
-import { eq, schema } from "@agenteschat/db";
+import { orgTopic } from "@agenteschat/adapters";
+import { and, eq, schema } from "@agenteschat/db";
 import type { ModelRequest } from "@agenteschat/providers";
 import { systemText } from "@agenteschat/providers";
 import {
@@ -23,6 +24,7 @@ import {
   NotFoundError,
   parseSkillMarkdown,
   postPersonMessage,
+  RIGHT_HAND,
   reimportSkill,
   revokeConnection,
   SKILL_LIMITS,
@@ -256,6 +258,25 @@ describe("import", () => {
     expect(again.version).toBe(2);
   });
 
+  test("a folder zipped by the Mac's Finder installs: its __MACOSX copies and .DS_Store are left out", async () => {
+    f = await setup();
+    const skill = await importSkillZip(
+      skillDeps(),
+      f.owner.id,
+      f.org.id,
+      zip({
+        "relatorio-semanal/SKILL.md": SKILL_MD,
+        "relatorio-semanal/.DS_Store": "\0\0\0\x01Bud1",
+        "relatorio-semanal/templates/relatorio.md": "# Semana {{n}}",
+        "__MACOSX/relatorio-semanal/._SKILL.md": "\0\x05\x16\x07",
+        "__MACOSX/relatorio-semanal/templates/._relatorio.md": "\0\x05\x16\x07",
+        ".DS_Store": "\0\0\0\x01Bud1",
+      }),
+    );
+    expect(skill).toMatchObject({ name: "relatorio-semanal", source: "upload" });
+    expect(skill.files.map((x) => x.path)).toEqual(["templates/relatorio.md"]);
+  });
+
   test("two files that collapse to one path are refused (no shared blob key, no undercounted size)", async () => {
     f = await setup();
     // `a.md` and `./a.md` both normalize to `a.md`: without the guard the big one overwrites the small one
@@ -344,6 +365,80 @@ describe("import", () => {
     const team = await importSkillFromUrl(deps, f.owner.id, f.org.id, "https://github.com/acme/skills/tree/main/team");
     expect("choices" in team && team.choices.map((c) => c.path)).toEqual(["team/deploy", "team/review"]);
     expect(github.fetched.filter((u) => /api\.github\.com|raw\.githubusercontent\.com/.test(u))).toEqual([]);
+  });
+
+  test("installed from an agent's card (offer_install_skill), what the link holds goes on for that agent", async () => {
+    f = await setup({ rightHand: true });
+    const deps = { ...skillDeps(), fetch: fakeGithub().fetch, pubsub: f.pubsub };
+    const told: string[] = [];
+    f.pubsub.subscribe(orgTopic(f.org.id), (e) => {
+      if (e.type === "org.broadcast") told.push((e.event as { type: string }).type);
+    });
+    const on = async (agentId = f.agent.id) => (await enabledSkills(f.db, f.org.id, agentId)).map((k) => k.name);
+    const forAgentId = f.agent.id;
+    await importSkillFromUrl(deps, f.owner.id, f.org.id, "https://github.com/acme/skills/tree/main/team/deploy", {
+      forAgentId,
+    });
+    expect(await on()).toEqual(["deploy"]);
+    // An open agent page saves its whole list: it hears of the change and reads it again.
+    expect(told.filter((t) => t === "agents.changed")).toHaveLength(1);
+    await importPickedSkills(deps, f.owner.id, f.org.id, "https://github.com/acme/skills", ["team/review"], {
+      forAgentId,
+    });
+    expect(await on()).toEqual(["deploy", "review"]);
+    // An agent gone or archived: the install still stands, on for nobody, and nothing to hear.
+    const url = "https://github.com/acme/skills/tree/main/relatorio-semanal";
+    const [lodi] = await f.db
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.orgId, f.org.id), eq(schema.agents.builtin, RIGHT_HAND)));
+    await f.db.update(schema.agents).set({ archivedAt: new Date() }).where(eq(schema.agents.id, f.agent.id));
+    told.length = 0;
+    for (const agentId of [crypto.randomUUID(), f.agent.id])
+      expect(await importSkillFromUrl(deps, f.owner.id, f.org.id, url, { forAgentId: agentId })).toMatchObject({
+        name: "relatorio-semanal",
+      });
+    expect(await on()).toEqual(["deploy", "review"]);
+    expect(await on(lodi?.id)).toEqual([]);
+    expect(told).toEqual([]);
+    // The right hand loads skills like any agent: from its own card, what installs goes on for it.
+    await importSkillFromUrl(deps, f.owner.id, f.org.id, url, { forAgentId: lodi?.id });
+    expect(await on(lodi?.id)).toEqual(["relatorio-semanal"]);
+    expect(told).toEqual(["agents.changed"]);
+  });
+
+  test("from a link or a pick, a removed skill's name comes back on for none of its old agents; the list says so", async () => {
+    f = await setup();
+    const deps = { ...skillDeps(), fetch: fakeGithub().fetch };
+    const on = async () => (await enabledSkills(f.db, f.org.id, f.agent.id)).map((k) => k.name);
+    const mine = (name: string) =>
+      saveSkill(deps, f.owner.id, f.org.id, {
+        name,
+        description: "Do time.",
+        body: "1. old",
+        metadata: {},
+        source: "manual",
+      });
+    const deploy = await mine("deploy");
+    await mine("review");
+    await setAgentSkills(f.db, f.owner.id, f.org.id, f.agent.id, [{ skillId: deploy.id, enabled: true }]);
+    await deleteSkill(f.db, f.owner.id, f.org.id, deploy.id);
+    const team = "https://github.com/acme/skills/tree/main/team";
+    const listed = await importSkillFromUrl(deps, f.owner.id, f.org.id, team);
+    expect("choices" in listed && listed.choices.map((c) => [c.name, c.replaces])).toEqual([
+      ["deploy", "removed"],
+      ["review", "installed"],
+    ]);
+    // Picked with its box unchecked: back under its name, on for nobody.
+    await importPickedSkills(deps, f.owner.id, f.org.id, team, ["team/deploy"]);
+    expect(await on()).toEqual([]);
+    // The same from the link alone, then with the box: on for the card's agent only.
+    await deleteSkill(f.db, f.owner.id, f.org.id, deploy.id);
+    await importSkillFromUrl(deps, f.owner.id, f.org.id, `${team}/deploy`);
+    expect(await on()).toEqual([]);
+    await deleteSkill(f.db, f.owner.id, f.org.id, deploy.id);
+    await importSkillFromUrl(deps, f.owner.id, f.org.id, `${team}/deploy`, { forAgentId: f.agent.id });
+    expect(await on()).toEqual(["deploy"]);
   });
 
   test("the skills a link holds that can't be installed are listed apart with why, never offered", async () => {
@@ -498,6 +593,38 @@ describe("import", () => {
     expect(await refusal("https://github.com/acme/skills", spent)).toMatchObject({ params: { count: 5 } });
   });
 
+  test("a read without credentials is limited by a 403 even with no header saying so, and by a 429", async () => {
+    f = await setup();
+    const refusal = async (github: ReturnType<typeof fakeGithub>) => {
+      const err = await importSkillFromUrl(
+        { ...skillDeps(), fetch: github.fetch },
+        f.owner.id,
+        f.org.id,
+        "https://github.com/acme/skills",
+      ).then(
+        () => null,
+        (e: unknown) => e as { constructor: { name: string }; code?: string; params?: unknown },
+      );
+      return { kind: err?.constructor.name, code: err?.code, params: err?.params };
+    };
+    // None remaining until the reset.
+    const reset = String(Math.floor(Date.now() / 1000) + 290);
+    expect(
+      await refusal(fakeGithub({ limited: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": reset }, status: 403 })),
+    ).toEqual({ kind: "TooManyError", code: "github.limited", params: { count: 5 } });
+    // The secondary limit's way: a 403 with no headers at all, which an address shared with other servers gets.
+    expect(await refusal(fakeGithub({ limited: {}, status: 403 }))).toEqual({
+      kind: "TooManyError",
+      code: "github.limited",
+      params: { count: 1 },
+    });
+    expect(await refusal(fakeGithub({ limited: {} }))).toEqual({
+      kind: "TooManyError",
+      code: "github.limited",
+      params: { count: 1 },
+    });
+  });
+
   test("images and videos are kept apart from the text's limit, up to their own; past it they are only listed", async () => {
     f = await setup();
     // A repository shaped like a real one: a video and screenshots past 2 MB next to a little Markdown.
@@ -571,6 +698,40 @@ const PRIVATE = {
   "acme-private-0123abc/team/review/SKILL.md": "---\nname: review\ndescription: Revisa um pull request.\n---\n# Review",
 };
 
+/** A public repository with one skill, as its archive holds it. */
+const PUBLIC_ONE = {
+  "skills-main/relatorio-semanal/SKILL.md": SKILL_MD,
+  "skills-main/relatorio-semanal/templates/relatorio.md": "# Semana {{n}}",
+};
+
+/**
+ * Fake GitHub that limits this server's reads without credentials: every one is a 403 with no headers, the way the
+ * secondary limit answers an address shared with other servers. The API takes the workspace's token, which `sees`
+ * says whether it can read the repository (a test changes it as GitHub's side changes), and sends the archive from
+ * codeload.
+ */
+function limitedPublicGithub() {
+  const requests: { url: string; auth: string | null }[] = [];
+  const sees = new Set([CONNECTION_TOKEN]);
+  const limit = { on: true };
+  const fetch = async (url: string, init?: RequestInit) => {
+    const auth = new Headers(init?.headers).get("authorization");
+    requests.push({ url, auth });
+    if (url === "https://github.com/acme/skills/archive/HEAD.zip") {
+      if (!limit.on) return new Response(zip(PUBLIC_ONE));
+      return new Response("slow down", { status: 403 });
+    }
+    if (url === "https://codeload.github.com/acme/skills/legacy.zip/token") return new Response(zip(PUBLIC_ONE));
+    const token = auth?.replace(/^Bearer /, "") ?? "";
+    if (sees.has(token) && url === "https://api.github.com/repos/acme/skills/zipball") {
+      const location = "https://codeload.github.com/acme/skills/legacy.zip/token";
+      return new Response(null, { status: 302, headers: { location } });
+    }
+    return new Response("403: Forbidden", { status: 403 });
+  };
+  return { fetch, requests, sees, limit };
+}
+
 /**
  * Fake GitHub where acme/private is private: github.com answers 404 for it, and the API's zipball answers a token that
  * sees it with a redirect to codeload carrying a short-lived link of its own. A token GitHub doesn't take is answered
@@ -634,6 +795,51 @@ describe("private repositories", () => {
   const connectors = () => ({ db: f.db, keyWrappers: [f.keyWrapper], publicUrl: "https://agentes.test" });
   const connectGithub = () =>
     createApiKeyConnection(connectors(), f.owner.id, f.org.id, { connector: "github", apiKey: CONNECTION_TOKEN });
+
+  test("a public read GitHub limits reads through the workspace's token, and the install concludes", async () => {
+    f = await setup();
+    const connection = await connectGithub();
+    const github = limitedPublicGithub();
+    const deps = { ...skillDeps(), fetch: github.fetch, github: { connectors: connectors() } };
+    const url = "https://github.com/acme/skills";
+    const skill = (await importSkillFromUrl(deps, f.owner.id, f.org.id, url)) as SkillDetail;
+    // The limit says nothing about who may read it: the skill stays one of a public repository.
+    expect(skill).toMatchObject({ name: "relatorio-semanal", version: 1, sourceVia: null });
+    expect(await listSkills(f.db, f.owner.id, f.org.id)).toMatchObject([{ name: "relatorio-semanal", version: 1 }]);
+    // The public read first, limited; then the token, sent to the API only, and the archive from codeload.
+    expect(github.requests).toEqual([
+      { url: "https://github.com/acme/skills/archive/HEAD.zip", auth: null },
+      { url: "https://api.github.com/repos/acme/skills/zipball", auth: `Bearer ${CONNECTION_TOKEN}` },
+      { url: "https://codeload.github.com/acme/skills/legacy.zip/token", auth: null },
+    ]);
+
+    // A 403 to the token is the token's own lack of access, never a limit: the repository is what it can't see.
+    github.sees.delete(CONNECTION_TOKEN);
+    expect(await importSkillFromUrl(deps, f.owner.id, f.org.id, url).catch((e) => e)).toMatchObject({
+      code: "github.repo_missing",
+      params: { repo: "acme/skills", connection: "ok", app: false },
+    });
+
+    // GitHub disconnected: while the limit lasts, updating says the limit; once it passes, it reads without one.
+    await revokeConnection(f.db, f.owner.id, f.org.id, connection.id);
+    expect(await refusalOf(reimportSkill(deps, f.owner.id, f.org.id, skill.id))).toMatchObject({
+      code: "github.limited",
+    });
+    github.limit.on = false;
+    expect(await reimportSkill(deps, f.owner.id, f.org.id, skill.id)).toMatchObject({ version: 2, sourceVia: null });
+  });
+
+  test("a limited public read says the limit when no token could be tried, the GitHub App on another account only", async () => {
+    f = await setup();
+    await installApp("someone-else");
+    const github = limitedPublicGithub();
+    const deps = { ...skillDeps(), fetch: github.fetch, github: { connectors: connectors(), app: APP } };
+    expect(await refusalOf(importSkillFromUrl(deps, f.owner.id, f.org.id, "https://github.com/acme/skills"))).toEqual({
+      code: "github.limited",
+      params: { count: 1 },
+    });
+    expect(github.requests.filter((r) => r.url.includes("/zipball"))).toEqual([]);
+  });
 
   test("read with the workspace's GitHub connection, its token sent to api.github.com only; updating reads through it", async () => {
     f = await setup();
@@ -699,9 +905,9 @@ describe("private repositories", () => {
       auth: `Bearer ${APP_TOKEN}`,
     });
 
-    // `list`: the one skill a folder holds, to pick, nothing installed again.
+    // `list`: the one skill a folder holds, to pick, nothing installed again; it says it replaces the one installed.
     expect(await importSkillFromUrl(deps, f.owner.id, f.org.id, folder, { list: true })).toEqual({
-      choices: [{ path: "team/review", name: "review", description: "Revisa um pull request." }],
+      choices: [{ path: "team/review", name: "review", description: "Revisa um pull request.", replaces: "installed" }],
       via: "github_app",
     });
     expect(await listSkills(f.db, f.owner.id, f.org.id)).toMatchObject([{ name: "review", version: 1 }]);

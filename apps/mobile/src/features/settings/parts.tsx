@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActionSheetIOS, Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { ActionSheetIOS, ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GroupedList, GroupedRow, Locked, Text, useToast } from "@/ui";
@@ -25,15 +25,21 @@ export function SettingsPage({
   title,
   subtitle,
   action,
+  busy = false,
   locked = false,
+  frozen = false,
   bottom,
   children,
 }: {
   title: string;
   subtitle?: string | undefined;
   action?: HeaderWordAction;
+  /** The action's word is saving: a spinner in its place, the page locked under it. */
+  busy?: boolean;
   /** The page's form is sending: its controls are off, the page still scrolls. */
   locked?: boolean;
+  /** The workspace is being deleted and this page would change it (`settingsFrozen`): greyed out, as on the web. */
+  frozen?: boolean;
   /** The page's one main action, docked under it ("Done" at the end of a guide). */
   bottom?: ReactNode;
   children?: ReactNode;
@@ -47,7 +53,7 @@ export function SettingsPage({
         {...(subtitle ? { subtitle } : {})}
         solid={false}
         grouped
-        {...(action ? { action } : {})}
+        {...(busy ? { right: <ActivityIndicator color={c.muted} /> } : action ? { action } : {})}
       />
       <ScrollView
         style={styles.fill}
@@ -57,7 +63,7 @@ export function SettingsPage({
         contentContainerStyle={[styles.body, { paddingBottom: 24 + insets.bottom }]}
       >
         {/* What is there as the screen opens doesn't fade in; what loads while it is watched does (`Loaded`). */}
-        <Locked when={locked}>
+        <Locked when={locked || busy || frozen} readable={frozen && !locked && !busy}>
           <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
         </Locked>
       </ScrollView>
@@ -134,6 +140,27 @@ export function confirmAction({
     { text: cancel, style: "cancel" },
     { text: action, style: destructive ? "destructive" : "default", onPress: onConfirm },
   ]);
+}
+
+/** "Prefiro no Terminal" under a one-click button (the web's fold): the same switch as a command, shown on a tap. */
+export function TerminalFallback({ command }: { command: string | null }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  if (!command) return null;
+  return (
+    <>
+      <Gap />
+      <GroupedList>
+        <GroupedRow icon="code" label={t("machines.access.preferTerminal")} onPress={() => setOpen((o) => !o)} />
+      </GroupedList>
+      {open ? (
+        <>
+          <Gap />
+          <CommandBlock command={command} />
+        </>
+      ) : null}
+    </>
+  );
 }
 
 /**

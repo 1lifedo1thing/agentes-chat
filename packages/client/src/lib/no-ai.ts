@@ -2,6 +2,7 @@ import type { TFunction } from "i18next";
 import type {
   Agent,
   AgentBrain,
+  AiAccounts,
   AiComputer,
   AiStatus,
   BrainUnavailable,
@@ -12,11 +13,11 @@ import type {
   MachineAccountKind,
   OrgStanding,
 } from "../api/types";
-import { ownSignInReady } from "./ai-accounts";
+import { ownSignInReady, ownSignIns, planWordOf } from "./ai-accounts";
 import { answersOthers, audienceOf } from "./audience";
 import { type BillingHold, billingHoldOf } from "./billing";
 import { type SetupView, setupPending } from "./computer";
-import { toolOffReason } from "./machines";
+import { firstName } from "./format";
 import { can } from "./permissions";
 import { CODING_PLANS, isPlanId, loginPerAgent, PLAN_IDS, type PlanId } from "./plans";
 import { isRightHand } from "./right-hand";
@@ -60,6 +61,9 @@ export interface NoAiCard {
   missing?: "cli_missing" | "no_computer";
   /** A billing hold stopped the run: the message is kept for after the plan (`keptCardState`). */
   held?: boolean;
+  /** With `plans_not_yours`: whose the workspace's plans are (first name) and what they are ("Claude"). */
+  owner?: string;
+  plan?: string;
 }
 
 /** Why the right hand's plan can't think for this message (`NoAiCard.planLine`). */
@@ -74,6 +78,7 @@ export type RightHandPlanLine =
   | "plan_inactive"
   | "commands_off"
   | "plan_not_shared"
+  | "plans_not_yours"
   | "plan_unattended"
   | "runner_outdated"
   | "plan_tools";
@@ -88,6 +93,7 @@ export const RIGHT_HAND_PLAN_LINES: ReadonlySet<string> = new Set<RightHandPlanL
   "plan_inactive",
   "commands_off",
   "plan_not_shared",
+  "plans_not_yours",
   "plan_unattended",
   "runner_outdated",
   "plan_tools",
@@ -126,7 +132,19 @@ export function noAiCardOf(meta: Record<string, unknown> | null | undefined): No
     ...(o.reason === "cli_failed" && typeof o.why === "string" && o.why ? { why: o.why } : {}),
     ...(o.reason === "cli_missing" || o.reason === "no_computer" ? { missing: o.reason } : {}),
     ...(o.reason === "plan_hold" ? { held: true } : {}),
+    ...(o.reason === "plans_not_yours" && typeof o.owner === "string" && o.owner
+      ? { owner: firstName(o.owner), plan: typeof o.plan === "string" && o.plan ? o.plan : "Claude" }
+      : {}),
   };
+}
+
+/**
+ * "O Claude daqui é só de Walter" (`plans_not_yours`, ADR 0059 §3): whose the workspace's plans are when none serves
+ * this person, from the AI status, for the receipt under their message. Null for any other reason.
+ */
+export function plansNotYoursOf(status: AiStatus | undefined, agentId: string | undefined) {
+  const a = agentId ? status?.agents.find((x) => x.agentId === agentId) : undefined;
+  return a?.reason === "plans_not_yours" && a.owner ? { owner: firstName(a.owner), plan: a.plan ?? "Claude" } : null;
 }
 
 /**
@@ -145,7 +163,7 @@ export const planLineKey = (line: RightHandPlanLine, why?: string) =>
 
 /** A plan line that passes by itself: once the agent can think again, its card offers "Responder agora". */
 export const planLinePasses = (line: RightHandPlanLine | undefined) =>
-  line === "computer_away" || line === "computer_failed" || line === "cli_failed";
+  line === "computer_away" || line === "computer_failed" || line === "cli_failed" || line === "plans_not_yours";
 
 /**
  * The key of a card's line while the agent still can't think (`agentGrammar(name)` fills it): the computer's own
@@ -164,12 +182,19 @@ export const noAiLineKey = (card: Pick<NoAiCard, "own" | "signedOut" | "missing"
 
 type ConnectingAgent = { ownerUserId?: string | null; builtin?: "right_hand" | null };
 
-/** Who can set an agent's own AI: its owner (a plan), who manages agents (a workspace key) or keys. */
-const maySetAgentAi = (
+/**
+ * Who can set an agent's own AI: its owner (a plan), who manages agents (a workspace key) or keys. On the right hand
+ * that is the workspace's AI, the one its background work (a widget's build) thinks with.
+ */
+export const maySetAgentAi = (
   agent: ConnectingAgent | null | undefined,
   meId: string | null | undefined,
   org: Parameters<typeof can>[0],
 ) => (!!meId && agent?.ownerUserId === meId) || can(org, "manage_agents") || can(org, "manage_credentials");
+
+/** Who connects an agent's AI, for a person who may not: its owner (`owner`, by first name) or an admin. */
+export const noAiLockedLine = (t: TFunction, name: string, owner: string | null | undefined) =>
+  owner ? t("noAi.locked", { name, owner: owner.split(" ")[0] }) : t("noAi.lockedAdmins");
 
 /**
  * Who can do something about an agent with no AI: who sets its AI, and on the right hand any member, for their own
@@ -195,8 +220,17 @@ export function planLineFix(
 ): "connectMine" | "useKey" | null {
   if (line === "plan_unattended") return maySetAgentAi(agent, meId, org) ? "useKey" : null;
   if (!mayConnectAi(agent, meId, org)) return null;
-  return line === "plan_not_shared" || !maySetAgentAi(agent, meId, org) ? "connectMine" : "useKey";
+  return line === "plan_not_shared" || line === "plans_not_yours" || !maySetAgentAi(agent, meId, org)
+    ? "connectMine"
+    : "useKey";
 }
+
+/**
+ * Where Connect opens for a widget waiting on the right hand's plan (`reason` one of its plan lines): the key step,
+ * since a build is nobody's ask and that plan never waits, so only a key builds it (`planLineFix`'s `useKey`).
+ */
+export const planKeyIntent = (agent: ConnectingAgent | null | undefined, reason: string | null | undefined) =>
+  isRightHand(agent) && reason && RIGHT_HAND_PLAN_LINES.has(reason) ? { intent: "api_key" as const } : {};
 
 /** The key of an agent's line from its AI status, for a banner with no card (`noAiLineKey`). */
 export function noAiStatusKey(status: AiStatus | undefined, agentId: string) {
@@ -265,6 +299,8 @@ export const PLAN_CHOICES: readonly PlanChoice[] = [
   "zen",
   ...PLAN_IDS,
 ];
+/** The plans whose marks stand on the scene over "Conectar uma IA": the three most used. */
+export const SCENE_PLANS = ["claude", "chatgpt", "gemini"] as const satisfies readonly PlanChoice[];
 /** The account a plan signs in as: ChatGPT's through Codex, Cursor's and OpenCode's through their CLIs; the rest through Claude Code. */
 export const kindOf = (choice: PlanChoice): MachineAccountKind =>
   choice === "chatgpt" || choice === "cursor" || choice === "zen" || choice === "grok" || choice === "gemini"
@@ -298,6 +334,17 @@ export const planMark = (choice: PlanChoice) =>
 /** A plan's short name, as its tile and its accounts say it: "Claude", "ChatGPT", "GLM Coding"… */
 export const planLabel = (t: TFunction, choice: PlanChoice) =>
   isPlanId(choice) ? CODING_PLANS[choice].label : t(`aiAccounts.connect.${kindOf(choice)}`);
+/**
+ * The viewer's plan on a computer as people say it ("Claude Max"): its own sign-in there first, else an account of
+ * theirs signed in there; null with none.
+ */
+export function devicePlanName(t: TFunction, view: AiAccounts | undefined, machineId: string): string | null {
+  const own = ownSignIns(view).find((o) => o.machineId === machineId);
+  const a = own ?? view?.accounts.find((x) => x.machineId === machineId && x.mine && x.status === "active");
+  if (!a) return null;
+  const choice = planOfAccount({ kind: a.kind, provider: "provider" in a ? a.provider : null });
+  return [planLabel(t, choice), planWordOf(a.plan)].filter(Boolean).join(" ");
+}
 /** A plan's name in its panel, as its maker sells it: "Your Claude plan", "GLM Coding Plan"… */
 export const planTitle = (t: TFunction, choice: PlanChoice) =>
   isPlanId(choice) ? CODING_PLANS[choice].name : t(`connectAi.plan.${choice}.title`);
@@ -514,6 +561,9 @@ const CLOUD_REASON = {
   outdated: "updating",
   // Said only past the wait: before it, the line says the computer is still looking.
   not_reported: "stuck",
+  // The Cloud's computers run Linux, where every CLI runs: never said there.
+  system: "stuck",
+  cant_start: "stuck",
 } as const satisfies Record<BrainUnavailable | "keys", string>;
 
 /**
@@ -522,14 +572,15 @@ const CLOUD_REASON = {
  * program being installed or updated, a restart) and that it comes back by itself (`rechecks`), or that it's on our
  * side. The Cloud's computer that never reached this agent has no line of its own: nothing is coming, as past a wait.
  * `hold`: a workspace on hold (`holdText`) waits for that, not for the computer, so it speaks instead. Null for any
- * other gate. `computer`: its name as the panel says it; `machine`: its row, for the way to allow a program on a
- * self-hosted one.
+ * other gate. `computer`: its name as the panel says it; `machine`: its row. A computer a person connected to the
+ * Cloud is theirs, not ours: it gets self-host's words. A program off there is said alone, its way out is a button
+ * beside the line (`ToolOffWayOut`).
  */
 export function gateLine(
   t: TFunction,
   {
     gate,
-    edition,
+    edition: asked,
     kind,
     computer,
     machine,
@@ -540,11 +591,12 @@ export function gateLine(
     edition: Edition | null;
     kind: MachineAccountKind;
     computer: string;
-    machine?: (Pick<Machine, "os" | "mode"> & Partial<Pick<Machine, "lastSeenAt">>) | null;
+    machine?: Partial<Pick<Machine, "lastSeenAt" | "kind">> | null;
     hold?: string | null;
     now?: number;
   },
 ): { text: string; rechecks: boolean } | null {
+  const edition = asked === "cloud" && machine?.kind && machine.kind !== "managed" ? "selfhost" : asked;
   const rechecks = gateRechecks(gate, edition);
   const program = t(`brain.card.${kind}`);
   if (hold && (gate.state === "offline" || gate.state === "unsupported")) return { text: hold, rechecks: false };
@@ -574,10 +626,7 @@ export function gateLine(
       rechecks,
     };
   if (gate.reason === "keys") return { text: t("aiAccounts.connect.needs.keys"), rechecks };
-  if (gate.reason === "tool_off") {
-    const off = toolOffReason(machine, kind);
-    return { text: t(off.key, { computer, command: off.command, program }), rechecks };
-  }
+  if (gate.reason === "tool_off") return { text: t("brain.reasons.tool_offOne", { computer, program }), rechecks };
   return { text: t(`brain.reasons.${gate.reason}`, { computer, program }), rechecks };
 }
 
@@ -585,7 +634,12 @@ export function gateLine(
 export function dimmedLine(
   t: TFunction,
   gate: PlanGate,
-  where: { edition: Edition | null; kind: MachineAccountKind; computer: string },
+  where: {
+    edition: Edition | null;
+    kind: MachineAccountKind;
+    computer: string;
+    machine?: Partial<Pick<Machine, "lastSeenAt" | "kind">> | null;
+  },
 ) {
   if (gate.state === "billing") return t("connectAi.billing");
   return gateLine(t, { gate, ...where })?.text ?? t("aiAccounts.connect.noComputer");

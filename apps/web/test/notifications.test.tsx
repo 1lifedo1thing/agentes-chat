@@ -299,6 +299,24 @@ describe("Notificações", () => {
     expect(row.textContent).toContain("Você respondeu: Sobe sim, às 17h.");
   });
 
+  test("in a workspace being deleted, an inline reply says why it takes nothing, and Cancelar closes it", async () => {
+    const state = seedState({ notifications: inbox() });
+    if (!state.me) throw new Error("signed in");
+    state.me.organizations = state.me.organizations.map((o) => ({
+      ...o,
+      deletion: { dueAt: new Date(Date.now() + 6 * 86_400_000).toISOString(), requestedAt: ago(60), requestedBy: null },
+    }));
+    await go(state);
+    const row = document.querySelector('[data-n="n-thread"]') as HTMLElement;
+    await click(within(row).getByRole("button", { name: "Responder" }));
+    expect(within(row).queryByRole("textbox")).toBeNull();
+    expect(within(row).getByRole("status").textContent).toBe(
+      "Você não pode enviar mensagens enquanto este workspace está sendo apagado",
+    );
+    await click(within(row).getByRole("button", { name: "Cancelar" }));
+    expect(within(row).queryByRole("status")).toBeNull();
+  });
+
   test("grouped task comments expand from the task's conversation (ADR 0145)", async () => {
     const state = seedState();
     const api = createFakeApi(state);
@@ -938,7 +956,7 @@ describe("Esperando você: what only points somewhere is a card of the requests'
     expect(row().classList.contains("nt-wr")).toBe(true);
     // A card of the requests' shape: where it is from and when on top, the headline as its words.
     expect(row().querySelector(".nt-wr__main")?.classList.contains("rq")).toBe(true);
-    expect(row().querySelector(".rq__kind .nt-wr__src")?.textContent).toBe("Membros");
+    expect(row().querySelector(".rq__kind .nt-wr__src")?.textContent).toBe("Convites");
     expect(row().querySelector(".rq__kind .nt-wr__tm")?.textContent).toBe(" · agora");
     expect(row().querySelector(".rq__lead.nt-what")?.textContent).toBe("Felipe Ramos pede para entrar");
     const acts = row().querySelector(".rq__foot.nt-wr__acts") as HTMLElement;
@@ -964,7 +982,7 @@ describe("Esperando você: what only points somewhere is a card of the requests'
     const { state, router } = await go(seedState({ notifications: [asks()] }));
     await click(row().querySelector(".nt-what") as HTMLElement);
     await settle(4);
-    expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/settings/members`);
+    expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/settings/invites`);
     expect(state.calls.find((c) => c.method === "notifications.read")?.args).toEqual([ORG_ID, "n-join", true]);
   });
 
@@ -1032,6 +1050,8 @@ describe("Esperando você: what only points somewhere is a card of the requests'
     // box, so a wrap never splits it, and its margin pushes it to the end. The kit spaces what is in it.
     expect(value(".ac-acts > .ac-acts", "display", kit)).toBe("contents");
     expect(value(".rq__end > .nt-tail.ac-acts", "display")).toBe("flex");
+    // The last button's plate keeps 8 from the card's edge: no pull past the footer's padding.
+    expect(value(".rq__end > .nt-tail.ac-acts", "margin-right")).toBeUndefined();
     expect(css).not.toMatch(/\.nt-tail(?:\.ac-acts)? > [^{]*\{[^}]*margin/);
     // What only points somewhere is a request card itself: no corners or padding of its own, its face on the kind's
     // line as every waiting item's.

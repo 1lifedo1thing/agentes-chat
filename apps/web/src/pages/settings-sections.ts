@@ -16,6 +16,7 @@ export type SettingsSection =
   | "apps"
   | "general"
   | "members"
+  | "invites"
   | "roles"
   | "vault"
   | "audit"
@@ -57,7 +58,10 @@ export const SETTINGS_SECTIONS: {
   // own speech engine, so the section has nothing to offer there (product decision).
   { id: "voice", icon: "mic", allowed: (o, server) => selfHosted(server) && can(o, "configure") },
   { id: "members", icon: "members", allowed: () => true },
-  { id: "roles", icon: "audiencePeople", allowed: (o) => can(o, "manage_roles") },
+  // Convites (ADR 0184): People's second tab, for who may invite: the requests waiting, the links and the e-mails.
+  { id: "invites", icon: "mail", allowed: (o) => can(o, "invite_people") },
+  // Cargos (ADR 0085): an entry of its own, for who manages them.
+  { id: "roles", icon: "shield", allowed: (o) => can(o, "manage_roles") },
   // "IA e uso", for everyone (ADR 0063): the workspace's AI accounts with their meters, what each person does with
   // their own, and the agents whose details they see, in tokens and percentages. The workspace's API keys only for who
   // manages them, money and the workspace's report only for who has `view_usage`.
@@ -118,8 +122,9 @@ export function settingsNavEntry(
  * `?connected=github` (back from OAuth), `?review=1` (a custom MCP server to
  * classify), `?mail=connected|failed&account={id}` (back from Gmail/Outlook),
  * `?request={id}&do=approve|deny` (a request to join, from the admins' email),
- * `?delete=1` (Geral's dialog that deletes the workspace), `?install={link}` (Skills, back from connecting GitHub
- * in Instalar skill: the link to read again) and `?agent={id}` (Auditoria filtered to that agent).
+ * `?delete=1` (Geral's dialog that deletes the workspace), `?create=1` (Cargos' Criar cargo, from ⌘K), `?install={link}` (Skills, back from connecting GitHub
+ * in Instalar skill: the link to read again, with `agent` when an agent's card opened it) and `?agent={id}`
+ * (Auditoria filtered to that agent).
  */
 export const settingsSearch = (
   search: Record<string, unknown>,
@@ -137,6 +142,8 @@ export const settingsSearch = (
   agent?: string;
   /** Uso › Pessoas: the person whose month opens (ADR 0141). */
   person?: string;
+  /** Cargos, with Criar cargo open (⌘K). */
+  create?: 1;
 } => ({
   connected: typeof search.connected === "string" ? search.connected : undefined,
   outcome: typeof search.outcome === "string" ? search.outcome : undefined,
@@ -150,4 +157,5 @@ export const settingsSearch = (
   skill: typeof search.skill === "string" ? search.skill : undefined,
   agent: typeof search.agent === "string" ? search.agent : undefined,
   person: typeof search.person === "string" ? search.person : undefined,
+  create: search.create === undefined ? undefined : 1,
 });

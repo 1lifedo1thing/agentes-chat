@@ -21,7 +21,7 @@ import {
   relativeTime,
 } from "./format";
 import { brainName } from "./outages";
-import { modelLimitOf, ownLimitsModel, planOf } from "./plans";
+import { modelLimitOf, ownLimitsModel, planOf, planReplies } from "./plans";
 
 /**
  * The words of the plan usage views (ADR 0063), shared by the web and the phone: a plan meter's text, an
@@ -99,16 +99,117 @@ export function modelLimitText(
 ): string | null {
   const model = ownLimitsModel(provider, value);
   const limit = model ? modelLimitOf(usage?.models, model.id, now.getTime()) : null;
-  if (!model || !limit) return null;
-  if (limit.region) return t("brain.modelRegion", { model: model.label });
-  if (limit.inactive) return t("brain.planInactive");
-  if (limit.off) return t("brain.modelOff", { model: model.label });
+  return model && limit ? modelLimitWords(t, locale, limit, model.label, now) : null;
+}
+
+/**
+ * Where a model's own quota stands, in a few words for its line in an account's models (`modelLimitOf`'s): filled
+ * up and when it resets, the region it needs, its key's plan with no subscription, or the plan refusing it. Without
+ * the model's name: the line already has it.
+ */
+export function modelRemainingWords(
+  t: TFunction,
+  locale: string | undefined,
+  limit: { until: number | null; region: boolean; off: boolean; inactive: boolean },
+  now = new Date(),
+): string {
+  if (limit.region) return t("usageViews.models.region");
+  if (limit.inactive) return t("usageViews.models.inactive");
+  if (limit.off) return t("usageViews.models.off");
   return limit.until === null
-    ? t("brain.modelLimitUnknown", { model: model.label })
-    : t("brain.modelLimit", {
-        model: model.label,
-        when: usageWhen(t, locale, new Date(limit.until).toISOString(), now),
-      });
+    ? t("usageViews.models.exhaustedUnknown")
+    : t("usageViews.models.exhausted", { when: usageWhen(t, locale, new Date(limit.until).toISOString(), now) });
+}
+
+/** A plan model at a limit of its own, as the usage views list it: one line each, its name and where it stands. */
+export interface PlanModelUsageLine {
+  /** Its id in the plan (`PlanUsage.models`' key). */
+  id: string;
+  label: string;
+  /** `modelRemainingWords`: no quota left and when it resets, off, the region it needs, or no subscription. */
+  text: string;
+}
+
+/**
+ * The plan's models at a limit of their own that hold now (`PlanUsage.models`, `modelLimitOf`), one line each, in the
+ * plan's order: the quota per model that the account's windows can't show (OpenCode Go's caps for each model). Empty
+ * for a plan whose models share the account's windows, and until a reading says something about one.
+ */
+export function planModelUsage(
+  t: TFunction,
+  locale: string | undefined,
+  usage: Pick<PlanUsage, "models"> | null | undefined,
+  provider: string | null | undefined,
+  now = new Date(),
+): PlanModelUsageLine[] {
+  const plan = planOf(provider);
+  if (!plan?.limitsPerModel) return [];
+  const order = new Map(plan.claudeCode.models.map((m, i) => [m.id, i]));
+  return Object.keys(usage?.models ?? {})
+    .flatMap((id) => {
+      const limit = modelLimitOf(usage?.models, id, now.getTime());
+      const model = plan.claudeCode.models.find((m) => m.id === id);
+      return limit ? [{ id, label: model?.label ?? id, text: modelRemainingWords(t, locale, limit, now) }] : [];
+    })
+    .sort(
+      (a, b) => (order.get(a.id) ?? order.size) - (order.get(b.id) ?? order.size) || a.label.localeCompare(b.label),
+    );
+}
+
+/**
+ * "MiniMax não mostra o uso por aqui": the plan's maker has no usage endpoint we can read (`plans.ts` `usage`). Null
+ * for a plan we read, and for no plan at all (a computer's own sign-in, which its CLI reports).
+ */
+export function notSharedText(t: TFunction, provider: string | null | undefined): string | null {
+  const plan = planOf(provider);
+  return plan && !plan.usage ? t("aiAccounts.usage.notShared", { maker: plan.maker }) : null;
+}
+
+/**
+ * A model at a limit of its own, in words (`modelLimitOf`'s): the region it needs, its account with no subscription,
+ * the plan refusing it, or when it resets. The brain card and a widget's wait say it alike.
+ */
+export function modelLimitWords(
+  t: TFunction,
+  locale: string | undefined,
+  limit: { until: number | null; region: boolean; off: boolean; inactive: boolean },
+  model: string,
+  now = new Date(),
+): string {
+  if (limit.region) return t("brain.modelRegion", { model });
+  if (limit.inactive) return t("brain.planInactive");
+  if (limit.off) return t("brain.modelOff", { model });
+  return limit.until === null
+    ? t("brain.modelLimitUnknown", { model })
+    : t("brain.modelLimit", { model, when: usageWhen(t, locale, new Date(limit.until).toISOString(), now) });
+}
+
+/**
+ * The line under a reply "Automático" gave with another model, the plan having refused the one it maps to
+ * (`meta.modelStandIn`); null on any other reply.
+ */
+export function modelStandInText(t: TFunction, meta: Record<string, unknown> | null | undefined): string | null {
+  const s = meta?.modelStandIn as { plan?: unknown; from?: unknown; to?: unknown } | undefined;
+  if (!s || typeof s.plan !== "string" || typeof s.from !== "string" || typeof s.to !== "string") return null;
+  return t("chat.modelStandIn.text", { plan: s.plan, from: s.from, to: s.to });
+}
+
+/**
+ * The key a stand-in reply ran on and the model that answered (`meta.modelStandIn`), for its "Usar o <modelo> em
+ * todos"; null on any other reply, or one too old to say.
+ */
+export function modelStandInKey(
+  meta: Record<string, unknown> | null | undefined,
+): { machineId: string; account: string; model: string; to: string } | null {
+  const s = meta?.modelStandIn as Record<string, unknown> | undefined;
+  if (!s) return null;
+  const { machineId, account, model, to } = s;
+  return typeof machineId === "string" &&
+    typeof account === "string" &&
+    typeof model === "string" &&
+    typeof to === "string"
+    ? { machineId, account, model, to }
+    : null;
 }
 
 /** When the next month starts (UTC): an agent's monthly budget renews then. */
@@ -152,6 +253,21 @@ export function planMeterText(
     ago: (iso) => t("aiAccounts.usage.ago", { ago: relativeTime(t, locale, iso, now) }),
     stale: (iso) => t("aiAccounts.usage.stale", { ago: relativeTime(t, locale, iso, now) }),
   };
+}
+
+/**
+ * The plan's state (the UI kit's `planState`) in a few words, for a line that has no room for the meter; null when it
+ * is fine.
+ */
+export function planWord(
+  t: TFunction,
+  locale: string,
+  plan: { state: "ok" | "almost" | "limited"; until: string | null } | null,
+  now = new Date(),
+) {
+  if (!plan || plan.state === "ok") return null;
+  const text = planMeterText(t, locale, now);
+  return plan.state === "limited" ? text.limited(plan.until) : text.almost;
 }
 
 /** A plan's limits are worth a line once a window is known or the plan refused a request: unknown is nothing. */
@@ -364,10 +480,42 @@ export function shareFacts(
 export const accountOwner = (t: TFunction, a: Pick<PlanAccountInfo, "ownerName">) =>
   a.ownerName ? t("usageViews.whose", { name: firstName(a.ownerName) }) : null;
 
+/**
+ * Who uses a plan (ADR 0059 §3), in a few words for its row: "Todos usam", "Só você usa", "Só Ana usa". Null for the
+ * computer's own sign-in, which thinks for its pairer's agents, or an older server that doesn't say.
+ */
+export function servesText(t: TFunction, a: Pick<PlanAccountInfo, "serves" | "ownerName" | "mine">) {
+  if (!a.serves) return null;
+  if (a.serves === "everyone") return t("usageViews.serves.everyone");
+  return a.mine
+    ? t("usageViews.serves.onlyYou")
+    : t("usageViews.serves.only", { name: firstName(a.ownerName ?? "") || t("usageViews.serves.someone") });
+}
+
+/** "2 logins" where one row stands for several logins of one account (`groupUsageAccounts`); null for one. */
+export const loginsText = (t: TFunction, a: Pick<PlanAccountInfo, "logins">) =>
+  (a.logins ?? 1) > 1 ? t("usageViews.logins", { count: a.logins }) : null;
+
+/** The ⓘ of "Quem usa": what the plan's terms say about letting other people use it (`planReplies`). */
+export function servesTerms(t: TFunction, a: Pick<PlanAccountInfo, "kind" | "plan" | "provider">) {
+  const { about, text } = planReplies(t, {
+    on: true,
+    agent: null,
+    brain: a.kind,
+    plan: a.plan,
+    ...(planOf(a.provider) ? { coding: planOf(a.provider) } : {}),
+  });
+  return { about, text };
+}
+
 type AccountWindows = NonNullable<PlanAccountUsage["usage"]>;
 
-/** Two logins of one account as one: the newest reading of its windows with both logins' agents, their months summed. */
-function mergeLogin(a: PlanAccountUsage, b: PlanAccountUsage): PlanAccountUsage {
+/**
+ * Two logins of one account as one: the newest reading of its windows with both logins' agents, their months summed.
+ * The viewer's own login leads, so the row keeps their "Quem usa" and actions.
+ */
+function mergeLogin(x: PlanAccountUsage, y: PlanAccountUsage): PlanAccountUsage {
+  const [a, b] = y.mine && !x.mine ? [y, x] : [x, y];
   const newest = (x: AccountWindows | null, y: AccountWindows | null) =>
     x && y ? (Date.parse(y.at) > Date.parse(x.at) ? [y, x] : [x, y]) : [x ?? y, null];
   const [usage, other] = newest(a.usage, b.usage);
@@ -379,6 +527,7 @@ function mergeLogin(a: PlanAccountUsage, b: PlanAccountUsage): PlanAccountUsage 
   }
   return {
     ...a,
+    logins: (a.logins ?? 1) + (b.logins ?? 1),
     signedOut: a.signedOut && b.signedOut,
     usage: usage
       ? {
@@ -400,10 +549,9 @@ function mergeLogin(a: PlanAccountUsage, b: PlanAccountUsage): PlanAccountUsage 
 }
 
 /**
- * The usage views' accounts with the viewer's own logins of one account as one row, as their plans group them
- * (`groupPlans`, from `GET …/ai-accounts`): a plan with a login per agent, or one signed in again and again, is one
- * account to its owner. The row stands where its first login was and goes by it. Anyone else's logins stay as the
- * server lists them: what tells them apart (the address, the key's end) is only their owner's to see.
+ * The usage views' accounts with the logins of one account as one row (`logins` counts them): one seat, whoever
+ * connected it (`seat`, opaque, from the server), and the viewer's own logins as their plans group them (`groupPlans`,
+ * from `GET …/ai-accounts`: a key's logins have no seat). The row stands where its first login was and goes by it.
  */
 export function groupUsageAccounts(
   accounts: readonly PlanAccountUsage[],
@@ -415,7 +563,7 @@ export function groupUsageAccounts(
   const out: PlanAccountUsage[] = [];
   const rowOf = new Map<string, number>();
   for (const a of accounts) {
-    const group = a.accountId ? groupOf.get(`${a.machineId}:${a.accountId}`) : undefined;
+    const group = a.seat ? `seat:${a.seat}` : a.accountId ? groupOf.get(`${a.machineId}:${a.accountId}`) : undefined;
     const row = group === undefined ? undefined : rowOf.get(group);
     const first = row === undefined ? undefined : out[row];
     if (row !== undefined && first) out[row] = mergeLogin(first, a);
@@ -437,9 +585,9 @@ export const brandOf = (a: Pick<PlanAccountInfo, "kind" | "provider">) =>
 
 /** Why an account shows no windows: its maker doesn't tell them here, nobody used it yet, or nobody uses it. */
 export function noWindowsText(t: TFunction, account: Pick<PlanAccountUsage, "provider" | "agents">) {
-  const plan = planOf(account.provider);
-  if (plan && !plan.usage) return t("aiAccounts.usage.notShared", { maker: plan.maker });
-  return account.agents.length ? t("usageViews.noWindows") : t("usageViews.unused");
+  return (
+    notSharedText(t, account.provider) ?? (account.agents.length ? t("usageViews.noWindows") : t("usageViews.unused"))
+  );
 }
 
 /** Where an agent's tokens went, by name: the account, "API", a removed account or the plan before accounts were recorded. */

@@ -1,4 +1,4 @@
-import type { ComputerSummary, EndedTask, ManagedTask } from "@agenteschat/client";
+import type { EndedTask, ManagedTask } from "@agenteschat/client";
 import {
   type AgentTasks,
   delegationText,
@@ -11,6 +11,7 @@ import {
   waitsOnPerson,
 } from "@agenteschat/client/lib/task-manager";
 import type { TFunction } from "i18next";
+import { type AppHref, chatHref } from "../links/logic";
 
 /**
  * What the phone's task manager says (ADR 0128): its list, a task's screen, an agent's tasks screen and the count in
@@ -70,13 +71,6 @@ export function taskStateWords(
   if (state === "queued") return { state: t("taskManager.state.queued"), next: null };
   if (state === "stopping") return { state: t("taskManager.state.stopping"), next: null };
   return taskWaitWords(t, locale, task, now) ?? { state: t("taskManager.state.answer"), next: null };
-}
-
-/** A computer on the task manager: "Cheio · 2 na fila · 3 trabalhando", "Tem espaço · 1 trabalhando". */
-export function computerLine(t: TFunction, computer: Pick<ComputerSummary, "working" | "inLine">): string {
-  const room =
-    computer.inLine > 0 ? t("taskManager.queue.full", { count: computer.inLine }) : t("taskManager.queue.room");
-  return computer.working > 0 ? `${room} · ${t("taskManager.working", { count: computer.working })}` : room;
 }
 
 /**
@@ -181,6 +175,21 @@ export function agentTasksHref(agentId: string, from: Place | null) {
   if (!from) return `/agent-tasks/${agentId}` as const;
   const thread = from.threadId ? `&thread=${from.threadId}` : "";
   return `/agent-tasks/${agentId}?channel=${from.channelId}${thread}` as const;
+}
+
+/**
+ * Where a task's request row opens: work another agent handed it, where it was handed off, at the reply that handed it
+ * (ADR 0084 addendum), as on the web; else its own conversation. Null: a routine's room or a conversation only agents
+ * are in, which nobody opens.
+ */
+export function taskHref(
+  task: Pick<ManagedTask, "channelId" | "threadId" | "background" | "betweenAgents"> & {
+    delegation?: ManagedTask["delegation"];
+  },
+): AppHref | null {
+  const from = task.delegation?.from;
+  if (from) return chatHref(from.channelId, from.threadId, from.messageId);
+  return task.background || task.betweenAgents ? null : chatHref(task.channelId, task.threadId);
 }
 
 /**

@@ -859,6 +859,12 @@ test("a terminal's screen: words apart by cursor moves, a line drawn in pieces, 
   u.write("one\r\ntwo\r\n");
   u.write(`${ESC}[2A${ESC}[2K${ESC}[1Gthree`);
   expect(u.text()).toBe("three\ntwo");
+  // A piece that ends the token's screen and clears it: the screen is seen just before each erase.
+  const seen: string[] = [];
+  const v = new Screen(undefined, () => seen.push(v.text()));
+  v.write(`Your OAuth token:\r\n${TOKEN}\r\nStore this token${ESC}[2J${ESC}[H`);
+  expect(v.text()).toBe("");
+  expect(seen.map((t) => parseSetupToken(t))).toEqual([TOKEN]);
   // Only a token after "OAuth token"; once the CLI ended, without the line under it.
   expect(parseSetupToken(`${TOKEN}\nYour OAuth token:\nStore this token`)).toBeNull();
   expect(parseSetupToken(`Your OAuth token:\n${TOKEN}`, true)).toBe(TOKEN);
@@ -976,6 +982,13 @@ test.if(posix)(
     m.probeUsage([id]);
     await new Promise((r) => setTimeout(r, 100));
     expect(runs().map((r) => r.args)).toEqual(["setup-token"]);
+    // Stuck at its limit, the server asks for a check (`list.recheck`): one turn on the cheapest model, once.
+    m.probeUsage([id], [id]);
+    await waitFor(() => runs().length > 1, 8000);
+    expect(runs()[1]?.args).toContain("--model haiku");
+    m.probeUsage([id], [id]);
+    await new Promise((r) => setTimeout(r, 100));
+    expect(runs()).toHaveLength(2);
     // A turn's endpoint refused it: signed out for every agent, nothing to hand over, until it signs in again.
     await m.refused("claude_code", id);
     m.invalidate();
@@ -991,7 +1004,11 @@ test.if(posix)(
     expect(lines.join("\n")).not.toContain("oat01");
     // Removed: nothing runs as root (only Claude's settings end a token), the folder and its markers go.
     expect(await m.remove("claude_code", id)).toBe(true);
-    expect(runs().map((r) => r.args)).toEqual(["setup-token", "setup-token"]);
+    expect(
+      runs()
+        .map((r) => r.args)
+        .filter((a) => a === "setup-token"),
+    ).toEqual(["setup-token", "setup-token"]);
     expect(existsSync(dir)).toBe(false);
     expect(existsSync(`${dir}.shared`)).toBe(false);
     expect(existsSync(`${dir}.invalid`)).toBe(false);
@@ -1568,6 +1585,27 @@ test.if(posix)(
       .slice(before)
       .map((r) => ("done" in r ? "status done" : r.args.startsWith("auth ") ? "status" : "probe"));
     expect(order).toEqual(["status", "status done", "probe"]);
+  },
+  20_000,
+);
+
+test.if(posix)(
+  "a look that read an account before a turn's refusal is never kept: the server hears it signed out at once",
+  async () => {
+    const { m, runs } = setup();
+    const id = LOGIN(88);
+    await signInClaude(m, id);
+    process.env.FAKE_ACCOUNT_STATUS_DELAY = "500";
+    const before = runs().length;
+    m.invalidate();
+    const stale = m.refresh();
+    // Its status look is running: it found no refusal.
+    await waitFor(() => runs().length > before, 5000);
+    await m.refused("claude_code", id);
+    m.invalidate();
+    expect((await m.refresh(true))[0]).toMatchObject({ id, loggedIn: false });
+    expect((await stale)[0]).toMatchObject({ id, loggedIn: true });
+    expect((await m.list())[0]).toMatchObject({ id, loggedIn: false });
   },
   20_000,
 );

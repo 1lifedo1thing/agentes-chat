@@ -87,7 +87,7 @@ export interface FakeHost extends Host {
     disk: boolean;
     networkAsks: number;
     setup: SetupState | null;
-    panes: MacPermission[];
+    panes: (MacPermission | "microphone")[];
   };
   /** The site in the main window asks this computer (ADR 0036): resolves with the popover's reply. */
   askThisMac(request: ThisMacRequest): Promise<{ ok: boolean; data: unknown }>;
@@ -182,6 +182,15 @@ export function createFakeHost(
           reach: !!here.reach,
           version: "1.4.0",
           backTo: here.back ?? null,
+          awake: running,
+          backups: {
+            nightly: true,
+            copyTo: null,
+            files: [
+              { path: "/Users/voce/.agentes/backups/agentes-2026-10-25-030000.tar.gz", at: Date.UTC(2026, 9, 25, 6) },
+            ],
+            problem: null,
+          },
         }
       : here.installed === "terminal"
         ? {
@@ -349,6 +358,10 @@ export function createFakeHost(
     },
     askToPair: async () => true,
     welcomeMode: async () => (options.welcomeAdd ? "add" : null),
+    addWorkspace: async () => {
+      options.welcomeAdd = true;
+      await host.showWindow("welcome");
+    },
     siteFetch: async (server, method, path, body) => {
       if (!list.servers.includes(server)) throw "not a server of this app";
       return site.answer(method, path, body);
@@ -410,6 +423,10 @@ export function createFakeHost(
       os: platform === "mac" ? "macos" : platform,
       arch: platform === "mac" ? "aarch64" : "x86_64",
       system: platform === "mac" ? "15.5" : null,
+      graphics:
+        platform === "linux"
+          ? "Ubuntu 26.04 LTS · wayland (GNOME) · WebKitGTK 2.50.4 · Intel (i915) · CPU · AppImage"
+          : null,
     }),
     autostart: async () => autostart,
     setAutostart: async (on) => {
@@ -434,7 +451,6 @@ export function createFakeHost(
     setAppMenu: async () => {},
     onMenuAction: () => () => {},
     thisMacListening: async () => {},
-    setDock: async () => {},
     setSiteNotify: async () => {},
     onBadge: (cb) => {
       const timer = setTimeout(() => cb({ waiting: 3, unread: 5 }), 50);
@@ -574,7 +590,23 @@ export function createFakeHost(
     },
     backupLocalServer: async () => {
       await wait(1100);
-      return "/Users/voce/.agentes/backups/agentes-2026-10-25-101500.tar.gz";
+      const path = "/Users/voce/.agentes/backups/agentes-2026-10-25-101500.tar.gz";
+      setLocal({
+        backups: { ...local.backups, files: [{ path, at: Date.now() }, ...local.backups.files].slice(0, 2) },
+      });
+      return path;
+    },
+    setLocalBackups: async (nightly, copyTo) => {
+      setLocal({ backups: { ...local.backups, nightly, copyTo } });
+    },
+    restoreLocalServer: async () => {
+      setLocal({ phase: "starting" });
+      await wait(1500);
+      setLocal({ phase: "running" });
+    },
+    keepRunning: async () => ({ autoLogin: false, autoRestart: false }),
+    openSystemSettings: async (page) => {
+      console.info("[fake] open System Settings:", page);
     },
     localDiagnostics: async () => `agentes.chat app ${version} (macos aarch64)\nserver here: ${local.phase}`,
     syncLocalHomes: async () => {},

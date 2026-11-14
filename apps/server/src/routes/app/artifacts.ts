@@ -24,6 +24,7 @@ import {
   listArtifacts,
   listArtifactVersions,
   listDeletedArtifacts,
+  MAX_MESSAGE_LENGTH,
   purgeArtifactNow,
   replyToBlock,
   restoreArtifact,
@@ -35,7 +36,7 @@ import {
   withPersonFacts,
 } from "@agenteschat/engine";
 import { createRoute, z } from "@hono/zod-openapi";
-import { createMiddleware } from "hono/factory";
+import { bodyLimit } from "hono/body-limit";
 import { rangedResponse } from "../../http/byte-range";
 import { apiError, errorResponse } from "../../http/errors";
 import {
@@ -96,6 +97,8 @@ const FileContent = z
     size: z.number().openapi({ description: "Bytes." }),
     sha256: z.string(),
     text: z.string().optional().openapi({ description: "Small UTF-8 text files only (≤ 40k characters)." }),
+    width: z.number().int().optional().openapi({ description: "A picture's width in pixels, when known." }),
+    height: z.number().int().optional().openapi({ description: "A picture's height in pixels, when known." }),
   })
   .openapi("ArtifactFileContent", {
     description: "An uploaded file as is: metadata only; the bytes come from the download link.",
@@ -275,14 +278,13 @@ export function artifactRoutes(deps: AppDeps) {
   const { db } = deps;
   const app = createAppRouter(deps);
   app.use("/organizations/*", requireSession(deps.auth));
-  // Uploads: refuse what is too large before reading the body.
-  const sizeGuard = createMiddleware(async (c, next) => {
-    const length = Number(c.req.header("content-length") ?? "0");
-    if (length > ARTIFACT_LIMITS.fileBytes + MULTIPART_SLACK_BYTES) {
+  // Uploads: the bytes are counted as they arrive, so a request that states no length is held to the same size.
+  const sizeGuard = bodyLimit({
+    maxSize: ARTIFACT_LIMITS.fileBytes + MULTIPART_SLACK_BYTES,
+    onError: (c) => {
       const maxMb = ARTIFACT_LIMITS.fileBytes / 1024 / 1024;
       return apiError(c, 413, "artifact.file_too_large", `The file is too large (max ${maxMb} MB)`, { maxMb });
-    }
-    return next();
+    },
   });
   app.use("/organizations/:orgId/artifacts/files", sizeGuard);
   app.use("/organizations/:orgId/artifacts/:artifactId/files", sizeGuard);
@@ -822,7 +824,7 @@ export function artifactRoutes(deps: AppDeps) {
           z.object({
             picks: z.array(z.number().int().min(0)).min(1).max(ARTIFACT_LIMITS.choiceQuestions),
             others: z
-              .array(z.string().max(ARTIFACT_LIMITS.choiceOtherChars).nullable())
+              .array(z.string().max(MAX_MESSAGE_LENGTH).nullable())
               .max(ARTIFACT_LIMITS.choiceQuestions)
               .nullable()
               .optional(),

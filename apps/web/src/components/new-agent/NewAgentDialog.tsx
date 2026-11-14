@@ -12,6 +12,7 @@ import {
 } from "@agenteschat/client";
 import { type Level, saveLevels } from "@agenteschat/client/lib/access-levels";
 import { errorText as failureText } from "@agenteschat/client/lib/errors";
+import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { addsAgentsTo, can } from "@agenteschat/client/lib/permissions";
@@ -22,11 +23,15 @@ import {
   type AgentColor,
   agentTones,
   Button,
+  ChipButton,
   Dialog,
   DialogBody,
   DialogFooter,
   Icon,
+  LimitLine,
+  limitShown,
   OptionList,
+  overLimit,
   PixelSky,
   pixelBurst,
   playAgentReaction,
@@ -40,8 +45,10 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   createContext,
   type KeyboardEvent,
+  lazy,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
@@ -62,6 +69,7 @@ import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { useMediaQuery } from "@/components/NavDrawer";
 import { useOrg } from "@/components/org-context";
 import { agentCoverOptions, facePool } from "@/components/Sky";
+import { useTextLimit } from "@/hooks/useTextLimit";
 import {
   BLANK_LOOK,
   type CardLevel,
@@ -84,6 +92,9 @@ import { AppsPickerDialog } from "./AppsPicker";
 import { useNewAgentBrain } from "./useNewAgentBrain";
 import "../team-plan.css";
 import "./new-agent-card.css";
+
+/** "Trazer agentes de outro app", loaded when it opens: every app's reader stays out of the app's first load. */
+const ImportAgentsDialog = lazy(() => import("./ImportAgentsDialog").then((m) => ({ default: m.ImportAgentsDialog })));
 
 /*
  * A new agent (ADR 0164): one dialog for every way in. On the left, from scratch first, then the ready-made starting
@@ -565,7 +576,9 @@ function NewAgentDialog({
   useScrollEdges(list, [picks.length, step, steps]);
   useScrollEdges(body, [sel, lookOpen, draft, step, steps]);
 
-  const ready = name !== "" && handle !== "" && (sel !== "zero" || draft.what.trim() !== "");
+  const instructionsLimit = useTextLimit(FIELD_LIMITS.instructions);
+  const tooLong = overLimit(draft.instructions, instructionsLimit);
+  const ready = name !== "" && handle !== "" && (sel !== "zero" || draft.what.trim() !== "") && !tooLong;
   const react = () => playAgentReaction(REACTION, "up");
   const hopFrom = useRef<DOMRect | null>(null);
   // While words are typed into its bubble it looks at them.
@@ -784,10 +797,7 @@ function NewAgentDialog({
   const appIcon = (id: string) => <ConnectorIcon def={defs.get(id) ?? null} label={appName(id)} />;
 
   const howLabel = name ? t("newAgentCard.how", g) : t("newAgentCard.howBlank");
-  const toImport = () => {
-    onClose();
-    void navigate({ to: "/org/$orgId/settings/$section", params: { orgId: org.id, section: "import" } });
-  };
+  const [importing, setImporting] = useState(false);
 
   return (
     <Dialog
@@ -1064,11 +1074,10 @@ function NewAgentDialog({
                         <span className="nac__chips">
                           {appIds.length === 0 && <span className="nac__none">{t("newAgentCard.usesNone")}</span>}
                           {appIds.map((id) => (
-                            <button key={id} type="button" className="ac-chip nac__app" onClick={() => setAppOpen(id)}>
-                              {appIcon(id)}
-                              <span className="ac-chip__text">{appName(id)}</span>
+                            <ChipButton key={id} className="nac__app" lead={appIcon(id)} onClick={() => setAppOpen(id)}>
+                              {appName(id)}
                               <span className="nac__level">{tt(`newAgentCard.level.${draft.apps[id] ?? "read"}`)}</span>
-                            </button>
+                            </ChipButton>
                           ))}
                         </span>
                       </section>
@@ -1149,13 +1158,17 @@ function NewAgentDialog({
                             className="nac__instr"
                             rows={3}
                             value={draft.instructions}
-                            maxLength={50_000}
                             placeholder={t("newAgentCard.instructionsPlaceholder")}
                             aria-label={t("newAgent.instructions")}
+                            aria-invalid={tooLong || undefined}
+                            aria-describedby={
+                              limitShown(draft.instructions, instructionsLimit) ? "nac-instr-limit" : undefined
+                            }
                             onChange={(e) => update({ instructions: e.target.value })}
                           />
                           <Icon name="edit" size={14} className="nac__pen" />
                         </span>
+                        <LimitLine id="nac-instr-limit" value={draft.instructions} limit={instructionsLimit} />
                         <span className="nac__tips">
                           {TIPS.map((tip) => (
                             <Button key={tip} size="sm" variant="ghost" icon="plus" onClick={() => addTip(tip)}>
@@ -1185,7 +1198,7 @@ function NewAgentDialog({
             className="nac__foot"
             note={
               <span className="nac__foot-left">
-                <button type="button" className="ac-link nac__import" onClick={toImport}>
+                <button type="button" className="ac-link nac__import" onClick={() => setImporting(true)}>
                   <Icon name="download" size={16} />
                   {t("newAgentCard.import")}
                 </button>
@@ -1251,6 +1264,11 @@ function NewAgentDialog({
           onConnect={connectApp}
           onClose={() => setPicking(false)}
         />
+      )}
+      {importing && (
+        <Suspense fallback={null}>
+          <ImportAgentsDialog orgId={org.id} standalone onClose={() => setImporting(false)} />
+        </Suspense>
       )}
       {/* Signing in on the provider's page comes back here, to this card (`takeResume`). */}
       <ConnectFlow

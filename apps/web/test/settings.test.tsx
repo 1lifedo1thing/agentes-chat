@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import type { Credential } from "@agenteschat/client";
 import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
@@ -41,8 +42,8 @@ describe("Configurações do workspace", () => {
     expect(screen().getByRole("heading", { level: 2, name: "Geral" })).toBeTruthy();
     expect(screen().queryByRole("button", { name: "Salvar organização" })).toBeNull();
     const field = screen().getByLabelText("Contexto do workspace");
-    // The server's cap: typing stops there, never a refusal after sending.
-    expect(field.getAttribute("maxlength")).toBe("20000");
+    // Nothing typed or pasted is cut: the limit shows near it, never a native cap.
+    expect(field.getAttribute("maxlength")).toBeNull();
     await type(field, "A Acme faz um app para clínicas.");
     await act(async () => fireEvent.blur(field));
     await settle(4);
@@ -125,8 +126,42 @@ describe("Configurações do workspace", () => {
     );
     expect(desktop.textContent).not.toContain("TELEMETRY=off");
     cleanup();
+    // In that app, on that very computer: the line says so and the button opens its Preferences › Servers.
+    const win = window as { __agentesDesktop?: unknown; __TAURI_INTERNALS__?: unknown };
+    const asked: Record<string, unknown>[] = [];
+    win.__agentesDesktop = { version: "0.8.6" };
+    win.__TAURI_INTERNALS__ = {
+      invoke: async (cmd: string, args: { request?: Record<string, unknown> }) => {
+        if (cmd !== "this_mac" || !args.request) return {};
+        asked.push(args.request);
+        return args.request.kind === "status" ? { orgs: [], agentsHere: true, local: true } : {};
+      },
+    };
+    try {
+      await go(seedState({ telemetry: { enabled: true, envOff: true, report: { report: 1, install: "desktop" } } }));
+      const here = screen().getByRole("region", { name: "Estatísticas de uso" });
+      expect(here.querySelector(".settings-row__status")?.textContent).toBe(
+        "Desligado no app do agentes.chat deste computador.Abrir Servidores",
+      );
+      await click(within(here).getByRole("button", { name: "Abrir Servidores" }));
+      expect(asked).toContainEqual({ kind: "prefs", tab: "servers" });
+    } finally {
+      delete win.__agentesDesktop;
+      delete win.__TAURI_INTERNALS__;
+    }
+    cleanup();
     await go();
     expect(screen().queryByRole("region", { name: "Estatísticas de uso" })).toBeNull();
+  });
+
+  test("Notificações: no phone gets them yet, so the row opens the phone app with a code", async () => {
+    await go(seedState(), "settings/notifications");
+    const row = document.getElementById("notice-phone-status")?.closest(".settings-row") as HTMLElement;
+    expect(row.textContent).toContain("Ative no app do celular");
+    expect(row.textContent).not.toContain("›");
+    await click(within(row).getByRole("button", { name: "Abrir no celular" }));
+    await settle(4);
+    expect(screen().getByRole("dialog", { name: "Abrir no celular" })).toBeTruthy();
   });
 
   test("connected connectors are listed; disconnect asks first", async () => {
@@ -141,13 +176,36 @@ describe("Configurações do workspace", () => {
     );
     const github = screen().getByRole("region", { name: "Repositórios do GitHub" });
     expect(hintOf("Repositórios do GitHub", github).text).toBe(
-      "Onde o app agentes.chat está instalado, os agentes abrem pull requests, issues, comentários e commits como o app, com o nome do agente e de quem pediu. Só a Acme usa o que você instalar daqui.",
+      "Onde o app agentes.chat está instalado, os agentes abrem pull requests, issues, comentários e commits como o app, com o nome do agente e de quem pediu.",
     );
     expect(
       within(github)
         .getAllByText(/^Onde o app agentes.chat está instalado/)
         .map((el) => el.hidden),
     ).toEqual([true]);
+    // A connected service is one line (its name, its pill, who uses it) that opens to its details and actions.
+    const line = within(section).getByRole("button", { name: /^GitHub/ });
+    expect(line.getAttribute("aria-expanded")).toBe("false");
+    expect(line.querySelector(".list-title")?.textContent).toBe("GitHubAtivo");
+    expect(line.querySelector(".connected-row__who")?.textContent).toBe("Nenhum agente ainda");
+    expect(line.textContent).not.toContain("Conectado como");
+    expect(within(section).queryByRole("button", { name: "Quem usa GitHub" })).toBeNull();
+    await click(line);
+    expect(line.getAttribute("aria-expanded")).toBe("true");
+    const more = document.getElementById(line.getAttribute("aria-controls") ?? "") as HTMLElement;
+    expect(more.inert).toBe(false);
+    expect(more.textContent).toContain("Conectado como acme");
+    // Its actions are one row of bare words, the ⋯ last.
+    expect([...more.querySelectorAll(".ac-acts > button")].map((b) => b.className)).toEqual([
+      "ac-link ac-link--action",
+      "ac-link ac-link--action",
+      "ac-btn ac-btn--ghost ac-btn--sm ac-btn--icon",
+    ]);
+    expect(within(more).getByRole("button", { name: "Quem usa GitHub" }).textContent).toBe("Quem usa");
+    await click(line);
+    expect(line.getAttribute("aria-expanded")).toBe("false");
+    expect(more.inert).toBe(true);
+    expect(within(section).queryByRole("button", { name: "Quem usa GitHub" })).toBeNull();
     expect(section.textContent).toContain("GitHub");
     expect(section.textContent).toContain("Ativo");
     expect(section.textContent).toContain("Conectado como acme");
@@ -852,4 +910,44 @@ test("Sua conta and Notificações in German and Japanese: every row keeps its �
     }
     cleanup();
   }
+});
+
+const endpointCred: Credential = {
+  id: "cred-custom",
+  provider: "custom",
+  label: "Gateway",
+  keyHint: "9f3c",
+  createdAt: "2026-11-01T10:00:00.000Z",
+  revokedAt: null,
+  endpoint: { style: "openai", baseURL: "https://llm.example.com/v1", models: [] },
+};
+
+test("a workspace's own endpoint key rotates whatever it looks like", async () => {
+  const { state } = await go(seedState({ credentials: [endpointCred] }), "settings/keys");
+  const keys = screen().getByRole("region", { name: "Chaves de provedor" });
+  await click(within(keys).getByRole("button", { name: "Trocar a chave" }));
+  const rotate = screen().getByRole("dialog", { name: "Trocar a chave Gateway" });
+  const field = within(rotate).getByLabelText("Chave da API");
+  // No provider's example or placeholder: this key is nobody's format.
+  expect(rotate.textContent).not.toContain("platform.claude.com");
+  expect(field.getAttribute("placeholder")).toBeNull();
+
+  await type(field, "tr_fake_endpoint_key");
+  await click(within(rotate).getByRole("button", { name: "Trocar a chave" }));
+  await settle(4);
+  // The fake logs the key redacted: the call itself is the proof the value passed the form's check.
+  expect(state.calls.find((c) => c.method === "agents.rotateCredential")?.args[1]).toBe("cred-custom");
+  expect(screen().queryByRole("dialog", { name: "Trocar a chave Gateway" })).toBeNull();
+});
+
+test("an endpoint key shorter than the server's floor is still caught", async () => {
+  const { state } = await go(seedState({ credentials: [endpointCred] }), "settings/keys");
+  const keys = screen().getByRole("region", { name: "Chaves de provedor" });
+  await click(within(keys).getByRole("button", { name: "Trocar a chave" }));
+  const rotate = screen().getByRole("dialog", { name: "Trocar a chave Gateway" });
+  await type(within(rotate).getByLabelText("Chave da API"), "tr_1");
+  await click(within(rotate).getByRole("button", { name: "Trocar a chave" }));
+  await settle(4);
+  expect(rotate.textContent).toContain("Cole a chave da API (pelo menos 8 caracteres).");
+  expect(state.calls.some((c) => c.method === "agents.rotateCredential")).toBe(false);
 });

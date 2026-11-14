@@ -119,6 +119,7 @@ async function connect({
   role,
   ada: adaRow,
   accounts = [],
+  paired = false,
 }: {
   computers?: AiComputer[];
   setup?: Partial<ComputerSetup>;
@@ -136,6 +137,8 @@ async function connect({
   ada?: Partial<Agent>;
   /** Walter's accounts on the computers (`/ai-accounts`). */
   accounts?: AiAccounts["accounts"];
+  /** With `setup` (the Cloud): a computer a person connected too, as without it. */
+  paired?: boolean;
 } = {}) {
   const state = seedState();
   const workspace = state.me?.organizations[0];
@@ -152,7 +155,7 @@ async function connect({
   const api = createFakeApi(state);
   const machines = fakeMachinesOf.get(api);
   if (setup) machines?.setSetup(setup);
-  else
+  if (!setup || paired)
     machines?.pair({
       id: "machine_1",
       name: "MacBook",
@@ -438,6 +441,32 @@ describe("Conectar uma IA: one picker, plans first", () => {
     expect(screen().queryByRole("dialog")).toBeNull();
   });
 
+  test("the scene over the choice: the team asleep, their computer and the AIs' marks, the picked one alone lit", async () => {
+    const { dialog, choose } = await connect();
+    const scene = dialog.querySelector(".connect-scene") as HTMLElement;
+    // Decoration: what it says is said by the dialog's words.
+    expect(scene.getAttribute("aria-hidden")).toBe("true");
+    expect(dialog.querySelector(".ac-dialog__body")?.firstElementChild).toBe(scene);
+    const faces = scene.querySelectorAll(".team-scene__agent");
+    expect(faces.length).toBeGreaterThan(0);
+    expect(faces.length).toBeLessThanOrEqual(3);
+    expect(scene.querySelector(".team-scene__cast")?.hasAttribute("data-awake")).toBe(false);
+    expect(scene.querySelector(".ac-computer")?.getAttribute("data-state")).toBe("paused");
+    const marks = () => Array.from(scene.querySelectorAll(".connect-scene__marks .ac-brand"));
+    expect(marks().map((m) => m.getAttribute("data-mark"))).toEqual(["claude", "openai", "gemini"]);
+    expect(marks().filter((m) => m.classList.contains("ac-brand--off"))).toEqual([]);
+    // The pixels walk from the marks to the team: two trails, counted from the AI's side.
+    const trails = Array.from(scene.querySelectorAll(".team-scene__trail"));
+    expect(trails.map((t) => t.getAttribute("data-state"))).toEqual(["walk", "walk"]);
+    expect(
+      Array.from(scene.querySelectorAll<HTMLElement>(".team-scene__trail i")).map((i) =>
+        i.style.getPropertyValue("--n"),
+      ),
+    ).toEqual(["9", "8", "7", "6", "5", "4", "3", "2", "1", "0"]);
+    await choose("ChatGPT");
+    expect(marks().map((m) => m.classList.contains("ac-brand--off"))).toEqual([true, false, true]);
+  });
+
   test("ChatGPT: first its settings, then a sign-in that starts only on its button; switching tiles starts nothing", async () => {
     const { state, dialog, choose } = await connect();
     await choose("ChatGPT");
@@ -540,8 +569,7 @@ describe("Conectar uma IA: one picker, plans first", () => {
     await choose("Gemini");
     const panel = within(dialog).getByRole("region", { name: "Seu plano do Gemini" });
     expect(panel.textContent).toContain("Google AI Pro, Google AI Ultra ou Gemini Enterprise");
-    const warning =
-      "O Google diz que usar um plano pessoal do Gemini dentro de outros apps pode suspender a conta. Para não correr esse risco, use uma chave de API ou o Gemini Enterprise.";
+    const warning = "O Google diz que usar um plano pessoal do Gemini dentro de outros apps pode suspender a conta.";
     expect(shownText(panel)).toContain(warning);
     await click(within(panel).getByRole("button", { name: "Usar o Gemini Enterprise" }));
     expect(shownText(panel)).not.toContain(warning);
@@ -554,11 +582,44 @@ describe("Conectar uma IA: one picker, plans first", () => {
       "antigravity",
       { provider: "enterprise" },
     ]);
-    // Its second step is Google's: the code its page shows, or that page's address. Claude is named nowhere.
+    // Its second step is Google's: the code its page shows, never that page's address. Claude is named nowhere.
     expect(shownText(panel)).toContain("Cole o código que o Google mostrar");
-    const field = within(panel).getByRole("textbox", { name: "Código ou link" });
-    expect(field.getAttribute("placeholder")).toBe("Código ou link");
+    const field = within(panel).getByRole("textbox", { name: "Código do Google" });
+    expect(field.getAttribute("placeholder")).toBe("Código do Google");
     expect(shownText(panel)).not.toContain("Claude");
+    const hint = hintOf("Cole o código que o Google mostrar", panel);
+    expect(hint.text).toBe("Cole o código que a página do Google mostra, não o endereço da página.");
+    expect(field.getAttribute("aria-describedby")).toBe(hint.button.getAttribute("aria-describedby"));
+    // The page's own address carries no code: said under the field, and it can't be sent.
+    const noCode = "Isso é um endereço sem código. Cole o código que a página do Google mostra.";
+    await type(field, "https://example.com/oauth-callback");
+    expect(shownText(panel)).toContain(noCode);
+    const send = () => within(panel).getByRole("button", { name: "Enviar ao MacBook" }) as HTMLButtonElement;
+    expect(send().disabled).toBe(true);
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    expect(calls(state, "machines.sendAccountCode")).toHaveLength(0);
+    for (const ok of ["https://example.com/oauth-callback?code=4%2F0Afake", "4/0Afake"]) {
+      await type(field, ok);
+      expect(shownText(panel)).not.toContain(noCode);
+      expect(send().disabled).toBe(false);
+    }
+  });
+
+  test("Gemini: a sign-in the computer can't share with every agent says so and what to use instead, with no Tentar de novo", async () => {
+    const base = fakeAgentBrain(ADA_ID);
+    const geminiOption = { kind: "antigravity" as const, available: true, models: [], defaultModel: null };
+    const { machines, dialog, choose } = await connect({
+      computers: [{ ...MAC, brains: { claude_code: true, codex: true, antigravity: true } }],
+      brain: { options: [...base.options, geminiOption] },
+    });
+    machines?.endLogin("login_1", { state: "failed", code: "not_kept", message: "Error: Please sign in." });
+    await choose("Gemini");
+    await withPopup(() => click(within(dialog).getByRole("button", { name: "Entrar com Google" })));
+    await settle(8);
+    expect(shownText(dialog)).toContain(
+      "O Gemini entrou, mas o MacBook não consegue compartilhar esse login com todos os agentes. Use uma chave de API do Gemini.",
+    );
+    expect(within(dialog).queryByRole("button", { name: "Tentar de novo" })).toBeNull();
   });
 
   test("a sign-in starting: the line under its title says the computer is asked, until it answers, and only then", async () => {
@@ -602,6 +663,59 @@ describe("Conectar uma IA: one picker, plans first", () => {
     const retry = within(dialog).getByRole("button", { name: "Tentar de novo" });
     expect(retry.parentElement?.className).toBe("ai-panel__row");
     expect(retry.parentElement?.querySelector(":scope > .ac-setnote")).not.toBeNull();
+  });
+
+  test("a sign-in that ended on the computer says why by its code, the CLI's own words under it only where they explain", async () => {
+    const said = `couldn't log in: ${"token-exchange-failed-".repeat(12)}end`;
+    const cases = [
+      {
+        code: "bad_code",
+        line: "O Gemini recusou o código. Tente de novo e cole só o código que a página mostrar.",
+        detail: false,
+      },
+      { code: "cli_exit", line: "O Gemini parou com um erro no MacBook. Tente de novo.", detail: true },
+      {
+        code: "not_signed_in_after_login",
+        line: "O Gemini aceitou o login, mas esta conta não pode ser usada aqui, talvez o plano não inclua. Tente outra conta ou uma chave de API.",
+        detail: true,
+      },
+      { code: "network", line: "O MacBook não conseguiu falar com o Gemini. Tente de novo.", detail: false },
+      // A code from a newer runner: the plain line.
+      { code: "something_new", line: "Não deu para entrar nessa conta. Tente de novo.", detail: false },
+    ];
+    const base = fakeAgentBrain(ADA_ID);
+    const geminiOption = { kind: "antigravity" as const, available: true, models: [], defaultModel: null };
+    for (const { code, line, detail } of cases) {
+      const { machines, dialog, choose } = await connect({
+        computers: [{ ...MAC, brains: { claude_code: true, codex: true, antigravity: true } }],
+        brain: { options: [...base.options, geminiOption] },
+      });
+      machines?.endLogin("login_1", { state: "failed", code, message: said } as never);
+      await choose("Gemini");
+      await withPopup(() => click(within(dialog).getByRole("button", { name: "Entrar com Google" })));
+      await settle(8);
+      const retry = within(dialog).getByRole("button", { name: "Tentar de novo" });
+      const row = retry.parentElement as HTMLElement;
+      expect(row.querySelector(":scope > .ac-setnote")?.textContent).toBe(line);
+      // Whole, in the code well between the line and its button: never cut, and the button under it.
+      const well = row.querySelector(":scope > .agp-addacct__said");
+      expect(well?.textContent ?? null).toBe(detail ? said : null);
+      if (well) expect([...row.children].indexOf(well)).toBe(1);
+      cleanup();
+    }
+    const layout = await stylesheet("../src/layout.css");
+    expect(ruleOf(layout, ".ai-panel__row > .agp-addacct__said")).toContain("flex: 1 1 100%");
+  });
+
+  test("a sign-in canceled from somewhere else shows no error: it is back at its start", async () => {
+    const { machines, dialog, choose } = await connect();
+    machines?.endLogin("login_1", { state: "failed", code: "canceled", message: "Canceled" });
+    await choose("ChatGPT");
+    await withPopup(() => click(within(dialog).getByRole("button", { name: "Entrar com ChatGPT" })));
+    await settle(8);
+    expect(within(dialog).queryByRole("button", { name: "Tentar de novo" })).toBeNull();
+    expect(dialog.textContent).not.toContain("Não deu para entrar");
+    expect(within(dialog).getByRole("button", { name: "Entrar com ChatGPT" })).toBeTruthy();
   });
 
   test("a plan's panel: its body starts at the panel's edge, every lead centred in the numbers' column, an even well", async () => {
@@ -795,32 +909,120 @@ describe("Conectar uma IA: one picker, plans first", () => {
     expect(dimmed("Kimi Code")).toBe(true);
     await closeAiSelect();
     await choose("ChatGPT");
-    expect(dialog.textContent).toContain("O Codex não está instalado no MacBook.");
+    expect(dialog.textContent).toContain("O Codex ainda não está no MacBook.");
     await choose("Kimi Code");
     expect(dialog.textContent).toContain("Atualize o agentes no computador para usar a chave de um plano");
     await click(within(dialog).getByRole("button", { name: "Usar uma chave de API agora" }));
     expect(payWith(dialog, "Com chave de API").getAttribute("aria-checked")).toBe("true");
   });
 
-  test("a plan whose tool is off on its computer: the app's Preferences on a Mac, the command too on Linux", async () => {
-    const reason = async (os: string, name: string) => {
+  test("a program not on the computer: one line, the Claude app told apart behind an ⓘ, installed or looked for from here", async () => {
+    const options = fakeAgentBrain(ADA_ID).options.map((o) =>
+      o.kind === "claude_code" ? { ...o, available: false, reason: "not_installed" as const } : o,
+    );
+    const name = "Estudio-PC";
+    const { dialog, choose, state, machines } = await connect({
+      machine: { os: "windows", name, cliInstall: true },
+      brain: { computer: { machineId: "machine_1", name, online: true }, options },
+    });
+    await choose("Claude");
+    const panel = within(dialog).getByRole("region", { name: "Seu plano do Claude" });
+    expect(panel.textContent).toContain("O Claude Code ainda não está no Estudio-PC.");
+    expect(panel.textContent).not.toContain("não está instalado");
+    expect(within(panel).getByRole("button", { name: "Sobre Claude Code" })).toBeTruthy();
+    expect(within(panel).getByRole("button", { name: "Já instalei, verificar de novo" })).toBeTruthy();
+    expect(within(panel).getByRole("button", { name: "Usar uma chave de API agora" })).toBeTruthy();
+
+    // Installed by hand: looked for again, and the line says it's still not there.
+    await click(within(panel).getByRole("button", { name: "Já instalei, verificar de novo" }));
+    await settle(4);
+    expect(calls(state, "machines.checkClis")).toHaveLength(1);
+    expect(panel.textContent).toContain("Verifiquei agora: o Claude Code ainda não está no Estudio-PC.");
+
+    await click(within(panel).getByRole("button", { name: "Instalar o Claude Code para mim" }));
+    await settle(4);
+    expect(calls(state, "machines.cliInstall").map((c) => c.args.at(-1))).toContain("start");
+    expect(panel.textContent).toContain("Instalando o Claude Code no Estudio-PC. Leva cerca de um minuto.");
+    expect(within(panel).getByRole("button", { name: "Cancelar" })).toBeTruthy();
+    expect(within(panel).queryByRole("button", { name: "Instalar o Claude Code para mim" })).toBeNull();
+
+    // The installer's own words when it fails, and Try again.
+    machines?.setCliInstall("machine_1", { tool: "claude", state: "failed", message: "irm: 404 Not Found" });
+    await click(within(panel).getByRole("button", { name: "Cancelar" }));
+    await settle(4);
+    expect(panel.textContent).toContain("Não deu para instalar no Estudio-PC: irm: 404 Not Found");
+    await click(within(panel).getByRole("button", { name: "Tentar de novo" }));
+    await settle(4);
+    expect(calls(state, "machines.cliInstall").filter((c) => c.args.at(-1) === "start")).toHaveLength(2);
+  });
+
+  test("a program not on someone else's computer: they are asked; one there that won't start says why", async () => {
+    const options = fakeAgentBrain(ADA_ID).options.map((o) =>
+      o.kind === "claude_code" ? { ...o, available: false, reason: "not_installed" as const } : o,
+    );
+    const { dialog, choose, state } = await connect({
+      machine: { os: "darwin", name: "MacBook", cliInstall: true, pairedBy: { id: "u-bia", name: "Bia Lima" } },
+      brain: { computer: { machineId: "machine_1", name: "MacBook", online: true }, options },
+    });
+    await choose("Claude");
+    const panel = within(dialog).getByRole("region", { name: "Seu plano do Claude" });
+    expect(within(panel).queryByRole("button", { name: "Instalar o Claude Code para mim" })).toBeNull();
+    await click(within(panel).getByRole("button", { name: "Pedir a Bia" }));
+    await settle(2);
+    expect(calls(state, "machines.askCliInstall")).toHaveLength(1);
+
+    cleanup();
+    const broken = fakeAgentBrain(ADA_ID).options.map((o) =>
+      o.kind === "claude_code" ? { ...o, available: false, reason: "cant_start" as const } : o,
+    );
+    const again = await connect({
+      machine: { os: "windows", name: "PC", cliInstall: true, cliErrors: { claude: "git_missing" } },
+      brain: { computer: { machineId: "machine_1", name: "PC", online: true }, options: broken },
+    });
+    await again.choose("Claude");
+    const there = within(again.dialog).getByRole("region", { name: "Seu plano do Claude" });
+    expect(there.textContent).toContain("O Claude Code precisa do Git for Windows no PC.");
+    expect(within(there).getByRole("link", { name: "Baixar o Git for Windows" }).getAttribute("href")).toBe(
+      "https://git-scm.com/downloads/win",
+    );
+    expect(within(there).queryByRole("button", { name: "Instalar o Claude Code para mim" })).toBeNull();
+  });
+
+  test("a plan whose program is off on its computer: the cause alone, then one way out by whose computer it is", async () => {
+    const panel = async (machine: Partial<Machine>, name = "MacBook") => {
       cleanup();
       const options = fakeAgentBrain(ADA_ID).options.map((o) =>
         o.kind === "codex" ? { ...o, available: false, reason: "tool_off" as const } : o,
       );
-      const { dialog, choose } = await connect({
-        machine: { os, name, mode: "system" },
+      const { dialog, choose, state } = await connect({
+        machine: { os: "darwin", name, ...machine },
         brain: { computer: { machineId: "machine_1", name, online: true }, options },
       });
       await choose("ChatGPT");
-      return dialog.textContent;
+      return { dialog, state, button: (label: string) => within(dialog).queryByRole("button", { name: label }) };
     };
-    expect(await reason("linux", "Servidor")).toContain(
-      "O Codex está desligado no Servidor. Ligue lá, no app do agentes.chat ou com sudo agentes-runner tools enable codex.",
-    );
-    expect(await reason("darwin", "MacBook")).toContain(
-      "O Codex está desligado no MacBook. Ligue lá, no app do agentes.chat: Preferências → Ferramentas.",
-    );
+    // Whoever connected it turns it on from here, beside the key. Never a path to a settings screen.
+    let p = await panel({ accessAllow: true });
+    expect(p.dialog.textContent).toContain("O Codex está desligado no MacBook.");
+    expect(p.dialog.textContent).not.toMatch(/Preferências|Ferramentas|Ligue lá/);
+    expect(p.button("Usar uma chave de API agora")).toBeTruthy();
+    await click(p.button("Ligar o Codex") as HTMLElement);
+    expect(calls(p.state, "machines.allowTool").map((c) => c.args[2])).toEqual(["codex"]);
+    // Offline: the button waits for it, and one line says so.
+    p = await panel({ accessAllow: true, online: false });
+    expect(p.dialog.textContent).toContain("O MacBook está offline. Assim que ele voltar, o botão liga o Codex.");
+    expect((p.button("Ligar o Codex") as HTMLButtonElement).disabled).toBe(true);
+    // Someone else's computer: they ask whoever connected it.
+    p = await panel({ accessAllow: true, pairedBy: { id: "u-rui", name: "Rui Prado" } });
+    expect(p.button("Ligar o Codex")).toBeNull();
+    await click(p.button("Pedir a Rui") as HTMLElement);
+    expect(calls(p.state, "machines.askTool")).toHaveLength(1);
+    // An app too old to switch from afar: update it there. On a server, the command too, behind "Prefiro no Terminal".
+    p = await panel({ os: "linux", mode: "system" }, "Servidor");
+    expect(p.dialog.textContent).toContain("Atualize o app do agentes.chat no Servidor para ligar daqui.");
+    expect(p.dialog.textContent).toContain("Prefiro no Terminal");
+    expect(p.dialog.textContent).toContain("sudo agentes-runner tools enable codex");
+    expect(p.button("Ligar o Codex")).toBeNull();
   });
 
   test("self-host with no computer for the agent: plans dim, the key comes first, and a plan's panel says to connect one", async () => {
@@ -1000,6 +1202,22 @@ describe("Conectar uma IA: one picker, plans first", () => {
     expect(within(dialog).getByRole("button", { name: "Usar uma chave de API agora" })).toBeTruthy();
   });
 
+  test("on the Cloud, a program off on a computer a person connected: theirs to turn on, never on our side", async () => {
+    const options = fakeAgentBrain(ADA_ID).options.map((o) =>
+      o.kind === "codex" ? { ...o, available: false, reason: "tool_off" as const } : o,
+    );
+    const { dialog, choose } = await connect({
+      setup: { state: "ready", machineId: "managed_1" },
+      paired: true,
+      machine: { os: "darwin", kind: "connected", accessAllow: true },
+      brain: { computer: { machineId: "machine_1", name: "MacBook", online: true }, options },
+    });
+    await choose("ChatGPT");
+    expect(dialog.textContent).toContain("O Codex está desligado no");
+    expect(dialog.textContent).not.toContain("nosso lado");
+    expect(within(dialog).getByRole("button", { name: "Ligar o Codex" })).toBeTruthy();
+  });
+
   test("the email's link on a cold load: once the agents arrive, Claude's sign-in for the viewer's agent", async () => {
     const state = seedState();
     const ada = state.agents.find((a) => a.id === ADA_ID);
@@ -1114,7 +1332,9 @@ describe("Conectar uma IA: one picker, plans first", () => {
     await click(within(panel).getByRole("button", { name: "Salvar chave" }));
     await settle(4);
     expect(calls(state, "agents.addCredential")).toHaveLength(1);
-    expect(panel.textContent).toContain("Salva. Todo agente sem plano pensa com ela.");
+    // The workspace already thinks with another key: said, with the way to switch.
+    expect(panel.textContent).toContain("Salva. Os agentes ainda pensam com Claude da Acme.");
+    expect(within(panel).getByRole("button", { name: "Usar esta chave para todos" })).toBeTruthy();
   });
 
   test("while a key saves, nothing that belongs to it moves: the way to pay, its maker, the field", async () => {
