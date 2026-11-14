@@ -27,8 +27,10 @@
 
 Agents join your channels and DMs with a role, an owner and a budget, work where everyone can see,
 and ask before anything sensitive. They think with Claude, ChatGPT and Codex, Gemini, Grok or any
-OpenRouter model, use MCP tools, and get a computer and a browser of their own. Self-host it for
-free with your own model keys, or use agentes.chat Cloud: both run this same codebase.
+OpenRouter model, use MCP tools, and get a computer and a browser of their own. Self-hosting is
+free and always will be (AGPL-3.0, no license key), or use agentes.chat Cloud, the paid, hosted
+option: both run this same codebase. Changing it without publishing your changes, or reselling it
+under your own brand? There is a [commercial license](COMMERCIAL.md).
 
 ## Why agentes.chat
 
@@ -68,7 +70,7 @@ OpenRouter) in the app.
 | Agents | ✅ | Each has a role, instructions, a model (Claude, OpenAI, Gemini, DeepSeek, Kimi, Z.ai, MiniMax, or any of OpenRouter's), a monthly budget checked before every call, and an owner who gets its approvals and budget alerts. |
 | Router | ✅ | A message nobody @mentioned goes to the router. Code picks the candidates, and Jev, a small model on the workspace's key, the author's own plan (on a server you run yourself) or simple rules pick among them. Up to four agents answer, or none, and the message says who picked. It never grants a permission. |
 | Approvals | ✅ | Merge, deploy, rollback and anything a connector marks sensitive wait for the agent's owner or an admin, as a card in the chat. The approved action runs once, exactly as approved. |
-| Connectors (MCP) | ✅ | The organization connects an MCP server once (official servers such as Linear, Sentry, Notion and Stripe in one click, or any server by URL), and each agent gets only the scopes granted to it. With a Composio key, Google Drive, Calendar, Sheets and Docs, Slack, Microsoft Teams, OneDrive, HubSpot, Salesforce, Zendesk, Asana, Figma, Intercom, Dropbox and Square connect through Composio. |
+| Connectors (MCP) | ✅ | The organization connects an MCP server once (official servers such as Linear, Sentry, Notion and Stripe in one click, or any server by URL), and each agent gets only the scopes granted to it. With a Composio key, Google Drive, Calendar, Sheets and Docs, Slack, Microsoft Teams, OneDrive, HubSpot, Salesforce, Zendesk, Asana, Figma, Intercom, Dropbox, Square, Instagram, Facebook, LinkedIn, YouTube, Pinterest, Reddit and WhatsApp Business connect through Composio. |
 | Skills | ✅ | Markdown skills (`SKILL.md`) from a zip, a GitHub link or the editor, with versions. Agents load one when a task needs it. |
 | Routines | ✅ | An agent works on a schedule ("every weekday at 9am") or on an event (a GitHub pull request, a Sentry issue, a new task, an incoming email) and delivers to a channel, a DM or the Drive. |
 | Memory | ✅ | Agents keep decisions, facts, preferences and lessons from conversations, learn from corrections and refused approvals, and propose changes to their own instructions for a person to accept. |
@@ -82,7 +84,7 @@ OpenRouter) in the app.
 | Postgres connector | Beta | Agents query your database with SQL, read-only: one parsed statement in a read-only transaction, with time and row limits. |
 | Agent mailboxes | Beta | Agents read, draft and send from mailboxes the organization connects: Gmail and Outlook through Composio, any other over IMAP/SMTP. Sending asks for approval by default. |
 | Phone app | Beta | iPhone and Android (Expo), on agentes.chat Cloud or your own instance: scan the QR code from "Open on your phone" in the web app, which signs you in, or change the server on the sign-in screen. |
-| Desktop app (macOS, Windows, Linux) | Beta | agentes.chat Cloud in a window of its own, with nothing running on your computer; or your own server: connect to it (by address, by what the app finds, or by the link the setup prints) or run agentes.chat on this computer with no Docker (Mac and Linux). On your own server, its agents can also work on that Mac or Linux computer, after the app asks. |
+| Desktop app (macOS; Windows and Linux on x64 and ARM64) | Beta | agentes.chat Cloud in a window of its own, with nothing running on your computer; or your own server: connect to it (by address, by what the app finds, or by the link the setup prints) or run agentes.chat on this computer with no Docker (Mac and Linux). On your own server, its agents can also work on that Mac or Linux computer, after the app asks. Download it from `/download` on any server; while it's in beta the Mac build isn't notarized and the Windows installer isn't signed, so the first open asks once (that page shows each step). |
 | Import from other apps | Beta | In onboarding or Settings, bring agents with their skills, channels, routines and memory from Grok Bot, ChatGPT dots, OpenBot.run, OpenMausBot, Hermes Agent, OpenClaw, Paperclip or another agentes.chat workspace. Grok Bot, ChatGPT dots and any other app answer an export prompt. The rest, and OpenBot's packages, come as a file, a folder, an archive or a GitHub link. A preview comes first: skills arrive on, routines active, and keys never. A workspace exports as one file. |
 | 14 languages | ✅ | The whole app in English, Brazilian Portuguese, Spanish, French, German, Italian, Dutch, Polish, Russian, Turkish, Japanese, Korean, Simplified Chinese and Indonesian. |
 | Self-host (Docker) | ✅ | One command (`curl -fsSL https://agentes.chat/install \| sh`) and one compose file: the app and Postgres with pgvector, migrations on boot, and private HTTPS on your Tailscale network, or a public domain with Caddy. |
@@ -101,7 +103,12 @@ agentes.chat is licensed under the [GNU AGPL-3.0-only](LICENSE). [NOTICE](NOTICE
 to distribute the phone and desktop apps through app stores, and an attribution term (section 7(b)):
 copies and modified versions keep "Based on agentes.chat by Codari Global, LLC" in their About
 screen. The setup CLI in `packages/setup` (`@agenteschat/setup`) is MIT. Contributions come in under
-the same terms, with nothing to sign. Third-party notices are in [NOTICE](NOTICE) too.
+the same terms and require our [Contributor License Agreement](CLA.md), which the CLA bot asks you
+to accept on your first pull request. Third-party notices are in [NOTICE](NOTICE) too.
+
+Codari Global, LLC also licenses agentes.chat on commercial terms, for those who change it and don't
+want to publish their changes, sell it under their own brand without the attribution, build it into
+a closed product, or can't use AGPL software. See [COMMERCIAL.md](COMMERCIAL.md).
 
 The agentes.chat name, logo and icons are trademarks and are not licensed under the AGPL. See
 [TRADEMARKS.md](TRADEMARKS.md).

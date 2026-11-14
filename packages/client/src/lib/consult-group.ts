@@ -12,9 +12,17 @@ import { noticeOf } from "./notices";
 /**
  * Where one question is. `waiting`: the consulted agent waits on a person; `offline`: for its computer or its AI
  * provider to come back (still out, paused, on no one); `handedOn`: its part done, it waits on agents it handed
- * some to.
+ * some to; `queued`: its run waits for a worker.
  */
-export type ConsultLineState = "working" | "waiting" | "offline" | "handedOn" | "answered" | "failed" | "expired";
+export type ConsultLineState =
+  | "working"
+  | "waiting"
+  | "offline"
+  | "handedOn"
+  | "queued"
+  | "answered"
+  | "failed"
+  | "expired";
 
 /** Reloads the list this often while a question is out (a consulted agent that stops waiting sends no event). */
 export const CONSULT_GROUP_POLL_MS = 10_000;
@@ -33,6 +41,7 @@ export function consultLineState(
   if (Date.parse(c.expiresAt) < now) return "expired";
   if (c.waiting === "computer" || c.waiting === "outage") return "offline";
   if (c.waiting === "agents") return "handedOn";
+  if (c.waiting === "queued") return "queued";
   return c.waiting ? "waiting" : "working";
 }
 
@@ -53,6 +62,8 @@ export function consultLineKey(state: ConsultLineState, c: Pick<RunConsultation,
         : ("chat.consultGroup.waitingComputer" as const);
     case "handedOn":
       return "chat.consultGroup.waitingAgents" as const;
+    case "queued":
+      return "chat.consultGroup.queued" as const;
     case "answered":
       return "chat.consultation.answered" as const;
     case "expired":
@@ -75,6 +86,61 @@ export const consultOriginKey = (c: Pick<RunConsultation, "kind">, inChannel: bo
     : inChannel
       ? ("chat.consultPanel.origin" as const)
       : ("chat.consultPanel.originDm" as const);
+
+/**
+ * Questions and hand-offs between the same two agents, either way, this close are one exchange: one asked before the
+ * last one ended, or within this after it. An exchange draws one row and opens one conversation.
+ */
+export const EXCHANGE_GAP_MS = 5 * 60_000;
+
+type Exchangeable = Pick<
+  RunConsultation,
+  "id" | "runId" | "agentId" | "consultedAgentId" | "status" | "createdAt" | "answeredAt"
+>;
+
+/** Each question's exchange, by question id: the exchange's first question. */
+function exchangeRoots(list: readonly Exchangeable[]): Map<string, Exchangeable> {
+  const out = new Map<string, Exchangeable>();
+  const current = new Map<string, { root: Exchangeable; end: number }>();
+  for (const c of [...list].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))) {
+    const pair = [c.agentId, c.consultedAgentId].sort().join(" ");
+    const at = Date.parse(c.createdAt);
+    const end = c.answeredAt ? Date.parse(c.answeredAt) : c.status === "open" ? Number.POSITIVE_INFINITY : at;
+    const open = current.get(pair);
+    if (open && at <= open.end + EXCHANGE_GAP_MS) {
+      open.end = Math.max(open.end, end);
+      out.set(c.id, open.root);
+    } else {
+      current.set(pair, { root: c, end });
+      out.set(c.id, c);
+    }
+  }
+  return out;
+}
+
+/**
+ * The conversation's questions as their rows draw them: each under the run of its exchange's first question, so the
+ * reply of that run shows one row for the whole exchange (its time from the first ask to the last answer) and the
+ * other runs' replies show none.
+ */
+export function asExchanges<T extends Exchangeable>(list: readonly T[]): T[] {
+  const roots = exchangeRoots(list);
+  return list.map((c) => {
+    const runId = roots.get(c.id)?.runId ?? c.runId;
+    return runId === c.runId ? c : { ...c, runId };
+  });
+}
+
+/** The questions of `id`'s exchange, oldest first: the conversation its row opens. */
+export function exchangeIds(list: readonly Exchangeable[], id: string): string[] {
+  const roots = exchangeRoots(list);
+  const root = roots.get(id);
+  if (!root) return [id];
+  return list
+    .filter((c) => roots.get(c.id) === root)
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
+    .map((c) => c.id);
+}
 
 /** The conversation's questions by the run that asked them, each run's oldest first. */
 export function groupsByRun(list: readonly RunConsultation[]): Map<string, RunConsultation[]> {
@@ -121,8 +187,14 @@ export function consultGroupSummary(
  */
 export type ConsultPairItem = Pick<
   RunConsultation,
-  "id" | "kind" | "consultedAgentId" | "status" | "waiting" | "question" | "answer" | "expiresAt"
-> & { createdAt: string | null; answeredAt: string | null };
+  "id" | "kind" | "consultedAgentId" | "status" | "waiting" | "question" | "answer" | "expiresAt" | "waitingSince"
+> & {
+  agentId?: string;
+  /** The consulted agent's run, from the list: whose card here waits on the reader. */
+  consultedRunId?: string | null;
+  createdAt: string | null;
+  answeredAt: string | null;
+};
 
 export const pairItemOf = (c: MessageConsultation): ConsultPairItem => ({
   id: c.consultationId,
@@ -150,10 +222,15 @@ function pairOpenKey(state: ConsultLineState, c: ConsultPairItem) {
         : ("chat.consultPair.waitingComputer" as const);
     case "handedOn":
       return "chat.consultPair.handedOn" as const;
+    case "queued":
+      return "chat.consultPair.queued" as const;
     default:
       return isNote(c) ? ("chat.consultPair.working" as const) : ("chat.consultPair.asking" as const);
   }
 }
+
+/** What waits on the person reading: the consulted agent's card here is theirs to decide or answer. */
+export type ConsultYours = "approval" | "answer";
 
 export interface ConsultPair {
   /** The consulted agents, each once, in the order asked; `off`: it didn't answer (its face dims). */
@@ -164,27 +241,47 @@ export interface ConsultPair {
   word: {
     key:
       | ReturnType<typeof pairOpenKey>
+      | "chat.consultPair.waitingYourApproval"
+      | "chat.consultPair.waitingYourAnswer"
       | "chat.consultGroup.progress"
       | "chat.consultPair.noAnswer"
       | "chat.consultPair.notFinished"
       | "chat.consultPair.someAnswered";
     values?: { done: number; total: number };
   } | null;
-  /** `live`: some question is still out (accent, the clock ticks); `bad`: some went unanswered. */
-  tone: "live" | "bad" | null;
-  /** How long it took, or has been out while live; null without times (a reply's `meta.consulted`). */
+  /**
+   * `live`: some question is still out and at work (accent, the clock ticks); `you`: it waits on the person reading
+   * (amber); `wait`: it waits on someone or something else (quiet); `bad`: some went unanswered.
+   */
+  tone: "live" | "you" | "wait" | "bad" | null;
+  /**
+   * How long it took, or has been out while live (while one waits, how long it has waited); null without times (a
+   * reply's `meta.consulted`).
+   */
   seconds: number | null;
 }
 
-/** The pair row of a run's questions: "Theo ⇄ Atlas · 2 min", "Theo ⇄ Atlas e mais 2 · 1 de 3 42 s". */
-export function consultPair(group: readonly ConsultPairItem[], now: number): ConsultPair | null {
+/**
+ * The pair row of a run's questions: "Theo ⇄ Atlas · 2 min", "Theo ⇄ Atlas e mais 2 · 1 de 3 42 s". `askerId`: the
+ * row's asker; in an exchange the other agent may have asked it too, and its face is still the other agent's.
+ * `yours`: one question out whose consulted agent has a card here waiting on the person reading (it wins over the
+ * list, which may not have heard the run park yet).
+ */
+export function consultPair(
+  group: readonly ConsultPairItem[],
+  now: number,
+  askerId?: string,
+  yours?: ConsultYours | null,
+): ConsultPair | null {
   const first = group[0];
   if (!first) return null;
   const states = group.map((c) => consultLineState(c, now));
   const closed = (s: ConsultLineState) => s === "answered" || s === "failed" || s === "expired";
+  const other = (c: ConsultPairItem) =>
+    askerId && c.agentId && c.consultedAgentId === askerId ? c.agentId : c.consultedAgentId;
   const off = new Map<string, boolean>();
   group.forEach((c, i) => {
-    off.set(c.consultedAgentId, states[i] === "failed" || states[i] === "expired");
+    off.set(other(c), states[i] === "failed" || states[i] === "expired");
   });
   const faces = [...off].map(([agentId, o]) => ({ agentId, off: o }));
   const summary = consultGroupSummary(group, now);
@@ -194,15 +291,22 @@ export function consultPair(group: readonly ConsultPairItem[], now: number): Con
   const opens = group[out]?.id ?? first.id;
   if (summary.open) {
     const state = states[0] ?? "working";
+    const one = group.length === 1;
+    const you = one ? (yours ?? null) : null;
+    const waits = one && !you && (["waiting", "offline", "handedOn", "queued"] as const).some((s) => s === state);
+    // While it waits, the clock counts the wait (the bar and the lists say the same).
+    const waited = (you || waits) && first.waitingSince ? Date.parse(first.waitingSince) : Number.NaN;
+    const from = Number.isNaN(waited) ? start : waited;
     return {
       faces,
       opens,
-      word:
-        group.length === 1
+      word: you
+        ? { key: you === "approval" ? "chat.consultPair.waitingYourApproval" : "chat.consultPair.waitingYourAnswer" }
+        : one
           ? { key: pairOpenKey(state, first) }
           : { key: "chat.consultGroup.progress", values: { done: summary.closed, total: summary.total } },
-      tone: "live",
-      seconds: Number.isNaN(start) ? null : Math.max(1, Math.round((now - start) / 1000)),
+      tone: you ? "you" : waits ? "wait" : "live",
+      seconds: Number.isNaN(from) ? null : Math.max(1, Math.round((now - from) / 1000)),
     };
   }
   const ends = group.map((c) => (c.answeredAt ? Date.parse(c.answeredAt) : Number.NaN));

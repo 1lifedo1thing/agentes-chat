@@ -53,6 +53,38 @@ test("hello carries the phones and toolchains the host reports, each field check
   expect(frame.phones?.[2]).not.toHaveProperty("transport");
 });
 
+test("toolchains.changed carries the whole list, each field checked like hello's", () => {
+  expect(
+    parseRunnerFrame(
+      JSON.stringify({
+        type: "toolchains.changed",
+        toolchains: {
+          xcode: "27.0",
+          xcodeSdk: "27.0",
+          appleTeam: "Sam Rivera (Personal Team)",
+          appleAccount: "team",
+          rogue: "1",
+        },
+      }),
+    ),
+  ).toEqual({
+    type: "toolchains.changed",
+    toolchains: { xcode: "27.0", xcodeSdk: "27.0", appleTeam: "Sam Rivera (Personal Team)", appleAccount: "team" },
+  });
+  const odd = parseRunnerFrame(JSON.stringify({ type: "toolchains.changed", toolchains: { appleAccount: "maybe" } }));
+  expect(odd).toEqual({ type: "toolchains.changed", toolchains: {} });
+  // Xcode installed but blocked: one of the known reasons, nothing else.
+  const blocked = (xcodeBlocked: string) =>
+    parseRunnerFrame(JSON.stringify({ type: "toolchains.changed", toolchains: { xcodeBlocked } }));
+  expect(blocked("command_line_tools")).toEqual({
+    type: "toolchains.changed",
+    toolchains: { xcodeBlocked: "command_line_tools" },
+  });
+  expect(blocked("license")).toEqual({ type: "toolchains.changed", toolchains: { xcodeBlocked: "license" } });
+  expect(blocked("rm -rf /")).toEqual({ type: "toolchains.changed", toolchains: {} });
+  expect(parseRunnerFrame(JSON.stringify({ type: "toolchains.changed", toolchains: "nope" }))).toBeNull();
+});
+
 test("phones.changed carries the whole list; one without a list is no frame", () => {
   expect(parseRunnerFrame(JSON.stringify({ type: "phones.changed", phones: [] }))).toEqual({
     type: "phones.changed",

@@ -1,14 +1,5 @@
-import { type ManagedTask, useCatalog, useContinueTasks } from "@agenteschat/client";
-import {
-  type TaskWaitGroup,
-  taskClock,
-  taskProgram,
-  taskSince,
-  taskState,
-  taskWaitGroups,
-  taskWaitGroupText,
-} from "@agenteschat/client/lib/task-manager";
-import { callLogo } from "@agenteschat/client/lib/work";
+import { type ManagedTask, useContinueTasks } from "@agenteschat/client";
+import { type TaskWaitGroup, taskTime, taskWaitGroups, taskWaitGroupText } from "@agenteschat/client/lib/task-manager";
 import type { AgentColorName } from "@agenteschat/ui/agent/engine";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,26 +9,25 @@ import {
   Button,
   fieldText,
   Icon,
+  LineIcon,
   MEDIA_ROW,
   MediaRow,
   PixelOrbit,
   PixelStop,
   PixelStopped,
-  ProviderLogo,
   Text,
   useReducedMotion,
   weights,
 } from "@/ui";
-import { useCallLogo } from "../chat/ToolCalls";
 import { useFailed } from "../routines/hooks";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
-import { isHeld, type RowState, taskStateWords, usingNow } from "./logic";
+import { isHeld, type RowState, taskStateWords } from "./logic";
 
 /**
  * The pieces the task manager's list, a task's screen and an agent's tasks share (ADR 0128): a task's mark and state,
- * what it uses now, its "Parar", and the confirmation that stopping several asks for.
+ * its "Parar", and the confirmation that stopping several asks for.
  */
 
 /** A reason's length at most: the server's (ADR 0128). */
@@ -70,8 +60,9 @@ export function useAgentColor(agentId: string): AgentColorName {
 }
 
 /**
- * "Trabalhando · 6:12", "Espera seu ok · 18:03" (amber: it waits on a person), "Parando…"; a wait wraps whole, with
- * what comes next under it ("Volta sáb às 18:00", or when it should start in the computer's line).
+ * "Trabalhando · 6:12", "Espera seu ok · 18 min" (amber: it waits on a person), "Parando…"; a wait wraps whole, its
+ * mark on its first line's capitals, with what comes next under it ("Volta sáb às 18:00", or when it should start in
+ * the computer's line). A task's screen says it so; the lists' rows show only the mark.
  */
 export function StateLine({ task, state, now }: { task: ManagedTask; state: RowState; now: number }) {
   const { t, i18n } = useTranslation();
@@ -80,16 +71,18 @@ export function StateLine({ task, state, now }: { task: ManagedTask; state: RowS
   const waits = state === "ok" || state === "answer";
   const words = taskStateWords(t, i18n.language, task, state, now);
   const line = (
-    <View style={styles.row}>
-      <TaskMark state={state} color={color} />
+    <View style={styles.first}>
+      <LineIcon variant="footnote" size={MARK + 4} mark>
+        <TaskMark state={state} color={color} />
+      </LineIcon>
       <Text variant="footnote" style={[styles.semibold, styles.shrink, { color: waits ? c.amber : c.ink2 }]}>
         {words.state}
+        {state === "stopping" ? null : (
+          <Text variant="caption" tone="faint" style={[styles.num, styles.regular]}>
+            {` · ${taskTime(t, task, now)}`}
+          </Text>
+        )}
       </Text>
-      {state === "stopping" ? null : (
-        <Text variant="caption" tone="faint" style={styles.num}>
-          · {taskClock(now - taskSince(task))}
-        </Text>
-      )}
     </View>
   );
   if (!words.next) return line;
@@ -131,41 +124,6 @@ function WaitLine({ group, now }: { group: TaskWaitGroup; now: number }) {
           onPress={() => go.mutate(group.continuable, { onError: failed })}
         />
       ) : null}
-    </View>
-  );
-}
-
-/**
- * "Usando agora": the program's logo, its name and what it does there, on one line ("Claude Code · Navegador ·
- * página de cancelar", "GitHub · PR #231"); "Pensando" while it works with nothing open yet.
- */
-export function UsingLine({ task }: { task: ManagedTask }) {
-  const { t, i18n } = useTranslation();
-  const logo = useCallLogo();
-  const catalog = useCatalog();
-  const using = usingNow(t, taskProgram(task), {
-    locale: i18n.language,
-    appName: (a) => {
-      const mark = callLogo(a, catalog.data?.connectors ?? []);
-      return mark.kind === "service" ? mark.label : "";
-    },
-  });
-  if (!using)
-    return taskState(task) === "working" ? (
-      <Text variant="footnote" tone="faint" numberOfLines={1}>
-        {t("taskManager.program.thinking")}
-      </Text>
-    ) : null;
-  const said = [using.name, using.detail].filter(Boolean).join(" · ");
-  return (
-    <View style={styles.row} accessible accessibilityLabel={`${t("taskManager.columns.using")}: ${said}`}>
-      {using.brain ? <ProviderLogo id={using.brain} size="chip" /> : using.activity ? logo(using.activity, 20) : null}
-      <Text variant="footnote" tone="muted" numberOfLines={1} style={styles.shrink}>
-        <Text variant="footnote" tone="ink2" style={styles.semibold}>
-          {using.name}
-        </Text>
-        {using.detail ? ` · ${using.detail}` : ""}
-      </Text>
     </View>
   );
 }
@@ -309,8 +267,10 @@ export function StopConfirm({
 
 const styles = StyleSheet.create({
   mark: { alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  row: { flexDirection: "row", alignItems: "center", gap: 6, minWidth: 0 },
+  // The mark on the words' first line however many they take (`LineIcon`).
+  first: { flexDirection: "row", alignItems: "flex-start", gap: 6, minWidth: 0 },
   semibold: { fontWeight: weights.semibold },
+  regular: { fontWeight: weights.regular },
   shrink: { flexShrink: 1 },
   grow: { flex: 1, minWidth: 0 },
   num: { fontVariant: ["tabular-nums"], flexShrink: 0 },

@@ -30,7 +30,7 @@ import { agentAi, aiStateOf } from "@agenteschat/client/lib/no-ai";
 import { can } from "@agenteschat/client/lib/permissions";
 import { settingsSectionNameKey, settingsSectionTextKey } from "@agenteschat/client/lib/personal-view";
 import { planOf, signInProviderOf } from "@agenteschat/client/lib/plans";
-import { keyNamedAfterProvider, providerLabel } from "@agenteschat/client/lib/providers";
+import { keyName, keyNamedAfterProvider, keySource } from "@agenteschat/client/lib/providers";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -47,6 +47,7 @@ import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { errorHaptic, PushedHeader, successHaptic } from "../shared/parts";
 import { PlanMeter } from "../usage/parts";
 import { AddAccount } from "./AddAccount";
+import { openKeyForAll } from "./KeyForAllScreen";
 import { openConnectAi } from "./NoAiCard";
 import { alertKeyRefused, Note, PlanHoldNote, usePlanHold } from "./parts";
 
@@ -179,6 +180,9 @@ export function AiAccountsScreen() {
           label: t("aiAccounts.page.useFor", agentGrammar(g.name)),
           onPress: () => void give(a, g),
         })),
+        ...(plan && a.status === "active"
+          ? [{ label: t("aiAccounts.page.useAll"), onPress: () => openKeyForAll(a.machineId, a.id) }]
+          : []),
         ...(Platform.OS === "ios" ? [{ label: t("aiAccounts.page.rename"), onPress: () => rename(a) }] : []),
         ...(out || plan
           ? [
@@ -407,7 +411,7 @@ function KeysSection({ locale }: { locale: string }) {
               toast({
                 title:
                   saved.check === "unchecked"
-                    ? t("connectAi.key.savedUnchecked", { provider: providerLabel(k.provider) })
+                    ? t("connectAi.key.savedUnchecked", { provider: keyName(k) })
                     : t("settings.rotated"),
                 icon: "check",
               });
@@ -473,7 +477,7 @@ function KeysSection({ locale }: { locale: string }) {
                 leading={<ProviderLogo id={k.provider} size="sm" />}
                 label={k.label}
                 sub={[
-                  keyNamedAfterProvider(k) ? null : providerLabel(k.provider),
+                  keyNamedAfterProvider(k) ? null : keySource(k),
                   t("settings.keyEndsIn", { hint: k.keyHint }),
                   t("settings.keyAdded", { when: relativeTime(t, locale, k.createdAt) }),
                 ]

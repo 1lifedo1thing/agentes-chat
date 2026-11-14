@@ -11,6 +11,8 @@
  *   (the same one when the code's `reconnect` names a machine of that organization)
  * - `POST   /api/app/machines/device/{userCode}/deny` → 204
  * - `POST   …/machines/{id}/access/reduce` `{ removeFolder?, disableTool? }` → the new access
+ * - `POST   …/machines/{id}/clis/check` → 200; `POST|GET|DELETE …/machines/{id}/cli-install` → `{ install }`
+ *   (`running` once started, until a test calls `setCliInstall()`); `POST …/cli-install/ask` → 200
  * - `GET    /api/desktop/latest?target=&arch=` → the release, or 404 (`null`)
  * - `GET    …/machines/outages` → `{ outages, targets }` (offline computers agents wait for)
  * - `GET    …/machines/{id}/queue` → the computer's line (`setQueue()`; nothing working or waiting by default)
@@ -30,6 +32,7 @@ import type {
   AccountLoginStatus,
   AiAccounts,
   ApiClient,
+  CliInstall,
   ComputerQueue,
   ComputerSetup,
   DesktopRelease,
@@ -58,12 +61,15 @@ export interface FakeMachines {
   all(): Machine[];
   /** A computer asked for a code (`POST /api/machines/device`). */
   addDevice(userCode: string, input?: Partial<DeviceRequest>): DeviceRequest;
-  /** The newest desktop build; `null` = none (404). */
-  setRelease(release: DesktopRelease | null): void;
+  /** The newest desktop build; `null` = none (404). With `targets`, only those systems have it (`darwin`, `windows`, `linux`). */
+  /** `targets`: the builds that have it (`darwin`, `windows`, `linux`, `windows-arm64`, `linux-arm64`); all when unset. */
+  setRelease(release: DesktopRelease | null, targets?: string[]): void;
   /** Offline computers and where their agents could go. */
   setOutages(outages: MachineOutages): void;
   /** A computer's line (`queue`); unset: nothing working or waiting on it. */
   setQueue(queue: ComputerQueue): void;
+  /** Where a computer's install of a coding CLI stands (`null`: none ran). */
+  setCliInstall(machineId: string, install: CliInstall | null): void;
   /** What `moveAgents` answers (default: every agent moved, nothing else). */
   setMoveResult(result: MoveAgentsResult | null): void;
   /** The server's own computer in the organization; `null` (default): it has none. */
@@ -88,6 +94,7 @@ export function createFakeMachines(ctx: MockContext, log: (method: string, ...ar
   const machines: Machine[] = [];
   const devices = new Map<string, DeviceRequest>();
   let release: DesktopRelease | null = null;
+  let releaseTargets: string[] | undefined;
   let outages: MachineOutages = { outages: [], targets: [] };
   const queues = new Map<string, ComputerQueue>();
   let moveResult: MoveAgentsResult | null = null;
@@ -110,6 +117,7 @@ export function createFakeMachines(ctx: MockContext, log: (method: string, ...ar
   type Login = { loginId: string; kind: MachineAccountKind; box: SecretBox | null; cancelled: boolean };
   let ai: AiAccounts = { accounts: [], computers: [] };
   const logins: Login[] = [];
+  const installs = new Map<string, CliInstall | null>();
   const loginStatus = new Map<string, AccountLoginStatus>();
   const login = (loginId: string) => {
     const l = logins.find((x) => x.loginId === loginId && !x.cancelled);
@@ -217,9 +225,41 @@ export function createFakeMachines(ctx: MockContext, log: (method: string, ...ar
         m.access = { folders, tools };
         return clone(m.access);
       },
+      allowTool: async (orgId, machineId, tool) => {
+        log("machines.allowTool", orgId, machineId, tool);
+        const m = find(machineId);
+        const access = m.access ?? { folders: [], tools: { claude: false, codex: false, commands: false } };
+        m.access = { ...access, tools: { ...access.tools, [tool]: true } };
+        return clone(m.access);
+      },
+      askTool: async (orgId, machineId, tool) => {
+        log("machines.askTool", orgId, machineId, tool);
+      },
+      checkClis: async (orgId, machineId) => {
+        log("machines.checkClis", orgId, machineId);
+        find(machineId);
+      },
+      cliInstall: async (orgId, machineId, tool, action) => {
+        log("machines.cliInstall", orgId, machineId, tool, action);
+        find(machineId);
+        if (action === "start") installs.set(machineId, { tool, state: "running" });
+        const now = installs.get(machineId) ?? null;
+        if (action === "cancel" && now?.state === "running") installs.set(machineId, { ...now, state: "canceled" });
+        return { install: clone(installs.get(machineId) ?? null) };
+      },
+      askCliInstall: async (orgId, machineId, tool) => {
+        log("machines.askCliInstall", orgId, machineId, tool);
+      },
+      setPause: async (orgId, machineId, input) => {
+        log("machines.setPause", orgId, machineId, input);
+        const m = find(machineId);
+        m.paused = input === "resume" ? null : { until: input.until, by: { id: "u-me", name: "You" } };
+        return m.paused ? clone(m.paused) : null;
+      },
       desktopLatest: async (target, arch) => {
         log("machines.desktopLatest", target, arch);
-        return release ? clone(release) : null;
+        const build = arch === "aarch64" && target !== "darwin" ? `${target}-arm64` : target;
+        return release && (!releaseTargets || releaseTargets.includes(build)) ? clone(release) : null;
       },
       // Read on every workspace page (the notice): not logged, so tests' call lists stay as they were.
       outages: async () => clone(outages),
@@ -291,6 +331,10 @@ export function createFakeMachines(ctx: MockContext, log: (method: string, ...ar
         log("machines.takeBackPlan", orgId, accountId, agentId);
         return { agentIds: agentId ? [agentId] : [] };
       },
+      setAccountServes: async (orgId, accountId, serves) => {
+        log("machines.setAccountServes", orgId, accountId, serves);
+        return { serves, agentIds: [] };
+      },
       renameAccount: async (orgId, machineId, accountId, label) => {
         log("machines.renameAccount", orgId, machineId, accountId, label);
         // One listed, or one a sign-in here just finished.
@@ -322,6 +366,9 @@ export function createFakeMachines(ctx: MockContext, log: (method: string, ...ar
     },
     setQueue: (next) => {
       queues.set(next.machineId, clone(next));
+    },
+    setCliInstall: (machineId, install) => {
+      installs.set(machineId, install ? clone(install) : null);
     },
     setMoveResult: (next) => {
       moveResult = next;
@@ -359,8 +406,9 @@ export function createFakeMachines(ctx: MockContext, log: (method: string, ...ar
       devices.set(userCode, d);
       return clone(d);
     },
-    setRelease: (r) => {
+    setRelease: (r, targets) => {
       release = r;
+      releaseTargets = targets;
     },
   };
 }

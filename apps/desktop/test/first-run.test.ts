@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { connectLink, parseConnectLink, readInstance, type ServerCheck } from "@agenteschat/client/lib/server";
+import { LOCALES } from "@agenteschat/i18n/locale";
 import { menuBarShown } from "../src/control/dock";
 import {
   connectOutcome,
@@ -15,7 +16,7 @@ import {
 } from "../src/control/first-run";
 import { MAX_MENU_LABEL, menuLabels } from "../src/control/menu-labels";
 import { platformOf } from "../src/control/platform";
-import { createDesktopI18n } from "../src/i18n";
+import { createDesktopI18n, loadDesktopI18n } from "../src/i18n";
 
 const BOX = "https://agentes.tail1234.ts.net";
 const TOKEN = "Qm9vdHN0cmFwLXRva2VuLTEyMzQ1Njc4OTBhYmNkZWY";
@@ -220,18 +221,18 @@ describe("a link to a server", () => {
 });
 
 describe("the menu bar and the labels Rust shows", () => {
-  test("the menu bar icon: the person's choice, else while agents work here, and always without the Dock", () => {
-    expect(menuBarShown(null, true, false)).toBe(false);
-    expect(menuBarShown(null, true, true)).toBe(true);
-    expect(menuBarShown(true, true, false)).toBe(true);
-    expect(menuBarShown(false, true, true)).toBe(false);
-    expect(menuBarShown(false, false, false)).toBe(true);
+  test("the menu bar icon: the person's choice, else while agents work here", () => {
+    expect(menuBarShown(null, false)).toBe(false);
+    expect(menuBarShown(null, true)).toBe(true);
+    expect(menuBarShown(true, false)).toBe(true);
+    expect(menuBarShown(false, true)).toBe(false);
   });
 
-  test("every label fits what Rust takes, in both languages and on every system", () => {
-    for (const lng of ["pt-BR", "en"] as const) {
+  // Rust refuses the whole set when one label is too long, so every language counts, not only the two written here.
+  test("every label fits what Rust takes, in every language and on every system", async () => {
+    for (const { code: lng } of LOCALES) {
       for (const platform of ["mac", "windows", "linux"] as const) {
-        const labels = menuLabels(createDesktopI18n(lng, platform).t);
+        const labels = menuLabels((await loadDesktopI18n(lng, platform)).t);
         expect(Object.keys(labels).length).toBeLessThanOrEqual(100);
         for (const [key, value] of Object.entries(labels)) {
           expect({ key, ok: key.length <= 40 && value.length > 0 && [...value].length <= MAX_MENU_LABEL }).toEqual({

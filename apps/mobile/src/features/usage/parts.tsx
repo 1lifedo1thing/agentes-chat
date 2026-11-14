@@ -1,10 +1,12 @@
-import type { PlanAccountInfo } from "@agenteschat/client";
+import type { PlanAccountInfo, PlanUsage } from "@agenteschat/client";
 import {
   accountName,
+  accountOwner,
   brandOf,
   type MeterSegment,
   type MeterWindow,
   planMeterText,
+  planModelUsage,
 } from "@agenteschat/client/lib/plan-usage";
 import { planName } from "@agenteschat/client/lib/plans";
 import { mixHex } from "@agenteschat/ui/agent/engine";
@@ -96,11 +98,14 @@ export function Meter({
 export function PlanMeter({
   usage,
   compact = false,
+  plain = false,
   label,
   children,
 }: {
   usage: MeterUsage;
   compact?: boolean;
+  /** No words above the bars on where the plan stands: what holds the meter already says it. */
+  plain?: boolean;
   label?: string;
   /** An account's agents: between the bars and when they renew, which then shows once under them. */
   children?: ReactNode;
@@ -134,7 +139,7 @@ export function PlanMeter({
   }
   const rows = planWindows(usage, now);
   const { state, until, used } = planState(usage, now);
-  const headline = state === "limited" ? text.limited(until) : state === "almost" ? text.almost : null;
+  const headline = plain ? null : state === "limited" ? text.limited(until) : state === "almost" ? text.almost : null;
   const passed = (iso: string | undefined) => iso !== undefined && Date.parse(iso) <= now;
   const renews = children ? renewals(rows, text, now) : null;
   return (
@@ -194,12 +199,35 @@ export function PlanMeter({
   );
 }
 
+/**
+ * One line per model at a limit of its own ("GLM-5.3 — Sem cota · renova sáb 18:00"), under the account's windows, as
+ * the web's `PlanModels`: its name, then where its quota stands. Nothing while no model is at a limit.
+ */
+export function PlanModels({ usage, provider }: { usage: Pick<PlanUsage, "models"> | null; provider: string | null }) {
+  const { t, i18n } = useTranslation();
+  const rows = planModelUsage(t, i18n.language, usage, provider);
+  if (rows.length === 0) return null;
+  return (
+    <View style={styles.models}>
+      {rows.map((r) => (
+        <View key={r.id} style={styles.windowLine}>
+          <Text variant="small" tone="ink2">
+            {r.label}
+          </Text>
+          <Text variant="caption" tone="danger" style={styles.grow}>
+            {r.text}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /** An account's head: the maker's mark, its name and plan, its maker and whose it is. */
 export function AccountHead({ account, extra }: { account: PlanAccountInfo; extra?: string | null }) {
   const { t } = useTranslation();
   const c = useColors();
-  const whose =
-    account.email ?? (account.ownerName ? t("usageViews.whose", { name: account.ownerName.split(" ")[0] }) : null);
+  const whose = account.email ?? accountOwner(t, account);
   // The maker's logo, the account and its plan on one line, whose it is under them at the row's width.
   return (
     <View style={styles.acctBox}>
@@ -221,7 +249,7 @@ export function AccountHead({ account, extra }: { account: PlanAccountInfo; extr
 }
 
 /** The small plate beside an account's name (its plan, "saiu da conta"). */
-function Tag({ text, color }: { text: string; color: string }) {
+export function Tag({ text, color }: { text: string; color: string }) {
   const c = useColors();
   return (
     <View style={[styles.tag, { backgroundColor: c.plate }]}>
@@ -241,12 +269,15 @@ export function UsageCard({
   title,
   hint,
   footer,
+  footerHint,
   children,
 }: {
   icon: IconName;
   title: string;
   hint?: { name: string; text: string };
   footer?: string;
+  /** An ⓘ after the footer's words, with the rest of the explanation. */
+  footerHint?: { name: string; text: string };
   children: ReactNode;
 }) {
   const { colors: c, shadows } = useTheme();
@@ -274,9 +305,17 @@ export function UsageCard({
       {children}
       {footer ? (
         <View style={[styles.cardFoot, { borderTopColor: c.line }]}>
-          <Text variant="caption" tone="muted">
-            {footer}
-          </Text>
+          {footerHint ? (
+            <InfoHint {...footerHint} variant="caption">
+              <Text variant="caption" tone="muted">
+                {footer}
+              </Text>
+            </InfoHint>
+          ) : (
+            <Text variant="caption" tone="muted">
+              {footer}
+            </Text>
+          )}
         </View>
       ) : null}
     </View>
@@ -399,6 +438,7 @@ const styles = StyleSheet.create({
   meter: { gap: 10 },
   meterCompact: { gap: 4 },
   window: { gap: 4 },
+  models: { gap: 4 },
   windowLine: { flexDirection: "row", alignItems: "baseline", gap: 8 },
   acctBox: { gap: 4 },
   acct: { flexDirection: "row", alignItems: "center", gap: 12 },

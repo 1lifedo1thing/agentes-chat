@@ -40,7 +40,7 @@ describe("Parar is immediate", () => {
     });
     await ev({ type: "agent.run", ...ids, status: "running" });
     await settle(3);
-    // happy-dom has no layout: the block counts as out of view, so the line above the composer speaks for it.
+    // At work it has no row: the line above the composer speaks for it.
     const bar = document.querySelector('.ac-typing[data-active="true"]') as HTMLElement;
     // Its row isn't in the conversation yet: its face, its step and its stop, no "Ver" (nothing to go back to).
     expect(bar.querySelector(".ac-avatar--agent")).not.toBeNull();
@@ -50,12 +50,12 @@ describe("Parar is immediate", () => {
     await act(() => new Promise((r) => setTimeout(r, 2100)));
     expect(within(bar).queryByRole("button", { name: "Ver" })).toBeNull();
     expect(within(bar).getByRole("button", { name: "Parar" })).toBeTruthy();
-    // Its words bring its row, out of view: the bar still speaks for it, with "Ver".
-    await ev({ type: "agent.delta", ...ids, seq: 0, text: "Olhando o login." });
+    // Writing brings no row either: the bar still speaks for it, still with no "Ver".
+    await ev({ type: "agent.typing", ...ids });
     await settle(3);
     expect(bar.querySelector(".ac-avatar--agent")).not.toBeNull();
     expect(bar.querySelector(".ac-typing__text")?.textContent).toBe("Ada escrevendo…");
-    expect(within(bar).getByRole("button", { name: "Ver" })).toBeTruthy();
+    expect(within(bar).queryByRole("button", { name: "Ver" })).toBeNull();
     // Its stop, one click, nothing asked.
     await act(async () => fireEvent.click(within(bar).getByRole("button", { name: "Parar" })));
     await settle(2);
@@ -66,7 +66,7 @@ describe("Parar is immediate", () => {
   test("the send button turns into stop with an empty box; one click stops, nothing asked", async () => {
     const { state, ev } = await open();
     await ev({ type: "agent.run", ...ids, status: "running" });
-    await ev({ type: "agent.delta", ...ids, seq: 0, text: "Escrevendo" });
+    await ev({ type: "agent.typing", ...ids });
     await settle(2);
     const stop = screen().getByRole("button", { name: "Parar a Ada" });
     expect(stop.getAttribute("data-mode")).toBe("stop");
@@ -151,18 +151,13 @@ describe("Parar is immediate", () => {
     expect(screen().getByRole("complementary", { name: "Perfil da Ada" })).toBeTruthy();
   });
 
-  test("typing while it works: 'Juntar' (↵) joins; ⌘↵ / Ctrl↵ sends with 'Parar e mandar'", async () => {
+  test("typing while it works: ↵ joins, ⌘↵ / Ctrl↵ stops and sends, with no row of options above the box", async () => {
     const { state, ev } = await open();
     await ev({ type: "agent.run", ...ids, status: "running" });
     await settle(2);
     const box = screen().getByRole("combobox", { name: /Mensagem para/ });
     await act(async () => fireEvent.change(box, { target: { value: "olha o refresh" } }));
-    const group = screen().getByRole("radiogroup", { name: "Como mandar enquanto a Ada trabalha" });
-    expect(
-      within(group)
-        .getByRole("radio", { name: /Juntar ao que (a|o) \w+ faz/ })
-        .getAttribute("aria-checked"),
-    ).toBe("true");
+    expect(screen().queryByRole("radiogroup", { name: /Como mandar/ })).toBeNull();
     await act(async () => fireEvent.keyDown(box, { key: "Enter", ctrlKey: true }));
     await settle(3);
     const posts = state.calls.filter((c) => c.method === "chat.post").map((c) => c.args[2] as { steer?: string });
@@ -174,7 +169,7 @@ describe("Parar is immediate", () => {
     expect(again.at(-1)?.steer).toBeUndefined();
   });
 
-  test("a member who may not stop it still chooses 'Parar e mandar'; there is no stop button", async () => {
+  test("a member who may not stop it still stops and sends with ⌘↵ / Ctrl↵; there is no stop button", async () => {
     const { state, ev } = await open((s) => {
       const o = s.me?.organizations[0];
       if (o) o.role = "member";
@@ -185,7 +180,6 @@ describe("Parar is immediate", () => {
     expect(screen().queryByRole("button", { name: "Parar a Ada" })).toBeNull();
     const box = screen().getByRole("combobox", { name: /Mensagem para/ });
     await act(async () => fireEvent.change(box, { target: { value: "olha o refresh" } }));
-    expect(screen().getByRole("radiogroup", { name: "Como mandar enquanto a Ada trabalha" })).toBeTruthy();
     await act(async () => fireEvent.keyDown(box, { key: "Enter", ctrlKey: true }));
     await settle(3);
     const posts = state.calls.filter((c) => c.method === "chat.post").map((c) => c.args[2] as { steer?: string });
@@ -203,9 +197,7 @@ describe("Parar is immediate", () => {
       agentId: "a",
       channelId: "c",
       threadId: "t",
-      status: "running",
-      text: "",
-      lastSeq: -1,
+      status: "thinking",
       startedAt: 0,
     };
     const call = (tool: string, code: boolean) => ({
@@ -220,7 +212,7 @@ describe("Parar is immediate", () => {
       since: 0,
     });
     expect(runContext(t, { ...base, work: [call("run_code", true)] }, 2 * 60_000)).toBe("rodando código há 2 min");
-    expect(runContext(t, { ...base, text: "Oi" }, 1000)).toBe("escrevendo a resposta");
+    expect(runContext(t, { ...base, status: "running" }, 1000)).toBe("escrevendo a resposta");
     expect(runContext(t, base, 10_000)).toBe("pensando há menos de 1 min");
   });
 });

@@ -30,6 +30,9 @@ test("ai-status per agent; a mention with no key gets the card; answer-now 409, 
     ],
     routing: byModel,
     apiKey: true,
+    // Memory reflects with the same key (ADR 0167).
+    reflection: true,
+    widgetsReady: [],
   });
 
   await t.db.update(schema.providerCredentials).set({ revokedAt: new Date() });
@@ -41,6 +44,8 @@ test("ai-status per agent; a mention with no key gets the card; answer-now 409, 
     ],
     routing: { by: "rules", mine: "rules", model: null, noSmallModel: null },
     apiKey: false,
+    reflection: false,
+    widgetsReady: [],
   });
   const asked = await owner(`${org}/channels/${channelId}/messages`, { json: { body: "@dev resume o canal" } });
   const { id: askedId } = (await asked.json()) as { id: string };

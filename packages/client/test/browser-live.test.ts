@@ -29,6 +29,7 @@ import {
   modifiersOf,
   pagePoint,
   parseBrowserLiveMessage,
+  parseBrowserPointer,
   pasteEvents,
   pressEvents,
   releaseEvent,
@@ -526,7 +527,7 @@ describe("agent browser requests (ADR 0040)", () => {
   test("the watching log keeps the browser calls only", () => {
     expect(
       browserSteps([
-        { kind: "say", text: "hi" },
+        { kind: "steer", messageId: "m1" },
         {
           kind: "call",
           id: "c1",
@@ -848,7 +849,7 @@ describe("the agent is in its browser", () => {
     expect(usesBrowser({ tool: "mcp__agentes__browser_read" })).toBe(true);
     const call = (id: string, tool: string) => ({ kind: "call", id, tool, detail: null, running: false });
     expect(
-      usesBrowser({ tool: null, work: [call("1", "browser_open"), { kind: "say", text: "Abri." }] as never }),
+      usesBrowser({ tool: null, work: [call("1", "browser_open"), { kind: "steer", messageId: "m1" }] as never }),
     ).toBe(true);
     expect(usesBrowser({ work: [call("1", "browser_open"), call("2", "run_code")] as never })).toBe(false);
     expect(usesBrowser({})).toBe(false);
@@ -934,4 +935,33 @@ test("what a person's lost input says, by the server's code", () => {
   expect(inputProblem("no_field")).toBe("browser.inCard.noField");
   expect(inputProblem("rate_limited")).toBeNull();
   expect(inputProblem(null)).toBeNull();
+});
+
+test("the agent's pointer: one call per gesture, its own agent's only, and nothing for a message that isn't one", () => {
+  const went: string[] = [];
+  const live = createBrowserLiveConnection({
+    send: () => {},
+    agentId: AGENT,
+    onFrame: () => {},
+    onStatus: () => {},
+    onPointer: (p) => went.push(`${p.act} ${p.x},${p.y} in ${p.width}x${p.height}`),
+  });
+  live.start();
+  const pointer = { type: "browser.pointer", agentId: AGENT, x: 320, y: 200, width: 1280, height: 800, act: "click" };
+  live.handleMessage(pointer);
+  live.handleMessage(pointer);
+  live.handleMessage({ ...pointer, agentId: "other" });
+  live.handleMessage({ ...pointer, act: "smash" });
+  live.handleMessage({ ...pointer, width: 0 });
+  expect(went).toEqual(["click 320,200 in 1280x800", "click 320,200 in 1280x800"]);
+  // A desktop's event carries the same shape.
+  expect(parseBrowserPointer({ x: 1, y: 2, width: 1280, height: 900, act: "type" })).toEqual({
+    x: 1,
+    y: 2,
+    width: 1280,
+    height: 900,
+    act: "type",
+  });
+  expect(parseBrowserPointer({ x: 1, y: "2", width: 1280, height: 900, act: "type" })).toBeNull();
+  expect(parseBrowserPointer(null)).toBeNull();
 });

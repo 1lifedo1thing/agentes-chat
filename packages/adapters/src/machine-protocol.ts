@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 55;
+export const MACHINE_PROTOCOL_VERSION = 66;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -240,6 +240,15 @@ export type ScreenKind = (typeof SCREEN_KINDS)[number];
  */
 export const PLAN_USAGE_PROTOCOL = 19;
 /**
+ * From this protocol on, `list.recheck`: a Claude setup-token account the server sees stuck at its plan's limit is
+ * checked with one call on the cheapest model (refused while still full, so free), at most every
+ * `TOKEN_RECHECK_MS`, since a token can't read its usage any other way. Older runners ignore it.
+ */
+export const PLAN_RECHECK_PROTOCOL = 62;
+/** How often a plan stuck at its limit is read again: a free probe (a CLI login, a key) and a token's check. */
+export const PLAN_RECHECK_MS = 5 * 60_000;
+export const TOKEN_RECHECK_MS = 10 * 60_000;
+/**
  * From this protocol on: coding plans as key accounts on Claude Code (ADR
  * 0059). `begin` with `provider` (a plan of `@agenteschat/providers/plans`)
  * starts no CLI: the runner makes the folder and a key the browser seals the
@@ -466,8 +475,8 @@ export const SHARED_COMPUTER_PROTOCOL = 37;
  */
 export const SHARED_CODEX_PROTOCOL = 38;
 /**
- * From this protocol on (ADR 0132): the OpenCode brain. `brain.turn` takes `kind: "opencode"` (OpenCode's CLI,
- * `opencode run --format json`, one process per turn), `account` takes `kind: "opencode"` (only an OpenCode key sealed
+ * From this protocol on (ADR 0132): the OpenCode brain. `brain.turn` takes `kind: "opencode"` (OpenCode's CLI, one
+ * process per turn; over ACP since `OPENCODE_ACP_PROTOCOL`), `account` takes `kind: "opencode"` (only an OpenCode key sealed
  * to the machine: `begin` with `provider: "zen"`), `hello.executors.opencode` reports the CLI with the models it lists
  * (`free` on OpenCode's free tier), and `access.tools.opencode` turns it on or off. The server never sends any of these
  * to an older runner.
@@ -600,6 +609,94 @@ export const PHONES_PROTOCOL = 54;
 export const PHONE_SCREEN_PROTOCOL = 55;
 /** Pairing an Android phone over Wi-Fi (`phone.pair.*`): the server asks no older runner. */
 export const PHONE_PAIRING_PROTOCOL = 55;
+/**
+ * iPhones over Wi-Fi (`phone.wifi`): a Mac lists the iPhones on its network that already trust it, and uses one only
+ * once its owner picks it (`allow`), through CoreDevice's own tunnel. The server asks no older runner.
+ */
+export const IPHONE_WIFI_PROTOCOL = 56;
+/**
+ * `pause.set`: a person who may manage the computer pauses or resumes it from the apps. The runner applies it as its
+ * own pause (stored, `runner.state` sent) and keeps `by`, the person who did it, until the next local change.
+ */
+export const REMOTE_PAUSE_PROTOCOL = 57;
+/**
+ * From this protocol on, in system mode a Gemini sign-in is made for all of its owner's agents there too (`begin`'s
+ * `shared` for `antigravity`): root's Antigravity CLI keeps the Google sign-in and each turn gets a copy (`agy_auth`
+ * grant). Older runners lend it to one agent.
+ */
+export const SHARED_GEMINI_PROTOCOL = 58;
+/**
+ * Codex brain turns on Windows (ADR 0032 "Codex"): the native `codex.exe`, a `plan` or `work` turn only inside MXC.
+ * A Windows runner before it refuses every Codex turn, so the server reads it as too old for Codex there.
+ */
+export const CODEX_WINDOWS_PROTOCOL = 60;
+/**
+ * `keep_running` (ADR 0176): `keep.start` and `keep.end` take and end an agent's hold, the computer's standard "don't go
+ * idle" lock, bound to one of its programs, its browser or a time; `hello.holds` says which live and which ended since,
+ * and `keep.ended` says one ended. The server asks no older runner.
+ */
+export const KEEP_RUNNING_PROTOCOL = 61;
+/**
+ * OpenCode turns over the Agent Client Protocol (ADR 0132 §ACP): `opencode acp` instead of `opencode run`, so they run
+ * on OpenCode 1.x and 2.x alike, on Windows too, and an OpenCode 2 turn takes `brain.steer`. A Windows runner before it
+ * refuses every OpenCode turn, so the server reads it as too old for OpenCode there.
+ */
+export const OPENCODE_ACP_PROTOCOL = 64;
+/** Why a hold ended on the computer: its program or browser went away (or its lock did), or its time ran out. */
+export type HoldEnd = "exited" | "expired";
+/**
+ * From this protocol on, `mcp.result` carries `images` (pictures and PDFs a tool returned, base64) and the runner hands
+ * them to the CLI as MCP `image` and embedded `resource` content. An older runner shows only the text: the server tells
+ * the agent there that the picture can't reach it until the app on that computer is updated.
+ */
+export const MCP_IMAGES_PROTOCOL = 62;
+/**
+ * `xcode.fix`: a Mac fixes its own Xcode for an iPhone's setup, started from the apps. `select` points the developer
+ * folder at Xcode, accepts its license and installs its first-launch packages behind macOS's own password window;
+ * `update` gets the device support files for a newer iOS (no password). The server sends no command: the runner holds
+ * the script. Older runners answer `bad_request`, and the apps show the Terminal command instead.
+ */
+export const XCODE_FIX_PROTOCOL = 62;
+/**
+ * `access.allow`: the person who paired the computer turns one of its tools on from the apps (ADR 0036 §8). The runner
+ * applies it as its own switch (`access.changed` follows) and tells whoever is at the computer, with a way to undo it.
+ * Older runners answer `bad_request`: the server asks none of them.
+ */
+export const ACCESS_ALLOW_PROTOCOL = 62;
+/**
+ * The iPhone guide's Developer Mode step: `phone.look` on a Mac reads its iPhones again before it answers (one turned
+ * on the mode, or came back from its restart), and `xcode.open` opens Xcode there, which shows the Developer Mode
+ * switch on a plugged iPhone that hides it. Older runners answer `phone.look` at once and `xcode.open` `bad_request`.
+ */
+export const IPHONE_DEV_MODE_PROTOCOL = 65;
+
+/**
+ * `clis.check`: the coding CLIs looked up again now, the PATH read again first (the apps' "I installed it, check again").
+ * `cli.install`: the person who paired the computer installs a coding CLI there from the apps, through its vendor's
+ * official installer, run as that person. The server sends a program id from `INSTALLABLE_CLIS`, never a command: the
+ * runner holds the installers. Older runners answer `bad_request`: the server asks none of them.
+ */
+export const CLI_INSTALL_PROTOCOL = 66;
+/** The coding CLIs `cli.install` installs: Claude Code and Codex. */
+export const INSTALLABLE_CLIS = ["claude", "codex"] as const;
+export type InstallableCli = (typeof INSTALLABLE_CLIS)[number];
+export const isInstallableCli = (v: unknown): v is InstallableCli =>
+  (INSTALLABLE_CLIS as readonly unknown[]).includes(v);
+export const CLI_INSTALL_STATES = ["running", "done", "failed", "canceled", "unsupported"] as const;
+/** Why an install failed before or after its installer ran, as a code the apps word (`message` has the rest). */
+export const CLI_INSTALL_CAUSES = ["git_missing", "still_missing"] as const;
+/**
+ * Where an install stands: `running`, `done` (the look after it found the CLI), `failed` (`message`: the installer's
+ * own last line; `cause`: `git_missing`, Claude Code on Windows without Git for Windows, so nothing was installed, or
+ * `still_missing`, the installer ended well and the look after it still doesn't find the CLI), `canceled`,
+ * `unsupported` (this runner can't: system mode, a system it has no installer for).
+ */
+export interface CliInstall {
+  tool: InstallableCli;
+  state: (typeof CLI_INSTALL_STATES)[number];
+  message?: string;
+  cause?: (typeof CLI_INSTALL_CAUSES)[number];
+}
 
 export type PhonePlatform = "android" | "ios";
 export type PhoneKind = "device" | "emulator" | "simulator";
@@ -617,7 +714,7 @@ export type PhoneReason =
   | "developer_mode_off"
   /** iPhone: Settings › Developer › Enable UI Automation is off. */
   | "ui_automation_off"
-  /** iPhone: no Xcode on the Mac, or it can't serve this iOS (`xcode_too_old`). */
+  /** iPhone: no Xcode on the Mac, or its iPhone SDK is older than the phone's iOS (`xcode_too_old`). */
   | "xcode_missing"
   | "xcode_too_old"
   /** iPhone: the Mac is preparing the phone (device support download, needs internet). */
@@ -625,8 +722,12 @@ export type PhoneReason =
   /** iPhone: the test helper isn't built yet, or its free signature ran out (`helper_expired`). */
   | "helper_missing"
   | "helper_expired"
-  /** iPhone: Xcode on the Mac is signed in to no Apple Account (Xcode › Settings › Accounts), so nothing signs the helper. */
+  /** iPhone: Xcode on the Mac is signed in to no Apple Account (Xcode › Settings › Apple Accounts), so nothing signs the helper. */
   | "apple_account_missing"
+  /** iPhone: Xcode lists an Apple Account but no team yet (it shows one after its first build for an iPhone). */
+  | "apple_team_missing"
+  /** iPhone: the phone refused UI actions (unlocked, so its daily passcode grant or UI Automation). */
+  | "ui_not_authorized"
   /** iPhone: a free Apple Account's limit (3 apps of its own per phone, 10 app ids a week) stops the helper. */
   | "team_limit"
   /** iPhone: the phone doesn't trust the helper's developer yet (Settings › General › VPN & Device Management). */
@@ -635,10 +736,27 @@ export type PhoneReason =
   | "booting"
   /** Windows sees no driver for this phone (install its maker's USB driver). */
   | "no_driver"
-  /** Too old an OS for the tools (`unsupported`). */
+  /** Too old an OS for the tools (`unsupported`): Android before 5, iOS before 17. */
   | "os_too_old"
   /** adb reports the phone `offline` (replug it, or it is restarting). */
-  | "adb_offline";
+  | "adb_offline"
+  /** iPhone over Wi-Fi: not on the Mac's network now. */
+  | "wifi_away"
+  /** iPhone over Wi-Fi: on the network, but its tunnel didn't come up (locked or asleep). */
+  | "wifi_asleep"
+  /** iPhone over Wi-Fi: its tunnel dropped, or its address couldn't be read for certain. */
+  | "tunnel_down"
+  /** iPhone over Wi-Fi: it doesn't trust this Mac (it never did over a cable, or the pairing was removed). */
+  | "wifi_untrusted";
+
+/** `IPHONE_WIFI_PROTOCOL`: an iPhone on the Mac's network that trusts it, not used until its owner picks it. */
+export interface WifiIphone {
+  /** Its UDID, as `RunnerPhone.serial` once picked. */
+  serial: string;
+  model: string;
+  name?: string;
+  osVersion: string;
+}
 
 /** Who holds a phone: the run and agent, and the person it works for. */
 export interface PhoneHolder {
@@ -716,6 +834,35 @@ export function pairAddress(input: unknown): string | null {
   return v6?.[1]?.includes(":") ? text : null;
 }
 
+export const XCODE_BLOCKED = ["command_line_tools", "license"] as const;
+export type XcodeBlocked = (typeof XCODE_BLOCKED)[number];
+
+/** `select`: Xcode in use, its license and first-launch packages (asks the Mac's password); `update`: `ddis update`. */
+export type XcodeFixKind = "select" | "update";
+export const XCODE_FIX_STATES = [
+  "asking",
+  "running",
+  "done",
+  "canceled",
+  "no_answer",
+  "failed",
+  "unsupported",
+] as const;
+/**
+ * Where a fix stands: `asking` (macOS's password window is open on the Mac), `running` (`step` of 3 commands done),
+ * `done`, `canceled` (Cancel in that window, or from the apps), `no_answer` (nobody typed the password in 3 minutes),
+ * `failed` (`message`: the command's own last line), `unsupported` (this runner can't: not a Mac, a system-mode runner,
+ * no Xcode in /Applications).
+ */
+export interface XcodeFix {
+  kind: XcodeFixKind;
+  state: (typeof XCODE_FIX_STATES)[number];
+  step: number;
+  message?: string;
+  /** `failed` after a `select` whose commands all ran: the look after it still finds Xcode blocked, and why. */
+  still?: XcodeBlocked;
+}
+
 /** What this computer can build and drive with (versions found, best effort; absent: not found). */
 export interface RunnerToolchains {
   git?: string;
@@ -729,7 +876,18 @@ export interface RunnerToolchains {
   xcode?: string;
   /** The Apple Account team that signs the iPhone test helper, as Xcode names it ("Sam Rivera (Personal Team)"). */
   appleTeam?: string;
+  /** What Xcode's Apple Accounts give: a team, an account with no team yet, or no account. */
+  appleAccount?: "team" | "no_team" | "none";
+  /** The iPhone SDK's version (`xcrun --sdk iphoneos --show-sdk-version`, "26.2"): the newest iOS it drives. */
+  xcodeSdk?: string;
+  /**
+   * Xcode is installed but its tools don't answer, for a reason one command fixes: the developer folder is still the
+   * Command Line Tools (`xcode-select -s`), or Xcode's license isn't agreed to. Absent with `xcode`.
+   */
+  xcodeBlocked?: XcodeBlocked;
   node?: string;
+  /** Podman's version: with the runner in system mode, the agents' containers (ADR 0169). */
+  podman?: string;
 }
 
 /** The phone a `phone.*` op is for. */
@@ -1019,7 +1177,10 @@ export interface PlanUsage {
   limited?: boolean;
   source: "turn" | "probe";
   at: string;
-  /** Server side only: the models at a limit of their own (`PlanModelLimit`), by model id. */
+  /**
+   * The models at a limit of their own (`PlanModelLimit`), by model id: the usage views show it to people, and the
+   * engine uses it so "Automático" and its own turns don't pick an exhausted model (never a switch on its own).
+   */
   models?: Record<string, PlanModelLimit>;
   /** Server side only, on a plan whose models have their own limits: the model that last answered with this key. */
   answered?: string;
@@ -1058,6 +1219,43 @@ export const PLAN_USAGE_LIMITS = { windows: 8, label: 40 } as const;
 export type AccountLoginState = "waiting" | "done" | "failed" | "expired";
 
 /**
+ * Why a sign-in ended without signing in (`status`'s `code`, beside `error`), for the apps to say in their own words.
+ * An older runner sends none.
+ */
+export const ACCOUNT_LOGIN_FAILURES = [
+  /** The CLI isn't installed on the computer. */
+  "not_installed",
+  /** The CLI found no terminal to read the pasted code from. */
+  "no_tty",
+  /** The CLI couldn't reach the provider. */
+  "network",
+  /** The provider refused the pasted code: not the page's, already used, or too old. */
+  "bad_code",
+  /** The CLI stopped with an error of its own (its words in `message`). */
+  "cli_exit",
+  /** The CLI finished, but its status says the account isn't signed in (its words in `message`). */
+  "not_signed_in_after_login",
+  /**
+   * The CLI finished, but its status didn't answer in time; or a Gemini sign-in for all agents' copy said nothing for
+   * sure (its words, if any, in `message`).
+   */
+  "status_unknown",
+  /** `claude setup-token` finished without showing its token. */
+  "no_token",
+  /** It signed in, but the computer couldn't keep the sign-in. */
+  "not_kept",
+  /** Grok Build signed in, but its sandbox doesn't start there for an agent's user (bubblewrap's words in `message`). */
+  "sandbox",
+  /** Nobody finished it within `ACCOUNT_LOGIN_TTL_MS` (`expired`). */
+  "timeout",
+  /** The person canceled it. */
+  "canceled",
+] as const;
+export type AccountLoginFailure = (typeof ACCOUNT_LOGIN_FAILURES)[number];
+export const isAccountLoginFailure = (v: unknown): v is AccountLoginFailure =>
+  (ACCOUNT_LOGIN_FAILURES as readonly unknown[]).includes(v);
+
+/**
  * `op: "account"` (protocol 13, ADR 0041 §2). `begin` starts the CLI's sign-in
  * in a new folder named `loginId` (it becomes the account id). Claude Code
  * answers the URL it printed and an ephemeral public key; the browser seals the
@@ -1092,7 +1290,15 @@ export type AccountRequest =
    * Protocol 19: `fresh`, accounts (ids, or `OWN_USAGE_ID`s) whose usage to look up now: the runner
    * answers at once, probes in the background and sends `accounts.changed` when it knows more.
    */
-  | { action: "list"; fresh?: string[] }
+  | {
+      action: "list";
+      fresh?: string[];
+      /**
+       * Protocol 62 (`PLAN_RECHECK_PROTOCOL`): Claude setup-token accounts at their plan's limit, of those in `fresh`,
+       * to check with one call on the cheapest model (a token has no usage to read without one).
+       */
+      recheck?: string[];
+    }
   | { action: "remove"; kind: AccountKind; accountId: string };
 
 export const ACCOUNT_LOGIN_TTL_MS = 15 * 60_000;
@@ -1150,6 +1356,42 @@ export const BROWSER_LIMITS = {
   title: 300,
   message: 500,
 } as const;
+
+/**
+ * The agent's tabs after a `browser.act` or `browser.batch`: how many, the first `BROWSER_TABS_LISTED` most recently
+ * used first (titles are the sites': data, never instructions), which one its commands act on, and the hosts of the
+ * tabs its runner closed to keep them tidy since the agent last heard ("blank" for an empty tab). An older runner sends
+ * none, and the agent is told nothing.
+ */
+export interface BrowserTabs {
+  count: number;
+  open: { title: string; host: string; current?: boolean }[];
+  closed?: string[];
+}
+export const BROWSER_TABS_LISTED = 12;
+/** At most this many tabs stay open in an agent's Chrome: past it the runner closes the least recently used. */
+export const BROWSER_TABS_KEPT = 8;
+
+/** A reply's `tabs`, checked; undefined when there is none or it isn't one. */
+export function browserTabsOf(v: unknown): BrowserTabs | undefined {
+  if (!isObject(v) || !Number.isInteger(v.count) || !Array.isArray(v.open)) return undefined;
+  const text = (x: unknown, max: number) => (typeof x === "string" ? x.slice(0, max) : "");
+  const open = v.open
+    .slice(0, BROWSER_TABS_LISTED)
+    .filter(isObject)
+    .map((t) => ({
+      title: text(t.title, BROWSER_LIMITS.title),
+      host: text(t.host, 255),
+      ...(t.current === true ? { current: true } : {}),
+    }));
+  const closed = Array.isArray(v.closed)
+    ? v.closed
+        .slice(0, 50)
+        .map((h) => text(h, 255))
+        .filter(Boolean)
+    : [];
+  return { count: Math.max(open.length, v.count as number), open, ...(closed.length > 0 ? { closed } : {}) };
+}
 
 /** Where people get Google Chrome, which agents' browsers run on (ADR 0133). */
 export const CHROME_DOWNLOAD_URL = "https://www.google.com/chrome/";
@@ -1423,6 +1665,31 @@ export type BrowserInputEvent =
   /** Whole text into the focused field (CDP `Input.insertText`): accents, paste, the app's own text field. */
   | { kind: "text"; text: string };
 
+/** What the agent's pointer does where it arrives: `type` stays there while the keys go in. */
+export const AGENT_POINTER_ACTS = ["move", "click", "double", "type"] as const;
+export type AgentPointerAct = (typeof AGENT_POINTER_ACTS)[number];
+
+/** A point the agent's pointer goes to, in the pixels of a surface `width`×`height` (the page's viewport). */
+export interface AgentPointer {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  act: AgentPointerAct;
+}
+
+/** An `AgentPointer` out of a frame: a point inside a surface of a sane size, or null. */
+export function parseAgentPointer(f: Record<string, unknown>): AgentPointer | null {
+  const [x, y, width, height] = [f.x, f.y, f.width, f.height].map((n) =>
+    typeof n === "number" && Number.isFinite(n) ? n : undefined,
+  );
+  const act = AGENT_POINTER_ACTS.find((a) => a === f.act);
+  if (x === undefined || y === undefined || width === undefined || height === undefined || !act) return null;
+  if (width < 1 || height < 1 || width > 16_384 || height > 16_384) return null;
+  const within = (n: number, max: number) => Math.round(Math.min(Math.max(n, 0), max));
+  return { x: within(x, width), y: within(y, height), width: Math.round(width), height: Math.round(height), act };
+}
+
 /** What a frame shows. */
 export interface BrowserFrameMetadata {
   deviceWidth: number;
@@ -1683,6 +1950,10 @@ export interface TaskStart {
   model?: string;
 }
 
+/** The coding CLIs `hello.executors` reports. */
+export const CLI_NAMES = ["claude", "codex", "cursor", "opencode", "grok", "antigravity"] as const;
+export type CliName = (typeof CLI_NAMES)[number];
+
 /** A coding CLI on the machine, as `hello` reports it (protocol 7). */
 export interface RunnerExecutorInfo {
   /** The first line of `<cli> --version`. */
@@ -1714,6 +1985,16 @@ export interface CursorModelInfo {
 export const CURSOR_MODEL_LIMITS = { models: 60, id: 80, label: 80 } as const;
 
 /**
+ * How a brain turn started on the runner (Claude Code; an older runner leaves it out): on a process already open
+ * (`warm`), how long a new one took to say it was ready (`initMs`), and the first event after the turn began.
+ */
+export interface BrainTurnTimings {
+  warm: boolean;
+  initMs?: number;
+  firstEventMs?: number;
+}
+
+/**
  * One event of a brain turn on the wire (`brain.event`), the same shape as
  * the engine's `BrainEvent` (packages/engine/src/brains/types.ts; this file
  * imports nothing).
@@ -1736,12 +2017,17 @@ export type WireBrainEvent =
       model?: string;
       cacheRead?: number;
       cacheWrite?: number;
-      /** Claude Code: the API calls the turn made (`num_turns`), and the most uncached input one of them read. */
+      /**
+       * The API calls the turn made (Claude Code's `num_turns`, Codex's model requests), the most uncached input one of
+       * them read (Claude Code), and the most input one read, cache included: its context at that step. An older
+       * runner sends none.
+       */
       calls?: number;
       maxUncached?: number;
+      maxContext?: number;
     }
   | { type: "limit"; resetsAt?: string }
-  | { type: "done"; text: string; session?: { id: string } }
+  | { type: "done"; text: string; session?: { id: string }; timings?: BrainTurnTimings }
   /**
    * `worked`: on a `plan_limit`, whether the turn used any tool before it was cut (an older runner leaves it out:
    * the engine counts that as worked).
@@ -1761,7 +2047,12 @@ export type WireBrainEvent =
   /** Protocol 46: Fast failed (`message`: the provider's words) and this turn answered at standard speed. */
   | { type: "speed_fallback"; message: string }
   /** A call the brain starts on its own (Claude Code's Read, Bash, Task): its `tool_call` follows once it ended. */
-  | { type: "tool_started"; id: string; name: string };
+  | { type: "tool_started"; id: string; name: string }
+  /**
+   * A file a tool of the brain's own made (Codex's image generation), kept in the agent's folder (`path`, relative
+   * to it): the server sends it to the Drive and its card goes with the reply. An older server drops the event.
+   */
+  | { type: "file"; path: string };
 
 /**
  * `brain.steer` (protocol 15): messages for the turn of `runId` in progress.
@@ -1830,7 +2121,18 @@ export interface BrainTurnRequest {
    * The turn's permission profile (ADR 0053 §3): `work` (default) edits and asks a person (or the server's
    * rules) for the rest; `plan` reads only. Codex honours it from `BRAIN_PROFILES_PROTOCOL` on.
    */
-  permissions?: { mode?: "plan" | "work" | "chat"; branchPrefix?: string; allow?: string[] };
+  permissions?: {
+    mode?: "plan" | "work" | "chat";
+    branchPrefix?: string;
+    allow?: string[];
+    /**
+     * Protocol 59 (`ASKS_PROTOCOL`): how much the agent asks, when it isn't the default. `always`: a Claude Code
+     * work turn lets only reads through on the computer, and every other call of its own tools reaches the server's
+     * prompt. `never`: a command the computer holds is refused with where it runs, never with a wait for a person.
+     * An older runner ignores it.
+     */
+    asks?: "always" | "never";
+  };
   /** Protocol 13: the account folder to run in (`accounts/<kind>/<id>`); absent: the machine's own sign-in. */
   account?: string;
   /** Protocol 13: how hard it thinks; absent: the CLI's default. */
@@ -1850,6 +2152,12 @@ export interface BrainTurnRequest {
    */
   personWaiting?: boolean;
 }
+
+/**
+ * From this protocol on the runner reads `BrainTurnRequest.permissions.asks`, and `exec` answers `merge` for an
+ * approved command that is one merge. The server sends an older runner a `plan` turn for an agent that always asks.
+ */
+export const ASKS_PROTOCOL = 59;
 
 /** Largest strings of a `brain.event` (tool inputs and results are cut, text deltas are small). */
 export const BRAIN_LIMITS = {
@@ -1992,6 +2300,12 @@ export interface MachineAgent {
   account?: string;
   /** The other accounts here it thinks with: the team's right hand on people's own plans (ADR 0137 §11). */
   accounts?: string[];
+  /**
+   * Its containers service may run here (ADR 0169). Absent for a brain whose shell runs in a sandbox of the CLI's own,
+   * which that service, outside it, would be a way out of, and for the team's right hand, which thinks on several.
+   * A person's seat of the right hand (an entry of its own here, ADR 0175) has it.
+   */
+  containers?: boolean;
 }
 
 /** The pause state (protocol 9). `until` null: paused until the owner resumes. */
@@ -1999,6 +2313,8 @@ export interface RunnerPause {
   paused: boolean;
   /** ISO time; absent or null with `paused: true` means "until resumed". */
   until?: string | null;
+  /** `REMOTE_PAUSE_PROTOCOL`: the user id of the person who paused it from the apps; absent when paused on it. */
+  by?: string | null;
 }
 
 /** The tools a person turns on or off on the machine (protocol 10). */
@@ -2079,6 +2395,11 @@ export interface RunnerInfo {
     opencode?: RunnerExecutorInfo;
     grok?: RunnerExecutorInfo;
     antigravity?: RunnerExecutorInfo;
+    /**
+     * `CLI_INSTALL_PROTOCOL`: a CLI that is there and whose `--version` keeps failing, with its own last line of
+     * error. It is not listed above: it can't run turns, and it isn't missing either.
+     */
+    broken?: Partial<Record<CliName, string>>;
   };
   /** Protocol 9: whether the owner paused this computer. */
   paused?: RunnerPause;
@@ -2115,6 +2436,13 @@ export interface RunnerInfo {
    * group, which the computer's egress rules may route apart from the rest of root.
    */
   authEgressGroup?: true;
+  /** `KEEP_RUNNING_PROTOCOL`: the holds that live here, and those that ended lately with why (the server may not know). */
+  holds?: RunnerHolds;
+}
+
+export interface RunnerHolds {
+  live: string[];
+  ended: { id: string; reason: HoldEnd }[];
 }
 
 export interface FileEntry {
@@ -2128,12 +2456,19 @@ export interface FileEntry {
  * The agent a request is for (protocol 2+). The runner gives each agent its
  * own folder inside the workspace, `<handle>-<first 8 of id>`, and treats it
  * as that request's workspace; a renamed agent keeps its folder (found by id).
+ * The id isn't always an agent's row: a browser profile's, or a person's seat of the team's right hand (ADR 0175),
+ * which the runner serves like any agent.
  */
 export interface AgentScope {
   id: string;
   handle: string;
   /** Protocol 9: the agent's display name, for the machine's activity log. */
   name?: string;
+  /**
+   * Protocol 63 (ADR 0156): on the work the server starts (`exec`, `brain.turn`, `task.start`), the `Co-authored-by`
+   * lines its commits end with. The runner hands them to git in the agent's own processes alone (`co-authors.ts`).
+   */
+  coAuthors?: string[];
 }
 
 /** What the server asks. Paths are always relative to the workspace (the agent's folder when `agent` is set). */
@@ -2188,6 +2523,8 @@ export type MachineRequest = (
       removeFolder?: { path: string; agentId?: string };
       disableTool?: keyof RunnerTools;
     }
+  /** `ACCESS_ALLOW_PROTOCOL`: the computer's owner turned `tool` on from the apps (`by` their user id, `byName` shown). */
+  | { op: "access.allow"; tool: keyof RunnerTools; by: string; byName: string }
   | {
       op: "push";
       path: string;
@@ -2313,6 +2650,36 @@ export type MachineRequest = (
   | { op: "phone.pair.code"; address: string; code: string }
   | { op: "phone.pair.status"; pairingId: string }
   | { op: "phone.pair.cancel"; pairingId: string }
+  /** `REMOTE_PAUSE_PROTOCOL`: pause (until `until`, null: until resumed) or resume, for the person `by`. */
+  | { op: "pause.set"; paused: boolean; until?: string | null; by: string }
+  /**
+   * A phone guide is open and waits for a phone: for the next minute, a Windows runner also looks for a plugged phone
+   * Windows has no USB driver for (adb never lists one) and reports it as `no_driver`. From `IPHONE_DEV_MODE_PROTOCOL`
+   * a Mac reads its iPhones again and answers once `phones.changed` went out. Older runners answer `bad_request`,
+   * which the server ignores.
+   */
+  | { op: "phone.look" }
+  /**
+   * `IPHONE_WIFI_PROTOCOL`: the iPhones on this Mac's network that trust it and aren't used yet (`list`), or use one
+   * over Wi-Fi from now on (`allow`) or no longer (`forget`). Each answers the list as it is then.
+   */
+  | { op: "phone.wifi"; action: "list" | "allow" | "forget"; serial?: string }
+  /**
+   * `KEEP_RUNNING_PROTOCOL`: takes hold `holdId` for the request's agent, or again with these bounds: bound to its
+   * program `pid` (one of its own), to its browser (`browser`, open now, always with `until`), and with `until` (ISO)
+   * ending then at the latest; `until` alone binds it to that time.
+   */
+  | { op: "keep.start"; holdId: string; pid?: number; browser?: boolean; until?: string }
+  /** Ends hold `holdId`; with `stop`, what it holds too: its program (SIGTERM, SIGKILL 10 s later) or the browser. */
+  | { op: "keep.end"; holdId: string; stop?: boolean }
+  /** `XCODE_FIX_PROTOCOL`: start a fix (`kind`), or say where the last one stands, or stop it. One at a time. */
+  | { op: "xcode.fix"; action: "start" | "status" | "cancel"; kind?: XcodeFixKind }
+  /** `CLI_INSTALL_PROTOCOL`: the PATH and the coding CLIs looked up now; `executors.changed` follows a change. */
+  | { op: "clis.check" }
+  /** `CLI_INSTALL_PROTOCOL`: start an install of `tool`, or say where the last one stands, or stop it. One at a time. */
+  | { op: "cli.install"; action: "start" | "status" | "cancel"; tool?: InstallableCli }
+  /** `IPHONE_DEV_MODE_PROTOCOL`: open Xcode on this Mac (it shows Developer Mode on a plugged iPhone). */
+  | { op: "xcode.open" }
 ) & {
   agent?: AgentScope;
   /** Protocol 34: a `browser.*` op in this browser profile's session instead of the agent's (ADR 0110). */
@@ -2350,6 +2717,7 @@ export const MACHINE_OPS: readonly MachineOp[] = [
   "mission.worktree",
   "access.request",
   "access.reduce",
+  "access.allow",
   "browser.act",
   "browser.stop",
   "browser.stream.start",
@@ -2383,6 +2751,15 @@ export const MACHINE_OPS: readonly MachineOp[] = [
   "phone.pair.code",
   "phone.pair.status",
   "phone.pair.cancel",
+  "pause.set",
+  "phone.look",
+  "phone.wifi",
+  "keep.start",
+  "keep.end",
+  "xcode.fix",
+  "clis.check",
+  "cli.install",
+  "xcode.open",
 ];
 
 /** What each op answers with `ok: true`. */
@@ -2393,7 +2770,7 @@ export interface MachineReplies {
     stderr: string;
     timedOut: boolean;
     canceled?: { killed: boolean };
-    /** It ran as a merge the agent does without asking (`mergeRepos`). */
+    /** It ran as one merge with no card of its own: in `mergeRepos`, or approved (a saved rule, an agent that never asks). */
     merge?: MergeDone;
   };
   /** `base64: null`: no such file. */
@@ -2422,6 +2799,10 @@ export interface MachineReplies {
     accounts?: RunnerAccountInfo[];
     /** `failed`: why, for people. */
     error?: string;
+    /** `failed` or `expired`: why, as a code (`ACCOUNT_LOGIN_FAILURES`). */
+    code?: AccountLoginFailure;
+    /** With `code`: what the CLI itself said, without tokens or the pasted code, cut at a word. */
+    message?: string;
   };
   /** `cwd`: where it runs, relative to the agent's folder (`.worktrees/<taskId>` with a branch). */
   "task.start": {
@@ -2448,6 +2829,7 @@ export interface MachineReplies {
   "mission.worktree": Partial<MissionWorktreeEnsured> & { removed?: boolean };
   "access.request": { requestId: string; status: "pending" | "granted" };
   "access.reduce": { access: RunnerAccess };
+  "access.allow": { access: RunnerAccess };
   /**
    * `agent-browser`'s own JSON answer: `success: false` with its `error` is a page-level failure (stale ref, covered
    * click). Protocol 45: `code` names a Vault refusal (`VAULT_TYPE_REFUSALS`).
@@ -2460,6 +2842,7 @@ export interface MachineReplies {
     setup?: BrowserSetup;
     /** Protocol 52: the page size its browser emulates (`agentes:viewport`) after the command; absent at its own. */
     emulated?: NonNullable<BrowserViewport>;
+    tabs?: BrowserTabs;
   };
   /** `false`: there was no session. */
   "browser.stop": { stopped: boolean };
@@ -2477,6 +2860,7 @@ export interface MachineReplies {
     setup?: BrowserSetup;
     /** As `browser.act`'s, after the batch. */
     emulated?: NonNullable<BrowserViewport>;
+    tabs?: BrowserTabs;
   };
   /** `false`: nothing was started (it runs or starts already, a person has the browser, or no room). */
   "browser.warm": { started: boolean; setup?: BrowserSetup };
@@ -2537,6 +2921,16 @@ export interface MachineReplies {
   "phone.pair.code": PhonePairing;
   "phone.pair.status": PhonePairing;
   "phone.pair.cancel": { canceled: boolean };
+  "pause.set": { paused: RunnerPause };
+  "phone.look": { looking: boolean };
+  "phone.wifi": { available: WifiIphone[] };
+  "keep.start": { held: true };
+  /** `false`: no such hold lived here. */
+  "keep.end": { ended: boolean };
+  "xcode.fix": { fix: XcodeFix | null };
+  "clis.check": { executors: NonNullable<RunnerInfo["executors"]> };
+  "cli.install": { install: CliInstall | null };
+  "xcode.open": { opened: boolean };
 }
 
 /** An element numbered on a `browser.capture` image: its ref and box (CSS pixels). */
@@ -2645,7 +3039,14 @@ export type ServerFrame =
   /** The server stored this task's `task.done`: the runner stops re-sending it. */
   | { type: "task.ack"; taskId: string }
   /** Protocol 5: the answer to an `mcp.call` (the text the executor's tool call returns). */
-  | { type: "mcp.result"; callId: string; ok: true; text: string }
+  | {
+      type: "mcp.result";
+      callId: string;
+      ok: true;
+      text: string;
+      /** `MCP_IMAGES_PROTOCOL`: pictures (PNG, JPEG, GIF, WebP) and PDFs the tool returned, base64. */
+      images?: { mediaType: string; data: string; name?: string }[];
+    }
   | { type: "mcp.result"; callId: string; ok: false; error: { code: string; message: string } }
   /** Protocol 8: the answer to an `mcp.list`: the tools this run may use (JSON Schemas simplified for the CLIs). */
   | { type: "mcp.tools"; callId: string; ok: true; tools: McpToolInfo[] }
@@ -2727,6 +3128,8 @@ export type RunnerFrame =
   | { type: "accounts.changed"; accounts: RunnerAccountInfo[]; ownUsage?: OwnPlanUsage }
   /** Protocol 41: the coding CLIs found changed since `hello` (`hello.executors`, whole). */
   | { type: "executors.changed"; executors: NonNullable<RunnerInfo["executors"]> }
+  /** What `hello.toolchains` said changed (an Apple team found, Xcode updated), whole. An older server drops it. */
+  | { type: "toolchains.changed"; toolchains: RunnerToolchains }
   /** `PHONES_PROTOCOL`: the phones it reaches changed (one came or went, a state or a holder changed), whole. */
   | { type: "phones.changed"; phones: RunnerPhone[] }
   /**
@@ -2743,14 +3146,31 @@ export type RunnerFrame =
   /** Protocol 12: one image of an agent's browser while its stream is on (newest wins; the server never stores it). */
   | { type: "browser.frame"; agentId: string; seq: number; data: string; metadata: BrowserFrameMetadata }
   /** Protocol 12: an agent's stream stopped on the machine (asked, session closed, error). */
-  | { type: "browser.stream.ended"; agentId: string; reason: "stopped" | "closed" | "error"; message?: string };
+  | { type: "browser.stream.ended"; agentId: string; reason: "stopped" | "closed" | "error"; message?: string }
+  /**
+   * Where the agent's pointer goes on its browser's page, said as the gesture starts so whoever watches sees it
+   * arrive before the page changes (ADR 0040 §7.2). An older server drops it: nothing asks for it.
+   */
+  | ({ type: "browser.pointer"; agentId: string } & AgentPointer)
+  /** The same on the agent's desktop (ADR 0062), in the screen's pixels: desktop use, and its browser's window there. */
+  | ({ type: "desktop.pointer"; agentId: string } & AgentPointer)
+  /** `KEEP_RUNNING_PROTOCOL`: a hold ended on the computer by itself (the next `hello` says so again). */
+  | { type: "keep.ended"; holdId: string; reason: HoldEnd };
 
 /** A tool as `mcp.tools` lists it (what MCP `tools/list` returns). */
 export interface McpToolInfo {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
+  /** MCP's own `_meta`, passed to the CLI as is (`MCP_ALWAYS_LOAD`). */
+  _meta?: Record<string, unknown>;
 }
+
+/**
+ * A tool's `_meta` key Claude Code reads: listed with its schema from the first round, never behind its ToolSearch.
+ * The runner sets it on the tools every run reaches for; the server on what one kind of run needs at once.
+ */
+export const MCP_ALWAYS_LOAD = "anthropic/alwaysLoad";
 
 /** Most tools one `mcp.tools` frame carries. */
 export const MCP_TOOLS_MAX = 200;
@@ -2788,7 +3208,11 @@ const TOOLCHAINS: readonly (keyof RunnerToolchains)[] = [
   "maestro",
   "xcode",
   "appleTeam",
+  "appleAccount",
+  "xcodeSdk",
+  "xcodeBlocked",
   "node",
+  "podman",
 ];
 const idOrNull = (v: unknown) => (isString(v) && v.length <= 64 ? v : null);
 
@@ -2838,13 +3262,32 @@ export function parsePhones(v: unknown[]): RunnerPhone[] {
   return out;
 }
 
+const HOLD_ENDS: readonly HoldEnd[] = ["exited", "expired"];
+/** A hold's id (a UUID), as the server makes them. */
+export const isUuid = (v: unknown): v is string =>
+  isString(v) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+/** Most holds one `hello` lists, live and ended alike. */
+const HELLO_HOLDS = 500;
+
+/** `hello.holds`: hold ids, each ended one with a reason we know; the rest dropped. */
+export function parseHolds(v: Record<string, unknown>): RunnerHolds {
+  const live = Array.isArray(v.live) ? v.live.filter(isUuid).slice(0, HELLO_HOLDS) : [];
+  const ended = (Array.isArray(v.ended) ? v.ended : []).slice(0, HELLO_HOLDS).flatMap((e) => {
+    const reason = isObject(e) ? HOLD_ENDS.find((r) => r === e.reason) : undefined;
+    return isObject(e) && isUuid(e.id) && reason ? [{ id: e.id, reason }] : [];
+  });
+  return { live, ended };
+}
+
 /** `hello.toolchains`: known tools only, each a short version string. */
 export function parseToolchains(v: Record<string, unknown>): RunnerToolchains {
   const out: RunnerToolchains = {};
   for (const key of TOOLCHAINS) {
     const value = cut(v[key], 100);
-    if (value) out[key] = value;
+    if (value) (out as Record<string, string>)[key] = value;
   }
+  if (out.appleAccount && !["team", "no_team", "none"].includes(out.appleAccount)) delete out.appleAccount;
+  if (out.xcodeBlocked && !(XCODE_BLOCKED as readonly string[]).includes(out.xcodeBlocked)) delete out.xcodeBlocked;
   return out;
 }
 
@@ -2910,11 +3353,14 @@ export function parseCursorModels(v: unknown): CursorModelInfo[] {
   return out;
 }
 
-/** `hello.executors`: only `claude`, `codex`, `cursor`, `opencode`, `grok` and `antigravity`, each with a short version line (and Claude Code's login). */
+/**
+ * `hello.executors`: only `claude`, `codex`, `cursor`, `opencode`, `grok` and `antigravity`, each with a short version
+ * line (and Claude Code's login), and `broken`: the error line of each of them that is there and can't start.
+ */
 export function parseExecutors(v: Record<string, unknown>): NonNullable<RunnerInfo["executors"]> {
   const out: NonNullable<RunnerInfo["executors"]> = {};
   const word = (x: unknown) => (isString(x) && /^[\w.-]{1,40}$/.test(x) ? x : undefined);
-  for (const name of ["claude", "codex", "cursor", "opencode", "grok", "antigravity"] as const) {
+  for (const name of CLI_NAMES) {
     const e = v[name];
     if (!isObject(e) || !isString(e.version)) continue;
     const authMethod = word(e.authMethod);
@@ -2928,8 +3374,21 @@ export function parseExecutors(v: Record<string, unknown>): NonNullable<RunnerIn
     const models = name === "claude" || name === "codex" ? [] : parseCursorModels(e.models);
     if (models.length) out[name] = { ...out[name], models } as RunnerExecutorInfo;
   }
+  if (isObject(v.broken)) {
+    const broken: Partial<Record<CliName, string>> = {};
+    for (const name of CLI_NAMES) {
+      const said = v.broken[name];
+      if (!out[name] && isString(said)) broken[name] = said.replace(/\s+/g, " ").trim().slice(0, CLI_ERROR_MAX);
+    }
+    if (Object.keys(broken).length) out.broken = broken;
+  }
   return out;
 }
+
+/** The longest error line `executors.broken` keeps for a CLI. */
+export const CLI_ERROR_MAX = 300;
+/** `executors.broken.claude` on Windows when Git for Windows, which Claude Code needs there, isn't on the computer. */
+export const CLI_GIT_MISSING = "git_missing";
 
 /** `hello.accounts` (protocol 13): at most `MAX_MACHINE_ACCOUNTS`, ids and kinds checked, short words only. */
 export function parseAccounts(v: unknown[]): RunnerAccountInfo[] {
@@ -3054,13 +3513,31 @@ export function parseBrainEvent(v: unknown): WireBrainEvent | null {
         ...(num(v.cacheWrite) > 0 ? { cacheWrite: num(v.cacheWrite) } : {}),
         ...(num(v.calls) > 0 ? { calls: num(v.calls) } : {}),
         ...(num(v.maxUncached) > 0 ? { maxUncached: num(v.maxUncached) } : {}),
+        ...(num(v.maxContext) > 0 ? { maxContext: num(v.maxContext) } : {}),
       };
     case "limit":
       return { type: "limit", ...(isString(v.resetsAt) ? { resetsAt: v.resetsAt.slice(0, 40) } : {}) };
     case "done": {
       if (!isString(v.text)) return null;
       const session = isObject(v.session) && isString(v.session.id) ? { id: v.session.id.slice(0, 64) } : undefined;
-      return { type: "done", text: v.text.slice(0, BRAIN_LIMITS.doneText), ...(session ? { session } : {}) };
+      const ms = (x: unknown) => (finite(x) !== undefined && (x as number) >= 0 ? Math.round(x as number) : undefined);
+      const t = isObject(v.timings) && typeof v.timings.warm === "boolean" ? v.timings : null;
+      const initMs = ms(t?.initMs);
+      const firstEventMs = ms(t?.firstEventMs);
+      return {
+        type: "done",
+        text: v.text.slice(0, BRAIN_LIMITS.doneText),
+        ...(session ? { session } : {}),
+        ...(t
+          ? {
+              timings: {
+                warm: t.warm as boolean,
+                ...(initMs !== undefined ? { initMs } : {}),
+                ...(firstEventMs !== undefined ? { firstEventMs } : {}),
+              },
+            }
+          : {}),
+      };
     }
     case "error":
       if (!isString(v.code)) return null;
@@ -3089,6 +3566,8 @@ export function parseBrainEvent(v: unknown): WireBrainEvent | null {
       return isString(v.id) && isString(v.name)
         ? { type: "tool_started", id: v.id.slice(0, 128), name: v.name.slice(0, BRAIN_LIMITS.toolName) }
         : null;
+    case "file":
+      return isString(v.path) && v.path.length > 0 && v.path.length <= 1024 ? { type: "file", path: v.path } : null;
     default:
       return null;
   }
@@ -3167,7 +3646,12 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
         ...(f.authEgressGroup === true ? { authEgressGroup: true as const } : {}),
         ...(Array.isArray(f.phones) ? { phones: parsePhones(f.phones) } : {}),
         ...(isObject(f.toolchains) ? { toolchains: parseToolchains(f.toolchains) } : {}),
+        ...(isObject(f.holds) ? { holds: parseHolds(f.holds) } : {}),
       };
+    }
+    case "keep.ended": {
+      const reason = HOLD_ENDS.find((r) => r === f.reason);
+      return isUuid(f.holdId) && reason ? { type: "keep.ended", holdId: f.holdId, reason } : null;
     }
     case "phones.changed":
       return Array.isArray(f.phones) ? { type: "phones.changed", phones: parsePhones(f.phones) } : null;
@@ -3210,6 +3694,11 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
         ...(message !== undefined ? { message } : {}),
       };
     }
+    case "browser.pointer":
+    case "desktop.pointer": {
+      const pointer = parseAgentPointer(f);
+      return isString(f.agentId) && pointer ? { type: f.type, agentId: f.agentId.slice(0, 64), ...pointer } : null;
+    }
     case "runner.state": {
       const paused = parsePause(f.paused);
       return paused ? { type: "runner.state", paused } : null;
@@ -3225,6 +3714,8 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
     }
     case "executors.changed":
       return isObject(f.executors) ? { type: "executors.changed", executors: parseExecutors(f.executors) } : null;
+    case "toolchains.changed":
+      return isObject(f.toolchains) ? { type: "toolchains.changed", toolchains: parseToolchains(f.toolchains) } : null;
     case "access.decided": {
       if (!isString(f.requestId)) return null;
       const decision = (["granted", "denied", "expired"] as const).find((d) => d === f.decision);
@@ -3527,7 +4018,7 @@ export const MISSION_MCP_TOOLS: readonly MissionMcpTool[] = [
   {
     name: "request_approval",
     description:
-      "Ask a person to approve a merge, a deploy or a rollback before you do it. Never merge, deploy or roll back without an approval. Then stop and wait: you are resumed with the outcome.",
+      "Ask a person to approve a merge, a deploy or a rollback before you do it, whenever one is held for a person. Then stop and wait: you are resumed with the outcome.",
     inputSchema: {
       type: "object",
       properties: {
@@ -3779,7 +4270,8 @@ export const isSafeRule = (rule: string) =>
 export function parsePause(v: unknown): RunnerPause | undefined {
   if (!isObject(v) || typeof v.paused !== "boolean") return undefined;
   const until = isString(v.until) && !Number.isNaN(Date.parse(v.until)) ? new Date(v.until).toISOString() : null;
-  return v.paused ? { paused: true, until } : { paused: false };
+  if (!v.paused) return { paused: false };
+  return isString(v.by) && v.by.length <= 64 ? { paused: true, until, by: v.by } : { paused: true, until };
 }
 
 /** `hello.access` / `access.changed.access`, checked and cut. */

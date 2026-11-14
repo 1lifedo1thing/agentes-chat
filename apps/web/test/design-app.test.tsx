@@ -26,24 +26,21 @@ const live = (over: Partial<LiveRun>): LiveRun => ({
   channelId: "c",
   threadId: "t",
   status: "running",
-  text: "",
-  lastSeq: 0,
   ...over,
 });
 
 describe("the living avatar follows the run", () => {
-  test("queued/thinking/running without words → thinking; words → writing; done/failed/approval → idle", () => {
+  test("queued/thinking → thinking; writing (running) → writing; done/failed/approval → idle", () => {
     expect(agentStateOfRun(live({ status: "queued" }))).toBe("thinking");
     expect(agentStateOfRun(live({ status: "thinking" }))).toBe("thinking");
-    expect(agentStateOfRun(live({ status: "running" }))).toBe("thinking");
-    expect(agentStateOfRun(live({ status: "running", text: "Achei" }))).toBe("writing");
-    expect(agentStateOfRun(live({ status: "done", text: "Achei" }))).toBe("idle");
+    expect(agentStateOfRun(live({ status: "running" }))).toBe("writing");
+    expect(agentStateOfRun(live({ status: "done" }))).toBe("idle");
     expect(agentStateOfRun(live({ status: "failed" }))).toBe("idle");
     expect(agentStateOfRun(live({ status: "waiting_approval" }))).toBe("idle");
     const state = {
       runs: {
         r1: live({ runId: "r1", status: "thinking" }),
-        r2: live({ runId: "r2", status: "running", text: "x", channelId: "other" }),
+        r2: live({ runId: "r2", status: "running", channelId: "other" }),
       },
       finished: {},
     };
@@ -353,12 +350,15 @@ describe("⌘K palette", () => {
 });
 
 describe("composer in a DM", () => {
-  test("the target agent pill; '/' commands insert a ready request", async () => {
+  test("no chip for the DM's agent, nor for one the draft calls; '/' commands insert a ready request", async () => {
     await renderApp(`/org/${ORG_ID}/dm/agent/${ADA_ID}`, { api: createFakeApi(seedState()) });
     await settle(8);
     const composer = screen().getByRole("combobox", { name: "Mensagem para Ada" }) as HTMLTextAreaElement;
     const card = composer.closest(".ac-composer") as HTMLElement;
-    expect(card.querySelector(".ac-composer__agent")?.textContent).toContain("Ada");
+    expect(card.querySelector(".ac-composer__pills")).toBeNull();
+    await type(composer, "@atlas olha isso");
+    expect(card.querySelector(".ac-composer__pills")).toBeNull();
+    await act(async () => fireEvent.change(composer, { target: { value: "" } }));
     await type(composer, "/");
     const menu = screen().getByRole("listbox", { name: "Comandos" });
     expect(

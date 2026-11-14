@@ -10,8 +10,10 @@ import {
   createFakeApi,
   ENG_ID,
   type FakeState,
+  fakeBrowserOf,
   GENERAL_ID,
   LODI_ID,
+  meAsAdmin,
   ORG_ID,
   seedDm,
   seedState,
@@ -181,6 +183,62 @@ describe("the right hand elsewhere", () => {
     expect(state.messages.some((m) => m.body === "Me ajuda a montar o time.")).toBe(true);
   });
 
+  test("someone it greeted when they joined: its stored question with the areas to tap, and no other ask above it", async () => {
+    const state = withRightHand(seedState());
+    const channelId = seedDm(state, { type: "agent", id: LODI_ID }, { body: "You just joined Acme." });
+    const greeting = state.messages.find((m) => m.channelId === channelId);
+    if (greeting)
+      greeting.meta = {
+        bodyCode: "welcome_member",
+        bodyParams: { org: "Acme" },
+        replyChips: { choices: ["Marketing", "Vendas"], multiple: false, step: 1, of: 1 },
+      };
+    // They never picked how agents talk to them: without the greeting, its intro would ask that.
+    const org = state.me?.organizations[0];
+    if (org) org.agentStyle = null;
+    await go(state, `dm/agent/${LODI_ID}`);
+    // Worded in the reader's language, whatever the server stored.
+    const text = document.querySelector(".channel__messages")?.textContent;
+    expect(text).toContain("Você acabou de entrar na Acme. Do que você cuida por aqui?");
+    expect(text).not.toContain("Como prefere que eu fale com você?");
+    // Nor the way to build the team, which the same conversation without the greeting ends its intro with.
+    expect(screen().queryByRole("button", { name: "Montar o time" })).toBeNull();
+    // A tap is the person's own message. Answered, the top of its DM asks what it asks anyone.
+    await click(screen().getByRole("button", { name: "Vendas" }));
+    expect(state.messages.some((m) => m.author.type === "person" && m.body === "Vendas")).toBe(true);
+    expect(document.querySelector(".channel__messages")?.textContent).toContain("Como prefere que eu fale com você?");
+  });
+
+  test("while the conversation loads, a member is asked nothing that would leave once its greeting shows", async () => {
+    const state = withRightHand(seedState());
+    meAsAdmin(state);
+    const channelId = seedDm(state, { type: "agent", id: LODI_ID }, { body: "You just joined Acme." });
+    const greeting = state.messages.find((m) => m.channelId === channelId);
+    if (greeting) greeting.meta = { bodyCode: "welcome_member", bodyParams: { org: "Acme" } };
+    const org = state.me?.organizations[0];
+    if (org) org.agentStyle = null;
+    const api = createFakeApi(state);
+    const read = api.chat.messages;
+    let arrive = () => {};
+    const held = new Promise<void>((r) => {
+      arrive = r;
+    });
+    api.chat.messages = async (...args) => {
+      await held;
+      return read(...args);
+    };
+    await renderApp(`/org/${ORG_ID}/dm/agent/${LODI_ID}`, { api });
+    await settle(8);
+    const text = () => document.querySelector(".channel__messages")?.textContent;
+    expect(text()).toContain("Oi, eu sou o Lodi");
+    expect(text()).not.toContain("Como prefere que eu fale com você?");
+    expect(screen().queryByRole("button", { name: "Montar o time" })).toBeNull();
+    await act(async () => arrive());
+    await settle(8);
+    expect(text()).toContain("Você acabou de entrar na Acme.");
+    expect(text()).not.toContain("Como prefere que eu fale com você?");
+  });
+
   test("on the first visit it waves under its greeting, once: the visit marks its DM read, so the next has no wave", async () => {
     const state = withRightHand(seedState());
     state.dms.push({
@@ -203,14 +261,10 @@ describe("the right hand elsewhere", () => {
     expect(document.querySelector('canvas[data-mood="wave"]')).toBeNull();
   });
 
-  test("Settings › Lodi: its name and face in the nav, the lock line and its audit link", async () => {
-    await go(withRightHand(seedState()), "settings/right_hand");
-    const link = within(screen().getByRole("navigation", { name: "Seções das configurações" })).getByRole("link", {
-      name: "Lodi",
-    });
-    expect(link.getAttribute("aria-current")).toBe("page");
+  test("Lodi's page: its name, the lock line and its audit link", async () => {
+    await go(withRightHand(seedState()), `agents/${LODI_ID}`);
     expect(screen().getByRole("heading", { name: "Lodi" })).toBeTruthy();
-    const body = document.querySelector(".settings__body") as HTMLElement;
+    const body = document.querySelector(".page") as HTMLElement;
     expect(body.textContent).toContain("Na barra lateral ele aparece sempre como “seu braço direito”.");
     expect(body.textContent).toContain("O Lodi não pode ser arquivado nem apagado.");
     expect(within(body).getByRole("link", { name: "Ver o que o Lodi fez" }).getAttribute("href")).toBe(
@@ -218,8 +272,40 @@ describe("the right hand elsewhere", () => {
     );
   });
 
+  test("its Computador row opens the viewer's own place, and where it has none stays and says why", async () => {
+    const page = async (desktop: { available: boolean; reason: string | null }) => {
+      cleanup();
+      const api = createFakeApi(withRightHand(seedState()));
+      fakeBrowserOf.get(api)?.desktops.set(LODI_ID, desktop);
+      await renderApp(`/org/${ORG_ID}/agents/${LODI_ID}`, { api });
+      await settle(8);
+      const row = [...document.querySelectorAll<HTMLElement>(".settings-row")].find((r) =>
+        r.textContent?.startsWith("Computador"),
+      );
+      if (!row) throw new Error("no Computador row");
+      return row;
+    };
+    const mine = await page({ available: true, reason: null });
+    expect(mine.tagName).toBe("BUTTON");
+    expect(mine.textContent).toContain("Seu espaço próprio no computador do workspace.");
+    // No computer of the workspace's own, or one user for every agent: nothing to open, and the reason in sight.
+    const none = await page({ available: false, reason: "no_home" });
+    expect(none.tagName).toBe("DIV");
+    expect(none.textContent).toContain("Ainda sem computador.");
+    // Whoever may add one gets there from the row itself, not from a path in its words.
+    expect(none.textContent).not.toContain("Configurações");
+    const add = [...none.querySelectorAll("a")].find((a) => a.textContent === "Adicionar um computador");
+    expect(add?.getAttribute("href")).toBe(`/org/${ORG_ID}/settings/devices`);
+    const oneUser = await page({ available: false, reason: "not_system" });
+    expect(oneUser.tagName).toBe("DIV");
+    expect(oneUser.textContent).toContain("um só usuário");
+    expect(oneUser.querySelector("a")).toBeNull();
+    // Any other state (its computer offline) is its own view's to tell.
+    expect((await page({ available: false, reason: "offline" })).tagName).toBe("BUTTON");
+  });
+
   test("Mudar visual: the face and the choices in the dialog's body, Cancelar and Salvar in its footer", async () => {
-    await go(withRightHand(seedState()), "settings/right_hand");
+    await go(withRightHand(seedState()), `agents/${LODI_ID}`);
     await click(screen().getByRole("button", { name: "Mudar o visual do Lodi" }));
     const dialog = screen().getByRole("dialog", { name: "Mudar visual" });
     const body = dialog.querySelector(":scope > .ac-dialog__body") as HTMLElement;
@@ -230,7 +316,7 @@ describe("the right hand elsewhere", () => {
   });
 
   test("renaming it there saves the name and its @", async () => {
-    const { state } = await go(withRightHand(seedState()), "settings/right_hand");
+    const { state } = await go(withRightHand(seedState()), `agents/${LODI_ID}`);
     const name = screen().getByRole("textbox", { name: "Nome e visual" });
     await act(async () => fireEvent.change(name, { target: { value: "Bento" } }));
     await act(async () => fireEvent.blur(name));
@@ -241,7 +327,7 @@ describe("the right hand elsewhere", () => {
     ]);
   });
 
-  test("a member has no Lodi section", async () => {
+  test("nobody has a Lodi section in the settings", async () => {
     const state = withRightHand(seedState());
     const org = state.me?.organizations[0];
     if (org) org.role = "member";

@@ -14,6 +14,7 @@ import { and, eq, schema } from "@agenteschat/db";
 import {
   ASK_PERSON_TOOL,
   cancelSecretRequests,
+  connectVaultSource,
   createAgent,
   createAgentRuns,
   createBrowserProfile,
@@ -34,7 +35,6 @@ import {
   MachineOfflineError,
   MachineRequestError,
   type MachineStatus,
-  ROUTINE_KEYS_REFUSAL,
   releaseVaultKeys,
   runnerFailureText,
   secretLabelOf,
@@ -54,6 +54,7 @@ import { openItemValue } from "../src/vault/seal";
 import { addMember, type Fixture, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
 import { agentRunRow, channelRoutine, fire } from "./routine-fixtures";
+import { SOURCE_TOKEN, writableSource } from "./vault-fixtures";
 
 /**
  * The Vault's tools (ADR 0144): what the Vault shares with an agent for the person behind its run, listed without a
@@ -334,7 +335,7 @@ test("vault_list shows what is shared with the agent for the person behind the r
   expect(out.content).toContain('username "dev@acme.example"');
   expect(out.content).toContain("on acme.example");
   // Ana's own key: by its variable name, for run_code's `keys`, and its id, for vault_save.
-  expect(out.content).toContain(`- ACME_API_KEY (personal, ana, id ${v.items.key.id}):`);
+  expect(out.content).toContain(`- ACME_API_KEY (personal, ana, kept in the Vault, id ${v.items.key.id}):`);
   expect(out.content).toContain("Read-only key for the Acme API");
   // A contact's fields are meant for the agent.
   expect(out.content).toContain("billing@acme.example");
@@ -398,7 +399,9 @@ test("what each item says reaches the model as data: its own block, markers neut
   // Every item's text is in a block of its own, after the line the engine writes (id, scope, site).
   const blocks = out.content.match(/<external_data source="vault item">/g) ?? [];
   expect(blocks).toHaveLength(3);
-  expect(out.content).toContain(`- ${v.items.login.id} (team), on acme.example:\n<external_data source="vault item">`);
+  expect(out.content).toContain(
+    `- ${v.items.login.id} (team, kept in the Vault), on acme.example:\n<external_data source="vault item">`,
+  );
   // The text can't close its block early.
   const login = out.content.slice(out.content.indexOf(v.items.login.id));
   const block = login.slice(0, login.indexOf("</external_data>"));
@@ -843,23 +846,48 @@ test("in a shared browser profile, a login is typed only when every agent grante
   expect((await v.call(own, "browser_type_secret", { target: "e2", login: mine.id })).isError).toBeFalsy();
 });
 
-test("a routine types a saved login but gets no keys in a command", async () => {
+test("a routine's own run uses the Vault keys its creator allowed, and asks a person for any other", async () => {
   const v = await vaultSetup();
   const ctx = await routineCtx();
-  const keys = await v.call(ctx, "run_code", { language: "bash", code: "env", keys: ["ACME_API_KEY"] });
-  expect(keys.isError).toBe(true);
-  expect(keys.content).toBe(ROUTINE_KEYS_REFUSAL);
-  // Refused before anything was released: no key asked of the computer, no command run, no use.
+  const [routine] = await f.db.select().from(schema.routines).where(eq(schema.routines.agentId, f.agent.id));
+  if (!routine) throw new Error("no routine");
+  const invoke = (input: Record<string, unknown>) =>
+    f.tools?.invoke(ctx, { toolUseId: `tu_${crypto.randomUUID()}`, name: "run_code", input });
+  const withKey = { language: "bash", code: "env", keys: ["ACME_API_KEY"] };
+  // Not listed: a person says yes first, and "Sempre nesta rotina" would keep the key as the routine's own.
+  const asked = await invoke(withKey);
+  expect(asked?.type).toBe("approval");
+  if (asked?.type !== "approval") throw new Error("no approval");
+  expect(asked.approval.approveAlways).toEqual({
+    tool: "run_code",
+    actions: ["vault:ACME_API_KEY"],
+    routineId: routine.id,
+  });
+  // Nothing was released while it asks: no key asked of the computer, no command run.
   expect(v.computer.calls.filter((c) => c.op === "vault.key" || c.op === "exec")).toEqual([]);
-  expect(v.computer.opened).toEqual([]);
-  expect((await usesOf(v.items.key.id)).filter((u) => u.action === "key")).toHaveLength(0);
-  // A command without keys runs as before.
-  expect((await v.call(ctx, "run_code", { language: "bash", code: "echo ok" })).isError).toBeFalsy();
+  // Listed by its creator: the key goes to that one command, with no card.
+  await f.db
+    .update(schema.routines)
+    .set({ ownActions: ["vault:ACME_API_KEY"] })
+    .where(eq(schema.routines.id, routine.id));
+  const listed = await v.call(ctx, "run_code", withKey);
+  expect(listed.isError).toBeFalsy();
+  expect(v.computer.opened).toEqual([{ use: "env:ACME_API_KEY", value: KEY_VALUE }]);
+  // Another key still asks.
+  expect((await invoke({ ...withKey, keys: ["ACME_API_KEY", "OTHER_KEY"] }))?.type).toBe("approval");
+  // An agent that always asks asks for every key, listed or not, with no "Sempre nesta rotina" that would change nothing.
+  await f.db.update(schema.agents).set({ approvalsLevel: "always" }).where(eq(schema.agents.id, f.agent.id));
+  const always = await invoke({ ...withKey, why: "The weekly sales export needs the Acme key to read the report." });
+  if (always?.type !== "approval") throw new Error("no approval");
+  expect(always.approval.approveAlways ?? null).toBeNull();
+  // An agent that never asks uses any key its creator may use, listed or not.
+  await f.db.update(schema.routines).set({ ownActions: [] }).where(eq(schema.routines.id, routine.id));
+  await f.db.update(schema.agents).set({ approvalsLevel: "never" }).where(eq(schema.agents.id, f.agent.id));
+  expect((await v.call(ctx, "run_code", withKey)).isError).toBeFalsy();
   // A saved login is still typed for the routine's creator: its value reaches neither the model nor a command.
   await v.call(ctx, "browser_read", {});
   const typed = await v.call(ctx, "browser_type_secret", { target: "e2", login: v.items.login.id });
   expect(typed.isError).toBeFalsy();
-  expect(v.computer.opened).toEqual([{ use: "fill:exact:https://acme.example", value: PASSWORD }]);
 });
 
 test("a key's use is recorded even when the command's answer never comes back", async () => {
@@ -1087,6 +1115,70 @@ test("a made password is for a named account", async () => {
   expect(out.isError).toBe(true);
   expect(out.content).toContain("username");
   expect(v.computer.calls.filter((c) => c.op === "vault.password")).toHaveLength(0);
+});
+
+test("with a password manager connected, the tools say where a login is kept and where a new one went", async () => {
+  const v = await makerSetup();
+  const source = writableSource();
+  Object.assign(v.vault.sources, { fakepass: source });
+  const connection = await connectVaultSource(v.vault, f.owner.id, f.org.id, {
+    kind: "fakepass",
+    scope: "team",
+    input: { token: SOURCE_TOKEN },
+    access: { everyone: true, roleIds: [], userIds: [], allAgents: true, agentIds: [] },
+  });
+  const ana = await v.runFor(f.owner.id);
+  v.computer.s.made = [MADE, "made-for-the-vault-2", "made-unfilled-3"];
+  const out = await v.call(ana, "browser_make_password", { target: "e2", username: "lia@acme.example" });
+  expect(out.isError).toBeFalsy();
+  const [login] = await madeLogins();
+  if (!login) throw new Error("no login");
+  expect(login.connectionId).toBe(connection.id);
+  expect(out.content).toContain(
+    `Saved in FakePass · "Agents" (the one connected password manager that takes your new logins) as login ${login.id}`,
+  );
+  // Typed from where it is kept, as any login read from a password manager.
+  expect(source.calls.some((c) => c.op === "reveal")).toBe(true);
+
+  const list = await v.call(ana, "vault_list", { kind: "login" });
+  expect(list.content).toContain(`- ${login.id} (team, kept in FakePass · "Agents"), anywhere on `);
+  expect(list.content).toContain(`(team, kept in the Vault), on acme.example:`);
+  expect(list.content).toContain('- FakePass · "Agents": takes new logins');
+
+  // The person named the Vault: there, and the answer says so.
+  const named = await v.call(ana, "browser_make_password", {
+    target: "e2",
+    username: "rui@acme.example",
+    save_in: "vault",
+  });
+  expect(named.content).toContain("Saved in the Vault (as asked) as login ");
+
+  // A field that didn't take it: nothing is deleted from a person's password manager.
+  v.computer.s.typeVault = () => ({
+    success: false,
+    data: null,
+    error: "not a password field",
+    code: "not_password_field",
+  });
+  const unfilled = await v.call(ana, "browser_make_password", { target: "e2", username: "eva@acme.example" });
+  expect(unfilled.isError).toBe(true);
+  expect(unfilled.content).toContain('stays in FakePass · "Agents" with a password no site has');
+  expect(source.items).toHaveLength(2);
+
+  source.readOnly = true;
+  const refused = await v.call(ana, "browser_make_password", {
+    target: "e2",
+    username: "noa@acme.example",
+    save_in: "FakePass",
+  });
+  expect(refused.isError).toBe(true);
+  expect(refused.content).toContain("This FakePass token can only read");
+  const audit = await f.db.select().from(schema.auditLog);
+  for (const text of [out, list, named, unfilled, refused, audit, v.computer.calls]) {
+    const said = JSON.stringify(text);
+    for (const secret of [MADE, "made-for-the-vault-2", "made-unfilled-3", SOURCE_TOKEN])
+      expect(said).not.toContain(secret);
+  }
 });
 
 test("typed nowhere, the Vault stays as it was: a new login goes, a replaced one comes back", async () => {

@@ -53,7 +53,16 @@ test("a rounded thing near a rounded box's edge has the box's radius less the ro
   expect(last(top, ".ac-msg__actions", "border-radius")).toBe("var(--bar-r)");
   const inBar = "calc(var(--bar-r) - var(--bar-pad))";
   expect(last(top, ".ac-msg__actions .ac-btn--sm", "border-radius")).toBe(inBar);
-  expect(last(atRule(kit, "@media (pointer: coarse)"), ".ac-msg__actions .ac-btn--sm", "border-radius")).toBe(inBar);
+  // Under a finger the plates grow through the bar's own size, so their corner stays the bar's less its room.
+  expect(last(atRule(kit, "@media (pointer: coarse)"), ".ac-msg__actions", "--bar-btn")).toBe("var(--control-h-sm)");
+  // A plate with a count (👍 1) is one plate around the icon and the count, the icon as far in as in a square one.
+  expect(last(top, ".ac-msg__actions .ac-btn--sm", "width")).toBe("var(--bar-btn)");
+  expect(last(top, ".ac-msg__actions .ac-btn--sm:not(.ac-btn--icon)", "width")).toBe("auto");
+  expect(last(top, ".ac-msg__actions .ac-btn--sm:not(.ac-btn--icon)", "padding-inline")).toBe(
+    "calc((var(--bar-btn) - var(--bar-icon)) / 2)",
+  );
+  // Pressed, it keeps the ghost's plate: no fill of the bar's own over it.
+  expect(kit).not.toContain('.ac-msg__actions .ac-btn[aria-pressed="true"]');
   // Segmented controls, and the command palette's rows in its list.
   expect(last(top, ".ac-seg__item", "border-radius")).toBe("calc(var(--seg-r) - var(--seg-in))");
   expect(last(top, ".ac-palette__list", "padding")).toBe("var(--palette-pad)");
@@ -155,8 +164,8 @@ test("a button inside a field is as far from its end as from its top and bottom,
   expect(last(kit, ".ac-token--sm", "--token-x-spare")).toBe("5px");
   expect(last(kit, ".ac-token--sm", "border-radius")).toBe("var(--radius-xs)");
   expect(last(kit, ".ac-token--sm .ac-token__remove", "border-radius")).toBe("var(--radius-cut)");
-  // The composer's tools: one room at both ends and under them, its send button the card's corner less it.
-  expect(last(kit, ".ac-composer__tools", "padding")).toBe("4px var(--space-2) var(--space-2)");
+  // The composer's row: one room on every side, its send button the card's corner less it.
+  expect(last(kit, ".ac-composer__row", "padding")).toBe("var(--space-2)");
   expect(last(kit, ".ac-composer__send", "border-radius")).toBe("var(--control-r-sm)");
   // The password field's eye: a 32px button in the ruler's 48px field, as far from its end as from its top and
   // bottom, its corner the field's less that room.
@@ -181,21 +190,24 @@ test("every hairline between a card's rows, and over its foot, has one step of r
   // Over a foot, the rows give back the card's gap: the last row's padding is all that's over the foot's hairline.
   expect(last(layout, ".settings-rows:has(+.ac-card__foot)", "margin-bottom")).toBe("calc(-1 * var(--space-3))");
   const roles = topLevel(await read(join(SRC, "components/roles/roles.css")));
-  expect(last(roles, ".roles-row", "padding")).toBe("var(--row-py) 20px");
-  expect(last(roles, ".roles-area", "padding")).toBe("var(--row-py) 0");
-  expect(last(roles, ".roles-look__row", "padding")).toBe("var(--row-py) 0");
+  // The cargos' list keeps 12 above and below its words (a list row's), each row's words past its grip's slot.
+  expect(last(roles, ".roles-row__open", "padding")).toBe(
+    "var(--space-3) var(--space-4) var(--space-3) var(--space-3)",
+  );
   // Limites are settings rows: every select on one right edge.
   const people = topLevel(await read(join(SRC, "components/people-usage.css")));
   expect(declarations(people, ".pu-limits__row")).toEqual([]);
   expect(last(people, ".pu-pick__select", "width")).toBe("200px");
   const plan = topLevel(await read(join(SRC, "components/plan-usage.css")));
-  expect(last(plan, ".plan-block", "padding")).toBe("var(--row-py) 0");
+  // An account's row: one step above and below its words, the list's 16 at its sides, what it folds on the same sides.
+  expect(last(plan, ".plan-row__head", "padding")).toBe("var(--space-3) var(--space-4)");
+  expect(last(plan, ".plan-row__body", "padding")).toBe("0 var(--space-4)");
+  expect(last(plan, ".plan-row__body", "gap")).toBe("var(--space-3)");
 });
 
-test("Seus planos and the API keys: each row has the rows' room above and below, 16 at its sides", async () => {
+test("the API keys: each row has the rows' room above and below, 16 at its sides", async () => {
   const layout = topLevel(await read(join(SRC, "layout.css")));
-  for (const row of [".ai-accounts__row", ".key-row"])
-    expect(last(layout, row, "padding")).toBe("var(--row-py) var(--space-4)");
+  expect(last(layout, ".key-row", "padding")).toBe("var(--row-py) var(--space-4)");
 });
 
 test("the settings sidebar's links are the ruler's compact step, the default one under a finger", async () => {
@@ -209,4 +221,36 @@ test("the settings sidebar's links are the ruler's compact step, the default one
   expect(last(top, ".settings__groups", "gap")).toBe("var(--space-4)");
   const touch = atRule(css, "@media (pointer: coarse)");
   expect(last(touch, ".settings__link", "min-height")).toBe("var(--control-h-md)");
+});
+
+test("where nothing drags, a cargo's row ends in its ⋯ instead of a grip and a chevron, on the row's middle", async () => {
+  const roles = await read(join(SRC, "components/roles/roles.css"));
+  const top = topLevel(roles);
+  expect(last(top, ".roles-row > .roles-row__more", "display")).toBe("none");
+  // A 32 box on the name's line would leave the row 6 above what it holds and 12 below.
+  expect(last(top, ".roles-row > .roles-row__more", "align-self")).toBe("center");
+  expect(last(top, ".roles-row > .roles-row__more", "margin-inline-end")).toBe("var(--space-2)");
+  // As wide as its button on every row, Todos' and Dono's too: every count ends on one edge.
+  expect(last(top, ".roles-row > .roles-row__more", "width")).toBe("var(--control-h-sm)");
+  // At phone width and under a finger, whatever the width.
+  for (const block of ["@container (max-width: 520px)", "@media (pointer: coarse)"]) {
+    const css = atRule(roles, block);
+    expect([block, last(css, ".roles-row__slot", "display")]).toEqual([block, "none"]);
+    expect([block, last(css, ".roles-row > .roles-row__more", "display")]).toEqual([block, "flex"]);
+    expect([block, last(css, ".roles-row:has(> .roles-row__more) .roles-row__end > .ac-icon", "display")]).toEqual([
+      block,
+      "none",
+    ]);
+  }
+});
+
+test("Nome, cor e ícone's preview: its mark a word of the name's line on the capitals' middle, never a column", async () => {
+  const roles = topLevel(await read(join(SRC, "components/roles/roles.css")));
+  expect(last(roles, ".roles-preview", "display")).toBeUndefined();
+  expect(last(roles, ".roles-preview", "line-height")).toBe("28px");
+  // `.ac-icon--inline`'s rule for a 32 box whose baseline is its bottom edge (an inline-block that clips).
+  expect(last(roles, ".roles-preview__mark", "display")).toBe("inline-block");
+  expect(last(roles, ".roles-preview__mark", "overflow")).toBe("hidden");
+  expect(last(roles, ".roles-preview__mark", "vertical-align")).toBe("calc(var(--cap-top) - var(--cap-mid) - 16px)");
+  expect(last(roles, ".roles-preview__mark > .ac-rolemark", "display")).toBe("grid");
 });

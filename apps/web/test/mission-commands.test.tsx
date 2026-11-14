@@ -68,7 +68,11 @@ describe("command approvals", () => {
     await settle(6);
     const card = screen().getByRole("region", { name: "Claude Code pede para rodar um comando" });
     expect(card.textContent).toContain("swift build -c release");
-    expect(card.textContent).toContain("Aprovar sempre libera swift build …");
+    // What it covers is the button's tip: no line of its own under the buttons.
+    expect(card.textContent).not.toContain("Aprovar sempre libera");
+    expect(
+      within(card).getByRole("button", { name: "Aprovar sempre nesta missão" }).getAttribute("aria-description"),
+    ).toContain("Aprovar sempre libera swift build …");
     expect(within(card).getByRole("button", { name: "Recusar" })).toBeTruthy();
     await act(async () => fireEvent.click(within(card).getByRole("button", { name: "Aprovar sempre nesta missão" })));
     await settle(6);
@@ -94,7 +98,10 @@ describe("command approvals", () => {
     );
     await settle(6);
     const card = screen().getByRole("region", { name: "Claude Code pede para rodar um comando" });
-    expect(card.textContent).toContain("libera gh issue create com quaisquer argumentos");
+    expect(card.textContent).not.toContain("com quaisquer argumentos");
+    expect(
+      within(card).getByRole("button", { name: "Aprovar sempre para este agente" }).getAttribute("aria-description"),
+    ).toContain("libera gh issue create com quaisquer argumentos");
     await act(async () =>
       fireEvent.click(within(card).getByRole("button", { name: "Aprovar sempre para este agente" })),
     );
@@ -129,8 +136,12 @@ describe("command approvals", () => {
     expect(within(dialog).getByRole("region", { name: "Read" }).textContent).toContain(
       "Read /Users/w/app/.agentes/notes.md",
     );
-    // Long and multi-line commands are cut to two lines with "Mostrar tudo".
-    expect(within(python).getAllByRole("button", { name: "Mostrar tudo" })).toHaveLength(1);
+    // Long and multi-line commands are cut to two lines with "Ver mais", which opens the command in place for good.
+    const more = within(python).getAllByRole("button", { name: "Ver mais" });
+    expect(more).toHaveLength(1);
+    await act(async () => fireEvent.click(more[0] as HTMLElement));
+    expect(python.querySelector(".mi-cmd-item__code[data-all]")).not.toBeNull();
+    expect(within(python).queryByRole("button", { name: /^Ver (mais|menos)$/ })).toBeNull();
     expect(within(dialog).getAllByRole("checkbox")).toHaveLength(4);
   });
 

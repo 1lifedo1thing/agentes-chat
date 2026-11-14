@@ -141,12 +141,11 @@ function fileType(name: string, mime: string, view: FileView): FileTypeKey {
   return view === "text" ? "text" : "file";
 }
 
-/** A video's height for `width`: its own shape once known (16:9 before), kept between tall (9:16) and wide (2:1). */
-export function videoHeight(width: number, size: { width: number; height: number } | null): number {
-  if (!size || size.width <= 0 || size.height <= 0) return Math.round((width * 9) / 16);
-  const ratio = Math.min(Math.max(size.width / size.height, 9 / 16), 2);
-  return Math.round(width / ratio);
-}
+/**
+ * A video's height for `width` in a message: one box (16:9), the video whole inside it. Its own shape is known only
+ * once it loads, and a box that took it then would move the rows around it.
+ */
+export const videoHeight = (width: number) => Math.round((width * 9) / 16);
 
 /** "0:07", "12:05", "1:02:09": a video's time. */
 export function videoClock(seconds: number): string {
@@ -157,11 +156,22 @@ export function videoClock(seconds: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
 }
 
-/** A lone picture's height for `width`: its own aspect ratio, kept between tall (3:4… 9:16) and wide (2:1). */
-export function singleImageHeight(width: number, size: { width: number; height: number } | null): number {
-  if (!size || size.width <= 0 || size.height <= 0) return Math.round(width * 0.75);
-  const ratio = Math.min(Math.max(size.width / size.height, 9 / 16), 2);
-  return Math.round(width / ratio);
+/** A lone picture's height for `width`: one box (4:3), the picture whole inside it, for the video's reason. */
+export const singleImageHeight = (width: number) => Math.round(width * 0.75);
+
+/** The tallest a lone picture of known shape gets (a portrait one narrows to fit). */
+export const MAX_PICTURE_HEIGHT = 400;
+
+/**
+ * A lone picture's box at most `width` wide: in its own proportions when its size is known (`ratio`, as the web's
+ * `[data-ratio]` tile), no taller than `MAX_PICTURE_HEIGHT`; else the one 4:3 box.
+ */
+export function singleImageBox(width: number, ratio: number | undefined): { width: number; height: number } {
+  if (!ratio) return { width, height: singleImageHeight(width) };
+  const height = Math.round(width / ratio);
+  return height <= MAX_PICTURE_HEIGHT
+    ? { width, height }
+    : { width: Math.round(MAX_PICTURE_HEIGHT * ratio), height: MAX_PICTURE_HEIGHT };
 }
 
 /**

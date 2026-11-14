@@ -41,7 +41,7 @@ import {
   type TurnContext,
 } from "@agenteschat/adapters/machine-protocol";
 import type { AccountGrant } from "./accounts";
-import { type AgentUser, readAgentUsers, systemLauncher } from "./agent-users";
+import { type AgentUser, keepContainers, readAgentUsers, rootlessContainers, systemLauncher } from "./agent-users";
 import { type BindPolicyOptions, ensureBrowserBindPolicy } from "./browser-bind-policy";
 import type { BrowserViews } from "./browser-views";
 import { backoffDelay } from "./connection";
@@ -165,6 +165,8 @@ export interface WorkerState {
   limits: { maxConcurrentTasks: number; taskMaxSeconds: number; brainIdleMinutes: number; brainMaxProcesses: number };
   /** People watching or controlling its agent's desktop (root's): its Chrome there isn't idle meanwhile. */
   desktopViewers?: number;
+  /** Its agent holds its browser (`keep_running`, ADR 0176): it isn't closed as idle meanwhile. */
+  browserKept?: boolean;
   /** The account its agent thinks with now (null: none): its processes on any other close (`keepAccount`). */
   account?: string | null;
   /** The other accounts it thinks with (the right hand on people's own plans): kept too. */
@@ -211,6 +213,8 @@ export interface BrainReclaimed {
   idle?: { since: number; spare: boolean };
   /** A peek: `spare` has an open CLI. */
   warm?: boolean;
+  /** A browser peek: when the agent's browser `BrowserManager.reclaimIdle` would close was last used. */
+  browserIdle?: number;
 }
 
 export type WorkerLinkFrame =
@@ -246,10 +250,10 @@ export type WorkerLinkFrame =
   /** From the worker: its agent's Chrome is in use on the agent's desktop (`BROWSER_LEASE_MS`). */
   | { type: "browser.desktop" }
   /**
-   * To the worker: close its least recently used idle brain CLI (`BrainManager.reclaimIdle`), `spare` last; with
-   * `peek`, only say which it would (`idleCandidate`).
+   * To the worker: close its least recently used idle brain CLI (`BrainManager.reclaimIdle`), `spare` last, or with
+   * `browser` its agent's idle browser (`BrowserManager.reclaimIdle`); with `peek`, only say which it would.
    */
-  | { type: "brain.reclaim"; reclaimId: string; spare?: string; peek?: boolean }
+  | { type: "brain.reclaim"; reclaimId: string; spare?: string; peek?: boolean; browser?: boolean }
   /** From the worker: whether it closed one, or (`peek`) when the one it would close was last used. */
   | ({ type: "brain.reclaimed"; reclaimId: string } & BrainReclaimed)
   /**
@@ -370,6 +374,8 @@ export interface SupervisorOptions {
   grant?: (kind: AccountKind, accountId: string) => Promise<AccountGrant | null>;
   /** What root launched for this agent on a sign-in with its own user: no stop by uid reaches it. */
   stopAccountScopes?: (uid: number) => void;
+  /** Its containers service (ADR 0169), which outlives its worker but not a network it is leaving. */
+  stopContainers?: (uid: number) => void;
   /** A turn's plan usage, for its account (`AccountManager.noteRateLimit`, `noteCodexRateLimits`). */
   usage?: (kind: AccountKind, accountId: string, info: unknown) => void;
   /** A refreshed ChatGPT sign-in root keeps for all agents (`AccountManager.keepCodexAuth`). */
@@ -382,6 +388,8 @@ export interface SupervisorOptions {
   desktop?: (agent: AgentScope, use: WorkerDesktopUse) => Promise<WorkerDesktop>;
   /** How many people watch or control the agent's desktop (`DesktopSessions.status`). */
   desktopViewers?: (agentId: string) => number;
+  /** The agent holds its browser (`keep_running`, ADR 0176): its worker keeps it open meanwhile. */
+  browserKept?: (agentId: string) => boolean;
   /** The account an agent thinks with now, still on this computer (the agents frame); null: none. */
   account?: (agentId: string) => string | null;
   /** The other accounts it thinks with now (`MachineAgent.accounts`). */
@@ -833,6 +841,18 @@ export class Supervisor {
     return false;
   }
 
+  /** No idle CLI was left to close: the least recently used idle agent's browser across the workers closes instead. */
+  async reclaimBrowsers(): Promise<boolean> {
+    const workers = [...this.workers.values()].filter((w) => w.ready);
+    const peeks = await Promise.all(
+      workers.map(async (w) => ({ w, since: (await this.askBrains(w, { peek: true, browser: true }))?.browserIdle })),
+    );
+    const order = peeks.flatMap(({ w, since }) => (since === undefined ? [] : [{ w, since }]));
+    order.sort((a, b) => a.since - b.since);
+    for (const { w } of order) if ((await this.askBrains(w, { browser: true }))?.closed) return true;
+    return false;
+  }
+
   /** Whether the session `key` (`brainKey`) has an open CLI in its agent's worker. */
   async warmBrain(key: string): Promise<boolean> {
     const w = this.workers.get(key.split(":")[0] ?? "");
@@ -840,7 +860,10 @@ export class Supervisor {
     return (await this.askBrains(w, { spare: key, peek: true }))?.warm === true;
   }
 
-  private askBrains(w: Worker, ask: { spare?: string; peek?: boolean }): Promise<BrainReclaimed | null> {
+  private askBrains(
+    w: Worker,
+    ask: { spare?: string; peek?: boolean; browser?: boolean },
+  ): Promise<BrainReclaimed | null> {
     const reclaimId = String(++this.seq);
     return new Promise((resolve) => {
       const late = setTimeout(() => {
@@ -857,6 +880,7 @@ export class Supervisor {
         reclaimId,
         ...(ask.spare ? { spare: ask.spare } : {}),
         ...(ask.peek ? { peek: true } : {}),
+        ...(ask.browser ? { browser: true } : {}),
       });
     });
   }
@@ -934,6 +958,7 @@ export class Supervisor {
     w.networkRetiring = true;
     w.ready = false;
     this.opts.stopAccountScopes?.(w.user.uid);
+    this.opts.stopContainers?.(w.user.uid);
     this.endSession(w, why, true);
     this.endShows(w, why);
     for (const waiter of [...w.waiters]) waiter.reject(new RunnerError("dropped", why));
@@ -1277,6 +1302,7 @@ export class Supervisor {
         w.user.networkLauncher || w.user.networkMark ? true : s.privateNetwork === undefined ? undefined : false,
       access: { ...s.access, folders },
       ...(viewers > 0 ? { desktopViewers: viewers } : {}),
+      ...(this.opts.browserKept?.(w.user.id) ? { browserKept: true } : {}),
       ...(this.opts.account ? { account: this.opts.account(w.user.id) } : {}),
       ...(this.opts.accounts?.(w.user.id).length ? { accounts: this.opts.accounts(w.user.id) } : {}),
     };
@@ -1347,6 +1373,11 @@ export class Supervisor {
         if (this.opts.send(f)) this.calls.set(f.callId, w);
         return;
       }
+      case "browser.pointer":
+      case "desktop.pointer":
+        // Its own agent's pointer only.
+        if (f.agentId === w.user.id) this.opts.send(f);
+        return;
       case "browser.frame":
       case "browser.stream.ended": {
         if (f.agentId !== w.user.id) return;
@@ -1481,6 +1512,7 @@ export class Supervisor {
         closed: f.closed === true,
         ...(valid ? { idle: { since: idle.since as number, spare: idle.spare as boolean } } : {}),
         ...(f.warm === true ? { warm: true } : {}),
+        ...(typeof f.browserIdle === "number" && Number.isFinite(f.browserIdle) ? { browserIdle: f.browserIdle } : {}),
       });
       return;
     }
@@ -1874,8 +1906,15 @@ export function retireLegacyPending(
 }
 
 /** `agentes-runner worker` for one agent through its launcher (its user, its slice, only its environment). */
-export function workerCommand(user: AgentUser, runner: string[], home: string, systemd?: boolean, oomPolicy?: boolean) {
-  const l = systemLauncher(user, systemd, oomPolicy);
+export function workerCommand(
+  user: AgentUser,
+  runner: string[],
+  home: string,
+  systemd?: boolean,
+  oomPolicy?: boolean,
+  containers?: boolean,
+) {
+  const l = systemLauncher(user, systemd, oomPolicy, containers);
   return {
     argv: [...l.prefix, ...runner, "worker", "--agent", user.id, "--dir", l.home, "--home", home],
     cwd: l.home,
@@ -1883,10 +1922,22 @@ export function workerCommand(user: AgentUser, runner: string[], home: string, s
   };
 }
 
-/** Starts each agent's worker as a process (`runner`: how this runner starts itself), its bind check passed first. */
-export function launchWorker(runner: string[], policy: BindPolicyOptions, base = AGENT_WORKER_HOMES): StartWorker {
+/**
+ * Starts each agent's worker as a process (`runner`: how this runner starts itself), its bind check passed first and
+ * its containers service as the agents frame says (`containers`, ADR 0169), where there are rootless containers;
+ * without it, only its containers don't work.
+ */
+export function launchWorker(
+  runner: string[],
+  policy: BindPolicyOptions,
+  base = AGENT_WORKER_HOMES,
+  log?: (line: string) => void,
+  containers: (agentId: string) => boolean = () => false,
+): StartWorker {
   return (user) => {
     ensureBrowserBindPolicy(user, runner, policy);
+    const problem = rootlessContainers() ? keepContainers(user, containers(user.id)) : null;
+    if (problem) log?.(`[${user.user}] containers unavailable: ${problem}`);
     const home = workerHome(base, user);
     retireLegacyPending(base, home, user);
     const { argv, cwd, env } = workerCommand(user, runner, home);

@@ -7,6 +7,7 @@ import type {
   MessageConsultation,
   MessagePin,
   ReactionCount,
+  TypingWho,
 } from "@agenteschat/client";
 import { agentProposalOf, costlyProposalOf, stretchCardOf } from "@agenteschat/client/lib/action-cards";
 import { type ActivityEntry, barEntries, type barWords, markedPieces, markInk } from "@agenteschat/client/lib/activity";
@@ -208,17 +209,13 @@ export function standsAlone(m: Message) {
  * routine's call written as its creator is left out, like the web's `buildTimeline`. The sticker or GIF an agent
  * adds right after its own reply (ADR 0091) always groups under that reply, whatever the reply carries.
  */
-export function buildRows(
-  messages: Message[],
-  hidden: (m: Message) => boolean = () => false,
-  /** The agents at work in this conversation: an event over once they happened is left out (`settledNotices`). */
-  working: ReadonlySet<string> = new Set(),
-): ChatRow[] {
+export function buildRows(messages: Message[], hidden: (m: Message) => boolean = () => false): ChatRow[] {
   const rows: ChatRow[] = [];
   let lastDay = "";
   let prev: Message | null = null;
   const answered = answeredNotices(messages);
-  const settled = settledNotices(messages, working);
+  // A return's line (the dock holds it), a mention its message's own line explains.
+  const settled = settledNotices(messages);
   for (const m of [...messages].sort(byTime)) {
     if (
       hidden(m) ||
@@ -266,17 +263,14 @@ const NOTICE_ICON: Record<string, EventLineView["icon"]> = {
   consult_reply: "agent",
   agent_note: "chat",
   wait_result: "check",
-  follow_up: "clock",
   wake_skipped: "info",
 };
 
 export function eventLineOf(
   m: Pick<Message, "body" | "meta">,
   names: { author: string; agentByHandle: (handle: string) => string | null },
-  /** A follow-up's time for the reader ("18:30"), and the reader's locale for its day. */
-  when: { time: (iso: string) => string; locale: string } = { time: (iso) => iso, locale: "pt-BR" },
 ): EventLineView | null {
-  const view = noticeView(m, names, when);
+  const view = noticeView(m, names);
   const kind = noticeOf(m.meta)?.kind ?? "";
   return view ? { ...view, kind: "notice", icon: NOTICE_ICON[kind] ?? "bell" } : null;
 }
@@ -342,7 +336,7 @@ export function workStepsOf(meta: Message["meta"]): number | null {
 /** `meta.artifacts`: the files on a message. */
 export function artifactsOf(
   meta: Message["meta"],
-): { id: string; version?: number; title: string; deleted: boolean }[] {
+): { id: string; version?: number; title: string; deleted: boolean; width?: number; height?: number }[] {
   const list = meta?.artifacts;
   if (!Array.isArray(list)) return [];
   return list.flatMap((r) => {
@@ -354,6 +348,8 @@ export function artifactsOf(
         ...(typeof o.version === "number" ? { version: o.version } : {}),
         title: str(o.title),
         deleted: o.deleted === true,
+        // A picture's size (when the server read it): its box has its shape before it loads.
+        ...(typeof o.width === "number" && typeof o.height === "number" ? { width: o.width, height: o.height } : {}),
       },
     ];
   });
@@ -375,6 +371,7 @@ export function questionOf(meta: Message["meta"]): AgentQuestion | null {
     status: q.status === "answered" ? "answered" : "open",
     answer: str(q.answer) || null,
     answeredByUserId: str(q.answeredByUserId) || null,
+    answeredAt: str(q.answeredAt) || null,
     ...(str(q.requestedForUserId) ? { requestedForUserId: str(q.requestedForUserId) } : {}),
     ...(q.withdrawn === true ? { withdrawn: true as const } : {}),
     ...(q.dismissed === true ? { dismissed: true as const } : {}),
@@ -405,17 +402,16 @@ export const hidesBody = (m: Message) =>
  * Who shows in the working line, as on the web's bar (`barEntries`): agents
  * asking another agent, then agents at work, one entry per agent even when it
  * has two runs (a provisional "thinking" row and the real run, or two tasks at
- * once), then the people typing.
+ * once), then the people typing or recording a voice message.
  */
 export function workingEntries(
   runs: LiveRun[],
   consults: LiveConsult[],
   agentName: (id: string) => string,
-  typing: string[] = [],
+  typing: TypingWho[] = [],
   personName: (id: string) => string | undefined = () => undefined,
 ): ActivityEntry[] {
-  // Writing agents stay in: the line above the box is on while they work.
-  return barEntries(runs, typing, agentName, personName, consults, true);
+  return barEntries(runs, typing, agentName, personName, consults);
 }
 
 /**
@@ -427,39 +423,24 @@ export const stoppableInLine = (runs: LiveRun[]) =>
 
 /**
  * What the line above the composer stops with its own "Parar" (the working line, or the requests' line while it
- * takes its place): the runs I may stop of the one agent at work here, whose live rows are out of view (a row on
- * screen carries its own stop). With several, the line can't say whose (the box's own stop stops them all).
+ * takes its place): the runs I may stop of the one agent at work here. With several, the line can't say whose (the
+ * box's own stop stops them all).
  */
-export function lineStops(
-  entries: ActivityEntry[],
-  runs: LiveRun[],
-  canStop: (run: LiveRun) => boolean,
-  rowInView: (run: LiveRun) => boolean = () => false,
-): LiveRun[] {
+export function lineStops(entries: ActivityEntry[], runs: LiveRun[], canStop: (run: LiveRun) => boolean): LiveRun[] {
   const agents = entries.filter((e) => e.type === "agent");
   const solo = agents.length === 1 ? agents[0] : undefined;
-  return solo ? stoppableInLine(runs).filter((r) => r.agentId === solo.id && canStop(r) && !rowInView(r)) : [];
+  return solo ? stoppableInLine(runs).filter((r) => r.agentId === solo.id && canStop(r)) : [];
 }
 
 /**
- * The one agent the working line speaks for while its live row is out of view (`entriesOffScreen` left it in): its
- * run, for the row's step, its time, "Ver" and its stop. None with several agents, or while its row is on screen
- * (a question it asks keeps its phrase in the line; the row says the rest).
+ * The one agent the working line speaks for: its run, for its step, its time and its stop. None with several agents
+ * (a question it asks keeps its phrase in the line).
  */
-export function awayRun(
-  entries: ActivityEntry[],
-  runs: LiveRun[],
-  rowInView: (run: LiveRun) => boolean,
-): LiveRun | undefined {
+export function awayRun(entries: ActivityEntry[], runs: LiveRun[]): LiveRun | undefined {
   const agents = entries.filter((e) => e.type === "agent");
   const solo = agents.length === 1 ? agents[0] : undefined;
-  const run = solo ? runs.find((r) => r.agentId === solo.id) : undefined;
-  return run && !rowInView(run) ? run : undefined;
+  return solo ? runs.find((r) => r.agentId === solo.id) : undefined;
 }
-
-/** The run whose live row offers its stop (the web's rule): the latest one here I may stop. */
-export const rowStopOf = (runs: LiveRun[], canStop: (run: LiveRun) => boolean): LiveRun | undefined =>
-  stoppableInLine(runs).findLast((r) => canStop(r));
 
 /**
  * Who may press "Parar" (the web's `useStopRun`): admins, the agent's owner,
@@ -480,6 +461,13 @@ export function mayStopRun(
 /** Names in a sentence: in ink, or with the agent's face (shared with the web's `WorkingLine`). */
 export const markName = markInk;
 
+/**
+ * Whether a return's words fit whole beside its sentence on the dock's line (widths in points, as laid out): they show
+ * whole or not at all, never cut.
+ */
+export const aboutFits = (room: number, sentence: number, about: number) =>
+  room > 0 && sentence > 0 && about > 0 && sentence + about <= room + 0.5;
+
 /** A marked sentence split into plain and bold (name) pieces; a faced name carries its agent's id. */
 export const markedParts = markedPieces;
 
@@ -487,6 +475,7 @@ export const markedParts = markedPieces;
 export interface LineDrawn {
   agents?: number;
   typers?: number;
+  recorders?: number;
 }
 
 /** A piece only narrows: kept to what it drew, it can't draw wider, and a narrower room cuts it again. */
@@ -497,16 +486,23 @@ export const narrowDrawn = (drawn: LineDrawn, part: keyof LineDrawn, width: numb
 export const AGENT_WORDS_MIN = 40;
 
 /**
- * The widths the working line's pieces keep (whole points) while someone types: iOS keeps a cut text's whole box,
- * a gap before what follows, so each keeps to what it drew and the next piece comes right after its "…".
+ * The widths the working line's pieces keep (whole points) while someone types or records: iOS keeps a cut text's
+ * whole box, a gap before what follows, so each keeps to what it drew and the next piece comes right after its "…".
  * `agents: null` drops the agents' words, their " · " with them, when they'd be a sliver: who types keeps the room,
  * as on the web. Alone, the agents' words keep the line as it is (nothing follows them).
  */
-export function lineFit(drawn: LineDrawn, someoneTypes: boolean): { agents?: number | null; typers?: number } {
+export function lineFit(
+  drawn: LineDrawn,
+  someoneTypes: boolean,
+): { agents?: number | null; typers?: number; recorders?: number } {
   if (!someoneTypes) return {};
   const whole = (width?: number) => (width === undefined ? undefined : Math.ceil(width));
   const sliver = drawn.agents !== undefined && drawn.agents < AGENT_WORDS_MIN;
-  return { agents: sliver ? null : whole(drawn.agents), typers: whole(drawn.typers) };
+  return {
+    agents: sliver ? null : whole(drawn.agents),
+    typers: whole(drawn.typers),
+    recorders: whole(drawn.recorders),
+  };
 }
 
 /** The working line's words in the pieces that give way in turn (`barWords`). */
@@ -693,7 +689,7 @@ export type Block =
   | { kind: "heading"; inline: Inline[] }
   | { kind: "bullet"; inline: Inline[]; ordinal: string | null }
   | { kind: "quote"; inline: Inline[] }
-  | { kind: "code"; lang: string; text: string; open?: boolean }
+  | { kind: "code"; lang: string; text: string }
   | { kind: "table"; header: Inline[][]; rows: Inline[][][]; align: TableAlign[] }
   /** Closed until tapped (the shared `detailsAt`, ADR 0147): `body` is Markdown of its own. */
   | { kind: "details"; summary: Inline[]; body: string };
@@ -862,14 +858,13 @@ function plainBlocks(body: string): Block[] {
   const parts = body.split(/```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/g);
   for (let i = 0; i < parts.length; i += 3) {
     const text = parts[i] ?? "";
-    // The last part may hold a block still being written (no closing fence yet): the web's rule, so an
-    // answer that is still streaming shows its code (or "Montando o gráfico…") instead of the raw text.
+    // The last part may hold a block without its closing fence: it runs to the end of the text, as code.
     const last = i + 3 >= parts.length;
     const open = last ? /```([a-zA-Z0-9_+-]*)\n([\s\S]*)$/.exec(text) : null;
     if (open) {
       textBlocks(text.slice(0, open.index), out);
       const code = (open[2] ?? "").replace(/`{1,2}$/, "").replace(/\n$/, "");
-      out.push({ kind: "code", lang: open[1] ?? "", text: code, open: true });
+      out.push({ kind: "code", lang: open[1] ?? "", text: code });
     } else textBlocks(last ? text.replace(/```[a-zA-Z0-9_+-]*$/, "") : text, out); // a fence still opening
     if (i + 2 < parts.length)
       out.push({ kind: "code", lang: parts[i + 1] ?? "", text: (parts[i + 2] ?? "").replace(/\n$/, "") });
@@ -952,3 +947,6 @@ export const readMark = (channelId: string, threadId: string | null | undefined)
  */
 export const messageRefWords = (t: TFunction, card: MessageCard) =>
   `${card.kind === "dm" ? `@${card.name}` : `#${card.name}`}${card.threadId ? ` › ${t("messageRefs.thread")}` : ""} › `;
+
+/** Two taps this close on a message are its double tap (the thumbs up), on its words or on a receipt under them. */
+export const DOUBLE_TAP_MS = 300;

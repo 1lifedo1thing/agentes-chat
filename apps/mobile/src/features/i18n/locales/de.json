@@ -54,10 +54,10 @@
     "closed": "{{title}} · geschlossen",
     "reopen": "Wieder anzeigen",
     "answeredBy": "{{name}} hat gewählt",
-    "failed": "Deine Auswahl wurde nicht gesendet. Versuch es noch einmal."
+    "failed": "Deine Auswahl wurde nicht gesendet. Versuch es noch einmal.",
+    "tooLongFix": "Kürze die Antwort."
   },
   "chart": {
-    "pending": "Diagramm wird erstellt…",
     "table": "Tabelle",
     "item": "Eintrag",
     "share": "Teilen",
@@ -303,7 +303,7 @@
   },
   "along": {
     "agent": "Ein Agent",
-    "waits": "{{name}} wartet auf dein Okay",
+    "waits": "{{name}} · wartet auf dich",
     "on": "{{name}} · {{what}}",
     "working": "{{name}} arbeitet",
     "more": "+{{count}}"
@@ -371,18 +371,10 @@
     "switchWorking": "arbeitet",
     "join": "Dem Kanal beitreten",
     "sending": "Wird gesendet…",
-    "failed": "Nicht gesendet · Erneut versuchen",
-    "notSent": "Die Nachricht wurde nicht gesendet.",
     "toLatest": "Zu den neuesten Nachrichten",
     "toLatestNew": "Zu den neuesten Nachrichten: {{text}}",
     "stopAgent": "{{name}} stoppen",
     "offlineWait": "Wird gesendet, sobald die Verbindung zurück ist",
-    "turn": {
-      "thinking": "denkt nach",
-      "working": "arbeitet",
-      "writing": "schreibt",
-      "stopped": "gestoppt"
-    },
     "steer": {
       "waiting": "{{name}} liest es bei der nächsten Pause",
       "computer": "{{name}} liest es, sobald der Computer frei ist",
@@ -801,7 +793,7 @@
     "teamSectionPersonal": "Deine Agenten",
     "managerQuiet": "Nichts in Arbeit",
     "state": {
-      "waitsYou": "wartet auf dein Okay",
+      "waitsYou": "wartet auf dich",
       "noAi": "Keine KI verbunden",
       "connect": "Verbinden",
       "archived": "Archiviert",
@@ -927,6 +919,9 @@
       "routine_failed_other": "Routinen fehlgeschlagen",
       "run_failed_one": "Ließ sich nicht abschließen",
       "run_failed_other": "Ließen sich nicht abschließen",
+      "admin_ask_channel_agent": "{{names}} bittet dich, {{agent}} zu #{{label}} hinzuzufügen",
+      "admin_ask_create_agents": "{{names}} möchte Agenten erstellen dürfen",
+      "admin_ask_webhook": "{{names}} bittet dich, den {{service}}-Webhook für Routinen einzurichten",
       "routine_paused_one": "Routine pausiert",
       "routine_paused_other": "Routinen pausiert",
       "routine_stalled_one": "Routine wartet auf den Computer",
@@ -987,6 +982,8 @@
       "plan_lent_other": "{{names}} haben dein {{plan}}-Abo mit {{agent}} verbunden",
       "plan_lent_female_one": "{{names}} hat dein {{plan}}-Abo mit {{agent}} verbunden",
       "plan_lent_female_other": "{{names}} haben dein {{plan}}-Abo mit {{agent}} verbunden",
+      "plan_serves_one": "Dein {{plan}} dient jetzt dem ganzen Workspace",
+      "plan_serves_other": "Dein {{plan}} dient jetzt dem ganzen Workspace",
       "plan_model_dropped_one": "{{model}} ist nicht mehr bei {{plan}}. {{names}} nutzt vorerst {{runs}}",
       "plan_model_dropped_other": "{{model}} ist nicht mehr bei {{plan}}. {{names}} nutzt vorerst {{runs}}",
       "computer_disk_full_one": "Die Festplatte eines Computers ist fast voll",
@@ -1097,7 +1094,6 @@
     "proposalsWaiting_other": "{{count}} warten",
     "drive": "Drive",
     "connectors": "Konnektoren und MCP",
-    "usage": "Nutzung",
     "preferences": "Einstellungen",
     "editProfile": "Profil bearbeiten",
     "switchWorkspace": "Workspace wechseln",
@@ -1143,6 +1139,9 @@
     "addWorkspaceTeamShort": "Dem Server deines Teams beitreten",
     "addWorkspaceTeamSubShort": "Adresse oder QR-Code des Computers",
     "addWorkspaceFoot": "Du verlässt keinen Workspace.",
+    "addAccount": "Bei einem weiteren Konto anmelden",
+    "addAccountSub": "Auf {{host}}, ohne dieses zu verlassen",
+    "accountNoWorkspace": "Noch kein Workspace",
     "teamServerLeadShort": "Was dein Team im Browser öffnet.",
     "teamServerQuestion": "Wie lautet die Adresse deines Teams?",
     "account": {
@@ -1160,6 +1159,8 @@
       "name": "Name",
       "namePlaceholder": "Dein Name",
       "email": "E-Mail",
+      "emailWebLead": "Melde dich auf der Website erneut an und ändere sie dort, ohne den Code.",
+      "emailWeb": "Auf der Website erneut anmelden",
       "inWorkspace": "In diesem Workspace · {{org}}",
       "handle": "Dein @",
       "timezone": "Zeitzone",
@@ -1372,7 +1373,8 @@
     "uses_one": "{{count}}-mal genutzt",
     "uses_other": "{{count}}-mal genutzt",
     "confirmed": "Von einer Person bestätigt",
-    "unconfirmed": "Noch nicht bestätigt",
+    "confirm": "Bestätigen",
+    "confirmedToast": "Bestätigt",
     "details": "Technische Details",
     "before": "Vorher stand hier: {{text}}",
     "fix": "Korrigieren",
@@ -1443,7 +1445,7 @@
       "plain": "hat eine Aufgabe abgeschlossen"
     },
     "rowWait": {
-      "approval": "wartet auf dein Okay",
+      "approval": "wartet auf dich",
       "question": "wartet auf deine Antwort",
       "mission": "wartet auf deine Prüfung"
     },
@@ -1481,13 +1483,13 @@
   },
   "intentAgents": {
     "waitingSection": "Wartet auf dich",
-    "waitingLine": "{{title}} · braucht dein Okay",
+    "waitingLine": "{{title}} · wartet auf dich",
     "waitingMore_one": "{{title}} · und {{count}} weitere wartet auf dich",
     "waitingMore_other": "{{title}} · und {{count}} weitere warten auf dich",
-    "waitingLabel": "{{name}}, braucht dein Okay",
+    "waitingLabel": "{{name}}, wartet auf dich",
     "owner": "Inhaber: {{name}}",
     "ownerYou": "Inhaber: du",
-    "nowWaiting": "Braucht dein Okay: {{title}}",
+    "nowWaiting": "Wartet auf dich: {{title}}",
     "did": {
       "title": "Was er für dich getan hat",
       "title_female": "Was sie für dich getan hat",
@@ -1506,7 +1508,7 @@
         "image": "Bild",
         "file": "Datei"
       },
-      "waitingOnYou": "Braucht dein Okay",
+      "waitingOnYou": "Wartet auf dich",
       "youApproved": "Du hast freigegeben",
       "youRefused": "Du hast abgelehnt",
       "action": {
@@ -1583,9 +1585,9 @@
         "setup": "Workspace-Einrichtung",
         "desktop": "Computerbildschirm"
       },
-      "asksYou": "Mergen und Veröffentlichen fragen immer nach deiner Freigabe, auf jeder Stufe.",
-      "asksOwner": "Mergen und Veröffentlichen fragen immer nach der Freigabe von {{name}}, auf jeder Stufe.",
-      "asksAdmins": "Mergen und Veröffentlichen fragen immer nach der Freigabe eines Admins, auf jeder Stufe.",
+      "asksYou": "Mergen und Veröffentlichen fragen nach deiner Freigabe, außer der Agent fragt nie.",
+      "asksOwner": "Mergen und Veröffentlichen fragen nach der Freigabe von {{name}}, außer der Agent fragt nie.",
+      "asksAdmins": "Mergen und Veröffentlichen fragen nach der Freigabe eines Admins, außer der Agent fragt nie.",
       "empty": "Vorerst nur Unterhaltung."
     }
   },
@@ -1684,13 +1686,7 @@
       "open": "Öffnen",
       "expandHint": "Zum Vergrößern tippen",
       "stop": "Stoppen",
-      "giveUp": "Aufgeben",
-      "done": "Erledigt: {{title}}",
-      "failed": "Nicht geschafft: {{title}}",
-      "failedNote": "Nicht geschafft: {{note}}",
-      "expired": "Niemand hat es rechtzeitig geöffnet: {{title}}",
-      "cancelled": "Abgebrochen: {{title}}",
-      "withdrawn": "{{name}} braucht das nicht mehr: {{title}}"
+      "giveUp": "Aufgeben"
     },
     "live": {
       "inControl": "Du hast die Steuerung",
@@ -1747,6 +1743,8 @@
         "offlineCloudM": "Der Computer von {{name}} antwortet gerade nicht.",
         "stuckF": "Der Browser von {{name}} ließ sich nicht öffnen.",
         "stuckM": "Der Browser von {{name}} ließ sich nicht öffnen.",
+        "noAnswerF": "Der Browser von {{name}} hat nicht geantwortet.",
+        "noAnswerM": "Der Browser von {{name}} hat nicht geantwortet.",
         "tooManyF": "Zu viele Browser gleichzeitig offen. Dieser erscheint, sobald ein anderer schließt.",
         "tooManyM": "Zu viele Browser gleichzeitig offen. Dieser erscheint, sobald ein anderer schließt."
       }
@@ -1807,12 +1805,19 @@
       "helper_missing": "Die Test-App ist noch nicht eingerichtet",
       "helper_expired": "Die Test-App muss erneuert werden",
       "apple_account_missing": "Xcode auf dem Mac braucht einen Apple Account",
+      "apple_team_missing": "Xcode auf dem Mac zeigt noch kein Team",
+      "ui_not_authorized": "Dieses iPhone hat die Eingaben der Test-App abgelehnt",
       "team_limit": "Entferne eine selbst erstellte App von diesem iPhone",
       "helper_untrusted": "Vertraue der Test-App auf diesem iPhone",
       "booting": "Startet gerade",
-      "no_driver": "Windows braucht den USB-Treiber dieses Handys",
+      "no_driver": "Windows braucht den USB-Treiber vom Hersteller des Handys",
+      "no_driverLinux": "Linux braucht udev-Regeln für dieses Handy",
       "os_too_old": "Das System dieses Handys ist zu alt",
       "adb_offline": "Zieh das Kabel ab und steck es wieder ein",
+      "wifi_away": "Verbinde dieses iPhone mit dem WLAN des Macs oder schließ es an",
+      "wifi_asleep": "Weck dieses iPhone auf, entsperr es und lass es nah am Mac",
+      "tunnel_down": "Die WLAN-Verbindung ist abgebrochen. Lass dieses iPhone nah am Mac oder schließ es an",
+      "wifi_untrusted": "Schließ es einmal an und tippe auf Vertrauen",
       "other": "Noch nicht bereit"
     },
     "os": {
@@ -1911,12 +1916,11 @@
       "noHost": "Dieses Handy arbeitet über einen deiner Computer. Verbinde zuerst einen.",
       "hostOffline": "{{host}} ist offline. Schalte ihn ein und öffne dort agentes.chat.",
       "step1": "Entwickleroptionen aktivieren",
-      "step1Text": "Tippe 7-mal auf Build-Nummer und gib dann deine PIN ein.",
+      "step1Text": "Tippe 7-mal auf Build-Nummer und gib dann deine PIN ein. Bei Samsung: Softwareinformationen › Buildnummer.",
       "openAbout": "Über das Telefon öffnen",
       "step2": "USB-Debugging aktivieren",
       "openDev": "Entwickleroptionen öffnen",
       "step3": "An {{host}} anschließen",
-      "step3Hint": "Nimm ein Kabel, das Daten überträgt, nicht nur eines zum Laden. Wenn das Handy fragt, wofür USB genutzt wird, wähle Dateiübertragung.",
       "looking": "Suche dieses Handy",
       "step4": "Tippe auf diesem Handy auf Zulassen",
       "step4Text": "Setz vorher das Häkchen bei Von diesem Computer immer zulassen.",
@@ -1934,7 +1938,7 @@
       "wifi1": "Debugging über WLAN einschalten",
       "wifi1Text": "Setz das Häkchen bei In diesem Netzwerk immer zulassen und tippe auf Zulassen.",
       "wifi2": "Code auf einem Computer scannen",
-      "wifi2Text": "Unter Debugging über WLAN › Gerät über QR-Code koppeln.",
+      "wifi2Text": "Unter Debugging über WLAN › Gerät über QR-Code koppeln. Nicht die Kamera nutzen: Sie liest den Code als WLAN-Netz und nimmt das Handy aus deinem WLAN.",
       "wifi2Hint": "Öffne agentes.chat auf einem Computer, dann Gerät verbinden › Android-Handy › Über WLAN, und wähle {{host}}.",
       "codeHead": "Mit Kopplungscode koppeln",
       "codeNote": "Unter Debugging über WLAN › Gerät über Kopplungscode koppeln. Öffne Einstellungen und agentes.chat nebeneinander, damit der Code sichtbar bleibt.",
@@ -1965,7 +1969,37 @@
       "step5Hint": "Die App, die {{host}} installiert, damit Agenten auf diesem iPhone tippen und schreiben können. Sie erscheint in dieser Liste, sobald sie installiert ist.",
       "step5Text": "Einstellungen › Allgemein › VPN & Geräteverwaltung. Tippe auf den Namen des Entwicklers und dann auf Vertrauen.",
       "waiting": "Warte, bis {{host}} es erkennt",
-      "footer": "Dein Mac erledigt den Rest und erneuert die Test-App alle 7 Tage, solange er an ist."
+      "footer": "Dein Mac erledigt den Rest und erneuert die Test-App alle 7 Tage, solange er an ist.",
+      "tooOld": "Dieses iPhone läuft mit iOS {{version}}, Agenten brauchen iOS 17 oder neuer. Aktualisiere es, wenn das geht, oder nimm ein neueres iPhone.",
+      "xcodeOld": "Dieses iPhone läuft mit iOS {{version}}, neuer als Xcode auf {{host}} kennt. Installiere dort Xcode {{major}} und führe dann xcrun devicectl manage ddis update im Terminal aus.",
+      "teamMissing": "Xcode ist angemeldet, zeigt aber noch kein Team. Erstelle in Xcode eine beliebige iOS-App, wähle unter Signing & Capabilities dein Team und führe sie einmal auf diesem iPhone aus.",
+      "uiRefused": "Dieses iPhone hat die Eingaben der Test-App abgelehnt. Entsperre es und gib deinen Code ein, wenn es danach fragt. Passiert es wieder, schalte Einstellungen › Entwickler › UI-Automatisierung aktivieren aus und wieder ein.",
+      "pluggedIn": "Es ist angeschlossen",
+      "wifi": {
+        "also": "Auch im WLAN von {{host}}: {{name}}",
+        "use": "Über WLAN nutzen",
+        "hint": "Hier erscheint nur ein iPhone, das dem Mac schon einmal per Kabel vertraut hat. Der Mac erreicht es über Apples eigene verschlüsselte Verbindung, dieselbe, die Xcode nutzt.",
+        "stop": "Nicht mehr über WLAN nutzen",
+        "stopTitle": "{{name}} nicht mehr über WLAN nutzen?",
+        "stopText": "Agenten erreichen es nicht mehr. Wähl es mit {{host}} wieder aus, um es zu nutzen.",
+        "stopped": "{{name}} wird nicht mehr über WLAN genutzt"
+      },
+      "stall": {
+        "plug": "{{host}} sieht dieses iPhone noch nicht. Nimm ein Kabel, das Daten überträgt und nicht nur lädt, lass dieses iPhone entsperrt und tippe auf Vertrauen, wenn es fragt."
+      },
+      "devMode": {
+        "restarting": "{{host}} sieht dieses iPhone nach dem Neustart noch nicht wieder. Lass es angeschlossen.",
+        "back": "Tippe in der Abfrage auf diesem iPhone auf Aktivieren und gib deinen Code ein.",
+        "check": "Ist eingeschaltet, erneut prüfen",
+        "stillOff": "{{host}} sieht den Entwicklermodus noch als aus.",
+        "missing": "Option nicht zu sehen?",
+        "hidden": "Dieses iPhone versteckt die Option, bis Xcode sie anzeigen lässt.",
+        "hiddenOpen": "Dieses iPhone versteckt die Option, bis Xcode sie anzeigen lässt. Öffne Xcode auf {{host}}, während dieses iPhone dort angeschlossen ist.",
+        "openXcode": "Xcode öffnen",
+        "opened": "Xcode ist auf {{host}} offen. Schau noch einmal in den Einstellungen und schließ Xcode dort danach.",
+        "unlock": "Eingeschaltet und neu gestartet? Die Abfrage mit Aktivieren erscheint, sobald dieses iPhone entsperrt ist.",
+        "outdated": "Die agentes.chat-App auf {{host}} ist veraltet. Aktualisiere sie auf diesem Mac."
+      }
     },
     "notice": {
       "kind": "Geräte",
@@ -1976,6 +2010,8 @@
       "access_requestFor": "{{names}} möchte {{device}} für {{person}} nutzen",
       "waiting": "{{names}} wartet auf {{device}}",
       "waitingFor": "{{names}} wartet für {{person}} auf {{device}}",
+      "tool_request": "{{names}} bittet dich, {{tool}} auf deinem {{device}} einzuschalten",
+      "cli_request": "{{names}} bittet dich, {{tool}} auf deinem {{device}} zu installieren",
       "allowOnce": "Einmal erlauben",
       "always": "{{name}} immer erlauben",
       "no": "Nein",
@@ -2032,13 +2068,13 @@
     "failed": "Verbinden hat nicht geklappt. Versuch es noch einmal.",
     "refused": "{{name}} hat nicht autorisiert. Es wurde nichts verbunden.",
     "connectedTitle": "{{name}} verbunden",
-    "connectedSub": "Prüf jetzt, was Agenten selbstständig tun können.",
     "connectedDone": "Dienst verbunden.",
     "levelFailed": "Der Zugriff auf {{name}} ließ sich nicht ändern. Versuch es noch einmal.",
     "everyoneFailed": "Der Zugriff für alle ließ sich nicht ändern. Versuch es noch einmal.",
     "disconnectFailed": "{{name}} ließ sich nicht trennen. Versuch es noch einmal.",
     "needsReconnect": "Das Konto bei {{name}} funktioniert nicht mehr. Agenten können es erst nutzen, wenn jemand es neu verbindet.",
-    "noTools": "Die Tools von {{name}} ließen sich nicht lesen. Die Agenten haben sie erst wieder, wenn sie unter Tools neu gelesen werden.",
+    "noTools": "Die Tools von {{name}} ließen sich nicht lesen. Die Agenten haben sie erst wieder, wenn sie neu gelesen werden.",
+    "readAgain": "Erneut lesen",
     "accountTitle": "Konto",
     "renameFailed": "Umbenennen hat nicht geklappt. Versuch es noch einmal.",
     "whoTitle": "Wer es nutzt",
@@ -2163,9 +2199,9 @@
     "anotherLead": "Auf agentes.chat. Du bleibst in {{org}} und kannst jederzeit wechseln.",
     "suggested": "Anhand deiner E-Mail bei {{domain}} habe ich {{org}} vorgeschlagen.",
     "create": "Erstellen",
+    "enter": "Zum Workspace",
     "shareMessage": "Tritt {{org}} auf agentes.chat bei: {{url}}",
-    "failed": "Speichern hat nicht geklappt. Versuch es noch einmal.",
-    "enter": "Zum Workspace"
+    "failed": "Speichern hat nicht geklappt. Versuch es noch einmal."
   },
   "ai": {
     "yourPlan": "Dein KI-Abo",
@@ -2215,23 +2251,20 @@
     "editSub": "Name, Logo, Zeitzone und was die Agenten wissen",
     "group": {
       "org": "Workspace",
-      "people": "Personen",
-      "agents": "Agenten",
-      "costs": "Kosten und Daten"
+      "people": "Personen"
     },
     "section": {
       "members": "Mitglieder",
       "roles": "Rollen",
       "access": "Zugriff der Agenten",
-      "connectors": "Konnektoren",
-      "usage": "Nutzung und Budget"
+      "connectors": "Konnektoren"
     },
     "ofOnline": "{{online}} von {{count}}",
     "deleteName": "{{name}} löschen",
     "deleteFoot": "Du hast 7 Tage Zeit, es dir anders zu überlegen.",
-    "deleteAlert": "Alle verlieren sofort den Zugriff. Wiederherstellen geht noch 7 Tage lang.",
+    "deleteAlert": "Alle können ihn ab sofort nur noch lesen. Wiederherstellen geht noch 7 Tage lang.",
     "deleteAction": "Löschen",
-    "deleteIntro": "{{name}} wird sofort für alle geschlossen und in 7 Tagen endgültig gelöscht.",
+    "deleteIntro": "{{name}} ist ab sofort für alle schreibgeschützt und wird in 7 Tagen endgültig gelöscht.",
     "holdDelete": "Zum Löschen gedrückt halten",
     "deleteFailed": "Der Workspace ließ sich nicht löschen. Versuch es noch einmal.",
     "access": {
@@ -2242,16 +2275,167 @@
       "tooBig": "Das Bild ist zu groß. Versuch ein anderes."
     },
     "machine": {
-      "toolsHow": "Tippe auf ein eingeschaltetes Tool, um es auszuschalten. Wieder einschalten geht nur am Computer selbst."
-    },
-    "roles": {
-      "onComputer": "Die Reihenfolge der Rollen und das Symbol jeder Rolle änderst du am Computer.",
-      "items": "Einzeln",
-      "create": "Erstellen"
+      "toolsHow": "Tippe auf ein eingeschaltetes Werkzeug, um es auszuschalten. Wieder einschalten: am Computer selbst, oder hier durch die Person, die ihn verbunden hat.",
+      "toolsHowOwner": "Tippe auf ein Werkzeug, um es ein- oder auszuschalten."
     },
     "import": {
       "preparing": "Datei wird vorbereitet…",
       "failed": "Die Datei ließ sich nicht herunterladen. Versuch es noch einmal."
+    }
+  },
+  "roles": {
+    "create": "Erstellen",
+    "search": "Rollen suchen",
+    "baseHint": "Gilt für jede Person im Workspace. Rollen kommen dazu.",
+    "orderHint": "Wer weiter oben steht, verwaltet die Rollen und die Personen darunter. Die Farbe eines Namens kommt von der höchsten Rolle der Person.",
+    "order": "Sortieren",
+    "orderDone": "Fertig",
+    "up": "{{name}} nach oben",
+    "down": "{{name}} nach unten",
+    "orderChanged": "Die Rollen haben sich geändert, während du sie verschoben hast. Lade neu und versuch es noch einmal.",
+    "none": "Noch keine Rollen. Erstelle eine, um manchen Personen mehr zu geben.",
+    "noMatch": "Keine Rolle passt zu „{{q}}“.",
+    "tooMany": "Dieser Workspace hat schon 100 Rollen. Lösche eine, um eine neue zu erstellen.",
+    "loadFailed": "Die Rollen konnten nicht geladen werden. {{cause}}",
+    "backToList": "Zurück zu den Rollen",
+    "nobody": "Niemand",
+    "reach": {
+      "permissions_one": "{{count}} Berechtigung",
+      "permissions_other": "{{count}} Berechtigungen",
+      "channels_one": "{{count}} Kanal",
+      "channels_other": "{{count}} Kanäle",
+      "agents_one": "{{count}} Agent",
+      "agents_other": "{{count}} Agenten",
+      "more": "+{{what}}",
+      "all": "Darf alles",
+      "owner": "Darf alles, immer",
+      "none": "Nur, was Alle dürfen",
+      "baseNone": "Nur lesen"
+    },
+    "tabs": {
+      "permissions": "Berechtigungen",
+      "channels": "Kanäle",
+      "agents": "Agenten"
+    },
+    "addOwners": "Inhaber hinzufügen",
+    "icons": {
+      "shield": "Schild",
+      "code": "Quellcode",
+      "wallet": "Geldbörse",
+      "mail": "E-Mail",
+      "bolt": "Blitz",
+      "flag": "Flagge",
+      "book": "Buch",
+      "chart": "Diagramm",
+      "bulb": "Glühbirne",
+      "globe": "Globus",
+      "pullRequest": "Pull-Request",
+      "calendar": "Kalender",
+      "message": "Nachricht",
+      "eye": "Auge",
+      "plug": "Stecker",
+      "person": "Person"
+    },
+    "inviteWith": "Mit dieser Rolle einladen",
+    "searchPermission": "Berechtigung suchen",
+    "everyoneCan": "Alle dürfen das",
+    "only": "Nur {{names}}",
+    "notHeld": "Du hast diese Berechtigung nicht.",
+    "noPermissionMatch": "Keine Berechtigung passt zu „{{q}}“.",
+    "advanced": "Erweitert",
+    "peopleOnly": "Rollen gelten für Personen. Jeder Agent hat eigene Berechtigungen, auf seiner Seite.",
+    "nowAbove": "Diese Rolle steht jetzt über deiner. Nur jemand weiter oben kann sie ändern.",
+    "admin": {
+      "title": "Administrator für {{name}} einschalten?",
+      "text": "Wer {{name}} hat, darf dann alles außer dem, was nur der Inhaber darf.",
+      "count_one": "Das ist {{count}} Person.",
+      "count_other": "Das sind {{count}} Personen.",
+      "on": "Administrator einschalten",
+      "note": "Mit Administrator darf {{name}} alles außer dem, was nur der Inhaber darf."
+    },
+    "computers": {
+      "title": "Computer der Agenten",
+      "hint": "Browser: der Browser und die Anmeldeanfragen. Computer: dazu der ganze Bildschirm und das Terminal. Eigene Agenten: die, für die die Person zuständig ist, und die Computer, die sie verbunden hat.",
+      "steps": {
+        "0": "Nutzt keine",
+        "1": "Browser der eigenen Agenten",
+        "2": "Computer der eigenen Agenten",
+        "3": "Browser jedes Agenten",
+        "4": "Computer jedes Agenten"
+      },
+      "stepsIn": {
+        "1": "den Browser der eigenen Agenten",
+        "2": "den Computer der eigenen Agenten",
+        "3": "den Browser jedes Agenten",
+        "4": "den Computer jedes Agenten"
+      },
+      "everyoneTo": "Alle bekommen {{step}}.",
+      "everyoneNone": "Alle nutzen die Computer der Agenten nicht mehr."
+    },
+    "whoCan": "Wer darf",
+    "everyoneSub": "Jede Person im Workspace",
+    "someRoles": "Nur manche Rollen",
+    "losing": "Verlieren es: {{names}}.",
+    "nobodyLoses": "Niemand verliert etwas.",
+    "everyoneGets": "Alle bekommen es.",
+    "ownersAlways": "Inhaber dürfen es immer.",
+    "noOtherRoles": "Es gibt noch keine anderen Rollen.",
+    "channels": {
+      "header": "Wer {{name}} hat, sieht",
+      "headerBase": "Alle sehen",
+      "hint": "Das gilt für Personen. Ein Agent kommt in einen Kanal, wenn jemand ihn hinzufügt.",
+      "search": "Kanal suchen",
+      "everyone": "Alle sehen ihn",
+      "private": "Privat",
+      "general": "Alle bleiben in #general.",
+      "locked": "Nur wer #{{channel}} erstellt hat oder Kanäle ordnet, ändert, wer ihn sieht.",
+      "leaveTitle": "#{{channel}} von {{name}} entfernen?",
+      "leave_one": "{{names}} verlässt den Kanal.",
+      "leave_other": "{{names}} verlassen den Kanal.",
+      "leaveAction": "Entfernen",
+      "openTitle": "#{{channel}} für {{name}} öffnen?",
+      "openText": "Wer {{name}} hat, sieht den Kanal und den ganzen Verlauf und kann beitreten.",
+      "openAction": "Öffnen",
+      "openAllTitle": "#{{channel}} für alle öffnen?",
+      "openAllText": "Der ganze Verlauf wird für den Workspace sichtbar.",
+      "admin": "Mit Administrator sieht, wer {{name}} hat, alle Kanäle.",
+      "onlyGeneral": "Bisher gibt es nur #general.",
+      "noMatch": "Kein Kanal passt zu „{{q}}“.",
+      "ungrouped": "Kanäle",
+      "whoSees": "Wer sieht",
+      "allSub": "Jede Person im Workspace sieht ihn und kann beitreten.",
+      "invited": "Nur wer hinzugefügt wird",
+      "invitedSub": "Niemand Neues sieht ihn. Wer drin ist, bleibt.",
+      "unsee": "Wer drin ist, bleibt. Sehen ihn nicht mehr: {{names}}."
+    },
+    "agents": {
+      "header": "Wer {{name}} hat, spricht mit",
+      "headerBase": "Alle sprechen mit",
+      "hint": "Das gilt für Personen. Was jeder Agent tut, steht auf seiner Seite.",
+      "everyone": "Alle sprechen mit ihm",
+      "gate": "Wer nur {{name}} hat, spricht nicht mit Agenten.",
+      "gateOn": "Mit Agenten sprechen einschalten",
+      "locked": "Nur {{owner}}, zuständig für {{name}}, oder wer jeden Agenten bearbeitet, ändert das.",
+      "locked_female": "Nur {{owner}}, zuständig für {{name}}, oder wer jeden Agenten bearbeitet, ändert das.",
+      "lockedNoOwner": "Nur wer jeden Agenten bearbeitet, ändert das.",
+      "none": "Noch keine Agenten.",
+      "some": "Nur manche Rollen und Personen",
+      "addPerson": "Person hinzufügen",
+      "losing": "Sprechen nicht mehr mit {{agent}}: {{names}}."
+    },
+    "people": {
+      "removed": "{{person}} hat {{name}} nicht mehr",
+      "selfTitle": "Dich aus {{name}} entfernen?",
+      "selfText": "Du verlierst, was nur {{name}} gibt. Nur jemand über dir gibt es zurück."
+    },
+    "mail": {
+      "title_one": "Ein Agent verliert ein Postfach",
+      "title_other": "Agenten verlieren {{count}} Postfächer",
+      "loses": "{{agent}} verliert {{address}}, das Postfach von {{owner}}.",
+      "losesAddress": "{{agent}} verliert das Postfach {{address}}.",
+      "only": "Nur wer ein Postfach gegeben hat, gibt es wieder.",
+      "addAnyway": "Trotzdem hinzufügen",
+      "giveAnyway": "Trotzdem geben"
     }
   },
   "vault": {
@@ -2290,7 +2474,7 @@
     },
     "import": {
       "title": "Von einem Computer importieren",
-      "text": "Um Passwörter aus einem Browser oder Passwort-Manager zu übernehmen, öffne im Web Einstellungen, Vault und wähle Importieren."
+      "text": "Um Passwörter aus einem Browser oder Passwort-Manager zu übernehmen, importiere sie im Web."
     },
     "connections": {
       "text": "Verbinde einen Passwort-Manager, und deine Agenten verwenden die Logins, die dort liegen. Nichts wird kopiert: Ein Passwort wird erst gelesen, wenn es gebraucht wird.",
@@ -2308,7 +2492,7 @@
       "guide": "Anleitung von {{name}} öffnen",
       "fields": "Angaben",
       "private": "Diese Angaben werden verschlüsselt aufbewahrt und nie wieder angezeigt.",
-      "teamHelp": "Seine Einträge sind zuerst für alle im Workspace sichtbar und von keinem Agenten genutzt. Die Agenten wählst du danach.",
+      "teamHelp": "Alle im Workspace sehen seine Einträge und jeder Agent kann sie verwenden. Du kannst das danach anpassen.",
       "personalHelp": "Nur du siehst seine Einträge, und deine Agenten verwenden sie, wenn du sie darum bittest.",
       "checking": "Wird mit {{name}} geprüft…",
       "connected": "{{name}} verbunden",
@@ -2319,6 +2503,7 @@
       "ready": "Verbunden",
       "syncing": "Wird synchronisiert…",
       "reads": "Liest {{label}}",
+      "noWrites": "nur Lesezugriff",
       "items_one": "{{count}} Eintrag",
       "items_other": "{{count}} Einträge",
       "synced": "synchronisiert {{when}}",
@@ -2527,7 +2712,6 @@
     },
     "formatAuto": "{{name}} wählt die beste aus",
     "newWidget": {
-      "titleHint": "Titel · {{name}} schlägt beim Testen einen vor",
       "alerts": "Alarm an",
       "realData": "Echte Daten",
       "editAsk": "Anfrage ändern",

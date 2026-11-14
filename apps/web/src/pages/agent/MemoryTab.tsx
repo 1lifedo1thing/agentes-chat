@@ -9,10 +9,12 @@ import {
   useSkillAction,
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
+import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { formatShortDate } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { can } from "@agenteschat/client/lib/permissions";
 import { memoryLine, pendingOnAgent, proposalTitle, proposalWhy } from "@agenteschat/client/lib/proposals";
+import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import {
   Alert,
   Button,
@@ -25,33 +27,36 @@ import {
   Field,
   GroupHeading,
   Icon,
+  type IconName,
   InfoHint,
   Locked,
+  overLimit,
   SearchField,
   Segmented,
   Textarea,
   Toolbar,
 } from "@agenteschat/ui";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AskAgentButton } from "@/components/AskAgentButton";
 import { HelpLink } from "@/components/HelpLink";
 import { ErrorState, LoadingLine } from "@/components/Loading";
 import { useOrg } from "@/components/org-context";
+import { useTextLimit } from "@/hooks/useTextLimit";
+import { useLandOn } from "@/lib/land-on";
 import { lookOf } from "@/lib/look";
 import { inlineWords } from "@/lib/markdown";
 import { useToast } from "@/lib/toast";
 import {
   filterMemories,
-  KIND_ICON,
   type MemoryTab as Kind,
   memorySource,
+  memoryTabOf,
   NoMemories,
   usageLabel,
 } from "@/pages/MemoryPage";
 import { CardHead, useAgentEdit } from "./context";
-import { Cell } from "./Work";
 
 /** A proposal to change this agent's instructions: why, the diff, and Aceitar / Editar antes / Recusar. */
 function ProposalCard({ proposal }: { proposal: Proposal }) {
@@ -153,20 +158,26 @@ function ProposalCard({ proposal }: { proposal: Proposal }) {
   );
 }
 
-/** A memory's trust in a chip: from outside, verified (a person or an outcome), or not yet. */
-function TrustChip({ m }: { m: Memory }) {
+/** A state in a memory's quiet line: its mark and its word, no pill. */
+function State({ icon, waiting, children }: { icon: IconName; waiting?: boolean; children: ReactNode }) {
+  return (
+    <span className="agp-mem__state" data-tone={waiting ? "waiting" : undefined}>
+      <Icon name={icon} size={14} />
+      {children}
+    </span>
+  );
+}
+
+/** A memory's trust, only where it is a state: from outside, or verified (a person or an outcome). */
+function Trust({ m }: { m: Memory }) {
   const { t } = useTranslation();
   if (m.lowTrust)
     return (
-      <Chip icon="alert" tone="waiting">
+      <State icon="alert" waiting>
         {t("memory.lowTrust")}
-      </Chip>
+      </State>
     );
-  return m.verified ? (
-    <Chip icon="check">{t("memory.verified")}</Chip>
-  ) : (
-    <Chip icon="info">{t("memory.unverified")}</Chip>
-  );
+  return m.verified ? <State icon="check">{t("memory.verified")}</State> : null;
 }
 
 /**
@@ -180,8 +191,11 @@ function LearnedRow({ m }: { m: Memory }) {
   const toast = useToast();
   const act = useMemoryAction(org.id, agent.id);
   const [draft, setDraft] = useState<string | null>(null);
+  const limit = useTextLimit(FIELD_LIMITS.memory);
+  const tooLong = draft !== null && overLimit(draft, limit);
   const save = () =>
     draft !== null &&
+    !tooLong &&
     act.mutate(
       { type: "edit", id: m.id, text: draft },
       {
@@ -192,7 +206,7 @@ function LearnedRow({ m }: { m: Memory }) {
       },
     );
   return (
-    <li className="agp-mem">
+    <li className="agp-mem" data-item-id={m.id}>
       {draft === null ? (
         m.summary ? (
           <>
@@ -208,24 +222,19 @@ function LearnedRow({ m }: { m: Memory }) {
       ) : (
         <Locked when={act.isPending}>
           <Field label={t("agentPage.memory.edit")} id={`learned-${m.id}`}>
-            <Textarea rows={3} maxLength={8000} value={draft} onChange={(e) => setDraft(e.target.value)} />
+            <Textarea rows={3} limit={limit} value={draft} onChange={(e) => setDraft(e.target.value)} />
           </Field>
         </Locked>
       )}
-      <span className="agp-chips">
-        {m.howTo ? (
-          <Chip icon="book">{t("agentPage.memory.howTo")}</Chip>
-        ) : (
-          <Chip icon={KIND_ICON[m.kind]}>{t(`memory.kinds.${m.kind}`)}</Chip>
-        )}
-        <TrustChip m={m} />
+      <span className="agp-mem__meta">
+        <Trust m={m} />
         {m.disputed && (
-          <Chip icon="alert" tone="waiting">
+          <State icon="alert" waiting>
             {t("agentPage.memory.disputed")}
-          </Chip>
+          </State>
         )}
-        <span className="small muted">
-          {usageLabel(t, m)} ·{" "}
+        <span>
+          {m.howTo ? t("agentPage.memory.howTo") : t(`memory.kinds.${m.kind}`)} · {usageLabel(t, m)} ·{" "}
           {m.channelId ? (
             <Link to="/org/$orgId/c/$channelId" params={{ orgId: org.id, channelId: m.channelId }}>
               {memorySource(t, i18n.language, m)}
@@ -238,12 +247,35 @@ function LearnedRow({ m }: { m: Memory }) {
       <span className="agp-row">
         {draft === null ? (
           <>
-            <Button size="sm" variant="ghost" icon="edit" onClick={() => setDraft(m.text)}>
+            {(m.lowTrust || !m.verified) && (
+              <Button
+                variant="link"
+                title={t("memory.confirmTitle")}
+                disabled={act.isPending}
+                onClick={() =>
+                  act.mutate({ type: "confirm", id: m.id }, { onSuccess: () => toast.show(t("memory.confirmed")) })
+                }
+              >
+                {t("memory.confirm")}
+              </Button>
+            )}
+            {/* Tornar do time (ADR 0167): who reviews memory makes it every agent's, its copies archived. */}
+            {can(org, "review_memory") && !m.howTo && !m.playbook && m.kind !== "lesson" && (
+              <Button
+                variant="link"
+                disabled={act.isPending}
+                onClick={() =>
+                  act.mutate({ type: "team", id: m.id }, { onSuccess: () => toast.show(t("teamMemory.made")) })
+                }
+              >
+                {t("teamMemory.make")}
+              </Button>
+            )}
+            <Button variant="link" onClick={() => setDraft(m.text)}>
               {t("agentPage.memory.edit")}
             </Button>
             <Button
-              size="sm"
-              variant="ghost"
+              variant="link"
               disabled={act.isPending}
               onClick={() =>
                 act.mutate(
@@ -257,7 +289,13 @@ function LearnedRow({ m }: { m: Memory }) {
           </>
         ) : (
           <>
-            <Button size="sm" variant="primary" disabled={!draft.trim()} loading={act.isPending} onClick={save}>
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={!draft.trim() || tooLong}
+              loading={act.isPending}
+              onClick={save}
+            >
               {t("agentPage.memory.save")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>
@@ -278,36 +316,31 @@ function LearnedSkillRow({ s }: { s: LearnedSkill }) {
   const act = useSkillAction(org.id);
   const [open, setOpen] = useState(false);
   return (
-    <li className="agp-mem">
+    <li className="agp-mem" data-item-id={s.id}>
       <span>
         <b>{s.name}</b> · {s.description}
       </span>
-      <span className="agp-chips">
-        <Chip icon="book">{t("agentPage.memory.howTo")}</Chip>
-        {s.locked && <Chip icon="lock">{t("agentPage.memory.locked")}</Chip>}
-        {s.archived && <Chip icon="close">{t("agentPage.memory.archivedSkill")}</Chip>}
-        <span className="small muted">{t("agentPage.memory.skillUses", { count: s.useCount ?? 0 })}</span>
+      <span className="agp-mem__meta">
+        {s.locked && <State icon="lock">{t("agentPage.memory.locked")}</State>}
+        {s.archived && <State icon="close">{t("agentPage.memory.archivedSkill")}</State>}
+        <span>
+          {t("agentPage.memory.howTo")} · {t("agentPage.memory.skillUses", { count: s.useCount ?? 0 })}
+        </span>
       </span>
       {open && <pre className="agp-skill-body">{s.body}</pre>}
       <span className="agp-row">
-        <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)}>
+        <Button variant="link" onClick={() => setOpen((v) => !v)}>
           {open ? t("agentPage.memory.hide") : t("agentPage.memory.view")}
         </Button>
         {!s.canChange ? null : s.archived ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={act.isPending}
-            onClick={() => act.mutate({ type: "restore", id: s.id })}
-          >
+          <Button variant="link" disabled={act.isPending} onClick={() => act.mutate({ type: "restore", id: s.id })}>
             {t("agentPage.memory.restore")}
           </Button>
         ) : (
           <>
             {s.canRevert && (
               <Button
-                size="sm"
-                variant="ghost"
+                variant="link"
                 disabled={act.isPending}
                 onClick={() =>
                   act.mutate(
@@ -320,8 +353,7 @@ function LearnedSkillRow({ s }: { s: LearnedSkill }) {
               </Button>
             )}
             <Button
-              size="sm"
-              variant="ghost"
+              variant="link"
               disabled={act.isPending}
               onClick={() => act.mutate({ type: "update", id: s.id, patch: { locked: !s.locked } })}
             >
@@ -358,25 +390,25 @@ function RulesCard({ rules }: { rules: Memory[] }) {
         id="mem-rules"
         icon="flag"
         title={t("agentPage.memory.rules")}
-        subtitle={t("agentPage.memory.rulesNote")}
+        hint={{
+          name: t("common.about", { label: t("agentPage.memory.rules") }),
+          text: t(isRightHand(agent) ? "agentPage.memory.rulesNoteRightHand" : "agentPage.memory.rulesNote"),
+        }}
       />
       <ul className="agp-list agp-mems">
         {rules.map((m) => (
-          <li key={m.id} className="agp-mem">
+          <li key={m.id} className="agp-mem" data-item-id={m.id}>
             <span>{memoryLine(t, m)}</span>
-            <span className="agp-chips">
-              <span className="small muted">
+            <span className="agp-mem__meta">
+              <span>
                 {t("agentPage.memory.ruleBy", {
                   name: m.origin?.name ?? t("memory.origin.someone"),
                   date: formatShortDate(i18n.language, m.origin?.at ?? m.updatedAt),
                 })}
               </span>
-            </span>
-            {m.removable && (
-              <span className="agp-row">
+              {m.removable && (
                 <Button
-                  size="sm"
-                  variant="ghost"
+                  variant="link"
                   disabled={act.isPending}
                   onClick={() =>
                     act.mutate(
@@ -387,8 +419,8 @@ function RulesCard({ rules }: { rules: Memory[] }) {
                 >
                   {t("agentPage.memory.removeRule")}
                 </Button>
-              </span>
-            )}
+              )}
+            </span>
           </li>
         ))}
       </ul>
@@ -461,16 +493,28 @@ function LearnedList({ list }: { list: Memory[] }) {
   );
 }
 
-/** Memória: proposals waiting, then what the agent knows (facts and decisions, lessons, archived) with search. */
-export function MemoryTab() {
+/**
+ * Memória: proposals waiting, then what the agent knows (facts and decisions, lessons, archived) with search. `item`:
+ * the memory or skill a link opened it at.
+ */
+export function MemoryTab({ item }: { item?: string }) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
   const { agent, g } = useAgentEdit();
   const memory = useMemory(org.id, agent.id);
   const proposals = useProposals(org.id);
-  const [kind, setKind] = useState<Kind | "learned">("known");
+  const skills = useLearnedSkills(org.id, agent.id).data ?? [];
+  const [picked, setKind] = useState<Kind | "learned" | null>(null);
   const [q, setQ] = useState("");
   const list = memory.data ?? [];
+  // What a link named: its list shows until the person picks one, and it is landed on. What the agent learned goes
+  // to Aprendizados, where it is edited or forgotten.
+  const linked = list.find((m) => m.id === item);
+  const linkedSkill = skills.some((s) => s.id === item);
+  const linkedKind = linked?.learned && !linked.archived ? "learned" : linked ? memoryTabOf(linked) : null;
+  const kind = picked ?? linkedKind ?? (linkedSkill ? "learned" : "known");
+  const cols = useRef<HTMLDivElement>(null);
+  useLandOn(cols, item, Boolean(linked) || linkedSkill);
   const pending = pendingOnAgent(proposals.data ?? [], agent.id);
   const learned = list
     .filter(
@@ -484,31 +528,36 @@ export function MemoryTab() {
     k === "learned" ? list.filter((m) => m.learned && !m.archived).length : filterMemories(list, k, "").length;
   const shown = kind === "learned" ? [] : filterMemories(list, kind, q);
   const rules = list.filter((m) => m.kind === "rule" && !m.archived);
+  // The strip's "verificados" counts among the facts and decisions it sits under, not every memory.
+  const known = filterMemories(list, "known", "");
   return (
     <>
-      <section className="agp-workcard" aria-label={t("agentPage.memory.counts")}>
-        <div className="agp-cells">
-          <Cell
-            icon={<Icon name="book" size={16} />}
-            label={t("memory.tabs.known")}
-            value={count("known")}
-            sub={t("agentPage.memory.verified", { count: list.filter((m) => !m.archived && m.verified).length })}
-          />
-          <Cell
-            icon={<Icon name="agent" size={16} />}
-            label={t("agentPage.memory.lessons")}
-            value={count("lessons")}
-            sub={t("agentPage.memory.fromTeam")}
-          />
-          <Cell
-            icon={<Icon name="document" size={16} />}
-            label={t("agentPage.memory.proposals")}
-            value={pending.length}
-            sub={pending.length ? t("agentPage.memory.waiting") : t("agentPage.memory.noneWaiting")}
-          />
-        </div>
+      <section className="agp-memstats" aria-label={t("agentPage.memory.counts")}>
+        {[
+          {
+            label: t("memory.tabs.known"),
+            value: known.length,
+            sub: t("agentPage.memory.verified", { count: known.filter((m) => m.verified).length }),
+          },
+          {
+            label: t("agentPage.memory.lessons"),
+            value: count("lessons"),
+            sub: t(isRightHand(agent) ? "agentPage.memory.fromTeamRightHand" : "agentPage.memory.fromTeam"),
+          },
+          {
+            label: t("agentPage.memory.proposals"),
+            value: pending.length,
+            sub: pending.length ? t("agentPage.memory.waiting") : t("agentPage.memory.noneWaiting"),
+          },
+        ].map((stat) => (
+          <p key={stat.label} className="agp-memstat">
+            <b className="ac-num">{stat.value}</b>
+            <span>{stat.label}</span>
+            <small>{stat.sub}</small>
+          </p>
+        ))}
       </section>
-      <div className="agp-cols">
+      <div className="agp-cols agp-cols--one" ref={cols}>
         <div className="agp-col">
           {pending.map((p) => (
             <ProposalCard key={p.id} proposal={p} />
@@ -536,7 +585,7 @@ export function MemoryTab() {
                 <SearchField
                   size="sm"
                   aria-label={t("memory.search")}
-                  placeholder={t("memory.searchPlaceholder", g)}
+                  placeholder={t("memory.search")}
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   onClear={() => setQ("")}
@@ -558,7 +607,8 @@ export function MemoryTab() {
                         ? "agentPage.memory.learned"
                         : `memory.tabs.${k}`,
                   ),
-                  count: count(k),
+                  // Shown only when there is something to count.
+                  hint: count(k) || undefined,
                 }))}
               />
             </Toolbar>
@@ -573,13 +623,13 @@ export function MemoryTab() {
             ) : (
               <ul className="agp-list agp-mems">
                 {shown.map((m) => (
-                  <li key={m.id} className="agp-mem">
+                  <li key={m.id} className="agp-mem" data-item-id={m.id}>
                     <span>{memoryLine(t, m)}</span>
-                    <span className="agp-chips">
-                      <Chip icon={KIND_ICON[m.kind]}>{t(`memory.kinds.${m.kind}`)}</Chip>
-                      <TrustChip m={m} />
-                      {m.pinned && <Chip icon="pin">{t("memory.pinned")}</Chip>}
-                      <span className="small muted">
+                    <span className="agp-mem__meta">
+                      <Trust m={m} />
+                      {m.pinned && <State icon="pin">{t("memory.pinned")}</State>}
+                      <span>
+                        {m.kind !== "fact" && kind !== "lessons" && `${t(`memory.kinds.${m.kind}`)} · `}
                         {usageLabel(t, m)} · {memorySource(t, i18n.language, m)}
                       </span>
                     </span>
@@ -588,8 +638,6 @@ export function MemoryTab() {
               </ul>
             )}
           </Card>
-        </div>
-        <div className="agp-col">
           <p className="page__note">
             <HelpLink slug="memory">{t("memory.how")}</HelpLink>
           </p>

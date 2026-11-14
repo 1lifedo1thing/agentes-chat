@@ -1,12 +1,8 @@
-import type { ComputerSummary, EndedTask, ManagedTask } from "@agenteschat/client";
-import { type Activity, activityVerb } from "@agenteschat/client/lib/activity";
-import { capitalize } from "@agenteschat/client/lib/format";
-import { brainName } from "@agenteschat/client/lib/outages";
+import type { EndedTask, ManagedTask } from "@agenteschat/client";
 import {
   type AgentTasks,
   delegationText,
   endedState,
-  type TaskProgram,
   taskState,
   tasksOf,
   taskWaitWords,
@@ -15,6 +11,7 @@ import {
   waitsOnPerson,
 } from "@agenteschat/client/lib/task-manager";
 import type { TFunction } from "i18next";
+import { type AppHref, chatHref } from "../links/logic";
 
 /**
  * What the phone's task manager says (ADR 0128): its list, a task's screen, an agent's tasks screen and the count in
@@ -74,13 +71,6 @@ export function taskStateWords(
   if (state === "queued") return { state: t("taskManager.state.queued"), next: null };
   if (state === "stopping") return { state: t("taskManager.state.stopping"), next: null };
   return taskWaitWords(t, locale, task, now) ?? { state: t("taskManager.state.answer"), next: null };
-}
-
-/** A computer on the task manager: "Cheio · 2 na fila · 3 trabalhando", "Tem espaço · 1 trabalhando". */
-export function computerLine(t: TFunction, computer: Pick<ComputerSummary, "working" | "inLine">): string {
-  const room =
-    computer.inLine > 0 ? t("taskManager.queue.full", { count: computer.inLine }) : t("taskManager.queue.room");
-  return computer.working > 0 ? `${room} · ${t("taskManager.working", { count: computer.working })}` : room;
 }
 
 /**
@@ -147,70 +137,6 @@ export function endedText(t: TFunction, task: Pick<EndedTask, "status" | "stoppe
 export const endedLatestFirst = (ended: readonly EndedTask[]) =>
   [...ended].sort((a, b) => Date.parse(b.finishedAt) - Date.parse(a.finishedAt));
 
-/** What a task uses now, as its line says it: a brain's product, one of the agent's own programs or an app. */
-export interface UsingNow {
-  /** A computer brain's mark (`claude_code`, `codex`, `cursor`); else the call's own logo (`activity`). */
-  brain: string | null;
-  activity: Activity | null;
-  /** "Claude Code", "Navegador", "GitHub". */
-  name: string;
-  /** "Navegador · página de cancelar", "PR #231". */
-  detail: string | null;
-}
-
-/**
- * "Usando agora": the program and what it does there. A brain says what it called through us, if anything; one of our
- * own tools says what it does ("agentes · Escrevendo na wiki"). `appName` names a connector's app (the catalog's
- * label); null while nothing runs (queued, or only thinking).
- */
-export function usingNow(
-  t: TFunction,
-  program: TaskProgram,
-  options: { locale?: string; appName?: (activity: Activity) => string } = {},
-): UsingNow | null {
-  const appName = options.appName ?? ((a: Activity) => a.app ?? "");
-  switch (program.kind) {
-    case "none":
-      return null;
-    case "brain": {
-      const inner = program.inner ? usingNow(t, program.inner, options) : null;
-      const detail = inner
-        ? inner.detail
-          ? t("taskManager.program.inside", { program: inner.name, detail: inner.detail })
-          : inner.name
-        : program.detail;
-      return { brain: program.brain, activity: null, name: brainName(program.brain), detail: detail || null };
-    }
-    case "browser":
-    case "screen":
-    case "terminal": {
-      const name =
-        program.kind === "browser"
-          ? t("taskManager.program.browser")
-          : program.kind === "screen"
-            ? t("taskManager.program.screen")
-            : t("taskManager.program.terminal");
-      return { brain: null, activity: program.activity, name, detail: program.detail };
-    }
-    case "app":
-      return {
-        brain: null,
-        activity: program.activity,
-        name: appName(program.activity) || program.activity.app || program.activity.service || "",
-        detail: program.detail,
-      };
-    case "agentes": {
-      const doing = capitalize(activityVerb(t, program.activity), options.locale);
-      return {
-        brain: null,
-        activity: program.activity,
-        name: t("taskManager.program.agentes"),
-        detail: [doing, program.detail].filter(Boolean).join(" · ") || null,
-      };
-    }
-  }
-}
-
 /** One agent's tasks now: its DM header's count and its tasks screen (ADR 0128). */
 export interface AgentTaskView {
   /** People's first, then its routines', oldest first; `here`: asked in the conversation it was opened from. */
@@ -249,6 +175,21 @@ export function agentTasksHref(agentId: string, from: Place | null) {
   if (!from) return `/agent-tasks/${agentId}` as const;
   const thread = from.threadId ? `&thread=${from.threadId}` : "";
   return `/agent-tasks/${agentId}?channel=${from.channelId}${thread}` as const;
+}
+
+/**
+ * Where a task's request row opens: work another agent handed it, where it was handed off, at the reply that handed it
+ * (ADR 0084 addendum), as on the web; else its own conversation. Null: a routine's room or a conversation only agents
+ * are in, which nobody opens.
+ */
+export function taskHref(
+  task: Pick<ManagedTask, "channelId" | "threadId" | "background" | "betweenAgents"> & {
+    delegation?: ManagedTask["delegation"];
+  },
+): AppHref | null {
+  const from = task.delegation?.from;
+  if (from) return chatHref(from.channelId, from.threadId, from.messageId);
+  return task.background || task.betweenAgents ? null : chatHref(task.channelId, task.threadId);
 }
 
 /**

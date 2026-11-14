@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import { toolActivity } from "./activity";
 import { previewOf } from "./consultations";
-import { joinNames, lowerFirst } from "./format";
+import { firstName, joinNames, lowerFirst } from "./format";
 import { autoUpdateText, talkerStatusText, workEndBody } from "./long-work";
 import { mediaKindOf, mediaWord } from "./media";
 import { RIGHT_HAND_PLAN_LINES } from "./no-ai";
@@ -95,7 +95,11 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
     code === "brain_unavailable" ? (m.brainUnavailable as { code?: unknown; long?: unknown } | undefined) : undefined;
   const busy = waitNote?.code === "busy";
   const noAi =
-    code === "no_ai" ? (m.noAi as { reason?: unknown; own?: unknown; model?: unknown } | undefined) : undefined;
+    code === "no_ai"
+      ? (m.noAi as
+          | { reason?: unknown; own?: unknown; model?: unknown; why?: unknown; owner?: unknown; plan?: unknown }
+          | undefined)
+      : undefined;
   const signedOut = noAi?.reason === "not_signed_in";
   // The team's right hand on a plan (ADR 0137 §7): why its plan can't think now (`RIGHT_HAND_PLAN_LINES`); any agent's
   // computer with no such CLI, or no computer at all.
@@ -107,6 +111,8 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
       noAi.reason === "plan_hold")
       ? `no_ai_${noAi.reason}`
       : null;
+  // The plan's CLI failed: the line says what it said.
+  const cliSaid = noAi?.reason === "cli_failed" && typeof noAi.why === "string" && noAi.why ? noAi.why : null;
   const own =
     signedOut &&
     (noAi?.own === "codex" ||
@@ -193,16 +199,22 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
     : signedOut
       ? "no_ai_signed_out"
       : planLine
-        ? planLine
+        ? `${planLine}${cliSaid ? "Why" : ""}`
         : anon
           ? "secret_requestAnon"
           : code;
   const key = `chat.body.${shown}`;
   const model = typeof noAi?.model === "string" ? { model: noAi.model } : {};
+  const notYours =
+    noAi?.reason === "plans_not_yours" && typeof noAi.owner === "string"
+      ? { owner: firstName(noAi.owner), plan: typeof noAi.plan === "string" ? noAi.plan : "Claude" }
+      : {};
   // i18next takes the first key that exists: a body with no `…NoComputer` words keeps its own.
   return t(params.computer && !namesComputer ? [`${key}NoComputer`, key] : key, {
     ...params,
     ...model,
+    ...notYours,
+    ...(cliSaid ? { why: cliSaid } : {}),
     defaultValue: body,
   });
 }

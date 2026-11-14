@@ -80,12 +80,29 @@ export const ICONS = {
   ],
   moon: [p("M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5Z")],
   sun: [c(12, 12, 4), p("M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4")],
+  cloud: [p("M7.2 18.6a4.2 4.2 0 0 1-.48-8.4 5.4 5.4 0 0 1 10.44-1.08A4.2 4.2 0 0 1 16.8 18.6Z")],
   globe: [
     c(12, 12, 8.5),
     p("M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5Z"),
   ],
   out: [p("M14 4.5h3.5A1.5 1.5 0 0 1 19 6v12a1.5 1.5 0 0 1-1.5 1.5H14"), p("M10 16l-4-4 4-4M6 12h9")],
   code: [p("m8.5 8-4 4 4 4M15.5 8l4 4-4 4")],
+  // The composer's formatting, the web's glyphs on this grid.
+  bold: [p("M7.5 5h5.5a3.5 3.5 0 0 1 0 7H7.5zM7.5 12h6.5a3.5 3.5 0 0 1 0 7H7.5z")],
+  italic: [p("M10.5 5h7M6.5 19h7M14 5l-4 14")],
+  strike: [
+    p(
+      "M5 12h14M16 8c-.4-1.8-1.9-3-4-3-2.3 0-4 1.3-4 3.2 0 .7.2 1.3.6 1.8M8 16c.4 1.8 1.9 3 4 3 2.3 0 4-1.3 4-3.2 0-.3 0-.5-.1-.8",
+    ),
+  ],
+  codeBlock: [r(3.5, 4.5, 17, 15, 3), p("m10 9.5-2.5 2.5 2.5 2.5M14 9.5l2.5 2.5-2.5 2.5")],
+  bulletList: [p("M10 7h9M10 12h9M10 17h9"), p("M5.5 7h.01M5.5 12h.01M5.5 17h.01", 2.6)],
+  numberedList: [
+    p(
+      "M11 7h8M11 12h8M11 17h8M4.8 6l1.4-1v4.5M4.6 14.3c.3-.5.8-.8 1.4-.8.7 0 1.3.5 1.3 1.2 0 .5-.3.9-.8 1.3l-1.9 1.5h2.8",
+    ),
+  ],
+  quote: [p("M5.5 5.5v13M10 8h9M10 12h9M10 16h6")],
   server: [r(4, 4.5, 16, 6, 2), r(4, 13.5, 16, 6, 2), p("M7.5 7.5h.01M7.5 16.5h.01", 2.6)],
   mail: [r(3.5, 5.5, 17, 13, 2.5), p("m4.5 7 7.5 6 7.5-6")],
   chart: [p("M5 19.5V11M10 19.5V5M15 19.5v-6M20 19.5V8")],
@@ -102,6 +119,7 @@ export const ICONS = {
     p("M19.8 12.6h-4.2a3 3 0 0 0-3 3v4.2"),
   ],
   laptop: [r(5, 5, 14, 10, 1.8), p("M3 18.5h18")],
+  phone: [r(7, 3, 10, 18, 2.4), p("M10.5 17.5h3")],
   // Each computer's line icon (the small form of its portrait, `ComputerIcon`).
   computerMac: [
     r(4, 4.5, 16, 11, 2),
@@ -182,6 +200,38 @@ export const ICONS = {
   replyTo: [p("M9.6 6 4.8 10.8l4.8 4.8M4.8 10.8h8.4a6 6 0 0 1 6 6v1.8")],
   // The web's swap arrows on this grid: one agent asking another, between their faces.
   swap: [p("M4.8 8.4h13.8M15.6 5.4l3 3-3 3M19.2 15.6H5.4M8.4 12.6l-3 3 3 3")],
+  // `down` turned over: Ordenar's ▲ on a cargo.
+  up: [p("M12 19V5M6 11l6-6 6 6")],
+  // The cargos' icons (ADR 0085 `ROLE_ICONS`) the phone didn't draw yet, the web's on this grid, and Todos' and the
+  // owners' marks. The rest of the sixteen (shield, code, mail, bolt, flag, chart, globe, eye, person) are above.
+  wallet: [p("M4.2 7.8a2.4 2.4 0 0 1 2.4-2.4H18v3.6"), r(4.2, 9, 15.6, 10.8, 2.4), p("M16.2 14.4h.01")],
+  book: [
+    p(
+      "M4.8 5.4h5.4A3 3 0 0 1 12 7.2v12a2.4 2.4 0 0 0-2.4-2.4H4.8zM19.2 5.4h-5.4A3 3 0 0 0 12 7.2v12a2.4 2.4 0 0 1 2.4-2.4h4.8z",
+    ),
+  ],
+  bulb: [p("M9 18h6M9.96 21h4.08M12 3a6 6 0 0 0-3.48 10.92v2.04h6.96v-2.04A6 6 0 0 0 12 3z")],
+  pullRequest: [p("M7.2 3.6v16.8M16.8 10.8v9.6M7.2 8.4a3.6 3.6 0 0 0 3.6 3.6h2.4a3.6 3.6 0 0 1 3.6 3.6")],
+  calendar: [
+    p("M7.2 4.2h9.6a3.6 3.6 0 0 1 3.6 3.6v9a3.6 3.6 0 0 1-3.6 3.6H3.6V7.8a3.6 3.6 0 0 1 3.6-3.6z"),
+    p("M3.6 9.6h16.8M8.4 2.4V6M15.6 2.4V6"),
+  ],
+  message: [p("M7.8 4.8h9a3.6 3.6 0 0 1 3.6 3.6v4.8a3.6 3.6 0 0 1-3.6 3.6H3.6V9a4.2 4.2 0 0 1 4.2-4.2z")],
+  plug: [p("M9 3.6v4.8M15 3.6v4.8M6 8.4h12v3a6 6 0 0 1-12 0zM12 17.4v3")],
+  audienceEveryone: [
+    c(12, 8.7, 3),
+    p("M6.6 19.2c.72-3.12 2.76-4.8 5.4-4.8s4.68 1.68 5.4 4.8"),
+    c(5.7, 10.5, 2.1),
+    p("M2.1 18c.36-1.86 1.5-3.06 3-3.42"),
+    c(18.3, 10.5, 2.1),
+    p("M21.9 18c-.36-1.86-1.5-3.06-3-3.42"),
+  ],
+  audienceOwner: [
+    c(9.6, 8.4, 3.3),
+    p("M3.6 19.5c.78-3.42 3-5.28 6-5.28 1.2 0 2.28.3 3.18.84"),
+    r(14.7, 15.3, 6.6, 5.1, 1.2),
+    p("M16.2 15.3v-1.32a1.8 1.8 0 0 1 3.6 0v1.32"),
+  ],
 } satisfies Record<string, IconShape[]>;
 
 export type IconName = keyof typeof ICONS;

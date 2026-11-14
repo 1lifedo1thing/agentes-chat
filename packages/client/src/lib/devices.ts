@@ -1,10 +1,12 @@
 import type { TFunction } from "i18next";
+import { useEffect, useState } from "react";
 import type {
   AppNotification,
   ComputerDevice,
   ConnectLinkState,
   DeviceAudience,
   DeviceStatus,
+  MachineTool,
   PhoneDevice,
   WifiPairing,
 } from "../api/types";
@@ -64,6 +66,16 @@ export function statusPill(t: TFunction, s: DeviceStatus): string {
   }
 }
 
+/** Why an iPhone used over Wi-Fi can't be reached now: the guide words each in full (`devices.iphone.wifiState`). */
+export const IPHONE_WIFI_REASONS = ["wifi_away", "wifi_asleep", "tunnel_down", "wifi_untrusted"] as const;
+export type IphoneWifiReason = (typeof IPHONE_WIFI_REASONS)[number];
+export const isIphoneWifiReason = (reason: string | null | undefined): reason is IphoneWifiReason =>
+  (IPHONE_WIFI_REASONS as readonly string[]).includes(reason ?? "");
+
+/** An iPhone its Mac reaches over Wi-Fi, through CoreDevice's tunnel (picked by the Mac's owner). */
+export const iphoneOverWifi = (p: { platform: string; transport: string | null }) =>
+  p.platform === "ios" && p.transport === "wifi";
+
 /** A reason code the apps word (`devices.reason.<code>`); a code they don't know reads as a generic line. */
 const REASONS = new Set([
   "locked",
@@ -77,20 +89,44 @@ const REASONS = new Set([
   "helper_missing",
   "helper_expired",
   "apple_account_missing",
+  "apple_team_missing",
+  "ui_not_authorized",
   "team_limit",
   "helper_untrusted",
   "booting",
   "no_driver",
   "os_too_old",
   "adb_offline",
+  ...IPHONE_WIFI_REASONS,
 ]);
-const reasonKey = (reason: string) => (REASONS.has(reason) ? reason : "other");
+/** A reason's key. A phone with no driver reads by the host's system: Windows wants its maker's driver, Linux udev rules. */
+const reasonKey = (reason: string, os?: string | null) =>
+  !REASONS.has(reason)
+    ? "other"
+    : reason === "no_driver" && os && computerKind(os) === "linux"
+      ? "no_driverLinux"
+      : reason;
 
-/** Why it isn't ready, as a sentence ("Developer Mode is off"). */
-export const reasonText = (t: TFunction, reason: string) => say(t, `devices.reason.${reasonKey(reason)}`);
+/** Why it isn't ready, as a sentence ("Developer Mode is off"). `os`: the host's, for words that depend on it. */
+export const reasonText = (t: TFunction, reason: string, os?: string | null) =>
+  say(t, `devices.reason.${reasonKey(reason, os)}`);
 
 /** What to do about it, phrased as the action ("Turn on Developer Mode"). */
-export const fixText = (t: TFunction, reason: string) => say(t, `devices.fix.${reasonKey(reason)}`);
+export const fixText = (t: TFunction, reason: string, os?: string | null) =>
+  say(t, `devices.fix.${reasonKey(reason, os)}`);
+
+/**
+ * `hostOs`: the host's system, which a phone with no driver reads by. `ios`: an iPhone's iOS version, which its
+ * "too old" line names.
+ */
+type StatusOptions = { host?: string | null; hostOs?: string | null; now?: Date; ios?: string | null };
+
+/** An iPhone's iOS version, for `StatusOptions.ios`. */
+export const iosOf = (d: ComputerDevice | PhoneDevice) =>
+  "platform" in d && d.platform === "ios" ? d.osVersion : null;
+
+/** The version a "too old" line names: devicectl gives none for some iPhones below iOS 17. */
+export const tooOldVersion = (t: TFunction, version: string) => version || t("devices.iphone.tooOldVersion");
 
 /**
  * The quiet line under a row's pill: "for Rui since 14:10", "last seen 14:02", "with Ana's iMac", "until 18:00";
@@ -100,7 +136,7 @@ export function statusDetail(
   t: TFunction,
   locale: string,
   s: DeviceStatus,
-  options: { host?: string | null; now?: Date } = {},
+  options: StatusOptions = {},
 ): string | null {
   const now = options.now ?? new Date();
   switch (s.kind) {
@@ -109,7 +145,7 @@ export function statusDetail(
         ? t("devices.detail.forSince", { name: firstName(s.userName), time: clockAt(locale, s.since, now) })
         : t("devices.detail.since", { time: clockAt(locale, s.since, now) });
     case "needs_you":
-      return fixText(t, s.reason);
+      return fixText(t, s.reason, options.hostOs);
     case "preparing":
       return reasonKey(s.reason) === "other" ? null : reasonText(t, s.reason);
     case "paused":
@@ -118,7 +154,9 @@ export function statusDetail(
       if (s.withHost && options.host) return t("devices.detail.withHost", { host: options.host });
       return s.lastSeenAt ? t("devices.detail.lastSeen", { time: clockAt(locale, s.lastSeenAt, now) }) : null;
     case "unsupported":
-      return reasonText(t, s.reason);
+      return s.reason === "os_too_old" && options.ios != null
+        ? t("devices.reason.iosTooOld", { version: tooOldVersion(t, options.ios) })
+        : reasonText(t, s.reason);
     default:
       return null;
   }
@@ -129,12 +167,12 @@ export function statusSentence(
   t: TFunction,
   locale: string,
   s: DeviceStatus,
-  options: { host?: string | null; now?: Date } = {},
+  options: StatusOptions = {},
 ): string | null {
   const now = options.now ?? new Date();
   switch (s.kind) {
     case "needs_you":
-      return reasonText(t, s.reason);
+      return reasonText(t, s.reason, options.hostOs);
     case "offline":
       if (s.withHost && options.host) return t("devices.line.offlineWithHost", { host: options.host });
       return s.lastSeenAt
@@ -185,6 +223,10 @@ export function computerLine(t: TFunction, d: ComputerDevice): string {
     .filter(Boolean)
     .join(" · ");
 }
+
+/** A computer in the line's "More computers" list: "Online · macOS · 16 GB · your Claude Max plan" (`plan`: the viewer's there). */
+export const spillDeviceText = (t: TFunction, d: ComputerDevice, plan: string | null) =>
+  [statusPill(t, d.status), computerLine(t, d), plan && t("queue.spill.plan", { plan })].filter(Boolean).join(" · ");
 
 /** "Android 16" or "iOS 27.1". */
 export const phoneSystem = (t: TFunction, p: Pick<PhoneDevice, "platform" | "osVersion">) =>
@@ -363,29 +405,95 @@ export const newComputerOf = (
 // ── Connect a phone ─────────────────────────────────────────────────────────
 
 /**
- * Where plugging an Android phone into `host` stands, from what the computer reports: still looking, the phone asks
- * to allow USB debugging, or it's ready. Phones the computer already had when the dialog opened (`known`) count only
- * while they still wait for Allow.
+ * Where plugging an Android phone into `host` stands, from what the computer reports: still looking, the computer
+ * sees the phone but has no driver for it, the phone asks to allow USB debugging, or it's ready. Phones the computer
+ * already had when the dialog opened (`known`) count only while they still wait for a driver or Allow.
  */
 export type AndroidStage =
   | { kind: "looking" }
+  | { kind: "driver"; phone: PhoneDevice }
   | { kind: "allow"; phone: PhoneDevice }
   | { kind: "ready"; phone: PhoneDevice };
+
+const waitsOn = (p: PhoneDevice, reason: string) => p.status.kind === "needs_you" && p.status.reason === reason;
 
 export function androidStage(host: ComputerDevice | undefined, known: ReadonlySet<string>): AndroidStage {
   const phones = (host?.phones ?? []).filter(
     (p) => p.platform === "android" && p.phoneKind === "device" && p.status.kind !== "offline",
   );
-  const asking = phones.find((p) => p.status.kind === "needs_you" && p.status.reason === "unauthorized");
+  const asking = phones.find((p) => waitsOn(p, "unauthorized"));
   if (asking) return { kind: "allow", phone: asking };
+  const driverless = phones.find((p) => waitsOn(p, "no_driver"));
+  if (driverless) return { kind: "driver", phone: driverless };
   const fresh = phones.find((p) => !known.has(p.id));
   if (fresh)
     return fresh.status.kind === "needs_you" ? { kind: "allow", phone: fresh } : { kind: "ready", phone: fresh };
   return { kind: "looking" };
 }
 
+/** The cable guide's steps, in order. */
+export const ANDROID_STEPS = ["devOptions", "usbDebugging", "plug", "allow"] as const;
+export type AndroidStep = (typeof ANDROID_STEPS)[number];
+/** Steps done on the phone alone: the computer can't see them until the phone shows up, so the person ticks them. */
+export const ANDROID_TICKABLE: ReadonlySet<AndroidStep> = new Set<AndroidStep>(["devOptions", "usbDebugging"]);
+
+/**
+ * The cable guide's checklist: each step done, the one to do now, or waiting. The person ticks the phone-only steps;
+ * once the computer sees the phone in any state, every step before Allow is done by itself. `byHand`: ticked by the
+ * person and not seen by the computer yet, so they may untick it. One step is open: the one asked for, else now's.
+ */
+export function androidSteps(
+  stage: AndroidStage,
+  ticked: ReadonlySet<AndroidStep>,
+  asked: AndroidStep | null = null,
+): { states: Record<AndroidStep, StepState>; now: AndroidStep; open: AndroidStep; byHand: ReadonlySet<AndroidStep> } {
+  const seen = stage.kind !== "looking";
+  const done = (s: AndroidStep) =>
+    s === "allow"
+      ? stage.kind === "ready"
+      : s === "plug"
+        ? stage.kind === "allow" || stage.kind === "ready"
+        : seen || ticked.has(s);
+  const now = ANDROID_STEPS.find((s) => !done(s)) ?? "allow";
+  const states = Object.fromEntries(
+    ANDROID_STEPS.map((s) => [s, done(s) ? "done" : s !== now ? "waiting" : seen ? "needs" : "current"]),
+  ) as Record<AndroidStep, StepState>;
+  const byHand = new Set(seen ? [] : ANDROID_STEPS.filter((s) => ANDROID_TICKABLE.has(s) && ticked.has(s)));
+  return { states, now, open: asked ?? now, byHand };
+}
+
+/** How often an open phone guide asks its computer to look for a phone with no driver (it looks for a minute after). */
+export const PHONE_LOOK_MS = 20_000;
+
+/** How long the guide looks for a plugged phone before it says why one may not show up. */
+export const ANDROID_SLOW_MS = 30_000;
+
+/** The official pages for a phone maker's USB driver on Windows: Google's (Pixel), Samsung's, and the other makers'. */
+export const ANDROID_USB_DRIVERS = {
+  google: "https://developer.android.com/studio/run/win-usb",
+  samsung: "https://developer.samsung.com/android-usb-driver",
+  others: "https://developer.android.com/studio/run/oem-usb",
+} as const;
+/** Android's own page on udev rules, so Linux may open a phone. */
+export const ANDROID_UDEV = "https://developer.android.com/studio/run/device#setting-up";
+
+/** Why a plugged phone may not show up, as the checklist under the cable step says it; the driver only on Windows. */
+export const androidNotShowing = (os: string | null | undefined) => [
+  "cable" as const,
+  "unlocked" as const,
+  "fileTransfer" as const,
+  "usbDebugging" as const,
+  "samsung" as const,
+  ...(computerKind(os) === "windows" ? ["driver" as const] : []),
+];
+
+/** Our phone app is in neither store yet, so a QR meant to open steps in it would only open a web page: hidden. */
+export const PHONE_APP_IN_STORE = { android: false, ios: false } as const;
+
 /** How often a Wi-Fi pairing is asked where it stands while it runs. */
 export const WIFI_PAIR_POLL_MS = 1500;
+/** How often a Mac's iPhones on its Wi-Fi are asked while its page or the iPhone guide is open. */
+export const WIFI_IPHONES_POLL_MS = 5000;
 
 /** The computer still looks for the phone, pairs or connects it. */
 export const wifiPairLive = (p: Pick<WifiPairing, "state"> | undefined) =>
@@ -395,13 +503,26 @@ export const wifiPairLive = (p: Pick<WifiPairing, "state"> | undefined) =>
 export const wifiHosts = (hosts: readonly ComputerDevice[]) =>
   hosts.filter((h) => h.machineKind === "connected" && h.mayManage && !h.systemMode);
 
+const LOCAL_NETWORK = new Set(["timed_out", "same_wifi", "mdns_off"]);
+
+/** A Wi-Fi pairing that failed in a way macOS's Local Network permission for the app may cause. */
+export const failedOnLocalNetwork = (p: Pick<WifiPairing, "state" | "reason"> | undefined) =>
+  p?.state === "failed" && LOCAL_NETWORK.has(p.reason ?? "");
+
 /**
  * The line a Wi-Fi pairing shows: where it is while it runs, else why it failed (the cause and the way out). A code
- * the phone refused reads differently from a pairing it stopped.
+ * the phone refused reads differently from a pairing it stopped. On a Mac, a phone it never heard from, couldn't reach
+ * or couldn't look for may also be macOS's Local Network permission for the app, so those name it.
  */
-export function wifiPairText(t: TFunction, p: Pick<WifiPairing, "state" | "reason" | "way">, computer: string) {
+export function wifiPairText(
+  t: TFunction,
+  p: Pick<WifiPairing, "state" | "reason" | "way">,
+  computer: string,
+  mac = false,
+) {
   if (p.state === "failed") {
-    const reason = p.reason === "refused" && p.way === "code" ? "refusedCode" : (p.reason ?? "failed");
+    const base = p.reason === "refused" && p.way === "code" ? "refusedCode" : (p.reason ?? "failed");
+    const reason = mac && LOCAL_NETWORK.has(base) ? `${base}Mac` : base;
     return say(t, `devices.wifiPair.fail.${reason}`, {
       computer,
       defaultValue: say(t, "devices.wifiPair.fail.failed"),
@@ -435,9 +556,157 @@ const IPHONE_REASON: Record<string, IphoneStep> = {
   helper_missing: "helper",
   helper_expired: "helper",
   apple_account_missing: "account",
+  apple_team_missing: "account",
+  ui_not_authorized: "uiAutomation",
+  os_too_old: "connected",
+  wifi_away: "connected",
+  wifi_asleep: "connected",
+  tunnel_down: "connected",
+  wifi_untrusted: "trust",
   team_limit: "helper",
   helper_untrusted: "helper",
 };
+
+const hasAppleTeam = (host: ComputerDevice) => !!host.toolchains.appleTeam || host.toolchains.appleAccount === "team";
+
+/** Xcode lists an Apple Account that shows no team yet: the account step says how to get one, not "sign in". */
+export const iphoneNoTeam = (host: ComputerDevice | undefined, phone: PhoneDevice | null) =>
+  host?.toolchains.appleAccount === "no_team" ||
+  (!!phone && "reason" in phone.status && phone.status.reason === "apple_team_missing");
+
+/** An iPhone's iOS major version ("27" from "27.0.1"), for the Xcode it needs. */
+export const iosMajor = (version: string) => version.split(".")[0] ?? version;
+
+/** What Xcode needs for an iPhone on a newer iOS than it knows, after installing the matching Xcode. */
+export const DDIS_UPDATE = "xcrun devicectl manage ddis update";
+
+/**
+ * What the Mac runs in Terminal for Xcode installed but blocked (the runner's `toolchains.xcodeBlocked`): the developer
+ * folder left on the Command Line Tools, or the license not agreed to. One paste, one password, both causes, and the
+ * first-launch packages an iPhone's build needs: the same commands the Mac's own fix runs (`xcode.fix` `select`).
+ * Each line ends in `&&` so a paste is read whole before sudo asks: sudo flushes typed-ahead input, which would drop
+ * the lines after the first in a shell without bracketed paste.
+ */
+export const XCODE_FIX_COMMAND = [
+  "sudo xcode-select -s /Applications/Xcode.app &&",
+  "sudo xcodebuild -license accept &&",
+  "sudo xcodebuild -runFirstLaunch",
+].join("\n");
+export const XCODE_BLOCKED = ["command_line_tools", "license"] as const;
+export type XcodeBlocked = (typeof XCODE_BLOCKED)[number];
+
+/** Why the Mac's Xcode doesn't answer, when it's installed and one command fixes it; null otherwise. */
+export function xcodeBlockedOf(host: ComputerDevice | undefined): XcodeBlocked | null {
+  const blocked = host?.toolchains.xcodeBlocked;
+  return !host?.toolchains.xcode && blocked && (XCODE_BLOCKED as readonly string[]).includes(blocked)
+    ? (blocked as XcodeBlocked)
+    : null;
+}
+
+/** What updates a runner installed from the Terminal (the app updates its own). */
+export const RUNNER_UPDATE_COMMAND = "agentes-runner update";
+
+/** How often the iPhone guide asks where a fix of the Mac's Xcode stands while it runs. */
+export const XCODE_FIX_POLL_MS = 1500;
+
+/** A fix of the Mac's Xcode still under way: the password window open, or its commands running. */
+export const xcodeFixLive = (fix: { state: string } | null | undefined) =>
+  fix?.state === "asking" || fix?.state === "running";
+
+export type XcodeFixStage = "offer" | "asking" | "running" | "done" | "missed" | "failed" | "still" | "terminal";
+
+/**
+ * What the Xcode step shows for a fix of `kind`: the button (`offer`), the password window open, the commands
+ * running, done (the Mac looks at Xcode again), nobody typed the password or Cancel (`missed`), failed, every command
+ * ran yet Xcode is still blocked (`still`: why, the command and Try again), or the Terminal command: picked
+ * (`terminal`), for who can't press the button, or a Mac whose app can't fix it.
+ */
+export function xcodeFixStage(
+  fix: { kind: string; state: string; still?: string } | null | undefined,
+  kind: "select" | "update",
+  o: { mayFix: boolean; terminal: boolean; outdated?: boolean },
+): XcodeFixStage {
+  const mine = fix?.kind === kind ? fix : null;
+  if (!o.mayFix || o.outdated || mine?.state === "unsupported") return "terminal";
+  if (mine?.state === "asking" || mine?.state === "running") return mine.state;
+  if (o.terminal) return "terminal";
+  if (mine?.state === "done") return "done";
+  if (mine?.state === "canceled" || mine?.state === "no_answer") return "missed";
+  if (mine?.state === "failed") return mine.still ? "still" : "failed";
+  return "offer";
+}
+
+/** A step under way or waiting on the person this long, unchanged, says what most likely holds it and one way out. */
+export const SETUP_STALL_MS = 45_000;
+
+/**
+ * Whether `key` (the step and what the device reports) stayed the same for `SETUP_STALL_MS`. A new key starts over;
+ * null: nothing waits.
+ */
+export function useStalled(key: string | null, ms = SETUP_STALL_MS): boolean {
+  const [since, setSince] = useState(() => ({ key, at: Date.now() }));
+  const [, rerender] = useState(0);
+  useEffect(() => {
+    setSince({ key, at: Date.now() });
+    if (key === null) return;
+    // Read again just after the time is up: the answer is the clock's.
+    const timer = setTimeout(() => rerender((n) => n + 1), ms + 100);
+    return () => clearTimeout(timer);
+  }, [key, ms]);
+  return key !== null && since.key === key && Date.now() - since.at >= ms;
+}
+
+/** How long an iPhone gone from its Mac at the Developer Mode step reads as restarting before the guide asks for it. */
+export const IPHONE_RESTART_MS = 3 * 60_000;
+
+/** The iPhone guide's memory of the Developer Mode step: which phone was at it, since when it is gone, whether it came back. */
+export interface IphoneRestartMemo {
+  at: string | null;
+  goneAt: number | null;
+  back: boolean;
+}
+export const NO_IPHONE_RESTART: IphoneRestartMemo = { at: null, goneAt: null, back: false };
+/** `restarting`: gone from its Mac after the Developer Mode step; `back`: there again and the mode still off. */
+export type IphoneRestart = "restarting" | "back" | null;
+/** An iPhone as the guide sees it now: a key that names it, and its reason (null: none, ready). */
+export type IphoneSeen = { key: string; reason: string | null | undefined } | null;
+
+/** The memo after seeing `phone` (null: the Mac lists none) at `now`. */
+export function iphoneRestartNext(memo: IphoneRestartMemo, phone: IphoneSeen, now: number): IphoneRestartMemo {
+  if (!phone) return memo.at && memo.goneAt === null ? { ...memo, goneAt: now } : memo;
+  if (phone.reason !== "developer_mode_off") return NO_IPHONE_RESTART;
+  const same = memo.at === phone.key;
+  return { at: phone.key, goneAt: null, back: same && (memo.back || memo.goneAt !== null) };
+}
+
+export function iphoneRestartOf(memo: IphoneRestartMemo, phone: IphoneSeen, now: number): IphoneRestart {
+  if (!phone) return memo.at && memo.goneAt !== null && now - memo.goneAt < IPHONE_RESTART_MS ? "restarting" : null;
+  return memo.back && memo.at === phone.key && phone.reason === "developer_mode_off" ? "back" : null;
+}
+
+/**
+ * An iPhone restarts to turn Developer Mode on, and is gone from its Mac meanwhile: the guide stays on that step
+ * (`restarting`) for up to `IPHONE_RESTART_MS` instead of asking for the cable again, then says what to do once it is
+ * back (`back`). Kept in memory: a guide opened during the restart starts from what the Mac sees.
+ */
+export function useIphoneRestart(phone: IphoneSeen): IphoneRestart {
+  const [memo, setMemo] = useState(NO_IPHONE_RESTART);
+  const [, rerender] = useState(0);
+  const now = Date.now();
+  const next = iphoneRestartNext(memo, phone, now);
+  const changed = next.at !== memo.at || next.goneAt !== memo.goneAt || next.back !== memo.back;
+  useEffect(() => {
+    if (changed) setMemo(next);
+  }, [changed, next]);
+  const goneAt = next.goneAt;
+  useEffect(() => {
+    if (goneAt === null) return;
+    // Read again just after the time is up: the answer is the clock's.
+    const timer = setTimeout(() => rerender((n) => n + 1), Math.max(0, goneAt + IPHONE_RESTART_MS - Date.now()) + 100);
+    return () => clearTimeout(timer);
+  }, [goneAt]);
+  return iphoneRestartOf(next, phone, now);
+}
 
 /** The iPhone a Mac reaches (a real one first), for the iPhone guide. */
 export const iphoneOf = (host: ComputerDevice | undefined) =>
@@ -446,17 +715,24 @@ export const iphoneOf = (host: ComputerDevice | undefined) =>
 /**
  * The iPhone guide's checklist, mirrored from what the Mac reports: steps before the phone's reason are done, that
  * one is current (amber when only the person can do it), the rest wait. No Xcode on the Mac stops at step one; with
- * no iPhone plugged in yet, the Apple Account comes from what the Mac found in Xcode.
+ * no iPhone plugged in yet, the Apple Account comes from what the Mac found in Xcode. An iPhone restarting to turn
+ * Developer Mode on (`restarting`, `useIphoneRestart`) stays on that step, under way.
  */
 export function iphoneSteps(
   host: ComputerDevice | undefined,
   phone: PhoneDevice | null,
+  restarting = false,
 ): Record<IphoneStep, StepState> {
   let at: IphoneStep | null;
   let needs = false;
-  if (!phone) {
-    at = !host?.toolchains.xcode ? "xcode" : !host.toolchains.appleTeam ? "account" : "connected";
+  if (!phone && restarting) {
+    at = "developerMode";
+  } else if (!phone) {
+    at = !host?.toolchains.xcode ? "xcode" : !hasAppleTeam(host) ? "account" : "connected";
     needs = at !== "connected";
+  } else if (phone.status.kind === "unsupported") {
+    // An iPhone below iOS 17: nothing the person does on this Mac makes it usable, so it ends here.
+    [at, needs] = ["connected", true];
   } else if (phone.status.kind === "needs_you" || phone.status.kind === "preparing") {
     at = IPHONE_REASON[phone.status.reason] ?? "helper";
     // While the Mac builds or renews the test helper the phone is preparing; needs_you there means it failed.
@@ -823,12 +1099,20 @@ export function screenGesture(
   };
 }
 
-export type DeviceNoticeKind = "device.join_request" | "device.in_use" | "device.access_request" | "device.waiting";
+export type DeviceNoticeKind =
+  | "device.join_request"
+  | "device.in_use"
+  | "device.access_request"
+  | "device.waiting"
+  | "device.tool_request"
+  | "device.cli_request";
 const NOTICE_KINDS = new Set<string>([
   "device.join_request",
   "device.in_use",
   "device.access_request",
   "device.waiting",
+  "device.tool_request",
+  "device.cli_request",
 ]);
 
 /**
@@ -851,6 +1135,12 @@ export interface DeviceNotice {
   forName: string | null;
   text: string | null;
   join: { name: string; os: string; ip: string; location: string | null } | null;
+  /**
+   * `device.tool_request`: the tool to turn on (`latest.reason`) and who asked (the person actor);
+   * `device.cli_request`: the coding CLI to install, the same way.
+   */
+  tool: MachineTool | null;
+  askerId: string | null;
 }
 
 export function deviceNoticeOf(
@@ -862,6 +1152,8 @@ export function deviceNoticeOf(
   const l = n.latest as Record<string, unknown>;
   const join = kind === "device.join_request";
   const actor = n.actors?.find((a) => a.type === "agent");
+  const tool =
+    kind === "device.tool_request" || kind === "device.cli_request" ? (str(l.reason) as MachineTool | null) : null;
   return {
     kind: kind as DeviceNoticeKind,
     requestId: str(s.requestId),
@@ -881,5 +1173,7 @@ export function deviceNoticeOf(
           location: str(l.location),
         }
       : null,
+    tool,
+    askerId: tool ? (n.actors?.find((a) => a.type === "user")?.id ?? null) : null,
   };
 }

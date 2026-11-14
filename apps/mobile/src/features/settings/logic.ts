@@ -6,10 +6,7 @@ import type {
   MachineOs,
   MachinePause,
   MachineToolName,
-  OrgRole,
-  OrgRoles,
   OrgSummary,
-  Person,
   S3Input,
   Skill,
   StorageConfig,
@@ -21,18 +18,6 @@ import { clockAt, formatPercent, relativeTime } from "@agenteschat/client/lib/fo
 import { folderName, hostDescKey, isPaused } from "@agenteschat/client/lib/machines";
 import { can } from "@agenteschat/client/lib/permissions";
 import { type ModeSwitchLine, personalSettingsHost, personalSettingsNav } from "@agenteschat/client/lib/personal-view";
-import {
-  type AreaLevel,
-  areaLine,
-  computerChoice,
-  everyoneOf,
-  isBelow,
-  isEveryone,
-  levelLabel,
-  levelOf,
-  levelOptions,
-  type PermissionAreaId,
-} from "@agenteschat/client/lib/roles";
 import { zoneDisplayName } from "@agenteschat/client/lib/routines";
 import { skillWaitingChip } from "@agenteschat/client/lib/skills";
 import type { TFunction } from "i18next";
@@ -49,7 +34,6 @@ import type { IconName } from "@/ui";
 export type SettingsSection =
   | "apps"
   | "general"
-  | "right_hand"
   | "members"
   | "roles"
   | "audit"
@@ -57,15 +41,26 @@ export type SettingsSection =
   | "access"
   | "connectors"
   | "skills"
-  | "keys"
   | "storage"
   | "computers"
   | "usage"
   | "import"
   | "vault";
 
-/** The phone's groups: the workspace itself, its people, its agents, costs and data (`mobile.settings.group.*`). */
-export type SettingsGroup = "org" | "people" | "agents" | "costs";
+/**
+ * The phone's groups, the web's settings entries (`TEAM_SETTINGS`; Your account is the phone's own tab): Workspace,
+ * People, AI and usage, Connectors, then Advanced.
+ */
+export type SettingsGroup = "org" | "people" | "ai" | "connectors" | "advanced";
+
+/** Each group's name: the words the web's list shows for the same entry. */
+export const GROUP_LABEL = {
+  org: "mobile.settings.group.org",
+  people: "mobile.settings.group.people",
+  ai: "settings.section.usage",
+  connectors: "access.kind.connectors",
+  advanced: "settings.advanced",
+} as const satisfies Record<SettingsGroup, string>;
 
 export interface SettingsEntry {
   id: SettingsSection;
@@ -78,61 +73,51 @@ export interface SettingsEntry {
 }
 
 /**
- * The web's settings (`settings.section.*`) in the phone's four groups, each thing once: the workspace itself (what
- * it is, its right hand, its GIFs), its people (members, roles, the audit), its agents (their access, connectors,
- * computers, the Vault, skills, the AI apps that reach them) and costs and data. Each with the phone's screen and a
- * neutral icon (the color stays on faces).
+ * The web's settings (`settings.section.*`) in the phone's groups, each thing once, a screen each: the workspace
+ * itself (what it is, its GIFs), its people (members, roles), AI and usage, connectors (with skills, the Vault, the
+ * agents' access and the AI apps that reach them) and Advanced (devices, storage, import and export, the audit). The
+ * right hand's settings are on its own profile. Each with a neutral icon (the color stays on faces).
  */
 export const SETTINGS_SECTIONS: readonly SettingsEntry[] = [
   // The workspace itself (its name, logo, zone, what every agent knows of it): who configures it.
-  {
-    id: "general",
-    group: "org",
-    icon: "home",
-    href: "/settings/general",
-    allowed: (o) => can(o, "configure"),
-  },
-  // The team's right hand (ADR 0137): its name, AI, budget and audience, for who manages agents.
-  {
-    id: "right_hand",
-    group: "org",
-    icon: "agent",
-    href: "/settings/right-hand",
-    allowed: (o) => can(o, "manage_agents"),
-  },
+  { id: "general", group: "org", icon: "home", href: "/settings/general", allowed: (o) => can(o, "configure") },
   // GIFs and stickers in chat (ADR 0091): who configures the workspace.
   { id: "media", group: "org", icon: "sticker", href: "/settings/media", allowed: (o) => can(o, "configure") },
   // Everyone, as on the web: who invites finds the requests there, a member who may not suggests someone (ADR 0090).
   { id: "members", group: "people", icon: "members", href: "/me/members", allowed: (o) => can(o, "read") },
-  // Papéis e permissões (ADR 0085): who manages roles, as on the web.
+  // Cargos (ADR 0085): who manages roles, as on the web.
   { id: "roles", group: "people", icon: "lock", href: "/settings/roles", allowed: (o) => can(o, "manage_roles") },
-  // What agents did and people changed: who may see the audit (it shows everyone's work).
-  { id: "audit", group: "people", icon: "list", href: "/settings/audit", allowed: (o) => can(o, "view_audit") },
+  // "IA e uso", for everyone (ADR 0063): the workspace's AI accounts with their meters and the agents whose details
+  // they see, in tokens and percentages; money only for who has `view_usage`. It leads to the AI accounts screen.
+  { id: "usage", group: "ai", icon: "chart", href: "/usage", allowed: () => true },
+  { id: "connectors", group: "connectors", icon: "join", href: "/connectors", allowed: () => true },
+  {
+    id: "skills",
+    group: "connectors",
+    icon: "sparkle",
+    href: "/settings/skills",
+    allowed: (o) => can(o, "manage_agents"),
+  },
+  // The Vault (ADR 0144): every member keeps their own logins and keys there and sees the team's shared with them.
+  { id: "vault", group: "connectors", icon: "key", href: "/settings/vault", allowed: (o) => can(o, "read") },
   {
     id: "access",
-    group: "agents",
+    group: "connectors",
     icon: "shield",
     href: "/settings/access",
     allowed: (o) => can(o, "manage_agents"),
   },
-  { id: "connectors", group: "agents", icon: "join", href: "/connectors", allowed: () => true },
-  // Dispositivos: every member sees the computers and the phones they reach, and connects their own (ADR 0025).
-  { id: "computers", group: "agents", icon: "laptop", href: "/settings/devices", allowed: (o) => can(o, "read") },
-  // The Vault (ADR 0144): every member keeps their own logins and keys there and sees the team's shared with them.
-  { id: "vault", group: "agents", icon: "key", href: "/settings/vault", allowed: (o) => can(o, "read") },
-  { id: "skills", group: "agents", icon: "sparkle", href: "/settings/skills", allowed: (o) => can(o, "manage_agents") },
   // AI apps (ADR 0119): each person's own connections in this workspace; connecting one happens on the web.
-  { id: "apps", group: "agents", icon: "share", href: "/settings/apps", allowed: () => true },
-  // Everyone (ADR 0063): their plans' meters and the agents whose details they see, in tokens and percentages;
-  // money only for who has `view_usage`.
-  { id: "usage", group: "costs", icon: "chart", href: "/usage", allowed: () => true },
-  // "Contas de IA": everyone's own plans; the workspace's API keys only for who manages them.
-  { id: "keys", group: "costs", icon: "brain", href: "/ai-accounts", allowed: (o) => can(o, "read") },
-  { id: "storage", group: "costs", icon: "archive", href: "/settings/storage", allowed: (o) => can(o, "configure") },
-  { id: "import", group: "costs", icon: "out", href: "/settings/import", allowed: (o) => can(o, "create_agents") },
+  { id: "apps", group: "connectors", icon: "share", href: "/settings/apps", allowed: () => true },
+  // Dispositivos: every member sees the computers and the phones they reach, and connects their own (ADR 0025).
+  { id: "computers", group: "advanced", icon: "laptop", href: "/settings/devices", allowed: (o) => can(o, "read") },
+  { id: "storage", group: "advanced", icon: "archive", href: "/settings/storage", allowed: (o) => can(o, "configure") },
+  { id: "import", group: "advanced", icon: "out", href: "/settings/import", allowed: (o) => can(o, "create_agents") },
+  // What agents did and people changed: who may see the audit (it shows everyone's work).
+  { id: "audit", group: "advanced", icon: "list", href: "/settings/audit", allowed: (o) => can(o, "view_audit") },
 ];
 
-export const SETTINGS_GROUPS: readonly SettingsGroup[] = ["org", "people", "agents", "costs"];
+export const SETTINGS_GROUPS: readonly SettingsGroup[] = ["org", "people", "ai", "connectors", "advanced"];
 
 /** The sections this membership opens, in order. */
 export const visibleSections = (org: OrgSummary | null | undefined) => SETTINGS_SECTIONS.filter((s) => s.allowed(org));
@@ -148,15 +133,18 @@ export interface PersonalSettings {
 
 /**
  * A personal workspace's settings on the phone (ADR 0159 §3), from the sections this person opens, as the web lists
- * them (`personalSettingsNav`): About you, AI and apps, Plan and usage, Vault and Computers in one list, with People
+ * them (`personalSettingsNav`): About you, AI and usage, Connectors, Vault and Computers in one list, with People
  * after About you once someone else is a member (`others`, unknown while loading: it doesn't); every other one under
- * Advanced, but for Connectors and Skills, which AI and apps shows at its foot. Only where a section is listed
- * changes: each opens the same screen, with the same permission, as in a team's workspace.
+ * Advanced. Only where a section is listed changes: each opens the same screen, with the same permission, as in a
+ * team's workspace.
  */
 export const personalSections = (org: OrgSummary | null | undefined, others: number | undefined): PersonalSettings =>
   personalSettingsNav(visibleSections(org), others);
 
-/** What AI and apps lists at its foot in a personal workspace: Connectors and Skills, those this person opens. */
+/**
+ * What the AI accounts screen lists at its foot in a personal workspace: the sections it holds (`personalSettingsHost`),
+ * those this person opens. No section is held there: Connectors and Skills have rows of their own.
+ */
 export function personalAiParts(org: OrgSummary | null | undefined): SettingsEntry[] {
   const open = visibleSections(org);
   const ids = new Set<string>(open.map((s) => s.id));
@@ -190,8 +178,6 @@ export interface TileFacts {
   connectors?: string[] | undefined;
   skills?: number | undefined;
   computers?: { count: number; online: number } | undefined;
-  /** Who manages keys sees the workspace's; anyone else, their own plans. */
-  keys?: { manages: true; live: number; platform: boolean } | { manages: false; plans: number } | undefined;
   storage?: { kind: "agentes" | "s3"; edition: "cloud" | "selfhost" } | undefined;
 }
 
@@ -210,10 +196,6 @@ export function areaValues(t: TFunction, locale: string, f: TileFacts): Partial<
   if (f.skills !== undefined && f.skills > 0) out.skills = String(f.skills);
   if (f.computers && f.computers.count > 0)
     out.computers = t("mobile.settings.ofOnline", { online: f.computers.online, count: f.computers.count });
-  if (f.keys) {
-    const n = f.keys.manages ? f.keys.live : f.keys.plans;
-    if (n > 0) out.keys = String(n);
-  }
   return out;
 }
 
@@ -511,73 +493,3 @@ export function s3Missing(f: S3Form, keysSaved: boolean) {
 
 /** The export's file name, as the web saves it: `agentes-chat-2026-10-28.json`. */
 export const exportFileName = (now: Date) => `agentes-chat-${now.toISOString().slice(0, 10)}.json`;
-
-// ── Papéis e permissões ─────────────────────────────────────────────────────
-
-/** The owners' page in the roles' routes (owner isn't a role on the server: `organization_members.role`). */
-export const OWNER_ROLE = "owner";
-/** The agents' computers' choice in the area routes: one choice, beside the areas (`computerChoice`). */
-export const COMPUTER_AREA = "computer";
-
-/** Each area's icon on a role's screen (the web's `AREA_ICONS`, in the phone's set). */
-export const ROLE_AREA_ICON: Record<string, IconName> = {
-  chat: "chat",
-  agents: "agent",
-  tools: "bolt",
-  knowledge: "doc",
-  org: "home",
-  [COMPUTER_AREA]: "laptop",
-};
-
-export interface RoleAreaRow {
-  id: string;
-  label: string;
-  /** What the role reaches there. */
-  line: string;
-  /** Its level; empty as Administrador (it has every area). */
-  value: string;
-}
-
-/** A role's areas on its screen, as the web's card: each with its line and level, the computers right after Ferramentas. */
-export function roleAreaRows(t: TFunction, locale: string, role: OrgRole, data: OrgRoles): RoleAreaRow[] {
-  const everyone = everyoneOf(data.roles);
-  const admin = !isEveryone(role) && role.permissions.includes("administrator");
-  return data.areas.flatMap((a) => {
-    const row = {
-      id: a.id,
-      label: t(`permissions.areas.${a.id as PermissionAreaId}`),
-      line: areaLine(t, locale, role, a, everyone),
-      value: admin ? "" : levelLabel(t, role, levelOf(role, a, everyone)),
-    };
-    if (a.id !== "tools") return [row];
-    const c = computerChoice(role, everyone);
-    return [
-      row,
-      {
-        id: COMPUTER_AREA,
-        label: t("rolesPage.computer.title"),
-        line: t(`rolesPage.computer.${c.reach}.${c.shown}`),
-        value: admin ? "" : t(`rolesPage.computer.levels.${c.shown}`),
-      },
-    ];
-  });
-}
-
-/** The levels an area's screen lists: those offered, and "Personalizado" while it is that (never picked). */
-export function areaChoices(role: OrgRole, area: OrgRoles["areas"][number], everyone: OrgRole | undefined) {
-  const level = levelOf(role, area, everyone);
-  const options: AreaLevel[] = levelOptions(role, area, everyone);
-  return { level, options: level === "custom" ? [...options, level] : options };
-}
-
-/** Who may get a role from this viewer: without it, and below them (the server checks it again). */
-export const roleCandidates = (
-  viewer: { role: string; rank?: number | null; userId: string },
-  role: Pick<OrgRole, "id">,
-  people: readonly Person[],
-  roles: readonly OrgRole[],
-) => people.filter((p) => !(p.roleIds ?? []).includes(role.id) && isBelow(viewer, p, roles));
-
-/** Whether the viewer gives and takes this role: not Todos, below them, and they manage members. */
-export const givesRole = (org: OrgSummary | null | undefined, role: Pick<OrgRole, "kind" | "givable">) =>
-  !isEveryone(role) && role.givable && can(org, "manage_members");

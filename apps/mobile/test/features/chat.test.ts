@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { LiveConsult, LiveRun, LiveWork, Message, RunConsultation, SecretRequest } from "@agenteschat/client";
-import { activitySentence, barElapsed, barFaces, barWords, entriesOffScreen } from "@agenteschat/client/lib/activity";
+import { activitySentence, barElapsed, barFaces, barWords, facesOf } from "@agenteschat/client/lib/activity";
 import { questionWaitsOn } from "@agenteschat/client/lib/agent-questions";
 import { runAround, runPosition } from "@agenteschat/client/lib/chat";
 import { consultBlocksNearEnd, consultsForLine } from "@agenteschat/client/lib/consult-group";
+import { formatInt } from "@agenteschat/client/lib/format";
 import { issueTakenOf, issueWorkOf } from "@agenteschat/client/lib/issues";
 import {
   latestSecret,
@@ -18,6 +19,7 @@ import { secretOutcome } from "@agenteschat/client/lib/secret-words";
 import { toolCalls, toolNow, toolPhrase, toolWhy } from "@agenteschat/client/lib/work";
 import {
   AGENT_WORDS_MIN,
+  aboutFits,
   artifactsOf,
   awayRun,
   buildRows,
@@ -47,7 +49,6 @@ import {
   reactionName,
   reactionPills,
   readMark,
-  rowStopOf,
   standsAlone,
   stoppableInLine,
   TABLE_COL_MAX,
@@ -61,21 +62,15 @@ import {
   workStepsOf,
 } from "../../src/features/chat/logic";
 import {
-  fadeTail,
   outputTail,
-  pruneMarks,
   recentTurn,
   rememberTurn,
   stepLimitOf,
   stoppedOf,
   turnItems,
   turnOpener,
-  turnOrder,
-  turnPhase,
   turnRuns,
-  turnShows,
   turnSignature,
-  turnsInPlace,
   withContinued,
   withOpacity,
 } from "../../src/features/chat/turn";
@@ -84,6 +79,8 @@ import { at, message, translator } from "./fixtures";
 
 /** A screen's source, for the wiring a test can't render (React Native). */
 const source = (path: string) => Bun.file(new URL(`../../src/${path}`, import.meta.url).pathname).text();
+/** People typing, as `typingIn` gives them. */
+const typing = (...ids: string[]) => ids.map((id) => ({ id, kind: "typing" as const }));
 
 describe("timeline", () => {
   test("top-level messages and loaded thread replies, in time order, no duplicates", () => {
@@ -251,6 +248,10 @@ describe("what a message carries", () => {
       { id: "f1", version: 2, title: "Relatório", deleted: false },
       { id: "f2", title: "", deleted: true },
     ]);
+    // A picture's size, when the server read it, rides along.
+    expect(
+      artifactsOf({ artifacts: [{ id: "p1", version: 1, title: "farol.png", width: 1024, height: 1536 }] }),
+    ).toEqual([{ id: "p1", version: 1, title: "farol.png", deleted: false, width: 1024, height: 1536 }]);
   });
 });
 
@@ -259,8 +260,6 @@ describe("working line", () => {
     channelId: "c1",
     threadId: "m1",
     status: "thinking",
-    text: "",
-    lastSeq: 0,
     ...over,
   });
   const names: Record<string, string> = { atlas: "Atlas", ada: "Ada", infra: "Infra" };
@@ -334,7 +333,7 @@ describe("working line", () => {
   test("a writing agent stays on the line ('escrevendo'); failed and waiting runs leave it", () => {
     const entries = workingEntries(
       [
-        run({ runId: "w", agentId: "atlas", status: "running", text: "Oi" }),
+        run({ runId: "w", agentId: "atlas", status: "running" }),
         run({ runId: "f", agentId: "ada", status: "failed" }),
         run({ runId: "a", agentId: "infra", status: "waiting_approval" }),
       ],
@@ -355,7 +354,7 @@ describe("working line", () => {
     const personName = (id: string) => people[id];
     const agents = ["atlas", "ada", "infra"].map((agentId) => run({ runId: `r-${agentId}`, agentId }));
     // Someone the directory doesn't know (gone from the workspace) isn't named.
-    const entries = workingEntries(agents, [], name, ["u1", "u2", "u3", "gone"], personName);
+    const entries = workingEntries(agents, [], name, typing("u1", "u2", "u3", "gone"), personName);
     expect(entries.map((e) => `${e.type}:${e.id}`)).toEqual([
       "agent:atlas",
       "agent:ada",
@@ -366,15 +365,86 @@ describe("working line", () => {
     ]);
     expect(activitySentence(t, entries)).toBe("Atlas e mais 2 estão trabalhando · Marina e mais 2 estão digitando…");
     expect(barFaces(entries).map((e) => e.id)).toEqual(["atlas", "ada", "u1"]);
-    expect(activitySentence(t, workingEntries([], [], name, ["u1"], personName))).toBe("Marina está digitando…");
+    expect(activitySentence(t, workingEntries([], [], name, typing("u1"), personName))).toBe("Marina está digitando…");
+  });
+
+  test("someone recording a voice message joins the line as on the web: last, with their own mark and faces", async () => {
+    const [pt, en] = await Promise.all([translator("pt-BR"), translator("en")]);
+    const people: Record<string, string> = { u1: "Marina", u2: "Rui", u3: "Gabi" };
+    const personName = (id: string) => people[id];
+    const voice = (...ids: string[]) => ids.map((id) => ({ id, kind: "voice" as const }));
+    const alone = workingEntries([], [], name, voice("u1"), personName);
+    expect(activitySentence(pt, alone)).toBe("Marina está gravando áudio…");
+    expect(activitySentence(en, alone)).toBe("Marina is recording audio…");
+    expect(activitySentence(pt, workingEntries([], [], name, voice("u1", "u2", "u3"), personName))).toBe(
+      "Marina e mais 2 estão gravando áudio…",
+    );
+    const mixed = workingEntries([], [], name, [...typing("u1"), ...voice("u2")], personName);
+    expect(activitySentence(pt, mixed)).toBe("Marina está digitando · Rui está gravando áudio…");
+    expect(barWords(pt, mixed)).toEqual(["", "", "Marina", " está digitando", " · ", "Rui", " está gravando áudio…"]);
+    // Both at it: each group shows its own faces after its mark, and nobody's face leads the line.
+    expect(barFaces(mixed)).toEqual([]);
+    expect(facesOf(mixed, "typing").map((e) => e.id)).toEqual(["u1"]);
+    expect(facesOf(mixed, "recordingVoice").map((e) => e.id)).toEqual(["u2"]);
+    const withAgent = workingEntries([run({ runId: "r", agentId: "ada" })], [], name, voice("u1"), personName);
+    expect(activitySentence(pt, withAgent)).toBe("Ada está trabalhando · Marina está gravando áudio…");
+    // Names cut short keep to what they drew, as who types' do.
+    expect(lineFit({ agents: 60.2, recorders: 41.5 }, true)).toEqual({ agents: 61, recorders: 42 });
+  });
+
+  test("the line draws the bars where the dots are, each verb with its own mark beside the other, nothing empty before them", async () => {
+    const lines = await source("features/chat/LiveRows.tsx");
+    const line = lines.slice(lines.indexOf("export function WorkingLine("), lines.indexOf("type LinePiece"));
+    expect(line).toContain(
+      "{color || !someoneTypes(entries) || bothAtIt(entries) ? null : <TypingDots color={c.muted} />}",
+    );
+    expect(line).toContain("{faces.length > 0 ? (");
+    expect(line).toContain('faces={{ typing: groupFaces("typing"), voice: groupFaces("recordingVoice") }}');
+    const words = lines.slice(lines.indexOf("function BarWords("), lines.indexOf("function TypingDots("));
+    expect(words).toContain("<RecordingBars color={c.muted} />");
+    expect(words).toContain("<TypingDots color={c.muted} />");
+    // Short of room, the second group takes a line of its own: every verb stays whole.
+    expect(words).toContain("typing && recording ? styles.wrap : undefined");
+    // Still with Reduce Motion, in the voice wave's look.
+    const bars = lines.slice(lines.indexOf("function RecordingBars("), lines.indexOf("function TypingDots("));
+    expect(bars).toContain("reduced ? still :");
+    expect(lines).toContain("bar: { width: 3, height: 12, borderRadius: 1.5, opacity: 0.7 },");
+  });
+
+  test("the phone tells the conversation while it records (held or hands free, not paused) and while the take uploads", async () => {
+    const take = await source("features/voice/useVoiceTake.ts");
+    const tick = take.slice(take.indexOf("const tick = useCallback("), take.indexOf("const record = useCallback("));
+    expect(tick).toContain('if (phaseNow === "hold" || phaseNow === "locked") targetRef.current.onRecording?.();');
+    const screen = await source("features/chat/ChatScreen.tsx");
+    // Recording never waits on what was just written (an agent asked in it waits for the take); the upload's frames do.
+    expect(screen).toContain(
+      'const onRecording = useCallback(() => sendTyping(threadId, undefined, "voice"), [sendTyping, threadId]);',
+    );
+    // Through the field's own component, which keeps what it is handed (`ChatComposer`).
+    const field = screen.slice(screen.indexOf("const ChatComposer = memo("), screen.indexOf("function ToLatest("));
+    expect(field).toContain("afterSend: onVoiceSent,\n    onRecording,\n  });");
+    expect(screen).toContain("!m.meta?.voiceAccepted &&");
+    expect(screen).toContain('const timer = setInterval(() => sendTyping(threadId, undefined, "voice", true), 1000);');
+    const live = (await source("features/chat/live.ts")).replace(/\s+/g, " ");
+    expect(live).toContain("throttle(Date.now(), text, kind, keepAlive)");
+    // Its message ends the line, also one too big for its event (`applyTypingEvent`, apps/web/test/live.test.ts).
+    expect(live).toContain("const typing = applyTypingEvent(state.typing, event, action.at);");
   });
 
   test("beside a long name typing, the agents' words give way first and leave whole when only a sliver would show", async () => {
     const t = await translator("en");
     const people: Record<string, string> = { u1: "Maria Fernanda Albuquerque" };
-    const entries = workingEntries([run({ runId: "r", agentId: "ada" })], [], name, ["u1"], (id) => people[id]);
+    const entries = workingEntries([run({ runId: "r", agentId: "ada" })], [], name, typing("u1"), (id) => people[id]);
     // The shared pieces, in the order they give way: the agents' words (and their " · "), then the names.
-    expect(barWords(t, entries)).toEqual(["Ada is working", " · ", "Maria Fernanda Albuquerque", " is typing…"]);
+    expect(barWords(t, entries)).toEqual([
+      "Ada is working",
+      " · ",
+      "Maria Fernanda Albuquerque",
+      " is typing…",
+      "",
+      "",
+      "",
+    ]);
     // What iOS drew of each: a cut-off "A" beside someone typing leaves, " · " with it.
     expect(lineFit({ agents: 4.7, typers: 170.3 }, true)).toEqual({ agents: null, typers: 171 });
     expect(lineFit({ agents: AGENT_WORDS_MIN }, true).agents).toBe(AGENT_WORDS_MIN);
@@ -394,7 +464,7 @@ describe("working line", () => {
   });
 
   test("the phrase turns as on the web: only the one shown and the one leaving are drawn, each shown whole", () => {
-    const words = (agents: string): LineWords => [agents, "", "", ""];
+    const words = (agents: string): LineWords => [agents, "", "", "", "", "", ""];
     const drawn = ({ was, now }: PhraseTurn) => [was, now].flatMap((w) => (w ? [w[0]] : []));
     const first: PhraseTurn = { now: words("Ada is working…"), was: null, n: 0, since: 1_000 };
     // A fast tool's start turns it...
@@ -420,7 +490,7 @@ describe("working line", () => {
   });
 
   test("a leaving phrase is drawn only during its crossfade, never under Reduce Motion, so it can't come back whole", () => {
-    const words = (agents: string): LineWords => [agents, "", "", ""];
+    const words = (agents: string): LineWords => [agents, "", "", "", "", "", ""];
     const turned: PhraseTurn = {
       now: words("Ada is working…"),
       was: words("Ada is checking GitHub…"),
@@ -446,11 +516,11 @@ describe("working line", () => {
     expect(barElapsed(en, one, [ada], now)).toBe("16s");
     expect(barElapsed(pt, one, [ada], now + 49_000)).toBe("1 min 5 s");
     expect(barElapsed(en, one, [ada], now - 15_000)).toBeNull();
-    // Someone typing beside it doesn't take its time away, nor does a turn of its own it stopped before.
-    const typing = workingEntries([ada], [], name, ["u1"], () => "Marina");
-    expect(barElapsed(en, typing, [ada], now)).toBe("16s");
-    const stopped = run({ runId: "r0", agentId: "ada", status: "canceled", startedAt: now - 90_000 });
-    expect(barElapsed(en, workingEntries([stopped, ada], [], name), [stopped, ada], now)).toBe("16s");
+    // Someone typing beside it doesn't take its time away, nor does a turn of its own that failed before.
+    const typingToo = workingEntries([ada], [], name, typing("u1"), () => "Marina");
+    expect(barElapsed(en, typingToo, [ada], now)).toBe("16s");
+    const failed = run({ runId: "r0", agentId: "ada", status: "failed", startedAt: now - 90_000 });
+    expect(barElapsed(en, workingEntries([failed, ada], [], name), [failed, ada], now)).toBe("16s");
     const atlas = run({ runId: "r2", agentId: "atlas", status: "running", startedAt: now - 30_000 });
     expect(barElapsed(en, workingEntries([ada, atlas], [], name), [ada, atlas], now)).toBeNull();
     const asking: LiveConsult = {
@@ -491,112 +561,68 @@ describe("working line", () => {
     expect(line).not.toContain("Date.now()");
   });
 
-  test("one agent on its own: the line says its name; with its row out of view, its face opens the line", async () => {
+  test("one agent on its own: the line says its name, its face opening the line", async () => {
     const en = await translator("en");
     const ada = run({ runId: "r", agentId: "ada" });
     const atlas = run({ runId: "s", agentId: "atlas" });
     expect(barWords(en, workingEntries([ada], [], name), markName)[0]).toBe(markName("Ada"));
     expect(barWords(en, workingEntries([ada, atlas], [], name))[0]).toBe("Ada and Atlas are working…");
-    // The agents left in the line are the ones whose rows are out of view: their faces lead it (no orbit).
+    // The agents at work lead it with their faces (no orbit).
     const lines = await source("features/chat/LiveRows.tsx");
     const line = lines.slice(lines.indexOf("export function WorkingLine("), lines.indexOf("type LinePiece"));
     expect(line).toContain("const faces = barFaces(entries);");
     expect(line).not.toContain("PixelOrbit");
   });
 
-  test("said once: an agent whose live row is on screen is left out of the line; people typing always stay", () => {
-    const ada = run({ runId: "r", agentId: "ada", status: "running" });
-    const atlas = run({ runId: "s", agentId: "atlas", status: "running" });
-    const runs = [ada, atlas];
-    const all = workingEntries(runs, [], name, ["joao"], (id) => (id === "joao" ? "João" : undefined));
-    const adaShows = (r: LiveRun) => r.runId === "r";
-    const left = entriesOffScreen(all, runs, adaShows);
-    expect(left.map((e) => e.id)).toEqual(["atlas", "joao"]);
-    expect(barFaces(left).map((e) => e.id)).toEqual(["atlas", "joao"]);
-    // Both rows on screen: only who types is left (the line shows just that).
-    expect(entriesOffScreen(all, runs, () => true).map((e) => e.id)).toEqual(["joao"]);
-    // Nothing at work out of view and no one typing: no line at all.
-    expect(entriesOffScreen(workingEntries([ada], [], name), [ada], adaShows)).toEqual([]);
-  });
-
-  test("its row out of view, the line speaks for that one agent: its step, its time right after it, and Ver", async () => {
+  test("the line speaks for one agent at work: its step, its time right after it, and its stop", async () => {
     const en = await translator("en");
     const now = 1_000_000;
     const ada = run({ runId: "r", agentId: "ada", status: "running", startedAt: now - 16_000 });
     const atlas = run({ runId: "s", agentId: "atlas", status: "running" });
-    const shows = (r: LiveRun) => r.runId === "s";
-    const left = entriesOffScreen(workingEntries([ada, atlas], [], name), [ada, atlas], shows);
-    expect(awayRun(left, [ada, atlas], shows)?.runId).toBe("r");
-    expect(barElapsed(en, left, [ada, atlas], now)).toBe("16s");
-    expect(lineStops(left, [ada, atlas], () => true, shows).map((r) => r.runId)).toEqual(["r"]);
-    // Its row on screen: the line has nothing of its own to say about it, and its stop is on the row.
     const alone = workingEntries([ada], [], name);
-    expect(awayRun(alone, [ada], () => true)).toBeUndefined();
-    expect(
-      lineStops(
-        alone,
-        [ada],
-        () => true,
-        () => true,
-      ),
-    ).toEqual([]);
-    // Two agents out of view: the line can't say whose time or stop.
+    expect(awayRun(alone, [ada])?.runId).toBe("r");
+    expect(barElapsed(en, alone, [ada], now)).toBe("16s");
+    expect(lineStops(alone, [ada], () => true).map((r) => r.runId)).toEqual(["r"]);
+    // Two agents at work: the line can't say whose time or stop.
     const both = workingEntries([ada, atlas], [], name);
-    expect(awayRun(both, [ada, atlas], () => false)).toBeUndefined();
-    // The step takes its own width, so its time follows the words instead of floating after a fixed gap.
+    expect(awayRun(both, [ada, atlas])).toBeUndefined();
+    expect(lineStops(both, [ada, atlas], () => true)).toEqual([]);
+    // The step takes its own width, so its time follows the words instead of floating after a fixed gap; short of room
+    // it gives way first. The name is never cut: no line cap, no width cap, it wraps.
     const lines = await source("features/chat/LiveRows.tsx");
-    expect(lines).toContain("barStep: { flexShrink: 1, minWidth: 0 },");
-    // "Ver" only once its row is in the conversation; "Parar", the word, only for the agents whose rows are out of view
-    // (a row on screen has its own at its end). It is the one stop: the composer keeps only its send.
+    expect(lines).toContain("barStep: { flexShrink: 1000, minWidth: 0 },");
+    expect(lines).toContain("awayName: { flexShrink: 1 },");
+    const away = lines.slice(lines.indexOf("function AwayStep("), lines.indexOf("const TURN"));
+    expect(away.slice(0, away.indexOf("{name}"))).not.toContain("numberOfLines");
+    // No "Ver": no row to go back to while it works. "Parar", the word, is the one stop: the composer keeps only its send.
     const line = lines.slice(lines.indexOf("export function WorkingLine("), lines.indexOf("type LinePiece"));
-    expect(line).toContain("const seeable = away && turnShows(away) ? away : undefined;");
-    expect(line).toContain("const stopHere = stop ? stop.runs.filter((r) => !rowInView(r)) : [];");
+    expect(line).not.toContain("seeable");
+    expect(line).toContain("const stopHere = stop?.runs ?? [];");
     expect(line).toContain('<LineStop runs={stopHere} onStop={stop.onStop} place="word" />');
     const screen = await source("features/chat/ChatScreen.tsx");
-    expect(screen).toContain(
-      "const working = useMemo<ComposerWorking | null>(() => (busyRuns.length === 0 ? null : {}), [busyRuns]);",
-    );
+    expect(screen).toContain("const busy = busyRuns.length > 0;");
+    expect(screen).toContain("const working = useMemo<ComposerWorking | null>(() => (busy ? {} : null), [busy]);");
   });
 
-  test("the row's stop: the latest run here I may stop (the web's rule), never a guess", () => {
-    const runs = [
-      run({ runId: "a", agentId: "ada", status: "running" }),
-      run({ runId: "b", agentId: "atlas", status: "running" }),
-      run({ runId: "p", agentId: "infra", provisional: true }),
-    ];
-    expect(rowStopOf(runs, () => true)?.runId).toBe("b");
-    expect(rowStopOf(runs, (r) => r.agentId === "ada")?.runId).toBe("a");
-    expect(rowStopOf(runs, () => false)).toBeUndefined();
-  });
-
-  test("no thinking row: before its words the turn draws nothing (the line speaks); then its row ends in its time and stop", async () => {
+  test("no row of its own while it works, writing or not: the line speaks; the reply rises in whole once posted", async () => {
     const lines = await source("features/chat/LiveRows.tsx");
-    const row = lines.slice(lines.indexOf("export const TurnRow"), lines.indexOf("function RunTail("));
-    expect(row).toContain("if (waiting) return pair;");
+    expect(lines).not.toContain("TurnRow");
+    expect(lines).not.toContain("RevealText");
     expect(lines).not.toContain("WaitLine");
-    expect(lines).not.toContain("openerDelayMs");
-    expect(row).toContain("{live ? <RunTail run={run} now={now} /> : null}");
-    const tail = lines.slice(lines.indexOf("function RunTail("), lines.indexOf("function RevealText("));
-    expect(tail).toContain("runElapsed(t, run, now)");
-    expect(tail).toContain('<LineStop runs={stops} onStop={rows.onStop} rule={false} place="row" />');
+    const screen = await source("features/chat/ChatScreen.tsx");
+    expect(screen).not.toContain('kind: "run"');
+    expect(screen).toContain("entering={isFresh(item.key) ? ENTER : undefined}");
     // 24 points drawn, 44 to the finger.
     expect(lines).toContain("hitSlop={10}");
-  });
-
-  test("once its words arrive, the block's header says the name and its start time, as on the web (no orbit)", async () => {
-    const lines = await source("features/chat/LiveRows.tsx");
-    const row = lines.slice(lines.indexOf("export const TurnRow"), lines.indexOf("function RunTail("));
-    expect(row).toContain("when.time(new Date(since ?? mountedAt).toISOString())");
-    expect(row).not.toContain("PixelOrbit");
   });
 
   test("Parar: real runs at work, also while they write (not a guess, not one waiting)", () => {
     const list = stoppableInLine([
       run({ runId: "p", agentId: "atlas", provisional: true }),
       run({ runId: "r", agentId: "atlas", status: "running" }),
-      run({ runId: "w", agentId: "ada", status: "running", text: "Oi" }),
+      run({ runId: "w", agentId: "ada", status: "running" }),
       run({ runId: "a", agentId: "infra", status: "waiting_approval" }),
-      run({ runId: "s", agentId: "infra", status: "canceled", text: "Parei" }),
+      run({ runId: "s", agentId: "infra", status: "failed" }),
     ]);
     expect(list.map((r) => r.runId)).toEqual(["r", "w"]);
   });
@@ -681,6 +707,12 @@ describe("reactions", () => {
       { reaction: "🎉", emoji: "🎉", people: 0, agentIds: ["nina"], mine: false },
       { reaction: "+1", emoji: "👍", people: 2, agentIds: [], mine: true },
     ]);
+  });
+  test("every count reads as the person's language writes it (1.284), a capped one too (99+)", async () => {
+    expect(formatInt("pt-BR", 1284)).toBe("1.284");
+    const count = await source("ui/Count.tsx");
+    expect(count).toContain("formatInt(i18n.language, value)");
+    expect(count).toContain("formatInt(i18n.language, max)}+");
   });
 });
 
@@ -782,16 +814,15 @@ describe("markdown", () => {
       { kind: "details", summary: [{ kind: "text", text: "Mais" }], body: "linha" },
     ]);
   });
-  test("blocks: a fence still being written is an open code block; a fence still opening is hidden", () => {
+  test("blocks: a fence never closed runs to the end as code; a fence still opening is hidden", () => {
     expect(parseBlocks('Aqui:\n```chart\n{"type":"bar","ti')).toEqual([
       { kind: "paragraph", inline: [{ kind: "text", text: "Aqui:" }] },
-      { kind: "code", lang: "chart", text: '{"type":"bar","ti', open: true },
+      { kind: "code", lang: "chart", text: '{"type":"bar","ti' },
     ]);
     expect(parseBlocks("```ts\nconst a = 1;\n``").at(-1)).toEqual({
       kind: "code",
       lang: "ts",
       text: "const a = 1;",
-      open: true,
     });
     expect(parseBlocks("Aqui:\n```cha")).toEqual([{ kind: "paragraph", inline: [{ kind: "text", text: "Aqui:" }] }]);
     expect(parseBlocks("use `npm` e pronto `x`").map((b) => b.kind)).toEqual(["paragraph"]);
@@ -854,6 +885,7 @@ describe("an agent's question (ask_user)", () => {
     status: "open",
     answer: null,
     answeredByUserId: null,
+    answeredAt: null,
   };
 
   test("meta.question becomes the card's data; bad shapes are ignored", () => {
@@ -943,14 +975,12 @@ describe("asking an agent to implement an issue", () => {
   });
 });
 
-describe("an agent's turn as one block", () => {
+describe("an agent's turn: nothing drawn while it works, its work kept for the reply", () => {
   const run = (over: Partial<LiveRun> & { runId: string }): LiveRun => ({
     agentId: "theo",
     channelId: "c1",
     threadId: "m1",
     status: "thinking",
-    text: "",
-    lastSeq: 0,
     ...over,
   });
   const call = (id: string, tool: string, running: boolean) => ({
@@ -964,14 +994,6 @@ describe("an agent's turn as one block", () => {
     running,
   });
 
-  test("its block shows once it has words of its own; steps alone stay in the line above the box", () => {
-    const fresh = run({ runId: "a", status: "running", startedAt: 10_000 });
-    expect(turnShows(fresh)).toBe(false);
-    expect(turnShows({ ...fresh, work: [call("1", "sentry_list_issues", true)] })).toBe(false);
-    expect(turnShows({ ...fresh, text: "Oi" })).toBe(true);
-    expect(turnShows({ ...fresh, work: [{ kind: "say", text: "Vou ler.", turn: 1 }] })).toBe(true);
-  });
-
   test("a call refused for its arguments: quiet once made right, plain when the run ends without it", () => {
     const slip = { ...call("1", "offer_connect_app", false), failed: true, slip: true };
     const made = turnItems(run({ runId: "r", work: [slip, call("2", "offer_connect_app", false)] }));
@@ -981,36 +1003,27 @@ describe("an agent's turn as one block", () => {
     expect(toolNow(turnItems(run({ runId: "r", status: "failed", work: [slip] })))?.state).toBe("fail");
   });
 
-  test("the end of what it said reaching its line changes what the saved reply keeps", () => {
-    const said = (text: string) =>
-      turnSignature(turnItems(run({ runId: "r", work: [{ kind: "say", text, turn: 1 }] })));
-    expect(said("Se você me passar o `build.gradle`")).not.toBe(said("Se você me pa"));
+  test("what the saved reply keeps changes with a call's state and count", () => {
+    const sig = (running: boolean) =>
+      turnSignature(turnItems(run({ runId: "r", work: [call("1", "drive_read", running)] })));
+    expect(sig(true)).not.toBe(sig(false));
   });
 
-  test("the header word: thinking, working on steps, writing, stopped", () => {
-    expect(turnPhase(run({ runId: "a" }))).toBe("thinking");
-    expect(turnPhase(run({ runId: "b", tool: "sentry_list_issues" }))).toBe("working");
-    expect(turnPhase(run({ runId: "c", work: [call("1", "sentry_list_issues", false)] }))).toBe("working");
-    expect(turnPhase(run({ runId: "d", status: "running", text: "Ontem" }))).toBe("writing");
-    expect(turnPhase(run({ runId: "e", status: "canceled", text: "Ontem" }))).toBe("stopped");
-  });
-
-  test("its work in order, as the tool block's items: calls (running or done), what it said, what it read", () => {
+  test("its work in order, as the tool block's items: calls (running or done) and what it read, never what it said", () => {
     const items = turnItems(
       run({
         runId: "r",
         work: [
           call("1", "sentry_list_issues", false),
-          { kind: "say", text: "Vou ver o Drive", turn: 1 },
           { kind: "steer", messageId: "m2", now: true },
           call("2", "drive_read", true),
         ],
       }),
     );
-    expect(items.map((x) => x.kind)).toEqual(["call", "say", "steer", "call"]);
+    expect(items.map((x) => x.kind)).toEqual(["call", "steer", "call"]);
     expect(items[0]).toMatchObject({ kind: "call", line: { state: "done", kind: "consulting", app: "Sentry" } });
-    expect(items[2]).toMatchObject({ kind: "steer", messageId: "m2", now: true });
-    expect(items[3]).toMatchObject({ kind: "call", line: { state: "run" } });
+    expect(items[1]).toMatchObject({ kind: "steer", messageId: "m2", now: true });
+    expect(items[2]).toMatchObject({ kind: "call", line: { state: "run" } });
     expect(toolCalls(items)).toBe(2);
   });
 
@@ -1068,60 +1081,15 @@ describe("an agent's turn as one block", () => {
     ]);
   });
 
-  test("it opens with the first thing it said; no placeholder before it", () => {
-    const quiet = run({ runId: "r" });
-    expect(turnOpener(turnItems(quiet))).toEqual({ said: null, lines: [] });
-    const said = run({
-      runId: "r",
-      work: [call("1", "sentry_list_issues", false), { kind: "say", text: "Vou pedir pro Josh", turn: 1 }],
-    });
-    const opened = turnOpener(turnItems(said));
-    expect(opened.said).toBe("Vou pedir pro Josh");
+  test("the saved reply's tools: no line said before them, none from the work it kept", () => {
+    const quiet = run({ runId: "r", work: [call("1", "sentry_list_issues", false)] });
+    const opened = turnOpener(turnItems(quiet), "Vou pedir pro Josh.");
+    expect(opened.said).toBeNull();
     expect(opened.lines.map((x) => x.kind)).toEqual(["call"]);
-    // Then posted as the saved reply (the lead before a card): the reply shows it, never twice.
-    const posted = turnOpener(turnItems(said), "Vou pedir pro Josh.\n\nEle sabe onde está.");
-    expect(posted.said).toBeNull();
-    expect(posted.lines.map((x) => x.kind)).toEqual(["call"]);
-    expect(turnOpener(turnItems(said), "Vou pedir pro Joshua").said).toBe("Vou pedir pro Josh");
   });
 
-  test("every agent at work has its block; the ones waiting for words go last, each group in its order", () => {
-    const runs = [
-      run({ runId: "a" }),
-      run({ runId: "b", text: "Ontem" }),
-      run({ runId: "c", status: "canceled" }),
-      run({ runId: "d", work: [call("1", "sentry_list_issues", true)] }),
-    ];
-    expect(turnOrder(runs).map((r) => r.runId)).toEqual(["b", "c", "a", "d"]);
-  });
-
-  test("a block sits where its words first showed: what was sent meanwhile is below it and shows its name again", () => {
-    // Two messages of one person, the second grouped under the first; the agent's words showed between them.
-    const rows = buildRows([message({ id: "ask", createdAt: at(10) }), message({ id: "meanwhile", createdAt: at(8) })]);
-    const writing = run({ runId: "w", agentId: "ada", text: "O login cai depois do refresh.", shownAt: at(9) });
-    const thinking = run({ runId: "t", agentId: "ada" });
-    const placed = turnsInPlace(rows, [thinking, writing], (r) => ({
-      kind: "run" as const,
-      key: `turn-${r.runId}`,
-      run: r,
-    }));
-    const shown = (r: (typeof placed.rows)[number]) =>
-      r.kind === "run"
-        ? `run ${r.run.runId}`
-        : r.kind === "message"
-          ? `${r.message.id} ${r.grouped} ${r.continued}`
-          : r.kind;
-    expect(placed.rows.map(shown)).toEqual(["day", "ask false false", "run w", "meanwhile false undefined"]);
-    // No words yet: at the end, as before.
-    expect(placed.last.map((r) => r.run.runId)).toEqual(["t"]);
-    // Nothing came after its words: nothing moves.
-    const alone = turnsInPlace(rows, [run({ runId: "late", agentId: "ada", text: "Oi", shownAt: at(1) })], (r) => r);
-    expect(alone.rows).toEqual(rows);
-    expect(alone.last.map((r) => r.runId)).toEqual(["late"]);
-  });
-
-  test("a stopped run's call that was running shows as stopped", () => {
-    const items = turnItems(run({ runId: "r", status: "canceled", work: [call("1", "sentry_list_issues", true)] }));
+  test("a failed run's call that was running shows as stopped", () => {
+    const items = turnItems(run({ runId: "r", status: "failed", work: [call("1", "sentry_list_issues", true)] }));
     expect(items[0]).toMatchObject({ kind: "call", line: { state: "stop" } });
   });
 
@@ -1133,66 +1101,28 @@ describe("an agent's turn as one block", () => {
     expect(long.endsWith("end")).toBe(true);
   });
 
-  test("blocks: every run at work (a guess too) and a stopped one; one in its browser has its card", () => {
+  test("at work: every run (a guess too) but one in its browser, which has its card; none draws a row", () => {
     const runs = [
       run({ runId: "p", provisional: true }),
       run({ runId: "q", status: "queued" }),
-      run({ runId: "w", status: "running", text: "Oi" }),
-      run({ runId: "s", status: "canceled", text: "Parei" }),
+      run({ runId: "w", status: "running" }),
       run({ runId: "a", status: "waiting_approval" }),
       run({ runId: "f", status: "failed" }),
       run({ runId: "b", status: "running" }),
     ];
-    expect(turnRuns(runs, new Set(["b"])).map((r) => r.runId)).toEqual(["p", "q", "w", "s"]);
+    expect(turnRuns(runs, new Set(["b"])).map((r) => r.runId)).toEqual(["p", "q", "w"]);
   });
 
-  test("words fade in: the newest pieces are the tail, the rest solid", () => {
-    const text = "Ontem foram 1.284 visitas";
-    // "Ontem " settled long ago, "foram " 140 ms ago, "1.284 " just now.
-    const marks = [
-      { at: 6, t: 0 },
-      { at: 12, t: 860 },
-      { at: 18, t: 1000 },
-    ];
-    const { solid, tail } = fadeTail(text, 18, marks, 1000);
-    expect(solid).toBe(6);
-    expect(tail.map((p) => p.text)).toEqual(["foram ", "1.284 "]);
-    expect(tail[0]?.opacity).toBeCloseTo(0.5, 1);
-    expect(tail[1]?.opacity).toBeCloseTo(0.05, 2);
-    // Settled: everything is solid.
-    expect(fadeTail(text, 18, marks, 2000)).toEqual({ solid: 18, tail: [] });
-  });
-
-  test("a tail with Markdown or a line break doesn't fade (it would read differently once parsed)", () => {
-    const marks = [
-      { at: 3, t: 0 },
-      { at: 9, t: 1000 },
-    ];
-    expect(fadeTail("Oi **bom** dia", 9, marks, 1000)).toEqual({ solid: 9, tail: [] });
-    expect(fadeTail("Oi\nbom dia", 9, marks, 1000)).toEqual({ solid: 9, tail: [] });
-  });
-
-  test("marks: the ones still fading plus the last settled one", () => {
-    const marks = [
-      { at: 3, t: 0 },
-      { at: 6, t: 100 },
-      { at: 9, t: 900 },
-    ];
-    expect(pruneMarks(marks, 1000)).toEqual([
-      { at: 6, t: 100 },
-      { at: 9, t: 900 },
-    ]);
-    expect(pruneMarks(marks, 100)).toEqual(marks);
-  });
-
-  test("the fading ink: hex gets an alpha, rgba is multiplied", () => {
+  test("a color's fade: hex gets an alpha, rgba is multiplied", () => {
     expect(withOpacity("#000000", 0.5)).toBe("#00000080");
+    expect(withOpacity("#ffaa0020", 0)).toBe("#ffaa0000");
+    expect(withOpacity("#ffaa0020", 0.5)).toBe("#ffaa0010");
     expect(withOpacity("rgba(10, 20, 30, 0.5)", 0.5)).toBe("rgba(10, 20, 30, 0.25)");
     expect(withOpacity("rgb(1, 2, 3)", 1)).toBe("rgba(1, 2, 3, 1)");
     expect(withOpacity("red", 0.5)).toBe("red");
   });
 
-  test("the saved reply finds the work its block showed a moment ago", () => {
+  test("the saved reply finds the work its run did, heard a moment ago", () => {
     const items = turnItems(run({ runId: "r9", work: [call("1", "sentry_list_issues", false)] }));
     rememberTurn("r9", { items, quotes: {}, at: 1000 });
     expect(recentTurn("r9", 2000)?.items).toEqual(items);
@@ -1250,7 +1180,6 @@ describe("automatic lines (notices) and fast replies", () => {
       key: "chat.notice.routineHandoff",
       values: { routine: "Sentry diário" },
       detail: { content: "3 erros novos" },
-      pending: false,
       answer: false,
     });
     const fromOnly = eventLineOf(
@@ -1309,60 +1238,20 @@ describe("automatic lines (notices) and fast replies", () => {
     });
   });
 
-  test("an agent's follow-up: when it will be back and for what (Cancel while it is to come), then the line that woke it", () => {
-    // Today, so the line needs no day.
-    const at = new Date(new Date().setHours(12, 0, 0, 0)).toISOString();
-    const when = { time: (iso: string) => (iso === at ? "12:00" : "?"), locale: "pt-BR" };
-    const refs = { runId: "r1", at, about: "ver o CI" };
-    const set = eventLineOf(
-      agentMsg("n1", { notice: { kind: "follow_up", text: "Check CI run 42", refs: { ...refs, state: "pending" } } }),
-      names,
-      when,
-    );
-    expect(set).toEqual({
-      kind: "notice",
-      icon: "clock",
-      key: "chat.notice.followUp",
-      values: { name: "Ada", about: "ver o CI", time: "12:00", day: "" },
-      // Its note to itself is the agent's: nothing to open.
-      detail: null,
-      pending: true,
-      answer: false,
-    });
-    const canceled = eventLineOf(
-      agentMsg("n2", { notice: { kind: "follow_up", text: "x", refs: { ...refs, state: "canceled" } } }),
-      names,
-      when,
-    );
-    expect(canceled?.key).toBe("chat.notice.followUpCanceled");
-    expect(canceled?.pending).toBe(false);
-    const woke = eventLineOf(
-      agentMsg("n3", { notice: { kind: "follow_up", text: "x", refs: { ...refs, wake: "1", followUpId: "n1" } } }),
-      names,
-      when,
-    );
-    expect(woke).toMatchObject({ key: "chat.notice.followUpWake", values: { name: "Ada", about: "ver o CI" } });
-  });
-
-  test("as on the web, a follow-up that came leaves the conversation once the agent's turn is over", () => {
+  test("as on the web, a return's line never shows (set, come, canceled, the one that woke it): the dock holds it", () => {
     const refs = { runId: "r1", at: "x", about: "ver o CI" };
     const at = (minute: number) => new Date(Date.UTC(2026, 10, 6, 20, minute)).toISOString();
+    const line = (id: string, more: Record<string, string>, minute: number) =>
+      agentMsg(id, { notice: { kind: "follow_up", text: "x", refs: { ...refs, ...more } } }, { createdAt: at(minute) });
     const list = [
-      agentMsg(
-        "set",
-        { notice: { kind: "follow_up", text: "x", refs: { ...refs, state: "done" } } },
-        { createdAt: at(0) },
-      ),
-      agentMsg(
-        "woke",
-        { notice: { kind: "follow_up", text: "x", refs: { ...refs, wake: "1" } } },
-        { createdAt: at(20) },
-      ),
+      line("pending", { state: "pending" }, 0),
+      line("canceled", { state: "canceled", canceledBy: "u1" }, 1),
+      line("done", { state: "done" }, 2),
+      line("woke", { wake: "1", followUpId: "done" }, 20),
     ];
     const ids = (rows: ReturnType<typeof buildRows>) =>
       rows.flatMap((r) => (r.kind === "message" ? [r.message.id] : []));
-    // At work: the line that woke it stays.
-    expect(ids(buildRows(list, undefined, new Set(["ada"])))).toEqual(["woke"]);
+    expect(ids(buildRows(list))).toEqual([]);
     const reply = message({
       id: "reply",
       author: { type: "agent", id: "ada" },
@@ -1370,6 +1259,27 @@ describe("automatic lines (notices) and fast replies", () => {
       createdAt: at(21),
     });
     expect(ids(buildRows([...list, reply]))).toEqual(["reply"]);
+  });
+
+  test("the dock's line shows her words only when they fit whole beside the sentence", () => {
+    // 390 points: the sentence takes most of the line, her words don't fit and leave it.
+    expect(aboutFits(250, 140, 180)).toBe(false);
+    // A wide screen: they fit, whole.
+    expect(aboutFits(600, 140, 180)).toBe(true);
+    expect(aboutFits(320, 140, 180)).toBe(true);
+    // Not laid out yet: nothing but the sentence.
+    expect(aboutFits(0, 140, 180)).toBe(false);
+    expect(aboutFits(600, 0, 180)).toBe(false);
+  });
+
+  test("the dock's line measures its sentence off the line, so a name never gives way to her words; 44 points to touch", async () => {
+    const src = await source("features/chat/Returns.tsx");
+    // The visible sentence shrinks its name to make room: measured there, her words would stay once shown (a canceled
+    // return's next one would read "… retorna às 00:50 · …"). An unseen copy, out of the row, says its own width.
+    expect(src).toContain("<View style={styles.said}>{pieces}</View>");
+    expect(src).toMatch(/style=\{\[styles\.said, styles\.measure\]\}[^>]*onLayout=\{\(e\) => setSaid\(/);
+    expect(src.match(/setSaid\(/g)?.length).toBe(1);
+    expect(src).toContain("hitSlop={{ top: 8, bottom: 8 }}");
   });
 
   test("a wait's result names the agent that waited, and opens nothing written for the agent", () => {

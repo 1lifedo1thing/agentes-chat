@@ -8,6 +8,7 @@ import {
 } from "@agenteschat/client";
 import { composioOffText, composioUsageText, nearComposioLimit } from "@agenteschat/client/lib/composio";
 import { type ConnectedItem, connectedItems, isMcpItem, itemName } from "@agenteschat/client/lib/connected";
+import { settingsFrozen } from "@agenteschat/client/lib/deletion";
 import { choiceOf, MAIL_BRANDS } from "@agenteschat/client/lib/mail";
 import { can } from "@agenteschat/client/lib/permissions";
 import { connectorDescription, connectorName } from "@agenteschat/client/lib/scopes";
@@ -34,6 +35,7 @@ import {
   Icon,
   IconButton,
   LineIcon,
+  Locked,
   PressScale,
   SearchField,
   SectionHeader,
@@ -101,8 +103,10 @@ function Gallery() {
   const pull = usePullRefresh(async () => {
     await Promise.all([catalog.refetch(), connections.refetch(), servers.refetch(), mailAccounts.refetch()]);
   });
-  // Connecting is for who manages connectors (the server checks it too).
-  const admin = can(org, "manage_connectors");
+  // Connecting is for who manages connectors (the server checks it too). Being deleted, nothing connects, as on the
+  // web: what is connected still opens.
+  const frozen = settingsFrozen(org, "connectors");
+  const admin = can(org, "manage_connectors") && !frozen;
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
   const list = catalog.data?.connectors ?? [];
@@ -150,8 +154,8 @@ function Gallery() {
     if (def) open(def);
     else sheet.open(<AddressSheet url={mcp || undefined} />);
   });
-  // Back from a sign-in that finished on the link route (`?connected=<id>`): its tools, as the web opens
-  // "O que faz" for the connection that just came in (admins; anyone else had the toast).
+  // Back from a sign-in that finished on the link route (`?connected=<id>`): the confirmation, as the web shows
+  // for the connection that just came in (admins; anyone else had the toast).
   const returned = useRef<string | null>(null);
   useEffect(() => {
     if (!connected || returned.current === connected || !connections.data || !servers.data || !catalog.data) return;
@@ -159,11 +163,7 @@ function Gallery() {
     const item = items.find((i) => i.id === connected);
     if (!item || !admin) return;
     sheet.open(
-      item.def ? (
-        <ConnectSheet def={item.def} item={item} start="review" fresh />
-      ) : (
-        <ServerSheet item={item} start="review" fresh />
-      ),
+      item.def ? <ConnectSheet def={item.def} item={item} start="done" /> : <ServerSheet item={item} start="done" />,
     );
   }, [connected, connections.data, servers.data, catalog.data, items, admin, sheet]);
 
@@ -269,7 +269,7 @@ function Gallery() {
                     : t("mobile.connectors.suggested", { org: org?.name ?? "" })
                 }
               />
-              <View style={styles.suggestions}>
+              <Locked when={frozen} readable keepKeyboard style={styles.suggestions}>
                 {suggestions.map((d) => (
                   <Suggestion
                     key={d.id}
@@ -279,7 +279,7 @@ function Gallery() {
                     onPress={() => open(d)}
                   />
                 ))}
-              </View>
+              </Locked>
             </>
           ) : null}
           {searching ? null : <SectionHeader title={t("mobile.connectors.allServices")} count={rows.length} />}
@@ -316,7 +316,7 @@ function Gallery() {
               }
             />
           ) : (
-            <View style={styles.list}>
+            <Locked when={frozen} readable keepKeyboard style={styles.list}>
               {rows.map(({ def: d, connected: isConnected }, i) => (
                 <ServiceRow
                   key={d.id}
@@ -328,7 +328,7 @@ function Gallery() {
                   onPress={() => open(d)}
                 />
               ))}
-            </View>
+            </Locked>
           )}
           {composioOff ? (
             <Text variant="small" tone="muted" style={styles.note}>

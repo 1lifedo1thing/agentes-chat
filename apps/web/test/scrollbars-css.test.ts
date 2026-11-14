@@ -56,25 +56,22 @@ async function selectorsWith(match: (property: string, value: string) => boolean
  */
 const SIDEWAYS: Record<string, "strip" | "content"> = {
   ".agp-subnav": "strip",
-  ".agp-tabs .ac-tabs": "strip",
+  ".ac-tabs": "strip",
   ".settings__groups": "strip",
   ".channel-settings__nav": "strip",
   ".onb__steps": "strip",
   ".newag .onb__steps": "strip",
   ".newag__tips": "strip",
-  ".issues-now__list": "strip",
   ".threads-tabs": "strip",
   ".nt-segwrap": "strip",
   ".mi-files__tabs": "strip",
   ".ac-seg": "strip",
-  ".ac-composer__format": "strip",
   ".ac-toolbar__filters": "strip",
   ".ac-toolbar[data-stack]>.ac-toolbar__filters": "strip",
   ".ac-carousel__track": "strip",
   ".dk-orgpick": "strip",
   ".wiki-doc .wiki-editor__bar": "strip",
   ".nac-band__path": "strip",
-  ".avatar-builder__main .ac-tabs": "strip",
   ".code-card__code": "content",
   ".code-card__preview": "content",
   ".level-matrix": "content",
@@ -343,6 +340,7 @@ describe("columns that scroll on their own", () => {
     ".cal-side",
     ".cal-agenda",
     ".cal-week__scroll",
+    ".onb",
   ];
   test("each hides its thumb until the pointer or the keyboard is on it, with its room kept", async () => {
     const layout = topLevel(await read("apps/web/src/layout.css"));

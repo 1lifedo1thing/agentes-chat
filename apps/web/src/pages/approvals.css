@@ -356,6 +356,9 @@ html:not([data-pointer]) .ap-conn-mark:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 1.5px var(--ink);
 }
+.ap-refuse textarea[aria-invalid="true"] {
+  box-shadow: inset 0 0 0 1.5px var(--danger);
+}
 .ap-refuse textarea:disabled {
   background: var(--sunken);
   color: var(--muted);
@@ -748,8 +751,6 @@ html:not([data-pointer]) .ap-li:focus-visible {
 /* "Ver cada um" unfolds the run: on a line of its own under its buttons, its words on their start edge. */
 .ap-run__more {
   align-self: flex-start;
-  margin-inline: calc(-1 * var(--ghost-plate));
-  padding-inline: var(--ghost-plate);
 }
 .ap-run .ap-run__items {
   margin: 0 -12px;
@@ -828,22 +829,13 @@ html:not([data-pointer]) .ap-li:focus-visible {
   line-height: 1.6;
   color: var(--ink);
 }
-.ap-review__text {
-  position: relative;
-  overflow: hidden;
-}
+/* A long text to publish, folded until "Ver mais": a mask, not a plate, so the fade ends on whatever is behind it in
+   either theme. */
 .ap-review__text.is-folded {
   max-height: 120px;
-}
-.ap-review__text.is-folded::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 48px;
-  background: linear-gradient(to bottom, transparent, var(--surface-raised));
-  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 60%, transparent);
+  mask-image: linear-gradient(#000 60%, transparent);
 }
 .ap-review__track {
   margin-top: 4px;
@@ -879,7 +871,7 @@ html:not([data-pointer]) .ap-li:focus-visible {
 }
 
 /* The decision: a bar floating at the bottom of the request (the selection bar's look); the dialog's footer
-   elsewhere. What approving allows on the left, Refuse and Approve on the right. */
+   elsewhere. Only its buttons, at its end: what each allows is in its tip. */
 .ap-bar {
   position: relative;
   display: flex;
@@ -905,8 +897,7 @@ html:not([data-pointer]) .ap-li:focus-visible {
   font-size: 13.5px;
   color: var(--muted);
 }
-/* As wide as its buttons: on a narrow bar they wrap, and the line that says what Aprovar sempre covers goes under them at
-   their width (it adds none of its own), never cut by the bar's edge. */
+/* As wide as its buttons: on a narrow bar they wrap, from its end. */
 .ap-bar__acts {
   display: flex;
   flex-wrap: wrap;
@@ -916,8 +907,12 @@ html:not([data-pointer]) .ap-li:focus-visible {
   flex: 0 1 auto;
   min-width: 0;
 }
-.ap-bar__acts .ap-always {
-  contain: inline-size;
+/* The buttons alone: at the bar's end, the same room on every side of them. */
+.ap-bar--acts {
+  justify-content: flex-end;
+}
+.ap-bar--acts.ap-bar--float {
+  padding: 10px;
 }
 .ap-bar--refuse {
   display: block;

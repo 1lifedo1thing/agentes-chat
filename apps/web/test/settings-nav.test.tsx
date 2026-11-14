@@ -41,7 +41,7 @@ describe("finding the settings", () => {
     await settle(6);
     expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/settings/connectors`);
     // The section's own title (the connectors card has a "Conectores" heading too).
-    expect(document.querySelector(".settings__body > .ac-pagehead h2")?.textContent).toBe("Conectores e MCPs");
+    expect(document.querySelector(".settings__body .ac-pagehead h2")?.textContent).toBe("Conectores e MCPs");
   });
 
   test("the workspace menu lists my workspaces (this one marked) and a digit opens an option", async () => {
@@ -95,27 +95,28 @@ describe("finding the settings", () => {
   });
 
   test("every section has its own URL, with the sub-nav marking it", async () => {
-    const sections: [string, string][] = [
-      ["account", "Sua conta"],
-      ["general", "Geral"],
-      ["members", "Membros e convites"],
-      ["access", "Agentes e acesso"],
-      ["connectors", "Conectores e MCPs"],
-      ["skills", "Skills"],
-      ["keys", "Contas de IA"],
-      ["storage", "Armazenamento"],
-      ["devices", "Dispositivos"],
-      ["usage", "Orçamento e uso"],
-      ["import", "Importar e exportar"],
+    // Each with the entry of the list that holds it.
+    const sections: [string, string, string][] = [
+      ["account", "Sua conta", "account"],
+      ["general", "Geral", "general"],
+      ["members", "Membros", "members"],
+      ["invites", "Convites", "members"],
+      ["access", "Agentes e acesso", "connectors"],
+      ["connectors", "Conectores e MCPs", "connectors"],
+      ["skills", "Skills", "connectors"],
+      ["storage", "Armazenamento", "storage"],
+      ["devices", "Dispositivos", "devices"],
+      ["usage", "IA e uso", "usage"],
+      ["import", "Importar e exportar", "import"],
     ];
-    for (const [id, heading] of sections) {
+    for (const [id, heading, entry] of sections) {
       await go(`settings/${id}`);
       expect(screen().getAllByRole("heading", { level: 2, name: heading }).length).toBeGreaterThan(0);
       const nav = screen().getByRole("navigation", { name: "Seções das configurações" });
       const current = within(nav)
         .getAllByRole("link")
         .find((l) => l.getAttribute("aria-current") === "page");
-      expect(current?.getAttribute("href")).toBe(`/org/${ORG_ID}/settings/${id}`);
+      expect(current?.getAttribute("href")).toBe(`/org/${ORG_ID}/settings/${entry}`);
       cleanup();
     }
   });
@@ -169,7 +170,7 @@ describe("finding the settings", () => {
     expect(nav().queryByRole("link", { name: "Sobre o agentes.chat" })).toBeNull();
     expect(screen().getByRole("heading", { level: 2, name: "Sua conta" })).toBeTruthy();
     // The Cloud has no Sobre for anyone: nothing to say about the person's role.
-    expect(screen().queryByText(/não abre com o seu papel/)).toBeNull();
+    expect(screen().queryByText(/não abre com o seu cargo/)).toBeNull();
     expect(license()).toBeNull();
     expect(await inPalette()).toBe(false);
   });
@@ -178,13 +179,13 @@ describe("finding the settings", () => {
     const state = seedState();
     if (state.me?.organizations[0]) state.me.organizations[0].role = "member";
     await go("settings/skills", state);
-    expect(screen().getByText(/não abre com o seu papel/).textContent).toBe(
-      "Skills não abre com o seu papel neste workspace. Quem gerencia os papéis pode liberar para você.",
+    expect(screen().getByText(/não abre com o seu cargo/).textContent).toBe(
+      "Skills não abre com o seu cargo neste workspace. Quem gerencia os cargos pode liberar para você.",
     );
     cleanup();
     // Opened from its own nav, the section says nothing more.
     await go("settings/account", state);
-    expect(screen().queryByText(/não abre com o seu papel/)).toBeNull();
+    expect(screen().queryByText(/não abre com o seu cargo/)).toBeNull();
   });
 
   test("Configurações with no section named, opened by a member, lands on their first section with nothing to explain", async () => {
@@ -193,7 +194,7 @@ describe("finding the settings", () => {
     await go("settings", state);
     const nav = screen().getByRole("navigation", { name: "Seções das configurações" });
     expect(nav.querySelector('[aria-current="page"]')).toBeTruthy();
-    expect(screen().queryByText(/não abre com o seu papel/)).toBeNull();
+    expect(screen().queryByText(/não abre com o seu cargo/)).toBeNull();
   });
 
   test("an unknown section goes back to Geral", async () => {
@@ -303,7 +304,7 @@ describe("the sections' strip on a phone", () => {
     return r ? r.left + r.width / 2 : null;
   };
 
-  test("opens with the current section's key in its middle, at once: Armazenamento, ninth of ten", async () => {
+  test("opens with the current section's key in its middle, at once: Armazenamento, under Advanced", async () => {
     phone();
     await go("settings/storage");
     expect(middle()).toBe(195);

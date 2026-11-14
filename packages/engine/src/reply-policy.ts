@@ -30,12 +30,12 @@ export const WHY_YOU_WERE_CALLED =
 
 /** The prompt block of a run another agent's @mention woke (`byAnotherAgent`): it may pass too. */
 export const WHY_AN_AGENT_CALLED =
-  '# Why you were called\nAnother agent mentioned you, not a person. Do what its message hands you: work, a question, or something to read and act on (a file, results, a summary, a verdict). When it says it will ask you to do something ("I\'ll ask @you to review it"), with no person to decide first, that is the request: do it now. If it only thanks you, acknowledges, agrees, signs off or names you, call pass at once, without looking anything up: nothing is posted, and a thanks never needs one back.';
+  "# Why you were called\nAnother agent mentioned you, not a person. Do only what its message asks of you: work, a question, or something to act on. If it only names you, credits or cites you, thanks you, agrees or signs off, call pass at once, without looking anything up: nothing is posted, and a thanks never needs one back. The person's question is that agent's to answer: never answer it again, restate its answer, confirm it or nitpick it here. If its answer is wrong in a way that matters, tell that agent privately with tell_agent and pass.";
 
 /**
  * Another agent's message that @mentions it woke the run (`dispatchMentions`), not one of its own lines (a notice, a
- * task's end, a follow-up): an agent's mention wakes unless the judge is sure it needs nothing (ADR 0089), so the run
- * may find nothing for it. Hop 2 or more: a person's click on that message (Continuar on a pause card, "Responder
+ * task's end, a follow-up): an agent's mention wakes when the judge reads a request to it (ADR 0089), so the run may
+ * still find nothing for it. Hop 2 or more: a person's click on that message (Continuar on a pause card, "Responder
  * agora") starts the run at hop 1 in a fresh stretch, and then it answers.
  */
 export const byAnotherAgent = (
@@ -58,8 +58,26 @@ export const byEveryone = (
   trigger: Pick<Message, "meta"> | null | undefined,
 ) => {
   const ids = trigger?.meta?.everyoneAgentIds;
-  return run.trigger === "mention" && Array.isArray(ids) && ids.includes(run.agentId);
+  return (
+    run.trigger === "mention" && Array.isArray(ids) && ids.includes(run.agentId) && !answersForEveryone(run, trigger)
+  );
 };
+
+/**
+ * The one agent a person's mention of everyone was judged to need (`classifyEveryone`, `everyoneShape.by`): it owes
+ * the answer, for all the agents here.
+ */
+export const answersForEveryone = (
+  run: Pick<AgentRun, "agentId" | "trigger">,
+  trigger: Pick<Message, "meta"> | null | undefined,
+) => {
+  const shape = trigger?.meta?.everyoneShape as { answer?: unknown; by?: unknown } | undefined;
+  return run.trigger === "mention" && shape?.answer === "one" && shape.by === run.agentId;
+};
+
+/** The prompt block of the run that answers a mention of everyone for all the agents (`answersForEveryone`). */
+export const WHY_ANSWER_FOR_EVERYONE =
+  '# Why you were called\nA person mentioned everyone in this conversation (@everyone). One answer serves all of you, so you answer for all the agents here: the others read it and stay quiet. Answer once, for the team. A rule or anything to keep from it is the whole team\'s: save it once with `remember` and for: "team", and never ask the other agents to save copies.';
 
 export interface ReplyPolicy {
   /** Nobody called it by name: it may end without a message (`pass`, an empty or sentinel-only answer). */
@@ -70,8 +88,8 @@ export interface ReplyPolicy {
 
 /**
  * Notices that only inform the agent (ADR 0053 §10): another agent's note, the late result of a wait it
- * stopped waiting on, its own fast reply, its own follow-up coming due, what happened on GitHub (it answers there).
- * The run one of them wakes may stay quiet.
+ * stopped waiting on, its own fast reply, its own follow-up coming due, what happened on GitHub (it answers there),
+ * the asks its ended background work took on (the work may have done them). The run one of them wakes may stay quiet.
  */
 const INFORMING_NOTICES: ReadonlySet<string> = new Set([
   "agent_note",
@@ -79,6 +97,7 @@ const INFORMING_NOTICES: ReadonlySet<string> = new Set([
   "talker_reply",
   "follow_up",
   "github_event",
+  "work_follow_up",
 ]);
 
 /**

@@ -14,8 +14,27 @@ export function redactCommon(text: string): string {
     .replace(/((?:password|passwd|secret|token|api[_-]?key)\s*[=:]\s*)("[^"]*"|'[^']*'|\S+)/gi, "$1***");
 }
 
-/** A crash's stack frame (`at fn (/x/y.js:1:2)`, `at /x/y.js:1:2`) or the Node.js version line it ends with. */
-const STACK_FRAME = /\s*\bat (?:async |new )?(?:[^\s()]+ \([^)]*\)|\/\S+|file:\/\/\S+|node:\S+)|\s*\bNode\.js v[\d.]+/g;
+/** A field holding a service's own credential (`access_token`, a Page's `page_access_token`), never a page cursor. */
+const TOKEN_FIELD = /(^|_)(access|refresh)_?token$/i;
+
+/**
+ * An answer without its credential fields, at any depth: Facebook lists a person's Pages with each Page's access
+ * token, which would let an agent act around its approvals.
+ */
+export function withoutTokens(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutTokens);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, v]) => (TOKEN_FIELD.test(key) ? [] : [[key, withoutTokens(v)]])),
+  );
+}
+
+/**
+ * A crash's stack frame (`at fn (/x/y.js:1:2)`, `at /x/y.js:1:2`) or the Node.js version line it ends with. No
+ * leading `\s*`: before a word boundary it backtracks over every run of spaces (quadratic on output full of them),
+ * and what it would take is trimmed with the line anyway.
+ */
+const STACK_FRAME = /\bat (?:async |new )?(?:[^\s()]+ \([^)]*\)|\/\S+|file:\/\/\S+|node:\S+)|\bNode\.js v[\d.]+/g;
 /** A line that names what went wrong (`Error: …`, `TypeError: …`, `ENOSPC: …`, `error: …`). */
 const ERROR_LINE = /(?:\w*Error|\bE[A-Z]{3,}|\berror)\b:/;
 
@@ -30,4 +49,12 @@ export function errorLineOf(output: string): string {
     .map((l) => l.trim())
     .filter(Boolean);
   return lines.filter((l) => ERROR_LINE.test(l)).at(-1) ?? lines.at(-1) ?? "";
+}
+
+/** `text` in at most `max` characters: when longer, cut after its last whole word, with "…". */
+export function cutAtWord(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const head = text.slice(0, max - 1).replace(/[\uD800-\uDBFF]$/, "");
+  const space = head.lastIndexOf(" ");
+  return `${(space > 0 ? head.slice(0, space) : head).trimEnd()}…`;
 }

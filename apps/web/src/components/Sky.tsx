@@ -9,6 +9,7 @@ import {
   cx,
   drawSprite,
   EYE,
+  formingField,
   HEADER_AREA,
   headerField,
   Icon,
@@ -32,8 +33,9 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
+import { useCloseAfterUse } from "@/hooks/useCloseAfterUse";
 import { useDirectory } from "@/hooks/useDirectory";
-import { usePrefersReducedMotion } from "@/hooks/useRevealedText";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { lookOf } from "@/lib/look";
 import { agentActivitySince, dayPart, isNewDay, lastVisit, markVisit } from "@/lib/welcome";
 
@@ -66,7 +68,10 @@ function claimGreeting(orgId: string, channelId: string) {
   return g;
 }
 
-/** The sky band at the top of a channel on the first visit of the day: a greeting and what its agents did since. */
+/**
+ * The sky band at the top of a channel on the first visit of the day: a greeting and what its agents did since. It
+ * closes by itself a while after the person starts using the page, never under the pointer, gliding shut.
+ */
 export function ChannelWelcome({
   channelId,
   messages,
@@ -82,14 +87,33 @@ export function ChannelWelcome({
   const overview = useOverview(org.id);
   const [greeting] = useState(() => claimGreeting(org.id, channelId));
   const [closed, setClosed] = useState(greeting.closed ?? false);
+  const reduced = usePrefersReducedMotion();
+  const box = useRef<HTMLElement>(null);
   const text = useRef<HTMLDivElement>(null);
   const faces = useRef<HTMLDivElement>(null);
   const shut = useRef<HTMLButtonElement>(null);
-  if (!greeting.show || greeting.channelId !== channelId || closed || !messages || greeting.last === null) return null;
+  const shows =
+    greeting.show && greeting.channelId === channelId && !closed && messages !== undefined && greeting.last !== null;
+  // Glides shut: its height and the room above it fold to nothing as it fades, the conversation takes the room (the
+  // list keeps what is read in place), then it leaves. With reduced motion it only fades.
   const close = () => {
+    if (greeting.closed) return;
     greeting.closed = true;
-    setClosed(true);
+    const el = box.current;
+    if (!el || typeof el.animate !== "function") return setClosed(true);
+    const gone = () => setClosed(true);
+    const fold = [
+      { height: `${el.offsetHeight}px`, minHeight: "0px", marginTop: getComputedStyle(el).marginTop, opacity: 1 },
+      { height: "0px", minHeight: "0px", marginTop: "0px", opacity: 0 },
+    ];
+    el.animate(reduced ? [{ opacity: 1 }, { opacity: 0 }] : fold, {
+      duration: reduced ? 160 : 240,
+      easing: "ease-out",
+      fill: "forwards",
+    }).finished.then(gone, gone);
   };
+  useCloseAfterUse(box, close, shows);
+  if (!shows || greeting.last === null || !messages) return null;
   const since = greeting.last;
   const activity = agentActivitySince(messages, since);
   const names = joinNames(
@@ -100,7 +124,7 @@ export function ChannelWelcome({
   const firstName = me.user.name.split(/\s+/)[0] ?? me.user.name;
   const crew = (activity.agentIds.length ? activity.agentIds : agents.map((a) => a.id)).slice(0, 3);
   return (
-    <section className="sky-welcome" aria-label={t("sky.welcome.label")}>
+    <section className="sky-welcome" aria-label={t("sky.welcome.label")} ref={box}>
       <PixelSky
         options={{
           pixel: 4,
@@ -343,6 +367,38 @@ export function AuthHorizon({ clear }: { clear?: Clear }) {
   );
 }
 
+/**
+ * The `/download` page's sky: the sign-in horizon turned over, soft tones at the top fading into the page, where the
+ * app (the agents' home on this computer) is offered. Two agents pass; the title and the button stay clear.
+ */
+export function DownloadSky({ clear }: { clear?: Clear }) {
+  const opts: SkyOptions = {
+    pixel: 4,
+    surface: "--bg",
+    palette: (bg) => softTones("sky", bg),
+    body: spriteTone("sky"),
+    near: 0,
+    ceil: 0.05,
+    light: 0.06,
+    sprites: 2,
+    clear,
+    base: (u, v, tt) => {
+      const s = Math.max(0, 1 - v / 0.9);
+      const e = s * s * (3 - 2 * s);
+      return 0.72 * e + 0.05 * S(u * 4 + tt * 0.4) * e;
+    },
+    blobs: (tt) => [
+      [0.15 + 0.08 * C(tt * 0.15), 0.08, 0.07, 0.07],
+      [0.85 + 0.08 * S(tt * 0.12), 0.1, 0.07, 0.07],
+    ],
+  };
+  return (
+    <span className="dlp__sky" aria-hidden="true">
+      <PixelSky options={opts} />
+    </span>
+  );
+}
+
 /* ---------- Small moments ---------- */
 
 /** A thin dithered strip sweeping in the agent's color behind the activity bar ("Theo está pensando…"). */
@@ -363,6 +419,25 @@ export function ActivitySky({ color }: { color: AgentColor }) {
         }}
       />
     </span>
+  );
+}
+
+/**
+ * Where a picture an agent is making will show (`ImageMaking`): the picture forming out of the agent's sky, in its
+ * soft tones over the conversation's background (`formingField`); whole and still with reduced motion.
+ */
+export function ImageSky({ color }: { color: AgentColor }) {
+  const reduced = usePrefersReducedMotion();
+  return (
+    <PixelSky
+      options={{
+        pixel: 4,
+        surface: "--bg",
+        palette: (bg) => softTones(color, bg),
+        light: 0,
+        base: (u, v, t) => formingField(u, v, reduced ? null : t),
+      }}
+    />
   );
 }
 

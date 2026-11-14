@@ -15,6 +15,7 @@ import {
   operatorMachines,
   pollDeviceToken,
   revokeManagedMachine,
+  setMachineEgressWaiting,
   setMachineStandby,
   WAKE_WANTED_EVERY_MS,
   WANTED_BUSY_MS,
@@ -137,6 +138,48 @@ describe("standby", () => {
   });
 });
 
+describe("agents waiting for their way out", () => {
+  test("the operator's word on the workspace's own computer: shown while it is online, kept, told, ended", async () => {
+    f = await setup();
+    const { machineId, token } = await managedComputer();
+    const heard: unknown[] = [];
+    f.pubsub.subscribe(orgTopic(f.org.id), (e) => {
+      const event = (e as { event?: { type?: string } }).event;
+      if (e.type === "org.broadcast" && event?.type === "machine.updated") heard.push(event);
+    });
+    const shown = async () => (await listMachines(f.db, f.owner.id, f.org.id)).find((m) => m.id === machineId);
+
+    expect(await setMachineEgressWaiting(deps(), f.org.id, machineId, true)).toEqual({ waiting: true });
+    const first = (await machineRow(machineId)).egressWaitingAt;
+    expect(first).toBeInstanceOf(Date);
+    expect(await setMachineEgressWaiting(deps(), f.org.id, machineId, true)).toEqual({ waiting: true });
+    expect((await machineRow(machineId)).egressWaitingAt).toEqual(first);
+    expect(heard).toEqual([
+      { type: "machine.updated", machineId, egressWaiting: true },
+      { type: "machine.updated", machineId, egressWaiting: true },
+    ]);
+    // Offline, there is nothing to wait on there: no line.
+    expect((await shown())?.egressWaiting).toBe(false);
+    await hello(token);
+    expect((await shown())?.egressWaiting).toBe(true);
+
+    // A computer someone connected, another workspace's id, or no such computer: nothing.
+    const paired = await pairMachine(deps(), f.owner.id, f.org.id, { name: "Laptop" });
+    expect(await setMachineEgressWaiting(deps(), f.org.id, paired.machineId, true)).toBeNull();
+    expect(await setMachineEgressWaiting(deps(), crypto.randomUUID(), machineId, false)).toBeNull();
+    expect(await setMachineEgressWaiting(deps(), f.org.id, crypto.randomUUID(), true)).toBeNull();
+
+    expect(await setMachineEgressWaiting(deps(), f.org.id, machineId, false)).toEqual({ waiting: false });
+    expect((await machineRow(machineId)).egressWaitingAt).toBeNull();
+    expect((await shown())?.egressWaiting).toBe(false);
+
+    // Removed: issued again, its agents wait for nothing.
+    await setMachineEgressWaiting(deps(), f.org.id, machineId, true);
+    await revokeManagedMachine(deps(), f.org.id, machineId);
+    expect((await machineRow(machineId)).egressWaitingAt).toBeNull();
+  });
+});
+
 describe("what wants it", () => {
   test("wanted_at at most every 30 s; machine.wake_wanted only in standby, at most every 10 s, never while off", async () => {
     f = await setup();
@@ -194,7 +237,7 @@ describe("what wants it", () => {
 });
 
 describe("what the operator decides with", () => {
-  test("busy: runs queued or running, one waiting for it, a task on it, someone in control, wanted lately", async () => {
+  test("busy: runs queued or running, one waiting for it, a task or a live hold on it, someone in control, wanted lately", async () => {
     f = await setup();
     const { machineId } = await managedComputer();
     const m = { id: machineId, orgId: f.org.id };
@@ -244,6 +287,22 @@ describe("what the operator decides with", () => {
     if (!task) throw new Error("no task");
     expect(await busy()).toBe(true);
     await f.db.update(schema.machineTasks).set({ status: "done" }).where(eq(schema.machineTasks.id, task.id));
+    expect(await busy()).toBe(false);
+
+    // What an agent keeps running on it (ADR 0176), until the hold ends or its time passes.
+    const [hold] = await f.db
+      .insert(schema.machineHolds)
+      .values({ orgId: f.org.id, agentId: f.agent.id, machineId, what: "Telegram bot", why: "answers", pid: 4242 })
+      .returning();
+    if (!hold) throw new Error("no hold");
+    const setHold = (values: Partial<typeof schema.machineHolds.$inferInsert>) =>
+      f.db.update(schema.machineHolds).set(values).where(eq(schema.machineHolds.id, hold.id));
+    expect(await busy()).toBe(true);
+    await setHold({ pid: null, until: new Date(Date.now() - 1_000) });
+    expect(await busy()).toBe(false);
+    await setHold({ until: new Date(Date.now() + 60_000) });
+    expect(await busy()).toBe(true);
+    await setHold({ endedAt: new Date(), endReason: "stopped_by_person" });
     expect(await busy()).toBe(false);
 
     const [handoff] = await f.db
@@ -337,7 +396,7 @@ describe("what the operator decides with", () => {
 
     // As the operator reads it: the workspace's own computer only.
     const paired = await pairMachine(deps(), f.owner.id, f.org.id, { name: "Laptop" });
-    const listed = await operatorMachines(f.db, f.org.id);
+    const listed = (await operatorMachines(f.db, f.org.id))?.machines;
     expect(listed?.find((x) => x.id === machineId)).toMatchObject({
       managed: true,
       standby: false,

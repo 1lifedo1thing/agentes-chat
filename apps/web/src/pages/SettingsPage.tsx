@@ -1,50 +1,44 @@
 import type { Credential, OrgSettings } from "@agenteschat/client";
 import {
   useAddCredential,
-  useAgents,
   useAiAccounts,
-  useAiStatus,
   useAuthConfig,
   useComposioUsage,
   useComputerSetup,
-  useConnections,
   useCredentials,
-  useInvitations,
-  useMachines,
-  useOverview,
+  useJoinRequests,
   usePlatformKey,
   useRemoveCredential,
   useRotateCredential,
   useServerTelemetry,
   useSetServerTelemetry,
   useSettings,
-  useSkills,
-  useStorage,
   useUpdateSettings,
   useUsageReport,
+  useWorkspaceUsesApi,
 } from "@agenteschat/client";
 import { selfHosted, showsAbout } from "@agenteschat/client/lib/about";
 import { keyRemovalText } from "@agenteschat/client/lib/ai-accounts";
 import { composioUsageText, showsComposioUsage } from "@agenteschat/client/lib/composio";
 import { computerEdition } from "@agenteschat/client/lib/computer";
+import { settingsFrozen } from "@agenteschat/client/lib/deletion";
 import { CUSTOM_PROVIDER } from "@agenteschat/client/lib/endpoints";
 import { errorText, keyRefusal } from "@agenteschat/client/lib/errors";
-import { formatPercent, formatShortDate, formatUsd, relativeTime } from "@agenteschat/client/lib/format";
+import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
+import { formatShortDate, formatUsd, relativeTime } from "@agenteschat/client/lib/format";
 import { can } from "@agenteschat/client/lib/permissions";
-import {
-  personalSettingsNav,
-  settingsSectionNameKey,
-  settingsSectionTextKey,
-} from "@agenteschat/client/lib/personal-view";
+import { settingsSectionNameKey, settingsSectionTextKey } from "@agenteschat/client/lib/personal-view";
 import {
   keyLooksValid,
+  keyName,
   keyNamedAfterProvider,
   type ProviderId,
   providerGuess,
   providerLabel,
   providerOf,
 } from "@agenteschat/client/lib/providers";
-import { isRightHand } from "@agenteschat/client/lib/right-hand";
+import type { RoleTab } from "@agenteschat/client/lib/roles";
+import { settingsNav, settingsTabs } from "@agenteschat/client/lib/settings-nav";
 import { parseAmount } from "@agenteschat/client/lib/text";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import {
@@ -63,25 +57,25 @@ import {
   Input,
   List,
   Locked,
-  Meter,
+  overLimit,
   PageHeader,
   ProviderLogo,
   SettingNote,
   Switch,
+  TabPanel,
+  Tabs,
   Textarea,
 } from "@agenteschat/ui";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { type ComponentProps, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AboutSection } from "@/components/AboutSettings";
 import { AccessMatrixSection } from "@/components/AccessLevels";
 import { AccountSection } from "@/components/AccountSettings";
-import { AgentAvatar } from "@/components/AgentAvatar";
 import { AiAppsSection } from "@/components/AiApps";
 import { ApprovalsSection } from "@/components/ApprovalCover";
 import { AuditSection } from "@/components/Audit";
 import { AutoModelsRow } from "@/components/AutoModels";
-import { AiAccountsSection } from "@/components/ai/AiAccounts";
 import { usePlanHold } from "@/components/ai/ConnectAiSteps";
 import { EndpointForm } from "@/components/ai/EndpointForm";
 import { WhoPicksSection } from "@/components/ai/Jev";
@@ -98,26 +92,33 @@ import { MediaSettingsSection } from "@/components/MediaSettings";
 import { NoticePrefsSection } from "@/components/NoticePrefs";
 import { useOrg } from "@/components/org-context";
 import { UsageTabs } from "@/components/PeopleUsage";
-import { PlanUsageCards } from "@/components/PlanUsage";
+import { ApiCard, PlanUsageCards } from "@/components/PlanUsage";
 import { MyFace, OrgLogoDialog, OrgMark } from "@/components/ProfilePhoto";
 import { KeyMismatch, KeyRefused, KeySite, ProviderKeySelect } from "@/components/ProviderKey";
-import { RightHandSettingsSection } from "@/components/RightHandSettings";
 import { RolesSection } from "@/components/roles/RolesSection";
 import { SkillsSection } from "@/components/Skills";
 import { StorageSection } from "@/components/StorageSettings";
+import { TeamMemoryCard } from "@/components/TeamMemory";
+import { OpenPrefsButton, useLocalServerHere } from "@/components/ThisMac";
 import { VoiceSettingsSection } from "@/components/VoiceSettings";
 import { VaultSection } from "@/components/vault/VaultSection";
 import { WorkspaceModeDialog } from "@/components/WorkspaceModeDialog";
 import { ZoneSelect } from "@/components/ZoneSelect";
 import { useCentreCurrent } from "@/hooks/useCentreCurrent";
-import { useDirectory } from "@/hooks/useDirectory";
 import { usePersonalView } from "@/hooks/usePersonalView";
 import { useRightHandLook } from "@/hooks/useRightHandLook";
+import { useTextLimit } from "@/hooks/useTextLimit";
 import { useOpenParam } from "@/lib/open-param";
-import { workspaceUsesApi } from "@/lib/plan-usage";
 import { useToast } from "@/lib/toast";
+import { InvitesPage } from "./InvitesPage";
 import { MembersPage } from "./MembersPage";
-import { SETTINGS_GROUPS, SETTINGS_SECTIONS, type SettingsSection, settingsNavEntry } from "./settings-sections";
+import {
+  isSettingsSection,
+  SETTINGS_SECTIONS,
+  type SettingsSection,
+  settingsNavEntry,
+  settingsShort,
+} from "./settings-sections";
 
 /**
  * Settings: a left sub-nav and one section per URL (`/settings/connectors`, …).
@@ -141,6 +142,9 @@ function Settings({
   skill,
   agent,
   person,
+  role,
+  tab,
+  create,
 }: {
   /** The section a link names; none (`/settings`): Geral for who opens it, else their first one. */
   section?: SettingsSection;
@@ -159,10 +163,15 @@ function Settings({
   device?: string;
   /** Devices, with the connect dialog open on this flow (the phone guide's link opens the Android one). */
   connect?: ConnectStart;
-  /** Auditoria: the agent it opens filtered to. */
+  /** Auditoria: the agent it opens filtered to. Skills, with `install`: the agent whose card opened that install. */
   agent?: string;
   /** Orçamento e uso › Pessoas: the person whose month opens (a limit's notice). */
   person?: string;
+  /** Cargos › one cargo (its id, `everyone` or `owner`) and its tab (`/settings/roles/{role}?tab=`). */
+  role?: string;
+  tab?: RoleTab;
+  /** Cargos, with Criar cargo open (⌘K's "Criar cargo"). */
+  create?: boolean;
 }) {
   const { t } = useTranslation();
   const { org } = useOrg();
@@ -180,30 +189,39 @@ function Settings({
   const refused = section && current !== section && !serverLacks ? section : null;
   const setup = useComputerSetup(org.id);
   const edition = computerEdition(setup.data);
-  // A personal workspace (ADR 0159 §3): one short list, every other section under Advanced, and AI and apps and Plan
-  // and usage holding other sections, whose own addresses mark those entries. A team's: the groups.
+  // One short list of entries, each a page whose tabs are the sections it holds, every other section under Advanced
+  // (a personal workspace's own short list, ADR 0159 §3). A section's own address marks its entry.
   const personal = isPersonal(org);
   const opens = (id: SettingsSection) => visible.some((s) => s.id === id);
-  // People joins the short list once someone else is a member (a family).
+  // People joins a personal workspace's short list once someone else is a member (a family).
   const { others } = usePersonalView();
-  const nav = personal ? personalSettingsNav(visible, others) : null;
-  const marked = settingsNavEntry(
-    org,
-    current,
-    visible.map((s) => s.id),
-  );
-  const inAdvanced = nav?.advanced.some((s) => s.id === marked) ?? false;
-  const [advanced, setAdvanced] = useState(inAdvanced);
-  // A section of Advanced opened by its address (⌘K, a card, a notice) shows in the list.
+  const short = settingsShort(org, server, others);
+  const nav = settingsNav(visible, short);
+  const open = visible.map((s) => s.id);
+  const marked = settingsNavEntry(current, open, short);
+  const tabs = settingsTabs(marked, open, short).filter(isSettingsSection);
+  const waiting = useJoinRequests(org.id, tabs.includes("invites")).data?.length ?? 0;
+  const inAdvanced = nav.advanced.some((s) => s.id === marked);
+  const [opened, setOpened] = useState(inAdvanced);
+  // A section of Advanced opened by its address (⌘K, a card, a notice) shows in the list in that same render (the
+  // strip centres its key then), and the list stays open after leaving it.
+  const advanced = opened || inAdvanced;
   useEffect(() => {
-    if (inAdvanced) setAdvanced(true);
+    if (inAdvanced) setOpened(true);
   }, [inAdvanced]);
   const strip = useRef<HTMLDivElement>(null);
   useCentreCurrent(strip, marked);
-  // The right hand's section goes by its name and face (admins may rename it).
-  const rightHand = useDirectory(org.id).agents.find(isRightHand);
-  const sectionName = (id: SettingsSection) =>
-    id === "right_hand" && rightHand ? rightHand.name : t(settingsSectionNameKey(org, id));
+  const sectionName = (id: SettingsSection) => t(settingsSectionNameKey(org, id));
+  // An entry's name in the list: a team's Workspace, People and Connectors hold more than the section they open on.
+  const entryName = (id: SettingsSection) =>
+    !personal && id === "general"
+      ? t("settings.group.org")
+      : !personal && id === "members"
+        ? t("settings.section.membersPersonal")
+        : !personal && id === "connectors"
+          ? t("access.kind.connectors")
+          : sectionName(id);
+  const navigate = useNavigate();
   const link = (s: (typeof visible)[number]) => (
     <li key={s.id}>
       <Link
@@ -212,16 +230,75 @@ function Settings({
         className="settings__link"
         aria-current={s.id === marked ? "page" : undefined}
       >
-        {s.id === "account" ? (
-          <MyFace size="xs" />
-        ) : s.id === "right_hand" && rightHand ? (
-          <AgentAvatar agentId={rightHand.id} name={rightHand.name} size="xs" />
-        ) : (
-          <Icon name={s.icon} size={18} />
-        )}
-        {sectionName(s.id)}
+        {s.id === "account" ? <MyFace size="xs" /> : <Icon name={s.icon} size={18} />}
+        {entryName(s.id)}
       </Link>
     </li>
+  );
+
+  const sections = (
+    <>
+      {current !== "members" &&
+        current !== "invites" &&
+        current !== "general" &&
+        current !== "roles" &&
+        current !== "vault" && (
+          <PageHeader
+            level={2}
+            title={sectionName(current)}
+            meta={
+              current !== "devices" ? (
+                t(settingsSectionTextKey(org, current))
+              ) : edition ? (
+                t(edition === "cloud" ? "devices.leadCloud" : "devices.lead")
+              ) : setup.isError ? null : (
+                // Never one edition's words before the server says which this is (the section says if it couldn't).
+                <LoadingLine width={320} />
+              )
+            }
+          />
+        )}
+      {current === "account" && <AccountSection />}
+      {current === "notifications" && <NoticePrefsSection />}
+      {current === "approvals" && <ApprovalsSection />}
+      {current === "apps" && <AiAppsSection />}
+      {current === "general" && <GeneralSection />}
+      {current === "members" && <MembersPage embedded />}
+      {current === "invites" && <InvitesPage />}
+      {current === "roles" && <RolesSection roleId={role} tab={tab} create={create} />}
+      {current === "vault" && <VaultSection />}
+      {current === "audit" && <AuditSection agent={agent} />}
+      {current === "media" && <MediaSettingsSection />}
+      {current === "voice" && <VoiceSettingsSection />}
+      {current === "access" && <AccessMatrixSection />}
+      {current === "connectors" && (
+        <ConnectorsSection connected={connected} outcome={outcome} review={review} mail={mail} account={account} />
+      )}
+      {current === "skills" && <SkillsSection install={install} connected={connected} skill={skill} agent={agent} />}
+      {current === "storage" && <StorageSection />}
+      {current === "devices" && (device ? <DevicePage path={device} /> : <DevicesSection start={connect} />)}
+      {current === "usage" && (
+        <>
+          <UsageTabs person={person} summary={<UsageSection />} />
+          {opens("billing") && (
+            <SettingsPart id="billing">
+              <BillingSection />
+            </SettingsPart>
+          )}
+        </>
+      )}
+      {current === "import" && <ImportExportSection />}
+      {current === "billing" && <BillingSection />}
+      {current === "about" && <AboutSection />}
+    </>
+  );
+  // Being deleted, what would change the workspace is greyed out in one place, as on the phone (`settingsFrozen`).
+  const body = settingsFrozen(org, current) ? (
+    <fieldset className="settings__frozen" disabled>
+      {sections}
+    </fieldset>
+  ) : (
+    sections
   );
 
   return (
@@ -239,124 +316,57 @@ function Settings({
           )}
         </div>
         <div className="settings__groups" ref={strip}>
-          {nav ? (
-            <>
-              <div className="settings__group">
-                <ul>{nav.main.map(link)}</ul>
-              </div>
-              {nav.advanced.length > 0 && (
-                <div className="settings__group">
-                  <ul>
-                    <li>
-                      <button
-                        type="button"
-                        className="settings__link"
-                        aria-expanded={advanced}
-                        onClick={() => setAdvanced((open) => !open)}
-                      >
-                        <Icon name={advanced ? "chevronDown" : "chevronRight"} size={18} />
-                        {t("settings.advanced")}
-                      </button>
-                    </li>
-                    {advanced && nav.advanced.map(link)}
-                  </ul>
-                </div>
-              )}
-            </>
-          ) : (
-            SETTINGS_GROUPS.map((g) => {
-              const items = visible.filter((s) => s.group === g);
-              if (items.length === 0) return null;
-              return (
-                // biome-ignore lint/a11y/useSemanticElements: a labelled group of links in the nav, not form fields
-                <div key={g} className="settings__group" role="group" aria-labelledby={`settings-group-${g}`}>
-                  <span id={`settings-group-${g}`} className="settings__group-label">
-                    {t(`settings.group.${g}`)}
-                  </span>
-                  <ul>{items.map(link)}</ul>
-                </div>
-              );
-            })
+          <div className="settings__group">
+            <ul>{nav.main.map(link)}</ul>
+          </div>
+          {nav.advanced.length > 0 && (
+            <div className="settings__group">
+              <ul>
+                <li>
+                  <button
+                    type="button"
+                    className="settings__link"
+                    aria-expanded={advanced}
+                    onClick={() => setOpened(!advanced)}
+                  >
+                    <Icon name={advanced ? "chevronDown" : "chevronRight"} size={18} />
+                    {t("settings.advanced")}
+                  </button>
+                </li>
+                {advanced && nav.advanced.map(link)}
+              </ul>
+            </div>
           )}
         </div>
       </nav>
       <div className="settings__body" data-scroll-restoration-id="settings-section">
         {refused && <Alert tone="neutral">{t("settings.notOpen", { section: sectionName(refused) })}</Alert>}
-        {current !== "members" && current !== "general" && current !== "roles" && current !== "vault" && (
-          <PageHeader
-            level={2}
-            title={sectionName(current)}
-            meta={
-              current !== "devices" ? (
-                t(settingsSectionTextKey(org, current))
-              ) : edition ? (
-                t(edition === "cloud" ? "devices.leadCloud" : "devices.lead")
-              ) : setup.isError ? null : (
-                // Never one edition's words before the server says which this is (the section says if it couldn't).
-                <LoadingLine width={320} />
-              )
+        {tabs.length > 0 ? (
+          <Tabs
+            value={current}
+            onValueChange={(section) =>
+              void navigate({ to: "/org/$orgId/settings/$section", params: { orgId: org.id, section } })
             }
-          />
+            label={entryName(marked)}
+            items={tabs.map((id) => ({
+              value: id,
+              label: id === "account" ? t("settings.tab.account") : sectionName(id),
+              // Convites says how many wait on the person (ADR 0184).
+              count: id === "invites" && waiting > 0 ? waiting : undefined,
+            }))}
+          >
+            <TabPanel value={current}>{body}</TabPanel>
+          </Tabs>
+        ) : (
+          body
         )}
-        {current === "account" && <AccountSection />}
-        {current === "notifications" && <NoticePrefsSection />}
-        {current === "approvals" && <ApprovalsSection />}
-        {current === "apps" && <AiAppsSection />}
-        {current === "general" && <GeneralSection />}
-        {current === "members" && <MembersPage embedded />}
-        {current === "roles" && <RolesSection />}
-        {current === "vault" && <VaultSection />}
-        {current === "right_hand" && <RightHandSettingsSection />}
-        {current === "audit" && <AuditSection agent={agent} />}
-        {current === "media" && <MediaSettingsSection />}
-        {current === "voice" && <VoiceSettingsSection />}
-        {current === "access" && <AccessMatrixSection />}
-        {current === "connectors" && (
-          <ConnectorsSection connected={connected} outcome={outcome} review={review} mail={mail} account={account} />
-        )}
-        {current === "skills" && <SkillsSection install={install} connected={connected} skill={skill} />}
-        {current === "keys" && (
-          <>
-            <AiAccountsSection />
-            <KeysSection />
-            <WhoPicksSection />
-            {personal && opens("connectors") && (
-              <SettingsPart id="connectors">
-                <ConnectorsSection />
-              </SettingsPart>
-            )}
-            {personal && opens("skills") && (
-              <SettingsPart id="skills">
-                <SkillsSection />
-              </SettingsPart>
-            )}
-          </>
-        )}
-        {current === "storage" && <StorageSection />}
-        {current === "devices" && (device ? <DevicePage path={device} /> : <DevicesSection start={connect} />)}
-        {current === "usage" && (
-          <>
-            <UsageTabs person={person} summary={<UsageSection />} />
-            {personal && opens("billing") && (
-              <SettingsPart id="billing">
-                <BillingSection />
-              </SettingsPart>
-            )}
-          </>
-        )}
-        {current === "import" && <ImportExportSection />}
-        {current === "billing" && <BillingSection />}
-        {current === "about" && <AboutSection />}
       </div>
     </div>
   );
 }
 
-/**
- * A section on another one's page in a personal workspace (ADR 0159 §3): Connectors and MCPs and Skills on AI and
- * apps, Plan and billing on Plan and usage, each under its own heading.
- */
-function SettingsPart({ id, children }: { id: "connectors" | "skills" | "billing"; children: ReactNode }) {
+/** A section that stands on another one's page under its own heading: Plan and billing on AI and usage. */
+function SettingsPart({ id, children }: { id: "billing"; children: ReactNode }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   return (
@@ -414,6 +424,7 @@ function GeneralSection() {
   const contextTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const savedTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const contextRef = useRef<HTMLTextAreaElement>(null);
+  const contextLimit = useTextLimit(FIELD_LIMITS.workspaceContext);
   // Filled once per org: a refetch after a save must not undo what is being typed.
   useEffect(() => {
     if (!settings.data || loaded.current === org.id) return;
@@ -451,11 +462,12 @@ function GeneralSection() {
   const changeContext = (value: string) => {
     setContext(value);
     clearTimeout(contextTimer.current);
+    if (overLimit(value, contextLimit)) return;
     contextTimer.current = setTimeout(() => save({ context: value }), 800);
   };
   const flushContext = () => {
     clearTimeout(contextTimer.current);
-    if (settings.data && context !== settings.data.context) save({ context });
+    if (settings.data && context !== settings.data.context && !overLimit(context, contextLimit)) save({ context });
   };
   const addIdea = (label: string) => {
     const value = `${context.replace(/\s*$/, "")}${context.trim() ? "\n\n" : ""}${label}: `;
@@ -605,7 +617,7 @@ function GeneralSection() {
       <Textarea
         ref={contextRef}
         rows={7}
-        maxLength={20_000}
+        limit={contextLimit}
         value={context}
         onChange={(e) => changeContext(e.target.value)}
         onBlur={flushContext}
@@ -648,10 +660,10 @@ function GeneralSection() {
       {personal ? contextCard : workspaceCard}
       {personal ? workspaceCard : contextCard}
 
-      {/* A team's tiles of every area; a personal workspace's short list and Advanced already show them. */}
-      {!personal && <SettingsTiles />}
+      <TeamMemoryCard />
+
       <UsageStatisticsCard />
-      {org.role === "owner" && <DeleteWorkspaceCard />}
+      {org.role === "owner" && !org.deletion && <DeleteWorkspaceCard />}
       <OrgLogoDialog open={logo} onClose={() => setLogo(false)} />
       <WorkspaceModeDialog
         open={switching}
@@ -698,8 +710,11 @@ function UsageStatisticsCard() {
   const telemetry = useServerTelemetry();
   const set = useSetServerTelemetry();
   const [open, setOpen] = useState(false);
+  const here = useLocalServerHere();
   const data = telemetry.data;
   if (!data) return null;
+  // Switched off in the app that runs this server: on that very computer, its Preferences › Servers one click away.
+  const inApp = data.envOff && data.report.install === "desktop" && here;
   return (
     <Card aria-labelledby="sec-telemetry">
       <CardHeader
@@ -708,8 +723,7 @@ function UsageStatisticsCard() {
         title={t("settings.telemetry.title")}
         action={
           <Button
-            size="sm"
-            variant="ghost"
+            variant="link"
             onClick={() => {
               setOpen(true);
               void telemetry.refetch();
@@ -730,12 +744,21 @@ function UsageStatisticsCard() {
                 {t("settings.telemetry.help")}
               </InfoHint>
             </span>
-            {data.envOff && (
-              <span className="settings-row__status" id="set-telemetry-help">
-                {t(
-                  data.report.install === "desktop" ? "settings.telemetry.envOffDesktop" : "settings.telemetry.envOff",
-                )}
+            {inApp ? (
+              <span className="settings-row__status ac-actline">
+                <span id="set-telemetry-help">{t("settings.telemetry.envOffHere")}</span>
+                <OpenPrefsButton tab="servers">{t("machines.thisMac.openServers")}</OpenPrefsButton>
               </span>
+            ) : (
+              data.envOff && (
+                <span className="settings-row__status" id="set-telemetry-help">
+                  {t(
+                    data.report.install === "desktop"
+                      ? "settings.telemetry.envOffDesktop"
+                      : "settings.telemetry.envOff",
+                  )}
+                </span>
+              )
             )}
           </div>
           <div className="settings-row__control">
@@ -767,118 +790,6 @@ function UsageStatisticsCard() {
   );
 }
 
-/** "Tudo da organização": a tile per area the person can open, with how it is now. */
-function SettingsTiles() {
-  const { t, i18n } = useTranslation();
-  const { org } = useOrg();
-  const server = useAuthConfig().data;
-  const shown = (id: SettingsSection) => SETTINGS_SECTIONS.some((s) => s.id === id && s.allowed(org, server));
-  const overview = useOverview(org.id);
-  const invitations = useInvitations(org.id, can(org, "invite_people"));
-  const connections = useConnections(org.id);
-  const skills = useSkills(org.id, shown("skills"));
-  const machines = useMachines(org.id, shown("devices"));
-  const managesKeys = can(org, "manage_credentials");
-  const credentials = useCredentials(org.id, managesKeys);
-  const plans = useAiAccounts(org.id, shown("keys") && !managesKeys);
-  const platform = usePlatformKey(org.id);
-  const storage = useStorage(org.id, shown("storage"));
-  const edition = computerEdition(useComputerSetup(org.id, shown("storage")).data);
-  const agents = useAgents(org.id).data ?? [];
-  const aiStatus = useAiStatus(org.id).data;
-  // The budget's share only where the workspace uses the API: on plans alone no 0% budget (ADR 0063 §5).
-  const budget =
-    overview.data && workspaceUsesApi(agents, aiStatus, overview.data.budgetUsedPercent)
-      ? overview.data.budgetUsedPercent
-      : null;
-
-  const live = (connections.data ?? []).filter((c) => !c.revokedAt);
-  const keys = (credentials.data ?? []).filter((c) => !c.revokedAt);
-  const online = (machines.data ?? []).filter((m) => m.online).length;
-  const pending = invitations.data?.length ?? 0;
-  const state: Partial<Record<SettingsSection, string | undefined>> = {
-    members:
-      overview.data &&
-      [
-        t("settings.tileState.members", { count: overview.data.people }),
-        pending > 0 ? t("settings.tileState.invitations", { count: pending }) : null,
-      ]
-        .filter(Boolean)
-        .join(" · "),
-    access: overview.data && t("settings.tileState.agents", { count: overview.data.agents }),
-    connectors:
-      connections.data &&
-      (live.length === 0
-        ? t("settings.tileState.noConnectors")
-        : [
-            t("settings.tileState.connectors", { count: live.length }),
-            live
-              .slice(0, 3)
-              .map((c) => c.label)
-              .join(", "),
-          ].join(" · ")),
-    skills: skills.data && t("settings.tileState.skills", { count: skills.data.length }),
-    devices:
-      machines.data &&
-      (machines.data.length === 0
-        ? t("settings.tileState.noDevices")
-        : t("settings.tileState.devices", { count: machines.data.length, online })),
-    usage:
-      budget !== null ? t("settings.tileState.usage", { percent: formatPercent(i18n.language, budget) }) : undefined,
-    keys: managesKeys
-      ? credentials.data &&
-        (keys.length > 0
-          ? t("settings.tileState.keys", { count: keys.length })
-          : platform.data
-            ? t("settings.tileState.platformKey")
-            : t("settings.tileState.noKeys"))
-      : plans.data &&
-        (plans.data.accounts.length > 0
-          ? t("settings.tileState.plans", { count: plans.data.accounts.length })
-          : t("settings.tileState.noPlans")),
-    storage:
-      storage.data && edition
-        ? t(storage.data.kind === "s3" ? "storage.s3" : edition === "cloud" ? "storage.agentes" : "storage.server")
-        : undefined,
-  };
-  type Tile = (typeof SETTINGS_SECTIONS)[number] & { id: Exclude<SettingsSection, "general"> };
-  // The workspace's areas: "Você" is the person's own.
-  const tiles = SETTINGS_SECTIONS.filter(
-    (s): s is Tile => s.id !== "general" && s.group !== "you" && s.allowed(org, server),
-  );
-  return (
-    <section className="settings-tiles" aria-labelledby="sec-tiles">
-      <h2 id="sec-tiles" className="settings-tiles__title">
-        {t("settings.tilesTitle")}
-      </h2>
-      <div className="settings-tiles__grid">
-        {tiles.map((s) => (
-          <Link
-            key={s.id}
-            to="/org/$orgId/settings/$section"
-            params={{ orgId: org.id, section: s.id }}
-            className="ac-card ac-card--interactive settings-tile"
-          >
-            <div className="ac-card__head">
-              <span className="ac-card__key" aria-hidden="true">
-                <Icon name={s.icon} size={16} />
-              </span>
-              <div className="ac-card__heading">
-                <h3>{t(`settings.section.${s.id}`)}</h3>
-              </div>
-              <Icon name="chevronRight" size={16} className="settings-tile__chevron" />
-            </div>
-            {s.id === "usage" && budget !== null && (
-              <Meter value={Math.min(100, budget)} max={100} label={t("settings.section.usage")} />
-            )}
-            <span className="settings-tile__state">{state[s.id] ?? "\u00a0"}</span>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function KeysSection() {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
@@ -897,9 +808,13 @@ function KeysSection() {
   >(null);
   const look = useRightHandLook();
   const hold = usePlanHold();
+  const plans = useAiAccounts(org.id).data?.accounts.length ?? 0;
   if (!allowed) return null;
   const live = (credentials.data ?? []).filter((c) => !c.revokedAt);
   const noKeys = credentials.isSuccess && live.length === 0;
+  // On plans alone the screen is the accounts: the first key is added from "Conectar uma IA", and this card comes
+  // with it.
+  if (live.length === 0 && plans > 0) return null;
   return (
     <Card aria-labelledby="sec-keys">
       <CardHeader
@@ -957,15 +872,14 @@ function KeysSection() {
                 </span>
                 <span className="key-row__tail ac-mediarow__end ac-mediarow__end--wrap">
                   {c.endpoint ? (
-                    <Button variant="ghost" size="sm" onClick={() => setDialog({ type: "models", cred: c })}>
+                    <Button variant="link" onClick={() => setDialog({ type: "models", cred: c })}>
                       {t("endpoint.models")}
                     </Button>
                   ) : isDefault ? (
                     <Chip icon="check">{t("settings.default")}</Chip>
                   ) : (
                     <Button
-                      variant="ghost"
-                      size="sm"
+                      variant="link"
                       disabled={updateSettings.isPending}
                       loading={updateSettings.isPending}
                       onClick={() => updateSettings.mutate({ defaultCredentialId: c.id })}
@@ -973,16 +887,15 @@ function KeysSection() {
                       {t("settings.makeDefault")}
                     </Button>
                   )}
-                  <div className="row" style={{ gap: 4 }}>
+                  <div className="ac-acts">
                     {!hold && (
-                      <Button variant="ghost" size="sm" onClick={() => setDialog({ type: "rotate", cred: c })}>
+                      <Button variant="link" onClick={() => setDialog({ type: "rotate", cred: c })}>
                         {t("settings.rotate")}
                       </Button>
                     )}
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      className="ac-btn--danger"
+                      variant="link"
+                      className="ac-link--danger"
                       onClick={() => setDialog({ type: "remove", cred: c })}
                     >
                       {t("settings.remove")}
@@ -1076,7 +989,7 @@ export function KeyDialog({
   };
   const unchecked = (saved: Credential) => {
     if (saved.check === "unchecked")
-      toast.show(t("connectAi.key.savedUnchecked", { provider: providerLabel(saved.provider) }), "info");
+      toast.show(t("connectAi.key.savedUnchecked", { provider: keyName(saved) }), "info");
   };
   const [label, setLabel] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -1095,10 +1008,14 @@ export function KeyDialog({
     setTouched(false);
     setRefused(null);
   }, [mode, cred]);
-  const valid = keyLooksValid(provider, apiKey);
+  // An endpoint's key (ADR 0146) has no published format: the server's 8-character floor is the whole check.
+  const endpointKey = cred?.provider === CUSTOM_PROVIDER;
+  const valid = endpointKey ? apiKey.trim().length >= 8 : keyLooksValid(provider, apiKey);
   const error =
     !touched || valid ? undefined : mode === "add" ? (
       <KeyMismatch provider={provider} apiKey={apiKey} onPick={setProvider} />
+    ) : endpointKey ? (
+      t("settings.keyInvalid")
     ) : (
       t(`onboarding.keyInvalid.${provider}`)
     );
@@ -1193,12 +1110,12 @@ export function KeyDialog({
                 label={t("settings.keyValue")}
                 id="key-value-set"
                 error={error}
-                example={<KeySite provider={provider} />}
+                example={endpointKey ? undefined : <KeySite provider={provider} />}
               >
                 <Input
                   type="password"
                   autoComplete="off"
-                  placeholder={providerOf(provider)?.placeholder}
+                  placeholder={endpointKey ? undefined : providerOf(provider)?.placeholder}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                 />
@@ -1241,10 +1158,16 @@ export function KeyDialog({
  * Uso (ADR 0063): the plan accounts by computer and the API per agent for everyone (money only for
  * admins), then the API's spend by kind and the default budget (admins).
  */
+/**
+ * IA e uso › Resumo: the workspace's AI accounts, then its provider keys (on plans alone, once it has one). What bills per use
+ * (the API per agent, its spend by kind, the default budget) shows only once the workspace uses the API
+ * (`workspaceUsesApi`): on plans alone there is no budget to show.
+ */
 function UsageSection() {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
-  const allowed = can(org, "view_usage");
+  const usesApi = useWorkspaceUsesApi(org.id);
+  const allowed = can(org, "view_usage") && usesApi;
   const report = useUsageReport(org.id, allowed);
   // Calls, not money: every member sees them.
   const composio = useComposioUsage(org.id);
@@ -1256,6 +1179,8 @@ function UsageSection() {
           <span className="small">{composioUsageText(t, i18n.language, composio.data)}</span>
         </Card>
       )}
+      <KeysSection />
+      {usesApi && <ApiCard />}
       {allowed && (
         <Card aria-labelledby="sec-usage">
           <CardHeader id="sec-usage" icon="chart" title={t("settings.usageTitle")} />
@@ -1285,6 +1210,7 @@ function UsageSection() {
         </Card>
       )}
       {allowed && <DefaultBudgetCard />}
+      <WhoPicksSection />
     </>
   );
 }

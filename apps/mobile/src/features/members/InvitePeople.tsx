@@ -10,6 +10,7 @@ import {
   useWorkspaceLimits,
 } from "@agenteschat/client";
 import { knownErrorText } from "@agenteschat/client/lib/errors";
+import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { INVITE_NOTE_MAX, sendsEmail } from "@agenteschat/client/lib/join-requests";
 import { membersFull } from "@agenteschat/client/lib/limits";
 import { aiStateOf, onlyOwnerReplies } from "@agenteschat/client/lib/no-ai";
@@ -19,6 +20,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, TextInput, type TextInputInstance, View } from "react-native";
+import { paysHere } from "@/lib/store";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -37,7 +39,7 @@ import { Page } from "../me/parts";
 import { useColors, useMeId } from "../shared/hooks";
 import { goBack, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
-import { TextArea } from "../shared/TextArea";
+import { overLimit, TextArea } from "../shared/TextArea";
 import { EMPTY_INVITE, setInviteDraft, updateInviteDraft, useInviteDraft } from "./draft";
 import { InviteLinkRows } from "./InviteLinkRows";
 import { AddressSheet } from "./InviteSheets";
@@ -54,6 +56,7 @@ import {
 } from "./logic";
 import { MembersFullNote } from "./MembersFullNote";
 
+const NOTE_LIMIT = { max: INVITE_NOTE_MAX };
 /**
  * Convidar pessoas (ADR 0090 §5), the web's invite dialog as a pushed screen: an address a row with its role, the
  * channels they also join and a note in the email on screens of their own, then the workspace's link. A server that
@@ -88,24 +91,32 @@ function InvitePeople() {
   const personal = isPersonal(org);
   // Family or friends, in a personal workspace: asked once each time this screen opens (ADR 0159 §4).
   const [family, setFamily] = useState(false);
-  // An agent's invite card opens it with its addresses (`?emails=a@x,b@y`), a channel's add sheet with that channel.
-  const { emails, channel } = useLocalSearchParams<{ emails?: string; channel?: string }>();
+  // An agent's invite card opens it with its addresses (`?emails=a@x,b@y`), a channel's add sheet with that channel, a
+  // cargo's "Convidar com este cargo" with that cargo and the channels it opens.
+  const { emails, channel, role } = useLocalSearchParams<{ emails?: string; channel?: string; role?: string }>();
+  const cargo = role ? roles.find((r) => r.id === role) : undefined;
+  const cargoChannels = cargo?.channelIds?.join() ?? "";
   useEffect(() => {
+    const roleId = role ?? null;
     setInviteDraft({
       ...EMPTY_INVITE,
-      addresses: emails ? withAddresses(EMPTY_INVITE.addresses, emails) : EMPTY_INVITE.addresses,
-      channelIds: channel ? [channel] : EMPTY_INVITE.channelIds,
+      roleId,
+      addresses: emails ? withAddresses(EMPTY_INVITE.addresses, emails, roleId) : EMPTY_INVITE.addresses,
+      channelIds: [...(channel ? [channel] : []), ...(cargoChannels ? cargoChannels.split(",") : [])],
     });
     return () => setInviteDraft(null);
-  }, [emails, channel]);
+  }, [emails, channel, role, cargoChannels]);
   const draft = useInviteDraft() ?? EMPTY_INVITE;
 
   // Who is in already, and who has an invitation waiting: said on their row and left out of the send.
-  const members = new Set(people.map((m) => m.email.toLowerCase()));
-  const invited = new Set(pendingInvitations(invitations).map((i) => i.email.toLowerCase()));
+  const members = useHeldWhile(new Set(people.map((m) => m.email.toLowerCase())), inviteMany.isPending);
+  const invited = useHeldWhile(
+    new Set(pendingInvitations(invitations).map((i) => i.email.toLowerCase())),
+    inviteMany.isPending,
+  );
   const stateOf = (a: InviteAddress) => addressState(a, members, invited);
   // What's still in the field counts: the button is pressed with the keyboard up, so the field never lost focus.
-  const all = withAddresses(draft.addresses, typed);
+  const all = withAddresses(draft.addresses, typed, draft.roleId ?? null);
   const ready = all.filter((a) => stateOf(a) === "ok");
   const bad = draft.addresses.some((a) => !a.valid);
 
@@ -114,7 +125,8 @@ function InvitePeople() {
   const extraNames = extra.map((ch) => `#${ch.name}`);
   const note = draft.note.trim();
 
-  const add = (text: string) => updateInviteDraft((d) => ({ ...d, addresses: withAddresses(d.addresses, text) }));
+  const add = (text: string) =>
+    updateInviteDraft((d) => ({ ...d, addresses: withAddresses(d.addresses, text, d.roleId ?? null) }));
   const onType = (next: string) => {
     const read = readTyped(typed, next);
     if (read.add) add(read.add);
@@ -157,7 +169,7 @@ function InvitePeople() {
   };
 
   const send = async () => {
-    if (ready.length === 0 || full || inviteMany.isPending) return;
+    if (ready.length === 0 || full || overLimit(note, NOTE_LIMIT) || inviteMany.isPending) return;
     try {
       const results = await inviteMany.mutateAsync({
         invites: ready.map((a) => ({ email: a.email, roleIds: a.roleId ? [a.roleId] : [] })),
@@ -195,7 +207,7 @@ function InvitePeople() {
         <GroupedFooter>
           {t("common.joinSentences", {
             a: t("standing.billing.invites"),
-            b: t(can(org, "manage_billing") ? "connectAi.billingWeb" : "standing.billing.askAdmin"),
+            b: t(paysHere(can(org, "manage_billing")) ? "connectAi.billingWeb" : "standing.billing.askAdmin"),
           })}
         </GroupedFooter>
       </Page>
@@ -212,7 +224,7 @@ function InvitePeople() {
                 variant="primary"
                 wide
                 label={ready.length > 0 ? t("members.dialog.send", { count: ready.length }) : t("members.invite")}
-                disabled={ready.length === 0 || full}
+                disabled={ready.length === 0 || full || overLimit(note, NOTE_LIMIT)}
                 loading={inviteMany.isPending}
                 onPress={() => void send()}
               />
@@ -405,7 +417,7 @@ export function InviteNoteScreen() {
         onChangeText={(note) => updateInviteDraft((d) => ({ ...d, note }))}
         placeholder={t(modeKey(org, "members.dialog.notePlaceholder"), { org: org?.name ?? "" })}
         accessibilityLabel={t("members.dialog.note")}
-        maxLength={INVITE_NOTE_MAX}
+        limit={NOTE_LIMIT}
         autoFocus
       />
       <GroupedFooter>{t("mobile.invitePeople.noteHelp", { max: INVITE_NOTE_MAX })}</GroupedFooter>

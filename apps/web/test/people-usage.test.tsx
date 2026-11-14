@@ -134,7 +134,7 @@ const joaoMonth = (money: boolean): PersonUsage => ({
   created: [],
 });
 
-describe("Orçamento e uso › Pessoas", () => {
+describe("IA e uso › Pessoas", () => {
   test("admins: each person's month with the limit, who uses agents now, the drawer with a DM as a count only", async () => {
     const state = seedState();
     state.peopleUsage = people;
@@ -224,7 +224,7 @@ describe("Orçamento e uso › Pessoas", () => {
     await click(screen().getByRole("button", { name: "Defina um limite por pessoa em Limites" }));
     expect(screen().getByRole("heading", { name: "Limite de uso por pessoa" })).toBeTruthy();
     expect(text(document.body)).toContain(
-      "Vale o limite da pessoa. Sem ele, o maior entre os papéis dela. Sem nenhum, o padrão. Donos não têm limite.",
+      "Vale o limite da pessoa. Sem ele, o maior entre os cargos dela. Sem nenhum, o padrão. Donos não têm limite.",
     );
     // One list of settings rows. With no default, the default's select says Sem limite, never an empty box.
     const limits = document.querySelector(".pu-limits") as HTMLElement;
@@ -319,7 +319,7 @@ describe("Orçamento e uso › Pessoas", () => {
     cleanup();
     await renderApp(`/org/${ORG_ID}/settings/usage`, { api: createFakeApi(personal(false)) });
     await settle(5);
-    expect(screen().getByRole("tablist", { name: "Plano e uso" })).toBeTruthy();
+    expect(screen().getByRole("tablist", { name: "IA e uso" })).toBeTruthy();
     expect(screen().getByRole("tab", { name: "Pessoas" })).toBeTruthy();
   });
 });

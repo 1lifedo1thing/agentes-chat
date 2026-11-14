@@ -8,8 +8,6 @@ import {
   createComposioMailConnector,
   createDiskBlobStore,
   createErrorReporter,
-  createExpoPushSender,
-  createFcmPushSender,
   createGiphyGifs,
   createImapConnectionTester,
   createImapMailConnector,
@@ -29,7 +27,6 @@ import {
   createRelayPushSender,
   createS3BlobStore,
   createSmtpEmailSender,
-  createTurnstileCheck,
   createWebPushSender,
   type EmailSender,
   type ErrorReporter,
@@ -38,7 +35,6 @@ import {
   type KeyWrapper,
   MAIL_PRESETS,
   type MailAdapters,
-  type PushSender,
   postgresJsNotifier,
   type WebPushSender,
 } from "@agenteschat/adapters";
@@ -53,7 +49,9 @@ import {
 import {
   APP_JOB_KINDS,
   adoptRestoredOperatorEvents,
+  allowPrivateOutbound,
   allowsPrivateEndpoints,
+  backfillMemoryTrust,
   composioUsageHook,
   createGifKey,
   createLocalKeyWrapper,
@@ -73,6 +71,7 @@ import {
   meterComposio,
   moveIssueComments,
   publicHttpsFetch,
+  queueEmbeddingBackfill,
   relayCredentials,
   resolveHostDns,
   retireHostTokens,
@@ -84,16 +83,18 @@ import {
   surfaceRoomFiles,
   vapidKeys,
   vapidSubject,
+  widenDmHowTos,
 } from "@agenteschat/engine";
-
 import { type AgentesModule, type Edition, type ModuleContext, resolveAdapters } from "@agenteschat/modules";
 import { createModelProviders, enableOpenRouterModels } from "@agenteschat/providers";
 import { createApp } from "./app";
 import { createAuth } from "./auth";
 import { buildEngine } from "./engine";
-import { checkHumanCheckAtBoot } from "./http/human-check";
+import { startFreezeWatch } from "./freeze-watch";
+import { checkHumanCheckAtBoot, createHumanCheck } from "./http/human-check";
 import { createLogger, type Logger } from "./logger";
 import { OPERATOR_API_PREFIX, serveOperatorApi } from "./operator/app";
+import { apnsKeyGaps, directPushSenders, phonePushMode, relayServeSender } from "./push-senders";
 import { createMachineSockets } from "./realtime/machines";
 import { createStreamSockets } from "./realtime/streams";
 import { createRealtime, type SocketData } from "./realtime/ws";
@@ -166,7 +167,18 @@ export async function startServer(options: StartOptions) {
   });
   const log = createLogger(config.LOG_LEVEL, errors);
   try {
-    return await boot(options, config, log, release, errors);
+    const started = await boot(options, config, log, release, errors);
+    // Once it serves: a boot's own long steps (migrations, the built-in database's start) aren't what it is for.
+    startFreezeWatch(
+      {
+        logLevel: config.LOG_LEVEL,
+        ...(config.SENTRY_DSN
+          ? { reports: { dsn: config.SENTRY_DSN, environment: config.SENTRY_ENVIRONMENT, release } }
+          : {}),
+      },
+      log,
+    );
+    return started;
   } catch (error) {
     log.error("startup failed", { error, unhandled: true });
     await log.flush(EXIT_FLUSH_MS);
@@ -210,10 +222,24 @@ async function boot(
   let resolved: Adapters | null = null;
   // The push relay's credentials are sealed the same way (ADR 0152).
   const keyWrappers = () => [resolved?.keyWrapper ?? localKeyWrapper, ...(resolved?.legacyKeyWrappers ?? [])];
-  // Android pushes straight to Firebase and the push relay this server may run share one sender, so one access
-  // token (ADR 0152).
-  const account = config.FIREBASE_SERVICE_ACCOUNT;
-  const fcm = account ? createFcmPushSender({ serviceAccount: account }) : null;
+  // Pushes straight to Firebase and to Apple, and the push relay this server may run, share one sender each: one
+  // access token, one connection to APNs (ADR 0152, ADR 0178).
+  const direct = directPushSenders(config);
+  const pushModes = {
+    android: phonePushMode(config, direct.android),
+    ios: phonePushMode(config, direct.ios),
+  };
+  // One relay sender for both platforms, so this installation registers there once.
+  const relayed =
+    pushModes.android === "relay" || pushModes.ios === "relay"
+      ? createRelayPushSender({
+          url: config.PUSH_RELAY_URL,
+          credentials: relayCredentials(database.db, keyWrappers, config.PUSH_RELAY_URL),
+          version: release,
+        })
+      : null;
+  const phoneSender = (platform: "android" | "ios") =>
+    pushModes[platform] === "direct" ? direct[platform] : pushModes[platform] === "relay" ? relayed : null;
   // The GIPHY key its owner may add in Settings (ADR 0091, amended 2026-10-31), made below once modules had their
   // say on the key wrappers; the GIF provider asks it on every call.
   let gifKey: GifKey | null = null;
@@ -230,12 +256,9 @@ async function boot(
       anthropic: { apiKey: config.PLATFORM_ANTHROPIC_API_KEY, workspaceId: config.PLATFORM_ANTHROPIC_WORKSPACE_ID },
     }),
     platformBlobs: platformBlobStore(config, database.db),
-    // Phone app push (ADR 0035, ADR 0152): only devices that registered get anything. Android straight to
-    // Firebase or through the push relay (`PUSH_SENDER`); iPhones through Expo.
-    push: createPhonePushSender({
-      android: androidPushSender(config, fcm, database.db, keyWrappers, release),
-      ios: createExpoPushSender({ accessToken: config.EXPO_ACCESS_TOKEN }),
-    }),
+    // Phone app push (ADR 0035, ADR 0152, ADR 0178): only devices that registered get anything. Android straight
+    // to Firebase and iPhones straight to Apple, or through the push relay (`PUSH_SENDER`).
+    push: createPhonePushSender({ android: phoneSender("android"), ios: phoneSender("ios") }),
     // Browser push (ADR 0071): the installation's own VAPID pair, made on first use.
     webPush: webPushSender(config, database.db, keyWrappers, log),
     // Each Composio call counts for its workspace before it is made (ADR 0107 §7).
@@ -246,16 +269,7 @@ async function boot(
     ),
     // People's Postgres databases for agents (ADR 0039): always on; every connection is checked and read-only.
     databases: createPostgresDatabaseDriver(),
-    // agentes.chat Cloud's bot check (ADR 0075), only with both keys: without them nothing reaches Cloudflare.
-    humanCheck:
-      config.TURNSTILE_SITE_KEY && config.TURNSTILE_SECRET_KEY
-        ? createTurnstileCheck({
-            siteKey: config.TURNSTILE_SITE_KEY,
-            secretKey: config.TURNSTILE_SECRET_KEY,
-            hostnames: [new URL(config.PUBLIC_URL).hostname],
-            log,
-          })
-        : null,
+    humanCheck: createHumanCheck(config, { log }),
     // GIFs in chat (ADR 0091), only with a key: without one nothing reaches GIPHY and the app shows no GIFs.
     gifs: gifProvider(config, () => gifKey?.key() ?? null),
     // The Vault's external sources (ADR 0144): nothing reaches them until a person connects one. A self-hosted
@@ -274,21 +288,43 @@ async function boot(
     imap: Boolean(defaults.mail?.imap),
   });
   log.info("browser push", defaults.webPush ? { webPush: "on", contact: vapidSubject(config) } : { webPush: "off" });
-  const androidPush = androidPushMode(config);
-  log.info("phone push", { android: androidPush, ios: "expo" });
-  if (androidPush === "relay") {
+  log.info("phone push", pushModes);
+  if (relayed) {
     // Said at every boot, so whoever runs the server knows what leaves it and how to stop it (ADR 0152).
     log.info(
-      "Android pushes go through the push relay: each one's phone token, title, text and ids pass through it, which keeps none of them. PUSH_SENDER=off turns them off; FIREBASE_SERVICE_ACCOUNT sends them straight to Firebase.",
-      { relay: new URL(config.PUSH_RELAY_URL).host },
+      "Phone pushes go through the push relay: each one's phone token, title, text and ids pass through it, which keeps none of them. PUSH_SENDER=off turns them off; FIREBASE_SERVICE_ACCOUNT sends Android's straight to Firebase and APNS_KEY the iPhone's straight to Apple.",
+      {
+        relay: new URL(config.PUSH_RELAY_URL).host,
+        platforms: (["android", "ios"] as const).filter((platform) => pushModes[platform] === "relay"),
+      },
     );
   }
-  if (config.PUSH_SENDER === "direct" && !config.FIREBASE_SERVICE_ACCOUNT) {
+  const unsent = (["android", "ios"] as const).filter((platform) => pushModes[platform] === "off");
+  if (config.PUSH_SENDER === "auto" && unsent.length > 0) {
+    // This server is the push relay and holds no credentials for these: there is nowhere to send them (ADR 0178).
+    log.info("phone push: none sent where this server, the push relay itself, has no credentials", {
+      platforms: unsent,
+      needs: unsent.map((platform) => (platform === "ios" ? "APNS_KEY" : "FIREBASE_SERVICE_ACCOUNT")),
+    });
+  }
+  const apnsGaps = apnsKeyGaps(config);
+  if (apnsGaps.length > 0) {
+    log.warn("APNS_KEY, APNS_KEY_ID and APNS_TEAM_ID work only together: iPhones are not pushed straight to Apple", {
+      missing: apnsGaps,
+    });
+  }
+  if (config.PUSH_SENDER === "direct" && !direct.android) {
     log.warn("PUSH_SENDER=direct without FIREBASE_SERVICE_ACCOUNT: Android phones get no push");
   }
+  if (config.PUSH_SENDER === "direct" && !direct.ios) {
+    log.warn("PUSH_SENDER=direct without APNS_KEY, APNS_KEY_ID and APNS_TEAM_ID: iPhones get no push");
+  }
   if (config.PUSH_RELAY_SERVE === "on") {
-    const serving = config.FIREBASE_SERVICE_ACCOUNT ? "/api/push-relay/v1" : "nothing (no FIREBASE_SERVICE_ACCOUNT)";
-    log.info("push relay", { serving });
+    const platforms = (["android", "ios"] as const).filter((platform) => direct[platform]);
+    log.info("push relay", {
+      serving: platforms.length > 0 ? "/api/push-relay/v1" : "nothing (no FIREBASE_SERVICE_ACCOUNT, no APNS_KEY)",
+      platforms,
+    });
   }
   const base = { config, db: database.db, edition, version: release };
   const { adapters, modelProviders, overridden } = await resolveAdapters(
@@ -325,6 +361,9 @@ async function boot(
   }
   const ctx: ModuleContext = { ...base, adapters };
 
+  // Addresses a workspace names (custom MCP servers, its own bucket, pages agents read) are pinned to public ones at
+  // every request, except where the operator lets workspaces reach this server's network.
+  allowPrivateOutbound(allowsPrivateEndpoints(config));
   // Per-process caches for agent/org/channel config, scopes, connections, credential rows (30 s TTL).
   enableCaches();
   // A write in any process (the app, a worker) clears what every process cached of it.
@@ -386,6 +425,30 @@ async function boot(
       if (made > 0) log.info("right hands created", { made });
     })
     .catch((error: unknown) => log.warn("right hands backfill failed", { error: String(error) }));
+  // Off the boot path, once (ADR 0167): untrusted memories saved from a person's own words are trusted again, and
+  // how-tos agents worked out between themselves that name nobody reach their other work.
+  void backfillMemoryTrust(database.db)
+    .then(async (r) => {
+      if (Object.keys(r.changed).length > 0) log.info("memory trust re-derived", { ...r });
+      const widened = await widenDmHowTos(database.db);
+      if (widened > 0) log.info("how-tos out of agents' DMs", { widened });
+    })
+    .catch((error: unknown) => log.warn("memory backfill failed", { error: String(error) }));
+  // Off the boot path (ADR 0167): what this model hasn't embedded yet gets its vectors, a reindex per workspace.
+  const vectors = engine.embeddings;
+  if (config.EMBEDDINGS_PROVIDER !== "none" && !vectors) {
+    const missing = config.EMBEDDINGS_PROVIDER === "voyage" ? "VOYAGE_API_KEY" : "EMBEDDINGS_URL";
+    log.warn("search goes on words alone", {
+      because: `EMBEDDINGS_PROVIDER=${config.EMBEDDINGS_PROVIDER} needs ${missing}`,
+    });
+  }
+  if (vectors?.kinds) {
+    void queueEmbeddingBackfill(database.db, { model: vectors.provider.model, kinds: vectors.kinds })
+      .then((queued) => {
+        if (queued > 0) log.info("embeddings backfill queued", { workspaces: queued, model: vectors.provider.model });
+      })
+      .catch((error: unknown) => log.warn("embeddings backfill failed", { error: String(error) }));
+  }
   // Off the boot path: tasks' comments from before their conversations move into them once (ADR 0145).
   void moveIssueComments(database.db)
     .then((moved) => {
@@ -434,11 +497,13 @@ async function boot(
     mail: { deps: engine.mail, pollSeconds: config.MAIL_POLL_SECONDS },
     browserLive: engine.browserLive,
     desktops: engine.desktops,
+    machines: engine.machineHub,
     ...(config.OPS_REPORT_EMAIL?.length
       ? { opsReport: { to: config.OPS_REPORT_EMAIL, publicUrl: config.PUBLIC_URL } }
       : {}),
     outbox,
     builtInDatabase: !database.client,
+    errors,
     log,
   });
   const telemetry = worker ? null : startTelemetry({ db: database.db, config, log });
@@ -481,7 +546,7 @@ async function boot(
         speech: engine.speech,
         voice: engine.voice,
         gitProxy: engine.gitProxy,
-        pushRelaySender: fcm,
+        pushRelaySender: relayServeSender(direct),
       },
     },
     log,
@@ -572,6 +637,8 @@ async function boot(
     log.info("shutting down", { signal });
     // No new jobs, from now on: one started during the delay below would be cut by the drain.
     workers.stop();
+    // The switch is the process's: a server started after this one sets its own.
+    allowPrivateOutbound(false);
     // `/api/health` answers 503 from now on: the proxy's health check takes this instance out before it stops
     // listening, and holds new requests for the next one instead of failing them.
     if (config.SHUTDOWN_DELAY_MS > 0) await Bun.sleep(config.SHUTDOWN_DELAY_MS);
@@ -685,34 +752,6 @@ function platformBlobStore(config: Config, db: Database) {
     accessKeyId: S3_ACCESS_KEY_ID,
     secretAccessKey: S3_SECRET_ACCESS_KEY,
     pathStyle: config.S3_PATH_STYLE,
-  });
-}
-
-/** How this server sends Android pushes (ADR 0152): `PUSH_SENDER`, with `auto` resolved. */
-function androidPushMode(config: Config): "direct" | "relay" | "off" {
-  if (config.PUSH_SENDER !== "auto") return config.PUSH_SENDER;
-  return config.FIREBASE_SERVICE_ACCOUNT ? "direct" : "relay";
-}
-
-/**
- * Android pushes (ADR 0152): straight to Firebase with this server's service account (`fcm`), or through the
- * push relay, which registers this installation on its first push and keeps its credentials sealed with
- * `wrappers()`; null when off or `direct` has no account.
- */
-function androidPushSender(
-  config: Config,
-  fcm: PushSender | null,
-  db: Database,
-  wrappers: () => KeyWrapper[],
-  version: string,
-): PushSender | null {
-  const mode = androidPushMode(config);
-  if (mode === "off") return null;
-  if (mode === "direct") return fcm;
-  return createRelayPushSender({
-    url: config.PUSH_RELAY_URL,
-    credentials: relayCredentials(db, wrappers, config.PUSH_RELAY_URL),
-    version,
   });
 }
 

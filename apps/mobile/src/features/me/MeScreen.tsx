@@ -6,7 +6,7 @@ import Constants from "expo-constants";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { signOut } from "@/features/account";
@@ -18,6 +18,7 @@ import {
   GroupedHeader,
   GroupedList,
   GroupedRow,
+  Icon,
   PersonAvatar,
   PixelOrbit,
   SCREEN_X,
@@ -38,8 +39,11 @@ import { useTasksUnreadMarks, useUnreadThreads } from "../shared/queries";
 import { useMyPerson, usePresenceOf } from "../status/hooks";
 import { personLine } from "../status/logic";
 import { openStatus } from "../status/StatusScreen";
+import { AppIconPicture, useAppIconName } from "./AppIconPage";
+import { useAppIcon } from "./app-icon";
 import { openIssuesWithMe, workspacesBeyond } from "./logic";
 import { useLanguageChoice, usePushSwitch, useSoundLabel, useStartLabel } from "./PreferencePages";
+import { useChangePhoto } from "./parts";
 import { useWorkspacesAcross, WorkspaceMark } from "./WorkspacesPages";
 
 /** The rows of Você's Work group. */
@@ -69,6 +73,10 @@ const open = (href: string) => router.push(href as never);
 const AGENTS_SHOWN = 3;
 /** Your photo on the cover, unframed (framed faces stop at 52). */
 const PHOTO = 96;
+/** The photo badge on its top corner and its glyph; its center sits on the photo's ring at 45°. */
+const PHOTO_BADGE = 30;
+const PHOTO_BADGE_ICON = 14;
+const PHOTO_BADGE_AT = ((PHOTO + 6) / 2) * (1 - Math.SQRT1_2) - PHOTO_BADGE / 2;
 /** How far the photo hangs below the sky. */
 const PHOTO_OVERLAP = 48;
 /** Your agents on the sky's horizon beside your photo: two on each side, unframed (the 24 size). */
@@ -80,11 +88,11 @@ let horizonArrived = false;
 
 /**
  * Você, pushed from your avatar, as the phone's own settings: the bar reads "Você" with Editar on the right; the
- * workspace's sky as a band with your photo hanging from it, your name, your @ and workspace; then grouped lists on
- * the grouped gray, one value per row. Status first (ADR 0084). The workspace as one row: where you are, how many
- * more and the unread elsewhere, opening the list by server (ADR 0154), with the workspace's settings under it. Your
- * agents, alive (a working one says what it does), "Ver todos" to the Agentes tab. Your work (Tarefas, Propostas,
- * Rotinas, Wiki, Drive, Painéis, Memória): what belongs to the workspace lives in Configurações, once. The
+ * workspace's sky as a band with your photo hanging from it (a tap changes it), your name, your @ and workspace; then
+ * grouped lists on the grouped gray, one value per row. Status first (ADR 0084). The workspace as one row: where you
+ * are, how many more and the unread elsewhere, opening the list by server (ADR 0154), with the workspace's settings
+ * under it. Your agents, alive (a working one says what it does), "Ver todos" to the Agentes tab. Your work (Tarefas,
+ * Propostas, Rotinas, Wiki, Drive, Painéis, Memória): what belongs to the workspace lives in Configurações, once. The
  * preferences; Sons and Aparência change in their row through the system's choice on iOS (a screen on Android, whose
  * dialog holds three buttons at most). Sair alone in red; the version is in Sobre. A settings page is opened many
  * times a day, so nothing here animates beyond the rows' press highlight and the platform's push. A personal workspace
@@ -99,6 +107,8 @@ export function MeScreen() {
   const personal = isPersonal(org.org);
   const { groups, elsewhere } = useWorkspacesAcross();
   const theme = useTheme();
+  const appIcon = useAppIcon();
+  const appIconName = useAppIconName(appIcon.icon ?? "night");
   const dir = useDirectory();
   const c = useColors();
   const insets = useSafeAreaInsets();
@@ -114,6 +124,7 @@ export function MeScreen() {
   const myPresence = useMyPerson()?.presence;
   const name = me.data?.user.name ?? "";
   const photo = usePersonPhoto(mine?.avatarUrl ?? mine?.image ?? me.data?.user.image);
+  const { changePhoto, uploading } = useChangePhoto();
   const sounds = useSoundChoice();
   const language = useLanguageChoice();
   const styleLabel = useSoundLabel();
@@ -264,16 +275,31 @@ export function MeScreen() {
           <HorizonTeam ids={myAgents.slice(0, HORIZON).map((a) => a.id)} />
         </View>
         <View style={styles.cover}>
-          <WithPresence size={PHOTO + 6} presence={myPresence} ring={c.grouped}>
-            <View style={[styles.ring, { borderColor: c.grouped }]}>
-              <PersonAvatar name={name || "?"} size={PHOTO} photo={photo} />
+          <Pressable
+            onPress={changePhoto}
+            disabled={uploading}
+            accessibilityRole="button"
+            accessibilityLabel={t("mobile.me.account.changePhoto")}
+            style={({ pressed }) => (pressed || uploading ? styles.pressed : null)}
+          >
+            <WithPresence size={PHOTO + 6} presence={myPresence} ring={c.grouped}>
+              <View style={[styles.ring, { borderColor: c.grouped }]}>
+                <PersonAvatar name={name || "?"} size={PHOTO} photo={photo} />
+              </View>
+            </WithPresence>
+            {/* A touch screen has no hover: the photo badge says the face changes it (presence keeps its corner). */}
+            <View
+              style={[styles.photoBadge, { backgroundColor: c.action, borderColor: c.grouped }]}
+              pointerEvents="none"
+            >
+              <Icon name="image" size={PHOTO_BADGE_ICON} color={c.onAction} />
             </View>
-          </WithPresence>
-          <Text variant="display2" numberOfLines={2} style={styles.center}>
+          </Pressable>
+          <Text variant="display2" style={styles.center}>
             {name}
           </Text>
           {headline ? (
-            <Text variant="subhead" tone="muted" numberOfLines={1} style={styles.center}>
+            <Text variant="subhead" tone="muted" style={styles.center}>
               {headline}
             </Text>
           ) : null}
@@ -415,6 +441,17 @@ export function MeScreen() {
               menu
               onPress={pickTheme}
             />
+            {/* The app icon (ADR 0179): only where this build carries the others. */}
+            {appIcon.supported && appIcon.icon ? (
+              <GroupedRow
+                key="appIcon"
+                leading={<AppIconPicture icon={appIcon.icon} />}
+                label={t("appIcon.title")}
+                value={appIconName}
+                chevron
+                onPress={() => open("/me/app-icon")}
+              />
+            ) : null}
             <GroupedRow
               key="language"
               icon="globe"
@@ -492,7 +529,7 @@ function HorizonTeam({ ids }: { ids: string[] }) {
         agentId={id}
         size={HORIZON_FACE}
         framed={false}
-        mode={presence.agent(id)?.presence === "busy" ? "run" : "idle"}
+        mode={presence.agent(id)?.presence === "working" ? "run" : "idle"}
       />
     </Animated.View>
   );
@@ -514,7 +551,7 @@ function HorizonTeam({ ids }: { ids: string[] }) {
 function AgentRow({ agentId, name, role }: { agentId: string; name: string; role: string | null | undefined }) {
   const dir = useDirectory();
   const shown = usePresenceOf().agent(agentId);
-  const working = shown?.presence === "busy" && shown.line ? shown.line.text : null;
+  const working = shown?.presence === "working" && shown.line ? shown.line.text : null;
   const look = agentLook(dir.agentById.get(agentId));
   return (
     <GroupedRow
@@ -557,6 +594,18 @@ const styles = StyleSheet.create({
   cover: { alignItems: "center", gap: 6, marginTop: -PHOTO_OVERLAP, paddingHorizontal: 16 },
   // A ring in the page's color lifts the photo off the sky.
   ring: { borderRadius: 999, borderWidth: 3 },
+  pressed: { opacity: 0.6 },
+  photoBadge: {
+    position: "absolute",
+    top: PHOTO_BADGE_AT,
+    right: PHOTO_BADGE_AT,
+    width: PHOTO_BADGE,
+    height: PHOTO_BADGE,
+    borderRadius: PHOTO_BADGE / 2,
+    borderWidth: 3,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   center: { textAlign: "center" },
   groups: { paddingHorizontal: SCREEN_X, paddingTop: 4 },
   gapBig: { height: 24 },

@@ -29,6 +29,7 @@ import {
   updateSkillFromSource,
   ValidationError,
 } from "@agenteschat/engine";
+import { SKILL_ZIP_BASE64_CHARS } from "@agenteschat/tokens/skills";
 import { createRoute, z } from "@hono/zod-openapi";
 import { apiError, errorResponse } from "../../http/errors";
 import { githubAppOf } from "../github-app";
@@ -157,6 +158,10 @@ const SkillChoice = z
     path: z.string().openapi({ description: "The skill's folder from the repository's root: what `paths` sends." }),
     name: z.string(),
     description: z.string(),
+    replaces: z.enum(["installed", "removed"]).optional().openapi({
+      description:
+        "A skill of this name is installed (this becomes a new version of it, for every agent that has it) or was removed (it comes back on for none of its old agents).",
+    }),
   })
   .openapi("SkillChoice");
 const SkillSkipped = z
@@ -324,12 +329,15 @@ export function skillRoutes(deps: AppDeps) {
               list: z.boolean().optional().openapi({
                 description: "Answer with the skills the link holds to pick, even one, installing none.",
               }),
+              forAgentId: z.uuid().optional().openapi({
+                description:
+                  "The agent whose card (`offer_install_skill`) opened the install: what installs goes on for it when the installer may change its skills, else the install stands alone.",
+              }),
             }),
             z.object({
               zipBase64: z
                 .string()
-                // Base64 of a zip holding all a skill keeps (text and scripts, plus its images and other files).
-                .max(Math.ceil(((SKILL_LIMITS.maxBytes + SKILL_LIMITS.assetBytes) * 4) / 3) + 1_000_000)
+                .max(SKILL_ZIP_BASE64_CHARS)
                 .openapi({
                   description: `The skill folder as a zip, base64 (≤ ${SKILL_LIMITS.maxBytes / 1024 / 1024} MB of text and scripts and ${SKILL_LIMITS.assetBytes / 1024 / 1024} MB of other files unzipped).`,
                 }),
@@ -360,10 +368,12 @@ export function skillRoutes(deps: AppDeps) {
       const actor = c.get("user").id;
       if ("url" in input) {
         if (!(await linkReadAllowed(actor))) return apiError(c, 429, "rate_limited", tooManyReads);
+        const forAgentId = input.forAgentId;
         if (input.paths) {
-          return c.json({ skills: await importPickedSkills(skills(), actor, orgId, input.url, input.paths) }, 201);
+          const installed = await importPickedSkills(skills(), actor, orgId, input.url, input.paths, { forAgentId });
+          return c.json({ skills: installed }, 201);
         }
-        const result = await importSkillFromUrl(skills(), actor, orgId, input.url, { list: input.list });
+        const result = await importSkillFromUrl(skills(), actor, orgId, input.url, { list: input.list, forAgentId });
         return "choices" in result ? c.json(result, 200) : c.json(result, 201);
       }
       let zip: Uint8Array;
