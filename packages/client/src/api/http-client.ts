@@ -74,6 +74,7 @@ import type {
   ChannelMember,
   ChannelOverride,
   Choices,
+  CliInstall,
   CodeSent,
   CommandApproval,
   ComposioUsage,
@@ -376,8 +377,10 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
     },
     working: {
       list: async (orgId) => (await request<{ runs: WorkingRun[] }>(`${org(orgId)}/active-runs`)).runs,
-      taskManager: (orgId, since) =>
-        request<TaskManagerView>(`${org(orgId)}/task-manager`, { query: since ? { since } : {} }),
+      taskManager: (orgId, since, doneToday) =>
+        request<TaskManagerView>(`${org(orgId)}/task-manager`, {
+          query: { since: since || undefined, doneToday: doneToday ? "true" : undefined },
+        }),
       taskSteps: (orgId, runId) => request<TaskSteps>(`${org(orgId)}/task-manager/${enc(runId)}/steps`),
       continueTasks: (orgId, runIds) =>
         request<{ continued: number }>(`${org(orgId)}/task-manager/continue`, { json: { runIds } }),
@@ -1326,6 +1329,19 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         ).access,
       askTool: async (orgId, machineId, tool) => {
         await request<unknown>(`${org(orgId)}/machines/${enc(machineId)}/access/ask`, { json: { tool } });
+      },
+      checkClis: async (orgId, machineId) => {
+        await request<unknown>(`${org(orgId)}/machines/${enc(machineId)}/clis/check`, { json: {} });
+      },
+      cliInstall: (orgId, machineId, tool, action) => {
+        const path = `${org(orgId)}/machines/${enc(machineId)}/cli-install`;
+        if (action === "start") return request<{ install: CliInstall | null }>(path, { json: { tool } });
+        return request<{ install: CliInstall | null }>(`${path}?tool=${enc(tool)}`, {
+          ...(action === "cancel" ? { method: "DELETE" } : {}),
+        });
+      },
+      askCliInstall: async (orgId, machineId, tool) => {
+        await request<unknown>(`${org(orgId)}/machines/${enc(machineId)}/cli-install/ask`, { json: { tool } });
       },
       setPause: async (orgId, machineId, input) =>
         (

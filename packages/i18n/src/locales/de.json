@@ -752,13 +752,19 @@
     "from": "Eingeladen von {{name}}",
     "crew_one": "{{names}} arbeitet dort",
     "crew_other": "{{names}} arbeiten dort",
+    "crewYours_one": "{{names}} arbeitet mit dir",
+    "crewYours_other": "{{names}} arbeiten mit dir",
     "hello": "Hallo. {{name}} hat dich zu {{org}} eingeladen.",
     "helloNoName": "Hallo. {{org}} hat dich eingeladen.",
+    "helloAs": "Hallo. {{name}} hat dich zu {{org}} eingeladen, als {{roles}}.",
+    "helloAsNoName": "Hallo. {{org}} hat dich eingeladen, als {{roles}}.",
     "nameLead": "Zuerst: Wie nennt dich das Team?",
     "newPasswordLead": "Damit kommst du jetzt und jedes weitere Mal in {{org}}.",
     "enter": "{{org}} beitreten",
     "calledYou": "{{name}} hat dich zu {{org}} eingeladen.",
     "calledYouNoName": "{{org}} hat dich eingeladen.",
+    "calledYouAs": "{{name}} hat dich zu {{org}} eingeladen, als {{roles}}.",
+    "calledYouAsNoName": "{{org}} hat dich eingeladen, als {{roles}}.",
     "signedInLead": "Du bist als {{email}} angemeldet. Tritt einfach bei.",
     "passwordLead": "{{name}} hat dich zu {{org}} eingeladen. Dein Passwort, und du bist drin.",
     "passwordLeadNoName": "{{org}} hat dich eingeladen. Dein Passwort, und du bist drin.",
@@ -836,6 +842,9 @@
       "reasonSaid": "<b>Ihre Notiz:</b> „{{reason}}“",
       "closedTitle": "Dieser Link funktioniert nicht mehr",
       "closedText": "Bitte die Person, die ihn geschickt hat, um einen neuen.",
+      "fullTitle": "Dieser Link hat schon alle Personen aufgenommen, die er konnte.",
+      "fullLead": "Bitte {{name}} um einen neuen Link.",
+      "fullLeadNoName": "Bitte die Person, die ihn geschickt hat, um einen neuen Link.",
       "hello": "Hallo. Das ist die Einladung von {{org}}.",
       "emailLead": "Wie lautet deine E-Mail-Adresse? Ein Admin gibt jede neue Person frei.",
       "haveAccountSignIn": "Du hast schon ein Konto? Anmelden",
@@ -1752,6 +1761,21 @@
     "hintAndroid": "Manche Startbildschirme brauchen ein paar Sekunden, bis das neue Symbol erscheint.",
     "failed": "Das Symbol konnte nicht geändert werden. Versuch es noch einmal.",
     "agentsOf": "Agenten in {{org}}",
+    "yours": "Eigenes Symbol",
+    "readyOne": "Vorgefertigt",
+    "use": "Dieses Symbol verwenden",
+    "inUse": "In Verwendung",
+    "sky": "Hintergrund",
+    "expression": "Gesichtsausdruck",
+    "ready": "Vorgefertigte",
+    "oneOrOther": "Mit einem Accessoire bleibt der Ausdruck der normale.",
+    "faces": {
+      "wink": "Zwinkern",
+      "heart": "Herzen",
+      "star": "Sterne",
+      "surprised": "Überrascht",
+      "angry": "Wütend"
+    },
     "names": {
       "night": "Nacht",
       "moon": "Mond",
@@ -3096,6 +3120,21 @@
       "zen": "OpenCode verbinden",
       "api_key": "API-Schlüssel hinzufügen"
     },
+    "cli": {
+      "missing": "{{program}} ist noch nicht auf {{computer}}.",
+      "claudeApp": "Die Claude-App reicht nicht: Agenten nutzen Claude Code, das auf dem Computer läuft.",
+      "install": "{{program}} für mich installieren",
+      "check": "Schon installiert, erneut prüfen",
+      "checked": "Gerade geprüft: {{program}} ist noch immer nicht auf {{computer}}.",
+      "installing": "{{program}} wird auf {{computer}} installiert. Das dauert etwa eine Minute.",
+      "failed": "Installation auf {{computer}} fehlgeschlagen: {{message}}",
+      "stillMissing": "Das Installationsprogramm ist fertig, aber {{computer}} findet {{program}} noch nicht.",
+      "gitMissing": "{{program}} braucht Git for Windows auf {{computer}}.",
+      "getGit": "Git for Windows herunterladen",
+      "cantStart": "{{program}} ist auf {{computer}}, startet aber nicht: {{message}}",
+      "outdated": "Aktualisiere die agentes.chat-App auf {{computer}}, um von hier zu installieren.",
+      "asked": "Anfrage gesendet. {{name}} bekommt einen Button zum Installieren."
+    },
     "titleFor": "Eine KI für {{name}} verbinden",
     "have": {
       "title": "Bereits verbunden",
@@ -3614,6 +3653,7 @@
     },
     "skill": {
       "created": "Das Gelernte in den Skill <b>{{name}}</b> verwandelt",
+      "created_asked": "Den Skill <b>{{name}}</b> erstellt",
       "updated": "Skill <b>{{name}}</b> korrigiert"
     },
     "agent": {
@@ -3718,6 +3758,7 @@
       },
       "skill": {
         "created": "Das Gelernte in Skills verwandelt: {{refs}}",
+        "created_asked": "Skills erstellt: {{refs}}",
         "updated": "Skills korrigiert: {{refs}}"
       },
       "agent": {
@@ -4663,7 +4704,7 @@
       "undoHere": "Zum Rückgängigmachen geh auf der Seite von {{name}} zu Tools und Zugriff.",
       "open": "Öffnen",
       "routine": "Immer in dieser Routine",
-      "thisRoutine": "diese Routine",
+      "thisRoutine": "Diese Routine",
       "noteRoutine": "{{routine}} erledigt das ab jetzt selbstständig, mit beliebigen Werten: {{actions}}. Außerhalb dieser Routine wird weiter gefragt. Rückgängig machen: in den Einstellungen der Routine.",
       "doneRoutine": "Freigegeben. {{routine}} fragt danach nicht mehr.",
       "undoRoutine": "Zum Rückgängigmachen geh in die Einstellungen der Routine."
@@ -5453,7 +5494,8 @@
           "200000": "Günstiger und schneller. Fasst lange Unterhaltungen früh zusammen.",
           "400000": "Merkt sich viel, und jede Antwort kostet weniger als mit 1M.",
           "1000000": "Merkt sich am meisten. Jede Antwort liest alles neu: langsamer und teurer.",
-          "auto": "Was das Modell zulässt."
+          "auto": "Was das Modell zulässt.",
+          "autoSummarizes": "Bei Claude Code und Codex fasst es das Gespräch bei {{size}} zusammen."
         },
         "advanced": {
           "title": "Erweiterte Einstellungen",
@@ -6776,6 +6818,8 @@
     "budgetHelp": "Am Limit hält {{name}} an und sagt Bescheid.",
     "budgetHelp_female": "Am Limit hält {{name}} an und sagt Bescheid.",
     "budgetInvalid": "Nutze einen Wert größer als null.",
+    "budgetCapped": "Nutzt den Standard des Workspace. Nur ein Admin kann ihn erhöhen.",
+    "budgetCappedAmount": "Nutzt den Standard des Workspace ({{amount}}). Nur ein Admin kann ihn erhöhen.",
     "warnsOwner": "Wir warnen {{name}} bei 80 %.",
     "warnsAdmins": "Wir warnen die Admins bei 80 %.",
     "upTo": "bis zu {{amount}}/Monat",
@@ -7104,7 +7148,7 @@
       "done": "{{name}} gehört nicht mehr zu {{org}}.",
       "left": "Du hast {{org}} verlassen.",
       "goneTitle": "Du gehörst nicht mehr zu {{org}}",
-      "goneText": "Dein Zugriff auf diesen Workspace ist beendet. Um zurückzukommen, bitte dort jemanden um eine neue Einladung."
+      "goneText": "Dein Zugang ist beendet. Um zurückzukommen, bitte um eine neue Einladung."
     },
     "chips": {
       "check": "prüfen",
@@ -7117,13 +7161,6 @@
     "dialog": {
       "title": "Zu {{org}} einladen",
       "titlePersonal": "Jemanden in deinen Workspace einladen",
-      "stepOf": "Schritt {{n}} von {{total}} · {{step}}",
-      "steps": {
-        "who": "Wer",
-        "role": "Rolle",
-        "where": "Wo es losgeht",
-        "note": "Notiz"
-      },
       "emails": "E-Mails",
       "moreEmails": "Weitere E-Mails…",
       "checkMarked": "Prüfe die markierten E-Mail-Adressen: Sie bekommen keine Einladung.",
@@ -7137,84 +7174,28 @@
       "notePlaceholder": "Hallo! Komm zu {{org}}: Das Team und die Agenten sind alle hier.",
       "notePlaceholderPersonal": "Hallo! Komm dazu: Meine Agenten können dir auch helfen.",
       "or": "oder sende den Link",
-      "continueWith": "Weiter mit {{count}}",
       "send_one": "{{count}} Person einladen",
       "send_other": "{{count}} Personen einladen",
       "sent": "Einladung an {{email}} gesendet.",
       "sentMany": "{{count}} Einladungen gesendet.",
       "alsoIn": "Sie treten auch {{channels}} bei.",
-      "who": {
-        "title": "Wen möchtest du dazuholen?",
-        "lead": "Gib mir die E-Mail-Adressen. Jede Person bekommt eine Einladung und tritt direkt bei."
-      },
       "orLink": {
         "title": "Lieber einen Link schicken?",
         "text": "Wer ihn öffnet, fragt nach Beitritt, und du bestätigst.",
         "open": "Link ansehen"
       },
       "role": {
-        "titleOne": "Mit welcher Rolle tritt {{name}} bei?",
-        "titleMany": "Mit welcher Rolle treten diese Personen bei?",
-        "lead": "Die Rolle bestimmt, was jede Person tun kann. Du kannst sie später ändern.",
-        "each": "Eine Rolle pro Person",
-        "same": "Dieselbe Rolle für alle",
         "titleOnePersonal": "Was darf {{name}} hier tun?",
-        "titleManyPersonal": "Was dürfen sie hier tun?",
         "leadPersonal": "Du kannst es später ändern.",
-        "eachPersonal": "Eine Auswahl pro Person",
-        "samePersonal": "Für alle gleich",
         "uses": "Nutzt die Agenten",
         "usesText": "Spricht mit den Agenten und nutzt, was geteilt wird.",
         "helps": "Hilft dir, alles zu verwalten",
         "helpsText": "Kann Agenten, Einstellungen und Mitglieder ändern, so wie du."
       },
-      "reach": {
-        "line_one": "<agents/> wird allen antworten, die dazukommen.",
-        "line_other": "<agents/> werden allen antworten, die dazukommen."
-      },
       "where": {
-        "titleOne": "In welchen Kanälen ist {{name}} gleich dabei?",
-        "titleMany": "In welchen Kanälen sind diese Personen gleich dabei?",
-        "titleOnePersonal": "Welchen Gruppenunterhaltungen tritt {{name}} gleich bei?",
-        "titleManyPersonal": "Welchen Gruppenunterhaltungen treten diese Personen gleich bei?",
-        "lead": "Alle starten in #{{channel}}. Die anderen wählst du.",
-        "label": "Kanäle",
-        "labelPersonal": "Gruppenunterhaltungen",
-        "everyone": "Alle sind dabei",
         "private": "Privat · du bist drin",
         "people_one": "{{count}} Person",
-        "people_other": "{{count}} Personen",
-        "fromChannel": "#{{channel}} ist schon angehakt: Du hast von dort eingeladen."
-      },
-      "noteStep": {
-        "title": "Soll ich etwas in die Einladung schreiben?",
-        "lead": "Es steht dann in der E-Mail. Wenn nicht, schicke ich sie so."
-      },
-      "mailFor": "So kommt es bei {{names}} an",
-      "mail": {
-        "from": "agentes.chat · an {{to}}",
-        "toMany": "{{email}} und {{count}} weitere",
-        "subject": "Du bist zu einem Workspace auf agentes.chat eingeladen",
-        "headline": "Du bist zu einem Workspace eingeladen",
-        "body": "<b>{{name}}</b> ({{email}}) lädt dich ein, <b>{{org}}</b> als Mitglied beizutreten.",
-        "noteFrom": "<b>{{name}}:</b> „{{note}}“",
-        "what": "Auf agentes.chat arbeiten Menschen und KI-Agenten zusammen.",
-        "button": "Einladung annehmen",
-        "small": "Die Einladung gilt 7 Tage lang. Nimm sie mit dieser E-Mail-Adresse an."
-      },
-      "done": {
-        "title": "Fertig, ich habe die Einladung an {{names}} geschickt.",
-        "leadOne": "Wenn {{name}} beitritt, begrüße ich die Person in {{channels}} und sage dir Bescheid.",
-        "leadMany": "Wenn jemand beitritt, begrüße ich die Person in {{channels}} und sage dir Bescheid.",
-        "none": "Diesmal ist keine Einladung rausgegangen.",
-        "noneLead": "Den Grund für jede Adresse siehst du unten."
-      },
-      "result": {
-        "invited": "Gesendet",
-        "already_member": "schon in {{org}}",
-        "already_memberPersonal": "schon hier",
-        "already_invited": "hatte schon eine Einladung",
-        "invalid_email": "ungültige E-Mail"
+        "people_other": "{{count}} Personen"
       },
       "again": "Weitere Personen einladen",
       "finish": "Fertig",
@@ -7274,9 +7255,9 @@
       "who": "Wer die Person ist",
       "whoPlaceholder": "Freiberufliche Designerin, hilft bei der neuen Website.",
       "send": "An die Admins senden",
-      "sent_one": "Vorschlag gesendet. {{names}} sieht ihn unter Mitglieder und Einladungen.",
-      "sent_other": "Vorschlag gesendet. {{names}} sehen ihn unter Mitglieder und Einladungen.",
-      "sentNoNames": "Vorschlag gesendet. Wer einlädt, sieht ihn unter Mitglieder und Einladungen.",
+      "sent_one": "Vorschlag gesendet. {{names}} sieht ihn unter Einladungen.",
+      "sent_other": "Vorschlag gesendet. {{names}} sehen ihn unter Einladungen.",
+      "sentNoNames": "Vorschlag gesendet. Wer einlädt, sieht ihn unter Einladungen.",
       "refused": {
         "invalid": "Prüfe die E-Mail-Adresse: etwa name@firma.de.",
         "member": "{{email}} ist schon in {{org}}.",
@@ -7293,6 +7274,7 @@
     "arrival": {
       "title": "Willkommen bei {{org}}, {{name}}",
       "lead": "Hier arbeiten das Team und die Agenten zusammen: Schreib in #{{channel}} oder ruf einen Agenten beim Namen.",
+      "alsoIn": "Du bist auch in {{channels}}.",
       "sayHi": "Sag Hallo in #{{channel}}",
       "talkTo": "Mit {{name}} sprechen",
       "team": "Team ansehen"
@@ -7355,6 +7337,119 @@
     "budgetLine": "{{percent}} des Budgets für {{month}}",
     "noAgents": "Noch keine Agenten."
   },
+  "invites": {
+    "how": "Wie einladen",
+    "byEmail": "E-Mail",
+    "byLink": "Link",
+    "to": "An",
+    "role": "Rolle",
+    "roleHint": "Was die Person tun kann. Rollen kommen zu dem hinzu, was Alle können. Gilt nur für Personen.",
+    "rolePersonal": "Darf",
+    "rolesFoot": "Rollen kommen zu dem hinzu, was Alle können. Die Kanäle und Agenten der Rolle sind schon markiert.",
+    "channels": "Kanäle",
+    "channelsPersonal": "Gespräche",
+    "channelsHint": "Wo die Person gleich dabei ist. Die Kanäle der Rolle sind schon angehakt.",
+    "channelsHintPersonal": "Wo die Person gleich dabei ist.",
+    "agents": "Agenten",
+    "agentsHint": "Mit wem die Person arbeitet. Sie stehen oben in ihrer Liste. Ein eingeschränkter Agent antwortet ihr dann auch.",
+    "addChannel": "Kanal hinzufügen…",
+    "addChannelPersonal": "Gespräch hinzufügen…",
+    "addAgent": "Agenten hinzufügen…",
+    "noChannel": "Kein Kanal passt zu „{{query}}“.",
+    "noChannels": "Noch keine anderen Kanäle.",
+    "noAgent": "Kein Agent passt zu „{{query}}“.",
+    "noAgents": "Noch keine anderen Agenten.",
+    "general": "Alle sind in #{{channel}}.",
+    "rightHand": "Alle haben {{name}}.",
+    "fromRole": "Kommt mit der Rolle {{role}}.",
+    "fromChannel": "Du hast von hier eingeladen.",
+    "groupRole_one": "Von der Rolle {{roles}}",
+    "groupRole_other": "Von den Rollen {{roles}}",
+    "agent": {
+      "byRole": "Über die Rolle {{role}}",
+      "opens": "Eingeschränkt · du gibst frei",
+      "locked": "Eingeschränkt · nur {{name}} gibt frei",
+      "lockedNoOwner": "Eingeschränkt · nur Admins geben frei",
+      "mailbox": "Liest die E-Mails von {{names}}",
+      "mailboxHint": "Wer ihn für mehr Personen öffnet, nimmt ihm diesen Zugang. Entscheide auf der Seite des Agenten.",
+      "plan": "Antwortet nur {{name}}",
+      "planMine": "Antwortet nur dir",
+      "rightHand": "Alle haben {{name}}"
+    },
+    "opens_one": "{{names}} antwortet dann allen, die über diese Einladung kommen.",
+    "opens_other": "{{names}} antworten dann allen, die über diese Einladung kommen.",
+    "noTalk": "Mit dieser Rolle spricht die Person nicht mit Agenten.",
+    "admin": "Mit {{role}} sieht die Person alle Agenten.",
+    "offline": "Der Server war nicht erreichbar. Nichts wurde gesendet.",
+    "refused": {
+      "channelArchived": "#{{channel}} wurde archiviert. Entferne den Kanal, um zu senden.",
+      "channelLeft": "Du bist nicht mehr in #{{channel}}. Entferne den Kanal, um zu senden.",
+      "channelGone": "Einen der Kanäle gibt es nicht mehr. Entferne den markierten, um zu senden.",
+      "agentGone": "{{name}} ist nicht mehr im Team. Entferne ihn aus der Einladung, um zu senden.",
+      "agentLocked": "Du kannst {{name}} nicht mehr freigeben. Entferne ihn aus der Einladung, um zu senden.",
+      "agentUnnamed": "Einer der Agenten hat das Team verlassen. Nimm den markierten raus, um zu senden.",
+      "role": "Du kannst die Rolle {{role}} nicht mehr vergeben. Wähle eine andere.",
+      "roleMany": "Du kannst eine dieser Rollen nicht mehr vergeben. Wähle andere."
+    },
+    "link": "Link",
+    "linkEmpty": "Erstelle den Link, um ihn zu kopieren",
+    "linkFailed": "Der Link konnte nicht erstellt werden. {{cause}}",
+    "never": "Läuft nie ab",
+    "untilDate": "Bis {{date}}",
+    "validFor": "Gilt {{ttl}} ab dem Erstellen.",
+    "expiresIn": "Gültigkeit",
+    "maxUses": "Höchstens Personen",
+    "onJoin": "Beim Beitritt",
+    "theLink": "Der Link",
+    "ttl": {
+      "30m": "30 Minuten",
+      "1h": "1 Stunde",
+      "1d": "1 Tag",
+      "7d": "7 Tage",
+      "30d": "30 Tage",
+      "never": "Läuft nie ab"
+    },
+    "people_one": "{{count}} Person",
+    "people_other": "{{count}} Personen",
+    "noLimit": "Ohne Grenze",
+    "usedSoFar_one": "{{count}} ist schon dabei",
+    "usedSoFar_other": "{{count}} sind schon dabei",
+    "linkSaved": "Link gespeichert. Die Adresse bleibt gleich.",
+    "invitationTitle": "Einladung für {{email}}",
+    "invitationSaved": "Einladung für {{email}} aktualisiert.",
+    "invitationExpired": "Diese Einladung ist abgelaufen. Erneuere sie, um zu ändern, was sie gibt.",
+    "editInvitation": "Einladung bearbeiten",
+    "search": "E-Mail oder Rolle suchen",
+    "type": "Art",
+    "types": {
+      "requests": "Anfragen",
+      "links": "Links",
+      "emails": "E-Mails"
+    },
+    "typesCount_one": "{{count}} Art",
+    "typesCount_other": "{{count}} Arten",
+    "noMatch": "Keine Einladung passt zu „{{query}}“.",
+    "links": "Links",
+    "emails": "Einladungen per E-Mail",
+    "viaLinkOf": "Über den Link von {{name}} angefragt {{when}}",
+    "withLink": "Mit dem Link: {{gives}}.",
+    "roleLeftOut_one": "{{roles}} bleibt außen vor: Sie steht über deiner Rolle.",
+    "roleLeftOut_other": "{{roles}} bleiben außen vor, weil sie über deiner Rolle stehen.",
+    "linkLabel": "Link {{name}}",
+    "linkMore": "Mehr Aktionen für den Link {{name}}",
+    "usesOf_one": "{{uses}} von {{count}} Person",
+    "usesOf_other": "{{uses}} von {{count}} Personen",
+    "joined_zero": "Noch niemand beigetreten",
+    "joined_one": "{{count}} Person beigetreten",
+    "joined_other": "{{count}} Personen beigetreten",
+    "expiresLeft": "läuft ab in {{left}}",
+    "neverEnds": "läuft nie ab",
+    "by": "von {{name}}",
+    "edit": "Bearbeiten",
+    "turnOff": "Link deaktivieren",
+    "editLink": "Link bearbeiten",
+    "linkTurnedOff": "Link ausgeschaltet."
+  },
   "empty": {
     "thread": {
       "title": "Threads",
@@ -7379,7 +7474,8 @@
     "notFoundText": "Die Adresse existiert nicht oder hat sich geändert.",
     "goHome": "Zurück zum Start",
     "noOrgTitle": "Du gehörst nicht zu diesem Workspace",
-    "noOrgText": "Bitte jemanden im Workspace um eine Einladung oder geh zurück zu deinem.",
+    "noOrgText": "Bitte jemanden dort um eine Einladung.",
+    "noOrgBack": "Zurück zu deinen Workspaces",
     "crashTitle": "Etwas ist schiefgelaufen",
     "crashText": "Lad die Seite neu, um weiterzumachen.",
     "crashCode": "Wenn du um Hilfe bittest, gib den Code {{id}} an.",
@@ -8210,10 +8306,10 @@
       "ownActions": "Macht selbst"
     },
     "ownActions": {
-      "hint": "Jeder Lauf erledigt das in deinen verbundenen Apps, ohne zu fragen. Jede andere Aktion dort fragt zuerst eine Person, außer der Agent fragt nie.",
-      "none": "In verbundenen Apps fragt sie vor jeder Aktion eine Person. Damit sie ihre Aufgabe selbst erledigt, sag dem Agenten im Chat, welche Aktionen sie ausführen darf.",
+      "hint": "Jeder Lauf erledigt das in deinen verbundenen Apps, ohne zu fragen, und andere normale Änderungen auch. Andere Sendungen, Löschungen, Zahlungen und Einladungen fragen zuerst eine Person. Fragt der Agent immer, fragt alles. Fragt er nie, fragt nichts.",
+      "none": "In verbundenen Apps macht sie normale Änderungen, ohne zu fragen, wie in einem Chat. Löschen, Senden, Bezahlen, Einladen und was ein Admin auf Fragen gestellt hat, braucht zuerst die Freigabe einer Person. Damit sie selbst sendet, sag dem Agenten im Chat, welche Aktionen sie ausführen darf. Fragt der Agent immer, fragt alles.",
       "hintShort": "Jeder Lauf erledigt das, ohne zu fragen.",
-      "noneShort": "Sie fragt vor jeder Aktion eine Person.",
+      "noneShort": "Sie fragt eine Person nur vor dem Löschen, Senden oder Bezahlen.",
       "remove": "Wieder vorher fragen: {{action}}"
     },
     "vaultKeys": {
@@ -10503,6 +10599,20 @@
     "page": "Seite",
     "newConversation": "neue Unterhaltung",
     "askLabel": "{{name}}, {{text}}",
+    "agents": "Agenten",
+    "settingsGroup": "Einstellungen",
+    "agentOption": "{{name}} · {{what}}",
+    "agentPage": "Seite des Agenten",
+    "changeModel": "KI-Modell wechseln",
+    "changeModelKeywords": "modell ki intelligenz wer denkt gehirn abo aufwand model ai brain plan claude codex chatgpt api",
+    "agentKeywords": "agent optionen einstellungen settings",
+    "settingsKeywords": "einstellungen optionen präferenzen settings",
+    "keysKeywords": "modell ki schlüssel api abo anbieter claude codex chatgpt key",
+    "themeOption": "Design: {{theme}}",
+    "themeKeywords": "design aussehen hell dunkel nachtmodus theme dark light",
+    "accountKeywords": "design aussehen hell dunkel nachtmodus sprache theme language",
+    "newChannel": "Neuer Kanal",
+    "createKeywords": "erstellen neu hinzufügen create new",
     "empty": "Nichts zu „{{q}}“."
   },
   "code": {
@@ -11409,6 +11519,7 @@
       "runner_old": "Aktualisiere das agentes.chat-Programm auf dem Computer, um es zu nutzen.",
       "tool_offOne": "{{program}} ist auf {{computer}} ausgeschaltet.",
       "not_installed": "{{program}} ist auf {{computer}} nicht installiert.",
+      "cant_start": "{{program}} ist auf {{computer}}, startet aber nicht.",
       "not_reported": "{{computer}} prüft noch, welche Programme vorhanden sind. Das ändert sich von selbst, wenn es so weit ist.",
       "outdated": "Die Version auf {{computer}} ist veraltet. Aktualisiere Codex, um es zu nutzen.",
       "system": "{{program}} läuft noch nicht auf dem System von {{computer}}.",
@@ -14735,7 +14846,6 @@
         "openXcode": "Xcode öffnen",
         "opened": "Xcode ist auf {{mac}} offen. Schau noch einmal in den Einstellungen des iPhones und schließ Xcode danach.",
         "unlock": "Eingeschaltet und das iPhone hat neu gestartet? Entsperre es. Die Abfrage mit Aktivieren erscheint erst danach.",
-        "check": "Erneut prüfen",
         "outdated": "Die agentes.chat-App auf {{mac}} ist veraltet. Aktualisiere die App, oder führe das hier im Terminal aus, wenn du sie dort installiert hast."
       },
       "uiAutomationText": "Unter Einstellungen › Entwickler, nach dem Neustart.",
@@ -14822,6 +14932,7 @@
       "access": "<b>{{who}}</b> möchte <b>{{deviceName}}</b> nutzen",
       "waiting": "<b>{{who}}</b> wartet auf <b>{{deviceName}}</b>",
       "toolRequest": "<b>{{who}}</b> bittet dich, {{tool}} auf deinem <b>{{deviceName}}</b> einzuschalten",
+      "cliRequest": "<b>{{who}}</b> bittet dich, {{tool}} auf deinem <b>{{deviceName}}</b> zu installieren",
       "once": "Einmal erlauben",
       "always": "Immer",
       "no": "Nein",
@@ -15415,7 +15526,8 @@
       "notifications": "Benachrichtigungen",
       "general": "Allgemein",
       "right_hand": "Rechte Hand",
-      "members": "Mitglieder und Einladungen",
+      "members": "Mitglieder",
+      "invites": "Einladungen",
       "roles": "Rollen",
       "vault": "Vault",
       "access": "Agenten und Zugriff",
@@ -15446,7 +15558,8 @@
       "notifications": "Was dich hier als Benachrichtigung erreicht. Der Posteingang behält alles.",
       "general": "Name, Zeitzone und was jeder Agent über den Workspace weiß.",
       "right_hand": "Der Assistent, der mit jeder Person das Team aufbaut, in ihrer DM.",
-      "members": "Wer im Workspace ist, und Einladungen.",
+      "members": "Wer im Workspace ist.",
+      "invites": "Wer hereinkommen kann und was die Person bekommt.",
       "roles": "Jede Rolle fügt Berechtigungen, Kanäle und Agenten hinzu.",
       "vault": "Passwörter, Schlüssel und Kontakte deiner Agenten. Passwörter sehen sie nie.",
       "access": "Was jeder Agent nutzen kann: eine Stufe pro Konnektor.",
@@ -15465,7 +15578,7 @@
       "generalPersonal": "Was deine Agenten über dich wissen und wie dieser Workspace funktioniert.",
       "usagePersonal": "Wie viel KI deine Agenten nutzen, und dein Tarif.",
       "connectorsPersonal": "Deine Apps und MCP-Server, einmal für deine Agenten verbunden.",
-      "membersPersonal": "Wer hier mit dir ist, und Einladungen.",
+      "membersPersonal": "Wer mit dir hier ist.",
       "rolesPersonal": "Was jede Person hier tun kann. Inhaber können alles."
     },
     "about": {
@@ -16320,6 +16433,7 @@
         "offeringConnectApp": "Angeboten, eine App zu verbinden",
         "offeringSkill": "Angeboten, einen Skill zu installieren",
         "updatingSkills": "Skills aktualisiert",
+        "creatingSkill": "Skill erstellt",
         "offeringInvites": "Angeboten, Personen einzuladen",
         "proposingAgent": "Einen Agenten vorgeschlagen",
         "askingAgent": "Einen anderen Agenten gefragt",
@@ -16439,6 +16553,7 @@
       "offeringConnectApp": "Vorbereiten einer App-Verbindung",
       "offeringSkill": "Vorbereiten einer Skill-Installation",
       "updatingSkills": "Skills werden aktualisiert",
+      "creatingSkill": "Skill wird erstellt",
       "offeringInvites": "Vorbereiten der Einladungen",
       "proposingAgent": "Vorschlagen eines Agenten",
       "askingAgent": "Fragen eines anderen Agenten",
@@ -16780,6 +16895,10 @@
     "update_skill": {
       "label": "Skill korrigieren",
       "description": "Korrigiert einen geladenen Skill. Beim Skill einer Person wird daraus ein Vorschlag."
+    },
+    "create_skill": {
+      "label": "Skill erstellen",
+      "description": "Macht auf Wunsch einer Person aus dem, was es getan hat, einen eigenen Skill. Erscheint unter Skills, mit Rückgängig."
     },
     "schedule_reminder": {
       "label": "Erinnerung erstellen",
@@ -17250,6 +17369,7 @@
       "openingLong": "Browser von {{name}} wird geöffnet…",
       "openingHelp": "Beim ersten Mal auf diesem Computer kann es eine Minute dauern.",
       "stuck": "Der Browser von {{name}} ließ sich nicht öffnen.",
+      "noAnswer": "Der Browser von {{name}} hat nicht geantwortet.",
       "stuckHelp": "Erneut versuchen startet den Browser neu. Anmeldungen bleiben gespeichert.",
       "subWorking": "{{name}} · {{now}}",
       "subStarting": "{{name}} öffnet den Browser",

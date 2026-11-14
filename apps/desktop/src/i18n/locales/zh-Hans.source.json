@@ -1337,6 +1337,33 @@
   "tools.stillMissing": {
     "value": "{{tool}} still isn't found. Run the command above, then check again."
   },
+  "tools.install": {
+    "value": "Install for me"
+  },
+  "tools.installing": {
+    "value": "Installing {{tool}}. It takes about a minute."
+  },
+  "tools.installFailed": {
+    "value": "Couldn't install: {{message}}"
+  },
+  "tools.gitMissing": {
+    "value": "{{tool}} needs Git for Windows on this computer."
+  },
+  "tools.getGit": {
+    "value": "Download Git for Windows"
+  },
+  "tools.cantStart": {
+    "value": "It's here, but it won't start: {{message}}"
+  },
+  "tools.cantStartChip": {
+    "value": "Won't start"
+  },
+  "tools.installedNotFound": {
+    "value": "The installer finished, but {{tool}} still isn't found."
+  },
+  "tools.notFoundYet": {
+    "value": "{{tool}} still isn't found."
+  },
   "tools.browserName": {
     "value": "Browser"
   },
@@ -1480,12 +1507,6 @@
   },
   "prefs.general.notifyBrowserDesc": {
     "value": "The request already reaches your phone and the site. This tells you here too."
-  },
-  "prefs.general.dockTitle": {
-    "value": "Show in the Dock"
-  },
-  "prefs.general.dockDesc": {
-    "value": "With the count of what waits for you. Off, the app stays in the menu bar only while no window is open."
   },
   "prefs.general.menuBarTitle": {
     "value": "Show in the menu bar"
