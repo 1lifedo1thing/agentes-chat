@@ -2,6 +2,9 @@
   "app.name": {
     "value": "agentes"
   },
+  "app.tabTitle": {
+    "value": "agentes.chat · Your team and your agents, in the same conversation"
+  },
   "common.close": {
     "value": "Close"
   },
@@ -3617,6 +3620,9 @@
   "onboarding.keyInvalid.openrouter": {
     "value": "OpenRouter keys start with sk-or-v1-. Check it and paste it again."
   },
+  "onboarding.keyInvalid.commandcode": {
+    "value": "Paste the whole Command Code key, with no spaces. Check it and paste it again."
+  },
   "onboarding.keyFromOther": {
     "value": "Is it from another provider?"
   },
@@ -5356,6 +5362,30 @@
   },
   "sidebarPins.full.people": {
     "value": "You already pinned 5 people. Unpin one to pin this one."
+  },
+  "appsDownload.computer": {
+    "value": "Computer"
+  },
+  "appsDownload.computerText": {
+    "value": "Your workspace in a window of its own, with the system's notifications."
+  },
+  "appsDownload.inApp": {
+    "value": "You're already in the computer app."
+  },
+  "appsDownload.howTo": {
+    "value": "How to install"
+  },
+  "appsDownload.phone": {
+    "value": "Phone"
+  },
+  "appsDownload.phoneText": {
+    "value": "Notifications in your pocket, to answer from anywhere."
+  },
+  "appsDownload.appStore": {
+    "value": "App Store"
+  },
+  "appsDownload.googlePlay": {
+    "value": "Google Play"
   },
   "openOnPhone.qr": {
     "value": "QR code to sign in to the agentes app"
@@ -8060,7 +8090,7 @@
     "value": "Turn on billing for the key's project. Without billing, Google may use what your agents send."
   },
   "connectAi.key.privacy": {
-    "value": "Your OpenRouter privacy settings decide which providers may keep what your agents send."
+    "value": "{{provider}} passes what your agents send to the company that makes or hosts the model, under {{provider}}'s privacy terms and settings."
   },
   "connectAi.wait.signIn": {
     "value": "You sign in here as soon as the computer is ready."
@@ -8220,6 +8250,12 @@
   },
   "connectAi.accountsLocked": {
     "value": "Only {{name}} connects a plan on {{computer}}."
+  },
+  "connectAi.connectMine": {
+    "value": "Connect my computer"
+  },
+  "connectAi.makeAgent": {
+    "value": "Create an agent with this plan"
   },
   "connectAi.later": {
     "value": "Connect later"
@@ -25096,6 +25132,12 @@
   "aiAccounts.usage.window.other": {
     "value": "Other limit"
   },
+  "aiAccounts.usage.window.extraUsage": {
+    "value": "Extra usage"
+  },
+  "aiAccounts.usage.window.oauthApps": {
+    "value": "OAuth apps"
+  },
   "aiAccounts.usage.short.five_hour": {
     "value": "5h"
   },
@@ -25113,6 +25155,12 @@
   },
   "aiAccounts.usage.short.other": {
     "value": "other"
+  },
+  "aiAccounts.usage.short.extraUsage": {
+    "value": "extra usage"
+  },
+  "aiAccounts.usage.short.oauthApps": {
+    "value": "OAuth apps"
   },
   "aiAccounts.usage.resetsAt": {
     "value": "resets at {{time}}"
@@ -37885,6 +37933,9 @@
   "settings.section.notifications": {
     "value": "Notifications"
   },
+  "settings.section.download": {
+    "value": "agentes.chat apps"
+  },
   "settings.section.general": {
     "value": "General"
   },
@@ -37968,6 +38019,9 @@
   },
   "settings.sectionText.notifications": {
     "value": "What reaches you as an alert here. The inbox keeps everything."
+  },
+  "settings.sectionText.download": {
+    "value": "The same workspace on your computer and your phone, with your account."
   },
   "settings.sectionText.general": {
     "value": "Name, time zone and what every agent knows about the workspace."

@@ -392,7 +392,7 @@ describe("Configurações do workspace", () => {
     expect(field.getAttribute("placeholder")).toBe("sk-or-v1-…");
     expect(within(add).getByRole("link", { name: "Crie a chave em openrouter.ai/keys." })).toBeTruthy();
     expect(add.textContent).toContain(
-      "As configurações de privacidade da OpenRouter decidem quais provedores podem guardar o que seus agentes enviam.",
+      "O que seus agentes enviam é repassado por OpenRouter à empresa que faz ou hospeda o modelo, sob os termos e as configurações de privacidade de OpenRouter.",
     );
     await click(within(add).getByRole("button", { name: "Salvar chave" }));
     await settle(4);
@@ -401,6 +401,21 @@ describe("Configurações do workspace", () => {
       label: "OpenRouter",
     });
     expect(document.body.textContent).toContain("O provedor não aceitou esta chave.");
+  });
+
+  test("a Command Code key: its line names Command Code as the one that passes what is sent on", async () => {
+    await go(seedState(), "settings/keys");
+    const keys = screen().getByRole("region", { name: "Chaves de provedor" });
+    await click(within(keys).getByRole("button", { name: "Adicionar chave" }));
+    const add = screen().getByRole("dialog", { name: "Adicionar chave de API" });
+    // Joined at run time: a literal key shape reads as a real key to the secret scan.
+    await type(within(add).getByLabelText("Chave da API"), ["user", "x".repeat(24)].join("_"));
+    await click(within(add).getByRole("button", { name: "Salvar chave" }));
+    await click(within(add).getByRole("button", { name: "Command Code" }));
+    expect(add.textContent).toContain(
+      "O que seus agentes enviam é repassado por Command Code à empresa que faz ou hospeda o modelo, sob os termos e as configurações de privacidade de Command Code.",
+    );
+    expect(add.textContent).not.toContain("OpenRouter");
   });
 
   test("a key with no credit: nothing saved, the provider's words in the dialog, and the page that fixes it", async () => {

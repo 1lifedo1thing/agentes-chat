@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · 你的团队和智能体，在同一对话中"
   },
   "common": {
     "close": "关闭",
@@ -1430,7 +1431,8 @@
       "moonshot": "Kimi 密钥以 sk- 开头。请检查后重新粘贴。",
       "zai": "请粘贴完整的 Z.ai 密钥，不要有空格。请检查后重新粘贴。",
       "minimax": "请粘贴完整的 MiniMax 密钥，不要有空格。以 sk-cp- 开头的密钥属于套餐，在这里无法使用。",
-      "openrouter": "OpenRouter 密钥以 sk-or-v1- 开头。请检查后重新粘贴。"
+      "openrouter": "OpenRouter 密钥以 sk-or-v1- 开头。请检查后重新粘贴。",
+      "commandcode": "请粘贴完整的 Command Code 密钥，不要有空格。请检查后重新粘贴。"
     },
     "keyFromOther": "是其他服务商的密钥？",
     "anthropicWorkspace": "Claude Console 工作区 ID",
@@ -2092,6 +2094,16 @@
       "channels": "你已置顶 5 个频道。取消一个才能置顶这个。",
       "people": "你已置顶 5 个人。取消一个才能置顶这位。"
     }
+  },
+  "appsDownload": {
+    "computer": "电脑",
+    "computerText": "在独立窗口中使用你的工作区，并收到系统通知。",
+    "inApp": "你已经在电脑应用里了。",
+    "howTo": "如何安装",
+    "phone": "手机",
+    "phoneText": "通知随身带，随时随地都能回复。",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
   },
   "openOnPhone": {
     "qr": "用于登录 agentes 应用的二维码",
@@ -3151,7 +3163,7 @@
       "closed": "API 密钥随工作区的 agentes.chat 套餐开放。",
       "notPlan": "编程套餐的密钥请填在上方它自己的选项里。",
       "billing": "请为密钥所属的项目开通结算。不开通结算的话，Google 可能会使用你的智能体发送的内容。",
-      "privacy": "你的 OpenRouter 隐私设置决定哪些服务商可以保留你的智能体发送的内容。"
+      "privacy": "{{provider}} 会把你的智能体发送的内容转交给开发或托管该模型的公司，并遵循 {{provider}} 的隐私条款和设置。"
     },
     "wait": {
       "signIn": "电脑一就绪，你就可以在这里登录。",
@@ -3224,6 +3236,8 @@
     "agent": "用于哪个智能体",
     "keyLocked": "只有管理员可以添加 API 密钥。",
     "accountsLocked": "只有 {{name}} 可以在 {{computer}} 上连接套餐。",
+    "connectMine": "连接我的电脑",
+    "makeAgent": "用此套餐创建智能体",
     "later": "稍后连接"
   },
   "keyGuard": {
@@ -9943,7 +9957,9 @@
         "seven_day_opus": "每周 · Opus",
         "seven_day_sonnet": "每周 · Sonnet",
         "monthly": "每月",
-        "other": "其他限额"
+        "other": "其他限额",
+        "extraUsage": "额外用量",
+        "oauthApps": "OAuth 应用"
       },
       "short": {
         "five_hour": "5 小时",
@@ -9951,7 +9967,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "月",
-        "other": "其他"
+        "other": "其他",
+        "extraUsage": "额外用量",
+        "oauthApps": "OAuth 应用"
       },
       "resetsAt": "{{time}} 重置",
       "resetsOn": "{{day}} {{time}} 重置",
@@ -15044,6 +15062,7 @@
     "section": {
       "account": "你的账号",
       "notifications": "通知",
+      "download": "agentes.chat 应用",
       "general": "常规",
       "right_hand": "得力助手",
       "members": "成员",
@@ -15076,6 +15095,7 @@
     "sectionText": {
       "account": "你的个人资料和应用外观。",
       "notifications": "在这里以通知形式推送给你的内容。收件箱会保留所有内容。",
+      "download": "电脑和手机上同一个工作区，用同一个账号。",
       "general": "名称、时区，以及每个智能体都知道的工作区信息。",
       "right_hand": "在每个人的私信中和他们一起组建团队的助手。",
       "members": "工作区里有谁。",
