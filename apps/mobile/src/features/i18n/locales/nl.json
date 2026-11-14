@@ -882,6 +882,8 @@
     },
     "doneToast": "Afgerond",
     "undo": "Ongedaan maken",
+    "doneAllToast_one": "{{count}} verplaatst naar Afgerond",
+    "doneAllToast_other": "{{count}} verplaatst naar Afgerond",
     "day": {
       "today": "Vandaag",
       "yesterday": "Gisteren",

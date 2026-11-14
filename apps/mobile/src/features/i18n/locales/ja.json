@@ -858,6 +858,7 @@
     },
     "doneToast": "完了にしました",
     "undo": "元に戻す",
+    "doneAllToast_other": "{{count}}件を完了に移動しました",
     "day": {
       "today": "今日",
       "yesterday": "昨日",

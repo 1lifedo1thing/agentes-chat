@@ -906,6 +906,9 @@
     },
     "doneToast": "Fatto",
     "undo": "Annulla",
+    "doneAllToast_one": "{{count}} spostata in Completate",
+    "doneAllToast_many": "{{count}} spostate in Completate",
+    "doneAllToast_other": "{{count}} spostate in Completate",
     "day": {
       "today": "Oggi",
       "yesterday": "Ieri",

@@ -906,6 +906,9 @@
     },
     "doneToast": "Listo",
     "undo": "Deshacer",
+    "doneAllToast_one": "{{count}} movida a Completadas",
+    "doneAllToast_many": "{{count}} movidas a Completadas",
+    "doneAllToast_other": "{{count}} movidas a Completadas",
     "day": {
       "today": "Hoy",
       "yesterday": "Ayer",

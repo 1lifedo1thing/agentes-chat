@@ -930,6 +930,10 @@
     },
     "doneToast": "Готово",
     "undo": "Отменить",
+    "doneAllToast_one": "{{count}} перемещено в Выполненные",
+    "doneAllToast_few": "{{count}} перемещено в Выполненные",
+    "doneAllToast_many": "{{count}} перемещено в Выполненные",
+    "doneAllToast_other": "{{count}} перемещено в Выполненные",
     "day": {
       "today": "Сегодня",
       "yesterday": "Вчера",

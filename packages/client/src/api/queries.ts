@@ -6065,7 +6065,11 @@ export type NotificationAction =
   | { type: "snooze"; item: AppNotification; until: string | null }
   | { type: "readAll"; filter: NotificationFilter }
   /** Undo of "Marcar tudo como lido": the ids it changed. */
-  | { type: "unreadMany"; ids: string[] };
+  | { type: "unreadMany"; ids: string[] }
+  /** "Concluir todas" in a filter: what waits on me stays. */
+  | { type: "doneAll"; filter: NotificationFilter }
+  /** Undo of "Concluir todas": the ids it changed, back in the inbox. */
+  | { type: "undoneMany"; ids: string[] };
 
 /** The changed items as the server sent them, and the ids "Marcar tudo como lido" touched. */
 export interface NotificationActionResult {
@@ -6091,7 +6095,32 @@ function optimistic(qc: QC, orgId: string, action: NotificationAction, now: stri
         const known = knownNotification(qc, orgId, id);
         return known ? [{ ...known, readAt: null }] : [];
       });
+    case "doneAll": {
+      const loaded = allItems(qc.getQueryData<NotificationPages>(keys.notificationList(orgId, action.filter)));
+      return loaded.filter((n) => !n.waiting && n.doneAt === null).map((n) => ({ ...n, doneAt: now }));
+    }
+    case "undoneMany":
+      return action.ids.flatMap((id) => {
+        const known = knownNotification(qc, orgId, id);
+        return known ? [{ ...known, doneAt: null }] : [];
+      });
   }
+}
+
+const notificationActionKey = (orgId: string) => ["notificationAction", orgId] as const;
+
+const isBulk = (action: NotificationAction | undefined) => action?.type === "doneAll" || action?.type === "undoneMany";
+
+/**
+ * "Concluir todas" or its undo under way, from any screen or row: the inbox's own actions wait for it (each row runs
+ * its own mutation on the phone).
+ */
+export function useNotificationBulkPending(orgId: string) {
+  const pending = useIsMutating({
+    mutationKey: notificationActionKey(orgId),
+    predicate: (mutation) => isBulk(mutation.state.variables as NotificationAction | undefined),
+  });
+  return pending > 0;
 }
 
 /**
@@ -6102,6 +6131,7 @@ export function useNotificationAction(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
+    mutationKey: notificationActionKey(orgId),
     mutationFn: async (action: NotificationAction): Promise<NotificationActionResult> => {
       switch (action.type) {
         case "read":
@@ -6118,6 +6148,13 @@ export function useNotificationAction(orgId: string) {
         case "unreadMany":
           return {
             items: await Promise.all(action.ids.map((id) => api.notifications.read(orgId, id, false))),
+            ids: action.ids,
+          };
+        case "doneAll":
+          return { items: [], ids: (await api.notifications.doneAll(orgId, action.filter)).ids };
+        case "undoneMany":
+          return {
+            items: await Promise.all(action.ids.map((id) => api.notifications.done(orgId, id, false))),
             ids: action.ids,
           };
       }
@@ -6139,8 +6176,8 @@ export function useNotificationAction(orgId: string) {
     },
     onSettled: (_r, _e, action) => {
       void qc.invalidateQueries({ queryKey: keys.notificationCount(orgId) });
-      // Marking everything read touches items beyond the loaded pages.
-      if (action.type === "readAll" || action.type === "unreadMany")
+      // A bulk action touches items beyond the loaded pages (and "Concluídas").
+      if (action.type === "readAll" || action.type === "unreadMany" || isBulk(action))
         void qc.invalidateQueries({ queryKey: [...keys.notifications(orgId), "list"] });
     },
   });

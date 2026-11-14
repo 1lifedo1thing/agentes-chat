@@ -5195,6 +5195,8 @@ export const ptBR = {
     summaryAllRead: "tudo lido",
     summaryNothing: "Nada novo por aqui.",
     readAll: "Marcar tudo como lido",
+    /** Everything in the filter to Done, except what waits on the person. */
+    doneAll: "Concluir todas",
     filters: "Filtrar notificações",
     filter: {
       all: "Tudo",
@@ -5429,6 +5431,8 @@ export const ptBR = {
       undo: "Desfazer",
       readAll_one: "{{count}} marcada como lida",
       readAll_other: "{{count}} marcadas como lidas",
+      doneAll_one: "{{count}} movida para Concluídas",
+      doneAll_other: "{{count}} movidas para Concluídas",
       sent: "Resposta enviada",
       see: "Ver",
       answered: "{{name}} recebeu sua resposta",

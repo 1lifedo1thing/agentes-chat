@@ -5312,6 +5312,8 @@ export const en = {
     summaryAllRead: "all read",
     summaryNothing: "Nothing new here.",
     readAll: "Mark all as read",
+    /** Everything in the filter to Done, except what waits on the person. */
+    doneAll: "Clear all",
     filters: "Filter notifications",
     filter: {
       all: "All",
@@ -5543,6 +5545,8 @@ export const en = {
       undo: "Undo",
       readAll_one: "{{count}} marked as read",
       readAll_other: "{{count}} marked as read",
+      doneAll_one: "{{count}} moved to Done",
+      doneAll_other: "{{count}} moved to Done",
       sent: "Reply sent",
       see: "See",
       answered: "{{name}} got your answer",
