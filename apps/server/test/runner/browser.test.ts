@@ -1204,10 +1204,9 @@ test.if(posix)(
       expect(await t.act("click", ["@e1"])).toMatchObject({ success: true });
       expect(devtools.navigated).toHaveLength(3);
       expect(devtools.asked.filter((a) => a === "Page.getNavigationHistory page-0")).toHaveLength(2);
-      // Our notice, in both languages, in the app's look.
+      // Our notice, in the app's look and in one language only: the person's, English when it isn't one of the app's.
       const notice = (memory: boolean, tag?: string) =>
         decodeURIComponent(crashPage(memory, tag).slice("data:text/html;charset=utf-8,".length));
-      // One language only: the person's, English when it isn't one of the app's.
       expect(notice(true, "pt-BR")).toContain('<html lang="pt-BR">');
       expect(notice(true, "pt-BR")).toContain("<title>A página ficou sem memória</title>");
       expect(notice(true, "pt-BR")).not.toContain("The page");
