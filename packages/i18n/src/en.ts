@@ -12541,7 +12541,7 @@ export const en = {
         bucketTitle: "Create a bucket",
         keyTitle: "Create the access key",
         userTitle: "Create a user just for agentes.chat",
-        r2Bucket: "In the Cloudflare dashboard, open <b>R2</b> and click <b>Create bucket</b>. Any name works.",
+        r2Bucket: "In Cloudflare's dashboard, open <b>R2</b> and click <b>Create bucket</b>. Any name works.",
         r2Key:
           "On the R2 page, under <b>API Tokens</b>, click <b>Manage</b> and then <b>Create API Token</b>. Pick the <b>Object Read & Write</b> permission and your bucket. At the end, Cloudflare shows the three values below only once.",
         s3Bucket: "In the AWS console, open <b>S3</b> and click <b>Create bucket</b>. Note the region you pick.",
