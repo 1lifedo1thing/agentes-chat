@@ -140,7 +140,9 @@ export function parseMarkdown(source: string, options: ParseOptions & { ranges?:
   while (i < lines.length) {
     start = i;
     const line = lines[i] as string;
-    const fence = line.match(/^\s*```\s*([\w+-]*)\s*$/);
+    // A fence's info string may carry more than a language (` ```json {"a":1}`): the rest is not a closing fence
+    // and must open a block, or the paragraph below would stop on it without consuming it and parse forever.
+    const fence = line.match(/^\s*```\s*([^\s`]*)/);
     if (fence) {
       const body: string[] = [];
       i++;
@@ -218,6 +220,12 @@ export function parseMarkdown(source: string, options: ParseOptions & { ranges?:
       )
         break;
       para.push(l.trim());
+      i++;
+    }
+    // Safety net: a line some branch above refuses without consuming must still be read, never left for the next
+    // pass of the outer loop, which would take it again forever.
+    if (para.length === 0) {
+      para.push(line.trim());
       i++;
     }
     push({ type: "paragraph", text: para.join(join) });
