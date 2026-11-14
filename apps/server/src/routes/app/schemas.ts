@@ -1043,8 +1043,14 @@ export const AgentBrain = z
           "The team's right hand: the workspace's AI, `model` for an API key (`key`, by its provider and name; null with none), else the plan's brain and owner; `servesYou`, it thinks for the caller (a key, a plan whose owner lets it serve everyone, or theirs).",
       }),
     brain: BrainKind,
-    model: z.string().nullable().openapi({ description: "As stored; null = the brain's default." }),
-    effectiveModel: z.string().nullable(),
+    model: z.string().nullable().openapi({
+      description:
+        "As stored; null = the brain's default. Always null for the `model` brain: an agent on an API key or a workspace endpoint keeps its model in the agent's own `model` (`GET …/agents/{agentId}`).",
+    }),
+    effectiveModel: z.string().nullable().openapi({
+      description:
+        'What a computer brain runs with (`model` or its default). Null for the `model` brain, which is not "no model": read the agent\'s `model` and `credentialId`.',
+    }),
     fallback: z
       .boolean()
       .openapi({ description: "When the computer can't answer, answer through the API (agent's budget)." }),

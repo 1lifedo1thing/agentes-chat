@@ -459,7 +459,7 @@ export interface AgentBrainView {
   brain: BrainKind;
   /** As stored (null = the brain's default). */
   model: string | null;
-  /** What it runs with (`model ?? defaultModel`), null for the model brain. */
+  /** What it runs with (`model ?? defaultModel`), null for the model brain: its model is the agent's own `model`. */
   effectiveModel: string | null;
   fallback: boolean;
   /** Long work may go on into the plan's paid extra usage where the provider reports it on (ADR 0118). */
