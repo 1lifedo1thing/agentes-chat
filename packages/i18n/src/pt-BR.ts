@@ -15940,6 +15940,17 @@ export const ptBR = {
     keySaid: "{{provider}} disse: {{said}}",
     keyInUse: "{{agents}} ainda pensam com esta chave.",
     keyManagement: "Esta é uma chave de gerenciamento. Crie uma chave de API comum.",
+    /** Saving a key the workspace already had: that key was updated, no copy added. */
+    keyResaved: "Essa chave já estava salva. Atualizei os dados.",
+    /** Quiet, on a key's line: the same key saved more than once, this row standing for all. */
+    keyCopies_one: "{{count}} cópia igual",
+    keyCopies_other: "{{count}} cópias iguais",
+    keyMore: "Ações de {{label}}",
+    removeCopies: "Remover cópias",
+    removeCopiesTitle: "Remover as cópias de {{label}}?",
+    removeCopiesText: "Fica uma chave só. Os agentes, o padrão e os gastos das cópias passam para ela.",
+    copiesRemoved_one: "{{count}} cópia removida.",
+    copiesRemoved_other: "{{count}} cópias removidas.",
     autoModels: {
       title: "Modelos do Automático",
       text: "Cada tarefa usa um destes, conforme a dificuldade.",

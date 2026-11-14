@@ -15155,6 +15155,13 @@
     "keySaid": "{{provider}}의 답변: {{said}}",
     "keyInUse": "{{agents}}은(는) 아직 이 키로 생각해요.",
     "keyManagement": "관리용 키예요. 일반 API 키를 만드세요.",
+    "keyResaved": "이 키는 이미 저장되어 있었어요. 정보를 업데이트했어요.",
+    "keyCopies_other": "같은 사본 {{count}}개",
+    "keyMore": "{{label}} 작업",
+    "removeCopies": "사본 삭제",
+    "removeCopiesTitle": "{{label}}의 사본을 삭제할까요?",
+    "removeCopiesText": "키 하나만 남아요. 사본의 에이전트, 기본값, 지난 사용 금액이 그 키로 옮겨져요.",
+    "copiesRemoved_other": "사본 {{count}}개를 삭제했어요.",
     "autoModels": {
       "title": "자동 모드에 쓸 모델",
       "text": "작업마다 난이도에 따라 이 중 하나를 사용해요.",

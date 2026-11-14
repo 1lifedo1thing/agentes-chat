@@ -15217,6 +15217,13 @@
     "keySaid": "{{provider}} berkata: {{said}}",
     "keyInUse": "{{agents}} masih berpikir dengan kunci ini.",
     "keyManagement": "Ini kunci manajemen. Buat kunci API biasa.",
+    "keyResaved": "Kunci ini sudah tersimpan. Saya memperbarui datanya.",
+    "keyCopies_other": "{{count}} salinan yang sama",
+    "keyMore": "Tindakan untuk {{label}}",
+    "removeCopies": "Hapus salinan",
+    "removeCopiesTitle": "Hapus salinan {{label}}?",
+    "removeCopiesText": "Satu kunci tetap ada. Agen, kunci default, dan biaya dari salinan pindah ke kunci itu.",
+    "copiesRemoved_other": "{{count}} salinan dihapus.",
     "autoModels": {
       "title": "Model untuk Otomatis",
       "text": "Setiap tugas mendapat salah satu model ini, sesuai tingkat kesulitannya.",

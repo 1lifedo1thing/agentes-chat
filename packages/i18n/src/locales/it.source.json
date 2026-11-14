@@ -38374,6 +38374,33 @@
   "settings.keyManagement": {
     "value": "This is a management key. Create a regular API key."
   },
+  "settings.keyResaved": {
+    "value": "This key was already saved. I updated its details."
+  },
+  "settings.keyCopies": {
+    "value": {
+      "one": "{{count}} identical copy",
+      "other": "{{count}} identical copies"
+    }
+  },
+  "settings.keyMore": {
+    "value": "Actions for {{label}}"
+  },
+  "settings.removeCopies": {
+    "value": "Remove copies"
+  },
+  "settings.removeCopiesTitle": {
+    "value": "Remove the copies of {{label}}?"
+  },
+  "settings.removeCopiesText": {
+    "value": "One key stays. Agents, the default and past spend on the copies move to it."
+  },
+  "settings.copiesRemoved": {
+    "value": {
+      "one": "{{count}} copy removed.",
+      "other": "{{count}} copies removed."
+    }
+  },
   "settings.autoModels.title": {
     "value": "Models for Automatic"
   },

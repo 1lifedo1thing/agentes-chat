@@ -15227,6 +15227,13 @@
     "keySaid": "{{provider}} 回复：{{said}}",
     "keyInUse": "{{agents}} 仍在用这个密钥思考。",
     "keyManagement": "这是一个管理密钥。请创建普通的 API 密钥。",
+    "keyResaved": "这个密钥之前已经保存过。我更新了它的信息。",
+    "keyCopies_other": "{{count}} 个相同的副本",
+    "keyMore": "{{label}} 的操作",
+    "removeCopies": "移除副本",
+    "removeCopiesTitle": "移除 {{label}} 的副本？",
+    "removeCopiesText": "只保留一个密钥。副本上的智能体、默认设置和过往花费都会转到它上面。",
+    "copiesRemoved_other": "已移除 {{count}} 个副本。",
     "autoModels": {
       "title": "“自动”使用的模型",
       "text": "每个任务会根据难度使用其中一个。",

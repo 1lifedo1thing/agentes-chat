@@ -15988,6 +15988,17 @@ export const en = {
     keySaid: "{{provider}} said: {{said}}",
     keyInUse: "{{agents}} still think with this key.",
     keyManagement: "This is a management key. Create a regular API key.",
+    /** Saving a key the workspace already had: that key was updated, no copy added. */
+    keyResaved: "This key was already saved. I updated its details.",
+    /** Quiet, on a key's line: the same key saved more than once, this row standing for all. */
+    keyCopies_one: "{{count}} identical copy",
+    keyCopies_other: "{{count}} identical copies",
+    keyMore: "Actions for {{label}}",
+    removeCopies: "Remove copies",
+    removeCopiesTitle: "Remove the copies of {{label}}?",
+    removeCopiesText: "One key stays. Agents, the default and past spend on the copies move to it.",
+    copiesRemoved_one: "{{count}} copy removed.",
+    copiesRemoved_other: "{{count}} copies removed.",
     autoModels: {
       title: "Models for Automatic",
       text: "Each task gets one of these, by how hard it is.",

@@ -15163,6 +15163,13 @@
     "keySaid": "{{provider}}の応答: {{said}}",
     "keyInUse": "{{agents}}はまだこのキーで動いています。",
     "keyManagement": "これは管理用のキーです。通常のAPIキーを作成してください。",
+    "keyResaved": "このキーはすでに保存されていました。内容を更新しました。",
+    "keyCopies_other": "同じコピーが{{count}}件",
+    "keyMore": "{{label}}の操作",
+    "removeCopies": "コピーを削除",
+    "removeCopiesTitle": "{{label}}のコピーを削除しますか？",
+    "removeCopiesText": "キーは1つだけ残ります。コピーのエージェント、デフォルト、これまでの利用額はそのキーに移ります。",
+    "copiesRemoved_other": "{{count}}件のコピーを削除しました。",
     "autoModels": {
       "title": "「自動」で使うモデル",
       "text": "タスクの難しさに応じて、いずれかが割り当てられます。",
