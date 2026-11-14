@@ -5,10 +5,13 @@ import { ApiError } from "../src/api/http";
 import { errorText } from "../src/lib/errors";
 import {
   BLANK_HEADER,
+  connectsWithoutKey,
   type HeaderRow,
   headerRefusal,
   headerRefused,
   headersToSend,
+  savedHeadersLine,
+  savedHeadersUnreadable,
   typedHeaders,
 } from "../src/lib/request-headers";
 
@@ -28,6 +31,52 @@ describe("the request headers a connect form sends", () => {
     expect(headersToSend([blank, key], true)).toEqual([{ name: "X-API-Key", value: " fake-value " }]);
     expect(headersToSend([blank], true)).toEqual([]);
     expect(headersToSend([blank], false)).toBeUndefined();
+  });
+
+  test("with no key typed it goes without one when it carries headers or the account has saved ones", () => {
+    expect(connectsWithoutKey(headersToSend([key], false), [])).toBe(true);
+    // Reconectar: kept, and removed. Removing an account's headers asks for no key.
+    expect(connectsWithoutKey(headersToSend([blank], false), ["X-API-Key"])).toBe(true);
+    expect(connectsWithoutKey(headersToSend([blank], true), ["X-API-Key"])).toBe(true);
+    // Nothing typed and nothing saved: the key's own way.
+    expect(connectsWithoutKey(headersToSend([blank], false), [])).toBe(false);
+    expect(connectsWithoutKey(headersToSend([blank], true), [])).toBe(false);
+  });
+});
+
+describe("what Reconectar says about the saved headers", () => {
+  const typed: HeaderRow[] = [BLANK_HEADER, { id: 1, name: "X-Trace", value: "" }];
+
+  test("they stay with Remover beside them, go with Desfazer, and a typed row replaces them with no way to keep them", () => {
+    expect(savedHeadersLine([], false, false)).toEqual({ says: "saved", action: "drop" });
+    expect(savedHeadersLine([BLANK_HEADER], false, false)).toEqual({ says: "saved", action: "drop" });
+    expect(savedHeadersLine([], true, false)).toEqual({ says: "dropping", action: "undo" });
+    expect(savedHeadersLine(typed, false, false)).toEqual({ says: "dropping", action: null });
+    expect(savedHeadersLine(typed, true, false)).toEqual({ says: "dropping", action: null });
+  });
+
+  test("once they couldn't be read they are never said to stay: the refusal with Remover, or they go", () => {
+    expect(savedHeadersLine([], false, true)).toEqual({ says: "unreadable", action: "drop" });
+    // A row added and left blank changes nothing.
+    expect(savedHeadersLine([BLANK_HEADER], false, true)).toEqual({ says: "unreadable", action: "drop" });
+    // Remover chosen: Desfazer leads back to the refusal.
+    expect(savedHeadersLine([], true, true)).toEqual({ says: "dropping", action: "undo" });
+    expect(savedHeadersLine(typed, false, true)).toEqual({ says: "dropping", action: null });
+    for (const rows of [[], [BLANK_HEADER], typed])
+      for (const dropSaved of [false, true]) expect(savedHeadersLine(rows, dropSaved, true).says).not.toBe("saved");
+    // What it sends is the person's choice alone: untouched, nothing is said about headers, so none is removed.
+    expect(headersToSend([], false)).toBeUndefined();
+    expect(headersToSend([], true)).toEqual([]);
+  });
+
+  test("only that refusal is the one that can't be read", () => {
+    const refusal = (code: string) => new ApiError(400, code, "refused");
+    expect(
+      ["connector.headers_unreadable", "connector.header_and_key", "connector.headers_with_sign_in"].map((code) =>
+        savedHeadersUnreadable(refusal(code)),
+      ),
+    ).toEqual([true, false, false]);
+    expect(savedHeadersUnreadable(new Error("offline"))).toBe(false);
   });
 });
 

@@ -29,6 +29,7 @@ import { knownErrorText, oauthReturnText } from "@agenteschat/client/lib/errors"
 import { can } from "@agenteschat/client/lib/permissions";
 import {
   BLANK_HEADER,
+  connectsWithoutKey,
   type HeaderRefused,
   type HeaderRow,
   headerRefused,
@@ -546,6 +547,8 @@ function ConnectStep({
   const [dropSaved, setDropSaved] = useState(false);
   const [headersOpen, setHeadersOpen] = useState(savedHeaders.length > 0);
   const [refused, setRefused] = useState<HeaderRefused | null>(null);
+  // The saved headers couldn't be read: kept until the sheet closes, so nothing brings "they stay" back.
+  const [unreadable, setUnreadable] = useState<HeaderRefused | null>(null);
   const headers = canHeaders ? headersToSend(headerRows, dropSaved) : undefined;
   const sendsHeaders = canHeaders && (headers ? headers.length > 0 : savedHeaders.length > 0);
   const [url, setUrl] = useState(initialUrl ?? "");
@@ -598,11 +601,12 @@ function ConnectStep({
     const refusal = headerRefused(headerRows, headers, error);
     if (!refusal) return fail(error);
     errorHaptic();
-    setRefused(refusal);
     setMode("key");
     setHeadersOpen(true);
-    // They can't be kept, so their line stops saying they stay: both ways out end with them gone.
-    if (savedHeadersUnreadable(error)) setDropSaved(true);
+    // Its words stand where the saved names were said to stay. Nothing is removed for the person: connecting again
+    // is refused again until they type the headers or choose Remover.
+    if (savedHeadersUnreadable(error)) setUnreadable(refusal);
+    else setRefused(refusal);
   };
   /** The browser round trip: open, wait for the answer, finish with the app's session. */
   const signInWith = async (authorizeUrl: string) => {
@@ -659,8 +663,9 @@ function ConnectStep({
   };
 
   const submitKey = async () => {
-    // Headers alone connect: with no key typed there is none to check or to send.
-    if (sendsHeaders && key.trim() === "") return signIn();
+    // Headers alone connect, and an account's saved ones are removed with no key: with none typed there is none to
+    // check or to send.
+    if (canHeaders && connectsWithoutKey(headers, savedHeaders) && key.trim() === "") return signIn();
     setError(null);
     setRefused(null);
     if (askUrl && !isHttpsUrl(url)) return oops(t("mobile.connectors.addressInvalid"));
@@ -844,6 +849,7 @@ function ConnectStep({
                     dropSaved={dropSaved}
                     open={headersOpen}
                     refused={refused}
+                    unreadable={unreadable}
                     onOpen={setHeadersOpen}
                     onChange={(rows, drop) => {
                       setHeaderRows(rows);

@@ -37,9 +37,32 @@ export function headerRefusal(error: unknown): { index: number | null; field: "n
   };
 }
 
+/**
+ * Whether a connect with no key typed goes as it is, with none asked for: it carries headers, or the account has saved
+ * ones, which may be all it connects with. Removing those is such a request too.
+ */
+export const connectsWithoutKey = (headers: readonly RequestHeader[] | undefined, saved: readonly string[]) =>
+  saved.length > 0 || (headers?.length ?? 0) > 0;
+
 /** Whether a failed Reconectar is the saved headers that couldn't be read: they can't be kept, only typed again or removed. */
 export const savedHeadersUnreadable = (error: unknown) =>
   error instanceof ApiError && error.code === "connector.headers_unreadable";
+
+/**
+ * What Reconectar says about the saved headers, and the control beside it. `unreadable`: a Reconectar that would keep
+ * them was refused because they couldn't be read. From then until the form closes they are never said to stay: the
+ * refusal stands in that sentence's place, and removing them stays the person's own choice.
+ */
+export function savedHeadersLine(
+  rows: readonly RequestHeader[],
+  dropSaved: boolean,
+  unreadable: boolean,
+): { says: "saved" | "dropping" | "unreadable"; action: "drop" | "undo" | null } {
+  // A typed row replaces the saved ones: they go, and no control would keep them.
+  if (typedHeaders(rows).length > 0) return { says: "dropping", action: null };
+  if (dropSaved) return { says: "dropping", action: "undo" };
+  return { says: unreadable ? "unreadable" : "saved", action: "drop" };
+}
 
 /** A row of the request headers form. `id` keeps its fields and its refusal with it when another row goes. */
 export interface HeaderRow extends RequestHeader {

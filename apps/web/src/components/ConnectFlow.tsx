@@ -45,6 +45,7 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import {
   BLANK_HEADER,
+  connectsWithoutKey,
   HEADER_NAME_EXAMPLE,
   type HeaderRefused,
   type HeaderRow,
@@ -52,8 +53,8 @@ import {
   headersToSend,
   MAX_HEADER_NAME,
   MAX_REQUEST_HEADERS,
+  savedHeadersLine,
   savedHeadersUnreadable,
-  typedHeaders,
 } from "@agenteschat/client/lib/request-headers";
 import { connectorBrand, connectorDescription, connectorName } from "@agenteschat/client/lib/scopes";
 import {
@@ -285,6 +286,8 @@ function ConnectStep({
   const [dropSaved, setDropSaved] = useState(false);
   const [headersOpen, setHeadersOpen] = useState(savedHeaders.length > 0);
   const [refused, setRefused] = useState<HeaderRefused | null>(null);
+  // The saved headers couldn't be read: kept until the form closes, so nothing brings "they stay" back.
+  const [unreadable, setUnreadable] = useState<HeaderRefused | null>(null);
 
   // An account of a server by address: its own address, whatever the catalog says.
   const fixed = item?.server?.serverUrl ?? null;
@@ -304,8 +307,12 @@ function ConnectStep({
   const canHeaders = byAddress && !viaComposio && (listed === null || savedHeaders.length > 0);
   const headers = canHeaders ? headersToSend(headerRows, dropSaved) : undefined;
   const sendsHeaders = canHeaders && (headers ? headers.length > 0 : savedHeaders.length > 0);
-  // Headers alone connect: with no key typed, the key's button would only ask for one.
-  const keyed = canKey && (keyOpen || !canOAuth) && !(sendsHeaders && apiKey.trim() === "");
+  // Headers alone connect, and an account's saved ones are removed with no key: with none typed, the key's button
+  // would only ask for one.
+  const keyed =
+    canKey &&
+    (keyOpen || !canOAuth) &&
+    !(canHeaders && connectsWithoutKey(headers, savedHeaders) && apiKey.trim() === "");
   const serverUrl = fixed ?? (def?.kind === "remote_mcp" ? def.serverUrl : url.trim());
   const appOffered =
     def?.id === "github" && !viaComposio && !mode && !accountOnly && githubApp.data?.installable === true;
@@ -352,10 +359,11 @@ function ConnectStep({
   const failed = (error: unknown) => {
     const refusal = headerRefused(headerRows, headers, error);
     if (!refusal) return toast.show(errorText(t, error, i18n.language), "error");
-    setRefused(refusal);
     setHeadersOpen(true);
-    // They can't be kept, so their line stops saying they stay: both ways out end with them gone.
-    if (savedHeadersUnreadable(error)) setDropSaved(true);
+    // Its words stand where the saved names were said to stay. Nothing is removed for the person: connecting again
+    // is refused again until they type the headers or choose Remover.
+    if (savedHeadersUnreadable(error)) setUnreadable(refusal);
+    else setRefused(refusal);
   };
   // The service's name: the server names another account after it ("Stripe 2"). A catalog entry's goes in English,
   // so each viewer reads a name nobody changed in their own language.
@@ -522,6 +530,7 @@ function ConnectStep({
                 saved={savedHeaders}
                 dropSaved={dropSaved}
                 refused={refused}
+                unreadable={unreadable}
                 onChange={(rows, drop) => {
                   setHeaderRows(rows);
                   setDropSaved(drop);
@@ -601,19 +610,22 @@ export function HeaderNames({ names }: { names: string[] }) {
 /**
  * The request headers of a server by address: a name and a value per row, the value typed as a secret. On Reconectar
  * the saved ones come first, by name: "Remover" sends none of them any more, and typing a row replaces them all, which
- * their line then says.
+ * their line then says. Saved ones that couldn't be read (`unreadable`) are no longer said to stay: that refusal takes
+ * the line, with "Remover" at its end.
  */
 function HeaderRows({
   rows,
   saved,
   dropSaved,
   refused,
+  unreadable,
   onChange,
 }: {
   rows: HeaderRow[];
   saved: string[];
   dropSaved: boolean;
   refused: HeaderRefused | null;
+  unreadable: HeaderRefused | null;
   onChange: (rows: HeaderRow[], dropSaved: boolean) => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -629,11 +641,10 @@ function HeaderRows({
   const box = useRef<HTMLDivElement>(null);
   // With many rows a refusal lands below what the dialog shows.
   useEffect(() => {
-    if (refused) box.current?.querySelector('[role="alert"]')?.scrollIntoView?.({ block: "nearest" });
-  }, [refused]);
+    if (refused || unreadable) box.current?.querySelector('[role="alert"]')?.scrollIntoView?.({ block: "nearest" });
+  }, [refused, unreadable]);
   const full = rows.length >= MAX_REQUEST_HEADERS;
-  // A typed row replaces the saved ones: they go, and no link would keep them.
-  const replaced = typedHeaders(rows).length > 0;
+  const line = savedHeadersLine(rows, dropSaved, unreadable !== null);
   const set = (id: number, patch: Partial<RequestHeader>) =>
     onChange(
       rows.map((row) => (row.id === id ? { ...row, ...patch } : row)),
@@ -644,16 +655,23 @@ function HeaderRows({
       <p className="small muted">{t("connectFlow.headers.help")}</p>
       {saved.length > 0 && (
         <p className="small">
-          <Trans
-            i18nKey={dropSaved || replaced ? "connectFlow.headers.dropping" : "connectFlow.headers.saved"}
-            count={saved.length}
-            components={{ names: <HeaderNames names={saved} /> }}
-          />
-          {!replaced && (
+          {line.says === "unreadable" && unreadable ? (
+            // The alert is the refusal alone: the link ends its line, outside what a screen reader announces.
+            <span className="ac-field__error" role="alert">
+              {errorText(t, unreadable.error, i18n.language)}
+            </span>
+          ) : (
+            <Trans
+              i18nKey={line.says === "saved" ? "connectFlow.headers.saved" : "connectFlow.headers.dropping"}
+              count={saved.length}
+              components={{ names: <HeaderNames names={saved} /> }}
+            />
+          )}
+          {line.action && (
             <>
               {" "}
-              <Button variant="link" onClick={() => onChange(rows, !dropSaved)}>
-                {t(dropSaved ? "connectFlow.headers.undo" : "connectFlow.headers.drop")}
+              <Button variant="link" onClick={() => onChange(rows, line.action === "drop")}>
+                {t(line.action === "drop" ? "connectFlow.headers.drop" : "connectFlow.headers.undo")}
               </Button>
             </>
           )}

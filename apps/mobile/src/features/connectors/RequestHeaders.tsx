@@ -6,7 +6,7 @@ import {
   type HeaderRow,
   MAX_HEADER_NAME,
   MAX_REQUEST_HEADERS,
-  typedHeaders,
+  savedHeadersLine,
 } from "@agenteschat/client/lib/request-headers";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,8 +19,9 @@ import { headerNamesText } from "./logic";
 /**
  * The request headers of a server by address (ADR 0186), under its key: one line that opens them. A name and a value
  * per row, the value typed as a secret. On Reconectar the saved ones come first, by name: "Remover" sends none of them
- * any more, and typing a row replaces them all, which its line then says. A header the server refused says so under
- * its row.
+ * any more, and typing a row replaces them all, which its line then says. Saved ones that couldn't be read
+ * (`unreadable`) are no longer said to stay: that refusal takes the line, over "Remover". A header the server refused
+ * says so under its row.
  */
 export function RequestHeaders({
   rows,
@@ -28,6 +29,7 @@ export function RequestHeaders({
   dropSaved,
   open,
   refused,
+  unreadable,
   onOpen,
   onChange,
 }: {
@@ -37,6 +39,7 @@ export function RequestHeaders({
   dropSaved: boolean;
   open: boolean;
   refused: HeaderRefused | null;
+  unreadable: HeaderRefused | null;
   onOpen: (open: boolean) => void;
   onChange: (rows: HeaderRow[], dropSaved: boolean) => void;
 }) {
@@ -46,8 +49,7 @@ export function RequestHeaders({
   const values = useRef(new Map<number, TextInputInstance | null>());
   const appear = reducedMotion ? undefined : FadeIn.duration(160);
   const full = rows.length >= MAX_REQUEST_HEADERS;
-  // A typed row replaces the saved ones: they go, and no button would keep them.
-  const replaced = typedHeaders(rows).length > 0;
+  const line = savedHeadersLine(rows, dropSaved, unreadable !== null);
   const tooMany = t("errors.connector.headersTooMany", { max: MAX_REQUEST_HEADERS });
   const field = [styles.field, { backgroundColor: c.raised, color: c.ink, borderColor: c.line }];
   const set = (id: number, patch: Partial<RequestHeader>) =>
@@ -87,21 +89,25 @@ export function RequestHeaders({
           </Text>
           {saved.length > 0 ? (
             <View>
-              <Text variant="small" tone="ink">
-                {headerNamesText(
-                  t,
-                  dropSaved || replaced ? "connectFlow.headers.dropping" : "connectFlow.headers.saved",
-                  saved,
-                )}
-              </Text>
-              {replaced ? null : (
+              {line.says === "unreadable" && unreadable ? (
+                why(unreadable)
+              ) : (
+                <Text variant="small" tone="ink">
+                  {headerNamesText(
+                    t,
+                    line.says === "saved" ? "connectFlow.headers.saved" : "connectFlow.headers.dropping",
+                    saved,
+                  )}
+                </Text>
+              )}
+              {line.action ? (
                 <Button
                   variant="text"
                   size="sm"
-                  label={t(dropSaved ? "connectFlow.headers.undo" : "connectFlow.headers.drop")}
-                  onPress={() => onChange(rows, !dropSaved)}
+                  label={t(line.action === "drop" ? "connectFlow.headers.drop" : "connectFlow.headers.undo")}
+                  onPress={() => onChange(rows, line.action === "drop")}
                 />
-              )}
+              ) : null}
             </View>
           ) : null}
           {rows.length > 0 ? (

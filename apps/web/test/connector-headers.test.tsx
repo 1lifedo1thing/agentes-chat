@@ -27,6 +27,21 @@ const header = async (n: number, name: string, value: string) => {
 };
 const connectCalls = (state: ReturnType<typeof seedState>) =>
   state.calls.filter((c) => c.method === "customConnectors.connect").map((c) => c.args[1] as Record<string, unknown>);
+/** What `run` scrolls into sight. There is no layout here: the call is all there is to see. */
+async function scrolledBy(run: () => Promise<void>) {
+  const shown: Element[] = [];
+  const element = Element.prototype as { scrollIntoView?: (this: Element) => void };
+  const scroll = element.scrollIntoView;
+  element.scrollIntoView = function () {
+    shown.push(this);
+  };
+  try {
+    await run();
+  } finally {
+    element.scrollIntoView = scroll;
+  }
+  return shown;
+}
 
 const ADDRESS = "https://mcp.example.com/mcp";
 /** "Adicionar MCP" with an address and a name typed, the headers open. */
@@ -343,15 +358,39 @@ describe("Reconectar and the server's row", () => {
     expect(disclosure().querySelector('[role="alert"]')?.textContent).toBe(
       "A chave de API já é enviada como Authorization. Apague a chave ou remova este cabeçalho.",
     );
+    // It was read: its line still says it stays. Only saved headers that can't be read stop being said to stay.
+    expect(disclosure().textContent).toContain("Salvo: Authorization. Continua, a menos que você digite novos.");
+    expect(within(disclosure()).getByRole("button", { name: "Remover" })).toBeTruthy();
   });
 
-  test("saved headers that can't be read any more: said in the headers, opened, with both ways out at hand", async () => {
-    const { state, api, reconnect } = await openReconnect();
+  test("removing the headers of an account that has no key, the key's form open and empty: no key is asked for", async () => {
+    const { state, reconnect } = await openReconnect(["X-API-Key"]);
+    await reconnect();
+    await click(within(flow()).getByText("Conectar com uma chave de API"));
+    expect(within(flow()).getByLabelText("Chave de API")).toBeTruthy();
+    await click(within(disclosure()).getByRole("button", { name: "Remover" }));
+    // The key's own button would only answer that a key is missing.
+    expect(within(flow()).queryByRole("button", { name: "Conectar com a chave" })).toBeNull();
+    await click(within(flow()).getByRole("button", { name: "Conectar" }));
+    await settle(4);
+    expect(connectCalls(state)).toEqual([expect.objectContaining({ apiKey: undefined, headers: [] })]);
+    expect(flow().textContent).not.toContain("Cole a chave de API");
+  });
+
+  test("saved headers that can't be read any more: the refusal takes their line, with Remover at its end, and nothing goes unless chosen", async () => {
+    const { api, reconnect } = await openReconnect();
     const connect = api.customConnectors.connect;
+    // What each request said about headers, the refused ones too.
+    const asked: unknown[] = [];
     // As the server does: only a request that would keep the saved ones has to read them.
     api.customConnectors.connect = async (orgId, input) => {
+      asked.push(input.headers);
       if (!input.headers) throw new ApiError(400, "connector.headers_unreadable", "The saved headers couldn't be read");
       return connect(orgId, input);
+    };
+    const conectar = async () => {
+      await click(within(flow()).getByRole("button", { name: "Conectar" }));
+      await settle(4);
     };
     await reconnect();
     // Folded away before it is sent: the refusal brings them back in sight.
@@ -359,39 +398,57 @@ describe("Reconectar and the server's row", () => {
       disclosure().open = false;
       fireEvent(disclosure(), new Event("toggle"));
     });
-    const shown: Element[] = [];
-    const element = Element.prototype as { scrollIntoView?: (this: Element) => void };
-    const scroll = element.scrollIntoView;
-    element.scrollIntoView = function () {
-      shown.push(this);
-    };
-    await click(within(flow()).getByRole("button", { name: "Conectar" }));
-    await settle(4);
-    element.scrollIntoView = scroll;
+    const shown = await scrolledBy(conectar);
     const said = "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.";
-    const alert = () => disclosure().querySelector(':scope > .cflow__headers > [role="alert"]');
+    const alert = () => disclosure().querySelector('.cflow__headers > p > [role="alert"]');
+    const link = (name: string) => within(disclosure()).queryByRole("button", { name });
     expect(disclosure().hasAttribute("open")).toBe(true);
     expect(alert()?.textContent).toBe(said);
     // With many rows it would land below what the dialog shows.
     expect(shown).toContain(alert() as Element);
-    // In the headers alone: no toast says it again.
+    // Once, in the headers: no toast and no second line says it again.
     expect(document.body.textContent?.split(said)).toHaveLength(2);
-    // They can't be kept: their line no longer says they stay, and the way back is at hand.
-    expect(disclosure().textContent).toMatch(/sa(i|em) ao reconectar\./);
-    expect(disclosure().textContent).not.toContain("a menos que você digite novos");
-    expect(within(disclosure()).getByRole("button", { name: "Desfazer" })).toBeTruthy();
+    // Nothing says they stay or that they go, and "ou remova" has its control right after it, in its own line.
+    expect(disclosure().textContent).not.toMatch(/Salvos?:|Continuam?,|ao reconectar/);
+    expect(alert()?.nextElementSibling).toBe(link("Remover"));
+    expect(link("Remover")?.className).toContain("ac-link");
+    expect(link("Desfazer")).toBeNull();
     expect(add().disabled).toBe(false);
     snapshot();
 
+    // A plain second Conectar is refused again: nothing was removed for the person.
+    await conectar();
+    expect(asked).toEqual([undefined, undefined]);
+    expect(alert()?.textContent).toBe(said);
+
+    // No change brings "Continuam" back. A typed row replaces them, as ever, and without it the refusal is back.
+    await click(add());
+    expect(alert()?.textContent).toBe(said);
+    await header(1, "X-Trace", "fake-value");
+    expect(alert()).toBeNull();
+    expect(disclosure().textContent).toContain("X-API-Key e X-Tenant saem ao reconectar.");
+    expect([link("Remover"), link("Desfazer")]).toEqual([null, null]);
+    await click(within(flow()).getByRole("button", { name: "Remover cabeçalho 1" }));
+    expect(alert()?.textContent).toBe(said);
+    expect(disclosure().textContent).not.toMatch(/Continuam?,/);
+
+    // Remover: they go at Reconectar, and the way back leads to the refusal, never to "Continuam".
+    await click(link("Remover") as Element);
+    expect(alert()).toBeNull();
+    expect(disclosure().textContent).toContain("X-API-Key e X-Tenant saem ao reconectar.");
+    snapshot();
+    await click(link("Desfazer") as Element);
+    expect(alert()?.textContent).toBe(said);
+    expect(disclosure().textContent).not.toMatch(/Continuam?,/);
+    await click(link("Remover") as Element);
+    await conectar();
+    expect(asked.at(-1)).toEqual([]);
+
     // Typed again, they replace the ones that can't be read.
     await click(add());
-    expect(alert()).toBeNull();
     await header(1, "X-API-Key", "fake-value");
-    await click(within(flow()).getByRole("button", { name: "Conectar" }));
-    await settle(4);
-    expect(connectCalls(state)).toEqual([
-      expect.objectContaining({ headers: [{ name: "X-API-Key", value: "[redacted]" }] }),
-    ]);
+    await conectar();
+    expect(asked.at(-1)).toEqual([{ name: "X-API-Key", value: "fake-value" }]);
     expect(document.body.textContent).toContain("Suporte reconectado.");
   });
 });
@@ -421,12 +478,15 @@ describe("worst cases", () => {
       await header(i + 1, name, "v".repeat(2000));
     }
     await click(within(flow()).getByText("Conectar com uma chave de API"));
-    await click(within(flow()).getByRole("button", { name: "Conectar" }));
-    await settle(4);
+    const shown = await scrolledBy(async () => {
+      await click(within(flow()).getByRole("button", { name: "Conectar" }));
+      await settle(4);
+    });
     expect(flow().querySelectorAll(".cflow__hrows > li")).toHaveLength(MAX_REQUEST_HEADERS);
-    expect(flow().querySelector('.cflow__hrows > li:last-child [role="alert"]')?.textContent).toBe(
-      `${LONG.at(-1)} está na lista duas vezes. Remova um deles.`,
-    );
+    const alert = flow().querySelector('.cflow__hrows > li:last-child [role="alert"]');
+    expect(alert?.textContent).toBe(`${LONG.at(-1)} está na lista duas vezes. Remova um deles.`);
+    // Under ten rows it is below what the dialog shows: the refused row's own words are brought into sight.
+    expect(shown).toContain(alert as Element);
     snapshot();
     await showIn(app.services, "en");
     expect(flow().textContent).toContain("A server takes at most 10 headers. Remove one to add another.");
@@ -443,11 +503,12 @@ describe("worst cases", () => {
     await reconnect();
     await click(within(flow()).getByRole("button", { name: "Conectar" }));
     await settle(4);
-    const alert = () => disclosure().querySelector(':scope > .cflow__headers > [role="alert"]');
+    const alert = () => disclosure().querySelector('.cflow__headers > p > [role="alert"]');
     expect(alert()?.textContent).toBe("Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.");
     snapshot();
     await showIn(app.services, "en");
     expect(alert()?.textContent).toBe("The saved headers couldn't be read. Type them again, or remove them.");
+    expect(alert()?.nextElementSibling?.textContent).toBe("Remove");
   });
 
   test("Reconectar and the row of a server with ten long names, removed and not", async () => {

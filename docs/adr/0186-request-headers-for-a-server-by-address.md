@@ -104,12 +104,14 @@ An admin may type request headers for a server by address. They are sent with ev
    key: one row per header, a name and a value typed as a secret, ten rows at most, and one line saying what
    headers are for and that most servers need none. A row left blank is no header. A refusal shows on the row the
    server names (`index`), in the person's language, each code with its own line and its way out; no toast repeats
-   it. One about them all (the server asks for a sign-in, the saved ones can't be read any more) shows under the
-   rows, and the disclosure opens for it. With headers typed and no key, the button connects by them alone instead
-   of asking for a key. Reconectar opens the disclosure on the saved names: left alone, the request says nothing
-   about headers, so they stay; "Remover" sends `[]`; a typed row replaces them all, and the line about the saved
-   ones then says they go, with no link that would keep them. A name's field takes the 64 characters a name may
-   have. A server's row in Conectores says what it also sends, by name, with Reconectar as the way to change it.
+   it. One about them all (the server asks for a sign-in) shows under the rows, and the disclosure opens for it.
+   With headers typed and no key, the button connects by them alone instead of asking for a key. Reconectar opens
+   the disclosure on the saved names: left alone, the request says nothing about headers, so they stay; "Remover"
+   sends `[]`; a typed row replaces them all, and the line about the saved ones then says they go, with no link
+   that would keep them. Saved ones that can't be read any more are no longer said to stay: until the form closes,
+   that refusal stands where their line was, with "Remover" beside it, and nothing is removed unless the person
+   chooses it or types a row. A name's field takes the 64 characters a name may have. A server's row in Conectores
+   says what it also sends, by name, with Reconectar as the way to change it.
 
    The phone has the same in its sheet, under the key: one line that opens the rows. A sheet shows one way in at a
    time, so an account that has headers opens on the key's side, and a refusal about headers brings that side back
