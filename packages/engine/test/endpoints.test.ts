@@ -282,6 +282,23 @@ describe("calls", () => {
     await expect(run(customModelId(cred.id, "paid"))).rejects.toBeInstanceOf(BudgetExceededError);
   });
 
+  test("a model named as the endpoint lists it gets its full id; one it doesn't list says which it has", async () => {
+    f = await setup();
+    const cred = await addEndpoint(f, [{ id: "vendor/model-a" }, { id: "model-b" }]);
+    const both = await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, {
+      model: "vendor/model-a",
+      credentialId: cred.id,
+    });
+    expect(both.model).toBe(customModelId(cred.id, "vendor/model-a"));
+    // The model alone, on the agent's endpoint key.
+    const alone = await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, { model: "model-b" });
+    expect(alone.model).toBe(customModelId(cred.id, "model-b"));
+    expect(alone.credentialId).toBe(cred.id);
+    await expect(
+      updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, { model: "not-listed", credentialId: cred.id }),
+    ).rejects.toThrow("Its models: vendor/model-a, model-b");
+  });
+
   test("another workspace's endpoint model is unknown here", async () => {
     f = await setup();
     const cred = await addEndpoint(f);
