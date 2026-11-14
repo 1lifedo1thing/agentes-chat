@@ -355,7 +355,7 @@ export function TaskManagerPage({
           key={e.runId}
           task={e}
           agentName={nameOf(e.agentId)}
-          nameOf={nameOf}
+          nameOf={(id) => dir.anyAgent(id)?.name}
           meId={me.user.id}
           selected={panel === e.runId}
           onOpen={() => setPanel(e.runId)}
@@ -1079,7 +1079,7 @@ function EndedRow({
   task: EndedTask;
   agentName: string;
   /** An agent's name: the right hand that stopped the task at someone's word. */
-  nameOf: (agentId: string) => string;
+  nameOf: (agentId: string) => string | undefined;
   meId: string;
   selected: boolean;
   onOpen: () => void;

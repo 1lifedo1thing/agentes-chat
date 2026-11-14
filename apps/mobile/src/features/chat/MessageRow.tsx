@@ -41,7 +41,7 @@ import { isMediaAfterReply, messageMediaOf } from "@agenteschat/client/lib/media
 import { memberRoleColor } from "@agenteschat/client/lib/member-groups";
 import { serverBody } from "@agenteschat/client/lib/message-body";
 import { missionSetupOf } from "@agenteschat/client/lib/missions";
-import { isTalkerReply, routineReportText, stopperOf, talkerWaited } from "@agenteschat/client/lib/notices";
+import { isTalkerReply, routineReportText, talkerWaited } from "@agenteschat/client/lib/notices";
 import { can } from "@agenteschat/client/lib/permissions";
 import { modelStandInText } from "@agenteschat/client/lib/plan-usage";
 import { reachHandoffs } from "@agenteschat/client/lib/reach";
@@ -1042,26 +1042,15 @@ function StoppedLine({
   const continued = useContinuedRun(m.id) ?? stopped.continuedRunId;
   const by = limit ? null : stop?.notice.byUserId || stopped.byUserId;
   const byMe = Boolean(meId) && by === meId;
-  const stopper = stopperOf({ byUserId: by, byAgentId: stop?.notice.byAgentId || stopped.byAgentId }, meId);
-  const stopperName =
-    stopper?.kind === "agent"
-      ? dir.nameOf({ type: "agent", id: stopper.agentId })
-      : stopper?.kind === "person"
-        ? dir.nameOf({ type: "person", id: stopper.userId })
-        : "";
-  // Without a notice and a name for whoever stopped it, or nobody did: the words the reply alone can say, its cause
-  // when no person stopped it (an archived agent, a closed workspace).
+  // The pill names whoever it can (`stopLine`); these are its words when it can't: the step limit, stuck, the plain
+  // stop, or its cause when no person stopped it (an archived agent, a closed workspace).
   const fallback = limit
     ? limit === "failed"
       ? null
       : t(limit === "stuck" ? "mobile.chat.stopped.stuck" : "mobile.chat.stopped.limit")
-    : stopper?.kind === "you"
-      ? t("mobile.chat.stopped.byYou")
-      : stopperName
-        ? t("mobile.chat.stopped.by", { name: stopperName })
-        : by
-          ? t("mobile.chat.stopped.plain")
-          : (runErrorText(t, stopped.code) ?? t("mobile.chat.stopped.plain"));
+    : by
+      ? t("mobile.chat.stopped.plain")
+      : (runErrorText(t, stopped.code) ?? t("mobile.chat.stopped.plain"));
   const owner = m.author.id ? dir.agentById.get(m.author.id)?.ownerUserId : null;
   const loaded = [
     ...(qc.getQueryData<Message[]>(keys.messages(orgId, m.channelId)) ?? []),

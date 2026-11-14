@@ -11,7 +11,7 @@ import {
 } from "@agenteschat/client";
 import { formatTime, lowerFirst } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { stopperOf } from "@agenteschat/client/lib/notices";
+import { stopperName, stopperOf } from "@agenteschat/client/lib/notices";
 import { formatDuration } from "@agenteschat/client/lib/work";
 import { agentGradient, BrowserMark, BrowserStrip, Chip, Icon } from "@agenteschat/ui";
 import type { TFunction } from "i18next";
@@ -70,12 +70,10 @@ export function BrowserTrailCard({
   if (!last || held) return null;
   const time = formatTime(i18n.language, last.at);
   const by = stopped ? stopperOf(stopped, me.user.id) : null;
-  const person =
-    by?.kind === "agent"
-      ? dir.anyAgent(by.agentId)?.name
-      : by?.kind === "person"
-        ? dir.memberById.get(by.userId)?.name
-        : undefined;
+  const person = stopperName(by, {
+    agent: (id) => dir.anyAgent(id)?.name,
+    person: (id) => dir.memberById.get(id)?.name,
+  });
   // Done needs no line (the message has its time); stopped says who and when.
   const ended = !stopped
     ? null

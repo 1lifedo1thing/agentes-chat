@@ -2646,6 +2646,8 @@ export interface WorkView {
   queuePosition: number | null;
   pausedUntil: string | null;
   canceledByUserId: string | null;
+  /** The right hand that made that stop at their word. */
+  canceledByAgentId?: string | null;
   errorCode: string | null;
 }
 

@@ -3,7 +3,7 @@ import { resources } from "@agenteschat/i18n";
 import i18next, { type TFunction } from "i18next";
 import type { EndedTask } from "../src/index";
 import { runErrorText } from "../src/lib/errors";
-import { stoppedNoticeOf, stopperOf } from "../src/lib/notices";
+import { stopLine, stoppedNoticeOf, stopperName, stopperOf } from "../src/lib/notices";
 import { endedText } from "../src/lib/task-manager";
 import { replyStopOf, splitCanceled } from "../src/lib/work";
 
@@ -18,6 +18,20 @@ describe("whom a stop's line names", () => {
     expect(stopperOf({ byUserId: "me", byAgentId: "lodi" }, "me")).toEqual({ kind: "agent", agentId: "lodi" });
     expect(stopperOf({ byUserId: null }, "me")).toBeNull();
     expect(stopperOf({ byUserId: "me" }, null)).toEqual({ kind: "person", userId: "me" });
+  });
+
+  test("the pill's sentence, web and phone alike: you, the right hand, someone else, or nobody to name", () => {
+    const names = { agent: (id: string) => (id === "lodi" ? "Lodi" : undefined), person: () => "João" };
+    const line = (stop: { byUserId?: string | null; byAgentId?: string | null }) =>
+      stopLine(t, "Ada", stopperOf(stop, "me"), names);
+    expect(line({ byUserId: "me" })).toBe("Você parou a Ada");
+    expect(line({ byUserId: "me", byAgentId: "lodi" })).toBe("Lodi parou a Ada");
+    expect(line({ byUserId: "joao" })).toBe("João parou a Ada");
+    // Nobody stopped it, or the right hand isn't known: the caller's own words for the stop.
+    expect(line({ byUserId: null })).toBeNull();
+    expect(line({ byUserId: "me", byAgentId: "gone" })).toBeNull();
+    expect(stopperName(stopperOf({ byUserId: "me" }, "me"), names)).toBeNull();
+    expect(stopperName(stopperOf({ byUserId: "ana", byAgentId: "lodi" }, "me"), names)).toBe("Lodi");
   });
 
   test("the notice says the agent that stopped it; an older one reads as the person's", () => {

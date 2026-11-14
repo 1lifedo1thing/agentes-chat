@@ -13,7 +13,7 @@ import {
 } from "@agenteschat/client";
 import { lowerFirst } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { stopperOf } from "@agenteschat/client/lib/notices";
+import { stopperName, stopperOf } from "@agenteschat/client/lib/notices";
 import { formatDuration } from "@agenteschat/client/lib/work";
 import type { TFunction } from "i18next";
 import { useState } from "react";
@@ -86,12 +86,10 @@ export function TrailCard({
 
   const time = when.time(last.at);
   const by = stopped ? stopperOf(stopped, meId) : null;
-  const person =
-    by?.kind === "agent"
-      ? dir.nameOf({ type: "agent", id: by.agentId })
-      : by?.kind === "person"
-        ? dir.memberById.get(by.userId)?.name
-        : undefined;
+  const person = stopperName(by, {
+    agent: (id) => dir.nameOf({ type: "agent", id }),
+    person: (id) => dir.memberById.get(id)?.name,
+  });
   // Done needs no line (the message has its time); stopped says who and when.
   const ended = !stopped
     ? null

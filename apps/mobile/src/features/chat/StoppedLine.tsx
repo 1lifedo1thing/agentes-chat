@@ -1,8 +1,7 @@
 import { type Message, useAiAccounts, useStopReason } from "@agenteschat/client";
 import { seesDetails } from "@agenteschat/client/lib/audience";
 import { mayPickModel } from "@agenteschat/client/lib/brain-picker";
-import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { type StoppedNotice, stopperOf } from "@agenteschat/client/lib/notices";
+import { type StoppedNotice, stopLine, stopperOf } from "@agenteschat/client/lib/notices";
 import { can } from "@agenteschat/client/lib/permissions";
 import { modelStandInKey } from "@agenteschat/client/lib/plan-usage";
 import { planOf } from "@agenteschat/client/lib/plans";
@@ -63,19 +62,11 @@ export function StopPill({
   const by = notice?.byUserId || byUserId || null;
   const stopper = stopperOf({ byUserId: by, byAgentId: notice?.byAgentId || byAgentId }, meId);
   const reason = notice?.reason ?? sent;
-  const name =
-    stopper?.kind === "agent"
-      ? notice?.byAgentName || dir.nameOf({ type: "agent", id: stopper.agentId })
-      : stopper?.kind === "person"
-        ? notice?.byName || dir.nameOf({ type: "person", id: stopper.userId })
-        : "";
-  const { context } = agentGrammar(agent);
   const sentence =
-    stopper?.kind === "you"
-      ? t("taskManager.stopped.line", { agent, context })
-      : name
-        ? t("taskManager.stopped.lineBy", { name, agent, context })
-        : fallback;
+    stopLine(t, agent, stopper, {
+      agent: (id) => notice?.byAgentName || dir.nameOf({ type: "agent", id }),
+      person: (id) => notice?.byName || dir.nameOf({ type: "person", id }),
+    }) ?? fallback;
   // The person it was stopped for says why, also when the right hand did it at their word.
   const sayWhy = Boolean(notice) && Boolean(meId) && by === meId && !reason && !writing;
   const send = () => {

@@ -5,13 +5,13 @@ import { seesDetails } from "@agenteschat/client/lib/audience";
 import { pairItemOf } from "@agenteschat/client/lib/consult-group";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { formatTime } from "@agenteschat/client/lib/format";
-import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import {
   consultationOfNotice,
   type NoticeView,
   noticeOf,
   noticeView,
   type StoppedNotice,
+  stopLine,
   stoppedNoticeOf,
   stopperOf,
 } from "@agenteschat/client/lib/notices";
@@ -236,21 +236,11 @@ export function StopPill({
   const byUserId = notice?.byUserId || who.byUserId || null;
   const stopper = stopperOf({ byUserId, byAgentId: notice?.byAgentId || who.byAgentId }, me.user.id);
   const reason = notice?.reason ?? sent;
-  const name =
-    stopper?.kind === "agent"
-      ? notice?.byAgentName || dir.anyAgent(stopper.agentId)?.name
-      : stopper?.kind === "person"
-        ? notice?.byName || dir.memberById.get(stopper.userId)?.name
-        : null;
-  const { context } = agentGrammar(agent);
   const sentence =
-    stopper?.kind === "you"
-      ? t("taskManager.stopped.line", { agent, context })
-      : name
-        ? t("taskManager.stopped.lineBy", { name, agent, context })
-        : byUserId || !fallback
-          ? t("run.stopped")
-          : fallback;
+    stopLine(t, agent, stopper, {
+      agent: (id) => notice?.byAgentName || dir.anyAgent(id)?.name,
+      person: (id) => notice?.byName || dir.memberById.get(id)?.name,
+    }) ?? (byUserId || !fallback ? t("run.stopped") : fallback);
   // The person it was stopped for says why, also when the right hand did it at their word.
   const sayWhy = Boolean(notice) && byUserId === me.user.id && !reason && !asking;
   return (

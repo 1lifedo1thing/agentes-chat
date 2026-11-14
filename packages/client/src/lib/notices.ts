@@ -1,4 +1,6 @@
+import type { TFunction } from "i18next";
 import type { ConsultationStatus, MessageConsultation } from "../api/types";
+import { agentGrammar } from "./grammar";
 import { reachOf } from "./reach";
 import { routineReplyOf } from "./routines";
 
@@ -362,4 +364,28 @@ export function stopperOf(
   if (stop.byAgentId) return { kind: "agent", agentId: stop.byAgentId };
   if (!stop.byUserId) return null;
   return stop.byUserId === meId ? { kind: "you" } : { kind: "person", userId: stop.byUserId };
+}
+
+/** Looks up a stopper's name: the agent's (`agent`) or the person's (`person`); empty or missing when not known. */
+export interface StopperNames {
+  agent: (agentId: string) => string | null | undefined;
+  person: (userId: string) => string | null | undefined;
+}
+
+/** The name a stop's line gives its stopper (`stopperOf`); null for "you", for nobody, or when the name isn't known. */
+export function stopperName(stopper: Stopper, names: StopperNames): string | null {
+  if (stopper?.kind === "agent") return names.agent(stopper.agentId) || null;
+  if (stopper?.kind === "person") return names.person(stopper.userId) || null;
+  return null;
+}
+
+/**
+ * A stop pill's sentence (web and phone, the chat's pill and the task panel): "You stopped Ada", "Lodi stopped Ada" or
+ * "Ana stopped Ada"; null when there is no one to name, and the caller's own words for the stop say it.
+ */
+export function stopLine(t: TFunction, agent: string, stopper: Stopper, names: StopperNames): string | null {
+  const { context } = agentGrammar(agent);
+  if (stopper?.kind === "you") return t("taskManager.stopped.line", { agent, context });
+  const name = stopperName(stopper, names);
+  return name ? t("taskManager.stopped.lineBy", { name, agent, context }) : null;
 }
