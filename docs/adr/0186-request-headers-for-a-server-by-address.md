@@ -6,7 +6,7 @@
   (`ConnectionSecret.headers`, `secretHeaders`, `connectionHeaders`), `custom.ts` (`connectCustomServer`,
   `storeCustomConnection`, `CustomServerView.headerNames`), `oauth-mcp.ts` (`probeMcpServer`), `mcp.ts`
   (`connectOverHttp`), `presets.ts` (`composioToolkitTyped`); schema
-  `packages/db/src/schema/connectors.ts` (`header_names`, migration 0274); route
+  `packages/db/src/schema/connectors.ts` (`header_names`, migration 0275); route
   `apps/server/src/routes/app/connectors-custom.ts`; client `packages/client/src/api/{types,client}.ts`,
   `lib/request-headers.ts`, the refusals' words in `lib/errors.ts`; web `apps/web/src/components/ConnectFlow.tsx`
   (`HeaderRows`, `HeaderNames`), `Connectors.tsx`; phone `apps/mobile/src/features/connectors/RequestHeaders.tsx`,
