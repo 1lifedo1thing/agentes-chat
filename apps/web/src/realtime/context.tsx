@@ -99,7 +99,7 @@ import { knownErrorText } from "@agenteschat/client/lib/errors";
 import { formatPercent } from "@agenteschat/client/lib/format";
 import { isReturnLine } from "@agenteschat/client/lib/notices";
 import { nextMonthIso, usageWhen } from "@agenteschat/client/lib/plan-usage";
-import { playSound, soundForNotification } from "@agenteschat/client/lib/sounds";
+import { playSound, soundForEvent } from "@agenteschat/client/lib/sounds";
 import { playAgentReaction } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
@@ -490,7 +490,7 @@ export function RealtimeProvider({
       // Its sound (ADR 0070): in one tab only, and in the background only what matters.
       if (isNotificationEvent(event) && event.type === "notification.upserted") {
         const { mine, background } = notificationAudience();
-        const sound = mine ? soundForNotification(event.notification, background) : null;
+        const sound = mine ? soundForEvent(event, background) : null;
         if (sound) playSound(sound);
       }
       // Notifications in this browser (ADR 0071): what was read, done or snoozed closes there too; a drop in
