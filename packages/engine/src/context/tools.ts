@@ -19,11 +19,11 @@ import type { ContentBlock, ModelMessage } from "@agenteschat/providers";
 import { resolveApps } from "../access";
 import { recordAgentActions } from "../agent-actions";
 import { agentsByHandle, handleOf } from "../agents";
-import { type AgentsDmReads, agentsDmReads, readerOfRun } from "../agents-dm-reads";
+import { type AgentsDmReads, agentsDmReads, readerOfMessage, readerOfRun } from "../agents-dm-reads";
 import { runAuthorityById, UUID } from "../authority";
 import { caches } from "../cache";
 import { isChannelMember, peopleAllIn, personReach } from "../channels";
-import { consultationOrigin } from "../consultations";
+import { agentsDmsOf, consultationOrigin } from "../consultations";
 import { personAgentDmKey } from "../dms";
 import type { MemoryUpdate } from "../events";
 import { cutText } from "../format";
@@ -208,6 +208,7 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
         const dm = await agentsDmReads(ctx.db, ctx.orgId, ctx.channelId, () => readerOfCall(ctx));
         // Only where no person reads the answer: a channel never gets what someone said in their DM.
         const theirDm = dm ? await dmWithRunPerson(ctx) : null;
+        const handed = !reader && !dm && person ? await handedReach(ctx, person) : [];
         const kinds = Array.isArray(input.kinds) ? (input.kinds as never[]) : undefined;
         const limit = typeof input.limit === "number" ? input.limit : 8;
         const [found, steps] = await Promise.all([
@@ -216,7 +217,10 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
             : searchVisible(deps, {
                 orgId: ctx.orgId,
                 text: str(input.query),
-                visibleChannelIds: theirDm && !channels.includes(theirDm) ? [...channels, theirDm] : channels,
+                visibleChannelIds: [
+                  ...(theirDm && !channels.includes(theirDm) ? [...channels, theirDm] : channels),
+                  ...handed,
+                ],
                 kinds,
                 limit,
               })
@@ -246,6 +250,21 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
               }),
             )
           : null;
+        // From the agents' DMs, only messages made for this person: every person's hand-offs share those DMs.
+        const handedReadable =
+          handed.length > 0
+            ? await Promise.all(
+                found.map((h) =>
+                  !h.channelIds.some((c) => handed.includes(c))
+                    ? true
+                    : h.kind === "message" &&
+                      readerOfMessage(ctx.db, ctx.orgId, h.sourceId).then(
+                        (r) => r === person,
+                        () => false,
+                      ),
+                ),
+              )
+            : null;
         // A routine's run reads the conversation it reports to, never its creator's files there (`files: true`).
         const fileReach =
           reader || !found.some((h) => h.kind === "file")
@@ -257,6 +276,7 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
         const hits = found.filter(
           (h, i) =>
             dmReadable?.[i] !== false &&
+            handedReadable?.[i] !== false &&
             (h.kind !== "file" ||
               !fileReach ||
               h.channelIds.length === 0 ||
@@ -1081,6 +1101,24 @@ async function dmWithRunPerson(ctx: ToolContext): Promise<string | null> {
   // The asking agent relays the answer where it was asked: it stays out unless everyone there is in this DM.
   const asked = await consultationOrigin(ctx.db, ctx.orgId, ctx.runId);
   return !asked || (await peopleAllIn(ctx.db, ctx.orgId, asked.channelId, row.id)) ? row.id : null;
+}
+
+/**
+ * In this agent's 1:1 DM with `person`, its DMs with other agents, where they asked or handed it work for that person
+ * (`handedFor`): its search there reads them too, keeping only what was made for that person. Empty anywhere else.
+ */
+async function handedReach(ctx: ToolContext, person: string): Promise<string[]> {
+  const [here] = await ctx.db
+    .select({ id: schema.channels.id })
+    .from(schema.channels)
+    .where(
+      and(
+        eq(schema.channels.orgId, ctx.orgId),
+        eq(schema.channels.id, ctx.channelId),
+        eq(schema.channels.dmKey, personAgentDmKey(person, ctx.agentId)),
+      ),
+    );
+  return here ? (await agentsDmsOf(ctx.db, ctx.agentId)).map((c) => c.id) : [];
 }
 
 /**

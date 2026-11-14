@@ -2270,6 +2270,21 @@ export interface HandedFor {
   createdAt: Date;
 }
 
+/** The agent's DMs with other agents (no person, not a routine's room), as a subquery of channel ids. */
+export const agentsDmsOf = (db: Executor, agentId: string) =>
+  db
+    .select({ id: channelMembers.channelId })
+    .from(channelMembers)
+    .innerJoin(channels, eq(channels.id, channelMembers.channelId))
+    .where(
+      and(
+        eq(channelMembers.agentId, agentId),
+        eq(channels.kind, "dm"),
+        sql`${channels.dmKey} not like '%u:%'`,
+        sql`${channels.dmKey} not like 'routine|%'`,
+      ),
+    );
+
 /**
  * What other agents asked or handed `agentId` for `personId` lately, latest first. That work happened in the agents'
  * DM, which no person reads and which its DM with that person never shows: without this, the agent asked about it
@@ -2285,16 +2300,7 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
       and(
         eq(agentConsultations.orgId, orgId),
         // By its DMs with other agents: the (org, channel) index, not every consultation of the workspace.
-        inArray(
-          agentConsultations.channelId,
-          db
-            .select({ id: channelMembers.channelId })
-            .from(channelMembers)
-            .innerJoin(channels, eq(channels.id, channelMembers.channelId))
-            .where(
-              and(eq(channelMembers.agentId, agentId), eq(channels.kind, "dm"), sql`${channels.dmKey} not like '%u:%'`),
-            ),
-        ),
+        inArray(agentConsultations.channelId, agentsDmsOf(db, agentId)),
         eq(agentConsultations.targetAgentId, agentId),
         gte(agentConsultations.createdAt, new Date(Date.now() - HANDED_REMEMBERED_DAYS * 86_400_000)),
       ),

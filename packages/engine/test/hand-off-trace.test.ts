@@ -28,12 +28,15 @@ async function handOff(tool: "tell_agent" | "ask_agent") {
   f = await setup({
     askAgent: true,
     chatTools: true,
+    contextTools: true,
     reply: (req: ModelRequest) => {
       const system = systemText(req.system ?? "");
       const last = JSON.stringify(req.messages.at(-1)?.content);
       prompts.push({ system, last });
       if (last.includes("tool_result")) return { chunks: ["Feito."] };
       if (system.includes(AGENTS_DM)) return { chunks: ["Pronto: está no Drive em Vendas/Outubro, subiu 12%."] };
+      if (last.includes("procura"))
+        return { chunks: [], toolUses: [{ name: "search_context", input: { query: "pronto drive" } }] };
       if (last.includes("relatório de vendas")) {
         return {
           chunks: [],
@@ -76,6 +79,15 @@ async function askInDm(f: Fixture, userId: string, adaId: string, prompts: { sys
   return prompts.slice(before).find((p) => p.last.includes("cadê aquilo"))?.system ?? "";
 }
 
+/** A person asks Ada in their DM to look it up: what her `search_context` there returned. */
+async function searchInDm(f: Fixture, userId: string, adaId: string, prompts: { system: string; last: string }[]) {
+  const dm = await openDm(f.db, userId, f.org.id, { agentId: adaId });
+  const before = prompts.length;
+  await postPersonMessage({ db: f.db, pubsub: f.pubsub }, userId, f.org.id, dm.id, { body: "procura aquilo" });
+  await drainOutbox(f.db, f.handlers);
+  return prompts.slice(before).find((p) => p.last.includes("tool_result"))?.last ?? "";
+}
+
 describe("work handed between agents, for a person", () => {
   test("handed work: the agent tells the person itself, and remembers it in their DM", async () => {
     const { prompts, ada } = await handOff("tell_agent");
@@ -110,6 +122,15 @@ describe("work handed between agents, for a person", () => {
     expect(theirs).not.toBe("");
     expect(theirs).not.toContain("# What other agents asked of you");
     expect(theirs).not.toContain("Vendas/Outubro");
+  });
+
+  test("its search in the person's DM finds that work, never in another person's DM", async () => {
+    const { prompts, ada } = await handOff("tell_agent");
+    expect(await searchInDm(f, f.owner.id, ada.id, prompts)).toContain("Vendas/Outubro, subiu 12%");
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    const theirs = await searchInDm(f, bia.id, ada.id, prompts);
+    expect(theirs).toContain("tool_result");
+    expect(theirs).not.toContain("subiu 12%");
   });
 });
 
