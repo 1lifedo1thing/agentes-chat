@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { resources } from "@agenteschat/i18n";
+import { en as enStrings, ptBR, resources } from "@agenteschat/i18n";
 import i18next, { type TFunction } from "i18next";
 import type { Approval } from "../src/index";
 import {
@@ -47,6 +47,15 @@ describe("the catalog of tool names", () => {
     }
     expect(bad).toEqual([]);
     expect(Object.keys(TOOL_LABELS).length).toBeGreaterThan(400);
+  });
+
+  test("the app's strings hold the same words, key for key, in English and pt-BR", () => {
+    const english: Record<string, string> = enStrings.toolNames.label;
+    const portuguese: Record<string, string> = ptBR.toolNames.label;
+    expect(Object.keys(english)).toEqual(Object.keys(TOOL_LABELS));
+    expect(Object.keys(portuguese)).toEqual(Object.keys(TOOL_LABELS));
+    for (const [key, labels] of Object.entries(TOOL_LABELS))
+      expect({ key, labels: [english[key], portuguese[key]] }).toEqual({ key, labels: [...labels] });
   });
 
   test("found however the server writes the name, without its app, account or articles", () => {
