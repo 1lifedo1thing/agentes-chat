@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Timmu dan agenmu, dalam percakapan yang sama"
   },
   "common": {
     "close": "Tutup",
@@ -9936,7 +9937,9 @@
         "seven_day_opus": "Minggu · Opus",
         "seven_day_sonnet": "Minggu · Sonnet",
         "monthly": "Bulan",
-        "other": "Batas lain"
+        "other": "Batas lain",
+        "extraUsage": "Penggunaan ekstra",
+        "oauthApps": "Aplikasi OAuth"
       },
       "short": {
         "five_hour": "5j",
@@ -9944,7 +9947,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "bulan",
-        "other": "lainnya"
+        "other": "lainnya",
+        "extraUsage": "penggunaan ekstra",
+        "oauthApps": "aplikasi OAuth"
       },
       "resetsAt": "direset pukul {{time}}",
       "resetsOn": "direset {{day}} pukul {{time}}",

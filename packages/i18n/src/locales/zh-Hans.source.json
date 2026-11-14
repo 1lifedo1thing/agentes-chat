@@ -2,6 +2,9 @@
   "app.name": {
     "value": "agentes"
   },
+  "app.tabTitle": {
+    "value": "agentes.chat · Your team and your agents, in the same conversation"
+  },
   "common.close": {
     "value": "Close"
   },
@@ -25090,6 +25093,12 @@
   "aiAccounts.usage.window.other": {
     "value": "Other limit"
   },
+  "aiAccounts.usage.window.extraUsage": {
+    "value": "Extra usage"
+  },
+  "aiAccounts.usage.window.oauthApps": {
+    "value": "OAuth apps"
+  },
   "aiAccounts.usage.short.five_hour": {
     "value": "5h"
   },
@@ -25107,6 +25116,12 @@
   },
   "aiAccounts.usage.short.other": {
     "value": "other"
+  },
+  "aiAccounts.usage.short.extraUsage": {
+    "value": "extra usage"
+  },
+  "aiAccounts.usage.short.oauthApps": {
+    "value": "OAuth apps"
   },
   "aiAccounts.usage.resetsAt": {
     "value": "resets at {{time}}"

@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · 你的团队和智能体，在同一对话中"
   },
   "common": {
     "close": "关闭",
@@ -9941,7 +9942,9 @@
         "seven_day_opus": "每周 · Opus",
         "seven_day_sonnet": "每周 · Sonnet",
         "monthly": "每月",
-        "other": "其他限额"
+        "other": "其他限额",
+        "extraUsage": "额外用量",
+        "oauthApps": "OAuth 应用"
       },
       "short": {
         "five_hour": "5 小时",
@@ -9949,7 +9952,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "月",
-        "other": "其他"
+        "other": "其他",
+        "extraUsage": "额外用量",
+        "oauthApps": "OAuth 应用"
       },
       "resetsAt": "{{time}} 重置",
       "resetsOn": "{{day}} {{time}} 重置",

@@ -7,7 +7,11 @@ import type { Widen } from "./widen";
  * no exclamation marks, buttons start with a verb, "agentes" in lower case.
  */
 export const en = {
-  app: { name: "agentes" },
+  app: {
+    name: "agentes",
+    /** The browser tab's title on every screen that doesn't set its own. */
+    tabTitle: "agentes.chat · Your team and your agents, in the same conversation",
+  },
   common: {
     close: "Close",
     joinSentences: "{{a}} {{b}}",
@@ -10646,6 +10650,9 @@ export const en = {
         seven_day_sonnet: "Week · Sonnet",
         monthly: "Month",
         other: "Other limit",
+        /** Rows the plan reports by an English label ("Extra usage", "OAuth apps"), in the person's language. */
+        extraUsage: "Extra usage",
+        oauthApps: "OAuth apps",
       },
       short: {
         five_hour: "5h",
@@ -10654,6 +10661,8 @@ export const en = {
         seven_day_sonnet: "Sonnet",
         monthly: "month",
         other: "other",
+        extraUsage: "extra usage",
+        oauthApps: "OAuth apps",
       },
       resetsAt: "resets at {{time}}",
       resetsOn: "resets {{day}} at {{time}}",

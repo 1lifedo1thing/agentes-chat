@@ -7,7 +7,11 @@ import type { LocaleStrings } from "./plurals";
  * no exclamation marks, buttons start with a verb, "agentes" in lower case.
  */
 export const ptBR = {
-  app: { name: "agentes" },
+  app: {
+    name: "agentes",
+    /** The browser tab's title on every screen that doesn't set its own. */
+    tabTitle: "agentes.chat · Seu time e seus agentes, na mesma conversa",
+  },
   common: {
     close: "Fechar",
     joinSentences: "{{a}} {{b}}",
@@ -10668,6 +10672,9 @@ export const ptBR = {
         seven_day_sonnet: "Semana · Sonnet",
         monthly: "Mês",
         other: "Outro limite",
+        /** Rows the plan reports by an English label ("Extra usage", "OAuth apps"), in the person's language. */
+        extraUsage: "Uso extra",
+        oauthApps: "Apps OAuth",
       },
       short: {
         five_hour: "5h",
@@ -10676,6 +10683,8 @@ export const ptBR = {
         seven_day_sonnet: "Sonnet",
         monthly: "mês",
         other: "outro",
+        extraUsage: "uso extra",
+        oauthApps: "apps OAuth",
       },
       resetsAt: "renova às {{time}}",
       resetsOn: "renova {{day}} às {{time}}",

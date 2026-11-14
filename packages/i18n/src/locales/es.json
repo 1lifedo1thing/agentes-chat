@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Tu equipo y tus agentes, en la misma conversación"
   },
   "common": {
     "close": "Cerrar",
@@ -10638,7 +10639,9 @@
         "seven_day_opus": "Semana · Opus",
         "seven_day_sonnet": "Semana · Sonnet",
         "monthly": "Mes",
-        "other": "Otro límite"
+        "other": "Otro límite",
+        "extraUsage": "Uso extra",
+        "oauthApps": "Apps OAuth"
       },
       "short": {
         "five_hour": "5 h",
@@ -10646,7 +10649,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "mes",
-        "other": "otro"
+        "other": "otro",
+        "extraUsage": "uso extra",
+        "oauthApps": "apps OAuth"
       },
       "resetsAt": "se renueva a las {{time}}",
       "resetsOn": "se renueva el {{day}} a las {{time}}",

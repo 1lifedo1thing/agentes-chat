@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · 팀과 에이전트가 같은 대화에서"
   },
   "common": {
     "close": "닫기",
@@ -9881,7 +9882,9 @@
         "seven_day_opus": "주간 · Opus",
         "seven_day_sonnet": "주간 · Sonnet",
         "monthly": "월간",
-        "other": "기타 한도"
+        "other": "기타 한도",
+        "extraUsage": "추가 사용량",
+        "oauthApps": "OAuth 앱"
       },
       "short": {
         "five_hour": "5시간",
@@ -9889,7 +9892,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "월간",
-        "other": "기타"
+        "other": "기타",
+        "extraUsage": "추가 사용량",
+        "oauthApps": "OAuth 앱"
       },
       "resetsAt": "{{time}}에 초기화",
       "resetsOn": "{{day}} {{time}}에 초기화",
