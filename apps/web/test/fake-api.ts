@@ -2613,6 +2613,19 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         log("agents.addCredential", orgId, { ...input, apiKey: "[redacted]" });
         if (state.keyRefusal)
           throw new ApiError(400, state.keyRefusal, "The provider didn't accept this key.", state.keyRefusalParams);
+        // As the server: the same key saved again updates the one there (here: same provider, ending and address).
+        const same = state.credentials.find(
+          (c) =>
+            !c.revokedAt &&
+            c.provider === input.provider &&
+            c.keyHint === input.apiKey.slice(-4) &&
+            c.endpoint?.baseURL === input.endpoint?.baseURL,
+        );
+        if (same) {
+          if (input.endpoint) same.endpoint = input.endpoint;
+          const checks = input.endpoint?.models.map((m) => ({ model: m.id, check: "ok" as const }));
+          return { ...same, reused: true, ...(checks ? { checks } : {}) };
+        }
         // The counter starts again with each fake: never the id of a key the seed already has.
         let credId = id("cred");
         while (state.credentials.some((c) => c.id === credId)) credId = id("cred");
@@ -2656,6 +2669,14 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         if (!cred) throw new ApiError(404, "not_found", "Credential not found");
         state.defaultCredentialId = credentialId;
         return { ...cred };
+      },
+      removeCredentialCopies: async (orgId, credentialId) => {
+        log("agents.removeCredentialCopies", orgId, credentialId);
+        const copies = state.credentials.filter((c) => c.copyOf === credentialId);
+        state.credentials = state.credentials
+          .filter((c) => c.copyOf !== credentialId)
+          .map((c) => (c.id === credentialId ? { ...c, copies: undefined } : c));
+        return { removed: copies.length };
       },
       checkCredential: async (orgId, credentialId) => {
         log("agents.checkCredential", orgId, credentialId);
