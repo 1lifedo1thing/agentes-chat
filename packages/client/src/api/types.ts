@@ -981,7 +981,7 @@ export interface Team {
 /** `Agent.brain`: shown next to its name instead of the API model when a computer thinks. */
 export interface AgentBrainLine {
   kind: BrainKind;
-  /** A computer brain's model ("Sonnet"); null for the model brain. */
+  /** A computer brain's model ("Sonnet 5.5"); null for the model brain. */
   model: string | null;
   computer?: string;
   /** A plan account's provider (`zai`, `kimi`…), whose mark replaces the brain's; absent for the CLI's own sign-in. */

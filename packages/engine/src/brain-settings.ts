@@ -1727,7 +1727,7 @@ export async function setMissionBrain(
 
 /**
  * What thinks for an agent, for wherever the agent is shown (DM header,
- * profile, cards): the brain, its model's label ("Sonnet"; null for the
+ * profile, cards): the brain, its model's label ("Sonnet 5.5"; null for the
  * model brain, which shows the agent's model) and the computer's name, only
  * for those who may see it (admins and the agent's owner, like Quem pensa).
  * On a plan, the account it thinks with and that plan's limits, for everyone
@@ -1750,7 +1750,7 @@ export interface AgentBrainSummary {
 }
 
 /**
- * The label of a computer brain's model ("opus" → "Opus", "GLM-5.3" on a plan; a typed Codex model as is): what it
+ * The label of a computer brain's model ("opus" → "Opus 5.5", "GLM-5.3" on a plan; a typed Codex model as is): what it
  * runs, so a plan's model kept while Claude thinks reads as Sonnet.
  */
 export function brainModelLabel(
