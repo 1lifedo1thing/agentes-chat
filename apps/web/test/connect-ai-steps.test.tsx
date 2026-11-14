@@ -1290,13 +1290,19 @@ describe("Conectar uma IA: one picker, plans first", () => {
       "Kimi",
       "Z.ai",
       "MiniMax",
+      "Command Code",
       expect.stringContaining("Outro provedor"),
     ]);
     await closeAiSelect();
-    // OpenRouter passes what is sent on to other providers: its privacy settings say who may keep it, in the ⓘ.
+    // A provider that passes what is sent on to the model's maker or host says so by name, in the ⓘ.
+    await chooseAi(dialog, "Command Code", true);
+    expect(hintOf("Crie a sua chave de API Command Code", panel)).toMatchObject({
+      text: "O que seus agentes enviam é repassado por Command Code à empresa que faz ou hospeda o modelo, sob os termos e as configurações de privacidade de Command Code.",
+      hidden: true,
+    });
     await chooseAi(dialog, "OpenRouter", true);
     expect(hintOf("Crie a sua chave de API OpenRouter", panel)).toMatchObject({
-      text: "As configurações de privacidade da OpenRouter decidem quais provedores podem guardar o que seus agentes enviam.",
+      text: "O que seus agentes enviam é repassado por OpenRouter à empresa que faz ou hospeda o modelo, sob os termos e as configurações de privacidade de OpenRouter.",
       hidden: true,
     });
     expect(within(panel).getByRole("link", { name: "Abrir openrouter.ai" }).getAttribute("href")).toBe(

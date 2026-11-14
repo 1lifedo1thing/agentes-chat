@@ -1475,7 +1475,8 @@
       "moonshot": "Kimi-Schlüssel beginnen mit sk-. Prüfe ihn und füge ihn noch einmal ein.",
       "zai": "Füge den ganzen Z.ai-Schlüssel ohne Leerzeichen ein. Prüfe ihn und füge ihn noch einmal ein.",
       "minimax": "Füge den ganzen MiniMax-Schlüssel ohne Leerzeichen ein. Schlüssel, die mit sk-cp- beginnen, gehören zum Abo und funktionieren hier nicht.",
-      "openrouter": "OpenRouter-Schlüssel beginnen mit sk-or-v1-. Prüfe ihn und füge ihn noch einmal ein."
+      "openrouter": "OpenRouter-Schlüssel beginnen mit sk-or-v1-. Prüfe ihn und füge ihn noch einmal ein.",
+      "commandcode": "Füge den ganzen Command-Code-Schlüssel ohne Leerzeichen ein. Prüfe ihn und füge ihn noch einmal ein."
     },
     "keyFromOther": "Ist er von einem anderen Anbieter?",
     "anthropicWorkspace": "Workspace-ID der Claude Console",
@@ -3275,7 +3276,7 @@
       "closed": "API-Schlüssel gibt es mit dem agentes.chat-Tarif des Workspace.",
       "notPlan": "Der Schlüssel eines Coding-Abos gehört in seine eigene Option oben.",
       "billing": "Aktiviere die Abrechnung für das Projekt des Schlüssels. Ohne Abrechnung darf Google nutzen, was deine Agenten senden.",
-      "privacy": "Deine Datenschutzeinstellungen bei OpenRouter entscheiden, welche Anbieter behalten dürfen, was deine Agenten senden."
+      "privacy": "{{provider}} leitet, was deine Agenten senden, an das Unternehmen weiter, das das Modell entwickelt oder hostet, gemäß den Datenschutzbedingungen und -einstellungen von {{provider}}."
     },
     "wait": {
       "signIn": "Du meldest dich hier an, sobald der Computer bereit ist.",

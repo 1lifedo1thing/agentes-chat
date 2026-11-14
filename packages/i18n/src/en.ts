@@ -1607,6 +1607,7 @@ export const en = {
       minimax:
         "Paste the whole MiniMax key, with no spaces. Keys starting with sk-cp- belong to the plan and don't work here.",
       openrouter: "OpenRouter keys start with sk-or-v1-. Check it and paste it again.",
+      commandcode: "Paste the whole Command Code key, with no spaces. Check it and paste it again.",
     },
     keyFromOther: "Is it from another provider?",
     anthropicWorkspace: "Claude Console workspace ID",
@@ -3544,7 +3545,9 @@ export const en = {
       closed: "API keys open with the workspace's agentes.chat plan.",
       notPlan: "A coding plan's key goes in its own option above.",
       billing: "Turn on billing for the key's project. Without billing, Google may use what your agents send.",
-      privacy: "Your OpenRouter privacy settings decide which providers may keep what your agents send.",
+      /** Under the key field or in the step's ⓘ, for a provider that passes calls on (OpenRouter, Command Code). */
+      privacy:
+        "{{provider}} passes what your agents send to the company that makes or hosts the model, under {{provider}}'s privacy terms and settings.",
     },
     wait: {
       signIn: "You sign in here as soon as the computer is ready.",

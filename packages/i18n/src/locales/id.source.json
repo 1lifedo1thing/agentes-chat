@@ -3614,6 +3614,9 @@
   "onboarding.keyInvalid.openrouter": {
     "value": "OpenRouter keys start with sk-or-v1-. Check it and paste it again."
   },
+  "onboarding.keyInvalid.commandcode": {
+    "value": "Paste the whole Command Code key, with no spaces. Check it and paste it again."
+  },
   "onboarding.keyFromOther": {
     "value": "Is it from another provider?"
   },
@@ -8057,7 +8060,7 @@
     "value": "Turn on billing for the key's project. Without billing, Google may use what your agents send."
   },
   "connectAi.key.privacy": {
-    "value": "Your OpenRouter privacy settings decide which providers may keep what your agents send."
+    "value": "{{provider}} passes what your agents send to the company that makes or hosts the model, under {{provider}}'s privacy terms and settings."
   },
   "connectAi.wait.signIn": {
     "value": "You sign in here as soon as the computer is ready."

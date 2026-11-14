@@ -1522,7 +1522,8 @@
       "moonshot": "Las claves de Kimi empiezan con sk-. Revísala y pégala de nuevo.",
       "zai": "Pega la clave completa de Z.ai, sin espacios. Revísala y pégala de nuevo.",
       "minimax": "Pega la clave completa de MiniMax, sin espacios. Las claves que empiezan con sk-cp- son del plan y no funcionan aquí.",
-      "openrouter": "Las claves de OpenRouter empiezan con sk-or-v1-. Revísala y pégala de nuevo."
+      "openrouter": "Las claves de OpenRouter empiezan con sk-or-v1-. Revísala y pégala de nuevo.",
+      "commandcode": "Pega la clave completa de Command Code, sin espacios. Revísala y pégala de nuevo."
     },
     "keyFromOther": "¿Es de otro proveedor?",
     "anthropicWorkspace": "ID del espacio de trabajo de Claude Console",
@@ -3388,7 +3389,7 @@
       "closed": "Las claves de API se abren con el plan de agentes.chat del workspace.",
       "notPlan": "La clave de un plan de programación va en su propia opción, arriba.",
       "billing": "Activa la facturación del proyecto de la clave. Sin facturación, Google puede usar lo que envían tus agentes.",
-      "privacy": "Tu configuración de privacidad de OpenRouter decide qué proveedores pueden guardar lo que envían tus agentes."
+      "privacy": "{{provider}} pasa lo que envían tus agentes a la empresa que crea o aloja el modelo, según los términos y la configuración de privacidad de {{provider}}."
     },
     "wait": {
       "signIn": "Inicias sesión aquí en cuanto la computadora esté lista.",

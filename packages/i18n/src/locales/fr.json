@@ -1523,7 +1523,8 @@
       "moonshot": "Les clés Kimi commencent par sk-. Vérifiez-la et collez-la de nouveau.",
       "zai": "Collez la clé Z.ai entière, sans espaces. Vérifiez-la et collez-la de nouveau.",
       "minimax": "Collez la clé MiniMax entière, sans espaces. Les clés qui commencent par sk-cp- appartiennent à l'abonnement et ne fonctionnent pas ici.",
-      "openrouter": "Les clés OpenRouter commencent par sk-or-v1-. Vérifiez-la et collez-la de nouveau."
+      "openrouter": "Les clés OpenRouter commencent par sk-or-v1-. Vérifiez-la et collez-la de nouveau.",
+      "commandcode": "Collez la clé Command Code entière, sans espaces. Vérifiez-la et collez-la de nouveau."
     },
     "keyFromOther": "Elle vient d'un autre fournisseur ?",
     "anthropicWorkspace": "ID d'espace de travail de la Claude Console",
@@ -3393,7 +3394,7 @@
       "closed": "Les clés API s'ouvrent avec l'abonnement agentes.chat du workspace.",
       "notPlan": "La clé d'un abonnement de code va dans sa propre option ci-dessus.",
       "billing": "Activez la facturation pour le projet de la clé. Sans facturation, Google peut utiliser ce que vos agents envoient.",
-      "privacy": "Vos paramètres de confidentialité OpenRouter décident quels fournisseurs peuvent conserver ce que vos agents envoient."
+      "privacy": "{{provider}} transmet ce que vos agents envoient à l'entreprise qui crée ou héberge le modèle, selon les conditions et les paramètres de confidentialité de {{provider}}."
     },
     "wait": {
       "signIn": "Vous vous connectez ici dès que l'ordinateur est prêt.",

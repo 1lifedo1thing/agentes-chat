@@ -1472,7 +1472,7 @@ function KeyPage({
               n={1}
               state={opened || clean ? "done" : "now"}
               title={t("connectAi.key.create", { provider: providerLabel(form.provider) })}
-              hint={hint && t(hint)}
+              hint={hint && t(hint, { provider: maker.label })}
               side={
                 <OpenPage
                   href={site.href}

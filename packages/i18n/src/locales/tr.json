@@ -1475,7 +1475,8 @@
       "moonshot": "Kimi anahtarları sk- ile başlar. Kontrol edip tekrar yapıştırın.",
       "zai": "Z.ai anahtarının tamamını boşluksuz yapıştırın. Kontrol edip tekrar yapıştırın.",
       "minimax": "MiniMax anahtarının tamamını boşluksuz yapıştırın. sk-cp- ile başlayan anahtarlar plana aittir ve burada çalışmaz.",
-      "openrouter": "OpenRouter anahtarları sk-or-v1- ile başlar. Kontrol edip tekrar yapıştırın."
+      "openrouter": "OpenRouter anahtarları sk-or-v1- ile başlar. Kontrol edip tekrar yapıştırın.",
+      "commandcode": "Command Code anahtarının tamamını boşluksuz yapıştırın. Kontrol edip tekrar yapıştırın."
     },
     "keyFromOther": "Başka bir sağlayıcıdan mı?",
     "anthropicWorkspace": "Claude Console çalışma alanı kimliği",
@@ -3264,7 +3265,7 @@
       "closed": "API anahtarları çalışma alanının agentes.chat planıyla açılır.",
       "notPlan": "Bir kodlama planının anahtarı yukarıdaki kendi seçeneğine girilir.",
       "billing": "Anahtarın projesi için faturalandırmayı açın. Faturalandırma olmadan Google, ajanlarınızın gönderdiklerini kullanabilir.",
-      "privacy": "Ajanlarınızın gönderdiklerini hangi sağlayıcıların saklayabileceğine OpenRouter gizlilik ayarlarınız karar verir."
+      "privacy": "{{provider}}, ajanlarınızın gönderdiklerini modeli yapan veya barındıran şirkete iletir. Bu, {{provider}} gizlilik koşullarına ve ayarlarına göre olur."
     },
     "wait": {
       "signIn": "Bilgisayar hazır olur olmaz burada giriş yaparsınız.",

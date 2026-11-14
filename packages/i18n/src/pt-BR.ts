@@ -1531,6 +1531,7 @@ export const ptBR = {
       minimax:
         "Cole a chave inteira da MiniMax, sem espaços. As que começam com sk-cp- são do plano e não servem aqui.",
       openrouter: "As chaves da OpenRouter começam com sk-or-v1-. Confira e cole de novo.",
+      commandcode: "Cole a chave inteira do Command Code, sem espaços. Confira e cole de novo.",
     },
     keyFromOther: "É de outro provedor?",
     anthropicWorkspace: "ID do workspace no Claude Console",
@@ -3448,7 +3449,7 @@ export const ptBR = {
       notPlan: "A chave de um plano de código vai na opção dele, acima.",
       billing: "Ative o faturamento no projeto da chave. Sem faturamento, o Google pode usar o que os agentes enviam.",
       privacy:
-        "As configurações de privacidade da OpenRouter decidem quais provedores podem guardar o que seus agentes enviam.",
+        "O que seus agentes enviam é repassado por {{provider}} à empresa que faz ou hospeda o modelo, sob os termos e as configurações de privacidade de {{provider}}.",
     },
     wait: {
       signIn: "Você entra aqui assim que o computador ficar pronto.",

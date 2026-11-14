@@ -1868,7 +1868,10 @@ export function KeyPanel({
               </OpenPage>
             }
           >
-            <StepTitle title={t("connectAi.key.create", { provider: providerLabel(keyOf) })} hint={hint && t(hint)} />
+            <StepTitle
+              title={t("connectAi.key.create", { provider: providerLabel(keyOf) })}
+              hint={hint && t(hint, { provider: maker.label })}
+            />
           </Step>
           <Step n={2}>
             <label htmlFor={fieldId}>

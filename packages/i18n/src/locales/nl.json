@@ -1475,7 +1475,8 @@
       "moonshot": "Kimi-sleutels beginnen met sk-. Controleer hem en plak hem opnieuw.",
       "zai": "Plak de hele Z.ai-sleutel, zonder spaties. Controleer hem en plak hem opnieuw.",
       "minimax": "Plak de hele MiniMax-sleutel, zonder spaties. Sleutels die met sk-cp- beginnen horen bij het abonnement en werken hier niet.",
-      "openrouter": "OpenRouter-sleutels beginnen met sk-or-v1-. Controleer hem en plak hem opnieuw."
+      "openrouter": "OpenRouter-sleutels beginnen met sk-or-v1-. Controleer hem en plak hem opnieuw.",
+      "commandcode": "Plak de hele Command Code-sleutel, zonder spaties. Controleer hem en plak hem opnieuw."
     },
     "keyFromOther": "Is hij van een andere aanbieder?",
     "anthropicWorkspace": "Workspace-ID van Claude Console",
@@ -3276,7 +3277,7 @@
       "closed": "API-sleutels gaan open met het agentes.chat-abonnement van de workspace.",
       "notPlan": "De sleutel van een codeerabonnement hoort bij die eigen optie hierboven.",
       "billing": "Zet facturering aan voor het project van de sleutel. Zonder facturering mag Google gebruiken wat je agents versturen.",
-      "privacy": "Je privacyinstellingen in OpenRouter bepalen welke aanbieders mogen bewaren wat je agents versturen."
+      "privacy": "{{provider}} geeft wat je agents sturen door aan het bedrijf dat het model maakt of host, volgens de privacyvoorwaarden en -instellingen van {{provider}}."
     },
     "wait": {
       "signIn": "Je logt hier in zodra de computer klaar is.",
