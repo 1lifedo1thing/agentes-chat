@@ -32,7 +32,7 @@ import { consolidateOrg } from "./context/consolidate";
 import { applyReactionFeedback } from "./context/feedback";
 import { LEARN_JOB, learnRun } from "./context/learn";
 import { REFLECT_DEFAULTS, reflectThread } from "./context/reflect";
-import { judgeOf } from "./context/summaries";
+import { judgeOf, summaryModelReady } from "./context/summaries";
 import { reportDroppedMentions, tellWakeSkipped } from "./continuation";
 import { DEVICE_WAIT_EXPIRED_JOB, expireDeviceWait } from "./device-waits";
 import {
@@ -59,7 +59,15 @@ import {
 import { forgetCodeEmail } from "./email-codes";
 import { type DecidedBy, publishListChanged, publishRouted } from "./events";
 import { executeRun, type RunExecutorDeps } from "./executor";
-import { FEEDBACK_FILE_PURGE_JOB, FEEDBACK_JOB, purgeFeedbackFile, sendQueuedFeedback } from "./feedback";
+import {
+  FEEDBACK_FILE_PURGE_JOB,
+  FEEDBACK_JOB,
+  type Feedback,
+  isFeedbackRelay,
+  purgeFeedbackFile,
+  relayQueuedFeedback,
+  sendQueuedFeedback,
+} from "./feedback";
 import { FOLLOW_UP_JOB, wakeFollowUp } from "./follow-through";
 import { cutText } from "./format";
 import type { GitHubAppAccess } from "./git/github-call";
@@ -90,11 +98,13 @@ import { ORG_FILES_PURGE_ATTEMPTS, ORG_FILES_PURGE_JOB, USER_FILES_PURGE_JOB } f
 import { outOfOfficeIds } from "./out-of-office";
 import { enqueue, type JobHandlers, type OutboxJob, PermanentJobError } from "./outbox";
 import { checkParkedRun, EARLY_CHECK_JOB, scheduleParkedChecks } from "./parked-asks";
+import { PARTNER_WAITLIST_CONTACT_JOB, savePartnerWaitlistContact } from "./partner-waitlist";
 import { notifyPersonLimit, PERSON_LIMIT_JOB } from "./person-usage";
-import { checkPushReceipts, deliverPush, pushTicketsOf } from "./push";
+import { deliverPush } from "./push";
 import { reachOf, settleReach } from "./reach";
 import { routineCreatorOf } from "./requester";
 import { considerCard, RIGHT_HAND_DECIDE_JOB } from "./right-hand-approvals";
+import { lodiLaneHandlers } from "./right-hand-lanes";
 import {
   createLlmRouterStrategy,
   DEFAULT_ROUTER_POLICY,
@@ -116,13 +126,13 @@ import { TEAM_HELLO_JOB } from "./standing";
 import { purgeOrgFiles, purgeUserFiles, runMigration, type StorageDeps } from "./storage";
 import { postStretchCard, STRETCH_JOB, type StretchHold } from "./stretch";
 import { sayTeamHello } from "./team-templates";
-import { postTeamWeek, TEAM_WEEK_JOB } from "./team-week";
+import { postTeamWeek, TEAM_DAY_JOB, TEAM_WEEK_JOB } from "./team-week";
 import { isAgentesCloud } from "./telemetry";
 import { assessThread } from "./thread-assess";
 import { runVaultSync, VAULT_SYNC_JOB, type VaultDeps } from "./vault";
 import { transcribeVoiceClip, VOICE_JOB, type VoiceDeps } from "./voice";
 import { saveWaitlistContact } from "./waitlist";
-import { checkInWork, WORK_CHECK_IN_JOB } from "./works";
+import { checkInWork, followUpWork, WORK_CHECK_IN_JOB, WORK_FOLLOW_UP_JOB } from "./works";
 import {
   ACCOUNT_DELETE_JOB,
   type DeletionDeps,
@@ -140,6 +150,8 @@ async function maybeEnqueueReflection(deps: JobDeps, orgId: string, threadId: st
     .where(and(eq(schema.messages.orgId, orgId), eq(schema.messages.threadId, threadId)));
   const n = Number(row?.n ?? 0);
   if (n === 0 || n % every !== 0) return;
+  // No model to reflect with: a job would only fail (ADR 0167).
+  if (deps.context && !(await summaryModelReady(deps.context, orgId))) return;
   await enqueue(deps.db, {
     orgId,
     kind: "context.reflect",
@@ -156,6 +168,8 @@ export interface JobDeps extends RunExecutorDeps {
   email?: EmailSender;
   /** Where feedback's pictures and videos are kept (jobs `feedback.send`, `feedback.file.purge`). */
   feedbackBlobs?: BlobStore;
+  /** How a feedback reaches the agentes.chat team's inbox (ADR 0160 §13); the network's own by default. */
+  feedbackFetch?: typeof fetch;
   /** Where emails get their pictures (`emailArtFor`); absent: from each link's own server. */
   emailArt?: EmailArt;
   /** Push to the phone app (job `push.send`); absent = push off. */
@@ -205,7 +219,7 @@ export interface JobDeps extends RunExecutorDeps {
     /** The small model on another provider's key (e.g. `{ openai: "gpt-6-luna" }`); else its catalog pick. */
     cheapModels?: Record<string, string>;
     minScore?: number;
-    /** Probability that an agent's @mention needs the agent it names for it to wake (`MENTION_WAKE_THRESHOLD`). */
+    /** Probability that an agent's @mention asks the agent it names to act, for it to wake (`MENTION_WAKE_THRESHOLD`). */
     mentionThreshold?: number;
     /** Replaces the core small-model step (e.g. an optional external classifier). */
     strategy?: RouterStrategy;
@@ -299,14 +313,15 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
   if (deps.quietByTyping || deps.router?.quietByTyping) typingLogFor(deps.pubsub);
   const routing = messageRouter(deps);
 
-  // An agent's @mention wakes the other agent unless the judge is sure it needs nothing from it.
+  // An agent's @mention is credit or a reference: it wakes the other agent only when it plainly asks it something.
   const mentionThreshold = deps.router?.mentionThreshold ?? MENTION_WAKE_THRESHOLD;
   /**
-   * Which agents an agent's @mentions wake (ADR 0089): the judge asks, per mentioned agent, whether the message
-   * needs nothing from it, in any language, reading the message being answered too; it wakes unless the judge is
-   * sure (`MENTION_WAKE_THRESHOLD`). Thanks, an "ok", a sign-off or a quote need nothing. Without a judge, or when it
-   * fails, only a message that opens with "@handle" wakes that agent. Each decision goes in
-   * `routing_decisions`, its score the chance the message needs the agent (1 − the judge's "nothing").
+   * Which agents an agent's @mentions wake (ADR 0089, addendum 2026-11-10): the judge asks, per mentioned agent,
+   * whether the message leaves it nothing to do, in any language, reading the message being answered too; it wakes
+   * only when the judge reads a plain request to it (`MENTION_WAKE_THRESHOLD`). A name, a source, a thanks or a
+   * correction asks nothing. Without a judge, or when it fails, only a message that opens with "@handle" wakes that
+   * agent. Each decision goes in `routing_decisions`, its score the chance the message asks the agent (1 − the
+   * judge's "nothing").
    */
   async function delegatedAgents(
     message: NonNullable<Awaited<ReturnType<typeof getMessage>>>,
@@ -638,8 +653,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         if (message.mentionedAgentIds.length > 0) {
           // No cap on hand-offs between agents: the stretch's limits hold a run agents start (`startOrJoinRun`).
           const handed = await delegatedAgents(message, outside, { wakeAll: Boolean(actingRoutine) });
-          // An agent the routine's run already handed this to (tell_agent) has it: the mention doesn't wake it again.
-          const told = routineRun ? await consultedBy(message.orgId, routineRun) : [];
+          // An agent the run already asked or handed this to (ask_agent, tell_agent) has it: the mention doesn't wake it
+          // again, or it would answer the person here too, besides the agent that asked.
+          const askerRun = routineRun ?? message.agentRunId;
+          const told = askerRun ? await consultedBy(message.orgId, askerRun) : [];
           let allowed = handed.allowed.filter((id) => !told.includes(id));
           // In an open mission's thread, another agent acts for the person behind it: only the
           // mission's owner and deciders make the mission's agent work (ADR 0029).
@@ -736,6 +753,8 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       if (Array.isArray(message.meta.steeredRunIds)) return;
       // A reply in an agent's background work thread: its reply turn started with the message.
       if (message.meta.forWork) return;
+      // For the task's agent in its task's conversation: its run started with the message, as in a DM.
+      if (message.meta.forTask) return;
       const channel = where;
       if (channel?.kind === "dm") {
         await dispatchDm(deps.db, message, { maxHops: deps.maxHops }); // idempotent safety net
@@ -827,6 +846,16 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         ...(typeof job.payload.due === "number" ? { due: job.payload.due } : {}),
       });
     },
+    // A long work ended after people passed messages on to it: its agent follows each one's up, once (ADR 0121).
+    [WORK_FOLLOW_UP_JOB]: async (job) => {
+      const ids = Array.isArray(job.payload.messageIds) ? job.payload.messageIds : [];
+      await followUpWork(deps, orgOf(job), {
+        workId: String(job.payload.workId),
+        runId: String(job.payload.runId),
+        messageIds: ids.filter((id): id is string => typeof id === "string"),
+        stopped: job.payload.stopped === true,
+      });
+    },
     "secret.activate": async (job) => {
       if (!deps.sandbox) throw new Error("Computer secret delivery is unavailable");
       await activateDeliveredSecret(
@@ -848,7 +877,9 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     },
     "search.reindex": async (job) => {
       if (!deps.search) return;
-      await reindexOrg({ db: deps.db, search: deps.search, gateway: deps.gateway }, orgOf(job));
+      // The boot backfill's reindex names the kinds that get vectors (`queueEmbeddingBackfill`); a person's has none.
+      const kinds = Array.isArray(job.payload.kinds) ? (job.payload.kinds as SearchKind[]) : undefined;
+      await reindexOrg({ db: deps.db, search: deps.search, gateway: deps.gateway }, orgOf(job), { kinds });
     },
     "context.reflect": async (job) => {
       if (!deps.context) return;
@@ -883,7 +914,12 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     },
     "routine.run": async (job) => {
       await executeRoutineRun(
-        { db: deps.db, pubsub: deps.pubsub, context: deps.context },
+        {
+          db: deps.db,
+          pubsub: deps.pubsub,
+          context: deps.context,
+          ai: { gateway: deps.gateway, machines: deps.machines ?? null },
+        },
         String(job.payload.routineRunId),
       );
     },
@@ -963,6 +999,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       await sayTeamHello(deps, orgOf(job), job.payload);
     },
     [FEEDBACK_JOB]: async (job) => {
+      if (isFeedbackRelay((job.payload.feedback as Feedback | undefined)?.to)) {
+        await relayQueuedFeedback(deps.feedbackFetch ?? fetch, job.payload, deps.feedbackBlobs);
+        return;
+      }
       if (!deps.email) throw new PermanentJobError("no email sender configured");
       await sendQueuedFeedback(deps.email, job.payload, deps.feedbackBlobs);
     },
@@ -992,6 +1032,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     "waitlist.contact": async (job) => {
       if (!deps.email) throw new PermanentJobError("no email sender configured");
       await saveWaitlistContact(deps.db, deps.email, String(job.payload.entryId));
+    },
+    [PARTNER_WAITLIST_CONTACT_JOB]: async (job) => {
+      if (!deps.email) throw new PermanentJobError("no email sender configured");
+      await savePartnerWaitlistContact(deps.db, deps.email, String(job.payload.entryId));
     },
     [ACCOUNT_CONTACT_JOB]: async (job) => {
       if (!deps.email) throw new PermanentJobError("no email sender configured");
@@ -1070,10 +1114,16 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         { orgId: orgOf(job), messageId: String(job.payload.messageId) },
       );
     },
-    // A person's monthly AI limit neared or reached (ADR 0141): the person hears 80%, who decides hears 100%.
+    // The right hand's cards: the week's, and the day's under its own kind (`TEAM_DAY_JOB`).
     [TEAM_WEEK_JOB]: async (job) => {
       await postTeamWeek({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), job.payload);
     },
+    [TEAM_DAY_JOB]: async (job) => {
+      await postTeamWeek({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), job.payload);
+    },
+    // What else the right hand does by itself: each lane's own jobs (`right-hand-lane.ts`).
+    ...lodiLaneHandlers(deps),
+    // A person's monthly AI limit neared or reached (ADR 0141): the person hears 80%, who decides hears 100%.
     [PERSON_LIMIT_JOB]: async (job) => {
       await notifyPersonLimit({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), {
         personId: String(job.payload.personId),
@@ -1098,10 +1148,6 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         String(job.payload.notificationId),
         { held: job.payload.held === true },
       );
-    },
-    // Receipts of a push ~15 min later: tokens whose device is gone are deleted.
-    "push.receipts": async (job) => {
-      await checkPushReceipts({ db: deps.db, push: deps.push }, pushTicketsOf(job.payload.tickets));
     },
     // A workspace's skills that update by themselves from their links, once a day.
     [SKILL_UPDATES_JOB]: async (job) => {

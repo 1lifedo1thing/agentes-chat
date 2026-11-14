@@ -37,7 +37,7 @@ const REQUEST_TTL_MS = 10 * 60_000;
 /** How recent a sign-in must be to hand it over to the app, or to add a password (`signedInLately`). */
 export const FRESH_SIGN_IN_MS = 10 * 60_000;
 /** 32 random bytes and their SHA-256, both base64url (43 characters): challenge, verifier and request id. */
-const KEY = /^[A-Za-z0-9_-]{43}$/;
+export const KEY = /^[A-Za-z0-9_-]{43}$/;
 /** Unambiguous code alphabet (no I/O/0/1) for the match the person reads off both screens. */
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const CODE_LENGTH = 8;
@@ -105,12 +105,6 @@ export function desktopSignIn() {
           const { session } = ctx.context.session;
           if (Date.now() - new Date(session.createdAt).getTime() > FRESH_SIGN_IN_MS) {
             throw new APIError("FORBIDDEN", { message: "Sign in again to continue in the app" });
-          }
-          // sessionMiddleware may use the signed five-minute cookie cache. A session
-          // revoked in the database must not mint a new device session through it.
-          const source = await ctx.context.internalAdapter.findSession(session.token);
-          if (!source || source.session.userId !== session.userId || source.session.expiresAt <= new Date()) {
-            throw new APIError("UNAUTHORIZED", { message: "Sign in again to continue in the app" });
           }
           const found = await ctx.context.internalAdapter.consumeVerificationValue(REQUEST_PREFIX + ctx.body.requestId);
           const request = found && found.expiresAt >= new Date() ? parseRequest(found.value) : null;

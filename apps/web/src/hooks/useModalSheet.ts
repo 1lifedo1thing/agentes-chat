@@ -3,16 +3,24 @@ import { type RefObject, useEffect, useState } from "react";
 /** The opener of a sheet that just went, for one taking its place in the same commit (opened from inside it). */
 let handedOver: HTMLElement | null = null;
 
+/** What floats over every sheet, in <body>, and stays in reach while one is open: the toasts and the notices' island. */
+const OVER_SHEETS = ".ac-toasts, .ni-wrap";
+
 /**
  * A full-screen sheet over the page (phone): while it is mounted, focus is inside it and everything behind it is
- * inert, except the elements matching `keep` (its scrim, which closes it). When it goes, focus returns to what had it
+ * inert, except the elements matching `keep` (its scrim, which closes it) and what floats over every sheet
+ * (`OVER_SHEETS`). When it goes, focus returns to what had it
  * before, unless something else already took it (a panel the sheet opened). A sheet that replaced another (Ver perfil
  * from a thread) was opened from inside it, gone by then: the focus goes back to what opened the first. Nothing left
  * of either (a popover's row): the conversation's composer, as Esc does (`useEscClose`).
  */
 export function useModalSheet(sheet: RefObject<HTMLElement | null>, keep?: string) {
-  // Read on the first render, before a field inside takes the focus (`autoFocus`).
-  const [opener] = useState(() => (document.activeElement instanceof HTMLElement ? document.activeElement : null));
+  // Read on the first render, before a field inside takes the focus (`autoFocus`). The page itself (a sheet the URL
+  // opened, after a menu let the focus go) is no opener: the one it replaced, or the composer, is.
+  const [opener] = useState(() => {
+    const now = document.activeElement;
+    return now instanceof HTMLElement && now !== document.body ? now : null;
+  });
   useEffect(() => {
     const el = sheet.current;
     if (!el) return;
@@ -22,7 +30,14 @@ export function useModalSheet(sheet: RefObject<HTMLElement | null>, keep?: strin
       const parent: HTMLElement | null = node.parentElement;
       if (!parent) break;
       for (const sib of Array.from(parent.children))
-        if (sib !== node && sib instanceof HTMLElement && !sib.inert && !(keep && sib.matches(keep))) behind.push(sib);
+        if (
+          sib !== node &&
+          sib instanceof HTMLElement &&
+          !sib.inert &&
+          !sib.matches(OVER_SHEETS) &&
+          !(keep && sib.matches(keep))
+        )
+          behind.push(sib);
     }
     for (const b of behind) b.inert = true;
     if (!el.contains(document.activeElement)) el.focus({ preventScroll: true });

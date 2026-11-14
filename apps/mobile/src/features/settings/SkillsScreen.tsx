@@ -20,8 +20,14 @@ import {
   useSkillUsage,
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { SKILL_ASSET_MB } from "@agenteschat/client/lib/files";
-import { relativeTime } from "@agenteschat/client/lib/format";
+import {
+  formatBytes,
+  SKILL_ASSET_MB,
+  SKILL_TEXT_MB,
+  SKILL_ZIP_BYTES,
+  SKILL_ZIP_MB,
+} from "@agenteschat/client/lib/files";
+import { formatPercent, relativeTime } from "@agenteschat/client/lib/format";
 import { can } from "@agenteschat/client/lib/permissions";
 import {
   changedByText,
@@ -30,6 +36,7 @@ import {
   hiddenRepoOf,
   hiddenRepoText,
   pickSkills,
+  relightsSkillUpdate,
   SKILL_FILES_SHOWN,
   SKILL_UPDATE_TOAST,
   type SkillText,
@@ -48,7 +55,7 @@ import { diffLines } from "@agenteschat/ui/diff";
 import { useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
@@ -72,7 +79,7 @@ import { Note } from "../ai/parts";
 import { MessageText } from "../chat/MessageText";
 import { ConnectSheet } from "../connectors/ConnectSheet";
 import { FirstUse } from "../shared/FirstUse";
-import { useColors } from "../shared/hooks";
+import { useColors, useDirectory, useErrorToast } from "../shared/hooks";
 import { goBack, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { TextArea } from "../shared/TextArea";
@@ -97,6 +104,7 @@ export function SkillsScreen() {
   const usage = useSkillUsage(orgId, admin && list.length > 0);
   const settings = useSkillSettings(orgId, admin);
   const action = useSkillAction(orgId);
+  const failed = useErrorToast();
   const [q, setQ] = useState("");
   const unavailable = skills.isError && (skills.error as { status?: number }).status === 404;
   const shown = searchSkills(list, q);
@@ -137,7 +145,10 @@ export function SkillsScreen() {
                   toggle={settings.data.agentsImprove}
                   disabled={action.isPending}
                   onPress={() =>
-                    action.mutate({ type: "settings", settings: { agentsImprove: !settings.data?.agentsImprove } })
+                    action.mutate(
+                      { type: "settings", settings: { agentsImprove: !settings.data?.agentsImprove } },
+                      { onError: failed },
+                    )
                   }
                 />
               </GroupedList>
@@ -220,7 +231,7 @@ export function SkillScreen({ id }: { id: string }) {
         t("skills.updated", { when: relativeTime(t, i18n.language, s.updatedAt) }),
       ].join(" · ")
     : undefined;
-  const failed = (e: unknown) => toast({ title: errorText(t, e), icon: "x" });
+  const failed = useErrorToast();
 
   const refresh = (item: SkillDetail) =>
     action.mutate(
@@ -404,6 +415,7 @@ function PendingDiff({ skill: s }: { skill: SkillDetail }) {
 function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const failed = useErrorToast();
   const { orgId } = useOrg();
   const action = useSkillAction(orgId);
   const agents = useAgents(orgId);
@@ -425,6 +437,7 @@ function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
           s.lastUpdate?.waited
             ? reopened()
             : said(t("skills.undone", { name: s.name, version: s.lastUpdate?.fromVersion ?? 0 })),
+        onError: failed,
       },
     );
   return (
@@ -456,6 +469,7 @@ function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
                           ? t("skills.pending.changedAgain", { name: s.name })
                           : t(waiting.applied, { name: s.name }),
                       ),
+                    onError: failed,
                   },
                 )
               }
@@ -467,7 +481,7 @@ function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
               onPress={() =>
                 action.mutate(
                   { type: "dismissUpdate", id: s.id },
-                  { onSuccess: () => said(t(waiting.kept, { name: s.name })) },
+                  { onSuccess: () => said(t(waiting.kept, { name: s.name })), onError: failed },
                 )
               }
             />
@@ -484,7 +498,9 @@ function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
               label={t("skills.undo")}
               sub={words.kept}
               disabled={action.isPending}
-              onPress={() => action.mutate({ type: "reopenUpdate", id: s.id }, { onSuccess: reopened })}
+              onPress={() =>
+                action.mutate({ type: "reopenUpdate", id: s.id }, { onSuccess: reopened, onError: failed })
+              }
             />
           </GroupedList>
         </>
@@ -494,6 +510,18 @@ function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
           <Note icon="x">{skillUpdateErrorText(t, s.updateError)}</Note>
         </View>
       ) : null}
+      {s.updateError && relightsSkillUpdate(s.updateError) ? (
+        <GroupedList>
+          <GroupedRow
+            icon="replay"
+            label={t("skills.updateFailed.relight")}
+            disabled={action.isPending}
+            onPress={() =>
+              action.mutate({ type: "update", id: s.id, patch: { autoUpdate: true } }, { onError: failed })
+            }
+          />
+        </GroupedList>
+      ) : null}
       <Gap />
       <GroupedList>
         <GroupedRow
@@ -501,7 +529,9 @@ function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
           hint={{ name: t("common.about", { label: t("skills.autoUpdate") }), text: t("skills.autoUpdateHelp") }}
           toggle={s.autoUpdate ?? false}
           disabled={action.isPending}
-          onPress={() => action.mutate({ type: "update", id: s.id, patch: { autoUpdate: !s.autoUpdate } })}
+          onPress={() =>
+            action.mutate({ type: "update", id: s.id, patch: { autoUpdate: !s.autoUpdate } }, { onError: failed })
+          }
         />
         {words.last ? (
           <GroupedRow
@@ -549,6 +579,7 @@ function ChangeRow({ change: c, agent }: { change: SkillAgentChange; agent: stri
 function AgentImprove({ skill: s }: { skill: SkillDetail }) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const failed = useErrorToast();
   const { orgId } = useOrg();
   const action = useSkillAction(orgId);
   const settings = useSkillSettings(orgId);
@@ -566,7 +597,9 @@ function AgentImprove({ skill: s }: { skill: SkillDetail }) {
           labelLines={2}
           toggle={on}
           disabled={action.isPending}
-          onPress={() => action.mutate({ type: "update", id: s.id, patch: { agentsImprove: !on } })}
+          onPress={() =>
+            action.mutate({ type: "update", id: s.id, patch: { agentsImprove: !on } }, { onError: failed })
+          }
         />
         {change ? (
           <GroupedRow
@@ -585,6 +618,7 @@ function AgentImprove({ skill: s }: { skill: SkillDetail }) {
                     successHaptic();
                     toast({ title: t("skills.undone", { name: s.name, version: change.fromVersion }), icon: "check" });
                   },
+                  onError: failed,
                 },
               )
             }
@@ -623,16 +657,20 @@ const REPOS_SHOWN = 30;
  * connection read it; when none can, "Conectar o GitHub" opens the connect sheet over it (or it says whom to ask),
  * and the link is read again once GitHub is connected.
  */
-export function InstallSkillScreen({ initialUrl }: { initialUrl?: string }) {
+export function InstallSkillScreen({ initialUrl, forAgentId }: { initialUrl?: string; forAgentId?: string }) {
   return (
     <SheetHostProvider>
-      <InstallSkill initialUrl={initialUrl} />
+      <InstallSkill initialUrl={initialUrl} forAgentId={forAgentId} />
     </SheetHostProvider>
   );
 }
 
-function InstallSkill({ initialUrl }: { initialUrl?: string }) {
-  const { t } = useTranslation();
+/**
+ * `forAgentId`: opened from that agent's card, a row (on by default) turns what installs on for it, as on the web, only
+ * from the card's own link: one typed over it or a repository picked instead goes on for nobody.
+ */
+function InstallSkill({ initialUrl, forAgentId }: { initialUrl?: string; forAgentId?: string }) {
+  const { t, i18n } = useTranslation();
   const c = useColors();
   const toast = useToast();
   const qc = useQueryClient();
@@ -647,19 +685,39 @@ function InstallSkill({ initialUrl }: { initialUrl?: string }) {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<InstallTab>("github");
   const [url, setUrl] = useState("");
-  const [zip, setZip] = useState<{ uri: string; name: string } | null>(null);
+  const [zip, setZip] = useState<{ uri: string; name: string; size: number | undefined } | null>(null);
+  const tooBig = (zip?.size ?? 0) > SKILL_ZIP_BYTES;
+  /** A .zip on its way: the share of it sent, from the moment it's read for sending until the server answers. */
+  const [sending, setSending] = useState<number | null>(null);
+  /** Stops the .zip on its way: Cancelar in the bar, or leaving the screen. */
+  const stop = useRef<AbortController | null>(null);
+  useEffect(() => () => stop.current?.abort(), []);
   const [form, setForm] = useState({ name: "", description: "", body: "" });
   const [error, setError] = useState<string | null>(null);
-  const [reading, setReading] = useState(false);
   const [choices, setChoices] = useState<SkillChoice[] | null>(null);
   const [skipped, setSkipped] = useState<SkillSkipped[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
-  const busy = action.isPending || reading;
-  const step = useStepText(busy, [
+  const [turnOn, setTurnOn] = useState(true);
+  const dir = useDirectory();
+  // Only a live agent the server would turn it on for: not one archived or gone since its card.
+  const forName = forAgentId ? dir.agentById.get(forAgentId)?.name : undefined;
+  const cardLink = forAgentId && forName ? initialUrl?.trim() : undefined;
+  const forCard = cardLink !== undefined && url.trim() === cardLink;
+  /** The agent what installs from `link` goes on for, when the row shows it and is checked. */
+  const sendFor = (link: string) =>
+    turnOn && cardLink !== undefined && link.trim() === cardLink ? forAgentId : undefined;
+  const busy = action.isPending || sending !== null;
+  const timerStep = useStepText(busy && sending === null, [
     t("skills.installStep.fetching"),
     t("skills.installStep.reading"),
     t("skills.installStep.saving"),
   ]);
+  const step =
+    sending === null
+      ? timerStep
+      : sending < 1
+        ? t("skills.zipSending", { percent: formatPercent(i18n.language, sending * 100) })
+        : t("skills.installStep.saving");
 
   const done = (skill: unknown) => {
     const s = skill as SkillDetail;
@@ -673,8 +731,12 @@ function InstallSkill({ initialUrl }: { initialUrl?: string }) {
   const read = (link: string, list = false) => {
     setError(null);
     setHidden(null);
+    const forAgent = sendFor(link);
     action.mutate(
-      { type: "import", input: list ? { url: link, list } : { url: link } },
+      {
+        type: "import",
+        input: list ? { url: link, list } : { url: link, ...(forAgent ? { forAgentId: forAgent } : {}) },
+      },
       {
         onSuccess: (result) => {
           const found = skillPickOf(result);
@@ -729,7 +791,7 @@ function InstallSkill({ initialUrl }: { initialUrl?: string }) {
     });
     const a = res.canceled ? null : res.assets[0];
     if (!a) return;
-    setZip({ uri: a.uri, name: a.name });
+    setZip({ uri: a.uri, name: a.name, size: a.size });
     setError(null);
   };
   const submit = async () => {
@@ -756,7 +818,7 @@ function InstallSkill({ initialUrl }: { initialUrl?: string }) {
         toast({ title: t("skills.installedMany", { count: list.length }), icon: "check" });
         goBack();
       };
-      action.mutate({ type: "importPicked", url: url.trim(), paths }, { onSuccess, onError });
+      action.mutate({ type: "importPicked", url: url.trim(), paths, forAgentId: sendFor(url) }, { onSuccess, onError });
       return;
     }
     if (tab === "zip") {
@@ -764,17 +826,32 @@ function InstallSkill({ initialUrl }: { initialUrl?: string }) {
         setError(t("skills.zipMissing"));
         return;
       }
-      setReading(true);
+      if (tooBig) return;
+      const stopper = new AbortController();
+      stop.current = stopper;
+      setSending(0);
       let zipBase64: string;
       try {
         zipBase64 = await new File(zip.uri).base64();
       } catch {
+        setSending(null);
         setError(t("common.unknownError"));
         return;
-      } finally {
-        setReading(false);
       }
-      action.mutate({ type: "import", input: { zipBase64 } }, { onSuccess: done, onError });
+      if (stopper.signal.aborted) {
+        setSending(null);
+        return;
+      }
+      action.mutate(
+        { type: "import", input: { zipBase64 }, upload: { signal: stopper.signal, onProgress: setSending } },
+        {
+          onSuccess: done,
+          onError: (e) => {
+            if (!stopper.signal.aborted) setError(errorText(t, e, i18n.language, { maxMb: SKILL_ZIP_MB }));
+          },
+          onSettled: () => setSending(null),
+        },
+      );
       return;
     }
     if (!(form.name.trim() && form.description.trim() && form.body.trim())) {
@@ -790,7 +867,15 @@ function InstallSkill({ initialUrl }: { initialUrl?: string }) {
   return (
     <SettingsPage
       title={t("skills.install")}
-      action={{ label: t("skills.installSubmit"), disabled: busy, onPress: () => void submit() }}
+      action={
+        sending !== null
+          ? { label: t("common.cancel"), onPress: () => stop.current?.abort() }
+          : {
+              label: t("skills.installSubmit"),
+              disabled: busy || (tab === "zip" && tooBig),
+              onPress: () => void submit(),
+            }
+      }
       locked={busy}
     >
       <View style={styles.tabs}>
@@ -871,8 +956,12 @@ function InstallSkill({ initialUrl }: { initialUrl?: string }) {
                 <GroupedRow
                   key={c.path}
                   label={c.name}
-                  sub={c.description}
-                  subLines={2}
+                  sub={
+                    c.replaces
+                      ? `${t(c.replaces === "removed" ? "skills.pickReplacesRemoved" : "skills.pickReplaces", { name: c.name })}\n${c.description}`
+                      : c.description
+                  }
+                  subLines={c.replaces ? 3 : 2}
                   checked={picked.has(c.path)}
                   onPress={() => togglePick([c.path], !picked.has(c.path))}
                 />
@@ -914,6 +1003,15 @@ function InstallSkill({ initialUrl }: { initialUrl?: string }) {
               {found.length > REPOS_SHOWN ? <GroupedFooter>{t("skills.reposMore")}</GroupedFooter> : null}
             </>
           ) : null}
+          {forCard ? (
+            <GroupedList>
+              <GroupedRow
+                label={t("skills.forAgent", { agent: forName, count: Math.max(picked.size, 1) })}
+                checked={turnOn}
+                onPress={() => setTurnOn((on) => !on)}
+              />
+            </GroupedList>
+          ) : null}
         </>
       ) : tab === "zip" ? (
         <>
@@ -922,12 +1020,43 @@ function InstallSkill({ initialUrl }: { initialUrl?: string }) {
             <GroupedRow
               icon="file"
               label={t("skills.zipPick")}
-              sub={zip?.name ?? t("skills.zipNone")}
+              sub={
+                zip
+                  ? zip.size === undefined
+                    ? zip.name
+                    : `${zip.name} · ${formatBytes(i18n.language, zip.size)}`
+                  : t("skills.zipNone")
+              }
               chevron
               onPress={() => void pickZip()}
             />
           </GroupedList>
-          <GroupedFooter>{t("skills.zipHelp")}</GroupedFooter>
+          <GroupedFooter
+            hint={{
+              name: t("common.about", { label: t("skills.tab.zip") }),
+              text: t("skills.zipAbout", { text: SKILL_TEXT_MB, assets: SKILL_ASSET_MB }),
+            }}
+          >
+            {t("skills.zipHelp", { max: SKILL_ZIP_MB })}
+          </GroupedFooter>
+          {zip && tooBig ? (
+            <View style={styles.hidden}>
+              <Note icon="x" live>
+                {t("skills.zipTooLarge", {
+                  name: zip.name,
+                  size: formatBytes(i18n.language, zip.size ?? 0),
+                  max: SKILL_ZIP_MB,
+                })}
+              </Note>
+              <Button
+                variant="secondary"
+                size="sm"
+                label={t("skills.zipUseLink")}
+                leading={(color) => <SocialMark provider="github" color={color} size={16} />}
+                onPress={() => setTab("github")}
+              />
+            </View>
+          ) : null}
         </>
       ) : (
         <>

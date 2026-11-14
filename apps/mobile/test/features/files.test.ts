@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ArtifactDetail } from "@agenteschat/client";
+import { pictureRatio } from "@agenteschat/client/lib/files";
 import {
   decodeFileList,
   driveWebUrl,
@@ -13,6 +14,7 @@ import {
   resolveDownloadUrl,
   safeFileName,
   shareSource,
+  singleImageBox,
   singleImageHeight,
   utf8Bytes,
   videoClock,
@@ -38,10 +40,8 @@ describe("videos", () => {
     expect(fileInfo(upload("antigo.avi", "video/x-msvideo")).view).toBe("other");
   });
 
-  test("its shape once known (16:9 before), kept between 9:16 and 2:1; its time as a clock", () => {
-    expect(videoHeight(320, null)).toBe(180);
-    expect(videoHeight(300, { width: 720, height: 1280 })).toBe(533);
-    expect(videoHeight(300, { width: 3000, height: 500 })).toBe(150);
+  test("one box in a message whatever its shape, so nothing moves once it loads; its time as a clock", () => {
+    expect(videoHeight(320)).toBe(180);
     expect(videoClock(7.9)).toBe("0:07");
     expect(videoClock(725)).toBe("12:05");
     expect(videoClock(3729)).toBe("1:02:09");
@@ -102,11 +102,17 @@ describe("file kind, tile and size", () => {
 });
 
 describe("pictures in a message", () => {
-  test("a lone picture keeps its shape, within limits", () => {
-    expect(singleImageHeight(300, null)).toBe(225);
-    expect(singleImageHeight(300, { width: 1000, height: 1000 })).toBe(300);
-    expect(singleImageHeight(300, { width: 1170, height: 2532 })).toBe(533); // a phone screenshot: 9:16 at most
-    expect(singleImageHeight(300, { width: 4000, height: 500 })).toBe(150); // a panorama: 2:1 at most
+  test("a lone picture of unknown size has one box whatever its shape, so nothing moves once it loads", () => {
+    expect(singleImageHeight(300)).toBe(225);
+    expect(singleImageBox(300, undefined)).toEqual({ width: 300, height: 225 });
+  });
+
+  test("one whose size the server read has its own shape from the first frame, no taller than 400", () => {
+    expect(singleImageBox(300, pictureRatio({ width: 1024, height: 1024 }))).toEqual({ width: 300, height: 300 });
+    expect(singleImageBox(300, pictureRatio({ width: 1536, height: 1024 }))).toEqual({ width: 300, height: 200 });
+    // A portrait one narrows to stay 400 high.
+    expect(singleImageBox(300, pictureRatio({ width: 1024, height: 1536 }))).toEqual({ width: 267, height: 400 });
+    expect(pictureRatio({ width: 1024 })).toBeUndefined();
   });
 });
 

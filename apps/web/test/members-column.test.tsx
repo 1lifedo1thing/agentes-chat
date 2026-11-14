@@ -468,16 +468,16 @@ describe("answering without a mention, as true for my own messages as who picks 
     return screen().getByRole("dialog", { name: "Perfil" }).textContent;
   };
 
-  test("my own plan picks: no chip in the column; the agent's card opened here says it answers without an @", async () => {
+  test("my own plan picks: no chip in the column and no line on the agent's card about answering without an @", async () => {
     await withRouting("plan");
     expect(await columnAgents()).not.toContain("sem menção");
-    expect(await cardOf("Atlas")).toContain("Responde aqui sem precisar de @");
+    expect(await cardOf("Atlas")).not.toContain("sem precisar de @");
   });
 
   test("only rules for my messages: no line on its card; it still takes replies and follow-ups", async () => {
     await withRouting("rules");
     expect(await columnAgents()).not.toContain("sem menção");
-    expect(await cardOf("Atlas")).not.toContain("Responde aqui sem precisar de @");
+    expect(await cardOf("Atlas")).not.toContain("sem precisar de @");
     cleanup();
     await withRouting("rules");
     expect(await onItsOwn()).toEqual({
@@ -506,17 +506,21 @@ describe("answering without a mention, as true for my own messages as who picks 
   });
 });
 
-describe("Settings › Papéis: listed apart", () => {
+describe("Settings › Cargos: listed apart", () => {
   test("a role's switch sets whether its people get their own group in the members column", async () => {
     const state = seedState();
     await renderApp(`/org/${ORG_ID}/settings/roles`, { api: createFakeApi(state) });
     await settle(6);
     await act(async () => fireEvent.click(screen().getByRole("button", { name: /^Admin/ })));
-    await settle(4);
+    await settle(6);
+    // Behind ✎: Nome, cor e ícone, saved once.
+    await act(async () => fireEvent.click(screen().getByRole("button", { name: "Mudar nome, cor e ícone" })));
+    await settle(2);
     const hoist = screen().getByRole("switch", { name: /Mostrar separado na lista de membros/ });
     expect(hoist.getAttribute("aria-checked")).toBe("true");
     await act(async () => fireEvent.click(hoist));
-    await settle(2);
+    await act(async () => fireEvent.click(screen().getByRole("button", { name: "Salvar" })));
+    await settle(4);
     expect(state.calls.find((c) => c.method === "roles.update")?.args[2]).toEqual({ hoist: false });
   });
 });

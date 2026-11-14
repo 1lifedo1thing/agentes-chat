@@ -7,6 +7,7 @@ import {
   callLogo,
   foldSteps,
   formatLineTime,
+  makingImage,
   oneCall,
   quietLine,
   quietWork,
@@ -94,18 +95,16 @@ const call = (id: string, tool: string, extra: Partial<Extract<LiveWork, { kind:
 });
 
 describe("the block's lines", () => {
-  test("the same kind in a row is one line counting each; a failure or something said keeps them apart", () => {
+  test("the same kind in a row is one line counting each; a failure keeps them apart", () => {
     const items = toolItemsLive([
       call("1", "browser_open"),
       call("2", "browser_click"),
       call("3", "browser_click", { failed: true }),
-      { kind: "say", text: "Vou tentar de novo." },
       call("4", "browser_click", { running: true, ms: undefined }),
     ]);
     expect(items.map((i) => (i.kind === "call" ? `${i.line.state}×${i.line.count}` : i.kind))).toEqual([
       "done×2",
       "fail×1",
-      "say",
       "run×1",
     ]);
     expect(toolCalls(items)).toBe(4);
@@ -560,11 +559,11 @@ describe("each call's service and its logo", () => {
     const [gmail, sales, other, old] = lines(
       toolItemsLive([
         call("1", "mail_wnogueira_search", { connector: "Email", service: "gmail" }),
-        { kind: "say", text: "Agora a de vendas." },
+        { kind: "steer", messageId: "m1" },
         call("2", "mail_vendas_search", { connector: "Email", service: "gmail" }),
-        { kind: "say", text: "Agora a outra caixa." },
+        { kind: "steer", messageId: "m2" },
         call("3", "mail_contato_read", { connector: "Email", service: "custom" }),
-        { kind: "say", text: "E a de antes." },
+        { kind: "steer", messageId: "m3" },
         call("4", "mail_ana_read", { connector: "Email" }),
       ]),
     );
@@ -707,9 +706,7 @@ describe("each call's service and its logo", () => {
       agentId: "theo",
       channelId: "c1",
       threadId: "m1",
-      status: "running" as const,
-      text: "",
-      lastSeq: 0,
+      status: "thinking" as const,
       tool: "mail_wnogueira_search",
       connector: "Email",
       service: "gmail",
@@ -732,16 +729,8 @@ describe("each call's service and its logo", () => {
 describe("one call is its own line (no 'Usou 1 ferramenta' to open)", () => {
   test("one call stands alone; two or more keep the block, a folded line counting each", () => {
     expect(oneCall(toolItemsLive([call("1", "create_routine")]))).toBe(true);
-    // What it said and the messages it read are not calls.
-    expect(
-      oneCall(
-        toolItemsLive([
-          { kind: "say", text: "Vou criar a rotina." },
-          call("1", "create_routine"),
-          { kind: "steer", messageId: "m9" },
-        ]),
-      ),
-    ).toBe(true);
+    // The messages it read are not calls.
+    expect(oneCall(toolItemsLive([call("1", "create_routine"), { kind: "steer", messageId: "m9" }]))).toBe(true);
     // Two browser steps fold into one line ("×2"): still two calls, the block.
     expect(oneCall(toolItemsLive([call("1", "browser_open"), call("2", "browser_click")]))).toBe(false);
     expect(oneCall(toolItemsLive([call("1", "create_routine"), call("2", "create_issue")]))).toBe(false);
@@ -794,6 +783,24 @@ describe("a lone quick read that only fed the answer shows no card", () => {
     for (const [why, work] of kept) expect([why, quietWork(toolItemsLive(work))]).toEqual([why, false]);
     // Lookups aren't steps: a usage check after looking the tool up is still a lone read.
     expect(quietWork(toolItemsLive([call("1", "find_tools"), call("2", "get_my_usage")]))).toBe(true);
+  });
+
+  test("a picture its own image tool made is its reply's picture: no card, however long it took; failed, it shows", () => {
+    expect(toolActivity("image_generation").kind).toBe("creatingImage");
+    expect(quietWork(toolItemsLive([call("1", "image_generation", { ms: 48_000 })]))).toBe(true);
+    expect(quietWork(toolItemsLive([call("1", "image_generation", { ms: 48_000, failed: true })]))).toBe(false);
+    expect(quietWork(toolItemsLive([call("1", "image_generation", { running: true })]))).toBe(false);
+    // Beside another call, the block stays.
+    expect(quietWork(toolItemsLive([call("1", "image_generation"), call("2", "create_issue")]))).toBe(false);
+    const saved = savedOneLine({ work: { steps: 1, calls: [{ name: "image_generation" }], durationMs: 50_000 } });
+    expect(saved && quietLine(saved)).toBe(true);
+  });
+
+  test("while it makes a picture its live run says so (`makingImage`), until another step replaces it", () => {
+    expect(makingImage({ step: { tool: "image_generation" } })).toBe(true);
+    expect(makingImage({ step: { tool: "shell" } })).toBe(false);
+    expect(makingImage({ step: { said: "Vou desenhar" } })).toBe(false);
+    expect(makingImage({})).toBe(false);
   });
 
   test("saved: the run's lone call is quiet by meta.work; calls another card shows are left out of the count", () => {

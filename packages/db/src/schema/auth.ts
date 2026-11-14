@@ -23,7 +23,7 @@ export const users = pgTable("users", {
   localeAuto: boolean().notNull().default(true),
   /**
    * Blocked by the people who run this server (operator API, ADR 0056): no sign-in and no membership
-   * anywhere (`standing.ts`). Not a Better Auth field, so it never reaches a session or the cookie cache.
+   * anywhere (`standing.ts`). Not a Better Auth field, so it never reaches a session.
    */
   blockedAt: timestamp({ withTimezone: true }),
   blockedReason: text(),
@@ -33,6 +33,12 @@ export const users = pgTable("users", {
    */
   deletionDueAt: timestamp({ withTimezone: true }),
   deletionRequestedAt: timestamp({ withTimezone: true }),
+  /**
+   * The person's own area, asked once during the onboarding: an id of `WORK_AREAS`
+   * (`@agenteschat/client/lib/work-area`) or `skipped`; null until asked. About the person, not a workspace, read by
+   * the operator API's account (which kinds of people stay). Not a Better Auth field.
+   */
+  workArea: text(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });

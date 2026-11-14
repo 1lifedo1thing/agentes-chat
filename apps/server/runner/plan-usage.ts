@@ -9,7 +9,7 @@ import {
 } from "@agenteschat/adapters/machine-protocol";
 import { type PlanId, planOf } from "@agenteschat/providers/plans";
 import { killTree } from "./exec";
-import { resolveCommand } from "./executors";
+import { cliSpawn } from "./executors";
 
 /**
  * Plan usage (protocol 19), read without touching any token: the CLIs and the
@@ -300,6 +300,11 @@ export interface UsageProbe {
   cwd: string;
   env: NodeJS.ProcessEnv;
   timeoutMs?: number;
+  /**
+   * Written to a fourth pipe (descriptor 3) and closed: a token the CLI reads there at its start
+   * (`CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR`), so neither its environment nor its arguments hold it.
+   */
+  fd3?: string;
 }
 
 /**
@@ -314,18 +319,17 @@ export function jsonLines<T>(
   onLine: (msg: Record<string, unknown>, send: (msg: unknown) => void) => T | null | undefined,
 ): Promise<T | null> {
   return new Promise((resolve) => {
-    const [file, ...pre] = p.command;
+    const run = cliSpawn(p.command, args, p.env.PATH);
     let child: ChildProcess;
     try {
-      child = spawn(resolveCommand(file ?? "", p.env.PATH), [...pre, ...args], {
+      child = spawn(run.file, run.args, {
         cwd: p.cwd,
-        env: p.env,
-        stdio: ["pipe", "pipe", "ignore"],
+        env: run.env ? { ...p.env, ...run.env } : p.env,
+        stdio: p.fd3 === undefined ? ["pipe", "pipe", "ignore"] : ["pipe", "pipe", "ignore", "pipe"],
         windowsHide: true,
         // Its own process group: the kill reaches what it started (posix).
         detached: process.platform !== "win32",
-        // Windows finds `claude.cmd` / `codex.cmd` only through the shell (argv: fixed words).
-        shell: process.platform === "win32" && p.command.length === 1,
+        windowsVerbatimArguments: run.windowsVerbatimArguments,
       });
     } catch {
       resolve(null);
@@ -349,6 +353,11 @@ export function jsonLines<T>(
       }
     };
     child.stdin?.on("error", () => {});
+    if (p.fd3 !== undefined) {
+      const pipe = child.stdio[3] as NodeJS.WritableStream | null | undefined;
+      pipe?.on("error", () => {});
+      pipe?.end(`${p.fd3}\n`);
+    }
     (child as unknown as EventEmitter).on("error", () => finish(null));
     if (!child.stdout) return finish(null);
     const lines = createInterface({ input: child.stdout, crlfDelay: Number.POSITIVE_INFINITY });
@@ -402,6 +411,36 @@ export function probeClaudeUsage(p: UsageProbe): Promise<PlanUsage | null> {
         send(request("usage", { subtype: "get_usage", skip_behaviors: true }));
       } else if (r?.request_id === "usage") return r.subtype === "success" ? claudeUsage(r.response) : null;
       return undefined;
+    },
+  );
+}
+
+/** A token check: the cheapest model, no tools, a one-word answer (Claude refuses it before any token when full). */
+export const CLAUDE_TOKEN_CHECK_ARGS = [
+  ...CLAUDE_PROBE_ARGS,
+  "--model",
+  "haiku",
+  "--tools",
+  "",
+  "--system-prompt",
+  "Reply with one word.",
+];
+
+/**
+ * A Claude setup token's plan, read the only way a token allows: one turn on the cheapest model, whose
+ * `rate_limit_event` (`withRateLimit`, from `prev`) says where each window stands and whether it refused. The reading,
+ * or null when it said nothing (the CLI failed, a network error).
+ */
+export function checkClaudeToken(p: UsageProbe, prev: PlanUsage | undefined): Promise<PlanUsage | null> {
+  let reading: PlanUsage | null = null;
+  return jsonLines(
+    p,
+    CLAUDE_TOKEN_CHECK_ARGS,
+    (send) =>
+      send({ type: "user", message: { role: "user", content: "ok" }, parent_tool_use_id: null, session_id: "" }),
+    (msg) => {
+      if (msg.type === "rate_limit_event") reading = withRateLimit(reading ?? prev, msg.rate_limit_info) ?? reading;
+      return msg.type === "result" ? reading : undefined;
     },
   );
 }

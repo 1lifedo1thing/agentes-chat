@@ -13,12 +13,13 @@ import { agentGrammar } from "./grammar";
 /** Whole minutes until `iso`, at least 1: an estimate never reads "0 min". */
 export const etaMinutes = (iso: string, now: number) => Math.max(1, Math.round((Date.parse(iso) - now) / 60_000));
 
-/** "3 min", "40 s", "2 h": how long something has gone on. */
+/** "3 min", "40 s", "2 h", "3 dias": how long something has gone on. */
 export function durationText(t: TFunction, ms: number) {
   if (ms < 60_000) return t("run.elapsedSeconds", { n: Math.max(1, Math.round(ms / 1000)) });
   const minutes = Math.round(ms / 60_000);
   if (minutes < 60) return t("format.inMinutes", { count: minutes });
-  return t("format.inHours", { count: Math.round(minutes / 60) });
+  const hours = Math.round(minutes / 60);
+  return hours < 48 ? t("format.inHours", { count: hours }) : t("format.inDays", { count: Math.round(hours / 24) });
 }
 
 /** "1st", "4º", "4." in the language's own ordinal form. */
@@ -65,6 +66,27 @@ export function queueFillText(t: TFunction, working: readonly Pick<QueueWorking,
   });
   return parts.length ? joinNames(parts, t) : null;
 }
+
+/** Why a turn waits: "Computer full: 4 jobs use its memory now (2 for people, 1 routine…)", null with nothing on it. */
+export function queueCauseText(t: TFunction, queue: Pick<ComputerQueue, "working"> | null | undefined) {
+  const fill = queue ? queueFillText(t, queue.working) : null;
+  return fill ? t("queue.cause", { count: queue?.working.length ?? 0, fill }) : null;
+}
+
+/**
+ * The work on the computer the viewer may stop to free it for a waiting turn (`canStop`, the line's own stop right): a
+ * routine first, then long work, then an agent's ask, never a reply someone waits on. Undefined with none.
+ */
+export const queueStoppable = (queue: Pick<ComputerQueue, "working"> | null | undefined) =>
+  (["routine", "work", "agent"] as const).flatMap(
+    (kind) => queue?.working.filter((w): w is StoppableWork => w.canStop === true && w.purpose.kind === kind) ?? [],
+  )[0];
+
+type StoppableWork = QueueWorking & { purpose: Exclude<QueuePurpose, { kind: "person" }> };
+
+/** "Parar a rotina", "Parar o trabalho longo", "Parar Ada" (an agent's ask, by the agent doing it). */
+export const queueStopText = (t: TFunction, row: Pick<StoppableWork, "purpose">, agent: string) =>
+  t(`queue.stopFill.${row.purpose.kind}`, { name: agent });
 
 /** "Computer · 9 waiting", or "Computer" while nothing waits. */
 export const queueButtonText = (t: TFunction, queue: ComputerQueue | null | undefined) =>

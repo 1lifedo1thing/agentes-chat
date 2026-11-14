@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import type { ControlEvent, ControlStatus } from "@agenteschat/adapters/runner-control";
 import { filesFolder } from "../src/control/local-server";
 import { DesktopStore, type Home } from "../src/control/store";
-import { answerThisMac, toolsHere } from "../src/control/this-mac";
+import { answerThisMac, connect, type PrefsTab, toolsHere, whenHostHomeReady } from "../src/control/this-mac";
 import type { Host } from "../src/host/types";
 
 /**
@@ -76,7 +76,7 @@ function setup(statuses: Record<string, ControlStatus>, others = false) {
   const revealed: string[] = [];
   const deps = {
     store,
-    openPrefs: async (tab: "folders" | "tools" | "updates") => void prefs.push(tab),
+    openPrefs: async (tab: PrefsTab) => void prefs.push(tab),
     showRequests: async () => void prefs.push("requests"),
     localDir: async () => "/Users/ana/.agentes",
     revealFolder: async (path: string) => {
@@ -89,6 +89,17 @@ function setup(statuses: Record<string, ControlStatus>, others = false) {
 }
 
 const settle = () => new Promise((r) => setTimeout(r, 10));
+
+test("privacy: the page opens the microphone's or Local Network's list in System Settings; another pane, or an app without it, is refused", async () => {
+  const { deps } = setup({ h1: paired("o1") });
+  const opened: string[] = [];
+  const withPanes = { ...deps, openPrivacy: async (pane: "microphone" | "network") => void opened.push(pane) };
+  expect(await answerThisMac(withPanes, { kind: "privacy", pane: "microphone" })).toEqual({});
+  expect(await answerThisMac(withPanes, { kind: "privacy", pane: "network" })).toEqual({});
+  expect(opened).toEqual(["microphone", "network"]);
+  await expect(answerThisMac(withPanes, { kind: "privacy", pane: "disk" as never })).rejects.toThrow("not_here");
+  await expect(answerThisMac(deps, { kind: "privacy", pane: "microphone" })).rejects.toThrow("not_here");
+});
 
 test("status: only the asking server's organizations, and whether agents may work here for it", async () => {
   const { store, deps } = setup({ h1: paired("o1"), h2: unpaired, h3: paired("o3", "online", OTHER) });
@@ -131,7 +142,7 @@ test("connect: refused where the page says agents can't work here (a server on t
   expect(sent.some((s) => s.type === "pair.start")).toBe(false);
 });
 
-test("connect: pairs with the asking page's own server; the first organization starts with safe tools", async () => {
+test("connect: pairs with the asking page's own server; the first organization starts with open tools", async () => {
   const { store, sent, event, deps: base } = setup({ h1: paired("o1") });
   let opensAtLogin = false;
   const deps = {
@@ -160,23 +171,23 @@ test("connect: pairs with the asking page's own server; the first organization s
   expect(await answer).toEqual({ userCode: "ABCD-EFGH" });
   expect(opensAtLogin).toBe(false);
 
-  // Confirmed on the site, and no other organization here has tools to copy: the browser on, Claude Code on
-  // because it was found here, Codex (not found) and commands off.
+  // Confirmed on the site, and no other organization here has tools to copy: everything on, Codex too, which no
+  // runner found here (installed later, it works without a trip to Preferences).
   event("new1", { kind: "pair.done", org: { id: "o2", name: "Beta" }, machine: { id: "m2", name: "MacBook" } });
   await settle();
   await settle();
   const tools = sent.filter((s) => s.homeId === "new1" && s.type === "tools.set").map((s) => [s.tool, s.on]);
   expect(tools).toEqual([
     ["claude", true],
-    ["codex", false],
-    ["commands", false],
+    ["codex", true],
+    ["commands", true],
     ["browser", true],
   ]);
   // Its agents work while the app runs: it opens at login now.
   expect(opensAtLogin).toBe(true);
 });
 
-test("connect: a new organization copies the others' tools but never their commands (the dialog said off)", async () => {
+test("connect: a new organization copies the others' tools for the whole computer, with commands on", async () => {
   // Another organization here has commands on.
   const { store, sent, event, deps } = setup({ h1: paired("o1") }, true);
   store.start();
@@ -197,12 +208,66 @@ test("connect: a new organization copies the others' tools but never their comma
   expect(tools).toEqual([
     ["claude", true],
     ["codex", false],
-    ["commands", false],
+    ["commands", true],
     ["browser", false],
   ]);
 });
 
-test("Preferences' tools: commands read on only when every organization has them, and say who does", () => {
+test("connect: the pairing sheet's choices go over the defaults; a home that comes back keeps its own", async () => {
+  const { store, sent, event, deps } = setup({ h1: paired("o1", "refused") });
+  store.start();
+  await settle();
+  const code = (homeId: string) =>
+    event(homeId, {
+      kind: "pair.code",
+      userCode: "ABCD-EFGH",
+      verificationUrl: `${SERVER}/c`,
+      expiresAt: "2026-10-21T20:00:00Z",
+    });
+  const toolsOf = (homeId: string) =>
+    sent.filter((s) => s.homeId === homeId && s.type === "tools.set").map((s) => [s.tool, s.on]);
+
+  const fresh = connect({ ...deps, tools: { commands: false, browser: false } }, "o2", SERVER);
+  await settle();
+  code("new1");
+  await fresh;
+  event("new1", { kind: "pair.done", org: { id: "o2", name: "Beta" }, machine: { id: "m2", name: "MacBook" } });
+  await settle();
+  await settle();
+  expect(toolsOf("new1")).toEqual([
+    ["claude", true],
+    ["codex", true],
+    ["commands", false],
+    ["browser", false],
+  ]);
+
+  // Refused by its organization and paired again: the runner kept its access, nothing is set over it.
+  const back = connect({ ...deps, tools: { commands: true } }, "o1", SERVER);
+  await settle();
+  code("h1");
+  await back;
+  event("h1", { kind: "pair.done", org: { id: "o1", name: "Acme" }, machine: { id: "m-o1", name: "MacBook" } });
+  await settle();
+  await settle();
+  expect(toolsOf("h1")).toEqual([]);
+});
+
+test("the server here's own new home: the same open tools as any pairing, commands included", async () => {
+  const { store, sent } = setup({ h1: paired("o1", "online", "http://127.0.0.1:4310") });
+  store.start();
+  await settle();
+  whenHostHomeReady(store, "h1");
+  await settle();
+  await settle();
+  expect(sent.filter((s) => s.type === "tools.set").map((s) => [s.tool, s.on])).toEqual([
+    ["claude", true],
+    ["codex", true],
+    ["commands", true],
+    ["browser", true],
+  ]);
+});
+
+test("Preferences' tools: commands read on only when every organization has them", () => {
   const home = (name: string, commands: boolean) =>
     ({
       status: { org: { id: name, name } },
@@ -210,15 +275,12 @@ test("Preferences' tools: commands read on only when every organization has them
     }) as unknown as Home;
   expect(toolsHere([home("Acme", true), home("Beta", false)])).toEqual({
     tools: { claude: true, codex: false, commands: false, browser: true },
-    commandsOnlyFor: ["Acme"],
   });
   expect(toolsHere([home("Acme", true), home("Beta", true)])).toMatchObject({
     tools: { commands: true },
-    commandsOnlyFor: [],
   });
   expect(toolsHere([])).toEqual({
     tools: { claude: false, codex: false, commands: false, browser: false },
-    commandsOnlyFor: [],
   });
 });
 
@@ -236,8 +298,9 @@ test("connect: a refused organization comes back on its own home; a failure reje
 test("prefs and requests: Preferences on the asked tab, the popover", async () => {
   const { deps, prefs } = setup({});
   expect(await answerThisMac(deps, { kind: "prefs", tab: "updates" })).toEqual({});
+  expect(await answerThisMac(deps, { kind: "prefs", tab: "servers" })).toEqual({});
   expect(await answerThisMac(deps, { kind: "requests" })).toEqual({});
-  expect(prefs).toEqual(["updates", "requests"]);
+  expect(prefs).toEqual(["updates", "servers", "requests"]);
 });
 
 test("reconnect: the organization's own runner on that server; anywhere else rejects", async () => {

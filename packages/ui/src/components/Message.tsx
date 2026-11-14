@@ -2,6 +2,7 @@ import {
   type CSSProperties,
   createContext,
   type HTMLAttributes,
+  isValidElement,
   type MouseEvent,
   type ReactNode,
   useContext,
@@ -88,7 +89,7 @@ export interface MessageProps extends Omit<HTMLAttributes<HTMLElement>, "childre
   nameColor?: readonly [string, string];
   /** Lays the body out as a column (approval cards). */
   stacked?: boolean;
-  /** Muted, at the end of the first line, the header's or a grouped message's text's (e.g. the receipt check). */
+  /** Muted, at the end of the header's line, or in a grouped message's gutter (e.g. the receipt check). */
   aside?: ReactNode;
   /** A line under the message, the same on a first and a grouped one (e.g. a receipt with words). */
   foot?: ReactNode;
@@ -100,8 +101,9 @@ export interface MessageProps extends Omit<HTMLAttributes<HTMLElement>, "childre
   menu?: { label: string; items: ReactNode };
 }
 
-/** Taps on these keep doing their own thing (no menu opens). */
-const INTERACTIVE = "a[href], button, input, textarea, select, label, summary, [role='button'], [tabindex='0']";
+/** Taps on these keep doing their own thing (no menu opens), a popover's or a menu's trigger too (`aria-haspopup`). */
+const INTERACTIVE =
+  "a[href], button, input, textarea, select, label, summary, [role='button'], [tabindex='0'], [aria-haspopup]";
 
 /**
  * The touch menu's reactions and most of two items (130px), 2px off the row and 8px inside the window. A row with less
@@ -171,6 +173,10 @@ export function Message({
   const [menuAt, setMenuAt] = useState<ReturnType<typeof menuPlace>>(null);
   const menuOpen = Boolean(menu) && menuAt !== null;
   const footed = mine && !inBubble && (run === "end" || run === "solo");
+  // A grouped row's receipt: in the gutter, or with no faces (so no gutter) on the line under the words.
+  const groupedAside = Boolean(aside) && grouped && !mine && !inBubble;
+  const gutterAside = groupedAside && look?.faces !== false;
+  const footAside = groupedAside && look?.faces === false;
   // The keys' focus in my row: its head is hidden, so its time's details open under its bubble.
   const [keysIn, setKeysIn] = useState(false);
   useEffect(() => {
@@ -267,7 +273,15 @@ export function Message({
       {aside && <span className="ac-msg__aside">{aside}</span>}
     </span>
   ) : null;
+  // A time given as words, or as one element around them (`<time>`): the bubble's last line keeps exactly their room.
+  const timeWords =
+    typeof time === "string"
+      ? time
+      : isValidElement<{ children?: ReactNode }>(time) && typeof time.props.children === "string"
+        ? time.props.children
+        : undefined;
   const rowVars = {
+    ...(inBubble && timeWords ? { "--stamp-text": JSON.stringify(timeWords) } : {}),
     ...(mine && drawn === "bubbles" ? { "--msg-mine": look?.mine } : {}),
     ...(nameColor && drawn === "bubbles" ? { "--msg-name": nameColor[0], "--msg-name-dark": nameColor[1] } : {}),
   };
@@ -318,20 +332,23 @@ export function Message({
         </span>
       )}
       {mine || look?.faces === false ? null : grouped ? (
-        // Same width as the avatar column; the time shows here on hover (it's also in the hidden header).
-        <span className="ac-msg__gutter" aria-hidden="true">
-          <Tip className="ac-msg__gutter-time" tip={meta} look="ac-msg__tip">
+        // Same width as the avatar column; the time shows here on hover (it's also in the hidden header). A grouped
+        // row's receipt stands here too, always seen, the time appearing on its left: the row's bar, at its right
+        // end, never covers it.
+        <span
+          className={cx("ac-msg__gutter", gutterAside && "ac-msg__gutter--aside")}
+          aria-hidden={gutterAside ? undefined : true}
+        >
+          <Tip className="ac-msg__gutter-time" tip={meta} look="ac-msg__tip" aria-hidden="true">
             {time}
           </Tip>
+          {gutterAside && <span className="ac-msg__aside">{aside}</span>}
         </span>
       ) : (
         <span className="ac-msg__avatar">{avatar}</span>
       )}
       <div className="ac-msg__body" style={stacked ? { display: "flex", flexDirection: "column" } : undefined}>
         {(!inBubble || mine) && head}
-        {aside && grouped && !mine && !inBubble && (
-          <span className="ac-msg__aside ac-msg__aside--floating">{aside}</span>
-        )}
         <BubbleContext.Provider
           value={
             inBubble || (quote && quoteInBubble)
@@ -368,7 +385,12 @@ export function Message({
             )}
           </div>
         )}
-        {foot && <div className="ac-msg__foot">{foot}</div>}
+        {(foot || footAside) && (
+          <div className="ac-msg__foot">
+            {footAside && <span className="ac-msg__aside">{aside}</span>}
+            {foot}
+          </div>
+        )}
       </div>
       {menu &&
         menuAt &&

@@ -6,6 +6,7 @@ import {
   createModelProviders,
   customModelId,
   customModelOf,
+  endpointModelId,
   isOpenRouterModel,
   listEndpointModels,
   maxCostNanoUsd,
@@ -34,6 +35,27 @@ const unpriced = {
 };
 
 describe("ids and the registry", () => {
+  test("the endpoint model picked when none is named: the best last test, the admin's order among equals", () => {
+    const pick = (models: { id: string; check?: "ok" | "no_tools" | "failed" }[]) => endpointModelId(CRED, models);
+    expect(pick([])).toBeNull();
+    expect(pick([{ id: "a" }, { id: "b" }])).toBe(customModelId(CRED, "a"));
+    expect(
+      pick([
+        { id: "a", check: "no_tools" },
+        { id: "b", check: "ok" },
+        { id: "c", check: "ok" },
+      ]),
+    ).toBe(customModelId(CRED, "b"));
+    expect(pick([{ id: "a", check: "failed" }, { id: "b" }])).toBe(customModelId(CRED, "b"));
+    expect(
+      pick([
+        { id: "a", check: "failed" },
+        { id: "b", check: "no_tools" },
+      ]),
+    ).toBe(customModelId(CRED, "b"));
+    expect(pick([{ id: "a", check: "failed" }])).toBe(customModelId(CRED, "a"));
+  });
+
   test("a custom id keeps its credential and the endpoint's own id, slashes and colons included", () => {
     expect(parseCustomModel(id)).toEqual({ credentialId: CRED, model: "meta-llama/llama-4:70b" });
     expect(parseCustomModel("claude-sonnet-5-5")).toBeNull();
@@ -239,6 +261,61 @@ describe("calls", () => {
       .catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ProviderError);
     expect((error as ProviderError).message).toContain("model llama-9 not found");
+  });
+
+  test("a tool result's image goes to Claude on an Anthropic-compatible endpoint, never to another company's model", async () => {
+    const reply = sse([
+      {
+        type: "message_start",
+        message: {
+          id: "m",
+          type: "message",
+          role: "assistant",
+          model: "x",
+          content: [],
+          stop_reason: null,
+          usage: { input_tokens: 5, output_tokens: 1 },
+        },
+      },
+      { type: "message_delta", delta: { stop_reason: "end_turn", stop_sequence: null }, usage: { output_tokens: 1 } },
+      { type: "message_stop" },
+    ]);
+    const messages = [
+      { role: "user" as const, content: "what is in the file?" },
+      { role: "assistant" as const, content: [{ type: "tool_use" as const, id: "t1", name: "read_file", input: {} }] },
+      {
+        role: "user" as const,
+        content: [
+          {
+            type: "tool_result" as const,
+            toolUseId: "t1",
+            content: "shot.png",
+            images: [{ mediaType: "image/png", data: "UE5H" }],
+          },
+        ],
+      },
+    ];
+    const send = async (model: string) => {
+      const { fetcher, requests } = scripted(reply);
+      const result = await createCustomProvider({ fetch: fetcher, maxRetries: 0 }).stream(
+        { model: customModelId(CRED, model), system: "s", messages, maxTokens: 100 },
+        {
+          apiKey: "k-123456789",
+          endpoint: { style: "anthropic", baseURL: "https://bedrock-runtime.us-east-1.amazonaws.com/anthropic" },
+          onDelta() {},
+        },
+      );
+      return { body: JSON.stringify(requests[0]?.body.messages), leftOut: result.imagesLeftOut };
+    };
+    const claude = await send("global.anthropic.claude-sonnet-5-5");
+    expect(claude.body).toContain('"type":"image"');
+    expect(claude.leftOut).toBeUndefined();
+    const other = await send("moonshotai.kimi-k2.5");
+    expect(other.leftOut).toBe(true);
+    expect(other.body).not.toContain('"type":"image"');
+    expect(other.body).toContain(
+      "The picture is not shown to you: this agent's AI (moonshotai.kimi-k2.5) reads text only",
+    );
   });
 
   test("tool calls without an index, or with object arguments, stay apart and readable", async () => {

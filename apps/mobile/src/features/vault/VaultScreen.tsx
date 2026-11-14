@@ -1,8 +1,11 @@
 import { useVault, type VaultConnection, type VaultItem, type VaultOverview } from "@agenteschat/client";
 import { joinNames, relativeTime } from "@agenteschat/client/lib/format";
+import { webSettingsUrl } from "@agenteschat/client/lib/server";
+import { vaultNoAgents } from "@agenteschat/client/lib/vault";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { serverUrl } from "@/lib/server";
 import {
   Button,
   Chip,
@@ -18,7 +21,7 @@ import {
   Text,
 } from "@/ui";
 import { router } from "@/ui/navigation";
-import { Note } from "../ai/parts";
+import { Note, openPage } from "../ai/parts";
 import { Gap, SettingsPage } from "../settings/parts";
 import { FirstUse } from "../shared/FirstUse";
 import { useColors, useNow, useOrgId } from "../shared/hooks";
@@ -118,6 +121,7 @@ export function VaultScreen() {
 /** One tab of items: what it is for, a search and a kind filter when it holds enough, the rows. */
 function Items({ data, tab, onNew }: { data: VaultOverview; tab: "team" | "personal"; onNew: () => void }) {
   const { t } = useTranslation();
+  const orgId = useOrgId();
   const now = useNow(60_000);
   const [kind, setKind] = useState<VaultKindFilter>("all");
   const [q, setQ] = useState("");
@@ -197,12 +201,22 @@ function Items({ data, tab, onNew }: { data: VaultOverview; tab: "team" | "perso
       )}
       <Gap />
       <GroupedList>
+        {mayAdd ? (
+          <GroupedRow
+            icon="key"
+            label={t("vault.env.open")}
+            chevron
+            onPress={() => router.push(vaultHref.env(tab) as never)}
+          />
+        ) : null}
         <GroupedRow
           icon="laptop"
           label={t("mobile.vault.import.title")}
           sub={t("mobile.vault.import.text")}
           subLines={4}
           media
+          chevron
+          onPress={() => openPage(webSettingsUrl(serverUrl(), orgId, "vault"))}
         />
       </GroupedList>
     </>
@@ -312,13 +326,20 @@ function ConnectionRow({ icon, conn, now }: { icon: IconName; conn: VaultConnect
       subLines={2}
       media
       below={
-        <View style={styles.chips}>
-          <Chip icon={state.icon} label={t(state.key)} />
-          <Chip
-            icon={conn.scope === "personal" ? "lock" : "members"}
-            label={conn.scope === "personal" ? t("mobile.vault.tab.personal") : t("mobile.vault.tab.team")}
-          />
-        </View>
+        <>
+          <View style={styles.chips}>
+            <Chip icon={state.icon} label={t(state.key)} />
+            <Chip
+              icon={conn.scope === "personal" ? "lock" : "members"}
+              label={conn.scope === "personal" ? t("mobile.vault.tab.personal") : t("mobile.vault.tab.team")}
+            />
+          </View>
+          {vaultNoAgents(conn.access) ? (
+            <Text variant="small" tone="muted">
+              {t("vault.connections.noAgents")}
+            </Text>
+          ) : null}
+        </>
       }
       chevron
       onPress={() => router.push(vaultHref.connection(conn.id) as never)}

@@ -150,11 +150,31 @@ describe("Approvals: the request beside the list", () => {
     expect(review().textContent).toContain("O que vai ser publicado");
     expect(review().querySelector(".ap-review__text")?.textContent).toContain("Os testes passaram. Pode revisar?");
     const bar = review().querySelector(".ap-bar") as HTMLElement;
-    expect(bar.querySelector(".ap-bar__text")?.textContent).toBe(
+    expect(bar.querySelector("p")).toBeNull();
+    expect(bar.querySelector('[data-approve="ap-merge"]')?.getAttribute("aria-description")).toBe(
       "Ada vai comentar numa issue, só desta vez e com estes valores.",
     );
     await click(bar.querySelector('[data-approve="ap-merge"]') as HTMLElement);
     expect(state.calls.find((c) => c.method === "approvals.approve")?.args).toEqual([ORG_ID, "ap-merge", undefined]);
+  });
+
+  test("a long text to publish folds, and Ver mais under it opens it in place for good", async () => {
+    const state = withComment();
+    const long = Array.from({ length: 9 }, (_, i) => `Parágrafo ${i + 1} do texto que vai sair.`).join("\n\n");
+    const merge = state.approvals.find((a) => a.id === "ap-merge");
+    Object.assign(merge?.params ?? {}, { body: long });
+    await renderApp(`/org/${ORG_ID}/approvals`, { api: createFakeApi(state) });
+    await settle(6);
+    await click(row("ap-merge"));
+    const text = review().querySelector(".ap-review__text") as HTMLElement;
+    expect(text.classList.contains("is-folded")).toBe(true);
+    // Under the words, as a message's: never in the card's head.
+    expect(text.closest(".ac-card")?.querySelector(".ac-card__head button")).toBeNull();
+    await click(within(text.parentElement as HTMLElement).getByRole("button", { name: "Ver mais" }));
+    expect(text.classList.contains("is-folded")).toBe(false);
+    expect(within(review()).queryByRole("button", { name: /^(Ver menos|Mostrar menos|Ver inteiro)$/ })).toBeNull();
+    expect(within(text.parentElement as HTMLElement).queryByRole("button", { name: "Ver mais" })).toBeNull();
+    expect(document.activeElement === text).toBe(true);
   });
 
   test("J and K walk the requests; R opens the reason and Escape backs out of it", async () => {

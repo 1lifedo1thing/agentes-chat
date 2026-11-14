@@ -22,10 +22,10 @@ import {
   GroupedRow,
   Icon,
   type IconName,
-  LineIcon,
   MEDIA_ROW,
   MediaRow,
   PressScale,
+  RoleMark,
   Segmented,
   Text,
   useTheme,
@@ -147,24 +147,6 @@ export function BoardRow({
   );
 }
 
-/** A role's mark: a square of dither in its color (the web's role chips), 10 points by default. */
-export function RoleMark({ color, size = 10 }: { color: string; size?: number }) {
-  const { scheme } = useTheme();
-  const tones = widgetTones(color, scheme === "dark");
-  return (
-    <Canvas style={{ width: size, height: size }}>
-      <DitherShape
-        width={size}
-        height={size}
-        shape={roundRectPath(0, 0, size, size, size * 0.3)}
-        fill={tones.stroke}
-        density={0.7}
-        cell={size >= 20 ? 2 : 1}
-      />
-    </Canvas>
-  );
-}
-
 /** Who sees a board, as its meta line says it: the whole workspace, its roles (each with its mark), or only you. */
 export function AudienceLine({ board, after }: { board: Pick<Dashboard, "audience" | "roleIds">; after?: string }) {
   const { t } = useTranslation();
@@ -177,7 +159,7 @@ export function AudienceLine({ board, after }: { board: Pick<Dashboard, "audienc
       {board.audience === "roles" ? (
         picked.map((r) => (
           <View key={r.id} style={styles.role}>
-            <RoleMark color={r.color} />
+            <RoleMark color={r.color} icon={r.icon} size={14} />
             <Text variant="footnote" tone="muted" style={styles.semibold}>
               {r.name}
             </Text>
@@ -468,7 +450,7 @@ export function AudienceFields({
                     contentStyle={[styles.roleChip, { backgroundColor: on ? c.ink : c.chip }]}
                   >
                     <View style={on ? null : styles.faded}>
-                      <RoleMark color={r.color} />
+                      <RoleMark color={r.color} icon={r.icon} size={18} />
                     </View>
                     <Text variant="subhead" style={[styles.semibold, { color: on ? c.bg : c.ink2 }]}>
                       {r.name}
@@ -501,15 +483,12 @@ export function AudienceFields({
           </GroupedList>
         </>
       )}
-      <View style={styles.exposure}>
-        {/* Down by the footer's own top padding, onto its first line (at the row's top it sat above the text). */}
-        <View style={styles.exposureIcon}>
-          <LineIcon variant="footnote" name="shield" size={14} color={c.faint} />
-        </View>
-        <View style={styles.grow}>
-          <GroupedFooter>{t("widgets.exposure")}</GroupedFooter>
-        </View>
-      </View>
+      {/* A footer like the others, from the section's edge: an icon before it set it in from them. */}
+      <GroupedFooter
+        hint={{ name: t("common.about", { label: t("dashboards.audience.label") }), text: t("widgets.exposure") }}
+      >
+        {t("widgets.exposureShort")}
+      </GroupedFooter>
     </>
   );
 }
@@ -555,7 +534,4 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   faded: { opacity: 0.35 },
-  exposure: { flexDirection: "row", alignItems: "flex-start", gap: 6, paddingLeft: 16, paddingTop: 10 },
-  // GroupedFooter's paddingTop.
-  exposureIcon: { paddingTop: 7 },
 });

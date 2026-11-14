@@ -41,7 +41,8 @@ One list of workspaces, grouped by server, in both apps; switching keeps every s
 - **Adicionar workspace**, at the end, opens a pushed screen with two ways: a new workspace on agentes.chat (signed in
   there already: its creation; otherwise sign in or create an account there, then its creation), or the team's server
   by address or QR code. Adding a server makes it the current one: signed in there already, its workspaces; otherwise
-  its sign-in, with a way back to the workspace before. Nothing signs out.
+  its sign-in, with a way back to the workspace before. Nothing signs out. On any server but agentes.chat, "Novo
+  workspace" comes first: a new workspace on that server, its creation over the app.
 - Signing out of a server signs out of that one only: its push registration, session and per-server values go, the
   others and the phone's own preferences (theme, sounds) stay.
 - Push: the phone registers its token with every server signed in to (again when the token changes). A tap reads
@@ -54,9 +55,11 @@ One list of workspaces, grouped by server, in both apps; switching keeps every s
   the webview's store (`cookies_for_url`, the same cookies the window uses) and calls `GET /api/app/me` and
   `GET /api/app/me/unread` like the phone does (no `Origin`, `X-Agentes-Client: mobile`), every minute and when the
   window gains focus. The server open in the window reports its own from the page.
-- The web sidebar's **Seus workspaces** lists them grouped by server, with unread counts; "Adicionar workspace" (in
-  place of "Novo workspace" in the desktop app) opens the welcome window in an add-a-workspace mode: a new workspace on
-  agentes.chat, or the team's server. Choosing a workspace on another server switches the window there.
+- The web sidebar's **Seus workspaces** lists them grouped by server, with unread counts; "Adicionar workspace" opens
+  the welcome window in an add-a-workspace mode: a new workspace on agentes.chat, or the team's server. It takes the
+  place of "Novo workspace" on agentes.chat; on any other server "Novo workspace" stays, under that server's own
+  workspaces, since that window can't make a workspace there. Choosing a workspace on another server switches the
+  window there.
 - New unread notifications on a server not open in the window show as the system's notification, named after the
   workspace and server (found by the minute's check, so up to a minute late); clicking it opens that workspace.
 - Preferences › Servers lists each server's workspaces.
@@ -68,3 +71,12 @@ One list of workspaces, grouped by server, in both apps; switching keeps every s
 - The phone keeps a session per server and asks each one for its workspaces; the desktop asks each one every minute.
 - Another account on the same server isn't supported yet.
 - Self-hosted Android pushes still share the relay's cap per phone across all of its servers (ADR 0152).
+
+## Addendum (2026-11-11): a session's prefix is random and has one owner
+
+Replaces how a server's `storagePrefix` is chosen in decision 2. A prefix made from the server's address (a 32-bit hash) could be matched by another address, and the app would then send the first server's session to the second.
+
+- A server the phone meets for the first time gets a random prefix, saved with its address before anything is stored under it. The saved list is the record of who owns each prefix: a prefix has one owner, and a second address saved with the same one is dropped and gets its own.
+- What is kept per server (the remembered workspace, the chats snapshot, the outboxes) is named after the server's prefix, not its address.
+- Installs from before this keep their sessions: at launch, each server the phone is signed in to that has no saved prefix keeps the one made from its address, now saved as its own. Where two such servers share one, the first signed in to keeps it and the other signs in again.
+- `authedFetch` sends a server's cookie only to addresses on that server's origin.

@@ -7,15 +7,18 @@
 //! native dialogs and self-update. Everything else lives in the runner and the server (TypeScript) and in the
 //! web view.
 
+mod app_icon;
 mod cover;
 mod deep_link;
 mod discover;
 mod dock;
+mod graphics;
 mod host_sync;
 mod local_server;
 mod main_window;
 mod menus;
 mod notch;
+mod prepare;
 mod runners;
 mod servers;
 mod tailscale;
@@ -51,6 +54,10 @@ struct AppInfo {
     version: String,
     os: &'static str,
     arch: &'static str,
+    /// The system's own version where it is read (macOS: `15.1`).
+    system: Option<String>,
+    /// How Linux draws the app, the line people copy (graphics.rs).
+    graphics: Option<String>,
 }
 
 /// The providers' own sign-in pages the runner gets from `claude auth login` / `codex login --device-auth`
@@ -82,33 +89,6 @@ fn is_help_page(url: &str) -> bool {
     path.starts_with("docs/")
 }
 
-/// The windows that make the app "open" like any other: while one is showing, the app has a Dock icon
-/// (with the open-window dot, clickable), even when the person took it out of the Dock.
-const APP_WINDOWS: &[&str] = &["welcome", "prefs", main_window::LABEL];
-
-/// The Dock icon: always, like Slack's (dock.rs), or, when the person turned that off, only while an app
-/// window is visible (macOS).
-pub(crate) fn sync_dock(app: &AppHandle) {
-    #[cfg(target_os = "macos")]
-    {
-        // By window, not web view: the main window holds two (the site and its cover).
-        let open = dock::shows(app)
-            || APP_WINDOWS.iter().any(|name| {
-                app.get_window(name)
-                    .and_then(|w| w.is_visible().ok())
-                    .unwrap_or(false)
-            });
-        let policy = if open {
-            tauri::ActivationPolicy::Regular
-        } else {
-            tauri::ActivationPolicy::Accessory
-        };
-        let _ = app.set_activation_policy(policy);
-    }
-    #[cfg(not(target_os = "macos"))]
-    let _ = app;
-}
-
 pub(crate) fn present(app: &AppHandle, name: &str) -> Result<(), String> {
     if !WINDOWS.contains(&name) {
         return Err(format!("unknown window: {name}"));
@@ -123,9 +103,6 @@ pub(crate) fn present(app: &AppHandle, name: &str) -> Result<(), String> {
     }
     let _ = window.unminimize();
     window.show().map_err(|e| e.to_string())?;
-    if APP_WINDOWS.contains(&name) {
-        sync_dock(app);
-    }
     window.set_focus().map_err(|e| e.to_string())?;
     let _ = app.emit("window://shown", name);
     Ok(())
@@ -147,6 +124,8 @@ fn make_window(app: &AppHandle, name: &str) -> Result<tauri::WebviewWindow, Stri
     let window = tauri::WebviewWindowBuilder::from_config(app, &config)
         .and_then(|b| b.build())
         .map_err(|e| e.to_string())?;
+    // On Windows and Linux a new window starts with the bundle's icon: the person's pick (ADR 0179).
+    app_icon::show(app);
     // Named in the app's language (the Dock's list, the Window menu): never a second "agentes.chat".
     let key = match name {
         "welcome" => Some("windowWelcome"),
@@ -422,11 +401,12 @@ fn hide_window(app: AppHandle, name: String) -> Result<(), String> {
     }
     let Some(window) = app.get_webview_window(&name) else { return Ok(()) };
     if MADE_ON_OPEN.contains(&name.as_str()) {
+        // `destroy` skips CloseRequested, where a setup on screen ends with its window.
+        prepare::closed(&app, &name);
         window.destroy().map_err(|e| e.to_string())?;
     } else {
         window.hide().map_err(|e| e.to_string())?;
     }
-    sync_dock(&app);
     Ok(())
 }
 
@@ -441,6 +421,8 @@ fn app_info(app: AppHandle) -> AppInfo {
         version: app.package_info().version.to_string(),
         os: std::env::consts::OS,
         arch: std::env::consts::ARCH,
+        system: prepare::system_version(),
+        graphics: graphics::system().map(|s| s.line()),
     }
 }
 
@@ -613,6 +595,7 @@ pub fn run() {
         .manage(dock::Dock::default())
         .manage(menus::MenuParts::default())
         .manage(window_state::LastSaved::default())
+        .manage(prepare::Resumed::default())
         .manage(UpdateDownload::default())
         .invoke_handler(tauri::generate_handler![
             runners_list,
@@ -652,6 +635,10 @@ pub fn run() {
             local_server::local_server_reach_stop,
             local_server::local_server_usage,
             local_server::local_server_backup,
+            local_server::local_server_backups_set,
+            local_server::local_server_restore,
+            local_server::keep_running,
+            local_server::open_system_settings,
             local_server::local_server_diagnostics,
             local_server::local_server_sync,
             tailscale::tailscale_status,
@@ -665,14 +652,21 @@ pub fn run() {
             workspaces::workspaces_get,
             workspaces::site_fetch,
             workspaces::welcome_mode_take,
-            dock::dock_set,
+            workspaces::welcome_add,
             menus::app_menu_set,
             menus::context_menu,
             cover::page_ready,
             cover::cover_retry,
             cover::cover_hide,
             cover::cover_server,
-            cover::cover_details
+            cover::cover_details,
+            prepare::screen_access,
+            prepare::screen_request,
+            prepare::disk_access,
+            prepare::network_ask,
+            prepare::privacy_open,
+            prepare::setup_state_get,
+            prepare::setup_state_set
         ])
         .on_menu_event(|app, event| menus::on_event(app, event.id().as_ref()))
         .on_window_event(|window, event| match event {
@@ -694,11 +688,11 @@ pub fn run() {
             {
                 api.prevent_close();
                 let _ = window.hide();
-                sync_dock(window.app_handle());
             }
-            // Welcome and Preferences really close (made again when they open).
-            WindowEvent::CloseRequested { .. } if MADE_ON_OPEN.contains(&window.label()) => {}
-            WindowEvent::Destroyed if MADE_ON_OPEN.contains(&window.label()) => sync_dock(window.app_handle()),
+            // Welcome and Preferences really close (made again when they open), and a setup on screen ends with them.
+            WindowEvent::CloseRequested { .. } if MADE_ON_OPEN.contains(&window.label()) => {
+                prepare::closed(window.app_handle(), window.label());
+            }
             WindowEvent::CloseRequested { api, .. } => {
                 // The other windows are made once and only hidden; quitting goes through "Quit".
                 api.prevent_close();
@@ -718,13 +712,11 @@ pub fn run() {
                         std::thread::spawn(move || {
                             std::thread::sleep(Duration::from_millis(700));
                             let _ = window.hide();
-                            sync_dock(window.app_handle());
                         });
                         return;
                     }
                 }
                 let _ = window.hide();
-                sync_dock(window.app_handle());
             }
             WindowEvent::Moved(_) if window.label() == main_window::LABEL => window_state::remember(window, true),
             WindowEvent::Resized(_) if window.label() == main_window::LABEL => {
@@ -742,8 +734,6 @@ pub fn run() {
             _ => {}
         })
         .setup(|app| {
-            #[cfg(target_os = "macos")]
-            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             let handle = app.handle().clone();
             // Before the tray (it lists them).
             servers::load(&handle);
@@ -768,15 +758,21 @@ pub fn run() {
             main_window::stop_from_notices(&handle);
             deep_link::setup(&handle);
             // Started at login: in the background (the popover, the tray). Opened by hand: the main window on
-            // the server open now, or the first run while there is none.
+            // the server open now, or the first run while there is none. Opened again by macOS in the middle of a
+            // setup (the "Quit & Reopen" after a permission): the main window on the page it showed, and the setup's
+            // window over it.
             let at_login = std::env::args().any(|a| a == AUTOSTART_ARG);
+            let resume = prepare::resume(&handle, at_login);
             if servers::current(&handle).is_none() {
                 let _ = present(&handle, "welcome");
             } else if !at_login {
-                let _ = main_window::open(&handle, None);
+                let _ = main_window::open(&handle, resume.as_ref().and_then(|r| r.page.clone()));
             }
-            // In the Dock from the start, like Slack (the popover then applies the person's choice).
-            sync_dock(&handle);
+            if let Some(resume) = resume {
+                let _ = present(&handle, resume.window);
+            }
+            // The app icon picked on this computer (ADR 0179).
+            app_icon::show(&handle);
             Ok(())
         });
     // After long in the background macOS may end a window's page to free memory, which leaves it blank:

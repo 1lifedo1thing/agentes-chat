@@ -49,9 +49,11 @@ import {
   useChannelMembers,
   useChannels,
   useChannelThreads,
+  useConsultations,
   useCreateMission,
   useDmReads,
   useDms,
+  useFollowUps,
   useHeldPlaces,
   useJoinChannel,
   useMarkChannelRead,
@@ -72,21 +74,26 @@ import {
   useThreadRange,
   useUpdateChannel,
   useWaiting,
+  useWaitingOnMe,
   useWikiTree,
+  type WaitingItem,
 } from "@agenteschat/client";
 import { actionCardOf } from "@agenteschat/client/lib/action-cards";
 import {
-  activityVerb,
+  barConsultTime,
   barElapsed,
   barEntries,
+  bothAtIt,
+  consultDetails,
   entriesOffScreen,
-  isWriting,
+  lineStep,
   runElapsed,
-  toolActivity,
+  someoneTypes,
   waitsForWords,
 } from "@agenteschat/client/lib/activity";
 import type { AgentTab } from "@agenteschat/client/lib/agent-edit";
 import { foldTalk, TALK_LINE_CHARS, talksToAgent } from "@agenteschat/client/lib/agent-talk";
+import { returnsHere } from "@agenteschat/client/lib/agent-work";
 import { looksLikeApiKey } from "@agenteschat/client/lib/api-key-text";
 import { approvalCardItems, asOfNow, cardDeadline } from "@agenteschat/client/lib/approval-card";
 import { artifactRefs } from "@agenteschat/client/lib/artifacts";
@@ -104,7 +111,7 @@ import {
   screenAboveEnd,
   usageLine,
 } from "@agenteschat/client/lib/chat";
-import { firstUnreadId, opensAtLastRead } from "@agenteschat/client/lib/chat-look";
+import { firstUnreadId, opensAtLastRead, unreadThreadRootId } from "@agenteschat/client/lib/chat-look";
 import { choiceReplyLine } from "@agenteschat/client/lib/choices";
 import { draftKeyOf } from "@agenteschat/client/lib/composer-drafts";
 import { consultsForLine } from "@agenteschat/client/lib/consult-group";
@@ -112,17 +119,29 @@ import { consultationsOf } from "@agenteschat/client/lib/consultations";
 import { deviceWaitOf } from "@agenteschat/client/lib/devices";
 import { clearDraft, peekDraft } from "@agenteschat/client/lib/drafts";
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
-import { errorCode, errorText, restrictionLine, runErrorText, runFailureLine } from "@agenteschat/client/lib/errors";
+import {
+  errorCode,
+  errorText,
+  filesTextOnlyOf,
+  restrictionLine,
+  runErrorText,
+  runErrorWords,
+  runFailureLine,
+  sendFailureText,
+  sendNeedsEdit,
+} from "@agenteschat/client/lib/errors";
 import { everyoneWord, isEveryoneMention, mentionsReader, offersEveryone } from "@agenteschat/client/lib/everyone";
 import { fileIcon, fitsUpload, formatBytes, MAX_UPLOAD_MB, previewKind } from "@agenteschat/client/lib/files";
-import { capitalize, dayLabel, formatFullDate, formatTime } from "@agenteschat/client/lib/format";
+import { dayLabel, formatFullDate, formatTime } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
+import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { issueTakenOf, issueWorkOf, taskConversationOf } from "@agenteschat/client/lib/issues";
 import { workAnchorBody, workContinuable, workIsOver } from "@agenteschat/client/lib/long-work";
 import { supersededBrainNotices } from "@agenteschat/client/lib/machine-outages";
 import { hasWideBlock, plainLine } from "@agenteschat/client/lib/markdown";
 import { isMediaAfterReply, isMediaAlone, messageMediaOf, quoteText, textOrMedia } from "@agenteschat/client/lib/media";
 import { serverBody } from "@agenteschat/client/lib/message-body";
+import { joinDrafts, tooLongToSend } from "@agenteschat/client/lib/message-length";
 import {
   isOpenMission,
   missionCommandOf,
@@ -138,26 +157,23 @@ import {
 import { noAiCardOf } from "@agenteschat/client/lib/no-ai";
 import { isTalkerReply, noticeOf, routineReportText, talkerWaited } from "@agenteschat/client/lib/notices";
 import { brainUnavailableOf, isOfflineNotice } from "@agenteschat/client/lib/outages";
-import { can, leavesChannel, managesChannel, setsAutoReply } from "@agenteschat/client/lib/permissions";
+import { can, leavesChannel, makesAgents, managesChannel, setsAutoReply } from "@agenteschat/client/lib/permissions";
+import { modelStandInText } from "@agenteschat/client/lib/plan-usage";
 import { reachHandoffs } from "@agenteschat/client/lib/reach";
 import { localMeta, replyOf } from "@agenteschat/client/lib/reply";
+import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { isReminderMessage, reminderBody, routineReplyOf } from "@agenteschat/client/lib/routines";
 import { picksForMe, replyAloneKey } from "@agenteschat/client/lib/routing";
+import { ConversationSeat } from "@agenteschat/client/lib/seat-context";
 import { seenMessageId } from "@agenteschat/client/lib/seen";
 import { hiddenCount, tasksOf, todayStart } from "@agenteschat/client/lib/task-manager";
-import { holdsText } from "@agenteschat/client/lib/text";
 import { contextMarks, hiddenByThreads, rangeCandidates, threadStartOf } from "@agenteschat/client/lib/threads";
-import {
-  blockPlaces,
-  buildTimeline,
-  lastPostedId,
-  mergeTimeline,
-  type TimelineItem,
-} from "@agenteschat/client/lib/timeline";
+import { buildTimeline, lastPostedId, mergeTimeline, type TimelineItem } from "@agenteschat/client/lib/timeline";
 import { usageWaitOf } from "@agenteschat/client/lib/usage-pause";
 import { appVia } from "@agenteschat/client/lib/via";
 import { voiceOf } from "@agenteschat/client/lib/voice";
-import { barStep, showsActivity, splitCanceled } from "@agenteschat/client/lib/work";
+import { waitingAway, waitingNotification } from "@agenteschat/client/lib/waiting";
+import { barStep, makingImage, showsActivity, splitCanceled } from "@agenteschat/client/lib/work";
 import {
   AffixInput,
   Avatar,
@@ -178,11 +194,11 @@ import {
   Field,
   FORMAT_KINDS,
   type FormatKind,
+  focusAtEnd,
   Icon,
   type IconName,
   Input,
   isIdHandle,
-  Kbd,
   Locked,
   Mention,
   Menu,
@@ -192,6 +208,8 @@ import {
   Message,
   MessageLookContext,
   MessageText,
+  mayTakeFocus,
+  OPEN_LAYER,
   PixelSpinner,
   SavedNote,
   Skeleton,
@@ -221,9 +239,12 @@ import {
 } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
+import { anchorShift, anchorsScroll, type RowResize } from "@/chat/anchor";
 import { tokenizeBody } from "@/chat/body";
 import { ChatMedia } from "@/chat/ChatMedia";
 import { ChatVoice } from "@/chat/ChatVoice";
+import { ClippedBody } from "@/chat/ClippedBody";
+import { LongDraftNotice } from "@/chat/LongDraftNotice";
 import { useConversationLook } from "@/chat/look";
 import { MessageBody } from "@/chat/MessageBody";
 import { useBrowserOffline } from "@/chat/offline";
@@ -231,7 +252,6 @@ import { readingLanding } from "@/chat/reading";
 import {
   blockRowByRun,
   nextSlots,
-  openerOf,
   type RunSlot,
   rowShows,
   SLOT_HOLD_MS,
@@ -240,16 +260,18 @@ import {
 } from "@/chat/run-slots";
 import { dividerIsFar, earlierKey, firstNewKey, landedKey, pillParts, unseenOf } from "@/chat/unseen";
 import { ActionCard } from "@/components/ActionCard";
+import { AskAdminButton } from "@/components/AdminAsk";
 import { AgentActionReceipts } from "@/components/AgentActions";
 import { ActorAvatar, AgentAvatar, PersonAvatar } from "@/components/AgentAvatar";
 import { AgentPanel } from "@/components/AgentPanel";
 import { ApprovalAsk, ApprovalGroupAsk } from "@/components/ApprovalAsk";
-import { InlineApproval } from "@/components/ApprovalItem";
 import { AgentPanelContext, AgentPanelShownContext, useOpenAgentPanel } from "@/components/agent-panel-context";
 import { AgentSidebar } from "@/components/agents/AgentSidebar";
+import { ModelStandInLine } from "@/components/ai/ModelPicker";
 import { ArtifactCard } from "@/components/artifacts/ArtifactCard";
 import { ImageSet } from "@/components/artifacts/ArtifactViewer";
 import { objectUrls } from "@/components/artifacts/FileView";
+import { ImageMaking } from "@/components/artifacts/ImageMaking";
 import { MessageWorkLine } from "@/components/BackgroundWork";
 import { HeldBrowserCard, RunBrowserCard, useHeldTakeover } from "@/components/browser/BrowserCard";
 import { BrowserHandoffCard } from "@/components/browser/BrowserHandoffCard";
@@ -270,10 +292,11 @@ import {
   StopsProvider,
   stopsOf,
   UnshownLine,
+  useStopMovedOn,
   useStopNotice,
 } from "@/components/ChatNotices";
 import { QueueWaitTurns, useAgentsMachineId } from "@/components/ComputerQueue";
-import { ConsultationPanel } from "@/components/ConsultationPanel";
+import { ConsultationDialog } from "@/components/ConsultationDialog";
 import {
   ConsultAnswerLine,
   type ConsultGroups,
@@ -289,6 +312,7 @@ import { DatePill, type DatePillHandle } from "@/components/DatePill";
 import { DeleteChannelDialog } from "@/components/DeleteChannelDialog";
 import { MenuEntries } from "@/components/DesktopMenus";
 import { DeviceWaitCard } from "@/components/devices/DeviceWaitCard";
+import { WaitToolOffAction } from "@/components/devices/ToolOneClick";
 import { useArchiveChannelWithUndo } from "@/components/entity-menus";
 import { FeedbackOfferRow } from "@/components/FeedbackOffer";
 import { InPlaceProvider } from "@/components/InPlace";
@@ -328,6 +352,7 @@ import { NewMissionDialog } from "@/components/missions/MissionDialogs";
 import { NavToggle } from "@/components/NavDrawer";
 import { CHANNEL_NAME, ChannelAccessChoice, toChannelName } from "@/components/NewChannelDialog";
 import { FailedRunFix, KeyGuardDialog, NoAiBanner, NoAiCard, useNoAiAutoOpen } from "@/components/NoAi";
+import { useNotificationOpener } from "@/components/NotificationOpen";
 import { useNewAgent } from "@/components/new-agent/NewAgentDialog";
 import { OpensAgent } from "@/components/OpensAgent";
 import { useOrg } from "@/components/org-context";
@@ -338,13 +363,16 @@ import { MessageReactions, useEmojiLabels } from "@/components/Reactions";
 import {
   type AskRegistry,
   AskRegistryProvider,
+  askOf,
   createAskRegistry,
   type PendingAsk,
   sameAsk,
   showRequest,
   useExpired,
+  usePendingAsks,
   WaitMark,
 } from "@/components/RequestCard";
+import { ReturnLine } from "@/components/ReturnLine";
 import { SidePanel } from "@/components/SidePanel";
 import { ActivitySky, ChannelWelcome, colorOf } from "@/components/Sky";
 import { isStoppable, StopButton, useContinueRun, useStopRun, useWasContinued } from "@/components/StopRun";
@@ -368,24 +396,25 @@ import {
 import { UsageWaitCancel, UsageWaitClosed } from "@/components/UsagePauseCard";
 import { PushAskContext, PushAskInline, usePushAsk } from "@/components/WebPush";
 import { useWikiLinkRenderer } from "@/components/WikiLinks";
-import { BarAlsoTyping, BarPhrase, BarStep, ConsultClock, WorkingStack } from "@/components/WorkingLine";
+import { BarAlsoTyping, BarPhrase, BarStep, ConsultClock, TypingMark, WorkingStack } from "@/components/WorkingLine";
 import { useChannelSearch } from "@/hooks/useChannelSearch";
 import { useComposerDraft } from "@/hooks/useComposerDraft";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useDmSidebar, useMembersColumn } from "@/hooks/useMembersColumn";
 import { useMentionSearch } from "@/hooks/useMentionSearch";
-import { usePrefersReducedMotion, useRevealedText } from "@/hooks/useRevealedText";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useAgentLines } from "@/hooks/usePresence";
 import { useRightHandLook } from "@/hooks/useRightHandLook";
 import { useHeaderSearch } from "@/hooks/useWorkspaceSearch";
 import { TYPED_VALUES } from "@/i18n";
 import { onAgentPanel, takeAgentPanel } from "@/lib/agent-panel-ask";
 import { onChannelDetails, takeChannelDetails } from "@/lib/channel-details";
 import { selectingIn } from "@/lib/context-menu";
-import { desktopPlatform, useDocumentTitle } from "@/lib/desktop";
+import { desktopPlatform, thisMac, useDocumentTitle } from "@/lib/desktop";
 import { holdOnScreen } from "@/lib/island";
-import { typingInField } from "@/lib/keys";
+import { composes, typingInField } from "@/lib/keys";
 import { lookOf } from "@/lib/look";
-import { threadSearch, useThreadPanel } from "@/lib/open-param";
+import { type AgentPanelPlace, agentPanelSearch, threadSearch, useAgentPanel, useThreadPanel } from "@/lib/open-param";
 import { reportPainted } from "@/lib/perf";
 import { useToast } from "@/lib/toast";
 import {
@@ -620,6 +649,7 @@ export function ChannelPage({
   if (dm) {
     const search = {
       ...threadSearch(router.state.location.search as Record<string, unknown>),
+      ...agentPanelSearch(router.state.location.search as Record<string, unknown>),
       ...(focusMessageId ? { m: focusMessageId } : {}),
     };
     return dm.with.type === "agent" ? (
@@ -781,6 +811,7 @@ function ChannelView({
   const { org, me } = useOrg();
   const dir = useDirectory(org.id);
   const rightHandLook = useRightHandLook();
+  const rightHandId = useMemo(() => dir.agents.find(isRightHand)?.id, [dir.agents]);
   const isMember = channel.isMember;
   // An administrator reads every channel without joining it (ADR 0151): only what needs being in it waits for Entrar.
   const readable = isMember || (!chrome && can(org, "administrator"));
@@ -860,7 +891,7 @@ function ChannelView({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.defaultPrevented || draftRef.current.trim()) return;
-      if (document.querySelector('[role="dialog"], [role="menu"], [role="listbox"]')) return;
+      if (document.querySelector(OPEN_LAYER)) return;
       // An Esc in another field (the search, a card's answer) is that field's: the composer stops agents on its own.
       if (typingInField(e.target)) return;
       // An Esc from a panel is that panel's, and one from the conversation beside a thread isn't the thread's.
@@ -888,7 +919,7 @@ function ChannelView({
     if (!quote) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.defaultPrevented) return;
-      if (document.querySelector('[role="dialog"], [role="menu"], [role="listbox"]')) return;
+      if (document.querySelector(OPEN_LAYER)) return;
       // The composer's Esc lets go of the reply first; another field's (the search, a card's answer) is that field's.
       if (typingInField(e.target) && !(e.target as Element).closest('[id^="composer-"]')) return;
       e.preventDefault();
@@ -909,65 +940,86 @@ function ChannelView({
     };
   }, [searchOpen, carry, channel.id]);
   // "Ver perfil" (a DM's header, the profile card): the agent's page in the same place, at a tab when a card asks
-  // (its memory); one panel at a time. Its opener again closes it (`close`, counted, so unsaved edits ask first).
-  const [profile, setProfile] = useState<{ agentId: string; tab?: AgentTab; close?: number } | null>(null);
+  // (its memory, at the item it names); one panel at a time. The agent and its tab are the URL's, so Back, Forward and
+  // a reload keep it; the item and the opener asking again to close it (`close`, counted, so unsaved edits ask first)
+  // are this page's.
+  const [agentPlace, setAgentPlace] = useAgentPanel(!chrome?.panel);
+  const [profileAsk, setProfileAsk] = useState<{ agentId: string; item?: string; close?: number } | null>(null);
+  const profile = useMemo<(AgentPanelPlace & { item?: string; close?: number }) | null>(
+    () =>
+      agentPlace && {
+        ...agentPlace,
+        ...(profileAsk?.agentId === agentPlace.agentId ? { item: profileAsk.item, close: profileAsk.close } : {}),
+      },
+    [agentPlace, profileAsk],
+  );
+  const profileNow = useRef(profile);
+  profileNow.current = profile;
+  // Closed by the URL (Back, a thread taking its place): a close asked before would close it again on Forward.
+  const profileShown = agentPlace?.agentId;
+  useEffect(() => {
+    if (!profileShown) setProfileAsk(null);
+  }, [profileShown]);
+  const askProfileClose = useCallback(() => {
+    const agentId = profileNow.current?.agentId;
+    if (!agentId) return;
+    setProfileAsk((ask) =>
+      ask?.agentId === agentId ? { ...ask, close: (ask.close ?? 0) + 1 } : { agentId, close: 1 },
+    );
+  }, []);
   // What had the focus when the profile opened: it gets it back when the panel closes.
   const profileOpener = useRef<HTMLElement | null>(null);
   const closeProfile = useCallback(() => {
-    setProfile(null);
+    setAgentPlace(null);
+    setProfileAsk(null);
     const opener = profileOpener.current;
     profileOpener.current = null;
     // After the frame: a closing "Descartar e sair" dialog hands focus back when it unmounts, to a page that's gone.
     requestAnimationFrame(() => {
       if (opener?.isConnected) opener.focus();
     });
-  }, []);
+  }, [setAgentPlace]);
   // The conversation stays in use beside the page: what would take the panel's place asks first over unsaved edits.
   const profileKeeps = useCallback(() => {
     if (!document.querySelector(".thread-panel [data-dirty]")) return false;
-    setProfile((open) => open && { ...open, close: (open.close ?? 0) + 1 });
+    askProfileClose();
     return true;
-  }, []);
-  // A thread the URL brings back (Back, Forward) takes the panel's place like one opened from here, unless unsaved
-  // edits hold it.
+  }, [askProfileClose]);
+  // A thread the URL brings back (Back, Forward) takes the search's place like one opened from here (the URL holds one
+  // panel: a thread or an agent's page).
   const panelId = panel?.id;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: only a new thread; the rest close around it
   useEffect(() => {
-    if (!panelId || profileKeeps()) return;
-    setProfile(null);
-    setConsultId(null);
-    if (panelId !== hitThread.current) setSearchOpen(false);
+    if (panelId && panelId !== hitThread.current) setSearchOpen(false);
   }, [panelId]);
-  // A question an agent asked another from here, opened from its line in the reply ("Theo ⇄ Iris"): one panel too.
+  // A question an agent asked another from here, opened from its line in the reply ("Theo ⇄ Iris"): a dialog over
+  // the conversation, whatever pane is open beside it.
   const [consultId, setConsultId] = useState<string | null>(null);
   // A DM with an agent: its tasks (ADR 0128), from the pill in the header; one panel too, any other one closes it.
   const [tasksOpen, setTasksOpen] = useState(false);
   useEffect(() => {
-    if (panel || profile || consultId || searchOpen) setTasksOpen(false);
-  }, [panel, profile, consultId, searchOpen]);
+    if (panel || profile || searchOpen) setTasksOpen(false);
+  }, [panel, profile, searchOpen]);
   const toggleTasks = useCallback(() => {
     if (profileKeeps()) return;
     setPanel(null);
-    setProfile(null);
-    setConsultId(null);
+    setAgentPlace(null);
     setSearchOpen(false);
     setTasksOpen((open) => !open);
-  }, [profileKeeps, setPanel]);
+  }, [profileKeeps, setPanel, setAgentPlace]);
   const outerPanel = useOpenAgentPanel();
   const openAgentPanel = useCallback(
-    (agentId: string, tab?: AgentTab) => {
+    (agentId: string, tab?: AgentTab, item?: string) => {
       if (profileKeeps()) return;
-      setPanel(null);
       setSearchOpen(false);
-      setConsultId(null);
-      const from = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      setProfile((open) => {
-        if (open?.agentId === agentId && open.tab === tab) return { ...open, close: (open.close ?? 0) + 1 };
-        profileOpener.current = from;
-        return { agentId, tab };
-      });
+      const open = profileNow.current;
+      // Its opener again (no tab, or the tab it is on) closes it.
+      if (open?.agentId === agentId && (!tab || tab === (open.tab ?? "overview")) && open.item === item)
+        return askProfileClose();
+      profileOpener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setProfileAsk({ agentId, item });
+      setAgentPlace({ agentId, tab });
     },
-    [profileKeeps, setPanel],
+    [profileKeeps, askProfileClose, setAgentPlace],
   );
   // A sidebar row's settings button, an agent's picture: its page beside this conversation, or beside its own once it
   // shows.
@@ -988,16 +1040,37 @@ function ChannelView({
   // `/mission` with several agents and none named: "Nova missão" with the goal filled in.
   const [missionDraft, setMissionDraft] = useState<string | null>(null);
   draftRef.current = draft;
+  // Once per conversation (each one mounts its own view): the cursor waits in the box, at the end of a draft.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only on opening; a thread opened with it takes the focus
   useEffect(() => {
-    if (!draftKey) return;
-    // Text left here is for the person to finish: the caret waits at its end.
     const box = composer.current;
-    if (peekDraft(draftKey) && box) {
-      box.focus();
-      box.setSelectionRange(box.value.length, box.value.length);
+    if (draftKey && peekDraft(draftKey)) {
+      // Text handed here is for the person to finish, whatever else holds the focus.
+      if (box) focusAtEnd(box);
+    } else if (box && !panel && mayTakeFocus()) {
+      focusAtEnd(box);
     }
-    clearDraft(draftKey);
+    if (draftKey) clearDraft(draftKey);
   }, [draftKey]);
+  // A printable key typed on the conversation, outside any field, goes into its box. Space, Enter, the arrows and the
+  // page keys stay the list's, and a key with ⌘, Ctrl or Alt is a shortcut.
+  const root = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const box = composer.current;
+      if (!box || box.disabled || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || composes(e)) return;
+      if (!/^\S$/u.test(e.key) || typingInField(e.target) || box.closest("[data-voice]")) return;
+      // The innermost conversation the key landed in (a thread's panel sits inside its channel); none: the page's.
+      const at = e.target instanceof Element ? e.target.closest(".shell__main--chat") : null;
+      if (at ? at !== root.current : chrome?.panel || e.target !== document.body) return;
+      // A side panel over it (an agent's page, the search's results, its tasks) is not the conversation.
+      const side = at && (e.target as Element).closest(".thread-panel");
+      if (side && at.contains(side)) return;
+      if (mayTakeFocus()) focusAtEnd(box);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [chrome?.panel]);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const membersColumn = useMembersColumn();
   const dmSidebar = useDmSidebar();
@@ -1236,9 +1309,6 @@ function ChannelView({
       lines: channelList.lines,
     };
   }, [thread, channelList, threadList, older, channelMessages.data, channel.id, panel?.id]);
-  // The agents at work here: a follow-up's line that woke one stays while its turn runs (`settledNotices`).
-  const workingKey = useStreams((s) => [...new Set(scopedRuns(s).map((r) => r.agentId))].sort().join(" "));
-  const agentsAtWork = useMemo(() => new Set(workingKey ? workingKey.split(" ") : []), [workingKey]);
   const timeline = useMemo(() => {
     if (thread) {
       // The thread's conversation. One made from a range: not its root (the channel's marker) nor the
@@ -1255,7 +1325,6 @@ function ChannelView({
         list.filter((m) => !passed.has(m.id)),
         [],
         [],
-        agentsAtWork,
       );
     }
     const visible = channelList?.visible ?? [];
@@ -1264,7 +1333,6 @@ function ChannelView({
       visible.filter((m) => !passed.has(m.id)),
       [],
       [],
-      agentsAtWork,
     );
     // A marker, a closed line or a thread's line is not a message: nothing groups under it.
     const special = (m: MessageType) =>
@@ -1272,14 +1340,14 @@ function ChannelView({
       threadsView?.byId.get(m.id)?.state === "closed" ||
       Boolean(channelList?.lines.has(m.id));
     return ungroupAfter(items, special);
-  }, [thread, channelList, channelMessages.data, threadMessages.data, threadsView, agentsAtWork]);
+  }, [thread, channelList, channelMessages.data, threadMessages.data, threadsView]);
 
-  // The agents' blocks (one per run, from "pensando" to its final message: `chat/run-slots.ts`), each where its words
-  // first showed, else at the end. They change when runs start or end or their words first show, never on a delta.
+  // The agents' blocks (one per run, from "pensando" to its final message: `chat/run-slots.ts`), at the end. They
+  // change when runs start or end, never on another of a run's events.
   const liveRunsKey = useStreams((s) =>
     scopedRuns(s)
       .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0))
-      .map((r) => `${r.runId}\t${r.agentId}\t${r.provisional ? 1 : 0}\t${r.shownAt ?? ""}`)
+      .map((r) => `${r.runId}\t${r.agentId}\t${r.provisional ? 1 : 0}`)
       .join("\n"),
   );
   const landedRuns = useMemo(
@@ -1295,8 +1363,8 @@ function ChannelView({
   const slots = useMemo(() => {
     const onScreen = liveRunsKey
       ? liveRunsKey.split("\n").map((line) => {
-          const [runId = "", agentId = "", provisional, shownAt] = line.split("\t");
-          return { runId, agentId, provisional: provisional === "1", ...(shownAt ? { shownAt } : {}) };
+          const [runId = "", agentId = "", provisional] = line.split("\t");
+          return { runId, agentId, provisional: provisional === "1" };
         })
       : [];
     // Its message is in a cache already (it lands in the timeline on the next render), or came without its body and
@@ -1323,8 +1391,8 @@ function ChannelView({
     return () => clearTimeout(timer);
   }, [slots]);
   const slotsKey = slots.map((x) => x.key).join(" ");
-  // Questions the agents asked other agents from here, drawn inside the replies that asked them (loaded or live):
-  // how their answers' notices draw, and which ones the working line leaves to a block near the end.
+  // Questions the agents asked other agents from here, drawn inside the replies that asked them: how their answers'
+  // notices draw, and which ones the working line leaves to a reply near the end (a run at work draws none yet).
   const consultRows = useMemo(() => timeline.flatMap((i) => (i.kind === "message" ? [i.message] : [])), [timeline]);
   const liveRuns = useMemo(() => new Set(slots.map((slot) => slot.runId)), [slots]);
   const consultGroups = useConsultGroups(channel.id, consultRows, liveRuns, consultId);
@@ -1425,7 +1493,7 @@ function ChannelView({
   const dividerOn = useRef(false);
   /**
    * Something arrived out of view: the divider before `key` (the first one since the person left). `up`: it landed
-   * above the divider already drawn (a reply keeps the place where its first words showed), which moves there.
+   * above the divider already drawn (a message placed before its post, `PLACE_KEPT_MS`), which moves there.
    */
   const markUnseen = (key: string, up = false) => {
     if (unseenFromRef.current !== null && !up) return;
@@ -1537,7 +1605,41 @@ function ChannelView({
         ownGlide = autoScrollUntil.current;
       } else followRef.current();
     };
-    const ro = new ResizeObserver(() => pin());
+    // Reading further up in a browser with no scroll anchoring: rows drawn late above the top edge would push what
+    // is on screen down, so the list moves by as much (`anchorShift`). Pinned to the end, `pin` already follows.
+    const heights = anchorsScroll() ? null : new WeakMap<Element, number>();
+    const hold = (entries: ResizeObserverEntry[]) => {
+      if (!heights) return;
+      const resized: RowResize[] = [];
+      const listTop = el.getBoundingClientRect().top - el.scrollTop;
+      for (const { target } of entries) {
+        if (!(target instanceof HTMLElement) || target === el) continue;
+        const before = heights.get(target);
+        const after = target.offsetHeight;
+        heights.set(target, after);
+        if (before !== undefined && before !== after)
+          resized.push({ top: target.getBoundingClientRect().top - listTop, before, after });
+      }
+      if (stick.current || Date.now() < autoScrollUntil.current) return;
+      const shift = anchorShift(resized, el.scrollTop);
+      if (shift !== 0) el.scrollTop += shift;
+    };
+    // What stands above the list folding away (the day's greeting, a bar) moves its top edge up: read further up, the
+    // words on screen stay where they are. Only up: what appears above it as the conversation opens is where the
+    // opening lands it. Pinned to the end, `pin` keeps the newest message in place.
+    // In the page's own terms: the window moving (Safari pushing the page up for the keyboard) folds nothing.
+    const edge = () => el.getBoundingClientRect().top + window.scrollY;
+    let top = edge();
+    const keep = () => {
+      const now = edge();
+      if (now < top && !stick.current && Date.now() >= autoScrollUntil.current) el.scrollTop -= top - now;
+      top = now;
+    };
+    const ro = new ResizeObserver((entries) => {
+      keep();
+      hold(entries);
+      pin();
+    });
     for (const child of Array.from(el.children)) ro.observe(child);
     ro.observe(el);
     // Only rows that came in are watched (observing every row again on each change cost a pass per delta).
@@ -1587,7 +1689,7 @@ function ChannelView({
     const blocks = previousSlots.current.split(" ");
     const shown = slotsKey.split(" ");
     const newBlock = shown.some((k) => k && !blocks.includes(k));
-    // Runs whose block just went: each one's message took its place, which can be above rows that came after it.
+    // Runs whose block just went: each one's message can sit above rows that came after it (`PLACE_KEPT_MS`).
     const gone = new Set(
       [...runKeys.current].flatMap(([runId, key]) => (blocks.includes(key) && !shown.includes(key) ? [runId] : [])),
     );
@@ -1625,7 +1727,26 @@ function ChannelView({
   // Their cards register with this view's scroller (`RowsProvider` around it, not around the panels).
   const [askRegistry] = useState(createAskRegistry);
   const asksOut = useAsksOutOfView(scroller, askRegistry, isMember);
+  // …and all of them, in view or not: the bar says a hand-off waits on me from them.
+  const pendingAsks = usePendingAsks(askRegistry);
   const seeAsk = (id: string) => showRequest(scroller.current, id, !reducedMotion);
+  // …and what waits on me here with its card not loaded (older, or in a thread): the line counts it and goes to the
+  // oldest (ADR 0172).
+  const waitingOnMe = useWaitingOnMe(org.id).data?.items;
+  const loadedIds = useMemo(
+    () => new Set(timeline.flatMap((i) => (i.kind === "message" ? [i.message.id] : []))),
+    [timeline],
+  );
+  const waitingHere = useMemo(
+    () => (isMember ? waitingAway(waitingOnMe, channel.id, thread?.id ?? null, loadedIds) : []),
+    [isMember, waitingOnMe, channel.id, thread?.id, loadedIds],
+  );
+  const openNotification = useNotificationOpener();
+  const seeWaiting = (item: WaitingItem) => {
+    const { messageId, threadId } = item.source;
+    if (messageId && (!threadId || threadId === thread?.id)) jumpTo(messageId);
+    else openNotification(waitingNotification(item), org.id);
+  };
   // A DM with an agent: its tasks (ADR 0128), a pill in the header while it has any, opening them in the side panel.
   const tasksAgentId = chrome?.dmAgentId && !thread ? chrome.dmAgentId : null;
   // Asked every 5 s: a pill beside the conversation, not the page that follows every task (3 s).
@@ -1655,52 +1776,27 @@ function ChannelView({
 
   // `[[` in the composer links wiki pages.
   const wikiPages = useWikiTree(org.id);
-  // Composer context: who it goes to (the DM agent, or the agents @mentioned in the draft).
   const dmAgent = chrome?.dmAgentId ? dir.agentById.get(chrome.dmAgentId) : undefined;
   const look = useConversationLook(
     Boolean(chrome?.dmAgentId || chrome?.dmPersonId || thread?.channelKind === "dm"),
     dmAgent ? colorOf(dmAgent) : undefined,
   );
   const namedLook = useMemo(() => ({ ...look, names: true, faces: true }), [look]);
-  const draftAgents = useMemo(
-    () =>
-      [
-        ...new Set(
-          tokenizeBody(draft).flatMap((tok) =>
-            tok.type === "mention" ? [dir.agentByHandle.get(tok.handle.toLowerCase())?.id] : [],
-          ),
-        ),
-      ]
-        .map((id) => (id ? dir.agentById.get(id) : undefined))
-        .filter((a): a is Agent => Boolean(a)),
-    [draft, dir.agentByHandle, dir.agentById],
-  );
-  const pillAgents = dmAgent ? [dmAgent] : draftAgents;
-  const composerPills =
-    pillAgents.length > 0 || missionReply ? (
-      <>
-        {missionReply && (
-          <span className="ac-composer__pill composer-reply">
-            <Icon name="message" size={14} />
-            <span className="ac-composer__pill-text">{t("missions.reply.pill", { label: missionReply.label })}</span>
-            <button
-              type="button"
-              className="composer-reply__close"
-              aria-label={t("missions.reply.cancel")}
-              onClick={() => setMissionReply(null)}
-            >
-              <Icon name="close" size={14} />
-            </button>
-          </span>
-        )}
-        {pillAgents.map((a) => (
-          <span key={a.id} className="ac-composer__agent">
-            <AgentAvatar agentId={a.id} channelId={channel.id} name={a.name} size="xs" />
-            <span className="ac-composer__pill-text">{a.name}</span>
-          </span>
-        ))}
-      </>
-    ) : undefined;
+  // The composer's one pill: the mission this message answers, which can be called off.
+  const composerPills = missionReply ? (
+    <span className="ac-composer__pill composer-reply">
+      <Icon name="message" size={14} />
+      <span className="ac-composer__pill-text">{t("missions.reply.pill", { label: missionReply.label })}</span>
+      <button
+        type="button"
+        className="composer-reply__close"
+        aria-label={t("missions.reply.cancel")}
+        onClick={() => setMissionReply(null)}
+      >
+        <Icon name="close" size={14} />
+      </button>
+    </span>
+  ) : undefined;
   // "/" commands, for the DM agent or the channel's suggested agent.
   const commandAgent = dmAgent ?? suggestedAgent;
   const navigateTo = useNavigate();
@@ -1883,6 +1979,24 @@ function ChannelView({
     setFocusTarget(messageId);
     setFocusDone(false);
   };
+  // Opened with something unread that isn't at its end: a reply in a thread, one line under its root, maybe far
+  // above. That root comes into view, highlighted, instead of an end with nothing new. Once, with what was unread
+  // on opening (reading moves it).
+  const [openedUnread] = useState(() => ({
+    count: thread || focusMessageId || adjustThreadId ? 0 : (channel.unreadCount ?? dmRead?.unread ?? 0),
+    at: channel.lastReadAt ?? dmRead?.lastReadAt,
+  }));
+  const threadLanded = useRef(openedUnread.count === 0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the messages and the threads are in
+  useEffect(() => {
+    // The threads as the server has them now: a list kept from an earlier visit knows nothing of the new reply.
+    if (threadLanded.current || !serverRead || !openThreads.isSuccess || openThreads.isFetching || !channelList) return;
+    threadLanded.current = true;
+    // A thread made from a range has no root in the conversation (its marker stands there).
+    const threads = (openThreads.data?.threads ?? []).filter((x) => !x.context);
+    const root = unreadThreadRootId(channelList.visible, threads, openedUnread.at, me.user.id);
+    if (root) jumpTo(root);
+  }, [serverRead, openThreads.isSuccess, openThreads.isFetching, channelList]);
   // A message link to this same conversation (a pill) changes only `?m=`: the page stays, so jump to it.
   const linked = useRef(focusMessageId);
   // biome-ignore lint/correctness/useExhaustiveDependencies: only a new `?m=`
@@ -1938,6 +2052,11 @@ function ChannelView({
         });
     }
     composer.current?.focus();
+  };
+  // A draft past the length limit goes as a text file instead, which agents open like any other.
+  const draftAsFile = () => {
+    addFiles([new File([draft], t("channel.tooLong.fileName"), { type: "text/plain" })]);
+    setDraft("");
   };
   const attached = files.flatMap((f) => (f.status === "done" && f.ref ? [f.ref] : []));
   const uploading = files.some((f) => f.status === "uploading");
@@ -2003,9 +2122,13 @@ function ChannelView({
             if (!allowed) toast.show(t("voice.limit"));
             return allowed;
           },
+          // "gravando áudio…" for the others while it records and while it uploads (then the server keeps it until the
+          // message comes); the throttle makes it one frame every 3 s, and holds the upload's while they write.
+          onRecording: () => sendTyping(undefined, "voice"),
           onTake: ({ blob, durationMs, peaks }) => {
             toBottom(true);
             setQuote(null);
+            const uploading = setInterval(() => sendTyping(undefined, "voice", true), 1000);
             void sendVoice({
               blob,
               durationMs,
@@ -2013,11 +2136,17 @@ function ChannelView({
               threadId: thread ? thread.id : null,
               replyTo: quote?.id ?? null,
               language: i18n.language.split("-")[0] ?? null,
-            });
+            }).finally(() => clearInterval(uploading));
           },
           onNotice: (notice: VoiceNotice) => {
             if (notice === "blocked") {
-              toast.show(t(desktopPlatform() === "mac" ? "voice.blockedMac" : "voice.blockedWeb"), "error");
+              // In the Mac app the way out opens right there: System Settings on the microphone's list.
+              if (desktopPlatform() === "mac")
+                toast.show(t("voice.blockedMac"), "error", {
+                  label: t("voice.openMacSettings"),
+                  run: () => void thisMac.openMicrophoneSettings().catch(() => {}),
+                });
+              else toast.show(t("voice.blockedWeb"), "error");
             } else {
               toast.show(t(`voice.${notice}`), notice === "deleted" ? undefined : "error");
             }
@@ -2038,8 +2167,8 @@ function ChannelView({
           },
         }
       : undefined;
-  // While an agent works here: the send button turns into stop (box empty), and typing offers
-  // "Juntar ao que ele faz" (↵) or "Parar e mandar" (⌘↵).
+  // While an agent works here: the send button turns into stop (box empty); a message sent with ↵ joins what it does,
+  // with ⌘↵ stops it to be read now (anyone who writes, the stop button only for who may stop it).
   const stopName = stopTarget ? (dir.agentById.get(stopTarget.agentId)?.name ?? t("channel.unknownAgent")) : "";
   const stopGrammar = agentGrammar(stopName);
   const working = stopTarget
@@ -2049,23 +2178,6 @@ function ChannelView({
         onStop: () => stopRun(stopTarget),
       }
     : null;
-  // The choice is for anyone who writes while an agent works (the stop button only for who may stop it).
-  const busyGrammar = agentGrammar(
-    busyTarget ? (dir.agentById.get(busyTarget.agentId)?.name ?? t("channel.unknownAgent")) : "",
-  );
-  const choice = busyTarget
-    ? {
-        label: t("run.choice.label", busyGrammar),
-        joinLabel: t("run.choice.join", busyGrammar),
-        interruptLabel: t("run.choice.interrupt"),
-        hint: (c: "join" | "interrupt", mod: string) => (
-          <>
-            <Kbd>↵</Kbd> {c === "join" ? t("run.choice.joins") : t("run.choice.interrupts")} · <Kbd>{mod}↵</Kbd>{" "}
-            {c === "join" ? t("run.choice.interrupts") : t("run.choice.joins")}
-          </>
-        ),
-      }
-    : undefined;
   // The round button's count (red for a mention of me), and its label: how many, who spoke, who is writing now.
   const myHandle = dir.memberById.get(me.user.id)?.handle?.toLowerCase();
   const unseenSummary = useMemo(
@@ -2074,7 +2186,7 @@ function ChannelView({
   );
   const writingAgents = useStreams((s) =>
     scopedRuns(s)
-      .filter((r) => r.status === "running" && r.text.length > 0)
+      .filter((r) => r.status === "running")
       .map((r) => r.agentId)
       .filter((id, i, all) => all.indexOf(id) === i)
       .join(" "),
@@ -2186,7 +2298,7 @@ function ChannelView({
     if (!adjusting) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.defaultPrevented) return;
-      if (document.querySelector('[role="dialog"], [role="menu"], [role="listbox"]')) return;
+      if (document.querySelector(OPEN_LAYER)) return;
       adjust.cancel();
     };
     window.addEventListener("keydown", onKey);
@@ -2205,6 +2317,13 @@ function ChannelView({
       stick.current = true;
       retry(local);
     },
+    editUnsent: (local) => {
+      qc.setQueryData<MessageType[]>(keys.messages(org.id, channel.id), (list) =>
+        list?.filter((m) => m.id !== local.id),
+      );
+      setDraft(joinDrafts(local.body, draft));
+      composer.current?.focus();
+    },
     resend: (body) => send(body),
     focusComposer: () => composer.current?.focus(),
     fillComposer: (text) => {
@@ -2214,6 +2333,7 @@ function ChannelView({
     followBottom: () => {
       if (stick.current && Date.now() >= autoScrollUntil.current) follow();
     },
+    letGo,
     channelAgents,
     // "Responder": in a thread view the next message answers this one (there are no threads in a thread); in a
     // channel, the message's thread opens in the panel (a reply there starts it).
@@ -2225,25 +2345,16 @@ function ChannelView({
         }
       : (message) => {
           if (profileKeeps()) return;
-          setProfile(null);
-          setConsultId(null);
           setSearchOpen(false);
           setPanel({ id: message.threadId ?? message.id, reply: true });
         },
     openThread: (id, focus) => {
       if (profileKeeps()) return;
-      setProfile(null);
-      setConsultId(null);
       setSearchOpen(false);
       setPanel({ id, reply: false, focus });
     },
-    openConsultation: (id) => {
-      if (profileKeeps()) return;
-      setProfile(null);
-      setPanel(null);
-      setSearchOpen(false);
-      setConsultId(id);
-    },
+    openConsultation: (id) => setConsultId(id),
+    seeRequest: (id) => seeAsk(id),
     requestCorrection: (message, text) => {
       const handle = message.author.type === "agent" ? dir.agentById.get(message.author.id ?? "")?.handle : undefined;
       toBottom(true);
@@ -2262,29 +2373,32 @@ function ChannelView({
   };
   const inThread = Boolean(thread);
   // A thread with no composer (archived, read only here) has nothing for "Responder" to do.
-  const replies = !thread || !(chrome?.composerReplacement || chrome?.locked || channel.can?.post === false);
+  const replies =
+    !thread || !(chrome?.composerReplacement || chrome?.locked || channel.can?.post === false || org.deletion);
   const actions = useMemo<ChannelActions>(() => {
     const now = () => latestActions.current;
     return {
       insertMention: (handle) => now().insertMention(handle),
       retry: (local) => now().retry(local),
+      editUnsent: (local) => now().editUnsent(local),
       resend: (body) => now().resend(body),
       focusComposer: () => now().focusComposer(),
       fillComposer: (text) => now().fillComposer(text),
       followBottom: () => now().followBottom(),
+      letGo: () => now().letGo(),
       channelAgents,
       reply: replies ? (message) => now().reply(message) : undefined,
       // A thread view has no panel: its links go to the thread's page.
       openThread: inThread ? undefined : (id, focus) => now().openThread(id, focus),
-      // In a thread view the question opens in place, inside the reply's block.
-      openConsultation: inThread ? undefined : (id) => now().openConsultation(id),
+      openConsultation: (id) => now().openConsultation(id),
+      seeRequest: (id) => now().seeRequest(id),
       requestCorrection: (message, text) => now().requestCorrection(message, text),
       jumpTo: (messageId) => now().jumpTo(messageId),
       replyToMission: (missionId, label) => now().replyToMission(missionId, label),
     };
   }, [channelAgents, inThread, replies]);
 
-  // A DM with an agent: the agent's chip sits in the composer's toolbar row.
+  // A DM with an agent (not one of its threads): its side column.
   const agentDm = Boolean(chrome?.dmAgentId) && !thread;
   const tasksControl = useMemo(
     () => (tasksAgentId ? { tasks: agentTasks, open: tasksOpen, toggle: toggleTasks } : null),
@@ -2295,19 +2409,17 @@ function ChannelView({
   const openSearch = () => {
     if (profileKeeps()) return;
     setPanel(null);
-    setProfile(null);
-    setConsultId(null);
+    setAgentPlace(null);
     setSearchOpen(true);
   };
   // Anything open in the column's place: its toggle closes that and shows the column.
-  const paneOpen = Boolean(panel || profile || searchOpen || consultId || tasksOpen);
+  const paneOpen = Boolean(panel || profile || searchOpen || tasksOpen);
   const toggleColumn = (column: { open: boolean; toggle: () => void }) => {
     if (!paneOpen) return column.toggle();
     if (profileKeeps()) return;
     setPanel(null);
-    setProfile(null);
+    setAgentPlace(null);
     setSearchOpen(false);
-    setConsultId(null);
     setTasksOpen(false);
     if (!column.open) column.toggle();
   };
@@ -2333,6 +2445,7 @@ function ChannelView({
               {/* A DM with an agent reads as one centered column; channels, threads and DMs between people
             are a left-aligned team chat. */}
               <Tag
+                ref={root}
                 className={cx("shell__main shell__main--chat", chrome?.panel && "thread-panel__chat")}
                 data-continues={continues || undefined}
               >
@@ -2409,7 +2522,17 @@ function ChannelView({
                           </div>
                         )}
                         {olderState !== "loading" && <DatePill scroller={scroller} ref={datePill} />}
-                        <RowsProvider asks={askRegistry} stop={stopTarget?.runId} drawn={rowDrawn}>
+                        <RowsProvider
+                          asks={askRegistry}
+                          stop={stopTarget?.runId}
+                          drawn={rowDrawn}
+                          seat={{
+                            orgId: org.id,
+                            channelId: channel.id,
+                            rightHandId,
+                            dm: Boolean(chrome?.dmAgentId || chrome?.dmPersonId || thread?.channelKind === "dm"),
+                          }}
+                        >
                           <section
                             ref={scroller}
                             className="channel__messages"
@@ -2591,7 +2714,7 @@ function ChannelView({
                         )}
                         <div className="channel__composer">
                           <ConnectionBanner status={status} />
-                          {!chrome?.intro && (
+                          {!chrome?.intro && !org.deletion && (
                             <NoAiBanner agentIds={channelAgents.map((a) => a.id)} dmAgentId={chrome?.dmAgentId} />
                           )}
                           <ActivityBar
@@ -2601,12 +2724,22 @@ function ChannelView({
                             outOfView={outOfView}
                             onSee={seeRun}
                             asks={asksOut}
+                            pendingAsks={pendingAsks}
                             onSeeAsk={seeAsk}
+                            waiting={waitingHere}
+                            onSeeWaiting={seeWaiting}
                             stoppable={stopTarget?.runId}
                             consultBlocks={consultGroups.nearEnd}
+                            member={isMember}
                           />
                           {adjustThreadId ? (
                             <RangeBar adjust={adjust} />
+                          ) : org.deletion ? (
+                            // Being deleted, it reads as ever and takes no message (ADR 0088 §7).
+                            <p className="channel__notice channel__readonly ac-iconline" role="status">
+                              <Icon name="lock" size={16} />
+                              <span>{t("deleting.composer")}</span>
+                            </p>
                           ) : chrome?.composerReplacement ? (
                             chrome.composerReplacement
                           ) : !isMember ? (
@@ -2675,7 +2808,17 @@ function ChannelView({
                                 }
                                 onFiles={chrome?.locked ? undefined : addFiles}
                                 canSendEmpty={attached.length > 0}
-                                sendBlocked={uploading}
+                                sendBlocked={uploading || tooLongToSend(draft)}
+                                notice={
+                                  tooLongToSend(draft) ? (
+                                    <LongDraftNotice
+                                      length={draft.trim().length}
+                                      onAsFile={
+                                        chrome?.locked || files.length >= MAX_ATTACHMENTS ? undefined : draftAsFile
+                                      }
+                                    />
+                                  ) : undefined
+                                }
                                 format={formatLabels}
                                 emoji={mediaTabs ? { ...emojiLabels, button: mediaTabs.button } : emojiLabels}
                                 pickerTabs={mediaTabs?.tabs}
@@ -2690,7 +2833,7 @@ function ChannelView({
                                 }}
                                 onSend={onSend}
                                 working={chrome?.locked ? null : working}
-                                choice={choice}
+                                agentBusy={Boolean(busyTarget)}
                                 voice={voice}
                                 disabled={Boolean(chrome?.locked)}
                                 label={
@@ -2710,7 +2853,6 @@ function ChannelView({
                                 sendText={t("channel.send")}
                                 attachLabel={t("channel.attach")}
                                 pills={composerPills}
-                                inlinePills={agentDm}
                                 links={{
                                   listLabel: t("wiki.editor.suggest"),
                                   search: (q) =>
@@ -2735,6 +2877,7 @@ function ChannelView({
                                   search: mentionSearch,
                                   listLabel: t("mentions.list"),
                                   onPick: (item) => {
+                                    // Only a channel's list carries the note (a DM takes no new member).
                                     if (item.note && item.key.startsWith("agent:")) setOffer(item.key.slice(6));
                                   },
                                 }}
@@ -2798,42 +2941,14 @@ function ChannelView({
                   at a time; the members column stays under it. */}
                   {profile ? (
                     <AgentPanel
-                      key={`${profile.agentId}:${profile.tab ?? ""}`}
+                      key={`${profile.agentId}:${profile.item ?? ""}`}
                       agentId={profile.agentId}
                       tab={profile.tab}
+                      item={profile.item}
                       closeRequest={profile.close}
+                      onTab={(tab) => setAgentPlace({ agentId: profile.agentId, tab }, { replace: true })}
                       onClose={closeProfile}
                     />
-                  ) : consultId ? (
-                    /* Rows from more than the two people of a DM: they keep their names there too. */
-                    <MessageLookContext.Provider value={namedLook}>
-                      <ConsultationPanel
-                        key={consultId}
-                        channelId={channel.id}
-                        channelName={chrome?.composerTarget ? null : channel.name}
-                        consultationId={consultId}
-                        onClose={() => setConsultId(null)}
-                        onTalk={(handle) => {
-                          setConsultId(null);
-                          actions.insertMention(handle);
-                        }}
-                        onAnswer={() => {
-                          setConsultId(null);
-                          actions.focusComposer();
-                        }}
-                        renderMessage={(m, grouped) => (
-                          <ErrorBoundary resetKey={m} fallback={unshownLine}>
-                            <TimelineMessage
-                              message={m}
-                              grouped={grouped}
-                              entering={false}
-                              modelLabels={NO_LABELS}
-                              readOnly
-                            />
-                          </ErrorBoundary>
-                        )}
-                      />
-                    </MessageLookContext.Provider>
                   ) : tasksOpen && tasksAgentId ? (
                     <AgentTasksPanel
                       agentId={tasksAgentId}
@@ -2845,6 +2960,7 @@ function ChannelView({
                     />
                   ) : panel || searchOpen ? (
                     <SidePanel
+                      inAddress={Boolean(panel)}
                       label={t(panel ? "threads.side.label" : "searchPage.panel.label")}
                       onClose={() => {
                         setPanel(null);
@@ -2912,6 +3028,39 @@ function ChannelView({
                   )}
                 </div>
               </Tag>
+              {consultId && (
+                /* Rows from more than the two people of a DM: they keep their names there too. */
+                <MessageLookContext.Provider value={namedLook}>
+                  <ConsultationDialog
+                    key={consultId}
+                    channelId={channel.id}
+                    channelName={chrome?.composerTarget ? null : channel.name}
+                    consultationId={consultId}
+                    onClose={() => setConsultId(null)}
+                    // The composer takes the focus once the dialog is gone: its trap would hold it while open.
+                    onTalk={(handle) => {
+                      setConsultId(null);
+                      actions.insertMention(handle);
+                      requestAnimationFrame(() => actions.focusComposer());
+                    }}
+                    onAnswer={() => {
+                      setConsultId(null);
+                      requestAnimationFrame(() => actions.focusComposer());
+                    }}
+                    renderMessage={(m, grouped) => (
+                      <ErrorBoundary resetKey={m} fallback={unshownLine}>
+                        <TimelineMessage
+                          message={m}
+                          grouped={grouped}
+                          entering={false}
+                          modelLabels={NO_LABELS}
+                          readOnly
+                        />
+                      </ErrorBoundary>
+                    )}
+                  />
+                </MessageLookContext.Provider>
+              )}
               {!chrome && !profile && membersColumn.sheet && (
                 <MembersSheet
                   channel={channel}
@@ -2974,10 +3123,9 @@ function Parts({ resetKey, children }: { resetKey: unknown; children: ReactNode 
 }
 
 /**
- * Persisted rows and the agents' live blocks: one whose words showed sits where they first did, with what people sent
- * meanwhile below it, the others last (`blockPlaces`). One flat keyed list: an answer seen live is drawn under its
- * block's key in that same place (its message is posted there), so the final message takes the block's place without
- * a remount. Memoized: streaming deltas don't re-render it.
+ * Persisted rows, then the agents' live blocks at the end (their replies are posted there, after what people sent
+ * meanwhile). One flat keyed list: an answer seen live is drawn under its block's key, so the final message takes a
+ * drawn block's place without a remount. Memoized: a run's events don't re-render it.
  */
 const Timeline = memo(function Timeline({
   items,
@@ -3106,8 +3254,6 @@ const Timeline = memo(function Timeline({
     const waiting = new Set(waitingKey.split(" "));
     return waitingLast(slots, (runId) => waiting.has(runId));
   }, [slots, waitingKey]);
-  // Each block where its words first showed (what people sent meanwhile reads below it), the others last.
-  const places = useMemo(() => blockPlaces(items, drawn, (slot) => slot.shownAt), [items, drawn]);
   // A take over whose run has no live block and no message here: its card at the end (`HeldBrowserRow`).
   const heldPlaces = useHeldPlaces();
   const held = useMemo(
@@ -3122,14 +3268,7 @@ const Timeline = memo(function Timeline({
   );
   const shownMessages = useMemo(() => items.flatMap((i) => (i.kind === "message" ? [i.message] : [])), [items]);
   // One stop, one pill: a stopped task's notice goes into its reply's pill while that reply (or its block) is here.
-  const stops = useMemo(
-    () =>
-      stopsOf(
-        shownMessages,
-        slots.map((s) => s.runId),
-      ),
-    [shownMessages, slots],
-  );
+  const stops = useMemo(() => stopsOf(shownMessages, slots), [shownMessages, slots]);
   const rows: ReactElement<{ message?: MessageType }>[] = [];
   const afterUnshown = () => unshown.has(rows.at(-1)?.key ?? "");
   const blockRow = (slot: RunSlot) => {
@@ -3145,16 +3284,10 @@ const Timeline = memo(function Timeline({
     );
   };
   for (const [at, item] of items.entries()) {
-    // A block drawn right before it: it starts its own run of rows, its header back.
-    const placed = places.before.get(at) ?? [];
-    const grouped = item.kind === "message" && item.grouped && !afterUnshown() && placed.length === 0;
+    const grouped = item.kind === "message" && item.grouped && !afterUnshown();
     const after = items[at + 1];
     // Where it sits in its author's run: my own rows' bubbles square the corners they share.
-    const run = runPosition(
-      grouped,
-      after?.kind === "message" && after.grouped && !unshown.has(item.key) && !places.before.has(at + 1),
-    );
-    for (const slot of placed) rows.push(blockRow(slot));
+    const run = runPosition(grouped, after?.kind === "message" && after.grouped && !unshown.has(item.key));
     if (divider?.key === item.key) {
       rows.push(
         <div key="unread-divider" className="channel__unread" data-fade={divider.fading || undefined}>
@@ -3213,7 +3346,7 @@ const Timeline = memo(function Timeline({
     );
   }
   rows.push(<QueueWaitTurns key="queue-waits" channelId={channelId} messages={shownMessages} />);
-  for (const slot of places.after) rows.push(blockRow(slot));
+  for (const slot of drawn) rows.push(blockRow(slot));
   for (const place of held) rows.push(<HeldBrowserRow key={`held-${place.runId}`} place={place} />);
   // A row that fails to draw (data this build doesn't expect) is one quiet line: the rest of the conversation, the
   // sidebar and the composer keep working. Its message changing draws it again: a live block that broke has none,
@@ -3268,10 +3401,7 @@ const HELD_RECENT_MS = 12 * 60 * 60_000;
 /** Model names for the rows of "Ajustar trecho" (no usage line is shown there). */
 const NO_LABELS = new Map<string, string>();
 
-/**
- * The live run as a message, while it has none (the block's text and header come from the run). Its time is its
- * message's to be: when its words first showed, else when it started.
- */
+/** The live run as a message, while it has none (the block's header comes from the run): from when it started. */
 function liveMessageOf(r: LiveRun): MessageType {
   return {
     id: `live:${r.runId}`,
@@ -3282,15 +3412,15 @@ function liveMessageOf(r: LiveRun): MessageType {
     mentionedAgentIds: [],
     agentRunId: r.runId,
     meta: {},
-    createdAt: r.shownAt ?? new Date(r.startedAt ?? Date.now()).toISOString(),
+    createdAt: new Date(r.startedAt ?? Date.now()).toISOString(),
   } as MessageType;
 }
 
 /**
- * One agent's answer, from "pensando" to its final message: the
- * live run while it works, then the message, in the same component (same element: nothing remounts or
- * flashes). Until the message lands, the last live state stays on screen. Subscribed by run id, so a
- * streaming delta re-renders only this block.
+ * One agent's answer, from "pensando" to its final message: the live run while it works (drawn only for what it has
+ * to show meanwhile, its browser card; its words show whole once posted), then the message, in the same component (same
+ * element: nothing remounts or flashes). A message whose live row was drawn takes that row's place; one whose row never
+ * drew slides in like any new row. Subscribed by run id, so a run's events re-render only this block.
  */
 function RunBlock({
   runId,
@@ -3317,14 +3447,13 @@ function RunBlock({
   const liveChannel = live?.channelId;
   const liveThread = live?.threadId;
   const liveStart = live?.startedAt;
-  const liveShown = live?.shownAt;
   // biome-ignore lint/correctness/useExhaustiveDependencies: the placeholder only depends on who and when
   const placeholder = useMemo(
     () => (live ? liveMessageOf(live) : null),
-    [liveId, liveAgent, liveChannel, liveThread, liveStart, liveShown],
+    [liveId, liveAgent, liveChannel, liveThread, liveStart],
   );
-  // No words of its own yet: the bar above the composer speaks for it, and the block draws only for something to
-  // show (`rowShows`). A run gone quiet meanwhile draws for "sem notícias · Atualizar": wake when that moment comes.
+  // At work the bar above the composer speaks for it, and the block draws only for something to show (`rowShows`).
+  // A run gone quiet meanwhile draws for "sem notícias · Atualizar": wake when that moment comes.
   const waits = Boolean(live && !message && waitsForWords(live));
   useDue(live?.lastEventAt ?? liveStart ?? null, QUIET_AFTER_MS, waits);
   const hidden = Boolean(live && !message && !rowShows(live, Date.now()));
@@ -3335,6 +3464,8 @@ function RunBlock({
   useLayoutEffect(() => {
     if (drawnRun) rowDrawn?.();
   }, [drawnRun, rowDrawn]);
+  const wasDrawn = useRef(false);
+  if (drawnRun) wasDrawn.current = true;
   if (!shown || hidden) return null;
   // At work it never groups under the agent's own message: it starts as the waiting row with its face, and taking the
   // face away when the words arrive would move the row. Its saved message groups as any other.
@@ -3346,6 +3477,7 @@ function RunBlock({
       seenLive={message ? last.current : undefined}
       grouped={together}
       {...rest}
+      entering={rest.entering || Boolean(message && !wasDrawn.current)}
     />
   );
 }
@@ -3417,24 +3549,31 @@ const RowStopContext = createContext<string | undefined>(undefined);
 /** Told when a run's live row is drawn, so the view measures which blocks are in view again. */
 const RowDrawnContext = createContext<(() => void) | undefined>(undefined);
 
-/** What the conversation's rows read from their view: the requests' registry, which row stops, and "a row drew". */
+/**
+ * What the conversation's rows read from their view: the requests' registry, which row stops, "a row drew", and
+ * which place the right hand's cards in them show (`seat`: its work here is on that one, not on the viewer's own).
+ */
 function RowsProvider({
   asks,
   stop,
   drawn,
+  seat,
   children,
 }: {
   asks: AskRegistry;
   stop: string | undefined;
   drawn: () => void;
+  seat: Omit<Parameters<typeof ConversationSeat>[0], "children">;
   children: ReactNode;
 }) {
   return (
-    <AskRegistryProvider value={asks}>
-      <RowDrawnContext.Provider value={drawn}>
-        <RowStopContext.Provider value={stop}>{children}</RowStopContext.Provider>
-      </RowDrawnContext.Provider>
-    </AskRegistryProvider>
+    <ConversationSeat {...seat}>
+      <AskRegistryProvider value={asks}>
+        <RowDrawnContext.Provider value={drawn}>
+          <RowStopContext.Provider value={stop}>{children}</RowStopContext.Provider>
+        </RowDrawnContext.Provider>
+      </AskRegistryProvider>
+    </ConversationSeat>
   );
 }
 
@@ -3458,15 +3597,9 @@ function RunTail({ run }: { run: LiveRun }) {
   );
 }
 
-/** Under a live block: "sem notícias há 4 min · Atualizar", or what it is doing between its steps. */
-function LiveRunStatus({
-  run,
-  quietOnly = false,
-}: {
-  run: LiveRun /** Waiting for its words, the bar says what it does: only "sem notícias" here. */;
-  quietOnly?: boolean;
-}) {
-  const { t, i18n } = useTranslation();
+/** Under a live block: "sem notícias há 4 min · Atualizar" (what it does now is the bar's to say). */
+function LiveRunStatus({ run }: { run: LiveRun }) {
+  const { t } = useTranslation();
   const { org } = useOrg();
   const api = useApi();
   const qc = useQueryClient();
@@ -3483,8 +3616,8 @@ function LiveRunStatus({
       window.removeEventListener("focus", again);
     };
   }, []);
-  const quiet = isQuiet(run);
   const [checking, setChecking] = useState(false);
+  if (!isQuiet(run)) return null;
   const recheck = () => {
     setChecking(true);
     void reconcileChannelRuns(api, liveStore, org.id, run.channelId, [run.runId])
@@ -3493,33 +3626,17 @@ function LiveRunStatus({
       })
       .finally(() => setChecking(false));
   };
-  const doing = run.tool ? toolActivity(run.tool, run.connector, null, run) : null;
-  const showDoing =
-    !quietOnly &&
-    !quiet &&
-    doing &&
-    doing.kind !== "thinking" &&
-    !(run.work ?? []).some((w) => w.kind === "call" && w.running);
-  if (!quiet && !showDoing) return null;
   return (
     <div className="run-status">
-      {quiet ? (
-        <p className="ac-msg__activity run-quiet">
-          {t("run.quiet", {
-            minutes: Math.max(3, Math.floor((Date.now() - (run.lastEventAt ?? run.startedAt ?? 0)) / 60_000)),
-          })}
-          {" · "}
-          <Button variant="ghost" size="sm" loading={checking} onClick={recheck}>
-            {t("run.refresh")}
-          </Button>
-        </p>
-      ) : (
-        doing && (
-          <p className="ac-msg__activity" aria-live="polite">
-            {capitalize(activityVerb(t, doing), i18n.language)}…
-          </p>
-        )
-      )}
+      <p className="ac-msg__activity run-quiet">
+        {t("run.quiet", {
+          minutes: Math.max(3, Math.floor((Date.now() - (run.lastEventAt ?? run.startedAt ?? 0)) / 60_000)),
+        })}
+        {" · "}
+        <Button variant="ghost" size="sm" loading={checking} onClick={recheck}>
+          {t("run.refresh")}
+        </Button>
+      </p>
     </div>
   );
 }
@@ -3558,11 +3675,13 @@ function StoppedLine({
   const cont = useContinueRun();
   const continued = useWasContinued(runId, message);
   const stop = useStopNotice(runId);
+  // The agent works here again, or wrote after the stop: it went on, so the stop is over and offers nothing.
+  const movedOn = useStopMovedOn(runId);
   // Its words when no person stopped it: the step limit, stuck; long work its provider cut off says it in its text.
   const fallback = limit ? (limit === "failed" ? null : t(limit === "stuck" ? "run.stuck" : "run.stepLimit")) : note;
   const said = Boolean(stop || byUserId || fallback);
   // Only a run a person stopped, one at its step limit, or long work its provider cut off, picks up again.
-  const can = Boolean(runId && (byUserId || stop || limit) && owner && !continued && canStop(owner));
+  const can = Boolean(runId && (byUserId || stop || limit) && owner && !continued && !movedOn && canStop(owner));
   if (!said && !can) return null;
   // Nothing to say (its text already says why): Continuar alone.
   if (!said && runId)
@@ -3606,8 +3725,14 @@ function useDue(from: number | null, ms: number, on: boolean) {
   const wait = at - Date.now();
   useEffect(() => {
     if (!on || wait <= 0) return;
-    const timer = setTimeout(() => tick((n) => n + 1), wait);
-    return () => clearTimeout(timer);
+    const again = () => tick((n) => n + 1);
+    const timer = setTimeout(again, wait);
+    // Back to the tab after a while: look again at once (a sleeping computer's timers run late).
+    window.addEventListener("focus", again);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", again);
+    };
   }, [on, wait]);
   return !on || wait <= 0;
 }
@@ -3784,9 +3909,13 @@ function ActivityBar({
   outOfView,
   onSee,
   asks,
+  pendingAsks,
   onSeeAsk,
+  waiting,
+  onSeeWaiting,
   stoppable,
   consultBlocks,
+  member,
 }: {
   channelId: string;
   /** A thread view: who types there (null: who types in the conversation itself). */
@@ -3799,18 +3928,28 @@ function ActivityBar({
   onSee: (runId: string) => void;
   /** Requests waiting for the viewer out of view: the bar says the first one instead of who works. */
   asks: PendingAsk[];
+  /** Every request waiting for the viewer here, in view or not: a hand-off whose agent asks them says so. */
+  pendingAsks: readonly PendingAsk[];
   /** "Ver" on a request: scrolls to it and lights it up. */
   onSeeAsk: (id: string) => void;
+  /** What waits on the viewer here with no card loaded, oldest first: counted when no request above speaks. */
+  waiting: WaitingItem[];
+  /** "Ver" on that count: goes to the oldest one. */
+  onSeeWaiting: (item: WaitingItem) => void;
   /** The run Esc stops (the pill shows its stop). */
   stoppable?: string;
   /** Runs whose questions a block near the end shows (`ConsultGroup`): the line doesn't say them again. */
   consultBlocks: ReadonlySet<string>;
+  /** The reader is in this conversation (may answer here). */
+  member: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const { org, me } = useOrg();
   const dir = useDirectory(org.id);
+  // The returns agents set here (a thread's own, else the main timeline's): the bar holds them while nobody works.
+  const returns = returnsHere(useFollowUps(org.id, channelId).data, threadId);
   const all = useStreams((s) => runsInChannel(s, channelId).filter((r) => visible?.current(r) ?? true), sameRuns);
-  const runs = all.filter((r) => r.status !== "failed" && r.status !== "canceled");
+  const runs = all.filter((r) => r.status !== "failed");
   const typing = useLive((s) => s.typing[channelId]);
   // Ticks while someone is on it (a question out counts: seen on the last render).
   const asking = useRef(false);
@@ -3820,12 +3959,29 @@ function ActivityBar({
     (s) => consultsIn(s.consults, channelId, now).filter((c) => visible?.current(c) ?? true),
     sameList,
   );
-  // A reply near the end shows its questions with where each is and its clock: the asker's own work stays here.
-  const consults = consultsForLine(heard, consultBlocks);
+  // A reply near the end shows its questions with where each is and its clock: the asker's own work stays here. Work
+  // handed off (ADR 0095 addendum) stays for as long as it is out, wherever its divider is: the bar never toggles.
+  const consultList = useConsultations(org.id, channelId).data;
+  const agentLines = useAgentLines();
+  const consults = [
+    ...consultsForLine(
+      heard.filter((c) => c.kind !== "note"),
+      consultBlocks,
+    ),
+    ...heard.filter((c) => c.kind === "note"),
+  ].map((c) => ({
+    ...c,
+    ...consultDetails(
+      c,
+      consultList ?? [],
+      (id, run) => askOf(pendingAsks, id, run)?.on ?? null,
+      (id) => lineStep(t, agentLines.get(id)),
+    ),
+  }));
   asking.current = consults.length > 0;
   const ids = typingIn({ [channelId]: typing ?? {} }, channelId, now, me.user.id, threadId);
-  // Its row on screen says what it does, for how long and how to stop it: the bar leaves that agent out (a row not
-  // drawn yet is out of view). Still waiting for its words, its row says none of that: the bar keeps it.
+  // At work, its row shows only what it has to show meanwhile (its browser card): the bar says what it does, for how
+  // long, and stops it. A row that says all that (none at work now) leaves the agent out while it is in view.
   const rowInView = (r: LiveRun) => !waitsForWords(r) && !outOfView(r.runId);
   const entries = entriesOffScreen(
     barEntries(
@@ -3834,7 +3990,6 @@ function ActivityBar({
       (id) => dir.agentById.get(id)?.name ?? t("channel.unknownAgent"),
       (id) => dir.memberById.get(id)?.name,
       consults,
-      true,
     ),
     runs,
     rowInView,
@@ -3851,19 +4006,42 @@ function ActivityBar({
   const took = soloAway ? barElapsed(t, entries, runs, now) : null;
   // The row's own words for what it does now, after its name; a question out keeps its own phrase.
   const step = soloAway && firstAgent && !firstAgent.consult ? barStep(t, soloAway, i18n.language, now) : null;
-  const typers = entries.some((e) => e.type === "person");
   // Agents running code: "Ver código" with the live code and output.
   const coding = runs.filter(
     (r) => !rowInView(r) && r.code && (r.work ?? []).some((w) => w.kind === "call" && w.running),
   );
   // An agent working in its browser: the bar says so, and a click opens its browser card in the conversation.
   // Its row in view draws its browser card itself.
-  const browsing = runs.find((r) => !isWriting(r) && usesBrowser(r) && !rowInView(r));
+  const browsing = runs.find((r) => usesBrowser(r) && !rowInView(r));
   const openBrowser = browsing ? () => requestBrowserCard({ agentId: browsing.agentId }) : undefined;
   // A request waiting for you, out of view: the bar says that instead (waiting beats working).
   const ask = asks[0];
   const askName = ask ? (dir.anyAgent(ask.agentId)?.name ?? t("channel.unknownAgent")) : "";
-  const pill = !ask && active;
+  const away = ask ? undefined : waiting[0];
+  const awayAgent = away?.asker?.type === "agent" ? dir.anyAgent(away.asker.id) : undefined;
+  const pill = !ask && !away && active;
+  // Nobody at work and nothing waiting on the reader: the soonest return rests in the same box (ADR 0037 addendum).
+  const rest = !ask && !away && !active && returns.length > 0;
+  // One agent's question or hand-off still out (ADR 0095 addendum): the consulted agent's state, its sky, its time, and
+  // "Ver", which opens their talk (or, when its card waits on me, goes to the card). No stop: that is theirs.
+  const consult = agents.length === 1 && firstAgent?.consult?.status === "asking" ? firstAgent.consult : undefined;
+  const consultAsk = consult?.yours ? askOf(pendingAsks, consult.to, consult.toRun) : null;
+  const consultTime = barConsultTime(i18n.language, consult, now);
+  const openTalk = useChannelActions()?.openConsultation;
+  const seeConsult = consultAsk
+    ? () => onSeeAsk(consultAsk.ask.id)
+    : consult?.id && openTalk
+      ? () => openTalk(consult.id as string)
+      : undefined;
+  const skyOf = consult ? consult.to : firstAgent?.id;
+  const consultTip =
+    consult?.kind === "note" && firstAgent
+      ? t("chat.consult.handedOff", {
+          to: consult.toName,
+          from: firstAgent.name,
+          context: agentGrammar(firstAgent.name).context,
+        })
+      : undefined;
   return (
     <>
       {coding.map((r) =>
@@ -3881,11 +4059,11 @@ function ActivityBar({
       <div
         className="ac-typing"
         aria-live="polite"
-        data-active={active || Boolean(ask)}
-        data-ask={ask ? true : undefined}
+        data-active={active || Boolean(ask) || Boolean(away)}
+        data-rest={rest || undefined}
+        data-ask={ask || away ? true : undefined}
+        data-consult={pill && consult ? (consult.yours ? "you" : consult.wait ? "wait" : "work") : undefined}
         data-browser={pill && openBrowser ? true : undefined}
-        // The agent's step and someone typing: the pill widens so neither is cut to nothing.
-        data-wide={pill && step !== null && typers ? true : undefined}
         onClick={
           pill && openBrowser
             ? (e) => {
@@ -3925,21 +4103,37 @@ function ActivityBar({
             {soloAway && stoppable === soloAway.runId && <StopButton run={soloAway} onStop={stop} place="bar" />}
           </>
         )}
+        {away && (
+          <>
+            {awayAgent && (
+              <>
+                <ActivitySky color={colorOf(awayAgent)} />
+                <span className="ac-typing__avatars" aria-hidden="true">
+                  <span className="ac-typing__tok">
+                    <AgentAvatar agentId={awayAgent.id} size="xs" name={awayAgent.name} state="waiting" />
+                  </span>
+                </span>
+              </>
+            )}
+            <WaitMark />
+            <span className="ac-typing__text">
+              <b>{t("ask.bar.here", { count: waiting.length })}</b>
+            </span>
+            <span className="ac-typing__sep" aria-hidden="true" />
+            <button type="button" className="ac-typing__see" onClick={() => onSeeWaiting(away)}>
+              {t("ask.bar.see")}
+            </button>
+          </>
+        )}
         {pill && (
           <>
-            {firstAgent && <ActivitySky color={colorOf(dir.agentById.get(firstAgent.id))} />}
+            {skyOf && !consult?.yours && <ActivitySky color={colorOf(dir.agentById.get(skyOf))} />}
             {/* Agents at work: their faces open the pill (their rows are out of view); people only typing: the dots
-                first. */}
-            {!firstAgent && (
-              <span className="ac-typing__dots" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </span>
-            )}
+                first. Who records has a mark of their own by their words, and so has who types beside them. */}
+            {!firstAgent && someoneTypes(entries) && !bothAtIt(entries) && <TypingMark />}
             <WorkingStack entries={entries} />
             {/* The phrase turns: the old one leaves upward, the new one comes from below. Names in ink. */}
-            <span className="ac-typing__text">
+            <span className="ac-typing__text" title={consultTip}>
               {step !== null && firstAgent ? (
                 <BarStep name={firstAgent.name} step={step} />
               ) : (
@@ -3948,6 +4142,7 @@ function ActivityBar({
             </span>
             <ConsultClock entries={entries} now={now} />
             {took && <span className="ac-typing__elapsed ac-num">{took}</span>}
+            {consultTime && <span className="ac-typing__elapsed ac-num">{consultTime}</span>}
             {step !== null && <BarAlsoTyping entries={entries} />}
             {openBrowser && (
               <Button
@@ -3961,8 +4156,16 @@ function ActivityBar({
                 onClick={openBrowser}
               />
             )}
+            {seeConsult && (
+              <>
+                <span className="ac-typing__sep" aria-hidden="true" />
+                <button type="button" className="ac-typing__see" onClick={seeConsult}>
+                  {t("run.strip.see")}
+                </button>
+              </>
+            )}
             {/* "Ver" once its row is in the conversation (before that, there is nothing to go back to). */}
-            {soloAway && rowShows(soloAway, now) && (
+            {!seeConsult && soloAway && rowShows(soloAway, now) && (
               <>
                 <span className="ac-typing__sep" aria-hidden="true" />
                 <button type="button" className="ac-typing__see" onClick={() => onSee(soloAway.runId)}>
@@ -3973,6 +4176,7 @@ function ActivityBar({
             {soloAway && stoppable === soloAway.runId && <StopButton run={soloAway} onStop={stop} place="bar" />}
           </>
         )}
+        {rest && <ReturnLine returns={returns} channelId={channelId} canAnswer={member} />}
       </div>
     </>
   );
@@ -4028,30 +4232,18 @@ export const TimelineMessage = memo(function TimelineMessage({
   const { org, me } = useOrg();
   const qc = useQueryClient();
   const dismissRun = useDismissRun();
-  // The words arrive at a steady reading pace, each fading in (`MessageBody live`).
-  const revealed = useRevealedText(live?.text ?? "", live?.status === "running" || live?.status === "thinking");
   const liveFailed = live?.status === "failed";
   const failedWhy = liveFailed ? runErrorText(t, live?.errorCode, live?.errorParams) : null;
   // Refused by the workspace's standing: its own words, not the server's English.
   const refusal = liveFailed ? restrictionLine(t, live?.errorCode, live?.errorParams) : null;
   const liveWaiting = live?.status === "waiting_approval";
-  const liveStopped = live?.status === "canceled";
-  const opening = live ? openerOf(live) : { said: null, work: [] };
-  // Nothing said and no steps yet: its words stream at the top, so the line it opens with stays put when a tool
-  // call turns it into narration (and the answer, with no tools, starts there too).
-  const wordsOnTop = !opening.said && opening.work.length === 0;
-  // At work with no words shown yet: its face and what it has to show (its browser card, a quiet run's notice), no
-  // name or time; the bar above the composer says what it does, for how long, and stops it.
-  const waiting = Boolean(live && waitsForWords({ ...live, text: revealed }));
+  // At work: its words show whole once posted. Meanwhile its face and what it has to show (its browser card, a quiet
+  // run's notice), no name or time; the bar above the composer says what it does, for how long, and stops it.
+  const waiting = Boolean(live && waitsForWords(live));
   // A sent message that waits for the connection: not "Não enviada", it goes out on its own.
   const queued = useWaiting(m.local === "failed" ? m.clientId : undefined);
   const local = m.local === "failed" && queued ? "pending" : m.local;
   const slowSend = useAfter(500, local === "pending");
-  // The streamed row it replaces was already on screen: take its place without sliding in again (an agent's sticker
-  // after its reply replaces nothing: it slides in).
-  const replacesLive = useStreams((s) =>
-    Boolean(m.agentRunId && !isMediaAfterReply(m.meta) && s.finished[m.agentRunId]),
-  );
   const dir = useDirectory(org.id);
   const actions = useChannelActions();
   const pushAsk = useContext(PushAskContext);
@@ -4110,17 +4302,16 @@ export const TimelineMessage = memo(function TimelineMessage({
   const choiceReply = Boolean(m.meta?.choiceReply);
   // My own message with a code block or a table: the bubble takes the row's whole width.
   const wide = useMemo(() => own && hasWideBlock(body), [own, body]);
-  // A long message from one agent to another (ADR 0034): its first paragraph here and "Ler tudo", which opens it
-  // whole in its thread, beside the chat. In a thread view (no panel), where it is already read, it stays whole.
-  const openThread = !live && !m.local && !readOnly ? actions?.openThread : undefined;
+  // A long message from one agent to another (ADR 0034): its first paragraph and "Ver mais", which opens the rest in
+  // place. In a thread view (no panel), where it is already read, it stays whole.
+  const foldsTalk = !live && !m.local && !readOnly && Boolean(actions?.openThread);
   const talk = useMemo(
     () =>
-      openThread && talksToAgent(m, (handle) => dir.agentByHandle.get(handle)?.id)
+      foldsTalk && talksToAgent(m, (handle) => dir.agentByHandle.get(handle)?.id)
         ? foldTalk(body, TALK_LINE_CHARS.web)
         : null,
-    [openThread, m, body, dir.agentByHandle],
+    [foldsTalk, m, body, dir.agentByHandle],
   );
-  const talkThread = m.threadId ?? m.id;
   // The reply of a run that reached its step limit, or that stopped because it got stuck: Continuar under it too.
   const ended = stopped.canceled ? undefined : (m.meta?.stepLimit as { stuck?: unknown } | undefined);
   const atLimit = ended ? (ended.stuck === true ? "stuck" : "steps") : undefined;
@@ -4162,6 +4353,7 @@ export const TimelineMessage = memo(function TimelineMessage({
     );
   };
   const meta = m.meta ?? {};
+  const standIn = modelStandInText(t, meta);
   const approvalId = typeof meta.approvalId === "string" ? meta.approvalId : null;
   const proposalId = typeof meta.proposalId === "string" ? meta.proposalId : null;
   const memoryUpdates = Array.isArray(meta.memoryUpdates)
@@ -4216,7 +4408,8 @@ export const TimelineMessage = memo(function TimelineMessage({
   // The root of a mission in the channel: its work lives in its thread.
   const missionStart = !m.threadId && Boolean(meta.missionStart) && actions?.openThread !== undefined;
   // It asked other agents before answering: one row right before the reply, its run's questions (on the run's last
-  // message here, or on its live row while it works) and the ones its `meta.consulted` names.
+  // message here; a run at work shows them on none until its reply comes, the working line says them) and the ones
+  // its `meta.consulted` names.
   const consulted = useMemo(() => (m.author.type === "agent" ? consultationsOf(m.meta) : []), [m.author.type, m.meta]);
   const reached = useMemo(() => reachHandoffs(m.meta), [m.meta]);
   const consults = useReplyConsults(
@@ -4247,6 +4440,8 @@ export const TimelineMessage = memo(function TimelineMessage({
   const weekCard = actionCard && actionCardOf(meta)?.kind === "team_week";
   // "I'll answer when the plan resets": "Don't run it" while that run still waits.
   const usageWait = m.author.type === "agent" ? usageWaitOf(meta) : null;
+  // A picture or PDF it opened reached its AI as text only: "Trocar modelo" under the reply that says so.
+  const filesFix = m.author.type === "agent" ? filesTextOnlyOf(meta) : null;
   const card =
     approvalId ||
     waitNotice ||
@@ -4270,22 +4465,14 @@ export const TimelineMessage = memo(function TimelineMessage({
   const barred = !readOnly && (feedback || personBar);
   // Watched live here: the steps it took stay in the block, folded ("3 passos"), instead of the summary.
   const keptAll = seenLive?.work?.length ? seenLive.work : null;
-  const keptWork =
+  const keptSteps =
     keptAll && onCards.length > 0
       ? keptAll.filter((w) => !(w.kind === "call" && onCards.some((s) => isScreenTool(w.tool, s))))
       : keptAll;
-  // The line it opened with live stays where it was, above the steps: it never vanishes into the fold.
-  const keptFirst = keptWork?.find((w) => w.kind === "say");
-  const keptSteps = keptFirst && keptWork ? keptWork.filter((w) => w !== keptFirst) : keptWork;
-  // Said before a call and then posted as this message (the lead before a card): the body already shows it.
-  const keptSaid = keptFirst?.kind === "say" && !holdsText(body, keptFirst.text) ? keptFirst : undefined;
   // What's in a `MessageText`, for the bubbles: the name opens the first, the time ends the last (a row with none keeps
-  // them above its cards).
-  const liveWords = !liveFailed && Boolean(revealed);
-  const liveLead = !(wordsOnTop && liveWords) && Boolean(opening.said);
-  const leadShown = live ? liveLead : keptSaid?.kind === "say";
+  // them above its cards). At work, nothing: its words show whole once posted.
   const bodyShown = live
-    ? liveWords
+    ? false
     : !missionCard &&
       // A request says its action itself ("Pedido de aprovação: …" would repeat it).
       !approvalId &&
@@ -4331,12 +4518,12 @@ export const TimelineMessage = memo(function TimelineMessage({
         grouped={grouped && !waiting && !pair}
         own={own}
         run={run}
-        bare={waiting || !(leadShown || bodyShown)}
+        bare={waiting || !bodyShown}
         quote={quoted ? <QuotedMessage reply={quoted} /> : undefined}
         nameColor={dir.nameColorOf(m.author)}
         waiting={waiting}
-        entering={entering && !replacesLive}
-        streaming={Boolean(live) && !liveFailed && !liveWaiting && !liveStopped}
+        entering={entering}
+        streaming={Boolean(live) && !liveFailed && !liveWaiting}
         className={cx(
           local && `ac-msg--local ac-msg--${local}`,
           contextMark && "msg--context",
@@ -4460,43 +4647,14 @@ export const TimelineMessage = memo(function TimelineMessage({
       >
         {live && waiting ? (
           <Parts resetKey={m}>
-            <LiveRunStatus run={live} quietOnly />
+            <LiveRunStatus run={live} />
+            {makingImage(live) && <ImageMaking color={colorOf(agent)} />}
             <RunBrowserCard run={live} name={name} />
             <span className="ac-visually-hidden">{t("channel.writing")}</span>
           </Parts>
         ) : live ? (
+          // Ended badly while at work: what went wrong, how to fix it, and its tools as far as they got.
           <Parts resetKey={m}>
-            {/* The first thing it said opens the block, above its tools; with nothing said, its words stream on top. */}
-            {/* Keyed like the saved message's parts: its text stays the same element when the message takes its place. */}
-            {wordsOnTop && liveWords ? (
-              <MessageText key="body">
-                <MessageBody
-                  body={revealed}
-                  resolveMention={dir.mentionName}
-                  mentionTone={dir.mentionTone}
-                  live={!liveStopped}
-                  accent={colorOf(agent)}
-                />
-              </MessageText>
-            ) : (
-              opening.said && (
-                <MessageText key="said" closes={!liveWords}>
-                  <MessageBody body={opening.said} resolveMention={dir.mentionName} mentionTone={dir.mentionTone} />
-                </MessageText>
-              )
-            )}
-            {/* The answer streams under the line it opened with, above its tools (where its saved message has it). */}
-            {liveWords && !wordsOnTop && (
-              <MessageText key="body" opens={!liveLead}>
-                <MessageBody
-                  body={revealed}
-                  resolveMention={dir.mentionName}
-                  mentionTone={dir.mentionTone}
-                  live={!liveStopped}
-                  accent={colorOf(agent)}
-                />
-              </MessageText>
-            )}
             {liveFailed && (
               <div className="ac-msg__error-row" role="alert">
                 <p className="ac-msg__error ac-iconline">
@@ -4505,7 +4663,7 @@ export const TimelineMessage = memo(function TimelineMessage({
                       words already say what it said. */}
                   <span title={!refusal && failedWhy && !live.errorParams?.detail ? live.error : undefined}>
                     {runFailureLine(t, name, { code: live.errorCode, params: live.errorParams }, i18n.language) ??
-                      (live.error
+                      (runErrorWords(live.error)
                         ? t("channel.runFailed", { agent: name, reason: live.error })
                         : t("channel.runFailedNoReason", { agent: name }))}
                   </span>
@@ -4521,61 +4679,34 @@ export const TimelineMessage = memo(function TimelineMessage({
                 />
               </div>
             )}
-            {liveStopped ? (
-              <StoppedLine runId={live.runId} byUserId={live.canceledBy} owner={live} />
-            ) : (
-              !liveFailed && <LiveRunStatus run={live} />
-            )}
-            {/* Its tools, as on its saved message: one line (what it does now) opening into each call. */}
-            <LiveTools
-              work={opening.work}
-              agentName={name}
-              color={colorOf(agent)}
-              steerNote={steerNote}
-              stopped={liveStopped || liveFailed}
-            />
-            {/* Last, after its tools; also on a failed or stopped run, for the person still in control (they hand back from it). */}
+            <LiveTools work={live.work ?? []} agentName={name} color={colorOf(agent)} steerNote={steerNote} stopped />
+            {/* Last, after its tools: for the person still in control of its browser (they hand back from it). */}
             <RunBrowserCard run={live} name={name} />
-            {!liveFailed && !liveWaiting && !liveStopped && (
-              <span className="ac-visually-hidden">{t("channel.writing")}</span>
-            )}
           </Parts>
         ) : (
           <Parts resetKey={m}>
-            {keptSaid?.kind === "say" && (
-              <MessageText key="said" closes={!bodyShown}>
-                <MessageBody body={keptSaid.text} resolveMention={dir.mentionName} mentionTone={dir.mentionTone} />
-              </MessageText>
-            )}
             {routine && report && reportOpen && <RoutineReport text={report} />}
             {bodyShown && (
-              <MessageText key="body" opens={!leadShown} style={workOver ? { opacity: 0.6 } : undefined}>
-                <MessageBody
-                  body={talk ? talk.lead : body}
-                  resolveMention={dir.mentionName}
-                  mentionTone={dir.mentionTone}
-                  renderMention={renderMention}
-                  wikiLink={wikiLink}
-                  channelRefs={channelRefsOf(m.meta)}
-                  accent={colorOf(agent)}
-                  pinFrom={
-                    m.author.type === "agent" && m.author.id && !m.local && !readOnly
-                      ? { messageId: m.id, agentId: m.author.id }
-                      : null
-                  }
-                />
-                {talk && openThread && (
-                  <button
-                    type="button"
-                    className="msg-talk__more"
-                    aria-pressed={threadsView?.open === talkThread}
-                    onClick={() => openThread(talkThread)}
-                  >
-                    {t("chat.talk.readAll")}
-                    <span className="msg-talk__count">{t("chat.talk.more", { count: talk.more })}</span>
-                    <Icon name="chevronRight" size={14} />
-                  </button>
-                )}
+              <MessageText key="body" style={workOver ? { opacity: 0.6 } : undefined}>
+                <ClippedBody lead={talk?.lead}>
+                  {(clip, lead) => (
+                    <MessageBody
+                      className={clip}
+                      body={lead ?? body}
+                      resolveMention={dir.mentionName}
+                      mentionTone={dir.mentionTone}
+                      renderMention={renderMention}
+                      wikiLink={wikiLink}
+                      channelRefs={channelRefsOf(m.meta)}
+                      accent={colorOf(agent)}
+                      pinFrom={
+                        m.author.type === "agent" && m.author.id && !m.local && !readOnly
+                          ? { messageId: m.id, agentId: m.author.id }
+                          : null
+                      }
+                    />
+                  )}
+                </ClippedBody>
               </MessageText>
             )}
             {choiceReply && (
@@ -4587,6 +4718,7 @@ export const TimelineMessage = memo(function TimelineMessage({
             {media && <ChatMedia media={media} />}
             {voice && <ChatVoice message={m} voice={voice} />}
             {m.author.type === "agent" && meta.speedFallback === true && <SpeedFallbackLine agent={agent} />}
+            {m.author.type === "agent" && standIn && <ModelStandInLine text={standIn} agent={agent} meta={meta} />}
             {(stopped.canceled || atLimit || providerCut) && (
               <StoppedLine
                 runId={m.agentRunId}
@@ -4602,14 +4734,21 @@ export const TimelineMessage = memo(function TimelineMessage({
               />
             )}
             {local === "failed" && (
-              <p className="ac-msg__error ac-iconline" role="alert">
-                <Icon name="alert" size={16} />
-                <span>{t("channel.notSent")}</span>
-                <span aria-hidden="true">·</span>
-                <button type="button" className="ac-link" onClick={() => actions?.retry(m)} style={inlineButton}>
-                  {t("channel.retrySend")}
+              // Why it didn't go, then the one way out: the same text again, or back in the field when only a change
+              // to it can make it go.
+              <div className="ac-msg__unsent" role="alert">
+                <p className="ac-msg__error ac-iconline">
+                  <Icon name="alert" size={16} />
+                  <span>{sendFailureText(t, m.sendFailure, i18n.language)}</span>
+                </p>
+                <button
+                  type="button"
+                  className="ac-link"
+                  onClick={() => (sendNeedsEdit(m.sendFailure) ? actions?.editUnsent(m) : actions?.retry(m))}
+                >
+                  {t(sendNeedsEdit(m.sendFailure) ? "channel.editSend" : "channel.retrySend")}
                 </button>
-              </p>
+              </div>
             )}
             {m.author.type === "agent" && !m.local && <AgentActionReceipts message={m} />}
             {m.author.type === "agent" && !m.local && <HandedTaskChips message={m} />}
@@ -4619,14 +4758,7 @@ export const TimelineMessage = memo(function TimelineMessage({
             {agent &&
               memoryUpdates
                 .filter((u) => u.action !== "proposed")
-                .map((u) => (
-                  <MemoryChangeCard
-                    key={`${u.action}-${u.itemId}`}
-                    update={u}
-                    agentId={agent.id}
-                    sentAt={m.createdAt}
-                  />
-                ))}
+                .map((u) => <MemoryChangeCard key={`${u.action}-${u.itemId}`} update={u} agentId={agent.id} />)}
             {browserTrail.length > 0 && m.author.id && !m.local && (
               <BrowserTrailCard
                 agentId={m.author.id}
@@ -4704,9 +4836,11 @@ export const TimelineMessage = memo(function TimelineMessage({
                 .filter((u) => u.action === "proposed")
                 .map((u) => <MemoryChangeCard key={`${u.action}-${u.itemId}`} update={u} agentId={agent.id} />)}
             {waitNotice && <WaitingCard notice={waitNotice} agentId={m.author.id ?? null} />}
+            {m.author.type === "agent" && <WaitToolOffAction meta={meta} />}
             {deviceWait && <DeviceWaitCard wait={deviceWait} message={m} />}
             {noAi && <NoAiCard message={m} />}
             {actionCard && <ActionCard message={m} />}
+            {filesFix && m.author.id && <FailedRunFix code={filesFix} agentId={m.author.id} />}
             {m.author.type === "agent" && !m.local && m.meta?.replyChips ? <ReplyChips message={m} /> : null}
             {pushAsk?.messageId === m.id && !readOnly && <PushAskInline agent={agent} onClose={pushAsk.close} />}
             {usageWait?.closed ? (
@@ -4715,7 +4849,7 @@ export const TimelineMessage = memo(function TimelineMessage({
               usageWait && !usageWait.canceled && !usageWait.ended && <UsageWaitCancel message={m} wait={usageWait} />
             )}
             {question && <QuestionCard question={question} />}
-            {secretRequest && <SecretCard request={secretRequest} />}
+            {secretRequest && <SecretCard request={secretRequest} runId={m.agentRunId} />}
             {browserHandoff && <BrowserHandoffCard handoff={browserHandoff} />}
             {missionDecision && <MissionDecisionCard message={missionDecision} />}
             {missionDelivery && <MissionDeliveryCard message={missionDelivery} />}
@@ -4773,15 +4907,6 @@ function isMemoryUpdate(v: unknown): v is MemoryUpdate {
   return typeof o.action === "string" && typeof o.itemId === "string" && typeof o.text === "string";
 }
 
-const inlineButton = {
-  background: "none",
-  border: 0,
-  padding: 0,
-  font: "inherit",
-  cursor: "pointer",
-  color: "inherit",
-};
-
 /**
  * The request of a message with `meta.approvalId`: from the approvals list, or fetched by id. Requests the agent
  * asked later in this conversation join the same card (`messageId`): then one card lists them all.
@@ -4805,33 +4930,13 @@ function MessageApproval({
   const card = useCardApprovals(org.id, messageId, !listed && approvals.isSuccess);
   const approval = listed ?? one.data;
   const items = approvalCardItems([...(approvals.data ?? []), ...(card.data ?? [])], messageId, approval);
-  // Past its deadline it has expired, even before the server's event says so.
-  const expired = useExpired(approval?.status === "pending" ? approval.expiresAt : null);
   // Drawn again when the card's earliest deadline passes.
   useExpired(cardDeadline(items));
   if (!approval) return null;
-  if (items.length > 1) {
-    const now = items.map((a) => asOfNow(a));
-    if (now.some((a) => a.status === "pending"))
-      return <ApprovalGroupAsk items={now} agent={agent} members={members} />;
-    return (
-      <>
-        {now.map((a) => (
-          <InlineApproval key={a.id} approval={a} agent={agent} members={members} />
-        ))}
-      </>
-    );
-  }
-  // Waiting: the agent asking, in the conversation; decided or expired: one line.
-  if (approval.status === "pending" && !expired)
-    return <ApprovalAsk approval={approval} agent={agent} members={members} />;
-  return (
-    <InlineApproval
-      approval={expired ? { ...approval, status: "expired" } : approval}
-      agent={agent}
-      members={members}
-    />
-  );
+  // One card, waiting or decided: several requests list on it, each row with how it ended.
+  if (items.length > 1)
+    return <ApprovalGroupAsk items={items.map((a) => asOfNow(a))} agent={agent} members={members} />;
+  return <ApprovalAsk approval={approval} agent={agent} members={members} />;
 }
 
 /** Above this many members the channel details list gets a search field. */
@@ -4987,6 +5092,8 @@ function ChannelDetails({
       },
     );
   const archiveIt = () => archive.run(channel, () => onOpenChange(false));
+  // While one of them runs, none of them can be pressed.
+  const busy = leaving.pending || archive.pending;
   // Deleting is for owners and admins, never #general; archiving is also for whoever made the channel.
   const deletable = can(org, "manage_channels") && channel.name !== "general";
   const [deleting, setDeleting] = useState(false);
@@ -5198,42 +5305,45 @@ function ChannelDetails({
                   </li>
                 ))}
               </ul>
+              {/* Rows of the nav, as wide as it, the pressed one's spinner in its icon's place. */}
               {channel.name !== "general" && (
                 <div className="channel-settings__danger">
                   {channel.isMember && (
-                    <Button
-                      variant="ghost"
-                      icon="arrowRight"
-                      className="channel-details__archive"
-                      loading={leaving.pending}
+                    <button
+                      type="button"
+                      className="settings__link channel-settings__act"
+                      disabled={busy}
+                      aria-busy={leaving.pending || undefined}
                       onClick={() => leaving.run(channel, () => onOpenChange(false))}
                     >
+                      <Icon name={leaving.pending ? "spinner" : "arrowRight"} size={18} />
                       {t("channel.leave")}
-                    </Button>
+                    </button>
                   )}
-                  <Button
-                    variant="ghost"
-                    icon="archive"
-                    className="channel-details__archive"
-                    loading={archive.pending}
+                  <button
+                    type="button"
+                    className="settings__link channel-settings__act"
+                    disabled={busy}
+                    aria-busy={archive.pending || undefined}
                     onClick={archiveIt}
                   >
+                    <Icon name={archive.pending ? "spinner" : "archive"} size={18} />
                     {t("channel.archive")}
-                  </Button>
+                  </button>
                   {deletable && (
-                    <Button
-                      variant="ghost"
-                      icon="trash"
-                      className="channel-details__archive"
-                      disabled={archive.pending}
+                    <button
+                      type="button"
+                      className="settings__link channel-settings__act"
+                      disabled={busy}
                       onClick={() => {
                         saveTopic();
                         saveName();
                         setDeleting(true);
                       }}
                     >
+                      <Icon name="trash" size={18} />
                       {t("channel.delete")}
-                    </Button>
+                    </button>
                   )}
                 </div>
               )}
@@ -5398,13 +5508,6 @@ function AddMembersDialog({
       setSelected(new Set());
     }
   }, [open]);
-  const rows = useMemberRows(q, exclude, undefined, { channel: true });
-  // An address nobody here has: invite them to the workspace and this channel (ADR 0090).
-  const invite = useInviteOffer(q);
-  const inviteDialog = useInviteDialog();
-  const newAgent = useNewAgent();
-  const navigate = useNavigate();
-  const creates = can(org, "create_agents");
   const add = useMutation({
     mutationFn: async () => {
       for (const key of selected) await api.chat.addMember(org.id, channel.id, memberOf(key));
@@ -5414,6 +5517,14 @@ function AddMembersDialog({
       onClose();
     },
   });
+  // Who was in before Adicionar, also while it closes: the ones being added keep their rows.
+  const rows = useMemberRows(q, useHeldWhile(exclude, add.isPending || !open), undefined, { channel: true });
+  // An address nobody here has: invite them to the workspace and this channel (ADR 0090).
+  const invite = useInviteOffer(q);
+  const inviteDialog = useInviteDialog();
+  const newAgent = useNewAgent();
+  const navigate = useNavigate();
+  const creates = makesAgents(org);
   return (
     <Dialog
       open={open}
@@ -5548,7 +5659,7 @@ function AddToChannelOffer({ channelId, agentId, onDone }: { channelId: string; 
           {t("mentions.add")}
         </Button>
       ) : (
-        <span className="small muted">{t("mentions.askAdmin")}</span>
+        <AskAdminButton ask={{ what: "channel_agent", channelId, agentId }} />
       )}
       <Button size="sm" variant="ghost" onClick={onDone}>
         {t("mentions.dismiss")}

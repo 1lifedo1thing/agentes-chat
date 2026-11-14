@@ -4,10 +4,11 @@ import type {
   DeviceAudience,
   DeviceStatus,
   DevicesList,
+  MachineTool,
   PhoneDevice,
 } from "@agenteschat/client";
 import { firstName, namesText } from "@agenteschat/client/lib/format";
-import { computerKind } from "@agenteschat/client/lib/machines";
+import { computerKind, toolWords } from "@agenteschat/client/lib/machines";
 import type { TFunction } from "i18next";
 import type { ComputerState, PortraitKind } from "@/computer/cells";
 import type { IconName } from "@/ui";
@@ -30,10 +31,14 @@ export interface StatusView {
   line: string | null;
 }
 
-/** What a reason code says (`PhoneReason` and the server's own); an unknown one says it isn't ready. */
-export function reasonText(t: TFunction, reason: string | null | undefined): string {
+/**
+ * What a reason code says (`PhoneReason` and the server's own); an unknown one says it isn't ready. `os`: the host's,
+ * since a phone with no driver needs its maker's on Windows and udev rules on Linux.
+ */
+export function reasonText(t: TFunction, reason: string | null | undefined, os?: string | null): string {
   const other = t("mobile.devices.reason.other");
-  return reason ? t(`mobile.devices.reason.${reason}`, { defaultValue: other }) : other;
+  const key = reason === "no_driver" && os && computerKind(os) === "linux" ? "no_driverLinux" : reason;
+  return key ? t(`mobile.devices.reason.${key}`, { defaultValue: other }) : other;
 }
 
 export function statusView(
@@ -224,18 +229,22 @@ const HELPER_STEP = new Set([
   "helper_untrusted",
   "team_limit",
   "apple_account_missing",
+  "apple_team_missing",
 ]);
 
 /** The iPhone guide's steps, in order; `iphoneStep` is the index of the one to do now (5: all done). */
 export const IPHONE_STEPS = ["plug", "trust", "devmode", "automation", "helper"] as const;
 
 export function iphoneStep(phone: Pick<PhoneDevice, "status"> | null | undefined): number {
-  if (!phone || phone.status.kind === "offline") return 0;
+  // Below iOS 17 (`unsupported`) it never gets past being plugged in: the guide says why instead of its steps.
+  if (!phone || phone.status.kind === "offline" || phone.status.kind === "unsupported") return 0;
   if (isUp(phone.status)) return IPHONE_STEPS.length;
   const s = phone.status;
   const reason = "reason" in s ? s.reason : "";
-  if (reason === "untrusted" || reason === "locked") return 1;
-  if (reason === "ui_automation_off") return 3;
+  // Over Wi-Fi the first step is being reached at all: on the Mac's network, awake, its tunnel up.
+  if (reason === "wifi_away" || reason === "wifi_asleep" || reason === "tunnel_down") return 0;
+  if (reason === "untrusted" || reason === "locked" || reason === "wifi_untrusted") return 1;
+  if (reason === "ui_automation_off" || reason === "ui_not_authorized") return 3;
   if (HELPER_STEP.has(reason)) return 4;
   return 2;
 }
@@ -258,6 +267,8 @@ export const DEVICE_NOTICES = [
   "device.in_use",
   "device.access_request",
   "device.waiting",
+  "device.tool_request",
+  "device.cli_request",
 ] as const;
 export type DeviceNoticeKind = (typeof DEVICE_NOTICES)[number];
 
@@ -279,6 +290,8 @@ export interface DeviceNotice {
   device: string;
   forUserId: string | null;
   doing: string | null;
+  /** `device.tool_request`: the tool to turn on (`latest.reason`); `device.cli_request`: the coding CLI to install. */
+  tool: MachineTool | null;
 }
 
 export function deviceNoticeOf(
@@ -294,6 +307,10 @@ export function deviceNoticeOf(
     device: str(s.label) ?? n.latest?.title ?? "",
     forUserId: str(s.userId),
     doing: n.latest?.text ?? null,
+    tool:
+      n.kind === "device.tool_request" || n.kind === "device.cli_request"
+        ? (str(n.latest?.reason) as MachineTool | null)
+        : null,
   };
 }
 
@@ -304,6 +321,12 @@ export function deviceNoticeOf(
  */
 export function deviceNoticeTitle(t: TFunction, d: DeviceNotice, names: string, person: string, org: string) {
   if (d.kind === "device.join_request") return t("mobile.devices.notice.join_request", { device: d.device, org });
+  if (d.kind === "device.tool_request" || d.kind === "device.cli_request")
+    return t(`mobile.devices.notice.${d.kind === "device.cli_request" ? "cli_request" : "tool_request"}`, {
+      names,
+      device: d.device,
+      tool: d.tool ? toolWords(t, d.tool) : "",
+    });
   const key = d.kind.slice("device.".length);
   return t(`mobile.devices.notice.${key}${person ? "For" : ""}`, { names, device: d.device, person });
 }

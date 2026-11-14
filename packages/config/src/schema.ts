@@ -44,6 +44,11 @@ export interface EnvVarDefinition {
 const DSN = /^https?:\/\/[^@/\s]+@[^/\s]+\/(?:[^\s]*\/)?\d+$/;
 const DSN_MESSAGE = "must be a DSN such as https://<key>@errors.example.com/1";
 
+/** `host=secret` pairs: a bare lower-case host name, and a secret of 32 characters or more with no comma or space. */
+const HOST_NAME = "[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*";
+const HOST_SECRET = `${HOST_NAME}=[^\\s,]{32,}`;
+const HOST_SECRETS = new RegExp(`^${HOST_SECRET}(?:,${HOST_SECRET})*$`);
+
 /** Claude model ids accepted as defaults. Prices live in `@agenteschat/providers` (`MODEL_CATALOG`). */
 const modelId = z.string().regex(/^[a-z0-9][a-z0-9.-]*$/, "must be a model id such as claude-sonnet-5-5");
 
@@ -74,7 +79,7 @@ export const envVars = {
   LANDING_URL: {
     schema: z.url().optional(),
     description:
-      "Public URL of the agentes.chat landing page (its own site), without a trailing slash. Turns on the waiting list: that origin may call it (CORS on `/api/waitlist` only), and the confirmation email links there. Unset: no waiting list.",
+      "Public URL of the agentes.chat landing page (its own site), without a trailing slash. Turns on the waiting lists, the product's and the partner program's: that origin may call them (CORS on `/api/waitlist` and `/api/partners/waitlist` only), and the confirmation email links there. With the bot check on, a token its page makes on this host counts for these lists and nothing else. Unset: no waiting lists.",
     section: "Server",
     example: "https://agentes.chat",
   },
@@ -221,13 +226,13 @@ export const envVars = {
   TURNSTILE_SITE_KEY: {
     schema: z.string().optional(),
     description:
-      "For agentes.chat Cloud. Unset by default. Cloudflare Turnstile's site key. With `TURNSTILE_SECRET_KEY`, a bot check runs before email lookup, sign-in, sign-up, password reset, the code to ask to join and the waiting list. Unset: no check, and no page loads anything from Cloudflare.",
+      "For agentes.chat Cloud. Unset by default. Cloudflare Turnstile's site key. With `TURNSTILE_SECRET_KEY`, a bot check runs before email lookup, sign-in, sign-up, password reset, the code to ask to join and the waiting lists. The widget's hostnames in Cloudflare hold `PUBLIC_URL`'s host, and `LANDING_URL`'s when it is set. Unset: no check, and no page loads anything from Cloudflare.",
     section: "Sign-in",
   },
   TURNSTILE_SECRET_KEY: {
     schema: z.string().optional(),
     description:
-      "For agentes.chat Cloud. Unset by default. Cloudflare Turnstile's secret key, which this server uses to check each answer with Cloudflare. Set both keys or neither. A secret Cloudflare refuses stops the server at boot.",
+      "For agentes.chat Cloud. Unset by default. Cloudflare Turnstile's secret key, which this server uses to check each answer with Cloudflare. A token counts only for the form it was made for, on `PUBLIC_URL`'s host. One made on `LANDING_URL`'s host counts only for the waiting lists. Set both keys or neither. A secret Cloudflare refuses stops the server at boot.",
     section: "Sign-in",
     secret: true,
   },
@@ -366,9 +371,9 @@ export const envVars = {
     section: "Agents",
   },
   ROUTER_MENTION_THRESHOLD: {
-    schema: z.coerce.number().min(0).max(1).default(0.2),
+    schema: z.coerce.number().min(0).max(1).default(0.6),
     description:
-      "When an agent @mentions another, minimum probability (0–1) that the message needs something from that agent for it to answer. Low on purpose: only a judge sure the message needs nothing (a thanks, an ok, a quote) leaves the agent asleep.",
+      "When an agent @mentions another, minimum probability (0–1) that the message plainly asks that agent to do something for it to answer. A mention is credit or a reference unless it asks: agents ask each other with ask_agent and tell_agent.",
     section: "Agents",
   },
   AGENT_MAX_OUTPUT_TOKENS: {
@@ -415,7 +420,7 @@ export const envVars = {
   MODEL_ENDPOINTS_PRIVATE: {
     schema: z.stringbool().optional(),
     description:
-      "Whether a workspace's own model endpoint (Settings › AI keys › Other provider) may be on this server's network or over http: an Ollama, vLLM, LM Studio or LiteLLM next to it. Unset: allowed, except on agentes.chat Cloud (https://app.agentes.chat) and with `ALLOW_SIGNUP=true`, where only public https addresses are, checked again at every connection.",
+      "Whether a workspace's own model endpoint (Settings › AI keys › Other provider) may be on this server's network or over http: an Ollama, vLLM, LM Studio or LiteLLM next to it. The same switch covers the other addresses a workspace names: custom MCP servers and their sign-in, its own bucket, server icons and the pages agents read. Unset: allowed, except on agentes.chat Cloud (https://app.agentes.chat) and with `ALLOW_SIGNUP=true`, where only public https addresses are, checked again at every connection.",
     section: "Agents",
   },
   SUMMARY_MODEL: {
@@ -457,9 +462,9 @@ export const envVars = {
     section: "Agents",
   },
   EMBEDDINGS_PROVIDER: {
-    schema: z.enum(["none", "voyage"]).default("none"),
+    schema: z.enum(["none", "voyage", "openai"]).default("none"),
     description:
-      "Vector embeddings for search. `none`: full-text search only. `voyage`: Voyage AI (needs `VOYAGE_API_KEY`); usage is recorded per organization (kind `embedding`).",
+      "Vector embeddings for search, so a request finds what was written in other words or another language (ADR 0167). `none`: full-text search only. `voyage`: Voyage AI (needs `VOYAGE_API_KEY`). `openai`: any server with OpenAI's embeddings API at `EMBEDDINGS_URL`: DeepInfra, OpenAI, or one of your own such as the compose file's `embeddings` profile. Usage is recorded per organization (kind `embedding`). When the server can't answer, search goes on with words alone.",
     section: "Search",
   },
   VOYAGE_API_KEY: {
@@ -468,9 +473,46 @@ export const envVars = {
     section: "Search",
     secret: true,
   },
+  EMBEDDINGS_URL: {
+    schema: z.url().optional(),
+    description:
+      "With `EMBEDDINGS_PROVIDER=openai`: the base of the embeddings API, requests go to `/embeddings` under it. DeepInfra: `https://api.deepinfra.com/v1/openai`. The compose file's `embeddings` profile: `http://embeddings:8080/v1`. It may be on your own network: only this server calls it.",
+    section: "Search",
+    example: "https://api.deepinfra.com/v1/openai",
+  },
+  EMBEDDINGS_API_KEY: {
+    schema: z.string().optional(),
+    description:
+      "The key that embeddings server asks for, sent as `Authorization: Bearer` (with `EMBEDDINGS_PROVIDER=openai`). A server of your own may need none.",
+    section: "Search",
+    secret: true,
+  },
   EMBEDDING_MODEL: {
-    schema: z.string().default("voyage-3.5"),
-    description: "Embedding model (1024 dimensions). After changing it, reindex (`search.reindex`).",
+    schema: z.string().optional(),
+    description:
+      "Embedding model, with at most 1024 numbers per vector (fewer are padded with zeros). Default: `voyage-3.5` for `voyage`, `Qwen/Qwen3-Embedding-0.6B` for `openai`. Also `Qwen/Qwen3-Embedding-8B`, `BAAI/bge-m3` and `ibm-granite/granite-embedding-311m-multilingual-r2`, or any other the server knows. After a change, each workspace's documents of `EMBEDDINGS_KINDS` get vectors again in the background from the next start; until then search finds them by their words.",
+    section: "Search",
+  },
+  EMBEDDINGS_KINDS: {
+    schema: z
+      .string()
+      .default("context_item")
+      .transform((value) =>
+        value
+          .split(",")
+          .map((entry) => entry.trim())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.enum(["message", "context_item", "issue", "file", "wiki", "action"]))),
+    description:
+      "What gets vectors, comma-separated, from context_item (memories), wiki, file, issue, action and message. The rest is found by its words alone. Messages are most of what is indexed, and their vectors would take most of the disk.",
+    section: "Search",
+    example: "context_item,wiki,file,issue,action",
+  },
+  EMBEDDINGS_QUERY_TIMEOUT_MS: {
+    schema: z.coerce.number().int().min(100).max(60_000).default(1500),
+    description:
+      "How long a search waits for its query's vector before it goes on with words alone, in milliseconds. An agent's run searches its memory before it starts, so a run may start this much later. A model on a small CPU may need more.",
     section: "Search",
   },
   BRAVE_SEARCH_API_KEY: {
@@ -670,6 +712,24 @@ export const envVars = {
     section: "Connectors",
     secret: true,
   },
+  MCP_CALLER_IDENTITY: {
+    schema: z
+      .string()
+      .regex(HOST_SECRETS, {
+        error:
+          "must be host=secret pairs separated by commas, with no spaces: a lower-case host name, and a secret of at least 32 characters",
+      })
+      .refine((value) => {
+        const hosts = value.split(",").map((pair) => pair.slice(0, pair.indexOf("=")));
+        return new Set(hosts).size === hosts.length;
+      }, "names a host more than once")
+      .optional(),
+    description:
+      "MCP servers of your own that are told, verifiably, who is calling (ADR 0181), as `host=secret` pairs separated by commas: the host name of a server connected by address in Settings › Connectors (lower case, with no scheme, port or path) and a secret of at least 32 characters that the server holds too (`openssl rand -base64 48`). Every tool call an agent makes to that server carries, in the request's `params._meta[\"chat.agentes/caller\"]`, a statement signed with the secret (a JWT, HS256): this instance, the workspace, the agent, the run, the connection and the person the run acts for, good for 60 seconds. With it the server can refuse a call that doesn't come from the workspaces and agents it expects, even one that carries its key. Only over https on the default port; a host that isn't listed gets nothing. Unset (default): no call carries it.",
+    section: "Connectors",
+    example: "tools.example.com=<output of openssl rand -base64 48>",
+    secret: true,
+  },
   MILLIONSEND_API_KEY: {
     schema: z.string().optional(),
     description:
@@ -773,13 +833,6 @@ export const envVars = {
     description: "Email approvers a digest of requests still waiting after this many hours (requests expire at 24 h).",
     section: "Email",
   },
-  EXPO_ACCESS_TOKEN: {
-    schema: z.string().optional(),
-    description:
-      "Expo access token for push notifications to the iPhone app (only needed when “enhanced push security” is on in the Expo project). iPhone pushes are sent through the Expo Push API either way; Android pushes don't use Expo (`PUSH_SENDER`).",
-    section: "Push",
-    secret: true,
-  },
   FIREBASE_SERVICE_ACCOUNT: {
     schema: z
       .string()
@@ -798,10 +851,68 @@ export const envVars = {
     section: "Push",
     secret: true,
   },
+  APNS_KEY: {
+    schema: z
+      .string()
+      .optional()
+      .transform((value, ctx) => {
+        if (value === undefined) return value;
+        try {
+          const pem = parsePemKey(value);
+          if (!pem.includes("BEGIN PRIVATE KEY")) throw new Error("must be the .p8 key (-----BEGIN PRIVATE KEY-----)");
+          return pem;
+        } catch (error) {
+          ctx.addIssue({ code: "custom", message: (error as Error).message });
+          return z.NEVER;
+        }
+      }),
+    description:
+      "iPhone pushes straight to Apple (APNs): an APNs auth key (the .p8 file from the Apple Developer account › Keys, with the Apple Push Notifications service on) as PEM, PEM with `\\n` for newlines, or base64 of the file. Set it with `APNS_KEY_ID` and `APNS_TEAM_ID`. Only for a server that sends to an iPhone app signed by its own Apple team (`PUSH_SENDER`) or runs the push relay (`PUSH_RELAY_SERVE`); the app from the App Store is reached through the relay.",
+    section: "Push",
+    secret: true,
+  },
+  APNS_KEY_ID: {
+    schema: z
+      .string()
+      .regex(/^[A-Z0-9]{10}$/, "must be the 10-character id of the APNs key")
+      .optional(),
+    description: "The id of `APNS_KEY` (10 characters, shown beside the key in the Apple Developer account).",
+    section: "Push",
+    example: "ABC123DEFG",
+  },
+  APNS_TEAM_ID: {
+    schema: z
+      .string()
+      .regex(/^[A-Z0-9]{10}$/, "must be the 10-character Apple team id")
+      .optional(),
+    description: "The Apple Developer team that owns `APNS_KEY` and the iPhone app (10 characters).",
+    section: "Push",
+    example: "XYZ987WVUT",
+  },
+  APNS_APP_IDS: {
+    schema: z
+      .string()
+      .default("chat.agentes.app,chat.agentes.app.preview,chat.agentes.app.development")
+      .transform((value, ctx) => {
+        const ids = value
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean);
+        const bad = ids.find((id) => !/^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_-]+){1,10}$/.test(id) || id.length > 155);
+        if (ids.length === 0 || bad !== undefined) {
+          ctx.addIssue({ code: "custom", message: `must be bundle ids separated by commas${bad ? ` (${bad})` : ""}` });
+          return z.NEVER;
+        }
+        return ids;
+      }),
+    description:
+      "The iPhone apps (bundle ids, separated by commas) this server pushes to with `APNS_KEY`; a push for any other is refused, since one key signs for every app of its team. The first is used for a phone that didn't say which app it runs.",
+    section: "Push",
+  },
   PUSH_SENDER: {
     schema: z.enum(["auto", "direct", "relay", "off"]).default("auto"),
     description:
-      "How Android pushes are sent (iPhones go through Expo for now). `auto` (default): straight to Firebase when `FIREBASE_SERVICE_ACCOUNT` is set, else through the push relay. `relay`: through the agentes.chat push relay (`PUSH_RELAY_URL`), which is what lets the Android app from the stores get this server's pushes; the server registers itself there on its first push, no account needed, and each push's text passes through it. `direct`: straight to Firebase with `FIREBASE_SERVICE_ACCOUNT`, for an Android app built with your own Firebase project. `off`: no Android pushes.",
+      "How pushes to the phone app are sent, each platform on its own. `auto` (default): Android straight to Firebase when `FIREBASE_SERVICE_ACCOUNT` is set and iPhones straight to Apple when `APNS_KEY` is, else through the push relay (the server that is the relay itself sends none for a platform without its credentials). `relay`: through the agentes.chat push relay (`PUSH_RELAY_URL`), which is what lets the app from the stores get this server's pushes; the server registers itself there on its first push, no account needed, and each push's text passes through it. `direct`: straight to Firebase with `FIREBASE_SERVICE_ACCOUNT` and to Apple with `APNS_KEY`, for an app built with your own Firebase project and Apple team. `off`: no phone pushes.",
     section: "Push",
   },
   PUSH_RELAY_URL: {
@@ -809,7 +920,8 @@ export const envVars = {
       .url()
       .refine((u) => u.startsWith("https://"), "must be an https URL")
       .default("https://app.agentes.chat/api/push-relay/v1"),
-    description: "The push relay Android pushes go through with `PUSH_SENDER=relay` (or `auto` without Firebase).",
+    description:
+      "The push relay phone pushes go through with `PUSH_SENDER=relay` (or `auto` without the platform's own credentials).",
     section: "Push",
   },
   PUSH_RELAY_SERVE: {
@@ -818,7 +930,7 @@ export const envVars = {
       .transform((on) => (on ? "on" : "off") as "on" | "off")
       .default("off"),
     description:
-      "Runs the push relay at `/api/push-relay/v1` for other installations' Android pushes, sent with this server's `FIREBASE_SERVICE_ACCOUNT` (agentes.chat's own servers). `on` without the service account serves nothing.",
+      "Runs the push relay at `/api/push-relay/v1` for other installations' phone pushes, sent with this server's `FIREBASE_SERVICE_ACCOUNT` (Android) and `APNS_KEY` (iPhone): agentes.chat's own servers. `on` with neither serves nothing.",
     section: "Push",
   },
   WEB_PUSH: {
@@ -931,6 +1043,17 @@ export const envVars = {
     example: "<output of openssl rand -base64 48>",
     secret: true,
   },
+  OPERATOR_API_READ_TOKEN: {
+    schema: z
+      .string()
+      .min(32, "must be at least 32 characters. Generate one with `openssl rand -base64 48`")
+      .optional(),
+    description:
+      "A second token for the operator API that only reads, for a caller that looks things up and changes nothing: accepted for `GET` requests alone, and never under `/review` (what a run or task did). Anything else it asks for is refused (403). It still reads every workspace's and account's names, emails and IP addresses, so keep it as private as the other. Needs `OPERATOR_API_TOKEN` and must differ from it. Unset (default): only `OPERATOR_API_TOKEN` is accepted. Generate with `openssl rand -base64 48`.",
+    section: "Operator",
+    example: "<output of openssl rand -base64 48>",
+    secret: true,
+  },
   OPERATOR_API_PORT: {
     schema: z.coerce.number().int().min(1).max(65535).default(3001),
     description:
@@ -947,9 +1070,26 @@ export const envVars = {
   FEEDBACK_EMAIL: {
     schema: z.email().optional(),
     description:
-      "Where the apps' feedback form sends what people write (the Beta mark beside their name): one email per message, with the person's name and address to answer them, the workspace's name and the app's version, never a conversation. Unset (default): the apps show no form.",
+      "For agentes.chat Cloud. Unset by default. The address the agentes.chat team reads feedback at: what people write in the apps' feedback form there, and what other servers send to its inbox (`POST /api/feedback/inbox`, there only), one email per message, nothing kept. A self-hosted server leaves it unset: its feedback goes to that team (`FEEDBACK_RELAY`).",
     section: "Operator",
     example: "feedback@example.com",
+  },
+  FEEDBACK_RELAY: {
+    schema: z.stringbool().default(true),
+    description:
+      "What a person writes in the feedback form goes to the agentes.chat team, who make the app (`FEEDBACK_URL`), and the form says so. Only when someone presses Send, and only that message: their text, their name and address to answer them, the workspace's name, the app's version and the pictures they added, never a conversation (https://agentes.chat/docs/install-on-a-server#data). `false`: the apps show no form.",
+    section: "Operator",
+  },
+  FEEDBACK_INBOX: {
+    schema: z.stringbool().default(true),
+    description:
+      "For agentes.chat Cloud. On agentes.chat's own servers, takes the feedback other servers send (`POST /api/feedback/inbox`) and mails each one to `FEEDBACK_EMAIL`, keeping nothing. `false` stops taking it. No other server has the route.",
+    section: "Operator",
+  },
+  FEEDBACK_URL: {
+    schema: z.url().default("https://app.agentes.chat/api/feedback/inbox"),
+    description: "Where `FEEDBACK_RELAY` sends a feedback (as JSON in a POST).",
+    section: "Operator",
   },
   OPS_REPORT_EMAIL: {
     schema: z

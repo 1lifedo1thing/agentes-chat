@@ -10,11 +10,13 @@ import {
   rightHandOf,
   teamAnswered,
   tellsNameStory,
+  welcomeOpen,
+  welcomesMember,
 } from "@agenteschat/client/lib/right-hand";
 import { STICKER_STILL_T, WAVE_SECONDS } from "@agenteschat/ui/agent/stickers";
 import { stickerFrame } from "../../src/agent/sticker";
 import { agentStarters, buildConversations, homeLayout, rightHandPin } from "../../src/features/chats/logic";
-import { SETTINGS_SECTIONS, visibleSections } from "../../src/features/settings/logic";
+import { SETTINGS_SECTIONS } from "../../src/features/settings/logic";
 import { agent, at } from "./fixtures";
 
 const lodi = agent({ id: "a-lodi", name: "Lodi", builtin: "right_hand" });
@@ -126,6 +128,60 @@ test("how agents should talk waits for the team's first answer, so it never stan
     expect(src(f)).toContain("answered: useTeamAnswered(");
 });
 
+test("someone it greeted when they joined is asked one thing: Connect alone above its stored greeting", () => {
+  expect(welcomesMember({ bodyCode: "welcome_member", bodyParams: { org: "Acme" } })).toBe(true);
+  expect(welcomesMember({ bodyCode: "team_week" })).toBe(false);
+  expect(welcomesMember(null)).toBe(false);
+  const base = { noAi: false, aiKnown: true, askStyle: true, welcomed: true };
+  // How agents talk to them would be a second question beside what they look after.
+  expect(introCards(base)).toEqual([]);
+  expect(introCards({ ...base, welcomed: false })).toEqual(["style"]);
+  // With no AI the way to connect one stays, until a no-AI card in the conversation carries it.
+  expect(introCards({ ...base, noAi: true })).toEqual(["connect"]);
+  expect(introCards({ ...base, noAi: true, noAiCard: true })).toEqual([]);
+  expect(introCards({ ...base, noAi: true, held: true })).toEqual([]);
+  // Nor the line to build the team: the greeting already offers their first agent.
+  const again = { noAi: false, aiKnown: true, createsAgents: true, hasTeam: true, cards: [] };
+  expect(offersTeamSetup(again)).toBe(true);
+  expect(offersTeamSetup({ ...again, welcomed: true })).toBe(false);
+  const src = (f: string) => readFileSync(new URL(f, import.meta.url), "utf8");
+  for (const f of ["../../src/features/right-hand/Intro.tsx", "../../../web/src/components/RightHandIntro.tsx"]) {
+    expect(src(f)).toMatch(/const welcomed = welcomeOpen\(messages, org\??\.role === "owner"\);/);
+    expect(src(f)).toMatch(/introCards\(\{[^}]*\bwelcomed\b[^}]*\}\)/);
+    expect(src(f)).toMatch(/offersTeamSetup\(\{[^}]*\bwelcomed\b[^}]*\}\)/);
+  }
+});
+
+test("its greeting of a newcomer is the one ask only until they answer it, whatever page it is on", () => {
+  const at = (n: number) => new Date(Date.UTC(2026, 0, 1, 0, n)).toISOString();
+  const line = (id: string, n: number, type: "agent" | "person", meta: Record<string, unknown> = {}) => ({
+    id,
+    createdAt: at(n),
+    author: { type, id: type },
+    body: id,
+    meta,
+  });
+  const greeting = line("greeting", 1, "agent", { bodyCode: "welcome_member" });
+  expect(welcomeOpen([greeting], false)).toBe(true);
+  // What it says after by itself is no answer.
+  expect(welcomeOpen([greeting, line("card", 2, "agent", { bodyCode: "team_day" })], false)).toBe(true);
+  // Answered: the top of its DM asks what it asks anyone, also while that message is still sending.
+  expect(welcomeOpen([greeting, line("vendas", 2, "person")], false)).toBe(false);
+  expect(welcomeOpen([greeting, { ...line("vendas", 2, "person"), local: "pending" as const }], false)).toBe(false);
+  expect(welcomeOpen([greeting, { ...line("vendas", 2, "person"), local: "failed" as const }], false)).toBe(true);
+  // A long conversation: the greeting left the loaded page, and the answer is the same as with it loaded.
+  const page = Array.from({ length: 100 }, (_, i) => line(`m${i}`, 10 + i, i % 2 ? "agent" : "person"));
+  expect(welcomeOpen(page, false)).toBe(false);
+  expect(welcomeOpen([greeting, line("vendas", 2, "person"), ...page], false)).toBe(false);
+  // Never greeted, and an empty conversation.
+  expect(welcomeOpen([line("oi", 1, "person")], false)).toBe(false);
+  expect(welcomeOpen([], false)).toBe(false);
+  // Still loading: nothing shows and then leaves for someone it may have greeted. An owner never is, so theirs
+  // doesn't wait.
+  expect(welcomeOpen(undefined, false)).toBe(true);
+  expect(welcomeOpen(undefined, true)).toBe(false);
+});
+
 test("the phone's greeting draws the checklist and Conversas has one line back to it, not a second list", () => {
   const src = (f: string) => readFileSync(new URL(`../../src/features/${f}`, import.meta.url), "utf8");
   expect(src("right-hand/Intro.tsx")).toContain("<FirstRunCard agent={agent} channelId={channelId} />");
@@ -155,12 +211,37 @@ test("the phone's greeting draws the checklist and Conversas has one line back t
   expect(steps).toContain('router.push({ pathname: "/connectors", params: { connect: def.id } })');
 });
 
-test("Configurações has its section for who manages agents, at its own screen", () => {
-  const ids = (permissions: string[]) =>
-    visibleSections({ id: "o", name: "Acme", role: "member", permissions }).map((s) => s.id);
-  expect(ids(["read", "manage_agents"])).toContain("right_hand");
-  expect(ids(["read"])).not.toContain("right_hand");
-  expect(SETTINGS_SECTIONS.find((s) => s.id === "right_hand")?.href).toBe("/settings/right-hand");
+test("on a hold for its first plan the phone's card leads with the plan row: where to choose it, in words only", () => {
+  const card = readFileSync(new URL("../../src/features/right-hand/FirstRun.tsx", import.meta.url), "utf8");
+  // The row comes only while the workspace waits for its first plan (ADR 0162, amended 2026-11-10).
+  expect(card).toContain('waitsForPlan: hold === "payment",');
+  expect(card).toContain('plan: "play",');
+  // No button and no way to pay from the phone (App Store 3.1.1): its line says where the plan is chosen, or who can.
+  expect(card).toContain("plan: () => undefined,");
+  expect(card).toContain('...(words.action && s !== "plan" && !(s === "about" && next === "about")');
+  expect(card).toContain('b: t(mayPay ? "connectAi.billingWeb" : "standing.billing.askAdmin"),');
+  // Any other hold has no plan row: the AI row says it, as before.
+  expect(card).toContain('const holdLine = s === "ai" && state === "afterPlan" && !steps.includes("plan");');
+  for (const banned of ["billingLink", "BillingLink", "planOffer", "plans.json"]) expect(card).not.toContain(banned);
+});
+
+test("its Computador row is always there: it opens the viewer's own place, or says why it has none", () => {
+  const screen = readFileSync(new URL("../../src/features/right-hand/SettingsScreen.tsx", import.meta.url), "utf8");
+  expect(screen).toContain("      <Computer agentId={agent.id} />\n");
+  expect(screen).toContain("const none = rightHandNoComputer(view.desktopQ.data?.reason);");
+  // With none there is nothing to open: no chevron, no press, and the reason under the row.
+  expect(screen).toContain('<GroupedRow icon="laptop" label={t("agentComputer.button")} />');
+  expect(screen).toContain('<GroupedFooter>{t(none ?? "rightHand.computerYours")}</GroupedFooter>');
+  // No computer of the workspace's own: whoever may add one opens Dispositivos from the row.
+  expect(screen).toContain('const add = none === "rightHand.computerNoHome" && can(org, "pair_computers");');
+  expect(screen).toContain('onPress={() => router.push("/settings/devices")}');
+});
+
+test("Configurações lists no section for it: its settings open from its own profile, on their screen", () => {
+  const src = (f: string) => readFileSync(new URL(`../../src/features/${f}`, import.meta.url), "utf8");
+  expect(SETTINGS_SECTIONS.map((s) => s.id as string)).not.toContain("right_hand");
+  expect(src("right-hand/SettingsScreen.tsx")).toContain('router.push("/settings/right-hand" as never)');
+  expect(src("agents/AgentProfileScreen.tsx")).toContain("onPress: openRightHandSettings");
 });
 
 test("its DM, cards and profile treat it apart through the one shared helper", () => {
@@ -172,6 +253,12 @@ test("its DM, cards and profile treat it apart through the one shared helper", (
   expect(chat).toMatch(/dmComputer = dmAgentId && !isThread && !rightHand/);
   // Never archived or deleted from the phone.
   expect(src("agents/AgentEditScreen.tsx")).toContain("admin && !rightHand");
+  // Its profile shows what it may use like any agent's (apps, built-in areas, mailboxes), without the AI row: its AI
+  // is each person's, on its settings.
+  const profile = src("agents/AgentProfileScreen.tsx");
+  expect(profile).toContain("{details ? accessView : null}");
+  expect(profile).toContain("const mailboxes = useAgentMailboxes(id, details);");
+  expect(profile).toContain("{thinks && !rightHand ? (");
   // No coordinator anywhere on the phone (ADR 0093, superseded by 0137).
   for (const f of [
     "agents/AgentEditScreen.tsx",

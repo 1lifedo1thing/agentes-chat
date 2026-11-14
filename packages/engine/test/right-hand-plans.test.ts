@@ -3,6 +3,7 @@ import { ACCOUNTS_PROTOCOL, LOCKED_BRAIN_PROTOCOL, MACHINE_PROTOCOL_VERSION } fr
 import { and, eq, schema } from "@agenteschat/db";
 import {
   type Brain,
+  BrainFailure,
   type BrainTurn,
   createAgentRuns,
   createClaudeCodeBrain,
@@ -22,6 +23,7 @@ import {
   RIGHT_HAND_TURN,
   resolveBrain,
   rightHandNoAiReason,
+  setAccountServes,
   setAgentBrain,
   UNAVAILABLE_CODES,
 } from "../src";
@@ -110,7 +112,10 @@ test("Lodi takes a Claude plan signed in as an account, never a computer's own s
   // Its audience is its own: everyone still has their DM with it.
   expect((await lodi()).audienceMode).toBe("everyone");
   // Its user there holds the sign-in while it thinks (system mode lends the folder by the `agents` frame).
-  expect((await machineAgents(fx.db, fx.org.id, machineId)).find((a) => a.id === id)).toMatchObject({ account: ANAS });
+  const listed = (await machineAgents(fx.db, fx.org.id, machineId)).find((a) => a.id === id);
+  expect(listed).toMatchObject({ account: ANAS });
+  // It thinks on several plans, sandboxed ones too: no containers service of its own (ADR 0169).
+  expect(listed?.containers).toBeUndefined();
   // An admin's view: Ana's plan, not theirs to give; "Atende outras pessoas" as for any agent on its owner's plan.
   expect(await getAgentBrain(deps, caio.id, fx.org.id, id)).toMatchObject({ canUsePlans: false, account: ANAS });
   expect(await codeOf(setAgentBrain(deps, caio.id, fx.org.id, id, { account: ANAS, onlyOwner: true }))).toBeNull();
@@ -137,8 +142,8 @@ test("a plan given to Lodi starts with its switches off, whatever was set before
   expect(await lodi()).toMatchObject({ brainAccountId: CAIOS, brainExtraUsage: false, planForOthers: false });
 });
 
-test("its turns think on the plan's computer and owner; another person's DM only once the plan answers others", async () => {
-  const { fx, deps, machineId, bia, lodi } = await world();
+test("its turns think on the plan's computer and owner; another person's DM while a plan serves them", async () => {
+  const { fx, deps, machineId, bia, caio, lodi } = await world();
   await setAgentBrain(deps, fx.owner.id, fx.org.id, (await lodi()).id, { brain: "claude_code", account: ANAS });
   const agent = await lodi();
   const runIn = async (userId: string) => {
@@ -153,14 +158,29 @@ test("its turns think on the plan's computer and owner; another person's DM only
   const plan = await resolveBrain({ db: fx.db, machines }, agent, ana.run, ana.dm.id);
   expect(plan).toMatchObject({ kind: "claude_code", account: { id: ANAS }, session: { machineId } });
   expect(plan.unavailable).toBeUndefined();
-  // Bia's DM: Ana's plan answers only Ana.
+  // Bia's DM: Ana's plan serves the whole workspace (ADR 0059 §3), so it thinks for Bia too.
   const theirs = await runIn(bia.id);
-  expect((await resolveBrain({ db: fx.db, machines }, agent, theirs.run, theirs.dm.id)).unavailable).toMatchObject({
+  const open = await lodi();
+  expect(await resolveBrain({ db: fx.db, machines }, open, theirs.run, theirs.dm.id)).toMatchObject({
+    account: { id: ANAS },
+  });
+  expect((await resolveBrain({ db: fx.db, machines }, open, theirs.run, theirs.dm.id)).unavailable).toBeUndefined();
+  // Ana keeps hers to herself: Bia's DM thinks with Caio's, which still serves everyone.
+  await setAccountServes({ db: fx.db }, fx.owner.id, fx.org.id, ANAS, "owner");
+  const onCaios = await resolveBrain({ db: fx.db, machines }, open, theirs.run, theirs.dm.id);
+  expect(onCaios).toMatchObject({ account: { id: CAIOS } });
+  expect(onCaios.unavailable).toBeUndefined();
+  // Caio too: nothing serves Bia, and her line names whose the plans are, with no plan of hers to connect yet.
+  await setAccountServes({ db: fx.db }, caio.id, fx.org.id, CAIOS, "owner");
+  expect((await resolveBrain({ db: fx.db, machines }, open, theirs.run, theirs.dm.id)).unavailable).toMatchObject({
     code: "plan_not_shared",
   });
-  await setAgentBrain(deps, fx.owner.id, fx.org.id, agent.id, { onlyOwner: false });
-  const open = await lodi();
-  expect((await resolveBrain({ db: fx.db, machines }, open, theirs.run, theirs.dm.id)).unavailable).toBeUndefined();
+  expect(await agentAiState({ db: fx.db, gateway: fx.gateway, machines }, open, undefined, bia.id)).toMatchObject({
+    state: "no_ai",
+    reason: "plans_not_yours",
+    plan: "Claude",
+  });
+  await setAccountServes({ db: fx.db }, fx.owner.id, fx.org.id, ANAS, "everyone");
   // A runner that can't lock Claude Code down never gets its turn.
   const old = { status: async (id: string) => statusOf(id, { protocol: LOCKED_BRAIN_PROTOCOL - 1 }) };
   expect((await resolveBrain({ db: fx.db, machines: old }, open, ana.run, ana.dm.id)).unavailable).toMatchObject({
@@ -206,6 +226,42 @@ test("its computer asleep: one line says why, the run fails at once, no wait and
   expect(usage.filter((u) => u.billedTo !== "plan")).toEqual([]);
 });
 
+test("its plan's CLI failing: its line says what the CLI said, the card keeps the way to a key", async () => {
+  const { fx, deps, lodi } = await world();
+  await setAgentBrain(deps, fx.owner.id, fx.org.id, (await lodi()).id, { brain: "claude_code", account: ANAS });
+  const agent = await lodi();
+  const brain: Brain = {
+    kind: "claude_code",
+    async *run() {
+      yield {
+        type: "error",
+        code: "claude_failed",
+        message: "Claude Code ended without an answer (exit 1): Error: Invalid settings file: hooks must be an object",
+        retryable: true,
+      };
+    },
+  };
+  const handlers = createJobHandlers({
+    ...fx.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  const dm = await openPersonAgentDm(fx.db, fx.org.id, fx.owner.id, agent.id);
+  await postPersonMessage({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, dm.id, { body: "oi" });
+  await drainOutbox(fx.db, handlers);
+  const [run] = await fx.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, agent.id));
+  expect(run?.status).toBe("failed");
+  const cards = (await fx.db.select().from(schema.messages).where(eq(schema.messages.channelId, dm.id))).filter(
+    (m) => m.meta.bodyCode === "no_ai",
+  );
+  expect(cards.map((m) => m.meta.noAi)).toMatchObject([
+    { reason: "cli_failed", why: "Invalid settings file: hooks must be an object" },
+  ]);
+  expect(cards[0]?.body).toBe(
+    "I can't answer now: my plan's AI stopped with an error (Invalid settings file: hooks must be an object).",
+  );
+});
+
 test("a request no person made, on a plan that answers only its owner: its line never says to connect a plan", async () => {
   const { fx, deps, lodi: helper } = await world();
   await setAgentBrain(deps, fx.owner.id, fx.org.id, (await helper()).id, { brain: "claude_code", account: ANAS });
@@ -229,6 +285,8 @@ test("a request no person made, on a plan that answers only its owner: its line 
   });
   const [run] = await createAgentRuns(fx.db, asked, [agent.id], "mention");
   if (!run) throw new Error("no run");
+  // A plan that serves only its owner.
+  await setAccountServes({ db: fx.db }, fx.owner.id, fx.org.id, ANAS, "owner");
   expect((await resolveBrain({ db: fx.db, machines }, agent, run, fx.general.id)).unavailable).toMatchObject({
     code: "plan_unattended",
   });
@@ -273,6 +331,78 @@ test("its CLI killed at a tool of its own after a bridge call: nothing of the tu
   expect(said.map((m) => m.meta.bodyCode)).toEqual(["no_ai"]);
   expect(said[0]?.meta.noAi).toMatchObject({ reason: "plan_tools" });
   expect(said.some((m) => m.body.includes("Looking it up"))).toBe(false);
+});
+
+test("its locked turn is never told of a computer's own tools: it has only ours, and no computer", async () => {
+  const { fx, deps, lodi } = await world();
+  await setAgentBrain(deps, fx.owner.id, fx.org.id, (await lodi()).id, { brain: "claude_code", account: ANAS });
+  const agent = await lodi();
+  const systems: string[] = [];
+  const brain: Brain = {
+    kind: "claude_code",
+    async *run(turn) {
+      systems.push(turn.system);
+      yield { type: "done", text: "Oi!" };
+    },
+  };
+  const handlers = createJobHandlers({
+    ...fx.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  const dm = await openPersonAgentDm(fx.db, fx.org.id, fx.owner.id, agent.id);
+  await postPersonMessage({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, dm.id, { body: "oi" });
+  await drainOutbox(fx.db, handlers);
+  expect(systems).toHaveLength(1);
+  expect(systems[0]).toContain("You have no computer here");
+  expect(systems[0]).not.toContain("# Your computer's tools");
+  expect(systems[0]).not.toContain("your computer's own tools");
+  // What changes per turn still reaches it in its messages, as for any computer brain.
+  expect(systems[0]).toContain('"# This turn" and "# This conversation" in your messages');
+});
+
+test("its plan's CLI failing: its line says so, and what the CLI said stays in the run's steps and is reported", async () => {
+  const { fx, deps, lodi } = await world();
+  await setAgentBrain(deps, fx.owner.id, fx.org.id, (await lodi()).id, { brain: "claude_code", account: ANAS });
+  const agent = await lodi();
+  // A CLI that refuses to start on that computer fails every turn the same way, in a few seconds.
+  const words = "Claude Code ended without an answer (exit 1): error: the sandbox could not start here";
+  const brain: Brain = {
+    kind: "claude_code",
+    async *run() {
+      yield { type: "error", code: "claude_failed", message: words, retryable: true };
+    },
+  };
+  const handlers = createJobHandlers({
+    ...fx.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  const dm = await openPersonAgentDm(fx.db, fx.org.id, fx.owner.id, agent.id);
+  await postPersonMessage({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, dm.id, { body: "oi" });
+  const reported: { code: string; message: string }[] = [];
+  await drainOutbox(fx.db, handlers, {
+    onError: (_job, error, outcome) => {
+      if (outcome === "failed" && error instanceof BrainFailure)
+        reported.push({ code: error.code, message: error.message });
+    },
+  });
+  const [run] = await fx.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, agent.id));
+  expect(run).toMatchObject({ status: "failed", error: "no_ai" });
+  const cards = (await fx.db.select().from(schema.messages).where(eq(schema.messages.channelId, dm.id))).filter(
+    (m) => m.meta.bodyCode === "no_ai",
+  );
+  expect(cards.map((m) => (m.meta.noAi as { reason?: string }).reason)).toEqual(["cli_failed"]);
+  const steps = await fx.db
+    .select({ data: schema.agentRunSteps.data })
+    .from(schema.agentRunSteps)
+    .where(and(eq(schema.agentRunSteps.runId, run?.id ?? ""), eq(schema.agentRunSteps.kind, "error")));
+  expect(steps.map((s) => s.data)).toContainEqual({
+    reason: "brain_unavailable",
+    code: "claude_failed",
+    message: words,
+  });
+  expect(reported).toEqual([{ code: "claude_failed", message: words }]);
 });
 
 test("its turn goes to the runner as the locked-down chat profile, with no checkout and none of the owner's servers", async () => {

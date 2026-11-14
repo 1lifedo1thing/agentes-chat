@@ -225,6 +225,15 @@
     for (let p = svgs[0].parentElement; p && p !== el; p = p.parentElement) if (hasSurface(style(p))) return null;
     return svgs[0];
   };
+  /** The kit's marks drawn without an svg: the working orbit (a canvas), the done, failed and stop squares, the wait. */
+  const MARKS = "canvas.ac-pixspin,.ac-pixdone,.ac-pixfail,.ac-pixstop,.rq-wait";
+  /** The mark a flow child is: one of `MARKS`, or a wordless box around one and nothing else that shows. */
+  const markOf = (el) => {
+    if (el.matches(MARKS)) return el;
+    if (el.matches("button,a,[role=button]") || visibleText(el) || hasSurface(style(el))) return null;
+    const marks = [...el.querySelectorAll(`svg,${MARKS}`)].filter(seen);
+    return marks.length === 1 && marks[0].matches(MARKS) ? marks[0] : null;
+  };
   /** Where what shows of a flow child starts and ends: its glyph, its plate, or its words. */
   const inkOf = (el) => {
     const glyph = glyphOf(el);
@@ -292,6 +301,8 @@
     (s.display.includes("grid") && s.gridTemplateColumns.split(" ").length > 1);
   /** What a row can lead with besides a glyph: a face, a tile, a picture. */
   const FACE = ".ac-avatar,.ac-rolemark,img,canvas,video,picture";
+  /** A menu item that is a face and nothing else (`MenuFace`, on a menu's top): no row, so no row's room or height. */
+  const FACE_ITEM = ".ac-face-edit";
   /** The box that lays `node` out: its parent, or past a `display: contents` one. */
   const layoutParent = (node) => {
     let p = node.parentElement;
@@ -447,7 +458,7 @@
     if (!search || !actions) return true;
     const gap = parseFloat(style(bar).columnGap) || 0;
     const floor = parseFloat(style(search).minWidth) || 0;
-    return floor + gap + actions.getBoundingClientRect().width <= bar.clientWidth + 0.5;
+    return floor + gap + actions.getBoundingClientRect().width <= bar.clientWidth - 0.5;
   };
   const stackToolbars = () => {
     for (const bar of document.querySelectorAll(".ac-toolbar:has(> .ac-toolbar__search)")) {
@@ -527,7 +538,7 @@
         if (!hasSurface(s) || s.display === "inline") continue;
         const b = el.getBoundingClientRect();
         if (b.width > 320 || el.scrollWidth > el.clientWidth + 1) continue;
-        // A face at the start of a pill sits concentric with its round end, tighter than the words at the other.
+        // A face at the start of a pill sits tighter than the words at the other end (`nest` checks its corner).
         if (el.firstElementChild?.matches(".ac-avatar,.ac-rolemark,canvas,[class*='face']")) continue;
         // A frame split into segments (an event pill's actions, each after a hairline) pads each one, not the whole.
         if (el.querySelector(":scope > [class*='__actions']")) continue;
@@ -643,7 +654,9 @@
           const clips = (v) => v === "hidden" || v === "clip";
           if (clips(s.overflowX) && wide > 1 && s.textOverflow !== "ellipsis")
             out.push({ rule: "clipped", node: el, el: sig(el), px: wide, text: words(el) });
-          if (clips(s.overflowY) && tall > 2 && s.webkitLineClamp === "none" && s.textOverflow !== "ellipsis")
+          // A fold ends its words under a fade (a mask) with "Ver mais" under them: on purpose, not at a hard edge.
+          const fold = (s.maskImage || s.webkitMaskImage || "none") !== "none";
+          if (clips(s.overflowY) && tall > 2 && s.webkitLineClamp === "none" && s.textOverflow !== "ellipsis" && !fold)
             out.push({ rule: "clipped", node: el, el: sig(el), px: tall, text: words(el) });
           // Cut by a box around it instead: that box's "…" reaches only words on its own lines, not a block inside it
           // (a picker's two lines, a flex column), so they stop mid-word at its edge.
@@ -983,6 +996,52 @@
       }
     },
     /**
+     * A bubble's time in its corner never covers the bubble's words: the last line keeps the room of the time as it
+     * is written (a 12-hour "11:43 PM" is half again as wide as "23:43") and of the mark after it.
+     */
+    stampover(out) {
+      for (const stamp of document.querySelectorAll(".ac-msg__text > .ac-msg__stamp")) {
+        if (!seen(stamp) || style(stamp).position !== "absolute") continue;
+        const s = stamp.getBoundingClientRect();
+        let px = 0;
+        const walker = document.createTreeWalker(stamp.parentElement, NodeFilter.SHOW_TEXT);
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          if (!n.textContent.trim() || stamp.contains(n) || !seen(n.parentElement)) continue;
+          for (const t of textRects(n))
+            if (Math.min(t.bottom, s.bottom) - Math.max(t.top, s.top) > 1)
+              px = Math.max(px, Math.min(t.right, s.right) - Math.max(t.left, s.left));
+        }
+        if (px > 0.5)
+          out.push({
+            rule: "stampover",
+            node: stamp,
+            el: sig(stamp),
+            box: sig(stamp.parentElement),
+            px: +px.toFixed(1),
+            text: words(stamp),
+          });
+      }
+    },
+    /**
+     * A grouped message's receipt (`.ac-msg__aside`, in its gutter) never sits under the row's bar
+     * (`.ac-msg__actions`, measured where it stands at rest, laid out though unseen) and never leaves the row on its
+     * left, at any text size.
+     */
+    msgaside(out) {
+      for (const aside of document.querySelectorAll(".ac-msg--grouped .ac-msg__aside")) {
+        if (!seen(aside)) continue;
+        const row = aside.closest(".ac-msg");
+        const a = aside.getBoundingClientRect();
+        const r = row.getBoundingClientRect();
+        const bar = row.querySelector(":scope > .ac-msg__body > .ac-msg__actions");
+        const b = bar && style(bar).display !== "none" ? bar.getBoundingClientRect() : null;
+        const ox = b ? Math.min(a.right, b.right) - Math.max(a.left, b.left) : 0;
+        const oy = b ? Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) : 0;
+        const px = Math.max(ox > 0.5 && oy > 0.5 ? Math.min(ox, oy) : 0, r.left - a.left);
+        if (px > 0.5) out.push({ rule: "msgaside", node: aside, el: sig(aside), box: sig(row), px: +px.toFixed(1) });
+      }
+    },
+    /**
      * A box that scrolls for a few px: margins, a border or rounding past its edge show a scrollbar (and let the wheel
      * nudge it) over content that, to the eye, fits. The check keeps one only if it stays in a taller window
      * (`lasting` in check.ts). A box with no class of its own is named by the nearest one with a class around it, so
@@ -1050,7 +1109,8 @@
     /**
      * A face or a mark in an option keeps the row's room around it while the option is highlighted: 6 above and below
      * (10 on touch) and 6 from its start, so it never touches the highlight's edge (OptionRow). A list row with a plate
-     * at rest (a fill: selected, current) keeps 8 around its lead; one between hairlines, 8 above and below.
+     * at rest (a fill: selected, current) keeps 8 around its lead; one between hairlines, 8 above and below. A face that
+     * is the item itself (`FACE_ITEM`) has no row around it.
      */
     rim(out) {
       const touch = matchMedia("(pointer: coarse)").matches;
@@ -1075,7 +1135,7 @@
         [...document.querySelectorAll("[role=option],[role^=menuitem],.ac-menu__item")].filter(seen),
       );
       for (const opt of options) {
-        const lead = leadOf(opt);
+        const lead = opt.matches(FACE_ITEM) ? null : leadOf(opt);
         if (!lead) continue;
         const had = opt.hasAttribute("data-highlighted");
         if (!had) opt.setAttribute("data-highlighted", "");
@@ -1153,7 +1213,8 @@
      * A glyph's middle on its line's capitals' middle, within 1px, where the eye centres a sign beside words: a row's
      * lead (a glyph, or a face no taller than 1.25 lines) on its first line, and a glyph inside or after words (an svg, or
      * a wordless box around one: a hint's ⓘ, a mark) on those words, in a line of text or in a row, and a face that is a
-     * word of its line (`.ac-who`) on that line. A person's initials sit within 0.5px of their tile's middle.
+     * word of its line (`.ac-who`) on that line. The kit's marks that draw no svg (`MARKS`: the working orbit, the done,
+     * failed and stop squares, the wait) are glyphs here too. A person's initials sit within 0.5px of their tile's middle.
      */
     iconmid(out) {
       const push = (node, part, px, row) =>
@@ -1171,7 +1232,7 @@
         const nodes = flowNodes(row);
         const lead = nodes[0];
         if (lead?.nodeType !== 1) continue;
-        const mark = glyphOf(lead) ?? (lead.matches(FACE) ? lead : null);
+        const mark = glyphOf(lead) ?? markOf(lead) ?? (lead.matches(FACE) ? lead : null);
         if (!mark) continue;
         const text = nodes.slice(1).map(wordsOf).find(Boolean);
         if (!text) continue;
@@ -1192,13 +1253,14 @@
         const px = (box.top + box.bottom) / 2 - caps.mid;
         if (Math.abs(px) > 1) push(lead, "lead", px, row);
       }
-      for (const svg of document.body.querySelectorAll("svg")) {
+      const glyphs = `svg,${MARKS}`;
+      for (const svg of document.body.querySelectorAll(glyphs)) {
         if (!seen(svg) || leads.has(svg) || svg.parentElement?.closest("svg,.ac-avatar,.ac-rolemark")) continue;
         let glyph = svg;
         for (let p = svg.parentElement; p && p !== document.body; p = p.parentElement) {
           const ps = style(p);
           if (ps.display === "contents") continue;
-          if (visibleText(p) || hasSurface(ps) || [...p.querySelectorAll("svg")].filter(seen).length !== 1) break;
+          if (visibleText(p) || hasSurface(ps) || [...p.querySelectorAll(glyphs)].filter(seen).length !== 1) break;
           if (p.matches("button,a,[role=button]") && !p.matches(".ac-hint")) break;
           if (style(glyph).display.startsWith("inline") && !ps.display.startsWith("inline")) break;
           glyph = p;
@@ -1260,11 +1322,19 @@
     /**
      * In a stack of fields (a box holding two or more), each field's control is as wide as the field and as tall as the
      * stack's usual control, within 1 and 0.5px. A button that shows a value is drawn as a select, never a plain button.
+     * A control that grows with what it holds (a chip field's tokens, picks on a second line) a line or more past its
+     * min-height is measured by that min-height: its first line is the one that matches.
      */
     fieldwidth(out) {
       const LABEL = ".ac-field__label,.ac-field__label-row,.ac-hintline";
       const TOGGLE =
         "[role=checkbox],[role=radio],[role=switch],[role=radiogroup],input[type=checkbox],input[type=radio]";
+      const heightOf = (c) => {
+        const h = c.getBoundingClientRect().height;
+        if (c.matches("textarea") || c.querySelector("textarea")) return h;
+        const min = parseFloat(style(c).minHeight) || 0;
+        return min > 0 && h - min >= 16 ? min : h;
+      };
       const stacks = new Set();
       for (const field of document.querySelectorAll(".ac-field")) {
         const p = layoutParent(field);
@@ -1284,7 +1354,7 @@
         );
         const count = new Map();
         for (const [, c] of controls) {
-          const h = Math.round(c.getBoundingClientRect().height * 2) / 2;
+          const h = Math.round(heightOf(c) * 2) / 2;
           count.set(h, (count.get(h) ?? 0) + 1);
         }
         const usual = [...count].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0] ?? 0;
@@ -1297,12 +1367,76 @@
             parseFloat(fs.borderLeftWidth) -
             parseFloat(fs.borderRightWidth);
           const c = control.getBoundingClientRect();
+          const h = heightOf(control);
           const base = { rule: "fieldwidth", node: control, el: sig(control), box: sig(field) };
           if (control.matches(".ac-btn")) out.push({ ...base, drawn: "button", text: words(control) });
           if (Math.abs(c.width - inner) > 1) out.push({ ...base, side: "width", px: +(c.width - inner).toFixed(1) });
-          const tall = control.matches("textarea") || control.querySelector("textarea") || c.height > 2 * usual;
-          if (!tall && Math.abs(c.height - usual) > 0.5)
-            out.push({ ...base, side: "height", px: +(c.height - usual).toFixed(1) });
+          const tall = control.matches("textarea") || control.querySelector("textarea") || h > 2 * usual;
+          if (!tall && Math.abs(h - usual) > 0.5) out.push({ ...base, side: "height", px: +(h - usual).toFixed(1) });
+        }
+      }
+    },
+    /**
+     * Rounded inside rounded: a plate or a face near a corner of the box it sits on, with room between them, has that
+     * box's corner less the room (`outer - gap`). In a fully round pill that makes what sits at its ends fully round. A
+     * thing flush with the edge is `corner`'s. Percent corners resolve against the box, every corner clamps to half the
+     * shorter side, as the browser draws them. Only on the surfaces built to it (the notice island, toasts, the banners
+     * over the composer and the computer's stage): elsewhere a card's buttons keep the kit's own corner.
+     */
+    nest(out) {
+      const NESTED = ".ni,.ac-toast,.noai-banner,.cmp-banner";
+      const CORNERS = [
+        ["TopLeft", "Top", "Left"],
+        ["TopRight", "Top", "Right"],
+        ["BottomLeft", "Bottom", "Left"],
+        ["BottomRight", "Bottom", "Right"],
+      ];
+      const REACH = 24;
+      const radius = (s, name, r) => {
+        const v = s[`border${name}Radius`].split(" ")[0];
+        const px = v.endsWith("%") ? (parseFloat(v) / 100) * r.width : parseFloat(v);
+        return Math.min(px || 0, r.width / 2, r.height / 2);
+      };
+      for (const el of document.body.querySelectorAll("*")) {
+        if (!seen(el) || el.closest("svg")) continue;
+        const s = style(el);
+        if (!hasSurface(s) && !el.matches(FACE)) continue;
+        // What a rounded box between them clips (a face's canvas, a tile's picture) takes that box's corner, not its own.
+        let box = el.parentElement;
+        let clipped = false;
+        for (; box && box !== document.body && !hasSurface(style(box)); box = box.parentElement) {
+          const ps = style(box);
+          if (ps.overflowX !== "visible" && parseFloat(ps.borderTopLeftRadius) > 0) clipped = true;
+        }
+        if (clipped || !box || box === document.body || !box.matches(NESTED)) continue;
+        const bs = style(box);
+        const a = el.getBoundingClientRect();
+        const b = box.getBoundingClientRect();
+        const gap = {
+          Top: a.top - b.top - parseFloat(bs.borderTopWidth),
+          Bottom: b.bottom - parseFloat(bs.borderBottomWidth) - a.bottom,
+          Left: a.left - b.left - parseFloat(bs.borderLeftWidth),
+          Right: b.right - parseFloat(bs.borderRightWidth) - a.right,
+        };
+        // An agent's cut corner (`--radius-agent`) is its mark, not a curve to follow.
+        const cut = el.matches(".ac-avatar--agent:not(.ac-avatar--framed)") ? "BottomLeft" : null;
+        for (const [name, v, h] of CORNERS) {
+          if (name === cut || gap[v] > REACH || gap[h] > REACH) continue;
+          const g = Math.min(gap[v], gap[h]);
+          if (g < 1) continue;
+          const want = radius(bs, name, b) - g;
+          if (!(want > 2)) continue;
+          const own = radius(s, name, a);
+          if (Math.abs(own - want) > 1.5)
+            out.push({
+              rule: "nest",
+              node: el,
+              el: sig(el),
+              box: sig(box),
+              side: name,
+              px: +own.toFixed(1),
+              want: +want.toFixed(1),
+            });
         }
       }
     },
@@ -1545,13 +1679,14 @@
     /**
      * Menu rows are their kind's height, within 0.5px: a line 32, a name over its description 50, a list with faces 36
      * (40, 58 and 44 on touch), a wrapped name or description by its extra lines. They stand 2 apart, the first
-     * `--menu-pad` under the menu's top. Headings, separators and the reactions' row keep their own.
+     * `--menu-pad` under the menu's top. Headings, separators, the reactions' row and a face that changes the photo on
+     * top (`MenuFace`, no row) keep their own.
      */
     menuitem(out) {
       const touch = matchMedia("(pointer: coarse)").matches;
       const MENU = ".ac-menu,[role=menu],[role=listbox]";
       const ITEM = "[role^=menuitem],[role=option],.ac-menu__item";
-      const OWN = ".ac-menu__reactions,.ac-menu__heading,.ac-menu__separator,[role=separator]";
+      const OWN = `.ac-menu__reactions,.ac-menu__heading,.ac-menu__separator,[role=separator],${FACE_ITEM}`;
       const follows = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
       for (const menu of document.querySelectorAll(MENU)) {
         if (!seen(menu) || menu.parentElement?.closest(MENU)) continue;
@@ -1578,7 +1713,7 @@
           const extra = desc
             ? grown(el.querySelector(".ac-menu__label > :first-child:not(.ac-menu__desc)")) +
               grown(el.querySelector(".ac-menu__desc"))
-            : 0;
+            : grown(el.querySelector(".ac-menu__label, .ac-filter__label"));
           const want = (faces ? (roomy ? 44 : 36) : desc ? (roomy ? 58 : 50) : roomy ? 40 : 32) + extra;
           const r = el.getBoundingClientRect();
           const base = { rule: "menuitem", node: el, el: sig(el), box: sig(menu) };
@@ -1685,7 +1820,9 @@
               continue;
             }
             // A plate or a control as tall as the row (its whole row a button) holds the row's content: look inside.
-            const full = n.getBoundingClientRect().height >= b.height - 1;
+            // So does the line of a row that opens under it (`.ac-foldrow__head`): the row's room is above what the
+            // line holds and below what it unfolds.
+            const full = n.getBoundingClientRect().height >= b.height - 1 || n.matches(".ac-foldrow__head");
             if ((n.matches(`${HOLDS},${FACE},svg`) || hasSurface(style(n))) && !full) {
               const r = n.getBoundingClientRect();
               add(r.top, r.bottom);
@@ -1791,7 +1928,8 @@
         if (!seen(row) || row.closest("svg") || !isRow(style(row))) continue;
         const nodes = flowNodes(row);
         const pic = nodes[0];
-        if (pic?.nodeType !== 1 || pic.matches(`${CONTROL},a`)) continue;
+        // A check's or a radio's look, in a row that is itself the button, leads as that control does: no picture.
+        if (pic?.nodeType !== 1 || pic.matches(`${CONTROL},a,.ac-check,.ac-radio`)) continue;
         const tile =
           !pic.matches(PILL_LABEL) &&
           hasSurface(style(pic)) &&
@@ -2019,7 +2157,7 @@
         return { left: r.left + air, right: r.right - air, top: r.top + air, bottom: r.bottom - air };
       };
       const ONE =
-        ".ac-split,.ac-seg,.ac-token,.ac-eventpill,.ac-msg__actions,.ac-composer__tools--format,.wiki-bar,[role=menu],[role=menubar],svg";
+        ".ac-split,.ac-seg,.ac-token,.ac-eventpill,.ac-msg__actions,.ac-formatbar,.wiki-bar,[role=menu],[role=menubar],svg";
       for (const row of document.body.querySelectorAll("*")) {
         if (!seen(row) || row.closest(ONE) || !isRow(style(row))) continue;
         const kids = flow(row);
@@ -2160,6 +2298,21 @@
         const parent = layoutParent(el);
         if (parent && /flex|grid/.test(style(parent).display))
           out.push({ rule: "undoinline", node: el, el: sig(el), box: sig(parent), text: words(el) });
+      }
+    },
+    /**
+     * The working line's own controls (the globe, Ver, the stop) end it at its end from the first frame: one beside
+     * words that grow nothing would jump to the end once the time comes in before it.
+     */
+    barend(out) {
+      for (const bar of document.querySelectorAll('.ac-typing[data-active="true"]')) {
+        const last = bar.lastElementChild;
+        if (!seen(bar) || !last?.matches(".stop-run-wrap, .ac-typing__browser, .ac-typing__see") || !seen(last))
+          continue;
+        const s = style(bar);
+        const end = bar.getBoundingClientRect().right - parseFloat(s.borderRightWidth) - parseFloat(s.paddingRight);
+        const free = end - last.getBoundingClientRect().right - parseFloat(style(last).marginRight);
+        if (free > 1) out.push({ rule: "barend", node: last, el: sig(last), box: sig(bar), px: +free.toFixed(1) });
       }
     },
     /**

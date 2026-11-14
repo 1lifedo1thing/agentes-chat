@@ -1,11 +1,13 @@
-import type { KeyWrapper, PlatformCredentials, PubSub } from "@agenteschat/adapters";
+import type { ErrorReporter, KeyWrapper, PlatformCredentials, PubSub, SearchKind } from "@agenteschat/adapters";
 import { and, type Database, desc, type Executor, eq, gte, isNull, lt, rowsOf, schema, sql } from "@agenteschat/db";
 import {
   costNanoUsd,
   customModelOf,
   type EmbeddingProvider,
+  type EmbeddingResult,
   type Endpoint,
   embeddingCostNanoUsd,
+  endpointKeyCheck,
   ensureOpenRouterModels,
   estimateTokens,
   isCustomModel,
@@ -63,7 +65,9 @@ export interface ModelGatewayDeps {
   platformCredentials: PlatformCredentials;
   now?: () => Date;
   /** Embeddings for search (optional: without it search is full-text only). */
-  embeddings?: { provider: EmbeddingProvider; apiKey: string };
+  embeddings?: GatewayEmbeddings;
+  /** Where an embeddings outage is reported, once (ADR 0104); absent: not reported. */
+  errors?: ErrorReporter;
   /** Called when an agent's monthly spend crosses 80% (`warning`) or 100% (`exhausted`) of its budget. */
   onBudgetThreshold?(event: {
     agent: Agent;
@@ -72,6 +76,21 @@ export interface ModelGatewayDeps {
     budgetNanoUsd: number;
   }): Promise<void> | void;
 }
+
+export interface GatewayEmbeddings {
+  provider: EmbeddingProvider;
+  apiKey: string;
+  /** The kinds of documents that get vectors (`EMBEDDINGS_KINDS`); absent: every kind. */
+  kinds?: readonly SearchKind[];
+  /** How long a query's vector may take before search goes on with words (`EMBEDDINGS_QUERY_TIMEOUT_MS`). */
+  queryTimeoutMs?: number;
+}
+
+export const EMBED_QUERY_TIMEOUT_MS = 1500;
+/** Only stops a hung server from holding an indexing job: a CPU server takes minutes over a long batch. */
+export const EMBED_DOCUMENT_TIMEOUT_MS = 5 * 60_000;
+/** Embedding calls failed in a row before the outage is reported, once until one succeeds again. */
+export const EMBED_FAILURES_REPORTED = 3;
 
 export const BUDGET_WARNING_RATIO = 0.8;
 
@@ -206,6 +225,7 @@ const masked = (
 export function createModelGateway(deps: ModelGatewayDeps) {
   const now = deps.now ?? (() => new Date());
   const { db } = deps;
+  let embedFailures = 0;
 
   const providerFor = (provider: string) => {
     const p = deps.providers[provider];
@@ -856,15 +876,51 @@ export function createModelGateway(deps: ModelGatewayDeps) {
     hasEmbeddings: () => deps.embeddings !== undefined,
 
     /**
-     * Embeds texts for the organization's search index (kind `embedding`,
-     * no agent). Returns null when no embedding provider is configured, or on a workspace that may not work.
+     * Embeds texts for the organization's search index (kind `embedding`, no agent), within a timeout: a query's is
+     * short, a run waits on it. Null when no embedding provider is configured, when none of `kinds` gets vectors (the
+     * kinds the texts are, or that a query searches; absent: any), or on a workspace that may not work. Throws when
+     * the provider fails, and callers go on with words alone; the failure that makes `EMBED_FAILURES_REPORTED` in a
+     * row is reported.
      */
-    async embed(call: { orgId: string; texts: string[]; inputType: "document" | "query" }) {
-      if (!deps.embeddings || call.texts.length === 0) return null;
+    async embed(call: {
+      orgId: string;
+      texts: string[];
+      inputType: "document" | "query";
+      kinds?: readonly SearchKind[];
+    }) {
+      const embeddings = deps.embeddings;
+      if (!embeddings || call.texts.length === 0) return null;
+      const embedded = embeddings.kinds;
+      const wanted = call.kinds?.length ? call.kinds : embedded;
+      if (embedded && !wanted?.some((k) => embedded.includes(k))) return null;
       // Null, not a refusal: people on a hold still read and search, with full text alone.
       if (await standingRefusal(db, call.orgId)) return null;
-      const { provider, apiKey } = deps.embeddings;
-      const result = await provider.embed(call.texts, { apiKey, inputType: call.inputType });
+      const { provider, apiKey } = embeddings;
+      const timeoutMs =
+        call.inputType === "query" ? (embeddings.queryTimeoutMs ?? EMBED_QUERY_TIMEOUT_MS) : EMBED_DOCUMENT_TIMEOUT_MS;
+      let result: EmbeddingResult;
+      try {
+        result = await provider.embed(call.texts, {
+          apiKey,
+          inputType: call.inputType,
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+      } catch (error) {
+        if (++embedFailures === EMBED_FAILURES_REPORTED) {
+          try {
+            deps.errors?.capture(error, {
+              cause: "embeddings",
+              provider: provider.id,
+              model: provider.model,
+              input_type: call.inputType,
+            });
+          } catch {
+            // A report that can't be made never fails a search.
+          }
+        }
+        throw error;
+      }
+      embedFailures = 0;
       const cost = embeddingCostNanoUsd(result.model, result.tokens);
       await db.insert(usageRecords).values({
         orgId: call.orgId,
@@ -924,7 +980,14 @@ export function createModelGateway(deps: ModelGatewayDeps) {
       const credential = await decryptCredential(db, deps.keyWrappers, orgId, credentialId);
       if (!credential) return null;
       const { provider, apiKey, workspaceId, options } = credential;
-      if (provider === "custom") return { provider, result: { state: "unchecked" } as KeyCheck };
+      // A workspace endpoint has no cheap catalog model to test its key with (`keyCheckRequest`): what its own models'
+      // last tests said of it is the answer (`endpointKeyCheck`), so a saved endpoint key isn't reported as unchecked.
+      if (provider === "custom") {
+        const checked = endpointKeyCheck((options?.endpoint?.models ?? []).map((m) => m.check)) === "ok";
+        // No call is made here, so there is no usage to record.
+        const result: KeyCheck = checked ? { state: "ok", record: async () => {} } : { state: "unchecked" };
+        return { provider, result };
+      }
       const key = {
         apiKey,
         ...(workspaceId ? { workspaceId } : {}),
