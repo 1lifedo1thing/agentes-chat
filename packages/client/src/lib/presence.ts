@@ -188,13 +188,16 @@ export function agentStatusShort(
   return { emoji: null, text: [t(`presence.agent.${line.kind}Short`), back].filter(Boolean).join(" · ") };
 }
 
+/** What of an agent's `…/agent-status` row its face reads. */
+type FaceStatus = Pick<AgentStatus, "presence" | "working" | "work">;
+
 /**
  * An agent's face as the apps draw it (ADR 0084, addendum of 2026-11-13), first match: held by the server's operators
  * (offline), out of office, no AI to think with (offline, §3), waiting on you (its work for this person, `work`), at
  * work, else free. At work it has an AI whatever this person reads of it, which for the right hand is their own, and
  * before the list says it: `working` is a run of its this app hears.
  */
-export function agentPresenceShown(status: AgentStatus | undefined, hasAi: boolean, working = false): AgentFace {
+export function agentPresenceShown(status: FaceStatus | undefined, hasAi: boolean, working = false): AgentFace {
   const presence = status?.presence ?? "away";
   if (presence === "offline") return "offline";
   if (presence === "out" && !working) return "out";
@@ -208,10 +211,11 @@ export function agentPresenceShown(status: AgentStatus | undefined, hasAi: boole
 
 /**
  * An agent's face and whether it has no AI, from the shared lists: the one rule every row that draws the face and
- * every list that groups by it follow. `ai` is its state in `…/ai-status`; `working`, a run of its this app hears.
+ * every list that groups by it follow. `ai` is its state in `…/ai-status`; `working`, a run of its this app hears. A
+ * run keeps it at work, so off no list, unless the operators hold it: the hold stops that run at its next call.
  */
 export function agentFaceOf(
-  status: AgentStatus | undefined,
+  status: FaceStatus | undefined,
   ai: AiStatus["agents"][number]["state"] | null | undefined,
   working = false,
 ): { presence: AgentFace; noAi: boolean } {
@@ -227,10 +231,27 @@ export const isAgentOff = (face: AgentFace) => face === "out" || face === "offli
  * Why an agent's face says what it says (`presence.agentWhy.*`): no AI, out of office, held; null for its work (the
  * work's own words say it, `workDetail`) and while it is free (ADR 0084 addendum of 2026-11-13).
  */
-export function agentWhyKey(face: AgentFace, noAi: boolean): "out" | "offline" | "noAi" | null {
+export function agentWhyKey(face: AgentFace, noAi: boolean): AgentWhy | null {
   if (noAi) return "noAi";
   return isAgentOff(face) ? face : null;
 }
+
+export type AgentWhy = "out" | "offline" | "noAi";
+
+/**
+ * The line under an agent in a members list, on every app, first match: its work (what it waits on, its return,
+ * "aqui"), its own line, why it is off (`agentWhyKey`). Null: the list's own words (its role, how it answers).
+ */
+export function agentMemberLine<W, L>(work: W | null | undefined, line: L | null | undefined, why: AgentWhy | null) {
+  if (work) return { work };
+  if (line) return { line };
+  if (why) return { why };
+  return null;
+}
+
+/** A line whose end has passed reads as none (the server clears it on read; a list kept here may be older). */
+export const liveLine = <T extends { until: string | null }>(line: T | null | undefined, now = Date.now()): T | null =>
+  line && (!line.until || new Date(line.until).getTime() > now) ? line : null;
 
 /** An agent's face in a word: "Disponível", "Trabalhando", "Esperando você", "Fora do escritório", "Offline". */
 export const agentFaceWord = (t: TFunction, face: AgentFace) =>

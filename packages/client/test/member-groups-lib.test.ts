@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { AgentStatus, MemberPresence, OrgRole } from "../src/api/types";
 import { memberGroups, sheetGroups } from "../src/lib/member-groups";
-import { agentFaceOf, agentWhyKey, isAgentOff } from "../src/lib/presence";
+import { agentFaceOf, agentMemberLine, agentWhyKey, isAgentOff, liveLine } from "../src/lib/presence";
 
 const role = (id: string, position: number, hoist = true): OrgRole => ({
   id,
@@ -138,6 +138,30 @@ describe("an agent off for now", () => {
     // Its computer away is not "no AI".
     expect(off(status("online"), "waiting")).toBe(false);
     expect(off(undefined, undefined)).toBe(false);
+  });
+
+  test("the one exception: held by the operators, it is off even with a run going (the hold stops that run)", () => {
+    expect(agentFaceOf(status("offline"), "ready", true)).toEqual({ presence: "offline", noAi: false });
+    expect(off(status("offline", true), "ready", true)).toBe(true);
+  });
+
+  test("the line under an agent in a members list: its work, else its own line, else why it is off", () => {
+    expect(agentMemberLine("Esperando você", "Sem limite · volta às 16:00", "out")).toEqual({ work: "Esperando você" });
+    expect(agentMemberLine("retorno às 00:32", null, "noAi")).toEqual({ work: "retorno às 00:32" });
+    expect(agentMemberLine(null, "Sem limite · volta às 16:00", "out")).toEqual({
+      line: "Sem limite · volta às 16:00",
+    });
+    expect(agentMemberLine(null, null, "offline")).toEqual({ why: "offline" });
+    expect(agentMemberLine(null, undefined, null)).toBeNull();
+  });
+
+  test("a line whose end has passed reads as none", () => {
+    const at = Date.parse("2026-01-02T16:00:00Z");
+    const line = { until: "2026-01-02T16:00:00Z" };
+    expect(liveLine(line, at - 1)).toBe(line);
+    expect(liveLine(line, at + 1)).toBeNull();
+    expect(liveLine({ until: null }, at)).toEqual({ until: null });
+    expect(liveLine(null)).toBeNull();
   });
 
   test("why its face says what it says: no AI, out of office, held; nothing for its work or while free", () => {

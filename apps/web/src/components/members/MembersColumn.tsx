@@ -4,7 +4,13 @@ import { WORK_TICK_MS, workLine, workLineText } from "@agenteschat/client/lib/ag
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
 import { relativeTime } from "@agenteschat/client/lib/format";
 import { memberGroups } from "@agenteschat/client/lib/member-groups";
-import { agentFaceWord, agentStatusShort, agentWhyKey, isOutOfOffice } from "@agenteschat/client/lib/presence";
+import {
+  agentFaceWord,
+  agentMemberLine,
+  agentStatusShort,
+  agentWhyKey,
+  isOutOfOffice,
+} from "@agenteschat/client/lib/presence";
 import {
   Avatar,
   Button,
@@ -336,7 +342,7 @@ function AgentRow({ agent, channelId, busy }: { agent: Agent; channelId: string;
   // One short line here; the whole one in the row's title and on its profile card.
   const line = shown?.line ? agentStatusShort(t, shown.line, i18n.language) : null;
   const full = agentLine(t, shown?.line ?? null, i18n.language)?.text;
-  const whyKey = shown ? agentWhyKey(shown.presence, shown.noAi) : null;
+  const under = agentMemberLine(now, line, shown ? agentWhyKey(shown.presence, shown.noAi) : null);
   // What it does here now (a run this tab hears), else its work's words: the orbit's label and the row's title.
   const doing =
     state !== "idle"
@@ -344,8 +350,8 @@ function AgentRow({ agent, channelId, busy }: { agent: Agent; channelId: string;
       : work?.state === "working"
         ? (now && workLineText(now)) || agentFaceWord(t, "working")
         : null;
-  // Under the name, one line of one height: its line (why it is out, what it is on), else why it is off, else its role
-  // (the agent's fixed label) as a tag, else its presence. Working here is the pixel orbit beside its name, so the row never jumps.
+  // Under the name, one line of one height: `agentMemberLine`, else its role (the agent's fixed label) as a tag, else its
+  // presence. Working here is the pixel orbit beside its name, so the row never jumps.
   const shows = useId();
   return (
     <ProfileTrigger
@@ -379,12 +385,12 @@ function AgentRow({ agent, channelId, busy }: { agent: Agent; channelId: string;
             <span className="members-side__label">{agent.name}</span>
             {doing && <PixelSpinner size={14} color={colorOf(agent)} label={doing} className="members-side__spin" />}
           </span>
-          {now ? (
-            <AgentWorkLine line={now} className="members-side__line" />
-          ) : line ? (
-            <StatusLine {...line} className="members-side__line" />
-          ) : whyKey ? (
-            <span className="members-side__line">{t(`presence.agentWhy.${whyKey}`)}</span>
+          {under?.work ? (
+            <AgentWorkLine line={under.work} className="members-side__line" />
+          ) : under?.line ? (
+            <StatusLine {...under.line} className="members-side__line" />
+          ) : under?.why ? (
+            <span className="members-side__line">{t(`presence.agentWhy.${under.why}`)}</span>
           ) : agent.role ? (
             <span className="members-side__line ac-tag">{agent.role}</span>
           ) : (

@@ -17,7 +17,7 @@ import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { isConnected, sheetGroups } from "@agenteschat/client/lib/member-groups";
 import { can, leavesChannel, makesAgents, managesChannel, setsAutoReply } from "@agenteschat/client/lib/permissions";
-import { agentStatusShort, agentWhyKey, isAgentOff } from "@agenteschat/client/lib/presence";
+import { agentMemberLine, agentStatusShort, agentWhyKey, isAgentOff, liveLine } from "@agenteschat/client/lib/presence";
 import { joinsChannels } from "@agenteschat/client/lib/right-hand";
 import { picksForMe, replyAloneKey } from "@agenteschat/client/lib/routing";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -133,15 +133,15 @@ export function ChannelMembersSheet({ channelId, channelName }: { channelId: str
     people: t("channelMembers.people"),
     offline: t("presence.offline"),
   };
-  /** An off agent says why ("Pausado", "Sem IA conectada"), else its work and how it answers here. */
+  /** An off agent's line as the web's column (`agentMemberLine`), else its work and how it answers here. */
   const subtitleOf = (w: Who) => {
     if (w.kind === "person") return lineOf(t, w, routing);
     const a = presence.agent(w.id);
     const why = a ? agentWhyKey(a.presence, a.noAi) : null;
-    // Its own short line first, as the web's column ("Sem limite · volta às 16:00").
-    const own = a && !a.noAi && a.status?.status ? agentStatusShort(t, a.status.status, i18n.language) : null;
-    if (why) return own ? lineText(own) : t(`presence.agentWhy.${why}`);
-    return [workText(w.id), lineOf(t, w, routing)].filter(Boolean).join("\n");
+    if (!a || !why) return [workText(w.id), lineOf(t, w, routing)].filter(Boolean).join("\n");
+    const own = liveLine(a.noAi ? null : a.status?.status, now);
+    const under = agentMemberLine(workText(w.id), own && agentStatusShort(t, own, i18n.language), why);
+    return under?.work ?? (under?.line ? lineText(under.line) : t(`presence.agentWhy.${why}`));
   };
 
   const open = (w: Who) =>

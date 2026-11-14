@@ -42,7 +42,9 @@ test("the channel's members: agents out of office, paused or with no AI and peop
   expect(sheet).toContain("sheetGroups(all, shown, off)");
   expect(sheet).toContain('t("presence.offline")');
   expect(sheet).toContain("faded={off(w)}");
-  // Why it is off, in place of how it answers here.
-  expect(sheet).toContain("presence.agentWhy.");
+  // An off agent's line by the web column's rule (its work, its own line while it lasts, why it is off), in place of how
+  // it answers here.
+  expect(sheet).toContain("agentMemberLine(workText(w.id), own && agentStatusShort(");
+  expect(sheet).toContain("liveLine(a.noAi ? null : a.status?.status, now)");
   expect(src("ui/Row.tsx")).toContain("opacity: faded ? FADED : 1");
 });
