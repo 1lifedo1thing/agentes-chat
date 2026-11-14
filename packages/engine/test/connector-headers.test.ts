@@ -381,6 +381,16 @@ test("what is masked: a value of 8 characters or more, as a JSON body spells it 
   // A value shorter than a key may be is a setting: masked, "1" would take the status with it.
   expect((refused as Error).message).toContain('{"error":"HTTP 401: version 1, mode 1234567, team ••••, key ••••"}');
 
+  // Some encoders write a slash as `\/`.
+  const slashed = "fake/gate/pass";
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ error: `bad key ${slashed}` }).replaceAll("/", "\\/"), {
+      status: 403,
+      headers: { "content-type": "application/json" },
+    })) as unknown as typeof fetch;
+  const escaped = await connectOverHttp({ serverUrl: SERVER }, { "x-api-key": slashed }).catch((e: unknown) => e);
+  expect((escaped as Error).message).toContain('{"error":"bad key ••••"}');
+
   const answers = [
     { content: [{ type: "text", text: `refused: ${said}, sent as ${JSON.stringify({ key: odd })}` }], isError: true },
     { content: [{ type: "text", text: said }] },
@@ -668,6 +678,11 @@ test("Reconectar with a saved secret that can't be opened: refused in words, and
     expect((await row())?.headerNames).toEqual(change.kekId ? ["X-Team"] : null);
     expect(r.sessions.at(-1)).toEqual(change.kekId ? { "x-team": TEAM } : {});
   }
+
+  // A secret that opens and holds none, on a row that names some: refused the same way.
+  await again({ apiKey: "test-key", headers: [] });
+  await spoil({ headerNames: ["X-API-Key"] });
+  await expect(again({})).rejects.toMatchObject({ code: "connector.headers_unreadable" });
 });
 
 test("refused where a key is: a service through Composio, and a sign-in-only server on the Cloud", async () => {

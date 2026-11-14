@@ -36,7 +36,9 @@ An admin may type request headers for a server by address. They are sent with ev
    and handed to the agent. So a session over HTTP (`connectOverHttp`) masks each header value it was opened with,
    the typed ones and the key or the sign-in's token with them, in every error it throws and in a tool's answer the
    server flags as an error (`isError`). A value is masked as it was typed and as a JSON body spells it (a quote, a
-   backslash or a tab escaped). A tool's ordinary answer is left as it came: it is what the agent asked for.
+   backslash or a tab escaped, and a slash written `\/`). Another spelling of it (a `\u` escape, a value encoded
+   twice) is not caught: a server that repeats its caller's key is the rare case, and these are rarer still. A tool's
+   ordinary answer is left as it came: it is what the agent asked for.
 
    Only a value of 8 characters or more is masked. A shorter one is a setting such as `1` or `v2`, not a key (the
    key field itself asks for 8), and masked wherever it shows it would turn "HTTP 401" into noise.

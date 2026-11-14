@@ -359,15 +359,27 @@ describe("Reconectar and the server's row", () => {
       disclosure().open = false;
       fireEvent(disclosure(), new Event("toggle"));
     });
+    const shown: Element[] = [];
+    const element = Element.prototype as { scrollIntoView?: (this: Element) => void };
+    const scroll = element.scrollIntoView;
+    element.scrollIntoView = function () {
+      shown.push(this);
+    };
     await click(within(flow()).getByRole("button", { name: "Conectar" }));
     await settle(4);
+    element.scrollIntoView = scroll;
     const said = "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.";
     const alert = () => disclosure().querySelector(':scope > .cflow__headers > [role="alert"]');
     expect(disclosure().hasAttribute("open")).toBe(true);
     expect(alert()?.textContent).toBe(said);
+    // With many rows it would land below what the dialog shows.
+    expect(shown).toContain(alert() as Element);
     // In the headers alone: no toast says it again.
     expect(document.body.textContent?.split(said)).toHaveLength(2);
-    expect(within(disclosure()).getByRole("button", { name: "Remover" })).toBeTruthy();
+    // They can't be kept: their line no longer says they stay, and the way back is at hand.
+    expect(disclosure().textContent).toMatch(/sa(i|em) ao reconectar\./);
+    expect(disclosure().textContent).not.toContain("a menos que você digite novos");
+    expect(within(disclosure()).getByRole("button", { name: "Desfazer" })).toBeTruthy();
     expect(add().disabled).toBe(false);
     snapshot();
 

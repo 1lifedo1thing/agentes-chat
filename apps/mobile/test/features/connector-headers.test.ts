@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { ApiError } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { heldWhole } from "@agenteschat/client/lib/format";
-import { headerRefused, MAX_REQUEST_HEADERS } from "@agenteschat/client/lib/request-headers";
+import { headerRefused, MAX_REQUEST_HEADERS, savedHeadersUnreadable } from "@agenteschat/client/lib/request-headers";
 import { headerNamesText, needsKeyText } from "../../src/features/connectors/logic";
 import { translator } from "./fixtures";
 
@@ -122,6 +122,8 @@ describe("the sheet that connects a server by address", () => {
     expect(failed).toContain("headerRefused(headerRows, headers, error)");
     expect(failed).toContain('setMode("key");');
     expect(failed).toContain("setHeadersOpen(true);");
+    // Saved ones that can't be read can't be kept: their line stops saying they stay.
+    expect(failed).toContain("if (savedHeadersUnreadable(error)) setDropSaved(true);");
   });
 
   test("saved headers that can't be read any more: said under the saved names with the headers open, in the person's language", async () => {
@@ -134,6 +136,10 @@ describe("the sheet that connects a server by address", () => {
     );
     // Reconectar sent no list: the refusal is about the saved ones, on no row.
     expect(headerRefused([], undefined, unreadable)).toEqual({ row: null, field: "name", error: unreadable });
+    expect([savedHeadersUnreadable(unreadable), savedHeadersUnreadable(refusal("connector.header_twice"))]).toEqual([
+      true,
+      false,
+    ]);
     // Under the rows, over the button that adds one, inside what the sheet opens on a refusal.
     const open = form.slice(form.indexOf("{open ? ("));
     const line = open.indexOf("{refused && refused.row === null ? why(refused) : null}");

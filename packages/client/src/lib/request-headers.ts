@@ -37,6 +37,10 @@ export function headerRefusal(error: unknown): { index: number | null; field: "n
   };
 }
 
+/** Whether a failed Reconectar is the saved headers that couldn't be read: they can't be kept, only typed again or removed. */
+export const savedHeadersUnreadable = (error: unknown) =>
+  error instanceof ApiError && error.code === "connector.headers_unreadable";
+
 /** A row of the request headers form. `id` keeps its fields and its refusal with it when another row goes. */
 export interface HeaderRow extends RequestHeader {
   id: number;

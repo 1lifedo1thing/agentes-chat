@@ -765,14 +765,14 @@ async function serverView(db: Database, orgId: string, id: string) {
  * is refused in words a person can act on: going on without them would drop them unsaid.
  */
 async function savedHeaders(deps: CustomDeps, c: ConnectorConnection) {
-  const secret = await openConnectionSecret(deps.keyWrappers, c).catch(() => null);
-  if (!secret?.headers) {
+  const headers = (await openConnectionSecret(deps.keyWrappers, c).catch(() => null))?.headers;
+  if (!headers || Object.keys(headers).length === 0) {
     throw new ValidationError(
       "The saved request headers couldn't be read: type them again, or remove them",
       "connector.headers_unreadable",
     );
   }
-  return secret.headers;
+  return headers;
 }
 
 /**

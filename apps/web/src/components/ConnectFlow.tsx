@@ -52,6 +52,7 @@ import {
   headersToSend,
   MAX_HEADER_NAME,
   MAX_REQUEST_HEADERS,
+  savedHeadersUnreadable,
   typedHeaders,
 } from "@agenteschat/client/lib/request-headers";
 import { connectorBrand, connectorDescription, connectorName } from "@agenteschat/client/lib/scopes";
@@ -353,6 +354,8 @@ function ConnectStep({
     if (!refusal) return toast.show(errorText(t, error, i18n.language), "error");
     setRefused(refusal);
     setHeadersOpen(true);
+    // They can't be kept, so their line stops saying they stay: both ways out end with them gone.
+    if (savedHeadersUnreadable(error)) setDropSaved(true);
   };
   // The service's name: the server names another account after it ("Stripe 2"). A catalog entry's goes in English,
   // so each viewer reads a name nobody changed in their own language.
@@ -623,6 +626,11 @@ function HeaderRows({
     removed.current = false;
     addButton.current?.focus();
   });
+  const box = useRef<HTMLDivElement>(null);
+  // With many rows a refusal lands below what the dialog shows.
+  useEffect(() => {
+    if (refused) box.current?.querySelector('[role="alert"]')?.scrollIntoView?.({ block: "nearest" });
+  }, [refused]);
   const full = rows.length >= MAX_REQUEST_HEADERS;
   // A typed row replaces the saved ones: they go, and no link would keep them.
   const replaced = typedHeaders(rows).length > 0;
@@ -632,7 +640,7 @@ function HeaderRows({
       dropSaved,
     );
   return (
-    <div className="cflow__headers">
+    <div ref={box} className="cflow__headers">
       <p className="small muted">{t("connectFlow.headers.help")}</p>
       {saved.length > 0 && (
         <p className="small">

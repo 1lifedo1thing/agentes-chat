@@ -156,8 +156,11 @@ export const connectOverHttp: McpConnect = async (connection, headers) => {
       name.toLowerCase() === "authorization" ? [value, value.slice(value.indexOf(" ") + 1)] : [value],
     )
     .filter((value) => value.length >= MASKED_FROM)
-    // A JSON body writes a quote, a backslash and a tab its own way.
-    .flatMap((value) => [value, JSON.stringify(value).slice(1, -1)]);
+    // A JSON body writes a quote, a backslash and a tab its own way, and some encoders a slash as `\/`.
+    .flatMap((value) => {
+      const json = JSON.stringify(value).slice(1, -1);
+      return [value, json, json.replaceAll("/", "\\/")];
+    });
   const clean = (text: string) => maskValues(text, secrets);
   const masked = <T>(work: Promise<T>) =>
     work.catch((error: unknown) => {

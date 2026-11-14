@@ -33,6 +33,7 @@ import {
   type HeaderRow,
   headerRefused,
   headersToSend,
+  savedHeadersUnreadable,
 } from "@agenteschat/client/lib/request-headers";
 import { connectorName, scopeText } from "@agenteschat/client/lib/scopes";
 import { reviewDecisions, reviewToolsOf } from "@agenteschat/client/lib/tool-review";
@@ -600,6 +601,8 @@ function ConnectStep({
     setRefused(refusal);
     setMode("key");
     setHeadersOpen(true);
+    // They can't be kept, so their line stops saying they stay: both ways out end with them gone.
+    if (savedHeadersUnreadable(error)) setDropSaved(true);
   };
   /** The browser round trip: open, wait for the answer, finish with the app's session. */
   const signInWith = async (authorizeUrl: string) => {
