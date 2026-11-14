@@ -26,6 +26,7 @@ import {
   openPersonAgentDm,
   pendingReturns,
   postPersonMessage,
+  RIGHT_HAND,
   removeChannelMember,
   runAuthority,
   STRETCH,
@@ -1147,6 +1148,71 @@ describe("a reply that names its own tools to a person", () => {
     expect(stopped).toHaveLength(1);
     expect(stopped[0]?.body).toStartWith(NAMED);
     expect((await bodiesOf(f)).filter((b) => b.startsWith(NAMED))).toHaveLength(1);
+  });
+
+  test("stopped to read a message while parked, the held reply sits just before that message, with no stop said", async () => {
+    f = await setup({
+      toolSources: [secrets],
+      reply: (_request, call) => (call === 1 ? { chunks: [NAMED] } : new ProviderError("overloaded", true, 529)),
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainDue(f, 5);
+    const parked = await runRow(f);
+    expect(parked?.status).toBe("waiting_input");
+    const sent = await ask(f, "na verdade, usa a conta de vendas");
+    await cancelRun({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, parked?.id ?? "", { sendMessageId: sent.id });
+    const timeline = await f.db.select().from(schema.messages).orderBy(schema.messages.createdAt);
+    const at = timeline.findIndex((m) => m.id === sent.id);
+    expect(timeline[at - 1]?.body).toBe(NAMED);
+    expect(timeline[at - 1]?.meta.canceled).toBeUndefined();
+    expect((await bodiesOf(f)).filter((b) => b.includes("Stopped"))).toEqual([]);
+    const steps = await f.db.select().from(schema.agentRunSteps);
+    expect(steps.some((s) => s.kind === "message" && s.data.messageId === timeline[at - 1]?.id)).toBe(true);
+  });
+
+  describe("the right hand's held reply with a key in it", () => {
+    const key = `sk-ant-oat01-${"x".repeat(24)}`;
+    const note = "[removido: parecia um login ou uma chave]";
+    const said = `Aqui está: ${key} e {"refresh_token": "abcdefgh12345678"}. Me mande a senha por \`request_secret\`.`;
+    const shown = `Aqui está: ${note} e {"refresh_token": ${note}}. Me mande a senha por \`request_secret\`.`;
+    const inRightHandDm = async (rewrite: () => FakeReply | Error) => {
+      f = await setup({
+        rightHand: true,
+        toolSources: [secrets],
+        reply: (_request, call) => (call === 1 ? { chunks: [said] } : rewrite()),
+      });
+      const [lodi] = await f.db.select().from(schema.agents).where(eq(schema.agents.builtin, RIGHT_HAND));
+      if (!lodi) throw new Error("no right hand");
+      await f.db.update(schema.users).set({ locale: "pt-BR" }).where(eq(schema.users.id, f.owner.id));
+      const dm = await openPersonAgentDm(f.db, f.org.id, f.owner.id, lodi.id);
+      await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, dm.id, {
+        body: "me ajuda a entrar no painel",
+      });
+      return lodi;
+    };
+    const lodiBodies = async (agentId: string) =>
+      (await f.db.select().from(schema.messages).orderBy(schema.messages.createdAt))
+        .filter((m) => m.authorAgentId === agentId)
+        .map((m) => m.body);
+
+    test("held, parked and stopped by the person: what is posted has the key taken out", async () => {
+      const lodi = await inRightHandDm(() => new ProviderError("overloaded", true, 529));
+      await drainDue(f, 5);
+      const [parked] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, lodi.id));
+      expect(parked?.status).toBe("waiting_input");
+      expect((parked?.transcript as { heldWording?: string } | undefined)?.heldWording).toBe(shown);
+      await cancelRun({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, parked?.id ?? "");
+      const bodies = await lodiBodies(lodi.id);
+      expect(bodies.join("\n")).not.toContain("sk-ant-");
+      expect(bodies.join("\n")).not.toContain("abcdefgh12345678");
+      expect(bodies.filter((b) => b.startsWith(shown))).toHaveLength(1);
+    });
+
+    test("held, then posted when its rewrite fails: taken out once, still readable", async () => {
+      const lodi = await inRightHandDm(() => new ProviderError("overloaded", false, 529));
+      await drainOutbox(f.db, f.handlers);
+      expect(await lodiBodies(lodi.id)).toEqual([shown]);
+    });
   });
 
   test("held for its wording, an emoji that only repeats the rewrite's reaction doesn't replace it", async () => {

@@ -222,7 +222,10 @@ export function scrubSignIns(text: string, note: string): { text: string; found:
     return note;
   };
   const out = text
-    .replace(SIGN_IN_FIELD, (_match, field: string) => `${field}${hit()}`)
+    // A value already scrubbed (the note itself) stays as it is: scrubbing twice changes nothing.
+    .replace(SIGN_IN_FIELD, (match, field: string, _value: string, at: number, all: string) =>
+      note && all.startsWith(note, at + field.length) ? match : `${field}${hit()}`,
+    )
     .replace(PRIVATE_KEY_BLOCK, hit)
     .replace(SECRET, hit)
     .replace(SIGN_IN_SHAPES, hit);

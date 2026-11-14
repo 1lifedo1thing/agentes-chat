@@ -19,7 +19,7 @@ import { seatScopes } from "./right-hand-seats";
 import { closeRoutineRun } from "./routine-ledger";
 import { ACTIVE_RUN_STATUSES, releaseInbox } from "./run-inbox";
 import { tellAgentStopped } from "./run-stopped";
-import { isTerminal, type RunStatus, replyThreadOf, transitionRun } from "./runs";
+import { addRunStep, isTerminal, type RunStatus, replyThreadOf, transitionRun } from "./runs";
 import { cancelSecretRequests, publishSecret, type SecretRequestRow, syncSecretMessage } from "./secrets";
 import { standingErrorDetail } from "./standing";
 import { endWork } from "./works";
@@ -299,18 +299,30 @@ export async function stopRun(
       const moved = await transitionRun(tx, run.id, status, "canceled", { error });
       if (!moved) return null;
       // Parked with a reply held for its wording, nobody runs its worker's stop (`stopCanceled`): that finished answer
-      // is posted here, or the person never sees it.
+      // is posted here, already as the run would publish it, or the person never sees it. Stopped to read a message
+      // ("Parar e mandar"), it goes just before that message, as written, with no stop said.
       const held = (moved.transcript as { heldWording?: string } | null)?.heldWording;
       if (held && status !== "running" && !moved.background && actor.type === "person") {
-        const [person] = await tx.select({ name: users.name }).from(users).where(eq(users.id, actor.id));
+        const [sent] = options.sendMessageId
+          ? await tx
+              .select({ createdAt: messages.createdAt })
+              .from(messages)
+              .where(and(eq(messages.orgId, orgId), eq(messages.id, options.sendMessageId)))
+          : [];
+        const [person] = sent ? [] : await tx.select({ name: users.name }).from(users).where(eq(users.id, actor.id));
         heldPost = await insertMessage(tx, {
           orgId,
           channelId: moved.channelId,
           threadId: replyThreadOf(moved),
           author: { type: "agent", agentId: moved.agentId, runId: moved.id, hop: moved.hop },
-          body: `${held}\n\n_Stopped${person ? ` by ${person.name}` : ""}._`,
-          meta: { canceled: { byUserId: actor.id, text: held } },
+          ...(sent
+            ? { body: held, createdAt: new Date(sent.createdAt.getTime() - 1) }
+            : {
+                body: `${held}\n\n_Stopped${person ? ` by ${person.name}` : ""}._`,
+                meta: { canceled: { byUserId: actor.id, text: held } },
+              }),
         });
+        await addRunStep(tx, moved, "message", { messageId: heldPost.id, held: true });
         await tx
           .update(agentRuns)
           .set({ replyMessageId: heldPost.id, transcript: sql`${agentRuns.transcript} - 'heldWording'` })

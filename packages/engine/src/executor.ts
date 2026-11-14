@@ -2042,6 +2042,27 @@ async function executeRunInner(
     return at ? { workingSince: at } : {};
   };
   /**
+   * What `post` publishes of the agent's own words. What a run a routine's reading feeds writes holds no credential it
+   * may have read (ADR 0053 §3); one a person wrote into since (`steeredBy`, in the transcript as it is now) answers
+   * that person. Any other run writes as the agent, with its own grants, as a person's does. A run that read outside
+   * content (ADR 0117) marks what it posts, so the next agent reads it as relayed and memory from it stays low trust;
+   * once it has read outside, every later post is marked too, and a credential in its reply is masked unless a person
+   * wrote it here. The right hand never posts a sign-in or a key, not even one a person wrote (ADR 0137 §4). Applying
+   * it twice changes nothing.
+   */
+  const publishable = async (tx: Executor, threadId: string | null, body: string) => {
+    const current = { ...run, transcript: transcript as unknown as Record<string, unknown> | null };
+    if (!readOutside) readOutside = await runReadOutside(tx, current, undefined, outsideMemo);
+    const masked = !carriesCredential(body)
+      ? body
+      : fedByRoutine(await runAuthority(tx, current))
+        ? maskCredentials(body)
+        : readOutside
+          ? maskCredentialsExcept(body, await personWords(tx, run.orgId, run.channelId, threadId))
+          : body;
+    return isRightHand(agent) ? await scrubRightHandReply(tx, run, masked) : masked;
+  };
+  /**
    * Posts as the agent where it replies, at the end of the conversation (what it writes shows whole there, once: none of
    * it went out live, ADR 0010). `note`: a line the server writes about the run (not its words).
    */
@@ -2058,24 +2079,7 @@ async function executeRunInner(
       [FEEDBACK_SEND]?: { key: string; feedback: Feedback };
     };
     const tagged = report && !note ? { routine: report } : {};
-    // What a run a routine's reading feeds writes holds no credential it may have read (ADR 0053 §3); one a person
-    // wrote into since (`steeredBy`, in the transcript as it is now) answers that person. Any other run writes as
-    // the agent, with its own grants, as a person's does.
-    const current = { ...run, transcript: transcript as unknown as Record<string, unknown> | null };
-    // A run that read outside content (ADR 0117) marks what it posts, so the next agent reads it as relayed and memory
-    // from it stays low trust; once it has read outside, every later post is marked too. A credential in its reply is
-    // masked unless a person wrote it here.
-    if (!note && !readOutside) readOutside = await runReadOutside(tx, current, undefined, outsideMemo);
-    const masked =
-      note || !carriesCredential(body)
-        ? body
-        : fedByRoutine(await runAuthority(tx, current))
-          ? maskCredentials(body)
-          : readOutside
-            ? maskCredentialsExcept(body, await personWords(tx, run.orgId, run.channelId, threadId))
-            : body;
-    // The right hand never posts a sign-in or a key, not even one a person wrote (ADR 0137 §4).
-    const said = !note && isRightHand(agent) ? await scrubRightHandReply(tx, run, masked) : masked;
+    const said = note ? body : await publishable(tx, threadId, body);
     // Team actions (ADR 0064): what the run didn't repeat because the team already did it rides on its reply.
     const teamChecks = note ? [] : await runChecksForReply(tx, run.orgId, run.id);
     // "Ver o que ele fez" under the reply: how many tool calls so far, so the apps leave it out at 0, and one call
@@ -5516,8 +5520,10 @@ async function executeRunInner(
           // Held for its wording only, it is still an answer: posted wherever the run ends before its next words. Its
           // text already carries a reply held back before it (`heldWords`). A later reply held for what it says
           // (secret, unbacked) leaves it standing and is never posted itself.
+          // Kept as `post` would publish it: a fallback outside this process (a stop while parked, the restart sweep)
+          // posts it as it is.
           if (decision.rule === "tool_names" || decision.rule === "local_paths") {
-            t.heldWording = text;
+            t.heldWording = await publishable(db, replyThreadId, text);
             delete t.held;
           }
           await saveTranscript(db, t);
