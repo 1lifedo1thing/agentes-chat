@@ -100,7 +100,7 @@ export function createMockCustomConnectors(
       const oauth = input.serverUrl.includes("oauth");
       const target = input.connectionId ? find(orgId, input.connectionId) : null;
       const headerNames = input.headers?.map((h) => h.name) ?? target?.headerNames ?? [];
-      if (oauth && headerNames.length > 0) {
+      if (oauth && !input.apiKey && headerNames.length > 0) {
         throw new ApiError(400, "connector.headers_with_sign_in", "This server asks for a sign-in");
       }
       if (!oauth && !input.apiKey && headerNames.length === 0) return { status: "needs_key" };

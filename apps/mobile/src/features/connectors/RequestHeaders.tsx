@@ -1,18 +1,26 @@
 import type { RequestHeader } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { HEADER_NAME_EXAMPLE, MAX_REQUEST_HEADERS } from "@agenteschat/client/lib/request-headers";
+import {
+  HEADER_NAME_EXAMPLE,
+  type HeaderRefused,
+  type HeaderRow,
+  MAX_HEADER_NAME,
+  MAX_REQUEST_HEADERS,
+  typedHeaders,
+} from "@agenteschat/client/lib/request-headers";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, TextInput, type TextInputInstance, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { Button, fieldText, Icon, IconButton, Text, TOOL_H, TOUCH, useTheme } from "@/ui";
 import { tapHaptic } from "../shared/parts";
-import { type HeaderRefused, type HeaderRow, headerNamesText } from "./logic";
+import { headerNamesText } from "./logic";
 
 /**
  * The request headers of a server by address (ADR 0186), under its key: one line that opens them. A name and a value
  * per row, the value typed as a secret. On Reconectar the saved ones come first, by name: "Remover" sends none of them
- * any more, and typing a row replaces them all. A header the server refused says so under its row.
+ * any more, and typing a row replaces them all, which its line then says. A header the server refused says so under
+ * its row.
  */
 export function RequestHeaders({
   rows,
@@ -38,6 +46,8 @@ export function RequestHeaders({
   const values = useRef(new Map<number, TextInputInstance | null>());
   const appear = reducedMotion ? undefined : FadeIn.duration(160);
   const full = rows.length >= MAX_REQUEST_HEADERS;
+  // A typed row replaces the saved ones: they go, and no button would keep them.
+  const replaced = typedHeaders(rows).length > 0;
   const tooMany = t("errors.connector.headersTooMany", { max: MAX_REQUEST_HEADERS });
   const field = [styles.field, { backgroundColor: c.raised, color: c.ink, borderColor: c.line }];
   const set = (id: number, patch: Partial<RequestHeader>) =>
@@ -78,14 +88,20 @@ export function RequestHeaders({
           {saved.length > 0 ? (
             <View>
               <Text variant="small" tone="ink">
-                {headerNamesText(t, dropSaved ? "connectFlow.headers.dropping" : "connectFlow.headers.saved", saved)}
+                {headerNamesText(
+                  t,
+                  dropSaved || replaced ? "connectFlow.headers.dropping" : "connectFlow.headers.saved",
+                  saved,
+                )}
               </Text>
-              <Button
-                variant="text"
-                size="sm"
-                label={t(dropSaved ? "connectFlow.headers.undo" : "connectFlow.headers.drop")}
-                onPress={() => onChange(rows, !dropSaved)}
-              />
+              {replaced ? null : (
+                <Button
+                  variant="text"
+                  size="sm"
+                  label={t(dropSaved ? "connectFlow.headers.undo" : "connectFlow.headers.drop")}
+                  onPress={() => onChange(rows, !dropSaved)}
+                />
+              )}
             </View>
           ) : null}
           {rows.length > 0 ? (
@@ -111,6 +127,7 @@ export function RequestHeaders({
                           onChangeText={(name) => set(row.id, { name })}
                           placeholder={HEADER_NAME_EXAMPLE}
                           placeholderTextColor={c.faint}
+                          maxLength={MAX_HEADER_NAME}
                           autoCapitalize="none"
                           autoCorrect={false}
                           autoComplete="off"

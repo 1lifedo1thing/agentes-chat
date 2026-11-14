@@ -4,7 +4,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import { ApiError, type CustomConnectStart } from "@agenteschat/client";
-import { MAX_REQUEST_HEADERS } from "@agenteschat/client/lib/request-headers";
+import { MAX_HEADER_NAME, MAX_REQUEST_HEADERS } from "@agenteschat/client/lib/request-headers";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { openConnected, pick, rowMenu } from "./catalog";
 import { createFakeApi, ORG_ID, seedState } from "./fake-api";
@@ -69,6 +69,8 @@ describe("request headers for a server by address", () => {
       "Para uma chave que vai em outro cabeçalho, ou um gateway na frente do servidor. A maioria dos servidores não precisa.",
     );
     expect(nameField(1).placeholder).toBe("X-API-Key");
+    // A name longer than the server takes can't be typed: its refusal would name no way out.
+    expect(nameField(1).maxLength).toBe(MAX_HEADER_NAME);
     expect([valueField(1).type, valueField(1).autocomplete, nameField(1).autocomplete]).toEqual([
       "password",
       "off",
@@ -203,11 +205,17 @@ describe("request headers for a server by address", () => {
 
     refuse = true;
     await type(within(flow()).getByLabelText("Endereço do servidor MCP"), ADDRESS);
+    // Folded away before it is sent: "confira os valores" brings them back in sight.
+    await act(async () => {
+      disclosure().open = false;
+      fireEvent(disclosure(), new Event("toggle"));
+    });
     await click(within(flow()).getByRole("button", { name: "Conectar" }));
     await settle(4);
     expect(flow().textContent).toContain(
       "O servidor não aceitou esses cabeçalhos. Confira os valores, ou conecte com uma chave de API.",
     );
+    expect(disclosure().hasAttribute("open")).toBe(true);
     expect(flow().textContent).not.toContain("não aceita OAuth");
     // The key's form opened, and without a key the headers still go alone.
     expect(within(flow()).getByRole("button", { name: "Conectar" })).toBeTruthy();
@@ -299,6 +307,24 @@ describe("Reconectar and the server's row", () => {
     expect(screen().getByRole("region", { name: "MCPs" }).textContent).toContain(
       "Envia também: X-Token. Para mudar, use Reconectar.",
     );
+  });
+
+  test("a typed row replaces the saved names: their line says they go, with no link that would keep them", async () => {
+    const { state, reconnect } = await openReconnect();
+    await reconnect();
+    // A row added and left blank is no header: they still stay.
+    await click(add());
+    expect(disclosure().textContent).toContain("Continuam, a menos que você digite novos.");
+    await header(1, "X-Trace", "fake-value");
+    expect(disclosure().textContent).toContain("X-API-Key e X-Tenant saem ao reconectar.");
+    expect(disclosure().textContent).not.toContain("Continuam");
+    for (const name of ["Remover", "Desfazer"]) {
+      expect(within(disclosure()).queryByRole("button", { name })).toBeNull();
+    }
+    snapshot();
+    await click(within(flow()).getByRole("button", { name: "Conectar" }));
+    await settle(4);
+    expect(connectCalls(state).at(-1)).toMatchObject({ headers: [{ name: "X-Trace", value: "[redacted]" }] });
   });
 
   test("a refusal of a saved header shows under the saved names", async () => {

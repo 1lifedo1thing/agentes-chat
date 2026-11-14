@@ -4,14 +4,8 @@ import { join } from "node:path";
 import { ApiError } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { heldWhole } from "@agenteschat/client/lib/format";
-import { headersToSend, MAX_REQUEST_HEADERS } from "@agenteschat/client/lib/request-headers";
-import {
-  BLANK_HEADER,
-  type HeaderRow,
-  headerNamesText,
-  headerRefused,
-  needsKeyText,
-} from "../../src/features/connectors/logic";
+import { MAX_REQUEST_HEADERS } from "@agenteschat/client/lib/request-headers";
+import { headerNamesText, needsKeyText } from "../../src/features/connectors/logic";
 import { translator } from "./fixtures";
 
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src/features/connectors", file), "utf8");
@@ -48,6 +42,10 @@ describe("request headers of a server by address", () => {
     expect(headerNamesText(en, "connectFlow.headers.dropping", ["X-API-Key", "X-Tenant"])).toBe(
       `${key} and ${tenant} will be removed when you reconnect.`,
     );
+    // `$` and `'` may be in a name: they are said as typed.
+    expect(headerNamesText(pt, "connectors.sendsToo", ["X-$'-Key", "X-$&"])).toBe(
+      `Envia também: ${heldWhole("X-$'-Key")} e ${heldWhole("X-$&")}. Para mudar, use Reconectar.`,
+    );
   });
 
   test("the most a server takes, each name as long as a name gets: every one is said, and no slot is left", async () => {
@@ -73,40 +71,6 @@ describe("request headers of a server by address", () => {
     expect(needsKeyText(en, { status: "needs_key", reason: "not_approved" }, "Acme", true)).toBe(
       needsKeyText(en, { status: "needs_key", reason: "not_approved" }, "Acme"),
     );
-  });
-
-  test("a refusal shows on the row it names, counted among the rows that say something", () => {
-    const rows: HeaderRow[] = [
-      BLANK_HEADER,
-      { id: 3, name: "X-API-Key", value: "fake-value" },
-      { id: 5, name: "X-Tenant", value: "" },
-    ];
-    const sent = headersToSend(rows, false);
-    expect(sent).toEqual([
-      { name: "X-API-Key", value: "fake-value" },
-      { name: "X-Tenant", value: "" },
-    ]);
-    const empty = refusal("connector.header_value", { header: "X-Tenant", index: 1 });
-    expect(headerRefused(rows, sent, empty)).toEqual({ row: 5, field: "value", error: empty });
-    const twice = refusal("connector.header_twice", { header: "X-API-Key", index: 0 });
-    expect(headerRefused(rows, sent, twice)).toEqual({ row: 3, field: "name", error: twice });
-    // About them all: under the rows.
-    const signIn = refusal("connector.headers_with_sign_in");
-    expect(headerRefused(rows, sent, signIn)).toEqual({ row: null, field: "name", error: signIn });
-  });
-
-  test("Reconectar with the saved ones kept: a refusal of one of them goes under the rows, on no typed row", () => {
-    // Untouched, the request carries no list, so the saved ones stay.
-    expect(headersToSend([], false)).toBeUndefined();
-    expect(headersToSend([BLANK_HEADER], false)).toBeUndefined();
-    expect(headersToSend([], true)).toEqual([]);
-    const reserved = refusal("connector.header_reserved", { header: "Host", index: 0 });
-    expect(headerRefused([BLANK_HEADER], undefined, reserved)?.row).toBeNull();
-  });
-
-  test("any other failure is not about headers", () => {
-    expect(headerRefused([BLANK_HEADER], undefined, refusal("connector.unavailable"))).toBeNull();
-    expect(headerRefused([BLANK_HEADER], undefined, new Error("offline"))).toBeNull();
   });
 
   test("a refused row reads in plain words with the way out, naming the header", async () => {
@@ -166,6 +130,10 @@ describe("the sheet that connects a server by address", () => {
     const value = form.slice(form.indexOf("value={row.value}"), form.indexOf("<IconButton"));
     expect(value).toContain("secureTextEntry");
     expect(value).toContain('autoComplete="off"');
+    // A name longer than the server takes can't be typed: its refusal would name no way out.
+    expect(form.slice(form.indexOf("value={row.name}"), form.indexOf("value={row.value}"))).toContain(
+      "maxLength={MAX_HEADER_NAME}",
+    );
     expect(form).toContain("const full = rows.length >= MAX_REQUEST_HEADERS;");
     expect(form).toContain("disabled={full}");
     expect(form).toMatch(/\{full \? \(\s*<Text variant="footnote" tone="muted">\s*\{tooMany\}/);
@@ -175,8 +143,13 @@ describe("the sheet that connects a server by address", () => {
     const help = form.indexOf('t("connectFlow.headers.help")');
     expect(form.indexOf('t("connectFlow.headers.title")')).toBeLessThan(help);
     expect(form.slice(0, help)).not.toContain("InfoHint");
-    expect(form).toContain('dropSaved ? "connectFlow.headers.dropping" : "connectFlow.headers.saved"');
     expect(form).toContain('t(dropSaved ? "connectFlow.headers.undo" : "connectFlow.headers.drop")');
+  });
+
+  test("a typed row replaces the saved names: their line says they go, with no button that would keep them", () => {
+    expect(form).toContain("const replaced = typedHeaders(rows).length > 0;");
+    expect(form).toContain('dropSaved || replaced ? "connectFlow.headers.dropping" : "connectFlow.headers.saved"');
+    expect(form).toMatch(/\{replaced \? null : \(\s*<Button\s+variant="text"/);
   });
 });
 

@@ -44,9 +44,13 @@ import { humanize, isHttpsUrl, sameServer } from "@agenteschat/client/lib/custom
 import { errorText } from "@agenteschat/client/lib/errors";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import {
+  BLANK_HEADER,
   HEADER_NAME_EXAMPLE,
-  headerRefusal,
+  type HeaderRefused,
+  type HeaderRow,
+  headerRefused,
   headersToSend,
+  MAX_HEADER_NAME,
   MAX_REQUEST_HEADERS,
   typedHeaders,
 } from "@agenteschat/client/lib/request-headers";
@@ -339,15 +343,15 @@ function ConnectStep({
     else if (result.status === "needs_key") {
       setNeedsKey(result);
       setKeyOpen(true);
+      // "Check their values": the headers it sent are in sight.
+      if (sendsHeaders) setHeadersOpen(true);
       setTouched(null);
     } else done(fromServer(result.server, catalog.data?.connectors ?? []), result.outcome ?? "connected");
   };
   const failed = (error: unknown) => {
-    const refusal = headerRefusal(error);
+    const refusal = headerRefused(headerRows, headers, error);
     if (!refusal) return toast.show(errorText(t, error, i18n.language), "error");
-    // A typed header is refused on its own row. One of the saved ones, or all of them, under the rows.
-    const row = headers?.length && refusal.index !== null ? typedHeaders(headerRows)[refusal.index]?.id : undefined;
-    setRefused({ row: row ?? null, field: refusal.field, error });
+    setRefused(refusal);
     setHeadersOpen(true);
   };
   // The service's name: the server names another account after it ("Stripe 2"). A catalog entry's goes in English,
@@ -591,22 +595,10 @@ export function HeaderNames({ names }: { names: string[] }) {
   );
 }
 
-/** A row of the request headers form. `id` keeps its fields and its refusal with it when another row goes. */
-interface HeaderRow extends RequestHeader {
-  id: number;
-}
-const BLANK_HEADER: HeaderRow = { id: 0, name: "", value: "" };
-
-/** The server's refusal of a header: on the row it names (`row`, its id), else under them all. */
-interface HeaderRefused {
-  row: number | null;
-  field: "name" | "value";
-  error: unknown;
-}
-
 /**
  * The request headers of a server by address: a name and a value per row, the value typed as a secret. On Reconectar
- * the saved ones come first, by name: "Remover" sends none of them any more, and typing a row replaces them all.
+ * the saved ones come first, by name: "Remover" sends none of them any more, and typing a row replaces them all, which
+ * their line then says.
  */
 function HeaderRows({
   rows,
@@ -632,6 +624,8 @@ function HeaderRows({
     addButton.current?.focus();
   });
   const full = rows.length >= MAX_REQUEST_HEADERS;
+  // A typed row replaces the saved ones: they go, and no link would keep them.
+  const replaced = typedHeaders(rows).length > 0;
   const set = (id: number, patch: Partial<RequestHeader>) =>
     onChange(
       rows.map((row) => (row.id === id ? { ...row, ...patch } : row)),
@@ -643,13 +637,18 @@ function HeaderRows({
       {saved.length > 0 && (
         <p className="small">
           <Trans
-            i18nKey={dropSaved ? "connectFlow.headers.dropping" : "connectFlow.headers.saved"}
+            i18nKey={dropSaved || replaced ? "connectFlow.headers.dropping" : "connectFlow.headers.saved"}
             count={saved.length}
             components={{ names: <HeaderNames names={saved} /> }}
-          />{" "}
-          <Button variant="link" onClick={() => onChange(rows, !dropSaved)}>
-            {t(dropSaved ? "connectFlow.headers.undo" : "connectFlow.headers.drop")}
-          </Button>
+          />
+          {!replaced && (
+            <>
+              {" "}
+              <Button variant="link" onClick={() => onChange(rows, !dropSaved)}>
+                {t(dropSaved ? "connectFlow.headers.undo" : "connectFlow.headers.drop")}
+              </Button>
+            </>
+          )}
         </p>
       )}
       {rows.length > 0 && (
@@ -667,6 +666,7 @@ function HeaderRows({
                   <Input
                     value={row.name}
                     placeholder={HEADER_NAME_EXAMPLE}
+                    maxLength={MAX_HEADER_NAME}
                     autoComplete="off"
                     autoCapitalize="none"
                     spellCheck={false}

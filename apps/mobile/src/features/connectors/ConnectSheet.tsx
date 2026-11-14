@@ -27,7 +27,13 @@ import {
 import { sameServer } from "@agenteschat/client/lib/custom-tools";
 import { knownErrorText, oauthReturnText } from "@agenteschat/client/lib/errors";
 import { can } from "@agenteschat/client/lib/permissions";
-import { headersToSend } from "@agenteschat/client/lib/request-headers";
+import {
+  BLANK_HEADER,
+  type HeaderRefused,
+  type HeaderRow,
+  headerRefused,
+  headersToSend,
+} from "@agenteschat/client/lib/request-headers";
 import { connectorName, scopeText } from "@agenteschat/client/lib/scopes";
 import { reviewDecisions, reviewToolsOf } from "@agenteschat/client/lib/tool-review";
 import { modeKey } from "@agenteschat/client/lib/workspace-mode";
@@ -64,14 +70,10 @@ import {
   APP_RETURN_URL,
   type AuthAnswer,
   authAnswerOf,
-  BLANK_HEADER,
   capabilityLines,
   connectHow,
   connectionOf,
   doneFinishing,
-  type HeaderRefused,
-  type HeaderRow,
-  headerRefused,
   isHttpsUrl,
   markFinishing,
   needsKeyText,
