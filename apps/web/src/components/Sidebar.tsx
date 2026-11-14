@@ -40,7 +40,14 @@ import {
 } from "@agenteschat/client";
 import { agentSections, groupOf } from "@agenteschat/client/lib/agent-groups";
 import { WORK_TICK_MS, workLine } from "@agenteschat/client/lib/agent-work";
-import { audienceChip, audienceNames, audienceNotice, canTalk, hiddenAgentIds } from "@agenteschat/client/lib/audience";
+import {
+  audienceChip,
+  audienceNames,
+  audienceNotice,
+  canTalk,
+  hiddenAgentIds,
+  listsAllAgents,
+} from "@agenteschat/client/lib/audience";
 import { workspaceNotes } from "@agenteschat/client/lib/deletion";
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
 import { errorText } from "@agenteschat/client/lib/errors";
@@ -94,7 +101,6 @@ import {
   SkeletonGroup,
   selectionSkyUrl,
 } from "@agenteschat/ui";
-import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import type { TFunction } from "i18next";
 import {
@@ -112,11 +118,11 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
-import { useAuth } from "@/auth/context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { agentLine, availabilityOf, personLine, useAgentPresence, usePersonPresence } from "@/hooks/usePresence";
 import { useServerPlace } from "@/hooks/useServerPlace";
 import { useSidebarPins } from "@/hooks/useSidebarPins";
+import { useSignOut } from "@/hooks/useSignOut";
 import { useUnreadTitle } from "@/hooks/useUnreadTitle";
 import { useWorkspaceGroups } from "@/hooks/useWorkspaceGroups";
 import { switchAccount } from "@/lib/accounts";
@@ -762,7 +768,7 @@ export function Sidebar() {
             </SidebarSection>
           );
         })}
-        {team.length > shownAgents.length && (
+        {listsAllAgents(org) && team.length > shownAgents.length && (
           <Link to="/org/$orgId/team" params={{ orgId }} className="sidebar__item sidebar__see-all">
             <Icon name="agent" />
             <span className="sidebar__item-label">
@@ -2080,8 +2086,6 @@ function AccountMenu({ personal = false }: { personal?: boolean }) {
   const { t, i18n } = useTranslation();
   const { org, me } = useOrg();
   const dir = useDirectory(org.id);
-  const auth = useAuth();
-  const qc = useQueryClient();
   const navigate = useNavigate();
   const compact = useMediaQuery(COMPACT_QUERY);
   const saveStatus = useSaveStatus();
@@ -2117,12 +2121,7 @@ function AccountMenu({ personal = false }: { personal?: boolean }) {
   const who = [me.user.name, line?.text ?? presenceWord].filter(Boolean).join(" · ");
   const under = Boolean(line || presenceWord);
 
-  const signOut = async () => {
-    await auth.signOut();
-    storage.set(STORAGE_KEYS.signedOut, "1");
-    qc.clear();
-    await navigate({ to: "/login" });
-  };
+  const { signOut } = useSignOut();
   const openSettings = (section?: SettingsSection) =>
     void (section
       ? navigate({ to: "/org/$orgId/settings/$section", params: { orgId: org.id, section } })
@@ -2536,7 +2535,7 @@ function WorkspaceMenuOptions({ onDone }: { onDone: () => void }) {
   const overview = useOverview(org.id);
   const managesAgents = can(org, "manage_agents");
   const connections = useConnections(org.id);
-  const skills = useSkills(org.id, managesAgents);
+  const skills = useSkills(org.id);
   const invite = useInviteDialog();
   const go = (section?: SettingsSection) => () => {
     onDone();
@@ -2600,16 +2599,9 @@ function WorkspaceMenuOptions({ onDone }: { onDone: () => void }) {
             {t("settings.section.access")}
           </MenuOverlayItem>
         )}
-        {managesAgents && (
-          <MenuOverlayItem
-            icon="book"
-            shortcut={next()}
-            count={skills.data?.length || undefined}
-            onSelect={go("skills")}
-          >
-            {t("settings.section.skills")}
-          </MenuOverlayItem>
-        )}
+        <MenuOverlayItem icon="book" shortcut={next()} count={skills.data?.length || undefined} onSelect={go("skills")}>
+          {t("settings.section.skills")}
+        </MenuOverlayItem>
         <MenuOverlayItem icon="settings" shortcut={next()} onSelect={go()}>
           {t("shell.workspaceSettings")}
         </MenuOverlayItem>
