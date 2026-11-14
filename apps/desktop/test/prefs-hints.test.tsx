@@ -87,6 +87,14 @@ const row = (root: ParentNode, title: string) => rows(root).find((r) => r.title 
 const buttonIn = (root: ParentNode, text: string) =>
   [...root.querySelectorAll("button")].find((b) => b.textContent === text);
 const eraseButton = (root: ParentNode) => buttonIn(root, "Erase and start over…");
+/** A failed erase: its line inside the dialog, which stays open with both buttons pressable again, and no toast. */
+const expectFailureInDialog = (dialog: HTMLElement, line: string) => {
+  expect(document.querySelector('[role="dialog"]')).toBe(dialog);
+  expect(dialog.querySelector('[role="alert"]')?.textContent).toBe(line);
+  expect((buttonIn(dialog, "Cancel") as HTMLButtonElement).disabled).toBe(false);
+  expect((buttonIn(dialog, "Erase it") as HTMLButtonElement).disabled).toBe(false);
+  expect(document.querySelector(".dk-toast")?.textContent).toBe("");
+};
 
 describe("Preferences: a setting's explanation behind its ⓘ", () => {
   test("General: no lead, and each behavior on one line, its ⓘ where it has something to say", () =>
@@ -211,7 +219,7 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
       },
     ));
 
-  test("Servers: on the stopped card too; a folder that couldn't move says its data stays and how to start it", () =>
+  test("Servers: on the stopped card too; a folder that couldn't move says so in its dialog, which stays open", () =>
     pane(
       "here",
       <Servers />,
@@ -223,12 +231,19 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
         expect(el.textContent).toContain("Start it here");
         await act(async () => eraseButton(el)?.click());
         await until(() => document.querySelector('[role="dialog"]'));
-        await act(async () => buttonIn(document.querySelector('[role="dialog"]') as HTMLElement, "Erase it")?.click());
-        await until(() => document.querySelector(".dk-toast")?.textContent?.includes("couldn't be moved"));
-        expect(document.querySelector(".dk-toast")?.textContent).toContain(
+        const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+        await act(async () => buttonIn(dialog, "Erase it")?.click());
+        await until(() => dialog.querySelector('[role="alert"]'));
+        expectFailureInDialog(
+          dialog,
           "Its data couldn't be moved, so nothing was erased and it stays in ~/.agentes. It's stopped until you start it again.",
         );
-        expect(eraseButton(el)).toBeTruthy();
+        // Opened again later, it starts clean.
+        await act(async () => buttonIn(dialog, "Cancel")?.click());
+        await until(() => !document.querySelector('[role="dialog"]'));
+        await act(async () => eraseButton(el)?.click());
+        await until(() => document.querySelector('[role="dialog"]'));
+        expect(document.querySelector('[role="dialog"] [role="alert"]')).toBeNull();
       },
       {
         here: { run: false },
@@ -238,7 +253,7 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
       },
     ));
 
-  test("Servers: another server holding its folder: the line names it and says to stop it first", () =>
+  test("Servers: another server holding its folder: its dialog says to stop it first, and a second try erases", () =>
     pane(
       "here",
       <Servers />,
@@ -249,15 +264,20 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
         const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
         expect(dialog.textContent).toContain("The agents' files in ~/agentes are yours and stay where they are.");
         await act(async () => buttonIn(dialog, "Erase it")?.click());
-        await until(() => document.querySelector(".dk-toast")?.textContent?.includes("Another"));
-        expect(document.querySelector(".dk-toast")?.textContent).toContain(
+        await until(() => dialog.querySelector('[role="alert"]'));
+        expectFailureInDialog(
+          dialog,
           "Another agentes.chat server is using its folder, so nothing was erased. Stop that server, then try again.",
         );
-        expect(eraseButton(el)).toBeTruthy();
+        await act(async () => buttonIn(dialog, "Erase it")?.click());
+        await until(() => !document.querySelector('[role="dialog"]'));
+        expect(document.querySelector(".dk-toast")?.textContent).toContain("Erased. Its old data is in");
       },
       {
         host: (host) => {
-          host.eraseLocalServer = () => Promise.reject("held");
+          const erase = host.eraseLocalServer;
+          let tries = 0;
+          host.eraseLocalServer = () => (tries++ === 0 ? Promise.reject("held") : erase());
         },
       },
     ));

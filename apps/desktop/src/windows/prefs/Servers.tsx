@@ -1,4 +1,16 @@
-import { Button, Chip, Dialog, DialogBody, DialogFooter, Icon, Menu, MenuItem, Select, Switch } from "@agenteschat/ui";
+import {
+  Alert,
+  Button,
+  Chip,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Icon,
+  Menu,
+  MenuItem,
+  Select,
+  Switch,
+} from "@agenteschat/ui";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHost, useSnapshot, useStore } from "../../app";
@@ -810,23 +822,24 @@ function EraseHere({ local, disabled }: { local: LocalServerStatus; disabled: bo
   const host = useHost();
   const toast = useToast();
   const [asking, setAsking] = useState(false);
+  // Why the last try didn't erase, shown in the dialog until it closes: a toast would cut it and take it away.
+  const [failed, setFailed] = useState<string | null>(null);
   const [busy, run] = usePending<"erase">();
   const erase = () =>
     run("erase", async () => {
+      setFailed(null);
       try {
         const to = await host.eraseLocalServer();
+        setAsking(false);
         toast(t("desktop.server.erased", { path: shortPath(to) }), "check");
       } catch (e) {
-        toast(
+        setFailed(
           e === "held"
             ? t("desktop.server.eraseHeld")
             : e === "move"
               ? t("desktop.server.eraseMoveFailed", { path: shortPath(local.dir) })
               : t("desktop.common.error"),
-          "alert",
         );
-      } finally {
-        setAsking(false);
       }
     });
   return (
@@ -836,7 +849,10 @@ function EraseHere({ local, disabled }: { local: LocalServerStatus; disabled: bo
         variant="ghost"
         className="dk-danger-text"
         disabled={disabled || !local.eraseTo || MOVING.has(local.phase)}
-        onClick={() => setAsking(true)}
+        onClick={() => {
+          setFailed(null);
+          setAsking(true);
+        }}
       >
         {t("desktop.server.erase")}
       </Button>
@@ -848,6 +864,11 @@ function EraseHere({ local, disabled }: { local: LocalServerStatus; disabled: bo
         closeLabel={t("desktop.common.close")}
         width={440}
       >
+        {failed && (
+          <DialogBody>
+            <Alert>{failed}</Alert>
+          </DialogBody>
+        )}
         <DialogFooter bar>
           <Button variant="ghost" onClick={() => setAsking(false)} disabled={busy !== null}>
             {t("desktop.common.cancel")}
