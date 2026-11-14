@@ -978,8 +978,11 @@ describe("the desktop app's owner on its own server: a sign-in again on this Mac
     delete win().__TAURI_INTERNALS__;
     sessionStorage.clear();
   });
-  /** The app around the site: records each request; `signIn` answers the app's sign-in. */
-  function inTheApp(signIn: () => Promise<unknown> = () => new Promise(() => {})) {
+  /**
+   * The app around the site: records each request; `signIn` answers the app's sign-in; `local`: this server runs in
+   * this app.
+   */
+  function inTheApp(signIn: () => Promise<unknown> = () => new Promise(() => {}), local = true) {
     const asked: Record<string, unknown>[] = [];
     win().__agentesDesktop = { version: "0.6.0" };
     win().__TAURI_INTERNALS__ = {
@@ -987,6 +990,7 @@ describe("the desktop app's owner on its own server: a sign-in again on this Mac
         if (cmd !== "this_mac") return {};
         asked.push(args.request);
         if (args.request.kind === "signIn") return signIn();
+        if (args.request.kind === "status") return { orgs: [], local };
         return {};
       },
     };
@@ -1036,7 +1040,26 @@ describe("the desktop app's owner on its own server: a sign-in again on this Mac
         .hasAttribute("disabled"),
     ).toBe(true);
     expect(within(dialog).getByLabelText("Digite Acme para confirmar").closest("fieldset")?.disabled).toBe(true);
+    expect(within(dialog).getByRole("button", { name: "Cancelar" }).hasAttribute("disabled")).toBe(true);
     expect(state.calls.some((c) => c.method === "orgs.deleteWorkspace")).toBe(false);
+  });
+
+  test("a dialog closed after Entrar de novo does not open again once the app signs the window in", async () => {
+    inTheApp();
+    const { router } = await open(`/org/${ORG_ID}/settings/general?delete=1`, { state: ownerHere() });
+    await settle(4);
+    await click(
+      within(screen().getByRole("dialog", { name: "Apagar Acme?" })).getByRole("button", { name: "Entrar de novo" }),
+    );
+    await settle(2);
+    expect(sessionStorage.getItem("agentes.thisMac.return")).not.toBeNull();
+    // The address moves on (Back): the dialog closes with it.
+    await act(() =>
+      router.navigate({ to: "/org/$orgId/settings/$section", params: { orgId: ORG_ID, section: "general" } }),
+    );
+    await settle(6);
+    expect(screen().queryByRole("dialog", { name: "Apagar Acme?" })).toBeNull();
+    expect(sessionStorage.getItem("agentes.thisMac.return")).toBeNull();
   });
 
   test("the app refuses to sign in: the dialog says so and the button works again", async () => {
@@ -1067,6 +1090,18 @@ describe("the desktop app's owner on its own server: a sign-in again on this Mac
     expect(within(dialog).getByRole("button", { name: "Entrar de novo" })).toBeTruthy();
     expect(within(dialog).queryByRole("alert")).toBeNull();
     expect(sessionStorage.getItem("agentes.thisMac.signedInAt")).toBeNull();
+  });
+
+  test("on that server from another computer's app: their password, as before, since only its own app signs them in", async () => {
+    const asked = inTheApp(undefined, false);
+    const state = ownerHere();
+    if (state.me) state.me.user = { ...state.me.user, hasPassword: true };
+    await open(`/org/${ORG_ID}/settings/general?delete=1`, { state });
+    await settle(4);
+    const dialog = screen().getByRole("dialog", { name: "Apagar Acme?" });
+    expect(asked).toContainEqual({ kind: "status" });
+    expect(within(dialog).getByLabelText("Sua senha")).toBeTruthy();
+    expect(within(dialog).queryByRole("button", { name: "Entrar de novo" })).toBeNull();
   });
 
   test("the same owner in a browser adds a password first, as before", async () => {

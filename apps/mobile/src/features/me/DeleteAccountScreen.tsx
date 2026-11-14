@@ -309,6 +309,7 @@ export function DeleteAccountScreen() {
                   <Text variant="body" tone="ink2">
                     {t("mobile.delete.onThisComputer")}
                   </Text>
+                  <Button variant="ghost" label={t("mobile.common.retry")} onPress={() => void meQuery.refetch()} />
                 </View>
               ) : (
                 <View style={styles.proof}>

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { AuthConfig, ComputerSetup, Machine, StorageConfig } from "@agenteschat/client";
 import { showsAbout } from "@agenteschat/client/lib/about";
 import { type SetupView, setupView } from "@agenteschat/client/lib/computer";
+import { proofToSend } from "@agenteschat/client/lib/deletion";
 import { changedByText, changesSinceLink, skillPendingViews, skillUpdateWords } from "@agenteschat/client/lib/skills";
 import { storageUsageLine } from "@agenteschat/client/lib/storage";
 import {
@@ -702,5 +703,19 @@ test("the desktop app's owner with no password deletes on that computer: one lin
     // In place of adding a password on the website, which their server has no other way in for.
     expect([file, screen.includes("me?.user.confirmsOnThisMac ? (")]).toEqual([file, true]);
     expect([file, screen.includes('t("mobile.delete.onThisComputer")')]).toEqual([file, true]);
+    // The hold waits for a proof that's ready, which "addPassword" never is.
+    expect([file, /disabled=\{!(toSend\.)?ready \|\| busy\}/.test(screen)]).toEqual([file, true]);
+    expect([file, screen.includes("proofToSend(proof, { sent: sent !== null, code, password })")]).toEqual([
+      file,
+      true,
+    ]);
   }
+  expect(proofToSend("addPassword", { sent: false, code: "", password: "" }).ready).toBe(false);
+  // Back from adding a password on the computer, the account screen asks again.
+  const account = src("features/me/DeleteAccountScreen.tsx");
+  const branch = account.slice(
+    account.indexOf('t("mobile.delete.onThisComputer")'),
+    account.indexOf('t("mobile.delete.addPasswordFirst")'),
+  );
+  expect(branch).toContain('t("mobile.common.retry")');
 });

@@ -24,8 +24,9 @@ import { useRouter } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { AddPasswordDialog } from "@/components/AddPassword";
+import { useLocalServerHere } from "@/components/ThisMac";
 import { useNow } from "@/hooks/useNow";
-import { inDesktopApp, thisMac } from "@/lib/desktop";
+import { thisMac } from "@/lib/desktop";
 import {
   forgetSignInOnThisMac,
   saveReturnOnThisMac,
@@ -56,6 +57,7 @@ export function DeleteWorkspaceDialog({
   const config = useAuthConfig().data;
   const del = useDeleteWorkspace(org.id);
   const proof = useDeletionProof(open, org.id, del.error);
+  const pending = del.isPending || proof.thisMac.pending;
   const [name, setName] = useState("");
   const { reset } = del;
   useEffect(() => {
@@ -71,7 +73,7 @@ export function DeleteWorkspaceDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(o) => !o && onClose()}
+      onOpenChange={(o) => !o && !pending && onClose()}
       title={t("deleteOrg.title", { name: org.name })}
       description={t("deleteOrg.undo", {
         date: formatShortDate(i18n.language, due),
@@ -87,7 +89,7 @@ export function DeleteWorkspaceDialog({
           if (named && proof.ready && !del.isPending) submit();
         }}
       >
-        <Locked when={del.isPending || proof.thisMac.pending}>
+        <Locked when={pending}>
           <DialogBody>
             <ul className="deletion-lines">
               <DeletionLine icon="message">{t("deleteOrg.goes.content")}</DeletionLine>
@@ -127,7 +129,7 @@ export function DeleteWorkspaceDialog({
           </DialogBody>
         </Locked>
         <DialogFooter>
-          <Button type="button" onClick={onClose}>
+          <Button type="button" onClick={onClose} disabled={pending}>
             {t("common.cancel")}
           </Button>
           <ProofButton proof={proof} enabled={named} busy={del.isPending}>
@@ -171,7 +173,9 @@ export function useDeletionProof(open: boolean, orgId: string | null, refused: u
   const config = useAuthConfig().data;
   const me = useMe().data;
   const router = useRouter();
-  const kind = deletionProof(config, me?.user.hasPassword, me?.user.confirmsOnThisMac === true && inDesktopApp());
+  // Only the app that runs this server signs its owner in (`not_here` elsewhere): anywhere else, today's proof.
+  const localHere = useLocalServerHere();
+  const kind = deletionProof(config, me?.user.hasPassword, me?.user.confirmsOnThisMac === true && localHere);
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState<{ email: string; resendAt: number } | null>(null);
@@ -194,7 +198,8 @@ export function useDeletionProof(open: boolean, orgId: string | null, refused: u
   });
   const { reset } = send;
   useEffect(() => {
-    if (!open) return;
+    // A dialog closed never comes back by itself after a sign-in it had asked for.
+    if (!open) return void takeReturnOnThisMac();
     setPassword("");
     setCode("");
     setSent(null);
@@ -203,6 +208,8 @@ export function useDeletionProof(open: boolean, orgId: string | null, refused: u
   }, [open, reset]);
   const why = errorCode(refused);
   const tooOld = why === "reauth.sign_in";
+  // The sign-in turns old while the dialog stays open: the line and the button follow it.
+  useNow(open && kind === "thisMac" ? 30_000 : false);
   useEffect(() => {
     if (tooOld) forgetSignInOnThisMac();
   }, [tooOld]);
