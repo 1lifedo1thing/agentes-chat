@@ -2091,6 +2091,16 @@
       "people": "이미 5명을 고정했어요. 이분을 고정하려면 한 명을 해제하세요."
     }
   },
+  "appsDownload": {
+    "computer": "컴퓨터",
+    "computerText": "워크스페이스를 전용 창에서, 시스템 알림과 함께.",
+    "inApp": "이미 컴퓨터 앱에 있어요.",
+    "howTo": "설치 방법",
+    "phone": "휴대폰",
+    "phoneText": "주머니 속 알림으로 어디서든 답할 수 있어요.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "agentes 앱에 로그인하는 QR 코드",
     "making": "코드를 만드는 중…",
@@ -14961,6 +14971,7 @@
     "section": {
       "account": "내 계정",
       "notifications": "알림",
+      "download": "agentes.chat 앱",
       "general": "일반",
       "right_hand": "오른팔",
       "members": "멤버",
@@ -14993,6 +15004,7 @@
     "sectionText": {
       "account": "내 프로필과 앱이 보이는 방식이에요.",
       "notifications": "여기서 알림으로 받을 것들이에요. 받은 편지함에는 모두 남아요.",
+      "download": "컴퓨터와 휴대폰에서 같은 계정으로 같은 워크스페이스를.",
       "general": "이름, 시간대, 모든 에이전트가 워크스페이스에 대해 아는 내용이에요.",
       "right_hand": "각 사람과 DM에서 팀을 꾸리는 어시스턴트예요.",
       "members": "워크스페이스에 있는 사람이에요.",

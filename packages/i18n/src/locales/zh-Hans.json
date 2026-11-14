@@ -2091,6 +2091,16 @@
       "people": "你已置顶 5 个人。取消一个才能置顶这位。"
     }
   },
+  "appsDownload": {
+    "computer": "电脑",
+    "computerText": "在独立窗口中使用你的工作区，并收到系统通知。",
+    "inApp": "你已经在电脑应用里了。",
+    "howTo": "如何安装",
+    "phone": "手机",
+    "phoneText": "通知随身带，随时随地都能回复。",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
+  },
   "openOnPhone": {
     "qr": "用于登录 agentes 应用的二维码",
     "making": "正在生成二维码…",
@@ -15033,6 +15043,7 @@
     "section": {
       "account": "你的账号",
       "notifications": "通知",
+      "download": "agentes.chat 应用",
       "general": "常规",
       "right_hand": "得力助手",
       "members": "成员",
@@ -15065,6 +15076,7 @@
     "sectionText": {
       "account": "你的个人资料和应用外观。",
       "notifications": "在这里以通知形式推送给你的内容。收件箱会保留所有内容。",
+      "download": "电脑和手机上同一个工作区，用同一个账号。",
       "general": "名称、时区，以及每个智能体都知道的工作区信息。",
       "right_hand": "在每个人的私信中和他们一起组建团队的助手。",
       "members": "工作区里有谁。",
