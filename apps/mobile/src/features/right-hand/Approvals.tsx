@@ -1,7 +1,6 @@
 import type { RightHandApprovals, RightHandApprovalsInput } from "@agenteschat/client";
 import { useRightHandApprovals, useSetRightHandApprovals } from "@agenteschat/client";
 import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
-import { formatUsd } from "@agenteschat/client/lib/format";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
@@ -27,7 +26,7 @@ export function RightHandApprovalsGroup() {
  * change.
  */
 function RightHandGroup({ view, name }: { view: RightHandApprovals; name: string }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const toast = useToast();
   const { orgId } = useOrg();
   const set = useSetRightHandApprovals(orgId);
@@ -90,7 +89,7 @@ function RightHandGroup({ view, name }: { view: RightHandApprovals; name: string
               .map((usd) => (
                 <GroupedRow
                   key={usd}
-                  label={`${formatUsd(i18n.language, usd)}${t("rightHandApprovals.perMonth")}`}
+                  label={`US$ ${usd}${t("rightHandApprovals.perMonth")}`}
                   checked={usd === budget}
                   onPress={() => save({ budgetCapNanoUsd: usd * USD })}
                 />
