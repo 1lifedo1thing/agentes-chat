@@ -766,7 +766,7 @@ async function serverView(db: Database, orgId: string, id: string) {
  */
 async function savedHeaders(deps: CustomDeps, c: ConnectorConnection) {
   const headers = (await openConnectionSecret(deps.keyWrappers, c).catch(() => null))?.headers;
-  if (!headers || Object.keys(headers).length === 0) {
+  if (!headers) {
     throw new ValidationError(
       "The saved request headers couldn't be read: type them again, or remove them",
       "connector.headers_unreadable",
