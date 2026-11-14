@@ -272,7 +272,3 @@ export function skillScopes<T extends Pick<Skill, "ownerUserId">>(skills: readon
 /** Whether Skills shows "Equipe | Pessoal": a workspace of one person keeps one library, unless personal ones exist. */
 export const skillsSplit = (members: number, skills: readonly Pick<Skill, "ownerUserId">[]) =>
   members > 1 || skills.some((s) => s.ownerUserId);
-
-/** Skills a person may give an agent: the team's and their own, never someone else's personal one. */
-export const pickableSkills = <T extends Pick<Skill, "ownerUserId">>(skills: readonly T[], userId: string) =>
-  skills.filter((s) => !s.ownerUserId || s.ownerUserId === userId);
