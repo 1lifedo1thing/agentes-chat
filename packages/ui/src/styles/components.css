@@ -10377,6 +10377,49 @@ html:not([data-pointer]) .ac-filter__option:focus-visible {
 .ac-hosting__trail[data-lit] i {
   background: #fff;
 }
+/* The desktop app's places (`PlaceScene`): the Cloud's agent sitting in its pixel cloud, the picked place fading in. */
+.ac-place__subject {
+  display: flex;
+  justify-content: center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ac-place__subject {
+    animation: ac-place-in 0.32s var(--out) both;
+  }
+}
+@keyframes ac-place-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.ac-place__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ac-place__brand .ac-avatar {
+  width: 76px;
+  height: 76px;
+}
+.ac-place__cloud {
+  position: relative;
+  width: 130px;
+  height: 45px;
+  margin-top: -20px;
+}
+.ac-place__cloud .body {
+  fill: #ffffff;
+}
+.ac-place__cloud .under {
+  fill: #cfe6ff;
+}
+[data-theme="dark"] .ac-place__cloud .body {
+  fill: #cfe0f7;
+}
+[data-theme="dark"] .ac-place__cloud .under {
+  fill: #8fb2e2;
+}
 .ac-sky-burst {
   position: fixed;
   z-index: var(--z-toast);

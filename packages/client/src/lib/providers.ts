@@ -21,7 +21,7 @@ interface ProviderEntry {
   masculine?: boolean;
   /** Its free tier lets the provider use what is sent: billing should be on. */
   billing?: boolean;
-  /** It passes what is sent on to other providers, as the account's privacy settings at it allow. */
+  /** It passes what is sent on to the company that makes or hosts the model, under its own privacy terms. */
   privacy?: boolean;
 }
 
@@ -96,6 +96,14 @@ export const PROVIDERS = [
     pattern: /^(?!sk-ant-|sk-cp-|sk-or-|AQ\.|AIza)[A-Za-z0-9._-]{16,}$/,
     site: "platform.minimax.io/user-center/basic-information/interface-key",
     plans: true,
+  },
+  {
+    id: "commandcode",
+    label: "Command Code",
+    placeholder: "user_…",
+    pattern: /^user_[A-Za-z0-9_-]{16,}$/,
+    site: "commandcode.ai/settings/keys",
+    privacy: true,
   },
 ] as const satisfies readonly ProviderEntry[];
 
@@ -175,7 +183,8 @@ export function providerGuess(key: string | undefined, asked?: string): Provider
 
 /**
  * The ⓘ on the key panel's first step, web and phone: for a maker that also sells coding plans, where a plan's key
- * goes; for one whose free tier may use what is sent, to turn on billing; for a router, who may keep what is sent.
+ * goes; for one whose free tier may use what is sent, to turn on billing; for one that passes calls on, who it
+ * passes them to (that text takes `{ provider: label }`).
  */
 export const keyStepHint = (p: ProviderEntry) =>
   p.plans
