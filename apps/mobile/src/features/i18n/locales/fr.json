@@ -1267,6 +1267,7 @@
     "blocked": "Vous êtes le seul propriétaire de {{names}}. Sur le site, dans Personnes, nommez quelqu'un d'autre propriétaire, puis revenez.",
     "addPasswordFirst": "Ajoutez d'abord un mot de passe à votre compte sur le site, puis saisissez-le ici.",
     "addPasswordWeb": "Ajouter un mot de passe sur le site",
+    "onThisComputer": "Supprimez-le dans l'app agentes.chat sur l'ordinateur où tourne ce serveur.",
     "otherAccount": "Vous vous êtes connecté à un autre compte. Rien n'a été supprimé.",
     "hold": "Maintenir pour supprimer"
   },

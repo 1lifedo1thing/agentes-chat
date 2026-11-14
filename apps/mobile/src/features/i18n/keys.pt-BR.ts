@@ -1241,6 +1241,7 @@ export const featureKeysPtBR = {
       "Você é a única pessoa dona de {{names}}. No site, em Pessoas, torne outra pessoa dona e depois volte aqui.",
     addPasswordFirst: "Adicione uma senha à sua conta no site antes, e digite ela aqui.",
     addPasswordWeb: "Adicionar senha no site",
+    onThisComputer: "Apague pelo app do agentes.chat no computador onde este servidor roda.",
     otherAccount: "Você entrou em outra conta. Nada foi apagado.",
     hold: "Segure para apagar",
   },

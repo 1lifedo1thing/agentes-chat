@@ -694,3 +694,13 @@ test("my photo on Você changes it with a tap, through Conta's own Alterar foto"
   expect(parts).toContain("export function useChangePhoto()");
   expect(parts).toContain('...(hasPhoto ? [t("mobile.me.account.removePhoto")] : [])');
 });
+
+test("the desktop app's owner with no password deletes on that computer: one line, the hold stays off", () => {
+  const src = (path: string) => readFileSync(join(import.meta.dir, "..", "..", "src", path), "utf8");
+  for (const file of ["features/settings/DeleteWorkspaceScreen.tsx", "features/me/DeleteAccountScreen.tsx"]) {
+    const screen = src(file);
+    // In place of adding a password on the website, which their server has no other way in for.
+    expect([file, screen.includes("me?.user.confirmsOnThisMac ? (")]).toEqual([file, true]);
+    expect([file, screen.includes('t("mobile.delete.onThisComputer")')]).toEqual([file, true]);
+  }
+});

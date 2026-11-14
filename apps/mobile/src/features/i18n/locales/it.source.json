@@ -2939,6 +2939,9 @@
   "delete.addPasswordWeb": {
     "value": "Add a password on the website"
   },
+  "delete.onThisComputer": {
+    "value": "Delete it in the agentes.chat app on the computer that runs this server."
+  },
   "delete.otherAccount": {
     "value": "You signed in to another account. Nothing was deleted."
   },

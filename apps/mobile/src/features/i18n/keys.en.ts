@@ -1273,6 +1273,8 @@ export const featureKeysEn = {
     /** No password, and no way to sign in again here: the website adds one. */
     addPasswordFirst: "Add a password to your account on the website first, then type it here.",
     addPasswordWeb: "Add a password on the website",
+    /** The owner of a server the desktop app runs, with no password: that app's sign-in is their proof. */
+    onThisComputer: "Delete it in the agentes.chat app on the computer that runs this server.",
     otherAccount: "You signed in to another account. Nothing was deleted.",
     hold: "Hold to delete",
   },
