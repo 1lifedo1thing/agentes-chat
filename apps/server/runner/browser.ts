@@ -72,9 +72,9 @@ import {
 } from "./human-input";
 import { GOOGLE_CHROME_LINUX, SYSTEM_BROWSER_DIR } from "./install-script";
 import { readJson, writeJson } from "./json-file";
+import { CRASH_WORDS, pageLocale } from "./page-words";
 import { agentFolderName, isInside, ownedSafely } from "./paths";
 import type { Spawn } from "./scope-gate";
-import { CRASH_WORDS, pageLocale } from "./page-words";
 import { prepareStartPage, type StartPageData } from "./start-page";
 import {
   FIELD_REFUSAL_MARK,
