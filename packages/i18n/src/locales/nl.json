@@ -7384,6 +7384,7 @@
     "role": "Rol",
     "roleHint": "Wat de persoon kan doen. Rollen komen bij wat Iedereen kan. Geldt alleen voor mensen.",
     "rolePersonal": "Mag",
+    "rolesFoot": "Rollen komen bovenop wat Iedereen kan. De kanalen en agents van de rol staan al aangevinkt.",
     "channels": "Kanalen",
     "channelsPersonal": "Gesprekken",
     "channelsHint": "Waar de persoon meteen in zit. De kanalen van de rol staan al aangevinkt.",
@@ -7425,6 +7426,7 @@
       "channelGone": "Een van de kanalen bestaat niet meer. Haal het gemarkeerde weg om te versturen.",
       "agentGone": "{{name}} zit niet meer in het team. Haal hem uit de uitnodiging om te versturen.",
       "agentLocked": "Je kunt {{name}} niet meer vrijgeven. Haal hem uit de uitnodiging om te versturen.",
+      "agentUnnamed": "Een van de agents heeft het team verlaten. Haal de gemarkeerde weg om te versturen.",
       "role": "Je kunt de rol {{role}} niet meer geven. Kies een andere.",
       "roleMany": "Je kunt een van deze rollen niet meer geven. Kies andere."
     },
@@ -7436,6 +7438,8 @@
     "validFor": "Werkt {{ttl}} na het maken.",
     "expiresIn": "Geldigheid",
     "maxUses": "Maximaal aantal mensen",
+    "onJoin": "Bij het meedoen",
+    "theLink": "De link",
     "ttl": {
       "30m": "30 minuten",
       "1h": "1 uur",
@@ -7453,6 +7457,7 @@
     "invitationTitle": "Uitnodiging voor {{email}}",
     "invitationSaved": "Uitnodiging voor {{email}} bijgewerkt.",
     "invitationExpired": "Deze uitnodiging is verlopen. Vernieuw hem om te veranderen wat hij geeft.",
+    "editInvitation": "Uitnodiging bewerken",
     "search": "E-mail of rol zoeken",
     "type": "Soort",
     "types": {
@@ -7480,7 +7485,9 @@
     "neverEnds": "verloopt nooit",
     "by": "van {{name}}",
     "edit": "Bewerken",
-    "turnOff": "Link uitzetten"
+    "turnOff": "Link uitzetten",
+    "editLink": "Link bewerken",
+    "linkTurnedOff": "Link uitgezet."
   },
   "empty": {
     "thread": {

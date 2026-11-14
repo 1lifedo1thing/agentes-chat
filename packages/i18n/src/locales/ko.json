@@ -7071,6 +7071,7 @@
     "role": "역할",
     "roleHint": "그 사람이 할 수 있는 일이에요. 역할은 모든 사람이 할 수 있는 일에 더해져요. 사람에게만 적용돼요.",
     "rolePersonal": "할 수 있는 일",
+    "rolesFoot": "역할은 모두가 할 수 있는 일에 더해져요. 역할의 채널과 에이전트는 미리 체크돼 있어요.",
     "channels": "채널",
     "channelsPersonal": "대화",
     "channelsHint": "그 사람이 바로 들어가는 곳이에요. 역할의 채널은 이미 선택돼 있어요.",
@@ -7110,6 +7111,7 @@
       "channelGone": "채널 하나가 더 이상 없어요. 보내려면 표시된 채널을 빼세요.",
       "agentGone": "{{name}}이(가) 팀을 떠났어요. 보내려면 초대에서 빼세요.",
       "agentLocked": "이제 {{name}}을(를) 허용할 수 없어요. 보내려면 초대에서 빼세요.",
+      "agentUnnamed": "에이전트 하나가 팀을 떠났어요. 표시된 에이전트를 빼고 보내세요.",
       "role": "이제 {{role}} 역할을 줄 수 없어요. 다른 역할을 고르세요.",
       "roleMany": "이 역할 중 하나를 더 이상 줄 수 없어요. 다른 역할을 고르세요."
     },
@@ -7121,6 +7123,8 @@
     "validFor": "만든 뒤 {{ttl}} 동안 유효해요.",
     "expiresIn": "유효 기간",
     "maxUses": "최대 인원",
+    "onJoin": "들어올 때",
+    "theLink": "링크",
     "ttl": {
       "30m": "30분",
       "1h": "1시간",
@@ -7136,6 +7140,7 @@
     "invitationTitle": "{{email}} 초대",
     "invitationSaved": "{{email}} 초대를 업데이트했어요.",
     "invitationExpired": "이 초대는 만료됐어요. 내용을 바꾸려면 갱신하세요.",
+    "editInvitation": "초대 편집",
     "search": "이메일이나 역할 검색",
     "type": "종류",
     "types": {
@@ -7159,7 +7164,9 @@
     "neverEnds": "만료 없음",
     "by": "{{name}}님이 만듦",
     "edit": "편집",
-    "turnOff": "링크 끄기"
+    "turnOff": "링크 끄기",
+    "editLink": "링크 편집",
+    "linkTurnedOff": "링크를 껐어요."
   },
   "empty": {
     "thread": {
