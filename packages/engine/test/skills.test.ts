@@ -1406,6 +1406,29 @@ describe("a repository past the archive's cap", () => {
     expect(await listSkills(f.db, f.owner.id, f.org.id)).toEqual([]);
   });
 
+  test("a member's personal skill from it reads the folder too, and updates and reimports so", async () => {
+    f = await setup();
+    const member = await addMember(f.db, f.org.id, "member", "walter");
+    const github = bigGithub();
+    const deps = { ...skillDeps(), fetch: github.fetch };
+    const skill = (await importSkillFromUrl(deps, member.id, f.org.id, folder, { personal: true })) as SkillDetail;
+    expect(skill).toMatchObject({ name: "relatorio-semanal", ownerUserId: member.id, sourceVia: null });
+    expect(skill.files).toHaveLength(2);
+    const [row] = await f.db.select().from(schema.skills).where(eq(schema.skills.id, skill.id));
+    expect(row?.sourceByFolder).toBe(true);
+
+    const before = github.requests.length;
+    expect(await updateSkillFromSource(deps, member.id, f.org.id, skill.id)).toMatchObject({ status: "unchanged" });
+    expect(await reimportSkill(deps, member.id, f.org.id, skill.id)).toMatchObject({
+      version: 2,
+      ownerUserId: member.id,
+    });
+    const since = github.requests.slice(before).map((r) => r.url);
+    expect(since.filter((u) => u.includes("archive") || u.includes("codeload"))).toEqual([]);
+    expect(since.filter((u) => u.includes("/git/trees/"))).toHaveLength(2);
+    expect((await listSkills(f.db, f.owner.id, f.org.id)).map((s) => s.id)).not.toContain(skill.id);
+  });
+
   test("a renamed one is read at its new name: the API and raw files redirect", async () => {
     f = await setup();
     const github = bigGithub();
