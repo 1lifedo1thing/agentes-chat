@@ -13033,7 +13033,6 @@ export const ptBR = {
   },
   toolNames: {
     order: "head-first",
-    catalog: "pt-BR",
     verb: {
       get: "Ver",
       list: "Listar",

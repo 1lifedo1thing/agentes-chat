@@ -12309,7 +12309,6 @@
   },
   "toolNames": {
     "order": "verb-last",
-    "catalog": "none",
     "verb": {
       "get": "조회",
       "list": "목록 조회",

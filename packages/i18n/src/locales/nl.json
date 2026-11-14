@@ -12882,7 +12882,6 @@
   },
   "toolNames": {
     "order": "modifiers-first",
-    "catalog": "none",
     "verb": {
       "get": "Ophalen",
       "list": "Weergeven",
