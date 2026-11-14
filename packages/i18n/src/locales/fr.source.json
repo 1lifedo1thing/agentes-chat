@@ -38425,6 +38425,9 @@
   "devices.notice.cliRequest": {
     "value": "<b>{{who}}</b> asks you to install {{tool}} on your <b>{{deviceName}}</b>"
   },
+  "devices.notice.folderRequest": {
+    "value": "<b>{{who}}</b> asks for the folder {{path}} on your <b>{{deviceName}}</b>"
+  },
   "devices.notice.once": {
     "value": "Allow once"
   },

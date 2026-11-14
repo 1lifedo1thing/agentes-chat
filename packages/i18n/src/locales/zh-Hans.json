@@ -15130,6 +15130,7 @@
       "waiting": "<b>{{who}}</b> 正在等待 <b>{{deviceName}}</b>",
       "toolRequest": "<b>{{who}}</b> 请你在你的 <b>{{deviceName}}</b> 上打开{{tool}}",
       "cliRequest": "<b>{{who}}</b> 请你在 <b>{{deviceName}}</b> 上安装 {{tool}}",
+      "folderRequest": "<b>{{who}}</b> 请你在你的 <b>{{deviceName}}</b> 上开放文件夹 {{path}}",
       "once": "允许一次",
       "always": "始终允许",
       "no": "不允许",
