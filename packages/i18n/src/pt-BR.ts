@@ -10655,6 +10655,9 @@ export const ptBR = {
         seven_day_sonnet: "Semana · Sonnet",
         monthly: "Mês",
         other: "Outro limite",
+        /** Rows the plan reports by an English label ("Extra usage", "OAuth apps"), in the person's language. */
+        extraUsage: "Uso extra",
+        oauthApps: "Apps OAuth",
       },
       short: {
         five_hour: "5h",
@@ -10663,6 +10666,8 @@ export const ptBR = {
         seven_day_sonnet: "Sonnet",
         monthly: "mês",
         other: "outro",
+        extraUsage: "uso extra",
+        oauthApps: "apps OAuth",
       },
       resetsAt: "renova às {{time}}",
       resetsOn: "renova {{day}} às {{time}}",

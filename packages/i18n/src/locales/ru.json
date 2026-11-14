@@ -11009,7 +11009,9 @@
         "seven_day_opus": "Неделя · Opus",
         "seven_day_sonnet": "Неделя · Sonnet",
         "monthly": "Месяц",
-        "other": "Другой лимит"
+        "other": "Другой лимит",
+        "extraUsage": "Дополнительный расход",
+        "oauthApps": "OAuth-приложения"
       },
       "short": {
         "five_hour": "5 ч",
@@ -11017,7 +11019,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "месяц",
-        "other": "другое"
+        "other": "другое",
+        "extraUsage": "доп. расход",
+        "oauthApps": "OAuth-приложения"
       },
       "resetsAt": "сбросится в {{time}}",
       "resetsOn": "сбросится {{day}} в {{time}}",

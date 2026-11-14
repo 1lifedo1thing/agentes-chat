@@ -11050,7 +11050,9 @@
         "seven_day_opus": "Tydzień · Opus",
         "seven_day_sonnet": "Tydzień · Sonnet",
         "monthly": "Miesiąc",
-        "other": "Inny limit"
+        "other": "Inny limit",
+        "extraUsage": "Dodatkowe użycie",
+        "oauthApps": "Aplikacje OAuth"
       },
       "short": {
         "five_hour": "5 godz.",
@@ -11058,7 +11060,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "miesiąc",
-        "other": "inny"
+        "other": "inny",
+        "extraUsage": "dodatkowe użycie",
+        "oauthApps": "aplikacje OAuth"
       },
       "resetsAt": "odnawia się o {{time}}",
       "resetsOn": "odnawia się {{day}} o {{time}}",

@@ -10231,7 +10231,9 @@
         "seven_day_opus": "Hafta · Opus",
         "seven_day_sonnet": "Hafta · Sonnet",
         "monthly": "Ay",
-        "other": "Diğer sınır"
+        "other": "Diğer sınır",
+        "extraUsage": "Ek kullanım",
+        "oauthApps": "OAuth uygulamaları"
       },
       "short": {
         "five_hour": "5 sa",
@@ -10239,7 +10241,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "ay",
-        "other": "diğer"
+        "other": "diğer",
+        "extraUsage": "ek kullanım",
+        "oauthApps": "OAuth uygulamaları"
       },
       "resetsAt": "{{time}} saatinde sıfırlanır",
       "resetsOn": "{{day}}, {{time}} saatinde sıfırlanır",
