@@ -1406,6 +1406,20 @@ describe("a repository past the archive's cap", () => {
     expect(await listSkills(f.db, f.owner.id, f.org.id)).toEqual([]);
   });
 
+  test("a renamed one is read at its new name: the API and raw files redirect", async () => {
+    f = await setup();
+    const github = bigGithub();
+    const fetch = async (url: string, init?: RequestInit) =>
+      url.includes("/acme/old")
+        ? new Response(null, { status: 301, headers: { location: url.replace("/acme/old", "/acme/big") } })
+        : github.fetch(url, init);
+    const deps = { ...skillDeps(), fetch };
+    const old = "https://github.com/acme/old/tree/main/skills/relatorio-semanal";
+    const skill = (await importSkillFromUrl(deps, f.owner.id, f.org.id, old)) as SkillDetail;
+    expect(skill).toMatchObject({ name: "relatorio-semanal", sourceVia: null });
+    expect(skill.files).toHaveLength(2);
+  });
+
   test("a private one is read through the workspace's token: the tree and each file from the API", async () => {
     f = await setup();
     const connectors = { db: f.db, keyWrappers: [f.keyWrapper], publicUrl: "https://agentes.test" };

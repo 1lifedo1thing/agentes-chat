@@ -946,6 +946,8 @@ const FOLDER_TREE: GithubFetchOptions = {
   maxBytes: 16 * MB,
   tooLarge: "That link's folder holds too many files to read. Link the skill's own folder.",
   tooLargeCode: "skill.link_too_large",
+  // The API, like github.com, redirects a renamed repository to its new name.
+  redirects: 3,
   timeoutMs: 30_000,
 };
 
@@ -953,6 +955,7 @@ const FOLDER_TREE: GithubFetchOptions = {
 const FOLDER_FILE: GithubFetchOptions = {
   maxBytes: Math.max(SKILL_LIMITS.maxBytes, SKILL_LIMITS.assetBytes),
   tooLarge: "A file of the skill is too large to download",
+  redirects: 3,
   timeoutMs: 30_000,
 };
 
