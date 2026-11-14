@@ -40,6 +40,7 @@ import { pendingConnectors } from "./access";
 import { linkRunActions, publishMessageActions } from "./agent-actions";
 import { withTimeout } from "./agent-media";
 import { announceAgentStatus, askRunStatus, startRunStatus, statusCandidates } from "./agent-status";
+import { TECHNICAL_STYLE_LINE } from "./agent-style";
 import { type Agent, getAgentCached } from "./agents";
 import { agentsDmReads, readerOfRun } from "./agents-dm-reads";
 import { type AgentAi, agentAiState, noAiReasonOf, ownNotSignedIn } from "./ai-status";
@@ -172,8 +173,10 @@ import {
   heldNudge,
   heldReplyRead,
   type LearnSignal,
+  localPathsCited,
   reportRunFailure,
   type TurnEndDecision,
+  toolsNamed,
   triedCalls,
   verdictRecord,
 } from "./continuation";
@@ -230,6 +233,7 @@ import {
 } from "./machine-accounts";
 import { computerBackSoon, type MachineCaller } from "./machine-hub";
 import { TASK_OFFLINE_GRACE_MS } from "./machine-tasks";
+import { getMachine } from "./machines";
 import { MEDIA_TOOLS } from "./media";
 import {
   getMessage,
@@ -549,7 +553,7 @@ export interface Transcript {
   promptKey?: string;
   /** "Automático": the model tier and effort chosen for this run; a resume thinks with the same. */
   autoModel?: AutoModelRecord;
-  /** Assistant text before this index was already posted to the chat (or was history). */
+  /** Assistant text before this index was already posted to the chat (or was history, or a reply held unposted). */
   postedUpTo: number;
   /** Chat messages this run posted so far. */
   postedCount: number;
@@ -5322,10 +5326,35 @@ async function executeRunInner(
               ),
             )
           : "";
+      const request = t.request ?? triggerMessage?.body ?? triggerText;
+      // A person who chose technical replies welcomes tool names (ADR 0147).
+      const namedTools =
+        text && !capped && !betweenAgents && !t.system.some((b) => b.text === TECHNICAL_STYLE_LINE)
+          ? toolsNamed(
+              text,
+              [...granted, ...tools].map((x) => x.name),
+              request,
+            )
+          : [];
+      // Files on its computer it cites to people, who can't open them: an agent with a computer, outside a repository's
+      // or a mission's work (code talk). The person who connected that computer can open them.
+      const cited =
+        text && !capped && !betweenAgents && !t.repo && !plan.missionId && granted.some((g) => g.name === "upload_file")
+          ? localPathsCited(text, request)
+          : [];
+      const computerId = cited.length > 0 ? (plan.session?.machineId ?? agent.machineId) : null;
+      const theirs =
+        computerId && triggerMessage?.authorUserId
+          ? (await getMachine(db, run.orgId, computerId).catch(() => null))?.pairedByUserId ===
+            triggerMessage.authorUserId
+          : false;
+      const localPaths = theirs ? [] : cited;
       let decision = await decideTurnEnd({
         state,
         kind: betweenAgents ? "agents_dm" : "conversation",
         openRequest,
+        namedTools,
+        localPaths,
         executed: transcript.executedCalls ?? 0,
         bound: t.stuck?.endAt !== undefined ? "stuck" : t.wrapUpNoted ? "step_limit" : null,
         quiet: silent && !judged,
@@ -5399,6 +5428,8 @@ async function executeRunInner(
         secret: "secret",
         unbacked: "unbacked",
         open_request: "open_request",
+        tool_names: "tool_names",
+        local_paths: "local_paths",
       }[decision.rule];
       const { nudge: _, ...recorded } = { ...decision, count: t.continuation.count };
       later(() =>
@@ -5421,13 +5452,21 @@ async function executeRunInner(
         // after something the next turn may do itself.
         // Nor a secret asked in the chat (ADR 0109 addendum).
         // Nor a result it claims that no call produced (ADR 0167).
+        // Nor a reply naming its tools to a person, nor one citing files on its computer, which nobody else can open.
         if (
           decision.rule === "decision" ||
           decision.rule === "answer" ||
           decision.rule === "untried" ||
           decision.rule === "secret" ||
-          decision.rule === "unbacked"
+          decision.rule === "unbacked" ||
+          decision.rule === "tool_names" ||
+          decision.rule === "local_paths"
         ) {
+          // A reply held unposted is never posted later either: as the closing line of a turn that writes nothing, in
+          // what a stopped run wrote, or by the restart sweep. A give-up judged untried still goes out if nothing better
+          // comes (`held`).
+          if (["secret", "unbacked", "tool_names", "local_paths"].includes(decision.rule))
+            t.postedUpTo = t.messages.length;
           await saveTranscript(db, t);
           continue;
         }

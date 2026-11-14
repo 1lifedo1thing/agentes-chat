@@ -43,10 +43,14 @@ export interface ContinuationState {
    * becomes the question card.
    */
   askPending?: boolean;
+  /** It was told once that nobody can open files on its computer (`localPathsNudge`): the next reply is posted. */
+  pathsNudged?: boolean;
   /** It was told once to say whether it still needs its open requests (`openRequestNudge`). */
   requestNudged?: boolean;
   /** It was told once to ask for a secret securely: the next secret verdict ends the run as it is. */
   secretNudged?: boolean;
+  /** It was told once to write a reply that named its tools again (`toolNamesNudge`): the next one is posted. */
+  toolsNudged?: boolean;
 }
 
 export type ContinuationVerdict = "done" | "continue" | "ask" | "untried" | "secret" | "unbacked";
@@ -164,6 +168,71 @@ export const ASK_NUDGE =
  */
 export const SECRET_NUDGE =
   "Not posted: never ask for a secret (a key, a token, a password) in the chat, where it stays in plain text. If you have request_secret, call it: the person types it into a secure card. Otherwise say which key is needed and where it is set up, without asking for it here.";
+
+/**
+ * The run's own tools its reply names (bare, in backticks, or behind a computer brain's `mcp__agentes__`) and the
+ * person's message doesn't: people can't see or use them. Only names with an underscore, so a one-word tool
+ * (`remember`, `react`) reads as the word it is. Tool names are `[A-Za-z0-9_-]`, nothing to escape.
+ */
+export function toolsNamed(reply: string, tools: Iterable<string>, request: string): string[] {
+  const says = (text: string, name: string) =>
+    text.includes(name) && new RegExp(`(?:(?<=mcp__agentes__)|(?<![\\w-]))${name}(?![\\w-])`).test(text);
+  return [...new Set(tools)].filter((n) => /^[\w-]*_[\w-]*$/.test(n) && says(reply, n) && !says(request, n));
+}
+
+/** What a run reads, once, when its reply named its own tools to a person (`toolsNamed`): the reply is not posted. */
+export const toolNamesNudge = (names: string[]) =>
+  `Not posted: your reply names your tools (${names.map((n) => `\`${n}\``).join(", ")}), and people can't see or use them. Write it again in plain words. When a tool is the next step, call it now instead of naming it: when it needs them, they get its card. Otherwise say in everyday words what you did or what will happen. Names from code the person works on can stay.`;
+
+/** Never a path on the agent's computer: a code block, a wiki link (`[[Folder/Page]]`), a web or mail address. */
+const NOT_PATHS = /```[\s\S]*?```|\[\[[^\]]*\]\]|[a-z][a-z0-9+.-]*:\/\/\S*|\bwww\.\S*|\S+@\S+/gi;
+/** A word with a slash in it: `notas/`, `~/out/x.csv`, `/home/agent/a.md`, `scripts/run.sh`. */
+const SLASHED = /(?<![\p{L}\p{N}_.~/-])(?:~|\.{1,2})?\/?(?:[\p{L}\p{N}_.-]+\/)+[\p{L}\p{N}_.-]*/gu;
+const UNDER_HOME = /^(?:~|\.{1,2})\/|^\/(?:home|root|tmp|Users|workspace|mnt|srv)\//;
+/** Source code: a person reads `src/login.ts` as code talk, not as a file they should open. */
+const CODE_FILE = /\.(?:[cm]?[jt]sx?|py|rb|go|rs|java|kt|swift|cpp|cs|php|sh|sql|vue|svelte|s?css|ya?ml|toml)$/i;
+
+/**
+ * A word with a slash that names a file or a folder: under a home or the current folder (`~/`, `./`, `/home/`), a
+ * name with an extension (`notas/pricing.md`) or a folder (`notas/`). A pair or a ratio (`e/ou`, `24/7`, `km/h`), a
+ * date, a version (`HTTP/1.1`), a source file outside a home, a path from the root outside a home and an address
+ * without its scheme (`example.com/precos`) aren't.
+ */
+function namesFile(word: string) {
+  if (UNDER_HOME.test(word)) return true;
+  // Elsewhere from the root it reads as an address's path (`/api/users/`) more often than as its file.
+  if (word.startsWith("/")) return false;
+  const parts = word.split("/").filter(Boolean);
+  if (!parts.some((p) => /\p{L}/u.test(p)) || /\.[a-z]{2,}$/i.test(parts[0] ?? "")) return false;
+  // A folder's name is two characters at least: "c/ desconto" and "w/ the team" are words.
+  const last = parts.at(-1) ?? "";
+  if (word.endsWith("/")) return last.length >= 2;
+  // An extension has a letter and two characters at least: "v1.3" and "S.A" are no files.
+  return (
+    /^[\p{L}\p{N}_-][\p{L}\p{N}_.-]*\.(?=[A-Za-z0-9]*[A-Za-z])[A-Za-z0-9]{2,5}$/u.test(last) && !CODE_FILE.test(last)
+  );
+}
+
+const pathsIn = (text: string) =>
+  [...text.replace(NOT_PATHS, " ").matchAll(SLASHED)].map((m) => m[0].replace(/[.,:;!?]+$/, "")).filter(namesFile);
+
+/**
+ * Files on the agent's computer its reply cites as if people could open them (`notas/pricing.md`, `~/out/`): nobody
+ * else can. None when the person's message writes paths or code itself: then they talk files, and read paths.
+ */
+export function localPathsCited(reply: string, request: string): string[] {
+  if (request.includes("```") || pathsIn(request).length > 0) return [];
+  return [...new Set(pathsIn(reply))];
+}
+
+/** What a run reads, once, when its reply cites files on its computer to people (`localPathsCited`): not posted. */
+export function localPathsNudge(paths: string[]) {
+  const cited = paths
+    .slice(0, 3)
+    .map((p) => `\`${p}\``)
+    .join(", ");
+  return `Not posted: your reply cites files on your computer (${cited}), which nobody else can open. When people need a file, share it with upload_file: it is posted as a file card. A .md, .csv or .html you wrote can go with export_file instead: it becomes a Drive document people open here. Otherwise write what matters from it in your message, or link a wiki page they asked for as [[Title]]. Then write your reply again without those paths. A path in code the person works on can stay.`;
+}
 
 /**
  * What a run reads, once, when its reply says something was made, sent or done that none of its calls did (ADR 0167):
@@ -416,6 +485,10 @@ export interface TurnEnd {
   /** What is judged ("" skips the judgment: nothing to read, or an agents' DM run that owes no answer). */
   judged: string;
   mission: boolean;
+  /** Files on its computer its reply cites to people (`localPathsCited`): it writes the reply again once, unposted. */
+  localPaths?: string[];
+  /** The run's own tools its reply names to a person (`toolsNamed`): it writes it again in plain words, once. */
+  namedTools?: string[];
   /**
    * Requests for a person it made in this run and stopped waiting on, still open (`openRequestNudge`, "" none): it
    * says once whether it still needs them before ending.
@@ -454,8 +527,14 @@ export async function decideTurnEnd(t: TurnEnd): Promise<TurnEndDecision> {
   // Quiet or not, a widget's run speaks only through update_widget: without it, nobody gets anything.
   if (t.widgetOwed && canNudge) return { outcome: "continue", rule: "widget", nudge: WIDGET_NUDGE };
   if (t.quiet) return { outcome: "done", rule: "quiet" };
+  // Only a person's conversation: another agent may read its computer's shared folder.
+  if (t.kind === "conversation" && t.localPaths?.length && !t.state.pathsNudged)
+    return { outcome: "continue", rule: "local_paths", nudge: localPathsNudge(t.localPaths) };
   if (t.decided && canNudge) return { outcome: "continue", rule: "decision", nudge: decisionNudge(t.decided) };
   if (t.unanswered && canNudge) return { outcome: "continue", rule: "answer", nudge: ANSWER_NUDGE };
+  // Only a person's conversation: another agent reading a tool's name can use it.
+  if (t.kind === "conversation" && t.namedTools?.length && !t.state.toolsNudged)
+    return { outcome: "continue", rule: "tool_names", nudge: toolNamesNudge(t.namedTools) };
   if (t.openRequest && !t.state.requestNudged)
     return { outcome: "continue", rule: "open_request", nudge: t.openRequest };
   if (!t.judged || !t.verdict) return { outcome: "done", rule: t.verdict ? "nothing_to_judge" : "no_judge" };
@@ -531,6 +610,8 @@ export function advance(state: ContinuationState, d: TurnEndDecision, executed: 
   if (d.rule === "ask") return { ...rest, askNudged: true, askPending: true };
   if (d.rule === "secret") return { ...rest, secretNudged: true };
   if (d.rule === "open_request") return { ...rest, requestNudged: true };
+  if (d.rule === "local_paths") return { ...rest, pathsNudged: true };
+  if (d.rule === "tool_names") return { ...rest, toolsNudged: true };
   return { ...rest, count: state.count + 1, executedAtNudge: executed };
 }
 
