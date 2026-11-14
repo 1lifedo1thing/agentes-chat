@@ -3943,6 +3943,8 @@ export const en = {
     },
     skill: {
       created: "Turned what I learned into the skill <b>{{name}}</b>",
+      /** Made when a person asked (`create_skill`), not from its how-tos. */
+      created_asked: "Created the skill <b>{{name}}</b>",
       updated: "Fixed the skill <b>{{name}}</b>",
     },
     /** A teammate's settings changed from the right hand's card, by the person who clicked Aplicar (ADR 0137). */
@@ -4057,6 +4059,7 @@ export const en = {
       },
       skill: {
         created: "Turned what I learned into the skills {{refs}}",
+        created_asked: "Created the skills {{refs}}",
         updated: "Fixed the skills {{refs}}",
       },
       agent: {
@@ -7787,6 +7790,8 @@ export const en = {
     role: "Role",
     roleHint: "What the person can do. Roles add to what Everyone can. Only for people.",
     rolePersonal: "Can",
+    /** Under the phone's Role list. */
+    rolesFoot: "Roles add to what Everyone can. The role's channels and agents come ticked.",
     channels: "Channels",
     channelsPersonal: "Conversations",
     channelsHint: "Where the person starts. The role's channels come ticked.",
@@ -7831,6 +7836,7 @@ export const en = {
       channelGone: "One of the channels no longer exists. Remove the marked one to send.",
       agentGone: "{{name}} left the team. Remove them from the invitation to send.",
       agentLocked: "You can no longer let people talk to {{name}}. Remove them from the invitation to send.",
+      agentUnnamed: "One of the agents left the team. Take out the marked one to send.",
       role: "You can no longer give the {{role}} role. Pick another.",
       roleMany: "You can no longer give one of these roles. Pick others.",
     },
@@ -7842,6 +7848,9 @@ export const en = {
     validFor: "Works for {{ttl}} once made.",
     expiresIn: "Expires after",
     maxUses: "Most people",
+    /** The phone's groups in Link mode and Edit link: what the person gets, then the link's own limits. */
+    onJoin: "On joining",
+    theLink: "The link",
     ttl: {
       "30m": "30 minutes",
       "1h": "1 hour",
@@ -7859,6 +7868,7 @@ export const en = {
     invitationTitle: "Invitation for {{email}}",
     invitationSaved: "Invitation for {{email}} updated.",
     invitationExpired: "This invitation expired. Renew it to change what it gives.",
+    editInvitation: "Edit invite",
     // The Invitations tab.
     search: "Search email or role",
     type: "Type",
@@ -7885,6 +7895,8 @@ export const en = {
     by: "by {{name}}",
     edit: "Edit",
     turnOff: "Turn off link",
+    editLink: "Edit link",
+    linkTurnedOff: "Link turned off.",
   },
   empty: {
     thread: { title: "Threads", text: "Thread replies will show up here, without taking over the channel." },
@@ -16726,6 +16738,7 @@ export const en = {
         offeringConnectApp: "Offered to connect an app",
         offeringSkill: "Offered to install a skill",
         updatingSkills: "Updated skills",
+        creatingSkill: "Created a skill",
         offeringInvites: "Offered to invite people",
         proposingAgent: "Proposed an agent",
         askingAgent: "Asked another agent",
@@ -16846,6 +16859,7 @@ export const en = {
       offeringConnectApp: "getting an app ready to connect",
       offeringSkill: "getting a skill ready to install",
       updatingSkills: "updating skills",
+      creatingSkill: "creating a skill",
       offeringInvites: "getting invitations ready",
       proposingAgent: "proposing an agent",
       askingAgent: "asking another agent",
@@ -17231,6 +17245,10 @@ export const en = {
     update_skill: {
       label: "Fix skill",
       description: "Fixes a skill it loaded. A person's skill becomes a proposal.",
+    },
+    create_skill: {
+      label: "Create skill",
+      description: "Turns what it did into a skill of its own when a person asks. Shows in Skills, with Undo.",
     },
     schedule_reminder: {
       label: "Create reminder",

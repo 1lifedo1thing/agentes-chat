@@ -3899,6 +3899,7 @@
     },
     "skill": {
       "created": "Zamieniono zdobytą wiedzę w umiejętność <b>{{name}}</b>",
+      "created_asked": "Utworzono umiejętność <b>{{name}}</b>",
       "updated": "Poprawiono umiejętność <b>{{name}}</b>"
     },
     "agent": {
@@ -4005,6 +4006,7 @@
       },
       "skill": {
         "created": "Zamieniono zdobytą wiedzę w umiejętności {{refs}}",
+        "created_asked": "Utworzono umiejętności {{refs}}",
         "updated": "Poprawiono umiejętności {{refs}}"
       },
       "agent": {
@@ -7846,6 +7848,7 @@
     "role": "Rola",
     "roleHint": "Co ta osoba może robić. Role dodają się do tego, co mogą Wszyscy. Dotyczy tylko osób.",
     "rolePersonal": "Może",
+    "rolesFoot": "Role dodają się do tego, co mogą Wszyscy. Kanały i agenci roli są już zaznaczeni.",
     "channels": "Kanały",
     "channelsPersonal": "Rozmowy",
     "channelsHint": "Gdzie ta osoba od razu dołącza. Kanały roli są już zaznaczone.",
@@ -7891,6 +7894,7 @@
       "channelGone": "Jeden z kanałów już nie istnieje. Usuń zaznaczony, aby wysłać.",
       "agentGone": "{{name}} odszedł z zespołu. Usuń go z zaproszenia, aby wysłać.",
       "agentLocked": "Nie możesz już udostępnić: {{name}}. Usuń go z zaproszenia, aby wysłać.",
+      "agentUnnamed": "Jednego z agentów nie ma już w zespole. Usuń zaznaczonego, żeby wysłać.",
       "role": "Nie możesz już nadać roli {{role}}. Wybierz inną.",
       "roleMany": "Nie możesz już nadać jednej z tych ról. Wybierz inne."
     },
@@ -7902,6 +7906,8 @@
     "validFor": "Działa {{ttl}} od utworzenia.",
     "expiresIn": "Ważność",
     "maxUses": "Maksymalna liczba osób",
+    "onJoin": "Po dołączeniu",
+    "theLink": "Link",
     "ttl": {
       "30m": "30 minut",
       "1h": "1 godzina",
@@ -7923,6 +7929,7 @@
     "invitationTitle": "Zaproszenie dla {{email}}",
     "invitationSaved": "Zaktualizowano zaproszenie dla {{email}}.",
     "invitationExpired": "To zaproszenie wygasło. Odnów je, aby zmienić to, co daje.",
+    "editInvitation": "Edytuj zaproszenie",
     "search": "Szukaj e-maila lub roli",
     "type": "Rodzaj",
     "types": {
@@ -7958,7 +7965,9 @@
     "neverEnds": "nie wygasa",
     "by": "od {{name}}",
     "edit": "Edytuj",
-    "turnOff": "Wyłącz link"
+    "turnOff": "Wyłącz link",
+    "editLink": "Edytuj link",
+    "linkTurnedOff": "Link wyłączony."
   },
   "empty": {
     "thread": {
@@ -17510,6 +17519,7 @@
         "offeringConnectApp": "Zaproponowano połączenie aplikacji",
         "offeringSkill": "Zaproponowano instalację umiejętności",
         "updatingSkills": "Zaktualizowano umiejętności",
+        "creatingSkill": "Utworzono umiejętność",
         "offeringInvites": "Zaproponowano zaproszenie osób",
         "proposingAgent": "Zaproponowano agenta",
         "askingAgent": "Zapytano innego agenta",
@@ -17629,6 +17639,7 @@
       "offeringConnectApp": "przygotowywanie połączenia aplikacji",
       "offeringSkill": "przygotowywanie instalacji umiejętności",
       "updatingSkills": "aktualizowanie umiejętności",
+      "creatingSkill": "tworzenie umiejętności",
       "offeringInvites": "przygotowywanie zaproszeń",
       "proposingAgent": "proponowanie agenta",
       "askingAgent": "pytanie innego agenta",
@@ -17979,6 +17990,10 @@
     "update_skill": {
       "label": "Popraw umiejętność",
       "description": "Poprawia wczytaną umiejętność. Umiejętność należąca do człowieka staje się propozycją."
+    },
+    "create_skill": {
+      "label": "Utwórz umiejętność",
+      "description": "Na prośbę osoby zamienia to, co zrobił, we własną umiejętność. Widać ją w Umiejętnościach, z Cofnij."
     },
     "schedule_reminder": {
       "label": "Utwórz przypomnienie",

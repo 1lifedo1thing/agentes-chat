@@ -3652,6 +3652,7 @@
     },
     "skill": {
       "created": "Das Gelernte in den Skill <b>{{name}}</b> verwandelt",
+      "created_asked": "Den Skill <b>{{name}}</b> erstellt",
       "updated": "Skill <b>{{name}}</b> korrigiert"
     },
     "agent": {
@@ -3756,6 +3757,7 @@
       },
       "skill": {
         "created": "Das Gelernte in Skills verwandelt: {{refs}}",
+        "created_asked": "Skills erstellt: {{refs}}",
         "updated": "Skills korrigiert: {{refs}}"
       },
       "agent": {
@@ -7342,6 +7344,7 @@
     "role": "Rolle",
     "roleHint": "Was die Person tun kann. Rollen kommen zu dem hinzu, was Alle können. Gilt nur für Personen.",
     "rolePersonal": "Darf",
+    "rolesFoot": "Rollen kommen zu dem hinzu, was Alle können. Die Kanäle und Agenten der Rolle sind schon markiert.",
     "channels": "Kanäle",
     "channelsPersonal": "Gespräche",
     "channelsHint": "Wo die Person gleich dabei ist. Die Kanäle der Rolle sind schon angehakt.",
@@ -7383,6 +7386,7 @@
       "channelGone": "Einen der Kanäle gibt es nicht mehr. Entferne den markierten, um zu senden.",
       "agentGone": "{{name}} ist nicht mehr im Team. Entferne ihn aus der Einladung, um zu senden.",
       "agentLocked": "Du kannst {{name}} nicht mehr freigeben. Entferne ihn aus der Einladung, um zu senden.",
+      "agentUnnamed": "Einer der Agenten hat das Team verlassen. Nimm den markierten raus, um zu senden.",
       "role": "Du kannst die Rolle {{role}} nicht mehr vergeben. Wähle eine andere.",
       "roleMany": "Du kannst eine dieser Rollen nicht mehr vergeben. Wähle andere."
     },
@@ -7394,6 +7398,8 @@
     "validFor": "Gilt {{ttl}} ab dem Erstellen.",
     "expiresIn": "Gültigkeit",
     "maxUses": "Höchstens Personen",
+    "onJoin": "Beim Beitritt",
+    "theLink": "Der Link",
     "ttl": {
       "30m": "30 Minuten",
       "1h": "1 Stunde",
@@ -7411,6 +7417,7 @@
     "invitationTitle": "Einladung für {{email}}",
     "invitationSaved": "Einladung für {{email}} aktualisiert.",
     "invitationExpired": "Diese Einladung ist abgelaufen. Erneuere sie, um zu ändern, was sie gibt.",
+    "editInvitation": "Einladung bearbeiten",
     "search": "E-Mail oder Rolle suchen",
     "type": "Art",
     "types": {
@@ -7426,7 +7433,7 @@
     "viaLinkOf": "Über den Link von {{name}} angefragt {{when}}",
     "withLink": "Mit dem Link: {{gives}}.",
     "roleLeftOut_one": "{{roles}} bleibt außen vor: Sie steht über deiner Rolle.",
-    "roleLeftOut_other": "{{roles}} bleiben außen vor: Sie stehen über deiner Rolle.",
+    "roleLeftOut_other": "{{roles}} bleiben außen vor, weil sie über deiner Rolle stehen.",
     "linkLabel": "Link {{name}}",
     "linkMore": "Mehr Aktionen für den Link {{name}}",
     "usesOf_one": "{{uses}} von {{count}} Person",
@@ -7438,7 +7445,9 @@
     "neverEnds": "läuft nie ab",
     "by": "von {{name}}",
     "edit": "Bearbeiten",
-    "turnOff": "Link deaktivieren"
+    "turnOff": "Link deaktivieren",
+    "editLink": "Link bearbeiten",
+    "linkTurnedOff": "Link ausgeschaltet."
   },
   "empty": {
     "thread": {
@@ -16423,6 +16432,7 @@
         "offeringConnectApp": "Angeboten, eine App zu verbinden",
         "offeringSkill": "Angeboten, einen Skill zu installieren",
         "updatingSkills": "Skills aktualisiert",
+        "creatingSkill": "Skill erstellt",
         "offeringInvites": "Angeboten, Personen einzuladen",
         "proposingAgent": "Einen Agenten vorgeschlagen",
         "askingAgent": "Einen anderen Agenten gefragt",
@@ -16542,6 +16552,7 @@
       "offeringConnectApp": "Vorbereiten einer App-Verbindung",
       "offeringSkill": "Vorbereiten einer Skill-Installation",
       "updatingSkills": "Skills werden aktualisiert",
+      "creatingSkill": "Skill wird erstellt",
       "offeringInvites": "Vorbereiten der Einladungen",
       "proposingAgent": "Vorschlagen eines Agenten",
       "askingAgent": "Fragen eines anderen Agenten",
@@ -16883,6 +16894,10 @@
     "update_skill": {
       "label": "Skill korrigieren",
       "description": "Korrigiert einen geladenen Skill. Beim Skill einer Person wird daraus ein Vorschlag."
+    },
+    "create_skill": {
+      "label": "Skill erstellen",
+      "description": "Macht auf Wunsch einer Person aus dem, was es getan hat, einen eigenen Skill. Erscheint unter Skills, mit Rückgängig."
     },
     "schedule_reminder": {
       "label": "Erinnerung erstellen",

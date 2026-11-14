@@ -8920,6 +8920,9 @@
   "agentActions.skill.created": {
     "value": "Turned what I learned into the skill <b>{{name}}</b>"
   },
+  "agentActions.skill.created_asked": {
+    "value": "Created the skill <b>{{name}}</b>"
+  },
   "agentActions.skill.updated": {
     "value": "Fixed the skill <b>{{name}}</b>"
   },
@@ -9162,6 +9165,9 @@
   },
   "agentActions.several.skill.created": {
     "value": "Turned what I learned into the skills {{refs}}"
+  },
+  "agentActions.several.skill.created_asked": {
+    "value": "Created the skills {{refs}}"
   },
   "agentActions.several.skill.updated": {
     "value": "Fixed the skills {{refs}}"
@@ -17955,6 +17961,9 @@
   "invites.rolePersonal": {
     "value": "Can"
   },
+  "invites.rolesFoot": {
+    "value": "Roles add to what Everyone can. The role's channels and agents come ticked."
+  },
   "invites.channels": {
     "value": "Channels"
   },
@@ -18069,6 +18078,9 @@
   "invites.refused.agentLocked": {
     "value": "You can no longer let people talk to {{name}}. Remove them from the invitation to send."
   },
+  "invites.refused.agentUnnamed": {
+    "value": "One of the agents left the team. Take out the marked one to send."
+  },
   "invites.refused.role": {
     "value": "You can no longer give the {{role}} role. Pick another."
   },
@@ -18098,6 +18110,12 @@
   },
   "invites.maxUses": {
     "value": "Most people"
+  },
+  "invites.onJoin": {
+    "value": "On joining"
+  },
+  "invites.theLink": {
+    "value": "The link"
   },
   "invites.ttl.30m": {
     "value": "30 minutes"
@@ -18143,6 +18161,9 @@
   },
   "invites.invitationExpired": {
     "value": "This invitation expired. Renew it to change what it gives."
+  },
+  "invites.editInvitation": {
+    "value": "Edit invite"
   },
   "invites.search": {
     "value": "Search email or role"
@@ -18219,6 +18240,12 @@
   },
   "invites.turnOff": {
     "value": "Turn off link"
+  },
+  "invites.editLink": {
+    "value": "Edit link"
+  },
+  "invites.linkTurnedOff": {
+    "value": "Link turned off."
   },
   "empty.thread.title": {
     "value": "Threads"
@@ -40107,6 +40134,9 @@
   "chat.work.step.updatingSkills": {
     "value": "Updated skills"
   },
+  "chat.work.step.creatingSkill": {
+    "value": "Created a skill"
+  },
   "chat.work.step.offeringInvites": {
     "value": "Offered to invite people"
   },
@@ -40454,6 +40484,9 @@
   },
   "chat.activity.updatingSkills": {
     "value": "updating skills"
+  },
+  "chat.activity.creatingSkill": {
+    "value": "creating a skill"
   },
   "chat.activity.offeringInvites": {
     "value": "getting invitations ready"
@@ -41273,6 +41306,12 @@
   },
   "builtinTools.update_skill.description": {
     "value": "Fixes a skill it loaded. A person's skill becomes a proposal."
+  },
+  "builtinTools.create_skill.label": {
+    "value": "Create skill"
+  },
+  "builtinTools.create_skill.description": {
+    "value": "Turns what it did into a skill of its own when a person asks. Shows in Skills, with Undo."
   },
   "builtinTools.schedule_reminder.label": {
     "value": "Create reminder"
