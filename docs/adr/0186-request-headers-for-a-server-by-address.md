@@ -6,8 +6,11 @@
   (`ConnectionSecret.headers`, `secretHeaders`, `connectionHeaders`), `custom.ts` (`connectCustomServer`,
   `storeCustomConnection`, `CustomServerView.headerNames`), `oauth-mcp.ts` (`probeMcpServer`); schema
   `packages/db/src/schema/connectors.ts` (`header_names`, migration 0274); route
-  `apps/server/src/routes/app/connectors-custom.ts`; client `packages/client/src/api/{types,client}.ts`; tests
-  `packages/engine/test/connector-headers.test.ts`, `apps/server/test/connectors.test.ts`
+  `apps/server/src/routes/app/connectors-custom.ts`; client `packages/client/src/api/{types,client}.ts`,
+  `lib/request-headers.ts`, the refusals' words in `lib/errors.ts`; web `apps/web/src/components/ConnectFlow.tsx`
+  (`HeaderRows`, `HeaderNames`), `Connectors.tsx`; tests `packages/engine/test/connector-headers.test.ts`,
+  `apps/server/test/connectors.test.ts`, `apps/web/test/connector-headers.test.tsx`,
+  `packages/client/test/request-headers-lib.test.ts`
 
 ## Context
 
@@ -75,6 +78,15 @@ An admin may type request headers for a server by address. They are sent with ev
 
 5. **What screens get.** `CustomServer.headerNames`, empty when there are none. A value can't be read back: to
    change one, the person types the list again.
+
+6. **The form.** In the web app, connecting a server the catalog doesn't list has a closed disclosure under the
+   key: one row per header, a name and a value typed as a secret, ten rows at most, and one line saying what
+   headers are for and that most servers need none. A row left blank is no header. A refusal shows on the row the
+   server names (`index`), in the person's language, each code with its own line and its way out; no toast repeats
+   it. With headers typed and no key, the button connects by them alone instead of asking for a key. Reconectar
+   opens the disclosure on the saved names: left alone, the request says nothing about headers, so they stay;
+   "Remover" sends `[]`; a typed row replaces them all. A server's row in Conectores says what it also sends, by
+   name, with Reconectar as the way to change it.
 
 ## Not built
 
