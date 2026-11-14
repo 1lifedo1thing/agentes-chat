@@ -45,5 +45,9 @@ describe("the tab's title", () => {
     document.title = "#general · Example";
     await i18n.changeLanguage("de");
     expect(document.title).toBe("#general · Example");
+    // The page goes and puts back the title it found, an earlier language's.
+    document.title = "(3) agentes.chat · Your team and your agents, in the same conversation";
+    await new Promise((done) => setTimeout(done, 0));
+    expect(document.title).toBe("(3) agentes.chat · Dein Team und deine Agenten, in derselben Unterhaltung");
   });
 });
