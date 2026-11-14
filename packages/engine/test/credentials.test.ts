@@ -312,6 +312,15 @@ describe("the same key saved again", () => {
     expect(await rows()).toHaveLength(1);
   });
 
+  test("saved again with make default, it becomes the default; saved again without, it stays the default", async () => {
+    const first = await save();
+    expect(first.isDefault).toBe(false);
+    expect(await save({ makeDefault: true })).toMatchObject({ id: first.id, reused: true, isDefault: true });
+    expect((await defaultCredentials(f.db, f.org.id)).perProvider.openai).toBe(first.id);
+    expect(await save()).toMatchObject({ id: first.id, reused: true, isDefault: true });
+    expect((await defaultCredentials(f.db, f.org.id)).perProvider.openai).toBe(first.id);
+  });
+
   test("another OpenAI project, another workspace scope or another secret is another key", async () => {
     await save();
     await save({ project: "proj_other" });
