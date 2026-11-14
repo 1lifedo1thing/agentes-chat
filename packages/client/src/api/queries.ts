@@ -28,7 +28,7 @@ import {
   XCODE_FIX_POLL_MS,
   xcodeFixLive,
 } from "../lib/devices";
-import { answerWithin, noAnswer, sendFailureOf, sendWaits, sessionEnded } from "../lib/errors";
+import { answerWithin, isGone, noAnswer, sendFailureOf, sendWaits, sessionEnded } from "../lib/errors";
 import { ISSUES_VIEW_DEFAULT, type IssuesViewChange, withIssuesView } from "../lib/issues-view";
 import { CLI_INSTALL_POLL_MS, LoginReadError, loginReadPasses } from "../lib/machines";
 import { GIF_PAGE, isMediaAfterReply, messageMediaOf, postedMedia } from "../lib/media";
@@ -6040,13 +6040,15 @@ export function applyNotificationEvent(qc: QC, orgId: string, event: Notificatio
   if (event.type === "notification.upserted" && event.notification.kind === "join_request")
     void qc.invalidateQueries({ queryKey: keys.joinRequests(orgId) });
   // What waits on me changes with a waiting row coming or any row leaving (a count alone says nothing new).
+  // `cancelRefetch: false`: "Concluir todas" sends one event per row, all after its single update, so the fetch already
+  // under way serves the whole burst.
   if (event.type === "notification.removed" || (event.type === "notification.upserted" && event.notification.waiting))
-    void qc.invalidateQueries({ queryKey: keys.waiting(orgId) });
+    void qc.invalidateQueries({ queryKey: keys.waiting(orgId) }, { cancelRefetch: false });
   if (event.type === "notification.upserted") cacheNotification(qc, orgId, event.notification);
   else if (event.type === "notification.removed") {
     dropNotification(qc, orgId, event.id, true);
     // Marked done on another device: "Concluídas" gains it (one auto-resolved changes nothing there).
-    void qc.invalidateQueries({ queryKey: keys.notificationList(orgId, "done") });
+    void qc.invalidateQueries({ queryKey: keys.notificationList(orgId, "done") }, { cancelRefetch: false });
   } else {
     const count = { unread: event.unread, waiting: event.waiting };
     qc.setQueryData<NotificationCount>(keys.notificationCount(orgId), count);
@@ -6152,11 +6154,15 @@ export function useNotificationAction(orgId: string) {
           };
         case "doneAll":
           return { items: [], ids: (await api.notifications.doneAll(orgId, action.filter)).ids };
-        case "undoneMany":
-          return {
-            items: await Promise.all(action.ids.map((id) => api.notifications.done(orgId, id, false))),
-            ids: action.ids,
-          };
+        case "undoneMany": {
+          // One failure doesn't undo the rest: a row deleted meanwhile (its task or channel gone) is just gone, and
+          // only when nothing came back does the undo fail.
+          const settled = await Promise.allSettled(action.ids.map((id) => api.notifications.done(orgId, id, false)));
+          const items = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+          const failed = settled.find((r) => r.status === "rejected" && !isGone(r.reason));
+          if (!items.length && failed?.status === "rejected") throw failed.reason;
+          return { items, ids: items.map((n) => n.id) };
+        }
       }
     },
     onMutate: async (action) => {

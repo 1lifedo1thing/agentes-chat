@@ -1482,6 +1482,8 @@ export function NotificationsPage({ waitingOnly = false }: { waitingOnly?: boole
     later(finish, LEAVE_MS);
   };
 
+  // Its own observer: a row's read or Feito on the page's `action` must not take over the clear's toast and Desfazer.
+  const bulkAction = useNotificationAction(org.id);
   const bulk = useNotificationBulkPending(org.id);
 
   const done = (n: AppNotification) => {
@@ -1616,7 +1618,7 @@ export function NotificationsPage({ waitingOnly = false }: { waitingOnly?: boole
   };
 
   const doneAll = () =>
-    action.mutate(
+    bulkAction.mutate(
       { type: "doneAll", filter },
       {
         onSuccess: (res) => {
@@ -1625,7 +1627,7 @@ export function NotificationsPage({ waitingOnly = false }: { waitingOnly?: boole
             toast.show(t("notifications.toast.doneAll", { count: res.ids.length }), "info", {
               label: t("notifications.toast.undo"),
               run: () =>
-                action.mutate(
+                bulkAction.mutate(
                   { type: "undoneMany", ids: res.ids },
                   { onError: (e) => toast.show(errorText(t, e), "error") },
                 ),
@@ -1797,12 +1799,12 @@ export function NotificationsPage({ waitingOnly = false }: { waitingOnly?: boole
               </MenuItem>
             </Menu>
             {!waitingOnly && (
-              <Button disabled={doneView || !counts?.unread || action.isPending} onClick={readAll}>
+              <Button disabled={doneView || !counts?.unread || action.isPending || bulk} onClick={readAll}>
                 {t("notifications.readAll")}
               </Button>
             )}
             {!waitingOnly && (
-              <Button disabled={!canClearAll(filter, counts, items) || action.isPending} onClick={doneAll}>
+              <Button disabled={!canClearAll(filter, counts, items) || action.isPending || bulk} onClick={doneAll}>
                 {t("notifications.doneAll")}
               </Button>
             )}

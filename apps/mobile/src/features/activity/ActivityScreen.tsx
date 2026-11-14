@@ -447,7 +447,7 @@ function useClearAll(
   const act = useNotificationAction(orgId);
   const busy = useNotificationBulkPending(orgId);
   const toast = useToast();
-  if (filter !== "all" || !canClearAll(filter, counts, items)) return null;
+  if (!canClearAll(filter, counts, items)) return null;
   const run = () =>
     act.mutate(
       { type: "doneAll", filter: "all" },

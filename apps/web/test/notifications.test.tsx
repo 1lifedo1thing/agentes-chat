@@ -535,6 +535,51 @@ describe("Notificações", () => {
     expect((within(row).getByRole("button", { name: "Feito" }) as HTMLButtonElement).disabled).toBe(false);
   });
 
+  test("tapping a row while Concluir todas runs keeps its toast and Desfazer, and the button off until it ends", async () => {
+    // On a phone the first tap on a row marks it read, a second mutation while the clear is under way.
+    const matchMedia = window.matchMedia;
+    window.matchMedia = ((query: string) =>
+      query === "(max-width: 720px)"
+        ? ({ matches: true, media: query } as MediaQueryList)
+        : matchMedia.call(window, query)) as typeof window.matchMedia;
+    try {
+      const { api, state } = await go();
+      const real = api.notifications.doneAll;
+      let finish: () => void = () => {};
+      api.notifications.doneAll = (orgId, filter) =>
+        new Promise((resolve) => {
+          finish = () => resolve(real(orgId, filter));
+        });
+      await click(screen().getByRole("button", { name: "Concluir todas" }));
+      await settle(2);
+      await click(document.querySelector('[data-n="n-q"]') as HTMLElement);
+      await settle(4);
+      expect(state.calls.some((c) => c.method === "notifications.read")).toBe(true);
+      expect((screen().getByRole("button", { name: "Concluir todas" }) as HTMLButtonElement).disabled).toBe(true);
+      await act(async () => finish());
+      await settle(4);
+      expect(document.body.textContent).toContain("3 movidas para Concluídas");
+      expect(screen().getByRole("button", { name: "Desfazer" })).toBeTruthy();
+    } finally {
+      window.matchMedia = matchMedia;
+    }
+  });
+
+  test("Desfazer brings back what it can: a row deleted meanwhile is just gone, with no error", async () => {
+    const { api } = await go();
+    await click(screen().getByRole("button", { name: "Concluir todas" }));
+    await settle(4);
+    const real = api.notifications.done;
+    api.notifications.done = (orgId, id, done) =>
+      id === "n-routine" ? Promise.reject(new ApiError(404, "not_found", "Not found")) : real(orgId, id, done);
+    await click(screen().getByRole("button", { name: "Desfazer" }));
+    await settle(6);
+    expect(document.querySelector(".ac-toast--error")).toBeNull();
+    expect(document.querySelector('[data-n="n-rx"]')).not.toBeNull();
+    expect(document.querySelector('[data-n="n-thread"]')).not.toBeNull();
+    expect(document.querySelector('[data-n="n-routine"]')).toBeNull();
+  });
+
   test("what the person brings back (alert false) plays no sound; news does", async () => {
     const { sockets } = await go();
     const heard: SoundName[] = [];

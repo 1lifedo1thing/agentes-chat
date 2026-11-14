@@ -43,10 +43,11 @@ export function useUserEvents() {
         applyNotificationEvent(qc, orgId, event);
         // The island at the top (ADR 0071 §9): what reaches me while the app is open, and what I settled elsewhere.
         feedIsland(event);
-        // Something new reached you somewhere: the conversation list's unread and last lines.
+        // Something new reached you somewhere: the conversation list's unread and last lines. A fetch under way
+        // serves a burst (the undo of "Concluir todas" restores row by row).
         if (event.type === "notification.upserted") {
-          void qc.invalidateQueries({ queryKey: keys.channels(orgId) });
-          void qc.invalidateQueries({ queryKey: keys.dms(orgId) });
+          void qc.invalidateQueries({ queryKey: keys.channels(orgId) }, { cancelRefetch: false });
+          void qc.invalidateQueries({ queryKey: keys.dms(orgId) }, { cancelRefetch: false });
           // Its sound (ADR 0070); the push covers the app in the background.
           const sound = soundForEvent(event, AppState.currentState !== "active");
           if (sound) playSound(sound);
