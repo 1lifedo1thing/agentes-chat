@@ -2,6 +2,7 @@ import {
   type InfiniteData,
   mutationOptions,
   notifyManager,
+  type QueryCache,
   type QueryClient,
   queryOptions,
   useInfiniteQuery,
@@ -271,20 +272,38 @@ export function useMe() {
   const cache = useQueryClient().getQueryCache();
   const current = () => cache.get(ME_HASH);
   useSyncExternalStore(
-    useCallback(
-      (changed: () => void) => {
-        // After the render in course, never during it: the first reader to render makes the query, which says `added`.
-        const later = notifyManager.batchCalls(changed);
-        return cache.subscribe((e) => {
-          if (e.query.queryHash === ME_HASH && (e.type === "added" || e.type === "removed")) later();
-        });
-      },
-      [cache],
-    ),
+    useCallback((changed: () => void) => onMeReplaced(cache, changed), [cache]),
     current,
     current,
   );
   return result;
+}
+
+/**
+ * One cache listener for every reader of `me`: the cache calls each listener on each of its events (every observer a
+ * row adds included), and a long conversation has hundreds of readers.
+ */
+const meReaders = new WeakMap<QueryCache, { readers: Set<() => void>; stop: () => void }>();
+function onMeReplaced(cache: QueryCache, changed: () => void) {
+  let entry = meReaders.get(cache);
+  if (!entry) {
+    const readers = new Set<() => void>();
+    const stop = cache.subscribe((e) => {
+      if (e.query.queryHash === ME_HASH && (e.type === "added" || e.type === "removed")) for (const r of readers) r();
+    });
+    entry = { readers, stop };
+    meReaders.set(cache, entry);
+  }
+  const { readers, stop } = entry;
+  // After the render in course, never during it: the first reader to render makes the query, which says `added`.
+  const reader = notifyManager.batchCalls(changed);
+  readers.add(reader);
+  return () => {
+    readers.delete(reader);
+    if (readers.size > 0) return;
+    stop();
+    meReaders.delete(cache);
+  };
 }
 export const useAuthConfig = () => useQuery(authConfigQuery(useApi()));
 export const useHealth = () => {
