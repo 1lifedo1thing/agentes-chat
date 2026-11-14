@@ -852,7 +852,11 @@ export async function removeCredentialCopies(
           defaultCredentialIds: perProvider,
           routerModel: renamed(settings.routerModel),
           summaryModel: renamed(settings.summaryModel),
-          agentSetup: setup && { ...setup, model: renamed(setup.model), ...(setup.key ? { key: swapId(setup.key) } : {}) },
+          agentSetup: setup && {
+            ...setup,
+            model: renamed(setup.model),
+            ...(setup.key ? { key: swapId(setup.key) } : {}),
+          },
           updatedAt: new Date(),
         })
         .where(eq(organizationSettings.orgId, orgId));

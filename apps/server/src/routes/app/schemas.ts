@@ -293,12 +293,9 @@ export const Credential = z
       .enum(["ok", "unchecked"])
       .optional()
       .openapi({ description: "On a key just saved: `ok` a real call passed, `unchecked` the provider didn't say." }),
-    reused: z
-      .boolean()
-      .optional()
-      .openapi({
-        description: "On a key just saved: the workspace already had it, so that key was updated, not copied.",
-      }),
+    reused: z.boolean().optional().openapi({
+      description: "On a key just saved: the workspace already had it, so that key was updated, not copied.",
+    }),
     copies: z
       .number()
       .int()
