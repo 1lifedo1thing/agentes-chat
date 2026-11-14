@@ -3275,7 +3275,7 @@
       "closed": "API-Schlüssel gibt es mit dem agentes.chat-Tarif des Workspace.",
       "notPlan": "Der Schlüssel eines Coding-Abos gehört in seine eigene Option oben.",
       "billing": "Aktiviere die Abrechnung für das Projekt des Schlüssels. Ohne Abrechnung darf Google nutzen, was deine Agenten senden.",
-      "privacy": "Deine Datenschutzeinstellungen bei OpenRouter entscheiden, welche Anbieter behalten dürfen, was deine Agenten senden."
+      "privacy": "{{provider}} gibt weiter, was deine Agenten senden, an das Unternehmen, das das Modell entwickelt oder betreibt, nach den Datenschutzbedingungen und -einstellungen von {{provider}}."
     },
     "wait": {
       "signIn": "Du meldest dich hier an, sobald der Computer bereit ist.",

@@ -57,7 +57,7 @@ describe("whose key is it", () => {
     expect(providerOf("openrouter")).toMatchObject({ label: "OpenRouter", site: "openrouter.ai/keys" });
   });
 
-  test("the key panel's first step: where a plan's key goes, billing, OpenRouter's privacy; nothing for the others", () => {
+  test("the key panel's first step: where a plan's key goes, billing, who passes calls on; nothing for the others", () => {
     const hint = (id: string) => {
       const p = providerOf(id);
       return p && keyStepHint(p);
@@ -66,8 +66,9 @@ describe("whose key is it", () => {
     expect(hint("gemini")).toBe("connectAi.key.billing");
     expect(hint("anthropic")).toBeUndefined();
     expect(hint("openai")).toBeUndefined();
-    // OpenRouter passes what is sent on to other providers: its own privacy settings say who may keep it.
+    // Both pass what is sent on to the model's maker or host.
     expect(hint("openrouter")).toBe("connectAi.key.privacy");
+    expect(hint("commandcode")).toBe("connectAi.key.privacy");
   });
 });
 

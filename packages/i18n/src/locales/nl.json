@@ -3276,7 +3276,7 @@
       "closed": "API-sleutels gaan open met het agentes.chat-abonnement van de workspace.",
       "notPlan": "De sleutel van een codeerabonnement hoort bij die eigen optie hierboven.",
       "billing": "Zet facturering aan voor het project van de sleutel. Zonder facturering mag Google gebruiken wat je agents versturen.",
-      "privacy": "Je privacyinstellingen in OpenRouter bepalen welke aanbieders mogen bewaren wat je agents versturen."
+      "privacy": "{{provider}} geeft wat je agents sturen door aan het bedrijf dat het model maakt of host, volgens de privacyvoorwaarden en -instellingen van {{provider}}."
     },
     "wait": {
       "signIn": "Je logt hier in zodra de computer klaar is.",

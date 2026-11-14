@@ -3511,7 +3511,7 @@
       "closed": "Klucze API otwierają się z planem agentes.chat workspace'u.",
       "notPlan": "Klucz planu do kodowania wpisz w jego własnej opcji powyżej.",
       "billing": "Włącz rozliczenia dla projektu tego klucza. Bez rozliczeń Google może wykorzystywać to, co wysyłają twoi agenci.",
-      "privacy": "Ustawienia prywatności OpenRouter decydują, którzy dostawcy mogą przechowywać to, co wysyłają twoi agenci."
+      "privacy": "{{provider}} przekazuje to, co wysyłają Twoi agenci, firmie, która tworzy lub hostuje model, zgodnie z warunkami i ustawieniami prywatności {{provider}}."
     },
     "wait": {
       "signIn": "Zalogujesz się tutaj, gdy tylko komputer będzie gotowy.",

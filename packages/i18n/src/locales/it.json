@@ -3395,7 +3395,7 @@
       "closed": "Le chiavi API si aprono con il piano agentes.chat del workspace.",
       "notPlan": "La chiave di un piano di coding va nella sua opzione qui sopra.",
       "billing": "Attiva la fatturazione per il progetto della chiave. Senza fatturazione, Google può usare quello che inviano i tuoi agenti.",
-      "privacy": "Le impostazioni privacy di OpenRouter decidono quali fornitori possono conservare quello che inviano i tuoi agenti."
+      "privacy": "{{provider}} passa ciò che inviano i tuoi agenti all'azienda che crea o ospita il modello, secondo i termini e le impostazioni sulla privacy di {{provider}}."
     },
     "wait": {
       "signIn": "Accedi qui appena il computer è pronto.",
