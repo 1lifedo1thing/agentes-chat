@@ -20,15 +20,7 @@ import { lineLocale } from "./requester";
 import { personCanPost } from "./routine-state";
 import { ACTIVE_RUN_STATUSES, passedOnTo } from "./run-inbox";
 import { deliverNoticeToRun } from "./run-resume";
-import {
-  type AgentRun,
-  canceledBy,
-  continuableEnd,
-  isTerminal,
-  personStopOf,
-  replyThreadOf,
-  runErrorDetail,
-} from "./runs";
+import { type AgentRun, continuableEnd, isTerminal, personStopOf, replyThreadOf, runErrorDetail } from "./runs";
 import { runStretchOf } from "./stretch";
 import { ago, stepLine } from "./talker-snapshot";
 import { nameConversation } from "./thread-assess";
@@ -160,6 +152,8 @@ export interface WorkView {
   pausedUntil: string | null;
   /** Stopped by a person: who. */
   canceledByUserId: string | null;
+  /** The right hand that made that stop at their word. */
+  canceledByAgentId: string | null;
   errorCode: string | null;
 }
 
@@ -277,6 +271,7 @@ export async function workViews(db: Executor, orgId: string, ids: string[]): Pro
     const asked =
       state === "waiting_input" ? questions.find((q) => q.runId === run?.id && q.channelId === w.channelId) : undefined;
     const detail = status === "failed" ? runErrorDetail(run?.error) : null;
+    const stop = status === "canceled" ? personStopOf(run?.error) : null;
     out.set(w.id, {
       id: w.id,
       agentId: w.agentId,
@@ -309,7 +304,8 @@ export async function workViews(db: Executor, orgId: string, ids: string[]): Pro
       resultMessageId: w.resultMessageId,
       queuePosition: state === "queued" ? Math.max(1, mine.findIndex((l) => l.id === w.id) + 1) : null,
       pausedUntil: state === "paused" ? (run?.until ?? null) : null,
-      canceledByUserId: status === "canceled" ? canceledBy(run?.error) : null,
+      canceledByUserId: stop?.userId ?? null,
+      canceledByAgentId: stop?.agentId ?? null,
       errorCode: detail?.errorCode ?? (w.resultMessageId ? (reportCodes.get(w.resultMessageId) ?? null) : null),
     });
   }

@@ -51,7 +51,11 @@ export function stoppedText(r: StoppedRefs): string {
     `${who} stopped your task${r.label ? ` «${r.label}»` : ""} ${doing}.`,
     ...(r.helpers ? [`What you asked of ${r.helpers} stopped with it: nothing more comes from them.`] : []),
     "What you already did or posted stays as it is.",
-    r.reason ? `Their reason, in their words: «${r.reason}».` : "They gave no reason.",
+    r.reason
+      ? r.byAgentName
+        ? `The reason given: «${r.reason}».`
+        : `Their reason, in their words: «${r.reason}».`
+      : "They gave no reason.",
     "Don't pick it up again on your own: only when someone asks you to.",
   ].join(" ");
 }

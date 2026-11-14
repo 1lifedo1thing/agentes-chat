@@ -269,7 +269,8 @@ export async function cancelRun(
     );
   }
   // Its usage note's "Don't run it" speaks for every turn that note took in, each for who may stop it.
-  for (const id of stopped.joined ?? []) await cancelRun(deps, userId, orgId, id, { tell: false }).catch(() => null);
+  for (const id of stopped.joined ?? [])
+    await cancelRun(deps, userId, orgId, id, { tell: false, ...(by ? { byAgentId: by } : {}) }).catch(() => null);
   return stopped;
 }
 
