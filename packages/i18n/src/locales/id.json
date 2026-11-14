@@ -378,6 +378,12 @@
       "short": "bicara",
       "say": "berbicara dengan agen"
     },
+    "view_all_agents": {
+      "title": "Lihat semua agen",
+      "desc": "Di Tim dan bilah samping. Tanpa ini, hanya agen yang menjawab orang itu.",
+      "short": "lihat semua agen",
+      "say": "melihat semua agen"
+    },
     "assign_work": {
       "title": "Beri agen misi",
       "desc": "Minta pekerjaan panjang yang berjalan sendiri.",

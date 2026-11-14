@@ -417,6 +417,12 @@ export const ptBR = {
       short: "conversar",
       say: "conversa com os agentes",
     },
+    view_all_agents: {
+      title: "Ver todos os agentes",
+      desc: "Na Equipe e na barra lateral. Sem isto, só os que respondem à pessoa.",
+      short: "ver todos os agentes",
+      say: "vê todos os agentes",
+    },
     assign_work: {
       title: "Dar missões aos agentes",
       desc: "Pedir trabalho longo, que segue sozinho.",
