@@ -1,5 +1,5 @@
 import { type Message, useApi } from "@agenteschat/client";
-import { type ConsultNoticeFold, pairItemOf } from "@agenteschat/client/lib/consult-group";
+import { type ConsultNoticeFold, handOffOf, pairItemOf } from "@agenteschat/client/lib/consult-group";
 import { agentsByAnyHandle } from "@agenteschat/client/lib/directory";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { consultationOfNotice, noticeOf, stoppedNoticeOf } from "@agenteschat/client/lib/notices";
@@ -42,6 +42,12 @@ export function EventLine({ message, fold, gap }: { message: Message; fold?: Con
         items={[fold.consultation]}
         gap={gap}
       />
+    );
+  // Another agent's request in this agent's DM: its pair row, opening the exchange.
+  const handed = handOffOf(message.meta);
+  if (handed)
+    return (
+      <ConsultPairRow askerId={handed.askerId} channelId={message.channelId} items={[handed.item]} handed gap={gap} />
     );
   // An answer from another agent that carries the consultation, its reply not here: the same pair row a reply
   // has (who asked whom), never the text written for the agent; a tap opens what they said.

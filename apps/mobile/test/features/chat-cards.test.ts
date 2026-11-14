@@ -106,6 +106,15 @@ describe("agents it asked first: one pair row right before the reply, never insi
     expect(source("cards.tsx")).not.toContain("Consultation");
   });
 
+  test("another agent's request in this agent's DM is the same row, its words in the arrows' place, no state while out", () => {
+    const line = source("EventLine.tsx");
+    expect(line).toContain("const handed = handOffOf(message.meta);");
+    expect(line).toMatch(/items=\{\[handed\.item\]\}\s+handed\s/);
+    const pair = source("ConsultGroup.tsx");
+    expect(pair).toContain('t("chat.consultPair.askedHere", { context: agentGrammar(names[0] ?? "").context })');
+    expect(pair).toContain("handed && live ? { ...found, word: null, seconds: null, tone: null } : found");
+  });
+
   test("an answer far below its question is the same row, never a line of words or a pill", () => {
     const line = source("EventLine.tsx");
     expect(line).toContain("items={[fold.consultation]}");

@@ -20,7 +20,7 @@ import {
 } from "@agenteschat/client/lib/consult-group";
 import { consultSubject, consultTimeText } from "@agenteschat/client/lib/consultations";
 import { namesText } from "@agenteschat/client/lib/format";
-import type { agentGrammar } from "@agenteschat/client/lib/grammar";
+import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import { useEffect, useMemo, useState } from "react";
@@ -124,6 +124,7 @@ export function ConsultPairRow({
   channelId,
   items,
   inline = false,
+  handed = false,
   gap,
 }: {
   askerId: string;
@@ -132,6 +133,11 @@ export function ConsultPairRow({
   items: readonly ConsultPairItem[];
   /** Inside a message (its reach lines): it reaches past the row's body to the conversation's width. */
   inline?: boolean;
+  /**
+   * Another agent's request in the DM of the agent it went to (`handOffOf`): "Atlas pediu à Ada" in place of ⇄, and
+   * nothing about its state until it ends, as on the web.
+   */
+  handed?: boolean;
   /** Under what shows above it (a turn's, or a part's under another quiet line). Inline: its margin above. */
   gap?: number;
 }) {
@@ -147,8 +153,9 @@ export function ConsultPairRow({
   const presence = usePresenceOf();
   const only = items.length === 1 && items[0]?.status === "open" ? items[0] : undefined;
   const mine = only ? handoffAsk(presence.agent(only.consultedAgentId)?.work, only.consultedRunId) : null;
-  const pair = consultPair(items, now, askerId, mine);
-  if (!pair) return null;
+  const found = consultPair(items, now, askerId, handed ? null : mine);
+  if (!found) return null;
+  const pair = handed && live ? { ...found, word: null, seconds: null, tone: null } : found;
   // Blue at work, amber when it waits on me, quiet when it waits on someone else, the warning for what went unanswered.
   const tone =
     pair.tone === "live" ? c.agent : pair.tone === "bad" ? c.warn : pair.tone === "you" ? c.amberInk : c.muted;
@@ -191,7 +198,11 @@ export function ConsultPairRow({
         <Text variant="footnote" tone="ink2" style={styles.name}>
           {from}
         </Text>
-        {pair.tone === "you" ? (
+        {handed ? (
+          <Text variant="footnote" tone="faint">
+            {t("chat.consultPair.askedHere", { context: agentGrammar(names[0] ?? "").context })}
+          </Text>
+        ) : pair.tone === "you" ? (
           <View style={styles.mark}>
             <WaitMark size={8} />
           </View>

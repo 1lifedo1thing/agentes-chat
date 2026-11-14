@@ -2,7 +2,7 @@ import type { Agent, Message } from "@agenteschat/client";
 import { keys } from "@agenteschat/client";
 import { APP_BRANDS } from "@agenteschat/client/lib/apps";
 import { seesDetails } from "@agenteschat/client/lib/audience";
-import { pairItemOf } from "@agenteschat/client/lib/consult-group";
+import { handOffOf, pairItemOf } from "@agenteschat/client/lib/consult-group";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { formatTime } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
@@ -140,6 +140,13 @@ export function NoticeLine({ message }: { message: Message }) {
   if (stopped) return <StoppedLine message={message} notice={stopped} />;
   // Another agent's answer with its consultation, its reply not here: the same pair row a reply has (who asked
   // whom), never the text written for the asking agent; a click opens what they said.
+  const handed = handOffOf(message.meta);
+  if (handed)
+    return (
+      <div data-message-id={message.id}>
+        <ConsultPairRow askerId={handed.askerId} items={[handed.item]} handed />
+      </div>
+    );
   const consulted = consultationOfNotice(message.meta);
   if (consulted)
     return (
