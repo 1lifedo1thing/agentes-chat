@@ -8,9 +8,11 @@
   `packages/db/src/schema/connectors.ts` (`header_names`, migration 0274); route
   `apps/server/src/routes/app/connectors-custom.ts`; client `packages/client/src/api/{types,client}.ts`,
   `lib/request-headers.ts`, the refusals' words in `lib/errors.ts`; web `apps/web/src/components/ConnectFlow.tsx`
-  (`HeaderRows`, `HeaderNames`), `Connectors.tsx`; tests `packages/engine/test/connector-headers.test.ts`,
-  `apps/server/test/connectors.test.ts`, `apps/web/test/connector-headers.test.tsx`,
-  `packages/client/test/request-headers-lib.test.ts`
+  (`HeaderRows`, `HeaderNames`), `Connectors.tsx`; phone `apps/mobile/src/features/connectors/RequestHeaders.tsx`,
+  `ConnectSheet.tsx`, `ConnectionScreen.tsx`, `logic.ts` (`headerRefused`, `headerNamesText`); tests
+  `packages/engine/test/connector-headers.test.ts`, `apps/server/test/connectors.test.ts`,
+  `apps/web/test/connector-headers.test.tsx`, `packages/client/test/request-headers-lib.test.ts`,
+  `apps/mobile/test/features/connector-headers.test.ts`
 
 ## Context
 
@@ -87,6 +89,10 @@ An admin may type request headers for a server by address. They are sent with ev
    opens the disclosure on the saved names: left alone, the request says nothing about headers, so they stay;
    "Remover" sends `[]`; a typed row replaces them all. A server's row in Conectores says what it also sends, by
    name, with Reconectar as the way to change it.
+
+   The phone has the same in its sheet, under the key: one line that opens the rows. A sheet shows one way in at a
+   time, so an account that has headers opens on the key's side, and a refusal about headers brings that side back
+   with the rows open, whichever way in was tried. A connection's screen says what it also sends under Reconectar.
 
 ## Not built
 
