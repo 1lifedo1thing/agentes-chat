@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · 你的团队和智能体，在同一对话中"
   },
   "common": {
     "close": "关闭",

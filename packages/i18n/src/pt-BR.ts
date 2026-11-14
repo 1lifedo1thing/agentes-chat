@@ -7,7 +7,11 @@ import type { LocaleStrings } from "./plurals";
  * no exclamation marks, buttons start with a verb, "agentes" in lower case.
  */
 export const ptBR = {
-  app: { name: "agentes" },
+  app: {
+    name: "agentes",
+    /** The browser tab's title on every screen that doesn't set its own. */
+    tabTitle: "agentes.chat · Seu time e seus agentes, na mesma conversa",
+  },
   common: {
     close: "Fechar",
     joinSentences: "{{a}} {{b}}",

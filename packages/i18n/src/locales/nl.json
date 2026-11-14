@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Je team en je agents, in hetzelfde gesprek"
   },
   "common": {
     "close": "Sluiten",

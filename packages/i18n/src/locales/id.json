@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Timmu dan agenmu, dalam percakapan yang sama"
   },
   "common": {
     "close": "Tutup",

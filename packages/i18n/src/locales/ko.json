@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · 팀과 에이전트가 같은 대화에서"
   },
   "common": {
     "close": "닫기",

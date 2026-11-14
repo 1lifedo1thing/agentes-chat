@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Twój zespół i twoi agenci w jednej rozmowie"
   },
   "common": {
     "close": "Zamknij",

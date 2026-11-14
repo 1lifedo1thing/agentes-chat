@@ -181,6 +181,20 @@ export async function loadI18n(lng: LocaleCode): Promise<I18n> {
   return instance;
 }
 
+/**
+ * The tab's default title in the app's language (index.html's is English), swapped when the language changes: only
+ * where the old one is still showing, so a page's own title stays, and so does the unread count in front of it.
+ */
+export function translateTabTitle(instance: I18n) {
+  let shown = instance.t("app.tabTitle");
+  document.title = shown;
+  instance.on("languageChanged", () => {
+    const next = instance.t("app.tabTitle");
+    if (document.title.includes(shown)) document.title = document.title.replace(shown, next);
+    shown = next;
+  });
+}
+
 /** An instance with every language loaded at once (tests). */
 export function createI18n(lng: LocaleCode = DEFAULT_LOCALE): I18n {
   const instance = i18n.createInstance();

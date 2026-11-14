@@ -2,6 +2,9 @@
   "app.name": {
     "value": "agentes"
   },
+  "app.tabTitle": {
+    "value": "agentes.chat · Your team and your agents, in the same conversation"
+  },
   "common.close": {
     "value": "Close"
   },

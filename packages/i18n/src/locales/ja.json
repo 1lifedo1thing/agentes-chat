@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · チームとエージェントが、同じ会話で"
   },
   "common": {
     "close": "閉じる",
