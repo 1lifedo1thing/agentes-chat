@@ -13,7 +13,9 @@ Everything it keeps is in Postgres, except uploaded files, which the compose fil
 (`https://agentes.tail1234.ts.net`, `https://chat.example.com`, or `http://localhost:3000` on your
 own machine). The setup writes it for you. Sign-in cookies, the only browser origin allowed to change
 anything, and every link the app sends come from it. Opened at any other address, sign-in fails with
-"Invalid origin" and saving fails with `bad_origin`.
+"Invalid origin" and saving fails with `bad_origin`. To reach the same instance at more than one
+address (the machine's LAN IP and a tunnel hostname, say), list the others in
+`EXTRA_TRUSTED_ORIGINS`, comma-separated; `PUBLIC_URL` stays trusted either way.
 
 The server needs no model key of its own. Each organization adds its own keys (Claude, OpenAI,
 Gemini, DeepSeek, Kimi, Z.ai, MiniMax, Command Code or OpenRouter) in **Settings → AI and usage**. Keys are stored encrypted with a key derived from `AGENTES_SECRET` and are
@@ -756,6 +758,7 @@ ones a self-hosted instance usually touches:
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `PUBLIC_URL` | `http://localhost:3000` | The exact address people open. |
+| `EXTRA_TRUSTED_ORIGINS` | | Other addresses this instance is opened at, comma-separated, each an origin such as `http://192.168.0.10:3000` or `https://agentes.tail1234.ts.net`. Sign-in and saving work from them too; `PUBLIC_URL` is always trusted. |
 | `AGENTES_SECRET` | required | Master secret, at least 32 characters. Never change it on an instance in use. |
 | `POSTGRES_PASSWORD` | required | Database password. Read by the compose file only. |
 | `AGENTES_IMAGE` | `ghcr.io/agentes-chat/agentes:latest` | The image to run. A version tag or a digest holds a version. |
