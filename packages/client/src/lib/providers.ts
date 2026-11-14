@@ -21,7 +21,7 @@ interface ProviderEntry {
   masculine?: boolean;
   /** Its free tier lets the provider use what is sent: billing should be on. */
   billing?: boolean;
-  /** It passes what is sent on to the company that makes or hosts the model, under its own privacy terms and settings. */
+  /** It passes what is sent on to the company that makes or hosts the model, under its own privacy terms. */
   privacy?: boolean;
 }
 
