@@ -317,8 +317,12 @@ export function routineReportText(messages: readonly Said[], noticeId: string | 
  */
 export interface StoppedNotice {
   runId: string;
+  /** The person who stopped it, or at whose word `byAgentId` did. */
   byUserId: string;
   byName: string;
+  /** The agent that stopped it at that person's word (the right hand), and its name then. */
+  byAgentId: string | null;
+  byAgentName: string;
   label: string;
   was: "working" | "waiting" | "queued";
   reason: string | null;
@@ -335,8 +339,27 @@ export function stoppedNoticeOf(meta: Meta): StoppedNotice | null {
     runId: s(r.runId),
     byUserId: s(r.byUserId),
     byName: s(r.byName),
+    byAgentId: s(r.byAgentId) || null,
+    byAgentName: s(r.byAgentName),
     label: s(r.label),
     was,
     reason: s(r.reason) || null,
   };
+}
+
+/** Whom a stop's line names: the agent that stopped it, the viewer ("You"), another person, or nobody. */
+export type Stopper = { kind: "agent"; agentId: string } | { kind: "you" } | { kind: "person"; userId: string } | null;
+
+/**
+ * Whom a stop's line names (ADR 0128): the agent that stopped it at a person's word (the right hand) is never "you",
+ * "you" only for the person who stopped it, any other person by name, and nobody when no person did (the system: its
+ * cause says why).
+ */
+export function stopperOf(
+  stop: { byUserId?: string | null; byAgentId?: string | null },
+  meId: string | null | undefined,
+): Stopper {
+  if (stop.byAgentId) return { kind: "agent", agentId: stop.byAgentId };
+  if (!stop.byUserId) return null;
+  return stop.byUserId === meId ? { kind: "you" } : { kind: "person", userId: stop.byUserId };
 }
