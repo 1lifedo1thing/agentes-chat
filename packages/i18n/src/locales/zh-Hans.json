@@ -13364,7 +13364,8 @@
       "headerTwice": "{{header}} 在列表中出现了两次。请移除其中一个。",
       "headerAndKey": "API 密钥已作为 Authorization 发送。请清空密钥，或移除这个标头。",
       "headersTooMany": "一个服务器最多可设置 {{max}} 个标头。请先移除一个再添加。",
-      "headersWithSignIn": "此服务器要求登录，而登录暂时无法携带标头。请移除标头后登录，或用 API 密钥连接。"
+      "headersWithSignIn": "此服务器要求登录，而登录暂时无法携带标头。请移除标头后登录，或用 API 密钥连接。",
+      "headersUnreadable": "无法读取已保存的标头。请重新输入，或将其移除。"
     },
     "wiki": {
       "githubNoNotes": "此链接中没有 Markdown 笔记。",

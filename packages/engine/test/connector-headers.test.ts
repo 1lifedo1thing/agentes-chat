@@ -22,7 +22,7 @@ import {
   saveCustomTools,
   setAgentScopes,
   storeCustomConnection,
-  type ValidationError,
+  ValidationError,
 } from "../src";
 import { addMember, type Fixture, SECRET, setup } from "./fixtures";
 import { routineDeps } from "./routine-fixtures";
@@ -175,8 +175,16 @@ interface Sent {
   body: string;
 }
 
-/** An MCP server over `fetch`, as far as a listing and a call go, that names an icon of its own: every request it got. */
-function mcpOverFetch(icon: string) {
+/**
+ * An MCP server over `fetch`, as far as a listing and a call go, that names an icon of its own: every request it got.
+ * `called`: what it answers a tool call with.
+ */
+function mcpOverFetch(
+  icon: string,
+  called: () => unknown = () => ({
+    content: [{ type: "text", text: '{"id":"0193ffff-0000-4000-8000-000000000001"}' }],
+  }),
+) {
   const sent: Sent[] = [];
   const serve = (async (input: string | URL | Request, init: RequestInit = {}) => {
     const body = typeof init.body === "string" ? init.body : "";
@@ -203,9 +211,9 @@ function mcpOverFetch(icon: string) {
           },
         ],
       },
-      "tools/call": { content: [{ type: "text", text: '{"id":"0193ffff-0000-4000-8000-000000000001"}' }] },
     };
-    return Response.json({ jsonrpc: "2.0", id: message.id, result: results[message.method] ?? {} });
+    const result = message.method === "tools/call" ? called() : results[message.method];
+    return Response.json({ jsonrpc: "2.0", id: message.id, result: result ?? {} });
   }) as unknown as typeof fetch;
   return { sent, serve };
 }
@@ -361,6 +369,33 @@ test("a server that repeats what it was sent in its refusal: no error, answer, r
   );
 });
 
+test("what is masked: a value of 8 characters or more, as a JSON body spells it too, in what is thrown and in an answer flagged as an error", async () => {
+  allowPrivateOutbound();
+  // A tab, quotes and a backslash: a JSON body writes each its own way.
+  const odd = 'fake\t"gate"\\pass';
+  const headers = { "x-version": "1", "x-mode": "1234567", "x-team": "12345678", "x-api-key": odd };
+  const said = `version 1, mode 1234567, team 12345678, key ${odd}`;
+  globalThis.fetch = (async () =>
+    Response.json({ error: `HTTP 401: ${said}` }, { status: 403 })) as unknown as typeof fetch;
+  const refused = await connectOverHttp({ serverUrl: SERVER }, headers).catch((error: unknown) => error);
+  // A value shorter than a key may be is a setting: masked, "1" would take the status with it.
+  expect((refused as Error).message).toContain('{"error":"HTTP 401: version 1, mode 1234567, team ••••, key ••••"}');
+
+  const answers = [
+    { content: [{ type: "text", text: `refused: ${said}, sent as ${JSON.stringify({ key: odd })}` }], isError: true },
+    { content: [{ type: "text", text: said }] },
+  ];
+  globalThis.fetch = mcpOverFetch("https://tickets.example.com/icon.png", () => answers.shift()).serve;
+  const session = await connectOverHttp({ serverUrl: SERVER }, headers);
+  expect(await session.callTool("find_ticket", {})).toEqual({
+    content: 'refused: version 1, mode 1234567, team ••••, key ••••, sent as {"key":"••••"}',
+    isError: true,
+  });
+  // What a tool answers is the agent's to read as it came.
+  expect(await session.callTool("find_ticket", {})).toEqual({ content: said, isError: false });
+  await session.close();
+});
+
 test("a server that asks for a sign-in: refused, and only the question to the server itself carried them", async () => {
   const fx = await setup();
   f = fx;
@@ -395,6 +430,27 @@ test("a server that asks for a sign-in: refused, and only the question to the se
     [SERVER, VALUE],
     [metadata, null],
   ]);
+  expect(await fx.db.select().from(schema.oauthStates)).toEqual([]);
+  expect(await fx.db.select().from(schema.connectorConnections)).toEqual([]);
+});
+
+test("a server that answers 401 and names no sign-in asks for a key, headers typed or not", async () => {
+  const fx = await setup();
+  f = fx;
+  const requests: [string, string | null][] = [];
+  const http = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    requests.push([url, new Headers(init?.headers).get("x-api-key")]);
+    return url === SERVER ? new Response("unauthorized", { status: 401 }) : new Response("not found", { status: 404 });
+  }) as unknown as typeof fetch;
+  const deps = depsOf(fx, { http });
+  const typed = { serverUrl: SERVER, headers: [h("X-API-Key", VALUE)] };
+  // Never `connector.headers_with_sign_in`: there is no sign-in to choose over them.
+  expect(await connectCustomServer(deps, fx.owner.id, fx.org.id, typed)).toEqual({ status: "needs_key" });
+  expect(requests.filter(([, sent]) => sent !== null)).toEqual([[SERVER, VALUE]]);
+  expect(await connectCustomServer(deps, fx.owner.id, fx.org.id, { serverUrl: SERVER })).toEqual({
+    status: "needs_key",
+  });
   expect(await fx.db.select().from(schema.oauthStates)).toEqual([]);
   expect(await fx.db.select().from(schema.connectorConnections)).toEqual([]);
 });
@@ -548,6 +604,72 @@ test("Reconectar keeps the account's headers, replaces them with a list and remo
   expect(rows.map((row) => [row.id, row.headerNames])).toEqual([[first.server.id, null]]);
 });
 
+test("a preset that names its account: the session that asks which one carries the typed headers, a key's on top", async () => {
+  const fx = await setup();
+  f = fx;
+  const stripe = mcpPreset("stripe");
+  if (!stripe?.account) throw new Error("the preset names no account tool");
+  const r = recorder();
+  const lookups: Record<string, string>[] = [];
+  const connect: McpConnect = async (_connection, headers) => ({
+    listTools: async () => [],
+    callTool: async (name) => {
+      if (name === stripe.account?.tool) lookups.push(headers);
+      const accounts = [{ stripe_context: "acct_1", livemode: false, name: "Acme" }];
+      return { content: JSON.stringify({ accounts }), isError: false };
+    },
+    close: async () => {},
+  });
+  const deps = depsOf(fx, { http: r.http, connect });
+  const alone = await connected(fx, deps, { serverUrl: stripe.serverUrl, headers: [h("X-API-Key", VALUE)] });
+  expect(lookups).toEqual([{ "x-api-key": VALUE }]);
+  expect(alone.server).toMatchObject({ accountLabel: "Acme", headerNames: ["X-API-Key"] });
+
+  const keyed = await connected(fx, deps, {
+    serverUrl: stripe.serverUrl,
+    apiKey: "test-key",
+    headers: [h("X-Team", TEAM)],
+  });
+  expect(lookups).toEqual([{ "x-api-key": VALUE }, { "x-team": TEAM, authorization: "Bearer test-key" }]);
+  // The account it reached is the one connected: its sign-in is the new one.
+  expect(keyed).toMatchObject({ outcome: "same_account", server: { id: alone.server.id, headerNames: ["X-Team"] } });
+});
+
+test("Reconectar with a saved secret that can't be opened: refused in words, and typing them again or removing them works", async () => {
+  const fx = await setup();
+  f = fx;
+  const r = recorder();
+  const deps = depsOf(fx, { http: r.http, connect: r.connect });
+  const first = await connected(fx, deps, { serverUrl: SERVER, headers: [h("X-API-Key", VALUE)] });
+  const again = (input: Omit<Parameters<typeof connectCustomServer>[3], "serverUrl" | "connectionId">) =>
+    connectCustomServer(deps, fx.owner.id, fx.org.id, { serverUrl: SERVER, connectionId: first.server.id, ...input });
+  const row = async () => (await fx.db.select().from(schema.connectorConnections))[0];
+  const spoil = (change: Partial<typeof schema.connectorConnections.$inferInsert>) =>
+    fx.db.update(schema.connectorConnections).set(change).where(eq(schema.connectorConnections.id, first.server.id));
+
+  // Sealed under a key this server no longer has, then with nothing sealed at all.
+  for (const change of [{ kekId: "gone" }, { secretCiphertext: null }]) {
+    await spoil(change);
+    const before = await row();
+    const asked = r.asked.length;
+    for (const input of [{}, { apiKey: "test-key" }]) {
+      const refused = await again(input).catch((error: unknown) => error);
+      expect(refused).toBeInstanceOf(ValidationError);
+      expect(refused).toMatchObject({ code: "connector.headers_unreadable" });
+    }
+    // Nothing was asked of the server, and the account is as it was.
+    expect(r.asked).toHaveLength(asked);
+    expect(await row()).toEqual(before);
+
+    // A list in the request never opens the secret: typed again they are kept, an empty one removes them.
+    const typed = change.kekId ? [h("X-Team", TEAM)] : [];
+    const done = await again({ headers: typed });
+    expect(done).toMatchObject({ status: "connected", outcome: "reconnected" });
+    expect((await row())?.headerNames).toEqual(change.kekId ? ["X-Team"] : null);
+    expect(r.sessions.at(-1)).toEqual(change.kekId ? { "x-team": TEAM } : {});
+  }
+});
+
 test("refused where a key is: a service through Composio, and a sign-in-only server on the Cloud", async () => {
   const fx = await setup();
   f = fx;
@@ -559,12 +681,22 @@ test("refused where a key is: a service through Composio, and a sign-in-only ser
   await expect(start(self, "https://backend.composio.dev/api/v3.1/toolkits/googledrive")).rejects.toMatchObject({
     code: "connector.oauth_only",
   });
-  // Composio's address with its port written out is the same address: neither headers nor a key go or stay there.
-  const spelled = "https://backend.composio.dev:443/api/v3.1/toolkits/googledrive";
-  await expect(start(self, spelled)).rejects.toMatchObject({ code: "connector.oauth_only" });
-  await expect(
-    connectCustomServer(self, fx.owner.id, fx.org.id, { serverUrl: spelled, apiKey: "test-key" }),
-  ).rejects.toMatchObject({ code: "connector.oauth_only" });
+  // Composio's address however it is spelled is the same address: neither headers nor a key go or stay there.
+  for (const spelled of [
+    "https://backend.composio.dev:443/api/v3.1/toolkits/googledrive",
+    "https://backend.composio.dev/api/v3.1/toolkits/googledrive?x=1",
+    "https://backend.composio.dev/api/v3.1/toolkits/googledrive//",
+    "https://backend.composio.dev/api/v3.1/toolkits/google%64rive",
+    "https://backend.composio.dev./api/v3.1/toolkits/googledrive",
+    "https://backend.composio.dev//api/v3.1/toolkits/googledrive",
+    "https://BACKEND.composio.dev.//api/v3.1%2Ftoolkits///google%64rive//",
+  ]) {
+    await expect(start(self, spelled)).rejects.toMatchObject({ code: "connector.oauth_only" });
+    await expect(
+      connectCustomServer(self, fx.owner.id, fx.org.id, { serverUrl: spelled, apiKey: "test-key" }),
+    ).rejects.toMatchObject({ code: "connector.oauth_only" });
+  }
+  expect([r.asked, r.sessions]).toEqual([[], []]);
   expect(await fx.db.select().from(schema.connectorConnections)).toEqual([]);
   const intercom = mcpPreset("intercom")?.serverUrl ?? "";
   await expect(start({ ...self, publicUrl: "https://agentes.chat" }, intercom)).rejects.toMatchObject({

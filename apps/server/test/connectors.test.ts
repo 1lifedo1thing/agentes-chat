@@ -821,6 +821,18 @@ test("request headers for a server by address (ADR 0186): taken by the route, na
   expect(audit).toContain("connector.custom_reconnected");
   expect(refusal + started + reconnected + listed + audit).not.toContain(value);
 
+  // Saved headers that can't be read any more (sealed under a key this server no longer has): a refusal that says
+  // so, never a failure of ours, and a list in the request still goes through.
+  await t.db
+    .update(schema.connectorConnections)
+    .set({ kekId: "gone" })
+    .where(eq(schema.connectorConnections.id, server.id));
+  const unreadable = await connect({ apiKey: "test-key", connectionId: server.id });
+  expect(unreadable.status).toBe(400);
+  expect(JSON.parse(await unreadable.text()).error).toMatchObject({ code: "connector.headers_unreadable" });
+  const removed = await connect({ apiKey: "test-key", connectionId: server.id, headers: [] });
+  expect(await removed.json()).toMatchObject({ outcome: "reconnected", server: { headerNames: [] } });
+
   const doc = (await (await owner("/api/openapi.json")).json()) as {
     components: { schemas: { CustomServer: { properties: Record<string, unknown>; required: string[] } } };
   };

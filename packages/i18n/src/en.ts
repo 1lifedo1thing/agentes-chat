@@ -13990,6 +13990,8 @@ export const en = {
       headersTooMany: "A server takes at most {{max}} headers. Remove one to add another.",
       headersWithSignIn:
         "This server asks for a sign-in, and a sign-in can't carry headers yet. Remove the headers to sign in, or connect with an API key.",
+      /** Reconnecting an account whose saved headers, kept encrypted, could no longer be opened. */
+      headersUnreadable: "The saved headers couldn't be read. Type them again, or remove them.",
     },
     wiki: {
       githubNoNotes: "No Markdown notes in this link.",

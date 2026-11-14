@@ -13837,7 +13837,8 @@
       "headerTwice": "{{header}} steht zweimal in der Liste. Entferne einen davon.",
       "headerAndKey": "Der API-Schlüssel wird schon als Authorization gesendet. Lösch den Schlüssel oder entferne diesen Header.",
       "headersTooMany": "Ein Server nimmt höchstens {{max}} Header. Entferne einen, um einen weiteren hinzuzufügen.",
-      "headersWithSignIn": "Dieser Server verlangt eine Anmeldung, und eine Anmeldung kann noch keine Header mitsenden. Entferne die Header, um dich anzumelden, oder verbinde ihn mit einem API-Schlüssel."
+      "headersWithSignIn": "Dieser Server verlangt eine Anmeldung, und eine Anmeldung kann noch keine Header mitsenden. Entferne die Header, um dich anzumelden, oder verbinde ihn mit einem API-Schlüssel.",
+      "headersUnreadable": "Die gespeicherten Header konnten nicht gelesen werden. Gib sie neu ein oder entferne sie."
     },
     "wiki": {
       "githubNoNotes": "Unter diesem Link gibt es keine Markdown-Notizen.",

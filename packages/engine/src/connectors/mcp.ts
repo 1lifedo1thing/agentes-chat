@@ -138,22 +138,35 @@ export async function mcpSessionOver(transport: Transport): Promise<McpSession> 
 }
 
 /**
+ * The shortest header value masked in what a server says back. A shorter one is a setting (`1`, `v2`), not a key, and
+ * masked wherever it shows it would take "HTTP 401" with it. A key is never shorter (`connector.key_too_short`).
+ */
+const MASKED_FROM = 8;
+
+/**
  * A session over streamable HTTP whose failures hold none of the header values it was opened with: a server may repeat
  * what it was sent in its refusal, and that text goes to the log, the connection's last error and the agent. The
- * error thrown is the server's own (its class and code are read), with its words changed.
+ * error thrown is the server's own (its class and code are read), with its words changed. A tool's answer flagged as
+ * an error is a refusal in the server's words too; any other answer is left as it came.
  */
 export const connectOverHttp: McpConnect = async (connection, headers) => {
-  // `Authorization` is a scheme and a credential: a server names the credential alone.
-  const secrets = Object.entries(headers).flatMap(([name, value]) =>
-    name.toLowerCase() === "authorization" ? [value, value.slice(value.indexOf(" ") + 1)] : [value],
-  );
+  const secrets = Object.entries(headers)
+    // `Authorization` is a scheme and a credential: a server names the credential alone.
+    .flatMap(([name, value]) =>
+      name.toLowerCase() === "authorization" ? [value, value.slice(value.indexOf(" ") + 1)] : [value],
+    )
+    .filter((value) => value.length >= MASKED_FROM)
+    // A JSON body writes a quote, a backslash and a tab its own way.
+    .flatMap((value) => [value, JSON.stringify(value).slice(1, -1)]);
+  const clean = (text: string) => maskValues(text, secrets);
   const masked = <T>(work: Promise<T>) =>
     work.catch((error: unknown) => {
       if (error instanceof Error) {
         // Written only where a value was: an abort's message (a DOMException's) can't be written at all.
         for (const part of ["message", "stack"] as const) {
-          const clean = maskValues(error[part] ?? "", secrets);
-          if (clean !== (error[part] ?? "")) error[part] = clean;
+          const text = error[part] ?? "";
+          const safe = clean(text);
+          if (safe !== text) error[part] = safe;
         }
       }
       throw error;
@@ -169,7 +182,10 @@ export const connectOverHttp: McpConnect = async (connection, headers) => {
   return {
     ...session,
     listTools: () => masked(session.listTools()),
-    callTool: (...call) => masked(session.callTool(...call)),
+    callTool: async (...call) => {
+      const result = await masked(session.callTool(...call));
+      return result.isError ? { ...result, content: clean(result.content) } : result;
+    },
   };
 };
 

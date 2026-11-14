@@ -13294,7 +13294,8 @@
       "headerTwice": "{{header}}: 목록에 두 번 있어요. 하나를 삭제하세요.",
       "headerAndKey": "API 키는 이미 Authorization으로 보내져요. 키를 지우거나 이 헤더를 삭제하세요.",
       "headersTooMany": "서버 하나에 헤더는 {{max}}개까지예요. 추가하려면 하나를 삭제하세요.",
-      "headersWithSignIn": "이 서버는 로그인을 요구하는데, 로그인으로는 아직 헤더를 보낼 수 없어요. 헤더를 삭제하고 로그인하거나 API 키로 연결하세요."
+      "headersWithSignIn": "이 서버는 로그인을 요구하는데, 로그인으로는 아직 헤더를 보낼 수 없어요. 헤더를 삭제하고 로그인하거나 API 키로 연결하세요.",
+      "headersUnreadable": "저장된 헤더를 읽지 못했어요. 다시 입력하거나 삭제하세요."
     },
     "wiki": {
       "githubNoNotes": "이 링크에는 Markdown 노트가 없어요.",

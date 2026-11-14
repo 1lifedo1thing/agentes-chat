@@ -13774,7 +13774,8 @@
       "headerTwice": "{{header}} listede iki kez var. Birini kaldırın.",
       "headerAndKey": "API anahtarı zaten Authorization olarak gönderiliyor. Anahtarı silin ya da bu başlığı kaldırın.",
       "headersTooMany": "Bir sunucu en çok {{max}} başlık alır. Yenisini eklemek için birini kaldırın.",
-      "headersWithSignIn": "Bu sunucu giriş istiyor ve giriş henüz başlık taşıyamıyor. Giriş yapmak için başlıkları kaldırın ya da API anahtarıyla bağlayın."
+      "headersWithSignIn": "Bu sunucu giriş istiyor ve giriş henüz başlık taşıyamıyor. Giriş yapmak için başlıkları kaldırın ya da API anahtarıyla bağlayın.",
+      "headersUnreadable": "Kayıtlı başlıklar okunamadı. Yeniden yazın ya da kaldırın."
     },
     "wiki": {
       "githubNoNotes": "Bu bağlantıda Markdown notu yok.",

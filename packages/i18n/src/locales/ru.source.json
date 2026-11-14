@@ -33659,6 +33659,9 @@
   "errors.connector.headersWithSignIn": {
     "value": "This server asks for a sign-in, and a sign-in can't carry headers yet. Remove the headers to sign in, or connect with an API key."
   },
+  "errors.connector.headersUnreadable": {
+    "value": "The saved headers couldn't be read. Type them again, or remove them."
+  },
   "errors.wiki.githubNoNotes": {
     "value": "No Markdown notes in this link."
   },

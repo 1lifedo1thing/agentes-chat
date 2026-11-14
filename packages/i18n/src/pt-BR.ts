@@ -13997,6 +13997,7 @@ export const ptBR = {
       headersTooMany: "Um servidor aceita no máximo {{max}} cabeçalhos. Remova um para adicionar outro.",
       headersWithSignIn:
         "Este servidor pede login, e o login ainda não leva cabeçalhos. Remova os cabeçalhos para entrar, ou conecte com uma chave de API.",
+      headersUnreadable: "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.",
     },
     /** Restricted wiki pages (ADR 0023). */
     wiki: {

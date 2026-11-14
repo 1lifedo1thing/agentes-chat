@@ -1343,8 +1343,8 @@ export interface ApiClient {
      * approved, with its refusal in `detail`). `headers` go with every request to the server (at most 10; a refused
      * one is a 400 `connector.header_*` whose params name it, `header` and `index`). Without a key, a server that
      * answers with them is connected by them alone; one that asks for a sign-in is refused
-     * (`connector.headers_with_sign_in`). With `connectionId`: absent keeps the account's, `[]` removes them, a list
-     * replaces them.
+     * (`connector.headers_with_sign_in`). With `connectionId`: absent keeps the account's (a 400
+     * `connector.headers_unreadable` when they can no longer be read), `[]` removes them, a list replaces them.
      */
     connect(
       orgId: string,

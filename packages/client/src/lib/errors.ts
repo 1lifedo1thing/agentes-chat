@@ -199,6 +199,7 @@ const KNOWN = {
   "connector.header_and_key": "errors.connector.headerAndKey",
   "connector.headers_too_many": "errors.connector.headersTooMany",
   "connector.headers_with_sign_in": "errors.connector.headersWithSignIn",
+  "connector.headers_unreadable": "errors.connector.headersUnreadable",
   // Facts only (the phone shows this one): the web's onboarding says `standing.createUnpaid` beside the way to pay.
   "org.create_unpaid": "standing.createInactive",
   "credentials.plan_hold": "connectAi.key.closed",

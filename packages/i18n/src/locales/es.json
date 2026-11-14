@@ -14266,7 +14266,8 @@
       "headerTwice": "{{header}} está dos veces en la lista. Quita uno.",
       "headerAndKey": "La clave de API ya se envía como Authorization. Borra la clave o quita este encabezado.",
       "headersTooMany": "Un servidor admite como máximo {{max}} encabezados. Quita uno para agregar otro.",
-      "headersWithSignIn": "Este servidor pide iniciar sesión, y un inicio de sesión todavía no puede llevar encabezados. Quita los encabezados para iniciar sesión, o conéctalo con una clave de API."
+      "headersWithSignIn": "Este servidor pide iniciar sesión, y un inicio de sesión todavía no puede llevar encabezados. Quita los encabezados para iniciar sesión, o conéctalo con una clave de API.",
+      "headersUnreadable": "No se pudieron leer los encabezados guardados. Escríbelos de nuevo o quítalos."
     },
     "wiki": {
       "githubNoNotes": "No hay notas en Markdown en este enlace.",

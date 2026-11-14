@@ -5,7 +5,7 @@
 - Code: engine `packages/engine/src/connectors/request-headers.ts` (`checkRequestHeaders`), `connections.ts`
   (`ConnectionSecret.headers`, `secretHeaders`, `connectionHeaders`), `custom.ts` (`connectCustomServer`,
   `storeCustomConnection`, `CustomServerView.headerNames`), `oauth-mcp.ts` (`probeMcpServer`), `mcp.ts`
-  (`connectOverHttp`); schema
+  (`connectOverHttp`), `presets.ts` (`composioToolkitTyped`); schema
   `packages/db/src/schema/connectors.ts` (`header_names`, migration 0274); route
   `apps/server/src/routes/app/connectors-custom.ts`; client `packages/client/src/api/{types,client}.ts`,
   `lib/request-headers.ts`, the refusals' words in `lib/errors.ts`; web `apps/web/src/components/ConnectFlow.tsx`
@@ -28,13 +28,18 @@ all. None of them could be connected.
 An admin may type request headers for a server by address. They are sent with every request to that server.
 
 1. **Where they are kept.** The values live in the connection's sealed secret (`ConnectionSecret.headers`, names as
-   typed), beside the key or the tokens, under the same envelope encryption. No API returns them, and no log line,
-   error, audit row or tool error holds one. The names alone are also kept readable, in `header_names` on
-   `connector_connections`, in the order typed.
+   typed), beside the key or the tokens, under the same envelope encryption. No API returns them, and nothing this
+   server writes of its own (a log line, an error, an audit row) holds one. The names alone are also kept readable,
+   in `header_names` on `connector_connections`, in the order typed.
 
    A server may repeat what it was sent in its refusal, and that text is kept as the connection's last error, logged
-   and handed to the agent. So a session over HTTP masks, in every error it throws, each header value it was opened
-   with (`connectOverHttp`): the typed ones, and the key or the sign-in's token with them.
+   and handed to the agent. So a session over HTTP (`connectOverHttp`) masks each header value it was opened with,
+   the typed ones and the key or the sign-in's token with them, in every error it throws and in a tool's answer the
+   server flags as an error (`isError`). A value is masked as it was typed and as a JSON body spells it (a quote, a
+   backslash or a tab escaped). A tool's ordinary answer is left as it came: it is what the agent asked for.
+
+   Only a value of 8 characters or more is masked. A shorter one is a setting such as `1` or `v2`, not a key (the
+   key field itself asks for 8), and masked wherever it shows it would turn "HTTP 401" into noise.
 
    Why the names and not the values: a screen has to say what a server is sent ("also sends: X-API-Key") and what
    Reconectar will keep, and a listing never opens a secret. A header's name says how a server is reached, as its
@@ -80,12 +85,15 @@ An admin may type request headers for a server by address. They are sent with ev
      refuses still answers `needs_key`. One that asks for a sign-in is refused, `connector.headers_with_sign_in`: a
      sign-in's token would be stored in their place, and they would be gone without a word.
    - A service through Composio, and a server that only signs in on the Cloud (ADR 0107), refuse headers as they
-     refuse a key (`connector.oauth_only`). Composio's address spelled another way (its port written out, a query)
-     is refused the same, with headers or a key.
+     refuse a key (`connector.oauth_only`). Composio's address spelled another way (its port written out, a query,
+     a dot after the host, a character percent-encoded, slashes repeated or left at the end) is refused the same,
+     with headers or a key, before any request is made.
    - Reconectar (`connectionId`): no `headers` keeps the ones the account has, whatever else changes; `[]` removes
      them; a list replaces them all. The account's secret is opened only in the first case, and only when its row
-     names headers. An account that keeps an `Authorization` header can't take a key until that header is replaced
-     or removed.
+     names headers. A secret that can't be opened then, or that holds none, is a 400
+     `connector.headers_unreadable`: going on would drop the headers unsaid. A list or `[]` never opens the secret,
+     so typing them again or removing them still works. An account that keeps an `Authorization` header can't take
+     a key until that header is replaced or removed.
 
 5. **What screens get.** `CustomServer.headerNames`, empty when there are none. A value can't be read back: to
    change one, the person types the list again.
@@ -94,11 +102,12 @@ An admin may type request headers for a server by address. They are sent with ev
    key: one row per header, a name and a value typed as a secret, ten rows at most, and one line saying what
    headers are for and that most servers need none. A row left blank is no header. A refusal shows on the row the
    server names (`index`), in the person's language, each code with its own line and its way out; no toast repeats
-   it. With headers typed and no key, the button connects by them alone instead of asking for a key. Reconectar
-   opens the disclosure on the saved names: left alone, the request says nothing about headers, so they stay;
-   "Remover" sends `[]`; a typed row replaces them all, and the line about the saved ones then says they go, with
-   no link that would keep them. A name's field takes the 64 characters a name may have. A server's row in
-   Conectores says what it also sends, by name, with Reconectar as the way to change it.
+   it. One about them all (the server asks for a sign-in, the saved ones can't be read any more) shows under the
+   rows, and the disclosure opens for it. With headers typed and no key, the button connects by them alone instead
+   of asking for a key. Reconectar opens the disclosure on the saved names: left alone, the request says nothing
+   about headers, so they stay; "Remover" sends `[]`; a typed row replaces them all, and the line about the saved
+   ones then says they go, with no link that would keep them. A name's field takes the 64 characters a name may
+   have. A server's row in Conectores says what it also sends, by name, with Reconectar as the way to change it.
 
    The phone has the same in its sheet, under the key: one line that opens the rows. A sheet shows one way in at a
    time, so an account that has headers opens on the key's side, and a refusal about headers brings that side back

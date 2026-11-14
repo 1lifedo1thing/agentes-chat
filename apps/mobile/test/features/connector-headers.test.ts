@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { ApiError } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { heldWhole } from "@agenteschat/client/lib/format";
-import { MAX_REQUEST_HEADERS } from "@agenteschat/client/lib/request-headers";
+import { headerRefused, MAX_REQUEST_HEADERS } from "@agenteschat/client/lib/request-headers";
 import { headerNamesText, needsKeyText } from "../../src/features/connectors/logic";
 import { translator } from "./fixtures";
 
@@ -122,6 +122,24 @@ describe("the sheet that connects a server by address", () => {
     expect(failed).toContain("headerRefused(headerRows, headers, error)");
     expect(failed).toContain('setMode("key");');
     expect(failed).toContain("setHeadersOpen(true);");
+  });
+
+  test("saved headers that can't be read any more: said under the saved names with the headers open, in the person's language", async () => {
+    const unreadable = refusal("connector.headers_unreadable");
+    expect(errorText(await translator("pt-BR"), unreadable, "pt-BR")).toBe(
+      "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.",
+    );
+    expect(errorText(await translator("en"), unreadable, "en")).toBe(
+      "The saved headers couldn't be read. Type them again, or remove them.",
+    );
+    // Reconectar sent no list: the refusal is about the saved ones, on no row.
+    expect(headerRefused([], undefined, unreadable)).toEqual({ row: null, field: "name", error: unreadable });
+    // Under the rows, over the button that adds one, inside what the sheet opens on a refusal.
+    const open = form.slice(form.indexOf("{open ? ("));
+    const line = open.indexOf("{refused && refused.row === null ? why(refused) : null}");
+    expect(line).toBeGreaterThan(open.indexOf('"connectFlow.headers.drop"'));
+    expect(line).toBeLessThan(open.indexOf('t("connectFlow.headers.add")'));
+    expect(form).toContain("{errorText(t, refusal.error, i18n.language)}");
   });
 
   test("closed until asked for, a value typed as a secret, and at the most rows no more are added, with why", () => {

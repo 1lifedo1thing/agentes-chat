@@ -344,6 +344,44 @@ describe("Reconectar and the server's row", () => {
       "A chave de API já é enviada como Authorization. Apague a chave ou remova este cabeçalho.",
     );
   });
+
+  test("saved headers that can't be read any more: said in the headers, opened, with both ways out at hand", async () => {
+    const { state, api, reconnect } = await openReconnect();
+    const connect = api.customConnectors.connect;
+    // As the server does: only a request that would keep the saved ones has to read them.
+    api.customConnectors.connect = async (orgId, input) => {
+      if (!input.headers) throw new ApiError(400, "connector.headers_unreadable", "The saved headers couldn't be read");
+      return connect(orgId, input);
+    };
+    await reconnect();
+    // Folded away before it is sent: the refusal brings them back in sight.
+    await act(async () => {
+      disclosure().open = false;
+      fireEvent(disclosure(), new Event("toggle"));
+    });
+    await click(within(flow()).getByRole("button", { name: "Conectar" }));
+    await settle(4);
+    const said = "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.";
+    const alert = () => disclosure().querySelector(':scope > .cflow__headers > [role="alert"]');
+    expect(disclosure().hasAttribute("open")).toBe(true);
+    expect(alert()?.textContent).toBe(said);
+    // In the headers alone: no toast says it again.
+    expect(document.body.textContent?.split(said)).toHaveLength(2);
+    expect(within(disclosure()).getByRole("button", { name: "Remover" })).toBeTruthy();
+    expect(add().disabled).toBe(false);
+    snapshot();
+
+    // Typed again, they replace the ones that can't be read.
+    await click(add());
+    expect(alert()).toBeNull();
+    await header(1, "X-API-Key", "fake-value");
+    await click(within(flow()).getByRole("button", { name: "Conectar" }));
+    await settle(4);
+    expect(connectCalls(state)).toEqual([
+      expect.objectContaining({ headers: [{ name: "X-API-Key", value: "[redacted]" }] }),
+    ]);
+    expect(document.body.textContent).toContain("Suporte reconectado.");
+  });
 });
 
 /**
@@ -383,6 +421,21 @@ describe("worst cases", () => {
     expect(flow().querySelector('.cflow__hrows [role="alert"]')?.textContent).toBe(
       `${LONG.at(-1)} is in the list twice. Remove one of them.`,
     );
+  });
+
+  test("Reconectar with ten long names that can't be read any more", async () => {
+    const { app, api, reconnect } = await openReconnect(LONG);
+    api.customConnectors.connect = async () => {
+      throw new ApiError(400, "connector.headers_unreadable", "The saved headers couldn't be read");
+    };
+    await reconnect();
+    await click(within(flow()).getByRole("button", { name: "Conectar" }));
+    await settle(4);
+    const alert = () => disclosure().querySelector(':scope > .cflow__headers > [role="alert"]');
+    expect(alert()?.textContent).toBe("Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.");
+    snapshot();
+    await showIn(app.services, "en");
+    expect(alert()?.textContent).toBe("The saved headers couldn't be read. Type them again, or remove them.");
   });
 
   test("Reconectar and the row of a server with ten long names, removed and not", async () => {

@@ -54,7 +54,14 @@ import {
 } from "./oauth-mcp";
 import { oauthReturnTo } from "./oauth-return";
 import { seedToolPins } from "./pins";
-import { composioToolkitOf, composioToolName, type McpPreset, presetForServer, serverUrlShown } from "./presets";
+import {
+  composioToolkitOf,
+  composioToolkitTyped,
+  composioToolName,
+  type McpPreset,
+  presetForServer,
+  serverUrlShown,
+} from "./presets";
 import { checkRequestHeaders, type RequestHeader } from "./request-headers";
 import { type McpServerInfo, refreshServerIcon } from "./server-icon";
 
@@ -754,12 +761,28 @@ async function serverView(db: Database, orgId: string, id: string) {
 }
 
 /**
+ * The request headers an account's row names, read from its secret. A secret that can't be opened, or that holds none,
+ * is refused in words a person can act on: going on without them would drop them unsaid.
+ */
+async function savedHeaders(deps: CustomDeps, c: ConnectorConnection) {
+  const secret = await openConnectionSecret(deps.keyWrappers, c).catch(() => null);
+  if (!secret?.headers) {
+    throw new ValidationError(
+      "The saved request headers couldn't be read: type them again, or remove them",
+      "connector.headers_unreadable",
+    );
+  }
+  return secret.headers;
+}
+
+/**
  * Connects an https MCP server by URL (admins): a new account, or with `connectionId` a new sign-in for that one
  * ("Reconectar", same address only). With an API key: stored and connected. Without: if it answers openly,
  * connected; if it speaks MCP OAuth with dynamic registration, the authorize URL comes back; otherwise `needs_key`.
  * `headers` (ADR 0186) go with every request to the server, the key's `Authorization` on top; without a key the
  * server is asked with them, and one that answers is connected by them alone. Reconectar keeps the ones the account
- * has unless `headers` says otherwise (`[]` removes them). They never go with a sign-in, here or at Composio.
+ * has unless `headers` says otherwise (`[]` removes them), and is refused when it can't read them
+ * (`connector.headers_unreadable`). They never go with a sign-in, here or at Composio.
  */
 export async function connectCustomServer(
   deps: CustomDeps,
@@ -782,8 +805,8 @@ export async function connectCustomServer(
     return beginComposioConnect(deps, actorId, orgId, input);
   }
   const url = await assertPublicHttpsUrl(input.serverUrl.trim(), deps.resolveHost);
-  // Composio's address spelled another way (its port, a query) is still Composio's: nothing is sent or kept there.
-  if (composioToolkitOf(`${url.origin}${url.pathname}`)) throw signInOnly();
+  // Composio's address spelled another way is still Composio's: nothing is sent or kept there.
+  if (composioToolkitTyped(url)) throw signInOnly();
   // Checked before anyone signs in for nothing.
   const target = input.connectionId ? await reconnectTarget(deps.db, orgId, input.connectionId, url.toString()) : null;
   // Reconectar asks at the account's own address, however it was typed again: what it keeps goes nowhere else.
@@ -791,9 +814,8 @@ export async function connectCustomServer(
   const label = input.label?.trim() || presetForServer(serverUrl)?.label || url.hostname;
   const apiKey = input.apiKey?.trim();
   // The account's own secret is opened only to carry its headers over; a list in the request replaces them unread.
-  const saved =
-    !input.headers && target?.headerNames?.length ? await openConnectionSecret(deps.keyWrappers, target) : null;
-  const typed = input.headers ?? Object.entries(saved?.headers ?? {}).map(([name, value]) => ({ name, value }));
+  const saved = !input.headers && target?.headerNames?.length ? await savedHeaders(deps, target) : {};
+  const typed = input.headers ?? Object.entries(saved).map(([name, value]) => ({ name, value }));
   const checked = checkRequestHeaders(typed, Boolean(apiKey));
   const headers = Object.keys(checked).length > 0 ? checked : undefined;
   const stored = async (authType: "api_key" | "none", secret: ConnectionSecret | null) => {

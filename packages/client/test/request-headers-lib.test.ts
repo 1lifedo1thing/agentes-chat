@@ -78,6 +78,9 @@ describe("a server's refusal of a header", () => {
     expect(headersToSend([], true)).toEqual([]);
     const reserved = refusal("connector.header_reserved", { header: "Host", index: 0 });
     expect(headerRefused([BLANK_HEADER], undefined, reserved)?.row).toBeNull();
+    // The saved ones couldn't be read at all: about them all, under the rows.
+    const unreadable = refusal("connector.headers_unreadable");
+    expect(headerRefused([], undefined, unreadable)).toEqual({ row: null, field: "name", error: unreadable });
     expect(headerRefused([BLANK_HEADER], undefined, refusal("connector.unavailable"))).toBeNull();
     expect(headerRefused([BLANK_HEADER], undefined, new Error("offline"))).toBeNull();
   });
@@ -92,6 +95,9 @@ describe("a server's refusal of a header", () => {
     );
     expect(said("connector.header_name", { header: "X Key", index: 0 })).toBe(
       "Use só letras, números e hífens no nome do cabeçalho, como em X-API-Key.",
+    );
+    expect(said("connector.headers_unreadable")).toBe(
+      "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.",
     );
   });
 });
