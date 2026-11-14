@@ -9660,6 +9660,15 @@
     "agentsImprove": "Agen memperbaiki skill sendiri",
     "agentsImproveHelp": "Saat agen menemukan skill yang salah atau kurang satu langkah, agen langsung memperbaikinya: versi baru yang bisa kamu urungkan, dan pembuat skill diberi tahu.",
     "agentsImproveThis": "Agen memperbaiki skill ini sendiri",
+    "personal": {
+      "note": "Hanya kamu yang melihat skill ini. Agenmu memakainya saat kamu meminta.",
+      "emptyTitle": "Simpan skill milikmu sendiri",
+      "emptyText": "Hanya kamu yang melihatnya, dan agenmu memakainya saat kamu meminta.",
+      "others": "Skill pribadi orang lain",
+      "of": "Pribadi milik {{name}}",
+      "forWhom": "Untuk siapa",
+      "teamLocked": "Hanya orang yang mengelola agen yang menambahkan skill tim."
+    },
     "agentChange": "{{agent}} mengubahnya {{when}}",
     "undoAgentChange": "Urungkan perubahan",
     "undo": "Urungkan",

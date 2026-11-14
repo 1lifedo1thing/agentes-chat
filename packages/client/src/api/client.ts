@@ -1255,15 +1255,22 @@ export interface ApiClient {
      * holding several skills (or any, with `list`) installs nothing and answers with them to pick from
      * (`importPicked`), those that can't be installed apart. A private repository is read through the workspace's
      * GitHub, on the server. `forAgentId`: the agent whose card opened the install, which gets what installs turned on
-     * when the installer may change its skills. `upload`: a zip's Cancel and how much of it has been sent.
+     * when the installer may change its skills. `personal`: the person's own skill, which any member installs (from a
+     * public repository unless they manage agents). `upload`: a zip's Cancel and how much of it has been sent.
      */
     import(
       orgId: string,
-      input: { url: string; list?: boolean; forAgentId?: string } | { zipBase64: string },
+      input: ({ url: string; list?: boolean; forAgentId?: string } | { zipBase64: string }) & { personal?: boolean },
       upload?: UploadOptions,
     ): Promise<SkillDetail | SkillPick>;
     /** Installs the skills picked among a link's choices (their `path`), on for `forAgentId` as `import` does. */
-    importPicked(orgId: string, url: string, paths: string[], forAgentId?: string): Promise<SkillDetail[]>;
+    importPicked(
+      orgId: string,
+      url: string,
+      paths: string[],
+      forAgentId?: string,
+      personal?: boolean,
+    ): Promise<SkillDetail[]>;
     update(orgId: string, id: string, patch: SkillPatch): Promise<SkillDetail>;
     /** Fetch the link again (`url` skills). */
     reimport(orgId: string, id: string): Promise<SkillDetail>;

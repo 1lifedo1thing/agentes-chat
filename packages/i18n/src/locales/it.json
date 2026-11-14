@@ -10404,6 +10404,15 @@
     "agentsImprove": "Gli agenti migliorano le skill da soli",
     "agentsImproveHelp": "Quando un agente trova una skill sbagliata o a cui manca un passo, la corregge subito: una nuova versione che puoi annullare, e chi ha creato la skill viene avvisato.",
     "agentsImproveThis": "Gli agenti migliorano questa skill da soli",
+    "personal": {
+      "note": "Solo tu vedi queste skill. I tuoi agenti le usano quando lo chiedi tu.",
+      "emptyTitle": "Tieni le tue skill",
+      "emptyText": "Solo tu le vedi, e i tuoi agenti le usano quando lo chiedi tu.",
+      "others": "Skill personali di altre persone",
+      "of": "Personale di {{name}}",
+      "forWhom": "Per chi",
+      "teamLocked": "Solo chi gestisce gli agenti aggiunge skill del team."
+    },
     "agentChange": "{{agent}} l'ha modificata {{when}}",
     "undoAgentChange": "Annulla modifica",
     "undo": "Annulla",

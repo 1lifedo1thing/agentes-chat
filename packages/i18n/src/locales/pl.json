@@ -10741,6 +10741,15 @@
     "agentsImprove": "Agenci sami ulepszają umiejętności",
     "agentsImproveHelp": "Gdy agent zauważy, że umiejętność jest błędna albo brakuje w niej kroku, od razu ją poprawia: nowa wersja, którą możesz cofnąć, a osoba, która ją utworzyła, dostaje informację.",
     "agentsImproveThis": "Agenci sami ulepszają tę umiejętność",
+    "personal": {
+      "note": "Tylko ty widzisz te umiejętności. Twoi agenci używają ich, gdy poprosisz.",
+      "emptyTitle": "Zachowaj własne umiejętności",
+      "emptyText": "Tylko ty je widzisz, a twoi agenci używają ich, gdy poprosisz.",
+      "others": "Osobiste umiejętności innych osób",
+      "of": "Osobiste: {{name}}",
+      "forWhom": "Dla kogo",
+      "teamLocked": "Umiejętności zespołu dodają tylko osoby zarządzające agentami."
+    },
     "agentChange": "{{agent}}: zmiana {{when}}",
     "undoAgentChange": "Cofnij zmianę",
     "undo": "Cofnij",

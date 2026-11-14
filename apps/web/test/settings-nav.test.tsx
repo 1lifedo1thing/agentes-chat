@@ -178,9 +178,9 @@ describe("finding the settings", () => {
   test("a section the person's role doesn't open says so where it lands, never silently on Sua conta", async () => {
     const state = seedState();
     if (state.me?.organizations[0]) state.me.organizations[0].role = "member";
-    await go("settings/skills", state);
+    await go("settings/access", state);
     expect(screen().getByText(/não abre com o seu cargo/).textContent).toBe(
-      "Skills não abre com o seu cargo neste workspace. Quem gerencia os cargos pode liberar para você.",
+      "Agentes e acesso não abre com o seu cargo neste workspace. Quem gerencia os cargos pode liberar para você.",
     );
     cleanup();
     // Opened from its own nav, the section says nothing more.

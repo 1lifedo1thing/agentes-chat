@@ -10341,6 +10341,16 @@ export const ptBR = {
     agentsImproveHelp:
       "Quando um agente acha uma skill errada ou faltando um passo, ele corrige na hora: uma versão nova que dá para desfazer, e quem fez a skill fica sabendo.",
     agentsImproveThis: "Agentes melhoram esta skill sozinhos",
+    /** Skills split as the Vault does (ADR 0144): the team's and each person's. */
+    personal: {
+      note: "Só você vê estas skills. Seus agentes usam quando você pede.",
+      emptyTitle: "Guarde suas skills",
+      emptyText: "Só você vê, e seus agentes usam quando você pede.",
+      others: "Pessoais de outras pessoas",
+      of: "Pessoal de {{name}}",
+      forWhom: "Para quem",
+      teamLocked: "Só quem gerencia agentes adiciona skills da equipe.",
+    },
     agentChange: "{{agent}} mudou {{when}}",
     undoAgentChange: "Desfazer mudança",
     undo: "Desfazer",
