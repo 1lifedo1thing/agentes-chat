@@ -89,15 +89,19 @@ function NoMatch({ text, clear }: { text: string; clear: () => void }) {
   );
 }
 
-/** Cargo: "Membro" first (no cargo past Todos), then the cargos this person may give, several at once. */
+/**
+ * Cargo: "Membro" first (no cargo past Todos), then the cargos this person may give, several at once, and one the form
+ * already gives that they can't, to take out.
+ */
 function CargoPick({ draft, change }: PickProps) {
   const { t } = useTranslation();
   const { orgId, org } = useOrg();
   const [query, setQuery] = useState("");
+  const [held] = useState(draft.roleIds);
   const roles = useRoles(orgId).data?.roles ?? [];
   const personal = isPersonal(org);
   const everyone = everyoneOf(roles);
-  const picks = cargoPicks(t, roles, draft.roleIds, personal);
+  const picks = cargoPicks(t, roles, draft.roleIds, personal, held);
   const shown = picks.filter((p) => matchesWords(p.label, query));
   const flip = (id: string | null) =>
     change((d) => ({
@@ -124,13 +128,17 @@ function CargoPick({ draft, change }: PickProps) {
                   {...(role && !personal ? { leading: <CargoMark role={role} size={30} /> } : {})}
                   label={p.label}
                   labelLines={2}
+                  sub={p.sub}
                   checked={p.on}
+                  disabled={p.disabled}
                   onPress={() => flip(p.id)}
                 />
               );
             })}
           </GroupedList>
-          <GroupedFooter>{picks.length === 1 ? t("members.noRolesToGive") : t("invites.rolesFoot")}</GroupedFooter>
+          <GroupedFooter>
+            {picks.some((p) => p.id !== null && !p.above) ? t("invites.rolesFoot") : t("members.noRolesToGive")}
+          </GroupedFooter>
         </>
       ) : (
         <NoMatch text={t("rolesPage.noMatch", { q: query.trim() })} clear={() => setQuery("")} />

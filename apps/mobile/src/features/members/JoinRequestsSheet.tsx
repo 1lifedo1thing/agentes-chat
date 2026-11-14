@@ -8,7 +8,14 @@ import {
   useWorkspaceLimits,
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { changedLists, inviteRefusal, inviteRefusalText, type RefusedPick } from "@agenteschat/client/lib/invite-start";
+import { joinNames } from "@agenteschat/client/lib/format";
+import {
+  approvalCargos,
+  changedLists,
+  inviteRefusal,
+  inviteRefusalText,
+  type RefusedPick,
+} from "@agenteschat/client/lib/invite-start";
 import { approvalNews, JOIN_REASON_MAX } from "@agenteschat/client/lib/join-requests";
 import { membersFull } from "@agenteschat/client/lib/limits";
 import { can } from "@agenteschat/client/lib/permissions";
@@ -156,8 +163,9 @@ function RequestCard({
   const approve = useApproveJoinRequest(orgId);
   const deny = useDenyJoinRequest(orgId);
   const key = `request:${r.id}`;
-  // The link's cargos, those still offered to this approver; its channels and agents as the link gives them.
-  const given = (r.link?.roleIds ?? []).filter((id) => roles.some((x) => x.id === id && x.givable));
+  // The link's cargos, those still offered to this approver (the others said as left out); its channels and agents
+  // as the link gives them.
+  const { given, leftOut } = approvalCargos(roles, r.link?.roleIds ?? []);
   const opening =
     roles.length > 0
       ? () => ({
@@ -192,7 +200,7 @@ function RequestCard({
     try {
       // Only roles still offered (one may have gone since it was picked); channels and agents only when changed, so
       // the link's own go as the server finds them now.
-      const offered = start.send.roleIds.filter((id) => roles.some((x) => x.id === id && x.givable));
+      const offered = approvalCargos(roles, start.send.roleIds).given;
       const changed = changedLists(
         { channelIds: r.link?.channelIds ?? [], agentIds: r.link?.agentIds ?? [] },
         { ...start.send, roleIds: [] },
@@ -303,6 +311,9 @@ function RequestCard({
               {line}
             </Text>
           ))}
+          {leftOut.length > 0 ? (
+            <Note icon="lock">{t("invites.roleLeftOut", { count: leftOut.length, roles: joinNames(leftOut, t) })}</Note>
+          ) : null}
           {linkFull ? <Note icon="x">{t("errors.join.linkFullApproval")}</Note> : null}
           <View style={styles.acts}>
             <View style={styles.grow}>

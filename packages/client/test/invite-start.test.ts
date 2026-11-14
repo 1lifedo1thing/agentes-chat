@@ -2,8 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { resources } from "@agenteschat/i18n";
 import i18next, { type TFunction } from "i18next";
 import { ApiError } from "../src/api/http";
-import type { Agent } from "../src/api/types";
+import type { Agent, OrgRole } from "../src/api/types";
 import {
+  approvalCargos,
   changedLists,
   INVITE_LINK_DEFAULTS,
   INVITE_LINK_MAX_USES,
@@ -135,6 +136,29 @@ describe("what the dialog offers and sends (ADR 0184)", () => {
     expect(
       linkNeedsAttention({ uses: 0, maxUses: 1, expiresAt: "9999-12-31T00:00:00.000Z", neverExpires: true }, now),
     ).toBe(false);
+  });
+
+  test("a request's approval starts on the link's cargos the approver may give, the others named as left out", () => {
+    const cargo = (id: string, name: string, position: number, givable: boolean) =>
+      ({
+        id,
+        name,
+        position,
+        givable,
+        kind: id === "todos" ? "everyone" : "custom",
+        permissions: [] as string[],
+      }) as OrgRole;
+    const cargos = [
+      cargo("admin", "Admin", 0, false),
+      cargo("fin", "Financeiro", 2, false),
+      cargo("sup", "Suporte", 1, true),
+      cargo("todos", "everyone", 9, false),
+    ];
+    expect(approvalCargos(cargos, ["fin", "sup", "admin", "todos"])).toEqual({
+      given: ["sup"],
+      leftOut: ["Admin", "Financeiro"],
+    });
+    expect(approvalCargos(cargos, [])).toEqual({ given: [], leftOut: [] });
   });
 
   test("Editar sends only the lists that changed, compared in any order", () => {

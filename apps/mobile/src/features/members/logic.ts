@@ -401,16 +401,30 @@ export function linkLine(
   return [took, lowerFirst(ends, locale), by].filter(Boolean).join(" · ");
 }
 
-/** A row of the Cargo choice: "Membro" (no cargo past Todos) first, then each cargo this person may give, top first. */
-export function cargoPicks(t: TFunction, roles: readonly OrgRole[], roleIds: readonly string[], personal: boolean) {
+/**
+ * A row of the Cargo choice: "Membro" (no cargo past Todos) first, then each cargo this person may give, top first.
+ * A cargo `held` that they can't give (someone higher's choice, on a link or an invitation) is listed too, marked, to
+ * take out and never to tick again, as the web's menu. `held`: the cargos as the choice opened, so one taken out keeps
+ * its place until it closes.
+ */
+export function cargoPicks(
+  t: TFunction,
+  roles: readonly OrgRole[],
+  roleIds: readonly string[],
+  personal: boolean,
+  held: readonly string[] = [],
+): { id: string | null; label: string; on: boolean; above?: boolean; sub?: string; disabled?: boolean }[] {
   const helper = personal ? personalHelperRole(roles) : null;
-  const givable = sortRoles(roles.filter((r) => !isEveryone(r) && r.givable));
+  const listed = sortRoles(roles.filter((r) => !isEveryone(r) && (r.givable || held.includes(r.id))));
   return [
     { id: null, label: personal ? t("members.dialog.role.uses") : t("roles.member"), on: roleIds.length === 0 },
-    ...[...(helper ? [helper] : []), ...givable.filter((r) => r.id !== helper?.id)].map((r) => ({
+    ...[...(helper ? [helper] : []), ...listed.filter((r) => r.id !== helper?.id)].map((r) => ({
       id: r.id,
       label: r.id === helper?.id ? t("members.dialog.role.helps") : r.name,
       on: roleIds.includes(r.id),
+      ...(r.givable || r.id === helper?.id
+        ? {}
+        : { above: true, sub: t("rolesPage.aboveYou"), disabled: !roleIds.includes(r.id) }),
     })),
   ];
 }
@@ -527,9 +541,11 @@ export function agentPicks(
             ? t("invites.agent.opens")
             : kind === "mailbox"
               ? t("invites.agent.mailbox", { names: joinNames([...(owners ?? [])], t) })
-              : owner
-                ? t(kind === "plan" ? "invites.agent.plan" : "invites.agent.locked", { name: owner })
-                : t("invites.agent.lockedNoOwner");
+              : kind === "plan" && a.ownerUserId === viewer.userId
+                ? t("invites.agent.planMine")
+                : owner
+                  ? t(kind === "plan" ? "invites.agent.plan" : "invites.agent.locked", { name: owner })
+                  : t("invites.agent.lockedNoOwner");
     const isOn = on.includes(a.id);
     const waiting = kind === "opens" && owners === undefined;
     const opens =

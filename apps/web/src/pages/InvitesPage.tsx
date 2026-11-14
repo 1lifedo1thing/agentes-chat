@@ -16,10 +16,10 @@ import {
 } from "@agenteschat/client";
 import { errorCode } from "@agenteschat/client/lib/errors";
 import { formatShortDate, joinNames, relativeTime, timeLeft } from "@agenteschat/client/lib/format";
-import { linkNeedsAttention } from "@agenteschat/client/lib/invite-start";
+import { approvalCargos, linkNeedsAttention } from "@agenteschat/client/lib/invite-start";
 import { approvalNews, JOIN_REASON_MAX, sendsEmail } from "@agenteschat/client/lib/join-requests";
 import { membersFull } from "@agenteschat/client/lib/limits";
-import { isEveryone, sortRoles } from "@agenteschat/client/lib/roles";
+import { sortRoles } from "@agenteschat/client/lib/roles";
 import {
   Alert,
   Avatar,
@@ -318,9 +318,7 @@ function WaitingRequests({
   }, [focus, action, list.data]);
 
   // Approving gives what the approver picks (ADR 0184 §8): a link's cargo above theirs starts out, and the row says so.
-  const givable = (r: JoinRequest) =>
-    (r.link?.roleIds ?? []).filter((id) => orgRoles.some((x) => x.id === id && x.givable));
-  const rolesOf = (r: JoinRequest) => roles[r.id] ?? givable(r);
+  const rolesOf = (r: JoinRequest) => roles[r.id] ?? approvalCargos(orgRoles, r.link?.roleIds ?? []).given;
   const approveOne = (r: JoinRequest) =>
     approve.mutate(
       { id: r.id, roleIds: rolesOf(r) },
@@ -373,9 +371,7 @@ function WaitingRequests({
               const link = r.link;
               const gives = link ? givesText(t, link, { ...look, general: false }) : "";
               const linkIsFull = link?.full === true;
-              const above = sortRoles(
-                orgRoles.filter((x) => (link?.roleIds ?? []).includes(x.id) && !isEveryone(x) && !x.givable),
-              ).map((x) => x.name);
+              const above = approvalCargos(orgRoles, link?.roleIds ?? []).leftOut;
               return (
                 // biome-ignore lint/a11y/useSemanticElements: a row of the list, named for who it is about
                 <div

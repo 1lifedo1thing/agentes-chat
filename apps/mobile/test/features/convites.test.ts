@@ -8,6 +8,7 @@ import { EMPTY_INVITE, type InviteDraft } from "../../src/features/members/draft
 import {
   agentLines,
   agentPicks,
+  cargoPicks,
   channelPicks,
   draftFrom,
   flipStart,
@@ -393,6 +394,43 @@ describe("the choices pushed over a form", () => {
       mailboxOwners: () => [],
     });
     expect([kept.others[0]?.on, kept.others[0]?.disabled]).toEqual([true, false]);
+    // The viewer's own agent that keeps its plan for them says so as the web does, and opens its plan's choice.
+    const mine = agentPicks(pt, {
+      ...args,
+      agents: [
+        agent({
+          id: "lia",
+          name: "Lia",
+          ownerUserId: "u-me",
+          audienceMode: "owner",
+          audience: { mode: "owner", userIds: [], roleIds: [] },
+          brain: { kind: "claude_code", account: "Claude Max" } as Agent["brain"],
+        }),
+      ],
+    });
+    expect(said(mine.others)).toEqual([["Lia", "plan", "Só atende você", false, false, "plan"]]);
+  });
+
+  test("Cargo: one the form gives that you can't give shows checked and marked, to take out and never to tick again", async () => {
+    const pt = await translator("pt-BR");
+    const roles = ROLES.map((r) => (r.id === "fin" ? { ...r, givable: false } : r));
+    const rows = (roleIds: string[], held: string[]) =>
+      cargoPicks(pt, roles, roleIds, false, held).map((p) => [p.label, p.on, p.sub ?? "", p.disabled ?? false]);
+    // Financeiro is the link's, above the editor; the others are theirs to give.
+    expect(rows(["fin", "suporte"], ["fin", "suporte"])).toEqual([
+      ["Membro", false, "", false],
+      ["Admin", false, "", false],
+      ["Suporte", true, "", false],
+      ["Financeiro", true, "Acima do seu cargo", false],
+    ]);
+    // Taken out, it keeps its place until the choice closes, and can't come back.
+    expect(rows(["suporte"], ["fin", "suporte"]).at(-1)).toEqual(["Financeiro", false, "Acima do seu cargo", true]);
+    // One the form never gave isn't offered.
+    expect(rows([], []).map(([label]) => label)).toEqual(["Membro", "Admin", "Suporte"]);
+    const picks = src("features/members/InvitePickers.tsx");
+    expect(picks).toContain("const [held] = useState(draft.roleIds);");
+    expect(picks).toContain("cargoPicks(t, roles, draft.roleIds, personal, held)");
+    expect(picks).toMatch(/sub=\{p\.sub\}\s*checked=\{p\.on\}\s*disabled=\{p\.disabled\}/);
   });
 
   test("the lines under Agentes: no talking, an Administrador, restricted agents that start answering", async () => {
@@ -549,11 +587,13 @@ describe("Configurações › Pessoas: Membros · Convites · Cargos", () => {
 
   test("a request's review starts on its link's choices, and a full link waits for a bigger maximum", () => {
     const sheet = src("features/members/JoinRequestsSheet.tsx");
-    expect(sheet).toContain(
-      "const given = (r.link?.roleIds ?? []).filter((id) => roles.some((x) => x.id === id && x.givable));",
-    );
+    expect(sheet).toContain("const { given, leftOut } = approvalCargos(roles, r.link?.roleIds ?? []);");
     expect(sheet).toContain("disabled={busy || full || linkFull || !draft}");
     expect(sheet).toContain('t("errors.join.linkFullApproval")');
+    // A link's cargo the approver can't give stays out, and the card says which, as the web's row.
+    expect(sheet).toContain(
+      '<Note icon="lock">{t("invites.roleLeftOut", { count: leftOut.length, roles: joinNames(leftOut, t) })}</Note>',
+    );
   });
 });
 

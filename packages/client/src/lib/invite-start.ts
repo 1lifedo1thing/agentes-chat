@@ -5,7 +5,7 @@ import { sameList } from "./agent-edit";
 import { answersOthers, audienceOf, modeOf } from "./audience";
 import { engineOfBrain } from "./brain";
 import { agentGrammar } from "./grammar";
-import { grants } from "./roles";
+import { grants, isEveryone, sortRoles } from "./roles";
 
 /** What an invitation starts someone with besides #general and the right hand (ADR 0184), as its chips show it. */
 export interface InviteStart {
@@ -146,6 +146,19 @@ export const sameChoices = (a: LinkChoices, b: LinkChoices) => {
 /** Whether a link took all its people: approving through it is refused until its maximum grows. */
 export const linkFull = (link: Pick<InviteLink, "maxUses" | "uses">) =>
   link.maxUses !== null && link.maxUses !== undefined && (link.uses ?? 0) >= link.maxUses;
+
+/**
+ * A request's approval starts on its link's cargos the approver may give (ADR 0184 §8); the others, Todos aside, are
+ * left out, and the request names them (`leftOut`, top first).
+ */
+export function approvalCargos(roles: readonly OrgRole[], linkRoleIds: readonly string[]) {
+  return {
+    given: linkRoleIds.filter((id) => roles.some((r) => r.id === id && r.givable)),
+    leftOut: sortRoles(roles.filter((r) => linkRoleIds.includes(r.id) && !isEveryone(r) && !r.givable)).map(
+      (r) => r.name,
+    ),
+  };
+}
 
 const DAY_MS = 86_400_000;
 
