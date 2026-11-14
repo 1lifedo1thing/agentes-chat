@@ -3973,6 +3973,28 @@ html:not([data-pointer]) .skill-file--open:focus-visible {
   align-items: center;
   gap: var(--space-1) var(--space-2);
 }
+.skill-row__name--static {
+  cursor: default;
+}
+.skill-row__name--static:hover {
+  text-decoration: none;
+}
+/* Others' personal skills: their person after the marks, the ⋯ menu at the row's end. */
+.skill-owner {
+  gap: var(--space-1);
+  min-width: 0;
+}
+.skill-row__meta > button:last-child {
+  margin-left: auto;
+}
+.skill-pill {
+  gap: var(--space-1);
+}
+.skill-others {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
 .skill-picks {
   margin: 0;
   padding: 0;

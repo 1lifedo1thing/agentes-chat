@@ -10343,6 +10343,15 @@
     "agentsImprove": "Los agentes mejoran las habilidades solos",
     "agentsImproveHelp": "Cuando un agente ve que una habilidad está mal o le falta un paso, la corrige al momento: una versión nueva que puedes deshacer, y quien hizo la habilidad se entera.",
     "agentsImproveThis": "Los agentes mejoran esta habilidad solos",
+    "personal": {
+      "note": "Solo tú ves estas habilidades. Tus agentes las usan cuando tú lo pides.",
+      "emptyTitle": "Guarda tus propias habilidades",
+      "emptyText": "Solo tú las ves, y tus agentes las usan cuando tú lo pides.",
+      "others": "Habilidades personales de otras personas",
+      "of": "Personal de {{name}}",
+      "forWhom": "Para quién",
+      "teamLocked": "Solo quien gestiona agentes añade habilidades del equipo."
+    },
     "agentChange": "{{agent}} la cambió {{when}}",
     "undoAgentChange": "Deshacer cambio",
     "undo": "Deshacer",

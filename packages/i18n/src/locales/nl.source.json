@@ -24398,6 +24398,27 @@
   "skills.agentsImproveThis": {
     "value": "Agents improve this skill by themselves"
   },
+  "skills.personal.note": {
+    "value": "Only you see these skills. Your agents use them when you ask."
+  },
+  "skills.personal.emptyTitle": {
+    "value": "Keep your own skills"
+  },
+  "skills.personal.emptyText": {
+    "value": "Only you see them, and your agents use them when you ask."
+  },
+  "skills.personal.others": {
+    "value": "Others' personal skills"
+  },
+  "skills.personal.of": {
+    "value": "{{name}}'s personal"
+  },
+  "skills.personal.forWhom": {
+    "value": "Who it's for"
+  },
+  "skills.personal.teamLocked": {
+    "value": "Only people who manage agents add team skills."
+  },
   "skills.agentChange": {
     "value": "{{agent}} changed it {{when}}"
   },

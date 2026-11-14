@@ -9,6 +9,7 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { holdSkies, installTitleTips, trackInput } from "@agenteschat/ui";
 import { AppProviders, type AppServices } from "./app/providers";
 import { createQueryClient } from "./app/query-client";
+import { backToSignIn } from "./app/unauthorized";
 import { createBetterAuthClient } from "./auth/better-auth";
 import { copyPillAddresses } from "./chat/link-pill-copy";
 import { ErrorScreen } from "./components/ErrorScreen";
@@ -84,14 +85,7 @@ installSounds();
 // The app icon this device picked (ADR 0179): the tab's, or the desktop app's Dock.
 startAppIcon();
 
-/** A 401 anywhere means the session ended: back to sign-in, then here again. */
-function onUnauthorized() {
-  if (window.location.pathname.startsWith("/login")) return;
-  const redirect = window.location.pathname + window.location.search;
-  queryClient.clear();
-  void router.navigate({ to: "/login", search: { redirect } });
-  toasts.show(i18n.t("common.signedOut"));
-}
+const onUnauthorized = () => backToSignIn({ router, queryClient, toasts, i18n });
 
 const queryClient = createQueryClient({
   onUnauthorized,

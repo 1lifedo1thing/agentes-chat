@@ -10395,6 +10395,15 @@
     "agentsImprove": "Les agents améliorent les compétences eux-mêmes",
     "agentsImproveHelp": "Quand un agent trouve une compétence fausse ou incomplète, il la corrige tout de suite : une nouvelle version que vous pouvez annuler, et la personne qui l'a créée est prévenue.",
     "agentsImproveThis": "Les agents améliorent cette compétence eux-mêmes",
+    "personal": {
+      "note": "Vous seul voyez ces compétences. Vos agents les utilisent quand vous le demandez.",
+      "emptyTitle": "Gardez vos propres compétences",
+      "emptyText": "Vous seul les voyez, et vos agents les utilisent quand vous le demandez.",
+      "others": "Compétences personnelles des autres",
+      "of": "Personnel de {{name}}",
+      "forWhom": "Pour qui",
+      "teamLocked": "Seules les personnes qui gèrent les agents ajoutent des compétences d’équipe."
+    },
     "agentChange": "{{agent}} l'a modifiée {{when}}",
     "undoAgentChange": "Annuler la modification",
     "undo": "Annuler",

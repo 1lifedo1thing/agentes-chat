@@ -10019,6 +10019,15 @@
     "agentsImprove": "Agenten verbessern Skills selbst",
     "agentsImproveHelp": "Findet ein Agent einen Skill falsch oder ohne einen Schritt, korrigiert er ihn sofort: eine neue Version, die du rückgängig machen kannst, und wer den Skill erstellt hat, erfährt es.",
     "agentsImproveThis": "Agenten verbessern diesen Skill selbst",
+    "personal": {
+      "note": "Nur du siehst diese Skills. Deine Agenten nutzen sie, wenn du fragst.",
+      "emptyTitle": "Behalte deine eigenen Skills",
+      "emptyText": "Nur du siehst sie, und deine Agenten nutzen sie, wenn du fragst.",
+      "others": "Persönliche Skills anderer",
+      "of": "Persönlich von {{name}}",
+      "forWhom": "Für wen",
+      "teamLocked": "Nur wer Agenten verwaltet, fügt Team-Skills hinzu."
+    },
     "agentChange": "{{agent}} hat ihn geändert {{when}}",
     "undoAgentChange": "Änderung rückgängig machen",
     "undo": "Rückgängig",
