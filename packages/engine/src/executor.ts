@@ -168,6 +168,7 @@ import {
   advance as advanceContinuation,
   type ContinuationState,
   callLine,
+  computerWork,
   continuationVerdict,
   decideTurnEnd,
   heldNudge,
@@ -327,7 +328,7 @@ import {
   STUCK_ERROR,
   transitionRun,
 } from "./runs";
-import { truncateOutput } from "./sandbox";
+import { SANDBOX_SCOPE, truncateOutput } from "./sandbox";
 import { secretResult } from "./secrets";
 import { enabledSkills } from "./skills";
 import { type SpillRecord, spillMayHelp, spillPlan, spillTarget } from "./spill";
@@ -564,6 +565,11 @@ export interface Transcript {
    * (`heldWords`), or alone when the run ends without any (a pass, an empty turn, a closing line, a failure).
    */
   held?: string;
+  /**
+   * A reply held for its wording (`tool_names`, `local_paths`): unseen, and never merged into its next words. It goes
+   * out only when the run fails before any (`fail`, the restart sweep).
+   */
+  heldWording?: string;
   /** What replies once streamed counted their pieces with: read by nothing now, kept on old runs' transcripts. */
   deltaSeq?: number;
   /** Memory changes made by tools, not yet attached to a posted message (`meta.memoryUpdates`). */
@@ -1578,7 +1584,12 @@ async function executeRunInner(
   /** `ledger`: the routine run's coded reason when the run error's own code isn't the right one. */
   const fail = async (reason: string, ledger?: { code: string; detail?: string }) => {
     // The turn after a held reply failed (its provider, its plan): that reply is still the answer, and it goes out.
-    if (endWithHeld && transcript?.held && reason !== "agent_archived" && !standingErrorDetail(reason))
+    if (
+      endWithHeld &&
+      (transcript?.held || transcript?.heldWording) &&
+      reason !== "agent_archived" &&
+      !standingErrorDetail(reason)
+    )
       return endWithHeld();
     await deferred;
     const plan = brainPlan && isComputerBrain(brainPlan.kind) ? BRAIN_PLAN_NAMES[brainPlan.kind] : undefined;
@@ -2165,6 +2176,7 @@ async function executeRunInner(
       transcript.lastPosted = body.trim();
       // Its words went out, the held reply with them or in their place (`heldWords`), or before them (`closeWith`).
       delete transcript.held;
+      delete transcript.heldWording;
     }
     return m;
   };
@@ -3128,8 +3140,9 @@ async function executeRunInner(
   /** Ends the run on the reply it held back (`held`), its own words, with what it changed and its cards. */
   const closeOnHeld = () => {
     const t = transcript as Transcript;
-    const held = t.held ?? "";
+    const held = t.held || t.heldWording || "";
     delete t.held;
+    delete t.heldWording;
     return closeWith(held, null, { held: true });
   };
   endWithHeld = closeOnHeld;
@@ -3201,8 +3214,9 @@ async function executeRunInner(
     const questionId = Bun.randomUUIDv7();
     const toolUseId = `continuation:${questionId}`;
     t.pending = { calls: [{ toolUseId, name: ASK_USER_TOOL, questionId, bridged: true }] };
-    // Its question carries the reply it held back (`heldWords`).
+    // Its question carries the reply it held back (`heldWords`), and is its next words.
     delete t.held;
+    delete t.heldWording;
     const pause = await db.transaction(async (tx) => {
       const posted = await postPauseCards(tx, run, {
         approvals: [],
@@ -3544,6 +3558,8 @@ async function executeRunInner(
     // A background run never posts by itself (ADR 0053 §5): its cards speak for it.
     if (run.background || repeatsLastPost(text)) text = "";
     text = await heldWords(text);
+    // Its cards are its next step: a reply held for its wording no longer stands in for an answer.
+    delete t.heldWording;
     // The bridge posted its cards when it asked: what it says goes with them.
     const message = text ? await post(db, replyThreadId, text, withFallback(t, takeMemoryUpdates(t)), at) : null;
     if (message) t.postedCount++;
@@ -5082,6 +5098,8 @@ async function executeRunInner(
         const text = stripSentinel(turnText);
         const spoken = run.background ? "" : asks.length > 0 ? text : pauseLead(text);
         const said = await heldWords(repeatsLastPost(spoken) ? "" : spoken);
+        // Its cards are its next step: a reply held for its wording no longer stands in for an answer.
+        delete t.heldWording;
         const posted = await db.transaction(async (tx) => {
           const lead = said ? await post(tx, replyThreadId, said, withFallback(t, takeMemoryUpdates(t))) : null;
           // The cards, the same way a computer brain's bridged call posts them (`postPauseCards`).
@@ -5327,21 +5345,39 @@ async function executeRunInner(
             )
           : "";
       const request = t.request ?? triggerMessage?.body ?? triggerText;
-      // A person who chose technical replies welcomes tool names (ADR 0147).
-      const namedTools =
-        text && !capped && !betweenAgents && !t.system.some((b) => b.text === TECHNICAL_STYLE_LINE)
-          ? toolsNamed(
-              text,
-              [...granted, ...tools].map((x) => x.name),
+      // Only this turn's words, when they are posted: a reply it held back (`held`) was read already. A person who chose
+      // technical replies welcomes tool names and paths (ADR 0147), and in a repository's or a mission's work they are
+      // code talk.
+      const fresh = text && words !== held ? said : "";
+      const plain =
+        Boolean(fresh) &&
+        !capped &&
+        !betweenAgents &&
+        !t.repo &&
+        !plan.missionId &&
+        !t.system.some((b) => b.text === TECHNICAL_STYLE_LINE);
+      const listed = [...granted, ...tools];
+      const namedTools = plain
+        ? toolsNamed(
+            fresh,
+            listed.map((x) => x.name),
+            request,
+          )
+        : [];
+      // Files on its computer it cites to people, who can't open them: an agent that can share them and writes no code
+      // (git). Only the model brain shows what its computer did; a coding CLI's own shell isn't in the transcript.
+      const cited =
+        plain &&
+        plan.kind === "model" &&
+        granted.some((g) => g.name === "upload_file") &&
+        !granted.some((g) => g.name === "git_clone")
+          ? localPathsCited(
+              fresh,
               request,
+              computerWork(t.messages, new Set(listed.filter((x) => x.scope === SANDBOX_SCOPE).map((x) => x.name))),
             )
           : [];
-      // Files on its computer it cites to people, who can't open them: an agent with a computer, outside a repository's
-      // or a mission's work (code talk). The person who connected that computer can open them.
-      const cited =
-        text && !capped && !betweenAgents && !t.repo && !plan.missionId && granted.some((g) => g.name === "upload_file")
-          ? localPathsCited(text, request)
-          : [];
+      // The person who connected that computer can open them.
       const computerId = cited.length > 0 ? (plan.session?.machineId ?? agent.machineId) : null;
       const theirs =
         computerId && triggerMessage?.authorUserId
@@ -5374,7 +5410,7 @@ async function executeRunInner(
                 orgId: run.orgId,
                 agentId: run.agentId,
                 runId: run.id,
-                request: t.request ?? triggerMessage?.body ?? triggerText,
+                request,
                 reply: judged,
                 ...(await judging.gather()),
                 runKind: betweenAgents ? "agents_dm" : "conversation",
@@ -5406,7 +5442,7 @@ async function executeRunInner(
               agentId: run.agentId,
               runId: run.id,
               question: judged,
-              request: t.request ?? triggerMessage?.body ?? triggerText,
+              request,
               ...judging.evidence,
             }).catch(() => (saysNeedsNothing(judged) ? ("none" as const) : ("person" as const)));
         if (asks === "none") decision = { outcome: "done", rule: "asks_nothing", verdict: "done" };
@@ -5467,6 +5503,8 @@ async function executeRunInner(
           // comes (`held`).
           if (["secret", "unbacked", "tool_names", "local_paths"].includes(decision.rule))
             t.postedUpTo = t.messages.length;
+          // Held for its wording only, it is still an answer: posted if the run fails before its next words (`fail`).
+          if (decision.rule === "tool_names" || decision.rule === "local_paths") t.heldWording = text;
           await saveTranscript(db, t);
           continue;
         }

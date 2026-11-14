@@ -1,5 +1,6 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, eq, inArray, schema, sql } from "@agenteschat/db";
+import type { ModelMessage } from "@agenteschat/providers";
 import { type Agent, getAgentCached } from "./agents";
 import { answersOthers, audienceOf } from "./audience";
 import { accountablePerson, runAuthority } from "./authority";
@@ -169,41 +170,57 @@ export const ASK_NUDGE =
 export const SECRET_NUDGE =
   "Not posted: never ask for a secret (a key, a token, a password) in the chat, where it stays in plain text. If you have request_secret, call it: the person types it into a secure card. Otherwise say which key is needed and where it is set up, without asking for it here.";
 
+/** The end of a host's name (`Outlook.com`, `Amazon.com.br`, `name.github.io`): a word with one is an address. */
+const TLD = "com|net|org|io|br|dev|app|co|ai|gov|edu";
+/**
+ * Never a path on the agent's computer nor a tool named to a person: a code block, a wiki link (`[[Folder/Page]]`), a
+ * web or mail address, with its scheme or without (`github.com/x/y/blob/main/run_code.py`).
+ */
+const NOT_PROSE = new RegExp(
+  `\`\`\`[\\s\\S]*?\`\`\`|\\[\\[[^\\]]*\\]\\]|[a-z][a-z0-9+.-]*:\\/\\/\\S*|\\bwww\\.\\S*|\\S+@\\S+|[\\w.-]+\\.(?:${TLD})\\/\\S*`,
+  "gi",
+);
+
 /**
  * The run's own tools its reply names (bare, in backticks, or behind a computer brain's `mcp__agentes__`) and the
  * person's message doesn't: people can't see or use them. Only names with an underscore, so a one-word tool
- * (`remember`, `react`) reads as the word it is. Tool names are `[A-Za-z0-9_-]`, nothing to escape.
+ * (`remember`, `react`) reads as the word it is, and only in prose: `def read_file(path)` in a code block is code, and
+ * so is that name around it. Tool names are `[A-Za-z0-9_-]`, nothing to escape.
  */
 export function toolsNamed(reply: string, tools: Iterable<string>, request: string): string[] {
+  const prose = reply.replace(NOT_PROSE, " ");
+  const code = reply.match(/```[\s\S]*?```/g)?.join("\n") ?? "";
   const says = (text: string, name: string) =>
     text.includes(name) && new RegExp(`(?:(?<=mcp__agentes__)|(?<![\\w-]))${name}(?![\\w-])`).test(text);
-  return [...new Set(tools)].filter((n) => /^[\w-]*_[\w-]*$/.test(n) && says(reply, n) && !says(request, n));
+  return [...new Set(tools)].filter(
+    (n) => /^[\w-]*_[\w-]*$/.test(n) && says(prose, n) && !says(request, n) && !says(code, n),
+  );
 }
 
 /** What a run reads, once, when its reply named its own tools to a person (`toolsNamed`): the reply is not posted. */
 export const toolNamesNudge = (names: string[]) =>
   `Not posted: your reply names your tools (${names.map((n) => `\`${n}\``).join(", ")}), and people can't see or use them. Write it again in plain words. When a tool is the next step, call it now instead of naming it: when it needs them, they get its card. Otherwise say in everyday words what you did or what will happen. Names from code the person works on can stay.`;
 
-/** Never a path on the agent's computer: a code block, a wiki link (`[[Folder/Page]]`), a web or mail address. */
-const NOT_PATHS = /```[\s\S]*?```|\[\[[^\]]*\]\]|[a-z][a-z0-9+.-]*:\/\/\S*|\bwww\.\S*|\S+@\S+/gi;
-/** A word with a slash in it: `notas/`, `~/out/x.csv`, `/home/agent/a.md`, `scripts/run.sh`. */
-const SLASHED = /(?<![\p{L}\p{N}_.~/-])(?:~|\.{1,2})?\/?(?:[\p{L}\p{N}_.-]+\/)+[\p{L}\p{N}_.-]*/gu;
+/** A word with a slash in it: `notas/`, `~/out/x.csv`, `/home/agent/a.md`, `scripts/run.sh`; never `#vendas/#suporte`. */
+const SLASHED = /(?<![\p{L}\p{N}_.~/#@:-])(?:~|\.{1,2})?\/?(?:[\p{L}\p{N}_.-]+\/)+[\p{L}\p{N}_.-]*/gu;
 const UNDER_HOME = /^(?:~|\.{1,2})\/|^\/(?:home|root|tmp|Users|workspace|mnt|srv)\//;
 /** Source code: a person reads `src/login.ts` as code talk, not as a file they should open. */
 const CODE_FILE = /\.(?:[cm]?[jt]sx?|py|rb|go|rs|java|kt|swift|cpp|cs|php|sh|sql|vue|svelte|s?css|ya?ml|toml)$/i;
+const HOST = new RegExp(`\\.(?:${TLD})$`, "i");
 
 /**
  * A word with a slash that names a file or a folder: under a home or the current folder (`~/`, `./`, `/home/`), a
  * name with an extension (`notas/pricing.md`) or a folder (`notas/`). A pair or a ratio (`e/ou`, `24/7`, `km/h`), a
  * date, a version (`HTTP/1.1`), a source file outside a home, a path from the root outside a home and an address
- * without its scheme (`example.com/precos`) aren't.
+ * without its scheme (`example.com/precos`, `Gmail/Outlook.com`) aren't.
  */
 function namesFile(word: string) {
   if (UNDER_HOME.test(word)) return true;
   // Elsewhere from the root it reads as an address's path (`/api/users/`) more often than as its file.
   if (word.startsWith("/")) return false;
   const parts = word.split("/").filter(Boolean);
-  if (!parts.some((p) => /\p{L}/u.test(p)) || /\.[a-z]{2,}$/i.test(parts[0] ?? "")) return false;
+  if (!parts.some((p) => /\p{L}/u.test(p)) || /\.[a-z]{2,}$/i.test(parts[0] ?? "") || parts.some((p) => HOST.test(p)))
+    return false;
   // A folder's name is two characters at least: "c/ desconto" and "w/ the team" are words.
   const last = parts.at(-1) ?? "";
   if (word.endsWith("/")) return last.length >= 2;
@@ -213,16 +230,52 @@ function namesFile(word: string) {
   );
 }
 
-const pathsIn = (text: string) =>
-  [...text.replace(NOT_PATHS, " ").matchAll(SLASHED)].map((m) => m[0].replace(/[.,:;!?]+$/, "")).filter(namesFile);
+const slashedWords = (text: string) =>
+  [...text.replace(NOT_PROSE, " ").matchAll(SLASHED)].map((m) => m[0].replace(/[.,:;!?]+$/, ""));
+
+/** What the run's computer did, as text: its calls' arguments and results, and what upload_file or export_file shared. */
+export interface ComputerWork {
+  touched: string;
+  shared: string;
+}
+
+const SHARES = new Set(["upload_file", "export_file"]);
+
+/** The run's calls of its computer's tools (`computer`, by name) in its transcript, with their results. */
+export function computerWork(messages: ModelMessage[], computer: ReadonlySet<string>): ComputerWork {
+  const touched: string[] = [];
+  const shared: string[] = [];
+  const ids = new Set<string>();
+  for (const m of messages) {
+    if (typeof m.content === "string") continue;
+    for (const b of m.content) {
+      if (b.type === "tool_use" && computer.has(b.name)) {
+        if (SHARES.has(b.name)) shared.push(JSON.stringify(b.input));
+        else {
+          touched.push(JSON.stringify(b.input));
+          ids.add(b.id);
+        }
+      } else if (b.type === "tool_result" && ids.has(b.toolUseId)) touched.push(b.content);
+    }
+  }
+  return { touched: touched.join("\n"), shared: shared.join("\n") };
+}
 
 /**
  * Files on the agent's computer its reply cites as if people could open them (`notas/pricing.md`, `~/out/`): nobody
- * else can. None when the person's message writes paths or code itself: then they talk files, and read paths.
+ * else can. Only a file or folder its computer worked on in this run (`work`), and not one it already shared: a path
+ * in a cloud drive, a wiki or the person's own computer is theirs to open. None when the person's message writes a
+ * path or code itself, or the reply names source code: then it is code talk. Nor one the person named.
  */
-export function localPathsCited(reply: string, request: string): string[] {
-  if (request.includes("```") || pathsIn(request).length > 0) return [];
-  return [...new Set(pathsIn(reply))];
+export function localPathsCited(reply: string, request: string, work: ComputerWork): string[] {
+  if (request.includes("```") || slashedWords(request).length > 0) return [];
+  const words = slashedWords(reply);
+  if (words.some((w) => CODE_FILE.test(w) && !UNDER_HOME.test(w))) return [];
+  const asked = request.toLowerCase();
+  return [...new Set(words.filter(namesFile))].filter((p) => {
+    const name = p.split("/").filter(Boolean).at(-1) ?? "";
+    return work.touched.includes(name) && !work.shared.includes(name) && !asked.includes(name.toLowerCase());
+  });
 }
 
 /** What a run reads, once, when its reply cites files on its computer to people (`localPathsCited`): not posted. */
@@ -610,8 +663,9 @@ export function advance(state: ContinuationState, d: TurnEndDecision, executed: 
   if (d.rule === "ask") return { ...rest, askNudged: true, askPending: true };
   if (d.rule === "secret") return { ...rest, secretNudged: true };
   if (d.rule === "open_request") return { ...rest, requestNudged: true };
-  if (d.rule === "local_paths") return { ...rest, pathsNudged: true };
-  if (d.rule === "tool_names") return { ...rest, toolsNudged: true };
+  // A reply held for its wording answers no ask: one it was told to ask still becomes the question card.
+  if (d.rule === "local_paths") return { ...state, pathsNudged: true };
+  if (d.rule === "tool_names") return { ...state, toolsNudged: true };
   return { ...rest, count: state.count + 1, executedAtNudge: executed };
 }
 

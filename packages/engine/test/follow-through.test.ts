@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { orgTopic } from "@agenteschat/adapters";
 import { and, eq, schema, sql } from "@agenteschat/db";
-import { type ModelRequest, systemText, textOf } from "@agenteschat/providers";
+import { type ModelRequest, ProviderError, systemText, textOf } from "@agenteschat/providers";
 import type { FakeReply } from "@agenteschat/providers/testing";
 import {
   agentStatuses,
@@ -12,6 +12,7 @@ import {
   createAgent,
   createAgentRuns,
   createIssue,
+  createJobHandlers,
   drainOutbox,
   FOLLOW_UP_JOB,
   FOLLOW_UP_TOOL,
@@ -909,6 +910,21 @@ describe("a reply that names its own tools to a person", () => {
     expect(toolsNamed("O `request_secret` e o vault_list.", tools, asked)).toEqual(["vault_list"]);
   });
 
+  test("never a name in code or in an address: code a person asked for uses the same words", () => {
+    const own = ["read_file", "run_code", "task_status", "request_secret"];
+    const code =
+      "Assim:\n```python\ndef read_file(path):\n    return open(path).read()\n```\nDepois chame read_file(path).";
+    expect(toolsNamed(code, own, "como leio um arquivo em python?")).toEqual([]);
+    expect(toolsNamed("```sql\nSELECT task_status, count(*) FROM tasks GROUP BY 1;\n```", own, "")).toEqual([]);
+    expect(toolsNamed("See github.com/example/repo/blob/main/run_code.py for it.", own, "")).toEqual([]);
+    expect(toolsNamed("Docs at https://example.com/api/request_secret and www.example.com/run_code.", own, "")).toEqual(
+      [],
+    );
+    expect(toolsNamed("Write to ops_team@example.com or task_status@example.com.", own, "")).toEqual([]);
+    // Outside the code, still a name.
+    expect(toolsNamed("```\nls\n```\nThen I run it with `run_code`.", own, "")).toEqual(["run_code"]);
+  });
+
   const turn = (over: Partial<TurnEnd> = {}): TurnEnd => ({
     state: { count: 0 },
     kind: "conversation",
@@ -932,6 +948,13 @@ describe("a reply that names its own tools to a person", () => {
     expect(d.nudge).toStartWith("Not posted: your reply names your tools (`request_secret`)");
     const next = advance({ count: 0 }, d, 0);
     expect(next).toEqual({ count: 0, toolsNudged: true });
+    // Told to ask, it still owes that question: the hold keeps it.
+    expect(advance({ count: 1, askNudged: true, askPending: true }, d, 0)).toEqual({
+      count: 1,
+      askNudged: true,
+      askPending: true,
+      toolsNudged: true,
+    });
     expect(await decideTurnEnd(turn({ state: next }))).toMatchObject({ outcome: "done", rule: "judged" });
     expect(await decideTurnEnd(turn({ verdict: null }))).toMatchObject({ rule: "tool_names" });
     expect(await decideTurnEnd(turn({ state: { count: 2 } }))).toMatchObject({ rule: "tool_names" });
@@ -991,6 +1014,58 @@ describe("a reply that names its own tools to a person", () => {
     const bodies = (await agentMessages(f)).map((m) => m.body);
     expect(bodies).toHaveLength(1);
     expect(bodies[0]).not.toContain("request_secret");
+  });
+
+  test("its rewrite failing, the held reply is still the answer: posted, never lost", async () => {
+    const answer = "Me envie a senha do painel por `request_secret`.";
+    f = await setup({
+      toolSources: [secrets],
+      reply: (_request, call) => (call === 1 ? { chunks: [answer] } : new ProviderError("overloaded", false, 529)),
+    });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, f.handlers);
+    expect(f.provider.calls.length).toBeGreaterThanOrEqual(2);
+    expect((await agentMessages(f)).map((m) => m.body)).toEqual([answer]);
+  });
+
+  test("at the turn cap it has no turn left: the reply is posted as written", async () => {
+    const answer = "Me envie a senha do painel por `request_secret`.";
+    f = await setup({ toolSources: [secrets], reply: () => ({ chunks: [answer] }) });
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainOutbox(f.db, createJobHandlers({ ...f.jobDeps, maxToolTurns: 1 }));
+    expect(f.provider.calls.length).toBe(1);
+    expect((await agentMessages(f)).map((m) => m.body)).toEqual([answer]);
+    const steps = await f.db.select().from(schema.agentRunSteps);
+    expect(steps.filter((s) => s.data.nudged === "tool_names")).toEqual([]);
+  });
+
+  test("between agents it is posted as it is: another agent can use the name", async () => {
+    const answer = "Use `request_secret` com o nome da chave do painel.";
+    f = await setup({
+      askAgent: true,
+      toolSources: [secrets],
+      reply: (request) => {
+        if (systemText(request.system).includes("You are Infra (@infra)")) return { chunks: [answer] };
+        if (JSON.stringify(request.messages.at(-1)?.content).includes("tool_result")) return { chunks: ["Perguntei."] };
+        return {
+          chunks: [],
+          toolUses: [{ name: "tell_agent", input: { agent: "@infra", message: "Como peço a senha do painel?" } }],
+        };
+      },
+    });
+    const infra = await createAgent(
+      f.db,
+      f.owner.id,
+      f.org.id,
+      { name: "Infra", handle: "infra", role: "Operations", credentialId: f.credential.id },
+      { model: "claude-sonnet-5-5" },
+    );
+    await ask(f, "@dev pergunta ao infra como pedir a senha do painel");
+    await drainOutbox(f.db, f.handlers);
+    const infraBodies = (await agentMessages(f)).filter((m) => m.authorAgentId === infra.id).map((m) => m.body);
+    expect(infraBodies).toContain(answer);
+    const steps = await f.db.select().from(schema.agentRunSteps);
+    expect(steps.filter((s) => s.data.nudged === "tool_names")).toEqual([]);
   });
 
   test("once per run: a rewrite that still names it is posted as written", async () => {

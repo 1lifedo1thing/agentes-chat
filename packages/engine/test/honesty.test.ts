@@ -96,12 +96,12 @@ test("a held reply is never shown in what a stopped run wrote", async () => {
     judge: (kind) => (kind === "follow_through" ? "unbacked" : undefined),
     reply: (_request, call) => {
       if (call === 2) {
-        // Stopped while it writes again.
-        void f.db
+        // Stopped while it writes again: its stream goes on only once the stop is in.
+        const stopped = f.db
           .select()
           .from(schema.agentRuns)
           .then(([run]) => run && cancelRun({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, run.id));
-        return { chunks: ["Na verdade, "], hold: new Promise<void>((resolve) => setTimeout(resolve, 50)) };
+        return { chunks: ["Na verdade, ", "não consigo."], hold: stopped };
       }
       return { chunks: [CLAIM] };
     },
