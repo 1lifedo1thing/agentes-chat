@@ -7114,6 +7114,7 @@
     "role": "角色",
     "roleHint": "这个人能做什么。角色会在所有人能做的基础上叠加。只适用于成员。",
     "rolePersonal": "可以",
+    "rolesFoot": "角色在“所有人”能做的基础上叠加。角色的频道和智能体已勾选。",
     "channels": "频道",
     "channelsPersonal": "对话",
     "channelsHint": "这个人一开始就在的地方。角色的频道已勾选。",
@@ -7153,6 +7154,7 @@
       "channelGone": "其中一个频道已不存在。请移除标记的频道后再发送。",
       "agentGone": "{{name}} 已离开团队。请从邀请中移除后再发送。",
       "agentLocked": "你已不能开放 {{name}}。请从邀请中移除后再发送。",
+      "agentUnnamed": "有一个智能体已离开团队。移除标记的那个后再发送。",
       "role": "你已不能授予 {{role}} 角色。请选择其他角色。",
       "roleMany": "你已不能授予其中某个角色。请选择其他角色。"
     },
@@ -7164,6 +7166,8 @@
     "validFor": "创建后 {{ttl}}内有效。",
     "expiresIn": "有效期",
     "maxUses": "最多人数",
+    "onJoin": "加入时",
+    "theLink": "链接",
     "ttl": {
       "30m": "30 分钟",
       "1h": "1 小时",
@@ -7179,6 +7183,7 @@
     "invitationTitle": "发给 {{email}} 的邀请",
     "invitationSaved": "发给 {{email}} 的邀请已更新。",
     "invitationExpired": "这个邀请已过期。续期后才能更改它的内容。",
+    "editInvitation": "编辑邀请",
     "search": "搜索邮箱或角色",
     "type": "类型",
     "types": {
@@ -7202,7 +7207,9 @@
     "neverEnds": "永不过期",
     "by": "由 {{name}} 创建",
     "edit": "编辑",
-    "turnOff": "停用链接"
+    "turnOff": "停用链接",
+    "editLink": "编辑链接",
+    "linkTurnedOff": "链接已停用。"
   },
   "empty": {
     "thread": {

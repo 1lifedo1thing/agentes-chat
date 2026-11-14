@@ -7305,6 +7305,7 @@
     "role": "Rol",
     "roleHint": "Kişinin neler yapabileceği. Roller, Herkes'in yapabildiklerine eklenir. Yalnızca kişiler için geçerlidir.",
     "rolePersonal": "Yapabilir",
+    "rolesFoot": "Roller, Herkes'in yapabildiklerine eklenir. Rolün kanalları ve ajanları işaretli gelir.",
     "channels": "Kanallar",
     "channelsPersonal": "Sohbetler",
     "channelsHint": "Kişinin hemen gireceği yerler. Rolün kanalları zaten işaretli.",
@@ -7346,6 +7347,7 @@
       "channelGone": "Kanallardan biri artık yok. Göndermek için işaretli olanı kaldırın.",
       "agentGone": "{{name}} ekipten ayrıldı. Göndermek için davetten kaldırın.",
       "agentLocked": "Artık {{name}} ajanını açamazsınız. Göndermek için davetten kaldırın.",
+      "agentUnnamed": "Ajanlardan biri ekipten ayrıldı. Göndermek için işaretli olanı çıkarın.",
       "role": "Artık {{role}} rolünü veremezsiniz. Başka bir rol seçin.",
       "roleMany": "Bu rollerden birini artık veremezsiniz. Başka roller seçin."
     },
@@ -7357,6 +7359,8 @@
     "validFor": "Oluşturulduktan sonra {{ttl}} geçerli.",
     "expiresIn": "Geçerlilik",
     "maxUses": "En fazla kişi",
+    "onJoin": "Katılırken",
+    "theLink": "Bağlantı",
     "ttl": {
       "30m": "30 dakika",
       "1h": "1 saat",
@@ -7374,6 +7378,7 @@
     "invitationTitle": "{{email}} için davet",
     "invitationSaved": "{{email}} için davet güncellendi.",
     "invitationExpired": "Bu davetin süresi doldu. Verdiklerini değiştirmek için yenileyin.",
+    "editInvitation": "Daveti düzenle",
     "search": "E-posta veya rol ara",
     "type": "Tür",
     "types": {
@@ -7401,7 +7406,9 @@
     "neverEnds": "süresi dolmaz",
     "by": "oluşturan: {{name}}",
     "edit": "Düzenle",
-    "turnOff": "Bağlantıyı kapat"
+    "turnOff": "Bağlantıyı kapat",
+    "editLink": "Bağlantıyı düzenle",
+    "linkTurnedOff": "Bağlantı kapatıldı."
   },
   "empty": {
     "thread": {
