@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Ekibin ve ajanların aynı sohbette"
   },
   "common": {
     "close": "Kapat",
@@ -1480,7 +1481,8 @@
       "moonshot": "Kimi anahtarları sk- ile başlar. Kontrol edip tekrar yapıştırın.",
       "zai": "Z.ai anahtarının tamamını boşluksuz yapıştırın. Kontrol edip tekrar yapıştırın.",
       "minimax": "MiniMax anahtarının tamamını boşluksuz yapıştırın. sk-cp- ile başlayan anahtarlar plana aittir ve burada çalışmaz.",
-      "openrouter": "OpenRouter anahtarları sk-or-v1- ile başlar. Kontrol edip tekrar yapıştırın."
+      "openrouter": "OpenRouter anahtarları sk-or-v1- ile başlar. Kontrol edip tekrar yapıştırın.",
+      "commandcode": "Command Code anahtarının tamamını boşluksuz yapıştırın. Kontrol edip tekrar yapıştırın."
     },
     "keyFromOther": "Başka bir sağlayıcıdan mı?",
     "anthropicWorkspace": "Claude Console çalışma alanı kimliği",
@@ -2158,6 +2160,16 @@
       "channels": "Zaten 5 kanal sabitlediniz. Bunu sabitlemek için birini kaldırın.",
       "people": "Zaten 5 kişi sabitlediniz. Bunu sabitlemek için birini kaldırın."
     }
+  },
+  "appsDownload": {
+    "computer": "Bilgisayar",
+    "computerText": "Workspace'iniz kendi penceresinde, sistemin bildirimleriyle.",
+    "inApp": "Zaten bilgisayardaki uygulamadasınız.",
+    "howTo": "Nasıl kurulur",
+    "phone": "Telefon",
+    "phoneText": "Bildirimler cebinizde, her yerden yanıt vermek için.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
   },
   "openOnPhone": {
     "qr": "agentes uygulamasına giriş yapmak için QR kodu",
@@ -3269,7 +3281,7 @@
       "closed": "API anahtarları çalışma alanının agentes.chat planıyla açılır.",
       "notPlan": "Bir kodlama planının anahtarı yukarıdaki kendi seçeneğine girilir.",
       "billing": "Anahtarın projesi için faturalandırmayı açın. Faturalandırma olmadan Google, ajanlarınızın gönderdiklerini kullanabilir.",
-      "privacy": "Ajanlarınızın gönderdiklerini hangi sağlayıcıların saklayabileceğine OpenRouter gizlilik ayarlarınız karar verir."
+      "privacy": "{{provider}}, ajanlarınızın gönderdiklerini modeli yapan veya barındıran şirkete iletir. Bu, {{provider}} gizlilik koşullarına ve ayarlarına göre olur."
     },
     "wait": {
       "signIn": "Bilgisayar hazır olur olmaz burada giriş yaparsınız.",
@@ -3340,6 +3352,8 @@
     "agent": "Hangi ajan için",
     "keyLocked": "API anahtarını yalnızca bir yönetici ekler.",
     "accountsLocked": "{{computer}} üzerinde planı yalnızca {{name}} bağlar.",
+    "connectMine": "Bilgisayarımı bağla",
+    "makeAgent": "Bu planla bir ajan oluştur",
     "later": "Sonra bağla"
   },
   "keyGuard": {
@@ -10252,7 +10266,9 @@
         "seven_day_opus": "Hafta · Opus",
         "seven_day_sonnet": "Hafta · Sonnet",
         "monthly": "Ay",
-        "other": "Diğer sınır"
+        "other": "Diğer sınır",
+        "extraUsage": "Ek kullanım",
+        "oauthApps": "OAuth uygulamaları"
       },
       "short": {
         "five_hour": "5 sa",
@@ -10260,7 +10276,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "ay",
-        "other": "diğer"
+        "other": "diğer",
+        "extraUsage": "ek kullanım",
+        "oauthApps": "OAuth uygulamaları"
       },
       "resetsAt": "{{time}} saatinde sıfırlanır",
       "resetsOn": "{{day}}, {{time}} saatinde sıfırlanır",
@@ -15475,6 +15493,7 @@
     "section": {
       "account": "Hesabınız",
       "notifications": "Bildirimler",
+      "download": "agentes.chat uygulamaları",
       "general": "Genel",
       "right_hand": "Sağ kol",
       "members": "Üyeler",
@@ -15507,6 +15526,7 @@
     "sectionText": {
       "account": "Profiliniz ve uygulamanın size nasıl göründüğü.",
       "notifications": "Burada size bildirim olarak ulaşanlar. Gelen kutusu her şeyi saklar.",
+      "download": "Bilgisayarda ve telefonda aynı workspace, hesabınızla.",
       "general": "Ad, saat dilimi ve her ajanın çalışma alanı hakkında bildikleri.",
       "right_hand": "Her kişiyle kendi DM'inde ekibi kuran asistan.",
       "members": "Çalışma alanında kimler var.",
@@ -15677,6 +15697,15 @@
     "keySaid": "{{provider}} şunu söyledi: {{said}}",
     "keyInUse": "{{agents}} hâlâ bu anahtarla düşünüyor.",
     "keyManagement": "Bu bir yönetim anahtarı. Normal bir API anahtarı oluşturun.",
+    "keyResaved": "Bu anahtar zaten kayıtlıydı. Bilgilerini güncelledim.",
+    "keyCopies_one": "{{count}} aynı kopya",
+    "keyCopies_other": "{{count}} aynı kopya",
+    "keyMore": "{{label}} için işlemler",
+    "removeCopies": "Kopyaları kaldır",
+    "removeCopiesTitle": "{{label}} kopyaları kaldırılsın mı?",
+    "removeCopiesText": "Tek bir anahtar kalır. Kopyaların ajanları, varsayılanı ve geçmiş harcaması ona geçer.",
+    "copiesRemoved_one": "{{count}} kopya kaldırıldı.",
+    "copiesRemoved_other": "{{count}} kopya kaldırıldı.",
     "autoModels": {
       "title": "Otomatik için modeller",
       "text": "Her görev, ne kadar zor olduğuna göre bunlardan birini alır.",

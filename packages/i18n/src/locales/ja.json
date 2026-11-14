@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · チームとエージェントが、同じ会話で"
   },
   "common": {
     "close": "閉じる",
@@ -1434,7 +1435,8 @@
       "moonshot": "Kimiのキーはsk-で始まります。確認してもう一度貼り付けてください。",
       "zai": "Z.aiのキー全体を、スペースなしで貼り付けてください。確認してもう一度貼り付けてください。",
       "minimax": "MiniMaxのキー全体を、スペースなしで貼り付けてください。sk-cp-で始まるキーはプラン用で、ここでは使えません。",
-      "openrouter": "OpenRouterのキーはsk-or-v1-で始まります。確認してもう一度貼り付けてください。"
+      "openrouter": "OpenRouterのキーはsk-or-v1-で始まります。確認してもう一度貼り付けてください。",
+      "commandcode": "Command Codeのキー全体を、スペースなしで貼り付けてください。確認してもう一度貼り付けてください。"
     },
     "keyFromOther": "別のプロバイダーのキーですか？",
     "anthropicWorkspace": "Claude ConsoleのワークスペースID",
@@ -2096,6 +2098,16 @@
       "channels": "すでにチャンネルを 5 件固定しています。固定するには 1 件解除してください。",
       "people": "すでにメンバーを 5 人固定しています。固定するには 1 人解除してください。"
     }
+  },
+  "appsDownload": {
+    "computer": "パソコン",
+    "computerText": "ワークスペースを専用のウィンドウで。システムの通知も届きます。",
+    "inApp": "すでにパソコンのアプリを使っています。",
+    "howTo": "インストール方法",
+    "phone": "スマートフォン",
+    "phoneText": "通知をポケットに。どこからでも返信できます。",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
   },
   "openOnPhone": {
     "qr": "agentesアプリにログインするためのQRコード",
@@ -3154,7 +3166,7 @@
       "closed": "APIキーはワークスペースのagentes.chatプランとともに使えるようになります。",
       "notPlan": "コーディングプランのキーは、上の専用の項目に入力してください。",
       "billing": "キーのプロジェクトで課金を有効にしてください。課金がないと、エージェントが送った内容をGoogleが利用する場合があります。",
-      "privacy": "エージェントが送った内容をどのプロバイダーが保存できるかは、OpenRouterのプライバシー設定で決まります。"
+      "privacy": "{{provider}}は、エージェントが送る内容を、モデルを開発またはホストする会社に渡します。{{provider}}のプライバシー規約と設定に従います。"
     },
     "wait": {
       "signIn": "コンピューターの準備ができしだい、ここでログインします。",
@@ -3225,6 +3237,8 @@
     "agent": "どのエージェント用か",
     "keyLocked": "APIキーを追加できるのは管理者だけです。",
     "accountsLocked": "{{computer}}でプランを接続できるのは{{name}}だけです。",
+    "connectMine": "自分のコンピューターを接続",
+    "makeAgent": "このプランでエージェントを作成",
     "later": "あとで接続"
   },
   "keyGuard": {
@@ -9893,7 +9907,9 @@
         "seven_day_opus": "週 · Opus",
         "seven_day_sonnet": "週 · Sonnet",
         "monthly": "月",
-        "other": "その他の上限"
+        "other": "その他の上限",
+        "extraUsage": "追加使用量",
+        "oauthApps": "OAuthアプリ"
       },
       "short": {
         "five_hour": "5時間",
@@ -9901,7 +9917,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "月",
-        "other": "その他"
+        "other": "その他",
+        "extraUsage": "追加使用量",
+        "oauthApps": "OAuthアプリ"
       },
       "resetsAt": "{{time}}にリセット",
       "resetsOn": "{{day}} {{time}}にリセット",
@@ -14984,6 +15002,7 @@
     "section": {
       "account": "アカウント",
       "notifications": "通知",
+      "download": "agentes.chatのアプリ",
       "general": "一般",
       "right_hand": "右腕",
       "members": "メンバー",
@@ -15016,6 +15035,7 @@
     "sectionText": {
       "account": "あなたのプロフィールと、アプリの表示設定。",
       "notifications": "ここで通知として届くもの。受信トレイにはすべてが残ります。",
+      "download": "パソコンでもスマートフォンでも、同じアカウントで同じワークスペース。",
       "general": "名前、タイムゾーン、そしてすべてのエージェントがワークスペースについて知っていること。",
       "right_hand": "一人ひとりとDMでチームを作るアシスタント。",
       "members": "ワークスペースにいる人。",
@@ -15185,6 +15205,13 @@
     "keySaid": "{{provider}}の応答: {{said}}",
     "keyInUse": "{{agents}}はまだこのキーで動いています。",
     "keyManagement": "これは管理用のキーです。通常のAPIキーを作成してください。",
+    "keyResaved": "このキーはすでに保存されていました。内容を更新しました。",
+    "keyCopies_other": "同じコピーが{{count}}件",
+    "keyMore": "{{label}}の操作",
+    "removeCopies": "コピーを削除",
+    "removeCopiesTitle": "{{label}}のコピーを削除しますか？",
+    "removeCopiesText": "キーは1つだけ残ります。コピーのエージェント、デフォルト、これまでの利用額はそのキーに移ります。",
+    "copiesRemoved_other": "{{count}}件のコピーを削除しました。",
     "autoModels": {
       "title": "「自動」で使うモデル",
       "text": "タスクの難しさに応じて、いずれかが割り当てられます。",

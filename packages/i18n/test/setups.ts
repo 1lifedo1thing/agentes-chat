@@ -269,7 +269,9 @@ export const ANYWHERE: readonly string[] = [
   "mobile.auth.server.",
   "mobile.auth.connect.",
   "desktop.first.",
-  "desktop.own.",
+  // The desktop app's first screen and its install: the Cloud, this computer and one always on, side by side.
+  "desktop.place.",
+  "desktop.install.",
   "desktop.connect.",
   "desktop.link.",
   "desktop.servers.",

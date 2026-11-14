@@ -7,7 +7,11 @@ import type { Widen } from "./widen";
  * no exclamation marks, buttons start with a verb, "agentes" in lower case.
  */
 export const en = {
-  app: { name: "agentes" },
+  app: {
+    name: "agentes",
+    /** The browser tab's title on every screen that doesn't set its own. */
+    tabTitle: "agentes.chat · Your team and your agents, in the same conversation",
+  },
   common: {
     close: "Close",
     joinSentences: "{{a}} {{b}}",
@@ -1609,6 +1613,7 @@ export const en = {
       minimax:
         "Paste the whole MiniMax key, with no spaces. Keys starting with sk-cp- belong to the plan and don't work here.",
       openrouter: "OpenRouter keys start with sk-or-v1-. Check it and paste it again.",
+      commandcode: "Paste the whole Command Code key, with no spaces. Check it and paste it again.",
     },
     keyFromOther: "Is it from another provider?",
     anthropicWorkspace: "Claude Console workspace ID",
@@ -2303,6 +2308,17 @@ export const en = {
       channels: "You already pinned 5 channels. Unpin one to pin this one.",
       people: "You already pinned 5 people. Unpin one to pin this one.",
     },
+  },
+  /** Settings › agentes.chat apps (`AppsDownload.tsx`): the desktop app for this computer and the phone apps. */
+  appsDownload: {
+    computer: "Computer",
+    computerText: "Your workspace in a window of its own, with the system's notifications.",
+    inApp: "You're already in the computer app.",
+    howTo: "How to install",
+    phone: "Phone",
+    phoneText: "Notifications in your pocket, to answer from anywhere.",
+    appStore: "App Store",
+    googlePlay: "Google Play",
   },
   openOnPhone: {
     qr: "QR code to sign in to the agentes app",
@@ -3546,7 +3562,9 @@ export const en = {
       closed: "API keys open with the workspace's agentes.chat plan.",
       notPlan: "A coding plan's key goes in its own option above.",
       billing: "Turn on billing for the key's project. Without billing, Google may use what your agents send.",
-      privacy: "Your OpenRouter privacy settings decide which providers may keep what your agents send.",
+      /** Under the key field or in the step's ⓘ, for a provider that passes calls on (OpenRouter, Command Code). */
+      privacy:
+        "{{provider}} passes what your agents send to the company that makes or hosts the model, under {{provider}}'s privacy terms and settings.",
     },
     wait: {
       signIn: "You sign in here as soon as the computer is ready.",
@@ -3619,6 +3637,10 @@ export const en = {
     agent: "For which agent",
     keyLocked: "Only an admin adds an API key.",
     accountsLocked: "Only {{name}} connects a plan on {{computer}}.",
+    /** Under `accountsLocked` (self-hosted servers): a computer of the person's own, where they sign their plan in. */
+    connectMine: "Connect my computer",
+    /** At the end, after a plan connected by someone who owns no agent yet. */
+    makeAgent: "Create an agent with this plan",
     later: "Connect later",
   },
   keyGuard: {
@@ -10652,6 +10674,9 @@ export const en = {
         seven_day_sonnet: "Week · Sonnet",
         monthly: "Month",
         other: "Other limit",
+        /** Rows the plan reports by an English label ("Extra usage", "OAuth apps"), in the person's language. */
+        extraUsage: "Extra usage",
+        oauthApps: "OAuth apps",
       },
       short: {
         five_hour: "5h",
@@ -10660,6 +10685,8 @@ export const en = {
         seven_day_sonnet: "Sonnet",
         monthly: "month",
         other: "other",
+        extraUsage: "extra usage",
+        oauthApps: "OAuth apps",
       },
       resetsAt: "resets at {{time}}",
       resetsOn: "resets {{day}} at {{time}}",
@@ -15788,6 +15815,7 @@ export const en = {
     section: {
       account: "Your account",
       notifications: "Notifications",
+      download: "agentes.chat apps",
       general: "General",
       right_hand: "Right hand",
       members: "Members",
@@ -15824,6 +15852,7 @@ export const en = {
     sectionText: {
       account: "Your profile and how the app looks for you.",
       notifications: "What reaches you as an alert here. The inbox keeps everything.",
+      download: "The same workspace on your computer and your phone, with your account.",
       general: "Name, time zone and what every agent knows about the workspace.",
       right_hand: "The assistant that builds the team with each person, in their DM.",
       members: "Who is in the workspace.",
@@ -16013,6 +16042,17 @@ export const en = {
     keySaid: "{{provider}} said: {{said}}",
     keyInUse: "{{agents}} still think with this key.",
     keyManagement: "This is a management key. Create a regular API key.",
+    /** Saving a key the workspace already had: that key was updated, no copy added. */
+    keyResaved: "This key was already saved. I updated its details.",
+    /** Quiet, on a key's line: the same key saved more than once, this row standing for all. */
+    keyCopies_one: "{{count}} identical copy",
+    keyCopies_other: "{{count}} identical copies",
+    keyMore: "Actions for {{label}}",
+    removeCopies: "Remove copies",
+    removeCopiesTitle: "Remove the copies of {{label}}?",
+    removeCopiesText: "One key stays. Agents, the default and past spend on the copies move to it.",
+    copiesRemoved_one: "{{count}} copy removed.",
+    copiesRemoved_other: "{{count}} copies removed.",
     autoModels: {
       title: "Models for Automatic",
       text: "Each task gets one of these, by how hard it is.",

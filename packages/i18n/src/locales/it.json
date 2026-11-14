@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Il tuo team e i tuoi agenti, nella stessa conversazione"
   },
   "common": {
     "close": "Chiudi",
@@ -1528,7 +1529,8 @@
       "moonshot": "Le chiavi Kimi iniziano con sk-. Controllala e incollala di nuovo.",
       "zai": "Incolla tutta la chiave Z.ai, senza spazi. Controllala e incollala di nuovo.",
       "minimax": "Incolla tutta la chiave MiniMax, senza spazi. Le chiavi che iniziano con sk-cp- sono del piano e qui non funzionano.",
-      "openrouter": "Le chiavi OpenRouter iniziano con sk-or-v1-. Controllala e incollala di nuovo."
+      "openrouter": "Le chiavi OpenRouter iniziano con sk-or-v1-. Controllala e incollala di nuovo.",
+      "commandcode": "Incolla tutta la chiave Command Code, senza spazi. Controllala e incollala di nuovo."
     },
     "keyFromOther": "È di un altro provider?",
     "anthropicWorkspace": "ID dello spazio di lavoro di Claude Console",
@@ -2222,6 +2224,16 @@
       "channels": "Hai già fissato 5 canali. Toglierne uno per fissare questo.",
       "people": "Hai già fissato 5 persone. Toglierne una per fissare questa."
     }
+  },
+  "appsDownload": {
+    "computer": "Computer",
+    "computerText": "Il tuo workspace in una finestra tutta sua, con le notifiche del sistema.",
+    "inApp": "Sei già nell'app del computer.",
+    "howTo": "Come installarla",
+    "phone": "Telefono",
+    "phoneText": "Le notifiche in tasca, per rispondere da ovunque.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
   },
   "openOnPhone": {
     "qr": "Codice QR per accedere all'app agentes",
@@ -3400,7 +3412,7 @@
       "closed": "Le chiavi API si aprono con il piano agentes.chat del workspace.",
       "notPlan": "La chiave di un piano di coding va nella sua opzione qui sopra.",
       "billing": "Attiva la fatturazione per il progetto della chiave. Senza fatturazione, Google può usare quello che inviano i tuoi agenti.",
-      "privacy": "Le impostazioni privacy di OpenRouter decidono quali fornitori possono conservare quello che inviano i tuoi agenti."
+      "privacy": "{{provider}} passa ciò che inviano i tuoi agenti all'azienda che crea o ospita il modello, secondo i termini e le impostazioni sulla privacy di {{provider}}."
     },
     "wait": {
       "signIn": "Accedi qui appena il computer è pronto.",
@@ -3473,6 +3485,8 @@
     "agent": "Per quale agente",
     "keyLocked": "Solo un admin aggiunge una chiave API.",
     "accountsLocked": "Solo {{name}} collega un piano sul {{computer}}.",
+    "connectMine": "Collega il mio computer",
+    "makeAgent": "Crea un agente con questo piano",
     "later": "Collega più tardi"
   },
   "keyGuard": {
@@ -10720,7 +10734,9 @@
         "seven_day_opus": "Settimana · Opus",
         "seven_day_sonnet": "Settimana · Sonnet",
         "monthly": "Mese",
-        "other": "Altro limite"
+        "other": "Altro limite",
+        "extraUsage": "Utilizzo extra",
+        "oauthApps": "App OAuth"
       },
       "short": {
         "five_hour": "5h",
@@ -10728,7 +10744,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "mese",
-        "other": "altro"
+        "other": "altro",
+        "extraUsage": "utilizzo extra",
+        "oauthApps": "app OAuth"
       },
       "resetsAt": "si azzera alle {{time}}",
       "resetsOn": "si azzera {{day}} alle {{time}}",
@@ -16069,6 +16087,7 @@
     "section": {
       "account": "Il tuo account",
       "notifications": "Notifiche",
+      "download": "App di agentes.chat",
       "general": "Generali",
       "right_hand": "Braccio destro",
       "members": "Membri",
@@ -16101,6 +16120,7 @@
     "sectionText": {
       "account": "Il tuo profilo e come appare l'app per te.",
       "notifications": "Cosa ti arriva come notifica qui. La posta in arrivo conserva tutto.",
+      "download": "Lo stesso workspace sul computer e sul telefono, con il tuo account.",
       "general": "Nome, fuso orario e ciò che ogni agente sa dello spazio di lavoro.",
       "right_hand": "L'assistente che costruisce il team con ogni persona, nella sua DM.",
       "members": "Chi fa parte dello spazio di lavoro.",
@@ -16272,6 +16292,17 @@
     "keySaid": "{{provider}} ha detto: {{said}}",
     "keyInUse": "{{agents}} ragionano ancora con questa chiave.",
     "keyManagement": "Questa è una chiave di gestione. Crea una normale chiave API.",
+    "keyResaved": "Questa chiave era già salvata. Ho aggiornato i suoi dati.",
+    "keyCopies_one": "{{count}} copia uguale",
+    "keyCopies_many": "{{count}} copie uguali",
+    "keyCopies_other": "{{count}} copie uguali",
+    "keyMore": "Azioni per {{label}}",
+    "removeCopies": "Rimuovi copie",
+    "removeCopiesTitle": "Rimuovere le copie di {{label}}?",
+    "removeCopiesText": "Resta una sola chiave. Agenti, chiave predefinita e spese delle copie passano a lei.",
+    "copiesRemoved_one": "{{count}} copia rimossa.",
+    "copiesRemoved_many": "{{count}} copie rimosse.",
+    "copiesRemoved_other": "{{count}} copie rimosse.",
     "autoModels": {
       "title": "Modelli per Automatico",
       "text": "Ogni attività riceve uno di questi, in base alla difficoltà.",

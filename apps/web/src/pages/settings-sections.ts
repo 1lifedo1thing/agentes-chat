@@ -12,6 +12,7 @@ import type { IconName } from "@agenteschat/ui";
 export type SettingsSection =
   | "account"
   | "notifications"
+  | "download"
   | "approvals"
   | "apps"
   | "general"
@@ -45,6 +46,8 @@ export const SETTINGS_SECTIONS: {
   { id: "account", icon: "person", allowed: () => true },
   // What reaches my devices as a notification here (ADR 0071 §8).
   { id: "notifications", icon: "bell", allowed: () => true },
+  // The desktop app for this computer and the phone apps, for everyone: a tab of Your account.
+  { id: "download", icon: "download", allowed: () => true },
   // Who approves for me, and whom I approve for (ADR 0139).
   { id: "approvals", icon: "approve", allowed: () => true },
   // AI apps (ADR 0119): each person connects their own, in this workspace.

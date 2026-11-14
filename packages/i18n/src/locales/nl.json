@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "agentes"
+    "name": "agentes",
+    "tabTitle": "agentes.chat · Je team en je agents, in hetzelfde gesprek"
   },
   "common": {
     "close": "Sluiten",
@@ -1480,7 +1481,8 @@
       "moonshot": "Kimi-sleutels beginnen met sk-. Controleer hem en plak hem opnieuw.",
       "zai": "Plak de hele Z.ai-sleutel, zonder spaties. Controleer hem en plak hem opnieuw.",
       "minimax": "Plak de hele MiniMax-sleutel, zonder spaties. Sleutels die met sk-cp- beginnen horen bij het abonnement en werken hier niet.",
-      "openrouter": "OpenRouter-sleutels beginnen met sk-or-v1-. Controleer hem en plak hem opnieuw."
+      "openrouter": "OpenRouter-sleutels beginnen met sk-or-v1-. Controleer hem en plak hem opnieuw.",
+      "commandcode": "Plak de hele Command Code-sleutel, zonder spaties. Controleer hem en plak hem opnieuw."
     },
     "keyFromOther": "Is hij van een andere aanbieder?",
     "anthropicWorkspace": "Workspace-ID van Claude Console",
@@ -2158,6 +2160,16 @@
       "channels": "Je hebt al 5 kanalen vastgezet. Maak er een los om dit vast te zetten.",
       "people": "Je hebt al 5 mensen vastgezet. Maak er een los om deze vast te zetten."
     }
+  },
+  "appsDownload": {
+    "computer": "Computer",
+    "computerText": "Je workspace in een eigen venster, met de meldingen van het systeem.",
+    "inApp": "Je zit al in de app op de computer.",
+    "howTo": "Zo installeer je hem",
+    "phone": "Telefoon",
+    "phoneText": "Meldingen op zak, om overal te antwoorden.",
+    "appStore": "App Store",
+    "googlePlay": "Google Play"
   },
   "openOnPhone": {
     "qr": "QR-code om in te loggen in de agentes-app",
@@ -3281,7 +3293,7 @@
       "closed": "API-sleutels gaan open met het agentes.chat-abonnement van de workspace.",
       "notPlan": "De sleutel van een codeerabonnement hoort bij die eigen optie hierboven.",
       "billing": "Zet facturering aan voor het project van de sleutel. Zonder facturering mag Google gebruiken wat je agents versturen.",
-      "privacy": "Je privacyinstellingen in OpenRouter bepalen welke aanbieders mogen bewaren wat je agents versturen."
+      "privacy": "{{provider}} geeft wat je agents sturen door aan het bedrijf dat het model maakt of host, volgens de privacyvoorwaarden en -instellingen van {{provider}}."
     },
     "wait": {
       "signIn": "Je logt hier in zodra de computer klaar is.",
@@ -3354,6 +3366,8 @@
     "agent": "Voor welke agent",
     "keyLocked": "Alleen een beheerder voegt een API-sleutel toe.",
     "accountsLocked": "Alleen {{name}} koppelt een abonnement op {{computer}}.",
+    "connectMine": "Mijn computer koppelen",
+    "makeAgent": "Een agent maken met dit abonnement",
     "later": "Later koppelen"
   },
   "keyGuard": {
@@ -10362,7 +10376,9 @@
         "seven_day_opus": "Week · Opus",
         "seven_day_sonnet": "Week · Sonnet",
         "monthly": "Maand",
-        "other": "Andere limiet"
+        "other": "Andere limiet",
+        "extraUsage": "Extra gebruik",
+        "oauthApps": "OAuth-apps"
       },
       "short": {
         "five_hour": "5u",
@@ -10370,7 +10386,9 @@
         "seven_day_opus": "Opus",
         "seven_day_sonnet": "Sonnet",
         "monthly": "maand",
-        "other": "overig"
+        "other": "overig",
+        "extraUsage": "extra gebruik",
+        "oauthApps": "OAuth-apps"
       },
       "resetsAt": "reset om {{time}}",
       "resetsOn": "reset {{day}} om {{time}}",
@@ -15602,6 +15620,7 @@
     "section": {
       "account": "Je account",
       "notifications": "Meldingen",
+      "download": "Apps van agentes.chat",
       "general": "Algemeen",
       "right_hand": "Rechterhand",
       "members": "Leden",
@@ -15634,6 +15653,7 @@
     "sectionText": {
       "account": "Je profiel en hoe de app er voor jou uitziet.",
       "notifications": "Wat je hier als melding bereikt. De inbox bewaart alles.",
+      "download": "Dezelfde workspace op je computer en je telefoon, met je account.",
       "general": "Naam, tijdzone en wat elke agent over de werkruimte weet.",
       "right_hand": "De assistent die met ieder het team opbouwt, in hun DM.",
       "members": "Wie er in de werkruimte zit.",
@@ -15804,6 +15824,15 @@
     "keySaid": "{{provider}} zei: {{said}}",
     "keyInUse": "{{agents}} denken nog met deze sleutel.",
     "keyManagement": "Dit is een beheersleutel. Maak een gewone API-sleutel.",
+    "keyResaved": "Deze sleutel was al opgeslagen. Ik heb de gegevens bijgewerkt.",
+    "keyCopies_one": "{{count}} gelijke kopie",
+    "keyCopies_other": "{{count}} gelijke kopieën",
+    "keyMore": "Acties voor {{label}}",
+    "removeCopies": "Kopieën verwijderen",
+    "removeCopiesTitle": "De kopieën van {{label}} verwijderen?",
+    "removeCopiesText": "Er blijft één sleutel over. Agents, de standaard en eerdere kosten van de kopieën gaan naar die sleutel.",
+    "copiesRemoved_one": "{{count}} kopie verwijderd.",
+    "copiesRemoved_other": "{{count}} kopieën verwijderd.",
     "autoModels": {
       "title": "Modellen voor Automatisch",
       "text": "Elke taak krijgt er een van, naar hoe moeilijk hij is.",
