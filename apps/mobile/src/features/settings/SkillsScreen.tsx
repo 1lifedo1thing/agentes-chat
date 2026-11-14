@@ -786,7 +786,8 @@ function InstallSkill({
   const admin = can(org, "manage_agents");
   const { split } = useSkillScopes(orgId);
   const [scope, setScope] = useState<SkillScope>(startScope ?? (admin ? "team" : "personal"));
-  const mine = split && scope === "personal" ? { personal: true } : {};
+  // Who doesn't manage agents is in a workspace of more than one person: theirs is always personal.
+  const mine = scope === "personal" && (split || !admin) ? { personal: true } : {};
   const repos = useGitHubRepos(orgId);
   const catalog = useCatalog();
   const github = catalog.data?.connectors.find((d) => d.id === "github");
