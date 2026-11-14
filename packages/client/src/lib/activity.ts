@@ -74,6 +74,7 @@ export type ActivityKind =
   | "offeringConnectApp"
   | "offeringSkill"
   | "updatingSkills"
+  | "creatingSkill"
   | "offeringInvites"
   | "proposingAgent"
   | "askingAgent"
