@@ -9,6 +9,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  rmSync,
   statSync,
 } from "node:fs";
 import { chmod, mkdir, readFile, readlink, rename, rm, writeFile } from "node:fs/promises";
@@ -73,7 +74,8 @@ import {
   typingDelays,
 } from "./human-input";
 import { GOOGLE_CHROME_LINUX, SYSTEM_BROWSER_DIR } from "./install-script";
-import { readJson, writeJson } from "./json-file";
+import { readJson, readSmallJson, writeJson } from "./json-file";
+import { bootId } from "./lock";
 import { CRASH_WORDS, pageLocale } from "./page-words";
 import { agentFolderName, isInside, ownedSafely } from "./paths";
 import type { Spawn } from "./scope-gate";
@@ -683,7 +685,8 @@ function secretStoreArgs(platform: string): string[] {
  * The whole command line for the agent's Chrome (`version`: the one on disk):
  * our flags, headless or headed (on its desktop), its own port (0: Chrome
  * picks), its profile, the page it opens (`startPage`, the agent's own start
- * page file, in place of a blank one).
+ * page file, in place of a blank one), or the tabs it opens again, the first
+ * one in front.
  */
 export function chromeLaunchArgs(
   version: string | null,
@@ -691,7 +694,7 @@ export function chromeLaunchArgs(
   platform: string = process.platform,
   lang: string | null = osLang(),
   headed = false,
-  page = "about:blank",
+  page: string | readonly string[] = "about:blank",
   debuggingPort = 0,
   startPage?: string,
   privateNetwork = false,
@@ -706,7 +709,7 @@ export function chromeLaunchArgs(
     ...(ua ? [`--user-agent=${ua}`] : []),
     ...(lang ? [`--lang=${lang}`] : []),
     ...(privateNetwork ? ["--force-webrtc-ip-handling-policy=disable_non_proxied_udp"] : []),
-    startPage && page === "about:blank" ? pathToFileURL(startPage).href : page,
+    ...(typeof page === "string" ? [startPage && page === "about:blank" ? pathToFileURL(startPage).href : page] : page),
   ];
 }
 
@@ -811,8 +814,8 @@ export function prepareProfile(profile: string) {
 
 /**
  * Before every start: the tabs Chrome saved go (`--restore-last-session` would open them again beside the page it
- * starts on, more of them at each restart), so the agent's browser starts on one page, as it always did. Its
- * cookies stay.
+ * starts on, more of them at each restart), so the agent's browser starts on one page, or on the tabs the runner kept
+ * for a computer that restarted or moved (`reopenedTabs`), never on Chrome's own pile. Its cookies stay.
  */
 export function forgetTabs(profile: string) {
   return rm(path.join(profile, "Default", "Sessions"), { recursive: true, force: true }).catch(() => undefined);
@@ -1660,6 +1663,8 @@ export interface BrowserManagerOptions {
    */
   kept?: (agentId: string) => boolean;
   now?: () => number;
+  /** Tests: this boot of the computer (default: `bootId`). */
+  bootId?: () => string;
   /** Tests: opens the session's stream socket. */
   connectStream?: (url: string) => StreamSocket;
   /** Tests: opens a tab's own DevTools socket, where a person's input goes (`PageLink`). */
@@ -1846,6 +1851,8 @@ interface Session {
   keptTabs?: Set<string>;
   /** What a tidy closed that the agent hasn't heard of yet (`tabLabel`). */
   tabsClosed?: string[];
+  /** The tabs `recordTabs` last wrote, as written. */
+  tabsRecorded?: string;
   /** When a sweep last tidied its tabs while it was kept and idle. */
   tidiedAt?: number;
 }
@@ -1897,6 +1904,27 @@ export function tabLabel(url: string): string {
   if (isEmptyTab(url)) return "blank";
   return pageHost(url) ?? url.split(":")[0]?.slice(0, 20) ?? "";
 }
+
+/**
+ * The tabs a computer that restarted or moved opens again, from its tabs in order (the one in front first): web pages
+ * only (no start page, new tab or blank one), each address once, `BROWSER_TABS_KEPT` at most. An address longer than
+ * `TAB_URL_CHARS` (state kept in its fragment) is left out, so the rest always fit in the record and on Chrome's
+ * command line.
+ */
+export function tabsToReopen(urls: readonly unknown[]): string[] {
+  const pages = urls.filter(
+    (u): u is string => typeof u === "string" && u.length <= TAB_URL_CHARS && pageHost(u) !== null,
+  );
+  return [...new Set(pages.map((u) => new URL(u).href))].slice(0, BROWSER_TABS_KEPT);
+}
+
+/**
+ * Where `recordTabs` keeps the agent's tabs: in its Chrome's profile, which the agent's tools never read
+ * (`AGENT_BROWSER_PROFILE` in the command policy), like its cookies.
+ */
+const TABS_FILE = "agentes-tabs.json";
+const TABS_FILE_BYTES = 64 * 1024;
+const TAB_URL_CHARS = 2048;
 
 /** `https://app.acme.example/trips` → `app.acme.example`; null for anything that isn't a web page. */
 export function pageHost(url: string): string | null {
@@ -3178,6 +3206,8 @@ export class BrowserManager {
       }
       const start = this.opts.startChrome ?? launchChrome;
       await this.clearStaleLock(profile);
+      // A Chrome that only restarts or moves to or from the desktop keeps to its one page.
+      const reopened = running || profileSession ? null : this.reopenedTabs(profile, allowed);
       const launch = async (on: ChromeDisplay | null) => {
         prepareProfile(profile);
         const startPage = this.opts.startPageDirectory
@@ -3190,7 +3220,7 @@ export class BrowserManager {
           process.platform,
           undefined,
           on !== null,
-          page,
+          reopened ?? page,
           this.opts.fixedPorts?.cdp ?? 0,
           startPage,
           this.opts.privateNetwork?.(),
@@ -3262,6 +3292,8 @@ export class BrowserManager {
       session.startFails = 0;
       session.startCooling = undefined;
       session.chrome = chrome;
+      // Opened again once; a start that failed keeps the record for the next one.
+      if (reopened) this.dropTabs(session);
       session.version = version ?? undefined;
       session.outdatedAt = undefined;
       session.headed = chrome.display !== undefined;
@@ -3411,6 +3443,9 @@ export class BrowserManager {
     session.chrome = undefined;
     session.aliveAt = null;
     if (!chrome) return;
+    // Closed while the runner runs (idle, stopped, reclaimed), it starts on its one page next time, on any boot. A
+    // runner that is stopping (a reboot stops both at once) keeps its tabs for the next boot.
+    if (!this.closed) this.dropTabs(session);
     const counter = this.counters.get(chrome);
     if (counter) {
       counter.quit();
@@ -3881,6 +3916,7 @@ export class BrowserManager {
       session.tabsClosed = [...(session.tabsClosed ?? []), tabLabel(p.url)];
     }
     const open = pages.filter((p) => !closed.has(p.id));
+    this.recordTabs(session, open);
     const own = open.findIndex((p) => p.url === current);
     return {
       count: open.length,
@@ -3890,6 +3926,55 @@ export class BrowserManager {
         ...(i === own ? { current: true } : {}),
       })),
     };
+  }
+
+  /**
+   * The agent's tabs as they are now (`tabsToReopen`), kept in its profile with the computer's boot, for a start
+   * after the computer restarted or moved (`reopenedTabs`). Never a popup or a tab a person opened (`keptTabs`), nor a
+   * shared profile's. Written when they changed; the addresses never go in the log. A Chrome the runner closes itself
+   * forgets them (`stopChrome`), as a start on the same boot would.
+   */
+  private recordTabs(session: Session, open: readonly { id: string; url: string }[]) {
+    if (isProfileKey(session.agentId)) return;
+    const urls = tabsToReopen(open.filter((p) => !session.keptTabs?.has(p.id)).map((p) => p.url));
+    const text = JSON.stringify(urls);
+    if (text === session.tabsRecorded) return;
+    try {
+      const profile = path.join(session.folder, AGENT_BROWSER_PROFILE);
+      mkdirSync(profile, { recursive: true, mode: 0o700 });
+      writeJson(path.join(profile, TABS_FILE), { urls, boot: this.bootId() });
+      session.tabsRecorded = text;
+    } catch {
+      // the next answer writes it
+    }
+  }
+
+  /**
+   * The tabs `recordTabs` kept on another boot of the computer (it restarted, or the agent's folder moved to another
+   * one), those the agent may reach. Null on a start on the same boot (a first one, one after an idle stop or a crash),
+   * where the boot can't be told (`bootId` is empty), or with nothing kept: Chrome starts on its one page.
+   */
+  private reopenedTabs(profile: string, allowed: readonly string[]): string[] | null {
+    const kept = readSmallJson(path.join(profile, TABS_FILE), TABS_FILE_BYTES);
+    if (!isRecord(kept) || typeof kept.boot !== "string" || !Array.isArray(kept.urls)) return null;
+    const boot = this.bootId();
+    if (!kept.boot || !boot || kept.boot === boot) return null;
+    const urls = tabsToReopen(kept.urls).filter((u) => domainAllowed(u, allowed));
+    return urls.length > 0 ? urls : null;
+  }
+
+  /** What `recordTabs` kept goes. */
+  private dropTabs(session: Session) {
+    session.tabsRecorded = undefined;
+    try {
+      rmSync(path.join(session.folder, AGENT_BROWSER_PROFILE, TABS_FILE), { force: true });
+    } catch {
+      // the next tidy writes it again, on this boot
+    }
+  }
+
+  private bootId() {
+    return (this.opts.bootId ?? bootId)();
   }
 
   /** The active tab's address, or null when the browser can't say. */
