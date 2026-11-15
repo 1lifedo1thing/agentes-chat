@@ -1478,6 +1478,21 @@ html:not([data-pointer]) .member-row--add:focus-visible {
   min-width: 0;
   color: var(--ink-muted);
 }
+/* "Mudar quando perguntar" under an approval's decision: a quiet link, in the card's small words. */
+.ac-link.when-asks {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+}
+.ac-link.when-asks:hover {
+  color: var(--ink);
+}
+/* "Para todos os agentes do workspace" under the levels, one step below them. */
+.scope-row.level-every {
+  margin-top: var(--space-3);
+}
+.level-own {
+  margin: var(--space-3) 0 0;
+}
 .scope-row {
   display: flex;
   align-items: flex-start;

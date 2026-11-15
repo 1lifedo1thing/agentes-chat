@@ -15,7 +15,7 @@ import {
   ownApprovalsCount,
 } from "@agenteschat/client/lib/approvals-level";
 import { can } from "@agenteschat/client/lib/permissions";
-import { Button, Checkbox, Dialog, DialogBody, InfoHint, OptionList } from "@agenteschat/ui";
+import { Button, Checkbox, cx, Dialog, DialogBody, InfoHint, OptionList } from "@agenteschat/ui";
 import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
@@ -116,7 +116,7 @@ export function WhenAsksLink({
   const saving = change.isPending || undo.isPending;
   return (
     <>
-      <Button variant="link" className={className} disabled={saving} onClick={() => setOpen(true)}>
+      <Button variant="link" className={cx("when-asks", className)} disabled={saving} onClick={() => setOpen(true)}>
         {t("approvalsLevel.change")}
       </Button>
       <ApprovalsLevelDialog
