@@ -480,17 +480,23 @@ export async function updateAgent(
 ): Promise<Agent> {
   const membership = await updateAgentMembership(db, actorId, orgId, agentId, patch);
   await refuseRightHandFields(db, orgId, agentId, patch);
-  // A model named as its endpoint lists it, on the agent's endpoint key (or the one sent with it): its full id.
+  let current: Agent | null | undefined;
+  const currentAgent = async () => (current === undefined ? (current = await getAgent(db, orgId, agentId)) : current);
+  // A model named as its endpoint lists it, on the agent's endpoint key (or the one sent with it): its full id. A known
+  // model sent alone is a catalog or OpenRouter pick (the picker sends endpoint models by their full id), even when the
+  // endpoint lists the same id, so it moves keys below instead.
   if (patch.model && !isAutoModel(patch.model) && !parseCustomModel(patch.model)) {
-    const credentialId =
-      patch.credentialId === undefined ? (await getAgent(db, orgId, agentId))?.credentialId : patch.credentialId;
-    const qualified = await endpointModel(db, orgId, { model: patch.model, credentialId });
-    if (qualified.model !== patch.model) patch = { ...patch, model: qualified.model };
+    const sentKey = patch.credentialId !== undefined;
+    if (sentKey || !(await modelInfoFor(db, patch.model, orgId))) {
+      const credentialId = sentKey ? patch.credentialId : (await currentAgent())?.credentialId;
+      const qualified = await endpointModel(db, orgId, { model: patch.model, credentialId });
+      if (qualified.model !== patch.model) patch = { ...patch, model: qualified.model };
+    }
   }
   // A model of another provider than the agent's own key (the model picker sends only the model): the key would refuse
   // every turn, so the agent goes on the workspace's default key for the new provider.
   if (patch.credentialId === undefined && patch.model && !isAutoModel(patch.model) && !parseCustomModel(patch.model)) {
-    const current = await getAgent(db, orgId, agentId);
+    const current = await currentAgent();
     if (current?.credentialId) {
       const [key, model] = await Promise.all([
         usableCredentialRow(db, orgId, current.credentialId),
@@ -501,7 +507,7 @@ export async function updateAgent(
   }
   // The connect flow may send only the key when the agent is already on Automatic.
   if (patch.credentialId !== undefined || isAutoModel(patch.model)) {
-    const current = await getAgent(db, orgId, agentId);
+    const current = await currentAgent();
     const selected = await endpointModel(db, orgId, {
       model: patch.model ?? current?.model,
       credentialId: patch.credentialId === undefined ? current?.credentialId : patch.credentialId,
