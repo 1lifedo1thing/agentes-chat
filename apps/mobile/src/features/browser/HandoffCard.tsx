@@ -230,6 +230,7 @@ function ScreenPeek({ agentId, name, color }: { agentId: string; name: string; c
           frame={live.frame}
           enabled={false}
           onInput={live.sendInput}
+          edge={styles.peek.borderRadius}
           cursor={{
             agentId,
             name,
