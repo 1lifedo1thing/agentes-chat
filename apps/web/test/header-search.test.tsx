@@ -104,6 +104,32 @@ describe("the header search (Discord's)", () => {
     expect(document.querySelector(".channel__header [role=combobox]")).toBeNull();
   });
 
+  test("emptied while its results show, it goes back to its icon when they close with the focus elsewhere", async () => {
+    await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(seeded()) });
+    await settle(6);
+    await typeIn("zebra");
+    await enter();
+    const group = within(results() as HTMLElement).getByRole("region", { name: /^@ada o login está devolvendo 401/ });
+    await act(async () => fireEvent.click(within(group).getByRole("button", { name: "Ir para a mensagem de Ada" })));
+    await settle(6);
+    await typeIn("");
+    const more = within(screen().getByRole("complementary", { name: "Thread" })).getByRole("button", {
+      name: "Mais ações da thread",
+    });
+    more.focus();
+    await act(async () => {
+      fireEvent.keyDown(more, { key: "Enter" });
+      fireEvent.keyUp(more, { key: "Enter" });
+    });
+    await settle(1);
+    await act(async () => fireEvent.click(screen().getByRole("menuitem", { name: "Ver em #eng" })));
+    await settle(4);
+    expect(results()).toBeNull();
+    const header = document.querySelector(".channel__header") as HTMLElement;
+    expect(within(header).queryByRole("combobox", { name: "Buscar" })).toBeNull();
+    expect(within(header).getByRole("button", { name: "Buscar" })).toBeTruthy();
+  });
+
   test("Esc in the box closes the results and keeps the words", async () => {
     await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(seeded()) });
     await settle(6);

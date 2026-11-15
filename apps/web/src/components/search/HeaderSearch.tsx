@@ -83,8 +83,10 @@ export function HeaderSearch({
   const holds =
     Boolean(ws?.input.trim()) || shownChips.some((c) => !(c.op === "in" && c.place.id === place?.id)) || searching;
   const field = open || holds;
+  // Its results can close, or its words go, while the focus is elsewhere: no blur is left to close it then.
   useEffect(() => {
     if (holds) setOpen(true);
+    else if (!input.current?.closest(".search-box")?.contains(document.activeElement)) setOpen(false);
   }, [holds]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs as the field or its icon replaces the other.
   useEffect(() => {
