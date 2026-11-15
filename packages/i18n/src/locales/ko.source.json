@@ -40510,6 +40510,12 @@
   "settings.account.chat.textSizeHelp": {
     "value": "Of messages, in every conversation and on all your devices"
   },
+  "settings.account.chat.fullMessages": {
+    "value": "Show full messages"
+  },
+  "settings.account.chat.fullMessagesHelp": {
+    "value": "Show long messages without “See more”, in every conversation and on all your devices"
+  },
   "settings.account.chat.textSizePhone": {
     "value": "Applies to the whole app, on top of your phone's text size"
   },

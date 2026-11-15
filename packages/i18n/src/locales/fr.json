@@ -16968,6 +16968,8 @@
         "openLatest": "Message le plus récent",
         "textSize": "Taille du texte",
         "textSizeHelp": "Des messages, dans toutes les discussions et sur tous vos appareils",
+        "fullMessages": "Afficher les messages en entier",
+        "fullMessagesHelp": "Affiche les longs messages sans « Voir plus », dans toutes les discussions et sur tous vos appareils",
         "textSizePhone": "S'applique à toute l'app, en plus de la taille du texte de votre téléphone",
         "textXs": "Plus petit",
         "textSm": "Petit",

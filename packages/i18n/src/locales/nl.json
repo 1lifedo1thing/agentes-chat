@@ -16512,6 +16512,8 @@
         "openLatest": "Nieuwste bericht",
         "textSize": "Tekstgrootte",
         "textSizeHelp": "Van berichten, in alle gesprekken en op al je apparaten",
+        "fullMessages": "Berichten volledig tonen",
+        "fullMessagesHelp": "Lange berichten zonder “Meer tonen”, in alle gesprekken en op al je apparaten",
         "textSizePhone": "Geldt voor de hele app, bovenop de tekstgrootte van je telefoon",
         "textXs": "Kleiner",
         "textSm": "Klein",
