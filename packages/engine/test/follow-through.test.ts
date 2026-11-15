@@ -486,13 +486,14 @@ test("at its time, an agent no longer in the conversation, or for a person who l
 
 test("in a task's conversation, read by people who are never its members, a follow-up still comes at its time", async () => {
   f = await setup({ followUps: true });
-  const ana = { type: "person" as const, userId: f.owner.id };
-  const issue = await createIssue({ db: f.db, pubsub: f.pubsub }, ana, f.org.id, {
+  const bia = await addMember(f.db, f.org.id, "member", "bia");
+  const asBia = { type: "person" as const, userId: bia.id };
+  const issue = await createIssue({ db: f.db, pubsub: f.pubsub }, asBia, f.org.id, {
     title: "Migrate the build cache",
     assignee: { type: "agent", id: f.agent.id },
   });
-  const at = await openTaskConversation(f.db, ana, f.org.id, issue.id);
-  await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, at.channelId, {
+  const at = await openTaskConversation(f.db, asBia, f.org.id, issue.id);
+  await postPersonMessage({ db: f.db, pubsub: f.pubsub }, bia.id, f.org.id, at.channelId, {
     body: "@dev keep an eye on the migration and tell me",
     threadId: at.rootId,
   });
