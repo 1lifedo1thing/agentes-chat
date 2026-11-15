@@ -1012,7 +1012,7 @@ const sharedSignInProtocol = (kind: string) =>
 /**
  * Whether a new sign-in of that kind on the computer thinks for all of its owner's agents there (protocol 29):
  * every one where the agents are the runner's own user; where each is its own OS user (system mode), as
- * `SHARED_SIGN_INS` says (ChatGPT's from protocol 38, Gemini's from 58, Grok Build's from 65, never Cursor's nor
+ * `SHARED_SIGN_INS` says (ChatGPT's from protocol 38, Gemini's from 58, Grok Build's from 67, never Cursor's nor
  * OpenCode's).
  */
 export function sharesSignIns(

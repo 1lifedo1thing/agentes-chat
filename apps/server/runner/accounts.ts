@@ -1694,7 +1694,7 @@ export class AccountManager {
    * keeps: Claude's through `claude setup-token` (no login hint there), a
    * plan's key as it is, ChatGPT's through `codex login` as root (`grant` hands its `auth.json` to each turn),
    * Gemini's through `agy acp --login` as root (each turn gets a copy of its sign-in file), Grok Build's through
-   * `grok login --device-auth` as root (`grok_auth` hands each turn a copy of its `auth.json`, protocol 65).
+   * `grok login --device-auth` as root (`grok_auth` hands each turn a copy of its `auth.json`, protocol 67).
    * `method` (protocol 50, a Claude subscription sign-in): the one to use, or a refusal; never another one. The method
    * a sign-in uses is kept beside its folder (`<id>.method`), and signing in again another way is refused.
    */

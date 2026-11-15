@@ -492,7 +492,7 @@ export interface GrokBrainContext {
   bin?: string;
   grants?: string[];
   accounts?: AccountFolders;
-  /** In a worker, a sign-in root keeps for all agents (protocol 65): the copy this turn gets (`AccountManager.grant`). */
+  /** In a worker, a sign-in root keeps for all agents (protocol 67): the copy this turn gets (`AccountManager.grant`). */
   grant?: AccountGrant;
   spawn?: Spawn;
 }

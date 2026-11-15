@@ -538,7 +538,7 @@ export const loginPerAgent = (kind: string, provider?: string | null) =>
  * owner on that computer (ADR 0059 §2, amended 2026-10-30, protocol 29): root keeps it and hands each turn what
  * its CLI needs. For Claude that is the token `claude setup-token` makes, which the runner then keeps; for ChatGPT
  * (protocol 38) a copy of the `auth.json` root signed in to, whose refreshed copies come back to root; for Gemini
- * (protocol 58) a copy of the Google sign-in root's Antigravity CLI keeps; for Grok Build (protocol 65, amended
+ * (protocol 58) a copy of the Google sign-in root's Antigravity CLI keeps; for Grok Build (protocol 67, amended
  * 2026-11-12) a copy of the `auth.json` in root's `GROK_HOME`, whose refreshed copies come back to root too (its
  * sign-in is a grok.com session token with a refresh token, and `GROK_HOME` is its whole store). Set a kind to
  * false to go back to one login per agent there. Where every agent is the runner's own user, any sign-in thinks

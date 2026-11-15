@@ -1600,7 +1600,7 @@ test("refreshing usage: the caller's own accounts, and their computers' own sign
   expect(await refreshAiAccounts(live.deps, stranger.id, f.org.id).catch((e) => e)).toBeInstanceOf(ForbiddenError);
 });
 
-test("a Grok sign-in is asked for all agents only from protocol 65 (issue #319)", async () => {
+test("a Grok sign-in is asked for all agents only from protocol 67 (issue #319)", async () => {
   f = await setup();
   const ask = async (protocol: number) => {
     const { machineId } = await ownedMachine(protocol);
@@ -1624,7 +1624,7 @@ test("a Grok sign-in is asked for all agents only from protocol 65 (issue #319)"
     kind: "grok",
     loginId: expect.any(String),
   });
-  // From 65: root keeps it and each agent's turn gets a copy.
+  // From 67: root keeps it and each agent's turn gets a copy.
   expect(await ask(SHARED_GROK_PROTOCOL)).toMatchObject({ kind: "grok", shared: true });
 });
 

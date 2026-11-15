@@ -1882,7 +1882,7 @@ export interface AiComputer {
   keys: boolean;
   /**
    * A new sign-in there thinks for all of the caller's agents on it (protocol 29): Claude's, ChatGPT's, Gemini's,
-   * Grok Build's (protocol 65) and a coding plan's key.
+   * Grok Build's (protocol 67) and a coding plan's key.
    */
   shares: {
     claude_code: boolean;
