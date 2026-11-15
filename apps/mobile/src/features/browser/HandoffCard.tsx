@@ -221,7 +221,7 @@ function ScreenPeek({ agentId }: { agentId: string }) {
   return (
     <View style={[styles.peek, { backgroundColor: c.sunken }]}>
       {live.frame ? (
-        <FrameView frame={live.frame} enabled={false} onInput={live.sendInput} />
+        <FrameView frame={live.frame} enabled={false} onInput={live.sendInput} edge={styles.peek.borderRadius} />
       ) : (
         <View style={styles.center}>
           <ActivityIndicator color={c.muted} />
