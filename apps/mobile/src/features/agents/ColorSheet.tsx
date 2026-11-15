@@ -63,7 +63,7 @@ export function ColorSheet({
   };
 
   return (
-    <Sheet open={open} onClose={onClose} solid>
+    <Sheet open={open} onClose={onClose}>
       <View style={styles.wrap}>
         <Text variant="title">{t("look.customColor")}</Text>
         <View

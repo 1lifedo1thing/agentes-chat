@@ -1009,8 +1009,9 @@ function Chat({
   const talkable = channelAgents.map((id) => dir.agentById.get(id)).filter((a): a is Agent => Boolean(a) && canTalk(a));
   const helloAgent = talkable.find((a) => !isIdHandle(a.handle)) ?? talkable[0];
 
+  // From the thread's options or a message's actions, the next page of that sheet; from the screen, a sheet.
   const openNewMission = (goal = "", homeThreadId: string | null = threadId) =>
-    sheet.open(
+    sheet.push(
       <NewMissionForm
         goal={goal}
         channelId={channelId}
@@ -1020,7 +1021,7 @@ function Chat({
       />,
     );
   const openRemind = (input: { text?: string; message?: Message } = {}) =>
-    sheet.open(
+    sheet.push(
       <RemindSheet
         channelId={channelId}
         threadId={threadId}
@@ -1029,7 +1030,7 @@ function Chat({
       />,
     );
   const summarize = () => {
-    if (mission) sheet.open(<MissionSummaryView missionId={mission.id} />);
+    if (mission) sheet.push(<MissionSummaryView missionId={mission.id} />);
     else send(t("mobile.chat.summaryMessage"), threadId);
   };
 
@@ -1364,7 +1365,8 @@ function Chat({
     seekPages.current = 0;
     setSeek(target.messageId);
   };
-  const openPins = () => sheet.open(<PinsSheet channelId={channelId} threadId={threadId} onPick={goToPin} />);
+  // From the conversation's options, the next page of that sheet.
+  const openPins = () => sheet.push(<PinsSheet channelId={channelId} threadId={threadId} onPick={goToPin} />);
   // The returns agents set here (ADR 0037 addendum): the dock's line at rest, the sheet behind it; a row goes to the
   // reply that said it.
   const returns = useReturnsHere(channelId, threadId);
@@ -1393,7 +1395,7 @@ function Chat({
     setSeek(target.messageId);
   };
   const openSearch = () =>
-    searchPlace ? sheet.open(<ConversationSearch place={searchPlace} onPick={goToHit} />) : undefined;
+    searchPlace ? sheet.push(<ConversationSearch place={searchPlace} onPick={goToHit} />) : undefined;
   // "Ver resultado" on a work's line: its report, when this conversation shows it.
   const jumpToMessage = useCallback((messageId: string) => {
     const index = rowsRef.current.findIndex((r) => r.kind === "message" && r.message.id === messageId);
@@ -1402,7 +1404,7 @@ function Chat({
     return true;
   }, []);
   const openMembers = () =>
-    channel ? sheet.open(<ChannelMembersSheet channelId={channelId} channelName={channel.name} />) : undefined;
+    channel ? sheet.push(<ChannelMembersSheet channelId={channelId} channelName={channel.name} />) : undefined;
 
   // ── Header ──
   // The header is glass over the conversation: the system's

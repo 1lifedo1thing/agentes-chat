@@ -597,7 +597,7 @@ function AdjustSheet({
   onClose: () => void;
 }) {
   return (
-    <Sheet open={agent !== null} onClose={onClose} solid>
+    <Sheet open={agent !== null} onClose={onClose}>
       {agent ? <AdjustForm key={agent.handle} agent={agent} saving={saving} onSave={onSave} onClose={onClose} /> : null}
     </Sheet>
   );
@@ -677,7 +677,7 @@ export function TeamMapSheet({ plan, open, onClose }: { plan: TeamPlan; open: bo
   const dir = useDirectory();
   const lodi = dir.agents.find(isRightHand);
   return (
-    <Sheet open={open} onClose={onClose} solid>
+    <Sheet open={open} onClose={onClose}>
       <ScrollView contentContainerStyle={styles.form}>
         <Text variant="title2">{t(modeKey(org, "teamPlan.map.title"))}</Text>
         <Text variant="footnote" tone="muted" style={styles.bold}>
@@ -775,7 +775,7 @@ export function TeamTemplatesSheet({
   }, [open, initial]);
   const chosen = list.data?.find((x) => x.id === picked) ?? null;
   return (
-    <Sheet open={open} onClose={onClose} solid>
+    <Sheet open={open} onClose={onClose}>
       <ScrollView contentContainerStyle={styles.form}>
         <Text variant="title2">{chosen ? chosen.name : t(modeKey(org, "teamPlan.templates.title"))}</Text>
         <Text variant="small" tone="muted">

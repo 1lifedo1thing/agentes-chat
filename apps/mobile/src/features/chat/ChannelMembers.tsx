@@ -145,7 +145,7 @@ export function ChannelMembersSheet({ channelId, channelName }: { channelId: str
   };
 
   const open = (w: Who) =>
-    sheet.open(<MemberOptions channelId={channelId} channelName={channelName} who={w} removable={editable} />);
+    sheet.push(<MemberOptions channelId={channelId} channelName={channelName} who={w} removable={editable} />);
   // No options to give here: the row is the way to the agent, as its picture is in the options.
   const seeAgent = (id: string) => {
     sheet.close();
@@ -219,7 +219,7 @@ export function ChannelMembersSheet({ channelId, channelName }: { channelId: str
               key: "add",
               icon: "plus",
               label: t("channelMembers.addRow"),
-              onPress: () => sheet.open(<AddChannelMembers channelId={channelId} channelName={channelName} />),
+              onPress: () => sheet.push(<AddChannelMembers channelId={channelId} channelName={channelName} />),
             },
           ]}
         />
@@ -324,7 +324,7 @@ function MemberOptions({
   const refresh = useRefresh(channelId);
   const routing = useAiStatus(orgId).data?.routing;
   const [autoReply, setAutoReply] = useState(who.autoReply);
-  const back = () => sheet.open(<ChannelMembersSheet channelId={channelId} channelName={channelName} />);
+  const back = () => sheet.back();
   const failed = () => toast({ title: t("mobile.app.failed"), icon: "x" });
 
   const reply = useMutation({
@@ -410,7 +410,6 @@ function MemberOptions({
           ]}
         />
       ) : null}
-      <Button variant="ghost" wide label={t("common.back")} onPress={back} />
     </>
   );
 }
@@ -429,7 +428,7 @@ function AddChannelMembers({ channelId, channelName }: { channelId: string; chan
   const refresh = useRefresh(channelId);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const back = () => sheet.open(<ChannelMembersSheet channelId={channelId} channelName={channelName} />);
+  const back = () => sheet.back();
   const add = useMutation({
     mutationFn: async () => {
       for (const key of selected) {

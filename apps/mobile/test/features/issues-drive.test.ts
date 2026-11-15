@@ -652,7 +652,8 @@ describe("a task's GitHub link", () => {
     const screen = source("IssueScreen.tsx");
     expect(screen).toContain("<GithubChip url={i.githubUrl} />");
     expect(screen).toContain("webUrl(i.githubUrl)");
-    expect(screen).toContain("sheet.open(<GithubLinkForm issue={i} />)");
+    // From the task's menu, the link's form is the next page of that sheet.
+    expect(screen).toContain("sheet.push(<GithubLinkForm issue={i} />)");
     expect(screen).toContain("<Locked when={action.isPending}>");
   });
 

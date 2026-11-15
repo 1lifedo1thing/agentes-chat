@@ -871,7 +871,8 @@ function useIssuePickers(i: Issue) {
     } else update({ type: "update", id: i.id, patch: { assignee: who } });
   };
   const same = (a: Actor | null, b: Actor | null) => (a?.type ?? null) === (b?.type ?? null) && a?.id === b?.id;
-  const pick = (items: ActionItem[]) => sheet.open(<ActionList items={items} />);
+  // From the task's menu, the next page of that sheet; from the screen's rows, a sheet.
+  const pick = (items: ActionItem[]) => sheet.push(<ActionList items={items} />);
   const checked = (on: boolean) => (on ? { trailing: <Icon name="check" size={18} /> } : {});
   const statusItems = (): ActionItem[] =>
     STATUSES.map((s) => ({
@@ -893,7 +894,7 @@ function useIssuePickers(i: Issue) {
     // Columns not loaded (or failed): the stages, as before the board had columns.
     pickColumn: () =>
       board.length > 0
-        ? sheet.open(
+        ? sheet.push(
             <ColumnPicker
               issue={i}
               columns={board}
@@ -1019,7 +1020,7 @@ function IssueMenu({ issue: i }: { issue: Issue }) {
       leading: <SocialMark provider="github" color={c.ink} size={18} />,
       label: t("issues.github.label"),
       ...(i.githubUrl ? { hint: githubLinkLabel(i.githubUrl) } : {}),
-      onPress: () => sheet.open(<GithubLinkForm issue={i} />),
+      onPress: () => sheet.push(<GithubLinkForm issue={i} />),
     },
     {
       key: "audience",

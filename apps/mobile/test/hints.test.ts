@@ -113,7 +113,7 @@ const source = (path: string) => readFileSync(join(SRC, path), "utf8");
 describe("where the ⓘ is plugged in", () => {
   test("every tap reaches the app's outermost view, and a bottom sheet's back closes the hint first", () => {
     expect(source("providers/AppProviders.tsx")).toMatch(/<GestureHandlerRootView[^>]*\{\.\.\.hintTouches\}/);
-    expect(source("ui/Sheet.tsx")).toContain("onRequestClose={hintBackOr(onClose)}");
+    expect(source("ui/Sheet.tsx")).toContain("onRequestClose={hintBackOr(onBack ?? onClose)}");
   });
 
   test("the ⓘ is a button named by the hint, says whether it's open, and its text is announced", () => {

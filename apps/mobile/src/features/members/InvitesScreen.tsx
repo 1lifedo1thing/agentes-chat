@@ -126,7 +126,6 @@ function Invites() {
         resent={Boolean(resent[inv.id])}
         onResent={(id, until) => setResent((all) => ({ ...all, [id]: until }))}
       />,
-      { solid: true },
     );
   // How it came on one line, what its link gives on the next: each wraps whole, nothing cut.
   const request = (r: JoinRequest) => {
@@ -201,7 +200,7 @@ function Invites() {
                 <GroupedHeader>{`${t("invites.links")} · ${formatInt(i18n.language, linkList.length)}`}</GroupedHeader>
                 <GroupedList>
                   {linkList.map((l) => (
-                    <LinkRow key={l.id} link={l} onPress={() => sheet.open(<LinkSheet link={l} />, { solid: true })} />
+                    <LinkRow key={l.id} link={l} onPress={() => sheet.open(<LinkSheet link={l} />)} />
                   ))}
                 </GroupedList>
               </>

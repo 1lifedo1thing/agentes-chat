@@ -1,12 +1,14 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useLayoutEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { Button, type IconName, InfoHint, Locked, Text } from "@/ui";
+import { useSheetPage } from "./SheetHost";
 import { overLimit, TextArea, type TextLimit } from "./TextArea";
 
 /**
  * A sheet's title row: an optional face or tile, the title (with an ⓘ, "About <title>", when `hint` says why) and a
- * line under it.
+ * line under it. On a page pushed in a sheet the title goes in the bar over it, beside the back button, and only the
+ * line under it stays here.
  */
 export function SheetTitle({
   leading,
@@ -20,6 +22,17 @@ export function SheetTitle({
   hint?: string;
 }) {
   const { t } = useTranslation();
+  const page = useSheetPage();
+  const inBar = page?.pushed === true;
+  useLayoutEffect(() => {
+    if (inBar) page?.setTitle(title);
+  }, [inBar, page, title]);
+  if (inBar)
+    return subtitle ? (
+      <Text variant="small" tone="muted">
+        {subtitle}
+      </Text>
+    ) : null;
   const text = <Text variant="title">{title}</Text>;
   return (
     <View style={[styles.title, hint ? styles.top : null]}>
