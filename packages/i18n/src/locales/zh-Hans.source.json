@@ -25162,6 +25162,12 @@
   "aiAccounts.usage.resetsOn": {
     "value": "resets {{day}} at {{time}}"
   },
+  "aiAccounts.usage.allModels": {
+    "value": "All models"
+  },
+  "aiAccounts.usage.onlyModels": {
+    "value": "Only {{name}}"
+  },
   "aiAccounts.usage.almost": {
     "value": "Almost at the limit"
   },

@@ -9971,6 +9971,8 @@
       },
       "resetsAt": "{{time}} 重置",
       "resetsOn": "{{day}} {{time}} 重置",
+      "allModels": "所有模型",
+      "onlyModels": "仅 {{name}}",
       "almost": "即将达到限额",
       "limited": "已达限额",
       "limitedUntil": "已达限额，直到 {{when}}",

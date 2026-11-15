@@ -10668,6 +10668,8 @@
       },
       "resetsAt": "se renueva a las {{time}}",
       "resetsOn": "se renueva el {{day}} a las {{time}}",
+      "allModels": "Todos los modelos",
+      "onlyModels": "Solo {{name}}",
       "almost": "Casi en el límite",
       "limited": "En el límite",
       "limitedUntil": "En el límite hasta {{when}}",

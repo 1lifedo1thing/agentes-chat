@@ -9966,6 +9966,8 @@
       },
       "resetsAt": "direset pukul {{time}}",
       "resetsOn": "direset {{day}} pukul {{time}}",
+      "allModels": "Semua model",
+      "onlyModels": "Hanya {{name}}",
       "almost": "Hampir mencapai batas",
       "limited": "Mencapai batas",
       "limitedUntil": "Mencapai batas sampai {{when}}",

@@ -10276,6 +10276,8 @@
       },
       "resetsAt": "{{time}} saatinde sıfırlanır",
       "resetsOn": "{{day}}, {{time}} saatinde sıfırlanır",
+      "allModels": "Tüm modeller",
+      "onlyModels": "Yalnızca {{name}}",
       "almost": "Sınıra yakın",
       "limited": "Sınırda",
       "limitedUntil": "Sınırda · bitiş: {{when}}",

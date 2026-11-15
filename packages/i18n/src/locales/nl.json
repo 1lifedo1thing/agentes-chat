@@ -10386,6 +10386,8 @@
       },
       "resetsAt": "reset om {{time}}",
       "resetsOn": "reset {{day}} om {{time}}",
+      "allModels": "Alle modellen",
+      "onlyModels": "Alleen {{name}}",
       "almost": "Bijna aan de limiet",
       "limited": "Limiet bereikt",
       "limitedUntil": "Limiet bereikt tot {{when}}",

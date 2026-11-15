@@ -11054,6 +11054,8 @@
       },
       "resetsAt": "сбросится в {{time}}",
       "resetsOn": "сбросится {{day}} в {{time}}",
+      "allModels": "Все модели",
+      "onlyModels": "Только {{name}}",
       "almost": "Почти на пределе",
       "limited": "На пределе",
       "limitedUntil": "На пределе до {{when}}",

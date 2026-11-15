@@ -52,6 +52,11 @@ export interface PlanMeterText {
   ago(iso: string): string;
   /** The same past `PLAN_STALE_MS`: "desatualizado, de há 7 h". */
   stale(iso: string): string;
+  /**
+   * The full meter's heading over a model group's quotas (`modelQuota`): "Só Claude and GPT"; null, over the
+   * account's own, "Todos os modelos". Absent: the windows stay one list, each by its own name.
+   */
+  group?(name: string | null): string;
 }
 
 export type PlanState = "ok" | "almost" | "limited";
@@ -85,6 +90,21 @@ const NOT_A_MODEL = new Set([EXTRA_USAGE_LABEL, "OAuth apps"]);
 
 /** A model's own quota: an `other` window named for a model or a group of them (Claude's `model_scoped`, Antigravity's groups). */
 const modelOwn = (w: { kind: string; label?: string }) => w.kind === "other" && !!w.label && !NOT_A_MODEL.has(w.label);
+
+/**
+ * A model group's own quota as the runner names it (`<group> · 5h|7d`, the Antigravity CLI's groups): the group
+ * ("Claude and GPT models" → "Claude and GPT") and the window it is. Null for any other window, a model's own week
+ * named by the model alone (Claude's `model_scoped`) included.
+ */
+export function modelQuota(w: { kind: string; label?: string }): {
+  group: string;
+  kind: "five_hour" | "seven_day";
+} | null {
+  if (!modelOwn(w) || !w.label) return null;
+  const named = /^(.+?)\s*·\s*(5h|7d)$/.exec(w.label);
+  const group = named?.[1]?.replace(/\s+models?$/i, "").trim();
+  return group ? { group, kind: named?.[2] === "5h" ? "five_hour" : "seven_day" } : null;
+}
 
 /**
  * Whether a model's own quota (`modelOwn`) is `model`'s: its name, without the window's length and "models", each

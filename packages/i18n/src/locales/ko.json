@@ -9911,6 +9911,8 @@
       },
       "resetsAt": "{{time}}에 초기화",
       "resetsOn": "{{day}} {{time}}에 초기화",
+      "allModels": "모든 모델",
+      "onlyModels": "{{name}}만",
       "almost": "한도에 거의 도달",
       "limited": "한도 도달",
       "limitedUntil": "{{when}}까지 한도 도달",

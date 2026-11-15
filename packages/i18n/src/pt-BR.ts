@@ -10704,6 +10704,8 @@ export const ptBR = {
       },
       resetsAt: "renova às {{time}}",
       resetsOn: "renova {{day}} às {{time}}",
+      allModels: "Todos os modelos",
+      onlyModels: "Só {{name}}",
       almost: "Quase no limite",
       limited: "No limite",
       limitedUntil: "No limite até {{when}}",

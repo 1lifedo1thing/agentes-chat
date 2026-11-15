@@ -10684,6 +10684,10 @@ export const en = {
       },
       resetsAt: "resets at {{time}}",
       resetsOn: "resets {{day}} at {{time}}",
+      /** The full meter's heading over a plan's own quotas, when some quotas bind only some models. */
+      allModels: "All models",
+      /** The heading over a model group's own quotas ({{name}}: "Claude and GPT", "Gemini 4 Argon"). */
+      onlyModels: "Only {{name}}",
       almost: "Almost at the limit",
       limited: "At the limit",
       limitedUntil: "At the limit until {{when}}",
