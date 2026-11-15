@@ -1133,7 +1133,7 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
     expect(box.textContent).not.toContain("agora pensa com");
   });
 
-  test("someone else's agent: its owner's account shows, locked, his alone to pick; an admin may still give her a key", async () => {
+  test("someone else's agent: its owner's account isn't listed, a line says it is his alone to give; an admin may still give her a key", async () => {
     const joao = acct({
       id: "acct_joao",
       label: "Claude Max",
@@ -1145,12 +1145,10 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
     // Ada is João's; Walter owns the workspace.
     const state = withCard();
     const { box, picker } = await connectAda(state, { accounts: [joao], canUsePlans: false, canManageAccounts: false });
-    const locked = within(picker).getByRole("button", { name: /^Claude Max/ }) as HTMLButtonElement;
-    expect(shownText(locked)).toBe("Claude MaxDe João");
-    expect(locked.disabled).toBe(true);
-    await click(locked);
+    expect(within(picker).queryByRole("radio", { name: /^Claude Max/ })).toBeNull();
+    expect(picker.textContent).toContain("Mais 1 conta de João que só João pode dar.");
     expect(calls(state, "agents.setBrain")).toHaveLength(0);
-    expect(within(picker).getByRole("button", { name: /^Claude da Acme/ })).toBeTruthy();
+    expect(within(picker).getByRole("radio", { name: /^Claude da Acme/ })).toBeTruthy();
     // A plan for her is João's to connect, as his account is his to pick.
     await chooseAi(box, "Claude");
     expect(box.textContent).toContain(
@@ -1158,7 +1156,54 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
     );
   });
 
-  test("who may use other people's plans picks a teammate's in one click; one another agent has stays locked", async () => {
+  test("one account João signed in once per agent is one row, offering the sign-in that's free; past three rows, all of them in Todas as contas", async () => {
+    // Thirteen sign-ins of João's Claude Team: ten with an agent each, two signed out, the last free.
+    const logins = Array.from({ length: 13 }, (_, i) =>
+      acct({
+        id: `acct_t${i + 1}`,
+        label: "Claude",
+        ownerId: "u-joao",
+        ownerName: "João Pereira",
+        mine: false,
+        sameAs: "acct_t1",
+        status: i === 10 || i === 11 ? "signed_out" : "active",
+        usedBy: i < 10 ? [`Agente ${i + 1}`] : [],
+      }),
+    );
+    const other = (id: string, label: string, over: Partial<MachineAccount> = {}) =>
+      acct({ id, label, plan: "max", ownerId: "u-joao", ownerName: "João Pereira", mine: false, sameAs: id, ...over });
+    const state = withCard();
+    const { box, picker } = await connectAda(state, {
+      accounts: [
+        ...logins,
+        other("acct_home", "Casa"),
+        other("acct_lab", "Laboratório", { shared: true, usedBy: ["Atlas"] }),
+        other("acct_gone", "Antiga", { status: "signed_out" }),
+      ],
+      canUsePlans: false,
+      canManageAccounts: false,
+      canUseOthersPlans: true,
+    });
+    // Three accounts of João's usable, the workspace's key: four rows, the three with most room shown.
+    expect(haveTitles(picker)).toHaveLength(3);
+    expect(picker.textContent).toContain("Mais 1 conta de João que só João pode dar.");
+    expect(picker.textContent).not.toContain("@");
+    await click(within(picker).getByRole("button", { name: "Ver as 4 contas" }));
+    const all = dialog("Todas as contas") as HTMLElement;
+    expect(haveTitles(all)).toEqual(["Claude da Acme", "Claude · Team", "Casa · Max", "Laboratório · Max"]);
+    expect(shownText(haveRow(all, "Claude · Team"))).toBe("Claude · TeamDe João · Team");
+    fireEvent.change(within(all).getByRole("searchbox", { name: "Buscar conta ou pessoa" }), {
+      target: { value: "team" },
+    });
+    expect(haveTitles(all)).toEqual(["Claude · Team"]);
+    await click(haveRow(all, "Claude · Team").querySelector("[role='radio']") as HTMLElement, 8);
+    expect(calls(state, "agents.setBrain").map((c) => c.args)).toEqual([
+      [ORG_ID, ADA_ID, { brain: "claude_code", account: "acct_t13" }],
+    ]);
+    expect(box.textContent).toContain("Ada agora pensa com Claude.");
+  });
+
+  test("who may use other people's plans picks a teammate's in one click; one another agent has is counted, not listed", async () => {
     const bia = acct({
       id: "acct_bia",
       label: "Claude Max",
@@ -1183,10 +1228,12 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
       canManageAccounts: false,
       canUseOthersPlans: true,
     });
-    const theirs = within(picker).getByRole("button", { name: /^Claude Max/ }) as HTMLButtonElement;
-    expect(shownText(theirs)).toBe("Claude MaxDe Bia");
+    const theirs = within(picker).getByRole("radio", { name: /^Claude Max/ }) as HTMLButtonElement;
+    expect(shownText(theirs.closest("label") as HTMLElement)).toBe("Claude MaxDe Bia · Max");
     expect(theirs.disabled).toBe(false);
-    expect((within(picker).getByRole("button", { name: /^Claude Pro/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect(within(picker).queryByRole("radio", { name: /^Claude Pro/ })).toBeNull();
+    expect(picker.textContent).toContain("Mais 1 conta de Caio que só Caio pode dar.");
+    expect(picker.textContent).toContain("Escolha uma conta já conectada aqui. A Ada pensa com ela.");
     expect(picker.textContent).toContain("Os planos que atendem o workspace todo mostram de quem são.");
     await click(theirs, 8);
     expect(calls(state, "agents.setBrain").map((c) => c.args)).toEqual([

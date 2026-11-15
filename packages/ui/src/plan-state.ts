@@ -302,3 +302,34 @@ export function renewals(rows: readonly PlanMeterWindow[], text: PlanMeterText, 
   if (due.length <= 1) return due[0] ? text.resets(due[0].at) : null;
   return due.map(({ w, at }) => `${text.short(w)} ${text.resets(at)}`).join(" · ");
 }
+
+/** What ranks a row of accounts to pick from (`sortHave`). */
+export interface HaveRank {
+  /** Its plan's limits; null where nothing says (a key). */
+  usage: PlanMeterUsage | null;
+  /** It can't be picked. */
+  off?: boolean;
+  /** Picking it asks for a sign-in. */
+  signIn?: boolean;
+  /** A workspace key. */
+  isKey?: boolean;
+}
+
+/**
+ * Accounts to pick from, web and phone: a plan used in one click first, the one with most room on top (one that
+ * doesn't say counts as half used); then one that asks for a sign-in, the workspace's keys, a plan at its limit, and
+ * last what can't be picked.
+ */
+export function sortHave<T extends HaveRank>(items: readonly T[], now = Date.now()): T[] {
+  const rank = (i: HaveRank) => {
+    const s = i.usage ? planState(i.usage, now) : null;
+    return (
+      (i.off ? 8000 : 0) +
+      (s?.state === "limited" ? 4000 : 0) +
+      (i.isKey ? 2000 : 0) +
+      (i.signIn ? 1000 : 0) +
+      (s?.used ?? 50)
+    );
+  };
+  return [...items].sort((a, b) => rank(a) - rank(b));
+}

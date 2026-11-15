@@ -1641,7 +1641,6 @@ function ConnectAiDialog({
                   gates={gates}
                   agent={forAgent}
                   credentials={credentials.data ?? []}
-                  named={!one}
                   signIn={login}
                   panel={held}
                   onSignIn={(next) => {
