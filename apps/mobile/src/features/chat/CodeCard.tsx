@@ -230,39 +230,45 @@ export function CodeSheet() {
     );
   }
   return (
-    <View style={styles.sheet}>
-      <View style={styles.sheetTop}>
-        <IconButton icon="x" plate label={t("mobile.common.close")} onPress={() => router.back()} />
-        <Text variant="title" style={styles.sheetTitle} numberOfLines={1}>
-          {codeLabel(code.lang) || t("mobile.code.label")}
-        </Text>
-        <CopyButton text={code.text} plate />
-      </View>
-      <View style={styles.sheetTools}>
-        <PressScale
-          onPress={() => setWrap((w) => !w)}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: wrap }}
-          style={[styles.pill, { backgroundColor: wrap ? c.ink : c.plate }]}
-          contentStyle={styles.center}
-        >
-          <Text variant="label" style={{ color: wrap ? c.bg : c.ink2 }}>
-            {t("mobile.code.wrap")}
+    <ScrollView
+      style={styles.fill}
+      // A form sheet sizes its first scroll view to the whole sheet, over whatever stands before it: the scroll view
+      // is the sheet's own first child, with the bar and its tools pinned at its top on the sheet's color.
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
+    >
+      <View style={[styles.sheetHead, { backgroundColor: c.grouped }]}>
+        <View style={styles.sheetTop}>
+          <IconButton icon="x" plate label={t("mobile.common.close")} onPress={() => router.back()} />
+          <Text variant="title" style={styles.sheetTitle} numberOfLines={1}>
+            {codeLabel(code.lang) || t("mobile.code.label")}
           </Text>
-        </PressScale>
+          <CopyButton text={code.text} plate />
+        </View>
+        <View style={styles.sheetTools}>
+          <PressScale
+            onPress={() => setWrap((w) => !w)}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: wrap }}
+            style={[styles.pill, { backgroundColor: wrap ? c.ink : c.plate }]}
+            contentStyle={styles.center}
+          >
+            <Text variant="label" style={{ color: wrap ? c.bg : c.ink2 }}>
+              {t("mobile.code.wrap")}
+            </Text>
+          </PressScale>
+        </View>
       </View>
-      <ScrollView style={styles.fill} contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
-        {wrap ? (
-          <View style={styles.sheetBody}>
-            <CodeText lines={lines} numbered wrap />
-          </View>
-        ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sheetBody}>
-            <CodeText lines={lines} numbered />
-          </ScrollView>
-        )}
-      </ScrollView>
-    </View>
+      {wrap ? (
+        <View style={styles.sheetBody}>
+          <CodeText lines={lines} numbered wrap />
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sheetBody}>
+          <CodeText lines={lines} numbered />
+        </ScrollView>
+      )}
+    </ScrollView>
   );
 }
 
@@ -286,7 +292,9 @@ const styles = StyleSheet.create({
   mono: { fontFamily: MONO, fontSize: 13, lineHeight: 20 },
   wrap: { flexShrink: 1 },
   italic: { fontStyle: "italic" },
-  sheet: { flex: 1, paddingTop: 14 },
+  sheet: { flex: 1 },
+  // Clear of the grabber.
+  sheetHead: { paddingTop: 14 },
   gone: { alignItems: "center", justifyContent: "center", padding: 24 },
   sheetTop: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 },
   sheetTitle: { flex: 1, textAlign: "center" },

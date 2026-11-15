@@ -285,10 +285,15 @@ describe("a document's head", () => {
 
   test("a chart opened whole: × alone on the bar, its title on a row of its own under it, never cut", () => {
     const chart = readFileSync(join(import.meta.dir, "../../src/features/chat/ChartCard.tsx"), "utf8");
-    const bar = chart.slice(chart.indexOf("<View style={styles.sheetTop}>"), chart.indexOf("{chart.spec.title}"));
+    const bar = chart.slice(chart.indexOf("<View style={[styles.sheetTop,"), chart.indexOf("{chart.spec.title}"));
     expect(bar.indexOf("</View>")).toBeLessThan(bar.indexOf("<Text"));
     expect(bar).not.toContain("numberOfLines");
     expect(chart).not.toContain("sheetSpacer");
+    // The scroll view is the sheet's first child, the bar pinned in it: a form sheet sizes its first scroll view to
+    // the whole sheet, and a bar standing before it was drawn over the chart.
+    const sheet = chart.slice(chart.indexOf("export function ChartSheet()"), chart.indexOf("export function ChartView("));
+    expect(sheet.slice(sheet.lastIndexOf("return (")).trimStart()).toMatch(/^return \(\s*<ScrollView\b/);
+    expect(sheet).toContain("stickyHeaderIndices={[0]}");
   });
 
   test("a browser profile's sign-in screen keeps its name and line whole beside ×", () => {

@@ -111,6 +111,7 @@ export const ChartCard = memo(function ChartCard({
 export function ChartSheet() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const chart = opened;
   if (!chart) {
     return (
@@ -122,15 +123,22 @@ export function ChartSheet() {
     );
   }
   return (
-    <View style={styles.sheet}>
-      <View style={styles.sheetTop}>
+    <ScrollView
+      style={styles.flex}
+      // A form sheet sizes its first scroll view to the whole sheet, over whatever stands before it (the chart was
+      // drawn under × and the title): the scroll view is the sheet's own first child, with the bar pinned at its
+      // top on the sheet's color.
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
+    >
+      <View style={[styles.sheetTop, { backgroundColor: colors.grouped }]}>
         <IconButton icon="x" plate label={t("mobile.common.close")} onPress={() => router.back()} />
       </View>
       {/* The title on a row of its own under the bar, the sheet's whole width: never cut beside its buttons. */}
       <Text variant="title" style={styles.sheetTitle}>
         {chart.spec.title}
       </Text>
-      <ScrollView contentContainerStyle={[styles.sheetBody, { paddingBottom: 24 + insets.bottom }]}>
+      <View style={styles.sheetBody}>
         {chart.spec.subtitle ? (
           <Text variant="footnote" tone="faint">
             {chart.spec.subtitle}
@@ -138,8 +146,8 @@ export function ChartSheet() {
         ) : null}
         <ChartView spec={chart.spec} accent={chart.accent} big />
         <ChartTable spec={chart.spec} />
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -570,9 +578,17 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   number: { flexDirection: "row", alignItems: "flex-end", gap: 14 },
   numValue: { fontWeight: "700", letterSpacing: -0.5, fontVariant: ["tabular-nums"] },
-  sheet: { flex: 1, paddingTop: 14 },
+  sheet: { flex: 1 },
   gone: { alignItems: "center", justifyContent: "center", padding: 24 },
-  sheetTop: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 },
-  sheetTitle: { paddingHorizontal: 16, paddingTop: 8 },
+  // Clear of the grabber, and tall enough under × that the title never touches it once pinned.
+  sheetTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  sheetTitle: { paddingHorizontal: 16 },
   sheetBody: { paddingHorizontal: 16, paddingTop: 14, gap: 20 },
 });
