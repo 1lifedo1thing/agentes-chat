@@ -59,10 +59,13 @@ const point = (x: number, y: number, act: BrowserPointer["act"] = "click"): Brow
 
 describe("each gesture of the agent's pointer", () => {
   test("counts up, also for two clicks on the same point", () => {
-    const one = nextPointer(null, point(10, 20));
-    const two = nextPointer(one, point(10, 20));
-    expect(one).toEqual({ ...point(10, 20), n: 1 });
-    expect(two.n).toBe(2);
+    const one = nextPointer(null, point(10, 20), 1000);
+    const two = nextPointer(one, point(10, 20), 1200);
+    expect(one).toEqual({ ...point(10, 20), n: 1, at: 1000 });
+    expect(two).toMatchObject({ n: 2, at: 1200 });
+    // When it came, stamped as it comes.
+    const before = Date.now();
+    expect(nextPointer(two, point(1, 2)).at).toBeGreaterThanOrEqual(before);
   });
 
   test("the desktop's pointer event is read for that agent only", () => {

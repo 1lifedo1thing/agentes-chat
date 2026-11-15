@@ -77,7 +77,7 @@ import { useColors, useDirectory, useMeId, useNow } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { successHaptic, tapHaptic } from "../shared/parts";
 import { useActiveWork } from "../shared/queries";
-import { AgentPointer, useDesktopPointer } from "./AgentPointer";
+import { DesktopAgentPointer } from "./AgentPointer";
 import { Cover } from "./Cover";
 import { DOCK_HANG, DockDone, DockIcon, DockRule, DockText, EdgeDock } from "./EdgeDock";
 import { LiveTrail } from "./LiveTrail";
@@ -306,9 +306,13 @@ export function AgentScreen({
     mode: taking ? "control" : finishing ? "watch" : mode,
     session,
   });
-  // The agent's own pointer, while the person watches its screen live (theirs is the one drawn in control).
-  const agentPointer = useDesktopPointer(agentId, live && !inControl && switching === null);
-  const pointerView = useDerivedValue(() => ({ s: s.value, x: x.value, y: y.value, ...desk.value }));
+  const pointerView = useDerivedValue(() => ({
+    s: s.value,
+    x: x.value,
+    y: y.value,
+    ...desk.value,
+    boxWidth: box.value.width,
+  }));
   // Opening, or a switch the stream never takes: past `STUCK_MS` it says so, with Tentar de novo.
   const waitsOn = screenWaits({ active, shown, switching: switching !== null });
   useEffect(() => {
@@ -798,7 +802,14 @@ export function AgentScreen({
                   }}
                 />
               </Animated.View>
-              <AgentPointer agentId={agentId} name={name} color={color} pointer={agentPointer} view={pointerView} />
+              {/* The agent's own pointer, while the person watches its screen live (theirs is drawn in control). */}
+              <DesktopAgentPointer
+                agentId={agentId}
+                name={name}
+                color={color}
+                enabled={live && !inControl && switching === null}
+                view={pointerView}
+              />
               {inControl && !wide ? (
                 <Animated.View pointerEvents="none" style={[styles.cursor, pointer]}>
                   <PixelCursor />

@@ -519,24 +519,45 @@ describe("the agent's own pointer on its screen", () => {
   test("the card's view of the screen is pinned at its top left, scaled to fit", () => {
     const box = { width: 336, height: 336 * (900 / 1280) };
     const w = watchView(box, desk);
-    expect(w).toEqual({ s: fitScale(box, desk), x: 0, y: 0, ...desk });
+    expect(w).toEqual({ s: fitScale(box, desk), x: 0, y: 0, ...desk, boxWidth: box.width });
     const at = pointerInView(said(1280, 900), w);
     expect(at.x).toBeCloseTo(box.width, 6);
     expect(at.y).toBeCloseTo(box.height, 6);
   });
 
-  test("a click rings once, a double click twice, typing leaves only the face; past 0.74 of the width the name turns", () => {
-    const p = { x: 640, y: 450, width: 1280, height: 900, n: 1 };
-    expect(pointerStep({ ...p, act: "click" })).toEqual({
+  const card = watchView({ width: 336, height: 336 * (900 / 1280) }, desk);
+  const p = { x: 640, y: 450, width: 1280, height: 900, n: 1, at: 10_000 };
+
+  test("a click rings once, a double click twice, typing leaves only the face; past 0.74 of the box the name turns", () => {
+    expect(pointerStep({ ...p, act: "click" }, card, 10_000)).toEqual({
       to: { x: 0.5, y: 0.5 },
       presses: 1,
       quiet: false,
       flip: false,
     });
-    expect(pointerStep({ ...p, act: "double" }).presses).toBe(2);
-    expect(pointerStep({ ...p, act: "move" }).presses).toBe(0);
-    expect(pointerStep({ ...p, act: "type" })).toMatchObject({ presses: 0, quiet: true });
-    expect(pointerStep({ ...p, x: 1000, act: "move" }).flip).toBe(true);
-    expect(pointerStep({ ...p, x: 900, act: "move" }).flip).toBe(false);
+    expect(pointerStep({ ...p, act: "double" }, card, 10_000)?.presses).toBe(2);
+    expect(pointerStep({ ...p, act: "move" }, card, 10_000)?.presses).toBe(0);
+    expect(pointerStep({ ...p, act: "type" }, card, 10_000)).toMatchObject({ presses: 0, quiet: true });
+    expect(pointerStep({ ...p, x: 1000, act: "move" }, card, 10_000)?.flip).toBe(true);
+    expect(pointerStep({ ...p, x: 900, act: "move" }, card, 10_000)?.flip).toBe(false);
+  });
+
+  test("zoomed in and panned, the name turns where the tip lands near the box's right edge, not by the desktop", () => {
+    const s = 2;
+    // The desktop's middle panned to the box's right side: x = 0.55 of the desktop lands about 20 pt from its edge.
+    const camera = { x: 0.55 * desk.width - (PHONE.width - 20) / s, y: 0 };
+    const zoomed = { ...view(camera, s), boxWidth: PHONE.width };
+    const tip = { ...p, x: 0.55 * 1280, act: "click" as const };
+    expect(pointerInView(pointerShare(tip), zoomed).x).toBeCloseTo(PHONE.width - 20, 6);
+    expect(pointerStep(tip, zoomed, 10_000)?.flip).toBe(true);
+    // Panned the other way, a point at 0.9 of the desktop sits on the box's left: the name opens right.
+    const left = { ...view({ x: 0.9 * desk.width - 20 / s, y: 0 }, s), boxWidth: PHONE.width };
+    expect(pointerStep({ ...tip, x: 0.9 * 1280 }, left, 10_000)?.flip).toBe(false);
+  });
+
+  test("a gesture over before the view showed it is never replayed", () => {
+    expect(pointerStep({ ...p, act: "click" }, card, 10_000 + 4000)).not.toBeNull();
+    expect(pointerStep({ ...p, act: "click" }, card, 10_000 + 4001)).toBeNull();
+    expect(pointerStep({ ...p, act: "click" }, card, 10_000 + 60_000)).toBeNull();
   });
 });

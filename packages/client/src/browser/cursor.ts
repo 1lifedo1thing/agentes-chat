@@ -29,12 +29,16 @@ export const CURSOR_FLIP_AT = 0.74;
 
 export type CursorSpot = { x: number; y: number };
 
-/** A pointer and how many gestures came before it: `n` changes with every one, also two clicks on one point. */
-export type CountedPointer = BrowserPointer & { n: number };
+/**
+ * A pointer and how many gestures came before it: `n` changes with every one, also two clicks on one point. `at` is
+ * when it came (ms), so a view that shows it later can tell a gesture long over from one under way.
+ */
+export type CountedPointer = BrowserPointer & { n: number; at: number };
 
-export const nextPointer = (was: CountedPointer | null, to: BrowserPointer): CountedPointer => ({
+export const nextPointer = (was: CountedPointer | null, to: BrowserPointer, at = Date.now()): CountedPointer => ({
   ...to,
   n: (was?.n ?? 0) + 1,
+  at,
 });
 
 /** The pointer in a desktop's `agent.desktop.pointer` user event (ADR 0062), for that agent only. */

@@ -55,7 +55,11 @@ export function FrameView({
   const [view, setView] = useState({ width: 0, height: 0 });
   const [sliding, setSliding] = useState(false);
   const meta = useMemo(() => frameMetadata(frame), [frame]);
-  const drawn = useMemo(() => frameView(view, meta), [view, meta]);
+  const { deviceWidth, deviceHeight } = meta;
+  const drawn = useMemo(
+    () => ({ ...frameView(view, { deviceWidth, deviceHeight }), boxWidth: view.width }),
+    [view, deviceWidth, deviceHeight],
+  );
   const pointerView = useDerivedValue(() => drawn, [drawn]);
   const now = useRef({ meta, view, enabled, onInput });
   now.current = { meta, view, enabled, onInput };
