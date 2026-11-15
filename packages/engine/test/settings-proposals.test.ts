@@ -261,6 +261,7 @@ describe("a change of department", () => {
     await call(f, ctx, { changes: [{ agent: "@dev", group: "Suporte" }], reason: "pediu" });
     const [row] = (await cardRows(f, bia.id)).rows;
     expect(row?.settings).toEqual([{ field: "group", from: "Vendas", to: "Suporte" }]);
+    await askProposal(deps, bia.id, f.org.id, row?.id ?? "");
     // A second "Suporte" made while the card waits: accepting it can't tell which one was meant.
     await createAgentGroup(deps, f.owner.id, f.org.id, { name: "Suporte" });
     await expect(decideProposal(f.db, f.owner.id, f.org.id, row?.id ?? "", "accept", deps)).rejects.toMatchObject({
