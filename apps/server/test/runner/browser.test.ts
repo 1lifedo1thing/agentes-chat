@@ -4488,3 +4488,59 @@ test.if(posix)(
     expect(emulationOn(devtools[2], "tab-3")).toEqual([]);
   },
 );
+
+test.if(posix)(
+  "its server short of memory: idle browsers close their duplicate and blank tabs and free memory, every other tab kept; one watched or just used is left alone, one its agent holds only tidied",
+  async () => {
+    let now = 1_000_000;
+    const devtools: FakeSocket[] = [];
+    const chromes = fakeChromes();
+    const json = jsonTargets([
+      { id: "CUR", url: "https://shop.example.com/", title: "Shop" },
+      { id: "A", url: "https://docs.example.com/", title: "Docs" },
+      { id: "A2", url: "https://docs.example.com/", title: "Docs" },
+      { id: "BLANK", url: "about:blank" },
+    ]);
+    const t = setup({
+      now: () => now,
+      kept: (agentId) => agentId === ops.id,
+      fetch: json.fetch,
+      startChrome: async (exe, args, profile) => ({
+        ...(await chromes.start(exe, args, profile)),
+        wsPath: "/devtools/browser/eased",
+      }),
+      connectDevtools: (url) => {
+        const s = new FakeSocket(url);
+        devtools.push(s);
+        queueMicrotask(() => {
+          s.onopen?.();
+          s.push({ id: 1, result: {} });
+        });
+        return s;
+      },
+    });
+    await t.act("open", ["https://shop.example.com/"]);
+    await t.act("open", ["https://shop.example.com/"], { agent: ops });
+    await waitFor(() => devtools.length === 2);
+    const eased = (i: number) =>
+      (devtools[i]?.sent ?? []).filter((m) => m.method === "Memory.simulatePressureNotification");
+    // Used a moment ago: nothing.
+    now += 30_000;
+    expect(await t.manager.easeIdle()).toBe(0);
+    json.closed.length = 0;
+    now += 2 * 60_000;
+    expect(await t.manager.easeIdle()).toBe(2);
+    expect(json.closed).toContain("A2");
+    expect(json.closed).toContain("BLANK");
+    expect(json.closed).not.toContain("A");
+    expect(json.closed).not.toContain("CUR");
+    expect(eased(0)).toEqual([expect.objectContaining({ params: { level: "critical" } })]);
+    expect(eased(1)).toEqual([]);
+    expect(t.chromes.every((c) => !c.killed)).toBe(true);
+    // Someone watches dev's browser: it is left as it is.
+    await t.manager.streamStart(dev, "watch");
+    now += 5 * 60_000;
+    expect(await t.manager.easeIdle()).toBe(1);
+    expect(eased(0)).toHaveLength(1);
+  },
+);
