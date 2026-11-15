@@ -5,6 +5,7 @@ import { Icon, VoicePlayer } from "@agenteschat/ui";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
+import { setVoiceSpeed, useVoiceSpeed } from "@/lib/voice-speed";
 
 /**
  * A voice message (ADR 0100): the recording's player. Its words stay closed until opened there; one still on its way
@@ -14,6 +15,7 @@ export function ChatVoice({ message, voice }: { message: Message; voice: Message
   const { t } = useTranslation();
   const { org } = useOrg();
   const url = message.local ? voiceLocalUrl(message.clientId) : voiceAudioUrl(org.id, voice.clipId);
+  const speed = useVoiceSpeed();
   const isGone = useCallback(() => (url ? voiceAudioGone(url) : Promise.resolve(false)), [url]);
   if (!url) return null;
   return (
@@ -24,6 +26,8 @@ export function ChatVoice({ message, voice }: { message: Message; voice: Message
       expired={voiceExpired(voice)}
       isGone={message.local ? undefined : isGone}
       words={voice.noWords ? null : message.body}
+      speed={speed}
+      onSpeed={setVoiceSpeed}
       note={
         message.meta?.[VOICE_WAITING] === true ? (
           <>
