@@ -4875,15 +4875,11 @@ html:not([data-pointer]) .ac-token__remove:focus-visible {
 .ac-chipfield > :is(.ac-token, .ac-token__tip) ~ .ac-chipfield__input {
   padding-inline-start: 4px;
 }
-/* No search row on top: the list takes the menu's whole height. */
-.ac-chipfield__menu .ac-tz__list {
-  max-height: min(420px, var(--radix-popover-content-available-height, 420px));
-}
-
-/* "@" suggestions above the composer */
+/* "@" suggestions above the composer: all of them where the window has room, not the menu's 280. */
 .ac-suggest {
   min-width: 280px;
   max-width: min(420px, calc(100vw - 32px));
+  max-height: var(--radix-popover-content-available-height);
 }
 .ac-suggest__item {
   align-items: center;
@@ -9308,7 +9304,7 @@ html:not([data-pointer]) .ac-recur__day:focus-visible {
   --menu-pad: 6px;
   width: max(320px, var(--radix-popover-trigger-width, 320px));
   max-width: 92vw;
-  max-height: min(420px, var(--radix-popover-content-available-height, 420px));
+  max-height: var(--radix-popover-content-available-height);
   padding: 0;
   overflow: hidden;
 }
@@ -9329,7 +9325,6 @@ html:not([data-pointer]) .ac-recur__day:focus-visible {
 .ac-tz__list {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: 360px;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--menu-pad);
@@ -10225,14 +10220,17 @@ html:not([data-pointer]) .ac-filter__clear:focus-visible {
   --menu-pad: 6px;
   min-width: 240px;
   max-width: min(340px, 92vw);
+  max-height: var(--radix-popover-content-available-height);
   padding: 0;
   overflow: hidden;
 }
+/* The list gives way under its search row and above its foot, and scrolls in what the window leaves. */
 .ac-filter__list {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
   gap: 2px;
-  max-height: 340px;
   overflow-y: auto;
   padding: var(--menu-pad);
   outline: none;
