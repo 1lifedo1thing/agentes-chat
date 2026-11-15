@@ -8,16 +8,18 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.storage-inuse__mark {
+/* A service's mark: its one-color icon as a mask in its brand color, at an icon's size. */
+.storage-mark {
   flex: none;
-  width: 14px;
-  height: 14px;
+}
+.storage-mark--brand {
   background: var(--connector-color, var(--ink));
   -webkit-mask: var(--connector-icon) center / contain no-repeat;
   mask: var(--connector-icon) center / contain no-repeat;
 }
 
-/* The list of services: whole rows to press, the mark's tile, the name over who it suits, a chevron at the end. */
+/* The list of services: whole rows to press, the mark centred on the name's line (`.ac-iconline`), who it suits under
+   the name, a chevron. */
 button.storage-pick__row {
   width: 100%;
   border: 0;
@@ -26,7 +28,7 @@ button.storage-pick__row {
   text-align: left;
   cursor: pointer;
   flex-wrap: nowrap;
-  align-items: center;
+  align-items: flex-start;
   transition: background-color 0.15s var(--out);
 }
 button.storage-pick__row:hover {
@@ -42,15 +44,8 @@ html:not([data-pointer]) button.storage-pick__row:focus-visible {
 .storage-pick__go {
   flex: none;
   margin-left: auto;
+  margin-top: 3px;
   color: var(--faint);
-}
-
-/* The dialog's form: the same rhythm as the fields of any form. */
-.storage-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--form-gap);
-  min-width: 0;
 }
 
 /* Numbered steps, flat: the number on the title's line, what to do under the title, the step's fields under that. */
@@ -109,10 +104,6 @@ html:not([data-pointer]) button.storage-pick__row:focus-visible {
   margin-left: 6px;
 }
 
-/* The footer's way back stays at the start, the main button at the end. */
-.storage-foot__first {
-  margin-right: auto;
-}
 .ac-alert b {
   font-weight: 600;
 }

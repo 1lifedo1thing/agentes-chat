@@ -45,7 +45,6 @@ import {
 } from "@agenteschat/ui";
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { StorageMeter } from "@/components/Limits";
 import { LoadingCards } from "@/components/Loading";
 import { useOrg } from "@/components/org-context";
@@ -91,17 +90,27 @@ function PathCode({ path }: { path: string }) {
   return <code style={{ fontSize: 12.5, overflowWrap: "anywhere" }}>{softBreaks(path)}</code>;
 }
 
-/** A service's mark on a tile, as the connectors catalog shows one; "Other" our database icon on the same tile. */
-function ProviderTile({ provider }: { provider: StorageProvider }) {
-  const { t } = useTranslation();
-  if (provider === "other") {
-    return (
-      <span className="connector-icon connector-icon--brand" aria-hidden="true">
-        <Icon name="database" />
-      </span>
-    );
-  }
-  return <ConnectorIcon def={MARKS[provider]} label={t(`storage.connect.provider.${provider}`)} />;
+/**
+ * A service's mark in its color, at an icon's size on the name's line (no tile: a tile beside a name and a line that
+ * wraps would own a column); "Other" our database icon.
+ */
+function ProviderMark({ provider, size = 20 }: { provider: StorageProvider; size?: 14 | 20 }) {
+  if (provider === "other") return <Icon name="database" size={size} className="storage-mark" />;
+  const mark = MARKS[provider];
+  return (
+    <span
+      className="storage-mark storage-mark--brand"
+      aria-hidden="true"
+      style={
+        {
+          "--connector-icon": `url("${mark.iconUrl}")`,
+          "--connector-color": mark.brandColor,
+          width: size,
+          height: size,
+        } as CSSProperties
+      }
+    />
+  );
 }
 
 /** The storage in use, said by its service and bucket ("Cloudflare R2 · acme-files"), or by its address when unknown. */
@@ -119,14 +128,9 @@ function InUseLine({ config }: { config: StorageConfig }) {
     }
     return <>{t("storage.connect.inUseAt", { bucket: s3.bucket, host })}</>;
   }
-  const mark = MARKS[provider];
   return (
     <span className="storage-inuse">
-      <span
-        className="storage-inuse__mark"
-        aria-hidden="true"
-        style={{ "--connector-icon": `url("${mark.iconUrl}")`, "--connector-color": mark.brandColor } as CSSProperties}
-      />
+      <ProviderMark provider={provider} size={14} />
       {t("storage.connect.inUse", { provider: t(`storage.connect.provider.${provider}`), bucket: s3.bucket })}
     </span>
   );
@@ -215,7 +219,8 @@ export function StorageSection() {
             <InUse config={config} place={place} onEdit={() => setConnect("edit")} />
           ) : (
             choice === "s3" && (
-              <div className="row">
+              // `ac-acts` straight in the card: on a phone its lone button takes the card's width.
+              <div className="ac-acts">
                 <Button variant="primary" onClick={() => setConnect("new")}>
                   {t("storage.connect.open")}
                 </Button>
@@ -367,8 +372,13 @@ function ConnectDialog({
         <DialogBody>
           <List className="storage-pick">
             {STORAGE_PROVIDERS.map((p) => (
-              <button key={p} type="button" className="ac-list__row storage-pick__row" onClick={() => setProvider(p)}>
-                <ProviderTile provider={p} />
+              <button
+                key={p}
+                type="button"
+                className="ac-list__row ac-iconline storage-pick__row"
+                onClick={() => setProvider(p)}
+              >
+                <ProviderMark provider={p} />
                 <span className="list-col">
                   <span className="storage-pick__name">{t(`storage.connect.provider.${p}`)}</span>
                   <span className="small muted">{t(`storage.connect.providerText.${p}`)}</span>
@@ -502,7 +512,7 @@ function ProviderSteps({
     >
       <DialogBody>
         <form
-          className="storage-form"
+          className="ac-form"
           aria-label={t(`storage.connect.title.${provider}`)}
           onSubmit={(e) => e.preventDefault()}
         >
@@ -630,7 +640,7 @@ function ProviderSteps({
         </form>
       </DialogBody>
       <DialogFooter>
-        <Button className="storage-foot__first" onClick={editing ? () => onOpenChange(false) : onBack}>
+        <Button onClick={editing ? () => onOpenChange(false) : onBack}>
           {editing ? t("common.cancel") : t("storage.connect.back")}
         </Button>
         {current?.ok ? (
