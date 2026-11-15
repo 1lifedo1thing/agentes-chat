@@ -40,6 +40,7 @@ import {
 } from "./tools/scopes";
 import { orgDefaultAgentBudget, resyncBudgetCounter } from "./usage";
 import { resumeBudgetWaits } from "./usage-pause";
+import { workspaceApprovalsLevel } from "./workspace-approvals";
 import { isPersonalWorkspace } from "./workspace-mode";
 
 const { agents, connectorConnections, importItems, machines, organizationMembers, providerCredentials } = schema;
@@ -96,8 +97,8 @@ export interface AgentInput {
   mediaReplies?: boolean;
   /** Its autonomy brakes (ADR 0131), stored as `autonomySettings` reads them. */
   autonomyBrakes?: Partial<AutonomySettings>;
-  /** How much it asks before acting (ADR 0173). */
-  approvalsLevel?: ApprovalsLevel;
+  /** How much it asks before acting (ADR 0173): its own choice; null follows the workspace's. */
+  approvalsLevel?: ApprovalsLevel | null;
 }
 
 /** Endpoints have no catalog tiers: connecting their key on Automatic pins one of their own models (ADR 0146). */
@@ -129,7 +130,7 @@ export async function validateAgentFields(db: Database, orgId: string, input: Pa
   if (input.monthlyBudgetNanoUsd != null && input.monthlyBudgetNanoUsd < 0) {
     throw new ValidationError("budget can't be negative");
   }
-  if (input.approvalsLevel !== undefined && !APPROVALS_LEVELS.includes(input.approvalsLevel)) {
+  if (input.approvalsLevel != null && !APPROVALS_LEVELS.includes(input.approvalsLevel)) {
     throw new ValidationError(`approvalsLevel must be one of: ${APPROVALS_LEVELS.join(", ")}`);
   }
   if (input.credentialId) {
@@ -233,14 +234,14 @@ export async function createAgent(
   options: { remember?: boolean; via?: string; pubsub?: PubSub } = {},
 ): Promise<Agent> {
   const membership = await requirePermission(db, actorId, orgId, "create_agents");
-  const { autonomy, audienceMode, setup, ...fields } = input;
+  const { autonomy, audienceMode, setup, approvalsLevel, ...fields } = input;
   // `create_agents` makes the creator's own agent (ADR 0085 §5): another owner, or none, is for who edits any agent.
   // So whoever gets this far may also set its Autonomia (ADR 0094): an admin or the new agent's owner.
   if (input.ownerUserId !== undefined && input.ownerUserId !== actorId && !can(membership, "manage_agents")) {
     throw new ForbiddenError("Only an admin can create an agent for someone else or with no owner");
   }
   // How much it asks (ADR 0173) is for who edits any agent, at its creation too.
-  if (input.approvalsLevel !== undefined && !can(membership, "manage_agents")) {
+  if (input.approvalsLevel != null && !can(membership, "manage_agents")) {
     throw new ForbiddenError("Only who manages agents can set how much an agent asks");
   }
   // What one agent may spend beyond the workspace's default is for who edits any agent: a member's new agent takes
@@ -282,6 +283,7 @@ export async function createAgent(
       .values({
         ...values,
         ...brainAuto,
+        ...(await approvalsLevelFields(db, orgId, approvalsLevel)),
         machineId: home,
         orgId,
         ownerUserId,
@@ -440,6 +442,13 @@ async function updateAgentMembership(
   return membership;
 }
 
+/** An agent's stored level: its own choice, or the workspace's (null or none given) while it follows it. */
+async function approvalsLevelFields(db: Executor, orgId: string, level: ApprovalsLevel | null | undefined) {
+  return level == null
+    ? { approvalsLevel: await workspaceApprovalsLevel(db, orgId), approvalsLevelOwn: false }
+    : { approvalsLevel: level, approvalsLevelOwn: true };
+}
+
 export async function updateAgent(
   db: Database,
   actorId: string,
@@ -511,11 +520,13 @@ export async function updateAgent(
           previousHandles: sql`case when ${agents.handle} = ${handle} then ${agents.previousHandles}
             else array_append(array_remove(${agents.previousHandles}, ${handle}::text), ${agents.handle}) end`,
         };
+  const { approvalsLevel, ...stored } = input;
+  const level = approvalsLevel === undefined ? {} : await approvalsLevelFields(db, orgId, approvalsLevel);
   let agent: Agent | undefined;
   try {
     [agent] = await db
       .update(agents)
-      .set({ ...input, ...handover, ...previous, updatedAt: new Date() })
+      .set({ ...stored, ...level, ...handover, ...previous, updatedAt: new Date() })
       .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId), isNull(agents.deletedAt)))
       .returning();
   } catch (error) {
@@ -717,6 +728,8 @@ export const agentView = (a: Agent) => ({
   brakes: autonomySettings(a.autonomyBrakes),
   /** How much it asks before acting (ADR 0173). */
   approvalsLevel: a.approvalsLevel,
+  /** Whether that level is its own choice; false: it follows the workspace's. */
+  approvalsLevelOwn: a.approvalsLevelOwn,
   createdAt: a.createdAt,
 });
 
