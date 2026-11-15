@@ -75,6 +75,7 @@ export const helpKo: Partial<Record<HelpSlug, HelpDocument>> = {
         heading: "다른 기기에서 로그인하기",
         blocks: [
           "소유자는 처음에 비밀번호가 없어요. 이 컴퓨터에서는 앱이 로그인해 줘요. 다른 컴퓨터의 브라우저에서 로그인하려면 **설정\u00a0›\u00a0내 계정**에서 비밀번호를 추가하세요. 추가하기 전까지 **환경설정\u00a0›\u00a0서버**에 알림이 보이고, **비밀번호 추가**를 누르면 그 페이지가 열려요. 휴대폰 앱은 **환경설정\u00a0›\u00a0서버**의 **내 휴대폰에서** 아래에 있는 QR 코드를 스캔해서 연결해요. 이때 **휴대폰과 팀원이 접속할 수 있게 하기**가 켜져 있어야 해요.",
+          "소유자가 **설정\u00a0›\u00a0내 계정**에서 계정을 삭제하면 7일 뒤에 완전히 사라지고, 소유자 혼자 있던 워크스페이스도 함께 사라져요. 그때까지는 로그인한 뒤 **계정 복원**을 누르면 되돌릴 수 있어요. 계정이 사라진 뒤 남은 계정이 하나도 없으면, 앱이 환영 창을 열어 새 소유자를 만들어요. 다른 사람의 계정이 남아 있으면 각자 자기 이메일로 로그인해요.",
         ],
       },
       {
@@ -97,19 +98,17 @@ export const helpKo: Partial<Record<HelpSlug, HelpDocument>> = {
         heading: "처음부터 다시 시작하거나 제거하기",
         blocks: [
           "agentes.chat이 이 컴퓨터에 저장하는 모든 것은 앱 안이 아니라 홈 폴더의 폴더들에 있어요. 그래서 앱을 휴지통으로 옮겨도 아무것도 지워지지 않고, 실행 중인 agentes.chat도 멈추지 않아요.",
-          "처음부터 다시 시작하려면 **환경설정\u00a0›\u00a0서버**에서 카드 아래의 **지우고 처음부터 시작…**을 누르세요. 이 컴퓨터의 agentes.chat이 멈추고, 담긴 모든 것은 홈 폴더의 새 폴더(이름은 `agentes.chat erased`와 그날 날짜)로 옮겨져 직접 지울 때까지 그대로 남아요. 그 워크스페이스는 쓰던 모든 사람이 쓸 수 없게 돼요. 그다음 환영 창이 열리고, 새 소유자 계정으로 다시 설정해요. 홈 폴더의 `agentes`에 있는 에이전트 파일은 그 자리에 그대로 남아요.",
-          "소유자가 **설정\u00a0›\u00a0내 계정**에서 계정을 삭제하면 7일 뒤에 완전히 사라지고, 소유자 혼자 있던 워크스페이스도 함께 사라져요. 그때까지는 로그인하면 되돌릴 수 있어요. 계정이 사라진 뒤 남은 계정이 하나도 없으면, 앱이 환영 창을 열어 새 소유자를 만들어요. 다른 사람의 계정이 남아 있으면 각자 자기 이메일로 로그인해요.",
+          "처음부터 다시 시작하려면 **환경설정\u00a0›\u00a0서버**에서 **지우고 처음부터 시작…**을 누르세요. 이 컴퓨터의 agentes.chat이 멈추고, 담긴 모든 것은 홈 폴더의 새 폴더(이름은 `agentes.chat erased`와 그날 날짜)로 옮겨져 직접 지울 때까지 남아요. 에이전트가 이 컴퓨터에 저장해 둔 것(예: 브라우저와 로그인 정보)은 `.agentes-runner`에서 삭제돼요. 그 워크스페이스는 쓰던 모든 사람이 쓸 수 없게 돼요. 그다음 환영 창이 열리고, 새 소유자 계정으로 다시 설정해요. 홈 폴더의 `agentes`에 있는 에이전트 파일은 그 자리에 그대로 남아요.",
           "이 컴퓨터에서 agentes.chat을 완전히 제거하려면:",
           {
             list: [
               "**환경설정\u00a0›\u00a0일반**에서 **로그인할 때 열기**를 끄세요.",
-              "앱을 종료하세요. 시계 옆의 agentes.chat 아이콘을 클릭하고 **agentes.chat 종료**를 고르세요. 창을 닫는 것만으로는 종료되지 않아요.",
+              "앱을 종료하세요. 창을 닫는 것만으로는 종료되지 않아요. Mac에서는 Dock의 아이콘을 클릭한 다음 화면 위쪽의 agentes.chat 메뉴에서 **agentes.chat 종료**를 고르거나 ⌘Q를 누르세요. Windows와 Linux에서는 시계 옆의 agentes.chat 아이콘을 클릭하고 **agentes.chat 종료**를 고르세요. **agentes.chat을 종료할까요?**라고 물으면 **종료**를 누르세요.",
               "앱을 삭제하세요. Mac에서는 휴지통으로 옮기세요. Windows와 Linux에서는 다른 앱처럼 제거하세요.",
-              "홈 폴더에서 다음 폴더를 삭제하세요. 내 데이터가 들어 있고 삭제하면 되돌릴 수 없으니, 나중에 필요할 수 있다면 먼저 다른 곳에 백업해 두세요. `.agentes`(메시지, 파일, 계정, 설정, 백업), 모든 `agentes.chat erased` 폴더, `.agentes-runner`(에이전트가 이 컴퓨터에 저장한 것, 예를 들어 브라우저와 로그인 정보), `agentes`(에이전트 파일).",
-              "앱 자체의 폴더를 삭제하세요. 앱 설정, 창의 로그인 정보, 로그만 들어 있어요. Mac: `~/Library`의 Application Support, Caches, HTTPStorages, Logs, Preferences, WebKit 폴더에서 이름이 `chat.agentes.desktop`으로 시작하는 모든 것과 `~/Library/LaunchAgents`의 `agentes.chat.plist`. Windows: `%APPDATA%\\chat.agentes.desktop`과 `%LOCALAPPDATA%\\chat.agentes.desktop`. Linux: `~/.config/chat.agentes.desktop`과 `~/.local/share/chat.agentes.desktop`.",
+              "홈 폴더에서 다음 폴더를 삭제하세요. 내 데이터가 들어 있고 삭제하면 되돌릴 수 없으니, 나중에 필요할 수 있다면 먼저 다른 곳에 백업해 두세요. `.agentes`(메시지, 파일, 계정, 설정, 백업), 모든 `agentes.chat erased` 폴더, `.agentes-runner`(에이전트가 이 컴퓨터에 저장한 것, 예를 들어 브라우저와 로그인 정보), `agentes`(에이전트 파일). 이름이 점으로 시작하는 폴더는 숨겨져 있어요. Mac에서는 Finder에서 홈 폴더를 열고 ⇧⌘.(Shift, Command, 마침표 키)를 누르면 보여요.",
+              "앱 자체의 폴더를 삭제하세요. 앱 설정, 창의 로그인 정보, 로그만 들어 있어요. Mac: `~/Library`의 Application Support, Caches, HTTPStorages, Logs, Preferences, WebKit 폴더에서 이름이 `chat.agentes.desktop`으로 시작하는 모든 것과 `~/Library/LaunchAgents`의 `agentes.chat.plist`. Windows: `%APPDATA%\\chat.agentes.desktop`과 `%LOCALAPPDATA%\\chat.agentes.desktop`. Linux: `~/.config/chat.agentes.desktop`과 `~/.local/share/chat.agentes.desktop`. Mac에서 이 폴더들을 열려면 Finder에서 ⇧⌘G를 누르고 경로(예: `~/Library/Caches`)를 입력하세요.",
             ],
           },
-          "Mac에서 이 폴더들을 열려면 Finder에서 ⇧⌘G를 누르고 경로(예: `~/.agentes`)를 입력하세요.",
         ],
       },
       {

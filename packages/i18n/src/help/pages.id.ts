@@ -75,6 +75,7 @@ export const helpId: Partial<Record<HelpSlug, HelpDocument>> = {
         heading: "Masuk dari perangkat lain",
         blocks: [
           "Awalnya pemilik tidak punya kata sandi: aplikasi memasukkanmu di komputer ini. Untuk masuk dari browser di komputer lain, tambahkan kata sandi di **Pengaturan\u00a0›\u00a0Akunmu**. Selama belum ada, **Preferensi\u00a0›\u00a0Server** mengingatkanmu, dan **Tambahkan kata sandi** membuka halaman itu. Aplikasi ponsel terhubung dengan memindai kode QR di bawah **Di ponselmu**, di **Preferensi\u00a0›\u00a0Server**. Untuk itu, **Akses dari ponselmu dan rekan tim** harus menyala.",
+          "Saat pemilik menghapus akunnya, di **Pengaturan\u00a0›\u00a0Akunmu**, akun itu hilang untuk selamanya 7 hari kemudian, dan ruang kerja yang hanya berisi dia ikut hilang. Sampai saat itu, masuk lalu tekan **Pulihkan akun** untuk memulihkannya. Setelah akun itu hilang, kalau tidak ada akun yang tersisa, aplikasi membuka jendela sambutan untuk membuat pemilik baru. Kalau orang lain masih punya akun, masing-masing masuk dengan email mereka sendiri.",
         ],
       },
       {
@@ -97,19 +98,17 @@ export const helpId: Partial<Record<HelpSlug, HelpDocument>> = {
         heading: "Mulai dari awal atau copot pemasangan",
         blocks: [
           "Semua yang disimpan agentes.chat di komputer ini ada di folder-folder dalam folder pribadimu, bukan di dalam aplikasi. Jadi memindahkan aplikasi ke Tempat Sampah tidak menghapus apa pun dari situ, dan tidak menghentikan agentes.chat kalau sedang berjalan.",
-          "Untuk mulai dari awal, tekan **Hapus dan mulai dari awal…** di bawah kartunya di **Preferensi\u00a0›\u00a0Server**. agentes.chat di sini berhenti dan semua isinya dipindahkan ke folder baru di folder pribadimu, bernama `agentes.chat erased` dengan tanggal hari itu, dan tetap utuh di sana sampai kamu menghapusnya. Ruang kerjanya hilang bagi semua orang yang memakainya. Lalu jendela sambutan terbuka, dan kamu menyiapkannya lagi dengan akun pemilik baru. File para agen, di `agentes` dalam folder pribadimu, tetap di tempatnya.",
-          "Saat pemilik menghapus akunnya, di **Pengaturan\u00a0›\u00a0Akunmu**, akun itu hilang untuk selamanya 7 hari kemudian, dan ruang kerja yang hanya berisi dia ikut hilang. Sampai saat itu, masuk lagi akan memulihkannya. Setelah akun itu hilang, kalau tidak ada akun yang tersisa, aplikasi membuka jendela sambutan untuk membuat pemilik baru. Kalau orang lain masih punya akun, masing-masing masuk dengan email mereka sendiri.",
+          "Untuk mulai dari awal, tekan **Hapus dan mulai dari awal…** di **Preferensi\u00a0›\u00a0Server**. agentes.chat di sini berhenti dan semua isinya dipindahkan ke folder baru di folder pribadimu, bernama `agentes.chat erased` dengan tanggal hari itu, dan tetap di sana sampai kamu menghapusnya. Yang disimpan para agennya di komputer ini, seperti browser dan login mereka, dihapus dari `.agentes-runner`. Ruang kerjanya hilang bagi semua orang yang memakainya. Lalu jendela sambutan terbuka, dan kamu menyiapkannya lagi dengan akun pemilik baru. File para agen, di `agentes` dalam folder pribadimu, tetap di tempatnya.",
           "Untuk menghapus agentes.chat dari komputer ini sepenuhnya:",
           {
             list: [
               "Matikan **Buka saat login** di **Preferensi\u00a0›\u00a0Umum**.",
-              "Keluar dari aplikasi: klik ikon agentes.chat di dekat jam dan pilih **Keluar dari agentes.chat**. Menutup jendelanya saja tidak cukup.",
+              "Keluar dari aplikasi. Menutup jendelanya saja tidak cukup. Di Mac, klik ikonnya di Dock, lalu pilih **Keluar dari agentes.chat** di menu agentes.chat di bagian atas layar, atau tekan ⌘Q. Di Windows dan Linux, klik ikon agentes.chat di dekat jam dan pilih **Keluar dari agentes.chat**. Kalau muncul pertanyaan **Keluar dari agentes.chat?**, tekan **Keluar**.",
               "Hapus aplikasinya. Di Mac, pindahkan ke Tempat Sampah. Di Windows dan Linux, copot pemasangannya seperti aplikasi lain.",
-              "Hapus folder-folder ini di folder pribadimu. Isinya datamu, dan setelah dihapus tidak bisa kembali, jadi simpan dulu cadangan di tempat lain kalau mungkin masih kamu perlukan: `.agentes` (pesan, file, akun, pengaturan, dan cadangan), setiap folder `agentes.chat erased`, `.agentes-runner` (yang disimpan para agen di komputer ini, seperti browser dan login mereka), dan `agentes` (file para agen).",
-              "Hapus folder milik aplikasi itu sendiri. Isinya hanya pengaturannya, login jendelanya, dan log-nya. Di Mac: semua yang namanya diawali `chat.agentes.desktop` di folder Application Support, Caches, HTTPStorages, Logs, Preferences, dan WebKit di `~/Library`, serta `agentes.chat.plist` di `~/Library/LaunchAgents`. Di Windows: `%APPDATA%\\chat.agentes.desktop` dan `%LOCALAPPDATA%\\chat.agentes.desktop`. Di Linux: `~/.config/chat.agentes.desktop` dan `~/.local/share/chat.agentes.desktop`.",
+              "Hapus folder-folder ini di folder pribadimu. Isinya datamu, dan setelah dihapus tidak bisa kembali, jadi simpan dulu cadangan di tempat lain kalau mungkin masih kamu perlukan: `.agentes` (pesan, file, akun, pengaturan, dan cadangan), setiap folder `agentes.chat erased`, `.agentes-runner` (yang disimpan para agen di komputer ini, seperti browser dan login mereka), dan `agentes` (file para agen). Folder yang namanya diawali titik tersembunyi. Di Mac, buka folder pribadimu di Finder lalu tekan ⇧⌘. (Shift, Command, dan tombol titik) untuk menampilkannya.",
+              "Hapus folder milik aplikasi itu sendiri. Isinya hanya pengaturannya, login jendelanya, dan log-nya. Di Mac: semua yang namanya diawali `chat.agentes.desktop` di folder Application Support, Caches, HTTPStorages, Logs, Preferences, dan WebKit di `~/Library`, serta `agentes.chat.plist` di `~/Library/LaunchAgents`. Di Windows: `%APPDATA%\\chat.agentes.desktop` dan `%LOCALAPPDATA%\\chat.agentes.desktop`. Di Linux: `~/.config/chat.agentes.desktop` dan `~/.local/share/chat.agentes.desktop`. Di Mac, untuk membuka salah satu folder ini, tekan ⇧⌘G di Finder lalu ketik jalurnya, misalnya `~/Library/Caches`.",
             ],
           },
-          "Di Mac, untuk membuka salah satu folder ini, tekan ⇧⌘G di Finder lalu ketik jalurnya, misalnya `~/.agentes`.",
         ],
       },
       {

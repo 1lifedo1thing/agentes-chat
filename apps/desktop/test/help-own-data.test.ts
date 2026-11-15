@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { serverText } from "@agenteschat/i18n";
 import { HELP, type HelpBlock } from "@agenteschat/i18n/help";
 import type { AppLocale } from "@agenteschat/i18n/locale";
 import { desktopStrings } from "../src/i18n";
@@ -23,13 +24,24 @@ describe("the help page on starting over and uninstalling", () => {
     expect(JSON.parse(read("apps/desktop/src-tauri/tauri.conf.json")).productName).toBe("agentes.chat");
     const selfHosting = read("SELF_HOSTING.md");
     expect(FOLDERS.filter((f) => !selfHosting.includes(f))).toEqual([]);
+    // A terminal install keeps running as its own service after the app quits.
+    const trash = selfHosting.slice(selfHosting.indexOf("**The Trash removes nothing.**"));
+    expect(trash.slice(0, trash.indexOf("\n- "))).toContain("service uninstall");
   });
 
   for (const [code, pages] of Object.entries(HELP)) {
     test(`${code}: names the app's own buttons and menus, and every folder`, () => {
+      const linesOf = (id: string) =>
+        pages["run-on-your-computer"]?.sections.find((s) => s.id === id)?.blocks.flatMap(lines) ?? [];
       const section = pages["run-on-your-computer"]?.sections.find((s) => s.id === "uninstall");
-      const text = section?.blocks.flatMap(lines).join("\n") ?? "";
+      const text = linesOf("uninstall").join("\n");
       const d = desktopStrings(code as AppLocale);
+      // Erase deletes the agents' homes for that server instead of moving them.
+      expect(linesOf("uninstall").find((l) => l.includes(`**${d.server.erase}**`))).toContain("`.agentes-runner`");
+      // Deleting an account belongs with signing in, and restoring it takes the screen's button.
+      const restore = `**${serverText(code as AppLocale, "accountDeleting.restore")}**`;
+      expect(text).not.toContain(restore);
+      expect(linesOf("password").join("\n")).toContain(restore);
       const prefs = d.windowTitle.prefs;
       const names = [
         `**${prefs} › ${d.prefs.nav.servers}**`,
@@ -37,12 +49,18 @@ describe("the help page on starting over and uninstalling", () => {
         `**${prefs} › ${d.prefs.nav.general}**`,
         `**${d.prefs.general.launchTitle}**`,
         `**${d.tray.quit}**`,
+        `**${d.tray.quitTitle}**`,
+        `**${d.tray.quitConfirm}**`,
         ...FOLDERS.map((f) => `\`${f}`),
       ];
       expect({ code, missing: names.filter((n) => !text.includes(n)) }).toEqual({ code, missing: [] });
       // Quitting comes before any deleting.
       const steps = section?.blocks.find((b): b is { list: string[] } => typeof b === "object" && "list" in b);
       expect(steps?.list.findIndex((l) => l.includes(`**${d.tray.quit}**`))).toBe(1);
+      // The menu bar icon can be hidden on a Mac; the app menu's Quit (menus.rs) is always there.
+      expect(steps?.list[1]).toContain("⌘Q");
+      // Folders whose name starts with a dot are hidden in Finder until shown.
+      expect(steps?.list.find((l) => l.includes("`.agentes`"))).toContain("⇧⌘.");
     });
   }
 });
