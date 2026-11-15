@@ -127,15 +127,17 @@ html:not([data-pointer]) .channel__icon.ac-btn:focus-visible {
 .members-sheet .channel__icon-count.ac-count {
   box-shadow: 0 0 0 2px var(--side);
 }
-.channel__search-icon.ac-btn {
-  display: none;
-}
-
-/* The header's search field: a soft plate with no line at rest, narrow, the field's own look and wider while used. */
+/* The header's search field, opened in place of its icon: a soft plate with no line at rest, narrow, the field's own
+   look and wider while used. It grows out of the icon's box. */
 .channel__search.search-box {
   margin-left: 8px;
   width: 220px;
   transition: width 0.2s var(--out);
+}
+@starting-style {
+  .channel__search.search-box {
+    width: var(--control-h-sm);
+  }
 }
 .channel__search.search-box:focus-within {
   width: 300px;
@@ -216,9 +218,6 @@ html:not([data-pointer]) .channel__icon.ac-btn:focus-visible {
   }
   .channel__acts:has(.channel__members-toggle) > .channel__cog {
     display: none;
-  }
-  .channel__search-icon.ac-btn {
-    display: inline-flex;
   }
   .search-sheet {
     position: fixed;
