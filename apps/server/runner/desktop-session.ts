@@ -838,7 +838,8 @@ export class DesktopSessions {
   }
 
   /**
-   * Nobody watches it, its agent doesn't use it, and nothing touched it for `PARK_AFTER_MS`.
+   * Nobody watches it, its agent doesn't use it, nothing touched it for `PARK_AFTER_MS`, and parking loses nothing
+   * (`holdsWork`).
    * ponytail: parking closes what was left open on the least-used desktops, which on 8 GB happens only with many
    * agents browsing at once; a per-agent memory measure replaces the hour rule if that ever bites.
    */
@@ -847,8 +848,21 @@ export class DesktopSessions {
       d.agent.id !== forAgentId &&
       d.streams === 0 &&
       this.now() - d.lastUsed >= PARK_AFTER_MS &&
-      !this.opts.inUse?.(d.agent.id)
+      !this.opts.inUse?.(d.agent.id) &&
+      !this.holdsWork(d)
     );
+  }
+
+  /**
+   * What a park would lose: a command still running in one of its Terminals (a build, a dev server), whose process
+   * and output a new shell can't bring back, or an app window other than Terminal, Chrome and Files, whose unsaved
+   * content a reopen can't either.
+   */
+  private holdsWork(d: Desktop) {
+    if (appsOf(this.keeperList(d)?.apps).some((a) => path.basename(a.argv[0] ?? "") !== "thunar")) return true;
+    const procs = this.sys.processes();
+    const shells = new Set(this.terminalShells(d, procs).map((p) => p.pid));
+    return procs.some((p) => shells.has(p.ppid));
   }
 
   stop(agent: Pick<AgentScope, "id">): Promise<MachineReplies["desktop.session.stop"]> {
@@ -1079,19 +1093,22 @@ export class DesktopSessions {
    * dock starts them apart from its session, so they aren't in its tree).
    */
   private terminalFolders(d: Desktop, procs: readonly ProcessStat[]) {
-    const terminals = new Set(
-      procs
-        .filter((p) => p.name === "xfce4-terminal" && this.sys.environ?.(p.pid)?.DISPLAY === `:${d.display}`)
-        .map((p) => p.pid),
-    );
-    return procs
-      .filter((p) => terminals.has(p.ppid))
+    return this.terminalShells(d, procs)
       .sort((a, b) => a.start - b.start)
       .flatMap((p) => {
         const folder = this.sys.cwd?.(p.pid);
         return folder && path.isAbsolute(folder) && !folder.endsWith(" (deleted)") ? [folder] : [];
       })
       .slice(0, REOPEN_MAX);
+  }
+
+  private terminalShells(d: Desktop, procs: readonly ProcessStat[]) {
+    const terminals = new Set(
+      procs
+        .filter((p) => p.name === "xfce4-terminal" && this.sys.environ?.(p.pid)?.DISPLAY === `:${d.display}`)
+        .map((p) => p.pid),
+    );
+    return procs.filter((p) => terminals.has(p.ppid));
   }
 
   /**

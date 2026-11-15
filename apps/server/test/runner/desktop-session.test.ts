@@ -1520,6 +1520,31 @@ test("its server short of memory: every desktop untouched for an hour, unwatched
   t.desktops.close();
 });
 
+test("short of memory, a desktop is never parked while a command runs in its Terminal or an app other than Files is open", async () => {
+  const t = setup();
+  const { display } = await t.desktops.ensure(dev);
+  t.fake.stats.push(
+    { pid: 7000, ppid: 1, name: "xfce4-terminal", start: 50, cpu: 1 },
+    { pid: 7001, ppid: 7000, name: "bash", start: 51, cpu: 0 },
+    { pid: 7002, ppid: 7001, name: "node", start: 52, cpu: 9 },
+  );
+  t.fake.envs.set(7000, { DISPLAY: `:${display}` });
+  t.clock.now += 2 * PARK_AFTER_MS;
+  // A dev server left running: parking would end it and lose its output.
+  expect(await t.desktops.parkIdle()).toBe(0);
+  expect(t.desktops.status(dev).running).toBe(true);
+  // Done, its shell idle, but an editor is open: what it hasn't saved would be lost.
+  t.fake.stats.pop();
+  const home = (await t.opts.user(dev)).home;
+  keeperList(home, { v: 1, browser: false, apps: [{ argv: ["mousepad", "notes.txt"], cwd: home }] });
+  expect(await t.desktops.parkIdle()).toBe(0);
+  // Only a Files window: nothing to lose, so it is parked.
+  keeperList(home, { v: 1, browser: false, apps: [{ argv: ["thunar", home], cwd: home }] });
+  expect(await t.desktops.parkIdle()).toBe(1);
+  expect(t.desktops.status(dev).running).toBe(false);
+  t.desktops.close();
+});
+
 test("the desktops of agents this computer no longer serves stop; the others go on", async () => {
   const t = setup();
   await t.desktops.ensure(dev);

@@ -801,8 +801,11 @@ async function standby(p: Parsed, on: boolean): Promise<number> {
   return 1;
 }
 
-/** Desktops parked one after another take a few seconds each: their processes get `KILL_WAIT_MS` to end. */
-const PARK_ANSWER_MS = 60_000;
+/**
+ * Desktops parked one after another take a few seconds each: their processes get `KILL_WAIT_MS` to end. Kept under
+ * 90 s, how long a caller of this verb is expected to wait, so a slow park still answers in time.
+ */
+const PARK_ANSWER_MS = 85_000;
 
 /** `agentes-runner park` (`park.ts`): prints what the running runner did, `{"desktops":0,"browsers":0}` with none running. */
 async function park(): Promise<number> {
