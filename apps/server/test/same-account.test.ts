@@ -116,3 +116,41 @@ test("a member of another workspace gets none of them, by this workspace's addre
   expect(own.status).toBe(404);
   expect(await ordered(asBiaOwn)).toEqual([]);
 });
+
+test("in the order of use, moving one login of an account signed in once per agent moves the account, all its logins together", async () => {
+  const { mac, asWalter } = await workspace();
+  const [walter] = await t.db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.email, "walter@example.com"));
+  await t.db.insert(schema.machineAccounts).values({
+    id: id(50),
+    orgId: (await t.db.select().from(schema.machines).where(eq(schema.machines.id, mac.machineId)))[0]?.orgId ?? "",
+    machineId: mac.machineId,
+    kind: "claude_code",
+    label: "Pessoal",
+    plan: "max",
+    email: "walter.home@example.com",
+    status: "active",
+    shared: true,
+    createdBy: walter?.id ?? "",
+    createdAt: new Date(Date.UTC(2026, 10, 1, 13)),
+  });
+  const team = Array.from({ length: 13 }, (_, i) => id(i + 1));
+  const put = async (accountId: string, index: number) => {
+    const res = await asWalter(`/ai-accounts/${accountId}/order`, { method: "PUT", json: { index } });
+    expect(res.status).toBe(200);
+    return ((await res.json()) as { accounts: Account[] }).accounts.map((a) => a.id);
+  };
+  // The other account first: past all thirteen logins at once, in one step.
+  expect(await put(id(50), 0)).toEqual([id(50), ...team]);
+  // One login of the thirteen first: every one of them comes along, in their order.
+  expect(await put(id(7), 0)).toEqual([...team, id(50)]);
+  expect((await ordered(asWalter)).map((a) => a.id)).toEqual([...team, id(50)]);
+  // An order where the other account sits among the thirteen: a place counts accounts, the logins come together.
+  for (const [i, accountId] of [...team.slice(0, 6), id(50), ...team.slice(6)].entries()) {
+    await t.db.update(schema.machineAccounts).set({ useOrder: i }).where(eq(schema.machineAccounts.id, accountId));
+  }
+  expect(await put(id(50), 1)).toEqual([...team, id(50)]);
+  expect(await put(id(50), 0)).toEqual([id(50), ...team]);
+});

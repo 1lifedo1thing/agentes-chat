@@ -531,9 +531,43 @@ export function accountChain<A extends MachineAccount>(
 export const chainHasRoom = <A>(chain: readonly A[], limited: (a: A) => boolean) =>
   chain.slice(1).some((a) => !limited(a));
 
-/** "Subir" and "Descer" in an order of use: the place to move the account to (`moveAccountInOrder`), null at that end. */
-export function orderStep(accounts: readonly { id: string }[], id: string, step: -1 | 1): number | null {
-  const from = accounts.findIndex((a) => a.id === id);
+/**
+ * The accounts of an order of use, each once: the logins of one account signed in once per agent (`sameAs`) together,
+ * at the place of the first of them. A row, a number and a move are the account's, never one login's.
+ */
+export function orderAccounts<A extends { id: string; sameAs?: string }>(logins: readonly A[]): A[][] {
+  const out: A[][] = [];
+  for (const a of logins) {
+    const block = out.find((b) => (b[0]?.sameAs ?? b[0]?.id) === (a.sameAs ?? a.id));
+    if (block) block.push(a);
+    else out.push([a]);
+  }
+  return out;
+}
+
+/**
+ * "Subir" and "Descer" in an order of use: the account's place to move it to (`moveAccountInOrder`, which counts
+ * accounts and moves their logins together, `orderAccounts`), null at that end.
+ */
+export function orderStep(
+  accounts: readonly { id: string; sameAs?: string }[],
+  id: string,
+  step: -1 | 1,
+): number | null {
+  const blocks = orderAccounts(accounts);
+  const from = blocks.findIndex((b) => b.some((a) => a.id === id));
   const to = from + step;
-  return from < 0 || to < 0 || to >= accounts.length ? null : to;
+  return from < 0 || to < 0 || to >= blocks.length ? null : to;
+}
+
+/** A dragged account dropped before or after another's row: its place among the other accounts, null onto itself. */
+export function orderDrop(
+  accounts: readonly { id: string; sameAs?: string }[],
+  id: string,
+  onto: string,
+  where: "before" | "after",
+): number | null {
+  const others = orderAccounts(accounts).filter((b) => !b.some((a) => a.id === id));
+  const at = others.findIndex((b) => b.some((a) => a.id === onto));
+  return at < 0 ? null : at + (where === "after" ? 1 : 0);
 }

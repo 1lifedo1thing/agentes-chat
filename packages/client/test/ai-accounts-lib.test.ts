@@ -19,6 +19,8 @@ import {
   lockedByOwner,
   lockedText,
   offersSignInAgain,
+  orderAccounts,
+  orderDrop,
   orderStep,
   ownSignInListed,
   ownSignInLower,
@@ -698,5 +700,26 @@ describe("accountChain: the accounts a run goes through at its plan's limit", ()
     expect(orderStep(order, "a", -1)).toBeNull();
     expect(orderStep(order, "c", 1)).toBeNull();
     expect(orderStep(order, "x", 1)).toBeNull();
+  });
+
+  test("an account signed in once per agent is one place: its logins move together, a step passes a whole account", () => {
+    // Walter's Team signed in three times (t1-t3, one apart), then Ada's, then Bia's.
+    const order = [
+      { id: "t1", sameAs: "t1" },
+      { id: "t2", sameAs: "t1" },
+      { id: "ada", sameAs: "ada" },
+      { id: "t3", sameAs: "t1" },
+      { id: "bia", sameAs: "bia" },
+    ];
+    expect(orderAccounts(order).map((b) => b.map((a) => a.id))).toEqual([["t1", "t2", "t3"], ["ada"], ["bia"]]);
+    // A place is an account's: Ada's up is first, Team's down is past Ada, Bia's up passes all of Team's logins at once.
+    expect(orderStep(order, "ada", -1)).toBe(0);
+    expect(orderStep(order, "t2", 1)).toBe(1);
+    expect(orderStep(order, "t3", -1)).toBeNull();
+    expect(orderStep(order, "bia", -1)).toBe(1);
+    expect(orderStep(order, "bia", 1)).toBeNull();
+    expect(orderDrop(order, "bia", "t2", "before")).toBe(0);
+    expect(orderDrop(order, "t1", "bia", "after")).toBe(2);
+    expect(orderDrop(order, "t1", "t3", "after")).toBeNull();
   });
 });

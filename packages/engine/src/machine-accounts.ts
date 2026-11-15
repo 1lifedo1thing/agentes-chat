@@ -393,7 +393,9 @@ export async function listAccountOrder(
 
 /**
  * `PUT …/ai-accounts/{id}/order`: the account takes place `index` (0 first) among its computer's accounts of its kind,
- * the others keeping theirs in order. Its owner or an admin (`account.order_forbidden`). Audited as `account.order`.
+ * the others keeping theirs in order. An account signed in once per agent is one place: its logins (`sameAccountWhere`)
+ * move together, and `index` counts accounts, not logins. Its owner or an admin (`account.order_forbidden`). Audited
+ * as `account.order`.
  */
 export async function moveAccountInOrder(
   deps: MachineAccountDeps,
@@ -419,13 +421,20 @@ export async function moveAccountInOrder(
   }
   await deps.db.transaction(async (tx) => {
     const group = await tx
-      .select({ id: machineAccounts.id, useOrder: machineAccounts.useOrder })
+      .select()
       .from(machineAccounts)
       .where(and(inOrder(orgId), eq(machineAccounts.machineId, row.machineId), eq(machineAccounts.kind, row.kind)))
       .orderBy(...orderOfUse)
       .for("update");
-    const ids = group.filter((g) => g.id !== row.id).map((g) => g.id);
-    ids.splice(Math.min(index, ids.length), 0, row.id);
+    const accounts: MachineAccountRow[][] = [];
+    for (const g of group) {
+      const account = accounts.find((a) => a[0] && sameAccountRow(g, a[0]));
+      if (account) account.push(g);
+      else accounts.push([g]);
+    }
+    const others = accounts.filter((a) => !a.some((g) => g.id === row.id));
+    others.splice(Math.min(index, others.length), 0, accounts.find((a) => a.some((g) => g.id === row.id)) ?? [row]);
+    const ids = others.flat().map((g) => g.id);
     for (const [place, id] of ids.entries()) {
       if (group.find((g) => g.id === id)?.useOrder === place) continue;
       await tx.update(machineAccounts).set({ useOrder: place }).where(eq(machineAccounts.id, id));

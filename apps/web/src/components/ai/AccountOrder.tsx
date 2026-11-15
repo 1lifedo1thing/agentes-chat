@@ -1,6 +1,6 @@
 import type { AccountOrderGroup } from "@agenteschat/client";
 import { useMoveAccountInOrder } from "@agenteschat/client";
-import { orderStep } from "@agenteschat/client/lib/ai-accounts";
+import { orderAccounts, orderDrop, orderStep } from "@agenteschat/client/lib/ai-accounts";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { HintLine, Icon, ProviderLogo } from "@agenteschat/ui";
 import { type DragEvent, type HTMLAttributes, type ReactNode, useRef, useState } from "react";
@@ -51,9 +51,10 @@ export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
   const move = useMoveAccountInOrder(orgId);
   const dragging = useRef<string | null>(null);
   const [mark, setMark] = useState<{ id: string; where: "before" | "after" } | null>(null);
-  const ids = group.accounts.map((a) => a.id);
+  // A place is an account's: the logins of one signed in once per agent move together.
+  const at = (accountId: string) => orderAccounts(group.accounts).findIndex((b) => b.some((a) => a.id === accountId));
   const put = (accountId: string, index: number | null) => {
-    if (index === null || ids[index] === accountId) return;
+    if (index === null || at(accountId) === index) return;
     move.mutate(
       { accountId, index },
       {
@@ -151,8 +152,7 @@ export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
       end();
       if (!from || !m) return;
       e.preventDefault();
-      const rest = ids.filter((id) => id !== from);
-      put(from, rest.indexOf(m.id) + (m.where === "after" ? 1 : 0));
+      put(from, orderDrop(group.accounts, from, m.id, m.where));
     },
   });
 

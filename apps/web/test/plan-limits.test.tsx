@@ -522,6 +522,31 @@ describe("IA e uso › Contas: the order of use at a limit (ADR 0041 §6)", () =
     expect(places().at(-1)?.[1]).toBe("Assinatura corporativa compartilhada da equipe de produto");
   });
 
+  test("an account signed in once per agent is one row with one place; moving it moves all its logins", async () => {
+    const state = onPlans();
+    // Trabalho signed in three times, once per agent, with Pessoal placed between two of its logins.
+    const team = (id: string, useOrder: number) =>
+      claude(id, "Trabalho", { email: "trabalho@example.com", sameAs: "acct_t1", useOrder, shared: false });
+    await go("settings/usage", state, [
+      team("acct_t1", 0),
+      claude("acct_p", "Pessoal", { useOrder: 1, sameAs: "acct_p" }),
+      team("acct_t2", 2),
+      team("acct_t3", 3),
+    ]);
+    expect(places()).toEqual([
+      ["1", "Trabalho"],
+      ["2", "Pessoal"],
+    ]);
+    await moveDown("Mover Trabalho, número 1 na ordem");
+    expect(state.calls.filter((c) => c.method === "machines.moveAccountInOrder").map((c) => c.args.slice(1))).toEqual([
+      ["acct_t1", 1],
+    ]);
+    expect(places()).toEqual([
+      ["1", "Pessoal"],
+      ["2", "Trabalho"],
+    ]);
+  });
+
   test("a drop before another row moves the account there", async () => {
     const state = onPlans();
     await go("settings/usage", state, ORDER);
