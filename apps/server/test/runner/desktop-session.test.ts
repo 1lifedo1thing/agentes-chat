@@ -899,7 +899,7 @@ test("Terminals open when the computer restarted open again at the desktop's nex
   expect(env).toMatchObject({
     DISPLAY: `:${display}`,
     DBUS_SESSION_BUS_ADDRESS: "unix:path=/tmp/dbus-0f1e,guid=0f1e",
-    [TERMINAL_NOTE_ENV]: terminalNote(false),
+    [TERMINAL_NOTE_ENV]: terminalNote("restarted"),
   });
   expect(env).not.toHaveProperty("LD_PRELOAD");
   // Once: later sweeps keep what is open now and open nothing more; a desktop stopped on purpose forgets it.
@@ -989,8 +989,8 @@ test("after a move the desktop opens again its browser and its other apps as the
   await next.sweep();
   expect(opened).toEqual([dev.id]);
   const terminal = t.fake.procs.find((p) => p.argv.some((a) => path.basename(a) === "xfce4-terminal"));
-  expect(terminal?.opts.env).toMatchObject({ [TERMINAL_NOTE_ENV]: terminalNote(true) });
-  expect(terminalNote(true)).toBe("The computer moved to another server: this is a new shell in the same folder.");
+  expect(terminal?.opts.env).toMatchObject({ [TERMINAL_NOTE_ENV]: terminalNote("moved") });
+  expect(terminalNote("moved")).toBe("The computer moved to another server: this is a new shell in the same folder.");
   const apps = t.fake.of("agentes-app");
   expect(apps.map((p) => p.argv.slice(4))).toEqual([
     [notes, "mousepad", "todo.txt"],
@@ -1462,6 +1462,61 @@ test("the agent's Chrome in use on its desktop touches it: parked an hour after 
   t.clock.now += PARK_AFTER_MS;
   expect((await t.desktops.ensure(ops)).started).toBe(true);
   expect(t.desktops.status(dev).running).toBe(false);
+  t.desktops.close();
+});
+
+test("its server short of memory: every desktop untouched for an hour, unwatched and unused, is parked at once, and opens again as it was", async () => {
+  const opened: string[] = [];
+  const t = setup({ inUse: (id) => id === ops.id, openBrowser: async (agent) => void opened.push(agent.id) });
+  const qa: AgentScope = { id: "77aa0000-0000-7000-8000-000000000000", handle: "qa" };
+  const { display } = await t.desktops.ensure(dev);
+  await t.desktops.ensure(ops);
+  await t.desktops.ensure(qa);
+  const site = path.join(t.folders, "dev", "site");
+  t.fake.stats.push(
+    { pid: 7000, ppid: 1, name: "xfce4-terminal", start: 50, cpu: 1 },
+    { pid: 7001, ppid: 7000, name: "bash", start: 51, cpu: 0 },
+  );
+  t.fake.envs.set(7000, { DISPLAY: `:${display}` });
+  t.fake.cwds.set(7001, site);
+  keeperList((await t.opts.user(dev)).home, { v: 1, browser: true, apps: [] });
+  t.clock.now += 2 * PARK_AFTER_MS;
+  // A person on qa's screen keeps it; ops's agent uses its Chrome there.
+  const release = t.desktops.hold(qa.id);
+  const runs = () => [dev, ops, qa].map((a) => t.desktops.status(a).running);
+  expect(await t.desktops.parkIdle()).toBe(1);
+  expect(runs()).toEqual([false, true, true]);
+  expect(t.logs).toContainEqual(
+    "the desktop of dev was parked: its server is short of memory, nobody used it for an hour",
+  );
+  // Asked again with nothing left to park: nothing happens.
+  expect(await t.desktops.parkIdle()).toBe(0);
+  release?.();
+  // Its viewer gone, qa's desktop was just watched: an hour must pass again.
+  expect(await t.desktops.parkIdle()).toBe(0);
+
+  // Asked for again, dev's desktop opens what was open on it, saying why.
+  t.fake.stats.length = 0;
+  t.fake.files.add(site);
+  await t.desktops.ensure(dev);
+  const session = t.fake.of("dbus-launch").at(-1);
+  if (!session) throw new Error("no session");
+  t.fake.stats.push(
+    { pid: session.pid, ppid: 1, name: "dbus-launch", start: 99, cpu: 0 },
+    { pid: 9000, ppid: session.pid, name: "xfce4-session", start: 100, cpu: 1 },
+  );
+  t.clock.now += 15_000;
+  await t.desktops.sweep();
+  expect(opened).toEqual([dev.id]);
+  const terminal = t.fake.procs.find((p) => p.argv.some((a) => path.basename(a) === "xfce4-terminal"));
+  expect(terminal?.argv).toEqual(["/usr/bin/xfce4-terminal", "--disable-server", `--working-directory=${site}`]);
+  expect(terminal?.opts.env).toMatchObject({ [TERMINAL_NOTE_ENV]: terminalNote("parked") });
+  expect(terminalNote("parked")).toBe(
+    "This desktop was put to rest while nobody used it: this is a new shell in the same folder.",
+  );
+  expect(t.logs).toContainEqual(
+    "the desktop of dev opened again after its park: 1 terminals, 0 other apps, its browser",
+  );
   t.desktops.close();
 });
 
