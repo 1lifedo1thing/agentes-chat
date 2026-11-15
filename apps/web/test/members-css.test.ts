@@ -34,7 +34,7 @@ test("the members column: 264px on the work's sheet, group titles in normal case
   expect(last(shipped, ".channel__col", "flex-direction")).toBe("column");
   expect(last(shipped, ".channel__col", "min-width")).toBe("0");
   // Everyone under Offline (people, and agents out of office, paused or with no AI) is faded alike.
-  expect(last(shipped, ".members-side__group--off .members-side__inner", "opacity")).toBe(".45");
+  expect(last(shipped, ".members-side__group[data-off] .members-side__inner", "opacity")).toBe(".45");
   expect(last(shipped, ".members-side__inner[data-presence=offline]", "opacity")).toBeUndefined();
   // The open card's row keeps the chosen plate, hover the lighter one.
   expect(last(shipped, ".members-side__row.profile-trigger[data-state=open]", "background")).toBe("var(--side-chosen)");

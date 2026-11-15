@@ -14,7 +14,6 @@ import {
 import {
   Avatar,
   Button,
-  cx,
   Icon,
   matchesWords,
   OPEN_LAYER,
@@ -224,7 +223,9 @@ function MembersList({ channelId, people, agents, onAdd }: Lists) {
         return (
           <section
             key={g.key}
-            className={cx("members-side__group", g.key === "offline" && "members-side__group--off")}
+            // A state, so an attribute and not a class: the layout check samples screens by their classes.
+            className="members-side__group"
+            data-off={g.key === "offline" || undefined}
             aria-label={label}
           >
             <h2 className="members-side__head">

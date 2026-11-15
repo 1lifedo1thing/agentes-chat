@@ -271,7 +271,7 @@ describe("the members column", () => {
     const side = column() as HTMLElement;
     expect(within(side).queryByRole("region", { name: "Agentes" })).toBeNull();
     const offline = within(side).getByRole("region", { name: "Offline" });
-    expect(offline.classList.contains("members-side__group--off")).toBe(true);
+    expect(offline.hasAttribute("data-off")).toBe(true);
     expect(offline.querySelector(".members-side__head")?.textContent).toBe("Offline — 3");
     // By name with the people there.
     expect([...offline.querySelectorAll(".members-side__label")].map((l) => l.textContent)).toEqual([
