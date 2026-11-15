@@ -3552,7 +3552,9 @@ test.if(posix)(
       );
       // Only listed: the tabs as they are now are kept for a computer that restarts.
       await t.act("tab", []);
-      await t.manager.stop(dev);
+      // The computer goes down under the runner: its Chrome is gone without the runner closing it.
+      chromes.started[0]?.close();
+      await Bun.sleep(20);
       const profile = chromes.started[0]?.profile ?? "";
       mkdirSync(path.join(profile, "Default", "Sessions"), { recursive: true });
       writeFileSync(path.join(profile, "Default", "Sessions", "tabs.json"), JSON.stringify(["https://pile.example/"]));
@@ -3568,7 +3570,8 @@ test.if(posix)(
       expect(logs.join("\n")).not.toContain("site0.example");
 
       // Opened again once: the next start on this boot is the start page, as always.
-      await t.manager.stop(dev);
+      chromes.started[1]?.close();
+      await Bun.sleep(20);
       json.targets.splice(0);
       await t.act("open", ["https://shop.example.com/"]);
       expect(chromes.started[2]?.args.at(-1)).toMatch(/^file:\/\/.+\/agentes-start\.html$/);
@@ -3618,6 +3621,36 @@ test.if(posix)(
     }
   },
 );
+
+test.if(posix)("a browser the runner closed as idle starts on its one page after a restart too", async () => {
+  const devtools = fakeDevtools([]);
+  try {
+    let now = 1_000_000;
+    let boot = "boot-a";
+    const json = jsonTargets([{ id: "CUR", url: "https://heavy.example/" }]);
+    const chromes = chromesAt(devtools);
+    const t = setup({
+      startChrome: chromes.start,
+      fetch: json.fetch,
+      bootId: () => boot,
+      now: () => now,
+      idleMs: 60_000,
+    });
+    await t.act("open", ["https://heavy.example/"]);
+    await t.act("tab", []);
+    const record = path.join(chromes.started[0]?.profile ?? "", "agentes-tabs.json");
+    expect(existsSync(record)).toBe(true);
+    now += 61_000;
+    await t.manager.sweep();
+    expect(existsSync(record)).toBe(false);
+
+    boot = "boot-b";
+    await t.act("open", ["https://heavy.example/"]);
+    expect(chromes.started[1]?.args.at(-1)).toMatch(/^file:\/\/.+\/agentes-start\.html$/);
+  } finally {
+    devtools.stop();
+  }
+});
 
 test.if(posix)(
   "after a restart, nothing kept opens the start page; a garbled record opens only its web pages, an overlong one left out; a failed start keeps it",

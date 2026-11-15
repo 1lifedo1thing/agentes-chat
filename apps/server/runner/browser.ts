@@ -2786,15 +2786,8 @@ export class BrowserManager {
         );
       }
       session.chrome = chrome;
-      if (reopened) {
-        // Opened again once; a start that failed keeps the record for the next one.
-        try {
-          rmSync(path.join(profile, TABS_FILE), { force: true });
-        } catch {
-          // the next tidy writes it again, on this boot
-        }
-        session.tabsRecorded = undefined;
-      }
+      // Opened again once; a start that failed keeps the record for the next one.
+      if (reopened) this.dropTabs(session);
       session.version = version ?? undefined;
       session.outdatedAt = undefined;
       session.headed = chrome.display !== undefined;
@@ -2942,6 +2935,9 @@ export class BrowserManager {
     session.chrome = undefined;
     session.aliveAt = null;
     if (!chrome) return;
+    // Closed while the runner runs (idle, stopped, reclaimed), it starts on its one page next time, on any boot. A
+    // runner that is stopping (a reboot stops both at once) keeps its tabs for the next boot.
+    if (!this.closed) this.dropTabs(session);
     const counter = this.counters.get(chrome);
     if (counter) {
       counter.quit();
@@ -3395,7 +3391,8 @@ export class BrowserManager {
   /**
    * The agent's tabs as they are now (`tabsToReopen`), kept in its profile with the computer's boot, for a start
    * after the computer restarted or moved (`reopenedTabs`). Never a popup or a tab a person opened (`keptTabs`), nor a
-   * shared profile's. Written when they changed; the addresses never go in the log.
+   * shared profile's. Written when they changed; the addresses never go in the log. A Chrome the runner closes itself
+   * forgets them (`stopChrome`), as a start on the same boot would.
    */
   private recordTabs(session: Session, open: readonly { id: string; url: string }[]) {
     if (isProfileKey(session.agentId)) return;
@@ -3424,6 +3421,16 @@ export class BrowserManager {
     if (!kept.boot || !boot || kept.boot === boot) return null;
     const urls = tabsToReopen(kept.urls).filter((u) => domainAllowed(u, allowed));
     return urls.length > 0 ? urls : null;
+  }
+
+  /** What `recordTabs` kept goes. */
+  private dropTabs(session: Session) {
+    session.tabsRecorded = undefined;
+    try {
+      rmSync(path.join(session.folder, AGENT_BROWSER_PROFILE, TABS_FILE), { force: true });
+    } catch {
+      // the next tidy writes it again, on this boot
+    }
   }
 
   private bootId() {

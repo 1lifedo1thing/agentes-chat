@@ -26,7 +26,8 @@ Some of it already comes back:
 - a Claude Code background task resumes its session in its folder (`settleInterruptedTask`, ADR 0029);
 - Chrome opens the agent's tidy tabs again: the runner records them in its profile with the computer's boot
   (`recordTabs`: web pages, each once, 8 at most, never a popup or a tab a person opened), and the first start on
-  another boot passes them on Chrome's command line (`reopenedTabs`). Chrome's own saved session
+  another boot passes them on Chrome's command line (`reopenedTabs`). A Chrome the runner had closed itself (idle,
+  stopped) forgets them, like a desktop that ended while the runner ran. Chrome's own saved session
   (`Default/Sessions`) is still deleted before every start, so `--restore-last-session` keeps only session cookies;
 - the desktop's Terminals: each desktop keeps what is open on it beside its state (`<id8>.open`, `recordOpen`, at each
   sweep), and a desktop that a restart or a move ended opens its Terminals again at its next start, as new shells in
