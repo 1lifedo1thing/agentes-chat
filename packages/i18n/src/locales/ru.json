@@ -18123,6 +18123,7 @@
       "waitingYourAnswer": "ждёт вашего ответа",
       "queued": "в очереди",
       "handedOn": "ждёт других агентов",
+      "answered": "ответил",
       "noAnswer": "не ответил",
       "notFinished": "не закончил",
       "someAnswered": "ответили {{done}} из {{total}}",

@@ -1433,8 +1433,8 @@ html:not([data-pointer]) .ac-msg--grouped:focus-within .ac-msg__gutter-time {
 /*
  * A grouped row's receipt in its gutter: always seen, on the words' first line, its end 4px short of them (into the
  * row's gap). The time shows on its left on hover, overflowing the gutter leftwards, capped at 12px so at the larger
- * text sizes it stays inside the row's own padding. A 12-hour time ("11:43 PM") would run past the row's edge on one
- * line: it stacks its two words in the first line's height instead.
+ * text sizes it stays inside the row's own padding. Never on two lines: the gutter gets the clock without its day
+ * period (`gutterTime`), which fits in every language.
  */
 .ac-msg__gutter--aside {
   justify-content: flex-end;
@@ -1445,16 +1445,7 @@ html:not([data-pointer]) .ac-msg--grouped:focus-within .ac-msg__gutter-time {
   flex: none;
 }
 .ac-msg__gutter--aside > .ac-msg__gutter-time {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: min-content;
-  min-height: var(--msg-line);
   font-size: min(12px, max(11px, calc(var(--msg-text) - 3px)));
-  line-height: calc(var(--msg-line) / 2);
-  text-align: right;
-  white-space: normal;
-  word-break: keep-all;
 }
 .ac-msg__gutter--aside > .ac-msg__aside {
   margin-right: calc(var(--space-1) - var(--space-3));

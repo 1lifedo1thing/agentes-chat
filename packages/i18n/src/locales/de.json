@@ -17098,6 +17098,7 @@
       "waitingYourAnswer": "wartet auf deine Antwort",
       "queued": "in der Warteschlange",
       "handedOn": "wartet auf andere Agenten",
+      "answered": "hat geantwortet",
       "noAnswer": "hat nicht geantwortet",
       "notFinished": "nicht fertig geworden",
       "someAnswered": "{{done}} von {{total}} haben geantwortet",

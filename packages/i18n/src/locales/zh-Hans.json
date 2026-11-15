@@ -16592,6 +16592,7 @@
       "waitingYourAnswer": "等你回答",
       "queued": "排队中",
       "handedOn": "等待其他智能体",
+      "answered": "已回答",
       "noAnswer": "未回答",
       "notFinished": "未完成",
       "someAnswered": "{{total}} 个中 {{done}} 个已回答",

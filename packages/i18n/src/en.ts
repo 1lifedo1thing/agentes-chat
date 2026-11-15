@@ -17423,6 +17423,8 @@ export const en = {
       queued: "in line",
       /** Its part done, it waits on agents it handed some to. */
       handedOn: "waiting on other agents",
+      /** On a consulted agent's choice in the dialog of a row of several: its answer came. */
+      answered: "answered",
       noAnswer: "didn't answer",
       /** Work handed off that its agent couldn't finish. */
       notFinished: "didn't finish",

@@ -16526,6 +16526,7 @@
       "waitingYourAnswer": "あなたの回答待ち",
       "queued": "順番待ち",
       "handedOn": "ほかのエージェント待ち",
+      "answered": "回答済み",
       "noAnswer": "回答なし",
       "notFinished": "完了せず",
       "someAnswered": "{{total}}件中{{done}}件回答",
