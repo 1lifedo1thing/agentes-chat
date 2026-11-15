@@ -3528,14 +3528,14 @@ test.if(posix)(
   async () => {
     const devtools = fakeDevtools([]);
     try {
-      let booted = 1_700_000_000_000;
+      let boot = "boot-a";
       const logs: string[] = [];
       const json = jsonTargets([{ id: "CUR", url: "https://shop.example.com/cart" }]);
       const chromes = chromesAt(devtools);
       const t = setup({
         startChrome: chromes.start,
         fetch: json.fetch,
-        bootedAt: () => booted,
+        bootId: () => boot,
         log: (l) => logs.push(l),
       });
       await t.act("open", ["https://shop.example.com/cart"]);
@@ -3557,7 +3557,7 @@ test.if(posix)(
       mkdirSync(path.join(profile, "Default", "Sessions"), { recursive: true });
       writeFileSync(path.join(profile, "Default", "Sessions", "tabs.json"), JSON.stringify(["https://pile.example/"]));
 
-      booted += 3_600_000;
+      boot = "boot-b";
       await t.act("open", ["https://shop.example.com/cart"]);
       const tidy = ["https://shop.example.com/cart", ...sites.slice(0, 7).map((s) => s.url)];
       const args = chromes.started[1]?.args ?? [];
@@ -3591,7 +3591,7 @@ test.if(posix)(
       const t = setup({
         startChrome: chromes.start,
         fetch: json.fetch,
-        bootedAt: () => 1_700_000_000_000,
+        bootId: () => "boot-a",
         now: () => now,
         idleMs: 60_000,
         chromeVersion: () => version,
@@ -3613,6 +3613,57 @@ test.if(posix)(
       await waitFor(() => chromes.started.length === 3);
       expect(chromes.started[2]?.args.at(-1)).toBe("https://heavy.example/");
       expect(chromes.started[2]?.args).not.toContain("https://other.example/");
+    } finally {
+      devtools.stop();
+    }
+  },
+);
+
+test.if(posix)(
+  "after a restart, nothing kept opens the start page; a garbled record opens only its web pages, an overlong one left out; a failed start keeps it",
+  async () => {
+    const devtools = fakeDevtools([]);
+    try {
+      let boot = "boot-a";
+      let failing = false;
+      const chromes = chromesAt(devtools);
+      const t = setup({
+        // Chrome's tab list never answers, so nothing writes the record again after a start.
+        fetch: (async () => new Response("{}")) as unknown as typeof globalThis.fetch,
+        startChrome: async (exe, args, profile) => {
+          if (failing) throw new ChromeStartError("Chrome closed while starting", "");
+          return chromes.start(exe, args, profile);
+        },
+        bootId: () => boot,
+      });
+      await t.act("open", ["https://shop.example.com/"]);
+      await t.manager.stop(dev);
+      const profile = chromes.started[0]?.profile ?? "";
+      const record = path.join(profile, "agentes-tabs.json");
+      expect(existsSync(record)).toBe(false);
+
+      boot = "boot-b";
+      await t.act("open", ["https://shop.example.com/"]);
+      expect(chromes.started[1]?.args.at(-1)).toMatch(/^file:\/\/.+\/agentes-start\.html$/);
+      await t.manager.stop(dev);
+
+      const long = `https://long.example/#${"x".repeat(5000)}`;
+      writeFileSync(
+        record,
+        JSON.stringify({
+          urls: ["javascript:alert(1)", "data:text/html,x", "file:///etc/passwd", 42, long, "https://ok.example/"],
+          boot: "boot-b",
+        }),
+      );
+      boot = "boot-c";
+      failing = true;
+      expect(await errorCode(() => t.act("open", ["https://shop.example.com/"]))).toBe("browser_unavailable");
+      expect(existsSync(record)).toBe(true);
+      failing = false;
+      await t.act("open", ["https://shop.example.com/"]);
+      expect(chromes.started[2]?.args.at(-2)).toStartWith("--");
+      expect(chromes.started[2]?.args.at(-1)).toBe("https://ok.example/");
+      expect(existsSync(record)).toBe(false);
     } finally {
       devtools.stop();
     }

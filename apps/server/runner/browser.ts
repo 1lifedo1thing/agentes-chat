@@ -9,6 +9,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  rmSync,
   statSync,
 } from "node:fs";
 import { chmod, mkdir, readFile, readlink, rename, rm, writeFile } from "node:fs/promises";
@@ -72,6 +73,7 @@ import {
 } from "./human-input";
 import { GOOGLE_CHROME_LINUX, SYSTEM_BROWSER_DIR } from "./install-script";
 import { readJson, readSmallJson, writeJson } from "./json-file";
+import { bootId } from "./lock";
 import { CRASH_WORDS, pageLocale } from "./page-words";
 import { agentFolderName, isInside, ownedSafely } from "./paths";
 import type { Spawn } from "./scope-gate";
@@ -1430,8 +1432,8 @@ export interface BrowserManagerOptions {
    */
   kept?: (agentId: string) => boolean;
   now?: () => number;
-  /** Tests: when the computer booted, in ms (default: from its uptime). */
-  bootedAt?: () => number;
+  /** Tests: this boot of the computer (default: `bootId`). */
+  bootId?: () => string;
   /** Tests: opens the session's stream socket. */
   connectStream?: (url: string) => StreamSocket;
   /** Tests: opens a Chrome's browser endpoint (its traffic and its pages that die). */
@@ -1640,18 +1642,24 @@ export function tabLabel(url: string): string {
 
 /**
  * The tabs a computer that restarted or moved opens again, from its tabs in order (the one in front first): web pages
- * only (no start page, new tab or blank one), each address once, `BROWSER_TABS_KEPT` at most.
+ * only (no start page, new tab or blank one), each address once, `BROWSER_TABS_KEPT` at most. An address longer than
+ * `TAB_URL_CHARS` (state kept in its fragment) is left out, so the rest always fit in the record and on Chrome's
+ * command line.
  */
 export function tabsToReopen(urls: readonly unknown[]): string[] {
-  const pages = urls.filter((u): u is string => typeof u === "string" && pageHost(u) !== null);
-  return [...new Set(pages)].slice(0, BROWSER_TABS_KEPT);
+  const pages = urls.filter(
+    (u): u is string => typeof u === "string" && u.length <= TAB_URL_CHARS && pageHost(u) !== null,
+  );
+  return [...new Set(pages.map((u) => new URL(u).href))].slice(0, BROWSER_TABS_KEPT);
 }
 
-/** Where `recordTabs` keeps the agent's tabs: in its Chrome's profile, which only the runner and that Chrome read. */
+/**
+ * Where `recordTabs` keeps the agent's tabs: in its Chrome's profile, which the agent's tools never read
+ * (`AGENT_BROWSER_PROFILE` in the command policy), like its cookies.
+ */
 const TABS_FILE = "agentes-tabs.json";
 const TABS_FILE_BYTES = 64 * 1024;
-/** Boot times read from the uptime this close apart are one boot. */
-const SAME_BOOT_MS = 60_000;
+const TAB_URL_CHARS = 2048;
 
 /** `https://app.acme.example/trips` → `app.acme.example`; null for anything that isn't a web page. */
 export function pageHost(url: string): string | null {
@@ -2707,7 +2715,7 @@ export class BrowserManager {
       const start = this.opts.startChrome ?? launchChrome;
       await this.clearStaleLock(profile);
       // A Chrome that only restarts or moves to or from the desktop keeps to its one page.
-      const reopened = running || profileSession ? null : this.reopenedTabs(session, profile, allowed);
+      const reopened = running || profileSession ? null : this.reopenedTabs(profile, allowed);
       const launch = async (on: ChromeDisplay | null) => {
         prepareProfile(profile);
         const startPage = this.opts.startPageDirectory
@@ -2778,6 +2786,15 @@ export class BrowserManager {
         );
       }
       session.chrome = chrome;
+      if (reopened) {
+        // Opened again once; a start that failed keeps the record for the next one.
+        try {
+          rmSync(path.join(profile, TABS_FILE), { force: true });
+        } catch {
+          // the next tidy writes it again, on this boot
+        }
+        session.tabsRecorded = undefined;
+      }
       session.version = version ?? undefined;
       session.outdatedAt = undefined;
       session.headed = chrome.display !== undefined;
@@ -3376,7 +3393,7 @@ export class BrowserManager {
   }
 
   /**
-   * The agent's tabs as they are now (`tabsToReopen`), kept in its profile with when the computer booted, for a start
+   * The agent's tabs as they are now (`tabsToReopen`), kept in its profile with the computer's boot, for a start
    * after the computer restarted or moved (`reopenedTabs`). Never a popup or a tab a person opened (`keptTabs`), nor a
    * shared profile's. Written when they changed; the addresses never go in the log.
    */
@@ -3388,7 +3405,7 @@ export class BrowserManager {
     try {
       const profile = path.join(session.folder, AGENT_BROWSER_PROFILE);
       mkdirSync(profile, { recursive: true, mode: 0o700 });
-      writeJson(path.join(profile, TABS_FILE), { urls, bootedAt: this.bootedAt() });
+      writeJson(path.join(profile, TABS_FILE), { urls, boot: this.bootId() });
       session.tabsRecorded = text;
     } catch {
       // the next answer writes it
@@ -3396,23 +3413,21 @@ export class BrowserManager {
   }
 
   /**
-   * The tabs `recordTabs` kept, when the computer booted since (it restarted, or the agent's folder moved to another
-   * one), those the agent may reach; that record goes once read so. Null on a start on the same boot (a first one, one
-   * after an idle stop or a crash), or with nothing kept: Chrome starts on its one page.
+   * The tabs `recordTabs` kept on another boot of the computer (it restarted, or the agent's folder moved to another
+   * one), those the agent may reach. Null on a start on the same boot (a first one, one after an idle stop or a crash),
+   * where the boot can't be told (`bootId` is empty), or with nothing kept: Chrome starts on its one page.
    */
-  private reopenedTabs(session: Session, profile: string, allowed: readonly string[]): string[] | null {
-    const file = path.join(profile, TABS_FILE);
-    const kept = readSmallJson(file, TABS_FILE_BYTES);
-    if (!isRecord(kept) || typeof kept.bootedAt !== "number" || !Array.isArray(kept.urls)) return null;
-    if (Math.abs(this.bootedAt() - kept.bootedAt) < SAME_BOOT_MS) return null;
-    void rm(file, { force: true }).catch(() => undefined);
-    session.tabsRecorded = undefined;
+  private reopenedTabs(profile: string, allowed: readonly string[]): string[] | null {
+    const kept = readSmallJson(path.join(profile, TABS_FILE), TABS_FILE_BYTES);
+    if (!isRecord(kept) || typeof kept.boot !== "string" || !Array.isArray(kept.urls)) return null;
+    const boot = this.bootId();
+    if (!kept.boot || !boot || kept.boot === boot) return null;
     const urls = tabsToReopen(kept.urls).filter((u) => domainAllowed(u, allowed));
     return urls.length > 0 ? urls : null;
   }
 
-  private bootedAt() {
-    return this.opts.bootedAt?.() ?? Date.now() - os.uptime() * 1000;
+  private bootId() {
+    return (this.opts.bootId ?? bootId)();
   }
 
   /** The active tab's address, or null when the browser can't say. */

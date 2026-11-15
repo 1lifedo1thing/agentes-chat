@@ -609,8 +609,8 @@ interface Desktop extends Saved {
 
 /**
  * What is open on a desktop, in `<id8>.open`: its Terminals as the folders their shells were in, oldest first; its other
- * apps as the keeper listed their windows; whether the agent's Chrome showed there (its tabs are kept beside its
- * profile, which it opens again); and the computer it was kept on. Background work comes back through the server (ADR 0168).
+ * apps as the keeper listed their windows; whether the agent's Chrome showed there (its tabs are kept in its profile,
+ * which it opens again); and the computer it was kept on. Background work comes back through the server (ADR 0168).
  */
 export interface OpenOnDesktop {
   terminals: string[];
@@ -1069,10 +1069,10 @@ export class DesktopSessions {
   /**
    * What was open on the desktop before the computer restarted or moved opens again, on the session's bus, where its
    * settings and the look's prompt are: the agent's Chrome when it showed there (the runner's own, through Browser's
-   * way, which opens the tabs the runner kept of it, `recordTabs`); each Terminal a new shell in its folder (one that is gone is left out), with
-   * `terminalNote` above its first prompt; each other app with its command line in its folder. Only the bus comes from
-   * the session's environment: what the agent's processes hold is never handed to the launcher, which starts as root
-   * in system mode.
+   * way, which opens the tabs the runner kept of it, `recordTabs`); each Terminal a new shell in its folder (one that
+   * is gone is left out), with `terminalNote` above its first prompt; each other app with its command line in its
+   * folder. Only the bus comes from the session's environment: what the agent's processes hold is never handed to the
+   * launcher, which starts as root in system mode.
    */
   private async reopen(d: Desktop, open: OpenOnDesktop) {
     if (this.desktops.get(d.agent.id) !== d || !this.alive(d)) return;
