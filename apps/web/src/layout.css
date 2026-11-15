@@ -3317,6 +3317,9 @@ html:not([data-pointer]) .artifact-table__sort:focus-visible {
 .md--message > * + * {
   margin-top: 14px;
 }
+.md-run {
+  word-break: break-all;
+}
 .md--message > p + ul,
 .md--message > p + ol {
   margin-top: 8px;
