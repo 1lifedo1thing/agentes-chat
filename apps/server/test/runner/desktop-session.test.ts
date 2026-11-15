@@ -1,6 +1,16 @@
 import { afterEach, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync, writeSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+  writeSync,
+} from "node:fs";
 import { createConnection } from "node:net";
 import path from "node:path";
 import type { AgentScope, MachineRequest, RunnerAccess } from "@agenteschat/adapters/machine-protocol";
@@ -925,6 +935,11 @@ function keeperList(home: string, list: unknown) {
   return file;
 }
 
+/** Each agent's keeper listed no app window: what a park needs to know it loses nothing. */
+async function keptNothing(t: ReturnType<typeof setup>, ...agents: AgentScope[]) {
+  for (const a of agents) keeperList((await t.opts.user(a)).home, { v: 1, browser: false, apps: [] });
+}
+
 test("after a move the desktop opens again its browser and its other apps as the keeper listed them, each as the agent in its folder, and its Terminals say the computer moved", async () => {
   const opened: string[] = [];
   const openBrowser = async (agent: AgentScope) => {
@@ -1395,6 +1410,7 @@ test("parking: short of memory, the least recently used desktop untouched for an
   // Each desktop takes 0.4 GiB of what this computer has; 1.5 GiB must stay free when one more starts.
   const running = () => t.fake.of("Xtigervnc").filter((p) => p.alive).length;
   const t = setup({ memAvailable: () => 3.4 * GiB - running() * 0.4 * GiB, inUse: (id) => id === busy.id });
+  await keptNothing(t, a, b, watched, busy, recent, c, d, e);
   await t.desktops.ensure(a);
   t.clock.now += 60_000;
   for (const next of [b, watched, busy]) await t.desktops.ensure(next);
@@ -1431,6 +1447,7 @@ test("parking: with every display taken, the least recently used desktop untouch
     t.fake.others.set(9000 + slot, ["/usr/lib/xorg/Xorg", `:${20 + slot}`]);
   }
   const qa: AgentScope = { id: "77aa0000-0000-7000-8000-000000000000", handle: "qa" };
+  await keptNothing(t, dev, ops, qa);
   await t.desktops.ensure(dev);
   t.clock.now += 60_000;
   await t.desktops.ensure(ops);
@@ -1450,6 +1467,7 @@ test("the agent's Chrome in use on its desktop touches it: parked an hour after 
     memAvailable: () => (t.desktops.status(dev).running ? GiB : 4 * GiB),
     inUse: (id) => id === dev.id && chromeInUse,
   });
+  await keptNothing(t, dev);
   await t.desktops.ensure(dev);
   // Hours of browsing on it, the sweep once a minute; then its Chrome closes.
   for (let minute = 0; minute < 180; minute++) {
@@ -1523,6 +1541,7 @@ test("its server short of memory: every desktop untouched for an hour, unwatched
 test("short of memory, a desktop is never parked while a command runs in its Terminal or an app other than Files is open", async () => {
   const t = setup();
   const { display } = await t.desktops.ensure(dev);
+  await keptNothing(t, dev);
   t.fake.stats.push(
     { pid: 7000, ppid: 1, name: "xfce4-terminal", start: 50, cpu: 1 },
     { pid: 7001, ppid: 7000, name: "bash", start: 51, cpu: 0 },
@@ -1542,6 +1561,35 @@ test("short of memory, a desktop is never parked while a command runs in its Ter
   keeperList(home, { v: 1, browser: false, apps: [{ argv: ["thunar", home], cwd: home }] });
   expect(await t.desktops.parkIdle()).toBe(1);
   expect(t.desktops.status(dev).running).toBe(false);
+  t.desktops.close();
+});
+
+test("short of memory, a desktop whose apps the keeper can't vouch for, or whose Terminal runs a program, is never parked", async () => {
+  const t = setup();
+  const { display } = await t.desktops.ensure(dev);
+  const home = (await t.opts.user(dev)).home;
+  t.clock.now += 2 * PARK_AFTER_MS;
+  // No keeper (python3-xlib missing, or its autostart never written): its windows are unknown.
+  expect(await t.desktops.parkIdle()).toBe(0);
+  // A list from before this session started.
+  const file = keeperList(home, { v: 1, browser: false, apps: [] });
+  utimesSync(file, 1, 1);
+  expect(await t.desktops.parkIdle()).toBe(0);
+  // A window the keeper couldn't list (no pid, another pid space, a command line over the cap).
+  keeperList(home, { v: 1, browser: false, apps: [], unkept: true });
+  expect(await t.desktops.parkIdle()).toBe(0);
+  // A Terminal started on an editor: the editor is the Terminal's child, with no child of its own.
+  keeperList(home, { v: 1, browser: false, apps: [] });
+  t.fake.stats.push(
+    { pid: 7000, ppid: 1, name: "xfce4-terminal", start: 50, cpu: 1 },
+    { pid: 7001, ppid: 7000, name: "vim", start: 51, cpu: 0 },
+  );
+  t.fake.envs.set(7000, { DISPLAY: `:${display}` });
+  expect(await t.desktops.parkIdle()).toBe(0);
+  expect(t.desktops.status(dev).running).toBe(true);
+  // Its shell back at the prompt: parked.
+  t.fake.stats[t.fake.stats.length - 1] = { pid: 7001, ppid: 7000, name: "bash", start: 51, cpu: 0 };
+  expect(await t.desktops.parkIdle()).toBe(1);
   t.desktops.close();
 });
 

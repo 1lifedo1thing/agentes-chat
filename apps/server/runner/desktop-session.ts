@@ -125,6 +125,8 @@ const KEEPER_STATE_BYTES = 64 * 1024;
 /** An app's command line kept to open it again: at most this many arguments, and characters in all. */
 const APP_ARGS_MAX = 64;
 const APP_CHARS_MAX = 4096;
+/** What a Terminal runs when it was started with no command: anything else it runs is work a park would end. */
+const SHELLS = new Set(["bash", "zsh", "sh", "dash", "fish", "ksh", "tcsh", "csh"]);
 /**
  * Each app opened again is the agent's own process changing into its folder (its home, where that is gone), so root
  * never enters a folder the agent could swap for a link: `sh -c APP_SCRIPT agentes-app <folder> <command line…>`.
@@ -825,8 +827,9 @@ export class DesktopSessions {
   async parkIdle(): Promise<number> {
     let parked = 0;
     for (const d of [...this.desktops.values()]) {
+      if (this.stopping) break;
       await this.serial(d.agent.id, async () => {
-        if (this.desktops.get(d.agent.id) !== d || !this.parkable(d, "")) return;
+        if (this.stopping || this.desktops.get(d.agent.id) !== d || !this.parkable(d, "")) return;
         this.opts.log(
           `the desktop of ${d.agent.handle} was parked: its server is short of memory, nobody used it for an hour`,
         );
@@ -854,15 +857,30 @@ export class DesktopSessions {
   }
 
   /**
-   * What a park would lose: a command still running in one of its Terminals (a build, a dev server), whose process
-   * and output a new shell can't bring back, or an app window other than Terminal, Chrome and Files, whose unsaved
-   * content a reopen can't either.
+   * What a park would lose: a command still running in one of its Terminals (a build, a dev server, or the program a
+   * Terminal was started with), whose process and output a new shell can't bring back, or an app window other than
+   * Terminal, Chrome and Files, whose unsaved content a reopen can't either. Without the keeper's list of this session
+   * (no keeper, or one from an earlier session) or with a window it couldn't list, the desktop's apps are unknown, so
+   * it holds.
    */
   private holdsWork(d: Desktop) {
-    if (appsOf(this.keeperList(d)?.apps).some((a) => path.basename(a.argv[0] ?? "") !== "thunar")) return true;
+    const list = this.keeperList(d);
+    if (!list || list.unkept === true || this.keeperListAt(d) < d.startedAt) return true;
+    if (appsOf(list.apps).some((a) => path.basename(a.argv[0] ?? "") !== "thunar")) return true;
     const procs = this.sys.processes();
-    const shells = new Set(this.terminalShells(d, procs).map((p) => p.pid));
-    return procs.some((p) => shells.has(p.ppid));
+    const shells = this.terminalShells(d, procs);
+    if (shells.some((p) => !SHELLS.has(p.name))) return true;
+    const pids = new Set(shells.map((p) => p.pid));
+    return procs.some((p) => pids.has(p.ppid));
+  }
+
+  /** When the keeper last wrote its list (ms), or 0. */
+  private keeperListAt(d: Desktop) {
+    try {
+      return lstatSync(path.join(d.home, KEEPER_STATE)).mtimeMs;
+    } catch {
+      return 0;
+    }
   }
 
   stop(agent: Pick<AgentScope, "id">): Promise<MachineReplies["desktop.session.stop"]> {
