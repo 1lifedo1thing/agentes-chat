@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { type LayoutChangeEvent, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { useDerivedValue } from "react-native-reanimated";
 import { useServer } from "@/lib/server";
-import { useDirectory, useOrgId } from "../shared/hooks";
+import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { DesktopAgentPointer } from "./AgentPointer";
 import { watchView } from "./agent-pointer";
@@ -44,6 +44,7 @@ export function ScreenWatch({
   ref?: Ref<ScreenWatchHandle>;
 }) {
   const { t } = useTranslation();
+  const c = useColors();
   const server = useServer();
   const orgId = useOrgId();
   const qc = useQueryClient();
@@ -97,8 +98,10 @@ export function ScreenWatch({
     setReady(false);
     setLife((n) => n + 1);
   };
+  // The hairline is inside the box's layout: the screen scales to the room within it.
   const onLayout = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
+    const width = e.nativeEvent.layout.width - 2 * EDGE;
+    const height = e.nativeEvent.layout.height - 2 * EDGE;
     setBox((b) => (b.width === width && b.height === height ? b : { width, height }));
   };
   const scale = box.width > 0 && box.height > 0 ? fitScale(box, desk) : 1;
@@ -107,7 +110,13 @@ export function ScreenWatch({
     <View
       onLayout={onLayout}
       pointerEvents={parked ? "none" : undefined}
-      style={[styles.box, style, { aspectRatio: desk.width / desk.height }, parked && styles.parked]}
+      style={[
+        styles.box,
+        { borderColor: c.line },
+        style,
+        { aspectRatio: desk.width / desk.height },
+        parked && styles.parked,
+      ]}
       accessible={!parked}
       accessibilityElementsHidden={parked}
       importantForAccessibility={parked ? "no-hide-descendants" : undefined}
@@ -148,8 +157,11 @@ export function ScreenWatch({
   );
 }
 
+/** The live picture's hairline, the card's thumbnail's: the line color, one device pixel. */
+const EDGE = StyleSheet.hairlineWidth;
+
 const styles = StyleSheet.create({
-  box: { overflow: "hidden", backgroundColor: "#101010" },
+  box: { overflow: "hidden", backgroundColor: "#101010", borderWidth: EDGE },
   // Out of the layout and out of sight, still rendering (a zero size could stop the page).
   parked: { position: "absolute", left: 0, top: 0, width: 1, height: 1, opacity: 0 },
   frame: { position: "absolute", left: 0, top: 0, transformOrigin: "left top" },

@@ -454,6 +454,7 @@ export function BrowserCard({
             <View
               style={[
                 styles.page,
+                { borderColor: c.line },
                 // Nothing under the page (no controls, note or steps): it keeps the card's margin at the bottom too.
                 !mine && !(helper && !live.hidden) && steps.length === 0 && styles.pageLast,
                 sky ? null : { backgroundColor: c.sunken },
@@ -654,8 +655,15 @@ const styles = StyleSheet.create({
   },
   hint: { marginTop: 2 },
   flip: { transform: [{ rotate: "180deg" }] },
-  page: { aspectRatio: 16 / 10, marginHorizontal: PAGE_INSET, borderRadius: CARD - PAGE_INSET, overflow: "hidden" },
-  // The whole screen, its own shape (ScreenWatch sets it): never cropped.
+  // The live picture's hairline is the thumbnail's, on the box that rounds and clips it: the picture sits inside it.
+  page: {
+    aspectRatio: 16 / 10,
+    marginHorizontal: PAGE_INSET,
+    borderRadius: CARD - PAGE_INSET,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+  },
+  // The whole screen, its own shape and hairline (ScreenWatch sets them): never cropped.
   screen: { marginHorizontal: PAGE_INSET, borderRadius: CARD - PAGE_INSET },
   pageLast: { marginBottom: PAGE_INSET },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 16 },
