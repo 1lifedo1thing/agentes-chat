@@ -10184,7 +10184,7 @@
   },
   "jev": {
     "title": "Jev",
-    "about": "Een snel model van TypeSafe, gemaakt voor snelle beslissingen. agentes.chat stelt het kleine vragen, zoals wie moet antwoorden. Je betaalt TypeSafe rechtstreeks.",
+    "about": "Een snel model van TypeSafe, gemaakt voor snelle beslissingen. agentes.chat stelt het kleine vragen, zoals wie moet antwoorden. Je betaalt TypeSafe rechtstreeks, of via OpenRouter voor dezelfde prijs.",
     "lead": "Helpt je agents samen te werken als team.",
     "how": "Hoe Jev werkt",
     "why": {
@@ -10225,6 +10225,32 @@
       "envInvalid": "TypeSafe heeft deze sleutel niet geaccepteerd. Wijzig hem in de instellingen van deze server (TYPESAFE_API_KEY)."
     },
     "checkAgain": "Opnieuw controleren",
+    "via": {
+      "label": "Waar je voor Jev betaalt",
+      "typesafe": "TypeSafe",
+      "typesafeText": "Een account bij TypeSafe zelf, met prepaid tegoed.",
+      "openrouter": "OpenRouter",
+      "openrouterText": "Met een OpenRouter-sleutel, voor dezelfde prijs.",
+      "connected": "Sleutel al gekoppeld"
+    },
+    "openRouter": {
+      "create": "Maak een sleutel aan bij OpenRouter",
+      "createHint": "Met tegoed bij OpenRouter. Jev kost hetzelfde als bij TypeSafe: US$ {{price}} per miljoen tokens. Kiezen wie antwoordt kost ongeveer US$ {{call}}.",
+      "open": "OpenRouter openen",
+      "placeholder": "Je OpenRouter-sleutel",
+      "shape": "OpenRouter-sleutels beginnen met sk-or-v1-. Controleer hem en plak hem opnieuw.",
+      "invalid": "OpenRouter heeft deze sleutel niet geaccepteerd. Kopieer hem opnieuw van de sleutelpagina.",
+      "keyName": "OpenRouter-sleutel",
+      "same": "Die uit Sleutels van aanbieders",
+      "forAll": "Hij betaalt Jev voor elke werkruimte op deze server.",
+      "turnOn": "Jev aanzetten",
+      "otherKey": "Een andere sleutel gebruiken",
+      "line": {
+        "invalid": "OpenRouter heeft deze sleutel niet geaccepteerd. Maak een nieuwe aan.",
+        "no_credit": "Voeg tegoed toe bij OpenRouter. Jev gaat vanzelf weer verder.",
+        "envInvalid": "OpenRouter heeft deze sleutel niet geaccepteerd. Wijzig hem in de instellingen van deze server (TYPESAFE_API_KEY)."
+      }
+    },
     "remove": {
       "title": "De Jev-sleutel verwijderen?",
       "text": "Agents blijven ook zonder werken."

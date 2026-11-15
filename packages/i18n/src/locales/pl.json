@@ -10873,7 +10873,7 @@
   },
   "jev": {
     "title": "Jev",
-    "about": "Szybki model od TypeSafe, stworzony do szybkich decyzji. agentes.chat zadaje mu drobne pytania, na przykład kto ma odpowiedzieć. Płacisz bezpośrednio TypeSafe.",
+    "about": "Szybki model od TypeSafe, stworzony do szybkich decyzji. agentes.chat zadaje mu drobne pytania, na przykład kto ma odpowiedzieć. Płacisz bezpośrednio TypeSafe albo przez OpenRouter w tej samej cenie.",
     "lead": "Pomaga twoim agentom działać jak zespół.",
     "how": "Jak działa Jev",
     "why": {
@@ -10916,6 +10916,32 @@
       "envInvalid": "TypeSafe nie przyjął tego klucza. Zmień go w ustawieniach tego serwera (TYPESAFE_API_KEY)."
     },
     "checkAgain": "Sprawdź ponownie",
+    "via": {
+      "label": "Gdzie płacisz za Jeva",
+      "typesafe": "TypeSafe",
+      "typesafeText": "Konto bezpośrednio w TypeSafe, z przedpłaconymi środkami.",
+      "openrouter": "OpenRouter",
+      "openrouterText": "Z kluczem OpenRouter, w tej samej cenie.",
+      "connected": "Klucz już połączony"
+    },
+    "openRouter": {
+      "create": "Utwórz klucz w OpenRouter",
+      "createHint": "Ze środkami w OpenRouter. Jev kosztuje tyle samo co w TypeSafe: {{price}} USD za milion tokenów. Wybór osoby, która odpowie, kosztuje około {{call}} USD.",
+      "open": "Otwórz OpenRouter",
+      "placeholder": "Twój klucz OpenRouter",
+      "shape": "Klucze OpenRouter zaczynają się od sk-or-v1-. Sprawdź go i wklej ponownie.",
+      "invalid": "OpenRouter nie przyjął tego klucza. Skopiuj go ponownie ze strony kluczy.",
+      "keyName": "Klucz OpenRouter",
+      "same": "Ten z Kluczy dostawców",
+      "forAll": "Ten klucz płaci za Jeva we wszystkich przestrzeniach roboczych na tym serwerze.",
+      "turnOn": "Włącz Jeva",
+      "otherKey": "Użyj innego klucza",
+      "line": {
+        "invalid": "OpenRouter nie przyjął tego klucza. Utwórz nowy.",
+        "no_credit": "Doładuj środki w OpenRouter. Jev wznowi pracę sam.",
+        "envInvalid": "OpenRouter nie przyjął tego klucza. Zmień go w ustawieniach tego serwera (TYPESAFE_API_KEY)."
+      }
+    },
     "remove": {
       "title": "Usunąć klucz Jeva?",
       "text": "Agenci będą działać dalej bez niego."

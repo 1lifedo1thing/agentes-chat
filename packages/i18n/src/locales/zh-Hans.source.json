@@ -24690,7 +24690,7 @@
     "value": "Jev"
   },
   "jev.about": {
-    "value": "A fast model by TypeSafe, made for quick decisions. agentes.chat asks it small questions, like who should answer. You pay TypeSafe directly."
+    "value": "A fast model by TypeSafe, made for quick decisions. agentes.chat asks it small questions, like who should answer. You pay TypeSafe directly, or through OpenRouter at the same price."
   },
   "jev.lead": {
     "value": "Helps your agents work as a team."
@@ -24787,6 +24787,66 @@
   },
   "jev.checkAgain": {
     "value": "Check again"
+  },
+  "jev.via.label": {
+    "value": "Where you pay for Jev"
+  },
+  "jev.via.typesafe": {
+    "value": "TypeSafe"
+  },
+  "jev.via.typesafeText": {
+    "value": "An account at TypeSafe itself, with prepaid credit."
+  },
+  "jev.via.openrouter": {
+    "value": "OpenRouter"
+  },
+  "jev.via.openrouterText": {
+    "value": "With an OpenRouter key, at the same price."
+  },
+  "jev.via.connected": {
+    "value": "Key already connected"
+  },
+  "jev.openRouter.create": {
+    "value": "Create a key at OpenRouter"
+  },
+  "jev.openRouter.createHint": {
+    "value": "With credit at OpenRouter. Jev costs the same as at TypeSafe: US$ {{price}} per million tokens. Picking who answers costs about US$ {{call}}."
+  },
+  "jev.openRouter.open": {
+    "value": "Open OpenRouter"
+  },
+  "jev.openRouter.placeholder": {
+    "value": "Your OpenRouter key"
+  },
+  "jev.openRouter.shape": {
+    "value": "OpenRouter keys start with sk-or-v1-. Check it and paste it again."
+  },
+  "jev.openRouter.invalid": {
+    "value": "OpenRouter didn't accept this key. Copy it again from the keys page."
+  },
+  "jev.openRouter.keyName": {
+    "value": "OpenRouter key"
+  },
+  "jev.openRouter.same": {
+    "value": "The one in Provider keys"
+  },
+  "jev.openRouter.forAll": {
+    "value": "It pays for Jev in every workspace on this server."
+  },
+  "jev.openRouter.turnOn": {
+    "value": "Turn on Jev"
+  },
+  "jev.openRouter.otherKey": {
+    "value": "Use another key"
+  },
+  "jev.openRouter.line.invalid": {
+    "value": "OpenRouter didn't accept this key. Create a new one."
+  },
+  "jev.openRouter.line.no_credit": {
+    "value": "Add credit at OpenRouter. Jev resumes by itself."
+  },
+  "jev.openRouter.line.envInvalid": {
+    "value": "OpenRouter didn't accept this key. Change it in this server's settings (TYPESAFE_API_KEY)."
   },
   "jev.remove.title": {
     "value": "Remove the Jev key?"

@@ -10474,7 +10474,7 @@ export const ptBR = {
   jev: {
     title: "Jev",
     about:
-      "Um modelo rápido da TypeSafe, feito para decisões rápidas. O agentes.chat faz perguntas pequenas a ele, como quem deve responder. Você paga direto à TypeSafe.",
+      "Um modelo rápido da TypeSafe, feito para decisões rápidas. O agentes.chat faz perguntas pequenas a ele, como quem deve responder. Você paga direto à TypeSafe ou pelo OpenRouter, pelo mesmo preço.",
     lead: "Ajuda os agentes a trabalhar em equipe.",
     how: "Como o Jev funciona",
     why: {
@@ -10517,6 +10517,35 @@ export const ptBR = {
       envInvalid: "A TypeSafe não aceitou esta chave. Troque nas configurações deste servidor (TYPESAFE_API_KEY).",
     },
     checkAgain: "Verificar de novo",
+    /** Where Jev is called and paid (ADR 0073 §9): the rows under the reasons once "Set up Jev" is pressed. */
+    via: {
+      label: "Onde você paga o Jev",
+      typesafe: "TypeSafe",
+      typesafeText: "Uma conta direto na TypeSafe, com crédito pré-pago.",
+      openrouter: "OpenRouter",
+      openrouterText: "Com uma chave do OpenRouter, pelo mesmo preço.",
+      connected: "Chave já conectada",
+    },
+    /** Jev through OpenRouter: its steps, the workspace's own key, and the key's lines once saved. */
+    openRouter: {
+      create: "Crie uma chave no OpenRouter",
+      createHint:
+        "Com crédito no OpenRouter. O Jev custa o mesmo que na TypeSafe: US$ {{price}} por milhão de tokens. Escolher quem responde custa cerca de US$ {{call}}.",
+      open: "Abrir o OpenRouter",
+      placeholder: "A sua chave do OpenRouter",
+      shape: "As chaves do OpenRouter começam com sk-or-v1-. Confira e cole de novo.",
+      invalid: "O OpenRouter não aceitou esta chave. Copie de novo na página de chaves.",
+      keyName: "Chave do OpenRouter",
+      same: "A mesma de Chaves de provedor",
+      forAll: "Ela paga o Jev de todos os workspaces deste servidor.",
+      turnOn: "Ligar o Jev",
+      otherKey: "Usar outra chave",
+      line: {
+        invalid: "O OpenRouter não aceitou esta chave. Crie uma nova.",
+        no_credit: "Adicione crédito no OpenRouter. O Jev volta sozinho.",
+        envInvalid: "O OpenRouter não aceitou esta chave. Troque nas configurações deste servidor (TYPESAFE_API_KEY).",
+      },
+    },
     remove: {
       title: "Remover a chave do Jev?",
       text: "Os agentes continuam trabalhando sem ele.",
