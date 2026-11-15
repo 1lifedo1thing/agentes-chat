@@ -19,6 +19,7 @@ import {
   runRoutineNow,
   setAgentBrain,
   thinkingAgent,
+  usageQueue,
 } from "../src";
 import { nextAccountPlan } from "../src/spill";
 import { addMember, type Fixture, setup } from "./fixtures";
@@ -335,6 +336,12 @@ test("every account at its limit: the run waits until the first of them resets, 
   expect(all?.meta.bodyParams).toMatchObject({ accounts: "3", plan: "Claude" });
   expect(all?.meta.usageWait).toMatchObject({ resetsAt: first });
   expect(await notes(fx, "plan_account_moved")).toHaveLength(0);
+  // The agent's line says the whole order waits, until the first reset.
+  expect(await usageQueue(fx.db, fx.owner.id, fx.org.id, fx.agent.id)).toMatchObject({
+    reason: "plan",
+    chain: 3,
+    resetsAt: first,
+  });
 });
 
 test("an agent pinned to its account waits for it, as before", async () => {
@@ -436,6 +443,12 @@ test("a run that moved resumes on the account it moved to, in its session there"
   const [parked] = await runs(fx);
   expect(parked?.status).toBe("waiting_input");
   expect(moveOf(parked)?.to).toBe(OWN2);
+  // Its line names the account it waits on: the one it moved to, not the agent's own.
+  expect(await usageQueue(fx.db, fx.owner.id, fx.org.id, fx.agent.id)).toMatchObject({
+    reason: "plan",
+    account: { id: OWN2, label: "Conta a002" },
+    chain: null,
+  });
 
   clearPlanLimits();
   await drainOutbox(fx.db, handlers, { now: later(3600_000 + RESUME_AFTER_MS + 1000) });

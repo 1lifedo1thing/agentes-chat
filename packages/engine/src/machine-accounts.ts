@@ -58,6 +58,7 @@ import {
   GEMINI_ENTERPRISE_PROVIDER,
   isPlanId,
   loginPerAgent,
+  NEXT_ACCOUNT_KINDS,
   type PlanId,
   planOf,
   SHARED_SIGN_INS,
@@ -157,6 +158,8 @@ export interface MachineAccountView {
   providerOrgId: string | null;
   /** Who it thinks for (ADR 0059 §3): everyone in the workspace, or only its owner. */
   serves: PlanServes;
+  /** Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6); null: after the placed ones, oldest first. */
+  useOrder: number | null;
 }
 
 /** Who a plan thinks for (`machine_accounts.serves`, ADR 0059 §3). */
@@ -255,6 +258,7 @@ function accountView(
     shared: row.shared,
     providerOrgId: mine ? row.providerOrgId : null,
     serves: servesOf(row.serves),
+    useOrder: row.useOrder,
   };
 }
 
@@ -314,6 +318,120 @@ export async function listMachineAccounts(
       ownerName,
     );
   });
+}
+
+/** One computer's accounts of one kind in their order of use (ADR 0041 §6). */
+export interface AccountOrderGroup {
+  machineId: string;
+  computer: string;
+  kind: AccountKind;
+  /** First to last: by `useOrder`, the unplaced after, oldest first. `canMove`: the viewer owns it or is an admin. */
+  accounts: (MachineAccountView & { canMove: boolean })[];
+}
+
+/** Accounts a run may go on with at its plan's limit (`nextAccountPlan`): the CLI's own sign-in, never a key. */
+const inOrder = (orgId: string) =>
+  and(
+    eq(machineAccounts.orgId, orgId),
+    inArray(machineAccounts.kind, [...NEXT_ACCOUNT_KINDS]),
+    inArray(machineAccounts.status, LISTED_ACCOUNT_STATUSES),
+    isNull(machineAccounts.provider),
+    sql`${machineAccounts.authMethod} is distinct from 'api_key'`,
+  );
+
+const orderOfUse = [
+  sql`${machineAccounts.useOrder} asc nulls last`,
+  machineAccounts.createdAt,
+  machineAccounts.id,
+] as const;
+
+/**
+ * `GET …/ai-accounts/order` (any member): every computer's Claude and ChatGPT accounts in the workspace's order of use,
+ * by computer and kind. Owner-only ones are listed too: they keep their place for their owner's agents.
+ */
+export async function listAccountOrder(
+  deps: Pick<MachineAccountDeps, "db">,
+  userId: string,
+  orgId: string,
+): Promise<AccountOrderGroup[]> {
+  const membership = await requirePermission(deps.db, userId, orgId, "read");
+  const admin = can(membership, "configure");
+  const rows = await deps.db
+    .select({ id: machineAccounts.id, machineId: machineAccounts.machineId, computer: machines.name })
+    .from(machineAccounts)
+    .innerJoin(machines, and(eq(machines.id, machineAccounts.machineId), isNull(machines.deletedAt)))
+    .where(inOrder(orgId))
+    .orderBy(machines.createdAt, machines.id, machineAccounts.kind, ...orderOfUse);
+  const views = new Map<string, MachineAccountView>();
+  for (const machineId of new Set(rows.map((r) => r.machineId))) {
+    for (const v of await listMachineAccounts(deps, orgId, machineId, userId)) views.set(v.id, v);
+  }
+  const groups: AccountOrderGroup[] = [];
+  for (const r of rows) {
+    const view = views.get(r.id);
+    if (!view) continue;
+    let group = groups.find((g) => g.machineId === r.machineId && g.kind === view.kind);
+    if (!group) {
+      group = { machineId: r.machineId, computer: r.computer, kind: view.kind, accounts: [] };
+      groups.push(group);
+    }
+    group.accounts.push({ ...view, canMove: view.mine || admin });
+  }
+  return groups;
+}
+
+/**
+ * `PUT …/ai-accounts/{id}/order`: the account takes place `index` (0 first) among its computer's accounts of its kind,
+ * the others keeping theirs in order. Its owner or an admin (`account.order_forbidden`). Audited as `account.order`.
+ */
+export async function moveAccountInOrder(
+  deps: MachineAccountDeps,
+  userId: string,
+  orgId: string,
+  accountId: string,
+  index: unknown,
+): Promise<AccountOrderGroup> {
+  if (typeof index !== "number" || !Number.isInteger(index) || index < 0) {
+    throw new ValidationError("The place is a whole number from 0", "account.invalid_order");
+  }
+  const membership = await requirePermission(deps.db, userId, orgId, "read");
+  const [row] = await deps.db
+    .select()
+    .from(machineAccounts)
+    .where(and(inOrder(orgId), eq(machineAccounts.id, accountId)));
+  if (!row) throw new NotFoundError("Account not found", "account.not_found");
+  if (row.createdBy !== userId && !can(membership, "configure")) {
+    throw new ForbiddenError(
+      "Only the person who connected this account or an admin can change its place in the order",
+      "account.order_forbidden",
+    );
+  }
+  await deps.db.transaction(async (tx) => {
+    const group = await tx
+      .select({ id: machineAccounts.id, useOrder: machineAccounts.useOrder })
+      .from(machineAccounts)
+      .where(and(inOrder(orgId), eq(machineAccounts.machineId, row.machineId), eq(machineAccounts.kind, row.kind)))
+      .orderBy(...orderOfUse)
+      .for("update");
+    const ids = group.filter((g) => g.id !== row.id).map((g) => g.id);
+    ids.splice(Math.min(index, ids.length), 0, row.id);
+    for (const [place, id] of ids.entries()) {
+      if (group.find((g) => g.id === id)?.useOrder === place) continue;
+      await tx.update(machineAccounts).set({ useOrder: place }).where(eq(machineAccounts.id, id));
+    }
+  });
+  await recordAudit(deps.db, {
+    orgId,
+    actor: { type: "person", id: userId },
+    action: "account.order",
+    target: { type: "machine_account", id: row.id },
+    details: { machineId: row.machineId, kind: row.kind, index },
+  });
+  await publishAccountsChanged(deps.pubsub, orgId, row.machineId);
+  const groups = await listAccountOrder(deps, userId, orgId);
+  const found = groups.find((g) => g.machineId === row.machineId && g.kind === row.kind);
+  if (!found) throw new NotFoundError("Account not found", "account.not_found");
+  return found;
 }
 
 async function accountViewOf(db: Database, orgId: string, row: MachineAccountRow, viewerId: string) {

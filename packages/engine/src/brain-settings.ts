@@ -481,6 +481,8 @@ export interface AgentBrainView {
   canEdit: boolean;
   /** The account its computer brain runs with (ADR 0041); null = the computer's own sign-in. */
   account: string | null;
+  /** "Só esta conta" (ADR 0041 §6): at its plan's limit it waits for this account instead of going on with the next. */
+  accountPinned: boolean;
   /** How hard its computer brain thinks; `auto` = picked per run; null = the CLI's default. */
   effort: BrainEffortSetting | null;
   /** How fast it answers in conversations (ADR 0149): kept whatever it thinks with, applied only where it fits. */
@@ -654,6 +656,7 @@ function view(
     machines,
     canEdit: true,
     account: agent.brainAccountId,
+    accountPinned: agent.brainAccountPinned,
     effort: isBrainEffortSetting(agent.brainEffort) ? agent.brainEffort : null,
     speed: isBrainSpeed(agent.brainSpeed) ? agent.brainSpeed : "standard",
     contextTokens: isContextLimit(agent.contextTokens) ? agent.contextTokens : null,
@@ -984,6 +987,8 @@ export interface AgentBrainInput {
   account?: unknown;
   /** The account thinks for another agent: take it from that one, which loses it (`releaseAgents`). */
   moveAccount?: unknown;
+  /** "Só esta conta" (ADR 0041 §6). Omitted = keep it. */
+  accountPinned?: unknown;
   /** `low`…`max`, `auto` (picked per run), or null for the CLI's default. Omitted = keep it. */
   effort?: unknown;
   /** `standard` or `fast`, kept through any change of brain, account or model. Omitted = keep it. */
@@ -1041,6 +1046,10 @@ export async function setAgentBrain(
   if (input.onlyOwner !== undefined && typeof input.onlyOwner !== "boolean") {
     throw new ValidationError("onlyOwner is on or off", "brain.invalid");
   }
+  if (input.accountPinned !== undefined && typeof input.accountPinned !== "boolean") {
+    throw new ValidationError("accountPinned is on or off", "brain.invalid");
+  }
+  const pinned = (input.accountPinned as boolean | undefined) ?? agent.brainAccountPinned;
   const brain = (input.brain as BrainKind | undefined) ?? from;
   const changed = brain !== from;
   const [machine, machines] = await Promise.all([
@@ -1150,7 +1159,8 @@ export async function setAgentBrain(
     effort !== agent.brainEffort ||
     speed !== agent.brainSpeed ||
     contextTokens !== agent.contextTokens ||
-    planForOthers !== agent.planForOthers;
+    planForOthers !== agent.planForOthers ||
+    pinned !== agent.brainAccountPinned;
   if (!thinks && !audience) return view(agent, machine, machines, accounts, userId);
   const { row, released } = await deps.db.transaction(async (tx) => {
     // A login made for one agent thinks for one: the check is taken again under its row's lock, so two agents
@@ -1192,6 +1202,7 @@ export async function setAgentBrain(
         brainModel: model,
         brainAccountId: account,
         brainAccountLentBy: lentBy,
+        brainAccountPinned: pinned,
         brainEffort: effort,
         brainSpeed: speed,
         contextTokens,
@@ -1259,8 +1270,9 @@ export async function setAgentBrain(
           effort: agent.brainEffort,
           speed: agent.brainSpeed,
           contextTokens: agent.contextTokens,
+          accountPinned: agent.brainAccountPinned,
         },
-        to: { brain, model, account, effort, speed, contextTokens },
+        to: { brain, model, account, effort, speed, contextTokens, accountPinned: pinned },
         ...(rightHand ? { planForOthers: { from: agent.planForOthers, to: planForOthers } } : {}),
         ...options.audit,
       },
@@ -1290,6 +1302,7 @@ export async function setAgentBrain(
     brainModel: model,
     brainAccountId: account,
     brainAccountLentBy: lentBy,
+    brainAccountPinned: pinned,
     brainEffort: effort,
     brainSpeed: speed,
     contextTokens,
@@ -1301,8 +1314,8 @@ export async function setAgentBrain(
     await rememberAgentSetup(deps.db, membership, setupOfAgent(saved));
   }
   // Another AI, account or model: what waited on the old one (its plan, budget or computer) goes on now, in its line's
-  // order.
-  if (changed || model !== agent.brainModel || account !== agent.brainAccountId)
+  // order. "Só esta conta" changed: a run waiting on its plan may go on with another account now, or comes back to this.
+  if (changed || model !== agent.brainModel || account !== agent.brainAccountId || pinned !== agent.brainAccountPinned)
     await wakeAgentsBrainWaits(deps, orgId, [agentId]);
   // The account's `usedBy` changed with it.
   // The right hand's row is on no computer: shown as its settings see it again.

@@ -694,6 +694,8 @@ export interface Transcript {
     reading?: PlanReadingRef;
     /** Its computer is just gone (within the outage grace): it waits without a word, and no outage shows yet. */
     quiet?: boolean;
+    /** A plan wait with every account of the order at its limit: how many (`resetsAt` is the first of them to reset). */
+    chain?: number;
   };
   /**
    * Long work paused near a limit (ADR 0118): `paused` once it was (it stays long work), `cardId` its card,
@@ -4023,6 +4025,7 @@ async function executeRunInner(
       ...(scope ? { scope } : {}),
       ...(steady ? { steady: true as const } : {}),
       ...(u.pause ? { source: u.pause.source } : {}),
+      ...(u.chain ? { chain: u.chain } : {}),
       // Continuar agora reads this plan's window again (`pauseContinuesPastPlan`).
       ...(u.pause?.source === "plan"
         ? {

@@ -78,7 +78,14 @@ const Run = z
         "What it last waited on that isn't a person: `busy`, `machine_offline`, `plan_limit`, `budget`, `usage_pause`, `work_queue`, `provider_outage`… Ignore values you don't know.",
     }),
     waitSource: z.string().nullable().openapi({ description: "A long-work pause's: `plan` or `budget`." }),
-    waitResetsAt: Time.nullable().openapi({ description: "When the limit it waits on resets, when known." }),
+    waitResetsAt: Time.nullable().openapi({
+      description:
+        "When the limit it waits on resets, when known. With every account of the order at its limit, the first of them.",
+    }),
+    accountId: z.uuid().nullable().openapi({
+      description:
+        "The AI account it went on with at its plan's limit (ADR 0041 §6): its plan waits and usage are that account's. Null: its agent's own (`accountId` on the agent).",
+    }),
     waitingMachineId: z.uuid().nullable().openapi({ description: "The computer it waits for." }),
     errorCode: z.string().nullable().openapi({
       description:

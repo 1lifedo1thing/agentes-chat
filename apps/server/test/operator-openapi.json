@@ -3994,7 +3994,12 @@
           },
           "waitResetsAt": {
             "type": ["string", "null"],
-            "description": "When the limit it waits on resets, when known."
+            "description": "When the limit it waits on resets, when known. With every account of the order at its limit, the first of them."
+          },
+          "accountId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "The AI account it went on with at its plan's limit (ADR 0041 §6): its plan waits and usage are that account's. Null: its agent's own (`accountId` on the agent)."
           },
           "waitingMachineId": {
             "type": ["string", "null"],
@@ -4045,6 +4050,7 @@
           "waitCode",
           "waitSource",
           "waitResetsAt",
+          "accountId",
           "waitingMachineId",
           "errorCode",
           "error",
@@ -4921,7 +4927,12 @@
                     },
                     "waitResetsAt": {
                       "type": ["string", "null"],
-                      "description": "When the limit it waits on resets, when known."
+                      "description": "When the limit it waits on resets, when known. With every account of the order at its limit, the first of them."
+                    },
+                    "accountId": {
+                      "type": ["string", "null"],
+                      "format": "uuid",
+                      "description": "The AI account it went on with at its plan's limit (ADR 0041 §6): its plan waits and usage are that account's. Null: its agent's own (`accountId` on the agent)."
                     },
                     "waitingMachineId": {
                       "type": ["string", "null"],
@@ -4974,6 +4985,7 @@
                     "waitCode",
                     "waitSource",
                     "waitResetsAt",
+                    "accountId",
                     "waitingMachineId",
                     "errorCode",
                     "error",

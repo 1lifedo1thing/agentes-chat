@@ -1025,6 +1025,10 @@ export const MachineAccount = z
       description:
         "Who it thinks for (ADR 0059 §3): everyone in the workspace (the default), or only its owner. Only its owner changes it.",
     }),
+    useOrder: z.number().int().nullable().openapi({
+      description:
+        "Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6), 0 first; null: after the placed ones, oldest first. A run at its plan's limit goes on with its agent's owner's next account, then the others that serve everyone.",
+    }),
   })
   .openapi("MachineAccount", {
     description:
@@ -1078,6 +1082,10 @@ export const AgentBrain = z
       .uuid()
       .nullable()
       .openapi({ description: "The account its computer brain runs with (ADR 0041); null = the computer's own." }),
+    accountPinned: z.boolean().openapi({
+      description:
+        "\"Só esta conta\" (ADR 0041 §6): at its plan's limit it waits for `account` to reset. Off (the default): the run goes on with the next account of the order (`GET …/ai-accounts/order`), its owner's first, and the next run starts on `account` again.",
+    }),
     effort: BrainEffortSetting.nullable().openapi({ description: "`auto` = per run; null = the CLI's default." }),
     speed: BrainSpeed,
     contextTokens: ContextLimit.nullable().openapi({

@@ -1,7 +1,7 @@
 import type { PlanUsage } from "@agenteschat/adapters";
 import { and, type Executor, eq, isNull, ne, or, schema, sql } from "@agenteschat/db";
 import { isAutoModel } from "@agenteschat/providers";
-import { autoPlanModel, claudeCodeModel, planOf } from "@agenteschat/providers/plans";
+import { autoPlanModel, claudeCodeModel, NEXT_ACCOUNT_KINDS, planOf } from "@agenteschat/providers/plans";
 import type { Agent } from "./agents";
 import { type BrainPlan, computerBrainUnavailable, planIsOwners, storedPlanUsage } from "./brains/select";
 import type { BrainAccount, BrainSession } from "./brains/types";
@@ -96,9 +96,6 @@ export interface AccountMove {
 /** Where `nextAccountPlan` landed: the plan on the next account, else how many accounts are all limited and the first reset. */
 export type NextAccount = { plan: BrainPlan; lentBy: string | null } | { plan: null; chain: number; resetsAt?: string };
 
-/** The kinds whose subscriptions a run may go on with at a limit: never Antigravity (ADR 0143, Context), Grok, Cursor or OpenCode. */
-const MOVES_ACCOUNTS: ReadonlySet<string> = new Set(["claude_code", "codex"]);
-
 type SeatRow = { id: string; email: string | null; providerOrgId: string | null };
 /** Two logins of one seat share its limits (`sameAccountWhere`): one email, in the same Claude organization when both know it. */
 const sameSeat = (a: SeatRow, b: SeatRow) =>
@@ -126,7 +123,7 @@ export async function nextAccountPlan(
   const machineId = plan.session?.machineId;
   const owner = agent.ownerUserId;
   const none = { plan: null, chain: 0 } as const;
-  if (!machineId || !owner || !plan.account || plan.missionId || !MOVES_ACCOUNTS.has(plan.kind)) return none;
+  if (!machineId || !owner || !plan.account || plan.missionId || !NEXT_ACCOUNT_KINDS.includes(plan.kind)) return none;
   if (agent.brainAccountPinned || plan.account.provider) return none;
   const { agents, organizationMembers: members } = schema;
   const [status, rows] = await Promise.all([

@@ -143,6 +143,7 @@ const runColumns = {
   waitCode: sql<string | null>`coalesce(${WAIT}->>'code', case when ${outageParkedSql} then 'provider_outage' end)`,
   waitSource: sql<string | null>`${WAIT}->>'source'`,
   waitResetsAt: sql<string | null>`${WAIT}->>'resetsAt'`,
+  accountId: sql<string | null>`${agentRuns.transcript}->'accountMove'->>'to'`,
   waitingMachineId: agentRuns.waitingMachineId,
   error: agentRuns.error,
   createdAt: ms(agentRuns.createdAt),

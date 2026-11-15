@@ -1458,6 +1458,14 @@ export function agentRoutes(deps: AppDeps) {
       reason: z.enum(["plan", "budget"]).nullable(),
       plan: z.string().nullable(),
       resetsAt: z.string().nullable(),
+      account: z.object({ id: z.uuid(), label: z.string() }).nullable().openapi({
+        description:
+          "A plan's line: the account it waits on, another than the agent's own when its run went on with the next account of the order (ADR 0041 §6); null: the computer's own sign-in, or a budget.",
+      }),
+      chain: z.number().int().nullable().openapi({
+        description:
+          "Every account of the order is at its limit: how many (`resetsAt` is when the first one resets); null otherwise.",
+      }),
       sharedWith: z.array(z.uuid()).openapi({ description: "Other agents waiting in the same plan's line." }),
       rows: z.array(UsageQueueRow),
       hidden: z.number().int().openapi({ description: "Waiting in conversations the viewer can't read." }),
@@ -1974,6 +1982,10 @@ export function agentRoutes(deps: AppDeps) {
             }),
             moveAccount: z.boolean().optional().openapi({
               description: "The account thinks for another agent (`account.in_use`): take it from that one (audited).",
+            }),
+            accountPinned: z.boolean().optional().openapi({
+              description:
+                "\"Só esta conta\" (ADR 0041 §6): true, at its plan's limit it waits for its own account; false, it goes on with the next account of the order. Omitted = keep. Ignored for the team's right hand's `mine`.",
             }),
             effort: BrainEffortSetting.nullable()
               .optional()
