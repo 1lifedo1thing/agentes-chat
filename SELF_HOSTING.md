@@ -814,7 +814,7 @@ ones a self-hosted instance usually touches:
 | `LOG_FORMAT` | `json` | `gcp` for Google Cloud Logging (`severity` and `message`). |
 | `TELEMETRY` | `on` | `off` stops the anonymous usage report (Optional services and what they receive). |
 | `FEEDBACK_RELAY` | `true` | The apps' feedback form sends what a person writes to the agentes.chat team. `false`: no form (Optional services and what they receive). |
-| `TYPESAFE_API_KEY` | | Your TypeSafe key for Jev (AI: plans and keys). Wins over the key added in Settings → AI and usage. |
+| `TYPESAFE_API_KEY` | | Your TypeSafe key for Jev, or an OpenRouter key (`sk-or-…`) to call the same Jev through OpenRouter (AI: plans and keys). Wins over the key added in Settings → AI and usage. |
 | `COMPOSIO_API_KEY`, `COMPOSIO_WEBHOOK_SECRET` | | Your Composio project: Gmail and Outlook mailboxes and the services connected through Composio (below). |
 | `COMPOSIO_AUTH_CONFIGS`, `COMPOSIO_CALLS_PER_MONTH` | `0` for the cap (none) | Auth configs of your own per toolkit (`googledrive=ac_…`), and the Composio calls a workspace may make per month. |
 
@@ -1105,7 +1105,7 @@ party only when you turn that service on:
 | Another provider (OpenAI- or Anthropic-compatible) | An organization's endpoint (Settings → AI and usage → Other provider) | What the other model providers receive, sent to the address the organization typed. When it is saved, the server also reads that address's model list and makes one small test call per model. |
 | OpenRouter | An organization's key | What the other model providers receive, passed on by OpenRouter to the model's own provider (the organization's OpenRouter privacy settings decide which may keep it). While a workspace has an OpenRouter key, the server also reads OpenRouter's public model list, with no key: about once an hour, and up to once a minute while agents' runs ask for a model the list lacks. |
 | OpenCode | Always on | Nothing of yours: the server reads OpenCode Go's public model list, with no key, at boot and about once an hour, so that plan's model picker stays current. If the list is out of reach, the picker uses the list built into this version. |
-| TypeSafe Jev | `TYPESAFE_API_KEY`, or the key the owner adds in **Settings → AI and usage** (the variable wins). Either way it is your own TypeSafe key, so TypeSafe bills your account. | To pick which agent answers a message nobody @mentioned: the channel's name and topic, the message (up to 4,000 characters), recent messages (up to 800 each), and the name, role, description and tools of the channel's agents. To pick an agent's model or the tools it loads: its name, role and instructions (up to 1,500 characters), the message (up to 2,000) and recent messages (up to 400 each). Also the messages and memory items it is asked to judge (a request to stop, a hand-off, a permission change, whether to archive a memory), a long run's task and latest words with the tool calls and the start of the results it may set aside, a mission's commands it is asked to rate with the mission's goal and current step, the names and descriptions of a connector's tools, and, when a message meets no AI connected, that message (up to 4,000 characters), to tell whether it asks to connect one. On agents' computers, what is on the screen it is asked to look at: the page's address, its text and a screenshot. Without it, a small model on one of the organization's API keys picks and judges instead, each person's own plan picks for their own messages, and simple rules do the rest. Some memory and tool decisions go back to what they did before Jev, nothing guesses what to connect, and nothing is read from images. |
+| TypeSafe Jev | `TYPESAFE_API_KEY`, or the key the owner adds in **Settings → AI and usage** (the variable wins). Either way it is your own key, so TypeSafe bills your account; with an OpenRouter key (`sk-or-…`) the same requests go through OpenRouter, which passes them on to TypeSafe and bills your OpenRouter account. | To pick which agent answers a message nobody @mentioned: the channel's name and topic, the message (up to 4,000 characters), recent messages (up to 800 each), and the name, role, description and tools of the channel's agents. To pick an agent's model or the tools it loads: its name, role and instructions (up to 1,500 characters), the message (up to 2,000) and recent messages (up to 400 each). Also the messages and memory items it is asked to judge (a request to stop, a hand-off, a permission change, whether to archive a memory), a long run's task and latest words with the tool calls and the start of the results it may set aside, a mission's commands it is asked to rate with the mission's goal and current step, the names and descriptions of a connector's tools, and, when a message meets no AI connected, that message (up to 4,000 characters), to tell whether it asks to connect one. On agents' computers, what is on the screen it is asked to look at: the page's address, its text and a screenshot. Without it, a small model on one of the organization's API keys picks and judges instead, each person's own plan picks for their own messages, and simple rules do the rest. Some memory and tool decisions go back to what they did before Jev, nothing guesses what to connect, and nothing is read from images. |
 | Voyage AI, DeepInfra, OpenAI or another embeddings server | `EMBEDDINGS_PROVIDER=voyage` with `VOYAGE_API_KEY`, or `EMBEDDINGS_PROVIDER=openai` with `EMBEDDINGS_URL` | The text of what `EMBEDDINGS_KINDS` lists (memory items by default) as it is indexed, up to 8,000 characters each, and search queries. The `embeddings` profile keeps them on this machine. Without one, search is full-text only. |
 | Web search for agents | Always on: DuckDuckGo's HTML page with no key, unless `BRAVE_SEARCH_API_KEY` (Brave Search) or `SEARXNG_URL` (your own SearXNG) is set; an agent with a browser on its computer searches there instead (Google, then Bing or DuckDuckGo) | The words an agent searches for (`web_search`). `web_fetch` opens the public pages an agent asks for, from this server: never an internal or private address. |
 | Composio | `COMPOSIO_API_KEY` | Gmail and Outlook mailboxes for agents, and the services connected through it (Google Drive, Calendar, Sheets and Docs, Slack, Microsoft Teams, OneDrive, HubSpot, Salesforce, Zendesk, Asana, Figma, Intercom, Dropbox, Square, Instagram, Facebook, LinkedIn, YouTube, Pinterest, Reddit and WhatsApp Business): Composio holds those connections, and what agents read or write there passes through it, files included. IMAP mailboxes and the other connectors connect directly. |
@@ -1582,7 +1582,9 @@ memory spots repeats said in other words, and agents find buttons from a descrip
 screenshots. The person who set up the server adds the key in **Settings → AI and usage** (the setup
 asks once), or puts it in `.env` as `TYPESAFE_API_KEY`, which wins. It is stored encrypted like
 provider keys and never sent back to a browser. TypeSafe bills your account: US$ 0.042 per million
-tokens read, about US$ 0.0001 per routed message. Without it, see https://agentes.chat/docs/jev#without.
+tokens read, about US$ 0.0001 per routed message. An OpenRouter key (`sk-or-…`) works too: the same
+Jev, called and billed through OpenRouter at the same price, and the open workspace's OpenRouter key
+can turn it on with one press. Without it, see https://agentes.chat/docs/jev#without.
 
 **Plans.** An agent can think with a Claude or ChatGPT subscription instead of a key, on a connected
 computer: Claude Code or Codex signs in there with the provider's own flow. Each account is a folder
@@ -1833,6 +1835,22 @@ S3_SECRET_ACCESS_KEY=...
 S3_BACKUP_BUCKET=agentes-backups
 ```
 
+**Encrypted dumps (optional).** A dump leaves the server as `pg_dump` wrote it unless
+`BACKUP_AGE_RECIPIENT` holds an [age](https://age-encryption.org) public key (`age1…`): then each dump
+is encrypted to that key before it is uploaded, as `agentes-<stamp>.dump.age`, and the bucket's key
+alone can't read it. Only the public key sits on the server, so create the pair somewhere else
+(`age-keygen -o key.txt`, which prints the public key and keeps the private one in `key.txt`) and keep
+the private key apart from the server and from the bucket: a dump whose key is lost can't be restored.
+Add the public key to `.env` and run `docker compose up -d`:
+
+```sh
+BACKUP_AGE_RECIPIENT=age1...
+```
+
+Restoring needs `age` on the machine that restores (`apk add age`, `apt install age` or
+`brew install age`) and that private key. Switching either way is safe: `list` and the retention cover
+both names, and the dumps already in the bucket stay as they are.
+
 Add `backup` to `COMPOSE_PROFILES` too, comma-separated: `COMPOSE_PROFILES=tailscale,backup` on
 Tailscale (the setup's default), `https,backup` with Caddy, or `backup` alone. Running the setup
 again keeps it. Run `docker compose up -d`: the first dump runs right away, unless the bucket has one
@@ -1866,7 +1884,15 @@ start the line with `cd /path/to/compose/dir && umask 077;` and write `\%F`).
 
 **Restore** with the app stopped, so nothing writes in between, into an emptied database: tables that
 a newer version added aren't in an older dump and would keep it from replacing the rest. A dump in
-the bucket comes down to the server first, under a name from `list`:
+the bucket comes down to the server first, under a name from `list`. An encrypted one (`.dump.age`)
+is decrypted with the private key, which the server doesn't have:
+
+```sh
+(umask 077 && docker compose run --rm -T backup fetch agentes-20261020-030000.dump.age > agentes-2026-10-20.dump.age)
+age -d -i key.txt agentes-2026-10-20.dump.age > agentes-2026-10-20.dump
+```
+
+A dump without `.age` is ready as it comes down:
 
 ```sh
 (umask 077 && docker compose run --rm -T backup fetch agentes-20261020-030000.dump > agentes-2026-10-20.dump)
