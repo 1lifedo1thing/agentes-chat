@@ -5,6 +5,7 @@ import {
   askingPermissions,
   asksOf,
   createAgent,
+  ensureRightHand,
   ForbiddenError,
   getOrgSettings,
   grantScopes,
@@ -877,6 +878,14 @@ describe("the workspace's level", () => {
     // Following it again (Desfazer after a first own choice) takes the workspace's level back.
     await updateAgent(f.db, f.owner.id, f.org.id, bia.id, { approvalsLevel: null });
     expect(await ownOf(bia.id)).toEqual({ level: "never", own: false });
+  });
+
+  test("the right hand starts where the workspace is, following it", async () => {
+    f = await setup();
+    await setWorkspaceApprovalsLevel(f.db, f.owner.id, f.org.id, "always");
+    const id = await ensureRightHand(f.db, f.org.id);
+    expect(id).toBeTruthy();
+    expect(await ownOf(id ?? "")).toEqual({ level: "always", own: false });
   });
 
   test("for every agent, it also clears each agent's own choice", async () => {

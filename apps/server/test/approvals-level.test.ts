@@ -40,7 +40,7 @@ test("an agent's approvals level: risky when made, changed by PATCH, never by a 
 });
 
 test("the workspace's level: in its settings, set by who manages agents, followed by agents without their own", async () => {
-  t = await createTestServer();
+  t = await createTestServer({ env: { ALLOW_SIGNUP: "true" } });
   const owner = browser(t);
   await signUp(owner, "owner@example.com");
   const { orgId } = await seedOrg(owner);
@@ -55,6 +55,15 @@ test("the workspace's level: in its settings, set by who manages agents, followe
 
   const level = (who: typeof owner, json: unknown) => who(`${org}/approvals-level`, { method: "PUT", json });
   expect((await level(bia, { level: "never" })).status).toBe(403);
+  // Another workspace's owner reads and sets nothing here.
+  const stranger = browser(t);
+  await signUp(stranger, "stranger@example.com");
+  await seedOrg(stranger);
+  expect((await level(stranger, { level: "never" })).status).toBe(403);
+  expect((await stranger(`${org}/settings`)).status).toBe(403);
+  expect((await stranger(`${org}/agents/${ada.id}`, { method: "PATCH", json: { approvalsLevel: null } })).status).toBe(
+    403,
+  );
   expect((await level(owner, { level: "sometimes" })).status).toBe(400);
   const set = await level(owner, { level: "never" });
   expect(set.status).toBe(200);
