@@ -437,7 +437,7 @@ export function GalleryPage() {
       <Section title="PlanMeter · Antigravity">
         <div style={{ display: "grid", gap: 24, maxWidth: 360 }}>
           <PlanMeter usage={antigravityUsage()} text={planMeterText(t, i18n.language)} />
-          <PlanMeter usage={antigravityUsage()} text={planMeterText(t, i18n.language)} compact label="gui.liznas" />
+          <PlanMeter usage={antigravityUsage()} text={planMeterText(t, i18n.language)} compact label="maya.lin" />
         </div>
       </Section>
 
