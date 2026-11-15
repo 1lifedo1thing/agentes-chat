@@ -20,6 +20,7 @@ import {
   deriveSecret,
   getOrganization,
   hasPassword,
+  INVITE_CHOICES_MAX,
   invitationLogoFile,
   invitationState,
   isAgentesCloud,
@@ -79,6 +80,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import {
   authUiConfig,
   changeAccountEmail,
+  confirmsOnThisMac,
   deletionProof,
   deviceAccountsOf,
   mintPhoneSignIn,
@@ -128,7 +130,7 @@ const Proof = z.object({
   password: z.string().min(1).max(128).optional(),
 });
 const PROOF_TEXT =
-  "Proof that it's you: the `code` emailed by `POST …/deletion/code` (403 `reauth.code` without one; `reauth.code_wrong`, `reauth.code_expired` or `reauth.code_tries` when refused, and 429 `reauth.code_limit` for every code once the account's 10 wrong tries of the day are spent; it works once, for this deletion only). On a server that sends no email, `password` instead (403 `reauth.password` without it or wrong, 429 after 5 in 15 minutes).";
+  "Proof that it's you: the `code` emailed by `POST …/deletion/code` (403 `reauth.code` without one; `reauth.code_wrong`, `reauth.code_expired` or `reauth.code_tries` when refused, and 429 `reauth.code_limit` for every code once the account's 10 wrong tries of the day are spent; it works once, for this deletion only). On a server that sends no email, `password` instead (403 `reauth.password` without it or wrong, 429 after 5 in 15 minutes), or nothing from the owner `GET /me` marks `confirmsOnThisMac` who signed in less than 10 minutes ago (403 `reauth.sign_in` past that).";
 const Sent = json(
   z.object({
     email: z.string().openapi({ description: "Where it went: the account's own address." }),
@@ -157,6 +159,10 @@ const Me = z
       }),
       emailVerified: z.boolean().openapi({
         description: "The person opened the link that confirms their email address.",
+      }),
+      confirmsOnThisMac: z.boolean().openapi({
+        description:
+          "A sign-in in the last 10 minutes is their proof before a deletion, with no password or code: the installation's owner on the desktop app's own server (an owner key, no email), whom the app signs in again with Continue on this Mac.",
       }),
       locale: z.string().nullable().openapi({
         description: "The app's language (`PATCH /me`); null until an app said one.",
@@ -200,15 +206,23 @@ const Created = z.object({
 /** Account, organizations, members and invitations. */
 export function accountRoutes(deps: AppDeps) {
   const { db, config } = deps;
+  /** What decides a deletion's proof, read when it's asked: whether this server sends email now. */
+  const proofDeps = () => ({
+    db,
+    rateLimiter: deps.adapters.rateLimiter,
+    emailDelivers: deps.adapters.email.delivers === true,
+    ownerKey: Boolean(config.OWNER_KEY_SHA256),
+  });
   /** `GET /me`'s body; null once the account is deleted. */
   const meBody = async (user: { id: string; name: string; email: string }): Promise<z.infer<typeof Me> | null> => {
-    const [memberships, password, verified, creates, unfinished, account] = await Promise.all([
+    const [memberships, password, verified, creates, unfinished, account, onThisMac] = await Promise.all([
       listMemberships(db, user.id),
       hasPassword(db, user.id),
       isEmailVerified(db, user.id),
       canCreateWorkspace(db, user.id, workspacePolicy(config)),
       unfinishedWorkspaces(db, user.id),
       myAccount(db, user.id),
+      confirmsOnThisMac(proofDeps(), user.id),
     ]);
     if (verified === null) return null;
     const onboardingOf = (orgId: string) => unfinished.find((u) => u.organization.id === orgId);
@@ -225,6 +239,7 @@ export function accountRoutes(deps: AppDeps) {
         image: account.image,
         hasPassword: password,
         emailVerified: verified,
+        confirmsOnThisMac: onThisMac,
         locale: account.locale,
         localeAuto: account.localeAuto,
         workArea: isWorkAreaAnswer(account.workArea) ? account.workArea : null,
@@ -291,16 +306,9 @@ export function accountRoutes(deps: AppDeps) {
     rateLimiter: deps.adapters.rateLimiter,
     emails: { publicUrl: config.PUBLIC_URL, support: config.SUPPORT_EMAIL },
   };
-  /** The proof a deletion takes (`deletionProof`), read when it's asked: whether this server sends email now. */
+  /** The proof a deletion takes (`deletionProof`). */
   const prove = (c: { req: { raw: Request } }, userId: string, orgId: string | null, proof: z.infer<typeof Proof>) =>
-    deletionProof(
-      deps.auth,
-      { db, rateLimiter: deps.adapters.rateLimiter, emailDelivers: deps.adapters.email.delivers === true },
-      c.req.raw.headers,
-      userId,
-      orgId,
-      proof,
-    );
+    deletionProof(deps.auth, proofDeps(), c.req.raw.headers, userId, orgId, proof);
   for (const path of [
     "/me",
     "/me/unread",
@@ -518,7 +526,28 @@ export function accountRoutes(deps: AppDeps) {
                   appearance: z.object({ color: z.string(), eyes: z.string(), accessory: z.string() }).nullable(),
                 }),
               )
-              .openapi({ description: "The organization's first agents (name and look)." }),
+              .openapi({
+                description:
+                  "The organization's first agents (name and look), the ones an invitation starts the person with first.",
+              }),
+            yours: z
+              .number()
+              .int()
+              .positive()
+              .optional()
+              .openapi({
+                description:
+                  "An email invitation (ADR 0184): how many of `agents`, from the first, it starts the person with. The " +
+                  "page's host is the first.",
+              }),
+            roles: z
+              .array(z.object({ name: z.string(), color: z.string(), icon: z.string() }))
+              .optional()
+              .openapi({
+                description:
+                  "An email invitation: the cargos it gives (ADR 0184), the ones whoever sent it may still give. Empty: " +
+                  "a member.",
+              }),
             moreAgents: z
               .number()
               .int()
@@ -545,9 +574,14 @@ export function accountRoutes(deps: AppDeps) {
                 description:
                   "An email invitation: how its address signs in (ADR 0090), so the page asks only what is missing.",
               }),
-            full: z.literal(true).optional().openapi({
-              description: "An email invitation to a workspace with no seat left: said before anyone makes an account.",
-            }),
+            full: z
+              .literal(true)
+              .optional()
+              .openapi({
+                description:
+                  "An email invitation to a workspace with no seat left, or a link that took all the people it may " +
+                  "(ADR 0184, asking answers `join.link_full`): said before anyone makes an account or asks.",
+              }),
             you: z
               .object({
                 member: z.boolean(),
@@ -1100,7 +1134,7 @@ export function accountRoutes(deps: AppDeps) {
         204: { description: "Scheduled; the session cookies are cleared" },
         400: errorResponse("A malformed code, or a wrong one (`reauth.code_wrong`)"),
         401: errors[401],
-        403: errorResponse("Blocked, or no proof that it's you (`reauth.code`, `reauth.password`)"),
+        403: errorResponse("Blocked, or no proof that it's you (`reauth.code`, `reauth.password`, `reauth.sign_in`)"),
         409: errorResponse(
           "Only owner of a workspace with others in it (`sole_owner`), or a code refused (`reauth.code_expired`, `reauth.code_tries`)",
         ),
@@ -1711,6 +1745,16 @@ export function accountRoutes(deps: AppDeps) {
               .max(50)
               .optional()
               .openapi({ description: "Roles they get on accepting, below your own (ADR 0085)." }),
+            channelIds: z
+              .array(z.string().uuid())
+              .max(INVITE_CHOICES_MAX)
+              .optional()
+              .openapi({ description: "Channels they join on accepting, as the batch's (ADR 0184)." }),
+            agentIds: z
+              .array(z.string().uuid())
+              .max(INVITE_CHOICES_MAX)
+              .optional()
+              .openapi({ description: "Agents they start with, as the batch's (ADR 0184)." }),
           }),
         ),
       },
@@ -1792,7 +1836,7 @@ export function accountRoutes(deps: AppDeps) {
       const user = c.get("user");
       const mail = { secret: config.AGENTES_SECRET, proof: c.req.valid("query").mail };
       const joined = await acceptInvitation(db, user, c.req.valid("param").token, new Date(), mail);
-      await announceMembers(deps.adapters.pubsub, joined.orgId);
+      await announceMembers(deps.adapters.pubsub, joined.orgId, joined.agents);
       // A request to join they had waiting closed as they joined: the admins' notice goes with the last one.
       await settleJoinRequests({ db, pubsub: deps.adapters.pubsub }, joined.orgId);
       await noticeInvitationAccepted(
