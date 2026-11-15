@@ -28367,9 +28367,6 @@
   "brain.summary.opencode": {
     "value": "OpenCode · {{model}}"
   },
-  "brain.summary.noFallback": {
-    "value": "{{brain}}, no API fallback"
-  },
   "brain.mission.modelLabel": {
     "value": "Model"
   },
@@ -41624,7 +41621,7 @@
     "value": "{{name}} thinks through the API"
   },
   "usageViews.agent.apiFallback": {
-    "value": "Outside the plan: quick decisions, and when the plan couldn't answer"
+    "value": "Outside the plan: quick decisions"
   },
   "usageViews.agent.removed": {
     "value": "Removed account"

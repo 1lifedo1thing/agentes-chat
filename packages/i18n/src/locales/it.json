@@ -12049,8 +12049,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, senza riserva tramite API"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "Modello",
@@ -17447,7 +17446,7 @@
       "nowTag": "ora",
       "api": "API",
       "apiMain": "{{name}} pensa tramite API",
-      "apiFallback": "Fuori dal piano: decisioni rapide, e quando il piano non poteva rispondere",
+      "apiFallback": "Fuori dal piano: decisioni rapide",
       "removed": "Account rimosso",
       "removedSub": "Non è più su nessun computer",
       "old": "{{brand}}, da prima degli account",

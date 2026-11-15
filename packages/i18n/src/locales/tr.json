@@ -11538,8 +11538,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, API yedeği yok"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "Model",
@@ -16841,7 +16840,7 @@
       "nowTag": "şimdi",
       "api": "API",
       "apiMain": "{{name}} API üzerinden düşünüyor",
-      "apiFallback": "Plan dışında: hızlı kararlar ve planın yanıt veremediği durumlar",
+      "apiFallback": "Plan dışında: hızlı kararlar",
       "removed": "Kaldırılmış hesap",
       "removedSub": "Artık hiçbir bilgisayarda değil",
       "old": "{{brand}}, hesaplardan önce",

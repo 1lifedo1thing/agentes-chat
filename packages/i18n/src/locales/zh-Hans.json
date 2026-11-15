@@ -11196,8 +11196,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}，不回退到 API"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "模型",
@@ -16400,7 +16399,7 @@
       "nowTag": "现在",
       "api": "API",
       "apiMain": "{{name}} 通过 API 思考",
-      "apiFallback": "套餐之外：快速决策，以及套餐无法回答的时候",
+      "apiFallback": "套餐之外：快速决策",
       "removed": "已移除的账号",
       "removedSub": "已不在任何电脑上",
       "old": "{{brand}}，在启用账号之前",

@@ -12033,8 +12033,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, sans repli sur l'API"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "Modèle",
@@ -17441,7 +17440,7 @@
       "api": "API",
       "apiMain": "{{name}} réfléchit via l'API",
       "apiMain_female": "{{name}} réfléchit via l'API",
-      "apiFallback": "Hors abonnement : décisions rapides, et quand l'abonnement n'a pas pu répondre",
+      "apiFallback": "Hors abonnement : décisions rapides",
       "removed": "Compte retiré",
       "removedSub": "N'est plus sur aucun ordinateur",
       "old": "{{brand}}, d'avant les comptes",

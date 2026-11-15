@@ -11124,8 +11124,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, API 대체 없음"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "모델",
@@ -16335,7 +16334,7 @@
       "api": "API",
       "apiMain": "{{name}}은(는) API로 생각해요",
       "apiMain_female": "{{name}}은(는) API로 생각해요",
-      "apiFallback": "요금제 외: 빠른 결정, 그리고 요금제가 응답하지 못했을 때",
+      "apiFallback": "요금제 외: 빠른 결정",
       "removed": "삭제된 계정",
       "removedSub": "더 이상 어떤 컴퓨터에도 없어요",
       "old": "계정 도입 이전 {{brand}}",

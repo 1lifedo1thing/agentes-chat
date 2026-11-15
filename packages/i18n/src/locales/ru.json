@@ -12421,8 +12421,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, без запасного API"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "Модель",
@@ -17925,7 +17924,7 @@
       "nowTag": "сейчас",
       "api": "API",
       "apiMain": "{{name}} думает через API",
-      "apiFallback": "Вне тарифа: быстрые решения и случаи, когда тариф не смог ответить",
+      "apiFallback": "Вне тарифа: быстрые решения",
       "removed": "Удалённый аккаунт",
       "removedSub": "Его больше нет ни на одном компьютере",
       "old": "{{brand}}, ещё до аккаунтов",

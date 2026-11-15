@@ -11965,7 +11965,6 @@ export const ptBR = {
       grok: "Grok Build · {{model}}",
       antigravity: "Antigravity CLI · {{model}}",
       opencode: "OpenCode · {{model}}",
-      noFallback: "{{brain}}, sem reserva pela API",
     },
     mission: {
       modelLabel: "Modelo",
@@ -17122,7 +17121,7 @@ export const ptBR = {
       api: "API",
       apiMain: "O {{name}} pensa pela API",
       apiMain_female: "A {{name}} pensa pela API",
-      apiFallback: "Fora do plano: decisões rápidas e quando o plano não pôde responder",
+      apiFallback: "Fora do plano: decisões rápidas",
       removed: "Conta removida",
       removedSub: "Não está mais em nenhum computador",
       old: "{{brand}}, de antes das contas",

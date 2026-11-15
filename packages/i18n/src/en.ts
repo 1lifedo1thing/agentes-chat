@@ -11933,7 +11933,6 @@ export const en = {
       grok: "Grok Build · {{model}}",
       antigravity: "Antigravity CLI · {{model}}",
       opencode: "OpenCode · {{model}}",
-      noFallback: "{{brain}}, no API fallback",
     },
     mission: {
       modelLabel: "Model",
@@ -17198,7 +17197,7 @@ export const en = {
       nowTag: "now",
       api: "API",
       apiMain: "{{name}} thinks through the API",
-      apiFallback: "Outside the plan: quick decisions, and when the plan couldn't answer",
+      apiFallback: "Outside the plan: quick decisions",
       removed: "Removed account",
       removedSub: "No longer on any computer",
       old: "{{brand}}, from before accounts",

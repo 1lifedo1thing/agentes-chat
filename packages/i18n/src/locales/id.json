@@ -11183,8 +11183,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, tanpa cadangan API"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "Model",
@@ -16397,7 +16396,7 @@
       "api": "API",
       "apiMain": "{{name}} berpikir lewat API",
       "apiMain_female": "{{name}} berpikir lewat API",
-      "apiFallback": "Di luar paket: keputusan cepat, dan saat paket tidak bisa menjawab",
+      "apiFallback": "Di luar paket: keputusan cepat",
       "removed": "Akun yang dihapus",
       "removedSub": "Sudah tidak ada di komputer mana pun",
       "old": "{{brand}}, dari sebelum ada akun",

@@ -11663,8 +11663,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, zonder terugval op de API"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "Model",
@@ -16967,7 +16966,7 @@
       "nowTag": "nu",
       "api": "API",
       "apiMain": "{{name}} denkt via de API",
-      "apiFallback": "Buiten het abonnement: snelle beslissingen, en als het abonnement niet kon antwoorden",
+      "apiFallback": "Buiten het abonnement: snelle beslissingen",
       "removed": "Verwijderd account",
       "removedSub": "Niet meer op een computer",
       "old": "{{brand}}, van voor de accounts",
