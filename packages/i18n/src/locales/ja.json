@@ -9933,6 +9933,8 @@
       },
       "resetsAt": "{{time}}にリセット",
       "resetsOn": "{{day}} {{time}}にリセット",
+      "allModels": "すべてのモデル",
+      "onlyModels": "{{name}} のみ",
       "almost": "まもなく上限",
       "limited": "上限に達しました",
       "limitedUntil": "{{when}}まで上限に達しています",

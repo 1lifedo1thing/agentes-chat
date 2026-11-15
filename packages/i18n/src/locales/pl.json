@@ -11114,6 +11114,8 @@
       },
       "resetsAt": "odnawia się o {{time}}",
       "resetsOn": "odnawia się {{day}} o {{time}}",
+      "allModels": "Wszystkie modele",
+      "onlyModels": "Tylko {{name}}",
       "almost": "Prawie u limitu",
       "limited": "Limit osiągnięty",
       "limitedUntil": "Limit osiągnięty do {{when}}",

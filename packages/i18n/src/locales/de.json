@@ -10349,6 +10349,8 @@
       },
       "resetsAt": "setzt sich um {{time}} zurück",
       "resetsOn": "setzt sich {{day}} um {{time}} zurück",
+      "allModels": "Alle Modelle",
+      "onlyModels": "Nur {{name}}",
       "almost": "Fast am Limit",
       "limited": "Am Limit",
       "limitedUntil": "Am Limit bis {{when}}",

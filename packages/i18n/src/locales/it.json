@@ -10762,6 +10762,8 @@
       },
       "resetsAt": "si azzera alle {{time}}",
       "resetsOn": "si azzera {{day}} alle {{time}}",
+      "allModels": "Tutti i modelli",
+      "onlyModels": "Solo {{name}}",
       "almost": "Quasi al limite",
       "limited": "Al limite",
       "limitedUntil": "Al limite fino a {{when}}",

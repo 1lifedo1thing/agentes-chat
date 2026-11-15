@@ -10745,6 +10745,8 @@
       },
       "resetsAt": "se réinitialise à {{time}}",
       "resetsOn": "se réinitialise {{day}} à {{time}}",
+      "allModels": "Tous les modèles",
+      "onlyModels": "Uniquement {{name}}",
       "almost": "Presque à la limite",
       "limited": "Limite atteinte",
       "limitedUntil": "Limite atteinte jusqu'à {{when}}",
