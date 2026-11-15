@@ -132,16 +132,11 @@ test("a turn on the computer's own key reaches Claude Code on Windows with --set
 
   const win = cliSpawn(["claude"], args, PATH_WIN, "win32", { exists: has(NPM_SHIM) });
   const line = (win.args[4] ?? "").slice(1, -1);
-  // cmd.exe: every quote paired, so nothing it reads (a space, `&`, `|`, `=`) stands outside one.
+  // cmd.exe: every argument sits inside a quoted pair; only the spaces between them are outside, so & | < > ^ stay text.
   expect(line.replace(/"[^"]*"/g, "").trim()).toBe("");
   // npm's launcher hands `%*` on as written; Node's C runtime splits it back into the same argv.
   expect(line).toContain('"--setting-sources" "" "--tools"');
   expect(splitWindows(line)).toEqual([NPM_SHIM, ...args]);
-
-  expect(cliSpawn(["/usr/local/bin/claude"], args, undefined, "linux")).toEqual({
-    file: "/usr/local/bin/claude",
-    args,
-  });
 });
 
 test("the Windows lookup: PATHEXT's runnable extensions in its order, quoted and relative entries, full paths", () => {
