@@ -162,6 +162,7 @@ import type {
   Proposal,
   ReactionCount,
   ReminderInput,
+  RequestHeader,
   RightHandApprovals,
   RightHandApprovalsInput,
   Role,
@@ -3832,9 +3833,12 @@ export function useCustomServerAction(orgId: string) {
         label?: string;
         returnTo: string;
         connectionId?: string;
+        headers?: RequestHeader[];
       }) => api.customConnectors.connect(orgId, input),
       // A new server is every agent's: their access trees change too.
       onSuccess: () => Promise.all([done(), qc.invalidateQueries({ queryKey: keys.access(orgId) })]),
+      // The form says its own failures: a refused header shows on its row.
+      meta: { silent: true },
     }),
     refresh: useMutation({ mutationFn: (id: string) => api.customConnectors.refresh(orgId, id), onSuccess: done }),
     save: useMutation({
