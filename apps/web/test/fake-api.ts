@@ -3584,6 +3584,17 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         conn.label = label;
         return structuredClone(conn);
       },
+      takeOffAgent: async (orgId, connectionId, agentId) => {
+        log("connectors.takeOffAgent", orgId, connectionId, agentId);
+        state.scopes[agentId] = (state.scopes[agentId] ?? []).filter((g) => g.connectionId !== connectionId);
+      },
+      moveToTeam: async (orgId, connectionId) => {
+        log("connectors.moveToTeam", orgId, connectionId);
+        const conn = state.connections.find((c) => c.id === connectionId);
+        if (!conn) throw new ApiError(404, "not_found", "Connection not found");
+        conn.ownerUserId = null;
+        return structuredClone(conn);
+      },
       disconnect: async (orgId, connectionId) => {
         log("connectors.disconnect", orgId, connectionId);
         state.connections = state.connections.filter((c) => c.id !== connectionId);

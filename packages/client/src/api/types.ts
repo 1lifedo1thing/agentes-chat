@@ -2248,6 +2248,14 @@ export interface Connection {
   reconnectAdds?: string[];
   /** `needs_reconnect`: its sign-in stopped working, no tools until Reconectar. Older servers leave it out. */
   status?: "active" | "needs_reconnect";
+  /**
+   * A personal connection's person (ADR 0099 addendum): only they see its details and give it to agents, and agents
+   * use it when they ask. Someone else's comes, to who manages connectors, with its name, service and person only.
+   * Null (older servers leave it out): the team's.
+   */
+  ownerUserId?: string | null;
+  /** A personal connection's agents (a grant of their own on it), in the list only. */
+  agentIds?: string[];
 }
 
 /** An installation of our GitHub App bound to the organization (repository access for git and PRs). */
@@ -2966,6 +2974,14 @@ export interface CustomServer {
   /** Last time an admin saved the classification; null = never (nothing exposed). */
   reviewedAt: string | null;
   createdAt: string;
+  /**
+   * A personal connection's person (ADR 0099 addendum): only they see its details and give it to agents, and agents
+   * use it when they ask. Someone else's comes, to who manages connectors, with its name, service and person only.
+   * Null (older servers leave it out): the team's.
+   */
+  ownerUserId?: string | null;
+  /** A personal connection's agents (a grant of their own on it), in the list only. */
+  agentIds?: string[];
 }
 
 /** The workspace's Composio calls this month (UTC): connectors and mailboxes together (ADR 0107 §7). */
@@ -4482,6 +4498,11 @@ export interface AgentAccess {
     custom: boolean;
     state: AccessState;
     scopes: AccessScope[];
+    /**
+     * A personal connection's person; null or absent: the team's. Someone else's comes (with `others`) only while the
+     * agent holds some of it, with no scopes: it can only be taken off (`connectors[id]: false`).
+     */
+    ownerUserId?: string | null;
   }[];
 }
 

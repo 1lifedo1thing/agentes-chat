@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import type { Connection, ConnectOutcome, ConnectorDef, CustomServer } from "../api/types";
 import { exposedTools, sameServer, toolsToReview } from "./custom-tools";
+import { type Owned, ownerScopeOf } from "./owner-split";
 import { connectorName } from "./scopes";
 import { reviewToolsOf } from "./tool-review";
 
@@ -50,6 +51,8 @@ export interface ConnectedItem {
   /** Never reviewed, or new tools to review. */
   needsReview: boolean;
   server: CustomServer | null;
+  /** A personal connection's person; null: the team's (older servers say nothing: the team's). */
+  ownerUserId: string | null;
 }
 
 const host = (url: string) => {
@@ -83,6 +86,7 @@ export function fromConnection(c: Connection, catalog: ConnectorDef[]): Connecte
     pending: 0,
     needsReview: false,
     server: null,
+    ownerUserId: c.ownerUserId ?? null,
   };
 }
 
@@ -105,6 +109,7 @@ export function fromServer(s: CustomServer, catalog: ConnectorDef[]): ConnectedI
     pending,
     needsReview: !s.reviewedAt || pending > 0,
     server: s,
+    ownerUserId: s.ownerUserId ?? null,
   };
 }
 
@@ -228,4 +233,38 @@ export function orgAccessChange(t: TFunction, before: readonly string[], now: re
  */
 export function accountUnchecked(accounts: readonly (Pick<CustomServer, "accountLabel"> | null | undefined)[]) {
   return !accounts.some((a) => a?.accountLabel);
+}
+
+/**
+ * Connectors that connect for the team only: GitHub's git proxy, repository lists and webhooks read the workspace's
+ * one GitHub connection (mirror of `requireConnect` in the engine).
+ */
+export const TEAM_ONLY_CONNECTORS: ReadonlySet<string> = new Set(["github"]);
+
+/** Whether "Para quem: Pessoal" is offered for a catalog entry (any server by address may be personal). */
+export const personalAllowed = (connectorId: string | null | undefined) =>
+  !connectorId || !TEAM_ONLY_CONNECTORS.has(connectorId);
+
+/**
+ * What a viewer may do with a connection's row (mirror of `mayConnection` in the engine). Their own: everything, and
+ * moving it to the team when they manage connectors. Someone else's personal one: who manages connectors removes it
+ * or takes it off an agent, never opens it. The team's: every member sees it, who manages connectors changes it.
+ */
+export function connectionActs(item: Owned, userId: string, managesConnectors: boolean) {
+  const scope = ownerScopeOf(item, userId);
+  const mine = scope === "mine";
+  const team = scope === "team";
+  return {
+    /** See its details (tools, account, address) and open its sheet. */
+    open: scope !== "others",
+    rename: mine || (team && managesConnectors),
+    /** Reconnect, classify its tools, set its headers. */
+    change: mine || (team && managesConnectors),
+    remove: mine || managesConnectors,
+    /** Turn it on for an agent. */
+    giveToAgents: mine || (team && managesConnectors),
+    /** "Tirar de um agente". */
+    takeOffAgent: mine || managesConnectors,
+    moveToTeam: mine && managesConnectors,
+  };
 }
