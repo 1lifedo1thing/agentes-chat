@@ -72,6 +72,7 @@ import type {
   ApprovalCoverInput,
   ApprovalCovers,
   ApprovalRule,
+  ApprovalsLevel,
   AppsList,
   ArchivedChannel,
   Artifact,
@@ -632,6 +633,11 @@ export interface ApiClient {
         autoModels?: Partial<Record<string, Partial<Record<ModelTier, string | null>>>>;
       },
     ): Promise<OrgSettings>;
+    /** The workspace's approvals level; `everyAgent` also clears every agent's own choice. */
+    setApprovalsLevel(
+      orgId: string,
+      input: { level: ApprovalsLevel; everyAgent?: boolean },
+    ): Promise<{ level: ApprovalsLevel; ownAgents: number }>;
     overview(orgId: string): Promise<OrgOverview>;
     /** Members with presence. */
     people(orgId: string): Promise<Person[]>;

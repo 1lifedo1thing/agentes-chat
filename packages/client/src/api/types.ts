@@ -842,6 +842,8 @@ export interface Agent {
   brakes?: AgentBrakes;
   /** How much it asks before acting (ADR 0173); absent from an older server (`risky`). */
   approvalsLevel?: ApprovalsLevel;
+  /** Whether that level is its own choice; false: it follows the workspace's. Absent from an older server. */
+  approvalsLevelOwn?: boolean;
   /**
    * Its setup checklist at the top of its chat (ADR 0155 §2): the ready-made role it started from and the steps a
    * person confirmed. Null or absent: an agent made before it (none shows).
@@ -1035,8 +1037,8 @@ export interface AgentInput {
   autonomy?: CommandApproval;
   /** Editing only: its autonomy brakes (ADR 0131); the fields given change. */
   brakes?: Partial<AgentBrakes>;
-  /** How much it asks before acting (ADR 0173); same permission as editing the agent. */
-  approvalsLevel?: ApprovalsLevel;
+  /** How much it asks before acting (ADR 0173), as its own choice; null follows the workspace's again. */
+  approvalsLevel?: ApprovalsLevel | null;
   /**
    * Creating only: the ready-made role it starts from, for its setup checklist (ADR 0155 §2), and what its card said
    * (ADR 0164): how it introduced itself, the personal starter it began as, the apps it will use at their levels.
@@ -2504,10 +2506,12 @@ export interface OrgSettings {
   agentMediaAvailable: boolean;
   /** Who the workspace is for (ADR 0159); absent from an older server, which is a team's. */
   mode?: WorkspaceMode;
+  /** What agents without their own choice ask before acting (ADR 0173); absent from an older server. */
+  approvalsLevel?: ApprovalsLevel;
 }
 
-/** `OrgSettings` the server works out itself: never in a PATCH. */
-export type ReadOnlyOrgSettings = "gifsAvailable" | "agentMediaAvailable" | "voiceAvailable";
+/** `OrgSettings` the server works out itself, or sets through its own call: never in a PATCH. */
+export type ReadOnlyOrgSettings = "gifsAvailable" | "agentMediaAvailable" | "voiceAvailable" | "approvalsLevel";
 
 /** Automático's sizes: quick tasks, everyday work, hard work. */
 export type ModelTier = "small" | "medium" | "large";
