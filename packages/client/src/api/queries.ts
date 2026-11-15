@@ -1,6 +1,10 @@
 import {
+  hashKey,
   type InfiniteData,
   mutationOptions,
+  notifyManager,
+  type QueryCache,
+  type QueryCacheNotifyEvent,
   type QueryClient,
   queryOptions,
   useInfiniteQuery,
@@ -10,7 +14,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { moveInGroups } from "../lib/agent-groups";
 import { artifactRefs } from "../lib/artifacts";
 import { newerBlockState, stateChanges, stateForPage } from "../lib/blocks";
@@ -27,7 +31,7 @@ import {
   XCODE_FIX_POLL_MS,
   xcodeFixLive,
 } from "../lib/devices";
-import { answerWithin, noAnswer, sendFailureOf, sendWaits } from "../lib/errors";
+import { answerWithin, isGone, noAnswer, sendFailureOf, sendWaits, sessionEnded } from "../lib/errors";
 import { ISSUES_VIEW_DEFAULT, type IssuesViewChange, withIssuesView } from "../lib/issues-view";
 import { CLI_INSTALL_POLL_MS, LoginReadError, loginReadPasses } from "../lib/machines";
 import { GIF_PAGE, isMediaAfterReply, messageMediaOf, postedMedia } from "../lib/media";
@@ -69,7 +73,7 @@ import { readUnknownMembers, setOrgDeletion } from "../realtime/machines";
 import type { ApiClient } from "./client";
 import { type AgentReactionEffect, useAgentReaction, useApi, useCardVia } from "./context";
 import { ApiError, type UploadOptions } from "./http";
-import { keys } from "./keys";
+import { keys, ME_HASH } from "./keys";
 import { keepSending, outbox } from "./outbox";
 import type {
   AdminAsk,
@@ -183,6 +187,7 @@ import type {
   StartChoice,
   StatusInput,
   StorageMigration,
+  TaskManagerView,
   TeamProposalCard,
   ThreadAction,
   ThreadCreateInput,
@@ -259,7 +264,56 @@ export const invitationStateQuery = (api: ApiClient, token: string) =>
 
 // ── Account ─────────────────────────────────────────────────────────────────
 
-export const useMe = () => useQuery(meQuery(useApi()));
+/**
+ * The signed-in person. `qc.clear()` (a sign-in, a sign-out, a session that ended) takes `me` out of the cache without
+ * telling who reads it, so a reader renders again whenever the cache's `me` is removed or made anew: `useQuery` reads
+ * the one in the cache on that render. Without it, a screen drawn from `me` outlasts its session.
+ */
+export function useMe() {
+  const result = useQuery(meQuery(useApi()));
+  const cache = useQueryClient().getQueryCache();
+  const current = () => cache.get(ME_HASH);
+  useSyncExternalStore(
+    useCallback((changed: () => void) => onQueryEvent(cache, ME_HASH, ["added", "removed"], changed), [cache]),
+    current,
+    current,
+  );
+  return result;
+}
+
+type QueryEventType = QueryCacheNotifyEvent["type"];
+type QueryReader = { types: readonly QueryEventType[]; changed: () => void };
+
+/**
+ * One cache listener for every reader of one query (`useMe`, `useCachedMessages`): the cache calls each listener on
+ * each of its events (every observer a row adds included), and a long conversation has hundreds of readers.
+ */
+const queryReaders = new WeakMap<QueryCache, { byHash: Map<string, Set<QueryReader>>; stop: () => void }>();
+function onQueryEvent(cache: QueryCache, hash: string, types: readonly QueryEventType[], changed: () => void) {
+  let entry = queryReaders.get(cache);
+  if (!entry) {
+    const byHash = new Map<string, Set<QueryReader>>();
+    const stop = cache.subscribe((e) => {
+      for (const r of byHash.get(e.query.queryHash) ?? []) if (r.types.includes(e.type)) r.changed();
+    });
+    entry = { byHash, stop };
+    queryReaders.set(cache, entry);
+  }
+  const { byHash, stop } = entry;
+  const readers = byHash.get(hash) ?? new Set<QueryReader>();
+  byHash.set(hash, readers);
+  // After the render in course, never during it: the first reader to render makes the query, which says `added`.
+  const reader = { types, changed: notifyManager.batchCalls(changed) };
+  readers.add(reader);
+  return () => {
+    readers.delete(reader);
+    if (readers.size > 0) return;
+    if (byHash.get(hash) === readers) byHash.delete(hash);
+    if (byHash.size > 0) return;
+    stop();
+    queryReaders.delete(cache);
+  };
+}
 export const useAuthConfig = () => useQuery(authConfigQuery(useApi()));
 export const useHealth = () => {
   const api = useApi();
@@ -382,13 +436,19 @@ export const CLOSING_POLL_MS = 30_000;
 export const useClosingMe = () =>
   useQuery({ ...meQuery(useApi()), refetchInterval: CLOSING_POLL_MS, refetchOnWindowFocus: "always" });
 
-/** Brings my account back; `GET /me` then opens its workspaces again. */
+/**
+ * Brings my account back; `GET /me` then opens its workspaces again. Refused for no session (deleting the account
+ * ended them all): nobody is signed in, as `GET /me` says with the same answer, so the screen that offered it yields.
+ */
 export function useRestoreAccount() {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => api.account.restore(),
     onSuccess: () => qc.refetchQueries({ queryKey: keys.me }),
+    onError: (error) => {
+      if (sessionEnded(error)) qc.setQueryData(keys.me, null);
+    },
   });
 }
 
@@ -1295,6 +1355,51 @@ export const useMessages = (orgId: string, channelId: string, enabled = true) =>
   const api = useApi();
   return useQuery({ ...messagesQuery(api, orgId, channelId), enabled });
 };
+
+const NO_MESSAGES: readonly Message[] = [];
+
+/**
+ * These messages as their conversation's cached lists hold them (its channel's latest page and, in a thread, the
+ * thread's), for a row that shows a piece of another message. The reader draws again when one of them arrives or
+ * changes, never for the rest of the list; with no ids it listens to nothing.
+ */
+export function useCachedMessages(
+  orgId: string,
+  channelId: string,
+  threadId: string | null | undefined,
+  ids: readonly string[],
+): readonly Message[] {
+  const cache = useQueryClient().getQueryCache();
+  const wanted = ids.join(" ");
+  const hashes = useMemo(
+    () => [
+      hashKey(keys.messages(orgId, channelId)),
+      ...(threadId ? [hashKey(keys.thread(orgId, channelId, threadId))] : []),
+    ],
+    [orgId, channelId, threadId],
+  );
+  const subscribe = useCallback(
+    (changed: () => void) => {
+      if (!wanted) return () => {};
+      const stops = hashes.map((h) => onQueryEvent(cache, h, ["added", "updated", "removed"], changed));
+      return () => {
+        for (const stop of stops) stop();
+      };
+    },
+    [cache, hashes, wanted],
+  );
+  const last = useRef(NO_MESSAGES);
+  const read = () => {
+    if (!wanted) return NO_MESSAGES;
+    const set = new Set(wanted.split(" "));
+    const found = hashes.flatMap((h) => (cache.get<Message[]>(h)?.state.data ?? []).filter((m) => set.has(m.id)));
+    const before = last.current;
+    if (found.length === before.length && found.every((m, i) => m === before[i])) return before;
+    last.current = found;
+    return found;
+  };
+  return useSyncExternalStore(subscribe, read, read);
+}
 
 /** Sidebar hover/focus: load a conversation before the click. */
 export function usePrefetchMessages(orgId: string) {
@@ -3173,6 +3278,21 @@ export function useRemoveCredential(orgId: string) {
   });
 }
 
+/** "Remover cópias": the copies' agents now think with the kept key. */
+export function useRemoveCredentialCopies(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.agents.removeCredentialCopies(orgId, id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
+      void qc.invalidateQueries({ queryKey: keys.agentPages(orgId) });
+      void qc.invalidateQueries({ queryKey: keys.models });
+      return qc.invalidateQueries({ queryKey: keys.credentials(orgId) });
+    },
+  });
+}
+
 export const useAgentDetail = (orgId: string, agentId: string) => {
   const api = useApi();
   return useQuery({
@@ -4754,10 +4874,12 @@ export function useSkillAction(orgId: string, { silent = false } = {}) {
       action:
         | {
             type: "import";
-            input: { url: string; list?: boolean; forAgentId?: string } | { zipBase64: string };
+            input: ({ url: string; list?: boolean; forAgentId?: string } | { zipBase64: string }) & {
+              personal?: boolean;
+            };
             upload?: UploadOptions;
           }
-        | { type: "importPicked"; url: string; paths: string[]; forAgentId?: string }
+        | { type: "importPicked"; url: string; paths: string[]; forAgentId?: string; personal?: boolean }
         | { type: "create"; input: SkillInput }
         | { type: "update"; id: string; patch: SkillPatch }
         | { type: "reimport"; id: string }
@@ -4772,7 +4894,7 @@ export function useSkillAction(orgId: string, { silent = false } = {}) {
         case "import":
           return api.skills.import(orgId, action.input, action.upload);
         case "importPicked":
-          return api.skills.importPicked(orgId, action.url, action.paths, action.forAgentId);
+          return api.skills.importPicked(orgId, action.url, action.paths, action.forAgentId, action.personal);
         case "create":
           return api.skills.create(orgId, action.input);
         case "update":
@@ -5991,13 +6113,15 @@ export function applyNotificationEvent(qc: QC, orgId: string, event: Notificatio
   if (event.type === "notification.upserted" && event.notification.kind === "join_request")
     void qc.invalidateQueries({ queryKey: keys.joinRequests(orgId) });
   // What waits on me changes with a waiting row coming or any row leaving (a count alone says nothing new).
+  // `cancelRefetch: false`: "Concluir todas" sends one event per row, all after its single update, so the fetch already
+  // under way serves the whole burst.
   if (event.type === "notification.removed" || (event.type === "notification.upserted" && event.notification.waiting))
-    void qc.invalidateQueries({ queryKey: keys.waiting(orgId) });
+    void qc.invalidateQueries({ queryKey: keys.waiting(orgId) }, { cancelRefetch: false });
   if (event.type === "notification.upserted") cacheNotification(qc, orgId, event.notification);
   else if (event.type === "notification.removed") {
     dropNotification(qc, orgId, event.id, true);
     // Marked done on another device: "Concluídas" gains it (one auto-resolved changes nothing there).
-    void qc.invalidateQueries({ queryKey: keys.notificationList(orgId, "done") });
+    void qc.invalidateQueries({ queryKey: keys.notificationList(orgId, "done") }, { cancelRefetch: false });
   } else {
     const count = { unread: event.unread, waiting: event.waiting };
     qc.setQueryData<NotificationCount>(keys.notificationCount(orgId), count);
@@ -6016,7 +6140,11 @@ export type NotificationAction =
   | { type: "snooze"; item: AppNotification; until: string | null }
   | { type: "readAll"; filter: NotificationFilter }
   /** Undo of "Marcar tudo como lido": the ids it changed. */
-  | { type: "unreadMany"; ids: string[] };
+  | { type: "unreadMany"; ids: string[] }
+  /** "Concluir todas" in a filter: what waits on me stays. */
+  | { type: "doneAll"; filter: NotificationFilter }
+  /** Undo of "Concluir todas": the ids it changed, back in the inbox. */
+  | { type: "undoneMany"; ids: string[] };
 
 /** The changed items as the server sent them, and the ids "Marcar tudo como lido" touched. */
 export interface NotificationActionResult {
@@ -6042,7 +6170,32 @@ function optimistic(qc: QC, orgId: string, action: NotificationAction, now: stri
         const known = knownNotification(qc, orgId, id);
         return known ? [{ ...known, readAt: null }] : [];
       });
+    case "doneAll": {
+      const loaded = allItems(qc.getQueryData<NotificationPages>(keys.notificationList(orgId, action.filter)));
+      return loaded.filter((n) => !n.waiting && n.doneAt === null).map((n) => ({ ...n, doneAt: now }));
+    }
+    case "undoneMany":
+      return action.ids.flatMap((id) => {
+        const known = knownNotification(qc, orgId, id);
+        return known ? [{ ...known, doneAt: null }] : [];
+      });
   }
+}
+
+const notificationActionKey = (orgId: string) => ["notificationAction", orgId] as const;
+
+const isBulk = (action: NotificationAction | undefined) => action?.type === "doneAll" || action?.type === "undoneMany";
+
+/**
+ * "Concluir todas" or its undo under way, from any screen or row: the inbox's own actions wait for it (each row runs
+ * its own mutation on the phone).
+ */
+export function useNotificationBulkPending(orgId: string) {
+  const pending = useIsMutating({
+    mutationKey: notificationActionKey(orgId),
+    predicate: (mutation) => isBulk(mutation.state.variables as NotificationAction | undefined),
+  });
+  return pending > 0;
 }
 
 /**
@@ -6053,6 +6206,7 @@ export function useNotificationAction(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
+    mutationKey: notificationActionKey(orgId),
     mutationFn: async (action: NotificationAction): Promise<NotificationActionResult> => {
       switch (action.type) {
         case "read":
@@ -6071,6 +6225,17 @@ export function useNotificationAction(orgId: string) {
             items: await Promise.all(action.ids.map((id) => api.notifications.read(orgId, id, false))),
             ids: action.ids,
           };
+        case "doneAll":
+          return { items: [], ids: (await api.notifications.doneAll(orgId, action.filter)).ids };
+        case "undoneMany": {
+          // One failure doesn't undo the rest: a row deleted meanwhile (its task or channel gone) is just gone, and
+          // only when nothing came back does the undo fail.
+          const settled = await Promise.allSettled(action.ids.map((id) => api.notifications.done(orgId, id, false)));
+          const items = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+          const failed = settled.find((r) => r.status === "rejected" && !isGone(r.reason));
+          if (!items.length && failed?.status === "rejected") throw failed.reason;
+          return { items, ids: items.map((n) => n.id) };
+        }
       }
     },
     onMutate: async (action) => {
@@ -6090,8 +6255,8 @@ export function useNotificationAction(orgId: string) {
     },
     onSettled: (_r, _e, action) => {
       void qc.invalidateQueries({ queryKey: keys.notificationCount(orgId) });
-      // Marking everything read touches items beyond the loaded pages.
-      if (action.type === "readAll" || action.type === "unreadMany")
+      // A bulk action touches items beyond the loaded pages (and "Concluídas").
+      if (action.type === "readAll" || action.type === "unreadMany" || isBulk(action))
         void qc.invalidateQueries({ queryKey: [...keys.notifications(orgId), "list"] });
     },
   });
@@ -6475,20 +6640,28 @@ export const TASK_MANAGER_POLL_MS = 3_000;
 
 /**
  * The task manager (ADR 0128): what the agents are doing now, what each one uses, each agent's last hour and what
- * ended since `since` (default: the last 24 h). Asked again every `pollMs` while shown.
+ * ended since `since` (default: the last 24 h). Asked again every `pollMs` while shown. `doneToday` also asks the
+ * count of tasks done since `since`, for the screen that shows it.
  */
 export function useTaskManager(
   orgId: string,
-  options: { since?: string; enabled?: boolean; pollMs?: number | false } = {},
+  options: { since?: string; enabled?: boolean; pollMs?: number | false; doneToday?: boolean } = {},
 ) {
   const api = useApi();
+  const qc = useQueryClient();
+  const since = options.since ?? null;
+  const counted = options.doneToday ?? false;
   return useQuery({
-    queryKey: [...keys.taskManager(orgId), options.since ?? null],
+    queryKey: [...keys.taskManager(orgId), since, counted],
     queryFn: () => {
       const working = part(api, "working");
       if (!working.taskManager) throw new Error("This server has no task manager yet");
-      return working.taskManager(orgId, options.since);
+      return working.taskManager(orgId, options.since, counted);
     },
+    // The counted answer holds everything the other one does, so a screen opened from the task manager shows it at once.
+    placeholderData: counted
+      ? undefined
+      : () => qc.getQueryData<TaskManagerView>([...keys.taskManager(orgId), since, true]),
     enabled: (options.enabled ?? true) && Boolean(api.working?.taskManager),
     staleTime: 1_000,
     refetchInterval: options.pollMs ?? TASK_MANAGER_POLL_MS,
