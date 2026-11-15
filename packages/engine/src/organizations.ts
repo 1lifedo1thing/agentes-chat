@@ -1407,6 +1407,7 @@ export async function deleteAccount(
   const { cancelMailboxApprovals, publishApproval } = await import("./approvals");
   const { dropMailOfOwner } = await import("./tools/scopes");
   const { removeSeat } = await import("./right-hand-seats");
+  const { wakeAgentsBrainWaits } = await import("./usage-pause");
   const done = await db.transaction(async (tx) => {
     // First, as creating a workspace does: one made in another tab meanwhile is in the plan below and closes with them.
     await lockWorkspacesOf(tx, userId);
@@ -1511,12 +1512,14 @@ export async function deleteAccount(
   const { releaseQuestionsOf } = await import("./questions");
   for (const org of plan.leaves) {
     await releaseQuestionsOf({ db, pubsub: options.pubsub }, org.id, userId);
+    const toApi = ownerless.filter((a) => a.orgId === org.id).map((a) => a.id);
     const changed = [
       ...released.agents.filter((a) => a.orgId === org.id).flatMap((a) => a.agentIds),
       ...removed.filter((r) => r.computer.orgId === org.id).flatMap((r) => r.freed),
-      ...ownerless.filter((a) => a.orgId === org.id).map((a) => a.id),
+      ...toApi,
     ];
     for (const id of changed) caches.agents.delete(`${org.id}:${id}`);
+    await wakeAgentsBrainWaits({ db, pubsub: options.pubsub }, org.id, toApi);
     await announceMembers(options.pubsub, org.id, [...new Set(changed)]);
   }
   for (const one of closed) await afterClosing({ ...options, db }, one);

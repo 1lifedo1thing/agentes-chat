@@ -375,6 +375,7 @@ import {
   retimeLine,
   routineRunByHand,
   routineRunRefreshesWidget,
+  turnStaysOnItsComputer,
   UNKNOWN_RESET_NOTICE_MS,
   USAGE_WAIT_CODES,
   USAGE_WINDOW_WORDS,
@@ -3293,10 +3294,8 @@ async function executeRunInner(
       await failNoAi(line, undefined, ownModel?.label, said || undefined);
       return "failed";
     }
-    // Tools already ran in a turn cut off by its computer: only that computer may finish it (the model
-    // brain would redo them), so the run waits for it. A turn the plan cut after it worked parks with no
-    // executed tools when the runner can't name them (Claude Code's own tools, an older runner): the same.
-    const onlyThisComputer = (t.interruptedTurn?.executed.length ?? 0) > 0 || t.interruptedTurn?.cause === "plan_limit";
+    // Only the computer that cut the turn may finish it, so the run waits for it.
+    const onlyThisComputer = turnStaysOnItsComputer(t.interruptedTurn?.executed.length ?? 0, t.interruptedTurn?.cause);
     // Signed out, the command-line tool missing, no computer: nothing signals that it's fixed (only the
     // computer coming back online would), so a wait would never end.
     if (!onlyThisComputer && NO_AI_CODES.has(u.code)) {

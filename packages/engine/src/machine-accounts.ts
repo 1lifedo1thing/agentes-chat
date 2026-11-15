@@ -1744,11 +1744,16 @@ export async function releaseAgentLogin(db: Executor, orgId: string, agentId: st
  * After `releaseMemberAccounts`, `releaseOrgAccounts` or `releaseAgentLogin`: pages refetch, and the replica holding
  * each machine's runner removes them.
  */
-export async function announceReleasedAccounts(deps: { db: Database; pubsub?: PubSub }, released: ReleasedAccounts) {
+export async function announceReleasedAccounts(
+  deps: { db: Database; pubsub?: PubSub },
+  released: ReleasedAccounts,
+  /** false: the agents or the workspace are being deleted, nothing of theirs is left to answer. */
+  options: { wakeWaits?: boolean } = {},
+) {
   const { pubsub } = deps;
   for (const a of released.agents) {
     forgetAgents(a.orgId, a.agentIds);
-    await wakeAgentsBrainWaits(deps, a.orgId, a.agentIds);
+    if (options.wakeWaits !== false) await wakeAgentsBrainWaits(deps, a.orgId, a.agentIds);
   }
   for (const m of released.machines) {
     await publishAccountsChanged(pubsub, m.orgId, m.machineId);

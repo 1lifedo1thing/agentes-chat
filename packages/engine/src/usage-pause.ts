@@ -1117,16 +1117,18 @@ export async function wakeAgentUsageWaits(
   db: Database,
   orgId: string,
   agentId: string,
-  options: { pubsub?: PubSub; now?: number } = {},
+  options: { pubsub?: PubSub; now?: number; delayMs?: number } = {},
 ) {
   const { agentRuns } = schema;
   const now = options.now ?? Date.now();
+  const start = now + (options.delayMs ?? 0);
   const found = await db
     .select({
       id: agentRuns.id,
       waitId: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'waitId'`,
       code: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'code'`,
       executed: sql<number>`coalesce(jsonb_array_length(${agentRuns.transcript}->'interruptedTurn'->'executed'), 0)`,
+      cut: sql<string | null>`${agentRuns.transcript}->'interruptedTurn'->>'cause'`,
       background: agentRuns.background,
       workId: agentRuns.workId,
       since: waitSinceSql,
@@ -1143,7 +1145,9 @@ export async function wakeAgentUsageWaits(
     )
     .limit(500);
   const rows = found
-    .filter((r) => r.waitId && (USAGE_WAIT_CODES.has(r.code ?? "") || Number(r.executed) === 0))
+    .filter(
+      (r) => r.waitId && (USAGE_WAIT_CODES.has(r.code ?? "") || !turnStaysOnItsComputer(Number(r.executed), r.cut)),
+    )
     .map((r) => ({ ...r, since: Number(r.since) }))
     .sort(inLineOrder);
   const woken: string[] = [];
@@ -1157,7 +1161,7 @@ export async function wakeAgentUsageWaits(
       kind: "agent_run.execute",
       payload: { runId: r.id, wait: r.waitId },
       dedupeKey: `agent_run.execute:${r.id}:switched:${r.waitId}`,
-      runAt: new Date(now + woken.length * RESUME_GAP_MS),
+      runAt: new Date(start + woken.length * RESUME_GAP_MS),
       maxAttempts: 4,
     });
     woken.push(r.id);
@@ -1165,9 +1169,21 @@ export async function wakeAgentUsageWaits(
   return woken;
 }
 
+/**
+ * A cut-off turn only its own computer may finish: tools already ran in it (another brain would redo them), or the
+ * plan cut it after it worked, stored with no executed tools when the runner can't name them (a CLI's own tools).
+ */
+export const turnStaysOnItsComputer = (executed: number, cause: string | null | undefined) =>
+  executed > 0 || cause === "plan_limit";
+
 /** After what these agents think with changed (their AI, account or computer): `wakeAgentUsageWaits` for each. */
-export async function wakeAgentsBrainWaits(deps: { db: Database; pubsub?: PubSub }, orgId: string, agentIds: string[]) {
+export async function wakeAgentsBrainWaits(
+  deps: { db: Database; pubsub?: PubSub },
+  orgId: string,
+  agentIds: string[],
+  options: { delayMs?: number } = {},
+) {
   for (const id of new Set(agentIds)) {
-    await wakeAgentUsageWaits(deps.db, orgId, id, { pubsub: deps.pubsub }).catch(() => null);
+    await wakeAgentUsageWaits(deps.db, orgId, id, { pubsub: deps.pubsub, ...options }).catch(() => null);
   }
 }

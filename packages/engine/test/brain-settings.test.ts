@@ -14,6 +14,7 @@ import { CODING_PLANS, learnPlanModels, planOf } from "@agenteschat/providers/pl
 import {
   ConflictError,
   canTalkTo,
+  deleteAccount,
   ForbiddenError,
   getAgentBrain,
   NO_PERSON,
@@ -23,6 +24,7 @@ import {
   setAgentAudience,
   setAgentBrain,
   setAgentComputerTarget,
+  TARGET_WAKE_DELAY_MS,
   takeBackPlan,
   updateAgent,
   ValidationError,
@@ -270,6 +272,7 @@ afterEach(async () => {
 
 const ANAS = "0193dddd-0000-4000-8000-0000000000a1";
 const BIAS = "0193dddd-0000-4000-8000-0000000000b1";
+const MINIS = "0193dddd-0000-4000-8000-0000000000c1";
 
 /** Ana's computer, with Claude Code on it, and her agent Dev there on the API; Bia a member, Caio an admin. */
 async function world() {
@@ -921,6 +924,48 @@ describe("what the agent thinks with changes: its computer waits look again", ()
     expect(await wokenNow(fx, removed)).toBe(true);
   });
 
+  test("moved to another computer, then its account there saved: one wake, due only after the save could land", async () => {
+    const { fx, deps, machineId } = await world();
+    const other = await pairMachine({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, {
+      name: "mini",
+      protocol: ACCOUNTS_PROTOCOL,
+      exec: true,
+    });
+    await fx.db
+      .update(schema.machines)
+      .set({ executors: { claude: { version: "2.1.304", loggedIn: true }, detectedAt: new Date().toISOString() } })
+      .where(eq(schema.machines.id, other.machineId));
+    await fx.db.insert(schema.machineAccounts).values({
+      id: MINIS,
+      orgId: fx.org.id,
+      machineId: other.machineId,
+      kind: "claude_code",
+      label: "mini",
+      status: "active",
+      createdBy: fx.owner.id,
+    });
+    await fx.db.update(schema.agents).set({ brain: "claude_code" }).where(eq(schema.agents.id, fx.agent.id));
+    const waiting = await parked(fx, offline(machineId));
+    const jobs = async () =>
+      (await fx.db.select().from(schema.outbox)).filter((j) =>
+        j.dedupeKey?.startsWith(`agent_run.execute:${waiting}:`),
+      );
+    const before = Date.now();
+    await setAgentComputerTarget(
+      { db: fx.db, pubsub: fx.pubsub },
+      fx.owner.id,
+      fx.org.id,
+      fx.agent.id,
+      other.machineId,
+    );
+    const [moved] = await jobs();
+    expect(moved?.nextAttemptAt.getTime()).toBeGreaterThanOrEqual(before + TARGET_WAKE_DELAY_MS);
+    await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, { brain: "claude_code", account: MINIS });
+    const after = await jobs();
+    expect(after).toHaveLength(1);
+    expect(after[0]?.nextAttemptAt.getTime()).toBe(moved?.nextAttemptAt.getTime());
+  });
+
   test("a new owner who doesn't own the plan: its computer waits go on through the API", async () => {
     const { fx, machineId, bia, account } = await world();
     await account(ANAS, fx.owner.id);
@@ -933,6 +978,17 @@ describe("what the agent thinks with changes: its computer waits look again", ()
     expect(await wokenNow(fx, waiting)).toBe(true);
   });
 
+  test("its owner deletes their account: back on the API, its computer waits go on", async () => {
+    const { fx, machineId, bia } = await world();
+    await fx.db
+      .update(schema.agents)
+      .set({ brain: "claude_code", ownerUserId: bia.id })
+      .where(eq(schema.agents.id, fx.agent.id));
+    const waiting = await parked(fx, offline(machineId));
+    expect(await deleteAccount(fx.db, bia.id)).toBe(true);
+    expect(await wokenNow(fx, waiting)).toBe(true);
+  });
+
   test("a turn its computer cut off after tools ran keeps waiting for that computer on a brain change", async () => {
     const { fx, deps, machineId } = await world();
     await fx.db.update(schema.agents).set({ brain: "claude_code" }).where(eq(schema.agents.id, fx.agent.id));
@@ -942,8 +998,14 @@ describe("what the agent thinks with changes: its computer waits look again", ()
     });
     const ranTools = await parked(fx, dropped(["github_open_pr", "post_message"]));
     const noTools = await parked(fx, dropped([]));
+    // The plan cut it mid-work with tools its CLI ran but can't name, then its computer went away.
+    const planCut = await parked(
+      fx,
+      offline(machineId, { interruptedTurn: { prompt: "Open the PR", executed: [], cause: "plan_limit" } }),
+    );
     await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, { brain: "model" });
     expect(await wokenNow(fx, ranTools)).toBe(false);
+    expect(await wokenNow(fx, planCut)).toBe(false);
     expect(await wokenNow(fx, noTools)).toBe(true);
   });
 });
