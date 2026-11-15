@@ -1072,7 +1072,9 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
   test("the workspace's API key: used, she thinks with it on the workspace's model", async () => {
     const state = onClaudeCode(walters(withCard(), ADA_ID));
     const { box } = await connectAda(state, { brain: "claude_code" });
-    expect(shownText(haveRow(box, "Claude da Acme"))).toBe("Claude da AcmeClaude · termina em 7f2a");
+    expect(shownText(haveRow(box, "Claude da Acme"))).toBe(
+      "Claude da AcmeClaude · termina em 7f2aPago por uso. Conta no orçamento da Ada.",
+    );
     await useHave(box, "Claude da Acme");
     expect(calls(state, "agents.setBrain").map((c) => c.args)).toEqual([[ORG_ID, ADA_ID, { brain: "model" }]]);
     // Her model runs on that key: it stays.
@@ -1096,7 +1098,9 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
     ];
     const { api, box } = await connectAda(state, { brain: "claude_code" });
     // The list names the endpoint's host, never the raw id "custom".
-    expect(shownText(haveRow(box, "Gateway Sul"))).toBe("Gateway Sulapi.example.com · termina em x7Qp");
+    expect(shownText(haveRow(box, "Gateway Sul"))).toBe(
+      "Gateway Sulapi.example.com · termina em x7QpPago por uso. Conta no orçamento da Ada.",
+    );
     api.agents.checkCredential = async () => ({ check: "unchecked" });
     await useHave(box, "Gateway Sul");
     expect(calls(state, "agents.update").map((c) => c.args)).toEqual([

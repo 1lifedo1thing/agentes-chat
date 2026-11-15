@@ -8,6 +8,7 @@ import {
   lockedText,
   pickable,
 } from "@agenteschat/client/lib/ai-accounts";
+import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { type PlanChoice, planOfAccount } from "@agenteschat/client/lib/no-ai";
 import { roomWord } from "@agenteschat/client/lib/plan-usage";
 import { keyLine } from "@agenteschat/client/lib/providers";
@@ -97,6 +98,7 @@ function itemOf(
       group,
       mark: <Icon name="key" size={20} className="arrival-have__mark" />,
       usage: null,
+      word: t("agentPage.work.brain.modelText", agentGrammar(agentName)),
       isKey: true,
     };
   }
