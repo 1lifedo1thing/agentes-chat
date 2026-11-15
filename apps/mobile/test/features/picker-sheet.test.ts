@@ -67,6 +67,19 @@ describe("every sheet is the system's own (TrueSheet), and a sheet's next step s
     expect(sheet).not.toContain("@gorhom/bottom-sheet");
   });
 
+  test("the sheets that are routes are TrueSheet's too, on the same look: none is react-native-screens' form sheet", () => {
+    const root = (path: string) => readFileSync(join(import.meta.dir, "../../app", path), "utf8");
+    const app = root("(app)/_layout.tsx");
+    expect(app).toContain('from "@lodev09/react-native-true-sheet/navigation/expo-router"');
+    expect(app).toContain('<Sheet.Screen name="(main)" />');
+    for (const name of ["new", "approval/[id]", "consultation/[id]", "chart", "code", "me/add-workspace"]) {
+      expect({ name, sheet: app.includes(`<Sheet.Screen name="${name}"`) }).toEqual({ name, sheet: true });
+    }
+    expect(root("(auth)/_layout.tsx")).toContain('<Sheet.Screen name="where" options={sheet(["auto"])} />');
+    expect(src("ui/Sheet.tsx")).toContain("export function useRouteSheetOptions()");
+    expect(src("ui/navigation.tsx")).not.toContain('presentation: "formSheet"');
+  });
+
   test("a step is a sheet over the one before: forward with push, back with back() or a flick down", () => {
     const host = src("features/shared/SheetHost.tsx");
     expect(host).toContain("<TrueSheet ref={ref} {...props} scrollableRef={scroll}>");

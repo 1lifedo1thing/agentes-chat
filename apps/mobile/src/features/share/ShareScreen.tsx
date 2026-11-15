@@ -3,9 +3,9 @@ import { makesAgents } from "@agenteschat/client/lib/permissions";
 import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { type NativeStackNavigationOptions, useNavigation } from "expo-router";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Keyboard, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Keyboard, Pressable, ScrollView, type ScrollViewInstance, StyleSheet, TextInput, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -29,6 +29,7 @@ import {
   SheetSurface,
   Text,
   useReducedMotion,
+  useRouteSheetScrollable,
   useTheme,
 } from "@/ui";
 import { router } from "@/ui/navigation";
@@ -128,13 +129,16 @@ export function ShareScreen() {
     }
   };
 
+  // The list is the sheet's scroll view (dragging at its top moves the sheet, the keyboard insets it).
+  const scroll = useRef<ScrollViewInstance>(null);
+  useRouteSheetScrollable(scroll);
   return (
     <SheetSurface>
       <View style={styles.fill}>
         <ScrollView
+          ref={scroll}
           style={styles.fill}
-          // The bar rides pinned at the top of this scroll view: a form sheet tracks its first scroll view, so nothing
-          // may stand before it (a bar above it is drawn under the list).
+          // The bar rides pinned at the top of this scroll view, on the sheet's color as the list passes under it.
           stickyHeaderIndices={[0]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"

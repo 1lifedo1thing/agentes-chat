@@ -177,7 +177,7 @@ describe("what agents did under each reply: the person's own setting, off by def
   test("Você has the row and its page, and a secret request's card shows without its text", () => {
     const me = readFileSync(join(import.meta.dir, "../../src/features/me/MeScreen.tsx"), "utf8");
     expect(me).toContain('onPress={() => open("/me/activity")}');
-    const route = readFileSync(join(import.meta.dir, "../../app/(app)/me/activity.tsx"), "utf8");
+    const route = readFileSync(join(import.meta.dir, "../../app/(app)/(main)/me/activity.tsx"), "utf8");
     expect(route).toContain("<ActivityPage />");
     expect(source("logic.ts")).toMatch(/hidesBody = [^;]*secretRequestOf\(m\.meta\)/);
   });
@@ -490,7 +490,7 @@ describe("an agent's offer card is done for everyone once it's done", () => {
     expect(routeAgent(link, "a-other")).toBeUndefined();
     expect(routeAgent(link, undefined)).toBeUndefined();
     // The route hands the screen only what `routeAgent` keeps.
-    const route = readFileSync(join(import.meta.dir, "../../app/(app)/settings/skills/new.tsx"), "utf8");
+    const route = readFileSync(join(import.meta.dir, "../../app/(app)/(main)/settings/skills/new.tsx"), "utf8");
     expect(route).toContain("forAgentId={routeAgent(url, agent)}");
     // The screen sends it only on an install from the card's link with its row checked, never on a read.
     const screen = readFileSync(join(import.meta.dir, "../../src/features/settings/SkillsScreen.tsx"), "utf8");

@@ -892,7 +892,9 @@ describe("the agent's AI", () => {
     expect(screen).toContain("modelSections(rows).map(");
     expect(screen).toContain("<GroupedHeader>{providerLabel(s.maker)}</GroupedHeader>");
     expect(screen).toContain('hint: { name: t("common.about", { label: r.label }), text: r.note }');
-    const route = await Bun.file(new URL("../../app/(app)/agent-model/[id].tsx", import.meta.url).pathname).text();
+    const route = await Bun.file(
+      new URL("../../app/(app)/(main)/agent-model/[id].tsx", import.meta.url).pathname,
+    ).text();
     expect(route).toContain("<AgentModelScreen agentId={id");
   });
 
@@ -991,7 +993,9 @@ describe("the agent's AI", () => {
     );
     const screen = await Bun.file(new URL("../../src/features/ai/AgentAiScreen.tsx", import.meta.url).pathname).text();
     expect(screen).toContain("onPress={() => openAgentSetup(agentId)}");
-    const route = await Bun.file(new URL("../../app/(app)/agent-setup/[id].tsx", import.meta.url).pathname).text();
+    const route = await Bun.file(
+      new URL("../../app/(app)/(main)/agent-setup/[id].tsx", import.meta.url).pathname,
+    ).text();
     expect(route).toContain("<AgentSetupScreen agentId={id");
   });
 
@@ -1141,7 +1145,7 @@ describe("the agent's AI", () => {
     const read = (path: string) => Bun.file(new URL(`../../${path}`, import.meta.url).pathname).text();
     const [sheet, route, screen, steps] = await Promise.all([
       read("src/features/ai/ConnectAi.tsx"),
-      read("app/(app)/new-agent.tsx"),
+      read("app/(app)/(main)/new-agent.tsx"),
       read("src/features/agents/NewAgentScreen.tsx"),
       read("src/features/ai/ConnectAiSteps.tsx"),
     ]);

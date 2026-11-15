@@ -33,7 +33,7 @@ const NOW = new Date("2026-11-14T12:00:00Z");
 const DAY = 86_400_000;
 const later = (days: number) => new Date(NOW.getTime() + days * DAY).toISOString();
 const src = (path: string) => readFileSync(join(import.meta.dir, "..", "..", "src", path), "utf8");
-const route = (path: string) => readFileSync(join(import.meta.dir, "..", "..", "app", "(app)", path), "utf8");
+const route = (path: string) => readFileSync(join(import.meta.dir, "..", "..", "app", "(app)", "(main)", path), "utf8");
 
 const role = (over: Partial<OrgRole> & { id: string; name: string }) =>
   ({

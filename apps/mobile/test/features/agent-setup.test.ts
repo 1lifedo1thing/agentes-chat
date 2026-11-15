@@ -51,7 +51,7 @@ test("each step but thinking is a pushed screen, registered in the stack; thinki
   const card = src("agents/setup/SetupCard.tsx");
   expect(card).toContain('if (step === "ai") openConnectAi({ agentId: agent.id });');
   expect(card).toContain("else openSetupStep(agent.id, step);");
-  const layout = readFileSync(new URL("../../app/(app)/_layout.tsx", import.meta.url), "utf8");
+  const layout = readFileSync(new URL("../../app/(app)/(main)/_layout.tsx", import.meta.url), "utf8");
   expect(layout).toContain('<Stack.Screen name="agent-step/[id]" options={{ ...pushed, ...scrollUnder }} />');
   const steps = src("agents/setup/SetupStepScreen.tsx");
   // Nothing saves until its word on the bar; then the step is confirmed and the screen goes back.

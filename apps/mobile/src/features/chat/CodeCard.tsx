@@ -8,10 +8,10 @@ import {
 } from "@agenteschat/client/lib/code";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Text as RNText, ScrollView, StyleSheet, View } from "react-native";
+import { Text as RNText, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Icon, IconButton, PressScale, Text, useReducedMotion, useTheme } from "@/ui";
+import { Icon, IconButton, PressScale, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors } from "../shared/hooks";
 import { copyText, MONO } from "../shared/parts";
@@ -212,11 +212,14 @@ function CopyButton({ text, plate = false }: { text: string; plate?: boolean }) 
   );
 }
 
-/** The full screen code (`/code`, a native form sheet): line numbers, wrap on demand, copy. */
+/** The full screen code (`/code`, a sheet): line numbers, wrap on demand, copy. */
 export function CodeSheet() {
   const { t } = useTranslation();
   const c = useColors();
   const insets = useSafeAreaInsets();
+  // The sheet's scroll view (dragging at its top moves the sheet).
+  const scroll = useRef<ScrollViewInstance>(null);
+  useRouteSheetScrollable(scroll);
   const [wrap, setWrap] = useState(false);
   const code = opened;
   const lines = code ? highlightCode(code.text, code.lang) : [];
@@ -231,9 +234,9 @@ export function CodeSheet() {
   }
   return (
     <ScrollView
+      ref={scroll}
       style={styles.fill}
-      // A form sheet sizes its first scroll view to the whole sheet, over whatever stands before it: the scroll view
-      // is the sheet's own first child, with the bar and its tools pinned at its top on the sheet's color.
+      // The bar and its tools ride pinned at the top, on the sheet's color as the code passes under them.
       stickyHeaderIndices={[0]}
       contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
     >

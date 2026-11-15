@@ -15,12 +15,12 @@ import {
   smoothPath,
 } from "@agenteschat/ui/sky/chart";
 import { Canvas, Circle, Group, Path, Skia } from "@shopify/react-native-skia";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { type LayoutChangeEvent, Pressable, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Icon, IconButton, PressScale, Text, useReducedMotion, useTheme } from "@/ui";
+import { Icon, IconButton, PressScale, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors } from "../shared/hooks";
 import type { Inline } from "./logic";
@@ -107,11 +107,14 @@ export const ChartCard = memo(function ChartCard({
   );
 });
 
-/** The full screen chart (`/chart`, a native form sheet): the chart big, its table under it. */
+/** The full screen chart (`/chart`, a sheet): the chart big, its table under it. */
 export function ChartSheet() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  // The sheet's scroll view (dragging at its top moves the sheet).
+  const scroll = useRef<ScrollViewInstance>(null);
+  useRouteSheetScrollable(scroll);
   const chart = opened;
   if (!chart) {
     return (
@@ -124,10 +127,9 @@ export function ChartSheet() {
   }
   return (
     <ScrollView
+      ref={scroll}
       style={styles.flex}
-      // A form sheet sizes its first scroll view to the whole sheet, over whatever stands before it (the chart was
-      // drawn under × and the title): the scroll view is the sheet's own first child, with the bar pinned at its
-      // top on the sheet's color.
+      // × rides pinned at the top, on the sheet's color as the chart passes under it.
       stickyHeaderIndices={[0]}
       contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
     >

@@ -78,7 +78,7 @@ describe("Apps de IA on the phone (ADR 0119)", () => {
   });
 
   test("the screen is in the stack, pushed", () => {
-    const layout = readFileSync(join(import.meta.dir, "..", "..", "app", "(app)", "_layout.tsx"), "utf8");
+    const layout = readFileSync(join(import.meta.dir, "..", "..", "app", "(app)", "(main)", "_layout.tsx"), "utf8");
     expect(layout).toContain(`name="settings/apps" options={{ ...pushed, ...scrollUnder }}`);
   });
 

@@ -11,11 +11,11 @@ import { consultSubject } from "@agenteschat/client/lib/consultations";
 import { namesText } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { groupsWith } from "@agenteschat/client/lib/timeline";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, LineIcon, PixelOrbit, Segmented, SheetSurface, Text } from "@/ui";
+import { Button, LineIcon, PixelOrbit, Segmented, SheetSurface, Text, useRouteSheetScrollable } from "@/ui";
 import { chatHref } from "../links/logic";
 import { useColors, useDirectory, useMeId, useOrgId, useWhen } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
@@ -102,19 +102,20 @@ function Consultation({
   // The consulted agent's own words came: its last one is the answer. Left out (its run also answers a question
   // from another conversation), the answer shows on its own.
   const said = list.some((m) => m.author.id === q?.consultedAgentId && m.channelId !== channelId);
-  // A form sheet sizes its first scroll view to the whole sheet, over whatever stands before or after it: the
-  // title rides pinned inside the list and the foot lies over its end, each on the sheet's own color, with the
-  // foot's height kept free under the last row. The list is the sheet's own first child, with no view around it:
-  // inside a painted one the sheet also moves the list to the screen's own frame, not only sizes it, and the list
-  // can land off the sheet, which then shows empty.
+  // The title rides pinned inside the list and the foot lies over its end, each on the sheet's own color, with the
+  // foot's height kept free under the last row. The list is the sheet's scroll view (dragging at its top moves the
+  // sheet).
   const [footHeight, setFootHeight] = useState(0);
+  const scroll = useRef<ScrollViewInstance>(null);
+  useRouteSheetScrollable(scroll);
   const talk = () => {
     if (asker) requestComposerText(channelId, `@${asker.handle} `);
     goBack(chatHref(channelId));
   };
   return (
-    <>
+    <SheetSurface>
       <ScrollView
+        ref={scroll}
         style={[styles.screen, { backgroundColor: c.bg }]}
         stickyHeaderIndices={[0]}
         contentContainerStyle={[styles.list, { paddingBottom: footHeight + 12 }]}
@@ -248,7 +249,7 @@ function Consultation({
           />
         ) : null}
       </View>
-    </>
+    </SheetSurface>
   );
 }
 

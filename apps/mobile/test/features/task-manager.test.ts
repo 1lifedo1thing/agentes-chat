@@ -29,7 +29,7 @@ import {
 } from "../../src/features/task-manager/logic";
 import { translator } from "./fixtures";
 
-const APP = join(import.meta.dir, "../../app/(app)");
+const APP = join(import.meta.dir, "../../app/(app)/(main)");
 
 const task = (over: Partial<ManagedTask> & { runId: string }): ManagedTask => ({
   agentId: "dev",

@@ -103,7 +103,7 @@ describe("the work-along line, the phone's Agora (ADR 0128 addendum)", () => {
     const shell = readFileSync(join(import.meta.dir, "../../src/ui/LargeTitleScreen.tsx"), "utf8");
     expect(shell).toContain("bottom: safe.bottom + TAB_BAR + footRoom");
     expect(shell).toContain("paddingBottom: bottomInset + (IOS ? 0 : footRoom)");
-    const layout = readFileSync(join(import.meta.dir, "../../app/(app)/(tabs)/_layout.tsx"), "utf8");
+    const layout = readFileSync(join(import.meta.dir, "../../app/(app)/(main)/(tabs)/_layout.tsx"), "utf8");
     expect(layout.replace(/\s+/g, " ")).toContain(
       "along && !accessory ? { node: <AlongStrip lead={along.lead} others={along.others} />, height: ALONG_STRIP }",
     );

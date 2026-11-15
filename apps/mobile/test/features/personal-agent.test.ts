@@ -25,7 +25,7 @@ describe("the first question's drawings", () => {
 
 describe("a personal workspace's agent", () => {
   test("Advanced is a screen of its own, with the brakes, who it reports to, its rules, repositories and deleting it", () => {
-    expect(read("app/(app)/_layout.tsx")).toContain('<Stack.Screen name="agent-more/[id]"');
+    expect(read("app/(app)/(main)/_layout.tsx")).toContain('<Stack.Screen name="agent-more/[id]"');
     const more = read("src/features/agents/AgentMoreScreen.tsx");
     for (const piece of [
       "<BrakesSection",

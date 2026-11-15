@@ -48,7 +48,7 @@ import { GROUPED_ROW, TOUCH } from "../../src/ui/rhythm";
 import { ditherPaths, roleMarkFit, roleMarkIcon } from "../../src/ui/role-mark";
 import { agent, translator } from "./fixtures";
 
-const APP = join(import.meta.dir, "..", "..", "app", "(app)");
+const APP = join(import.meta.dir, "..", "..", "app", "(app)", "(main)");
 const SRC = join(import.meta.dir, "..", "..", "src");
 const read = (path: string) => readFileSync(join(SRC, path), "utf8");
 

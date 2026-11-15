@@ -43,7 +43,7 @@ import {
 } from "../../src/features/settings/logic";
 import { translator } from "./fixtures";
 
-const APP = join(import.meta.dir, "..", "..", "app", "(app)");
+const APP = join(import.meta.dir, "..", "..", "app", "(app)", "(main)");
 const NOW = new Date(2026, 9, 28, 15, 0);
 
 const machine = (over: Partial<Machine> & { id: string }): Machine => ({

@@ -532,7 +532,7 @@ describe("dashboards in links, notifications and routines", () => {
   });
 
   test("Dashboards is a screen pushed from the home, never a tab; the tab bar stays as it was", () => {
-    const app = join(import.meta.dir, "..", "..", "app", "(app)");
+    const app = join(import.meta.dir, "..", "..", "app", "(app)", "(main)");
     expect(existsSync(join(app, "dashboards.tsx"))).toBe(true);
     expect(existsSync(join(app, "(tabs)", "dashboards"))).toBe(false);
     expect(readFileSync(join(app, "_layout.tsx"), "utf8")).toContain('name="dashboards"');

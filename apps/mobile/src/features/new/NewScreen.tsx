@@ -9,6 +9,7 @@ import {
   Keyboard,
   Pressable,
   ScrollView,
+  type ScrollViewInstance,
   StyleSheet,
   TextInput,
   type TextInputInstance,
@@ -29,6 +30,7 @@ import {
   SheetSurface,
   Text,
   useReducedMotion,
+  useRouteSheetScrollable,
   useTheme,
 } from "@/ui";
 import { router } from "@/ui/navigation";
@@ -108,6 +110,9 @@ export function NewScreen() {
     return () => sub.remove();
   });
 
+  // The list is the sheet's scroll view (dragging at its top moves the sheet, the keyboard insets it).
+  const scroll = useRef<ScrollViewInstance>(null);
+  useRouteSheetScrollable(scroll);
   // Groups that come and go as the person types fade, and what stays slides into place.
   const fade = reduced ? {} : { entering: FadeIn.duration(160), exiting: FadeOut.duration(120) };
   const layout = reduced ? undefined : LinearTransition.duration(220);
@@ -115,9 +120,9 @@ export function NewScreen() {
   return (
     <SheetSurface>
       <ScrollView
+        ref={scroll}
         style={styles.fill}
-        // The bar rides at the top of the scroll view, pinned: a form sheet tracks its first scroll view, so nothing may
-        // stand before it (a bar above it was drawn under the list).
+        // The bar rides at the top of the scroll view, pinned, on the sheet's color as the list passes under it.
         stickyHeaderIndices={[0]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"

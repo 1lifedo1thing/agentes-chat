@@ -1,5 +1,6 @@
-import { TrueSheet } from "@lodev09/react-native-true-sheet";
-import { type ReactNode, type RefObject, useEffect, useMemo, useRef } from "react";
+import { type SheetDetent, TrueSheet } from "@lodev09/react-native-true-sheet";
+import { useNavigation } from "expo-router";
+import { type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Keyboard,
@@ -67,9 +68,52 @@ export function Sheet({ open, onClose, children, onGone, header }: SheetProps) {
 }
 
 /**
- * What every sheet of the app shares, for `<TrueSheet>`: content-sized, the system's grabber and corners, Liquid Glass
- * or the sheet's gray, Android's back (an open ⓘ goes with the sheet), and `open` driving present and dismiss with
- * `onClose` when the person closes it and `onGone` once it is off the screen.
+ * The look every sheet of the app shares, the ones a screen opens and the ones that are routes: the system's grabber
+ * (named for screen readers) and corners, and Liquid Glass on iOS 26 or the sheet's gray.
+ */
+function useSheetLook() {
+  const { colors, scheme } = useTheme();
+  const { t } = useTranslation();
+  const inside = useMemo(() => sheetColors(colors, scheme), [colors, scheme]);
+  return useMemo(
+    () => ({
+      grabber: true,
+      ...(GLASS ? {} : { backgroundColor: inside.grouped }),
+      accessibilityOptions: { grabberLabel: t("mobile.a11y.grabber") },
+    }),
+    [inside, t],
+  );
+}
+
+/**
+ * The options of a sheet that is a route (`Sheet.Screen` in `app/(app)/_layout.tsx`), on `Sheet`'s look. `detents`:
+ * the fractions of the screen it may rest at, or `"auto"` for its content's height; one with fixed heights fills them.
+ * Its content tells the sheet which view scrolls (`useRouteSheetScrollable`).
+ */
+export function useRouteSheetOptions() {
+  const look = useSheetLook();
+  return useCallback(
+    (detents: SheetDetent[]) => ({
+      ...look,
+      detents,
+      ...(detents.includes("auto") ? {} : { style: styles.fill }),
+    }),
+    [look],
+  );
+}
+
+/** A route sheet's content: its scroll view is the sheet's own (dragging at its top moves the sheet, the keyboard insets it). */
+export function useRouteSheetScrollable(ref: RefObject<ScrollViewInstance | null>) {
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({ scrollableRef: ref } as never);
+  }, [navigation, ref]);
+}
+
+/**
+ * What every sheet a screen opens shares, for `<TrueSheet>`: content-sized, `Sheet`'s look, Android's back (an open ⓘ
+ * goes with the sheet), and `open` driving present and dismiss with `onClose` when the person closes it and `onGone`
+ * once it is off the screen.
  */
 export function useSheetProps({
   open,
@@ -85,9 +129,7 @@ export function useSheetProps({
   /** Present as it mounts (a sheet pushed over another), rather than when `open` turns true. */
   presentOnMount?: boolean;
 }) {
-  const { colors, scheme } = useTheme();
-  const { t } = useTranslation();
-  const inside = useMemo(() => sheetColors(colors, scheme), [colors, scheme]);
+  const look = useSheetLook();
   const shown = useRef(presentOnMount);
   const openRef = useRef(open);
   openRef.current = open;
@@ -111,10 +153,8 @@ export function useSheetProps({
   }, [open, presentOnMount, ref]);
 
   return {
+    ...look,
     detents: ["auto" as const],
-    grabber: true,
-    ...(GLASS ? {} : { backgroundColor: inside.grouped }),
-    accessibilityOptions: { grabberLabel: t("mobile.a11y.grabber") },
     ...(presentOnMount ? { initialDetentIndex: 0 } : {}),
     onDidDismiss: () => {
       shown.current = false;
@@ -129,12 +169,15 @@ export function useSheetProps({
   };
 }
 
-/** A sheet's content: gestures need their own root in the sheet's window, and it reads the sheet's colors. */
-export function SheetContent({ children }: { children: ReactNode }) {
+/**
+ * A sheet's content: gestures need their own root in the sheet's window, and it reads the sheet's colors. `fill` for a
+ * sheet of fixed heights, whose content fills them.
+ */
+export function SheetContent({ children, fill = false }: { children: ReactNode; fill?: boolean }) {
   const { colors, scheme } = useTheme();
   const inside = useMemo(() => sheetColors(colors, scheme), [colors, scheme]);
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={fill ? styles.fill : undefined}>
       <ThemeColorsOverride colors={inside}>{children}</ThemeColorsOverride>
     </GestureHandlerRootView>
   );
@@ -147,6 +190,7 @@ export function useSheetBody(top = 24): ViewStyle {
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   // The header spans the sheet, under the grabber's room.
   header: { paddingTop: 24 },
 });
