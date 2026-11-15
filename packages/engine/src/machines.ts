@@ -35,7 +35,6 @@ import { can, requireActiveMembership, requirePermission } from "./organizations
 import { maySql } from "./permissions";
 import { isRightHand, RIGHT_HAND, rightHandPermanent } from "./right-hand";
 import { liveSeats, removedSeatIds, removeSeat, SHARED_SEAT, seatName } from "./right-hand-seats";
-import { wakeAgentsBrainWaits } from "./usage-pause";
 
 const { machines, agents, users, organizationMembers } = schema;
 
@@ -925,6 +924,8 @@ export async function announceRemovedMachine(
       event: { type: "agent.computer", agentId, target: { kind: "none" } },
     });
   }
+  // Lazy: usage-pause's graph reaches task-manager while agent-work, which imports this module's graph, is loading.
+  const { wakeAgentsBrainWaits } = await import("./usage-pause");
   await wakeAgentsBrainWaits(deps, orgId, freed);
 }
 
@@ -1024,7 +1025,9 @@ export async function setAgentComputerTarget(
   await publishMachineAgentsChanged(deps.pubsub, orgId);
   // Later than at once: an account on the new computer is saved next (`setAgentBrain`), and a run claimed between the
   // two would find no sign-in there. That save's wake shares the job's dedupe key, so the job keeps this later time.
-  if (moved && options.wakeWaits !== false)
+  if (moved && options.wakeWaits !== false) {
+    const { wakeAgentsBrainWaits } = await import("./usage-pause");
     await wakeAgentsBrainWaits(deps, orgId, [agentId], { delayMs: TARGET_WAKE_DELAY_MS });
+  }
   return target;
 }
