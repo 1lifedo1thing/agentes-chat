@@ -16,6 +16,7 @@ export function ConnectedRow({
   icon,
   name,
   chips,
+  meta,
   using,
   total,
   details,
@@ -24,6 +25,8 @@ export function ConnectedRow({
   icon: ReactNode;
   name: string;
   chips: ReactNode;
+  /** One line under the name, cut at the row's edge (whose personal connection it is); the name is cut too. */
+  meta?: ReactNode;
   using: Agent[];
   total: number;
   /** One muted line each, always in the same order. */
@@ -33,13 +36,16 @@ export function ConnectedRow({
   const { t } = useTranslation();
   return (
     <FoldRow
-      className="connected-row"
+      className={meta ? "connected-row connected-row--meta" : "connected-row"}
       face={icon}
       title={
-        <span className="list-title">
-          <span>{name}</span>
-          {chips}
-        </span>
+        <>
+          <span className="list-title">
+            <span>{name}</span>
+            {chips}
+          </span>
+          {meta && <MetaLine>{meta}</MetaLine>}
+        </>
       }
       end={
         <span className="connected-row__who small muted">
@@ -66,4 +72,8 @@ export function ConnectedRow({
       {actions && <div className="ac-acts">{actions}</div>}
     </FoldRow>
   );
+}
+
+function MetaLine({ children }: { children: ReactNode }) {
+  return <span className="ac-mediarow__meta connected-row__meta ac-iconline">{children}</span>;
 }

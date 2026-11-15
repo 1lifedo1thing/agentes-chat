@@ -61,6 +61,7 @@ import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { FlowTitle } from "@/components/FlowTitle";
 import { LoadingList, useStepText } from "@/components/Loading";
 import { MailRulesPanel } from "@/components/MailRules";
+import { ForWhom } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";
 import { reviewNote, ToolLevelsView, ToolReview, type ToolReviewState } from "@/components/ToolReview";
 import { useDirectory } from "@/hooks/useDirectory";
@@ -211,6 +212,7 @@ function OAuthStep({ provider, onClose }: { provider: "gmail" | "outlook"; onClo
         <p className="muted cflow__text">
           {t(`mail.choice.${provider}.text`)} {t("mail.oauthText", { company })}
         </p>
+        <MailForWhom />
       </DialogBody>
       <DialogFooter bar note={t("connectFlow.nothingYet")}>
         <Button onClick={onClose}>{t("common.cancel")}</Button>
@@ -229,6 +231,23 @@ function OAuthStep({ provider, onClose }: { provider: "gmail" | "outlook"; onClo
         </Button>
       </DialogFooter>
     </>
+  );
+}
+
+/** "Para quem" on connecting a mailbox, where the workspace has more than one person: always its person's. */
+function MailForWhom() {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const members = useDirectory(org.id).members.length;
+  if (members <= 1) return null;
+  return (
+    <ForWhom
+      label={t("connectors.personal.forWhom")}
+      value="personal"
+      locked
+      note={t("connectors.personal.mailLocked")}
+      onValueChange={() => {}}
+    />
   );
 }
 
@@ -442,6 +461,7 @@ export function ImapStep({
               </div>
             </details>
           )}
+          <MailForWhom />
           {error && (
             <Alert>
               {t(error === "auth" && choice === "icloud" ? "mail.error.auth_icloud" : `mail.error.${error}`)}
@@ -1114,13 +1134,15 @@ export function MailDisconnectDialog({ account, onClose }: { account: MailAccoun
   const { org } = useOrg();
   const toast = useToast();
   const { disconnect } = useMailAction(org.id);
-  const name = account?.address ?? "";
+  // Someone else's mailbox comes without its address: its service names it, and it reads "Remover" as its row does.
+  const theirs = account !== null && !account.address;
+  const name = account ? account.address || account.label || mailChoiceName(t, choiceOf(account)) : "";
   const using = account?.agents.length ?? 0;
   return (
     <Dialog
       open={account !== null}
       onOpenChange={(o) => !o && onClose()}
-      title={t("connectors.disconnectTitle", { name })}
+      title={t(theirs ? "connectors.personal.removeTitle" : "connectors.disconnectTitle", { name })}
       description={using > 0 ? t("connectors.disconnectText", { count: using }) : t("connectors.disconnectTextNone")}
       closeLabel={t("common.close")}
       width={440}
@@ -1141,7 +1163,7 @@ export function MailDisconnectDialog({ account, onClose }: { account: MailAccoun
             })
           }
         >
-          {t("connectors.disconnect")}
+          {t(theirs ? "connectors.personal.remove" : "connectors.disconnect")}
         </Button>
       </DialogFooter>
     </Dialog>
