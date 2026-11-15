@@ -5,7 +5,7 @@ setupDom();
 
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { Composer, type ComposerProps, type ComposerVoice, ComposerFile } from "../src";
+import { Composer, ComposerFile, type ComposerProps, type ComposerVoice } from "../src";
 import type { VoiceNotice } from "../src/components/voice-recorder";
 import { fakeMicrophone } from "../testing/microphone";
 

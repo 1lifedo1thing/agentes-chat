@@ -154,7 +154,9 @@ describe("a voice note with typed text and files", () => {
     await open(state);
     const message = row("m-voice");
     expect(message.textContent?.split("o deploy das nove quebrou o login")).toHaveLength(2);
-    expect(within(message.querySelector(".ac-voice") as HTMLElement).getByRole("button", { name: "Ver texto" })).toBeTruthy();
+    expect(
+      within(message.querySelector(".ac-voice") as HTMLElement).getByRole("button", { name: "Ver texto" }),
+    ).toBeTruthy();
     await act(async () => fireEvent.contextMenu(message, { clientX: 40, clientY: 60 }));
     await settle(2);
     const menu = screen().getByRole("menu", { name: "Ações" });

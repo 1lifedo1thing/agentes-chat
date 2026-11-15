@@ -7514,10 +7514,9 @@ html:not([data-pointer]) .ac-composer__send:focus-visible {
 /* Esc with text in the box: the row asks, in place, and its answers follow the words or drop under them. */
 .ac-composer__voice-ask {
   flex: 1 1 100%;
+  min-height: var(--control-h-sm);
+  align-items: center;
   font-size: var(--text-sm);
-}
-.ac-composer__voice-ask > :first-child {
-  padding-block: calc((var(--control-h-sm) - 1lh) / 2);
 }
 .ac-composer[data-voice="rec"] {
   box-shadow:
