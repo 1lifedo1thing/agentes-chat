@@ -18,7 +18,6 @@ import {
   insertMessage,
   listConnections,
   type McpConnect,
-  mayConnection,
   mcpSessionOver,
   moveConnectionToTeam,
   NotFoundError,
@@ -184,7 +183,7 @@ describe("who may add, see and change a personal connection", () => {
 
   test("another workspace finds nothing of it", async () => {
     const { mine } = await walterWithLinear();
-    const [other] = await f.db.insert(schema.organizations).values({ name: "Acme", slug: "acme-2" }).returning();
+    const [other] = await f.db.insert(schema.organizations).values({ name: "Acme" }).returning();
     if (!other) throw new Error("no org");
     await f.db.insert(schema.organizationMembers).values({ orgId: other.id, userId: f.owner.id, role: "owner" });
     await expect(connectionFor(f.db, f.owner.id, other.id, mine.id, "remove")).rejects.toBeInstanceOf(NotFoundError);
@@ -195,7 +194,6 @@ describe("who may add, see and change a personal connection", () => {
     const { walter, mine } = await walterWithLinear();
     expect((await renameConnection(f.db, walter.id, f.org.id, mine.id, "My Linear")).label).toBe("My Linear");
     await expect(moveConnectionToTeam(f.db, walter.id, f.org.id, mine.id)).rejects.toThrow("manage connectors");
-    expect(mayConnection({ ownerUserId: walter.id }, walter.id, null, "move")).toBe(false);
   });
 });
 

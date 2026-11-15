@@ -1,5 +1,8 @@
-import { and, type Database, type Executor, eq, isNull, or, type SQL, schema } from "@agenteschat/db";
+import { and, type Database, type Executor, eq, inArray, isNull, or, type SQL, schema, sql } from "@agenteschat/db";
+import { getAgent } from "../agents";
+import { recordAudit } from "../audit";
 import { runAuthorityById } from "../authority";
+import { caches } from "../cache";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors";
 import { can, type Membership, requirePermission } from "../organizations";
 import { ownerApprovers, personalUseCheck, personOfRun } from "../personal-use";
@@ -127,4 +130,94 @@ export function personalTool(
     ...(reads ? { readsOutside: true as const } : {}),
     ...(others ? { sensitive: true, asksOwner: true as const } : {}),
   };
+}
+
+/**
+ * Takes a connection off one agent ("Tirar de um agente"): its person, who manages connectors or agents, or the
+ * agent's owner (taking access away is anyone's who may change the agent). Its grants on that agent go, every one of
+ * them; the connection stays. Someone else's personal connection reads as missing to anyone else.
+ */
+export async function takeConnectionOffAgent(
+  db: Database,
+  actorId: string,
+  orgId: string,
+  connectionId: string,
+  agentId: string,
+) {
+  const membership = await requirePermission(db, actorId, orgId, "read");
+  const [c] = await db
+    .select()
+    .from(connectorConnections)
+    .where(
+      and(
+        eq(connectorConnections.id, connectionId),
+        eq(connectorConnections.orgId, orgId),
+        isNull(connectorConnections.revokedAt),
+      ),
+    );
+  const agent = await getAgent(db, orgId, agentId);
+  if (!agent) throw new NotFoundError("Agent not found");
+  const may =
+    c &&
+    (c.ownerUserId === actorId ||
+      can(membership, "manage_connectors") ||
+      can(membership, "manage_agents") ||
+      agent.ownerUserId === actorId);
+  if (!c || (!may && othersPersonal(c, actorId))) throw new NotFoundError("Connection not found");
+  if (!may) throw new ForbiddenError("Only an admin or the agent's owner can change its access");
+  const gone = await db.transaction(async (tx) => {
+    const rows = await tx
+      .delete(schema.agentScopes)
+      .where(
+        and(
+          eq(schema.agentScopes.orgId, orgId),
+          eq(schema.agentScopes.agentId, agentId),
+          eq(schema.agentScopes.connectionId, c.id),
+        ),
+      )
+      .returning({ scope: schema.agentScopes.scope });
+    if (rows.length > 0)
+      await recordAudit(tx, {
+        orgId,
+        actor: { type: "person", id: actorId },
+        action: "agent.access_changed",
+        target: { type: "agent", id: agentId },
+        details: { connectionId: c.id, label: c.label, level: "none" },
+      });
+    return rows.length;
+  });
+  caches.scopes.deletePrefix(`${orgId}:${agentId}`);
+  return { removed: gone };
+}
+
+/**
+ * The agents each personal connection is on (a grant of their own on it, denials aside), for its row's "which agents".
+ * Team connections aren't read: "all tools" reaches them too, so their grants alone don't say it.
+ */
+export async function personalAgents(
+  db: Database,
+  orgId: string,
+  rows: Pick<ConnectorConnection, "id" | "ownerUserId">[],
+) {
+  const ids = rows.filter((r) => r.ownerUserId).map((r) => r.id);
+  const out = new Map<string, string[]>();
+  if (ids.length === 0) return out;
+  const grants = await db
+    .selectDistinct({ connectionId: schema.agentScopes.connectionId, agentId: schema.agentScopes.agentId })
+    .from(schema.agentScopes)
+    .innerJoin(schema.agents, eq(schema.agents.id, schema.agentScopes.agentId))
+    .where(
+      and(
+        eq(schema.agentScopes.orgId, orgId),
+        inArray(schema.agentScopes.connectionId, ids),
+        sql`${schema.agentScopes.scope} not like 'deny:%'`,
+        isNull(schema.agents.archivedAt),
+        isNull(schema.agents.deletedAt),
+      ),
+    );
+  for (const g of grants) {
+    if (!g.connectionId) continue;
+    out.set(g.connectionId, [...(out.get(g.connectionId) ?? []), g.agentId]);
+  }
+  return out;
 }

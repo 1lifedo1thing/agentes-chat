@@ -53,7 +53,7 @@ import {
   serverKey,
 } from "./oauth-mcp";
 import { oauthReturnTo } from "./oauth-return";
-import { connectionFor, connectionsOf, othersPersonal, requireConnect, seenBy } from "./personal";
+import { connectionFor, connectionsOf, othersPersonal, personalAgents, requireConnect, seenBy } from "./personal";
 import { seedToolPins } from "./pins";
 import {
   composioToolkitOf,
@@ -205,6 +205,8 @@ export interface CustomServerView {
    * and person only: no address, account, headers or tools.
    */
   ownerUserId: string | null;
+  /** A personal connection's agents (a grant of their own on it), in the list only. */
+  agentIds?: string[];
 }
 
 export type CustomConnectStart =
@@ -358,7 +360,11 @@ export async function listCustomServers(
     db,
     rows.filter((r) => !othersPersonal(r, actorId)).map((r) => r.id),
   );
-  return rows.map((r) => view(r, tools, whole || r.ownerUserId === actorId, actorId));
+  const agents = await personalAgents(db, orgId, rows);
+  return rows.map((r) => ({
+    ...view(r, tools, whole || r.ownerUserId === actorId, actorId),
+    ...(r.ownerUserId ? { agentIds: agents.get(r.id) ?? [] } : {}),
+  }));
 }
 
 type AccountSpec = NonNullable<McpPreset["account"]>;

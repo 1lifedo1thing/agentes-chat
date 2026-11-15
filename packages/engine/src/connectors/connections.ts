@@ -237,8 +237,8 @@ export const connectionView = (c: ConnectorConnection) => ({
  * A connection as `actorId` may see it: someone else's personal connection shows its service, name and person only,
  * never its address, account or sign-in.
  */
-export function connectionViewFor(c: ConnectorConnection, actorId: string) {
-  const v = connectionView(c);
+export function connectionViewFor(c: ConnectorConnection, actorId: string, agents?: Map<string, string[]>) {
+  const v = { ...connectionView(c), ...(c.ownerUserId ? { agentIds: agents?.get(c.id) ?? [] } : {}) };
   if (!othersPersonal(c, actorId)) return v;
   return { ...v, serverUrl: "", accountLabel: null, tokenExpiresAt: null, reconnectAdds: [] };
 }
