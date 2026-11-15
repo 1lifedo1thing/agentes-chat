@@ -77,8 +77,9 @@ test("status: the organization's connection, its tools and its config, never 'No
   expect(r.output).toContain("desktop on");
   expect(r.output).toContain("terminal on");
   expect(r.output).not.toContain("Not connected");
-  // The desktops and the terminal are the organization's switches too: they show as on.
-  expect(r.output).toContain("Desktops: on");
+  // The desktops and the terminal are the organization's switches too: never off. Desktops show "unavailable" on a
+  // machine without their packages, as on CI.
+  expect(r.output).not.toContain("Desktops: off");
   expect(r.output).toContain("Terminal: on");
 });
 
