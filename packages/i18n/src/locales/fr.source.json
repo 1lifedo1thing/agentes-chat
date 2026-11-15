@@ -30604,6 +30604,78 @@
   "connectors.mcp.none": {
     "value": "MCP servers you connect by their address show up here."
   },
+  "connectors.personal.note": {
+    "value": "Only you see these connections. Your agents use them when you ask."
+  },
+  "connectors.personal.emptyTitle": {
+    "value": "Connect your own accounts"
+  },
+  "connectors.personal.emptyText": {
+    "value": "Only you see them, and your agents use them when you ask."
+  },
+  "connectors.personal.others": {
+    "value": "Others' personal connections"
+  },
+  "connectors.personal.of": {
+    "value": "{{name}}'s personal"
+  },
+  "connectors.personal.forWhom": {
+    "value": "Who it's for"
+  },
+  "connectors.personal.teamLocked": {
+    "value": "Only people who manage connectors add the team's."
+  },
+  "connectors.personal.mailLocked": {
+    "value": "A mailbox always belongs to whoever connects it."
+  },
+  "connectors.personal.done": {
+    "value": "Your agents use it when you ask, in your own conversation with them."
+  },
+  "connectors.personal.worksWhenAsked": {
+    "value": "Works only when you ask."
+  },
+  "connectors.personal.remove": {
+    "value": "Remove"
+  },
+  "connectors.personal.removeName": {
+    "value": "Remove {{name}}"
+  },
+  "connectors.personal.removeTitle": {
+    "value": "Remove {{name}}?"
+  },
+  "connectors.personal.takeOff": {
+    "value": "Take off an agent"
+  },
+  "connectors.personal.takeOffTitle": {
+    "value": "Take {{name}} off an agent"
+  },
+  "connectors.personal.takeOffName": {
+    "value": "Take {{name}} off {{agent}}"
+  },
+  "connectors.personal.takeOffOne": {
+    "value": "Take off"
+  },
+  "connectors.personal.takenOff": {
+    "value": "{{agent}} no longer uses {{name}}."
+  },
+  "connectors.personal.turnOff": {
+    "value": "Turn off"
+  },
+  "connectors.personal.turnOffName": {
+    "value": "Turn off {{name}} for this agent"
+  },
+  "connectors.personal.moveToTeam": {
+    "value": "Move to the team"
+  },
+  "connectors.personal.moveTitle": {
+    "value": "Move {{name}} to the team?"
+  },
+  "connectors.personal.moveText": {
+    "value": "Everyone in the workspace sees it. People who manage connectors choose which agents use it."
+  },
+  "connectors.personal.moved": {
+    "value": "{{name}} now belongs to the team."
+  },
   "connectors.addTitle": {
     "value": "Add connector"
   },
