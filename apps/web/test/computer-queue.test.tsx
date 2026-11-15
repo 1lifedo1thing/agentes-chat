@@ -415,7 +415,11 @@ describe("a computer's line", () => {
     await act(async () => socket.push(orgEvent({ type: "computer.queue", machineId: queue.machineId })));
     await settle(6);
     // (Behind the computer's dialog, so read from the page itself.)
-    expect(header.querySelectorAll(".brw-dm")).toHaveLength(1);
+    const icon = header.querySelector(".dm-computer") as HTMLElement;
+    expect(icon.getAttribute("aria-label")).toBe("Computador");
+    // The icon alone, a header glyph like the others, its name in the kit's tip.
+    expect(icon.textContent).toBe("");
+    expect(icon.classList.contains("channel__icon")).toBe(true);
     expect(header.querySelector(".cq-btn")).toBeNull();
   });
 });
@@ -716,7 +720,6 @@ test("a narrow header fits: the waiting count alone beside the computer, the nam
   expect(value(phone, ".cq-btn .cq-btn__label", "position")).toBe("absolute");
   expect(value(phone, ".cq-btn .cq-btn__label", "width")).toBe("1px");
   expect(value(phone, ".cq-btn .cq-btn__count", "display")).toBe("inline-block");
-  expect(value(phone, ".brw-dm .brw-dm__label", "position")).toBe("absolute");
   // Buttons keep their size; the title and its line wrap whole, never cut, and the glyphs go under them instead.
   const narrow = atRule(css, "@media (max-width: 760px)");
   expect(value(narrow, ".channel__header", "flex-wrap")).toBe("nowrap");
