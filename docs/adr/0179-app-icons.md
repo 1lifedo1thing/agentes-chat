@@ -33,13 +33,14 @@ Comparing directions, more than one was liked, which raised the question of lett
    script again.
 
 2. **The scenes sit on a pixel grid.** A 1024 icon is 32 cells a side and the agent's dither cells are the sky's
-   cells, so nothing is half a pixel. The favicon is drawn on its own at 16 and 32 px with its eyes on whole pixels
+   cells, so nothing is half a pixel (but in the two Peeking icons, whose agent leans: its cells turn with it, on a
+   sky that stays on the grid). The favicon is drawn on its own at 16 and 32 px with its eyes on whole pixels
    and mirrored (at 16 px the body is three flat bands, as a dither there is noise); the `.ico` carries both, and
    browsers pick by size. `favicon.svg` stays as the agent's mark (the boot screen, apps' and connectors' logos).
 
 3. **Five icons.** Night ships (the night sky with a dither glow around the agent); Moon, Sky (the day sky with the
-   sky's navy agent), Peeking at night and Peeking in the sky (the agent big, coming up from the bottom edge) are
-   the others. `APP_ICONS` is the list; the generator, the phone's plugin and the desktop app list the same ids and
+   sky's navy agent), Peeking at night and Peeking in the sky (the agent big, leaning in from the bottom right
+   corner; their 16 and 32 px favicons keep it upright, as a lean there is a blur) are the others. `APP_ICONS` is the list; the generator, the phone's plugin and the desktop app list the same ids and
    a test keeps them equal.
 
 4. **The pick is the device's, not the account's.** Like the theme, it is set where it shows, and never synced: iOS

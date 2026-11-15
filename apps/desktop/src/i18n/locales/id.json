@@ -207,6 +207,7 @@
     "title": "Ayo siapkan {{device}} ini",
     "how": "Hanya semenit. Semuanya tetap di sini, hanya bersamamu.",
     "again": "Pernah berjalan di sini, dan datanya masih ada di {{path}}.",
+    "ownerNone": "Tidak ada akun yang tersisa di sini. Dengan nama dan emailmu, kamu menjadi pemilik barunya.",
     "name": "Namamu",
     "nameNeeded": "Tulis namamu.",
     "email": "Emailmu",

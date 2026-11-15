@@ -1150,6 +1150,24 @@ describe("a reply that names its own tools to a person", () => {
     expect((await bodiesOf(f)).filter((b) => b.startsWith(NAMED))).toHaveLength(1);
   });
 
+  test("held for its wording on a parked run, stopped by the right hand at the person's word: the reply names both", async () => {
+    f = await setup({
+      rightHand: true,
+      toolSources: [secrets],
+      reply: (_request, call) => (call === 1 ? { chunks: [NAMED] } : new ProviderError("overloaded", true, 529)),
+    });
+    const [lodi] = await f.db.select().from(schema.agents).where(eq(schema.agents.builtin, RIGHT_HAND));
+    if (!lodi) throw new Error("no right hand");
+    await ask(f, "@dev entra no painel da Northwind");
+    await drainDue(f, 5);
+    const parked = await runRow(f);
+    expect(parked?.status).toBe("waiting_input");
+    await cancelRun({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, parked?.id ?? "", { byAgentId: lodi.id });
+    const [stopped] = (await agentMessages(f)).filter((m) => m.meta.canceled);
+    expect(stopped?.meta.canceled).toEqual({ byUserId: f.owner.id, byAgentId: lodi.id, text: NAMED });
+    expect(stopped?.body).toBe(`${NAMED}\n\n_Stopped by ${lodi.name} for ${f.owner.name}._`);
+  });
+
   test("stopped to read a message while parked, the held reply sits just before that message, with no stop said", async () => {
     f = await setup({
       toolSources: [secrets],
