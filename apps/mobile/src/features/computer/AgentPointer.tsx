@@ -144,7 +144,6 @@ export const AgentPointer = memo(function AgentPointer({
       if (was && box.w === was.w && box.h === was.h) return;
       scheduleOnRN(relook);
     },
-    [view],
   );
 
   const share = useDerivedValue(() => glidePoint(from.value, to.value, t.value, ratio.value));
