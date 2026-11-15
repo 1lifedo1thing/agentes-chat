@@ -40,9 +40,12 @@ export function MailAccessCard() {
   const { org, me } = useOrg();
   const dir = useDirectory(org.id);
   const { agent, can } = useAgentEdit();
-  const accounts = useMailAccounts(org.id);
+  // Someone else's mailbox shows only while this agent holds it (who manages connectors gets those, address-less).
+  const accounts = useMailAccounts(org.id, true, { others: true });
   const mail = useAgentMail(org.id, agent.id, (accounts.data?.length ?? 0) > 0);
-  const list = accounts.data ?? [];
+  const list = (accounts.data ?? []).filter(
+    (a) => !a.ownerUserId || a.ownerUserId === me.user.id || a.agents.some((x) => x.agentId === agent.id),
+  );
   // A server without email, or none connected: nothing to show here.
   if (list.length === 0) return null;
   const title = t("mail.agent.title");
@@ -60,7 +63,7 @@ export function MailAccessCard() {
       />
       <ul className="level-list" aria-label={t("mail.agent.title")}>
         {list.map((account) => {
-          const name = account.address || mailChoiceName(t, choiceOf(account));
+          const name = account.address || account.label || mailChoiceName(t, choiceOf(account));
           const may = mailAccessOf(account, { userId: me.user.id, talks: canTalk(agent), managesAgent: can("levels") });
           return account.status === "pending" ? (
             <LevelRow

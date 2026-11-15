@@ -1,5 +1,7 @@
-import { useAgentSkills } from "@agenteschat/client";
+import { useAgentAccess, useAgentSkills, useCatalog, useTakeConnectionOffAgent } from "@agenteschat/client";
 import { type AccessResource, asksAt, LEVELS, type Level } from "@agenteschat/client/lib/access-levels";
+import { errorText } from "@agenteschat/client/lib/errors";
+import { can as orgCan } from "@agenteschat/client/lib/permissions";
 import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { Button, Card, Chip, EmptyState, Icon, Menu, MenuItem, SearchField, Segmented, Toolbar } from "@agenteschat/ui";
 import { Link } from "@tanstack/react-router";
@@ -14,10 +16,13 @@ import {
   toolLabel,
   useConnectedById,
 } from "@/components/AccessLevels";
+import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { LoadingLine } from "@/components/Loading";
 import { useOrg } from "@/components/org-context";
 import { SkillPicker } from "@/components/Skills";
+import { useDirectory } from "@/hooks/useDirectory";
 import { lookOf } from "@/lib/look";
+import { useToast } from "@/lib/toast";
 import { ApprovalRulesCard } from "./ApprovalRulesCard";
 import { ApprovalsLevelCard } from "./ApprovalsLevelCard";
 import { CardHead, ChangedTag, useAgentEdit, WasLine } from "./context";
@@ -31,13 +36,16 @@ type AccessFilter = "all" | "on" | "ask";
 /**
  * Ferramentas e acesso: one level per connector and built-in area, and the skills. Saved with the save bar. In a
  * personal workspace (ADR 0159 §3) it comes in two parts: `basic` (its apps and mailboxes, the "Can use" tab) and
- * `advanced` (built-in areas, databases, rules and skills, in the Advanced tab).
+ * `advanced` (built-in areas, databases, rules and skills, in the Advanced tab). Connections: the team's, then the
+ * viewer's own personal ones; another person's personal one the agent holds shows, for who may take it off, with
+ * only Desligar (ADR 0099 addendum).
  */
 export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced" }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const { agent, g, viewer, draft, setLevel, set, can, changeOf, resources, accessState } = useAgentEdit();
   const items = useConnectedById();
+  const personalOf = (r: AccessResource) => Boolean(r.connectionId && items.get(r.connectionId)?.ownerUserId);
   const skills = useAgentSkills(org.id, agent.id);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<AccessFilter>("all");
@@ -57,7 +65,10 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
     on: resources.filter((r) => level(r) !== "none").length,
     ask: resources.filter((r) => asksOf(r).length > 0).length,
   };
-  const connectors = shown.filter((r) => r.kind === "connector");
+  // The team's first, then the viewer's own personal ones.
+  const connectors = shown
+    .filter((r) => r.kind === "connector")
+    .sort((a, b) => Number(personalOf(a)) - Number(personalOf(b)));
   const noConnectors = resources.every((r) => r.kind !== "connector");
   const builtins = shown.filter((r) => r.kind === "builtin");
   const row = (r: AccessResource) => {
@@ -69,13 +80,20 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
         key={r.id}
         icon={<ResourceIcon resource={r} items={items} name={name} />}
         name={name}
-        hint={levelText(t, r, level(r), g)}
+        hint={personalOf(r) ? t("connectors.personal.worksWhenAsked") : levelText(t, r, level(r), g)}
         asks={asksOf(r)}
         levels={r.levels}
         value={level(r)}
         onChange={editable ? (l) => setLevel(r.id, l) : undefined}
         changed={changed || (isGithub(r) && Boolean(changeOf("repos")))}
-        tag={changed ? <ChangedTag changeKey={key} /> : undefined}
+        tag={
+          personalOf(r) || changed ? (
+            <>
+              {personalOf(r) && <Chip icon="lock">{t("vault.tab.personal")}</Chip>}
+              {changed && <ChangedTag changeKey={key} />}
+            </>
+          ) : undefined
+        }
         extra={changed ? <WasLine changeKey={key} /> : undefined}
         below={
           isGithub(r) && level(r) !== "none" ? (
@@ -192,6 +210,7 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
                   ) : connectors.length ? (
                     <ul className="level-list" aria-label={t("access.kind.connectors")}>
                       {connectors.map(row)}
+                      <OthersPersonalRows agent={agent} mayTakeOff={viewer !== "member"} />
                     </ul>
                   ) : (
                     empty
@@ -301,4 +320,58 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
       </div>
     </>
   );
+}
+
+/**
+ * Other people's personal connections this agent holds: whose each is, and Desligar, for who manages connectors or
+ * agents and the agent's owner. Their tools and level stay their person's, so the row shows none.
+ */
+function OthersPersonalRows({ agent, mayTakeOff }: { agent: { id: string; name: string }; mayTakeOff: boolean }) {
+  const { t, i18n } = useTranslation();
+  const { org, me } = useOrg();
+  const toast = useToast();
+  const may = mayTakeOff || orgCan(org, "manage_connectors");
+  const tree = useAgentAccess(org.id, agent.id, may, { others: true });
+  const catalog = useCatalog();
+  const dir = useDirectory(org.id);
+  const takeOff = useTakeConnectionOffAgent(org.id);
+  if (!may) return null;
+  const theirs = (tree.data?.connectors ?? []).filter((c) => c.ownerUserId && c.ownerUserId !== me.user.id);
+  return theirs.map((c) => {
+    const def = catalog.data?.connectors.find((d) => d.id === c.connector) ?? null;
+    const owner = (c.ownerUserId && dir.memberById.get(c.ownerUserId)?.name) || t("channel.unknownPerson");
+    return (
+      <li key={c.connectionId} className="level-row level-row--meta ac-mediarow">
+        <span className="ac-mediarow__face">
+          <ConnectorIcon def={def} label={c.label} />
+        </span>
+        <span className="ac-mediarow__head">
+          <span className="level-row__name level-row__name--cut">{c.label}</span>
+          <span className="ac-mediarow__meta level-row__owner ac-iconline">
+            <Icon name="lock" size={14} />
+            <span>{t("connectors.personal.of", { name: owner })}</span>
+          </span>
+        </span>
+        <span className="ac-mediarow__end">
+          <Button
+            size="sm"
+            aria-label={t("connectors.personal.turnOffName", { name: c.label })}
+            disabled={takeOff.isPending}
+            loading={takeOff.isPending && takeOff.variables?.connectionId === c.connectionId}
+            onClick={() =>
+              takeOff.mutate(
+                { connectionId: c.connectionId, agentId: agent.id },
+                {
+                  onSuccess: () => toast.show(t("connectors.personal.takenOff", { name: c.label, agent: agent.name })),
+                  onError: (e) => toast.show(errorText(t, e, i18n.language), "error"),
+                },
+              )
+            }
+          >
+            {t("connectors.personal.turnOff")}
+          </Button>
+        </span>
+      </li>
+    );
+  });
 }
