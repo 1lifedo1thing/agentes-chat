@@ -15,7 +15,9 @@ import {
   chooseDecision,
   closeMission,
   createAgent,
+  createJobHandlers,
   createMission,
+  createMissionHooks,
   createMissionRunToolSource,
   decideCommand,
   decideJoinRequest,
@@ -487,7 +489,97 @@ describe("missions (ADR 0029)", () => {
     expect(system).not.toContain("send_to_mission");
   });
 
-  test("roles: a non-participant's or commenter's mention is a suggestion (no run); a decider's starts a run; accept forwards it", async () => {
+  test("a person writes in the mission's thread while the mission's computer is offline: the run waits for that computer, says so once, and goes on when it is back", async () => {
+    const { view, turns } = await proposed();
+    const mission = await missionRow();
+    const missionMachine = mission.machineId as string;
+    // The agent's own computer is another one, online: only the mission's computer may hold the run.
+    const own = await pairMachine(deps(), f.owner.id, f.org.id, { name: "Mac mini", ...RUNNER, exec: true });
+    await setAgentComputerTarget(deps(), f.owner.id, f.org.id, f.agent.id, own.machineId);
+    const [agent] = await f.db.select().from(schema.agents).where(eq(schema.agents.id, f.agent.id));
+    expect(agent?.machineId).toBe(own.machineId);
+    expect(missionMachine).not.toBe(own.machineId);
+    let missionOnline = false;
+    const handlers = createJobHandlers({
+      ...f.jobDeps,
+      machines: {
+        status: async (id) => ({
+          id,
+          orgId: f.org.id,
+          name: "MacBook",
+          online: id !== missionMachine || missionOnline,
+          execAllowed: true,
+          os: "darwin",
+          protocol: MACHINE_PROTOCOL_VERSION,
+          executors: { claude: { version: "2.1.300", loggedIn: true }, detectedAt: new Date().toISOString() },
+        }),
+      },
+    });
+    const turnsBefore = turns.length;
+    const callsBefore = f.provider.calls.length;
+    const write = (body: string) =>
+      postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
+        body,
+        threadId: view.threadId,
+      });
+    const waiting = async () =>
+      f.db
+        .select()
+        .from(schema.agentRuns)
+        .where(and(eq(schema.agentRuns.threadRootId, view.threadId), eq(schema.agentRuns.status, "waiting_input")));
+    const waitNotes = async () =>
+      (await f.db.select().from(schema.messages).where(eq(schema.messages.threadId, view.threadId))).filter(
+        (m) => m.meta.bodyCode === "brain_unavailable",
+      );
+
+    await write("@dev how is it going?");
+    await drainOutbox(f.db, handlers);
+    let [run, ...more] = await waiting();
+    expect(more).toHaveLength(0);
+    expect(run?.waitingMachineId).toBe(missionMachine);
+    expect((run?.transcript as { waitingForBrain?: unknown } | undefined)?.waitingForBrain).toMatchObject({
+      kind: "claude_code",
+      machineId: missionMachine,
+      code: "machine_offline",
+    });
+    // The API never stands in, and the computer brain is not asked either.
+    expect(f.provider.calls).toHaveLength(callsBefore);
+    expect(turns).toHaveLength(turnsBefore);
+    let notes = await waitNotes();
+    expect(notes).toHaveLength(1);
+    expect(notes[0]?.meta.brainUnavailable).toMatchObject({
+      brain: "claude_code",
+      code: "machine_offline",
+      machineId: missionMachine,
+    });
+
+    // Another message while it waits: still one note for this outage.
+    await write("@dev any news?");
+    await drainOutbox(f.db, handlers);
+    notes = await waitNotes();
+    expect(notes).toHaveLength(1);
+    expect((await waiting()).map((r) => r.waitingMachineId)).toEqual([missionMachine]);
+    expect(f.provider.calls).toHaveLength(callsBefore);
+
+    // The hub calls its online hook when the runner says hello again.
+    missionOnline = true;
+    await createMissionHooks({ ...f.missionDeps, tools: f.jobDeps.tools }).online?.(missionMachine);
+    await drainOutbox(f.db, handlers);
+    [run] = await f.db
+      .select()
+      .from(schema.agentRuns)
+      .where(eq(schema.agentRuns.id, run?.id as string));
+    expect(run?.status).toBe("done");
+    expect(run?.waitingMachineId).toBeNull();
+    expect(await waiting()).toHaveLength(0);
+    expect(f.provider.calls).toHaveLength(callsBefore);
+    expect(turns.length).toBeGreaterThan(turnsBefore);
+    const last = turns.at(-1);
+    expect(last?.session?.machineId).toBe(missionMachine);
+    expect(last ? systemWithConversation(last) : "").toContain("# Mission in this thread");
+  });
+
+  test("roles:a non-participant's or commenter's mention is a suggestion (no run); a decider's starts a run; accept forwards it", async () => {
     const { view } = await proposed();
     const bia = await addMember(f.db, f.org.id, "member", "bia");
     const caio = await addMember(f.db, f.org.id, "member", "caio");
