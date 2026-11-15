@@ -1709,6 +1709,12 @@
   "auth.desktopOwner.text": {
     "value": "You set up agentes.chat on this {{device}}: no password needed."
   },
+  "auth.desktopOwner.gone": {
+    "value": "This server's owner deleted their account, so Continue on this {{device}} can't sign anyone in. Sign in with your own email instead."
+  },
+  "auth.desktopOwner.none": {
+    "value": "No account is left on the agentes.chat on this {{device}}. Make its new owner in the window that opened."
+  },
   "auth.server.into": {
     "value": "Signing in to <b>{{server}}</b>"
   },

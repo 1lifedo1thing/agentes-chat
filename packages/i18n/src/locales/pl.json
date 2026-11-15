@@ -732,7 +732,9 @@
     },
     "desktopOwner": {
       "continue": "Kontynuuj tutaj ({{device}})",
-      "text": "agentes.chat zostało skonfigurowane na tym urządzeniu ({{device}}): hasło nie jest potrzebne."
+      "text": "agentes.chat zostało skonfigurowane na tym urządzeniu ({{device}}): hasło nie jest potrzebne.",
+      "gone": "Właściciel tego serwera usunął swoje konto, więc „Kontynuuj tutaj ({{device}})” nie może nikogo zalogować. Zaloguj się zamiast tego własnym e-mailem.",
+      "none": "W agentes.chat na tym urządzeniu ({{device}}) nie zostało żadne konto. Utwórz nowego właściciela w oknie, które się otworzyło."
     },
     "server": {
       "into": "Logowanie do <b>{{server}}</b>",

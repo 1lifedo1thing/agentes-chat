@@ -737,6 +737,10 @@ export const en = {
     desktopOwner: {
       continue: "Continue on this {{device}}",
       text: "You set up agentes.chat on this {{device}}: no password needed.",
+      /** Continue on this Mac refused: the server's owner deleted their account, while others still have one. */
+      gone: "This server's owner deleted their account, so Continue on this {{device}} can't sign anyone in. Sign in with your own email instead.",
+      /** Continue on this Mac refused: no account is left, and the app opened its window to make the new owner. */
+      none: "No account is left on the agentes.chat on this {{device}}. Make its new owner in the window that opened.",
     },
     /** The line under every sign-in: which server it signs in to (ADR 0158). */
     server: {

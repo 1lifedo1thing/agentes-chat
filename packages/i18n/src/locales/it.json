@@ -718,7 +718,9 @@
     },
     "desktopOwner": {
       "continue": "Continua su questo {{device}}",
-      "text": "Hai configurato agentes.chat su questo {{device}}: non serve una password."
+      "text": "Hai configurato agentes.chat su questo {{device}}: non serve una password.",
+      "gone": "Il proprietario di questo server ha eliminato il suo account, quindi «Continua su questo {{device}}» non può far accedere nessuno. Accedi invece con la tua email.",
+      "none": "Nell’agentes.chat di questo {{device}} non è rimasto nessun account. Crea il nuovo proprietario nella finestra che si è aperta."
     },
     "server": {
       "into": "Accesso a <b>{{server}}</b>",

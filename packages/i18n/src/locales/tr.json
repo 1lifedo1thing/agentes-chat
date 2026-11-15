@@ -704,7 +704,9 @@
     },
     "desktopOwner": {
       "continue": "Bu {{device}} üzerinde devam et",
-      "text": "agentes.chat'i bu {{device}} üzerinde kurdunuz: şifre gerekmez."
+      "text": "agentes.chat'i bu {{device}} üzerinde kurdunuz: şifre gerekmez.",
+      "gone": "Bu sunucunun sahibi hesabını sildi, bu yüzden Bu {{device}} üzerinde devam et kimsenin girişini yapamaz. Bunun yerine kendi e-postanızla giriş yapın.",
+      "none": "Bu {{device}} üzerindeki agentes.chat'te hiç hesap kalmadı. Yeni sahibini açılan pencerede oluşturun."
     },
     "server": {
       "into": "<b>{{server}}</b> sunucusuna giriş",

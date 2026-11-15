@@ -704,7 +704,9 @@
     },
     "desktopOwner": {
       "continue": "Doorgaan op deze {{device}}",
-      "text": "Je hebt agentes.chat op deze {{device}} ingericht: geen wachtwoord nodig."
+      "text": "Je hebt agentes.chat op deze {{device}} ingericht: geen wachtwoord nodig.",
+      "gone": "De eigenaar van deze server heeft zijn account verwijderd, dus ‘Doorgaan op deze {{device}}’ kan niemand aanmelden. Meld je in plaats daarvan aan met je eigen e-mail.",
+      "none": "Op agentes.chat op deze {{device}} is geen account meer over. Maak de nieuwe eigenaar aan in het venster dat openging."
     },
     "server": {
       "into": "Aanmelden bij <b>{{server}}</b>",

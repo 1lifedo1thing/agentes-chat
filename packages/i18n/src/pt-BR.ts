@@ -732,6 +732,8 @@ export const ptBR = {
     desktopOwner: {
       continue: "Continuar neste {{device}}",
       text: "Você instalou o agentes.chat neste {{device}}: não precisa de senha.",
+      gone: "O dono deste servidor apagou a conta, então Continuar neste {{device}} não consegue entrar com ninguém. Entre com o seu próprio e-mail.",
+      none: "Não sobrou nenhuma conta no agentes.chat deste {{device}}. Crie o novo dono na janela que abriu.",
     },
     /** The line over the sign-in in the desktop app: which server it signs in to (ADR 0158). */
     server: {

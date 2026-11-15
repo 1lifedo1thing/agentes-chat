@@ -718,7 +718,9 @@
     },
     "desktopOwner": {
       "continue": "Continuer sur ce {{device}}",
-      "text": "Vous avez installé agentes.chat sur ce {{device}} : pas besoin de mot de passe."
+      "text": "Vous avez installé agentes.chat sur ce {{device}} : pas besoin de mot de passe.",
+      "gone": "Le propriétaire de ce serveur a supprimé son compte, donc « Continuer sur ce {{device}} » ne peut connecter personne. Connectez-vous plutôt avec votre propre e-mail.",
+      "none": "Il ne reste plus aucun compte sur l’agentes.chat de ce {{device}}. Créez son nouveau propriétaire dans la fenêtre qui s’est ouverte."
     },
     "server": {
       "into": "Connexion à <b>{{server}}</b>",
