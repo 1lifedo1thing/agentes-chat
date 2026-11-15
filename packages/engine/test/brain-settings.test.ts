@@ -616,8 +616,7 @@ describe("a plan thinks only for its owner's agents, one account each", () => {
     const agentRow = async () => (await fx.db.select().from(schema.agents).where(eq(schema.agents.id, fx.agent.id)))[0];
     const stored = await agentRow();
     const ignored = await setAgentBrain(deps, caio.id, fx.org.id, fx.agent.id, { extraUsage: false, fallback: false });
-    expect(ignored).not.toHaveProperty("fallback");
-    expect(ignored).not.toHaveProperty("extraUsage");
+    expect(ignored).toMatchObject({ fallback: false, extraUsage: true });
     expect(await agentRow()).toEqual(stored);
     const taken = await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, {
       brain: "claude_code",
@@ -763,13 +762,19 @@ describe("Usar planos de outras pessoas (ADR 0059 §3, amended 2026-11-04)", () 
     await account(BIAS, bia.id);
     // Dev's long work may use its owner's own plan's paid extra usage, never Bia's given to it.
     expect(paysExtraUsage(await row())).toBe(true);
-    await setAgentBrain(deps, caio.id, fx.org.id, fx.agent.id, { brain: "claude_code", account: BIAS });
+    const lent = await setAgentBrain(deps, caio.id, fx.org.id, fx.agent.id, { brain: "claude_code", account: BIAS });
     expect(paysExtraUsage(await row())).toBe(false);
-    // On her plan someone let everyone talk to Dev.
-    await fx.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, fx.agent.id));
+    // Older phone builds read the view's switch; the previous release reads the column during a deploy or a rollback.
+    expect(lent.extraUsage).toBe(false);
+    expect((await row()).brainExtraUsage).toBe(false);
+    // On her plan someone let everyone talk to Dev, and the previous release's switch was turned on.
+    await fx.db
+      .update(schema.agents)
+      .set({ audienceMode: "everyone", brainExtraUsage: true })
+      .where(eq(schema.agents.id, fx.agent.id));
     await takeBackPlan(deps, bia.id, fx.org.id, BIAS, fx.agent.id);
     // Back on its owner's own sign-in, which answers no one else until its owner says so.
-    expect(await row()).toMatchObject({ brain: "claude_code", audienceMode: "owner" });
+    expect(await row()).toMatchObject({ brain: "claude_code", audienceMode: "owner", brainExtraUsage: false });
     expect(paysExtraUsage(await row())).toBe(true);
   });
 

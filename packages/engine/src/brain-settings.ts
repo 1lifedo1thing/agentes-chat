@@ -103,7 +103,7 @@ import { can, getMembership, requirePermission } from "./organizations";
 import { isRightHand, personalBrain, personalModel } from "./right-hand";
 import { orgModelProvider } from "./router";
 import { readRefusal } from "./standing";
-import { wakeAgentUsageWaits } from "./usage-pause";
+import { paysExtraUsage, wakeAgentUsageWaits } from "./usage-pause";
 
 /*
  * "Quem pensa" (ADR 0032 §5): the brain an agent thinks with and its model,
@@ -466,6 +466,13 @@ export interface AgentBrainView {
   model: string | null;
   /** What it runs with (`model ?? defaultModel`), null for the model brain. */
   effectiveModel: string | null;
+  /**
+   * Deprecated, read-only: phone builds without the switches' removal still draw them from these, so they say what
+   * happens. Always false: the API never stands in for a computer brain (ADR 0032's 2026-11-15 addendum).
+   */
+  fallback: false;
+  /** Deprecated, read-only (see `fallback`): whether long work may use the plan's paid extra usage (`paysExtraUsage`). */
+  extraUsage: boolean;
   computer: BrainComputer | null;
   options: BrainOption[];
   /** Every computer the caller may give the agent (admins: all; its owner: the ones they connected), with its options. */
@@ -640,6 +647,8 @@ function view(
     brain,
     model: brain === "model" ? null : agent.brainModel,
     effectiveModel: brain === "model" ? null : (agent.brainModel ?? defaultBrainModel(brain)),
+    fallback: false,
+    extraUsage: paysExtraUsage(agent),
     computer: machine ? { machineId: machine.id, name: machine.name, online: machineOnline(machine) } : null,
     options: brainOptions(machine),
     machines,
@@ -1186,6 +1195,10 @@ export async function setAgentBrain(
         brainSpeed: speed,
         contextTokens,
         planForOthers,
+        // Unused here, but the previous release still reads it while a deploy rolls out or after a rollback: a plan
+        // that changes hands keeps it off there too, so that release never spends someone else's extra usage.
+        // Goes with the column (ADR 0118's 2026-11-15 addendum).
+        ...(newPlan || ownerSwitch ? { brainExtraUsage: false } : {}),
         // The people and roles lists stay while it is its owner's only, for when it is let out again.
         ...(audience
           ? {

@@ -654,7 +654,7 @@ export interface Transcript {
    */
   modelStandIn?: { plan: string; from: string; to: string; model?: string; machineId?: string; account?: string };
   /**
-   * The computer brain is unavailable and nothing can stand in: the run waits for the computer. A usage wait
+   * The computer brain is unavailable: the run waits for the computer. A usage wait
    * (`USAGE_WAIT_CODES`: the plan's limit, the agent's budget) has no computer to wait for: `machineId` is empty,
    * `waitKey` groups the runs that wait on the same plan or budget (`usageWaitKey`) and `until` is when its job runs.
    */
@@ -1511,7 +1511,7 @@ async function executeRunInner(
     ...(error ? { error, ...runErrorDetail(error) } : {}),
   });
   /**
-   * The ask from the line worked (a computer took the turn, or the model stands in): the run leaves the line, and the
+   * The ask from the line worked (a computer took the turn): the run leaves the line, and the
    * conversation hears now what `askingForRoom` held back. A turn can open with a tool, so no word of it may come.
    * A run's first turn starts its clock here: minutes in line are no minutes of work.
    */
@@ -1764,7 +1764,7 @@ async function executeRunInner(
   let tools = presentTools(granted, isSensitive, ctx.loadedGroups);
   /**
    * Only Claude Code defers our tools itself: a run that lists every tool and thinks with another brain (the model
-   * brain standing in, a mission's Codex) lists the core tools instead, the rest behind `find_tools`.
+   * brain, a mission's Codex) lists the core tools instead, the rest behind `find_tools`.
    */
   const onDemandForOtherBrain = (t: Transcript) => {
     if (!listsEveryTool(ctx)) return;
@@ -1776,7 +1776,7 @@ async function executeRunInner(
   if (fresh && trigger)
     deps.onTiming?.("trigger_to_claim_ms", claimedAt - trigger.createdAt.getTime(), { runId: run.id });
   if (!agent || agent.archivedAt) return fail("agent_archived");
-  // A new run that can't think (no key, a computer brain signed out or missing, and no fallback) fails here,
+  // A new run that can't think (no key, a computer brain signed out or missing) fails here,
   // before the judges below, any context or a model call.
   if (needsContext) {
     const ai = await agentAiState({ db, gateway: deps.gateway, machines: deps.machines }, agent, run);
@@ -2890,7 +2890,7 @@ async function executeRunInner(
 
   // The brain that thinks for this run (ADR 0032). It only thinks: the loop below owns everything else.
   // Who (§5): the mission's brain in its thread, else the agent's; a computer brain that can't answer now
-  // falls back to the model brain when a model credential exists, else the message waits for the computer.
+  // makes the message wait for the computer, or fails the run with `no_ai` when it has nothing to think with.
   const turnToken = { current: "" };
   brainPlan = await resolveBrain(deps, agent, run, replyThreadId ?? run.channelId, {
     // A routine's or any background run's work never continues a conversation's session, nor the other way.
@@ -3528,7 +3528,7 @@ async function executeRunInner(
 
   /**
    * A computer brain failed mid-turn after tools already ran (ADR 0032 §5):
-   * no fallback (the model brain would redo them). What it said after its
+   * nothing may redo them. What it said after its
    * last call (`lastText`), and which tools it used, are posted
    * (`meta.brainInterrupted`, the app adds the note in the person's
    * language) and the run ends there.
@@ -4656,7 +4656,7 @@ async function executeRunInner(
           .where(and(eq(agentRuns.id, run.id), eq(agentRuns.status, "running")))
           .catch(() => {});
         // Tools already ran in this computer turn (their side effects happened; they aren't in the
-        // transcript): neither the model brain (fallback) nor a retried job may redo the turn from scratch,
+        // transcript): no retried job may redo the turn from scratch,
         // they would run them again. Post what the brain said and what it did instead, and end the run there.
         if (turnPlan.kind !== "model") {
           const executed = await executedSince(db, run.id, turnStepSeq, executedNow);
@@ -5561,7 +5561,7 @@ function createBrain(
   const factory = deps.brains?.[kind];
   if (factory) return factory(agent, run, { mcpToken: () => token.current });
   if (kind !== "model") {
-    // No factory registered for it on this server: the turn falls back like an unavailable computer.
+    // No factory registered for it on this server: the turn is refused like an unavailable computer's.
     return {
       kind,
       async *run() {

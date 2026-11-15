@@ -232,7 +232,7 @@ export function createTalker(deps: TalkerDeps): Talker {
       ]);
       const skip = talkerPolicy({
         run: landed,
-        // The brain this run thinks with, not the agent's stored one (a fallback runs on the model).
+        // The brain this run thinks with, not the agent's stored one (a mission's may differ).
         brain: runBrainOf(landed, agent),
         message,
         waited,

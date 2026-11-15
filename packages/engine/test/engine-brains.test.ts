@@ -72,7 +72,9 @@ import {
   SESSION_IDLE_MS,
   SESSION_MAX_INPUT_TOKENS,
   sessionLostNote,
+  setAgentBrain,
   statusReply,
+  storeMachineAccess,
   type ToolSource,
   taskManager,
 } from "../src";
@@ -1637,6 +1639,66 @@ test("someone else's plan never thinks for the agent: plan_not_owner makes the r
   await f.db.delete(schema.organizationMembers).where(eq(schema.organizationMembers.userId, bia.id));
   const gone = await resolveBrain({ db: f.db, machines: statusAccounts }, agent, run, f.general.id);
   expect(gone.unavailable).toMatchObject({ code: "plan_not_owner" });
+});
+
+test("a run waiting on someone else's plan goes on once the agent's owner gives it her own account", async () => {
+  f = await setup({ reply: () => ({ chunks: ["Respondi pela API."] }) });
+  const machineId = await computerAgent(f);
+  const bia = await addMember(f.db, f.org.id, "member", "bia");
+  await f.db.update(schema.agents).set({ ownerUserId: bia.id }).where(eq(schema.agents.id, f.agent.id));
+  const { brain, seen } = scriptedComputerBrain(() => [{ type: "done", text: "Pelo plano da Bia." }]);
+  const machines = { status: async (id: string) => statusOf(id, { protocol: ACCOUNTS_PROTOCOL }) };
+  const handlers = createJobHandlers({ ...f.jobDeps, brains: { claude_code: () => brain }, machines });
+  await post(f, "@dev oi");
+  await drainOutbox(f.db, handlers);
+  const parked = await f.db.select().from(schema.agentRuns);
+  expect(parked.map((r) => r.status)).toEqual(["waiting_input"]);
+  expect(parked[0]?.waitingMachineId).toBe(machineId);
+
+  // The computer stays online, so no reconnect resumes it: picking her own account in Quem pensa does.
+  const ACCOUNT = "0193dddd-0000-4000-8000-000000000002";
+  await f.db.insert(schema.machineAccounts).values({
+    id: ACCOUNT,
+    orgId: f.org.id,
+    machineId,
+    kind: "claude_code",
+    label: "Pessoal",
+    status: "active",
+    createdBy: bia.id,
+  });
+  await setAgentBrain({ db: f.db }, bia.id, f.org.id, f.agent.id, { account: ACCOUNT });
+  await drainOutbox(f.db, handlers);
+  const [done] = await f.db.select().from(schema.agentRuns);
+  expect(done?.status).toBe("done");
+  expect(seen).toHaveLength(1);
+  expect(f.provider.calls).toHaveLength(0);
+});
+
+test("a run waiting for commands turned off on its computer goes on when they are turned on there", async () => {
+  f = await setup({ reply: () => ({ chunks: ["Respondi pela API."] }) });
+  const machineId = await computerAgent(f);
+  let execAllowed = false;
+  const { brain, seen } = scriptedComputerBrain(() => [{ type: "done", text: "Comandos de volta." }]);
+  const machines = { status: async (id: string) => statusOf(id, { execAllowed }) };
+  const handlers = createJobHandlers({ ...f.jobDeps, brains: { claude_code: () => brain }, machines });
+  await post(f, "@dev oi");
+  await drainOutbox(f.db, handlers);
+  const [parked] = await f.db.select().from(schema.agentRuns);
+  expect(parked?.status).toBe("waiting_input");
+  expect((parked?.transcript as { waitingForBrain?: { code: string } } | undefined)?.waitingForBrain?.code).toBe(
+    "exec_disabled",
+  );
+
+  execAllowed = true;
+  await storeMachineAccess({ db: f.db }, machineId, {
+    folders: [],
+    tools: { commands: true, claude: true, codex: false },
+  });
+  await drainOutbox(f.db, handlers);
+  const [done] = await f.db.select().from(schema.agentRuns);
+  expect(done?.status).toBe("done");
+  expect(seen).toHaveLength(1);
+  expect(f.provider.calls).toHaveLength(0);
 });
 
 test("an offline computer, though the workspace has a key: the agent says so once and the run waits until it is back", async () => {

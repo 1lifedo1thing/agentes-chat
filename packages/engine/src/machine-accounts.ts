@@ -352,6 +352,8 @@ export async function releaseAgents(
       brainAccountLentBy: null,
       brain: sql`case when ${ownSignIn} then "agents"."brain" else 'model' end`,
       // Someone else's plan leaves with its switch: its owner's own sign-in doesn't answer others.
+      // `brain_extra_usage` is unused here; the previous release still reads it during a deploy or after a rollback.
+      brainExtraUsage: sql`case when ${lent} then false else "agents"."brain_extra_usage" end`,
       audienceMode: sql`case when ${lent} and ${ownSignIn} then 'owner' else "agents"."audience_mode" end`,
       updatedAt: now,
     })

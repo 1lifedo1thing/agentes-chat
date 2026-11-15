@@ -743,7 +743,7 @@ export function agentRoutes(deps: AppDeps) {
                 }),
                 background: z.enum(["ready", "no_ai", "waiting"]).optional().openapi({
                   description:
-                    "Its state for background work (a routine, a widget's build) where that differs from `state`: background work never falls back on the model brain, and the right hand's thinks with the workspace's own AI, nobody's.",
+                    "Its state for background work (a routine, a widget's build) where that differs from `state`: the right hand's thinks with the workspace's own AI, nobody's.",
                 }),
               }),
             ),
@@ -789,7 +789,7 @@ export function agentRoutes(deps: AppDeps) {
       security,
       summary: "Each agent's presence (online, busy, away, out of office, offline) and what it says it is doing",
       description:
-        "From its work (ADR 0084): `busy` on a routine, a task, a run going for over 2 minutes or one rated heavy, or when it said so; `online` while answering, waiting on an answer or active in the last 30 minutes (one never active, in the 30 minutes since it was made; the right hand always); `away` after that; `out` (out of office, §12) while its plan is at its limit with no model to fall back on or its monthly budget is spent, with an `out_of_plan`/`out_of_budget` line whose `until` says when it is back, and the router leaves it out of messages nobody mentioned it in; `offline` when held. An agent with no AI is drawn offline by the apps (`ai-status`). `status`: its own words (`set_status`), a line picked for its run (`kind` + `subject`), or what its run waits on; gone when the run ends unless it set `until`. Refreshed on `agent.status` events and every 30 seconds while open.",
+        "From its work (ADR 0084): `busy` on a routine, a task, a run going for over 2 minutes or one rated heavy, or when it said so; `online` while answering, waiting on an answer or active in the last 30 minutes (one never active, in the 30 minutes since it was made; the right hand always); `away` after that; `out` (out of office, §12) while its plan is at its limit or its monthly budget is spent, with an `out_of_plan`/`out_of_budget` line whose `until` says when it is back, and the router leaves it out of messages nobody mentioned it in; `offline` when held. An agent with no AI is drawn offline by the apps (`ai-status`). `status`: its own words (`set_status`), a line picked for its run (`kind` + `subject`), or what its run waits on; gone when the run ends unless it set `until`. Refreshed on `agent.status` events and every 30 seconds while open.",
       request: { params: OrgParams },
       responses: {
         200: json(

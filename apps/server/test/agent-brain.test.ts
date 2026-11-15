@@ -92,13 +92,13 @@ function pairMac(api: (path: string, init?: Parameters<ReturnType<typeof browser
 test("agent brain: defaults, who may, letting others talk to a plan, what the computer has, and the model", async () => {
   const { api, asBia, agentId } = await workspace();
 
-  // Defaults: the model (API), nothing to offer without a computer. The removed switches are not in the view.
+  // Defaults: the model (API), nothing to offer without a computer. The removed switches stay in the view for older
+  // phone builds, read-only and true to what happens: never the API for the computer, extra usage on the own plan.
   const first = await api(`/agents/${agentId}/brain`);
   expect(first.status).toBe(200);
   const fresh = (await first.json()) as Brain;
   expect(fresh).toMatchObject({ brain: "model", model: null, effectiveModel: null, computer: null });
-  expect(fresh).not.toHaveProperty("fallback");
-  expect(fresh).not.toHaveProperty("extraUsage");
+  expect(fresh).toMatchObject({ fallback: false, extraUsage: true });
   // Accounts (ADR 0041): none without a computer.
   expect(fresh).toMatchObject({
     account: null,
@@ -203,7 +203,7 @@ test("agent brain: defaults, who may, letting others talk to a plan, what the co
   expect(ignored.status).toBe(200);
   const ignoredView = (await ignored.json()) as Brain;
   expect(ignoredView).toMatchObject({ brain: "claude_code", model: "opus" });
-  expect(ignoredView).not.toHaveProperty("fallback");
+  expect(ignoredView).toMatchObject({ fallback: false, extraUsage: true });
   expect((await t.db.select().from(schema.agents).where(eq(schema.agents.id, agentId)))[0]).toEqual(stored);
   // The model changes without confirming again; bad models are refused.
   const sonnet = (await (

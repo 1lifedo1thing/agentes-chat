@@ -138,8 +138,9 @@ test("a plan given to Lodi starts with its switch off, whatever was set before i
   await setAgentBrain(deps, fx.owner.id, fx.org.id, id, { onlyOwner: false });
   await setAgentBrain(deps, caio.id, fx.org.id, id, { account: CAIOS });
   expect(await lodi()).toMatchObject({ brainAccountId: CAIOS, planForOthers: false });
-  // Its long work never spends a plan's paid extra usage.
+  // Its long work never spends a plan's paid extra usage, nor on the previous release, which reads the column.
   expect(paysExtraUsage(await lodi())).toBe(false);
+  expect((await lodi()).brainExtraUsage).toBe(false);
 });
 
 test("its turns think on the plan's computer and owner; another person's DM while a plan serves them", async () => {

@@ -1,5 +1,5 @@
 import type { PubSub } from "@agenteschat/adapters";
-import { and, type Database, type Executor, eq, schema, sql } from "@agenteschat/db";
+import { and, type Database, type Executor, eq, inArray, schema, sql } from "@agenteschat/db";
 import { routineBriefOfRun } from "./background";
 import type { ToolResult } from "./brains/types";
 import { deliverNotice, publishDelivery } from "./delivery";
@@ -241,7 +241,7 @@ export function forPeople(notice: Notice) {
 
 /**
  * The agent's computer is back (ADR 0032 §5): runs that waited for its
- * computer brain (no model credential to fall back on) are queued again.
+ * computer brain are queued again (`codes`: only the waits for those).
  * Found by `agent_runs.waiting_machine_id` (indexed, set only while a run
  * waits for its computer); one job per wait (`waitingForBrain.waitId`), so
  * reconnects while the job is still queued don't add more. A routine's run
@@ -253,7 +253,7 @@ export function forPeople(notice: Notice) {
 export async function resumeRunsWaitingForMachine(
   db: Database,
   machineId: string,
-  options: { pubsub?: PubSub; now?: Date } = {},
+  options: { pubsub?: PubSub; now?: Date; codes?: readonly string[] } = {},
 ): Promise<string[]> {
   const rows = await db
     .select({
@@ -270,6 +270,9 @@ export async function resumeRunsWaitingForMachine(
         eq(agentRuns.status, "waiting_input"),
         // The computer coming back says nothing about a plan's limit or a budget.
         sql`coalesce(${agentRuns.transcript}->'waitingForBrain'->>'code', '') not in ('plan_limit', 'budget', 'usage_pause')`,
+        options.codes
+          ? inArray(sql<string>`${agentRuns.transcript}->'waitingForBrain'->>'code'`, [...options.codes])
+          : undefined,
         // `last_used_at` too: only a turn that answered sets it, and older rows of other CLIs than Claude Code have
         // no `last_success_at`.
         sql`not (${agentRuns.transcript} ? 'outage' and exists (select 1 from agents a join machine_accounts ma

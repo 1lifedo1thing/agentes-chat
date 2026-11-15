@@ -272,6 +272,11 @@ const Agent = z
   .object({
     ...agentFields,
     previousHandles: z.array(z.string()).openapi({ description: "Handles it had before a rename, oldest first." }),
+    fallback: z.literal(false).openapi({
+      deprecated: true,
+      description:
+        "Always false: the API never answers for a computer brain (ADR 0032's 2026-11-15 addendum). Kept for v1 callers.",
+    }),
     provider: z.string().nullable().openapi({
       description: "The API's provider: its credential's, else the model's own; null when neither says.",
     }),
@@ -463,6 +468,7 @@ export function registerOperatorLookups(api: OpenAPIHono, { db }: OperatorDeps) 
       return c.json(
         {
           ...agentJson(agent),
+          fallback: false as const,
           credential: credential && { ...credential, revokedAt: iso(credential.revokedAt) },
           account: account && {
             ...account,

@@ -49,7 +49,7 @@ export interface MissionTurn {
  * Which brain thinks for this run (ADR 0032 §5), by priority: the mission's
  * brain when the run is its main session (`missionTurnFor`), else the
  * agent's stored brain (`agents.brain`, block 3a). Availability is checked
- * separately (`computerBrainUnavailable`); the engine falls back from there.
+ * separately (`computerBrainUnavailable`); the engine waits or fails from there.
  */
 export function brainFor(
   agent: Pick<Agent, "brain">,
@@ -449,7 +449,7 @@ export function computerBrainUnavailable(
 }
 
 /**
- * Brain errors that mean "not now on this computer": they fall back, or the message waits. `busy`: the
+ * Brain errors that mean "not now on this computer": the message waits. `busy`: the
  * computer had no room for the turn, and the run looks again on a timer (`COMPUTER_BUSY_RETRY_MS`).
  */
 export const UNAVAILABLE_CODES: ReadonlySet<string> = new Set([
@@ -608,8 +608,7 @@ export async function planIsOwners(
 
 /**
  * The agent's effort when it thinks with its own brain (a mission's other brain: the CLI's default). On an API key it
- * holds for a fixed model; "Automático" picks its own (`autoApplied`), and a computer brain's fallback to the API sends
- * none.
+ * holds for a fixed model; "Automático" picks its own (`autoApplied`), and a brain other than the agent's own sends none.
  */
 export function brainEffortFor(agent: Pick<Agent, "brain" | "brainEffort">, kind: BrainKind): BrainEffort | undefined {
   if (kindOf(agent.brain) !== kind) return undefined;

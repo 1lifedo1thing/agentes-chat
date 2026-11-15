@@ -80,7 +80,7 @@ type AiAgent = Pick<Agent, "orgId" | "model" | "credentialId" | "brain" | "brain
   Partial<Pick<Agent, "builtin" | "ownerUserId" | "planForOthers">>;
 
 /** The run being checked: a mission's turn thinks with the mission's brain. */
-type AiRun = Pick<AgentRun, "id" | "orgId" | "agentId" | "threadRootId" | "triggerMessageId" | "background">;
+type AiRun = Pick<AgentRun, "id" | "orgId" | "agentId" | "threadRootId" | "triggerMessageId">;
 
 const READY: AgentAi = { state: "ready" };
 

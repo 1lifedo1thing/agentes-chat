@@ -3714,6 +3714,12 @@
             },
             "description": "Handles it had before a rename, oldest first."
           },
+          "fallback": {
+            "type": "boolean",
+            "enum": [false],
+            "deprecated": true,
+            "description": "Always false: the API never answers for a computer brain (ADR 0032's 2026-11-15 addendum). Kept for v1 callers."
+          },
           "provider": {
             "type": ["string", "null"],
             "description": "The API's provider: its credential's, else the model's own; null when neither says."
@@ -3871,6 +3877,7 @@
           "archivedAt",
           "deletedAt",
           "previousHandles",
+          "fallback",
           "provider",
           "credential",
           "account",

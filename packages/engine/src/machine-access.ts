@@ -32,6 +32,7 @@ import { insertMessage, messageView } from "./messages";
 import { type NotificationDeps, notify, resolveNotifications } from "./notifications";
 import { requirePermission } from "./organizations";
 import { enqueue } from "./outbox";
+import { resumeRunsWaitingForMachine } from "./run-resume";
 import { replyThreadOf } from "./runs";
 import { hopLimitReached, runStretchOf } from "./stretch";
 import type { ToolContext } from "./tools/types";
@@ -82,6 +83,13 @@ export async function storeMachineAccess(deps: AccessDeps, machineId: string, ac
       groupKey: toolRequestKey(machineId, tool),
       kind: "device.tool_request",
     }).catch(() => 0);
+  }
+  // Runs that waited for commands or a coding tool turned off there look again: no reconnect says it's back on.
+  if (Object.values(access.tools).some((on) => on === true)) {
+    await resumeRunsWaitingForMachine(deps.db, machineId, {
+      pubsub: deps.pubsub,
+      codes: ["exec_disabled", "tool_off"],
+    }).catch(() => []);
   }
 }
 

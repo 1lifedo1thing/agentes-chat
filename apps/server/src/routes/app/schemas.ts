@@ -1058,6 +1058,15 @@ export const AgentBrain = z
     brain: BrainKind,
     model: z.string().nullable().openapi({ description: "As stored; null = the brain's default." }),
     effectiveModel: z.string().nullable(),
+    fallback: z.literal(false).openapi({
+      deprecated: true,
+      description: "Always false: the API never answers for a computer brain. Older phone builds still draw it.",
+    }),
+    extraUsage: z.boolean().openapi({
+      deprecated: true,
+      description:
+        "Read-only: long work may go on into the plan's paid extra usage where the plan reports it (ADR 0118), never on a plan lent to the agent nor for the right hand. Older phone builds still draw it.",
+    }),
     computer: z.object({ machineId: z.uuid(), name: z.string(), online: z.boolean() }).nullable(),
     options: z.array(BrainOption),
     machines: z.array(BrainMachine).openapi({

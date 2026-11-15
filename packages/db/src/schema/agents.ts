@@ -208,8 +208,8 @@ export const agents = pgTable(
      */
     brainFallback: boolean().notNull().default(true),
     /**
-     * Unused (ADR 0118's 2026-11-15 addendum: paid extra usage follows the plan, `paysExtraUsage`). Kept and dropped
-     * as `brainFallback` is.
+     * Never read (ADR 0118's 2026-11-15 addendum: paid extra usage follows the plan, `paysExtraUsage`). Kept and dropped
+     * as `brainFallback` is; until then written `false` where the previous release wrote it, which still reads it.
      */
     brainExtraUsage: boolean().notNull().default(true),
     /**

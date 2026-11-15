@@ -1108,6 +1108,8 @@ export async function stopAgentUsageWaits(deps: { db: Database; pubsub?: PubSub 
 /**
  * The agent thinks with another AI account or model now: what waited on the old one's limit goes on, in line order,
  * 60 s apart, on the new sign-in (each claim reads the agent's brain again; one still limited parks in its new line).
+ * Its computer waits go on too: one for a plan that isn't its owner's ends only with another account, and no
+ * reconnect signals that.
  */
 export async function wakeAgentUsageWaits(db: Executor, orgId: string, agentId: string, now = Date.now()) {
   const { agentRuns } = schema;
@@ -1126,7 +1128,7 @@ export async function wakeAgentUsageWaits(db: Executor, orgId: string, agentId: 
         eq(agentRuns.orgId, orgId),
         eq(agentRuns.agentId, agentId),
         eq(agentRuns.status, "waiting_input"),
-        sql`${agentRuns.transcript}->'waitingForBrain'->>'code' in ('plan_limit', 'budget', 'usage_pause')`,
+        sql`${agentRuns.transcript} ? 'waitingForBrain'`,
       ),
     )
     .limit(500);
