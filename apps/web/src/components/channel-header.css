@@ -142,6 +142,14 @@ html:not([data-pointer]) .channel__icon.ac-btn:focus-visible {
 .channel__search.search-box:focus-within {
   width: 300px;
 }
+/* Short of room, the open field gives way and the glyphs beside it keep their size: the model's chip, sized to its
+   words, would wrap them at a fraction of a pixel less. */
+.channel__acts > .channel__search.search-box {
+  min-width: 120px;
+}
+.channel__acts:has(> .channel__search) > :not(.channel__search) {
+  flex-shrink: 0;
+}
 .channel__search .search-box__field {
   flex-wrap: nowrap;
   min-height: var(--control-h-sm);

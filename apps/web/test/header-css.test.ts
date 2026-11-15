@@ -55,6 +55,9 @@ test("the channel header's icons never get a plate, are 32 boxes 8 apart, and a 
   // The field: a soft plate with no line at rest, and it grows while it is used.
   expect(last(shipped, ".channel__search.search-box", "width")).toBe("220px");
   expect(last(shipped, ".channel__search.search-box:focus-within", "width")).toBe("300px");
+  // Short of room the open field gives way, never the model's chip beside it (its words would wrap).
+  expect(last(shipped, ".channel__acts>.channel__search.search-box", "min-width")).toBe("120px");
+  expect(last(shipped, ".channel__acts:has(>.channel__search)>:not(.channel__search)", "flex-shrink")).toBe("0");
   expect(last(shipped, ".channel__search .search-box__field", "background")).toBe("var(--plate-soft)");
   // The minifier writes `transparent` as `#0000`.
   expect(last(shipped, ".channel__search .search-box__field", "border-color")).toBe("#0000");
