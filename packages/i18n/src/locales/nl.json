@@ -17011,6 +17011,18 @@
       "see": "Gebruik bekijken"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "Per soort",
+      "handoffs": "Overdrachten tussen agents",
+      "people": "Gesprekken met mensen",
+      "routines": "Routines"
+    },
+    "hint": {
+      "handoffs": "Het meeste gebruik deze week kwam van agents die elkaar werk overdragen. Vraag lang werk rechtstreeks aan de agent.",
+      "message": "Bericht aan {{name}}"
+    }
+  },
   "usageViews": {
     "signedOut": "Uitgelogd",
     "whose": "Van {{name}}",

@@ -17157,6 +17157,19 @@ export const ptBR = {
     },
     actions: { raise: "Aumentar para {{amount}} este mês", refuse: "Recusar", see: "Ver o uso" },
   },
+  usage: {
+    kinds: {
+      label: "Por tipo",
+      handoffs: "Repasses entre agentes",
+      people: "Conversas com pessoas",
+      routines: "Rotinas",
+    },
+    hint: {
+      handoffs:
+        "A maior parte do uso desta semana veio de agentes passando trabalho uns aos outros. Para trabalhos longos, peça direto ao agente.",
+      message: "Mandar mensagem para {{name}}",
+    },
+  },
   usageViews: {
     signedOut: "Saiu da conta",
     whose: "de {{name}}",

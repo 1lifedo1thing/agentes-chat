@@ -16371,6 +16371,18 @@
       "see": "사용량 보기"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "종류별",
+      "handoffs": "에이전트 간 인계",
+      "people": "사람과의 대화",
+      "routines": "루틴"
+    },
+    "hint": {
+      "handoffs": "이번 주 사용량의 대부분은 에이전트끼리 작업을 넘긴 데서 나왔습니다. 긴 작업은 에이전트에게 직접 요청하세요.",
+      "message": "{{name}}에게 메시지"
+    }
+  },
   "usageViews": {
     "signedOut": "로그아웃됨",
     "whose": "{{name}}의 계정",

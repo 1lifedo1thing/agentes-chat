@@ -18021,6 +18021,18 @@
       "see": "Zobacz użycie"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "Według rodzaju",
+      "handoffs": "Przekazania między agentami",
+      "people": "Rozmowy z ludźmi",
+      "routines": "Rutyny"
+    },
+    "hint": {
+      "handoffs": "Większość użycia w tym tygodniu pochodziła z agentów przekazujących sobie pracę. Długą pracę zlecaj bezpośrednio agentowi.",
+      "message": "Napisz do: {{name}}"
+    }
+  },
   "usageViews": {
     "signedOut": "Wylogowane",
     "whose": "Należy do: {{name}}",

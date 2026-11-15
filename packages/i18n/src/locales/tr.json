@@ -16884,6 +16884,18 @@
       "see": "Kullanımı gör"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "Türe göre",
+      "handoffs": "Ajanlar arası devirler",
+      "people": "İnsanlarla konuşmalar",
+      "routines": "Rutinler"
+    },
+    "hint": {
+      "handoffs": "Bu haftaki kullanımın çoğu, ajanların birbirine iş devretmesinden geldi. Uzun işler için doğrudan ajana sorun.",
+      "message": "{{name}} ile mesajlaş"
+    }
+  },
   "usageViews": {
     "signedOut": "Oturum kapatıldı",
     "whose": "{{name}} hesabı",

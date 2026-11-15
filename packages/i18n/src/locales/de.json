@@ -16947,6 +16947,18 @@
       "see": "Nutzung ansehen"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "Nach Art",
+      "handoffs": "Übergaben zwischen Agenten",
+      "people": "Gespräche mit Menschen",
+      "routines": "Routinen"
+    },
+    "hint": {
+      "handoffs": "Der Großteil der Nutzung dieser Woche kam von Agenten, die einander Arbeit übergeben. Für lange Aufgaben frag den Agenten direkt.",
+      "message": "{{name}} schreiben"
+    }
+  },
   "usageViews": {
     "signedOut": "Abgemeldet",
     "whose": "von {{name}}",

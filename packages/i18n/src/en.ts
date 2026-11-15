@@ -17252,6 +17252,23 @@ export const en = {
     },
     actions: { raise: "Raise to {{amount}} this month", refuse: "Decline", see: "See their usage" },
   },
+  /** Settings › AI and usage: what a plan's use was for, under an account's agents. */
+  usage: {
+    kinds: {
+      label: "By kind",
+      /** Runs one agent started by handing work to another (tell_agent, ask_agent). */
+      handoffs: "Handoffs between agents",
+      people: "Conversations with people",
+      routines: "Routines",
+    },
+    hint: {
+      /** Shown when handoffs led the week's use; followed by the `message` link. */
+      handoffs:
+        "Most of this week's use came from agents handing work to each other. Ask the agent directly for long work.",
+      /** Opens the DM with the agent that took most of the handed work. */
+      message: "Message {{name}}",
+    },
+  },
   usageViews: {
     signedOut: "Signed out",
     whose: "{{name}}'s",
