@@ -410,6 +410,7 @@ function MemberOptions({
           ]}
         />
       ) : null}
+      <Button variant="ghost" wide label={t("common.back")} onPress={back} />
     </>
   );
 }

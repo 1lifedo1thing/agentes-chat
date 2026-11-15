@@ -1,5 +1,6 @@
 import { useAuthConfig, useIssues, useMe, useOverview } from "@agenteschat/client";
 import { showsAbout } from "@agenteschat/client/lib/about";
+import { PHONE_APP_ICON } from "@agenteschat/client/lib/app-icons";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { isAppLocale, localeInfo, readyLocales } from "@agenteschat/i18n/locale";
 import Constants from "expo-constants";
@@ -108,7 +109,7 @@ export function MeScreen() {
   const { groups, elsewhere } = useWorkspacesAcross();
   const theme = useTheme();
   const appIcon = useAppIcon();
-  const appIconName = useAppIconName(appIcon.icon ?? "night");
+  const appIconName = useAppIconName(appIcon.icon ?? PHONE_APP_ICON);
   const dir = useDirectory();
   const c = useColors();
   const insets = useSafeAreaInsets();

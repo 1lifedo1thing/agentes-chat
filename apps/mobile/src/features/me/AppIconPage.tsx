@@ -12,6 +12,7 @@ import {
   MADE_ICON_SKIES,
   type MadeIcon,
   type MadeIconLook,
+  PHONE_APP_ICON,
 } from "@agenteschat/client/lib/app-icons";
 import { drawAccessory, drawAgent, gradientOf } from "@agenteschat/ui/agent/engine";
 import { Canvas, createPicture, Picture } from "@shopify/react-native-skia";
@@ -322,7 +323,8 @@ function AppIconMaker({ current, set }: { current: PhoneIcon; set: (icon: PhoneI
       <GroupedHeader>{t("appIcon.ready")}</GroupedHeader>
       <GroupedList>
         <View style={styles.readies} accessibilityRole="radiogroup" accessibilityLabel={t("appIcon.ready")}>
-          {APP_ICONS.map((id) => {
+          {/* The one the app ships with first. */}
+          {[PHONE_APP_ICON, ...APP_ICONS.filter((x) => x !== PHONE_APP_ICON)].map((id) => {
             const on = ready === id;
             return (
               <Choice

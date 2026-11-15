@@ -57,21 +57,20 @@ describe("pickers are the app's sheet, never the system's alert list", () => {
   });
 });
 
-describe("sheets are @gorhom/bottom-sheet, and a sheet's next step is a page of it", () => {
-  test("the sheet is the library's in a window of its own, never one drawn and dragged here", () => {
+describe("every sheet is the system's own (TrueSheet), and a sheet's next step stacks over it", () => {
+  test("the sheet is TrueSheet, sized to its content, never one drawn and dragged here", () => {
     const sheet = src("ui/Sheet.tsx");
-    expect(sheet).toContain('from "@gorhom/bottom-sheet"');
-    expect(sheet).toContain("<BottomSheetScrollView");
+    expect(sheet).toContain('from "@lodev09/react-native-true-sheet"');
+    expect(sheet).toContain('detents: ["auto" as const]');
+    expect(sheet).toContain("scrollableRef={scroll}");
     expect(sheet).not.toContain("PanResponder");
-    // It rises over the keyboard for any field in it, ours or React Native's.
-    expect(sheet).toContain("TextInput.State.currentlyFocusedInput()");
+    expect(sheet).not.toContain("@gorhom/bottom-sheet");
   });
 
-  test("pages are a stack navigator's inside the sheet: forward with push, back with the bar or back()", () => {
+  test("a step is a sheet over the one before: forward with push, back with back() or a flick down", () => {
     const host = src("features/shared/SheetHost.tsx");
-    expect(host).toContain("createStackNavigator");
-    expect(host).toContain("<NavigationIndependentTree>");
-    expect(host).toContain("nav.dispatch(StackActions.push(");
+    expect(host).toContain("<TrueSheet ref={ref} {...props} scrollableRef={scroll}>");
+    expect(host).toContain("presentOnMount: !first");
     const chat = src("features/chat/ChatScreen.tsx");
     for (const next of ["sheet.push(<PinsSheet", "sheet.push(<ConversationSearch", "sheet.push(<ChannelMembersSheet"]) {
       expect({ next, pushed: chat.includes(next) }).toEqual({ next, pushed: true });
@@ -80,7 +79,5 @@ describe("sheets are @gorhom/bottom-sheet, and a sheet's next step is a page of 
     expect(members).toContain("sheet.push(<MemberOptions");
     expect(members).toContain("sheet.push(<AddChannelMembers");
     expect(members).toContain("const back = () => sheet.back();");
-    // A pushed page's title goes in the bar beside its back button.
-    expect(src("features/shared/PromptForm.tsx")).toContain("if (inBar) page?.setTitle(title);");
   });
 });
