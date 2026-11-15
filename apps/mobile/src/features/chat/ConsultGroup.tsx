@@ -163,6 +163,8 @@ export function ConsultPairRow({
   const question = previewOf(opened?.question ?? "");
   // An old reply's question with no id of its own has no conversation to open.
   const opens = openableConsultation(pair.opens);
+  // A row of several opens on all of them: the screen offers each agent's exchange.
+  const ids = items.map((x) => x.id);
   return (
     <View
       style={[
@@ -181,7 +183,7 @@ export function ConsultPairRow({
       <View style={[styles.rule, { backgroundColor: c.line }]} />
       <Pressable
         onPress={() => {
-          if (opens) router.push(consultationHref(opens, channelId));
+          if (opens) router.push(consultationHref(opens, channelId, ids));
         }}
         disabled={!opens}
         accessibilityRole="button"

@@ -17420,6 +17420,7 @@
       "waitingYourAnswer": "esperando tu respuesta",
       "queued": "en la fila",
       "handedOn": "esperando a otros agentes",
+      "answered": "respondió",
       "noAnswer": "no respondió",
       "notFinished": "no terminó",
       "someAnswered": "respondieron {{done}} de {{total}}",

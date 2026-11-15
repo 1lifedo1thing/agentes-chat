@@ -16438,6 +16438,7 @@
       "waitingYourAnswer": "menunggu jawabanmu",
       "queued": "dalam antrean",
       "handedOn": "menunggu agen lain",
+      "answered": "sudah menjawab",
       "noAnswer": "tidak menjawab",
       "notFinished": "tidak selesai",
       "someAnswered": "{{done}} dari {{total}} menjawab",

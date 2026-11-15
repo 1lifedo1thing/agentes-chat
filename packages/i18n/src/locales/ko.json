@@ -16376,6 +16376,7 @@
       "waitingYourAnswer": "내 답변 대기 중",
       "queued": "차례 대기 중",
       "handedOn": "다른 에이전트 대기 중",
+      "answered": "답변함",
       "noAnswer": "답하지 않음",
       "notFinished": "끝내지 못함",
       "someAnswered": "{{total}}명 중 {{done}}명 답함",

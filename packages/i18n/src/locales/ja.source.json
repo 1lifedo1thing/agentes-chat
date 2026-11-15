@@ -41722,6 +41722,9 @@
   "chat.consultPair.handedOn": {
     "value": "waiting on other agents"
   },
+  "chat.consultPair.answered": {
+    "value": "answered"
+  },
   "chat.consultPair.noAnswer": {
     "value": "didn't answer"
   },

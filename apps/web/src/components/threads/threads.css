@@ -259,6 +259,12 @@ html:not([data-pointer]) .pins-pop__item:has(> .thread-pop__row:focus-visible) {
   min-height: 120px;
   padding-top: 4px;
 }
+/* A row of several asked agents: one choice each, between the dialog's head and the chosen exchange, on its sides. */
+.consult-dialog__choice {
+  flex: none;
+  width: auto;
+  margin: 0 var(--dialog-pad) var(--space-1);
+}
 /* The answer on its own, when the consulted agent's words in the DM are left out: under the messages, at their text. */
 .consult-answer {
   margin: 4px 12px 8px var(--thread-indent, calc(16px + var(--name-face) + var(--space-3)));

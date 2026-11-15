@@ -115,7 +115,7 @@ import {
 import { firstUnreadId, opensAtLastRead, unreadThreadRootId } from "@agenteschat/client/lib/chat-look";
 import { choiceReplyLine } from "@agenteschat/client/lib/choices";
 import { draftKeyOf } from "@agenteschat/client/lib/composer-drafts";
-import { consultsForLine } from "@agenteschat/client/lib/consult-group";
+import { type ConsultPairItem, consultsForLine } from "@agenteschat/client/lib/consult-group";
 import { consultationsOf } from "@agenteschat/client/lib/consultations";
 import { deviceWaitOf } from "@agenteschat/client/lib/devices";
 import { clearDraft, peekDraft } from "@agenteschat/client/lib/drafts";
@@ -994,7 +994,8 @@ function ChannelView({
   }, [panelId]);
   // A question an agent asked another from here, opened from its line in the reply ("Theo ⇄ Iris"): a dialog over
   // the conversation, whatever pane is open beside it.
-  const [consultId, setConsultId] = useState<string | null>(null);
+  const [consult, setConsult] = useState<{ id: string; group?: readonly ConsultPairItem[] } | null>(null);
+  const consultId = consult?.id ?? null;
   // A DM with an agent: its tasks (ADR 0128), from the pill in the header; one panel too, any other one closes it.
   const [tasksOpen, setTasksOpen] = useState(false);
   useEffect(() => {
@@ -2362,7 +2363,7 @@ function ChannelView({
       setSearchOpen(false);
       setPanel({ id, reply: false, focus });
     },
-    openConsultation: (id) => setConsultId(id),
+    openConsultation: (id, group) => setConsult({ id, group }),
     seeRequest: (id) => seeAsk(id),
     requestCorrection: (message, text) => {
       const handle = message.author.type === "agent" ? dir.agentById.get(message.author.id ?? "")?.handle : undefined;
@@ -2399,7 +2400,7 @@ function ChannelView({
       reply: replies ? (message) => now().reply(message) : undefined,
       // A thread view has no panel: its links go to the thread's page.
       openThread: inThread ? undefined : (id, focus) => now().openThread(id, focus),
-      openConsultation: (id) => now().openConsultation(id),
+      openConsultation: (id, group) => now().openConsultation(id, group),
       seeRequest: (id) => now().seeRequest(id),
       requestCorrection: (message, text) => now().requestCorrection(message, text),
       jumpTo: (messageId) => now().jumpTo(messageId),
@@ -3046,15 +3047,16 @@ function ChannelView({
                     channelId={channel.id}
                     channelName={chrome?.composerTarget ? null : channel.name}
                     consultationId={consultId}
-                    onClose={() => setConsultId(null)}
+                    group={consult?.group}
+                    onClose={() => setConsult(null)}
                     // The composer takes the focus once the dialog is gone: its trap would hold it while open.
                     onTalk={(handle) => {
-                      setConsultId(null);
+                      setConsult(null);
                       actions.insertMention(handle);
                       requestAnimationFrame(() => actions.focusComposer());
                     }}
                     onAnswer={() => {
-                      setConsultId(null);
+                      setConsult(null);
                       requestAnimationFrame(() => actions.focusComposer());
                     }}
                     renderMessage={(m, grouped) => (

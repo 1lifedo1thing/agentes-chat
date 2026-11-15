@@ -16886,6 +16886,7 @@
       "waitingYourAnswer": "yanıtınızı bekliyor",
       "queued": "sırada",
       "handedOn": "diğer ajanları bekliyor",
+      "answered": "yanıtladı",
       "noAnswer": "yanıt vermedi",
       "notFinished": "bitiremedi",
       "someAnswered": "{{total}} ajandan {{done}} tanesi yanıt verdi",

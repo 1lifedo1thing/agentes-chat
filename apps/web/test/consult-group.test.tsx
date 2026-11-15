@@ -213,6 +213,36 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
     expect(tip?.textContent).toContain(QUESTION);
   });
 
+  test("the row of several opens them all: named as the row, one choice per agent saying where it stands", async () => {
+    const q1 = consultation({ status: "answered", answer: ANSWER, answeredAt: ago(5) });
+    const q2 = consultation({ id: "q2", consultedAgentId: "agent-iris", consultedRunId: "iris-run" });
+    const state = withTalk(withAsk([q1, q2]), q1);
+    const first = state.consultationConversations;
+    withTalk(state, q2);
+    state.consultationConversations = { ...first, ...state.consultationConversations };
+    const atlas = state.agents.find((a) => a.id === ATLAS_ID);
+    if (atlas) state.agents.push({ ...atlas, id: "agent-iris", name: "Iris", handle: "iris" });
+    await open(state);
+    await act(async () => fireEvent.click(rowButton()));
+    await settle(3);
+    const side = panel() as HTMLElement;
+    // The row said "Ada ⇄ Atlas e mais 1": so does the dialog, and both agents are in it.
+    expect(side.querySelector(".consult-title")?.textContent).toBe("AdaAtlas e mais 1");
+    const choices = within(side).getAllByRole("radio");
+    expect(choices.map((c) => c.textContent)).toEqual(["Atlasrespondeu", "Irisperguntando"]);
+    // It opens on the one still out, as the row's click says.
+    expect(choices[1]?.getAttribute("aria-checked")).toBe("true");
+    expect(panelLabel()).toBe("Conversa entre Ada e Iris");
+    expect(side.textContent).not.toContain("subiu 6 pb");
+    await act(async () => fireEvent.click(choices[0] as HTMLElement));
+    await settle(3);
+    expect(panelLabel()).toBe("Conversa entre Ada e Atlas");
+    expect(side.textContent).toContain("subiu 6 pb");
+    // Read only as before; its way out still goes to the agent that asked.
+    expect(within(side).queryByRole("combobox")).toBeNull();
+    expect(within(side).getByRole("button", { name: "Falar com a Ada" })).toBeTruthy();
+  });
+
   test("a long question stays on the row's one line, cut by the row, whole in its tip", async () => {
     const long = `${"Revise o relatório de cobranças recorrentes do último trimestre e diga quais clientes ".repeat(2)}foram cobrados duas vezes`;
     const c = consultation({ question: long });
@@ -326,6 +356,8 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
     expect(side.textContent).toContain(QUESTION);
     expect(side.textContent).toContain("subiu 6 pb");
     expect(rowButton().getAttribute("aria-pressed")).toBe("true");
+    // A row of one: no choice between agents, the dialog as it always was.
+    expect(within(side).queryByRole("radio")).toBeNull();
     // Read only: no composer there, a note instead.
     expect(within(side).queryByRole("combobox")).toBeNull();
     expect(side.textContent).toContain("Só leitura.");

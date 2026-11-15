@@ -17021,6 +17021,7 @@
       "waitingYourAnswer": "wacht op je antwoord",
       "queued": "in de rij",
       "handedOn": "wacht op andere agents",
+      "answered": "heeft geantwoord",
       "noAnswer": "gaf geen antwoord",
       "notFinished": "niet afgemaakt",
       "someAnswered": "{{done}} van {{total}} gaven antwoord",

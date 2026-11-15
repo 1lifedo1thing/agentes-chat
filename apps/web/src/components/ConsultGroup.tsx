@@ -214,7 +214,7 @@ export function ConsultPairRow({ askerId, items }: { askerId: string; items: rea
             : openConsultation
               ? {
                   "aria-pressed": items.some((c) => c.id === openId),
-                  onClick: () => openConsultation(pair.opens),
+                  onClick: () => openConsultation(pair.opens, items),
                 }
               : { "aria-expanded": open, onClick: () => setOpen((o) => !o) })}
         >
