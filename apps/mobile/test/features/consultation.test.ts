@@ -27,12 +27,18 @@ test("'Falar com o Theo' hands '@theo ' to that conversation's composer, once", 
   expect(currentComposerRequest()).toBeNull();
 });
 
-test("the two agents' line wraps their names whole, never clipped at a narrow width", () => {
+test("the two agents' line is always one line: the subject gives way first, the word and time never", () => {
   const group = readFileSync(join(import.meta.dir, "../../src/features/chat/ConsultGroup.tsx"), "utf8");
   const pair = group.slice(group.indexOf("<AgentFace agentId={askerId}"), group.indexOf("</Pressable>"));
-  expect(pair).not.toContain("numberOfLines");
   expect(pair).not.toContain('ellipsizeMode="clip"');
-  expect(group).toContain('flexWrap: "wrap",\n    justifyContent: "center",');
+  expect(pair).toContain("numberOfLines={1} style={styles.subject}");
+  const row = group.slice(group.indexOf("  row: {"), group.indexOf("},", group.indexOf("  row: {")));
+  expect(row).not.toContain("flexWrap");
+  // The names shrink only once the subject has none left: its share of any shrink dwarfs theirs.
+  expect(group).toContain("subject: { flexShrink: 100000 },");
+  expect(group).toContain('name: { fontWeight: "600", flexShrink: 1 },');
+  expect(group).toContain('word: { fontWeight: "600", flexShrink: 0 },');
+  expect(group).toContain('time: { fontVariant: ["tabular-nums"], flexShrink: 0 },');
 });
 
 test("two agents' conversation is a sheet over the one that asked, as the web's dialog", () => {

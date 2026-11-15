@@ -201,10 +201,46 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
     expect(r.querySelectorAll(".consult-pair__faces .ac-avatar")).toHaveLength(2);
     expect(r.textContent).toContain("Atlas e mais 1");
     expect(r.querySelector(".consult-pair__word")?.textContent).toBe("0 de 2");
-    expect(rowButton().getAttribute("title")).toBe("Conversas de Ada com Atlas e Iris");
+    // Its tip names them all, then the whole question; no browser title doubles it.
+    expect(rowButton().getAttribute("title")).toBeNull();
+    expect(rowButton().getAttribute("aria-description")).toBe(QUESTION);
+    await act(async () => {
+      fireEvent.keyDown(document.body, { key: "Tab" });
+      rowButton().focus();
+    });
+    const tip = document.querySelector(".ac-tip.tm-tip") as HTMLElement;
+    expect(tip?.querySelector("b")?.textContent).toBe("Conversas de Ada com Atlas e Iris");
+    expect(tip?.textContent).toContain(QUESTION);
   });
 
-  test("long names wrap whole on the row, never cut: one sentence, each face with its name's first word", async () => {
+  test("a long question stays on the row's one line, cut by the row, whole in its tip", async () => {
+    const long = `${"Revise o relatório de cobranças recorrentes do último trimestre e diga quais clientes ".repeat(2)}foram cobrados duas vezes`;
+    const c = consultation({ question: long });
+    await open(withTalk(withAsk([c]), c));
+    const r = row() as HTMLElement;
+    // The question stays whole: the row shows its subject (`consultSubject`) and the line's CSS cuts that.
+    const subject = r.querySelector(".consult-pair__subject")?.textContent ?? "";
+    expect(long.startsWith(subject.replace(/…$/, ""))).toBe(true);
+    expect(rowButton().getAttribute("aria-description")).toBe(long);
+    // Names, the count and the time are their own pieces beside it, never inside what gives way.
+    const pieces = [...rowButton().children].map((e) => e.className.split(" ")[0]);
+    expect(pieces.slice(0, 4)).toEqual([
+      "consult-pair__lead",
+      "consult-pair__sep",
+      "consult-pair__subject",
+      "consult-pair__sep",
+    ]);
+    expect(
+      r.querySelector(".consult-pair__subject .consult-pair__word, .consult-pair__subject .consult-pair__time"),
+    ).toBeNull();
+    await act(async () => {
+      fireEvent.pointerEnter(rowButton(), { pointerType: "mouse" });
+      await Bun.sleep(300);
+    });
+    expect(document.querySelector(".ac-tip.tm-tip")?.textContent).toBe(`Conversa entre Ada e Atlas${long}`);
+  });
+
+  test("long names stay whole on the row's one line, each face beside its name", async () => {
     const state = withAsk([consultation({}), consultation({ id: "q2", consultedAgentId: "agent-iris" })]);
     const ada = state.agents.find((a) => a.id === ADA_ID);
     const atlas = state.agents.find((a) => a.id === ATLAS_ID);
@@ -218,12 +254,12 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
       "Assistente de Atendimento ao Cliente",
       "Especialista em Faturamento Recorrente e mais 1",
     ]);
-    // One sentence: each face keeps its name's first word (`__who`), the · follows the second name's last word.
-    const who = [...r.querySelectorAll(".consult-pair__row > .consult-pair__who")];
+    // The names, faces and ⇄ in one piece (`__lead`), which gives way only once the subject has none left.
+    const who = [...r.querySelectorAll(".consult-pair__row > .consult-pair__lead > .consult-pair__who")];
     expect(who).toHaveLength(2);
     expect(who[0]?.firstElementChild?.matches(".ac-avatar")).toBe(true);
     expect(who[1]?.firstElementChild?.matches(".consult-pair__faces")).toBe(true);
-    expect(r.querySelector(".consult-pair__who + .consult-pair__sep")).not.toBeNull();
+    expect(r.querySelector(".consult-pair__lead + .consult-pair__sep")).not.toBeNull();
   });
 
   test("waiting on a person, for its computer, on what it handed on: a short word in the same slot, quiet", async () => {
