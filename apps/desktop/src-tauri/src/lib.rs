@@ -524,14 +524,26 @@ async fn update_install(app: AppHandle) -> Result<bool, String> {
     };
     // Windows: the installer runs and the app ends here.
     update.install(bytes).map_err(|e| e.to_string())?;
-    // The new app starts the server here's new version (`local_server`).
-    reopen(app);
+    // The new app starts the server here's new version (`local_server`); one started at login stays in the
+    // background.
+    leave(app, true);
     Ok(true)
 }
 
-/// The runners and the server here finish their work first, as when quitting; then the app opens again.
+/// Set by a person's Reopen: the reopened app keeps the arguments it started with, `AUTOSTART_ARG` too, and opens its
+/// windows all the same.
+const REOPENED_VAR: &str = "AGENTES_DESKTOP_REOPENED";
+
+/// A person's Reopen: the runners and the server here finish their work first, as when quitting; then the app opens
+/// again, its windows shown.
 fn reopen(app: AppHandle) {
+    std::env::set_var(REOPENED_VAR, "1");
     leave(app, true);
+}
+
+/// A start at login stays in the background, unless a person's Reopen brought the app back with its arguments.
+fn started_at_login(mut args: impl Iterator<Item = String>, reopened: bool) -> bool {
+    !reopened && args.any(|a| a == AUTOSTART_ARG)
 }
 
 /// Preferences' Reopen now: a setting that only takes effect when the app starts (Compatibility mode).
@@ -581,6 +593,9 @@ fn migrate_login_item(app: &AppHandle) {
 pub fn run() {
     // Before any thread starts: WebKitGTK reads how to draw once.
     graphics::choose();
+    // Taken once: a later reopen for an update keeps a start at login in the background.
+    let reopened = std::env::var_os(REOPENED_VAR).is_some();
+    std::env::remove_var(REOPENED_VAR);
     let builder = tauri::Builder::default()
         // First: a second launch brings the running app's window back; one carrying a link (Windows,
         // Linux) goes to the deep-link plugin first (`deep_link.rs` shows it).
@@ -768,7 +783,7 @@ pub fn run() {
             }
             _ => {}
         })
-        .setup(|app| {
+        .setup(move |app| {
             let handle = app.handle().clone();
             // Before the tray (it lists them).
             servers::load(&handle);
@@ -796,7 +811,7 @@ pub fn run() {
             // the server open now, or the first run while there is none. Opened again by macOS in the middle of a
             // setup (the "Quit & Reopen" after a permission): the main window on the page it showed, and the setup's
             // window over it.
-            let at_login = std::env::args().any(|a| a == AUTOSTART_ARG);
+            let at_login = started_at_login(std::env::args(), reopened);
             let resume = prepare::resume(&handle, at_login);
             if servers::current(&handle).is_none() {
                 let _ = present(&handle, "welcome");
@@ -852,6 +867,15 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_reopen_by_hand_shows_the_windows_of_an_app_started_at_login() {
+        let args = |list: &[&str]| list.iter().map(|a| a.to_string()).collect::<Vec<_>>().into_iter();
+        assert!(started_at_login(args(&["agentes-chat", AUTOSTART_ARG]), false));
+        assert!(!started_at_login(args(&["agentes-chat", AUTOSTART_ARG]), true));
+        assert!(!started_at_login(args(&["agentes-chat"]), false));
+        assert!(!started_at_login(args(&["agentes-chat"]), true));
+    }
 
     #[test]
     fn what_opens_in_the_browser() {

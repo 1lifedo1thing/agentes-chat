@@ -1,6 +1,6 @@
 import type { AppLocale } from "@agenteschat/i18n/locale";
 import { Button, Dialog, DialogFooter, Input, Select, Switch } from "@agenteschat/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHost, useSnapshot, useStore } from "../../app";
 import { BROWSER_NOTIFY_PREF } from "../../control/browser";
@@ -85,8 +85,11 @@ export function General() {
       toast(t("desktop.common.error"), "alert");
     }
   };
+  // Read when pressed: a toast's action keeps the render it was made in.
+  const askFirst = useRef(false);
+  askFirst.current = works || local.run;
   /** While agents work here or agentes.chat runs here, asks first, as Quit does. */
-  const reopen = () => (works || local.run ? setAskReopen(true) : void reopenNow());
+  const reopen = () => (askFirst.current ? setAskReopen(true) : void reopenNow());
 
   /** The drawing mode changes only on a new start: reopen now, or say it will. */
   const changeCompat = async (on: boolean, reopenAfter = false) => {
@@ -347,7 +350,7 @@ export function General() {
         open={askReopen}
         onOpenChange={(open) => !open && !reopening && setAskReopen(false)}
         title={t("desktop.prefs.general.reopenTitle")}
-        description={t("desktop.prefs.general.reopenBody")}
+        description={t(local.run ? "desktop.tray.quitHereBody" : "desktop.prefs.general.reopenBody")}
         closeLabel={t("desktop.common.close")}
         width={440}
       >

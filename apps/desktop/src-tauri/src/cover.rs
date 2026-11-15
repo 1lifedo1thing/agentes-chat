@@ -200,26 +200,35 @@ pub fn page_ready(app: AppHandle, webview: tauri::Webview) -> Result<(), String>
     Ok(())
 }
 
-/// The site's page finished loading (on Linux, on the graphics card, before it painted): once its server answers,
-/// the opening's marker says the page arrived, so a window that then stays black falls back at the next opening
-/// (graphics.rs `decide`). A load that failed (offline, the server down) leaves it as it was.
-pub fn site_loaded(app: &AppHandle) {
-    if !cfg!(target_os = "linux") {
-        return;
-    }
-    fn loading(path: &std::path::Path) -> bool {
-        std::fs::read_to_string(path).is_ok_and(|m| m == crate::graphics::GPU_LOADING)
-    }
-    let Some(path) = pending_path(app).filter(|p| loading(p)) else { return };
-    let Some(site) = main_window::site(app) else { return };
-    std::thread::spawn(move || {
-        let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(5)).redirects(0).build();
-        let answered = matches!(agent.get(site.as_str()).call(), Ok(_) | Err(ureq::Error::Status(..)));
-        let _marker = MARKER.lock();
-        if answered && loading(&path) {
-            let _ = std::fs::write(&path, crate::graphics::GPU_LOADED);
+/// The site's page finished loading (on Linux, on the graphics card, before it painted): when WebKit's own answer for
+/// it is the page, the opening's marker says it arrived, so a window that then stays black falls back at the next
+/// opening (graphics.rs `decide`). A load that failed (offline, the server down, a proxy's error page) leaves it as it
+/// was.
+pub fn site_loaded(app: &AppHandle, page: &tauri::WebviewWindow) {
+    #[cfg(target_os = "linux")]
+    {
+        fn loading(path: &std::path::Path) -> bool {
+            std::fs::read_to_string(path).is_ok_and(|m| m == crate::graphics::GPU_LOADING)
         }
-    });
+        let Some(path) = pending_path(app).filter(|p| loading(p)) else { return };
+        let _ = page.with_webview(move |view| {
+            use webkit2gtk::{URIResponseExt, WebResourceExt, WebViewExt};
+            let status = view.inner().main_resource().and_then(|r| r.response()).map(|r| r.status_code());
+            let _marker = MARKER.lock();
+            if arrived(status) && loading(&path) {
+                let _ = std::fs::write(&path, crate::graphics::GPU_LOADED);
+            }
+        });
+    }
+    #[cfg(not(target_os = "linux"))]
+    let _ = (app, page);
+}
+
+/// The page's HTTP status as WebKit received it says the site's page arrived: an error status is a page too (a
+/// proxy's 502 for a server that is down), but never the site's, so it never paints.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+fn arrived(status: Option<u32>) -> bool {
+    status.is_some_and(|s| (200..=399).contains(&s))
 }
 
 /// This opening's page arrived on the graphics card and never painted: its window may be black.
@@ -394,5 +403,15 @@ mod tests {
         // The last 40 lines only.
         assert!(text.contains("11 0.6.0 step 11") && !text.contains("\n10 0.6.0 step 10"));
         assert!(window_details("agentes.chat 0.6.0 · macOS 15.1", "", "").ends_with("window.log:\n\n"));
+    }
+
+    #[test]
+    fn only_the_sites_own_answer_says_the_page_arrived() {
+        assert!(!arrived(None));
+        assert!(!arrived(Some(0)));
+        assert!(arrived(Some(200)));
+        assert!(arrived(Some(304)));
+        assert!(!arrived(Some(404)));
+        assert!(!arrived(Some(502)));
     }
 }

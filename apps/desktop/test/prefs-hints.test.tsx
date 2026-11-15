@@ -7,7 +7,7 @@ import { act, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
 import { AppProvider } from "../src/app";
-import type { Tailnet } from "../src/control/local-server";
+import type { LocalServerStatus, Tailnet } from "../src/control/local-server";
 import { DesktopStore } from "../src/control/store";
 import type { UpdateCheck } from "../src/hooks";
 import { createFakeHost, type FakeHost, type HereOptions, type Scenario } from "../src/host/fake";
@@ -783,6 +783,39 @@ describe("Preferences › General: Compatibility mode (Linux)", () => {
       },
       { host: (h) => (h.compat = { on: true, fellBack: true, own: false }) },
     ));
+
+  test("the fallback's way back asks first when agentes.chat starts running here after the window opened", () => {
+    let said: ((status: LocalServerStatus) => void) | undefined;
+    return pane(
+      "linux",
+      <General />,
+      () => toast()?.textContent?.includes("compatibility mode"),
+      async (_el, host) => {
+        let reopened = 0;
+        host.setCompatMode = async () => {};
+        host.reopen = async () => {
+          reopened++;
+        };
+        const status = await host.localServer();
+        await act(async () => said?.({ ...status, run: true }));
+        await act(async () => buttonIn(toast() as HTMLElement, "Try the graphics card again")?.click());
+        await until(() => document.querySelector('[role="dialog"]'));
+        const dialog = document.querySelector('[role="dialog"]')?.textContent;
+        expect(dialog).toContain("Reopen agentes.chat?");
+        expect(dialog).toContain("agentes.chat stops on this computer: nobody can use it");
+        expect(reopened).toBe(0);
+      },
+      {
+        host: (h) => {
+          h.compat = { on: true, fellBack: true, own: false };
+          h.onLocalServer = (cb) => {
+            said = cb;
+            return () => {};
+          };
+        },
+      },
+    );
+  });
 
   test("Reopen now asks first while agents work here, and waits while the app reopens", () =>
     pane(

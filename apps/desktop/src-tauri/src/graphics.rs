@@ -89,9 +89,11 @@ fn decide(own: Option<&str>, compat: bool, last_unpainted: Option<&str>) -> (boo
     }
 }
 
-/// The opening's marker as it starts (cover.rs `opening`): "cpu", or `GPU_LOADING`.
+/// The opening's marker as it starts (cover.rs `opening`): "cpu", or `GPU_LOADING`; empty outside Linux.
 pub fn marker() -> &'static str {
-    if renderer() == "cpu" {
+    if !cfg!(target_os = "linux") {
+        ""
+    } else if renderer() == "cpu" {
         "cpu"
     } else {
         GPU_LOADING
@@ -191,7 +193,8 @@ pub fn compat_get(app: AppHandle) -> Compat {
         .app_config_dir()
         .ok()
         .and_then(|d| std::fs::read_to_string(d.join(COMPAT_FILE)).ok());
-    Compat { on: compat_on(text.as_deref()), fell_back, own: false }
+    // A fallback whose switch couldn't be written back on draws without the graphics card all the same.
+    Compat { on: why() == Why::Fallback || compat_on(text.as_deref()), fell_back, own: false }
 }
 
 /// Preferences › General: Compatibility mode for the next opening (WebKitGTK reads it only when the app starts).
