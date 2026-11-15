@@ -1079,6 +1079,14 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
   contain: inline-size;
   overflow-wrap: anywhere;
 }
+/* An agent's role and its person keep one line, ending in "…": the header's plate stays one height whatever the role
+   says, and the button over it shows the whole line in its tip. */
+.dm-who__text > .channel__topic--line {
+  overflow: hidden;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 .dm-who__hit.profile-trigger {
   position: absolute;
   inset: 0;
@@ -3327,6 +3335,9 @@ html:not([data-pointer]) .artifact-table__sort:focus-visible {
 .md--message > * + * {
   margin-top: 14px;
 }
+.md-run {
+  word-break: break-all;
+}
 .md--message > p + ul,
 .md--message > p + ol {
   margin-top: 8px;
@@ -3428,7 +3439,6 @@ html:not([data-pointer]) .profile-trigger:focus-visible {
 .profile-card {
   --menu-pad: var(--space-2);
   width: 300px;
-  max-height: none;
   padding: var(--menu-pad);
 }
 /* A channel's card: its words further in than the room (`.ac-popover`), its buttons back on it. */
@@ -6923,6 +6933,12 @@ html:not([data-pointer]) .avatar-builder__swatch:focus-visible {
   flex-wrap: wrap;
   justify-content: space-between;
 }
+/* Its buttons' touch targets reach 4px past their plates (`.ac-btn--sm::after`): the plate holds them, as the kit's
+   formatting bar does. */
+.wiki-editor__bar.ac-glass {
+  padding: var(--space-1);
+  border-radius: calc(var(--control-r-sm) + var(--space-1));
+}
 .wiki-editor__tools {
   display: flex;
   flex-wrap: wrap;
@@ -6979,8 +6995,11 @@ html:not([data-pointer]) .avatar-builder__swatch:focus-visible {
   top: 48px;
   width: 300px;
   max-width: calc(100% - 32px);
-  padding: var(--menu-pad);
-  z-index: var(--z-floating);
+}
+/* The kit's menu with no trigger to match: as wide as set above, as tall as its rows (the floating one: `placeList`). */
+.ac-menu.wiki-suggest {
+  min-width: 0;
+  max-height: none;
 }
 /* "Salvar na wiki" */
 .save-wiki__list {
@@ -11842,7 +11861,6 @@ html:not([data-pointer]) .agp-subnav__item:focus-visible {
 .agp-changes.ac-popover {
   --menu-pad: var(--space-2);
   width: min(420px, calc(100vw - 24px));
-  max-height: 60vh;
   overflow: auto;
   padding: var(--menu-pad);
 }
@@ -13143,7 +13161,6 @@ html:not([data-pointer]) .sidebar__more:focus-visible {
 .sidebar__more-menu {
   width: max-content;
   max-width: min(400px, calc(100vw - 32px));
-  max-height: none;
 }
 .sidebar__more-item {
   text-decoration: none;

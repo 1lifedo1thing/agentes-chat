@@ -12353,7 +12353,6 @@
       "open": "Zmień model agenta {{agent}}",
       "ownSignIn": "Konto tego komputera",
       "apiKey": "{{provider}} z kluczem API",
-      "default": "domyślny",
       "refused": "Odrzucony dla tego klucza",
       "textOnly": "Czyta tylko tekst",
       "search": "Szukaj modeli",
