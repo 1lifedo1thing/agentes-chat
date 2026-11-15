@@ -304,7 +304,10 @@ describe("calls", () => {
     const openai = Object.entries(MODEL_CATALOG).find(([, m]) => m.provider === "openai")?.[0];
     if (!openai) throw new Error("no OpenAI model in the catalog");
     const cred = await addEndpoint(f, [{ id: openai }]);
-    const onEndpoint = await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, { model: openai, credentialId: cred.id });
+    const onEndpoint = await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, {
+      model: openai,
+      credentialId: cred.id,
+    });
     expect(onEndpoint.model).toBe(customModelId(cred.id, openai));
     const moved = await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, { model: openai });
     expect([moved.model, moved.credentialId]).toEqual([openai, null]);

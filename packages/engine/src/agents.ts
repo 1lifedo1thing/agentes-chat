@@ -480,8 +480,11 @@ export async function updateAgent(
 ): Promise<Agent> {
   const membership = await updateAgentMembership(db, actorId, orgId, agentId, patch);
   await refuseRightHandFields(db, orgId, agentId, patch);
-  let current: Agent | null | undefined;
-  const currentAgent = async () => (current === undefined ? (current = await getAgent(db, orgId, agentId)) : current);
+  let current: Promise<Agent | null> | undefined;
+  const currentAgent = () => {
+    current ??= getAgent(db, orgId, agentId);
+    return current;
+  };
   // A model named as its endpoint lists it, on the agent's endpoint key (or the one sent with it): its full id. A known
   // model sent alone is a catalog or OpenRouter pick (the picker sends endpoint models by their full id), even when the
   // endpoint lists the same id, so it moves keys below instead.
