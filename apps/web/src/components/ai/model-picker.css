@@ -153,7 +153,7 @@
   margin-top: var(--space-3);
 }
 
-/* The models: the kit's menu rows (`.ac-menu__item`), Automático first with "padrão", the one it runs checked, a
+/* The models: the kit's menu rows (`.ac-menu__item`), Automático first, the one it runs checked, a
    refused one dimmed. */
 .mp__models {
   display: flex;
