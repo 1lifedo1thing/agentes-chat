@@ -1827,6 +1827,12 @@
     "use": "Utiliser cette icône",
     "inUse": "Utilisée",
     "sky": "Arrière-plan",
+    "pose": "Pose",
+    "poses": {
+      "front": "De face",
+      "peek": "Coup d'œil"
+    },
+    "peekBare": "En coup d'œil, il ne porte pas d'accessoire.",
     "expression": "Expression du visage",
     "ready": "Prédéfinies",
     "oneOrOther": "Avec un accessoire, l'expression reste la normale.",

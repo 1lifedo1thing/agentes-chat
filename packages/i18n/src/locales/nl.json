@@ -1775,6 +1775,12 @@
     "use": "Dit icoon gebruiken",
     "inUse": "In gebruik",
     "sky": "Achtergrond",
+    "pose": "Houding",
+    "poses": {
+      "front": "Recht vooruit",
+      "peek": "Glurend"
+    },
+    "peekBare": "Glurend draagt hij geen accessoire.",
     "expression": "Gezichtsuitdrukking",
     "ready": "Kant-en-klare iconen",
     "oneOrOther": "Met een accessoire blijft de uitdrukking de gewone.",
