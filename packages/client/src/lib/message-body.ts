@@ -10,7 +10,7 @@ import { brainName } from "./outages";
 import { usageWhen } from "./plan-usage";
 import { weekDay } from "./team-week";
 import { closedNoteText, usageWaitOf, usageWindowText } from "./usage-pause";
-import { isVoiceMeta, voiceLength, voiceWord } from "./voice";
+import { isVoiceMeta, voiceLength, voiceOf, voiceWord } from "./voice";
 import { stepLabel } from "./work";
 
 /** Notes of an agent waiting on its plan's limit or its budget (`meta.usageWait`): `{{when}}` from its reset. */
@@ -67,7 +67,7 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
   if (cut && typeof cut === "object" && typeof cut.text === "string") {
     const brain = brainName(typeof cut.brain === "string" ? cut.brain : null);
     const names = Array.isArray(cut.tools) ? cut.tools.filter((x): x is string => typeof x === "string") : [];
-    const done = names.map((tool) => lowerFirst(stepLabel(t, { ...toolActivity(tool), tool }), locale));
+    const done = names.map((tool) => lowerFirst(stepLabel(t, { ...toolActivity(tool), tool }, locale), locale));
     const tools = joinNames([...new Set(done)], t);
     const note = `_${t("chat.body.brain_interrupted", {
       brain,
@@ -225,7 +225,10 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
  * or a sticker with no text as its word (ADR 0091: the list's `mediaKind`, or a kind its meta carries).
  */
 export function previewBody(t: TFunction, text: string, meta: Meta | null, mediaKind?: unknown): string {
-  // Never a voice message's words, even from a server that sent them (ADR 0100).
+  // Never a voice message's words, even from a server that sent them: what was typed beside them, else its name
+  // (ADR 0100).
+  const typed = voiceOf(meta)?.text;
+  if (typed) return previewOf(typed);
   if (isVoiceMeta(meta) || mediaKindOf(mediaKind) === "voice") return voiceWord(t, voiceLength(meta));
   // What happened on GitHub, as the chat's line says it: someone's words alone, under the agent's name, would read as
   // the agent's.
