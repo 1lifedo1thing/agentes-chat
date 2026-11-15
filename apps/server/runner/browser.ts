@@ -4465,11 +4465,12 @@ export class BrowserManager {
         finish(null);
       });
       // On Windows, when `agent-browser` launches or restarts its background daemon, the daemon inherits stdout/stderr
-      // pipe handles so `"close"` stays blocked for the daemon's lifetime even after the CLI exits. Drain briefly
-      // after `"exit"` so buffered stdio chunks arrive without hanging until timeout.
+      // pipe handles so `"close"` stays blocked for the daemon's lifetime even after the CLI exits. Drain after
+      // `"exit"` so buffered stdio chunks arrive without hanging until timeout; 500 ms leaves a loaded box time to flush a
+      // large snapshot, and the normal path still settles on `"close"`.
       events.on("exit", (code: number | null) => {
         if (!exitDrain) {
-          exitDrain = setTimeout(() => finish(code), 50);
+          exitDrain = setTimeout(() => finish(code), 500);
           exitDrain.unref?.();
         }
       });
