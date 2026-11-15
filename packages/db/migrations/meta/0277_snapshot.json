@@ -1,5 +1,5 @@
 {
-  "id": "e158372c-256f-4f04-a5df-b26dfcc56370",
+  "id": "574cc66d-297e-4360-ad46-98be8e81c9cc",
   "prevId": "02c7f1a4-6701-4ee7-9ead-79de7d2ee32b",
   "version": "7",
   "dialect": "postgresql",
@@ -323,13 +323,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "brain_account_pinned": {
-          "name": "brain_account_pinned",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "brain_effort": {
           "name": "brain_effort",
@@ -4854,6 +4847,12 @@
         "composio_account_id": {
           "name": "composio_account_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "header_names": {
+          "name": "header_names",
+          "type": "text[]",
           "primaryKey": false,
           "notNull": false
         },
@@ -10075,12 +10074,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'everyone'"
-        },
-        "use_order": {
-          "name": "use_order",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         },
         "auth_method": {
           "name": "auth_method",

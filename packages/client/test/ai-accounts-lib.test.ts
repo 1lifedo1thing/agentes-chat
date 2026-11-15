@@ -29,6 +29,7 @@ import {
   ownSignIns,
   pickable,
   planWordOf,
+  removableLogins,
   reusableAccount,
   signInOf,
   signInPlan,
@@ -728,5 +729,27 @@ describe("accountChain: the accounts a run goes through at its plan's limit", ()
     expect(orderDrop(order, "bia", "t2", "before")).toBe(0);
     expect(orderDrop(order, "t1", "bia", "after")).toBe(2);
     expect(orderDrop(order, "t1", "t3", "after")).toBeNull();
+  });
+});
+
+describe("a batch removal takes only what the viewer may remove (`removableLogins`)", () => {
+  const grok = (id: string, over: Partial<MachineAccount & { machineId: string }> = {}) =>
+    login(id, { kind: "grok", label: "Grok", provider: null, keyHint: null, email: "ana@acme.com", ...over });
+
+  test("every login of that kind the viewer owns, on every computer", () => {
+    const accounts = [grok("g1"), grok("g2", { machineId: "m2" }), grok("g3", { usedBy: ["Ada"] })];
+    expect(removableLogins(accounts, "grok").map((a) => a.id)).toEqual(["g1", "g2", "g3"]);
+  });
+
+  test("never another person's, never another program's, and nothing of another kind", () => {
+    const accounts = [
+      grok("mine"),
+      grok("adas", { ownerId: "u_ada", ownerName: "Ada", mine: false }),
+      login("chatgpt", { kind: "codex", label: "ChatGPT", provider: null, keyHint: null }),
+      login("glm"),
+    ];
+    expect(removableLogins(accounts, "grok").map((a) => a.id)).toEqual(["mine"]);
+    expect(removableLogins(accounts, "codex").map((a) => a.id)).toEqual(["chatgpt"]);
+    expect(removableLogins([], "grok")).toEqual([]);
   });
 });
