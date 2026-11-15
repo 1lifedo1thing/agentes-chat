@@ -11,16 +11,7 @@ import {
   agentWhyKey,
   isOutOfOffice,
 } from "@agenteschat/client/lib/presence";
-import {
-  Avatar,
-  Button,
-  Icon,
-  matchesWords,
-  OPEN_LAYER,
-  PixelSpinner,
-  RoleMark,
-  SearchField,
-} from "@agenteschat/ui";
+import { Avatar, Button, Icon, matchesWords, OPEN_LAYER, PixelSpinner, RoleMark, SearchField } from "@agenteschat/ui";
 import { type KeyboardEvent, type TouchEvent, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
