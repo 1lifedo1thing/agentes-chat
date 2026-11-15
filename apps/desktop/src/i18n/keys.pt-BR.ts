@@ -223,6 +223,7 @@ export const desktopPtBR = {
     title: "Vamos preparar este {{device}}",
     how: "Leva um minuto. Tudo fica guardado aqui, só com você.",
     again: "Ele já rodou aqui, e os dados continuam em {{path}}.",
+    ownerNone: "Não sobrou nenhuma conta nele. Com seu nome e e-mail você vira o novo dono.",
     name: "Seu nome",
     nameNeeded: "Escreva o seu nome.",
     email: "Seu e-mail",

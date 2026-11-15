@@ -11,6 +11,14 @@ html {
 html[data-theme="dark"] {
   color-scheme: dark;
 }
+/* While the theme changes (`switchTheme`), every element takes its new colors in the same frame. */
+html[data-theme-switching],
+html[data-theme-switching] *,
+html[data-theme-switching] *::before,
+html[data-theme-switching] *::after {
+  /* biome-ignore lint/complexity/noImportantStyles: must beat every component's own transition, hover and state rules too */
+  transition: none !important;
+}
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -398,7 +406,6 @@ html:not([data-pointer]) .ac-btn:focus-visible {
 }
 .ac-btn--primary:hover {
   background: var(--action);
-  opacity: 0.88;
 }
 .ac-btn--agent {
   border-bottom-left-radius: var(--radius-cut);
@@ -1426,8 +1433,8 @@ html:not([data-pointer]) .ac-msg--grouped:focus-within .ac-msg__gutter-time {
 /*
  * A grouped row's receipt in its gutter: always seen, on the words' first line, its end 4px short of them (into the
  * row's gap). The time shows on its left on hover, overflowing the gutter leftwards, capped at 12px so at the larger
- * text sizes it stays inside the row's own padding. A 12-hour time ("11:43 PM") would run past the row's edge on one
- * line: it stacks its two words in the first line's height instead.
+ * text sizes it stays inside the row's own padding. Never on two lines: the gutter gets the clock without its day
+ * period (`gutterTime`), which fits in every language.
  */
 .ac-msg__gutter--aside {
   justify-content: flex-end;
@@ -1438,16 +1445,7 @@ html:not([data-pointer]) .ac-msg--grouped:focus-within .ac-msg__gutter-time {
   flex: none;
 }
 .ac-msg__gutter--aside > .ac-msg__gutter-time {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: min-content;
-  min-height: var(--msg-line);
   font-size: min(12px, max(11px, calc(var(--msg-text) - 3px)));
-  line-height: calc(var(--msg-line) / 2);
-  text-align: right;
-  white-space: normal;
-  word-break: keep-all;
 }
 .ac-msg__gutter--aside > .ac-msg__aside {
   margin-right: calc(var(--space-1) - var(--space-3));
@@ -5519,7 +5517,6 @@ html:not([data-pointer]) .ac-btn:focus-visible {
     0 6px 14px -6px rgba(0, 0, 0, 0.45);
 }
 .ac-btn--primary:hover {
-  opacity: 1;
   background: linear-gradient(180deg, color-mix(in srgb, var(--ink) 82%, var(--bg)) 0%, var(--ink) 100%);
   filter: brightness(1.08);
   box-shadow:
@@ -6172,7 +6169,8 @@ html:not([data-pointer]) .ac-seg__item:focus-visible {
 
 /*
  * Cards: neutral, a hairline on the white page, no shadow. Every card keeps the cut corner: straight bottom-left, the rest rounded.
- * Interactive ones darken their line and lift a little.
+ * Interactive ones darken their line. Nothing a pointer rests on moves: lifted by its hover, a card slid out from under
+ * a pointer on its bottom edge, lost the hover, dropped back under it and blinked every frame.
  */
 .ac-card {
   border: 0;
@@ -6190,7 +6188,6 @@ html:not([data-pointer]) .ac-seg__item:focus-visible {
 }
 .ac-card--interactive:hover {
   box-shadow: var(--card-shadow-hover);
-  transform: translateY(-1px);
 }
 /* Head: the lead (a key with the icon, the title and an optional quiet line), the action on the right. The key (an
    `.ac-iconline` lead) stays on the title's first line when the title or the quiet line wraps; the action stays

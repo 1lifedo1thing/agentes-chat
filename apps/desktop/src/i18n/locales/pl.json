@@ -216,6 +216,7 @@
     "title": "Przygotujmy to urządzenie ({{device}})",
     "how": "To zajmie minutę. Wszystko zostaje tutaj, tylko u ciebie.",
     "again": "Działało tu już wcześniej, a jego dane wciąż są w {{path}}.",
+    "ownerNone": "Nie zostało tu żadne konto. Z Twoim imieniem i e-mailem zostajesz nowym właścicielem.",
     "name": "Twoje imię",
     "nameNeeded": "Wpisz swoje imię.",
     "email": "Twój e-mail",

@@ -225,6 +225,7 @@ export const desktopEn = {
     title: "Let's get this {{device}} ready",
     how: "It takes a minute. Everything stays here, with you alone.",
     again: "It ran here before, and its data is still in {{path}}.",
+    ownerNone: "No account is left on it. Your name and email make you its new owner.",
     name: "Your name",
     nameNeeded: "Write your name.",
     email: "Your email",
