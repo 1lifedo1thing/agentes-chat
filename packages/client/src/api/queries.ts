@@ -16,6 +16,7 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { moveInGroups } from "../lib/agent-groups";
+import { type LevelsBefore, levelsBefore } from "../lib/approvals-level";
 import { artifactRefs } from "../lib/artifacts";
 import { newerBlockState, stateChanges, stateForPage } from "../lib/blocks";
 import type { ChatPrefs } from "../lib/chat-look";
@@ -98,6 +99,7 @@ import type {
   AppNotification,
   Approval,
   ApprovalCoverInput,
+  ApprovalsLevel,
   ArtifactContent,
   ArtifactDetail,
   ArtifactFilters,
@@ -153,6 +155,7 @@ import type {
   NotificationEvent,
   NotificationFilter,
   OrgRoles,
+  OrgSettings,
   PendingReturn,
   Person,
   PersonalTokenInput,
@@ -2694,6 +2697,73 @@ export function useUpdateSettings(orgId: string) {
         predicate: (q) => q.queryKey[0] === "org" && q.queryKey[1] === orgId && q.queryKey[4] === "detail",
       });
     },
+  });
+}
+
+/** Sets the workspace's approvals level: the settings and every agent's level show it at once. */
+export function useSetWorkspaceApprovalsLevel(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { level: ApprovalsLevel; everyAgent?: boolean }) => api.orgs.setApprovalsLevel(orgId, input),
+    onSuccess: ({ level }) => {
+      qc.setQueryData<OrgSettings>(keys.settings(orgId), (s) => (s ? { ...s, approvalsLevel: level } : s));
+      levelsChanged(qc, orgId);
+    },
+  });
+}
+
+/**
+ * "Mudar quando perguntar": one agent's own level, or with `everyAgent` the workspace's for every agent (their own
+ * choices cleared). Resolves to the levels before, for "Desfazer" (`useUndoWhenAsks`).
+ */
+export function useChangeWhenAsks(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      agentId,
+      level,
+      everyAgent,
+    }: {
+      agentId: string;
+      level: ApprovalsLevel;
+      everyAgent?: boolean;
+    }) => {
+      const [agents, settings] = await Promise.all([
+        qc.ensureQueryData({ queryKey: keys.agents(orgId), queryFn: () => api.agents.list(orgId) }),
+        everyAgent
+          ? qc.ensureQueryData({ queryKey: keys.settings(orgId), queryFn: () => api.orgs.settings(orgId) })
+          : null,
+      ]);
+      const before = levelsBefore(settings?.approvalsLevel ?? "risky", agents, everyAgent ? undefined : agentId);
+      if (everyAgent) await api.orgs.setApprovalsLevel(orgId, { level, everyAgent: true });
+      else await api.agents.update(orgId, agentId, { approvalsLevel: level });
+      return before;
+    },
+    onSuccess: () => levelsChanged(qc, orgId),
+  });
+}
+
+/** "Desfazer" after `useChangeWhenAsks`: the workspace's level (for every agent) and each agent's choice come back. */
+export function useUndoWhenAsks(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ before, everyAgent }: { before: LevelsBefore; everyAgent?: boolean }) => {
+      if (everyAgent) await api.orgs.setApprovalsLevel(orgId, { level: before.workspace });
+      // ponytail: one request per agent that had its own choice, a batch call if workspaces with many appear.
+      for (const a of before.agents) await api.agents.update(orgId, a.id, { approvalsLevel: a.level });
+    },
+    onSuccess: () => levelsChanged(qc, orgId),
+  });
+}
+
+function levelsChanged(qc: QueryClient, orgId: string) {
+  void qc.invalidateQueries({ queryKey: keys.settings(orgId) });
+  void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
+  void qc.invalidateQueries({
+    predicate: (q) => q.queryKey[0] === "org" && q.queryKey[1] === orgId && q.queryKey[4] === "detail",
   });
 }
 

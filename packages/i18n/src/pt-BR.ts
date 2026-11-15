@@ -3597,6 +3597,23 @@ export const ptBR = {
       title: "Nunca perguntar",
       text: "Não pergunta nada, nem em merge, deploy, pagamentos e rotinas.",
     },
+    /** The quiet link on a waiting approval that opens its agent's three choices in place. */
+    change: "Mudar quando perguntar",
+    /** The toast after a choice from that link. {{level}}: the choice's title. */
+    now: "{{name}} agora: {{level}}.",
+    nowEveryAgent: "Todos os agentes agora: {{level}}.",
+    undo: "Desfazer",
+    /** In that dialog, for who may set the workspace's level: it also clears each agent's own choice. */
+    everyAgent: "Para todos os agentes do workspace",
+    /** An agent's row value while it has no choice of its own. */
+    follows: "Segue o workspace",
+    /** Settings → Aprovações: the button that opens the three choices. */
+    edit: "Mudar",
+    /** Settings → Aprovações: the workspace's level. */
+    workspaceLead: "Quando os agentes perguntam a uma pessoa antes de agir.",
+    workspaceHelp: "Cada agente segue esta escolha até alguém mudar a dele na página do agente.",
+    ownAgents_one: "{{count}} agente tem a própria escolha e não muda.",
+    ownAgents_other: "{{count}} agentes têm a própria escolha e não mudam.",
   },
   /** Configurações do agente: o que ele pode começar sem ninguém pedir diretamente, e quais agentes pode chamar (ADR 0131). */
   brakes: {

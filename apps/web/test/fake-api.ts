@@ -308,6 +308,8 @@ export interface FakeState {
   teamWeek?: Partial<LodiPrefs>;
   /** The workspace's own switches of Lodi; unset: on. */
   lodiSwitches?: { teamWatch?: boolean; welcomePeople?: boolean };
+  /** The workspace's approvals level (ADR 0173); unset: `risky`. */
+  approvalsLevel?: "always" | "risky" | "never";
   memories: Memory[];
   proposals: Proposal[];
   reactions: Record<string, ReactionCount[]>;
@@ -1986,11 +1988,21 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         autoModels: state.autoModels ?? {},
         teamWatch: state.lodiSwitches?.teamWatch ?? true,
         welcomePeople: state.lodiSwitches?.welcomePeople ?? true,
+        approvalsLevel: state.approvalsLevel ?? "risky",
         ...mediaSettings(state),
         mode: personalOrg(orgId) ? "personal" : "team",
         // Money: admins only, like the backend.
         ...(seesCost() ? { defaultAgentBudgetUsd: state.defaultAgentBudgetUsd ?? 50 } : {}),
       }),
+      setApprovalsLevel: async (orgId, { level, everyAgent }) => {
+        log("orgs.setApprovalsLevel", orgId, { level, everyAgent });
+        // As the backend: agents that follow the workspace take it, or every agent, their own choices cleared.
+        state.approvalsLevel = level;
+        for (const a of state.agents)
+          if (everyAgent || a.approvalsLevelOwn === false)
+            Object.assign(a, { approvalsLevel: level, approvalsLevelOwn: false });
+        return { level, ownAgents: state.agents.filter((a) => a.approvalsLevelOwn === true).length };
+      },
       updateSettings: async (orgId, input) => {
         log("orgs.updateSettings", orgId, input);
         // A switch of mode (ADR 0159), with the name it may bring: `me` says them at once, as the server's.
@@ -2576,7 +2588,13 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
           agent.previousHandles = [...(agent.previousHandles ?? []).filter((h) => h !== input.handle), agent.handle];
         }
         // As the backend: a mailbox given since the person was asked refuses the save.
-        const { mailLossSeen, ...fields } = input;
+        const { mailLossSeen, approvalsLevel, ...fields } = input;
+        // As the backend: a level is the agent's own choice; null follows the workspace's again.
+        if (approvalsLevel !== undefined)
+          Object.assign(agent, {
+            approvalsLevel: approvalsLevel ?? state.approvalsLevel ?? "risky",
+            approvalsLevelOwn: approvalsLevel !== null,
+          });
         if (mailLossSeen && (state.mailLoss?.[agentId] ?? []).some((m) => !mailLossSeen.includes(m.accountId))) {
           throw new ApiError(409, "agent.mail_loss_changed", "It holds a mailbox you weren't asked about");
         }

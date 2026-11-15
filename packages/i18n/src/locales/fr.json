@@ -3533,7 +3533,19 @@
     "never": {
       "title": "Ne jamais demander",
       "text": "Ne demande rien, même pour un merge, un deploy, un paiement ou dans une routine."
-    }
+    },
+    "change": "Changer quand il demande",
+    "now": "{{name}} désormais : {{level}}.",
+    "nowEveryAgent": "Tous les agents désormais : {{level}}.",
+    "undo": "Annuler",
+    "everyAgent": "Pour tous les agents du workspace",
+    "follows": "Suit le workspace",
+    "edit": "Changer",
+    "workspaceLead": "Quand les agents demandent à une personne avant d’agir.",
+    "workspaceHelp": "Chaque agent suit ce choix jusqu’à ce que quelqu’un change le sien sur la page de l’agent.",
+    "ownAgents_one": "{{count}} agent a son propre choix et ne change pas.",
+    "ownAgents_many": "{{count}} agents ont leur propre choix et ne changent pas.",
+    "ownAgents_other": "{{count}} agents ont leur propre choix et ne changent pas."
   },
   "brakes": {
     "title": "Travail que personne n'a demandé",

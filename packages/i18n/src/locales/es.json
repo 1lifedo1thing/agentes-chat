@@ -3528,7 +3528,19 @@
     "never": {
       "title": "No preguntar nunca",
       "text": "No pregunta nada, tampoco en merge, deploy, pagos y rutinas."
-    }
+    },
+    "change": "Cambiar cuándo pregunta",
+    "now": "{{name}} ahora: {{level}}.",
+    "nowEveryAgent": "Todos los agentes ahora: {{level}}.",
+    "undo": "Deshacer",
+    "everyAgent": "Para todos los agentes del workspace",
+    "follows": "Sigue al workspace",
+    "edit": "Cambiar",
+    "workspaceLead": "Cuándo los agentes preguntan a una persona antes de actuar.",
+    "workspaceHelp": "Cada agente sigue esta elección hasta que alguien cambie la suya en la página del agente.",
+    "ownAgents_one": "{{count}} agente tiene su propia elección y no cambia.",
+    "ownAgents_many": "{{count}} agentes tienen su propia elección y no cambian.",
+    "ownAgents_other": "{{count}} agentes tienen su propia elección y no cambian."
   },
   "brakes": {
     "title": "Trabajo que nadie pidió",

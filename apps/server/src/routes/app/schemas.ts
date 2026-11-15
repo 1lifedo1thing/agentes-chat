@@ -498,6 +498,10 @@ export const Agent = z
         "It may send a sticker or a GIF (ADR 0091): when someone asks for one, and after a light reply as often as the workspace's `agentMedia` allows.",
     }),
     approvalsLevel: ApprovalsLevel,
+    approvalsLevelOwn: z.boolean().optional().openapi({
+      description:
+        "Whether `approvalsLevel` is the agent's own choice. False: it follows the workspace's (`approvalsLevel` in the workspace's settings) and changes with it.",
+    }),
     builtin: z.enum(["right_hand"]).nullable().openapi({
       description:
         "A built-in agent the product ships (ADR 0137): `right_hand`, the team's right hand, one per workspace, never archived, deleted or exported. Null for the agents people make.",

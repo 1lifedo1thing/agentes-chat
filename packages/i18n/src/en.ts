@@ -3693,6 +3693,23 @@ export const en = {
       title: "Never ask",
       text: "Never asks, merge, deploy, payments and routines included.",
     },
+    /** The quiet link on a waiting approval that opens its agent's three choices in place. */
+    change: "Change when it asks",
+    /** The toast after a choice from that link. {{level}}: the choice's title. */
+    now: "{{name}} now: {{level}}.",
+    nowEveryAgent: "Every agent now: {{level}}.",
+    undo: "Undo",
+    /** In that dialog, for who may set the workspace's level: it also clears each agent's own choice. */
+    everyAgent: "For every agent in the workspace",
+    /** An agent's row value while it has no choice of its own. */
+    follows: "Follows the workspace",
+    /** Settings → Approvals: the button that opens the three choices. */
+    edit: "Change",
+    /** Settings → Approvals: the workspace's level. */
+    workspaceLead: "When agents ask a person before acting.",
+    workspaceHelp: "Each agent follows this choice until someone changes its own on the agent's page.",
+    ownAgents_one: "{{count}} agent has its own choice and won't change.",
+    ownAgents_other: "{{count}} agents have their own choice and won't change.",
   },
   /** Agent settings: what it may start that nobody asked for directly, and which agents it may call (ADR 0131). */
   brakes: {

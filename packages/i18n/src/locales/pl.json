@@ -3649,7 +3649,20 @@
     "never": {
       "title": "Nigdy nie pytaj",
       "text": "Nigdy nie pyta, także przy merge, deploy, płatnościach i rutynach."
-    }
+    },
+    "change": "Zmień, kiedy pyta",
+    "now": "{{name}} teraz: {{level}}.",
+    "nowEveryAgent": "Wszyscy agenci teraz: {{level}}.",
+    "undo": "Cofnij",
+    "everyAgent": "Dla wszystkich agentów w workspace",
+    "follows": "Jak w workspace",
+    "edit": "Zmień",
+    "workspaceLead": "Kiedy agenci pytają człowieka przed działaniem.",
+    "workspaceHelp": "Każdy agent stosuje ten wybór, dopóki ktoś nie zmieni jego własnego na stronie agenta.",
+    "ownAgents_one": "{{count}} agent ma własny wybór i się nie zmieni.",
+    "ownAgents_few": "{{count}} agenci mają własny wybór i się nie zmienią.",
+    "ownAgents_many": "{{count}} agentów ma własny wybór i się nie zmieni.",
+    "ownAgents_other": "{{count}} agenta ma własny wybór i się nie zmieni."
   },
   "brakes": {
     "title": "Praca, o którą nikt nie prosił",

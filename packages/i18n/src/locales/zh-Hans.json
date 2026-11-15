@@ -3290,7 +3290,17 @@
     "never": {
       "title": "从不询问",
       "text": "从不询问，包括合并、部署、付款和例程。"
-    }
+    },
+    "change": "更改何时询问",
+    "now": "{{name}} 现在：{{level}}。",
+    "nowEveryAgent": "所有智能体现在：{{level}}。",
+    "undo": "撤销",
+    "everyAgent": "应用到工作区的所有智能体",
+    "follows": "跟随工作区",
+    "edit": "更改",
+    "workspaceLead": "智能体在行动前何时询问人。",
+    "workspaceHelp": "每个智能体都跟随此选择，直到有人在智能体页面上更改它自己的设置。",
+    "ownAgents_other": "{{count}} 个智能体有自己的选择，不会改变。"
   },
   "brakes": {
     "title": "没人要求的工作",
