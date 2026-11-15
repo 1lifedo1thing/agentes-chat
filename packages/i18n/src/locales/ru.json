@@ -16728,6 +16728,7 @@
       "waiting": "<b>{{who}}</b> ждёт <b>{{deviceName}}</b>",
       "toolRequest": "<b>{{who}}</b> просит вас включить {{tool}} на вашем <b>{{deviceName}}</b>",
       "cliRequest": "<b>{{who}}</b> просит установить {{tool}} на вашем <b>{{deviceName}}</b>",
+      "folderRequest": "<b>{{who}}</b> просит папку {{path}} на вашем <b>{{deviceName}}</b>",
       "once": "Разрешить один раз",
       "always": "Всегда",
       "no": "Нет",

@@ -15272,6 +15272,7 @@
       "waiting": "<b>{{who}}</b> sedang menunggu <b>{{deviceName}}</b>",
       "toolRequest": "<b>{{who}}</b> memintamu menyalakan {{tool}} di <b>{{deviceName}}</b> milikmu",
       "cliRequest": "<b>{{who}}</b> meminta kamu memasang {{tool}} di <b>{{deviceName}}</b> kamu",
+      "folderRequest": "<b>{{who}}</b> memintamu membuka folder {{path}} di <b>{{deviceName}}</b> milikmu",
       "once": "Izinkan sekali",
       "always": "Selalu",
       "no": "Tidak",

@@ -15218,6 +15218,7 @@
       "waiting": "<b>{{who}}</b>が<b>{{deviceName}}</b>を待っています",
       "toolRequest": "<b>{{who}}</b> があなたの <b>{{deviceName}}</b> で{{tool}}をオンにするよう頼んでいます",
       "cliRequest": "<b>{{who}}</b> が <b>{{deviceName}}</b> に {{tool}} をインストールするよう求めています",
+      "folderRequest": "<b>{{who}}</b> があなたの <b>{{deviceName}}</b> でフォルダ {{path}} を求めています",
       "once": "今回のみ許可",
       "always": "常に許可",
       "no": "許可しない",

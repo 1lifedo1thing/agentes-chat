@@ -16265,6 +16265,7 @@
       "waiting": "<b>{{who}}</b> attend <b>{{deviceName}}</b>",
       "toolRequest": "<b>{{who}}</b> vous demande d'activer {{tool}} sur votre <b>{{deviceName}}</b>",
       "cliRequest": "<b>{{who}}</b> vous demande d'installer {{tool}} sur votre <b>{{deviceName}}</b>",
+      "folderRequest": "<b>{{who}}</b> vous demande le dossier {{path}} sur votre <b>{{deviceName}}</b>",
       "once": "Autoriser une fois",
       "always": "Toujours",
       "no": "Non",

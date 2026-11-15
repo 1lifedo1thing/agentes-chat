@@ -16194,6 +16194,7 @@
       "waiting": "<b>{{who}}</b> está esperando a <b>{{deviceName}}</b>",
       "toolRequest": "<b>{{who}}</b> te pide activar {{tool}} en tu <b>{{deviceName}}</b>",
       "cliRequest": "<b>{{who}}</b> te pide instalar {{tool}} en tu <b>{{deviceName}}</b>",
+      "folderRequest": "<b>{{who}}</b> te pide la carpeta {{path}} en tu <b>{{deviceName}}</b>",
       "once": "Permitir una vez",
       "always": "Siempre",
       "no": "No",
