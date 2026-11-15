@@ -228,6 +228,11 @@ export const agents = pgTable(
      * the plan stays lent if that person leaves.
      */
     brainAccountLentBy: text(),
+    /**
+     * "Só esta conta" (ADR 0041 §6): at its plan's limit a run waits for this account to reset instead of going on
+     * with the next account in the workspace's order (`nextAccountPlan`).
+     */
+    brainAccountPinned: boolean().notNull().default(false),
     /** How hard its computer brain thinks (`low`…`max`, ADR 0041); null = the CLI's default. */
     brainEffort: text(),
     /**
