@@ -620,6 +620,8 @@ export function createFakeHost(
       if (local.run) setLocal({ phase: "stopped", awake: false });
       await wait(600);
       const to = local.eraseTo ?? "";
+      // Its agents' homes on this computer go with it.
+      for (const [homeId, runner] of runners) if (runner.server === LOCAL_URL) await host.removeRunner(homeId);
       for (const server of new Set([local.publicUrl, local.url])) if (server) await host.removeServer(server);
       setLocal({ ...NO_SERVER, bundled: true, dir: local.dir, systemName: "Ana Souza", erased: to });
       ownerMode = true;
