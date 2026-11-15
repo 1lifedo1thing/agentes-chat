@@ -210,6 +210,7 @@
     "title": "Lass uns diesen {{device}} vorbereiten",
     "how": "Das dauert eine Minute. Alles bleibt hier, nur bei dir.",
     "again": "Es lief hier schon einmal, und seine Daten liegen noch in {{path}}.",
+    "ownerNone": "Hier ist kein Konto mehr übrig. Mit deinem Namen und deiner E-Mail wirst du sein neuer Inhaber.",
     "name": "Dein Name",
     "nameNeeded": "Schreib deinen Namen.",
     "email": "Deine E-Mail",

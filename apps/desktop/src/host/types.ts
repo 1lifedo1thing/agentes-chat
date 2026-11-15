@@ -115,8 +115,11 @@ export interface Host {
    * code (`site_fetch` in workspaces.rs allows only those).
    */
   siteFetch(server: string, method: string, path: string, body?: string): Promise<SiteAnswer>;
-  /** How the welcome window opens, taken once: `add` from the site's "Add a workspace", else null. */
-  welcomeMode(): Promise<"add" | null>;
+  /**
+   * How the welcome window opens, taken once: `add` from the site's "Add a workspace", `owner` when the app opened it
+   * because no account is left on the server it runs (Run here's form makes the new owner), else null.
+   */
+  welcomeMode(): Promise<"add" | "owner" | null>;
   /** The welcome window in its adding mode ("Add a workspace", from Preferences). */
   addWorkspace(): Promise<void>;
   /** Takes `server` out of the list (the server and the account there stay as they are). */
