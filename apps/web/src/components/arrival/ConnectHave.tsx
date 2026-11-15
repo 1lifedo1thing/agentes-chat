@@ -116,7 +116,7 @@ function itemOf(
 /**
  * One row. In a list (`RadioGroup`) it is a radio, its border alone marking the one picked (no dot); `still`: the one
  * in use, shown alone, nothing to pick. `whose`: it says whose it is instead of the line about it (a list of mixed
- * owners).
+ * owners). `onPick`: picking it acts at once, so it is a button (a radio would act on every arrow key).
  */
 export function HaveRow({
   item,
@@ -125,6 +125,7 @@ export function HaveRow({
   disabled = false,
   still = false,
   word,
+  onPick,
 }: {
   item: HaveItem;
   checked: boolean;
@@ -133,6 +134,7 @@ export function HaveRow({
   still?: boolean;
   /** Its state in words, over the plan's own ("Quase no limite"). */
   word?: string | null;
+  onPick?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const dom = useId();
@@ -182,6 +184,21 @@ export function HaveRow({
       </div>
     );
   }
+  if (onPick) {
+    return (
+      <button
+        type="button"
+        className="arrival-have__row"
+        data-state={checked ? "checked" : "unchecked"}
+        data-disabled={off ? "" : undefined}
+        aria-pressed={checked}
+        disabled={off}
+        onClick={onPick}
+      >
+        {body}
+      </button>
+    );
+  }
   return (
     <label
       htmlFor={`${dom}-row`}
@@ -199,7 +216,7 @@ export function HaveRow({
  * Rows to pick one from (`HaveItem`): few are grouped (the person's, the workspace's keys, each other owner's); many
  * show the three with most room, each saying whose it is, and `all` lists every one under a search, by owner, those at
  * their limit last. `byAi`: those groups go by AI instead of by owner. `pinned`: a group over the rest whatever their
- * number (the one in use), never in `all`.
+ * number (the one in use), never in `all`. `onPick`: a row acts once picked, so the rows are buttons, not radios.
  */
 export function HaveList({
   items,
@@ -212,6 +229,7 @@ export function HaveList({
   label,
   byAi = false,
   notes = [],
+  onPick,
 }: {
   items: readonly HaveItem[];
   value: string | undefined;
@@ -225,13 +243,21 @@ export function HaveList({
   byAi?: boolean;
   /** A quiet line under a group (`HaveItem.group.key`), after its rows; under the list where that group has none shown. */
   notes?: readonly { key: string; text: string }[];
+  onPick?: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const list = sortHave(items);
   const many = items.length > HAVE_SHOWN;
   const row = (i: HaveItem, whose: boolean) => (
-    <HaveRow key={i.id} item={i} checked={i.id === value} whose={whose} disabled={disabled} />
+    <HaveRow
+      key={i.id}
+      item={i}
+      checked={i.id === value}
+      whose={whose}
+      disabled={disabled}
+      onPick={onPick && (() => onPick(i.id))}
+    />
   );
 
   /** By owner: the person's, the workspace's keys, each other owner's; in `all`, those at their limit last. */
@@ -283,55 +309,60 @@ export function HaveList({
   const found = query.trim()
     ? list.filter((i) => `${i.title} ${i.whose}`.toLowerCase().includes(query.trim().toLowerCase()))
     : null;
-  return (
+  const body = all ? (
+    <>
+      <label className="arrival-have__search">
+        <Icon name="search" size={16} />
+        <input
+          type="search"
+          value={query}
+          placeholder={t("connectAi.chat.search")}
+          aria-label={t("connectAi.chat.search")}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </label>
+      <div className="arrival-have__scroll">
+        {found ? (
+          found.length > 0 ? (
+            found.map((i) => row(i, true))
+          ) : (
+            <p className="arrival-have__none">{t("connectAi.chat.none")}</p>
+          )
+        ) : (
+          grouped
+        )}
+      </div>
+    </>
+  ) : many ? (
+    <>
+      {top}
+      <p className="arrival-opts__label">{t("connectAi.chat.best")}</p>
+      {list.slice(0, HAVE_SHOWN).map((i) => row(i, true))}
+      {/* The one picked in the full list stays in sight when it isn't among the three. */}
+      {list
+        .slice(HAVE_SHOWN)
+        .filter((i) => i.id === value)
+        .map((i) => row(i, true))}
+      <button type="button" className="arrival-have__link" onClick={onAll}>
+        <Icon name="layers" size={16} />
+        <span>{t("connectAi.chat.seeAll", { count: items.length })}</span>
+        <Icon name="chevronRight" size={16} />
+      </button>
+      {notes.map(note)}
+    </>
+  ) : (
+    <>
+      {top}
+      {grouped}
+    </>
+  );
+  return onPick ? (
+    <fieldset className="arrival-have" aria-label={label}>
+      {body}
+    </fieldset>
+  ) : (
     <RadioGroup className="arrival-have" aria-label={label} value={value ?? ""} onValueChange={onChange}>
-      {all ? (
-        <>
-          <label className="arrival-have__search">
-            <Icon name="search" size={16} />
-            <input
-              type="search"
-              value={query}
-              placeholder={t("connectAi.chat.search")}
-              aria-label={t("connectAi.chat.search")}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </label>
-          <div className="arrival-have__scroll">
-            {found ? (
-              found.length > 0 ? (
-                found.map((i) => row(i, true))
-              ) : (
-                <p className="arrival-have__none">{t("connectAi.chat.none")}</p>
-              )
-            ) : (
-              grouped
-            )}
-          </div>
-        </>
-      ) : many ? (
-        <>
-          {top}
-          <p className="arrival-opts__label">{t("connectAi.chat.best")}</p>
-          {list.slice(0, HAVE_SHOWN).map((i) => row(i, true))}
-          {/* The one picked in the full list stays in sight when it isn't among the three. */}
-          {list
-            .slice(HAVE_SHOWN)
-            .filter((i) => i.id === value)
-            .map((i) => row(i, true))}
-          <button type="button" className="arrival-have__link" onClick={onAll}>
-            <Icon name="layers" size={16} />
-            <span>{t("connectAi.chat.seeAll", { count: items.length })}</span>
-            <Icon name="chevronRight" size={16} />
-          </button>
-          {notes.map(note)}
-        </>
-      ) : (
-        <>
-          {top}
-          {grouped}
-        </>
-      )}
+      {body}
     </RadioGroup>
   );
 }
@@ -352,6 +383,7 @@ export function ConnectHave({
   all = false,
   onAll,
   disabled = false,
+  acts = false,
 }: {
   rows: readonly ExistingAi[];
   agentName: string;
@@ -364,6 +396,8 @@ export function ConnectHave({
   /** Past `HAVE_SHOWN` rows: opens the list of all of them. */
   onAll?: () => void;
   disabled?: boolean;
+  /** A pick acts at once (no confirm at the foot): the rows are buttons (`HaveList`). */
+  acts?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const items = pickable(rows).map((r) => itemOf(t, i18n.language, r, agentName, dims));
@@ -376,6 +410,7 @@ export function ConnectHave({
       all={all}
       onAll={onAll}
       disabled={disabled}
+      onPick={acts ? onChange : undefined}
       label={t("connectAi.have.title")}
     />
   );

@@ -1145,15 +1145,56 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
     // Ada is João's; Walter owns the workspace.
     const state = withCard();
     const { box, picker } = await connectAda(state, { accounts: [joao], canUsePlans: false, canManageAccounts: false });
-    expect(within(picker).queryByRole("radio", { name: /^Claude Max/ })).toBeNull();
+    expect(within(picker).queryByRole("button", { name: /^Claude Max/ })).toBeNull();
     expect(picker.textContent).toContain("Mais 1 conta de João que só João pode dar.");
     expect(calls(state, "agents.setBrain")).toHaveLength(0);
-    expect(within(picker).getByRole("radio", { name: /^Claude da Acme/ })).toBeTruthy();
+    expect(within(picker).getByRole("button", { name: /^Claude da Acme/ })).toBeTruthy();
     // A plan for her is João's to connect, as his account is his to pick.
     await chooseAi(box, "Claude");
     expect(box.textContent).toContain(
       "Quem conecta a IA de Ada: um admin, com uma chave de API, ou João, com o próprio plano.",
     );
+  });
+
+  test("nothing the person can pick: no line asking for a pick, the line on whose accounts they are stays", async () => {
+    const joao = acct({
+      id: "acct_joao",
+      label: "Claude Max",
+      plan: "max",
+      ownerId: "u-joao",
+      ownerName: "João",
+      mine: false,
+    });
+    const state = withCard();
+    state.credentials = [];
+    const { picker } = await connectAda(state, { accounts: [joao], canUsePlans: false, canManageAccounts: false });
+    expect(picker.querySelectorAll(".arrival-have__row")).toHaveLength(0);
+    expect(picker.textContent).not.toContain("Escolha uma conta já conectada aqui.");
+    expect(picker.textContent).toContain("Mais 1 conta de João que só João pode dar.");
+  });
+
+  test("a pick here acts at once, so a row is a button an arrow key never presses, not a radio", async () => {
+    const bia = acct({
+      id: "acct_bia",
+      label: "Claude Max",
+      plan: "max",
+      ownerId: "u-bia",
+      ownerName: "Bia",
+      mine: false,
+    });
+    const state = withCard();
+    const { picker } = await connectAda(state, {
+      accounts: [bia],
+      canUsePlans: false,
+      canManageAccounts: false,
+      canUseOthersPlans: true,
+    });
+    expect(within(picker).queryAllByRole("radio", { name: /^Claude/ })).toHaveLength(0);
+    const row = within(picker).getByRole("button", { name: /^Claude Max/ });
+    expect(row.getAttribute("aria-pressed")).toBe("false");
+    await act(async () => fireEvent.keyDown(row, { key: "ArrowDown" }));
+    await settle(4);
+    expect(calls(state, "agents.setBrain")).toHaveLength(0);
   });
 
   test("one account João signed in once per agent is one row, offering the sign-in that's free; past three rows, all of them in Todas as contas", async () => {
@@ -1196,7 +1237,7 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
       target: { value: "team" },
     });
     expect(haveTitles(all)).toEqual(["Claude · Team"]);
-    await click(haveRow(all, "Claude · Team").querySelector("[role='radio']") as HTMLElement, 8);
+    await click(haveRow(all, "Claude · Team"), 8);
     expect(calls(state, "agents.setBrain").map((c) => c.args)).toEqual([
       [ORG_ID, ADA_ID, { brain: "claude_code", account: "acct_t13" }],
     ]);
@@ -1228,10 +1269,10 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
       canManageAccounts: false,
       canUseOthersPlans: true,
     });
-    const theirs = within(picker).getByRole("radio", { name: /^Claude Max/ }) as HTMLButtonElement;
-    expect(shownText(theirs.closest("label") as HTMLElement)).toBe("Claude MaxDe Bia · Max");
+    const theirs = within(picker).getByRole("button", { name: /^Claude Max/ }) as HTMLButtonElement;
+    expect(shownText(theirs)).toBe("Claude MaxDe Bia · Max");
     expect(theirs.disabled).toBe(false);
-    expect(within(picker).queryByRole("radio", { name: /^Claude Pro/ })).toBeNull();
+    expect(within(picker).queryByRole("button", { name: /^Claude Pro/ })).toBeNull();
     expect(picker.textContent).toContain("Mais 1 conta de Caio que só Caio pode dar.");
     expect(picker.textContent).toContain("Escolha uma conta já conectada aqui. A Ada pensa com ela.");
     expect(picker.textContent).toContain("Os planos que atendem o workspace todo mostram de quem são.");

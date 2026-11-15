@@ -14,6 +14,7 @@ import {
   existingAi,
   groupPlans,
   ownSignInLower,
+  pickable,
   planWordOf,
   signInPlan,
 } from "@agenteschat/client/lib/ai-accounts";
@@ -468,6 +469,7 @@ export function ExistingRows({
       all={wide}
       onAll={() => setAll(true)}
       disabled={busy}
+      acts
     />
   );
   // Someone else's plan, for whoever may use other people's plans: its owner hears it and may take it back.
@@ -477,7 +479,7 @@ export function ExistingRows({
   );
   return (
     <>
-      <p className="ai-picker__or">{t("connectAi.have.pickLine", g)}</p>
+      {pickable(rows).length > 0 && <p className="ai-picker__or">{t("connectAi.have.pickLine", g)}</p>}
       {list(false)}
       {/* A row's sign-in panel, under the list: mounted while the rows change around it. */}
       {panel}
