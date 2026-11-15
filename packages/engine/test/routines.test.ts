@@ -25,6 +25,7 @@ import {
   updateOrgSettings,
 } from "../src";
 import { isNoReply } from "../src/context";
+import { BRAIN_IDLE_TIMEOUT_MS } from "../src/machine-hub";
 import { ROUTINE_STALL_MS } from "../src/routine-firing";
 import { type Fixture, setup } from "./fixtures";
 
@@ -677,7 +678,9 @@ test("a run that already handed off holds no slot: the next one starts while its
   ]);
 });
 
-test("a run with nothing moving in it for 15 minutes is let go, and the next slot runs", async () => {
+test("a run with nothing moving in it for 20 minutes is let go, and the next slot runs", async () => {
+  // A computer's turn may be silent up to the hub's own bound: only a run quiet past it is let go.
+  expect(ROUTINE_STALL_MS).toBeGreaterThan(BRAIN_IDLE_TIMEOUT_MS);
   f = await setup();
   const { deps, row, leave, ledger } = await routineWithRun();
   await leave("started", new Date(Date.now() - ROUTINE_STALL_MS - 60_000));

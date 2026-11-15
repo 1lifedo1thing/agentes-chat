@@ -24,10 +24,11 @@ const ACTIVE_RUN: AgentRunRow["status"][] = ["queued", "running", "waiting_appro
 
 /**
  * A routine run that has shown nothing for this long is let go (§6.3): its work stopped in a call that
- * never came back, or it handed off and the turn left over it (its own record) never ended. The hub gives
- * a computer's turn the same 15 minutes of silence before it gives up on it.
+ * never came back, or it handed off and the turn left over it (its own record) never ended. It must stay above
+ * the hub's `BRAIN_IDLE_TIMEOUT_MS` (15 minutes): a computer's turn can be silent that long, and its events
+ * don't always write a step, so a live turn is never let go before the hub itself would fail it.
  */
-export const ROUTINE_STALL_MS = 15 * 60_000;
+export const ROUTINE_STALL_MS = 20 * 60_000;
 
 /** A working run's last sign of work: its row's change, or its newest step (a tool call, a turn's save). */
 const lastWork = sql`greatest(${agentRuns.updatedAt}, coalesce((select max(${agentRunSteps.createdAt}) from ${agentRunSteps} where ${agentRunSteps.runId} = ${agentRuns.id}), ${agentRuns.updatedAt}))`;

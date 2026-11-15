@@ -8673,7 +8673,7 @@ export const en = {
       waiting_budget_late: "Missed its time: the budget renewed too late",
       stopped: "Stopped by someone",
       stoppedBy: "Stopped by {{name}}",
-      stalled: "Let go: nothing moved in it for 15 minutes",
+      stalled: "Let go: nothing moved in it for 20 minutes",
       no_report: "Finished without telling the result",
       handoff_blocked: "Couldn't tell: the routine was paused or its creator can no longer post there",
       deleted: "Stopped: the routine was deleted",
