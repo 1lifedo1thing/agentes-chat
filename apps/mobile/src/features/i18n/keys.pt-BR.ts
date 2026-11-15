@@ -920,6 +920,9 @@ export const featureKeysPtBR = {
     /** The toast after a swipe marked an item done, with the way back. */
     doneToast: "Feito",
     undo: "Desfazer",
+    /** The toast after "Clear all" (named after the Done pill), with the way back. */
+    doneAllToast_one: "{{count}} movida para Feitas",
+    doneAllToast_other: "{{count}} movidas para Feitas",
     day: {
       today: "Hoje",
       yesterday: "Ontem",

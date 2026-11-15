@@ -858,6 +858,7 @@
     },
     "doneToast": "已完成",
     "undo": "撤销",
+    "doneAllToast_other": "已将 {{count}} 条移到已完成",
     "day": {
       "today": "今天",
       "yesterday": "昨天",

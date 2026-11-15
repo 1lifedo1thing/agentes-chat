@@ -5090,6 +5090,7 @@
     "summaryAllRead": "tout est lu",
     "summaryNothing": "Rien de nouveau ici.",
     "readAll": "Tout marquer comme lu",
+    "doneAll": "Tout terminer",
     "filters": "Filtrer les notifications",
     "filter": {
       "all": "Toutes",
@@ -5331,6 +5332,9 @@
       "readAll_one": "{{count}} marquée comme lue",
       "readAll_many": "{{count}} marquées comme lues",
       "readAll_other": "{{count}} marquées comme lues",
+      "doneAll_one": "{{count}} déplacée dans Terminées",
+      "doneAll_many": "{{count}} déplacées dans Terminées",
+      "doneAll_other": "{{count}} déplacées dans Terminées",
       "sent": "Réponse envoyée",
       "see": "Voir",
       "answered": "{{name}} a reçu votre réponse",

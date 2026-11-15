@@ -858,6 +858,7 @@
     },
     "doneToast": "Selesai",
     "undo": "Urungkan",
+    "doneAllToast_other": "{{count}} dipindahkan ke Selesai",
     "day": {
       "today": "Hari ini",
       "yesterday": "Kemarin",

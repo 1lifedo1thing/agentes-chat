@@ -906,6 +906,9 @@
     },
     "doneToast": "Terminé",
     "undo": "Annuler",
+    "doneAllToast_one": "{{count}} déplacée dans Terminées",
+    "doneAllToast_many": "{{count}} déplacées dans Terminées",
+    "doneAllToast_other": "{{count}} déplacées dans Terminées",
     "day": {
       "today": "Aujourd'hui",
       "yesterday": "Hier",

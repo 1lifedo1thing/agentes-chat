@@ -4761,6 +4761,7 @@
     "summaryAllRead": "모두 읽음",
     "summaryNothing": "새로운 소식이 없어요.",
     "readAll": "모두 읽음으로 표시",
+    "doneAll": "모두 완료",
     "filters": "알림 필터",
     "filter": {
       "all": "전체",
@@ -4972,6 +4973,7 @@
       "restored": "받은편지함으로 돌아갔어요",
       "undo": "실행 취소",
       "readAll_other": "{{count}}개를 읽음으로 표시했어요",
+      "doneAll_other": "{{count}}개를 완료로 옮겼어요",
       "sent": "답장을 보냈어요",
       "see": "보기",
       "answered": "{{name}}이(가) 내 답을 받았어요",

@@ -930,6 +930,10 @@
     },
     "doneToast": "Gotowe",
     "undo": "Cofnij",
+    "doneAllToast_one": "Przeniesiono {{count}} do Zakończonych",
+    "doneAllToast_few": "Przeniesiono {{count}} do Zakończonych",
+    "doneAllToast_many": "Przeniesiono {{count}} do Zakończonych",
+    "doneAllToast_other": "Przeniesiono {{count}} do Zakończonych",
     "day": {
       "today": "Dzisiaj",
       "yesterday": "Wczoraj",

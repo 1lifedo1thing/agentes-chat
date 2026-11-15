@@ -5084,6 +5084,7 @@
     "summaryAllRead": "todo leído",
     "summaryNothing": "Nada nuevo por aquí.",
     "readAll": "Marcar todo como leído",
+    "doneAll": "Completar todas",
     "filters": "Filtrar notificaciones",
     "filter": {
       "all": "Todas",
@@ -5325,6 +5326,9 @@
       "readAll_one": "{{count}} marcada como leída",
       "readAll_many": "{{count}} marcadas como leídas",
       "readAll_other": "{{count}} marcadas como leídas",
+      "doneAll_one": "{{count}} movida a Completadas",
+      "doneAll_many": "{{count}} movidas a Completadas",
+      "doneAll_other": "{{count}} movidas a Completadas",
       "sent": "Respuesta enviada",
       "see": "Ver",
       "answered": "{{name}} recibió tu respuesta",

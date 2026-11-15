@@ -4938,6 +4938,7 @@
     "summaryAllRead": "alles gelesen",
     "summaryNothing": "Nichts Neues hier.",
     "readAll": "Alle als gelesen markieren",
+    "doneAll": "Alle erledigen",
     "filters": "Benachrichtigungen filtern",
     "filter": {
       "all": "Alle",
@@ -5166,6 +5167,8 @@
       "undo": "Rückgängig",
       "readAll_one": "{{count}} als gelesen markiert",
       "readAll_other": "{{count}} als gelesen markiert",
+      "doneAll_one": "{{count}} nach Erledigt verschoben",
+      "doneAll_other": "{{count}} nach Erledigt verschoben",
       "sent": "Antwort gesendet",
       "see": "Ansehen",
       "answered": "{{name}} hat deine Antwort bekommen",

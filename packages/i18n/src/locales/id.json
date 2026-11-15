@@ -4776,6 +4776,7 @@
     "summaryAllRead": "semua sudah dibaca",
     "summaryNothing": "Tidak ada yang baru di sini.",
     "readAll": "Tandai semua sudah dibaca",
+    "doneAll": "Selesaikan semua",
     "filters": "Filter notifikasi",
     "filter": {
       "all": "Semua",
@@ -4989,6 +4990,7 @@
       "restored": "Kembali ke kotak masukmu",
       "undo": "Urungkan",
       "readAll_other": "{{count}} ditandai sudah dibaca",
+      "doneAll_other": "{{count}} dipindahkan ke Selesai",
       "sent": "Balasan terkirim",
       "see": "Lihat",
       "answered": "{{name}} menerima jawabanmu",

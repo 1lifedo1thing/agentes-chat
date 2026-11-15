@@ -12054,6 +12054,9 @@
   "notifications.readAll": {
     "value": "Mark all as read"
   },
+  "notifications.doneAll": {
+    "value": "Clear all"
+  },
   "notifications.filters": {
     "value": "Filter notifications"
   },
@@ -12661,6 +12664,12 @@
     "value": {
       "one": "{{count}} marked as read",
       "other": "{{count}} marked as read"
+    }
+  },
+  "notifications.toast.doneAll": {
+    "value": {
+      "one": "{{count}} moved to Done",
+      "other": "{{count}} moved to Done"
     }
   },
   "notifications.toast.sent": {

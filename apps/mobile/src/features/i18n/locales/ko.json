@@ -858,6 +858,7 @@
     },
     "doneToast": "완료",
     "undo": "실행 취소",
+    "doneAllToast_other": "{{count}}개를 완료로 옮겼어요",
     "day": {
       "today": "오늘",
       "yesterday": "어제",

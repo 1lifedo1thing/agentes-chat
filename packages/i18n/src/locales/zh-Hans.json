@@ -4766,6 +4766,7 @@
     "summaryAllRead": "全部已读",
     "summaryNothing": "这里没有新内容。",
     "readAll": "全部标为已读",
+    "doneAll": "全部完成",
     "filters": "筛选通知",
     "filter": {
       "all": "全部",
@@ -4977,6 +4978,7 @@
       "restored": "已移回收件箱",
       "undo": "撤销",
       "readAll_other": "已将 {{count}} 条标为已读",
+      "doneAll_other": "已将 {{count}} 条移到已完成",
       "sent": "回复已发送",
       "see": "查看",
       "answered": "{{name}} 收到了你的回复",

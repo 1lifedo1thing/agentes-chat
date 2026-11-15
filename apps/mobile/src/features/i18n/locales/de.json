@@ -882,6 +882,8 @@
     },
     "doneToast": "Erledigt",
     "undo": "Rückgängig",
+    "doneAllToast_one": "{{count}} nach Erledigt verschoben",
+    "doneAllToast_other": "{{count}} nach Erledigt verschoben",
     "day": {
       "today": "Heute",
       "yesterday": "Gestern",

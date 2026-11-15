@@ -4763,6 +4763,7 @@
     "summaryAllRead": "すべて既読",
     "summaryNothing": "新しいものはありません。",
     "readAll": "すべて既読にする",
+    "doneAll": "すべて完了にする",
     "filters": "通知を絞り込む",
     "filter": {
       "all": "すべて",
@@ -4974,6 +4975,7 @@
       "restored": "受信トレイに戻しました",
       "undo": "元に戻す",
       "readAll_other": "{{count}}件を既読にしました",
+      "doneAll_other": "{{count}}件を完了に移動しました",
       "sent": "返信を送信しました",
       "see": "見る",
       "answered": "{{name}}があなたの答えを受け取りました",

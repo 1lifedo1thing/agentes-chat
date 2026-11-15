@@ -5267,6 +5267,7 @@
     "summaryAllRead": "wszystko przeczytane",
     "summaryNothing": "Nic nowego.",
     "readAll": "Oznacz wszystko jako przeczytane",
+    "doneAll": "Zakończ wszystkie",
     "filters": "Filtruj powiadomienia",
     "filter": {
       "all": "Wszystkie",
@@ -5523,6 +5524,10 @@
       "readAll_few": "Oznaczono {{count}} jako przeczytane",
       "readAll_many": "Oznaczono {{count}} jako przeczytane",
       "readAll_other": "Oznaczono {{count}} jako przeczytane",
+      "doneAll_one": "Przeniesiono {{count}} do Zakończonych",
+      "doneAll_few": "Przeniesiono {{count}} do Zakończonych",
+      "doneAll_many": "Przeniesiono {{count}} do Zakończonych",
+      "doneAll_other": "Przeniesiono {{count}} do Zakończonych",
       "sent": "Wysłano odpowiedź",
       "see": "Zobacz",
       "answered": "{{name}} ma twoją odpowiedź",

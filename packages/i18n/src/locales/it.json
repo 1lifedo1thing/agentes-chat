@@ -5090,6 +5090,7 @@
     "summaryAllRead": "tutto letto",
     "summaryNothing": "Niente di nuovo qui.",
     "readAll": "Segna tutto come letto",
+    "doneAll": "Completa tutte",
     "filters": "Filtra notifiche",
     "filter": {
       "all": "Tutte",
@@ -5333,6 +5334,9 @@
       "readAll_one": "{{count}} segnata come letta",
       "readAll_many": "{{count}} segnate come lette",
       "readAll_other": "{{count}} segnate come lette",
+      "doneAll_one": "{{count}} spostata in Completate",
+      "doneAll_many": "{{count}} spostate in Completate",
+      "doneAll_other": "{{count}} spostate in Completate",
       "sent": "Risposta inviata",
       "see": "Vedi",
       "answered": "{{name}} ha ricevuto la tua risposta",
