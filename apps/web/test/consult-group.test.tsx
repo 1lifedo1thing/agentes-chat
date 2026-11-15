@@ -161,7 +161,7 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
     expect(r.querySelector(".consult-pair__time")?.textContent).toMatch(/^\d+ s$/);
     expect(r.querySelector(".consult-pair__row--live")).not.toBeNull();
     // A one-sentence question is its own subject.
-    expect(r.querySelector(".consult-pair__subject")?.textContent).toBe(QUESTION);
+    expect(r.querySelector(".consult-pair__subject")?.textContent).toBe(`·${QUESTION}`);
     expect(r.textContent).not.toContain(ANSWER);
     // The reply under it shows its face and name again (not grouped under the message above).
     expect(asked().classList.contains("ac-msg--grouped")).toBe(false);
@@ -172,12 +172,12 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
     await open(withTalk(withAsk([c]), c));
     const r = row() as HTMLElement;
     const subject = "Investigue as notificações duplicadas.";
-    expect(r.querySelector(".consult-pair__subject")?.textContent).toBe(subject);
+    expect(r.querySelector(".consult-pair__subject")?.textContent).toBe(`·${subject}`);
     // Names first, then · subject · word and time.
     const parts = [...r.querySelectorAll(".consult-pair__name, .consult-pair__subject, .consult-pair__word")].map(
       (n) => n.textContent,
     );
-    expect(parts).toEqual(["Ada", "Atlas", subject, "perguntando"]);
+    expect(parts).toEqual(["Ada", "Atlas", `·${subject}`, "perguntando"]);
     expect(r.querySelectorAll(".consult-pair__sep")).toHaveLength(2);
     await act(async () => fireEvent.click(rowButton()));
     await settle(3);
@@ -250,16 +250,13 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
     const r = row() as HTMLElement;
     // The question stays whole: the row shows its subject (`consultSubject`) and the line's CSS cuts that.
     const subject = r.querySelector(".consult-pair__subject")?.textContent ?? "";
-    expect(long.startsWith(subject.replace(/…$/, ""))).toBe(true);
+    expect(long.startsWith(subject.replace(/^·|…$/g, ""))).toBe(true);
     expect(rowButton().getAttribute("aria-description")).toBe(long);
     // Names, the count and the time are their own pieces beside it, never inside what gives way.
     const pieces = [...rowButton().children].map((e) => e.className.split(" ")[0]);
-    expect(pieces.slice(0, 4)).toEqual([
-      "consult-pair__lead",
-      "consult-pair__sep",
-      "consult-pair__subject",
-      "consult-pair__sep",
-    ]);
+    // The subject carries its own ·, so a subject with no room left leaves no lone dot behind.
+    expect(pieces.slice(0, 3)).toEqual(["consult-pair__lead", "consult-pair__subject", "consult-pair__sep"]);
+    expect(r.querySelector(".consult-pair__subject > .consult-pair__sep")?.textContent).toBe("·");
     expect(
       r.querySelector(".consult-pair__subject .consult-pair__word, .consult-pair__subject .consult-pair__time"),
     ).toBeNull();
@@ -289,7 +286,7 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
     expect(who).toHaveLength(2);
     expect(who[0]?.firstElementChild?.matches(".ac-avatar")).toBe(true);
     expect(who[1]?.firstElementChild?.matches(".consult-pair__faces")).toBe(true);
-    expect(r.querySelector(".consult-pair__lead + .consult-pair__sep")).not.toBeNull();
+    expect(r.querySelector(".consult-pair__lead + .consult-pair__subject")).not.toBeNull();
   });
 
   test("waiting on a person, for its computer, on what it handed on: a short word in the same slot, quiet", async () => {

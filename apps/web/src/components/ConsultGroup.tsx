@@ -246,13 +246,16 @@ export function ConsultPairRow({ askerId, items }: { askerId: string; items: rea
               <span className="consult-pair__name">{names.length === 1 ? names[0] : namesText(t, names, 1)}</span>
             </span>
           </span>
-          {(subject || pair.word || pair.seconds !== null) && (
-            <span className="consult-pair__sep" aria-hidden="true">
-              ·
+          {/* The subject carries its own ·: when it has no room left, the dot goes with it. */}
+          {subject && (
+            <span className="consult-pair__subject">
+              <span className="consult-pair__sep" aria-hidden="true">
+                ·
+              </span>
+              {subject}
             </span>
           )}{" "}
-          {subject && <span className="consult-pair__subject">{subject}</span>}
-          {subject && (pair.word || pair.seconds !== null) && (
+          {(pair.word || pair.seconds !== null) && (
             <span className="consult-pair__sep" aria-hidden="true">
               ·
             </span>

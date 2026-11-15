@@ -218,17 +218,13 @@ export function ConsultPairRow({
         <Text variant="footnote" tone="ink2" numberOfLines={1} style={styles.name}>
           {to}
         </Text>
-        {subject || pair.word || pair.seconds !== null ? (
-          <Text variant="footnote" tone="faint">
-            ·
-          </Text>
-        ) : null}
+        {/* The subject carries its own ·: when it has no room left, the dot goes with it. */}
         {subject ? (
           <Text variant="footnote" tone="faint" numberOfLines={1} style={styles.subject}>
-            {subject}
+            {`· ${subject}`}
           </Text>
         ) : null}
-        {subject && (pair.word || pair.seconds !== null) ? (
+        {pair.word || pair.seconds !== null ? (
           <Text variant="footnote" tone="faint">
             ·
           </Text>

@@ -40,6 +40,8 @@ test("the two agents' line is always one line: the subject gives way first, the 
   const pair = group.slice(group.indexOf("<AgentFace agentId={askerId}"), group.indexOf("</Pressable>"));
   expect(pair).not.toContain('ellipsizeMode="clip"');
   expect(pair).toContain("numberOfLines={1} style={styles.subject}");
+  // Its · goes with it: a subject with no room left leaves no lone dot.
+  expect(pair).toContain("· $" + "{subject}");
   const row = group.slice(group.indexOf("  row: {"), group.indexOf("},", group.indexOf("  row: {")));
   expect(row).not.toContain("flexWrap");
   // The names shrink only once the subject has none left: its share of any shrink dwarfs theirs.

@@ -435,9 +435,7 @@ p {
 }
 /* A phone's line has room for the names, the count and the time only: the subject would be a letter and its "…". */
 @container (max-width: 420px) {
-  .consult-pair__subject,
-  .consult-pair__subject + .consult-pair__sep,
-  .consult-pair__sep:has(+ .consult-pair__subject + .consult-pair__chev) {
+  .consult-pair__subject {
     display: none;
   }
 }
