@@ -4,7 +4,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import { join } from "node:path";
-import type { AiAccounts, AiComputer, PlanUsage } from "@agenteschat/client";
+import { type AiAccounts, type AiComputer, ApiError, type PlanUsage } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { declarations, topLevel } from "./built-css";
 import { ADA_ID, ATLAS_ID, createFakeApi, fakeMachinesOf, ORG_ID, seedState } from "./fake-api";
@@ -70,7 +70,7 @@ async function go(path: string, state: State, accounts: AiAccounts["accounts"] =
   fakeMachinesOf.get(api)?.setAiAccounts({ accounts, computers: [MAC] });
   const r = await renderApp(`/org/${ORG_ID}/${path}`, { api });
   await settle(6);
-  return r;
+  return { ...r, api };
 }
 
 const click = async (el: Element) => {
@@ -460,6 +460,66 @@ describe("IA e uso › Contas: the order of use at a limit (ADR 0041 §6)", () =
       ["acct_a", 1],
     ]);
     expect(places().map(([, name]) => name)).toEqual(["Pessoal", "Trabalho", "Conta do João"]);
+  });
+
+  const moveDown = async (name: string) => {
+    await click(within(order() as HTMLElement).getByRole("button", { name }));
+    const menu = screen().getByRole("menu", { name: "Ações" });
+    await act(async () => fireEvent.click(within(menu).getByRole("menuitem", { name: "Mover para baixo" })));
+    await settle(6);
+  };
+
+  test("after a move the keyboard stays on the moved account's grip, which says its new place", async () => {
+    await go("settings/usage", onPlans(), ORDER);
+    await moveDown("Mover Trabalho, número 1 na ordem");
+    expect(document.activeElement?.getAttribute("aria-label")).toBe("Mover Trabalho, número 2 na ordem");
+    expect(document.activeElement?.getAttribute("aria-haspopup")).toBe("menu");
+  });
+
+  test("a move the server refuses says why; while one is saving, no grip takes another", async () => {
+    const { api } = await go("settings/usage", onPlans(), ORDER);
+    api.machines.moveAccountInOrder = async () => {
+      throw new ApiError(403, "account.order_forbidden", "Only the account's owner or an admin may move it");
+    };
+    await moveDown("Mover Trabalho, número 1 na ordem");
+    expect(
+      screen().getByText("Só quem conectou esta conta ou um admin pode mudar o lugar dela na ordem."),
+    ).toBeTruthy();
+    expect(places().map(([, name]) => name)).toEqual(["Trabalho", "Pessoal", "Conta do João"]);
+
+    api.machines.moveAccountInOrder = () => new Promise(() => {});
+    await moveDown("Mover Trabalho, número 1 na ordem");
+    const grips = [...(order() as HTMLElement).querySelectorAll<HTMLElement>("button.plan-row__place")];
+    expect(grips.map((g) => [g.getAttribute("aria-disabled"), g.getAttribute("draggable")])).toEqual([
+      ["true", "false"],
+      ["true", "false"],
+    ]);
+    // Pressed while saving, a grip opens nothing.
+    await click(grips[1] as HTMLElement);
+    expect(screen().queryByRole("menu", { name: "Ações" })).toBeNull();
+  });
+
+  test("an admin moves a teammate's account; twelve accounts keep one width of place, long names included", async () => {
+    const many: AiAccounts["accounts"] = [
+      claude("acct_j", "Conta do João", {
+        mine: false,
+        ownerId: "u-joao",
+        ownerName: "João",
+        email: null,
+        useOrder: 0,
+      }),
+      ...Array.from({ length: 11 }, (_, i) =>
+        claude(`acct_${i}`, i === 10 ? "Assinatura corporativa compartilhada da equipe de produto" : `Conta ${i + 2}`, {
+          useOrder: i + 1,
+        }),
+      ),
+    ].map((a, i) => (i === 0 ? ({ ...a, canMove: true } as never) : a));
+    await go("settings/usage", onPlans(), many);
+    expect(
+      within(order() as HTMLElement).getByRole("button", { name: "Mover Conta do João, número 1 na ordem" }),
+    ).toBeTruthy();
+    expect(places().map(([n]) => n)).toEqual(Array.from({ length: 12 }, (_, i) => String(i + 1)));
+    expect(places().at(-1)?.[1]).toBe("Assinatura corporativa compartilhada da equipe de produto");
   });
 
   test("a drop before another row moves the account there", async () => {

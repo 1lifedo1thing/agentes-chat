@@ -386,6 +386,7 @@ export function useBrainState(view: AgentBrain, opts: { added: readonly MachineA
           ownerId: agent.ownerUserId ?? null,
           account: view.account,
           pinned: view.accountPinned === true,
+          ...(view.scope ? { scope: view.scope } : {}),
         });
   const moves = chain.length > 1;
   // At its limit it waits only with no other account of its chain that has room: then the way out is by hand.

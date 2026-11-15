@@ -54,7 +54,17 @@ export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
   const ids = group.accounts.map((a) => a.id);
   const put = (accountId: string, index: number | null) => {
     if (index === null || ids[index] === accountId) return;
-    move.mutate({ accountId, index }, { onError: (e) => toast.show(errorText(t, e), "error") });
+    move.mutate(
+      { accountId, index },
+      {
+        onError: (e) => toast.show(errorText(t, e), "error"),
+        // Back on the moved account's grip, whose name carries its new place: a keyboard or a screen reader stays there.
+        onSuccess: () =>
+          requestAnimationFrame(() =>
+            document.querySelector<HTMLElement>(`[data-order-grip="${CSS.escape(accountId)}"]`)?.focus(),
+          ),
+      },
+    );
   };
   const end = () => {
     dragging.current = null;
@@ -69,10 +79,13 @@ export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
       <button
         type="button"
         className="plan-row__place plan-row__place--grip"
-        draggable
+        draggable={!move.isPending}
         aria-label={label}
+        aria-haspopup="menu"
         title={label}
-        disabled={move.isPending}
+        data-order-grip={accountId}
+        // Not `disabled`: a focused button that turns disabled drops the keyboard's place on the page.
+        aria-disabled={move.isPending || undefined}
         onDragStart={(e) => {
           dragging.current = accountId;
           e.dataTransfer.effectAllowed = "move";
@@ -86,6 +99,7 @@ export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
         }}
         onDragEnd={end}
         onClick={(e) => {
+          if (move.isPending) return;
           const r = e.currentTarget.getBoundingClientRect();
           const up = orderStep(group.accounts, accountId, -1);
           const down = orderStep(group.accounts, accountId, 1);

@@ -62,7 +62,8 @@ function orderGroups(ai: AiAccounts): AccountOrderGroup[] {
       g = { machineId: a.machineId, computer: a.computer, kind: a.kind, accounts: [] };
       groups.push(g);
     }
-    g.accounts.push({ ...a, canMove: a.mine });
+    // An admin may move anyone's: a fixture says so with its own `canMove`.
+    g.accounts.push({ ...a, canMove: (a as { canMove?: boolean }).canMove ?? a.mine });
   }
   return groups;
 }

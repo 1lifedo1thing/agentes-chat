@@ -710,7 +710,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
           <div className="bd-use">
             <p className="arrival-opts__label">{t("agentPage.work.brain.account")}</p>
             {s.currentRow && <HaveRow item={s.currentRow} checked still />}
-            {s.moves && (
+            {s.moves && !s.waitsAtLimit && (
               <p className="bd-moves ac-iconline">
                 <Icon name="layers" size={16} />
                 <span>{t("agentPage.work.brain.movesOn")}</span>

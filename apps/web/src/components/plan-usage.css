@@ -341,14 +341,28 @@ html:not([data-pointer]) .plan-row__place--grip:focus-visible {
     grid-column: 1 / -1;
     min-height: 0;
   }
+  /* A placed row: the head keeps the mark's column empty and the place stands in it, on the name's line, so the facts
+     and the meter start on the row's edge as on any other row. */
+  .plan-row--placed {
+    display: block;
+    position: relative;
+  }
+  .plan-row--placed > .plan-row__place {
+    position: absolute;
+    z-index: 1;
+    top: var(--space-3);
+    left: var(--space-4);
+    margin: 0;
+  }
   .plan-row--placed > .plan-row__head {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: calc(var(--control-h-sm) + var(--space-3)) minmax(0, 1fr) auto;
+    padding-left: var(--space-4);
   }
   .plan-row--placed .plan-row__title {
-    grid-area: 1 / 1;
+    grid-area: 1 / 2;
   }
   .plan-row--placed > .plan-row__head > .plan-row__chevron {
-    grid-column: 2;
+    grid-column: 3;
   }
   .plan-row--placed .plan-row__facts,
   .plan-row--placed > .plan-row__head > .plan-row__meter {

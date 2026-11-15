@@ -17048,7 +17048,7 @@ export const ptBR = {
   usageViews: {
     signedOut: "Saiu da conta",
     whose: "de {{name}}",
-    /** Who uses a plan (ADR 0059 §3): its row's status, and the choice in its details for whoever connected it. */
+    /** The order of use of a plan's accounts at a limit (ADR 0041 §6). */
     order: {
       title: "{{plan}} · Ordem de uso",
       hint: "No limite, os agentes seguem na próxima conta com folga e voltam para a primeira quando ela renovar.",
@@ -17058,6 +17058,7 @@ export const ptBR = {
         "Um plano é de uma pessoa, então confira os termos do {{plan}} antes de os seus agentes contarem com várias contas.",
       move: "Mover {{name}}, número {{n}} na ordem",
     },
+    /** Who uses a plan (ADR 0059 §3): its row's status, and the choice in its details for whoever connected it. */
     serves: {
       everyone: "Todos usam",
       onlyYou: "Só você usa",
