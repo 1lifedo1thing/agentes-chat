@@ -86,7 +86,9 @@ import { KeyedQueue } from "./queue";
  *   again at its next start (`reopen`, ADR 0168): its Terminals, as new shells
  *   in the folders theirs were in, each with a line saying why; its other
  *   apps, as the desktop's keeper listed their windows (`desktop-keeper.py`);
- *   and the agent's Chrome, when it showed there, which opens its last tabs.
+ *   and the agent's Chrome, when it showed there, which opens again the tabs
+ *   the runner kept of it (`recordTabs` in `browser.ts`: its web pages, each
+ *   once, 8 at most, never a popup or a tab a person opened).
  *   A desktop that ends while the runner runs (stopped, parked, crashed)
  *   forgets it; one that ends once the runner is stopping (a reboot stops both
  *   at once) keeps it.
@@ -607,8 +609,8 @@ interface Desktop extends Saved {
 
 /**
  * What is open on a desktop, in `<id8>.open`: its Terminals as the folders their shells were in, oldest first; its other
- * apps as the keeper listed their windows; whether the agent's Chrome showed there (its tabs are its own session's,
- * which it opens again); and the computer it was kept on. Background work comes back through the server (ADR 0168).
+ * apps as the keeper listed their windows; whether the agent's Chrome showed there (its tabs are kept beside its
+ * profile, which it opens again); and the computer it was kept on. Background work comes back through the server (ADR 0168).
  */
 export interface OpenOnDesktop {
   terminals: string[];
@@ -1067,7 +1069,7 @@ export class DesktopSessions {
   /**
    * What was open on the desktop before the computer restarted or moved opens again, on the session's bus, where its
    * settings and the look's prompt are: the agent's Chrome when it showed there (the runner's own, through Browser's
-   * way, which opens its last tabs); each Terminal a new shell in its folder (one that is gone is left out), with
+   * way, which opens the tabs the runner kept of it, `recordTabs`); each Terminal a new shell in its folder (one that is gone is left out), with
    * `terminalNote` above its first prompt; each other app with its command line in its folder. Only the bus comes from
    * the session's environment: what the agent's processes hold is never handed to the launcher, which starts as root
    * in system mode.
