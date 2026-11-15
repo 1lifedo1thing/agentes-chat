@@ -925,7 +925,7 @@ describe("the workspace's level", () => {
       .set({ approvalsLevel: "never", approvalsLevelOwn: false })
       .where(eq(schema.agents.id, bia.id));
     const file = await Bun.file(
-      new URL("../../db/migrations/0277_workspace_approvals_level.sql", import.meta.url),
+      new URL("../../db/migrations/0278_workspace_approvals_level.sql", import.meta.url),
     ).text();
     const backfill = file.split("--> statement-breakpoint").at(-1) ?? "";
     await f.db.execute(sql.raw(backfill));

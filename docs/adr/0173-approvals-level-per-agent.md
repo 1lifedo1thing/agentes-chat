@@ -200,7 +200,7 @@ and no approval card pointed to it. What each level means is unchanged (the amen
    The workspace's level is copied onto each following agent (`setWorkspaceApprovalsLevel`, and at creation through
    `createAgent` and the right hand's provisioning), so every reader keeps reading `agents.approvals_level` alone and
    the policy, the prompt lines and the git proxy needed no change.
-2. **The migration changes nothing on deploy.** Migration `0277_workspace_approvals_level` marks an agent at any
+2. **The migration changes nothing on deploy.** Migration `0278_workspace_approvals_level` marks an agent at any
    level but `risky` as its own choice, and the rest follow the workspace, which starts at `risky`. An agent someone
    set back to `risky` by hand reads as following, which behaves the same.
 3. **Who sets it.** Whoever may set any agent's level (`manage_agents`), through `PUT …/approvals-level`. Setting it
