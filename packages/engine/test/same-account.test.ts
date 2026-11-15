@@ -96,3 +96,16 @@ test("a login nothing tells apart, or whose oldest login was removed, names itse
     [id(4), id(4)],
   ]);
 });
+
+test("one account signed in by the CLI and by a setup token is one; two accounts of one person on one plan stay two", async () => {
+  const { fx, machineId, walter, member, login } = await world();
+  await login(1, walter.id, { email: "walter@example.com", authMethod: "cli_login", status: "signed_out" });
+  await login(2, walter.id, { email: "walter@example.com", authMethod: "setup_token", shared: true });
+  await login(3, walter.id, { email: "walter.ops@example.com", authMethod: "cli_login" });
+  const views = await listMachineAccounts({ db: fx.db }, fx.org.id, machineId, member.id);
+  expect(views.map((v) => [v.id, v.sameAs])).toEqual([
+    [id(1), id(1)],
+    [id(2), id(1)],
+    [id(3), id(3)],
+  ]);
+});

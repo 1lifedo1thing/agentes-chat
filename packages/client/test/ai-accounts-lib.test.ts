@@ -336,6 +336,13 @@ describe("one account signed in once per agent is one row, whoever looks", () =>
     ]);
   });
 
+  test("its oldest login signed out, a newer one free: the row offers the newer one, usable", () => {
+    const [old, , , , , , , , , , , , free] = team(false);
+    if (!old || !free) throw new Error("logins");
+    const logins = [{ ...old, status: "signed_out" as const, usedBy: [] }, free];
+    expect(acts(false, true, logins)).toEqual([["use", "w13"]]);
+  });
+
   test("an account none of whose logins is free stays locked, once, even for an admin", () => {
     const busy = team(false).map((l) => (l.usedBy.length ? l : { ...l, status: "signed_out" as const }));
     expect(acts(false, true, busy)).toEqual([["locked", "w1"]]);
