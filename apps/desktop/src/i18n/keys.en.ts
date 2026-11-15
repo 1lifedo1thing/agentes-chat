@@ -651,6 +651,16 @@ export const desktopEn = {
       menuBarTitle: "Show in the menu bar",
       notchTitle: "Show the agents in the notch",
       notchDesc: "On MacBooks with a notch: who is working shows around the camera.",
+      /** Linux: draw the window without the graphics card. */
+      compatTitle: "Compatibility mode",
+      compatDesc:
+        "Draws the window without the graphics card. It's slower but works on any computer. Use it if the window goes black, gets cut off or freezes.",
+      /** Toast after changing Compatibility mode: the drawing mode changes only when the app starts. */
+      compatReopen: "Takes effect when the app reopens.",
+      reopenNow: "Reopen now",
+      /** Toast once, after an opening with the graphics card never painted and the app fell back. */
+      compatFellBack: "The window didn't open with the graphics card, so it opened in compatibility mode.",
+      compatTryCard: "Try the graphics card again",
     },
     thisMac: {
       agents: "Agents",
@@ -780,7 +790,7 @@ export const desktopEn = {
       installerNote: "Open the downloaded file: it installs the new version over the old one.",
       keepNote: "Your servers and settings stay.",
       whatsNew: "What's new in {{version}}",
-      /** Linux: how this computer draws the app (system, graphics card, renderer), one line to copy. */
+      /** The app's and the system's versions (on Linux also how it draws the app), one line to copy. */
       systemDetails: "System details",
     },
     activity: {

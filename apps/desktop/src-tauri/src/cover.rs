@@ -30,8 +30,8 @@ const FADE: Duration = Duration::from_millis(260);
 /// The sky's deepest tone (packages/ui sky SKY_TONES[0]), before the cover's page paints.
 const SKY: Color = Color(10, 63, 156, 255);
 /// Written when the window opens, removed when the site paints: still there at the next opening, the last one
-/// never painted.
-const PENDING_FILE: &str = "page-pending";
+/// never painted. It holds how that opening drew ("gpu" or "cpu", graphics.rs `mode`).
+pub const PENDING_FILE: &str = "page-pending";
 
 #[derive(Default)]
 pub struct Cover(Mutex<Shown>);
@@ -213,7 +213,7 @@ pub fn opening(app: &AppHandle) {
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
-    let _ = std::fs::write(&path, b"");
+    let _ = std::fs::write(&path, crate::graphics::mode());
 }
 
 /// The site, from its server again (a first load that never arrived leaves nothing to reload).
@@ -328,14 +328,14 @@ pub fn cover_details(app: AppHandle, webview: tauri::Webview) -> Result<String, 
         .ok()
         .and_then(|d| std::fs::read_to_string(d.join("window.log")).ok())
         .unwrap_or_default();
-    Ok(window_details(&app.package_info().version.to_string(), std::env::consts::OS, &server, &log))
+    Ok(window_details(&crate::graphics::details(&app), &server, &log))
 }
 
-/// What the window's Copy details says: versions, the server, the last lines of `window.log`.
-pub fn window_details(version: &str, os: &str, server: &str, log: &str) -> String {
+/// What the window's Copy details says: the system details line, the server, the last lines of `window.log`.
+pub fn window_details(details: &str, server: &str, log: &str) -> String {
     let lines: Vec<&str> = log.lines().collect();
     let tail = lines[lines.len().saturating_sub(40)..].join("\n");
-    format!("agentes.chat {version} ({os})\nserver: {server}\n\nwindow.log:\n{tail}\n")
+    format!("{details}\nserver: {server}\n\nwindow.log:\n{tail}\n")
 }
 
 /// The cover: the person chose to see the page as it is ("Mostrar assim mesmo"), after it didn't open.
@@ -356,10 +356,10 @@ mod tests {
     #[test]
     fn the_windows_own_details() {
         let log: String = (1..=50).map(|n| format!("{n} 0.6.0 step {n}\n")).collect();
-        let text = window_details("0.6.0", "macos", "https://chat.example.com", &log);
-        assert!(text.starts_with("agentes.chat 0.6.0 (macos)\nserver: https://chat.example.com\n"));
+        let text = window_details("agentes.chat 0.6.0 · macOS 15.1", "https://chat.example.com", &log);
+        assert!(text.starts_with("agentes.chat 0.6.0 · macOS 15.1\nserver: https://chat.example.com\n"));
         // The last 40 lines only.
         assert!(text.contains("11 0.6.0 step 11") && !text.contains("\n10 0.6.0 step 10"));
-        assert!(window_details("0.6.0", "macos", "", "").ends_with("window.log:\n\n"));
+        assert!(window_details("agentes.chat 0.6.0 · macOS 15.1", "", "").ends_with("window.log:\n\n"));
     }
 }

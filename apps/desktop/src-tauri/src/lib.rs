@@ -57,8 +57,8 @@ struct AppInfo {
     arch: &'static str,
     /// The system's own version where it is read (macOS: `15.1`).
     system: Option<String>,
-    /// How Linux draws the app, the line people copy (graphics.rs).
-    graphics: Option<String>,
+    /// The line people copy: versions, and on Linux how it draws (graphics.rs).
+    details: String,
 }
 
 /// The providers' own sign-in pages the runner gets from `claude auth login` / `codex login --device-auth`
@@ -423,7 +423,7 @@ fn app_info(app: AppHandle) -> AppInfo {
         os: std::env::consts::OS,
         arch: std::env::consts::ARCH,
         system: prepare::system_version(),
-        graphics: graphics::system().map(|s| s.line()),
+        details: graphics::details(&app),
     }
 }
 
@@ -515,13 +515,23 @@ async fn update_install(app: AppHandle) -> Result<bool, String> {
     };
     // Windows: the installer runs and the app ends here.
     update.install(bytes).map_err(|e| e.to_string())?;
-    // The runners and the server here finish their work first, as when quitting; then the new app opens
-    // (and starts the server here's new version, `local_server`).
+    // The new app starts the server here's new version (`local_server`).
+    reopen(app);
+    Ok(true)
+}
+
+/// The runners and the server here finish their work first, as when quitting; then the app opens again.
+fn reopen(app: AppHandle) {
     tauri::async_runtime::spawn_blocking(move || {
         stop_children(&app);
         app.restart();
     });
-    Ok(true)
+}
+
+/// Preferences' Reopen now: a setting that only takes effect when the app starts (Compatibility mode).
+#[tauri::command]
+fn app_reopen(app: AppHandle) {
+    reopen(app);
 }
 
 /// Preferences' Cancel while an update downloads.
@@ -563,6 +573,8 @@ fn migrate_login_item(app: &AppHandle) {
 }
 
 pub fn run() {
+    // Before any thread starts: WebKitGTK reads how to draw once.
+    graphics::choose();
     let builder = tauri::Builder::default()
         // First: a second launch brings the running app's window back; one carrying a link (Windows,
         // Linux) goes to the deep-link plugin first (`deep_link.rs` shows it).
@@ -611,6 +623,9 @@ pub fn run() {
             hide_window,
             quit_app,
             app_info,
+            app_reopen,
+            graphics::compat_get,
+            graphics::compat_set,
             autostart_get,
             autostart_set,
             notify,
@@ -772,6 +787,10 @@ pub fn run() {
             }
             if let Some(resume) = resume {
                 let _ = present(&handle, resume.window);
+            }
+            // The last opening with the graphics card never painted: this one draws without it, and Preferences says so.
+            if graphics::fall_back(&handle) {
+                let _ = present(&handle, "prefs");
             }
             // The app icon picked on this computer (ADR 0179).
             app_icon::show(&handle);

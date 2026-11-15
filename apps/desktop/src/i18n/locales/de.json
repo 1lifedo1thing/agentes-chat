@@ -580,7 +580,13 @@
       "notifyBrowserDesc": "Die Anfrage kommt schon auf deinem Handy und auf der Website an. So erfährst du es auch hier.",
       "menuBarTitle": "In der Menüleiste zeigen",
       "notchTitle": "Agenten in der Notch zeigen",
-      "notchDesc": "Auf MacBooks mit Notch: Wer arbeitet, erscheint rund um die Kamera."
+      "notchDesc": "Auf MacBooks mit Notch: Wer arbeitet, erscheint rund um die Kamera.",
+      "compatTitle": "Kompatibilitätsmodus",
+      "compatDesc": "Zeichnet das Fenster ohne die Grafikkarte. Das ist langsamer, funktioniert aber auf jedem Computer. Nutze ihn, wenn das Fenster schwarz wird, abgeschnitten ist oder hängt.",
+      "compatReopen": "Gilt, wenn die App neu geöffnet wird.",
+      "reopenNow": "Jetzt neu öffnen",
+      "compatFellBack": "Das Fenster ging mit der Grafikkarte nicht auf, deshalb wurde es im Kompatibilitätsmodus geöffnet.",
+      "compatTryCard": "Grafikkarte erneut versuchen"
     },
     "thisMac": {
       "agents": "Agenten",

@@ -44,10 +44,50 @@ export function General() {
   const [language, setLanguage] = usePref<AppLocale | "auto">(LOCALE_PREF, "auto");
   const [leaving, setLeaving] = useState<Home | null>(null);
   const [busy, setBusy] = useState(false);
+  const linux = host.platform === "linux";
+  // Linux: Compatibility mode as the next opening will have it; null until read.
+  const [compat, setCompat] = useState<boolean | null>(null);
+  const [compatSaving, setCompatSaving] = useState(false);
   const iconShown = menuBarShown(menuBar, works || local.run);
   useEffect(() => {
     void host.setTrayVisible(iconShown).catch(() => {});
   }, [host, iconShown]);
+
+  // An opening that fell back to compatibility mode says so here once, with the way back to the graphics card.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: read once per window
+  useEffect(() => {
+    if (!linux) return;
+    host
+      .compatMode()
+      .then((mode) => {
+        setCompat(mode.on);
+        if (!mode.fellBack) return;
+        toast(t("desktop.prefs.general.compatFellBack"), "alert", {
+          label: t("desktop.prefs.general.compatTryCard"),
+          run: () => void changeCompat(false, true),
+        });
+      })
+      .catch(() => setCompat(true));
+  }, [host, linux]);
+
+  /** The drawing mode changes only on a new start: reopen now, or say it will. */
+  const changeCompat = async (on: boolean, reopen = false) => {
+    setCompatSaving(true);
+    try {
+      await host.setCompatMode(on);
+      setCompat(on);
+      if (reopen) await host.reopen();
+      else
+        toast(t("desktop.prefs.general.compatReopen"), "info", {
+          label: t("desktop.prefs.general.reopenNow"),
+          run: () => void host.reopen().catch(() => toast(t("desktop.common.error"), "alert")),
+        });
+    } catch {
+      toast(t("desktop.common.error"), "alert");
+    } finally {
+      setCompatSaving(false);
+    }
+  };
 
   // The name arrives with the first status.
   useEffect(() => {
@@ -254,6 +294,22 @@ export function General() {
                     toast(t("desktop.common.error"), "alert");
                   });
                 }}
+              />
+            }
+          />
+        )}
+        {linux && (
+          <PrefRow
+            title={t("desktop.prefs.general.compatTitle")}
+            hint={hintFor(t, t("desktop.prefs.general.compatTitle"), t("desktop.prefs.general.compatDesc"))}
+            htmlFor="compat"
+            end={
+              <Switch
+                id="compat"
+                aria-describedby="compat-hint"
+                checked={compat !== false}
+                disabled={compat === null || compatSaving}
+                onCheckedChange={(on) => void changeCompat(on)}
               />
             }
           />

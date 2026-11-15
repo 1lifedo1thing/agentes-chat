@@ -585,7 +585,13 @@
       "notifyBrowserDesc": "La demande arrive déjà sur votre téléphone et sur le site. Ceci vous prévient aussi ici.",
       "menuBarTitle": "Afficher dans la barre des menus",
       "notchTitle": "Afficher les agents dans l'encoche",
-      "notchDesc": "Sur les MacBook avec encoche : qui travaille s'affiche autour de la caméra."
+      "notchDesc": "Sur les MacBook avec encoche : qui travaille s'affiche autour de la caméra.",
+      "compatTitle": "Mode compatibilité",
+      "compatDesc": "Dessine la fenêtre sans la carte graphique. C'est plus lent, mais ça marche sur n'importe quel ordinateur. Utilisez-le si la fenêtre devient noire, est coupée ou se fige.",
+      "compatReopen": "Prend effet à la réouverture de l'app.",
+      "reopenNow": "Rouvrir maintenant",
+      "compatFellBack": "La fenêtre ne s'est pas ouverte avec la carte graphique, elle s'est donc ouverte en mode compatibilité.",
+      "compatTryCard": "Réessayer la carte graphique"
     },
     "thisMac": {
       "agents": "Agents",
