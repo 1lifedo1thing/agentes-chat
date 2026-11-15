@@ -18,9 +18,15 @@ import {
   chainHasRoom,
   type ExistingAi,
   existingAi,
+  groupPlans,
+  haveAbout,
+  haveGroup,
   lendable,
+  lockedByOwner,
+  lockedText,
   orderStep,
   ownSignInLower,
+  pickable,
   signInOf,
 } from "@agenteschat/client/lib/ai-accounts";
 import { thinksWith } from "@agenteschat/client/lib/brain";
@@ -42,10 +48,10 @@ import {
   planOfAccount,
   planOfKind,
 } from "@agenteschat/client/lib/no-ai";
-import { planWord } from "@agenteschat/client/lib/plan-usage";
+import { planWord, roomWord } from "@agenteschat/client/lib/plan-usage";
 import { brainPlan } from "@agenteschat/client/lib/plans";
 import { AUTO, isAuto, keyLine } from "@agenteschat/client/lib/providers";
-import { planState } from "@agenteschat/ui/plan-state";
+import { planState, sortHave } from "@agenteschat/ui/plan-state";
 import type { TFunction } from "i18next";
 
 /*
@@ -62,9 +68,10 @@ export const offersKeyNow = (gate: PlanGate, held: boolean) =>
     ? gate.view !== null && !held
     : !held && (gate.state === "offline" || gate.state === "missing" || gate.state === "unsupported");
 
-/** Where the flow is: the first page, the plans, one plan's page, the API key's, or that key's makers. */
+/** Where the flow is: the first page, every account already connected, the plans, one plan's page, the API key's, or that key's makers. */
 export type FlowView =
   | { page: "home" }
+  | { page: "have" }
   | { page: "plans" }
   | { page: "plan"; choice: PlanChoice }
   | { page: "key" }
@@ -73,6 +80,7 @@ export type FlowView =
 /** What Back opens: a list's pick goes back to its list, and a sign-in from a row of what the person has to that row. */
 export const flowBack = (view: FlowView, fromRow: boolean): FlowView | null => {
   if (view.page === "home") return null;
+  if (view.page === "have") return { page: "home" };
   if (view.page === "makers") return { page: "key" };
   return view.page === "plan" && !fromRow ? { page: "plans" } : { page: "home" };
 };
@@ -225,8 +233,9 @@ export const accountRow = (t: TFunction, choice: AccountChoice<MachineAccount>, 
 };
 
 /**
- * Connect an AI's first group: what the person already has for the agent (`existingAi`), each row as it reads, the
- * accounts as the agent's page lists them and a workspace key with the budget line under it.
+ * Connect an AI's first rows: what the person already has for the agent and may pick (`existingAi`, `pickable`), each
+ * row as it reads, with its group by owner (`haveGroup`). An account's line tells it apart (`haveAbout`), someone
+ * else's says how much room its plan has, a workspace key the budget line under it.
  */
 export function existingRows(
   t: TFunction,
@@ -235,19 +244,91 @@ export function existingRows(
   agentName: string,
   locale: string,
 ) {
-  return existingAi(view, keys).map((row: ExistingAi) =>
-    row.kind === "key"
-      ? {
-          key: row.key.id,
-          row,
-          label: row.key.label,
-          sub: keyLine(t, row.key),
-          below: t("agentPage.work.brain.modelText", agentGrammar(agentName)),
-          mark: row.key.provider,
-          off: false,
-        }
-      : { key: row.choice.login.id, row, ...accountRow(t, row.choice, agentName, locale) },
-  );
+  return pickable(existingAi(view, keys)).map((row: ExistingAi) => {
+    const group = haveGroup(t, row);
+    if (row.kind === "key") {
+      return {
+        key: row.key.id,
+        row,
+        group,
+        label: row.key.label,
+        sub: keyLine(t, row.key),
+        below: t("agentPage.work.brain.modelText", agentGrammar(agentName)),
+        mark: row.key.provider,
+        off: false,
+        usage: null,
+        isKey: true,
+        signIn: false,
+      };
+    }
+    const a = row.choice.login;
+    const state = a.usage ? planState(a.usage, Date.now()) : null;
+    const word = a.mine ? planWord(t, locale, state) : roomWord(t, locale, state);
+    return {
+      key: a.id,
+      row,
+      group,
+      label: accountTitle(a),
+      sub: haveAbout(t, row, agentName),
+      ...(word ? { below: word } : {}),
+      mark: a.provider ?? a.kind,
+      off: signInOf(a) === "signed_out",
+      usage: a.usage,
+      isKey: false,
+      signIn: row.act !== "use" && row.act !== "move",
+    };
+  });
+}
+
+/** Someone else's accounts the person can't pick, one line per owner ("Mais 2 contas de Walter…"), by group key. */
+export const existingNotes = (
+  t: TFunction,
+  view: Pick<AgentBrain, "accounts" | "account" | "canUseOthersPlans">,
+  keys: readonly Credential[],
+) => lockedByOwner(existingAi(view, keys)).map((o) => ({ key: o.key, text: lockedText(t, o) }));
+
+/** Up to this many rows the first page groups them all; past it, this many with most room and a row to the rest. */
+export const HAVE_SHOWN = 3;
+
+/**
+ * How the first page lays out what the person has, as the web's list: few rows by owner (theirs, the workspace's
+ * keys, each other person's), each person's line of accounts they can't give under their group; many rows the three
+ * with most room (`sortHave`), the rest a row away ("Ver as N contas"), the lines under them.
+ */
+export function haveLayout<R extends { group: { key: string; label: string }; usage: PlanUsage | null }>(
+  rows: readonly R[],
+  notes: readonly { key: string; text: string }[],
+): { best: R[] | null; groups: { key: string; label: string | null; rows: R[]; note: string | null }[] } {
+  if (rows.length > HAVE_SHOWN) {
+    return {
+      best: sortHave(rows).slice(0, HAVE_SHOWN),
+      groups: notes.map((n) => ({ key: n.key, label: null, rows: [], note: n.text })),
+    };
+  }
+  const groups: { key: string; label: string | null; rows: R[]; note: string | null }[] = [];
+  const order = (k: string) => (k === "mine" ? 0 : k === "keys" ? 1 : 2);
+  for (const r of [...rows].sort((x, y) => order(x.group.key) - order(y.group.key))) {
+    const g = groups.find((x) => x.key === r.group.key);
+    if (g) g.rows.push(r);
+    else groups.push({ key: r.group.key, label: r.group.label, rows: [r], note: null });
+  }
+  for (const n of notes) {
+    const g = groups.find((x) => x.key === n.key);
+    if (g) g.note = n.text;
+    else groups.push({ key: n.key, label: null, rows: [], note: n.text });
+  }
+  return { best: null, groups };
+}
+
+/**
+ * Contas de IA's own rows: the viewer's logins of one account (`groupPlans`) as one row, by its login for all agents
+ * (else a signed-in one), with every agent on any of them and the newest usage; `logins`, all of them.
+ */
+export function ownAccountRows<A extends MachineAccount & { machineId: string }>(accounts: readonly A[]) {
+  return groupPlans(accounts).flatMap(({ logins, usedBy, usage }) => {
+    const first = logins.find((l) => l.shared === true) ?? logins.find((l) => l.status === "active") ?? logins[0];
+    return first ? [{ account: { ...first, usedBy: [...new Set(usedBy)], usage: usage ?? first.usage }, logins }] : [];
+  });
 }
 
 /**

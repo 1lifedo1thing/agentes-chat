@@ -16,13 +16,16 @@ import {
   advancedResetInput,
   agentAccounts,
   agentChain,
+  existingNotes,
   existingRows,
   flowBack,
+  haveLayout,
   modelInput,
   modelRows,
   modelSections,
   newAgentAi,
   orderMoves,
+  ownAccountRows,
   pickedAi,
   setupWords,
   takenFrom,
@@ -103,13 +106,17 @@ describe("the agent's AI", () => {
     expect(agentAccounts({ ...view, canUseOthersPlans: false }, "claude_code", "u1", "Ada").map((a) => a.id)).toEqual([
       "owners",
     ]);
-    // Connect an AI's first rows: Bia's in one tap, whose it is under it; one another agent has stays locked.
+    // Connect an AI's first rows: Bia's in one tap, whose it is and its plan under it; the two only their owner can
+    // give leave the list, one line under that person's group.
     const rows = existingRows(t, view, [], "Ada", "pt-BR").map((r) => [
       r.row.kind === "key" ? "key" : r.row.act,
       r.sub,
     ]);
-    expect(rows).toContainEqual(["use", "De Bia"]);
-    expect(rows.filter(([act]) => act === "locked")).toHaveLength(2);
+    expect(rows).toContainEqual(["use", "De Bia · Max"]);
+    expect(rows.filter(([act]) => act === "locked")).toHaveLength(0);
+    expect(existingNotes(t, view, [])).toEqual([
+      { key: "owner:u3", text: "Mais 2 contas de Walter que só Walter pode dar." },
+    ]);
   });
 
   test("the usage shown is its account's, or the computer's own sign-in's only where that thinks for it", () => {
@@ -489,15 +496,17 @@ describe("the agent's AI", () => {
       ["also", "Claude Pessoal · Max", "Também usada por Atlas", null],
       ["also", "ChatGPT Plus", "Também usada por Atlas", null],
       ["key", "Claude da Acme", "Claude · termina em 7f2a", "Pago por uso. Conta no orçamento da Ada."],
-      ["locked", "Claude Max", "De João", null],
+    ]);
+    expect(existingNotes(t, view, [])).toEqual([
+      { key: "owner:u2", text: "Mais 1 conta de João que só João pode dar." },
     ]);
     // The first page lists them before the plans, drawn as the agent's AI draws its accounts.
     const connect = await Bun.file(
       new URL("../../src/features/ai/ConnectAiSteps.tsx", import.meta.url).pathname,
     ).text();
     const home = connect.slice(connect.indexOf("function Home("));
-    expect(home.indexOf('t("connectAi.have.title")')).toBeGreaterThan(-1);
-    expect(home.indexOf('t("connectAi.have.title")')).toBeLessThan(home.indexOf('t("mobile.ai.planRow")'));
+    expect(home.indexOf('t("connectAi.have.pickLine"')).toBeGreaterThan(-1);
+    expect(home.indexOf('t("connectAi.have.pickLine"')).toBeLessThan(home.indexOf('t("mobile.ai.planRow")'));
     expect(home).toContain("<AiRow");
     // A plan or a key, one row each; whose is one searched list, the plan's page and the key's steps as before.
     expect(home).toContain('onView({ page: "plans" })');
@@ -1255,6 +1264,62 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     expect(orderMoves(order, { id: "b", canMove: false })).toEqual([]);
   });
 
+  test("an account signed in once per agent is one row in Contas de IA and one place in the order", () => {
+    const team = (id: string, over: Partial<MachineAccount> = {}) =>
+      ({
+        ...account(id, { email: "walter@example.com", sameAs: "t1", ...over }),
+        machineId: "m1",
+      }) as MachineAccount & {
+        machineId: string;
+      };
+    const rows = ownAccountRows([
+      team("t1", { usedBy: ["Ada"], status: "signed_out" }),
+      team("t2", { usedBy: ["Theo"] }),
+      team("t3", { usedBy: [] }),
+      { ...account("p", { email: "pessoal@example.com", sameAs: "p" }), machineId: "m1" },
+    ]);
+    expect(rows.map((r) => [r.account.id, r.account.usedBy, r.logins.map((l) => l.id)])).toEqual([
+      ["t2", ["Ada", "Theo"], ["t1", "t2", "t3"]],
+      ["p", [], ["p"]],
+    ]);
+    const order = [
+      { id: "t1", sameAs: "t1" },
+      { id: "p", sameAs: "p" },
+      { id: "t2", sameAs: "t1" },
+    ];
+    expect(orderMoves(order, { id: "t2", canMove: true })).toEqual([{ step: 1, index: 1 }]);
+    expect(orderMoves(order, { id: "p", canMove: true })).toEqual([{ step: -1, index: 0 }]);
+  });
+
+  test("Connect an AI's first page as the web's list: few rows by owner, many the three with most room and the rest a row away", () => {
+    const r = (key: string, group: string, used: number | null) => ({
+      key,
+      group: { key: group, label: group },
+      usage: used === null ? null : usage(used),
+    });
+    const few = haveLayout(
+      [r("w", "owner:u2", 10), r("k", "keys", null), r("m", "mine", 50)],
+      [
+        { key: "owner:u2", text: "Mais 2" },
+        { key: "owner:u3", text: "Mais 1" },
+      ],
+    );
+    expect(few.best).toBeNull();
+    expect(few.groups.map((g) => [g.key, g.rows.map((x) => x.key), g.note])).toEqual([
+      ["mine", ["m"], null],
+      ["keys", ["k"], null],
+      ["owner:u2", ["w"], "Mais 2"],
+      ["owner:u3", [], "Mais 1"],
+    ]);
+    const many = haveLayout(
+      [r("a", "mine", 90), r("b", "mine", 10), r("c", "owner:u2", 40), r("d", "owner:u2", 20)],
+      [{ key: "owner:u2", text: "Mais 1" }],
+    );
+    expect(many.best?.map((x) => x.key)).toEqual(["b", "d", "c"]);
+    expect(many.groups.map((g) => g.note)).toEqual(["Mais 1"]);
+    expect(flowBack({ page: "have" }, false)).toEqual({ page: "home" });
+  });
+
   test("the screens: the order with Move up and Move down, the pin switch, the limit's way out only when it waits", async () => {
     const read = (file: string) => Bun.file(new URL(`../../src/features/ai/${file}`, import.meta.url).pathname).text();
     const [accounts, ai, advanced] = await Promise.all([
@@ -1266,7 +1331,9 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     expect(accounts).toContain("rows.filter((a) => !placed.has(a.id)).map((a) => accountRow(a))");
     expect(accounts).toContain("if (mine) return accountRow(mine, g, i + 1);");
     expect(accounts).toContain("...(g && placedAs ? moves(g, placedAs) : []),");
-    expect(accounts).toContain("filter((g) => g.accounts.length > 1)");
+    expect(accounts).toContain("filter((g) => orderAccounts(g.accounts).length > 1)");
+    expect(accounts).toContain("{orderAccounts(g.accounts).map((block, i) => {");
+    expect(accounts).toContain("const owned = ownAccountRows(ai.data?.accounts ?? []);");
     expect(accounts).toContain("disabled={g !== undefined && move.isPending}");
     expect(ai).toContain("const offers = waits && kind && view ?");
     expect(ai).toContain('chain.moves && !waits ? t("agentPage.work.brain.movesOn") : null');

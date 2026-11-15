@@ -20,6 +20,7 @@ import {
   keyRemovalText,
   offersSignInAgain,
   onSeveralComputers,
+  orderAccounts,
   ownSignIns,
   ownSignInTitle,
   signInOf,
@@ -50,7 +51,7 @@ import { errorHaptic, PushedHeader, successHaptic } from "../shared/parts";
 import { PlanMeter } from "../usage/parts";
 import { AddAccount } from "./AddAccount";
 import { openKeyForAll } from "./KeyForAllScreen";
-import { orderMoves } from "./logic";
+import { orderMoves, ownAccountRows } from "./logic";
 import { openConnectAi } from "./NoAiCard";
 import { alertKeyRefused, Note, PlanHoldNote, usePlanHold } from "./parts";
 
@@ -92,7 +93,10 @@ export function AiAccountsScreen() {
   useEffect(() => {
     void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
   }, [api, orgId]);
-  const rows = ai.data?.accounts ?? [];
+  // The viewer's logins of one account (one per agent) are one row; disconnecting it removes every one of them.
+  const owned = ownAccountRows(ai.data?.accounts ?? []);
+  const rows = owned.map((o) => o.account);
+  const loginsOf = (a: Account) => owned.find((o) => o.account.id === a.id)?.logins ?? [a];
   const own = ownSignIns(ai.data);
   const several = onSeveralComputers(rows);
   const refetch = () => void qc.invalidateQueries({ queryKey: keys.aiAccounts(orgId) });
@@ -155,7 +159,7 @@ export function AiAccountsScreen() {
           text: t("aiAccounts.page.disconnect"),
           style: "destructive",
           onPress: () =>
-            api.machines.removeAccount(orgId, a.machineId, a.id).then(() => {
+            Promise.all(loginsOf(a).map((l) => api.machines.removeAccount(orgId, l.machineId, l.id))).then(() => {
               successHaptic();
               toast({ title: t("aiAccounts.page.disconnected", { label: a.label }), icon: "check" });
               refetch();
@@ -166,8 +170,8 @@ export function AiAccountsScreen() {
     );
   const order = useAccountOrder(orgId);
   const move = useMoveAccountInOrder(orgId);
-  // An order of one account shows nothing of an order.
-  const groups = (order.data?.groups ?? []).filter((g) => g.accounts.length > 1);
+  // An order of one account shows nothing of an order; an account signed in once per agent is one place in it.
+  const groups = (order.data?.groups ?? []).filter((g) => orderAccounts(g.accounts).length > 1);
   const placed = new Set(groups.flatMap((g) => g.accounts.map((a) => a.id)));
   const severalOrders = new Set(groups.map((g) => g.machineId)).size > 1;
   const put = (accountId: string, index: number | null) => {
@@ -342,7 +346,9 @@ export function AiAccountsScreen() {
             group={g}
             computer={severalOrders ? computerOf(g.computer) : null}
           >
-            {g.accounts.map((a, i) => {
+            {orderAccounts(g.accounts).map((block, i) => {
+              const a = block.find((l) => rows.some((r) => r.id === l.id)) ?? block[0];
+              if (!a) return null;
               const mine = rows.find((r) => r.id === a.id);
               if (mine) return accountRow(mine, g, i + 1);
               const them = moves(g, a);
