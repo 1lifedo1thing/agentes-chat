@@ -312,6 +312,7 @@ export function AgentScreen({
     y: y.value,
     ...desk.value,
     boxWidth: box.value.width,
+    boxHeight: box.value.height,
   }));
   // Opening, or a switch the stream never takes: past `STUCK_MS` it says so, with Tentar de novo.
   const waitsOn = screenWaits({ active, shown, switching: switching !== null });

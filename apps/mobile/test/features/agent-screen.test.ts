@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 import { pointerInView, pointerShare } from "@agenteschat/client";
-import { pointerStep, watchView } from "../../src/features/computer/agent-pointer";
+import { pointerStep, TAG_BELOW, watchView } from "../../src/features/computer/agent-pointer";
 import { CURSOR_CELLS, cursorCells } from "../../src/features/computer/pixel-cursor";
 import {
   BUTTON,
@@ -519,7 +519,7 @@ describe("the agent's own pointer on its screen", () => {
   test("the card's view of the screen is pinned at its top left, scaled to fit", () => {
     const box = { width: 336, height: 336 * (900 / 1280) };
     const w = watchView(box, desk);
-    expect(w).toEqual({ s: fitScale(box, desk), x: 0, y: 0, ...desk, boxWidth: box.width });
+    expect(w).toEqual({ s: fitScale(box, desk), x: 0, y: 0, ...desk, boxWidth: box.width, boxHeight: box.height });
     const at = pointerInView(said(1280, 900), w);
     expect(at.x).toBeCloseTo(box.width, 6);
     expect(at.y).toBeCloseTo(box.height, 6);
@@ -534,6 +534,7 @@ describe("the agent's own pointer on its screen", () => {
       presses: 1,
       quiet: false,
       flip: false,
+      lift: false,
     });
     expect(pointerStep({ ...p, act: "double" }, card, 10_000)?.presses).toBe(2);
     expect(pointerStep({ ...p, act: "move" }, card, 10_000)?.presses).toBe(0);
@@ -546,13 +547,40 @@ describe("the agent's own pointer on its screen", () => {
     const s = 2;
     // The desktop's middle panned to the box's right side: x = 0.55 of the desktop lands about 20 pt from its edge.
     const camera = { x: 0.55 * desk.width - (PHONE.width - 20) / s, y: 0 };
-    const zoomed = { ...view(camera, s), boxWidth: PHONE.width };
+    const zoomed = { ...view(camera, s), boxWidth: PHONE.width, boxHeight: PHONE.height };
     const tip = { ...p, x: 0.55 * 1280, act: "click" as const };
     expect(pointerInView(pointerShare(tip), zoomed).x).toBeCloseTo(PHONE.width - 20, 6);
     expect(pointerStep(tip, zoomed, 10_000)?.flip).toBe(true);
     // Panned the other way, a point at 0.9 of the desktop sits on the box's left: the name opens right.
-    const left = { ...view({ x: 0.9 * desk.width - 20 / s, y: 0 }, s), boxWidth: PHONE.width };
+    const left = { ...view({ x: 0.9 * desk.width - 20 / s, y: 0 }, s), boxWidth: PHONE.width, boxHeight: PHONE.height };
     expect(pointerStep({ ...tip, x: 0.9 * 1280 }, left, 10_000)?.flip).toBe(false);
+  });
+
+  test("the name opens above the arrow where the tip lands too near the box's bottom for it to fit below", () => {
+    const h = card.boxHeight;
+    const at = (y: number, x = 640) => pointerStep({ ...p, x, y, act: "move" }, card, 10_000);
+    // Top and middle: below, as always.
+    expect(at(10)?.lift).toBe(false);
+    expect(at(450)?.lift).toBe(false);
+    // Room for the whole tag below ends `TAG_BELOW` above the bottom.
+    const edge = ((h - TAG_BELOW) / h) * 900;
+    expect(at(edge - 1)?.lift).toBe(false);
+    expect(at(edge + 1)?.lift).toBe(true);
+    expect(at(0.95 * 900)?.lift).toBe(true);
+    // The bottom right corner turns both ways.
+    expect(at(0.95 * 900, 0.95 * 1280)).toMatchObject({ flip: true, lift: true });
+  });
+
+  test("zoomed in, the name lifts where the tip lands in the box, not by the desktop", () => {
+    const s = 2;
+    // The desktop's middle panned to the box's bottom: y = 0.5 of the desktop lands 10 pt above its bottom edge.
+    const camera = { x: 0, y: 0.5 * desk.height - (PHONE.height - 10) / s };
+    const zoomed = { ...view(camera, s), boxWidth: PHONE.width, boxHeight: PHONE.height };
+    const tip = { ...p, x: 0.1 * 1280, y: 0.5 * 900, act: "move" as const };
+    expect(pointerInView(pointerShare(tip), zoomed).y).toBeCloseTo(PHONE.height - 10, 6);
+    expect(pointerStep(tip, zoomed, 10_000)?.lift).toBe(true);
+    // Unzoomed, the same point is the card's middle: the name stays below.
+    expect(pointerStep(tip, card, 10_000)?.lift).toBe(false);
   });
 
   test("a gesture over before the view showed it is never replayed", () => {

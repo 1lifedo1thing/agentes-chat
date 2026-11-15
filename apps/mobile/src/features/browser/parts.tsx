@@ -57,10 +57,10 @@ export function FrameView({
   const meta = useMemo(() => frameMetadata(frame), [frame]);
   const { deviceWidth, deviceHeight } = meta;
   const drawn = useMemo(
-    () => ({ ...frameView(view, { deviceWidth, deviceHeight }), boxWidth: view.width }),
+    () => ({ ...frameView(view, { deviceWidth, deviceHeight }), boxWidth: view.width, boxHeight: view.height }),
     [view, deviceWidth, deviceHeight],
   );
-  const pointerView = useDerivedValue(() => drawn, [drawn]);
+  const pointerView = useDerivedValue(() => drawn);
   const now = useRef({ meta, view, enabled, onInput });
   now.current = { meta, view, enabled, onInput };
   const [{ down, move, up, cancel }] = useState(() => {

@@ -61,7 +61,7 @@ export function ScreenWatch({
   const said = useRef(onState);
   said.current = onState;
   const shownAt = useMemo(() => watchView(box, desk), [box, desk]);
-  const pointerView = useDerivedValue(() => shownAt, [shownAt]);
+  const pointerView = useDerivedValue(() => shownAt);
 
   useEffect(() => {
     if (ready) web.current?.call("set", { connect, mode: "watch" });

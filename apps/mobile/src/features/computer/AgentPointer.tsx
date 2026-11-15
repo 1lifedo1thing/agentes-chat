@@ -119,7 +119,7 @@ export const AgentPointer = memo(function AgentPointer({
   const ringA = useSharedValue(1);
   const ringB = useSharedValue(1);
   const placed = useRef(false);
-  const [look, setLook] = useState({ quiet: false, flip: false });
+  const [look, setLook] = useState({ quiet: false, flip: false, lift: false });
 
   const share = useDerivedValue(() => glidePoint(from.value, to.value, t.value, ratio.value));
   const cursor = useAnimatedStyle(() => {
@@ -144,7 +144,7 @@ export const AgentPointer = memo(function AgentPointer({
     const timers: ReturnType<typeof setTimeout>[] = [];
     const shape = pointer.height / pointer.width;
     ratio.value = shape;
-    setLook({ quiet: false, flip: step.flip });
+    setLook({ quiet: false, flip: step.flip, lift: step.lift });
     const fadeIn = placed.current && !reduced;
     placed.current = true;
     const arrived = () => {
@@ -203,7 +203,7 @@ export const AgentPointer = memo(function AgentPointer({
         <Animated.View style={[styles.arrow, arrow]}>
           <Arrow deep={deep} />
         </Animated.View>
-        <View style={[styles.who, look.flip ? styles.whoFlip : null]}>
+        <View style={[styles.who, whoAt(look.flip, look.lift)]}>
           <AgentFace agentId={agentId} size={18} live={false} />
           {look.quiet ? null : (
             <Text variant="caption" numberOfLines={1} style={styles.name}>
@@ -220,6 +220,16 @@ export const AgentPointer = memo(function AgentPointer({
 export function DesktopAgentPointer({ enabled, ...props }: PointerProps & { enabled: boolean }) {
   const pointer = useDesktopPointer(props.agentId, enabled);
   return <AgentPointer {...props} pointer={pointer} />;
+}
+
+/** The tag turned left past the box's right side, lifted over the arrow near its bottom (`pointerStep`). */
+function whoAt(flip: boolean, lift: boolean) {
+  if (!flip && !lift) return null;
+  return [
+    flip ? styles.whoFlip : null,
+    lift ? (flip ? styles.whoLiftFlip : styles.whoLift) : null,
+    { transform: [{ translateX: flip ? "-100%" : 0 }, { translateY: lift ? "-100%" : 0 }] },
+  ];
 }
 
 const styles = StyleSheet.create({
@@ -250,6 +260,9 @@ const styles = StyleSheet.create({
     boxShadow: "0px 0px 0px 1px rgba(20, 20, 20, 0.16), 1.5px 1.5px 0px 1px rgba(10, 20, 40, 0.38)",
   },
   // Its right edge 4 pt left of the tip, at any width of the name.
-  whoFlip: { left: -4, transform: [{ translateX: "-100%" }], borderTopLeftRadius: 9, borderTopRightRadius: 3 },
+  whoFlip: { left: -4, borderTopLeftRadius: 9, borderTopRightRadius: 3 },
+  // Its bottom edge 4 pt above the tip, the arrow under it.
+  whoLift: { top: -4, borderTopLeftRadius: 9, borderBottomLeftRadius: 3 },
+  whoLiftFlip: { top: -4, borderTopRightRadius: 9, borderBottomRightRadius: 3 },
   name: { maxWidth: 120, paddingHorizontal: 6, color: INK, fontWeight: "600" },
 });
