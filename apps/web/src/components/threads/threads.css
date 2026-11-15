@@ -138,8 +138,9 @@ html:not([data-pointer]) .thread-marker__open:focus-visible {
   margin: 0;
   padding: 8px;
 }
+/* The popover takes the window's height (`.ac-popover`): the list gives way under the head and scrolls past it. */
 .thread-pop__list {
-  max-height: min(420px, 60vh);
+  min-height: 0;
   overflow-y: auto;
 }
 /* A MediaRow: a face or a kind tile (32), the name with its time or state at the line's end, what it says under them,

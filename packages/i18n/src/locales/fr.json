@@ -11917,7 +11917,6 @@
       "open": "Changer le modèle de {{agent}}",
       "ownSignIn": "Compte de cet ordinateur",
       "apiKey": "{{provider}} avec une clé d'API",
-      "default": "par défaut",
       "refused": "Refusé avec cette clé",
       "textOnly": "Lit seulement du texte",
       "search": "Rechercher des modèles",

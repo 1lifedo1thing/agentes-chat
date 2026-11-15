@@ -11482,7 +11482,6 @@
       "open": "Modell von {{agent}} ändern",
       "ownSignIn": "Konto dieses Computers",
       "apiKey": "{{provider}} mit API-Schlüssel",
-      "default": "Standard",
       "refused": "Mit diesem Schlüssel abgelehnt",
       "textOnly": "Liest nur Text",
       "search": "Modelle suchen",

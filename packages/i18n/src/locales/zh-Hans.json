@@ -11080,7 +11080,6 @@
       "open": "更改 {{agent}} 的模型",
       "ownSignIn": "此电脑的账号",
       "apiKey": "通过 API 密钥使用 {{provider}}",
-      "default": "默认",
       "refused": "此密钥被拒绝",
       "textOnly": "仅读取文本",
       "search": "搜索模型",

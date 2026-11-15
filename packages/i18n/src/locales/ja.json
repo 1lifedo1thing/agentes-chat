@@ -11015,7 +11015,6 @@
       "open": "{{agent}}のモデルを変更",
       "ownSignIn": "このコンピューターのアカウント",
       "apiKey": "APIキーで使う{{provider}}",
-      "default": "既定",
       "refused": "このキーでは拒否されました",
       "textOnly": "テキストのみ",
       "search": "モデルを検索",

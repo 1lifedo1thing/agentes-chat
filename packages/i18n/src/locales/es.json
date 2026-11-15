@@ -11848,7 +11848,6 @@
       "open": "Cambiar el modelo de {{agent}}",
       "ownSignIn": "Cuenta de este ordenador",
       "apiKey": "{{provider}} con clave de API",
-      "default": "predeterminado",
       "refused": "Rechazado con esta clave",
       "textOnly": "Solo lee texto",
       "search": "Buscar modelos",

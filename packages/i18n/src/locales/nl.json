@@ -11547,7 +11547,6 @@
       "open": "Model van {{agent}} wijzigen",
       "ownSignIn": "Account van deze computer",
       "apiKey": "{{provider}} met een API-sleutel",
-      "default": "standaard",
       "refused": "Geweigerd voor deze sleutel",
       "textOnly": "Leest alleen tekst",
       "search": "Modellen zoeken",

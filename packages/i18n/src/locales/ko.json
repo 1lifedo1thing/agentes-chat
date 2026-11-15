@@ -11009,7 +11009,6 @@
       "open": "{{agent}}의 모델 바꾸기",
       "ownSignIn": "이 컴퓨터의 계정",
       "apiKey": "API 키로 쓰는 {{provider}}",
-      "default": "기본값",
       "refused": "이 키로 거부됨",
       "textOnly": "텍스트만 읽어요",
       "search": "모델 검색",

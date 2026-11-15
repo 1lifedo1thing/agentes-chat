@@ -11810,7 +11810,6 @@ export const en = {
       open: "Change {{agent}}'s model",
       ownSignIn: "This computer's account",
       apiKey: "{{provider}} with an API key",
-      default: "default",
       refused: "Refused for this key",
       textOnly: "Reads text only",
       search: "Search models",
