@@ -109,11 +109,16 @@ export function voiceFields(item: VoiceSend): [string, string][] {
   return fields;
 }
 
-/** A refused take's typed text, for the field of the conversation it was sent from (null anywhere else). */
-export const textBack = (
-  item: Pick<VoiceSend, "text" | "channelId" | "threadId">,
+/** A refused take's typed text and files, for the composer of the conversation it was sent from (null anywhere else). */
+export const takeBack = (
+  item: Pick<VoiceSend, "text" | "artifacts" | "channelId" | "threadId">,
   here: { channelId: string; threadId: string | null },
-) => (item.text && item.channelId === here.channelId && item.threadId === here.threadId ? item.text : null);
+) => {
+  const text = item.text ?? "";
+  const artifacts = item.artifacts ?? [];
+  const same = item.channelId === here.channelId && item.threadId === here.threadId;
+  return same && (text || artifacts.length > 0) ? { text, artifacts } : null;
+};
 
 /** Tries before the bubble says it didn't go (the first miss is often a blip the next try fixes). */
 const FAILED_AFTER = 2;

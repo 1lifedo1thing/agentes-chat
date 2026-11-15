@@ -15,7 +15,7 @@ import {
   secondsLeft,
   slideIntent,
   spokenWords,
-  textBack,
+  takeBack,
   uploadVerdict,
   voiceFields,
   WAVE_CELL,
@@ -196,18 +196,25 @@ describe("a voice note with typed text and files", () => {
     expect(plain).toEqual({ durationMs: "1200", peaks: "[0.5]", clientId: "k1", language: "pt" });
   });
 
-  test("a take the server refuses gives its typed text back to the field it was sent from, and nowhere else", () => {
+  test("a take the server refuses gives its typed text and files back to the composer it was sent from, and nowhere else", () => {
     const here = { channelId: "ch", threadId: null };
-    expect(textBack({ ...item, text: typed }, here)).toBe(typed);
-    expect(textBack({ ...item, text: typed }, { channelId: "other", threadId: null })).toBeNull();
-    expect(textBack({ ...item, text: typed }, { channelId: "ch", threadId: "t1" })).toBeNull();
-    expect(textBack(item, here)).toBeNull();
+    expect(takeBack({ ...item, text: typed }, here)).toEqual({ text: typed, artifacts: [] });
+    expect(takeBack({ ...item, artifacts: files }, here)).toEqual({ text: "", artifacts: files });
+    expect(takeBack({ ...item, text: typed }, { channelId: "other", threadId: null })).toBeNull();
+    expect(takeBack({ ...item, text: typed }, { channelId: "ch", threadId: "t1" })).toBeNull();
+    expect(takeBack(item, here)).toBeNull();
     const take = src("features/voice/useVoiceTake.ts");
     expect(take).toMatch(
-      /const back = item \? textBack\(item, targetRef\.current\) : null;\s*if \(back\) targetRef\.current\.textBack\?\.\(back\);/,
+      /const back = item \? takeBack\(item, targetRef\.current\) : null;\s*if \(back\) targetRef\.current\.takeBack\?\.\(back\);/,
     );
     expect(src("features/voice/outbox.ts")).toContain('onRefused(verdict === "limit" ? "limit" : "refused", item);');
-    expect(src("features/chat/ChatScreen.tsx")).toContain("textBack: voiceTextBack,");
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat).toContain("takeBack: voiceTakeBack,");
+    // The files come back from what was uploaded for the take, to wait above the field again.
+    expect(chat).toMatch(/sentWithVoice\.current\.set\(a\.id, file\)/);
+    expect(chat).toMatch(
+      /sentWithVoice\.current\.get\(a\.id\)[\s\S]{0,200}setPending\(\(now\) => \[\.\.\.files, \.\.\.now\]/,
+    );
   });
 
   test("the bubble until the server answers shows the typed text, the take and the files", () => {

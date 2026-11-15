@@ -1110,6 +1110,10 @@ function Chat({
     if (pending.length === 0) return { text, artifacts: [] };
     const artifacts = await uploadPending(pending);
     if (!artifacts) return null;
+    artifacts.forEach((a, i) => {
+      const file = pending[i];
+      if (file) sentWithVoice.current.set(a.id, file);
+    });
     setPending([]);
     return { text, artifacts };
   };
@@ -1155,7 +1159,16 @@ function Chat({
   // stays, marked, and the caption comes back to the field, so nothing typed is lost.
   const [pending, setPending] = useState<PendingFile[]>([]);
   const [captionBack, setCaptionBack] = useState<{ text: string; at: number; join?: boolean } | null>(null);
-  const voiceTextBack = useCallback((text: string) => setCaptionBack({ text, at: Date.now(), join: true }), []);
+  // The local files a take carried, by their uploaded ids: a refused take puts them back above the field.
+  const sentWithVoice = useRef(new Map<string, PendingFile>());
+  const voiceTakeBack = useCallback(({ text, artifacts }: { text: string; artifacts: ArtifactRef[] }) => {
+    if (text) setCaptionBack({ text, at: Date.now(), join: true });
+    const files = artifacts.flatMap((a) => {
+      const file = sentWithVoice.current.get(a.id);
+      return file ? [{ ...file, state: "waiting" as const }] : [];
+    });
+    if (files.length > 0) setPending((now) => [...files, ...now].slice(0, MAX_PENDING));
+  }, []);
   const addPending = (files: { uri: string; name: string; type: string }[]) => {
     if (files.length === 0) return;
     const at = Date.now();
@@ -2634,7 +2647,7 @@ function Chat({
                     voiceOn={voiceOn}
                     onVoiceSent={afterVoice}
                     prepareVoice={voiceFromField}
-                    voiceTextBack={voiceTextBack}
+                    voiceTakeBack={voiceTakeBack}
                     onRecording={onRecording}
                   />
                 ) : (
@@ -2684,7 +2697,7 @@ const ChatComposer = memo(function ChatComposer({
   voiceOn,
   onVoiceSent,
   prepareVoice,
-  voiceTextBack,
+  voiceTakeBack,
   onRecording,
   ...composer
 }: Omit<ComposerProps, "voice"> & {
@@ -2700,7 +2713,7 @@ const ChatComposer = memo(function ChatComposer({
   onVoiceSent: () => void;
   /** What goes with a take: the words typed beside it and the files, uploaded (`VoiceTarget.prepare`). */
   prepareVoice: NonNullable<VoiceTarget["prepare"]>;
-  voiceTextBack: NonNullable<VoiceTarget["textBack"]>;
+  voiceTakeBack: NonNullable<VoiceTarget["takeBack"]>;
   /** While a take records: the others see "gravando áudio…" (throttled by the caller). */
   onRecording: () => void;
 }) {
@@ -2713,7 +2726,7 @@ const ChatComposer = memo(function ChatComposer({
     authorId,
     enabled: voiceOn,
     prepare: prepareVoice,
-    textBack: voiceTextBack,
+    takeBack: voiceTakeBack,
     afterSend: onVoiceSent,
     onRecording,
   });
