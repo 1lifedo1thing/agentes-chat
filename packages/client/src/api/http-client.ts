@@ -74,6 +74,7 @@ import type {
   ChannelMember,
   ChannelOverride,
   Choices,
+  CliInstall,
   CodeSent,
   CommandApproval,
   ComposioUsage,
@@ -376,8 +377,10 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
     },
     working: {
       list: async (orgId) => (await request<{ runs: WorkingRun[] }>(`${org(orgId)}/active-runs`)).runs,
-      taskManager: (orgId, since) =>
-        request<TaskManagerView>(`${org(orgId)}/task-manager`, { query: since ? { since } : {} }),
+      taskManager: (orgId, since, doneToday) =>
+        request<TaskManagerView>(`${org(orgId)}/task-manager`, {
+          query: { since: since || undefined, doneToday: doneToday ? "true" : undefined },
+        }),
       taskSteps: (orgId, runId) => request<TaskSteps>(`${org(orgId)}/task-manager/${enc(runId)}/steps`),
       continueTasks: (orgId, runIds) =>
         request<{ continued: number }>(`${org(orgId)}/task-manager/continue`, { json: { runIds } }),
@@ -911,6 +914,10 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
           method: "DELETE",
           query: { purge: purge ? "true" : undefined, release: release ? "true" : undefined },
         }),
+      makeDefaultCredential: (orgId, id) =>
+        request<Credential>(`${org(orgId)}/credentials/${enc(id)}/make-default`, { json: {} }),
+      removeCredentialCopies: (orgId, id) =>
+        request<{ removed: number }>(`${org(orgId)}/credentials/${enc(id)}/remove-copies`, { json: {} }),
       checkCredential: (orgId, id) =>
         request<{ check: "ok" | "unchecked" }>(`${org(orgId)}/credentials/${enc(id)}/check`, { json: {} }),
       platformKeyAvailable: async (orgId) =>
@@ -1290,6 +1297,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<XcodeFixView>(`${org(orgId)}/devices/computers/${enc(machineId)}/xcode-fix`),
       cancelXcodeFix: (orgId, machineId) =>
         request<XcodeFixView>(`${org(orgId)}/devices/computers/${enc(machineId)}/xcode-fix`, { method: "DELETE" }),
+      openXcode: (orgId, machineId) =>
+        request<{ opened: boolean }>(`${org(orgId)}/devices/computers/${enc(machineId)}/xcode-open`, { json: {} }),
     },
     machines: {
       list: async (orgId) => (await request<{ machines: Machine[] }>(`${org(orgId)}/machines`)).machines,
@@ -1322,6 +1331,19 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         ).access,
       askTool: async (orgId, machineId, tool) => {
         await request<unknown>(`${org(orgId)}/machines/${enc(machineId)}/access/ask`, { json: { tool } });
+      },
+      checkClis: async (orgId, machineId) => {
+        await request<unknown>(`${org(orgId)}/machines/${enc(machineId)}/clis/check`, { json: {} });
+      },
+      cliInstall: (orgId, machineId, tool, action) => {
+        const path = `${org(orgId)}/machines/${enc(machineId)}/cli-install`;
+        if (action === "start") return request<{ install: CliInstall | null }>(path, { json: { tool } });
+        return request<{ install: CliInstall | null }>(`${path}?tool=${enc(tool)}`, {
+          ...(action === "cancel" ? { method: "DELETE" } : {}),
+        });
+      },
+      askCliInstall: async (orgId, machineId, tool) => {
+        await request<unknown>(`${org(orgId)}/machines/${enc(machineId)}/cli-install/ask`, { json: { tool } });
       },
       setPause: async (orgId, machineId, input) =>
         (
@@ -1389,11 +1411,16 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       list: async (orgId) => (await request<{ skills: Skill[] }>(`${org(orgId)}/skills`)).skills,
       get: (orgId, id) => request<SkillDetail>(`${org(orgId)}/skills/${enc(id)}`),
       create: (orgId, input) => request<SkillDetail>(`${org(orgId)}/skills`, { json: input }),
-      import: (orgId, input) => request<SkillDetail | SkillPick>(`${org(orgId)}/skills/import`, { json: input }),
-      importPicked: async (orgId, url, paths, forAgentId) =>
+      import: (orgId, input, upload) =>
+        request<SkillDetail | SkillPick>(`${org(orgId)}/skills/import`, {
+          json: input,
+          signal: upload?.signal,
+          onUploadProgress: upload?.onProgress,
+        }),
+      importPicked: async (orgId, url, paths, forAgentId, personal) =>
         (
           await request<{ skills: SkillDetail[] }>(`${org(orgId)}/skills/import`, {
-            json: { url, paths, ...(forAgentId ? { forAgentId } : {}) },
+            json: { url, paths, ...(forAgentId ? { forAgentId } : {}), ...(personal ? { personal } : {}) },
           })
         ).skills,
       update: (orgId, id, patch) =>
@@ -1835,6 +1862,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<AppNotification>(`${org(orgId)}/notifications/${enc(id)}/snooze`, { json: { until } }),
       readAll: (orgId, filter) =>
         request<{ ids: string[] }>(`${org(orgId)}/notifications/read-all`, { json: filter ? { filter } : {} }),
+      doneAll: (orgId, filter) =>
+        request<{ ids: string[] }>(`${org(orgId)}/notifications/done-all`, { json: filter ? { filter } : {} }),
       prefs: (orgId) => request<NoticePrefs>(`${org(orgId)}/notification-prefs`),
       setPref: (orgId, category, on) =>
         request<NoticePrefs>(`${org(orgId)}/notification-prefs`, { method: "PUT", json: { category, on } }),

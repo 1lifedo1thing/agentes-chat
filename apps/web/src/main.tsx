@@ -9,11 +9,12 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { holdSkies, installTitleTips, trackInput } from "@agenteschat/ui";
 import { AppProviders, type AppServices } from "./app/providers";
 import { createQueryClient } from "./app/query-client";
+import { backToSignIn } from "./app/unauthorized";
 import { createBetterAuthClient } from "./auth/better-auth";
 import { copyPillAddresses } from "./chat/link-pill-copy";
 import { ErrorScreen } from "./components/ErrorScreen";
 import { withComposerDraftsSignOut } from "./hooks/useComposerDraft";
-import { loadI18n, savedLocale } from "./i18n";
+import { loadI18n, savedLocale, translateTabTitle } from "./i18n";
 import { accountInLink, followAccountChanges, takeAccountMove, watchAccount, withoutAccount } from "./lib/accounts";
 import { startAppIcon } from "./lib/app-icon";
 import {
@@ -25,7 +26,14 @@ import {
   startVersionWatch,
   VERSION_CHECK_MS,
 } from "./lib/app-version";
-import { applyDesktopDevice, askForPhone, asksForPhone, desktopPlatform, inDesktopApp } from "./lib/desktop";
+import {
+  applyDesktopDevice,
+  askForPhone,
+  asksForPhone,
+  desktopPlatform,
+  desktopRenderer,
+  inDesktopApp,
+} from "./lib/desktop";
 import { tolerateForeignDomEdits } from "./lib/dom-guard";
 import { announceConfirmation, emailConfirmedToast } from "./lib/email-confirmation";
 import { catchEarlyErrors, reportError, setErrorScope, startErrorReports } from "./lib/error-reports";
@@ -54,6 +62,7 @@ const i18n = await loadI18n(savedLocale()).catch((error: unknown) => {
   throw error;
 });
 document.documentElement.lang = i18n.language;
+translateTabTitle(i18n);
 // In the desktop app (ADR 0036): the site draws the window's title bar (desktop.css), with room for a Mac's
 // buttons only there; and "this Mac" is this computer's own name.
 const platform = desktopPlatform();
@@ -61,8 +70,11 @@ if (platform) {
   document.documentElement.dataset.desktop = platform;
   applyDesktopDevice(i18n, platform);
   if (asksForPhone(window.location.search)) askForPhone();
-  // Linux's WebKitGTK paints in software there: the skies stand still, or their frames keep a core busy (holdSkies).
-  if (platform === "linux") holdSkies();
+  // Painted in software (Linux's WebKitGTK): the skies stand still, or their frames keep a core busy (holdSkies), and
+  // desktop.css drops the blurs and endless loops.
+  const renderer = desktopRenderer();
+  if (renderer) document.documentElement.dataset.desktopRenderer = renderer;
+  if (renderer === "cpu") holdSkies();
 }
 // Focus rings only while the keys move the focus (`data-pointer` on <html>, read by the stylesheet).
 trackInput();
@@ -74,14 +86,7 @@ installSounds();
 // The app icon this device picked (ADR 0179): the tab's, or the desktop app's Dock.
 startAppIcon();
 
-/** A 401 anywhere means the session ended: back to sign-in, then here again. */
-function onUnauthorized() {
-  if (window.location.pathname.startsWith("/login")) return;
-  const redirect = window.location.pathname + window.location.search;
-  queryClient.clear();
-  void router.navigate({ to: "/login", search: { redirect } });
-  toasts.show(i18n.t("common.signedOut"));
-}
+const onUnauthorized = () => backToSignIn({ router, queryClient, toasts, i18n });
 
 const queryClient = createQueryClient({
   onUnauthorized,

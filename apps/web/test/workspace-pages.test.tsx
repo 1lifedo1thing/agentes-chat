@@ -4,7 +4,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { ADA_ID, ATLAS_ID, createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
+import { ADA_ID, ATLAS_ID, createFakeApi, ENG_ID, ORG_ID, seedRoles, seedState } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
 
 afterEach(() => cleanup());
@@ -439,7 +439,7 @@ describe("Membros", () => {
     expect(atlasRow?.textContent).not.toMatch(/orçamento|%/);
   });
 
-  test("sent invitations: pending first, who sent each and until when; an expired one renews with the same link", async () => {
+  test("Convites por e-mail: newest first, who sent each and until when; an expired one renews with the same link", async () => {
     const state = seedState();
     state.invitations.push(
       {
@@ -463,18 +463,18 @@ describe("Membros", () => {
         url: "http://localhost:3000/invite/tok-inv-new",
       },
     );
-    await go("members", state);
-    const sent = () => screen().getByRole("region", { name: "Convites enviados" });
+    await go("settings/invites", state);
+    const sent = () => screen().getByRole("region", { name: "Convites por e-mail" });
     const rows = within(sent()).getAllByRole("group");
     expect(rows.map((r) => r.getAttribute("aria-label"))).toEqual([
       "Convite para carla@acme.com.br",
       "Convite para rafa@acme.com.br",
     ]);
     const [carla, rafa] = rows as [HTMLElement, HTMLElement];
-    // The role, who sent it (mine: "convite seu"), when; until when it works, or since when it doesn't.
-    expect(carla.textContent).toMatch(/Membro · convite de João · em \d+ \S+/);
+    // What it gives, who sent it when it isn't you; until when it works, or since when it doesn't.
+    expect(carla.textContent).toContain("de João");
     expect(carla.textContent).toContain("Expira em 5 dias");
-    expect(rafa.textContent).toMatch(/Membro · convite seu · enviado em \d+ \S+/);
+    expect(rafa.textContent).not.toContain("de Walter");
     expect(rafa.textContent).toContain("Expirou ontem");
     expect(rafa.getAttribute("data-off")).toBe("true");
     // An expired link opens nothing: no Copy; Renovar sends it again, with the same link.
@@ -587,6 +587,39 @@ describe("Equipe (ADR 0148)", () => {
     const atlas = within(table).getByRole("link", { name: /Atlas/ }).closest("tr") as HTMLElement;
     expect(within(atlas).getByRole("button", { name: "Sem IA" })).toBeTruthy();
     expect(atlas.textContent).not.toContain("Disponível");
+  });
+
+  test("without Ver todos os agentes, a member's Equipe and its counts name only the agents that answer them", async () => {
+    const member = (keyOn: boolean) => {
+      const state = seedState();
+      const org = state.me?.organizations[0];
+      if (org) org.role = "member";
+      const ada = state.agents.find((a) => a.id === ADA_ID);
+      if (ada) ada.audience = { mode: "owner", userIds: [] };
+      state.agentGroups = [
+        { id: "g-team", name: "Time", agentIds: [ATLAS_ID] },
+        { id: "g-private", name: "Privado", agentIds: [ADA_ID] },
+      ];
+      state.roles = seedRoles().map((r) =>
+        r.kind === "everyone" && !keyOn
+          ? { ...r, permissions: r.permissions.filter((k) => k !== "view_all_agents") }
+          : r,
+      );
+      return state;
+    };
+    const count = () => document.querySelector(".ac-pagehead__titleline > .ac-pagehead__count")?.textContent;
+    // On for Todos by default: every agent, as before.
+    await go("team", member(true));
+    expect(count()).toBe("2 pessoas · 2 agentes · 2 setores");
+    expect(rows()).toEqual(["Atlas", "Ada"]);
+    cleanup();
+    await go("team", member(false));
+    expect(count()).toBe("2 pessoas · 1 agente · 1 setor");
+    expect(rows()).toEqual(["Atlas"]);
+    await view("Setores");
+    const sectors = screen().getByRole("region", { name: "Setores" });
+    expect(sectors.textContent).toContain("Time");
+    expect(sectors.textContent).not.toContain("Privado");
   });
 
   test("Lista: search by name, role or channel, filter, and sort by a column", async () => {

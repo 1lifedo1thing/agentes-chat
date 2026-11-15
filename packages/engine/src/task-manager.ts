@@ -1,5 +1,6 @@
 import { and, type Database, eq, inArray, rowsOf, schema, sql } from "@agenteschat/db";
 import { planOf as codingPlan, PLAN_IDS, planModel } from "@agenteschat/providers/plans";
+import { CONSULT_SUBJECT_CHARS, consultSubject } from "@agenteschat/ui/agent-talk";
 import {
   type AgentWorkState,
   agentsOnlyIn,
@@ -19,7 +20,7 @@ import { type CanceledReturn, canceledReturns, type PendingReturn, pendingReturn
 import { replyExcerpt } from "./messages";
 import { can, requireActiveMembership } from "./organizations";
 import { pendingIds } from "./recovery";
-import { shownStatusSql } from "./runs";
+import { canceledBySql, personStopOf, shownStatusSql } from "./runs";
 import { channelReaderSql } from "./task-access";
 import { mayContinuePause } from "./usage-pause";
 
@@ -136,6 +137,11 @@ export interface ManagedTask {
   requester: { userId: string; name: string } | null;
   /** Another agent asked it, in their private conversation. */
   delegation: TaskDelegation | null;
+  /**
+   * What the latest agent to ask it asked, one line (`consultSubject`): what its row is called by. Null unless the caller
+   * reads where it was handed off (`delegation.from`): the question's words come from a conversation they may not read.
+   */
+  subject: string | null;
   /** What it asked of other agents and is still on or not started, all the way down: they stop with it in one action. */
   helpers: number;
   /** The brain it thinks with (`model`, `claude_code`, `codex`, `cursor`); null before its first turn. */
@@ -207,8 +213,8 @@ export interface EndedTask {
   routine: { id: string; name: string } | null;
   startedAt: string | null;
   finishedAt: string;
-  /** Stopped by a person: who. */
-  stoppedBy: { userId: string; name: string } | null;
+  /** Stopped by a person: who, and the agent that stopped it at their word (the right hand). */
+  stoppedBy: { userId: string; name: string; agentId?: string } | null;
 }
 
 /** The workspace's work the caller may not see: how much, never what. */
@@ -233,6 +239,11 @@ export interface TaskManagerView {
   followUps: PendingReturn[];
   /** The returns canceled since `since` ("Terminadas hoje"), the latest first. */
   canceledFollowUps: CanceledReturn[];
+  /**
+   * The caller's tasks done since `since`, all of them (`ended` stops at `TASK_MANAGER_ENDED_MAX`). Only when asked
+   * (`doneToday: true`): a count over every finished run, which callers polling for the tasks alone never show.
+   */
+  doneToday?: number;
 }
 
 type Row = {
@@ -259,6 +270,7 @@ type Row = {
   requester_id: string | null;
   requester_name: string | null;
   asker_agent_id: string | null;
+  question: string | null;
   routine_id: string | null;
   routine_name: string | null;
   work_title: string | null;
@@ -349,6 +361,7 @@ async function visibleRuns(
         array_to_json(r.pending_message_ids) as pending, r.background, r.brain,
         a.owner_user_id, a.machine_id, mc.name as machine_name,
         trig.author_user_id as requester_id, ru.name as requester_name, trig.author_agent_id as asker_agent_id,
+        ${which.active ? sql`consult.question` : sql`null`} as question,
         rt.id as routine_id, rt.name as routine_name, w.title as work_title, w.plan as work_plan,
         last.data as last_data, last.created_at as last_at,
         (select count(*) from ${agentRunSteps} s where s.run_id = r.id and s.kind = 'tool_call') as steps,
@@ -373,8 +386,17 @@ async function visibleRuns(
         where m.org_id = ${orgId}::uuid and m.id = r.trigger_message_id
         limit 1
       ) trig on true
+      ${
+        which.active
+          ? sql`left join lateral (
+        select left(ac.question, ${CONSULT_SUBJECT_CHARS * 8}::int) as question from ${agentConsultations} ac
+        where ac.org_id = ${orgId}::uuid and ac.target_run_id = r.id
+        order by ac.created_at desc limit 1
+      ) consult on true`
+          : sql``
+      }
       left join ${users} ru on ru.id = trig.author_user_id
-      left join ${users} su on r.error like 'canceled_by:%' and su.id = substring(r.error from 13)
+      left join ${users} su on su.id = ${canceledBySql(sql`r.error`)}
       left join ${routineRuns} rr on rr.org_id = ${orgId}::uuid and rr.agent_run_id = r.id
       left join ${routines} rt on rt.id = rr.routine_id
       left join lateral (
@@ -391,6 +413,20 @@ async function visibleRuns(
       order by ${which.active ? sql`r.created_at desc` : sql`r.finished_at desc`}, r.id desc
       limit ${limit}`),
   );
+}
+
+/** How many of the runs the caller sees ended done since `since`. */
+async function doneSince(db: Database, userId: string, orgId: string, manages: boolean, since: Date) {
+  const [row] = rowsOf<{ n: number | string }>(
+    await db.execute(sql`select count(*) as n
+      from ${agentRuns} r
+      join ${channels} c on c.id = r.channel_id and c.org_id = ${orgId}::uuid
+        and c.archived_at is null and c.kind in ('channel', 'dm')
+      join ${agents} a on a.id = r.agent_id and a.org_id = ${orgId}::uuid
+      where r.org_id = ${orgId}::uuid and r.status = 'done' and r.finished_at >= ${since.toISOString()}::timestamptz
+        and ${seesRunSql(RUN_COLUMNS, userId, orgId, manages)}`),
+  );
+  return Number(row?.n ?? 0);
 }
 
 /** The tasks still on that `visibleRuns` leaves out, as counts: the computers' rows count them all. */
@@ -613,19 +649,20 @@ export async function taskManager(
   db: Database,
   userId: string,
   orgId: string,
-  options: { since?: Date; now?: Date } = {},
+  options: { since?: Date; now?: Date; doneToday?: boolean } = {},
 ): Promise<TaskManagerView> {
   const membership = await requireActiveMembership(db, userId, orgId);
   const manages = can(membership, "manage_agents");
   const now = options.now ?? new Date();
   const since = options.since ?? new Date(now.getTime() - 24 * 3600_000);
-  const [active, ended, hidden, asks, followUps, canceledFollowUps] = await Promise.all([
+  const [active, ended, hidden, asks, followUps, canceledFollowUps, doneToday] = await Promise.all([
     visibleRuns(db, userId, orgId, manages, { active: true }),
     visibleRuns(db, userId, orgId, manages, { active: false, since }),
     hiddenTasks(db, userId, orgId, manages),
     openAsks(db, orgId),
     pendingReturns(db, userId, orgId, { managesAgents: manages }),
     canceledReturns(db, userId, orgId, since),
+    options.doneToday ? doneSince(db, userId, orgId, manages, since) : undefined,
   ]);
   const delegations = await delegationsOf(db, userId, orgId, active);
   const { edges, waking } = asks;
@@ -651,6 +688,7 @@ export async function taskManager(
     plan: planOf(r.work_plan),
     requester: r.requester_id ? { userId: r.requester_id, name: r.requester_name ?? "" } : null,
     delegation: delegations.get(r.id) ?? null,
+    subject: delegations.get(r.id)?.from ? consultSubject(r.question) || null : null,
     helpers: [...runsBelow(edges, r.id)].filter((id) => on.has(id)).length,
     brain: r.brain,
     machine: r.machine_id ? { id: r.machine_id, name: r.machine_name ?? "" } : null,
@@ -690,7 +728,7 @@ export async function taskManager(
     if (place) task.line = place;
   }
   const endedTasks: EndedTask[] = ended.map((r) => {
-    const by = r.error?.startsWith("canceled_by:") ? r.error.slice("canceled_by:".length) : null;
+    const stop = personStopOf(r.error);
     return {
       runId: r.id,
       agentId: r.agent_id,
@@ -701,7 +739,9 @@ export async function taskManager(
       routine: routineOf(r),
       startedAt: iso(r.started_at),
       finishedAt: iso(r.finished_at) as string,
-      stoppedBy: by ? { userId: by, name: r.stopper_name ?? "" } : null,
+      stoppedBy: stop
+        ? { userId: stop.userId, name: r.stopper_name ?? "", ...(stop.agentId ? { agentId: stop.agentId } : {}) }
+        : null,
     };
   });
   return {
@@ -712,6 +752,7 @@ export async function taskManager(
     activity: await agentActivity(db, orgId, now),
     followUps,
     canceledFollowUps,
+    ...(doneToday === undefined ? {} : { doneToday }),
   };
 }
 

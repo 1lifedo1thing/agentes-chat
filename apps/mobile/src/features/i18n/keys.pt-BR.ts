@@ -64,6 +64,8 @@ export const featureKeysPtBR = {
     reopen: "Mostrar de novo",
     answeredBy: "{{name}} escolheu",
     failed: "Não deu para mandar sua escolha. Tente de novo.",
+    /** After the message's size and limit, when a written answer makes the reply too long. */
+    tooLongFix: "Encurte a resposta.",
   },
   chart: {
     table: "Tabela",
@@ -918,6 +920,9 @@ export const featureKeysPtBR = {
     /** The toast after a swipe marked an item done, with the way back. */
     doneToast: "Feito",
     undo: "Desfazer",
+    /** The toast after "Clear all" (named after the Done pill), with the way back. */
+    doneAllToast_one: "{{count}} movida para Feitas",
+    doneAllToast_other: "{{count}} movidas para Feitas",
     day: {
       today: "Hoje",
       yesterday: "Ontem",
@@ -1239,6 +1244,7 @@ export const featureKeysPtBR = {
       "Você é a única pessoa dona de {{names}}. No site, em Pessoas, torne outra pessoa dona e depois volte aqui.",
     addPasswordFirst: "Adicione uma senha à sua conta no site antes, e digite ela aqui.",
     addPasswordWeb: "Adicionar senha no site",
+    onThisComputer: "Apague pelo app do agentes.chat no computador onde este servidor roda.",
     otherAccount: "Você entrou em outra conta. Nada foi apagado.",
     hold: "Segure para apagar",
   },
@@ -1777,6 +1783,8 @@ export const featureKeysPtBR = {
         offlineCloudM: "O computador do {{name}} não está respondendo agora.",
         stuckF: "Não deu para abrir o navegador da {{name}}.",
         stuckM: "Não deu para abrir o navegador do {{name}}.",
+        noAnswerF: "O navegador da {{name}} não respondeu.",
+        noAnswerM: "O navegador do {{name}} não respondeu.",
         tooManyF: "Muitos navegadores abertos ao mesmo tempo. Este aparece quando outro fechar.",
         tooManyM: "Muitos navegadores abertos ao mesmo tempo. Este aparece quando outro fechar.",
       },
@@ -2018,8 +2026,20 @@ export const featureKeysPtBR = {
       },
       stall: {
         plug: "O {{host}} ainda não vê este iPhone. Use um cabo que passe dados, não só carga, deixe este iPhone desbloqueado e toque em Confiar se ele pedir.",
-        devmode:
-          "O Modo de Desenvolvedor só liga depois que este iPhone reinicia. Toque em Reiniciar e em Ativar quando ele voltar. Não tem a opção? Desconecte este iPhone e ligue de novo.",
+      },
+      devMode: {
+        restarting: "O {{host}} ainda não vê este iPhone depois de reiniciar. Deixe o cabo ligado.",
+        back: "Toque em Ativar no aviso deste iPhone e digite seu código.",
+        check: "Já ativei, verificar de novo",
+        stillOff: "O {{host}} ainda vê o Modo de Desenvolvedor desligado.",
+        missing: "Não aparece essa opção?",
+        hidden: "Este iPhone esconde a opção até o Xcode pedir para mostrar.",
+        hiddenOpen:
+          "Este iPhone esconde a opção até o Xcode pedir para mostrar. Abra o Xcode no {{host}} com este iPhone ligado nele.",
+        openXcode: "Abrir o Xcode",
+        opened: "O Xcode abriu no {{host}}. Veja de novo nos Ajustes e feche o Xcode lá depois.",
+        unlock: "Já ativou e ele reiniciou? O aviso com Ativar aparece quando este iPhone está desbloqueado.",
+        outdated: "O app agentes.chat no {{host}} está desatualizado. Atualize nesse Mac.",
       },
     },
     notice: {
@@ -2032,6 +2052,8 @@ export const featureKeysPtBR = {
       waiting: "{{names}} está esperando o {{device}}",
       waitingFor: "{{names}} está esperando o {{device}} para {{person}}",
       tool_request: "{{names}} pede para ligar {{tool}} no seu {{device}}",
+      cli_request: "{{names}} pede para instalar {{tool}} no seu {{device}}",
+      folder_request: "{{names}} pede a pasta {{path}} no seu {{device}}",
       allowOnce: "Permitir uma vez",
       always: "Sempre permitir {{name}}",
       no: "Não",
@@ -2093,8 +2115,8 @@ export const featureKeysPtBR = {
     everyoneFailed: "Não deu para mudar o acesso de todos. Tente de novo.",
     disconnectFailed: "Não deu para desconectar o {{name}}. Tente de novo.",
     needsReconnect: "A conta do {{name}} parou de funcionar. Os agentes não usam até alguém reconectar.",
-    noTools:
-      "Não deu para ler as ferramentas do {{name}}. Os agentes ficam sem elas até serem lidas de novo, em Ferramentas.",
+    noTools: "Não deu para ler as ferramentas do {{name}}. Os agentes ficam sem elas até serem lidas de novo.",
+    readAgain: "Ler de novo",
     accountTitle: "Conta",
     renameFailed: "Não deu para renomear. Tente de novo.",
     whoTitle: "Quem usa",
@@ -2165,8 +2187,6 @@ export const featureKeysPtBR = {
   },
   joinRequests: {
     share: "Compartilhar o link",
-    roles: "Cargos",
-    rolesHint: "A pessoa entra com os cargos ligados. Sem nenhum, ela pode o mesmo que Todos.",
   },
   humanCheck: {
     title: "Verificação rápida",
@@ -2174,16 +2194,9 @@ export const featureKeysPtBR = {
   },
   /** Convidar pessoas and the sent invitations' sheet (ADR 0090); the other words are the shared `members.*`. */
   invitePeople: {
-    emailsHelp: "Cole uma lista ou digite. Cada pessoa recebe um e-mail e entra direto.",
-    here: "Já está aqui",
-    invited: "Já convidado",
-    fix: "Confira",
-    channels: "Canais",
     optional: "Opcional",
     ok: "OK",
     noteHelp: "Aparece no e-mail com o seu nome. Até {{max}} letras.",
-    roleHelp: "Muda o que a pessoa recebe ao entrar.",
-    remove: "Tirar da lista",
     sendAgain: "Mandar de novo",
     cancelTitle: "Cancelar o convite de {{email}}?",
     cancelText: "O link dele para de abrir.",
@@ -2511,7 +2524,7 @@ export const featureKeysPtBR = {
     },
     import: {
       title: "Importar de um computador",
-      text: "Para trazer senhas de um navegador ou de um gerenciador de senhas, abra Configurações, Cofre na web e escolha Importar.",
+      text: "Para trazer senhas de um navegador ou de um gerenciador de senhas, importe pela web.",
     },
     connections: {
       text: "Conecte um gerenciador de senhas e seus agentes usam os logins guardados lá. Nada é copiado: a senha só é lida na hora do uso.",

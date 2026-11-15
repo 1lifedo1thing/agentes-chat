@@ -58,7 +58,8 @@
     "closed": "{{title}} · zamknięte",
     "reopen": "Pokaż ponownie",
     "answeredBy": "Wybór: {{name}}",
-    "failed": "Twój wybór nie został wysłany. Spróbuj ponownie."
+    "failed": "Twój wybór nie został wysłany. Spróbuj ponownie.",
+    "tooLongFix": "Skróć odpowiedź."
   },
   "chart": {
     "table": "Tabela",
@@ -929,6 +930,10 @@
     },
     "doneToast": "Gotowe",
     "undo": "Cofnij",
+    "doneAllToast_one": "Przeniesiono {{count}} do Zakończonych",
+    "doneAllToast_few": "Przeniesiono {{count}} do Zakończonych",
+    "doneAllToast_many": "Przeniesiono {{count}} do Zakończonych",
+    "doneAllToast_other": "Przeniesiono {{count}} do Zakończonych",
     "day": {
       "today": "Dzisiaj",
       "yesterday": "Wczoraj",
@@ -1346,6 +1351,7 @@
     "blocked": "Jesteś jedynym właścicielem: {{names}}. Na stronie, w sekcji Osoby, nadaj komuś rolę właściciela i wróć tutaj.",
     "addPasswordFirst": "Najpierw dodaj hasło do konta na stronie, a potem wpisz je tutaj.",
     "addPasswordWeb": "Dodaj hasło na stronie",
+    "onThisComputer": "Usuń to w aplikacji agentes.chat na komputerze, na którym działa ten serwer.",
     "otherAccount": "Zalogowano się na inne konto. Nic nie zostało usunięte.",
     "hold": "Przytrzymaj, aby usunąć"
   },
@@ -1936,6 +1942,8 @@
         "offlineCloudM": "Komputer agenta {{name}} teraz nie odpowiada.",
         "stuckF": "Nie udało się otworzyć przeglądarki agenta {{name}}.",
         "stuckM": "Nie udało się otworzyć przeglądarki agenta {{name}}.",
+        "noAnswerF": "Przeglądarka {{name}} nie odpowiedziała.",
+        "noAnswerM": "Przeglądarka {{name}} nie odpowiedziała.",
         "tooManyF": "Za dużo przeglądarek otwartych naraz. Ta pojawi się, gdy inna się zamknie.",
         "tooManyM": "Za dużo przeglądarek otwartych naraz. Ta pojawi się, gdy inna się zamknie."
       }
@@ -2178,8 +2186,20 @@
         "stopped": "{{name}} nie jest już używany przez Wi-Fi"
       },
       "stall": {
-        "plug": "{{host}} nie widzi jeszcze tego iPhone'a. Użyj kabla, który przesyła dane, a nie tylko ładuje, trzymaj ten iPhone odblokowany i stuknij Zaufaj, jeśli poprosi.",
-        "devmode": "Tryb dewelopera włącza się dopiero po ponownym uruchomieniu tego iPhone'a. Stuknij Uruchom ponownie, a po starcie Włącz. Nie ma przełącznika? Odłącz ten iPhone i podłącz go ponownie."
+        "plug": "{{host}} nie widzi jeszcze tego iPhone'a. Użyj kabla, który przesyła dane, a nie tylko ładuje, trzymaj ten iPhone odblokowany i stuknij Zaufaj, jeśli poprosi."
+      },
+      "devMode": {
+        "restarting": "{{host}} jeszcze nie widzi tego iPhone'a po ponownym uruchomieniu. Zostaw go podłączonego.",
+        "back": "Stuknij Włącz w alercie na tym iPhonie i wpisz kod.",
+        "check": "Już włączone, sprawdź ponownie",
+        "stillOff": "{{host}} nadal widzi tryb dewelopera jako wyłączony.",
+        "missing": "Nie widzisz tej opcji?",
+        "hidden": "Ten iPhone ukrywa tę opcję, dopóki Xcode nie poprosi o jej pokazanie.",
+        "hiddenOpen": "Ten iPhone ukrywa tę opcję, dopóki Xcode nie poprosi o jej pokazanie. Otwórz Xcode na {{host}} z podłączonym tym iPhone'em.",
+        "openXcode": "Otwórz Xcode",
+        "opened": "Xcode otworzył się na {{host}}. Zajrzyj jeszcze raz do Ustawień, a potem zamknij tam Xcode.",
+        "unlock": "Włączone i uruchomił się ponownie? Alert z Włącz pojawia się, gdy ten iPhone jest odblokowany.",
+        "outdated": "Aplikacja agentes.chat na {{host}} jest nieaktualna. Zaktualizuj ją na tym Macu."
       }
     },
     "notice": {
@@ -2192,6 +2212,8 @@
       "waiting": "{{names}} czeka na urządzenie {{device}}",
       "waitingFor": "{{names}} czeka na urządzenie {{device}} dla {{person}}",
       "tool_request": "{{names}} prosi Cię o włączenie: {{tool}} na {{device}}",
+      "cli_request": "{{names}} prosi o zainstalowanie {{tool}} na Twoim {{device}}",
+      "folder_request": "{{names}} prosi Cię o folder {{path}} na {{device}}",
       "allowOnce": "Zezwól raz",
       "always": "Zawsze zezwalaj: {{name}}",
       "no": "Nie",
@@ -2257,7 +2279,8 @@
     "everyoneFailed": "Nie udało się zmienić dostępu dla wszystkich. Spróbuj ponownie.",
     "disconnectFailed": "Nie udało się odłączyć {{name}}. Spróbuj ponownie.",
     "needsReconnect": "Konto {{name}} przestało działać. Agenci nie mogą z niego korzystać, dopóki ktoś go nie połączy ponownie.",
-    "noTools": "Nie udało się odczytać narzędzi {{name}}. Agenci są bez nich, dopóki nie zostaną odczytane ponownie, w Narzędziach.",
+    "noTools": "Nie udało się odczytać narzędzi {{name}}. Agenci są bez nich, dopóki nie zostaną odczytane ponownie.",
+    "readAgain": "Odczytaj ponownie",
     "accountTitle": "Konto",
     "renameFailed": "Nie udało się zmienić nazwy. Spróbuj ponownie.",
     "whoTitle": "Kto z tego korzysta",
@@ -2326,25 +2349,16 @@
     }
   },
   "joinRequests": {
-    "share": "Udostępnij link",
-    "roles": "Role",
-    "rolesHint": "Dołączają z włączonymi rolami. Bez żadnej mogą robić to, co Wszyscy."
+    "share": "Udostępnij link"
   },
   "humanCheck": {
     "title": "Szybka weryfikacja",
     "blocked": "Weryfikacja się nie wczytała. Spróbuj innej sieci."
   },
   "invitePeople": {
-    "emailsHelp": "Wklej listę albo wpisz. Każda osoba dostanie e-mail i od razu dołączy.",
-    "here": "Już tutaj są",
-    "invited": "Już zaproszeni",
-    "fix": "Sprawdź to",
-    "channels": "Kanały",
     "optional": "Opcjonalnie",
     "ok": "OK",
     "noteHelp": "Pojawi się w e-mailu z twoim imieniem. Maksymalnie {{max}} znaków.",
-    "roleHelp": "Zmienia to, co osoba dostaje po dołączeniu.",
-    "remove": "Usuń z listy",
     "sendAgain": "Wyślij ponownie",
     "cancelTitle": "Anulować zaproszenie dla {{email}}?",
     "cancelText": "Jego link przestanie działać.",
@@ -2677,7 +2691,7 @@
     },
     "import": {
       "title": "Import z komputera",
-      "text": "Aby przenieść hasła z przeglądarki lub menedżera haseł, otwórz w wersji webowej Ustawienia, Vault i wybierz Importuj."
+      "text": "Aby przenieść hasła z przeglądarki lub menedżera haseł, zaimportuj je w wersji webowej."
     },
     "connections": {
       "text": "Połącz menedżer haseł, a twoi agenci będą używać przechowywanych w nim loginów. Nic nie jest kopiowane: hasło jest odczytywane dopiero wtedy, gdy jest potrzebne.",

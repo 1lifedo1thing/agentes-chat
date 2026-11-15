@@ -54,7 +54,8 @@
     "closed": "{{title}} · geschlossen",
     "reopen": "Wieder anzeigen",
     "answeredBy": "{{name}} hat gewählt",
-    "failed": "Deine Auswahl wurde nicht gesendet. Versuch es noch einmal."
+    "failed": "Deine Auswahl wurde nicht gesendet. Versuch es noch einmal.",
+    "tooLongFix": "Kürze die Antwort."
   },
   "chart": {
     "table": "Tabelle",
@@ -881,6 +882,8 @@
     },
     "doneToast": "Erledigt",
     "undo": "Rückgängig",
+    "doneAllToast_one": "{{count}} nach Erledigt verschoben",
+    "doneAllToast_other": "{{count}} nach Erledigt verschoben",
     "day": {
       "today": "Heute",
       "yesterday": "Gestern",
@@ -1192,6 +1195,7 @@
     "blocked": "Du bist der einzige Inhaber von {{names}}. Mach auf der Website unter Personen jemand anderen zum Inhaber und komm dann zurück.",
     "addPasswordFirst": "Füge deinem Konto zuerst auf der Website ein Passwort hinzu und gib es dann hier ein.",
     "addPasswordWeb": "Passwort auf der Website hinzufügen",
+    "onThisComputer": "Lösche es in der agentes.chat-App auf dem Computer, auf dem dieser Server läuft.",
     "otherAccount": "Du hast dich mit einem anderen Konto angemeldet. Es wurde nichts gelöscht.",
     "hold": "Zum Löschen gedrückt halten"
   },
@@ -1742,6 +1746,8 @@
         "offlineCloudM": "Der Computer von {{name}} antwortet gerade nicht.",
         "stuckF": "Der Browser von {{name}} ließ sich nicht öffnen.",
         "stuckM": "Der Browser von {{name}} ließ sich nicht öffnen.",
+        "noAnswerF": "Der Browser von {{name}} hat nicht geantwortet.",
+        "noAnswerM": "Der Browser von {{name}} hat nicht geantwortet.",
         "tooManyF": "Zu viele Browser gleichzeitig offen. Dieser erscheint, sobald ein anderer schließt.",
         "tooManyM": "Zu viele Browser gleichzeitig offen. Dieser erscheint, sobald ein anderer schließt."
       }
@@ -1982,8 +1988,20 @@
         "stopped": "{{name}} wird nicht mehr über WLAN genutzt"
       },
       "stall": {
-        "plug": "{{host}} sieht dieses iPhone noch nicht. Nimm ein Kabel, das Daten überträgt und nicht nur lädt, lass dieses iPhone entsperrt und tippe auf Vertrauen, wenn es fragt.",
-        "devmode": "Der Entwicklermodus geht erst nach einem Neustart dieses iPhones an. Tippe auf Neustart und danach auf Aktivieren. Kein Schalter da? Zieh dieses iPhone ab und schließ es wieder an."
+        "plug": "{{host}} sieht dieses iPhone noch nicht. Nimm ein Kabel, das Daten überträgt und nicht nur lädt, lass dieses iPhone entsperrt und tippe auf Vertrauen, wenn es fragt."
+      },
+      "devMode": {
+        "restarting": "{{host}} sieht dieses iPhone nach dem Neustart noch nicht wieder. Lass es angeschlossen.",
+        "back": "Tippe in der Abfrage auf diesem iPhone auf Aktivieren und gib deinen Code ein.",
+        "check": "Ist eingeschaltet, erneut prüfen",
+        "stillOff": "{{host}} sieht den Entwicklermodus noch als aus.",
+        "missing": "Option nicht zu sehen?",
+        "hidden": "Dieses iPhone versteckt die Option, bis Xcode sie anzeigen lässt.",
+        "hiddenOpen": "Dieses iPhone versteckt die Option, bis Xcode sie anzeigen lässt. Öffne Xcode auf {{host}}, während dieses iPhone dort angeschlossen ist.",
+        "openXcode": "Xcode öffnen",
+        "opened": "Xcode ist auf {{host}} offen. Schau noch einmal in den Einstellungen und schließ Xcode dort danach.",
+        "unlock": "Eingeschaltet und neu gestartet? Die Abfrage mit Aktivieren erscheint, sobald dieses iPhone entsperrt ist.",
+        "outdated": "Die agentes.chat-App auf {{host}} ist veraltet. Aktualisiere sie auf diesem Mac."
       }
     },
     "notice": {
@@ -1996,6 +2014,8 @@
       "waiting": "{{names}} wartet auf {{device}}",
       "waitingFor": "{{names}} wartet für {{person}} auf {{device}}",
       "tool_request": "{{names}} bittet dich, {{tool}} auf deinem {{device}} einzuschalten",
+      "cli_request": "{{names}} bittet dich, {{tool}} auf deinem {{device}} zu installieren",
+      "folder_request": "{{names}} bittet dich um den Ordner {{path}} auf deinem {{device}}",
       "allowOnce": "Einmal erlauben",
       "always": "{{name}} immer erlauben",
       "no": "Nein",
@@ -2057,7 +2077,8 @@
     "everyoneFailed": "Der Zugriff für alle ließ sich nicht ändern. Versuch es noch einmal.",
     "disconnectFailed": "{{name}} ließ sich nicht trennen. Versuch es noch einmal.",
     "needsReconnect": "Das Konto bei {{name}} funktioniert nicht mehr. Agenten können es erst nutzen, wenn jemand es neu verbindet.",
-    "noTools": "Die Tools von {{name}} ließen sich nicht lesen. Die Agenten haben sie erst wieder, wenn sie unter Tools neu gelesen werden.",
+    "noTools": "Die Tools von {{name}} ließen sich nicht lesen. Die Agenten haben sie erst wieder, wenn sie neu gelesen werden.",
+    "readAgain": "Erneut lesen",
     "accountTitle": "Konto",
     "renameFailed": "Umbenennen hat nicht geklappt. Versuch es noch einmal.",
     "whoTitle": "Wer es nutzt",
@@ -2124,25 +2145,16 @@
     }
   },
   "joinRequests": {
-    "share": "Link teilen",
-    "roles": "Rollen",
-    "rolesHint": "Sie treten mit den eingeschalteten Rollen bei. Ohne Rolle dürfen sie, was Alle dürfen."
+    "share": "Link teilen"
   },
   "humanCheck": {
     "title": "Kurze Prüfung",
     "blocked": "Die Prüfung wurde nicht geladen. Versuch ein anderes Netzwerk."
   },
   "invitePeople": {
-    "emailsHelp": "Füge eine Liste ein oder tippe. Jede Person bekommt eine E-Mail und tritt sofort bei.",
-    "here": "Schon dabei",
-    "invited": "Schon eingeladen",
-    "fix": "Prüf das",
-    "channels": "Kanäle",
     "optional": "Optional",
     "ok": "Fertig",
     "noteHelp": "Erscheint in der E-Mail mit deinem Namen. Bis zu {{max}} Zeichen.",
-    "roleHelp": "Ändert, was die Person beim Beitritt bekommt.",
-    "remove": "Von der Liste nehmen",
     "sendAgain": "Erneut senden",
     "cancelTitle": "Einladung an {{email}} zurückziehen?",
     "cancelText": "Der Link öffnet sich dann nicht mehr.",
@@ -2457,7 +2469,7 @@
     },
     "import": {
       "title": "Von einem Computer importieren",
-      "text": "Um Passwörter aus einem Browser oder Passwort-Manager zu übernehmen, öffne im Web Einstellungen, Vault und wähle Importieren."
+      "text": "Um Passwörter aus einem Browser oder Passwort-Manager zu übernehmen, importiere sie im Web."
     },
     "connections": {
       "text": "Verbinde einen Passwort-Manager, und deine Agenten verwenden die Logins, die dort liegen. Nichts wird kopiert: Ein Passwort wird erst gelesen, wenn es gebraucht wird.",

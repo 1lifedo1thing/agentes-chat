@@ -54,7 +54,8 @@
     "closed": "{{title}} · kapandı",
     "reopen": "Yeniden göster",
     "answeredBy": "{{name}} seçti",
-    "failed": "Seçiminiz gönderilemedi. Tekrar deneyin."
+    "failed": "Seçiminiz gönderilemedi. Tekrar deneyin.",
+    "tooLongFix": "Cevabı kısalt."
   },
   "chart": {
     "table": "Tablo",
@@ -881,6 +882,8 @@
     },
     "doneToast": "Tamamlandı",
     "undo": "Geri al",
+    "doneAllToast_one": "{{count}} bildirim Tamamlananlar'a taşındı",
+    "doneAllToast_other": "{{count}} bildirim Tamamlananlar'a taşındı",
     "day": {
       "today": "Bugün",
       "yesterday": "Dün",
@@ -1192,6 +1195,7 @@
     "blocked": "{{names}} çalışma alanının tek sahibi sizsiniz. Web sitesinde, Kişiler bölümünde başka birini sahip yapın, sonra geri gelin.",
     "addPasswordFirst": "Önce web sitesinden hesabınıza bir şifre ekleyin, sonra buraya yazın.",
     "addPasswordWeb": "Web sitesinde şifre ekle",
+    "onThisComputer": "Bu sunucuyu çalıştıran bilgisayardaki agentes.chat uygulamasından silin.",
     "otherAccount": "Başka bir hesaba giriş yaptınız. Hiçbir şey silinmedi.",
     "hold": "Silmek için basılı tutun"
   },
@@ -1742,6 +1746,8 @@
         "offlineCloudM": "{{name}} ajanının bilgisayarı şu an yanıt vermiyor.",
         "stuckF": "{{name}} ajanının tarayıcısı açılamadı.",
         "stuckM": "{{name}} ajanının tarayıcısı açılamadı.",
+        "noAnswerF": "{{name}} tarayıcısı yanıt vermedi.",
+        "noAnswerM": "{{name}} tarayıcısı yanıt vermedi.",
         "tooManyF": "Aynı anda çok fazla tarayıcı açık. Biri kapanınca bu görünecek.",
         "tooManyM": "Aynı anda çok fazla tarayıcı açık. Biri kapanınca bu görünecek."
       }
@@ -1982,8 +1988,20 @@
         "stopped": "{{name}} artık Wi-Fi üzerinden kullanılmıyor"
       },
       "stall": {
-        "plug": "{{host}} henüz bu iPhone'u görmüyor. Sadece şarj değil veri de taşıyan bir kablo kullanın, bu iPhone'un kilidini açık tutun ve isterse Güven'e dokunun.",
-        "devmode": "Geliştirici Modu yalnızca bu iPhone yeniden başladıktan sonra açılır. Yeniden Başlat'a, açıldıktan sonra da Aç'a dokunun. Anahtar yok mu? Bu iPhone'u çıkarıp yeniden takın."
+        "plug": "{{host}} henüz bu iPhone'u görmüyor. Sadece şarj değil veri de taşıyan bir kablo kullanın, bu iPhone'un kilidini açık tutun ve isterse Güven'e dokunun."
+      },
+      "devMode": {
+        "restarting": "{{host}} yeniden başlatmadan sonra bu iPhone'u henüz yeniden görmüyor. Bağlı bırakın.",
+        "back": "Bu iPhone'daki uyarıda Aç'a dokunun ve parolanızı girin.",
+        "check": "Açtım, yeniden kontrol et",
+        "stillOff": "{{host}} Geliştirici Modu'nu hâlâ kapalı görüyor.",
+        "missing": "Seçenek görünmüyor mu?",
+        "hidden": "Bu iPhone, Xcode göstermesini isteyene kadar bu seçeneği gizler.",
+        "hiddenOpen": "Bu iPhone, Xcode göstermesini isteyene kadar bu seçeneği gizler. Bu iPhone bağlıyken {{host}} üzerinde Xcode'u açın.",
+        "openXcode": "Xcode'u aç",
+        "opened": "Xcode {{host}} üzerinde açıldı. Ayarlar'a yeniden bakın, sonra oradaki Xcode'u kapatın.",
+        "unlock": "Açtınız ve yeniden başladı mı? Aç düğmeli uyarı, bu iPhone'un kilidi açıldığında çıkar.",
+        "outdated": "{{host}} üzerindeki agentes.chat uygulaması eski. O Mac'te güncelleyin."
       }
     },
     "notice": {
@@ -1996,6 +2014,8 @@
       "waiting": "{{names}}, {{device}} cihazını bekliyor",
       "waitingFor": "{{names}}, {{person}} için {{device}} cihazını bekliyor",
       "tool_request": "{{names}}, {{device}} cihazınızda {{tool}} açmanızı istiyor",
+      "cli_request": "{{names}}, {{device}} cihazınıza {{tool}} kurmanızı istiyor",
+      "folder_request": "{{names}}, {{device}} cihazınızda {{path}} klasörünü istiyor",
       "allowOnce": "Bir kez izin ver",
       "always": "{{name}} için her zaman izin ver",
       "no": "Hayır",
@@ -2057,7 +2077,8 @@
     "everyoneFailed": "Herkesin erişimi değiştirilemedi. Tekrar deneyin.",
     "disconnectFailed": "{{name}} bağlantısı kesilemedi. Tekrar deneyin.",
     "needsReconnect": "{{name}} hesabı çalışmayı bıraktı. Biri yeniden bağlayana kadar ajanlar onu kullanamaz.",
-    "noTools": "{{name}} araçları okunamadı. Araçlar bölümünde yeniden okunana kadar ajanlar bunları kullanamaz.",
+    "noTools": "{{name}} araçları okunamadı. Yeniden okunana kadar ajanlar bunları kullanamaz.",
+    "readAgain": "Yeniden oku",
     "accountTitle": "Hesap",
     "renameFailed": "Yeniden adlandırılamadı. Tekrar deneyin.",
     "whoTitle": "Kim kullanıyor",
@@ -2124,25 +2145,16 @@
     }
   },
   "joinRequests": {
-    "share": "Bağlantıyı paylaş",
-    "roles": "Roller",
-    "rolesHint": "Açık olan rollerle katılırlar. Hiçbiri açık değilse Herkes'in yapabildiklerini yapabilirler."
+    "share": "Bağlantıyı paylaş"
   },
   "humanCheck": {
     "title": "Hızlı doğrulama",
     "blocked": "Doğrulama yüklenmedi. Başka bir ağ deneyin."
   },
   "invitePeople": {
-    "emailsHelp": "Bir liste yapıştırın ya da yazın. Her kişiye bir e-posta gider ve hemen katılır.",
-    "here": "Zaten burada",
-    "invited": "Zaten davet edildi",
-    "fix": "Bunu kontrol edin",
-    "channels": "Kanallar",
     "optional": "İsteğe bağlı",
     "ok": "Tamam",
     "noteHelp": "E-postada adınızla birlikte görünür. En fazla {{max}} karakter.",
-    "roleHelp": "Kişinin katılırken ne alacağını değiştirir.",
-    "remove": "Listeden çıkar",
     "sendAgain": "Yeniden gönder",
     "cancelTitle": "{{email}} adresine gönderilen davet iptal edilsin mi?",
     "cancelText": "Bağlantısı artık açılmaz.",
@@ -2457,7 +2469,7 @@
     },
     "import": {
       "title": "Bir bilgisayardan içe aktar",
-      "text": "Bir tarayıcıdan ya da şifre yöneticisinden şifre getirmek için web'de Ayarlar, Vault'u açın ve İçe aktar'ı seçin."
+      "text": "Bir tarayıcıdan ya da şifre yöneticisinden şifre getirmek için web'den içe aktarın."
     },
     "connections": {
       "text": "Bir şifre yöneticisi bağlayın, ajanlarınız orada saklanan giriş bilgilerini kullansın. Hiçbir şey kopyalanmaz: şifre yalnızca kullanıldığı anda okunur.",

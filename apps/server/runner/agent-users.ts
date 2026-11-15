@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
-import { AGENT_WORKER_HOMES } from "@agenteschat/adapters/command-policy";
+import { AGENT_WORKER_HOMES, GROK_ACCOUNT_HOMES } from "@agenteschat/adapters/command-policy";
 import { type AgentScope, isAccountId } from "@agenteschat/adapters/machine-protocol";
 import { agentTmpOnDisk, isAgentUid } from "./config";
 import { RunnerError } from "./errors";
@@ -501,17 +501,17 @@ export function ensureSubids(user: Pick<AgentUser, "user" | "uid">, etc = "/etc"
 /**
  * Runs a command as the agent's user inside its slice (whose limits then
  * hold), with its own temporary folders (`agentRam`, its /tmp on disk with
- * `tmpOnDisk`, and `PRIVATE_TMP`), or with
- * runuser alone where systemd isn't PID 1 (a container). Absolute paths: root
- * never looks these up on a PATH. `--collect`: a scope the OOM killer ended
- * doesn't stay behind as a failed unit. `OOMPolicy=continue` (`oomPolicy`): a
- * process the kernel stops for memory takes only itself, so the command it ran
- * fails where its caller can tell, and the agent's other work goes on. sh,
- * unshare and sh each become the next program (no fork), so runuser still
- * passes SIGTERM on; with slave propagation, what the computer unmounts leaves
- * the agent's namespace too. With rootless containers (`containers`), every
- * launch has the agent's runtime dir and talks to its containers service's
- * Podman (`docker` and `podman` both, through the socket's Docker API too).
+ * `tmpOnDisk`, and `PRIVATE_TMP`), or with `asAgent` alone where systemd isn't
+ * PID 1 (a container). Absolute paths: root never looks these up on a PATH.
+ * `--collect`: a scope the OOM killer ended doesn't stay behind as a failed
+ * unit. `OOMPolicy=continue` (`oomPolicy`): a process the kernel stops for
+ * memory takes only itself, so the command it ran fails where its caller can
+ * tell, and the agent's other work goes on. sh, unshare, sh and setpriv each
+ * become the next program (no fork), so SIGTERM reaches the command itself;
+ * with slave propagation, what the computer unmounts leaves the agent's
+ * namespace too. With rootless containers (`containers`), every launch has the
+ * agent's runtime dir and talks to its containers service's Podman (`docker`
+ * and `podman` both, through the socket's Docker API too).
  */
 export function systemLauncher(
   u: AgentUser,
@@ -521,8 +521,7 @@ export function systemLauncher(
   tmpOnDisk = systemd && agentTmpOnDisk(),
 ): Launcher {
   const home = agentHome(u.user);
-  const runuser = ["/usr/sbin/runuser", "-u", u.user, "--"];
-  const command = [...networkPrefix(u), ...networkRestrictions(u), ...runuser];
+  const command = [...networkPrefix(u), ...networkRestrictions(u), ...asAgent(u.user)];
   const socket = podmanSocket(u.uid);
   const env = {
     ...agentEnv(u, containers),
@@ -632,11 +631,7 @@ export function containersCommand(
     ...(hook.length > 0 ? ["/bin/sh", "-c", CGROUP_BACK, "sh", keptCgroup(u.uid)] : []),
     SETPRIV,
     "--bounding-set=-net_admin,-net_raw",
-    "--",
-    "/usr/sbin/runuser",
-    "-u",
-    u.user,
-    "--",
+    ...asAgent(u.user).slice(1),
     "/usr/bin/env",
     "-i",
     ...env,
@@ -769,7 +764,7 @@ export function agentGid(user: string, run: RunCommand = runSync): number {
   return gid;
 }
 
-/** Commands before runuser and root's network diagnostics enter the same optional network context. */
+/** Commands before becoming the agent and root's network diagnostics enter the same optional network context. */
 export function networkPrefix(user: AgentUser): string[] {
   return user.networkLauncher ? [...trustedNetworkLauncher(user.networkLauncher), String(user.uid), "--"] : [];
 }
@@ -812,6 +807,15 @@ export function ensureGitCacheUser(run: RunCommand = runSync): { uid: number; gi
  */
 export const AUTH_EGRESS_GROUP = "agentes-auth";
 const SETPRIV = "/usr/bin/setpriv";
+
+/**
+ * Becomes the agent's user: its own group and its groups. Never `runuser` or `su`, whose PAM session may load
+ * `pam_systemd` (Arch's `/etc/pam.d/runuser` includes `system-login`), which registers a logind session and moves the
+ * process from the agent's slice into `user-<uid>.slice/session-N.scope`: past its limits and its bind policy, so every
+ * worker's bind check failed there (#253). `setpriv` opens no PAM session and is the one the capability drops use too.
+ */
+export const asAgent = (user: string) => [SETPRIV, `--reuid=${user}`, `--regid=${user}`, "--init-groups", "--"];
+
 /** `$1` the new project, `$2` the transcript, `$3` its copy: a link stays a link, which then resumes nothing. */
 const CARRY_SESSION = 'umask 077 && mkdir -p -- "$1" && exec cp --no-dereference --remove-destination -- "$2" "$3"';
 
@@ -879,9 +883,9 @@ export function readAccountUsers(home: string): Omit<AccountUser, "gid">[] {
   return Array.isArray(v) ? v.filter(isAccountRow).map(({ id, user, uid }) => ({ id, user, uid })) : [];
 }
 
-/** What holds agents' data. Claude's mount view hides them all; a turn's cwd must lie under one but the stores. */
+/** What holds agents' data. Claude's mount view hides them all; a turn's cwd must lie under one but the sign-ins'. */
 const AGENT_DATA_ROOTS = ["/home", SHARED_ROOT, AGENT_WORKER_HOMES, GIT_CACHE_DIR];
-export const ACCOUNT_MASKED_ROOTS = [...AGENT_DATA_ROOTS, ACCOUNT_STORES];
+export const ACCOUNT_MASKED_ROOTS = [...AGENT_DATA_ROOTS, GROK_ACCOUNT_HOMES, ACCOUNT_STORES];
 
 const inside = (root: string, p: string) => p.startsWith(`${root}/`);
 export const underMaskedRoot = (p: string) => ACCOUNT_MASKED_ROOTS.some((root) => inside(root, p));

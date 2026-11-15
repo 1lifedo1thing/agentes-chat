@@ -59,6 +59,8 @@ export const featureKeysEn = {
     reopen: "Show again",
     answeredBy: "{{name}} picked",
     failed: "Your pick didn't go through. Try again.",
+    /** After the message's size and limit, when a written answer makes the reply too long. */
+    tooLongFix: "Shorten the answer.",
   },
   chart: {
     table: "Table",
@@ -939,6 +941,9 @@ export const featureKeysEn = {
     /** The toast after a swipe marked an item done, with the way back. */
     doneToast: "Done",
     undo: "Undo",
+    /** The toast after "Clear all" (named after the Done pill), with the way back. */
+    doneAllToast_one: "{{count}} moved to Done",
+    doneAllToast_other: "{{count}} moved to Done",
     day: {
       today: "Today",
       yesterday: "Yesterday",
@@ -1271,6 +1276,8 @@ export const featureKeysEn = {
     /** No password, and no way to sign in again here: the website adds one. */
     addPasswordFirst: "Add a password to your account on the website first, then type it here.",
     addPasswordWeb: "Add a password on the website",
+    /** The owner of a server the desktop app runs, with no password: that app's sign-in is their proof. */
+    onThisComputer: "Delete it in the agentes.chat app on the computer that runs this server.",
     otherAccount: "You signed in to another account. Nothing was deleted.",
     hold: "Hold to delete",
   },
@@ -1822,6 +1829,8 @@ export const featureKeysEn = {
         offlineCloudM: "{{name}}'s computer isn't answering right now.",
         stuckF: "Couldn't open {{name}}'s browser.",
         stuckM: "Couldn't open {{name}}'s browser.",
+        noAnswerF: "{{name}}'s browser didn't answer.",
+        noAnswerM: "{{name}}'s browser didn't answer.",
         tooManyF: "Too many browsers open at once. This one shows when another one closes.",
         tooManyM: "Too many browsers open at once. This one shows when another one closes.",
       },
@@ -2075,8 +2084,26 @@ export const featureKeysEn = {
       /** Under a step that sat unchanged for a while: what most likely holds it, and one way out. */
       stall: {
         plug: "{{host}} doesn't see this iPhone yet. Use a cable that carries data, not only power, keep this iPhone unlocked and tap Trust if it asks.",
-        devmode:
-          "Developer Mode turns on only after this iPhone restarts. Tap Restart, then Turn On once it's back. No switch there? Unplug this iPhone and plug it in again.",
+      },
+      /** Under Developer Mode, on the iPhone itself. */
+      devMode: {
+        /** It restarted to turn the mode on, and its Mac doesn't see it again yet. */
+        restarting: "{{host}} doesn't see this iPhone again yet after its restart. Keep it plugged in.",
+        /** Back from the restart with the mode still off: iOS shows its alert once unlocked. */
+        back: "Tap Turn On in the alert on this iPhone and enter your passcode.",
+        /** A button: the Mac looks at this iPhone again now. */
+        check: "I turned it on, check again",
+        stillOff: "{{host}} still sees Developer Mode off.",
+        /** Each reason the switch may be missing, with its one way out. */
+        missing: "Don't see the option?",
+        hidden: "This iPhone hides the option until Xcode asks to show it.",
+        /** For who can't open Xcode from here: someone who doesn't manage the Mac, or a Mac whose app is too old. */
+        hiddenOpen:
+          "This iPhone hides the option until Xcode asks to show it. Open Xcode on {{host}} with this iPhone plugged in.",
+        openXcode: "Open Xcode",
+        opened: "Xcode opened on {{host}}. Look in Settings again, then close Xcode there.",
+        unlock: "Turned it on and it restarted? The alert with Turn On shows once this iPhone is unlocked.",
+        outdated: "The agentes.chat app on {{host}} is out of date. Update it on that Mac.",
       },
     },
     /**
@@ -2093,6 +2120,8 @@ export const featureKeysEn = {
       waiting: "{{names}} is waiting for {{device}}",
       waitingFor: "{{names}} is waiting for {{device}} for {{person}}",
       tool_request: "{{names}} asks you to turn on {{tool}} on your {{device}}",
+      cli_request: "{{names}} asks you to install {{tool}} on your {{device}}",
+      folder_request: "{{names}} asks for the folder {{path}} on your {{device}}",
       allowOnce: "Allow once",
       always: "Always allow {{name}}",
       no: "No",
@@ -2162,7 +2191,8 @@ export const featureKeysEn = {
     everyoneFailed: "Couldn't change everyone's access. Try again.",
     disconnectFailed: "Couldn't disconnect {{name}}. Try again.",
     needsReconnect: "The {{name}} account stopped working. Agents can't use it until someone reconnects it.",
-    noTools: "{{name}}'s tools couldn't be read. Agents go without them until they're read again, in Tools.",
+    noTools: "{{name}}'s tools couldn't be read. Agents go without them until they're read again.",
+    readAgain: "Read again",
     accountTitle: "Account",
     renameFailed: "Couldn't rename it. Try again.",
     whoTitle: "Who uses it",
@@ -2233,8 +2263,6 @@ export const featureKeysEn = {
   },
   joinRequests: {
     share: "Share the link",
-    roles: "Roles",
-    rolesHint: "They join with the roles turned on. With none, they may do what Everyone may.",
   },
   humanCheck: {
     title: "Quick check",
@@ -2242,16 +2270,9 @@ export const featureKeysEn = {
   },
   /** Convidar pessoas and the sent invitations' sheet (ADR 0090); the other words are the shared `members.*`. */
   invitePeople: {
-    emailsHelp: "Paste a list or type. Each person gets an email and joins right away.",
-    here: "Already here",
-    invited: "Already invited",
-    fix: "Check this",
-    channels: "Channels",
     optional: "Optional",
     ok: "OK",
     noteHelp: "It shows in the email with your name. Up to {{max}} characters.",
-    roleHelp: "Changes what the person gets on joining.",
-    remove: "Take off the list",
     sendAgain: "Send again",
     cancelTitle: "Cancel the invitation to {{email}}?",
     cancelText: "Its link stops opening.",
@@ -2605,7 +2626,7 @@ export const featureKeysEn = {
     },
     import: {
       title: "Import from a computer",
-      text: "To bring passwords from a browser or a password manager, open Settings, Vault on the web and choose Import.",
+      text: "To bring passwords from a browser or a password manager, import them on the web.",
     },
     connections: {
       text: "Connect a password manager and your agents use the logins kept there. Nothing is copied: a password is read only when it's used.",

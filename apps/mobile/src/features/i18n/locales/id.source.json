@@ -146,6 +146,9 @@
   "choices.failed": {
     "value": "Your pick didn't go through. Try again."
   },
+  "choices.tooLongFix": {
+    "value": "Shorten the answer."
+  },
   "chart.table": {
     "value": "Table"
   },
@@ -2091,6 +2094,12 @@
   "activity.undo": {
     "value": "Undo"
   },
+  "activity.doneAllToast": {
+    "value": {
+      "one": "{{count}} moved to Done",
+      "other": "{{count}} moved to Done"
+    }
+  },
   "activity.day.today": {
     "value": "Today"
   },
@@ -2935,6 +2944,9 @@
   },
   "delete.addPasswordWeb": {
     "value": "Add a password on the website"
+  },
+  "delete.onThisComputer": {
+    "value": "Delete it in the agentes.chat app on the computer that runs this server."
   },
   "delete.otherAccount": {
     "value": "You signed in to another account. Nothing was deleted."
@@ -4289,6 +4301,12 @@
   "browser.live.unavailable.stuckM": {
     "value": "Couldn't open {{name}}'s browser."
   },
+  "browser.live.unavailable.noAnswerF": {
+    "value": "{{name}}'s browser didn't answer."
+  },
+  "browser.live.unavailable.noAnswerM": {
+    "value": "{{name}}'s browser didn't answer."
+  },
   "browser.live.unavailable.tooManyF": {
     "value": "Too many browsers open at once. This one shows when another one closes."
   },
@@ -4886,8 +4904,38 @@
   "devices.iphone.stall.plug": {
     "value": "{{host}} doesn't see this iPhone yet. Use a cable that carries data, not only power, keep this iPhone unlocked and tap Trust if it asks."
   },
-  "devices.iphone.stall.devmode": {
-    "value": "Developer Mode turns on only after this iPhone restarts. Tap Restart, then Turn On once it's back. No switch there? Unplug this iPhone and plug it in again."
+  "devices.iphone.devMode.restarting": {
+    "value": "{{host}} doesn't see this iPhone again yet after its restart. Keep it plugged in."
+  },
+  "devices.iphone.devMode.back": {
+    "value": "Tap Turn On in the alert on this iPhone and enter your passcode."
+  },
+  "devices.iphone.devMode.check": {
+    "value": "I turned it on, check again"
+  },
+  "devices.iphone.devMode.stillOff": {
+    "value": "{{host}} still sees Developer Mode off."
+  },
+  "devices.iphone.devMode.missing": {
+    "value": "Don't see the option?"
+  },
+  "devices.iphone.devMode.hidden": {
+    "value": "This iPhone hides the option until Xcode asks to show it."
+  },
+  "devices.iphone.devMode.hiddenOpen": {
+    "value": "This iPhone hides the option until Xcode asks to show it. Open Xcode on {{host}} with this iPhone plugged in."
+  },
+  "devices.iphone.devMode.openXcode": {
+    "value": "Open Xcode"
+  },
+  "devices.iphone.devMode.opened": {
+    "value": "Xcode opened on {{host}}. Look in Settings again, then close Xcode there."
+  },
+  "devices.iphone.devMode.unlock": {
+    "value": "Turned it on and it restarted? The alert with Turn On shows once this iPhone is unlocked."
+  },
+  "devices.iphone.devMode.outdated": {
+    "value": "The agentes.chat app on {{host}} is out of date. Update it on that Mac."
   },
   "devices.notice.kind": {
     "value": "Devices"
@@ -4915,6 +4963,12 @@
   },
   "devices.notice.tool_request": {
     "value": "{{names}} asks you to turn on {{tool}} on your {{device}}"
+  },
+  "devices.notice.cli_request": {
+    "value": "{{names}} asks you to install {{tool}} on your {{device}}"
+  },
+  "devices.notice.folder_request": {
+    "value": "{{names}} asks for the folder {{path}} on your {{device}}"
   },
   "devices.notice.allowOnce": {
     "value": "Allow once"
@@ -5085,7 +5139,10 @@
     "value": "The {{name}} account stopped working. Agents can't use it until someone reconnects it."
   },
   "connectors.noTools": {
-    "value": "{{name}}'s tools couldn't be read. Agents go without them until they're read again, in Tools."
+    "value": "{{name}}'s tools couldn't be read. Agents go without them until they're read again."
+  },
+  "connectors.readAgain": {
+    "value": "Read again"
   },
   "connectors.accountTitle": {
     "value": "Account"
@@ -5241,32 +5298,11 @@
   "joinRequests.share": {
     "value": "Share the link"
   },
-  "joinRequests.roles": {
-    "value": "Roles"
-  },
-  "joinRequests.rolesHint": {
-    "value": "They join with the roles turned on. With none, they may do what Everyone may."
-  },
   "humanCheck.title": {
     "value": "Quick check"
   },
   "humanCheck.blocked": {
     "value": "The check didn't load. Try another network."
-  },
-  "invitePeople.emailsHelp": {
-    "value": "Paste a list or type. Each person gets an email and joins right away."
-  },
-  "invitePeople.here": {
-    "value": "Already here"
-  },
-  "invitePeople.invited": {
-    "value": "Already invited"
-  },
-  "invitePeople.fix": {
-    "value": "Check this"
-  },
-  "invitePeople.channels": {
-    "value": "Channels"
   },
   "invitePeople.optional": {
     "value": "Optional"
@@ -5276,12 +5312,6 @@
   },
   "invitePeople.noteHelp": {
     "value": "It shows in the email with your name. Up to {{max}} characters."
-  },
-  "invitePeople.roleHelp": {
-    "value": "Changes what the person gets on joining."
-  },
-  "invitePeople.remove": {
-    "value": "Take off the list"
   },
   "invitePeople.sendAgain": {
     "value": "Send again"
@@ -6028,7 +6058,7 @@
     "value": "Import from a computer"
   },
   "vault.import.text": {
-    "value": "To bring passwords from a browser or a password manager, open Settings, Vault on the web and choose Import."
+    "value": "To bring passwords from a browser or a password manager, import them on the web."
   },
   "vault.connections.text": {
     "value": "Connect a password manager and your agents use the logins kept there. Nothing is copied: a password is read only when it's used."

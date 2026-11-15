@@ -370,15 +370,16 @@ p {
 }
 
 /* The pair row right before a reply whose agent asked others first: "Theo ⇄ Atlas · 2 min", one 18px line 26 tall, a
-   line across the whole conversation as the day and "Novas" are, the two agents on its middle. Names too long for it
-   wrap whole, never cut: the row is one centred sentence, its faces and the ⇄ on the capitals of the words beside
-   them. */
+   line across the whole conversation as the day and "Novas" are, the two agents on its middle. Always one line: the
+   question's subject gives way first ("…", whole in the row's tip and its dialog), the names only once it is gone,
+   the count and the time never. Its faces and the ⇄ sit on the capitals of the words beside them. */
 .consult-pair {
   display: grid;
   grid-template-columns: minmax(16px, 1fr) minmax(0, auto) minmax(16px, 1fr);
   align-items: center;
   padding-inline: 16px;
   min-width: 0;
+  container-type: inline-size;
 }
 .consult-pair::before,
 .consult-pair::after {
@@ -393,7 +394,8 @@ p {
 .consult-pair__row {
   position: relative;
   grid-area: 1 / 2;
-  display: inline-block;
+  display: flex;
+  align-items: baseline;
   max-width: 100%;
   min-height: 26px;
   /* The same at both ends, the chevron in the room: the agents stay on the middle whether it shows or not. */
@@ -404,20 +406,38 @@ p {
   font: inherit;
   font-size: 13px;
   line-height: 18px;
-  text-align: center;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
   color: var(--muted);
   cursor: pointer;
   transition:
     background-color 0.12s,
     color 0.12s;
 }
-/* A face and its name's first word never part; the name wraps at its own spaces. */
-.consult-pair__who {
-  white-space: nowrap;
+.consult-pair__row > * {
+  flex: none;
 }
-.consult-pair__who > .consult-pair__name {
-  white-space: normal;
+/* The names give way only once the subject has none left: the subject's share of any shrink is so much larger that
+   theirs rounds to nothing before then (any share at all would cut them, an ellipsis taking a whole word). Its
+   block's 2px above and below keeps the faces' rings out of the clip. */
+.consult-pair__lead {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-block: -2px;
+  padding-block: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.consult-pair__row > .consult-pair__subject {
+  flex: 0 100000 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* A phone's line has room for the names, the count and the time only: the subject would be a letter and its "…". */
+@container (max-width: 420px) {
+  .consult-pair__subject {
+    display: none;
+  }
 }
 /* The faces on the capitals' middle, as an inline face (`.ac-who`): the row's type, not the face's own. */
 .consult-pair__who > .ac-avatar,
@@ -429,14 +449,12 @@ p {
 .consult-pair__faces {
   display: inline-flex;
 }
-/* How it went: the · stays with the name's last word, the time with the word before it, each kept whole. */
-.consult-pair__sep,
+/* How it went: the ·, then the word and its time, each kept whole. */
+.consult-pair__sep {
+  margin-inline: 6px 4px;
+}
 .consult-pair__time {
   margin-inline-start: 6px;
-}
-.consult-pair__word,
-.consult-pair__time {
-  white-space: nowrap;
 }
 .consult-pair__row:hover {
   background: var(--plate);
@@ -453,6 +471,10 @@ html:not([data-pointer]) .consult-pair__row:focus-visible {
 .consult-pair__name {
   font-weight: 600;
   color: var(--ink2);
+}
+/* What the question is about, after the names: quieter than them, on hover too (the row's ink turns --ink2). */
+.consult-pair__subject {
+  color: var(--muted);
 }
 .consult-pair__swap,
 .consult-pair__chev {
@@ -1056,6 +1078,14 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
   display: block;
   contain: inline-size;
   overflow-wrap: anywhere;
+}
+/* An agent's role and its person keep one line, ending in "…": the header's plate stays one height whatever the role
+   says, and the button over it shows the whole line in its tip. */
+.dm-who__text > .channel__topic--line {
+  overflow: hidden;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .dm-who__hit.profile-trigger {
   position: absolute;
@@ -3305,6 +3335,9 @@ html:not([data-pointer]) .artifact-table__sort:focus-visible {
 .md--message > * + * {
   margin-top: 14px;
 }
+.md-run {
+  word-break: break-all;
+}
 .md--message > p + ul,
 .md--message > p + ol {
   margin-top: 8px;
@@ -3406,7 +3439,6 @@ html:not([data-pointer]) .profile-trigger:focus-visible {
 .profile-card {
   --menu-pad: var(--space-2);
   width: 300px;
-  max-height: none;
   padding: var(--menu-pad);
 }
 /* A channel's card: its words further in than the room (`.ac-popover`), its buttons back on it. */
@@ -3962,6 +3994,28 @@ html:not([data-pointer]) .skill-file--open:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1) var(--space-2);
+}
+.skill-row__name--static {
+  cursor: default;
+}
+.skill-row__name--static:hover {
+  text-decoration: none;
+}
+/* Others' personal skills: their person after the marks, the ⋯ menu at the row's end. */
+.skill-owner {
+  gap: var(--space-1);
+  min-width: 0;
+}
+.skill-row__meta > button:last-child {
+  margin-left: auto;
+}
+.skill-pill {
+  gap: var(--space-1);
+}
+.skill-others {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 .skill-picks {
   margin: 0;
@@ -4761,7 +4815,6 @@ html:not([data-pointer]) .catalog__cat:focus-visible {
 }
 .catalog-feat__card:hover,
 .catalog-tile:hover {
-  transform: translateY(-1px);
   box-shadow: var(--e2), var(--top);
 }
 .catalog-feat__card:active,
@@ -6483,7 +6536,6 @@ html:not([data-pointer]) .photo-drop:focus-visible {
     box-shadow 0.16s;
 }
 .avatar-ask__door:hover {
-  transform: translateY(-2px);
   box-shadow: var(--e2);
 }
 .avatar-ask__door:active {
@@ -6881,6 +6933,12 @@ html:not([data-pointer]) .avatar-builder__swatch:focus-visible {
   flex-wrap: wrap;
   justify-content: space-between;
 }
+/* Its buttons' touch targets reach 4px past their plates (`.ac-btn--sm::after`): the plate holds them, as the kit's
+   formatting bar does. */
+.wiki-editor__bar.ac-glass {
+  padding: var(--space-1);
+  border-radius: calc(var(--control-r-sm) + var(--space-1));
+}
 .wiki-editor__tools {
   display: flex;
   flex-wrap: wrap;
@@ -6937,8 +6995,11 @@ html:not([data-pointer]) .avatar-builder__swatch:focus-visible {
   top: 48px;
   width: 300px;
   max-width: calc(100% - 32px);
-  padding: var(--menu-pad);
-  z-index: var(--z-floating);
+}
+/* The kit's menu with no trigger to match: as wide as set above, as tall as its rows (the floating one: `placeList`). */
+.ac-menu.wiki-suggest {
+  min-width: 0;
+  max-height: none;
 }
 /* "Salvar na wiki" */
 .save-wiki__list {
@@ -7208,12 +7269,9 @@ p.run-canceled {
   line-height: normal;
   color: var(--ink);
   cursor: pointer;
-  transition: transform 0.18s var(--spring);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .run-continue:hover:not(:disabled) {
-    transform: translateY(-1px);
-  }
+.run-continue:hover:not(:disabled) {
+  box-shadow: var(--card-shadow-hover);
 }
 html:not([data-pointer]) .run-continue:focus-visible {
   outline: none;
@@ -7447,6 +7505,17 @@ html:not([data-pointer]) .run-continue:focus-visible {
 .sidebar[data-rail="true"] .sidebar__org {
   flex-direction: column;
   padding: 0;
+}
+/* A tablet's rail opened by its toggle: the whole sidebar over the page, which keeps the rail's room and its layout. */
+.sidebar[data-float="true"] {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  z-index: var(--z-floating);
+  box-shadow: var(--e3);
+}
+.shell:has(> .sidebar[data-float="true"]) {
+  padding-left: 68px;
 }
 .sidebar[data-rail="true"] .sidebar__org-text,
 .sidebar[data-rail="true"] .sidebar__org-button > .ac-icon,
@@ -9445,7 +9514,6 @@ html:not([data-pointer]) .onb__step:focus-visible {
 }
 .newag__role:hover,
 .newag__tip:hover {
-  transform: translateY(-2px);
   box-shadow: var(--e2), var(--top);
 }
 .newag__role[aria-pressed="true"] {
@@ -9607,7 +9675,7 @@ html:not([data-pointer]) .newag__addrow:focus-visible {
   transition: transform 0.2s var(--spring);
 }
 .newag__swatch:hover {
-  transform: translateY(-2px);
+  transform: scale(1.12);
 }
 .newag__swatch--custom {
   background: conic-gradient(from 200deg, #f58aa6, #f3c25c, #5fcf8b, #4cd0c0, #8cc3ff, #7d8bff, #ae8cf7, #f58aa6);
@@ -9653,7 +9721,6 @@ html:not([data-pointer]) .newag__addrow:focus-visible {
 }
 .newag__opt:hover {
   color: var(--ink);
-  transform: translateY(-1px);
 }
 .newag__opt[aria-pressed="true"] {
   background: var(--chosen-bg);
@@ -11794,7 +11861,6 @@ html:not([data-pointer]) .agp-subnav__item:focus-visible {
 .agp-changes.ac-popover {
   --menu-pad: var(--space-2);
   width: min(420px, calc(100vw - 24px));
-  max-height: 60vh;
   overflow: auto;
   padding: var(--menu-pad);
 }
@@ -12602,6 +12668,25 @@ html:not([data-pointer]) .sidebar__section-toggle:focus-visible {
 .sidebar__section-head > .sidebar__section-working + .ac-btn {
   margin-inline-start: calc(var(--space-2) - 2px);
 }
+/* While a header's buttons are hidden they take no room after its "working" line, so the line stands at the head's
+   end (8 from it, as a count) and not in the middle of the row; hover or focus opens their room again. They keep
+   their place in the tab order. Touch screens always show them. */
+@media (hover: hover) {
+  .sidebar__section-head:not(:hover, :has(.sidebar__section-add:is(:focus-visible, [data-state="open"])))
+    > .sidebar__section-working
+    ~ .sidebar__section-add.ac-btn {
+    width: 0;
+    min-width: 0;
+    margin-inline-start: -2px;
+    padding: 0;
+    border-width: 0;
+    overflow: hidden;
+  }
+  .sidebar__section-head:not(:hover, :has(.sidebar__section-add:is(:focus-visible, [data-state="open"])))
+    > .sidebar__section-working:not(:has(~ .sidebar__section-count)) {
+    padding-inline-end: 6px;
+  }
+}
 /*
  * Channel categories (ADR 0080). Closed, a category also keeps its unread channels in sight, not only the open
  * one (the rule above hides the rest).
@@ -13076,7 +13161,6 @@ html:not([data-pointer]) .sidebar__more:focus-visible {
 .sidebar__more-menu {
   width: max-content;
   max-width: min(400px, calc(100vw - 32px));
-  max-height: none;
 }
 .sidebar__more-item {
   text-decoration: none;
@@ -13777,141 +13861,10 @@ html:not([data-pointer]) .ac-typing__see:focus-visible {
 .ai-panel--plan .agp-addacct__step > i {
   margin-inline: calc((var(--lead) - 20px) / 2);
 }
-/*
- * A program switched off on the computer (`ToolOffSteps`): the computer's name, then plain lines between hairlines,
- * nothing sunken. A line's number, and the switch drawn at its end, sit on its first line.
- */
-.tool-off {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.tool-off__where {
-  margin: 0;
-  color: var(--ink2);
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 20px;
-}
-.tool-off__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--line);
-}
-.tool-off__list > li,
-.tool-off__row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink);
-  font-size: 14px;
-  line-height: 20px;
-}
-.tool-off__row {
-  border-top: 1px solid var(--line);
-}
-.tool-off__row--stack {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-.tool-off__list > li > span:not(.tool-off__switch),
-.tool-off__row > span {
-  flex: 1;
-  min-width: 0;
-}
-/* The app's own button is 32px on a 20px line: on the line's middle. */
-.tool-off__row > .ac-btn {
-  flex: none;
-  margin-block: -6px;
-}
-.tool-off__list > li > i {
-  display: inline-grid;
-  flex: none;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--bg);
-  font-size: 11.5px;
-  font-style: normal;
-  font-weight: 650;
-}
-.tool-off__list small {
-  display: block;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 12.5px;
-  line-height: 18px;
-}
-/* The app's icon inside the sentence, as a word of it: on the line's middle, never a lead. */
-.tool-off__app {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 18px;
-  margin-inline: 2px;
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--ink) 10%, transparent);
-  vertical-align: middle;
-}
-/* The kit's switch, drawn (`.ac-switch`), turning on over and over. */
-.tool-off__switch {
-  position: relative;
-  flex: none;
-  width: 28px;
-  height: 16px;
-  margin-top: 2px;
-  border-radius: var(--radius-full);
-  background: var(--line-strong);
-}
-.tool-off__switch::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--surface-raised);
-}
-@keyframes tool-off-track {
-  0%,
-  40% {
-    background: var(--line-strong);
-  }
-  55%,
-  100% {
-    background: var(--action);
-  }
-}
-@keyframes tool-off-thumb {
-  0%,
-  40% {
-    transform: none;
-  }
-  55%,
-  100% {
-    transform: translateX(12px);
-  }
-}
-.tool-off__wait {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 20px;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .tool-off__switch {
-    animation: tool-off-track 3s infinite;
-  }
-  .tool-off__switch::after {
-    animation: tool-off-thumb 3s infinite;
-  }
+/* The way out where a program is off (`ToolOffWayOut`): its buttons go under one another before past the edge. */
+.ac-acts.tool-way {
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
 }
 /* A step's title, an option's and the foot's line break into lines of a length, never onto a word or two alone. */
 .ai-panel--plan :is(.agp-addacct__text b, .ac-option__title, .ac-card__foot) {
@@ -14464,7 +14417,8 @@ html:not([data-pointer]) .ac-typing__see:focus-visible {
 .settings-row.rh-guidance {
   gap: 10px;
 }
-.rh-guidance > .ac-actrow__text + * {
+.rh-guidance > .ac-actrow__text + *,
+.rh-guidance > .ac-limit {
   flex-basis: 100%;
 }
 /* Configurações › Sua conta: a line that opens something is a button, its chevron at the end. Its hover stays inside

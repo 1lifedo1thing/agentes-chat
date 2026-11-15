@@ -52,7 +52,8 @@
     "closed": "{{title}} · ditutup",
     "reopen": "Tampilkan lagi",
     "answeredBy": "{{name}} memilih",
-    "failed": "Pilihanmu tidak terkirim. Coba lagi."
+    "failed": "Pilihanmu tidak terkirim. Coba lagi.",
+    "tooLongFix": "Persingkat jawabannya."
   },
   "chart": {
     "table": "Tabel",
@@ -857,6 +858,7 @@
     },
     "doneToast": "Selesai",
     "undo": "Urungkan",
+    "doneAllToast_other": "{{count}} dipindahkan ke Selesai",
     "day": {
       "today": "Hari ini",
       "yesterday": "Kemarin",
@@ -1115,6 +1117,7 @@
     "blocked": "Kamu satu-satunya pemilik {{names}}. Di situs web, di Orang, jadikan orang lain pemilik, lalu kembali ke sini.",
     "addPasswordFirst": "Tambahkan kata sandi ke akunmu di situs web dulu, lalu ketik di sini.",
     "addPasswordWeb": "Tambahkan kata sandi di situs web",
+    "onThisComputer": "Hapus di aplikasi agentes.chat di komputer yang menjalankan server ini.",
     "otherAccount": "Kamu masuk ke akun lain. Tidak ada yang dihapus.",
     "hold": "Tahan untuk menghapus"
   },
@@ -1645,6 +1648,8 @@
         "offlineCloudM": "Komputer {{name}} sedang tidak merespons.",
         "stuckF": "Tidak bisa membuka browser {{name}}.",
         "stuckM": "Tidak bisa membuka browser {{name}}.",
+        "noAnswerF": "Browser {{name}} tidak merespons.",
+        "noAnswerM": "Browser {{name}} tidak merespons.",
         "tooManyF": "Terlalu banyak browser terbuka sekaligus. Yang ini muncul saat browser lain ditutup.",
         "tooManyM": "Terlalu banyak browser terbuka sekaligus. Yang ini muncul saat browser lain ditutup."
       }
@@ -1884,8 +1889,20 @@
         "stopped": "{{name}} tidak lagi dipakai lewat Wi-Fi"
       },
       "stall": {
-        "plug": "{{host}} belum melihat iPhone ini. Pakai kabel yang membawa data, bukan hanya daya, biarkan iPhone ini tidak terkunci, lalu ketuk Percayai jika diminta.",
-        "devmode": "Mode Pengembang baru menyala setelah iPhone ini dimulai ulang. Ketuk Mulai Ulang, lalu Nyalakan setelah iPhone menyala lagi. Tidak ada tombolnya? Cabut iPhone ini dan colokkan lagi."
+        "plug": "{{host}} belum melihat iPhone ini. Pakai kabel yang membawa data, bukan hanya daya, biarkan iPhone ini tidak terkunci, lalu ketuk Percayai jika diminta."
+      },
+      "devMode": {
+        "restarting": "{{host}} belum melihat iPhone ini lagi setelah dimulai ulang. Biarkan tetap tersambung.",
+        "back": "Ketuk Nyalakan di peringatan pada iPhone ini dan masukkan kode sandimu.",
+        "check": "Sudah kunyalakan, periksa lagi",
+        "stillOff": "{{host}} masih melihat Mode Pengembang mati.",
+        "missing": "Opsinya tidak muncul?",
+        "hidden": "iPhone ini menyembunyikan opsi ini sampai Xcode memintanya muncul.",
+        "hiddenOpen": "iPhone ini menyembunyikan opsi ini sampai Xcode memintanya muncul. Buka Xcode di {{host}} dengan iPhone ini tersambung.",
+        "openXcode": "Buka Xcode",
+        "opened": "Xcode terbuka di {{host}}. Lihat lagi di Pengaturan, lalu tutup Xcode di sana.",
+        "unlock": "Sudah dinyalakan dan dimulai ulang? Peringatan dengan Nyalakan muncul saat kunci iPhone ini terbuka.",
+        "outdated": "Aplikasi agentes.chat di {{host}} sudah usang. Perbarui di Mac itu."
       }
     },
     "notice": {
@@ -1898,6 +1915,8 @@
       "waiting": "{{names}} sedang menunggu {{device}}",
       "waitingFor": "{{names}} sedang menunggu {{device}} untuk {{person}}",
       "tool_request": "{{names}} memintamu menyalakan {{tool}} di {{device}} milikmu",
+      "cli_request": "{{names}} meminta kamu memasang {{tool}} di {{device}} kamu",
+      "folder_request": "{{names}} memintamu membuka folder {{path}} di {{device}} milikmu",
       "allowOnce": "Izinkan sekali",
       "always": "Selalu izinkan {{name}}",
       "no": "Tidak",
@@ -1957,7 +1976,8 @@
     "everyoneFailed": "Tidak bisa mengubah akses semua orang. Coba lagi.",
     "disconnectFailed": "Tidak bisa memutus {{name}}. Coba lagi.",
     "needsReconnect": "Akun {{name}} berhenti berfungsi. Agen tidak bisa memakainya sampai ada yang menghubungkannya lagi.",
-    "noTools": "Alat dari {{name}} tidak bisa dibaca. Agen tidak bisa memakainya sampai dibaca lagi, di Alat.",
+    "noTools": "Alat dari {{name}} tidak bisa dibaca. Agen tidak bisa memakainya sampai dibaca lagi.",
+    "readAgain": "Baca lagi",
     "accountTitle": "Akun",
     "renameFailed": "Tidak bisa mengganti nama. Coba lagi.",
     "whoTitle": "Siapa yang memakainya",
@@ -2023,25 +2043,16 @@
     }
   },
   "joinRequests": {
-    "share": "Bagikan tautan",
-    "roles": "Peran",
-    "rolesHint": "Mereka bergabung dengan peran yang diaktifkan. Tanpa peran, mereka bisa melakukan apa yang boleh dilakukan Semua orang."
+    "share": "Bagikan tautan"
   },
   "humanCheck": {
     "title": "Pemeriksaan singkat",
     "blocked": "Pemeriksaan tidak termuat. Coba jaringan lain."
   },
   "invitePeople": {
-    "emailsHelp": "Tempel daftar atau ketik. Setiap orang menerima email dan langsung bergabung.",
-    "here": "Sudah di sini",
-    "invited": "Sudah diundang",
-    "fix": "Periksa ini",
-    "channels": "Kanal",
     "optional": "Opsional",
     "ok": "Oke",
     "noteHelp": "Muncul di email bersama namamu. Maksimal {{max}} karakter.",
-    "roleHelp": "Mengubah apa yang didapat orang itu saat bergabung.",
-    "remove": "Hapus dari daftar",
     "sendAgain": "Kirim lagi",
     "cancelTitle": "Batalkan undangan untuk {{email}}?",
     "cancelText": "Tautannya tidak akan bisa dibuka lagi.",
@@ -2347,7 +2358,7 @@
     },
     "import": {
       "title": "Impor dari komputer",
-      "text": "Untuk membawa kata sandi dari browser atau pengelola kata sandi, buka Pengaturan, Vault di web lalu pilih Impor."
+      "text": "Untuk membawa kata sandi dari browser atau pengelola kata sandi, impor lewat web."
     },
     "connections": {
       "text": "Hubungkan pengelola kata sandi, dan agenmu menggunakan login yang disimpan di sana. Tidak ada yang disalin: kata sandi hanya dibaca saat digunakan.",
