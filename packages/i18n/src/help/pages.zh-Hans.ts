@@ -92,6 +92,26 @@ export const helpZhHans: Partial<Record<HelpSlug, HelpDocument>> = {
         ],
       },
       {
+        id: "uninstall",
+        heading: "重新开始或卸载",
+        blocks: [
+          "agentes.chat 在这台电脑上保存的所有内容都在你主文件夹的文件夹里，而不在应用里面。所以把应用移到废纸篓不会删除其中任何内容，也不会停止正在运行的 agentes.chat。",
+          "要重新开始，请在 **偏好设置\u00a0›\u00a0服务器** 中点按它卡片下方的 **清除并重新开始…**。这台电脑上的 agentes.chat 会停止，里面的所有内容会移到你主文件夹中的一个新文件夹（名为 `agentes.chat erased` 加上当天日期），并完整地留在那里，直到你删除它。它的工作区会对所有使用者消失。之后欢迎窗口会打开，你用新的所有者账号重新设置。智能体的文件在你主文件夹的 `agentes` 中，会留在原处。",
+          "所有者在 **设置\u00a0›\u00a0你的账号** 中删除账号后，账号会在 7 天后彻底删除，只有所有者一人的工作区也会随之删除。在此之前，重新登录即可恢复。删除后，如果一个账号都不剩，应用会打开欢迎窗口来创建新的所有者。如果其他人还有账号，每个人用自己的邮箱登录。",
+          "要把 agentes.chat 从这台电脑上彻底移除：",
+          {
+            list: [
+              "在 **偏好设置\u00a0›\u00a0通用** 中关闭 **登录时打开**。",
+              "退出应用：点按时钟旁的 agentes.chat 图标，选择 **退出 agentes.chat**。只关闭窗口是不够的。",
+              "删除应用。在 Mac 上，把它移到废纸篓。在 Windows 和 Linux 上，像卸载其他应用一样卸载它。",
+              "删除你主文件夹中的这些文件夹。它们保存着你的数据，删除后无法恢复，所以如果以后可能还需要，请先在别处留一份备份：`.agentes`（消息、文件、账号、设置和备份）、每个 `agentes.chat erased` 文件夹、`.agentes-runner`（智能体在这台电脑上保存的内容，比如它们的浏览器和登录信息）以及 `agentes`（智能体的文件）。",
+              "删除应用自己的文件夹。里面只有它的设置、窗口的登录信息和日志。在 Mac 上：`~/Library` 中 Application Support、Caches、HTTPStorages、Logs、Preferences 和 WebKit 文件夹里名称以 `chat.agentes.desktop` 开头的所有内容，以及 `~/Library/LaunchAgents` 中的 `agentes.chat.plist`。在 Windows 上：`%APPDATA%\\chat.agentes.desktop` 和 `%LOCALAPPDATA%\\chat.agentes.desktop`。在 Linux 上：`~/.config/chat.agentes.desktop` 和 `~/.local/share/chat.agentes.desktop`。",
+            ],
+          },
+          "在 Mac 上，要打开其中一个文件夹，请在访达中按 ⇧⌘G，然后输入它的路径，比如 `~/.agentes`。",
+        ],
+      },
+      {
         id: "ai-programs",
         heading: "Claude Code 和 Codex",
         blocks: [

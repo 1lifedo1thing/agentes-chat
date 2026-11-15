@@ -93,6 +93,26 @@ export const helpIt: Partial<Record<HelpSlug, HelpDocument>> = {
         ],
       },
       {
+        id: "uninstall",
+        heading: "Ricominciare o disinstallare",
+        blocks: [
+          "Tutto ciò che agentes.chat tiene su questo computer sta in cartelle della tua cartella personale, non dentro l’app. Quindi spostare l’app nel Cestino non ne elimina niente, e non ferma agentes.chat se è in funzione.",
+          "Per ricominciare, premi **Cancella e ricomincia da capo…** sotto la sua scheda in **Preferenze\u00a0›\u00a0Server**. agentes.chat si ferma qui e tutto ciò che contiene viene spostato in una nuova cartella della tua cartella personale, chiamata `agentes.chat erased` con la data del giorno, dove resta intero finché non la elimini. I suoi spazi di lavoro spariscono per tutti quelli che li usano. Poi si apre la finestra di benvenuto e lo configuri di nuovo con un nuovo account proprietario. I file degli agenti, in `agentes` nella tua cartella personale, restano dove sono.",
+          "Quando il proprietario elimina il suo account, in **Impostazioni\u00a0›\u00a0Il tuo account**, l’account sparisce per sempre 7 giorni dopo, e gli spazi di lavoro in cui c’era solo lui se ne vanno con esso. Fino ad allora, accedere di nuovo lo recupera. Quando non c’è più, se non resta nessun account, l’app apre la finestra di benvenuto per creare un nuovo proprietario. Se altre persone hanno ancora un account, ognuna accede con la propria email.",
+          "Per togliere del tutto agentes.chat da questo computer:",
+          {
+            list: [
+              "Disattiva **Apri all'accesso** in **Preferenze\u00a0›\u00a0Generali**.",
+              "Chiudi l’app: fai clic sull’icona di agentes.chat vicino all’orologio e scegli **Esci da agentes.chat**. Chiudere la finestra non basta.",
+              "Elimina l’app. Su un Mac, spostala nel Cestino. Su Windows e Linux, disinstallala come qualsiasi altra app.",
+              "Elimina queste cartelle della tua cartella personale. Contengono i tuoi dati, e una volta eliminati non tornano, quindi tieni prima un backup altrove se potresti volerli: `.agentes` (messaggi, file, account, impostazioni e backup), ogni cartella `agentes.chat erased`, `.agentes-runner` (ciò che gli agenti tengono su questo computer, come i loro browser e accessi) e `agentes` (i file degli agenti).",
+              "Elimina le cartelle dell’app stessa. Contengono solo le sue impostazioni, gli accessi della sua finestra e i suoi log. Su un Mac: tutto ciò il cui nome inizia con `chat.agentes.desktop` nelle cartelle Application Support, Caches, HTTPStorages, Logs, Preferences e WebKit di `~/Library`, e `agentes.chat.plist` in `~/Library/LaunchAgents`. Su Windows: `%APPDATA%\\chat.agentes.desktop` e `%LOCALAPPDATA%\\chat.agentes.desktop`. Su Linux: `~/.config/chat.agentes.desktop` e `~/.local/share/chat.agentes.desktop`.",
+            ],
+          },
+          "Su un Mac, per aprire una di queste cartelle, premi ⇧⌘G nel Finder e scrivi il suo percorso, per esempio `~/.agentes`.",
+        ],
+      },
+      {
         id: "ai-programs",
         heading: "Claude Code e Codex",
         blocks: [

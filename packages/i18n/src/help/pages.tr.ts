@@ -93,6 +93,26 @@ export const helpTr: Partial<Record<HelpSlug, HelpDocument>> = {
         ],
       },
       {
+        id: "uninstall",
+        heading: "Baştan başlamak veya kaldırmak",
+        blocks: [
+          "agentes.chat'in bu bilgisayarda tuttuğu her şey uygulamanın içinde değil, ana klasörünüzdeki klasörlerdedir. Bu yüzden uygulamayı Çöp Sepeti'ne taşımak bunların hiçbirini silmez ve çalışıyorsa agentes.chat'i durdurmaz.",
+          "Baştan başlamak için **Tercihler\u00a0›\u00a0Sunucular** içinde kartının altındaki **Sil ve baştan başla…** düğmesine basın. Buradaki agentes.chat durur ve içindeki her şey ana klasörünüzde `agentes.chat erased` ve günün tarihiyle adlandırılan yeni bir klasöre taşınır, siz silene kadar orada eksiksiz kalır. Çalışma alanları, onları kullanan herkes için kaybolur. Sonra karşılama penceresi açılır ve onu yeni bir sahip hesabıyla yeniden kurarsınız. Ajanların ana klasörünüzdeki `agentes` içinde bulunan dosyaları oldukları yerde kalır.",
+          "Sahip, **Ayarlar\u00a0›\u00a0Hesabınız** bölümünden hesabını sildiğinde hesap 7 gün sonra tamamen silinir ve yalnızca onun bulunduğu çalışma alanları da onunla gider. O zamana kadar oturum açmak hesabı geri getirir. Hesap silindikten sonra hiç hesap kalmadıysa uygulama yeni bir sahip oluşturmak için karşılama penceresini açar. Başkalarının hâlâ hesabı varsa her biri kendi e-postasıyla giriş yapar.",
+          "agentes.chat'i bu bilgisayardan tamamen kaldırmak için:",
+          {
+            list: [
+              "**Tercihler\u00a0›\u00a0Genel** içinde **Oturum açılınca başlat** seçeneğini kapatın.",
+              "Uygulamadan çıkın: saatin yanındaki agentes.chat simgesine tıklayın ve **agentes.chat'ten çık** seçeneğini seçin. Penceresini kapatmak yetmez.",
+              "Uygulamayı silin. Mac'te Çöp Sepeti'ne taşıyın. Windows ve Linux'ta diğer uygulamalar gibi kaldırın.",
+              "Ana klasörünüzdeki şu klasörleri silin. Verileriniz bunlardadır ve silindikten sonra geri gelmez, bu yüzden ileride isteyebilirseniz önce başka bir yerde yedek alın: `.agentes` (mesajlar, dosyalar, hesaplar, ayarlar ve yedekler), her `agentes.chat erased` klasörü, `.agentes-runner` (ajanların bu bilgisayarda tuttukları, örneğin tarayıcıları ve oturumları) ve `agentes` (ajanların dosyaları).",
+              "Uygulamanın kendi klasörlerini silin. Bunlarda yalnızca ayarları, penceresinin oturumları ve günlükleri bulunur. Mac'te: `~/Library` içindeki Application Support, Caches, HTTPStorages, Logs, Preferences ve WebKit klasörlerinde adı `chat.agentes.desktop` ile başlayan her şey ve `~/Library/LaunchAgents` içindeki `agentes.chat.plist`. Windows'ta: `%APPDATA%\\chat.agentes.desktop` ve `%LOCALAPPDATA%\\chat.agentes.desktop`. Linux'ta: `~/.config/chat.agentes.desktop` ve `~/.local/share/chat.agentes.desktop`.",
+            ],
+          },
+          "Mac'te bu klasörlerden birini açmak için Finder'da ⇧⌘G tuşlarına basıp yolunu yazın, örneğin `~/.agentes`.",
+        ],
+      },
+      {
         id: "ai-programs",
         heading: "Claude Code ve Codex",
         blocks: [

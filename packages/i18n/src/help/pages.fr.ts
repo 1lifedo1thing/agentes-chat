@@ -93,6 +93,26 @@ export const helpFr: Partial<Record<HelpSlug, HelpDocument>> = {
         ],
       },
       {
+        id: "uninstall",
+        heading: "Recommencer ou désinstaller",
+        blocks: [
+          "Tout ce qu’agentes.chat garde sur cet ordinateur se trouve dans des dossiers de votre dossier personnel, pas dans l’app. Mettre l’app à la corbeille n’en supprime donc rien, et n’arrête pas agentes.chat s’il tourne.",
+          "Pour recommencer, appuyez sur **Effacer et repartir de zéro…** sous sa carte dans **Préférences\u00a0›\u00a0Serveurs**. agentes.chat s’arrête ici et tout ce qu’il contient part dans un nouveau dossier de votre dossier personnel, nommé `agentes.chat erased` suivi de la date du jour, où il reste entier jusqu’à ce que vous le supprimiez. Ses espaces de travail disparaissent pour tous ceux qui les utilisent. Ensuite, la fenêtre de bienvenue s’ouvre et vous le configurez de nouveau avec un nouveau compte propriétaire. Les fichiers des agents, dans `agentes` dans votre dossier personnel, restent où ils sont.",
+          "Quand le propriétaire supprime son compte, dans **Paramètres\u00a0›\u00a0Votre compte**, il disparaît pour de bon 7 jours plus tard, et les espaces de travail où il était seul partent avec lui. D’ici là, se reconnecter le récupère. Une fois le compte disparu, s’il ne reste aucun compte, l’app ouvre sa fenêtre de bienvenue pour créer un nouveau propriétaire. Si d’autres personnes ont encore un compte, chacune se connecte avec son propre e-mail.",
+          "Pour retirer complètement agentes.chat de cet ordinateur\u00a0:",
+          {
+            list: [
+              "Désactivez **Ouvrir à la connexion** dans **Préférences\u00a0›\u00a0Général**.",
+              "Quittez l’app\u00a0: cliquez sur l’icône agentes.chat près de l’horloge et choisissez **Quitter agentes.chat**. Fermer sa fenêtre ne suffit pas.",
+              "Supprimez l’app. Sur un Mac, mettez-la à la corbeille. Sous Windows et Linux, désinstallez-la comme n’importe quelle autre app.",
+              "Supprimez ces dossiers de votre dossier personnel. Ils contiennent vos données, et une fois supprimées elles ne reviennent pas, alors gardez d’abord une sauvegarde ailleurs si vous pourriez en avoir besoin\u00a0: `.agentes` (messages, fichiers, comptes, réglages et sauvegardes), chaque dossier `agentes.chat erased`, `.agentes-runner` (ce que les agents gardent sur cet ordinateur, comme leurs navigateurs et leurs connexions) et `agentes` (les fichiers des agents).",
+              "Supprimez les dossiers de l’app elle-même. Ils ne contiennent que ses réglages, les connexions de sa fenêtre et ses journaux. Sur un Mac\u00a0: tout ce dont le nom commence par `chat.agentes.desktop` dans les dossiers Application Support, Caches, HTTPStorages, Logs, Preferences et WebKit de `~/Library`, et `agentes.chat.plist` dans `~/Library/LaunchAgents`. Sous Windows\u00a0: `%APPDATA%\\chat.agentes.desktop` et `%LOCALAPPDATA%\\chat.agentes.desktop`. Sous Linux\u00a0: `~/.config/chat.agentes.desktop` et `~/.local/share/chat.agentes.desktop`.",
+            ],
+          },
+          "Sur un Mac, pour ouvrir l’un de ces dossiers, appuyez sur ⇧⌘G dans le Finder et tapez son chemin, par exemple `~/.agentes`.",
+        ],
+      },
+      {
         id: "ai-programs",
         heading: "Claude Code et Codex",
         blocks: [

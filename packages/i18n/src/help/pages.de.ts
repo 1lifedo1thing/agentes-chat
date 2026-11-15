@@ -93,6 +93,26 @@ export const helpDe: Partial<Record<HelpSlug, HelpDocument>> = {
         ],
       },
       {
+        id: "uninstall",
+        heading: "Neu anfangen oder deinstallieren",
+        blocks: [
+          "Alles, was agentes.chat auf diesem Computer speichert, liegt in Ordnern in deinem Benutzerordner, nicht in der App. Wenn du die App in den Papierkorb legst, wird also nichts davon gelöscht, und agentes.chat stoppt nicht, falls es läuft.",
+          "Um neu anzufangen, drück **Löschen und neu anfangen…** unter seiner Karte in **Einstellungen\u00a0›\u00a0Server**. agentes.chat stoppt hier, und alles, was es enthält, wird in einen neuen Ordner in deinem Benutzerordner verschoben, der `agentes.chat erased` mit dem Datum des Tages heißt. Dort bleibt es vollständig, bis du ihn löschst. Seine Workspaces verschwinden für alle, die sie nutzen. Danach öffnet sich das Willkommensfenster, und du richtest es mit einem neuen Inhaber-Konto neu ein. Die Dateien der Agenten, in `agentes` in deinem Benutzerordner, bleiben, wo sie sind.",
+          "Löscht der Inhaber sein Konto unter **Einstellungen\u00a0›\u00a0Dein Konto**, ist es 7 Tage später endgültig weg, und die Workspaces, in denen nur er war, verschwinden mit ihm. Bis dahin holt eine Anmeldung es zurück. Ist es weg und kein Konto mehr übrig, öffnet die App ihr Willkommensfenster, um einen neuen Inhaber anzulegen. Haben andere noch ein Konto, meldet sich jeder mit seiner eigenen E-Mail an.",
+          "So entfernst du agentes.chat ganz von diesem Computer:",
+          {
+            list: [
+              "Schalte **Bei der Anmeldung öffnen** unter **Einstellungen\u00a0›\u00a0Allgemein** aus.",
+              "Beende die App: Klick auf das agentes.chat-Symbol neben der Uhr und wähl **agentes.chat beenden**. Das Fenster zu schließen reicht nicht.",
+              "Lösch die App. Auf einem Mac legst du sie in den Papierkorb. Unter Windows und Linux deinstallierst du sie wie jede andere App.",
+              "Lösch diese Ordner in deinem Benutzerordner. Sie enthalten deine Daten, und einmal gelöscht kommen sie nicht zurück. Leg also vorher woanders ein Backup ab, falls du sie noch brauchen könntest: `.agentes` (Nachrichten, Dateien, Konten, Einstellungen und Backups), jeden Ordner `agentes.chat erased`, `.agentes-runner` (was die Agenten auf diesem Computer speichern, etwa ihre Browser und Anmeldungen) und `agentes` (die Dateien der Agenten).",
+              "Lösch die Ordner der App selbst. Sie enthalten nur ihre Einstellungen, die Anmeldungen ihres Fensters und ihre Protokolle. Auf einem Mac: alles, dessen Name mit `chat.agentes.desktop` beginnt, in den Ordnern Application Support, Caches, HTTPStorages, Logs, Preferences und WebKit von `~/Library`, und `agentes.chat.plist` in `~/Library/LaunchAgents`. Unter Windows: `%APPDATA%\\chat.agentes.desktop` und `%LOCALAPPDATA%\\chat.agentes.desktop`. Unter Linux: `~/.config/chat.agentes.desktop` und `~/.local/share/chat.agentes.desktop`.",
+            ],
+          },
+          "Auf einem Mac öffnest du einen dieser Ordner, indem du im Finder ⇧⌘G drückst und seinen Pfad eingibst, etwa `~/.agentes`.",
+        ],
+      },
+      {
         id: "ai-programs",
         heading: "Claude Code und Codex",
         blocks: [

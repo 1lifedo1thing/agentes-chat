@@ -92,6 +92,26 @@ export const helpEn: Record<HelpSlug, HelpDocument> = {
         ],
       },
       {
+        id: "uninstall",
+        heading: "Start over or uninstall",
+        blocks: [
+          "Everything agentes.chat keeps on this computer is in folders in your home folder, not inside the app. So moving the app to the Trash removes none of it, and doesn't stop agentes.chat if it's running.",
+          "To start over, press **Erase and start over…** under its card in **Preferences\u00a0›\u00a0Servers**. It stops agentes.chat here and moves everything it holds to a new folder in your home folder, named `agentes.chat erased` and the day's date, where it stays whole until you delete it. Its workspaces go for everyone who uses them. Then the welcome window opens, and you set it up again with a new owner account. The agents' files, in `agentes` in your home folder, stay where they are.",
+          "When the owner deletes their account, in **Settings\u00a0›\u00a0Your account**, it goes for good 7 days later, and the workspaces only they were in go with it. Until then, signing in brings it back. Once it's gone, if no account is left, the app opens its welcome window to make a new owner. If other people still have accounts, each of them signs in with their own email.",
+          "To remove agentes.chat from this computer entirely:",
+          {
+            list: [
+              "Turn off **Open at login** in **Preferences\u00a0›\u00a0General**.",
+              "Quit the app: click the agentes.chat icon by the clock and choose **Quit agentes.chat**. Closing its window isn't enough.",
+              "Delete the app. On a Mac, move it to the Trash. On Windows and Linux, uninstall it like any other app.",
+              "Delete these folders in your home folder. They hold your data, and once they're deleted it can't come back, so keep a backup somewhere else first if you might want it: `.agentes` (messages, files, accounts, settings and backups), every `agentes.chat erased` folder, `.agentes-runner` (what the agents keep on this computer, such as their browsers and sign-ins) and `agentes` (the agents' files).",
+              "Delete the app's own folders. They hold only its settings, its window's sign-ins and its logs. On a Mac: everything whose name starts with `chat.agentes.desktop` in the Application Support, Caches, HTTPStorages, Logs, Preferences and WebKit folders of `~/Library`, and `agentes.chat.plist` in `~/Library/LaunchAgents`. On Windows: `%APPDATA%\\chat.agentes.desktop` and `%LOCALAPPDATA%\\chat.agentes.desktop`. On Linux: `~/.config/chat.agentes.desktop` and `~/.local/share/chat.agentes.desktop`.",
+            ],
+          },
+          "On a Mac, to open one of these folders, press ⇧⌘G in Finder and type its path, such as `~/.agentes`.",
+        ],
+      },
+      {
         id: "ai-programs",
         heading: "Claude Code and Codex",
         blocks: [

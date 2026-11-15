@@ -93,6 +93,26 @@ export const helpPl: Partial<Record<HelpSlug, HelpDocument>> = {
         ],
       },
       {
+        id: "uninstall",
+        heading: "Zacznij od nowa lub odinstaluj",
+        blocks: [
+          "Wszystko, co agentes.chat trzyma na tym komputerze, jest w folderach w twoim folderze domowym, nie w aplikacji. Dlatego przeniesienie aplikacji do Kosza niczego z tego nie usuwa i nie zatrzymuje agentes.chat, jeśli działa.",
+          "Żeby zacząć od nowa, naciśnij **Wymaż i zacznij od nowa…** pod jego kartą w **Preferencje\u00a0›\u00a0Serwery**. agentes.chat zatrzymuje się tutaj, a wszystko, co zawiera, trafia do nowego folderu w twoim folderze domowym, nazwanego `agentes.chat erased` z datą tego dnia, i zostaje tam w całości, dopóki go nie usuniesz. Jego przestrzenie robocze znikają dla wszystkich, którzy z nich korzystają. Potem otwiera się okno powitalne i konfigurujesz go od nowa z nowym kontem właściciela. Pliki agentów, w `agentes` w twoim folderze domowym, zostają tam, gdzie są.",
+          "Gdy właściciel usunie swoje konto w **Ustawienia\u00a0›\u00a0Twoje konto**, znika ono na dobre 7 dni później, a przestrzenie robocze, w których był tylko on, znikają razem z nim. Do tego czasu zalogowanie się przywraca konto. Gdy już go nie ma i nie zostało żadne konto, aplikacja otwiera okno powitalne, żeby utworzyć nowego właściciela. Jeśli inni nadal mają konta, każdy loguje się własnym adresem e-mail.",
+          "Żeby całkowicie usunąć agentes.chat z tego komputera:",
+          {
+            list: [
+              "Wyłącz **Otwieraj po zalogowaniu** w **Preferencje\u00a0›\u00a0Ogólne**.",
+              "Zakończ aplikację: kliknij ikonę agentes.chat przy zegarze i wybierz **Zakończ agentes.chat**. Samo zamknięcie okna nie wystarczy.",
+              "Usuń aplikację. Na Macu przenieś ją do Kosza. Na Windowsie i Linuksie odinstaluj ją jak każdą inną aplikację.",
+              "Usuń te foldery ze swojego folderu domowego. Są w nich twoje dane, a po usunięciu nie da się ich odzyskać, więc najpierw zrób kopię w innym miejscu, jeśli możesz ich jeszcze potrzebować: `.agentes` (wiadomości, pliki, konta, ustawienia i kopie zapasowe), każdy folder `agentes.chat erased`, `.agentes-runner` (to, co agenci trzymają na tym komputerze, na przykład ich przeglądarki i logowania) i `agentes` (pliki agentów).",
+              "Usuń foldery samej aplikacji. Są w nich tylko jej ustawienia, logowania jej okna i logi. Na Macu: wszystko, czego nazwa zaczyna się od `chat.agentes.desktop`, w folderach Application Support, Caches, HTTPStorages, Logs, Preferences i WebKit w `~/Library`, oraz `agentes.chat.plist` w `~/Library/LaunchAgents`. Na Windowsie: `%APPDATA%\\chat.agentes.desktop` i `%LOCALAPPDATA%\\chat.agentes.desktop`. Na Linuksie: `~/.config/chat.agentes.desktop` i `~/.local/share/chat.agentes.desktop`.",
+            ],
+          },
+          "Na Macu, żeby otworzyć jeden z tych folderów, naciśnij ⇧⌘G w Finderze i wpisz jego ścieżkę, na przykład `~/.agentes`.",
+        ],
+      },
+      {
         id: "ai-programs",
         heading: "Claude Code i Codex",
         blocks: [

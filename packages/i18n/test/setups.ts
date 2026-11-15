@@ -216,7 +216,9 @@ export const SHOWN_ONLY: Record<Condition, readonly string[]> = {
     "help.any.computers.sections.0.blocks.0",
     "help.any.computers.sections.1.blocks.1.list.0",
     // The moving steps' command is the Mac's, said so in the step above it.
-    "help.selfhost.run-on-your-computer.sections.11.blocks.1.code",
+    "help.selfhost.run-on-your-computer.sections.12.blocks.1.code",
+    // How to open a folder there, a line that starts with "On a Mac".
+    "help.selfhost.run-on-your-computer.sections.10.blocks.5",
     "desktop.prefs.general.menuBarTitle",
     // The app icon's hint shows only in the Mac's desktop app (AppIconPicker.tsx): its Dock and Finder.
     "appIcon.hintMac",

@@ -93,6 +93,26 @@ export const helpJa: Partial<Record<HelpSlug, HelpDocument>> = {
         ],
       },
       {
+        id: "uninstall",
+        heading: "やり直す・アンインストールする",
+        blocks: [
+          "agentes.chat がこのコンピューターに保存するものは、すべてアプリの中ではなくホームフォルダ内のフォルダにあります。そのため、アプリをゴミ箱に入れても何も削除されず、動いている agentes.chat も止まりません。",
+          "やり直すには、**環境設定\u00a0›\u00a0サーバー** のカードの下にある **消去してやり直す…** を押します。このコンピューターの agentes.chat が止まり、保存されているものはすべてホームフォルダ内の新しいフォルダ (名前は `agentes.chat erased` とその日の日付) に移動して、削除するまでそのまま残ります。そのワークスペースは、使っている全員が使えなくなります。そのあとウェルカムウィンドウが開き、新しいオーナーアカウントでセットアップし直します。ホームフォルダの `agentes` にあるエージェントのファイルは、そのままの場所に残ります。",
+          "オーナーが **設定\u00a0›\u00a0アカウント** でアカウントを削除すると、7 日後に完全に削除され、オーナーしかいなかったワークスペースも一緒に削除されます。それまでは、サインインすると元に戻せます。削除されたあと、アカウントが 1 つも残っていなければ、アプリがウェルカムウィンドウを開いて新しいオーナーを作ります。ほかの人のアカウントが残っていれば、それぞれ自分のメールアドレスでサインインします。",
+          "agentes.chat をこのコンピューターから完全に取り除くには:",
+          {
+            list: [
+              "**環境設定\u00a0›\u00a0一般** で **ログイン時に開く** をオフにします。",
+              "アプリを終了します。時計の横にある agentes.chat のアイコンをクリックし、**agentes.chatを終了** を選びます。ウィンドウを閉じるだけでは終了しません。",
+              "アプリを削除します。Mac ではゴミ箱に入れます。Windows と Linux では、ほかのアプリと同じようにアンインストールします。",
+              "ホームフォルダにある次のフォルダを削除します。あなたのデータが入っていて、削除すると元に戻せないので、あとで必要になりそうなら先にほかの場所へバックアップを取っておいてください。`.agentes` (メッセージ、ファイル、アカウント、設定、バックアップ)、すべての `agentes.chat erased` フォルダ、`.agentes-runner` (エージェントがこのコンピューターに保存しているもの。ブラウザやサインイン情報など)、`agentes` (エージェントのファイル)。",
+              "アプリ自体のフォルダを削除します。入っているのはアプリの設定、ウィンドウのサインイン情報、ログだけです。Mac: `~/Library` の Application Support、Caches、HTTPStorages、Logs、Preferences、WebKit フォルダ内で名前が `chat.agentes.desktop` で始まるものすべてと、`~/Library/LaunchAgents` の `agentes.chat.plist`。Windows: `%APPDATA%\\chat.agentes.desktop` と `%LOCALAPPDATA%\\chat.agentes.desktop`。Linux: `~/.config/chat.agentes.desktop` と `~/.local/share/chat.agentes.desktop`。",
+            ],
+          },
+          "Mac でこれらのフォルダを開くには、Finder で ⇧⌘G を押してパス (`~/.agentes` など) を入力します。",
+        ],
+      },
+      {
         id: "ai-programs",
         heading: "Claude Code と Codex",
         blocks: [
