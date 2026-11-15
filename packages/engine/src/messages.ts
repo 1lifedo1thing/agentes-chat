@@ -1713,8 +1713,7 @@ export const fileIdsOf = (meta: Record<string, unknown> | undefined): string[] =
     typeof f?.id === "string" ? [f.id] : [],
   );
 
-/** Files for a message: the person's own uploads or files of this channel, not deleted. */
-/** Files a message may carry: this workspace's, uploaded by its sender or of this channel. Throws on any other. */
+/** Files a message may carry: this workspace's, its sender's uploads or of this channel, not deleted. Throws on others. */
 export async function attachmentRefsFor(db: Database, userId: string, orgId: string, channelId: string, ids: string[]) {
   const wanted = [...new Set(ids)];
   if (wanted.length > MAX_MESSAGE_ATTACHMENTS) {

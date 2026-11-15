@@ -346,7 +346,8 @@ export async function transcribeVoiceClip(deps: VoiceDeps, clipId: string, optio
   };
   // Typed first, so agents, mentions and search read both: the apps show `meta.voice.text` as text, the rest as words.
   // The typed text may use the whole length a message has: the words then keep what is left of it.
-  const said = (words ? words.text : VOICE_NO_WORDS_BODY).slice(0, Math.max(0, MAX_MESSAGE_LENGTH - typed.length - 2));
+  const spoken = words ? words.text : VOICE_NO_WORDS_BODY;
+  const said = typed ? spoken.slice(0, Math.max(0, MAX_MESSAGE_LENGTH - typed.length - 2)) : spoken;
   try {
     const message = await postPersonMessage(
       { db: deps.db, pubsub: deps.pubsub, judge: deps.judge ?? undefined },
