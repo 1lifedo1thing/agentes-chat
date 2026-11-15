@@ -336,7 +336,9 @@ function StoppedHere({ local }: { local: LocalServerStatus }) {
             </Button>
           }
         />
-        {local.installedVersion && <PrefRow title={t("desktop.server.installedVersion")} desc={local.installedVersion} />}
+        {local.installedVersion && (
+          <PrefRow title={t("desktop.server.installedVersion")} desc={local.installedVersion} />
+        )}
       </PrefCard>
       {/* Under the card, where the running card has it: beside Start it would squeeze the line about its data. */}
       <div className="dk-under-card dk-here__acts">
