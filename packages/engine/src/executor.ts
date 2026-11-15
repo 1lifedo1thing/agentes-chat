@@ -276,6 +276,7 @@ import {
   rightHandNoAiReason,
   rightHandPerson,
   scrubRightHandReply,
+  thinkingAgent,
   withPersonalBrain,
 } from "./right-hand";
 import { seatState } from "./right-hand-seats";
@@ -331,7 +332,16 @@ import {
 import { SANDBOX_SCOPE, truncateOutput } from "./sandbox";
 import { secretResult } from "./secrets";
 import { enabledSkills } from "./skills";
-import { type SpillRecord, spillMayHelp, spillPlan, spillTarget } from "./spill";
+import {
+  type AccountMove,
+  movedAccountPlan,
+  type NextAccount,
+  nextAccountPlan,
+  type SpillRecord,
+  spillMayHelp,
+  spillPlan,
+  spillTarget,
+} from "./spill";
 import { billingHold, standingErrorDetail, standingRefusal } from "./standing";
 import { personAskedLately, rerootRun, runStretchOf } from "./stretch";
 import { isStuck, noteStep, STUCK_END_NOTE, STUCK_END_REPLY_NOTE, STUCK_NOTE, type StuckState } from "./stuck";
@@ -721,6 +731,8 @@ export interface Transcript {
   roomAsk?: { machineId: string; at: number };
   /** Its agent's computer was full: it thinks on another computer of the workspace, in a session of its own there. */
   spill?: SpillRecord;
+  /** Its plan's limit moved it to the next account in the workspace's order (ADR 0041 §6), in a session of its own there. */
+  accountMove?: AccountMove;
   /** Caught up after a long wait on its plan or budget (`catch-up.ts`): since when it paused; whether it may pass. */
   catchUp?: { since: number; mayPass?: true };
   /** The check before that catch-up (`catch-up-triage.ts`): its last verdict, reused while nothing new came in. */
@@ -821,6 +833,13 @@ export class BrainFailure extends Error {
 /** What a computer brain reads when its session's folder was gone and a fresh session took the turn. */
 export const sessionLostNote = (folder: string) =>
   `# Your session\nYour previous session on the computer was lost: the folder it worked in (${folder}) isn't there anymore. This is a fresh session in your own folder: it knows this conversation, not what you ran before. Look at what is on disk before you go on, and tell the person if work was lost.`;
+
+/**
+ * What a computer brain reads first in the fresh session of the account its run moved to (`Transcript.accountMove`):
+ * `done`, what the run already ran, as a dropped turn's resume names it.
+ */
+export const movedSessionNote = (done: readonly string[]) =>
+  `# Your session\nYour plan's account hit its limit, so this run goes on with another account, in a fresh session: it knows this conversation, not what you ran before in this run.${done.length > 0 ? ` Already done in this run, do not repeat: ${[...new Set(done)].join(", ")}.` : ""} Look at what is on disk before you go on.`;
 
 /**
  * What a mission's main session reads when its agent's settings changed since it started (`BrainPlan.settingsChanged`);
@@ -2931,6 +2950,28 @@ async function executeRunInner(
       delete transcript.spill;
     }
   }
+  /** The agent as its plan sees it (`thinkingAgent`): the right hand's owner is its plan's. */
+  const planAgent = async () =>
+    isRightHand(agent) ? thinkingAgent(db, agent, await rightHandPerson(db, agent, run)) : agent;
+  // A run that went on with the next account at its plan's limit thinks on there. That account gone or signed out,
+  // the agent pinned to its own since, or its own account changed by a person: its own takes it, in a fresh session,
+  // unless the plan cut a turn there after it worked (only that session may finish it).
+  const moved = transcript.accountMove;
+  if (moved && brainPlan.kind !== "model" && brainPlan.session) {
+    const there =
+      brainPlan.account?.id === moved.from && !agent.brainAccountPinned
+        ? await movedAccountPlan(deps, await planAgent(), brainPlan, moved.to)
+        : null;
+    const cut = transcript.interruptedTurn;
+    const stays = turnStaysOnItsComputer(cut?.executed.length ?? 0, cut?.cause);
+    if (there && (stays || !there.unavailable || !NO_AI_CODES.has(there.unavailable.code))) brainPlan = there;
+    else {
+      const fresh = Bun.randomUUIDv7();
+      await db.update(agentRuns).set({ brainSessionId: fresh }).where(eq(agentRuns.id, run.id));
+      brainPlan = { ...brainPlan, session: { ...brainPlan.session, id: fresh, resume: false } };
+      delete transcript.accountMove;
+    }
+  }
   // A mission's main session can't be replaced mid-mission: its first turn after an edit reads the settings again.
   if (brainPlan.settingsChanged && needsContext) {
     transcript.system = [
@@ -3053,6 +3094,8 @@ async function executeRunInner(
   // Read once: a later pause of this run resumes with its own text.
   delete transcript.continued;
   let computerTurns = 0;
+  /** The account a turn of this claim last ran with, marked used (a move changes it). */
+  let touchedAccount: string | undefined;
   /** This run ranks first in its computer's line, a person waiting on it: every computer turn of the claim says so. */
   let personWaiting = false;
   /** The plan said "limit" during the current computer turn (`onLimit`): a turn that went on anyway proves no room. */
@@ -3254,6 +3297,66 @@ async function executeRunInner(
     await redispatchPending("done");
   };
 
+  /** The fresh session of a move in this claim was told what the run already did (`movedSessionNote`). */
+  let movedNoted = false;
+  /**
+   * At its plan's limit the run goes on with the next account of the workspace's order (ADR 0041 §6), in a fresh
+   * session there with the conversation so far, and says so once per run. Never a turn the plan cut after it worked
+   * (`turnStaysOnItsComputer`: a fresh session can't see what it did there), nor a spilled run. `room`: long work also
+   * needs the next account under the pause line. What `nextAccountPlan` found; null where no move is looked for.
+   */
+  const moveToNextAccount = async (room?: (usage: PlanUsage | null) => boolean): Promise<NextAccount | null> => {
+    const t = transcript as Transcript;
+    const home = plan.account;
+    if (plan.kind === "model" || !home || t.spill) return null;
+    if (turnStaysOnItsComputer(t.interruptedTurn?.executed.length ?? 0, t.interruptedTurn?.cause)) return null;
+    const prev = t.accountMove;
+    const tried = [...new Set([...(prev?.tried ?? []), prev?.from ?? home.id, home.id])];
+    const person = isRightHand(agent) ? await rightHandPerson(db, agent, run) : null;
+    const next = await nextAccountPlan(deps, await planAgent(), plan, tried, {
+      ...(room ? { room } : {}),
+      forPerson: person,
+    });
+    const to = next.plan?.account;
+    if (!next.plan || !to || !next.plan.session) return next;
+    await db.update(agentRuns).set({ brainSessionId: next.plan.session.id }).where(eq(agentRuns.id, run.id));
+    plan = next.plan;
+    t.accountMove = {
+      from: prev?.from ?? home.id,
+      to: to.id,
+      ...(next.lentBy ? { lentBy: next.lentBy } : {}),
+      tried: [...tried, to.id],
+    };
+    if (run.turns > 0 && !movedNoted) {
+      movedNoted = true;
+      const done = [...(await executedSince(db, run.id, 0, [])).map((c) => c.label), ...(t.harnessTried ?? [])];
+      nextPrompt = [movedSessionNote(done), nextPrompt ?? triggerText].join("\n\n");
+    }
+    later(() => addRunStep(db, run, "context", { accountMove: t.accountMove }));
+    await deferred;
+    // One line per run, never a routine's (Rotinas says what it thinks with): a refusal by the next account moves on
+    // without another.
+    const note =
+      prev || run.background || viaRoutine !== null
+        ? null
+        : await db.transaction((tx) =>
+            post(
+              tx,
+              replyThreadId,
+              `The ${home.label} account hit its limit. I'm going on with the ${to.label} account.`,
+              bodyCode("plan_account_moved", { from: home.label, to: to.label }),
+              undefined,
+              true,
+            ),
+          );
+    await saveTranscript(db, t);
+    if (note) {
+      const [view] = await withWikiLinks(db, run.orgId, [messageView(note)]);
+      if (view) await publishMessageCreated(deps.pubsub, view);
+    }
+    return next;
+  };
+
   /**
    * The computer brain can't answer. At the run's start (`look`), a computer in standby is woken and waited for, and on
    * its first look one just gone too (`computerBackSoon`). Still away: the run waits for the computer (the API never
@@ -3263,10 +3366,13 @@ async function executeRunInner(
   const brainUnavailable = async (
     u: BrainUnavailability & { queued?: boolean; retryAt?: number },
     look?: "first" | "again",
-  ): Promise<"waited" | "failed" | "no" | "back" | "canceled"> => {
+  ): Promise<"waited" | "failed" | "no" | "back" | "canceled" | "moved"> => {
     const from = plan.kind;
     if (from === "model") return "no";
     const t = transcript as Transcript;
+    // The account's limit (not one model's): the next account in the order takes the turn, the right hand's too.
+    const next = u.code === "plan_limit" && !u.scope ? await moveToNextAccount() : null;
+    if (next?.plan) return "moved";
     const machineId = plan.session?.machineId ?? agent.machineId ?? null;
     if (look && machineId && u.code === "machine_offline") {
       const back = await computerBackSoon(deps.machines, machineId, {
@@ -3302,13 +3408,23 @@ async function executeRunInner(
       await failNoAi(noAiReasonOf(u.code), ownNotSignedIn(u.code, from, plan.account).own);
       return "failed";
     }
-    // The plan's limit: nothing about the computer, the run waits for the plan in its own session.
+    // The plan's limit: nothing about the computer, the run waits for the plan in its own session. Every account of
+    // the order limited too: until the first of them resets, and its next claim starts on its agent's own account.
     if (u.code === "plan_limit") {
+      const all = next && !next.plan && next.chain > 1 ? next : null;
+      if (all && t.accountMove && !onlyThisComputer) {
+        delete t.accountMove;
+        await db.update(agentRuns).set({ brainSessionId: Bun.randomUUIDv7() }).where(eq(agentRuns.id, run.id));
+      }
+      const resetsAt = [u.resetsAt, all?.resetsAt]
+        .filter((at): at is string => Boolean(at))
+        .sort((a, b) => Date.parse(a) - Date.parse(b))[0];
       await waitForUsage({
         code: "plan_limit",
         message: u.message,
-        ...(u.resetsAt ? { resetsAt: u.resetsAt } : {}),
+        ...(resetsAt ? { resetsAt } : {}),
         ...(u.scope ? { scope: u.scope } : {}),
+        ...(all ? { chain: all.chain } : {}),
       });
       return "waited";
     }
@@ -3747,6 +3863,8 @@ async function executeRunInner(
     pause?: { source: "plan" | "budget"; used: number; window?: string };
     /** One model's refusal, not the account's (`refusalScope`). */
     scope?: ModelScope;
+    /** How many accounts of the order are all at their limit (`nextAccountPlan`), when more than this one. */
+    chain?: number;
   }) => {
     await deferred;
     const t = transcript as Transcript;
@@ -3846,24 +3964,29 @@ async function executeRunInner(
                         known ? "plan_model_limit_wait" : "plan_model_limit_wait_unknown",
                         `${ownModel.label} hit its own limit on ${name}. The plan's other models keep working: change ${agent.name}'s model or wait ${known ? "until it resets" : "for it to reset"}.`,
                       ]
-                    : cut
+                    : u.chain
                       ? [
-                          known ? "plan_limit_cut" : "plan_limit_cut_unknown",
-                          `I stopped at the ${name} plan's limit. I'll pick up where I left off ${known ? "when" : "as soon as"} it resets.`,
+                          known ? "plan_limit_all_wait" : "plan_limit_all_wait_unknown",
+                          `All ${u.chain} ${name} accounts hit their limit. I'll answer ${known ? "when the first one resets" : "as soon as one resets"}.`,
                         ]
-                      : [
-                          known ? "plan_limit_wait" : "plan_limit_wait_unknown",
-                          known
-                            ? `The ${name} plan hit its limit. I'll answer when it resets. If it's freed sooner on ${name}, I'll notice and answer right away.`
-                            : `The ${name} plan hit its limit. I'll answer as soon as it resets.`,
-                        ];
+                      : cut
+                        ? [
+                            known ? "plan_limit_cut" : "plan_limit_cut_unknown",
+                            `I stopped at the ${name} plan's limit. I'll pick up where I left off ${known ? "when" : "as soon as"} it resets.`,
+                          ]
+                        : [
+                            known ? "plan_limit_wait" : "plan_limit_wait_unknown",
+                            known
+                              ? `The ${name} plan hit its limit. I'll answer when it resets. If it's freed sooner on ${name}, I'll notice and answer right away.`
+                              : `The ${name} plan hit its limit. I'll answer as soon as it resets.`,
+                          ];
           const m = await post(
             tx,
             replyThreadId,
             text,
             // `usageWait.resetsAt`: the apps say when in the reader's zone; `runId`: "Don't run it" cancels it.
             {
-              ...bodyCode(code, { plan: name, ...modelWords }),
+              ...bodyCode(code, { plan: name, ...modelWords, ...(u.chain ? { accounts: String(u.chain) } : {}) }),
               usageWait: { code: u.code, runId: run.id, forUserId, ...(resetsAt ? { resetsAt } : {}) },
             },
             undefined,
@@ -4000,7 +4123,10 @@ async function executeRunInner(
         : machineId
           ? await storedPlanUsage(db, run.orgId, machineId, plan.kind, plan.account?.id).catch(() => null)
           : null;
-    return planReading(usage, plan.model ?? null, paysExtraUsage(agent));
+    // A run moved to someone else's account uses it as a lent plan.
+    const move = (transcript as Transcript).accountMove;
+    const payer = move ? { builtin: agent.builtin, brainAccountLentBy: move.lentBy ?? null } : agent;
+    return planReading(usage, plan.model ?? null, paysExtraUsage(payer));
   };
   /**
    * A routine's run started by Rodar agora (a person just asked for it) or one that refreshes a widget isn't long by
@@ -4243,6 +4369,12 @@ async function executeRunInner(
       if (run.workId && plan.kind === "model" && Date.now() - claimedAt > WORK_JOB_YIELD_MS) return yieldWorkJob();
       // Long work near its limit parks here, between steps: nothing is in flight and the next step reads on.
       const pause = await longWorkPause();
+      // At the plan's pause line long work goes on with the next account under it: it pauses on the last one.
+      const nextAccount =
+        pause?.source === "plan"
+          ? await moveToNextAccount((usage) => longWorkHasRoom(planReading(usage, plan.model ?? null, false)))
+          : null;
+      if (nextAccount?.plan) continue;
       if (pause) {
         return waitForUsage({
           code: "usage_pause",
@@ -4576,7 +4708,8 @@ async function executeRunInner(
           carried = null;
           // The account it ran with (ADR 0041): when it was last used and last answered, after the turn.
           const account = turnPlan.account;
-          if (account && computerTurns === 1) {
+          if (account && account.id !== touchedAccount) {
+            touchedAccount = account.id;
             later(() => touchMachineAccount(db, run.orgId, account.id));
           }
           // A turn cut off by its computer is finished now, and one that found room ends that wait.
@@ -4757,6 +4890,7 @@ async function executeRunInner(
           }
           const handled = await brainUnavailable({ code: error.code, message: error.message, ...refusal });
           if (handled === "waited" || handled === "failed") return;
+          if (handled === "moved") continue;
         }
         // The person behind it is at their monthly limit (ADR 0141): the agent says so with "Pedir mais" and stops.
         if (error instanceof PersonLimitError) return failPersonLimit(error.personId);

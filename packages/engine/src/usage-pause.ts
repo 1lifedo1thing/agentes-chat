@@ -244,7 +244,7 @@ export async function wakePlanWaits(
           .select({
             ...fields,
             waitModel: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'model'`,
-            brainAccountLentBy: agents.brainAccountLentBy,
+            brainAccountLentBy: runLentBy,
             builtin: agents.builtin,
           })
           .from(agentRuns)
@@ -419,6 +419,10 @@ export const continuesPastPlan = (r: { source: "plan" | "budget"; used: number; 
 export const paysExtraUsage = (agent: { brainAccountLentBy?: string | null; builtin?: string | null }) =>
   !agent.brainAccountLentBy && !isRightHand(agent);
 
+/** Whose plan lent to a run it thinks with (`paysExtraUsage`): the account it moved to's (`AccountMove.lentBy`), else its agent's. */
+const runLentBy = sql<string | null>`case when ${schema.agentRuns.transcript} ? 'accountMove'
+  then ${schema.agentRuns.transcript}->'accountMove'->>'lentBy' else ${schema.agents.brainAccountLentBy} end`;
+
 /**
  * Why Continuar agora is refused (`continuesPastPlan`), in the words both places use: the agent's long work never
  * uses paid extra usage (`paysExtraUsage`), or the plan has none left (none reported, or that window is used up too).
@@ -456,7 +460,7 @@ export async function pauseContinuesPastPlan(
   const [row] = await db
     .select({
       wait: sql<Record<string, unknown> | null>`${agentRuns.transcript}->'waitingForBrain'`,
-      brainAccountLentBy: agents.brainAccountLentBy,
+      brainAccountLentBy: runLentBy,
       builtin: agents.builtin,
     })
     .from(agentRuns)
