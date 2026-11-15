@@ -3,6 +3,7 @@ import {
   type ConsultLineState,
   type ConsultPairItem,
   consultChoiceKey,
+  consultChoiceOf,
   consultChoices,
   consultLineState,
   consultOriginKey,
@@ -67,7 +68,12 @@ export function ConsultationDialog({
     () => (group ?? []).map((g) => listed.data?.find((c) => c.id === g.id) ?? g),
     [group, listed.data],
   );
-  const [pick, setPick] = useState(opened);
+  // On the opened agent's own exchange as its asker asked it, so the title and "Falar com" stay on the asker.
+  const [pick, setPick] = useState(() =>
+    group && group.length > 1
+      ? (consultChoiceOf(consultChoices(group, Date.now(), group[0]?.agentId), group, opened)?.opens ?? opened)
+      : opened,
+  );
   const consultationId = pick;
   // The whole exchange its row stands for: the other questions between the same two agents come in it too.
   const query = useExchangeConversation(org.id, channelId, consultationId);
@@ -77,7 +83,7 @@ export function ConsultationDialog({
   const askerOf = items[0]?.agentId;
   const choices = consultChoices(items, now, askerOf).filter((ch) => openableConsultation(ch.opens));
   const several = choices.length > 1;
-  const picked = choices.find((ch) => ch.opens === pick || ch.item.id === pick) ?? choices[0];
+  const picked = consultChoiceOf(choices, items, pick) ?? choices[0];
   const timeline = useMemo(() => buildTimeline(list ?? [], [], []), [list]);
   // While a chosen exchange loads, the row's asker still names the dialog.
   const asker = dir.agentById.get(c?.agentId ?? askerOf ?? "");

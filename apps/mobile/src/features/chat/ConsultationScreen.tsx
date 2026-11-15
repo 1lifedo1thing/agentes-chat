@@ -1,6 +1,7 @@
 import { useChannels, useConsultations, useExchangeConversation } from "@agenteschat/client";
 import {
   consultChoiceKey,
+  consultChoiceOf,
   consultChoices,
   consultLineState,
   consultOriginKey,
@@ -83,8 +84,9 @@ function Consultation({
   );
   const choices = consultChoices(items, Date.now(), items[0]?.agentId).filter((ch) => openableConsultation(ch.opens));
   const [pick, setPick] = useState(opened);
-  const consultationId = pick;
-  const picked = choices.find((ch) => ch.opens === pick || ch.item.id === pick) ?? choices[0];
+  const picked = consultChoiceOf(choices, items, pick) ?? choices[0];
+  // On the chosen agent's own exchange as its asker asked it, so the title and "Falar com" stay on the asker.
+  const consultationId = choices.length > 1 && picked ? picked.opens : pick;
   const nameOf = (id: string) => dir.agentById.get(id)?.name ?? t("mobile.chat.someone");
   // The whole exchange its row stands for: the other questions between the same two agents come in it too.
   const query = useExchangeConversation(orgId, channelId, consultationId && channelId ? consultationId : null);

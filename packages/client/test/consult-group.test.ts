@@ -6,6 +6,7 @@ import {
   consultAskedKey,
   consultBlocksNearEnd,
   consultChoiceKey,
+  consultChoiceOf,
   consultChoices,
   consultGroupSummary,
   consultLineKey,
@@ -364,6 +365,17 @@ describe("consultChoices (the dialog of a row of several)", () => {
   test("in an exchange the other agent asked back: it is still that agent's choice, not the asker's", () => {
     const back = q({ id: "q2", agentId: "theo", consultedAgentId: "lia", createdAt: iso(10) });
     expect(consultChoices([q(), back], now, "lia").map((c) => c.agentId)).toEqual(["theo"]);
+  });
+
+  test("it opens on a question the asker asked, even while the other agent's question back is still out", () => {
+    const asked = q({ status: "answered", answer: "Up 6 bp.", answeredAt: iso(30) });
+    const back = q({ id: "q2", agentId: "theo", consultedAgentId: "lia", createdAt: iso(10) });
+    const group = [back, asked];
+    const choices = consultChoices(group, now, "lia");
+    expect(choices.map((c) => [c.agentId, c.opens])).toEqual([["theo", "q1"]]);
+    // The row may open on the question back: it is still that agent's choice.
+    expect(consultChoiceOf(choices, group, "q2")?.agentId).toBe("theo");
+    expect(consultChoiceOf(choices, group, "nope")).toBeUndefined();
   });
 
   test("each says where it stands in a word: answered, at work, waiting, unanswered", () => {

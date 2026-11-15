@@ -360,14 +360,25 @@ export interface ConsultChoice {
  */
 export function consultChoices(group: readonly ConsultPairItem[], now: number, askerId?: string): ConsultChoice[] {
   const out = new Map<string, ConsultChoice>();
+  const closed = (s: ConsultLineState) => s === "answered" || s === "failed" || s === "expired";
+  // The asker's own questions come first, so the exchange opens on one it asked and its dialog keeps naming it.
+  const rank = (c: ConsultPairItem, s: ConsultLineState) =>
+    (askerId && c.agentId && c.agentId !== askerId ? 2 : 0) + (closed(s) ? 1 : 0);
   for (const c of group) {
     const agentId = askerId && c.agentId && c.consultedAgentId === askerId ? c.agentId : c.consultedAgentId;
     const state = consultLineState(c, now);
     const had = out.get(agentId);
-    const closed = (s: ConsultLineState) => s === "answered" || s === "failed" || s === "expired";
-    if (!had || (closed(had.state) && !closed(state))) out.set(agentId, { agentId, opens: c.id, state, item: c });
+    if (!had || rank(c, state) < rank(had.item, had.state)) out.set(agentId, { agentId, opens: c.id, state, item: c });
   }
   return [...out.values()];
+}
+
+/** The choice a question of the group belongs to: the agent it was asked of, or that asked it back. */
+export function consultChoiceOf(choices: readonly ConsultChoice[], group: readonly ConsultPairItem[], id: string) {
+  const c = group.find((x) => x.id === id);
+  return choices.find(
+    (ch) => ch.opens === id || (c !== undefined && (c.consultedAgentId === ch.agentId || c.agentId === ch.agentId)),
+  );
 }
 
 /** A choice's short word: "respondeu", "perguntando", "esperando aprovação", "não respondeu". */
