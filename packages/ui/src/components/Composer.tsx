@@ -801,6 +801,8 @@ export function Composer({
       }
       return true;
     }
+    // Delete's own Enter deletes: from it, the take's Enter would send what the person meant to throw away.
+    if (target?.closest(".ac-composer__voice-trash") && e.key !== "Escape") return true;
     if (target === ref.current) {
       // The box's own Esc asks first; its Enter sends everything; its Space types.
       if (typed) return true;

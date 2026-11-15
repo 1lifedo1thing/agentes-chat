@@ -171,6 +171,16 @@ describe("nothing typed: the take's keys as they were", () => {
     expect(out.takes).toEqual([]);
   });
 
+  test("Enter on delete, reached with Tab, is delete's own: the take is never sent from it", async () => {
+    const out = setup();
+    await record();
+    const trash = screen.getByRole("button", { name: "Apagar gravação" });
+    act(() => trash.focus());
+    expect(key(trash, { key: "Enter" })).toBe(true);
+    await wait(20);
+    expect(out.takes).toEqual([]);
+  });
+
   test("a key an input method composes is never the take's", async () => {
     const out = setup();
     await record();
