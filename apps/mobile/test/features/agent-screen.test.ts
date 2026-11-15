@@ -603,4 +603,25 @@ describe("the agent's own pointer on its screen", () => {
     const peek = (await read("browser/HandoffCard.tsx")).split("function ScreenPeek")[1] ?? "";
     expect(peek).toMatch(/<FrameView[^>]*cursor=\{/);
   });
+
+  test("a desktop's last pointer, said as its stream opens and before its picture shows, is heard and then drawn", async () => {
+    const pointer = await Bun.file(new URL("../../src/features/computer/AgentPointer.tsx", import.meta.url)).text();
+    // The hook listens whatever the view shows; the view only decides whether it is drawn.
+    const hook = pointer.split("function useDesktopPointer")[1]?.split("\n}\n")[0] ?? "";
+    expect(hook).toContain("connection.onUserEvent");
+    expect(hook).not.toContain("enabled");
+    expect(pointer).toContain("pointer={enabled ? pointer : null}");
+  });
+
+  test("a resting pointer said before its box was laid out turns and lifts its name once the box has its size", async () => {
+    const corner = { ...p, x: 0.95 * 1280, y: 0.95 * 900, act: "click" as const, at: 0 };
+    const unlaid = watchView({ width: 0, height: 0 }, desk);
+    expect(pointerStep(corner, unlaid, 10_000)).toMatchObject({ flip: false, lift: false, rest: true });
+    expect(pointerStep(corner, card, 10_000)).toMatchObject({ flip: true, lift: true, rest: true });
+    // So the cursor works its look out again for each size the box takes, not only as a gesture starts.
+    const pointer = await Bun.file(new URL("../../src/features/computer/AgentPointer.tsx", import.meta.url)).text();
+    expect(pointer).toMatch(
+      /useAnimatedReaction\(\s*\(\) => \(\{ w: view\.value\.boxWidth, h: view\.value\.boxHeight \}\)/,
+    );
+  });
 });

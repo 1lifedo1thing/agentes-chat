@@ -36,7 +36,14 @@ export function AgentCursor({ agentId, name, color, pointer }: AgentCursorProps)
   const cursor = useRef<HTMLSpanElement>(null);
   const at = useRef<CursorSpot | null>(null);
   const [rings, setRings] = useState<{ key: number; x: number; y: number }[]>([]);
-  const [look, setLook] = useState({ press: false, quiet: false, idle: false, flip: false, lift: false });
+  const [look, setLook] = useState({
+    press: false,
+    quiet: false,
+    idle: false,
+    placed: false,
+    flip: false,
+    lift: false,
+  });
   const ratio = pointer ? pointer.height / pointer.width : 1;
 
   const place = (p: CursorSpot) => {
@@ -55,13 +62,14 @@ export function AgentCursor({ agentId, name, color, pointer }: AgentCursorProps)
     const edges = { flip: to.x > CURSOR_FLIP_AT, lift: cursorTagLifts(to.y * tall, tall) };
     if (pointerAtRest(pointer, Date.now())) {
       place(to);
-      setLook({ press: false, quiet: pointer.act === "type", idle: true, ...edges });
+      // Measuring its frame computed its style at full strength: `placed` keeps it from fading down from there.
+      setLook({ press: false, quiet: pointer.act === "type", idle: true, placed: true, ...edges });
       return;
     }
     const from = glideStart(at.current, to);
     const timers: ReturnType<typeof setTimeout>[] = [];
     let frame = 0;
-    setLook({ press: false, quiet: false, idle: false, ...edges });
+    setLook({ press: false, quiet: false, idle: false, placed: false, ...edges });
     const arrived = () => {
       place(to);
       const ring = (delay: number) =>
@@ -125,6 +133,7 @@ export function AgentCursor({ agentId, name, color, pointer }: AgentCursorProps)
             look.press && "is-press",
             look.quiet && "is-quiet",
             look.idle && "is-idle",
+            look.placed && "is-placed",
             look.flip && "is-flip",
             look.lift && "is-lift",
           ]

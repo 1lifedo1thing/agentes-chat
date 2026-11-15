@@ -60,10 +60,26 @@ test("an old pointer shown again (a card remounted, control handed back) is plac
   expect(cursor()?.style.left).toBe("80%");
   expect(cursor()?.style.top).toBe("20%");
   expect(cursor()?.classList.contains("is-idle")).toBe(true);
+  // Measuring its frame computes its style at full strength first: it never fades down from there.
+  expect(cursor()?.classList.contains("is-placed")).toBe(true);
   await wait(1000);
   expect(rings()).toBe(0);
   // Its name still turns left near the right edge.
   expect(cursor()?.classList.contains("is-flip")).toBe(true);
+});
+
+test("placed at rest it is there at once, with no fade; the next gesture fades back in as before", async () => {
+  const css = await Bun.file(path.join(import.meta.dir, "../src/components/browser/browser.css")).text();
+  expect(declarations(css, ".brw-cur.is-placed")).toContainEqual(["transition", "none"]);
+  jest.useFakeTimers();
+  const view = render(draw(at(800, 100, Date.now() - CURSOR_IDLE_MS - 1)));
+  view.rerender(draw(at(100, 100, Date.now(), 2)));
+  expect(cursor()?.classList.contains("is-placed")).toBe(false);
+  // Resting after a gesture it saw, it fades down.
+  await wait(1000);
+  await wait(CURSOR_IDLE_MS);
+  expect(cursor()?.classList.contains("is-idle")).toBe(true);
+  expect(cursor()?.classList.contains("is-placed")).toBe(false);
 });
 
 test("a fresh click still glides there and rings", async () => {

@@ -1845,6 +1845,10 @@ html:not([data-pointer]) .brw-mf-end__row:focus-visible {
 .brw-cur.is-idle {
   opacity: 0.45;
 }
+/* Shown already at rest (a view opened, control handed back): there at once, never fading down to it. */
+.brw-cur.is-placed {
+  transition: none;
+}
 .brw-cur > svg {
   position: absolute;
   left: 0;
