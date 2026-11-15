@@ -1029,6 +1029,10 @@ export const MachineAccount = z
       description:
         "Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6), 0 first; null: after the placed ones, oldest first. A run at its plan's limit goes on with its agent's owner's next account, then the others that serve everyone.",
     }),
+    sameAs: z.uuid().openapi({
+      description:
+        "The id of the oldest login of the same account on its computer (one account may be signed in once per agent); its own id where it is the oldest or nothing tells it apart. Logins with the same `sameAs` are one account, whoever looks: the email and key's end that tell them apart stay its owner's.",
+    }),
   })
   .openapi("MachineAccount", {
     description:

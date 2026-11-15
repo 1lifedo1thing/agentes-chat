@@ -160,6 +160,12 @@ export interface MachineAccountView {
   serves: PlanServes;
   /** Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6); null: after the placed ones, oldest first. */
   useOrder: number | null;
+  /**
+   * The id of the oldest login of the same account on its computer (`sameAccountWhere`), itself where it is the
+   * oldest or nothing tells it apart: the same for every login of one account, so anyone can group them, the email
+   * and key staying its owner's.
+   */
+  sameAs: string;
 }
 
 /** Who a plan thinks for (`machine_accounts.serves`, ADR 0059 §3). */
@@ -237,6 +243,7 @@ function accountView(
   using: { id: string; name: string }[],
   viewerId: string | null,
   ownerName: string | null,
+  sameAs = row.id,
 ): MachineAccountView {
   const mine = viewerId !== null && row.createdBy === viewerId;
   return {
@@ -259,6 +266,7 @@ function accountView(
     providerOrgId: mine ? row.providerOrgId : null,
     serves: servesOf(row.serves),
     useOrder: row.useOrder,
+    sameAs,
   };
 }
 
@@ -311,11 +319,14 @@ export async function listMachineAccounts(
   ]);
   return rows.map(({ account, ownerName }) => {
     const on = [...using, ...people].filter((a) => a.accountId === account.id);
+    // Oldest first, as `sameLogins` orders them.
+    const first = rows.find((r) => sameAccountRow(r.account, account))?.account.id;
     return accountView(
       account,
       on.filter((a, i) => on.findIndex((b) => b.id === a.id) === i),
       viewerId,
       ownerName,
+      first,
     );
   });
 }
@@ -577,6 +588,26 @@ function sameAccountWhere(row: AccountKey, same: AccountIdentity) {
     row.provider ? eq(machineAccounts.provider, row.provider) : isNull(machineAccounts.provider),
     inArray(machineAccounts.status, LISTED_ACCOUNT_STATUSES),
     match,
+  );
+}
+
+/** `sameAccountWhere` between two listed rows of one computer, in memory: `row` is a login of the same account as `same`. */
+function sameAccountRow(row: MachineAccountRow, same: MachineAccountRow) {
+  if (row.id === same.id) return true;
+  if (
+    row.orgId !== same.orgId ||
+    row.machineId !== same.machineId ||
+    row.kind !== same.kind ||
+    row.createdBy !== same.createdBy ||
+    row.provider !== same.provider
+  ) {
+    return false;
+  }
+  if (row.provider) return Boolean(same.keyHint) && row.keyHint === same.keyHint;
+  return (
+    Boolean(same.email) &&
+    row.email?.toLowerCase() === same.email?.toLowerCase() &&
+    (!same.providerOrgId || !row.providerOrgId || row.providerOrgId === same.providerOrgId)
   );
 }
 

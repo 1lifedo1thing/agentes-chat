@@ -6032,6 +6032,11 @@ export interface MachineAccount {
    * placed ones, oldest first (absent: an older server).
    */
   useOrder?: number | null;
+  /**
+   * The id of the oldest login of the same account on its computer: the same for every login of one account (Claude
+   * signs in once per agent), whoever looks, where its email and key's end are its owner's (absent: an older server).
+   */
+  sameAs?: string;
 }
 
 /** `GET …/ai-accounts/order`: one computer's Claude or ChatGPT accounts in their order of use (ADR 0041 §6). */
