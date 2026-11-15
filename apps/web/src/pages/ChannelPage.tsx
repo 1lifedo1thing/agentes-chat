@@ -115,7 +115,7 @@ import {
 import { firstUnreadId, opensAtLastRead, unreadThreadRootId } from "@agenteschat/client/lib/chat-look";
 import { choiceReplyLine } from "@agenteschat/client/lib/choices";
 import { draftKeyOf } from "@agenteschat/client/lib/composer-drafts";
-import { consultsForLine } from "@agenteschat/client/lib/consult-group";
+import { type ConsultPairItem, consultsForLine } from "@agenteschat/client/lib/consult-group";
 import { consultationsOf } from "@agenteschat/client/lib/consultations";
 import { deviceWaitOf } from "@agenteschat/client/lib/devices";
 import { clearDraft, peekDraft } from "@agenteschat/client/lib/drafts";
@@ -133,7 +133,7 @@ import {
 } from "@agenteschat/client/lib/errors";
 import { everyoneWord, isEveryoneMention, mentionsReader, offersEveryone } from "@agenteschat/client/lib/everyone";
 import { fileIcon, fitsUpload, formatBytes, MAX_UPLOAD_MB, previewKind } from "@agenteschat/client/lib/files";
-import { dayLabel, formatFullDate, formatTime } from "@agenteschat/client/lib/format";
+import { dayLabel, formatClock, formatFullDate, formatTime } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { issueTakenOf, issueWorkOf, taskConversationOf } from "@agenteschat/client/lib/issues";
@@ -994,7 +994,8 @@ function ChannelView({
   }, [panelId]);
   // A question an agent asked another from here, opened from its line in the reply ("Theo ⇄ Iris"): a dialog over
   // the conversation, whatever pane is open beside it.
-  const [consultId, setConsultId] = useState<string | null>(null);
+  const [consult, setConsult] = useState<{ id: string; group?: readonly ConsultPairItem[] } | null>(null);
+  const consultId = consult?.id ?? null;
   // A DM with an agent: its tasks (ADR 0128), from the pill in the header; one panel too, any other one closes it.
   const [tasksOpen, setTasksOpen] = useState(false);
   useEffect(() => {
@@ -2362,7 +2363,7 @@ function ChannelView({
       setSearchOpen(false);
       setPanel({ id, reply: false, focus });
     },
-    openConsultation: (id) => setConsultId(id),
+    openConsultation: (id, group) => setConsult({ id, group }),
     seeRequest: (id) => seeAsk(id),
     requestCorrection: (message, text) => {
       const handle = message.author.type === "agent" ? dir.agentById.get(message.author.id ?? "")?.handle : undefined;
@@ -2399,7 +2400,7 @@ function ChannelView({
       reply: replies ? (message) => now().reply(message) : undefined,
       // A thread view has no panel: its links go to the thread's page.
       openThread: inThread ? undefined : (id, focus) => now().openThread(id, focus),
-      openConsultation: (id) => now().openConsultation(id),
+      openConsultation: (id, group) => now().openConsultation(id, group),
       seeRequest: (id) => now().seeRequest(id),
       requestCorrection: (message, text) => now().requestCorrection(message, text),
       jumpTo: (messageId) => now().jumpTo(messageId),
@@ -3047,15 +3048,16 @@ function ChannelView({
                     channelId={channel.id}
                     channelName={chrome?.composerTarget ? null : channel.name}
                     consultationId={consultId}
-                    onClose={() => setConsultId(null)}
+                    group={consult?.group}
+                    onClose={() => setConsult(null)}
                     // The composer takes the focus once the dialog is gone: its trap would hold it while open.
                     onTalk={(handle) => {
-                      setConsultId(null);
+                      setConsult(null);
                       actions.insertMention(handle);
                       requestAnimationFrame(() => actions.focusComposer());
                     }}
                     onAnswer={() => {
-                      setConsultId(null);
+                      setConsult(null);
                       requestAnimationFrame(() => actions.focusComposer());
                     }}
                     renderMessage={(m, grouped) => (
@@ -3664,15 +3666,18 @@ function LiveRunStatus({ run }: { run: LiveRun }) {
 function StoppedLine({
   runId,
   byUserId,
-  note,
+  byAgentId,
+  code,
   limit,
   owner,
   message,
 }: {
   runId: string | null | undefined;
   byUserId: string | null | undefined;
-  /** The server's line, for older messages without a person in the meta. */
-  note?: string | null;
+  /** The agent that stopped it at that person's word (the right hand). */
+  byAgentId?: string | null;
+  /** Nobody stopped it: why (`run.agent_archived`…), said in the person's language. */
+  code?: string | null;
   /**
    * The run ended at its step limit, or because it got stuck (`meta.stepLimit`), or its long work failed on its AI
    * provider (`meta.workEnd`, whose text already says so): nobody stopped it.
@@ -3692,8 +3697,15 @@ function StoppedLine({
   const stop = useStopNotice(runId);
   // The agent works here again, or wrote after the stop: it went on, so the stop is over and offers nothing.
   const movedOn = useStopMovedOn(runId);
-  // Its words when no person stopped it: the step limit, stuck; long work its provider cut off says it in its text.
-  const fallback = limit ? (limit === "failed" ? null : t(limit === "stuck" ? "run.stuck" : "run.stepLimit")) : note;
+  // Its words when no person stopped it: the step limit, stuck, or its cause (an archived agent, a closed workspace);
+  // long work its provider cut off says it in its text.
+  const fallback = limit
+    ? limit === "failed"
+      ? null
+      : t(limit === "stuck" ? "run.stuck" : "run.stepLimit")
+    : !byUserId && !stop
+      ? (runErrorText(t, code) ?? t("run.stopped"))
+      : null;
   const said = Boolean(stop || byUserId || fallback);
   // Only a run a person stopped, one at its step limit, or long work its provider cut off, picks up again.
   const can = Boolean(runId && (byUserId || stop || limit) && owner && !continued && !movedOn && canStop(owner));
@@ -3722,7 +3734,7 @@ function StoppedLine({
   return (
     <StopPill
       agent={agent}
-      who={{ notice: stop?.notice, at: stop?.at, byUserId }}
+      who={{ notice: stop?.notice, at: stop?.at, byUserId, byAgentId }}
       fallback={fallback}
       cont={go}
       channelId={owner?.channelId ?? message?.channelId ?? ""}
@@ -4618,6 +4630,7 @@ export const TimelineMessage = memo(function TimelineMessage({
         time={
           live ? <RunClock run={live} /> : <time dateTime={m.createdAt}>{formatTime(i18n.language, m.createdAt)}</time>
         }
+        gutterTime={live ? undefined : <time dateTime={m.createdAt}>{formatClock(i18n.language, m.createdAt)}</time>}
         meta={m.local || live ? undefined : details}
         note={joinedTip ? { label: t("chat.joined.label"), tip: joinedTip } : undefined}
         // Its words arriving: its time and its stop after the time it started (the bar no longer says them).
@@ -4734,7 +4747,8 @@ export const TimelineMessage = memo(function TimelineMessage({
               <StoppedLine
                 runId={m.agentRunId}
                 byUserId={stopped.byUserId}
-                note={stopped.note}
+                byAgentId={stopped.byAgentId}
+                code={stopped.code}
                 limit={providerCut ? "failed" : atLimit}
                 owner={
                   m.author.type === "agent" && m.author.id
@@ -4776,7 +4790,7 @@ export const TimelineMessage = memo(function TimelineMessage({
                 runId={m.agentRunId ?? null}
                 name={name}
                 steps={browserTrail}
-                stopped={stopped.canceled ? { byUserId: stopped.byUserId } : null}
+                stopped={stopped.canceled ? stopped : null}
                 recent={Date.now() - Date.parse(m.createdAt) < HELD_RECENT_MS}
               />
             )}
@@ -4786,7 +4800,7 @@ export const TimelineMessage = memo(function TimelineMessage({
                 runId={m.agentRunId ?? null}
                 name={name}
                 steps={desktopTrail}
-                stopped={stopped.canceled ? { byUserId: stopped.byUserId } : null}
+                stopped={stopped.canceled ? stopped : null}
                 screen="desktop"
               />
             )}
