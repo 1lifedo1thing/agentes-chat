@@ -18,8 +18,8 @@
   mask: var(--connector-icon) center / contain no-repeat;
 }
 
-/* The list of services: whole rows to press, the mark centred on the name's line (`.ac-iconline`), who it suits under
-   the name, a chevron. */
+/* The list of services: whole rows to press, the mark centred on the name's line, who it suits under the name, a
+   chevron. */
 button.storage-pick__row {
   width: 100%;
   border: 0;
@@ -30,6 +30,11 @@ button.storage-pick__row {
   flex-wrap: nowrap;
   align-items: flex-start;
   transition: background-color 0.15s var(--out);
+}
+/* The mark and its words: one `.ac-iconline` inside the row, so the row's own layout (a list row's) stays as it is. */
+.storage-pick__main {
+  flex: 1;
+  min-width: 0;
 }
 button.storage-pick__row:hover {
   background: var(--plate-soft);

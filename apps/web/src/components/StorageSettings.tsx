@@ -372,16 +372,13 @@ function ConnectDialog({
         <DialogBody>
           <List className="storage-pick">
             {STORAGE_PROVIDERS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                className="ac-list__row ac-iconline storage-pick__row"
-                onClick={() => setProvider(p)}
-              >
-                <ProviderMark provider={p} />
-                <span className="list-col">
-                  <span className="storage-pick__name">{t(`storage.connect.provider.${p}`)}</span>
-                  <span className="small muted">{t(`storage.connect.providerText.${p}`)}</span>
+              <button key={p} type="button" className="ac-list__row storage-pick__row" onClick={() => setProvider(p)}>
+                <span className="ac-iconline storage-pick__main">
+                  <ProviderMark provider={p} />
+                  <span className="list-col">
+                    <span className="storage-pick__name">{t(`storage.connect.provider.${p}`)}</span>
+                    <span className="small muted">{t(`storage.connect.providerText.${p}`)}</span>
+                  </span>
                 </span>
                 <Icon name="chevronRight" size={16} className="storage-pick__go" />
               </button>
