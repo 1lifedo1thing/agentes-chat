@@ -592,7 +592,9 @@ function Home({
     <View>
       {have.length > 0 || haveNotes.length > 0 ? (
         <>
-          {agentName ? <GroupedFooter>{t("connectAi.have.pickLine", agentGrammar(agentName))}</GroupedFooter> : null}
+          {agentName && have.length > 0 ? (
+            <GroupedFooter>{t("connectAi.have.pickLine", agentGrammar(agentName))}</GroupedFooter>
+          ) : null}
           {layout.best ? (
             <>
               <GroupedHeader>{t("connectAi.chat.best")}</GroupedHeader>
@@ -663,7 +665,7 @@ function AllHave({
   onHave: (row: ExistingAi) => void;
 }) {
   const { t } = useTranslation();
-  const rows = haveLayout(have, []).groups.flatMap((g) => g.rows);
+  const rows = haveLayout(have, [], true).groups.flatMap((g) => g.rows);
   return (
     <PickList
       options={rows.map((r) => ({

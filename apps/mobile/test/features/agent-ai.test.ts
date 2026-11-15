@@ -508,6 +508,9 @@ describe("the agent's AI", () => {
     expect(home.indexOf('t("connectAi.have.pickLine"')).toBeGreaterThan(-1);
     expect(home.indexOf('t("connectAi.have.pickLine"')).toBeLessThan(home.indexOf('t("mobile.ai.planRow")'));
     expect(home).toContain("<AiRow");
+    // "Ver as N contas" opens every row, not the three, and the line over the list only when there is one to pick.
+    expect(connect).toContain("haveLayout(have, [], true)");
+    expect(home).toContain("agentName && have.length > 0 ?");
     // A plan or a key, one row each; whose is one searched list, the plan's page and the key's steps as before.
     expect(home).toContain('onView({ page: "plans" })');
     expect(home).toContain('onView({ page: "key" })');
@@ -1317,6 +1320,14 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     );
     expect(many.best?.map((x) => x.key)).toEqual(["b", "d", "c"]);
     expect(many.groups.map((g) => g.note)).toEqual(["Mais 1"]);
+    // "Todas as contas": every row, by owner, however many.
+    const every = haveLayout(
+      [r("a", "mine", 90), r("b", "mine", 10), r("c", "owner:u2", 40), r("d", "owner:u2", 20)],
+      [],
+      true,
+    );
+    expect(every.best).toBeNull();
+    expect(every.groups.flatMap((g) => g.rows.map((x) => x.key))).toEqual(["a", "b", "c", "d"]);
     expect(flowBack({ page: "have" }, false)).toEqual({ page: "home" });
   });
 

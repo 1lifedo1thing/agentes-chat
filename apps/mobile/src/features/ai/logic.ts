@@ -293,13 +293,15 @@ export const HAVE_SHOWN = 3;
 /**
  * How the first page lays out what the person has, as the web's list: few rows by owner (theirs, the workspace's
  * keys, each other person's), each person's line of accounts they can't give under their group; many rows the three
- * with most room (`sortHave`), the rest a row away ("Ver as N contas"), the lines under them.
+ * with most room (`sortHave`), the rest a row away ("Ver as N contas"), the lines under them. `all`: every row by
+ * owner, whatever their number ("Todas as contas").
  */
 export function haveLayout<R extends { group: { key: string; label: string }; usage: PlanUsage | null }>(
   rows: readonly R[],
   notes: readonly { key: string; text: string }[],
+  all = false,
 ): { best: R[] | null; groups: { key: string; label: string | null; rows: R[]; note: string | null }[] } {
-  if (rows.length > HAVE_SHOWN) {
+  if (!all && rows.length > HAVE_SHOWN) {
     return {
       best: sortHave(rows).slice(0, HAVE_SHOWN),
       groups: notes.map((n) => ({ key: n.key, label: null, rows: [], note: n.text })),
