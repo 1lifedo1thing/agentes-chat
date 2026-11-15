@@ -1929,6 +1929,11 @@ export const en = {
     inUse: "In use",
     /** The made icon's parts. */
     sky: "Background",
+    /** How the agent stands in the icon: facing, or leaning in from the corner. */
+    pose: "Position",
+    poses: { front: "Facing", peek: "Peeking" },
+    /** Under the positions: the peeking agent has a face, never an accessory. */
+    peekBare: "Peeking, it wears no accessory.",
     expression: "Expression",
     /** Over the icons that come ready. */
     ready: "Ready-made",

@@ -1824,6 +1824,12 @@
     "use": "Usar este icono",
     "inUse": "En uso",
     "sky": "Fondo",
+    "pose": "Posición",
+    "poses": {
+      "front": "De frente",
+      "peek": "Asomándose"
+    },
+    "peekBare": "Asomándose, no lleva accesorio.",
     "expression": "Expresión",
     "ready": "Predefinidos",
     "oneOrOther": "Con un accesorio, la expresión es la normal.",

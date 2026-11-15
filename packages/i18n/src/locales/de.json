@@ -1773,6 +1773,12 @@
     "use": "Dieses Symbol verwenden",
     "inUse": "In Verwendung",
     "sky": "Hintergrund",
+    "pose": "Haltung",
+    "poses": {
+      "front": "Von vorn",
+      "peek": "Neugierig"
+    },
+    "peekBare": "Neugierig trägt er kein Accessoire.",
     "expression": "Gesichtsausdruck",
     "ready": "Vorgefertigte",
     "oneOrOther": "Mit einem Accessoire bleibt der Ausdruck der normale.",

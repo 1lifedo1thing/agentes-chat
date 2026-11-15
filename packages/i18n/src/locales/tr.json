@@ -1773,6 +1773,12 @@
     "use": "Bu simgeyi kullan",
     "inUse": "Kullanımda",
     "sky": "Arka plan",
+    "pose": "Duruş",
+    "poses": {
+      "front": "Karşıdan",
+      "peek": "Gözetleyen"
+    },
+    "peekBare": "Gözetlerken aksesuar takmaz.",
     "expression": "İfade",
     "ready": "Hazır simgeler",
     "oneOrOther": "Aksesuar takılıyken ifade normal kalır.",
