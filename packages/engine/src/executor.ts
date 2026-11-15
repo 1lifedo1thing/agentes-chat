@@ -4443,6 +4443,8 @@ async function executeRunInner(
       const turnStepSeq = plan.kind !== "model" ? await lastStepSeq(db, run.id) : 0;
       /** Calls the computer brain said it ran in this turn (through the bridge or on its own). */
       const executedNow: { id: string; name: string; input: unknown; result?: ToolResult }[] = [];
+      /** How many of them were its own (not ours through the bridge, which counts those itself). */
+      const ownExecutedNow = () => executedNow.filter((c) => !turnTools.some((t) => t.name === c.name)).length;
       /** Files the brain's own tools made this turn (`file` events), on their way to the Drive. */
       const sharing: Promise<void>[] = [];
       /** Its own calls whose step line went out as they started (`tool_started`): not again as they end. */
@@ -4608,10 +4610,7 @@ async function executeRunInner(
           // Before anything reads the inbox again (the next step, a failure's redispatch): what the turn
           // was handed and never confirmed reading goes back there.
         ).finally(() => live.endTurn());
-        const ownExecuted =
-          turnPlan.kind === "model"
-            ? result.executedCount
-            : executedNow.filter((c) => !turnTools.some((t) => t.name === c.name)).length;
+        const ownExecuted = turnPlan.kind === "model" ? result.executedCount : ownExecutedNow();
         transcript.executedCalls = (transcript.executedCalls ?? 0) + result.toolCalls.length + ownExecuted;
         callsCounted = true;
         // A turn ran: a later limit is a new wait, with its own note.
@@ -4691,10 +4690,7 @@ async function executeRunInner(
           // What the bridge kept during this turn (cards, a reaction) is the engine's now.
           const bridged = await takeBridgeResult(db, run.id).catch(() => ({ effects: null, calls: 0 }));
           mergeToolEffects(transcript, bridged.effects);
-          if (!callsCounted)
-            transcript.executedCalls =
-              (transcript.executedCalls ?? 0) +
-              executedNow.filter((c) => !turnTools.some((t) => t.name === c.name)).length;
+          if (!callsCounted) transcript.executedCalls = (transcript.executedCalls ?? 0) + ownExecutedNow();
           transcript.executedCalls = (transcript.executedCalls ?? 0) + bridged.calls;
           // A bridged call paused the run before the brain failed: the run waits for the person, with the
           // pending calls the bridge wrote (no fallback, no failure; the decision resumes the session).

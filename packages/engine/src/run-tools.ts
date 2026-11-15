@@ -411,11 +411,6 @@ export async function takeBridgeResult(db: Database, runId: string): Promise<Bri
   });
 }
 
-/** Takes (and clears) the side effects the bridge kept for this run. */
-export async function takeBridgeEffects(db: Database, runId: string): Promise<ToolSideEffects | null> {
-  return (await takeBridgeResult(db, runId)).effects;
-}
-
 // ── Calls ────────────────────────────────────────────────────────────────────
 
 /** What `invokeWithChip` needs: the run's tool context, where its events go and the tools of this turn. */
