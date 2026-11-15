@@ -105,6 +105,21 @@ describe("the sidebar's toggle stays in one place at every width", () => {
     expect(nav().dataset.rail).toBe("true");
   });
 
+  test("a tablet's open sidebar hands focus back to its toggle on Esc, and folds back when Tab leaves it", async () => {
+    widthIs(TABLET_QUERY);
+    await open();
+    await click(toggle());
+    const row = within(nav()).getByRole("link", { name: /general/ });
+    row.focus();
+    await act(async () => fireEvent.keyDown(row, { key: "Escape" }));
+    expect(nav().dataset.rail).toBe("true");
+    expect(document.activeElement).toBe(toggle());
+    await click(toggle());
+    expect(nav().dataset.float).toBe("true");
+    await act(async () => (within(screen().getByRole("main")).getAllByRole("button")[0] as HTMLElement).focus());
+    expect(nav().dataset.rail).toBe("true");
+  });
+
   test("a phone-width window's drawer has the toggle in the same place, and it closes the drawer", async () => {
     widthIs(DESKTOP_QUERY);
     await open();
@@ -143,6 +158,12 @@ describe("the sidebar's toggle stays in one place at every width", () => {
       await open();
       expect(barToggle()?.getAttribute("aria-label")).toBe("Abrir menu");
       await click(barToggle() as Element);
+      expect(nav().dataset.open).toBe("true");
+      // The View menu's item does what the title bar's button does there.
+      const menu = (window as { __agentesMenu?: (action: string) => void }).__agentesMenu;
+      await act(async () => menu?.("toggleSidebar"));
+      expect(nav().dataset.open).toBe("false");
+      await act(async () => menu?.("toggleSidebar"));
       expect(nav().dataset.open).toBe("true");
     } finally {
       delete w.__agentesDesktop;

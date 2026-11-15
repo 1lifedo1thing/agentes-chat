@@ -533,7 +533,8 @@ export function Sidebar() {
   useScrollEdges(navRef, [channels.data, directs.length, shownAgents.length, groups.length, rail]);
 
   // A tablet's open sidebar folds back on a new page, a width change, Esc (before the page sees it: Esc in a channel
-  // would stop an agent; an open menu closes first) and a press outside it.
+  // would stop an agent; an open menu closes first), a press outside it and focus leaving it (Tab past its end would
+  // land on the page under it).
   const sideRef = useRef<HTMLElement>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: a new page or width closes it
   useEffect(() => closeTabletSidebar(), [pathname, tablet]);
@@ -542,19 +543,25 @@ export function Sidebar() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.defaultPrevented || document.querySelector(OPEN_LAYER)) return;
       e.preventDefault();
+      // Focus on a row the rail hides would be lost: back to the toggle (the title bar's, in the Mac app).
+      if (sideRef.current?.contains(document.activeElement)) {
+        document.querySelector<HTMLElement>("[data-sidebar-toggle]")?.focus();
+      }
       closeTabletSidebar();
     };
     // Not the title bar's toggle: its click closes it after the press.
-    const onPress = (e: PointerEvent) => {
+    const onOutside = (e: Event) => {
       const t = e.target;
       if (!(t instanceof Element) || sideRef.current?.contains(t) || t.closest("[data-sidebar-toggle]")) return;
       if (!document.querySelector(OPEN_LAYER)) closeTabletSidebar();
     };
     window.addEventListener("keydown", onKey, true);
-    document.addEventListener("pointerdown", onPress, true);
+    document.addEventListener("pointerdown", onOutside, true);
+    document.addEventListener("focusin", onOutside, true);
     return () => {
       window.removeEventListener("keydown", onKey, true);
-      document.removeEventListener("pointerdown", onPress, true);
+      document.removeEventListener("pointerdown", onOutside, true);
+      document.removeEventListener("focusin", onOutside, true);
     };
   }, [float]);
 
@@ -914,6 +921,7 @@ export function Sidebar() {
     variant: "ghost",
     iconOnly: true,
     icon: "sidebar",
+    "data-sidebar-toggle": "",
     "aria-label": collapseLabel,
     title: collapseLabel,
     "aria-expanded": compact || !collapsed,
