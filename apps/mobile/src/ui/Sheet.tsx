@@ -171,13 +171,15 @@ export function useSheetProps({
 
 /**
  * A sheet's content: gestures need their own root in the sheet's window, and it reads the sheet's colors. `fill` for a
- * sheet of fixed heights, whose content fills them.
+ * sheet of fixed heights, whose content fills them; otherwise it is as tall as what it holds. The root always gets a
+ * style: left without one, it takes `flex: 1`, which in a sheet sized to its content is no height at all, and the
+ * sheet came up empty.
  */
 export function SheetContent({ children, fill = false }: { children: ReactNode; fill?: boolean }) {
   const { colors, scheme } = useTheme();
   const inside = useMemo(() => sheetColors(colors, scheme), [colors, scheme]);
   return (
-    <GestureHandlerRootView style={fill ? styles.fill : undefined}>
+    <GestureHandlerRootView style={fill ? styles.fill : styles.fit}>
       <ThemeColorsOverride colors={inside}>{children}</ThemeColorsOverride>
     </GestureHandlerRootView>
   );
@@ -191,6 +193,7 @@ export function useSheetBody(top = 24): ViewStyle {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  fit: { alignSelf: "stretch" },
   // The header spans the sheet, under the grabber's room.
   header: { paddingTop: 24 },
 });

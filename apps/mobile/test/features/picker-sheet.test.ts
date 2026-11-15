@@ -65,6 +65,8 @@ describe("every sheet is the system's own (TrueSheet), and a sheet's next step s
     expect(sheet).toContain("scrollableRef={scroll}");
     expect(sheet).not.toContain("PanResponder");
     expect(sheet).not.toContain("@gorhom/bottom-sheet");
+    // The gestures' root always gets a style: without one it takes flex: 1, no height in a content-sized sheet.
+    expect(sheet).toContain("<GestureHandlerRootView style={fill ? styles.fill : styles.fit}>");
   });
 
   test("the sheets that are routes are TrueSheet's too, on the same look: none is react-native-screens' form sheet", () => {
