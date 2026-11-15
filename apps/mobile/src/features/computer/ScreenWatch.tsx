@@ -98,10 +98,10 @@ export function ScreenWatch({
     setReady(false);
     setLife((n) => n + 1);
   };
-  // The hairline is inside the box's layout: the screen scales to the room within it.
+  // The hairline is inside the box's layout: the screen scales to the room within it (at least the parked box's 1x1).
   const onLayout = (e: LayoutChangeEvent) => {
-    const width = e.nativeEvent.layout.width - 2 * EDGE;
-    const height = e.nativeEvent.layout.height - 2 * EDGE;
+    const width = Math.max(1, e.nativeEvent.layout.width - 2 * EDGE);
+    const height = Math.max(1, e.nativeEvent.layout.height - 2 * EDGE);
     setBox((b) => (b.width === width && b.height === height ? b : { width, height }));
   };
   const scale = box.width > 0 && box.height > 0 ? fitScale(box, desk) : 1;
@@ -112,7 +112,7 @@ export function ScreenWatch({
       pointerEvents={parked ? "none" : undefined}
       style={[
         styles.box,
-        { borderColor: c.line },
+        { backgroundColor: c.sunken, borderColor: c.line },
         style,
         { aspectRatio: desk.width / desk.height },
         parked && styles.parked,
@@ -161,8 +161,9 @@ export function ScreenWatch({
 const EDGE = StyleSheet.hairlineWidth;
 
 const styles = StyleSheet.create({
-  box: { overflow: "hidden", backgroundColor: "#101010", borderWidth: EDGE },
+  // The line is translucent: over the thumbnail's backdrop it reads the same; the dark fill is the screen's alone.
+  box: { overflow: "hidden", borderWidth: EDGE },
   // Out of the layout and out of sight, still rendering (a zero size could stop the page).
   parked: { position: "absolute", left: 0, top: 0, width: 1, height: 1, opacity: 0 },
-  frame: { position: "absolute", left: 0, top: 0, transformOrigin: "left top" },
+  frame: { position: "absolute", left: 0, top: 0, transformOrigin: "left top", backgroundColor: "#101010" },
 });

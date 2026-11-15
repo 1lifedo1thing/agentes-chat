@@ -13,7 +13,7 @@ describe("the live picture's edge on the phone", () => {
     // On the box that rounds and clips the picture, at that box's radius.
     expect(style(card, "page")).toContain(HAIRLINE);
     expect(style(card, "page")).toContain("borderRadius: CARD - PAGE_INSET");
-    expect(card).toContain("styles.page,\n                { borderColor: c.line },");
+    expect(card).toMatch(/styles\.page,\s*\{ borderColor: c\.line \},/);
     // The whole screen's box is ScreenWatch's, rounded by the card.
     expect(style(card, "screen")).toContain("borderRadius: CARD - PAGE_INSET");
     expect(card).toContain("style={[styles.screen,");
@@ -26,9 +26,12 @@ describe("the live picture's edge on the phone", () => {
     const watch = await read("computer/ScreenWatch.tsx");
     expect(watch).toContain("const EDGE = StyleSheet.hairlineWidth;");
     expect(style(watch, "box")).toContain("borderWidth: EDGE");
-    expect(watch).toContain("styles.box,\n        { borderColor: c.line },");
+    // Over the thumbnail's backdrop, so the translucent line reads the same; the dark fill is the screen's alone.
+    expect(watch).toMatch(/styles\.box,\s*\{ backgroundColor: c\.sunken, borderColor: c\.line \},/);
+    expect(style(watch, "box")).not.toContain("backgroundColor");
+    expect(style(watch, "frame")).toContain('backgroundColor: "#101010"');
     // The line is inside the box's layout: the room the screen scales to is what it leaves.
-    expect(watch).toContain("const width = e.nativeEvent.layout.width - 2 * EDGE;");
-    expect(watch).toContain("const height = e.nativeEvent.layout.height - 2 * EDGE;");
+    expect(watch).toContain("const width = Math.max(1, e.nativeEvent.layout.width - 2 * EDGE);");
+    expect(watch).toContain("const height = Math.max(1, e.nativeEvent.layout.height - 2 * EDGE);");
   });
 });
