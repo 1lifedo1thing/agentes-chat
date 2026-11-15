@@ -357,7 +357,7 @@ describe("one account signed in once per agent is one row, whoever looks", () =>
     expect(lockedText(t, { name: "Walter", count: 2 })).toBe('connectAi.have.onlyOwner {"count":2,"name":"Walter"}');
   });
 
-  test("a row's line tells accounts apart: one's own by its email and how many more agents; someone else's by whose and its plan", () => {
+  test("a row's line tells accounts apart: one's own by its email and how many more agents; someone else's by whose alone (its title says the plan)", () => {
     const t = ((key: string, o?: Record<string, unknown>) =>
       o ? `${key}(${Object.values(o).join(",")})` : key) as unknown as TFunction;
     const [own, ,] = existingAi({ accounts: more(true), account: null }, []);
@@ -366,7 +366,8 @@ describe("one account signed in once per agent is one row, whoever looks", () =>
     // Made for all of Walter's agents, Atlas on it: the email, then one more agent.
     expect(haveAbout(t, own, "Lia")).toBe("walter.ops@example.com · connectAi.have.moreAgents(1)");
     expect(haveAbout(t, own, "Atlas")).toBe("walter.ops@example.com");
-    expect(haveAbout(t, theirs, "Lia")).toBe("agentPage.work.brain.accountOf(Walter) · Team");
+    expect(haveAbout(t, theirs, "Lia")).toBe("agentPage.work.brain.accountOf(Walter)");
+    expect(theirs.choice.login.plan).toBe("team");
     expect(JSON.stringify(haveAbout(t, theirs, "Lia"))).not.toContain("@");
     expect(haveGroup(t, own)).toEqual({ key: "mine", label: "connectAi.chat.mine" });
     expect(haveGroup(t, theirs)).toEqual({ key: "owner:u_walter", label: "agentPage.work.brain.accountOf(Walter)" });

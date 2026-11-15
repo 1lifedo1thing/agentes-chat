@@ -327,15 +327,12 @@ export function haveGroup(t: TFunction, r: ExistingAi): { key: string; label: st
 /**
  * The line under an account in a list of what the person has, what tells two accounts apart: one's own says its email
  * (or its key's end), then how many other agents think with it where it thinks for all of them; one that would move,
- * sign in again or is signed out says so (`accountAbout`). Someone else's says whose it is and its plan, never its email.
+ * sign in again or is signed out says so (`accountAbout`). Someone else's says whose it is and nothing else: never its
+ * email, and not its plan, which its title already says (`accountTitle`).
  */
 export function haveAbout(t: TFunction, r: ExistingAccount, agentName: string): string | undefined {
   const a = r.choice.login;
-  if (!a.mine) {
-    return [t("agentPage.work.brain.accountOf", { name: firstName(a.ownerName ?? "") }), planWordOf(a.plan)]
-      .filter(Boolean)
-      .join(" · ");
-  }
+  if (!a.mine) return t("agentPage.work.brain.accountOf", { name: firstName(a.ownerName ?? "") });
   if (r.act !== "use") return accountAbout(t, r.choice, agentName);
   const others = [...new Set(r.choice.usedBy)].filter((n) => n !== agentName);
   const who = a.keyHint ? t("aiAccounts.page.keyEnds", { hint: a.keyHint }) : a.email;

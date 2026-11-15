@@ -106,13 +106,14 @@ describe("the agent's AI", () => {
     expect(agentAccounts({ ...view, canUseOthersPlans: false }, "claude_code", "u1", "Ada").map((a) => a.id)).toEqual([
       "owners",
     ]);
-    // Connect an AI's first rows: Bia's in one tap, whose it is and its plan under it; the two only their owner can
-    // give leave the list, one line under that person's group.
+    // Connect an AI's first rows: Bia's in one tap, its plan in its title and whose it is under it; the two only their
+    // owner can give leave the list, one line under that person's group.
     const rows = existingRows(t, view, [], "Ada", "pt-BR").map((r) => [
       r.row.kind === "key" ? "key" : r.row.act,
+      r.label,
       r.sub,
     ]);
-    expect(rows).toContainEqual(["use", "De Bia · Max"]);
+    expect(rows).toContainEqual(["use", "bias · Max", "De Bia"]);
     expect(rows.filter(([act]) => act === "locked")).toHaveLength(0);
     expect(existingNotes(t, view, [])).toEqual([
       { key: "owner:u3", text: "Mais 2 contas de Walter que só Walter pode dar." },

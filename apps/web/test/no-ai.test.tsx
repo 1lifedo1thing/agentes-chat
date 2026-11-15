@@ -1283,7 +1283,7 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
     await click(within(picker).getByRole("button", { name: "Ver as 4 contas" }));
     const all = dialog("Todas as contas") as HTMLElement;
     expect(haveTitles(all)).toEqual(["Claude da Acme", "Claude · Team", "Casa · Max", "Laboratório · Max"]);
-    expect(shownText(haveRow(all, "Claude · Team"))).toBe("Claude · TeamDe João · Team");
+    expect(shownText(haveRow(all, "Claude · Team"))).toBe("Claude · TeamDe João");
     fireEvent.change(within(all).getByRole("searchbox", { name: "Buscar conta ou pessoa" }), {
       target: { value: "team" },
     });
@@ -1321,7 +1321,7 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
       canUseOthersPlans: true,
     });
     const theirs = within(picker).getByRole("button", { name: /^Claude Max/ }) as HTMLButtonElement;
-    expect(shownText(theirs)).toBe("Claude MaxDe Bia · Max");
+    expect(shownText(theirs)).toBe("Claude MaxDe Bia");
     expect(theirs.disabled).toBe(false);
     expect(within(picker).queryByRole("button", { name: /^Claude Pro/ })).toBeNull();
     expect(picker.textContent).toContain("Mais 1 conta de Caio que só Caio pode dar.");
