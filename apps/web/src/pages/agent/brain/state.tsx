@@ -10,8 +10,10 @@ import {
 import {
   type AccountChoice,
   accountAbout,
+  accountChain,
   accountChoices,
   accountTitle,
+  chainHasRoom,
   lendable,
   offersSignInAgain,
   ownSignInListed,
@@ -375,9 +377,23 @@ export function useBrainState(view: AgentBrain, opts: { added: readonly MachineA
   // ── the account in use ──
   const usage: PlanUsage | null = currentRow?.usage ?? null;
   const limitedNow = usage ? planState(usage).state === "limited" : false;
+  // The accounts its runs go through at a limit (ADR 0041 §6), its own first; one alone when pinned or none move on.
+  const chain =
+    kind === "model"
+      ? []
+      : accountChain(allAccounts, {
+          id: agent.id,
+          ownerId: agent.ownerUserId ?? null,
+          account: view.account,
+          pinned: view.accountPinned === true,
+        });
+  const moves = chain.length > 1;
+  // At its limit it waits only with no other account of its chain that has room: then the way out is by hand.
+  const waitsAtLimit =
+    limitedNow && !chainHasRoom(chain, (a) => (a.usage ? planState(a.usage).state === "limited" : false));
   // At its limit, its owner's free accounts of the same plan with room, never another agent's (`limitOffers`).
   const offers =
-    limitedNow && kind !== "model"
+    waitsAtLimit && kind !== "model"
       ? limitOffers(listed, kind, view.account).flatMap(({ account }) => {
           const r = accountRow({ login: account, usedBy: account.usedBy, also: false });
           return r && !r.off && (r.act === "use" || r.act === "move") ? [r] : [];
@@ -460,6 +476,8 @@ export function useBrainState(view: AgentBrain, opts: { added: readonly MachineA
     rows,
     usage,
     limitedNow,
+    waitsAtLimit,
+    moves,
     offers,
     signedOut,
     unknown,

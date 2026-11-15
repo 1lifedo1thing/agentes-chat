@@ -60,7 +60,17 @@ import { useAdminsLock } from "@/hooks/usePersonalView";
 import { modelLimitText, notSharedText } from "@/lib/plan-usage";
 import { useToast } from "@/lib/toast";
 import { useAgentEdit } from "../context";
-import { BrainLine, ContextField, Fold, PickList, type PickOption, PlanWindows, SpeedField, useGlide } from "./pieces";
+import {
+  BrainLine,
+  ContextField,
+  Fold,
+  PickList,
+  type PickOption,
+  PinAccount,
+  PlanWindows,
+  SpeedField,
+  useGlide,
+} from "./pieces";
 import { SetupCopyDialog } from "./SetupCopyDialog";
 import { type BrainRow, useBrainState } from "./state";
 import { useRefresh, useWork } from "./work";
@@ -137,7 +147,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
   // unless a link asked for a screen of its own.
   const [trail, setTrail] = useState<Screen[]>(() => {
     const asked = at === "model" ? mayModel : at === "switch" ? can("brain") : at === "more";
-    return at && asked ? ["glance", at] : [s.limitedNow ? "limit" : "glance"];
+    return at && asked ? ["glance", at] : [s.waitsAtLimit ? "limit" : "glance"];
   });
   const screen: Screen = trail[trail.length - 1] ?? "glance";
   const [dir, setDir] = useState<"fwd" | "back">("fwd");
@@ -464,11 +474,14 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
   };
 
   // ── how it thinks ──
+  // "Só esta conta" where its account could move on, or where it is on: a right hand's own plan never moves.
+  const pinShown = !view.scope && (s.moves || view.accountPinned === true);
   const moreNow: Advanced = {
     effort: s.effort,
     speed: s.speedOn ? view.speed : "standard",
     contextTokens: s.savedContext,
     onlyOwner: view.onlyOwner,
+    ...(pinShown ? { accountPinned: view.accountPinned === true } : {}),
   };
   const m = more ?? moreNow;
   const openMore = () => {
@@ -485,6 +498,8 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
     if (s.kind !== "model") {
       if (s.speedOn && m.speed !== view.speed) input.speed = m.speed;
       if (m.onlyOwner !== view.onlyOwner) input.onlyOwner = m.onlyOwner;
+      if (m.accountPinned !== undefined && m.accountPinned !== (view.accountPinned === true))
+        input.accountPinned = m.accountPinned;
     }
     if (m.contextTokens !== s.savedContext) input.contextTokens = m.contextTokens;
     if (Object.keys(input).length === 0) return home();
@@ -647,8 +662,8 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
     (screen === "team" && teamToo) || (screen === "done" && (switched?.others.length ?? 0) > 0)
       ? sceneTeam(team, agent)
       : [agent];
-  // While the account in use is at its limit the agent sleeps under the night; another account brings the day.
-  const asleep = s.limitedNow && screen !== "done";
+  // While it waits on its limit the agent sleeps under the night; another account brings the day.
+  const asleep = s.waitsAtLimit && screen !== "done";
   const day = useDawn(!asleep);
   const markOf: AiChoice | undefined =
     screen === "switch" || screen === "all"
@@ -695,6 +710,12 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
           <div className="bd-use">
             <p className="arrival-opts__label">{t("agentPage.work.brain.account")}</p>
             {s.currentRow && <HaveRow item={s.currentRow} checked still />}
+            {s.moves && (
+              <p className="bd-moves ac-iconline">
+                <Icon name="layers" size={16} />
+                <span>{t("agentPage.work.brain.movesOn")}</span>
+              </p>
+            )}
             {s.usage ? (
               <PlanWindows usage={s.usage} provider={s.currentAccount?.provider ?? null} />
             ) : (
@@ -972,6 +993,11 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
               />
             </div>
           )}
+          {m.accountPinned !== undefined && (
+            <div className="bd-row">
+              <PinAccount on={m.accountPinned} onChange={(on) => setMore({ ...m, accountPinned: on })} />
+            </div>
+          )}
           {s.runsOn.length > 1 && can("machine") && (
             <BrainLine
               label={t("agentPage.work.brain.v2.computer")}
@@ -1190,6 +1216,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
         speed: m.speed,
         contextTokens: m.contextTokens,
         onlyOwner: m.onlyOwner,
+        ...(m.accountPinned !== undefined ? { accountPinned: m.accountPinned } : {}),
       };
       return footer({
         second: (

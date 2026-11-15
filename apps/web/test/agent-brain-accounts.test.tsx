@@ -274,7 +274,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     expect(brainCalls(state)).toEqual([]);
   });
 
-  test("plan usage: at the limit it opens on its owner's free accounts with room, never another agent's", async () => {
+  test("plan usage, pinned to this account: at the limit it opens on its owner's free accounts with room, never another agent's", async () => {
     const now = new Date().toISOString();
     const full: PlanUsage = {
       windows: [{ kind: "five_hour", usedPercent: 100, resetsAt: new Date(Date.now() + 2 * 3_600_000).toISOString() }],
@@ -292,6 +292,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     const { state } = await onMac({
       account: "acct_work",
       accounts: [{ ...work, usedBy: ["Ada"], usage: full }, roomy, busy],
+      accountPinned: true,
     });
     // The work cell says it, where the account is.
     expect(sentence().textContent).toContain("Trabalho · No limite até");
@@ -312,6 +313,52 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     expect(brainScreen(d)).toBe("Pronto");
   });
 
+  test("at the limit with another account of its order that has room, it goes on there: no limit screen, no sleep", async () => {
+    const full: PlanUsage = {
+      windows: [{ kind: "five_hour", usedPercent: 100, resetsAt: new Date(Date.now() + 2 * 3_600_000).toISOString() }],
+      source: "turn",
+      at: new Date().toISOString(),
+    };
+    const next: MachineAccount = { ...work, id: "acct_next", label: "Pessoal", shared: true, usage: null };
+    await onMac({ account: "acct_work", accounts: [{ ...work, shared: true, usage: full }, next] });
+    const d = await brainDialog();
+    expect(brainScreen(d)).toBe("Quem pensa pela Ada");
+    expect(d.querySelector(".bd-moves")?.textContent).toBe("Segue na próxima conta no limite");
+    // Every account of the order at its limit: the agent waits, and the dialog opens on the way out.
+    cleanup();
+    await onMac({
+      account: "acct_work",
+      accounts: [
+        { ...work, shared: true, usage: full },
+        { ...next, usage: full },
+      ],
+    });
+    expect(brainScreen(await brainDialog(/no limite$/))).toBe("A conta da Ada está no limite");
+  });
+
+  test("Só esta conta, under Mais opções with a second account: its ⓘ, saved with Concluir, named on the row", async () => {
+    const next: MachineAccount = { ...work, id: "acct_next", label: "Pessoal", shared: true };
+    const { state } = await onMac({ account: "acct_work", accounts: [{ ...work, shared: true }, next] });
+    const d = await brainDialog();
+    await toScreen(d, "Mais opções");
+    const pin = within(d).getByRole("switch", { name: "Só esta conta" });
+    expect(pin.getAttribute("aria-checked")).toBe("false");
+    expect(hintOf("Só esta conta", d).text).toBe("No limite, espera esta conta renovar em vez de seguir na próxima.");
+    await click(pin);
+    await done(d);
+    await settle(6);
+    expect(brainCalls(state).at(-1)).toEqual({ brain: "claude_code", accountPinned: true });
+    // One account alone never moves: no switch.
+    cleanup();
+    const d2 = await (async () => {
+      await onMac({ account: "acct_work", accounts: [work] });
+      return brainDialog();
+    })();
+    expect(d2.querySelector(".bd-moves")).toBeNull();
+    await toScreen(d2, "Mais opções");
+    expect(within(d2).queryByRole("switch", { name: "Só esta conta" })).toBeNull();
+  });
+
   test("plan usage to someone who isn't the agent's owner: the limit, no offer", async () => {
     const full: PlanUsage = {
       windows: [{ kind: "seven_day", usedPercent: 100 }],
@@ -324,6 +371,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
       accounts: [{ ...work, usedBy: ["Ada"], usage: full }, spare],
       canUsePlans: false,
       canManageAccounts: false,
+      accountPinned: true,
     });
     const d = await brainDialog(/no limite$/);
     expect(d.textContent).toContain("Trabalho · Team volta");
