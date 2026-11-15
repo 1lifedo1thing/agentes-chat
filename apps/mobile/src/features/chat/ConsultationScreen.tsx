@@ -104,16 +104,18 @@ function Consultation({
   const said = list.some((m) => m.author.id === q?.consultedAgentId && m.channelId !== channelId);
   // A form sheet sizes its first scroll view to the whole sheet, over whatever stands before or after it: the
   // title rides pinned inside the list and the foot lies over its end, each on the sheet's own color, with the
-  // foot's height kept free under the last row.
+  // foot's height kept free under the last row. The list is the sheet's own first child, with no view around it:
+  // inside a painted one the sheet also moves the list to the screen's own frame, not only sizes it, and the list
+  // can land off the sheet, which then shows empty.
   const [footHeight, setFootHeight] = useState(0);
   const talk = () => {
     if (asker) requestComposerText(channelId, `@${asker.handle} `);
     goBack(chatHref(channelId));
   };
   return (
-    <View style={[styles.screen, { backgroundColor: c.bg }]}>
+    <>
       <ScrollView
-        style={styles.screen}
+        style={[styles.screen, { backgroundColor: c.bg }]}
         stickyHeaderIndices={[0]}
         contentContainerStyle={[styles.list, { paddingBottom: footHeight + 12 }]}
         scrollIndicatorInsets={{ bottom: footHeight }}
@@ -246,7 +248,7 @@ function Consultation({
           />
         ) : null}
       </View>
-    </View>
+    </>
   );
 }
 
