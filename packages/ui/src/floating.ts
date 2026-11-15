@@ -33,7 +33,8 @@ export function placeTip(
 /**
  * How far a popover moves over its trigger to show whole: a card taller than the room on its side (its height clamped to
  * that room, and still overflowing) gains what it lacks over `base`, the room it had before moving, up to the whole
- * window between the edges. 0 for one that fits, or that its own cap clamps (a menu's 280px scrolls where it is).
+ * window between the edges. 0 for one that fits, or that its own cap clamps (a search list's fixed height scrolls where it
+ * is).
  * Measured from `base`, not from the room now: one that already moved but isn't placed again yet asks the same, not more.
  */
 export function pullToFit(box: {

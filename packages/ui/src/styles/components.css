@@ -2423,7 +2423,7 @@ html:not([data-pointer]) .ac-select__trigger:focus-visible,
 }
 .ac-menu--select {
   min-width: var(--radix-select-trigger-width);
-  max-height: min(280px, var(--radix-select-content-available-height));
+  max-height: var(--radix-select-content-available-height);
 }
 /*
  * A select's rows scroll in its viewport: the room at the ends goes inside it, so the last row keeps it once
@@ -2449,8 +2449,7 @@ html:not([data-pointer]) .ac-select__trigger:focus-visible,
 }
 .ac-menu--dropdown {
   min-width: 200px;
-  /* A dropdown shows all its actions; it scrolls only when the screen is short. */
-  max-height: min(520px, var(--radix-dropdown-menu-content-available-height, 520px));
+  max-height: var(--radix-dropdown-menu-content-available-height);
 }
 /* The right click (MenuAt): at the pointer at once, like the system's menus. */
 .ac-menu.ac-menu--at[data-state="open"] {
@@ -4193,10 +4192,17 @@ html:not([data-pointer]) .ac-receipt__action:focus-visible {
 /* A popover with words and controls of its own (`--menu-pad: var(--space-2)`): what touches its corners (a card, a
    field, the actions' row) sits on that room, so the menu's concentric corner holds; its words this much further in,
    14px from the edge. */
+/*
+ * A Radix layer (popover, dropdown, select list) is as tall as the window lets it on its side, never a fixed cap: it
+ * scrolls only when its content can't fit the window at all. No fallback in the var(): before Radix first places it
+ * the cap is none, so its flip measures the whole content and opens on the side with room (with a cap there, the cut
+ * card "fits" the short side and scrolls there).
+ */
 .ac-popover {
   --popover-in: 6px;
   min-width: 220px;
   max-width: 320px;
+  max-height: var(--radix-popover-content-available-height);
   gap: var(--space-1);
 }
 .ac-popover:focus {
@@ -4594,7 +4600,7 @@ html:not([data-pointer]) .ac-receipt__check:focus-visible {
   --menu-pad: var(--space-2);
   min-width: 0;
   width: 280px;
-  max-height: none;
+  max-height: var(--radix-popover-content-available-height);
   gap: var(--menu-pad);
 }
 .ac-date__head {
