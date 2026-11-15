@@ -201,6 +201,9 @@
   border-radius: 0;
   box-shadow: none;
 }
+.cmp-dialog.is-screen-only .dsk-screen::after {
+  content: none;
+}
 .cmp-dialog.is-screen-only > .ac-dialog__head,
 .cmp-dialog.is-screen-only .cmp-banner,
 .cmp-dialog.is-screen-only .cmp-asked,
@@ -398,6 +401,7 @@
   max-height: none;
   aspect-ratio: 1280 / 900;
   margin: 0;
+  border-radius: 10px;
 }
 /*
  * Under a cover the box is its stage, the line's room too where it has none: the cover's frost or sky never shows the
@@ -452,6 +456,7 @@
   width: min(100cqw, 100cqh * 16 / 10);
   max-height: none;
   margin: 0;
+  border-radius: 10px;
 }
 .cmp-body:has(> .brw-ac.is-control) > .cmp-steps-row {
   display: none;
