@@ -201,13 +201,23 @@ function eyeMask(e, s) {
       return (X, Y) => inRound(X, Y, ex, ey, w, h, Math.min(w, h) / 2);
   }
 }
-/** The agent: its body (the engine's shape, dithered in `tones` or one `solid` color) and its white eyes. */
-function agent({ x, y, s, n, tones, solid, style = "round", pose = {} }) {
+/** A layer turned `deg` clockwise around `about`, a point of the scene. */
+function turned(layer, { deg, about: [ax, ay] }) {
+  const cos = Math.cos((deg * Math.PI) / 180);
+  const sin = Math.sin((deg * Math.PI) / 180);
+  const back = (f) => (X, Y) => f(ax + (X - ax) * cos + (Y - ay) * sin, ay - (X - ax) * sin + (Y - ay) * cos);
+  return { ...layer, mask: back(layer.mask), color: back(layer.color) };
+}
+/**
+ * The agent: its body (the engine's shape, dithered in `tones` or one `solid` color) and its white eyes, both leaning
+ * with `turn`.
+ */
+function agent({ x, y, s, n, tones, solid, style = "round", pose = {}, turn }) {
   const c = s / n;
   const eyes = eyeShapes(style, pose).map((e) =>
     eyeMask({ ...e, x: x + e.x * s, y: y + e.y * s, w: e.w * s, h: e.h * s }, s),
   );
-  return [
+  const layers = [
     {
       part: "agent",
       mask: (X, Y) => inBody((X - x) / s, (Y - y) / s),
@@ -219,6 +229,7 @@ function agent({ x, y, s, n, tones, solid, style = "round", pose = {} }) {
       color: () => WHITE,
     },
   ];
+  return turn ? layers.map((l) => turned(l, turn)) : layers;
 }
 
 function nightAt(halo) {
@@ -236,8 +247,11 @@ const dayAt = (i, j, cols) => pick(DAY, Math.floor(((j + 0.5) / cols) * 2.7 + by
 const AG = { x: 224, y: 192, s: 576, n: 18 };
 /** Smaller and to the left, so the moon fits: cells 6..22 × 8..24. */
 const AG_MOON = { x: 192, y: 256, s: 544, n: 17 };
-/** Big, coming up from the bottom edge and looking up: cells 2..29 × 9.. */
-const PEEK = { x: 64, y: 288, s: 896, n: 28, pose: { look: [-0.035, -0.045] } };
+/**
+ * Big, leaning in from the bottom right corner and looking up: 30 cells a side, turned around the middle of its eyes,
+ * so its cells lean with it and no longer sit on the sky's.
+ */
+const PEEK = { x: 170, y: 202, s: 960, n: 30, pose: { look: [-0.035, -0.045] }, turn: { deg: -18, about: [650, 600] } };
 const LOOK_UP_RIGHT = { look: [0.035, -0.05] };
 
 const STARS = [
@@ -259,12 +273,14 @@ const STARS_MOON = [
   [4, 27, "#8cc3ff"],
   [26, 12, "#4693e8"],
 ];
-const STARS_TOP = [
+/** The stars around the leaning agent: over it and down its left side. */
+const STARS_PEEK = [
   [4, 3, "#c6e1ff"],
-  [27, 4, "#8cc3ff"],
+  [24, 1, "#8cc3ff"],
   [16, 2, "#4693e8"],
   [9, 6, "#4693e8"],
-  [23, 7, "#c6e1ff"],
+  [2, 15, "#c6e1ff"],
+  [4, 25, "#8cc3ff"],
 ];
 const CLOUD_A = ["..XX...", ".XXXXX.", "XXXXXXX"];
 const CLOUD_B = [".XXX.", "XXXXX"];
@@ -391,8 +407,8 @@ export const SCENES = {
   },
   /** Espiando à noite: the agent big, coming up from the bottom edge and looking up, under the night's stars. */
   peekNight: {
-    light: () => [grid(32, nightAt(false)), cells(32, STARS_TOP), ...agent({ ...PEEK, tones: SKY_T })],
-    dark: () => [fill(BLACK_NIGHT), cells(32, STARS_TOP), ...agent({ ...PEEK, tones: SKY_T })],
+    light: () => [grid(32, nightAt(false)), cells(32, STARS_PEEK), ...agent({ ...PEEK, tones: SKY_T })],
+    dark: () => [fill(BLACK_NIGHT), cells(32, STARS_PEEK), ...agent({ ...PEEK, tones: SKY_T })],
     favicon: (N) =>
       N === 32
         ? [
@@ -411,10 +427,10 @@ export const SCENES = {
     light: () => [
       grid(32, dayAt),
       shape(32, CLOUD_A, 3, 2, WHITE),
-      shape(32, CLOUD_B, 22, 4, WHITE),
+      shape(32, CLOUD_B, 17, 1, WHITE),
       ...agent({ ...PEEK, tones: NAVY_T }),
     ],
-    dark: () => [grid(32, nightAt(false)), cells(32, STARS_TOP), ...agent({ ...PEEK, tones: SKY_T })],
+    dark: () => [grid(32, nightAt(false)), cells(32, STARS_PEEK), ...agent({ ...PEEK, tones: SKY_T })],
     favicon: (N) =>
       N === 32
         ? [

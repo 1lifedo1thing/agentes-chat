@@ -7492,6 +7492,17 @@ html:not([data-pointer]) .run-continue:focus-visible {
   flex-direction: column;
   padding: 0;
 }
+/* A tablet's rail opened by its toggle: the whole sidebar over the page, which keeps the rail's room and its layout. */
+.sidebar[data-float="true"] {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  z-index: var(--z-floating);
+  box-shadow: var(--e3);
+}
+.shell:has(> .sidebar[data-float="true"]) {
+  padding-left: 68px;
+}
 .sidebar[data-rail="true"] .sidebar__org-text,
 .sidebar[data-rail="true"] .sidebar__org-button > .ac-icon,
 .sidebar[data-rail="true"] .sidebar__jump .ac-kbd,
