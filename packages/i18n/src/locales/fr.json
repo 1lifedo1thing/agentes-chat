@@ -15389,7 +15389,8 @@
     },
     "agentGroup": {
       "notFound": "Ce service n'existe plus.",
-      "tooMany": "Cet espace de travail a déjà {{max}} services. Supprimez-en un d'abord."
+      "tooMany": "Cet espace de travail a déjà {{max}} services. Supprimez-en un d'abord.",
+      "ambiguous": "Deux services s'appellent {{name}}. Renommez-en un, puis réessayez."
     },
     "rightHand": {
       "permanent": "Le bras droit fait partie de l'espace de travail et reste hors des canaux. Une @mention le joint dans n'importe lequel.",

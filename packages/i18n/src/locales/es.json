@@ -15318,7 +15318,8 @@
     },
     "agentGroup": {
       "notFound": "Este departamento ya no existe.",
-      "tooMany": "Este espacio de trabajo ya tiene {{max}} departamentos. Elimina uno primero."
+      "tooMany": "Este espacio de trabajo ya tiene {{max}} departamentos. Elimina uno primero.",
+      "ambiguous": "Dos departamentos se llaman {{name}}. Cambia el nombre de uno y vuelve a intentarlo."
     },
     "rightHand": {
       "permanent": "La mano derecha forma parte del espacio de trabajo y queda fuera de los canales. Una @mención la llama en cualquiera de ellos.",

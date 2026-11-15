@@ -15081,6 +15081,8 @@ export const ptBR = {
     agentGroup: {
       notFound: "Este setor não existe mais.",
       tooMany: "Este workspace já tem {{max}} setores. Exclua um antes.",
+      /** `agent_group.ambiguous`: a card names a department two of them are called; renaming one decides. */
+      ambiguous: "Dois setores se chamam {{name}}. Renomeie um deles e tente de novo.",
     },
     /** `agent.right_hand_permanent`: archiving, deleting or adding the right hand to a channel (ADR 0137). */
     rightHand: {

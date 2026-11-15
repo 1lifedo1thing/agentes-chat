@@ -248,6 +248,31 @@ describe("a change of department", () => {
     expect(out.content).toContain("applied at once");
     expect((await getAgent(f.db, f.org.id, f.agent.id))?.groupId).toBeNull();
   });
+
+  test("a name two departments share is refused, on the card and when it is accepted, never moved to one of them", async () => {
+    f = await setup({ rightHand: true });
+    const deps = { db: f.db, pubsub: f.pubsub };
+    await createAgentGroup(deps, f.owner.id, f.org.id, { name: "Vendas", agentIds: [f.agent.id] });
+    const suporte = (await createAgentGroup(deps, f.owner.id, f.org.id, { name: "Suporte" })).find(
+      (g) => g.name === "Suporte",
+    );
+    const bia = await addMember(f.db, f.org.id, "member", "Bia Rocha");
+    const ctx = await lodiRun(f, bia.id, "coloca o dev no Suporte");
+    await call(f, ctx, { changes: [{ agent: "@dev", group: "Suporte" }], reason: "pediu" });
+    const [row] = (await cardRows(f, bia.id)).rows;
+    expect(row?.settings).toEqual([{ field: "group", from: "Vendas", to: "Suporte" }]);
+    // A second "Suporte" made while the card waits: accepting it can't tell which one was meant.
+    await createAgentGroup(deps, f.owner.id, f.org.id, { name: "Suporte" });
+    await expect(decideProposal(f.db, f.owner.id, f.org.id, row?.id ?? "", "accept", deps)).rejects.toMatchObject({
+      code: "agent_group.ambiguous",
+    });
+    expect((await getAgent(f.db, f.org.id, f.agent.id))?.groupId).not.toBe(suporte?.id);
+
+    const owner = await lodiRun(f, f.owner.id, "coloca o dev no Suporte", true);
+    const refused = await call(f, owner, { changes: [{ agent: "@dev", group: "Suporte" }], reason: "pediu" });
+    expect(refused).toMatchObject({ isError: true });
+    expect(refused.content).toContain('two departments are called "Suporte"');
+  });
 });
 
 describe("the settings card", () => {

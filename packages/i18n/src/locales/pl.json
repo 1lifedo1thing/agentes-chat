@@ -15898,7 +15898,8 @@
     },
     "agentGroup": {
       "notFound": "Ten dział już nie istnieje.",
-      "tooMany": "Ta przestrzeń robocza ma już {{max}} działów. Najpierw usuń jeden."
+      "tooMany": "Ta przestrzeń robocza ma już {{max}} działów. Najpierw usuń jeden.",
+      "ambiguous": "Dwa działy nazywają się {{name}}. Zmień nazwę jednego z nich i spróbuj ponownie."
     },
     "rightHand": {
       "permanent": "Prawa ręka jest częścią przestrzeni roboczej i nie dołącza do kanałów. @wzmianka przywoła ją w każdym z nich.",

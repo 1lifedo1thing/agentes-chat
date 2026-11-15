@@ -36581,6 +36581,9 @@
   "errors.agentGroup.tooMany": {
     "value": "This workspace already has {{max}} departments. Delete one first."
   },
+  "errors.agentGroup.ambiguous": {
+    "value": "Two departments are called {{name}}. Rename one of them, then try again."
+  },
   "errors.rightHand.permanent": {
     "value": "The right hand is part of the workspace and stays out of channels. An @mention reaches it in any of them."
   },

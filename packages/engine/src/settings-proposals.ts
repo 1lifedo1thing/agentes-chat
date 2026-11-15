@@ -10,7 +10,7 @@ import { isComputerBrain } from "./brains/types";
 import { invalidateOrg } from "./cache";
 import { addChannelMember, removeChannelMember, setChannelAgentAutoReply } from "./channels";
 import { sha256 } from "./crypto";
-import { ForbiddenError, NotFoundError } from "./errors";
+import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { publishAgentsChanged } from "./events";
 import { setAgentComputerTarget } from "./machines";
 import { can, getMembership, requirePermission } from "./organizations";
@@ -156,6 +156,15 @@ async function departmentOf(db: Executor, agent: Agent) {
   return row?.name ?? null;
 }
 
+/** Department names aren't unique: a name two of them share is refused, never resolved to one of them. */
+function departmentsNamed(db: Executor, orgId: string, name: string) {
+  return db
+    .select({ id: agentGroups.id })
+    .from(agentGroups)
+    .where(and(eq(agentGroups.orgId, orgId), eq(agentGroups.name, name)))
+    .limit(2);
+}
+
 async function skillOn(db: Executor, agent: Agent, skillId: string) {
   if (!skillId) return null;
   const [row] = await db
@@ -227,13 +236,11 @@ async function setValue(
     // A department: the editor resolves the name the card holds, and checks who may move an agent (ADR 0083).
     case "group": {
       const name = typeof value === "string" && value.trim() ? value.trim() : null;
-      const [group] = name
-        ? await db
-            .select({ id: agentGroups.id })
-            .from(agentGroups)
-            .where(and(eq(agentGroups.orgId, orgId), eq(agentGroups.name, name)))
-        : [];
-      if (name && !group) throw new NotFoundError("That department is gone", "agent_group.not_found");
+      const named = name ? await departmentsNamed(db, orgId, name) : [];
+      if (name && named.length === 0) throw new NotFoundError("That department is gone", "agent_group.not_found");
+      if (named.length > 1)
+        throw new ValidationError(`Two departments are called ${name}`, "agent_group.ambiguous", { name: name ?? "" });
+      const [group] = named;
       return void (await moveAgentToGroup(deps, actorId, orgId, agentId, { groupId: group?.id ?? null }));
     }
     case "model": {
@@ -474,11 +481,9 @@ async function refusal(db: Database, orgId: string, requesterId: string, agent: 
       if (w.to === null) return null;
       if (typeof w.to !== "string" || !w.to.trim()) return "say which department, or none.";
       const name = w.to.trim();
-      const [group] = await db
-        .select({ id: agentGroups.id })
-        .from(agentGroups)
-        .where(and(eq(agentGroups.orgId, orgId), eq(agentGroups.name, name)));
-      return group ? null : `there is no department called "${name}" here.`;
+      const named = await departmentsNamed(db, orgId, name);
+      if (named.length > 1) return `two departments are called "${name}": ask the person to rename one of them first.`;
+      return named.length ? null : `there is no department called "${name}" here.`;
     }
     default: {
       const [channel] = await db

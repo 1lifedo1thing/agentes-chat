@@ -14824,7 +14824,8 @@
     },
     "agentGroup": {
       "notFound": "Bu departman artık yok.",
-      "tooMany": "Bu çalışma alanında zaten {{max}} departman var. Önce birini silin."
+      "tooMany": "Bu çalışma alanında zaten {{max}} departman var. Önce birini silin.",
+      "ambiguous": "İki departmanın adı {{name}}. Birinin adını değiştirip yeniden deneyin."
     },
     "rightHand": {
       "permanent": "Sağ kol çalışma alanının bir parçasıdır ve kanalların dışında kalır. Bir @bahsetme onu herhangi bir kanalda çağırır.",

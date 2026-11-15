@@ -15091,6 +15091,8 @@ export const en = {
     agentGroup: {
       notFound: "This department no longer exists.",
       tooMany: "This workspace already has {{max}} departments. Delete one first.",
+      /** `agent_group.ambiguous`: a card names a department two of them are called; renaming one decides. */
+      ambiguous: "Two departments are called {{name}}. Rename one of them, then try again.",
     },
     /** `agent.right_hand_permanent`: archiving, deleting or adding the right hand to a channel (ADR 0137). */
     rightHand: {

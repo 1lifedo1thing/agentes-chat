@@ -14951,7 +14951,8 @@
     },
     "agentGroup": {
       "notFound": "Deze afdeling bestaat niet meer.",
-      "tooMany": "Deze werkruimte heeft al {{max}} afdelingen. Verwijder er eerst een."
+      "tooMany": "Deze werkruimte heeft al {{max}} afdelingen. Verwijder er eerst een.",
+      "ambiguous": "Twee afdelingen heten {{name}}. Geef er een een andere naam en probeer het opnieuw."
     },
     "rightHand": {
       "permanent": "De rechterhand hoort bij de werkruimte en blijft buiten de kanalen. Een @vermelding bereikt hem in elk kanaal.",

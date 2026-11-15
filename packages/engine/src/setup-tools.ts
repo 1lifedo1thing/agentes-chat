@@ -1624,13 +1624,15 @@ async function wantedLines(ctx: ToolContext, change: SettingsChangeInput): Promi
     const wanted = change.group.trim();
     // "none" takes the agent out of every sector; any other name is stored as the workspace writes it, so the card,
     // its apply and Undo all find the same sector however the model typed its case.
-    const [group] =
+    // Two names that differ only in case: the one typed exactly, else the name as typed (the card refuses a guess).
+    const found =
       wanted.toLowerCase() === "none"
         ? []
         : await ctx.db
             .select({ name: agentGroups.name })
             .from(agentGroups)
             .where(and(eq(agentGroups.orgId, ctx.orgId), sql`lower(${agentGroups.name}) = ${wanted.toLowerCase()}`));
+    const group = found.find((g) => g.name === wanted) ?? (found.length === 1 ? found[0] : undefined);
     lines.push({ field: "group", to: group?.name ?? (wanted.toLowerCase() === "none" ? null : wanted) });
   }
   if (typeof change.reports_to === "string") {

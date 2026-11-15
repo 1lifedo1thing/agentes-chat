@@ -14404,7 +14404,8 @@
     },
     "agentGroup": {
       "notFound": "Departemen ini sudah tidak ada.",
-      "tooMany": "Ruang kerja ini sudah punya {{max}} departemen. Hapus satu dulu."
+      "tooMany": "Ruang kerja ini sudah punya {{max}} departemen. Hapus satu dulu.",
+      "ambiguous": "Dua departemen bernama {{name}}. Ganti nama salah satunya, lalu coba lagi."
     },
     "rightHand": {
       "permanent": "Tangan kanan adalah bagian dari ruang kerja dan tetap di luar kanal. Sebuah @sebutan menjangkaunya di kanal mana pun.",
