@@ -234,8 +234,6 @@ const UPDATE_IDLE_MS = 10 * 60_000;
 const KEPT_UPDATE_WAIT_MS = 24 * 3600_000;
 const DOWNLOAD_TIMEOUT_MS = 5 * 60_000;
 const QUICK_TIMEOUT_MS = 15_000;
-/** How long a killed `agent-browser` that exited may wait for its pipes to close before it counts as done. */
-const SPAWN_EXIT_GRACE_MS = 3_000;
 /** One input command on the relay: a click or a key answers in milliseconds. */
 const INPUT_TIMEOUT_MS = 5_000;
 /**
@@ -5169,30 +5167,29 @@ export class BrowserManager {
       let size = 0;
       let timedOut = false;
       let done = false;
+      let exitDrain: ReturnType<typeof setTimeout> | undefined;
+      let killDrain: ReturnType<typeof setTimeout> | undefined;
       const finish = (exitCode: number | null) => {
         if (done) return;
         done = true;
         clearTimeout(timer);
+        if (exitDrain) clearTimeout(exitDrain);
+        if (killDrain) clearTimeout(killDrain);
         opts.signal?.removeEventListener("abort", onAbort);
         resolve({ stdout, stderr, exitCode, timedOut });
       };
-      // `close` waits for the pipes, which a process it started may hold open after it is killed: once killed and
-      // exited, it is done a little later anyway, so a stuck grandchild can't hold the agent's queue for good.
-      let killed = false;
-      let exited: number | null | undefined;
-      const doneAfterKill = () => {
-        if (!killed || exited === undefined) return;
-        const late = setTimeout(() => finish(exited ?? null), SPAWN_EXIT_GRACE_MS);
-        (late as { unref?: () => void }).unref?.();
-      };
       const kill = () => {
-        killed = true;
         try {
           child.kill("SIGKILL");
         } catch {
           // gone
         }
-        doneAfterKill();
+        // On Windows, a background child (such as a daemon started by the CLI) may inherit stdout/stderr handles so
+        // `close` never fires even after killing the direct child; settle shortly after `kill()` as well.
+        if (!killDrain) {
+          killDrain = setTimeout(() => finish(null), 200);
+          killDrain.unref?.();
+        }
       };
       const timer = setTimeout(() => {
         timedOut = true;
@@ -5214,11 +5211,17 @@ export class BrowserManager {
         stderr += err.message;
         finish(null);
       });
-      events.on("close", (code: number | null) => finish(code));
+      // On Windows, when `agent-browser` launches or restarts its background daemon, the daemon inherits stdout/stderr
+      // pipe handles so `"close"` stays blocked for the daemon's lifetime even after the CLI exits. Drain after
+      // `"exit"` so buffered stdio chunks arrive without hanging until timeout; 500 ms leaves a loaded box time to flush a
+      // large snapshot, and the normal path still settles on `"close"`.
       events.on("exit", (code: number | null) => {
-        exited = code;
-        doneAfterKill();
+        if (!exitDrain) {
+          exitDrain = setTimeout(() => finish(code), 500);
+          exitDrain.unref?.();
+        }
       });
+      events.on("close", (code: number | null) => finish(code));
       child.stdin.on("error", () => undefined);
       child.stdin.end(opts.stdin ?? "");
     });
