@@ -45,6 +45,10 @@ test("Mudar quando perguntar: in the approval sheet's Da próxima vez and under 
   expect(sheet).toContain("(approveAlwaysOffered(a) || when.shown)");
   expect(sheet).toMatch(/label=\{t\("approvalsLevel\.change"\)\}[\s\S]*?chevron[\s\S]*?onPress=\{when\.open\}/);
   expect(read("features/activity/ActivityScreen.tsx")).toContain("<WhenAsksLink approval={a} />");
+  // The conversation's cards, one request or several, as the web's.
+  const cards = read("features/chat/cards.tsx");
+  expect(cards).toContain("<WhenAsksLink approval={a} />");
+  expect(cards).toContain("{decider ? <WhenAsksLink approval={decider} /> : null}");
   // The picker's switch starts off on every ask and tells the caller each change.
   const picker = read("features/shared/PickerSheet.tsx");
   expect(picker).toContain("setToggled(false);");
