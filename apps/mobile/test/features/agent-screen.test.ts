@@ -1,4 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
+import { pointerInView, pointerShare } from "@agenteschat/client";
+import { pointerStep, watchView } from "../../src/features/computer/agent-pointer";
 import { CURSOR_CELLS, cursorCells } from "../../src/features/computer/pixel-cursor";
 import {
   BUTTON,
@@ -460,5 +462,81 @@ describe("typing straight onto the screen", () => {
     // The caret went back to "he" and typed "x": the screen's "hello" becomes "hexllo" too.
     const { back, typed } = typedSince("hello", "hexllo");
     expect("hello".slice(0, 5 - back) + typed).toBe("hexllo");
+  });
+});
+
+describe("the agent's own pointer on its screen", () => {
+  const desk = DEFAULT_DESKTOP;
+  const view = (camera: { x: number; y: number }, s: number) => ({ s, ...camera, ...desk });
+  // The picture draws desktop pixel p at (p - camera) × s: the arrow's tip must land on the same spot.
+  const drawn = (p: { x: number; y: number }, camera: { x: number; y: number }, s: number) => ({
+    x: (p.x - camera.x) * s,
+    y: (p.y - camera.y) * s,
+  });
+  // The agent's computer says its points on a screen of its own size (here twice the desktop's pixels).
+  const said = (x: number, y: number) => pointerShare({ x: x * 2, y: y * 2, width: 2560, height: 1800, act: "move" });
+
+  test("watching the whole screen, upright and sideways, each corner is the picture's corner", () => {
+    for (const box of [PHONE, { width: 932, height: 430 }]) {
+      const s = fitScale(box, desk);
+      const camera = boundCamera(0, 0, s, box, desk);
+      for (const p of [
+        { x: 0, y: 0 },
+        { x: 1280, y: 0 },
+        { x: 0, y: 900 },
+        { x: 1280, y: 900 },
+        { x: 640, y: 450 },
+      ]) {
+        const at = pointerInView(said(p.x, p.y), view(camera, s));
+        const want = drawn(p, camera, s);
+        expect(at.x).toBeCloseTo(want.x, 6);
+        expect(at.y).toBeCloseTo(want.y, 6);
+      }
+    }
+  });
+
+  test("after a pinch the arrow stays on the point under the fingers, and its size never changes", () => {
+    const before = boundCamera(0, 0, fitScale(PHONE, desk), PHONE, desk);
+    const focal = { x: 120, y: 90 };
+    const pixel = toDesktop(focal, before, fitScale(PHONE, desk), desk);
+    const after = zoomCamera(before, fitScale(PHONE, desk), 2, focal, PHONE, desk);
+    const at = pointerInView(said(pixel.x, pixel.y), view(after, 2));
+    expect(at.x).toBeCloseTo(focal.x, 6);
+    expect(at.y).toBeCloseTo(focal.y, 6);
+  });
+
+  test("panned to the desktop's far corner, its far corner is the box's; a point out of view lands outside the box", () => {
+    const s = 2;
+    const camera = boundCamera(9999, 9999, s, PHONE, desk);
+    const corner = pointerInView(said(1280, 900), view(camera, s));
+    expect(corner.x).toBeCloseTo(PHONE.width, 6);
+    expect(corner.y).toBeCloseTo(PHONE.height, 6);
+    const gone = pointerInView(said(0, 0), view(camera, s));
+    expect(gone.x).toBeLessThan(0);
+    expect(gone.y).toBeLessThan(0);
+  });
+
+  test("the card's view of the screen is pinned at its top left, scaled to fit", () => {
+    const box = { width: 336, height: 336 * (900 / 1280) };
+    const w = watchView(box, desk);
+    expect(w).toEqual({ s: fitScale(box, desk), x: 0, y: 0, ...desk });
+    const at = pointerInView(said(1280, 900), w);
+    expect(at.x).toBeCloseTo(box.width, 6);
+    expect(at.y).toBeCloseTo(box.height, 6);
+  });
+
+  test("a click rings once, a double click twice, typing leaves only the face; past 0.74 of the width the name turns", () => {
+    const p = { x: 640, y: 450, width: 1280, height: 900, n: 1 };
+    expect(pointerStep({ ...p, act: "click" })).toEqual({
+      to: { x: 0.5, y: 0.5 },
+      presses: 1,
+      quiet: false,
+      flip: false,
+    });
+    expect(pointerStep({ ...p, act: "double" }).presses).toBe(2);
+    expect(pointerStep({ ...p, act: "move" }).presses).toBe(0);
+    expect(pointerStep({ ...p, act: "type" })).toMatchObject({ presses: 0, quiet: true });
+    expect(pointerStep({ ...p, x: 1000, act: "move" }).flip).toBe(true);
+    expect(pointerStep({ ...p, x: 900, act: "move" }).flip).toBe(false);
   });
 });

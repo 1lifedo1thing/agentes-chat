@@ -1,12 +1,15 @@
 import { type DesktopViewState, keys } from "@agenteschat/client";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { useQueryClient } from "@tanstack/react-query";
-import { type Ref, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type LayoutChangeEvent, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
+import { useDerivedValue } from "react-native-reanimated";
 import { useServer } from "@/lib/server";
 import { useDirectory, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
+import { AgentPointer, useDesktopPointer } from "./AgentPointer";
+import { watchView } from "./agent-pointer";
 import { Cover } from "./Cover";
 import { reportStuck, ScreenPage, type ScreenPageHandle } from "./ScreenPage";
 import { DEFAULT_DESKTOP, fitScale, type Size } from "./screen-view";
@@ -57,6 +60,9 @@ export function ScreenWatch({
   const [desk, setDesk] = useState<Size>(DEFAULT_DESKTOP);
   const said = useRef(onState);
   said.current = onState;
+  const pointer = useDesktopPointer(agentId, page === "live" && !parked);
+  const shownAt = useMemo(() => watchView(box, desk), [box, desk]);
+  const pointerView = useDerivedValue(() => shownAt, [shownAt]);
 
   useEffect(() => {
     if (ready) web.current?.call("set", { connect, mode: "watch" });
@@ -131,6 +137,7 @@ export function ScreenWatch({
           onGone={restart}
         />
       </View>
+      <AgentPointer agentId={agentId} name={agent?.name ?? ""} color={color} pointer={pointer} view={pointerView} />
       {page === "live" ? null : <Cover fill sky spinner color={color} text={t("agentComputer.state.opening", g)} />}
     </View>
   );

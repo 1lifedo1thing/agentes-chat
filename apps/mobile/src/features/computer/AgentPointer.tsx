@@ -1,0 +1,244 @@
+import {
+  AGENT_ARROW,
+  type CountedPointer,
+  CURSOR_IDLE_MS,
+  type CursorSpot,
+  desktopPointerOf,
+  glideMs,
+  glidePoint,
+  glideStart,
+  nextPointer,
+  type PointerView,
+  pointerInView,
+} from "@agenteschat/client";
+import { gradientOf } from "@agenteschat/ui/agent/engine";
+import { useEffect, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import Animated, {
+  Easing,
+  type SharedValue,
+  useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import Svg, { G, Rect } from "react-native-svg";
+import { Text, useReducedMotion } from "@/ui";
+import { AgentFace } from "../shared/Face";
+import { useConnection } from "../shared/hooks";
+import { pointerStep } from "./agent-pointer";
+
+/** A site is a light page in both themes, so the arrow's edge and the name's tag are light on it too. */
+const PAPER = "#ffffff";
+const INK = "#111111";
+const SHADOW = "#0a1428";
+/** Points per arrow pixel, and the hard shadow's offset in pixels (the web's 1.5 px). */
+const CELL = 2;
+const DROP = 0.75;
+const ARROW_CELLS = AGENT_ARROW.flatMap((row, y) =>
+  [...row].flatMap((c, x) => (c === "." ? [] : [{ x, y, edge: c === "X" }])),
+);
+const RING = 30;
+const RING_MS = 500;
+const FADE_MS = 600;
+
+/**
+ * Where the agent's pointer last went on its desktop (ADR 0062), while this view shows that screen (`enabled`): the
+ * server sends it to whoever has the screen open. `n` counts its gestures.
+ */
+export function useDesktopPointer(agentId: string, enabled: boolean): CountedPointer | null {
+  const connection = useConnection();
+  const [pointer, setPointer] = useState<CountedPointer | null>(null);
+  useEffect(() => {
+    setPointer(null);
+    if (!connection || !enabled) return;
+    return connection.onUserEvent((event) => {
+      const to = desktopPointerOf(event, agentId);
+      if (to) setPointer((was) => nextPointer(was, to));
+    });
+  }, [connection, agentId, enabled]);
+  return pointer;
+}
+
+/** A ring around the point a click landed on, `k` of the way out: it grows and fades, gone at 1. */
+function ringLook(k: number, at: CursorSpot) {
+  "worklet";
+  return {
+    opacity: k >= 1 ? 0 : 1 - k,
+    transform: [{ translateX: at.x }, { translateY: at.y }, { scale: 0.35 + k }],
+  };
+}
+
+/**
+ * The agent's cursor over the picture of its page or its desktop (ADR 0040 §7.2), as the web's `AgentCursor`: the
+ * pixel arrow in the agent's deep color with its face and name, gliding on an arc to each point its computer says as
+ * the gesture starts, a ring on a click (two on a double), only the face while it types, fading after a quiet while.
+ * `view` is how the box shows the picture (a desktop's camera, which a pinch or a pan moves, or a letterboxed page),
+ * so the arrow follows the picture at its own fixed size. Null `pointer` draws nothing. Decoration: never touched,
+ * skipped by screen readers, the steps under the picture already say what the agent does.
+ */
+export function AgentPointer({
+  agentId,
+  name,
+  color,
+  pointer,
+  view,
+}: {
+  agentId: string;
+  name: string;
+  color: string | undefined;
+  pointer: CountedPointer | null;
+  view: Readonly<SharedValue<PointerView>>;
+}) {
+  const reduced = useReducedMotion();
+  const from = useSharedValue<CursorSpot>({ x: 0, y: 0 });
+  const to = useSharedValue<CursorSpot>({ x: 0, y: 0 });
+  const t = useSharedValue(1);
+  const ratio = useSharedValue(1);
+  const seen = useSharedValue(1);
+  const squash = useSharedValue(1);
+  // Each ring's way out, 0 to 1 (at rest: gone).
+  const ringA = useSharedValue(1);
+  const ringB = useSharedValue(1);
+  const placed = useRef(false);
+  const [look, setLook] = useState({ quiet: false, flip: false });
+  const [tagWidth, setTagWidth] = useState(0);
+
+  const share = useDerivedValue(() => glidePoint(from.value, to.value, t.value, ratio.value));
+  const cursor = useAnimatedStyle(() => {
+    const at = pointerInView(share.value, view.value);
+    return { opacity: seen.value, transform: [{ translateX: at.x }, { translateY: at.y }] };
+  });
+  const arrow = useAnimatedStyle(() => ({ transform: [{ scale: squash.value }] }));
+  const ring0 = useAnimatedStyle(() => ringLook(ringA.value, pointerInView(to.value, view.value)));
+  const ring1 = useAnimatedStyle(() => ringLook(ringB.value, pointerInView(to.value, view.value)));
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one run per gesture (`n`), reading the newest point.
+  useEffect(() => {
+    if (!pointer) return;
+    const step = pointerStep(pointer);
+    const start = glideStart(placed.current ? glidePoint(from.value, to.value, t.value, ratio.value) : null, step.to);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const shape = pointer.height / pointer.width;
+    ratio.value = shape;
+    setLook({ quiet: false, flip: step.flip });
+    seen.value = placed.current && !reduced ? withTiming(1, { duration: FADE_MS }) : 1;
+    placed.current = true;
+    const arrived = () => {
+      if (step.presses > 0 && !reduced) {
+        squash.value = withSequence(withTiming(0.84, { duration: 90 }), withDelay(50, withTiming(1, { duration: 90 })));
+        const ring = (k: SharedValue<number>, delay: number) => {
+          k.value = withDelay(
+            delay,
+            withSequence(
+              withTiming(0, { duration: 0 }),
+              withTiming(1, { duration: RING_MS, easing: Easing.steps(5, false) }),
+            ),
+          );
+        };
+        ring(ringA, 0);
+        if (step.presses === 2) ring(ringB, 150);
+      }
+      if (step.quiet) setLook((l) => ({ ...l, quiet: true }));
+      timers.push(
+        setTimeout(() => {
+          seen.value = reduced ? 0 : withTiming(0, { duration: FADE_MS });
+        }, CURSOR_IDLE_MS),
+      );
+    };
+    if (reduced) {
+      from.value = step.to;
+      to.value = step.to;
+      t.value = 1;
+      arrived();
+    } else {
+      from.value = start;
+      t.value = 0;
+      to.value = step.to;
+      const ms = glideMs(Math.hypot(step.to.x - start.x, (step.to.y - start.y) * shape));
+      t.value = withTiming(1, { duration: ms, easing: Easing.linear });
+      timers.push(setTimeout(arrived, ms));
+    }
+    return () => {
+      for (const id of timers) clearTimeout(id);
+    };
+  }, [pointer?.n, reduced]);
+
+  if (!pointer) return null;
+  const [, deep] = gradientOf(color);
+  return (
+    <View
+      pointerEvents="none"
+      style={styles.layer}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <Animated.View style={[styles.ring, { borderColor: deep }, ring0]} />
+      <Animated.View style={[styles.ring, { borderColor: deep }, ring1]} />
+      <Animated.View style={[styles.cursor, cursor]}>
+        <Animated.View style={[styles.arrow, arrow]}>
+          <Svg width={(8 + DROP) * CELL} height={(12 + DROP) * CELL} viewBox={`0 0 ${8 + DROP} ${12 + DROP}`}>
+            <G opacity={0.38}>
+              {ARROW_CELLS.map((c) => (
+                <Rect key={`s${c.x}-${c.y}`} x={c.x + DROP} y={c.y + DROP} width={1} height={1} fill={SHADOW} />
+              ))}
+            </G>
+            {ARROW_CELLS.map((c) => (
+              <Rect key={`${c.x}-${c.y}`} x={c.x} y={c.y} width={1.02} height={1.02} fill={c.edge ? PAPER : deep} />
+            ))}
+          </Svg>
+        </Animated.View>
+        <View
+          onLayout={(e) => setTagWidth(e.nativeEvent.layout.width)}
+          style={[styles.who, look.flip ? [styles.whoFlip, { left: -4 - tagWidth }] : null]}
+        >
+          <AgentFace agentId={agentId} size={18} live={false} />
+          {look.quiet ? null : (
+            <Text variant="caption" numberOfLines={1} style={styles.name}>
+              {name}
+            </Text>
+          )}
+        </View>
+      </Animated.View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  layer: { position: "absolute", left: 0, top: 0, right: 0, bottom: 0, overflow: "hidden" },
+  // As large as the box, its top left corner on the tip: the tag lays out against that room, never against none.
+  cursor: { position: "absolute", left: 0, top: 0, right: 0, bottom: 0 },
+  arrow: { position: "absolute", left: 0, top: 0, transformOrigin: "left top" },
+  ring: {
+    position: "absolute",
+    left: -RING / 2,
+    top: -RING / 2,
+    width: RING,
+    height: RING,
+    borderWidth: 2,
+    opacity: 0,
+  },
+  who: {
+    position: "absolute",
+    left: 11,
+    top: 21,
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 24,
+    padding: 3,
+    borderRadius: 9,
+    borderTopLeftRadius: 3,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(20, 20, 20, 0.16)",
+    backgroundColor: PAPER,
+    shadowColor: SHADOW,
+    shadowOpacity: 0.38,
+    shadowRadius: 0,
+    shadowOffset: { width: 1.5, height: 1.5 },
+    elevation: 2,
+  },
+  whoFlip: { borderTopLeftRadius: 9, borderTopRightRadius: 3 },
+  name: { maxWidth: 120, paddingHorizontal: 6, color: INK, fontWeight: "600" },
+});
