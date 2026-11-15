@@ -15,16 +15,16 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import { Button, LineIcon, Text, useToast } from "@/ui";
-import { router } from "@/ui/navigation";
 import { AskButtons, AskCard, AskFoot, ExpiryLine, useAskStore } from "../chat/asks";
+import { openComputer } from "../computer/AgentComputerRow";
 import { IconTile } from "../connectors/ConnectorIcon";
 import { useColors, useDirectory, useMeId, useOrgId, useWhen } from "../shared/hooks";
-import { genderOf } from "../shared/logic";
+import { agentLook, genderOf } from "../shared/logic";
 import { PromptForm } from "../shared/PromptForm";
 import { useSurface } from "../shared/parts";
 import { useSheet } from "../shared/SheetHost";
 import { BrowserCard } from "./BrowserCard";
-import { cardStateOf, NOTE_MAX } from "./logic";
+import { cardStateOf, NOTE_LIMIT } from "./logic";
 import { useOpenHandoffId } from "./open";
 import { FrameView, useLiveConnection } from "./parts";
 
@@ -101,7 +101,7 @@ export function HandoffCard({ handoff: fromMessage }: { handoff: BrowserHandoff 
     const helper = h.controllerUserId ? dir.memberById.get(h.controllerUserId)?.name : undefined;
     return (
       <Pressable
-        onPress={() => router.push(`/computer/${h.agentId}`)}
+        onPress={() => openComputer(h.agentId, h.seat)}
         accessibilityRole="button"
         style={({ pressed }) => [styles.done, surface, pressed && styles.pressed]}
       >
@@ -161,7 +161,7 @@ function HandoffAsk({
     try {
       await actions.takeControl(h.id);
       asks?.settle(h.id);
-      if (opensScreen) router.push(`/computer/${h.agentId}`);
+      if (opensScreen) openComputer(h.agentId, h.seat);
     } catch (err) {
       failed(err);
     }
@@ -175,7 +175,7 @@ function HandoffAsk({
     onOpened(true);
     actions.takeControl(h.id).then(
       () => {
-        if (opensScreen) router.push(`/computer/${h.agentId}`);
+        if (opensScreen) openComputer(h.agentId, h.seat);
       },
       () => {},
     );
@@ -194,7 +194,12 @@ function HandoffAsk({
         tile: <IconTile name={desktop ? "laptop" : "globe"} size={20} bare />,
         title: name,
         detail: null,
-        more: desktop ? null : { label: t("ask.seeScreen"), content: <ScreenPeek agentId={h.agentId} /> },
+        more: desktop
+          ? null
+          : {
+              label: t("ask.seeScreen"),
+              content: <ScreenPeek agentId={h.agentId} name={name} color={agentLook(agent).color} />,
+            },
       }}
       expiry={h.expiresAt ? <ExpiryLine createdAt={h.createdAt} expiresAt={h.expiresAt} /> : null}
       foot={
@@ -213,15 +218,26 @@ function HandoffAsk({
   );
 }
 
-/** The agent's page as it is now, to look at before taking it (watching only: taps do nothing). */
-function ScreenPeek({ agentId }: { agentId: string }) {
+/** The agent's page as it is now, with its pointer, to look at before taking it (watching only: taps do nothing). */
+function ScreenPeek({ agentId, name, color }: { agentId: string; name: string; color: string | undefined }) {
   const c = useColors();
   // A small look before taking it: a frame a second is enough (ADR 0040 §7.1).
   const live = useLiveConnection(agentId, true, BROWSER_FPS.preview);
   return (
     <View style={[styles.peek, { backgroundColor: c.sunken }]}>
       {live.frame ? (
-        <FrameView frame={live.frame} enabled={false} onInput={live.sendInput} />
+        <FrameView
+          frame={live.frame}
+          enabled={false}
+          onInput={live.sendInput}
+          edge={styles.peek.borderRadius}
+          cursor={{
+            agentId,
+            name,
+            color,
+            pointer: (live.handoff?.controllerUserId ?? live.controllerUserId) ? null : live.pointer,
+          }}
+        />
       ) : (
         <View style={styles.center}>
           <ActivityIndicator color={c.muted} />
@@ -270,10 +286,11 @@ export function useNotNow(h: BrowserHandoff | null, onDone?: () => void) {
         placeholder={t("mobile.browser.failed.placeholder")}
         submitLabel={t("mobile.browser.failed.send")}
         allowEmpty
+        limit={NOTE_LIMIT}
         onSubmit={async (text) => {
           sheet.close();
           try {
-            await actions.failed(h.id, text.trim().slice(0, NOTE_MAX) || undefined);
+            await actions.failed(h.id, text.trim() || undefined);
             onDone?.();
           } catch (err) {
             // It ended meanwhile: the card settles on its own (`useBrowserHandoffMutations`), with nothing to tell.
