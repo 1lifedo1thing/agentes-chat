@@ -193,8 +193,7 @@ pub fn compat_get(app: AppHandle) -> Compat {
         .app_config_dir()
         .ok()
         .and_then(|d| std::fs::read_to_string(d.join(COMPAT_FILE)).ok());
-    // A fallback whose switch couldn't be written back on draws without the graphics card all the same.
-    Compat { on: why() == Why::Fallback || compat_on(text.as_deref()), fell_back, own: false }
+    Compat { on: compat_on(text.as_deref()), fell_back, own: false }
 }
 
 /// Preferences › General: Compatibility mode for the next opening (WebKitGTK reads it only when the app starts).
