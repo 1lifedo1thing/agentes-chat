@@ -19,7 +19,7 @@ import {
   timeOptions,
 } from "../src";
 import { TIP_OPEN_MS } from "../src/components/Tip";
-import { EDGE_ROOM, placeTip, pullToFit, TIP_GAP } from "../src/floating";
+import { EDGE_ROOM, placeList, placeTip, pullToFit, TIP_GAP } from "../src/floating";
 
 const body = () => within(document.body);
 const key = async (el: Element, k: string) => {
@@ -271,5 +271,21 @@ describe("Token", () => {
     );
     await click(body().getByRole("button", { name: "Remover Ada" }));
     expect(removed).toEqual(["ada"]);
+  });
+});
+
+describe("a list opened by typing (placeList)", () => {
+  const caret = { top: 400, bottom: 420 };
+  test("under the caret, as tall as the room under it, not a fixed cap", () => {
+    expect(placeList(caret, 300, 900)).toEqual({ top: 420 + TIP_GAP, maxHeight: 900 - EDGE_ROOM - 420 - TIP_GAP });
+  });
+  test("over the caret when it doesn't fit under and over has more room, its foot on the caret", () => {
+    const low = { top: 700, bottom: 720 };
+    expect(placeList(low, 300, 900)).toEqual({ top: 700 - TIP_GAP - 300, maxHeight: 700 - TIP_GAP - EDGE_ROOM });
+  });
+  test("taller than the window: on the roomier side, held to its room, so it scrolls only then", () => {
+    const low = { top: 700, bottom: 720 };
+    expect(placeList(low, 2000, 900)).toEqual({ top: EDGE_ROOM, maxHeight: 700 - TIP_GAP - EDGE_ROOM });
+    expect(placeList(caret, 2000, 900).top).toBe(420 + TIP_GAP);
   });
 });

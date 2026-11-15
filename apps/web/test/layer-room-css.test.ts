@@ -14,12 +14,20 @@ const last = (css: string, selector: string, property: string) =>
     .filter(([p]) => p === property)
     .at(-1)?.[1];
 
-/** The roots of floating layers: the kit's, and the app's own popovers and menus built on them. */
+/**
+ * The roots of floating layers: the kit's, and the app's own popovers and menus built on them. Not here: the time list
+ * and the emoji picker, catalogs no window holds whole, which keep one height so a person's place in them stays put.
+ */
 const LAYERS = [
   ".ac-popover",
   ".ac-menu--dropdown",
   ".ac-menu--select",
   ".ac-date",
+  ".ac-suggest",
+  ".ac-tz__menu",
+  ".ac-filter__menu",
+  ".wiki-folders-pop",
+  ".wiki-suggest--float",
   ".agora",
   ".mp",
   ".agp-changes",
@@ -43,6 +51,9 @@ test("a kit layer is as tall as the window lets it on its side: Radix's room the
   expect(last(css, ".ac-date", "max-height")).toBe("var(--radix-popover-content-available-height)");
   expect(last(css, ".ac-menu--dropdown", "max-height")).toBe("var(--radix-dropdown-menu-content-available-height)");
   expect(last(css, ".ac-menu--select", "max-height")).toBe("var(--radix-select-content-available-height)");
+  expect(last(css, ".ac-suggest", "max-height")).toBe("var(--radix-popover-content-available-height)");
+  expect(last(css, ".ac-tz__menu.ac-menu", "max-height")).toBe("var(--radix-popover-content-available-height)");
+  expect(last(css, ".ac-filter__menu.ac-menu", "max-height")).toBe("var(--radix-popover-content-available-height)");
 });
 
 test("no popover or menu caps its own height under the window's room, nor lifts the cap off it", async () => {
@@ -56,8 +67,20 @@ test("no popover or menu caps its own height under the window's room, nor lifts 
 });
 
 test("a popover's list under a head gives way to the window's room and scrolls there, the head kept", async () => {
-  const css = await read("apps/web/src/components/threads/threads.css");
-  expect(last(css, ".thread-pop__list", "max-height")).toBeUndefined();
-  expect(last(css, ".thread-pop__list", "min-height")).toBe("0");
-  expect(last(css, ".thread-pop__list", "overflow-y")).toBe("auto");
+  const lists = [
+    ["apps/web/src/components/threads/threads.css", ".thread-pop__list"],
+    ["apps/web/src/pages/wiki.css", ".wiki-folders-pop__list"],
+    [KIT, ".ac-tz__list"],
+    [KIT, ".ac-filter__list"],
+  ] as const;
+  for (const [file, list] of lists) {
+    const css = await read(file);
+    expect([list, last(css, list, "max-height")]).toEqual([list, undefined]);
+    expect([list, last(css, list, "min-height")]).toEqual([list, "0"]);
+    expect([list, last(css, list, "overflow-y")]).toEqual([list, "auto"]);
+  }
+  const kit = await read(KIT);
+  for (const r of rules(kit))
+    if (r.selectors.some((s) => /\.ac-tz__list(?![\w-])/.test(s)))
+      expect(r.declarations.filter(([p]) => p === "max-height")).toEqual([]);
 });

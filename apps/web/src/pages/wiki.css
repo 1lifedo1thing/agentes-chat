@@ -1354,11 +1354,12 @@ html:not([data-pointer]) .wiki-outline__item:focus-visible {
 .wiki-folders-pop {
   min-width: 260px;
 }
+/* The popover takes the window's height (`.ac-popover`): the list gives way under the search and scrolls past it. */
 .wiki-folders-pop__list {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  max-height: 260px;
+  min-height: 0;
   margin-top: 6px;
   overflow-y: auto;
 }
@@ -1485,7 +1486,7 @@ p.wiki-rich__raw {
   position: fixed;
   z-index: var(--z-floating);
   width: 300px;
-  max-height: 320px;
+  /* Its top and height: the room on its side of the caret (`placeList`). */
   overflow-y: auto;
 }
 .wiki-hintline {
