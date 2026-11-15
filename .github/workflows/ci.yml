@@ -310,7 +310,7 @@ jobs:
       needs.changes.outputs.shared == 'true' || needs.changes.outputs.web == 'true' ||
       needs.changes.outputs.mobile == 'true' || needs.changes.outputs.desktop == 'true'
     runs-on: ${{ vars.CI_RUNNER_LARGE || 'ubuntu-latest' }}
-    timeout-minutes: 35
+    timeout-minutes: 60
     env:
       SHARED: ${{ needs.changes.outputs.shared }}
       WEB: ${{ needs.changes.outputs.web }}
@@ -341,7 +341,7 @@ jobs:
       # app's CSS order and the reverse one (cascadeorder).
       - name: Geometry (the layout rules on every screen the tests reach)
         if: (success() || failure()) && (env.SHARED == 'true' || env.WEB == 'true')
-        timeout-minutes: 12
+        timeout-minutes: 35
         run: GEOMETRY_BROWSERS=$(nproc) bun run check:geometry "$RUNNER_TEMP/geometry" --report geometry-report.md --text-size xs,xl
       # The "Novo evento" dialog tests once aborted the whole DOM process (exit 134), so the main run
       # skips them (RUN_NEW_EVENT) and they run alone here. Alone they pass, so a failure is real.
@@ -359,7 +359,8 @@ jobs:
           paths=()
           if [ "$SHARED" = true ] || [ "$MOBILE" = true ]; then paths+=(apps/mobile/test); fi
           if [ "$SHARED" = true ] || [ "$DESKTOP" = true ]; then paths+=(apps/desktop/test); fi
-          bun test "${paths[@]}" 2>&1 | tee -a test.log
+          # Shared runners render the apps' windows far slower than a laptop: the web new-event step's limit, not bun's 5 s.
+          bun test --timeout 20000 "${paths[@]}" 2>&1 | tee -a test.log
       - *keep-test-errors
       - name: Upload logs
         if: always()
@@ -416,14 +417,15 @@ jobs:
   secrets:
     name: Secret scan and boundaries
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
-    timeout-minutes: 5
+    # main's whole-history scan passed 4.5 minutes on 2026-11-13 and grows with every migration snapshot.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       # Bun first: the boundaries check below still runs when the scan fails.
       - *setup-bun
-      # main and a release tag scan the whole history (about two minutes); a branch or a pull request scans the
+      # main and a release tag scan the whole history (about five minutes); a branch or a pull request scans the
       # commits it adds to main, which main's own runs have already scanned up to there.
       - name: Secret scan
         env:

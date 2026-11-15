@@ -2,6 +2,7 @@ import {
   useComputerSetup,
   useConnections,
   useInvitations,
+  useJoinRequests,
   useMachines,
   useOverview,
   useSkills,
@@ -36,6 +37,7 @@ import { Gap, SettingsPage } from "./parts";
 const SHORT: Partial<Record<SettingsSection, string>> = {
   computers: "mobile.devices.title",
   members: "mobile.settings.section.members",
+  invites: "settings.section.invites",
   roles: "mobile.settings.section.roles",
   access: "mobile.settings.section.access",
   connectors: "mobile.settings.section.connectors",
@@ -175,13 +177,13 @@ export function SectionGroups({
 
 /**
  * Owners: "Delete <name>" alone in red, behind the system's alert (one firm haptic as it confirms), then the proof and
- * the hold on a screen of its own. Nothing for anyone else.
+ * the hold on a screen of its own. Nothing for anyone else, nor while it is being deleted.
  */
 export function DeleteWorkspaceRow() {
   const { t } = useTranslation();
   const { org } = useOrg();
   const name = org?.name ?? "";
-  if (org?.role !== "owner") return null;
+  if (org?.role !== "owner" || org.deletion) return null;
   const confirmDelete = () =>
     Alert.alert(t("deleteOrg.title", { name }), t("mobile.settings.deleteAlert"), [
       { text: t("common.cancel"), style: "cancel" },
@@ -214,6 +216,7 @@ function useAreaValues(areas: readonly SettingsEntry[]) {
   const shown = (id: string) => areas.some((s) => s.id === id);
   const overview = useOverview(orgId);
   const invitations = useInvitations(orgId, can(org, "invite_people"));
+  const waiting = useJoinRequests(orgId, shown("invites"));
   const connections = useConnections(orgId);
   const skills = useSkills(orgId, shown("skills"));
   const machines = useMachines(orgId, shown("computers"));
@@ -224,6 +227,7 @@ function useAreaValues(areas: readonly SettingsEntry[]) {
     overview: overview.data,
     usesApi,
     invitations: invitations.data?.length,
+    waiting: waiting.data?.length,
     connectors: connections.data?.filter((x) => !x.revokedAt).map((x) => x.label),
     skills: skills.data?.length,
     computers: machines.data

@@ -7,8 +7,10 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { renderUnicodeCompact } from "uqr";
 
+/** The one-line installer (install.sh at the repository's root, which calls it INSTALL_URL too). */
+export const INSTALL_URL = "https://agentes.chat/install";
 /** Every instance serves its own build's compose file there; agentes.chat's follows main, so it can be ahead of `:latest`. */
-export const COMPOSE_URL = "https://agentes.chat/install/docker-compose.yml";
+export const COMPOSE_URL = `${INSTALL_URL}/docker-compose.yml`;
 /** `INSTALL_DOCS_URL` in @agenteschat/i18n, as text: this MIT package bundles none of the AGPL workspace. */
 export const GUIDE_URL = "https://agentes.chat/docs/install-on-a-server";
 export const ISSUES_URL = "https://github.com/agentes-chat/agentes-chat/issues";
@@ -712,21 +714,40 @@ export function decideTelemetry(p: { flag?: OnOff; content: string | null; answe
 /** TypeSafe's console, and its page where keys are made. */
 export const TYPESAFE_CONSOLE = "https://console.typesafe.ai";
 export const TYPESAFE_KEYS = `${TYPESAFE_CONSOLE}/keys`;
+/** OpenRouter's pages for Jev through it (ADR 0073 §9): its keys, and its credit. */
+const OPENROUTER_KEYS = "https://openrouter.ai/keys";
+const OPENROUTER_CREDITS = "https://openrouter.ai/settings/credits";
+
+/** Where a key calls Jev, as the server reads it (`jevViaOf`): an OpenRouter key (`sk-or-…`) through OpenRouter. */
+const throughOpenRouter = (key: string) => key.startsWith("sk-or-");
 
 /** A whole key is printable ASCII: a pasted curly quote or space can't go in a request, which would read as no answer. */
 export const jevKeyProblem = (key: string) =>
-  /^[\x21-\x7E]{8,512}$/.test(key) ? null : `that isn't a whole TypeSafe key. Copy it again from ${TYPESAFE_KEYS}.`;
+  /^[\x21-\x7E]{8,512}$/.test(key)
+    ? null
+    : `that isn't a whole key. Copy it again from ${TYPESAFE_KEYS}, or ${OPENROUTER_KEYS} for an OpenRouter key.`;
 
 /**
- * What a TypeSafe answer says about a key, first match first, as the server reads it (`jevStateOf` in
+ * What an answer says about a key, first match first, as the server reads it (`jevStateOf` in
  * packages/engine/src/jev-key.ts). The setup is standalone, so it keeps this copy: the same fixture table in both
  * packages' tests keeps the two alike. Null: the request's own fault, which says nothing about the key.
  */
-export function jevStateOf(status: number, body?: unknown) {
+export function jevStateOf(status: number, body?: unknown, via: "typesafe" | "openrouter" = "typesafe") {
   if (status >= 200 && status < 300) return "ok" as const;
-  const detail = (body as { detail?: { error_type?: unknown; message?: unknown } | string } | null | undefined)?.detail;
-  const words = typeof detail === "string" ? detail : `${detail?.error_type ?? ""} ${detail?.message ?? ""}`;
+  const b = body as
+    | { detail?: { error_type?: unknown; message?: unknown } | string; error?: { message?: unknown } }
+    | null
+    | undefined;
+  const detail = b?.detail;
+  const words = `${typeof detail === "string" ? detail : `${detail?.error_type ?? ""} ${detail?.message ?? ""}`} ${
+    typeof b?.error?.message === "string" ? b.error.message : ""
+  }`;
   if (status === 402 || /credit|balance|billing|payment|funds/i.test(words)) return "no_credit" as const;
+  if (via === "openrouter") {
+    if (status === 403 && /key limit/i.test(words)) return "no_credit" as const;
+    if (status === 403 && /flagged|moderation/i.test(words)) return null;
+    if (status === 404) return "down" as const;
+  }
   // 403 is TypeSafe's answer to a request without a key.
   if (status === 401 || status === 403) return "invalid" as const;
   if (status === 429) return "rate_limited" as const;
@@ -736,21 +757,36 @@ export function jevStateOf(status: number, body?: unknown) {
 
 export type JevCheck = "ok" | "invalid" | "no_credit" | "unchecked";
 
-/** One tiny call (about 50 tokens), as the server's check: only a real call says a key has no credit. */
+/**
+ * One tiny call (about 50 tokens), as the server's check: only a real call says a key has no credit. An OpenRouter key
+ * asks the same Jev through OpenRouter's Decisions route.
+ */
 export async function checkJevKey(key: string, fetchFn: typeof fetch = fetch): Promise<JevCheck> {
   const question = {
     type: "noul",
     instructions: "Is the state the word ok?",
     criteria: { true: "The state is the word ok.", false: "The state is something else." },
   };
+  const openRouter = throughOpenRouter(key);
   try {
-    const res = await fetchFn("https://api.typesafe.ai/v1/systemone", {
-      method: "POST",
-      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-      body: JSON.stringify({ model: "jev-latest", state: "ok", questions: { ok: question } }),
-      signal: AbortSignal.timeout(5000),
-    });
-    const state = jevStateOf(res.status, await res.json().catch(() => null));
+    const res = await fetchFn(
+      openRouter ? "https://openrouter.ai/api/alpha/decisions" : "https://api.typesafe.ai/v1/systemone",
+      {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${key}`,
+          "content-type": "application/json",
+          ...(openRouter ? { "HTTP-Referer": "https://agentes.chat", "X-OpenRouter-Title": "agentes.chat" } : {}),
+        },
+        body: JSON.stringify({
+          model: openRouter ? "~typesafe/jev-latest" : "jev-latest",
+          state: "ok",
+          questions: { ok: question },
+        }),
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+    const state = jevStateOf(res.status, await res.json().catch(() => null), openRouter ? "openrouter" : "typesafe");
     return state === "ok" || state === "invalid" || state === "no_credit" ? state : "unchecked";
   } catch {
     return "unchecked";
@@ -776,12 +812,15 @@ export async function jevStep(p: {
   if (!p.flag || p.flag === now) return { value: now ? "kept" : "off", entries: {} };
   if (p.dryRun) return { value: "unchecked", entries: {} };
   const state = await p.check(p.flag);
+  // An OpenRouter key is OpenRouter's to accept, and its credit is there.
+  const openRouter = throughOpenRouter(p.flag);
+  const who = openRouter ? "OpenRouter" : "TypeSafe";
   if (state === "invalid") {
     return {
       problem: {
         check: "jev",
-        error: "TypeSafe didn't accept --typesafe-key.",
-        fix: `Copy the key again from ${TYPESAFE_KEYS}, or leave the option out and add it later in Settings › AI accounts.`,
+        error: `${who} didn't accept --typesafe-key.`,
+        fix: `Copy the key again from ${openRouter ? OPENROUTER_KEYS : TYPESAFE_KEYS}, or leave the option out and add it later in Settings › AI accounts.`,
       },
     };
   }
@@ -789,11 +828,11 @@ export async function jevStep(p: {
     ok: { ok: true, text: "Jev: key checked" },
     no_credit: {
       ok: false,
-      text: `Jev: the key works but has no credit. Add credit at ${TYPESAFE_CONSOLE} and Jev starts by itself.`,
+      text: `Jev: the key works but has no credit. Add credit at ${openRouter ? OPENROUTER_CREDITS : TYPESAFE_CONSOLE} and Jev starts by itself.`,
     },
     unchecked: {
       ok: false,
-      text: "Jev: TypeSafe didn't answer, so the key wasn't checked. agentes.chat checks it when it uses it.",
+      text: `Jev: ${who} didn't answer, so the key wasn't checked. agentes.chat checks it when it uses it.`,
     },
   }[state];
   return { value: state, entries: { TYPESAFE_API_KEY: p.flag }, said };
@@ -848,8 +887,14 @@ export function hostTokenConflict(content: string | null): { now: string; off: s
 /**
  * Whether this machine can be its agents' computer, and the answer when nobody gives one: yes, except on
  * a Linux machine too small for agents' screens or without apt-get for their packages, which `why` says.
+ * `dir` is the folder the setup runs in, where a run as root goes on.
  */
-export function computerOffer(machine: ThisMachine, content: string | null, image: boolean): ComputerOffer {
+export function computerOffer(
+  machine: ThisMachine,
+  content: string | null,
+  image: boolean,
+  dir: string,
+): ComputerOffer {
   const no = (error: string, fix: string): ComputerOffer => ({ problem: { check: "computer", error, fix } });
   const later = "connect a computer later in Settings › Devices";
   if (image) {
@@ -873,10 +918,11 @@ export function computerOffer(machine: ThisMachine, content: string | null, imag
   }
   const mac = machine.platform === "darwin";
   if (!mac && machine.platform !== "linux") return no("The agents' computer runs on Linux or a Mac.", `So ${later}.`);
+  // Simple mode needs root as well: it makes the user the agents share.
   if (!mac && !machine.root) {
     return no(
-      "Each agent gets a user of its own on this machine, which needs root.",
-      `Run the setup as root, or ${later}.`,
+      "Making this machine your agents' computer needs root: the setup adds users and a service for them.",
+      `Run it as root, in this folder (curl -fsSL ${INSTALL_URL} | sudo sh -s -- --dir ${quoteEnvValue(dir)} --computer yes), or ${later}.`,
     );
   }
   if (!mac && !machine.systemd) {
@@ -1143,7 +1189,7 @@ export function decideComputer(p: {
         },
       };
     }
-    return { plan: { state: "skipped", why: p.offer.problem.error }, entries: {} };
+    return { plan: { state: "skipped", why: `${p.offer.problem.error} ${p.offer.problem.fix}` }, entries: {} };
   }
   const on = p.computer ? p.computer === "yes" : now ? now === "on" : p.answers.on;
   if (on === undefined) return { ask: "computer", yes: p.offer.yes };

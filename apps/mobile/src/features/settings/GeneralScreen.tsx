@@ -9,6 +9,8 @@ import {
   useTeamMemories,
   useUpdateSettings,
 } from "@agenteschat/client";
+import { settingsFrozen } from "@agenteschat/client/lib/deletion";
+import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { can } from "@agenteschat/client/lib/permissions";
 import { memoryLine } from "@agenteschat/client/lib/proposals";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
@@ -40,6 +42,7 @@ import {
 } from "@/ui";
 import { router } from "@/ui/navigation";
 import { MemoryFix } from "../agents/AgentProfileScreen";
+import { WorkspaceApprovalsRow } from "../agents/ApprovalsLevelRow";
 import { useMemoryOriginText } from "../agents/useMemoryOriginText";
 import { Note } from "../ai/parts";
 import { ZoneList } from "../me/AccountPage";
@@ -48,7 +51,7 @@ import { useColors } from "../shared/hooks";
 import { OrgAvatar } from "../shared/OrgAvatar";
 import { errorHaptic, goBack, MONO, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
-import { TextArea } from "../shared/TextArea";
+import { overLimit, TextArea } from "../shared/TextArea";
 import { missingIdeas, nameOnLeave, withIdea, zoneLabel } from "./logic";
 import { chooseAction, Gap, SettingsPage } from "./parts";
 
@@ -56,6 +59,7 @@ import { chooseAction, Gap, SettingsPage } from "./parts";
 const SAVED_MS = 1800;
 /** The context saves this long after the last key (and when its field is left). */
 const CONTEXT_SAVE_MS = 800;
+const CONTEXT_LIMIT = { max: FIELD_LIMITS.workspaceContext };
 
 /** The zone picked on Fuso (a screen pushed over Geral) goes back to Geral, which saves it. */
 let zonePick: string | null = null;
@@ -184,6 +188,7 @@ export function GeneralScreen() {
     typed.current.context = true;
     setContext(value);
     clearTimeout(contextTimer.current);
+    if (overLimit(value, CONTEXT_LIMIT)) return;
     contextTimer.current = setTimeout(() => {
       typed.current.context = false;
       save({ context: value });
@@ -193,7 +198,7 @@ export function GeneralScreen() {
     clearTimeout(contextTimer.current);
     if (!typed.current.context) return;
     typed.current.context = false;
-    if (settings.data && context !== settings.data.context) save({ context });
+    if (settings.data && context !== settings.data.context && !overLimit(context, CONTEXT_LIMIT)) save({ context });
   };
   const addIdea = (label: string) => {
     changeContext(withIdea(context, label));
@@ -332,6 +337,12 @@ export function GeneralScreen() {
       />
     </GroupedList>
   );
+  const approvals = can(org, "manage_agents") ? (
+    <>
+      <WorkspaceApprovalsRow />
+      <Gap />
+    </>
+  ) : null;
   // Who the workspace is for (ADR 0159 §4): the mode it is in, and for who configures it the screen that switches it.
   const mode = (
     <GroupedList>
@@ -365,7 +376,7 @@ export function GeneralScreen() {
       <TextArea
         ref={contextField}
         value={context}
-        maxLength={20_000}
+        limit={CONTEXT_LIMIT}
         onChangeText={changeContext}
         onBlur={flushContext}
         editable={editable}
@@ -405,6 +416,7 @@ export function GeneralScreen() {
             : t("settings.section.general")
       }
       subtitle={saved ? t("settings.savedShort") : undefined}
+      frozen={settingsFrozen(org, "general")}
     >
       {!editable ? (
         <View style={styles.note}>
@@ -423,6 +435,7 @@ export function GeneralScreen() {
           <Gap />
           {checks}
           <Gap />
+          {approvals}
           {mode}
         </>
       ) : (
@@ -435,6 +448,7 @@ export function GeneralScreen() {
           <Gap />
           {checks}
           <Gap />
+          {approvals}
           {mode}
           {contextPart}
         </>

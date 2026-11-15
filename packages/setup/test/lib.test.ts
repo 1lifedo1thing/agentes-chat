@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mobileEn } from "../../../apps/mobile/src/i18n/keys.en";
 import { mobilePtBR } from "../../../apps/mobile/src/i18n/keys.pt-BR";
@@ -73,6 +74,14 @@ const root = join(import.meta.dir, "../../..");
 const AUTH_KEY = "tskey-auth-kAbC123CNTRL-SECRETabc123";
 const CLIENT_SECRET = "tskey-client-kXyZ789CNTRL-SECRETxyz789";
 const SSH = { user: "ana", host: "203.0.113.7", port: null };
+/** The folder the setup runs in. */
+const DIR = "/home/ana/agentes";
+/** What `computerOffer` says on Linux to a user other than root, run in `dir`. */
+const notRoot = (dir: string) => ({
+  check: "computer",
+  error: "Making this machine your agents' computer needs root: the setup adds users and a service for them.",
+  fix: `Run it as root, in this folder (curl -fsSL https://agentes.chat/install | sudo sh -s -- --dir ${dir} --computer yes), or connect a computer later in Settings › Devices.`,
+});
 
 describe("options", () => {
   const parse = (argv: string[], env: Record<string, string> = {}) => parseOptions(argv, env);
@@ -165,7 +174,8 @@ describe("options", () => {
     // A key cut short, or pasted with a curly quote, a space or a zero-width space: never sent, never written.
     for (const key of ["ts_123", "ts_live 9f2c", "“ts_live_9f2c”", "ts_live_\u200b9f2c"])
       expect(parse(["--typesafe-key", key])).toEqual({
-        error: "--typesafe-key: that isn't a whole TypeSafe key. Copy it again from https://console.typesafe.ai/keys.",
+        error:
+          "--typesafe-key: that isn't a whole key. Copy it again from https://console.typesafe.ai/keys, or https://openrouter.ai/keys for an OpenRouter key.",
       });
     expect(parse(["--frobnicate"])).toMatchObject({ error: expect.stringContaining("--help") });
   });
@@ -189,7 +199,7 @@ describe("Jev's key (--typesafe-key)", () => {
     });
     // In --help, after --telemetry, in the options' column.
     expect(readFileSync(join(import.meta.dir, "../src/cli.ts"), "utf8")).toMatch(
-      /--telemetry <on\|off> {16}.*\n {2}--typesafe-key <key> {16}TypeSafe key for Jev, optional \(\$\{TYPESAFE_KEYS\}\)\n/,
+      /--telemetry <on\|off> {16}.*\n {2}--typesafe-key <key> {16}TypeSafe key for Jev, or an OpenRouter key \(sk-or-…\), optional \(\$\{TYPESAFE_KEYS\}\)\n/,
     );
   });
 
@@ -213,6 +223,15 @@ describe("Jev's key (--typesafe-key)", () => {
     ];
     for (const [status, body, state] of table)
       expect({ status, state: jevStateOf(status, body) }).toEqual({ status, state });
+    // Through OpenRouter (ADR 0073 §9), as the server reads it too.
+    const or = (status: number, message: string) =>
+      jevStateOf(status, { error: { code: status, message } }, "openrouter");
+    expect(or(402, "Insufficient credits")).toBe("no_credit");
+    expect(or(403, "Key limit exceeded")).toBe("no_credit");
+    expect(or(403, "Your input was flagged by moderation")).toBeNull();
+    expect(or(403, "Forbidden")).toBe("invalid");
+    expect(or(401, "No auth credentials found")).toBe("invalid");
+    expect(or(404, "Resource not found")).toBe("down");
   });
 
   test("the check: one call to TypeSafe with the key; no answer, a limit or an outage leave it unchecked", async () => {
@@ -229,6 +248,13 @@ describe("Jev's key (--typesafe-key)", () => {
     expect(await checkJevKey("ts_live_9f2c", answer(402))).toBe("no_credit");
     for (const status of [429, 529, 422, "offline"] as const)
       expect([status, await checkJevKey("ts_live_9f2c", answer(status))]).toEqual([status, "unchecked"]);
+    // An OpenRouter key asks the same Jev through OpenRouter.
+    seen.length = 0;
+    expect(await checkJevKey("sk-or-v1-live_9f2c", answer(200))).toBe("ok");
+    expect(seen).toEqual([{ url: "https://openrouter.ai/api/alpha/decisions", auth: "Bearer sk-or-v1-live_9f2c" }]);
+    expect(
+      await checkJevKey("sk-or-v1-live_9f2c", answer(402, { error: { code: 402, message: "Insufficient" } })),
+    ).toBe("no_credit");
   });
 
   test("checked before .env is written: refused writes nothing, the others write it and say how it went", async () => {
@@ -269,6 +295,21 @@ describe("Jev's key (--typesafe-key)", () => {
       },
     });
     expect(asked).toEqual(["ts_live_9f2c", "ts_wrong_0000", "ts_empty_5555", "ts_live_9f2c"]);
+    // An OpenRouter key: OpenRouter's words and pages.
+    expect(await step("invalid", "sk-or-v1-wrong_0000")).toEqual({
+      problem: {
+        check: "jev",
+        error: "OpenRouter didn't accept --typesafe-key.",
+        fix: "Copy the key again from https://openrouter.ai/keys, or leave the option out and add it later in Settings › AI accounts.",
+      },
+    });
+    expect(await step("no_credit", "sk-or-v1-empty_5555")).toMatchObject({
+      said: {
+        ok: false,
+        text: "Jev: the key works but has no credit. Add credit at https://openrouter.ai/settings/credits and Jev starts by itself.",
+      },
+    });
+    asked.length = 0;
 
     asked.length = 0;
     const env = "TYPESAFE_API_KEY=ts_live_9f2c\n";
@@ -675,23 +716,23 @@ describe("the agents' computer", () => {
   };
 
   test("yes by default on a Linux server with room for agents' screens, and on a Mac", () => {
-    expect(computerOffer(server, null, false)).toEqual({ mac: false, simple: false, yes: true, why: null });
+    expect(computerOffer(server, null, false, DIR)).toEqual({ mac: false, simple: false, yes: true, why: null });
     // A "4 GB" server reports a little less.
-    expect(computerOffer({ ...server, memory: 3.8 * GB }, null, false)).toMatchObject({ yes: true });
-    expect(computerOffer(mac, null, false)).toEqual({ mac: true, simple: false, yes: true, why: null });
+    expect(computerOffer({ ...server, memory: 3.8 * GB }, null, false, DIR)).toMatchObject({ yes: true });
+    expect(computerOffer(mac, null, false, DIR)).toEqual({ mac: true, simple: false, yes: true, why: null });
   });
 
   test("no by default under 4 GB, or without apt-get for the screens' and browsers' packages, saying why", () => {
-    expect(computerOffer({ ...server, memory: 2 * GB }, null, false)).toEqual({
+    expect(computerOffer({ ...server, memory: 2 * GB }, null, false, DIR)).toEqual({
       mac: false,
       simple: false,
       yes: false,
       why: "This machine has 2 GB of memory. Each agent's screen needs about 0.2 GB, and its browser 0.6 GB more.",
     });
-    expect(computerOffer({ ...server, memory: 1.9 * GB }, null, false)).toMatchObject({
+    expect(computerOffer({ ...server, memory: 1.9 * GB }, null, false, DIR)).toMatchObject({
       why: expect.stringMatching(/^This machine has 1\.9 GB of memory\./),
     });
-    expect(computerOffer({ ...server, apt: false }, null, false)).toEqual({
+    expect(computerOffer({ ...server, apt: false }, null, false, DIR)).toEqual({
       mac: false,
       simple: false,
       yes: false,
@@ -701,7 +742,7 @@ describe("the agents' computer", () => {
 
   test("skipped where it can't be, each with the reason and what to do instead", () => {
     const why = (machine: ThisMachine, content: string | null = null, image = false) => {
-      const offer = computerOffer(machine, content, image);
+      const offer = computerOffer(machine, content, image, DIR);
       return "problem" in offer ? offer.problem : null;
     };
     for (const open of ["ALLOW_SIGNUP=true\n", "ALLOW_SIGNUP=1\n", "ALLOW_SIGNUP=yes\n"]) {
@@ -806,7 +847,7 @@ describe("the agents' computer", () => {
       over: Partial<Parameters<typeof decideComputer>[0]> = {},
     ): ReturnType<typeof decideComputer> =>
       decideComputer({
-        offer: computerOffer(machine, over.content ?? null, false),
+        offer: computerOffer(machine, over.content ?? null, false, DIR),
         content: null,
         installed: null,
         answers: {},
@@ -863,8 +904,9 @@ describe("the agents' computer", () => {
 
     test("where it can't be: skipped and .env left alone, refused when asked for, stopped when the server wouldn't start", () => {
       const noRoot = { ...server, root: false };
+      // Not asked: the run says why, and what makes this machine the agents' computer.
       expect(decide(noRoot)).toEqual({
-        plan: { state: "skipped", why: "Each agent gets a user of its own on this machine, which needs root." },
+        plan: { state: "skipped", why: `${notRoot(DIR).error} ${notRoot(DIR).fix}` },
         entries: {},
       });
       expect(decide(noRoot, { computer: "yes" })).toEqual({ problem: expect.objectContaining({ check: "computer" }) });
@@ -892,6 +934,44 @@ describe("the agents' computer", () => {
         entries: { HOST_COMPUTER_TOKEN: "" },
       });
     });
+
+    test("--computer yes as a user other than root on Linux: refused with the command that runs it as root here; as root, and on a Mac, it goes on", () => {
+      const user = { ...server, root: false };
+      // Simple mode (no BPF_FRAMEWORK) makes the user its agents share, as root too.
+      for (const machine of [user, { ...user, bpf: false }]) {
+        expect(decide(machine, { computer: "yes" })).toEqual({ problem: notRoot(DIR) });
+      }
+      expect(computerOffer(user, null, false, "/home/ana/my agentes")).toEqual({
+        problem: notRoot("'/home/ana/my agentes'"),
+      });
+      expect(plan(decide(server, { computer: "yes" }))).toMatchObject({ state: "on", mac: false });
+      // A Mac needs no root: agents work as the person, who is still asked about commands.
+      expect(decide(mac, { computer: "yes" })).toEqual({ ask: "commands", yes: true });
+    });
+  });
+
+  test("--computer yes as a user other than root on Linux stops the run before Docker, any question or any file", () => {
+    // The CLI itself, as that user on whatever machine runs this; docker is a stub that notes its calls.
+    const bin = mkdtempSync(join(tmpdir(), "agentes-setup-bin-"));
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "agentes-setup-dir-")));
+    try {
+      const calls = join(bin, "calls.log");
+      writeFileSync(join(bin, "docker"), `#!/bin/sh\necho "docker $*" >> "${calls}"\nexit 1\n`, { mode: 0o755 });
+      const script = [
+        'Object.defineProperty(process, "platform", { value: "linux" });',
+        "process.getuid = () => 1000;",
+        `const { main } = await import(${JSON.stringify(join(import.meta.dir, "../src/cli.ts"))});`,
+        'process.exitCode = await main(["--computer", "yes", "--json"]);',
+      ].join("\n");
+      const run = Bun.spawnSync([process.execPath, "-e", script], { cwd: dir, env: { PATH: bin, HOME: bin } });
+      expect(JSON.parse(run.stdout.toString())).toEqual({ ok: false, ...notRoot(quoteEnvValue(dir)) });
+      expect(run.exitCode).toBe(1);
+      expect(existsSync(calls)).toBe(false);
+      expect(readdirSync(dir)).toEqual([]);
+    } finally {
+      rmSync(bin, { recursive: true, force: true });
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test("whether the installed service lets agents run commands, from its own arguments", () => {
@@ -1239,12 +1319,10 @@ describe("the plan", () => {
     );
     const skipped = planSteps({
       ...base,
-      computer: { state: "skipped", why: "Each agent gets a user of its own on this machine, which needs root." },
+      computer: { state: "skipped", why: notRoot(DIR).error },
       telemetry: { value: "off", kept: true },
     });
-    expect(skipped).toContain(
-      "agents' computer: skipped. Each agent gets a user of its own on this machine, which needs root.",
-    );
+    expect(skipped).toContain(`agents' computer: skipped. ${notRoot(DIR).error}`);
     expect(skipped).toContain("usage statistics: keep what .env has (TELEMETRY=off)");
     // Without starting, the install waits for the run that starts it.
     expect(planSteps({ ...base, start: false }).some((s) => s.includes("install.sh"))).toBe(false);
@@ -1555,9 +1633,9 @@ describe("what the agents need", () => {
       apt: true,
       connected: false,
     };
-    expect(computerOffer(ubuntu, null, false)).toEqual({ mac: false, simple: true, yes: true, why: null });
+    expect(computerOffer(ubuntu, null, false, DIR)).toEqual({ mac: false, simple: true, yes: true, why: null });
     const decided = decideComputer({
-      offer: computerOffer(ubuntu, null, false),
+      offer: computerOffer(ubuntu, null, false, DIR),
       content: null,
       installed: null,
       answers: { on: true },
@@ -1571,6 +1649,8 @@ describe("what the agents need", () => {
       install: { user: "agentes", args: expect.not.arrayContaining(["--system"]) },
     });
     // Still root and systemd: simple mode makes its user and runs its service.
-    expect(computerOffer({ ...ubuntu, root: false }, null, false)).toMatchObject({ problem: { check: "computer" } });
+    expect(computerOffer({ ...ubuntu, root: false }, null, false, DIR)).toMatchObject({
+      problem: { check: "computer" },
+    });
   });
 });

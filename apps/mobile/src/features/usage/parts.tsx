@@ -1,4 +1,4 @@
-import type { PlanAccountInfo } from "@agenteschat/client";
+import type { PlanAccountInfo, PlanUsage } from "@agenteschat/client";
 import {
   accountName,
   accountOwner,
@@ -6,6 +6,7 @@ import {
   type MeterSegment,
   type MeterWindow,
   planMeterText,
+  planModelUsage,
 } from "@agenteschat/client/lib/plan-usage";
 import { planName } from "@agenteschat/client/lib/plans";
 import { mixHex } from "@agenteschat/ui/agent/engine";
@@ -198,6 +199,30 @@ export function PlanMeter({
   );
 }
 
+/**
+ * One line per model at a limit of its own ("GLM-5.3 — Sem cota · renova sáb 18:00"), under the account's windows, as
+ * the web's `PlanModels`: its name, then where its quota stands. Nothing while no model is at a limit.
+ */
+export function PlanModels({ usage, provider }: { usage: Pick<PlanUsage, "models"> | null; provider: string | null }) {
+  const { t, i18n } = useTranslation();
+  const rows = planModelUsage(t, i18n.language, usage, provider);
+  if (rows.length === 0) return null;
+  return (
+    <View style={styles.models}>
+      {rows.map((r) => (
+        <View key={r.id} style={styles.windowLine}>
+          <Text variant="small" tone="ink2">
+            {r.label}
+          </Text>
+          <Text variant="caption" tone="danger" style={styles.grow}>
+            {r.text}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /** An account's head: the maker's mark, its name and plan, its maker and whose it is. */
 export function AccountHead({ account, extra }: { account: PlanAccountInfo; extra?: string | null }) {
   const { t } = useTranslation();
@@ -244,12 +269,15 @@ export function UsageCard({
   title,
   hint,
   footer,
+  footerHint,
   children,
 }: {
   icon: IconName;
   title: string;
   hint?: { name: string; text: string };
   footer?: string;
+  /** An ⓘ after the footer's words, with the rest of the explanation. */
+  footerHint?: { name: string; text: string };
   children: ReactNode;
 }) {
   const { colors: c, shadows } = useTheme();
@@ -277,9 +305,17 @@ export function UsageCard({
       {children}
       {footer ? (
         <View style={[styles.cardFoot, { borderTopColor: c.line }]}>
-          <Text variant="caption" tone="muted">
-            {footer}
-          </Text>
+          {footerHint ? (
+            <InfoHint {...footerHint} variant="caption">
+              <Text variant="caption" tone="muted">
+                {footer}
+              </Text>
+            </InfoHint>
+          ) : (
+            <Text variant="caption" tone="muted">
+              {footer}
+            </Text>
+          )}
         </View>
       ) : null}
     </View>
@@ -402,6 +438,7 @@ const styles = StyleSheet.create({
   meter: { gap: 10 },
   meterCompact: { gap: 4 },
   window: { gap: 4 },
+  models: { gap: 4 },
   windowLine: { flexDirection: "row", alignItems: "baseline", gap: 8 },
   acctBox: { gap: 4 },
   acct: { flexDirection: "row", alignItems: "center", gap: 12 },

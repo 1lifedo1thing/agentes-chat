@@ -1,17 +1,18 @@
 import { Slot } from "radix-ui";
-import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from "react";
+import { type ButtonHTMLAttributes, forwardRef, type MouseEvent, type ReactNode } from "react";
 import { cx } from "../cx";
 import { Icon, type IconName } from "../icons/Icon";
 import { Kbd } from "./Kbd";
 import { Spinner } from "./Skeleton";
 
-export type ButtonVariant = "default" | "primary" | "agent" | "danger" | "ghost";
+export type ButtonVariant = "default" | "primary" | "agent" | "danger" | "ghost" | "link";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /**
    * `primary` at most once per area; `agent` only to ask an agent for
    * something ("Pedir à Ada": cut corner + agent icon); `danger` to refuse or
-   * delete; `ghost` in toolbars.
+   * delete; `ghost` in toolbars; `link` for a row's or a card's quiet action ("Editar", "Mudar", "Ver"): the words
+   * alone, with no box, so it takes no room but its text's (`size`, `block` and `iconOnly` don't apply).
    */
   variant?: ButtonVariant;
   /** The control ruler: `md` 40 (default), `sm` 32 (toolbars, rows, composer), `lg` 48 (only a full screen's main action). */
@@ -27,7 +28,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   kbd?: string[];
   /** An async action is running: inline spinner, same width, not clickable (`aria-busy`). */
   loading?: boolean;
-  /** Render the child element (e.g. a router link) with the button styles. */
+  /** Render the child element (e.g. a router link) with the button styles; `disabled` switches it off too. */
   asChild?: boolean;
   children?: ReactNode;
 }
@@ -54,18 +55,27 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   // An icon and nothing else is an icon button, said or not: square, as `ac-btn--icon` draws it.
   const onlyIcon =
     iconOnly || (Boolean(leading) && !asChild && (children == null || children === false || children === "") && !kbd);
-  const classes = cx(
-    "ac-btn",
-    variant !== "default" && `ac-btn--${variant}`,
-    size !== "md" && `ac-btn--${size}`,
-    onlyIcon && "ac-btn--icon",
-    block && "ac-btn--block",
-    loading && "ac-btn--loading",
-    className,
-  );
+  const classes =
+    variant === "link"
+      ? cx("ac-link", "ac-link--action", loading && "ac-link--loading", className)
+      : cx(
+          "ac-btn",
+          variant !== "default" && `ac-btn--${variant}`,
+          size !== "md" && `ac-btn--${size}`,
+          onlyIcon && "ac-btn--icon",
+          block && "ac-btn--block",
+          loading && "ac-btn--loading",
+          className,
+        );
   if (asChild) {
+    // A link has no `disabled` of its own: off, it follows no click (Enter is one) and is no stop for Tab.
+    const off = disabled && {
+      "aria-disabled": true,
+      tabIndex: -1,
+      onClick: (event: MouseEvent) => event.preventDefault(),
+    };
     return (
-      <Slot.Root ref={ref} className={classes} aria-disabled={disabled || undefined} {...rest}>
+      <Slot.Root ref={ref} className={classes} {...rest} {...off}>
         {children}
       </Slot.Root>
     );
