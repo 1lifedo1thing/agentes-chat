@@ -284,7 +284,7 @@ export function PickList({
       <span className="arrival-have__text">
         <span className="arrival-have__title">{o.label}</span>
         {o.description && <span className="arrival-have__line">{o.description}</span>}
-        {o.hint && <span className="arrival-have__line bd-pick__hint">{o.hint}</span>}
+        {o.hint && <span className="arrival-have__line arrival-have__line--words bd-pick__hint">{o.hint}</span>}
       </span>
     </label>
   );

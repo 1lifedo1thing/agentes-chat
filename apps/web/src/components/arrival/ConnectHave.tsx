@@ -160,7 +160,7 @@ export function HaveRow({
         <span className="arrival-have__title">{item.title}</span>
         {about && <span className="arrival-have__line">{about}</span>}
         {shownWord && (
-          <span className="arrival-have__line" data-plan={state?.state}>
+          <span className="arrival-have__line arrival-have__line--words" data-plan={state?.state}>
             {shownWord}
           </span>
         )}

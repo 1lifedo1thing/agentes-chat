@@ -1122,6 +1122,10 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
     expect(shownText(haveRow(box, "Claude da Acme"))).toBe(
       "Claude da AcmeClaude · termina em 7f2aPago por uso. Conta no orçamento da Ada.",
     );
+    // A sentence wraps whole on a narrow window, never cut to "Conta no orçamento …".
+    const said = Array.from(haveRow(box, "Claude da Acme").querySelectorAll(".arrival-have__line")).at(-1);
+    expect(said?.textContent).toBe("Pago por uso. Conta no orçamento da Ada.");
+    expect(said?.classList.contains("arrival-have__line--words")).toBe(true);
     await useHave(box, "Claude da Acme");
     expect(calls(state, "agents.setBrain").map((c) => c.args)).toEqual([[ORG_ID, ADA_ID, { brain: "model" }]]);
     // Her model runs on that key: it stays.

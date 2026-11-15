@@ -702,7 +702,7 @@ html:not([data-pointer]) button.arrival-have__row[data-state="checked"]:focus-vi
   gap: 1px;
   min-width: 0;
 }
-/* A row's lines stay one line each: a long name or email ends in an ellipsis, so every row keeps one height. */
+/* A row's name and its email or owner stay one line each: a long one ends in an ellipsis. */
 .arrival-have__title,
 .arrival-have__line {
   overflow: hidden;
@@ -718,6 +718,10 @@ html:not([data-pointer]) button.arrival-have__row[data-state="checked"]:focus-vi
   color: var(--ink-muted);
   font-size: 13px;
   line-height: 18px;
+}
+/* A sentence under a name (a key's "paid by use", a plan's room, a model's need) wraps whole: cut, it reads broken. */
+.arrival-have__line--words {
+  white-space: normal;
 }
 /* The state is the words; the colour only follows them. */
 .arrival-have__line[data-plan="almost"] {

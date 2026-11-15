@@ -360,6 +360,15 @@ describe("the team dialog's styles", () => {
     );
   });
 
+  test("an account row's sentence wraps whole, after the one-line name and owner", async () => {
+    const css = await stylesheet("../src/components/arrival/arrival.css");
+    const cut = css.indexOf(".arrival-have__line {");
+    const words = css.indexOf("\n.arrival-have__line--words {");
+    expect(cut).toBeGreaterThan(-1);
+    expect(words).toBeGreaterThan(cut);
+    expect(css.slice(words).split("}")[0]).toContain("white-space: normal");
+  });
+
   test("Choose keeps long names whole, the box and the face on the name's first line", async () => {
     const css = await stylesheet("../src/components/arrival/arrival.css");
     const rule = (selector: string) =>
