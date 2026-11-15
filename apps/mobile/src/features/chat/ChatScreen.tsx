@@ -1529,8 +1529,6 @@ function Chat({
       dayShown.value = withTiming(0, { duration: 300 });
     }, DATE_PILL_IDLE_MS);
   }, [dayShown]);
-  // Its hide is armed from the start too: a start with no end (a momentum the list ended itself) left it standing
-  // over the first message with nobody scrolling. The next drag or fling shows it again.
   const showDay = useCallback(() => {
     dayShown.value = withTiming(1, { duration: 120 });
     hideDay();

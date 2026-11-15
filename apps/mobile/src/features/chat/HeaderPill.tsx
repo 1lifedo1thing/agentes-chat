@@ -142,8 +142,6 @@ export function HeaderPill({
     open.value = withTiming(closed ? 0 : 1, { duration: closed ? 120 : 200, easing: EASE_OUT });
   }, [closed, open]);
   useEffect(() => {
-    // Never on Liquid Glass (iOS 26): a scale animated on the glass, for as long as the agent works, made the whole
-    // screen flash black there (iOS doesn't render glass under a scale or opacity animation). The sky still sweeps.
     if (working && !reduced && !liquidHere) {
       breath.value = withRepeat(
         withSequence(
