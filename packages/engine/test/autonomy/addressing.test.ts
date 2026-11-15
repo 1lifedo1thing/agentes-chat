@@ -188,7 +188,7 @@ scenario("S10a", "a thanks an agent is sure needs nothing wakes nobody", async (
   await assertInvariants(w);
 });
 
-scenario("S10b", "a thanks the judge is unsure of wakes the agent once, it passes and posts nothing", async () => {
+scenario("S10b", "a thanks the judge leans on as a handover wakes the agent once, it passes and posts nothing", async () => {
   const w = await thanks(0.65, 0.35);
   expect(await w.runs("theo")).toHaveLength(1);
   expect(await w.posts("theo")).toEqual([]);
