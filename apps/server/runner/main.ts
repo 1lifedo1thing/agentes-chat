@@ -77,6 +77,7 @@ import {
   devicePair,
   formatUserCode,
   LINK_CODE,
+  movedFrom,
   PairingError,
   redeemIssuedCode,
   takeEnrollCode,
@@ -84,7 +85,7 @@ import {
 } from "./pairing";
 import { agentWorkspace } from "./paths";
 import { connectVnc, type VncConnection, vncInit } from "./rfb";
-import { installService, installSystemService, serviceStatus, uninstallService } from "./service";
+import { installService, installSystemService, removeOwnService, serviceStatus, uninstallService } from "./service";
 import { askStandby, STANDBY_DEFAULT_MINUTES, STANDBY_MAX_MINUTES, standbyAcked } from "./standby";
 import type { DataListener, DataSocket } from "./streams";
 import { runTaskWrapper } from "./tasks";
@@ -172,7 +173,7 @@ Usage:
 Every command takes --home <dir> (default $AGENTES_RUNNER_HOME or ~/.agentes-runner).
 Config: <home>/config.json, mode 600. For background tasks, optional "maxConcurrentTasks" (default 3)
 and "taskMaxSeconds" (default 14400). For agents thinking with Claude Code, optional "brainIdleMinutes"
-(default 3) and "brainMaxProcesses" (default 1). Changes apply while it runs.
+(default 20 on Linux, 3 elsewhere) and "brainMaxProcesses" (default 2 on Linux, 1 elsewhere). Changes apply while it runs.
 Background tasks keep running when the runner restarts. Their logs are in tasks/.
 Commands run as the user that runs the runner. Consider a dedicated OS user.`;
 
@@ -391,6 +392,9 @@ async function pair(p: Parsed): Promise<number> {
   const details = [`Workspace: ${workspaceReal}${exec ? "" : " (commands off)"}`, `Config: ${configPath(home)}`];
   if (wait) wait.done(connected, ...details);
   else term.step(connected, ...details);
+  // One home holds one connection: it left the workspace it worked for, which nothing else says.
+  const left = movedFrom(prev, grant.org);
+  if (left) term.warn(left);
   // An issued code is a provisioner's (the workspace computer): its rule is the workspace's, not a person's choice.
   const who = enrollCode ? null : whoCanUse(grant, next.name ?? grant.name);
   if (who && grant.url) {
@@ -424,7 +428,7 @@ async function start(): Promise<number> {
     console.error(`This runtime has no WebSocket client (${process.version}). Use Node.js 22 or newer, or Bun.`);
     return 1;
   }
-  const lock = acquireLock(home, "start");
+  const lock = acquireLock(home, "start", { version: RUNNER_VERSION, protocol: MACHINE_PROTOCOL_VERSION });
   if (!lock.ok) {
     console.error(lockedMessage(home, lock.holder));
     return serviceSafe(4);
@@ -445,6 +449,15 @@ async function start(): Promise<number> {
       case "outdated":
         log("This runner is too old for the server. Update it: agentes-runner update");
         return serviceSafe(3);
+      case "revoked": {
+        const removed = removeOwnService({ manager: process.env.AGENTES_RUNNER_SERVICE });
+        log(
+          removed
+            ? `This computer was removed from the workspace, so its login service is gone too (${removed}). To connect it again: agentes-runner pair --server <url>`
+            : "This computer was removed from the workspace. To connect it again: agentes-runner pair --server <url>",
+        );
+        return serviceSafe(TOKEN_REFUSED_EXIT);
+      }
       default:
         log("Connect this computer again: agentes-runner pair --server <url>");
         return serviceSafe(TOKEN_REFUSED_EXIT);
@@ -484,7 +497,7 @@ async function app(): Promise<number> {
   console.debug = toLog;
   console.error = toLog;
   process.stdout.on("error", () => {});
-  const lock = acquireLock(home, "app");
+  const lock = acquireLock(home, "app", { version: RUNNER_VERSION, protocol: MACHINE_PROTOCOL_VERSION });
   const ac = new AbortController();
   process.once("SIGTERM", () => ac.abort());
   process.once("SIGINT", () => ac.abort());
@@ -605,7 +618,7 @@ async function host(p: Parsed): Promise<number> {
   // Read once, then out of the environment: the organizations' runners (and their agents) never see it.
   const envToken = flags.tokenEnv ? process.env[flags.tokenEnv]?.trim() || null : null;
   if (flags.tokenEnv) delete process.env[flags.tokenEnv];
-  const lock = acquireLock(flags.state, "host");
+  const lock = acquireLock(flags.state, "host", { version: RUNNER_VERSION, protocol: MACHINE_PROTOCOL_VERSION });
   if (!lock.ok) {
     console.error(lockedMessage(flags.state, lock.holder));
     return 4;
@@ -844,18 +857,29 @@ function status(): number {
   const stored = storedOrNull(home);
   const config = readConfig(home);
   const bun = (process.versions as { bun?: string }).bun;
-  term.intro(
-    `agentes-runner ${RUNNER_VERSION} (protocol ${MACHINE_PROTOCOL_VERSION}) on ${bun ? `bun ${bun}` : `${process.release.name} ${process.version}`}${runningCompiled() ? " (compiled)" : ""}`,
-    false,
-  );
+  // The version worth reporting is the one of the runner serving this home, which keeps in the lock what it puts
+  // in its `hello`. This command may be another install's shim: its own constant is only the answer when no runner
+  // reports one, and then the line says whose version it is.
+  const holder = readLock(home);
+  const running = holder && pidAlive(holder.pid) ? holder : null;
+  const version = running?.version ?? RUNNER_VERSION;
+  const protocol = running?.protocol ?? MACHINE_PROTOCOL_VERSION;
+  const here = `agentes-runner ${version} (protocol ${protocol})`;
+  const build = `on ${bun ? `bun ${bun}` : `${process.release.name} ${process.version}`}${runningCompiled() ? " (compiled)" : ""}`;
+  const same = version === RUNNER_VERSION && protocol === MACHINE_PROTOCOL_VERSION;
+  const line = !running?.version
+    ? `${here} ${build} — this command's version: ${running ? "the runner here didn't report one" : "no runner is running"}`
+    : same
+      ? `${here} ${build}`
+      : `${here} running here · this command is ${RUNNER_VERSION} (protocol ${MACHINE_PROTOCOL_VERSION}) ${build}`;
+  term.intro(line, false);
   if (config) {
     term.step(
       `Connected${stored?.orgName ? ` to ${stored.orgName}` : ""} as "${config.name}"`,
       `${config.server} · workspace ${config.workspace}`,
     );
   } else term.fail("Not connected.");
-  const holder = readLock(home);
-  if (holder && pidAlive(holder.pid)) term.step(`Running: pid ${holder.pid}${holder.mode ? ` (${holder.mode})` : ""}`);
+  if (running) term.step(`Running: pid ${running.pid}${running.mode ? ` (${running.mode})` : ""}`);
   else term.warn("Running: no");
   const service = serviceStatus(undefined, stored?.mode === "system");
   // systemd says how the unit is ("(active)", "(inactive)", "(failed)"); launchd and Windows only that it's there.

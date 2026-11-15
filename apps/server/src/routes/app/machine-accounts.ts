@@ -10,6 +10,7 @@ import {
   removeMachineAccount,
   renameMachineAccount,
   sendAccountLoginCode,
+  setAccountServes,
   takeBackPlan,
   ValidationError,
 } from "@agenteschat/engine";
@@ -60,7 +61,7 @@ const AccountLoginStatus = z
     error: z.string().optional().openapi({ description: "`failed`: why, for people." }),
     code: z.enum(ACCOUNT_LOGIN_FAILURES).optional().openapi({
       description:
-        "`failed` or `expired` on the computer: why, for the app to say in its own words. `not_installed`, `no_tty` (no terminal to take the code), `network` (the provider out of reach), `bad_code` (the provider refused the pasted code), `cli_exit` (the CLI stopped with an error of its own), `not_signed_in_after_login` (it finished, but its status says signed out), `status_unknown` (its status didn't answer), `no_token`, `not_kept`, `timeout` (`expired`), `canceled`. An older runner sends none.",
+        "`failed` or `expired` on the computer: why, for the app to say in its own words. `not_installed`, `no_tty` (no terminal to take the code), `network` (the provider out of reach), `bad_code` (the provider refused the pasted code), `cli_exit` (the CLI stopped with an error of its own), `not_signed_in_after_login` (it finished, but its status says signed out), `status_unknown` (its status didn't answer), `no_token`, `not_kept`, `sandbox` (Grok Build signed in, but its sandbox doesn't start there for an agent), `timeout` (`expired`), `canceled`. An older runner sends none.",
     }),
     message: z.string().optional().openapi({
       description: "With `code`: what the CLI itself said (English, credentials masked, at most 300 characters).",
@@ -397,6 +398,38 @@ export function machineAccountRoutes(deps: AppDeps) {
         orgId,
         accountId,
         c.req.valid("json").agentId,
+      );
+      if (result.agentIds.length) await publishMachineAgentsChanged(pubsub, orgId);
+      return c.json(result, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/organizations/{orgId}/ai-accounts/{accountId}/serves",
+      tags,
+      security,
+      summary: "Choose who a plan thinks for: everyone in the workspace, or only you (the person who connected it)",
+      description:
+        "ADR 0059 §3: `everyone` (the default) lets every person's right hand and any agent think with it; `owner` keeps it to the caller's own, moving other people's agents off it as when a plan is taken back. Every login of the account changes together. Audited as `account.serves`; its `plan_serves` notification is done.",
+      request: {
+        params: PlanParams,
+        body: body(z.object({ serves: z.enum(["everyone", "owner"]) })),
+      },
+      responses: {
+        200: json(z.object({ serves: z.enum(["everyone", "owner"]), agentIds: z.array(z.uuid()) })),
+        ...errors,
+      },
+    }),
+    async (c) => {
+      const { orgId, accountId } = c.req.valid("param");
+      const result = await setAccountServes(
+        { db, pubsub },
+        c.get("user").id,
+        orgId,
+        accountId,
+        c.req.valid("json").serves,
       );
       if (result.agentIds.length) await publishMachineAgentsChanged(pubsub, orgId);
       return c.json(result, 200);

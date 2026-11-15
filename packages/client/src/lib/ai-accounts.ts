@@ -12,6 +12,7 @@ import type {
 } from "../api/types";
 import { joinNames } from "./format";
 import { isPlanId, loginPerAgent, planName } from "./plans";
+import { shownKeys } from "./providers";
 import { isRightHand } from "./right-hand";
 
 /** One account as a row shows it: its logins, one per agent where its plan allows it (`LOGIN_PER_AGENT`). */
@@ -237,7 +238,7 @@ export function accountAbout(
 }
 
 /**
- * Someone else's plan that a person who may use other people's plans (`use_others_plans`, ADR 0059 §3) can give the
+ * Someone else's plan that a person who may use other people's plans (`canUseOthersPlans`, ADR 0059 §3) can give the
  * agent named `agentName`: signed in, and thinking for nobody else or for all of its owner's agents there. It is
  * never taken from an agent that has it.
  */
@@ -288,7 +289,7 @@ export function existingAi<A extends MachineAccount>(
     const act = existingAct(choice, view.canUseOthersPlans === true);
     return act ? [{ kind: "account", choice, act }] : [];
   });
-  const live = keys.filter((k) => !k.revokedAt).map((key): ExistingAi<A> => ({ kind: "key", key }));
+  const live = shownKeys(keys).map((key): ExistingAi<A> => ({ kind: "key", key }));
   const rank = (r: ExistingAi<A>) => EXISTING_RANK[r.kind === "key" ? "key" : r.act];
   return [...accounts, ...live].sort((x, y) => rank(x) - rank(y));
 }

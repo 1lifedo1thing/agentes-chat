@@ -54,6 +54,7 @@ import {
   planOfAccount,
   planOfKind,
   planPickText,
+  plansNotYoursOf,
   signInAgainPlan,
   signsInOnce,
   signsInPerAgent,
@@ -812,7 +813,7 @@ describe("why a plan can't sign in yet, in plain words (`gateLine`)", () => {
   const pt = instance.t.bind(instance) as TFunction;
   const computer = "Computador da Acme";
   const line = (gate: PlanGate, edition: "cloud" | "selfhost", kind: "claude_code" | "codex" = "codex") =>
-    gateLine(pt, { gate, edition, kind, computer, machine: { os: "linux", mode: "single" } });
+    gateLine(pt, { gate, edition, kind, computer });
   const off = (reason: Extract<PlanGate, { state: "unsupported" }>["reason"]) =>
     ({ state: "unsupported", reason }) as const;
 
@@ -896,12 +897,22 @@ describe("why a plan can't sign in yet, in plain words (`gateLine`)", () => {
       text: "O Codex não está instalado no Computador da Acme.",
       rechecks: false,
     });
-    expect(line(off("tool_off"), "selfhost")?.text).toContain("agentes-runner tools enable codex");
+    // The cause alone: its way out is the button beside it, never a path to a settings screen in the sentence.
+    expect(line(off("tool_off"), "selfhost")?.text).toBe("O Codex está desligado no Computador da Acme.");
     expect(line(off("keys"), "selfhost")?.text).toBe(pt("aiAccounts.connect.needs.keys"));
     expect(line({ state: "offline" }, "selfhost")).toEqual({
       text: pt("brain.offline", { computer }),
       rechecks: true,
     });
+  });
+
+  test('a computer a person connected to the Cloud is theirs: its words are self-host\'s, never "on our side"', () => {
+    const say = (gate: PlanGate, kind: "connected" | "managed") =>
+      gateLine(pt, { gate, edition: "cloud", kind: "codex", computer, machine: { kind } })?.text;
+    expect(say(off("tool_off"), "connected")).toBe("O Codex está desligado no Computador da Acme.");
+    expect(say(off("not_installed"), "connected")).toBe("O Codex não está instalado no Computador da Acme.");
+    expect(say({ state: "offline" }, "connected")).toBe(pt("brain.offline", { computer }));
+    expect(say(off("tool_off"), "managed")).toContain("Isso é do nosso lado");
   });
 
   test("any other gate has no line", () => {
@@ -978,6 +989,30 @@ describe("a card says the real cause, not that the agent has no AI", () => {
     expect(serverBody(pt, "…", meta("commands_off"))).toBe(
       "Agora não consigo responder: os comandos estão desligados no computador do meu plano.",
     );
+  });
+
+  test("every plan here serves only someone else: whose they are, and the person's own plan as the way out", () => {
+    const lodi = { ownerUserId: "u1", builtin: "right_hand" as const };
+    expect(card("plans_not_yours", { owner: "Walter Souza", plan: "Claude" })).toMatchObject({
+      planLine: "plans_not_yours",
+      owner: "Walter",
+      plan: "Claude",
+    });
+    expect(planLineFix("plans_not_yours", lodi, "u2", { permissions: ["manage_agents"] })).toBe("connectMine");
+    expect(pt("noAi.rightHand.plans_not_yours", { owner: "Walter", plan: "Claude" })).toBe(
+      "O Claude daqui é só de Walter. Conecte o seu e eu respondo.",
+    );
+    expect(serverBody(pt, "…", meta("plans_not_yours", { owner: "Walter Souza", plan: "Claude" }))).toBe(
+      "O Claude daqui é só de Walter. Conecte o seu e eu respondo.",
+    );
+    const status: AiStatus = {
+      any: true,
+      agents: [{ agentId: "lodi", state: "no_ai", reason: "plans_not_yours", owner: "Walter Souza", plan: "Claude" }],
+    };
+    const whose = plansNotYoursOf(status, "lodi");
+    expect(whose).toEqual({ owner: "Walter", plan: "Claude" });
+    expect(pt("noAi.notYours.receipt", whose ?? {})).toBe("Ninguém vai responder: o Claude é só de Walter");
+    expect(plansNotYoursOf(status, "other")).toBeNull();
   });
 
   test("the right hand's run nobody asked for never says to connect your plan: only a key, for who sets its AI", () => {

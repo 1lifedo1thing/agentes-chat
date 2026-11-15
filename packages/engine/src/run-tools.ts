@@ -1,12 +1,12 @@
 import { PERMISSION_TOOL, type PubSub } from "@agenteschat/adapters";
 import { and, type Database, type Executor, eq, inArray, isNull, type SQL, schema, sql } from "@agenteschat/db";
 import { linkRunActions, publishMessageActions } from "./agent-actions";
-import { followWork } from "./agent-status";
-import { openApprovalCard, publishApproval } from "./approvals";
+import { announceAgentStatus, followWork } from "./agent-status";
+import { openApprovalCard, publishApproval, supersedeApprovals } from "./approvals";
 import { runAuthorityById } from "./authority";
 import type { BrainTool, ToolResult } from "./brains/types";
 import { readableChannelIds } from "./channels";
-import { consultationCardThread, consultationOrigin } from "./consultations";
+import { announceConsultationChange, consultationCardThread, consultationOrigin } from "./consultations";
 import { NotFoundError } from "./errors";
 import { type MemoryUpdate, publishChannelEvent, publishMessageCreated, takeStepWords } from "./events";
 import { type PendingFeedbackOffer, pendingFeedbackOfferOf } from "./feedback-offers";
@@ -25,6 +25,7 @@ import {
   questionView,
   syncQuestionMessage,
 } from "./questions";
+import { PASS_TOOL } from "./reply-policy";
 import { routineBriefOf } from "./routine-brief";
 import type { BridgeIdentity } from "./run-tool-tokens";
 import { type AgentRun, replyThreadOf } from "./runs";
@@ -130,6 +131,8 @@ export interface ToolSideEffects {
   tasks?: HandedTask[];
   /** A report it offered about the app (`offer_feedback`, ADR 0160 §12), for its next reply (`meta.feedbackOffer`). */
   feedbackOffer?: PendingFeedbackOffer;
+  /** A call refused for a switch off on its computer (`ToolOffError`): its reply's one-click card (`meta.toolOff`). */
+  toolOff?: { machineId: string; tool: string };
 }
 
 /** A task handed on, as a reply's chip reads it: the task, its agent and its conversation's root (the thread). */
@@ -274,6 +277,9 @@ export function absorbToolData(t: ToolSideEffects, data: Record<string, unknown>
     t.tasks = [...(t.tasks ?? []).filter((x) => x.issueId !== task.issueId), task];
   const offer = pendingFeedbackOfferOf(data.feedbackOffer);
   if (offer) t.feedbackOffer = offer;
+  const off = data.toolOff as { machineId?: unknown; tool?: unknown } | undefined;
+  if (off && typeof off.machineId === "string" && typeof off.tool === "string")
+    t.toolOff = { machineId: off.machineId, tool: off.tool };
   const update = data.memoryUpdate as MemoryUpdate | undefined;
   if (update) t.memoryUpdates = [...(t.memoryUpdates ?? []), update];
   return update ?? null;
@@ -295,6 +301,7 @@ export function mergeToolEffects(t: ToolSideEffects, e: ToolSideEffects | null |
   if (e.desktop?.length) t.desktop = withTrail(t.desktop, e.desktop);
   if (e.tasks?.length) t.tasks = [...(t.tasks ?? []), ...e.tasks];
   if (e.feedbackOffer) t.feedbackOffer = e.feedbackOffer;
+  if (e.toolOff) t.toolOff = e.toolOff;
 }
 
 const hasEffects = (e: ToolSideEffects) =>
@@ -311,7 +318,8 @@ const hasEffects = (e: ToolSideEffects) =>
       e.browser?.length ||
       e.desktop?.length ||
       e.tasks?.length ||
-      e.feedbackOffer,
+      e.feedbackOffer ||
+      e.toolOff,
   );
 
 /** The transcript key where the bridge leaves a computer-brain turn's side effects for the engine. */
@@ -504,7 +512,9 @@ export async function invokeWithChip(
   const command = toolCommand(use.name, input);
   // The agent's line follows what it does now (ADR 0084 §10), beside the call, never in its way.
   if (def) void followWork(deps, ctx, def).catch(() => {});
-  const said = takeStepWords(where.runId);
+  const words = takeStepWords(where.runId);
+  // What it wrote before staying quiet was never meant for people: shown, it would vanish with the pass.
+  const said = use.name === PASS_TOOL ? undefined : words;
   await publishChannelEvent(deps.pubsub, {
     type: "agent.tool",
     ...where,
@@ -684,7 +694,11 @@ export async function invokeToolForRun(
   if (outcome.type === "result") {
     const isError = outcome.output.isError === true;
     return {
-      result: { content: outcome.output.content, ...(isError ? { isError: true } : {}) },
+      result: {
+        content: outcome.output.content,
+        ...(isError ? { isError: true } : {}),
+        ...(outcome.output.images?.length ? { images: outcome.output.images } : {}),
+      },
       ...(isError ? { code: codeOf(outcome.output.content, outcome.output.data) } : {}),
     };
   }
@@ -734,6 +748,8 @@ export interface PostedPause {
   secrets: SecretRequestRow[];
   /** Cards that took the run's receipts (`message.actions` goes out with them). */
   withReceipts: string[];
+  /** Older requests the new ones replaced (`supersedeApprovals`). */
+  superseded: Approval[];
 }
 
 /** A run's trigger, as its messages and cards read it. */
@@ -795,7 +811,14 @@ export function runMessageMeta(
  * Runs inside the caller's transaction; nothing is published here (`publishPauseCards`).
  */
 export async function postPauseCards(tx: Executor, run: AgentRun, requests: PauseRequests): Promise<PostedPause> {
-  const out: PostedPause = { messages: [], approvals: [], questions: [], secrets: [], withReceipts: [] };
+  const out: PostedPause = {
+    messages: [],
+    approvals: [],
+    questions: [],
+    secrets: [],
+    withReceipts: [],
+    superseded: [],
+  };
   if (requests.approvals.length + requests.questions.length + requests.secretRequestIds.length === 0) return out;
   const trigger = await runTriggerOf(tx, run);
   const extra = runMessageMeta(run, trigger);
@@ -938,6 +961,7 @@ export async function postPauseCards(tx: Executor, run: AgentRun, requests: Paus
       .where(eq(approvals.id, approval.id))
       .returning();
     out.approvals.push(linked ?? approval);
+    out.superseded.push(...(await supersedeApprovals(tx, linked ?? approval)));
   }
   return out;
 }
@@ -958,6 +982,7 @@ export async function publishPauseCards(deps: { db: Database; pubsub?: PubSub },
       if (card.missionId) await notifyMissionApproval({ db, pubsub }, card).catch(() => undefined);
     }
   }
+  for (const old of posted.superseded) await publishApproval({ db, pubsub }, old, "approval.decided").catch(() => {});
   for (const q of posted.questions) {
     await publishQuestion(pubsub, q, "question.asked");
     await notifyQuestion({ db, pubsub } as Parameters<typeof notifyQuestion>[0], q).catch(() => {});
@@ -1095,6 +1120,10 @@ export async function suspendRunForTool(
       status: posted.status,
       ...(run.background ? { background: true as const } : {}),
     });
+    // It parked mid-turn: its face and lists say so now, and so does the conversation that handed it the work (its
+    // own events reach only the agents' DM, which nobody has open). The turn's end says it again.
+    await announceAgentStatus(deps.pubsub, run.orgId, run.agentId).catch(() => {});
+    await announceConsultationChange(deps, run).catch(() => {});
   }
 
   if (gated.type === "approval") {
