@@ -634,6 +634,24 @@ describe("Quem pensa: a plan with a login per agent, and plans on the Cloud", ()
     expect(brainScreen(d)).toBe("Pronto");
   });
 
+  test("Mais opções holds no switch for answering through the API or for paid extra usage", async () => {
+    const state = seedState();
+    const api = createFakeApi(state);
+    pairMac(api, true);
+    fakeMachinesOf.get(api)?.setSetup({ state: "ready", machineId: "machine_1" });
+    await api.sandbox.setTarget(ORG_ID, ADA_ID, "machine_1");
+    api.agents.brain = async () =>
+      fakeAgentBrain(ADA_ID, { brain: "claude_code", effectiveModel: "sonnet", onlyOwner: true });
+    await open(state, api);
+    const d = await brainDialog();
+    await toScreen(d, "Mais opções");
+    expect(within(d).getAllByRole("switch")).toEqual([
+      within(d).getByRole("switch", { name: "Atende outras pessoas" }),
+    ]);
+    expect(shownText(d)).not.toContain("chave de API");
+    expect(shownText(d)).not.toContain("uso extra pago");
+  });
+
   test("on the Cloud too, the plan's owner lets it answer other people: the switch, its line and ⓘ", async () => {
     const state = seedState();
     const api = createFakeApi(state);

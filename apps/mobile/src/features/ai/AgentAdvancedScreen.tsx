@@ -1,5 +1,5 @@
 import type { AgentBrain, AgentBrainInput, BrainSpeed } from "@agenteschat/client";
-import { keys, useAgentBrain, useAiAccounts, useAiStatus, useApi, useModels } from "@agenteschat/client";
+import { keys, useAgentBrain, useAiAccounts, useApi, useModels } from "@agenteschat/client";
 import { signInPlan } from "@agenteschat/client/lib/ai-accounts";
 import { EVERYONE_AUDIENCE } from "@agenteschat/client/lib/audience";
 import {
@@ -10,7 +10,6 @@ import {
   SPEEDS,
   viewSpeedFits,
 } from "@agenteschat/client/lib/brain-advanced";
-import { computerNameOf } from "@agenteschat/client/lib/computer";
 import {
   autoContextLine,
   type ContextLimit,
@@ -21,7 +20,6 @@ import {
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { planOf } from "@agenteschat/client/lib/plans";
 import { isAuto } from "@agenteschat/client/lib/providers";
-import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -58,13 +56,12 @@ export const advancedOf = (view: AgentBrain, options?: readonly ContextLimit[]):
     speed: viewSpeedFits(view) ? view.speed : "standard",
     contextTokens: tokens !== null && (!options || options.includes(tokens)) ? tokens : null,
     onlyOwner: view.onlyOwner,
-    fallback: view.fallback,
   };
 };
 
 export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
   const { t, i18n } = useTranslation();
-  const { orgId, org } = useOrg();
+  const { orgId } = useOrg();
   const api = useApi();
   const qc = useQueryClient();
   const toast = useToast();
@@ -78,7 +75,6 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
   const g = agentGrammar(name);
   const brain = useAgentBrain(orgId, agentId);
   const models = useModels();
-  const apiKey = useAiStatus(orgId).data?.apiKey !== false;
   const [busy, setBusy] = useState(false);
   const view = brain.data;
   const kind = accountKindOf(view?.brain);
@@ -103,9 +99,6 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
   const may = !busy && view?.canEdit === true;
   const effort = useEffortChoice(agentId, now?.effort);
   const speed = useBrainChoice<BrainSpeed>(agentId, now?.speed ?? "standard", (value) => ({ speed: value }));
-  const fallbackLabel = t("agentPage.work.brain.fallbackTitle", {
-    computer: computerNameOf(t, org?.name ?? "", view?.computer?.name ?? "", isPersonal(org)),
-  });
 
   /** Saves at once and says what the row on "Pensa com" will say now (or `done`). */
   const save = async (input: AgentBrainInput, done?: string) => {
@@ -116,7 +109,6 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
       const line = advancedSummary(t, i18n.language, {
         kind: next.brain,
         autoModel,
-        apiKey,
         now: advancedOf(next, options),
       });
       toast({ title: done ?? line, icon: "check" });
@@ -244,23 +236,6 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
                     disabled={busy}
                     keep
                   />
-                ) : null}
-                {apiKey ? (
-                  <View style={styles.gap}>
-                    <GroupedList>
-                      <GroupedRow
-                        label={fallbackLabel}
-                        labelLines={2}
-                        hint={{
-                          name: t("common.about", { label: fallbackLabel }),
-                          text: t("agentPage.work.brain.fallbackHint", g),
-                        }}
-                        toggle={view.fallback}
-                        disabled={!may}
-                        onPress={() => void save({ fallback: !view.fallback })}
-                      />
-                    </GroupedList>
-                  </View>
                 ) : null}
               </>
             ) : null}

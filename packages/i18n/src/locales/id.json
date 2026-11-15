@@ -3361,9 +3361,7 @@
     "dontRunForbidden": "Hanya yang meminta, pemilik agen, atau admin yang bisa membatalkannya",
     "answerAnyway": "Tetap jawab",
     "answerAnywayHint": "Menjawab sekarang, setelah membaca semua yang ditulis sejak itu",
-    "answerAnywayForbidden": "Hanya yang meminta, pemilik agen, atau admin yang bisa memintanya",
-    "extraTitle": "Pekerjaan panjang bisa memakai penggunaan ekstra berbayar",
-    "extraHint": "Kalau penggunaan ekstra di paket aktif, pekerjaan panjang terus berjalan melewati 95%. Kalau mati, pekerjaan dijeda di 95% dan lanjut saat paket diatur ulang."
+    "answerAnywayForbidden": "Hanya yang meminta, pemilik agen, atau admin yang bisa memintanya"
   },
   "usageQueue": {
     "back": "{{agent}} kembali {{when}}",
@@ -5299,8 +5297,6 @@
         "addAccount": "Tambah akun",
         "signInAgain": "Masuk lagi",
         "connectPlan": "Hubungkan paket lain",
-        "fallbackTitle": "Jika {{computer}} berhenti merespons, jawab lewat API",
-        "fallbackHint": "Agen menjawab lewat API dan dihitung dari anggaran {{name}}. Jika tidak, {{name}} memberi tahu siapa pun yang meminta dan menunggu komputernya kembali.",
         "effort": "Upaya",
         "efforts": {
           "auto": "Otomatis",
@@ -5361,8 +5357,7 @@
           "effort": "Upaya: {{level}}",
           "speed": "Kecepatan: cepat",
           "context": "Konteks: {{size}}",
-          "sharing": "Menjawab orang lain",
-          "waits": "Menunggu komputer"
+          "sharing": "Menjawab orang lain"
         },
         "copy": {
           "row": "Pakai di agen lain",
@@ -5500,7 +5495,6 @@
           "wait": "Tunggu",
           "modelTitle": "Model {{name}}",
           "moreTitle": "Opsi lainnya untuk {{name}}",
-          "fallback": "Pakai kunci API jika paketnya berhenti",
           "computer": "Komputer",
           "doneTitle": "Beres",
           "doneSub": "Yang sedang berjalan lanjut dengan akun baru.",
@@ -8440,7 +8434,7 @@
       "canceledToast": "Dibatalkan. Tidak akan berjalan saat batasnya diatur ulang.",
       "continuedToast": "Proses dilanjutkan.",
       "forbidden": "Hanya pembuat rutinitas, pemilik agen, atau admin yang bisa melanjutkannya sekarang",
-      "extra_off": "Jatah paket ini sudah habis dan pekerjaan panjang agen ini tidak memakai penggunaan ekstra berbayar. Aktifkan di pengaturan AI-nya untuk lanjut sekarang, atau dia lanjut setelah diatur ulang",
+      "extra_off": "Jatah paket ini sudah habis dan pekerjaan panjang agen ini tidak memakai penggunaan ekstra berbayar dari paket. Dia lanjut setelah diatur ulang",
       "extra_used_up": "Jatah paket ini sudah habis dan penggunaan ekstra berbayarnya juga habis atau tidak tersedia. Dia lanjut setelah diatur ulang"
     },
     "pausedRunningToast": "Rutinitas dijeda. Proses yang sedang berjalan juga dihentikan.",
@@ -14314,7 +14308,7 @@
       "takeOverNoAccess": "Bergabunglah ke percakapan rutinitas sebelum mengambil alihnya.",
       "agentNotInChannel": "Tambahkan agen ke percakapan dulu.",
       "webhookPaused": "Aktifkan rutinitas untuk mengujinya.",
-      "continueExtraOff": "Jatah periode paket ini sudah habis dan pekerjaan panjang agen ini tidak memakai pemakaian tambahan berbayar. Aktifkan itu di pengaturan AI-nya untuk melanjutkan sekarang, atau agen melanjutkan setelah reset.",
+      "continueExtraOff": "Jatah periode paket ini sudah habis dan pekerjaan panjang agen ini tidak memakai pemakaian tambahan berbayar dari paket. Agen melanjutkan setelah reset.",
       "continueExtraUsedUp": "Jatah periode paket ini sudah habis dan pemakaian tambahan berbayarnya juga habis atau tidak tersedia. Agen melanjutkan setelah reset.",
       "actionsNeedApprover": "Hanya pemilik agen atau orang yang menyetujui tindakannya yang bisa membiarkan rutinitas bertindak sendiri.",
       "editorOnly": "Hanya pembuat rutinitas, pemilik agen, atau Admin yang bisa mengubahnya.",
@@ -14409,7 +14403,6 @@
     "agent": {
       "ownerOrAdmin": "Hanya pemilik agen atau Admin yang bisa melakukan ini.",
       "detailsHidden": "Hanya orang yang berbicara dengan {{agentName}} yang bisa melihat cara kerjanya.",
-      "extraOwnerOnly": "Hanya pemilik agen yang bisa menyalakan atau mematikan penggunaan ekstra berbayar pada paket.",
       "undoForbidden": "Hanya orang yang dibantu agen, pemiliknya, atau Admin yang bisa membatalkan ini.",
       "undoSkillsAdmins": "Hanya Admin yang bisa membatalkan atau mengulang perubahan pada skill agen."
     },

@@ -3592,9 +3592,7 @@
     "dontRunForbidden": "Solo quien lo pidió, el responsable del agente o un admin pueden cancelarlo",
     "answerAnyway": "Responder de todos modos",
     "answerAnywayHint": "Responde ahora, leyendo todo lo que se escribió después",
-    "answerAnywayForbidden": "Solo quien lo pidió, el responsable del agente o un admin pueden pedirlo",
-    "extraTitle": "El trabajo largo puede usar uso extra pagado",
-    "extraHint": "Con el uso extra activado en el plan, el trabajo largo sigue después del 95%. Si está desactivado, se pausa en el 95% y retoma cuando el plan se renueva."
+    "answerAnywayForbidden": "Solo quien lo pidió, el responsable del agente o un admin pueden pedirlo"
   },
   "usageQueue": {
     "back": "{{agent}} vuelve {{when}}",
@@ -5645,8 +5643,6 @@
         "addAccount": "Agregar cuenta",
         "signInAgain": "Volver a iniciar sesión",
         "connectPlan": "Conectar otro plan",
-        "fallbackTitle": "Si {{computer}} deja de responder, responder a través de la API",
-        "fallbackHint": "Responde a través de la API y cuenta para el presupuesto de {{name}}. Si no, {{name}} le avisa a quien preguntó y espera a que la computadora vuelva.",
         "effort": "Esfuerzo",
         "efforts": {
           "auto": "Automático",
@@ -5707,8 +5703,7 @@
           "effort": "Esfuerzo: {{level}}",
           "speed": "Velocidad: rápida",
           "context": "Contexto: {{size}}",
-          "sharing": "Responde a otras personas",
-          "waits": "Espera a la computadora"
+          "sharing": "Responde a otras personas"
         },
         "copy": {
           "row": "Usar en otros agentes",
@@ -5858,7 +5853,6 @@
           "wait": "Esperar",
           "modelTitle": "Modelo de {{name}}",
           "moreTitle": "Más opciones de {{name}}",
-          "fallback": "Usar la clave de API si el plan se detiene",
           "computer": "Computadora",
           "doneTitle": "Todo listo",
           "doneSub": "Lo que estaba en curso sigue con la cuenta nueva.",
@@ -8956,7 +8950,7 @@
       "canceledToast": "Cancelado. No se ejecutará cuando el límite se renueve.",
       "continuedToast": "La ejecución continúa.",
       "forbidden": "Solo quien creó la rutina, el responsable del agente o un admin pueden continuarla ahora",
-      "extra_off": "La ventana de este plan se agotó y el trabajo largo de este agente no usa uso extra pagado. Actívalo en su configuración de IA para continuar ahora, o retoma después de la renovación",
+      "extra_off": "La ventana de este plan se agotó y el trabajo largo de este agente no usa el uso extra pagado del plan. Retoma después de la renovación",
       "extra_used_up": "La ventana de este plan se agotó y su uso extra pagado se agotó o no está disponible. Retoma después de la renovación"
     },
     "pausedRunningToast": "Rutina en pausa. La ejecución en curso también se detuvo.",
@@ -15226,7 +15220,7 @@
       "takeOverNoAccess": "Únete a la conversación de la rutina antes de hacerte cargo de ella.",
       "agentNotInChannel": "Primero agrega el agente a la conversación.",
       "webhookPaused": "Activa la rutina para probarla.",
-      "continueExtraOff": "La ventana de este plan se agotó y el trabajo largo de este agente no usa uso extra pagado. Actívalo en su configuración de IA para continuar ahora, o seguirá después del reinicio.",
+      "continueExtraOff": "La ventana de este plan se agotó y el trabajo largo de este agente no usa el uso extra pagado del plan. Seguirá después del reinicio.",
       "continueExtraUsedUp": "La ventana de este plan se agotó y su uso extra pagado se agotó o no está disponible. Seguirá después del reinicio.",
       "actionsNeedApprover": "Solo el dueño del agente o quien aprueba sus acciones puede dejar que una rutina actúe por su cuenta.",
       "editorOnly": "Solo quien creó la rutina, el dueño del agente o un admin puede cambiarla.",
@@ -15323,7 +15317,6 @@
     "agent": {
       "ownerOrAdmin": "Solo el dueño del agente o un admin puede hacer esto.",
       "detailsHidden": "Solo quien habla con {{agentName}} ve cómo funciona.",
-      "extraOwnerOnly": "Solo el dueño del agente activa o desactiva el uso extra pagado del plan.",
       "undoForbidden": "Solo la persona para quien trabajó el agente, su dueño o un admin puede deshacer esto.",
       "undoSkillsAdmins": "Solo un admin puede deshacer o rehacer un cambio en las habilidades de un agente."
     },

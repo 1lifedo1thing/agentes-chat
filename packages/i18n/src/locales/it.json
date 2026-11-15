@@ -3599,9 +3599,7 @@
     "dontRunForbidden": "Solo chi l'ha chiesto, il proprietario dell'agente o un admin può annullarlo",
     "answerAnyway": "Rispondi comunque",
     "answerAnywayHint": "Risponde ora, leggendo tutto quello che è stato scritto dopo",
-    "answerAnywayForbidden": "Solo chi l'ha chiesto, il proprietario dell'agente o un admin può chiederlo",
-    "extraTitle": "Il lavoro lungo può usare l'utilizzo extra a pagamento",
-    "extraHint": "Con l'utilizzo extra attivo nel piano, il lavoro lungo va avanti oltre il 95%. Se è disattivato, si mette in pausa al 95% e riprende quando il piano si rinnova."
+    "answerAnywayForbidden": "Solo chi l'ha chiesto, il proprietario dell'agente o un admin può chiederlo"
   },
   "usageQueue": {
     "back": "{{agent}} torna {{when}}",
@@ -5672,9 +5670,6 @@
         "addAccount": "Aggiungi account",
         "signInAgain": "Accedi di nuovo",
         "connectPlan": "Collega un altro piano",
-        "fallbackTitle": "Se {{computer}} smette di rispondere, rispondi tramite l'API",
-        "fallbackHint": "Risponde tramite l'API e rientra nel budget di {{name}}. Altrimenti {{name}} avvisa chi ha chiesto e aspetta che il computer torni disponibile.",
-        "fallbackHint_female": "Risponde tramite l'API e rientra nel budget di {{name}}. Altrimenti {{name}} avvisa chi ha chiesto e aspetta che il computer torni disponibile.",
         "effort": "Impegno",
         "efforts": {
           "auto": "Automatico",
@@ -5735,8 +5730,7 @@
           "effort": "Impegno: {{level}}",
           "speed": "Velocità: rapida",
           "context": "Contesto: {{size}}",
-          "sharing": "Risponde ad altre persone",
-          "waits": "Aspetta il computer"
+          "sharing": "Risponde ad altre persone"
         },
         "copy": {
           "row": "Usa su altri agenti",
@@ -5886,7 +5880,6 @@
           "wait": "Aspetta",
           "modelTitle": "Modello di {{name}}",
           "moreTitle": "Altre opzioni per {{name}}",
-          "fallback": "Usa la chiave API se il piano si ferma",
           "computer": "Computer",
           "doneTitle": "Tutto pronto",
           "doneSub": "Quello che era in corso continua con il nuovo account.",
@@ -9012,7 +9005,7 @@
       "canceledToast": "Annullato. Non partirà quando il limite si rinnova.",
       "continuedToast": "L'esecuzione continua.",
       "forbidden": "Solo chi ha creato la routine, il proprietario dell'agente o un admin può farla continuare ora",
-      "extra_off": "La finestra di questo piano è esaurita e il lavoro lungo di questo agente non usa l'utilizzo extra a pagamento. Attivalo nelle impostazioni IA dell'agente per continuare ora, altrimenti riprende dopo il rinnovo",
+      "extra_off": "La finestra di questo piano è esaurita e il lavoro lungo di questo agente non usa l'utilizzo extra a pagamento del piano. Riprende dopo il rinnovo",
       "extra_used_up": "La finestra di questo piano è esaurita e l'utilizzo extra a pagamento è esaurito o non disponibile. Riprende dopo il rinnovo"
     },
     "pausedRunningToast": "Routine in pausa. Anche l'esecuzione in corso si è fermata.",
@@ -15309,7 +15302,7 @@
       "takeOverNoAccess": "Entra nella conversazione della routine prima di prenderla in carico.",
       "agentNotInChannel": "Prima aggiungi l'agente alla conversazione.",
       "webhookPaused": "Attiva la routine per testarla.",
-      "continueExtraOff": "La finestra di questo piano è esaurita e il lavoro lungo di questo agente non usa l'utilizzo extra a pagamento. Attivalo nelle sue impostazioni IA per continuare ora, altrimenti riprende dopo il reset.",
+      "continueExtraOff": "La finestra di questo piano è esaurita e il lavoro lungo di questo agente non usa l'utilizzo extra a pagamento del piano. Riprende dopo il reset.",
       "continueExtraUsedUp": "La finestra di questo piano è esaurita e il suo utilizzo extra a pagamento è esaurito o non disponibile. Riprende dopo il reset.",
       "actionsNeedApprover": "Solo il responsabile dell'agente o chi approva le sue azioni può lasciare che una routine agisca da sola.",
       "editorOnly": "Solo chi ha creato la routine, il responsabile dell'agente o un admin può modificarla.",
@@ -15406,7 +15399,6 @@
     "agent": {
       "ownerOrAdmin": "Solo il responsabile dell'agente o un admin può farlo.",
       "detailsHidden": "Solo chi parla con {{agentName}} vede come funziona.",
-      "extraOwnerOnly": "Solo il responsabile dell'agente attiva o disattiva l'utilizzo extra a pagamento del piano.",
       "undoForbidden": "Solo la persona per cui l'agente ha lavorato, il suo responsabile o un admin può annullarlo.",
       "undoSkillsAdmins": "Solo un admin può annullare o ripetere una modifica alle skill di un agente."
     },

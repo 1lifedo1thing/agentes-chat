@@ -235,12 +235,11 @@ export function setupWords(
   t: TFunction,
   language: string,
   view: Pick<AgentBrain, "brain" | "effectiveModel" | "options" | "accounts" | "account" | "autonomy">,
-  o: { apiKey: boolean; now: Advanced },
+  o: { now: Advanced },
 ): string {
   const parts = advancedParts(t, language, {
     kind: view.brain,
     autoModel: isAuto(view.effectiveModel),
-    apiKey: o.apiKey,
     // The workspace's setup for a key carries no effort yet (ADR 0041, amended 2026-11-12): its words name none.
     now: view.brain === "model" ? { ...o.now, effort: null } : o.now,
   });
@@ -268,7 +267,6 @@ export function advancedResetInput(
           ...(autoModel ? {} : { effort: to.effort }),
           ...(to.speed !== now.speed ? { speed: to.speed } : {}),
           ...(to.onlyOwner !== view.onlyOwner ? { onlyOwner: to.onlyOwner } : {}),
-          fallback: to.fallback,
         }),
   };
 }

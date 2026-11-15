@@ -3466,9 +3466,7 @@
     "dontRunForbidden": "Yalnızca isteyen kişi, ajanın sahibi ya da bir yönetici iptal edebilir",
     "answerAnyway": "Yine de yanıtla",
     "answerAnywayHint": "Sonradan yazılan her şeyi okuyup şimdi yanıt verir",
-    "answerAnywayForbidden": "Bunu yalnızca isteyen kişi, ajanın sahibi ya da bir yönetici isteyebilir",
-    "extraTitle": "Uzun işler ücretli ek kullanımı kullanabilir",
-    "extraHint": "Planda ek kullanım açıkken uzun işler %95'in ötesinde sürer. Kapalıyken %95'te duraklar ve plan sıfırlanınca devam eder."
+    "answerAnywayForbidden": "Bunu yalnızca isteyen kişi, ajanın sahibi ya da bir yönetici isteyebilir"
   },
   "usageQueue": {
     "back": "{{agent}} {{when}} geri dönüyor",
@@ -5464,8 +5462,6 @@
         "addAccount": "Hesap ekle",
         "signInAgain": "Yeniden giriş yap",
         "connectPlan": "Başka bir plan bağla",
-        "fallbackTitle": "{{computer}} yanıt vermezse API üzerinden yanıtla",
-        "fallbackHint": "API üzerinden yanıt verir ve {{name}} ajanının bütçesinden düşer. Aksi halde {{name}} isteyen kişiye haber verir ve bilgisayarın geri gelmesini bekler.",
         "effort": "Çaba",
         "efforts": {
           "auto": "Otomatik",
@@ -5526,8 +5522,7 @@
           "effort": "Çaba: {{level}}",
           "speed": "Hız: hızlı",
           "context": "Bağlam: {{size}}",
-          "sharing": "Başka kişilere de yanıt verir",
-          "waits": "Bilgisayarı bekler"
+          "sharing": "Başka kişilere de yanıt verir"
         },
         "copy": {
           "row": "Diğer ajanlarda kullan",
@@ -5671,7 +5666,6 @@
           "wait": "Bekle",
           "modelTitle": "{{name}} için model",
           "moreTitle": "{{name}} için diğer seçenekler",
-          "fallback": "Plan durursa API anahtarını kullan",
           "computer": "Bilgisayar",
           "doneTitle": "Her şey hazır",
           "doneSub": "Devam eden işler yeni hesapla sürüyor.",
@@ -8663,7 +8657,7 @@
       "canceledToast": "İptal edildi. Sınır sıfırlanınca çalışmayacak.",
       "continuedToast": "Çalıştırma devam ediyor.",
       "forbidden": "Şu anda yalnızca rutini oluşturan kişi, ajanın sahibi ya da bir yönetici devam ettirebilir",
-      "extra_off": "Bu planın kullanım aralığı doldu ve bu ajanın uzun işleri ücretli ek kullanımı kullanmıyor. Şimdi devam etmek için ajanın yapay zeka ayarlarından bunu açın, yoksa sıfırlamadan sonra devam eder",
+      "extra_off": "Bu planın kullanım aralığı doldu ve bu ajanın uzun işleri planın ücretli ek kullanımını kullanmıyor. Sıfırlamadan sonra devam eder",
       "extra_used_up": "Bu planın kullanım aralığı doldu ve ücretli ek kullanımı da bitti ya da kullanılamıyor. Sıfırlamadan sonra devam eder"
     },
     "pausedRunningToast": "Rutin duraklatıldı. Süren çalıştırma da durdu.",
@@ -14733,7 +14727,7 @@
       "takeOverNoAccess": "Rutini devralmadan önce onun konuşmasına katılın.",
       "agentNotInChannel": "Önce ajanı konuşmaya ekleyin.",
       "webhookPaused": "Test etmek için rutini açın.",
-      "continueExtraOff": "Bu planın kullanım dönemi doldu ve bu ajanın uzun işleri ücretli ek kullanımı kullanmıyor. Hemen devam etmek için bunu yapay zeka ayarlarından açın, yoksa sıfırlamadan sonra kaldığı yerden sürer.",
+      "continueExtraOff": "Bu planın kullanım dönemi doldu ve bu ajanın uzun işleri planın ücretli ek kullanımını kullanmıyor. Sıfırlamadan sonra kaldığı yerden sürer.",
       "continueExtraUsedUp": "Bu planın kullanım dönemi doldu ve ücretli ek kullanımı da bitti ya da kullanılamıyor. Sıfırlamadan sonra kaldığı yerden sürer.",
       "actionsNeedApprover": "Bir rutinin kendi başına hareket etmesine yalnızca ajanın sahibi veya eylemlerini onaylayan kişi izin verebilir.",
       "editorOnly": "Rutini yalnızca oluşturan kişi, ajanın sahibi veya bir yönetici değiştirebilir.",
@@ -14829,7 +14823,6 @@
     "agent": {
       "ownerOrAdmin": "Bunu yalnızca ajanın sahibi veya bir yönetici yapabilir.",
       "detailsHidden": "Nasıl çalıştığını yalnızca {{agentName}} ile konuşanlar görür.",
-      "extraOwnerOnly": "Planın ücretli ek kullanımını yalnızca ajanın sahibi açıp kapatabilir.",
       "undoForbidden": "Bunu yalnızca ajanın çalıştığı kişi, sahibi veya bir yönetici geri alabilir.",
       "undoSkillsAdmins": "Bir ajanın becerilerindeki değişikliği yalnızca bir yönetici geri alabilir veya yineleyebilir."
     },

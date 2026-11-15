@@ -1,4 +1,4 @@
-import { keys, useAgentBrain, useAiStatus, useApi, useModels, useSetupPreview } from "@agenteschat/client";
+import { keys, useAgentBrain, useApi, useModels, useSetupPreview } from "@agenteschat/client";
 import {
   autonomyName,
   changes,
@@ -47,7 +47,6 @@ export function AgentSetupScreen({ agentId }: { agentId: string }) {
   const insets = useSafeAreaInsets();
   const dir = useDirectory();
   const brain = useAgentBrain(orgId, agentId);
-  const apiKey = useAiStatus(orgId).data?.apiKey !== false;
   const models = useModels();
   // "Levar a autonomia" off: the others keep their own.
   const [withAutonomy, setWithAutonomy] = useState(true);
@@ -64,7 +63,7 @@ export function AgentSetupScreen({ agentId }: { agentId: string }) {
   const results = sortedResults(preview.data ?? []);
   const can = takers(results);
   const chosen = can.filter((id) => picked.has(id));
-  const setupText = view ? setupWords(t, i18n.language, view, { apiKey, now: advancedOf(view) }) : "";
+  const setupText = view ? setupWords(t, i18n.language, view, { now: advancedOf(view) }) : "";
   const toggle = (id: string) =>
     setPicked((p) => {
       const next = new Set(p);

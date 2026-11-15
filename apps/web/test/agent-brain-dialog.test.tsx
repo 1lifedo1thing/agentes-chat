@@ -225,7 +225,7 @@ describe("Quem pensa (its dialog)", () => {
     expect(shownText(d)).toContain("A Ada agora pensa com Claude e só atende Walter.");
   });
 
-  test("the fallback to the API is a switch in Mais opções, its ⓘ saying what it does; with no API key anywhere there is none", async () => {
+  test("Mais opções has no switch to answer through the API, with an API key in the workspace or without one", async () => {
     const plan = async (state: ReturnType<typeof seedState>) => {
       const api = createFakeApi(state);
       api.agents.brain = async () => fakeAgentBrain(ADA_ID, { brain: "claude_code", effectiveModel: "sonnet" });
@@ -234,16 +234,9 @@ describe("Quem pensa (its dialog)", () => {
       await toScreen(d, "Mais opções");
       return d;
     };
-    const SWITCH = "Usar a chave de API se o plano parar";
     const d = await plan(seedState());
-    const fallback = within(d).getByRole("switch", { name: SWITCH });
-    expect(fallback.getAttribute("aria-checked")).toBe("true");
-    const hint = hintOf(SWITCH, d);
-    expect(hint.text).toBe(
-      "Responde pela API e conta no orçamento da Ada. Se não, a Ada avisa quem chamou e espera o computador voltar.",
-    );
-    expect(fallback.getAttribute("aria-describedby")).toBe(hint.button.getAttribute("aria-describedby"));
-    expect(shownText(d)).not.toContain("avisa quem chamou");
+    expect(within(d).getAllByRole("switch")).toHaveLength(1);
+    expect(d.textContent).not.toContain("chave de API se o plano parar");
     cleanup();
     const none = await plan(
       seedState({
@@ -255,7 +248,6 @@ describe("Quem pensa (its dialog)", () => {
         },
       }),
     );
-    expect(within(none).queryByRole("switch", { name: SWITCH })).toBeNull();
     expect(none.textContent).not.toContain("chave de API se o plano parar");
   });
 

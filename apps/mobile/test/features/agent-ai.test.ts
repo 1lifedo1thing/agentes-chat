@@ -955,19 +955,16 @@ describe("the agent's AI", () => {
       speed: "standard" as const,
       contextTokens: null,
       onlyOwner: true,
-      fallback: true,
     };
-    expect(setupWords(t, "pt-BR", view, { apiKey: true, now })).toBe("Opus pelo plano do Claude · Esforço alto");
-    expect(setupWords(t, "pt-BR", view, { apiKey: true, now: { ...now, speed: "fast" } })).toBe(
+    expect(setupWords(t, "pt-BR", view, { now })).toBe("Opus pelo plano do Claude · Esforço alto");
+    expect(setupWords(t, "pt-BR", view, { now: { ...now, speed: "fast" } })).toBe(
       "Opus pelo plano do Claude · Esforço alto · Velocidade rápida",
     );
     // On a coding plan, its own model; everything at its default says nothing more.
     const glm = { ...view, effectiveModel: "sonnet", accounts: [account("glm", { provider: "zai" })], account: "glm" };
-    expect(setupWords(t, "pt-BR", glm, { apiKey: true, now: { ...now, effort: "medium" } })).toBe(
-      "GLM-5.3 pelo GLM Coding",
-    );
+    expect(setupWords(t, "pt-BR", glm, { now: { ...now, effort: "medium" } })).toBe("GLM-5.3 pelo GLM Coding");
     // Its Autonomia last, as on the web; one that changes only it can take it, and the toast says so.
-    expect(setupWords(t, "pt-BR", { ...view, autonomy: "never" }, { apiKey: true, now })).toBe(
+    expect(setupWords(t, "pt-BR", { ...view, autonomy: "never" }, { now })).toBe(
       "Opus pelo plano do Claude · Esforço alto · Autonomia: Não pergunta",
     );
     const advanced = await Bun.file(
@@ -978,6 +975,8 @@ describe("the agent's AI", () => {
     expect(advanced).toContain('t("agentPage.work.brain.speedText")');
     expect(advanced).toContain("disabled={!view.canEdit}");
     expect(advanced).toContain('speed: viewSpeedFits(view) ? view.speed : "standard"');
+    // No switch to answer through the API or to spend paid extra usage, as on the web.
+    expect(advanced).not.toContain("fallback");
     const setup = await Bun.file(
       new URL("../../src/features/ai/AgentSetupScreen.tsx", import.meta.url).pathname,
     ).text();
@@ -991,12 +990,13 @@ describe("the agent's AI", () => {
     );
     const screen = await Bun.file(new URL("../../src/features/ai/AgentAiScreen.tsx", import.meta.url).pathname).text();
     expect(screen).toContain("onPress={() => openAgentSetup(agentId)}");
+    expect(screen).not.toContain("extraUsage");
     const route = await Bun.file(new URL("../../app/(app)/agent-setup/[id].tsx", import.meta.url).pathname).text();
     expect(route).toContain("<AgentSetupScreen agentId={id");
   });
 
   test("Voltar ao padrão on an API key gives the effort back to the model, Automático too; nothing chosen saves none", () => {
-    const base = { effort: null, speed: "standard" as const, contextTokens: null, onlyOwner: true, fallback: true };
+    const base = { effort: null, speed: "standard" as const, contextTokens: null, onlyOwner: true };
     const key = { brain: "model" as const, onlyOwner: true };
     expect(advancedResetInput(key, { ...base, effort: "high", contextTokens: 400_000 }, false)).toEqual({
       contextTokens: null,
@@ -1009,12 +1009,8 @@ describe("the agent's AI", () => {
     expect(advancedResetInput(plan, { ...base, effort: "high" }, false)).toEqual({
       contextTokens: null,
       effort: "medium",
-      fallback: true,
     });
-    expect(advancedResetInput(plan, { ...base, effort: "high" }, true)).toEqual({
-      contextTokens: null,
-      fallback: true,
-    });
+    expect(advancedResetInput(plan, { ...base, effort: "high" }, true)).toEqual({ contextTokens: null });
   });
 
   test("Usar em outros agentes on other people's plans asks once before saving, naming every owner", async () => {

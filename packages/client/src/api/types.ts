@@ -4187,8 +4187,9 @@ export interface Routine {
   waitingFor: { machineId: string; machineName: string; since: string } | null;
   /**
    * Its run waits on its plan or budget (state `usage_paused`, ADR 0118): paused near the limit, or stopped at it
-   * (`limit`: nothing to continue). It picks up at `resetsAt` (null: not known yet); `plan` is the plan's name. `extraOff`: the plan's window is used up and the agent's long work may not use paid
-   * extra usage, so Continuar agora is refused; `extraUsedUp`: the same with the switch on but no extra usage left.
+   * (`limit`: nothing to continue). It picks up at `resetsAt` (null: not known yet); `plan` is the plan's name. `extraOff`: the plan's window is used up and the agent's long work never uses paid
+   * extra usage (a plan lent to it, the team's right hand), so Continuar agora is refused; `extraUsedUp`: the same with
+   * no extra usage left.
    * Who may press it: `canManage`.
    */
   usagePause?: {
@@ -5928,10 +5929,6 @@ export interface AgentBrain {
   /** As stored; null = the brain's default. */
   model: string | null;
   effectiveModel: string | null;
-  /** If the computer isn't available, answer through the API (counts against the budget). */
-  fallback: boolean;
-  /** Long work may go on into the plan's paid extra usage where the provider reports it on (ADR 0118). */
-  extraUsage: boolean;
   computer: { machineId: string; name: string; online: boolean } | null;
   options: BrainOption[];
   /** Every computer the caller may give the agent, with what each offers ("Vai para o Mac mini"). */
@@ -5956,7 +5953,7 @@ export interface AgentBrain {
   accountsSupported: boolean;
   /** Nobody but the agent's owner talks to it ("Atende outras pessoas" off). */
   onlyOwner: boolean;
-  /** The viewer owns the agent: only they connect its plan and turn its paid extra usage on or off. */
+  /** The viewer owns the agent: only they connect its plan. */
   canUsePlans: boolean;
   /**
    * True since plans serve the whole workspace (ADR 0059 §3): `accounts` has every plan on its computer that serves
@@ -6099,9 +6096,6 @@ export interface AgentBrainInput {
   scope?: BrainScope;
   brain?: BrainKind;
   model?: string | null;
-  fallback?: boolean;
-  /** Off: long work pauses at 95% of the plan even with its paid extra usage on. */
-  extraUsage?: boolean;
   /**
    * "Atende outras pessoas" turned off: false lets in whoever its "who can talk" list allows (everyone with no list).
    */
@@ -6130,7 +6124,6 @@ export interface AgentSetup {
   /** Omitted = each agent keeps its own. */
   speed?: BrainSpeed;
   contextTokens?: number | null;
-  fallback?: boolean;
   /** "Atende outras pessoas" off, for the agents that move onto the plan. */
   onlyOwner?: boolean;
   /** Its Autonomia, wherever the caller may set it by hand, whatever the AI takes; omitted = each keeps its own. */
@@ -6177,7 +6170,6 @@ export interface NewAgentSetup {
   /** The computer's own sign-in thinks for the caller's agents there (they connected it). */
   ownSignIn?: boolean;
   effort?: BrainEffortSetting | null;
-  fallback?: boolean;
   /** Its Autonomia; null or absent = the default. */
   autonomy?: CommandApproval | null;
 }

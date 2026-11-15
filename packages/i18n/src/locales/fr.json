@@ -3597,9 +3597,7 @@
     "dontRunForbidden": "Seuls la personne qui a demandé, le propriétaire de l'agent ou un admin peuvent l'annuler",
     "answerAnyway": "Répondre quand même",
     "answerAnywayHint": "Répond maintenant, en lisant tout ce qui a été écrit depuis",
-    "answerAnywayForbidden": "Seuls la personne qui a demandé, le propriétaire de l'agent ou un admin peuvent le demander",
-    "extraTitle": "Le long travail peut utiliser l'usage supplémentaire payant",
-    "extraHint": "Avec l'usage supplémentaire activé dans l'abonnement, le long travail continue au-delà de 95 %. Désactivé, il se met en pause à 95 % et reprend au renouvellement de l'abonnement."
+    "answerAnywayForbidden": "Seuls la personne qui a demandé, le propriétaire de l'agent ou un admin peuvent le demander"
   },
   "usageQueue": {
     "back": "{{agent}} revient {{when}}",
@@ -5670,9 +5668,6 @@
         "addAccount": "Ajouter un compte",
         "signInAgain": "Se reconnecter",
         "connectPlan": "Connecter un autre abonnement",
-        "fallbackTitle": "Si {{computer}} ne répond plus, répondre via l'API",
-        "fallbackHint": "Il répond via l'API et cela compte dans le budget de {{name}}. Sinon, {{name}} prévient la personne qui a demandé et attend le retour de l'ordinateur.",
-        "fallbackHint_female": "Elle répond via l'API et cela compte dans le budget de {{name}}. Sinon, {{name}} prévient la personne qui a demandé et attend le retour de l'ordinateur.",
         "effort": "Effort",
         "efforts": {
           "auto": "Automatique",
@@ -5733,8 +5728,7 @@
           "effort": "Effort : {{level}}",
           "speed": "Vitesse : rapide",
           "context": "Contexte : {{size}}",
-          "sharing": "Répond aux autres personnes",
-          "waits": "Attend l'ordinateur"
+          "sharing": "Répond aux autres personnes"
         },
         "copy": {
           "row": "Utiliser sur d'autres agents",
@@ -5884,7 +5878,6 @@
           "wait": "Attendre",
           "modelTitle": "Modèle de {{name}}",
           "moreTitle": "Plus d'options pour {{name}}",
-          "fallback": "Utiliser la clé API si l'abonnement s'arrête",
           "computer": "Ordinateur",
           "doneTitle": "C'est fait",
           "doneSub": "Ce qui était en cours continue avec le nouveau compte.",
@@ -9008,7 +9001,7 @@
       "canceledToast": "Annulé. Ça ne s'exécutera pas quand la limite se renouvellera.",
       "continuedToast": "L'exécution continue.",
       "forbidden": "Seuls la personne qui a créé la routine, le propriétaire de l'agent ou un admin peuvent la poursuivre maintenant",
-      "extra_off": "La fenêtre de cet abonnement est épuisée et le long travail de cet agent n'utilise pas l'usage supplémentaire payant. Activez-le dans ses paramètres d'IA pour continuer maintenant, sinon il reprendra après le renouvellement",
+      "extra_off": "La fenêtre de cet abonnement est épuisée et le long travail de cet agent n'utilise pas l'usage supplémentaire payant de l'abonnement. Il reprendra après le renouvellement",
       "extra_used_up": "La fenêtre de cet abonnement est épuisée et son usage supplémentaire payant est épuisé ou indisponible. Il reprendra après le renouvellement"
     },
     "pausedRunningToast": "Routine en pause. L'exécution en cours s'est aussi arrêtée.",
@@ -15297,7 +15290,7 @@
       "takeOverNoAccess": "Rejoignez la conversation de la routine avant de la reprendre.",
       "agentNotInChannel": "Ajoutez d'abord l'agent à la conversation.",
       "webhookPaused": "Activez la routine pour la tester.",
-      "continueExtraOff": "La fenêtre de cet abonnement est épuisée et le travail long de cet agent n'utilise pas l'usage supplémentaire payant. Activez-le dans ses paramètres IA pour continuer maintenant, sinon il reprendra après la réinitialisation.",
+      "continueExtraOff": "La fenêtre de cet abonnement est épuisée et le travail long de cet agent n'utilise pas l'usage supplémentaire payant de l'abonnement. Il reprendra après la réinitialisation.",
       "continueExtraUsedUp": "La fenêtre de cet abonnement est épuisée et son usage supplémentaire payant est épuisé ou indisponible. Il reprendra après la réinitialisation.",
       "actionsNeedApprover": "Seuls le responsable de l'agent ou une personne qui approuve ses actions peuvent laisser une routine agir seule.",
       "editorOnly": "Seuls la personne qui a créé la routine, le responsable de l'agent ou un admin peuvent la modifier.",
@@ -15394,7 +15387,6 @@
     "agent": {
       "ownerOrAdmin": "Seuls le responsable de l'agent ou un admin peuvent faire cela.",
       "detailsHidden": "Seules les personnes qui parlent à {{agentName}} voient comment cela fonctionne.",
-      "extraOwnerOnly": "Seul le responsable de l'agent active ou désactive l'usage supplémentaire payant de l'abonnement.",
       "undoForbidden": "Seuls la personne pour qui l'agent a travaillé, son responsable ou un admin peuvent annuler cela.",
       "undoSkillsAdmins": "Seul un admin peut annuler ou rétablir une modification des compétences d’un agent."
     },

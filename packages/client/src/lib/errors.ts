@@ -38,7 +38,6 @@ const KNOWN = {
   "agent.not_owner": "errors.agent.ownerOrAdmin",
   "usage_queue.cancel_forbidden": "errors.agent.ownerOrAdmin",
   "agent.details_hidden": "errors.agent.detailsHidden",
-  "brain.extra_owner_only": "errors.agent.extraOwnerOnly",
   "action.not_allowed": "errors.agent.undoForbidden",
   "action.skills_admins": "errors.agent.undoSkillsAdmins",
   "account.not_owner": "errors.account.notOwner",

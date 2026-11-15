@@ -3713,9 +3713,7 @@
     "dontRunForbidden": "Anulować może tylko osoba, która prosiła, właściciel agenta albo administrator",
     "answerAnyway": "Odpowiedz mimo to",
     "answerAnywayHint": "Odpowiada teraz, po przeczytaniu wszystkiego, co napisano później",
-    "answerAnywayForbidden": "Poprosić o to może tylko osoba, która prosiła, właściciel agenta albo administrator",
-    "extraTitle": "Długa praca może korzystać z płatnego dodatkowego użycia",
-    "extraHint": "Przy włączonym dodatkowym użyciu w planie długa praca trwa dalej po przekroczeniu 95%. Gdy jest wyłączone, zatrzymuje się na 95% i wznawia po odnowieniu planu."
+    "answerAnywayForbidden": "Poprosić o to może tylko osoba, która prosiła, właściciel agenta albo administrator"
   },
   "usageQueue": {
     "back": "{{agent}} wraca {{when}}",
@@ -5867,9 +5865,6 @@
         "addAccount": "Dodaj konto",
         "signInAgain": "Zaloguj się ponownie",
         "connectPlan": "Połącz inny plan",
-        "fallbackTitle": "Jeśli {{computer}} przestanie odpowiadać, odpowiadaj przez API",
-        "fallbackHint": "Odpowiada przez API i liczy się to do budżetu agenta {{name}}. W przeciwnym razie {{name}} informuje osobę, która prosiła, i czeka, aż komputer wróci.",
-        "fallbackHint_female": "Odpowiada przez API i liczy się to do budżetu agentki {{name}}. W przeciwnym razie {{name}} informuje osobę, która prosiła, i czeka, aż komputer wróci.",
         "effort": "Wysiłek",
         "efforts": {
           "auto": "Automatycznie",
@@ -5930,8 +5925,7 @@
           "effort": "Wysiłek: {{level}}",
           "speed": "Szybkość: szybka",
           "context": "Kontekst: {{size}}",
-          "sharing": "Odpowiada innym osobom",
-          "waits": "Czeka na komputer"
+          "sharing": "Odpowiada innym osobom"
         },
         "copy": {
           "row": "Użyj u innych agentów",
@@ -6087,7 +6081,6 @@
           "wait": "Poczekaj",
           "modelTitle": "Model agenta {{name}}",
           "moreTitle": "Więcej opcji agenta {{name}}",
-          "fallback": "Użyj klucza API, gdy plan się zatrzyma",
           "computer": "Komputer",
           "doneTitle": "Wszystko gotowe",
           "doneSub": "To, co było w toku, idzie dalej z nowym kontem.",
@@ -9275,7 +9268,7 @@
       "canceledToast": "Anulowano. Nie uruchomi się, gdy limit się odnowi.",
       "continuedToast": "Uruchomienie trwa dalej.",
       "forbidden": "Teraz kontynuować może tylko twórca rutyny, właściciel agenta albo administrator",
-      "extra_off": "Okno tego planu jest wykorzystane, a długa praca tego agenta nie korzysta z płatnego dodatkowego użycia. Włącz to w jego ustawieniach AI, aby kontynuować teraz, albo poczekaj, aż wznowi się po odnowieniu",
+      "extra_off": "Okno tego planu jest wykorzystane, a długa praca tego agenta nie korzysta z płatnego dodatkowego użycia planu. Wznowi się po odnowieniu",
       "extra_used_up": "Okno tego planu jest wykorzystane, a jego płatne dodatkowe użycie się skończyło lub jest niedostępne. Wznowi się po odnowieniu"
     },
     "pausedRunningToast": "Rutyna wstrzymana. Trwające uruchomienie też zostało zatrzymane.",
@@ -15805,7 +15798,7 @@
       "takeOverNoAccess": "Dołącz do rozmowy rutyny, zanim ją przejmiesz.",
       "agentNotInChannel": "Najpierw dodaj agenta do rozmowy.",
       "webhookPaused": "Włącz rutynę, żeby ją przetestować.",
-      "continueExtraOff": "Okno tego planu jest wykorzystane, a długa praca tego agenta nie korzysta z płatnego dodatkowego użycia. Włącz je w jego ustawieniach AI, żeby kontynuować teraz, albo agent wznowi pracę po resecie.",
+      "continueExtraOff": "Okno tego planu jest wykorzystane, a długa praca tego agenta nie korzysta z płatnego dodatkowego użycia planu. Agent wznowi pracę po resecie.",
       "continueExtraUsedUp": "Okno tego planu jest wykorzystane, a jego płatne dodatkowe użycie się skończyło lub jest niedostępne. Praca zostanie wznowiona po resecie.",
       "actionsNeedApprover": "Tylko właściciel agenta albo osoba zatwierdzająca jego działania może pozwolić rutynie działać samodzielnie.",
       "editorOnly": "Zmienić rutynę może tylko osoba, która ją utworzyła, właściciel agenta albo administrator.",
@@ -15903,7 +15896,6 @@
     "agent": {
       "ownerOrAdmin": "Może to zrobić tylko właściciel agenta albo administrator.",
       "detailsHidden": "Tylko osoby rozmawiające z {{agentName}} widzą, jak to działa.",
-      "extraOwnerOnly": "Tylko właściciel agenta włącza lub wyłącza płatne dodatkowe użycie planu.",
       "undoForbidden": "Cofnąć to może tylko osoba, dla której agent pracował, jego właściciel albo administrator.",
       "undoSkillsAdmins": "Cofnąć lub ponowić zmianę umiejętności agenta może tylko administrator."
     },

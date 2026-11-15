@@ -3354,9 +3354,7 @@
     "dontRunForbidden": "只有提出请求的人、智能体的负责人或管理员可以取消",
     "answerAnyway": "仍然回复",
     "answerAnywayHint": "读完之后发的所有内容，现在回复",
-    "answerAnywayForbidden": "只有提出请求的人、智能体的负责人或管理员可以这样要求",
-    "extraTitle": "长时间工作可以使用付费的额外用量",
-    "extraHint": "如果套餐开启了额外用量，长时间工作在超过 95% 后仍会继续。关闭时，会在 95% 时暂停，并在套餐重置后继续。"
+    "answerAnywayForbidden": "只有提出请求的人、智能体的负责人或管理员可以这样要求"
   },
   "usageQueue": {
     "back": "{{agent}} {{when}}回来",
@@ -5306,9 +5304,6 @@
         "addAccount": "添加账号",
         "signInAgain": "重新登录",
         "connectPlan": "连接其他套餐",
-        "fallbackTitle": "{{computer}} 无响应时，通过 API 回复",
-        "fallbackHint": "将通过 API 回复，并计入 {{name}} 的预算。否则 {{name}} 会告知提出请求的人，并等待电脑恢复。",
-        "fallbackHint_female": "将通过 API 回复，并计入 {{name}} 的预算。否则 {{name}} 会告知提出请求的人，并等待电脑恢复。",
         "effort": "投入程度",
         "efforts": {
           "auto": "自动",
@@ -5369,8 +5364,7 @@
           "effort": "投入程度：{{level}}",
           "speed": "速度：快速",
           "context": "上下文：{{size}}",
-          "sharing": "回复其他成员",
-          "waits": "等待电脑"
+          "sharing": "回复其他成员"
         },
         "copy": {
           "row": "用于其他智能体",
@@ -5508,7 +5502,6 @@
           "wait": "等待",
           "modelTitle": "{{name}} 的模型",
           "moreTitle": "{{name}} 的更多选项",
-          "fallback": "套餐停止时使用 API 密钥",
           "computer": "电脑",
           "doneTitle": "都好了",
           "doneSub": "进行中的工作会用新账号继续。",
@@ -8448,7 +8441,7 @@
       "canceledToast": "已取消。限额重置后不会运行。",
       "continuedToast": "运行继续中。",
       "forbidden": "现在只有例行工作的创建者、智能体的负责人或管理员可以让它继续",
-      "extra_off": "这个套餐的时段额度已用完，而这个智能体的长时间工作不使用付费的额外用量。在它的 AI 设置中开启后即可立即继续，否则会在重置后继续",
+      "extra_off": "这个套餐的时段额度已用完，而这个智能体的长时间工作不使用套餐的付费额外用量。会在重置后继续",
       "extra_used_up": "这个套餐的时段额度已用完，付费的额外用量也已用完或不可用。会在重置后继续"
     },
     "pausedRunningToast": "例行工作已暂停。正在进行的运行也已停止。",
@@ -14324,7 +14317,7 @@
       "takeOverNoAccess": "接手例行工作之前，请先加入它所在的对话。",
       "agentNotInChannel": "请先把智能体添加到对话中。",
       "webhookPaused": "请开启例行工作后再测试。",
-      "continueExtraOff": "这个套餐的时间窗口额度已用完，而这个智能体的长时间工作没有启用付费额外用量。在它的 AI 设置中开启后即可立即继续，否则会在额度重置后继续。",
+      "continueExtraOff": "这个套餐的时间窗口额度已用完，而这个智能体的长时间工作不使用套餐的付费额外用量。会在额度重置后继续。",
       "continueExtraUsedUp": "这个套餐的时间窗口额度已用完，付费额外用量也已用完或不可用。它会在额度重置后继续。",
       "actionsNeedApprover": "只有智能体负责人或批准其操作的人可以让例行工作自行执行。",
       "editorOnly": "只有例行工作的创建者、智能体负责人或管理员可以修改它。",
@@ -14419,7 +14412,6 @@
     "agent": {
       "ownerOrAdmin": "只有智能体负责人或管理员可以执行此操作。",
       "detailsHidden": "只有与 {{agentName}} 对话的人可以看到它的工作方式。",
-      "extraOwnerOnly": "只有智能体负责人可以开启或关闭套餐的付费额外用量。",
       "undoForbidden": "只有智能体为其工作的人、智能体负责人或管理员可以撤销此操作。",
       "undoSkillsAdmins": "只有管理员能撤销或重做对智能体技能的更改。"
     },

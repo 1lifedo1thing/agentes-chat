@@ -8524,12 +8524,6 @@
   "usageCard.answerAnywayForbidden": {
     "value": "Only who asked, the agent's owner or an admin can ask for this"
   },
-  "usageCard.extraTitle": {
-    "value": "Long work may use paid extra usage"
-  },
-  "usageCard.extraHint": {
-    "value": "With extra usage on in the plan, long work goes on past 95%. Off, it pauses at 95% and picks up when the plan resets."
-  },
   "usageQueue.back": {
     "value": "{{agent}} is back {{when}}"
   },
@@ -13479,12 +13473,6 @@
   "agentPage.work.brain.connectPlan": {
     "value": "Connect another plan"
   },
-  "agentPage.work.brain.fallbackTitle": {
-    "value": "If {{computer}} stops answering, answer through the API"
-  },
-  "agentPage.work.brain.fallbackHint": {
-    "value": "It answers through the API and counts against {{name}}'s budget. Otherwise {{name}} tells whoever asked and waits for the computer to come back."
-  },
   "agentPage.work.brain.effort": {
     "value": "Effort"
   },
@@ -13622,9 +13610,6 @@
   },
   "agentPage.work.brain.advanced.sharing": {
     "value": "Answers other people"
-  },
-  "agentPage.work.brain.advanced.waits": {
-    "value": "Waits for the computer"
   },
   "agentPage.work.brain.copy.row": {
     "value": "Use on other agents"
@@ -14000,9 +13985,6 @@
   },
   "agentPage.work.brain.v2.moreTitle": {
     "value": "More options for {{name}}"
-  },
-  "agentPage.work.brain.v2.fallback": {
-    "value": "Use the API key if the plan stops"
   },
   "agentPage.work.brain.v2.computer": {
     "value": "Computer"
@@ -21128,7 +21110,7 @@
     "value": "Only who created the routine, the agent's owner or an admin can continue it now"
   },
   "routines.usagePause.extra_off": {
-    "value": "This plan's window is used up and this agent's long work doesn't use paid extra usage. Turn that on in its AI settings to continue now, or it picks up after the reset"
+    "value": "This plan's window is used up and this agent's long work doesn't use the plan's paid extra usage. It picks up after the reset"
   },
   "routines.usagePause.extra_used_up": {
     "value": "This plan's window is used up and its paid extra usage is used up or unavailable. It picks up after the reset"
@@ -36348,7 +36330,7 @@
     "value": "Turn the routine on to test it."
   },
   "errors.routine.continueExtraOff": {
-    "value": "This plan's window is used up and this agent's long work doesn't use paid extra usage. Turn that on in its AI settings to continue now, or it picks up after the reset."
+    "value": "This plan's window is used up and this agent's long work doesn't use the plan's paid extra usage. It picks up after the reset."
   },
   "errors.routine.continueExtraUsedUp": {
     "value": "This plan's window is used up and its paid extra usage is used up or unavailable. It picks up after the reset."
@@ -36580,9 +36562,6 @@
   },
   "errors.agent.detailsHidden": {
     "value": "Only who talks to {{agentName}} sees how it works."
-  },
-  "errors.agent.extraOwnerOnly": {
-    "value": "Only the agent's owner turns its plan's paid extra usage on or off."
   },
   "errors.agent.undoForbidden": {
     "value": "Only the person the agent worked for, its owner or an admin can undo this."

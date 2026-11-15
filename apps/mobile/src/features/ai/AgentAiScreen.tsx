@@ -17,7 +17,7 @@ import { modelLimitText } from "@agenteschat/client/lib/plan-usage";
 import { brainPlan, geminiPersonal, isPlanId, planFreeHint, planOf } from "@agenteschat/client/lib/plans";
 import { apiProviderOf, isAuto, providerLabel } from "@agenteschat/client/lib/providers";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
-import { extraUsageOn, limitOffers, planState } from "@agenteschat/ui/plan-state";
+import { limitOffers, planState } from "@agenteschat/ui/plan-state";
 import { useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -301,15 +301,6 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                       onPress={() => choose(a)}
                     />
                   ))}
-                  {extraUsageOn(usage) ? (
-                    <GroupedRow
-                      label={t("usageCard.extraTitle")}
-                      labelLines={2}
-                      toggle={view.extraUsage}
-                      disabled={busy || !(current ? current.mine : view.canUsePlans)}
-                      onPress={() => void save({ extraUsage: !view.extraUsage }, t("usageCard.extraTitle"))}
-                    />
-                  ) : null}
                   {limited && view.canUsePlans && view.canManageAccounts ? (
                     <GroupedRow
                       icon="plus"

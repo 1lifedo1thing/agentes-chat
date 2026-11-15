@@ -3480,9 +3480,7 @@
     "dontRunForbidden": "Alleen wie het vroeg, de eigenaar van de agent of een beheerder kan het annuleren",
     "answerAnyway": "Toch antwoorden",
     "answerAnywayHint": "Antwoordt nu en leest alles wat sindsdien is geschreven",
-    "answerAnywayForbidden": "Alleen wie het vroeg, de eigenaar van de agent of een beheerder kan dit vragen",
-    "extraTitle": "Lang werk mag betaald extra gebruik gebruiken",
-    "extraHint": "Met extra gebruik aan in het abonnement gaat lang werk door na 95%. Uit pauzeert het bij 95% en gaat het verder als het abonnement opnieuw begint."
+    "answerAnywayForbidden": "Alleen wie het vroeg, de eigenaar van de agent of een beheerder kan dit vragen"
   },
   "usageQueue": {
     "back": "{{agent}} is {{when}} terug",
@@ -5503,9 +5501,6 @@
         "addAccount": "Account toevoegen",
         "signInAgain": "Opnieuw inloggen",
         "connectPlan": "Ander abonnement koppelen",
-        "fallbackTitle": "Als {{computer}} niet meer reageert, antwoord via de API",
-        "fallbackHint": "Antwoordt dan via de API en telt mee voor het budget van {{name}}. Anders laat {{name}} het weten aan wie het vroeg en wacht tot de computer terug is.",
-        "fallbackHint_female": "Antwoordt dan via de API en telt mee voor het budget van {{name}}. Anders laat {{name}} het weten aan wie het vroeg en wacht tot de computer terug is.",
         "effort": "Inspanning",
         "efforts": {
           "auto": "Automatisch",
@@ -5566,8 +5561,7 @@
           "effort": "Inspanning: {{level}}",
           "speed": "Snelheid: snel",
           "context": "Context: {{size}}",
-          "sharing": "Antwoordt andere mensen",
-          "waits": "Wacht op de computer"
+          "sharing": "Antwoordt andere mensen"
         },
         "copy": {
           "row": "Gebruiken bij andere agents",
@@ -5711,7 +5705,6 @@
           "wait": "Wachten",
           "modelTitle": "Model van {{name}}",
           "moreTitle": "Meer opties voor {{name}}",
-          "fallback": "De API-sleutel gebruiken als het abonnement stopt",
           "computer": "Computer",
           "doneTitle": "Alles geregeld",
           "doneSub": "Wat bezig was, gaat verder met het nieuwe account.",
@@ -8752,7 +8745,7 @@
       "canceledToast": "Geannuleerd. Het draait niet als de limiet opnieuw begint.",
       "continuedToast": "Run gaat verder.",
       "forbidden": "Alleen wie de routine maakte, de eigenaar van de agent of een beheerder kan hem nu laten doorgaan",
-      "extra_off": "Het venster van dit abonnement is op en het lange werk van deze agent gebruikt geen betaald extra gebruik. Zet dat aan in de AI-instellingen om nu door te gaan, of hij gaat verder na de reset",
+      "extra_off": "Het venster van dit abonnement is op en het lange werk van deze agent gebruikt geen betaald extra gebruik van het abonnement. Hij gaat verder na de reset",
       "extra_used_up": "Het venster van dit abonnement is op en het betaalde extra gebruik is op of niet beschikbaar. Hij gaat verder na de reset"
     },
     "pausedRunningToast": "Routine gepauzeerd. De lopende run is ook gestopt.",
@@ -14860,7 +14853,7 @@
       "takeOverNoAccess": "Ga in het gesprek van de routine zitten voordat je hem overneemt.",
       "agentNotInChannel": "Voeg de agent eerst toe aan het gesprek.",
       "webhookPaused": "Zet de routine aan om hem te testen.",
-      "continueExtraOff": "Het venster van dit abonnement is op en het lange werk van deze agent gebruikt geen betaald extra gebruik. Zet dat aan in de AI-instellingen om nu door te gaan, anders gaat hij verder na de reset.",
+      "continueExtraOff": "Het venster van dit abonnement is op en het lange werk van deze agent gebruikt geen betaald extra gebruik van het abonnement. Hij gaat verder na de reset.",
       "continueExtraUsedUp": "Het venster van dit abonnement is op en het betaalde extra gebruik is ook op of niet beschikbaar. Hij gaat verder na de reset.",
       "actionsNeedApprover": "Alleen de eigenaar van de agent of wie zijn acties goedkeurt, kan een routine zelfstandig laten handelen.",
       "editorOnly": "Alleen wie de routine maakte, de eigenaar van de agent of een beheerder kan hem wijzigen.",
@@ -14956,7 +14949,6 @@
     "agent": {
       "ownerOrAdmin": "Alleen de eigenaar van de agent of een beheerder kan dit doen.",
       "detailsHidden": "Alleen wie met {{agentName}} praat, ziet hoe het werkt.",
-      "extraOwnerOnly": "Alleen de eigenaar van de agent zet het betaalde extra gebruik van het abonnement aan of uit.",
       "undoForbidden": "Alleen de persoon voor wie de agent werkte, zijn eigenaar of een beheerder kan dit ongedaan maken.",
       "undoSkillsAdmins": "Alleen een beheerder kan een wijziging in de skills van een agent ongedaan maken of opnieuw doen."
     },

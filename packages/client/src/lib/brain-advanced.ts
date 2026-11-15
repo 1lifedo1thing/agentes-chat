@@ -38,16 +38,14 @@ export interface Advanced {
   contextTokens: ContextLimit | null;
   /** "Atende outras pessoas" off. */
   onlyOwner: boolean;
-  fallback: boolean;
 }
 
-/** A new agent's: medium effort, its model's window, its owner only on a plan (ADR 0059 §5), the API when away. */
+/** A new agent's: medium effort, its model's window, its owner only on a plan (ADR 0059 §5). */
 export const ADVANCED_DEFAULTS: Advanced = {
   effort: "medium",
   speed: "standard",
   contextTokens: null,
   onlyOwner: true,
-  fallback: true,
 };
 
 /**
@@ -59,7 +57,7 @@ export const advancedDefaults = (kind: BrainKind, now: Advanced): Advanced =>
 export const isAdvancedDefault = (kind: BrainKind, now: Advanced) =>
   JSON.stringify(advancedDefaults(kind, now)) === JSON.stringify(now);
 
-type AdvancedOf = { kind: BrainKind; autoModel: boolean; apiKey: boolean; now: Advanced };
+type AdvancedOf = { kind: BrainKind; autoModel: boolean; now: Advanced };
 
 /** The row's line: what the dialog holds ("Esforço, janela de contexto e quem atende"), the effort only with a fixed model. */
 export function advancedContents(
@@ -74,7 +72,7 @@ export function advancedContents(
 
 /**
  * After a save: "Tudo no padrão", or only what differs ("Esforço alto · Contexto de 400K"). The effort counts only
- * with a fixed model (an automatic one picks it), and the fallback only where answering through the API is possible.
+ * with a fixed model (an automatic one picks it).
  */
 export function advancedSummary(t: TFunction, language: string, o: AdvancedOf): string {
   const parts = advancedParts(t, language, o);
@@ -94,7 +92,6 @@ export function advancedParts(t: TFunction, _language: string, o: AdvancedOf): s
     computer && now.speed === "fast" ? t("agentPage.work.brain.advanced.speed") : null,
     now.contextTokens ? t("agentPage.work.brain.advanced.context", { size: contextSize(now.contextTokens) }) : null,
     computer && !now.onlyOwner ? t("agentPage.work.brain.advanced.sharing") : null,
-    computer && o.apiKey && !now.fallback ? t("agentPage.work.brain.advanced.waits") : null,
   ].filter((p): p is string => p !== null);
 }
 

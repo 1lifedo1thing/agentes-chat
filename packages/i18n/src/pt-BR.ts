@@ -3664,9 +3664,6 @@ export const ptBR = {
     answerAnyway: "Responder mesmo assim",
     answerAnywayHint: "Responde agora, lendo tudo o que veio depois",
     answerAnywayForbidden: "Só quem pediu, o dono do agente ou um admin pode pedir isso",
-    extraTitle: "Trabalho longo pode usar o uso extra pago",
-    extraHint:
-      "Com o uso extra ligado no plano, o trabalho longo segue depois de 95%. Desligado, ele pausa em 95% e retoma quando o plano renovar.",
   },
   /** An agent's line of work waiting on its plan or budget (ADR 0118): the web's dialog, the phone's sheet. */
   usageQueue: {
@@ -5771,12 +5768,6 @@ export const ptBR = {
         addAccount: "Adicionar conta",
         signInAgain: "Entrar de novo",
         connectPlan: "Conectar outro plano",
-        fallbackTitle: "Se o {{computer}} parar de responder, responder pela API",
-        /** The switch's ⓘ: the same in both states. */
-        fallbackHint:
-          "Responde pela API e conta no orçamento do {{name}}. Se não, o {{name}} avisa quem chamou e espera o computador voltar.",
-        fallbackHint_female:
-          "Responde pela API e conta no orçamento da {{name}}. Se não, a {{name}} avisa quem chamou e espera o computador voltar.",
         effort: "Esforço",
         efforts: {
           auto: "Automático",
@@ -5837,7 +5828,6 @@ export const ptBR = {
           speed: "Velocidade rápida",
           context: "Contexto de {{size}}",
           sharing: "Atende outras pessoas",
-          waits: "Espera o computador voltar",
         },
         /** "Usar em outros agentes" (ADR 0094): the same setup on the agents picked, each by its own rules. */
         copy: {
@@ -6025,8 +6015,6 @@ export const ptBR = {
           modelTitle_female: "Modelo da {{name}}",
           moreTitle: "Mais opções do {{name}}",
           moreTitle_female: "Mais opções da {{name}}",
-          /** A switch: its ⓘ is `fallbackHint`. */
-          fallback: "Usar a chave de API se o plano parar",
           /** A line under More options where several computers can run it. */
           computer: "Computador",
           doneTitle: "Pronto",
@@ -9112,7 +9100,7 @@ export const ptBR = {
       continuedToast: "Execução continuando.",
       forbidden: "Só quem criou a rotina, o dono do agente ou um admin pode continuar agora",
       extra_off:
-        "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago. Ligue isso nas configurações de IA dele para continuar agora, ou ele retoma depois que o limite renovar",
+        "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago do plano. Ele retoma depois que o limite renovar",
       extra_used_up:
         "A janela deste plano acabou e o uso extra pago dele acabou ou não está disponível. Ele retoma depois que o limite renovar",
     },
@@ -14981,7 +14969,7 @@ export const ptBR = {
       agentNotInChannel: "Adicione o agente à conversa antes.",
       webhookPaused: "Ligue a rotina para testar.",
       continueExtraOff:
-        "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago. Ligue isso nas configurações de IA dele para continuar agora, ou ele retoma depois que o limite renovar.",
+        "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago do plano. Ele retoma depois que o limite renovar.",
       continueExtraUsedUp:
         "A janela deste plano acabou e o uso extra pago dele acabou ou não está disponível. Ele retoma depois que o limite renovar.",
       actionsNeedApprover: "Só o dono do agente ou quem aprova as ações dele pode deixar uma rotina agir sozinha.",
@@ -15085,7 +15073,6 @@ export const ptBR = {
     agent: {
       ownerOrAdmin: "Só o dono do agente ou um admin pode fazer isso.",
       detailsHidden: "Só quem conversa com {{agentName}} vê como funciona.",
-      extraOwnerOnly: "Só o dono do agente liga ou desliga o uso extra pago do plano.",
       undoForbidden: "Só a pessoa para quem o agente trabalhou, o dono dele ou um admin pode desfazer isso.",
       undoSkillsAdmins: "Só um admin desfaz ou refaz uma mudança nas skills de um agente.",
     },

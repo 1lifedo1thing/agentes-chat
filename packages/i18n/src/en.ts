@@ -3759,9 +3759,6 @@ export const en = {
     answerAnyway: "Answer anyway",
     answerAnywayHint: "Answers now, reading everything posted since",
     answerAnywayForbidden: "Only who asked, the agent's owner or an admin can ask for this",
-    extraTitle: "Long work may use paid extra usage",
-    extraHint:
-      "With extra usage on in the plan, long work goes on past 95%. Off, it pauses at 95% and picks up when the plan resets.",
   },
   /** An agent's line of work waiting on its plan or budget (ADR 0118): the web's dialog, the phone's sheet. */
   usageQueue: {
@@ -5877,9 +5874,6 @@ export const en = {
         addAccount: "Add account",
         signInAgain: "Sign in again",
         connectPlan: "Connect another plan",
-        fallbackTitle: "If {{computer}} stops answering, answer through the API",
-        fallbackHint:
-          "It answers through the API and counts against {{name}}'s budget. Otherwise {{name}} tells whoever asked and waits for the computer to come back.",
         effort: "Effort",
         /** `none`: an API key with no effort chosen, which thinks as its provider does by default. */
         efforts: {
@@ -5936,7 +5930,6 @@ export const en = {
           speed: "Fast speed",
           context: "Context: {{size}}",
           sharing: "Answers other people",
-          waits: "Waits for the computer",
         },
         copy: {
           row: "Use on other agents",
@@ -6110,8 +6103,6 @@ export const en = {
           wait: "Wait",
           modelTitle: "{{name}}'s model",
           moreTitle: "More options for {{name}}",
-          /** A switch: its ⓘ is `fallbackHint`. */
-          fallback: "Use the API key if the plan stops",
           /** A line under More options where several computers can run it. */
           computer: "Computer",
           doneTitle: "All set",
@@ -9118,7 +9109,7 @@ export const en = {
       continuedToast: "Run continuing.",
       forbidden: "Only who created the routine, the agent's owner or an admin can continue it now",
       extra_off:
-        "This plan's window is used up and this agent's long work doesn't use paid extra usage. Turn that on in its AI settings to continue now, or it picks up after the reset",
+        "This plan's window is used up and this agent's long work doesn't use the plan's paid extra usage. It picks up after the reset",
       extra_used_up:
         "This plan's window is used up and its paid extra usage is used up or unavailable. It picks up after the reset",
     },
@@ -14993,7 +14984,7 @@ export const en = {
       agentNotInChannel: "Add the agent to the conversation first.",
       webhookPaused: "Turn the routine on to test it.",
       continueExtraOff:
-        "This plan's window is used up and this agent's long work doesn't use paid extra usage. Turn that on in its AI settings to continue now, or it picks up after the reset.",
+        "This plan's window is used up and this agent's long work doesn't use the plan's paid extra usage. It picks up after the reset.",
       continueExtraUsedUp:
         "This plan's window is used up and its paid extra usage is used up or unavailable. It picks up after the reset.",
       actionsNeedApprover:
@@ -15099,7 +15090,6 @@ export const en = {
     agent: {
       ownerOrAdmin: "Only the agent's owner or an admin can do this.",
       detailsHidden: "Only who talks to {{agentName}} sees how it works.",
-      extraOwnerOnly: "Only the agent's owner turns its plan's paid extra usage on or off.",
       undoForbidden: "Only the person the agent worked for, its owner or an admin can undo this.",
       /** `action.skills_admins`: skills are only admins' on the agent's page, so are their Undo and Redo. */
       undoSkillsAdmins: "Only an admin can undo or redo a change to an agent's skills.",

@@ -3477,9 +3477,7 @@
     "dontRunForbidden": "Nur wer gefragt hat, der Inhaber des Agenten oder ein Admin kann es abbrechen",
     "answerAnyway": "Trotzdem antworten",
     "answerAnywayHint": "Antwortet jetzt und liest alles, was seitdem geschrieben wurde",
-    "answerAnywayForbidden": "Nur wer gefragt hat, der Inhaber des Agenten oder ein Admin kann darum bitten",
-    "extraTitle": "Längere Arbeit darf bezahlte Zusatznutzung verwenden",
-    "extraHint": "Mit eingeschalteter Zusatznutzung im Abo läuft längere Arbeit über 95 % hinaus weiter. Ausgeschaltet pausiert sie bei 95 % und geht weiter, wenn sich das Abo zurücksetzt."
+    "answerAnywayForbidden": "Nur wer gefragt hat, der Inhaber des Agenten oder ein Admin kann darum bitten"
   },
   "usageQueue": {
     "back": "{{agent}} ist {{when}} zurück",
@@ -5481,8 +5479,6 @@
         "addAccount": "Konto hinzufügen",
         "signInAgain": "Erneut anmelden",
         "connectPlan": "Weiteres Abo verbinden",
-        "fallbackTitle": "Wenn {{computer}} nicht mehr antwortet, über die API antworten",
-        "fallbackHint": "Die Antwort kommt dann über die API und zählt zum Budget von {{name}}. Sonst sagt {{name}} der Person, die gefragt hat, Bescheid und wartet, bis der Computer zurück ist.",
         "effort": "Aufwand",
         "efforts": {
           "auto": "Automatisch",
@@ -5543,8 +5539,7 @@
           "effort": "Aufwand: {{level}}",
           "speed": "Geschwindigkeit: schnell",
           "context": "Kontext: {{size}}",
-          "sharing": "Antwortet anderen Personen",
-          "waits": "Wartet auf den Computer"
+          "sharing": "Antwortet anderen Personen"
         },
         "copy": {
           "row": "Für andere Agenten verwenden",
@@ -5688,7 +5683,6 @@
           "wait": "Warten",
           "modelTitle": "Modell von {{name}}",
           "moreTitle": "Weitere Optionen für {{name}}",
-          "fallback": "Den API-Schlüssel nutzen, wenn das Abo stoppt",
           "computer": "Computer",
           "doneTitle": "Alles erledigt",
           "doneSub": "Was gerade lief, geht mit dem neuen Konto weiter.",
@@ -8706,7 +8700,7 @@
       "canceledToast": "Abgebrochen. Es läuft nicht, wenn das Limit zurückgesetzt ist.",
       "continuedToast": "Ausführung geht weiter.",
       "forbidden": "Nur wer die Routine erstellt hat, der Inhaber des Agenten oder ein Admin kann sie jetzt fortsetzen",
-      "extra_off": "Das Zeitfenster dieses Abos ist aufgebraucht und die längere Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung. Schalte sie in seinen KI-Einstellungen ein, um jetzt weiterzumachen, sonst geht es nach dem Zurücksetzen weiter",
+      "extra_off": "Das Zeitfenster dieses Abos ist aufgebraucht und die längere Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung des Abos. Sie geht nach dem Zurücksetzen weiter",
       "extra_used_up": "Das Zeitfenster dieses Abos ist aufgebraucht und seine bezahlte Zusatznutzung ist verbraucht oder nicht verfügbar. Es geht nach dem Zurücksetzen weiter"
     },
     "pausedRunningToast": "Routine pausiert. Die laufende Ausführung wurde auch gestoppt.",
@@ -14796,7 +14790,7 @@
       "takeOverNoAccess": "Tritt der Unterhaltung der Routine bei, bevor du sie übernimmst.",
       "agentNotInChannel": "Füg den Agent zuerst zur Unterhaltung hinzu.",
       "webhookPaused": "Schalte die Routine ein, um sie zu testen.",
-      "continueExtraOff": "Das Zeitfenster dieses Abos ist aufgebraucht, und die lange Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung. Schalte sie in seinen KI-Einstellungen ein, um jetzt weiterzumachen, sonst geht es nach dem Zurücksetzen weiter.",
+      "continueExtraOff": "Das Zeitfenster dieses Abos ist aufgebraucht, und die lange Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung des Abos. Sie geht nach dem Zurücksetzen weiter.",
       "continueExtraUsedUp": "Das Zeitfenster dieses Abos ist aufgebraucht, und seine bezahlte Zusatznutzung ist aufgebraucht oder nicht verfügbar. Es geht nach dem Zurücksetzen weiter.",
       "actionsNeedApprover": "Nur der Inhaber des Agenten oder wer seine Aktionen genehmigt, kann eine Routine selbstständig handeln lassen.",
       "editorOnly": "Nur wer die Routine erstellt hat, der Inhaber des Agenten oder ein Admin kann sie ändern.",
@@ -14892,7 +14886,6 @@
     "agent": {
       "ownerOrAdmin": "Nur der Inhaber des Agenten oder ein Admin kann das tun.",
       "detailsHidden": "Nur wer mit {{agentName}} spricht, sieht, wie es funktioniert.",
-      "extraOwnerOnly": "Nur der Inhaber des Agenten schaltet die bezahlte Zusatznutzung des Abos ein oder aus.",
       "undoForbidden": "Nur die Person, für die der Agent gearbeitet hat, sein Inhaber oder ein Admin kann das rückgängig machen.",
       "undoSkillsAdmins": "Nur ein Admin kann eine Änderung an den Skills eines Agenten rückgängig machen oder wiederholen."
     },

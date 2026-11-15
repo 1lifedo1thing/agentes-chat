@@ -37,7 +37,6 @@ import {
   planState,
   SettingNote,
 } from "@agenteschat/ui";
-import { extraUsageOn } from "@agenteschat/ui/plan-state";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
@@ -61,17 +60,7 @@ import { useAdminsLock } from "@/hooks/usePersonalView";
 import { modelLimitText, notSharedText } from "@/lib/plan-usage";
 import { useToast } from "@/lib/toast";
 import { useAgentEdit } from "../context";
-import {
-  BrainLine,
-  ContextField,
-  Fold,
-  PickList,
-  type PickOption,
-  PlanWindows,
-  SpeedField,
-  SwitchLine,
-  useGlide,
-} from "./pieces";
+import { BrainLine, ContextField, Fold, PickList, type PickOption, PlanWindows, SpeedField, useGlide } from "./pieces";
 import { SetupCopyDialog } from "./SetupCopyDialog";
 import { type BrainRow, useBrainState } from "./state";
 import { useRefresh, useWork } from "./work";
@@ -109,10 +98,6 @@ interface Switched {
   missed: string[];
   /** "Atende outras pessoas" off after it, as the server put it. */
   onlyOwnerAfter: boolean;
-}
-
-interface MoreDraft extends Advanced {
-  extraUsage: boolean;
 }
 
 /**
@@ -175,7 +160,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
   const [adding, setAdding] = useState<{ row: BrainRow; again?: MachineAccount; also?: MachineAccount }>();
   const [arrived, setArrived] = useState<MachineAccount | null>(null);
   const [modelPick, setModelPick] = useState<string>();
-  const [more, setMore] = useState<MoreDraft | null>(null);
+  const [more, setMore] = useState<Advanced | null>(null);
   const [fold, setFold] = useState<"effort" | "speed" | "context" | null>(null);
   const [machinePick, setMachinePick] = useState<string>();
   const [copying, setCopying] = useState(false);
@@ -479,13 +464,11 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
   };
 
   // ── how it thinks ──
-  const moreNow: MoreDraft = {
+  const moreNow: Advanced = {
     effort: s.effort,
     speed: s.speedOn ? view.speed : "standard",
     contextTokens: s.savedContext,
     onlyOwner: view.onlyOwner,
-    fallback: view.fallback,
-    extraUsage: view.extraUsage,
   };
   const m = more ?? moreNow;
   const openMore = () => {
@@ -501,9 +484,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
     if ((!isAuto(s.modelNow) || m.effort === null) && m.effort !== was) input.effort = m.effort ?? AUTO;
     if (s.kind !== "model") {
       if (s.speedOn && m.speed !== view.speed) input.speed = m.speed;
-      if (m.fallback !== view.fallback) input.fallback = m.fallback;
       if (m.onlyOwner !== view.onlyOwner) input.onlyOwner = m.onlyOwner;
-      if (m.extraUsage !== view.extraUsage) input.extraUsage = m.extraUsage;
     }
     if (m.contextTokens !== s.savedContext) input.contextTokens = m.contextTokens;
     if (Object.keys(input).length === 0) return home();
@@ -575,7 +556,6 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
             effort: isAuto(view.effectiveModel) ? AUTO : s.effort,
             ...(s.speedOn ? { speed: view.speed } : {}),
             contextTokens: s.shownContext,
-            fallback: view.fallback,
             onlyOwner: view.onlyOwner,
             ...autonomy,
           }
@@ -585,14 +565,12 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
     ...advancedParts(t, i18n.language, {
       kind: s.kind,
       autoModel: isAuto(s.modelNow),
-      apiKey: s.apiKey,
       now: {
         // The workspace's setup for a key carries no effort yet (ADR 0041, amended 2026-11-12): its line names none.
         effort: s.kind === "model" ? null : s.effort,
         speed: s.speedOn ? view.speed : "standard",
         contextTokens: s.shownContext,
         onlyOwner: view.onlyOwner,
-        fallback: view.fallback,
       },
     }),
     ...(carried ? [autonomyWords(t, carried)] : []),
@@ -981,14 +959,6 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
               onChange={(n) => setMore({ ...m, contextTokens: n })}
             />,
           )}
-          {s.kind !== "model" && s.apiKey && (
-            <SwitchLine
-              label={t("agentPage.work.brain.v2.fallback")}
-              hint={t("agentPage.work.brain.fallbackHint", g)}
-              checked={m.fallback}
-              onChange={(on) => setMore({ ...m, fallback: on })}
-            />
-          )}
           {s.kind !== "model" && agent.ownerUserId && (
             <div className="bd-row">
               <PlanReplies
@@ -1001,16 +971,6 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
                 coding={s.plan}
               />
             </div>
-          )}
-          {s.kind !== "model" && s.usage && extraUsageOn(s.usage) && (
-            <SwitchLine
-              label={t("usageCard.extraTitle")}
-              hint={t("usageCard.extraHint")}
-              checked={m.extraUsage}
-              // Paid extra usage bills the plan's owner: someone else's plan given to this agent is theirs to turn on.
-              disabled={!(s.currentAccount ? s.currentAccount.mine : view.canUsePlans)}
-              onChange={(on) => setMore({ ...m, extraUsage: on })}
-            />
           )}
           {s.runsOn.length > 1 && can("machine") && (
             <BrainLine
@@ -1230,7 +1190,6 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
         speed: m.speed,
         contextTokens: m.contextTokens,
         onlyOwner: m.onlyOwner,
-        fallback: m.fallback,
       };
       return footer({
         second: (

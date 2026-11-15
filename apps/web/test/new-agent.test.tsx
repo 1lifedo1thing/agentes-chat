@@ -1114,7 +1114,6 @@ describe("Criar agente: what gets created", () => {
       account: { id: "acc-1", label: "Claude", provider: null, mine: true, free: true },
       ownSignIn: false,
       effort: "high",
-      fallback: true,
     };
     await open(state);
     await startAs("Assistente");
@@ -1130,7 +1129,7 @@ describe("Criar agente: what gets created", () => {
     expect(state.calls.find((c) => c.method === "agents.setBrain")?.args).toEqual([
       ORG_ID,
       agentId,
-      { brain: "claude_code", account: "acc-1", model: "opus", effort: "high", contextTokens: null, fallback: true },
+      { brain: "claude_code", account: "acc-1", model: "opus", effort: "high", contextTokens: null },
     ]);
   });
 
@@ -1163,7 +1162,6 @@ describe("Criar agente: what gets created", () => {
       account: null,
       ownSignIn: true,
       effort: "high",
-      fallback: true,
     };
     const api = createFakeApi(state);
     fakeMachinesOf.get(api)?.setAiAccounts({

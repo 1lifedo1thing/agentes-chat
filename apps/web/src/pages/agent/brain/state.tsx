@@ -1,7 +1,6 @@
 import type { AgentBrain, BrainKind, MachineAccount, MachineAccountKind, PlanUsage } from "@agenteschat/client";
 import {
   useAiAccounts,
-  useAiStatus,
   useComputerSetup,
   useCredentials,
   useModels,
@@ -104,8 +103,6 @@ export function useBrainState(view: AgentBrain, opts: { added: readonly MachineA
   const credentials = useCredentials(org.id, canDo(org, "manage_credentials"));
   const platform = usePlatformKey(org.id);
   const settings = useSettings(org.id);
-  // Answering through the API needs a key: the workspace's own, or the server's.
-  const apiKey = useAiStatus(org.id).data?.apiKey !== false;
   const ai = useAiAccounts(org.id, view.canUsePlans);
   const kind = view.brain;
   const savedCard = aiChoiceOf(view);
@@ -450,7 +447,6 @@ export function useBrainState(view: AgentBrain, opts: { added: readonly MachineA
     savedCard,
     hold,
     edition,
-    apiKey,
     computerName,
     nameOf,
     homeOf,
