@@ -49,6 +49,8 @@ test("Mudar quando perguntar: in the approval sheet's Da próxima vez and under 
   const cards = read("features/chat/cards.tsx");
   expect(cards).toContain("<WhenAsksLink approval={a} />");
   expect(cards).toContain("{decider ? <WhenAsksLink approval={decider} /> : null}");
+  // The right hand's routine group, when one agent asked them all.
+  expect(read("features/ai/OfferApprovals.tsx")).toContain("{oneAgent ? <WhenAsksLink approval={oneAgent} /> : null}");
   // The picker's switch starts off on every ask and tells the caller each change.
   const picker = read("features/shared/PickerSheet.tsx");
   expect(picker).toContain("setToggled(false);");
