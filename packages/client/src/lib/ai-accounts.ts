@@ -433,7 +433,8 @@ export function keyRemovalText(
  * between agents (a login made for one agent is lent to that agent only), its owner's first and then those that serve
  * everyone, each by `useOrder` (the unplaced after, in the order given: oldest first). Only its own account when it is
  * pinned ("Só esta conta"), a key's, or of a kind that never moves (Gemini, Grok, Cursor, OpenCode). The right hand's
- * `scope`: its person's own AI goes on only with that person's accounts (`mine`), the workspace's is shown alone.
+ * `scope`: its person's own AI goes on only with that person's accounts (`mine`), and never on a plan someone else
+ * gave it, the workspace's included.
  */
 export function accountChain<A extends MachineAccount>(
   accounts: readonly A[],
@@ -441,8 +442,8 @@ export function accountChain<A extends MachineAccount>(
 ): A[] {
   const own = accounts.find((a) => a.id === agent.account);
   if (!own) return [];
-  if (agent.pinned || agent.scope === "workspace" || own.provider || !NEXT_ACCOUNT_KINDS.includes(own.kind))
-    return [own];
+  const lent = agent.scope === "workspace" || (agent.scope === "mine" && !own.mine);
+  if (agent.pinned || lent || own.provider || !NEXT_ACCOUNT_KINDS.includes(own.kind)) return [own];
   const mine = (a: A) => (agent.scope === "mine" ? a.mine : agent.ownerId !== null && a.ownerId === agent.ownerId);
   const serves = (a: A) => mine(a) || (agent.scope !== "mine" && (a.serves ?? "everyone") === "everyone");
   const place = (a: A) => a.useOrder ?? Number.POSITIVE_INFINITY;

@@ -834,6 +834,19 @@ test("Lodi goes on only with the person's own accounts that may answer them", as
   // Nor on resume, after a move made in her DM.
   expect((await movedAccountPlan(deps, forAda, plan, OWN2, ada.id))?.account?.id).toBe(OWN2);
   expect(await movedAccountPlan(deps, forAda, plan, OWN2, fx.owner.id)).toBeNull();
+
+  // On the workspace's plan, which isn't hers, it waits: never on to that plan owner's other accounts.
+  await add(OWN3, fx.owner.id);
+  const onTeamPlan = { ...lodi, ownerUserId: fx.owner.id };
+  const teamPlan: BrainPlan = { ...plan, account: { id: WALTER_ALL, label: "b001", status: "active" } };
+  expect(await nextAccountPlan(deps, onTeamPlan, teamPlan, [WALTER_ALL], { forPerson: ada.id })).toMatchObject({
+    plan: null,
+  });
+  expect(await movedAccountPlan(deps, onTeamPlan, teamPlan, OWN3, ada.id)).toBeNull();
+  // Its plan's owner answered: those are their own accounts.
+  expect(
+    (await nextAccountPlan(deps, onTeamPlan, teamPlan, [WALTER_ALL], { forPerson: fx.owner.id })).plan?.account?.id,
+  ).toBe(OWN3);
 });
 
 test("Lodi on its person's plan at the limit goes on with their next account instead of its no-AI line", async () => {

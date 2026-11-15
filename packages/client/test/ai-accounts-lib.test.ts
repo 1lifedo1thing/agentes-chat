@@ -563,6 +563,8 @@ describe("accountChain: the accounts a run goes through at its plan's limit", ()
     ];
     expect(chainOf(accounts, { scope: "mine" })).toEqual(["own1", "mine-only"]);
     expect(chainOf(accounts, { scope: "workspace" })).toEqual(["own1"]);
+    // Its person's AI on a plan someone else gave them waits for that plan.
+    expect(chainOf(accounts, { scope: "mine", account: "w1" })).toEqual(["w1"]);
   });
 
   test("pinned, a key, or a kind that never moves: its own account alone; none without one", () => {

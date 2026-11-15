@@ -112,7 +112,7 @@ type ChainAgent = Pick<Agent, "id" | "orgId" | "ownerUserId" | "brainAccountPinn
  * The accounts on `machineId` of `kind` a run of `agent` may go on with at its plan's limit (ADR 0041 §6): a CLI
  * sign-in (never a key, which is paid by the token) shared between agents, whose owner is still a member
  * (`planIsOwners`) and that serves this agent: its owner's own, or one that serves everyone. The right hand goes on
- * only with its plan's owner's, one that serves only them when it answers them (`forPerson`). `keep`: the run's own
+ * only with the accounts of the person it answers (`forPerson`), so never on a plan someone else gave it. `keep`: the run's own
  * accounts, whatever their sharing. A one-agent login is never another's: the runner lends its folder to that agent only.
  */
 function chainWhere(agent: ChainAgent, kind: string, machineId: string, forPerson: string | null, keep: string[]) {
@@ -124,10 +124,9 @@ function chainWhere(agent: ChainAgent, kind: string, machineId: string, forPerso
     isNull(machineAccounts.provider),
     sql`${machineAccounts.authMethod} is distinct from 'api_key'`,
     isRightHand(agent)
-      ? and(
-          eq(machineAccounts.createdBy, owner),
-          forPerson === owner ? undefined : eq(machineAccounts.serves, "everyone"),
-        )
+      ? forPerson === owner
+        ? eq(machineAccounts.createdBy, owner)
+        : sql`false`
       : or(eq(machineAccounts.createdBy, owner), eq(machineAccounts.serves, "everyone")),
     keep.length > 0
       ? or(inArray(machineAccounts.id, keep), eq(machineAccounts.shared, true))
