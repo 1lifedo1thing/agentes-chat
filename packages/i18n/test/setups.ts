@@ -151,6 +151,8 @@ export const SHOWN_ONLY: Record<Condition, readonly string[]> = {
     "help.selfhost.",
     // A server other than the Cloud with no terms or privacy page of its own: the Cloud always shows its documents.
     "legal.none.",
+    // Only to the owner of a server the desktop app runs (`confirmsOnThisMac`), which has no password.
+    "mobile.delete.onThisComputer",
     "mobile.newMission.noAgents",
     "mobile.newMission.reason.no_computer",
     // The Jev card and its setup screen render only for the installation's owner on self-host

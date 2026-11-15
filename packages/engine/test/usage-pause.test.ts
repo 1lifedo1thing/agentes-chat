@@ -35,6 +35,7 @@ import {
   REPARK_STEADY_MS,
   RESUME_AFTER_MS,
   RESUME_GAP_MS,
+  RIGHT_HAND,
   recoverStaleRuns,
   storeOwnUsage as reportOwnUsage,
   resumeBudgetWaits,
@@ -1059,6 +1060,52 @@ test("a stopped turn's note speaks on for the turns it took in, and the archive 
   await archiveAgent(f.db, f.owner.id, f.org.id, f.agent.id, f.pubsub);
   expect((await runs(f)).map((r) => r.status)).toEqual(["canceled", "canceled"]);
   expect((await notes(f, "plan_limit_wait"))[0]?.meta.usageWait).toMatchObject({ canceled: true, reason: "archived" });
+});
+
+test("the right hand's Don't run it at a person's word: the turns the note took in are its stop too", async () => {
+  f = await setup({ rightHand: true, reply: () => ({ chunks: ["pela API"] }) });
+  await computerAgent(f, { brainFallback: false });
+  const { brain } = scripted(() => [
+    { type: "limit", resetsAt: later(3600_000).toISOString() },
+    { type: "error", code: "plan_limit", message: "You've hit your session limit", worked: false },
+  ]);
+  await post(f, "@dev oi");
+  await drainOutbox(f.db, handlersWith(f, brain));
+  const [a] = await runs(f);
+  const [note] = await notes(f, "plan_limit_wait");
+  const extra = await post(f, "@dev e aí?");
+  await f.db
+    .update(schema.agentRuns)
+    .set({ pendingMessageIds: [] })
+    .where(eq(schema.agentRuns.id, a?.id ?? ""));
+  const [b] = await f.db
+    .insert(schema.agentRuns)
+    .values({
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      channelId: f.general.id,
+      threadRootId: extra.id,
+      triggerMessageId: extra.id,
+      trigger: "mention",
+      hop: 1,
+      status: "waiting_input",
+      transcript: { waitingForBrain: { code: "plan_limit", machineId: "", kind: "claude_code" } } as never,
+    })
+    .returning();
+  await f.db
+    .update(schema.messages)
+    .set({ meta: { ...note?.meta, usageWait: { ...(note?.meta.usageWait as object), runIds: [b?.id] } } })
+    .where(eq(schema.messages.id, note?.id ?? ""));
+  const [lodi] = await f.db
+    .select()
+    .from(schema.agents)
+    .where(and(eq(schema.agents.orgId, f.org.id), eq(schema.agents.builtin, RIGHT_HAND)));
+
+  await cancelRun({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, a?.id ?? "", { byAgentId: lodi?.id ?? "" });
+  expect((await runs(f)).map((r) => [r.status, r.error])).toEqual([
+    ["canceled", `canceled_by:${f.owner.id}|agent:${lodi?.id}`],
+    ["canceled", `canceled_by:${f.owner.id}|agent:${lodi?.id}`],
+  ]);
 });
 
 test("back after a long wait, a conversation catches up: how long, what was posted since, and it may pass", async () => {

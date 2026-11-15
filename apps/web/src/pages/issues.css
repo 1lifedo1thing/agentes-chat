@@ -492,7 +492,6 @@ html:not([data-pointer]) .issues-layout:focus-visible {
     box-shadow 0.2s var(--out);
 }
 .issue-card:hover {
-  transform: translateY(-2px);
   box-shadow: var(--e2), var(--top);
 }
 html:not([data-pointer]) .issue-card:focus-visible {

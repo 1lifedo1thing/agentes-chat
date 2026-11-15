@@ -44,6 +44,7 @@ import {
   useAiStatus,
   useApproval,
   useApprovals,
+  useCachedMessages,
   useCardApprovals,
   useChannelCategories,
   useChannelMembers,
@@ -1283,32 +1284,40 @@ function ChannelView({
     el.scrollTop = el.scrollHeight - a.height + a.top;
   }, [older]);
 
-  // The channel's messages: only what was said in the channel (agents asked there answer there).
   // Every thread with replies is one line under its root; its replies live in the panel.
-  const channelList = useMemo(() => {
-    if (thread) return null;
-    const top = [...older, ...(channelMessages.data ?? [])];
-    const hidden = hiddenByThreads(threadList, top);
-    // My replies from the panel wait in the channel's page until sent: they belong to the thread.
-    const visible = top.filter((m) => !m.threadId && !hidden(m));
+  const threadLines = useMemo(() => {
     const lines = new Map<string, { thread: ThreadInfo; count: number }>();
     for (const x of threadList) {
       // A range thread has its marker, a mission its card, a closed thread its own line.
       if (x.state !== "open" || x.context || x.mission || x.replyCount === 0) continue;
       lines.set(x.id, { thread: x, count: x.replyCount });
     }
-    return { visible, lines };
-  }, [thread, older, channelMessages.data, threadList]);
-  // The channel's threads as the timeline draws them (none in a thread view).
+    return lines;
+  }, [threadList]);
+  // The channel's messages: only what was said in the channel (agents asked there answer there).
+  const channelList = useMemo(() => {
+    if (thread) return null;
+    const top = [...older, ...(channelMessages.data ?? [])];
+    const hidden = hiddenByThreads(threadList, top);
+    // My replies from the panel wait in the channel's page until sent: they belong to the thread.
+    const visible = top.filter((m) => !m.threadId && !hidden(m));
+    return { visible, lines: threadLines };
+  }, [thread, older, channelMessages.data, threadList, threadLines]);
+  // The channel's threads as the timeline draws them (none in a thread view). Every row reads this context, so it
+  // must not change with the messages: a new message or an older page would draw every row again.
   const threadsView = useMemo<ChannelThreadsView | null>(() => {
-    if (thread || !channelList) return null;
+    if (thread) return null;
     return {
       byId: new Map(threadList.filter((x) => x.state !== "archived").map((x) => [x.id, x])),
-      marks: contextMarks(threadList, [...older, ...(channelMessages.data ?? [])], channel.id),
       open: panel?.id ?? null,
-      lines: channelList.lines,
+      lines: threadLines,
     };
-  }, [thread, channelList, threadList, older, channelMessages.data, channel.id, panel?.id]);
+  }, [thread, threadList, threadLines, panel?.id]);
+  // Messages that are a thread's context and still in the channel: the gutter mark.
+  const contextMarkIds = useMemo(
+    () => (thread ? NO_MARKS : contextMarks(threadList, [...older, ...(channelMessages.data ?? [])], channel.id)),
+    [thread, threadList, older, channelMessages.data, channel.id],
+  );
   const timeline = useMemo(() => {
     if (thread) {
       // The thread's conversation. One made from a range: not its root (the channel's marker) nor the
@@ -2669,6 +2678,7 @@ function ChannelView({
                                   dmPersonId={thread ? undefined : chrome?.dmPersonId}
                                   consultGroups={consultGroups}
                                   seenId={thread ? null : seenId}
+                                  marks={contextMarkIds}
                                 />
                                 {/* A thread's root is on screen from the channel: only its replies are loading. */}
                                 {thread && messages.isPlaceholderData && thread.replyCount > 0 && (
@@ -3138,6 +3148,7 @@ const Timeline = memo(function Timeline({
   dmPersonId,
   consultGroups,
   seenId = null,
+  marks,
 }: {
   items: ReturnType<typeof buildTimeline>;
   /** The first page loaded: rows from then on slide in. */
@@ -3157,6 +3168,8 @@ const Timeline = memo(function Timeline({
   consultGroups: ConsultGroups;
   /** My message they read last: their face is its receipt. */
   seenId?: string | null;
+  /** Messages that are a thread's context and still in the channel: the gutter mark. */
+  marks: ReadonlySet<string>;
 }) {
   const { t, i18n } = useTranslation();
   const models = useModels();
@@ -3322,7 +3335,7 @@ const Timeline = memo(function Timeline({
           grouped={grouped}
           entering={false}
           modelLabels={modelLabels}
-          contextMark={threadsView?.marks.has(m.id)}
+          contextMark={marks.has(m.id)}
           replyContext={item.context}
           lastOfRun={lastByRun.get(m.agentRunId) === item.key}
           run={run}
@@ -3334,7 +3347,7 @@ const Timeline = memo(function Timeline({
           grouped={grouped}
           entering={entering}
           modelLabels={modelLabels}
-          contextMark={threadsView?.marks.has(m.id)}
+          contextMark={marks.has(m.id)}
           replyContext={item.context}
           lastOfRun={Boolean(m.agentRunId && lastByRun.get(m.agentRunId) === item.key)}
           dmPersonId={dmPersonId}
@@ -3400,6 +3413,7 @@ const HELD_RECENT_MS = 12 * 60 * 60_000;
 
 /** Model names for the rows of "Ajustar trecho" (no usage line is shown there). */
 const NO_LABELS = new Map<string, string>();
+const NO_MARKS: ReadonlySet<string> = new Set();
 
 /** The live run as a message, while it has none (the block's header comes from the run): from when it started. */
 function liveMessageOf(r: LiveRun): MessageType {
@@ -3649,15 +3663,18 @@ function LiveRunStatus({ run }: { run: LiveRun }) {
 function StoppedLine({
   runId,
   byUserId,
-  note,
+  byAgentId,
+  code,
   limit,
   owner,
   message,
 }: {
   runId: string | null | undefined;
   byUserId: string | null | undefined;
-  /** The server's line, for older messages without a person in the meta. */
-  note?: string | null;
+  /** The agent that stopped it at that person's word (the right hand). */
+  byAgentId?: string | null;
+  /** Nobody stopped it: why (`run.agent_archived`…), said in the person's language. */
+  code?: string | null;
   /**
    * The run ended at its step limit, or because it got stuck (`meta.stepLimit`), or its long work failed on its AI
    * provider (`meta.workEnd`, whose text already says so): nobody stopped it.
@@ -3677,8 +3694,15 @@ function StoppedLine({
   const stop = useStopNotice(runId);
   // The agent works here again, or wrote after the stop: it went on, so the stop is over and offers nothing.
   const movedOn = useStopMovedOn(runId);
-  // Its words when no person stopped it: the step limit, stuck; long work its provider cut off says it in its text.
-  const fallback = limit ? (limit === "failed" ? null : t(limit === "stuck" ? "run.stuck" : "run.stepLimit")) : note;
+  // Its words when no person stopped it: the step limit, stuck, or its cause (an archived agent, a closed workspace);
+  // long work its provider cut off says it in its text.
+  const fallback = limit
+    ? limit === "failed"
+      ? null
+      : t(limit === "stuck" ? "run.stuck" : "run.stepLimit")
+    : !byUserId && !stop
+      ? (runErrorText(t, code) ?? t("run.stopped"))
+      : null;
   const said = Boolean(stop || byUserId || fallback);
   // Only a run a person stopped, one at its step limit, or long work its provider cut off, picks up again.
   const can = Boolean(runId && (byUserId || stop || limit) && owner && !continued && !movedOn && canStop(owner));
@@ -3707,7 +3731,7 @@ function StoppedLine({
   return (
     <StopPill
       agent={agent}
-      who={{ notice: stop?.notice, at: stop?.at, byUserId }}
+      who={{ notice: stop?.notice, at: stop?.at, byUserId, byAgentId }}
       fallback={fallback}
       cont={go}
       channelId={owner?.channelId ?? message?.channelId ?? ""}
@@ -4230,7 +4254,6 @@ export const TimelineMessage = memo(function TimelineMessage({
 }) {
   const { t, i18n } = useTranslation();
   const { org, me } = useOrg();
-  const qc = useQueryClient();
   const dismissRun = useDismissRun();
   const liveFailed = live?.status === "failed";
   const failedWhy = liveFailed ? runErrorText(t, live?.errorCode, live?.errorParams) : null;
@@ -4262,25 +4285,22 @@ export const TimelineMessage = memo(function TimelineMessage({
   // it answers on demand (that report's own line folds into this message).
   const routine = routineReplyOf(m);
   const [reportOpen, setReportOpen] = useState(false);
-  const report = routine?.noticeId
-    ? routineReportText(
-        [
-          ...(qc.getQueryData<MessageType[]>(keys.messages(org.id, m.channelId)) ?? []),
-          ...((m.threadId && qc.getQueryData<MessageType[]>(keys.thread(org.id, m.channelId, m.threadId))) || []),
-        ],
-        routine.noticeId,
-      )
-    : null;
+  // The other messages it shows a piece of: its routine's report, and the messages its run read (`steerNote`).
+  const shownIds = useMemo(
+    () => [
+      ...(routine?.noticeId ? [routine.noticeId] : []),
+      ...[...(live?.work ?? []), ...(seenLive?.work ?? [])].flatMap((w) => (w.kind === "steer" ? [w.messageId] : [])),
+    ],
+    [routine?.noticeId, live?.work, seenLive?.work],
+  );
+  const shown = useCachedMessages(org.id, m.channelId, m.threadId, shownIds);
+  const report = routine?.noticeId ? routineReportText(shown, routine.noticeId) : null;
   // A short reply it gave while its task kept working (the talker): its message, "enquanto trabalha".
   const talker = m.author.type === "agent" && isTalkerReply(m.meta);
   const wikiLink = useWikiLinkRenderer();
   /** A message that went into this run's work, as the well inside it shows it. */
   const steerNote = (messageId: string): SteerNote | undefined => {
-    const lists = [
-      qc.getQueryData<MessageType[]>(keys.messages(org.id, m.channelId)),
-      m.threadId ? qc.getQueryData<MessageType[]>(keys.thread(org.id, m.channelId, m.threadId)) : undefined,
-    ];
-    const found = lists.flatMap((l) => l ?? []).find((x) => x.id === messageId);
+    const found = shown.find((x) => x.id === messageId);
     if (!found) return undefined;
     return {
       author: dir.authorName(found.author),
@@ -4723,7 +4743,8 @@ export const TimelineMessage = memo(function TimelineMessage({
               <StoppedLine
                 runId={m.agentRunId}
                 byUserId={stopped.byUserId}
-                note={stopped.note}
+                byAgentId={stopped.byAgentId}
+                code={stopped.code}
                 limit={providerCut ? "failed" : atLimit}
                 owner={
                   m.author.type === "agent" && m.author.id
@@ -4765,7 +4786,7 @@ export const TimelineMessage = memo(function TimelineMessage({
                 runId={m.agentRunId ?? null}
                 name={name}
                 steps={browserTrail}
-                stopped={stopped.canceled ? { byUserId: stopped.byUserId } : null}
+                stopped={stopped.canceled ? stopped : null}
                 recent={Date.now() - Date.parse(m.createdAt) < HELD_RECENT_MS}
               />
             )}
@@ -4775,7 +4796,7 @@ export const TimelineMessage = memo(function TimelineMessage({
                 runId={m.agentRunId ?? null}
                 name={name}
                 steps={desktopTrail}
-                stopped={stopped.canceled ? { byUserId: stopped.byUserId } : null}
+                stopped={stopped.canceled ? stopped : null}
                 screen="desktop"
               />
             )}

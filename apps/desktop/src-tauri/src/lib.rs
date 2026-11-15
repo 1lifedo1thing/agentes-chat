@@ -8,6 +8,7 @@
 //! web view.
 
 mod app_icon;
+mod cookies;
 mod cover;
 mod deep_link;
 mod discover;

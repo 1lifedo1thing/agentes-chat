@@ -3,6 +3,7 @@ import { consultLineState, consultOriginKey } from "@agenteschat/client/lib/cons
 import { consultSubject } from "@agenteschat/client/lib/consultations";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { groupsWith } from "@agenteschat/client/lib/timeline";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -63,26 +64,37 @@ function Consultation({ consultationId, channelId }: { consultationId: string; c
   // The consulted agent's own words came: its last one is the answer. Left out (its run also answers a question
   // from another conversation), the answer shows on its own.
   const said = list.some((m) => m.author.id === q?.consultedAgentId && m.channelId !== channelId);
+  // A form sheet sizes its first scroll view to the whole sheet, over whatever stands before or after it: the
+  // title rides pinned inside the list and the foot lies over its end, each on the sheet's own color, with the
+  // foot's height kept free under the last row. The list is the sheet's own first child, with no view around it:
+  // inside a painted one the sheet also moves the list to the screen's own frame, not only sizes it, and the list
+  // can land off the sheet, which then shows empty.
+  const [footHeight, setFootHeight] = useState(0);
   const talk = () => {
     if (asker) requestComposerText(channelId, `@${asker.handle} `);
     goBack(chatHref(channelId));
   };
   return (
-    <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <View style={styles.head}>
-        <SheetTitle
-          title={q ? t("chat.consultPanel.title", { from: from.name, to: to.name }) : ""}
-          subtitle={[
-            // What the exchange is about, ahead of where it is and how many messages it has.
-            consultSubject(q?.question),
-            channelName ? t("chat.consultPanel.where", { channel: channelName }) : t("chat.consultPanel.whereDm"),
-            ...(list.length > 0 ? [t("chat.consultPanel.messages", { count: list.length })] : []),
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        />
-      </View>
-      <ScrollView contentContainerStyle={styles.list}>
+    <>
+      <ScrollView
+        style={[styles.screen, { backgroundColor: c.bg }]}
+        stickyHeaderIndices={[0]}
+        contentContainerStyle={[styles.list, { paddingBottom: footHeight + 12 }]}
+        scrollIndicatorInsets={{ bottom: footHeight }}
+      >
+        <View style={[styles.head, { backgroundColor: c.bg }]}>
+          <SheetTitle
+            title={q ? t("chat.consultPanel.title", { from: from.name, to: to.name }) : ""}
+            subtitle={[
+              // What the exchange is about, ahead of where it is and how many messages it has.
+              consultSubject(q?.question),
+              channelName ? t("chat.consultPanel.where", { channel: channelName }) : t("chat.consultPanel.whereDm"),
+              ...(list.length > 0 ? [t("chat.consultPanel.messages", { count: list.length })] : []),
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+        </View>
         {query.isLoading ? <ActivityIndicator color={c.muted} /> : null}
         {!query.isLoading && !query.data ? (
           <Text variant="small" tone="muted" style={styles.pad}>
@@ -141,7 +153,10 @@ function Consultation({ consultationId, channelId }: { consultationId: string; c
           </View>
         ) : null}
       </ScrollView>
-      <View style={[styles.foot, { paddingBottom: insets.bottom + 8 }]}>
+      <View
+        style={[styles.foot, { paddingBottom: insets.bottom + 8, backgroundColor: c.bg }]}
+        onLayout={(e) => setFootHeight(e.nativeEvent.layout.height)}
+      >
         <View style={[styles.note, { backgroundColor: c.sunken }]}>
           <LineIcon variant="footnote" name="lock" size={16} color={c.muted} />
           <Text variant="footnote" tone="muted" style={styles.grow}>
@@ -162,7 +177,7 @@ function Consultation({ consultationId, channelId }: { consultationId: string; c
           />
         ) : null}
       </View>
-    </View>
+    </>
   );
 }
 
@@ -170,13 +185,13 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   // Under the sheet's grabber, the list's side inset.
   head: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12 },
-  list: { paddingVertical: 12, gap: 2 },
+  list: { gap: 2 },
   pad: { paddingHorizontal: 16 },
   // Sentences that wrap: the icon stays on their first line (`LineIcon`), not between the lines.
   line: { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 6 },
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
   answer: { gap: 4, paddingVertical: 8 },
-  foot: { paddingHorizontal: 12, paddingTop: 8, gap: 8 },
+  foot: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 12, paddingTop: 8, gap: 8 },
   note: { flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 12, borderRadius: 14 },
 });

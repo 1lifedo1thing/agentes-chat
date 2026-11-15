@@ -4787,7 +4787,6 @@ html:not([data-pointer]) .catalog__cat:focus-visible {
 }
 .catalog-feat__card:hover,
 .catalog-tile:hover {
-  transform: translateY(-1px);
   box-shadow: var(--e2), var(--top);
 }
 .catalog-feat__card:active,
@@ -6509,7 +6508,6 @@ html:not([data-pointer]) .photo-drop:focus-visible {
     box-shadow 0.16s;
 }
 .avatar-ask__door:hover {
-  transform: translateY(-2px);
   box-shadow: var(--e2);
 }
 .avatar-ask__door:active {
@@ -7234,12 +7232,9 @@ p.run-canceled {
   line-height: normal;
   color: var(--ink);
   cursor: pointer;
-  transition: transform 0.18s var(--spring);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .run-continue:hover:not(:disabled) {
-    transform: translateY(-1px);
-  }
+.run-continue:hover:not(:disabled) {
+  box-shadow: var(--card-shadow-hover);
 }
 html:not([data-pointer]) .run-continue:focus-visible {
   outline: none;
@@ -7473,6 +7468,17 @@ html:not([data-pointer]) .run-continue:focus-visible {
 .sidebar[data-rail="true"] .sidebar__org {
   flex-direction: column;
   padding: 0;
+}
+/* A tablet's rail opened by its toggle: the whole sidebar over the page, which keeps the rail's room and its layout. */
+.sidebar[data-float="true"] {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  z-index: var(--z-floating);
+  box-shadow: var(--e3);
+}
+.shell:has(> .sidebar[data-float="true"]) {
+  padding-left: 68px;
 }
 .sidebar[data-rail="true"] .sidebar__org-text,
 .sidebar[data-rail="true"] .sidebar__org-button > .ac-icon,
@@ -9471,7 +9477,6 @@ html:not([data-pointer]) .onb__step:focus-visible {
 }
 .newag__role:hover,
 .newag__tip:hover {
-  transform: translateY(-2px);
   box-shadow: var(--e2), var(--top);
 }
 .newag__role[aria-pressed="true"] {
@@ -9633,7 +9638,7 @@ html:not([data-pointer]) .newag__addrow:focus-visible {
   transition: transform 0.2s var(--spring);
 }
 .newag__swatch:hover {
-  transform: translateY(-2px);
+  transform: scale(1.12);
 }
 .newag__swatch--custom {
   background: conic-gradient(from 200deg, #f58aa6, #f3c25c, #5fcf8b, #4cd0c0, #8cc3ff, #7d8bff, #ae8cf7, #f58aa6);
@@ -9679,7 +9684,6 @@ html:not([data-pointer]) .newag__addrow:focus-visible {
 }
 .newag__opt:hover {
   color: var(--ink);
-  transform: translateY(-1px);
 }
 .newag__opt[aria-pressed="true"] {
   background: var(--chosen-bg);

@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { schema } from "@agenteschat/db";
+import { eq, schema } from "@agenteschat/db";
 import { deleteAccount } from "@agenteschat/engine";
-import { browser, createTestServer, signUp, type TestServer } from "./harness";
+import { type Browser, browser, createTestServer, joinByInvitation, signUp, type TestServer } from "./harness";
 
 /**
  * The installation's first account when the install left a secret for its owner (ADR 0060 §6): the
@@ -218,5 +218,94 @@ describe("the desktop app's owner key (OWNER_KEY_SHA256)", () => {
     expect(res.status).toBe(200);
     const me = (await (await window("/api/app/me")).json()) as { user: { id: string; email: string } };
     expect(me.user).toMatchObject({ id: userId, email: "carla@example.com" });
+  });
+});
+
+describe("deleting with no password on the desktop app's own server (ADR 0088 §2, addendum 2026-11-14)", () => {
+  /** A response's status and error code. */
+  const answer = async (res: Response) => [
+    res.status,
+    ((await res.json().catch(() => ({}))) as { error?: { code?: string } }).error?.code,
+  ];
+  /** A window the app signs in as the owner with its key: Continue on this Mac. */
+  const continueOnThisMac = async () => {
+    const res = await ownerKey({ key: KEY, name: "Ana", email: "ana@example.com" });
+    return (await trade(((await res.json()) as { token: string }).token)).window;
+  };
+  const meOf = async (b: Browser) =>
+    ((await (await b("/api/app/me")).json()) as { user: { id: string; confirmsOnThisMac: boolean } }).user;
+  const workspace = async (b: Browser, name = "Acme") =>
+    ((await (await b("/api/app/organizations", { json: { name } })).json()) as { organization: { id: string } })
+      .organization.id;
+  const deleteOrg = (b: Browser, orgId: string, json: Record<string, unknown> = {}) =>
+    b(`/api/app/organizations/${orgId}/deletion`, { json });
+  const deleteMyAccount = (b: Browser, json: Record<string, unknown> = {}) =>
+    b("/api/app/account", { method: "DELETE", json });
+  /** Every session of theirs signed in an hour ago, as the database says. */
+  const signedInAnHourAgo = (userId: string) =>
+    t.db
+      .update(schema.sessions)
+      .set({ createdAt: new Date(Date.now() - 3600_000) })
+      .where(eq(schema.sessions.userId, userId));
+
+  test("a fresh sign-in through the key deletes; an old one, a phone minted from it, and a teammate don't", async () => {
+    t = await createTestServer({ env: { OWNER_KEY_SHA256: sha256(KEY) }, emailDelivers: false });
+    const owner = await continueOnThisMac();
+    const ownerMe = await meOf(owner);
+    expect(ownerMe.confirmsOnThisMac).toBe(true);
+    const orgId = await workspace(owner);
+    const bia = await joinByInvitation(t, owner, orgId, "bia@example.com");
+    // A teammate, signed in just now: still their password.
+    expect((await meOf(bia)).confirmsOnThisMac).toBe(false);
+    expect(await answer(await deleteMyAccount(bia))).toEqual([403, "reauth.password"]);
+
+    await signedInAnHourAgo(ownerMe.id);
+    expect(await answer(await deleteOrg(owner, orgId))).toEqual([403, "reauth.sign_in"]);
+    // A phone signed in from that old session signed in when it did.
+    const { token } = (await (await owner("/api/app/phone-sign-in", { json: {} })).json()) as { token: string };
+    const phone = browser(t);
+    expect((await phone("/api/auth/sign-in/one-time-token", { json: { token } })).status).toBe(200);
+    expect((await meOf(phone)).confirmsOnThisMac).toBe(true);
+    expect(await answer(await deleteOrg(phone, orgId))).toEqual([403, "reauth.sign_in"]);
+
+    // Continue on this Mac again: nothing to type.
+    expect((await deleteOrg(await continueOnThisMac(), orgId)).status).toBe(202);
+    // The account too, the same way.
+    await signedInAnHourAgo(ownerMe.id);
+    expect(await answer(await deleteMyAccount(owner))).toEqual([403, "reauth.sign_in"]);
+    expect((await deleteMyAccount(await continueOnThisMac())).status).toBe(204);
+  });
+
+  test("an owner who added a password: a fresh sign-in is enough, an old one still takes the password", async () => {
+    t = await createTestServer({ env: { OWNER_KEY_SHA256: sha256(KEY) }, emailDelivers: false });
+    const owner = await continueOnThisMac();
+    expect((await owner("/api/app/me/password", { json: { password: PASSWORD } })).status).toBe(204);
+    const ownerMe = await meOf(owner);
+    expect(ownerMe.confirmsOnThisMac).toBe(true);
+    expect((await deleteOrg(owner, await workspace(owner, "First"))).status).toBe(202);
+
+    const second = await workspace(owner, "Second");
+    await signedInAnHourAgo(ownerMe.id);
+    expect(await answer(await deleteOrg(owner, second))).toEqual([403, "reauth.sign_in"]);
+    expect(await answer(await deleteOrg(owner, second, { password: "not my password" }))).toEqual([
+      403,
+      "reauth.password",
+    ]);
+    expect((await deleteOrg(owner, second, { password: PASSWORD })).status).toBe(202);
+  });
+
+  test("a server that sends email still takes the emailed code, even from the owner signed in just now", async () => {
+    t = await createTestServer({ env: { OWNER_KEY_SHA256: sha256(KEY) } });
+    const owner = await continueOnThisMac();
+    expect((await meOf(owner)).confirmsOnThisMac).toBe(false);
+    expect(await answer(await deleteOrg(owner, await workspace(owner)))).toEqual([403, "reauth.code"]);
+  });
+
+  test("a server with no owner key takes the password from its first account, however fresh", async () => {
+    t = await createTestServer({ emailDelivers: false });
+    const owner = browser(t);
+    await signUp(owner, "ana@example.com");
+    expect((await meOf(owner)).confirmsOnThisMac).toBe(false);
+    expect(await answer(await deleteOrg(owner, await workspace(owner)))).toEqual([403, "reauth.password"]);
   });
 });

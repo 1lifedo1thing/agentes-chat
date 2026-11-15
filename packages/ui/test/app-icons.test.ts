@@ -88,6 +88,31 @@ describe("app icons (ADR 0179)", () => {
     expect(mono("crown")).not.toBe(mono("hat"));
   });
 
+  test("the peeking agent leans to the left: its right eye sits higher than its left", () => {
+    for (const look of ["light", "dark"] as const) {
+      const N = 128;
+      const { px } = render(N, SCENES.peekNight[look](), { k: 1024 / N });
+      // Each row's fully white pixels: the eyes.
+      const eyes: number[][] = [];
+      for (let y = 0; y < N; y++) {
+        const row: number[] = [];
+        for (let x = 0; x < N; x++) {
+          const i = (y * N + x) * 4;
+          if (px[i] === 255 && px[i + 1] === 255 && px[i + 2] === 255) row.push(x);
+        }
+        if (row.length) eyes.push(row);
+      }
+      const middle = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+      expect(eyes.length).toBeGreaterThan(10);
+      // The topmost row is the right eye's and the lowest the left eye's.
+      expect(middle(eyes[0] ?? [])).toBeGreaterThan(middle(eyes[eyes.length - 1] ?? []) + 4);
+      // It comes in from the bottom right: that corner is the agent, the one across is the sky.
+      const at = (x: number, y: number) => [...px.slice((y * N + x) * 4, (y * N + x) * 4 + 3)];
+      expect(at(N - 1, N - 1)).not.toEqual(at(0, N - 1));
+      expect(at(0, 0)).toEqual(at(0, 0).map((v) => Math.min(v, 0x60)));
+    }
+  });
+
   test("the 16 px favicon's eyes sit on whole pixels", () => {
     const { px } = render(16, SCENES.night.favicon(16));
     let white = 0;

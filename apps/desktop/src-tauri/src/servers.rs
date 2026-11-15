@@ -197,13 +197,10 @@ pub fn remove(app: &AppHandle, origin: &str) {
     crate::menus::servers_changed(app);
 }
 
-/// The main window's cookies sent to `origin` go. Off the main thread only: reading or deleting them there deadlocks
-/// on Windows (WebView2).
+/// The main window's cookies sent to `origin` go. From a thread of its own only (`cookies`).
 pub fn drop_cookies(app: &AppHandle, origin: &str) {
     let (Some(page), Ok(url)) = (app.get_webview(crate::main_window::LABEL), origin.parse::<Url>()) else { return };
-    for cookie in page.cookies().unwrap_or_default().into_iter().filter(|c| crate::workspaces::sent_to(c, &url)) {
-        let _ = page.delete_cookie(cookie);
-    }
+    crate::cookies::remove(&page, move |c| crate::workspaces::sent_to(c, &url));
 }
 
 /// The main window's capability for a server other than agentes.chat, for its own origin only.
@@ -292,7 +289,7 @@ pub async fn server_sign_out(app: AppHandle, server: String) -> Result<(), Strin
     let (asking, shared) = (server.clone(), is_loopback(&server));
     tauri::async_runtime::spawn_blocking(move || {
         let cookies: Vec<_> =
-            page.cookies().unwrap_or_default().into_iter().filter(|c| crate::workspaces::sent_to(c, &url)).collect();
+            crate::cookies::read(&page).into_iter().filter(|c| crate::workspaces::sent_to(c, &url)).collect();
         let cookie = crate::workspaces::cookie_header(cookies.iter().map(|c| (c.name(), c.value())));
         if !cookie.is_empty() {
             let agent = ureq::AgentBuilder::new().timeout(std::time::Duration::from_secs(10)).redirects(0).build();
@@ -304,9 +301,7 @@ pub async fn server_sign_out(app: AppHandle, server: String) -> Result<(), Strin
                 .send_string("{}");
         }
         if !shared {
-            for cookie in cookies {
-                let _ = page.delete_cookie(cookie);
-            }
+            crate::cookies::remove(&page, move |c| crate::workspaces::sent_to(c, &url));
         }
     })
     .await
