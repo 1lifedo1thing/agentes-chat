@@ -201,9 +201,6 @@
   border-radius: 0;
   box-shadow: none;
 }
-.cmp-dialog.is-screen-only .dsk-screen::after {
-  content: none;
-}
 .cmp-dialog.is-screen-only > .ac-dialog__head,
 .cmp-dialog.is-screen-only .cmp-banner,
 .cmp-dialog.is-screen-only .cmp-asked,

@@ -21,33 +21,22 @@ test("the live picture in the card is concentric with it: the card's radius less
   expect(px(value(".cmp-body .dsk-screen", "border-radius"))).toBe(10);
 });
 
-test("a hairline over the live picture's edge follows its rounded corners, over what the picture draws", () => {
-  for (const selector of [
-    ".brw-ac__page::after",
-    ".dsk-screen::after",
-    // In the conversation's frame the picture runs to the frame's inner corners: the stage carries them.
-    ".brw-mf > .brw-mf__top + .brw-ac__body > .brw-ac__stage::after",
-  ]) {
-    expect({ selector, content: value(selector, "content") }).toEqual({ selector, content: '""' });
-    expect({ selector, radius: value(selector, "border-radius") }).toEqual({ selector, radius: "inherit" });
-    expect({ selector, line: value(selector, "box-shadow") }).toEqual({
-      selector,
-      line: "inset 0 0 0 1px var(--line)",
-    });
-    expect({ selector, events: value(selector, "pointer-events") }).toEqual({ selector, events: "none" });
-    // Over a held still (z-index 1), under the agent's pointer (2).
-    expect({ selector, z: value(selector, "z-index") }).toEqual({ selector, z: "1" });
-  }
+test("in the conversation's frame, a hairline over the picture's edge follows its rounded corners", () => {
+  // The picture runs to the frame's inner corners there: the stage carries them, and the line.
+  const selector = ".brw-mf > .brw-mf__top + .brw-ac__body > .brw-ac__stage::after";
+  expect(value(selector, "content")).toBe('""');
+  expect(value(selector, "border-radius")).toBe("inherit");
+  expect(value(selector, "box-shadow")).toBe("inset 0 0 0 1px var(--line)");
+  expect(value(selector, "pointer-events")).toBe("none");
+  // Over a held still (z-index 1), under the agent's pointer (2).
+  expect(value(selector, "z-index")).toBe("1");
   expect(value(".brw-mf > .brw-mf__top + .brw-ac__body > .brw-ac__stage", "border-radius")).toBe("inherit");
 });
 
-test("no hairline where the picture has square corners: edge to edge, or letterboxed at a device's size", () => {
-  for (const selector of [
-    ".brw-mf .brw-ac__page::after",
-    ".brw-mf .dsk-screen::after",
-    ".brw-ac__page.is-emulated::after",
-    ".cmp-dialog.is-screen-only .dsk-screen::after",
-  ]) {
-    expect({ selector, content: value(selector, "content") }).toEqual({ selector, content: "none" });
+test("the card's page and the screen keep one line: the elevation's ring, with none drawn inside it", () => {
+  expect(value(".brw-ac__page", "box-shadow")).toBe("var(--e2)");
+  expect(value(".dsk-screen", "box-shadow")).toBe("var(--e2)");
+  for (const selector of [".brw-ac__page::after", ".dsk-screen::after"]) {
+    expect({ selector, content: value(selector, "content") }).toEqual({ selector, content: undefined });
   }
 });
