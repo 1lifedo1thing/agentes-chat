@@ -13,6 +13,7 @@ import { Icon, PressScale, Text } from "@/ui";
 import { useColors, useOrgId } from "../shared/hooks";
 import { nextSpeed, spokenWords, waveAt } from "./logic";
 import { playingId, seekPlayback, setPlaybackSpeed, startPlayback, stopPlayback, subscribePlayback } from "./playback";
+import { setVoiceSpeed, subscribeVoiceSpeed, voiceSpeed } from "./speed";
 import { PixelWave, wavePaths } from "./VoiceBars";
 
 /** Six rows of the sky's cells. */
@@ -23,7 +24,6 @@ const ONE_LINE = 40;
 const opened = new Set<string>();
 const positions = new Map<string, number>();
 const expired = new Set<string>();
-let speed = 1;
 /** The last tap on a play button, of any row. */
 let asked = 0;
 
@@ -45,7 +45,7 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
   const edge = useSharedValue(Skia.Path.Make());
   const [width, setWidth] = useState(0);
   const [time, setTime] = useState(durationMs);
-  const [rate, setRate] = useState(speed);
+  const rate = useSyncExternalStore(subscribeVoiceSpeed, voiceSpeed);
   const [gone, setGone] = useState(() => expired.has(clipId) || Boolean(voice && voiceExpired(voice)));
   const [open, setOpen] = useState(() => opened.has(message.id));
   const [broken, setBroken] = useState(false);
@@ -60,6 +60,10 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
     setOpen(opened.has(message.id));
     setBroken(false);
   }, [clipId, message.id]);
+  // A speed picked on any row, or while this one was still starting, reaches it where it plays.
+  useEffect(() => {
+    if (playing) setPlaybackSpeed(clipId, rate);
+  }, [playing, rate, clipId]);
   useEffect(() => {
     if (width <= 0 || !voice) return;
     const wave = wavePaths(voice.peaks, width, WAVE);
@@ -105,7 +109,7 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
       source: { uri: url, headers: appHeaders(lastCookie()) },
       durationMs,
       from: positions.get(clipId) ?? 0,
-      speed,
+      speed: voiceSpeed(),
       onProgress: report,
       onEnd: ended,
       onError: () => setBroken(true),
@@ -115,11 +119,7 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
     report(at);
     seekPlayback(clipId, at);
   };
-  const cycle = () => {
-    speed = nextSpeed(speed);
-    setRate(speed);
-    setPlaybackSpeed(clipId, speed);
-  };
+  const cycle = () => setVoiceSpeed(nextSpeed(rate));
   const flip = () => {
     if (open) opened.delete(message.id);
     else opened.add(message.id);
