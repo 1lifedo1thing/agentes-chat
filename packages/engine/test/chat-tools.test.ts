@@ -192,10 +192,7 @@ test("post_message from a consulted agent: never where an agent that asked it an
   // A second request, from #fotos, as when it joins the run still at work (`startOrJoinRun`): that run answers
   // both, and posts in neither place.
   await say("@dev pede pro nino as fotos", fotos.id);
-  const requests = await f.db
-    .select()
-    .from(schema.agentConsultations)
-    .orderBy(schema.agentConsultations.createdAt);
+  const requests = await f.db.select().from(schema.agentConsultations).orderBy(schema.agentConsultations.createdAt);
   expect(requests).toHaveLength(2);
   await f.db
     .update(schema.agentConsultations)
