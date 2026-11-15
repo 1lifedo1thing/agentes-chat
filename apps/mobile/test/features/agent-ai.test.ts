@@ -22,6 +22,7 @@ import {
   modelRows,
   modelSections,
   newAgentAi,
+  orderMoves,
   pickedAi,
   setupWords,
   takenFrom,
@@ -1211,7 +1212,7 @@ describe("Outro provedor on the phone", () => {
 
 describe("the order of use at a limit (ADR 0041 §6)", () => {
   const limited = usage(100);
-  const view = (over: Partial<Pick<AgentBrain, "accounts" | "account" | "accountPinned">> = {}) => ({
+  const view = (over: Partial<Pick<AgentBrain, "accounts" | "account" | "accountPinned" | "scope">> = {}) => ({
     accounts: [
       account("own", { usage: limited, shared: true, useOrder: 0 }),
       account("next", { usage: usage(20), shared: true, useOrder: 1 }),
@@ -1230,6 +1231,30 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     expect(agentChain(view({ account: null }), "ag_ada", "u1")).toEqual({ moves: false, waits: false });
   });
 
+  test("the right hand: its person's own AI goes on with that person's accounts only, the workspace's waits", () => {
+    const theirs = view({
+      scope: "mine",
+      accounts: [
+        account("own", { usage: limited, shared: true, mine: true }),
+        account("next", { usage: usage(20), shared: true, mine: false, ownerId: "u2" }),
+      ],
+    });
+    expect(agentChain(theirs, "lodi", "u1")).toEqual({ moves: false, waits: true });
+    expect(agentChain(view({ scope: "mine" }), "lodi", "u1")).toEqual({ moves: true, waits: false });
+    expect(agentChain(view({ scope: "workspace" }), "lodi", "u1")).toEqual({ moves: false, waits: true });
+  });
+
+  test("Move up and Move down: none up for the first, none down for the last, nothing for who may not move it", () => {
+    const order = [{ id: "a" }, { id: "b" }, { id: "c" }];
+    expect(orderMoves(order, { id: "a", canMove: true })).toEqual([{ step: 1, index: 1 }]);
+    expect(orderMoves(order, { id: "b", canMove: true })).toEqual([
+      { step: -1, index: 0 },
+      { step: 1, index: 2 },
+    ]);
+    expect(orderMoves(order, { id: "c", canMove: true })).toEqual([{ step: -1, index: 1 }]);
+    expect(orderMoves(order, { id: "b", canMove: false })).toEqual([]);
+  });
+
   test("the screens: the order with Move up and Move down, the pin switch, the limit's way out only when it waits", async () => {
     const read = (file: string) => Bun.file(new URL(`../../src/features/ai/${file}`, import.meta.url).pathname).text();
     const [accounts, ai, advanced] = await Promise.all([
@@ -1237,10 +1262,12 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
       read("AgentAiScreen.tsx"),
       read("AgentAdvancedScreen.tsx"),
     ]);
-    expect(accounts).toContain("<OrderSections computerOf={computerOf} />");
-    expect(accounts).toContain("const up = orderStep(g.accounts, a.id, -1);");
+    // The order numbers the account rows themselves: each account once, never a second list.
+    expect(accounts).toContain("rows.filter((a) => !placed.has(a.id)).map((a) => accountRow(a))");
+    expect(accounts).toContain("if (mine) return accountRow(mine, g, i + 1);");
+    expect(accounts).toContain("...(g && placedAs ? moves(g, placedAs) : []),");
     expect(accounts).toContain("filter((g) => g.accounts.length > 1)");
-    expect(accounts).toContain("more={a.canMove}");
+    expect(accounts).toContain("disabled={g !== undefined && move.isPending}");
     expect(ai).toContain("const offers = waits && kind && view ?");
     expect(ai).toContain('chain.moves && !waits ? t("agentPage.work.brain.movesOn") : null');
     expect(advanced).toContain("toggle={now.accountPinned}");

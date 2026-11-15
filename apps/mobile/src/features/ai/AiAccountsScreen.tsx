@@ -20,7 +20,6 @@ import {
   keyRemovalText,
   offersSignInAgain,
   onSeveralComputers,
-  orderStep,
   ownSignIns,
   ownSignInTitle,
   signInOf,
@@ -36,7 +35,7 @@ import { planOf, signInProviderOf } from "@agenteschat/client/lib/plans";
 import { keyCopiesLine, keyName, keyNamedAfterProvider, keySource, shownKeys } from "@agenteschat/client/lib/providers";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -51,6 +50,7 @@ import { errorHaptic, PushedHeader, successHaptic } from "../shared/parts";
 import { PlanMeter } from "../usage/parts";
 import { AddAccount } from "./AddAccount";
 import { openKeyForAll } from "./KeyForAllScreen";
+import { orderMoves } from "./logic";
 import { openConnectAi } from "./NoAiCard";
 import { alertKeyRefused, Note, PlanHoldNote, usePlanHold } from "./parts";
 
@@ -164,8 +164,34 @@ export function AiAccountsScreen() {
         },
       ],
     );
-  const actions = (a: Account) => {
+  const order = useAccountOrder(orgId);
+  const move = useMoveAccountInOrder(orgId);
+  // An order of one account shows nothing of an order.
+  const groups = (order.data?.groups ?? []).filter((g) => g.accounts.length > 1);
+  const placed = new Set(groups.flatMap((g) => g.accounts.map((a) => a.id)));
+  const severalOrders = new Set(groups.map((g) => g.machineId)).size > 1;
+  const put = (accountId: string, index: number | null) => {
+    if (index === null) return;
+    move.mutate(
+      { accountId, index },
+      {
+        onSuccess: () => successHaptic(),
+        onError: (e) => {
+          errorHaptic();
+          toast({ title: errorText(t, e), icon: "x" });
+        },
+      },
+    );
+  };
+  /** Move up and Move down for an account of `g`, when the viewer may move it: none at that end. */
+  const moves = (g: AccountOrderGroup, a: OrderAccount) =>
+    orderMoves(g.accounts, a).map((m) => ({
+      label: t(m.step < 0 ? "contextMenu.moveUp" : "contextMenu.moveDown"),
+      onPress: () => put(a.id, m.index),
+    }));
+  const actions = (a: Account, g?: AccountOrderGroup) => {
     const plan = planOf(a.provider);
+    const placedAs = g?.accounts.find((x) => x.id === a.id);
     const out = offersSignInAgain(a);
     const toGive = meId
       ? agentsToGive({
@@ -177,8 +203,9 @@ export function AiAccountsScreen() {
         })
       : [];
     choose(
-      a.label,
+      accountTitle(a),
       [
+        ...(g && placedAs ? moves(g, placedAs) : []),
         ...toGive.map((g) => ({
           label: t("aiAccounts.page.useFor", agentGrammar(g.name)),
           onPress: () => void give(a, g),
@@ -198,6 +225,61 @@ export function AiAccountsScreen() {
         { label: t("aiAccounts.page.disconnect"), destructive: true, onPress: () => remove(a) },
       ],
       t("common.cancel"),
+    );
+  };
+
+  /** One of the viewer's accounts: its meter and actions, with its place `n` when it is in an order (`g`). */
+  const accountRow = (a: Account, g?: AccountOrderGroup, n?: number) => {
+    const plan = planOf(a.provider);
+    const out = signInOf(a) === "signed_out";
+    const unknown = signInOf(a) === "unknown";
+    const facts = [
+      a.email ??
+        (a.keyHint
+          ? t("aiAccounts.page.keyEnds", { hint: a.keyHint })
+          : identityUnknown(a, machineOf(a))
+            ? t("aiAccounts.page.identityUnknown")
+            : null),
+      several ? t("aiAccounts.page.on", { computer: computerOf(a.computer) }) : null,
+      a.usedBy.length > 0
+        ? t("aiAccounts.page.usedBy", { count: a.usedBy.length, agents: names(a.usedBy) })
+        : t("aiAccounts.page.noAgent"),
+    ].filter(Boolean);
+    return (
+      <GroupedRow
+        key={a.id}
+        leading={
+          n !== undefined ? (
+            <Text variant="callout" tone="muted" style={styles.place}>
+              {n}
+            </Text>
+          ) : (
+            <ProviderLogo id={a.provider ?? a.kind} size="sm" off={out} />
+          )
+        }
+        label={accountTitle(a)}
+        sub={facts.join(" · ")}
+        more
+        disabled={g !== undefined && move.isPending}
+        onPress={() => actions(a, g)}
+        below={
+          out || unknown || a.usage || (plan && !plan.usage) ? (
+            <View style={styles.below}>
+              {out ? (
+                <Note icon="x">{plan ? t("aiAccounts.page.keyRefused") : t("aiAccounts.page.signedOut")}</Note>
+              ) : null}
+              {unknown ? <Note icon="info">{t("aiAccounts.page.statusUnknown")}</Note> : null}
+              {a.usage ? (
+                <PlanMeter usage={a.usage} compact />
+              ) : plan && !plan.usage ? (
+                <Text variant="small" tone="muted">
+                  {t("aiAccounts.usage.notShared", { maker: plan.maker })}
+                </Text>
+              ) : null}
+            </View>
+          ) : undefined
+        }
+      />
     );
   };
 
@@ -251,57 +333,44 @@ export function AiAccountsScreen() {
             ))}
           </GroupedList>
         ) : null}
-        {rows.length > 0 ? (
-          <GroupedList>
-            {rows.map((a) => {
-              const plan = planOf(a.provider);
-              const out = signInOf(a) === "signed_out";
-              const unknown = signInOf(a) === "unknown";
-              const facts = [
-                a.email ??
-                  (a.keyHint
-                    ? t("aiAccounts.page.keyEnds", { hint: a.keyHint })
-                    : identityUnknown(a, machineOf(a))
-                      ? t("aiAccounts.page.identityUnknown")
-                      : null),
-                several ? t("aiAccounts.page.on", { computer: computerOf(a.computer) }) : null,
-                a.usedBy.length > 0
-                  ? t("aiAccounts.page.usedBy", { count: a.usedBy.length, agents: names(a.usedBy) })
-                  : t("aiAccounts.page.noAgent"),
-              ].filter(Boolean);
+        {rows.some((a) => !placed.has(a.id)) ? (
+          <GroupedList>{rows.filter((a) => !placed.has(a.id)).map((a) => accountRow(a))}</GroupedList>
+        ) : null}
+        {groups.map((g) => (
+          <OrderSection
+            key={`${g.machineId}:${g.kind}`}
+            group={g}
+            computer={severalOrders ? computerOf(g.computer) : null}
+          >
+            {g.accounts.map((a, i) => {
+              const mine = rows.find((r) => r.id === a.id);
+              if (mine) return accountRow(mine, g, i + 1);
+              const them = moves(g, a);
               return (
                 <GroupedRow
                   key={a.id}
-                  leading={<ProviderLogo id={a.provider ?? a.kind} size="sm" off={out} />}
+                  leading={
+                    <Text variant="callout" tone="muted" style={styles.place}>
+                      {i + 1}
+                    </Text>
+                  }
                   label={accountTitle(a)}
-                  sub={facts.join(" · ")}
-                  more
-                  onPress={() => actions(a)}
+                  sub={a.ownerName ?? undefined}
+                  more={them.length > 0}
+                  disabled={move.isPending}
+                  {...(them.length > 0 ? { onPress: () => choose(accountTitle(a), them, t("common.cancel")) } : {})}
                   below={
-                    out || unknown || a.usage || (plan && !plan.usage) ? (
+                    a.usage ? (
                       <View style={styles.below}>
-                        {out ? (
-                          <Note icon="x">
-                            {plan ? t("aiAccounts.page.keyRefused") : t("aiAccounts.page.signedOut")}
-                          </Note>
-                        ) : null}
-                        {unknown ? <Note icon="info">{t("aiAccounts.page.statusUnknown")}</Note> : null}
-                        {a.usage ? (
-                          <PlanMeter usage={a.usage} compact />
-                        ) : plan && !plan.usage ? (
-                          <Text variant="small" tone="muted">
-                            {t("aiAccounts.usage.notShared", { maker: plan.maker })}
-                          </Text>
-                        ) : null}
+                        <PlanMeter usage={a.usage} compact />
                       </View>
                     ) : undefined
                   }
                 />
               );
             })}
-          </GroupedList>
-        ) : null}
-        <OrderSections computerOf={computerOf} />
+          </OrderSection>
+        ))}
         {again ? (
           // On the page, not in a card: the steps draw their own.
           <View style={styles.again}>
@@ -348,84 +417,44 @@ export function AiAccountsScreen() {
   );
 }
 
+type OrderAccount = AccountOrderGroup["accounts"][number];
+
 /**
- * "Ordem de uso" (ADR 0041 §6), the web's groups in IA e uso: each computer's Claude or ChatGPT accounts a run goes
- * through at a limit, first to last, with the plan's terms on a quiet line. Whoever may move an account (its owner or
- * an admin) moves it with Move up and Move down in its ⋯. An order of one account shows nothing.
+ * "Ordem de uso" (ADR 0041 §6), as the web's groups in IA e uso: one computer's Claude or ChatGPT accounts a run goes
+ * through at a limit, numbered first to last, with the plan's terms on a quiet line. Whoever may move an account (its
+ * owner or an admin) moves it with Move up and Move down in its ⋯.
  */
-function OrderSections({ computerOf }: { computerOf: (name: string) => string }) {
+function OrderSection({
+  group,
+  computer,
+  children,
+}: {
+  group: AccountOrderGroup;
+  computer: string | null;
+  children: ReactNode;
+}) {
   const { t } = useTranslation();
-  const { orgId } = useOrg();
-  const toast = useToast();
-  const order = useAccountOrder(orgId);
-  const move = useMoveAccountInOrder(orgId);
-  const groups = (order.data?.groups ?? []).filter((g) => g.accounts.length > 1);
-  if (groups.length === 0) return null;
-  const several = new Set(groups.map((g) => g.machineId)).size > 1;
-  const put = (accountId: string, index: number | null) => {
-    if (index === null) return;
-    move.mutate(
-      { accountId, index },
-      {
-        onSuccess: () => successHaptic(),
-        onError: (e) => {
-          errorHaptic();
-          toast({ title: errorText(t, e), icon: "x" });
-        },
-      },
-    );
-  };
-  const actions = (g: AccountOrderGroup, a: AccountOrderGroup["accounts"][number]) => {
-    const up = orderStep(g.accounts, a.id, -1);
-    const down = orderStep(g.accounts, a.id, 1);
-    chooseAction(
-      a.label,
-      [
-        ...(up !== null ? [{ label: t("contextMenu.moveUp"), onPress: () => put(a.id, up) }] : []),
-        ...(down !== null ? [{ label: t("contextMenu.moveDown"), onPress: () => put(a.id, down) }] : []),
-      ],
-      t("common.cancel"),
-    );
-  };
-  return groups.map((g) => {
-    const plan = t(`aiAccounts.connect.${g.kind}`);
-    const title = t("usageViews.order.title", { plan });
-    return (
-      <View key={`${g.machineId}:${g.kind}`} style={styles.order}>
-        <GroupedHeader hint={{ name: t("common.about", { label: title }), text: t("usageViews.order.hint") }}>
-          {several ? `${title} ${t("aiAccounts.page.on", { computer: computerOf(g.computer) })}` : title}
-        </GroupedHeader>
-        <View style={styles.terms}>
-          <InfoHint
-            name={t("usageViews.order.termsAbout", { plan })}
-            text={t("usageViews.order.termsHint", { plan })}
-            variant="footnote"
-          >
-            <Text variant="footnote" tone="muted">
-              {t("usageViews.order.terms", { plan })}
-            </Text>
-          </InfoHint>
-        </View>
-        <GroupedList>
-          {g.accounts.map((a, i) => (
-            <GroupedRow
-              key={a.id}
-              leading={
-                <Text variant="callout" tone="muted" style={styles.place}>
-                  {i + 1}
-                </Text>
-              }
-              label={accountTitle(a)}
-              sub={a.mine ? undefined : (a.ownerName ?? undefined)}
-              more={a.canMove}
-              disabled={move.isPending}
-              {...(a.canMove ? { onPress: () => actions(g, a) } : {})}
-            />
-          ))}
-        </GroupedList>
+  const plan = t(`aiAccounts.connect.${group.kind}`);
+  const title = t("usageViews.order.title", { plan });
+  return (
+    <View>
+      <GroupedHeader hint={{ name: t("common.about", { label: title }), text: t("usageViews.order.hint") }}>
+        {computer ? `${title} ${t("aiAccounts.page.on", { computer })}` : title}
+      </GroupedHeader>
+      <View style={styles.terms}>
+        <InfoHint
+          name={t("usageViews.order.termsAbout", { plan })}
+          text={t("usageViews.order.termsHint", { plan })}
+          variant="footnote"
+        >
+          <Text variant="footnote" tone="muted">
+            {t("usageViews.order.terms", { plan })}
+          </Text>
+        </InfoHint>
       </View>
-    );
-  });
+      <GroupedList>{children}</GroupedList>
+    </View>
+  );
 }
 
 /**
@@ -621,7 +650,6 @@ const styles = StyleSheet.create({
   grow: { flex: 1, minWidth: 0 },
   start: { alignSelf: "flex-start" },
   again: { gap: 12 },
-  order: { gap: 0 },
   // On the header's edge, above the group like a second header line.
   terms: { paddingHorizontal: 16, paddingBottom: 8, marginTop: -2 },
   place: { minWidth: 24, textAlign: "center", fontVariant: ["tabular-nums"], fontWeight: "600" },

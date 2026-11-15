@@ -19,6 +19,7 @@ import {
   type ExistingAi,
   existingAi,
   lendable,
+  orderStep,
   ownSignInLower,
   signInOf,
 } from "@agenteschat/client/lib/ai-accounts";
@@ -118,7 +119,7 @@ export const agentAccounts = (
  * the order; `waits`, its own is at its limit and none of the others has room, so it is the agent that waits.
  */
 export function agentChain(
-  view: Pick<AgentBrain, "accounts" | "account" | "accountPinned">,
+  view: Pick<AgentBrain, "accounts" | "account" | "accountPinned" | "scope">,
   agentId: string,
   ownerUserId: string | null | undefined,
 ) {
@@ -127,6 +128,7 @@ export function agentChain(
     ownerId: ownerUserId ?? null,
     account: view.account,
     pinned: view.accountPinned === true,
+    ...(view.scope ? { scope: view.scope } : {}),
   });
   const limited = (a: MachineAccount) => (a.usage ? planState(a.usage).state === "limited" : false);
   const own = chain[0];
@@ -347,4 +349,13 @@ export function pickedAi(
     plan: { machineId: pick.machineId, input: brainPickInput(pick) },
     connect: needsOwnSignIn(computers, pick) ? planOfKind(pick.kind) : null,
   };
+}
+
+/** Move up and Move down for `account` in its order of use (`orderStep`): only for whoever may move it, none at an end. */
+export function orderMoves(accounts: readonly { id: string }[], account: { id: string; canMove: boolean }) {
+  if (!account.canMove) return [];
+  return ([-1, 1] as const).flatMap((step) => {
+    const index = orderStep(accounts, account.id, step);
+    return index === null ? [] : [{ step, index }];
+  });
 }
