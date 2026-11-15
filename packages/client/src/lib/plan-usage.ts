@@ -48,6 +48,11 @@ export interface MeterSegment {
 }
 
 const WINDOW_NAMES = ["five_hour", "seven_day", "seven_day_opus", "seven_day_sonnet", "monthly"] as const;
+/** `other` windows the runner labels in English (apps/server/runner/plan-usage.ts); any other label shows as is. */
+const LABEL_NAMES = new Map<string, "extraUsage" | "oauthApps">([
+  ["Extra usage", "extraUsage"],
+  ["OAuth apps", "oauthApps"],
+]);
 
 /** When a window resets, in the viewer's time zone: the time today, the weekday this week, else the date. */
 function resetWhen(locale: string, iso: string, now: Date): { day: string | null; time: string } {
@@ -231,9 +236,10 @@ export function planMeterText(
   updated(iso: string): string;
   ago(iso: string): string;
   stale(iso: string): string;
+  group(name: string | null): string;
 } {
   const named = (w: Pick<MeterWindow, "kind" | "label">, words: "window" | "short") => {
-    const kind = WINDOW_NAMES.find((k) => k === w.kind);
+    const kind = WINDOW_NAMES.find((k) => k === w.kind) ?? LABEL_NAMES.get(w.label ?? "");
     return kind ? t(`aiAccounts.usage.${words}.${kind}`) : (w.label ?? t(`aiAccounts.usage.${words}.other`));
   };
   return {
@@ -252,6 +258,7 @@ export function planMeterText(
     updated: (iso) => t("aiAccounts.usage.updated", { ago: relativeTime(t, locale, iso, now) }),
     ago: (iso) => t("aiAccounts.usage.ago", { ago: relativeTime(t, locale, iso, now) }),
     stale: (iso) => t("aiAccounts.usage.stale", { ago: relativeTime(t, locale, iso, now) }),
+    group: (name) => (name === null ? t("aiAccounts.usage.allModels") : t("aiAccounts.usage.onlyModels", { name })),
   };
 }
 

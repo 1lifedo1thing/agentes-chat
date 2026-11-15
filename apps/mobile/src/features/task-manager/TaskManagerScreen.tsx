@@ -16,6 +16,7 @@ import {
   computerRoomText,
   computersBesides,
   endedState,
+  endedText,
   groupLead,
   groupTasks,
   hiddenCount,
@@ -72,7 +73,7 @@ import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { type ActionItem, ActionList, Tile } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { useStopper, useTasksToday } from "./hooks";
-import { endedLatestFirst, endedText, groupLine, type RowState, rowState, taskStateWords, taskSubline } from "./logic";
+import { endedLatestFirst, groupLine, type RowState, rowState, taskStateWords, taskSubline } from "./logic";
 import { TaskMark, useAgentColor, WaitLines } from "./parts";
 
 /** Rows whose agent moves (a long list stays light). */
@@ -115,7 +116,7 @@ function TaskManager() {
   const { t } = useTranslation();
   const look = useEmptyLook();
   const meId = useMeId();
-  const tasks = useTasksToday();
+  const tasks = useTasksToday({ doneToday: true });
   const pull = usePullRefresh(tasks.refetch);
   const now = useNow(1000);
   // Tasks being stopped from their screens read "Parando…" here too.
@@ -551,7 +552,7 @@ function EndedRow({ task, divider, meId }: { task: EndedTask; divider: boolean; 
   const title = taskTitle(t, task);
   const agentName = dir.nameOf({ type: "agent", id: task.agentId });
   const line = [agentName, taskPlace(t, task)].filter(Boolean).join(" · ");
-  const how = endedText(t, task, meId);
+  const how = endedText(t, task, meId, (id) => dir.nameOf({ type: "agent", id }) || undefined);
   const state = endedState(task);
   return (
     <Pressable

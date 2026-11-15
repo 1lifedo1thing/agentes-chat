@@ -268,6 +268,7 @@ import type {
   Reminder,
   ReminderInput,
   RemovalPreview,
+  RequestHeader,
   RightHandApprovals,
   RightHandApprovalsInput,
   Role,
@@ -832,6 +833,8 @@ export interface ApiClient {
     removeCredential(orgId: string, credentialId: string, purge?: boolean, release?: boolean): Promise<void>;
     /** The key becomes the workspace's default and its provider's: agents without an AI of their own think with it. */
     makeDefaultCredential(orgId: string, credentialId: string): Promise<Credential>;
+    /** The other saved copies of this key fold into it: their agents, defaults and spend move to it, then they go. */
+    removeCredentialCopies(orgId: string, credentialId: string): Promise<{ removed: number }>;
     /** One cheap real call with a stored key, before an agent is pointed at it. A refusal comes as on saving one. */
     checkCredential(orgId: string, credentialId: string): Promise<{ check: "ok" | "unchecked" }>;
     /** Whether this server offers the platform key (Cloud). */
@@ -1255,15 +1258,22 @@ export interface ApiClient {
      * holding several skills (or any, with `list`) installs nothing and answers with them to pick from
      * (`importPicked`), those that can't be installed apart. A private repository is read through the workspace's
      * GitHub, on the server. `forAgentId`: the agent whose card opened the install, which gets what installs turned on
-     * when the installer may change its skills. `upload`: a zip's Cancel and how much of it has been sent.
+     * when the installer may change its skills. `personal`: the person's own skill, which any member installs (from a
+     * public repository unless they manage agents). `upload`: a zip's Cancel and how much of it has been sent.
      */
     import(
       orgId: string,
-      input: { url: string; list?: boolean; forAgentId?: string } | { zipBase64: string },
+      input: ({ url: string; list?: boolean; forAgentId?: string } | { zipBase64: string }) & { personal?: boolean },
       upload?: UploadOptions,
     ): Promise<SkillDetail | SkillPick>;
     /** Installs the skills picked among a link's choices (their `path`), on for `forAgentId` as `import` does. */
-    importPicked(orgId: string, url: string, paths: string[], forAgentId?: string): Promise<SkillDetail[]>;
+    importPicked(
+      orgId: string,
+      url: string,
+      paths: string[],
+      forAgentId?: string,
+      personal?: boolean,
+    ): Promise<SkillDetail[]>;
     update(orgId: string, id: string, patch: SkillPatch): Promise<SkillDetail>;
     /** Fetch the link again (`url` skills). */
     reimport(orgId: string, id: string): Promise<SkillDetail>;
@@ -1339,11 +1349,22 @@ export interface ApiClient {
      * Connects to an https MCP server: a new account, or with `connectionId` a new sign-in for that one
      * ("Reconectar"). Without `apiKey` the server tries OAuth (discovery + dynamic client registration); if the
      * MCP server doesn't support it, answers `needs_key` (`reason: "not_approved"` when it only registers apps it
-     * approved, with its refusal in `detail`).
+     * approved, with its refusal in `detail`). `headers` go with every request to the server (at most 10; a refused
+     * one is a 400 `connector.header_*` whose params name it, `header` and `index`). Without a key, a server that
+     * answers with them is connected by them alone; one that asks for a sign-in is refused
+     * (`connector.headers_with_sign_in`). With `connectionId`: absent keeps the account's (a 400
+     * `connector.headers_unreadable` when they can no longer be read), `[]` removes them, a list replaces them.
      */
     connect(
       orgId: string,
-      input: { serverUrl: string; apiKey?: string; label?: string; returnTo: string; connectionId?: string },
+      input: {
+        serverUrl: string;
+        apiKey?: string;
+        label?: string;
+        returnTo: string;
+        connectionId?: string;
+        headers?: RequestHeader[];
+      },
     ): Promise<CustomConnectStart>;
     /** Lists the server's tools again; new ones come back unclassified. */
     refresh(orgId: string, serverId: string): Promise<CustomServer>;
@@ -1715,6 +1736,8 @@ export interface ApiClient {
     snooze(orgId: string, id: string, until: string | null): Promise<AppNotification>;
     /** "Marcar tudo como lido": the ids it changed (undo marks them unread again). */
     readAll(orgId: string, filter?: NotificationFilter): Promise<{ ids: string[] }>;
+    /** "Concluir todas" but what waits on me: the ids it changed (undo brings each back with `done(…, false)`). */
+    doneAll(orgId: string, filter?: NotificationFilter): Promise<{ ids: string[] }>;
     /** What reaches my devices as a notification in this workspace (ADR 0071 §8). */
     prefs(orgId: string): Promise<NoticePrefs>;
     setPref(orgId: string, category: NoticeCategory, on: boolean): Promise<NoticePrefs>;
@@ -1944,7 +1967,7 @@ export interface ApiClient {
   working?: {
     list(orgId: string): Promise<WorkingRun[]>;
     /** The task manager (ADR 0128): tasks now, what each uses, each agent's last hour, what ended since `since`. */
-    taskManager?(orgId: string, since?: string): Promise<TaskManagerView>;
+    taskManager?(orgId: string, since?: string, doneToday?: boolean): Promise<TaskManagerView>;
     /** A task's steps for "Ver passos", to whoever sees it in the task manager (no inputs, no outputs). */
     taskSteps?(orgId: string, runId: string): Promise<TaskSteps>;
     /** Continuar agora on runs paused near a limit (`wait.canContinue`). */
