@@ -16436,6 +16436,8 @@
         "openLatest": "En yeni mesaj",
         "textSize": "Metin boyutu",
         "textSizeHelp": "Mesajların, tüm sohbetlerde ve tüm cihazlarınızda",
+        "fullMessages": "Mesajların tamamını göster",
+        "fullMessagesHelp": "Uzun mesajları “Devamını gör” olmadan gösterir, tüm sohbetlerde ve tüm cihazlarınızda",
         "textSizePhone": "Telefonunuzun metin boyutunun üzerine, tüm uygulamada geçerlidir",
         "textXs": "Daha küçük",
         "textSm": "Küçük",

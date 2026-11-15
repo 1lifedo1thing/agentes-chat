@@ -16499,6 +16499,8 @@
         "openLatest": "Neueste Nachricht",
         "textSize": "Textgröße",
         "textSizeHelp": "Für Nachrichten, in allen Unterhaltungen und auf all deinen Geräten",
+        "fullMessages": "Nachrichten vollständig anzeigen",
+        "fullMessagesHelp": "Lange Nachrichten ohne „Mehr anzeigen“, in allen Unterhaltungen und auf all deinen Geräten",
         "textSizePhone": "Gilt für die ganze App, zusätzlich zur Textgröße deines Handys",
         "textXs": "Kleiner",
         "textSm": "Klein",

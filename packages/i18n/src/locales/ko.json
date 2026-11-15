@@ -15934,6 +15934,8 @@
         "openLatest": "가장 최근 메시지",
         "textSize": "글자 크기",
         "textSizeHelp": "메시지 글자예요. 모든 대화와 내 모든 기기에 적용돼요",
+        "fullMessages": "메시지 전체 보기",
+        "fullMessagesHelp": "긴 메시지를 “더 보기” 없이 보여줘요. 모든 대화와 내 모든 기기에 적용돼요",
         "textSizePhone": "휴대폰의 글자 크기 설정에 더해 앱 전체에 적용돼요",
         "textXs": "더 작게",
         "textSm": "작게",

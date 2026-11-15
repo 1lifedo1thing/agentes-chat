@@ -15996,6 +15996,8 @@
         "openLatest": "Pesan terbaru",
         "textSize": "Ukuran teks",
         "textSizeHelp": "Untuk pesan, di semua percakapan dan di semua perangkatmu",
+        "fullMessages": "Tampilkan pesan lengkap",
+        "fullMessagesHelp": "Tampilkan pesan panjang tanpa “Lihat selengkapnya”, di semua percakapan dan di semua perangkatmu",
         "textSizePhone": "Berlaku untuk seluruh aplikasi, di atas ukuran teks ponselmu",
         "textXs": "Lebih kecil",
         "textSm": "Kecil",

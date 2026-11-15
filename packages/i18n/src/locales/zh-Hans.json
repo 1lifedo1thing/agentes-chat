@@ -16006,6 +16006,8 @@
         "openLatest": "最新消息",
         "textSize": "文字大小",
         "textSizeHelp": "消息的文字，适用于所有对话，并同步到你的所有设备",
+        "fullMessages": "显示完整消息",
+        "fullMessagesHelp": "长消息不再折叠为“查看更多”，适用于所有对话，并同步到你的所有设备",
         "textSizePhone": "作用于整个应用，并叠加在手机的文字大小之上",
         "textXs": "更小",
         "textSm": "小",

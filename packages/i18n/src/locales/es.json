@@ -16948,6 +16948,8 @@
         "openLatest": "Mensaje más reciente",
         "textSize": "Tamaño del texto",
         "textSizeHelp": "De los mensajes, en todas las conversaciones y en todos tus dispositivos",
+        "fullMessages": "Mostrar mensajes completos",
+        "fullMessagesHelp": "Muestra los mensajes largos sin “Ver más”, en todas las conversaciones y en todos tus dispositivos",
         "textSizePhone": "Se aplica a toda la app, además del tamaño de texto de tu teléfono",
         "textXs": "Más pequeño",
         "textSm": "Pequeño",
