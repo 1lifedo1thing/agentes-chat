@@ -211,10 +211,11 @@ and no approval card pointed to it. What each level means is unchanged (the amen
 4. **The apps.** Settings → Aprovações (admins) shows the workspace's level with the same three choices, titles and
    lines as an agent's row, and an ⓘ. An agent's row says "Segue o workspace" while it follows. Every waiting
    approval (the conversation's card, the approvals page, the notifications, the right hand's cards, the phone's
-   approval sheet and its notifications) has "Mudar quando perguntar" for who decides it and may set the agent's
+   approval sheet, its conversation cards and its notifications) has "Mudar quando perguntar" for who decides it and may set the agent's
    level (`changesWhenAsks`: `canDecide` and `manage_agents`). It opens the agent's three choices in place, approves
    nothing, and a toast says the new choice with Desfazer, which puts back the levels before it. Who may set the
-   workspace's level also gets "Para todos os agentes do workspace" there, which is `everyAgent`.
+   workspace's level also gets "Para todos os agentes do workspace" there, which is `everyAgent`. Ticked, no level
+   shows as chosen, so the agent's current level can be given to every agent too.
 
 Consequences:
 
