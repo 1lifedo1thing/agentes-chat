@@ -1891,6 +1891,27 @@
       "when": 1794756700000,
       "tag": "0273_push_apns",
       "breakpoints": true
+    },
+    {
+      "idx": 272,
+      "version": "7",
+      "when": 1794756800000,
+      "tag": "0274_personal_skills",
+      "breakpoints": true
+    },
+    {
+      "idx": 273,
+      "version": "7",
+      "when": 1794756900000,
+      "tag": "0275_view_all_agents",
+      "breakpoints": true
+    },
+    {
+      "idx": 274,
+      "version": "7",
+      "when": 1794757000000,
+      "tag": "0276_skill_source_by_folder",
+      "breakpoints": true
     }
   ]
 }

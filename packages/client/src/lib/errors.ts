@@ -284,6 +284,7 @@ const KNOWN = {
   "skill.too_large": "errors.skill.tooLarge",
   "skill.too_many_files": "errors.skill.tooManyFiles",
   "skill.repo_too_large": "errors.skill.repoTooLarge",
+  "skill.link_too_large": "errors.skill.linkTooLarge",
   "skill.no_frontmatter": "errors.skill.noFrontmatter",
   "skill.body_too_long": "errors.skill.bodyTooLong",
   "skill.no_skill_md_zip": "errors.skill.noSkillMdZip",
@@ -831,6 +832,9 @@ const FIELD_ISSUES = {
 
 /** The app has its own line for this server code. */
 export const hasWordsFor = (code: string) => Object.hasOwn(KNOWN, code);
+
+/** The server knows no session for this request (401): only signing in again helps. */
+export const sessionEnded = (error: unknown) => error instanceof ApiError && error.status === 401;
 
 /** What the request named isn't there anymore (deleted, archived, or never this person's to see): trying again won't help. */
 export const isGone = (error: unknown) => error instanceof ApiError && (error.status === 404 || error.status === 410);

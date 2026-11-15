@@ -526,7 +526,13 @@ const EndedTask = z
     routine: Routine,
     startedAt: z.string().nullable(),
     finishedAt: z.string(),
-    stoppedBy: z.object({ userId: z.string(), name: z.string() }).nullable(),
+    stoppedBy: z
+      .object({
+        userId: z.string(),
+        name: z.string(),
+        agentId: z.string().optional().openapi({ description: "The agent that stopped it at their word." }),
+      })
+      .nullable(),
   })
   .openapi("EndedTask");
 
@@ -553,10 +559,9 @@ const TaskManagerView = z
     canceledFollowUps: z
       .array(CanceledReturn)
       .openapi({ description: "Returns canceled since `since`, the latest first." }),
-    doneToday: z
-      .number()
-      .int()
-      .openapi({ description: "Your tasks done since `since`, all of them (`ended` is cut at 50)." }),
+    doneToday: z.number().int().optional().openapi({
+      description: "Your tasks done since `since`, all of them (`ended` is cut at 50). Only when asked (`doneToday`).",
+    }),
   })
   .openapi("TaskManagerView");
 
@@ -1765,13 +1770,23 @@ export function managementRoutes(deps: AppDeps) {
       summary: "The task manager (ADR 0128): what the agents are doing now, what each uses, and what ended",
       description:
         "Tasks in the conversations you are in (the `active-runs` rule), plus routines' background runs and agents' private conversations for admins and the agent's owner; the rest only as counts (`hidden`). No cost. `since` (default: the last 24 h) bounds `ended`.",
-      request: { params: OrgParams, query: z.object({ since: z.iso.datetime().optional() }) },
+      request: {
+        params: OrgParams,
+        query: z.object({
+          since: z.iso.datetime().optional(),
+          doneToday: z
+            .stringbool()
+            .optional()
+            .openapi({ description: "Also count your tasks done since `since` (`doneToday`)." }),
+        }),
+      },
       responses: { 200: json(TaskManagerView), ...errors },
     }),
     async (c) => {
-      const since = c.req.valid("query").since;
+      const { since, doneToday } = c.req.valid("query");
       const view = await taskManager(db, c.get("user").id, c.req.valid("param").orgId, {
         ...(since ? { since: new Date(since) } : {}),
+        doneToday: doneToday ?? false,
       });
       return c.json(view, 200);
     },

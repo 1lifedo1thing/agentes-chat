@@ -264,6 +264,11 @@ export interface User {
   /** Opened the link that confirms the email address. */
   emailVerified?: boolean;
   /**
+   * The installation's owner on the desktop app's own server: a sign-in in the last 10 minutes through Continue on this
+   * Mac is their proof before a deletion (absent from an older server: false).
+   */
+  confirmsOnThisMac?: boolean;
+  /**
    * A new workspace would be made for them (false on agentes.chat Cloud while sign-up is by invitation, unless early
    * access allowed them; `org.create_refused` and `org.create_unpaid` can still refuse it).
    */
@@ -732,6 +737,12 @@ export interface Credential {
   usedBy?: { id: string; name: string }[];
   /** On a key just saved: `ok` a real call passed, `unchecked` the provider didn't say. */
   check?: "ok" | "unchecked";
+  /** On a key just saved: the workspace already had it, so that key was updated instead of adding a copy. */
+  reused?: boolean;
+  /** In a list of keys: how many other saved keys are this same key ("Remover cópias" folds them into it). */
+  copies?: number;
+  /** In a list of keys: the key this one is a copy of, the row shown for both. */
+  copyOf?: string;
   createdAt: string;
   revokedAt: string | null;
 }
@@ -981,7 +992,7 @@ export interface Team {
 /** `Agent.brain`: shown next to its name instead of the API model when a computer thinks. */
 export interface AgentBrainLine {
   kind: BrainKind;
-  /** A computer brain's model ("Sonnet"); null for the model brain. */
+  /** A computer brain's model ("Sonnet 5.5"); null for the model brain. */
   model: string | null;
   computer?: string;
   /** A plan account's provider (`zai`, `kimi`…), whose mark replaces the brain's; absent for the CLI's own sign-in. */
@@ -1219,7 +1230,10 @@ export interface Model {
   outputUsdPerMTok: number;
   /** The workspace can use it (has a key for the provider). Expected from the backend; derived until then. */
   available?: boolean;
-  /** In a long list (OpenRouter's): `true` is a good pick, shown first. Absent: a catalog model. */
+  /**
+   * `false`: offered only to a workspace with its provider's key (OpenRouter's long list, Command Code's).
+   * `true`: a long list's good pick, greyed without a key. Absent: a catalog model.
+   */
   pick?: boolean;
   /** The size Automático uses it for on its provider's key, by default. */
   tier?: ModelTier;
@@ -2637,6 +2651,8 @@ export interface WorkView {
   queuePosition: number | null;
   pausedUntil: string | null;
   canceledByUserId: string | null;
+  /** The right hand that made that stop at their word. */
+  canceledByAgentId?: string | null;
   errorCode: string | null;
 }
 
@@ -3503,8 +3519,13 @@ export interface SecretBox {
 
 export type StorageKind = "agentes" | "s3";
 
-/** What an admin types for "Seu próprio bucket". Keys empty = keep the stored ones. */
+/** The service an admin picked when connecting their own storage: which steps the app shows. */
+export type StorageProvider = "r2" | "s3" | "b2" | "other";
+
+/** What an admin types for "Your own storage". Keys empty = keep the stored ones. */
 export interface S3Input {
+  /** Null from settings saved before the app said it (older servers leave it out). */
+  provider?: StorageProvider | null;
   endpoint: string;
   region: string;
   bucket: string;
@@ -3550,7 +3571,8 @@ export type StorageStep = "write" | "read" | "list" | "delete";
 
 export interface StorageTestResult {
   ok: boolean;
-  steps: { step: StorageStep; ok: boolean; error?: string | null }[];
+  /** `code`: the failure's stable code (`storage.permission`…), absent from an older server. */
+  steps: { step: StorageStep; ok: boolean; error?: string | null; code?: string | null }[];
 }
 
 export interface StorageMigration {
@@ -4479,6 +4501,13 @@ export interface Skill {
   /** `agent`: made from an agent's own how-tos (older servers leave it out). */
   origin?: "person" | "agent";
   ownerAgentId?: string | null;
+  /**
+   * A personal skill's person: only they read and change it, and agents use it only when that person asks. Someone
+   * else's comes with its name and agents only. Null (older servers leave it out): the team's.
+   */
+  ownerUserId?: string | null;
+  /** How many active agents have it on (the library's list). */
+  agentsCount?: number;
   /** Agents can't change it; never archived for disuse. */
   locked?: boolean;
   useCount?: number;
@@ -4611,6 +4640,8 @@ export interface SkillInput {
   description: string;
   body: string;
   defaultForNewAgents?: boolean;
+  /** The person's own skill, not the team's. */
+  personal?: boolean;
 }
 
 /** An edit (new version unless only the flag changes). */
@@ -7260,8 +7291,8 @@ export interface EndedTask {
   routine: { id: string; name: string } | null;
   startedAt: string | null;
   finishedAt: string;
-  /** Stopped by a person: who. */
-  stoppedBy: { userId: string; name: string } | null;
+  /** Stopped by a person: who, and the agent that stopped it at their word (the right hand). */
+  stoppedBy: { userId: string; name: string; agentId?: string } | null;
 }
 
 /** A task's steps (`GET …/task-manager/{runId}/steps`): the chat chip's fields per call, how each ended. */
@@ -7292,7 +7323,7 @@ export interface TaskManagerView {
   followUps?: PendingReturn[];
   /** Returns canceled since `since`, the latest first (absent on an older server). */
   canceledFollowUps?: CanceledReturn[];
-  /** Your tasks done since `since`, all of them (`ended` is cut at 50); absent on an older server. */
+  /** Your tasks done since `since`, all of them (`ended` is cut at 50); only when asked (`doneToday`). */
   doneToday?: number;
 }
 

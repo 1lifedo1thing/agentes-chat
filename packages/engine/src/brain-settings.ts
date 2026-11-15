@@ -208,12 +208,17 @@ export const antigravityModels = (listed: readonly { id: string; label?: string 
     return { value: m.id, label: m.label || m.id, ...(catalogModelOf(base) ? { modelId: base } : {}) };
   });
 
-/** Claude Code's aliases (`--model opus|sonnet|haiku`), mapped to today's ids in the catalog. */
-export const CLAUDE_CODE_MODELS: readonly BrainModelOption[] = [
-  { value: "opus", label: "Opus", modelId: "claude-opus-5-5" },
-  { value: "sonnet", label: "Sonnet", modelId: "claude-sonnet-5-5", recommended: true },
-  { value: "haiku", label: "Haiku", modelId: "claude-haiku-5-5" },
-];
+/**
+ * Claude Code's aliases (`--model opus|sonnet|haiku`), mapped to today's ids in the catalog. Each is named by its
+ * catalog row without the maker ("Opus 5.5"), so moving an alias to a new id renames it with no copy change.
+ */
+export const CLAUDE_CODE_MODELS: readonly BrainModelOption[] = (
+  [
+    { value: "opus", modelId: "claude-opus-5-5" },
+    { value: "sonnet", modelId: "claude-sonnet-5-5", recommended: true },
+    { value: "haiku", modelId: "claude-haiku-5-5" },
+  ] as const
+).map((o) => ({ ...o, label: MODEL_CATALOG[o.modelId]?.label.replace(/^Claude /, "") ?? o.value }));
 
 /** Codex's models: the OpenAI rows of the catalog (any other name is accepted as typed). */
 export const codexModels = (): BrainModelOption[] =>
@@ -371,9 +376,9 @@ export function brainOptions(machine: MachineLike | null): BrainOption[] {
     else if (machine.protocol < BRAIN_PROTOCOL) reason = "runner_old";
     else if (executor === "codex" && machine.os === "windows" && machine.protocol < CODEX_WINDOWS_PROTOCOL)
       reason = "runner_old";
-    else if (machine.access?.tools && machine.access.tools[executor] !== true) reason = "tool_off";
     else if (!found?.available.includes(executor))
       reason = executor === "codex" && found?.codexTooOld ? "outdated" : missingCli(machine, executor);
+    else if (machine.access?.tools && machine.access.tools[executor] !== true) reason = "tool_off";
     const detected = machine?.executors?.codex?.version;
     return {
       kind,
@@ -420,8 +425,8 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
   else if (kind === "opencode" && machine.os === "windows" && machine.protocol < OPENCODE_ACP_PROTOCOL)
     reason = "runner_old";
   else if (!brainRunsOn(kind, machine.os)) reason = "system";
-  else if (tools && (tools[kind] ?? tools.codex) !== true) reason = "tool_off";
   else if (!machine.executors?.[kind]) reason = missingCli(machine, kind);
+  else if (tools && (tools[kind] ?? tools.codex) !== true) reason = "tool_off";
   return {
     kind,
     available: !reason,
@@ -1733,7 +1738,7 @@ export async function setMissionBrain(
 
 /**
  * What thinks for an agent, for wherever the agent is shown (DM header,
- * profile, cards): the brain, its model's label ("Sonnet"; null for the
+ * profile, cards): the brain, its model's label ("Sonnet 5.5"; null for the
  * model brain, which shows the agent's model) and the computer's name, only
  * for those who may see it (admins and the agent's owner, like Quem pensa).
  * On a plan, the account it thinks with and that plan's limits, for everyone
@@ -1756,7 +1761,7 @@ export interface AgentBrainSummary {
 }
 
 /**
- * The label of a computer brain's model ("opus" → "Opus", "GLM-5.3" on a plan; a typed Codex model as is): what it
+ * The label of a computer brain's model ("opus" → "Opus 5.5", "GLM-5.3" on a plan; a typed Codex model as is): what it
  * runs, so a plan's model kept while Claude thinks reads as Sonnet.
  */
 export function brainModelLabel(
