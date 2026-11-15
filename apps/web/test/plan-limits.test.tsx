@@ -419,7 +419,12 @@ describe("IA e uso › Contas: the order of use at a limit (ADR 0041 §6)", () =
     const group = order();
     if (!group) throw new Error("no order");
     // The seeded workspace has accounts on two computers: the heading says which one.
-    expect(group.querySelector(".plan-order__title > span")?.textContent).toBe("Claude · Ordem de uso no MacBook");
+    expect(group.querySelector(".plan-order__title .ac-hintline > span")?.textContent).toBe(
+      "Claude · Ordem de uso no MacBook",
+    );
+    // The plan's mark leads the heading, the rows start with their places.
+    expect(group.querySelector(".plan-order__title .ac-brand")).toBeTruthy();
+    expect(group.querySelectorAll(".plan-row__head .ac-brand")).toHaveLength(0);
     expect(within(group).getByRole("button", { name: "Sobre Claude · Ordem de uso" })).toBeTruthy();
     expect(group.querySelector(".plan-order__terms > span")?.textContent).toBe(
       "Usar várias contas do Claude é uma área cinzenta nos termos do Claude.",

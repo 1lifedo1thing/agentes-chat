@@ -133,8 +133,7 @@ html:not([data-pointer]) .plan-row__head:focus-visible {
 .plan-row__alert[data-level="limited"] {
   --meter-fill: var(--danger);
 }
-/* An order of use (ADR 0041 §6): its heading, then its rows, each with its place before its line. The place is an
-   in-row control, 8 from the row's edge, on the middle of the mark's line. */
+/* An order of use (ADR 0041 §6): its heading, then its rows, each with its place before its line. */
 .plan-rows > .plan-order + *,
 .plan-rows > * + .plan-order {
   border-top: 1px solid var(--line);
@@ -157,29 +156,41 @@ html:not([data-pointer]) .plan-row__head:focus-visible {
   line-height: 18px;
   color: var(--muted);
 }
+/* A placed row: its place in the mark's column (the heading holds the mark), on its name's 24px line, so the row's
+   room above and below its words stays the head's own. */
 .plan-row--placed {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
 }
 .plan-row--placed > .plan-row__place {
   grid-area: 1 / 1;
-  /* The head's 12 above its 24px line, less half of the 32 control: its middle on the mark's. */
-  margin: var(--space-2) 0 0 var(--space-2);
+  margin: var(--space-3) 0 0 var(--space-2);
 }
 .plan-row--placed > .plan-row__head {
   grid-area: 1 / 2;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 180px) auto;
   padding-left: var(--space-2);
+}
+.plan-row--placed > .plan-row__head > .plan-acct__name {
+  grid-column: 1;
+}
+.plan-row--placed > .plan-row__head > .plan-row__meter {
+  grid-column: 2;
+}
+.plan-row--placed > .plan-row__head > .plan-row__chevron {
+  grid-column: 3;
 }
 .plan-row--placed > .plan-row__fold {
   grid-column: 1 / -1;
 }
+/* One width for every place, a grip or not and up to two digits, so every row's name starts on one edge. */
 .plan-row__place {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: var(--space-1);
-  min-width: var(--control-h-sm);
-  height: var(--control-h-sm);
+  width: calc(var(--control-h-sm) + var(--space-3));
+  height: calc(var(--control-h-sm) - var(--space-2));
   padding: 0 var(--space-1);
   border: 0;
   border-radius: var(--control-r-sm);
@@ -329,6 +340,19 @@ html:not([data-pointer]) .plan-row__place--grip:focus-visible {
   .plan-row__head > .plan-row__meter {
     grid-column: 1 / -1;
     min-height: 0;
+  }
+  .plan-row--placed > .plan-row__head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .plan-row--placed .plan-row__title {
+    grid-area: 1 / 1;
+  }
+  .plan-row--placed > .plan-row__head > .plan-row__chevron {
+    grid-column: 2;
+  }
+  .plan-row--placed .plan-row__facts,
+  .plan-row--placed > .plan-row__head > .plan-row__meter {
+    grid-column: 1 / -1;
   }
 }
 .plan-block__month {

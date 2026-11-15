@@ -2,7 +2,7 @@ import type { AccountOrderGroup } from "@agenteschat/client";
 import { useMoveAccountInOrder } from "@agenteschat/client";
 import { orderStep } from "@agenteschat/client/lib/ai-accounts";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { HintLine, Icon } from "@agenteschat/ui";
+import { HintLine, Icon, ProviderLogo } from "@agenteschat/ui";
 import { type DragEvent, type HTMLAttributes, type ReactNode, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { openContextMenu } from "@/lib/context-menu";
@@ -23,13 +23,13 @@ export function OrderHead({ group, computer }: { group: AccountOrderGroup; compu
   const title = t("usageViews.order.title", { plan });
   return (
     <div className="plan-order__head">
-      <HintLine
-        className="plan-order__title"
-        name={t("common.about", { label: title })}
-        hint={t("usageViews.order.hint")}
-      >
-        {computer ? `${title} ${t("aiAccounts.page.on", { computer })}` : title}
-      </HintLine>
+      {/* The plan's mark leads its heading: its rows start with their places instead. */}
+      <div className="plan-order__title ac-iconline">
+        <ProviderLogo id={group.kind} size="xs" />
+        <HintLine name={t("common.about", { label: title })} hint={t("usageViews.order.hint")}>
+          {computer ? `${title} ${t("aiAccounts.page.on", { computer })}` : title}
+        </HintLine>
+      </div>
       <HintLine
         className="plan-order__terms"
         name={t("usageViews.order.termsAbout", { plan })}

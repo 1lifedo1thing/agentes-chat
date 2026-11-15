@@ -277,7 +277,7 @@ function AccountRow({
           setOpen(!open);
         }}
       >
-        <ProviderLogo id={account.provider ?? account.kind} size="sm" off={account.signedOut} />
+        {!place && <ProviderLogo id={account.provider ?? account.kind} size="sm" off={account.signedOut} />}
         {/* Two parts: one line of words on a wide row, and on a phone the name beside the mark with the plan and
             whose it is under both. The space that parts them ends the name, so neither starts with it. */}
         <span className="plan-acct__name">
