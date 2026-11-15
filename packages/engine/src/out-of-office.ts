@@ -73,14 +73,13 @@ export async function outOfOffice(
     if (limited && usable && movesOn(a, usable)) chained.push({ agent: a, own: usable, until: limited.until });
   }
   if (chained.length === 0) return out;
-  const [next, users] = await nextAccounts(db, orgId, chained);
+  const next = await nextAccounts(db, orgId, chained);
   for (const { agent: a, own, until } of chained) {
     let earliest = until;
     let room = false;
     for (const r of next) {
       if (r.machineId !== own.machineId || r.kind !== own.kind || r.id === own.id) continue;
       if (r.createdBy !== a.ownerUserId && r.serves !== "everyone") continue;
-      if (!r.shared && (users.get(r.id) ?? []).some((id) => id !== a.id)) continue;
       const limit = planLimitOf(own.machineId, brainOf(a.brain), r.id, r.usage as PlanUsage | null, ms);
       if (!limit) {
         room = true;
@@ -102,10 +101,10 @@ const movesOn = (a: OutOfOfficeAgent, own: AccountUsage) =>
   Boolean(a.ownerUserId) &&
   !isRightHand(a);
 
-/** The signed-in CLI accounts on the computers and kinds of `chained`, whose owner is still a member, with their users. */
-async function nextAccounts(db: Database, orgId: string, chained: { own: AccountUsage }[]) {
-  const { machineAccounts, organizationMembers: members, agents } = schema;
-  const rows = await db
+/** The shared signed-in CLI accounts on the computers and kinds of `chained`, whose owner is still a member. */
+function nextAccounts(db: Database, orgId: string, chained: { own: AccountUsage }[]) {
+  const { machineAccounts, organizationMembers: members } = schema;
+  return db
     .select({
       id: machineAccounts.id,
       machineId: machineAccounts.machineId,
@@ -113,7 +112,6 @@ async function nextAccounts(db: Database, orgId: string, chained: { own: Account
       usage: machineAccounts.usage,
       createdBy: machineAccounts.createdBy,
       serves: machineAccounts.serves,
-      shared: machineAccounts.shared,
     })
     .from(machineAccounts)
     .innerJoin(members, and(eq(members.orgId, machineAccounts.orgId), eq(members.userId, machineAccounts.createdBy)))
@@ -123,20 +121,11 @@ async function nextAccounts(db: Database, orgId: string, chained: { own: Account
         inArray(machineAccounts.machineId, [...new Set(chained.map((c) => c.own.machineId))]),
         inArray(machineAccounts.kind, [...new Set(chained.map((c) => c.own.kind))]),
         eq(machineAccounts.status, "active"),
+        eq(machineAccounts.shared, true),
         isNull(machineAccounts.provider),
         sql`${machineAccounts.authMethod} is distinct from 'api_key'`,
       ),
     );
-  const users = new Map<string, string[]>();
-  const ids = rows.filter((r) => !r.shared).map((r) => r.id);
-  if (ids.length > 0) {
-    const used = await db
-      .select({ id: agents.id, account: agents.brainAccountId })
-      .from(agents)
-      .where(and(eq(agents.orgId, orgId), inArray(agents.brainAccountId, ids), isNull(agents.archivedAt)));
-    for (const u of used) if (u.account) users.set(u.account, [...(users.get(u.account) ?? []), u.id]);
-  }
-  return [rows, users] as const;
 }
 
 interface AccountUsage {

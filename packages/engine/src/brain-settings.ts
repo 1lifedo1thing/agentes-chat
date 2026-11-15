@@ -103,7 +103,7 @@ import { can, getMembership, requirePermission } from "./organizations";
 import { isRightHand, personalBrain, personalModel } from "./right-hand";
 import { orgModelProvider } from "./router";
 import { readRefusal } from "./standing";
-import { paysExtraUsage, wakeAgentsBrainWaits } from "./usage-pause";
+import { agentsMovedOnto, paysExtraUsage, wakeAgentsBrainWaits } from "./usage-pause";
 
 /*
  * "Quem pensa" (ADR 0032 §5): the brain an agent thinks with and its model,
@@ -1569,7 +1569,8 @@ export async function setAccountServes(
     return { ids: updated.map((u) => u.id), agentIds, people: people.length };
   });
   forgetAgents(orgId, changed.agentIds);
-  await wakeAgentsBrainWaits(deps, orgId, changed.agentIds);
+  const moved = serves === "owner" ? await agentsMovedOnto(deps.db, orgId, changed.ids) : [];
+  await wakeAgentsBrainWaits(deps, orgId, [...changed.agentIds, ...moved]);
   if (changed.people > 0) await publishMachineAgentsChanged(deps.pubsub, orgId);
   for (const id of changed.ids) {
     await recordAudit(deps.db, {

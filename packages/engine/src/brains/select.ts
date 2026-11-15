@@ -673,6 +673,7 @@ async function sessionFor(
   kind: BrainKind,
   conversation: string,
   machineId: string,
+  accountId: string | null,
   options: { fresh?: boolean; promptKey?: string },
   now: Date,
 ): Promise<{ id: string; resume: boolean }> {
@@ -716,6 +717,11 @@ async function sessionFor(
           sql`not exists (select 1 from ${usageRecords} u4 where u4.org_id = "agent_runs"."org_id"
             and u4.run_id = "agent_runs"."id" and u4.provider = ${kind} and u4.machine_id is not null
             and u4.machine_id <> ${machineId}::uuid)`,
+          // Nor one another account thought in (a run that went on with the next account, ADR 0041 §6): that account's
+          // folder holds it, so this one would start over while being told only what's new.
+          sql`not exists (select 1 from ${usageRecords} u5 where u5.org_id = "agent_runs"."org_id"
+            and u5.run_id = "agent_runs"."id" and u5.provider = ${kind} and u5.brain_account_id is not null
+            and u5.brain_account_id is distinct from ${accountId}::uuid)`,
           // Never a session background work thought in (a routine's: it was told to answer NO_REPLY, and a
           // conversation that picked it up answered that). Any run that shared it counts, older rows too.
           sql`not exists (select 1 from ${agentRuns} r2
@@ -826,7 +832,17 @@ export async function resolveBrain(
     mission?.session ??
     (machineId
       ? {
-          ...(await sessionFor(deps.db, agent, run, kind, conversation, machineId, options, options.now ?? new Date())),
+          ...(await sessionFor(
+            deps.db,
+            agent,
+            run,
+            kind,
+            conversation,
+            machineId,
+            account?.id ?? null,
+            options,
+            options.now ?? new Date(),
+          )),
           machineId,
           cwd: "",
         }

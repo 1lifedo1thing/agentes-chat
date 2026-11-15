@@ -83,7 +83,7 @@ import { recordAccountFailure } from "./operator-events";
 import { can, requirePermission } from "./organizations";
 import { runnerUpdateWay } from "./runner-update";
 import { scrubSignIns } from "./tool-detail";
-import { usageWaitKey, wakeAgentsBrainWaits, wakeOnRoom } from "./usage-pause";
+import { agentsMovedOnto, usageWaitKey, wakeAgentsBrainWaits, wakeOnRoom } from "./usage-pause";
 
 const { machineAccounts, agents, machines, rightHandBrains, users } = schema;
 
@@ -1741,7 +1741,7 @@ export async function removeMachineAccount(
   }
   const released = await deps.db.transaction((tx) => tombstone(tx, orgId, [account.id]));
   forgetAgents(orgId, released);
-  await wakeAgentsBrainWaits(deps, orgId, released);
+  await wakeAgentsBrainWaits(deps, orgId, [...released, ...(await agentsMovedOnto(deps.db, orgId, [account.id]))]);
   await recordAudit(deps.db, {
     orgId,
     actor: { type: "person", id: userId },

@@ -1,5 +1,5 @@
 import type { PlanUsage } from "@agenteschat/adapters";
-import { and, type Executor, eq, isNull, ne, or, schema, sql } from "@agenteschat/db";
+import { and, type Executor, eq, inArray, isNull, ne, or, schema, sql } from "@agenteschat/db";
 import { isAutoModel } from "@agenteschat/providers";
 import { autoPlanModel, claudeCodeModel, NEXT_ACCOUNT_KINDS, planOf } from "@agenteschat/providers/plans";
 import type { Agent } from "./agents";
@@ -94,7 +94,9 @@ export interface AccountMove {
 }
 
 /** Where `nextAccountPlan` landed: the plan on the next account, else how many accounts are all limited and the first reset. */
-export type NextAccount = { plan: BrainPlan; lentBy: string | null } | { plan: null; chain: number; resetsAt?: string };
+export type NextAccount =
+  | { plan: BrainPlan; lentBy: string | null; lenderName?: string }
+  | { plan: null; chain: number; resetsAt?: string };
 
 type SeatRow = { id: string; email: string | null; providerOrgId: string | null };
 /** Two logins of one seat share its limits (`sameAccountWhere`): one email, in the same Claude organization when both know it. */
@@ -104,28 +106,62 @@ const sameSeat = (a: SeatRow, b: SeatRow) =>
     a.email.toLowerCase() === b.email?.toLowerCase() &&
     (!a.providerOrgId || !b.providerOrgId || a.providerOrgId === b.providerOrgId));
 
+type ChainAgent = Pick<Agent, "id" | "orgId" | "ownerUserId" | "brainAccountPinned" | "builtin">;
+
 /**
- * The next account a run at its plan's limit goes on with (ADR 0041 §6), on the same computer and of the same kind,
- * signed in with the CLI's own sign-in (never a key, which is paid by the token): one that serves this agent, its
- * owner's own first and then the others that serve everyone, each by `use_order`. Never a one-agent login another agent
- * thinks with, an account `tried` or one of their seats, nor one limited by what is stored: unknown usage is worth a
- * try (a setup token can't read its usage without a turn). `room`: what long work also needs of the stored usage.
- * The right hand goes on only with its plan's owner's accounts that may answer its person (`forPerson`).
- * Null plan: no such account, with how many accounts are limited (the tried ones counted) and the earliest reset.
+ * The accounts on `machineId` of `kind` a run of `agent` may go on with at its plan's limit (ADR 0041 §6): a CLI
+ * sign-in (never a key, which is paid by the token) shared between agents, whose owner is still a member
+ * (`planIsOwners`) and that serves this agent: its owner's own, or one that serves everyone. The right hand goes on
+ * only with its plan's owner's, one that serves only them when it answers them (`forPerson`). `keep`: the run's own
+ * accounts, whatever their sharing. A one-agent login is never another's: the runner lends its folder to that agent only.
+ */
+function chainWhere(agent: ChainAgent, kind: string, machineId: string, forPerson: string | null, keep: string[]) {
+  const owner = agent.ownerUserId ?? "";
+  return and(
+    eq(machineAccounts.orgId, agent.orgId),
+    eq(machineAccounts.machineId, machineId),
+    eq(machineAccounts.kind, kind),
+    isNull(machineAccounts.provider),
+    sql`${machineAccounts.authMethod} is distinct from 'api_key'`,
+    isRightHand(agent)
+      ? and(
+          eq(machineAccounts.createdBy, owner),
+          forPerson === owner ? undefined : eq(machineAccounts.serves, "everyone"),
+        )
+      : or(eq(machineAccounts.createdBy, owner), eq(machineAccounts.serves, "everyone")),
+    keep.length > 0
+      ? or(inArray(machineAccounts.id, keep), eq(machineAccounts.shared, true))
+      : eq(machineAccounts.shared, true),
+  );
+}
+
+/** Its owner still in the workspace (`planIsOwners`). */
+const ownerIsMember = and(
+  eq(schema.organizationMembers.orgId, machineAccounts.orgId),
+  eq(schema.organizationMembers.userId, machineAccounts.createdBy),
+);
+
+/**
+ * The next account a run at its plan's limit goes on with (ADR 0041 §6), on the same computer and of the same kind
+ * (`chainWhere`): its owner's own first and then the others that serve everyone, each by `use_order`. Never an account
+ * `tried` or one of their seats, nor one limited by what is stored: unknown usage is worth a try (a setup token can't
+ * read its usage without a turn). `own`: the agent's own account, which takes the run back when it has room. `room`:
+ * what long work also needs of the stored usage. Null plan: no such account, with how many accounts are limited (the
+ * tried ones counted) and the earliest reset.
  */
 export async function nextAccountPlan(
   deps: SpillDeps,
-  agent: Pick<Agent, "id" | "orgId" | "ownerUserId" | "brainAccountPinned" | "builtin">,
+  agent: ChainAgent,
   plan: BrainPlan,
   tried: readonly string[],
-  options: { room?: (usage: PlanUsage | null) => boolean; forPerson?: string | null } = {},
+  options: { room?: (usage: PlanUsage | null) => boolean; forPerson?: string | null; own?: string } = {},
 ): Promise<NextAccount> {
   const machineId = plan.session?.machineId;
   const owner = agent.ownerUserId;
   const none = { plan: null, chain: 0 } as const;
   if (!machineId || !owner || !plan.account || plan.missionId || !NEXT_ACCOUNT_KINDS.includes(plan.kind)) return none;
   if (agent.brainAccountPinned || plan.account.provider) return none;
-  const { agents, organizationMembers: members } = schema;
+  const keep = [plan.account.id, ...(options.own ? [options.own] : [])];
   const [status, rows] = await Promise.all([
     deps.machines ? deps.machines.status(machineId).catch(() => null) : null,
     deps.db
@@ -135,31 +171,16 @@ export async function nextAccountPlan(
         email: machineAccounts.email,
         providerOrgId: machineAccounts.providerOrgId,
         createdBy: machineAccounts.createdBy,
+        ownerName: schema.users.name,
         usage: machineAccounts.usage,
       })
       .from(machineAccounts)
-      // Its owner still in the workspace (`planIsOwners`).
-      .innerJoin(members, and(eq(members.orgId, machineAccounts.orgId), eq(members.userId, machineAccounts.createdBy)))
+      .innerJoin(schema.organizationMembers, ownerIsMember)
+      .leftJoin(schema.users, eq(schema.users.id, machineAccounts.createdBy))
       .where(
         and(
-          eq(machineAccounts.orgId, agent.orgId),
-          eq(machineAccounts.machineId, machineId),
-          eq(machineAccounts.kind, plan.kind),
+          chainWhere(agent, plan.kind, machineId, options.forPerson ?? null, keep),
           eq(machineAccounts.status, "active"),
-          isNull(machineAccounts.provider),
-          sql`${machineAccounts.authMethod} is distinct from 'api_key'`,
-          isRightHand(agent)
-            ? and(
-                eq(machineAccounts.createdBy, owner),
-                options.forPerson === owner ? undefined : eq(machineAccounts.serves, "everyone"),
-              )
-            : or(eq(machineAccounts.createdBy, owner), eq(machineAccounts.serves, "everyone")),
-          or(
-            eq(machineAccounts.id, plan.account.id),
-            eq(machineAccounts.shared, true),
-            sql`not exists (select 1 from ${agents} a where a.org_id = ${machineAccounts.orgId}
-              and a.brain_account_id = ${machineAccounts.id} and a.id <> ${agent.id} and a.archived_at is null)`,
-          ),
         ),
       )
       .orderBy(
@@ -196,6 +217,7 @@ export async function nextAccountPlan(
         session: { ...(plan.session as BrainSession), id: Bun.randomUUIDv7(), resume: false },
       },
       lentBy: r.createdBy === owner ? null : r.createdBy,
+      ...(r.createdBy !== owner && r.ownerName ? { lenderName: r.ownerName } : {}),
     };
   }
   return {
@@ -207,28 +229,24 @@ export async function nextAccountPlan(
 
 /**
  * A resumed run's plan on the account it moved to (`AccountMove.to`), in the session it has there, with what keeps
- * that account from thinking now: null when the account is gone from the agent's computer or no longer serves it.
+ * that account from thinking now: null when it may no longer take the run (`chainWhere`: gone from the agent's
+ * computer, no longer serving it or its person, or no longer shared).
  */
 export async function movedAccountPlan(
   deps: SpillDeps,
-  agent: Pick<Agent, "orgId" | "ownerUserId">,
+  agent: ChainAgent,
   plan: BrainPlan,
   accountId: string,
+  forPerson: string | null = null,
 ): Promise<BrainPlan | null> {
   const machineId = plan.session?.machineId;
   if (!machineId || plan.kind === "model") return null;
   const [row] = await deps.db
     .select({ id: machineAccounts.id, label: machineAccounts.label, status: machineAccounts.status })
     .from(machineAccounts)
-    .where(
-      and(
-        eq(machineAccounts.orgId, agent.orgId),
-        eq(machineAccounts.id, accountId),
-        eq(machineAccounts.machineId, machineId),
-        eq(machineAccounts.kind, plan.kind),
-      ),
-    );
-  if (!row || !(await planIsOwners(deps.db, agent, machineId, row))) return null;
+    .innerJoin(schema.organizationMembers, ownerIsMember)
+    .where(and(eq(machineAccounts.id, accountId), chainWhere(agent, plan.kind, machineId, forPerson, [])));
+  if (!row) return null;
   const account: BrainAccount = {
     id: row.id,
     label: row.label,

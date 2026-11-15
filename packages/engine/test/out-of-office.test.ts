@@ -135,6 +135,14 @@ test("at its account's limit, an agent with another account of the order that ha
   await fx.db.update(schema.machineAccounts).set({ serves: "owner" }).where(eq(schema.machineAccounts.id, theirs));
   expect([...(await outOfOfficeIds(fx.db, fx.org.id, [fx.agent.id]))]).toEqual([fx.agent.id]);
 
+  // A login for one agent never takes another's run, even unused.
+  await fx.db
+    .update(schema.machineAccounts)
+    .set({ serves: "everyone", shared: false })
+    .where(eq(schema.machineAccounts.id, theirs));
+  expect([...(await outOfOfficeIds(fx.db, fx.org.id, [fx.agent.id]))]).toEqual([fx.agent.id]);
+  await fx.db.update(schema.machineAccounts).set({ shared: true }).where(eq(schema.machineAccounts.id, theirs));
+
   // Every account limited: out until the earliest reset of the chain.
   await fx.db
     .update(schema.machineAccounts)

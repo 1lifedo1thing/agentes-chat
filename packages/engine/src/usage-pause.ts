@@ -1180,6 +1180,26 @@ export async function wakeAgentUsageWaits(
 export const turnStaysOnItsComputer = (executed: number, cause: string | null | undefined) =>
   executed > 0 || cause === "plan_limit";
 
+/**
+ * Agents with a run waiting on an account it moved to at its plan's limit (`Transcript.accountMove`): when that account
+ * goes or stops serving them, the run is woken (`wakeAgentsBrainWaits`) to go back to its agent's own.
+ */
+export async function agentsMovedOnto(db: Executor, orgId: string, accountIds: readonly string[]): Promise<string[]> {
+  if (accountIds.length === 0) return [];
+  const { agentRuns } = schema;
+  const rows = await db
+    .selectDistinct({ id: agentRuns.agentId })
+    .from(agentRuns)
+    .where(
+      and(
+        eq(agentRuns.orgId, orgId),
+        eq(agentRuns.status, "waiting_input"),
+        inArray(sql`${agentRuns.transcript}->'accountMove'->>'to'`, [...accountIds]),
+      ),
+    );
+  return rows.map((r) => r.id);
+}
+
 /** After what these agents think with changed (their AI, account or computer): `wakeAgentUsageWaits` for each. */
 export async function wakeAgentsBrainWaits(
   deps: { db: Database; pubsub?: PubSub },
