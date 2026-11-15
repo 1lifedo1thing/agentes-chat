@@ -4,11 +4,16 @@ import {
   type BrowserPointer,
   CURSOR_FLIP_AT,
   CURSOR_IDLE_MS,
+  CURSOR_REST_OPACITY,
+  CURSOR_TAG_BELOW,
+  cursorTagLifts,
   desktopPointerOf,
   frameView,
   glideMs,
   glidePoint,
   nextPointer,
+  parseBrowserPointer,
+  pointerAtRest,
   pointerInView,
   pointerShare,
 } from "../src/browser";
@@ -39,7 +44,18 @@ describe("the agent's cursor on its way to a point", () => {
     expect(glideMs(2)).toBe(640);
   });
 
-  test("its look: fades after 4 s, the name opens to the left past 0.74 of the width, an 8×12 pixel arrow", () => {
+  test("after 4 s with no gesture it rests where it was, dimmed but still seen", () => {
+    expect(CURSOR_REST_OPACITY).toBeGreaterThan(0.3);
+    expect(CURSOR_REST_OPACITY).toBeLessThan(0.6);
+  });
+
+  test("its name opens above the arrow where the box's bottom would cut it below, never in a box not laid out", () => {
+    expect(cursorTagLifts(400 - CURSOR_TAG_BELOW, 400)).toBe(false);
+    expect(cursorTagLifts(401 - CURSOR_TAG_BELOW, 400)).toBe(true);
+    expect(cursorTagLifts(10, 0)).toBe(false);
+  });
+
+  test("its look: rests after 4 s, the name opens to the left past 0.74 of the width, an 8×12 pixel arrow", () => {
     expect(CURSOR_IDLE_MS).toBe(4000);
     expect(CURSOR_FLIP_AT).toBe(0.74);
     expect(AGENT_ARROW).toHaveLength(12);
@@ -66,6 +82,29 @@ describe("each gesture of the agent's pointer", () => {
     // When it came, stamped as it comes.
     const before = Date.now();
     expect(nextPointer(two, point(1, 2)).at).toBeGreaterThanOrEqual(before);
+  });
+
+  test("a gesture under way glides; one over by now, or said before the view opened, is placed at rest", () => {
+    const fresh = nextPointer(null, point(10, 20), 1000);
+    expect(pointerAtRest(fresh, 1000)).toBe(false);
+    expect(pointerAtRest(fresh, 1000 + CURSOR_IDLE_MS)).toBe(false);
+    expect(pointerAtRest(fresh, 1001 + CURSOR_IDLE_MS)).toBe(true);
+    // The server's copy of the last one, sent as a view opens: long over, whatever the clock says.
+    const replayed = nextPointer(null, { ...point(10, 20), replay: true }, 5000);
+    expect(replayed).toEqual({ ...point(10, 20), n: 1, at: 0 });
+    expect(pointerAtRest(replayed, 5000)).toBe(true);
+  });
+
+  test("the last one sent again to a view that already shows it changes nothing; a newer one is placed", () => {
+    const shown = nextPointer(null, point(10, 20), 1000);
+    expect(nextPointer(shown, { ...point(10, 20), replay: true }, 1100)).toBe(shown);
+    const missed = nextPointer(shown, { ...point(30, 40), replay: true }, 1100);
+    expect(missed).toEqual({ ...point(30, 40), n: 2, at: 0 });
+  });
+
+  test("a replay is said with `replay: true` only", () => {
+    expect(parseBrowserPointer({ ...point(1, 2), replay: true })).toEqual({ ...point(1, 2), replay: true });
+    expect(parseBrowserPointer({ ...point(1, 2), replay: "yes" })).toEqual(point(1, 2));
   });
 
   test("the desktop's pointer event is read for that agent only", () => {

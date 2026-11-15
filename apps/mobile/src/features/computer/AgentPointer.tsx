@@ -2,6 +2,7 @@ import {
   AGENT_ARROW,
   type CountedPointer,
   CURSOR_IDLE_MS,
+  CURSOR_REST_OPACITY,
   type CursorSpot,
   desktopPointerOf,
   glideMs,
@@ -96,7 +97,8 @@ type PointerProps = {
 /**
  * The agent's cursor over the picture of its page or its desktop (ADR 0040 §7.2), as the web's `AgentCursor`: the
  * pixel arrow in the agent's deep color with its face and name, gliding on an arc to each point its computer says as
- * the gesture starts, a ring on a click (two on a double), only the face while it types, fading after a quiet while.
+ * the gesture starts, a ring on a click (two on a double), only the face while it types, dimmed where it rests after a
+ * quiet while.
  * `view` is how the box shows the picture (a desktop's camera, which a pinch or a pan moves, or a letterboxed page),
  * so the arrow follows the picture at its own fixed size. Null `pointer` draws nothing. Decoration: never touched,
  * skipped by screen readers, the steps under the picture already say what the agent does.
@@ -139,10 +141,19 @@ export const AgentPointer = memo(function AgentPointer({
       return;
     }
     const step = pointerStep(pointer, view.value, Date.now());
-    if (!step) return;
+    const shape = pointer.height / pointer.width;
+    if (step.rest) {
+      placed.current = true;
+      ratio.value = shape;
+      from.value = step.to;
+      to.value = step.to;
+      t.value = 1;
+      setLook({ quiet: step.quiet, flip: step.flip, lift: step.lift });
+      seen.value = CURSOR_REST_OPACITY;
+      return;
+    }
     const start = glideStart(placed.current ? glidePoint(from.value, to.value, t.value, ratio.value) : null, step.to);
     const timers: ReturnType<typeof setTimeout>[] = [];
-    const shape = pointer.height / pointer.width;
     ratio.value = shape;
     setLook({ quiet: false, flip: step.flip, lift: step.lift });
     const fadeIn = placed.current && !reduced;
@@ -165,7 +176,7 @@ export const AgentPointer = memo(function AgentPointer({
       if (step.quiet) setLook((l) => ({ ...l, quiet: true }));
       timers.push(
         setTimeout(() => {
-          seen.value = reduced ? 0 : withTiming(0, { duration: FADE_MS });
+          seen.value = reduced ? CURSOR_REST_OPACITY : withTiming(CURSOR_REST_OPACITY, { duration: FADE_MS });
         }, CURSOR_IDLE_MS),
       );
     };
