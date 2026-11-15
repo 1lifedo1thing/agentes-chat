@@ -51,6 +51,7 @@ import {
   accountRow,
   accountSaved,
   agentAccounts,
+  agentChain,
   modelInput,
   modelRows,
   modelSections,
@@ -170,7 +171,10 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   const usage = view && kind ? thinkingUsage(view, kind) : undefined;
   const limited = usage ? planState(usage).state === "limited" : false;
   const modelLimit = modelLimitText(t, i18n.language, usage, current?.provider, model?.value);
-  const offers = limited && kind && view ? limitOffers(accounts, kind, view.account).slice(0, 2) : [];
+  const chain = view ? agentChain(view, agentId, agent?.ownerUserId) : { moves: false, waits: false };
+  // At its limit with another account of its order that has room, its runs go on there: no way out by hand.
+  const waits = limited && (chain.waits || !chain.moves);
+  const offers = waits && kind && view ? limitOffers(accounts, kind, view.account).slice(0, 2) : [];
   const signedOut = current != null && signInOf(current) === "signed_out" && current.mine;
   const signInAgain = current != null && offersSignInAgain(current) && current.mine;
   // A coding plan's key that its endpoint refused: a new key, on that plan's page.
@@ -181,7 +185,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
     ? t(refused ? "aiAccounts.page.keyRefused" : "agentPage.work.brain.accountSignedOut")
     : current != null && signInOf(current) === "unknown"
       ? t("aiAccounts.page.statusUnknown")
-      : limited
+      : waits
         ? t("agentPage.work.brain.v2.fullWait", g)
         : lends
           ? t("agentPage.work.brain.accountOthers")
@@ -263,7 +267,13 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                     {t("connectAi.accountsLocked", { name: pairer?.name.split(" ")[0] ?? "", computer })}
                   </Note>
                 ) : null}
-                {accountNote ? <GroupedFooter>{accountNote}</GroupedFooter> : null}
+                {accountNote || chain.moves ? (
+                  <GroupedFooter>
+                    {[accountNote, chain.moves && !waits ? t("agentPage.work.brain.movesOn") : null]
+                      .filter(Boolean)
+                      .join("\n")}
+                  </GroupedFooter>
+                ) : null}
               </>
             ) : null}
             {kind ? (
@@ -301,7 +311,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                       onPress={() => choose(a)}
                     />
                   ))}
-                  {limited && view.canUsePlans && view.canManageAccounts ? (
+                  {waits && view.canUsePlans && view.canManageAccounts ? (
                     <GroupedRow
                       icon="plus"
                       label={t("aiAccounts.usage.offer.connect")}

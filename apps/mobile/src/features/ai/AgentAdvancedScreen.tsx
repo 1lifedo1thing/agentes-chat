@@ -33,7 +33,7 @@ import { useColors, useDirectory } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { PushedHeader } from "../shared/parts";
 import { EffortRamp, useBrainChoice, useEffortChoice } from "./EffortRamp";
-import { accountKindOf, advancedResetInput, agentAccounts } from "./logic";
+import { accountKindOf, advancedResetInput, agentAccounts, agentChain } from "./logic";
 import { Note, PlanReplies } from "./parts";
 
 /*
@@ -95,7 +95,14 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
             ? undefined
             : view.options.find((o) => o.kind === view.brain)?.models.find((m) => m.value === view.effectiveModel),
         );
-  const now = view ? advancedOf(view, options) : null;
+  // "Só esta conta" where its account could move on, or where it is on: a right hand's own plan never moves.
+  const pinShown =
+    view !== undefined &&
+    !view.scope &&
+    (agentChain(view, agentId, agent?.ownerUserId).moves || view.accountPinned === true);
+  const now = view
+    ? { ...advancedOf(view, options), ...(pinShown ? { accountPinned: view.accountPinned === true } : {}) }
+    : null;
   const may = !busy && view?.canEdit === true;
   const effort = useEffortChoice(agentId, now?.effort);
   const speed = useBrainChoice<BrainSpeed>(agentId, now?.speed ?? "standard", (value) => ({ speed: value }));
@@ -109,7 +116,7 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
       const line = advancedSummary(t, i18n.language, {
         kind: next.brain,
         autoModel,
-        now: advancedOf(next, options),
+        now: { ...advancedOf(next, options), ...(pinShown ? { accountPinned: next.accountPinned === true } : {}) },
       });
       toast({ title: done ?? line, icon: "check" });
     } catch {
@@ -238,6 +245,22 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
                   />
                 ) : null}
               </>
+            ) : null}
+            {now.accountPinned !== undefined ? (
+              <View style={styles.gap}>
+                <GroupedList>
+                  <GroupedRow
+                    label={t("agentPage.work.brain.pinned")}
+                    hint={{
+                      name: t("common.about", { label: t("agentPage.work.brain.pinned") }),
+                      text: t("agentPage.work.brain.pinnedHint"),
+                    }}
+                    toggle={now.accountPinned}
+                    disabled={!may}
+                    onPress={() => void save({ accountPinned: !now.accountPinned })}
+                  />
+                </GroupedList>
+              </View>
             ) : null}
             <View style={styles.gap}>
               <GroupedList>

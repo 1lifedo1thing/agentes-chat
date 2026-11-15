@@ -13,7 +13,9 @@ import { autonomyWords, type NewAgentStart } from "@agenteschat/client/lib/agent
 import {
   type AccountChoice,
   accountAbout,
+  accountChain,
   accountTitle,
+  chainHasRoom,
   type ExistingAi,
   existingAi,
   lendable,
@@ -110,6 +112,26 @@ export const agentAccounts = (
         a.id === view.account ||
         (view.canUseOthersPlans === true && a.ownerId !== ownerUserId && lendable(a, agentName))),
   );
+
+/**
+ * Where its runs go at a limit (ADR 0041 §6, as the web's "Quem pensa"): `moves`, another account follows its own in
+ * the order; `waits`, its own is at its limit and none of the others has room, so it is the agent that waits.
+ */
+export function agentChain(
+  view: Pick<AgentBrain, "accounts" | "account" | "accountPinned">,
+  agentId: string,
+  ownerUserId: string | null | undefined,
+) {
+  const chain = accountChain(view.accounts, {
+    id: agentId,
+    ownerId: ownerUserId ?? null,
+    account: view.account,
+    pinned: view.accountPinned === true,
+  });
+  const limited = (a: MachineAccount) => (a.usage ? planState(a.usage).state === "limited" : false);
+  const own = chain[0];
+  return { moves: chain.length > 1, waits: own !== undefined && limited(own) && !chainHasRoom(chain, limited) };
+}
 
 /** The plan usage of what it thinks with: its account's, or the computer's own sign-in's where that thinks for it. */
 export function thinkingUsage(
@@ -267,6 +289,7 @@ export function advancedResetInput(
           ...(autoModel ? {} : { effort: to.effort }),
           ...(to.speed !== now.speed ? { speed: to.speed } : {}),
           ...(to.onlyOwner !== view.onlyOwner ? { onlyOwner: to.onlyOwner } : {}),
+          ...(now.accountPinned ? { accountPinned: false } : {}),
         }),
   };
 }

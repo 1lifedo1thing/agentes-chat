@@ -1,11 +1,13 @@
-import type { AiAccounts as AiAccountsView, Credential } from "@agenteschat/client";
+import type { AccountOrderGroup, AiAccounts as AiAccountsView, Credential } from "@agenteschat/client";
 import {
   keys,
+  useAccountOrder,
   useAiAccounts,
   useAiStatus,
   useApi,
   useCredentials,
   useMachines,
+  useMoveAccountInOrder,
   usePlatformKey,
   useSettings,
   useUpdateSettings,
@@ -18,6 +20,7 @@ import {
   keyRemovalText,
   offersSignInAgain,
   onSeveralComputers,
+  orderStep,
   ownSignIns,
   ownSignInTitle,
   signInOf,
@@ -38,7 +41,7 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
-import { Button, GroupedList, GroupedRow, InfoHint, ProviderLogo, Text, useToast } from "@/ui";
+import { Button, GroupedHeader, GroupedList, GroupedRow, InfoHint, ProviderLogo, Text, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { personalAiParts } from "../settings/logic";
 import { chooseAction } from "../settings/parts";
@@ -298,6 +301,7 @@ export function AiAccountsScreen() {
             })}
           </GroupedList>
         ) : null}
+        <OrderSections computerOf={computerOf} />
         {again ? (
           // On the page, not in a card: the steps draw their own.
           <View style={styles.again}>
@@ -342,6 +346,86 @@ export function AiAccountsScreen() {
       </ScrollView>
     </View>
   );
+}
+
+/**
+ * "Ordem de uso" (ADR 0041 §6), the web's groups in IA e uso: each computer's Claude or ChatGPT accounts a run goes
+ * through at a limit, first to last, with the plan's terms on a quiet line. Whoever may move an account (its owner or
+ * an admin) moves it with Move up and Move down in its ⋯. An order of one account shows nothing.
+ */
+function OrderSections({ computerOf }: { computerOf: (name: string) => string }) {
+  const { t } = useTranslation();
+  const { orgId } = useOrg();
+  const toast = useToast();
+  const order = useAccountOrder(orgId);
+  const move = useMoveAccountInOrder(orgId);
+  const groups = (order.data?.groups ?? []).filter((g) => g.accounts.length > 1);
+  if (groups.length === 0) return null;
+  const several = new Set(groups.map((g) => g.machineId)).size > 1;
+  const put = (accountId: string, index: number | null) => {
+    if (index === null) return;
+    move.mutate(
+      { accountId, index },
+      {
+        onSuccess: () => successHaptic(),
+        onError: (e) => {
+          errorHaptic();
+          toast({ title: errorText(t, e), icon: "x" });
+        },
+      },
+    );
+  };
+  const actions = (g: AccountOrderGroup, a: AccountOrderGroup["accounts"][number]) => {
+    const up = orderStep(g.accounts, a.id, -1);
+    const down = orderStep(g.accounts, a.id, 1);
+    chooseAction(
+      a.label,
+      [
+        ...(up !== null ? [{ label: t("contextMenu.moveUp"), onPress: () => put(a.id, up) }] : []),
+        ...(down !== null ? [{ label: t("contextMenu.moveDown"), onPress: () => put(a.id, down) }] : []),
+      ],
+      t("common.cancel"),
+    );
+  };
+  return groups.map((g) => {
+    const plan = t(`aiAccounts.connect.${g.kind}`);
+    const title = t("usageViews.order.title", { plan });
+    return (
+      <View key={`${g.machineId}:${g.kind}`} style={styles.order}>
+        <GroupedHeader hint={{ name: t("common.about", { label: title }), text: t("usageViews.order.hint") }}>
+          {several ? `${title} ${t("aiAccounts.page.on", { computer: computerOf(g.computer) })}` : title}
+        </GroupedHeader>
+        <View style={styles.terms}>
+          <InfoHint
+            name={t("usageViews.order.termsAbout", { plan })}
+            text={t("usageViews.order.termsHint", { plan })}
+            variant="footnote"
+          >
+            <Text variant="footnote" tone="muted">
+              {t("usageViews.order.terms", { plan })}
+            </Text>
+          </InfoHint>
+        </View>
+        <GroupedList>
+          {g.accounts.map((a, i) => (
+            <GroupedRow
+              key={a.id}
+              leading={
+                <Text variant="callout" tone="muted" style={styles.place}>
+                  {i + 1}
+                </Text>
+              }
+              label={accountTitle(a)}
+              sub={a.mine ? undefined : (a.ownerName ?? undefined)}
+              more={a.canMove}
+              disabled={move.isPending}
+              {...(a.canMove ? { onPress: () => actions(g, a) } : {})}
+            />
+          ))}
+        </GroupedList>
+      </View>
+    );
+  });
 }
 
 /**
@@ -537,5 +621,9 @@ const styles = StyleSheet.create({
   grow: { flex: 1, minWidth: 0 },
   start: { alignSelf: "flex-start" },
   again: { gap: 12 },
+  order: { gap: 0 },
+  // On the header's edge, above the group like a second header line.
+  terms: { paddingHorizontal: 16, paddingBottom: 8, marginTop: -2 },
+  place: { minWidth: 24, textAlign: "center", fontVariant: ["tabular-nums"], fontWeight: "600" },
   againHead: { flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 2 },
 });

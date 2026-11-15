@@ -15,6 +15,7 @@ import {
   accountSaved,
   advancedResetInput,
   agentAccounts,
+  agentChain,
   existingRows,
   flowBack,
   modelInput,
@@ -1011,6 +1012,13 @@ describe("the agent's AI", () => {
       effort: "medium",
     });
     expect(advancedResetInput(plan, { ...base, effort: "high" }, true)).toEqual({ contextTokens: null });
+
+    // "Só esta conta" on goes back off; off, or not shown, it is left out.
+    expect(advancedResetInput(plan, { ...base, accountPinned: true }, true)).toEqual({
+      contextTokens: null,
+      accountPinned: false,
+    });
+    expect(advancedResetInput(plan, { ...base, accountPinned: false }, true)).toEqual({ contextTokens: null });
   });
 
   test("Usar em outros agentes on other people's plans asks once before saving, naming every owner", async () => {
@@ -1198,5 +1206,44 @@ describe("Outro provedor on the phone", () => {
     );
     expect(form).toContain('<IconButton icon="plus" label={t("endpoint.add")}');
     expect(form).toContain("withoutModel(d, m.id)");
+  });
+});
+
+describe("the order of use at a limit (ADR 0041 §6)", () => {
+  const limited = usage(100);
+  const view = (over: Partial<Pick<AgentBrain, "accounts" | "account" | "accountPinned">> = {}) => ({
+    accounts: [
+      account("own", { usage: limited, shared: true, useOrder: 0 }),
+      account("next", { usage: usage(20), shared: true, useOrder: 1 }),
+    ],
+    account: "own" as string | null,
+    ...over,
+  });
+
+  test("it moves on while another account of its order has room, and waits only when none has or it is pinned", () => {
+    expect(agentChain(view(), "ag_ada", "u1")).toEqual({ moves: true, waits: false });
+    const full = view({
+      accounts: [account("own", { usage: limited, shared: true }), account("next", { usage: limited, shared: true })],
+    });
+    expect(agentChain(full, "ag_ada", "u1")).toEqual({ moves: true, waits: true });
+    expect(agentChain(view({ accountPinned: true }), "ag_ada", "u1")).toEqual({ moves: false, waits: true });
+    expect(agentChain(view({ account: null }), "ag_ada", "u1")).toEqual({ moves: false, waits: false });
+  });
+
+  test("the screens: the order with Move up and Move down, the pin switch, the limit's way out only when it waits", async () => {
+    const read = (file: string) => Bun.file(new URL(`../../src/features/ai/${file}`, import.meta.url).pathname).text();
+    const [accounts, ai, advanced] = await Promise.all([
+      read("AiAccountsScreen.tsx"),
+      read("AgentAiScreen.tsx"),
+      read("AgentAdvancedScreen.tsx"),
+    ]);
+    expect(accounts).toContain("<OrderSections computerOf={computerOf} />");
+    expect(accounts).toContain("const up = orderStep(g.accounts, a.id, -1);");
+    expect(accounts).toContain("filter((g) => g.accounts.length > 1)");
+    expect(accounts).toContain("more={a.canMove}");
+    expect(ai).toContain("const offers = waits && kind && view ?");
+    expect(ai).toContain('chain.moves && !waits ? t("agentPage.work.brain.movesOn") : null');
+    expect(advanced).toContain("toggle={now.accountPinned}");
+    expect(advanced).toContain("onPress={() => void save({ accountPinned: !now.accountPinned })}");
   });
 });
