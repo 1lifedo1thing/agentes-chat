@@ -8963,6 +8963,7 @@
       "waiting_budget_late": "Ha mancato l'orario: il budget si è rinnovato troppo tardi",
       "stopped": "Fermata da qualcuno",
       "stoppedBy": "Fermata da {{name}}",
+      "stalled": "Liberata: niente si è mosso per 20 minuti",
       "no_report": "Terminata senza riferire il risultato",
       "handoff_blocked": "Non ha potuto riferire: la routine era in pausa o chi l'ha creata non può più scrivere lì",
       "deleted": "Fermata: la routine è stata eliminata",

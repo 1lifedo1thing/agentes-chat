@@ -8399,6 +8399,7 @@
       "waiting_budget_late": "错过了时间：预算更新得太晚",
       "stopped": "被人停止",
       "stoppedBy": "被 {{name}} 停止",
+      "stalled": "已释放：20 分钟内没有任何进展",
       "no_report": "已结束，但没有告知结果",
       "handoff_blocked": "无法告知：例行工作已暂停，或创建者已无法在那里发消息",
       "deleted": "已停止：例行工作已删除",

@@ -8703,6 +8703,7 @@
       "waiting_budget_late": "Zijn moment gemist: het budget werd te laat vernieuwd",
       "stopped": "Door iemand gestopt",
       "stoppedBy": "Gestopt door {{name}}",
+      "stalled": "Vrijgegeven: er bewoog 20 minuten niets",
       "no_report": "Klaar zonder het resultaat te melden",
       "handoff_blocked": "Kon het niet melden: de routine is gepauzeerd of wie hem maakte, kan daar niet meer posten",
       "deleted": "Gestopt: de routine is verwijderd",

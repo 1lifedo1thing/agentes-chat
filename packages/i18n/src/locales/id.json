@@ -8391,6 +8391,7 @@
       "waiting_budget_late": "Terlewat waktunya: anggarannya diperbarui terlambat",
       "stopped": "Dihentikan oleh seseorang",
       "stoppedBy": "Dihentikan oleh {{name}}",
+      "stalled": "Dilepas: tidak ada yang bergerak selama 20 menit",
       "no_report": "Selesai tanpa melaporkan hasilnya",
       "handoff_blocked": "Tidak bisa melapor: rutinitasnya dijeda atau pembuatnya sudah tidak bisa memposting di sana",
       "deleted": "Dihentikan: rutinitasnya dihapus",

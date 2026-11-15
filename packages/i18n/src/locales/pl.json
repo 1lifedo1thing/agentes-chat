@@ -9226,6 +9226,7 @@
       "waiting_budget_late": "Przegapiona pora: budżet odnowił się za późno",
       "stopped": "Zatrzymane przez kogoś",
       "stoppedBy": "Zatrzymane przez: {{name}}",
+      "stalled": "Zwolnione: przez 20 minut nic się nie ruszyło",
       "no_report": "Zakończone bez przekazania wyniku",
       "handoff_blocked": "Nie udało się przekazać: rutyna została wstrzymana albo jej twórca nie może już tam pisać",
       "deleted": "Zatrzymane: rutyna została usunięta",
