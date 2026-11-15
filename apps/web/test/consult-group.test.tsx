@@ -229,7 +229,7 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
     // The row said "Ada ⇄ Atlas e mais 1": so does the dialog, and both agents are in it.
     expect(side.querySelector(".consult-title")?.textContent).toBe("AdaAtlas e mais 1");
     const choices = within(side).getAllByRole("radio");
-    expect(choices.map((c) => c.textContent)).toEqual(["Atlasrespondeu", "Irisperguntando"]);
+    expect(choices.map((c) => c.textContent)).toEqual(["Atlasrespondeu", "Iristrabalhando"]);
     // It opens on the one still out, as the row's click says.
     expect(choices[1]?.getAttribute("aria-checked")).toBe("true");
     expect(panelLabel()).toBe("Conversa entre Ada e Iris");

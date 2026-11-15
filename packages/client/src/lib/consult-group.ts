@@ -381,12 +381,16 @@ export function consultChoiceOf(choices: readonly ConsultChoice[], group: readon
   );
 }
 
-/** A choice's short word: "respondeu", "perguntando", "esperando aprovação", "não respondeu". */
+/**
+ * A choice's short word: "respondeu", "trabalhando", "esperando aprovação", "não respondeu". The word sits beside the
+ * asked agent's own name, where "perguntando" would read as that agent asking.
+ */
 export function consultChoiceKey(state: ConsultLineState, c: ConsultPairItem) {
   if (state === "answered") return "chat.consultPair.answered" as const;
   if (state === "failed" || state === "expired")
     return isNote(c) ? ("chat.consultPair.notFinished" as const) : ("chat.consultPair.noAnswer" as const);
-  return pairOpenKey(state, c);
+  const key = pairOpenKey(state, c);
+  return key === "chat.consultPair.asking" ? ("chat.consultPair.working" as const) : key;
 }
 
 /**

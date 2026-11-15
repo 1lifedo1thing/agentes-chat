@@ -380,7 +380,7 @@ describe("consultChoices (the dialog of a row of several)", () => {
 
   test("each says where it stands in a word: answered, at work, waiting, unanswered", () => {
     expect(consultChoiceKey("answered", q())).toBe("chat.consultPair.answered");
-    expect(consultChoiceKey("working", q())).toBe("chat.consultPair.asking");
+    expect(consultChoiceKey("working", q())).toBe("chat.consultPair.working");
     expect(consultChoiceKey("waiting", q({ waiting: "approval" }))).toBe("chat.consultPair.waitingApproval");
     expect(consultChoiceKey("expired", q())).toBe("chat.consultPair.noAnswer");
     expect(consultChoiceKey("failed", q({ kind: "note" }))).toBe("chat.consultPair.notFinished");
