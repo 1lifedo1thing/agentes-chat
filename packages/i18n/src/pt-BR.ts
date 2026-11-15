@@ -3674,6 +3674,7 @@ export const ptBR = {
     shared_one: "{{agents}} usa o mesmo plano do {{plan}}. As conversas dos dois entram na mesma fila.",
     shared_other: "{{agents}} usam o mesmo plano do {{plan}}. As conversas de todos entram na mesma fila.",
     about: "Sobre a fila",
+    chain: "As {{accounts}} contas do {{plan}} chegaram ao limite.",
     lists: "Conversas",
     queuedTab: "Na fila",
     skippedTab: "Puladas",
@@ -5765,6 +5766,9 @@ export const ptBR = {
         accountOf: "De {{name}}",
         /** Under the accounts when other people's plans are listed (`canUseOthersPlans`). */
         accountOthers: "Os planos que atendem o workspace todo mostram de quem são.",
+        movesOn: "Segue na próxima conta no limite",
+        pinned: "Só esta conta",
+        pinnedHint: "No limite, espera esta conta renovar em vez de seguir na próxima.",
         addAccount: "Adicionar conta",
         signInAgain: "Entrar de novo",
         connectPlan: "Conectar outro plano",
@@ -17045,6 +17049,15 @@ export const ptBR = {
     signedOut: "Saiu da conta",
     whose: "de {{name}}",
     /** Who uses a plan (ADR 0059 §3): its row's status, and the choice in its details for whoever connected it. */
+    order: {
+      title: "{{plan}} · Ordem de uso",
+      hint: "No limite, os agentes seguem na próxima conta com folga e voltam para a primeira quando ela renovar.",
+      terms: "Usar várias contas do {{plan}} é uma área cinzenta nos termos do {{plan}}.",
+      termsAbout: "Sobre os termos do {{plan}}",
+      termsHint:
+        "Um plano é de uma pessoa, então confira os termos do {{plan}} antes de os seus agentes contarem com várias contas.",
+      move: "Mover {{name}}, número {{n}} na ordem",
+    },
     serves: {
       everyone: "Todos usam",
       onlyYou: "Só você usa",

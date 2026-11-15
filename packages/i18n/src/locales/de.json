@@ -3487,6 +3487,7 @@
     "shared_one": "{{agents}} nutzt dasselbe {{plan}}-Abo. Die Unterhaltungen beider kommen in dieselbe Warteschlange.",
     "shared_other": "{{agents}} nutzen dasselbe {{plan}}-Abo. Alle ihre Unterhaltungen kommen in dieselbe Warteschlange.",
     "about": "Über die Warteschlange",
+    "chain": "Alle {{accounts}} {{plan}}-Konten haben ihr Limit erreicht.",
     "lists": "Unterhaltungen",
     "queuedTab": "In der Warteschlange",
     "skippedTab": "Übersprungen",
@@ -5476,6 +5477,9 @@
         "accountAlso": "Auch genutzt von {{agents}}",
         "accountOf": "Von {{name}}",
         "accountOthers": "Abos, die dem ganzen Workspace dienen, zeigen, wem sie gehören.",
+        "movesOn": "Macht am Limit mit dem nächsten Konto weiter",
+        "pinned": "Nur dieses Konto",
+        "pinnedHint": "Wartet am Limit, bis sich dieses Konto zurücksetzt, statt zum nächsten zu wechseln.",
         "addAccount": "Konto hinzufügen",
         "signInAgain": "Erneut anmelden",
         "connectPlan": "Weiteres Abo verbinden",
@@ -16852,6 +16856,14 @@
       "me": "Nur ich",
       "savedEveryone": "Jetzt nutzt der ganze Workspace dieses Abo.",
       "savedOwner": "Jetzt nutzt nur du dieses Abo."
+    },
+    "order": {
+      "title": "{{plan}} · Nutzungsreihenfolge",
+      "hint": "Am Limit machen die Agenten mit dem nächsten Konto weiter, das noch Spielraum hat, und kehren zum ersten zurück, wenn es sich zurücksetzt.",
+      "terms": "Mehrere {{plan}}-Konten zu nutzen ist in den Bedingungen von {{plan}} eine Grauzone.",
+      "termsAbout": "Über die Bedingungen von {{plan}}",
+      "termsHint": "Ein Abo ist für eine Person gedacht, also prüfe die Bedingungen von {{plan}}, bevor sich deine Agenten auf mehrere verlassen.",
+      "move": "{{name}} verschieben, Nummer {{n}} in der Reihenfolge"
     },
     "logins_one": "{{count}} Anmeldung",
     "logins_other": "{{count}} Anmeldungen",

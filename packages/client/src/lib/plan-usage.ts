@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import type {
+  AccountOrderGroup,
   Agent,
   AgentBrainLine,
   AgentUsageSource,
@@ -577,6 +578,43 @@ export function groupUsageAccounts(
       out.push(a);
     }
   }
+  return out;
+}
+
+/** Rows of the usage list, an order of use's together (`group`) or the rest in the order they came (null). */
+export interface UsageOrderSection<R> {
+  group: AccountOrderGroup | null;
+  rows: R[];
+}
+
+/**
+ * The usage list's rows by order of use (ADR 0041 §6): the accounts of one order with two or more rows shown come
+ * together, first to last, where the first of them was. An order of one shows as any other row.
+ */
+export function usageOrderSections<R extends Pick<PlanAccountInfo, "machineId" | "kind" | "accountId">>(
+  rows: readonly R[],
+  groups: readonly AccountOrderGroup[] | undefined,
+): UsageOrderSection<R>[] {
+  const place = new Map<string, { group: AccountOrderGroup; index: number }>();
+  for (const group of groups ?? [])
+    group.accounts.forEach((a, index) => {
+      place.set(`${group.machineId}:${group.kind}:${a.id}`, { group, index });
+    });
+  const at = (r: R) => (r.accountId ? place.get(`${r.machineId}:${r.kind}:${r.accountId}`) : undefined);
+  const count = new Map<AccountOrderGroup, number>();
+  for (const r of rows) {
+    const p = at(r);
+    if (p) count.set(p.group, (count.get(p.group) ?? 0) + 1);
+  }
+  const out: UsageOrderSection<R>[] = [];
+  for (const r of rows) {
+    const p = at(r);
+    const group = p && (count.get(p.group) ?? 0) > 1 ? p.group : null;
+    const section = group ? out.find((s) => s.group === group) : out[out.length - 1];
+    if (section && section.group === group) section.rows.push(r);
+    else out.push({ group, rows: [r] });
+  }
+  for (const s of out) if (s.group) s.rows.sort((a, b) => (at(a)?.index ?? 0) - (at(b)?.index ?? 0));
   return out;
 }
 

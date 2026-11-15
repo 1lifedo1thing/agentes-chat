@@ -3603,6 +3603,7 @@
     "shared_many": "{{agents}} usan el mismo plan de {{plan}}. Las conversaciones de todos van a la misma fila.",
     "shared_other": "{{agents}} usan el mismo plan de {{plan}}. Las conversaciones de todos van a la misma fila.",
     "about": "Sobre la fila",
+    "chain": "Las {{accounts}} cuentas de {{plan}} llegaron a su límite.",
     "lists": "Conversaciones",
     "queuedTab": "En la fila",
     "skippedTab": "Omitidas",
@@ -5640,6 +5641,9 @@
         "accountAlso": "También la usa {{agents}}",
         "accountOf": "De {{name}}",
         "accountOthers": "Los planes que atienden a todo el workspace muestran de quién son.",
+        "movesOn": "Sigue con la siguiente cuenta al llegar a un límite",
+        "pinned": "Solo esta cuenta",
+        "pinnedHint": "Al llegar a un límite, espera a que esta cuenta se renueve en vez de pasar a la siguiente.",
         "addAccount": "Agregar cuenta",
         "signInAgain": "Volver a iniciar sesión",
         "connectPlan": "Conectar otro plan",
@@ -17311,6 +17315,14 @@
       "me": "Solo yo",
       "savedEveryone": "Ahora todo el workspace usa este plan.",
       "savedOwner": "Ahora solo tú usas este plan."
+    },
+    "order": {
+      "title": "{{plan}} · Orden de uso",
+      "hint": "Al llegar a un límite, los agentes siguen con la siguiente cuenta que tenga margen y vuelven a la primera cuando se renueva.",
+      "terms": "Usar varias cuentas de {{plan}} es una zona gris en los términos de {{plan}}.",
+      "termsAbout": "Sobre los términos de {{plan}}",
+      "termsHint": "Un plan es para una persona, así que revisa los términos de {{plan}} antes de que tus agentes dependan de varias.",
+      "move": "Mover {{name}}, número {{n}} en el orden"
     },
     "logins_one": "{{count}} inicio de sesión",
     "logins_many": "{{count}} inicios de sesión",

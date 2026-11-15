@@ -3772,6 +3772,8 @@ export const en = {
     shared_one: "{{agents}} uses the same {{plan}} plan. Both agents' conversations go in the same line.",
     shared_other: "{{agents}} use the same {{plan}} plan. All their conversations go in the same line.",
     about: "About the line",
+    /** Behind the title's ⓘ when every account of the order is at its limit ({{accounts}}: how many). */
+    chain: "All {{accounts}} {{plan}} accounts hit their limit.",
     /** The two lists' switch: its name, then each side. */
     lists: "Conversations",
     queuedTab: "In line",
@@ -5871,6 +5873,10 @@ export const en = {
         accountOf: "{{name}}'s",
         /** Under the accounts when other people's plans are listed (`canUseOthersPlans`). */
         accountOthers: "Plans that serve the whole workspace show whose they are.",
+        /** Under the account in use when its runs go on with the next account of the order (ADR 0041 §6). */
+        movesOn: "Goes on with the next account at a limit",
+        pinned: "This account only",
+        pinnedHint: "At a limit, waits for this account to reset instead of moving to the next.",
         addAccount: "Add account",
         signInAgain: "Sign in again",
         connectPlan: "Connect another plan",
@@ -17128,6 +17134,16 @@ export const en = {
   usageViews: {
     signedOut: "Signed out",
     whose: "{{name}}'s",
+    /** An order of use (ADR 0041 §6): the accounts of one plan a run goes through at a limit, first to last. */
+    order: {
+      title: "{{plan}} · Order of use",
+      hint: "At a limit, agents go on with the next account that has room and go back to the first when it resets.",
+      terms: "Using several {{plan}} accounts is a gray area in {{plan}}'s terms.",
+      termsAbout: "About {{plan}}'s terms",
+      termsHint: "A plan is meant for one person, so check {{plan}}'s terms before your agents rely on several.",
+      /** The grip's name: drag it, or press it for Move up and Move down. */
+      move: "Move {{name}}, number {{n}} in the order",
+    },
     serves: {
       everyone: "Everyone uses it",
       onlyYou: "Only you use it",

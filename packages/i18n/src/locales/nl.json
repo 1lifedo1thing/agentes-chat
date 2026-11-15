@@ -3490,6 +3490,7 @@
     "shared_one": "{{agents}} gebruikt hetzelfde {{plan}}-abonnement. De gesprekken van allebei komen in dezelfde rij.",
     "shared_other": "{{agents}} gebruiken hetzelfde {{plan}}-abonnement. Al hun gesprekken komen in dezelfde rij.",
     "about": "Over de rij",
+    "chain": "Alle {{accounts}} {{plan}}-accounts hebben de limiet bereikt.",
     "lists": "Gesprekken",
     "queuedTab": "In de rij",
     "skippedTab": "Overgeslagen",
@@ -5498,6 +5499,9 @@
         "accountAlso": "Ook gebruikt door {{agents}}",
         "accountOf": "Van {{name}}",
         "accountOthers": "Abonnementen voor de hele workspace laten zien van wie ze zijn.",
+        "movesOn": "Gaat bij een limiet verder met het volgende account",
+        "pinned": "Alleen dit account",
+        "pinnedHint": "Wacht bij een limiet tot dit account is gereset, in plaats van naar het volgende te gaan.",
         "addAccount": "Account toevoegen",
         "signInAgain": "Opnieuw inloggen",
         "connectPlan": "Ander abonnement koppelen",
@@ -16915,6 +16919,14 @@
       "me": "Alleen ik",
       "savedEveryone": "Nu gebruikt de hele workspace dit abonnement.",
       "savedOwner": "Nu gebruik alleen jij dit abonnement."
+    },
+    "order": {
+      "title": "{{plan}} · Gebruiksvolgorde",
+      "hint": "Bij een limiet gaan agents verder met het volgende account dat nog ruimte heeft en keren ze terug naar het eerste zodra dat is gereset.",
+      "terms": "Meerdere {{plan}}-accounts gebruiken is een grijs gebied in de voorwaarden van {{plan}}.",
+      "termsAbout": "Over de voorwaarden van {{plan}}",
+      "termsHint": "Een abonnement is voor één persoon bedoeld, dus controleer de voorwaarden van {{plan}} voordat je agents op meerdere accounts rekenen.",
+      "move": "{{name}} verplaatsen, nummer {{n}} in de volgorde"
     },
     "logins_one": "{{count}} aanmelding",
     "logins_other": "{{count}} aanmeldingen",

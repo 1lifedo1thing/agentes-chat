@@ -3363,6 +3363,7 @@
     "resuming": "{{agent}} 正在继续",
     "shared_other": "{{agents}} 也在用同一个 {{plan}} 套餐。所有对话都进入同一个队列。",
     "about": "关于队列",
+    "chain": "{{plan}} 的 {{accounts}} 个账号都已达限额。",
     "lists": "对话",
     "queuedTab": "排队中",
     "skippedTab": "已跳过",
@@ -5301,6 +5302,9 @@
         "accountAlso": "{{agents}} 也在使用",
         "accountOf": "{{name}} 的",
         "accountOthers": "服务整个 workspace 的套餐会显示属于谁。",
+        "movesOn": "达到限额时改用下一个账号",
+        "pinned": "仅此账号",
+        "pinnedHint": "达到限额时，等这个账号重置，而不是改用下一个。",
         "addAccount": "添加账号",
         "signInAgain": "重新登录",
         "connectPlan": "连接其他套餐",
@@ -16350,6 +16354,14 @@
       "me": "仅我自己",
       "savedEveryone": "现在整个 workspace 都使用这个套餐。",
       "savedOwner": "现在只有你使用这个套餐。"
+    },
+    "order": {
+      "title": "{{plan}} · 使用顺序",
+      "hint": "达到限额时，智能体会改用下一个还有余量的账号，第一个账号重置后再换回来。",
+      "terms": "在 {{plan}} 的条款中，使用多个 {{plan}} 账号属于灰色地带。",
+      "termsAbout": "关于 {{plan}} 的条款",
+      "termsHint": "一个套餐只供一个人使用，所以在让智能体依赖多个账号之前，请先查看 {{plan}} 的条款。",
+      "move": "移动 {{name}}，顺序第 {{n}} 位"
     },
     "logins_other": "{{count}} 个登录",
     "noWindows": "再次使用此账号后会显示限额。",

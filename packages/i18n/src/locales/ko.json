@@ -3358,6 +3358,7 @@
     "resuming": "{{agent}}이(가) 이어서 하는 중이에요",
     "shared_other": "{{agents}}도 같은 {{plan}} 요금제를 써요. 대화는 모두 같은 대기열에 들어가요.",
     "about": "대기열 안내",
+    "chain": "{{plan}} 계정 {{accounts}}개가 모두 한도에 도달했어요.",
     "lists": "대화",
     "queuedTab": "대기 중",
     "skippedTab": "건너뜀",
@@ -5277,6 +5278,9 @@
         "accountAlso": "{{agents}}도 사용 중",
         "accountOf": "{{name}}님의 계정",
         "accountOthers": "workspace 전체를 지원하는 플랜에는 소유자가 표시돼요.",
+        "movesOn": "한도에 도달하면 다음 계정으로 이어서 해요",
+        "pinned": "이 계정만",
+        "pinnedHint": "한도에 도달하면 다음 계정으로 넘어가지 않고 이 계정이 초기화될 때까지 기다려요.",
         "addAccount": "계정 추가",
         "signInAgain": "다시 로그인",
         "connectPlan": "다른 요금제 연결",
@@ -16279,6 +16283,14 @@
       "me": "나만",
       "savedEveryone": "이제 workspace 전체가 이 플랜을 사용해요.",
       "savedOwner": "이제 이 플랜은 나만 사용해요."
+    },
+    "order": {
+      "title": "{{plan}} · 사용 순서",
+      "hint": "한도에 도달하면 에이전트는 여유가 있는 다음 계정으로 이어서 하고, 첫 계정이 초기화되면 돌아와요.",
+      "terms": "{{plan}} 계정을 여러 개 쓰는 건 {{plan}} 약관에서 회색 지대예요.",
+      "termsAbout": "{{plan}} 약관 안내",
+      "termsHint": "플랜은 한 사람용이라서, 에이전트가 여러 계정에 기대기 전에 {{plan}} 약관을 확인하세요.",
+      "move": "{{name}} 이동, 순서 {{n}}번"
     },
     "logins_other": "로그인 {{count}}개",
     "noWindows": "이 계정을 다시 사용하면 한도가 표시돼요.",

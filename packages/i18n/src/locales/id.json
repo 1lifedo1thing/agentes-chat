@@ -3370,6 +3370,7 @@
     "resuming": "{{agent}} sedang melanjutkan",
     "shared_other": "{{agents}} memakai paket {{plan}} yang sama. Percakapan mereka masuk ke antrean yang sama.",
     "about": "Tentang antrean",
+    "chain": "Semua {{accounts}} akun {{plan}} mencapai batasnya.",
     "lists": "Percakapan",
     "queuedTab": "Dalam antrean",
     "skippedTab": "Dilewati",
@@ -5294,6 +5295,9 @@
         "accountAlso": "Juga dipakai oleh {{agents}}",
         "accountOf": "Milik {{name}}",
         "accountOthers": "Paket yang melayani seluruh workspace menunjukkan pemiliknya.",
+        "movesOn": "Lanjut dengan akun berikutnya saat mencapai batas",
+        "pinned": "Hanya akun ini",
+        "pinnedHint": "Saat mencapai batas, menunggu akun ini direset alih-alih pindah ke akun berikutnya.",
         "addAccount": "Tambah akun",
         "signInAgain": "Masuk lagi",
         "connectPlan": "Hubungkan paket lain",
@@ -16341,6 +16345,14 @@
       "me": "Hanya saya",
       "savedEveryone": "Sekarang seluruh workspace memakai paket ini.",
       "savedOwner": "Sekarang hanya kamu yang memakai paket ini."
+    },
+    "order": {
+      "title": "{{plan}} · Urutan pemakaian",
+      "hint": "Saat mencapai batas, agen lanjut dengan akun berikutnya yang masih punya sisa dan kembali ke akun pertama saat akun itu direset.",
+      "terms": "Memakai beberapa akun {{plan}} adalah area abu-abu dalam ketentuan {{plan}}.",
+      "termsAbout": "Tentang ketentuan {{plan}}",
+      "termsHint": "Satu paket untuk satu orang, jadi cek ketentuan {{plan}} sebelum agenmu mengandalkan beberapa akun.",
+      "move": "Pindahkan {{name}}, nomor {{n}} dalam urutan"
     },
     "logins_other": "{{count}} login",
     "noWindows": "Batasnya muncul setelah akun ini dipakai lagi.",

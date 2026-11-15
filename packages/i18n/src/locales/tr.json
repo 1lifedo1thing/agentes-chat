@@ -3476,6 +3476,7 @@
     "shared_one": "{{agents}} da aynı {{plan}} planını kullanıyor. İkisinin konuşmaları aynı sıraya giriyor.",
     "shared_other": "{{agents}} da aynı {{plan}} planını kullanıyor. Hepsinin konuşmaları aynı sıraya giriyor.",
     "about": "Sıra hakkında",
+    "chain": "{{accounts}} {{plan}} hesabının hepsi sınırına ulaştı.",
     "lists": "Konuşmalar",
     "queuedTab": "Sırada",
     "skippedTab": "Atlananlar",
@@ -5459,6 +5460,9 @@
         "accountAlso": "{{agents}} da kullanıyor",
         "accountOf": "{{name}} hesabı",
         "accountOthers": "Tüm workspace'e hizmet eden planlar kime ait olduklarını gösterir.",
+        "movesOn": "Sınıra gelince bir sonraki hesapla devam eder",
+        "pinned": "Yalnızca bu hesap",
+        "pinnedHint": "Sınıra gelince bir sonraki hesaba geçmek yerine bu hesabın sıfırlanmasını bekler.",
         "addAccount": "Hesap ekle",
         "signInAgain": "Yeniden giriş yap",
         "connectPlan": "Başka bir plan bağla",
@@ -16789,6 +16793,14 @@
       "me": "Yalnızca ben",
       "savedEveryone": "Artık tüm workspace bu planı kullanıyor.",
       "savedOwner": "Artık bu planı yalnızca sen kullanıyorsun."
+    },
+    "order": {
+      "title": "{{plan}} · Kullanım sırası",
+      "hint": "Bir sınıra gelindiğinde ajanlar boşluğu olan bir sonraki hesapla devam eder ve ilki sıfırlandığında ona döner.",
+      "terms": "Birden fazla {{plan}} hesabı kullanmak {{plan}} koşullarında gri bir alandır.",
+      "termsAbout": "{{plan}} koşulları hakkında",
+      "termsHint": "Bir plan tek kişi içindir, bu yüzden ajanlarınız birden fazla hesaba güvenmeden önce {{plan}} koşullarını kontrol edin.",
+      "move": "{{name}} hesabını taşı, sırada {{n}}"
     },
     "logins_one": "{{count}} oturum",
     "logins_other": "{{count}} oturum",

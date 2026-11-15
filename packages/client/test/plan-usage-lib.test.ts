@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import type { TFunction } from "i18next";
-import type { AgentBrainLine, AiAccounts, AiComputer, AiStatus, PlanAccountUsage, PlanUsage } from "../src/api/types";
+import type {
+  AccountOrderGroup,
+  AgentBrainLine,
+  AiAccounts,
+  AiComputer,
+  AiStatus,
+  PlanAccountUsage,
+  PlanUsage,
+} from "../src/api/types";
 import {
   accountOwner,
   accountShares,
@@ -14,6 +22,7 @@ import {
   servesText,
   shareFacts,
   splitUsage,
+  usageOrderSections,
   usageShown,
   workspaceUsesApi,
 } from "../src/lib/plan-usage";
@@ -543,5 +552,43 @@ describe("the quota per model of a plan whose models have limits of their own", 
     expect(notSharedText(t, "opencode")).toBeNull();
     expect(notSharedText(t, null)).toBeNull();
     expect(planModelUsage(t, "en", withModels({ "glm-5.3": { at: NOW.toISOString() } }), null, NOW)).toEqual([]);
+  });
+});
+
+describe("usageOrderSections: the usage list by order of use", () => {
+  const row = (machineId: string, kind: "claude_code" | "codex", accountId: string | null) => ({
+    machineId,
+    kind,
+    accountId,
+  });
+  const group = (machineId: string, kind: "claude_code" | "codex", ids: string[]): AccountOrderGroup => ({
+    machineId,
+    computer: "MacBook",
+    kind,
+    accounts: ids.map((id) => ({ id }) as AccountOrderGroup["accounts"][number]),
+  });
+  const ids = (sections: ReturnType<typeof usageOrderSections<ReturnType<typeof row>>>) =>
+    sections.map((s) => [s.group ? `${s.group.machineId}:${s.group.kind}` : null, s.rows.map((r) => r.accountId)]);
+
+  test("an order's rows come together first to last, where its first row was; the rest stay as they came", () => {
+    const rows = [
+      row("m1", "claude_code", null),
+      row("m1", "claude_code", "b"),
+      row("m1", "codex", "x"),
+      row("m1", "claude_code", "a"),
+      row("m1", "claude_code", "c"),
+    ];
+    const groups = [group("m1", "claude_code", ["a", "b", "c"]), group("m1", "codex", ["x"])];
+    expect(ids(usageOrderSections(rows, groups))).toEqual([
+      [null, [null]],
+      ["m1:claude_code", ["a", "b", "c"]],
+      [null, ["x"]],
+    ]);
+  });
+
+  test("an order with one row shown is any other row, and no orders keep the list as it is", () => {
+    const rows = [row("m1", "claude_code", "a"), row("m2", "claude_code", "b")];
+    expect(ids(usageOrderSections(rows, [group("m1", "claude_code", ["a", "z"])]))).toEqual([[null, ["a", "b"]]]);
+    expect(ids(usageOrderSections(rows, undefined))).toEqual([[null, ["a", "b"]]]);
   });
 });

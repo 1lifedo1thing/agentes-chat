@@ -38,6 +38,8 @@ export interface Advanced {
   contextTokens: ContextLimit | null;
   /** "Atende outras pessoas" off. */
   onlyOwner: boolean;
+  /** "Só esta conta" (ADR 0041 §6); absent where the agent's account never moves on. */
+  accountPinned?: boolean;
 }
 
 /** A new agent's: medium effort, its model's window, its owner only on a plan (ADR 0059 §5). */
@@ -53,7 +55,11 @@ export const ADVANCED_DEFAULTS: Advanced = {
  * effort goes back to none, the provider's default.
  */
 export const advancedDefaults = (kind: BrainKind, now: Advanced): Advanced =>
-  kind === "model" ? { ...now, effort: null, contextTokens: null } : ADVANCED_DEFAULTS;
+  kind === "model"
+    ? { ...now, effort: null, contextTokens: null }
+    : now.accountPinned === undefined
+      ? ADVANCED_DEFAULTS
+      : { ...ADVANCED_DEFAULTS, accountPinned: false };
 export const isAdvancedDefault = (kind: BrainKind, now: Advanced) =>
   JSON.stringify(advancedDefaults(kind, now)) === JSON.stringify(now);
 
@@ -92,6 +98,7 @@ export function advancedParts(t: TFunction, _language: string, o: AdvancedOf): s
     computer && now.speed === "fast" ? t("agentPage.work.brain.advanced.speed") : null,
     now.contextTokens ? t("agentPage.work.brain.advanced.context", { size: contextSize(now.contextTokens) }) : null,
     computer && !now.onlyOwner ? t("agentPage.work.brain.advanced.sharing") : null,
+    computer && now.accountPinned ? t("agentPage.work.brain.pinned") : null,
   ].filter((p): p is string => p !== null);
 }
 

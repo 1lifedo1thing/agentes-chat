@@ -8545,6 +8545,9 @@
   "usageQueue.about": {
     "value": "About the line"
   },
+  "usageQueue.chain": {
+    "value": "All {{accounts}} {{plan}} accounts hit their limit."
+  },
   "usageQueue.lists": {
     "value": "Conversations"
   },
@@ -13463,6 +13466,15 @@
   },
   "agentPage.work.brain.accountOthers": {
     "value": "Plans that serve the whole workspace show whose they are."
+  },
+  "agentPage.work.brain.movesOn": {
+    "value": "Goes on with the next account at a limit"
+  },
+  "agentPage.work.brain.pinned": {
+    "value": "This account only"
+  },
+  "agentPage.work.brain.pinnedHint": {
+    "value": "At a limit, waits for this account to reset instead of moving to the next."
   },
   "agentPage.work.brain.addAccount": {
     "value": "Add account"
@@ -41490,6 +41502,24 @@
   },
   "usageViews.serves.savedOwner": {
     "value": "Only you use this plan now."
+  },
+  "usageViews.order.title": {
+    "value": "{{plan}} · Order of use"
+  },
+  "usageViews.order.hint": {
+    "value": "At a limit, agents go on with the next account that has room and go back to the first when it resets."
+  },
+  "usageViews.order.terms": {
+    "value": "Using several {{plan}} accounts is a gray area in {{plan}}'s terms."
+  },
+  "usageViews.order.termsAbout": {
+    "value": "About {{plan}}'s terms"
+  },
+  "usageViews.order.termsHint": {
+    "value": "A plan is meant for one person, so check {{plan}}'s terms before your agents rely on several."
+  },
+  "usageViews.order.move": {
+    "value": "Move {{name}}, number {{n}} in the order"
   },
   "usageViews.logins": {
     "value": {

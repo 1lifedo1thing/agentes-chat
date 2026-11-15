@@ -3608,6 +3608,7 @@
     "shared_many": "{{agents}} utilisent le même forfait {{plan}}. Toutes leurs conversations vont dans la même file.",
     "shared_other": "{{agents}} utilisent le même forfait {{plan}}. Toutes leurs conversations vont dans la même file.",
     "about": "À propos de la file",
+    "chain": "Les {{accounts}} comptes {{plan}} ont atteint leur limite.",
     "lists": "Liste des conversations",
     "queuedTab": "Dans la file",
     "skippedTab": "Ignorées",
@@ -5665,6 +5666,9 @@
         "accountAlso": "Aussi utilisé par {{agents}}",
         "accountOf": "De {{name}}",
         "accountOthers": "Les forfaits qui servent tout le workspace indiquent à qui ils sont.",
+        "movesOn": "Continue avec le compte suivant à la limite",
+        "pinned": "Ce compte uniquement",
+        "pinnedHint": "À la limite, attend que ce compte se réinitialise au lieu de passer au suivant.",
         "addAccount": "Ajouter un compte",
         "signInAgain": "Se reconnecter",
         "connectPlan": "Connecter un autre abonnement",
@@ -17381,6 +17385,14 @@
       "me": "Moi seul",
       "savedEveryone": "Tout le workspace utilise désormais ce forfait.",
       "savedOwner": "Vous êtes désormais seul à utiliser ce forfait."
+    },
+    "order": {
+      "title": "{{plan}} · Ordre d'utilisation",
+      "hint": "À la limite, les agents continuent avec le compte suivant qui a de la marge et reviennent au premier quand il se réinitialise.",
+      "terms": "Utiliser plusieurs comptes {{plan}} est une zone grise dans les conditions de {{plan}}.",
+      "termsAbout": "À propos des conditions de {{plan}}",
+      "termsHint": "Un abonnement est prévu pour une personne, alors vérifiez les conditions de {{plan}} avant que vos agents comptent sur plusieurs comptes.",
+      "move": "Déplacer {{name}}, numéro {{n}} dans l'ordre"
     },
     "logins_one": "{{count}} connexion",
     "logins_many": "{{count}} connexions",

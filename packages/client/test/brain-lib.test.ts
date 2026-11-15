@@ -133,6 +133,16 @@ describe("Velocidade (ADR 0149)", () => {
     expect(isAdvancedDefault("claude_code", ADVANCED_DEFAULTS)).toBe(true);
   });
 
+  test("Só esta conta counts as a change from the defaults, and Voltar ao padrão turns it off", () => {
+    const pinned = { ...ADVANCED_DEFAULTS, accountPinned: true };
+    expect(advancedParts(t, "pt-BR", { kind: "claude_code", autoModel: false, now: pinned })).toEqual([
+      "agentPage.work.brain.pinned",
+    ]);
+    expect(isAdvancedDefault("claude_code", pinned)).toBe(false);
+    expect(advancedDefaults("claude_code", pinned)).toEqual({ ...ADVANCED_DEFAULTS, accountPinned: false });
+    expect(isAdvancedDefault("claude_code", { ...ADVANCED_DEFAULTS, accountPinned: false })).toBe(true);
+  });
+
   test("Rápida counts as a change from the defaults and is named wherever they are", () => {
     const now = { ...ADVANCED_DEFAULTS, speed: "fast" as const };
     expect(isAdvancedDefault("codex", now)).toBe(false);

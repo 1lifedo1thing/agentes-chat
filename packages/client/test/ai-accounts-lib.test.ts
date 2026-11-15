@@ -7,6 +7,7 @@ import {
   accountChoices,
   accountTitle,
   agentsToGive,
+  chainHasRoom,
   endsOnClaude,
   existingAi,
   groupPlans,
@@ -560,6 +561,15 @@ describe("accountChain: the accounts a run goes through at its plan's limit", ()
       "own1",
     ]);
     expect(chainOf(accounts, { account: null })).toEqual([]);
+  });
+
+  test("at its own account's limit it waits only when no other account of its chain has room", () => {
+    const limited = new Set(["own1", "own2"]);
+    const full = (a: { id: string }) => limited.has(a.id);
+    expect(chainHasRoom([claude("own1"), claude("own2"), claude("w1", walter)], full)).toBe(true);
+    expect(chainHasRoom([claude("own1"), claude("own2")], full)).toBe(false);
+    expect(chainHasRoom([claude("own1")], full)).toBe(false);
+    expect(chainHasRoom([], full)).toBe(false);
   });
 
   test("Subir and Descer: the next place, none at either end", () => {

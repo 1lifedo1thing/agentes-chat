@@ -458,6 +458,13 @@ export function accountChain<A extends MachineAccount>(
   return [own, ...next.map(({ a }) => a)];
 }
 
+/**
+ * At its own account's limit, whether the agent's runs go on with another account of its `accountChain` that `limited`
+ * doesn't hold. Only when none does is it the agent that waits (the limit screen, a sleeping face, "it waits").
+ */
+export const chainHasRoom = <A>(chain: readonly A[], limited: (a: A) => boolean) =>
+  chain.slice(1).some((a) => !limited(a));
+
 /** "Subir" and "Descer" in an order of use: the place to move the account to (`moveAccountInOrder`), null at that end. */
 export function orderStep(accounts: readonly { id: string }[], id: string, step: -1 | 1): number | null {
   const from = accounts.findIndex((a) => a.id === id);

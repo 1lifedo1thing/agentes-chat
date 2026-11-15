@@ -3610,6 +3610,7 @@
     "shared_many": "{{agents}} usano lo stesso piano {{plan}}. Tutte le loro conversazioni finiscono nella stessa coda.",
     "shared_other": "{{agents}} usano lo stesso piano {{plan}}. Tutte le loro conversazioni finiscono nella stessa coda.",
     "about": "Informazioni sulla coda",
+    "chain": "Tutti i {{accounts}} account {{plan}} hanno raggiunto il limite.",
     "lists": "Conversazioni",
     "queuedTab": "In coda",
     "skippedTab": "Saltate",
@@ -5667,6 +5668,9 @@
         "accountAlso": "Usato anche da {{agents}}",
         "accountOf": "Di {{name}}",
         "accountOthers": "I piani che servono tutto il workspace mostrano di chi sono.",
+        "movesOn": "Continua con l'account successivo al limite",
+        "pinned": "Solo questo account",
+        "pinnedHint": "Al limite, aspetta che questo account si azzeri invece di passare al successivo.",
         "addAccount": "Aggiungi account",
         "signInAgain": "Accedi di nuovo",
         "connectPlan": "Collega un altro piano",
@@ -17393,6 +17397,14 @@
       "me": "Solo io",
       "savedEveryone": "Ora tutto il workspace usa questo piano.",
       "savedOwner": "Ora solo tu usi questo piano."
+    },
+    "order": {
+      "title": "{{plan}} · Ordine di utilizzo",
+      "hint": "Al limite, gli agenti continuano con l'account successivo che ha margine e tornano al primo quando si azzera.",
+      "terms": "Usare più account {{plan}} è una zona grigia nei termini di {{plan}}.",
+      "termsAbout": "Sui termini di {{plan}}",
+      "termsHint": "Un piano è pensato per una persona, quindi controlla i termini di {{plan}} prima che i tuoi agenti contino su più account.",
+      "move": "Sposta {{name}}, numero {{n}} nell'ordine"
     },
     "logins_one": "{{count}} accesso",
     "logins_many": "{{count}} accessi",

@@ -3725,6 +3725,7 @@
     "shared_many": "{{agents}} korzystają z tego samego planu {{plan}}. Wszystkie ich rozmowy trafiają do tej samej kolejki.",
     "shared_other": "{{agents}} korzystają z tego samego planu {{plan}}. Wszystkie ich rozmowy trafiają do tej samej kolejki.",
     "about": "O kolejce",
+    "chain": "Wszystkie konta {{plan}} ({{accounts}}) osiągnęły limit.",
     "lists": "Rozmowy",
     "queuedTab": "W kolejce",
     "skippedTab": "Pominięte",
@@ -5862,6 +5863,9 @@
         "accountAlso": "Używane też przez: {{agents}}",
         "accountOf": "Należy do: {{name}}",
         "accountOthers": "Plany obsługujące cały workspace pokazują, czyje są.",
+        "movesOn": "Po dojściu do limitu działa dalej na następnym koncie",
+        "pinned": "Tylko to konto",
+        "pinnedHint": "Po dojściu do limitu czeka na odnowienie tego konta zamiast przejść na następne.",
         "addAccount": "Dodaj konto",
         "signInAgain": "Zaloguj się ponownie",
         "connectPlan": "Połącz inny plan",
@@ -17919,6 +17923,14 @@
       "me": "Tylko ja",
       "savedEveryone": "Teraz cały workspace używa tego planu.",
       "savedOwner": "Teraz tylko Ty używasz tego planu."
+    },
+    "order": {
+      "title": "{{plan}} · Kolejność użycia",
+      "hint": "Po dojściu do limitu agenci działają dalej na następnym koncie, które ma zapas, i wracają do pierwszego, gdy się odnowi.",
+      "terms": "Korzystanie z kilku kont {{plan}} to szara strefa w warunkach {{plan}}.",
+      "termsAbout": "O warunkach {{plan}}",
+      "termsHint": "Plan jest przeznaczony dla jednej osoby, więc sprawdź warunki {{plan}}, zanim twoi agenci zaczną polegać na kilku kontach.",
+      "move": "Przenieś {{name}}, numer {{n}} w kolejności"
     },
     "logins_one": "{{count}} logowanie",
     "logins_few": "{{count}} logowania",

@@ -3360,6 +3360,7 @@
     "resuming": "{{agent}}が再開しています",
     "shared_other": "{{agents}}も同じ{{plan}}のプランを使っています。会話はすべて同じ順番待ちに入ります。",
     "about": "順番待ちについて",
+    "chain": "{{plan}} の {{accounts}} 個のアカウントがすべて上限に達しました。",
     "lists": "会話",
     "queuedTab": "順番待ち",
     "skippedTab": "スキップ済み",
@@ -5279,6 +5280,9 @@
         "accountAlso": "{{agents}}も使用中",
         "accountOf": "{{name}}のもの",
         "accountOthers": "workspace 全体で使えるプランには持ち主が表示されます。",
+        "movesOn": "上限に達したら次のアカウントで続けます",
+        "pinned": "このアカウントのみ",
+        "pinnedHint": "上限に達したら、次のアカウントに移らず、このアカウントのリセットを待ちます。",
         "addAccount": "アカウントを追加",
         "signInAgain": "もう一度ログイン",
         "connectPlan": "別のプランを接続",
@@ -16287,6 +16291,14 @@
       "me": "自分だけ",
       "savedEveryone": "このプランは今 workspace 全員が使えます。",
       "savedOwner": "このプランは今あなただけが使います。"
+    },
+    "order": {
+      "title": "{{plan}} · 使用順",
+      "hint": "上限に達すると、エージェントは余裕のある次のアカウントで続け、最初のアカウントがリセットされたら戻ります。",
+      "terms": "複数の{{plan}}アカウントを使うことは、{{plan}}の規約ではグレーゾーンです。",
+      "termsAbout": "{{plan}}の規約について",
+      "termsHint": "プランは1人用なので、エージェントが複数のアカウントに頼る前に{{plan}}の規約を確認してください。",
+      "move": "{{name}}を移動（使用順{{n}}番目）"
     },
     "logins_other": "{{count}}件のログイン",
     "noWindows": "このアカウントが再び使われると、上限が表示されます。",
