@@ -1104,13 +1104,17 @@ export type DeviceNoticeKind =
   | "device.in_use"
   | "device.access_request"
   | "device.waiting"
-  | "device.tool_request";
+  | "device.tool_request"
+  | "device.cli_request"
+  | "device.folder_request";
 const NOTICE_KINDS = new Set<string>([
   "device.join_request",
   "device.in_use",
   "device.access_request",
   "device.waiting",
   "device.tool_request",
+  "device.cli_request",
+  "device.folder_request",
 ]);
 
 /**
@@ -1133,8 +1137,13 @@ export interface DeviceNotice {
   forName: string | null;
   text: string | null;
   join: { name: string; os: string; ip: string; location: string | null } | null;
-  /** `device.tool_request`: the tool to turn on (`latest.reason`) and who asked (the person actor). */
+  /**
+   * `device.tool_request`: the tool to turn on (`latest.reason`) and who asked (the person actor);
+   * `device.cli_request`: the coding CLI to install, the same way.
+   */
   tool: MachineTool | null;
+  /** `device.folder_request`: the folder an agent waits for on this computer (`latest.title`). */
+  path: string | null;
   askerId: string | null;
 }
 
@@ -1147,7 +1156,8 @@ export function deviceNoticeOf(
   const l = n.latest as Record<string, unknown>;
   const join = kind === "device.join_request";
   const actor = n.actors?.find((a) => a.type === "agent");
-  const tool = kind === "device.tool_request" ? (str(l.reason) as MachineTool | null) : null;
+  const tool =
+    kind === "device.tool_request" || kind === "device.cli_request" ? (str(l.reason) as MachineTool | null) : null;
   return {
     kind: kind as DeviceNoticeKind,
     requestId: str(s.requestId),
@@ -1157,7 +1167,8 @@ export function deviceNoticeOf(
     device: str(s.label) ?? str(l.title) ?? "",
     agentId: actor?.id ?? str(s.agentId),
     userId: str(s.userId),
-    forName: join ? null : str(l.title),
+    // A folder request's `latest.title` is the folder itself, not a person: it reads in the line, not as a name.
+    forName: join || kind === "device.folder_request" ? null : str(l.title),
     text: str(l.text),
     join: join
       ? {
@@ -1168,6 +1179,7 @@ export function deviceNoticeOf(
         }
       : null,
     tool,
+    path: kind === "device.folder_request" ? str(l.title) : null,
     askerId: tool ? (n.actors?.find((a) => a.type === "user")?.id ?? null) : null,
   };
 }

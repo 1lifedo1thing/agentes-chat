@@ -39,6 +39,7 @@ test("GET /me: an owner may do everything; a member what the base role gives", a
   expect(members).toMatchObject({ role: "member", rank: null });
   expect([...(members?.permissions ?? [])].sort()).toEqual([
     "assign_work",
+    "create_agents",
     "create_channels",
     "edit_wiki",
     "own_browsers",
@@ -48,6 +49,7 @@ test("GET /me: an owner may do everything; a member what the base role gives", a
     "read",
     "talk_to_agents",
     "upload_files",
+    "view_all_agents",
   ]);
 });
 

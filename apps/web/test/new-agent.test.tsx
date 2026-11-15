@@ -66,7 +66,8 @@ const openBrain = async () => {
 };
 const chooseBrain = async (name: RegExp) => {
   await openBrain();
-  await click(screen().getByRole("option", { name }));
+  // Claude's own, not Command Code's same model.
+  await click(screen().getAllByRole("option", { name })[0] as HTMLElement);
 };
 const groupNames = (list: HTMLElement) =>
   within(list)
@@ -245,7 +246,7 @@ describe("Criar agente: steps", () => {
     const list = await openBrain();
     const [auto, ...rest] = within(list).getAllByRole("option");
     expect(auto?.getAttribute("aria-selected")).toBe("true");
-    const sonnet = screen().getByRole("option", { name: /^Claude Sonnet 5\.5/ });
+    const sonnet = screen().getAllByRole("option", { name: /^Claude Sonnet 5\.5/ })[0] as HTMLElement;
     expect(sonnet.getAttribute("aria-selected")).toBe("false");
     expect(rest.indexOf(sonnet)).toBeGreaterThanOrEqual(0);
     // Claude's models by what each is for, as on the agent's page; a model without a key can't be picked.
@@ -662,21 +663,13 @@ describe("Criar agente: what gets created", () => {
     await click(screen().getByRole("button", { name: "Conectar uma IA" }));
     await settle(6);
     const box = screen().getByRole("dialog", { name: "Conectar uma IA" });
-    // A plan for the agent being made (never one of theirs): a computer to connect opens beside the draft.
+    // A plan for the agent being made (never one of theirs): a computer to connect opens in place, over the draft.
     await chooseAi(box, "Claude");
     const panel = within(box).getByRole("region", { name: "Seu plano do Claude" });
-    const opened: unknown[][] = [];
-    const realOpen = window.open;
-    window.open = ((...args: unknown[]) => {
-      opened.push(args);
-      return null;
-    }) as typeof window.open;
-    try {
-      await click(within(panel).getByRole("button", { name: "Conectar um computador" }));
-    } finally {
-      window.open = realOpen;
-    }
-    expect(opened).toEqual([[`/org/${ORG_ID}/settings/devices`, "_blank", "noopener"]]);
+    await click(within(panel).getByRole("button", { name: "Conectar um computador" }));
+    const pairing = screen().getByRole("dialog", { name: "Conectar um dispositivo" });
+    await click(within(pairing).getByRole("button", { name: "Fechar" }));
+    expect(screen().queryByRole("dialog", { name: "Conectar um dispositivo" })).toBeNull();
     await click(payWith(box, "Com chave de API"));
     await act(async () =>
       fireEvent.change(within(box).getByLabelText("Cole aqui"), {
@@ -1722,6 +1715,21 @@ describe("Criar agente with Criar agentes alone: an agent of my own, without app
     await settle(8);
     expect(createdWith(state)?.ownerUserId).toBe("u-walter");
     expect(screen().getByRole("heading", { name: "Iris entrou no time" })).toBeTruthy();
+  });
+
+  test("the budget is the workspace's default, said in one line, with no field to raise it", async () => {
+    const state = await asMaker();
+    await startAs("QA");
+    await proceed(4);
+    expect(title()).toBe("Modelo e orçamento");
+    expect(screen().queryByLabelText("Orçamento mensal (US$)")).toBeNull();
+    expect(screen().getByText(/^Usa o padrão do workspace/).textContent).toMatch(
+      /^Usa o padrão do workspace( \(US\$\u00a050\))?\. Só um admin aumenta\.$/,
+    );
+    await proceed();
+    await click(screen().getByRole("button", { name: "Criar Iris" }));
+    await settle(8);
+    expect(createdWith(state)?.monthlyBudgetUsd).toBeNull();
   });
 
   test("apps start without access and can't be changed here; Criar saves none, so nothing is refused", async () => {

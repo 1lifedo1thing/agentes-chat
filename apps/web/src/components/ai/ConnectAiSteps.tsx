@@ -33,7 +33,7 @@ import { CUSTOM_PROVIDER } from "@agenteschat/client/lib/endpoints";
 import { errorText, holdText, keyRefusal } from "@agenteschat/client/lib/errors";
 import { NAMES_SHOWN, namesText } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { brainTool } from "@agenteschat/client/lib/machines";
+import { brainTool, installableCli } from "@agenteschat/client/lib/machines";
 import {
   type AiChoice,
   ALL_AGENTS,
@@ -108,11 +108,13 @@ import { BillingLinkButton } from "@/components/BillingLinkButton";
 import { ToolOffWayOut } from "@/components/devices/ToolOneClick";
 import { useOrg } from "@/components/org-context";
 import { KeyMismatch, KeyRefused, ProviderSelect } from "@/components/ProviderKey";
+import { OpenPrefsButton, useIsThisMac } from "@/components/ThisMac";
 import { managedOf, SetupProgress, useSetupWait, useWaitReader } from "@/components/WorkspaceComputer";
 import { useDirectory } from "@/hooks/useDirectory";
 import { planWord } from "@/lib/plan-usage";
 import { useToast } from "@/lib/toast";
 import { AddAccount, OpenPage, Step, StepTitle } from "./AddAccountFlow";
+import { CliMissing } from "./CliMissing";
 import { EndpointForm } from "./EndpointForm";
 import { PlanReplies, usePlanRepliesShown } from "./PlanReplies";
 
@@ -816,6 +818,7 @@ export function PlanWithoutAgent({
   const steps = gate.state === "ready" || gate.state === "preparing" || (gate.state === "offline" && signingIn);
   // Only whoever connected the computers there signs a plan in on them: a computer of their own is the way on.
   const elsewhere = gate.state === "locked" && !cloud;
+  const pairsOwn = elsewhere && can(org, "pair_computers");
   return (
     <Card as="section" className="ai-panel ai-panel--plan" aria-label={title}>
       <PanelHead
@@ -846,10 +849,10 @@ export function PlanWithoutAgent({
             onKey={onKey}
             onComputer={onComputer}
           />
-          {elsewhere && onComputer && (
+          {pairsOwn && onComputer && (
             <span>
               <Button size="sm" variant="primary" onClick={onComputer}>
-                {t("aiAccounts.connect.addComputer")}
+                {t("connectAi.connectMine")}
               </Button>
             </span>
           )}
@@ -1650,6 +1653,7 @@ function GateWait({
   const { t } = useTranslation();
   const { org } = useOrg();
   const reader = useWaitReader();
+  const here = useIsThisMac(org.id, machineId ?? "");
   const machines = useMachines(org.id, edition !== null);
   const preparing = gate.state === "preparing" ? gate.view : null;
   const { eta, email } = useSetupWait(preparing, reader.held);
@@ -1734,12 +1738,39 @@ function GateWait({
         </ToolOffWayOut>
       </>
     );
+  } else if (
+    gate.state === "unsupported" &&
+    (gate.reason === "not_installed" || gate.reason === "cant_start") &&
+    !hold &&
+    installableCli(kind) &&
+    row &&
+    row.kind !== "managed"
+  ) {
+    // A computer someone connected that hasn't the program, or has it and it won't start: install it from here.
+    wait = <CliMissing machine={row} kind={kind} computer={computer} reason={gate.reason} useKey={keyButton} />;
   } else if (why && !(gate.state === "offline" && signingIn)) {
     wait = (
       <>
         <SettingNote icon={why.rechecks ? "clock" : "alert"} live={why.rechecks}>
           {why.text}
         </SettingNote>
+        {!hold &&
+          edition === "selfhost" &&
+          kind === "codex" &&
+          gate.state === "unsupported" &&
+          gate.reason === "outdated" && (
+            <>
+              <p className="setup-line">
+                {t(here ? "brain.reasons.codexRecheckHere" : "brain.reasons.codexRecheckThere", { computer })}
+              </p>
+              <div className="ac-acts">
+                <OpenPage href="https://learn.chatgpt.com/docs/codex/cli#install-codex">
+                  {t("brain.reasons.codexUpdateGuide")}
+                </OpenPage>
+                {here && <OpenPrefsButton tab="tools">{t("machines.thisMac.openTools")}</OpenPrefsButton>}
+              </div>
+            </>
+          )}
         {!hold && useKey}
       </>
     );
@@ -1856,7 +1887,10 @@ export function KeyPanel({
               </OpenPage>
             }
           >
-            <StepTitle title={t("connectAi.key.create", { provider: providerLabel(keyOf) })} hint={hint && t(hint)} />
+            <StepTitle
+              title={t("connectAi.key.create", { provider: providerLabel(keyOf) })}
+              hint={hint && t(hint, { provider: maker.label })}
+            />
           </Step>
           <Step n={2}>
             <label htmlFor={fieldId}>

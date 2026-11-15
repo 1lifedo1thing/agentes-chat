@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import type {
   CanceledReturn,
+  ComputerSummary,
   EndedTask,
   HiddenTasks,
   ManagedTask,
@@ -11,6 +12,7 @@ import type {
 import { type Activity, toolActivity } from "./activity";
 import { durationText, etaMinutes } from "./computer-queue";
 import { agentGrammar } from "./grammar";
+import { stopperOf } from "./notices";
 import { usageWhenShort } from "./plan-usage";
 import { usageWindowText } from "./usage-pause";
 
@@ -250,6 +252,59 @@ export function waitCauses(tasks: ManagedTask[]): WaitCause[] {
 }
 
 const CAUSE_ORDER: Record<WaitCause["kind"], number> = { limit: 0, computer: 1, person: 2 };
+
+/** Causes shown at most: the ones holding the most work. "N esperando" still counts every waiting task. */
+export const CAUSES_SHOWN = 3;
+
+/** What holds the waiting work, as the task manager shows it over its sections (`waitCauses`, the first few). */
+export const shownCauses = (tasks: ManagedTask[]) => waitCauses(tasks).slice(0, CAUSES_SHOWN);
+
+/** A computer on the task manager: "Cheio · 2 na fila · 3 trabalhando", "Tem espaço · 1 trabalhando". */
+export function computerRoomText(t: TFunction, computer: Pick<ComputerSummary, "working" | "inLine">): string {
+  const s = say(t);
+  const room =
+    computer.inLine > 0 ? s("taskManager.queue.full", { count: computer.inLine }) : s("taskManager.queue.room");
+  return computer.working > 0 ? `${room} · ${s("taskManager.working", { count: computer.working })}` : room;
+}
+
+/** Computadores' computers: the ones no shown cause already names, so a full or away computer shows once. */
+export function computersBesides(computers: ComputerSummary[], causes: WaitCause[]): ComputerSummary[] {
+  const shown = new Set(causes.flatMap((c) => (c.kind === "computer" ? [c.machineId] : [])));
+  return computers.filter((c) => !shown.has(c.id));
+}
+
+/**
+ * A cause's row, the same on web and phone: a limit in its tasks' own wait words ("Plano do Claude no limite", "Volta
+ * às 16:59 · 2 tarefas"), its time the wait's own, when the work goes on (a usage meter's can differ: a refusal's
+ * reset outranks the windows); a computer with Computadores' facts.
+ */
+export function causeWords(
+  t: TFunction,
+  locale: string,
+  cause: WaitCause,
+  computers: ComputerSummary[],
+  now = Date.now(),
+): { name: string; fact: string } {
+  const s = say(t);
+  const first = cause.tasks[0] as ManagedTask;
+  const words = taskWaitWords(t, locale, first, now);
+  const count = s("taskManager.tasks", { count: cause.tasks.length });
+  if (cause.kind === "limit")
+    return { name: words?.state ?? "", fact: [words?.next, count].filter(Boolean).join(" · ") };
+  if (cause.kind === "computer") {
+    const computer = computers.find((c) => c.id === cause.machineId);
+    const name = computer?.name ?? first.machine?.name ?? "";
+    // Full, it has a line: its own tasks in it at least, while the workspace's count lags behind them.
+    if (cause.busy)
+      return {
+        name,
+        fact: computerRoomText(t, { working: computer?.working ?? 0, inLine: computer?.inLine || cause.tasks.length }),
+      };
+    const working = computer?.working ? s("taskManager.working", { count: computer.working }) : null;
+    return { name, fact: [words?.state, count, working].filter(Boolean).join(" · ") };
+  }
+  return { name: s("taskManager.waiting", { count: cause.tasks.length }), fact: words?.next ?? "" };
+}
 
 /** Since when it counts (a long work's start, else the run's), in ms. */
 export const taskSince = (t: Pick<ManagedTask, "startedAt" | "createdAt">) => Date.parse(t.startedAt ?? t.createdAt);
@@ -561,6 +616,26 @@ export function activityLine(activity: Record<string, number[]>, agentId: string
 /** How a task ended, for "Terminadas hoje": done, stopped (by whom) or couldn't. */
 export const endedState = (e: Pick<EndedTask, "status">): "done" | "stopped" | "failed" =>
   e.status === "done" ? "done" : e.status === "canceled" ? "stopped" : "failed";
+
+/**
+ * How a task ended, in words: done, couldn't finish, or stopped: "You stopped it" only for who stopped it, the name of
+ * anyone else or of the agent that stopped it at their word (`agentName`), and a plain "Stopped" when no person did.
+ */
+export function endedText(
+  t: TFunction,
+  task: Pick<EndedTask, "status" | "stoppedBy">,
+  meId: string | null | undefined,
+  agentName: (id: string) => string | undefined = () => undefined,
+): string {
+  const state = endedState(task);
+  if (state === "done") return t("taskManager.ended.done");
+  if (state === "failed") return t("taskManager.ended.failed");
+  const by = task.stoppedBy;
+  const stopper = by ? stopperOf({ byUserId: by.userId, byAgentId: by.agentId }, meId) : null;
+  if (stopper?.kind === "you") return t("taskManager.ended.stopped");
+  const name = stopper?.kind === "agent" ? agentName(stopper.agentId) : by?.name;
+  return name ? t("taskManager.ended.stoppedBy", { name }) : t("taskManager.state.stopped");
+}
 
 /** Since when "Terminadas hoje" counts: the local midnight. */
 export function todayStart(now = new Date()): string {

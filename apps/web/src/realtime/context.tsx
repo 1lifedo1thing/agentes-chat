@@ -37,6 +37,7 @@ import {
   type BrowserLiveUnavailable,
   type ConnectionStatus,
   type ConsultsState,
+  type CountedPointer,
   cacheActionCard,
   cacheAgentProposal,
   cacheApproval,
@@ -53,6 +54,7 @@ import {
   catchUpChannel,
   consultSeeds,
   createBrowserLiveConnection,
+  desktopPointerOf,
   dismissRun,
   dropLocalVoice,
   dropProvisional,
@@ -64,6 +66,7 @@ import {
   isNotificationEvent,
   keys,
   markStopping,
+  nextPointer,
   type OpenConsult,
   openConversation,
   RealtimeConnection,
@@ -97,7 +100,7 @@ import { knownErrorText } from "@agenteschat/client/lib/errors";
 import { formatPercent } from "@agenteschat/client/lib/format";
 import { isReturnLine } from "@agenteschat/client/lib/notices";
 import { nextMonthIso, usageWhen } from "@agenteschat/client/lib/plan-usage";
-import { playSound, soundForNotification } from "@agenteschat/client/lib/sounds";
+import { playSound, soundForEvent } from "@agenteschat/client/lib/sounds";
 import { playAgentReaction } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
@@ -488,7 +491,7 @@ export function RealtimeProvider({
       // Its sound (ADR 0070): in one tab only, and in the background only what matters.
       if (isNotificationEvent(event) && event.type === "notification.upserted") {
         const { mine, background } = notificationAudience();
-        const sound = mine ? soundForNotification(event.notification, background) : null;
+        const sound = mine ? soundForEvent(event, background) : null;
         if (sound) playSound(sound);
       }
       // Notifications in this browser (ADR 0071): what was read, done or snoozed closes there too; a drop in
@@ -1009,6 +1012,8 @@ export interface BrowserLiveState {
   error: string | null;
   /** How many came, for what says each one: the same refusal again leaves `error` as it was. */
   errors: number;
+  /** Where the agent's pointer last went on the page; `n` counts its gestures (two clicks on one point are two). */
+  pointer: CountedPointer | null;
 }
 
 const EMPTY_LIVE: BrowserLiveState = {
@@ -1019,6 +1024,7 @@ const EMPTY_LIVE: BrowserLiveState = {
   endedBy: null,
   error: null,
   errors: 0,
+  pointer: null,
 };
 
 /**
@@ -1049,6 +1055,7 @@ export function useBrowserLive(agentId: string, enabled = true, maxFps?: number)
         setState((s) => ({ ...s, frame, unavailable: null, ended: false, endedBy: null, error: null })),
       onStatus: (status) =>
         setState((s) => ({ ...s, status, unavailable: null, ended: false, endedBy: null, error: null })),
+      onPointer: (pointer) => setState((s) => ({ ...s, pointer: nextPointer(s.pointer, pointer) })),
       onUnavailable: (reason, message) =>
         setState((s) => ({ ...s, unavailable: { reason, ...(message ? { message } : {}) } })),
       onEnded: (reason, _message, by) =>
@@ -1084,6 +1091,24 @@ export function useBrowserLive(agentId: string, enabled = true, maxFps?: number)
   const sendInput = useCallback((events: BrowserInputEvent[]) => liveRef.current?.sendInput(events) ?? false, []);
   const retry = useCallback(() => liveRef.current?.retry(), []);
   return { ...state, sendInput, retry };
+}
+
+/**
+ * Where the agent's pointer last went on its desktop (ADR 0062), while this view shows that screen: the server
+ * sends it to whoever has the screen open. `n` counts its gestures.
+ */
+export function useDesktopPointer(agentId: string, enabled = true) {
+  const { connection } = useRealtime();
+  const [pointer, setPointer] = useState<BrowserLiveState["pointer"]>(null);
+  useEffect(() => {
+    setPointer(null);
+    if (!connection || !enabled) return;
+    return connection.onUserEvent((event) => {
+      const to = desktopPointerOf(event, agentId);
+      if (to) setPointer((was) => nextPointer(was, to));
+    });
+  }, [connection, agentId, enabled]);
+  return pointer;
 }
 
 export function useConnectionStatus(): ConnectionStatus {

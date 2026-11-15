@@ -104,6 +104,7 @@ import type {
   ChannelMember,
   ChannelOverride,
   Choices,
+  CliInstall,
   CodeSent,
   CommandApproval,
   ComposioUsage,
@@ -163,6 +164,7 @@ import type {
   ImportFileInput,
   ImportInput,
   ImportPlan,
+  InstallableCli,
   Instance,
   Invitation,
   InvitationPreview,
@@ -830,6 +832,8 @@ export interface ApiClient {
     removeCredential(orgId: string, credentialId: string, purge?: boolean, release?: boolean): Promise<void>;
     /** The key becomes the workspace's default and its provider's: agents without an AI of their own think with it. */
     makeDefaultCredential(orgId: string, credentialId: string): Promise<Credential>;
+    /** The other saved copies of this key fold into it: their agents, defaults and spend move to it, then they go. */
+    removeCredentialCopies(orgId: string, credentialId: string): Promise<{ removed: number }>;
     /** One cheap real call with a stored key, before an agent is pointed at it. A refusal comes as on saving one. */
     checkCredential(orgId: string, credentialId: string): Promise<{ check: "ok" | "unchecked" }>;
     /** Whether this server offers the platform key (Cloud). */
@@ -1182,6 +1186,17 @@ export interface ApiClient {
     allowTool(orgId: string, machineId: string, tool: MachineTool): Promise<MachineAccess>;
     /** Anyone else: asks whoever paired it to turn `tool` on (an inbox row with the same button). */
     askTool(orgId: string, machineId: string, tool: MachineTool): Promise<void>;
+    /** Its PATH read again and its coding CLIs looked for now ("Já instalei, verificar de novo"). */
+    checkClis(orgId: string, machineId: string): Promise<void>;
+    /** Only the person who paired it: installs `tool` there, or where that install stands, or stops it. */
+    cliInstall(
+      orgId: string,
+      machineId: string,
+      tool: InstallableCli,
+      action: "start" | "status" | "cancel",
+    ): Promise<{ install: CliInstall | null }>;
+    /** Anyone else: asks whoever paired it to install `tool` (an inbox row with the install button). */
+    askCliInstall(orgId: string, machineId: string, tool: InstallableCli): Promise<void>;
     /** Pauses it (`until` null: until resumed) or resumes it (`resume`); the pause as it stands then. */
     setPause(
       orgId: string,
@@ -1242,15 +1257,22 @@ export interface ApiClient {
      * holding several skills (or any, with `list`) installs nothing and answers with them to pick from
      * (`importPicked`), those that can't be installed apart. A private repository is read through the workspace's
      * GitHub, on the server. `forAgentId`: the agent whose card opened the install, which gets what installs turned on
-     * when the installer may change its skills. `upload`: a zip's Cancel and how much of it has been sent.
+     * when the installer may change its skills. `personal`: the person's own skill, which any member installs (from a
+     * public repository unless they manage agents). `upload`: a zip's Cancel and how much of it has been sent.
      */
     import(
       orgId: string,
-      input: { url: string; list?: boolean; forAgentId?: string } | { zipBase64: string },
+      input: ({ url: string; list?: boolean; forAgentId?: string } | { zipBase64: string }) & { personal?: boolean },
       upload?: UploadOptions,
     ): Promise<SkillDetail | SkillPick>;
     /** Installs the skills picked among a link's choices (their `path`), on for `forAgentId` as `import` does. */
-    importPicked(orgId: string, url: string, paths: string[], forAgentId?: string): Promise<SkillDetail[]>;
+    importPicked(
+      orgId: string,
+      url: string,
+      paths: string[],
+      forAgentId?: string,
+      personal?: boolean,
+    ): Promise<SkillDetail[]>;
     update(orgId: string, id: string, patch: SkillPatch): Promise<SkillDetail>;
     /** Fetch the link again (`url` skills). */
     reimport(orgId: string, id: string): Promise<SkillDetail>;
@@ -1702,6 +1724,8 @@ export interface ApiClient {
     snooze(orgId: string, id: string, until: string | null): Promise<AppNotification>;
     /** "Marcar tudo como lido": the ids it changed (undo marks them unread again). */
     readAll(orgId: string, filter?: NotificationFilter): Promise<{ ids: string[] }>;
+    /** "Concluir todas" but what waits on me: the ids it changed (undo brings each back with `done(…, false)`). */
+    doneAll(orgId: string, filter?: NotificationFilter): Promise<{ ids: string[] }>;
     /** What reaches my devices as a notification in this workspace (ADR 0071 §8). */
     prefs(orgId: string): Promise<NoticePrefs>;
     setPref(orgId: string, category: NoticeCategory, on: boolean): Promise<NoticePrefs>;
@@ -1931,7 +1955,7 @@ export interface ApiClient {
   working?: {
     list(orgId: string): Promise<WorkingRun[]>;
     /** The task manager (ADR 0128): tasks now, what each uses, each agent's last hour, what ended since `since`. */
-    taskManager?(orgId: string, since?: string): Promise<TaskManagerView>;
+    taskManager?(orgId: string, since?: string, doneToday?: boolean): Promise<TaskManagerView>;
     /** A task's steps for "Ver passos", to whoever sees it in the task manager (no inputs, no outputs). */
     taskSteps?(orgId: string, runId: string): Promise<TaskSteps>;
     /** Continuar agora on runs paused near a limit (`wait.canContinue`). */

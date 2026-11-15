@@ -524,9 +524,9 @@ describe("Quem pensa: Automático", () => {
     // Each with what it is for.
     expect(rowsOf(d)).toEqual([
       ["Automático", "Escolhe o modelo e o esforço para cada tarefa"],
-      ["Opus", "O mais capaz. Gasta o plano mais rápido."],
-      ["Sonnet", "Equilibrado. Bom para quase tudo."],
-      ["Haiku", "Rápido e leve. Para tarefas simples."],
+      ["Opus 5.5", "O mais capaz. Gasta o plano mais rápido."],
+      ["Sonnet 5.5", "Equilibrado. Bom para quase tudo."],
+      ["Haiku 5.5", "Rápido e leve. Para tarefas simples."],
     ]);
     await toScreen(d, "Voltar");
     // A fixed model: the effort's four levels, none of them Automático, under "Mais opções".
@@ -559,6 +559,9 @@ describe("Quem pensa: Automático", () => {
     const state = await onClaude({ model: "auto", effectiveModel: "auto", effort: "auto" });
     const d = await brainDialog();
     await toScreen(d, "Mais opções");
+    // Claude Code on Automático summarises at 200K.
+    await toScreen(d, "Janela de contexto");
+    expect(d.textContent).toContain("No Claude Code e no Codex, resume a conversa em 200K.");
     await toScreen(d, "Esforço");
     expect(within(d).queryByRole("slider", { name: "Esforço" })).toBeNull();
     await toScreen(d, "Voltar");
@@ -629,6 +632,10 @@ describe("Quem pensa: Automático", () => {
     expect(lineOf(d, "Mais opções")).toBe("Janela de contexto");
     await toScreen(d, "Mais opções");
     expect(lineOf(d, "Esforço")).toBe("Automático");
+    // A key has its own cap: the line under Automático stays the model's window.
+    await toScreen(d, "Janela de contexto");
+    expect(d.textContent).toContain("O que o modelo aguenta.");
+    expect(d.textContent).not.toContain("resume a conversa em 200K");
     await toScreen(d, "Esforço");
     expect(within(d).queryByRole("slider", { name: "Esforço" })).toBeNull();
   });
@@ -719,6 +726,37 @@ describe("Quem pensa: Automático", () => {
       ["Claude Sonnet Latest", "Precisa de uma chave de API OpenRouter", true],
     ]);
     expect(groupsOf(d)).not.toContain("OpenRouter");
+  });
+
+  test("Command Code's models show only with its key: choosable, with their prices", async () => {
+    const cc = { provider: "commandcode", pick: false };
+    const models = [
+      {
+        ...cc,
+        id: "commandcode:claude-sonnet-5-5",
+        label: "Claude Sonnet 5.5",
+        inputUsdPerMTok: 2,
+        outputUsdPerMTok: 10,
+      },
+      { ...cc, id: "commandcode:zai-org/GLM-5.3", label: "GLM-5.3", inputUsdPerMTok: 0.6, outputUsdPerMTok: 2.2 },
+    ];
+    await open(seedState({ extraModels: models }));
+    const without = await brainDialog();
+    await toScreen(without, "Modelo");
+    expect(groupsOf(without)).not.toContain("Command Code");
+    cleanup();
+
+    const seeded = seedState({ extraModels: models });
+    seeded.credentials.push({ ...OPENROUTER_KEY, id: "cred-cc", provider: "commandcode", label: "Command Code" });
+    await open(seeded);
+    const d = await brainDialog();
+    await toScreen(d, "Modelo");
+    const rows = brainRows(d).filter((r) => r.group === "Command Code");
+    expect(rows.map((r) => [r.title, r.off])).toEqual([
+      ["Claude Sonnet 5.5", false],
+      ["GLM-5.3", false],
+    ]);
+    expect(rows[0]?.lines.join(" ")).toContain("US$");
   });
 });
 

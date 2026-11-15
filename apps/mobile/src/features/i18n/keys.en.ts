@@ -941,6 +941,9 @@ export const featureKeysEn = {
     /** The toast after a swipe marked an item done, with the way back. */
     doneToast: "Done",
     undo: "Undo",
+    /** The toast after "Clear all" (named after the Done pill), with the way back. */
+    doneAllToast_one: "{{count}} moved to Done",
+    doneAllToast_other: "{{count}} moved to Done",
     day: {
       today: "Today",
       yesterday: "Yesterday",
@@ -1273,6 +1276,8 @@ export const featureKeysEn = {
     /** No password, and no way to sign in again here: the website adds one. */
     addPasswordFirst: "Add a password to your account on the website first, then type it here.",
     addPasswordWeb: "Add a password on the website",
+    /** The owner of a server the desktop app runs, with no password: that app's sign-in is their proof. */
+    onThisComputer: "Delete it in the agentes.chat app on the computer that runs this server.",
     otherAccount: "You signed in to another account. Nothing was deleted.",
     hold: "Hold to delete",
   },
@@ -1824,6 +1829,8 @@ export const featureKeysEn = {
         offlineCloudM: "{{name}}'s computer isn't answering right now.",
         stuckF: "Couldn't open {{name}}'s browser.",
         stuckM: "Couldn't open {{name}}'s browser.",
+        noAnswerF: "{{name}}'s browser didn't answer.",
+        noAnswerM: "{{name}}'s browser didn't answer.",
         tooManyF: "Too many browsers open at once. This one shows when another one closes.",
         tooManyM: "Too many browsers open at once. This one shows when another one closes.",
       },
@@ -2096,7 +2103,6 @@ export const featureKeysEn = {
         openXcode: "Open Xcode",
         opened: "Xcode opened on {{host}}. Look in Settings again, then close Xcode there.",
         unlock: "Turned it on and it restarted? The alert with Turn On shows once this iPhone is unlocked.",
-        checkAgain: "Check again",
         outdated: "The agentes.chat app on {{host}} is out of date. Update it on that Mac.",
       },
     },
@@ -2114,6 +2120,8 @@ export const featureKeysEn = {
       waiting: "{{names}} is waiting for {{device}}",
       waitingFor: "{{names}} is waiting for {{device}} for {{person}}",
       tool_request: "{{names}} asks you to turn on {{tool}} on your {{device}}",
+      cli_request: "{{names}} asks you to install {{tool}} on your {{device}}",
+      folder_request: "{{names}} asks for the folder {{path}} on your {{device}}",
       allowOnce: "Allow once",
       always: "Always allow {{name}}",
       no: "No",
@@ -2255,8 +2263,6 @@ export const featureKeysEn = {
   },
   joinRequests: {
     share: "Share the link",
-    roles: "Roles",
-    rolesHint: "They join with the roles turned on. With none, they may do what Everyone may.",
   },
   humanCheck: {
     title: "Quick check",
@@ -2264,16 +2270,9 @@ export const featureKeysEn = {
   },
   /** Convidar pessoas and the sent invitations' sheet (ADR 0090); the other words are the shared `members.*`. */
   invitePeople: {
-    emailsHelp: "Paste a list or type. Each person gets an email and joins right away.",
-    here: "Already here",
-    invited: "Already invited",
-    fix: "Check this",
-    channels: "Channels",
     optional: "Optional",
     ok: "OK",
     noteHelp: "It shows in the email with your name. Up to {{max}} characters.",
-    roleHelp: "Changes what the person gets on joining.",
-    remove: "Take off the list",
     sendAgain: "Send again",
     cancelTitle: "Cancel the invitation to {{email}}?",
     cancelText: "Its link stops opening.",

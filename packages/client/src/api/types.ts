@@ -80,11 +80,12 @@ export interface SpeechKeyInput {
 }
 
 /**
- * A device that hears pushes (`POST /api/app/push/devices`): the phone app's Expo token (ADR 0035), or this
+ * A device that hears pushes (`POST /api/app/push/devices`): the phone app's token (ADR 0035; an iPhone's with its
+ * app's id and whether it is a development build, ADR 0178), or this
  * browser's Web Push subscription (ADR 0071: its endpoint and keys, from `PushSubscription.toJSON()`).
  */
 export type PushDeviceInput =
-  | { platform: "ios" | "android"; token: string; locale: string }
+  | { platform: "ios" | "android"; token: string; locale: string; appId?: string; sandbox?: boolean }
   | { platform: "web"; endpoint: string; keys: { p256dh: string; auth: string }; locale: string };
 
 /** What the feedback form sends (`POST /api/app/feedback`): `id` is made by the app, so a retry goes once. */
@@ -262,6 +263,11 @@ export interface User {
   hasPassword?: boolean;
   /** Opened the link that confirms the email address. */
   emailVerified?: boolean;
+  /**
+   * The installation's owner on the desktop app's own server: a sign-in in the last 10 minutes through Continue on this
+   * Mac is their proof before a deletion (absent from an older server: false).
+   */
+  confirmsOnThisMac?: boolean;
   /**
    * A new workspace would be made for them (false on agentes.chat Cloud while sign-up is by invitation, unless early
    * access allowed them; `org.create_refused` and `org.create_unpaid` can still refuse it).
@@ -731,6 +737,12 @@ export interface Credential {
   usedBy?: { id: string; name: string }[];
   /** On a key just saved: `ok` a real call passed, `unchecked` the provider didn't say. */
   check?: "ok" | "unchecked";
+  /** On a key just saved: the workspace already had it, so that key was updated instead of adding a copy. */
+  reused?: boolean;
+  /** In a list of keys: how many other saved keys are this same key ("Remover cópias" folds them into it). */
+  copies?: number;
+  /** In a list of keys: the key this one is a copy of, the row shown for both. */
+  copyOf?: string;
   createdAt: string;
   revokedAt: string | null;
 }
@@ -980,7 +992,7 @@ export interface Team {
 /** `Agent.brain`: shown next to its name instead of the API model when a computer thinks. */
 export interface AgentBrainLine {
   kind: BrainKind;
-  /** A computer brain's model ("Sonnet"); null for the model brain. */
+  /** A computer brain's model ("Sonnet 5.5"); null for the model brain. */
   model: string | null;
   computer?: string;
   /** A plan account's provider (`zai`, `kimi`…), whose mark replaces the brain's; absent for the CLI's own sign-in. */
@@ -1218,7 +1230,10 @@ export interface Model {
   outputUsdPerMTok: number;
   /** The workspace can use it (has a key for the provider). Expected from the backend; derived until then. */
   available?: boolean;
-  /** In a long list (OpenRouter's): `true` is a good pick, shown first. Absent: a catalog model. */
+  /**
+   * `false`: offered only to a workspace with its provider's key (OpenRouter's long list, Command Code's).
+   * `true`: a long list's good pick, greyed without a key. Absent: a catalog model.
+   */
   pick?: boolean;
   /** The size Automático uses it for on its provider's key, by default. */
   tier?: ModelTier;
@@ -2636,6 +2651,8 @@ export interface WorkView {
   queuePosition: number | null;
   pausedUntil: string | null;
   canceledByUserId: string | null;
+  /** The right hand that made that stop at their word. */
+  canceledByAgentId?: string | null;
   errorCode: string | null;
 }
 
@@ -3502,8 +3519,13 @@ export interface SecretBox {
 
 export type StorageKind = "agentes" | "s3";
 
-/** What an admin types for "Seu próprio bucket". Keys empty = keep the stored ones. */
+/** The service an admin picked when connecting their own storage: which steps the app shows. */
+export type StorageProvider = "r2" | "s3" | "b2" | "other";
+
+/** What an admin types for "Your own storage". Keys empty = keep the stored ones. */
 export interface S3Input {
+  /** Null from settings saved before the app said it (older servers leave it out). */
+  provider?: StorageProvider | null;
   endpoint: string;
   region: string;
   bucket: string;
@@ -3549,7 +3571,8 @@ export type StorageStep = "write" | "read" | "list" | "delete";
 
 export interface StorageTestResult {
   ok: boolean;
-  steps: { step: StorageStep; ok: boolean; error?: string | null }[];
+  /** `code`: the failure's stable code (`storage.permission`…), absent from an older server. */
+  steps: { step: StorageStep; ok: boolean; error?: string | null; code?: string | null }[];
 }
 
 export interface StorageMigration {
@@ -4478,6 +4501,13 @@ export interface Skill {
   /** `agent`: made from an agent's own how-tos (older servers leave it out). */
   origin?: "person" | "agent";
   ownerAgentId?: string | null;
+  /**
+   * A personal skill's person: only they read and change it, and agents use it only when that person asks. Someone
+   * else's comes with its name and agents only. Null (older servers leave it out): the team's.
+   */
+  ownerUserId?: string | null;
+  /** How many active agents have it on (the library's list). */
+  agentsCount?: number;
   /** Agents can't change it; never archived for disuse. */
   locked?: boolean;
   useCount?: number;
@@ -4610,6 +4640,8 @@ export interface SkillInput {
   description: string;
   body: string;
   defaultForNewAgents?: boolean;
+  /** The person's own skill, not the team's. */
+  personal?: boolean;
 }
 
 /** An edit (new version unless only the flag changes). */
@@ -4721,6 +4753,16 @@ export interface Machine {
   remotePause?: boolean;
   /** Who paired it turns its tools on from the apps (`POST …/access/allow`); `false` or absent: its app is too old. */
   accessAllow?: boolean;
+  /**
+   * Its coding CLIs are looked for again from the apps (`POST …/clis/check`) and installed there by who paired it
+   * (`…/cli-install`); `false` or absent: its app is too old, or it is the workspace's own computer.
+   */
+  cliInstall?: boolean;
+  /**
+   * The coding CLIs there that can't start (`claude`, `codex`…), each with its own last error line, or
+   * `CLI_GIT_MISSING`; null or absent for people who don't manage it.
+   */
+  cliErrors?: Partial<Record<string, string>> | null;
   /** ADR 0036 §8 (protocol 10): what the machine allows, as last reported. Absent until the machine reports it. */
   access?: MachineAccess | null;
   /** ADR 0040 (protocol 12): whether the agent browser can run there; null or absent when its runner doesn't say. */
@@ -5832,7 +5874,9 @@ export type BrainUnavailable =
   /** Its runner hasn't said which CLIs it has yet. */
   | "not_reported"
   /** Its runner doesn't run this CLI on the computer's system (Cursor on Windows, for one). */
-  | "system";
+  | "system"
+  /** It is there and can't start: the computer's row has its error (`Machine.cliErrors`). */
+  | "cant_start";
 
 export interface BrainModelOption {
   /** What is stored (`opus`, `sonnet`, `haiku`, a Codex model). */
@@ -5848,10 +5892,16 @@ export interface BrainModelOption {
   free?: boolean;
 }
 
+export interface CodexVersionRequirement {
+  detected: string;
+  minimum: string;
+}
+
 export interface BrainOption {
   kind: BrainKind;
   available: boolean;
   reason?: BrainUnavailable;
+  codexVersion?: CodexVersionRequirement;
   models: BrainModelOption[];
   defaultModel: string | null;
 }
@@ -6007,6 +6057,7 @@ export interface AiComputer {
   };
   /** Why a CLI of `brains` can't think there (absent: an older server). */
   off?: Partial<Record<MachineAccountKind, BrainUnavailable>>;
+  codexVersion?: CodexVersionRequirement;
   /** What it can think with now: Claude Code (Claude and the coding plans) and Codex (ChatGPT). */
   brains: {
     claude_code: boolean;
@@ -6541,6 +6592,14 @@ export type NotificationKind =
    * `source.label`, the tool in `latest.reason`, the asker as actor; the row turns it on in one click.
    */
   | "device.tool_request"
+  /** Someone needs a coding CLI installed on this person's computer: `latest.reason` the program, one-click install. */
+  | "device.cli_request"
+  /**
+   * An agent waits for a folder on this person's computer (`request_folder_access`): `source.machineId`, its name in
+   * `source.label`, the folder in `latest.title`, its reason in `latest.text`, the agent as actor. Waiting; answered on
+   * the computer itself, and done once it says so.
+   */
+  | "device.folder_request"
   /**
    * "Pedir a um admin" (`POST …/admin-asks`): the asker as actor, what in `latest.reason` (`channel_agent` with
    * `source.channelId` and `agentId`, waiting until added; `create_agents`; `webhook` with the service in `latest.title`).
@@ -7238,8 +7297,8 @@ export interface EndedTask {
   routine: { id: string; name: string } | null;
   startedAt: string | null;
   finishedAt: string;
-  /** Stopped by a person: who. */
-  stoppedBy: { userId: string; name: string } | null;
+  /** Stopped by a person: who, and the agent that stopped it at their word (the right hand). */
+  stoppedBy: { userId: string; name: string; agentId?: string } | null;
 }
 
 /** A task's steps (`GET …/task-manager/{runId}/steps`): the chat chip's fields per call, how each ended. */
@@ -7270,7 +7329,7 @@ export interface TaskManagerView {
   followUps?: PendingReturn[];
   /** Returns canceled since `since`, the latest first (absent on an older server). */
   canceledFollowUps?: CanceledReturn[];
-  /** Your tasks done since `since`, all of them (`ended` is cut at 50); absent on an older server. */
+  /** Your tasks done since `since`, all of them (`ended` is cut at 50); only when asked (`doneToday`). */
   doneToday?: number;
 }
 
@@ -8118,6 +8177,21 @@ export interface XcodeFix {
   message?: string;
   /** `failed` after every command ran: Xcode is still blocked on the Mac, and why. */
   still?: "command_line_tools" | "license";
+}
+
+/** The coding CLIs a computer installs from the apps (`INSTALLABLE_CLIS`). */
+export type InstallableCli = "claude" | "codex";
+
+/**
+ * Where an install of a coding CLI stands (`…/cli-install`): `failed` with the installer's `message`, or a `cause`:
+ * `git_missing` (Claude Code on Windows without Git for Windows, nothing installed), `still_missing` (installed, and
+ * the computer still doesn't find it). `unsupported`: no installer for it there.
+ */
+export interface CliInstall {
+  tool: InstallableCli;
+  state: "running" | "done" | "failed" | "canceled" | "unsupported";
+  message?: string;
+  cause?: "git_missing" | "still_missing";
 }
 
 /** `fix: null`: none ran; `update`: the Mac's agentes.chat is too old to fix it (the Terminal way instead). */
