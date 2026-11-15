@@ -16,9 +16,9 @@ import { useTranslation } from "react-i18next";
 import { Alert, AppState, Linking } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { haptics, useToast } from "@/ui";
-import { levelOf, peaksOf } from "./logic";
+import { levelOf, peaksOf, textBack } from "./logic";
 import { joinM4a } from "./m4a";
-import { flushVoice, queueVoice, type VoiceRefusal } from "./outbox";
+import { flushVoice, queueVoice, type VoiceRefusal, type VoiceSend } from "./outbox";
 import { playingId, seekPlayback, startPlayback, stopPlayback } from "./playback";
 import { emptyWave, type WavePaths, wavePaths } from "./VoiceBars";
 
@@ -60,6 +60,8 @@ export interface VoiceTarget {
   prepare?: (text: string) => Promise<{ text: string; artifacts: ArtifactRef[] } | null>;
   /** While it records, held or hands free, never paused: the others see "gravando áudio…" (call it throttled). */
   onRecording?: () => void;
+  /** The server refused a take sent from this conversation: the text typed beside it, for the field. */
+  textBack?: (text: string) => void;
 }
 
 const removeFile = (uri: string) => {
@@ -125,9 +127,11 @@ export function useVoiceTake(target: VoiceTarget) {
   );
 
   const refused = useCallback(
-    (reason: VoiceRefusal) => {
+    (reason: VoiceRefusal, item?: VoiceSend) => {
       haptics.warning();
       toast({ title: t(reason === "limit" ? "voice.limit" : "voice.notSent"), icon: "x" });
+      const back = item ? textBack(item, targetRef.current) : null;
+      if (back) targetRef.current.textBack?.(back);
     },
     [t, toast],
   );

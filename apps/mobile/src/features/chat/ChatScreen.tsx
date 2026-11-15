@@ -1155,6 +1155,7 @@ function Chat({
   // stays, marked, and the caption comes back to the field, so nothing typed is lost.
   const [pending, setPending] = useState<PendingFile[]>([]);
   const [captionBack, setCaptionBack] = useState<{ text: string; at: number; join?: boolean } | null>(null);
+  const voiceTextBack = useCallback((text: string) => setCaptionBack({ text, at: Date.now(), join: true }), []);
   const addPending = (files: { uri: string; name: string; type: string }[]) => {
     if (files.length === 0) return;
     const at = Date.now();
@@ -2633,6 +2634,7 @@ function Chat({
                     voiceOn={voiceOn}
                     onVoiceSent={afterVoice}
                     prepareVoice={voiceFromField}
+                    voiceTextBack={voiceTextBack}
                     onRecording={onRecording}
                   />
                 ) : (
@@ -2682,6 +2684,7 @@ const ChatComposer = memo(function ChatComposer({
   voiceOn,
   onVoiceSent,
   prepareVoice,
+  voiceTextBack,
   onRecording,
   ...composer
 }: Omit<ComposerProps, "voice"> & {
@@ -2697,6 +2700,7 @@ const ChatComposer = memo(function ChatComposer({
   onVoiceSent: () => void;
   /** What goes with a take: the words typed beside it and the files, uploaded (`VoiceTarget.prepare`). */
   prepareVoice: NonNullable<VoiceTarget["prepare"]>;
+  voiceTextBack: NonNullable<VoiceTarget["textBack"]>;
   /** While a take records: the others see "gravando áudio…" (throttled by the caller). */
   onRecording: () => void;
 }) {
@@ -2709,6 +2713,7 @@ const ChatComposer = memo(function ChatComposer({
     authorId,
     enabled: voiceOn,
     prepare: prepareVoice,
+    textBack: voiceTextBack,
     afterSend: onVoiceSent,
     onRecording,
   });

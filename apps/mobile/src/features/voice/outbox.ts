@@ -39,6 +39,8 @@ export interface VoiceSend {
 }
 
 export type VoiceRefusal = "limit" | "refused";
+/** The server refused a recording for good: why, and what it carried (its typed text goes back to the field). */
+export type OnVoiceRefused = (reason: VoiceRefusal, item: VoiceSend) => void;
 
 const folder = () => new Directory(Paths.document, "voice-outbox");
 const index = () => new File(folder(), "index.json");
@@ -145,7 +147,7 @@ const laneOf = (item: VoiceSend) => `${item.server ?? ""}|${item.orgId}|${item.c
  * recording for a server out of reach, such as a team's own one behind a private network, used to hold back every
  * recording queued after it on every server, the network's timeout included: they all sat on "Enviando…".)
  */
-export async function flushVoice(qc: QueryClient, onRefused: (reason: VoiceRefusal) => void) {
+export async function flushVoice(qc: QueryClient, onRefused: OnVoiceRefused) {
   if (flushing) {
     again = true;
     return;
@@ -179,7 +181,7 @@ export async function flushVoice(qc: QueryClient, onRefused: (reason: VoiceRefus
             continue;
           }
           removeBubble(qc, item);
-          onRefused(verdict === "limit" ? "limit" : "refused");
+          onRefused(verdict === "limit" ? "limit" : "refused", item);
         }
       }),
     );
@@ -199,11 +201,7 @@ export async function flushVoice(qc: QueryClient, onRefused: (reason: VoiceRefus
 }
 
 /** "Tentar de novo" on a voice note that didn't go: back to "Enviando…" and tried now, not at the next timer. */
-export function retryVoice(
-  qc: QueryClient,
-  clientId: string | null | undefined,
-  onRefused: (reason: VoiceRefusal) => void,
-) {
+export function retryVoice(qc: QueryClient, clientId: string | null | undefined, onRefused: OnVoiceRefused) {
   if (!clientId) return;
   queue = read().map((q) => (q.clientId === clientId ? { ...q, tries: 0 } : q));
   write();
@@ -218,7 +216,7 @@ export function queueVoice(
   qc: QueryClient,
   uri: string,
   item: Omit<VoiceSend, "file" | "createdAt">,
-  onRefused: (reason: VoiceRefusal) => void,
+  onRefused: OnVoiceRefused,
 ) {
   if (!folder().exists) folder().create({ intermediates: true });
   const file = `${item.clientId}.m4a`;

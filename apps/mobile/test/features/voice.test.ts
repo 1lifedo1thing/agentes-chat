@@ -15,6 +15,7 @@ import {
   secondsLeft,
   slideIntent,
   spokenWords,
+  textBack,
   uploadVerdict,
   voiceFields,
   WAVE_CELL,
@@ -193,6 +194,20 @@ describe("a voice note with typed text and files", () => {
     expect(JSON.parse(fields.attachments ?? "")).toEqual(["a1", "a2"]);
     const plain = Object.fromEntries(voiceFields({ ...item, text: "  " }));
     expect(plain).toEqual({ durationMs: "1200", peaks: "[0.5]", clientId: "k1", language: "pt" });
+  });
+
+  test("a take the server refuses gives its typed text back to the field it was sent from, and nowhere else", () => {
+    const here = { channelId: "ch", threadId: null };
+    expect(textBack({ ...item, text: typed }, here)).toBe(typed);
+    expect(textBack({ ...item, text: typed }, { channelId: "other", threadId: null })).toBeNull();
+    expect(textBack({ ...item, text: typed }, { channelId: "ch", threadId: "t1" })).toBeNull();
+    expect(textBack(item, here)).toBeNull();
+    const take = src("features/voice/useVoiceTake.ts");
+    expect(take).toMatch(
+      /const back = item \? textBack\(item, targetRef\.current\) : null;\s*if \(back\) targetRef\.current\.textBack\?\.\(back\);/,
+    );
+    expect(src("features/voice/outbox.ts")).toContain('onRefused(verdict === "limit" ? "limit" : "refused", item);');
+    expect(src("features/chat/ChatScreen.tsx")).toContain("textBack: voiceTextBack,");
   });
 
   test("the bubble until the server answers shows the typed text, the take and the files", () => {

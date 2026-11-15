@@ -109,6 +109,12 @@ export function voiceFields(item: VoiceSend): [string, string][] {
   return fields;
 }
 
+/** A refused take's typed text, for the field of the conversation it was sent from (null anywhere else). */
+export const textBack = (
+  item: Pick<VoiceSend, "text" | "channelId" | "threadId">,
+  here: { channelId: string; threadId: string | null },
+) => (item.text && item.channelId === here.channelId && item.threadId === here.threadId ? item.text : null);
+
 /** Tries before the bubble says it didn't go (the first miss is often a blip the next try fixes). */
 const FAILED_AFTER = 2;
 
