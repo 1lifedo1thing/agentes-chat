@@ -15320,7 +15320,8 @@
     },
     "account": {
       "notRestorable": "Esta cuenta ya no se puede restaurar.",
-      "notOwner": "Solo quien conectó esta cuenta o plan puede hacer esto."
+      "notOwner": "Solo quien conectó esta cuenta o plan puede hacer esto.",
+      "orderForbidden": "Solo quien conectó esta cuenta o un admin puede cambiar su lugar en el orden."
     },
     "channel": {
       "membersForbidden": "Solo quien creó el canal o un admin puede agregar o quitar personas."

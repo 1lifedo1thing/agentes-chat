@@ -1,3 +1,4 @@
+import { NEXT_ACCOUNT_KINDS } from "@agenteschat/providers/plans";
 import type { TFunction } from "i18next";
 import type {
   Agent,
@@ -423,4 +424,43 @@ export function keyRemovalText(
       t,
     ),
   });
+}
+
+/**
+ * The accounts a run of an agent goes through at its plan's limit (ADR 0041 §6, the server's `nextAccountPlan`): its
+ * own account, then the others of its kind with the CLI's own sign-in (never a key) that are signed in, its owner's
+ * first and then those that serve everyone, each by `useOrder` (the unplaced after, in the order given: oldest first).
+ * Never a login made for one agent that another agent thinks with. Only its own account when it is pinned ("Só esta
+ * conta"), a key's, or of a kind that never moves (Gemini, Grok, Cursor, OpenCode).
+ */
+export function accountChain<A extends MachineAccount>(
+  accounts: readonly A[],
+  agent: { id: string; ownerId: string | null; account: string | null; pinned?: boolean },
+): A[] {
+  const own = accounts.find((a) => a.id === agent.account);
+  if (!own) return [];
+  if (agent.pinned || own.provider || !NEXT_ACCOUNT_KINDS.includes(own.kind)) return [own];
+  const mine = (a: A) => agent.ownerId !== null && a.ownerId === agent.ownerId;
+  const place = (a: A) => a.useOrder ?? Number.POSITIVE_INFINITY;
+  const free = (a: A) => a.shared === true || (a.usedByIds ?? []).every((id) => id === agent.id);
+  const next = accounts
+    .map((a, i) => ({ a, i }))
+    .filter(
+      ({ a }) =>
+        a.id !== own.id &&
+        a.kind === own.kind &&
+        a.provider === null &&
+        a.status === "active" &&
+        (mine(a) || (a.serves ?? "everyone") === "everyone") &&
+        free(a),
+    )
+    .sort((x, y) => Number(mine(y.a)) - Number(mine(x.a)) || place(x.a) - place(y.a) || x.i - y.i);
+  return [own, ...next.map(({ a }) => a)];
+}
+
+/** "Subir" and "Descer" in an order of use: the place to move the account to (`moveAccountInOrder`), null at that end. */
+export function orderStep(accounts: readonly { id: string }[], id: string, step: -1 | 1): number | null {
+  const from = accounts.findIndex((a) => a.id === id);
+  const to = from + step;
+  return from < 0 || to < 0 || to >= accounts.length ? null : to;
 }

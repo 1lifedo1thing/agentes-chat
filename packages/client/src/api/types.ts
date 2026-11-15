@@ -5045,6 +5045,13 @@ export interface UsageQueue {
   resetsAt: string | null;
   /** A plan's line: when its plan was last read or asked about (absent: an older server). */
   checkedAt?: string | null;
+  /**
+   * A plan's line: the account it waits on, another than the agent's own when its run went on with the next account
+   * (ADR 0041 §6); null: the computer's own sign-in, or a budget (absent: an older server).
+   */
+  account?: { id: string; label: string } | null;
+  /** Every account of the order is at its limit: how many (`resetsAt`: when the first resets); null otherwise. */
+  chain?: number | null;
   /** Other agents in the same plan's line. */
   sharedWith: string[];
   rows: UsageQueueRow[];
@@ -5936,6 +5943,11 @@ export interface AgentBrain {
   canEdit: boolean;
   /** ADR 0041: the account on the agent's computer it thinks with; null = "Conta deste computador". */
   account: string | null;
+  /**
+   * "Só esta conta" (ADR 0041 §6): at its plan's limit it waits for `account`. Off: the run goes on with the next
+   * account of the order (`accountChain`). Absent: an older server, which never moves.
+   */
+  accountPinned?: boolean;
   /** How much it thinks before answering; `auto` = picked per task; null = the brain's default. */
   effort: BrainEffortSetting | null;
   /** How fast it answers in conversations; kept whatever it thinks with, applied only where `speedFits`. */
@@ -6015,6 +6027,20 @@ export interface MachineAccount {
   providerOrgId?: string | null;
   /** Who it thinks for (ADR 0059 §3): everyone in the workspace, or only its owner (absent: an older server). */
   serves?: PlanServes;
+  /**
+   * Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6), 0 first; null: after the
+   * placed ones, oldest first (absent: an older server).
+   */
+  useOrder?: number | null;
+}
+
+/** `GET …/ai-accounts/order`: one computer's Claude or ChatGPT accounts in their order of use (ADR 0041 §6). */
+export interface AccountOrderGroup {
+  machineId: string;
+  computer: string;
+  kind: MachineAccountKind;
+  /** First to last. `canMove`: the viewer may move it (its owner or an admin). */
+  accounts: (MachineAccount & { canMove: boolean })[];
 }
 
 /** Who a plan thinks for (ADR 0059 §3): everyone in the workspace, or only the person who connected it. */
@@ -6104,6 +6130,8 @@ export interface AgentBrainInput {
   account?: string | null;
   /** The account thinks for another agent: take it from that one. */
   moveAccount?: boolean;
+  /** "Só esta conta". Omitted = keep. */
+  accountPinned?: boolean;
   effort?: BrainEffortSetting | null;
   speed?: BrainSpeed;
   /** 200K, 400K or 1M tokens; null = the model's window; omitted = keep. */

@@ -14952,7 +14952,8 @@
     },
     "account": {
       "notRestorable": "Dit account kan niet meer hersteld worden.",
-      "notOwner": "Alleen wie dit account of abonnement heeft gekoppeld, kan dit doen."
+      "notOwner": "Alleen wie dit account of abonnement heeft gekoppeld, kan dit doen.",
+      "orderForbidden": "Alleen wie dit account heeft gekoppeld of een beheerder kan de plek in de volgorde wijzigen."
     },
     "channel": {
       "membersForbidden": "Alleen wie het kanaal maakte of een beheerder kan mensen toevoegen of verwijderen."

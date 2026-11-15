@@ -20,6 +20,7 @@ import type {
   AccountDeletionPlan,
   AccountLoginStart,
   AccountLoginStatus,
+  AccountOrderGroup,
   ActiveRun,
   Agent,
   AgentAccess,
@@ -1389,6 +1390,12 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<{ serves: PlanServes; agentIds: string[] }>(`${org(orgId)}/ai-accounts/${enc(accountId)}/serves`, {
           method: "PUT",
           json: { serves },
+        }),
+      accountOrder: (orgId) => request<{ groups: AccountOrderGroup[] }>(`${org(orgId)}/ai-accounts/order`),
+      moveAccountInOrder: (orgId, accountId, index) =>
+        request<AccountOrderGroup>(`${org(orgId)}/ai-accounts/${enc(accountId)}/order`, {
+          method: "PUT",
+          json: { index },
         }),
       renameAccount: (orgId, machineId, accountId, label) =>
         request<MachineAccount>(`${org(orgId)}/machines/${enc(machineId)}/accounts/${enc(accountId)}`, {

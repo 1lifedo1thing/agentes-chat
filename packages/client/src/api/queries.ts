@@ -76,6 +76,7 @@ import { ApiError, type UploadOptions } from "./http";
 import { keys, ME_HASH } from "./keys";
 import { keepSending, outbox } from "./outbox";
 import type {
+  AccountOrderGroup,
   AdminAsk,
   Agent,
   AgentAction,
@@ -5012,6 +5013,39 @@ export const useAiAccounts = (orgId: string, enabled = true, pollMs: number | fa
     refetchInterval: pollMs,
   });
 };
+
+/** "Ordem de uso" (ADR 0041 §6): every computer's Claude and ChatGPT accounts in their order, by computer and kind. */
+export const useAccountOrder = (orgId: string, enabled = true) => {
+  const api = useApi();
+  return useQuery({
+    queryKey: keys.accountOrder(orgId),
+    queryFn: () => api.machines.accountOrder(orgId),
+    enabled,
+  });
+};
+
+/**
+ * Moves an account in its order ("Subir", "Descer", a drag): the group the server answers replaces the old one at once.
+ * Every agent's "Quem pensa" lists the accounts with their place, so those refetch too.
+ */
+export function useMoveAccountInOrder(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ accountId, index }: { accountId: string; index: number }) =>
+      api.machines.moveAccountInOrder(orgId, accountId, index),
+    onSuccess: (group) => {
+      qc.setQueryData<{ groups: AccountOrderGroup[] }>(keys.accountOrder(orgId), (old) =>
+        old
+          ? {
+              groups: old.groups.map((g) => (g.machineId === group.machineId && g.kind === group.kind ? group : g)),
+            }
+          : old,
+      );
+      void qc.invalidateQueries({ queryKey: keys.agentPages(orgId) });
+    },
+  });
+}
 
 /**
  * ADR 0041 §2: a sign-in on the computer, asked every 2 s until it ends (done, failed or expired), through failed

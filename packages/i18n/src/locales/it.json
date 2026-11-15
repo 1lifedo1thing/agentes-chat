@@ -15402,7 +15402,8 @@
     },
     "account": {
       "notRestorable": "Questo account non si può più ripristinare.",
-      "notOwner": "Solo chi ha collegato questo account o piano può farlo."
+      "notOwner": "Solo chi ha collegato questo account o piano può farlo.",
+      "orderForbidden": "Solo chi ha collegato questo account o un admin può cambiarne il posto nell'ordine."
     },
     "channel": {
       "membersForbidden": "Solo chi ha creato il canale o un admin può aggiungere o rimuovere persone."

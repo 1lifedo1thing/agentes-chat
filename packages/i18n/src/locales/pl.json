@@ -15899,7 +15899,8 @@
     },
     "account": {
       "notRestorable": "Tego konta nie da się już przywrócić.",
-      "notOwner": "Może to zrobić tylko osoba, która połączyła to konto lub plan."
+      "notOwner": "Może to zrobić tylko osoba, która połączyła to konto lub plan.",
+      "orderForbidden": "Tylko osoba, która połączyła to konto, albo administrator może zmienić jego miejsce w kolejności."
     },
     "channel": {
       "membersForbidden": "Dodawać i usuwać osoby może tylko twórca kanału albo administrator."

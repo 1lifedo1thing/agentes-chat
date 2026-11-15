@@ -15077,6 +15077,8 @@ export const ptBR = {
     account: {
       notRestorable: "Esta conta não pode mais ser restaurada.",
       notOwner: "Só quem conectou esta conta ou plano pode fazer isso.",
+      /** `account.order_forbidden`: the order of use of a provider's accounts (ADR 0041 §6). */
+      orderForbidden: "Só quem conectou esta conta ou um admin pode mudar o lugar dela na ordem.",
     },
     channel: {
       membersForbidden: "Só quem criou o canal ou um admin pode adicionar ou remover pessoas.",

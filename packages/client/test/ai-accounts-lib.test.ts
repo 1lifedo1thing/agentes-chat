@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import type { AiComputer, Credential, MachineAccount, PlanUsage } from "../src/api/types";
 import {
   accountAbout,
+  accountChain,
   accountChoices,
   accountTitle,
   agentsToGive,
@@ -13,6 +14,7 @@ import {
   lendable,
   listsExisting,
   offersSignInAgain,
+  orderStep,
   ownSignInListed,
   ownSignInLower,
   ownSignInName,
@@ -511,4 +513,61 @@ test("Connect an AI starts with what the person has while the agent has no AI, a
   expect(listsExisting({ builtin: null }, false)).toBe(false);
   expect(listsExisting({ builtin: "right_hand" }, false)).toBe(true);
   expect(listsExisting(undefined, false)).toBe(false);
+});
+
+describe("accountChain: the accounts a run goes through at its plan's limit", () => {
+  /** Claude accounts with the CLI's own sign-in on the Mac, Ana's unless said otherwise. */
+  const claude = (id: string, over: Partial<MachineAccount & { machineId: string }> = {}) =>
+    login(id, { label: id, provider: null, keyHint: null, shared: true, serves: "everyone", useOrder: null, ...over });
+  const walter = { ownerId: "u_walter", ownerName: "Walter", mine: false };
+  const agent = { id: "ag_ada", ownerId: "u_ana", account: "own1" as string | null };
+  const chainOf = (accounts: MachineAccount[], over: Partial<typeof agent & { pinned: boolean }> = {}) =>
+    accountChain(accounts, { ...agent, ...over }).map((a) => a.id);
+
+  test("its own account, then its owner's others, then those that serve everyone, each by its place", () => {
+    expect(
+      chainOf([
+        claude("w1", { ...walter, useOrder: 0 }),
+        claude("own1", { useOrder: 3 }),
+        claude("old"),
+        claude("own2", { useOrder: 1 }),
+        claude("w2", { ...walter }),
+        claude("w0", { ...walter, useOrder: 2 }),
+      ]),
+    ).toEqual(["own1", "own2", "old", "w1", "w0", "w2"]);
+  });
+
+  test("never a key, another kind, one signed out, someone's owner-only one or another agent's one-agent login", () => {
+    expect(
+      chainOf([
+        claude("own1"),
+        claude("key", { provider: "zai" }),
+        claude("codex", { kind: "codex" }),
+        claude("out", { status: "signed_out" }),
+        claude("only", { ...walter, serves: "owner" }),
+        claude("solo", { ...walter, shared: false, usedByIds: ["ag_other"] }),
+        claude("mine-only", { serves: "owner" }),
+        claude("free", { ...walter, shared: false, usedByIds: [] }),
+      ]),
+    ).toEqual(["own1", "mine-only", "free"]);
+  });
+
+  test("pinned, a key, or a kind that never moves: its own account alone; none without one", () => {
+    const accounts = [claude("own1"), claude("own2")];
+    expect(chainOf(accounts, { pinned: true })).toEqual(["own1"]);
+    expect(chainOf([claude("own1", { provider: "zai" }), claude("own2", { provider: "zai" })])).toEqual(["own1"]);
+    expect(chainOf([claude("own1", { kind: "antigravity" }), claude("own2", { kind: "antigravity" })])).toEqual([
+      "own1",
+    ]);
+    expect(chainOf(accounts, { account: null })).toEqual([]);
+  });
+
+  test("Subir and Descer: the next place, none at either end", () => {
+    const order = [{ id: "a" }, { id: "b" }, { id: "c" }];
+    expect(orderStep(order, "b", -1)).toBe(0);
+    expect(orderStep(order, "b", 1)).toBe(2);
+    expect(orderStep(order, "a", -1)).toBeNull();
+    expect(orderStep(order, "c", 1)).toBeNull();
+    expect(orderStep(order, "x", 1)).toBeNull();
+  });
 });

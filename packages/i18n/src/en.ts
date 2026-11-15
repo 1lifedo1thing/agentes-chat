@@ -15095,6 +15095,8 @@ export const en = {
     account: {
       notRestorable: "This account can't be restored anymore.",
       notOwner: "Only the person who connected this account or plan can do this.",
+      /** `account.order_forbidden`: the order of use of a provider's accounts (ADR 0041 §6). */
+      orderForbidden: "Only the person who connected this account or an admin can change its place in the order.",
     },
     channel: {
       membersForbidden: "Only the channel's creator or an admin can add or remove people.",

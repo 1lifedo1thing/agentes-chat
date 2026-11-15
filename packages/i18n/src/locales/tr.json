@@ -14826,7 +14826,8 @@
     },
     "account": {
       "notRestorable": "Bu hesap artık geri yüklenemez.",
-      "notOwner": "Bunu yalnızca bu hesabı veya planı bağlayan kişi yapabilir."
+      "notOwner": "Bunu yalnızca bu hesabı veya planı bağlayan kişi yapabilir.",
+      "orderForbidden": "Bu hesabın sıradaki yerini yalnızca onu bağlayan kişi veya bir yönetici değiştirebilir."
     },
     "channel": {
       "membersForbidden": "Kişi ekleyip çıkarmayı yalnızca kanalı oluşturan kişi veya bir yönetici yapabilir."

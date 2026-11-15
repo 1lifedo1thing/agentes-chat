@@ -14415,7 +14415,8 @@
     },
     "account": {
       "notRestorable": "这个账号已无法恢复。",
-      "notOwner": "只有连接此账号或套餐的人可以执行此操作。"
+      "notOwner": "只有连接此账号或套餐的人可以执行此操作。",
+      "orderForbidden": "只有连接此账号的人或管理员可以调整它在顺序中的位置。"
     },
     "channel": {
       "membersForbidden": "只有频道创建者或管理员可以添加或移除成员。"

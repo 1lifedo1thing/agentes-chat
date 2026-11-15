@@ -14889,7 +14889,8 @@
     },
     "account": {
       "notRestorable": "Dieses Konto kann nicht mehr wiederhergestellt werden.",
-      "notOwner": "Nur wer dieses Konto oder Abo verbunden hat, kann das tun."
+      "notOwner": "Nur wer dieses Konto oder Abo verbunden hat, kann das tun.",
+      "orderForbidden": "Nur wer dieses Konto verbunden hat oder ein Admin kann seinen Platz in der Reihenfolge ändern."
     },
     "channel": {
       "membersForbidden": "Nur wer den Kanal erstellt hat oder ein Admin kann Personen hinzufügen oder entfernen."

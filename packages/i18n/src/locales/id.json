@@ -14406,7 +14406,8 @@
     },
     "account": {
       "notRestorable": "Akun ini sudah tidak bisa dipulihkan.",
-      "notOwner": "Hanya orang yang menghubungkan akun atau paket ini yang bisa melakukan ini."
+      "notOwner": "Hanya orang yang menghubungkan akun atau paket ini yang bisa melakukan ini.",
+      "orderForbidden": "Hanya orang yang menghubungkan akun ini atau Admin yang bisa mengubah posisinya dalam urutan."
     },
     "channel": {
       "membersForbidden": "Hanya pembuat kanal atau Admin yang bisa menambahkan atau menghapus orang."

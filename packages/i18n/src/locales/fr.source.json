@@ -36569,6 +36569,9 @@
   "errors.account.notOwner": {
     "value": "Only the person who connected this account or plan can do this."
   },
+  "errors.account.orderForbidden": {
+    "value": "Only the person who connected this account or an admin can change its place in the order."
+  },
   "errors.channel.membersForbidden": {
     "value": "Only the channel's creator or an admin can add or remove people."
   },
