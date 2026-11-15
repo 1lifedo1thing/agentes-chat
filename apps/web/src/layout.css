@@ -6906,6 +6906,12 @@ html:not([data-pointer]) .avatar-builder__swatch:focus-visible {
   flex-wrap: wrap;
   justify-content: space-between;
 }
+/* Its buttons' touch targets reach 4px past their plates (`.ac-btn--sm::after`): the plate holds them, as the kit's
+   formatting bar does. */
+.wiki-editor__bar.ac-glass {
+  padding: var(--space-1);
+  border-radius: calc(var(--control-r-sm) + var(--space-1));
+}
 .wiki-editor__tools {
   display: flex;
   flex-wrap: wrap;
@@ -6962,8 +6968,11 @@ html:not([data-pointer]) .avatar-builder__swatch:focus-visible {
   top: 48px;
   width: 300px;
   max-width: calc(100% - 32px);
-  padding: var(--menu-pad);
-  z-index: var(--z-floating);
+}
+/* The kit's menu with no trigger to match: as wide as set above, as tall as its rows (the floating one: `placeList`). */
+.ac-menu.wiki-suggest {
+  min-width: 0;
+  max-height: none;
 }
 /* "Salvar na wiki" */
 .save-wiki__list {

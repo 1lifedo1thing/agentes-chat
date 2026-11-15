@@ -53,13 +53,20 @@ export function pullToFit(box: {
 /**
  * Where a list opened by typing goes when nothing places it for it (the wiki editor's "[[" and "/" lists): `gap` under
  * the caret, or over it when its content doesn't fit under and over has more room. As tall as that side's room lets it
- * (`EDGE_ROOM` from the window's edge), so it scrolls only past what the window holds.
+ * (`EDGE_ROOM` from the window's edge), so it scrolls only past what the window holds. Its start on the caret's, moved
+ * along only as far as it takes to stay `EDGE_ROOM` inside the window.
  */
-export function placeList(caret: { top: number; bottom: number }, height: number, windowHeight: number, gap = TIP_GAP) {
-  const under = windowHeight - EDGE_ROOM - caret.bottom - gap;
+export function placeList(
+  caret: { left: number; top: number; bottom: number },
+  list: { width: number; height: number },
+  win: { width: number; height: number },
+  gap = TIP_GAP,
+) {
+  const left = Math.max(EDGE_ROOM, Math.min(caret.left, win.width - EDGE_ROOM - list.width));
+  const under = win.height - EDGE_ROOM - caret.bottom - gap;
   const over = caret.top - gap - EDGE_ROOM;
-  if (height <= under || under >= over) return { top: caret.bottom + gap, maxHeight: under };
-  return { top: caret.top - gap - Math.min(height, over), maxHeight: over };
+  if (list.height <= under || under >= over) return { left, top: caret.bottom + gap, maxHeight: under };
+  return { left, top: caret.top - gap - Math.min(list.height, over), maxHeight: over };
 }
 
 /**

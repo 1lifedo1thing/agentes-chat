@@ -344,11 +344,16 @@ export const WikiRichEditor = forwardRef<
       : [];
   const count = menu?.kind === "link" ? linkOptions.length : blockOptions.length;
   const current = Math.min(active, Math.max(0, count - 1));
-  // On the side with room, as tall as it lets it: measured with its rows in, before it paints.
+  // On the side with room, as tall as it lets it, inside the window: measured with its rows in, before it paints.
   useLayoutEffect(() => {
     const el = listRef.current;
     if (!el || !menu || !count) return;
-    const at = placeList(menu, el.scrollHeight, window.innerHeight);
+    const at = placeList(
+      { left: menu.x, top: menu.top, bottom: menu.bottom },
+      { width: el.offsetWidth, height: el.scrollHeight },
+      { width: window.innerWidth, height: window.innerHeight },
+    );
+    el.style.left = `${at.left}px`;
     el.style.top = `${at.top}px`;
     el.style.maxHeight = `${at.maxHeight}px`;
   }, [menu, count]);
@@ -596,12 +601,11 @@ export const WikiRichEditor = forwardRef<
       )}
       {menu && count > 0 && (
         <div
-          className="wiki-suggest wiki-suggest--float ac-glass"
+          className="ac-menu wiki-suggest wiki-suggest--float"
           role="listbox"
           id={listId}
           aria-label={menu.kind === "link" ? t("wiki.editor.suggest") : t("wiki.rich.blockLabel")}
           ref={listRef}
-          style={{ left: menu.x }}
         >
           {menu.kind === "link"
             ? linkOptions.map((p, i) => (
