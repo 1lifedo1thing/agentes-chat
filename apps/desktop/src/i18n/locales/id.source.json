@@ -1137,7 +1137,7 @@
     "value": "Erase agentes.chat on this {{device}}?"
   },
   "server.eraseBody": {
-    "value": "Its workspaces go for everyone who uses them, on every device. Everything it holds moves to {{path}} and stays there whole. The agents' files in ~/agentes are yours and stay where they are. Then you set it up again with a new owner account."
+    "value": "Its workspaces go for everyone who uses them, on every device. Its data moves to {{path}} and stays there. What its agents kept on this {{device}}, such as their browsers and sign-ins, is deleted. The agents' files in ~/agentes are yours and stay where they are. Then you set it up again with a new owner."
   },
   "server.eraseConfirm": {
     "value": "Erase it"

@@ -453,11 +453,11 @@ export const desktopEn = {
     restored: "Restored the backup from {{time}}",
     restoreFailed: "That backup didn't start, so agentes.chat is back as it was. Try the other backup.",
     restoreUnreadable: "That backup can't be opened. Try the other one.",
-    /** Preferences › Servers: it stops, its folder moves whole to a dated folder in the home folder, and a new setup starts. */
+    /** Preferences › Servers: it stops, its folder moves whole to a dated folder in the home folder, its agents' homes here (browser profiles, sign-ins, machine tokens) are deleted, and a new setup starts. */
     erase: "Erase and start over…",
     eraseTitle: "Erase agentes.chat on this {{device}}?",
     eraseBody:
-      "Its workspaces go for everyone who uses them, on every device. Everything it holds moves to {{path}} and stays there whole. The agents' files in ~/agentes are yours and stay where they are. Then you set it up again with a new owner account.",
+      "Its workspaces go for everyone who uses them, on every device. Its data moves to {{path}} and stays there. What its agents kept on this {{device}}, such as their browsers and sign-ins, is deleted. The agents' files in ~/agentes are yours and stay where they are. Then you set it up again with a new owner.",
     eraseConfirm: "Erase it",
     erased: "Erased. Its old data is in {{path}}.",
     eraseMoveFailed:

@@ -425,7 +425,7 @@
     "restoreUnreadable": "Tej kopii nie da się otworzyć. Spróbuj drugiej.",
     "erase": "Wymaż i zacznij od nowa…",
     "eraseTitle": "Wymazać agentes.chat na tym urządzeniu ({{device}})?",
-    "eraseBody": "Jego przestrzenie robocze znikną dla wszystkich, którzy z nich korzystają, na każdym urządzeniu. Wszystko, co zawiera, trafi do {{path}} i zostanie tam w całości. Pliki agentów w ~/agentes są twoje i zostają tam, gdzie są. Potem skonfigurujesz go od nowa z nowym kontem właściciela.",
+    "eraseBody": "Jego przestrzenie robocze znikną dla wszystkich, którzy z nich korzystają, na każdym urządzeniu. Jego dane trafią do {{path}} i tam zostaną. To, co jego agenci trzymali na tym urządzeniu ({{device}}), na przykład ich przeglądarki i logowania, zostanie usunięte. Pliki agentów w ~/agentes są twoje i zostają tam, gdzie są. Potem skonfigurujesz go od nowa z nowym właścicielem.",
     "eraseConfirm": "Wymaż",
     "erased": "Wymazano. Stare dane są w {{path}}.",
     "eraseMoveFailed": "Nie udało się przenieść danych, więc nic nie zostało wymazane i nadal są w {{path}}. Pozostaje zatrzymany, dopóki nie uruchomisz go ponownie.",

@@ -262,7 +262,10 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
         await act(async () => eraseButton(el)?.click());
         await until(() => document.querySelector('[role="dialog"]'));
         const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
-        expect(dialog.textContent).toContain("The agents' files in ~/agentes are yours and stay where they are.");
+        // Everything that goes and everything that stays, in that order.
+        expect(dialog.textContent).toContain(
+          "Its workspaces go for everyone who uses them, on every device. Its data moves to ~/agentes.chat erased 2026-11-14 and stays there. What its agents kept on this Mac, such as their browsers and sign-ins, is deleted. The agents' files in ~/agentes are yours and stay where they are. Then you set it up again with a new owner.",
+        );
         await act(async () => buttonIn(dialog, "Erase it")?.click());
         await until(() => dialog.querySelector('[role="alert"]'));
         expectFailureInDialog(
