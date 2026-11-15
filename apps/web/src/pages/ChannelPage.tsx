@@ -2144,6 +2144,7 @@ function ChannelView({
             setQuote(null);
             if (key) setKeyAsk({ text: typed, key });
             else if (text) setDraft("");
+            const sentFiles = files.filter((f) => f.status === "done" && f.ref);
             const uploading = setInterval(() => sendTyping(undefined, "voice", true), 1000);
             void sendVoice({
               blob,
@@ -2154,8 +2155,16 @@ function ChannelView({
               language: i18n.language.split("-")[0] ?? null,
               text,
               meta: localMeta(quote, quote ? dir.authorName(quote.author) : "", attached),
-            }).finally(() => clearInterval(uploading));
-            if (attached.length > 0) dropFiles((f) => f.status === "uploading");
+            })
+              .then((went) => {
+                // Refused: what was typed and attached comes back to the box (thumbnails as icons: theirs are freed).
+                if (went) return;
+                if (text) setDraft((now) => joinDrafts(text, now));
+                if (sentFiles.length > 0)
+                  setFiles((now) => [...sentFiles.map((f) => ({ ...f, preview: undefined })), ...now]);
+              })
+              .finally(() => clearInterval(uploading));
+            if (sentFiles.length > 0) dropFiles((f) => !sentFiles.includes(f));
           },
           onNotice: (notice: VoiceNotice) => {
             if (notice === "blocked") {

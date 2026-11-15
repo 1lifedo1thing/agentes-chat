@@ -3,7 +3,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
-import type { ApiClient } from "@agenteschat/client";
+import { type ApiClient, ApiError } from "@agenteschat/client";
 import { fakeMicrophone } from "@agenteschat/ui/testing";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
@@ -69,6 +69,30 @@ describe("a voice note with typed text and files", () => {
     expect(composer().value).toBe("");
     expect(document.querySelector(".ac-composer__file")).toBeNull();
     expect(document.querySelector(".ac-composer__voice")).toBeNull();
+  });
+
+  test("a take the server refuses gives the typed text and the files back to the box", async () => {
+    restore = fakeMicrophone();
+    const state = seedState({ media: { voiceAvailable: true } });
+    const api = createFakeApi(state);
+    api.voice.send = async () => {
+      throw new ApiError(400, "voice.limit", "Too many voice messages");
+    };
+    await open(state, api);
+    const input = document.querySelector(".ac-composer input[type=file]") as HTMLInputElement;
+    const file = new File([new Uint8Array([1, 2, 3])], "notas.txt", { type: "text/plain" });
+    await act(async () => fireEvent.change(input, { target: { files: [file] } }));
+    await settle(4);
+    await act(async () => {
+      fireEvent.pointerDown(screen().getByRole("button", { name: "Gravar áudio" }), { button: 0 });
+      fireEvent.pointerUp(window);
+    });
+    await act(() => Bun.sleep(800));
+    await act(async () => fireEvent.change(composer(), { target: { value: "olha as notas" } }));
+    await act(async () => fireEvent.click(screen().getByRole("button", { name: "Enviar áudio" })));
+    await settle(6);
+    expect(composer().value).toBe("olha as notas");
+    expect(document.querySelector(".ac-composer__file")?.textContent).toContain("notas.txt");
   });
 
   test("a take with nothing typed or attached goes as before: no text, no files", async () => {

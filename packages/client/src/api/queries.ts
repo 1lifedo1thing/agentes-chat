@@ -1891,7 +1891,8 @@ export function dropLocalVoice(qc: QueryClient, orgId: string, channelId: string
  * Sends a recording (ADR 0100): its bubble appears at once and stays until the server's message replaces it (same
  * `clientId`). Without a connection the recording waits in memory and goes when it comes back, with the same
  * `clientId`, so a send whose answer was lost is stored once. `onRefused`: the server said no, and the bubble went.
- * `text` and the files in `meta.artifacts` (as `localMeta` writes them) go in the same message.
+ * `text` and the files in `meta.artifacts` (as `localMeta` writes them) go in the same message. Resolves false when
+ * the server refused it, so the caller can give the text and the files back.
  */
 export function useSendVoice(
   orgId: string,
@@ -1913,7 +1914,7 @@ export function useSendVoice(
       language: string | null;
       meta?: Record<string, unknown>;
       text?: string;
-    }) => {
+    }): Promise<boolean> => {
       const { blob, durationMs, peaks, threadId, replyTo, language, meta } = input;
       const text = input.text?.trim() ?? "";
       const attachments = artifactRefs(meta).map((r) => r.id);
@@ -1954,12 +1955,12 @@ export function useSendVoice(
             ...(attachments.length > 0 ? { attachments } : {}),
           });
           waiting(false);
-          return;
+          return true;
         } catch (error) {
           if (!sendWaits(error)) {
             dropLocalVoice(qc, orgId, channelId, clientId);
             latest.current.onRefused?.(error);
-            return;
+            return false;
           }
           waiting(true);
           await voiceRetryWait(attempt);
