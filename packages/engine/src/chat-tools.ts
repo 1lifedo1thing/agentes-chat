@@ -2,7 +2,7 @@ import type { PubSub } from "@agenteschat/adapters";
 import { and, count, desc, eq, isNull, or, schema, sql } from "@agenteschat/db";
 import { type ArtifactDeps, shareArtifact } from "./artifacts";
 import { recordAudit } from "./audit";
-import { answersAgentsOnly, cardPlace } from "./consultations";
+import { answersAgentsOnly, askerSpeaksIn } from "./consultations";
 import { addAgentReaction, isValidReaction, normalizeReaction } from "./context/feedback";
 import { openPersonAgentDm } from "./dms";
 import { publishMessageCreated } from "./events";
@@ -64,12 +64,12 @@ const origin = (ctx: ToolContext) => ({
 const SAME_CONVERSATION = "That is this conversation: just reply.";
 
 /**
- * A run answering another agent, asked to post in the conversation the person behind it is being answered in: the
- * agent that asked speaks there, so a post of its own would land beside that answer (and at the channel's top level
- * when the person asked in a thread).
+ * A run answering another agent, asked to post where that agent speaks (`askerSpeaksIn`): the agent that asked
+ * delivers its work there, so a post of its own would repeat it, and at the channel's top level even when the
+ * person asked in a thread. The agents' conversation already says so ("Don't also answer where … asked").
  */
-const ASKER_ANSWERS_THERE =
-  "That is where the agent that asked you is answering the person: it delivers your work there. Give it what you made in your answer (name the files) and post nothing there yourself.";
+const askerSpeaksThere = (channel: string) =>
+  `#${channel} is where the agent that asked you answers, with what you give it: put what you made in your answer (each file's artifact id) and post nothing there yourself.`;
 
 /** `post_message`'s and `send_dm`'s GIF, listed only when the agent may send one (`AgentGifPoster.offered`). */
 const GIF_PROPERTY = {
@@ -249,9 +249,8 @@ export function createChatToolSource(deps: {
             return { content: `No channel #${name} that ${who} in.`, isError: true };
           }
           const here = channel.id === ctx.channelId;
-          // From the agents' conversation, the place people follow this run is where the chain of questions began.
-          if (!here && (await cardPlace(ctx))?.channelId === channel.id) {
-            return { content: ASKER_ANSWERS_THERE, isError: true };
+          if (!here && (await askerSpeaksIn(ctx.db, ctx.orgId, ctx.runId, channel.id))) {
+            return { content: askerSpeaksThere(channel.name), isError: true };
           }
           const moving = input.move_here === true;
           const [run] = await ctx.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.id, ctx.runId));

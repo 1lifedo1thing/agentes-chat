@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { and, eq, schema } from "@agenteschat/db";
+import { and, eq, inArray, schema, sql } from "@agenteschat/db";
 import type { ModelRequest } from "@agenteschat/providers";
 import {
   addChannelMember,
@@ -128,7 +128,7 @@ test("post_message: from a DM to #general with the file (as a copy); only channe
   });
 });
 
-test("post_message from a consulted agent: never into the conversation where the agent that asked is answering", async () => {
+test("post_message from a consulted agent: never where an agent that asked it answers", async () => {
   f = await setup({
     chatTools: true,
     askAgent: true,
@@ -142,6 +142,14 @@ test("post_message from a consulted agent: never into the conversation where the
     },
   });
   const deps = { db: f.db, pubsub: f.pubsub };
+  const say = async (body: string, channelId: string, threadId?: string) => {
+    const message = await postPersonMessage(deps, f.owner.id, f.org.id, channelId, {
+      body,
+      ...(threadId ? { threadId } : {}),
+    });
+    await drainOutbox(f.db, f.handlers);
+    return message;
+  };
   const nino = await createAgent(
     f.db,
     f.owner.id,
@@ -149,9 +157,15 @@ test("post_message from a consulted agent: never into the conversation where the
     { name: "Nino", handle: "nino", role: "Fotos", credentialId: f.credential.id },
     { model: "claude-sonnet-5-5" },
   );
-  const other = await createChannel(f.db, f.owner.id, f.org.id, { name: "fotos" });
-  await postPersonMessage(deps, f.owner.id, f.org.id, f.general.id, { body: "@dev pede pro nino as fotos" });
-  await drainOutbox(f.db, f.handlers);
+  const fotos = await createChannel(f.db, f.owner.id, f.org.id, { name: "fotos" });
+  await addChannelMember(f.db, f.owner.id, f.org.id, fotos.id, { agentId: f.agent.id });
+  const avisos = await createChannel(f.db, f.owner.id, f.org.id, { name: "avisos" });
+
+  // The person asks @dev inside a thread of #general, and @dev asks Nino in the two agents' conversation.
+  const root = await say("@dev capas da semana", f.general.id);
+  const asked = await say("@dev pede pro nino as fotos", f.general.id, root.id);
+  const [asker] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.triggerMessageId, asked.id));
+  expect(asker?.threadRootId).toBe(root.id);
   const [consulted] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, nino.id));
   if (!consulted) throw new Error("the consultation started no run");
   expect(consulted.channelId).not.toBe(f.general.id);
@@ -169,14 +183,44 @@ test("post_message from a consulted agent: never into the conversation where the
       .from(schema.messages)
       .where(and(eq(schema.messages.channelId, channelId), eq(schema.messages.authorAgentId, nino.id)));
 
-  // Where the person asked @dev: @dev answers there, with what Nino gives it.
+  // @dev answers in that thread with what Nino gives it: a post of Nino's would land at the channel's top level.
   const refused = await post("general");
   expect(refused.isError).toBe(true);
-  expect(refused.content).toContain("the agent that asked you is answering the person");
+  expect(refused.content).toContain("#general is where the agent that asked you answers");
   expect(await postsIn(f.general.id)).toHaveLength(0);
+
+  // A second request, from #fotos, as when it joins the run still at work (`startOrJoinRun`): that run answers
+  // both, and posts in neither place.
+  await say("@dev pede pro nino as fotos", fotos.id);
+  const requests = await f.db
+    .select()
+    .from(schema.agentConsultations)
+    .orderBy(schema.agentConsultations.createdAt);
+  expect(requests).toHaveLength(2);
+  await f.db
+    .update(schema.agentConsultations)
+    .set({ targetRunId: consulted.id })
+    .where(eq(schema.agentConsultations.id, requests[1]?.id as string));
+  expect((await post("general")).isError).toBe(true);
+  expect((await post("fotos")).isError).toBe(true);
+  expect(await postsIn(f.general.id)).toHaveLength(0);
+  expect(await postsIn(fotos.id)).toHaveLength(0);
   // Any other channel the person is in is still a place to post.
-  expect((await post("fotos")).isError).toBeFalsy();
-  expect(await postsIn(other.id)).toHaveLength(1);
+  expect((await post("avisos")).isError).toBeFalsy();
+  expect(await postsIn(avisos.id)).toHaveLength(1);
+
+  // News nobody carries back (a heads-up) is no answer for someone else to deliver: the post goes through.
+  await f.db
+    .update(schema.messages)
+    .set({ meta: sql`${schema.messages.meta} || '{"agentNote":{"headsUp":true}}'::jsonb` })
+    .where(
+      inArray(
+        schema.messages.id,
+        requests.map((r) => r.messageId),
+      ),
+    );
+  expect((await post("general")).isError).toBeFalsy();
+  expect(await postsIn(f.general.id)).toHaveLength(1);
 });
 
 test("send_dm: the agent writes to a person in its DM with them, they're notified; several matches ask which one", async () => {
