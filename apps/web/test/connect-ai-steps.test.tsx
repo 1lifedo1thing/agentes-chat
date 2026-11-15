@@ -927,7 +927,7 @@ describe("Conectar uma IA: one picker, plans first", () => {
       },
     });
     await choose("OpenCode");
-    expect(dialog.textContent).toContain("O OpenCode ainda não está no MacBook.");
+    expect(dialog.textContent).toContain("O OpenCode não está instalado no MacBook.");
     expect(within(dialog).queryByRole("button", { name: "Usar uma chave de API agora" })).toBeNull();
     // Another plan its computer can't take keeps the key one click away.
     await choose("Kimi Code");
