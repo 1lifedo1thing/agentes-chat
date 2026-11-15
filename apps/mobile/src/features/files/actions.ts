@@ -2,9 +2,10 @@ import { type ArtifactDetail, useApi } from "@agenteschat/client";
 import { relativeDay } from "@agenteschat/client/lib/format";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActionSheetIOS, Alert, Linking, Platform } from "react-native";
+import { Linking } from "react-native";
 import { useToast } from "@/ui";
 import { router } from "@/ui/navigation";
+import { chooseAction } from "../settings/parts";
 import { useOrgId, useWhen } from "../shared/hooks";
 import { whenKind } from "../shared/logic";
 import { successHaptic } from "../shared/parts";
@@ -63,28 +64,22 @@ export function useFileActions(detail: ArtifactDetail | undefined) {
     if (detail) router.push({ pathname: "/file-share", params: { id: detail.id } });
   };
 
-  /** The "…" of the top bar: the same actions as a native menu. */
-  const more = (withPhotos: boolean) => {
-    const items = [
-      ...(detail?.inDrive !== false ? [{ label: t("share.button"), run: shareSheet }] : []),
-      { label: t("mobile.files.send"), run: share },
-      ...(withPhotos ? [{ label: t("mobile.files.savePhotos"), run: savePhotos }] : []),
-      { label: t("mobile.files.drive"), run: drive },
-    ];
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: [...items.map((i) => i.label), t("mobile.common.cancel")], cancelButtonIndex: items.length },
-        (i) => {
-          items[i]?.run();
-        },
-      );
-      return;
-    }
-    Alert.alert(detail?.title ?? "", undefined, [
-      ...items.map((i) => ({ text: i.label, onPress: () => void i.run() })),
-      { text: t("mobile.common.cancel"), style: "cancel" as const },
-    ]);
-  };
+  /** The "…" of the top bar: the same actions in the app's sheet, under the file's name. */
+  const more = (withPhotos: boolean) =>
+    chooseAction(
+      detail?.title ?? "",
+      [
+        ...(detail?.inDrive !== false
+          ? [{ icon: "members" as const, label: t("share.button"), onPress: shareSheet }]
+          : []),
+        { icon: "share", label: t("mobile.files.send"), onPress: () => void share() },
+        ...(withPhotos
+          ? [{ icon: "photos" as const, label: t("mobile.files.savePhotos"), onPress: () => void savePhotos() }]
+          : []),
+        { icon: "drive", label: t("mobile.files.drive"), onPress: drive },
+      ],
+      t("mobile.common.cancel"),
+    );
 
   return { share, shareSheet, savePhotos, drive, more, busy };
 }

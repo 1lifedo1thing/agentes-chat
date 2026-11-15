@@ -13,11 +13,12 @@ import { type RoutineFix, routineChannelOf, runPixels, type Words } from "@agent
 import { browserTimezone, onceParts, routineHookUrl, timezoneName } from "@agenteschat/client/lib/routines";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ActionSheetIOS, Alert, Platform } from "react-native";
+import { Alert } from "react-native";
 import { type IconName, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { routineHref, widgetHref } from "../links/logic";
 import { useDirectory, useMeId, useOrgId } from "../shared/hooks";
+import { SheetTitle } from "../shared/PromptForm";
 import { type ActionItem, ActionList, copyText, errorHaptic, successHaptic } from "../shared/parts";
 import { useSheet } from "../shared/SheetHost";
 import { everyMinutes, isInbox, isRunning, nextLine, RUN_SLOTS, routineTitle, runCaption, toastParts } from "./logic";
@@ -373,19 +374,6 @@ export function useRoutineMenu(r: Routine, from: "list" | "screen", onDeleted?: 
   if (r.canManage) items.push({ key: "delete", icon: "x", label: t("routines.delete"), danger: true, run: remove });
   const open = () => {
     if (items.length === 0) return;
-    if (Platform.OS === "ios") {
-      const danger = items.findIndex((i) => i.danger);
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          title,
-          options: [...items.map((i) => i.label), t("mobile.common.cancel")],
-          cancelButtonIndex: items.length,
-          ...(danger >= 0 ? { destructiveButtonIndex: danger } : {}),
-        },
-        (i) => items[i]?.run(),
-      );
-      return;
-    }
     const list: ActionItem[] = items.map((i) => ({
       key: i.key,
       icon: i.icon,
@@ -396,7 +384,13 @@ export function useRoutineMenu(r: Routine, from: "list" | "screen", onDeleted?: 
         i.run();
       },
     }));
-    sheet.open(<ActionList items={list} />);
+    // The app's own sheet on every system: its title, then the actions with their icons.
+    sheet.open(
+      <>
+        <SheetTitle title={title} />
+        <ActionList items={list} />
+      </>,
+    );
   };
   return { open, any: items.length > 0, label: t("routines.more", { name: title }) };
 }

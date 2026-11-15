@@ -3,8 +3,11 @@ import { matchesWords } from "@agenteschat/ui/search";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
-import { GroupedList, GroupedRow, haptics, type IconName, SearchField, Sheet, Text } from "@/ui";
+import { GroupedList, GroupedRow, haptics, Icon, type IconName, SearchField, Sheet, Text } from "@/ui";
 import { AgentFace, Face } from "./Face";
+import { useColors } from "./hooks";
+import { SheetTitle } from "./PromptForm";
+import { ActionList } from "./parts";
 
 /**
  * What leads an option: a person's photo (or initial), an agent's living face, an icon's tile, a mark of the caller's
@@ -24,7 +27,7 @@ export interface PickOption {
   /** Lines `sub` may take when it is a sentence that must be read whole; one when left out. */
   subLines?: number | undefined;
   leading?: PickLeading | undefined;
-  /** Red, for the action menus that come here on Android ("Apagar conta"). */
+  /** Red, for the action menus that come here ("Apagar conta"). */
   destructive?: boolean | undefined;
 }
 
@@ -68,21 +71,28 @@ export function pickOne(ask: PickAsk): Promise<string | null> {
 }
 
 /**
- * A short menu of actions in the same sheet (Android: the system's dialog holds three buttons at most). The action
- * runs once the sheet is gone, so what it presents next (an alert, the photo library) never lands under it. False
- * when no host is mounted, and the caller keeps its own fallback.
+ * A short menu of actions in the app's own sheet, on every system (never the system's action sheet or an alert's
+ * buttons): the title, then the actions as a list, each with its icon when the caller gives one, as a
+ * conversation's "…" is. The action runs once the sheet is gone, so what it presents next (an alert, the photo
+ * library) never lands under it. False when no host is mounted, and the caller keeps its own fallback.
  */
 export function showActionSheet(
   title: string,
   actions: readonly {
     label: string;
+    icon?: IconName | undefined;
     destructive?: boolean | undefined;
     checked?: boolean | undefined;
     onPress: () => void;
   }[],
 ): boolean {
   if (!present) return false;
-  const options = actions.map((a, i) => ({ key: String(i), label: a.label, destructive: a.destructive }));
+  const options = actions.map((a, i) => ({
+    key: String(i),
+    label: a.label,
+    destructive: a.destructive,
+    ...(a.icon ? { leading: { kind: "icon" as const, name: a.icon } } : {}),
+  }));
   const checkedAt = actions.findIndex((a) => a.checked);
   present({
     title,
@@ -99,6 +109,7 @@ export function showActionSheet(
 /** The host of `pickOne` and `showActionSheet`, mounted once at the app's root. */
 export function PickerHost() {
   const { t } = useTranslation();
+  const c = useColors();
   const [ask, setAsk] = useState<Pending | null>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -146,42 +157,44 @@ export function PickerHost() {
   );
   const live = options.length <= LIVE_UP_TO;
 
-  const bar = ask ? (
-    <View>
-      <View style={styles.bar}>
-        <Pressable
-          onPress={() => finish(null)}
-          accessibilityRole="button"
-          hitSlop={10}
-          style={({ pressed }) => [styles.cancel, pressed && styles.pressed]}
-        >
-          <Text variant="body" tone="ink2" numberOfLines={1}>
-            {t("mobile.common.cancel")}
+  // A menu of actions has no bar: its title leads the list (below), and the scrim or a flick down cancels.
+  const bar =
+    ask?.mode === "pick" ? (
+      <View>
+        <View style={styles.bar}>
+          <Pressable
+            onPress={() => finish(null)}
+            accessibilityRole="button"
+            hitSlop={10}
+            style={({ pressed }) => [styles.cancel, pressed && styles.pressed]}
+          >
+            <Text variant="body" tone="ink2" numberOfLines={1}>
+              {t("mobile.common.cancel")}
+            </Text>
+          </Pressable>
+          <Text variant="title" style={styles.title} accessibilityRole="header" numberOfLines={1}>
+            {ask.title}
           </Text>
-        </Pressable>
-        <Text variant="title" style={styles.title} accessibilityRole="header" numberOfLines={1}>
-          {ask.title}
-        </Text>
-        <View style={styles.side} />
-      </View>
-      {ask.note ? (
-        <Text variant="footnote" tone="muted" style={styles.note} numberOfLines={2}>
-          {ask.note}
-        </Text>
-      ) : null}
-      {searchable ? (
-        <View style={styles.search}>
-          <SearchField
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t("mobile.search.placeholder")}
-            accessibilityLabel={t("mobile.search.placeholder")}
-            returnKeyType="search"
-          />
+          <View style={styles.side} />
         </View>
-      ) : null}
-    </View>
-  ) : null;
+        {ask.note ? (
+          <Text variant="footnote" tone="muted" style={styles.note} numberOfLines={2}>
+            {ask.note}
+          </Text>
+        ) : null}
+        {searchable ? (
+          <View style={styles.search}>
+            <SearchField
+              value={query}
+              onChangeText={setQuery}
+              placeholder={t("mobile.search.placeholder")}
+              accessibilityLabel={t("mobile.search.placeholder")}
+              returnKeyType="search"
+            />
+          </View>
+        ) : null}
+      </View>
+    ) : null;
 
   return (
     <Sheet
@@ -196,7 +209,27 @@ export function PickerHost() {
         run?.();
       }}
     >
-      {ask ? (
+      {ask?.mode === "actions" ? (
+        <View style={styles.actions}>
+          {ask.title ? <SheetTitle title={ask.title} /> : null}
+          <ActionList
+            items={options.map((o) => ({
+              key: o.key,
+              label: o.label,
+              ...(o.leading?.kind === "icon" ? { icon: o.leading.name } : {}),
+              ...(o.destructive ? { danger: true } : {}),
+              // The one in use, in a menu that is a short choice (a template, a level).
+              ...(ask.value != null && o.key === ask.value
+                ? { trailing: <Icon name="check" size={18} color={c.ink} /> }
+                : {}),
+              onPress: () => {
+                haptics.selection();
+                finish(o.key);
+              },
+            }))}
+          />
+        </View>
+      ) : ask ? (
         <GroupedList>
           {shown.map((o) => {
             const picked = ask.value != null && o.key === ask.value;
@@ -217,7 +250,7 @@ export function PickerHost() {
                       ? { leading: lead.node }
                       : {})}
                 danger={Boolean(o.destructive)}
-                {...(ask.mode === "pick" || picked ? { checked: picked } : {})}
+                checked={picked}
                 onPress={() => {
                   haptics.selection();
                   finish(o.key);
@@ -263,4 +296,6 @@ const styles = StyleSheet.create({
   search: { paddingHorizontal: 18, paddingBottom: 12 },
   empty: { textAlign: "center", paddingVertical: 24 },
   toggle: { marginTop: 24 },
+  // As the screen's own sheets space a title and its list (`SheetHostProvider`).
+  actions: { gap: 12 },
 });

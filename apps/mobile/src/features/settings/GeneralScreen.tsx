@@ -265,9 +265,18 @@ export function GeneralScreen() {
     chooseAction(
       t("orgLogo.title"),
       [
-        { label: t("mobile.me.account.fromLibrary"), onPress: () => void uploadLogo("library") },
-        { label: t("mobile.me.account.fromCamera"), onPress: () => void uploadLogo("camera") },
-        ...(org?.logo ? [{ label: t("orgLogo.remove"), destructive: true, onPress: () => void removeLogo() }] : []),
+        { icon: "photos", label: t("mobile.me.account.fromLibrary"), onPress: () => void uploadLogo("library") },
+        { icon: "camera", label: t("mobile.me.account.fromCamera"), onPress: () => void uploadLogo("camera") },
+        ...(org?.logo
+          ? [
+              {
+                icon: "trash" as const,
+                label: t("orgLogo.remove"),
+                destructive: true,
+                onPress: () => void removeLogo(),
+              },
+            ]
+          : []),
       ],
       t("mobile.common.cancel"),
     );

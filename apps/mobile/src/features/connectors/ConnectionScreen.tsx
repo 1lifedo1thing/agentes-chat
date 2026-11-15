@@ -113,7 +113,7 @@ function Connection({ id }: { id: string }) {
         onPress={() =>
           chooseAction(
             name,
-            [{ label: t("connectors.rename"), onPress: () => sheet.open(<RenameSheet item={item} />) }],
+            [{ icon: "pen", label: t("connectors.rename"), onPress: () => sheet.open(<RenameSheet item={item} />) }],
             t("common.cancel"),
           )
         }

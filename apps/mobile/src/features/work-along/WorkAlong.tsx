@@ -3,14 +3,14 @@ import { markedPieces, markInk } from "@agenteschat/client/lib/activity";
 import { taskTitle, todayStart } from "@agenteschat/client/lib/task-manager";
 import type { WorkItem } from "@agenteschat/client/lib/working";
 import { NativeTabs } from "expo-router/native-tabs";
-import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import { ActionSheetIOS, Alert, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 import Animated, { SlideInDown, SlideOutDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { haptics, PixelOrbit, Text, useReducedMotion, useTheme } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useWaitingItems } from "../chats/useWaitingItems";
+import { chooseAction } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { useDirectory, useNow, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
@@ -143,45 +143,25 @@ function useRunMenu() {
       return;
     }
     const name = dir.anyAgent(task.agentId)?.name || t("mobile.along.agent");
-    showMenu(
-      t,
+    chooseAction(
       words,
       items.map((item) =>
         item === "steps"
-          ? { label: t("taskManager.actions.steps"), run: () => router.push(`/task-manager/${runId}`) }
+          ? {
+              icon: "list" as const,
+              label: t("taskManager.actions.steps"),
+              onPress: () => router.push(`/task-manager/${runId}`),
+            }
           : {
+              icon: "stop" as const,
               label: t("taskManager.actions.stop"),
-              danger: true,
-              run: () => askToStop(t, task, taskTitle(t, task), name, stop),
+              destructive: true,
+              onPress: () => askToStop(t, task, taskTitle(t, task), name, stop),
             },
       ),
+      t("mobile.common.cancel"),
     );
   };
-}
-
-/** The system's own menu: an action sheet on iOS, an alert's buttons on Android. */
-function showMenu(t: TFunction, title: string, items: { label: string; danger?: boolean; run: () => void }[]) {
-  if (Platform.OS === "ios") {
-    const danger = items.findIndex((i) => i.danger);
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title,
-        options: [...items.map((i) => i.label), t("mobile.common.cancel")],
-        cancelButtonIndex: items.length,
-        ...(danger >= 0 ? { destructiveButtonIndex: danger } : {}),
-      },
-      (i) => items[i]?.run(),
-    );
-    return;
-  }
-  Alert.alert(title, undefined, [
-    { text: t("mobile.common.cancel"), style: "cancel" },
-    ...items.map((i) => ({
-      text: i.label,
-      style: i.danger ? ("destructive" as const) : ("default" as const),
-      onPress: i.run,
-    })),
-  ]);
 }
 
 const styles = StyleSheet.create({

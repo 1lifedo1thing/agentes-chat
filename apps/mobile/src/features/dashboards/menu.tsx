@@ -7,12 +7,13 @@ import {
 } from "@agenteschat/client";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ActionSheetIOS, Alert, Platform } from "react-native";
+import { Alert } from "react-native";
 import { type IconName, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useFailed } from "../routines/hooks";
 import { useOrgId } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
+import { SheetTitle } from "../shared/PromptForm";
 import { type ActionItem, ActionList, goBack, successHaptic } from "../shared/parts";
 import { useSheet } from "../shared/SheetHost";
 import { type BoardMenuKey, boardMenuKeys, HOME } from "./logic";
@@ -103,19 +104,6 @@ export function useBoardMenu(board: Dashboard | undefined) {
   const items: MenuItem[] = boardMenuKeys(board, onHome).map((key) => ({ key, ...all[key] }));
   const open = () => {
     if (items.length === 0) return;
-    if (Platform.OS === "ios") {
-      const danger = items.findIndex((i) => i.danger);
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          title,
-          options: [...items.map((i) => i.label), t("mobile.common.cancel")],
-          cancelButtonIndex: items.length,
-          ...(danger >= 0 ? { destructiveButtonIndex: danger } : {}),
-        },
-        (i) => items[i]?.run(),
-      );
-      return;
-    }
     const list: ActionItem[] = items.map((i) => ({
       key: i.key,
       icon: i.icon,
@@ -126,7 +114,13 @@ export function useBoardMenu(board: Dashboard | undefined) {
         i.run();
       },
     }));
-    sheet.open(<ActionList items={list} />);
+    // The app's own sheet on every system: its title, then the actions with their icons.
+    sheet.open(
+      <>
+        <SheetTitle title={title} />
+        <ActionList items={list} />
+      </>,
+    );
   };
   return { any: items.length > 0, open, label: t("widgets.menu.label") };
 }

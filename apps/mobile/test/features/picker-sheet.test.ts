@@ -5,10 +5,28 @@ import { join } from "node:path";
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
 
 describe("pickers are the app's sheet, never the system's alert list", () => {
-  test("one host at the root serves every picker and Android's action menus", () => {
+  test("one host at the root serves every picker and every action menu, on both systems", () => {
     expect(src("providers/AppProviders.tsx")).toContain("<PickerHost />");
     expect(existsSync(join(import.meta.dir, "../../src/ui/ChoiceHost.tsx"))).toBe(false);
-    expect(src("features/settings/parts.tsx")).toContain("if (showActionSheet(title, options)) return;");
+    // The app's sheet first, whatever the system: the system's own only where no host is mounted.
+    const choose = src("features/settings/parts.tsx");
+    const body = choose.slice(choose.indexOf("export function chooseAction("));
+    expect(body.indexOf("if (showActionSheet(title, options)) return;")).toBeLessThan(body.indexOf("Platform.OS"));
+    // No screen reaches for the system's action sheet by itself.
+    for (const file of [
+      "features/dashboards/menu.tsx",
+      "features/routines/hooks.tsx",
+      "features/files/actions.ts",
+      "features/me/parts.tsx",
+      "features/work-along/WorkAlong.tsx",
+      "features/wiki/WikiScreen.tsx",
+    ]) {
+      expect({ file, system: src(file).includes("ActionSheetIOS") }).toEqual({ file, system: false });
+    }
+    // A menu of actions reads as a conversation's "…": its title, then the list with each action's icon.
+    const menu = src("features/shared/PickerSheet.tsx");
+    expect(menu).toContain("{ask.title ? <SheetTitle title={ask.title} /> : null}");
+    expect(menu).toContain("<ActionList");
     const sheet = src("features/shared/PickerSheet.tsx");
     // Faces for people and agents, a tile for icons, the check on the one in use, a search on long lists.
     expect(sheet).toContain('<Face who={{ type: "person", id: lead.userId }} size={36} />');

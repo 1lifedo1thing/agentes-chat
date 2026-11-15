@@ -176,8 +176,13 @@ function Agents() {
     chooseAction(
       a.name,
       [
-        { label: t("team.restore"), onPress: () => restoreOne(a) },
-        { label: t("agentPage.delete.button"), destructive: true, onPress: () => openAgentDelete(a.id) },
+        { icon: "undo", label: t("team.restore"), onPress: () => restoreOne(a) },
+        {
+          icon: "trash",
+          label: t("agentPage.delete.button"),
+          destructive: true,
+          onPress: () => openAgentDelete(a.id),
+        },
       ],
       t("common.cancel"),
     );

@@ -178,21 +178,25 @@ export function WikiScreen({ folder = "" }: { folder?: string }) {
   const choosable = search ? found : (home?.pages ?? []);
   // Only with links: a sky of lone dots says nothing.
   const hasMap = Boolean(sky && star && !folder && sky.links.length > 0);
-  // "…": what the home no longer shows, each a line of the system's list.
+  // "…": what the home no longer shows, each a line of the app's sheet with its icon.
   const menu = [
     ...(choosesAudience
       ? [
           {
+            icon: "members" as const,
             label: folder ? t("wiki.audience") : t("wiki.audienceRootTitle"),
             onPress: () => router.push({ pathname: "/wiki-audience", params: folder ? { folder } : { root: "1" } }),
           },
         ]
       : []),
-    ...(writes && pages.length > 0 ? [{ label: t("wiki.bulk.select"), onPress: () => setSelecting(true) }] : []),
-    ...(!folder && writes ? [{ label: t("wiki.trash.title"), onPress: openWikiTrash }] : []),
+    ...(writes && pages.length > 0
+      ? [{ icon: "checkc" as const, label: t("wiki.bulk.select"), onPress: () => setSelecting(true) }]
+      : []),
+    ...(!folder && writes ? [{ icon: "trash" as const, label: t("wiki.trash.title"), onPress: openWikiTrash }] : []),
     ...(folder && writes
       ? [
           {
+            icon: "trash" as const,
             label: t("wiki.bulk.deleteFolder", { folder }),
             destructive: true,
             onPress: () =>

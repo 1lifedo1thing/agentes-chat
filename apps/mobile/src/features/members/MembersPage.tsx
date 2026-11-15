@@ -31,6 +31,9 @@ import { useColors, useMeId } from "../shared/hooks";
 import { errorHaptic, Loaded, successHaptic } from "../shared/parts";
 import { invitersOf, memberActions, memberLine, membersByName, whenWords } from "./logic";
 
+/** What leads each of a person's actions in their row's menu. */
+const ACT_ICON = { dm: "chat", roles: "shield", leave: "out", remove: "trash" } as const;
+
 /**
  * Membros (ADR 0090): whoever may invite gets "Convidar pessoas" on top (what waits on them, the links and the
  * invitations sent are Convites', its own screen beside this one); a member who may not invite suggests someone.
@@ -104,6 +107,7 @@ export function MembersPage() {
                           chooseAction(
                             m.name,
                             acts.map((a) => ({
+                              icon: ACT_ICON[a],
                               label: t(
                                 a === "dm"
                                   ? "profile.dm"

@@ -33,6 +33,7 @@ function useKept(agentId: string) {
       hold.what,
       [
         {
+          icon: "stop",
           label: t("agentComputer.kept.stop"),
           destructive: true,
           onPress: () =>

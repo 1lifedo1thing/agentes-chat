@@ -3,12 +3,13 @@ import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { type ReactNode, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { ActionSheetIOS, Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import { Locked, useToast } from "@/ui";
+import { chooseAction } from "../settings/parts";
 import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { type HeaderWordAction, PushedHeader } from "../shared/parts";
 import { type AccountDraft, PHOTO_MAX_BASE64, photoContentType } from "./logic";
@@ -160,30 +161,25 @@ export function useChangePhoto() {
 
   const changePhoto = () => {
     const hasPhoto = Boolean(meId && dir.memberById.get(meId)?.avatarUrl);
-    const labels = [
-      t("mobile.me.account.fromLibrary"),
-      t("mobile.me.account.fromCamera"),
-      ...(hasPhoto ? [t("mobile.me.account.removePhoto")] : []),
-    ];
-    const run = (i: number) => {
-      if (i === 0) void upload("library");
-      else if (i === 1) void upload("camera");
-      else if (i === 2 && hasPhoto) void remove();
-    };
-    if (Platform.OS === "ios")
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: [...labels, t("mobile.common.cancel")],
-          cancelButtonIndex: labels.length,
-          ...(hasPhoto ? { destructiveButtonIndex: 2 } : {}),
-        },
-        run,
-      );
-    else
-      Alert.alert(t("mobile.me.account.changePhoto"), undefined, [
-        ...labels.map((text, i) => ({ text, onPress: () => run(i) })),
-        { text: t("mobile.common.cancel"), style: "cancel" as const },
-      ]);
+    // The library and the camera open once the sheet is gone (`showActionSheet`), never under it.
+    chooseAction(
+      t("mobile.me.account.changePhoto"),
+      [
+        { icon: "photos", label: t("mobile.me.account.fromLibrary"), onPress: () => void upload("library") },
+        { icon: "camera", label: t("mobile.me.account.fromCamera"), onPress: () => void upload("camera") },
+        ...(hasPhoto
+          ? [
+              {
+                icon: "trash" as const,
+                label: t("mobile.me.account.removePhoto"),
+                destructive: true,
+                onPress: () => void remove(),
+              },
+            ]
+          : []),
+      ],
+      t("mobile.common.cancel"),
+    );
   };
 
   return { changePhoto, uploading };

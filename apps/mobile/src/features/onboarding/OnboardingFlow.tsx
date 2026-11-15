@@ -349,8 +349,9 @@ export function OnboardingFlow({ onLeave, another }: { onLeave?: () => void; ano
               chooseAction(
                 email,
                 [
-                  { label: t("mobile.org.signOut"), onPress: () => void signOut() },
+                  { icon: "out", label: t("mobile.org.signOut"), onPress: () => void signOut() },
                   {
+                    icon: "trash",
                     label: t("deleteAccount.menu"),
                     destructive: true,
                     onPress: () => openWebPath("/onboarding?account=delete"),

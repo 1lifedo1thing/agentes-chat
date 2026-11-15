@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ActionSheetIOS, ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GroupedList, GroupedRow, Locked, Text, useToast } from "@/ui";
+import { GroupedList, GroupedRow, type IconName, Locked, Text, useToast } from "@/ui";
 import { useColors } from "../shared/hooks";
 import { showActionSheet } from "../shared/PickerSheet";
 import { BottomBar, copyText, type HeaderWordAction, MONO, PushedHeader, successHaptic } from "../shared/parts";
@@ -82,18 +82,23 @@ export function Gap() {
 
 export interface ActionChoice {
   label: string;
+  /** What leads its row. Every choice of a menu has one, or none does. */
+  icon?: IconName;
   destructive?: boolean;
-  /** The one in use: checked in Android's sheet (iOS's action sheet draws no checks). */
+  /** The one in use: checked. */
   checked?: boolean;
   onPress: () => void;
 }
 
 /**
- * A short menu of actions (the web's "…" menus: Sair / Apagar conta, Tirar foto / Escolher da galeria): the system's
- * action sheet on iOS, the app's sheet on Android. Picking a value (a person, a level, a language, a time) is
- * `pickOne`'s, with faces, checks and a search.
+ * A short menu of actions (the web's "…" menus: Sair / Apagar conta, Tirar foto / Escolher da galeria): the app's own
+ * sheet on every system, a title and a list as a conversation's "…" is, never the system's action sheet (a floating
+ * stack of buttons that looks like no other part of the app). Picking a value (a person, a level, a language, a
+ * time) is `pickOne`'s, with faces, checks and a search.
  */
 export function chooseAction(title: string, options: ActionChoice[], cancel: string) {
+  if (showActionSheet(title, options)) return;
+  // No host mounted (it is at the app's root, so only before the app is up): the system's own.
   if (Platform.OS === "ios") {
     const destructive = options.findIndex((o) => o.destructive);
     ActionSheetIOS.showActionSheetWithOptions(
@@ -106,8 +111,6 @@ export function chooseAction(title: string, options: ActionChoice[], cancel: str
       (i) => options[i]?.onPress(),
     );
   } else {
-    // Any number of options in the app's sheet; the dialog below only where no host is mounted.
-    if (showActionSheet(title, options)) return;
     const buttons = options.map((o) => ({
       text: o.label,
       style: o.destructive ? ("destructive" as const) : undefined,

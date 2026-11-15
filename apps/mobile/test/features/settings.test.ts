@@ -693,7 +693,11 @@ test("my photo on Você changes it with a tap, through Conta's own Alterar foto"
   expect(account).not.toContain("ImagePicker");
   const parts = read("parts.tsx");
   expect(parts).toContain("export function useChangePhoto()");
-  expect(parts).toContain('...(hasPhoto ? [t("mobile.me.account.removePhoto")] : [])');
+  // Removing it is offered only with a photo, and the choices open in the app's sheet, never the system's.
+  expect(parts).toContain("...(hasPhoto");
+  expect(parts).toContain('label: t("mobile.me.account.removePhoto")');
+  expect(parts).toContain("chooseAction(");
+  expect(parts).not.toContain("ActionSheetIOS");
 });
 
 test("the desktop app's owner with no password deletes on that computer: one line, the hold stays off", () => {
