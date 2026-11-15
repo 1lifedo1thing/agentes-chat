@@ -276,6 +276,14 @@ export function planWord(
   return plan.state === "limited" ? text.limited(plan.until) : text.almost;
 }
 
+/** Someone else's plan's state in a few words, said too when it is fine ("Com folga"): nothing else on its row says it. */
+export const roomWord = (
+  t: TFunction,
+  locale: string,
+  plan: { state: "ok" | "almost" | "limited"; until: string | null } | null,
+  now = new Date(),
+) => (plan?.state === "ok" ? t("connectAi.have.plenty") : planWord(t, locale, plan, now));
+
 /** A plan's limits are worth a line once a window is known or the plan refused a request: unknown is nothing. */
 const knownLimits = (usage: PlanUsage | null | undefined): usage is PlanUsage =>
   usage != null && (usage.windows.length > 0 || usage.limited === true);

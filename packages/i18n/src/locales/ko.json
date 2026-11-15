@@ -3041,7 +3041,11 @@
       "title": "이미 연결됨",
       "titleFor": "{{name}}에 이미 연결됨",
       "other": "또는 다른 것 연결",
-      "manageKeys": "키 관리 또는 삭제"
+      "manageKeys": "키 관리 또는 삭제",
+      "pickLine": "여기에 이미 연결된 계정을 고르세요. {{name}}은(는) 그 계정으로 생각해요.",
+      "onlyOwner_other": "{{name}}님만 줄 수 있는 계정이 {{count}}개 더 있어요.",
+      "moreAgents_other": "외 에이전트 {{count}}개",
+      "plenty": "여유 있음"
     },
     "chat": {
       "mine": "내 계정",
@@ -16273,6 +16277,14 @@
   "usageViews": {
     "signedOut": "로그아웃됨",
     "whose": "{{name}}의 계정",
+    "order": {
+      "title": "{{plan}} · 사용 순서",
+      "hint": "한도에 도달하면 에이전트는 여유가 있는 다음 계정으로 이어서 하고, 첫 계정이 초기화되면 돌아와요.",
+      "terms": "{{plan}} 계정을 여러 개 쓰는 건 {{plan}} 약관에서 회색 지대예요.",
+      "termsAbout": "{{plan}} 약관 안내",
+      "termsHint": "플랜은 한 사람용이라서, 에이전트가 여러 계정에 기대기 전에 {{plan}} 약관을 확인하세요.",
+      "move": "{{name}} 이동, 순서 {{n}}번"
+    },
     "serves": {
       "everyone": "모두 사용",
       "onlyYou": "나만 사용",
@@ -16283,14 +16295,6 @@
       "me": "나만",
       "savedEveryone": "이제 workspace 전체가 이 플랜을 사용해요.",
       "savedOwner": "이제 이 플랜은 나만 사용해요."
-    },
-    "order": {
-      "title": "{{plan}} · 사용 순서",
-      "hint": "한도에 도달하면 에이전트는 여유가 있는 다음 계정으로 이어서 하고, 첫 계정이 초기화되면 돌아와요.",
-      "terms": "{{plan}} 계정을 여러 개 쓰는 건 {{plan}} 약관에서 회색 지대예요.",
-      "termsAbout": "{{plan}} 약관 안내",
-      "termsHint": "플랜은 한 사람용이라서, 에이전트가 여러 계정에 기대기 전에 {{plan}} 약관을 확인하세요.",
-      "move": "{{name}} 이동, 순서 {{n}}번"
     },
     "logins_other": "로그인 {{count}}개",
     "noWindows": "이 계정을 다시 사용하면 한도가 표시돼요.",

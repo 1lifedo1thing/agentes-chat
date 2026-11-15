@@ -7822,6 +7822,24 @@
   "connectAi.have.manageKeys": {
     "value": "Manage or delete keys"
   },
+  "connectAi.have.pickLine": {
+    "value": "Pick an account already connected here. {{name}} thinks with it."
+  },
+  "connectAi.have.onlyOwner": {
+    "value": {
+      "one": "{{count}} more of {{name}}'s accounts only {{name}} can give.",
+      "other": "{{count}} more of {{name}}'s accounts only {{name}} can give."
+    }
+  },
+  "connectAi.have.moreAgents": {
+    "value": {
+      "one": "and {{count}} more agent",
+      "other": "and {{count}} more agents"
+    }
+  },
+  "connectAi.have.plenty": {
+    "value": "Plenty left"
+  },
   "connectAi.chat.mine": {
     "value": "Yours"
   },
@@ -41476,6 +41494,24 @@
   "usageViews.whose": {
     "value": "{{name}}'s"
   },
+  "usageViews.order.title": {
+    "value": "{{plan}} · Order of use"
+  },
+  "usageViews.order.hint": {
+    "value": "At a limit, agents go on with the next account that has room and go back to the first when it resets."
+  },
+  "usageViews.order.terms": {
+    "value": "Using several {{plan}} accounts is a gray area in {{plan}}'s terms."
+  },
+  "usageViews.order.termsAbout": {
+    "value": "About {{plan}}'s terms"
+  },
+  "usageViews.order.termsHint": {
+    "value": "A plan is meant for one person, so check {{plan}}'s terms before your agents rely on several."
+  },
+  "usageViews.order.move": {
+    "value": "Move {{name}}, number {{n}} in the order"
+  },
   "usageViews.serves.everyone": {
     "value": "Everyone uses it"
   },
@@ -41502,24 +41538,6 @@
   },
   "usageViews.serves.savedOwner": {
     "value": "Only you use this plan now."
-  },
-  "usageViews.order.title": {
-    "value": "{{plan}} · Order of use"
-  },
-  "usageViews.order.hint": {
-    "value": "At a limit, agents go on with the next account that has room and go back to the first when it resets."
-  },
-  "usageViews.order.terms": {
-    "value": "Using several {{plan}} accounts is a gray area in {{plan}}'s terms."
-  },
-  "usageViews.order.termsAbout": {
-    "value": "About {{plan}}'s terms"
-  },
-  "usageViews.order.termsHint": {
-    "value": "A plan is meant for one person, so check {{plan}}'s terms before your agents rely on several."
-  },
-  "usageViews.order.move": {
-    "value": "Move {{name}}, number {{n}} in the order"
   },
   "usageViews.logins": {
     "value": {

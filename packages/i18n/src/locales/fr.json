@@ -3281,7 +3281,15 @@
       "titleFor": "Déjà connecté, pour {{name}}",
       "titleFor_female": "Déjà connecté, pour {{name}}",
       "other": "Ou en connecter un autre",
-      "manageKeys": "Gérer ou supprimer les clés"
+      "manageKeys": "Gérer ou supprimer les clés",
+      "pickLine": "Choisissez un compte déjà connecté ici. {{name}} réfléchit avec.",
+      "onlyOwner_one": "Encore {{count}} compte, à donner par {{name}} uniquement.",
+      "onlyOwner_many": "Encore {{count}} comptes, à donner par {{name}} uniquement.",
+      "onlyOwner_other": "Encore {{count}} comptes, à donner par {{name}} uniquement.",
+      "moreAgents_one": "et {{count}} autre agent",
+      "moreAgents_many": "et {{count}} autres agents",
+      "moreAgents_other": "et {{count}} autres agents",
+      "plenty": "Bonne marge"
     },
     "chat": {
       "mine": "Les vôtres",
@@ -17375,6 +17383,14 @@
   "usageViews": {
     "signedOut": "Déconnecté",
     "whose": "De {{name}}",
+    "order": {
+      "title": "{{plan}} · Ordre d'utilisation",
+      "hint": "À la limite, les agents continuent avec le compte suivant qui a de la marge et reviennent au premier quand il se réinitialise.",
+      "terms": "Utiliser plusieurs comptes {{plan}} est une zone grise dans les conditions de {{plan}}.",
+      "termsAbout": "À propos des conditions de {{plan}}",
+      "termsHint": "Un abonnement est prévu pour une personne, alors vérifiez les conditions de {{plan}} avant que vos agents comptent sur plusieurs comptes.",
+      "move": "Déplacer {{name}}, numéro {{n}} dans l'ordre"
+    },
     "serves": {
       "everyone": "Tout le monde l'utilise",
       "onlyYou": "Vous seul l'utilisez",
@@ -17385,14 +17401,6 @@
       "me": "Moi seul",
       "savedEveryone": "Tout le workspace utilise désormais ce forfait.",
       "savedOwner": "Vous êtes désormais seul à utiliser ce forfait."
-    },
-    "order": {
-      "title": "{{plan}} · Ordre d'utilisation",
-      "hint": "À la limite, les agents continuent avec le compte suivant qui a de la marge et reviennent au premier quand il se réinitialise.",
-      "terms": "Utiliser plusieurs comptes {{plan}} est une zone grise dans les conditions de {{plan}}.",
-      "termsAbout": "À propos des conditions de {{plan}}",
-      "termsHint": "Un abonnement est prévu pour une personne, alors vérifiez les conditions de {{plan}} avant que vos agents comptent sur plusieurs comptes.",
-      "move": "Déplacer {{name}}, numéro {{n}} dans l'ordre"
     },
     "logins_one": "{{count}} connexion",
     "logins_many": "{{count}} connexions",

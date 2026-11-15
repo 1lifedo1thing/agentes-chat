@@ -3282,7 +3282,15 @@
       "titleFor": "Già collegati, per {{name}}",
       "titleFor_female": "Già collegati, per {{name}}",
       "other": "Oppure collegane un altro",
-      "manageKeys": "Gestisci o elimina le chiavi"
+      "manageKeys": "Gestisci o elimina le chiavi",
+      "pickLine": "Scegli un account già collegato qui. {{name}} ragiona con quello.",
+      "onlyOwner_one": "Ancora {{count}} account che solo {{name}} può dare.",
+      "onlyOwner_many": "Ancora {{count}} account che solo {{name}} può dare.",
+      "onlyOwner_other": "Ancora {{count}} account che solo {{name}} può dare.",
+      "moreAgents_one": "e {{count}} altro agente",
+      "moreAgents_many": "e altri {{count}} agenti",
+      "moreAgents_other": "e altri {{count}} agenti",
+      "plenty": "Ampio margine"
     },
     "chat": {
       "mine": "I tuoi",
@@ -17387,6 +17395,14 @@
   "usageViews": {
     "signedOut": "Disconnesso",
     "whose": "di {{name}}",
+    "order": {
+      "title": "{{plan}} · Ordine di utilizzo",
+      "hint": "Al limite, gli agenti continuano con l'account successivo che ha margine e tornano al primo quando si azzera.",
+      "terms": "Usare più account {{plan}} è una zona grigia nei termini di {{plan}}.",
+      "termsAbout": "Sui termini di {{plan}}",
+      "termsHint": "Un piano è pensato per una persona, quindi controlla i termini di {{plan}} prima che i tuoi agenti contino su più account.",
+      "move": "Sposta {{name}}, numero {{n}} nell'ordine"
+    },
     "serves": {
       "everyone": "Lo usano tutti",
       "onlyYou": "Lo usi solo tu",
@@ -17397,14 +17413,6 @@
       "me": "Solo io",
       "savedEveryone": "Ora tutto il workspace usa questo piano.",
       "savedOwner": "Ora solo tu usi questo piano."
-    },
-    "order": {
-      "title": "{{plan}} · Ordine di utilizzo",
-      "hint": "Al limite, gli agenti continuano con l'account successivo che ha margine e tornano al primo quando si azzera.",
-      "terms": "Usare più account {{plan}} è una zona grigia nei termini di {{plan}}.",
-      "termsAbout": "Sui termini di {{plan}}",
-      "termsHint": "Un piano è pensato per una persona, quindi controlla i termini di {{plan}} prima che i tuoi agenti contino su più account.",
-      "move": "Sposta {{name}}, numero {{n}} nell'ordine"
     },
     "logins_one": "{{count}} accesso",
     "logins_many": "{{count}} accessi",

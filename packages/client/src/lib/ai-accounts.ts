@@ -12,7 +12,7 @@ import type {
   MachineAccountKind,
   PlanUsage,
 } from "../api/types";
-import { joinNames } from "./format";
+import { firstName, joinNames } from "./format";
 import { isPlanId, loginPerAgent, planName } from "./plans";
 import { shownKeys } from "./providers";
 import { isRightHand } from "./right-hand";
@@ -56,7 +56,8 @@ const newest = (usages: (PlanUsage | null)[]) =>
 /**
  * The logins of one account together, as the server tells them apart: the same computer, owner, CLI and plan, and
  * the same email (any case) and Claude organization (one not said is any), or key's last 4. Never the label, which any rename can repeat.
- * A login whose email or key the viewer can't see (another person's) is a row of its own.
+ * A login whose email or key the viewer can't see (another person's) goes by the server's `sameAs`, or is a row of
+ * its own where an older server doesn't say it.
  */
 export function groupPlans<A extends MachineAccount & { machineId?: string }>(
   accounts: readonly A[],
@@ -64,7 +65,11 @@ export function groupPlans<A extends MachineAccount & { machineId?: string }>(
   const groups: { key: string; org: string | null; logins: A[] }[] = [];
   for (const a of accounts) {
     const identity = a.provider ? a.keyHint : a.email?.toLowerCase();
-    const key = identity ? JSON.stringify([a.machineId ?? null, a.ownerId, a.kind, a.provider, identity]) : a.id;
+    const key = identity
+      ? JSON.stringify([a.machineId ?? null, a.ownerId, a.kind, a.provider, identity])
+      : a.sameAs
+        ? JSON.stringify(["sameAs", a.sameAs])
+        : a.id;
     const org = a.providerOrgId ?? null;
     // Like the server's, an organization not said matches any: only two known ones tell logins apart.
     const same = groups.filter((g) => g.key === key);
@@ -99,16 +104,17 @@ export interface AccountChoice<A extends MachineAccount> {
 
 /**
  * An agent's account choice, one entry per account (`groupPlans`): the first of `ids` it has a login of (the one
- * chosen, then the one the agent thinks with), else a login of the viewer's that thinks for all of their agents
+ * chosen, then the one the agent thinks with), else a login free to take that thinks for all of its owner's agents
  * there or for nobody (a signed-in one first: a new sign-in of Claude can sign the account's other logins out), else
- * its first.
+ * its first. Of someone else's account, free to take is `lendable`: one login of it may be usable while the others
+ * think for their agents or are signed out.
  */
 export function accountChoices<A extends MachineAccount & { machineId?: string }>(
   accounts: readonly A[],
   ids: readonly (string | null | undefined)[],
 ): AccountChoice<A>[] {
   return groupPlans(accounts).flatMap(({ logins, usedBy }) => {
-    const free = logins.filter((l) => l.mine && (l.shared === true || l.usedBy.length === 0));
+    const free = logins.filter((l) => (l.mine ? l.shared === true || l.usedBy.length === 0 : lendable(l, "")));
     const own =
       ids.map((id) => logins.find((l) => l.id === id)).find(Boolean) ??
       free.find((l) => l.status === "active") ??
@@ -295,6 +301,62 @@ export function existingAi<A extends MachineAccount>(
   const rank = (r: ExistingAi<A>) => EXISTING_RANK[r.kind === "key" ? "key" : r.act];
   return [...accounts, ...live].sort((x, y) => rank(x) - rank(y));
 }
+
+/** A row of what the person has that is an account. */
+export type ExistingAccount<A extends MachineAccount = MachineAccount> = Extract<ExistingAi<A>, { kind: "account" }>;
+
+/** Where a row of what the person has goes in a list by owner: theirs ("Suas"), the workspace's keys, each other person's ("De Walter"). */
+export function haveGroup(t: TFunction, r: ExistingAi): { key: string; label: string } {
+  if (r.kind === "key") return { key: "keys", label: t("connectAi.chat.keys") };
+  const a = r.choice.login;
+  return a.mine
+    ? { key: "mine", label: t("connectAi.chat.mine") }
+    : { key: `owner:${a.ownerId}`, label: t("agentPage.work.brain.accountOf", { name: firstName(a.ownerName ?? "") }) };
+}
+
+/**
+ * The line under an account in a list of what the person has, what tells two accounts apart: one's own says its email
+ * (or its key's end), then how many other agents think with it where it thinks for all of them; one that would move,
+ * sign in again or is signed out says so (`accountAbout`). Someone else's says whose it is and its plan, never its email.
+ */
+export function haveAbout(t: TFunction, r: ExistingAccount, agentName: string): string | undefined {
+  const a = r.choice.login;
+  if (!a.mine) {
+    return [t("agentPage.work.brain.accountOf", { name: firstName(a.ownerName ?? "") }), planWordOf(a.plan)]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  if (r.act !== "use") return accountAbout(t, r.choice, agentName);
+  const others = [...new Set(r.choice.usedBy)].filter((n) => n !== agentName);
+  const who = a.keyHint ? t("aiAccounts.page.keyEnds", { hint: a.keyHint }) : a.email;
+  if (!others.length || a.shared !== true) return who ?? accountAbout(t, r.choice, agentName);
+  if (!who) return t("agentPage.work.brain.accountAlso", { agents: joinNames(others, t) });
+  return `${who} · ${t("connectAi.have.moreAgents", { count: others.length })}`;
+}
+
+/**
+ * Someone else's accounts the viewer can't pick (`locked`: not lent to them, or signed out), which leave the list:
+ * how many each person has, one per account (`accountChoices`), for one quiet line under that person's group.
+ */
+export function lockedByOwner(rows: readonly ExistingAi[]): { key: string; name: string; count: number }[] {
+  const out: { key: string; name: string; count: number }[] = [];
+  for (const r of rows) {
+    if (r.kind !== "account" || r.act !== "locked") continue;
+    const key = `owner:${r.choice.login.ownerId}`;
+    const found = out.find((o) => o.key === key);
+    if (found) found.count++;
+    else out.push({ key, name: firstName(r.choice.login.ownerName ?? ""), count: 1 });
+  }
+  return out;
+}
+
+/** "Mais 2 contas de Walter que só Walter pode dar." (`lockedByOwner`). */
+export const lockedText = (t: TFunction, o: { name: string; count: number }) =>
+  t("connectAi.have.onlyOwner", { count: o.count, name: o.name });
+
+/** What the person may pick of what they have (`existingAi`): someone else's they can't (`locked`) leave the list. */
+export const pickable = <A extends MachineAccount>(rows: readonly ExistingAi<A>[]) =>
+  rows.filter((r) => r.kind === "key" || r.act !== "locked");
 
 /**
  * Whether Connect an AI starts with what the person already has for the agent (`existingAi`): while it has no AI, and

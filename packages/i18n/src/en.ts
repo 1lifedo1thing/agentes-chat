@@ -3432,6 +3432,16 @@ export const en = {
       titleFor: "Already connected, for {{name}}",
       other: "Or connect another",
       manageKeys: "Manage or delete keys",
+      /** Over the accounts already connected: what picking one does. */
+      pickLine: "Pick an account already connected here. {{name}} thinks with it.",
+      /** Under a person's group: their accounts the viewer can't pick (not lent, or signed out), counted per account. */
+      onlyOwner_one: "{{count}} more of {{name}}'s accounts only {{name}} can give.",
+      onlyOwner_other: "{{count}} more of {{name}}'s accounts only {{name}} can give.",
+      /** After the email of one's own account made for all agents: how many other agents think with it. */
+      moreAgents_one: "and {{count}} more agent",
+      moreAgents_other: "and {{count}} more agents",
+      /** Someone else's plan, with room left (their row has no meter word otherwise). */
+      plenty: "Plenty left",
     },
     /** Connect opened from an agent's conversation (ADR 0160, addendum): what is already connected, to pick from. */
     chat: {

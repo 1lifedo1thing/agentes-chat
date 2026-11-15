@@ -3166,7 +3166,13 @@
       "titleFor": "Al gekoppeld, voor {{name}}",
       "titleFor_female": "Al gekoppeld, voor {{name}}",
       "other": "Of koppel een ander",
-      "manageKeys": "Sleutels beheren of verwijderen"
+      "manageKeys": "Sleutels beheren of verwijderen",
+      "pickLine": "Kies een account dat hier al verbonden is. {{name}} denkt ermee.",
+      "onlyOwner_one": "Nog {{count}} account dat alleen {{name}} kan geven.",
+      "onlyOwner_other": "Nog {{count}} accounts die alleen {{name}} kan geven.",
+      "moreAgents_one": "en nog {{count}} agent",
+      "moreAgents_other": "en nog {{count}} agents",
+      "plenty": "Ruim genoeg"
     },
     "chat": {
       "mine": "Van jou",
@@ -16909,6 +16915,14 @@
   "usageViews": {
     "signedOut": "Uitgelogd",
     "whose": "Van {{name}}",
+    "order": {
+      "title": "{{plan}} · Gebruiksvolgorde",
+      "hint": "Bij een limiet gaan agents verder met het volgende account dat nog ruimte heeft en keren ze terug naar het eerste zodra dat is gereset.",
+      "terms": "Meerdere {{plan}}-accounts gebruiken is een grijs gebied in de voorwaarden van {{plan}}.",
+      "termsAbout": "Over de voorwaarden van {{plan}}",
+      "termsHint": "Een abonnement is voor één persoon bedoeld, dus controleer de voorwaarden van {{plan}} voordat je agents op meerdere accounts rekenen.",
+      "move": "{{name}} verplaatsen, nummer {{n}} in de volgorde"
+    },
     "serves": {
       "everyone": "Iedereen gebruikt het",
       "onlyYou": "Alleen jij gebruikt het",
@@ -16919,14 +16933,6 @@
       "me": "Alleen ik",
       "savedEveryone": "Nu gebruikt de hele workspace dit abonnement.",
       "savedOwner": "Nu gebruik alleen jij dit abonnement."
-    },
-    "order": {
-      "title": "{{plan}} · Gebruiksvolgorde",
-      "hint": "Bij een limiet gaan agents verder met het volgende account dat nog ruimte heeft en keren ze terug naar het eerste zodra dat is gereset.",
-      "terms": "Meerdere {{plan}}-accounts gebruiken is een grijs gebied in de voorwaarden van {{plan}}.",
-      "termsAbout": "Over de voorwaarden van {{plan}}",
-      "termsHint": "Een abonnement is voor één persoon bedoeld, dus controleer de voorwaarden van {{plan}} voordat je agents op meerdere accounts rekenen.",
-      "move": "{{name}} verplaatsen, nummer {{n}} in de volgorde"
     },
     "logins_one": "{{count}} aanmelding",
     "logins_other": "{{count}} aanmeldingen",

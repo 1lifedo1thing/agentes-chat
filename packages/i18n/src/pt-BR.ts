@@ -3335,6 +3335,17 @@ export const ptBR = {
       titleFor_female: "Já conectadas, para a {{name}}",
       other: "Ou conecte outra",
       manageKeys: "Gerenciar ou apagar chaves",
+      /** Over the accounts already connected: what picking one does. */
+      pickLine: "Escolha uma conta já conectada aqui. O {{name}} pensa com ela.",
+      pickLine_female: "Escolha uma conta já conectada aqui. A {{name}} pensa com ela.",
+      /** Under a person's group: their accounts the viewer can't pick (not lent, or signed out), counted per account. */
+      onlyOwner_one: "Mais {{count}} conta de {{name}} que só {{name}} pode dar.",
+      onlyOwner_other: "Mais {{count}} contas de {{name}} que só {{name}} pode dar.",
+      /** After the email of one's own account made for all agents: how many other agents think with it. */
+      moreAgents_one: "e mais {{count}} agente",
+      moreAgents_other: "e mais {{count}} agentes",
+      /** Someone else's plan, with room left (their row has no meter word otherwise). */
+      plenty: "Com folga",
     },
     /** Connect opened from an agent's conversation (ADR 0160, addendum): what is already connected, to pick from. */
     chat: {

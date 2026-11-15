@@ -3165,7 +3165,13 @@
       "title": "Bereits verbunden",
       "titleFor": "Bereits verbunden, für {{name}}",
       "other": "Oder eine andere verbinden",
-      "manageKeys": "Schlüssel verwalten oder löschen"
+      "manageKeys": "Schlüssel verwalten oder löschen",
+      "pickLine": "Wähle ein Konto, das hier schon verbunden ist. {{name}} denkt damit.",
+      "onlyOwner_one": "Noch {{count}} Konto, das nur {{name}} vergeben kann.",
+      "onlyOwner_other": "Noch {{count}} Konten, die nur {{name}} vergeben kann.",
+      "moreAgents_one": "und {{count}} weiterer Agent",
+      "moreAgents_other": "und {{count}} weitere Agenten",
+      "plenty": "Noch viel Luft"
     },
     "chat": {
       "mine": "Deine",
@@ -16846,6 +16852,14 @@
   "usageViews": {
     "signedOut": "Abgemeldet",
     "whose": "von {{name}}",
+    "order": {
+      "title": "{{plan}} · Nutzungsreihenfolge",
+      "hint": "Am Limit machen die Agenten mit dem nächsten Konto weiter, das noch Spielraum hat, und kehren zum ersten zurück, wenn es sich zurücksetzt.",
+      "terms": "Mehrere {{plan}}-Konten zu nutzen ist in den Bedingungen von {{plan}} eine Grauzone.",
+      "termsAbout": "Über die Bedingungen von {{plan}}",
+      "termsHint": "Ein Abo ist für eine Person gedacht, also prüfe die Bedingungen von {{plan}}, bevor sich deine Agenten auf mehrere verlassen.",
+      "move": "{{name}} verschieben, Nummer {{n}} in der Reihenfolge"
+    },
     "serves": {
       "everyone": "Alle nutzen es",
       "onlyYou": "Nur du nutzt es",
@@ -16856,14 +16870,6 @@
       "me": "Nur ich",
       "savedEveryone": "Jetzt nutzt der ganze Workspace dieses Abo.",
       "savedOwner": "Jetzt nutzt nur du dieses Abo."
-    },
-    "order": {
-      "title": "{{plan}} · Nutzungsreihenfolge",
-      "hint": "Am Limit machen die Agenten mit dem nächsten Konto weiter, das noch Spielraum hat, und kehren zum ersten zurück, wenn es sich zurücksetzt.",
-      "terms": "Mehrere {{plan}}-Konten zu nutzen ist in den Bedingungen von {{plan}} eine Grauzone.",
-      "termsAbout": "Über die Bedingungen von {{plan}}",
-      "termsHint": "Ein Abo ist für eine Person gedacht, also prüfe die Bedingungen von {{plan}}, bevor sich deine Agenten auf mehrere verlassen.",
-      "move": "{{name}} verschieben, Nummer {{n}} in der Reihenfolge"
     },
     "logins_one": "{{count}} Anmeldung",
     "logins_other": "{{count}} Anmeldungen",

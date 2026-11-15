@@ -3155,7 +3155,13 @@
       "title": "Zaten bağlı",
       "titleFor": "Zaten bağlı, {{name}} için",
       "other": "Ya da başka birini bağlayın",
-      "manageKeys": "Anahtarları yönet veya sil"
+      "manageKeys": "Anahtarları yönet veya sil",
+      "pickLine": "Burada zaten bağlı bir hesap seçin. {{name}} onunla düşünür.",
+      "onlyOwner_one": "Yalnızca {{name}} tarafından verilebilecek {{count}} hesap daha var.",
+      "onlyOwner_other": "Yalnızca {{name}} tarafından verilebilecek {{count}} hesap daha var.",
+      "moreAgents_one": "ve {{count}} ajan daha",
+      "moreAgents_other": "ve {{count}} ajan daha",
+      "plenty": "Bolca yer var"
     },
     "chat": {
       "mine": "Sizinkiler",
@@ -16783,6 +16789,14 @@
   "usageViews": {
     "signedOut": "Oturum kapatıldı",
     "whose": "{{name}} hesabı",
+    "order": {
+      "title": "{{plan}} · Kullanım sırası",
+      "hint": "Bir sınıra gelindiğinde ajanlar boşluğu olan bir sonraki hesapla devam eder ve ilki sıfırlandığında ona döner.",
+      "terms": "Birden fazla {{plan}} hesabı kullanmak {{plan}} koşullarında gri bir alandır.",
+      "termsAbout": "{{plan}} koşulları hakkında",
+      "termsHint": "Bir plan tek kişi içindir, bu yüzden ajanlarınız birden fazla hesaba güvenmeden önce {{plan}} koşullarını kontrol edin.",
+      "move": "{{name}} hesabını taşı, sırada {{n}}"
+    },
     "serves": {
       "everyone": "Herkes kullanıyor",
       "onlyYou": "Yalnızca sen kullanıyorsun",
@@ -16793,14 +16807,6 @@
       "me": "Yalnızca ben",
       "savedEveryone": "Artık tüm workspace bu planı kullanıyor.",
       "savedOwner": "Artık bu planı yalnızca sen kullanıyorsun."
-    },
-    "order": {
-      "title": "{{plan}} · Kullanım sırası",
-      "hint": "Bir sınıra gelindiğinde ajanlar boşluğu olan bir sonraki hesapla devam eder ve ilki sıfırlandığında ona döner.",
-      "terms": "Birden fazla {{plan}} hesabı kullanmak {{plan}} koşullarında gri bir alandır.",
-      "termsAbout": "{{plan}} koşulları hakkında",
-      "termsHint": "Bir plan tek kişi içindir, bu yüzden ajanlarınız birden fazla hesaba güvenmeden önce {{plan}} koşullarını kontrol edin.",
-      "move": "{{name}} hesabını taşı, sırada {{n}}"
     },
     "logins_one": "{{count}} oturum",
     "logins_other": "{{count}} oturum",

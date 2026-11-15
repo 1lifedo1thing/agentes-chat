@@ -3395,7 +3395,17 @@
       "title": "Już połączone",
       "titleFor": "Już połączone dla: {{name}}",
       "other": "Albo połącz inne",
-      "manageKeys": "Zarządzaj kluczami lub je usuń"
+      "manageKeys": "Zarządzaj kluczami lub je usuń",
+      "pickLine": "Wybierz konto już tu połączone. {{name}} myśli z jego pomocą.",
+      "onlyOwner_one": "Jeszcze {{count}} konto, które może przekazać tylko {{name}}.",
+      "onlyOwner_few": "Jeszcze {{count}} konta, które może przekazać tylko {{name}}.",
+      "onlyOwner_many": "Jeszcze {{count}} kont, które może przekazać tylko {{name}}.",
+      "onlyOwner_other": "Jeszcze {{count}} konta, które może przekazać tylko {{name}}.",
+      "moreAgents_one": "i jeszcze {{count}} agent",
+      "moreAgents_few": "i jeszcze {{count}} agentów",
+      "moreAgents_many": "i jeszcze {{count}} agentów",
+      "moreAgents_other": "i jeszcze {{count}} agenta",
+      "plenty": "Spory zapas"
     },
     "chat": {
       "mine": "Twoje",
@@ -17913,6 +17923,14 @@
   "usageViews": {
     "signedOut": "Wylogowane",
     "whose": "Należy do: {{name}}",
+    "order": {
+      "title": "{{plan}} · Kolejność użycia",
+      "hint": "Po dojściu do limitu agenci działają dalej na następnym koncie, które ma zapas, i wracają do pierwszego, gdy się odnowi.",
+      "terms": "Korzystanie z kilku kont {{plan}} to szara strefa w warunkach {{plan}}.",
+      "termsAbout": "O warunkach {{plan}}",
+      "termsHint": "Plan jest przeznaczony dla jednej osoby, więc sprawdź warunki {{plan}}, zanim twoi agenci zaczną polegać na kilku kontach.",
+      "move": "Przenieś {{name}}, numer {{n}} w kolejności"
+    },
     "serves": {
       "everyone": "Używają wszyscy",
       "onlyYou": "Używasz tylko Ty",
@@ -17923,14 +17941,6 @@
       "me": "Tylko ja",
       "savedEveryone": "Teraz cały workspace używa tego planu.",
       "savedOwner": "Teraz tylko Ty używasz tego planu."
-    },
-    "order": {
-      "title": "{{plan}} · Kolejność użycia",
-      "hint": "Po dojściu do limitu agenci działają dalej na następnym koncie, które ma zapas, i wracają do pierwszego, gdy się odnowi.",
-      "terms": "Korzystanie z kilku kont {{plan}} to szara strefa w warunkach {{plan}}.",
-      "termsAbout": "O warunkach {{plan}}",
-      "termsHint": "Plan jest przeznaczony dla jednej osoby, więc sprawdź warunki {{plan}}, zanim twoi agenci zaczną polegać na kilku kontach.",
-      "move": "Przenieś {{name}}, numer {{n}} w kolejności"
     },
     "logins_one": "{{count}} logowanie",
     "logins_few": "{{count}} logowania",

@@ -3051,7 +3051,11 @@
       "titleFor": "Sudah terhubung, untuk {{name}}",
       "titleFor_female": "Sudah terhubung, untuk {{name}}",
       "other": "Atau hubungkan yang lain",
-      "manageKeys": "Kelola atau hapus kunci"
+      "manageKeys": "Kelola atau hapus kunci",
+      "pickLine": "Pilih akun yang sudah terhubung di sini. {{name}} berpikir dengannya.",
+      "onlyOwner_other": "{{count}} akun lagi yang hanya bisa diberikan {{name}}.",
+      "moreAgents_other": "dan {{count}} agen lagi",
+      "plenty": "Masih longgar"
     },
     "chat": {
       "mine": "Milikmu",
@@ -16335,6 +16339,14 @@
   "usageViews": {
     "signedOut": "Sudah keluar",
     "whose": "Milik {{name}}",
+    "order": {
+      "title": "{{plan}} · Urutan pemakaian",
+      "hint": "Saat mencapai batas, agen lanjut dengan akun berikutnya yang masih punya sisa dan kembali ke akun pertama saat akun itu direset.",
+      "terms": "Memakai beberapa akun {{plan}} adalah area abu-abu dalam ketentuan {{plan}}.",
+      "termsAbout": "Tentang ketentuan {{plan}}",
+      "termsHint": "Satu paket untuk satu orang, jadi cek ketentuan {{plan}} sebelum agenmu mengandalkan beberapa akun.",
+      "move": "Pindahkan {{name}}, nomor {{n}} dalam urutan"
+    },
     "serves": {
       "everyone": "Semua orang memakainya",
       "onlyYou": "Hanya kamu yang memakainya",
@@ -16345,14 +16357,6 @@
       "me": "Hanya saya",
       "savedEveryone": "Sekarang seluruh workspace memakai paket ini.",
       "savedOwner": "Sekarang hanya kamu yang memakai paket ini."
-    },
-    "order": {
-      "title": "{{plan}} · Urutan pemakaian",
-      "hint": "Saat mencapai batas, agen lanjut dengan akun berikutnya yang masih punya sisa dan kembali ke akun pertama saat akun itu direset.",
-      "terms": "Memakai beberapa akun {{plan}} adalah area abu-abu dalam ketentuan {{plan}}.",
-      "termsAbout": "Tentang ketentuan {{plan}}",
-      "termsHint": "Satu paket untuk satu orang, jadi cek ketentuan {{plan}} sebelum agenmu mengandalkan beberapa akun.",
-      "move": "Pindahkan {{name}}, nomor {{n}} dalam urutan"
     },
     "logins_other": "{{count}} login",
     "noWindows": "Batasnya muncul setelah akun ini dipakai lagi.",

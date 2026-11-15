@@ -11,9 +11,13 @@ import {
   endsOnClaude,
   existingAi,
   groupPlans,
+  haveAbout,
+  haveGroup,
   identityUnknown,
   lendable,
   listsExisting,
+  lockedByOwner,
+  lockedText,
   offersSignInAgain,
   orderStep,
   ownSignInListed,
@@ -21,13 +25,14 @@ import {
   ownSignInName,
   ownSignInReady,
   ownSignIns,
+  pickable,
   planWordOf,
   reusableAccount,
   signInOf,
   signInPlan,
   unusedCopies,
 } from "../src/lib/ai-accounts";
-import { accountName, usageSourcePart } from "../src/lib/plan-usage";
+import { accountName, roomWord, usageSourcePart } from "../src/lib/plan-usage";
 
 const usage = (at: string, usedPercent: number): PlanUsage => ({
   windows: [{ kind: "five_hour", usedPercent }],
@@ -258,6 +263,106 @@ describe("existingAi: what a person already has for an agent with no AI", () => 
     expect(rows(false).every(([act]) => act === "locked")).toBe(true);
     expect(lendable({ status: "active", shared: false, usedBy: ["Ada"] }, "Ada")).toBe(true);
     expect(lendable({ status: "active", shared: false, usedBy: ["Theo"] }, "Ada")).toBe(false);
+  });
+});
+
+describe("one account signed in once per agent is one row, whoever looks", () => {
+  /** Walter's Claude Team, signed in thirteen times on the Mac (one login per agent): ten agents on it, two signed out, one free. */
+  const team = (mine: boolean) =>
+    Array.from({ length: 13 }, (_, i) =>
+      login(`w${i + 1}`, {
+        provider: null,
+        keyHint: null,
+        label: "Claude",
+        plan: "team",
+        email: mine ? "walter@example.com" : null,
+        mine,
+        ownerId: "u_walter",
+        ownerName: "Walter Branco",
+        sameAs: "w1",
+        status: i === 10 || i === 11 ? "signed_out" : "active",
+        usedBy: i < 10 ? [`Agent ${i + 1}`] : [],
+      }),
+    );
+  /** One more of Walter's, made for all of his agents there (another account), and one of Bia's own. */
+  const more = (mine: boolean) => [
+    login("s1", {
+      provider: null,
+      keyHint: null,
+      label: "Claude",
+      plan: "team",
+      email: mine ? "walter.ops@example.com" : null,
+      mine,
+      ownerId: "u_walter",
+      ownerName: "Walter Branco",
+      sameAs: "s1",
+      shared: true,
+      usedBy: ["Atlas"],
+    }),
+    login("b1", {
+      provider: null,
+      keyHint: null,
+      label: "Claude",
+      email: mine ? null : "bia@example.com",
+      mine: !mine,
+      ownerId: "u_bia",
+      ownerName: "Bia",
+      sameAs: "b1",
+    }),
+  ];
+  const acts = (mine: boolean, canUseOthersPlans: boolean, accounts = [...team(mine), ...more(mine)]) =>
+    existingAi({ accounts, account: null, canUseOthersPlans }, []).map((r) =>
+      r.kind === "key" ? ["key", r.key.id] : [r.act, r.choice.login.id],
+    );
+
+  test("its owner, an admin who may use others' plans and a member who may not each read one row per account", () => {
+    expect(groupPlans(team(true)).map((g) => g.logins.length)).toEqual([13]);
+    expect(groupPlans(team(false)).map((g) => g.logins.length)).toEqual([13]);
+    // The owner: the free login of the thirteen, used at once.
+    expect(acts(true, false, team(true))).toEqual([["use", "w13"]]);
+    // An admin: the same free login, not the oldest (an agent's), so the account reads as usable, not locked.
+    expect(acts(false, true)).toEqual([
+      ["use", "w13"],
+      ["use", "s1"],
+      ["use", "b1"],
+    ]);
+    // A member who may not use others' plans: each of Walter's accounts once, locked.
+    expect(acts(false, false)).toEqual([
+      ["use", "b1"],
+      ["locked", "w13"],
+      ["locked", "s1"],
+    ]);
+  });
+
+  test("an account none of whose logins is free stays locked, once, even for an admin", () => {
+    const busy = team(false).map((l) => (l.usedBy.length ? l : { ...l, status: "signed_out" as const }));
+    expect(acts(false, true, busy)).toEqual([["locked", "w1"]]);
+  });
+
+  test("what can't be picked leaves the list and is counted per person and per account, never per login", () => {
+    const rows = existingAi({ accounts: [...team(false), ...more(false)], account: null }, []);
+    expect(pickable(rows).map((r) => (r.kind === "account" ? r.choice.login.id : r.key.id))).toEqual(["b1"]);
+    expect(lockedByOwner(rows)).toEqual([{ key: "owner:u_walter", name: "Walter", count: 2 }]);
+    const t = ((key: string, o?: object) => `${key} ${JSON.stringify(o)}`) as unknown as TFunction;
+    expect(lockedText(t, { name: "Walter", count: 2 })).toBe('connectAi.have.onlyOwner {"count":2,"name":"Walter"}');
+  });
+
+  test("a row's line tells accounts apart: one's own by its email and how many more agents; someone else's by whose and its plan", () => {
+    const t = ((key: string, o?: Record<string, unknown>) =>
+      o ? `${key}(${Object.values(o).join(",")})` : key) as unknown as TFunction;
+    const [own, ,] = existingAi({ accounts: more(true), account: null }, []);
+    const theirs = existingAi({ accounts: team(false), account: null, canUseOthersPlans: true }, [])[0];
+    if (own?.kind !== "account" || theirs?.kind !== "account") throw new Error("rows");
+    // Made for all of Walter's agents, Atlas on it: the email, then one more agent.
+    expect(haveAbout(t, own, "Lia")).toBe("walter.ops@example.com · connectAi.have.moreAgents(1)");
+    expect(haveAbout(t, own, "Atlas")).toBe("walter.ops@example.com");
+    expect(haveAbout(t, theirs, "Lia")).toBe("agentPage.work.brain.accountOf(Walter) · Team");
+    expect(JSON.stringify(haveAbout(t, theirs, "Lia"))).not.toContain("@");
+    expect(haveGroup(t, own)).toEqual({ key: "mine", label: "connectAi.chat.mine" });
+    expect(haveGroup(t, theirs)).toEqual({ key: "owner:u_walter", label: "agentPage.work.brain.accountOf(Walter)" });
+    expect(roomWord(t, "en", { state: "ok", until: null })).toBe("connectAi.have.plenty");
+    expect(roomWord(t, "en", { state: "almost", until: null })).toBe("aiAccounts.usage.almost");
+    expect(roomWord(t, "en", null)).toBeNull();
   });
 });
 
