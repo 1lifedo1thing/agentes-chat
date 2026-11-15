@@ -8614,6 +8614,7 @@
       "waiting_budget_late": "Zamanını kaçırdı: bütçe çok geç yenilendi",
       "stopped": "Biri tarafından durduruldu",
       "stoppedBy": "{{name}} durdurdu",
+      "stalled": "Bırakıldı: 20 dakika boyunca hiçbir şey ilerlemedi",
       "no_report": "Sonucu bildirmeden bitti",
       "handoff_blocked": "Bildirilemedi: rutin duraklatıldı ya da oluşturan kişi artık oraya yazamıyor",
       "deleted": "Durduruldu: rutin silindi",

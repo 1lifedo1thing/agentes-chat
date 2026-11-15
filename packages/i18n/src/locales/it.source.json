@@ -20986,6 +20986,9 @@
   "routines.code.stoppedBy": {
     "value": "Stopped by {{name}}"
   },
+  "routines.code.stalled": {
+    "value": "Let go: nothing moved in it for 20 minutes"
+  },
   "routines.code.no_report": {
     "value": "Finished without telling the result"
   },

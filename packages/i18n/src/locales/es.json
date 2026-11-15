@@ -8907,6 +8907,7 @@
       "waiting_budget_late": "Se le pasó la hora: el presupuesto se renovó demasiado tarde",
       "stopped": "Alguien la detuvo",
       "stoppedBy": "Detenida por {{name}}",
+      "stalled": "Liberada: nada avanzó en ella durante 20 minutos",
       "no_report": "Terminó sin contar el resultado",
       "handoff_blocked": "No pudo contarlo: la rutina se pausó o quien la creó ya no puede publicar allí",
       "deleted": "Detenida: la rutina se eliminó",

@@ -8657,6 +8657,7 @@
       "waiting_budget_late": "Hat ihre Zeit verpasst: Das Budget hat sich zu spät erneuert",
       "stopped": "Von jemandem gestoppt",
       "stoppedBy": "Von {{name}} gestoppt",
+      "stalled": "Freigegeben: 20 Minuten lang hat sich nichts bewegt",
       "no_report": "Fertig, ohne das Ergebnis mitzuteilen",
       "handoff_blocked": "Konnte nicht berichten: Die Routine wurde pausiert oder wer sie erstellt hat, kann dort nicht mehr posten",
       "deleted": "Gestoppt: Die Routine wurde gelöscht",
