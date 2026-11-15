@@ -234,6 +234,8 @@ const UPDATE_IDLE_MS = 10 * 60_000;
 const KEPT_UPDATE_WAIT_MS = 24 * 3600_000;
 const DOWNLOAD_TIMEOUT_MS = 5 * 60_000;
 const QUICK_TIMEOUT_MS = 15_000;
+/** How long a killed `agent-browser` that exited may wait for its pipes to close before it counts as done. */
+const SPAWN_EXIT_GRACE_MS = 3_000;
 /** One input command on the relay: a click or a key answers in milliseconds. */
 const INPUT_TIMEOUT_MS = 5_000;
 /**
@@ -1084,6 +1086,24 @@ const POINTER_COMMANDS = new Set([...HUMAN_COMMANDS, "mouse", "drag"]);
 const HUMAN_DONE: Record<string, string> = { click: "clicked", hover: "hovered", fill: "filled" };
 /** A command that timed out. The apps match these words (`browserNoAnswerMessage`): keep them. */
 const NO_ANSWER = "The browser didn't answer";
+/**
+ * A whole `browser.act` or `browser.batch` under one deadline (`deadlined`): the step it is on, and the signal that
+ * stops whatever runs in it once that deadline passes.
+ */
+interface Deadline {
+  signal: AbortSignal;
+  step: string;
+}
+/** A deadline's step as the agent tells it; a command's own step is its name. */
+const STUCK_STEPS: Record<string, string> = {
+  install: "getting the browser ready",
+  queued: "waiting behind the agent's earlier browser command",
+  desktop: "starting the agent's desktop",
+  launch: "starting Chrome",
+  tabs: "listing the tabs",
+};
+/** A deadline that passed (`deadlined`): the server words it for the agent (`runnerFailureText`). */
+const STUCK_CODE = "browser_stuck";
 /** The answer to a command a person's taking control cut short (`stopInput`). */
 const TOOK_OVER: BrowserAnswer = {
   success: false,
@@ -1781,6 +1801,8 @@ interface Session {
    * one under way stops, and one still waiting in the queue never runs.
    */
   calls: Set<AbortController>;
+  /** The deadline of the `act` or `batch` running in the queue now: every `run` and tab listing in it stops with it. */
+  deadline?: Deadline;
   /** Until when the daemon may still run an agent command that taking control cut off (`DAEMON_HOLD_MS`). */
   daemonBusyUntil?: number;
   /** How many agent (or server) commands are being performed now: only those make taking control wait (`takeOver`). */
@@ -2198,13 +2220,37 @@ export class BrowserManager {
     const driven = this.sessions.get(String(agent.id ?? ""));
     if (!person && driven && this.driving(driven)) return this.whileDriving(driven, prepared);
     const setup: BrowserSetup = {};
+    return this.deadlined(
+      agent,
+      prepared.timeoutMs,
+      setup,
+      (d) => this.actIn(agent, folder, req, prepared, allowed, person, setup, d, signal, actor),
+      (stuck) => ({ ...stuck, ...withSetup(setup) }),
+    );
+  }
+
+  private async actIn(
+    agent: AgentScope,
+    folder: string,
+    req: ActRequest,
+    prepared: Prepared,
+    allowed: string[],
+    person: boolean,
+    setup: BrowserSetup,
+    d: Deadline,
+    signal?: AbortSignal,
+    actor: AgentScope = agent,
+  ): Promise<BrowserAnswer & { setup?: BrowserSetup; tabs?: BrowserTabs }> {
     const session = await this.timedSession(agent, folder, setup);
     const desktop = req.desktop === true;
     const queuedAt = this.now();
     const acts = actsOnPage(prepared);
     // The person's own command isn't the agent's: their taking control doesn't stop it.
     const call = person ? new AbortController() : this.agentCall(session);
+    d.step = "queued";
     const answer = await this.enqueue(session, async () => {
+      d.signal.throwIfAborted();
+      session.deadline = d;
       this.mark(setup, "queued", queuedAt);
       if (!person && this.driving(session)) return this.whileDriving(session, prepared);
       // A page that died since the agent last heard, or while this ran, is an action's answer: it changed under it.
@@ -2226,13 +2272,17 @@ export class BrowserManager {
           call.signal,
         );
         const told = (acts ? (this.takeCrash(session, true) ?? this.takeBlocked(session)) : null) ?? done;
+        d.step = "tabs";
         // A tab command's numbers are the ones the agent was given: nothing closes under them.
         return { ...told, ...(await this.tabsNow(session, prepared.command === "tab" ? "none" : "all")) };
       } finally {
         if (!person) session.agentRunning = Math.max(0, (session.agentRunning ?? 1) - 1);
         opening.close();
       }
-    }).finally(() => session.calls.delete(call));
+    }).finally(() => {
+      session.calls.delete(call);
+      if (session.deadline === d) session.deadline = undefined;
+    });
     return { ...answer, ...withSetup(setup), ...(session.viewport ? { emulated: session.viewport } : {}) };
   }
 
@@ -2284,14 +2334,39 @@ export class BrowserManager {
     const driven = this.sessions.get(String(agent.id ?? ""));
     if (driven && this.driving(driven)) return { answers: [PERSON_DRIVING] };
     const setup: BrowserSetup = {};
+    const answers: BrowserAnswer[] = [];
+    return this.deadlined(
+      agent,
+      prepared.reduce((ms, p) => ms + p.timeoutMs, 0),
+      setup,
+      (d) => this.batchIn(agent, folder, req, prepared, allowed, setup, answers, d, signal, actor),
+      // What answered before it stays the agent's; the step that got stuck is the last answer.
+      (stuck): MachineReplies["browser.batch"] => ({ answers: [...answers, stuck], ...withSetup(setup) }),
+    );
+  }
+
+  private async batchIn(
+    agent: AgentScope,
+    folder: string,
+    req: BatchRequest,
+    prepared: (Prepared & { tolerate: boolean })[],
+    allowed: string[],
+    setup: BrowserSetup,
+    answers: BrowserAnswer[],
+    d: Deadline,
+    signal?: AbortSignal,
+    actor: AgentScope = agent,
+  ): Promise<MachineReplies["browser.batch"]> {
     const session = await this.timedSession(agent, folder, setup);
     const desktop = req.desktop === true;
     const queuedAt = this.now();
     const call = this.agentCall(session);
+    d.step = "queued";
     return this.enqueue(session, async (): Promise<MachineReplies["browser.batch"]> => {
+      d.signal.throwIfAborted();
+      session.deadline = d;
       this.mark(setup, "queued", queuedAt);
       if (this.driving(session)) return { answers: [PERSON_DRIVING], ...withSetup(setup) };
-      const answers: BrowserAnswer[] = [];
       /** Where this batch's last action answered. */
       let acted = -1;
       /**
@@ -2320,7 +2395,7 @@ export class BrowserManager {
       session.agentRunning = (session.agentRunning ?? 0) + 1;
       try {
         for (const p of prepared) {
-          if (signal?.aborted) break;
+          if (signal?.aborted || d.signal.aborted) break;
           const acts = actsOnPage(p);
           if (acts && died()) break;
           if (acts) acted = answers.length;
@@ -2360,13 +2435,56 @@ export class BrowserManager {
         // Each Vault value this batch opened goes with it (ADR 0144).
         opening.close();
       }
+      d.step = "tabs";
+      const tabs = await this.tabsNow(session);
       return {
         answers,
         ...withSetup(setup),
         ...(session.viewport ? { emulated: session.viewport } : {}),
-        ...(await this.tabsNow(session)),
+        ...tabs,
       };
-    }).finally(() => session.calls.delete(call));
+    }).finally(() => {
+      session.calls.delete(call);
+      if (session.deadline === d) session.deadline = undefined;
+    });
+  }
+
+  /**
+   * One deadline for a whole `browser.act` or `browser.batch`: its commands' own time (`ms`), which the server waits
+   * for plus 30 s, so this answer always reaches it first. It covers the install, the wait in the queue, the desktop,
+   * Chrome's start, and every command and check run for it (`session.deadline` stops each `run` and tab listing).
+   * Past it the answer is `browser_stuck`, naming the step it was on, and the runner's log says the same. A Chrome
+   * still starting goes on, for the next command.
+   */
+  private async deadlined<T>(
+    agent: AgentScope,
+    ms: number,
+    setup: BrowserSetup,
+    body: (d: Deadline) => Promise<T>,
+    stuck: (answer: BrowserAnswer) => T,
+  ): Promise<T> {
+    const stop = new AbortController();
+    const d: Deadline = { signal: stop.signal, step: "install" };
+    const seconds = Math.round(Math.min(ms, 600_000) / 1000);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const expired = new Promise<T>((resolve) => {
+      timer = setTimeout(() => {
+        stop.abort();
+        const step = STUCK_STEPS[d.step] ?? `on "${d.step}"`;
+        const timed = browserSetupText(setup);
+        this.opts.log(
+          `the browser of ${agent.handle} didn't answer within ${seconds} s: stuck ${step}${timed ? ` (${timed})` : ""}`,
+        );
+        resolve(
+          stuck({ success: false, data: null, code: STUCK_CODE, error: `${NO_ANSWER} within ${seconds} s: stuck ${step}` }),
+        );
+      }, seconds * 1000);
+    });
+    try {
+      return await Promise.race([body(d), expired]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /** An agent's `act` or `batch` as it is queued: a person taking control ends it (`stopInput`). */
@@ -2550,6 +2668,7 @@ export class BrowserManager {
   ): Promise<BrowserAnswer> {
     const { command, args, timeoutMs } = p;
     if (taken?.aborted) return TOOK_OVER;
+    if (session.deadline) session.deadline.step = command;
     session.allowed = allowed;
     const actor = vault?.actor ?? agent;
     const stops = signal && taken ? AbortSignal.any([signal, taken]) : (signal ?? taken);
@@ -2587,6 +2706,7 @@ export class BrowserManager {
       return answer;
     }
     if (!READS.has(command)) await this.ensureOwnChrome(agent, session, desktop, allowed, false, setup);
+    if (session.deadline) session.deadline.step = command;
     if (!NO_PAGE.has(command)) await this.foreground(session, stops);
     if (command === "agentes:viewport") {
       const answer = this.setViewport(session, browserViewportOf(args) ?? null);
@@ -2993,11 +3113,16 @@ export class BrowserManager {
     if (profileSession && asked) throw new RunnerError("not_allowed", "A browser profile only runs in the background");
     const desktop = onDesktop && !profileSession;
     const running = session.chrome;
-    if (!running && session.chromeStarting) return session.chromeStarting;
+    if (!running && session.chromeStarting) {
+      if (session.deadline) session.deadline.step = "launch";
+      return session.chromeStarting;
+    }
     if (running && !restart && ((running.display !== undefined) === desktop || (!asked && this.inView(session)))) {
       return running;
     }
+    if (session.deadline) session.deadline.step = desktop ? "desktop" : "launch";
     const where = desktop ? await this.desktopFor(agent, session, asked, setup) : null;
+    if (session.deadline) session.deadline.step = "launch";
     if (asked && !where) throw new RunnerError("desktop_unavailable", "The agent's desktop isn't running");
     const startedAt = this.now();
     let page: string | undefined;
@@ -3610,8 +3735,12 @@ export class BrowserManager {
     args: string[],
     opts: { timeoutMs: number; signal?: AbortSignal; stdin?: string; notUse?: boolean },
   ): Promise<BrowserAnswer> {
+    // Also stopped by the queue's deadline (`deadlined`), which only the `act` or `batch` running now sets: a call from
+    // outside the queue meanwhile is stopped with it only once that browser is stuck anyway.
+    const deadline = session.deadline?.signal;
+    const signal = opts.signal && deadline ? AbortSignal.any([opts.signal, deadline]) : (opts.signal ?? deadline);
     // An abort only reaches a process that is running: one that came first would not stop this.
-    if (opts.signal?.aborted) return { success: false, data: null, error: "Stopped" };
+    if (signal?.aborted) return { success: false, data: null, error: "Stopped" };
     const command = this.presentCommand() ?? (await this.ensureReady());
     if (!opts.notUse) session.lastUsed = this.now();
     // Never without our Chrome: `agent-browser` would launch its own, with the automation markers.
@@ -3622,7 +3751,7 @@ export class BrowserManager {
     const out = await this.spawn(command, [...this.sessionFlags(session, chrome), ...args], {
       timeoutMs: opts.timeoutMs,
       cwd: session.folder,
-      ...(opts.signal ? { signal: opts.signal } : {}),
+      ...(signal ? { signal } : {}),
       ...(opts.stdin !== undefined ? { stdin: opts.stdin } : {}),
     }).finally(() => {
       session.running = (session.running ?? 1) - 1;
@@ -3677,7 +3806,9 @@ export class BrowserManager {
     const call = (p: string) =>
       (this.opts.fetch ?? fetch)(`http://127.0.0.1:${chrome.port}/json/${p}`, {
         redirect: "error",
-        signal: AbortSignal.timeout(QUICK_TIMEOUT_MS),
+        signal: session.deadline
+          ? AbortSignal.any([AbortSignal.timeout(QUICK_TIMEOUT_MS), session.deadline.signal])
+          : AbortSignal.timeout(QUICK_TIMEOUT_MS),
       });
     const listed = (await (await call("list")).json()) as unknown;
     if (!Array.isArray(listed)) return undefined;
@@ -5045,12 +5176,23 @@ export class BrowserManager {
         opts.signal?.removeEventListener("abort", onAbort);
         resolve({ stdout, stderr, exitCode, timedOut });
       };
+      // `close` waits for the pipes, which a process it started may hold open after it is killed: once killed and
+      // exited, it is done a little later anyway, so a stuck grandchild can't hold the agent's queue for good.
+      let killed = false;
+      let exited: number | null | undefined;
+      const doneAfterKill = () => {
+        if (!killed || exited === undefined) return;
+        const late = setTimeout(() => finish(exited ?? null), SPAWN_EXIT_GRACE_MS);
+        (late as { unref?: () => void }).unref?.();
+      };
       const kill = () => {
+        killed = true;
         try {
           child.kill("SIGKILL");
         } catch {
           // gone
         }
+        doneAfterKill();
       };
       const timer = setTimeout(() => {
         timedOut = true;
@@ -5073,6 +5215,10 @@ export class BrowserManager {
         finish(null);
       });
       events.on("close", (code: number | null) => finish(code));
+      events.on("exit", (code: number | null) => {
+        exited = code;
+        doneAfterKill();
+      });
       child.stdin.on("error", () => undefined);
       child.stdin.end(opts.stdin ?? "");
     });

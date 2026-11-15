@@ -4544,3 +4544,85 @@ test.if(posix)(
     expect(eased(0)).toHaveLength(1);
   },
 );
+
+describe("one deadline for a whole command", () => {
+  const stuckIn = (answer: BrowserAnswer | undefined) => ({ code: answer?.code, error: answer?.error });
+
+  test.if(posix)(
+    "a browser that stops answering in the runner's own checks answers browser_stuck, naming the step, inside the command's time",
+    async () => {
+      const t = setup();
+      await t.act("open", ["https://shop.example.com/"]);
+      // Every eval hangs: the look at whether the tab shows and the names put on the controls before a snapshot, each
+      // 15 s on its own, which the server never counted.
+      t.page({ hang: { command: "eval", ms: 20_000 } });
+      const startedAt = performance.now();
+      const { answers } = await t.manager.batch(dev, await t.folder(), {
+        op: "browser.batch",
+        commands: [{ command: "snapshot", args: [], timeoutSeconds: 2 }],
+      });
+      const took = performance.now() - startedAt;
+      expect(took).toBeGreaterThan(1_500);
+      expect(took).toBeLessThan(4_000);
+      expect(stuckIn(answers.at(-1))).toEqual({
+        code: "browser_stuck",
+        error: `The browser didn't answer within 2 s: stuck on "snapshot"`,
+      });
+      // What was running stopped with it: the next command runs at once.
+      t.page({ hang: null });
+      const after = performance.now();
+      expect((await t.act("get", ["url"])).success).toBe(true);
+      expect(performance.now() - after).toBeLessThan(2_000);
+    },
+  );
+
+  test.if(posix)("a command waiting behind a stuck one says it was waiting in the queue", async () => {
+    const t = setup();
+    await t.act("open", ["https://shop.example.com/"]);
+    t.page({ hang: { command: "get", ms: 20_000 } });
+    const folder = await t.folder();
+    const first = new AbortController();
+    const held = t.manager.act(
+      dev,
+      folder,
+      { op: "browser.act", command: "get", args: ["text", "@e3"], timeoutSeconds: 20 },
+      first.signal,
+    );
+    await waitFor(() => t.logged().some((c) => c.args.includes("text")));
+    const { answers } = await t.manager.batch(dev, folder, {
+      op: "browser.batch",
+      commands: [{ command: "snapshot", args: [], timeoutSeconds: 1 }],
+    });
+    expect(stuckIn(answers.at(-1))).toEqual({
+      code: "browser_stuck",
+      error: "The browser didn't answer within 1 s: stuck waiting behind the agent's earlier browser command",
+    });
+    first.abort();
+    await held;
+    t.page({ hang: null });
+  });
+
+  test.if(posix)("a killed agent-browser whose child still holds its output frees the queue a moment later", async () => {
+    const t = setup();
+    await t.act("open", ["https://shop.example.com/"]);
+    t.page({ orphan: { command: "get", ms: 60_000 } });
+    const folder = await t.folder();
+    try {
+      const stuck = await t.manager.act(dev, folder, {
+        op: "browser.act",
+        command: "get",
+        args: ["url"],
+        timeoutSeconds: 1,
+      });
+      expect(stuck.code).toBe("browser_stuck");
+      t.page({ orphan: null });
+      // The killed process exited; its child holding the pipe no longer holds the agent's next command.
+      const startedAt = performance.now();
+      expect((await t.act("get", ["url"])).success).toBe(true);
+      expect(performance.now() - startedAt).toBeLessThan(8_000);
+    } finally {
+      const pid = JSON.parse(readFileSync(process.env.FAKE_AB_STATE as string, "utf8")).orphanPid as number | undefined;
+      if (pid) process.kill(pid, "SIGKILL");
+    }
+  });
+});
