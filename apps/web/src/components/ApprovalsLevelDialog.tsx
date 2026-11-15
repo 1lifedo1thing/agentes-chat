@@ -23,7 +23,8 @@ import { useToast } from "@/lib/toast";
 
 /**
  * The three approvals levels in a dialog (ADR 0173): an agent's page, Settings' workspace row and an approval's
- * "Mudar quando perguntar" all choose here. A choice saves at once; `children` go under the choices.
+ * "Mudar quando perguntar" all choose here. A choice saves at once; `children` go under the choices. With no `value`
+ * none is chosen, so every one of them saves.
  */
 export function ApprovalsLevelDialog({
   open,
@@ -37,7 +38,7 @@ export function ApprovalsLevelDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   description: string;
-  value: ApprovalsLevel;
+  value: ApprovalsLevel | null;
   saving: boolean;
   onChoose: (level: ApprovalsLevel) => void;
   children?: ReactNode;
@@ -54,11 +55,11 @@ export function ApprovalsLevelDialog({
       width={480}
     >
       <DialogBody>
-        <OptionList<ApprovalsLevel>
+        <OptionList<ApprovalsLevel | "">
           aria-label={title}
-          value={value}
+          value={value ?? ""}
           disabled={saving}
-          onValueChange={onChoose}
+          onValueChange={(level) => level && onChoose(level)}
           options={APPROVALS_LEVELS.map((level) => ({
             value: level,
             title: t(`approvalsLevel.${level}.title`),
@@ -116,19 +117,30 @@ export function WhenAsksLink({
   const saving = change.isPending || undo.isPending;
   return (
     <>
-      <Button variant="link" className={cx("when-asks", className)} disabled={saving} onClick={() => setOpen(true)}>
+      <Button
+        variant="link"
+        className={cx("when-asks", className)}
+        disabled={saving}
+        onClick={() => {
+          setEveryAgent(false);
+          setOpen(true);
+        }}
+      >
         {t("approvalsLevel.change")}
       </Button>
       <ApprovalsLevelDialog
         open={open}
         onOpenChange={setOpen}
         description={t("approvalsLevel.lead", { name: agent.name })}
-        value={(change.isPending ? change.variables?.level : undefined) ?? approvalsLevelOf(agent)}
+        // For every agent, the agent's own level is no answer: each choice, its level too, sets the workspace's.
+        value={
+          (change.isPending ? change.variables?.level : undefined) ?? (everyAgent ? null : approvalsLevelOf(agent))
+        }
         saving={saving}
         onChoose={choose}
       >
         {can(org, "manage_agents") && (
-          <label htmlFor={boxId} className="scope-row level-every">
+          <label htmlFor={boxId} className="scope-row">
             <Checkbox id={boxId} checked={everyAgent} onCheckedChange={setEveryAgent} disabled={saving} />
             <span className="scope-row__text">{t("approvalsLevel.everyAgent")}</span>
           </label>
@@ -175,7 +187,7 @@ export function WorkspaceApprovalsRow() {
         saving={set.isPending}
         onChoose={(next) => set.mutate({ level: next }, { onSuccess: () => setOpen(false) })}
       >
-        {own > 0 && <p className="small muted level-own">{t("approvalsLevel.ownAgents", { count: own })}</p>}
+        {own > 0 && <p className="small muted">{t("approvalsLevel.ownAgents", { count: own })}</p>}
       </ApprovalsLevelDialog>
     </div>
   );

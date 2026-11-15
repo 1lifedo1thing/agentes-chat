@@ -83,6 +83,29 @@ describe("Mudar quando perguntar", () => {
     });
   });
 
+  test("for every agent, the agent's own level saves too, and the box starts unticked each time", async () => {
+    const state = following();
+    await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(state) });
+    await settle(4);
+    let dialog = await openChoices(card());
+    const box = () => within(dialog).getByRole("checkbox", { name: "Para todos os agentes do workspace" });
+    await click(box());
+    // Ticked, no level is chosen: Ada's own "Só o arriscado" is a choice like the others.
+    expect(
+      within(dialog)
+        .getAllByRole("radio")
+        .map((r) => r.getAttribute("aria-checked")),
+    ).toEqual(["false", "false", "false"]);
+    await click(within(dialog).getByRole("radio", { name: /Só o arriscado/ }));
+    expect(calls(state, "orgs.setApprovalsLevel")).toEqual([[ORG_ID, { level: "risky", everyAgent: true }]]);
+    expect(state.agents.find((a) => a.id !== ADA_ID)).toMatchObject({
+      approvalsLevel: "risky",
+      approvalsLevelOwn: false,
+    });
+    dialog = await openChoices(card());
+    expect(box().getAttribute("aria-checked")).toBe("false");
+  });
+
   test("who may decide the request but not set the agent's level sees no link", async () => {
     const state = following();
     if (state.me?.organizations[0]) state.me.organizations[0].role = "member";
