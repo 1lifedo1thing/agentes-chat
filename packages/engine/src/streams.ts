@@ -636,10 +636,11 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
      * seat's), each person once per agent they opened it as: the agent's pointer goes to them under that agent's id.
      */
     desktopViewers(screenId: string, machineId: string) {
-      const seen = new Map<string, { orgId: string; userId: string; agentId: string }>();
+      const seen = new Map<string, { orgId: string; userId: string; agentId: string; shared?: true }>();
       for (const s of streams.values()) {
         if (screenOf(s) !== screenId || s.machineId !== machineId || s.request.kind !== "desktop") continue;
-        seen.set(`${s.orgId}:${s.userId}:${s.agentId}`, { orgId: s.orgId, userId: s.userId, agentId: s.agentId });
+        const { orgId, userId, agentId } = s;
+        seen.set(`${orgId}:${userId}:${agentId}`, { orgId, userId, agentId, ...(s.shared ? { shared: true } : {}) });
       }
       return [...seen.values()];
     },

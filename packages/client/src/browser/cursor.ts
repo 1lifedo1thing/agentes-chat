@@ -56,12 +56,17 @@ export function nextPointer(was: CountedPointer | null, to: BrowserPointer, at =
 /** A gesture over by `now`: shown later (a view opened, control handed back) it is placed at rest, never replayed. */
 export const pointerAtRest = (p: CountedPointer, now: number) => now - p.at > CURSOR_IDLE_MS;
 
-/** The pointer in a desktop's `agent.desktop.pointer` user event (ADR 0062), for that agent only. */
+/**
+ * The pointer in a desktop's `agent.desktop.pointer` user event (ADR 0062), for that agent only, and for the right
+ * hand on the seat the view shows (`shared`: its shared one, ADR 0175), as a person may have both open.
+ */
 export function desktopPointerOf(
-  event: { type: string; agentId?: unknown; pointer?: unknown },
+  event: { type: string; agentId?: unknown; shared?: unknown; pointer?: unknown },
   agentId: string,
+  shared = false,
 ): BrowserPointer | null {
   if (event.type !== "agent.desktop.pointer" || event.agentId !== agentId) return null;
+  if ((event.shared === true) !== shared) return null;
   return parseBrowserPointer(event.pointer);
 }
 

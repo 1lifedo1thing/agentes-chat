@@ -118,6 +118,15 @@ describe("each gesture of the agent's pointer", () => {
     expect(desktopPointerOf({ ...event, pointer: { ...point(1, 2), act: "drag" } }, "a1")).toBeNull();
     expect(desktopPointerOf({ type: "agent.desktop.pointer" }, "a1")).toBeNull();
   });
+
+  test("the right hand's shared seat and a person's own are told apart: each view draws its own seat's only", () => {
+    const own = { type: "agent.desktop.pointer", agentId: "a1", pointer: point(5, 6) };
+    const shared = { ...own, shared: true };
+    expect(desktopPointerOf(own, "a1")).toEqual(point(5, 6));
+    expect(desktopPointerOf(shared, "a1")).toBeNull();
+    expect(desktopPointerOf(shared, "a1", true)).toEqual(point(5, 6));
+    expect(desktopPointerOf(own, "a1", true)).toBeNull();
+  });
 });
 
 describe("where the arrow's tip lands on the view", () => {

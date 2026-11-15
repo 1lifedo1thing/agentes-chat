@@ -347,14 +347,19 @@ describe("the broker", () => {
     f = await setup();
     const machine = await paired();
     const seat = { id: "seat-of-ada", handle: "ada-seat" };
+    const shared = { id: "seat-shared", handle: "shared-seat" };
     const { broker } = brokerFor(machine, {
-      authorize: async () => ({ machineId: machine.machineId, agent: seat }),
+      authorize: async (s) => ({ machineId: machine.machineId, agent: s.shared ? shared : seat }),
     });
-    const stream = broker.open(fakeSocket().socket, input(WATCH));
-    await until(() => stream.runner !== null, "the data socket");
-    // The computer says the seat's pointer by the seat's id (ADR 0175); the app knows the agent's.
+    const own = broker.open(fakeSocket().socket, input(WATCH));
+    const place = broker.open(fakeSocket().socket, { ...input(WATCH), shared: true });
+    await until(() => own.runner !== null && place.runner !== null, "the data sockets");
+    // The computer says the seat's pointer by the seat's id (ADR 0175); the app knows the agent's, and which seat.
     expect(broker.desktopViewers(seat.id, machine.machineId)).toEqual([
       { orgId: f.org.id, userId: f.owner.id, agentId: f.agent.id },
+    ]);
+    expect(broker.desktopViewers(shared.id, machine.machineId)).toEqual([
+      { orgId: f.org.id, userId: f.owner.id, agentId: f.agent.id, shared: true },
     ]);
     expect(broker.desktopViewers(f.agent.id, machine.machineId)).toEqual([]);
   });
@@ -395,15 +400,67 @@ describe("the broker", () => {
     pointers.report(machine.machineId, at(50));
     expect(sent.at(-1)?.event).toEqual({ type: "agent.desktop.pointer", agentId: f.agent.id, pointer: pointer(50) });
     broker.close(first);
-    // Another computer's report of the same screen is never shown here, and its computer going forgets it.
+    const reopen = async (expected: number) => {
+      sent.length = 0;
+      const s = broker.open(fakeSocket().socket, input(WATCH));
+      await until(() => s.runner !== null && sent.length >= expected, "the view");
+      await Bun.sleep(5);
+      broker.close(s);
+      return sent.map((m) => m.event);
+    };
+    const replayed = (x: number) => [
+      { type: "agent.desktop.pointer", agentId: f.agent.id, pointer: { ...pointer(x), replay: true } },
+    ];
+    // Another computer's report under the same id is its own: never shown here, never erasing this one.
     pointers.report("another-computer", at(70));
     pointers.closed("another-computer");
+    expect(await reopen(1)).toEqual(replayed(50));
+    // A computer names its screens itself: only its newest few are kept, the one in use among them.
+    for (let i = 0; i < 64; i++) pointers.report(machine.machineId, { ...at(1), agentId: `made-up-${i}` });
+    expect(await reopen(0)).toEqual([]);
+    pointers.report(machine.machineId, at(60));
+    expect(await reopen(1)).toEqual(replayed(60));
+    // The server ending that desktop forgets it: a new one starts with no pointer on it.
+    pointers.stopped(machine.machineId, f.agent.id);
+    expect(await reopen(0)).toEqual([]);
+    // And so does its computer going.
+    pointers.report(machine.machineId, at(90));
     pointers.closed(machine.machineId);
-    sent.length = 0;
-    const second = broker.open(fakeSocket().socket, input(WATCH));
-    await until(() => second.runner !== null, "the data socket");
-    await Bun.sleep(5);
-    expect(sent).toEqual([]);
+    expect(await reopen(0)).toEqual([]);
+  });
+
+  test("the right hand's shared seat and a person's own say which one the pointer is on", async () => {
+    f = await setup();
+    const machine = await paired();
+    const shared = { id: "seat-shared", handle: "shared-seat" };
+    const sent: unknown[] = [];
+    let pointers: ReturnType<typeof createDesktopPointers> | undefined;
+    const { broker } = brokerFor(machine, {
+      authorize: async (s) => ({
+        machineId: machine.machineId,
+        agent: s.shared ? shared : { id: "seat-of-ada", handle: "a" },
+      }),
+      onReady: (s) => pointers?.opened(s),
+    });
+    pointers = createDesktopPointers({
+      viewers: (screenId, machineId) => broker.desktopViewers(screenId, machineId),
+      send: (_viewer, event) => sent.push(event),
+    });
+    const point = { x: 5, y: 6, width: 1280, height: 900, act: "move" as const };
+    pointers.report(machine.machineId, { type: "desktop.pointer", agentId: shared.id, ...point });
+    const place = broker.open(fakeSocket().socket, { ...input(WATCH), shared: true });
+    await until(() => sent.length === 1, "the last pointer");
+    expect(sent).toEqual([
+      { type: "agent.desktop.pointer", agentId: f.agent.id, shared: true, pointer: { ...point, replay: true } },
+    ]);
+    pointers.report(machine.machineId, { type: "desktop.pointer", agentId: shared.id, ...point, x: 7 });
+    expect(sent.at(-1)).toEqual({
+      type: "agent.desktop.pointer",
+      agentId: f.agent.id,
+      shared: true,
+      pointer: { ...point, x: 7 },
+    });
+    broker.close(place);
   });
 
   test("an older runner refuses a desktop that isn't running: the server starts it and opens once more", async () => {

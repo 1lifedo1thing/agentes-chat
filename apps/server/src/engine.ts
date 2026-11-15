@@ -591,6 +591,7 @@ export function buildEngine(o: EngineOptions) {
   machineHub.setBrowserHooks({
     ...browserLive.hubHooks,
     desktopPointer: desktopPointers.report,
+    desktopStopped: desktopPointers.stopped,
     closed(machineId) {
       browserLive.hubHooks.closed(machineId);
       desktopPointers.closed(machineId);
