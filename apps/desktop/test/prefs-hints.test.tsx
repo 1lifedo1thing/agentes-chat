@@ -163,6 +163,31 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
       },
     ));
 
+  test("Servers: installed and internal versions stay distinct through a restart", () =>
+    pane(
+      "here",
+      <Servers />,
+      (el) => row(el, "Reach it from your phone and teammates"),
+      async (el) => {
+        const installed = () => row(el, "Installed package version")?.line;
+        const internal = () => row(el, "Internal server version")?.line;
+        const phase = () => el.querySelector(".dk-card .dk-crow__end .ac-chip")?.textContent;
+        const restart = [...el.querySelectorAll("button")].find((button) => button.textContent === "Restart");
+
+        expect(installed()).toBe("0.8.5");
+        expect(internal()).toBe("0.1.1");
+        expect(restart?.disabled).toBe(false);
+        await act(async () => restart?.click());
+        await until(() => phase() === "Starting");
+        expect(installed()).toBe("0.8.5");
+        expect(internal()).toBeUndefined();
+
+        await until(() => phase() === "Running");
+        expect(installed()).toBe("0.8.5");
+        expect(internal()).toBe("0.1.1");
+      },
+    ));
+
   test("Servers: until Tailscale answers, reach says it is checking and its switch waits", async () => {
     // Tailscale is connected, but its read takes a moment: the line says so, never "Needs Tailscale" meanwhile.
     const answers: ((tailnet: Tailnet) => void)[] = [];
@@ -400,6 +425,30 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
         expect(el.querySelector(".dk-phead .dk-lead")?.textContent).toBe(
           "What agents of every workspace can run on this Mac.",
         );
+      },
+    ));
+
+  test("Tools: the installed Codex can be checked again", () =>
+    pane(
+      "selfhost",
+      <Tools />,
+      (el) => el.querySelector('#tool-claude[aria-checked="true"]'),
+      async (el, host) => {
+        const codex = el.querySelector("#tool-codex")?.closest(".dk-crow");
+        const button = [...(codex?.querySelectorAll("button") ?? [])].find(
+          (button) => button.textContent === "Check again",
+        );
+        expect(button?.disabled).toBe(false);
+        const checks = new Set<string>();
+        for (const [id, runner] of host.runners) {
+          const handle = runner.handle.bind(runner);
+          runner.handle = (line) => {
+            if (JSON.parse(line).type === "executors.check") checks.add(id);
+            handle(line);
+          };
+        }
+        await act(async () => button?.click());
+        await until(() => checks.size === host.runners.size);
       },
     ));
 

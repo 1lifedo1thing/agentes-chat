@@ -10719,6 +10719,8 @@ export const ptBR = {
       },
       resetsAt: "renova às {{time}}",
       resetsOn: "renova {{day}} às {{time}}",
+      allModels: "Todos os modelos",
+      onlyModels: "Só {{name}}",
       almost: "Quase no limite",
       limited: "No limite",
       limitedUntil: "No limite até {{when}}",
@@ -11929,6 +11931,13 @@ export const ptBR = {
       cant_start: "O {{program}} está no {{computer}}, mas não abre.",
       not_reported: "O {{computer}} ainda está vendo quais programas tem. Isto muda sozinho quando terminar.",
       outdated: "A versão no {{computer}} é antiga. Atualize o Codex para usar.",
+      outdatedCodex:
+        "O Codex CLI {{detected}} foi encontrado no {{computer}}. Atualize para a versão {{minimum}} ou superior.",
+      codexUpdateGuide: "Como atualizar o Codex CLI",
+      codexRecheckHere:
+        "Depois de atualizar, clique em Verificar de novo na linha do Codex em Preferências › Ferramentas.",
+      codexRecheckThere:
+        "Atualize o Codex CLI no {{computer}}. Se ele usa o app para computador, clique em Verificar de novo na linha do Codex em Preferências › Ferramentas.",
       system: "O {{program}} ainda não roda no sistema do {{computer}}.",
       no_computerCloud: "Disponível assim que o {{computer}} ficar pronto.",
     },
@@ -13066,6 +13075,7 @@ export const ptBR = {
     connected: "Conectado",
     connectedAs: "Conectado como {{account}}",
     reconnectAdds: "Reconecte o {{name}} para os agentes também poderem {{what}}.",
+    sendsToo: "Envia também: <names/>. Para mudar, use Reconectar.",
     adds: { github_project: "usar o GitHub Projects (ler quadros e mover cards)" },
     toolsCount_one: "{{count}} ferramenta",
     toolsCount_other: "{{count}} ferramentas",
@@ -14163,6 +14173,22 @@ export const ptBR = {
     notApproved:
       "{{name}} só deixa entrar apps que aprovou, e o agentes.chat ainda não foi aprovado. Se ele te der uma chave de API, dá para conectar com ela.",
     serverSaid: "O servidor respondeu: {{detail}}",
+    headers: {
+      title: "Cabeçalhos da requisição",
+      help: "Para uma chave que vai em outro cabeçalho, ou um gateway na frente do servidor. A maioria dos servidores não precisa.",
+      value: "Valor",
+      nameOf: "Nome do cabeçalho {{n}}",
+      valueOf: "Valor do cabeçalho {{n}}",
+      remove: "Remover cabeçalho {{n}}",
+      add: "Adicionar cabeçalho",
+      saved_one: "Salvo: <names/>. Continua, a menos que você digite novos.",
+      saved_other: "Salvos: <names/>. Continuam, a menos que você digite novos.",
+      drop: "Remover",
+      dropping_one: "<names/> sai ao reconectar.",
+      dropping_other: "<names/> saem ao reconectar.",
+      undo: "Desfazer",
+      refused: "O servidor não aceitou esses cabeçalhos. Confira os valores, ou conecte com uma chave de API.",
+    },
     nothingYet: "Nada fica disponível para os agentes até o passo 3.",
     allCanUse: "Ao conectar, todos os agentes podem usar. Dá para ajustar depois.",
     replace: "Substitui o login atual. Quem usa continua igual.",
@@ -14819,6 +14845,15 @@ export const ptBR = {
        */
       misconfigured:
         "A conexão com {{provider}} está mal configurada no servidor, então ela não conclui. Quem cuida do servidor precisa trocar a chave nas configurações do app.",
+      headerName: "Use só letras, números e hífens no nome do cabeçalho, como em X-API-Key.",
+      headerValue: "Digite um valor para {{header}}: até 2.000 caracteres em uma linha, sem acentos nem emojis.",
+      headerReserved: "{{header}} já é enviado em toda requisição e não dá para trocar. Remova este cabeçalho.",
+      headerTwice: "{{header}} está na lista duas vezes. Remova um deles.",
+      headerAndKey: "A chave de API já é enviada como Authorization. Apague a chave ou remova este cabeçalho.",
+      headersTooMany: "Um servidor aceita no máximo {{max}} cabeçalhos. Remova um para adicionar outro.",
+      headersWithSignIn:
+        "Este servidor pede login, e o login ainda não leva cabeçalhos. Remova os cabeçalhos para entrar, ou conecte com uma chave de API.",
+      headersUnreadable: "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.",
     },
     /** Restricted wiki pages (ADR 0023). */
     wiki: {
@@ -15971,6 +16006,7 @@ export const ptBR = {
       waiting: "<b>{{who}}</b> está esperando <b>{{deviceName}}</b>",
       toolRequest: "<b>{{who}}</b> pede para ligar {{tool}} no seu <b>{{deviceName}}</b>",
       cliRequest: "<b>{{who}}</b> pede para instalar {{tool}} no seu <b>{{deviceName}}</b>",
+      folderRequest: "<b>{{who}}</b> pede a pasta {{path}} no seu <b>{{deviceName}}</b>",
       once: "Permitir uma vez",
       always: "Sempre",
       no: "Não",
