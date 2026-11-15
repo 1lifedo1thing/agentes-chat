@@ -541,6 +541,7 @@ export {
   workspaceInk,
   workspaceTones,
 } from "./sky/workspace";
+export { onThemeChange, switchTheme, THEME_SWITCHING_ATTR, type Theme } from "./theme";
 export {
   allZones,
   cityOf,

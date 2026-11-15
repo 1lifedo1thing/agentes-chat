@@ -415,7 +415,6 @@ html:not([data-pointer]) .wiki-tag:focus-visible {
 }
 .wiki-card:hover {
   box-shadow: var(--e2), var(--top);
-  transform: translateY(-2px);
 }
 html:not([data-pointer]) .wiki-card:focus-visible {
   outline: none;
