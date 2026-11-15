@@ -417,7 +417,7 @@
     "restoreUnreadable": "Die back-up gaat niet open. Probeer de andere.",
     "erase": "Wissen en opnieuw beginnen…",
     "eraseTitle": "agentes.chat op deze {{device}} wissen?",
-    "eraseBody": "Zijn werkruimtes verdwijnen voor iedereen die ze gebruikt, op elk apparaat. Alles wat erin staat gaat naar {{path}} en blijft daar compleet. De bestanden van de agenten in ~/agentes zijn van jou en blijven waar ze zijn. Daarna stel je het opnieuw in met een nieuw eigenaarsaccount.",
+    "eraseBody": "Zijn werkruimtes verdwijnen voor iedereen die ze gebruikt, op elk apparaat. Zijn gegevens gaan naar {{path}} en blijven daar. Wat zijn agenten op deze {{device}} bewaarden, zoals hun browsers en aanmeldingen, wordt verwijderd. De bestanden van de agenten in ~/agentes zijn van jou en blijven waar ze zijn. Daarna stel je het opnieuw in met een nieuwe eigenaar.",
     "eraseConfirm": "Wissen",
     "erased": "Gewist. De oude gegevens staan in {{path}}.",
     "eraseMoveFailed": "De gegevens konden niet worden verplaatst, dus er is niets gewist en ze staan nog in {{path}}. Het blijft gestopt tot je het weer start.",

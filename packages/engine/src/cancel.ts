@@ -18,7 +18,7 @@ import { seatScopes } from "./right-hand-seats";
 import { closeRoutineRun } from "./routine-ledger";
 import { ACTIVE_RUN_STATUSES, releaseInbox } from "./run-inbox";
 import { tellAgentStopped } from "./run-stopped";
-import { isTerminal, type RunStatus, replyThreadOf, transitionRun } from "./runs";
+import { isTerminal, type RunStatus, replyThreadOf, type StopActor, stopError, transitionRun } from "./runs";
 import { cancelSecretRequests, publishSecret, type SecretRequestRow, syncSecretMessage } from "./secrets";
 import { standingErrorDetail } from "./standing";
 import { endWork } from "./works";
@@ -209,8 +209,16 @@ export async function cancelRun(
   /**
    * `chain`: what the run asked of other agents stops with it, all the way down (`stopHelpers`).
    * `sendMessageId`: "Parar e mandar" to a computer brain: the message it is stopped to read (`stoppedToSend`).
+   * `byAgentId`: the agent that stops it at the person's word (the right hand).
    */
-  options: { stopMessageId?: string; sendMessageId?: string; reason?: string; tell?: boolean; chain?: boolean } = {},
+  options: {
+    stopMessageId?: string;
+    sendMessageId?: string;
+    reason?: string;
+    tell?: boolean;
+    chain?: boolean;
+    byAgentId?: string;
+  } = {},
 ): Promise<{ id: string; status: RunStatus; previousStatus: RunStatus }> {
   const { db } = deps;
   const membership = await requireActiveMembership(db, userId, orgId);
@@ -235,8 +243,9 @@ export async function cancelRun(
     ? await (await import("./consultations")).stopHelpers(deps, userId, orgId, runId, options.reason)
     : [];
   // It ended as the person pressed stop, but what it asked was still on: that stopped, and its agent reads so.
+  const by = options.byAgentId;
   if (helpers.length > 0 && isTerminal(row.run.status)) {
-    await tellAgentStopped(deps, row.run, row.run.status, userId, options.reason, helpers).catch(() => null);
+    await tellAgentStopped(deps, row.run, row.run.status, userId, options.reason, helpers, by).catch(() => null);
     return { id: row.run.id, status: row.run.status, previousStatus: row.run.status };
   }
   // The agent's owner or an admin decides for the whole conversation; who asked, only for what they sent.
@@ -246,7 +255,7 @@ export async function cancelRun(
     orgId,
     row.run,
     row.channelKind,
-    { type: "person", id: userId },
+    { type: "person", id: userId, ...(by ? { agentId: by } : {}) },
     {
       ...options,
       forAll,
@@ -255,18 +264,21 @@ export async function cancelRun(
   // The agent is told (ADR 0128), unless the stop came with a message to it ("Parar e mandar": that message says it)
   // or the agent stopped it itself on a person's word (`tell: false`).
   if (!options.stopMessageId && !options.sendMessageId && options.tell !== false) {
-    await tellAgentStopped(deps, row.run, stopped.previousStatus, userId, options.reason, helpers).catch(() => null);
+    await tellAgentStopped(deps, row.run, stopped.previousStatus, userId, options.reason, helpers, by).catch(
+      () => null,
+    );
   }
   // Its usage note's "Don't run it" speaks for every turn that note took in, each for who may stop it.
-  for (const id of stopped.joined ?? []) await cancelRun(deps, userId, orgId, id, { tell: false }).catch(() => null);
+  for (const id of stopped.joined ?? [])
+    await cancelRun(deps, userId, orgId, id, { tell: false, ...(by ? { byAgentId: by } : {}) }).catch(() => null);
   return stopped;
 }
 
 /**
  * Ends a run that hasn't finished: its pending approvals, questions and
  * secret requests close, its queued jobs are dropped, the worker running it
- * aborts, and the app hears it stopped. `actor`: the person who stopped it,
- * or the system (a consultation nobody waits for anymore, ADR 0034).
+ * aborts, and the app hears it stopped. `actor`: the person who stopped it (or the agent at their word),
+ * or the system (a consultation nobody waits for anymore, ADR 0034), kept on the run (`stopError`).
  * Its unread messages are handed on, and an agent whose question it answered
  * hears it couldn't: by the worker executing it once it has posted the stop
  * (it may restart from a "Parar e mandar"), else here.
@@ -276,12 +288,12 @@ export async function stopRun(
   orgId: string,
   start: typeof agentRuns.$inferSelect,
   channelKind: string | null,
-  actor: { type: "person"; id: string } | { type: "system"; reason: string },
+  actor: StopActor,
   /** `forAll`: the person stops a conversation's catch-up for everyone in it (the agent's owner, an admin). */
   options: { stopMessageId?: string; sendMessageId?: string; forAll?: boolean } = {},
 ): Promise<{ id: string; status: RunStatus; previousStatus: RunStatus; joined?: string[] }> {
   const { db } = deps;
-  const error = actor.type === "person" ? `canceled_by:${actor.id}` : actor.reason;
+  const error = stopError(actor);
   let run = start;
   let previous: RunStatus = run.status;
   let line: string | null = null;
@@ -347,7 +359,14 @@ export async function stopRun(
         );
       await recordAudit(tx, {
         orgId,
-        actor: actor.type === "person" ? actor : { type: "system", id: null },
+        // The right hand's stop is its own, on behalf of the person whose word it acted on.
+        actor:
+          actor.type === "system"
+            ? { type: "system", id: null }
+            : actor.agentId
+              ? { type: "agent", id: actor.agentId }
+              : { type: "person", id: actor.id },
+        ...(actor.type === "person" && actor.agentId ? { onBehalfOfUserId: actor.id } : {}),
         action: "run.canceled",
         target: { type: "agent_run", id: run.id },
         details: { agentId: run.agentId, from: status, ...(actor.type === "system" ? { reason: actor.reason } : {}) },
@@ -432,7 +451,12 @@ export async function stopRun(
   };
   const bg = run.background ? { background: true as const } : {};
   if (actor.type === "person" && !run.background)
-    await publishChannelEvent(deps.pubsub, { type: "run.canceled", ...where, byUserId: actor.id });
+    await publishChannelEvent(deps.pubsub, {
+      type: "run.canceled",
+      ...where,
+      byUserId: actor.id,
+      ...(actor.agentId ? { byAgentId: actor.agentId } : {}),
+    });
   await publishChannelEvent(deps.pubsub, { type: "agent.run", ...where, ...bg, status: "canceled" });
   // Its line ends with the run (ADR 0084 §11).
   await announceAgentStatus(deps.pubsub, run.orgId, run.agentId).catch(() => {});

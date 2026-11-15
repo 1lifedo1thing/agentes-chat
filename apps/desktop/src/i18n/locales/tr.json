@@ -417,7 +417,7 @@
     "restoreUnreadable": "O yedek açılamıyor. Diğerini dene.",
     "erase": "Sil ve baştan başla…",
     "eraseTitle": "agentes.chat bu {{device}} üzerinde silinsin mi?",
-    "eraseBody": "Çalışma alanları, onları kullanan herkes için her cihazda kaybolur. İçindeki her şey {{path}} konumuna taşınır ve orada eksiksiz kalır. Ajanların ~/agentes içindeki dosyaları senindir ve oldukları yerde kalır. Sonra onu yeni bir sahip hesabıyla yeniden kurarsın.",
+    "eraseBody": "Çalışma alanları, onları kullanan herkes için her cihazda kaybolur. Verileri {{path}} konumuna taşınır ve orada kalır. Ajanlarının bu {{device}} üzerinde tuttukları, örneğin tarayıcıları ve oturum açmaları, silinir. Ajanların ~/agentes içindeki dosyaları senindir ve oldukları yerde kalır. Sonra onu yeni bir sahiple yeniden kurarsın.",
     "eraseConfirm": "Sil",
     "erased": "Silindi. Eski verileri {{path}} konumunda.",
     "eraseMoveFailed": "Veriler taşınamadı, bu yüzden hiçbir şey silinmedi ve veriler {{path}} konumunda duruyor. Yeniden başlatana kadar durdurulmuş kalır.",

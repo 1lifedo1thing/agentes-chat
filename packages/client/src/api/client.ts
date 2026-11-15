@@ -832,6 +832,8 @@ export interface ApiClient {
     removeCredential(orgId: string, credentialId: string, purge?: boolean, release?: boolean): Promise<void>;
     /** The key becomes the workspace's default and its provider's: agents without an AI of their own think with it. */
     makeDefaultCredential(orgId: string, credentialId: string): Promise<Credential>;
+    /** The other saved copies of this key fold into it: their agents, defaults and spend move to it, then they go. */
+    removeCredentialCopies(orgId: string, credentialId: string): Promise<{ removed: number }>;
     /** One cheap real call with a stored key, before an agent is pointed at it. A refusal comes as on saving one. */
     checkCredential(orgId: string, credentialId: string): Promise<{ check: "ok" | "unchecked" }>;
     /** Whether this server offers the platform key (Cloud). */
@@ -1722,6 +1724,8 @@ export interface ApiClient {
     snooze(orgId: string, id: string, until: string | null): Promise<AppNotification>;
     /** "Marcar tudo como lido": the ids it changed (undo marks them unread again). */
     readAll(orgId: string, filter?: NotificationFilter): Promise<{ ids: string[] }>;
+    /** "Concluir todas" but what waits on me: the ids it changed (undo brings each back with `done(…, false)`). */
+    doneAll(orgId: string, filter?: NotificationFilter): Promise<{ ids: string[] }>;
     /** What reaches my devices as a notification in this workspace (ADR 0071 §8). */
     prefs(orgId: string): Promise<NoticePrefs>;
     setPref(orgId: string, category: NoticeCategory, on: boolean): Promise<NoticePrefs>;

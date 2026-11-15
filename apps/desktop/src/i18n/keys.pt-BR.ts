@@ -449,7 +449,7 @@ export const desktopPtBR = {
     erase: "Apagar e começar de novo…",
     eraseTitle: "Apagar o agentes.chat neste {{device}}?",
     eraseBody:
-      "Os workspaces dele somem para todos que os usam, em qualquer aparelho. Tudo o que ele guarda vai para {{path}} e fica lá inteiro. Os arquivos dos agentes em ~/agentes são seus e ficam onde estão. Depois você configura de novo, com uma nova conta de dono.",
+      "Os workspaces dele somem para todos que os usam, em qualquer aparelho. Os dados dele vão para {{path}} e ficam lá. O que os agentes dele guardavam neste {{device}}, como navegadores e logins, é apagado. Os arquivos dos agentes em ~/agentes são seus e ficam onde estão. Depois você configura de novo, com um novo dono.",
     eraseConfirm: "Apagar",
     erased: "Apagado. Os dados antigos estão em {{path}}.",
     eraseMoveFailed:

@@ -413,7 +413,7 @@
     "restoreUnreadable": "Cadangan itu tidak bisa dibuka. Coba yang lain.",
     "erase": "Hapus dan mulai dari awal…",
     "eraseTitle": "Hapus agentes.chat di {{device}} ini?",
-    "eraseBody": "Ruang kerjanya hilang bagi semua orang yang memakainya, di perangkat apa pun. Semua isinya dipindahkan ke {{path}} dan tetap utuh di sana. File para agen di ~/agentes milikmu dan tetap di tempatnya. Lalu kamu menyiapkannya lagi dengan akun pemilik baru.",
+    "eraseBody": "Ruang kerjanya hilang bagi semua orang yang memakainya, di perangkat apa pun. Datanya dipindahkan ke {{path}} dan tetap di sana. Yang disimpan para agennya di {{device}} ini, seperti browser dan login mereka, dihapus. File para agen di ~/agentes milikmu dan tetap di tempatnya. Lalu kamu menyiapkannya lagi dengan pemilik baru.",
     "eraseConfirm": "Hapus",
     "erased": "Sudah dihapus. Data lamanya ada di {{path}}.",
     "eraseMoveFailed": "Datanya tidak bisa dipindahkan, jadi tidak ada yang dihapus dan datanya tetap di {{path}}. agentes.chat tetap berhenti sampai kamu menjalankannya lagi.",
