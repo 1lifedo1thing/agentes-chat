@@ -14,9 +14,11 @@ import { lowerFirst } from "@agenteschat/client/lib/format";
 import { aiStateOf } from "@agenteschat/client/lib/no-ai";
 import {
   type AgentFace,
+  agentFaceOf,
   agentFaceWord,
   agentPresenceShown,
   agentStatusText,
+  agentWhyKey,
   clearsText,
   isOutOfOffice,
   type LIMIT_ICON,
@@ -24,7 +26,7 @@ import {
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDirectory, useMeId, useNow, useOrgId } from "../shared/hooks";
-import { agentWhyKey, lineText, personLine } from "./logic";
+import { lineText, personLine } from "./logic";
 
 /**
  * Who is how (ADR 0084): people's presence and line (`GET …/people`) and agents' (`GET …/agent-status`, an agent
@@ -66,9 +68,7 @@ export function usePresenceOf(): PresenceOf {
       agent: (agentId) => {
         if (!agents.data) return null;
         const status = byAgent.get(agentId);
-        // At work it has an AI, whatever the AIs' list reads for this person (the right hand's is each person's own).
-        const noAi = aiStateOf(ai.data, agentId) === "no_ai" && status?.working !== true;
-        const presence = agentPresenceShown(status, !noAi);
+        const { presence, noAi } = agentFaceOf(status, aiStateOf(ai.data, agentId));
         // Without an AI it does nothing: no line either.
         const line = !noAi && status?.status ? agentStatusText(t, status.status, i18n.language) : null;
         return { presence, work: status?.work ?? null, line, status, noAi };
@@ -162,10 +162,15 @@ export function useAgentProfileStatus(agentId: string, name: string): AgentProfi
   const key = agentWhyKey(shown.presence, shown.noAi);
   const why = key
     ? t(`presence.agentWhy.${key}`)
-    : workDetail(t, shown.work, {
-        agentName: (id) => dir.agentById.get(id)?.name,
-        channelName: (id) => channels?.find((c) => c.id === id)?.name,
-      });
+    : workDetail(
+        t,
+        shown.work,
+        {
+          agentName: (id) => dir.agentById.get(id)?.name,
+          channelName: (id) => channels?.find((c) => c.id === id)?.name,
+        },
+        i18n.language,
+      );
   const own = shown.status?.status;
   const until = own?.until ?? null;
   const note = !own

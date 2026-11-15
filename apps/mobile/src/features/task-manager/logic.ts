@@ -1,4 +1,4 @@
-import type { ComputerSummary, EndedTask, ManagedTask } from "@agenteschat/client";
+import type { EndedTask, ManagedTask } from "@agenteschat/client";
 import {
   type AgentTasks,
   delegationText,
@@ -73,13 +73,6 @@ export function taskStateWords(
   return taskWaitWords(t, locale, task, now) ?? { state: t("taskManager.state.answer"), next: null };
 }
 
-/** A computer on the task manager: "Cheio · 2 na fila · 3 trabalhando", "Tem espaço · 1 trabalhando". */
-export function computerLine(t: TFunction, computer: Pick<ComputerSummary, "working" | "inLine">): string {
-  const room =
-    computer.inLine > 0 ? t("taskManager.queue.full", { count: computer.inLine }) : t("taskManager.queue.room");
-  return computer.working > 0 ? `${room} · ${t("taskManager.working", { count: computer.working })}` : room;
-}
-
 /**
  * An agent's row: "1 trabalhando · 1 espera você"; with nothing of that, `held`, what holds its tasks ("Pausada: plano
  * a 95% da semana"), or "Na fila" while they only wait their turn.
@@ -127,17 +120,6 @@ export function taskSubline(
   const chain = delegationText(t, task, agentName, meId);
   const helpers = task.helpers ? t("taskManager.helpers", { count: task.helpers }) : null;
   return [where === title ? null : where, chain ?? asked, plan, helpers].filter(Boolean).join(" · ");
-}
-
-/** How a task ended, for "Terminadas hoje": done, stopped (by you, by someone), or couldn't finish. */
-export function endedText(t: TFunction, task: Pick<EndedTask, "status" | "stoppedBy">, meId: string | null): string {
-  const state = endedState(task);
-  if (state === "done") return t("taskManager.ended.done");
-  if (state === "failed") return t("taskManager.ended.failed");
-  if (!task.stoppedBy) return t("taskManager.state.stopped");
-  return task.stoppedBy.userId === meId
-    ? t("taskManager.ended.stopped")
-    : t("taskManager.ended.stoppedBy", { name: task.stoppedBy.name });
 }
 
 /** "Terminadas hoje", the latest first. */
