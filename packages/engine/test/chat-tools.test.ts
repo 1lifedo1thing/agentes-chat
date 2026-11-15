@@ -1,7 +1,16 @@
 import { afterEach, expect, test } from "bun:test";
 import { and, eq, schema } from "@agenteschat/db";
 import type { ModelRequest } from "@agenteschat/providers";
-import { addChannelMember, createChannel, drainOutbox, openDm, postPersonMessage, setChannelOverride } from "../src";
+import {
+  addChannelMember,
+  createAgent,
+  createChannel,
+  drainOutbox,
+  invokeToolForRun,
+  openDm,
+  postPersonMessage,
+  setChannelOverride,
+} from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 let f: Fixture;
@@ -117,6 +126,57 @@ test("post_message: from a DM to #general with the file (as a copy); only channe
     isError: true,
     content: "No channel #general that the person who asked can post in.",
   });
+});
+
+test("post_message from a consulted agent: never into the conversation where the agent that asked is answering", async () => {
+  f = await setup({
+    chatTools: true,
+    askAgent: true,
+    reply: (req: ModelRequest) => {
+      const last = JSON.stringify(req.messages.at(-1)?.content);
+      if (last.includes("tool_result")) return { chunks: ["Pedi."] };
+      if (last.includes("pede pro nino")) {
+        return { chunks: [], toolUses: [{ name: "ask_agent", input: { agent: "@nino", question: "Faz as fotos" } }] };
+      }
+      return { chunks: ["ok"] };
+    },
+  });
+  const deps = { db: f.db, pubsub: f.pubsub };
+  const nino = await createAgent(
+    f.db,
+    f.owner.id,
+    f.org.id,
+    { name: "Nino", handle: "nino", role: "Fotos", credentialId: f.credential.id },
+    { model: "claude-sonnet-5-5" },
+  );
+  const other = await createChannel(f.db, f.owner.id, f.org.id, { name: "fotos" });
+  await postPersonMessage(deps, f.owner.id, f.org.id, f.general.id, { body: "@dev pede pro nino as fotos" });
+  await drainOutbox(f.db, f.handlers);
+  const [consulted] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, nino.id));
+  if (!consulted) throw new Error("the consultation started no run");
+  expect(consulted.channelId).not.toBe(f.general.id);
+  const post = async (channel: string) =>
+    (
+      await invokeToolForRun(
+        { ...deps, tools: f.tools },
+        { orgId: f.org.id, agentId: nino.id, runId: consulted.id, machineId: "" },
+        { id: crypto.randomUUID(), name: "post_message", input: { channel, text: "Fotos prontas" } },
+      )
+    ).result;
+  const postsIn = (channelId: string) =>
+    f.db
+      .select()
+      .from(schema.messages)
+      .where(and(eq(schema.messages.channelId, channelId), eq(schema.messages.authorAgentId, nino.id)));
+
+  // Where the person asked @dev: @dev answers there, with what Nino gives it.
+  const refused = await post("general");
+  expect(refused.isError).toBe(true);
+  expect(refused.content).toContain("the agent that asked you is answering the person");
+  expect(await postsIn(f.general.id)).toHaveLength(0);
+  // Any other channel the person is in is still a place to post.
+  expect((await post("fotos")).isError).toBeFalsy();
+  expect(await postsIn(other.id)).toHaveLength(1);
 });
 
 test("send_dm: the agent writes to a person in its DM with them, they're notified; several matches ask which one", async () => {
