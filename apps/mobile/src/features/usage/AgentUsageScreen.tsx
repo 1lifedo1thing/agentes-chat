@@ -9,6 +9,7 @@ import {
   joinNames,
 } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
+import { can } from "@agenteschat/client/lib/permissions";
 import {
   brandOf,
   noWindowsText,
@@ -16,15 +17,17 @@ import {
   usageSourceName,
   usageSourcePart,
 } from "@agenteschat/client/lib/plan-usage";
+import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { gradientOf } from "@agenteschat/ui/agent/engine";
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
-import { Icon, InfoHint, ProviderLogo, Text } from "@/ui";
-import { useColors, useDirectory } from "../shared/hooks";
+import { Button, Icon, InfoHint, ProviderLogo, Text } from "@/ui";
+import { openAgentAi } from "../ai/AgentAiScreen";
+import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { Loaded, PushedHeader } from "../shared/parts";
 import { AccountHead, PlanMeter, PlanModels, Swatch, UsageCard, UsageDays } from "./parts";
@@ -37,14 +40,29 @@ import { AccountHead, PlanMeter, PlanModels, Swatch, UsageCard, UsageDays } from
 
 export function AgentUsageScreen({ agentId }: { agentId: string }) {
   const { t } = useTranslation();
-  const { orgId } = useOrg();
+  const { orgId, org } = useOrg();
   const api = useApi();
   const c = useColors();
   const dir = useDirectory();
+  const meId = useMeId();
   const insets = useSafeAreaInsets();
   const usage = useAgentPlanUsage(orgId, agentId);
   const agent = dir.agentById.get(agentId);
   const name = agent?.name ?? "";
+  // Its owner and who manages agents change what it thinks with, as on its page (the right hand's is each person's
+  // own, on its settings). Here too: this is where they see it at its limit.
+  const changes =
+    agent && !isRightHand(agent) && (Boolean(meId && agent.ownerUserId === meId) || can(org, "manage_agents"));
+  const switchAi = changes ? (
+    <View style={styles.switch}>
+      <Button
+        variant="secondary"
+        size="sm"
+        label={t("usageQueue.switchAi", agentGrammar(name))}
+        onPress={() => openAgentAi(agentId)}
+      />
+    </View>
+  ) : null;
   // Looking at the plans: their usage is looked up again (it comes back as `machine.updated`).
   useEffect(() => {
     void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
@@ -77,7 +95,7 @@ export function AgentUsageScreen({ agentId }: { agentId: string }) {
             <Loaded>
               <View style={styles.stack}>
                 <Month data={data} name={name} tones={tones} />
-                {data.current ? <Now data={data} agentId={agentId} name={name} /> : null}
+                {data.current ? <Now data={data} agentId={agentId} name={name} action={switchAi} /> : switchAi}
                 {data.sources.length > 0 ? (
                   <BySource
                     data={data}
@@ -167,7 +185,18 @@ function Month({ data, name, tones }: { data: AgentPlanUsage; name: string; tone
   );
 }
 
-function Now({ data, agentId, name }: { data: AgentPlanUsage; agentId: string; name: string }) {
+function Now({
+  data,
+  agentId,
+  name,
+  action,
+}: {
+  data: AgentPlanUsage;
+  agentId: string;
+  name: string;
+  /** "Trocar a IA do Nick", under the account it thinks with now, for who may. */
+  action: ReactNode;
+}) {
   const { t, i18n } = useTranslation();
   const dir = useDirectory();
   const g = agentGrammar(name);
@@ -210,6 +239,7 @@ function Now({ data, agentId, name }: { data: AgentPlanUsage; agentId: string; n
         </Text>
       )}
       <PlanModels usage={current.usage} provider={current.provider} />
+      {action}
     </UsageCard>
   );
 }
@@ -333,4 +363,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   n: { alignItems: "flex-start" },
+  switch: { flexDirection: "row" },
 });
