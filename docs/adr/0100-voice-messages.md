@@ -130,3 +130,30 @@ the second takes a line of its own when the line is short: names give way, verbs
 
 **Agents wait for it.** The quiet window counts a voice frame like typing (ADR 0112): a run started on a person's
 message waits its whole window while they record a follow-up.
+
+## Addendum (2026-11-15): typed text and files in the same message
+
+**The need.** While a take existed, the recorder took the composer's place: nobody could type, paste or attach, and a
+send carried the audio alone. Someone who recorded their reasoning and then wanted to add a screenshot, or answer an
+agent's questions in writing, had to send a second message. Files attached before the take stayed on screen and were
+lost when it went.
+
+**The decision.** One message carries the take, the text typed beside it and its files. The upload
+(`POST …/channels/{channelId}/voice`) takes two optional fields: `text`, with a typed message's limit
+(`message.too_long`), and `attachments`, a JSON array of file ids with a typed message's checks (this workspace's files
+the sender uploaded or of this channel, at most 10: `message.attachment_not_found`, `message.too_many_attachments`).
+Both are refused before anything is stored, and kept on `voice_clips` (`text`, `attachments`). `voice.transcribe`
+posts `body` as the typed text, a blank line, then the words (the typed text alone when nothing was said), the files as
+`meta.artifacts`, and the typed part again as `meta.voice.text`. A take with no words and nothing typed or attached is
+still dropped; with either, the message goes.
+
+**What reads what.** Agents get the body as before, typed part first, with no prompt change, so mentions, routing,
+context and search see both. The apps show `meta.voice.text` as text above the player and the rest of the body as the
+player's words (`voiceParts` in `@agenteschat/client`). Lists, notifications, push, thread titles and quotes show the
+typed part (`readableBody`, `listedText`), and name the message a voice message only when nothing was typed: such a
+message's preview carries no `voice` and no `mediaKind`, and its quote no `mediaKind`.
+
+**Older apps.** The upload only gains optional fields, so an older app sends takes as before. An app that doesn't know
+`meta.voice.text` shows the whole body in the player's transcript, typed text first: nothing is lost, only the typed
+part isn't set apart. Its lists show the typed text, since the server sends them no voice marker for such a message.
+A take with nothing said posts its audio with the typed text as its body, which an older app shows in the transcript.
