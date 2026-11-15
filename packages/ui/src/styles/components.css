@@ -7512,7 +7512,8 @@ html:not([data-pointer]) .ac-composer__send:focus-visible {
   container: ac-composer-voice / inline-size;
 }
 /* Esc with text in the box: the row asks, in place, and its answers follow the words or drop under them. */
-.ac-composer__voice-ask {
+/* Beats `.ac-actline`'s top alignment: one line of words centres on its 32 tall buttons. */
+.ac-composer__voice-ask.ac-actline {
   flex: 1 1 100%;
   min-height: var(--control-h-sm);
   align-items: center;
