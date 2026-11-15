@@ -133,7 +133,7 @@ import {
 } from "@agenteschat/client/lib/errors";
 import { everyoneWord, isEveryoneMention, mentionsReader, offersEveryone } from "@agenteschat/client/lib/everyone";
 import { fileIcon, fitsUpload, formatBytes, MAX_UPLOAD_MB, previewKind } from "@agenteschat/client/lib/files";
-import { dayLabel, formatFullDate, formatTime } from "@agenteschat/client/lib/format";
+import { dayLabel, formatClock, formatFullDate, formatTime } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { issueTakenOf, issueWorkOf, taskConversationOf } from "@agenteschat/client/lib/issues";
@@ -4617,6 +4617,7 @@ export const TimelineMessage = memo(function TimelineMessage({
         time={
           live ? <RunClock run={live} /> : <time dateTime={m.createdAt}>{formatTime(i18n.language, m.createdAt)}</time>
         }
+        gutterTime={live ? undefined : <time dateTime={m.createdAt}>{formatClock(i18n.language, m.createdAt)}</time>}
         meta={m.local || live ? undefined : details}
         note={joinedTip ? { label: t("chat.joined.label"), tip: joinedTip } : undefined}
         // Its words arriving: its time and its stop after the time it started (the bar no longer says them).
