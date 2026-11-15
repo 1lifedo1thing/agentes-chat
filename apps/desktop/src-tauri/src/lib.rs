@@ -313,6 +313,11 @@ pub(crate) fn run_watched(
 
 /// Graceful quit: the children stop, then the app exits.
 fn begin_quit(app: AppHandle) {
+    leave(app, false);
+}
+
+/// Quitting, or (`again`) reopening: once, the windows go at once, the children stop, then the app exits or opens anew.
+fn leave(app: AppHandle, again: bool) {
     let runners = app.state::<Runners>();
     if runners.is_quitting() {
         return;
@@ -327,7 +332,11 @@ fn begin_quit(app: AppHandle) {
     }
     std::thread::spawn(move || {
         stop_children(&app);
-        app.exit(0);
+        if again {
+            app.restart();
+        } else {
+            app.exit(0);
+        }
     });
 }
 
@@ -522,10 +531,7 @@ async fn update_install(app: AppHandle) -> Result<bool, String> {
 
 /// The runners and the server here finish their work first, as when quitting; then the app opens again.
 fn reopen(app: AppHandle) {
-    tauri::async_runtime::spawn_blocking(move || {
-        stop_children(&app);
-        app.restart();
-    });
+    leave(app, true);
 }
 
 /// Preferences' Reopen now: a setting that only takes effect when the app starts (Compatibility mode).
@@ -579,6 +585,12 @@ pub fn run() {
         // First: a second launch brings the running app's window back; one carrying a link (Windows,
         // Linux) goes to the deep-link plugin first (`deep_link.rs` shows it).
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            // `--compatibility-mode` over a running app: it reopens, drawing as the switch now says (graphics.rs).
+            #[cfg(target_os = "linux")]
+            if argv.iter().any(|a| a == graphics::COMPAT_ARG) {
+                reopen(app.clone());
+                return;
+            }
             if !deep_link::in_args(&argv) {
                 open_app(app);
             }
@@ -715,9 +727,15 @@ pub fn run() {
                 api.prevent_close();
                 if window.label() == main_window::LABEL {
                     window_state::remember(window, false);
-                    // Some Linux desktops show no tray icon: there the window stays in reach, minimized.
+                    // Some Linux desktops show no tray icon: there the window stays in reach, minimized. One that
+                    // may be black (its page arrived on the graphics card and never painted) quits instead, so
+                    // opening the app again draws without the graphics card (graphics.rs `decide`).
                     #[cfg(target_os = "linux")]
                     {
+                        if cover::unpainted_on_gpu(window.app_handle()) {
+                            begin_quit(window.app_handle().clone());
+                            return;
+                        }
                         let _ = window.minimize();
                         return;
                     }
@@ -788,8 +806,9 @@ pub fn run() {
             if let Some(resume) = resume {
                 let _ = present(&handle, resume.window);
             }
-            // The last opening with the graphics card never painted: this one draws without it, and Preferences says so.
-            if graphics::fall_back(&handle) {
+            // The last opening with the graphics card never painted: this one draws without it, and Preferences says
+            // so (when it next opens, after a start at login).
+            if graphics::fall_back(&handle) && !at_login {
                 let _ = present(&handle, "prefs");
             }
             // The app icon picked on this computer (ADR 0179).

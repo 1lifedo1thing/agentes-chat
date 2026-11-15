@@ -732,7 +732,53 @@ describe("Preferences › General: Compatibility mode (Linux)", () => {
         await until(() => reopened === 1);
         expect(chosen).toEqual([false]);
       },
-      { host: (h) => (h.compat = { on: true, fellBack: true }) },
+      { host: (h) => (h.compat = { on: true, fellBack: true, own: false }) },
+    ));
+
+  test("Reopen now asks first while agents work here, and waits while the app reopens", () =>
+    pane(
+      "selfhost",
+      <General />,
+      // Agents work here once this computer's name shows.
+      (el) => row(el, "Name") && compatRow(el) && !el.querySelector<HTMLButtonElement>("#compat")?.disabled,
+      async (el, host) => {
+        let reopened = 0;
+        host.reopen = () => {
+          reopened++;
+          return new Promise<void>(() => {});
+        };
+        await act(async () => el.querySelector<HTMLButtonElement>("#compat")?.click());
+        await until(() => buttonIn(toast() as HTMLElement, "Reopen now"));
+        await act(async () => buttonIn(toast() as HTMLElement, "Reopen now")?.click());
+        await until(() => document.querySelector('[role="dialog"]'));
+        const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+        expect(dialog.textContent).toContain("Reopen agentes.chat?");
+        expect(dialog.textContent).toContain("Agents can't use this computer until the app opens again.");
+        expect(reopened).toBe(0);
+        await act(async () => buttonIn(dialog, "Reopen now")?.click());
+        expect(reopened).toBe(1);
+        expect((buttonIn(dialog, "Cancel") as HTMLButtonElement).disabled).toBe(true);
+        expect((buttonIn(dialog, "Reopen now") as HTMLButtonElement).disabled).toBe(true);
+      },
+      { host: (h) => Object.assign(h, { platform: "linux" }) },
+    ));
+
+  test("the system's own WEBKIT_DISABLE_DMABUF_RENDERER decides: the switch shows it, can't change it, and its ⓘ says why", () =>
+    pane(
+      "linux",
+      <General />,
+      (el) => compatRow(el)?.hint?.includes("decides this now"),
+      (el) => {
+        const desc =
+          "Draws the window without the graphics card. It's slower but works on any computer. Use it if the window goes black, gets cut off or freezes.";
+        expect(compatRow(el)?.hint).toBe(
+          `${desc} WEBKIT_DISABLE_DMABUF_RENDERER decides this now. To choose here, quit the app and open it without that variable.`,
+        );
+        const sw = el.querySelector<HTMLButtonElement>("#compat") as HTMLButtonElement;
+        expect(sw.getAttribute("aria-checked")).toBe("false");
+        expect(sw.disabled).toBe(true);
+      },
+      { host: (h) => (h.compat = { on: false, fellBack: false, own: true }) },
     ));
 
   test("not on a Mac or Windows", async () => {

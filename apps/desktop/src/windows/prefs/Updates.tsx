@@ -122,7 +122,7 @@ export function Updates({ update }: { update: UpdateCheck }) {
             title={t("desktop.prefs.updates.systemDetails")}
             desc={details}
             end={
-              <Button size="sm" icon="copy" onClick={() => void copyDetails(details)}>
+              <Button variant="ghost" size="sm" icon="copy" onClick={() => void copyDetails(details)}>
                 {t("desktop.common.copy")}
               </Button>
             }

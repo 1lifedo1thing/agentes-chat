@@ -4,8 +4,11 @@
 //!
 //! On Linux the person chooses it (Compatibility mode in Preferences › General, on unless turned off): on, WebKitGTK
 //! draws without the graphics card (`WEBKIT_DISABLE_DMABUF_RENDERER`); off, with it. The choice is read before
-//! anything starts (`choose`), since WebKitGTK reads that variable once. An opening with the graphics card that never
-//! painted turns it back on for the next one, so a black window is never more than one opening away from a window.
+//! anything starts (`choose`), since WebKitGTK reads that variable once. An opening with the graphics card whose page
+//! arrived from its server and never painted turns it back on for the next one, so a black window is never more than
+//! one opening away from a window. Without painting anything, `--compatibility-mode` turns it on too (and reopens an
+//! app already running). A server older than the site's `page_ready` never clears the opening's marker: with the
+//! switch off, every other opening there falls back.
 
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -20,6 +23,16 @@ const DMABUF_VAR: &str = "WEBKIT_DISABLE_DMABUF_RENDERER";
 const APP_SET_VAR: &str = "AGENTES_DESKTOP_DMABUF_BY_APP";
 /// The Compatibility mode switch, in the app's config folder: "off", or anything else (none at all too) for on.
 const COMPAT_FILE: &str = "compatibility-mode";
+/// Turns Compatibility mode on from a terminal, for a window too black to reach Preferences.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+pub const COMPAT_ARG: &str = "--compatibility-mode";
+/// Set once `COMPAT_ARG` was taken: a reopened app keeps its arguments, and must not undo a later switch off.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+const ARG_TAKEN_VAR: &str = "AGENTES_DESKTOP_COMPAT_ARG_TAKEN";
+/// The opening's marker (cover.rs `PENDING_FILE`) on the graphics card until its page arrives from its server, then
+/// `GPU_LOADED`: only that one falls back when it never painted.
+pub const GPU_LOADING: &str = "gpu-loading";
+pub const GPU_LOADED: &str = "gpu";
 
 /// Why this opening draws the way it does.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
@@ -64,24 +77,24 @@ fn compat_on(text: Option<&str>) -> bool {
 }
 
 /// How this opening draws (true: without the graphics card), and why. `own`: the person's own variable, which always
-/// wins. `last_unpainted`: what the last opening that never painted wrote in its marker (`mode`).
+/// wins. `last_unpainted`: what the last opening that never painted wrote in its marker (`marker`): only one whose
+/// page arrived on the graphics card counts, never one that was offline, found its server down or quit first.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 fn decide(own: Option<&str>, compat: bool, last_unpainted: Option<&str>) -> (bool, Why) {
     match own {
         Some(value) => (value != "0", Why::Variable),
         None if compat => (true, Why::Chosen),
-        None if last_unpainted.map(str::trim) == Some("gpu") => (true, Why::Fallback),
+        None if last_unpainted.map(str::trim) == Some(GPU_LOADED) => (true, Why::Fallback),
         None => (false, Why::Chosen),
     }
 }
 
-/// What this opening asked WebKitGTK for, for the opening's marker (cover.rs `opening`): "cpu" or "gpu".
-pub fn mode() -> &'static str {
-    let off = std::env::var(DMABUF_VAR).is_ok_and(|v| v != "0");
-    if off {
+/// The opening's marker as it starts (cover.rs `opening`): "cpu", or `GPU_LOADING`.
+pub fn marker() -> &'static str {
+    if renderer() == "cpu" {
         "cpu"
     } else {
-        "gpu"
+        GPU_LOADING
     }
 }
 
@@ -109,8 +122,16 @@ pub fn choose() {
         Some(_) => None,
         None => std::env::var(DMABUF_VAR).ok(),
     };
+    let asked = std::env::var_os(ARG_TAKEN_VAR).is_none() && std::env::args().any(|a| a == COMPAT_ARG);
+    if asked {
+        if let Some(dir) = &dir {
+            let _ = write_compat(dir, true);
+        }
+        std::env::set_var(ARG_TAKEN_VAR, "1");
+    }
     let last = read(crate::cover::PENDING_FILE);
-    let (cpu, why) = decide(own.as_deref(), compat_on(read(COMPAT_FILE).as_deref()), last.as_deref());
+    let compat = asked || compat_on(read(COMPAT_FILE).as_deref());
+    let (cpu, why) = decide(own.as_deref(), compat, last.as_deref());
     if why != Why::Variable {
         if cpu {
             std::env::set_var(DMABUF_VAR, "1");
@@ -127,16 +148,18 @@ pub fn choose() {
 pub fn choose() {}
 
 /// Once the app is up, never in a second launch on its way to the running one: an opening that fell back keeps
-/// Compatibility mode on, and Preferences says so once. True when it did.
+/// Compatibility mode on, and Preferences says so once. True when it did; a switch that couldn't be written back on
+/// is not claimed to be.
 pub fn fall_back(app: &AppHandle) -> bool {
-    if !fell_back() {
-        return false;
+    let written = fell_back()
+        && app
+            .path()
+            .app_config_dir()
+            .is_ok_and(|dir| write_compat(&dir, true).is_ok());
+    if written {
+        FELL_BACK_UNSAID.store(true, Ordering::Relaxed);
     }
-    if let Ok(dir) = app.path().app_config_dir() {
-        let _ = write_compat(&dir, true);
-    }
-    FELL_BACK_UNSAID.store(true, Ordering::Relaxed);
-    true
+    written
 }
 
 fn write_compat(dir: &Path, on: bool) -> std::io::Result<()> {
@@ -150,17 +173,25 @@ pub struct Compat {
     on: bool,
     /// This opening fell back, not said yet: true for the first ask only.
     fell_back: bool,
+    /// `WEBKIT_DISABLE_DMABUF_RENDERER` was there when the app started (the person's, or one an older version of the
+    /// app set and passed on as it reopened): it decides, `on` says what it does, and the switch can't change it.
+    own: bool,
 }
 
 /// Preferences › General: Compatibility mode as it will be at the next opening.
 #[tauri::command]
 pub fn compat_get(app: AppHandle) -> Compat {
+    let fell_back = FELL_BACK_UNSAID.swap(false, Ordering::Relaxed);
+    if why() == Why::Variable {
+        let on = std::env::var(DMABUF_VAR).is_ok_and(|v| v != "0");
+        return Compat { on, fell_back, own: true };
+    }
     let text = app
         .path()
         .app_config_dir()
         .ok()
         .and_then(|d| std::fs::read_to_string(d.join(COMPAT_FILE)).ok());
-    Compat { on: compat_on(text.as_deref()), fell_back: FELL_BACK_UNSAID.swap(false, Ordering::Relaxed) }
+    Compat { on: compat_on(text.as_deref()), fell_back, own: false }
 }
 
 /// Preferences › General: Compatibility mode for the next opening (WebKitGTK reads it only when the app starts).
@@ -421,6 +452,8 @@ mod tests {
         assert_eq!(decide(None, false, Some("gpu")), (true, Why::Fallback));
         // A marker from before the mode was written in it says nothing.
         assert_eq!(decide(None, false, Some("")), (false, Why::Chosen));
+        // Nor an opening whose page never arrived from its server (offline, the server down, quit first).
+        assert_eq!(decide(None, false, Some(GPU_LOADING)), (false, Why::Chosen));
     }
 
     #[test]

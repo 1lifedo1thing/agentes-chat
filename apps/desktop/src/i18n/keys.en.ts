@@ -661,6 +661,12 @@ export const desktopEn = {
       /** Toast once, after an opening with the graphics card never painted and the app fell back. */
       compatFellBack: "The window didn't open with the graphics card, so it opened in compatibility mode.",
       compatTryCard: "Try the graphics card again",
+      /** Behind the ⓘ while WEBKIT_DISABLE_DMABUF_RENDERER was set when the app started: the switch can't change it. */
+      compatOwn:
+        "WEBKIT_DISABLE_DMABUF_RENDERER decides this now. To choose here, quit the app and open it without that variable.",
+      /** Asked before Reopen now while agents work on this computer or agentes.chat runs here. */
+      reopenTitle: "Reopen agentes.chat?",
+      reopenBody: "Agents can't use this computer until the app opens again. What is already running finishes first.",
     },
     thisMac: {
       agents: "Agents",

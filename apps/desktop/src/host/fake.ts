@@ -286,7 +286,7 @@ export function createFakeHost(
 
   const host: FakeHost = {
     window: initial,
-    compat: { on: true, fellBack: false },
+    compat: { on: true, fellBack: false, own: false },
     fake: true,
     platform,
     runners,

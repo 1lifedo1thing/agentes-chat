@@ -59,6 +59,8 @@ export interface CompatMode {
   on: boolean;
   /** This opening fell back: the last one, with the graphics card, never painted. True for the first ask only. */
   fellBack: boolean;
+  /** WEBKIT_DISABLE_DMABUF_RENDERER was set when the app started: it decides (`on` says what it does), not the switch. */
+  own: boolean;
 }
 
 /** A server's answer to `siteFetch`: its status and body as text. */

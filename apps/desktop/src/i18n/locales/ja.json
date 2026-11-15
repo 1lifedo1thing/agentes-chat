@@ -581,7 +581,10 @@
       "compatReopen": "アプリを開き直すと反映されます。",
       "reopenNow": "今すぐ開き直す",
       "compatFellBack": "グラフィックカードではウィンドウが開かなかったため、互換モードで開きました。",
-      "compatTryCard": "グラフィックカードをもう一度試す"
+      "compatTryCard": "グラフィックカードをもう一度試す",
+      "compatOwn": "現在は WEBKIT_DISABLE_DMABUF_RENDERER がこの設定を決めています。ここで選ぶには、アプリを終了し、その変数なしで開き直してください。",
+      "reopenTitle": "agentes.chatを開き直しますか？",
+      "reopenBody": "アプリが開き直るまで、エージェントはこのコンピュータを使えません。すでに実行中のものは先に完了します。"
     },
     "thisMac": {
       "agents": "エージェント",

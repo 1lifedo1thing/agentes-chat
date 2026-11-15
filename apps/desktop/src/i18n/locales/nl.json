@@ -586,7 +586,10 @@
       "compatReopen": "Geldt wanneer de app opnieuw opent.",
       "reopenNow": "Nu opnieuw openen",
       "compatFellBack": "Het venster opende niet met de videokaart, dus het opende in compatibiliteitsmodus.",
-      "compatTryCard": "Videokaart opnieuw proberen"
+      "compatTryCard": "Videokaart opnieuw proberen",
+      "compatOwn": "WEBKIT_DISABLE_DMABUF_RENDERER bepaalt dit nu. Om hier te kiezen, sluit je de app af en open je hem zonder die variabele.",
+      "reopenTitle": "agentes.chat opnieuw openen?",
+      "reopenBody": "Agents kunnen deze computer niet gebruiken tot de app weer open is. Wat al draait, wordt eerst afgemaakt."
     },
     "thisMac": {
       "agents": "Agents",

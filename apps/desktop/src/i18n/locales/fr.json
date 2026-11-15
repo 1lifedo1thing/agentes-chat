@@ -591,7 +591,10 @@
       "compatReopen": "Prend effet à la réouverture de l'app.",
       "reopenNow": "Rouvrir maintenant",
       "compatFellBack": "La fenêtre ne s'est pas ouverte avec la carte graphique, elle s'est donc ouverte en mode compatibilité.",
-      "compatTryCard": "Réessayer la carte graphique"
+      "compatTryCard": "Réessayer la carte graphique",
+      "compatOwn": "C'est WEBKIT_DISABLE_DMABUF_RENDERER qui décide pour l'instant. Pour choisir ici, quittez l'app et rouvrez-la sans cette variable.",
+      "reopenTitle": "Rouvrir agentes.chat ?",
+      "reopenBody": "Les agents ne peuvent pas utiliser cet ordinateur avant que l'app ne se rouvre. Ce qui tourne déjà se termine d'abord."
     },
     "thisMac": {
       "agents": "Agents",

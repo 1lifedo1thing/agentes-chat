@@ -581,7 +581,10 @@
       "compatReopen": "앱을 다시 열면 적용됩니다.",
       "reopenNow": "지금 다시 열기",
       "compatFellBack": "그래픽 카드로 창이 열리지 않아 호환 모드로 열었습니다.",
-      "compatTryCard": "그래픽 카드 다시 시도"
+      "compatTryCard": "그래픽 카드 다시 시도",
+      "compatOwn": "지금은 WEBKIT_DISABLE_DMABUF_RENDERER 변수가 이 설정을 정해요. 여기서 고르려면 앱을 종료하고 그 변수 없이 다시 여세요.",
+      "reopenTitle": "agentes.chat을 다시 열까요?",
+      "reopenBody": "앱이 다시 열릴 때까지 에이전트는 이 컴퓨터를 사용할 수 없어요. 이미 실행 중인 작업은 먼저 끝나요."
     },
     "thisMac": {
       "agents": "에이전트",

@@ -272,7 +272,10 @@ pub fn open(app: &AppHandle, url: Option<Url>) -> Result<(), String> {
         .on_page_load(move |_, payload| match payload.event() {
             PageLoadEvent::Started => crate::cover::show(&on_load, Duration::ZERO),
             // The page's own sizes follow the zoom (desktop.css), and the bar knows about full screen.
-            PageLoadEvent::Finished => fit_page(&on_load),
+            PageLoadEvent::Finished => {
+                fit_page(&on_load);
+                crate::cover::site_loaded(&on_load);
+            }
         })
         .on_download(move |_, event| match event {
             DownloadEvent::Requested { destination, .. } => match downloads_path(&on_download, destination) {

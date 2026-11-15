@@ -30,8 +30,10 @@ const FADE: Duration = Duration::from_millis(260);
 /// The sky's deepest tone (packages/ui sky SKY_TONES[0]), before the cover's page paints.
 const SKY: Color = Color(10, 63, 156, 255);
 /// Written when the window opens, removed when the site paints: still there at the next opening, the last one
-/// never painted. It holds how that opening drew ("gpu" or "cpu", graphics.rs `mode`).
+/// never painted. It holds how that opening drew (graphics.rs `marker`), and whether its page arrived.
 pub const PENDING_FILE: &str = "page-pending";
+/// The marker is removed (`page_ready`) and moved on (`site_loaded`) from different threads.
+static MARKER: Mutex<()> = Mutex::new(());
 
 #[derive(Default)]
 pub struct Cover(Mutex<Shown>);
@@ -191,10 +193,41 @@ pub fn page_ready(app: AppHandle, webview: tauri::Webview) -> Result<(), String>
         return Err("only the site says it painted".into());
     }
     if let Some(path) = pending_path(&app).filter(|p| p.exists()) {
+        let _marker = MARKER.lock();
         let _ = std::fs::remove_file(path);
     }
     hide(&app);
     Ok(())
+}
+
+/// The site's page finished loading (on Linux, on the graphics card, before it painted): once its server answers,
+/// the opening's marker says the page arrived, so a window that then stays black falls back at the next opening
+/// (graphics.rs `decide`). A load that failed (offline, the server down) leaves it as it was.
+pub fn site_loaded(app: &AppHandle) {
+    if !cfg!(target_os = "linux") {
+        return;
+    }
+    fn loading(path: &std::path::Path) -> bool {
+        std::fs::read_to_string(path).is_ok_and(|m| m == crate::graphics::GPU_LOADING)
+    }
+    let Some(path) = pending_path(app).filter(|p| loading(p)) else { return };
+    let Some(site) = main_window::site(app) else { return };
+    std::thread::spawn(move || {
+        let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(5)).redirects(0).build();
+        let answered = matches!(agent.get(site.as_str()).call(), Ok(_) | Err(ureq::Error::Status(..)));
+        let _marker = MARKER.lock();
+        if answered && loading(&path) {
+            let _ = std::fs::write(&path, crate::graphics::GPU_LOADED);
+        }
+    });
+}
+
+/// This opening's page arrived on the graphics card and never painted: its window may be black.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+pub fn unpainted_on_gpu(app: &AppHandle) -> bool {
+    pending_path(app)
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .is_some_and(|m| m == crate::graphics::GPU_LOADED)
 }
 
 fn pending_path(app: &AppHandle) -> Option<PathBuf> {
@@ -213,7 +246,7 @@ pub fn opening(app: &AppHandle) {
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
-    let _ = std::fs::write(&path, crate::graphics::mode());
+    let _ = std::fs::write(&path, crate::graphics::marker());
 }
 
 /// The site, from its server again (a first load that never arrived leaves nothing to reload).

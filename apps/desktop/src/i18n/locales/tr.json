@@ -586,7 +586,10 @@
       "compatReopen": "Uygulama yeniden açıldığında geçerli olur.",
       "reopenNow": "Şimdi yeniden aç",
       "compatFellBack": "Pencere ekran kartıyla açılmadı, bu yüzden uyumluluk modunda açıldı.",
-      "compatTryCard": "Ekran kartını yeniden dene"
+      "compatTryCard": "Ekran kartını yeniden dene",
+      "compatOwn": "Şu an bunu WEBKIT_DISABLE_DMABUF_RENDERER belirliyor. Burada seçmek için uygulamadan çıkın ve bu değişken olmadan yeniden açın.",
+      "reopenTitle": "agentes.chat yeniden açılsın mı?",
+      "reopenBody": "Uygulama yeniden açılana kadar ajanlar bu bilgisayarı kullanamaz. Zaten çalışanlar önce biter."
     },
     "thisMac": {
       "agents": "Ajanlar",
