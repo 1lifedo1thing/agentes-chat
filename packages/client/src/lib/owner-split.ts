@@ -19,3 +19,7 @@ export function ownerSplit<T extends Owned>(items: readonly T[], userId: string)
   for (const item of items) split[ownerScopeOf(item, userId)].push(item);
   return split;
 }
+
+/** Whether a list shows "Equipe | Pessoal": a workspace of one person keeps one list, unless personal ones exist. */
+export const ownerTabsShown = (members: number, items: readonly Owned[]) =>
+  members > 1 || items.some((i) => i.ownerUserId);

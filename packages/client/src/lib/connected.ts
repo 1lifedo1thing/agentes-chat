@@ -53,6 +53,8 @@ export interface ConnectedItem {
   server: CustomServer | null;
   /** A personal connection's person; null: the team's (older servers say nothing: the team's). */
   ownerUserId: string | null;
+  /** Someone else's personal connection: the agents that hold it (the only detail its row may show). */
+  agentIds: string[];
 }
 
 const host = (url: string) => {
@@ -87,6 +89,7 @@ export function fromConnection(c: Connection, catalog: ConnectorDef[]): Connecte
     needsReview: false,
     server: null,
     ownerUserId: c.ownerUserId ?? null,
+    agentIds: c.agentIds ?? [],
   };
 }
 
@@ -110,6 +113,7 @@ export function fromServer(s: CustomServer, catalog: ConnectorDef[]): ConnectedI
     needsReview: !s.reviewedAt || pending > 0,
     server: s,
     ownerUserId: s.ownerUserId ?? null,
+    agentIds: s.agentIds ?? [],
   };
 }
 

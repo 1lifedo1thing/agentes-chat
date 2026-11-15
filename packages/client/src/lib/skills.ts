@@ -11,7 +11,7 @@ import type {
 } from "../api/types";
 import { errorText } from "./errors";
 import { joinNames, relativeTime } from "./format";
-import { ownerSplit } from "./owner-split";
+import { ownerSplit, ownerTabsShown } from "./owner-split";
 
 /**
  * What a GitHub link holds when `skills.import` answers with skills to pick from, else null. `via`: which of the
@@ -269,5 +269,4 @@ export const skillsToGive = <T extends Pick<Skill, "ownerUserId">>(skills: reado
   skills.filter((s) => !s.ownerUserId || s.ownerUserId === userId);
 
 /** Whether Skills shows "Equipe | Pessoal": a workspace of one person keeps one library, unless personal ones exist. */
-export const skillsSplit = (members: number, skills: readonly Pick<Skill, "ownerUserId">[]) =>
-  members > 1 || skills.some((s) => s.ownerUserId);
+export const skillsSplit = ownerTabsShown;
