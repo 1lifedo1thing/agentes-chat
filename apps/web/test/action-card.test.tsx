@@ -6,18 +6,7 @@ setupDom();
 import type { Agent, Message } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { setNavigateAway } from "@/lib/navigate";
-import {
-  ADA_ID,
-  ATLAS_ID,
-  createFakeApi,
-  ENG_ID,
-  LODI_ID,
-  meWithRole,
-  NOW,
-  ORG_ID,
-  seedState,
-  withRightHand,
-} from "./fake-api";
+import { ADA_ID, ATLAS_ID, createFakeApi, ENG_ID, meWithRole, NOW, ORG_ID, seedState } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
 
 afterEach(() => {
@@ -742,7 +731,7 @@ describe("an agent's card to install or update a skill", () => {
     ]);
   });
 
-  test("a card by an agent archived since, or by the right hand, shows no box and turns nothing on", async () => {
+  test("a card by an agent archived since shows no box and turns nothing on", async () => {
     const link = "https://github.com/acme/skills/tree/main/deploy";
     const installFrom = async (state: ReturnType<typeof seedState>, author: string) => {
       state.messages.push({
@@ -769,9 +758,6 @@ describe("an agent's card to install or update a skill", () => {
       { id: ATLAS_ID, name: atlas?.name ?? "Atlas", role: atlas?.role ?? "", appearance: null, deleted: false },
     ];
     await installFrom(archived, ATLAS_ID);
-    const ownCard = seedState();
-    withRightHand(ownCard);
-    await installFrom(ownCard, LODI_ID);
   });
 
   test("a link typed over the card's, or a repository picked from the connected GitHub, installs for nobody", async () => {
@@ -848,6 +834,20 @@ describe("an agent's card to install or update a skill", () => {
       returnTo: `/org/${ORG_ID}/settings/skills?install=${encodeURIComponent(link)}&agent=${ATLAS_ID}`,
       serverUrl: undefined,
     });
+  });
+
+  test("a member who doesn't manage agents installs it as their own personal skill", async () => {
+    const state = seedState();
+    meWithRole(state, []);
+    const link = "https://github.com/acme/skills/tree/main/deploy";
+    state.messages.push(offer("c-skill", "install_skill", { url: link, why: "Faz deploys." }));
+    await open(state);
+    await click(within(cardRow("Instalar uma skill")).getByRole("button", { name: "Instalar" }), 8);
+    const install = dialog("Instalar skill") as HTMLElement;
+    expect(install.textContent).toContain("Só quem gerencia agentes adiciona skills da equipe.");
+    expect(state.calls.filter((c) => c.method === "skills.import").map((c) => c.args[1])).toEqual([
+      { url: link, list: true, personal: true },
+    ]);
   });
 
   test("done for everyone once the library has it, a member who doesn't manage agents too", async () => {

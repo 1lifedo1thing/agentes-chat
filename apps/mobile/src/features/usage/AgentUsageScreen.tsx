@@ -27,7 +27,7 @@ import { Icon, InfoHint, ProviderLogo, Text } from "@/ui";
 import { useColors, useDirectory } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { Loaded, PushedHeader } from "../shared/parts";
-import { AccountHead, PlanMeter, Swatch, UsageCard, UsageDays } from "./parts";
+import { AccountHead, PlanMeter, PlanModels, Swatch, UsageCard, UsageDays } from "./parts";
 
 /*
  * An agent's Uso, as the web's tab (ADR 0063): one sentence with the month by account, the month day by day colored
@@ -181,7 +181,11 @@ function Now({ data, agentId, name }: { data: AgentPlanUsage; agentId: string; n
     <UsageCard
       icon="clock"
       title={t("usageViews.agent.now")}
-      footer={t("usageViews.agent.estimate", { ...g, brand: brandOf(current) })}
+      footer={t("usageViews.agent.estimateShort")}
+      footerHint={{
+        name: t("common.about", { label: t("usageViews.agent.now") }),
+        text: t("usageViews.agent.estimate", { ...g, brand: brandOf(current) }),
+      }}
     >
       <AccountHead
         account={current}
@@ -205,6 +209,7 @@ function Now({ data, agentId, name }: { data: AgentPlanUsage; agentId: string; n
           {noWindowsText(t, current)}
         </Text>
       )}
+      <PlanModels usage={current.usage} provider={current.provider} />
     </UsageCard>
   );
 }
