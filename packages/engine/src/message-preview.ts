@@ -9,6 +9,11 @@ export interface MessageVoice {
   expiresAt?: string;
   /** `body` is our placeholder, not what was said: never offered as the message's words. */
   noWords?: true;
+  /**
+   * `noWords` for a message with typed text: apps that predate `text` hide a `noWords` body, which holds the typed text
+   * too, so they show it whole in the transcript instead. Read as `noWords`.
+   */
+  unheard?: true;
   /** What the person typed beside the take: `body` starts with it, then a blank line, then the words. */
   text?: string;
 }
@@ -22,7 +27,7 @@ export function voiceOf(meta: Record<string, unknown> | null | undefined): Messa
         durationMs: v.durationMs,
         peaks: Array.isArray(v.peaks) ? v.peaks : [],
         ...(typeof v.expiresAt === "string" ? { expiresAt: v.expiresAt } : {}),
-        ...(v.noWords === true ? { noWords: true as const } : {}),
+        ...(v.noWords === true || v.unheard === true ? { noWords: true as const } : {}),
         ...(typeof v.text === "string" && v.text ? { text: v.text } : {}),
       }
     : null;

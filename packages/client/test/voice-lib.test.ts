@@ -54,6 +54,9 @@ describe("voice messages' helpers (ADR 0100)", () => {
     // No engine made out the words: the placeholder after the typed text is never offered.
     const noWords = { body: `${typed}\n\n(placeholder)`, meta: { voice: { ...voice, text: typed, noWords: true } } };
     expect(voiceParts(noWords)).toEqual({ typed, words: null });
+    // The server marks it `unheard` when text was typed, so apps that predate `text` show the body whole.
+    const unheard = { ...noWords, meta: { voice: { ...voice, text: typed, unheard: true } } };
+    expect(voiceParts(unheard)).toEqual({ typed, words: null });
     // A body that doesn't start with the typed text loses nothing: it all shows as words.
     expect(voiceParts({ body: "other", meta: { voice: { ...voice, text: typed } } })).toEqual({
       typed,

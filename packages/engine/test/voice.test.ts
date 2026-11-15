@@ -410,6 +410,19 @@ describe("typed text and files beside the take", () => {
     const message = await messageOf(clipId);
     expect(message?.body).toBe(`veja a tela\n\n${VOICE_NO_WORDS_BODY}`);
     expect(voiceOf(message?.meta)).toMatchObject({ text: "veja a tela", noWords: true });
+    // Apps that predate the typed text hide a `noWords` body: this one holds the typed text, so they show it whole.
+    expect(message?.meta.voice).not.toHaveProperty("noWords");
+  });
+
+  test("typed text up to a message's limit still posts, with the words in what is left", async () => {
+    f = await setup();
+    const deps = voiceDeps([engine("e o deploy de ontem")]);
+    const typed = "x".repeat(MAX_MESSAGE_LENGTH - 7);
+    const { clipId } = await accept(deps, { text: typed });
+    await transcribeVoiceClip(deps, clipId, { finalAttempt: false });
+    const message = await messageOf(clipId);
+    expect(message?.body).toBe(`${typed}\n\ne o d`);
+    expect(voiceOf(message?.meta)?.text).toBe(typed);
   });
 
   test("the text has a typed message's limit and the files a typed message's checks, before anything is stored", async () => {

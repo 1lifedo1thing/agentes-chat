@@ -29,7 +29,8 @@ export function voiceOf(meta: Meta): MessageVoice | null {
     durationMs: o.durationMs,
     peaks: Array.isArray(o.peaks) ? o.peaks.filter((p): p is number => typeof p === "number") : [],
     ...(typeof o.expiresAt === "string" ? { expiresAt: o.expiresAt } : {}),
-    ...(o.noWords === true ? { noWords: true } : {}),
+    // `unheard`: the server's `noWords` for a take with typed text (see the engine's `MessageVoice`).
+    ...(o.noWords === true || o.unheard === true ? { noWords: true } : {}),
     ...(typeof o.text === "string" && o.text ? { text: o.text } : {}),
   };
 }
