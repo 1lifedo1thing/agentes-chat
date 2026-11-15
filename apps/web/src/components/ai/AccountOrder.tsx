@@ -1,0 +1,146 @@
+import type { AccountOrderGroup } from "@agenteschat/client";
+import { useMoveAccountInOrder } from "@agenteschat/client";
+import { orderStep } from "@agenteschat/client/lib/ai-accounts";
+import { errorText } from "@agenteschat/client/lib/errors";
+import { HintLine, Icon } from "@agenteschat/ui";
+import { type DragEvent, type HTMLAttributes, type ReactNode, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { openContextMenu } from "@/lib/context-menu";
+import { useToast } from "@/lib/toast";
+
+/*
+ * "Ordem de uso" (ADR 0041 §6) in Configurações › IA e uso: the accounts of one plan on one computer that a run goes
+ * through at a limit, first to last. Whoever may move an account (its owner or an admin) drags it by its place, or
+ * presses the place for Move up and Move down.
+ */
+
+const ACCOUNT_DRAG = "application/x-agentes-account";
+
+/** The group's heading: its plan's order with what happens at a limit behind the ⓘ, and the plan's terms on a quiet line. */
+export function OrderHead({ group, computer }: { group: AccountOrderGroup; computer: string | null }) {
+  const { t } = useTranslation();
+  const plan = t(`aiAccounts.connect.${group.kind}`);
+  const title = t("usageViews.order.title", { plan });
+  return (
+    <div className="plan-order__head">
+      <HintLine
+        className="plan-order__title"
+        name={t("common.about", { label: title })}
+        hint={t("usageViews.order.hint")}
+      >
+        {computer ? `${title} ${t("aiAccounts.page.on", { computer })}` : title}
+      </HintLine>
+      <HintLine
+        className="plan-order__terms"
+        name={t("usageViews.order.termsAbout", { plan })}
+        hint={t("usageViews.order.termsHint", { plan })}
+      >
+        {t("usageViews.order.terms", { plan })}
+      </HintLine>
+    </div>
+  );
+}
+
+/**
+ * Moving the accounts of `group`: `place` is a row's number (a grip for whoever may move it), `drop` what makes a row
+ * take a dragged account before or after it.
+ */
+export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const move = useMoveAccountInOrder(orgId);
+  const dragging = useRef<string | null>(null);
+  const [mark, setMark] = useState<{ id: string; where: "before" | "after" } | null>(null);
+  const ids = group.accounts.map((a) => a.id);
+  const put = (accountId: string, index: number | null) => {
+    if (index === null || ids[index] === accountId) return;
+    move.mutate({ accountId, index }, { onError: (e) => toast.show(errorText(t, e), "error") });
+  };
+  const end = () => {
+    dragging.current = null;
+    setMark(null);
+  };
+
+  const place = (accountId: string, n: number, name: string): ReactNode => {
+    const account = group.accounts.find((a) => a.id === accountId);
+    if (!account?.canMove) return <span className="plan-row__place">{n}</span>;
+    const label = t("usageViews.order.move", { name, n });
+    return (
+      <button
+        type="button"
+        className="plan-row__place plan-row__place--grip"
+        draggable
+        aria-label={label}
+        title={label}
+        disabled={move.isPending}
+        onDragStart={(e) => {
+          dragging.current = accountId;
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData(ACCOUNT_DRAG, accountId);
+          // The ghost is the row's line, not the grip alone.
+          const head = e.currentTarget.parentElement?.querySelector<HTMLElement>(".plan-row__head");
+          if (head) {
+            const r = head.getBoundingClientRect();
+            e.dataTransfer.setDragImage(head, Math.max(0, e.clientX - r.left), Math.max(0, e.clientY - r.top));
+          }
+        }}
+        onDragEnd={end}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          const up = orderStep(group.accounts, accountId, -1);
+          const down = orderStep(group.accounts, accountId, 1);
+          openContextMenu(r.left, r.bottom, [
+            { kind: "header", label: name },
+            {
+              kind: "item",
+              id: "move-up",
+              label: t("contextMenu.moveUp"),
+              icon: "chevronUp",
+              disabled: up === null,
+              run: () => put(accountId, up),
+            },
+            {
+              kind: "item",
+              id: "move-down",
+              label: t("contextMenu.moveDown"),
+              icon: "chevronDown",
+              disabled: down === null,
+              run: () => put(accountId, down),
+            },
+          ]);
+        }}
+      >
+        <span>{n}</span>
+        <Icon name="grip" size={14} />
+      </button>
+    );
+  };
+
+  /** A row's own box: it takes an account of this order dragged onto it. */
+  const drop = (accountId: string): HTMLAttributes<HTMLDivElement> & { "data-drop"?: string } => ({
+    "data-drop": mark?.id === accountId ? mark.where : undefined,
+    onDragOver: (e: DragEvent<HTMLDivElement>) => {
+      const from = dragging.current;
+      if (!from || from === accountId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const r = e.currentTarget.getBoundingClientRect();
+      const where = e.clientY > r.top + r.height / 2 ? "after" : "before";
+      if (mark?.id !== accountId || mark.where !== where) setMark({ id: accountId, where });
+    },
+    onDragLeave: (e: DragEvent<HTMLDivElement>) => {
+      if (!e.currentTarget.contains(e.relatedTarget as Node | null) && mark?.id === accountId) setMark(null);
+    },
+    onDrop: (e: DragEvent<HTMLDivElement>) => {
+      const from = dragging.current;
+      const m = mark;
+      end();
+      if (!from || !m) return;
+      e.preventDefault();
+      const rest = ids.filter((id) => id !== from);
+      put(from, rest.indexOf(m.id) + (m.where === "after" ? 1 : 0));
+    },
+  });
+
+  return { place, drop };
+}

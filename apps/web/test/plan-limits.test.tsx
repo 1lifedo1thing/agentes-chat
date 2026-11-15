@@ -8,6 +8,7 @@ import type { AiAccounts, AiComputer, PlanUsage } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { declarations, topLevel } from "./built-css";
 import { ADA_ID, ATLAS_ID, createFakeApi, fakeMachinesOf, ORG_ID, seedState } from "./fake-api";
+import { hintOf } from "./hint";
 import { renderApp, screen, settle } from "./render";
 
 /*
@@ -385,5 +386,95 @@ describe("IA e uso › Contas: the quota per model", () => {
     const row = await openRow("MiniMax");
     expect(row.textContent).toContain("MiniMax não mostra o uso por aqui.");
     expect(row.textContent).not.toContain("%");
+  });
+});
+
+describe("IA e uso › Contas: the order of use at a limit (ADR 0041 §6)", () => {
+  const claude = (id: string, label: string, over: Partial<AiAccounts["accounts"][number]> = {}) => ({
+    ...TEAM,
+    id,
+    label,
+    email: `${id}@example.com`,
+    usedBy: [],
+    usage: used(10, 20),
+    shared: true,
+    ...over,
+  });
+  const ORDER: AiAccounts["accounts"] = [
+    claude("acct_b", "Pessoal", { useOrder: 1 }),
+    claude("acct_a", "Trabalho", { useOrder: 0 }),
+    claude("acct_j", "Conta do João", { mine: false, ownerId: "u-joao", ownerName: "João", email: null }),
+    { ...claude("acct_x", "ChatGPT Plus"), kind: "codex" },
+  ];
+  const plans = () => screen().getByRole("region", { name: "Contas" });
+  const order = () => plans().querySelector(".plan-order") as HTMLElement | null;
+  const places = () =>
+    [...(order()?.querySelectorAll(".plan-row") ?? [])].map((r) => [
+      r.querySelector(".plan-row__place")?.textContent,
+      r.querySelector(".plan-row__title")?.textContent?.trim(),
+    ]);
+
+  test("a plan's accounts come together under one heading, first to last, each with its place; an order of one has none", async () => {
+    await go("settings/usage", onPlans(), ORDER);
+    const group = order();
+    if (!group) throw new Error("no order");
+    // The seeded workspace has accounts on two computers: the heading says which one.
+    expect(group.querySelector(".plan-order__title > span")?.textContent).toBe("Claude · Ordem de uso no MacBook");
+    expect(within(group).getByRole("button", { name: "Sobre Claude · Ordem de uso" })).toBeTruthy();
+    expect(group.querySelector(".plan-order__terms > span")?.textContent).toBe(
+      "Usar várias contas do Claude é uma área cinzenta nos termos do Claude.",
+    );
+    expect(hintOf("os termos do Claude", group).text).toBe(
+      "Um plano é de uma pessoa, então confira os termos do Claude antes de os seus agentes contarem com várias contas.",
+    );
+    expect(places()).toEqual([
+      ["1", "Trabalho"],
+      ["2", "Pessoal"],
+      ["3", "Conta do João"],
+    ]);
+    // Only whoever may move an account gets its grip: João's is a number.
+    const grips = [...group.querySelectorAll("button.plan-row__place")].map((b) => b.getAttribute("aria-label"));
+    expect(grips).toEqual(["Mover Trabalho, número 1 na ordem", "Mover Pessoal, número 2 na ordem"]);
+    // ChatGPT has one account: a row like any other, no place, no heading.
+    expect(plans().querySelectorAll(".plan-order")).toHaveLength(1);
+    const codex = [...plans().querySelectorAll(".plan-row")].find((r) => r.textContent?.includes("ChatGPT Plus"));
+    expect(codex?.querySelector(".plan-row__place")).toBeNull();
+  });
+
+  test("Mover para baixo from the place's menu saves the new place and the list follows", async () => {
+    const state = onPlans();
+    await go("settings/usage", state, ORDER);
+    const grip = within(order() as HTMLElement).getByRole("button", { name: "Mover Trabalho, número 1 na ordem" });
+    await click(grip);
+    const menu = screen().getByRole("menu", { name: "Ações" });
+    // The first can't go up.
+    expect(within(menu).getByRole("menuitem", { name: "Mover para cima" }).getAttribute("aria-disabled")).toBe("true");
+    await act(async () => fireEvent.click(within(menu).getByRole("menuitem", { name: "Mover para baixo" })));
+    await settle(6);
+    expect(state.calls.filter((c) => c.method === "machines.moveAccountInOrder").map((c) => c.args.slice(1))).toEqual([
+      ["acct_a", 1],
+    ]);
+    expect(places().map(([, name]) => name)).toEqual(["Pessoal", "Trabalho", "Conta do João"]);
+  });
+
+  test("a drop before another row moves the account there", async () => {
+    const state = onPlans();
+    await go("settings/usage", state, ORDER);
+    const rows = [...(order() as HTMLElement).querySelectorAll<HTMLElement>(".plan-row")];
+    const grip = rows[1]?.querySelector("button.plan-row__place") as HTMLElement;
+    const target = rows[0] as HTMLElement;
+    target.getBoundingClientRect = () =>
+      ({ top: 0, height: 40, bottom: 40, left: 0, right: 400, width: 400 }) as DOMRect;
+    const data = { setData: () => {}, setDragImage: () => {}, effectAllowed: "", dropEffect: "" };
+    await act(async () => {
+      fireEvent.dragStart(grip, { dataTransfer: data });
+      fireEvent.dragOver(target, { dataTransfer: data, clientY: 5 });
+    });
+    expect(target.dataset.drop).toBe("before");
+    await act(async () => fireEvent.drop(target, { dataTransfer: data, clientY: 5 }));
+    await settle(6);
+    expect(state.calls.filter((c) => c.method === "machines.moveAccountInOrder").map((c) => c.args.slice(1))).toEqual([
+      ["acct_b", 0],
+    ]);
   });
 });
