@@ -5,6 +5,7 @@ import type {
   AgentBrain,
   AiAccounts,
   AiComputer,
+  BrainScope,
   Credential,
   Machine,
   MachineAccount,
@@ -428,21 +429,23 @@ export function keyRemovalText(
 
 /**
  * The accounts a run of an agent goes through at its plan's limit (ADR 0041 §6, the server's `nextAccountPlan`): its
- * own account, then the others of its kind with the CLI's own sign-in (never a key) that are signed in, its owner's
- * first and then those that serve everyone, each by `useOrder` (the unplaced after, in the order given: oldest first).
- * Never a login made for one agent that another agent thinks with. Only its own account when it is pinned ("Só esta
- * conta"), a key's, or of a kind that never moves (Gemini, Grok, Cursor, OpenCode).
+ * own account, then the others of its kind with the CLI's own sign-in (never a key) that are signed in and shared
+ * between agents (a login made for one agent is lent to that agent only), its owner's first and then those that serve
+ * everyone, each by `useOrder` (the unplaced after, in the order given: oldest first). Only its own account when it is
+ * pinned ("Só esta conta"), a key's, or of a kind that never moves (Gemini, Grok, Cursor, OpenCode). The right hand's
+ * `scope`: its person's own AI goes on only with that person's accounts (`mine`), the workspace's is shown alone.
  */
 export function accountChain<A extends MachineAccount>(
   accounts: readonly A[],
-  agent: { id: string; ownerId: string | null; account: string | null; pinned?: boolean },
+  agent: { id: string; ownerId: string | null; account: string | null; pinned?: boolean; scope?: BrainScope },
 ): A[] {
   const own = accounts.find((a) => a.id === agent.account);
   if (!own) return [];
-  if (agent.pinned || own.provider || !NEXT_ACCOUNT_KINDS.includes(own.kind)) return [own];
-  const mine = (a: A) => agent.ownerId !== null && a.ownerId === agent.ownerId;
+  if (agent.pinned || agent.scope === "workspace" || own.provider || !NEXT_ACCOUNT_KINDS.includes(own.kind))
+    return [own];
+  const mine = (a: A) => (agent.scope === "mine" ? a.mine : agent.ownerId !== null && a.ownerId === agent.ownerId);
+  const serves = (a: A) => mine(a) || (agent.scope !== "mine" && (a.serves ?? "everyone") === "everyone");
   const place = (a: A) => a.useOrder ?? Number.POSITIVE_INFINITY;
-  const free = (a: A) => a.shared === true || (a.usedByIds ?? []).every((id) => id === agent.id);
   const next = accounts
     .map((a, i) => ({ a, i }))
     .filter(
@@ -451,8 +454,8 @@ export function accountChain<A extends MachineAccount>(
         a.kind === own.kind &&
         a.provider === null &&
         a.status === "active" &&
-        (mine(a) || (a.serves ?? "everyone") === "everyone") &&
-        free(a),
+        a.shared === true &&
+        serves(a),
     )
     .sort((x, y) => Number(mine(y.a)) - Number(mine(x.a)) || place(x.a) - place(y.a) || x.i - y.i);
   return [own, ...next.map(({ a }) => a)];

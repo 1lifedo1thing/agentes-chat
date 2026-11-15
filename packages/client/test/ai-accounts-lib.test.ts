@@ -522,8 +522,10 @@ describe("accountChain: the accounts a run goes through at its plan's limit", ()
     login(id, { label: id, provider: null, keyHint: null, shared: true, serves: "everyone", useOrder: null, ...over });
   const walter = { ownerId: "u_walter", ownerName: "Walter", mine: false };
   const agent = { id: "ag_ada", ownerId: "u_ana", account: "own1" as string | null };
-  const chainOf = (accounts: MachineAccount[], over: Partial<typeof agent & { pinned: boolean }> = {}) =>
-    accountChain(accounts, { ...agent, ...over }).map((a) => a.id);
+  const chainOf = (
+    accounts: MachineAccount[],
+    over: Partial<typeof agent & { pinned: boolean; scope: "mine" | "workspace" }> = {},
+  ) => accountChain(accounts, { ...agent, ...over }).map((a) => a.id);
 
   test("its own account, then its owner's others, then those that serve everyone, each by its place", () => {
     expect(
@@ -538,7 +540,7 @@ describe("accountChain: the accounts a run goes through at its plan's limit", ()
     ).toEqual(["own1", "own2", "old", "w1", "w0", "w2"]);
   });
 
-  test("never a key, another kind, one signed out, someone's owner-only one or another agent's one-agent login", () => {
+  test("never a key, another kind, one signed out, someone's owner-only one or a one-agent login, even an unused one", () => {
     expect(
       chainOf([
         claude("own1"),
@@ -550,7 +552,17 @@ describe("accountChain: the accounts a run goes through at its plan's limit", ()
         claude("mine-only", { serves: "owner" }),
         claude("free", { ...walter, shared: false, usedByIds: [] }),
       ]),
-    ).toEqual(["own1", "mine-only", "free"]);
+    ).toEqual(["own1", "mine-only"]);
+  });
+
+  test("the right hand: its person's own AI goes on with that person's accounts only, the workspace's never shows a chain", () => {
+    const accounts = [
+      claude("own1", { mine: true }),
+      claude("w1", { ...walter }),
+      claude("mine-only", { mine: true, ownerId: "u_viewer", serves: "owner" }),
+    ];
+    expect(chainOf(accounts, { scope: "mine" })).toEqual(["own1", "mine-only"]);
+    expect(chainOf(accounts, { scope: "workspace" })).toEqual(["own1"]);
   });
 
   test("pinned, a key, or a kind that never moves: its own account alone; none without one", () => {
