@@ -3512,8 +3512,13 @@ export interface SecretBox {
 
 export type StorageKind = "agentes" | "s3";
 
-/** What an admin types for "Seu próprio bucket". Keys empty = keep the stored ones. */
+/** The service an admin picked when connecting their own storage: which steps the app shows. */
+export type StorageProvider = "r2" | "s3" | "b2" | "other";
+
+/** What an admin types for "Your own storage". Keys empty = keep the stored ones. */
 export interface S3Input {
+  /** Null from settings saved before the app said it (older servers leave it out). */
+  provider?: StorageProvider | null;
   endpoint: string;
   region: string;
   bucket: string;
@@ -3559,7 +3564,8 @@ export type StorageStep = "write" | "read" | "list" | "delete";
 
 export interface StorageTestResult {
   ok: boolean;
-  steps: { step: StorageStep; ok: boolean; error?: string | null }[];
+  /** `code`: the failure's stable code (`storage.permission`…), absent from an older server. */
+  steps: { step: StorageStep; ok: boolean; error?: string | null; code?: string | null }[];
 }
 
 export interface StorageMigration {
