@@ -3003,6 +3003,7 @@ export const en = {
         ai_account: "Only the account's owner gives it",
         name: "Only admins rename an agent",
         look: "Only admins and its owner change its look",
+        group: "Only admins move an agent to another department",
         reports_to: "Only admins change who an agent reports to",
         many: "Only admins make these changes",
       },
@@ -3017,6 +3018,7 @@ export const en = {
       channel: "Channel",
       name: "Name",
       look: "Look",
+      group: "Department",
       reports_to: "Reports to",
       skill: "{{name}} skill",
     },
@@ -15145,6 +15147,8 @@ export const en = {
     agentGroup: {
       notFound: "This department no longer exists.",
       tooMany: "This workspace already has {{max}} departments. Delete one first.",
+      /** `agent_group.ambiguous`: a card names a department two of them are called; renaming one decides. */
+      ambiguous: "Two departments are called {{name}}. Rename one of them, then try again.",
     },
     /** `agent.right_hand_permanent`: archiving, deleting or adding the right hand to a channel (ADR 0137). */
     rightHand: {

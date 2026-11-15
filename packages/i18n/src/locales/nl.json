@@ -2790,6 +2790,7 @@
         "ai_account": "Alleen de eigenaar van het account geeft het",
         "name": "Alleen admins hernoemen een agent",
         "look": "Alleen admins en de verantwoordelijke wijzigen het uiterlijk",
+        "group": "Alleen admins verplaatsen een agent naar een andere afdeling",
         "reports_to": "Alleen admins veranderen aan wie een agent rapporteert",
         "many": "Alleen admins maken deze wijzigingen"
       }
@@ -2804,6 +2805,7 @@
       "channel": "Kanaal",
       "name": "Naam",
       "look": "Uiterlijk",
+      "group": "Afdeling",
       "reports_to": "Rapporteert aan",
       "skill": "Skill {{name}}"
     },
@@ -15000,7 +15002,8 @@
     },
     "agentGroup": {
       "notFound": "Deze afdeling bestaat niet meer.",
-      "tooMany": "Deze werkruimte heeft al {{max}} afdelingen. Verwijder er eerst een."
+      "tooMany": "Deze werkruimte heeft al {{max}} afdelingen. Verwijder er eerst een.",
+      "ambiguous": "Twee afdelingen heten {{name}}. Geef er een een andere naam en probeer het opnieuw."
     },
     "rightHand": {
       "permanent": "De rechterhand hoort bij de werkruimte en blijft buiten de kanalen. Een @vermelding bereikt hem in elk kanaal.",

@@ -2889,6 +2889,7 @@
         "ai_account": "Seul le propriétaire du compte l’attribue",
         "name": "Seuls les admins renomment un agent",
         "look": "Seuls les admins et son responsable changent son apparence",
+        "group": "Seuls les admins changent un agent de service",
         "reports_to": "Seuls les admins changent à qui un agent rend compte",
         "many": "Seuls les admins font ces changements"
       }
@@ -2903,6 +2904,7 @@
       "channel": "Canal",
       "name": "Nom",
       "look": "Apparence",
+      "group": "Service",
       "reports_to": "Rend compte à",
       "skill": "Compétence {{name}}"
     },
@@ -15438,7 +15440,8 @@
     },
     "agentGroup": {
       "notFound": "Ce service n'existe plus.",
-      "tooMany": "Cet espace de travail a déjà {{max}} services. Supprimez-en un d'abord."
+      "tooMany": "Cet espace de travail a déjà {{max}} services. Supprimez-en un d'abord.",
+      "ambiguous": "Deux services s'appellent {{name}}. Renommez-en un, puis réessayez."
     },
     "rightHand": {
       "permanent": "Le bras droit fait partie de l'espace de travail et reste hors des canaux. Une @mention le joint dans n'importe lequel.",

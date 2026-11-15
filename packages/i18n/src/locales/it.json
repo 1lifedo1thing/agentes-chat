@@ -2884,6 +2884,7 @@
         "ai_account": "Solo il proprietario dell’account lo assegna",
         "name": "Solo gli admin rinominano un agente",
         "look": "Solo gli admin e il responsabile cambiano il suo aspetto",
+        "group": "Solo gli admin spostano un agente di reparto",
         "reports_to": "Solo gli admin cambiano a chi risponde un agente",
         "many": "Solo gli admin fanno queste modifiche"
       }
@@ -2898,6 +2899,7 @@
       "channel": "Canale",
       "name": "Nome",
       "look": "Aspetto",
+      "group": "Reparto",
       "reports_to": "Risponde a",
       "skill": "Skill {{name}}"
     },
@@ -15450,7 +15452,8 @@
     },
     "agentGroup": {
       "notFound": "Questo reparto non esiste più.",
-      "tooMany": "Questo spazio di lavoro ha già {{max}} reparti. Eliminane prima uno."
+      "tooMany": "Questo spazio di lavoro ha già {{max}} reparti. Eliminane prima uno.",
+      "ambiguous": "Due reparti si chiamano {{name}}. Rinominane uno e riprova."
     },
     "rightHand": {
       "permanent": "Il braccio destro fa parte dello spazio di lavoro e resta fuori dai canali. Una @menzione lo raggiunge in qualsiasi canale.",

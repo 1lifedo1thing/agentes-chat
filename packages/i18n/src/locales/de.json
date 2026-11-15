@@ -2791,6 +2791,7 @@
         "ai_account": "Nur die Person, der das Konto gehört, vergibt es",
         "name": "Nur Admins benennen einen Agenten um",
         "look": "Nur Admins und sein Verantwortlicher ändern sein Aussehen",
+        "group": "Nur Admins versetzen einen Agenten in eine andere Abteilung",
         "reports_to": "Nur Admins ändern, an wen ein Agent berichtet",
         "many": "Nur Admins machen diese Änderungen"
       }
@@ -2805,6 +2806,7 @@
       "channel": "Kanal",
       "name": "Name",
       "look": "Aussehen",
+      "group": "Abteilung",
       "reports_to": "Berichtet an",
       "skill": "Skill {{name}}"
     },
@@ -14936,7 +14938,8 @@
     },
     "agentGroup": {
       "notFound": "Diese Abteilung gibt es nicht mehr.",
-      "tooMany": "Dieser Workspace hat schon {{max}} Abteilungen. Lösch zuerst eine."
+      "tooMany": "Dieser Workspace hat schon {{max}} Abteilungen. Lösch zuerst eine.",
+      "ambiguous": "Zwei Abteilungen heißen {{name}}. Benenne eine davon um und versuch es noch einmal."
     },
     "rightHand": {
       "permanent": "Die rechte Hand gehört zum Workspace und bleibt außerhalb der Kanäle. Eine @Erwähnung erreicht sie in jedem davon.",
