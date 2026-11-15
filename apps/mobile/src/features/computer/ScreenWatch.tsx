@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { type LayoutChangeEvent, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { useDerivedValue } from "react-native-reanimated";
 import { useServer } from "@/lib/server";
+import { PictureEdge } from "@/ui";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { DesktopAgentPointer } from "./AgentPointer";
@@ -31,6 +32,7 @@ export function ScreenWatch({
   connect,
   parked = false,
   onState,
+  radius,
   style,
   ref,
 }: {
@@ -40,6 +42,8 @@ export function ScreenWatch({
   /** Kept loaded but out of sight (the card folded while the stream lingers): a quick reopen reuses the page. */
   parked?: boolean;
   onState: (state: DesktopViewState) => void;
+  /** The box's corners, its hairline's too. */
+  radius: number;
   style?: StyleProp<ViewStyle>;
   ref?: Ref<ScreenWatchHandle>;
 }) {
@@ -98,10 +102,8 @@ export function ScreenWatch({
     setReady(false);
     setLife((n) => n + 1);
   };
-  // The hairline is inside the box's layout: the screen scales to the room within it (at least the parked box's 1x1).
   const onLayout = (e: LayoutChangeEvent) => {
-    const width = Math.max(1, e.nativeEvent.layout.width - 2 * EDGE);
-    const height = Math.max(1, e.nativeEvent.layout.height - 2 * EDGE);
+    const { width, height } = e.nativeEvent.layout;
     setBox((b) => (b.width === width && b.height === height ? b : { width, height }));
   };
   const scale = box.width > 0 && box.height > 0 ? fitScale(box, desk) : 1;
@@ -112,7 +114,7 @@ export function ScreenWatch({
       pointerEvents={parked ? "none" : undefined}
       style={[
         styles.box,
-        { backgroundColor: c.sunken, borderColor: c.line },
+        { backgroundColor: c.sunken, borderRadius: radius },
         style,
         { aspectRatio: desk.width / desk.height },
         parked && styles.parked,
@@ -145,6 +147,7 @@ export function ScreenWatch({
           onGone={restart}
         />
       </View>
+      <PictureEdge radius={radius} />
       <DesktopAgentPointer
         agentId={agentId}
         name={agent?.name ?? ""}
@@ -157,12 +160,8 @@ export function ScreenWatch({
   );
 }
 
-/** The live picture's hairline, the card's thumbnail's: the line color, one device pixel. */
-const EDGE = StyleSheet.hairlineWidth;
-
 const styles = StyleSheet.create({
-  // The line is translucent: over the thumbnail's backdrop it reads the same; the dark fill is the screen's alone.
-  box: { overflow: "hidden", borderWidth: EDGE },
+  box: { overflow: "hidden" },
   // Out of the layout and out of sight, still rendering (a zero size could stop the page).
   parked: { position: "absolute", left: 0, top: 0, width: 1, height: 1, opacity: 0 },
   frame: { position: "absolute", left: 0, top: 0, transformOrigin: "left top", backgroundColor: "#101010" },

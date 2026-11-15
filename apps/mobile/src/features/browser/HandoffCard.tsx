@@ -219,9 +219,9 @@ function ScreenPeek({ agentId }: { agentId: string }) {
   // A small look before taking it: a frame a second is enough (ADR 0040 §7.1).
   const live = useLiveConnection(agentId, true, BROWSER_FPS.preview);
   return (
-    <View style={[styles.peek, { backgroundColor: c.sunken, borderColor: c.line }]}>
+    <View style={[styles.peek, { backgroundColor: c.sunken }]}>
       {live.frame ? (
-        <FrameView frame={live.frame} enabled={false} onInput={live.sendInput} />
+        <FrameView frame={live.frame} enabled={false} onInput={live.sendInput} edge={styles.peek.borderRadius} />
       ) : (
         <View style={styles.center}>
           <ActivityIndicator color={c.muted} />
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 20,
   },
-  peek: { aspectRatio: 16 / 10, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, overflow: "hidden" },
+  peek: { aspectRatio: 16 / 10, borderRadius: 12, overflow: "hidden" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   pressed: { opacity: 0.85 },
 });

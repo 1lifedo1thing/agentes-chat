@@ -1,37 +1,74 @@
 import { describe, expect, test } from "bun:test";
 
-const read = (path: string) => Bun.file(new URL(`../../src/features/${path}`, import.meta.url).pathname).text();
+const read = (path: string) => Bun.file(new URL(`../../src/${path}`, import.meta.url).pathname).text();
 /** A `StyleSheet.create` entry's declarations, as written. */
 const style = (source: string, name: string) => source.match(new RegExp(`\\n  ${name}: \\{([^}]*)\\}`))?.[1] ?? "";
+const HAIRLINE = "borderWidth: StyleSheet.hairlineWidth";
+/** `a` comes before `b` in the source, both present. */
+const before = (source: string, a: string, b: string) => {
+  const i = source.indexOf(a);
+  const j = source.indexOf(b, i + 1);
+  return i >= 0 && j > i;
+};
 
 describe("the live picture's edge on the phone", () => {
-  test("the closed card's thumbnail, the open card's page, its view of the whole screen and the help peek share one hairline", async () => {
-    const [card, handoff] = await Promise.all([read("browser/BrowserCard.tsx"), read("browser/HandoffCard.tsx")]);
-    const HAIRLINE = "borderWidth: StyleSheet.hairlineWidth";
-    expect(style(card, "thumb")).toContain(HAIRLINE);
-    expect(card).toContain("{ backgroundColor: c.sunken, borderColor: c.line }");
-    // On the box that rounds and clips the picture, at that box's radius.
-    expect(style(card, "page")).toContain(HAIRLINE);
-    expect(style(card, "page")).toContain("borderRadius: CARD - PAGE_INSET");
-    expect(card).toMatch(/styles\.page,\s*\{ borderColor: c\.line \},/);
-    // The whole screen's box is ScreenWatch's, rounded by the card.
-    expect(style(card, "screen")).toContain("borderRadius: CARD - PAGE_INSET");
-    expect(card).toContain("style={[styles.screen,");
-    expect(style(handoff, "peek")).toContain(HAIRLINE);
-    expect(style(handoff, "peek")).toContain("borderRadius: 12");
-    expect(handoff).toContain("<View style={[styles.peek, { backgroundColor: c.sunken, borderColor: c.line }]}>");
+  test("one kit piece draws the hairline over the picture's own edge, at the clipping box's radius", async () => {
+    const [edge, kit] = await Promise.all([read("ui/PictureEdge.tsx"), read("ui/index.ts")]);
+    expect(kit).toContain('export { PictureEdge } from "./PictureEdge";');
+    expect(edge).toContain('pointerEvents="none"');
+    expect(edge).toContain("StyleSheet.absoluteFill");
+    expect(edge).toContain("{ borderRadius: radius, borderColor: colors.line }");
+    expect(style(edge, "edge")).toContain(HAIRLINE);
   });
 
-  test("the whole screen's box carries the same hairline, and the screen fits inside it", async () => {
-    const watch = await read("computer/ScreenWatch.tsx");
-    expect(watch).toContain("const EDGE = StyleSheet.hairlineWidth;");
-    expect(style(watch, "box")).toContain("borderWidth: EDGE");
-    // Over the thumbnail's backdrop, so the translucent line reads the same; the dark fill is the screen's alone.
-    expect(watch).toMatch(/styles\.box,\s*\{ backgroundColor: c\.sunken, borderColor: c\.line \},/);
-    expect(style(watch, "box")).not.toContain("backgroundColor");
+  test("the open card's page and the help peek: the picture fills the box, the line lies over its edge", async () => {
+    const [card, handoff, parts] = await Promise.all([
+      read("features/browser/BrowserCard.tsx"),
+      read("features/browser/HandoffCard.tsx"),
+      read("features/browser/parts.tsx"),
+    ]);
+    // The closed card's thumbnail keeps its own border: no picture runs under it.
+    expect(style(card, "thumb")).toContain(HAIRLINE);
+    expect(style(card, "page")).not.toContain("borderWidth");
+    expect(card).not.toMatch(/styles\.page,\s*\{ borderColor/);
+    expect(card).toContain("edge={styles.page.borderRadius}");
+    expect(style(handoff, "peek")).not.toContain("borderWidth");
+    expect(style(handoff, "peek")).toContain("borderRadius: 12");
+    expect(handoff).toContain("<View style={[styles.peek, { backgroundColor: c.sunken }]}>");
+    expect(handoff).toContain("edge={styles.peek.borderRadius}");
+    // The picture's own view draws it: over the picture, under the agent's pointer and the touch hint.
+    const LINE = "{edge === undefined ? null : <PictureEdge radius={edge} />}";
+    expect(parts).toContain(LINE);
+    expect(before(parts, "source={{ uri: browserFrameDataUrl(frame)", LINE)).toBe(true);
+    expect(before(parts, LINE, "<AgentPointer {...cursor}")).toBe(true);
+  });
+
+  test("the card's whole screen: the picture fills the box at the screen's ratio, the line over it", async () => {
+    const [watch, card] = await Promise.all([
+      read("features/computer/ScreenWatch.tsx"),
+      read("features/browser/BrowserCard.tsx"),
+    ]);
+    expect(style(watch, "box")).not.toContain("borderWidth");
+    expect(watch).not.toContain("borderColor");
+    expect(watch).not.toContain("EDGE");
+    // The room the screen scales to is the box itself: no line in its layout takes from it.
+    expect(watch).toContain("const { width, height } = e.nativeEvent.layout;");
     expect(style(watch, "frame")).toContain('backgroundColor: "#101010"');
-    // The line is inside the box's layout: the room the screen scales to is what it leaves.
-    expect(watch).toContain("const width = Math.max(1, e.nativeEvent.layout.width - 2 * EDGE);");
-    expect(watch).toContain("const height = Math.max(1, e.nativeEvent.layout.height - 2 * EDGE);");
+    expect(watch).toContain("<PictureEdge radius={radius} />");
+    expect(before(watch, "<ScreenPage", "<PictureEdge radius={radius} />")).toBe(true);
+    expect(before(watch, "<PictureEdge radius={radius} />", "<DesktopAgentPointer")).toBe(true);
+    expect(watch).toContain("{ backgroundColor: c.sunken, borderRadius: radius }");
+    expect(card).toContain("radius={CARD - PAGE_INSET}");
+    expect(style(card, "screen")).not.toContain("borderRadius");
+  });
+
+  test("the computer's own view: the line while the screen is the rounded box, under the pointer and the covers", async () => {
+    const screen = await read("features/computer/AgentScreen.tsx");
+    const LINE = "{inControl || wide ? null : <PictureEdge radius={styles.box.borderRadius} />}";
+    expect(screen).toContain(LINE);
+    expect(style(screen, "box")).toContain("borderRadius: 20");
+    expect(style(screen, "boxWide")).toContain("borderRadius: 0");
+    expect(before(screen, "<ScreenPage", LINE)).toBe(true);
+    expect(before(screen, LINE, "<DesktopAgentPointer")).toBe(true);
   });
 });
