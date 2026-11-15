@@ -127,13 +127,7 @@ export function WhoCanUseRow({
         label={t("devices.who.title")}
         hint={hint}
         control={
-          <WhoSelect
-            size="sm"
-            value={shown}
-            onChange={change}
-            narrowOnly={narrowOnly}
-            disabled={!editable || saving}
-          />
+          <WhoSelect size="sm" value={shown} onChange={change} narrowOnly={narrowOnly} disabled={!editable || saving} />
         }
       />
       {editable && (
