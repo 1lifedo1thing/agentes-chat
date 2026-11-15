@@ -3544,7 +3544,7 @@
                 },
                 "model": {
                   "type": "string",
-                  "description": "The API's model: what `model` thinks with, and a CLI's fallback."
+                  "description": "The API's model: what `model` thinks with."
                 },
                 "brainModel": {
                   "type": ["string", "null"],
@@ -3656,7 +3656,7 @@
           },
           "model": {
             "type": "string",
-            "description": "The API's model: what `model` thinks with, and a CLI's fallback."
+            "description": "The API's model: what `model` thinks with."
           },
           "brainModel": {
             "type": ["string", "null"],
@@ -3713,10 +3713,6 @@
               "type": "string"
             },
             "description": "Handles it had before a rename, oldest first."
-          },
-          "fallback": {
-            "type": "boolean",
-            "description": "When its CLI can't answer, it answers through the API."
           },
           "provider": {
             "type": ["string", "null"],
@@ -3875,7 +3871,6 @@
           "archivedAt",
           "deletedAt",
           "previousHandles",
-          "fallback",
           "provider",
           "credential",
           "account",
@@ -4173,7 +4168,7 @@
                   "items": {
                     "type": "string"
                   },
-                  "description": "A `context` step's: the names of what it noted (`autoModel`, `brainFallback`, `passed`, `steeredMessageIds`…), never the notes."
+                  "description": "A `context` step's: the names of what it noted (`autoModel`, `passed`, `steeredMessageIds`…), never the notes."
                 }
               },
               "required": [

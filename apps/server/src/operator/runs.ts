@@ -239,7 +239,7 @@ const Trace = z
           messageId: z.uuid().nullable().openapi({ description: "A `message` step's: the reply it posted." }),
           records: z.array(z.string()).openapi({
             description:
-              "A `context` step's: the names of what it noted (`autoModel`, `brainFallback`, `passed`, `steeredMessageIds`…), never the notes.",
+              "A `context` step's: the names of what it noted (`autoModel`, `passed`, `steeredMessageIds`…), never the notes.",
           }),
         }),
       )

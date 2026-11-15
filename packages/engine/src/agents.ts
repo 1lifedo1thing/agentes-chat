@@ -176,7 +176,6 @@ export function setupOfAgent(a: Agent): schema.AgentSetup {
     account: a.brainAccountId,
     effort: a.brainEffort,
     contextTokens: a.contextTokens,
-    fallback: a.brainFallback,
     autonomy,
   };
 }

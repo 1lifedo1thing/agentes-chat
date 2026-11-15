@@ -235,7 +235,7 @@ const agentFields = {
     description:
       "Who thinks for it: `model` (a provider's API), or a coding CLI on its computer (`claude_code`, `codex`…).",
   }),
-  model: z.string().openapi({ description: "The API's model: what `model` thinks with, and a CLI's fallback." }),
+  model: z.string().openapi({ description: "The API's model: what `model` thinks with." }),
   brainModel: z.string().nullable().openapi({ description: "The CLI's model; null: its default." }),
   credentialId: z.uuid().nullable().openapi({
     description: "The workspace's provider credential the API bills to; null: the platform's, where there is one.",
@@ -272,7 +272,6 @@ const Agent = z
   .object({
     ...agentFields,
     previousHandles: z.array(z.string()).openapi({ description: "Handles it had before a rename, oldest first." }),
-    fallback: z.boolean().openapi({ description: "When its CLI can't answer, it answers through the API." }),
     provider: z.string().nullable().openapi({
       description: "The API's provider: its credential's, else the model's own; null when neither says.",
     }),

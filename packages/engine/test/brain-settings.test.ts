@@ -38,6 +38,7 @@ import {
 } from "../src/brain-settings";
 import { contextFields, recordPlanUsage, speedFields } from "../src/brains/claude-code";
 import { brainAccountFor, brainSpeedFor, planIsOwners } from "../src/brains/select";
+import { paysExtraUsage } from "../src/usage-pause";
 import { addMember, everyoneWithout, type Fixture, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
 
@@ -611,9 +612,13 @@ describe("a plan thinks only for its owner's agents, one account each", () => {
     }).catch((e) => e);
     expect(theirs).toBeInstanceOf(ForbiddenError);
     expect(theirs.code).toBe("account.not_owner");
-    // The plan's paid extra usage bills its owner: an admin never turns it off or on.
-    const extra = await setAgentBrain(deps, caio.id, fx.org.id, fx.agent.id, { extraUsage: false }).catch((e) => e);
-    expect(extra.code).toBe("brain.extra_owner_only");
+    // An older app still sends the removed switches: ignored, from an admin too, and nothing stored changes.
+    const agentRow = async () => (await fx.db.select().from(schema.agents).where(eq(schema.agents.id, fx.agent.id)))[0];
+    const stored = await agentRow();
+    const ignored = await setAgentBrain(deps, caio.id, fx.org.id, fx.agent.id, { extraUsage: false, fallback: false });
+    expect(ignored).not.toHaveProperty("fallback");
+    expect(ignored).not.toHaveProperty("extraUsage");
+    expect(await agentRow()).toEqual(stored);
     const taken = await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, {
       brain: "claude_code",
       account: ANAS,
@@ -709,7 +714,7 @@ describe("Usar planos de outras pessoas (ADR 0059 §3, amended 2026-11-04)", () 
     ]);
 
     const lent = await setAgentBrain(deps, caio.id, fx.org.id, fx.agent.id, { brain: "claude_code", account: BIAS });
-    expect(lent).toMatchObject({ brain: "claude_code", account: BIAS, onlyOwner: true, extraUsage: false });
+    expect(lent).toMatchObject({ brain: "claude_code", account: BIAS, onlyOwner: true });
     expect(await row()).toMatchObject({ brainAccountId: BIAS, brainAccountLentBy: caio.id });
     expect((await audits("account.lent"))[0]).toMatchObject({
       targetId: BIAS,
@@ -737,8 +742,8 @@ describe("Usar planos de outras pessoas (ADR 0059 §3, amended 2026-11-04)", () 
       .from(schema.usageRecords)
       .where(eq(schema.usageRecords.id, usage ?? ""));
     expect(record).toMatchObject({ brainAccountId: BIAS, billedTo: "plan", costNanoUsd: 0 });
-    const extra = await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, { extraUsage: true }).catch((e) => e);
-    expect(extra.code).toBe("brain.extra_owner_only");
+    // Its long work never spends Bia's paid extra usage.
+    expect(paysExtraUsage(await row())).toBe(false);
 
     // Her plan serves the whole workspace, as she chose: nobody is told, no note and no email.
     expect(await fx.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "agent.plan_lent"))).toEqual([]);
@@ -753,26 +758,19 @@ describe("Usar planos de outras pessoas (ADR 0059 §3, amended 2026-11-04)", () 
     });
   });
 
-  test("a plan given keeps none of the old switches, and leaves with its own", async () => {
+  test("a plan given leaves with its own switch; only the owner's own plan pays extra usage", async () => {
     const { fx, deps, bia, caio, account, row } = await world();
     await account(BIAS, bia.id);
-    // Dev's paid extra usage was on (its owner's own sign-in): it is never sent on with Bia's plan by someone else.
-    expect((await row()).brainExtraUsage).toBe(true);
-    const carried = await setAgentBrain(deps, caio.id, fx.org.id, fx.agent.id, {
-      brain: "claude_code",
-      account: BIAS,
-      extraUsage: true,
-    }).catch((e) => e);
-    expect(carried.code).toBe("brain.extra_owner_only");
+    // Dev's long work may use its owner's own plan's paid extra usage, never Bia's given to it.
+    expect(paysExtraUsage(await row())).toBe(true);
     await setAgentBrain(deps, caio.id, fx.org.id, fx.agent.id, { brain: "claude_code", account: BIAS });
-    // On her plan Bia turned extra usage on and someone let everyone talk to Dev.
-    await fx.db
-      .update(schema.agents)
-      .set({ brainExtraUsage: true, audienceMode: "everyone" })
-      .where(eq(schema.agents.id, fx.agent.id));
+    expect(paysExtraUsage(await row())).toBe(false);
+    // On her plan someone let everyone talk to Dev.
+    await fx.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, fx.agent.id));
     await takeBackPlan(deps, bia.id, fx.org.id, BIAS, fx.agent.id);
-    // Back on its owner's own sign-in, which neither pays extra nor answers others until its owner says so.
-    expect(await row()).toMatchObject({ brain: "claude_code", brainExtraUsage: false, audienceMode: "owner" });
+    // Back on its owner's own sign-in, which answers no one else until its owner says so.
+    expect(await row()).toMatchObject({ brain: "claude_code", audienceMode: "owner" });
+    expect(paysExtraUsage(await row())).toBe(true);
   });
 
   test("a login another agent has stays there; taking back from all leaves Bia's own agents alone", async () => {
@@ -851,10 +849,7 @@ test("a model its plan's list dropped since: a save that repeats it goes through
   const table = CODING_PLANS.opencode.claudeCode.models;
   learnPlanModels({ opencode: table.filter((m) => m.id !== "hy3") });
   try {
-    expect(await save({ brain: "claude_code", model: "hy3", fallback: false })).toMatchObject({
-      model: "hy3",
-      fallback: false,
-    });
+    expect(await save({ brain: "claude_code", model: "hy3" })).toMatchObject({ model: "hy3" });
     await save({ model: "opus" });
     await expect(save({ model: "hy3" })).rejects.toBeInstanceOf(ValidationError);
   } finally {
