@@ -3414,7 +3414,18 @@
     "never": {
       "title": "Nooit vragen",
       "text": "Vraagt nooit, ook niet bij merge, deploy, betalingen en routines."
-    }
+    },
+    "change": "Wijzigen wanneer hij vraagt",
+    "now": "{{name}} nu: {{level}}.",
+    "nowEveryAgent": "Alle agents nu: {{level}}.",
+    "undo": "Ongedaan maken",
+    "everyAgent": "Voor alle agents in de workspace",
+    "follows": "Volgt de workspace",
+    "edit": "Wijzigen",
+    "workspaceLead": "Wanneer agents iemand vragen voordat ze iets doen.",
+    "workspaceHelp": "Elke agent volgt deze keuze tot iemand die van de agent wijzigt op zijn pagina.",
+    "ownAgents_one": "{{count}} agent heeft een eigen keuze en verandert niet.",
+    "ownAgents_other": "{{count}} agents hebben een eigen keuze en veranderen niet."
   },
   "brakes": {
     "title": "Werk waar niemand om vroeg",

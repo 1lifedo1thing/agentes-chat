@@ -8356,6 +8356,39 @@
   "approvalsLevel.never.text": {
     "value": "Never asks, merge, deploy, payments and routines included."
   },
+  "approvalsLevel.change": {
+    "value": "Change when it asks"
+  },
+  "approvalsLevel.now": {
+    "value": "{{name}} now: {{level}}."
+  },
+  "approvalsLevel.nowEveryAgent": {
+    "value": "Every agent now: {{level}}."
+  },
+  "approvalsLevel.undo": {
+    "value": "Undo"
+  },
+  "approvalsLevel.everyAgent": {
+    "value": "For every agent in the workspace"
+  },
+  "approvalsLevel.follows": {
+    "value": "Follows the workspace"
+  },
+  "approvalsLevel.edit": {
+    "value": "Change"
+  },
+  "approvalsLevel.workspaceLead": {
+    "value": "When agents ask a person before acting."
+  },
+  "approvalsLevel.workspaceHelp": {
+    "value": "Each agent follows this choice until someone changes its own on the agent's page."
+  },
+  "approvalsLevel.ownAgents": {
+    "value": {
+      "one": "{{count}} agent has its own choice and won't change.",
+      "other": "{{count}} agents have their own choice and won't change."
+    }
+  },
   "brakes.title": {
     "value": "Work nobody asked for"
   },

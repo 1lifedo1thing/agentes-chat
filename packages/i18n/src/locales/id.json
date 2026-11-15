@@ -3295,7 +3295,17 @@
     "never": {
       "title": "Jangan pernah tanya",
       "text": "Tidak pernah bertanya, termasuk untuk merge, deploy, pembayaran, dan rutinitas."
-    }
+    },
+    "change": "Ubah kapan bertanya",
+    "now": "{{name}} sekarang: {{level}}.",
+    "nowEveryAgent": "Semua agen sekarang: {{level}}.",
+    "undo": "Urungkan",
+    "everyAgent": "Untuk semua agen di workspace",
+    "follows": "Mengikuti workspace",
+    "edit": "Ubah",
+    "workspaceLead": "Kapan agen bertanya kepada seseorang sebelum bertindak.",
+    "workspaceHelp": "Setiap agen mengikuti pilihan ini sampai seseorang mengubah pilihannya di halaman agen.",
+    "ownAgents_other": "{{count}} agen punya pilihan sendiri dan tidak berubah."
   },
   "brakes": {
     "title": "Pekerjaan yang tidak diminta siapa pun",

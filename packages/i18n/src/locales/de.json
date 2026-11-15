@@ -3411,7 +3411,18 @@
     "never": {
       "title": "Nie fragen",
       "text": "Fragt nie, auch nicht bei Merge, Deploy, Zahlungen und Routinen."
-    }
+    },
+    "change": "Ändern, wann gefragt wird",
+    "now": "{{name}} jetzt: {{level}}.",
+    "nowEveryAgent": "Alle Agenten jetzt: {{level}}.",
+    "undo": "Rückgängig",
+    "everyAgent": "Für alle Agenten im Workspace",
+    "follows": "Folgt dem Workspace",
+    "edit": "Ändern",
+    "workspaceLead": "Wann die Agenten vor dem Handeln eine Person fragen.",
+    "workspaceHelp": "Jeder Agent folgt dieser Wahl, bis jemand seine eigene auf der Seite des Agenten ändert.",
+    "ownAgents_one": "{{count}} Agent hat eine eigene Wahl und ändert sich nicht.",
+    "ownAgents_other": "{{count}} Agenten haben eine eigene Wahl und ändern sich nicht."
   },
   "brakes": {
     "title": "Arbeit, um die niemand gebeten hat",
