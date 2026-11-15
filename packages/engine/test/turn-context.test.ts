@@ -199,7 +199,7 @@ describe("the prompt's rules", () => {
     );
     // A sign-in whose link or code goes to a mailbox the agent reads is the agent's own work.
     expect(text).toContain(
-      "when the site sends a link or a code to a mailbox you can read (your own address, a webmail open in your browser, a connected mailbox), get it there and go on.",
+      "when the site sends a link or a code to a mailbox you can read (yours, a webmail in your browser, a connected one), get it there and go on;",
     );
     expect(text).toContain(
       "ask it yourself (ask_agent) when you need its answer, or hand it work or news (tell_agent): what comes of either reaches you here by itself.",
