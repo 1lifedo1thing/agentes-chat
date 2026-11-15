@@ -1,3 +1,4 @@
+import { heldWhole } from "@agenteschat/client/lib/format";
 import {
   Alert,
   Button,
@@ -860,7 +861,8 @@ function EraseHere({ local, disabled }: { local: LocalServerStatus; disabled: bo
         open={asking}
         onOpenChange={(o) => !o && busy === null && setAsking(false)}
         title={t("desktop.server.eraseTitle")}
-        description={t("desktop.server.eraseBody", { path: shortPath(local.eraseTo ?? "") })}
+        // The date in the folder's name stays on one line.
+        description={t("desktop.server.eraseBody", { path: heldWhole(shortPath(local.eraseTo ?? "")) })}
         closeLabel={t("desktop.common.close")}
         width={440}
       >
