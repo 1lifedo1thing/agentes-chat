@@ -39,6 +39,8 @@ import {
   browserViewportOf,
   CHROME_FAILURES,
   CHROMIUM_LINUX,
+  chromeExitCause,
+  chromeExitText,
   DESKTOP_SIZE,
   type MachineReplies,
   type MachineRequest,
@@ -853,7 +855,8 @@ export interface OwnChrome {
  * Chrome didn't start. The message is for people; `detail` (what Chrome
  * printed meanwhile) is for the logs; `missing` lists the libraries this
  * computer lacks, when that is why; `profile`: the agent's profile is what
- * didn't open (another Chrome holds it).
+ * didn't open (another Chrome holds it); `why`: for people, how it closed while starting and the way out
+ * (`chromeExitCause`).
  */
 export class ChromeStartError extends Error {
   constructor(
@@ -861,6 +864,7 @@ export class ChromeStartError extends Error {
     readonly detail: string,
     readonly missing: string[] = [],
     readonly profile = false,
+    readonly why = "",
   ) {
     super(message);
     this.name = "ChromeStartError";
@@ -973,11 +977,13 @@ export async function launchChrome(
       }
       // 21 is Chrome's exit code for a profile another Chrome holds (RESULT_CODE_PROFILE_IN_USE).
       const inUse = child.exitCode === 21;
+      const exit = chromeExitText(child.exitCode, child.signalCode);
       throw new ChromeStartError(
-        inUse ? "Chrome closed while starting (another Chrome is using this profile)" : "Chrome closed while starting",
+        `Chrome closed while starting (${inUse ? "another Chrome is using this profile, " : ""}${exit})`,
         detail,
         [],
         inUse,
+        chromeExitCause(child.exitCode, child.signalCode),
       );
     }
     // Chromium writes DevToolsActivePort only for port 0. For a fixed, preguarded
@@ -1082,6 +1088,9 @@ const POINTER_ACTS: Record<string, AgentPointerAct> = {
 const POINTER_COMMANDS = new Set([...HUMAN_COMMANDS, "mouse", "drag"]);
 /** What `agent-browser` answers to each when the runner did it itself. */
 const HUMAN_DONE: Record<string, string> = { click: "clicked", hover: "hovered", fill: "filled" };
+/** Chrome starts in a row that close while starting before the next ones answer at once for `START_COOL_MS`. */
+const START_FAILS = 3;
+const START_COOL_MS = 60_000;
 /** A command that timed out. The apps match these words (`browserNoAnswerMessage`): keep them. */
 const NO_ANSWER = "The browser didn't answer";
 /**
@@ -1811,6 +1820,10 @@ interface Session {
   pressedAt?: number;
   /** When its desktop last failed to start for it (`desktopFor`). */
   desktopFailedAt?: number;
+  /** How many of its Chrome starts in a row closed while starting (`START_FAILS`). */
+  startFails?: number;
+  /** After `START_FAILS` of them: until when a start answers with the last one's error at once, and that error. */
+  startCooling?: { until: number; error: RunnerError };
   /** How its page died since the agent last heard (`pageCrashed`), for its next action's answer. */
   crash?: PageCrash;
   /** How many times each tab's page died since the agent last heard of it. */
@@ -2474,7 +2487,12 @@ export class BrowserManager {
           `the browser of ${agent.handle} didn't answer within ${seconds} s: stuck ${step}${timed ? ` (${timed})` : ""}`,
         );
         resolve(
-          stuck({ success: false, data: null, code: STUCK_CODE, error: `${NO_ANSWER} within ${seconds} s: stuck ${step}` }),
+          stuck({
+            success: false,
+            data: null,
+            code: STUCK_CODE,
+            error: `${NO_ANSWER} within ${seconds} s: stuck ${step}`,
+          }),
         );
       }, seconds * 1000);
     });
@@ -3118,6 +3136,9 @@ export class BrowserManager {
     if (running && !restart && ((running.display !== undefined) === desktop || (!asked && this.inView(session)))) {
       return running;
     }
+    // A Chrome that keeps closing as it starts isn't started again and again meanwhile: the agent hears why at once.
+    const cooling = session.startCooling;
+    if (cooling && cooling.until > this.now()) throw cooling.error;
     if (session.deadline) session.deadline.step = desktop ? "desktop" : "launch";
     const where = desktop ? await this.desktopFor(agent, session, asked, setup) : null;
     if (session.deadline) session.deadline.step = "launch";
@@ -3217,15 +3238,29 @@ export class BrowserManager {
           this.opts.log(`the browser of ${agent.handle} didn't start: ${err instanceof Error ? err.message : err}`);
         }
         const failed = err instanceof ChromeStartError ? err : null;
-        throw new RunnerError(
+        const error = new RunnerError(
           "browser_unavailable",
           failed?.profile
             ? CHROME_FAILURES.profile
             : failed?.missing.length
               ? `${CHROME_FAILURES.start} ${missingLibrariesText(failed.missing)}`
-              : CHROME_FAILURES.start,
+              : failed?.why
+                ? `${CHROME_FAILURES.start} ${failed.why}`
+                : CHROME_FAILURES.start,
         );
+        if (failed && failed.missing.length === 0) {
+          session.startFails = (session.startFails ?? 0) + 1;
+          if (session.startFails >= START_FAILS) {
+            session.startCooling = { until: this.now() + START_COOL_MS, error };
+            this.opts.log(
+              `the browser of ${agent.handle} closed while starting ${session.startFails} times in a row: not started again for ${START_COOL_MS / 1000} s`,
+            );
+          }
+        }
+        throw error;
       }
+      session.startFails = 0;
+      session.startCooling = undefined;
       session.chrome = chrome;
       session.version = version ?? undefined;
       session.outdatedAt = undefined;

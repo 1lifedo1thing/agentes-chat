@@ -20,6 +20,8 @@ import {
   browserSetupOf,
   CHROME_FAILURES,
   CHROMIUM_LINUX,
+  chromeExitCause,
+  chromeExitText,
   chromeFailureKind,
   decodeBrowserFrame,
   MACHINE_PROTOCOL_VERSION,
@@ -1295,15 +1297,18 @@ test.if(posix)(
       "Failed to create a ProcessSingleton for your profile directory. Aborting now to avoid profile corruption.";
     err = await failedStart(`echo "${held}" >&2; exit 21`);
     expect(err.missing).toEqual([]);
-    expect(err.message).toBe("Chrome closed while starting (another Chrome is using this profile)");
+    expect(err.message).toBe("Chrome closed while starting (another Chrome is using this profile, exit 21)");
     expect(err.profile).toBe(true);
     expect(err.detail).toBe(held);
 
-    // Any other exit, a loader error among them, gets no guess at why; what Chrome said goes to the logs.
+    // Any other exit, a loader error among them, gets no guess at why, only its code; what Chrome said goes to the logs.
     err = await failedStart(`echo "$0: /lib/libc.so.6: version 'GLIBC_2.38' not found (required by $0)" >&2; exit 1`);
     expect(err.missing).toEqual([]);
-    expect(err.message).toBe("Chrome closed while starting");
+    expect(err.message).toBe("Chrome closed while starting (exit 1)");
+    expect(err.why).toStartWith("Google Chrome closed as it started (exit 1). Update Google Chrome on it");
     expect(err.detail).toContain("version 'GLIBC_2.38' not found");
+    err = await failedStart("kill -SEGV $$");
+    expect(err.message).toBe("Chrome closed while starting (signal SIGSEGV)");
   },
 );
 
@@ -2547,8 +2552,63 @@ test.if(posix)(
     const libs = (await said()) as { message: string };
     expect(libs.message).toStartWith(`${CHROME_FAILURES.start} This computer is missing system libraries`);
     expect(chromeFailureKind(libs.message)).toBe("start");
+    // How it closed reaches the agent, with the way out.
+    failure = new ChromeStartError("Chrome closed while starting (exit 1)", "", [], false, chromeExitCause(1, null));
+    const exited = (await said()) as { message: string };
+    expect(exited.message).toBe(`${CHROME_FAILURES.start} ${chromeExitCause(1, null)}`);
+    expect(chromeFailureKind(exited.message)).toBe("start");
     // Anything else of the browser's (a busy computer) isn't a Chrome failure.
     expect(chromeFailureKind("This computer already has 8 browsers open (its limit).")).toBeNull();
+  },
+);
+
+test("a Chrome's exit code reads in hex on Windows, and the codes we know name their cause", () => {
+  expect(chromeExitText(0xc0000005, null, "win32")).toBe("exit 0xC0000005/3221225477");
+  // Some runtimes hand Windows codes over as signed numbers.
+  expect(chromeExitText(-1073741515, null, "win32")).toBe("exit 0xC0000135/3221225781");
+  expect(chromeExitText(21, null, "win32")).toBe("exit 0x15/21");
+  expect(chromeExitText(1, null, "linux")).toBe("exit 1");
+  expect(chromeExitText(null, "SIGKILL", "linux")).toBe("signal SIGKILL");
+  expect(chromeExitCause(-1073741515, null, "win32")).toBe(
+    "A file Google Chrome needs is missing (exit 0xC0000135/3221225781). Reinstall Google Chrome from google.com/chrome, then try again.",
+  );
+  expect(chromeExitCause(0xc0000005, null, "win32")).toStartWith(
+    "Google Chrome crashed as it started (exit 0xC0000005/3221225477). Update Google Chrome on it (open Chrome, then Settings › About Chrome, and Relaunch)",
+  );
+  expect(chromeExitCause(24, null, "win32")).toStartWith(
+    "Another Google Chrome already running with the agent's profile",
+  );
+  expect(chromeExitCause(0, null, "win32")).toBe(
+    "Google Chrome closed as it started (exit 0x0/0). Update Google Chrome on it (open Chrome, then Settings › About Chrome, and Relaunch), then try again.",
+  );
+});
+
+test.if(posix)(
+  "a Chrome that keeps closing as it starts isn't started again for a minute: the agent hears the last cause at once",
+  async () => {
+    let now = 1_000_000;
+    let starts = 0;
+    const lines: string[] = [];
+    const why = chromeExitCause(0xc0000005, null, "win32");
+    const t = setup({
+      now: () => now,
+      log: (l) => lines.push(l),
+      startChrome: async () => {
+        starts++;
+        throw new ChromeStartError("Chrome closed while starting (exit 0xC0000005/3221225477)", "", [], false, why);
+      },
+    });
+    const said = () => t.act("open", ["https://a/"]).catch((e: { code: string; message: string }) => e);
+    for (let i = 0; i < 3; i++) {
+      expect(await said()).toMatchObject({ code: "browser_unavailable", message: `${CHROME_FAILURES.start} ${why}` });
+    }
+    expect(starts).toBe(3);
+    expect(lines.some((l) => l.includes("closed while starting 3 times in a row"))).toBe(true);
+    expect(await said()).toMatchObject({ code: "browser_unavailable", message: `${CHROME_FAILURES.start} ${why}` });
+    expect(starts).toBe(3);
+    now += 60_000;
+    await said();
+    expect(starts).toBe(4);
   },
 );
 
@@ -4645,27 +4705,32 @@ describe("one deadline for a whole command", () => {
     t.page({ hang: null });
   });
 
-  test.if(posix)("a killed agent-browser whose child still holds its output frees the queue a moment later", async () => {
-    const t = setup();
-    await t.act("open", ["https://shop.example.com/"]);
-    t.page({ orphan: { command: "get", ms: 60_000 } });
-    const folder = await t.folder();
-    try {
-      const stuck = await t.manager.act(dev, folder, {
-        op: "browser.act",
-        command: "get",
-        args: ["url"],
-        timeoutSeconds: 1,
-      });
-      expect(stuck.code).toBe("browser_stuck");
-      t.page({ orphan: null });
-      // The killed process exited; its child holding the pipe no longer holds the agent's next command.
-      const startedAt = performance.now();
-      expect((await t.act("get", ["url"])).success).toBe(true);
-      expect(performance.now() - startedAt).toBeLessThan(8_000);
-    } finally {
-      const pid = JSON.parse(readFileSync(process.env.FAKE_AB_STATE as string, "utf8")).orphanPid as number | undefined;
-      if (pid) process.kill(pid, "SIGKILL");
-    }
-  });
+  test.if(posix)(
+    "a killed agent-browser whose child still holds its output frees the queue a moment later",
+    async () => {
+      const t = setup();
+      await t.act("open", ["https://shop.example.com/"]);
+      t.page({ orphan: { command: "get", ms: 60_000 } });
+      const folder = await t.folder();
+      try {
+        const stuck = await t.manager.act(dev, folder, {
+          op: "browser.act",
+          command: "get",
+          args: ["url"],
+          timeoutSeconds: 1,
+        });
+        expect(stuck.code).toBe("browser_stuck");
+        t.page({ orphan: null });
+        // The killed process exited; its child holding the pipe no longer holds the agent's next command.
+        const startedAt = performance.now();
+        expect((await t.act("get", ["url"])).success).toBe(true);
+        expect(performance.now() - startedAt).toBeLessThan(8_000);
+      } finally {
+        const pid = JSON.parse(readFileSync(process.env.FAKE_AB_STATE as string, "utf8")).orphanPid as
+          | number
+          | undefined;
+        if (pid) process.kill(pid, "SIGKILL");
+      }
+    },
+  );
 });
