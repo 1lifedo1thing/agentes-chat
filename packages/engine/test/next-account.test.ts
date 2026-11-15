@@ -747,6 +747,29 @@ test("a paused run on a teammate's account it moved to never goes on into that p
   expect(await pauseContinuesPastPlan(fx.db, fx.org.id, run.id)).toBe("extra_off");
 });
 
+test("long work on a teammate's account it moved to pauses at the line instead of spending that plan's extra usage", async () => {
+  const { fx, walter, account, usage } = await world();
+  await account(WALTER_ALL, walter.id);
+  await usage(OWN1, 100, iso(5 * 3600_000));
+  const pastLine = {
+    ...reading(97),
+    windows: [...reading(97).windows, { kind: "other", label: "Extra usage", usedPercent: 10 }],
+  };
+  await fx.db
+    .update(schema.machineAccounts)
+    .set({ usage: pastLine as never })
+    .where(eq(schema.machineAccounts.id, WALTER_ALL));
+  const { brain, seen } = scripted(() => answers);
+  await scheduledSlot(fx);
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+  expect(seen).toHaveLength(0);
+  const [run] = await runs(fx);
+  expect((run?.transcript as { waitingForBrain?: { code: string } } | undefined)?.waitingForBrain?.code).toBe(
+    "usage_pause",
+  );
+  expect(moveOf(run)).toMatchObject({ to: WALTER_ALL, lentBy: walter.id });
+});
+
 test("a budget wait never moves an account", async () => {
   f = await setup({ budgetNanoUsd: 0, reply: () => ({ chunks: ["pela API"] }) });
   await ask(f);
