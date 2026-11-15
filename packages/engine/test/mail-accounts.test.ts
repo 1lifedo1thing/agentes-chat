@@ -12,6 +12,7 @@ import {
   listAgentScopes,
   listMailAccounts,
   markNeedsReconnect,
+  NotFoundError,
   OrgDeletingError,
   openMailProvider,
   revokeMailAccount,
@@ -81,10 +82,14 @@ test("an IMAP mailbox is tested before it's saved; the password is sealed and ne
   await expect(
     createImapAccount(deps, f.owner.id, f.org.id, { preset: "icloud", address: "support@example.com", password: "x" }),
   ).rejects.toBeInstanceOf(ConflictError);
+  // A mailbox is its person's: any member connects their own (ADR 0099 addendum).
   const member = await addMember(f.db, f.org.id, "member");
-  await expect(
-    createImapAccount(deps, member.id, f.org.id, { preset: "icloud", address: "b@example.com", password: "x" }),
-  ).rejects.toBeInstanceOf(ForbiddenError);
+  const theirs = await createImapAccount(deps, member.id, f.org.id, {
+    preset: "icloud",
+    address: "b@example.com",
+    password: "abcd-efgh-ijkl-mnop",
+  });
+  expect(theirs).toMatchObject({ ok: true, account: { ownerUserId: member.id } });
 });
 
 test("custom hosts can't point inside our network", async () => {
@@ -160,9 +165,10 @@ test("a mailbox's other addresses: normalised, a default among them, pinned agen
   expect(after).toMatchObject({ account: { aliases: ["support@acme.com"], defaultFrom: null } });
   expect((await getAgentMail(f.db, f.owner.id, f.org.id, f.agent.id))[0]?.policy.fromAddress).toBeNull();
 
+  // Someone else's mailbox reads as missing to a member who doesn't manage connectors.
   const member = await addMember(f.db, f.org.id, "member");
   await expect(updateMailAccount(deps, member.id, f.org.id, account.id, { aliases: [] })).rejects.toBeInstanceOf(
-    ForbiddenError,
+    NotFoundError,
   );
 });
 
@@ -531,4 +537,28 @@ test("only who connected a mailbox loosens its actions or adds addresses; admins
   expect(r).toMatchObject({
     account: { offActions: ["delete", "organize"], askActions: [], aliases: [], label: "Vendas" },
   });
+});
+
+test("a mailbox is its person's on the list: others see it only when they manage connectors, without its address", async () => {
+  m = await mailSetup();
+  const { f, deps } = m;
+  const walter = await addMember(f.db, f.org.id, "member", "walter");
+  const bia = await addMember(f.db, f.org.id, "member", "bia");
+  const mine = await createImapAccount(deps, walter.id, f.org.id, {
+    preset: "icloud",
+    address: "walter@example.com",
+    password: "abcd-efgh-ijkl-mnop",
+  });
+  if (!mine.ok) throw new Error("not connected");
+  const id = mine.account.id;
+  expect((await listMailAccounts(f.db, walter.id, f.org.id)).map((a) => a.id)).toEqual([id]);
+  expect((await listMailAccounts(f.db, bia.id, f.org.id, { others: true })).map((a) => a.id)).toEqual([]);
+  // Who manages connectors: only when the app asks for others' rows, and with no address.
+  expect((await listMailAccounts(f.db, f.owner.id, f.org.id)).map((a) => a.id)).toEqual([]);
+  const [row] = await listMailAccounts(f.db, f.owner.id, f.org.id, { others: true });
+  expect(row).toMatchObject({ id, ownerUserId: walter.id, address: "", aliases: [] });
+  // Bia can't remove it; who manages connectors can, and so can Walter his own.
+  await expect(revokeMailAccount(deps, bia.id, f.org.id, id)).rejects.toBeInstanceOf(NotFoundError);
+  await revokeMailAccount(deps, f.owner.id, f.org.id, id);
+  expect(await listMailAccounts(f.db, walter.id, f.org.id)).toEqual([]);
 });

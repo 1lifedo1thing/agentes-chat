@@ -8,7 +8,7 @@ import { openSecret, randomToken, sealSecret, sha256 } from "../crypto";
 import { ConflictError, ForbiddenError, MisconfiguredError, NotFoundError, ValidationError } from "../errors";
 import { forgetInstallationTokens } from "../git/github-app";
 import { outboundFetch, type ResolveHost } from "../net-guard";
-import { requireChangePermission, requirePermission } from "../organizations";
+import { can, requireChangePermission, requirePermission } from "../organizations";
 import { CONNECTOR_ALL } from "../tools/scopes";
 import { CONNECTOR_CATALOG, type ConnectorDefinition } from "./catalog";
 import { type ComposioConnectors, completeComposioOAuth, forgetComposioAccount } from "./composio";
@@ -17,6 +17,7 @@ import { offersCatalog } from "./listing";
 import type { McpConnect } from "./mcp";
 import { clientAuth, getOAuthClient, type McpOAuthDeps, probeMcpServer } from "./oauth-mcp";
 import { oauthReturnTo } from "./oauth-return";
+import { connectionFor, connectionsOf, othersPersonal, requireConnect, seenBy } from "./personal";
 import { presetForServer } from "./presets";
 
 const { connectorConnections, oauthStates, agentScopes, agents, approvalRules, githubAppInstallations } = schema;
@@ -114,19 +115,27 @@ export function secretHeaders(secret: ConnectionSecret, serverUrl: string): Reco
 /**
  * A new connection starts at "Ler e escrever" (`connector:*`) for every agent: agents get the basics and people take
  * access away where they want. Sensitive tools still ask a person on every call, whatever the grant. Connecting is an
- * admin's call, as giving grants is; each agent's grant is an `agent.access_changed` audit row. Runs in the caller's
- * transaction, which clears the org's scope cache once it commits.
+ * admin's call, as giving grants is; each agent's grant is an `agent.access_changed` audit row. A personal connection
+ * goes on for its person's own agents only (the Vault's "any agent I ask, for me"). Runs in the caller's transaction,
+ * which clears the org's scope cache once it commits.
  */
 export async function grantToEveryAgent(
   tx: Executor,
   orgId: string,
   actorId: string,
-  connection: Pick<ConnectorConnection, "id" | "label">,
+  connection: Pick<ConnectorConnection, "id" | "label"> & Partial<Pick<ConnectorConnection, "ownerUserId">>,
 ) {
+  const owner = connection.ownerUserId ?? null;
   const everyone = await tx
     .select({ id: agents.id })
     .from(agents)
-    .where(and(eq(agents.orgId, orgId), isNull(agents.archivedAt)));
+    .where(
+      and(
+        eq(agents.orgId, orgId),
+        isNull(agents.archivedAt),
+        owner ? and(eq(agents.ownerUserId, owner), isNull(agents.deletedAt)) : undefined,
+      ),
+    );
   if (everyone.length === 0) return;
   await tx.insert(agentScopes).values(
     everyone.map((a) => ({
@@ -143,7 +152,12 @@ export async function grantToEveryAgent(
       actor: { type: "person", id: actorId },
       action: "agent.access_changed",
       target: { type: "agent", id: a.id },
-      details: { connectionId: connection.id, label: connection.label, level: "write" },
+      details: {
+        connectionId: connection.id,
+        label: connection.label,
+        level: "write",
+        ...(owner ? { personal: true } : {}),
+      },
     });
   }
 }
@@ -206,6 +220,7 @@ export function missingOAuthScopes(c: Pick<ConnectorConnection, "connector" | "a
 /** Public view: no secrets. */
 export const connectionView = (c: ConnectorConnection) => ({
   id: c.id,
+  ownerUserId: c.ownerUserId,
   connector: c.connector,
   label: c.label,
   serverUrl: c.serverUrl,
@@ -217,6 +232,16 @@ export const connectionView = (c: ConnectorConnection) => ({
   reconnectAdds: missingOAuthScopes(c),
   status: c.status === "needs_reconnect" ? ("needs_reconnect" as const) : ("active" as const),
 });
+
+/**
+ * A connection as `actorId` may see it: someone else's personal connection shows its service, name and person only,
+ * never its address, account or sign-in.
+ */
+export function connectionViewFor(c: ConnectorConnection, actorId: string) {
+  const v = connectionView(c);
+  if (!othersPersonal(c, actorId)) return v;
+  return { ...v, serverUrl: "", accountLabel: null, tokenExpiresAt: null, reconnectAdds: [] };
+}
 
 function checkServerUrl(url: string) {
   let parsed: URL;
@@ -246,15 +271,19 @@ async function storeConnection(
     oauthClientId?: string | null;
     resource?: string | null;
     oauthScopes?: string | null;
+    /** A personal connection's person; null or absent: the team's. */
+    owner?: string | null;
   },
 ): Promise<{ connection: ConnectorConnection; outcome: ConnectOutcome }> {
   const def = connectorDefinition(input.connector);
+  const owner = input.owner ?? null;
   const wrapper = deps.keyWrappers[0];
   if (!wrapper) throw new Error("no key wrapper");
   const id = crypto.randomUUID();
   const sealed = input.secret ? await sealSecret(wrapper, JSON.stringify(input.secret), aadFor(input.orgId, id)) : null;
   return deps.db.transaction(async (tx) => {
-    // One active connection per connector: a new one replaces the old (grants move over); a first one is every agent's.
+    // One active connection per connector for the team and one for each person: a new one replaces that owner's old
+    // one (grants move over); a first one is every agent's (a personal one, its person's agents').
     const [previous] = await tx
       .update(connectorConnections)
       .set({ revokedAt: deps.now?.() ?? new Date() })
@@ -263,6 +292,7 @@ async function storeConnection(
           eq(connectorConnections.orgId, input.orgId),
           eq(connectorConnections.connector, input.connector),
           isNull(connectorConnections.revokedAt),
+          connectionsOf(owner),
         ),
       )
       .returning();
@@ -287,6 +317,7 @@ async function storeConnection(
         resource: input.resource ?? null,
         oauthScopes: input.oauthScopes ?? null,
         createdByUserId: input.actorId,
+        ownerUserId: owner,
       })
       .returning();
     if (!row) throw new Error("connection insert returned nothing");
@@ -302,7 +333,12 @@ async function storeConnection(
         actor: { type: "person", id: input.actorId },
         action: previous ? "connector.reconnected" : "connector.connected",
         target: { type: "connector", id: row.id },
-        details: { connector: input.connector, label: row.label, auth: input.authType },
+        details: {
+          connector: input.connector,
+          label: row.label,
+          auth: input.authType,
+          ...(owner ? { personal: true } : {}),
+        },
       });
     }
     if (!previous) await grantToEveryAgent(tx, input.orgId, input.actorId, row);
@@ -316,14 +352,17 @@ async function storeConnection(
   });
 }
 
-/** Connects with an API key (or a server that needs no auth). Admins only. */
+/**
+ * Connects with an API key (or a server that needs no auth): the team's (who manages connectors), or with `personal`
+ * the actor's own, which any member adds.
+ */
 export async function createApiKeyConnection(
   deps: ConnectorDeps,
   actorId: string,
   orgId: string,
-  input: { connector: string; apiKey?: string; label?: string },
+  input: { connector: string; apiKey?: string; label?: string; personal?: boolean },
 ) {
-  await requirePermission(deps.db, actorId, orgId, "manage_connectors");
+  await requireConnect(deps.db, actorId, orgId, input.personal === true, input.connector);
   const def = connectorDefinition(input.connector);
   const serverUrl = checkServerUrl(def.serverUrl);
   const apiKey = input.apiKey?.trim();
@@ -336,12 +375,23 @@ export async function createApiKeyConnection(
     serverUrl,
     label: input.label,
     secret: apiKey ? { apiKey } : null,
+    owner: input.personal ? actorId : null,
   });
   return connection;
 }
 
-export async function listConnections(db: Database, actorId: string, orgId: string) {
-  await requirePermission(db, actorId, orgId, "read");
+/**
+ * The team's connections and the actor's own personal ones. `others`: also everyone else's personal connections, for
+ * who manages connectors, to be shown as `connectionViewFor` says.
+ */
+export async function listConnections(
+  db: Database,
+  actorId: string,
+  orgId: string,
+  options: { others?: boolean } = {},
+) {
+  const membership = await requirePermission(db, actorId, orgId, "read");
+  const others = options.others === true && can(membership, "manage_connectors");
   return db
     .select()
     .from(connectorConnections)
@@ -351,17 +401,19 @@ export async function listConnections(db: Database, actorId: string, orgId: stri
         isNull(connectorConnections.revokedAt),
         // Custom servers have their own endpoints (`…/connectors/custom`).
         sql`${connectorConnections.connector} not like 'custom:%'`,
+        others ? undefined : seenBy(actorId),
       ),
     )
     .orderBy(asc(connectorConnections.createdAt));
 }
 
 /**
- * Renames a connection, any kind (admins): it's how people and agents tell two accounts of a service apart. Its tools
- * keep their names (`tool_prefix`), so grants and denials of single tools keep applying.
+ * Renames a connection, any kind (the team's by who manages connectors, a personal one by its person): it's how people
+ * and agents tell two accounts of a service apart. Its tools keep their names (`tool_prefix`), so grants and denials
+ * of single tools keep applying.
  */
 export async function renameConnection(db: Database, actorId: string, orgId: string, id: string, label: string) {
-  await requirePermission(db, actorId, orgId, "manage_connectors");
+  await connectionFor(db, actorId, orgId, id, "change");
   const row = await db.transaction(async (tx) => {
     const [c] = await tx
       .select()
@@ -386,6 +438,41 @@ export async function renameConnection(db: Database, actorId: string, orgId: str
     return row;
   });
   caches.connections.delete(`${orgId}:active`);
+  return row;
+}
+
+/**
+ * Moves a person's own connection to the team (its person, when they also manage connectors): its grants and rules
+ * stay, and it becomes every member's to see. A catalog connector the team already has stays personal (409).
+ */
+export async function moveConnectionToTeam(db: Database, actorId: string, orgId: string, id: string) {
+  const c = await connectionFor(db, actorId, orgId, id, "move");
+  if (!c.ownerUserId) return c;
+  const row = await db.transaction(async (tx) => {
+    if (!isCustom(c)) {
+      const [team] = await tx
+        .select({ id: connectorConnections.id })
+        .from(connectorConnections)
+        .where(and(activeOf(orgId), eq(connectorConnections.connector, c.connector), connectionsOf(null)));
+      if (team) throw new ConflictError("The team already has this connector. Remove it first.");
+    }
+    const [row] = await tx
+      .update(connectorConnections)
+      .set({ ownerUserId: null, updatedAt: new Date() })
+      .where(eq(connectorConnections.id, c.id))
+      .returning();
+    if (!row) throw new Error("connection update returned nothing");
+    await recordAudit(tx, {
+      orgId,
+      actor: { type: "person", id: actorId },
+      action: "connector.moved",
+      target: { type: "connector_connection", id: c.id },
+      details: { label: c.label, to: "team" },
+    });
+    return row;
+  });
+  caches.connections.delete(`${orgId}:active`);
+  caches.scopes.deletePrefix(`${orgId}:`);
   return row;
 }
 
@@ -431,7 +518,7 @@ export async function revokeConnection(
   connectionId: string,
   composio?: Pick<ComposioConnectors, "client"> | null,
 ) {
-  await requirePermission(db, actorId, orgId, "manage_connectors");
+  await connectionFor(db, actorId, orgId, connectionId, "remove");
   const actor = { type: "person" as const, id: actorId };
   const { gone, unbound } = await db.transaction(async (tx) => {
     const [current] = await tx
@@ -477,6 +564,23 @@ export async function revokeConnection(
   caches.connections.delete(`${orgId}:active`);
   caches.scopes.deletePrefix(`${orgId}:`);
   if (gone?.composioAccountId && composio) await forgetComposioAccount(composio.client, gone.composioAccountId);
+}
+
+/**
+ * `userId` left the workspace: their personal connections go with them (the Vault's rule, ADR 0144 §2), in the
+ * transaction that removes them. Agents lose their scopes and rules; nothing of the team's changes.
+ */
+export async function dropPersonalConnections(tx: Executor, orgId: string, userId: string, actorId: string) {
+  const theirs = await tx
+    .select()
+    .from(connectorConnections)
+    .where(and(activeOf(orgId), eq(connectorConnections.ownerUserId, userId)));
+  for (const row of theirs) await dropConnection(tx, orgId, row, { type: "person", id: actorId });
+  if (theirs.length > 0) {
+    caches.connections.delete(`${orgId}:active`);
+    caches.scopes.deletePrefix(`${orgId}:`);
+  }
+  return theirs;
 }
 
 /** Revokes a live connection in the caller's transaction: agents lose its scopes and its "Aprovar sempre" rules. */
@@ -618,9 +722,10 @@ export async function startOAuth(
   actorId: string,
   orgId: string,
   connector: string,
-  options: { returnTo?: string } = {},
+  options: { returnTo?: string; personal?: boolean } = {},
 ): Promise<{ authorizeUrl: string; state: string }> {
-  await requirePermission(deps.db, actorId, orgId, "manage_connectors");
+  const personal = options.personal === true;
+  await requireConnect(deps.db, actorId, orgId, personal, connector);
   const def = connectorDefinition(connector);
   const app = deps.oauthApps?.[connector];
   const serverUrl = checkServerUrl(def.serverUrl);
@@ -628,7 +733,7 @@ export async function startOAuth(
     // A catalog entry without a fixed OAuth app uses the server's own MCP OAuth (discovery + registration).
     const native =
       def.auth.includes("oauth") && !def.oauth
-        ? await nativeAuthorizeUrl(deps, actorId, orgId, connector, serverUrl, options.returnTo)
+        ? await nativeAuthorizeUrl(deps, actorId, orgId, connector, serverUrl, options.returnTo, personal)
         : null;
     if (native) return { authorizeUrl: native, state: "" };
     throw new ValidationError(`OAuth for ${def.label} is not configured on this server`);
@@ -652,6 +757,7 @@ export async function startOAuth(
     kekId: sealed.kekId,
     serverUrl,
     returnTo,
+    personal,
     expiresAt: new Date((deps.now?.() ?? new Date()).getTime() + OAUTH_STATE_TTL_MS),
   });
   const url = new URL(def.oauth.authorizeUrl);
@@ -809,8 +915,9 @@ export async function completeOAuth(
     .where(and(eq(oauthStates.id, row.id), isNull(oauthStates.usedAt)))
     .returning({ id: oauthStates.id });
   if (claimed.length === 0) throw new ConflictError("This authorization link was already used", "oauth.link_used");
-  // Still an admin, in a workspace not being deleted? Both can change during the round trip.
-  await requireChangePermission(deps.db, user.id, row.orgId, "manage_connectors");
+  // Still an admin (a member, for their own connection), in a workspace not being deleted? Both can change during the
+  // round trip.
+  await requireChangePermission(deps.db, user.id, row.orgId, row.personal ? "read" : "manage_connectors");
 
   if (row.composioAccountId) return completeComposioOAuth(deps, user, row, input.code);
   if (row.oauthClientId) return completeMcpOAuth(deps, user, row, input.code, at);
@@ -844,6 +951,7 @@ export async function completeOAuth(
     oauthScopes:
       (typeof token.scope === "string" ? token.scope.split(/[\s,]+/) : def.oauth.scopes).filter(Boolean).join(" ") ||
       null,
+    owner: row.personal ? user.id : null,
   });
   return { ...stored, returnTo: row.returnTo };
 }
@@ -1027,6 +1135,7 @@ async function nativeAuthorizeUrl(
   connector: string,
   serverUrl: string,
   returnTo?: string,
+  personal = false,
 ) {
   const probe = await probeMcpServer(deps, serverUrl).catch(() => null);
   if (probe?.kind !== "oauth") return null;
@@ -1037,6 +1146,7 @@ async function nativeAuthorizeUrl(
     issuer: probe.issuer,
     scopes: probe.scopes,
     returnTo,
+    personal,
   });
   return started.status === "oauth" ? started.authorizeUrl : null;
 }
@@ -1083,6 +1193,7 @@ async function completeMcpOAuth(
       oauthClientId: client.id,
       resource: row.resource,
       connectionId: row.connectionId,
+      owner: row.personal ? user.id : null,
     });
     return { ...stored, returnTo: row.returnTo };
   }
@@ -1096,6 +1207,7 @@ async function completeMcpOAuth(
     tokenExpiresAt,
     oauthClientId: client.id,
     resource: row.resource,
+    owner: row.personal ? user.id : null,
   });
   return { ...stored, returnTo: row.returnTo };
 }

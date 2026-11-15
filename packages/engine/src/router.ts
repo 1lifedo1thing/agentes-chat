@@ -929,7 +929,13 @@ export async function routeMessage(
     db
       .select({ label: connectorConnections.label })
       .from(connectorConnections)
-      .where(and(eq(connectorConnections.orgId, message.orgId), isNull(connectorConnections.revokedAt))),
+      .where(
+        and(
+          eq(connectorConnections.orgId, message.orgId),
+          isNull(connectorConnections.revokedAt),
+          isNull(connectorConnections.ownerUserId),
+        ),
+      ),
   ]);
   const orgApps = connections.map((c) => c.label);
   for (const c of candidates) {

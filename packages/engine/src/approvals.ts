@@ -735,15 +735,21 @@ export async function repointApprovals(
 }
 
 /**
- * `userId` left the workspace: the actions in their mailboxes that may still run (waiting for a person, or approved and
- * not run) never run, and a run waiting on one hears it. In the transaction that removes them; then `publishApproval`
+ * `userId` left the workspace: the actions in their mailboxes and personal connections that may still run (waiting
+ * for a person, or approved and not run) never run, and a run waiting on one hears it. In the transaction that removes them; then `publishApproval`
  * each row returned.
  */
 export async function cancelMailboxApprovals(tx: Executor, orgId: string, userId: string, actorId: string) {
-  const theirs = tx
+  const mailboxes = await tx
     .select({ id: mailAccounts.id })
     .from(mailAccounts)
     .where(and(eq(mailAccounts.orgId, orgId), eq(mailAccounts.createdByUserId, userId)));
+  const connections = await tx
+    .select({ id: connectorConnections.id })
+    .from(connectorConnections)
+    .where(and(eq(connectorConnections.orgId, orgId), eq(connectorConnections.ownerUserId, userId)));
+  const theirs = [...mailboxes, ...connections].map((r) => r.id);
+  if (theirs.length === 0) return [];
   const rows = await tx
     .update(approvals)
     .set({ status: "canceled", decidedByUserId: actorId, decidedAt: new Date() })

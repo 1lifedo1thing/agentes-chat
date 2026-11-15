@@ -347,7 +347,13 @@ export async function createAgent(
       const apps = await db
         .select({ id: connectorConnections.id })
         .from(connectorConnections)
-        .where(eq(connectorConnections.orgId, orgId));
+        .where(
+          and(
+            eq(connectorConnections.orgId, orgId),
+            isNull(connectorConnections.revokedAt),
+            isNull(connectorConnections.ownerUserId),
+          ),
+        );
       await grantScopes(
         db,
         orgId,
@@ -358,6 +364,27 @@ export async function createAgent(
         ],
         actorId,
       );
+    }
+    // Its owner's personal connections go on for it, as for their other agents (ADR 0099 addendum).
+    if (agent.ownerUserId) {
+      const own = await db
+        .select({ id: connectorConnections.id })
+        .from(connectorConnections)
+        .where(
+          and(
+            eq(connectorConnections.orgId, orgId),
+            isNull(connectorConnections.revokedAt),
+            eq(connectorConnections.ownerUserId, agent.ownerUserId),
+          ),
+        );
+      if (own.length > 0)
+        await grantScopes(
+          db,
+          orgId,
+          agent.id,
+          own.map((c) => ({ connectionId: c.id, scope: CONNECTOR_ALL })),
+          agent.ownerUserId,
+        );
     }
     // Skills the org marked "default for new agents".
     const defaults = await db

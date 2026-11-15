@@ -160,6 +160,13 @@ export interface ToolDefinition {
    * posts next carries `meta.readOutside` (ADR 0117). It changes nothing about the call itself.
    */
   readsOutside?: true;
+  /**
+   * Someone else's call in one person's own connection (ADR 0099 addendum): it asks that person whatever the agent's
+   * level, and no "Aprovar sempre" rule or routine allowance runs it in their place.
+   */
+  asksOwner?: true;
+  /** A person's own connection's tool: that person, the only one who reads its calls in the audit log. */
+  ownerUserId?: string;
   /** A mission's tool (agent mode, ADR 0029): its approvals are bound to that mission too. */
   missionId?: string;
   /**
@@ -200,7 +207,7 @@ export interface ToolDefinition {
   /** Human summary of a call, for approval cards. */
   describe?(input: Record<string, unknown>): { title: string; detail?: string };
   /**
-   * Our own tools only (`request_approval`, ADR 0126; a person's own mailbox, ADR 0038): who decides this call's
+   * Our own tools only (`request_approval`, ADR 0126; a person's own mailbox, ADR 0038, or connection): who decides this call's
    * approval instead of the agent's owner and admins; `requestedBy` is the person behind the run. A message refuses
    * the call (a role that isn't there); null approvers: the usual rule.
    */

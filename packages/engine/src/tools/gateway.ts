@@ -205,12 +205,12 @@ export const asksByChoice = (tool: Pick<ToolDefinition, "name" | "scope" | "conn
  * runs without any card, on every run that has one (a person's, the agent's own, a routine's, one a routine's reading
  * feeds). Everything the agent may already use: merge, deploy, rollback, a tool that runs whatever its arguments say,
  * someone's mailbox, a command the computer holds, a workspace where every command asks. Only our tools whose job is
- * asking keep their card. It is the one place that says so: the call, the listing, a held command and the autonomy
+ * asking keep their card, and someone else's call in a person's own connection (`asksOwner`). It is the one place that says so: the call, the listing, a held command and the autonomy
  * brakes all read it. It lifts asking and nothing else: the policy's refusals, scopes, a tool turned off, the budget
  * and the tools' own checks all come before or apart from it. A call outside a run (a mission task's) has no level.
  */
 export function unaskedAtNever(level: ApprovalsLevel, tool: ToolDefinition, authority: RunAuthority | null): boolean {
-  return level === "never" && authority !== null && !asksByChoice(tool);
+  return level === "never" && authority !== null && !asksByChoice(tool) && !tool.asksOwner;
 }
 
 /**
@@ -1271,6 +1271,7 @@ export function createToolGateway(deps: {
           outcome,
           approvalRules: approvedBy,
           unasked: unasked && outcome !== "refused",
+          personalOf: tool.ownerUserId ?? null,
           ...extra,
         });
       };
@@ -1432,7 +1433,7 @@ export function createToolGateway(deps: {
         }
         return false;
       };
-      const kinds = approves ? await rememberKinds(tool, call.input, authority, level) : [];
+      const kinds = approves && !tool.asksOwner ? await rememberKinds(tool, call.input, authority, level) : [];
       const remember = kinds[0] ?? null;
       if (await coveredBy(kinds)) approves = false;
       // The routine's own job: an action its creator allowed when they set it up runs like an allowed one, every run,
@@ -1441,7 +1442,7 @@ export function createToolGateway(deps: {
       // joined it (the end of a task, another routine's report, another agent's message) is not the job the person
       // set up, and would choose an allowed action's arguments.
       const ownJobBrief =
-        !approves || level === "always"
+        !approves || level === "always" || tool.asksOwner
           ? null
           : authority?.kind === "routine"
             ? authority.brief

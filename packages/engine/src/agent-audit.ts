@@ -129,6 +129,8 @@ export async function recordToolCall(
     /** A call that ran without the card its tool would open, because its agent never asks (ADR 0173). */
     unasked?: boolean;
     about?: ToolCallSubject | null;
+    /** A call in a person's own connection: that person, the only one whose audit log shows what it asked. */
+    personalOf?: string | null;
   },
 ) {
   // A secret's variable-style name is the agent's own: people read its label (the call's title), never this.
@@ -159,6 +161,7 @@ export async function recordToolCall(
       ...(call.approvalRules?.length ? { approvalRules: call.approvalRules } : {}),
       ...(call.unasked ? { approvalsLevel: "never" } : {}),
       ...(call.about ? { about: call.about } : {}),
+      ...(call.personalOf ? { personalOf: call.personalOf } : {}),
     },
     runId: call.runId,
     channelId: call.channelId,
@@ -330,6 +333,10 @@ export async function listAudit(
     .limit(limit + 1);
   const page = found.slice(0, limit);
   const hidden = can(membership, "administrator") ? new Set<string>() : await hiddenFrom(db, orgId, actorId, page);
+  // A call in someone else's personal connection keeps only that it happened, for admins too.
+  for (const r of page)
+    if (r.action === TOOL_CALL && typeof r.details.personalOf === "string" && r.details.personalOf !== actorId)
+      hidden.add(r.id);
 
   const approvalOf = (r: (typeof page)[number]) =>
     typeof r.details.approvalId === "string" ? r.details.approvalId : null;

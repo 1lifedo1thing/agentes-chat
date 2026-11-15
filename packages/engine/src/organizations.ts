@@ -1200,6 +1200,7 @@ export async function removeMember(
   const { cancelSecretRequestsFor, publishSecret } = await import("./secrets");
   const { cancelMailboxApprovals, publishApproval } = await import("./approvals");
   const { dropMailOfOwner } = await import("./tools/scopes");
+  const { dropPersonalConnections } = await import("./connectors/connections");
   const { removeSeat } = await import("./right-hand-seats");
   const { dropMemberDashboards } = await import("./dashboards/service");
   const { released, removed, handed, changed, heir, secrets, mailActions } = await db.transaction(async (tx) => {
@@ -1302,6 +1303,8 @@ export async function removeMember(
     });
     // No agent goes on reading or sending in their name: their mailboxes leave every agent, and what waits to run there doesn't.
     await dropMailOfOwner(tx, orgId, targetUserId, actorId);
+    // Their personal connections go with them (ADR 0099 addendum).
+    await dropPersonalConnections(tx, orgId, targetUserId, actorId);
     // Their place on the workspace's computer for the right hand goes too (ADR 0175): coming back starts a new one.
     await removeSeat(tx, orgId, targetUserId);
     const mailActions = await cancelMailboxApprovals(tx, orgId, targetUserId, actorId);
