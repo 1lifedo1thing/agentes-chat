@@ -10862,7 +10862,7 @@
   },
   "jev": {
     "title": "Jev",
-    "about": "Быстрая модель от TypeSafe для быстрых решений. agentes.chat задаёт ей небольшие вопросы, например, кто должен ответить. Вы платите TypeSafe напрямую.",
+    "about": "Быстрая модель от TypeSafe для быстрых решений. agentes.chat задаёт ей небольшие вопросы, например, кто должен ответить. Вы платите TypeSafe напрямую или через OpenRouter по той же цене.",
     "lead": "Помогает вашим агентам работать как команда.",
     "how": "Как работает Jev",
     "why": {
@@ -10905,6 +10905,32 @@
       "envInvalid": "TypeSafe не принял этот ключ. Измените его в настройках этого сервера (TYPESAFE_API_KEY)."
     },
     "checkAgain": "Проверить снова",
+    "via": {
+      "label": "Где вы платите за Jev",
+      "typesafe": "TypeSafe",
+      "typesafeText": "Аккаунт в самом TypeSafe, с предоплаченным балансом.",
+      "openrouter": "OpenRouter",
+      "openrouterText": "С ключом OpenRouter, по той же цене.",
+      "connected": "Ключ уже подключён"
+    },
+    "openRouter": {
+      "create": "Создайте ключ в OpenRouter",
+      "createHint": "С балансом в OpenRouter. Jev стоит столько же, сколько в TypeSafe: US$ {{price}} за миллион токенов. Выбор отвечающего стоит около US$ {{call}}.",
+      "open": "Открыть OpenRouter",
+      "placeholder": "Ваш ключ OpenRouter",
+      "shape": "Ключи OpenRouter начинаются с sk-or-v1-. Проверьте ключ и вставьте его снова.",
+      "invalid": "OpenRouter не принял этот ключ. Скопируйте его ещё раз со страницы ключей.",
+      "keyName": "Ключ OpenRouter",
+      "same": "Тот, что в Ключах провайдеров",
+      "forAll": "Этот ключ оплачивает Jev во всех рабочих пространствах этого сервера.",
+      "turnOn": "Включить Jev",
+      "otherKey": "Другой ключ",
+      "line": {
+        "invalid": "OpenRouter не принял этот ключ. Создайте новый.",
+        "no_credit": "Пополните баланс в OpenRouter. Jev продолжит сам.",
+        "envInvalid": "OpenRouter не принял этот ключ. Измените его в настройках этого сервера (TYPESAFE_API_KEY)."
+      }
+    },
     "remove": {
       "title": "Удалить ключ Jev?",
       "text": "Агенты продолжат работать и без него."

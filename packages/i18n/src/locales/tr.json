@@ -10105,7 +10105,7 @@
   },
   "jev": {
     "title": "Jev",
-    "about": "TypeSafe'in hızlı kararlar için yaptığı hızlı bir model. agentes.chat ona kimin yanıt vereceği gibi küçük sorular sorar. Ücreti doğrudan TypeSafe'e ödersiniz.",
+    "about": "TypeSafe'in hızlı kararlar için yaptığı hızlı bir model. agentes.chat ona kimin yanıt vereceği gibi küçük sorular sorar. Ücreti doğrudan TypeSafe'e ya da aynı fiyatla OpenRouter üzerinden ödersiniz.",
     "lead": "Ajanlarınızın ekip olarak çalışmasına yardım eder.",
     "how": "Jev nasıl çalışır",
     "why": {
@@ -10146,6 +10146,32 @@
       "envInvalid": "TypeSafe bu anahtarı kabul etmedi. Bu sunucunun ayarlarından değiştirin (TYPESAFE_API_KEY)."
     },
     "checkAgain": "Tekrar kontrol et",
+    "via": {
+      "label": "Jev için nereden ödersiniz",
+      "typesafe": "TypeSafe",
+      "typesafeText": "Doğrudan TypeSafe'te bir hesap, ön ödemeli krediyle.",
+      "openrouter": "OpenRouter",
+      "openrouterText": "Bir OpenRouter anahtarıyla, aynı fiyata.",
+      "connected": "Anahtar zaten bağlı"
+    },
+    "openRouter": {
+      "create": "OpenRouter'da bir anahtar oluşturun",
+      "createHint": "OpenRouter'daki krediyle. Jev, TypeSafe'teki ile aynı fiyattadır: milyon token başına US$ {{price}}. Kimin yanıt vereceğini seçmek yaklaşık US$ {{call}} tutar.",
+      "open": "OpenRouter'ı aç",
+      "placeholder": "OpenRouter anahtarınız",
+      "shape": "OpenRouter anahtarları sk-or-v1- ile başlar. Kontrol edip tekrar yapıştırın.",
+      "invalid": "OpenRouter bu anahtarı kabul etmedi. Anahtarlar sayfasından tekrar kopyalayın.",
+      "keyName": "OpenRouter anahtarı",
+      "same": "Sağlayıcı anahtarlarındaki",
+      "forAll": "Bu anahtar, bu sunucudaki tüm çalışma alanlarında Jev'in ücretini öder.",
+      "turnOn": "Jev'i aç",
+      "otherKey": "Başka anahtar kullan",
+      "line": {
+        "invalid": "OpenRouter bu anahtarı kabul etmedi. Yeni bir tane oluşturun.",
+        "no_credit": "OpenRouter'da kredi ekleyin. Jev kendiliğinden devam eder.",
+        "envInvalid": "OpenRouter bu anahtarı kabul etmedi. Bu sunucunun ayarlarından değiştirin (TYPESAFE_API_KEY)."
+      }
+    },
     "remove": {
       "title": "Jev anahtarı kaldırılsın mı?",
       "text": "Ajanlar onsuz da çalışmaya devam eder."

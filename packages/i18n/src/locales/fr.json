@@ -10538,7 +10538,7 @@
   },
   "jev": {
     "title": "Jev",
-    "about": "Un modèle rapide de TypeSafe, conçu pour les décisions rapides. agentes.chat lui pose de petites questions, comme qui doit répondre. Vous payez TypeSafe directement.",
+    "about": "Un modèle rapide de TypeSafe, conçu pour les décisions rapides. agentes.chat lui pose de petites questions, comme qui doit répondre. Vous payez TypeSafe directement, ou via OpenRouter au même prix.",
     "lead": "Aide vos agents à travailler en équipe.",
     "how": "Comment fonctionne Jev",
     "why": {
@@ -10580,6 +10580,32 @@
       "envInvalid": "TypeSafe n'a pas accepté cette clé. Changez-la dans les paramètres de ce serveur (TYPESAFE_API_KEY)."
     },
     "checkAgain": "Vérifier à nouveau",
+    "via": {
+      "label": "Où vous payez Jev",
+      "typesafe": "TypeSafe",
+      "typesafeText": "Un compte directement chez TypeSafe, avec du crédit prépayé.",
+      "openrouter": "OpenRouter",
+      "openrouterText": "Avec une clé OpenRouter, au même prix.",
+      "connected": "Clé déjà connectée"
+    },
+    "openRouter": {
+      "create": "Créez une clé chez OpenRouter",
+      "createHint": "Avec du crédit chez OpenRouter. Jev coûte le même prix que chez TypeSafe : {{price}} US$ par million de jetons. Choisir qui répond coûte environ {{call}} US$.",
+      "open": "Ouvrir OpenRouter",
+      "placeholder": "Votre clé OpenRouter",
+      "shape": "Les clés OpenRouter commencent par sk-or-v1-. Vérifiez-la et collez-la de nouveau.",
+      "invalid": "OpenRouter n'a pas accepté cette clé. Copiez-la de nouveau depuis la page des clés.",
+      "keyName": "Clé OpenRouter",
+      "same": "Celle des Clés des fournisseurs",
+      "forAll": "Elle paie Jev pour tous les espaces de travail de ce serveur.",
+      "turnOn": "Activer Jev",
+      "otherKey": "Utiliser une autre clé",
+      "line": {
+        "invalid": "OpenRouter n'a pas accepté cette clé. Créez-en une nouvelle.",
+        "no_credit": "Ajoutez du crédit chez OpenRouter. Jev reprend tout seul.",
+        "envInvalid": "OpenRouter n'a pas accepté cette clé. Changez-la dans les paramètres de ce serveur (TYPESAFE_API_KEY)."
+      }
+    },
     "remove": {
       "title": "Supprimer la clé Jev ?",
       "text": "Les agents continuent de travailler sans elle."

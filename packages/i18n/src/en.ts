@@ -10486,7 +10486,7 @@ export const en = {
   jev: {
     title: "Jev",
     about:
-      "A fast model by TypeSafe, made for quick decisions. agentes.chat asks it small questions, like who should answer. You pay TypeSafe directly.",
+      "A fast model by TypeSafe, made for quick decisions. agentes.chat asks it small questions, like who should answer. You pay TypeSafe directly, or through OpenRouter at the same price.",
     lead: "Helps your agents work as a team.",
     how: "How Jev works",
     why: {
@@ -10528,6 +10528,35 @@ export const en = {
       envInvalid: "TypeSafe didn't accept this key. Change it in this server's settings (TYPESAFE_API_KEY).",
     },
     checkAgain: "Check again",
+    /** Where Jev is called and paid (ADR 0073 §9): the rows under the reasons once "Set up Jev" is pressed. */
+    via: {
+      label: "Where you pay for Jev",
+      typesafe: "TypeSafe",
+      typesafeText: "An account at TypeSafe itself, with prepaid credit.",
+      openrouter: "OpenRouter",
+      openrouterText: "With an OpenRouter key, at the same price.",
+      connected: "Key already connected",
+    },
+    /** Jev through OpenRouter: its steps, the workspace's own key, and the key's lines once saved. */
+    openRouter: {
+      create: "Create a key at OpenRouter",
+      createHint:
+        "With credit at OpenRouter. Jev costs the same as at TypeSafe: US$ {{price}} per million tokens. Picking who answers costs about US$ {{call}}.",
+      open: "Open OpenRouter",
+      placeholder: "Your OpenRouter key",
+      shape: "OpenRouter keys start with sk-or-v1-. Check it and paste it again.",
+      invalid: "OpenRouter didn't accept this key. Copy it again from the keys page.",
+      keyName: "OpenRouter key",
+      same: "The one in Provider keys",
+      forAll: "It pays for Jev in every workspace on this server.",
+      turnOn: "Turn on Jev",
+      otherKey: "Use another key",
+      line: {
+        invalid: "OpenRouter didn't accept this key. Create a new one.",
+        no_credit: "Add credit at OpenRouter. Jev resumes by itself.",
+        envInvalid: "OpenRouter didn't accept this key. Change it in this server's settings (TYPESAFE_API_KEY).",
+      },
+    },
     remove: {
       title: "Remove the Jev key?",
       text: "Agents keep working without it.",
