@@ -90,7 +90,6 @@ export function seekPlayback(id: string, at: number) {
   void player.seekTo((at * now.durationMs) / 1000);
 }
 
-/** Whatever plays takes the new speed where it is. */
-export function setPlaybackSpeed(speed: number) {
-  if (now) player?.setPlaybackRate(speed);
+export function setPlaybackSpeed(id: string, speed: number) {
+  if (now?.id === id) player?.setPlaybackRate(speed);
 }

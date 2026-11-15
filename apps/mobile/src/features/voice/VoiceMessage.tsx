@@ -58,6 +58,10 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
     setOpen(opened.has(message.id));
     setBroken(false);
   }, [clipId, message.id]);
+  // A speed picked on any row, or while this one was still starting, reaches it where it plays.
+  useEffect(() => {
+    if (playing) setPlaybackSpeed(clipId, rate);
+  }, [playing, rate, clipId]);
   useEffect(() => {
     if (width <= 0 || !voice) return;
     const wave = wavePaths(voice.peaks, width, WAVE);
@@ -110,11 +114,7 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
     report(at);
     seekPlayback(clipId, at);
   };
-  const cycle = () => {
-    const next = nextSpeed(rate);
-    setVoiceSpeed(next);
-    setPlaybackSpeed(next);
-  };
+  const cycle = () => setVoiceSpeed(nextSpeed(rate));
   const flip = () => {
     if (open) opened.delete(message.id);
     else opened.add(message.id);
