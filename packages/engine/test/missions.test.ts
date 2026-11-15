@@ -58,12 +58,13 @@ import {
   startSessionTask,
   stopMission,
   syncMissionFiles,
+  systemWithConversation,
   taskNotice,
   versionOf,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
-import { ownerWrites } from "./mission-helpers";
+import { missionComputerBrain, ownerWrites } from "./mission-helpers";
 
 let f: Fixture;
 afterEach(async () => {
@@ -216,11 +217,13 @@ async function proposed(
     judge?: NonNullable<Parameters<typeof setup>[0]>["judge"];
   } = {},
 ) {
+  const computer = missionComputerBrain();
   f = await setup({
     machines: true,
     missionTools: true,
     reply: options.reply ?? (() => ({ chunks: ["ok"] })),
     ...(options.judge ? { judge: options.judge } : {}),
+    brains: computer.brains,
   });
   const paired = await pairedMachine();
   const runner = missionRunner(f.machineHub as MachineHub);
@@ -242,7 +245,7 @@ async function proposed(
     resume: false,
   });
   const task = runner.started[0] as TaskStartRequest;
-  return { view, runner, task, paired };
+  return { view, runner, task, paired, turns: computer.turns };
 }
 
 /**
@@ -436,7 +439,7 @@ describe("missions (ADR 0029)", () => {
   });
 
   test("update_plan versions the plan; changes after the first post one line; mission brief in the run's context", async () => {
-    const { view, runner, task: plan } = await proposed();
+    const { view, runner, task: plan, turns } = await proposed();
     const first = ok(
       await runner.mcp(plan.taskId, "update_plan", {
         items: [
@@ -474,7 +477,9 @@ describe("missions (ADR 0029)", () => {
       threadId: view.threadId,
     });
     await drainOutbox(f.db, f.handlers);
-    const system = JSON.stringify(f.provider.calls.at(-1)?.request.system ?? "");
+    // What the mission's Claude Code reads as its system text: the agent's, then this conversation's.
+    const last = turns.at(-1);
+    const system = last ? systemWithConversation(last) : "";
     expect(system).toContain("# Mission in this thread");
     expect(system).toContain("Plan: 1 of 2 done");
     // The run is the main session, whatever its brain: it does the work itself.
