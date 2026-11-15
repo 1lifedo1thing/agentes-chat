@@ -17,8 +17,16 @@ describe("the live picture's edge on the phone", () => {
     expect(kit).toContain('export { PictureEdge } from "./PictureEdge";');
     expect(edge).toContain('pointerEvents="none"');
     expect(edge).toContain("StyleSheet.absoluteFill");
-    expect(edge).toContain("{ borderRadius: radius, borderColor: colors.line }");
     expect(style(edge, "edge")).toContain(HAIRLINE);
+    // The line is translucent: it lies on the box's fill, so a white picture under it doesn't wash it out.
+    expect(before(edge, "{ borderColor: colors.sunken }", "{ borderColor: colors.line }")).toBe(true);
+  });
+
+  test("a cover that fills the picture's box is clipped by it: no corners of its own to show the screen past", async () => {
+    const cover = await read("features/computer/Cover.tsx");
+    expect(style(cover, "cover")).not.toContain("borderRadius");
+    expect(style(cover, "stage")).toContain("borderRadius: 20");
+    expect(cover).toContain("fill ? StyleSheet.absoluteFill : styles.stage,");
   });
 
   test("the open card's page and the help peek: the picture fills the box, the line lies over its edge", async () => {
