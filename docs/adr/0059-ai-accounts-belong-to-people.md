@@ -175,3 +175,5 @@ Each account's usage comes from the CLIs themselves: the rate-limit events durin
 - **Taking turns on one folder**, lent to whichever agent runs. Agents would queue behind each other's turns, which take minutes, and the router starts up to two at once. Rejected. *Still rejected for Claude (2026-10-30); the way for ChatGPT where each agent is its own OS user (§2):* the other choice there is one agent per ChatGPT account, and OpenAI documents serialized use.
 - **One OS user for all of one person's agents.** It would give one sign-in to every agent of a person and drop the isolation between them (files, browser profiles, processes, ADR 0057). Not now.
 - **Storing plan keys on the server**, encrypted like workspace keys. The coding plans' terms allow only their coding tools, and a server-held key could be routed anywhere. Rejected.
+
+*Amended 2026-11-15:* paid extra usage is no longer a switch its owner turns on (`brain.extra_owner_only` is gone): long work uses it on the agent owner's own plan where the plan reports it on, never on a plan given to the agent nor for the right hand (`paysExtraUsage`, ADR 0118's addendum of the same day).

@@ -103,7 +103,7 @@ import { can, getMembership, requirePermission } from "./organizations";
 import { isRightHand, personalBrain, personalModel } from "./right-hand";
 import { orgModelProvider } from "./router";
 import { readRefusal } from "./standing";
-import { paysExtraUsage, wakeAgentUsageWaits } from "./usage-pause";
+import { paysExtraUsage, wakeAgentsBrainWaits } from "./usage-pause";
 
 /*
  * "Quem pensa" (ADR 0032 §5): the brain an agent thinks with and its model,
@@ -891,6 +891,7 @@ async function setPersonalBrain(
     return released;
   });
   forgetAgents(orgId, released);
+  await wakeAgentsBrainWaits(deps, orgId, released);
   await audit({ brain, model, account: account.id, effort: effort ?? null });
   if (moved) {
     await recordAudit(db, {
@@ -1236,6 +1237,7 @@ export async function setAgentBrain(
   caches.agents.delete(`${orgId}:${agentId}`);
   if (audience) caches.agents.delete(`${orgId}:team`);
   forgetAgents(orgId, released);
+  await wakeAgentsBrainWaits(deps, orgId, released);
   // Another model chosen: the note that its model left its plan's list is done.
   if (changed || model !== agent.brainModel || account !== agent.brainAccountId) {
     await resolveNotifications(deps, orgId, {
@@ -1298,9 +1300,10 @@ export async function setAgentBrain(
   if (thinks && options.remember !== false && !rightHand) {
     await rememberAgentSetup(deps.db, membership, setupOfAgent(saved));
   }
-  // Another AI, account or model: what waited on the old one's plan or budget goes on now, in its line's order.
+  // Another AI, account or model: what waited on the old one (its plan, budget or computer) goes on now, in its line's
+  // order.
   if (changed || model !== agent.brainModel || account !== agent.brainAccountId)
-    await wakeAgentUsageWaits(deps.db, orgId, agentId).catch(() => null);
+    await wakeAgentsBrainWaits(deps, orgId, [agentId]);
   // The account's `usedBy` changed with it.
   // The right hand's row is on no computer: shown as its settings see it again.
   const shown = rightHand ? await settingsAgent(deps.db, saved, userId) : saved;
@@ -1437,6 +1440,7 @@ export async function takeBackPlan(
     lent.map((a) => a.id),
   );
   forgetAgents(orgId, ids);
+  await wakeAgentsBrainWaits(deps, orgId, ids);
   // People's own AI for the right hand (ADR 0137 §11) given this plan: back to the workspace's.
   const rightHand = agentId ? isRightHand(await getAgent(deps.db, orgId, agentId)) : true;
   const personal = rightHand
@@ -1552,6 +1556,7 @@ export async function setAccountServes(
     return { ids: updated.map((u) => u.id), agentIds, people: people.length };
   });
   forgetAgents(orgId, changed.agentIds);
+  await wakeAgentsBrainWaits(deps, orgId, changed.agentIds);
   if (changed.people > 0) await publishMachineAgentsChanged(deps.pubsub, orgId);
   for (const id of changed.ids) {
     await recordAudit(deps.db, {

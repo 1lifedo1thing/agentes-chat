@@ -1160,8 +1160,8 @@ export async function removalPreview(
  * isn't its owner's, or that has no computer left, goes back to the API.
  */
 async function offPlansNotOwners(tx: Executor, orgId: string, ids: string[]) {
-  if (ids.length === 0) return;
-  await tx
+  if (ids.length === 0) return [];
+  const rows = await tx
     .update(agents)
     .set({ brain: "model", brainAccountId: null, updatedAt: new Date() })
     .where(
@@ -1173,7 +1173,9 @@ async function offPlansNotOwners(tx: Executor, orgId: string, ids: string[]) {
             and ${agents.ownerUserId} = case when ${agents.brainAccountId} is null then m.paired_by_user_id
               else (select a.created_by from ${schema.machineAccounts} a where a.id = ${agents.brainAccountId}) end)`,
       ),
-    );
+    )
+    .returning({ id: agents.id });
+  return rows.map((r) => r.id);
 }
 
 /**
@@ -1198,11 +1200,12 @@ export async function removeMember(
   );
   const { releaseLeaverDevices } = await import("./devices");
   const { cancelSecretRequestsFor, publishSecret } = await import("./secrets");
+  const { wakeAgentsBrainWaits } = await import("./usage-pause");
   const { cancelMailboxApprovals, publishApproval } = await import("./approvals");
   const { dropMailOfOwner } = await import("./tools/scopes");
   const { removeSeat } = await import("./right-hand-seats");
   const { dropMemberDashboards } = await import("./dashboards/service");
-  const { released, removed, handed, changed, heir, secrets, mailActions } = await db.transaction(async (tx) => {
+  const { released, removed, handed, changed, heir, secrets, mailActions, toApi } = await db.transaction(async (tx) => {
     await lockOrgMembers(tx, orgId);
     if (target.role === "owner" && (await ownerCount(tx, orgId)) <= 1) {
       throw new ConflictError("An organization needs at least one owner. Transfer ownership first.");
@@ -1313,10 +1316,10 @@ export async function removeMember(
     }
     await releaseLeaverDevices(tx, orgId, targetUserId);
     const touched = [...new Set([...handed.map((a) => a.id), ...removed.flatMap((r) => r.freed)])];
-    await offPlansNotOwners(tx, orgId, touched);
+    const toApi = await offPlansNotOwners(tx, orgId, touched);
     const changed = [...new Set([...touched, ...released.agents.flatMap((a) => a.agentIds)])];
     await followOwner(tx, orgId);
-    return { released, removed, handed, changed, heir, secrets, mailActions };
+    return { released, removed, handed, changed, heir, secrets, mailActions, toApi };
   });
   for (const row of secrets) await publishSecret({ db, pubsub: options.pubsub }, row, "secret.updated");
   for (const row of mailActions) await publishApproval({ db, pubsub: options.pubsub }, row, "approval.decided");
@@ -1324,6 +1327,7 @@ export async function removeMember(
     orgId,
     handed.map((a) => a.id),
   );
+  await wakeAgentsBrainWaits({ db, pubsub: options.pubsub }, orgId, toApi);
   if (handed.length) caches.agents.delete(`${orgId}:team`);
   if (heir && handed.length) {
     const { handOver } = await import("./agents");
@@ -1331,7 +1335,7 @@ export async function removeMember(
       await handOver({ db, pubsub: options.pubsub }, actorId, { ...agent, ownerUserId: targetUserId }, heir);
     }
   }
-  await announceReleasedAccounts(options.pubsub, released);
+  await announceReleasedAccounts({ db, pubsub: options.pubsub }, released);
   for (const { computer, freed } of removed) {
     await announceRemovedMachine({ db, pubsub: options.pubsub }, computer, { type: "person", id: actorId }, freed);
   }
@@ -1495,7 +1499,7 @@ export async function deleteAccount(
   if (!done) return false;
   const { plan, closed, released, removed, mailActions, ownerless } = done;
   for (const row of mailActions) await publishApproval({ db, pubsub: options.pubsub }, row, "approval.decided");
-  await announceReleasedAccounts(options.pubsub, released);
+  await announceReleasedAccounts({ db, pubsub: options.pubsub }, released);
   for (const { computer, freed } of removed) {
     await announceRemovedMachine({ db, pubsub: options.pubsub }, computer, { type: "person", id: userId }, freed);
   }

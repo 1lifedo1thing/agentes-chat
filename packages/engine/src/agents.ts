@@ -39,7 +39,7 @@ import {
   PERSONAL_AGENT_SCOPES,
 } from "./tools/scopes";
 import { orgDefaultAgentBudget, resyncBudgetCounter } from "./usage";
-import { resumeBudgetWaits } from "./usage-pause";
+import { resumeBudgetWaits, wakeAgentsBrainWaits } from "./usage-pause";
 import { isPersonalWorkspace } from "./workspace-mode";
 
 const { agents, connectorConnections, importItems, machines, organizationMembers, providerCredentials } = schema;
@@ -548,6 +548,7 @@ export async function updateAgent(
         reason: "owner_changed",
       },
     });
+    await wakeAgentsBrainWaits({ db, pubsub: options.pubsub }, orgId, [agentId]);
   }
   // Which fields changed, not the instructions' text (they can be long and say anything); the rest as set.
   const changed = Object.keys(input).filter((k) => input[k as keyof typeof input] !== undefined);

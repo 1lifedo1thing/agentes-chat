@@ -35,6 +35,7 @@ import { can, requireActiveMembership, requirePermission } from "./organizations
 import { maySql } from "./permissions";
 import { isRightHand, RIGHT_HAND, rightHandPermanent } from "./right-hand";
 import { liveSeats, removedSeatIds, removeSeat, SHARED_SEAT, seatName } from "./right-hand-seats";
+import { wakeAgentsBrainWaits } from "./usage-pause";
 
 const { machines, agents, users, organizationMembers } = schema;
 
@@ -924,6 +925,7 @@ export async function announceRemovedMachine(
       event: { type: "agent.computer", agentId, target: { kind: "none" } },
     });
   }
+  await wakeAgentsBrainWaits(deps, orgId, freed);
 }
 
 /** Which computer an agent uses (`GET …/computer` `target`). */
@@ -961,6 +963,8 @@ export async function setAgentComputerTarget(
   orgId: string,
   agentId: string,
   machineId: string | null,
+  /** false: the caller moves its waiting runs itself (`moveAgentsFromMachine`). */
+  options: { wakeWaits?: boolean } = {},
 ): Promise<ComputerTarget> {
   const membership = await requirePermission(deps.db, actorId, orgId, "read");
   const agent = await getAgent(deps.db, orgId, agentId);
@@ -1015,5 +1019,6 @@ export async function setAgentComputerTarget(
   });
   // The machine it left and the one it joined list their agents again (protocol 9).
   await publishMachineAgentsChanged(deps.pubsub, orgId);
+  if (moved && options.wakeWaits !== false) await wakeAgentsBrainWaits(deps, orgId, [agentId]);
   return target;
 }

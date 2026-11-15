@@ -82,7 +82,7 @@ import { recordAccountFailure } from "./operator-events";
 import { can, requirePermission } from "./organizations";
 import { runnerUpdateWay } from "./runner-update";
 import { scrubSignIns } from "./tool-detail";
-import { usageWaitKey, wakeOnRoom } from "./usage-pause";
+import { usageWaitKey, wakeAgentsBrainWaits, wakeOnRoom } from "./usage-pause";
 
 const { machineAccounts, agents, machines, rightHandBrains, users } = schema;
 
@@ -825,6 +825,7 @@ export async function syncMachineAccounts(
   });
   if (!out) return [];
   forgetAgents(orgId, out.released);
+  await wakeAgentsBrainWaits(deps, orgId, out.released);
   if (out.changed) await publishAccountsChanged(deps.pubsub, orgId, machineId);
   return out.remove;
 }
@@ -1476,6 +1477,7 @@ export async function accountLoginStatus(
   if (info.id !== row.id) return { state: "failed", error: "The computer reported another account." };
   const settled = await deps.db.transaction((tx) => settleAccount(tx, orgId, machine, info, true));
   forgetAgents(orgId, settled.released);
+  await wakeAgentsBrainWaits(deps, orgId, settled.released);
   if (settled.other) {
     if (settled.changed) await publishAccountsChanged(deps.pubsub, orgId, machine.id);
     const { email, duplicate } = settled.other;
@@ -1621,6 +1623,7 @@ export async function removeMachineAccount(
   }
   const released = await deps.db.transaction((tx) => tombstone(tx, orgId, [account.id]));
   forgetAgents(orgId, released);
+  await wakeAgentsBrainWaits(deps, orgId, released);
   await recordAudit(deps.db, {
     orgId,
     actor: { type: "person", id: userId },
@@ -1741,8 +1744,12 @@ export async function releaseAgentLogin(db: Executor, orgId: string, agentId: st
  * After `releaseMemberAccounts`, `releaseOrgAccounts` or `releaseAgentLogin`: pages refetch, and the replica holding
  * each machine's runner removes them.
  */
-export async function announceReleasedAccounts(pubsub: PubSub | undefined, released: ReleasedAccounts) {
-  for (const a of released.agents) forgetAgents(a.orgId, a.agentIds);
+export async function announceReleasedAccounts(deps: { db: Database; pubsub?: PubSub }, released: ReleasedAccounts) {
+  const { pubsub } = deps;
+  for (const a of released.agents) {
+    forgetAgents(a.orgId, a.agentIds);
+    await wakeAgentsBrainWaits(deps, a.orgId, a.agentIds);
+  }
   for (const m of released.machines) {
     await publishAccountsChanged(pubsub, m.orgId, m.machineId);
     await pubsub

@@ -19,8 +19,10 @@ import {
   NO_PERSON,
   newAgentBrainMachines,
   releaseAgents,
+  removeMachine,
   setAgentAudience,
   setAgentBrain,
+  setAgentComputerTarget,
   takeBackPlan,
   updateAgent,
   ValidationError,
@@ -860,4 +862,88 @@ test("a model its plan's list dropped since: a save that repeats it goes through
   } finally {
     learnPlanModels({ opencode: table });
   }
+});
+
+describe("what the agent thinks with changes: its computer waits look again", () => {
+  /** A run of Dev parked with `transcript`; `wokenNow` says whether a brain change queued it again. */
+  const parked = async (
+    fx: Fixture,
+    transcript: Record<string, unknown>,
+    status: "waiting_input" | "waiting_approval" = "waiting_input",
+  ) => {
+    const [run] = await fx.db
+      .insert(schema.agentRuns)
+      .values({
+        orgId: fx.org.id,
+        agentId: fx.agent.id,
+        channelId: fx.general.id,
+        threadRootId: crypto.randomUUID(),
+        triggerMessageId: crypto.randomUUID(),
+        trigger: "mention",
+        hop: 1,
+        status,
+        transcript,
+      })
+      .returning();
+    if (!run) throw new Error("no run");
+    return run.id;
+  };
+  const offline = (machineId: string, extra: Record<string, unknown> = {}) => ({
+    waitingForBrain: { kind: "claude_code", machineId, code: "machine_offline", waitId: Bun.randomUUIDv7() },
+    ...extra,
+  });
+  const wokenNow = async (fx: Fixture, runId: string) =>
+    (await fx.db.select({ key: schema.outbox.dedupeKey }).from(schema.outbox)).some((j) =>
+      j.key?.startsWith(`agent_run.execute:${runId}:switched:`),
+    );
+
+  test("a plan taken back, the computer moved or removed: its computer waits go on, a person's answer still waits", async () => {
+    const { fx, deps, machineId, bia, caio, account } = await world();
+    await account(BIAS, bia.id);
+    await setAgentBrain(deps, caio.id, fx.org.id, fx.agent.id, { brain: "claude_code", account: BIAS });
+    const onPlan = await parked(fx, offline(machineId));
+    const question = await parked(fx, { messages: [] });
+    const approval = await parked(fx, { messages: [] }, "waiting_approval");
+    await takeBackPlan(deps, bia.id, fx.org.id, BIAS, fx.agent.id);
+    expect(await wokenNow(fx, onPlan)).toBe(true);
+    expect(await wokenNow(fx, question)).toBe(false);
+    expect(await wokenNow(fx, approval)).toBe(false);
+
+    const moved = await parked(fx, offline(machineId));
+    await setAgentComputerTarget({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, fx.agent.id, null);
+    expect(await wokenNow(fx, moved)).toBe(true);
+
+    await fx.db.update(schema.agents).set({ machineId }).where(eq(schema.agents.id, fx.agent.id));
+    const removed = await parked(fx, offline(machineId));
+    const [machine] = await fx.db.select().from(schema.machines).where(eq(schema.machines.id, machineId));
+    if (!machine) throw new Error("no machine");
+    await removeMachine({ db: fx.db, pubsub: fx.pubsub }, machine, { type: "person", id: fx.owner.id });
+    expect(await wokenNow(fx, removed)).toBe(true);
+  });
+
+  test("a new owner who doesn't own the plan: its computer waits go on through the API", async () => {
+    const { fx, machineId, bia, account } = await world();
+    await account(ANAS, fx.owner.id);
+    await fx.db
+      .update(schema.agents)
+      .set({ brain: "claude_code", brainAccountId: ANAS })
+      .where(eq(schema.agents.id, fx.agent.id));
+    const waiting = await parked(fx, offline(machineId));
+    await updateAgent(fx.db, fx.owner.id, fx.org.id, fx.agent.id, { ownerUserId: bia.id });
+    expect(await wokenNow(fx, waiting)).toBe(true);
+  });
+
+  test("a turn its computer cut off after tools ran keeps waiting for that computer on a brain change", async () => {
+    const { fx, deps, machineId } = await world();
+    await fx.db.update(schema.agents).set({ brain: "claude_code" }).where(eq(schema.agents.id, fx.agent.id));
+    const dropped = (executed: string[]) => ({
+      waitingForBrain: { kind: "claude_code", machineId, code: "machine_dropped", waitId: Bun.randomUUIDv7() },
+      interruptedTurn: { prompt: "Open the PR and post in #ops", executed, drops: 1 },
+    });
+    const ranTools = await parked(fx, dropped(["github_open_pr", "post_message"]));
+    const noTools = await parked(fx, dropped([]));
+    await setAgentBrain(deps, fx.owner.id, fx.org.id, fx.agent.id, { brain: "model" });
+    expect(await wokenNow(fx, ranTools)).toBe(false);
+    expect(await wokenNow(fx, noTools)).toBe(true);
+  });
 });

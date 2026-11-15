@@ -11,6 +11,7 @@ import { type Message, messageView } from "./messages";
 import { can, type Membership, requireActiveMembership } from "./organizations";
 import { enqueue } from "./outbox";
 import { isRightHand } from "./right-hand";
+import { missStaleRoutineRun } from "./routine-firing";
 import { isTerminal } from "./runs";
 import { effectiveAgentBudget, monthStartUtc } from "./usage";
 
@@ -1109,14 +1110,23 @@ export async function stopAgentUsageWaits(deps: { db: Database; pubsub?: PubSub 
  * The agent thinks with another AI account or model now: what waited on the old one's limit goes on, in line order,
  * 60 s apart, on the new sign-in (each claim reads the agent's brain again; one still limited parks in its new line).
  * Its computer waits go on too: one for a plan that isn't its owner's ends only with another account, and no
- * reconnect signals that.
+ * reconnect signals that. Not one whose cut-off turn already ran tools (another brain would run them again), nor a
+ * routine's whose slot is stale (`missStaleRoutineRun`, as when its computer comes back).
  */
-export async function wakeAgentUsageWaits(db: Executor, orgId: string, agentId: string, now = Date.now()) {
+export async function wakeAgentUsageWaits(
+  db: Database,
+  orgId: string,
+  agentId: string,
+  options: { pubsub?: PubSub; now?: number } = {},
+) {
   const { agentRuns } = schema;
+  const now = options.now ?? Date.now();
   const found = await db
     .select({
       id: agentRuns.id,
       waitId: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'waitId'`,
+      code: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'code'`,
+      executed: sql<number>`coalesce(jsonb_array_length(${agentRuns.transcript}->'interruptedTurn'->'executed'), 0)`,
       background: agentRuns.background,
       workId: agentRuns.workId,
       since: waitSinceSql,
@@ -1133,18 +1143,31 @@ export async function wakeAgentUsageWaits(db: Executor, orgId: string, agentId: 
     )
     .limit(500);
   const rows = found
-    .filter((r) => r.waitId)
+    .filter((r) => r.waitId && (USAGE_WAIT_CODES.has(r.code ?? "") || Number(r.executed) === 0))
     .map((r) => ({ ...r, since: Number(r.since) }))
     .sort(inLineOrder);
-  for (const [i, r] of rows.entries()) {
+  const woken: string[] = [];
+  for (const r of rows) {
+    // A usage wait's staleness is the executor's to judge (it names why it came too late).
+    if (r.background && !USAGE_WAIT_CODES.has(r.code ?? "")) {
+      if (await missStaleRoutineRun({ db, pubsub: options.pubsub }, r.id, new Date(now))) continue;
+    }
     await enqueue(db, {
       orgId,
       kind: "agent_run.execute",
       payload: { runId: r.id, wait: r.waitId },
       dedupeKey: `agent_run.execute:${r.id}:switched:${r.waitId}`,
-      runAt: new Date(now + i * RESUME_GAP_MS),
+      runAt: new Date(now + woken.length * RESUME_GAP_MS),
       maxAttempts: 4,
     });
+    woken.push(r.id);
   }
-  return rows.map((r) => r.id);
+  return woken;
+}
+
+/** After what these agents think with changed (their AI, account or computer): `wakeAgentUsageWaits` for each. */
+export async function wakeAgentsBrainWaits(deps: { db: Database; pubsub?: PubSub }, orgId: string, agentIds: string[]) {
+  for (const id of new Set(agentIds)) {
+    await wakeAgentUsageWaits(deps.db, orgId, id, { pubsub: deps.pubsub }).catch(() => null);
+  }
 }

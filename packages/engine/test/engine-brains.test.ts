@@ -37,6 +37,7 @@ import {
   createCredential,
   createJobHandlers,
   createMissionEngine,
+  createMissionHooks,
   decideApproval,
   drainLocalRuns,
   drainOutbox,
@@ -1689,11 +1690,13 @@ test("a run waiting for commands turned off on its computer goes on when they ar
     "exec_disabled",
   );
 
+  // The hub stores the runner's access.changed and then calls its online hook (machines.test.ts covers that call).
   execAllowed = true;
   await storeMachineAccess({ db: f.db }, machineId, {
     folders: [],
     tools: { commands: true, claude: true, codex: false },
   });
+  await createMissionHooks({ db: f.db, pubsub: f.pubsub }).online?.(machineId);
   await drainOutbox(f.db, handlers);
   const [done] = await f.db.select().from(schema.agentRuns);
   expect(done?.status).toBe("done");
