@@ -160,3 +160,25 @@ test("a plan limit's note says when the plan was last checked; no other note doe
   expect(planLimitNote({ bodyCode: "plan_limit_cut_unknown" })).toBe(true);
   expect(planLimitNote({ bodyCode: "budget_wait" })).toBe(false);
 });
+
+test("every account of the order at its limit: how many and when the first resets, as a plan limit's note", () => {
+  const soon = new Date(Date.now() + 60_000).toISOString();
+  const body = serverBody(
+    t,
+    "fallback",
+    {
+      bodyCode: "plan_limit_all_wait",
+      bodyParams: { plan: "Claude", accounts: "3" },
+      usageWait: { code: "plan_limit", resetsAt: soon },
+    },
+    "en",
+  );
+  expect(body.startsWith("chat.body.plan_limit_all_wait ")).toBe(true);
+  expect(body).toContain('"accounts":"3"');
+  expect(body).toContain("chat.usageWhen.");
+  expect(planLimitNote({ bodyCode: "plan_limit_all_wait_unknown" })).toBe(true);
+  // The line of a move says which accounts, in the reader's words.
+  expect(serverBody(t, "x", { bodyCode: "plan_account_moved", bodyParams: { from: "Trabalho", to: "Pessoal" } })).toBe(
+    'chat.body.plan_account_moved {"from":"Trabalho","to":"Pessoal"}',
+  );
+});

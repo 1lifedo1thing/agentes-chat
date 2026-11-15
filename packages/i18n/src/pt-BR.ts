@@ -17818,6 +17818,13 @@ export const ptBR = {
       plan_limit_wait:
         "O plano do {{plan}} chegou ao limite. Respondo {{when}}, quando ele renovar. Se ele for liberado antes no {{plan}}, eu percebo e respondo na hora.",
       plan_limit_wait_unknown: "O plano do {{plan}} chegou ao limite. Respondo assim que ele renovar.",
+      /** The run went on with the next account of the order at its plan's limit (ADR 0041 §6). */
+      plan_account_moved: "A conta {{from}} chegou ao limite. Sigo na conta {{to}}.",
+      /** Every account of the order at its limit: `accounts` of them, `when` the first resets. */
+      plan_limit_all_wait:
+        "As {{accounts}} contas do {{plan}} chegaram ao limite. Respondo {{when}}, quando a primeira renovar.",
+      plan_limit_all_wait_unknown:
+        "As {{accounts}} contas do {{plan}} chegaram ao limite. Respondo assim que uma renovar.",
       plan_model_limit_wait:
         "O {{model}} chegou ao limite dele no {{plan}}. Os outros modelos do plano seguem funcionando: troque o modelo de {{agent}} ou espere ele renovar {{when}}.",
       plan_model_limit_wait_unknown:

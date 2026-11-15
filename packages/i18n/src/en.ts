@@ -17889,6 +17889,13 @@ export const en = {
       plan_limit_wait:
         "The {{plan}} plan hit its limit. I'll answer {{when}}, when it resets. If it's freed sooner on {{plan}}, I'll notice and answer right away.",
       plan_limit_wait_unknown: "The {{plan}} plan hit its limit. I'll answer as soon as it resets.",
+      /** The run went on with the next account of the order at its plan's limit (ADR 0041 §6). */
+      plan_account_moved: "The {{from}} account hit its limit. I'm going on with the {{to}} account.",
+      /** Every account of the order at its limit: `accounts` of them, `when` the first resets. */
+      plan_limit_all_wait:
+        "All {{accounts}} {{plan}} accounts hit their limit. I'll answer {{when}}, when the first one resets.",
+      plan_limit_all_wait_unknown:
+        "All {{accounts}} {{plan}} accounts hit their limit. I'll answer as soon as one resets.",
       /** A model's own limit on a plan whose models each have one (OpenCode Go): the others still answer. */
       plan_model_limit_wait:
         "{{model}} hit its own limit on {{plan}}. The plan's other models keep working: change {{agent}}'s model or wait for it to reset {{when}}.",

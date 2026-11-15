@@ -184,6 +184,8 @@ export const closedNoteText = (t: TFunction, closed: CatchUpClosed) =>
 const PLAN_LIMIT_NOTES = new Set([
   "plan_limit_wait",
   "plan_limit_wait_unknown",
+  "plan_limit_all_wait",
+  "plan_limit_all_wait_unknown",
   "plan_limit_cut",
   "plan_limit_cut_unknown",
 ]);
