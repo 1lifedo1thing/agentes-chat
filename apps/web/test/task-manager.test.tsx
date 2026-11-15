@@ -23,7 +23,18 @@ import { keys, TASK_MANAGER_POLL_MS } from "@agenteschat/client";
 import { formatTime } from "@agenteschat/client/lib/format";
 import { usageWhenShort } from "@agenteschat/client/lib/plan-usage";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { ADA_ID, ATLAS_ID, createFakeApi, ENG_ID, type FakeState, fakeMachinesOf, ORG_ID, seedState } from "./fake-api";
+import {
+  ADA_ID,
+  ATLAS_ID,
+  createFakeApi,
+  ENG_ID,
+  type FakeState,
+  fakeMachinesOf,
+  LODI_ID,
+  ORG_ID,
+  seedState,
+  withRightHand,
+} from "./fake-api";
 import { renderApp, screen, settle, showIn } from "./render";
 
 afterEach(() => {
@@ -400,7 +411,10 @@ describe("the task manager page", () => {
     await open(state, "task-manager");
     expect(screen().getByRole("heading", { level: 1 }).textContent).toBe("Gerenciador de tarefas");
     expect(document.querySelector(".tm-sum")?.textContent).toBe("3 trabalhando1 espera você");
-    expect(state.calls.find((c) => c.method === "working.taskManager")?.args[0]).toBe(ORG_ID);
+    const calls = state.calls.filter((c) => c.method === "working.taskManager");
+    expect(calls.length).toBeGreaterThan(0);
+    // The page shows today's count, so every call of it asks for one.
+    expect(calls.every((c) => c.args[0] === ORG_ID && c.args[2] === true)).toBe(true);
 
     // Todos first and chosen, then each agent with its tasks and who waits on it, each with its line.
     const cards = [...document.querySelectorAll<HTMLElement>(".tm-card")];
@@ -658,6 +672,34 @@ describe("the task manager page", () => {
     expect(rows[0]).toContain("Terminou");
     expect(rows[1]).toContain("Responder os tickets");
     expect(rows[1]).toContain("João parou");
+  });
+
+  test("Terminadas hoje never says I stopped what nobody did: the system plainly, the right hand by its name", async () => {
+    const view = busy();
+    view.ended = [
+      ended({ runId: "r-archived", agentId: ADA_ID, status: "canceled", label: "Limpar os logs", finishedAt: ago(9) }),
+      ended({
+        runId: "r-lodi",
+        agentId: ATLAS_ID,
+        status: "canceled",
+        label: "Fechar o mês",
+        stoppedBy: { userId: "u-walter", name: "Walter", agentId: LODI_ID },
+        finishedAt: ago(8),
+      }),
+    ];
+    await open(withRightHand(seedState({ taskManager: view })), "task-manager");
+    await click(screen().getByRole("button", { name: /Terminadas hoje/ }));
+    const rows = [...document.querySelectorAll<HTMLElement>(".tm-row--ended")];
+    const row = (label: string) => rows.find((r) => r.textContent?.includes(label)) as HTMLElement;
+    expect(row("Limpar os logs").textContent).toContain("Parada");
+    expect(row("Fechar o mês").textContent).toContain("Lodi parou");
+    expect(rows.map((r) => r.textContent).join()).not.toContain("Você parou");
+    await click(within(row("Fechar o mês")).getByRole("button", { name: "Fechar o mês" }));
+    await settle(4);
+    const panel = screen().getByRole("complementary", { name: "Fechar o mês" });
+    expect(panel.textContent).toContain("Lodi parou o Atlas");
+    // Stopped at my word: I still say why.
+    expect(within(panel).getByPlaceholderText("Quer dizer por quê? (opcional)")).toBeTruthy();
   });
 
   test("a finished row opens its panel like one still on: how it ended, how long as people say it, its message", async () => {
@@ -1010,6 +1052,10 @@ describe("an agent's tasks beside its DM", () => {
     const state = withDm({ taskManager: view });
     await open(state, `dm/agent/${ADA_ID}`);
     const pill = screen().getByRole("button", { name: PILL });
+    // The pill and its panel count what ended themselves: the conversation never asks for today's count.
+    const calls = state.calls.filter((c) => c.method === "working.taskManager");
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls.every((c) => c.args[2] === false)).toBe(true);
     expect(pill.closest(".channel__header")).toBeTruthy();
     expect(pill.getAttribute("aria-expanded")).toBe("false");
     // The words on a computer; on a phone (tasks.css) the counts alone, so her name keeps the header's room.
