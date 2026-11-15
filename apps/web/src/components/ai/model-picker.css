@@ -171,12 +171,6 @@
   overflow-wrap: anywhere;
   white-space: normal;
 }
-.mp__model-tag {
-  flex: none;
-  align-self: center;
-  color: var(--muted);
-  font-size: var(--text-xs);
-}
 
 .mp__effort {
   padding-top: var(--space-3);
