@@ -96,6 +96,29 @@ describe("hover", () => {
     expect(offenders).toEqual([]);
   });
 
+  test("nothing slides on its own hover, so a pointer on its edge never loses and regains it every frame", () => {
+    const moves = /(^|[;\s])(transform\s*:[^;]*translate|translate\s*:\s*(?!none|0\b))/;
+    const offenders = STYLES.flatMap((path) =>
+      rules(path).flatMap(([sel, body]) =>
+        moves.test(body)
+          ? sel
+              .split(",")
+              // The hovered element itself (its last compound), not a part inside it.
+              .filter((one) =>
+                /:hover/.test(
+                  one
+                    .trim()
+                    .split(/\s+|>|\+|~/)
+                    .pop() ?? "",
+                ),
+              )
+              .map((one) => `${path}: ${one.trim()}`)
+          : [],
+      ),
+    );
+    expect(offenders).toEqual([]);
+  });
+
   test("a button's hover never changes its opacity, so a dimmed or disabled one never lights up under the mouse", () => {
     const offenders = STYLES.flatMap((path) =>
       rules(path).flatMap(([sel, body]) =>
