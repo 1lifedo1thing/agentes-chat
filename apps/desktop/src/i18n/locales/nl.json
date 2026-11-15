@@ -210,6 +210,7 @@
     "title": "Laten we deze {{device}} klaarmaken",
     "how": "Het duurt een minuut. Alles blijft hier, alleen bij jou.",
     "again": "Het draaide hier al eerder, en de gegevens staan nog in {{path}}.",
+    "ownerNone": "Er is geen account meer over. Met je naam en e-mail word je de nieuwe eigenaar.",
     "name": "Je naam",
     "nameNeeded": "Schrijf je naam.",
     "email": "Je e-mail",
