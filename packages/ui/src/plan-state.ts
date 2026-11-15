@@ -196,6 +196,8 @@ export interface OfferAccount {
   shared?: boolean;
   /** Its place in the workspace's order of use; null: after the placed ones. */
   useOrder?: number | null;
+  /** The oldest login of the same account (one account may be signed in once per agent); absent: an older server. */
+  sameAs?: string;
 }
 
 /**
@@ -203,9 +205,11 @@ export interface OfferAccount {
  * same kind and plan maker (another maker's models would think instead),
  * signed in, not at their own limit, and free or made for all of the owner's
  * agents there. A login another agent thinks with is never offered (it serves
- * one agent; moving plans between agents to dodge a limit isn't). In the
- * order of use, then most headroom first, unknown usage last. Shared by the
- * web's and the phone's agent settings.
+ * one agent; moving plans between agents to dodge a limit isn't). Another
+ * login of the account in use shares its limit and is never offered; an
+ * account signed in once per agent is offered once. In the order of use, then
+ * most headroom first, unknown usage last. Shared by the web's and the
+ * phone's agent settings.
  */
 export function limitOffers<A extends OfferAccount>(
   accounts: readonly A[],
@@ -213,11 +217,14 @@ export function limitOffers<A extends OfferAccount>(
   current: string | null,
   now = Date.now(),
 ): { account: A; used: number | null }[] {
-  const provider = accounts.find((a) => a.id === current)?.provider ?? null;
+  const inUse = accounts.find((a) => a.id === current);
+  const provider = inUse?.provider ?? null;
+  const accountOf = (a: A) => a.sameAs ?? a.id;
   return accounts
     .filter(
       (a) =>
         a.mine &&
+        (!inUse || accountOf(a) !== accountOf(inUse)) &&
         a.kind === kind &&
         (a.provider ?? null) === provider &&
         a.id !== current &&
@@ -231,7 +238,8 @@ export function limitOffers<A extends OfferAccount>(
       (a, b) =>
         (a.account.useOrder ?? Number.POSITIVE_INFINITY) - (b.account.useOrder ?? Number.POSITIVE_INFINITY) ||
         (a.used ?? 101) - (b.used ?? 101),
-    );
+    )
+    .filter((o, i, all) => all.findIndex((x) => accountOf(x.account) === accountOf(o.account)) === i);
 }
 
 /** From here long work pauses until the window resets (ADR 0118); replies to people go on until the limit. */
