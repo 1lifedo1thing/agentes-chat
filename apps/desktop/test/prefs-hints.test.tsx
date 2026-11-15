@@ -13,6 +13,7 @@ import type { UpdateCheck } from "../src/hooks";
 import { createFakeHost, type FakeHost, type HereOptions, type Scenario } from "../src/host/fake";
 import { createDesktopI18n } from "../src/i18n";
 import { ToastProvider } from "../src/ui/Toast";
+import { Prefs } from "../src/windows/Prefs";
 import { Advanced } from "../src/windows/prefs/Advanced";
 import { Folders } from "../src/windows/prefs/Folders";
 import { General } from "../src/windows/prefs/General";
@@ -186,6 +187,28 @@ describe("Preferences: a setting's explanation behind its ⓘ", () => {
       },
     );
   });
+
+  test("Preferences: once the server here is erased, the window's header no longer names its address", () =>
+    pane(
+      "here",
+      <Prefs />,
+      (el) => buttonIn(el, "Servers"),
+      async (el, host) => {
+        const header = () => el.querySelector(".dk-pnav__whotext")?.textContent ?? "";
+        const address = new URL((await host.servers()).current ?? "").host;
+        await act(async () => buttonIn(el, "Servers")?.click());
+        await until(() => eraseButton(el));
+        await act(async () => eraseButton(el)?.click());
+        await until(() => document.querySelector('[role="dialog"]'));
+        await act(async () => buttonIn(document.querySelector('[role="dialog"]') as HTMLElement, "Erase it")?.click());
+        await until(() => !eraseButton(el) && !document.querySelector('[role="dialog"]'));
+        // Its agents' homes went with it, so the header is the app's own again: its name, and no server under it.
+        await until(() => host.runners.size === 0);
+        await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+        expect(header()).not.toContain(address);
+        expect(header()).toBe("agentes.chat");
+      },
+    ));
 
   test("Servers: Erase and start over… asks once, then the server here's card goes and a line says where its data went", () =>
     pane(
