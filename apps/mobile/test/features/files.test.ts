@@ -291,7 +291,10 @@ describe("a document's head", () => {
     expect(chart).not.toContain("sheetSpacer");
     // The scroll view is the sheet's first child, the bar pinned in it: a form sheet sizes its first scroll view to
     // the whole sheet, and a bar standing before it was drawn over the chart.
-    const sheet = chart.slice(chart.indexOf("export function ChartSheet()"), chart.indexOf("export function ChartView("));
+    const sheet = chart.slice(
+      chart.indexOf("export function ChartSheet()"),
+      chart.indexOf("export function ChartView("),
+    );
     expect(sheet.slice(sheet.lastIndexOf("return (")).trimStart()).toMatch(/^return \(\s*<ScrollView\b/);
     expect(sheet).toContain("stickyHeaderIndices={[0]}");
   });
