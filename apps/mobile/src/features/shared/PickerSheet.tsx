@@ -21,6 +21,8 @@ export interface PickOption {
   label: string;
   /** A quieter line under it: a person's or an agent's role, a computer's state ("Desligado"). */
   sub?: string | undefined;
+  /** Lines `sub` may take when it is a sentence that must be read whole; one when left out. */
+  subLines?: number | undefined;
   leading?: PickLeading | undefined;
   /** Red, for the action menus that come here on Android ("Apagar conta"). */
   destructive?: boolean | undefined;
@@ -35,6 +37,8 @@ export interface PickAsk {
   value?: string | null | undefined;
   /** A search field over the list; on its own from `SEARCH_FROM` options. */
   search?: boolean | undefined;
+  /** A switch under the options that changes what a pick does ("Para todos os agentes do workspace"), off at first. */
+  toggle?: { label: string; onChange: (on: boolean) => void } | undefined;
 }
 
 /** From this many options the list gets its search field (people, languages, times, zones). */
@@ -98,6 +102,7 @@ export function PickerHost() {
   const [ask, setAsk] = useState<Pending | null>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [toggled, setToggled] = useState(false);
   // What happens once the sheet is gone: an action menu's action, or a cancelled pick's null.
   const after = useRef<(() => void) | null>(null);
   const current = useRef<Pending | null>(null);
@@ -112,6 +117,7 @@ export function PickerHost() {
       waiting?.();
       current.current = next;
       setQuery("");
+      setToggled(false);
       setAsk(next);
       setOpen(true);
     };
@@ -201,6 +207,7 @@ export function PickerHost() {
                 label={o.label}
                 {...(typed ? { labelParts: markTerms(o.label, [typed]) } : {})}
                 {...(o.sub ? { sub: o.sub } : {})}
+                {...(o.subLines ? { subLines: o.subLines } : {})}
                 {...(lead?.kind === "icon" ? { icon: lead.name } : {})}
                 {...(lead?.kind === "person"
                   ? { leading: <Face who={{ type: "person", id: lead.userId }} size={36} /> }
@@ -219,6 +226,22 @@ export function PickerHost() {
             );
           })}
         </GroupedList>
+      ) : null}
+      {ask?.toggle ? (
+        <View style={styles.toggle}>
+          <GroupedList>
+            <GroupedRow
+              label={ask.toggle.label}
+              labelLines={2}
+              toggle={toggled}
+              onPress={() => {
+                const on = !toggled;
+                setToggled(on);
+                ask.toggle?.onChange(on);
+              }}
+            />
+          </GroupedList>
+        </View>
       ) : null}
       {ask && shown.length === 0 ? (
         <Text variant="subhead" tone="muted" style={styles.empty}>
@@ -239,4 +262,5 @@ const styles = StyleSheet.create({
   note: { textAlign: "center", paddingHorizontal: 24, paddingBottom: 8 },
   search: { paddingHorizontal: 18, paddingBottom: 12 },
   empty: { textAlign: "center", paddingVertical: 24 },
+  toggle: { marginTop: 24 },
 });
