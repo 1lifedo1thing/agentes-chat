@@ -12,6 +12,7 @@ import {
   AgentHeldError,
   auditStream,
   authorizeStream,
+  createDesktopPointers,
   createStreamBroker,
   DESKTOP_SCOPE,
   grantScopes,
@@ -332,12 +333,77 @@ describe("the broker", () => {
     const shell = broker.open(fakeSocket().socket, input(TERMINAL));
     await until(() => [first, second, shell].every((s) => s.runner !== null), "the data sockets");
     // The agent's pointer on its desktop goes to them (ADR 0040 §7.2).
-    expect(broker.desktopViewers(f.agent.id, machine.machineId)).toEqual([{ orgId: f.org.id, userId: f.owner.id }]);
+    expect(broker.desktopViewers(f.agent.id, machine.machineId)).toEqual([
+      { orgId: f.org.id, userId: f.owner.id, agentId: f.agent.id },
+    ]);
     expect(broker.desktopViewers(f.agent.id, "another-computer")).toEqual([]);
     expect(broker.desktopViewers("another-agent", machine.machineId)).toEqual([]);
     broker.close(first);
     broker.close(second);
     expect(broker.desktopViewers(f.agent.id, machine.machineId)).toEqual([]);
+  });
+
+  test("who watches the right hand's own screen: found by the seat's id, each heard under the agent they opened", async () => {
+    f = await setup();
+    const machine = await paired();
+    const seat = { id: "seat-of-ada", handle: "ada-seat" };
+    const { broker } = brokerFor(machine, {
+      authorize: async () => ({ machineId: machine.machineId, agent: seat }),
+    });
+    const stream = broker.open(fakeSocket().socket, input(WATCH));
+    await until(() => stream.runner !== null, "the data socket");
+    // The computer says the seat's pointer by the seat's id (ADR 0175); the app knows the agent's.
+    expect(broker.desktopViewers(seat.id, machine.machineId)).toEqual([
+      { orgId: f.org.id, userId: f.owner.id, agentId: f.agent.id },
+    ]);
+    expect(broker.desktopViewers(f.agent.id, machine.machineId)).toEqual([]);
+  });
+
+  test("the agent's last pointer on a screen: live to who watches, once to who opens it later, forgotten with its computer", async () => {
+    f = await setup();
+    const machine = await paired();
+    const sent: { userId: string; event: unknown }[] = [];
+    let pointers: ReturnType<typeof createDesktopPointers> | undefined;
+    const { broker } = brokerFor(machine, { onReady: (s) => pointers?.opened(s) });
+    pointers = createDesktopPointers({
+      viewers: (screenId, machineId) => broker.desktopViewers(screenId, machineId),
+      send: (viewer, event) => sent.push({ userId: viewer.userId, event }),
+    });
+    const at = (x: number) => ({
+      type: "desktop.pointer" as const,
+      agentId: f.agent.id,
+      x,
+      y: 20,
+      width: 1280,
+      height: 900,
+      act: "click" as const,
+    });
+    const pointer = (x: number) => ({ x, y: 20, width: 1280, height: 900, act: "click" });
+    // Nobody watches yet: nothing goes, the newest is kept (one per screen).
+    pointers.report(machine.machineId, at(10));
+    pointers.report(machine.machineId, at(30));
+    expect(sent).toEqual([]);
+    const first = broker.open(fakeSocket().socket, input(WATCH));
+    await until(() => sent.length === 1, "the last pointer");
+    expect(sent).toEqual([
+      {
+        userId: f.owner.id,
+        event: { type: "agent.desktop.pointer", agentId: f.agent.id, pointer: { ...pointer(30), replay: true } },
+      },
+    ]);
+    // While it is open, each gesture goes as it starts.
+    pointers.report(machine.machineId, at(50));
+    expect(sent.at(-1)?.event).toEqual({ type: "agent.desktop.pointer", agentId: f.agent.id, pointer: pointer(50) });
+    broker.close(first);
+    // Another computer's report of the same screen is never shown here, and its computer going forgets it.
+    pointers.report("another-computer", at(70));
+    pointers.closed("another-computer");
+    pointers.closed(machine.machineId);
+    sent.length = 0;
+    const second = broker.open(fakeSocket().socket, input(WATCH));
+    await until(() => second.runner !== null, "the data socket");
+    await Bun.sleep(5);
+    expect(sent).toEqual([]);
   });
 
   test("an older runner refuses a desktop that isn't running: the server starts it and opens once more", async () => {

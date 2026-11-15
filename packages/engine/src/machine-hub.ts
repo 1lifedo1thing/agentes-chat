@@ -505,7 +505,7 @@ export interface MachineMissionHooks {
 export interface MachineBrowserHooks {
   frame?(machineId: string, frame: Extract<RunnerFrame, { type: "browser.frame" }>): void;
   streamEnded?(machineId: string, frame: Extract<RunnerFrame, { type: "browser.stream.ended" }>): void;
-  /** Where the agent's pointer goes on the page (ADR 0040 §7.2): to whoever watches, never stored. */
+  /** Where the agent's pointer goes on the page (ADR 0040 §7.2): to whoever watches; the newest kept in memory. */
   pointer?(machineId: string, frame: Extract<RunnerFrame, { type: "browser.pointer" }>): void;
   /** The same on its desktop (ADR 0062): to whoever has that screen open. */
   desktopPointer?(machineId: string, frame: Extract<RunnerFrame, { type: "desktop.pointer" }>): void;
