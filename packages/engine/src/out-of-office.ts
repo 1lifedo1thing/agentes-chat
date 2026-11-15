@@ -1,9 +1,11 @@
 import type { PlanUsage } from "@agenteschat/adapters";
-import { and, type Database, eq, inArray, schema } from "@agenteschat/db";
+import { and, type Database, eq, inArray, isNull, schema, sql } from "@agenteschat/db";
+import { NEXT_ACCOUNT_KINDS } from "@agenteschat/providers/plans";
 import type { Agent } from "./agents";
 import { brainOf } from "./brain-settings";
 import { planLimitOf } from "./brains/select";
 import { isComputerBrain } from "./brains/types";
+import { isRightHand } from "./right-hand";
 import { monthStartUtc, orgDefaultAgentBudget } from "./usage";
 import { nextMonthStart } from "./usage-pause";
 
@@ -20,7 +22,8 @@ export interface OutOfOffice {
 export type OutOfOfficeAgent = Pick<
   Agent,
   "id" | "orgId" | "model" | "credentialId" | "brain" | "brainAccountId" | "machineId" | "monthlyBudgetNanoUsd"
->;
+> &
+  Pick<Agent, "ownerUserId" | "brainAccountPinned" | "builtin">;
 
 export interface OutOfOfficeOptions {
   now?: Date;
@@ -29,6 +32,7 @@ export interface OutOfOfficeOptions {
 /**
  * Which of `list` are out of office now, by agent id. Read from what is stored (the runner's plan readings, this
  * month's spend) plus this process's plan limits, in a few queries for the whole list: it runs on every presence read.
+ * An agent whose run would go on with the next account of the order (ADR 0041 §6) is not out while one has room.
  */
 export async function outOfOffice(
   db: Database,
@@ -52,6 +56,7 @@ export async function outOfOffice(
     return (spent.get(a.id) ?? 0) >= budget;
   };
   const budgetOut: OutOfOffice = { reason: "budget", until: new Date(nextMonthStart(ms)) };
+  const chained: { agent: OutOfOfficeAgent; own: AccountUsage; until: number | null }[] = [];
   for (const a of list) {
     const kind = brainOf(a.brain);
     if (!isComputerBrain(kind)) {
@@ -65,14 +70,80 @@ export async function outOfOffice(
     const usage = usable ? usable.usage : (machines.get(a.machineId)?.[kind] ?? null);
     const limited = planLimitOf(a.machineId, kind, usable?.id, usage, ms);
     if (limited) out.set(a.id, { reason: "plan", until: limited.until !== null ? new Date(limited.until) : null });
+    if (limited && usable && movesOn(a, usable)) chained.push({ agent: a, own: usable, until: limited.until });
+  }
+  if (chained.length === 0) return out;
+  const [next, users] = await nextAccounts(db, orgId, chained);
+  for (const { agent: a, own, until } of chained) {
+    let earliest = until;
+    let room = false;
+    for (const r of next) {
+      if (r.machineId !== own.machineId || r.kind !== own.kind || r.id === own.id) continue;
+      if (r.createdBy !== a.ownerUserId && r.serves !== "everyone") continue;
+      if (!r.shared && (users.get(r.id) ?? []).some((id) => id !== a.id)) continue;
+      const limit = planLimitOf(own.machineId, brainOf(a.brain), r.id, r.usage as PlanUsage | null, ms);
+      if (!limit) {
+        room = true;
+        break;
+      }
+      if (limit.until !== null && (earliest === null || limit.until < earliest)) earliest = limit.until;
+    }
+    if (room) out.delete(a.id);
+    else out.set(a.id, { reason: "plan", until: earliest !== null ? new Date(earliest) : null });
   }
   return out;
+}
+
+/** The server's `nextAccountPlan` rules that a stored reading can answer: a CLI sign-in of a kind that moves, unpinned. */
+const movesOn = (a: OutOfOfficeAgent, own: AccountUsage) =>
+  NEXT_ACCOUNT_KINDS.includes(own.kind) &&
+  own.provider === null &&
+  !a.brainAccountPinned &&
+  Boolean(a.ownerUserId) &&
+  !isRightHand(a);
+
+/** The signed-in CLI accounts on the computers and kinds of `chained`, whose owner is still a member, with their users. */
+async function nextAccounts(db: Database, orgId: string, chained: { own: AccountUsage }[]) {
+  const { machineAccounts, organizationMembers: members, agents } = schema;
+  const rows = await db
+    .select({
+      id: machineAccounts.id,
+      machineId: machineAccounts.machineId,
+      kind: machineAccounts.kind,
+      usage: machineAccounts.usage,
+      createdBy: machineAccounts.createdBy,
+      serves: machineAccounts.serves,
+      shared: machineAccounts.shared,
+    })
+    .from(machineAccounts)
+    .innerJoin(members, and(eq(members.orgId, machineAccounts.orgId), eq(members.userId, machineAccounts.createdBy)))
+    .where(
+      and(
+        eq(machineAccounts.orgId, orgId),
+        inArray(machineAccounts.machineId, [...new Set(chained.map((c) => c.own.machineId))]),
+        inArray(machineAccounts.kind, [...new Set(chained.map((c) => c.own.kind))]),
+        eq(machineAccounts.status, "active"),
+        isNull(machineAccounts.provider),
+        sql`${machineAccounts.authMethod} is distinct from 'api_key'`,
+      ),
+    );
+  const users = new Map<string, string[]>();
+  const ids = rows.filter((r) => !r.shared).map((r) => r.id);
+  if (ids.length > 0) {
+    const used = await db
+      .select({ id: agents.id, account: agents.brainAccountId })
+      .from(agents)
+      .where(and(eq(agents.orgId, orgId), inArray(agents.brainAccountId, ids), isNull(agents.archivedAt)));
+    for (const u of used) if (u.account) users.set(u.account, [...(users.get(u.account) ?? []), u.id]);
+  }
+  return [rows, users] as const;
 }
 
 interface AccountUsage {
   id: string;
   machineId: string;
   kind: string;
+  provider: string | null;
   usage: PlanUsage | null;
 }
 
@@ -85,6 +156,7 @@ async function accountUsages(db: Database, orgId: string, list: OutOfOfficeAgent
       id: machineAccounts.id,
       machineId: machineAccounts.machineId,
       kind: machineAccounts.kind,
+      provider: machineAccounts.provider,
       usage: machineAccounts.usage,
     })
     .from(machineAccounts)
@@ -147,6 +219,9 @@ export async function outOfOfficeIds(
       brainAccountId: agents.brainAccountId,
       machineId: agents.machineId,
       monthlyBudgetNanoUsd: agents.monthlyBudgetNanoUsd,
+      ownerUserId: agents.ownerUserId,
+      brainAccountPinned: agents.brainAccountPinned,
+      builtin: agents.builtin,
     })
     .from(agents)
     .where(and(eq(agents.orgId, orgId), inArray(agents.id, agentIds)));

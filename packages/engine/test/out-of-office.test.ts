@@ -18,7 +18,7 @@ import {
   setMyStatus,
 } from "../src";
 import type { ToolContext } from "../src/tools/types";
-import { type Fixture, setup } from "./fixtures";
+import { addMember, type Fixture, setup } from "./fixtures";
 
 let f: Fixture;
 afterEach(async () => {
@@ -90,6 +90,60 @@ test("a plan at its limit: out, though the workspace has a key (the API never st
 
   clearPlanLimits();
   expect((await statusOf(f, f.agent.id))?.presence).toBe("online");
+});
+
+test("at its account's limit, an agent with another account of the order that has room is not out", async () => {
+  f = await setup();
+  const fx = f;
+  const machineId = await onPlan(fx, fx.agent.id);
+  const walter = await addMember(fx.db, fx.org.id, "member", "walter");
+  const soon = Date.now() + 3600_000;
+  const later = Date.now() + 5 * 3600_000;
+  const reading = (used: number, at: number) => ({
+    windows: [{ kind: "five_hour", usedPercent: used, resetsAt: new Date(at).toISOString() }],
+    source: "turn",
+    at: new Date().toISOString(),
+  });
+  const account = (id: string, createdBy: string, usage: unknown, more: Record<string, unknown> = {}) =>
+    fx.db.insert(schema.machineAccounts).values({
+      id,
+      orgId: fx.org.id,
+      machineId,
+      kind: "claude_code",
+      label: `Conta ${id.slice(-1)}`,
+      status: "active",
+      createdBy,
+      shared: true,
+      usage: usage as never,
+      ...more,
+    });
+  const own = "0193eeee-0000-4000-8000-00000000c001";
+  const theirs = "0193eeee-0000-4000-8000-00000000c002";
+  await account(own, fx.owner.id, reading(100, later));
+  await account(theirs, walter.id, reading(30, later));
+  await fx.db.update(schema.agents).set({ brainAccountId: own }).where(eq(schema.agents.id, fx.agent.id));
+  // Walter's account serves everyone and has room: the run would move there.
+  expect((await statusOf(fx, fx.agent.id))?.presence).toBe("online");
+  expect([...(await outOfOfficeIds(fx.db, fx.org.id, [fx.agent.id]))]).toEqual([]);
+
+  // Pinned to its own account ("Só esta conta"), it waits for it again.
+  await fx.db.update(schema.agents).set({ brainAccountPinned: true }).where(eq(schema.agents.id, fx.agent.id));
+  expect([...(await outOfOfficeIds(fx.db, fx.org.id, [fx.agent.id]))]).toEqual([fx.agent.id]);
+  await fx.db.update(schema.agents).set({ brainAccountPinned: false }).where(eq(schema.agents.id, fx.agent.id));
+
+  // Set to serve only Walter, it never serves this agent.
+  await fx.db.update(schema.machineAccounts).set({ serves: "owner" }).where(eq(schema.machineAccounts.id, theirs));
+  expect([...(await outOfOfficeIds(fx.db, fx.org.id, [fx.agent.id]))]).toEqual([fx.agent.id]);
+
+  // Every account limited: out until the earliest reset of the chain.
+  await fx.db
+    .update(schema.machineAccounts)
+    .set({ serves: "everyone", usage: reading(100, soon) as never })
+    .where(eq(schema.machineAccounts.id, theirs));
+  expect(await statusOf(fx, fx.agent.id)).toMatchObject({
+    presence: "out",
+    status: { kind: "out_of_plan", until: new Date(soon).toISOString() },
+  });
 });
 
 test("out of office keeps the agent's own words, and a held agent still reads offline", async () => {

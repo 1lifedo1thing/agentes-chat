@@ -209,6 +209,8 @@ export async function loadAgentStatuses(
         credentialId: agents.credentialId,
         brain: agents.brain,
         brainAccountId: agents.brainAccountId,
+        brainAccountPinned: agents.brainAccountPinned,
+        ownerUserId: agents.ownerUserId,
         machineId: agents.machineId,
         monthlyBudgetNanoUsd: agents.monthlyBudgetNanoUsd,
         heldAt: agents.operatorHoldAt,
