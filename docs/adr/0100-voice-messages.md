@@ -157,3 +157,13 @@ message's preview carries no `voice` and no `mediaKind`, and its quote no `media
 `meta.voice.text` shows the whole body in the player's transcript, typed text first: nothing is lost, only the typed
 part isn't set apart. Its lists show the typed text, since the server sends them no voice marker for such a message.
 A take with nothing said posts its audio with the typed text as its body, which an older app shows in the transcript.
+
+**The composer.** A take is a row in the composer's file strip, above the text, the strip's whole width: play or the
+red dot, the time, the wave, the keys line and delete at its end. The text field, attach, emoji, paste, drag and drop
+and the pills stay usable during a take, and a take may start with files already attached. Its keys (Space listens,
+Enter sends, Esc deletes) stay the recorder's except while the focus is in the field with text in it: there Enter sends
+everything and Space types a space. Esc never drops both: with nothing typed it deletes the take as before; with text,
+the take's row asks in place ("Delete the audio? Your text stays.", Delete, Keep, Enter keeps), never a dialog. The
+keys line shows only while the keys are the take's. Uploads still running hold the send, as for a typed message. A
+key an input method composes is never the take's. A pasted API key in the typed text stays in the box for the key
+check while the take goes with the files.
