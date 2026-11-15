@@ -1,11 +1,11 @@
-import { keys, type Message } from "@agenteschat/client";
+import { type ArtifactRef, keys, type Message } from "@agenteschat/client";
 import { upsertMessage } from "@agenteschat/client/lib/timeline";
 import type { QueryClient } from "@tanstack/react-query";
 import { Directory, File, Paths } from "expo-file-system";
 import { authedFetch } from "@/lib/auth";
 import { placeKey } from "@/lib/server";
 import { serverOf } from "@/lib/server-choice";
-import { retryDelayMs, uploadVerdict } from "./logic";
+import { localVoiceMessage, retryDelayMs, uploadVerdict, voiceFields } from "./logic";
 
 /**
  * Recordings on their way to the server. A recording lands in the app's documents the moment it is sent and stays
@@ -24,6 +24,10 @@ export interface VoiceSend {
   durationMs: number;
   peaks: number[];
   language: string | null;
+  /** What was typed beside the take: above the player in the same message. */
+  text?: string;
+  /** Files sent with it, already uploaded. */
+  artifacts?: ArtifactRef[];
   createdAt: string;
   /** The server it was recorded on: it goes there, with that server's session, whichever is open (ADR 0154). */
   server?: string;
@@ -66,31 +70,6 @@ function write() {
     // Not kept across a restart; it still goes while the app stays open.
   }
 }
-
-/** The bubble until the real message arrives: my audio, not playable yet, no words. */
-/** Tries before the bubble says it didn't go (the first miss is often a blip the next try fixes). */
-const FAILED_AFTER = 2;
-
-export const localVoiceMessage = (item: VoiceSend): Message => ({
-  id: `local-${item.clientId}`,
-  channelId: item.channelId,
-  threadId: item.threadId,
-  author: { type: "person", id: item.authorId },
-  body: "",
-  mentionedAgentIds: [],
-  agentRunId: null,
-  meta: {
-    voice: { clipId: `local:${item.clientId}`, durationMs: item.durationMs, peaks: item.peaks },
-    // Why it didn't go yet, under "Não foi enviada" once it failed: a sender is never left guessing.
-    ...(item.lastError ? { sendError: item.lastError } : {}),
-    // The server has it (it answered 202): it posts the message once the words are made out, which can take a moment;
-    // the bubble stops saying "Enviando…" meanwhile (the recording is safe there).
-    ...(item.accepted ? { voiceAccepted: true } : {}),
-  },
-  clientId: item.clientId,
-  local: (item.tries ?? 0) >= FAILED_AFTER ? "failed" : "pending",
-  createdAt: item.createdAt,
-});
 
 const listKeys = (item: Pick<VoiceSend, "orgId" | "channelId" | "threadId">) => [
   keys.messages(item.orgId, item.channelId),
@@ -140,12 +119,7 @@ async function upload(item: VoiceSend) {
     type: "audio/mp4",
     bytes: () => recording.bytes(),
   } as unknown as Blob);
-  form.append("durationMs", String(item.durationMs));
-  form.append("peaks", JSON.stringify(item.peaks));
-  form.append("clientId", item.clientId);
-  if (item.threadId) form.append("threadId", item.threadId);
-  if (item.replyTo) form.append("replyTo", item.replyTo);
-  if (item.language) form.append("language", item.language);
+  for (const [name, value] of voiceFields(item)) form.append(name, value);
   // The place it was recorded on (a server, or one of its accounts: ADR 0183): it goes out as that account.
   const place = item.server ?? placeKey();
   const res = await authedFetch(

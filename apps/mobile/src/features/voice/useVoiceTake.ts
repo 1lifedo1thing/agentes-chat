@@ -1,4 +1,4 @@
-import { newClientId } from "@agenteschat/client";
+import { type ArtifactRef, newClientId } from "@agenteschat/client";
 import { VOICE_MAX_MS, VOICE_MIN_MS } from "@agenteschat/client/lib/voice";
 import { Skia } from "@shopify/react-native-skia";
 import { useQueryClient } from "@tanstack/react-query";
@@ -53,6 +53,11 @@ export interface VoiceTarget {
   /** Whether this person may record now (`/voice/allowed`); null while unknown. */
   allowed: boolean | null;
   afterSend: () => void;
+  /**
+   * Right before a take goes: what goes with it, the text typed beside it and the files waiting above the field, once
+   * they are uploaded. Null when they can't go now: the take stays, paused, and nothing is sent.
+   */
+  prepare?: (text: string) => Promise<{ text: string; artifacts: ArtifactRef[] } | null>;
   /** While it records, held or hands free, never paused: the others see "gravando áudio…" (call it throttled). */
   onRecording?: () => void;
 }
@@ -97,6 +102,8 @@ export function useVoiceTake(target: VoiceTarget) {
   /** The finger left before the recorder started. */
   const starting = useRef(false);
   const released = useRef(false);
+  /** The files that go with it are uploading: a second press waits for the first. */
+  const sending = useRef(false);
   const targetRef = useRef(target);
   targetRef.current = target;
 
@@ -182,9 +189,8 @@ export function useVoiceTake(target: VoiceTarget) {
     return out;
   }, []);
 
-  const pause = useCallback(async () => {
-    if (phaseRef.current === "idle" || phaseRef.current === "paused") return;
-    await finishStretch();
+  /** The finished stretches as one take that can be heard. */
+  const held = useCallback(async () => {
     setPhase("paused");
     await joined();
     wholeWave();
@@ -192,46 +198,69 @@ export function useVoiceTake(target: VoiceTarget) {
     const whole = Math.floor(doneMs.current / 1000);
     setSeconds(whole);
     setTotal(whole);
-  }, [finishStretch, joined, wholeWave, progress, setPhase]);
+  }, [joined, wholeWave, progress, setPhase]);
 
-  const send = useCallback(async () => {
-    const { orgId, channelId, threadId, replyTo = null, authorId, afterSend } = targetRef.current;
-    stopPlayback();
+  const pause = useCallback(async () => {
+    if (phaseRef.current === "idle" || phaseRef.current === "paused") return;
     await finishStretch();
-    const total = doneMs.current;
-    if (total < VOICE_MIN_MS) {
-      for (const s of stretches.current) removeFile(s.uri);
-      toast({ title: t("voice.tooShort"), icon: "mic" });
+    await held();
+  }, [finishStretch, held]);
+
+  /** Whether it went; when it didn't, the caller keeps what was typed. */
+  const send = useCallback(
+    async (typed = ""): Promise<boolean> => {
+      if (sending.current) return false;
+      const { orgId, channelId, threadId, replyTo = null, authorId, afterSend, prepare } = targetRef.current;
+      stopPlayback();
+      await finishStretch();
+      const total = doneMs.current;
+      if (total < VOICE_MIN_MS) {
+        for (const s of stretches.current) removeFile(s.uri);
+        toast({ title: t("voice.tooShort"), icon: "mic" });
+        reset();
+        return false;
+      }
+      sending.current = true;
+      const extra = await (prepare ? prepare(typed) : Promise.resolve({ text: typed, artifacts: [] })).finally(() => {
+        sending.current = false;
+      });
+      if (!extra) {
+        await held();
+        return false;
+      }
+      const files = await joined();
+      const all = levels.current;
+      let from = 0;
+      for (const file of files) {
+        const to = from + Math.round((file.ms / total) * all.length);
+        queueVoice(
+          qc,
+          file.uri,
+          {
+            clientId: newClientId(),
+            orgId,
+            channelId,
+            threadId,
+            replyTo,
+            authorId,
+            durationMs: Math.round(file.ms),
+            peaks: peaksOf(all.slice(from, to)),
+            language: i18n.language?.slice(0, 2) ?? null,
+            // A take that could not be joined goes in pieces: what goes with it, with the first.
+            ...(file === files[0] && extra.text ? { text: extra.text } : {}),
+            ...(file === files[0] && extra.artifacts.length > 0 ? { artifacts: extra.artifacts } : {}),
+          },
+          refused,
+        );
+        from = to;
+      }
+      haptics.light();
       reset();
-      return;
-    }
-    const files = await joined();
-    const all = levels.current;
-    let from = 0;
-    for (const file of files) {
-      const to = from + Math.round((file.ms / total) * all.length);
-      queueVoice(
-        qc,
-        file.uri,
-        {
-          clientId: newClientId(),
-          orgId,
-          channelId,
-          threadId,
-          replyTo,
-          authorId,
-          durationMs: Math.round(file.ms),
-          peaks: peaksOf(all.slice(from, to)),
-          language: i18n.language?.slice(0, 2) ?? null,
-        },
-        refused,
-      );
-      from = to;
-    }
-    haptics.light();
-    reset();
-    afterSend();
-  }, [finishStretch, i18n.language, joined, qc, refused, reset, t, toast]);
+      afterSend();
+      return true;
+    },
+    [finishStretch, held, i18n.language, joined, qc, refused, reset, t, toast],
+  );
 
   const cancel = useCallback(
     async (notice = true) => {

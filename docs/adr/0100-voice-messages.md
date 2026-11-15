@@ -167,3 +167,11 @@ the take's row asks in place ("Delete the audio? Your text stays.", Delete, Keep
 keys line shows only while the keys are the take's. Uploads still running hold the send, as for a typed message. A
 key an input method composes is never the take's. A pasted API key in the typed text stays in the box for the key
 check while the take goes with the files.
+
+**The phone.** The same model. Hands free or paused, the take's row (the time or play, the wave, pause, and delete at
+its end) sits above the field in the field's own capsule, and the field and the "+" stay usable under it. The mic shows
+whenever the field holds no words, also with files waiting, so a take can start with them. The field's send sends the
+take, the words and the files as one message: the phone uploads its files at send time, so they upload first, and when
+one fails the take stays, paused, with the words back in the field. The offline queue keeps the typed text and the
+uploaded files with the recording and sends them with it. Holding the mic and sliding to cancel are unchanged. The
+phone has no Esc question: delete in the row removes only the take, and the words stay in the field.
