@@ -134,9 +134,8 @@ message waits its whole window while they record a follow-up.
 ## Addendum (2026-11-15): typed text and files in the same message
 
 **The need.** While a take existed, the recorder took the composer's place: nobody could type, paste or attach, and a
-send carried the audio alone. Someone who recorded their reasoning and then wanted to add a screenshot, or answer an
-agent's questions in writing, had to send a second message. Files attached before the take stayed on screen and were
-lost when it went.
+send carried the audio alone. A picture or a written line meant for the same message had to go as a second message.
+Files attached before the take stayed on screen and were lost when it went.
 
 **The decision.** One message carries the take, the text typed beside it and its files. The upload
 (`POST …/channels/{channelId}/voice`) takes two optional fields: `text`, with a typed message's limit
