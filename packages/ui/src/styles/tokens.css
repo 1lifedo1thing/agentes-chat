@@ -217,12 +217,3 @@
   --track-tight: -0.025em;
   --track-tighter: -0.035em;
 }
-
-/* While the theme changes (`switchTheme`), every element takes its new colors in the same frame. */
-html[data-theme-switching],
-html[data-theme-switching] *,
-html[data-theme-switching] *::before,
-html[data-theme-switching] *::after {
-  /* biome-ignore lint/complexity/noImportantStyles: must beat every component's own transition, hover and state rules too */
-  transition: none !important;
-}

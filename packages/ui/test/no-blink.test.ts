@@ -45,7 +45,9 @@ describe("switching the theme", () => {
   });
 
   test("the stylesheet turns transitions off under it, the pseudo-elements' too", () => {
-    const off = rules("packages/ui/src/styles/tokens.css").find(([sel]) => sel.includes(`[${THEME_SWITCHING_ATTR}]`));
+    const off = rules("packages/ui/src/styles/components.css").find(([sel]) =>
+      sel.includes(`[${THEME_SWITCHING_ATTR}]`),
+    );
     expect(off?.[0]).toContain(`html[${THEME_SWITCHING_ATTR}] *::before`);
     expect(off?.[0]).toContain(`html[${THEME_SWITCHING_ATTR}] *::after`);
     expect(off?.[1]).toContain("transition: none !important");
