@@ -18,7 +18,7 @@ import {
   openableConsultation,
   pairItemOf,
 } from "@agenteschat/client/lib/consult-group";
-import { consultSubject, consultTimeText, previewOf } from "@agenteschat/client/lib/consultations";
+import { consultSubject, consultTimeText, withoutRelayLine } from "@agenteschat/client/lib/consultations";
 import { namesText } from "@agenteschat/client/lib/format";
 import type { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { useQueryClient } from "@tanstack/react-query";
@@ -160,7 +160,7 @@ export function ConsultPairRow({
   const opened = items.find((x) => x.id === pair.opens) ?? items[0];
   const subject = consultSubject(opened?.question);
   // The whole question, which the row's one line cuts: for screen readers here, on the screen a tap opens.
-  const question = previewOf(opened?.question ?? "");
+  const question = withoutRelayLine(opened?.question ?? "").trim();
   // An old reply's question with no id of its own has no conversation to open.
   const opens = openableConsultation(pair.opens);
   // A row of several opens on all of them: the screen offers each agent's exchange.
