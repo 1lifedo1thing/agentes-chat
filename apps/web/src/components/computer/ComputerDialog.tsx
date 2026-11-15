@@ -656,9 +656,10 @@ function Banner({
 }
 
 /**
- * "Computador" in the agent's DM header: while turns wait for its computer, "Computador · 4 aguardando" opening the
- * line (with a way on to the computer for whoever may watch it), else, for whoever may watch it, the same dialog in
- * place, with a dot while the agent needs someone (amber) or works on it (its color). `queueOnly`: just that line.
+ * The computer in the agent's DM header: while turns wait for its computer, "Computador · 4 aguardando" opening the
+ * line (with a way on to the computer for whoever may watch it), else, for whoever may watch it, the computer's icon
+ * opening the same dialog in place, with a dot while the agent needs someone (amber) or works on it (its color).
+ * `queueOnly`: just that line.
  */
 export function ComputerButton({ agent, queueOnly }: { agent: Agent; queueOnly?: boolean }) {
   const view = useAgentComputer(agent);
@@ -710,16 +711,16 @@ function WatchButton({ agent, signal }: { agent: Agent; signal: EntrySignal }) {
   const openComputer = useOpenComputer();
   return (
     <Button
-      size="sm"
+      variant="ghost"
+      iconOnly
       icon="computer"
-      className="brw-dm"
+      className="channel__icon dm-computer"
+      aria-label={t("agentComputer.button")}
+      aria-description={signal.line}
       data-state={signal.state}
       style={signal.style}
       onClick={() => openComputer(agent.id)}
-    >
-      <span className="brw-dm__label">{t("agentComputer.button")}</span>
-      {signal.line && <span className="ac-visually-hidden">{signal.line}</span>}
-    </Button>
+    />
   );
 }
 
