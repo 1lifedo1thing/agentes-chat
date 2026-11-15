@@ -21,7 +21,7 @@ import {
   videoHeight,
   withExtension,
 } from "../../src/features/files/logic";
-import { clampZoomTranslate, containSize, doubleTapZoom, MAX_ZOOM, zoomAround } from "../../src/features/files/zoom";
+import { DISMISS_DISTANCE } from "../../src/features/files/zoom";
 import { ICONS } from "../../src/ui/icons.data";
 
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src", file), "utf8");
@@ -192,7 +192,7 @@ describe("viewer", () => {
     expect(pageStep(0, 1, 1)).toBeNull();
   });
 
-  test("several pictures: 2 de 4 in the head, ‹ › on the sides (gone while zoomed) slide the pager as a swipe", () => {
+  test("several pictures: 2 de 4 in the head, ‹ › on the sides (gone while zoomed) slide the gallery as a swipe", () => {
     const viewer = src("features/files/ImageViewer.tsx");
     expect(viewer).toContain(
       'files.length > 1 ? t("mobile.files.place", { index: index + 1, count: files.length }) : ""',
@@ -205,7 +205,7 @@ describe("viewer", () => {
       '<Round icon="right" label={t("mobile.files.next")} plate={SCRIM} onPress={() => turn(next)} />',
     );
     expect(viewer).toContain("visible={chrome && !zoomed}");
-    expect(viewer).toContain("pager.current?.scrollTo({ x: to * width, y: 0, animated: !reduced })");
+    expect(viewer).toContain("gallery.current?.setIndex(to);");
     // The count took the dots' place: one place says where you are.
     expect(viewer).not.toContain("styles.dots");
   });
@@ -218,17 +218,23 @@ describe("viewer", () => {
     expect(src("features/files/ImageViewer.tsx")).toContain('const SCRIM = "rgba(0,0,0,0.45)";');
   });
 
-  test("zoom keeps the point under the fingers still and stays inside the picture", () => {
-    expect(zoomAround({ x: 0, y: 0 }, 1, 2, 50, -20)).toEqual({ x: -50, y: 20 });
-    expect(zoomAround({ x: 0, y: 0 }, 1, 2, 0, 0)).toEqual({ x: 0, y: 0 });
-    expect(clampZoomTranslate(500, -500, 2, 400, 800)).toEqual({ x: 200, y: -400 });
-    expect(clampZoomTranslate(30, 10, 1, 400, 800)).toEqual({ x: 0, y: 0 });
-    // A wide banner drawn 400×100: zoomed 4× it is 1600×400, shorter than the screen, so it can't move up or down.
-    expect(clampZoomTranslate(9999, 9999, 4, 400, 800, 400, 100)).toEqual({ x: 600, y: 0 });
-    expect(containSize(3600, 900, 400, 800)).toEqual({ w: 400, h: 100 });
-    expect(containSize(0, 0, 400, 800)).toEqual({ w: 400, h: 800 });
-    expect(doubleTapZoom(400, 100, 400, 800)).toBe(MAX_ZOOM);
-    expect(doubleTapZoom(400, 600, 400, 800)).toBe(2.5);
+  test("the pictures zoom, move, page and close in react-native-zoom-toolkit's Gallery, never in gestures drawn here", () => {
+    const viewer = src("features/files/ImageViewer.tsx");
+    expect(viewer).toContain('from "react-native-zoom-toolkit"');
+    expect(viewer).toContain("maxScale={MAX_ZOOM}");
+    // Pulled away at its own size, the picture follows the finger and a far or fast release closes the viewer.
+    expect(viewer).toContain("onVerticalPull={onVerticalPull}");
+    expect(viewer).toContain("Math.abs(pull.translateY) > DISMISS_DISTANCE");
+    expect(DISMISS_DISTANCE).toBeGreaterThan(0);
+    expect(viewer).not.toContain("usePinchGesture");
+  });
+
+  test("a video plays in the system's player with its controls, never controls of ours over it", () => {
+    const player = src("features/files/VideoPlayer.tsx");
+    // In full screen the platform's controls are the only way back out: they are always on where it plays.
+    expect(player).toContain("nativeControls\n");
+    expect(player).not.toContain("enterFullscreen");
+    expect(player).not.toContain("<Glass");
   });
 });
 

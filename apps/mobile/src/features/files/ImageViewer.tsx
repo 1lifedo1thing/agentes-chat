@@ -1,33 +1,41 @@
 import { useArtifact } from "@agenteschat/client";
 import { keepWhole } from "@agenteschat/client/lib/format";
+import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  type ScrollViewInstance,
-  StyleSheet,
-  useWindowDimensions,
-  View,
-} from "react-native";
-import { ScrollView } from "react-native-gesture-handler";
-import Animated, { type SharedValue, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
+import Animated, {
+  type SharedValue,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Icon, type IconName, PressScale, SCREEN_X, Text, ToastHost, useReducedMotion } from "@/ui";
+import { scheduleOnRN } from "react-native-worklets";
+import {
+  type CommonZoomState,
+  fitContainer,
+  Gallery,
+  type GalleryRefType,
+  type VerticalPullOptions,
+} from "react-native-zoom-toolkit";
+import { Icon, type IconName, PressScale, SCREEN_X, Text, ToastHost } from "@/ui";
 import { useDirectory, useOrgId } from "../shared/hooks";
 import { goBack } from "../shared/parts";
 import { savedAt, useFileActions, useSavedWhen } from "./actions";
 import { decodeFileList, fileInfo, pageStep } from "./logic";
 import { useRemoteFile } from "./source";
 import { tellViewerPlace } from "./viewer-place";
-import { ZoomableImage } from "./ZoomableImage";
+import { DISMISS_DISTANCE, DISMISS_VELOCITY, MAX_ZOOM } from "./zoom";
 
 /**
- * A message's pictures, full screen: black, the name, "2 de 4" and who sent it on top, pinch and double tap to
- * zoom, swipe or ‹ › on the sides between the pictures, drag down to close, and Compartilhar, Salvar em Fotos,
- * Ver no Drive at the bottom. A tap hides and shows the bars.
+ * A message's pictures, full screen, as the phone's own photos: black, the name, "2 de 4" and who sent it on top;
+ * pinch to zoom around the fingers, double tap to zoom in at that spot or back out, drag a zoomed picture with its
+ * momentum and an elastic edge (react-native-zoom-toolkit's Gallery); swipe or ‹ › on the sides between the pictures;
+ * pull down (or up) to close, the picture following the finger as the black fades; and Compartilhar, Salvar em
+ * Fotos, Ver no Drive at the bottom. A tap hides and shows the bars.
  */
 export function ImageViewer({
   files: rawFiles,
@@ -70,33 +78,61 @@ function Viewer({
   const savedWhen = useSavedWhen();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const reduced = useReducedMotion();
-  const pager = useRef<ScrollViewInstance>(null);
+  const gallery = useRef<GalleryRefType>(null);
   const files = decodeFileList(rawFiles);
   const first = Math.min(Math.max(Number(at) || 0, 0), Math.max(files.length - 1, 0));
   const [index, setIndex] = useState(first);
   const [zoomed, setZoomed] = useState(false);
   const [chrome, setChrome] = useState(true);
   const drag = useSharedValue(0);
+  const scale = useSharedValue(1);
   const current = files[index];
   const detail = useArtifact(orgId, current?.id ?? null, current?.version).data;
   const actions = useFileActions(detail);
-  const close = () => goBack();
+  const close = useCallback(() => goBack(), []);
   useEffect(() => {
     if (from) tellViewerPlace(from, index);
   }, [from, index]);
 
-  const onPage = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const i = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (i !== index && i >= 0 && i < files.length) setIndex(i);
-  };
+  // The gallery's state, on the UI thread: zoomed in, the side buttons step aside as the swipe does.
+  const onUpdate = useCallback(
+    (state: CommonZoomState<number>) => {
+      "worklet";
+      scale.value = state.scale;
+    },
+    [scale],
+  );
+  useAnimatedReaction(
+    () => scale.value > 1.01,
+    (now, before) => {
+      if (now !== before) scheduleOnRN(setZoomed, now);
+    },
+  );
+  // Pulled down or up at its own size: the picture follows the finger (the gallery moves it) and the black fades;
+  // let go far or fast enough, the viewer closes, else everything settles back.
+  const onVerticalPull = useCallback(
+    (pull: VerticalPullOptions) => {
+      "worklet";
+      if (!pull.released) {
+        drag.value = pull.translateY;
+        return;
+      }
+      if (Math.abs(pull.translateY) > DISMISS_DISTANCE || Math.abs(pull.velocityY) > DISMISS_VELOCITY) {
+        scheduleOnRN(close);
+        return;
+      }
+      drag.value = withTiming(0, { duration: 200 });
+    },
+    [drag, close],
+  );
+  const onTap = useCallback(() => setChrome((v) => !v), []);
+
   const prev = pageStep(index, -1, files.length);
   const next = pageStep(index, 1, files.length);
-  // The side buttons: the pager slides there (at once with reduced motion), as a swipe would.
+  // The side buttons: the gallery slides there, as a swipe would.
   const turn = (to: number | null) => {
     if (to === null) return;
-    setIndex(to);
-    pager.current?.scrollTo({ x: to * width, y: 0, animated: !reduced });
+    gallery.current?.setIndex(to);
   };
 
   const backdrop = useAnimatedStyle(() => ({
@@ -114,31 +150,27 @@ function Viewer({
     <View style={styles.screen}>
       <StatusBar style="light" hidden={!chrome} animated />
       <Animated.View style={[StyleSheet.absoluteFill, styles.black, backdrop]} />
-      <ScrollView
-        ref={pager}
-        horizontal
-        pagingEnabled
-        scrollEnabled={!zoomed && files.length > 1}
-        showsHorizontalScrollIndicator={false}
-        contentOffset={{ x: first * width, y: 0 }}
-        onMomentumScrollEnd={onPage}
-        style={StyleSheet.absoluteFill}
-      >
-        {files.map((f, i) => (
-          <Page
-            key={`${f.id}@${f.version ?? ""}`}
+      <Gallery
+        ref={gallery}
+        data={files}
+        keyExtractor={(f) => `${f.id}@${f.version ?? ""}`}
+        initialIndex={first}
+        // The one in sight and one each side: they load as they come near.
+        windowSize={3}
+        maxScale={MAX_ZOOM}
+        onIndexChange={setIndex}
+        onTap={onTap}
+        onUpdate={onUpdate}
+        onVerticalPull={onVerticalPull}
+        renderItem={(f) => (
+          <Picture
             id={f.id}
             {...(f.version !== undefined ? { version: f.version } : {})}
             width={width}
             height={height}
-            drag={drag}
-            near={Math.abs(i - index) <= 1}
-            onZoomChange={setZoomed}
-            onTap={() => setChrome((v) => !v)}
-            onDismiss={close}
           />
-        ))}
-      </ScrollView>
+        )}
+      />
 
       <Chrome visible={chrome} drag={drag} style={[styles.top, { paddingTop: insets.top + 8 }]}>
         <Round icon="x" label={t("mobile.common.close")} onPress={close} />
@@ -197,48 +229,35 @@ function Viewer({
   );
 }
 
-function Page({
-  id,
-  version,
-  width,
-  height,
-  drag,
-  near,
-  onZoomChange,
-  onTap,
-  onDismiss,
-}: {
-  id: string;
-  version?: number;
-  width: number;
-  height: number;
-  drag: SharedValue<number>;
-  /** Only the pictures next to the one on screen load. */
-  near: boolean;
-  onZoomChange: (z: boolean) => void;
-  onTap: () => void;
-  onDismiss: () => void;
-}) {
+/** One picture, fitted whole in the screen once its size is known (the gallery zooms and moves it). */
+function Picture({ id, version, width, height }: { id: string; version?: number; width: number; height: number }) {
   const orgId = useOrgId();
-  const link = useRemoteFile(orgId, near ? id : null, version);
+  const link = useRemoteFile(orgId, id, version);
+  const [ratio, setRatio] = useState<number | null>(null);
+  const size = ratio ? fitContainer(ratio, { width, height }) : { width, height };
+  if (!link.data)
+    return (
+      <View style={[styles.center, { width, height }]}>
+        {link.isError ? <Icon name="image" size={30} color={DIM} /> : <ActivityIndicator color={WHITE} />}
+      </View>
+    );
   return (
-    <View style={{ width, height, alignItems: "center", justifyContent: "center" }}>
-      {link.data ? (
-        <ZoomableImage
-          uri={link.data.uri}
-          headers={link.data.headers}
-          cacheKey={`${id}@${version ?? "latest"}`}
-          width={width}
-          height={height}
-          drag={drag}
-          onZoomChange={onZoomChange}
-          onTap={onTap}
-          onDismiss={onDismiss}
-        />
-      ) : link.isError ? (
-        <Icon name="image" size={30} color={DIM} />
-      ) : (
-        <ActivityIndicator color={WHITE} />
+    <View style={size}>
+      <Image
+        source={{ uri: link.data.uri, headers: link.data.headers, cacheKey: `${id}@${version ?? "latest"}` }}
+        recyclingKey={`${id}@${version ?? "latest"}`}
+        contentFit="contain"
+        transition={160}
+        onLoad={(e) => {
+          if (e.source.width > 0 && e.source.height > 0) setRatio(e.source.width / e.source.height);
+        }}
+        style={StyleSheet.absoluteFill}
+        accessible={false}
+      />
+      {ratio ? null : (
+        <View style={[StyleSheet.absoluteFill, styles.center]} pointerEvents="none">
+          <ActivityIndicator color={WHITE} />
+        </View>
       )}
     </View>
   );
