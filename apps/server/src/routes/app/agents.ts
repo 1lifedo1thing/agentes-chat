@@ -202,9 +202,9 @@ const AgentFields = z.object({
   brakes: AgentBrakes.partial().optional().openapi({
     description: "Its autonomy brakes (ADR 0131); the fields given change, the rest stay. Needs `manage_agents`.",
   }),
-  approvalsLevel: ApprovalsLevel.optional().openapi({
+  approvalsLevel: ApprovalsLevel.nullable().optional().openapi({
     description:
-      "How much it asks before acting (ADR 0173). Needs `manage_agents`. A new agent starts at `risky`. It never widens what the agent may use.",
+      "How much it asks before acting (ADR 0173), as its own choice. Null: it follows the workspace's level again. Needs `manage_agents`. A new agent follows the workspace. It never widens what the agent may use.",
   }),
 });
 

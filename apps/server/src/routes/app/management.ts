@@ -71,6 +71,7 @@ import {
   setShowActivity,
   setStartPage,
   setStopReason,
+  setWorkspaceApprovalsLevel,
   sidebarPlaceAllowed,
   speakerOf,
   taskManager,
@@ -99,6 +100,7 @@ import { credentialOut } from "./credential-view";
 import {
   AgentAppearance,
   AgentAudience,
+  ApprovalsLevel,
   CanceledReturn,
   ChatPrefs,
   Credential,
@@ -205,6 +207,10 @@ const Settings = z
     }),
     welcomePeople: z.boolean().openapi({
       description: "The right hand greets each person who joins the workspace, once. On by default.",
+    }),
+    approvalsLevel: ApprovalsLevel.openapi({
+      description:
+        "What every agent without its own choice asks before acting (ADR 0173). `risky` by default. Set with `PUT …/approvals-level`.",
     }),
     voiceAvailable: z.boolean().openapi({
       description: "Read only: this server has a speech engine now, from its environment or from its owner's Settings.",
@@ -659,6 +665,45 @@ export function managementRoutes(deps: AppDeps) {
       const seesCost = await canViewCost(db, actor, orgId);
       // Only who configures the workspace gets here (`updateOrgSettings`).
       return c.json({ ...settingsFor(settings, seesCost, true), ...(await mediaAvailable()) }, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/organizations/{orgId}/approvals-level",
+      tags: ["Organization"],
+      security,
+      summary: "Set how much the workspace's agents ask before acting (who manages agents)",
+      description:
+        "Every agent that follows the workspace takes the level at once; an agent with its own choice keeps it unless `everyAgent` is true, which clears every agent's own choice.",
+      request: {
+        params: OrgParams,
+        body: body(
+          z.object({
+            level: ApprovalsLevel,
+            everyAgent: z.boolean().optional().openapi({ description: "Also clear every agent's own choice." }),
+          }),
+        ),
+      },
+      responses: {
+        200: json(
+          z.object({
+            level: ApprovalsLevel,
+            ownAgents: z.number().openapi({ description: "Agents that keep their own choice." }),
+          }),
+        ),
+        ...errors,
+      },
+    }),
+    async (c) => {
+      const { orgId } = c.req.valid("param");
+      const { level, everyAgent } = c.req.valid("json");
+      const out = await setWorkspaceApprovalsLevel(db, c.get("user").id, orgId, level, {
+        everyAgent,
+        pubsub: adapters.pubsub,
+      });
+      return c.json(out, 200);
     },
   );
 
