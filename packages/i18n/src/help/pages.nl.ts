@@ -99,6 +99,7 @@ export const helpNl: Partial<Record<HelpSlug, HelpDocument>> = {
         blocks: [
           "Alles wat agentes.chat op deze computer bewaart, staat in mappen in je thuismap, niet in de app. Als je de app naar de prullenmand sleept, verdwijnt daar dus niets van, en stopt agentes.chat niet als het draait.",
           "Wil je opnieuw beginnen, druk dan op **Wissen en opnieuw beginnen…** in **Voorkeuren\u00a0›\u00a0Servers**. agentes.chat stopt hier en alles wat erin staat gaat naar een nieuwe map in je thuismap, `agentes.chat erased` met de datum van die dag, waar het blijft tot je de map verwijdert. Wat de agenten op deze computer bewaarden, zoals hun browsers en logins, wordt uit `.agentes-runner` verwijderd. Zijn werkruimtes verdwijnen voor iedereen die ze gebruikt. Daarna opent het welkomstvenster en stel je het opnieuw in met een nieuw eigenaarsaccount. De bestanden van de agenten, in `agentes` in je thuismap, blijven waar ze zijn.",
+          "Wil je het later terughalen, sluit dan de app af, zet een nieuwere map `.agentes` opzij als die er is, hernoem de map `agentes.chat erased` naar `.agentes`, open de app en stel het opnieuw in op deze computer. Het start met zijn werkruimtes en zijn eigenaar zoals ze waren. Wat de agenten op deze computer bewaarden komt niet terug, dus ze moeten opnieuw inloggen.",
           "Zo haal je agentes.chat helemaal van deze computer:",
           {
             list: [

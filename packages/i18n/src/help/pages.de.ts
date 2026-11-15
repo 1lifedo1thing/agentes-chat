@@ -99,6 +99,7 @@ export const helpDe: Partial<Record<HelpSlug, HelpDocument>> = {
         blocks: [
           "Alles, was agentes.chat auf diesem Computer speichert, liegt in Ordnern in deinem Benutzerordner, nicht in der App. Wenn du die App in den Papierkorb legst, wird also nichts davon gelöscht, und agentes.chat stoppt nicht, falls es läuft.",
           "Um neu anzufangen, drück **Löschen und neu anfangen…** in **Einstellungen\u00a0›\u00a0Server**. agentes.chat stoppt hier, und alles, was es enthält, wird in einen neuen Ordner in deinem Benutzerordner verschoben, der `agentes.chat erased` mit dem Datum des Tages heißt. Dort bleibt es, bis du ihn löschst. Was seine Agenten auf diesem Computer gespeichert hatten, etwa ihre Browser und Anmeldungen, wird aus `.agentes-runner` gelöscht. Seine Workspaces verschwinden für alle, die sie nutzen. Danach öffnet sich das Willkommensfenster, und du richtest es mit einem neuen Inhaber-Konto neu ein. Die Dateien der Agenten, in `agentes` in deinem Benutzerordner, bleiben, wo sie sind.",
+          "Um es später zurückzuholen, beende die App, leg einen neueren Ordner `.agentes` beiseite, falls es einen gibt, benenne den Ordner `agentes.chat erased` in `.agentes` um, öffne die App und richte es auf diesem Computer wieder ein. Es startet mit seinen Workspaces und seinem Eigentümer, wie sie waren. Was seine Agenten auf diesem Computer gespeichert hatten, kommt nicht zurück, sie müssen sich also neu anmelden.",
           "So entfernst du agentes.chat ganz von diesem Computer:",
           {
             list: [

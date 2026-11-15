@@ -99,6 +99,7 @@ export const helpFr: Partial<Record<HelpSlug, HelpDocument>> = {
         blocks: [
           "Tout ce qu’agentes.chat garde sur cet ordinateur se trouve dans des dossiers de votre dossier personnel, pas dans l’app. Mettre l’app à la corbeille n’en supprime donc rien, et n’arrête pas agentes.chat s’il tourne.",
           "Pour recommencer, appuyez sur **Effacer et repartir de zéro…** dans **Préférences\u00a0›\u00a0Serveurs**. agentes.chat s’arrête ici et tout ce qu’il contient part dans un nouveau dossier de votre dossier personnel, nommé `agentes.chat erased` suivi de la date du jour, où il reste jusqu’à ce que vous le supprimiez. Ce que ses agents gardaient sur cet ordinateur, comme leurs navigateurs et leurs connexions, est supprimé de `.agentes-runner`. Ses espaces de travail disparaissent pour tous ceux qui les utilisent. Ensuite, la fenêtre de bienvenue s’ouvre et vous le configurez de nouveau avec un nouveau compte propriétaire. Les fichiers des agents, dans `agentes` dans votre dossier personnel, restent où ils sont.",
+          "Pour le retrouver plus tard, quittez l’app, mettez de côté un dossier `.agentes` plus récent s’il y en a un, renommez le dossier `agentes.chat erased` en `.agentes`, puis ouvrez l’app et configurez-le à nouveau sur cet ordinateur. Il revient avec ses espaces de travail et son propriétaire tels qu’ils étaient. Ce que ses agents gardaient sur cet ordinateur ne revient pas : ils doivent se reconnecter.",
           "Pour retirer complètement agentes.chat de cet ordinateur\u00a0:",
           {
             list: [

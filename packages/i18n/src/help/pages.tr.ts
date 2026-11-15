@@ -99,6 +99,7 @@ export const helpTr: Partial<Record<HelpSlug, HelpDocument>> = {
         blocks: [
           "agentes.chat'in bu bilgisayarda tuttuğu her şey uygulamanın içinde değil, ana klasörünüzdeki klasörlerdedir. Bu yüzden uygulamayı Çöp Sepeti'ne taşımak bunların hiçbirini silmez ve çalışıyorsa agentes.chat'i durdurmaz.",
           "Baştan başlamak için **Tercihler\u00a0›\u00a0Sunucular** içindeki **Sil ve baştan başla…** düğmesine basın. Buradaki agentes.chat durur ve içindeki her şey ana klasörünüzde `agentes.chat erased` ve günün tarihiyle adlandırılan yeni bir klasöre taşınır, siz silene kadar orada kalır. Ajanlarının bu bilgisayarda tuttukları, örneğin tarayıcıları ve oturumları, `.agentes-runner` içinden silinir. Çalışma alanları, onları kullanan herkes için kaybolur. Sonra karşılama penceresi açılır ve onu yeni bir sahip hesabıyla yeniden kurarsınız. Ajanların ana klasörünüzdeki `agentes` içinde bulunan dosyaları oldukları yerde kalır.",
+          "Sonradan geri getirmek için uygulamadan çıkın, varsa daha yeni bir `.agentes` klasörünü kenara alın, `agentes.chat erased` klasörünün adını `.agentes` olarak değiştirin, sonra uygulamayı açıp onu bu bilgisayarda yeniden kurun. Çalışma alanları ve sahibiyle, bıraktığınız gibi açılır. Ajanlarının bu bilgisayarda tuttukları geri gelmez, bu yüzden yeniden oturum açmaları gerekir.",
           "agentes.chat'i bu bilgisayardan tamamen kaldırmak için:",
           {
             list: [

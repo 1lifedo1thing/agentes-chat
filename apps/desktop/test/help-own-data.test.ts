@@ -54,6 +54,9 @@ describe("the help page on starting over and uninstalling", () => {
         ...FOLDERS.map((f) => `\`${f}`),
       ];
       expect({ code, missing: names.filter((n) => !text.includes(n)) }).toEqual({ code, missing: [] });
+      // How an erased one comes back: its dated folder renamed to the data folder's own name.
+      const paragraphs = section?.blocks.filter((b): b is string => typeof b === "string") ?? [];
+      expect(paragraphs.filter((l) => l.includes("`agentes.chat erased`") && l.includes("`.agentes`"))).toHaveLength(1);
       // Quitting comes before any deleting.
       const steps = section?.blocks.find((b): b is { list: string[] } => typeof b === "object" && "list" in b);
       expect(steps?.list.findIndex((l) => l.includes(`**${d.tray.quit}**`))).toBe(1);

@@ -98,6 +98,7 @@ export const helpPtBR: Record<HelpSlug, HelpDocument> = {
         blocks: [
           "Tudo o que o agentes.chat guarda neste computador fica em pastas da sua pasta pessoal, não dentro do app. Por isso, mandar o app para a Lixeira não apaga nada disso, e não para o agentes.chat se ele estiver rodando.",
           "Para começar de novo, aperte **Apagar e começar de novo…** em **Preferências\u00a0›\u00a0Servidores**. Ele para o agentes.chat aqui e leva tudo o que ele guarda para uma pasta nova na sua pasta pessoal, chamada `agentes.chat erased` com a data do dia, onde fica até você apagar. O que os agentes dele guardavam neste computador, como os navegadores e logins deles, é apagado de `.agentes-runner`. Os workspaces dele somem para todos que os usam. Depois a janela de boas-vindas abre, e você configura de novo, com uma nova conta de dono. Os arquivos dos agentes, em `agentes` na sua pasta pessoal, ficam onde estão.",
+          "Para trazer de volta depois, saia do app, tire do caminho uma pasta `.agentes` mais nova, se houver, renomeie a pasta `agentes.chat erased` para `.agentes`, abra o app e configure de novo neste computador. Ele volta com os workspaces e o dono como estavam. O que os agentes guardavam neste computador não volta, então eles precisam entrar de novo nas contas.",
           "Para tirar o agentes.chat deste computador por completo:",
           {
             list: [

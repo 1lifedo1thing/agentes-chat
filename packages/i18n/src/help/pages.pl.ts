@@ -99,6 +99,7 @@ export const helpPl: Partial<Record<HelpSlug, HelpDocument>> = {
         blocks: [
           "Wszystko, co agentes.chat trzyma na tym komputerze, jest w folderach w twoim folderze domowym, nie w aplikacji. Dlatego przeniesienie aplikacji do Kosza niczego z tego nie usuwa i nie zatrzymuje agentes.chat, jeśli działa.",
           "Żeby zacząć od nowa, naciśnij **Wymaż i zacznij od nowa…** w **Preferencje\u00a0›\u00a0Serwery**. agentes.chat zatrzymuje się tutaj, a wszystko, co zawiera, trafia do nowego folderu w twoim folderze domowym, nazwanego `agentes.chat erased` z datą tego dnia, i zostaje tam, dopóki go nie usuniesz. To, co jego agenci trzymali na tym komputerze, na przykład ich przeglądarki i logowania, zostaje usunięte z `.agentes-runner`. Jego przestrzenie robocze znikają dla wszystkich, którzy z nich korzystają. Potem otwiera się okno powitalne i konfigurujesz go od nowa z nowym kontem właściciela. Pliki agentów, w `agentes` w twoim folderze domowym, zostają tam, gdzie są.",
+          "Żeby później go przywrócić, zakończ aplikację, odłóż na bok nowszy folder `.agentes`, jeśli jest, zmień nazwę folderu `agentes.chat erased` na `.agentes`, otwórz aplikację i skonfiguruj go ponownie na tym komputerze. Wraca ze swoimi przestrzeniami roboczymi i właścicielem, tak jak były. To, co jego agenci trzymali na tym komputerze, nie wraca, więc muszą zalogować się ponownie.",
           "Żeby całkowicie usunąć agentes.chat z tego komputera:",
           {
             list: [

@@ -99,6 +99,7 @@ export const helpId: Partial<Record<HelpSlug, HelpDocument>> = {
         blocks: [
           "Semua yang disimpan agentes.chat di komputer ini ada di folder-folder dalam folder pribadimu, bukan di dalam aplikasi. Jadi memindahkan aplikasi ke Tempat Sampah tidak menghapus apa pun dari situ, dan tidak menghentikan agentes.chat kalau sedang berjalan.",
           "Untuk mulai dari awal, tekan **Hapus dan mulai dari awal…** di **Preferensi\u00a0›\u00a0Server**. agentes.chat di sini berhenti dan semua isinya dipindahkan ke folder baru di folder pribadimu, bernama `agentes.chat erased` dengan tanggal hari itu, dan tetap di sana sampai kamu menghapusnya. Yang disimpan para agennya di komputer ini, seperti browser dan login mereka, dihapus dari `.agentes-runner`. Ruang kerjanya hilang bagi semua orang yang memakainya. Lalu jendela sambutan terbuka, dan kamu menyiapkannya lagi dengan akun pemilik baru. File para agen, di `agentes` dalam folder pribadimu, tetap di tempatnya.",
+          "Untuk mengembalikannya nanti, keluar dari aplikasi, singkirkan folder `.agentes` yang lebih baru kalau ada, ubah nama folder `agentes.chat erased` menjadi `.agentes`, lalu buka aplikasi dan siapkan lagi di komputer ini. Ia berjalan lagi dengan ruang kerja dan pemiliknya seperti semula. Yang disimpan para agennya di komputer ini tidak kembali, jadi mereka perlu login lagi.",
           "Untuk menghapus agentes.chat dari komputer ini sepenuhnya:",
           {
             list: [

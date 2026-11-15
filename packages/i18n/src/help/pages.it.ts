@@ -99,6 +99,7 @@ export const helpIt: Partial<Record<HelpSlug, HelpDocument>> = {
         blocks: [
           "Tutto ciò che agentes.chat tiene su questo computer sta in cartelle della tua cartella personale, non dentro l’app. Quindi spostare l’app nel Cestino non ne elimina niente, e non ferma agentes.chat se è in funzione.",
           "Per ricominciare, premi **Cancella e ricomincia da capo…** in **Preferenze\u00a0›\u00a0Server**. agentes.chat si ferma qui e tutto ciò che contiene viene spostato in una nuova cartella della tua cartella personale, chiamata `agentes.chat erased` con la data del giorno, dove resta finché non la elimini. Ciò che i suoi agenti tenevano su questo computer, come i loro browser e accessi, viene eliminato da `.agentes-runner`. I suoi spazi di lavoro spariscono per tutti quelli che li usano. Poi si apre la finestra di benvenuto e lo configuri di nuovo con un nuovo account proprietario. I file degli agenti, in `agentes` nella tua cartella personale, restano dove sono.",
+          "Per riaverlo più tardi, esci dall’app, sposta altrove una cartella `.agentes` più recente, se c’è, rinomina la cartella `agentes.chat erased` in `.agentes`, poi apri l’app e configuralo di nuovo su questo computer. Riparte con i suoi spazi di lavoro e il suo proprietario com’erano. Ciò che i suoi agenti tenevano su questo computer non torna, quindi devono accedere di nuovo.",
           "Per togliere del tutto agentes.chat da questo computer:",
           {
             list: [

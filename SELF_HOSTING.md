@@ -586,6 +586,9 @@ computer and opens agentes.chat, signed in.
   homes for this computer in `~/.agentes-runner/orgs`, forgets its addresses and their sign-ins in the
   app, and opens the welcome window for a new setup with a new owner. Its workspaces go for everyone; the
   agents' files in `~/agentes` stay. Only for the folder the app made, never a terminal install's.
+  To bring it back: quit the app, move a newer `~/.agentes` out of the way, rename the erased folder to
+  `~/.agentes`, and set it up on this computer again. It starts with its workspaces and its owner (the
+  owner key is in the folder); its agents' homes are gone, so they sign in again.
 - **The Trash removes nothing.** All of the above lives outside the app, so trashing it leaves every folder
   and doesn't stop a running app. To remove it entirely, in this order: turn off **Open at login**
   (**Preferences › General**), quit the app (**Quit agentes.chat**: on a Mac in the agentes.chat menu or

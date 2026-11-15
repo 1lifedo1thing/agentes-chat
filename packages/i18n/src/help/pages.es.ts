@@ -99,6 +99,7 @@ export const helpEs: Partial<Record<HelpSlug, HelpDocument>> = {
         blocks: [
           "Todo lo que agentes.chat guarda en esta computadora está en carpetas de tu carpeta personal, no dentro de la app. Por eso, mover la app a la Papelera no borra nada de eso, y no detiene agentes.chat si está en marcha.",
           "Para empezar de nuevo, pulsa **Borrar y empezar de nuevo…** en **Preferencias\u00a0›\u00a0Servidores**. agentes.chat se detiene aquí y todo lo que guarda pasa a una carpeta nueva en tu carpeta personal, llamada `agentes.chat erased` con la fecha del día, donde queda hasta que la borres. Lo que sus agentes guardaban en esta computadora, como sus navegadores e inicios de sesión, se borra de `.agentes-runner`. Sus espacios de trabajo desaparecen para todos los que los usan. Luego se abre la ventana de bienvenida y lo configuras de nuevo con una nueva cuenta de propietario. Los archivos de los agentes, en `agentes` en tu carpeta personal, se quedan donde están.",
+          "Para recuperarlo más tarde, sal de la app, aparta una carpeta `.agentes` más nueva si la hay, cambia el nombre de la carpeta `agentes.chat erased` a `.agentes`, abre la app y configúralo otra vez en esta computadora. Vuelve con sus espacios de trabajo y su propietario como estaban. Lo que sus agentes guardaban en esta computadora no vuelve, así que tienen que iniciar sesión de nuevo.",
           "Para quitar agentes.chat de esta computadora por completo:",
           {
             list: [

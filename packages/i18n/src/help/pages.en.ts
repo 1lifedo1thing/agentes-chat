@@ -98,6 +98,7 @@ export const helpEn: Record<HelpSlug, HelpDocument> = {
         blocks: [
           "Everything agentes.chat keeps on this computer is in folders in your home folder, not inside the app. So moving the app to the Trash removes none of it, and doesn't stop agentes.chat if it's running.",
           "To start over, press **Erase and start over…** in **Preferences\u00a0›\u00a0Servers**. It stops agentes.chat here and moves everything it holds to a new folder in your home folder, named `agentes.chat erased` and the day's date, where it stays until you delete it. What its agents kept on this computer, such as their browsers and sign-ins, is deleted from `.agentes-runner`. Its workspaces go for everyone who uses them. Then the welcome window opens, and you set it up again with a new owner account. The agents' files, in `agentes` in your home folder, stay where they are.",
+          "To bring it back later, quit the app, move a newer `.agentes` folder out of the way if there is one, rename the `agentes.chat erased` folder to `.agentes`, then open the app and set it up on this computer again. It starts with its workspaces and its owner as they were. What its agents kept on this computer doesn't come back, so they need their sign-ins again.",
           "To remove agentes.chat from this computer entirely:",
           {
             list: [
