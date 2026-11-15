@@ -35,9 +35,9 @@ import {
   type BrowserInputEvent,
   type BrowserLiveStatus,
   type BrowserLiveUnavailable,
-  type BrowserPointer,
   type ConnectionStatus,
   type ConsultsState,
+  type CountedPointer,
   cacheActionCard,
   cacheAgentProposal,
   cacheApproval,
@@ -54,6 +54,7 @@ import {
   catchUpChannel,
   consultSeeds,
   createBrowserLiveConnection,
+  desktopPointerOf,
   dismissRun,
   dropLocalVoice,
   dropProvisional,
@@ -65,9 +66,9 @@ import {
   isNotificationEvent,
   keys,
   markStopping,
+  nextPointer,
   type OpenConsult,
   openConversation,
-  parseBrowserPointer,
   RealtimeConnection,
   type ReceiptsState,
   realtimeUrl,
@@ -1012,7 +1013,7 @@ export interface BrowserLiveState {
   /** How many came, for what says each one: the same refusal again leaves `error` as it was. */
   errors: number;
   /** Where the agent's pointer last went on the page; `n` counts its gestures (two clicks on one point are two). */
-  pointer: (BrowserPointer & { n: number }) | null;
+  pointer: CountedPointer | null;
 }
 
 const EMPTY_LIVE: BrowserLiveState = {
@@ -1054,7 +1055,7 @@ export function useBrowserLive(agentId: string, enabled = true, maxFps?: number)
         setState((s) => ({ ...s, frame, unavailable: null, ended: false, endedBy: null, error: null })),
       onStatus: (status) =>
         setState((s) => ({ ...s, status, unavailable: null, ended: false, endedBy: null, error: null })),
-      onPointer: (pointer) => setState((s) => ({ ...s, pointer: { ...pointer, n: (s.pointer?.n ?? 0) + 1 } })),
+      onPointer: (pointer) => setState((s) => ({ ...s, pointer: nextPointer(s.pointer, pointer) })),
       onUnavailable: (reason, message) =>
         setState((s) => ({ ...s, unavailable: { reason, ...(message ? { message } : {}) } })),
       onEnded: (reason, _message, by) =>
@@ -1103,10 +1104,8 @@ export function useDesktopPointer(agentId: string, enabled = true) {
     setPointer(null);
     if (!connection || !enabled) return;
     return connection.onUserEvent((event) => {
-      const said = event as { type: string; agentId?: unknown; pointer?: unknown };
-      if (said.type !== "agent.desktop.pointer" || said.agentId !== agentId) return;
-      const to = parseBrowserPointer(said.pointer);
-      if (to) setPointer((was) => ({ ...to, n: (was?.n ?? 0) + 1 }));
+      const to = desktopPointerOf(event, agentId);
+      if (to) setPointer((was) => nextPointer(was, to));
     });
   }, [connection, agentId, enabled]);
   return pointer;
