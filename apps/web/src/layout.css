@@ -1079,6 +1079,14 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
   contain: inline-size;
   overflow-wrap: anywhere;
 }
+/* An agent's role and its person keep one line, ending in "…": the header's plate stays one height whatever the role
+   says, and the button over it shows the whole line in its tip. */
+.dm-who__text > .channel__topic--line {
+  overflow: hidden;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 .dm-who__hit.profile-trigger {
   position: absolute;
   inset: 0;
@@ -3326,6 +3334,9 @@ html:not([data-pointer]) .artifact-table__sort:focus-visible {
 }
 .md--message > * + * {
   margin-top: 14px;
+}
+.md-run {
+  word-break: break-all;
 }
 .md--message > p + ul,
 .md--message > p + ol {

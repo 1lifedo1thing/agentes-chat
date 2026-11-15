@@ -11060,7 +11060,6 @@
       "open": "Ganti model {{agent}}",
       "ownSignIn": "Akun komputer ini",
       "apiKey": "{{provider}} dengan kunci API",
-      "default": "bawaan",
       "refused": "Ditolak untuk kunci ini",
       "textOnly": "Hanya membaca teks",
       "search": "Cari model",

@@ -11831,7 +11831,6 @@ export const ptBR = {
       open: "Mudar o modelo de {{agent}}",
       ownSignIn: "Conta deste computador",
       apiKey: "{{provider}} por chave de API",
-      default: "padrão",
       refused: "Recusado por esta chave",
       textOnly: "Só lê texto",
       search: "Buscar modelos",

@@ -474,7 +474,7 @@ export interface DmSideControl {
 /** Header and empty state of a channel, or of a DM (same layout). */
 export interface ChannelChrome {
   /** A page's own header; a function gets the header search's way into its results and the sidebar (a DM's). */
-  header?: ReactNode | ((h: { onSearch: () => void; side: DmSideControl | null }) => ReactNode);
+  header?: ReactNode | ((h: { onSearch: () => void; side: DmSideControl | null; searching: boolean }) => ReactNode);
   emptyText?: string;
   /** Composer label/placeholder target, e.g. "Ada" instead of "#eng". */
   composerTarget?: string;
@@ -2464,7 +2464,7 @@ function ChannelView({
                   <AgentTasksContext.Provider value={tasksControl}>
                     <AgentPanelShownContext.Provider value={profile?.agentId ?? null}>
                       {typeof chrome.header === "function"
-                        ? chrome.header({ onSearch: openSearch, side })
+                        ? chrome.header({ onSearch: openSearch, side, searching: searchOpen })
                         : chrome.header}
                     </AgentPanelShownContext.Provider>
                   </AgentTasksContext.Provider>
@@ -2479,6 +2479,7 @@ function ChannelView({
                     onMembers={() => toggleColumn(membersColumn)}
                     onDetails={() => setDetailsOpen(true)}
                     onSearch={openSearch}
+                    searching={searchOpen}
                   />
                 )}
                 {/* Under the header: the conversation, and the members beside it (the header spans both, as Discord's). */}

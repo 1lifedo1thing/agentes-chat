@@ -28055,9 +28055,6 @@
   "brain.picker.apiKey": {
     "value": "{{provider}} with an API key"
   },
-  "brain.picker.default": {
-    "value": "default"
-  },
   "brain.picker.refused": {
     "value": "Refused for this key"
   },
