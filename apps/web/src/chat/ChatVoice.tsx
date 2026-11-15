@@ -1,6 +1,6 @@
 import type { Message, MessageVoice } from "@agenteschat/client";
 import { VOICE_WAITING, voiceLocalUrl } from "@agenteschat/client";
-import { voiceAudioGone, voiceAudioUrl, voiceExpired } from "@agenteschat/client/lib/voice";
+import { voiceAudioGone, voiceAudioUrl, voiceExpired, voiceParts } from "@agenteschat/client/lib/voice";
 import { Icon, VoicePlayer } from "@agenteschat/ui";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,7 +8,8 @@ import { useOrg } from "@/components/org-context";
 import { setVoiceSpeed, useVoiceSpeed } from "@/lib/voice-speed";
 
 /**
- * A voice message (ADR 0100): the recording's player. Its words stay closed until opened there; one still on its way
+ * A voice message (ADR 0100): the recording's player, with its words alone (the text typed beside it shows above it,
+ * as the message's text). Its words stay closed until opened there; one still on its way
  * plays from this device. An expired one says so, by its date or by the server's 410.
  */
 export function ChatVoice({ message, voice }: { message: Message; voice: MessageVoice }) {
@@ -25,7 +26,7 @@ export function ChatVoice({ message, voice }: { message: Message; voice: Message
       durationMs={voice.durationMs}
       expired={voiceExpired(voice)}
       isGone={message.local ? undefined : isGone}
-      words={voice.noWords ? null : message.body}
+      words={voiceParts(message).words}
       speed={speed}
       onSpeed={setVoiceSpeed}
       note={

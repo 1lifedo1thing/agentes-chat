@@ -11,7 +11,7 @@ import { appHeaders, authedFetch, lastCookie } from "@/lib/auth";
 import { serverUrl } from "@/lib/server";
 import { Icon, PressScale, Text } from "@/ui";
 import { useColors, useOrgId } from "../shared/hooks";
-import { hasWords, nextSpeed, waveAt } from "./logic";
+import { nextSpeed, spokenWords, waveAt } from "./logic";
 import { playingId, seekPlayback, setPlaybackSpeed, startPlayback, stopPlayback, subscribePlayback } from "./playback";
 import { setVoiceSpeed, subscribeVoiceSpeed, voiceSpeed } from "./speed";
 import { PixelWave, wavePaths } from "./VoiceBars";
@@ -144,13 +144,13 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
   });
   const scrub = useExclusiveGestures(pan, tap);
 
-  const words = useMemo(() => hasWords(message), [message]);
+  const words = useMemo(() => spokenWords(message), [message]);
   // The speed as the language writes it ("1,5×" in Portuguese).
   const speedFormat = useMemo(
     () => new Intl.NumberFormat(i18n.language, { maximumFractionDigits: 1 }),
     [i18n.language],
   );
-  const more = words && !open && (message.body.length > ONE_LINE || message.body.includes("\n"));
+  const more = words && !open && (words.length > ONE_LINE || words.includes("\n"));
   if (!voice) return null;
   return (
     <View style={styles.box}>
@@ -218,7 +218,7 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
             style={styles.words}
           >
             <Text variant="small" tone="muted" numberOfLines={open ? undefined : 1} selectable={open}>
-              {message.body}
+              {words}
             </Text>
             {more ? (
               <Text variant="footnote" tone="faint" numberOfLines={1}>
