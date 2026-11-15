@@ -73,10 +73,10 @@ describe("a receipt never changes a message's height", () => {
       steerStore.apply({ type: "agent.run.read", channelId: ENG_ID, runId: "r1", agentId: ADA_ID, messageIds: ["s2"] });
     });
     await settle(4);
-    // My own rows: the mark ends the time's line. Waiting for the next pause: the spinner.
-    const waiting = row("s1").querySelector(".ac-msg__own-foot .ac-receipt__check");
-    expect(waiting?.getAttribute("data-steer")).toBe("waiting");
-    expect(waiting?.querySelector("canvas.ac-pixspin")).not.toBeNull();
+    // My own rows: the mark ends the time's line. Waiting for the next pause: no mark (it was sent; a spinner or a
+    // clock there reads as a message that never arrived).
+    expect(row("s1").querySelector(".ac-msg__own-foot .ac-receipt__check")).toBeNull();
+    expect(row("s1").querySelector("canvas.ac-pixspin")).toBeNull();
     // Read: the double check every read message has, in the same place and size, and no face in the bubble. Who
     // read it is in the mark's words.
     const read = row("s2").querySelector(".ac-msg__own-foot .ac-receipt__check");
