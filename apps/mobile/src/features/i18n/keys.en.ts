@@ -1305,7 +1305,8 @@ export const featureKeysEn = {
       file: "File",
     },
     more: "More options",
-    send: "Send",
+    /** The system's share sheet with the file itself (the file screen's bar, the picture viewer's row). */
+    sendCopy: "Send a copy",
     savePhotos: "Save to Photos",
     drive: "View in Drive",
     saved: "Saved to Photos",

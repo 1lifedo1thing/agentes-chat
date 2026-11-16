@@ -1270,7 +1270,7 @@ export const featureKeysPtBR = {
       file: "Arquivo",
     },
     more: "Mais opções",
-    send: "Enviar",
+    sendCopy: "Enviar cópia",
     savePhotos: "Salvar em Fotos",
     drive: "Ver no Drive",
     saved: "Salvo em Fotos",

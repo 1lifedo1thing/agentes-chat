@@ -427,22 +427,21 @@ export function useFileLine() {
 }
 
 /** The file type's tile: the extension in capitals on a folded page (or the file icon without one). */
-export function FileTile({ ext, size = "md" }: { ext: string; size?: "md" | "lg" }) {
+export function FileTile({ ext }: { ext: string }) {
   const c = useColors();
-  const lg = size === "lg";
   return (
     <View
-      style={[styles.tile, lg && styles.tileLg, { backgroundColor: c.sunken }]}
+      style={[styles.tile, { backgroundColor: c.sunken }]}
       accessible={false}
       importantForAccessibility="no-hide-descendants"
     >
-      <View style={[styles.fold, lg && styles.foldLg, { backgroundColor: c.line2, borderColor: c.bg }]} />
+      <View style={[styles.fold, { backgroundColor: c.line2, borderColor: c.bg }]} />
       {ext ? (
-        <Text variant="caption" tone="muted" style={[styles.ext, lg && styles.extLg]} numberOfLines={1}>
+        <Text variant="caption" tone="muted" style={styles.ext} numberOfLines={1}>
           {ext}
         </Text>
       ) : (
-        <Icon name="file" size={lg ? 30 : 19} color={c.muted} />
+        <Icon name="file" size={19} color={c.muted} />
       )}
     </View>
   );
@@ -506,7 +505,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   tile: { width: 40, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  tileLg: { width: 84, height: 100, borderRadius: 14 },
   fold: {
     position: "absolute",
     top: -1,
@@ -517,9 +515,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderBottomWidth: 1,
   },
-  foldLg: { width: 24, height: 24, borderBottomLeftRadius: 5 },
   ext: { fontSize: 10, fontWeight: "700", letterSpacing: 0.4 },
-  extLg: { fontSize: 17, letterSpacing: 0.6 },
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
 });

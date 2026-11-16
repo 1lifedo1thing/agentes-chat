@@ -1,4 +1,4 @@
-import { type ArtifactSharing, useArtifact, useRoles, useSetArtifactSharing } from "@agenteschat/client";
+import { ApiError, type ArtifactSharing, useArtifact, useRoles, useSetArtifactSharing } from "@agenteschat/client";
 import { CONVERSATION_ONLY, isPrivateArtifact, toggledSharing } from "@agenteschat/client/lib/drive";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { joinNames } from "@agenteschat/client/lib/format";
@@ -26,6 +26,7 @@ import {
 import { useFontScale } from "@/ui/text-scale";
 import { leadBox } from "@/ui/type-scale";
 import { Face } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { SheetTitle } from "../shared/PromptForm";
 import { copyText, successHaptic } from "../shared/parts";
@@ -65,8 +66,10 @@ export function FileShareSheet({ id, onClose }: { id: string; onClose: () => voi
   if (!a) {
     return (
       <SheetScreen fit>
-        {query.isError ? (
+        {query.error instanceof ApiError && query.error.status === 404 ? (
           <Text tone="muted">{t("errors.artifact.notFound")}</Text>
+        ) : query.isError ? (
+          <LoadFailed onRetry={() => void query.refetch()} />
         ) : (
           <ActivityIndicator color={c.faint} />
         )}
@@ -104,7 +107,7 @@ export function FileShareSheet({ id, onClose }: { id: string; onClose: () => voi
     if (await copyText(`${serverUrl().replace(/\/+$/, "")}${filePath(orgId, a.id)}`)) {
       successHaptic();
       toast({ title: t("share.copied"), icon: "link" });
-    }
+    } else toast({ title: t("mobile.app.failed"), icon: "x" });
   };
   const aud = a.audience;
   const where =

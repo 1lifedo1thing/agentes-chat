@@ -3003,8 +3003,8 @@
   "files.more": {
     "value": "More options"
   },
-  "files.send": {
-    "value": "Send"
+  "files.sendCopy": {
+    "value": "Send a copy"
   },
   "files.savePhotos": {
     "value": "Save to Photos"

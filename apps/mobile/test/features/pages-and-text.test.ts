@@ -15,7 +15,7 @@ test("a page opens as a page: an HTML file or an agent's page, never its source"
     "html",
   );
   const viewer = src("features/files/DocumentViewer.tsx");
-  expect(viewer).toContain('info.view === "html" ? (\n          <HtmlPage detail={detail} />');
+  expect(viewer).toMatch(/info\.view === "html" \? \(\s*<HtmlPage detail=\{detail\} \/>/);
   // Apart from the app, as every page an agent writes: the blocks' isolated web view, the network cut off.
   expect(viewer).toContain("isolatedPage(html, PAGE_HEAD)");
   expect(viewer).toContain("{...ISOLATED_WEB_VIEW}");

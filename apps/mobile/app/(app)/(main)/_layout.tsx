@@ -66,7 +66,8 @@ export default function MainStack() {
         animation: "fade",
         contentStyle: { backgroundColor: "transparent" },
       },
-      "file/[id]": modal,
+      // A file: pushed with its bar opaque over the file itself (a web view lays out below it, as a block does).
+      "file/[id]": solid,
       "computer/[agentId]": modal,
       "browser-profile/[profileId]": modal,
     };

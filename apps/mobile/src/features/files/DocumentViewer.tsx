@@ -3,60 +3,48 @@ import { formatJson, highlightCode } from "@agenteschat/client/lib/code";
 import { isJsonFile } from "@agenteschat/client/lib/files";
 import { isolatedPage } from "@agenteschat/client/lib/isolated-page";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Platform, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
-import { Button, CARD_PAD, IconButton, SCREEN_X, Text, ToastHost, useToast } from "@/ui";
+import { Button, EmptyState, type HeaderAction, type HeaderMenuItem, SCREEN_X, usePulse, useToast } from "@/ui";
 import { ISOLATED_WEB_VIEW, STORAGE_STANDINS } from "../blocks/logic";
 import { CodeText, RawToggle } from "../chat/CodeCard";
 import { MessageText } from "../chat/MessageText";
+import { chooseAction } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
-import { copyText, goBack, MONO } from "../shared/parts";
+import { copyText, MONO, PushedHeader, successHaptic } from "../shared/parts";
 import { useFileActions } from "./actions";
-import { type FileInfo, fileInfo, textChunks } from "./logic";
-import { FileTile, useFileLine } from "./MessageFiles";
+import { fileInfo, textChunks } from "./logic";
+import { useFileLine } from "./MessageFiles";
 import { openFile } from "./open";
 import { fileText, useRemoteFile } from "./source";
 
 /**
- * A file opened from a message: Markdown and text drawn by the app, PDF in a web view (iOS draws PDFs natively there),
- * anything else as its card. Pictures and videos open straight in the picture viewer (`openFile`); one reached here
- * anyway (a file's link that didn't say what it was) goes on there. Top: close, Copy text and the "…", then the name
- * and "Document · 4 KB · Theo" on a row of their own. Bottom: Send and Share; View in Drive in the "…".
+ * A file opened from a message, the Drive or a link: a screen pushed with the platform's push. Its bar is the native
+ * one: back, the file's name with its line under it ("Documento · 4 KB · Theo"), and two buttons: Enviar cópia (the
+ * system's share sheet with the file) and the "…" with Compartilhar (who sees it and its link, ADR 0157), Copiar texto
+ * and Ver no Drive (the system's own menu on iOS, the app's list of the same choices on Android). Under it the file
+ * itself, the screen's whole width: Markdown and text drawn by the app, a page or a PDF in a web view (iOS draws PDFs
+ * natively there), anything else says it opens in another app. Pictures and videos open straight in the picture
+ * viewer (`openFile`); one reached here anyway (a file's link that didn't say what it was) goes on there.
  */
 export function DocumentViewer({ id, version }: { id: string; version?: number }) {
-  return (
-    <ToastHost>
-      <Viewer id={id} {...(version !== undefined ? { version } : {})} />
-    </ToastHost>
-  );
-}
-
-function Viewer({ id, version }: { id: string; version?: number }) {
   const { t } = useTranslation();
   const orgId = useOrgId();
   const dir = useDirectory();
-  const c = useColors();
-  const insets = useSafeAreaInsets();
   const line = useFileLine();
+  const toast = useToast();
   const query = useArtifact(orgId, id, version);
   const detail = query.data;
   const actions = useFileActions(detail);
-  const toast = useToast();
   const info = detail ? fileInfo(detail) : null;
   const textual = info?.view === "markdown" || info?.view === "text";
   // The page's own text, read once for the page and for Copiar texto.
   const text = useFileText(detail, textual);
-  const close = () => goBack();
-  const copy = () => {
-    if (text.data === undefined) return;
-    void copyText(text.data).then((ok) =>
-      toast(ok ? { title: t("contextMenu.textCopied"), icon: "copy" } : { title: t("mobile.app.failed"), icon: "x" }),
-    );
-  };
   // A PDF is drawn in the web view on iOS only (Android's WebView has no PDF viewer).
   const pdf = info?.view === "pdf" && Platform.OS === "ios";
   // Only a fallback: every way into a file opens a picture or a video in the picture viewer at once. A link that didn't
@@ -66,85 +54,122 @@ function Viewer({ id, version }: { id: string; version?: number }) {
     if (media && detail) openFile({ id: detail.id, detail }, undefined, { replace: true });
   }, [media, detail]);
 
+  const copy = () => {
+    if (text.data === undefined) return;
+    void copyText(text.data).then((ok) => {
+      if (ok) successHaptic();
+      toast(ok ? { title: t("contextMenu.textCopied"), icon: "copy" } : { title: t("mobile.app.failed"), icon: "x" });
+    });
+  };
+  // A block or a vote lives in its conversation, not in the Drive (ADR 0113): nothing to share or find there.
+  const inDrive = detail?.inDrive !== false;
+  const choices: HeaderMenuItem[] = [
+    ...(inDrive
+      ? [
+          {
+            icon: "person" as const,
+            sf: "person.badge.plus" as const,
+            label: t("share.button"),
+            onPress: actions.shareSheet,
+          },
+        ]
+      : []),
+    ...(textual && text.data !== undefined
+      ? [{ icon: "copy" as const, sf: "doc.on.doc" as const, label: t("contextMenu.copyText"), onPress: copy }]
+      : []),
+    ...(inDrive
+      ? [{ icon: "drive" as const, sf: "folder" as const, label: t("mobile.files.drive"), onPress: actions.drive }]
+      : []),
+  ];
+  const bar: HeaderAction[] = detail
+    ? [
+        {
+          icon: "share",
+          sf: "square.and.arrow.up",
+          label: t("mobile.files.sendCopy"),
+          disabled: actions.busy !== null,
+          onPress: () => void actions.share(),
+        },
+        ...(choices.length > 0
+          ? [
+              {
+                icon: "more" as const,
+                sf: "ellipsis" as const,
+                label: t("mobile.files.more"),
+                menu: choices,
+                // Android: the same choices in the app's list (iOS opens the menu from the button itself).
+                onPress: () => chooseAction(info?.name ?? "", choices, t("mobile.common.cancel")),
+              },
+            ]
+          : []),
+      ]
+    : [];
+
   return (
-    <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <View style={[styles.top, { paddingTop: insets.top + 8 }]}>
-        <IconButton icon="x" plate label={t("mobile.common.close")} onPress={close} />
-        <View style={styles.spacer} />
-        {textual ? (
-          <IconButton
-            icon="copy"
-            plate
-            label={t("contextMenu.copyText")}
-            onPress={copy}
-            disabled={text.data === undefined}
-          />
-        ) : null}
-        <IconButton icon="more" plate label={t("mobile.files.more")} onPress={actions.more} disabled={!detail} />
-      </View>
-      {/* The name and its line under the buttons, the screen's whole width: never cut to one line beside them. */}
-      <View style={styles.heading}>
-        <Text variant="body" style={styles.bold} numberOfLines={3}>
-          {info?.name ?? ""}
-        </Text>
-        <Text variant="footnote" tone="faint">
-          {info && detail ? line(info, [dir.nameOf(detail.createdBy)]) : ""}
-        </Text>
-      </View>
-
-      <View style={styles.body}>
-        {query.isError ? (
-          <Center>
-            <Text variant="body" tone="muted">
-              {t("mobile.files.loadFailed")}
-            </Text>
-          </Center>
-        ) : !detail || !info || media ? (
-          // A picture or a video waits here only while the viewer takes its place.
-          <Center>
-            <ActivityIndicator color={c.faint} />
-          </Center>
-        ) : info.view === "html" ? (
-          <HtmlPage detail={detail} />
-        ) : info.view === "markdown" || info.view === "text" ? (
-          <TextPage detail={detail} markdown={info.view === "markdown"} json={isJsonFile(info.name, info.mime)} />
-        ) : pdf ? (
-          <PdfPage detail={detail} />
-        ) : (
-          <BigCard info={info} />
-        )}
-      </View>
-
-      <View style={[styles.bar, { paddingBottom: insets.bottom + 12, borderTopColor: c.line2, backgroundColor: c.bg }]}>
-        <View style={styles.half}>
-          <Button
-            variant="secondary"
-            wide
-            icon="share"
-            label={t("mobile.files.send")}
-            disabled={!detail || actions.busy !== null}
-            onPress={actions.share}
-          />
-        </View>
-        {detail?.inDrive !== false ? (
-          <View style={styles.half}>
+    <>
+      <PushedHeader
+        title={info?.name ?? ""}
+        {...(info && detail ? { subtitle: line(info, [dir.nameOf(detail.createdBy)]) } : {})}
+        actions={bar}
+      />
+      {query.isError && !detail ? (
+        <Middle>
+          <LoadFailed onRetry={() => void query.refetch()} />
+        </Middle>
+      ) : !detail || !info || media ? (
+        // The text's shape while the file's details come (a picture or a video only until the viewer takes its place).
+        <PageBones />
+      ) : info.view === "html" ? (
+        <HtmlPage detail={detail} />
+      ) : textual ? (
+        <TextPage detail={detail} markdown={info.view === "markdown"} json={isJsonFile(info.name, info.mime)} />
+      ) : pdf ? (
+        <PdfPage detail={detail} />
+      ) : (
+        // A type the app doesn't draw: what it is, and the way to open it in another app.
+        <EmptyState
+          size="page"
+          icon="file"
+          title={info.name}
+          subtitle={t("mobile.files.noPreview")}
+          action={
             <Button
-              variant="primary"
-              wide
-              icon="person"
-              label={t("share.button")}
-              disabled={!detail}
-              onPress={actions.shareSheet}
+              variant="secondary"
+              icon="share"
+              label={t("mobile.files.sendCopy")}
+              loading={actions.busy === "share"}
+              onPress={() => void actions.share()}
             />
-          </View>
-        ) : null}
-      </View>
-    </View>
+          }
+        />
+      )}
+    </>
   );
 }
 
-function Center({ children }: { children: React.ReactNode }) {
-  return <View style={styles.center}>{children}</View>;
+/** What fills the screen under the bar, centred (a failure, a page's spinner). */
+function Middle({ children }: { children: ReactNode }) {
+  return <View style={styles.middle}>{children}</View>;
+}
+
+/** Widths of the text's lines while it loads, so it reads as a page of text, not a pattern. */
+const BONES = [92, 84, 96, 71, 88, 64, 90, 78];
+
+/** A page of text while it loads: lines where the text goes, pulsing as the app's lists do while they load. */
+function PageBones() {
+  const c = useColors();
+  const pulse = usePulse();
+  return (
+    <Animated.View
+      style={[styles.bones, pulse]}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      {BONES.map((w) => (
+        <View key={w} style={[styles.bone, { width: `${w}%`, backgroundColor: c.sunken }]} />
+      ))}
+    </Animated.View>
+  );
 }
 
 /** A Markdown or text file's text, loaded once per version. */
@@ -160,48 +185,41 @@ function useFileText(detail: ArtifactDetail | undefined, enabled: boolean) {
 }
 
 /**
- * Markdown with the messages' renderer, plain text in mono, on a raised page. JSON formatted and colored as a code
- * block reads it, the text as written one press away ("Original").
+ * Markdown with the messages' renderer, plain text in mono, across the screen as a page reads. JSON formatted and
+ * colored as a code block reads it, the text as written one press away ("Original").
  */
 function TextPage({ detail, markdown, json }: { detail: ArtifactDetail; markdown: boolean; json: boolean }) {
-  const { t } = useTranslation();
   const c = useColors();
+  const insets = useSafeAreaInsets();
   const text = useFileText(detail, true);
   const formatted = useMemo(() => (json && text.data !== undefined ? formatJson(text.data) : null), [json, text.data]);
   const [raw, setRaw] = useState(false);
+  if (text.isError)
+    return (
+      <Middle>
+        <LoadFailed onRetry={() => void text.refetch()} />
+      </Middle>
+    );
+  if (text.data === undefined) return <PageBones />;
   return (
-    <View style={[styles.page, { backgroundColor: c.raised }]}>
-      {text.data !== undefined ? (
-        <ScrollView contentContainerStyle={styles.pageInner}>
-          {markdown ? (
-            <MessageText body={text.data} />
-          ) : formatted !== null ? (
-            <View style={styles.json}>
-              {formatted !== text.data.trim() ? <RawToggle on={raw} onPress={() => setRaw((r) => !r)} /> : null}
-              <CodeText lines={highlightCode(raw ? text.data : formatted, "json")} wrap />
-            </View>
-          ) : (
-            // In pieces: a long file in one text view was taller than the phone draws, and showed blank.
-            textChunks(text.data).map((piece, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text, in order
-              <RNText key={i} selectable style={[styles.mono, { color: c.ink2 }]}>
-                {piece}
-              </RNText>
-            ))
-          )}
-        </ScrollView>
-      ) : text.isError ? (
-        <Center>
-          <Text variant="body" tone="muted">
-            {t("mobile.files.loadFailed")}
-          </Text>
-        </Center>
+    <ScrollView style={styles.fill} contentContainerStyle={[styles.page, { paddingBottom: insets.bottom + 24 }]}>
+      {markdown ? (
+        <MessageText body={text.data} />
+      ) : formatted !== null ? (
+        <View style={styles.json}>
+          {formatted !== text.data.trim() ? <RawToggle on={raw} onPress={() => setRaw((r) => !r)} /> : null}
+          <CodeText lines={highlightCode(raw ? text.data : formatted, "json")} wrap />
+        </View>
       ) : (
-        <Center>
-          <ActivityIndicator color={c.faint} />
-        </Center>
+        // In pieces: a long file in one text view was taller than the phone draws, and showed blank.
+        textChunks(text.data).map((piece, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text, in order
+          <RNText key={i} selectable style={[styles.mono, { color: c.ink2 }]}>
+            {piece}
+          </RNText>
+        ))
       )}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -213,31 +231,32 @@ function PdfPage({ detail }: { detail: ArtifactDetail }) {
   const orgId = useOrgId();
   const c = useColors();
   const link = useRemoteFile(orgId, detail.id, detail.shownVersion, { once: true });
+  if (link.isError)
+    return (
+      <Middle>
+        <LoadFailed onRetry={() => void link.refetch()} />
+      </Middle>
+    );
+  if (!link.data) return <Spinner />;
   return (
-    <View style={[styles.page, styles.clip, { backgroundColor: c.raised }]}>
-      {link.isError ? (
-        <Center>
-          <LoadFailed onRetry={() => void link.refetch()} />
-        </Center>
-      ) : link.data ? (
-        <WebView
-          key={`${detail.id}@${detail.shownVersion}`}
-          source={{ uri: link.data.uri, headers: link.data.headers }}
-          originWhitelist={["https://*", "http://*"]}
-          javaScriptEnabled={false}
-          startInLoadingState
-          renderLoading={() => (
-            <Center>
-              <ActivityIndicator color={c.faint} />
-            </Center>
-          )}
-          style={styles.web}
-        />
-      ) : (
-        <Center>
-          <ActivityIndicator color={c.faint} />
-        </Center>
-      )}
+    <WebView
+      key={`${detail.id}@${detail.shownVersion}`}
+      source={{ uri: link.data.uri, headers: link.data.headers }}
+      originWhitelist={["https://*", "http://*"]}
+      javaScriptEnabled={false}
+      startInLoadingState
+      renderLoading={() => <Spinner />}
+      style={[styles.fill, { backgroundColor: c.bg }]}
+    />
+  );
+}
+
+/** A web view still drawing its page: a spinner where the page will be. */
+function Spinner() {
+  const c = useColors();
+  return (
+    <View style={[StyleSheet.absoluteFill, styles.middle]}>
+      <ActivityIndicator color={c.faint} />
     </View>
   );
 }
@@ -251,86 +270,41 @@ const PAGE_HEAD = `<meta name="viewport" content="width=device-width, initial-sc
  * phone's width, scrolling by itself. On white, as a page is when it sets no background of its own.
  */
 function HtmlPage({ detail }: { detail: ArtifactDetail }) {
-  const c = useColors();
   const inline = detail.content.kind === "html" ? detail.content.html : undefined;
   const text = useFileText(detail, inline === undefined);
   const html = inline ?? text.data;
   const page = useMemo(() => (html !== undefined ? isolatedPage(html, PAGE_HEAD) : null), [html]);
   // A page the system ended (long in the background) comes back.
   const [life, setLife] = useState(0);
+  if (page === null)
+    return text.isError ? (
+      <Middle>
+        <LoadFailed onRetry={() => void text.refetch()} />
+      </Middle>
+    ) : (
+      <Spinner />
+    );
   return (
-    <View style={[styles.page, styles.clip, styles.white]}>
-      {page !== null ? (
-        <WebView
-          key={life}
-          source={{ html: page }}
-          {...ISOLATED_WEB_VIEW}
-          startInLoadingState
-          renderLoading={() => (
-            <Center>
-              <ActivityIndicator color={c.faint} />
-            </Center>
-          )}
-          onContentProcessDidTerminate={() => setLife((n) => n + 1)}
-          onRenderProcessGone={() => setLife((n) => n + 1)}
-          style={styles.web}
-        />
-      ) : text.isError ? (
-        <Center>
-          <LoadFailed onRetry={() => void text.refetch()} />
-        </Center>
-      ) : (
-        <Center>
-          <ActivityIndicator color={c.faint} />
-        </Center>
-      )}
-    </View>
-  );
-}
-
-/** A type the app doesn't draw: its card, big, and Compartilhar opens it elsewhere. */
-function BigCard({ info }: { info: FileInfo }) {
-  const { t } = useTranslation();
-  const line = useFileLine();
-  return (
-    <Center>
-      <FileTile ext={info.ext} size="lg" />
-      <Text variant="title" style={styles.bigName} numberOfLines={3}>
-        {info.name}
-      </Text>
-      <Text variant="footnote" tone="faint">
-        {line(info)}
-      </Text>
-      <Text variant="small" tone="muted" style={styles.note}>
-        {t("mobile.files.noPreview")}
-      </Text>
-    </Center>
+    <WebView
+      key={life}
+      source={{ html: page }}
+      {...ISOLATED_WEB_VIEW}
+      startInLoadingState
+      renderLoading={() => <Spinner />}
+      onContentProcessDidTerminate={() => setLife((n) => n + 1)}
+      onRenderProcessGone={() => setLife((n) => n + 1)}
+      style={[styles.fill, styles.white]}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  top: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingBottom: 10 },
-  spacer: { flex: 1 },
-  heading: { gap: 2, paddingHorizontal: SCREEN_X, paddingBottom: 8 },
-  bold: { fontWeight: "600" },
-  body: { flex: 1 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 6 },
-  page: { flex: 1, marginTop: 4, marginHorizontal: 16, borderTopLeftRadius: 14, borderTopRightRadius: 14 },
-  clip: { overflow: "hidden" },
+  fill: { flex: 1 },
+  middle: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: SCREEN_X },
+  page: { paddingHorizontal: SCREEN_X, paddingTop: 12 },
+  bones: { gap: 12, paddingHorizontal: SCREEN_X, paddingTop: 20 },
+  bone: { height: 12, borderRadius: 6 },
   white: { backgroundColor: "#fff" },
-  pageInner: { paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: 32 },
   mono: { fontFamily: MONO, fontSize: 13, lineHeight: 19 },
   json: { gap: 10, alignItems: "flex-start" },
-  web: { flex: 1, backgroundColor: "transparent" },
-  bigName: { marginTop: 14, textAlign: "center" },
-  note: { marginTop: 10, textAlign: "center" },
-  bar: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  half: { flex: 1 },
 });

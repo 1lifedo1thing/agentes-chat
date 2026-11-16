@@ -52,6 +52,7 @@ import {
   zoomInRect,
 } from "../../src/features/files/zoom";
 import { ICONS } from "../../src/ui/icons.data";
+import { ownOptionsOf } from "../main-stack";
 
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src", file), "utf8");
 
@@ -601,21 +602,30 @@ describe("viewer", () => {
 });
 
 describe("a document's head", () => {
-  test("the bar keeps ×, Copiar texto and ⋯; the name and its line take a row of their own under it, never cut", () => {
-    const viewer = readFileSync(join(import.meta.dir, "../../src/features/files/DocumentViewer.tsx"), "utf8");
-    const bar = viewer.slice(
-      viewer.indexOf("<View style={[styles.top,"),
-      viewer.indexOf("<View style={styles.heading}>"),
-    );
-    expect(bar).not.toContain("info?.name");
-    expect(bar).not.toContain("styles.balance");
-    const heading = viewer.slice(
-      viewer.indexOf("<View style={styles.heading}>"),
-      viewer.indexOf("<View style={styles.body}>"),
-    );
-    expect(heading).toContain("numberOfLines={3}");
-    expect(heading).toContain("{info?.name");
-    expect(heading).not.toContain("numberOfLines={1}");
+  test("a file is a pushed screen: the native bar holds its name, its line, Enviar cópia and the ⋯", () => {
+    // Pushed, never a full-screen modal: the app's sheets, menus and toasts live at the root, under a modal.
+    expect(ownOptionsOf("file/[id]")).toBe("solid,");
+    const viewer = src("features/files/DocumentViewer.tsx");
+    expect(viewer).toContain("<PushedHeader");
+    expect(viewer).toContain('title={info?.name ?? ""}');
+    expect(viewer).toContain("subtitle: line(info, [dir.nameOf(detail.createdBy)])");
+    expect(viewer).toContain("actions={bar}");
+    // The system's share sheet says what it does; the ⋯ is the system's menu on iOS and the app's list on Android.
+    expect(viewer).toContain('label: t("mobile.files.sendCopy")');
+    expect(viewer).toContain("menu: choices,");
+    expect(viewer).toContain('onPress: () => chooseAction(info?.name ?? "", choices, t("mobile.common.cancel"))');
+    // No bar drawn by the screen, no toast host of its own, no buttons docked under the file.
+    for (const gone of ["ToastHost", "styles.top", "styles.bar", "insets.top", 'icon="x"'])
+      expect({ gone, there: viewer.includes(gone) }).toEqual({ gone, there: false });
+  });
+
+  test("Copiar texto says it copied, with a tap; it's in the ⋯ once the text is read", () => {
+    const viewer = src("features/files/DocumentViewer.tsx");
+    const copy = viewer.slice(viewer.indexOf("const copy = () => {"), viewer.indexOf("const inDrive ="));
+    expect(copy).toContain("if (ok) successHaptic();");
+    expect(copy).toContain('{ title: t("contextMenu.textCopied"), icon: "copy" }');
+    expect(copy).toContain('{ title: t("mobile.app.failed"), icon: "x" }');
+    expect(viewer).toContain("...(textual && text.data !== undefined");
   });
 
   test("a picture's head too: × alone on the first row, the name and its line on the row under it", () => {
@@ -633,10 +643,13 @@ describe("a document's head", () => {
     expect(viewer).not.toContain('icon="more"');
     expect(viewer).not.toContain("actions.more");
     expect(viewer).toContain('<Action icon="person" label={t("share.button")}');
-    // A document's ⋯ draws Share with the same icon.
-    const actions = src("features/files/actions.ts");
-    expect(actions).toContain('{ icon: "person" as const, label: t("share.button"), onPress: shareSheet }');
-    expect(actions).not.toContain('"members"');
+    // A document's ⋯ draws Share with the same icon, and both say Enviar cópia for the system's share sheet.
+    const document = src("features/files/DocumentViewer.tsx");
+    expect(document).toMatch(
+      /icon: "person" as const,\s+sf: "person\.badge\.plus" as const,\s+label: t\("share\.button"\)/,
+    );
+    expect(document).not.toContain('"members"');
+    expect(viewer).toContain('label={t("mobile.files.sendCopy")}');
   });
 
   test("a file on its way into the Drive holds a card's place, its name and a spinner, until it's there", () => {
