@@ -3331,6 +3331,37 @@ async function executeRunInner(
   if (transcript.freshSession !== undefined && plan.kind !== "model" && transcript.freshSession === plan.session?.id)
     await noteMoved();
   else delete transcript.freshSession;
+  /**
+   * A routine's run started by Rodar agora (a person just asked for it) or one that refreshes a widget isn't long by
+   * kind: read once.
+   */
+  let notLongByKind: boolean | null = null;
+  /**
+   * A mission's work is long by kind; a person's message in its thread starts a quick reply (it roots in that
+   * person), not more of the mission's work: read once.
+   */
+  let missionWork: boolean | null = null;
+  /** Whether this run is long work now (ADR 0118): by kind, after a pause, or by its size in this claim. */
+  const longNow = async () => {
+    if (run.background && notLongByKind === null) {
+      notLongByKind =
+        (await routineRunByHand(db, run.id).catch(() => false)) ||
+        (await routineRunRefreshesWidget(db, run.id).catch(() => false));
+    }
+    if (plan.missionId && missionWork === null)
+      missionWork = !(await personOfMessage(db, run.orgId, run.triggerMessageId).catch(() => null));
+    return isLongWork({
+      routine: run.background && !notLongByKind,
+      // Background work (ADR 0121) is long work by kind.
+      mission: Boolean(missionWork) || Boolean(run.workId),
+      pausedBefore: Boolean((transcript as Transcript).usagePause?.paused),
+      computer: plan.kind !== "model",
+      calls: plan.kind === "model" ? run.turns - turnsAtClaim : computerTurns,
+      elapsedMs: Date.now() - claimedAt,
+    });
+  };
+  /** Long work goes on only with an account under the pause line, never into a lent plan's extra usage. */
+  const underTheLine = (usage: PlanUsage | null) => longWorkHasRoom(planReading(usage, plan.model ?? null, false));
   /** Accounts this claim thought with or was refused on: each at most once (a park with a timer separates claims). */
   const triedThisClaim = new Set<string>();
   /**
@@ -3419,7 +3450,10 @@ async function executeRunInner(
     if (from === "model") return "no";
     const t = transcript as Transcript;
     // The account's limit (not one model's): the next account in the order takes the turn, the right hand's too.
-    const next = u.code === "plan_limit" && !u.scope ? await moveToNextAccount() : null;
+    const next =
+      u.code === "plan_limit" && !u.scope
+        ? await moveToNextAccount((await longNow()) ? underTheLine : undefined)
+        : null;
     if (next?.plan) return "moved";
     const machineId = plan.session?.machineId ?? agent.machineId ?? null;
     if (look && machineId && u.code === "machine_offline") {
@@ -4174,16 +4208,6 @@ async function executeRunInner(
     const payer = move ? { builtin: agent.builtin, brainAccountLentBy: move.lentBy ?? null } : agent;
     return planReading(usage, plan.model ?? null, paysExtraUsage(payer));
   };
-  /**
-   * A routine's run started by Rodar agora (a person just asked for it) or one that refreshes a widget isn't long by
-   * kind: read once.
-   */
-  let notLongByKind: boolean | null = null;
-  /**
-   * A mission's work is long by kind; a person's message in its thread starts a quick reply (it roots in that
-   * person), not more of the mission's work: read once.
-   */
-  let missionWork: boolean | null = null;
   /** Long work past its caps (ADR 0121 §7) waits in line, parked like a usage wait; ending work releases it. */
   const parkInWorkQueue = async () => {
     const t = transcript as Transcript;
@@ -4239,23 +4263,7 @@ async function executeRunInner(
       const now = await usageReading();
       return now && continuesPastPlan(now) ? now : null;
     }
-    if (run.background && notLongByKind === null) {
-      notLongByKind =
-        (await routineRunByHand(db, run.id).catch(() => false)) ||
-        (await routineRunRefreshesWidget(db, run.id).catch(() => false));
-    }
-    if (plan.missionId && missionWork === null)
-      missionWork = !(await personOfMessage(db, run.orgId, run.triggerMessageId).catch(() => null));
-    const long = isLongWork({
-      routine: run.background && !notLongByKind,
-      // Background work (ADR 0121) is long work by kind.
-      mission: Boolean(missionWork) || Boolean(run.workId),
-      pausedBefore: Boolean(t.usagePause?.paused),
-      computer: plan.kind !== "model",
-      calls: plan.kind === "model" ? run.turns - turnsAtClaim : computerTurns,
-      elapsedMs: Date.now() - claimedAt,
-    });
-    if (!long) return null;
+    if (!(await longNow())) return null;
     const now = await usageReading();
     intoExtra = now?.source === "plan" && now.used >= PLAN_PAUSE && now.extra === true;
     return longWorkHasRoom(now) ? null : now;
@@ -4423,7 +4431,7 @@ async function executeRunInner(
       // account comes before its owner's paid extra usage too.
       const nextAccount =
         pause?.source === "plan" || intoExtra
-          ? await moveToNextAccount((usage) => longWorkHasRoom(planReading(usage, plan.model ?? null, false)))
+          ? await moveToNextAccount(underTheLine)
           : null;
       if (nextAccount?.plan) continue;
       // On another account at the line there: its own (tried already) takes it back into its owner's paid extra
