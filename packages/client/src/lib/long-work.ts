@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import type { AgentStatusLine, WorkView } from "../api/types";
 import { runErrorText } from "./errors";
-import { formatTime, lowerFirst } from "./format";
+import { formatTime, keepWhole, lowerFirst } from "./format";
 import { plainLines } from "./markdown";
 import { usageWhen } from "./plan-usage";
 
@@ -154,7 +154,10 @@ export function handedLine(t: TFunction, w: WorkView, c: WorkLineContext): Hande
   const say = loose(t);
   const base = workLine(t, w, c);
   const now = c.now ?? new Date();
-  const took = workDuration(t, (w.finishedAt ? Date.parse(w.finishedAt) : now.getTime()) - Date.parse(w.startedAt));
+  // Each fact stays on one line ("2 min", "step 3 of 5"): the line wraps between them.
+  const took = keepWhole(
+    workDuration(t, (w.finishedAt ? Date.parse(w.finishedAt) : now.getTime()) - Date.parse(w.startedAt)),
+  );
   const out = { tone: base.tone, stop: base.stop, result: base.result, question: base.question };
   if (w.status === "done") return { ...out, state: say("work.handed.done", { duration: took }), facts: [] };
   if (w.status === "failed") return { ...out, state: say("work.handed.failed"), facts: [] };
@@ -171,7 +174,7 @@ export function handedLine(t: TFunction, w: WorkView, c: WorkLineContext): Hande
   };
   const wait = w.state ? waits[w.state] : undefined;
   if (wait) return { ...out, state: say(wait), facts: [took] };
-  const step = w.planStep ? [say("work.handed.step", w.planStep)] : [];
+  const step = w.planStep ? [keepWhole(say("work.handed.step", w.planStep))] : [];
   return { ...out, state: say("work.handed.working"), facts: [...step, took] };
 }
 

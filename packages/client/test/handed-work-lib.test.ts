@@ -51,7 +51,11 @@ const ctx = { locale: "en", now: NOW, meId: "walter", agentName: "Atlas", canSto
 describe("a handed work's line under the reply that handed it (F1)", () => {
   test("working: the state, its step and how long; Stop, no task label and no repeated update", () => {
     const h = handedLine(en, work(), ctx);
-    expect(h).toMatchObject({ tone: "working", state: "working on it", facts: ["step 3 of 5", "2 min"] });
+    expect(h).toMatchObject({
+      tone: "working",
+      state: "working on it",
+      facts: ["step\u00a03\u00a0of\u00a05", "2\u00a0min"],
+    });
     expect(h.stop).toEqual({ runId: "run-atlas" });
     expect(h).not.toHaveProperty("task");
     expect(h).not.toHaveProperty("update");
@@ -63,7 +67,7 @@ describe("a handed work's line under the reply that handed it (F1)", () => {
     expect(handedLine(en, waiting, ctx)).toMatchObject({
       tone: "waiting",
       state: "waiting for your answer",
-      facts: ["1 min"],
+      facts: ["1\u00a0min"],
     });
     expect(handedLine(en, waiting, { ...ctx, meId: "joao" }).state).toBe("waiting for an answer");
   });
@@ -71,7 +75,7 @@ describe("a handed work's line under the reply that handed it (F1)", () => {
   test("done: how long it took and See the result, nothing to stop", () => {
     const done = work({ status: "done", state: null, finishedAt: ago(0), startedAt: ago(10), resultMessageId: "r-1" });
     const h = handedLine(en, done, ctx);
-    expect(h).toMatchObject({ tone: "done", state: "done in 10 min", facts: [] });
+    expect(h).toMatchObject({ tone: "done", state: "done in 10\u00a0min", facts: [] });
     expect(h.result).toEqual({ messageId: "r-1", label: "See the result" });
     expect(h.stop).toBeNull();
   });

@@ -80,7 +80,7 @@ describe("the handed line under the reply that handed it (F1)", () => {
     const line = await chat(work());
     expect(line?.classList.contains("ac-workline--working")).toBe(true);
     expect(line?.querySelector(".ac-workline__text")?.textContent).toContain(
-      "Handed to Atlas · working on it · step 3 of 5 · 2 min",
+      "Handed to Atlas · working on it · step\u00a03\u00a0of\u00a05 · 2\u00a0min",
     );
     expect(line?.querySelector(".handed-line__who .ac-avatar")).not.toBeNull();
     expect([...(line?.querySelectorAll(".ac-workline__action") ?? [])].map((b) => b.textContent)).toEqual(["Stop"]);
@@ -99,7 +99,7 @@ describe("the handed line under the reply that handed it (F1)", () => {
   test("done: how long it took, and See the result", async () => {
     const done = work({ status: "done", state: null, startedAt: ago(10), finishedAt: ago(0), resultMessageId: "r-1" });
     const line = await chat(done);
-    expect(line?.querySelector(".ac-workline__text")?.textContent).toContain("Handed to Atlas · done in 10 min");
+    expect(line?.querySelector(".ac-workline__text")?.textContent).toContain("Handed to Atlas · done in 10\u00a0min");
     expect([...(line?.querySelectorAll(".ac-workline__action") ?? [])].map((b) => b.textContent)).toEqual([
       "See the result",
     ]);
