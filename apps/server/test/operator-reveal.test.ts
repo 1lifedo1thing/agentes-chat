@@ -70,7 +70,7 @@ const runs = {} as Record<
   string
 >;
 const requests = {} as Record<
-  "owner" | "bia" | "ada" | "byHand" | "stale" | "left" | "tenDays" | "yesterday" | "foreign",
+  "owner" | "bia" | "ada" | "byHand" | "stale" | "left" | "tenDays" | "yesterday" | "before" | "foreign",
   string
 >;
 
@@ -484,6 +484,7 @@ beforeAll(async () => {
   requests.left = await request(w.caioId, "form");
   requests.tenDays = await request(w.ownerId, "form", { createdAt: ago(10 * DAY) });
   requests.yesterday = await request(w.ownerId, "form", { createdAt: ago(DAY) });
+  requests.before = await request(w.ownerId, "form", { createdAt: ago(25 * DAY) });
   requests.foreign = await request(zedId, "form", { orgId: other.orgId });
 });
 
@@ -740,6 +741,15 @@ test("fault: a run that failed or stands still, in its days, opens what hangs on
   expect(await outcome(ask("message", messages.dm, "text", direct))).toEqual([403, "reveal.direct_conversation"]);
   expect(await outcome(ask("agent", w.devId, "instructions", direct))).toBe(200);
   expect(await outcome(ask("routine", w.routineId, "instructions", direct))).toBe(200);
+});
+
+test("fault: a report made before the run moves nothing; the run keeps its own 14 days", async () => {
+  const input = (runId: string, requestId: string) => outcome(step(runId, 1, "input", { runId, requestId }));
+  // Twenty days old, and the report is five days older: it is about something else.
+  expect(await input(runs.older, requests.before)).toEqual([403, "reveal.no_fault"]);
+  expect(await input(runs.older, requests.tenDays)).toBe(200);
+  // A failure after the report opens for its own days, whatever report is named with it.
+  expect(await input(runs.failed, requests.before)).toBe(200);
 });
 
 test("a conversation deleted for good: what its runs kept is the same 404 as nobody's, whatever the purpose", async () => {

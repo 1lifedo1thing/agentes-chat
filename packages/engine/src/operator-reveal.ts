@@ -489,11 +489,11 @@ async function checkFault(db: Database, orgId: string, input: RevealInput, found
   const request = input.requestId ? await openRequest(db, orgId, input.requestId, now) : null;
   const run = await faultRun(db, orgId, input.runId ?? "", now);
   const days = REVEAL_FAULT_DAYS * DAY_MS;
-  // A member's report must not outlive the run it is about: with one, the days count back from the report.
-  const inDays =
-    run &&
-    (now.getTime() - run.createdAt.getTime() <= days ||
-      (request !== null && request.createdAt.getTime() - run.createdAt.getTime() <= days));
+  const age = (until: Date) => until.getTime() - (run?.createdAt.getTime() ?? 0);
+  // A member's report must not outlive the run it is about: the days count back from a report made after the run.
+  // One made before it is about something else, and moves nothing.
+  const reported = request ? age(request.createdAt) : -1;
+  const inDays = run && (age(now) <= days || (reported >= 0 && reported <= days));
   if (!run || !inDays || !(run.open || run.failedStep)) {
     throw refused("no_fault", "No run of this workspace by this id failed or got stuck in its 14 days");
   }
