@@ -298,6 +298,7 @@ describe("viewer", () => {
     // A file's link that turns out to be one still goes on to the viewer, in the file screen's place.
     const document = src("features/files/DocumentViewer.tsx");
     expect(document).toContain('const media = info?.view === "image" || info?.view === "video";');
+    expect(document).toContain("openFile({ id: detail.id, detail }, undefined, { replace: true });");
     expect(document).not.toContain("<VideoPlayer");
   });
 
@@ -334,10 +335,24 @@ describe("viewer", () => {
     expect(fileRoute({ id: "d", detail: { ...pdf, shownVersion: 1, version: 3 } }).params).toEqual({ id: "d", v: "1" });
     expect(fileRoute({ id: "d", detail: { ...pdf, shownVersion: 3, version: 3 } }).params).toEqual({ id: "d" });
     expect(fileRoute({ id: "d", version: 4, title: "log.txt" }).params).toEqual({ id: "d", v: "4" });
-    // A deck opens through it, among the message's pictures and videos.
-    const deck = src("features/files/ImageStack.tsx");
-    expect(deck).toContain("openFile(tapped, siblings ?? deck, { from: key });");
-    expect(deck).not.toContain('pathname: "/images"');
+    // Every place that opens a file goes through it: no screen pushes the viewer or the file screen by itself.
+    for (const file of [
+      "features/files/AttachmentTile.tsx",
+      "features/files/MessageFiles.tsx",
+      "features/files/ImageStack.tsx",
+      "features/search/SearchResults.tsx",
+      "features/chat/FileRefText.tsx",
+      "features/issues/IssueScreen.tsx",
+      "features/agents/AgentProfileScreen.tsx",
+    ]) {
+      const source = src(file);
+      expect({ file, opens: source.includes("openFile(") }).toEqual({ file, opens: true });
+      expect({ file, own: /pathname: "\/(images|file\/\[id\])"/.test(source) }).toEqual({ file, own: false });
+    }
+    // A message's pictures and videos are the viewer's pages, in the order they show.
+    expect(src("features/files/MessageFiles.tsx")).toContain(
+      "(tiles.length > 0 ? [...videos, ...images] : [...pictures, ...videos])",
+    );
     // The viewer tells a deck the file the person stopped at; a video beside its pictures leaves it as it was.
     expect(src("features/files/ImageViewer.tsx")).toContain("tellViewerPlace(from, currentId)");
     expect(src("features/files/ImageStack.tsx")).toContain("if (at < 0) return;");
@@ -516,8 +531,15 @@ describe("viewer", () => {
     const viewer = src("features/files/ImageViewer.tsx");
     expect(viewer).toContain("useRemoteFile(orgId, id, version, { once: true })");
     expect(viewer).toMatch(/key=\{`\$\{id\}@\$\{version \?\? "latest"\}`\}/);
+    const message = src("features/files/MessageFiles.tsx");
+    expect(message).toContain("useRemoteFile(orgId, file.id, file.version, { once: true })");
+    expect(message).toMatch(/key=\{`\$\{file\.id\}@\$\{file\.version \?\? "latest"\}`\}/);
+    expect(src("features/files/DocumentViewer.tsx")).toContain(
+      "useRemoteFile(orgId, detail.id, detail.shownVersion, { once: true })",
+    );
     // Never keyed on the link itself, which changes every few minutes.
-    expect(viewer).not.toMatch(/key=\{(video)?[sS]ource\.uri\}/);
+    for (const file of ["features/files/ImageViewer.tsx", "features/files/MessageFiles.tsx"])
+      expect({ file, uri: /key=\{(video)?[sS]ource\.uri\}/.test(src(file)) }).toEqual({ file, uri: false });
   });
 
   test("on Android a video draws with the views around it, inside rounded corners and under a pull", () => {
@@ -591,11 +613,15 @@ describe("a document's head", () => {
     expect(viewer).toContain('title: { flexBasis: "100%", gap: 2 }');
   });
 
-  test("a picture's actions are the row at the bottom, never repeated in a ⋯", () => {
+  test("a picture's actions are the row at the bottom, never repeated in a ⋯, and Share has one icon", () => {
     const viewer = src("features/files/ImageViewer.tsx");
     expect(viewer).not.toContain('icon="more"');
     expect(viewer).not.toContain("actions.more");
     expect(viewer).toContain('<Action icon="person" label={t("share.button")}');
+    // A document's ⋯ draws Share with the same icon.
+    const actions = src("features/files/actions.ts");
+    expect(actions).toContain('{ icon: "person" as const, label: t("share.button"), onPress: shareSheet }');
+    expect(actions).not.toContain('"members"');
   });
 
   test("among files a picture is only the picture, two to a row; a file takes the row, its name whole", () => {

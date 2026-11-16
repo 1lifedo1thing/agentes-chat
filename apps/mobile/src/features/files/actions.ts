@@ -64,18 +64,18 @@ export function useFileActions(detail: ArtifactDetail | undefined) {
     if (detail) router.push({ pathname: "/file-share", params: { id: detail.id } });
   };
 
-  /** The "…" of the top bar: the same actions in the app's sheet, under the file's name. */
-  const more = (withPhotos: boolean) =>
+  /**
+   * A document's "…" (the picture viewer has its actions in a row of its own and no "…"): the actions in the app's
+   * sheet, under the file's name, each with the icon it has wherever it shows.
+   */
+  const more = () =>
     chooseAction(
       detail?.title ?? "",
       [
         ...(detail?.inDrive !== false
-          ? [{ icon: "members" as const, label: t("share.button"), onPress: shareSheet }]
+          ? [{ icon: "person" as const, label: t("share.button"), onPress: shareSheet }]
           : []),
         { icon: "share", label: t("mobile.files.send"), onPress: () => void share() },
-        ...(withPhotos
-          ? [{ icon: "photos" as const, label: t("mobile.files.savePhotos"), onPress: () => void savePhotos() }]
-          : []),
         { icon: "drive", label: t("mobile.files.drive"), onPress: drive },
       ],
       t("mobile.common.cancel"),

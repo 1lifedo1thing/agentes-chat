@@ -8,22 +8,22 @@ import { ActivityIndicator, Platform, Text as RNText, ScrollView, StyleSheet, Vi
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { Button, CARD_PAD, IconButton, SCREEN_X, Text, ToastHost, useToast } from "@/ui";
-import { router } from "@/ui/navigation";
 import { CodeText, RawToggle } from "../chat/CodeCard";
 import { MessageText } from "../chat/MessageText";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { copyText, goBack, MONO } from "../shared/parts";
 import { useFileActions } from "./actions";
-import { encodeFileList, type FileInfo, fileInfo } from "./logic";
+import { type FileInfo, fileInfo } from "./logic";
 import { FileTile, useFileLine } from "./MessageFiles";
+import { openFile } from "./open";
 import { fileText, useRemoteFile } from "./source";
 
 /**
- * A file opened from a message: Markdown and text drawn by the
- * app, PDF in a web view (iOS draws PDFs natively there), anything else as its card; a picture or a video goes on to
- * the picture viewer, where every picture and video opens. Top: close,
- * Copiar texto and the "…", then the name and "Documento · 4 KB · Theo" on a row of their own. Bottom: Enviar and
- * Compartilhar; Ver no Drive in the "…".
+ * A file opened from a message: Markdown and text drawn by the app, PDF in a web view (iOS draws PDFs natively there),
+ * anything else as its card. Pictures and videos open straight in the picture viewer (`openFile`); one reached here
+ * anyway (a file's link that didn't say what it was) goes on there. Top: close, Copy text and the "…", then the name
+ * and "Document · 4 KB · Theo" on a row of their own. Bottom: Send and Share; View in Drive in the "…".
  */
 export function DocumentViewer({ id, version }: { id: string; version?: number }) {
   return (
@@ -57,14 +57,11 @@ function Viewer({ id, version }: { id: string; version?: number }) {
   };
   // A PDF is drawn in the web view on iOS only (Android's WebView has no PDF viewer).
   const pdf = info?.view === "pdf" && Platform.OS === "ios";
-  // A picture or a video reached by a file's link opens where every picture and video does, the picture viewer.
+  // Only a fallback: every way into a file opens a picture or a video in the picture viewer at once. A link that didn't
+  // say what it was (a deep link, a name with no extension) lands here, and this screen gives way to the viewer.
   const media = info?.view === "image" || info?.view === "video";
   useEffect(() => {
-    if (!media || !detail) return;
-    router.replace({
-      pathname: "/images",
-      params: { files: encodeFileList([{ id: detail.id, version: detail.shownVersion }]), at: "0" },
-    });
+    if (media && detail) openFile({ id: detail.id, detail }, undefined, { replace: true });
   }, [media, detail]);
 
   return (
@@ -81,13 +78,7 @@ function Viewer({ id, version }: { id: string; version?: number }) {
             disabled={text.data === undefined}
           />
         ) : null}
-        <IconButton
-          icon="more"
-          plate
-          label={t("mobile.files.more")}
-          onPress={() => actions.more(false)}
-          disabled={!detail}
-        />
+        <IconButton icon="more" plate label={t("mobile.files.more")} onPress={actions.more} disabled={!detail} />
       </View>
       {/* The name and its line under the buttons, the screen's whole width: never cut to one line beside them. */}
       <View style={styles.heading}>
@@ -206,15 +197,23 @@ function TextPage({ detail, markdown, json }: { detail: ArtifactDetail; markdown
   );
 }
 
-/** A PDF from its short-lived link (with the session when the link is ours). */
+/**
+ * A PDF from its short-lived link (with the session when the link is ours), read once: a new link would load the page
+ * again, back at its first page, each time the app came back to the front.
+ */
 function PdfPage({ detail }: { detail: ArtifactDetail }) {
   const orgId = useOrgId();
   const c = useColors();
-  const link = useRemoteFile(orgId, detail.id, detail.shownVersion);
+  const link = useRemoteFile(orgId, detail.id, detail.shownVersion, { once: true });
   return (
     <View style={[styles.page, styles.clip, { backgroundColor: c.raised }]}>
-      {link.data ? (
+      {link.isError ? (
+        <Center>
+          <LoadFailed onRetry={() => void link.refetch()} />
+        </Center>
+      ) : link.data ? (
         <WebView
+          key={`${detail.id}@${detail.shownVersion}`}
           source={{ uri: link.data.uri, headers: link.data.headers }}
           originWhitelist={["https://*", "http://*"]}
           javaScriptEnabled={false}

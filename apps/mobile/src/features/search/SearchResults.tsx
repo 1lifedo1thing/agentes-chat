@@ -9,6 +9,7 @@ import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import { EmptyState, SectionHeader, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
+import { openFile } from "../files/open";
 import { chatHref } from "../links/logic";
 import { AgentFace, Face } from "../shared/Face";
 import { useDirectory, useOrgId, useWhen } from "../shared/hooks";
@@ -54,8 +55,8 @@ export function SearchResults({ q }: { q: string }) {
     else router.navigate("/agents");
   };
   const channelName = (id: string | undefined) => (id ? channels.data?.find((x) => x.id === id)?.name : undefined);
-  // The app's own viewer (a document, an image), never the browser.
-  const openFile = (id: string) => router.push({ pathname: "/file/[id]", params: { id } });
+  // The app's own viewer (a document, an image), never the browser: a picture's name opens it straight in the pictures.
+  const openHit = (id: string, title: string) => openFile({ id, title });
   const words = Boolean(q.trim());
   const terms = searchTerms(q);
 
@@ -188,7 +189,7 @@ export function SearchResults({ q }: { q: string }) {
                   hint: [where ? t("mobile.chats.waitIn", { where: `#${where}` }) : null, when.short(h.createdAt)]
                     .filter(Boolean)
                     .join(" · "),
-                  onPress: () => openFile(h.sourceId),
+                  onPress: () => openHit(h.sourceId, h.title),
                 };
               })}
             />
