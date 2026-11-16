@@ -25,7 +25,7 @@ import { parseAmount } from "@agenteschat/client/lib/text";
 import { PLAN_ALMOST, PLAN_TONE, planLevel, planLine } from "@agenteschat/ui/plan-state";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Keyboard, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Keyboard, Pressable, RefreshControl, StyleSheet, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -49,7 +49,7 @@ import { LOGO_SIZES } from "@/ui/provider-marks";
 import { PlanHoldNote, usePlanHold } from "../ai/parts";
 import { AgentFace } from "../shared/Face";
 import { FirstUse, LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useErrorToast } from "../shared/hooks";
+import { useColors, useDirectory, useErrorToast, usePullRefresh } from "../shared/hooks";
 import { Loaded, PushedHeader } from "../shared/parts";
 import { Meter, Tag, UsageCard } from "./parts";
 import { MyUsageCard, PeopleList } from "./people";
@@ -90,6 +90,16 @@ export function UsageScreen() {
   const [view, setView] = useState<"summary" | "people">("summary");
   // The viewer's own logins of one account are one row, as their plans group them.
   const mine = useAiAccounts(orgId);
+  // A pull asks the plans for their usage again and reads every card again (the API's report only where it shows).
+  const pull = usePullRefresh(() => {
+    void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
+    return Promise.allSettled([
+      usage.refetch(),
+      mine.refetch(),
+      composio.refetch(),
+      ...(allowed && usesApi ? [report.refetch()] : []),
+    ]);
+  });
   const data = usage.data ? { ...usage.data, accounts: groupUsageAccounts(usage.data.accounts, mine.data) } : undefined;
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
@@ -101,6 +111,7 @@ export function UsageScreen() {
         keyboardShouldPersistTaps="handled"
         // A drag down the page takes the number pad with it, as every page with a field.
         keyboardDismissMode="interactive"
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         bottomOffset={TOOLBAR_HEIGHT + 24}
         extraKeyboardSpace={TOOLBAR_HEIGHT}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}

@@ -19,14 +19,14 @@ import { gradientOf } from "@agenteschat/ui/agent/engine";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import { GROUPED_ROW, GroupedFooter, GroupedHeader, GroupedList, GroupedRow, SkeletonList, Text, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { AgentFace } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useErrorToast } from "../shared/hooks";
+import { useColors, useDirectory, useErrorToast, usePullRefresh } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { PushedHeader } from "../shared/parts";
 import { PlanMeter, PlanModels } from "./parts";
@@ -46,8 +46,14 @@ export function UsageAccountScreen({ accountKey }: { accountKey: string }) {
   const { orgId } = useOrg();
   const c = useColors();
   const insets = useSafeAreaInsets();
+  const api = useApi();
   const usage = usePlanUsage(orgId);
   const mine = useAiAccounts(orgId);
+  // A pull asks the plans for their usage again and reads the account's windows again.
+  const pull = usePullRefresh(() => {
+    void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
+    return Promise.allSettled([usage.refetch(), mine.refetch()]);
+  });
   const accounts = usage.data ? groupUsageAccounts(usage.data.accounts, mine.data) : [];
   const account = accounts.find((a) => a.key === accountKey);
   const several = new Set(accounts.map((a) => a.machineId)).size > 1;
@@ -67,6 +73,7 @@ export function UsageAccountScreen({ accountKey }: { accountKey: string }) {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
         {usage.isLoading ? (

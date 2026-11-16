@@ -92,3 +92,22 @@ describe("forms are pushed screens, not sheets", () => {
     expect(screen).not.toContain("autoFocus");
   });
 });
+
+describe("what loads from the server reads again on a pull", () => {
+  test("Uso, a plan account, an agent's usage, Contas de IA, an agent's AI and its model", () => {
+    for (const file of [
+      "usage/UsageScreen.tsx",
+      "usage/UsageAccountScreen.tsx",
+      "usage/AgentUsageScreen.tsx",
+      "ai/AiAccountsScreen.tsx",
+      "ai/AgentAiScreen.tsx",
+    ]) {
+      const screen = src(file);
+      expect({ file, pull: screen.includes("<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />") })
+        .toEqual({ file, pull: true });
+      expect({ file, hook: screen.includes("usePullRefresh(") }).toEqual({ file, hook: true });
+    }
+    // The model's screen reads its brain again.
+    expect(src("ai/AgentAiScreen.tsx")).toContain("const pull = usePullRefresh(brain.refetch);");
+  });
+});

@@ -36,7 +36,7 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
@@ -55,7 +55,7 @@ import { router } from "@/ui/navigation";
 import { personalAiParts } from "../settings/logic";
 import { chooseAction, Gap, SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { FirstUse, LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useMeId } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, usePullRefresh } from "../shared/hooks";
 import { SheetTitle } from "../shared/PromptForm";
 import { errorHaptic, goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
@@ -116,6 +116,16 @@ function AiAccounts() {
   useEffect(() => {
     void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
   }, [api, orgId]);
+  // A pull asks the plans for their usage again and reads the accounts and the keys again.
+  const pull = usePullRefresh(() => {
+    void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
+    return Promise.allSettled([
+      ai.refetch(),
+      machines.refetch(),
+      status.refetch(),
+      qc.invalidateQueries({ queryKey: keys.credentials(orgId) }),
+    ]);
+  });
   const rows = ai.data?.accounts ?? [];
   const own = ownSignIns(ai.data);
   const several = onSeveralComputers(rows);
@@ -229,6 +239,7 @@ function AiAccounts() {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
         <GroupedHeader
