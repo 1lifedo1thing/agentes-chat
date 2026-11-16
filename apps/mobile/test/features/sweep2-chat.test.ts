@@ -18,3 +18,23 @@ describe("no screen or sheet of the conversation opens with the keyboard up", ()
     expect(search).toContain("field.current?.focus();");
   });
 });
+
+describe("an empty conversation scrolls clear of the bar and the keyboard", () => {
+  test("an agent's first day and a channel's hello leave the clear bar's room at their top", () => {
+    for (const file of ["features/chat/FirstDay.tsx", "features/chat/ChannelHello.tsx"]) {
+      const greeting = src(file);
+      expect(greeting).toContain("paddingTop: topInset + 8, paddingBottom: bottomInset + 16");
+      expect(greeting).toContain("scrollIndicatorInsets={{ top: topInset, bottom: bottomInset }}");
+    }
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat.match(/topInset=\{headerHeight\}/g)).toHaveLength(2);
+  });
+
+  test("a DM's intro answers taps with the keyboard up, lets it go on a drag and reaches its last rows above it", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat).toMatch(
+      /const introScroll = \{[\s\S]*keyboardShouldPersistTaps: "handled"[\s\S]*keyboardDismissMode: "interactive"[\s\S]*automaticallyAdjustKeyboardInsets: true/,
+    );
+    expect(chat.match(/<ScrollView \{\.\.\.introScroll\}>/g)).toHaveLength(2);
+  });
+});

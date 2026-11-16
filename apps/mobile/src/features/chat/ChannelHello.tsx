@@ -74,6 +74,7 @@ export function ChannelHello({
   topic,
   agents,
   members,
+  topInset,
   bottomInset,
   keyboardLift,
   onAsk,
@@ -86,6 +87,8 @@ export function ChannelHello({
   agents: Agent[];
   /** Everyone in it (the roster): agents and people. */
   members: RosterMember[];
+  /** Room for the clear bar over the top: a greeting taller than the room above the keys scrolls out from under it. */
+  topInset: number;
   /** Room for the composer floating over the bottom. */
   bottomInset: number;
   /** How much of the composer's bottom padding hides behind the open keyboard. */
@@ -171,7 +174,8 @@ export function ChannelHello({
     <Animated.View style={[styles.grow, ...above]}>
       <ScrollView
         style={styles.grow}
-        contentContainerStyle={[styles.content, { paddingBottom: bottomInset + 16 }]}
+        contentContainerStyle={[styles.content, { paddingTop: topInset + 8, paddingBottom: bottomInset + 16 }]}
+        scrollIndicatorInsets={{ top: topInset, bottom: bottomInset }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
@@ -240,7 +244,7 @@ const styles = StyleSheet.create({
   grow: { flex: 1 },
   fill: { flex: 1 },
   // The greeting sits at the bottom, over the composer, where a conversation's latest message is.
-  content: { flexGrow: 1, justifyContent: "flex-end", paddingTop: 8 },
+  content: { flexGrow: 1, justifyContent: "flex-end" },
   band: { height: BAND, marginBottom: 16, justifyContent: "flex-end" },
   // The crew centered on the horizon, 8 apart, standing 16 above the band's foot.
   crew: { flexDirection: "row", justifyContent: "center", gap: 8, paddingHorizontal: 16, paddingBottom: 16 },

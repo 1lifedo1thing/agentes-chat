@@ -2365,6 +2365,16 @@ function Chat({
     () => (hasPin ? styles.listPad : [styles.listPad, { paddingTop: headerHeight + 8 }]),
     [hasPin, headerHeight],
   );
+  // A DM's intro before its first message (the right hand's greeting, a new agent's checklist): below the bar, above
+  // the box, its buttons answering the first tap while the keyboard is up, the keyboard going with a drag and its last
+  // rows reachable above it.
+  const introScroll = {
+    contentContainerStyle: { paddingTop: headerHeight, paddingBottom: composerHeight },
+    scrollIndicatorInsets: { top: headerHeight, bottom: composerHeight },
+    keyboardShouldPersistTaps: "handled" as const,
+    keyboardDismissMode: "interactive" as const,
+    automaticallyAdjustKeyboardInsets: true,
+  };
 
   // ── Requests out of view ──
   // A waiting request shows while 40 points of its card do in the list's band: below the floating header (a pinned
@@ -2690,15 +2700,21 @@ function Chat({
                 // A conversation with nothing yet: the agent's first day or a quiet line, over the empty list.
                 <View style={StyleSheet.absoluteFill}>
                   {dmAgent && rightHand ? (
-                    <ScrollView contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: composerHeight }}>
+                    <ScrollView {...introScroll}>
                       <RightHandIntro agent={dmAgent} channelId={channelId} waveFrom={waveFrom} />
                     </ScrollView>
                   ) : dmAgent && setupIntro ? (
-                    <ScrollView contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: composerHeight }}>
+                    <ScrollView {...introScroll}>
                       <AgentSetupIntro agent={dmAgent} channelId={channelId} />
                     </ScrollView>
                   ) : dmAgent && !isThread ? (
-                    <FirstDay agent={dmAgent} bottomInset={composerHeight} keyboardLift={lift} onAsk={onSend} />
+                    <FirstDay
+                      agent={dmAgent}
+                      topInset={headerHeight}
+                      bottomInset={composerHeight}
+                      keyboardLift={lift}
+                      onAsk={onSend}
+                    />
                   ) : channel && helloAgent && !dm && !isThread ? (
                     <ChannelHello
                       channelId={channelId}
@@ -2706,6 +2722,7 @@ function Chat({
                       topic={channel.topic}
                       agents={[helloAgent, ...talkable.filter((a) => a.id !== helloAgent.id)]}
                       members={roster.data ?? []}
+                      topInset={headerHeight}
                       bottomInset={composerHeight}
                       keyboardLift={lift}
                       onAsk={onSend}
