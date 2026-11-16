@@ -2710,6 +2710,16 @@ export const ptBR = {
    * dos admins (`{{name}}`); "Lodi" só por padrão.
    */
   rightHand: {
+    brain: {
+      unusable: {
+        title: "Precisa de um computador",
+        computerOnly: "De {{owner}}, conectado só em {{computer}}. O Lodi pensa com um plano conectado como conta.",
+        noComputer: "De {{owner}}. Precisa de um computador, e o workspace não tem nenhum conectado.",
+        away: "De {{owner}}, em {{computer}}, que está ausente.",
+        connect: "Conectar um computador",
+        plans: "Ver planos",
+      },
+    },
     label: "seu braço direito",
     labelCapitalized: "Seu braço direito",
     unusable: {
@@ -3452,7 +3462,8 @@ export const ptBR = {
       gemini: {
         title: "Seu plano do Gemini",
         tiers: "Google AI Pro, Google AI Ultra ou Gemini Enterprise",
-        warning: "O Google diz que usar um plano pessoal do Gemini dentro de outros apps pode suspender a conta.",
+        warning:
+          "O Google diz que usar um plano pessoal do Gemini dentro de outros apps pode suspender a conta. Para não correr esse risco, use uma chave de API do Gemini ou o Gemini Enterprise.",
       },
       zen: { title: "OpenCode", tiers: "Modelos grátis, ou a sua chave do OpenCode" },
       zai: { tiers: "Lite, Pro ou Max" },
@@ -4445,6 +4456,8 @@ export const ptBR = {
     computerAway:
       "O computador de {{agent}} não está respondendo agora. O pedido continua aberto até {{time}}. Tente de novo em instantes.",
     computerPaused: "O dono pausou o computador de {{agent}}. O pedido continua aberto até {{time}}.",
+    insecureContext:
+      "Esta página não está aberta em https, então o navegador não tranca a chave. Abra pelo endereço https:// (ou localhost).",
     failed: "Não deu para entregar. O computador do agente está ligado?",
     changed: "Este pedido mudou enquanto você respondia. Nada foi enviado. Envie de novo.",
     empty: "Digite o valor.",
@@ -8116,6 +8129,9 @@ export const ptBR = {
     },
   },
   issues: {
+    handedBy: "passada por <0/>{{name}}",
+    fromDm: "da <0>sua DM com {{name}}</0>",
+    fromDmText: "da sua DM com {{name}}",
     delete: {
       action: "Excluir tarefa",
       title: "Excluir a tarefa #{{number}}?",
@@ -8307,6 +8323,9 @@ export const ptBR = {
       stoppedOn: "Parou em {{date}}",
     },
     work: {
+      finishedTitle: "{{name}} terminou",
+      finishedMeta: "{{when}} · passada por {{name}}",
+      answer: "Responder",
       label: "Trabalho do {{name}}",
       label_female: "Trabalho da {{name}}",
       runningTitle: "O {{name}} está trabalhando nisso",
@@ -17338,6 +17357,21 @@ export const ptBR = {
     tomorrowAt: "amanhã {{time}}",
   },
   work: {
+    handed: {
+      lead: "Passado para <0/>{{name}}",
+      working: "trabalhando nisso",
+      done: "pronto em {{duration}}",
+      waitingYou: "esperando sua resposta",
+      waiting: "esperando uma resposta",
+      waitingApprovalYou: "esperando sua aprovação",
+      waitingApproval: "esperando aprovação",
+      waitingComputer: "esperando o computador",
+      paused: "pausado no limite do plano",
+      queued: "na fila",
+      failed: "não terminou",
+      stopped: "parado",
+      step: "etapa {{current}} de {{total}}",
+    },
     duration: {
       minutes_one: "{{count}} min",
       minutes_other: "{{count}} min",
@@ -17426,6 +17460,7 @@ export const ptBR = {
     working: "Em segundo plano",
   },
   chat: {
+    request: { asksYou: "{{name}} pergunta a você" },
     /** Under a reply that came at standard speed because Fast was refused (`meta.speedFallback`, ADR 0149). */
     speedFallback: {
       text: "O ChatGPT recusou a velocidade Rápida nesta conta ou neste modelo, então esta resposta veio no padrão.",

@@ -2812,6 +2812,17 @@ export const en = {
    * is the admins' to change (`{{name}}`); "Lodi" only by default.
    */
   rightHand: {
+    /** Plans that can't think for the right hand now, greyed in its AI's picker, each with why and the way out. */
+    brain: {
+      unusable: {
+        title: "Needs a computer",
+        computerOnly: "{{owner}}'s, signed in on {{computer}} only. Lodi thinks with a plan signed in as an account.",
+        noComputer: "{{owner}}'s. It needs a computer, and the workspace has none connected.",
+        away: "{{owner}}'s, on {{computer}}, which is away.",
+        connect: "Connect a computer",
+        plans: "See plans",
+      },
+    },
     /** Muted, lowercase, on the right of its row in the sidebar. */
     label: "your right hand",
     /** The same where it starts a line: under its name on its page and side panel, and on its phone settings row. */
@@ -3546,7 +3557,8 @@ export const en = {
         title: "Your Gemini plan",
         tiers: "Google AI Pro, Google AI Ultra or Gemini Enterprise",
         /** Shown plainly wherever a personal Gemini plan is connected or chosen: Google's own rule for consumer plans. */
-        warning: "Google says using a personal Gemini plan inside other apps can get the account suspended.",
+        warning:
+          "Google says using a personal Gemini plan inside other apps can get the account suspended. To avoid that risk, use a Gemini API key or Gemini Enterprise.",
       },
       /** OpenCode's CLI (ADR 0132): its free models with no sign-in, or a key from OpenCode's console. */
       zen: { title: "OpenCode", tiers: "Free models, or your OpenCode key" },
@@ -4563,6 +4575,9 @@ export const en = {
     computerAway:
       "{{agent}}'s computer isn't answering right now. This request stays open until {{time}}. Try again in a moment.",
     computerPaused: "{{agent}}'s computer is paused by its owner. This request stays open until {{time}}.",
+    /** Sealing a secret or a sign-in code needs the browser's crypto, which a plain-http address doesn't get. */
+    insecureContext:
+      "This page isn't open over https, so the browser won't lock the key. Open it at https:// (or localhost).",
     failed: "Couldn't deliver it. Is the agent's computer on?",
     changed: "This request changed while you answered. Nothing was sent. Send it again.",
     empty: "Type the value.",
@@ -8137,6 +8152,12 @@ export const en = {
     },
   },
   issues: {
+    /** A task another agent handed over: on its card and after its title in the list. */
+    handedBy: "handed by <0/>{{name}}",
+    /** Where a handed task came from, for a reader of that DM. */
+    fromDm: "from <0>your DM with {{name}}</0>",
+    /** The same, as plain words (the phone's line under the title, its Linked row). */
+    fromDmText: "from your DM with {{name}}",
     delete: {
       action: "Delete task",
       title: "Delete task #{{number}}?",
@@ -8333,6 +8354,9 @@ export const en = {
       label: "{{name}}'s work",
       runningTitle: "{{name}} is working on it",
       waitingTitle: "{{name}} is waiting for you",
+      finishedTitle: "{{name}} finished it",
+      finishedMeta: "{{when}} · handed by {{name}}",
+      answer: "Answer",
       stalledTitle: "{{name}} stopped {{when}}",
       stalledText: "The task is still with {{name}}, but no run is going.",
       started: "started {{when}}",
@@ -17436,6 +17460,22 @@ export const en = {
     tomorrowAt: "tomorrow {{time}}",
   },
   work: {
+    /** A handed work's line under the reply that handed it: "Handed to [face] Atlas · working on it · step 3 of 5 · 2 min". */
+    handed: {
+      lead: "Handed to <0/>{{name}}",
+      working: "working on it",
+      done: "done in {{duration}}",
+      waitingYou: "waiting for your answer",
+      waiting: "waiting for an answer",
+      waitingApprovalYou: "waiting for your approval",
+      waitingApproval: "waiting for approval",
+      waitingComputer: "waiting for the computer",
+      paused: "paused at the plan's limit",
+      queued: "in line",
+      failed: "didn't finish",
+      stopped: "stopped",
+      step: "step {{current}} of {{total}}",
+    },
     duration: {
       minutes_one: "{{count}} min",
       minutes_other: "{{count}} min",
@@ -17525,6 +17565,8 @@ export const en = {
     working: "In the background",
   },
   chat: {
+    /** A card's kind when another agent than the conversation's own asks (work handed to it). */
+    request: { asksYou: "{{name}} asks you" },
     speedFallback: {
       text: "ChatGPT refused Fast speed on this account or model, so this reply came at standard speed.",
       action: "Open agent",
