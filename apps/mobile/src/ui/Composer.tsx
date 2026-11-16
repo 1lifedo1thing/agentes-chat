@@ -108,6 +108,11 @@ export interface ComposerProps {
   focusAt?: number;
   /** Right above the field ("Respondendo a Ana"). */
   banner?: ReactNode;
+  /**
+   * What waits to go with the message (photos, files): inside the field, over the words, as the system's messages
+   * hold them; the send button stays at the field's foot, beside the words.
+   */
+  attachments?: ReactNode;
   /** Something waits above the field to go with the message (photos, files): send shows and sends with no words. */
   sendEmpty?: boolean;
   /**
@@ -187,6 +192,7 @@ export function Composer({
   prefill,
   focusAt,
   banner,
+  attachments,
   sendEmpty = false,
   onLongAsFile,
   onType,
@@ -433,6 +439,7 @@ export function Composer({
         >
           {/* The placeholder is ours, on one line (cut with "…"): a long one wrapped and grew the empty field. */}
           <View style={styles.inputBox}>
+            {attachments ?? null}
             {!text ? (
               <View style={styles.placeholder} pointerEvents="none">
                 <RNText numberOfLines={1} style={[placeholderText, { color: colors.faint }]}>

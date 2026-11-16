@@ -58,6 +58,7 @@ import {
 } from "@agenteschat/client/lib/consult-group";
 import { errorText, sendNeedsEdit } from "@agenteschat/client/lib/errors";
 import { mentionsReader, offersEveryone } from "@agenteschat/client/lib/everyone";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@agenteschat/client/lib/files";
 import { capitalize } from "@agenteschat/client/lib/format";
 import { issueTakenOf, issueWorkOf, taskConversationOf } from "@agenteschat/client/lib/issues";
 import { workIsOver } from "@agenteschat/client/lib/long-work";
@@ -1146,7 +1147,11 @@ function Chat({
   // stays, marked, and the caption comes back to the field, so nothing typed is lost.
   const [pending, setPending] = useState<PendingFile[]>([]);
   const [captionBack, setCaptionBack] = useState<{ text: string; at: number; join?: boolean } | null>(null);
-  const addPending = (files: { uri: string; name: string; type: string }[]) => {
+  const addPending = (all: { uri: string; name: string; type: string; size?: number }[]) => {
+    // Past the upload limit a file never goes: said as it is picked, not after a wait at send.
+    const files = all.filter((f) => f.size === undefined || f.size <= MAX_UPLOAD_BYTES);
+    if (files.length < all.length)
+      toast({ title: t("errors.artifact.fileTooLarge", { max: MAX_UPLOAD_MB }), icon: "x" });
     if (files.length === 0) return;
     const at = Date.now();
     const picked = files.map((f, i): PendingFile => ({ ...f, id: `${at}-${i}-${f.uri}`, state: "waiting" }));
@@ -1182,7 +1187,10 @@ function Chat({
       const after = (f: PendingFile): PendingFile["state"] => (failed.has(f.id) ? "failed" : "waiting");
       setPending((now) => now.map((f) => ({ ...f, state: after(f) })));
       if (text) setCaptionBack({ text, at: Date.now() });
-      toast({ title: t("mobile.chat.uploadFailed"), icon: "x" });
+      // Why, when it is known (too large, the workspace's storage full, no connection…); else the plain line.
+      const reason = results.find((r): r is PromiseRejectedResult => r.status === "rejected")?.reason;
+      const said = reason ? errorText(t, reason, i18n.language, { maxMb: MAX_UPLOAD_MB }) : null;
+      toast({ title: said && said !== t("common.unknownError") ? said : t("mobile.chat.uploadFailed"), icon: "x" });
       return;
     }
     const refs = results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
@@ -1214,6 +1222,7 @@ function Chat({
     uri: a.uri,
     name: a.fileName ?? (a.type === "video" ? "video.mp4" : "photo.jpg"),
     type: a.mimeType ?? (a.type === "video" ? "video/mp4" : "image/jpeg"),
+    ...(a.fileSize ? { size: a.fileSize } : {}),
   });
   const openPlus = () => sheet.open(<PlusActions media={mediaTabs.length > 0} onPick={(p) => void onPlus(p)} />);
   const onPlus = async (pick: PlusPick) => {
@@ -1245,6 +1254,9 @@ function Chat({
         const res = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ["images", "videos"],
           quality: 0.8,
+          // A video goes as 720p H.264 (iOS converts it as it is picked): the library's own (4K, HEVC) passed the
+          // upload limit in seconds, and H.264 plays in every browser. Android hands the original, checked by size.
+          videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
           allowsMultipleSelection: true,
           selectionLimit: Math.max(1, MAX_PENDING - pending.length),
           orderedSelection: true,
@@ -1256,7 +1268,12 @@ function Chat({
         const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, multiple: true });
         if (!res.canceled)
           addPending(
-            res.assets.map((a) => ({ uri: a.uri, name: a.name, type: a.mimeType ?? "application/octet-stream" })),
+            res.assets.map((a) => ({
+              uri: a.uri,
+              name: a.name,
+              type: a.mimeType ?? "application/octet-stream",
+              ...(a.size ? { size: a.size } : {}),
+            })),
           );
         return;
       }
@@ -2064,16 +2081,15 @@ function Chat({
   const cancelQuote = useCallback(() => setQuote(null), []);
   const quoteName = quote ? dir.nameOf(quote.author) : null;
   const canAttach = pending.length < MAX_PENDING;
-  // Photos and files waiting to go (their caption is the field), then whom it answers.
+  // Whom it answers, over the field.
   const composerBanner = useMemo(
-    () =>
-      pending.length > 0 || quoteName !== null ? (
-        <>
-          <AttachmentStrip files={pending} onRemove={removeFromStrip} onAdd={canAttach ? plusFromField : undefined} />
-          {quoteName !== null ? <QuoteBar name={quoteName} onCancel={cancelQuote} /> : null}
-        </>
-      ) : undefined,
-    [pending, quoteName, canAttach, removeFromStrip, plusFromField, cancelQuote],
+    () => (quoteName !== null ? <QuoteBar name={quoteName} onCancel={cancelQuote} /> : undefined),
+    [quoteName, cancelQuote],
+  );
+  // Photos and files waiting to go, inside the field over their caption.
+  const composerAttachments = useMemo(
+    () => (pending.length > 0 ? <AttachmentStrip files={pending} onRemove={removeFromStrip} /> : undefined),
+    [pending, removeFromStrip],
   );
   const everyoneOffered = offersEveryone(org, Boolean(dm));
   const mentionCard = useCallback<NonNullable<ComposerProps["mention"]>>(
@@ -2603,6 +2619,7 @@ function Chat({
                     prefill={prefill ?? captionBack}
                     focusAt={replyAt}
                     banner={composerBanner}
+                    attachments={composerAttachments}
                     sendEmpty={pending.length > 0}
                     {...(canAttach ? { onLongAsFile: longFromField } : {})}
                     mention={mentionCard}
