@@ -350,6 +350,16 @@ test("a sent reply reads as read in the app, and the agent's next message still 
   expect(await unreadOf(answer.channelId)).toBe(1);
 });
 
+test("what the agent posted after the reply but before the reply was sent still counts", async () => {
+  const { id: linkId } = await link();
+  const run = await runOn(await said("hi", { via: linkId }));
+  const answer = await reply(run, "Hello");
+  await Bun.sleep(2);
+  await reply(run, "One more thing");
+  await sent(answer);
+  expect(await unreadOf(answer.channelId)).toBe(1);
+});
+
 test("a sent reply that kept an earlier place than its post reads as read", async () => {
   const { id: linkId } = await link();
   const run = await runOn(await said("hi", { via: linkId }));
