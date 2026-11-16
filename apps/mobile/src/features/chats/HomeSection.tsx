@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, LayoutAnimationConfig, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { readValueSync, STORED, writeValue } from "@/lib/storage";
-import { Count, Icon, IconButton, LIST_INSET, SCREEN_X, Text, useReducedMotion, weights } from "@/ui";
+import { Count, Icon, IconButton, LIST_INSET, ROW_PRESS_DELAY, SCREEN_X, Text, useReducedMotion, weights } from "@/ui";
 import { useColors } from "../shared/hooks";
 import {
   HOME_SECTIONS,
@@ -82,7 +82,9 @@ export function CollapsibleSection({
   }));
   return (
     <View>
+      {/* A full-width row: it lights a beat after the finger lands, as the list's rows do (not when a scroll starts). */}
       <Pressable
+        unstable_pressDelay={ROW_PRESS_DELAY}
         onPress={onToggle}
         {...(menu
           ? {
@@ -124,11 +126,15 @@ export function CollapsibleSection({
   );
 }
 
-/** "Ver todos os agentes" under a section's first rows, aligned with the text column (`.more`). */
+/**
+ * "Ver todos os agentes" under a section's first rows, aligned with the text column (`.more`). A full-width row: it
+ * lights a beat after the finger lands, as the list's rows do, so a scroll starting on it never flashes it.
+ */
 export function SeeAllRow({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useColors();
   return (
     <Pressable
+      unstable_pressDelay={ROW_PRESS_DELAY}
       onPress={onPress}
       accessibilityRole="button"
       style={({ pressed }) => [styles.more, pressed && { backgroundColor: c.sunken }]}

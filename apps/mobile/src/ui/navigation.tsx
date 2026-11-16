@@ -6,10 +6,20 @@ import {
   type NativeStackNavigationOptions,
   type Theme as NavigationTheme,
   Stack,
+  useFocusEffect,
 } from "expo-router";
-import { type ReactNode, useLayoutEffect, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { Platform } from "react-native";
+import { isStill, landsOnRoot, STILL_PARAM } from "@/features/links/landing";
 import { needsHeaderBlur, pushOnce } from "@/lib/nav";
 import { IconButton } from "./IconButton";
 import { useTheme } from "./theme";
@@ -227,7 +237,37 @@ function plateBack(label: string): NativeStackNavigationOptions {
  */
 export function goBack(fallback: Href = "/") {
   if (router.canGoBack()) router.back();
-  else router.replace(fallback);
+  else landOn(fallback);
+}
+
+/**
+ * Leaves this screen for `href`, taking its place. A tab's root (or the sign-in) is already at the bottom of the
+ * stack, so the screens over it are dismissed down to it: expo-router makes a new route on `replace`, and the tabs then
+ * sat twice in the stack (a second tab bar slid over, a swipe back showed the copy, the app's root hooks ran twice).
+ * Any other screen replaces this one.
+ */
+export function landOn(href: Href) {
+  if (landsOnRoot(href)) router.dismissTo(href);
+  else router.replace(href);
+}
+
+/** `<Redirect>` for a screen with nothing to show: it lands (`landOn`) where it sends the person. */
+export function LandOn({ href }: { href: Href }) {
+  useFocusEffect(useCallback(() => landOn(href), [href]));
+  return null;
+}
+
+/**
+ * A screen opened in place (`stillHref`, no slide) drops that mark once it is up, so going back slides as it does from
+ * any pushed screen (the stack's options read the mark: `isStill`).
+ */
+export function useSettleStill(params: unknown) {
+  const still = isStill(params);
+  useEffect(() => {
+    if (!still) return;
+    const frame = requestAnimationFrame(() => router.setParams({ [STILL_PARAM]: undefined }));
+    return () => cancelAnimationFrame(frame);
+  }, [still]);
 }
 
 /** The bar of a pushed screen whose content scrolls under it (needs `contentInsetAdjustmentBehavior="automatic"`). */

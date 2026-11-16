@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { type SetupRowFacts, setupRow, setupSteps } from "@agenteschat/client/lib/setup-checklist";
 import { setupStepsInSight } from "../../src/features/agents/setup/steps";
+import { pushedByDefault } from "../main-stack";
 import { agent, translator } from "./fixtures";
 
 // A new agent's setup checklist on the phone (ADR 0155 §2): the web's words and rules, its own screens.
@@ -47,12 +48,11 @@ test("the DM draws the checklist on top for whoever sets it up, not the first da
   expect(src("agents/AgentProfileScreen.tsx")).toContain('<AgentSetupCard agent={agent} place="profile" />');
 });
 
-test("each step but thinking is a pushed screen, registered in the stack; thinking opens Connect AI", () => {
+test("each step but thinking is a pushed screen (the stack's default); thinking opens Connect AI", () => {
   const card = src("agents/setup/SetupCard.tsx");
   expect(card).toContain('if (step === "ai") openConnectAi({ agentId: agent.id });');
   expect(card).toContain("else openSetupStep(agent.id, step);");
-  const layout = readFileSync(new URL("../../app/(app)/(main)/_layout.tsx", import.meta.url), "utf8");
-  expect(layout).toContain('<Stack.Screen name="agent-step/[id]" options={{ ...pushed, ...scrollUnder }} />');
+  expect(pushedByDefault("agent-step/[id]")).toBe(true);
   const steps = src("agents/setup/SetupStepScreen.tsx");
   // Nothing saves until its word on the bar; then the step is confirmed and the screen goes back.
   expect(steps).toContain("await confirm.mutateAsync(step);");

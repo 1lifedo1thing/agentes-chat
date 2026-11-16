@@ -4,7 +4,16 @@ import { type IslandItem, islandLead, noticeLine } from "@agenteschat/client/lib
 import { mediaWord } from "@agenteschat/client/lib/media";
 import { quickReply, waitingCardOf } from "@agenteschat/client/lib/notifications";
 import { StatusBar } from "expo-status-bar";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  Fragment,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   AccessibilityInfo,
@@ -18,7 +27,14 @@ import {
   View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from "react-native-reanimated";
+import Animated, {
+  type SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { scheduleOnRN } from "react-native-worklets";
 import { setIslandLive } from "@/lib/push";
@@ -54,8 +70,19 @@ const OPEN_MAX = 3;
 const WHITE = "#fff";
 const MUTED = "rgba(255,255,255,0.64)";
 const LINE = "rgba(255,255,255,0.12)";
+/**
+ * The shape's spring from one size to the next: settled, with almost no overshoot, well before the content fades in
+ * (`CONTENT_IN`), so nothing shows past its edge.
+ */
+const ISLAND_SPRING = { duration: 350, dampingRatio: 0.85 };
+/** The content's fade: in once the shape is nearly there, out as it folds away. */
+const CONTENT_IN = { delay: 160, duration: 220 };
+const CONTENT_OUT = 120;
+/** Chips are 36 points tall: this much more around each makes a 44-point target (they sit 8 apart). */
+const CHIP_SLOP = 4;
 
 type Shape = "none" | "pill" | "small" | "open";
+type Shown = { shape: Exclude<Shape, "none">; w: number; h: number; corner: number };
 
 /** Pulled past its edge, the island follows less the further it goes (a boundary that resists, not a wall). */
 function rubberband(overshoot: number, dimension: number, constant = 0.55) {
@@ -71,7 +98,7 @@ function rubberband(overshoot: number, dimension: number, constant = 0.55) {
  */
 export function NoticeIsland() {
   const { t } = useTranslation();
-  const { motion, reducedMotion } = useTheme();
+  const { reducedMotion } = useTheme();
   const insets = useSafeAreaInsets();
   const { width, height: screenHeight } = useWindowDimensions();
   const { status } = useRealtime();
@@ -128,28 +155,29 @@ export function NoticeIsland() {
     open: { w: Math.min(width - 16, 440), h: Math.min(openHeight, openMax) },
   }[shape];
   const corner = shape === "open" ? (camera ? 44 : 28) : shape === "pill" ? 36 : size.h / 2;
+  // What the content is laid out for: this shape, or folding away, the last one shown (it stays drawn while it goes).
+  const lastShown = useRef<Shown | null>(null);
+  if (shape !== "none") lastShown.current = { shape, w: size.w, h: size.h, corner };
+  const drawn = lastShown.current;
 
+  // The shape is a backdrop with nothing in it, so its size and corner spring without laying anything out again; the
+  // content sits over it at its final size, behind its own fade (`IslandContent`).
   const w = useSharedValue(size.w);
   const h = useSharedValue(size.h);
   const r = useSharedValue(corner);
   const fade = useSharedValue(0);
-  const content = useSharedValue(0);
   const drag = useSharedValue(0);
   useEffect(() => {
-    const to = (v: number) => (reducedMotion ? withTiming(v, { duration: 160 }) : withSpring(v, motion.pop));
+    const to = (v: number) => (reducedMotion ? withTiming(v, { duration: 160 }) : withSpring(v, ISLAND_SPRING));
     w.value = to(size.w);
     h.value = to(size.h);
     r.value = to(corner);
-    if (shape === "none") {
-      content.value = withTiming(0, { duration: 120 });
-      // Back into the camera's island (or a dot), then gone.
-      fade.value = withDelay(reducedMotion ? 0 : 260, withTiming(0, { duration: 160 }));
-    } else {
-      fade.value = withTiming(1, { duration: 120 });
-      content.value = 0;
-      content.value = withDelay(reducedMotion ? 0 : 160, withTiming(1, { duration: 220 }));
-    }
-  }, [shape, size.w, size.h, corner, reducedMotion, motion.pop, w, h, r, fade, content]);
+    // Back into the camera's island (or a dot), then gone.
+    fade.value =
+      shape === "none"
+        ? withDelay(reducedMotion ? 0 : 260, withTiming(0, { duration: 160 }))
+        : withTiming(1, { duration: 120 });
+  }, [shape, size.w, size.h, corner, reducedMotion, w, h, r, fade]);
 
   // Swiped up: what isn't waiting leaves, what is shrinks beside the camera. The island is the finger while it is
   // down (up freely; pulled down it resists, it lives at the top), and lets go on distance or on a flick, the spring
@@ -175,14 +203,8 @@ export function NoticeIsland() {
     [drag, putAway, scrolls],
   );
 
-  const box = useAnimatedStyle(() => ({
-    width: w.value,
-    height: h.value,
-    borderRadius: r.value,
-    opacity: fade.value,
-    transform: [{ translateY: drag.value }],
-  }));
-  const inner = useAnimatedStyle(() => ({ opacity: content.value }));
+  const frame = useAnimatedStyle(() => ({ opacity: fade.value, transform: [{ translateY: drag.value }] }));
+  const backdrop = useAnimatedStyle(() => ({ width: w.value, height: h.value, borderRadius: r.value }));
 
   const item = lead ?? shown.current;
   if (!item && shape === "none") return null;
@@ -200,58 +222,121 @@ export function NoticeIsland() {
       {camera ? <StatusBar hidden={coversBar} animated /> : null}
       <View pointerEvents="box-none" style={[styles.place, { top }]}>
         <GestureDetector gesture={pan}>
-          <Animated.View pointerEvents={shape === "none" ? "none" : "auto"} style={[styles.island, box]}>
-            <Animated.View style={[styles.fill, inner]}>
-              {shape === "open" ? (
-                <ScrollView
-                  scrollEnabled={scrolls}
-                  bounces={false}
-                  showsVerticalScrollIndicator={scrolls}
-                  // A reply's send takes the first tap, with the keyboard up.
-                  keyboardShouldPersistTaps="handled"
-                >
-                  <View
-                    style={{ width: size.w, paddingTop: clear }}
-                    onLayout={(e: LayoutChangeEvent) => setOpenHeight(Math.ceil(e.nativeEvent.layout.height))}
+          {/* Touches and the swipe land on the shape's final size; the backdrop and the content center in it. */}
+          <Animated.View
+            pointerEvents={shape === "none" ? "none" : "auto"}
+            style={[styles.frame, { width: size.w, height: size.h }, frame]}
+          >
+            <Animated.View style={[styles.backdrop, backdrop]} />
+            {drawn ? (
+              <IslandContent
+                // A new shape lays out new content, invisible from its first frame until the shape is nearly there.
+                key={drawn.shape}
+                leaving={shape === "none"}
+                reduced={reducedMotion}
+                width={drawn.w}
+                height={drawn.h}
+                corner={drawn.corner}
+                shapeWidth={w}
+                shapeHeight={h}
+              >
+                {drawn.shape === "open" ? (
+                  <ScrollView
+                    scrollEnabled={scrolls}
+                    bounces={false}
+                    showsVerticalScrollIndicator={scrolls}
+                    // A reply's send takes the first tap, with the keyboard up.
+                    keyboardShouldPersistTaps="handled"
                   >
-                    {snap.items.slice(0, OPEN_MAX).map((i, k) => (
-                      <Fragment key={i.n.id}>
-                        {k > 0 ? <View style={styles.rule} /> : null}
-                        <IslandRow n={i.n} onOpened={() => setOpen(false)} />
-                      </Fragment>
-                    ))}
-                    {snap.items.length > OPEN_MAX ? (
-                      <Pressable
-                        onPress={() => {
-                          setOpen(false);
-                          router.push("/activity");
-                        }}
-                        style={({ pressed }) => [styles.all, pressed && styles.pressed]}
-                        accessibilityRole="link"
-                      >
-                        <Text variant="footnote" style={{ color: MUTED }}>
-                          {t("island.all")}
-                        </Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                </ScrollView>
-              ) : item && shape === "small" ? (
-                <SmallIsland item={item} others={others} camera={camera} onPress={() => setOpen(true)} />
-              ) : item ? (
-                <Pill
-                  item={item}
-                  others={others}
-                  clear={clear}
-                  onPress={() => setOpen(true)}
-                  onOpened={() => setOpen(false)}
-                />
-              ) : null}
-            </Animated.View>
+                    <View
+                      style={{ width: drawn.w, paddingTop: clear }}
+                      onLayout={(e: LayoutChangeEvent) => {
+                        // Folding away it keeps the height it had: the next opening measures again.
+                        if (shape === "open") setOpenHeight(Math.ceil(e.nativeEvent.layout.height));
+                      }}
+                    >
+                      {snap.items.slice(0, OPEN_MAX).map((i, k) => (
+                        <Fragment key={i.n.id}>
+                          {k > 0 ? <View style={styles.rule} /> : null}
+                          <IslandRow n={i.n} onOpened={() => setOpen(false)} />
+                        </Fragment>
+                      ))}
+                      {snap.items.length > OPEN_MAX ? (
+                        <Pressable
+                          onPress={() => {
+                            setOpen(false);
+                            router.push("/activity");
+                          }}
+                          style={({ pressed }) => [styles.all, pressed && styles.pressed]}
+                          accessibilityRole="link"
+                        >
+                          <Text variant="footnote" style={{ color: MUTED }}>
+                            {t("island.all")}
+                          </Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </ScrollView>
+                ) : item && drawn.shape === "small" ? (
+                  <SmallIsland item={item} others={others} camera={camera} onPress={() => setOpen(true)} />
+                ) : item ? (
+                  <Pill
+                    item={item}
+                    others={others}
+                    clear={clear}
+                    onPress={() => setOpen(true)}
+                    onOpened={() => setOpen(false)}
+                  />
+                ) : null}
+              </IslandContent>
+            ) : null}
           </Animated.View>
         </GestureDetector>
       </View>
     </>
+  );
+}
+
+/**
+ * What the island says, laid out once at its shape's final size, over the backdrop: nothing in it lays out again while
+ * the shape springs. Each shape mounts its own (`key`), invisible from its first frame; it fades in once the shape is
+ * nearly there. Folding away (`leaving`) it fades out and shrinks with the shape toward the camera, so none of it shows
+ * past the shape's edge.
+ */
+function IslandContent({
+  leaving,
+  reduced,
+  width,
+  height,
+  corner,
+  shapeWidth,
+  shapeHeight,
+  children,
+}: {
+  leaving: boolean;
+  reduced: boolean;
+  width: number;
+  height: number;
+  corner: number;
+  shapeWidth: SharedValue<number>;
+  shapeHeight: SharedValue<number>;
+  children: ReactNode;
+}) {
+  const shown = useSharedValue(0);
+  useEffect(() => {
+    shown.value = leaving
+      ? withTiming(0, { duration: CONTENT_OUT })
+      : withDelay(reduced ? 0 : CONTENT_IN.delay, withTiming(1, { duration: CONTENT_IN.duration }));
+  }, [leaving, reduced, shown]);
+  const look = useAnimatedStyle(() => {
+    // Only a shape narrower than the content shrinks it (folding away); one that only grows taller (a reply being
+    // typed) never does.
+    const across = shapeWidth.value / width;
+    const down = leaving ? shapeHeight.value / height : 1;
+    return { opacity: shown.value, transform: [{ scale: Math.min(1, across, down) }] };
+  });
+  return (
+    <Animated.View style={[styles.content, { width, height, borderRadius: corner }, look]}>{children}</Animated.View>
   );
 }
 
@@ -552,6 +637,7 @@ function Chip({
         onPress();
       }}
       disabled={disabled}
+      hitSlop={CHIP_SLOP}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: Boolean(disabled) }}
@@ -596,13 +682,27 @@ function IslandFace({ n, size, round = false }: { n: AppNotification; size: numb
 const styles = StyleSheet.create({
   // The island's place: centered, whatever its width while it grows.
   place: { position: "absolute", left: 0, right: 0, alignItems: "center", zIndex: 100 },
-  island: {
+  // The touch area at the shape's final size; what it holds centers on it from its top.
+  frame: { alignItems: "center" },
+  // The shape itself: out of the layout and empty, so only it lays out while its size and corner spring.
+  backdrop: {
+    position: "absolute",
+    top: 0,
     backgroundColor: "#000",
-    overflow: "hidden",
     borderCurve: "continuous",
     boxShadow: "0 18px 40px -16px rgba(0,0,0,0.6)",
   },
-  fill: { flex: 1 },
+  // The content at its shape's final size and corner, on the shape's own black (what scrolls inside stays in it, and an
+  // open island that grows taller, a reply being typed, is whole at once rather than spilling past the shape); folding
+  // away it shrinks toward the camera from its top.
+  content: {
+    position: "absolute",
+    top: 0,
+    overflow: "hidden",
+    backgroundColor: "#000",
+    borderCurve: "continuous",
+    transformOrigin: "top",
+  },
   sysFace: { alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.14)" },
   pill: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingLeft: 16, paddingRight: 18 },
   grow: { flex: 1, minWidth: 0 },

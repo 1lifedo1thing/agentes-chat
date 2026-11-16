@@ -342,6 +342,13 @@ export const categoryOfListKind = (kind: string) =>
 /** The row's agent, channel or person, as "Fixar no topo" names it. */
 const pinIdOf = (r: ConversationRow) => (r.kind === "dm" ? r.with.id : r.kind === "channel" ? r.channelId : null);
 
+/** What "Fixar no topo" pins for a row: the list it is in and its agent's, channel's or person's id; null for a thread. */
+export function pinOf(r: ConversationRow): { kind: HomeSection; id: string } | null {
+  const id = pinIdOf(r);
+  const kind = kindOf(r);
+  return id && kind !== "threads" ? { kind, id } : null;
+}
+
 /**
  * The home with channel categories: Agentes, Canais (the channels with no category), one section per category
  * in the sidebar's order, then Pessoas; each the first `max` by latest activity, its pinned rows first (`pins`, as

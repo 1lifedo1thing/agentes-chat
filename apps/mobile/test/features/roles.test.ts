@@ -46,6 +46,7 @@ import { SETTINGS_SECTIONS, visibleSections } from "../../src/features/settings/
 import { ICON_NAMES } from "../../src/ui/icons.data";
 import { GROUPED_ROW, TOUCH } from "../../src/ui/rhythm";
 import { ditherPaths, roleMarkFit, roleMarkIcon } from "../../src/ui/role-mark";
+import { pushedByDefault } from "../main-stack";
 import { agent, translator } from "./fixtures";
 
 const APP = join(import.meta.dir, "..", "..", "app", "(app)", "(main)");
@@ -170,11 +171,10 @@ describe("Cargos on the phone: where they live (P1, plan §1.4)", () => {
     expect(visibleSections(org(["read", "manage_roles"])).map((s) => s.id)).toContain("roles");
     expect(visibleSections(org(["read", "manage_members"])).map((s) => s.id)).not.toContain("roles");
     expect(SETTINGS_SECTIONS.find((s) => s.id === "roles")?.href).toBe("/settings/roles");
-    const layout = readFileSync(join(APP, "_layout.tsx"), "utf8");
     const pages = ["index", "[roleId]", "permissions", "who", "channels", "channel", "agents", "agent"];
     for (const page of [...pages, "people", "add", "look", "rename", "new", "person"]) {
       expect(existsSync(join(APP, "settings", "roles", `${page}.tsx`))).toBe(true);
-      expect(layout).toContain(`name="settings/roles/${page}"`);
+      expect(pushedByDefault(`settings/roles/${page}`)).toBe(true);
     }
     // The levels' screen and the "on the computer" line went with the old page.
     expect(existsSync(join(APP, "settings", "roles", "area.tsx"))).toBe(false);

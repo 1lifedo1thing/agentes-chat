@@ -10,7 +10,7 @@ import { useSession } from "@/providers/session";
 import { AuthScaffold, CENTER } from "@/ui/auth/AuthScaffold";
 import { Button } from "@/ui/Button";
 import { haptics } from "@/ui/haptics";
-import { router } from "@/ui/navigation";
+import { landOn } from "@/ui/navigation";
 import { Text } from "@/ui/Text";
 
 /** How long the token's session gets to arrive before the screen says so (never a screen that waits forever). */
@@ -50,7 +50,7 @@ export default function Connect() {
 
   // The token's session arrives a moment after the answer: into the app once it has.
   useEffect(() => {
-    if (signingIn && session.signedIn) router.replace("/");
+    if (signingIn && session.signedIn) landOn("/");
   }, [signingIn, session.signedIn]);
   useEffect(() => {
     if (!signingIn || session.signedIn) return;
@@ -61,7 +61,7 @@ export default function Connect() {
     return () => clearTimeout(timer);
   }, [signingIn, session.signedIn]);
 
-  const leave = () => router.replace(session.signedIn ? "/" : "/sign-in");
+  const leave = () => landOn(session.signedIn ? "/" : "/sign-in");
 
   if (!server)
     return (
@@ -86,7 +86,7 @@ export default function Connect() {
       return setRefused(true);
     }
     // Signed in there already: its workspaces; otherwise its sign-in.
-    router.replace(signedInServers().includes(check.server) ? "/" : "/sign-in");
+    landOn(signedInServers().includes(check.server) ? "/" : "/sign-in");
   };
 
   const problem = check && !check.ok ? t(problemText(check.problem, target), { host }) : null;
@@ -113,7 +113,7 @@ export default function Connect() {
         </Text>
       ) : null}
       {stuck ? (
-        <Button variant="primary" wide label={t("mobile.common.continue")} onPress={() => router.replace("/sign-in")} />
+        <Button variant="primary" wide label={t("mobile.common.continue")} onPress={() => landOn("/sign-in")} />
       ) : problem ? (
         <Button variant="primary" wide label={t("mobile.common.retry")} onPress={() => setAttempt((a) => a + 1)} />
       ) : (

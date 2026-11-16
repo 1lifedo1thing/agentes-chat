@@ -27,9 +27,8 @@ import {
   taskSubline,
   tasksBadge,
 } from "../../src/features/task-manager/logic";
+import { pushedByDefault } from "../main-stack";
 import { translator } from "./fixtures";
-
-const APP = join(import.meta.dir, "../../app/(app)/(main)");
 
 const task = (over: Partial<ManagedTask> & { runId: string }): ManagedTask => ({
   agentId: "dev",
@@ -460,10 +459,8 @@ describe("why a task waits", () => {
 
 describe("navigation", () => {
   test("the task manager, a task and an agent's tasks are pushed screens, in the stack", () => {
-    const layout = readFileSync(join(APP, "_layout.tsx"), "utf8");
-    expect(layout).toContain(`name="task-manager/index" options={{ ...pushed, ...scrollUnder }}`);
-    expect(layout).toContain(`name="task-manager/[runId]" options={{ ...pushed, ...scrollUnder }}`);
-    expect(layout).toContain(`name="agent-tasks/[agentId]" options={{ ...pushed, ...scrollUnder }}`);
+    for (const route of ["task-manager/index", "task-manager/[runId]", "agent-tasks/[agentId]"])
+      expect({ route, pushed: pushedByDefault(route) }).toEqual({ route, pushed: true });
   });
 });
 
