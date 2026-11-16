@@ -77,7 +77,7 @@ export function ConversationSearch({ place, onPick }: { place: SearchPlace; onPi
         autoCorrect={false}
         returnKeyType="search"
       />
-      {/* Edge to edge as in the search tab: these pad themselves, so the sheet's own side padding is undone. */}
+      {/* Edge to edge as in the search tab: these pad themselves, the sheet's own side padding is undone. */}
       <View style={styles.bleed}>
         {scope.shown.length > 0 ? (
           <FilterChips
@@ -125,6 +125,5 @@ export function ConversationSearch({ place, onPick }: { place: SearchPlace; onPi
 }
 
 const styles = StyleSheet.create({
-  // Exactly the sheet's side padding (`SHEET_X`): any more and the results ran past the sheet's edges.
   bleed: { marginHorizontal: -SHEET_X, marginTop: 10 },
 });

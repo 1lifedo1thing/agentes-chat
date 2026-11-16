@@ -1756,8 +1756,6 @@ export const featureKeysPtBR = {
       keys: "Teclas",
       paste: "Colar",
       pasteHint: "Colar na página o que você copiou",
-      /** Paste with nothing copied on the phone. */
-      pasteEmpty: "Nada copiado para colar",
       secureOn: "Mostrar o texto",
       secureOff: "Esconder o texto (senha)",
       send: "Enviar",

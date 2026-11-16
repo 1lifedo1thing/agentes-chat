@@ -24,7 +24,7 @@ import { Image, type LayoutChangeEvent, Pressable, StyleSheet, TextInput, View }
 import { GestureDetector, GestureStateManager, type TouchData, useManualGesture } from "react-native-gesture-handler";
 import { useDerivedValue } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { fieldText, Icon, Locked, PictureEdge, Text, useToast } from "@/ui";
+import { fieldText, Icon, Locked, PictureEdge, Text } from "@/ui";
 import { AgentPointer } from "../computer/AgentPointer";
 import { useColors, useConnection } from "../shared/hooks";
 import { tapHaptic, useSurface } from "../shared/parts";
@@ -164,7 +164,6 @@ export function TypeBar({
 }) {
   const { t } = useTranslation();
   const c = useColors();
-  const toast = useToast();
   const [text, setText] = useState("");
   const [secret, setSecret] = useState(startSecret);
   const [keys, setKeys] = useState(false);
@@ -187,15 +186,11 @@ export function TypeBar({
     tapHaptic();
     onKey(k);
   };
-  /**
-   * Colar: what the person copied, into the page's focused field as it is (the field's own paste waits for Send).
-   * Nothing copied (or the phone refused): a toast says so, never a press that does nothing.
-   */
+  /** Colar: what the person copied, into the page's focused field as it is (the field's own paste waits for Send). */
   const paste = async () => {
     tapHaptic();
     const copied = await Clipboard.getStringAsync().catch(() => "");
     if (copied) onText(copied);
-    else toast({ title: t("mobile.browser.live.pasteEmpty"), icon: "x" });
   };
   const tool = (on: boolean) => [styles.tool, { backgroundColor: on ? c.sunken : "transparent" }];
   return (
@@ -255,7 +250,7 @@ export function TypeBar({
           accessibilityRole="switch"
           accessibilityState={{ checked: secret }}
           accessibilityLabel={secret ? t("mobile.browser.live.secureOn") : t("mobile.browser.live.secureOff")}
-          hitSlop={FIELD_SLOP}
+          hitSlop={4}
           style={({ pressed }) => tool(secret || pressed)}
         >
           <Icon name="lock" size={18} color={secret ? c.ink : c.muted} />
@@ -265,7 +260,7 @@ export function TypeBar({
           accessibilityRole="button"
           accessibilityState={{ expanded: keys }}
           accessibilityLabel={t("mobile.browser.live.keys")}
-          hitSlop={FIELD_SLOP}
+          hitSlop={4}
           style={({ pressed }) => tool(keys || pressed)}
         >
           <Icon name="keyboard" size={18} color={keys ? c.ink : c.muted} />
@@ -275,7 +270,6 @@ export function TypeBar({
           disabled={!text}
           accessibilityRole="button"
           accessibilityLabel={t("mobile.browser.live.send")}
-          hitSlop={FIELD_SLOP}
           style={({ pressed }) => [styles.send, { backgroundColor: c.ink, opacity: !text ? 0.35 : pressed ? 0.8 : 1 }]}
         >
           <Icon name="send" size={18} color={c.bg} />
@@ -359,7 +353,6 @@ export function AddressBar({
             disabled={!ready}
             accessibilityRole="button"
             accessibilityLabel={t("browser.inCard.go")}
-            hitSlop={FIELD_SLOP}
             style={({ pressed }) => [
               styles.send,
               { backgroundColor: c.ink, opacity: !ready ? 0.35 : pressed ? 0.8 : 1 },
@@ -502,8 +495,6 @@ const FIELD = 44;
 const FIELD_BUTTON = 34;
 /** A key cap's taps reach the 44 pt the finger needs, above and below (beside it are the other keys). */
 const KEY_SLOP = { top: 5, bottom: 5 };
-/** The field's round buttons, 34 in its 44: the field's whole height takes their taps (beside them, each other). */
-const FIELD_SLOP = { top: (FIELD - FIELD_BUTTON) / 2, bottom: (FIELD - FIELD_BUTTON) / 2 };
 
 const styles = StyleSheet.create({
   frame: { flex: 1 },

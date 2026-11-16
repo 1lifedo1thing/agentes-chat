@@ -37,8 +37,7 @@ import {
 } from "react-native";
 import { useAppActive } from "@/lib/useAppActive";
 import { Sky } from "@/sky/Sky";
-import { Button, Fuse, Icon, IconButton, PixelOrbit, Text, useToast } from "@/ui";
-import { useCardTop } from "../chat/look";
+import { Button, Fuse, Icon, PixelOrbit, Text, useToast } from "@/ui";
 import { ScreenWatch, type ScreenWatchHandle } from "../computer/ScreenWatch";
 import { MachineToolButton } from "../devices/ToolOneClick";
 import { useColors, useDirectory, useEdition, useMeId, useNow, useOrgId } from "../shared/hooks";
@@ -109,9 +108,6 @@ export function BrowserCard({
   const c = useColors();
   const toast = useToast();
   const raised = useSurface("e2");
-  // In a message's body (a request for help) the body's card gap sets its top; its own row in the conversation and a
-  // screen of its own set theirs.
-  const cardTop = useCardTop();
   // The Cloud's computer is always on: when it doesn't answer, it says so.
   const cloud = useEdition() === "cloud";
   const now = useNow(15_000);
@@ -270,8 +266,8 @@ export function BrowserCard({
     if (!profile) return finishing.handBack();
     void profileActions.handback.mutateAsync(profile.id).then(successHaptic, failedToast);
   };
-  // The button gives the press's own haptic.
   const stop = () => {
+    tapHaptic();
     Alert.alert(t(`mobile.browser.card.stopAsk${g}`, { name }), undefined, [
       { text: t("mobile.common.cancel"), style: "cancel" },
       {
@@ -328,7 +324,7 @@ export function BrowserCard({
               : t(`mobile.browser.card.where${g}`, { name });
 
   return (
-    <View style={[styles.card, raised, cardTop, style]}>
+    <View style={[styles.card, raised, style]}>
       <Sky color={color} surface="raised" depth={0.95} fade={0} style={styles.sky} />
       {surface && !title && !hasAction ? null : (
         <Pressable
@@ -415,7 +411,15 @@ export function BrowserCard({
                     />
                   ) : null}
                   {ready && !surface && !profile ? (
-                    <IconButton icon="stop" small label={t("mobile.browser.card.stop")} onPress={stop} />
+                    <Pressable
+                      onPress={stop}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("mobile.browser.card.stop")}
+                      hitSlop={8}
+                      style={({ pressed }) => [styles.icon, pressed && { backgroundColor: c.sunken }]}
+                    >
+                      <Icon name="stop" size={16} color={c.muted} />
+                    </Pressable>
                   ) : null}
                 </>
               ) : null}
@@ -631,7 +635,7 @@ const CARD = 20;
 const PAGE_INSET = 8;
 
 const styles = StyleSheet.create({
-  card: { borderRadius: CARD, overflow: "hidden" },
+  card: { marginTop: 12, borderRadius: CARD, overflow: "hidden" },
   sky: { height: 6 },
   head: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 10 },
   grow: { flex: 1, minWidth: 0 },
@@ -640,6 +644,7 @@ const styles = StyleSheet.create({
   semibold: { fontWeight: "600" },
   medium: { fontWeight: "500" },
   acts: { flexDirection: "row", alignItems: "center", gap: 4 },
+  icon: { width: 30, height: 30, borderRadius: 999, alignItems: "center", justifyContent: "center" },
   thumb: {
     width: 96,
     height: 60,

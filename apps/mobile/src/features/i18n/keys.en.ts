@@ -1805,8 +1805,6 @@ export const featureKeysEn = {
       keys: "Keys",
       paste: "Paste",
       pasteHint: "Paste what you copied into the page",
-      /** Paste with nothing copied on the phone. */
-      pasteEmpty: "Nothing copied to paste",
       secureOn: "Show the text",
       secureOff: "Hide the text (password)",
       send: "Send",

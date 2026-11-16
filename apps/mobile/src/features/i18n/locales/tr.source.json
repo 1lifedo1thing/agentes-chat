@@ -4221,9 +4221,6 @@
   "browser.live.pasteHint": {
     "value": "Paste what you copied into the page"
   },
-  "browser.live.pasteEmpty": {
-    "value": "Nothing copied to paste"
-  },
   "browser.live.secureOn": {
     "value": "Show the text"
   },

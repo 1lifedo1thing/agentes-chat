@@ -1812,7 +1812,6 @@
       "keys": "Teclas",
       "paste": "Pegar",
       "pasteHint": "Pegar en la página lo que copiaste",
-      "pasteEmpty": "No hay nada copiado para pegar",
       "secureOn": "Mostrar el texto",
       "secureOff": "Ocultar el texto (contraseña)",
       "send": "Enviar",

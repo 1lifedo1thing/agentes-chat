@@ -1718,7 +1718,6 @@
       "keys": "Tasten",
       "paste": "Einfügen",
       "pasteHint": "Das Kopierte in die Seite einfügen",
-      "pasteEmpty": "Nichts zum Einfügen kopiert",
       "secureOn": "Text anzeigen",
       "secureOff": "Text verbergen (Passwort)",
       "send": "Senden",

@@ -1619,7 +1619,6 @@
       "keys": "按键",
       "paste": "粘贴",
       "pasteHint": "把你复制的内容粘贴到页面",
-      "pasteEmpty": "没有已复制的内容可粘贴",
       "secureOn": "显示文字",
       "secureOff": "隐藏文字（密码）",
       "send": "发送",

@@ -1,8 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { featureKeysEn } from "../../src/features/i18n/keys.en";
-import { featureKeysPtBR } from "../../src/features/i18n/keys.pt-BR";
 
 // No renderer for the phone's components in these tests: what only the source can say is read from it.
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src/features", file), "utf8");
@@ -122,33 +120,7 @@ describe("the kit's press, not one of its own", () => {
   });
 });
 
-describe("the agent's browser in a message", () => {
-  test("the card takes its top from the message's body, never a margin of its own; stop is the kit's icon button", () => {
-    const card = src("browser/BrowserCard.tsx");
-    expect(style(card, "card")).not.toMatch(/margin(Top|Bottom|Vertical)/);
-    expect(card).toContain("const cardTop = useCardTop();");
-    expect(card).toContain("<View style={[styles.card, raised, cardTop, style]}>");
-    expect(card).toContain('<IconButton icon="stop" small label={t("mobile.browser.card.stop")} onPress={stop} />');
-  });
-
-  test("the line that opens the agent's screen is a card of a message: its top, the kit's press, a chevron", () => {
-    const handoff = src("browser/HandoffCard.tsx");
-    expect(handoff).not.toContain("Pressable");
-    expect(handoff).toContain("style={[styles.doneBox, surface, cardTop]}");
-    expect(handoff).toContain('<LineIcon name="right" variant="small" size={15} color={c.faint} />');
-  });
-
-  test("the typing field's round buttons take the field's whole height; Paste with nothing copied says so", () => {
-    const parts = src("browser/parts.tsx");
-    expect(parts).toContain(
-      "const FIELD_SLOP = { top: (FIELD - FIELD_BUTTON) / 2, bottom: (FIELD - FIELD_BUTTON) / 2 };",
-    );
-    expect(parts.match(/hitSlop=\{FIELD_SLOP\}/g)).toHaveLength(4);
-    expect(parts).toContain('else toast({ title: t("mobile.browser.live.pasteEmpty"), icon: "x" });');
-    expect(featureKeysEn.browser.live.pasteEmpty).toBe("Nothing copied to paste");
-    expect(featureKeysPtBR.browser.live.pasteEmpty).toBe("Nada copiado para colar");
-  });
-
+describe("the agent's browser steps in a message", () => {
   test("a site that won't open from the steps says so", () => {
     expect(src("browser/TrailCard.tsx")).toContain(
       'void Linking.openURL(href).catch(() => toast({ title: t("mobile.app.failed"), icon: "x" }))',
