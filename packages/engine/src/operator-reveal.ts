@@ -11,6 +11,7 @@ import { inputLines } from "./operator-review";
 import { runShownSql } from "./operator-runs";
 import { getMembership, requirePermission } from "./organizations";
 import { getRoutineView } from "./routines";
+import { cloudNotice } from "./standing";
 import { SUPPORT_SOURCES } from "./support-requests";
 import { redactCredentials } from "./tool-detail";
 import { neutralizeUntrusted } from "./untrusted";
@@ -578,6 +579,8 @@ export async function operatorReveal(
         purpose,
         assistedByAi,
         ...facts,
+        // Who "the operator" is to the workspace's people: the apps name agentes.chat's own support there.
+        ...cloudNotice(),
       },
       onBehalfOfUserId: member,
     });

@@ -10680,10 +10680,10 @@
       "copiesRemoved_one": "{{count}} inicio de sesión sin uso quitado.",
       "copiesRemoved_many": "{{count}} inicios de sesión sin uso quitados.",
       "copiesRemoved_other": "{{count}} inicios de sesión sin uso quitados.",
-      "removeAllDone": "{{n}} inicios de sesión de Grok quitados.",
-      "removeAllText": "Dejan de pensar por sus agentes en {{computers}}. Los inicios de sesión de otras personas no se tocan.",
-      "removeAllTitle": "¿Quitar los {{n}} inicios de sesión de Grok?",
       "removeAllGrok": "Quitar todos los inicios de sesión de Grok",
+      "removeAllTitle": "¿Quitar los {{n}} inicios de sesión de Grok?",
+      "removeAllText": "Dejan de pensar por sus agentes en {{computers}}. Los inicios de sesión de otras personas no se tocan.",
+      "removeAllDone": "{{n}} inicios de sesión de Grok quitados.",
       "disconnect": "Desconectar",
       "renameTitle": "Cambiar el nombre de {{label}}",
       "nameLabel": "Nombre",
@@ -16735,6 +16735,34 @@
     },
     "system": "Sistema",
     "removed": "Eliminado",
+    "operatorRead": {
+      "sentence": "{{who}} leyó {{what}}",
+      "who": {
+        "server": "Quien administra este servidor",
+        "cloud": "El soporte de agentes.chat"
+      },
+      "what": {
+        "message": "un mensaje",
+        "run_step": "un paso del trabajo de un agente",
+        "agent": "las instrucciones de un agente",
+        "routine": "una rutina",
+        "task": "una tarea en segundo plano",
+        "channel": "el nombre de un canal",
+        "connection": "los datos de una conexión",
+        "support_request": "una solicitud de soporte",
+        "direct": "algo en una conversación privada",
+        "other": "algo del espacio de trabajo"
+      },
+      "request": {
+        "plain": "a pedido de {{name}}",
+        "app": "a pedido de {{name}}, enviado desde la app",
+        "email": "a pedido de {{name}}, enviado por correo",
+        "operator": "a pedido de {{name}}, registrado por quien administra este servidor",
+        "support": "a pedido de {{name}}, registrado por soporte"
+      },
+      "fault": "para diagnosticar una ejecución que falló o se quedó detenida",
+      "ai": "con un asistente de IA"
+    },
     "change": {
       "mergedWithoutAsking": "Hizo merge en {{repo}} sin preguntar",
       "pattern": "{{verb}} {{area}}",

@@ -10755,10 +10755,10 @@
       "copiesRemoved_one": "{{count}} accesso inutilizzato rimosso.",
       "copiesRemoved_many": "{{count}} accessi inutilizzati rimossi.",
       "copiesRemoved_other": "{{count}} accessi inutilizzati rimossi.",
-      "removeAllDone": "{{n}} accessi a Grok rimossi.",
-      "removeAllText": "Smettono di pensare per i loro agenti su {{computers}}. Gli accessi di altre persone non vengono toccati.",
-      "removeAllTitle": "Rimuovere tutti i {{n}} accessi a Grok?",
       "removeAllGrok": "Rimuovi tutti gli accessi a Grok",
+      "removeAllTitle": "Rimuovere tutti i {{n}} accessi a Grok?",
+      "removeAllText": "Smettono di pensare per i loro agenti su {{computers}}. Gli accessi di altre persone non vengono toccati.",
+      "removeAllDone": "{{n}} accessi a Grok rimossi.",
       "disconnect": "Scollega",
       "renameTitle": "Rinomina {{label}}",
       "nameLabel": "Nome",
@@ -16818,6 +16818,34 @@
     },
     "system": "Sistema",
     "removed": "Rimosso",
+    "operatorRead": {
+      "sentence": "{{who}} ha letto {{what}}",
+      "who": {
+        "server": "Chi gestisce questo server",
+        "cloud": "Il supporto di agentes.chat"
+      },
+      "what": {
+        "message": "un messaggio",
+        "run_step": "un passaggio del lavoro di un agente",
+        "agent": "le istruzioni di un agente",
+        "routine": "una routine",
+        "task": "un'attività in background",
+        "channel": "il nome di un canale",
+        "connection": "i dati di una connessione",
+        "support_request": "una richiesta di supporto",
+        "direct": "qualcosa in una conversazione privata",
+        "other": "qualcosa nello spazio di lavoro"
+      },
+      "request": {
+        "plain": "su richiesta di {{name}}",
+        "app": "su richiesta di {{name}}, inviata dall'app",
+        "email": "su richiesta di {{name}}, inviata via email",
+        "operator": "su richiesta di {{name}}, registrata da chi gestisce questo server",
+        "support": "su richiesta di {{name}}, registrata dal supporto"
+      },
+      "fault": "per diagnosticare un'esecuzione non riuscita o bloccata",
+      "ai": "con un assistente IA"
+    },
     "change": {
       "mergedWithoutAsking": "Ha fatto il merge in {{repo}} senza chiedere",
       "pattern": "{{verb}} {{area}}",

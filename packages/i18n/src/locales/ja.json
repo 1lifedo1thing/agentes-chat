@@ -9937,10 +9937,10 @@
       "copies_other": "エージェントのいない、このアカウントのログインがあと{{count}}件あります。",
       "removeCopies": "削除",
       "copiesRemoved_other": "使われていないログインを{{count}}件削除しました。",
-      "removeAllDone": "Grok のログインを {{n}} 件削除しました。",
-      "removeAllText": "{{computers}} でそれぞれのエージェントのために考えなくなります。他の人のログインはそのまま残ります。",
-      "removeAllTitle": "Grok のログイン {{n}} 件をすべて削除しますか？",
       "removeAllGrok": "Grok のログインをすべて削除",
+      "removeAllTitle": "Grok のログイン {{n}} 件をすべて削除しますか？",
+      "removeAllText": "{{computers}} でそれぞれのエージェントのために考えなくなります。他の人のログインはそのまま残ります。",
+      "removeAllDone": "Grok のログインを {{n}} 件削除しました。",
       "disconnect": "接続を解除",
       "renameTitle": "{{label}}の名前を変更",
       "nameLabel": "名前",
@@ -15727,6 +15727,34 @@
     },
     "system": "システム",
     "removed": "削除済み",
+    "operatorRead": {
+      "sentence": "{{who}}が{{what}}を閲覧",
+      "who": {
+        "server": "このサーバーの運用者",
+        "cloud": "agentes.chat サポート"
+      },
+      "what": {
+        "message": "メッセージ",
+        "run_step": "エージェントの作業の1ステップ",
+        "agent": "エージェントの指示",
+        "routine": "ルーティン",
+        "task": "バックグラウンドのタスク",
+        "channel": "チャンネルの名前",
+        "connection": "接続の情報",
+        "support_request": "サポートへの依頼",
+        "direct": "非公開の会話の内容",
+        "other": "ワークスペース内の内容"
+      },
+      "request": {
+        "plain": "{{name}}の依頼による",
+        "app": "{{name}}の依頼による（アプリから送信）",
+        "email": "{{name}}の依頼による（メールで送信）",
+        "operator": "{{name}}の依頼による（このサーバーの運用者が記録）",
+        "support": "{{name}}の依頼による（サポートが記録）"
+      },
+      "fault": "失敗または停止した実行の調査のため",
+      "ai": "AIアシスタントを使用"
+    },
     "change": {
       "mergedWithoutAsking": "{{repo}}で確認なしでマージしました",
       "pattern": "{{verb}}: {{area}}",

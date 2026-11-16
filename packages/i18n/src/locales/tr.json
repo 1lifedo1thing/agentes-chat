@@ -10292,10 +10292,10 @@
       "removeCopies": "Kaldır",
       "copiesRemoved_one": "Kullanılmayan {{count}} giriş kaldırıldı.",
       "copiesRemoved_other": "Kullanılmayan {{count}} giriş kaldırıldı.",
-      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
-      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
-      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
       "removeAllGrok": "Tüm Grok oturumlarını kaldır",
+      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
+      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
+      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
       "disconnect": "Bağlantıyı kes",
       "renameTitle": "{{label}} adını değiştir",
       "nameLabel": "Ad",
@@ -16222,6 +16222,34 @@
     },
     "system": "Sistem",
     "removed": "Kaldırıldı",
+    "operatorRead": {
+      "sentence": "{{who}} {{what}} okudu",
+      "who": {
+        "server": "Bu sunucuyu yöneten kişi",
+        "cloud": "agentes.chat destek ekibi"
+      },
+      "what": {
+        "message": "bir mesajı",
+        "run_step": "bir ajanın çalışmasındaki bir adımı",
+        "agent": "bir ajanın talimatlarını",
+        "routine": "bir rutini",
+        "task": "arka plandaki bir görevi",
+        "channel": "bir kanalın adını",
+        "connection": "bir bağlantının bilgilerini",
+        "support_request": "bir destek talebini",
+        "direct": "özel bir sohbetteki bir içeriği",
+        "other": "çalışma alanındaki bir içeriği"
+      },
+      "request": {
+        "plain": "{{name}} adlı üyenin talebiyle",
+        "app": "{{name}} adlı üyenin uygulamadan gönderdiği taleple",
+        "email": "{{name}} adlı üyenin e-postayla gönderdiği taleple",
+        "operator": "{{name}} adlı üyenin, bu sunucuyu yöneten kişinin kaydettiği talebiyle",
+        "support": "{{name}} adlı üyenin, destek ekibinin kaydettiği talebiyle"
+      },
+      "fault": "başarısız olan veya takılan bir çalıştırmayı incelemek için",
+      "ai": "bir yapay zeka asistanıyla"
+    },
     "change": {
       "mergedWithoutAsking": "{{repo}} içinde sormadan birleştirdi",
       "pattern": "{{verb}}: {{area}}",

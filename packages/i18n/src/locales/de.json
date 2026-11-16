@@ -10348,10 +10348,10 @@
       "removeCopies": "Entfernen",
       "copiesRemoved_one": "{{count}} ungenutzte Anmeldung entfernt.",
       "copiesRemoved_other": "{{count}} ungenutzte Anmeldungen entfernt.",
-      "removeAllDone": "{{n}} Grok-Anmeldungen entfernt.",
-      "removeAllText": "Sie denken dann für ihre Agenten auf {{computers}} nicht mehr mit. Anmeldungen anderer Personen bleiben unangetastet.",
-      "removeAllTitle": "Alle {{n}} Grok-Anmeldungen entfernen?",
       "removeAllGrok": "Alle Grok-Anmeldungen entfernen",
+      "removeAllTitle": "Alle {{n}} Grok-Anmeldungen entfernen?",
+      "removeAllText": "Sie denken dann für ihre Agenten auf {{computers}} nicht mehr mit. Anmeldungen anderer Personen bleiben unangetastet.",
+      "removeAllDone": "{{n}} Grok-Anmeldungen entfernt.",
       "disconnect": "Trennen",
       "renameTitle": "{{label}} umbenennen",
       "nameLabel": "Name",
@@ -16285,6 +16285,34 @@
     },
     "system": "System",
     "removed": "Entfernt",
+    "operatorRead": {
+      "sentence": "{{who}} hat {{what}} gelesen",
+      "who": {
+        "server": "Die Person, die diesen Server betreibt,",
+        "cloud": "Der Support von agentes.chat"
+      },
+      "what": {
+        "message": "eine Nachricht",
+        "run_step": "einen Schritt aus der Arbeit eines Agenten",
+        "agent": "die Anweisungen eines Agenten",
+        "routine": "eine Routine",
+        "task": "eine Aufgabe im Hintergrund",
+        "channel": "den Namen eines Kanals",
+        "connection": "die Angaben einer Verbindung",
+        "support_request": "eine Support-Anfrage",
+        "direct": "etwas aus einer privaten Unterhaltung",
+        "other": "etwas aus dem Workspace"
+      },
+      "request": {
+        "plain": "auf Anfrage von {{name}}",
+        "app": "auf Anfrage von {{name}}, gesendet aus der App",
+        "email": "auf Anfrage von {{name}}, gesendet per E-Mail",
+        "operator": "auf Anfrage von {{name}}, erfasst von der Person, die diesen Server betreibt",
+        "support": "auf Anfrage von {{name}}, erfasst vom Support"
+      },
+      "fault": "zur Diagnose eines fehlgeschlagenen oder hängenden Laufs",
+      "ai": "mit einem KI-Assistenten"
+    },
     "change": {
       "mergedWithoutAsking": "In {{repo}} ohne Nachfrage gemergt",
       "pattern": "{{verb}}: {{area}}",

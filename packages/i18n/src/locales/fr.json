@@ -10738,10 +10738,10 @@
       "copiesRemoved_one": "{{count}} connexion inutilisée supprimée.",
       "copiesRemoved_many": "{{count}} connexions inutilisées supprimées.",
       "copiesRemoved_other": "{{count}} connexions inutilisées supprimées.",
-      "removeAllDone": "{{n}} connexions Grok supprimées.",
-      "removeAllText": "Elles cessent de réfléchir pour leurs agents sur {{computers}}. Les connexions des autres personnes ne sont pas touchées.",
-      "removeAllTitle": "Supprimer les {{n}} connexions Grok ?",
       "removeAllGrok": "Supprimer toutes les connexions Grok",
+      "removeAllTitle": "Supprimer les {{n}} connexions Grok ?",
+      "removeAllText": "Elles cessent de réfléchir pour leurs agents sur {{computers}}. Les connexions des autres personnes ne sont pas touchées.",
+      "removeAllDone": "{{n}} connexions Grok supprimées.",
       "disconnect": "Déconnecter",
       "renameTitle": "Renommer {{label}}",
       "nameLabel": "Nom",
@@ -16806,6 +16806,34 @@
     },
     "system": "Système",
     "removed": "Retiré",
+    "operatorRead": {
+      "sentence": "{{who}} a lu {{what}}",
+      "who": {
+        "server": "La personne qui gère ce serveur",
+        "cloud": "Le support agentes.chat"
+      },
+      "what": {
+        "message": "un message",
+        "run_step": "une étape du travail d'un agent",
+        "agent": "les instructions d'un agent",
+        "routine": "une routine",
+        "task": "une tâche en arrière-plan",
+        "channel": "le nom d'un canal",
+        "connection": "les détails d'une connexion",
+        "support_request": "une demande d'assistance",
+        "direct": "un élément d'une conversation privée",
+        "other": "un élément de l'espace de travail"
+      },
+      "request": {
+        "plain": "à la demande de {{name}}",
+        "app": "à la demande de {{name}}, envoyée depuis l'app",
+        "email": "à la demande de {{name}}, envoyée par e-mail",
+        "operator": "à la demande de {{name}}, enregistrée par la personne qui gère ce serveur",
+        "support": "à la demande de {{name}}, enregistrée par le support"
+      },
+      "fault": "pour diagnostiquer une exécution en échec ou bloquée",
+      "ai": "avec un assistant IA"
+    },
     "change": {
       "mergedWithoutAsking": "A mergé dans {{repo}} sans demander",
       "pattern": "{{verb}} {{area}}",

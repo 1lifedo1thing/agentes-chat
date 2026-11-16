@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
 import { createFakeErrorReporter, createMemoryRateLimiter } from "@agenteschat/adapters";
 import { testConfig } from "@agenteschat/config";
 import { asc, type Database, desc, eq, schema } from "@agenteschat/db";
-import { addRunStep, REVEAL_FIELDS, REVEAL_PER_WORKSPACE_DAY } from "@agenteschat/engine";
+import { addRunStep, REVEAL_FIELDS, REVEAL_PER_WORKSPACE_DAY, setRestrictionNotices } from "@agenteschat/engine";
 import { createLogger } from "../src/logger";
 import { createOperatorApp, type OperatorDeps } from "../src/operator/app";
 import { poison } from "./canary";
@@ -795,6 +795,16 @@ test("the record first: an event with the reason, an audit entry with what was r
   expect(written).not.toContain("canary");
   expect(written).not.toContain("approval requests");
   expect(written).not.toContain(messages.dm);
+
+  // On agentes.chat's own servers the entry says so, for the apps to name who read it.
+  await forget();
+  setRestrictionNotices("https://app.agentes.chat");
+  try {
+    expect(await outcome(ask("message", messages.asked, "text", { requestId: requests.owner }))).toBe(200);
+  } finally {
+    setRestrictionNotices(t.config.PUBLIC_URL);
+  }
+  expect((await auditLines()).map((l) => l.details.cloud)).toEqual([true]);
 
   // A refusal reads nothing and records nothing.
   await forget();
