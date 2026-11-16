@@ -2,6 +2,7 @@ import type { BlobStoreResolver, PubSub, SpeechEngine } from "@agenteschat/adapt
 import { firstWords, typingTopic } from "@agenteschat/adapters";
 import { and, asc, count, type Database, desc, eq, gt, gte, isNull, lt, ne, schema, sql } from "@agenteschat/db";
 import { requireChannelAccess } from "./channels";
+import { markChannelRead } from "./dms";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { publishTyping, publishUserEvent } from "./events";
 import type { Judge } from "./judge";
@@ -138,6 +139,8 @@ export async function acceptVoiceClip(
     text?: string | null;
     /** Files (artifact ids) sent with it, checked as a typed message's. */
     attachments?: string[] | null;
+    /** Where it came from when not an app (an outside chat surface): posted as the message's `meta.via`. */
+    via?: Record<string, unknown> | null;
   },
 ): Promise<{ clipId: string }> {
   const { membership } = await requireChannelAccess(deps.db, userId, orgId, channelId);
@@ -194,6 +197,7 @@ export async function acceptVoiceClip(
         language: input.language?.slice(0, 8) ?? null,
         text,
         attachments,
+        via: input.via ?? null,
       })
       .onConflictDoNothing()
       .returning({ id: voiceClips.id });
@@ -360,7 +364,10 @@ export async function transcribeVoiceClip(deps: VoiceDeps, clipId: string, optio
         attachments: clip.attachments ?? undefined,
         clientId: clip.clientId,
         replyTo: clip.replyTo,
-        meta: { voice },
+        meta: {
+          voice,
+          ...(clip.via ? { via: clip.via, ...(clip.via.forwarded === true ? { readOutside: true } : {}) } : {}),
+        },
       },
     );
     await deps.db
@@ -372,6 +379,10 @@ export async function transcribeVoiceClip(deps: VoiceDeps, clipId: string, optio
         costNanoUsd: words ? costOf(words.engine, clip.durationMs) : 0,
       })
       .where(eq(voiceClips.id, clip.id));
+    // Heard on the surface, not in an app: the person has read their DM up to it, as a typed surface message.
+    if (clip.via) {
+      await markChannelRead(deps.db, clip.userId, clip.orgId, clip.channelId, new Date(message.createdAt), deps.pubsub);
+    }
   } catch (error) {
     if (error instanceof ForbiddenError || error instanceof NotFoundError || error instanceof ValidationError) {
       return dropClip(deps, clip, "refused");

@@ -313,6 +313,7 @@ export * from "./streams";
 export * from "./stretch";
 export * from "./stuck";
 export * from "./surfaces/config";
+export * from "./surfaces/inbound";
 export * from "./surfaces/links";
 export * from "./talker";
 export * from "./task-access";

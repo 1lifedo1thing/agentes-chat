@@ -145,6 +145,86 @@
         },
         "required": ["externalId", "reason"],
         "additionalProperties": false
+      },
+      "SurfacePosted": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["posted", "duplicate", "queued"],
+            "description": "`queued`: a voice note, posted when its words are ready."
+          },
+          "messageId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "voiceAsFile": {
+            "type": "boolean",
+            "description": "The voice note went in as a file."
+          },
+          "orgId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orgName": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          }
+        },
+        "required": ["status", "messageId", "voiceAsFile", "orgId", "orgName", "locale"]
+      },
+      "SurfaceMessage": {
+        "type": "object",
+        "properties": {
+          "externalId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "The surface's stable, opaque id for the sender. Never a phone number or any address that can change hands."
+          },
+          "inboundId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "The surface's own message id (for grouped media, the first one's): a resend posts nothing new."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 100000
+          },
+          "forwarded": {
+            "type": "string",
+            "enum": ["true"],
+            "description": "Forwarded from another chat: the agent reads it as quoted text, not a request."
+          },
+          "replyTo": {
+            "type": "string",
+            "format": "uuid",
+            "description": "One of our message ids the sender quoted; ignored outside the DM."
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "description": "Repeated, at most 10, each with a file name and at most 50 MB."
+          },
+          "voice": {
+            "type": "string",
+            "format": "binary",
+            "description": "One voice note, never with `files`."
+          },
+          "voiceDurationMs": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "description": "Required with `voice`."
+          }
+        },
+        "required": ["externalId", "inboundId"],
+        "additionalProperties": false
       }
     },
     "parameters": {}
@@ -295,6 +375,95 @@
           },
           "401": {
             "description": "Missing or wrong bridge token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/messages": {
+      "post": {
+        "tags": ["Surface"],
+        "summary": "A linked sender's message, posted as them in their DM with the workspace's right hand",
+        "description": "At least one of `text`, `files`, `voice`. A voice note that isn't one core takes (type, size, bytes over 8 KB a second of its length, voice off) goes in as a file named `voice.<ext>`. The DM is marked read up to the message.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SurfaceMessage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurfacePosted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong bridge token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active link for this sender (`surface.unlinked`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`surface.no_workspace` or `surface.no_assistant`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Over 100 MiB, or a file over 50 MB (`surface.too_large`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`surface.rate_limited` (this person, with `retryIn` and `window`) or `surface.busy`",
             "content": {
               "application/json": {
                 "schema": {

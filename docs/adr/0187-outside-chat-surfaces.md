@@ -7,7 +7,8 @@
   `SURFACE_ONLY`) and its rules in `index.ts`; db `packages/db/src/schema/surfaces.ts` (`surface_links`,
   `surface_deliveries`, `surface_calls`) and `voice_clips.via`, migration 0280; engine
   `packages/engine/src/surfaces/config.ts` (`setSurface`, `surfaceOn`, `surfaceAllowed`) and `links.ts` (codes,
-  claim, confirm, unlink; revoked with `revokeUserApps` and `setUserBlocked`); server
+  claim, confirm, unlink; revoked with `revokeUserApps` and `setUserBlocked`) and `inbound.ts` (`postFromSurface`,
+  with `voice_clips.via` carried by the voice job); server
   `apps/server/src/surface/app.ts` (`createSurfaceApp`), served by `operatorFetch` in
   `apps/server/src/operator/app.ts`; app routes `apps/server/src/routes/app/surfaces.ts`; contract `apps/server/test/surface-openapi.json`
 

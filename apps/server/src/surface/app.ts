@@ -1,7 +1,11 @@
 import { schema } from "@agenteschat/db";
 import {
+  ARTIFACT_LIMITS,
   activeLink,
   claimLink,
+  MAX_MESSAGE_ATTACHMENTS,
+  MAX_MESSAGE_LENGTH,
+  postFromSurface,
   retryInSeconds,
   SURFACE_PREFIX,
   safeEqual,
@@ -11,6 +15,7 @@ import {
   unlinkExternal,
 } from "@agenteschat/engine";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { bodyLimit } from "hono/body-limit";
 import { apiError, domainErrorResponse, errorResponse, routeOf, validationHook } from "../http/errors";
 import { type AppDeps, json } from "../routes/app/context";
 
@@ -64,6 +69,52 @@ const Unlink = z
   .object({ externalId: ExternalId, reason: z.enum(["asked", "identity_changed"]) })
   .strict()
   .openapi("SurfaceUnlink");
+
+/** The whole multipart body of `POST /messages`. */
+const MESSAGE_MAX_BYTES = 100 * 1024 * 1024;
+
+const Binary = z.any().openapi({ type: "string", format: "binary" });
+const Post = z
+  .object({
+    externalId: ExternalId,
+    inboundId: z.string().min(1).max(256).openapi({
+      description: "The surface's own message id (for grouped media, the first one's): a resend posts nothing new.",
+    }),
+    text: z.string().max(MAX_MESSAGE_LENGTH).optional(),
+    forwarded: z
+      .literal("true")
+      .optional()
+      .openapi({ description: "Forwarded from another chat: the agent reads it as quoted text, not a request." }),
+    replyTo: z
+      .uuid()
+      .optional()
+      .openapi({ description: "One of our message ids the sender quoted; ignored outside the DM." }),
+    files: z
+      .any()
+      .optional()
+      .openapi({
+        type: "array",
+        items: { type: "string", format: "binary" },
+        description: `Repeated, at most ${MAX_MESSAGE_ATTACHMENTS}, each with a file name and at most 50 MB.`,
+      }),
+    voice: Binary.optional().openapi({ description: "One voice note, never with `files`." }),
+    voiceDurationMs: z.coerce.number().int().positive().optional().openapi({ description: "Required with `voice`." }),
+  })
+  .strict()
+  .openapi("SurfaceMessage");
+
+const Posted = z
+  .object({
+    status: z.enum(["posted", "duplicate", "queued"]).openapi({
+      description: "`queued`: a voice note, posted when its words are ready.",
+    }),
+    messageId: z.uuid().nullable(),
+    voiceAsFile: z.boolean().openapi({ description: "The voice note went in as a file." }),
+    orgId: z.uuid(),
+    orgName: z.string(),
+    locale: z.string(),
+  })
+  .openapi("SurfacePosted");
 
 const Health = z
   .object({
@@ -198,6 +249,88 @@ export function createSurfaceApp(deps: AppDeps, token: string, version: string) 
       if (link) Object.assign(audit, { linkId: link.id, userId: link.userId, orgId: link.orgId ?? undefined });
       const status = await unlinkExternal({ db: deps.db, pubsub: deps.adapters.pubsub }, externalId, reason);
       return c.json({ status }, 200);
+    },
+  );
+
+  api.use(
+    "/messages",
+    bodyLimit({
+      maxSize: MESSAGE_MAX_BYTES,
+      onError: (c) => apiError(c, 413, "surface.too_large", "The message is over 100 MiB"),
+    }),
+  );
+  api.openapi(
+    createRoute({
+      method: "post",
+      path: "/messages",
+      tags,
+      summary: "A linked sender's message, posted as them in their DM with the workspace's right hand",
+      description:
+        "At least one of `text`, `files`, `voice`. A voice note that isn't one core takes (type, size, bytes over 8 KB a second of its length, voice off) goes in as a file named `voice.<ext>`. The DM is marked read up to the message.",
+      request: { body: { required: true, content: { "multipart/form-data": { schema: Post } } } },
+      responses: {
+        201: json(Posted),
+        ...errors,
+        404: errorResponse("No active link for this sender (`surface.unlinked`)"),
+        409: errorResponse("`surface.no_workspace` or `surface.no_assistant`"),
+        413: errorResponse("Over 100 MiB, or a file over 50 MB (`surface.too_large`)"),
+        429: errorResponse("`surface.rate_limited` (this person, with `retryIn` and `window`) or `surface.busy`"),
+      },
+    }),
+    async (c) => {
+      const form = c.req.valid("form");
+      const audit = c.get("audit");
+      audit.externalId = form.externalId;
+      const files: unknown[] = [form.files ?? []].flat();
+      const voice: unknown = form.voice;
+      const bad = (message: string) => apiError(c, 400, "invalid_request", message);
+      if (!files.every((f): f is File => f instanceof File) || (voice !== undefined && !(voice instanceof File))) {
+        return bad("files and voice are file parts");
+      }
+      if (files.length > MAX_MESSAGE_ATTACHMENTS) return bad(`At most ${MAX_MESSAGE_ATTACHMENTS} files`);
+      if (voice && files.length > 0) return bad("A voice note goes alone, without files");
+      if (voice && form.voiceDurationMs === undefined) return bad("voiceDurationMs is required with voice");
+      if (!form.text && files.length === 0 && !voice) return bad("Send text, files or a voice note");
+      if (files.some((f) => f.size > ARTIFACT_LIMITS.fileBytes)) {
+        return apiError(c, 413, "surface.too_large", "A file is over 50 MB");
+      }
+      const link = await activeLink(deps.db, form.externalId);
+      if (link) Object.assign(audit, { linkId: link.id, userId: link.userId, orgId: link.orgId ?? undefined });
+      const artifacts = deps.extras?.artifacts;
+      if (!artifacts) throw new Error("file storage is not configured");
+      const posted = await postFromSurface(
+        {
+          db: deps.db,
+          pubsub: deps.adapters.pubsub,
+          judge: deps.extras?.context?.judge,
+          talker: deps.extras?.talker,
+          gifs: deps.adapters.gifs,
+          artifacts,
+          voice: deps.extras?.voice ?? null,
+          rateLimiter: deps.adapters.rateLimiter,
+          warn: deps.log?.warn,
+        },
+        {
+          externalId: form.externalId,
+          inboundId: form.inboundId,
+          text: form.text ?? null,
+          forwarded: form.forwarded === "true",
+          replyTo: form.replyTo ?? null,
+          files: await Promise.all(
+            files.map(async (f) => ({ name: f.name, type: f.type, bytes: new Uint8Array(await f.arrayBuffer()) })),
+          ),
+          voice:
+            voice instanceof File
+              ? {
+                  type: voice.type,
+                  bytes: new Uint8Array(await voice.arrayBuffer()),
+                  durationMs: form.voiceDurationMs ?? 0,
+                }
+              : null,
+        },
+      );
+      deps.wakeWorkers?.();
+      return c.json(posted, 201);
     },
   );
 
