@@ -16,9 +16,10 @@ import { titleOfSlug, toggleTask, wikiImportOf } from "@agenteschat/client/lib/w
 import { type DiffLine, diffLines } from "@agenteschat/ui/diff";
 import { useQueryClient } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
+import { useHeaderHeight } from "expo-router/react-navigation";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, StyleSheet, TextInput, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { readValueSync, STORED, writeValueSync } from "@/lib/storage";
@@ -47,10 +48,12 @@ import {
   SkeletonList,
   Text,
   useFieldText,
+  useLargeTitleScroll,
   usePulse,
   useReducedMotion,
   useToast,
 } from "@/ui";
+import { FadingHeaderTitle } from "@/ui/cover";
 import { router } from "@/ui/navigation";
 import { Note } from "../ai/parts";
 import { Constellation, StarCard } from "../constellation/Constellation";
@@ -402,6 +405,14 @@ const GRAPH_HEIGHT = 220;
 const HOME_STARS = 24;
 /** A page's small sky of itself and its neighbours. */
 const AROUND_HEIGHT = 168;
+/**
+ * Where a page's heading starts under the bar (the band's 8 + 96, the page's 16 above its words) and how far it runs
+ * (its title's line; a folder's line and its 4 above the title): the bar's title fades in over that span, as the
+ * heading leaves.
+ */
+const TITLE_IN_BAR_FROM = 8 + 96 + 16;
+const TITLE_IN_BAR_SPAN = 36;
+const FOLDER_LINE = 22;
 
 const inFolder = (p: WikiPageSummary, folder: string) => p.folder === folder || p.folder.startsWith(`${folder}/`);
 
@@ -448,6 +459,7 @@ export function WikiPageScreen({ slug }: { slug: string }) {
   const bulkDelete = useWikiBulkDelete();
   const graph = useWikiGraph(orgId, true);
   const insets = useSafeAreaInsets();
+  const headerHeight = useHeaderHeight();
   const p = page.data;
   const editable = p ? writes && (!p.locked || admin) : false;
   const pages = useMemo(() => tree.data ?? [], [tree.data]);
@@ -672,10 +684,31 @@ export function WikiPageScreen({ slug }: { slug: string }) {
     : "";
   // The band takes the writer's sky: an agent's color, the app's sky for a person.
   const bandColor = p?.updatedBy.type === "agent" ? agentLook(dir.anyAgent(p.updatedBy.id)).color : ("sky" as const);
+  // Read from where the content rests under the bar (iOS insets it by the bar's height).
+  const scroll = useLargeTitleScroll(Platform.OS === "ios" ? headerHeight : 0, { snap: false });
   return (
     <View style={[styles.fill, { backgroundColor: c.bg }]}>
-      <PushedHeader solid={false} actions={barActions} />
-      <ScrollView
+      {/* The page's title comes into the bar as its own heading scrolls under it, so a long page keeps its name. */}
+      <PushedHeader
+        solid={false}
+        {...(p
+          ? {
+              title: (
+                <FadingHeaderTitle
+                  y={scroll.y}
+                  from={TITLE_IN_BAR_FROM}
+                  to={TITLE_IN_BAR_FROM + (p.folder ? TITLE_IN_BAR_SPAN + FOLDER_LINE : TITLE_IN_BAR_SPAN)}
+                  text={p.title}
+                />
+              ),
+            }
+          : {})}
+        actions={barActions}
+      />
+      <Animated.ScrollView
+        ref={scroll.ref}
+        onScroll={scroll.onScroll}
+        scrollEventThrottle={16}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
@@ -827,7 +860,7 @@ export function WikiPageScreen({ slug }: { slug: string }) {
             />
           </>
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
