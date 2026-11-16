@@ -1,4 +1,4 @@
-import { useApproval, useChannels, useDecideApproval } from "@agenteschat/client";
+import { ApiError, useApproval, useChannels, useDecideApproval } from "@agenteschat/client";
 import { aheadPhase } from "@agenteschat/client/lib/approval-kind";
 import { approvalEffects } from "@agenteschat/client/lib/approval-review";
 import {
@@ -12,24 +12,28 @@ import { nextLabel } from "@agenteschat/client/lib/format";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
   Button,
+  EmptyState,
   GroupedFooter,
   GroupedHeader,
   GroupedList,
   GroupedRow,
   HoldButton,
-  IconButton,
   Locked,
+  SHEET_X,
+  SheetBar,
   SheetScreen,
+  SkeletonList,
   Text,
   useToast,
 } from "@/ui";
 import { ExpiryLine } from "../chat/asks";
 import { AgentFace } from "../shared/Face";
-import { useColors, useDirectory, useNow, useOrgId } from "../shared/hooks";
+import { LoadFailed } from "../shared/FirstUse";
+import { useDirectory, useNow, useOrgId } from "../shared/hooks";
 import { genderOf } from "../shared/logic";
 import { successHaptic } from "../shared/parts";
 import { TextArea } from "../shared/TextArea";
@@ -60,9 +64,9 @@ import { useWhenAsks } from "./when-asks";
 const SHORT_VALUE = 22;
 
 /**
- * A request, from anywhere (deep link `approval/<id>`), as the system's sheets read: its title ("Pedido") and ×, who
- * asks with the action in words and whether it can be undone after it, where and the fuse to its deadline under them
- * at the sheet's width; then the request in groups (why, the service it goes through, the values it runs with, what
+ * A request, from anywhere (deep link `approval/<id>`), as the system's sheets read: the task sheets' bar (`SheetBar`: ×
+ * and its title, "Pedido"), who asks with the action in words and whether it can be undone after it, where and the
+ * fuse to its deadline under them at the sheet's width; then the request in groups (why, the service it goes through, the values it runs with, what
  * it affects) and, where its kind allows it, "Aprovar sempre" as a switch for next time. Two buttons side by side:
  * Recusar and Aprovar (held, for high risk). Recusar writes the optional reason in the sheet (the deep link's `refuse`
  * opens there; the cards ask in the system's alert).
@@ -80,7 +84,6 @@ export function ApprovalSheet({
   const orgId = useOrgId();
   const { org } = useOrg();
   const dir = useDirectory();
-  const c = useColors();
   const now = useNow();
   const toast = useToast();
   const approval = useApproval(orgId, id);
@@ -134,24 +137,19 @@ export function ApprovalSheet({
     );
   };
 
-  const head = (
-    <View style={styles.bar}>
-      <Text variant="body" style={styles.semibold}>
-        {t("mobile.approval.sheet.title")}
-      </Text>
-      <View style={styles.barEnd}>
-        <IconButton icon="x" plate label={t("mobile.common.close")} onPress={onClose} />
-      </View>
-    </View>
-  );
-
   let body: ReactNode;
   if (!a) {
-    body = approval.isError ? (
-      <Text tone="muted">{t("mobile.approval.notFound")}</Text>
-    ) : (
-      <ActivityIndicator color={c.muted} />
-    );
+    body =
+      approval.error instanceof ApiError && approval.error.status === 404 ? (
+        <EmptyState size="inline" title={t("mobile.approval.notFound")} />
+      ) : approval.isError ? (
+        <LoadFailed onRetry={() => void approval.refetch()} />
+      ) : (
+        // Loading: the request's own shape (who asks, what), never a spinner; at the sheet's edges, as a list's rows.
+        <View style={styles.bleed}>
+          <SkeletonList rows={2} />
+        </View>
+      );
   } else {
     const pending = a.status === "pending" && new Date(a.expiresAt).getTime() > now;
     const high = approvalRisk(a) === "high";
@@ -337,16 +335,15 @@ export function ApprovalSheet({
 
   return (
     <SheetScreen>
-      {head}
+      <SheetBar title={t("mobile.approval.sheet.title")} onClose={onClose} inset />
       <View style={styles.in}>{body}</View>
     </SheetScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  // The sheet's own bar: its title centered on the grabber's line, × at the end.
-  bar: { height: 44, alignItems: "center", justifyContent: "center", marginTop: -12 },
-  barEnd: { position: "absolute", right: -2, top: 0, bottom: 0, justifyContent: "center" },
+  // The rows' shape runs to the sheet's edges, as a list's rows do, not inside its padding.
+  bleed: { marginHorizontal: -SHEET_X },
   semibold: { fontWeight: "600" },
   in: { gap: 24 },
   // The face beside the title alone (never a column beside where and when): those go under, at the sheet's width.

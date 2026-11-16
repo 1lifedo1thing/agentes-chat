@@ -11,23 +11,24 @@ import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { pickableProjects } from "@agenteschat/client/lib/issue-projects";
 import { PRIORITIES } from "@agenteschat/client/lib/issues";
 import { aiStateOf } from "@agenteschat/client/lib/no-ai";
-import { EVERYONE } from "@agenteschat/client/lib/who-sees";
+import { type AudienceChoice, EVERYONE } from "@agenteschat/client/lib/who-sees";
 import { useLocalSearchParams, usePreventRemove } from "expo-router";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Filters, GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Locked, OPTION_ROW, useToast } from "@/ui";
+import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Locked, OPTION_ROW, useToast } from "@/ui";
+import { router } from "@/ui/navigation";
+import { chooseAction } from "../settings/parts";
 import { Face } from "../shared/Face";
 import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
-import { useWhoSeesDraft, useWhoSeesLabel, WhoSeesRows } from "../shared/WhoSees";
+import { useWhoSeesLabel } from "../shared/WhoSees";
 import { columnOfIssue, DUE_CHOICES, type DueChoice, dueDateOf } from "./logic";
 import { ProjectDot, useColumnLabel } from "./parts";
+import { audienceReady, openTaskPick, type TaskPick } from "./pick";
 import { useStartAgent } from "./useStartAgent";
-
-type Open = "who" | "project" | "priority" | "due" | "sees" | null;
 
 const DESCRIPTION_LIMIT = { max: FIELD_LIMITS.issueDescription };
 const close = () => goBack("/issues");
@@ -35,8 +36,10 @@ const close = () => goBack("/issues");
 /**
  * "Nova tarefa", a screen pushed over Tarefas (the native bar: back, the title, "Criar"): the title, a
  * description, who does it (an agent picked here is asked right away, as on the web: it starts and the status
- * moves on its own), its project, the priority and the due date. From a board column's "+" (`column`), it goes in
- * that column; from a project's tasks (`project`), it starts in that project.
+ * moves on its own), its project, the priority, the due date and who sees it. Who does it, the project and who sees it
+ * are picked on their own pushed screen (`TaskPickScreen`), the priority and the due date in the app's menu of
+ * choices: nothing opens inside the form. From a board column's "+" (`column`), it goes in that column; from a
+ * project's tasks (`project`), it starts in that project.
  */
 export function NewIssueForm() {
   const { t } = useTranslation();
@@ -61,10 +64,10 @@ export function NewIssueForm() {
   const [who, setWho] = useState<Actor | null>(null);
   const [priority, setPriority] = useState<IssuePriority>("normal");
   const [due, setDue] = useState<DueChoice>("none");
-  const [open, setOpen] = useState<Open>(null);
-  const sees = useWhoSeesDraft(EVERYONE);
+  const [audience, setAudience] = useState<AudienceChoice>(EVERYONE);
   const seesLabel = useWhoSeesLabel();
-  const ready = title.trim().length > 0 && !overLimit(text, DESCRIPTION_LIMIT) && !action.isPending && sees.ready;
+  const ready =
+    title.trim().length > 0 && !overLimit(text, DESCRIPTION_LIMIT) && !action.isPending && audienceReady(audience);
   // A back swipe with a task half written asks first, as the web's dialog keeps it from a stray click.
   const done = useRef(false);
   usePreventRemove(title.trim() !== "" || text.trim() !== "", ({ repeat }) => {
@@ -74,8 +77,6 @@ export function NewIssueForm() {
       { text: t("edit.discard"), style: "destructive", onPress: repeat },
     ]);
   });
-  const toggle = (o: Exclude<Open, null>) => setOpen((v) => (v === o ? null : o));
-  const agents = dir.agents.filter((a) => a.canTalk !== false);
   const whoName = (a: Actor | null) =>
     !a ? t("mobile.issues.nobody") : a.type === "person" && a.id === meId ? t("mobile.issues.you") : dir.nameOf(a);
   const whoRole = who?.type === "agent" ? (dir.agentById.get(who.id)?.role ?? "") : "";
@@ -92,7 +93,7 @@ export function NewIssueForm() {
           priority,
           dueDate: dueDateOf(due),
           ...(project ? { projectId: project.id } : {}),
-          audience: sees.choice,
+          audience,
         },
       },
       {
@@ -116,11 +117,32 @@ export function NewIssueForm() {
     );
   };
 
-  const choices: (Actor | null)[] = [
-    ...agents.map((a) => ({ type: "agent" as const, id: a.id })),
-    ...(meId ? [{ type: "person" as const, id: meId }] : []),
-    null,
-  ];
+  // A field with many choices is picked on its own pushed screen; a short fixed list (priority, due date) in the
+  // app's menu of choices, its row marked as one.
+  const pickOn = (pick: TaskPick) => {
+    openTaskPick(pick);
+    router.push("/issues/pick");
+  };
+  const pickPriority = () =>
+    chooseAction(
+      t("issues.form.priority"),
+      PRIORITIES.map((p) => ({
+        label: t(`issues.priority.${p}`),
+        checked: p === priority,
+        onPress: () => setPriority(p),
+      })),
+      t("common.cancel"),
+    );
+  const pickDue = () =>
+    chooseAction(
+      t("mobile.issues.form.due"),
+      DUE_CHOICES.map((d) => ({
+        label: t(`mobile.issues.form.dueChoice.${d}`),
+        checked: d === due,
+        onPress: () => setDue(d),
+      })),
+      t("common.cancel"),
+    );
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
       <PushedHeader
@@ -164,25 +186,8 @@ export function NewIssueForm() {
                 icon={who ? undefined : "agent"}
                 value={whoRole || undefined}
                 chevron
-                onPress={() => toggle("who")}
+                onPress={() => pickOn({ what: "who", value: who, apply: setWho })}
               />
-              {open === "who"
-                ? choices
-                    .filter((a) => (a?.type ?? null) !== (who?.type ?? null) || a?.id !== who?.id)
-                    .map((a) => (
-                      <GroupedRow
-                        key={a ? `${a.type}:${a.id}` : "nobody"}
-                        label={whoName(a)}
-                        leading={a ? <Face who={a} size={OPTION_ROW.face} live={false} /> : undefined}
-                        icon={a ? undefined : "circle"}
-                        value={a?.type === "agent" ? (dir.agentById.get(a.id)?.role ?? undefined) : undefined}
-                        onPress={() => {
-                          setWho(a);
-                          setOpen(null);
-                        }}
-                      />
-                    ))
-                : null}
             </GroupedList>
             {who?.type === "agent" ? (
               <GroupedFooter>
@@ -205,76 +210,31 @@ export function NewIssueForm() {
                   label={t("issues.projects.label")}
                   value={project?.name ?? t("issues.projects.none")}
                   chevron
-                  onPress={() => toggle("project")}
+                  onPress={() => pickOn({ what: "project", value: project, apply: setProjectId })}
                 />
               ) : null}
-              {open === "project"
-                ? [...projects, null]
-                    .filter((p) => (p?.id ?? null) !== (project?.id ?? null))
-                    .map((p) => (
-                      <GroupedRow
-                        key={p?.id ?? "none"}
-                        leading={<ProjectDot color={p?.color} />}
-                        label={p?.name ?? t("issues.projects.none")}
-                        onPress={() => {
-                          setProjectId(p?.id ?? null);
-                          setOpen(null);
-                        }}
-                      />
-                    ))
-                : null}
               <GroupedRow
                 icon="flag"
                 label={t("issues.form.priority")}
                 value={t(`issues.priority.${priority}`)}
-                chevron
-                onPress={() => toggle("priority")}
+                menu
+                onPress={pickPriority}
               />
-              {open === "priority" ? (
-                <View style={styles.inline}>
-                  <Filters
-                    items={PRIORITIES.map((p) => ({ key: p, label: t(`issues.priority.${p}`) }))}
-                    value={priority}
-                    onChange={(k) => {
-                      setPriority(k as IssuePriority);
-                      setOpen(null);
-                    }}
-                  />
-                </View>
-              ) : null}
               <GroupedRow
                 icon="clock"
                 label={t("mobile.issues.form.due")}
                 value={t(`mobile.issues.form.dueChoice.${due}`)}
-                chevron
-                onPress={() => toggle("due")}
+                menu
+                onPress={pickDue}
               />
-              {open === "due" ? (
-                <View style={styles.inline}>
-                  <Filters
-                    items={DUE_CHOICES.map((d) => ({ key: d, label: t(`mobile.issues.form.dueChoice.${d}`) }))}
-                    value={due}
-                    onChange={(k) => {
-                      setDue(k as DueChoice);
-                      setOpen(null);
-                    }}
-                  />
-                </View>
-              ) : null}
               <GroupedRow
-                icon={sees.choice.mode === "everyone" ? "globe" : "lock"}
+                icon={audience.mode === "everyone" ? "globe" : "lock"}
                 label={t("whoSees.label")}
-                value={seesLabel(sees.choice)}
+                value={seesLabel(audience)}
                 chevron
-                onPress={() => toggle("sees")}
+                onPress={() => pickOn({ what: "sees", value: audience, apply: setAudience })}
               />
             </GroupedList>
-            {open === "sees" ? (
-              <View style={styles.seesRows}>
-                <WhoSeesRows draft={sees} />
-                <GroupedFooter>{t("whoSees.admins")}</GroupedFooter>
-              </View>
-            ) : null}
           </View>
         </Locked>
       </ScrollView>
@@ -287,6 +247,4 @@ const styles = StyleSheet.create({
   // A form's 16 pt sides, as Nova rotina's.
   in: { paddingHorizontal: 16, paddingTop: 8, gap: 12 },
   fields: { gap: 12 },
-  inline: { paddingVertical: 10, marginHorizontal: -2 },
-  seesRows: { gap: 12, marginTop: 12 },
 });

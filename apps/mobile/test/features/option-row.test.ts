@@ -24,7 +24,6 @@ describe("OptionRow (#46, A11)", () => {
 
   test("every list to pick people or agents from draws its faces at that one size", () => {
     for (const file of [
-      "features/issues/IssueScreen.tsx",
       "features/issues/NewIssueForm.tsx",
       "features/routines/RoutineForm.tsx",
       "features/chat/sheets.tsx",
@@ -33,17 +32,18 @@ describe("OptionRow (#46, A11)", () => {
     ]) {
       expect({ file, one: src(file).includes("size={OPTION_ROW.face}") }).toEqual({ file, one: true });
     }
-    // The task's assignee sheet: no face of another size beside the one "Ninguém" leads with a glyph.
+    // The task's assignee is picked on its pushed picker, faces in the rows' lead column as the agent picker's.
     expect(src("features/issues/IssueScreen.tsx")).not.toContain("<Face who={who} size={26}");
     expect(src("features/issues/NewIssueForm.tsx")).not.toContain("size={26}");
+    expect(src("features/issues/TaskPickScreen.tsx")).toContain("<Face who={who} size={FACE} live={false} />");
   });
 
   test("a task's Responsável shows who it is by their face, as a select shows its choice (#47)", () => {
+    // On the task's strip: its face, a glyph only while nobody has it.
     const screen = src("features/issues/IssueScreen.tsx");
-    expect(screen).toMatch(
-      /key: "assignee",[\s\S]{0,160}leading: <Face who=\{i\.assignee\} size=\{OPTION_ROW\.face\} live=\{false\} \/>/,
+    expect(screen).toContain(
+      '{...(assignee ? { leading: <Face who={assignee} size={20} live={false} /> } : { icon: "person" as const })}',
     );
-    expect(screen).toContain(': { icon: "agent" as const }),');
     // The new task's Quem faz and a routine's agent lead with the chosen face too.
     expect(src("features/issues/NewIssueForm.tsx")).toContain(
       "leading={who ? <Face who={who} size={OPTION_ROW.face} live={false} /> : undefined}",
