@@ -111,3 +111,27 @@ describe("what loads from the server reads again on a pull", () => {
     expect(src("ai/AgentAiScreen.tsx")).toContain("const pull = usePullRefresh(brain.refetch);");
   });
 });
+
+describe("the standard pieces", () => {
+  test("where an agent merges: the search first under the title, what the switches do under them, an empty page said", () => {
+    const merge = src("agents/MergeReposSection.tsx");
+    const screen = merge.slice(merge.indexOf("export function MergeReposScreen("));
+    expect(screen.indexOf("<SearchField")).toBeLessThan(screen.indexOf('t("repos.merge.dialogDesc")'));
+    expect(screen).toContain('<EmptyState icon="code" title={t("repos.none")} subtitle={t("repos.merge.dialogDesc")} />');
+  });
+
+  test("the color swatches and the team's channel cards answer a press with the kit's scale", () => {
+    const look = src("agents/LookPicker.tsx");
+    expect(look).not.toContain("<Pressable");
+    expect(look.match(/<PressScale/g)).toHaveLength(2);
+    const team = src("team/TeamScreen.tsx");
+    expect(team).toContain("<PressScale");
+    expect(team).not.toContain("opacity: 0.7");
+  });
+
+  test("a setor renamed and not saved asks before it is left; deleting it leaves without asking", () => {
+    const sector = src("team/SectorScreen.tsx");
+    expect(sector).toContain("const leave = useUnsavedGuard(");
+    expect(sector).toMatch(/remove\.ask\(group, \(\) => \{\s+leave\(\);\s+goBack\(\);/);
+  });
+});

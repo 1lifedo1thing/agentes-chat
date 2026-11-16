@@ -5,7 +5,7 @@ import { matchesWords } from "@agenteschat/ui/search";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
-import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, SearchField, useToast } from "@/ui";
+import { EmptyState, GroupedFooter, GroupedHeader, GroupedList, GroupedRow, SearchField, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { RowBones } from "../roles/parts";
 import { SettingsPage } from "../settings/parts";
@@ -59,8 +59,9 @@ export function MergeReposSection({ agentId, mayEdit }: { agentId: string; mayEd
 
 /**
  * Where the agent merges without asking, pushed from its row (ADR 0135: screens, never sheets): the repositories it
- * already uses, searchable, each a switch saved at once. A switch flips on the tap and only its own row waits for its
- * save; a refused save goes back to what is saved.
+ * already uses, searchable (the search first under the title, what the switches do under them), each a switch saved
+ * at once. A switch flips on the tap and only its own row waits for its save; a refused save goes back to what is
+ * saved.
  */
 export function MergeReposScreen({ agentId }: { agentId: string }) {
   const { t } = useTranslation();
@@ -97,7 +98,6 @@ export function MergeReposScreen({ agentId }: { agentId: string }) {
   const loading = !merge.data || !reach.data || listing.isPending;
   return (
     <SettingsPage title={t("repos.merge.dialogTitle", agentGrammar(name))}>
-      <GroupedFooter>{t("repos.merge.dialogDesc")}</GroupedFooter>
       {failed ? (
         // What didn't load is never an empty list: what happened, and the way to ask again.
         <LoadFailed
@@ -139,6 +139,13 @@ export function MergeReposScreen({ agentId }: { agentId: string }) {
               />
             ))}
           </GroupedList>
+          {/* What the switches do, under them: the search stays first under the title. With nothing it uses yet, the
+              same words say why the page is empty. */}
+          {choices.length === 0 ? (
+            <EmptyState icon="code" title={t("repos.none")} subtitle={t("repos.merge.dialogDesc")} />
+          ) : shown.length > 0 ? (
+            <GroupedFooter>{t("repos.merge.dialogDesc")}</GroupedFooter>
+          ) : null}
           {q.trim() && shown.length === 0 ? (
             // A search that names nothing says so, and offers to clear it.
             <>

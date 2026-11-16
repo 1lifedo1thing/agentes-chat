@@ -2,9 +2,9 @@ import { gradientOf, isHexColor } from "@agenteschat/ui/agent/engine";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AgentAvatar, GroupedHeader, GroupedList, GroupedRow, Icon, useTheme } from "@/ui";
+import { AgentAvatar, GroupedHeader, GroupedList, GroupedRow, Icon, PressScale, useTheme } from "@/ui";
 import { router } from "@/ui/navigation";
 import { AGENT_ACCESSORIES, AGENT_COLORS, AGENT_EYES } from "../shared/logic";
 import { goBack, PushedHeader, tapHaptic } from "../shared/parts";
@@ -111,28 +111,29 @@ function Swatches({
         const [top, bottom] = gradientOf(color);
         const on = look.color === color;
         return (
-          <Pressable
+          <PressScale
             key={color}
             onPress={() => onPick(color)}
             accessibilityRole="radio"
             accessibilityLabel={t(`look.colors.${color}`)}
             accessibilityState={{ selected: on }}
             hitSlop={slop}
-            style={({ pressed }) => (pressed ? styles.pressed : null)}
+            // The pick's own tap is felt once, from the form (`set`).
+            haptic={false}
           >
             <LinearGradient colors={[top, bottom]} style={styles.swatch}>
               {on ? <Icon name="check" size={16} color="#fff" /> : null}
             </LinearGradient>
-          </Pressable>
+          </PressScale>
         );
       })}
-      <Pressable
+      <PressScale
         onPress={onCustom}
         accessibilityRole="radio"
         accessibilityLabel={t("look.customColor")}
         accessibilityState={{ selected: custom }}
         hitSlop={slop}
-        style={({ pressed }) => (pressed ? styles.pressed : null)}
+        haptic={false}
       >
         <LinearGradient
           colors={custom ? gradientOf(look.color) : RAINBOW}
@@ -142,7 +143,7 @@ function Swatches({
         >
           {custom ? <Icon name="check" size={16} color="#fff" /> : null}
         </LinearGradient>
-      </Pressable>
+      </PressScale>
     </View>
   );
 }
@@ -223,5 +224,4 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   swatch: { width: 30, height: 30, borderRadius: 999, alignItems: "center", justifyContent: "center" },
-  pressed: { transform: [{ scale: 0.96 }] },
 });
