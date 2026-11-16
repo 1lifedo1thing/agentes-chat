@@ -245,8 +245,9 @@ export function AddWorkspacePage() {
   };
   return (
     <SheetScreen fit>
-      {/* The sheets' bar: back to the list it came from, the title centered (as Novo's). */}
-      <SheetHeader title={t("mobile.me.addWorkspace")} icon="back" />
+      {/* The sheets' bar, the title centered (as New's): × closes this sheet, presented over the list it came from
+          (which a flick down shows again too); never a back drawn in a sheet's bar. */}
+      <SheetHeader title={t("mobile.me.addWorkspace")} />
       <GroupedList>
         {offersNewWorkspaceHere(server, me) ? (
           <GroupedRow

@@ -143,10 +143,11 @@ describe("the team's sheets", () => {
     const card = source("right-hand/TeamCard.tsx");
     expect(card).not.toContain('variant="title2"');
     expect(card).not.toContain("<ScrollView");
-    expect(card.match(/<SheetBar/g)?.length).toBeGreaterThanOrEqual(4);
+    expect(card.match(/<SheetBar/g)?.length).toBeGreaterThanOrEqual(3);
     const templates = card.slice(card.indexOf("export function TeamTemplatesSheet("));
-    // A template opens its team behind the bar's back, never a Back button at the foot.
-    expect(templates).toContain('icon="back"');
+    // A template opens its team as a sheet over the list (a flick down comes back), never a back drawn in the bar or
+    // a Back button at the foot.
+    expect(templates).not.toContain('icon="back"');
     expect(templates).not.toContain('label={t("common.back")}');
     expect(templates).toContain("<GroupedRow");
     expect(templates).not.toContain("<Pressable");

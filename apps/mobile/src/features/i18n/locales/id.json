@@ -595,7 +595,6 @@
     "minuteLess": "{{n}} menit lebih awal",
     "minuteMore": "{{n}} menit lebih lambat",
     "submit": "Ingatkan aku pada waktu ini",
-    "quick": "Lihat waktu cepat",
     "done": "Pengingat dipasang",
     "error": {
       "noAgent": "Tidak ada agen di sini yang bisa mengingatkanmu",
@@ -2198,7 +2197,6 @@
     "noMatch": "Tidak ada peran yang cocok dengan “{{q}}”.",
     "tooMany": "Ruang kerja ini sudah punya 100 peran. Hapus satu untuk membuat yang lain.",
     "loadFailed": "Tidak bisa memuat peran. {{cause}}",
-    "backToList": "Kembali ke peran",
     "nobody": "Tidak ada",
     "reach": {
       "permissions_other": "{{count}} izin",

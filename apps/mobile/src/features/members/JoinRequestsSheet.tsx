@@ -31,6 +31,7 @@ import {
   GROUPED_ROW,
   Locked,
   PersonAvatar,
+  Sheet,
   SheetScreen,
   SkeletonList,
   Text,
@@ -53,9 +54,10 @@ const REASON_LIMIT = { max: JOIN_REASON_MAX };
  * Requests to join through an invitation link (ADR 0068, 0184), as a native form sheet: the web's Convites › Esperando
  * você on the phone, opened by the push, Atividade's card and `agenteschat://join-requests`. Each is approved with
  * what its link gives (Cargo, Canais, Agentes, changed here first if need be; a suggestion starts on nothing past
- * Todos), or denied with a reason the person reads in the email. On a server that sends no email, approving hands the
- * approver the invitation's link to share. `focus`: the request tapped on Convites, on top. With no room left nobody
- * can be approved, as on the web.
+ * Todos), or denied with a reason the person reads in the email, written on the next step: a sheet over the list (a
+ * flick down comes back to it), never the card swapped for a form with a drawn back. On a server that sends no email,
+ * approving hands the approver the invitation's link to share. `focus`: the request tapped on Convites, on top. With
+ * no room left nobody can be approved, as on the web.
  */
 export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefined; onClose: () => void }) {
   const { t } = useTranslation();
@@ -66,6 +68,8 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
   const full = membersFull(useWorkspaceLimits(orgId).data) !== null;
   // Every link handed over stays until the sheet closes: each is returned once, and the Share sheet can be dismissed.
   const [handOffs, setHandOffs] = useState<{ name: string; url: string }[]>([]);
+  // Deny's step, over the list: the request it is for.
+  const [denying, setDenying] = useState<JoinRequest | null>(null);
   const orgName = org?.name ?? "";
   const share = (url: string) =>
     void Share.share({ message: t("mobile.onb.shareMessage", { org: orgName, url }) }).catch(() => undefined);
@@ -100,6 +104,7 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
         request={r}
         roles={roles.data?.roles ?? []}
         full={full}
+        onDeny={() => setDenying(r)}
         onSend={(url) => {
           setHandOffs((all) => [...all, { name: r.name, url }]);
           share(url);
@@ -119,6 +124,9 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
         <MembersFullNote />
         {body}
       </LayoutAnimationConfig>
+      <Sheet open={denying !== null} onClose={() => setDenying(null)}>
+        {denying ? <DenyStep key={denying.id} request={denying} onDone={() => setDenying(null)} /> : null}
+      </Sheet>
     </SheetScreen>
   );
 }
@@ -128,8 +136,7 @@ const CARD_OUT = FadeOut.duration(120);
 
 /**
  * A card of the sheet that comes or goes while it is watched: it fades (none of it with reduced motion). No layout
- * transition: one would also stretch a card's own frame when denying swaps its answer for the reason field, the
- * words spilling past its edge while it grew.
+ * transition: one would stretch a card's own frame while it grew, the words spilling past its edge.
  */
 function Moving({ style, children }: { style: StyleProp<ViewStyle>; children: ReactNode }) {
   const reduced = useReducedMotion();
@@ -149,6 +156,7 @@ function RequestCard({
   request: r,
   roles,
   full,
+  onDeny,
   onSend,
 }: {
   request: JoinRequest;
@@ -156,17 +164,17 @@ function RequestCard({
   roles: readonly OrgRole[];
   /** No one more fits: only denying is left. */
   full: boolean;
+  /** Deny: its reason is the next step, over the list. */
+  onDeny: () => void;
   onSend: (url: string) => void;
 }) {
   const { t, i18n } = useTranslation();
   const { orgId } = useOrg();
   const c = useColors();
   const surface = useSurface();
-  const reduced = useReducedMotion();
   const chips = requestChips(t, i18n.language, r);
   const toast = useToast();
   const approve = useApproveJoinRequest(orgId);
-  const deny = useDenyJoinRequest(orgId);
   const key = `request:${r.id}`;
   // The link's cargos, those still offered to this approver (the others said as left out); its channels and agents
   // as the link gives them.
@@ -187,9 +195,7 @@ function RequestCard({
   const draft = useInviteDraft(key) ?? opening?.() ?? null;
   const [refused, setRefused] = useState<RefusedPick | null>(null);
   const start = useStartFields(key, draft, { refused });
-  const [denying, setDenying] = useState(false);
-  const [reason, setReason] = useState("");
-  const busy = approve.isPending || deny.isPending;
+  const busy = approve.isPending;
   const linkFull = r.link?.full === true;
   // Someone else answered first, or it ran out: said in words, and the list refreshes (the hooks refetch).
   const failed = (e: unknown) => {
@@ -224,15 +230,6 @@ function RequestCard({
       failed(e);
     }
   };
-  const denyIt = async () => {
-    if (overLimit(reason, REASON_LIMIT)) return;
-    try {
-      await deny.mutateAsync({ id: r.id, ...(reason.trim() ? { reason: reason.trim() } : {}) });
-      toast({ title: t("members.requests.denied") });
-    } catch (e) {
-      failed(e);
-    }
-  };
   const lines = [...(refused ? [inviteRefusalText(t, refused)] : []), ...start.lines];
 
   return (
@@ -262,89 +259,94 @@ function RequestCard({
           {t("members.requests.note", { note: r.note })}
         </Text>
       ) : null}
-      {/* Denying swaps the answer for the reason, faded in place. */}
-      {denying ? (
-        <Animated.View key="deny" entering={reduced ? undefined : CARD_IN} style={styles.swap}>
-          <Locked when={busy} style={styles.field}>
-            <TextArea
-              value={reason}
-              onChangeText={setReason}
-              placeholder={t("members.requests.reason")}
-              accessibilityLabel={t("members.requests.denyTitle", { name: r.name })}
-              limit={REASON_LIMIT}
-              autoFocus
-            />
-            <Text variant="caption" tone="faint">
-              {t("members.requests.reasonHelp")}
-            </Text>
-          </Locked>
-          <View style={styles.acts}>
-            <View style={styles.grow}>
-              <Button
-                variant="primary"
-                wide
-                label={t("members.requests.deny")}
-                loading={deny.isPending}
-                disabled={busy || overLimit(reason, REASON_LIMIT)}
-                onPress={() => void denyIt()}
-              />
-            </View>
-            <View style={styles.grow}>
-              <Button
-                variant="ghost"
-                wide
-                label={t("mobile.common.back")}
-                disabled={busy}
-                onPress={() => setDenying(false)}
-              />
-            </View>
-          </View>
-        </Animated.View>
-      ) : (
-        <Animated.View key="answer" entering={reduced ? undefined : CARD_IN} style={styles.swap}>
-          {/* Flat in the card (never a card in a card): the fields' text on the card's own 16 pt edge. */}
-          <Locked when={busy} style={styles.rows}>
-            {start.fields.map((field, i) => (
-              <Fragment key={field.key}>
-                {i > 0 ? <View style={[styles.divider, { backgroundColor: c.line2 }]} /> : null}
-                {field}
-              </Fragment>
-            ))}
-          </Locked>
-          {lines.map((line, i) => (
-            <Text key={line} variant="footnote" tone={refused && i === 0 ? "danger" : "faint"}>
-              {line}
-            </Text>
-          ))}
-          {leftOut.length > 0 ? (
-            <Note icon="lock">{t("invites.roleLeftOut", { count: leftOut.length, roles: joinNames(leftOut, t) })}</Note>
-          ) : null}
-          {linkFull ? <Note icon="x">{t("errors.join.linkFullApproval")}</Note> : null}
-          <View style={styles.acts}>
-            <View style={styles.grow}>
-              <Button
-                variant="primary"
-                wide
-                icon="check"
-                label={t("members.requests.approve")}
-                loading={approve.isPending}
-                disabled={busy || full || linkFull || !draft}
-                onPress={() => void approveIt()}
-              />
-            </View>
-            <View style={styles.grow}>
-              <Button
-                variant="secondary"
-                wide
-                label={t("members.requests.deny")}
-                disabled={busy}
-                onPress={() => setDenying(true)}
-              />
-            </View>
-          </View>
-        </Animated.View>
-      )}
+      {/* Flat in the card (never a card in a card): the fields' text on the card's own 16 pt edge. */}
+      <Locked when={busy} style={styles.rows}>
+        {start.fields.map((field, i) => (
+          <Fragment key={field.key}>
+            {i > 0 ? <View style={[styles.divider, { backgroundColor: c.line2 }]} /> : null}
+            {field}
+          </Fragment>
+        ))}
+      </Locked>
+      {lines.map((line, i) => (
+        <Text key={line} variant="footnote" tone={refused && i === 0 ? "danger" : "faint"}>
+          {line}
+        </Text>
+      ))}
+      {leftOut.length > 0 ? (
+        <Note icon="lock">{t("invites.roleLeftOut", { count: leftOut.length, roles: joinNames(leftOut, t) })}</Note>
+      ) : null}
+      {linkFull ? <Note icon="x">{t("errors.join.linkFullApproval")}</Note> : null}
+      <View style={styles.acts}>
+        <View style={styles.grow}>
+          <Button
+            variant="primary"
+            wide
+            icon="check"
+            label={t("members.requests.approve")}
+            loading={approve.isPending}
+            disabled={busy || full || linkFull || !draft}
+            onPress={() => void approveIt()}
+          />
+        </View>
+        <View style={styles.grow}>
+          <Button variant="secondary" wide label={t("members.requests.deny")} disabled={busy} onPress={onDeny} />
+        </View>
+      </View>
     </Moving>
+  );
+}
+
+/**
+ * Deny's step, over the list: who is denied, the reason they read in the email (optional), and the one button. Done,
+ * the step closes and the card leaves the list.
+ */
+function DenyStep({ request: r, onDone }: { request: JoinRequest; onDone: () => void }) {
+  const { t, i18n } = useTranslation();
+  const { orgId } = useOrg();
+  const toast = useToast();
+  const deny = useDenyJoinRequest(orgId);
+  const [reason, setReason] = useState("");
+  const denyIt = async () => {
+    if (overLimit(reason, REASON_LIMIT) || deny.isPending) return;
+    try {
+      await deny.mutateAsync({ id: r.id, ...(reason.trim() ? { reason: reason.trim() } : {}) });
+      toast({ title: t("members.requests.denied") });
+      onDone();
+    } catch (e) {
+      errorHaptic();
+      toast({ title: errorText(t, e, i18n.language), icon: "x" });
+    }
+  };
+  return (
+    <View style={styles.deny}>
+      <SheetTitle
+        leading={<PersonAvatar name={r.name} size={40} />}
+        title={t("members.requests.denyTitle", { name: r.name })}
+        subtitle={r.email}
+      />
+      <Locked when={deny.isPending} style={styles.field}>
+        <TextArea
+          value={reason}
+          onChangeText={setReason}
+          placeholder={t("members.requests.reason")}
+          accessibilityLabel={t("members.requests.denyTitle", { name: r.name })}
+          limit={REASON_LIMIT}
+          autoFocus
+        />
+        <Text variant="caption" tone="faint">
+          {t("members.requests.reasonHelp")}
+        </Text>
+      </Locked>
+      <Button
+        variant="primary"
+        wide
+        label={t("members.requests.deny")}
+        loading={deny.isPending}
+        disabled={overLimit(reason, REASON_LIMIT)}
+        onPress={() => void denyIt()}
+      />
+    </View>
   );
 }
 
@@ -365,8 +367,7 @@ function HandOff({ name, onShare }: { name: string; onShare: () => void }) {
 
 const styles = StyleSheet.create({
   card: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 14, gap: 10 },
-  // The card's own column inside the swap.
-  swap: { gap: 10 },
+  deny: { gap: 14 },
   who: { flexDirection: "row", alignItems: "center", gap: 10 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   grow: { flex: 1, minWidth: 0 },

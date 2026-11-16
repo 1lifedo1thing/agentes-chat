@@ -611,7 +611,6 @@
     "minuteLess": "{{n}} minuten eerder",
     "minuteMore": "{{n}} minuten later",
     "submit": "Herinner me op dit tijdstip",
-    "quick": "Snelle tijden bekijken",
     "done": "Herinnering ingesteld",
     "error": {
       "noAgent": "Geen agent hier kan je herinneren",
@@ -2304,7 +2303,6 @@
     "noMatch": "Geen rol komt overeen met “{{q}}”.",
     "tooMany": "Deze werkruimte heeft al 100 rollen. Verwijder er een om een nieuwe te maken.",
     "loadFailed": "De rollen konden niet worden geladen. {{cause}}",
-    "backToList": "Terug naar rollen",
     "nobody": "Niemand",
     "reach": {
       "permissions_one": "{{count}} recht",

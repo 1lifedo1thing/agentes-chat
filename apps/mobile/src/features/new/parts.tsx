@@ -9,20 +9,19 @@ import { goBack } from "../shared/parts";
  */
 
 /**
- * The sheet's bar in a sheet's padded body: the task sheets' `SheetBar` (the title centered, close or back to "Novo"
- * on the left), its sides and its room under the grabber the body's own.
+ * The sheet's bar in a sheet's padded body: the task sheets' `SheetBar` (the title centered, × on the left), its sides
+ * and its room under the grabber the body's own. × closes this sheet only: one presented over another (Add workspace
+ * over the workspaces) shows the one under it again, as a flick down does; nothing draws a back inside a sheet.
  */
 export function SheetHeader({
   title,
-  icon = "x",
   onPress,
 }: {
   title: string;
-  icon?: "x" | "back";
-  /** Instead of closing the sheet (a page inside it goes back to the one before). */
+  /** Instead of closing the route's sheet: a sheet the screen opens itself, closed its own way. */
   onPress?: () => void;
 }) {
-  return <SheetBar inset title={title} icon={icon} onClose={onPress ?? (() => goBack())} />;
+  return <SheetBar inset title={title} onClose={onPress ?? (() => goBack())} />;
 }
 
 /** Closes the sheets and screens over the tabs ("New" and its forms), then opens `href` (a new conversation) there. */

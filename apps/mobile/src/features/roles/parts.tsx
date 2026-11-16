@@ -18,7 +18,6 @@ import {
   useTheme,
   useToast,
 } from "@/ui";
-import { router } from "@/ui/navigation";
 import { Note } from "../ai/parts";
 import { SettingsPage } from "../settings/parts";
 import { useMeId } from "../shared/hooks";
@@ -27,7 +26,6 @@ import { glanceLine, mailLossQuestion, OWNER_MARK, OWNER_ROLE, type Viewer } fro
 
 /** The cargos' screens (`app/(app)/settings/roles/*`): a cargo's id, or `owner` for the owners'. */
 export const rolesHref = {
-  list: "/settings/roles",
   role: (roleId: string) => `/settings/roles/${roleId}`,
   tab: (tab: "permissions" | "channels" | "agents" | "people" | "look" | "add" | "rename", roleId: string) => ({
     pathname: `/settings/roles/${tab}`,
@@ -256,7 +254,10 @@ export function CargoHead({
   );
 }
 
-/** Back to the list when the cargo is gone (someone deleted it, or a link to one that never was). */
+/**
+ * A cargo that is gone (someone deleted it, or a link to one that never was): it says so, and the bar's back is the way
+ * out, as on any pushed screen; never a row drawn as a second back.
+ */
 export function Gone({ title }: { title: string }) {
   const { t } = useTranslation();
   return (
@@ -264,9 +265,6 @@ export function Gone({ title }: { title: string }) {
       <View style={styles.note}>
         <Note icon="x">{t("errors.role.unknown")}</Note>
       </View>
-      <GroupedList>
-        <GroupedRow icon="back" label={t("mobile.roles.backToList")} onPress={() => router.replace(rolesHref.list)} />
-      </GroupedList>
     </SettingsPage>
   );
 }

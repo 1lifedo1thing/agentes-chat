@@ -24,6 +24,7 @@ import {
   HoldButton,
   Locked,
   SHEET_X,
+  Sheet,
   SheetBar,
   SheetScreen,
   SkeletonList,
@@ -68,18 +69,11 @@ const SHORT_VALUE = 22;
  * and its title, "Pedido"), who asks with the action in words and whether it can be undone after it, where and the
  * fuse to its deadline under them at the sheet's width; then the request in groups (why, the service it goes through, the values it runs with, what
  * it affects) and, where its kind allows it, "Aprovar sempre" as a switch for next time. Two buttons side by side:
- * Recusar and Aprovar (held, for high risk). Recusar writes the optional reason in the sheet (the deep link's `refuse`
- * opens there; the cards ask in the system's alert).
+ * Recusar and Aprovar (held, for high risk). Refuse asks for the optional reason on the next step, a sheet over the
+ * request (a flick down comes back to it), never the request swapped for a form with a drawn back; the link's `refuse`
+ * (a card's Refuse) opens on that step alone. The cards ask in the system's alert.
  */
-export function ApprovalSheet({
-  id,
-  refuse: startRefusing = false,
-  onClose,
-}: {
-  id: string;
-  refuse?: boolean;
-  onClose: () => void;
-}) {
+export function ApprovalSheet({ id, refuse = false, onClose }: { id: string; refuse?: boolean; onClose: () => void }) {
   const { t, i18n } = useTranslation();
   const orgId = useOrgId();
   const { org } = useOrg();
@@ -90,7 +84,8 @@ export function ApprovalSheet({
   const channels = useChannels(orgId);
   const decide = useDecideApproval(orgId);
   const cancelAhead = useCancelAhead();
-  const [refusing, setRefusing] = useState(startRefusing);
+  // Refuse's step, a sheet over the request.
+  const [refusing, setRefusing] = useState(false);
   const [reason, setReason] = useState("");
   const [always, setAlways] = useState(false);
   const a = approval.data;
@@ -138,6 +133,7 @@ export function ApprovalSheet({
   };
 
   let body: ReactNode;
+  let step: ReactNode = null;
   if (!a) {
     body =
       approval.error instanceof ApiError && approval.error.status === 404 ? (
@@ -187,7 +183,8 @@ export function ApprovalSheet({
         </View>
       </View>
     );
-    body = refusing ? (
+    // Refuse's own words and its one button: what is refused stays in view over them.
+    const refusal = (
       <>
         {who}
         <Text variant="small" tone="muted">
@@ -202,141 +199,141 @@ export function ApprovalSheet({
             autoFocus
           />
         </Locked>
-        <View style={styles.pair}>
-          <View style={styles.half}>
-            <Button
-              variant="secondary"
-              wide
-              label={t("mobile.common.back")}
-              disabled={decide.isPending}
-              onPress={() => setRefusing(false)}
-            />
-          </View>
-          <View style={styles.half}>
-            <Button
-              variant="primary"
-              wide
-              label={t("mobile.approval.refuse")}
-              loading={decide.isPending}
-              onPress={() => done("refuse")}
-            />
-          </View>
-        </View>
+        <Button
+          variant="primary"
+          wide
+          label={t("mobile.approval.refuse")}
+          loading={decide.isPending}
+          onPress={() => done("refuse")}
+        />
       </>
-    ) : (
-      <>
-        {who}
-        <ApprovalAheadLine approval={a} />
-        {a.email ? <ApprovalEmailLetter email={a.email} full /> : null}
-        <View>
-          <GroupedHeader>{t("mobile.approval.sheet.request")}</GroupedHeader>
-          <GroupedList>
-            {said ? <GroupedRow key="why" label={t("mobile.approval.sheet.why")} sub={said} subLines={6} /> : null}
-            {detail ? <GroupedRow key="detail" label={detail} labelLines={4} /> : null}
-            {facts.map((f) => {
-              const label = f.label ?? t("mobile.approval.sheet.service");
-              return f.value.length > SHORT_VALUE ? (
-                <GroupedRow key={label} label={label} sub={f.value} subLines={8} />
-              ) : (
-                <GroupedRow key={label} label={label} value={f.value} />
-              );
-            })}
-          </GroupedList>
-          {foot ? <GroupedFooter>{foot}</GroupedFooter> : null}
-        </View>
-        {pending && a.canDecide && (approveAlwaysOffered(a) || when.shown) ? (
+    );
+    body =
+      refuse && pending && a.canDecide ? (
+        refusal
+      ) : (
+        <>
+          {who}
+          <ApprovalAheadLine approval={a} />
+          {a.email ? <ApprovalEmailLetter email={a.email} full /> : null}
           <View>
-            <GroupedHeader>{t("mobile.approval.sheet.nextTime")}</GroupedHeader>
+            <GroupedHeader>{t("mobile.approval.sheet.request")}</GroupedHeader>
             <GroupedList>
-              {/* What it covers behind its ⓘ: the sheet ends on its buttons, not on a paragraph. */}
-              {approveAlwaysOffered(a) ? (
-                <GroupedRow
-                  label={approveAlwaysLabel(t, a)}
-                  labelLines={2}
-                  toggle={always}
-                  disabled={decide.isPending}
-                  onPress={() => setAlways((on) => !on)}
-                  hint={{
-                    name: t("common.about", { label: approveAlwaysLabel(t, a) }),
-                    text: approveAlwaysHint(t, a, name || t("channel.unknownAgent")),
-                  }}
-                />
-              ) : null}
-              {when.shown ? (
-                <GroupedRow
-                  label={t("approvalsLevel.change")}
-                  labelLines={2}
-                  chevron
-                  disabled={decide.isPending || when.pending}
-                  onPress={when.open}
-                />
-              ) : null}
+              {said ? <GroupedRow key="why" label={t("mobile.approval.sheet.why")} sub={said} subLines={6} /> : null}
+              {detail ? <GroupedRow key="detail" label={detail} labelLines={4} /> : null}
+              {facts.map((f) => {
+                const label = f.label ?? t("mobile.approval.sheet.service");
+                return f.value.length > SHORT_VALUE ? (
+                  <GroupedRow key={label} label={label} sub={f.value} subLines={8} />
+                ) : (
+                  <GroupedRow key={label} label={label} value={f.value} />
+                );
+              })}
             </GroupedList>
+            {foot ? <GroupedFooter>{foot}</GroupedFooter> : null}
           </View>
-        ) : null}
-        {pending ? (
-          a.canDecide ? (
-            <View style={styles.pair}>
-              <View style={styles.half}>
+          {pending && a.canDecide && (approveAlwaysOffered(a) || when.shown) ? (
+            <View>
+              <GroupedHeader>{t("mobile.approval.sheet.nextTime")}</GroupedHeader>
+              <GroupedList>
+                {/* What it covers behind its ⓘ: the sheet ends on its buttons, not on a paragraph. */}
+                {approveAlwaysOffered(a) ? (
+                  <GroupedRow
+                    label={approveAlwaysLabel(t, a)}
+                    labelLines={2}
+                    toggle={always}
+                    disabled={decide.isPending}
+                    onPress={() => setAlways((on) => !on)}
+                    hint={{
+                      name: t("common.about", { label: approveAlwaysLabel(t, a) }),
+                      text: approveAlwaysHint(t, a, name || t("channel.unknownAgent")),
+                    }}
+                  />
+                ) : null}
+                {when.shown ? (
+                  <GroupedRow
+                    label={t("approvalsLevel.change")}
+                    labelLines={2}
+                    chevron
+                    disabled={decide.isPending || when.pending}
+                    onPress={when.open}
+                  />
+                ) : null}
+              </GroupedList>
+            </View>
+          ) : null}
+          {pending ? (
+            a.canDecide ? (
+              <View style={styles.pair}>
+                <View style={styles.half}>
+                  <Button
+                    variant="secondary"
+                    wide
+                    label={t("mobile.approval.refuse")}
+                    disabled={decide.isPending}
+                    onPress={() => setRefusing(true)}
+                  />
+                </View>
+                <View style={styles.half}>
+                  {high ? (
+                    <HoldButton
+                      label={t("mobile.approval.hold")}
+                      disabled={decide.isPending}
+                      onConfirm={() => done("approve", always)}
+                    />
+                  ) : (
+                    <Button
+                      variant="primary"
+                      wide
+                      label={approvalAction(a) === "draft" ? t("approval.approve.draft") : t("mobile.approval.approve")}
+                      loading={decide.isPending}
+                      onPress={() => done("approve", always)}
+                    />
+                  )}
+                </View>
+              </View>
+            ) : (
+              <Text variant="small" tone="muted" style={styles.note}>
+                {owner ? t("mobile.approval.onlyOwner", { name: owner }) : t("mobile.approval.onlyAdmins")}
+              </Text>
+            )
+          ) : aheadPhase(a) === "scheduled" && runAt ? (
+            <>
+              <Text variant="small" tone="muted" style={styles.note}>
+                {t("mobile.approval.status.scheduled", { when: runAt })}
+              </Text>
+              {a.canCancel ? (
                 <Button
                   variant="secondary"
                   wide
-                  label={t("mobile.approval.refuse")}
-                  disabled={decide.isPending}
-                  onPress={() => setRefusing(true)}
+                  label={t("approval.ahead.cancel")}
+                  loading={cancelAhead.pending}
+                  onPress={() => cancelAhead.cancel(a.id, onClose)}
                 />
-              </View>
-              <View style={styles.half}>
-                {high ? (
-                  <HoldButton
-                    label={t("mobile.approval.hold")}
-                    disabled={decide.isPending}
-                    onConfirm={() => done("approve", always)}
-                  />
-                ) : (
-                  <Button
-                    variant="primary"
-                    wide
-                    label={approvalAction(a) === "draft" ? t("approval.approve.draft") : t("mobile.approval.approve")}
-                    loading={decide.isPending}
-                    onPress={() => done("approve", always)}
-                  />
-                )}
-              </View>
-            </View>
+              ) : null}
+            </>
           ) : (
             <Text variant="small" tone="muted" style={styles.note}>
-              {owner ? t("mobile.approval.onlyOwner", { name: owner }) : t("mobile.approval.onlyAdmins")}
+              {aheadEndLine(t, a) ?? t(`mobile.approval.status.${a.status === "pending" ? "expired" : a.status}`)}
             </Text>
-          )
-        ) : aheadPhase(a) === "scheduled" && runAt ? (
-          <>
-            <Text variant="small" tone="muted" style={styles.note}>
-              {t("mobile.approval.status.scheduled", { when: runAt })}
-            </Text>
-            {a.canCancel ? (
-              <Button
-                variant="secondary"
-                wide
-                label={t("approval.ahead.cancel")}
-                loading={cancelAhead.pending}
-                onPress={() => cancelAhead.cancel(a.id, onClose)}
-              />
-            ) : null}
-          </>
-        ) : (
-          <Text variant="small" tone="muted" style={styles.note}>
-            {aheadEndLine(t, a) ?? t(`mobile.approval.status.${a.status === "pending" ? "expired" : a.status}`)}
-          </Text>
-        )}
-      </>
-    );
+          )}
+        </>
+      );
+    // Refuse's step over the request (opened only while it can be refused; kept mounted so a request that ends while
+    // it is up never pulls a sheet from under the person's finger).
+    if (!refuse)
+      step = (
+        <Sheet open={refusing} onClose={() => setRefusing(false)}>
+          <View style={styles.in}>{refusal}</View>
+        </Sheet>
+      );
   }
 
   return (
     <SheetScreen>
       <SheetBar title={t("mobile.approval.sheet.title")} onClose={onClose} inset />
       <View style={styles.in}>{body}</View>
+      {step}
     </SheetScreen>
   );
 }

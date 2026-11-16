@@ -595,7 +595,6 @@
     "minuteLess": "提前 {{n}} 分钟",
     "minuteMore": "推后 {{n}} 分钟",
     "submit": "在这个时间提醒我",
-    "quick": "查看快捷时间",
     "done": "提醒已设置",
     "error": {
       "noAgent": "这里没有能提醒你的智能体",
@@ -2198,7 +2197,6 @@
     "noMatch": "没有与“{{q}}”匹配的角色。",
     "tooMany": "这个工作区已有 100 个角色。删除一个才能创建新的。",
     "loadFailed": "无法加载角色。{{cause}}",
-    "backToList": "返回角色",
     "nobody": "无人",
     "reach": {
       "permissions_other": "{{count}} 项权限",

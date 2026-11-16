@@ -1424,9 +1424,6 @@
   "remind.submit": {
     "value": "Remind me at this time"
   },
-  "remind.quick": {
-    "value": "See quick times"
-  },
   "remind.done": {
     "value": "Reminder set"
   },
@@ -5657,9 +5654,6 @@
   },
   "roles.loadFailed": {
     "value": "Couldn't load the roles. {{cause}}"
-  },
-  "roles.backToList": {
-    "value": "Back to roles"
   },
   "roles.nobody": {
     "value": "Nobody"

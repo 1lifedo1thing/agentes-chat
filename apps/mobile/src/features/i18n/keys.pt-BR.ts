@@ -633,7 +633,6 @@ export const featureKeysPtBR = {
     minuteLess: "{{n}} minutos antes",
     minuteMore: "{{n}} minutos depois",
     submit: "Lembrar neste horário",
-    quick: "Ver horários rápidos",
     done: "Lembrete marcado",
     error: {
       noAgent: "Nenhum agente aqui pode te lembrar",
@@ -2360,7 +2359,6 @@ export const featureKeysPtBR = {
     noMatch: "Nenhum cargo com “{{q}}”.",
     tooMany: "Este workspace já tem 100 cargos. Apague um para criar outro.",
     loadFailed: "Não consegui carregar os cargos. {{cause}}",
-    backToList: "Voltar aos cargos",
     nobody: "Ninguém",
     reach: {
       permissions_one: "{{count}} permissão",

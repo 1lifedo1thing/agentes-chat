@@ -89,14 +89,55 @@ import { ReviewStep } from "./ToolReview";
 import { openTools } from "./ToolsScreen";
 
 /**
+ * What every step of one connect sheet repeats over its content: the service's mark (checked once it is connected),
+ * its name and the line under it, and where the step stands (`Progress`) among `steps`.
+ */
+interface FlowHead {
+  def: ConnectorDef | null;
+  image?: string | null | undefined;
+  /** The mark's letter when the service has no logo. */
+  label: string;
+  title: string;
+  subtitle?: string | undefined;
+  steps: Step[];
+}
+
+/** A step's head: the service, then its step's dashes. `connected` checks the mark; `label` names a new connection. */
+function StepHead({
+  head,
+  step,
+  connected,
+  label,
+}: {
+  head: FlowHead;
+  step: Step;
+  connected: boolean;
+  label?: string | undefined;
+}) {
+  return (
+    <>
+      <SheetTitle
+        leading={
+          <ConnectorIcon def={head.def} image={head.image} label={label ?? head.label} size={52} check={connected} />
+        }
+        title={head.title}
+        {...(head.subtitle ? { subtitle: head.subtitle } : {})}
+      />
+      <Progress steps={head.steps} step={step} />
+    </>
+  );
+}
+
+/**
  * One service in a sheet over the gallery, as on the web: what agents could do there (what always asks marked
  * "pede sua aprovação") → connect (sign in in the browser and come back, or paste a key) → a short confirmation
- * that ends it. "Ajustar" there goes on to its tools ("O que faz") and who uses it and how far. A connected one
- * opens on who uses it (its tools are a screen of their own; `item`: that connection, when the service is
- * connected more than once; `start`, back from a sign-in that finished elsewhere). `mode` starts at connecting:
- * `add`, another account of the service, or `reconnect`, a new sign-in for `item` (a toast says it, and the sheet
- * closes). `account`: GitHub's sign-in alone, without the agentes.chat app first (GitHub through the app alone
- * connecting an account).
+ * that ends it. "Ajustar" there goes on to its tools ("O que faz") and who uses it and how far. Each step is a sheet
+ * over the one before (the app's sheet stack: a flick down goes back a step), never this sheet's content swapped in
+ * place. A connected one opens on who uses it (its tools are a screen of their own; `item`: that connection, when the
+ * service is connected more than once; `start`, back from a sign-in that finished elsewhere). `mode` starts at
+ * connecting: `add`, another account of the service, or `reconnect`, a new sign-in for `item` (a toast says it, and
+ * the sheet closes). `account`: GitHub's sign-in alone, without the agentes.chat app first (GitHub through the app
+ * alone connecting an account).
  */
 export function ConnectSheet({
   def,
@@ -111,103 +152,56 @@ export function ConnectSheet({
   mode?: "add" | "reconnect";
   account?: boolean;
 }) {
-  const { t, i18n } = useTranslation();
-  const c = useColors();
+  const { t } = useTranslation();
   const { org } = useOrg();
   const orgId = useOrgId();
   const catalog = useCatalog();
   const connections = useConnections(orgId);
   const servers = useCustomServers(orgId);
   const admin = can(org, "manage_connectors");
-  const sheet = useSheet();
   const existing =
     item ??
     connectionOf(def, connectedItems(connections.data ?? [], servers.data ?? [], catalog.data?.connectors ?? [def]));
   const connecting = Boolean(mode) || account;
-  const [connectionId, setConnectionId] = useState<string | null>(connecting ? null : (existing?.id ?? null));
-  const [step, setStep] = useState<Step>(() => (connecting ? "connect" : firstStep(existing, admin, start)));
+  // Where it opens, decided once: the steps after it are sheets over it.
+  const [first] = useState<Step>(() => (connecting ? "connect" : firstStep(existing, admin, start)));
   const service = connectorName(t, def);
-  const name =
-    mode === "reconnect" && item
-      ? t("connectFlow.reconnectTitle", { name: itemName(t, item) })
-      : mode === "add"
-        ? t("connectFlow.addTitle", { name: service })
-        : service;
-  const tr = t as unknown as (key: string) => string;
-  const lines = capabilityLines(
-    tr,
-    (k) => i18n.exists(k),
+  const head: FlowHead = {
     def,
-    (s) => scopeText(t, s).label,
-  );
-  return (
-    <View style={styles.body}>
-      <SheetTitle
-        leading={<ConnectorIcon def={def} label={service} size={52} check={Boolean(connectionId)} />}
-        title={name}
-        subtitle={
-          def.via === "composio"
-            ? `${t(`connectors.category.${def.category}`)} · ${t("connectors.composio.via")}`
-            : t(`connectors.category.${def.category}`)
-        }
+    label: service,
+    title:
+      mode === "reconnect" && item
+        ? t("connectFlow.reconnectTitle", { name: itemName(t, item) })
+        : mode === "add"
+          ? t("connectFlow.addTitle", { name: service })
+          : service,
+    subtitle:
+      def.via === "composio"
+        ? `${t(`connectors.category.${def.category}`)} · ${t("connectors.composio.via")}`
+        : t(`connectors.category.${def.category}`),
+    steps: CATALOG_STEPS,
+  };
+  const flow: Flow = { head, def, name: service, item: mode ? undefined : existing };
+  if (first === "about") return <AboutStep flow={flow} />;
+  if (first === "connect")
+    return (
+      <ConnectingStep
+        flow={flow}
+        item={mode ? item : undefined}
+        reconnect={mode === "reconnect"}
+        accountOnly={connecting}
       />
-      <Progress steps={CATALOG_STEPS} step={step} />
-      {step === "about" ? (
-        <>
-          <Text variant="footnote" tone="faint" style={styles.label}>
-            {t("mobile.connectors.canTitle")}
-          </Text>
-          <View style={styles.caps}>
-            {lines.map((l) => (
-              <View key={l.text} style={styles.cap}>
-                <LineIcon name={l.asks ? "shield" : "eye"} size={18} color={l.asks ? c.warn : c.muted} />
-                <Text variant="body" style={styles.grow}>
-                  {l.asks && !l.said ? t("mobile.connectors.asks", { text: l.text }) : l.text}
-                </Text>
-              </View>
-            ))}
-          </View>
-          {admin ? (
-            <Button variant="primary" wide label={t("mobile.connectors.connect")} onPress={() => setStep("connect")} />
-          ) : (
-            <Text variant="small" tone="muted">
-              {/* A personal workspace's are whoever runs it, never "an admin of Personal" (ADR 0159). */}
-              {t(modeKey(org, "mobile.connectors.adminsOnly"), { org: org?.name ?? "" })}
-            </Text>
-          )}
-        </>
-      ) : step === "connect" ? (
-        <ConnectStep
-          def={def}
-          name={service}
-          item={mode ? item : undefined}
-          reconnect={mode === "reconnect"}
-          accountOnly={connecting}
-          onConnected={(id) => {
-            setConnectionId(id);
-            setStep("done");
-          }}
-          onDone={sheet.close}
-        />
-      ) : connectionId && step === "done" ? (
-        <DoneStep connectionId={connectionId} def={def} name={service} onAdjust={() => setStep("review")} />
-      ) : connectionId ? (
-        <ConnectedSteps
-          step={step}
-          onStep={setStep}
-          connectionId={connectionId}
-          def={def}
-          name={service}
-          item={mode ? undefined : existing}
-        />
-      ) : null}
-    </View>
-  );
+    );
+  // Connected: the confirmation, its tools or who uses it, on the connection it opened for.
+  if (!existing) return null;
+  return <StepView flow={flow} step={first} connectionId={existing.id} />;
 }
 
 /**
- * "Conectar pelo endereço": any MCP server by its https address (sign in there, or a key when it asks). With an
- * `item` of a server not in the catalog: another account of it (`add`) or a new sign-in for it (`reconnect`).
+ * "Conectar pelo endereço": any MCP server by its https address (sign in there, or a key when it asks). The address
+ * is the first step (the one typed in the search or a card's, already in it), connecting the next, a sheet over it.
+ * With an `item` of a server not in the catalog: another account of it (`add`) or a new sign-in for it (`reconnect`),
+ * on its own address.
  */
 export function AddressSheet({
   item,
@@ -219,80 +213,240 @@ export function AddressSheet({
   url?: string;
 } = {}) {
   const { t } = useTranslation();
+  const head: FlowHead = {
+    def: item?.def ?? null,
+    image: item?.image,
+    label: item?.label ?? "+",
+    title:
+      item && mode === "reconnect"
+        ? t("connectFlow.reconnectTitle", { name: itemName(t, item) })
+        : item
+          ? t("connectFlow.addTitle", { name: itemName(t, item) })
+          : t("mobile.connectors.addressTitle"),
+    subtitle: item?.viaComposio
+      ? t("connectors.composio.via")
+      : (item?.server?.serverUrl ?? t("mobile.connectors.addressHelp")),
+    steps: ADDRESS_STEPS,
+  };
+  const flow: Flow = { head, def: null, name: item ? itemName(t, item) : "" };
+  if (!item) return <AddressStep flow={flow} initialUrl={url ?? ""} />;
+  return <ConnectingStep flow={flow} item={item} reconnect={mode === "reconnect"} />;
+}
+
+/**
+ * A server connected by its address that isn't in the catalog: its name and address, then who uses it (the same steps
+ * as connecting it, each a sheet over the one before), and disconnecting it.
+ */
+export function ServerSheet({ item, start }: { item: ConnectedItem; start?: Step }) {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const admin = can(org, "manage_connectors");
+  // Its tools never hold this sheet (they wait on the connection's screen): its confirmation, or who uses it.
+  const [first] = useState<Step>(() =>
+    firstStep(item, admin, start === "review" ? "who" : start) === "done" ? "done" : "who",
+  );
+  const name = itemName(t, item);
+  const head: FlowHead = {
+    def: item.def,
+    image: item.image,
+    label: name,
+    title: name,
+    subtitle: item.account || undefined,
+    steps: ADDRESS_STEPS,
+  };
+  return <StepView flow={{ head, def: item.def, name, item }} step={first} connectionId={item.id} />;
+}
+
+/** One connect sheet's flow, handed from step to step: its head, the service, and the connection it opened on. */
+interface Flow {
+  head: FlowHead;
+  def: ConnectorDef | null;
+  /** The service's name in the steps' words. */
+  name: string;
+  /** The connection as it was opened (the live lists win once they have it). */
+  item?: ConnectedItem | undefined;
+}
+
+/** The step after "Ajustar" or Continuar: a catalog service's tools come before who uses it. */
+const nextOf = (flow: Flow, step: "done" | "review"): Step =>
+  step === "done" && flow.head.steps.includes("review") ? "review" : "who";
+
+/**
+ * A step on a connection that exists: its confirmation, its tools or who uses it, each going on to the next as a
+ * sheet over it.
+ */
+function StepView({ flow, step, connectionId }: { flow: Flow; step: Step; connectionId: string }) {
   const sheet = useSheet();
-  const [connected, setConnected] = useState<{ id: string; name: string } | null>(null);
-  const [step, setStep] = useState<Step>("connect");
-  const title =
-    item && mode === "reconnect"
-      ? t("connectFlow.reconnectTitle", { name: itemName(t, item) })
-      : item
-        ? t("connectFlow.addTitle", { name: itemName(t, item) })
-        : t("mobile.connectors.addressTitle");
+  const next = (from: "done" | "review") =>
+    sheet.push(<StepView flow={flow} step={nextOf(flow, from)} connectionId={connectionId} />);
   return (
     <View style={styles.body}>
-      <SheetTitle
-        leading={
-          <ConnectorIcon
-            def={item?.def ?? null}
-            image={item?.image}
-            label={connected?.name ?? item?.label ?? "+"}
-            size={52}
-            check={Boolean(connected)}
-          />
-        }
-        title={title}
-        subtitle={
-          item?.viaComposio
-            ? t("connectors.composio.via")
-            : (item?.server?.serverUrl ?? t("mobile.connectors.addressHelp"))
-        }
-      />
-      <Progress steps={ADDRESS_STEPS} step={step} />
-      {connected && step === "done" ? (
-        <DoneStep connectionId={connected.id} def={null} name={connected.name} onAdjust={() => setStep("who")} />
-      ) : connected ? (
-        <ConnectedSteps step={step} onStep={setStep} connectionId={connected.id} def={null} name={connected.name} />
+      <StepHead head={flow.head} step={step} connected />
+      {step === "done" ? (
+        <DoneStep connectionId={connectionId} def={flow.def} name={flow.name} onAdjust={() => next("done")} />
+      ) : step === "review" ? (
+        <ReviewStep connectionId={connectionId} def={flow.def} name={flow.name} onNext={() => next("review")} />
       ) : (
-        <ConnectStep
-          def={null}
-          name={item ? itemName(t, item) : ""}
-          item={item}
-          initialUrl={url}
-          reconnect={mode === "reconnect"}
-          onConnected={(id, name) => {
-            setConnected({ id, name });
-            setStep("done");
-          }}
-          onDone={sheet.close}
+        <WhoStep connectionId={connectionId} item={flow.item} />
+      )}
+    </View>
+  );
+}
+
+/** A catalog service's first step: what agents could do there, and Conectar (admins), which goes on to connecting. */
+function AboutStep({ flow }: { flow: Flow }) {
+  const { t, i18n } = useTranslation();
+  const c = useColors();
+  const { org } = useOrg();
+  const sheet = useSheet();
+  const admin = can(org, "manage_connectors");
+  const def = flow.def;
+  if (!def) return null;
+  const tr = t as unknown as (key: string) => string;
+  const lines = capabilityLines(
+    tr,
+    (k) => i18n.exists(k),
+    def,
+    (s) => scopeText(t, s).label,
+  );
+  return (
+    <View style={styles.body}>
+      <StepHead head={flow.head} step="about" connected={false} />
+      <Text variant="footnote" tone="faint" style={styles.label}>
+        {t("mobile.connectors.canTitle")}
+      </Text>
+      <View style={styles.caps}>
+        {lines.map((l) => (
+          <View key={l.text} style={styles.cap}>
+            <LineIcon name={l.asks ? "shield" : "eye"} size={18} color={l.asks ? c.warn : c.muted} />
+            <Text variant="body" style={styles.grow}>
+              {l.asks && !l.said ? t("mobile.connectors.asks", { text: l.text }) : l.text}
+            </Text>
+          </View>
+        ))}
+      </View>
+      {admin ? (
+        <Button
+          variant="primary"
+          wide
+          label={t("mobile.connectors.connect")}
+          onPress={() => sheet.push(<ConnectingStep flow={flow} />)}
         />
+      ) : (
+        <Text variant="small" tone="muted">
+          {/* A personal workspace's are whoever runs it, never "an admin of Personal" (ADR 0159). */}
+          {t(modeKey(org, "mobile.connectors.adminsOnly"), { org: org?.name ?? "" })}
+        </Text>
       )}
     </View>
   );
 }
 
 /**
- * A server connected by its address that isn't in the catalog: its name and address, then its tools and who
- * uses it (the same steps as connecting it), and disconnecting it.
+ * Connecting by an address, its first step: the address (Continuar checks it), then connecting is the next step, a
+ * sheet over this one, where the address shows; a flick down comes back here to change it.
  */
-export function ServerSheet({ item, start }: { item: ConnectedItem; start?: Step }) {
+function AddressStep({ flow, initialUrl }: { flow: Flow; initialUrl: string }) {
   const { t } = useTranslation();
-  const { org } = useOrg();
-  const admin = can(org, "manage_connectors");
-  // Its tools never hold this sheet: they wait on the connection's screen.
-  const [step, setStep] = useState<Step>(() => firstStep(item, admin, start === "review" ? "who" : start));
-  const name = itemName(t, item);
+  const c = useColors();
+  const sheet = useSheet();
+  const [url, setUrl] = useState(initialUrl);
+  const [error, setError] = useState<string | null>(null);
+  const next = () => {
+    const address = url.trim();
+    if (!isHttpsUrl(address)) {
+      errorHaptic();
+      return setError(t("mobile.connectors.addressInvalid"));
+    }
+    setError(null);
+    sheet.push(<ConnectingStep flow={flow} url={address} />);
+  };
   return (
     <View style={styles.body}>
-      <SheetTitle
-        leading={<ConnectorIcon def={item.def} image={item.image} label={name} size={52} check />}
-        title={name}
-        {...(item.account ? { subtitle: item.account } : {})}
+      <StepHead head={flow.head} step="connect" connected={false} />
+      <View style={styles.fieldBox}>
+        <Text variant="footnote" tone="faint">
+          {t("mobile.connectors.addressLabel")}
+        </Text>
+        <TextInput
+          value={url}
+          onChangeText={(v) => {
+            setUrl(v);
+            setError(null);
+          }}
+          placeholder="https://"
+          placeholderTextColor={c.faint}
+          autoCapitalize="none"
+          autoCorrect={false}
+          // An address handed in (the search's, a card's) waits on Continuar, the keyboard down.
+          autoFocus={!isHttpsUrl(initialUrl)}
+          keyboardType="url"
+          returnKeyType="next"
+          onSubmitEditing={next}
+          accessibilityLabel={t("mobile.connectors.addressLabel")}
+          style={[styles.field, { backgroundColor: c.raised, color: c.ink, borderColor: c.line }]}
+        />
+      </View>
+      <Button variant="primary" wide label={t("connectFlow.next")} onPress={next} />
+      {error ? <Problem key={error} text={error} /> : null}
+    </View>
+  );
+}
+
+/**
+ * Connecting, as a step of its own: the sign-in or the key (`ConnectStep`), and, once a new account is in, the
+ * confirmation in its place (what the step came to, the mark checked). "Ajustar" goes on as a sheet over it.
+ */
+function ConnectingStep({
+  flow,
+  item,
+  url,
+  reconnect = false,
+  accountOnly = false,
+}: {
+  flow: Flow;
+  item?: ConnectedItem | undefined;
+  /** The address typed on the step before. */
+  url?: string;
+  reconnect?: boolean;
+  accountOnly?: boolean;
+}) {
+  const sheet = useSheet();
+  const [connected, setConnected] = useState<{ id: string; name: string } | null>(null);
+  return (
+    <View style={styles.body}>
+      <StepHead
+        head={flow.head}
+        step={connected ? "done" : "connect"}
+        connected={connected !== null}
+        {...(connected && !flow.def ? { label: connected.name } : {})}
       />
-      <Progress steps={ADDRESS_STEPS} step={step} />
-      {step === "done" ? (
-        <DoneStep connectionId={item.id} def={item.def} name={name} onAdjust={() => setStep("who")} />
+      {connected ? (
+        <DoneStep
+          connectionId={connected.id}
+          def={flow.def}
+          name={flow.def ? flow.name : connected.name}
+          onAdjust={() =>
+            sheet.push(
+              <StepView
+                flow={{ ...flow, ...(flow.def ? {} : { name: connected.name }), item: undefined }}
+                step={nextOf(flow, "done")}
+                connectionId={connected.id}
+              />,
+            )
+          }
+        />
       ) : (
-        <ConnectedSteps step={step} onStep={setStep} connectionId={item.id} def={item.def} name={name} item={item} />
+        <ConnectStep
+          def={flow.def}
+          name={flow.name}
+          item={item}
+          {...(url ? { url } : {})}
+          reconnect={reconnect}
+          accountOnly={accountOnly}
+          onConnected={(id, name) => setConnected({ id, name })}
+          onDone={sheet.close}
+        />
       )}
     </View>
   );
@@ -363,27 +517,11 @@ function DoneStep({
 }
 
 /**
- * The detail behind "Ajustar": a catalog service's tools ("O que faz", then Continuar), then who uses it (one row
- * per agent, the level as its value). What a server's tools need from an admin is one row there (it opens
- * Ferramentas); anyone else is told when they still wait for an admin. Ferramentas, the account and Desconectar
- * live on its screen.
+ * Who uses a connection (one row per agent, the level as its value), the last step behind "Ajustar". What a server's
+ * tools need from an admin is one row there (it opens Ferramentas); anyone else is told when they still wait for an
+ * admin. Ferramentas, the account and Desconectar live on its screen.
  */
-function ConnectedSteps({
-  step,
-  onStep,
-  connectionId,
-  def,
-  name,
-  item,
-}: {
-  step: Step;
-  onStep: (step: Step) => void;
-  connectionId: string;
-  def: ConnectorDef | null;
-  name: string;
-  /** The connection as it was opened (the live lists win once they have it). */
-  item?: ConnectedItem;
-}) {
+function WhoStep({ connectionId, item }: { connectionId: string; item?: ConnectedItem | undefined }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const sheet = useSheet();
@@ -396,9 +534,6 @@ function ConnectedSteps({
     connectedItems(connections.data ?? [], servers.data ?? [], catalog.data?.connectors ?? []).find(
       (i) => i.id === connectionId,
     ) ?? item;
-  if (step === "review") {
-    return <ReviewStep connectionId={connectionId} def={def} name={name} onNext={() => onStep("who")} />;
-  }
   const waiting = admin && live ? live.pending : 0;
   return (
     <>
@@ -473,7 +608,7 @@ export function ConnectedNote({ name, text }: { name: string; text: string | nul
 
 /**
  * Connecting: sign in in the system browser (the server hands the answer back to the app, which finishes
- * with its own session) and/or paste a key. A catalog service that needs its server's address asks for it.
+ * with its own session) and/or paste a key. `url`: the address typed on the step before (a server by its address).
  * `item`: an account of a server by address (its address; `reconnect`: a new sign-in for it). A new account
  * goes on (`onConnected`); a new sign-in, or the same account again, ends with a toast (`onDone`). GitHub, where
  * the server has the agentes.chat app (ADR 0156), offers the app first and an account as the other way, unless
@@ -484,7 +619,7 @@ function ConnectStep({
   def,
   name,
   item,
-  initialUrl,
+  url = "",
   reconnect = false,
   accountOnly = false,
   onConnected,
@@ -492,9 +627,9 @@ function ConnectStep({
 }: {
   def: ConnectorDef | null;
   name: string;
-  item?: ConnectedItem;
-  /** The address already typed in (an agent's card in the chat). */
-  initialUrl?: string;
+  item?: ConnectedItem | undefined;
+  /** The address typed on the step before. */
+  url?: string;
   reconnect?: boolean;
   accountOnly?: boolean;
   onConnected: (connectionId: string, name: string) => void;
@@ -537,11 +672,6 @@ function ConnectStep({
   const [unreadable, setUnreadable] = useState<HeaderRefused | null>(null);
   const headers = canHeaders ? headersToSend(headerRows, dropSaved) : undefined;
   const sendsHeaders = canHeaders && (headers ? headers.length > 0 : savedHeaders.length > 0);
-  const [url, setUrl] = useState(initialUrl ?? "");
-  // By address: the address first (Continuar checks it), then how to get in, once the host is known.
-  const [phase, setPhase] = useState<"address" | "enter">(() =>
-    askUrl && !isHttpsUrl(initialUrl ?? "") ? "address" : "enter",
-  );
   const [key, setKey] = useState("");
   const [error, setError] = useState<string | null>(null);
   const busy = start.isPending || complete.isPending || withKey.isPending || connect.isPending || installer.busy;
@@ -687,11 +817,6 @@ function ConnectStep({
     else if (done.error) oops(done.error);
   };
   const field = [styles.field, { backgroundColor: c.raised, color: c.ink, borderColor: c.line }];
-  const toEnter = () => {
-    if (!isHttpsUrl(url.trim())) return oops(t("mobile.connectors.addressInvalid"));
-    setError(null);
-    setPhase("enter");
-  };
   if (appOffered && via === "app") {
     return (
       <>
@@ -730,143 +855,101 @@ function ConnectStep({
           {t("connectFlow.github.accountText")}
         </Text>
       ) : null}
-      {askUrl && phase === "address" ? (
-        <>
-          <Locked when={busy} style={styles.fieldBox}>
-            <Text variant="footnote" tone="faint">
-              {t("mobile.connectors.addressLabel")}
-            </Text>
-            <TextInput
-              value={url}
-              onChangeText={(v) => {
-                setUrl(v);
-                setError(null);
-              }}
-              placeholder="https://"
-              placeholderTextColor={c.faint}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoFocus
-              keyboardType="url"
-              returnKeyType="next"
-              onSubmitEditing={toEnter}
-              accessibilityLabel={t("mobile.connectors.addressLabel")}
-              style={field}
-            />
-          </Locked>
-          <Button variant="primary" wide label={t("connectFlow.next")} disabled={busy} onPress={toEnter} />
-          {error ? <Problem key={error} text={error} /> : null}
-        </>
+      {askUrl ? (
+        // The address it will enter, typed on the step before (a flick down goes back to change it).
+        <Text variant="footnote" tone="faint" numberOfLines={1}>
+          {serverUrl}
+        </Text>
+      ) : null}
+      {githubOrgs ? <GithubOrgs /> : null}
+      {mode === "signIn" ? (
+        <Button
+          variant="primary"
+          wide
+          label={viaComposio ? t("connectFlow.continueInComposio") : t("mobile.connectors.signIn", { name: shownName })}
+          loading={busy}
+          onPress={() => void signIn()}
+        />
       ) : (
         <>
-          {askUrl ? (
-            // The address it will enter, and a way back to change it.
-            <View style={styles.keyRow}>
-              <Text variant="footnote" tone="faint" numberOfLines={1} style={styles.grow}>
-                {serverUrl}
+          <Locked when={busy} style={styles.fieldBox}>
+            <InfoHint
+              name={t("common.about", { label: keyLabel })}
+              text={t("mobile.connectors.keyHelp")}
+              variant="footnote"
+            >
+              <Text variant="footnote" tone="faint">
+                {keyLabel}
               </Text>
+            </InfoHint>
+            <View style={styles.keyRow}>
+              <TextInput
+                value={key}
+                onChangeText={setKey}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel={keyLabel}
+                style={[field, styles.grow]}
+              />
               <Button
-                variant="text"
+                variant="secondary"
                 size="sm"
-                label={t("common.back")}
-                disabled={busy}
-                onPress={() => setPhase("address")}
+                label={t("mobile.connectors.paste")}
+                onPress={() => void Clipboard.getStringAsync().then((v) => setKey(v.trim()))}
               />
             </View>
-          ) : null}
-          {githubOrgs ? <GithubOrgs /> : null}
-          {mode === "signIn" ? (
-            <Button
-              variant="primary"
-              wide
-              label={
-                viaComposio ? t("connectFlow.continueInComposio") : t("mobile.connectors.signIn", { name: shownName })
-              }
-              loading={busy}
-              onPress={() => void signIn()}
-            />
-          ) : (
-            <>
-              <Locked when={busy} style={styles.fieldBox}>
-                <InfoHint
-                  name={t("common.about", { label: keyLabel })}
-                  text={t("mobile.connectors.keyHelp")}
-                  variant="footnote"
-                >
-                  <Text variant="footnote" tone="faint">
-                    {keyLabel}
-                  </Text>
-                </InfoHint>
-                <View style={styles.keyRow}>
-                  <TextInput
-                    value={key}
-                    onChangeText={setKey}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    accessibilityLabel={keyLabel}
-                    style={[field, styles.grow]}
-                  />
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    label={t("mobile.connectors.paste")}
-                    onPress={() => void Clipboard.getStringAsync().then((v) => setKey(v.trim()))}
-                  />
-                </View>
-              </Locked>
-              {canHeaders ? (
-                <Locked when={busy}>
-                  <RequestHeaders
-                    rows={headerRows}
-                    saved={savedHeaders}
-                    dropSaved={dropSaved}
-                    open={headersOpen}
-                    refused={refused}
-                    unreadable={unreadable}
-                    onOpen={setHeadersOpen}
-                    onChange={(rows, drop) => {
-                      setHeaderRows(rows);
-                      setDropSaved(drop);
-                      setRefused(null);
-                    }}
-                  />
-                </Locked>
-              ) : null}
-              <Button
-                variant="primary"
-                wide
-                label={t("mobile.connectors.connect")}
-                loading={busy}
-                onPress={() => void submitKey()}
+          </Locked>
+          {canHeaders ? (
+            <Locked when={busy}>
+              <RequestHeaders
+                rows={headerRows}
+                saved={savedHeaders}
+                dropSaved={dropSaved}
+                open={headersOpen}
+                refused={refused}
+                unreadable={unreadable}
+                onOpen={setHeadersOpen}
+                onChange={(rows, drop) => {
+                  setHeaderRows(rows);
+                  setDropSaved(drop);
+                  setRefused(null);
+                }}
               />
-            </>
-          )}
-          {/* The other way in, as words under the button, only where both exist (a server asked for a key). */}
-          {!viaComposio && (how === "either" || (byAddress && mode === "key")) ? (
-            <Button
-              variant="text"
-              size="sm"
-              label={mode === "signIn" ? t("mobile.connectors.useKey") : t("mobile.connectors.useSignIn")}
-              disabled={busy}
-              onPress={() => setMode(mode === "signIn" ? "key" : "signIn")}
-            />
+            </Locked>
           ) : null}
-          {appOffered ? (
-            <Button
-              variant="text"
-              size="sm"
-              label={t("mobile.connectors.githubApp.useApp")}
-              disabled={busy}
-              onPress={() => {
-                setError(null);
-                setVia("app");
-              }}
-            />
-          ) : null}
-          {error ? <Problem key={error} text={error} /> : null}
+          <Button
+            variant="primary"
+            wide
+            label={t("mobile.connectors.connect")}
+            loading={busy}
+            onPress={() => void submitKey()}
+          />
         </>
       )}
+      {/* The other way in, as words under the button, only where both exist (a server asked for a key). */}
+      {!viaComposio && (how === "either" || (byAddress && mode === "key")) ? (
+        <Button
+          variant="text"
+          size="sm"
+          label={mode === "signIn" ? t("mobile.connectors.useKey") : t("mobile.connectors.useSignIn")}
+          disabled={busy}
+          onPress={() => setMode(mode === "signIn" ? "key" : "signIn")}
+        />
+      ) : null}
+      {appOffered ? (
+        <Button
+          variant="text"
+          size="sm"
+          label={t("mobile.connectors.githubApp.useApp")}
+          disabled={busy}
+          onPress={() => {
+            setError(null);
+            setVia("app");
+          }}
+        />
+      ) : null}
+      {error ? <Problem key={error} text={error} /> : null}
     </>
   );
 }

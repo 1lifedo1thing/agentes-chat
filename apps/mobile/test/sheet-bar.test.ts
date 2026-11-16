@@ -17,8 +17,9 @@ describe("one bar for the task sheets", () => {
     expect(src("features/share/ShareScreen.tsx")).toContain(
       '<SheetBar title={t("mobile.share.title")} onClose={cancel} />',
     );
+    // A form's header closes its sheet (×); none draws a back inside a sheet.
     expect(src("features/new/parts.tsx")).toContain(
-      "<SheetBar inset title={title} icon={icon} onClose={onPress ?? (() => goBack())} />",
+      "<SheetBar inset title={title} onClose={onPress ?? (() => goBack())} />",
     );
     // None keeps a bar of its own.
     for (const file of ["features/new/NewScreen.tsx", "features/share/ShareScreen.tsx"]) {

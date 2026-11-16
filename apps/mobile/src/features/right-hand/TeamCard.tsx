@@ -32,7 +32,7 @@ import {
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { WAVE_SECONDS } from "@agenteschat/ui/agent/stickers";
 import type { TFunction } from "i18next";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { StickerCanvas } from "@/agent/StickerCanvas";
@@ -788,11 +788,16 @@ export function TeamMapSheet({ plan, open, onClose }: { plan: TeamPlan; open: bo
 /** A template's team, its faces side by side under its name. */
 const TEMPLATE_FACE = 22;
 
+/** A step of "Team templates": the list, or one template's team. */
+type TemplateStep = { kind: "list" } | { kind: "template"; id: string };
+
 /**
- * "Team templates" as a sheet: its bar (× to close; on a template, ‹ back to the list and the template's name), the
- * templates as a grouped list, each with its team's faces and opening its team, "None of these" and the other ways to
- * start under them; on a template, "Create the team" makes it. In a personal workspace (ADR 0159) the server lists
- * them by area of life, and the words are about the person's agents.
+ * "Team templates" as a sheet: its bar (× closes it), the templates as a grouped list, each with its team's faces,
+ * "None of these" and the other ways to start under them. A template opens its team as the next step, a sheet over the
+ * list (a flick down comes back to it), never the list swapped for it with a drawn back; there "Create the team" makes
+ * it. Opened on a template (`initial`, the business the first run's row 1 saved, ADR 0155 §6), that template is the
+ * first step and the list is a step over it. In a personal workspace (ADR 0159) the server lists them by area of
+ * life, and the words are about the person's agents.
  */
 export function TeamTemplatesSheet({
   open,
@@ -804,8 +809,88 @@ export function TeamTemplatesSheet({
   onClose: () => void;
   /** "Nenhum desses": back to writing what they do. */
   onNone: () => void;
-  /** The business the first run's row 1 saved (ADR 0155 §6): its template opens picked. */
+  /** The business the first run's row 1 saved (ADR 0155 §6): its template opens first. */
   initial?: string | undefined;
+}) {
+  // The steps over the first, in the order they were opened; every opening starts on the first alone. They leave once
+  // the first is gone from the screen (closing it takes them down with it), never while they are still up.
+  // Each keeps the key it was opened with: the same step opened again is a new sheet.
+  const [over, setOver] = useState<{ step: TemplateStep; key: number }[]>([]);
+  const opened = useRef(0);
+  useEffect(() => {
+    if (open) setOver([]);
+  }, [open]);
+  const first: TemplateStep = initial ? { kind: "template", id: initial } : { kind: "list" };
+  const push = (step: TemplateStep) => {
+    opened.current += 1;
+    const key = opened.current;
+    setOver((list) => [...list, { step, key }]);
+  };
+  // `on`: the templates are read only while the sheet is open (a closed sheet keeps its content mounted).
+  const content = (step: TemplateStep, at: number, on: boolean) => (
+    <TemplateStepView
+      step={step}
+      on={on}
+      onTemplate={(id) => push({ kind: "template", id })}
+      {...(at === 0 && step.kind === "template" ? { onList: () => push({ kind: "list" }) } : {})}
+      onNone={onNone}
+      // × and what leaves the sheet close every step: the first, and the ones over it with it.
+      onClose={onClose}
+    />
+  );
+  return (
+    <>
+      <Sheet
+        open={open}
+        onClose={onClose}
+        onGone={() => setOver([])}
+        header={<TemplateBar step={first} on={open} onClose={onClose} />}
+      >
+        {content(first, 0, open)}
+      </Sheet>
+      {over.map(({ step, key }, i) => (
+        // Each step presents over the one before as it mounts; a flick down takes it, and the ones over it, away.
+        <Sheet
+          key={key}
+          open
+          onClose={() => setOver((list) => list.slice(0, i))}
+          header={<TemplateBar step={step} on onClose={onClose} />}
+        >
+          {content(step, i + 1, true)}
+        </Sheet>
+      ))}
+    </>
+  );
+}
+
+/** A step's bar: × and the list's title, or the template's name. */
+function TemplateBar({ step, on, onClose }: { step: TemplateStep; on: boolean; onClose: () => void }) {
+  const { t, i18n } = useTranslation();
+  const { orgId, org } = useOrg();
+  const list = useTeamTemplates(orgId, i18n.language, on);
+  const chosen = step.kind === "template" ? list.data?.find((x) => x.id === step.id) : undefined;
+  return <SheetBar title={chosen ? chosen.name : t(modeKey(org, "teamPlan.templates.title"))} onClose={onClose} />;
+}
+
+/**
+ * One step's content: the templates, or a template's team with "Create the team". A template the list doesn't have
+ * (gone since it was saved) shows the list instead. `onList`: on the template the sheet opened on, the other templates.
+ */
+function TemplateStepView({
+  step,
+  on,
+  onTemplate,
+  onList,
+  onNone,
+  onClose,
+}: {
+  step: TemplateStep;
+  /** The sheet is open: its templates are read. */
+  on: boolean;
+  onTemplate: (id: string) => void;
+  onList?: () => void;
+  onNone: () => void;
+  onClose: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const { orgId, org } = useOrg();
@@ -814,133 +899,132 @@ export function TeamTemplatesSheet({
   const held = usePlanHold(orgId, org) !== null;
   const personal = isPersonal(org);
   const name = dir.agents.find(isRightHand)?.name ?? RIGHT_HAND_DEFAULT.name;
-  const list = useTeamTemplates(orgId, i18n.language, open);
+  const list = useTeamTemplates(orgId, i18n.language, on);
   const use = useApplyTeamTemplate(orgId);
-  const [picked, setPicked] = useState<string | null>(null);
   const [refused, setRefused] = useState<string | null>(null);
-  useEffect(() => {
-    if (open) setPicked(initial ?? null);
-    setRefused(null);
-  }, [open, initial]);
-  const chosen = list.data?.find((x) => x.id === picked) ?? null;
-  const bar = chosen ? (
-    // Back to the list while nothing is being made.
-    <SheetBar title={chosen.name} icon="back" onClose={() => !use.isPending && setPicked(null)} />
-  ) : (
-    <SheetBar title={t(modeKey(org, "teamPlan.templates.title"))} onClose={onClose} />
-  );
+  const chosen = step.kind === "template" ? (list.data?.find((x) => x.id === step.id) ?? null) : null;
+  if (step.kind === "template" && list.isPending) return <SkeletonList rows={3} />;
   return (
-    <Sheet open={open} onClose={onClose} header={bar}>
-      <View style={styles.form}>
-        <Text variant="small" tone="muted" style={styles.lead}>
-          {chosen
-            ? chosen.description
-            : held
-              ? t(modeKey(org, "teamPlan.templates.heldLead"))
-              : t(modeKey(org, "teamPlan.templates.lead"), { name })}
-        </Text>
-        {chosen ? (
-          <>
-            <TeamRows plan={chosen.team} reviewer={name} personal={personal} />
-            {held ? null : (
-              <Text variant="footnote" tone="muted">
-                {t(modeKey(org, "teamPlan.templates.tailor"))}
-              </Text>
-            )}
-            <Text variant="caption" tone="muted">
-              {countsText(t, chosen.team, personal)}
+    <View style={styles.form}>
+      <Text variant="small" tone="muted" style={styles.lead}>
+        {chosen
+          ? chosen.description
+          : held
+            ? t(modeKey(org, "teamPlan.templates.heldLead"))
+            : t(modeKey(org, "teamPlan.templates.lead"), { name })}
+      </Text>
+      {chosen ? (
+        <>
+          <TeamRows plan={chosen.team} reviewer={name} personal={personal} />
+          {held ? null : (
+            <Text variant="footnote" tone="muted">
+              {t(modeKey(org, "teamPlan.templates.tailor"))}
             </Text>
-            <Button
-              variant="primary"
-              wide
-              label={t(modeKey(org, "teamPlan.templates.create"))}
-              loading={use.isPending}
-              onPress={() =>
-                use.mutate(
-                  { templateId: chosen.id, locale: i18n.language },
-                  {
-                    // A step that failed: its reason, and the card stays open in the right hand's DM.
-                    onSuccess: (out) =>
-                      out.state === "created"
-                        ? onClose()
-                        : setRefused(
-                            out.error
-                              ? teamFailureText(t, out.error, i18n.language)
-                              : t(modeKey(org, "teamPlan.templates.failed")),
-                          ),
-                    onError: failed,
-                  },
-                )
-              }
+          )}
+          <Text variant="caption" tone="muted">
+            {countsText(t, chosen.team, personal)}
+          </Text>
+          <Button
+            variant="primary"
+            wide
+            label={t(modeKey(org, "teamPlan.templates.create"))}
+            loading={use.isPending}
+            onPress={() =>
+              use.mutate(
+                { templateId: chosen.id, locale: i18n.language },
+                {
+                  // A step that failed: its reason, and the card stays open in the right hand's DM.
+                  onSuccess: (out) =>
+                    out.state === "created"
+                      ? onClose()
+                      : setRefused(
+                          out.error
+                            ? teamFailureText(t, out.error, i18n.language)
+                            : t(modeKey(org, "teamPlan.templates.failed")),
+                        ),
+                  onError: failed,
+                },
+              )
+            }
+          />
+          {refused ? (
+            <Text variant="small" tone="danger" accessibilityLiveRegion="polite">
+              {refused}
+            </Text>
+          ) : null}
+          {onList ? (
+            // Opened on this one: the others are a step away, over it.
+            <GroupedList>
+              <GroupedRow
+                label={t(modeKey(org, "teamPlan.templates.title"))}
+                chevron
+                disabled={use.isPending}
+                onPress={onList}
+              />
+            </GroupedList>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {list.isPending ? <SkeletonList rows={3} /> : null}
+          {list.isError && !list.data ? <LoadFailed onRetry={() => void list.refetch()} /> : null}
+          <GroupedList>
+            {(list.data ?? []).map((x) => (
+              <GroupedRow
+                key={x.id}
+                label={x.name}
+                sub={x.sub}
+                subLines={2}
+                below={
+                  <View style={styles.faces}>
+                    {x.team.agents.map((a) => (
+                      <AgentAvatar
+                        key={a.handle}
+                        agent={fullLook(a.appearance)}
+                        size={TEMPLATE_FACE}
+                        name={a.name}
+                        live={false}
+                      />
+                    ))}
+                  </View>
+                }
+                chevron
+                onPress={() => onTemplate(x.id)}
+              />
+            ))}
+            {held || !list.data ? null : (
+              <GroupedRow
+                icon="pen"
+                label={t("teamPlan.templates.none")}
+                sub={t(modeKey(org, "teamPlan.templates.noneSub"), { name })}
+                subLines={2}
+                onPress={onNone}
+              />
+            )}
+          </GroupedList>
+          <GroupedList>
+            <GroupedRow
+              icon="out"
+              label={t("teamPlan.templates.import")}
+              chevron
+              onPress={() => {
+                onClose();
+                router.push("/settings/import");
+              }}
             />
-            {refused ? (
-              <Text variant="small" tone="danger" accessibilityLiveRegion="polite">
-                {refused}
-              </Text>
-            ) : null}
-          </>
-        ) : (
-          <>
-            {list.isPending ? <SkeletonList rows={3} /> : null}
-            {list.isError && !list.data ? <LoadFailed onRetry={() => void list.refetch()} /> : null}
-            <GroupedList>
-              {(list.data ?? []).map((x) => (
-                <GroupedRow
-                  key={x.id}
-                  label={x.name}
-                  sub={x.sub}
-                  subLines={2}
-                  below={
-                    <View style={styles.faces}>
-                      {x.team.agents.map((a) => (
-                        <AgentAvatar
-                          key={a.handle}
-                          agent={fullLook(a.appearance)}
-                          size={TEMPLATE_FACE}
-                          name={a.name}
-                          live={false}
-                        />
-                      ))}
-                    </View>
-                  }
-                  chevron
-                  onPress={() => setPicked(x.id)}
-                />
-              ))}
-              {held || !list.data ? null : (
-                <GroupedRow
-                  icon="pen"
-                  label={t("teamPlan.templates.none")}
-                  sub={t(modeKey(org, "teamPlan.templates.noneSub"), { name })}
-                  subLines={2}
-                  onPress={onNone}
-                />
-              )}
-            </GroupedList>
-            <GroupedList>
-              <GroupedRow
-                icon="out"
-                label={t("teamPlan.templates.import")}
-                chevron
-                onPress={() => {
-                  onClose();
-                  router.push("/settings/import");
-                }}
-              />
-              <GroupedRow
-                icon="plus"
-                label={t("teamPlan.templates.scratch")}
-                chevron
-                onPress={() => {
-                  onClose();
-                  router.push("/new-agent");
-                }}
-              />
-            </GroupedList>
-          </>
-        )}
-      </View>
-    </Sheet>
+            <GroupedRow
+              icon="plus"
+              label={t("teamPlan.templates.scratch")}
+              chevron
+              onPress={() => {
+                onClose();
+                router.push("/new-agent");
+              }}
+            />
+          </GroupedList>
+        </>
+      )}
+    </View>
   );
 }
 

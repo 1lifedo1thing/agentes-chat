@@ -643,7 +643,6 @@
     "minuteLess": "{{n}} min wcześniej",
     "minuteMore": "{{n}} min później",
     "submit": "Przypomnij mi o tej godzinie",
-    "quick": "Zobacz szybkie terminy",
     "done": "Przypomnienie ustawione",
     "error": {
       "noAgent": "Żaden agent tutaj nie może ci przypomnieć",
@@ -2516,7 +2515,6 @@
     "noMatch": "Żadna rola nie pasuje do „{{q}}”.",
     "tooMany": "Ta przestrzeń robocza ma już 100 ról. Usuń jedną, aby utworzyć kolejną.",
     "loadFailed": "Nie udało się wczytać ról. {{cause}}",
-    "backToList": "Wróć do ról",
     "nobody": "Nikt",
     "reach": {
       "permissions_one": "{{count}} uprawnienie",

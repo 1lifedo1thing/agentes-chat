@@ -611,7 +611,6 @@
     "minuteLess": "{{n}} Minuten früher",
     "minuteMore": "{{n}} Minuten später",
     "submit": "Zu dieser Zeit erinnern",
-    "quick": "Schnelle Zeiten ansehen",
     "done": "Erinnerung eingestellt",
     "error": {
       "noAgent": "Kein Agent hier kann dich erinnern",
@@ -2304,7 +2303,6 @@
     "noMatch": "Keine Rolle passt zu „{{q}}“.",
     "tooMany": "Dieser Workspace hat schon 100 Rollen. Lösche eine, um eine neue zu erstellen.",
     "loadFailed": "Die Rollen konnten nicht geladen werden. {{cause}}",
-    "backToList": "Zurück zu den Rollen",
     "nobody": "Niemand",
     "reach": {
       "permissions_one": "{{count}} Berechtigung",

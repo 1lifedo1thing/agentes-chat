@@ -627,7 +627,6 @@
     "minuteLess": "{{n}} minutes plus tôt",
     "minuteMore": "{{n}} minutes plus tard",
     "submit": "Me le rappeler à cette heure",
-    "quick": "Voir les horaires rapides",
     "done": "Rappel programmé",
     "error": {
       "noAgent": "Aucun agent ici ne peut vous le rappeler",
@@ -2403,7 +2402,6 @@
     "noMatch": "Aucun rôle ne correspond à “{{q}}”.",
     "tooMany": "Cet espace de travail a déjà 100 rôles. Supprimez-en un pour en créer un autre.",
     "loadFailed": "Impossible de charger les rôles. {{cause}}",
-    "backToList": "Retour aux rôles",
     "nobody": "Personne",
     "reach": {
       "permissions_one": "{{count}} permission",

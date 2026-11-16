@@ -649,7 +649,6 @@ export const featureKeysEn = {
     minuteLess: "{{n}} minutes earlier",
     minuteMore: "{{n}} minutes later",
     submit: "Remind me at this time",
-    quick: "See quick times",
     done: "Reminder set",
     error: {
       noAgent: "No agent here can remind you",
@@ -2450,7 +2449,6 @@ export const featureKeysEn = {
     noMatch: "No role matches “{{q}}”.",
     tooMany: "This workspace already has 100 roles. Delete one to create another.",
     loadFailed: "Couldn't load the roles. {{cause}}",
-    backToList: "Back to roles",
     /** A role nobody holds yet, at the start of its glance line. */
     nobody: "Nobody",
     /** What a role adds to what Everyone can, under its name: "+3 permissions · +2 channels · +1 agent". */

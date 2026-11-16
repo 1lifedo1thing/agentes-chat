@@ -564,7 +564,7 @@ describe("a request's sheet on the phone", () => {
 
   test("whether it can be undone is a chip after the title, not a line in the foot; what it touches stays there", () => {
     const sheet = read("approvals/ApprovalSheet.tsx");
-    const who = sheet.slice(sheet.indexOf("const who = ("), sheet.indexOf("body = refusing"));
+    const who = sheet.slice(sheet.indexOf("const who = ("), sheet.indexOf("const refusal = ("));
     // The title, then the chip on its last line while it fits (a wrapping line), never cut.
     expect(who.indexOf("<ApprovalUndoChip approval={a} />")).toBeGreaterThan(who.indexOf("approvalTitleText(t, a)"));
     expect(who).not.toContain("numberOfLines");
