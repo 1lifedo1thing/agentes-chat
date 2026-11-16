@@ -9,6 +9,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import { Card, Count, Icon, IconButton, Row, Text, useToast, weights } from "@/ui";
 import { Face } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId, useWhen } from "../shared/hooks";
 import { previewOf } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
@@ -117,7 +118,8 @@ export function PinsSheet({
       {pins.isLoading ? (
         <ActivityIndicator color={c.muted} />
       ) : pins.isError ? (
-        <Text tone="muted">{t("mobile.app.failed")}</Text>
+        // What happened, and the way to ask again from the sheet itself.
+        <LoadFailed onRetry={() => void pins.refetch()} />
       ) : list.length === 0 ? (
         <Text variant="body" tone="muted" style={styles.empty}>
           {t("mobile.pins.empty")}
