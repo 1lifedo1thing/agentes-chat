@@ -478,6 +478,8 @@ test("signing in: the person who connected the computer; the code is sealed to i
       providerOrgId: null,
       serves: "everyone",
       useOrder: null,
+      // A login for one agent is never a next account.
+      movable: false,
     },
   });
   // Polled again: the same account, added once.

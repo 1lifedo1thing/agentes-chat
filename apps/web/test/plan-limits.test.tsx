@@ -446,6 +446,25 @@ describe("IA e uso › Contas: the order of use at a limit (ADR 0041 §6)", () =
     expect(codex?.querySelector(".plan-row__place")).toBeNull();
   });
 
+  test("an account a run never moves to keeps its row in the order with no number, starting where the others do", async () => {
+    await go("settings/usage", onPlans(), [
+      ...ORDER,
+      claude("acct_solo", "Só da Ada", { useOrder: 0, shared: false }),
+      claude("acct_out", "Saiu", { status: "signed_out" }),
+    ]);
+    expect(places()).toEqual([
+      ["1", "Trabalho"],
+      ["2", "Pessoal"],
+      ["3", "Conta do João"],
+      ["", "Só da Ada"],
+      ["", "Saiu"],
+    ]);
+    const group = order() as HTMLElement;
+    const grips = [...group.querySelectorAll("button.plan-row__place")].map((b) => b.getAttribute("aria-label"));
+    // Only the placed ones have a grip, and their names count only the placed ones.
+    expect(grips).toEqual(["Mover Trabalho, número 1 na ordem", "Mover Pessoal, número 2 na ordem"]);
+  });
+
   test("Mover para baixo from the place's menu saves the new place and the list follows", async () => {
     const state = onPlans();
     await go("settings/usage", state, ORDER);

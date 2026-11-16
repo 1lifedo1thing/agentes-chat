@@ -20,6 +20,7 @@ import {
   keyRemovalText,
   offersSignInAgain,
   onSeveralComputers,
+  orderPlaces,
   ownSignIns,
   ownSignInTitle,
   signInOf,
@@ -228,8 +229,11 @@ export function AiAccountsScreen() {
     );
   };
 
-  /** One of the viewer's accounts: its meter and actions, with its place `n` when it is in an order (`g`). */
-  const accountRow = (a: Account, g?: AccountOrderGroup, n?: number) => {
+  /**
+   * One of the viewer's accounts: its meter and actions, with its place `n` when it is in an order (`g`), blank (null)
+   * when a run never moves to it.
+   */
+  const accountRow = (a: Account, g?: AccountOrderGroup, n?: number | null) => {
     const plan = planOf(a.provider);
     const out = signInOf(a) === "signed_out";
     const unknown = signInOf(a) === "unknown";
@@ -251,7 +255,7 @@ export function AiAccountsScreen() {
         leading={
           n !== undefined ? (
             <Text variant="callout" tone="muted" style={styles.place}>
-              {n}
+              {n ?? ""}
             </Text>
           ) : (
             <ProviderLogo id={a.provider ?? a.kind} size="sm" off={out} />
@@ -343,15 +347,16 @@ export function AiAccountsScreen() {
             computer={severalOrders ? computerOf(g.computer) : null}
           >
             {g.accounts.map((a, i) => {
+              const n = orderPlaces(g.accounts)[i] ?? null;
               const mine = rows.find((r) => r.id === a.id);
-              if (mine) return accountRow(mine, g, i + 1);
+              if (mine) return accountRow(mine, g, n);
               const them = moves(g, a);
               return (
                 <GroupedRow
                   key={a.id}
                   leading={
                     <Text variant="callout" tone="muted" style={styles.place}>
-                      {i + 1}
+                      {n ?? ""}
                     </Text>
                   }
                   label={accountTitle(a)}

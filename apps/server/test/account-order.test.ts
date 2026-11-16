@@ -25,7 +25,11 @@ const OWNER_KEY = "0193ffff-0000-4000-8000-00000000a003";
 const OWNER_CODEX = "0193ffff-0000-4000-8000-00000000a004";
 const OWNER_GEMINI = "0193ffff-0000-4000-8000-00000000a005";
 
-type Group = { machineId: string; kind: string; accounts: { id: string; canMove: boolean; useOrder: number | null }[] };
+type Group = {
+  machineId: string;
+  kind: string;
+  accounts: { id: string; canMove: boolean; useOrder: number | null; movable: boolean }[];
+};
 
 async function workspace() {
   t = await createTestServer({ env: { ALLOW_SIGNUP: "true" }, reply: () => ({ chunks: ["ok"] }) });
@@ -95,6 +99,23 @@ test("the order of use: by computer and kind, the CLI's own sign-ins only, place
   // João moves only his own.
   expect(groups[0]?.accounts.map((a) => a.canMove)).toEqual([false, false, true, true]);
   expect(groups[0]?.accounts[0]?.useOrder).toBe(0);
+});
+
+test("only accounts a run may move to have a place: a one-agent login and a signed-out one come last, out of the moves", async () => {
+  const { api } = await workspace();
+  await t.db
+    .update(schema.machineAccounts)
+    .set({ shared: false, useOrder: 0 })
+    .where(eq(schema.machineAccounts.id, OWNER_A));
+  await t.db.update(schema.machineAccounts).set({ status: "signed_out" }).where(eq(schema.machineAccounts.id, JOAO_A));
+  const [claude] = await order(api);
+  expect(ids(claude)).toEqual([OWNER_B, JOAO_ONLY, OWNER_A, JOAO_A]);
+  expect(claude?.accounts.map((a) => a.movable)).toEqual([true, true, false, false]);
+  // A move counts only the placed ones, and an account with no place isn't one to move.
+  const moved = await move(api, JOAO_ONLY, 0);
+  expect(moved.status).toBe(200);
+  expect(ids((await moved.json()) as Group)).toEqual([JOAO_ONLY, OWNER_B, OWNER_A, JOAO_A]);
+  expect((await move(api, OWNER_A, 0)).status).toBe(404);
 });
 
 test("moving an account: its owner or an admin, the others keep their order; anyone else is refused in words", async () => {

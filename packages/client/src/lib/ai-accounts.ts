@@ -439,7 +439,7 @@ export function keyRemovalText(
 
 /**
  * The accounts a run of an agent goes through at its plan's limit (ADR 0041 §6, the server's `nextAccountPlan`): its
- * own account, then the others of its kind with the CLI's own sign-in (never a key) that are signed in and shared
+ * own account, then the others of its kind with the CLI's own sign-in (never a key, `movable`) that are signed in and shared
  * between agents (a login made for one agent is lent to that agent only), its owner's first and then those that serve
  * everyone, each by `useOrder` (the unplaced after, in the order given: oldest first). Only its own account when it is
  * pinned ("Só esta conta"), a key's, or of a kind that never moves (Gemini, Grok, Cursor, OpenCode). The right hand's
@@ -466,6 +466,7 @@ export function accountChain<A extends MachineAccount>(
         a.provider === null &&
         a.status === "active" &&
         a.shared === true &&
+        runMayMoveTo(a) &&
         serves(a),
     )
     .sort((x, y) => Number(mine(y.a)) - Number(mine(x.a)) || place(x.a) - place(y.a) || x.i - y.i);
@@ -479,9 +480,26 @@ export function accountChain<A extends MachineAccount>(
 export const chainHasRoom = <A>(chain: readonly A[], limited: (a: A) => boolean) =>
   chain.slice(1).some((a) => !limited(a));
 
-/** "Subir" and "Descer" in an order of use: the place to move the account to (`moveAccountInOrder`), null at that end. */
-export function orderStep(accounts: readonly { id: string }[], id: string, step: -1 | 1): number | null {
-  const from = accounts.findIndex((a) => a.id === id);
+/** A run at another account's limit may go on with it (the server's `movable`; absent: an older server, which says yes). */
+export const runMayMoveTo = (a: { movable?: boolean }) => a.movable !== false;
+
+/** Each account's place in its order of use, 1 first: only those a run may move to (`runMayMoveTo`), null the rest. */
+export function orderPlaces(accounts: readonly { movable?: boolean }[]): (number | null)[] {
+  let n = 0;
+  return accounts.map((a) => (runMayMoveTo(a) ? ++n : null));
+}
+
+/**
+ * "Subir" and "Descer" in an order of use: the place to move the account to among those that have one
+ * (`moveAccountInOrder`), null at that end or for an account with no place.
+ */
+export function orderStep(
+  accounts: readonly { id: string; movable?: boolean }[],
+  id: string,
+  step: -1 | 1,
+): number | null {
+  const placed = accounts.filter(runMayMoveTo);
+  const from = placed.findIndex((a) => a.id === id);
   const to = from + step;
-  return from < 0 || to < 0 || to >= accounts.length ? null : to;
+  return from < 0 || to < 0 || to >= placed.length ? null : to;
 }

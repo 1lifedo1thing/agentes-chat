@@ -216,13 +216,13 @@ function OrderRows({
   return (
     <div className="plan-order">
       <OrderHead group={group} computer={computer} />
-      {rows.map((a, i) => (
+      {rows.map((a) => (
         <AccountRow
           key={a.key}
           account={a}
           money={money}
           computer={computer}
-          place={a.accountId ? place(a.accountId, i + 1, accountName(t, a)) : undefined}
+          place={a.accountId ? place(a.accountId, accountName(t, a)) : undefined}
           drop={a.accountId ? drop(a.accountId) : undefined}
         />
       ))}

@@ -15,6 +15,7 @@ import {
   lendable,
   listsExisting,
   offersSignInAgain,
+  orderPlaces,
   orderStep,
   ownSignInListed,
   ownSignInLower,
@@ -594,6 +595,19 @@ describe("accountChain: the accounts a run goes through at its plan's limit", ()
     expect(orderStep(order, "a", -1)).toBeNull();
     expect(orderStep(order, "c", 1)).toBeNull();
     expect(orderStep(order, "x", 1)).toBeNull();
+  });
+
+  test("a CLI login by API key is never a next account: the server says so with `movable`", () => {
+    expect(chainOf([claude("own1"), claude("cli-key", { movable: false }), claude("own2")])).toEqual(["own1", "own2"]);
+  });
+
+  test("only accounts a run may move to have a place: the others keep their row with no number, and no Subir or Descer", () => {
+    const order = [{ id: "a" }, { id: "solo", movable: false }, { id: "b" }, { id: "out", movable: false }];
+    expect(orderPlaces(order)).toEqual([1, null, 2, null]);
+    expect(orderStep(order, "a", 1)).toBe(1);
+    expect(orderStep(order, "b", -1)).toBe(0);
+    expect(orderStep(order, "b", 1)).toBeNull();
+    expect(orderStep(order, "solo", -1)).toBeNull();
   });
 });
 

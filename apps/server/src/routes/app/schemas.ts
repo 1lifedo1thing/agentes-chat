@@ -1041,6 +1041,10 @@ export const MachineAccount = z
       description:
         "Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6), 0 first; null: after the placed ones, oldest first. A run at its plan's limit goes on with its agent's owner's next account, then the others that serve everyone.",
     }),
+    movable: z.boolean().openapi({
+      description:
+        "A run at another account's limit may go on with it: Claude Code's or Codex's own sign-in (never a key), shared between agents and signed in (ADR 0041 §6). Only these have a place in the order of use.",
+    }),
   })
   .openapi("MachineAccount", {
     description:

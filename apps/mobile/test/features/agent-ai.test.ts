@@ -1255,6 +1255,12 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     expect(orderMoves(order, { id: "b", canMove: false })).toEqual([]);
   });
 
+  test("an account a run never moves to has no Move up or Move down, and the others step over it", () => {
+    const order = [{ id: "a" }, { id: "solo", movable: false }, { id: "b" }];
+    expect(orderMoves(order, { id: "solo", canMove: true })).toEqual([]);
+    expect(orderMoves(order, { id: "b", canMove: true })).toEqual([{ step: -1, index: 0 }]);
+  });
+
   test("the screens: the order with Move up and Move down, the pin switch, the limit's way out only when it waits", async () => {
     const read = (file: string) => Bun.file(new URL(`../../src/features/ai/${file}`, import.meta.url).pathname).text();
     const [accounts, ai, advanced] = await Promise.all([
@@ -1264,7 +1270,7 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     ]);
     // The order numbers the account rows themselves: each account once, never a second list.
     expect(accounts).toContain("rows.filter((a) => !placed.has(a.id)).map((a) => accountRow(a))");
-    expect(accounts).toContain("if (mine) return accountRow(mine, g, i + 1);");
+    expect(accounts).toContain("if (mine) return accountRow(mine, g, n);");
     expect(accounts).toContain("...(g && placedAs ? moves(g, placedAs) : []),");
     expect(accounts).toContain("filter((g) => g.accounts.length > 1)");
     expect(accounts).toContain("disabled={g !== undefined && move.isPending}");

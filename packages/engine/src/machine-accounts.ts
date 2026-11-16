@@ -161,6 +161,11 @@ export interface MachineAccountView {
   serves: PlanServes;
   /** Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6); null: after the placed ones, oldest first. */
   useOrder: number | null;
+  /**
+   * A run at another account's limit may go on with it (`nextAccountPlan`): Claude Code's or Codex's own sign-in (never
+   * a key), shared between agents and signed in. Only these have a place in the order of use.
+   */
+  movable: boolean;
 }
 
 /** Who a plan thinks for (`machine_accounts.serves`, ADR 0059 §3). */
@@ -260,8 +265,20 @@ function accountView(
     providerOrgId: mine ? row.providerOrgId : null,
     serves: servesOf(row.serves),
     useOrder: row.useOrder,
+    movable: runMayMoveTo(row),
   };
 }
+
+/** `MachineAccountView.movable`, as `chainWhere` in `spill.ts` reads it, short of whom the account serves. */
+const runMayMoveTo = (row: Pick<MachineAccountRow, "kind" | "provider" | "authMethod" | "shared" | "status">) =>
+  (NEXT_ACCOUNT_KINDS as readonly string[]).includes(row.kind) &&
+  row.provider === null &&
+  row.authMethod !== "api_key" &&
+  row.shared &&
+  row.status === "active";
+
+/** The accounts of an order of use that have a place in it (`MachineAccountView.movable`). */
+const movableRow = and(eq(machineAccounts.shared, true), eq(machineAccounts.status, "active"));
 
 /** People would see a difference: a window moved a point or more, its reset moved, one came or went, or the limit. */
 export function usageMoved(prev: PlanUsage | null | undefined, next: PlanUsage | null | undefined): boolean {
@@ -348,7 +365,8 @@ const orderOfUse = [
 
 /**
  * `GET …/ai-accounts/order` (any member): every computer's Claude and ChatGPT accounts in the workspace's order of use,
- * by computer and kind. Owner-only ones are listed too: they keep their place for their owner's agents.
+ * by computer and kind. Owner-only ones are listed too: they keep their place for their owner's agents. Those a run
+ * never moves to (a login for one agent, one signed out) come last, with no place.
  */
 export async function listAccountOrder(
   deps: Pick<MachineAccountDeps, "db">,
@@ -362,7 +380,7 @@ export async function listAccountOrder(
     .from(machineAccounts)
     .innerJoin(machines, and(eq(machines.id, machineAccounts.machineId), isNull(machines.deletedAt)))
     .where(inOrder(orgId))
-    .orderBy(machines.createdAt, machines.id, machineAccounts.kind, ...orderOfUse);
+    .orderBy(machines.createdAt, machines.id, machineAccounts.kind, sql`${movableRow} desc`, ...orderOfUse);
   const views = new Map<string, MachineAccountView>();
   for (const machineId of new Set(rows.map((r) => r.machineId))) {
     for (const v of await listMachineAccounts(deps, orgId, machineId, userId)) views.set(v.id, v);
@@ -382,8 +400,8 @@ export async function listAccountOrder(
 }
 
 /**
- * `PUT …/ai-accounts/{id}/order`: the account takes place `index` (0 first) among its computer's accounts of its kind,
- * the others keeping theirs in order. Its owner or an admin (`account.order_forbidden`). Audited as `account.order`.
+ * `PUT …/ai-accounts/{id}/order`: the account takes place `index` (0 first) among its computer's accounts of its kind
+ * that have a place (`movableRow`), the others keeping theirs in order. Its owner or an admin (`account.order_forbidden`). Audited as `account.order`.
  */
 export async function moveAccountInOrder(
   deps: MachineAccountDeps,
@@ -399,7 +417,7 @@ export async function moveAccountInOrder(
   const [row] = await deps.db
     .select()
     .from(machineAccounts)
-    .where(and(inOrder(orgId), eq(machineAccounts.id, accountId)));
+    .where(and(inOrder(orgId), movableRow, eq(machineAccounts.id, accountId)));
   if (!row) throw new NotFoundError("Account not found", "account.not_found");
   if (row.createdBy !== userId && !can(membership, "configure")) {
     throw new ForbiddenError(
@@ -411,7 +429,14 @@ export async function moveAccountInOrder(
     const group = await tx
       .select({ id: machineAccounts.id, useOrder: machineAccounts.useOrder })
       .from(machineAccounts)
-      .where(and(inOrder(orgId), eq(machineAccounts.machineId, row.machineId), eq(machineAccounts.kind, row.kind)))
+      .where(
+        and(
+          inOrder(orgId),
+          movableRow,
+          eq(machineAccounts.machineId, row.machineId),
+          eq(machineAccounts.kind, row.kind),
+        ),
+      )
       .orderBy(...orderOfUse)
       .for("update");
     const ids = group.filter((g) => g.id !== row.id).map((g) => g.id);

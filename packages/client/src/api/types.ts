@@ -6064,6 +6064,11 @@ export interface MachineAccount {
    * placed ones, oldest first (absent: an older server).
    */
   useOrder?: number | null;
+  /**
+   * A run at another account's limit may go on with it: Claude Code's or Codex's own sign-in (never a key), shared
+   * between agents and signed in. Only these have a place in the order of use (absent: an older server).
+   */
+  movable?: boolean;
 }
 
 /** `GET …/ai-accounts/order`: one computer's Claude or ChatGPT accounts in their order of use (ADR 0041 §6). */

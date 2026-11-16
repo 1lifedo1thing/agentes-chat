@@ -351,8 +351,14 @@ export function pickedAi(
   };
 }
 
-/** Move up and Move down for `account` in its order of use (`orderStep`): only for whoever may move it, none at an end. */
-export function orderMoves(accounts: readonly { id: string }[], account: { id: string; canMove: boolean }) {
+/**
+ * Move up and Move down for `account` in its order of use (`orderStep`): only for whoever may move it, none at an end
+ * nor for an account with no place.
+ */
+export function orderMoves(
+  accounts: readonly { id: string; movable?: boolean }[],
+  account: { id: string; canMove: boolean },
+) {
   if (!account.canMove) return [];
   return ([-1, 1] as const).flatMap((step) => {
     const index = orderStep(accounts, account.id, step);
