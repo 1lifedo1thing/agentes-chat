@@ -43,12 +43,14 @@ const w = {} as Record<
   | "generalId"
   | "secretId"
   | "dmId"
+  | "goneId"
   | "connectionId"
   | "routineId"
-  | "taskId",
+  | "taskId"
+  | "goneTaskId",
   string
 >;
-const messages = {} as Record<"asked" | "written" | "other" | "secret" | "dm" | "deleted" | "foreign", string>;
+const messages = {} as Record<"asked" | "written" | "other" | "secret" | "dm" | "deleted" | "gone" | "foreign", string>;
 const runs = {} as Record<
   | "failed"
   | "others"
@@ -63,6 +65,7 @@ const runs = {} as Record<
   | "older"
   | "direct"
   | "keys"
+  | "gone"
   | "foreign",
   string
 >;
@@ -186,6 +189,7 @@ beforeAll(async () => {
     });
   w.secretId = await channel("canary-plans", "channel", [{ userId: w.ownerId }, { agentId: w.devId }]);
   w.dmId = await channel("dm-owner-dev", "dm", [{ userId: w.ownerId }, { agentId: w.devId }]);
+  w.goneId = await channel("canary-gone", "channel", [{ userId: w.ownerId }, { agentId: w.devId }]);
   await db
     .insert(schema.channelMembers)
     .values([
@@ -209,6 +213,7 @@ beforeAll(async () => {
   messages.secret = await say(w.secretId, "canary-secret plans");
   messages.dm = await say(w.dmId, "canary-direct words");
   messages.deleted = await say(w.generalId, "canary-deleted words", { deletedAt: new Date() });
+  messages.gone = await say(w.goneId, "canary-gone words");
 
   // One run per agent and message: each answers a message of its own unless it is told which.
   const run = async (
@@ -338,6 +343,12 @@ beforeAll(async () => {
       },
     ],
   ]);
+  runs.gone = await run("failed", {
+    channelId: w.goneId,
+    triggerMessageId: messages.gone,
+    threadRootId: messages.gone,
+  });
+  await steps(runs.gone, [aCall("g"), aResult("g")]);
 
   w.routineId = await one(
     db
@@ -383,6 +394,22 @@ beforeAll(async () => {
         prompt: "canary-task-prompt",
         result: "canary-task-result",
         lastLine: "canary-task-line",
+        status: "done",
+      })
+      .returning({ id: schema.machineTasks.id }),
+  );
+  w.goneTaskId = await one(
+    db
+      .insert(schema.machineTasks)
+      .values({
+        orgId,
+        agentId: w.devId,
+        machineId,
+        channelId: w.goneId,
+        runId: runs.gone,
+        title: "canary-gone-title",
+        executor: "claude",
+        command: "canary-gone-command",
         status: "done",
       })
       .returning({ id: schema.machineTasks.id }),
@@ -713,6 +740,36 @@ test("fault: a run that failed or stands still, in its days, opens what hangs on
   expect(await outcome(ask("message", messages.dm, "text", direct))).toEqual([403, "reveal.direct_conversation"]);
   expect(await outcome(ask("agent", w.devId, "instructions", direct))).toBe(200);
   expect(await outcome(ask("routine", w.routineId, "instructions", direct))).toBe(200);
+});
+
+test("a conversation deleted for good: what its runs kept is the same 404 as nobody's, whatever the purpose", async () => {
+  const of = { runId: runs.gone };
+  const mine = { requestId: requests.owner };
+  const kept = [
+    step(runs.gone, 1, "input", of),
+    step(runs.gone, 2, "result", of),
+    ask("message", messages.gone, "text", of),
+    ask("task", w.goneTaskId, "command", of),
+  ];
+  // Archived, it can come back: its failed run is still one to diagnose.
+  await db.update(schema.channels).set({ archivedAt: new Date() }).where(eq(schema.channels.id, w.goneId));
+  for (const json of kept) expect({ json, answer: await outcome(json) }).toEqual({ json, answer: 200 });
+  // Deleted, its row stays for the runs that name it, and so do their steps.
+  await db
+    .update(schema.channels)
+    .set({ deletedAt: new Date(), name: `deleted-${w.goneId}` })
+    .where(eq(schema.channels.id, w.goneId));
+  await forget();
+  const nobody = await (await call(ask("message", UNKNOWN, "text", mine))).text();
+  for (const json of [...kept, ...kept.map((k) => ({ ...k, runId: undefined, purpose: "member_request", ...mine }))]) {
+    const res = await call(json);
+    expect({ json, status: res.status, body: (await res.text()).replace(String(json.id), UNKNOWN) }).toEqual({
+      json,
+      status: 404,
+      body: nobody,
+    });
+  }
+  expect([await events(), await auditLines()]).toEqual([[], []]);
 });
 
 test("the record first: an event with the reason, an audit entry with what was read and its proof, never the text or the reason", async () => {

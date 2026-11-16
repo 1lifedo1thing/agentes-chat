@@ -172,6 +172,10 @@ type Find = (db: Database, orgId: string, input: RevealInput) => Promise<Found |
 /** Whether a conversation is a direct one. `channelId` names its table: in a subquery a bare column would be the subquery's own. */
 const directOf = (channelId: string) =>
   sql<boolean>`coalesce((select c.kind = 'dm' from ${channels} c where c.id = ${sql.raw(channelId)}), false)`;
+/** Whether a record's conversation still stands: one deleted for good keeps its row, and its runs keep their steps. */
+const conversationStands = (channelId: string) =>
+  sql<boolean>`not exists (
+    select 1 from ${channels} c where c.id = ${sql.raw(channelId)} and c.deleted_at is not null)`;
 const filled = (column: unknown) => sql<boolean>`coalesce(length(${column}), 0) > 0`;
 
 /** Who the app gives a run's steps to: who may see the agent's runs, and reads the conversation it ran in. */
@@ -180,7 +184,12 @@ const readsRunsOf = async (db: Database, orgId: string, userId: string, agentId:
   (await readableChannelIds(db, orgId, userId, [channelId])).has(channelId);
 
 const findMessage: Find = async (db, orgId, { id }) => {
-  const where = and(eq(messages.id, id), eq(messages.orgId, orgId), isNull(messages.deletedAt));
+  const where = and(
+    eq(messages.id, id),
+    eq(messages.orgId, orgId),
+    isNull(messages.deletedAt),
+    conversationStands('"messages"."channel_id"'),
+  );
   const [m] = await db
     .select({
       channelId: messages.channelId,
@@ -227,7 +236,8 @@ const findStep: Find = async (db, orgId, { id, seq, field }) => {
           and o.data->'isError' = 'true'::jsonb)) as result_failed,
         coalesce(length(s.data->>'narration'), 0) > 0 as narrated
       from ${agentRunSteps} s join ${agentRuns} r on r.id = s.run_id
-      where s.run_id = ${id}::uuid and s.seq = ${seq ?? 0} and r.org_id = ${orgId}::uuid`),
+      where s.run_id = ${id}::uuid and s.seq = ${seq ?? 0} and r.org_id = ${orgId}::uuid
+        and ${conversationStands("r.channel_id")}`),
   );
   if (!s) return null;
   const has = { input: s.kind === "tool_call", result: s.kind === "tool_result", narration: s.narrated }[field];
@@ -297,7 +307,11 @@ const findRoutine: Find = async (db, orgId, { id, field }) => {
 const findTask: Find = async (db, orgId, { id, field }) => {
   const column = { command: machineTasks.command, prompt: machineTasks.prompt, result: machineTasks.result }[field];
   if (!column) return null;
-  const where = and(eq(machineTasks.id, id), eq(machineTasks.orgId, orgId));
+  const where = and(
+    eq(machineTasks.id, id),
+    eq(machineTasks.orgId, orgId),
+    conversationStands('"machine_tasks"."channel_id"'),
+  );
   const [t] = await db
     .select({
       agentId: machineTasks.agentId,

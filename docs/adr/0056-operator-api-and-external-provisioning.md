@@ -425,6 +425,7 @@ A closed table (`REVEAL_FIELDS` in `packages/engine/src/operator-reveal.ts`): a 
 - **One record a call.** The request takes one `kind`, one `id` and one `field`, and refuses anything else it is sent: a list of ids, a range of dates, a search word (400). A longer field is read on from `offset`, each call on record.
 - **Never** a file, an attachment, a picture or a voice note, a wiki page, a memory, a notification's words, a job's payload, a run's whole transcript, a credential, a token, a session, a hash, a code, or anything deleted. None of them is a kind.
 - **One 404 for what is not there.** A record of another workspace under this workspace's path, a deleted message, a field that holds nothing and an id nobody has answer the same body. An `error` asked of something that did not fail is 409 `reveal.no_error`.
+- **A conversation deleted for good takes what its runs kept with it.** Deleting a channel removes its messages and keeps its row, its runs and their steps, so that usage and the audit log still resolve. Through this door a message, a step and a task of such a conversation are the same 404, for either purpose. An archived conversation is not a deleted one: it can be brought back, so a failed run of it still opens under `fault`, while under `member_request` the app's own check answers, and the app shows an archived conversation to nobody.
 
 ### Two purposes, each proved by a record
 
