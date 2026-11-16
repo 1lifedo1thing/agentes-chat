@@ -1084,7 +1084,6 @@ export function RenameMachineScreen({ machineId }: { machineId: string }) {
         multiline={false}
         minHeight={50}
         maxLength={80}
-        autoFocus
         returnKeyType="done"
         onSubmitEditing={save}
         accessibilityLabel={t("machines.name")}

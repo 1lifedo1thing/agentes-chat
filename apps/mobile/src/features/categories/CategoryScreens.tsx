@@ -201,7 +201,6 @@ export function NewCategoryScreen({ channelId }: { channelId?: string }) {
             placeholder={t("channelCategories.namePlaceholder")}
             placeholderTextColor={c.faint}
             maxLength={NAME_MAX}
-            autoFocus
             autoCapitalize="words"
             returnKeyType="done"
             onSubmitEditing={save}

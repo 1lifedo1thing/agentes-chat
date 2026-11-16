@@ -39,7 +39,7 @@ import { router } from "@/ui/navigation";
 import { Text } from "@/ui/Text";
 import { SheetHeader } from "../new/parts";
 import { OrgAvatar } from "../shared/OrgAvatar";
-import { goBack } from "../shared/parts";
+import { goBack, PushedHeader } from "../shared/parts";
 import { useMyFace } from "../shared/tabHeader";
 import { Page } from "./parts";
 import { orderedServers, type ServerWorkspaces, unreadElsewhere, workspacesOf } from "./workspaces-logic";
@@ -245,8 +245,9 @@ export function AddWorkspacePage() {
   };
   return (
     <SheetScreen fit>
-      {/* The sheets' bar: back to the list it came from, the title centered (as Novo's). */}
-      <SheetHeader title={t("mobile.me.addWorkspace")} icon="back" />
+      {/* The sheets' bar: × closes it (over the list in Você, or with the workspaces' sheet already gone), the title
+          centered. */}
+      <SheetHeader title={t("mobile.me.addWorkspace")} />
       <GroupedList>
         {offersNewWorkspaceHere(server, me) ? (
           <GroupedRow
@@ -292,10 +293,10 @@ export function AddWorkspacePage() {
 }
 
 /**
- * Servidor da equipe, while signed in, on the sign-in's ruler (a low sky, the question in two lines): the address with
- * the URL keyboard open and its return key as the action, Escanear QR code below it as the one button, and one quiet
- * line: nothing signs out (ADR 0154). The server is checked first;
- * then the app moves there: signed in there already, its workspaces; otherwise its sign-in.
+ * Servidor da equipe, while signed in, on the sign-in's ruler (a low sky, the question in two lines) under the native
+ * bar, clear over the sky with its back button: the address (the URL keyboard once the field is tapped, its return key
+ * as the action), Escanear QR code below it as the one button, and one quiet line: nothing signs out (ADR 0154). The
+ * server is checked first; then the app moves there: signed in there already, its workspaces; otherwise its sign-in.
  */
 export function TeamServerPage() {
   const { t } = useTranslation();
@@ -322,13 +323,15 @@ export function TeamServerPage() {
   };
 
   return (
-    <AuthScaffold
-      sky="low"
-      title={t("mobile.me.teamServerQuestion")}
-      subtitle={t("mobile.me.teamServerLeadShort")}
-      onBack={goBack}
-      agentMode={busy ? "run" : "idle"}
-    >
+    <>
+      {/* A pushed screen's own bar (`cover` in the stack's options): the system's back over the sky, no title. */}
+      <PushedHeader plate />
+      <AuthScaffold
+        sky="low"
+        title={t("mobile.me.teamServerQuestion")}
+        subtitle={t("mobile.me.teamServerLeadShort")}
+        agentMode={busy ? "run" : "idle"}
+      >
       <Locked when={busy} keepKeyboard>
         <AuthField
           value={address}
@@ -346,7 +349,6 @@ export function TeamServerPage() {
           enablesReturnKeyAutomatically
           onSubmitEditing={() => void submit()}
           accessibilityLabel={t("mobile.auth.server.label")}
-          autoFocus
         />
       </Locked>
       {error ? (
@@ -368,7 +370,8 @@ export function TeamServerPage() {
       <Text variant="footnote" tone="muted" style={[styles.center, styles.quiet]}>
         {t("mobile.me.addWorkspaceFoot")}
       </Text>
-    </AuthScaffold>
+      </AuthScaffold>
+    </>
   );
 }
 
