@@ -198,3 +198,17 @@ describe("back on the conversation, the list follows the keyboard at once", () =
     expect(chat).toMatch(/return;\s*\}\s*uncover\(\);\s*\/\/ Unless the app moved the list/);
   });
 });
+
+describe("a card a run posts on the way never keeps the run's work", () => {
+  test("only the reply keeps the turn; the card test is the one that makes a card row", () => {
+    const row = src("features/chat/MessageRow.tsx");
+    expect(row).toContain(
+      "const postedCard = Boolean(meta?.actionCard || approvalId || question || secret || handoff);",
+    );
+    expect(row).toMatch(
+      /ownWork && m\.agentRunId && !postedCard \? keptTurn\(m\.id, m\.agentRunId, Date\.now\(\)\) : null/,
+    );
+    expect(row).toContain("const cardRow = !body && !media && postedCard;");
+    expect(row.indexOf("const postedCard = ")).toBeLessThan(row.indexOf("const [kept] = useState("));
+  });
+});

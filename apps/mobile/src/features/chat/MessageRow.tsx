@@ -389,12 +389,24 @@ function RowBody({
   const atLimit = isAgent && m.agentRunId && !stopped && !mediaAfter ? stepLimitOf(meta) : null;
   // A long work's end after its AI provider failed: Continuar under it too.
   const providerCut = isAgent && m.agentRunId && !stopped && !atLimit ? workContinuable(meta) : null;
+  const approvalId = approvalIdOf(meta);
+  const question = isAgent ? questionOf(meta) : null;
+  // An agent asks a person for a secret for its computer (ADR 0027).
+  const secret = isAgent ? secretRequestOf(meta) : null;
+  // An agent proposes a change to the workspace's context or to an agent's instructions: decided right here.
+  // The agent needs a person in its browser (ADR 0040): the request, live.
+  const handoff = isAgent ? browserHandoffOf(meta) : null;
+  // A card its run posts on the way (Connect, a proposal, an approval, a question, a secret, a handoff), from inside a
+  // call still running: never the run's reply.
+  const postedCard = Boolean(meta?.actionCard || approvalId || question || secret || handoff);
   // This reply just took its live block's place here: the same tools (and the messages it read) stay, also each time
-  // the row comes back into view (`keptTurn`).
-  const [kept] = useState(() => (ownWork && m.agentRunId ? keptTurn(m.id, m.agentRunId, Date.now()) : null));
+  // the row comes back into view (`keptTurn`). Only the reply: a card took the work so far, its running call read as
+  // stopped, kept it for the whole session, and the reply showed it all again.
+  const [kept] = useState(() =>
+    ownWork && m.agentRunId && !postedCard ? keptTurn(m.id, m.agentRunId, Date.now()) : null,
+  );
   // The line its block opened with stays above the tools, where it was, instead of moving into them (`turnOpener`).
   const opened = kept ? turnOpener(kept.items, body) : null;
-  const approvalId = approvalIdOf(meta);
   const review = missionCardRef(meta, "missionReview");
   const decision = missionCardRef(meta, "missionDecision");
   const plan = missionPlanOf(meta);
@@ -410,14 +422,8 @@ function RowBody({
     above ? hangsUnder(above, aboveThread, aboveReactions, meId) : false,
     hangsUnder(m, Boolean(thread), cachedReactions.data, meId),
   );
-  const question = isAgent ? questionOf(meta) : null;
-  // An agent asks a person for a secret for its computer (ADR 0027).
-  const secret = isAgent ? secretRequestOf(meta) : null;
-  // An agent proposes a change to the workspace's context or to an agent's instructions: decided right here.
-  // The agent needs a person in its browser (ADR 0040): the request, live.
-  const handoff = isAgent ? browserHandoffOf(meta) : null;
   // A card in a row of its own under the same author's words stands as far off them as in the same row.
-  const cardRow = !body && !media && Boolean(meta?.actionCard || approvalId || question || secret || handoff);
+  const cardRow = !body && !media && postedCard;
   // Settings it proposes, or a workspace action it asks for: their card (`SettingsProposals`).
   const actionKind = actionCardOf(meta)?.kind;
   const settingsCard = actionKind === "settings_proposal" || actionKind === "workspace_action";
