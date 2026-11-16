@@ -8,10 +8,12 @@ import {
   type BrainPlan,
   type BrainTurn,
   clearPlanLimits,
+  createAgent,
   createJobHandlers,
   createRoutine,
   drainOutbox,
   executeToolForRun,
+  insertMessage,
   listMessages,
   type MachineStatus,
   openPersonAgentDm,
@@ -1118,6 +1120,66 @@ test("a budget wait never moves an account", async () => {
   expect((run?.transcript as { waitingForBrain?: { code: string } } | undefined)?.waitingForBrain?.code).toBe("budget");
   expect(moveOf(run)).toBeUndefined();
   expect(await notes(f, "plan_account_moved")).toHaveLength(0);
+});
+
+test("work another agent handed it at its plan's limit goes on with the next account; its report still goes home", async () => {
+  const { fx, account, usage } = await world({}, { askAgent: true });
+  await account(OWN2, fx.owner.id);
+  await usage(OWN1, 100);
+  const atlas = await createAgent(
+    fx.db,
+    fx.owner.id,
+    fx.org.id,
+    { name: "Atlas", handle: "atlas", role: "Operations", credentialId: fx.credential.id },
+    { model: "claude-sonnet-5-5" },
+  );
+  const trigger = await insertMessage(fx.db, {
+    orgId: fx.org.id,
+    channelId: fx.general.id,
+    author: { type: "person", userId: fx.owner.id },
+    body: "@atlas get the October report ready",
+  });
+  const [asker] = await fx.db
+    .insert(schema.agentRuns)
+    .values({
+      orgId: fx.org.id,
+      agentId: atlas.id,
+      channelId: fx.general.id,
+      threadRootId: trigger.id,
+      triggerMessageId: trigger.id,
+      trigger: "mention",
+      hop: 1,
+      stretchId: trigger.id,
+      status: "done",
+    })
+    .returning();
+  if (!asker || !fx.tools) throw new Error("no run");
+  await fx.tools.invoke(
+    {
+      db: fx.db,
+      orgId: fx.org.id,
+      agentId: atlas.id,
+      runId: asker.id,
+      channelId: fx.general.id,
+      threadRootId: trigger.id,
+      triggerMessageId: trigger.id,
+    },
+    { toolUseId: "tu_handed", name: "tell_agent", input: { agent: "@dev", message: "Build the October report." } },
+  );
+  const { brain, seen } = scripted(() => answers);
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN2]);
+  const run = (await runs(fx)).find((r) => r.agentId === fx.agent.id);
+  expect(run?.status).toBe("done");
+  expect(moveOf(run)).toMatchObject({ from: OWN1, to: OWN2 });
+  const [work] = await fx.db.select().from(schema.agentWorks);
+  expect(work).toMatchObject({ how: "handed", status: "done" });
+  const [home] = await fx.db
+    .select()
+    .from(schema.messages)
+    .where(eq(schema.messages.id, work?.resultMessageId ?? ""));
+  expect(home).toMatchObject({ channelId: fx.general.id, body: "Feito.", agentRunId: run?.id });
 });
 
 test("Lodi goes on only with the person's own accounts that may answer them", async () => {
