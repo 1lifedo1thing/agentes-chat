@@ -301,7 +301,7 @@ export function ConnectorsSection({
         />
       )}
       {personal && tabs.mine > 0 && (
-        <p className="small muted ac-iconline">
+        <p className="small muted ac-iconline connected-note">
           <Icon name="lock" size={14} />
           <span>{t("connectors.personal.note")}</span>
         </p>

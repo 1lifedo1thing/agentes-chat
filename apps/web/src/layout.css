@@ -5242,6 +5242,10 @@ html:not([data-pointer]) .catalog-tile:focus-visible {
 .connected-others > button {
   align-self: flex-start;
 }
+/* Pessoal's note under Equipe | Pessoal, in the settings panel's own stack: no browser margins of its own. */
+.connected-note {
+  margin: 0;
+}
 /* "Pessoal de <name>": the words stay whole, the name alone ends in an ellipsis on its own side. */
 .owner-of {
   display: inline-flex;
@@ -5397,6 +5401,10 @@ html:not([data-pointer]) .cflow__more summary:focus-visible {
   flex-direction: column;
   gap: var(--form-gap);
   margin-top: var(--space-3);
+}
+/* After "Para quem" the dialog's own gap is the space: a field ends on its own line, not on running text. */
+.ac-field + .cflow__key {
+  margin-top: 0;
 }
 /* A server by address's request headers: what they are for, the saved names, a name and a value per row, one more. */
 .cflow__headers {
