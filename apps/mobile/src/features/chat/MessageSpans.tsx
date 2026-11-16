@@ -53,10 +53,6 @@ export function Spans({
   ink?: string | undefined;
 }) {
   const c = useColors();
-  const myHandle = useMyHandle();
-  const { i18n } = useTranslation();
-  const { agents, memberByHandle } = useDirectory();
-  const { scheme } = useTheme();
   // In a conversation, the size of code in its card (`chatCodeOf`), so inline and fenced code agree at every step.
   const sized = useRowLook().text;
   const codeSize = sized ? { fontSize: chatCodeOf(sized).fontSize } : undefined;
@@ -119,32 +115,44 @@ export function Spans({
             );
             return <IdRefText key={key} id={s.id} shown={shown} />;
           }
-          case "mention": {
-            const handle = s.text.slice(1);
-            const all = everyone && isEveryoneWord(handle);
-            const tint = mentionTint(handle, agents, scheme);
-            if (!all && !tint && !memberByHandle.has(handle.toLowerCase())) return <RNText key={key}>{s.text}</RNText>;
-            return (
-              <RNText
-                key={key}
-                style={[
-                  styles.bold,
-                  ink
-                    ? { color: ink, backgroundColor: "rgba(0,0,0,0.16)" }
-                    : all || handle.toLowerCase() === myHandle
-                      ? { color: c.amber, backgroundColor: `${c.amber}2e` }
-                      : (tint ?? { color: c.ink }),
-                ]}
-              >
-                {all ? `@${everyoneWord(i18n.language)}` : s.text}
-              </RNText>
-            );
-          }
+          case "mention":
+            return <MentionText key={key} text={s.text} everyone={everyone} ink={ink} />;
           default:
             return <RNText key={key}>{s.text}</RNText>;
         }
       })}
     </>
+  );
+}
+
+/**
+ * An @mention in a text: the agent's chip in its tone, mine and everyone's in amber, a person's in ink; a handle nobody
+ * here has stays as written. A piece of its own, so only a text with a mention reads the directory, the reader's handle
+ * and the language: every paragraph, list item and table cell of a conversation is a `Spans`, and each paid for them.
+ */
+function MentionText({ text, everyone, ink }: { text: string; everyone: boolean; ink: string | undefined }) {
+  const c = useColors();
+  const myHandle = useMyHandle();
+  const { i18n } = useTranslation();
+  const { agents, memberByHandle } = useDirectory();
+  const { scheme } = useTheme();
+  const handle = text.slice(1);
+  const all = everyone && isEveryoneWord(handle);
+  const tint = mentionTint(handle, agents, scheme);
+  if (!all && !tint && !memberByHandle.has(handle.toLowerCase())) return <RNText>{text}</RNText>;
+  return (
+    <RNText
+      style={[
+        styles.bold,
+        ink
+          ? { color: ink, backgroundColor: "rgba(0,0,0,0.16)" }
+          : all || handle.toLowerCase() === myHandle
+            ? { color: c.amber, backgroundColor: `${c.amber}2e` }
+            : (tint ?? { color: c.ink }),
+      ]}
+    >
+      {all ? `@${everyoneWord(i18n.language)}` : text}
+    </RNText>
   );
 }
 
@@ -168,13 +176,19 @@ export function Table({
   const { fontScale } = useWindowDimensions();
   // Each column's width as drawn, kept across the list's unmounts (`kept-sizes.ts`): a table coming back lays out at
   // its widths from its first frame. At the letters' guess its cells wrapped otherwise (another height) until they
-  // were measured again, and every row under it moved.
+  // were measured again, and every row under it moved. Measured anew when what they depend on changes (the cells,
+  // the width, the text size).
   const content = useMemo(() => tableKey(header, rows), [header, rows]);
   const columnsKey = `table:${content}:${useLayoutKey()}`;
-  const [drawn, setDrawn] = useState<Record<number, number>>(() => ({ ...keptColumns(columnsKey) }));
+  const [measured, setMeasured] = useState(() => ({ key: columnsKey, columns: { ...keptColumns(columnsKey) } }));
+  if (measured.key !== columnsKey) setMeasured({ key: columnsKey, columns: { ...keptColumns(columnsKey) } });
+  const drawn: Record<number, number> = measured.columns;
   useEffect(() => {
     if (Object.keys(drawn).length > 0) keepColumns(columnsKey, drawn);
   }, [columnsKey, drawn]);
+  // The unseen copy only until every column has its width: a table coming back has them all, and drew each of its
+  // cells twice on every mount for nothing.
+  const unmeasured = header.some((_, col) => drawn[col] === undefined);
   const [frame, setFrame] = useState(0);
   // Where the scroll stood when an edge's fade last turned on or off: a scroll redraws the table only then, never at
   // every frame of a swipe. Where it is now lives off React (`scrolled`) and catches the drawn one up when the box or
@@ -223,33 +237,39 @@ export function Table({
   return (
     <View>
       {/* Each column's cells unseen, on a sideways strip with no width to wrap them: their widths. */}
-      <View
-        pointerEvents="none"
-        style={styles.measure}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        <ScrollView horizontal scrollEnabled={false} showsHorizontalScrollIndicator={false}>
-          {header.map((h, col) => (
-            <View
-              // biome-ignore lint/suspicious/noArrayIndexKey: the columns of one table, in order
-              key={col}
-              onLayout={(e) => {
-                const w = e.nativeEvent.layout.width;
-                setDrawn((d) => (d[col] === w ? d : { ...d, [col]: w }));
-                setX(scrolled.current);
-              }}
-            >
-              {[h, ...rows.map((r) => r[col] ?? [])].map((inline, j) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: the cells of one column, in order
-                <View key={j} style={styles.cell}>
-                  {words(inline, col, j === 0)}
-                </View>
-              ))}
-            </View>
-          ))}
-        </ScrollView>
-      </View>
+      {unmeasured ? (
+        <View
+          pointerEvents="none"
+          style={styles.measure}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <ScrollView horizontal scrollEnabled={false} showsHorizontalScrollIndicator={false}>
+            {header.map((h, col) => (
+              <View
+                // biome-ignore lint/suspicious/noArrayIndexKey: the columns of one table, in order
+                key={col}
+                onLayout={(e) => {
+                  const w = e.nativeEvent.layout.width;
+                  setMeasured((m) =>
+                    m.key !== columnsKey || m.columns[col] === w
+                      ? m
+                      : { key: m.key, columns: { ...m.columns, [col]: w } },
+                  );
+                  setX(scrolled.current);
+                }}
+              >
+                {[h, ...rows.map((r) => r[col] ?? [])].map((inline, j) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: the cells of one column, in order
+                  <View key={j} style={styles.cell}>
+                    {words(inline, col, j === 0)}
+                  </View>
+                ))}
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
       {/* The message's long-press (select) is a Pressable around the whole row: the table takes its own touches so a
           sideways drag scrolls it instead of starting the press, and its scroller is the gesture handler's (native
           gesture first, ahead of the row's JS responder). Long-press elsewhere on the message still selects it. */}
