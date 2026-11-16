@@ -18,12 +18,16 @@ test("the computers' screens and the import load with their own pages, never wit
   expect(importers("Machines")).toEqual(["components/devices/DevicePage.tsx", "components/devices/DevicesSection.tsx"]);
   expect(importers("DevicePage")).toEqual(["pages/SettingsPage.tsx"]);
   expect(importers("DevicesSection")).toEqual(["components/devices/DevicePage.tsx", "pages/SettingsPage.tsx"]);
+  // The import's sheet takes the flow's state type from it, and is itself loaded only by the flow and the onboarding's
+  // import views.
   expect(importers("ImportFlow")).toEqual([
+    "components/ImportSheet.tsx",
     "components/new-agent/ImportAgentsDialog.tsx",
     "pages/NewAgentPage.tsx",
     "pages/SettingsPage.tsx",
     "pages/onboarding/TeamSourceBody.tsx",
   ]);
+  expect(importers("ImportSheet")).toEqual(["components/ImportFlow.tsx", "pages/onboarding/TeamSourceBody.tsx"]);
   // Over the new agent's dialog, which the app's shell holds: only its `lazy(() => import(…))` reaches the import.
   expect(importers("ImportAgentsDialog")).toEqual([]);
   expect(SOURCES.find((s) => s.path === "components/new-agent/NewAgentDialog.tsx")?.code).toContain(

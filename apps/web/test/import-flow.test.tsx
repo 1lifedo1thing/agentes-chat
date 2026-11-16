@@ -535,7 +535,9 @@ describe("Configurações → Importar e exportar", () => {
       "Baixe o arquivo do outro workspace",
       "Solte aqui o .json",
     ]);
-    expect(sheet.textContent).toContain("Lá, em Configurações › Importar e exportar › Baixar o arquivo.");
+    expect(sheet.textContent).toContain(
+      "Lá, em Configurações\u00a0›\u00a0Importar e exportar\u00a0›\u00a0Baixar o arquivo.",
+    );
     const link = within(sheet).getByRole("link", { name: "Abrir Estúdio Norte numa aba nova" });
     expect(link.getAttribute("href")).toBe("/org/org-north/settings/import");
     expect(link.getAttribute("target")).toBe("_blank");
