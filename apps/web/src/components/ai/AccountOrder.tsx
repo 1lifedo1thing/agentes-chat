@@ -32,7 +32,7 @@ export function OrderHead({ group, computer }: { group: AccountOrderGroup; compu
       </div>
       <HintLine
         className="plan-order__terms"
-        name={t("usageViews.order.termsAbout", { plan })}
+        name={t("common.about", { label: t("usageViews.order.termsLabel", { plan }) })}
         hint={t("usageViews.order.termsHint", { plan })}
       >
         {t("usageViews.order.terms", { plan })}

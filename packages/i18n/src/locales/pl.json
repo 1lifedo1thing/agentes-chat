@@ -11099,10 +11099,10 @@
       "copiesRemoved_few": "Usunięto {{count}} nieużywane logowania.",
       "copiesRemoved_many": "Usunięto {{count}} nieużywanych logowań.",
       "copiesRemoved_other": "Usunięto {{count}} nieużywanego logowania.",
-      "removeAllDone": "Usunięto {{n}} logowań Grok.",
-      "removeAllText": "Przestaną myśleć za swoje agenty na {{computers}}. Logowania innych osób zostają.",
-      "removeAllTitle": "Usunąć wszystkie {{n}} logowań Grok?",
       "removeAllGrok": "Usuń wszystkie logowania Grok",
+      "removeAllTitle": "Usunąć wszystkie {{n}} logowań Grok?",
+      "removeAllText": "Przestaną myśleć za swoje agenty na {{computers}}. Logowania innych osób zostają.",
+      "removeAllDone": "Usunięto {{n}} logowań Grok.",
       "disconnect": "Rozłącz",
       "renameTitle": "Zmień nazwę: {{label}}",
       "nameLabel": "Nazwa",
@@ -18020,6 +18020,14 @@
   "usageViews": {
     "signedOut": "Wylogowane",
     "whose": "Należy do: {{name}}",
+    "order": {
+      "title": "{{plan}} · Kolejność użycia",
+      "hint": "Po dojściu do limitu agenci działają dalej na następnym koncie, które ma zapas, i wracają do pierwszego, gdy się odnowi.",
+      "terms": "Korzystanie z kilku kont {{plan}} to szara strefa w warunkach {{plan}}.",
+      "termsLabel": "warunki {{plan}}",
+      "termsHint": "Plan jest przeznaczony dla jednej osoby, więc sprawdź warunki {{plan}}, zanim twoi agenci zaczną polegać na kilku kontach.",
+      "move": "Przenieś {{name}}, numer {{n}} w kolejności"
+    },
     "serves": {
       "everyone": "Używają wszyscy",
       "onlyYou": "Używasz tylko Ty",
@@ -18030,14 +18038,6 @@
       "me": "Tylko ja",
       "savedEveryone": "Teraz cały workspace używa tego planu.",
       "savedOwner": "Teraz tylko Ty używasz tego planu."
-    },
-    "order": {
-      "title": "{{plan}} · Kolejność użycia",
-      "hint": "Po dojściu do limitu agenci działają dalej na następnym koncie, które ma zapas, i wracają do pierwszego, gdy się odnowi.",
-      "terms": "Korzystanie z kilku kont {{plan}} to szara strefa w warunkach {{plan}}.",
-      "termsAbout": "O warunkach {{plan}}",
-      "termsHint": "Plan jest przeznaczony dla jednej osoby, więc sprawdź warunki {{plan}}, zanim twoi agenci zaczną polegać na kilku kontach.",
-      "move": "Przenieś {{name}}, numer {{n}} w kolejności"
     },
     "logins_one": "{{count}} logowanie",
     "logins_few": "{{count}} logowania",

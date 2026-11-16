@@ -17257,7 +17257,8 @@ export const en = {
       title: "{{plan}} · Order of use",
       hint: "At a limit, agents go on with the next account that has room and go back to the first when it resets.",
       terms: "Using several {{plan}} accounts is a gray area in {{plan}}'s terms.",
-      termsAbout: "About {{plan}}'s terms",
+      /** What the terms line's ⓘ is about ("common.about"). */
+      termsLabel: "{{plan}}'s terms",
       termsHint: "A plan is meant for one person, so check {{plan}}'s terms before your agents rely on several.",
       /** The grip's name: drag it, or press it for Move up and Move down. */
       move: "Move {{name}}, number {{n}} in the order",

@@ -10735,10 +10735,10 @@
       "copiesRemoved_one": "{{count}} connexion inutilisée supprimée.",
       "copiesRemoved_many": "{{count}} connexions inutilisées supprimées.",
       "copiesRemoved_other": "{{count}} connexions inutilisées supprimées.",
-      "removeAllDone": "{{n}} connexions Grok supprimées.",
-      "removeAllText": "Elles cessent de réfléchir pour leurs agents sur {{computers}}. Les connexions des autres personnes ne sont pas touchées.",
-      "removeAllTitle": "Supprimer les {{n}} connexions Grok ?",
       "removeAllGrok": "Supprimer toutes les connexions Grok",
+      "removeAllTitle": "Supprimer les {{n}} connexions Grok ?",
+      "removeAllText": "Elles cessent de réfléchir pour leurs agents sur {{computers}}. Les connexions des autres personnes ne sont pas touchées.",
+      "removeAllDone": "{{n}} connexions Grok supprimées.",
       "disconnect": "Déconnecter",
       "renameTitle": "Renommer {{label}}",
       "nameLabel": "Nom",
@@ -17477,6 +17477,14 @@
   "usageViews": {
     "signedOut": "Déconnecté",
     "whose": "De {{name}}",
+    "order": {
+      "title": "{{plan}} · Ordre d'utilisation",
+      "hint": "À la limite, les agents continuent avec le compte suivant qui a de la marge et reviennent au premier quand il se réinitialise.",
+      "terms": "Utiliser plusieurs comptes {{plan}} est une zone grise dans les conditions de {{plan}}.",
+      "termsLabel": "conditions de {{plan}}",
+      "termsHint": "Un abonnement est prévu pour une personne, alors vérifiez les conditions de {{plan}} avant que vos agents comptent sur plusieurs comptes.",
+      "move": "Déplacer {{name}}, numéro {{n}} dans l'ordre"
+    },
     "serves": {
       "everyone": "Tout le monde l'utilise",
       "onlyYou": "Vous seul l'utilisez",
@@ -17487,14 +17495,6 @@
       "me": "Moi seul",
       "savedEveryone": "Tout le workspace utilise désormais ce forfait.",
       "savedOwner": "Vous êtes désormais seul à utiliser ce forfait."
-    },
-    "order": {
-      "title": "{{plan}} · Ordre d'utilisation",
-      "hint": "À la limite, les agents continuent avec le compte suivant qui a de la marge et reviennent au premier quand il se réinitialise.",
-      "terms": "Utiliser plusieurs comptes {{plan}} est une zone grise dans les conditions de {{plan}}.",
-      "termsAbout": "À propos des conditions de {{plan}}",
-      "termsHint": "Un abonnement est prévu pour une personne, alors vérifiez les conditions de {{plan}} avant que vos agents comptent sur plusieurs comptes.",
-      "move": "Déplacer {{name}}, numéro {{n}} dans l'ordre"
     },
     "logins_one": "{{count}} connexion",
     "logins_many": "{{count}} connexions",

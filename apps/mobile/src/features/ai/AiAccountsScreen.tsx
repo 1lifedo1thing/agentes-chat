@@ -443,7 +443,7 @@ function OrderSection({
       </GroupedHeader>
       <View style={styles.terms}>
         <InfoHint
-          name={t("usageViews.order.termsAbout", { plan })}
+          name={t("common.about", { label: t("usageViews.order.termsLabel", { plan }) })}
           text={t("usageViews.order.termsHint", { plan })}
           variant="footnote"
         >

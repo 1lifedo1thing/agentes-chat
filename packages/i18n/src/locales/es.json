@@ -10678,10 +10678,10 @@
       "copiesRemoved_one": "{{count}} inicio de sesión sin uso quitado.",
       "copiesRemoved_many": "{{count}} inicios de sesión sin uso quitados.",
       "copiesRemoved_other": "{{count}} inicios de sesión sin uso quitados.",
-      "removeAllDone": "{{n}} inicios de sesión de Grok quitados.",
-      "removeAllText": "Dejan de pensar por sus agentes en {{computers}}. Los inicios de sesión de otras personas no se tocan.",
-      "removeAllTitle": "¿Quitar los {{n}} inicios de sesión de Grok?",
       "removeAllGrok": "Quitar todos los inicios de sesión de Grok",
+      "removeAllTitle": "¿Quitar los {{n}} inicios de sesión de Grok?",
+      "removeAllText": "Dejan de pensar por sus agentes en {{computers}}. Los inicios de sesión de otras personas no se tocan.",
+      "removeAllDone": "{{n}} inicios de sesión de Grok quitados.",
       "disconnect": "Desconectar",
       "renameTitle": "Cambiar el nombre de {{label}}",
       "nameLabel": "Nombre",
@@ -17407,6 +17407,14 @@
   "usageViews": {
     "signedOut": "Sesión cerrada",
     "whose": "De {{name}}",
+    "order": {
+      "title": "{{plan}} · Orden de uso",
+      "hint": "Al llegar a un límite, los agentes siguen con la siguiente cuenta que tenga margen y vuelven a la primera cuando se renueva.",
+      "terms": "Usar varias cuentas de {{plan}} es una zona gris en los términos de {{plan}}.",
+      "termsLabel": "los términos de {{plan}}",
+      "termsHint": "Un plan es para una persona, así que revisa los términos de {{plan}} antes de que tus agentes dependan de varias.",
+      "move": "Mover {{name}}, número {{n}} en el orden"
+    },
     "serves": {
       "everyone": "Todos lo usan",
       "onlyYou": "Solo tú lo usas",
@@ -17417,14 +17425,6 @@
       "me": "Solo yo",
       "savedEveryone": "Ahora todo el workspace usa este plan.",
       "savedOwner": "Ahora solo tú usas este plan."
-    },
-    "order": {
-      "title": "{{plan}} · Orden de uso",
-      "hint": "Al llegar a un límite, los agentes siguen con la siguiente cuenta que tenga margen y vuelven a la primera cuando se renueva.",
-      "terms": "Usar varias cuentas de {{plan}} es una zona gris en los términos de {{plan}}.",
-      "termsAbout": "Sobre los términos de {{plan}}",
-      "termsHint": "Un plan es para una persona, así que revisa los términos de {{plan}} antes de que tus agentes dependan de varias.",
-      "move": "Mover {{name}}, número {{n}} en el orden"
     },
     "logins_one": "{{count}} inicio de sesión",
     "logins_many": "{{count}} inicios de sesión",

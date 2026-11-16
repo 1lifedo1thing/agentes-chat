@@ -9935,10 +9935,10 @@
       "copies_other": "エージェントのいない、このアカウントのログインがあと{{count}}件あります。",
       "removeCopies": "削除",
       "copiesRemoved_other": "使われていないログインを{{count}}件削除しました。",
-      "removeAllDone": "Grok のログインを {{n}} 件削除しました。",
-      "removeAllText": "{{computers}} でそれぞれのエージェントのために考えなくなります。他の人のログインはそのまま残ります。",
-      "removeAllTitle": "Grok のログイン {{n}} 件をすべて削除しますか？",
       "removeAllGrok": "Grok のログインをすべて削除",
+      "removeAllTitle": "Grok のログイン {{n}} 件をすべて削除しますか？",
+      "removeAllText": "{{computers}} でそれぞれのエージェントのために考えなくなります。他の人のログインはそのまま残ります。",
+      "removeAllDone": "Grok のログインを {{n}} 件削除しました。",
       "disconnect": "接続を解除",
       "renameTitle": "{{label}}の名前を変更",
       "nameLabel": "名前",
@@ -16379,6 +16379,14 @@
   "usageViews": {
     "signedOut": "ログアウト済み",
     "whose": "{{name}}の",
+    "order": {
+      "title": "{{plan}} · 使用順",
+      "hint": "上限に達すると、エージェントは余裕のある次のアカウントで続け、最初のアカウントがリセットされたら戻ります。",
+      "terms": "複数の{{plan}}アカウントを使うことは、{{plan}}の規約ではグレーゾーンです。",
+      "termsLabel": "{{plan}}の規約",
+      "termsHint": "プランは1人用なので、エージェントが複数のアカウントに頼る前に{{plan}}の規約を確認してください。",
+      "move": "{{name}}を移動（使用順{{n}}番目）"
+    },
     "serves": {
       "everyone": "全員が使う",
       "onlyYou": "あなただけが使う",
@@ -16389,14 +16397,6 @@
       "me": "自分だけ",
       "savedEveryone": "このプランは今 workspace 全員が使えます。",
       "savedOwner": "このプランは今あなただけが使います。"
-    },
-    "order": {
-      "title": "{{plan}} · 使用順",
-      "hint": "上限に達すると、エージェントは余裕のある次のアカウントで続け、最初のアカウントがリセットされたら戻ります。",
-      "terms": "複数の{{plan}}アカウントを使うことは、{{plan}}の規約ではグレーゾーンです。",
-      "termsAbout": "{{plan}}の規約について",
-      "termsHint": "プランは1人用なので、エージェントが複数のアカウントに頼る前に{{plan}}の規約を確認してください。",
-      "move": "{{name}}を移動（使用順{{n}}番目）"
     },
     "logins_other": "{{count}}件のログイン",
     "noWindows": "このアカウントが再び使われると、上限が表示されます。",

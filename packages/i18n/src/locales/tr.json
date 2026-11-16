@@ -10290,10 +10290,10 @@
       "removeCopies": "Kaldır",
       "copiesRemoved_one": "Kullanılmayan {{count}} giriş kaldırıldı.",
       "copiesRemoved_other": "Kullanılmayan {{count}} giriş kaldırıldı.",
-      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
-      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
-      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
       "removeAllGrok": "Tüm Grok oturumlarını kaldır",
+      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
+      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
+      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
       "disconnect": "Bağlantıyı kes",
       "renameTitle": "{{label}} adını değiştir",
       "nameLabel": "Ad",
@@ -16884,6 +16884,14 @@
   "usageViews": {
     "signedOut": "Oturum kapatıldı",
     "whose": "{{name}} hesabı",
+    "order": {
+      "title": "{{plan}} · Kullanım sırası",
+      "hint": "Bir sınıra gelindiğinde ajanlar boşluğu olan bir sonraki hesapla devam eder ve ilki sıfırlandığında ona döner.",
+      "terms": "Birden fazla {{plan}} hesabı kullanmak {{plan}} koşullarında gri bir alandır.",
+      "termsLabel": "{{plan}} koşulları",
+      "termsHint": "Bir plan tek kişi içindir, bu yüzden ajanlarınız birden fazla hesaba güvenmeden önce {{plan}} koşullarını kontrol edin.",
+      "move": "{{name}} hesabını taşı, sırada {{n}}"
+    },
     "serves": {
       "everyone": "Herkes kullanıyor",
       "onlyYou": "Yalnızca sen kullanıyorsun",
@@ -16894,14 +16902,6 @@
       "me": "Yalnızca ben",
       "savedEveryone": "Artık tüm workspace bu planı kullanıyor.",
       "savedOwner": "Artık bu planı yalnızca sen kullanıyorsun."
-    },
-    "order": {
-      "title": "{{plan}} · Kullanım sırası",
-      "hint": "Bir sınıra gelindiğinde ajanlar boşluğu olan bir sonraki hesapla devam eder ve ilki sıfırlandığında ona döner.",
-      "terms": "Birden fazla {{plan}} hesabı kullanmak {{plan}} koşullarında gri bir alandır.",
-      "termsAbout": "{{plan}} koşulları hakkında",
-      "termsHint": "Bir plan tek kişi içindir, bu yüzden ajanlarınız birden fazla hesaba güvenmeden önce {{plan}} koşullarını kontrol edin.",
-      "move": "{{name}} hesabını taşı, sırada {{n}}"
     },
     "logins_one": "{{count}} oturum",
     "logins_other": "{{count}} oturum",

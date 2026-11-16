@@ -9984,10 +9984,10 @@
       "copies_other": "{{count}} login lain dari akun ini, tanpa agen.",
       "removeCopies": "Hapus",
       "copiesRemoved_other": "{{count}} login yang tidak dipakai dihapus.",
-      "removeAllDone": "{{n}} login Grok dihapus.",
-      "removeAllText": "Mereka berhenti berpikir untuk agennya di {{computers}}. Login orang lain tidak disentuh.",
-      "removeAllTitle": "Hapus semua {{n}} login Grok?",
       "removeAllGrok": "Hapus semua login Grok",
+      "removeAllTitle": "Hapus semua {{n}} login Grok?",
+      "removeAllText": "Mereka berhenti berpikir untuk agennya di {{computers}}. Login orang lain tidak disentuh.",
+      "removeAllDone": "{{n}} login Grok dihapus.",
       "disconnect": "Putuskan",
       "renameTitle": "Ganti nama {{label}}",
       "nameLabel": "Nama",
@@ -16433,6 +16433,14 @@
   "usageViews": {
     "signedOut": "Sudah keluar",
     "whose": "Milik {{name}}",
+    "order": {
+      "title": "{{plan}} · Urutan pemakaian",
+      "hint": "Saat mencapai batas, agen lanjut dengan akun berikutnya yang masih punya sisa dan kembali ke akun pertama saat akun itu direset.",
+      "terms": "Memakai beberapa akun {{plan}} adalah area abu-abu dalam ketentuan {{plan}}.",
+      "termsLabel": "ketentuan {{plan}}",
+      "termsHint": "Satu paket untuk satu orang, jadi cek ketentuan {{plan}} sebelum agenmu mengandalkan beberapa akun.",
+      "move": "Pindahkan {{name}}, nomor {{n}} dalam urutan"
+    },
     "serves": {
       "everyone": "Semua orang memakainya",
       "onlyYou": "Hanya kamu yang memakainya",
@@ -16443,14 +16451,6 @@
       "me": "Hanya saya",
       "savedEveryone": "Sekarang seluruh workspace memakai paket ini.",
       "savedOwner": "Sekarang hanya kamu yang memakai paket ini."
-    },
-    "order": {
-      "title": "{{plan}} · Urutan pemakaian",
-      "hint": "Saat mencapai batas, agen lanjut dengan akun berikutnya yang masih punya sisa dan kembali ke akun pertama saat akun itu direset.",
-      "terms": "Memakai beberapa akun {{plan}} adalah area abu-abu dalam ketentuan {{plan}}.",
-      "termsAbout": "Tentang ketentuan {{plan}}",
-      "termsHint": "Satu paket untuk satu orang, jadi cek ketentuan {{plan}} sebelum agenmu mengandalkan beberapa akun.",
-      "move": "Pindahkan {{name}}, nomor {{n}} dalam urutan"
     },
     "logins_other": "{{count}} login",
     "noWindows": "Batasnya muncul setelah akun ini dipakai lagi.",

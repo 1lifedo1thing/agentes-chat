@@ -17157,7 +17157,7 @@ export const ptBR = {
       title: "{{plan}} · Ordem de uso",
       hint: "No limite, os agentes seguem na próxima conta com folga e voltam para a primeira quando ela renovar.",
       terms: "Usar várias contas do {{plan}} é uma área cinzenta nos termos do {{plan}}.",
-      termsAbout: "Sobre os termos do {{plan}}",
+      termsLabel: "os termos do {{plan}}",
       termsHint:
         "Um plano é de uma pessoa, então confira os termos do {{plan}} antes de os seus agentes contarem com várias contas.",
       move: "Mover {{name}}, número {{n}} na ordem",
