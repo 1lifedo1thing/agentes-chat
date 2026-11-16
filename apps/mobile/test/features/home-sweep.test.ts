@@ -23,12 +23,18 @@ describe("the large title's scroll view is the screen's own first view", () => {
 describe("headers are the system's own", () => {
   test("a wiki page's Editar and … are native bar buttons, the … the system's menu on iOS", () => {
     const page = src("wiki/WikiScreen.tsx");
-    expect(page).toContain("<PushedHeader solid={false} actions={barActions} />");
+    expect(page).toContain("actions={barActions}");
     expect(page).toContain('sf: "ellipsis"');
     expect(page).toContain("menu: items.map((i) => ({");
     // Android lists the same choices in the app's sheet.
     expect(page).toContain("chooseAction(\n              p.title,");
     expect(page).not.toContain("barWordText");
+  });
+
+  test("a wiki page's name comes into the bar as its heading scrolls away", () => {
+    const page = src("wiki/WikiScreen.tsx");
+    expect(page).toContain("<FadingHeaderTitle");
+    expect(page).toContain("onScroll={scroll.onScroll}");
   });
 
   test("the wiki's forms are settings pages with their word in the bar", () => {
@@ -117,6 +123,18 @@ describe("the kit's own parts, not look-alikes", () => {
     expect(activity).toContain("loading={list.isFetchingNextPage}");
     // What a row decides under it starts at the row's words.
     expect(activity).toContain("change: { paddingLeft: LIST_INSET, paddingRight: 16, paddingBottom: 12 },");
+  });
+
+  test("a new channel's name sits in a group on the grouped rows' ruler, its fine print as a group's footer", () => {
+    const form = src("new/NewChannelForm.tsx");
+    expect(form).toContain("<GroupedList>");
+    expect(form).toContain("<GroupedFooter>");
+    expect(form).toContain("minHeight: GROUPED_ROW.minHeight,");
+    expect(form).not.toContain("marginHorizontal: 6");
+  });
+
+  test("a conversation's search runs edge to edge by exactly the sheet's own padding", () => {
+    expect(src("search/ConversationSearch.tsx")).toContain("bleed: { marginHorizontal: -SHEET_X, marginTop: 10 },");
   });
 
   test("the wiki's folder shortcuts are the kit's filters", () => {
