@@ -103,6 +103,8 @@ describe("the work-along line, the phone's Agora (ADR 0128 addendum)", () => {
     const shell = readFileSync(join(import.meta.dir, "../../src/ui/LargeTitleScreen.tsx"), "utf8");
     expect(shell).toContain("bottom: safe.bottom + TAB_BAR + footRoom");
     expect(shell).toContain("paddingBottom: bottomInset + (IOS ? 0 : footRoom)");
+    // Under the system's large title the system keeps the list clear of the tab bar; the strip's room is ours.
+    expect(shell).toContain("contentContainerStyle={{ paddingBottom: bottomInset + (foot?.height ?? 0) }}");
     const layout = readFileSync(join(import.meta.dir, "../../app/(app)/(main)/(tabs)/_layout.tsx"), "utf8");
     expect(layout.replace(/\s+/g, " ")).toContain(
       "along && !ACCESSORY ? { node: <AlongStrip />, height: ALONG_STRIP } : null",

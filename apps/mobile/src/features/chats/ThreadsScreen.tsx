@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { RefreshControl } from "react-native";
 import { STORED } from "@/lib/storage";
-import { Button, LargeTitleScreen, PULL_TINT, PullOrbit, SkeletonList } from "@/ui";
+import { Button, LargeTitleScreen, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
 import { usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
@@ -107,12 +107,7 @@ export function ThreadsScreen({ pushed = false }: { pushed?: boolean }) {
       </PushedLargeTitle>
     );
   return (
-    <LargeTitleScreen
-      title={t("mobile.threads.title")}
-      {...header}
-      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={PULL_TINT} />}
-      pullMark={<PullOrbit refreshing={pull.refreshing} />}
-    >
+    <LargeTitleScreen title={t("mobile.threads.title")} {...header} pull={pull}>
       {body}
     </LargeTitleScreen>
   );

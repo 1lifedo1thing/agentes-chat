@@ -15,9 +15,9 @@ describe("Agents", () => {
     expect(failed).toBeGreaterThan(skeleton);
     expect(first).toBeGreaterThan(failed);
     expect(screen).toContain("directory.isError && !directory.data");
-    // Its pull as the other tabs': the orbit in place of the wheel, and the team itself read again.
-    expect(screen).toContain("tintColor={PULL_TINT}");
-    expect(screen).toContain("pullMark={<PullOrbit refreshing={pull.refreshing} />}");
+    // Its pull as the other tabs' (the tab screen draws the wheel or the orbit), and the team itself read again.
+    expect(screen).toContain("pull={pull}");
+    expect(screen).not.toContain("<RefreshControl");
     expect(screen).toContain("directory.refetch(),");
   });
 

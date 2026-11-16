@@ -24,7 +24,7 @@ import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useIsFocused } from "expo-router";
 import { Fragment, memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshControl, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -45,8 +45,6 @@ import {
   LineIcon,
   ListRow,
   PixelOrbit,
-  PULL_TINT,
-  PullOrbit,
   SectionHeader,
   SkeletonList,
   SwipeRow,
@@ -215,13 +213,7 @@ function Agents() {
     ? [{ icon: "plus", sf: "plus", label: t("mobile.agents.create"), onPress: () => router.push("/new-agent") }]
     : header.actions;
   return (
-    <LargeTitleScreen
-      title={t("mobile.agents.title")}
-      left={header.left}
-      actions={actions}
-      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={PULL_TINT} />}
-      pullMark={<PullOrbit refreshing={pull.refreshing} />}
-    >
+    <LargeTitleScreen title={t("mobile.agents.title")} left={header.left} actions={actions} pull={pull}>
       {/* The rows' shape while the team loads; a team that didn't load is not an empty one. */}
       {dir.loading ? (
         <SkeletonList rows={4} />

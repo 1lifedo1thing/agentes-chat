@@ -128,8 +128,10 @@ function useScrollUnderBar(): NativeStackNavigationOptions {
 }
 
 /**
- * A tab's stack root: a clear bar whose title fades in on scroll; the large title is drawn by the screen
- * (`LargeTitleScreen`), not the native one, which stayed expanded over the list inside the system tabs.
+ * A tab's stack root, for a large title the screen draws (`LargeTitleScreen`: on Android, and on iOS where art stands
+ * behind the bar): a clear bar whose title fades in on scroll. A tab root under the system's large title (iOS) sets
+ * the system's bar over these, as the pushed screens do: under this clear bar the system's large title stayed expanded
+ * over the list.
  */
 export function useLargeTitleOptions(): NativeStackNavigationOptions {
   const { colors } = useTheme();
@@ -149,7 +151,7 @@ export function useLargeTitleOptions(): NativeStackNavigationOptions {
 }
 
 /**
- * The stack inside a tab (Conversas, Agentes, Atividade): its root screen gets the native large title.
+ * The stack inside a tab (Conversas, Agentes, Atividade): its root screen sets its large title (`LargeTitleScreen`).
  * The title is set here too so the first frame already has it.
  */
 export function TabStack({ title }: { title: string }) {

@@ -45,6 +45,46 @@ describe("large titles settle", () => {
     }
   });
 
+  test("on iOS the tab roots take the system's large title, set up as the pushed screens'; art behind keeps it drawn", () => {
+    const tabs = src("ui/LargeTitleScreen.tsx");
+    expect(tabs).toContain(
+      "return IOS && !props.drawnTitle ? <SystemTitleScreen {...props} /> : <DrawnTitleScreen {...props} />;",
+    );
+    const system = tabs.slice(tabs.indexOf("function SystemTitleScreen("), tabs.indexOf("function DrawnTitleScreen("));
+    // The system's bar over the tab stacks' clear one (under it the large title stayed expanded over the list).
+    expect(system).toContain("const bar = useScrollUnderPushedOptions();");
+    expect(system).toMatch(/\.\.\.actionOptions,\s*\.\.\.bar,/);
+    expect(system).toContain("headerLargeTitleEnabled: !collapsed,");
+    // The scroll view is the screen's first view, insets left to the system; the system's wheel on a pull.
+    expect(system).toMatch(
+      /<LivePause paused=\{!focused\}>\s*<ScrollView\s+contentInsetAdjustmentBehavior="automatic"/,
+    );
+    expect(system).not.toContain("<View style={[styles.screen");
+    expect(system).toContain("<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />");
+    expect(system).not.toContain("PullOrbit");
+    // Drawn: the orbit in place of the hidden wheel.
+    const drawn = tabs.slice(tabs.indexOf("function DrawnTitleScreen("));
+    expect(drawn).toContain("tintColor={PULL_TINT}");
+    expect(drawn).toContain("<PullOrbit refreshing={pull.refreshing} />");
+    // Only Conversas, its sky behind the bar, draws it; every tab root hands its pull over.
+    expect(src("features/chats/ChatsScreen.tsx")).toContain("      drawnTitle\n");
+    for (const file of [
+      "features/chats/ChatsScreen.tsx",
+      "features/agents/AgentsScreen.tsx",
+      "features/activity/ActivityScreen.tsx",
+      "features/chats/ThreadsScreen.tsx",
+    ]) {
+      const screen = src(file);
+      expect({ file, pull: screen.includes("pull={pull}"), orbit: screen.includes("PullOrbit") }).toEqual({
+        file,
+        pull: true,
+        orbit: false,
+      });
+    }
+    for (const file of ["features/agents/AgentsScreen.tsx", "features/activity/ActivityScreen.tsx"])
+      expect({ file, drawn: src(file).includes("drawnTitle") }).toEqual({ file, drawn: false });
+  });
+
   test("the title's coming and going is built once, on the theme's motion, never while rendering", () => {
     const head = src("ui/LargeTitleHead.tsx");
     expect(head).toContain("const TITLE_IN = FadeIn.duration(motion.base).easing(motion.easeOut);");

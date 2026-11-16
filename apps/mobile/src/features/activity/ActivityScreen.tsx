@@ -20,7 +20,7 @@ import { useLocalSearchParams } from "expo-router";
 import type { TFunction } from "i18next";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, RefreshControl, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LayoutAnimationConfig, LinearTransition } from "react-native-reanimated";
 import { useOrg } from "@/providers/org";
 import {
@@ -35,8 +35,6 @@ import {
   LIST_INSET,
   ListRow,
   PersonAvatar,
-  PULL_TINT,
-  PullOrbit,
   SectionHeader,
   SkeletonList,
   SwipeRow,
@@ -112,12 +110,7 @@ export function ActivityScreen() {
   // A card decided while the page shows fades out and the rest close up; a new one fades in.
   const cardMotion = reduced ? {} : { entering: CARD_IN, exiting: CARD_OUT, layout: LinearTransition };
   return (
-    <LargeTitleScreen
-      title={t("mobile.activity.title")}
-      {...header}
-      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={PULL_TINT} />}
-      pullMark={<PullOrbit refreshing={pull.refreshing} />}
-    >
+    <LargeTitleScreen title={t("mobile.activity.title")} {...header} pull={pull}>
       <Filters
         items={[
           { key: "all", label: t("mobile.activity.filter.all") },

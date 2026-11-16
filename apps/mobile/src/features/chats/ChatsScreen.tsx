@@ -8,9 +8,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useIsFocused } from "expo-router";
 import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshControl, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import { useOrg } from "@/providers/org";
-import { GroupedRow, LargeTitleScreen, PULL_TINT, PullOrbit, SkeletonList } from "@/ui";
+import { GroupedRow, LargeTitleScreen, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
 import { workByAgent } from "../agents/logic";
 import { useCategoryMenus } from "../categories/menus";
@@ -202,6 +202,8 @@ function Home() {
     <LargeTitleScreen
       title={t("mobile.chats.title")}
       {...header}
+      // The sky stands behind the bar and the large title and scrolls with them: the title is drawn with it.
+      drawnTitle
       backdrop={
         empty || failed ? undefined : (
           // The sky comes up quickly after the splash's own (300 ms): the home is there, not still arriving.
@@ -221,8 +223,7 @@ function Home() {
           />
         )
       }
-      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={PULL_TINT} />}
-      pullMark={<PullOrbit refreshing={pull.refreshing} />}
+      pull={pull}
     >
       {/* Being deleted, its line comes first and alone: its work stopped, nothing else is news (ADR 0088 §7). */}
       {org?.deletion ? (
