@@ -14,6 +14,7 @@ import {
   fonts,
   GROUPED_ROW,
   GroupedList,
+  type HeaderAction,
   HeaderCapsule,
   HeaderSlot,
   type HeaderSlotStore,
@@ -25,6 +26,7 @@ import {
   Text,
   ToggleSwitch,
   textLineOf,
+  useHeaderActionOptions,
   useHeaderSlot,
   useScrollUnderPushedOptions,
   useTheme,
@@ -208,11 +210,17 @@ export function PushedHeader({
   solid = true,
   grouped = false,
   largeTitle = false,
+  actions,
 }: {
   title?: ReactNode;
   subtitle?: string;
   right?: ReactNode;
   action?: HeaderWordAction;
+  /**
+   * Buttons on the right as the system's own bar buttons (iOS; a `menu` opens the system's menu from the button), our
+   * icon buttons in a capsule on Android (`useHeaderActionOptions`). In place of `right`.
+   */
+  actions?: HeaderAction[];
   /** Over a sky cover: a clear bar, the back button over the art. */
   plate?: boolean;
   solid?: boolean;
@@ -239,6 +247,8 @@ export function PushedHeader({
   });
   const word = action?.label ?? null;
   const wordOff = action?.disabled ?? false;
+  const actionOptions = useHeaderActionOptions({ right: actions });
+  const hasActions = (actions?.length ?? 0) > 0;
   // Stable options: `setOptions` runs when the title, subtitle or the presence of actions change, not on
   // every render of the screen (a conversation re-renders while agents stream).
   const options = useMemo<NativeStackNavigationOptions>(
@@ -287,8 +297,11 @@ export function PushedHeader({
               </View>
             )
           : undefined,
+      ...(hasActions ? actionOptions : null),
     }),
     [
+      hasActions,
+      actionOptions,
       plate,
       solid,
       scrollUnder,

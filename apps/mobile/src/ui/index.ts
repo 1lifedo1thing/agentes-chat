@@ -54,6 +54,7 @@ export {
   BarPressable,
   type HeaderAction,
   HeaderCapsule,
+  type HeaderMenuItem,
   type SFSymbolName,
   useHeaderActionOptions,
 } from "./headerActions";

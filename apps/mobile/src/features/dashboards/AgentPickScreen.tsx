@@ -18,9 +18,10 @@ import { AGENT_SEARCH_FROM, agentsMatching } from "./logic";
 const LOGOS_SHOWN = 4;
 
 /**
- * "Who looks after it", pushed from New widget's card (ADR 0135; screens, never sheets): the agents the person can
- * talk to, each with its face, name, role and the connected apps it reads, the current one checked. A search field
- * past a handful of agents. Choosing one goes back to the card at once.
+ * An agent to pick, pushed from a form (ADR 0135; screens, never sheets): New widget's "Who looks after it", a
+ * routine's agent. The agents the person can talk to (every agent with `everyone`), each with its face, name, role
+ * and the connected apps it reads, the current one checked. A search field past a handful of agents. Choosing one
+ * goes back to the form at once.
  */
 export function AgentPickScreen() {
   const { t } = useTranslation();
@@ -29,7 +30,9 @@ export function AgentPickScreen() {
   const dir = useDirectory();
   const pick = useAgentPick();
   const [query, setQuery] = useState("");
-  const agents = useMemo(() => dir.agents.filter((a) => canTalk(a)), [dir.agents]);
+  const everyone = pick?.everyone === true;
+  const agents = useMemo(() => (everyone ? dir.agents : dir.agents.filter((a) => canTalk(a))), [dir.agents, everyone]);
+  const note = pick?.note ?? t("mobile.dashboards.agentPick.note");
   const shown = useMemo(() => agentsMatching(agents, query), [agents, query]);
   // Opened with no card under it (its address on its own): nothing to pick for.
   useEffect(() => {
@@ -41,7 +44,7 @@ export function AgentPickScreen() {
   };
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-      <PushedHeader title={t("dashboards.newWidget.who")} solid={false} grouped />
+      <PushedHeader title={pick?.title ?? t("dashboards.newWidget.who")} solid={false} grouped />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
@@ -70,7 +73,7 @@ export function AgentPickScreen() {
             {agents.length === 0 ? t("dashboards.newWidget.noAgents") : t("mobile.dashboards.agentPick.noMatch")}
           </Text>
         ) : null}
-        {pick && agents.length > 0 ? <GroupedFooter>{t("mobile.dashboards.agentPick.note")}</GroupedFooter> : null}
+        {pick && agents.length > 0 && note ? <GroupedFooter>{note}</GroupedFooter> : null}
       </ScrollView>
     </View>
   );
