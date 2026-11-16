@@ -592,7 +592,7 @@ export async function storeCustomConnection(
         // The service's name, not the account's: `stripe`, then `stripe_2`; a later account goes by the server's
         // oldest one, whatever it is called now.
         const base = live[0] ? prefixService(toolPrefixOfConnection(live[0])) : toolPrefixOf(service);
-        const label = await freeLabel(tx, input.orgId, named ? accountName(service, named) : service);
+        const label = await freeLabel(tx, input.orgId, named ? accountName(service, named) : service, owner);
         const toolPrefix = await freeToolPrefix(tx, input.orgId, base, deps.oauthApps);
         const [row] = await tx
           .insert(connectorConnections)
@@ -1061,7 +1061,7 @@ export async function saveCustomTools(
   const now = new Date();
   await deps.db.transaction(async (tx) => {
     const asked = input.label.trim();
-    const label = asked && asked !== c.label ? await checkLabel(tx, orgId, asked, c.id) : c.label;
+    const label = asked && asked !== c.label ? await checkLabel(tx, orgId, asked, c) : c.label;
     for (const t of input.tools) {
       const row = known.get(t.name);
       if (!row) continue;

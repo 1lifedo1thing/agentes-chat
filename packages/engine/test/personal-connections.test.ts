@@ -1,21 +1,34 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { createFakeComposioClient, createFakeMailConnector } from "@agenteschat/adapters";
 import { and, eq, schema } from "@agenteschat/db";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
+  agentScopesFor,
+  agentSourceNames,
+  CONNECTOR_FORGET_JOB,
+  ConflictError,
   type ConnectorDeps,
+  checkConnectorTrigger,
   composioUserId,
   connectionFor,
   connectionViewFor,
+  connectorStates,
+  connectorTriggerAllowed,
   createAgentRuns,
   createApiKeyConnection,
   createConnectorToolSource,
+  createJobHandlers,
   createToolGateway,
+  customScope,
+  deleteAccount,
   ensureRightHand,
   ForbiddenError,
   getAgentAccess,
+  getAgentMail,
   insertMessage,
+  listAgentScopes,
   listConnections,
   type McpConnect,
   mcpSessionOver,
@@ -317,5 +330,216 @@ describe("an agent's page", () => {
     expect(
       (await f.db.select().from(schema.agentScopes).where(eq(schema.agentScopes.connectionId, mine.id))).length,
     ).toBe(1);
+  });
+});
+
+describe("what others may know of it", () => {
+  test("a member who neither manages nor owns the agent gets nothing of another's on it, even asking for others'", async () => {
+    const { bia, mine } = await walterWithLinear();
+    const tree = await getAgentAccess(f.db, bia.id, f.org.id, f.agent.id, { others: true });
+    expect(tree.connectors.map((c) => c.connectionId)).not.toContain(mine.id);
+    // The grant rows say nothing of it to her either; who manages connectors still sees them.
+    expect((await listAgentScopes(f.db, f.org.id, f.agent.id)).some((r) => r.connectionId === mine.id)).toBe(true);
+    expect((await agentScopesFor(f.db, bia.id, f.org.id, f.agent.id)).map((r) => r.connectionId)).not.toContain(
+      mine.id,
+    );
+    expect((await agentScopesFor(f.db, f.owner.id, f.org.id, f.agent.id)).map((r) => r.connectionId)).toContain(
+      mine.id,
+    );
+  });
+
+  test("a name is free unless the team or the person already uses it, so it never tells of someone else's", async () => {
+    const { walter, bia, mine } = await walterWithLinear();
+    await renameConnection(f.db, walter.id, f.org.id, mine.id, "Linear (walter@example.com)");
+    const hers = await createApiKeyConnection(depsOf(f), bia.id, f.org.id, {
+      connector: "sentry",
+      apiKey: "sntrys_FAKE_bia_123456",
+      personal: true,
+    });
+    const renamed = await renameConnection(f.db, bia.id, f.org.id, hers.id, "Linear (walter@example.com)");
+    expect(renamed.label).toBe("Linear (walter@example.com)");
+    // The team's own Linear takes its plain name beside his.
+    const team = await createApiKeyConnection(depsOf(f), f.owner.id, f.org.id, {
+      connector: "linear",
+      apiKey: "lin_api_FAKE_team_1234",
+    });
+    expect(team.label).toBe("Linear");
+  });
+
+  test("what a run holds counts the team's and its person's own, never someone else's", async () => {
+    const { walter, bia } = await walterWithLinear();
+    const catalog = { oauthApps: {} };
+    const linear = (person: string | null) =>
+      connectorStates(f.db, f.org.id, catalog, { usable: [], listed: [] }, person).then((all) =>
+        all.find((c) => c.names.includes("linear")),
+      );
+    // Held and not listed: nothing is said of it for Walter. For Bia it isn't connected at all.
+    expect(await linear(walter.id)).toBeUndefined();
+    expect((await linear(bia.id))?.state).not.toBeUndefined();
+    expect((await linear(null))?.state).not.toBeUndefined();
+  });
+
+  test("widget suggestions never name a person's own connection", async () => {
+    const { mine } = await walterWithLinear();
+    expect(await agentSourceNames(f.db, f.org.id, f.agent.id)).not.toContain(mine.label);
+  });
+
+  test("an agent's mailboxes: one's own and ownerless ones; someone else's only while held, to who may take it off, with no rules", async () => {
+    const { walter, bia } = await walterWithLinear();
+    const [box] = await f.db
+      .insert(schema.mailAccounts)
+      .values({
+        orgId: f.org.id,
+        provider: "imap",
+        via: "imap",
+        address: "walter@example.com",
+        status: "active",
+        createdByUserId: walter.id,
+      })
+      .returning();
+    if (!box) throw new Error("no mailbox");
+    await f.db
+      .insert(schema.agentScopes)
+      .values({ orgId: f.org.id, agentId: f.agent.id, connectionId: box.id, scope: "mail:read" });
+    await f.db.insert(schema.mailAgentPolicies).values({
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      accountId: box.id,
+      folders: ["INBOX"],
+      senders: [],
+      allowedRecipients: ["ada@example.com"],
+      windowDays: null,
+      dailySendCap: 10,
+      sendWithoutAsking: false,
+    });
+    expect((await getAgentMail(f.db, bia.id, f.org.id, f.agent.id)).map((m) => m.accountId)).not.toContain(box.id);
+    const seen = (await getAgentMail(f.db, f.owner.id, f.org.id, f.agent.id)).find((m) => m.accountId === box.id);
+    expect(seen?.level).toBe("read");
+    expect(seen?.policy.allowedRecipients).toEqual([]);
+    expect(
+      (await getAgentMail(f.db, walter.id, f.org.id, f.agent.id)).find((m) => m.accountId === box.id)?.policy,
+    ).toMatchObject({ allowedRecipients: ["ada@example.com"] });
+  });
+});
+
+describe("routines that wait on a person's connection", () => {
+  async function millionSendOf(ownerId: string, agentId: string) {
+    const [ms] = await f.db
+      .insert(schema.connectorConnections)
+      .values({
+        orgId: f.org.id,
+        connector: "custom:ms1",
+        label: "MillionSend",
+        serverUrl: "https://api.millionsend.com/mcp",
+        authType: "api_key",
+        toolPrefix: "millionsend",
+        ownerUserId: ownerId,
+        createdByUserId: ownerId,
+      })
+      .returning();
+    if (!ms) throw new Error("no row");
+    await f.db
+      .insert(schema.agentScopes)
+      .values({ orgId: f.org.id, agentId, connectionId: ms.id, scope: customScope(ms.id, "read") });
+    return ms;
+  }
+  const event = "millionsend.email.received" as const;
+
+  test("on the right hand, only its owner's own routine takes its events", async () => {
+    const { walter, bia } = await walterWithLinear();
+    await ensureRightHand(f.db, f.org.id);
+    const [lodi] = await f.db
+      .select()
+      .from(schema.agents)
+      .where(and(eq(schema.agents.orgId, f.org.id), eq(schema.agents.builtin, RIGHT_HAND)));
+    if (!lodi) throw new Error("no right hand");
+    const ms = await millionSendOf(walter.id, lodi.id);
+    const input = { connectionId: ms.id, event };
+    await expect(checkConnectorTrigger(f.db, f.org.id, lodi.id, input, bia.id)).rejects.toBeInstanceOf(ValidationError);
+    expect((await checkConnectorTrigger(f.db, f.org.id, lodi.id, input, walter.id)).id).toBe(ms.id);
+  });
+
+  test("on another agent, its owner or someone it answers; a creator who left gets nothing", async () => {
+    const { walter, bia } = await walterWithLinear();
+    const ms = await millionSendOf(walter.id, f.agent.id);
+    const input = { connectionId: ms.id, event };
+    // `@dev` answers only Walter.
+    await expect(checkConnectorTrigger(f.db, f.org.id, f.agent.id, input, bia.id)).rejects.toBeInstanceOf(
+      ValidationError,
+    );
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
+    expect((await checkConnectorTrigger(f.db, f.org.id, f.agent.id, input, bia.id)).id).toBe(ms.id);
+    const [routine] = await f.db
+      .insert(schema.routines)
+      .values({
+        orgId: f.org.id,
+        agentId: f.agent.id,
+        name: "Mail",
+        prompt: "Read it",
+        target: { type: "dm" },
+        triggerType: "webhook",
+        createdByUserId: bia.id,
+      })
+      .returning();
+    if (!routine) throw new Error("no routine");
+    expect(await connectorTriggerAllowed(f.db, f.org.id, routine.id, { ...input, filter: {} })).toBe(true);
+    await removeMember(f.db, f.owner.id, f.org.id, bia.id);
+    expect(await connectorTriggerAllowed(f.db, f.org.id, routine.id, { ...input, filter: {} })).toBe(false);
+  });
+});
+
+describe("one-click accounts at the hosted adapter", () => {
+  async function oneClick(ownerId: string) {
+    const [row] = await f.db
+      .insert(schema.connectorConnections)
+      .values({
+        orgId: f.org.id,
+        connector: "custom:notion1",
+        label: "Notion",
+        serverUrl: "https://composio.example.com/toolkits/notion",
+        authType: "oauth",
+        toolPrefix: "notion",
+        ownerUserId: ownerId,
+        createdByUserId: ownerId,
+        composioAccountId: "ca_FAKE_walter_notion",
+      })
+      .returning();
+    if (!row) throw new Error("no row");
+    return row;
+  }
+  const forgets = async () =>
+    (await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, CONNECTOR_FORGET_JOB))).map((j) => j.payload);
+
+  test("one doesn't move to the team: its account lives under its person's own id there", async () => {
+    f = await setup();
+    const row = await oneClick(f.owner.id);
+    await expect(moveConnectionToTeam(f.db, f.owner.id, f.org.id, row.id)).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  test("a person who leaves has the adapter forget theirs", async () => {
+    f = await setup();
+    const walter = await addMember(f.db, f.org.id, "member", "walter");
+    await oneClick(walter.id);
+    await removeMember(f.db, f.owner.id, f.org.id, walter.id);
+    expect(await forgets()).toEqual([{ accountIds: ["ca_FAKE_walter_notion"] }]);
+    const composio = createFakeComposioClient();
+    const handlers = createJobHandlers({
+      ...f.jobDeps,
+      mail: { composio: { client: composio.client, connector: createFakeMailConnector().connector }, imap: null },
+    });
+    const [job] = await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, CONNECTOR_FORGET_JOB));
+    if (!job) throw new Error("no job");
+    await handlers[CONNECTOR_FORGET_JOB]?.(job, { finalAttempt: false });
+    expect(composio.state.deletedAccounts).toEqual(["ca_FAKE_walter_notion"]);
+  });
+
+  test("a deleted account's connections are revoked and audited, and the adapter forgets them", async () => {
+    f = await setup();
+    const walter = await addMember(f.db, f.org.id, "member", "walter");
+    const row = await oneClick(walter.id);
+    await deleteAccount(f.db, walter.id, {});
+    const audit = await f.db.select().from(schema.auditLog).where(eq(schema.auditLog.targetId, row.id));
+    expect(audit.map((a) => a.action)).toContain("connector.disconnected");
+    expect(await forgets()).toEqual([{ accountIds: ["ca_FAKE_walter_notion"] }]);
   });
 });

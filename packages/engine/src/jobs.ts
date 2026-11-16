@@ -25,7 +25,8 @@ import { HANDOFF_REMIND_JOB, remindBrowserHandoff } from "./browser/handoff";
 import { typingLogFor } from "./burst";
 import { CHANNEL_DELETE_JOB, purgeChannel } from "./channel-deletion";
 import { crowdedAgents, publishQueueChanged } from "./computer-queue";
-import type { ConnectorDeps } from "./connectors/connections";
+import { forgetComposioAccount } from "./connectors/composio";
+import { CONNECTOR_FORGET_JOB, type ConnectorDeps } from "./connectors/connections";
 import { startNoteRun } from "./consultations";
 import { getChannelCached } from "./context";
 import { consolidateOrg } from "./context/consolidate";
@@ -1153,6 +1154,13 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     [SKILL_UPDATES_JOB]: async (job) => {
       if (!deps.skills) return;
       await runSkillUpdates(deps.skills, orgOf(job));
+    },
+    // One-click accounts of personal connections that went with their person (`dropPersonalConnections`).
+    [CONNECTOR_FORGET_JOB]: async (job) => {
+      const client = deps.connectors?.composio?.client ?? deps.mail?.composio?.client;
+      if (!client) return;
+      const ids = Array.isArray(job.payload.accountIds) ? job.payload.accountIds : [];
+      for (const id of ids) if (typeof id === "string") await forgetComposioAccount(client, id);
     },
     // A Vault connection read again (ADR 0144); a source's refusal stays on the connection, never retried here.
     [VAULT_SYNC_JOB]: async (job) => {

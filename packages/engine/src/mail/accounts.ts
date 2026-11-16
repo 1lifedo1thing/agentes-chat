@@ -231,7 +231,9 @@ export async function listMailAccounts(
   return rows.map((r) => {
     const v = mailAccountView(r, grants.get(r.id));
     if (!r.createdByUserId || r.createdByUserId === actorId) return v;
-    return { ...v, address: "", lastError: null, preset: null, aliases: [], defaultFrom: null };
+    // A label defaults to the address: one that holds it is left out too.
+    const label = r.address && v.label.toLowerCase().includes(r.address.toLowerCase()) ? "" : v.label;
+    return { ...v, label, address: "", lastError: null, preset: null, aliases: [], defaultFrom: null };
   });
 }
 

@@ -2,6 +2,7 @@ import { connectorOAuthApps } from "@agenteschat/config";
 import {
   abandonComposioOAuth,
   acceptCustomSuggestion,
+  agentScopesFor,
   appOAuthRedirect,
   BUILTIN_SCOPES,
   type ConnectorDeps,
@@ -17,12 +18,10 @@ import {
   desktopOAuthRedirect,
   desktopReturnPath,
   GITHUB_APP_AUTH,
-  getAgent,
   isAgentesCloud,
   isAppReturn,
   isCustom,
   isDesktopReturn,
-  listAgentScopes,
   listConnections,
   listGitHubAppInstallations,
   moveConnectionToTeam,
@@ -31,7 +30,6 @@ import {
   personalAgents,
   presetForServer,
   renameConnection,
-  requirePermission,
   revokeAtProvider,
   revokeConnection,
   setAgentScopes,
@@ -553,9 +551,7 @@ export function connectorRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const { orgId, agentId } = c.req.valid("param");
-      await requirePermission(db, c.get("user").id, orgId, "read");
-      if (!(await getAgent(db, orgId, agentId))) throw new NotFoundError("Agent not found");
-      return c.json({ scopes: await listAgentScopes(db, orgId, agentId) }, 200);
+      return c.json({ scopes: await agentScopesFor(db, c.get("user").id, orgId, agentId) }, 200);
     },
   );
 
@@ -573,7 +569,7 @@ export function connectorRoutes(deps: AppDeps) {
     async (c) => {
       const { orgId, agentId } = c.req.valid("param");
       await setAgentScopes(db, c.get("user").id, orgId, agentId, c.req.valid("json").scopes, connectorGrantValidator);
-      return c.json({ scopes: await listAgentScopes(db, orgId, agentId) }, 200);
+      return c.json({ scopes: await agentScopesFor(db, c.get("user").id, orgId, agentId) }, 200);
     },
   );
 

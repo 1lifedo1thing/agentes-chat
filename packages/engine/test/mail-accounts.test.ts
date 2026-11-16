@@ -481,9 +481,10 @@ test("only who connected a mailbox gives an agent access to it; admins and the a
   const account = await imapAccount(m);
   const { db, org, agent } = m.f;
   const as = (who: { id: string }) => ({ ...m, f: { ...m.f, owner: who } }) as MailFixture;
-  const level = async () => (await getAgentMail(db, m.f.owner.id, org.id, agent.id))[0]?.level;
   // A member's own mailbox: theirs to give, admin or not, to an agent they can talk to.
   const ana = await addMember(db, org.id, "member", "Ana Mock");
+  const mail = async () => (await getAgentMail(db, ana.id, org.id, agent.id))[0];
+  const level = async () => (await mail())?.level;
   await db.update(schema.mailAccounts).set({ createdByUserId: ana.id }).where(eq(schema.mailAccounts.id, account.id));
   await giveMail(as(ana), account.id, "read_write", { dailySendCap: 7 });
   expect(await level()).toBe("read_write");
@@ -496,7 +497,9 @@ test("only who connected a mailbox gives an agent access to it; admins and the a
   await expect(giveMail(m, account.id, "read_write", {}, true)).rejects.toBeInstanceOf(ForbiddenError);
   // Lowering it is allowed, and their looser rules are ignored (the owner's stay).
   const lowered = await giveMail(as(admin), account.id, "read", { dailySendCap: 1000 });
-  expect([lowered.level, lowered.policy.dailySendCap]).toEqual(["read", 7]);
+  // The admin is never shown her rules; they stay hers.
+  expect([lowered.level, lowered.policy.dailySendCap]).toEqual(["read", 25]);
+  expect((await mail())?.policy.dailySendCap).toBe(7);
   // A member who neither owns the mailbox nor the agent takes nothing away.
   const bia = await addMember(db, org.id, "member", "Bia Mock");
   await expect(giveMail(as(bia), account.id, "none")).rejects.toBeInstanceOf(ForbiddenError);

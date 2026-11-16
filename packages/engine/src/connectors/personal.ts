@@ -6,7 +6,7 @@ import { caches } from "../cache";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors";
 import { can, type Membership, requirePermission } from "../organizations";
 import { ownerApprovers, personalUseCheck, personOfRun } from "../personal-use";
-import { ALL_TOOLS, grantedScopeKeys, grantKey, isAllowed, toolAccess } from "../tools/scopes";
+import { ALL_TOOLS, grantedScopeKeys, grantKey, isAllowed, listAgentScopes, toolAccess } from "../tools/scopes";
 import type { ToolContext, ToolDefinition } from "../tools/types";
 
 const { connectorConnections } = schema;
@@ -46,6 +46,13 @@ export const seenBy = (actorId: string): SQL =>
 /** Whether a connection is someone other than `actorId`'s personal one. */
 export const othersPersonal = (c: Pick<ConnectorConnection, "ownerUserId">, actorId: string) =>
   c.ownerUserId !== null && c.ownerUserId !== actorId;
+
+/**
+ * Whether `actorId` sees that someone else's personal connection is on this agent (and may take it off): who manages
+ * connectors or agents, and the agent's owner. Never its details.
+ */
+export const seesOthersOnAgent = (membership: Membership, agent: { ownerUserId?: string | null }, actorId: string) =>
+  can(membership, "manage_connectors") || can(membership, "manage_agents") || agent.ownerUserId === actorId;
 
 /**
  * Who may connect for whom: a personal connection (`personal`) any member makes, a team one who manages connectors.
@@ -157,12 +164,7 @@ export async function takeConnectionOffAgent(
     );
   const agent = await getAgent(db, orgId, agentId);
   if (!agent) throw new NotFoundError("Agent not found");
-  const may =
-    c &&
-    (c.ownerUserId === actorId ||
-      can(membership, "manage_connectors") ||
-      can(membership, "manage_agents") ||
-      agent.ownerUserId === actorId);
+  const may = c && (c.ownerUserId === actorId || seesOthersOnAgent(membership, agent, actorId));
   if (!c || (!may && othersPersonal(c, actorId))) throw new NotFoundError("Connection not found");
   if (!may) throw new ForbiddenError("Only an admin or the agent's owner can change its access");
   const gone = await db.transaction(async (tx) => {
@@ -220,4 +222,32 @@ export async function personalAgents(
     out.set(g.connectionId, [...(out.get(g.connectionId) ?? []), g.agentId]);
   }
   return out;
+}
+
+/**
+ * `GET …/agents/{id}/scopes` as `actorId` may read it: grants on someone else's own connection or mailbox only for
+ * who may take them off (`seesOthersOnAgent`).
+ */
+export async function agentScopesFor(db: Database, actorId: string, orgId: string, agentId: string) {
+  const membership = await requirePermission(db, actorId, orgId, "read");
+  const agent = await getAgent(db, orgId, agentId);
+  if (!agent) throw new NotFoundError("Agent not found");
+  const rows = await listAgentScopes(db, orgId, agentId);
+  if (seesOthersOnAgent(membership, agent, actorId)) return rows;
+  const ids = [...new Set(rows.flatMap((r) => (r.connectionId ? [r.connectionId] : [])))];
+  if (ids.length === 0) return rows;
+  const [connections, mailboxes] = await Promise.all([
+    db
+      .select({ id: connectorConnections.id, owner: connectorConnections.ownerUserId })
+      .from(connectorConnections)
+      .where(and(eq(connectorConnections.orgId, orgId), inArray(connectorConnections.id, ids))),
+    db
+      .select({ id: schema.mailAccounts.id, owner: schema.mailAccounts.createdByUserId })
+      .from(schema.mailAccounts)
+      .where(and(eq(schema.mailAccounts.orgId, orgId), inArray(schema.mailAccounts.id, ids))),
+  ]);
+  const theirs = new Set(
+    [...connections, ...mailboxes].filter((r) => r.owner !== null && r.owner !== actorId).map((r) => r.id),
+  );
+  return rows.filter((r) => !r.connectionId || !theirs.has(r.connectionId));
 }

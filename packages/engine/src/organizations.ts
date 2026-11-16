@@ -1200,7 +1200,7 @@ export async function removeMember(
   const { cancelSecretRequestsFor, publishSecret } = await import("./secrets");
   const { cancelMailboxApprovals, publishApproval } = await import("./approvals");
   const { dropMailOfOwner } = await import("./tools/scopes");
-  const { dropPersonalConnections } = await import("./connectors/connections");
+  const { dropPersonalConnections, forgetConnectionCaches } = await import("./connectors/connections");
   const { removeSeat } = await import("./right-hand-seats");
   const { dropMemberDashboards } = await import("./dashboards/service");
   const { released, removed, handed, changed, heir, secrets, mailActions } = await db.transaction(async (tx) => {
@@ -1321,6 +1321,7 @@ export async function removeMember(
     await followOwner(tx, orgId);
     return { released, removed, handed, changed, heir, secrets, mailActions };
   });
+  forgetConnectionCaches(orgId);
   for (const row of secrets) await publishSecret({ db, pubsub: options.pubsub }, row, "secret.updated");
   for (const row of mailActions) await publishApproval({ db, pubsub: options.pubsub }, row, "approval.decided");
   forgetAgents(
@@ -1405,6 +1406,7 @@ export async function deleteAccount(
     await import("./workspace-deletion");
   const { cancelMailboxApprovals, publishApproval } = await import("./approvals");
   const { dropMailOfOwner } = await import("./tools/scopes");
+  const { dropPersonalConnections, forgetConnectionCaches } = await import("./connectors/connections");
   const { removeSeat } = await import("./right-hand-seats");
   const done = await db.transaction(async (tx) => {
     // First, as creating a workspace does: one made in another tab meanwhile is in the plan below and closes with them.
@@ -1439,6 +1441,8 @@ export async function deleteAccount(
     const mailActions = [];
     for (const m of mine) {
       await dropMailOfOwner(tx, m.orgId, userId, userId);
+      // Before the user row: the foreign key would delete their connections with no audit and no adapter forget.
+      await dropPersonalConnections(tx, m.orgId, userId, userId);
       await removeSeat(tx, m.orgId, userId);
       mailActions.push(...(await cancelMailboxApprovals(tx, m.orgId, userId, userId)));
     }
@@ -1497,6 +1501,7 @@ export async function deleteAccount(
   });
   if (!done) return false;
   const { plan, closed, released, removed, mailActions, ownerless } = done;
+  for (const org of [...plan.leaves, ...plan.closes]) forgetConnectionCaches(org.id);
   for (const row of mailActions) await publishApproval({ db, pubsub: options.pubsub }, row, "approval.decided");
   await announceReleasedAccounts(options.pubsub, released);
   for (const { computer, freed } of removed) {

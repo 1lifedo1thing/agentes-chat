@@ -43,6 +43,7 @@ import { isUnexpectedError, ToolOffError } from "../errors";
 import { cutMarked, cutText, pgSafeJson, pgSafeText } from "../format";
 import { mergeReposOfCall, recordMergeDone, reposOfGithubCall } from "../git/repos";
 import { recordRead } from "../outbound";
+import { personOfRun } from "../personal-use";
 import { routineCreatorOf } from "../requester";
 import { isRightHand, RIGHT_HAND_NOT_OFFERED } from "../right-hand";
 import { type RoutineBrief, routineBriefOf } from "../routine-brief";
@@ -1196,7 +1197,13 @@ export function createToolGateway(deps: {
           const [tools, connectors] = await Promise.all([
             notAllowed(ctx, authority, all).catch(() => []),
             deps.catalog
-              ? missingConnectors(ctx.db, ctx.orgId, deps.catalog, { usable, listed: all.values() }).catch(() => [])
+              ? missingConnectors(
+                  ctx.db,
+                  ctx.orgId,
+                  deps.catalog,
+                  { usable, listed: all.values() },
+                  personOfRun(authority),
+                ).catch(() => [])
               : [],
           ]);
           const ask = usable.some((t) => t.name === REQUEST_PERMISSION_TOOL) ? REQUEST_PERMISSION_TOOL : null;

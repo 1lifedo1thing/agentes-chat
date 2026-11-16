@@ -7,7 +7,7 @@ import { CONNECTOR_CATALOG } from "./connectors/catalog";
 import { connectorGrantValidator, toolPrefixOfConnection } from "./connectors/connections";
 import { classifiedTools, customScope, isCustom, type ToolAccess } from "./connectors/custom";
 import { exposedToolName } from "./connectors/mcp";
-import { othersPersonal } from "./connectors/personal";
+import { othersPersonal, seesOthersOnAgent } from "./connectors/personal";
 import { sha256 } from "./crypto";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { can, requirePermission } from "./organizations";
@@ -556,10 +556,10 @@ export async function getAgentAccess(
   agentId: string,
   options: { others?: boolean } = {},
 ) {
-  await requirePermission(db, actorId, orgId, "read");
+  const membership = await requirePermission(db, actorId, orgId, "read");
   const agent = await getAgent(db, orgId, agentId);
   if (!agent) throw new NotFoundError("Agent not found");
-  return treeAs(db, actorId, orgId, agent, options.others === true);
+  return treeAs(db, actorId, orgId, agent, options.others === true && seesOthersOnAgent(membership, agent, actorId));
 }
 
 /**
@@ -684,7 +684,7 @@ export async function setAgentAccess(
     });
   });
   caches.scopes.deletePrefix(`${orgId}:${agentId}`);
-  return treeAs(db, actorId, orgId, agent, options.others === true);
+  return treeAs(db, actorId, orgId, agent, options.others === true && seesOthersOnAgent(membership, agent, actorId));
 }
 
 /**

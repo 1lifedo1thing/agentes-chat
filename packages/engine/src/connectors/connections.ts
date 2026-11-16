@@ -9,6 +9,7 @@ import { ConflictError, ForbiddenError, MisconfiguredError, NotFoundError, Valid
 import { forgetInstallationTokens } from "../git/github-app";
 import { outboundFetch, type ResolveHost } from "../net-guard";
 import { can, requireChangePermission, requirePermission } from "../organizations";
+import { enqueue } from "../outbox";
 import { CONNECTOR_ALL } from "../tools/scopes";
 import { CONNECTOR_CATALOG, type ConnectorDefinition } from "./catalog";
 import { type ComposioConnectors, completeComposioOAuth, forgetComposioAccount } from "./composio";
@@ -69,30 +70,36 @@ export async function freeToolPrefix(tx: Executor, orgId: string, base: string, 
   return `${base}_${n}`;
 }
 
-async function labelsTaken(tx: Executor, orgId: string, exceptId?: string) {
+/** The names in use beside a connection of `owner`: the team's, and that person's own (never another person's). */
+async function labelsTaken(tx: Executor, orgId: string, owner: string | null, exceptId?: string) {
   const rows = await tx
     .select({ id: connectorConnections.id, label: connectorConnections.label })
     .from(connectorConnections)
-    .where(activeOf(orgId));
+    .where(and(activeOf(orgId), owner ? seenBy(owner) : connectionsOf(null)));
   return new Set(rows.filter((r) => r.id !== exceptId).map((r) => r.label.toLowerCase()));
 }
 
-/** `base`, else `base 2`, `base 3`…: a name no other live connection of the workspace has. */
-export async function freeLabel(tx: Executor, orgId: string, base: string) {
-  const taken = await labelsTaken(tx, orgId);
+/** `base`, else `base 2`, `base 3`…: a name no other connection `owner` sees has (`labelsTaken`). */
+export async function freeLabel(tx: Executor, orgId: string, base: string, owner: string | null) {
+  const taken = await labelsTaken(tx, orgId, owner);
   if (!taken.has(base.toLowerCase())) return base;
   let n = 2;
   while (taken.has(`${base} ${n}`.toLowerCase())) n++;
   return `${base} ${n}`;
 }
 
-/** A connection's name: 1 to 80 characters, and no other live connection of the workspace has it (409). */
-export async function checkLabel(tx: Executor, orgId: string, label: string, connectionId: string) {
+/** A connection's name: 1 to 80 characters, and no other connection its owner sees has it (409). */
+export async function checkLabel(
+  tx: Executor,
+  orgId: string,
+  label: string,
+  connection: Pick<ConnectorConnection, "id" | "ownerUserId">,
+) {
   const name = label.trim();
   if (name.length < 1 || name.length > 80) {
     throw new ValidationError("The name must have 1 to 80 characters", "connector.label_invalid");
   }
-  if ((await labelsTaken(tx, orgId, connectionId)).has(name.toLowerCase())) {
+  if ((await labelsTaken(tx, orgId, connection.ownerUserId, connection.id)).has(name.toLowerCase())) {
     throw new ConflictError("Another connector already has this name", "connector.label_taken");
   }
   return name;
@@ -302,7 +309,7 @@ async function storeConnection(
         id,
         orgId: input.orgId,
         connector: input.connector,
-        label: previous?.label ?? (await freeLabel(tx, input.orgId, input.label?.trim() || def.label)),
+        label: previous?.label ?? (await freeLabel(tx, input.orgId, input.label?.trim() || def.label, owner)),
         toolPrefix: previous
           ? toolPrefixOfConnection(previous)
           : await freeToolPrefix(tx, input.orgId, def.id, deps.oauthApps, def.id),
@@ -421,7 +428,7 @@ export async function renameConnection(db: Database, actorId: string, orgId: str
       .where(and(eq(connectorConnections.id, id), activeOf(orgId)));
     if (!c) throw new NotFoundError("Connection not found");
     if (label.trim() === c.label) return c;
-    const name = await checkLabel(tx, orgId, label, c.id);
+    const name = await checkLabel(tx, orgId, label, c);
     const [row] = await tx
       .update(connectorConnections)
       .set({ label: name, updatedAt: new Date() })
@@ -448,6 +455,13 @@ export async function renameConnection(db: Database, actorId: string, orgId: str
 export async function moveConnectionToTeam(db: Database, actorId: string, orgId: string, id: string) {
   const c = await connectionFor(db, actorId, orgId, id, "move");
   if (!c.ownerUserId) return c;
+  // A one-click account was made under its person's own user at the hosted adapter, which refuses it under any other.
+  if (c.composioAccountId) {
+    throw new ConflictError(
+      "A one-click connection can't move to the team. Connect it again for the team.",
+      "connector.move_one_click",
+    );
+  }
   const row = await db.transaction(async (tx) => {
     if (!isCustom(c)) {
       const [team] = await tx
@@ -456,9 +470,11 @@ export async function moveConnectionToTeam(db: Database, actorId: string, orgId:
         .where(and(activeOf(orgId), eq(connectorConnections.connector, c.connector), connectionsOf(null)));
       if (team) throw new ConflictError("The team already has this connector. Remove it first.");
     }
+    // Its name may be one the team already uses: it takes the next free one there.
+    const label = await freeLabel(tx, orgId, c.label, null);
     const [row] = await tx
       .update(connectorConnections)
-      .set({ ownerUserId: null, updatedAt: new Date() })
+      .set({ ownerUserId: null, label, updatedAt: new Date() })
       .where(eq(connectorConnections.id, c.id))
       .returning();
     if (!row) throw new Error("connection update returned nothing");
@@ -566,9 +582,14 @@ export async function revokeConnection(
   if (gone?.composioAccountId && composio) await forgetComposioAccount(composio.client, gone.composioAccountId);
 }
 
+/** Job: the hosted adapter forgets one-click accounts whose connections went with a transaction (`accountIds`). */
+export const CONNECTOR_FORGET_JOB = "connector.forget_accounts";
+
 /**
- * `userId` left the workspace: their personal connections go with them (the Vault's rule, ADR 0144 §2), in the
- * transaction that removes them. Agents lose their scopes and rules; nothing of the team's changes.
+ * `userId` left the workspace or deleted their account: their personal connections go with them (the Vault's rule,
+ * ADR 0144 §2), in the caller's transaction. Agents lose their scopes and rules; nothing of the team's changes. Their
+ * one-click accounts are forgotten at the hosted adapter once it commits (`CONNECTOR_FORGET_JOB`). The caller clears
+ * the connection caches after the commit, so a reload in between can't keep the old rows.
  */
 export async function dropPersonalConnections(tx: Executor, orgId: string, userId: string, actorId: string) {
   const theirs = await tx
@@ -576,11 +597,15 @@ export async function dropPersonalConnections(tx: Executor, orgId: string, userI
     .from(connectorConnections)
     .where(and(activeOf(orgId), eq(connectorConnections.ownerUserId, userId)));
   for (const row of theirs) await dropConnection(tx, orgId, row, { type: "person", id: actorId });
-  if (theirs.length > 0) {
-    caches.connections.delete(`${orgId}:active`);
-    caches.scopes.deletePrefix(`${orgId}:`);
-  }
+  const accountIds = theirs.flatMap((r) => (r.composioAccountId ? [r.composioAccountId] : []));
+  if (accountIds.length > 0) await enqueue(tx, { orgId, kind: CONNECTOR_FORGET_JOB, payload: { accountIds } });
   return theirs;
+}
+
+/** Clears what a process keeps of a workspace's connections and grants (after the commit that changed them). */
+export function forgetConnectionCaches(orgId: string) {
+  caches.connections.delete(`${orgId}:active`);
+  caches.scopes.deletePrefix(`${orgId}:`);
 }
 
 /** Revokes a live connection in the caller's transaction: agents lose its scopes and its "Aprovar sempre" rules. */
@@ -659,7 +684,7 @@ export async function syncGitHubAppConnection(
       .values({
         orgId,
         connector: def.id,
-        label: await freeLabel(tx, orgId, def.label),
+        label: await freeLabel(tx, orgId, def.label, null),
         toolPrefix: await freeToolPrefix(tx, orgId, def.id, oauthApps, def.id),
         serverUrl: def.serverUrl,
         authType: GITHUB_APP_AUTH,
