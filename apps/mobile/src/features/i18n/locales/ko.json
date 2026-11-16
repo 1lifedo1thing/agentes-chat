@@ -1338,8 +1338,6 @@
     "openExisting": "페이지 열기"
   },
   "routines": {
-    "loadFailed": "루틴을 불러오지 못했어요.",
-    "anyAgent": "모든 에이전트",
     "create": "만들기",
     "when": {
       "custom": "직접 설정",
@@ -2558,7 +2556,6 @@
   },
   "dashboards": {
     "homeRow": "나만 · 내 위젯",
-    "loadFailed": "대시보드를 불러오지 못했어요.",
     "create": "만들기",
     "routineTarget": "해당 위젯",
     "pin": {

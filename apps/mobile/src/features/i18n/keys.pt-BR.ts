@@ -1455,8 +1455,6 @@ export const featureKeysPtBR = {
 
   // Rotinas (the rest of its words are the web's, `routines.*`).
   routines: {
-    loadFailed: "Não deu para carregar as rotinas.",
-    anyAgent: "Todos os agentes",
     create: "Criar",
     when: {
       custom: "Do seu jeito",
@@ -2733,7 +2731,6 @@ export const featureKeysPtBR = {
   // Dashboards on the phone (ADR 0135); the rest of their words are the web's, `dashboards.*` and `widgets.*`.
   dashboards: {
     homeRow: "Só você · seus próprios widgets",
-    loadFailed: "Não deu para carregar os painéis.",
     create: "Criar",
     routineTarget: "o widget dela",
     pin: {

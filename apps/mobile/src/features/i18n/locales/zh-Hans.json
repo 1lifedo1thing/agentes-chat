@@ -1338,8 +1338,6 @@
     "openExisting": "打开页面"
   },
   "routines": {
-    "loadFailed": "无法加载例行工作。",
-    "anyAgent": "所有智能体",
     "create": "创建",
     "when": {
       "custom": "自定义",
@@ -2558,7 +2556,6 @@
   },
   "dashboards": {
     "homeRow": "仅你自己 · 你自己的小组件",
-    "loadFailed": "无法加载仪表盘。",
     "create": "创建",
     "routineTarget": "它的小组件",
     "pin": {

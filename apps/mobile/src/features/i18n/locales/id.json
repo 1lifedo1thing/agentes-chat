@@ -1338,8 +1338,6 @@
     "openExisting": "Buka halaman"
   },
   "routines": {
-    "loadFailed": "Tidak bisa memuat rutinitas.",
-    "anyAgent": "Semua agen",
     "create": "Buat",
     "when": {
       "custom": "Caramu sendiri",
@@ -2558,7 +2556,6 @@
   },
   "dashboards": {
     "homeRow": "Hanya kamu · widget milikmu sendiri",
-    "loadFailed": "Dasbor tidak bisa dimuat.",
     "create": "Buat",
     "routineTarget": "widget-nya",
     "pin": {

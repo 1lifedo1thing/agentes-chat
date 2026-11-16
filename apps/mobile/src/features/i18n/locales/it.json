@@ -1504,8 +1504,6 @@
     "openExisting": "Apri la pagina"
   },
   "routines": {
-    "loadFailed": "Non è stato possibile caricare le routine.",
-    "anyAgent": "Tutti gli agenti",
     "create": "Crea",
     "when": {
       "custom": "A modo tuo",
@@ -2779,7 +2777,6 @@
   },
   "dashboards": {
     "homeRow": "Solo tu · i tuoi widget",
-    "loadFailed": "Impossibile caricare le dashboard.",
     "create": "Crea",
     "routineTarget": "il suo widget",
     "pin": {

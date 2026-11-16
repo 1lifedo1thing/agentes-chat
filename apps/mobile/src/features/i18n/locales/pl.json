@@ -1593,8 +1593,6 @@
     "openExisting": "Otwórz stronę"
   },
   "routines": {
-    "loadFailed": "Nie udało się wczytać rutyn.",
-    "anyAgent": "Wszyscy agenci",
     "create": "Utwórz",
     "when": {
       "custom": "Po swojemu",
@@ -2909,7 +2907,6 @@
   },
   "dashboards": {
     "homeRow": "Tylko ty · twoje własne widżety",
-    "loadFailed": "Nie udało się wczytać dashboardów.",
     "create": "Utwórz",
     "routineTarget": "jego widżet",
     "pin": {

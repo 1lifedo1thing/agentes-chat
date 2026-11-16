@@ -1423,8 +1423,6 @@
     "openExisting": "De pagina openen"
   },
   "routines": {
-    "loadFailed": "De routines konden niet worden geladen.",
-    "anyAgent": "Alle agents",
     "create": "Aanmaken",
     "when": {
       "custom": "Op jouw manier",
@@ -2675,7 +2673,6 @@
   },
   "dashboards": {
     "homeRow": "Alleen jij · je eigen widgets",
-    "loadFailed": "De dashboards konden niet worden geladen.",
     "create": "Maken",
     "routineTarget": "zijn widget",
     "pin": {
