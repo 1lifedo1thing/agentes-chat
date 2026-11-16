@@ -148,6 +148,8 @@ const PLACES: [what: string, table: string, value: string, where?: string][] = [
   ["a verification code", "verifications", "value"],
   ["a push token", "push_devices", "token"],
   ["a notification's words", "notifications", "latest::text"],
+  ["what a member wrote to ask for help", "support_requests", "text"],
+  ["what the thing they reported says", "support_requests", "about"],
 ];
 
 // Every column that holds text (a string, an array of them or JSON), but the ids a foreign key ties at either end.
@@ -783,6 +785,17 @@ beforeAll(async () => {
     reason: "canary device reason",
     expiresAt: soon,
   });
+  // A member's request for help, with its words kept as on a server that lets its operator read them.
+  await db.insert(schema.supportRequests).values({
+    orgId,
+    userId: ownerId,
+    source: "form",
+    ref: "canary-ref",
+    aboutKind: "message",
+    messageId: look,
+    text: "canary request words",
+    about: "canary reported words",
+  });
   await db
     .insert(schema.githubAppInstallations)
     .values({ orgId, installationId: 1, accountLogin: "canary-login", accountType: "Organization" });
@@ -875,7 +888,9 @@ beforeAll(async () => {
       `/orgs/${id}/runs?groupBy=error`,
       `/orgs/${id}/tool-calls?limit=200`,
       ...["tool", "agent", "outcome"].map((by) => `/orgs/${id}/tool-calls?groupBy=${by}`),
-      ...["connections", "audit", "asks", "routines", "unanswered"].map((list) => `/orgs/${id}/${list}?limit=200`),
+      ...["connections", "audit", "asks", "routines", "unanswered", "support-requests"].map(
+        (list) => `/orgs/${id}/${list}?limit=200`,
+      ),
       `/orgs/${id}/unanswered?summary=true`,
       `/analytics/work/orgs/${id}?${days}`,
     ]),
@@ -931,7 +946,10 @@ beforeAll(async () => {
     [`/orgs/${orgId}/timeline`, 400],
     [`/orgs/${orgId}/tool-calls?runId=${UNKNOWN}`, 404],
     [`/orgs/${orgId}/tool-calls?outcome=maybe`, 400],
-    ...["connections", "audit", "asks", "routines"].map((list): Call => [`/orgs/${UNKNOWN}/${list}`, 404]),
+    ...["connections", "audit", "asks", "routines", "support-requests"].map(
+      (list): Call => [`/orgs/${UNKNOWN}/${list}`, 404],
+    ),
+    [`/orgs/${orgId}/support-requests?cursor=nope`, 400],
     [`/orgs/${orgId}/connections?cursor=nope`, 400],
     [`/orgs/${orgId}/audit?from=yesterday`, 400],
     [`/orgs/${orgId}/asks?kind=wish`, 400],

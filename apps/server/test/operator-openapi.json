@@ -3,7 +3,7 @@
   "info": {
     "title": "agentes.chat operator API",
     "version": "test",
-    "description": "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, workspace standing, billing holds and limits (ADR 0079), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056)."
+    "description": "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, the times a member asked for help, workspace standing, billing holds and limits (ADR 0079), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056)."
   },
   "servers": [
     {
@@ -568,7 +568,7 @@
           },
           "type": {
             "type": "string",
-            "description": "`user.signed_up`, `session.created`, `user.deletion_requested`, `user.deletion_canceled`, `user.deleted`, `organization.created`, `organization.deletion_requested`, `organization.deletion_canceled`, `organization.deleted`, `invitation.created`, `agent.created`, `agent.deleted`, `mail.sent`, `run.finished`, `run.hop_limit`, `task.finished`, `desktop_control.ended`, `content.viewed`, `platform_ai.threshold` or `account.failure` (ADR 0056 §5 lists each one's `data`). Ignore types you don't know: new ones keep v1."
+            "description": "`user.signed_up`, `session.created`, `user.deletion_requested`, `user.deletion_canceled`, `user.deleted`, `organization.created`, `organization.deletion_requested`, `organization.deletion_canceled`, `organization.deleted`, `invitation.created`, `agent.created`, `agent.deleted`, `mail.sent`, `run.finished`, `run.hop_limit`, `task.finished`, `desktop_control.ended`, `content.viewed`, `support.requested`, `platform_ai.threshold` or `account.failure` (ADR 0056 §5 lists each one's `data`). Ignore types you don't know: new ones keep v1."
           },
           "orgId": {
             "type": ["string", "null"],
@@ -6697,6 +6697,59 @@
           }
         },
         "required": ["userId", "targetKind", "targetId", "allowed", "rule"]
+      },
+      "OperatorSupportRequestPage": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperatorSupportRequest"
+            }
+          },
+          "next": {
+            "type": ["string", "null"],
+            "description": "`cursor` for the next page; null on the last one."
+          }
+        },
+        "required": ["requests", "next"]
+      },
+      "OperatorSupportRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "description": "The account that asked."
+          },
+          "source": {
+            "type": ["string", "null"],
+            "enum": ["form", "offer", "email", "operator", null],
+            "description": "How it arrived: `form` (the apps' feedback form), `offer` (a report an agent offered, which the person read and sent), `email` or `operator` (recorded by the operator through this API)."
+          },
+          "aboutKind": {
+            "type": ["string", "null"],
+            "enum": ["message", "agent_message", "card", "other", null],
+            "description": "What kind of thing was reported, from the form's own list; `other` for anything else it named, null when it named nothing or the request came another way."
+          },
+          "messageId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "The reported message, when the form named one and it is a message of this workspace."
+          },
+          "hasWords": {
+            "type": "boolean",
+            "description": "Whether what the member wrote is kept: only on a server with `OPERATOR_API_REVEAL_TOKEN`, for 90 days. The words themselves are never in this answer."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO 8601, UTC."
+          }
+        },
+        "required": ["id", "userId", "source", "aboutKind", "messageId", "hasWords", "createdAt"]
       }
     },
     "parameters": {}
@@ -11535,6 +11588,179 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OperatorAccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orgs/{orgId}/support-requests": {
+      "get": {
+        "tags": ["Operator"],
+        "summary": "The times a workspace's members asked whoever runs the server for help, newest first",
+        "description": "Who asked, how it arrived, when, what kind of thing they reported and which message: ids and listed words. Never what they wrote. A request is kept 365 days.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "orgId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorSupportRequestPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Operator"],
+        "summary": "Record that a member asked for help another way",
+        "description": "For a request that reached the operator outside the app (a mail from the address of their account, a call). The account must be a member of the workspace the app would let in now, else 404. The same `source` and `ref` again answer the request first recorded and write nothing.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "orgId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 320,
+                    "description": "The member who asked."
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": ["email", "operator"],
+                    "description": "`email`: they wrote from the address of their account. `operator`: recorded by hand."
+                  },
+                  "ref": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "description": "Your own id for it (a mail's id, a record's): sent again, it is the same request."
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 4000,
+                    "description": "What they wrote. Kept only on a server with `OPERATOR_API_REVEAL_TOKEN`; dropped otherwise."
+                  }
+                },
+                "required": ["userId", "source", "ref"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorSupportRequest"
                 }
               }
             }

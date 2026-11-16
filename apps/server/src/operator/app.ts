@@ -18,6 +18,7 @@ import { registerOperatorOrgs } from "./orgs";
 import { registerOperatorPeople } from "./people";
 import { registerOperatorRuns } from "./runs";
 import { registerOperatorStanding } from "./standing";
+import { registerOperatorSupport } from "./support";
 import { registerOperatorWorkspace } from "./workspace";
 
 /** Versioned because its caller deploys apart from this server (ADR 0056 §3). */
@@ -98,13 +99,14 @@ export function createOperatorApp(deps: OperatorDeps, token: string, readToken?:
   registerOperatorJobs(api, deps);
   registerOperatorWorkspace(api, deps);
   registerOperatorPeople(api, deps);
+  registerOperatorSupport(api, deps);
   api.doc31("/openapi.json", {
     openapi: "3.1.0",
     info: {
       title: "agentes.chat operator API",
       version: deps.version,
       description:
-        "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, workspace standing, billing holds and limits (ADR 0079), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056).",
+        "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, the times a member asked for help, workspace standing, billing holds and limits (ADR 0079), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056).",
     },
     servers: [{ url: OPERATOR_API_PREFIX }],
     security: [{ operator: [] }],

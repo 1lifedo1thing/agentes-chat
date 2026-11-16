@@ -38,6 +38,7 @@ export type OperatorEventType =
   | "task.finished"
   | "desktop_control.ended"
   | "content.viewed"
+  | "support.requested"
   | "platform_ai.threshold"
   | "account.failure"
   | "machine.wake_wanted";
