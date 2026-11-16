@@ -3,8 +3,8 @@ import { can } from "@agenteschat/client/lib/permissions";
 import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/providers/org";
-import { GroupedList, GroupedRow } from "@/ui";
-import { SettingsPage } from "../settings/parts";
+import { EmptyState, GroupedList, GroupedRow } from "@/ui";
+import { Gap, SettingsPage } from "../settings/parts";
 import { useDirectory, useMeId } from "../shared/hooks";
 import { AlwaysApproved } from "./AgentProfileScreen";
 import { BrakesSection } from "./BrakesSection";
@@ -28,29 +28,38 @@ export function AgentMoreScreen({ agentId }: { agentId: string }) {
   const mine = Boolean(meId && agent?.ownerUserId === meId);
   const admin = can(org, "manage_agents");
   const rightHand = isRightHand(agent);
+  if (!agent)
+    return (
+      <SettingsPage title={t("agentPage.tabs.advanced")}>
+        <EmptyState icon="agent" title={t("mobile.agentEdit.missing")} />
+      </SettingsPage>
+    );
   return (
     <SettingsPage title={t("agentPage.tabs.advanced")}>
-      {agent && !rightHand ? (
+      {!rightHand ? (
         <>
           <BrakesSection agent={agent} />
           <ReportsToSection agentId={agentId} />
         </>
       ) : null}
       <AlwaysApproved agentId={agentId} name={name} mayRemove={mine || can(org, "approve_actions")} />
-      <MergeReposSection agentId={agentId} name={name} mayEdit={mine || can(org, "manage_agents")} />
+      <MergeReposSection agentId={agentId} mayEdit={mine || can(org, "manage_agents")} />
       {/* Deleting for good asks for its name on a screen of its own (ADR 0082). */}
-      {admin && agent && !rightHand ? (
-        <GroupedList>
-          <GroupedRow
-            icon="x"
-            label={t("agentPage.delete.action", agentGrammar(name))}
-            sub={t("agentPage.delete.help")}
-            subLines={2}
-            danger
-            chevron
-            onPress={() => openAgentDelete(agentId)}
-          />
-        </GroupedList>
+      {admin && !rightHand ? (
+        <>
+          <Gap />
+          <GroupedList>
+            <GroupedRow
+              icon="x"
+              label={t("agentPage.delete.action", agentGrammar(name))}
+              sub={t("agentPage.delete.help")}
+              subLines={2}
+              danger
+              chevron
+              onPress={() => openAgentDelete(agentId)}
+            />
+          </GroupedList>
+        </>
       ) : null}
     </SettingsPage>
   );

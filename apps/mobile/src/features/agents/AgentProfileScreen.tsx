@@ -34,10 +34,10 @@ import { isRightHand, tellsNameStory } from "@agenteschat/client/lib/right-hand"
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { planLine } from "@agenteschat/ui/plan-state";
 import { useQueryClient } from "@tanstack/react-query";
-import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
-import Animated, { FadeIn, LayoutAnimationConfig } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { readValueSync, STORED, writeValue } from "@/lib/storage";
 import { useOrg } from "@/providers/org";
@@ -45,13 +45,11 @@ import {
   AgentAvatar,
   Button,
   EmptyState,
-  GROUPED_ROW,
   GroupedFooter,
   GroupedHeader,
   GroupedList,
   GroupedRow,
   Icon,
-  IconButton,
   type IconName,
   Locked,
   PixelOrbit,
@@ -60,7 +58,6 @@ import {
   Sky,
   SwipeRow,
   Text,
-  useReducedMotion,
   useToast,
   WithPresence,
 } from "@/ui";
@@ -154,7 +151,7 @@ export function AgentProfileScreen({ id }: { id: string }) {
     return (
       <View style={[styles.screen, { backgroundColor: c.bg }]}>
         <PushedHeader title={agent.name} solid={false} />
-        <EmptyState icon="agent" title={t("profile.former")} />
+        <EmptyState size="page" icon="agent" title={t("profile.former")} />
       </View>
     );
   }
@@ -200,7 +197,6 @@ function Profile({ id }: { id: string }) {
   };
   // A hello when its profile opens (a rare, small moment): it smiles once, unless it is at work.
   const hello = useHello();
-  const reduced = useReducedMotion();
   const modelLabel = useModelLabel();
   const detail = useAgentDetail(orgId, id);
   const access = useAgentAccess(orgId, id, details);
@@ -469,14 +465,16 @@ function Profile({ id }: { id: string }) {
         </View>
       ) : null}
       {status?.waiting ? (
+        // Its place in the line, a row of the page as everything else here (it opens the line's sheet).
         <View style={styles.block}>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon="wait"
-            label={t("queue.see")}
-            onPress={() => sheet.open(<UsageQueueSheet agentId={id} />)}
-          />
+          <GroupedList>
+            <GroupedRow
+              icon="wait"
+              label={t("queue.see")}
+              more
+              onPress={() => sheet.open(<UsageQueueSheet agentId={id} />)}
+            />
+          </GroupedList>
         </View>
       ) : null}
       {work.length > 0 ? (
@@ -634,39 +632,22 @@ function Profile({ id }: { id: string }) {
               ),
             )}
             {/* Its mailboxes beside its apps (ADR 0038): a tap on one's own picks the level. */}
-            {mailboxes.map((m) =>
-              m.remove ? (
-                <ButtonRow
-                  key={`mail:${m.id}`}
-                  icon="mail"
-                  label={m.address}
-                  sub={m.sub}
-                  value={m.level}
-                  below={
-                    <View style={styles.remove}>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        label={m.remove.label}
-                        disabled={m.remove.busy}
-                        onPress={m.remove.onPress}
-                      />
-                    </View>
-                  }
-                />
-              ) : (
-                <GroupedRow
-                  key={`mail:${m.id}`}
-                  icon="mail"
-                  label={m.address}
-                  {...(m.sub ? { sub: m.sub, subLines: 2 } : {})}
-                  {...(m.hint ? { hint: m.hint } : {})}
-                  value={m.level}
-                  // The value changes in its row, through the app's picker: its mark, not a chevron to a screen.
-                  {...(m.onPress ? { menu: true, onPress: m.onPress } : {})}
-                />
-              ),
-            )}
+            {mailboxes.map((m) => (
+              <GroupedRow
+                key={`mail:${m.id}`}
+                icon="mail"
+                label={m.address}
+                {...(m.sub ? { sub: m.sub, subLines: 2 } : {})}
+                {...(m.hint ? { hint: m.hint } : {})}
+                value={m.level}
+                // The value changes in its row, through the app's picker: its mark, not a chevron to a screen.
+                {...(m.onPress ? { menu: true, onPress: m.onPress } : {})}
+                // Someone else's mailbox: its × takes the agent's access away (gone while that save is on its way).
+                {...(m.remove && !m.remove.busy
+                  ? { remove: { label: m.remove.label, onPress: m.remove.onPress } }
+                  : {})}
+              />
+            ))}
             {decides ? (
               // A new service for this agent starts in Conectores (who uses it is chosen there).
               <GroupedRow
@@ -698,7 +679,7 @@ function Profile({ id }: { id: string }) {
       ) : (
         <>
           <AlwaysApproved agentId={id} name={name} mayRemove={mine || can(org, "approve_actions")} />
-          <MergeReposSection agentId={id} name={name} mayEdit={mine || can(org, "manage_agents")} />
+          <MergeReposSection agentId={id} mayEdit={mine || can(org, "manage_agents")} />
           {ownerLine ? (
             <View style={styles.apart}>
               <GroupedList>
@@ -870,30 +851,24 @@ function Profile({ id }: { id: string }) {
                 size="page"
               />
             </View>
-            {/* A view picked fades in; the one the profile opens on just shows. */}
-            <LayoutAnimationConfig skipEntering>
-              <Animated.View key={tab} entering={reduced ? undefined : TAB_IN} style={styles.page}>
-                {tab === "today" ? todayView : tab === "access" ? accessView : memoryView}
-              </Animated.View>
-            </LayoutAnimationConfig>
+            {/* Views are peers: a switch shows the other at once, never animated (it happens many times a visit). */}
+            <View style={styles.page}>{tab === "today" ? todayView : tab === "access" ? accessView : memoryView}</View>
           </>
         ) : (
           <View style={styles.page}>{nowBlock}</View>
         )}
       </Animated.ScrollView>
-      <View style={styles.bar} pointerEvents="box-none">
-        {/* Its person changes its look; admins, everything ("Editar", as the web's Configurações). The right hand's
-            settings open for everyone: each person has their own there. */}
-        <PushedHeader
-          plate
-          solid={false}
-          {...(rightHand
-            ? { action: { label: t("rightHand.profile.configure"), onPress: openRightHandSettings } }
-            : decides && agent
-              ? { action: { label: t("agent.edit"), onPress: () => openAgentEdit(id) } }
-              : {})}
-        />
-      </View>
+      {/* Its person changes its look; admins, everything ("Editar", as the web's Configurações). The right hand's
+          settings open for everyone: each person has their own there. */}
+      <PushedHeader
+        plate
+        solid={false}
+        {...(rightHand
+          ? { action: { label: t("rightHand.profile.configure"), onPress: openRightHandSettings } }
+          : decides && agent
+            ? { action: { label: t("agent.edit"), onPress: () => openAgentEdit(id) } }
+            : {})}
+      />
     </View>
   );
 }
@@ -924,7 +899,7 @@ export function AlwaysApproved({ agentId, name, mayRemove }: { agentId: string; 
           const who = rule.createdByUserId ? dir.memberById.get(rule.createdByUserId)?.name : undefined;
           const at = when.short(rule.createdAt);
           return (
-            <ButtonRow
+            <GroupedRow
               key={rule.id}
               leading={
                 <ConnectorIcon
@@ -941,85 +916,26 @@ export function AlwaysApproved({ agentId, name, mayRemove }: { agentId: string; 
                   ? t("agentPage.access.always.by", { name: who, when: at })
                   : t("agentPage.access.always.byNobody", { when: at })
               }
-              trailing={
-                mayRemove ? (
-                  <IconButton
-                    icon="x"
-                    label={t("agentPage.access.always.remove", { what })}
-                    disabled={remove.isPending}
-                    onPress={() =>
-                      remove.mutate(rule.id, {
-                        onSuccess: () => toast({ title: t("agentPage.access.always.removed", { name }), agentId }),
-                        onError: failed,
-                      })
-                    }
-                  />
-                ) : undefined
-              }
+              subLines={2}
+              // Its × takes it back at once (gone while a removal is on its way).
+              {...(mayRemove && !remove.isPending
+                ? {
+                    remove: {
+                      label: t("agentPage.access.always.remove", { what }),
+                      onPress: () =>
+                        remove.mutate(rule.id, {
+                          onSuccess: () => toast({ title: t("agentPage.access.always.removed", { name }), agentId }),
+                          onError: failed,
+                        }),
+                    },
+                  }
+                : {})}
             />
           );
         })}
       </GroupedList>
       <GroupedFooter>{t("agentPage.access.always.help")}</GroupedFooter>
     </>
-  );
-}
-
-/**
- * A row of a grouped list that holds its own button (a rule's ×, a mailbox's Remove access), drawn as `GroupedRow`
- * draws its rows. A plain view, not a pressable one: a pressable row would fold the button into itself for
- * VoiceOver. `GroupedList` reads `icon` and `leading` for where its hairline starts.
- */
-function ButtonRow({
-  icon,
-  leading,
-  label,
-  labelLines = 1,
-  sub,
-  value,
-  trailing,
-  below,
-}: {
-  icon?: IconName;
-  leading?: ReactNode;
-  label: string;
-  labelLines?: number;
-  sub?: string | null;
-  value?: string;
-  trailing?: ReactNode;
-  below?: ReactNode;
-}) {
-  const c = useColors();
-  return (
-    <View style={styles.row}>
-      {icon ? (
-        <View style={styles.lead}>
-          <View style={[styles.tile, { backgroundColor: c.sunken }]}>
-            <Icon name={icon} size={16} color={c.ink2} />
-          </View>
-        </View>
-      ) : null}
-      {leading ? <View style={styles.lead}>{leading}</View> : null}
-      <View style={styles.grow}>
-        <View accessible accessibilityLabel={[label, sub].filter(Boolean).join(", ")}>
-          <Text variant="body" numberOfLines={labelLines}>
-            {label}
-          </Text>
-          {sub ? (
-            <Text variant="footnote" tone="faint" numberOfLines={2}>
-              {sub}
-            </Text>
-          ) : null}
-        </View>
-        {below}
-      </View>
-      {value ? (
-        <Text variant="callout" tone="faint" numberOfLines={1} style={styles.value}>
-          {value}
-        </Text>
-      ) : null}
-      {trailing}
-    </View>
   );
 }
 
@@ -1193,8 +1109,6 @@ export function MemoryFix({
   );
 }
 
-const TAB_IN = FadeIn.duration(160);
-
 /** A saved tab, or Hoje. */
 const profileTabOf = (v: string | null): ProfileTab => (v === "access" || v === "memory" ? v : "today");
 
@@ -1222,7 +1136,6 @@ const BAR_HEIGHT = 44;
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  bar: { position: "absolute", top: 0, left: 0, right: 0 },
   // Not clipped: on a pull the sky grows up into the gap above the content.
   cover: { height: COVER_HEIGHT, alignItems: "center", justifyContent: "flex-end", paddingBottom: COVER_FOOT },
   // Face, name 28, what it does 15: 8 apart; the buttons 16 under them.
@@ -1242,20 +1155,5 @@ const styles = StyleSheet.create({
   orbit: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   pixels: { marginBottom: 12 },
   apart: { marginTop: 24 },
-  remove: { marginTop: 6, alignSelf: "flex-start" },
-  // As `GroupedRow`'s own row, tile and value.
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    minHeight: GROUPED_ROW.minHeight,
-    paddingHorizontal: GROUPED_ROW.padX,
-    paddingVertical: GROUPED_ROW.padY,
-  },
-  // One leading column for a tile or a mark, as `GroupedRow`'s (36, a framed face's width): the text starts at 62 in
-  // every row, these included.
-  lead: { width: 36, alignItems: "center", justifyContent: "center" },
-  tile: { width: 28, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  value: { flexShrink: 1, maxWidth: "50%" },
   src: { flexDirection: "row", alignItems: "center", gap: 6 },
 });

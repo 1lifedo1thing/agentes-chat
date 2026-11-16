@@ -116,6 +116,9 @@ export function RolePeopleScreen({ roleId }: { roleId: string }) {
         })}
       </GroupedList>
       {holders.length === 0 ? <GroupedFooter>{t("rolesPage.nobody", { name })}</GroupedFooter> : null}
+      {query.trim() && holders.length > 0 && shown.length === 0 ? (
+        <NoMatch q={query.trim()} clear={() => setQuery("")} />
+      ) : null}
     </SettingsPage>
   );
 }
@@ -148,6 +151,7 @@ export function AddToRoleScreen({ roleId }: { roleId: string }) {
       ? people.filter((p) => p.role !== "owner")
       : people.filter((p) => !(p.roleIds ?? []).includes(roleId) && isBelow(viewer, p, data.roles))
   ).sort(byName);
+  const shown = candidates.filter((p) => matchesWords(`${p.name} ${p.email}`, query));
   const add = async () => {
     setBusy(true);
     let stays = true;
@@ -215,29 +219,30 @@ export function AddToRoleScreen({ roleId }: { roleId: string }) {
       ) : null}
       <Gap />
       <GroupedList>
-        {candidates
-          .filter((p) => matchesWords(`${p.name} ${p.email}`, query))
-          .map((p) => (
-            <GroupedRow
-              key={p.userId}
-              leading={<Face who={{ type: "person", id: p.userId }} size={30} live={false} />}
-              label={p.name}
-              sub={p.email}
-              subLines={2}
-              media
-              checked={picked.has(p.userId)}
-              onPress={() => {
-                tapHaptic();
-                setPicked((now) => {
-                  const next = new Set(now);
-                  if (!next.delete(p.userId)) next.add(p.userId);
-                  return next;
-                });
-              }}
-            />
-          ))}
+        {shown.map((p) => (
+          <GroupedRow
+            key={p.userId}
+            leading={<Face who={{ type: "person", id: p.userId }} size={30} live={false} />}
+            label={p.name}
+            sub={p.email}
+            subLines={2}
+            media
+            checked={picked.has(p.userId)}
+            onPress={() => {
+              tapHaptic();
+              setPicked((now) => {
+                const next = new Set(now);
+                if (!next.delete(p.userId)) next.add(p.userId);
+                return next;
+              });
+            }}
+          />
+        ))}
       </GroupedList>
       {candidates.length === 0 ? <GroupedFooter>{t("rolesPage.noOneLeft", { name })}</GroupedFooter> : null}
+      {query.trim() && candidates.length > 0 && shown.length === 0 ? (
+        <NoMatch q={query.trim()} clear={() => setQuery("")} />
+      ) : null}
     </SettingsPage>
   );
 }
@@ -295,6 +300,19 @@ export function PersonRolesScreen({ userId }: { userId: string }) {
       </GroupedList>
       <GroupedFooter>{roles.length ? t("members.everyoneNote") : t("members.noRolesToGive")}</GroupedFooter>
     </SettingsPage>
+  );
+}
+
+/** A search that names nobody: what was looked for, and a way to clear it. */
+function NoMatch({ q, clear }: { q: string; clear: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <GroupedFooter>{t("rolesPage.holders.noMatch", { q })}</GroupedFooter>
+      <GroupedList>
+        <GroupedRow icon="x" label={t("filters.clearSearch")} onPress={clear} />
+      </GroupedList>
+    </>
   );
 }
 

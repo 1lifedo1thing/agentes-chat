@@ -1,15 +1,18 @@
 import { type Agent, type AgentBrakes, BRAKES_DEFAULTS, useUpdateAgent } from "@agenteschat/client";
+import { joinNames } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { can } from "@agenteschat/client/lib/permissions";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, TextInput } from "react-native";
 import { useOrg } from "@/providers/org";
 import { fieldText, GROUPED_ROW, GroupedFooter, GroupedHeader, GroupedList, GroupedRow } from "@/ui";
+import { router } from "@/ui/navigation";
 import { useFailed } from "../routines/hooks";
 import { confirmAction } from "../settings/parts";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
+import { closeAgentChoose, openAgentChoose } from "./agent-choose";
 
 const AT_ONCE = [1, 2, 3, 5, 10];
 const PRS = [0, 1, 2, 3, 5, 10];
@@ -17,8 +20,9 @@ const PRS = [0, 1, 2, 3, 5, 10];
 /**
  * The web's Autonomia sem pedido (ADR 0131) on the phone: costly work nobody asked for asks first, how many such jobs
  * at once, PRs an hour, which agents it may call and its project. Saved at once by who manages agents; a number is
- * picked from its list in the app's picker (one save), and forgetting the remembered answers asks first. Settings' own
- * groups: each header over its group, each note under it.
+ * picked from its list in the app's picker (one save), the agents it may call on a screen of their own (each tap
+ * saved), and forgetting the remembered answers asks first. Settings' own groups: each header over its group, each
+ * note under it.
  */
 export function BrakesSection({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
@@ -54,6 +58,25 @@ export function BrakesSection({ agent }: { agent: Agent }) {
       onConfirm: () => save({ go: [], never: [] }),
     });
   const others = [...dir.agentById.values()].filter((a) => !a.former && a.id !== agent.id);
+  // The picker's taps reach the latest `save` (the brakes as they are then).
+  const latest = useRef(save);
+  useLayoutEffect(() => {
+    latest.current = save;
+  });
+  useEffect(() => () => closeAgentChoose(), []);
+  // "Só estes": the agents on a screen of their own, never a list unfolding in this card.
+  const chooseCallees = () => {
+    openAgentChoose({
+      title: t("brakes.call"),
+      ids: others.map((a) => a.id),
+      picked: b.callAgentIds,
+      multi: true,
+      note: t("brakes.callHelp"),
+      apply: (ids) => latest.current({ callAgents: "some", callAgentIds: ids }),
+    });
+    router.push("/agent-choose");
+  };
+  const callees = b.callAgentIds.flatMap((id) => dir.agentById.get(id)?.name ?? []);
   return (
     <>
       <GroupedHeader>{t("brakes.title")}</GroupedHeader>
@@ -107,26 +130,18 @@ export function BrakesSection({ agent }: { agent: Agent }) {
             label={t(`brakes.call${v === "all" ? "All" : v === "some" ? "Some" : "None"}`)}
             checked={b.callAgents === v}
             disabled={!editable}
-            onPress={() => save({ callAgents: v })}
+            onPress={() => (v === "some" ? chooseCallees() : save({ callAgents: v }))}
           />
         ))}
-        {b.callAgents === "some"
-          ? others.map((a) => (
-              <GroupedRow
-                key={a.id}
-                label={`@${a.handle}`}
-                toggle={b.callAgentIds.includes(a.id)}
-                disabled={!editable}
-                onPress={() =>
-                  save({
-                    callAgentIds: b.callAgentIds.includes(a.id)
-                      ? b.callAgentIds.filter((id) => id !== a.id)
-                      : [...b.callAgentIds, a.id],
-                  })
-                }
-              />
-            ))
-          : null}
+        {b.callAgents === "some" ? (
+          <GroupedRow
+            key="callees"
+            icon="agent"
+            label={callees.length > 0 ? joinNames(callees, t) : t("repos.choose")}
+            labelLines={2}
+            {...(editable ? { chevron: true, onPress: chooseCallees } : {})}
+          />
+        ) : null}
       </GroupedList>
       <GroupedHeader hint={{ name: t("common.about", { label: t("brakes.project") }), text: t("brakes.projectHelp") }}>
         {t("brakes.project")}

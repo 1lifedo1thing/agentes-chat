@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { pushedByDefault } from "../main-stack";
 import { translator } from "./fixtures";
 
 /** The agents, AI, members and team screens: components the tests can't render, read as text. */
@@ -78,6 +79,14 @@ describe("an agent's profile", () => {
     expect(merge).not.toContain("disabled={save.isPending}");
   });
 
+  test("where it merges is chosen on a screen of its own, never in a sheet over the profile", () => {
+    const merge = src("agents/MergeReposSection.tsx");
+    expect(merge).not.toContain("<Sheet");
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: the screen's own template, read as source text
+    expect(merge).toContain("router.push(`/agent-merge/${agentId}` as never)");
+    expect(pushedByDefault("agent-merge/[id]")).toBe(true);
+  });
+
   test("Advanced is a settings page", () => {
     const more = src("agents/AgentMoreScreen.tsx");
     expect(more).toContain('<SettingsPage title={t("agentPage.tabs.advanced")}>');
@@ -91,7 +100,11 @@ describe("saving forms", () => {
     expect(steps.match(/busy=\{busy\}/g)).toHaveLength(4);
     expect(steps).toContain("busy={save.isPending}");
     expect(steps).not.toMatch(/disabled=\{busy\}|disabled: busy/);
-    expect(src("agents/AgentEditScreen.tsx")).toContain("? { right: <ActivityIndicator color={c.muted} /> }");
+    // Edit is a settings page: its Save spins in the bar, and leaving with changes asks through the shared guard.
+    const edit = src("agents/AgentEditScreen.tsx");
+    expect(edit).toContain("busy={update.isPending}");
+    expect(edit).toContain("const leave = useUnsavedGuard(Boolean(changes));");
+    expect(edit).not.toContain("usePreventRemove");
     const sector = src("team/SectorScreen.tsx");
     expect(sector).toContain("busy={action.isPending}");
     expect(sector).toContain("<LoadFailed onRetry={() => void groups.refetch()} />");
@@ -170,5 +183,89 @@ describe("Connect an AI and the right hand's cards", () => {
     expect(src("right-hand/TeamWeekCard.tsx")).toContain(
       'when: { alignSelf: "flex-start", minHeight: 44, marginVertical: -8, justifyContent: "center" },',
     );
+  });
+});
+
+describe("the agents' pages on the phone's standards", () => {
+  test("a choice of one agent, of several or of a person is a pushed screen, never a list unfolding in a card", () => {
+    for (const route of ["agent-choose", "person-choose", "agent-look", "agent-brain", "agent-merge/[id]"])
+      expect({ route, pushed: pushedByDefault(route) }).toEqual({ route, pushed: true });
+    const reports = src("agents/ReportsToSection.tsx");
+    expect(reports).toContain('router.push("/agent-choose");');
+    expect(reports).not.toContain("[null, ...choices].map(");
+    // Desfazer is the toast's word, not a row that appears under the field.
+    expect(reports).toMatch(/action: \{\s*label: t\("agentGroups\.undo"\),\s*onPress: \(\) => apply\(previous, true\)/);
+    const brakes = src("agents/BrakesSection.tsx");
+    expect(brakes).toContain("multi: true,");
+    expect(brakes).not.toContain("toggle={b.callAgentIds.includes(a.id)}");
+    // Each opener closes its choice when it goes away, so a stale form never hears a pick.
+    for (const file of ["agents/ReportsToSection.tsx", "agents/BrakesSection.tsx", "agents/LookPicker.tsx"])
+      expect(src(file)).toMatch(/useEffect\(\(\) => \(\) => close\w+\(\), \[\]\);/);
+    const roleWho = src("roles/AgentsScreen.tsx");
+    expect(roleWho).toContain("openPersonChoose({");
+    expect(roleWho).not.toContain("pickOne(");
+  });
+
+  test("states: the rows' shape while loading, a failed load with Try again, never a bare spinner or a blank page", () => {
+    const steps = src("agents/setup/SetupStepScreen.tsx");
+    expect(steps).not.toContain("ActivityIndicator");
+    expect(steps.match(/<Bones \/>/g)).toHaveLength(3);
+    const team = src("team/TeamScreen.tsx");
+    expect(team).toContain("<SkeletonList rows={4} />");
+    expect(team).toContain("<LoadFailed onRetry={() => void team.refetch()} />");
+    expect(src("agents/ProposalsScreen.tsx")).toContain("{proposals.isPending ? <SkeletonList rows={3} /> : null}");
+    expect(src("team/SectorScreen.tsx")).not.toContain("ActivityIndicator");
+    const create = src("agents/NewAgentScreen.tsx");
+    expect(create).toContain("{proposal.isPending ? (");
+    expect(create).toContain("<RowBones />");
+  });
+
+  test("a setup step's app level is picked among the app's own levels, never cycled by taps", () => {
+    const steps = src("agents/setup/SetupStepScreen.tsx");
+    expect(steps).not.toContain("nextLevel");
+    expect(steps).toContain("options: r.levels.map((level) => ({");
+  });
+
+  test("the app's own rows and groups, never hand-made look-alikes", () => {
+    const profile = src("agents/AgentProfileScreen.tsx");
+    expect(profile).not.toContain("function ButtonRow");
+    // Its place in the usage line is a row of the page, not a small button floating under the cards.
+    expect(profile).toMatch(/icon="wait"\s+label=\{t\("queue\.see"\)\}\s+more/);
+    // The views are peers: switching them shows the other at once.
+    expect(profile).not.toContain("entering=");
+    const budget = src("agents/BudgetSection.tsx");
+    expect(budget).toContain('<GroupedHeader>{t("rightHand.settings.budget")}</GroupedHeader>');
+    // Saved apart from the form's Salvar, so it says it went.
+    expect(budget).toContain('onSuccess: () => toast({ title: t("mobile.agentEdit.saved"), agentId: agent.id })');
+    expect(budget).not.toContain('<Text variant="title"');
+    expect(src("agents/setup/SetupStepScreen.tsx")).toContain("<BudgetField");
+    const roles = src("roles/RolesScreen.tsx");
+    expect(roles).not.toContain("<Pressable");
+    expect(roles).toMatch(/<Button\s+variant="text"\s+size="sm"/);
+    const imp = src("agents/ImportAgents.tsx");
+    expect(imp).toContain("leading={<SourceMark card={card} />}");
+    expect(imp).not.toContain("function Note(");
+    expect(imp).not.toContain("<Toggle");
+    const create = src("agents/NewAgentScreen.tsx");
+    expect(create).toMatch(/label=\{t\("approval\.refuse"\)\}\s+danger/);
+    // Back and Continue pinned under the step's scroll in the app's bottom bar, as a settings page's one action.
+    expect(create).toContain("<BottomBar bottom={insets.bottom}>");
+    expect(src("agents/LookPicker.tsx")).not.toContain("export function LookPicker(");
+    // The fields are only ever rows of a grouped list: no loose bordered look-alike left behind.
+    for (const field of ["agents/RoleInput.tsx", "agents/HandleInput.tsx"])
+      expect({ field, loose: src(field).includes("grouped") && src(field).includes("borderWidth") }).toEqual({
+        field,
+        loose: false,
+      });
+  });
+
+  test("a value changed through the app's picker shows the up-down mark; a row that opens a screen, the chevron", () => {
+    const sector = src("team/SectorScreen.tsx");
+    expect(sector).toMatch(/chevron: true,\s+onPress: \(\) => pick\(t\("team\.sectors\.leadLabel"\), "leadUserId"\)/);
+    // The setor's "…" in Agentes is the app's action list, as every "…".
+    expect(sector).toContain("chooseAction(");
+    expect(sector).not.toContain("<ActionList");
+    const create = src("agents/NewAgentScreen.tsx");
+    expect(create).toContain("{...(start ? { menu: true } : { chevron: true })}");
   });
 });

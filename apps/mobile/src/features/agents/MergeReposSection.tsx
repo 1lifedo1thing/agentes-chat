@@ -4,24 +4,73 @@ import { mergeChoices } from "@agenteschat/client/lib/repos";
 import { matchesWords } from "@agenteschat/ui/search";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, SearchField, Sheet, useToast } from "@/ui";
-import { useOrgId } from "../shared/hooks";
-import { SheetTitle } from "../shared/PromptForm";
+import { StyleSheet, View } from "react-native";
+import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, SearchField, useToast } from "@/ui";
+import { router } from "@/ui/navigation";
+import { RowBones } from "../roles/parts";
+import { SettingsPage } from "../settings/parts";
+import { LoadFailed } from "../shared/FirstUse";
+import { useDirectory, useOrgId } from "../shared/hooks";
+
+/** Opens where an agent merges with no approval card, on its own screen. */
+const openMergeRepos = (agentId: string) => router.push(`/agent-merge/${agentId}` as never);
 
 /**
  * "Pode fazer merge sem perguntar", as under GitHub on the web's Ferramentas e acesso: where the agent merges with no
- * approval card. Its owner or an admin chooses in a sheet, each switch saved at once. Shown only when there is
+ * approval card. Its owner or an admin chooses on a screen of its own (`MergeReposScreen`). Shown only when there is
  * something chosen, or something to choose. A grouped list with its header and footer, as the profile's Access view.
  */
-export function MergeReposSection({ agentId, name, mayEdit }: { agentId: string; name: string; mayEdit: boolean }) {
+export function MergeReposSection({ agentId, mayEdit }: { agentId: string; mayEdit: boolean }) {
+  const { t } = useTranslation();
+  const orgId = useOrgId();
+  const merge = useAgentMergeRepos(orgId, agentId);
+  const reach = useAgentRepos(orgId, agentId, mayEdit);
+  const listing = useGitHubRepos(orgId, mayEdit);
+  const list = merge.data ?? [];
+  const choices = mergeChoices(listing.data, reach.data ?? []);
+  if (!merge.data || (list.length === 0 && !(mayEdit && choices.length > 0))) return null;
+  return (
+    <>
+      <GroupedHeader>{t("repos.merge.label")}</GroupedHeader>
+      <GroupedList>
+        {list.map((repo) => (
+          <GroupedRow key={repo} label={repo} icon="code" />
+        ))}
+        {mayEdit ? (
+          <GroupedRow
+            label={list.length === 0 ? t("repos.choose") : t("repos.change")}
+            chevron
+            onPress={() => openMergeRepos(agentId)}
+          />
+        ) : null}
+      </GroupedList>
+      {list.length === 0 ? (
+        <GroupedFooter>{t("repos.merge.none")}</GroupedFooter>
+      ) : (
+        <GroupedFooter
+          hint={{ name: t("common.about", { label: t("repos.merge.label") }), text: t("repos.merge.help") }}
+        >
+          {t("repos.merge.short")}
+        </GroupedFooter>
+      )}
+    </>
+  );
+}
+
+/**
+ * Where the agent merges without asking, pushed from its row (ADR 0135: screens, never sheets): the repositories it
+ * already uses, searchable, each a switch saved at once. A switch flips on the tap and only its own row waits for its
+ * save; a refused save goes back to what is saved.
+ */
+export function MergeReposScreen({ agentId }: { agentId: string }) {
   const { t } = useTranslation();
   const orgId = useOrgId();
   const toast = useToast();
+  const name = useDirectory().anyAgent(agentId)?.name ?? "";
   const merge = useAgentMergeRepos(orgId, agentId);
   const save = useSetAgentMergeRepos(orgId, agentId);
-  const reach = useAgentRepos(orgId, agentId, mayEdit);
-  const listing = useGitHubRepos(orgId, mayEdit);
-  const [picking, setPicking] = useState(false);
+  const reach = useAgentRepos(orgId, agentId);
+  const listing = useGitHubRepos(orgId);
   const [q, setQ] = useState("");
   // The repositories whose switch was flipped and whose save is on its way: each waits for its own.
   const [flipping, setFlipping] = useState<ReadonlySet<string>>(() => new Set());
@@ -29,7 +78,7 @@ export function MergeReposSection({ agentId, name, mayEdit }: { agentId: string;
   // the tap, and a refused save goes back to what is saved.
   const list = (save.isPending ? save.variables : undefined) ?? merge.data ?? [];
   const choices = mergeChoices(listing.data, reach.data ?? []);
-  if (!merge.data || (list.length === 0 && !(mayEdit && choices.length > 0))) return null;
+  const shown = choices.filter((repo) => !q.trim() || matchesWords(repo, q));
   const toggle = (repo: string) => {
     if (flipping.has(repo)) return;
     setFlipping((now) => new Set(now).add(repo));
@@ -44,41 +93,67 @@ export function MergeReposSection({ agentId, name, mayEdit }: { agentId: string;
         }),
       );
   };
+  const failed = (merge.isError && !merge.data) || (reach.isError && !reach.data);
+  const loading = !merge.data || !reach.data || listing.isPending;
   return (
-    <>
-      <GroupedHeader>{t("repos.merge.label")}</GroupedHeader>
-      <GroupedList>
-        {list.map((repo) => (
-          <GroupedRow key={repo} label={repo} icon="code" />
-        ))}
-        {mayEdit ? (
-          <GroupedRow
-            label={list.length === 0 ? t("repos.choose") : t("repos.change")}
-            chevron
-            onPress={() => setPicking(true)}
-          />
-        ) : null}
-      </GroupedList>
-      {list.length === 0 ? (
-        <GroupedFooter>{t("repos.merge.none")}</GroupedFooter>
-      ) : (
-        <GroupedFooter
-          hint={{ name: t("common.about", { label: t("repos.merge.label") }), text: t("repos.merge.help") }}
-        >
-          {t("repos.merge.short")}
-        </GroupedFooter>
-      )}
-      <Sheet open={picking} onClose={() => setPicking(false)}>
-        <SheetTitle title={t("repos.merge.dialogTitle", agentGrammar(name))} />
-        <SearchField value={q} onChangeText={setQ} placeholder={t("repos.search")} autoCorrect={false} />
+    <SettingsPage title={t("repos.merge.dialogTitle", agentGrammar(name))}>
+      <GroupedFooter>{t("repos.merge.dialogDesc")}</GroupedFooter>
+      {failed ? (
+        // What didn't load is never an empty list: what happened, and the way to ask again.
+        <LoadFailed
+          onRetry={() => {
+            void merge.refetch();
+            void reach.refetch();
+            void listing.refetch();
+          }}
+        />
+      ) : loading ? (
+        // The rows' own shape while they load, never a spinner.
         <GroupedList>
-          {choices
-            .filter((repo) => !q.trim() || matchesWords(repo, q))
-            .map((repo) => (
-              <GroupedRow key={repo} label={repo} toggle={list.includes(repo)} onPress={() => toggle(repo)} />
-            ))}
+          <RowBones />
+          <RowBones name={56} />
+          <RowBones name={34} />
         </GroupedList>
-      </Sheet>
-    </>
+      ) : (
+        <>
+          {choices.length > 0 ? (
+            <View style={styles.search}>
+              <SearchField
+                value={q}
+                onChangeText={setQ}
+                placeholder={t("repos.search")}
+                accessibilityLabel={t("repos.search")}
+                autoCorrect={false}
+                autoCapitalize="none"
+              />
+            </View>
+          ) : null}
+          <GroupedList>
+            {shown.map((repo) => (
+              <GroupedRow
+                key={repo}
+                icon="code"
+                label={repo}
+                toggle={list.includes(repo)}
+                onPress={() => toggle(repo)}
+              />
+            ))}
+          </GroupedList>
+          {q.trim() && shown.length === 0 ? (
+            // A search that names nothing says so, and offers to clear it.
+            <>
+              <GroupedFooter>{t("repos.noMatch", { q: q.trim() })}</GroupedFooter>
+              <GroupedList>
+                <GroupedRow icon="x" label={t("filters.clearSearch")} onPress={() => setQ("")} />
+              </GroupedList>
+            </>
+          ) : null}
+        </>
+      )}
+    </SettingsPage>
   );
 }
+
+const styles = StyleSheet.create({
+  search: { paddingTop: 10, paddingBottom: 14 },
+});

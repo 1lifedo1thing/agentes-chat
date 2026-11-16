@@ -71,6 +71,7 @@ import {
   ACT_LINE,
   AgentAvatar,
   Button,
+  EmptyState,
   fieldText,
   GROUPED_ROW,
   GroupedFooter,
@@ -94,14 +95,15 @@ import { ConnectorIcon } from "../connectors/ConnectorIcon";
 import { pickLevel } from "../connectors/pick-level";
 import { suggestAgentName } from "../new/logic";
 import { useOpenDm } from "../new/useOpenDm";
+import { RowBones } from "../roles/parts";
 import { useFailed } from "../routines/hooks";
 import { proposedRoutineWhen } from "../routines/rule";
-import { chooseAction } from "../settings/parts";
+import { chooseAction, SettingsPage } from "../settings/parts";
 import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
-import { goBack, PushedHeader, successHaptic, Tile, tapHaptic, useSurface } from "../shared/parts";
+import { BottomBar, goBack, PushedHeader, successHaptic, Tile, tapHaptic, useSurface } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { markArrived } from "./arrival";
-import { BrainPickSheet } from "./BrainPickSheet";
+import { closeBrainPick, openBrainPick } from "./brain-pick";
 import { type FullLook, fullLook } from "./edit";
 import { ErrorLine, HandleInput } from "./HandleInput";
 import { ImportAgents } from "./ImportAgents";
@@ -147,7 +149,6 @@ export function NewAgentScreen({
   accountId?: string | null;
 }) {
   const { t } = useTranslation();
-  const c = useColors();
   const orgId = useOrgId();
   const proposal = useAgentProposal(orgId, proposalId);
   // The draft as it was when it opened: once created here the proposal is closed, and the form stays on.
@@ -155,21 +156,27 @@ export function NewAgentScreen({
   if (proposal.data?.canDecide && opened.current?.messageId !== proposal.data.messageId) opened.current = proposal.data;
   if (proposalId && !opened.current) {
     return (
-      <View style={[styles.fill, { backgroundColor: c.grouped }]}>
-        <PushedHeader title={t("newAgent.title")} solid={false} grouped />
-        <View style={styles.closed}>
-          {proposal.isPending ? null : (
-            <>
-              <Text variant="body" tone="muted">
-                {proposal.error instanceof ApiError && proposal.error.status === 403
-                  ? t("newAgent.proposalNoAccess")
-                  : t("newAgent.proposalClosed")}
-              </Text>
-              <Button variant="secondary" label={t("newAgent.backToChat")} onPress={() => goBack()} />
-            </>
-          )}
-        </View>
-      </View>
+      <SettingsPage title={t("newAgent.title")}>
+        {proposal.isPending ? (
+          // The draft's own shape while it loads: the review's rows, never a blank page.
+          <GroupedList>
+            <RowBones />
+            <RowBones name={56} />
+            <RowBones name={34} />
+          </GroupedList>
+        ) : (
+          <EmptyState
+            size="page"
+            icon="agent"
+            title={
+              proposal.error instanceof ApiError && proposal.error.status === 403
+                ? t("newAgent.proposalNoAccess")
+                : t("newAgent.proposalClosed")
+            }
+            action={<Button variant="secondary" size="sm" label={t("newAgent.backToChat")} onPress={() => goBack()} />}
+          />
+        )}
+      </SettingsPage>
     );
   }
   return (
@@ -269,7 +276,6 @@ function NewAgentForm({
     held,
   });
   const [picked, setPicked] = useState<BrainPickOption | null>(null);
-  const [picking, setPicking] = useState(false);
   // "Conectar uma IA" from this step (the same sheet as Settings, for the agents I create): a plan account that wasn't
   // among the choices when it opened is what the agent thinks with, over a pick made before; nothing new keeps the pick.
   const [optionsBefore, setOptionsBefore] = useState<ReadonlySet<string> | null>(null);
@@ -288,6 +294,20 @@ function NewAgentForm({
         provider: lastSetup.data?.account?.provider,
       })
     : "";
+  // "Quem pensa" on its own screen: the options as they are when it opens, the choice back here.
+  const pickBrain = () => {
+    openBrainPick({
+      options: brainOptions,
+      value: chosen?.value ?? (start && useLast ? undefined : AUTO),
+      apply: (o) => {
+        setPicked(o);
+        setUseLast(false);
+        setOptionsBefore(null);
+      },
+    });
+    router.push("/agent-brain");
+  };
+  useEffect(() => () => closeBrainPick(), []);
   const created = useRef(false);
   const denied = useRef(false);
   // Bringing agents from another app, in place of the role cards (the web's create-agent import step).
@@ -646,7 +666,7 @@ function NewAgentForm({
           />
         </GroupedList>
         {role === "custom" && !starter ? (
-          <RoleInput value={roleText} onChangeText={setRoleText} placeholder={t("agent.roleHelp")} grouped />
+          <RoleInput value={roleText} onChangeText={setRoleText} placeholder={t("agent.roleHelp")} />
         ) : null}
         {/* Right under "Do zero", a card of its own: the other way to start, before the presets. */}
         {mayImport && !proposed ? (
@@ -785,7 +805,6 @@ function NewAgentForm({
                 }}
                 label={t("newAgent.handle")}
                 placeholder={t("newAgent.handlePlaceholder")}
-                grouped
                 ok={Boolean(handle) && !handleIssue}
               />
             </GroupedList>
@@ -881,7 +900,9 @@ function NewAgentForm({
                       : t("brain.auto.label")
                 }
                 labelLines={2}
-                chevron
+                // With a last setup to go back to, the row offers it or the rest (a short menu, its up-down mark);
+                // without, it opens the choices' screen (a chevron).
+                {...(start ? { menu: true } : { chevron: true })}
                 onPress={() =>
                   start
                     ? chooseAction(
@@ -889,16 +910,17 @@ function NewAgentForm({
                         [
                           {
                             label: startText,
+                            checked: !chosen && useLast,
                             onPress: () => {
                               setPicked(null);
                               setUseLast(true);
                             },
                           },
-                          { label: t("newAgent.brainPick.other"), onPress: () => setPicking(true) },
+                          { label: t("newAgent.brainPick.other"), onPress: pickBrain },
                         ],
                         t("common.cancel"),
                       )
-                    : setPicking(true)
+                    : pickBrain()
                 }
               />
               {held ? null : (
@@ -920,17 +942,6 @@ function NewAgentForm({
             ) : null}
           </>
         )}
-        <BrainPickSheet
-          open={picking}
-          onClose={() => setPicking(false)}
-          options={brainOptions}
-          value={chosen?.value ?? (start && useLast ? undefined : AUTO)}
-          onPick={(o) => {
-            setPicked(o);
-            setUseLast(false);
-            setOptionsBefore(null);
-          }}
-        />
 
         <GroupedHeader>{t("newAgent.preview.uses")}</GroupedHeader>
         <GroupedList>
@@ -1028,14 +1039,19 @@ function NewAgentForm({
         </GroupedList>
         <GroupedFooter>{myChannels.length > 0 ? t("newAgent.channelsHelp") : t("newAgent.noChannels")}</GroupedFooter>
         {from ? (
-          <View style={styles.refuse}>
-            <Button
-              variant="secondary"
-              label={t("approval.refuse")}
-              disabled={busy || deny.isPending}
-              onPress={refuse}
-            />
-          </View>
+          // Saying no to the proposal: the page's last row, apart, in red (never a button floating under the list).
+          <>
+            <View style={styles.gap} />
+            <GroupedList>
+              <GroupedRow
+                icon="x"
+                label={t("approval.refuse")}
+                danger
+                disabled={busy || deny.isPending}
+                onPress={refuse}
+              />
+            </GroupedList>
+          </>
         ) : null}
       </>
     ),
@@ -1071,44 +1087,47 @@ function NewAgentForm({
           )}
         </ScrollView>
         {footer ? (
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            {importing ? (
-              <>
-                <Button variant="text" label={t("common.back")} disabled={busy} onPress={closeImport} />
-                {imp.planned && imp.picks.length > 0 ? (
-                  <View style={styles.fill}>
-                    <Button
-                      variant="primary"
-                      wide
-                      label={t("onboarding.import.go", { count: imp.picks.length })}
-                      loading={busy}
-                      disabled={busy}
-                      onPress={() => void runImport()}
-                    />
-                  </View>
-                ) : null}
-              </>
-            ) : null}
-            {backs ? (
-              // Back is a word; Continue is the step's one primary.
-              <Button variant="text" label={t("common.back")} disabled={busy} onPress={() => goTo(index - 1)} />
-            ) : null}
-            {goes ? (
-              <View style={styles.fill}>
-                <Button
-                  variant="primary"
-                  wide
-                  label={
-                    index === total - 1
-                      ? t("newAgent.create", { name: name.trim() || shownName })
-                      : t("common.continue")
-                  }
-                  loading={busy}
-                  onPress={next}
-                />
-              </View>
-            ) : null}
-          </View>
+          // The step's actions pinned under its scroll, as a settings page's one action: always at hand.
+          <BottomBar bottom={insets.bottom}>
+            <View style={styles.footer}>
+              {importing ? (
+                <>
+                  <Button variant="text" label={t("common.back")} disabled={busy} onPress={closeImport} />
+                  {imp.planned && imp.picks.length > 0 ? (
+                    <View style={styles.fill}>
+                      <Button
+                        variant="primary"
+                        wide
+                        label={t("onboarding.import.go", { count: imp.picks.length })}
+                        loading={busy}
+                        disabled={busy}
+                        onPress={() => void runImport()}
+                      />
+                    </View>
+                  ) : null}
+                </>
+              ) : null}
+              {backs ? (
+                // Back is a word; Continue is the step's one primary.
+                <Button variant="text" label={t("common.back")} disabled={busy} onPress={() => goTo(index - 1)} />
+              ) : null}
+              {goes ? (
+                <View style={styles.fill}>
+                  <Button
+                    variant="primary"
+                    wide
+                    label={
+                      index === total - 1
+                        ? t("newAgent.create", { name: name.trim() || shownName })
+                        : t("common.continue")
+                    }
+                    loading={busy}
+                    onPress={next}
+                  />
+                </View>
+              ) : null}
+            </View>
+          </BottomBar>
         ) : null}
       </KeyboardAvoidingView>
     </View>
@@ -1178,7 +1197,6 @@ function ImportMarks() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  closed: { paddingHorizontal: 16, gap: 8 },
   body: { paddingHorizontal: 16, paddingBottom: 32 },
   steps: { paddingTop: 4 },
   bars: { flexDirection: "row", gap: 6 },
@@ -1216,7 +1234,6 @@ const styles = StyleSheet.create({
   },
   bare: { borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
   restore: { alignItems: "center", columnGap: 16, rowGap: 8, paddingTop: 7, paddingLeft: 16 },
-  refuse: { marginTop: 24 },
   // Back as a word at the left, 16 from the primary that takes the rest.
-  footer: { flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingTop: 12 },
+  footer: { flexDirection: "row", alignItems: "center", gap: 16 },
 });

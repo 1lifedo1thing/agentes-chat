@@ -66,7 +66,6 @@ import { useColors, useDirectory, useNow, useOrgId, usePullRefresh } from "../sh
 import { agentLook } from "../shared/logic";
 import { successHaptic, Tile } from "../shared/parts";
 import { useWaitingApprovals, useWorkingNow } from "../shared/queries";
-import { SheetHostProvider } from "../shared/SheetHost";
 import { useTabHeader } from "../shared/tabHeader";
 import { useAgentWorkLine, usePresenceOf } from "../status/hooks";
 import { useTasksToday } from "../task-manager/hooks";
@@ -81,8 +80,11 @@ import { agoShort, workTitle } from "./work";
 const LIVE_ROWS = 8;
 /** While Agentes is on screen, how often it asks whether the task manager is there (the manager itself: seconds). */
 const TASKS_POLL_MS = 15_000;
-/** A row's state line changes in place (a run starts, a request lands): it crosses over, never pops. */
-const STATE_IN = FadeIn.duration(160);
+/**
+ * A row's state line changes in place (a run starts, a request lands): it crosses over, never pops; under 150 ms, as
+ * something seen many times a day (animate-expo's gate).
+ */
+const STATE_IN = FadeIn.duration(140);
 /** Back from a routine: the body comes back into its sky's frame. */
 const FACE_IN = FadeIn.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1));
 
@@ -96,14 +98,6 @@ const FACE_IN = FadeIn.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1));
  * bar's "+" creates one; an archived agent restores with a swipe.
  */
 export function AgentsScreen() {
-  return (
-    <SheetHostProvider>
-      <Agents />
-    </SheetHostProvider>
-  );
-}
-
-function Agents() {
   const { t } = useTranslation();
   const dir = useDirectory();
   const header = useTabHeader();
@@ -234,7 +228,7 @@ function Agents() {
       ) : null}
       {/* Equipe's org chart and channels (ADR 0148). A personal workspace (ADR 0159) keeps it as the last row of You ›
           Work: one person's agents rarely need an org chart in sight. */}
-      {total > 0 && !isPersonal(org) ? <TeamEntry /> : null}
+      {total > 0 && !isPersonal(org) ? <TeamEntry divider={showsManager} /> : null}
       <LayoutAnimationConfig skipEntering>
         {waiting.length > 0 ? (
           <>
@@ -342,7 +336,7 @@ function ManagerRow({ working, waiting, onPress }: { working: number; waiting: n
       leading={<Tile icon="list" size={52} />}
       title={t("taskManager.title")}
       sub={
-        <Text variant="subhead" style={{ color: waiting > 0 ? c.amber : c.muted }} numberOfLines={1}>
+        <Text variant="small" style={[LIST_PREVIEW, { color: waiting > 0 ? c.amber : c.muted }]} numberOfLines={1}>
           {line}
         </Text>
       }
@@ -686,8 +680,9 @@ function useGreeting(order: readonly string[]): string | null {
 }
 
 /**
- * A newcomer's row coming in: from a little below and a touch small, on a spring with a small bounce (a rare moment,
- * the one place this list is allowed one). Reduced motion: it only fades in. Every other row: no style at all.
+ * A newcomer's row coming in: from a little below and a touch small, settling on a spring without overshoot (a rare
+ * moment, but no finger threw it: nothing to bounce from). Reduced motion: it only fades in. Every other row: no style
+ * at all.
  */
 function useArrival(arriving: boolean, reduced: boolean) {
   const shown = useSharedValue(1);
@@ -695,7 +690,7 @@ function useArrival(arriving: boolean, reduced: boolean) {
     if (!arriving) return;
     shown.set(0);
     shown.set(
-      reduced ? withTiming(1, { duration: 200 }) : withDelay(120, withSpring(1, { duration: 520, dampingRatio: 0.72 })),
+      reduced ? withTiming(1, { duration: 200 }) : withDelay(120, withSpring(1, { duration: 400, dampingRatio: 1 })),
     );
   }, [arriving, reduced, shown]);
   return useAnimatedStyle(() => {
