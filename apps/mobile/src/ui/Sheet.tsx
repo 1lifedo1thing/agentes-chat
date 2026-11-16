@@ -93,7 +93,10 @@ export function useRouteSheetOptions() {
   );
 }
 
-/** A route sheet's content: its scroll view is the sheet's own (dragging at its top moves the sheet, the keyboard insets it). */
+/**
+ * A route sheet's content: its scroll view is the sheet's own (dragging at its top moves the sheet, the keyboard
+ * insets it).
+ */
 export function useRouteSheetScrollable(ref: RefObject<ScrollViewInstance | null>) {
   const navigation = useNavigation();
   useLayoutEffect(() => {
@@ -176,7 +179,7 @@ export function SheetContent({ children, fill = false }: { children: ReactNode; 
   );
 }
 
-/** The padding of a sheet's content: 18 at the sides, `top` (room for the grabber), room over the screen's bottom edge. */
+/** The padding of a sheet's content: 18 at the sides, `top` (room for the grabber), room over the bottom edge. */
 export function useSheetBody(top = 24): ViewStyle {
   const insets = useSafeAreaInsets();
   return { paddingHorizontal: 18, paddingTop: top, paddingBottom: 24 + Math.max(0, insets.bottom - 8) };

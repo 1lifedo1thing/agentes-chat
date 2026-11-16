@@ -317,7 +317,7 @@ const TILE = 36;
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  // The sheet's bar: Cancelar at the left, the title centered, 50 tall, clear of the grabber (5 tall at 5 from the top).
+  // The sheet's bar: Cancelar at the left, the title centered, 50 tall, clear of the grabber (5 tall, 5 from the top).
   // Its room over it is its own (padding, on its color): the list passing under it never shows above it.
   head: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 64, paddingTop: 14, paddingHorizontal: 16 },
   cancel: { minWidth: 72, minHeight: 44, justifyContent: "center" },
