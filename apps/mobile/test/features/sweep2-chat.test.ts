@@ -102,7 +102,7 @@ describe("the conversation's sheets read as one family", () => {
       const card = src(file);
       expect(card).toMatch(
         new RegExp(
-          `<SheetBar onClose=\\{\\(\\) => router\\.back\\(\\)\\} />\\s*<View style=\\{styles\\.gone\\}>\\s*<EmptyState size="panel" icon="\\w+" title=\\{t\\("${key.replace(/\./g, "\\.")}"\\)\\} />`,
+          `<SheetBar onClose=\\{\\(\\) => router\\.back\\(\\)\\} />\\s*<View style=\\{styles\\.gone\\}>\\s*<EmptyState size="panel" icon="\\w+" title=\\{t\\("${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"\\)\\} />`,
         ),
       );
     }

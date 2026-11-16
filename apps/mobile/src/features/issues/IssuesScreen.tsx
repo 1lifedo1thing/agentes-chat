@@ -1,6 +1,7 @@
 import { type Issue, type IssueColumn, useIssueColumns, useIssueProjects, useIssues } from "@agenteschat/client";
 import { dueLabel } from "@agenteschat/client/lib/format";
 import { liveProjectFilter, NO_PROJECT } from "@agenteschat/client/lib/issue-projects";
+import { assigneeNames } from "@agenteschat/client/lib/issues";
 import { Fragment, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -39,6 +40,7 @@ import { useColors, useDirectory, useMeId, useOrgId, usePullRefresh } from "../s
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { type BoardColumn, issueBoard, taskListSections, taskTitleText } from "./logic";
 import {
+  AssigneeFace,
   BoardCard,
   ColumnHeader,
   ProjectDot,
@@ -246,7 +248,13 @@ function TaskRow({
   const done = i.status === "done";
   const running = state?.kind === "running";
   const title = taskTitleText(i.title);
-  const who = i.assignee ? dir.nameOf(i.assignee) : t("mobile.issues.nobody");
+  const who =
+    i.assignees.length > 0
+      ? assigneeNames(
+          t,
+          i.assignees.map((a) => dir.nameOf(a)),
+        )
+      : t("mobile.issues.nobody");
   const due = i.dueDate && !done ? dueLabel(t, i18n.language, i.dueDate) : null;
   const axis = mediaRowAxis(16, textLineOf("small", useFontScale(), LIST_PREVIEW));
   return (
@@ -258,9 +266,13 @@ function TaskRow({
       sub={
         <View style={styles.subLine}>
           <View style={styles.person}>
-            {i.assignee ? (
+            {i.assignees.length > 1 ? (
               <View style={{ marginTop: axis.face }}>
-                <Face who={i.assignee} size={16} live={live} mode={running ? "run" : "idle"} />
+                <AssigneeFace issue={i} size={20} live={live} ring={c.bg} />
+              </View>
+            ) : i.assignees[0] ? (
+              <View style={{ marginTop: axis.face }}>
+                <Face who={i.assignees[0]} size={16} live={live} mode={running ? "run" : "idle"} />
               </View>
             ) : null}
             <Text variant="small" tone="muted" style={[LIST_PREVIEW, styles.shrink, { paddingTop: axis.words }]}>

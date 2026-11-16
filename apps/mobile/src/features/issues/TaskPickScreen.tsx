@@ -13,7 +13,7 @@ import { goBack } from "../shared/parts";
 import { useWhoSeesDraft, WhoSeesRows } from "../shared/WhoSees";
 import { columnChoices, stageCustomized } from "./logic";
 import { ProjectDot, useColumnLabel } from "./parts";
-import { closeTaskPick, sameActor, type TaskPick, taskPickNow } from "./pick";
+import { closeTaskPick, sameActor, type TaskPick, taskPickNow, toggleActor } from "./pick";
 
 /** A face in the rows' 36 pt leading column, as the agent picker's. */
 const FACE = 36;
@@ -21,7 +21,7 @@ const FACE = 36;
 /**
  * A task's field, pushed from where it is set (ADR 0135: screens, never a list opened in place): who does it, its
  * project, its column, who sees it, or Tarefas' project filter. A single choice goes back on its tap with the check on
- * the one in use; who sees it writes back as each option is tapped and goes back with the bar's back.
+ * the one in use; who does it and who sees it write back as each option is tapped and go back with the bar's back.
  */
 export function TaskPickScreen() {
   // The pick this screen was pushed for, taken as it opens: one started for the next screen while this one slides away
@@ -46,26 +46,49 @@ function chose(apply: () => void) {
   goBack("/issues");
 }
 
-/** Who does it: the agents the person can talk to (a search past a handful), then me, then nobody. */
+/**
+ * Who does it, several at once (ADR 0188): the agents the person can talk to (a search past a handful), then me and
+ * whoever had the task already, then nobody, with a check on each one that has it. A tap adds one or takes one off and
+ * is written back at once; the screen stays open for the next, and the bar's back (or "Pronto") goes back with it.
+ */
 function WhoPick({ pick }: { pick: Extract<TaskPick, { what: "who" }> }) {
   const { t } = useTranslation();
   const dir = useDirectory();
   const meId = useMeId();
   const [query, setQuery] = useState("");
+  // What the rows show is what was tapped: a task itself comes back with it a moment later.
+  const [list, setList] = useState<Actor[]>(() => [...pick.value]);
   const agents = useMemo(() => dir.agents.filter((a) => a.canTalk !== false), [dir.agents]);
   const shown = useMemo(() => agentsMatching(agents, query), [agents, query]);
+  // Whoever had it and isn't offered above (someone else, an agent I can't talk to) stays listed, to take off or back.
+  const others = useMemo(
+    () => pick.value.filter((a) => (a.type === "agent" ? !agents.some((g) => g.id === a.id) : a.id !== meId)),
+    [pick.value, agents, meId],
+  );
+  const set = (next: Actor[]) => {
+    const was = list;
+    setList(next);
+    // A save that failed takes its tap back, unless another one came since.
+    Promise.resolve(pick.apply(next, was)).catch(() => setList((now) => (now === next ? was : now)));
+  };
   const row = (who: Actor | null, label: string, sub?: string | null) => (
     <GroupedRow
       key={who ? `${who.type}:${who.id}` : "nobody"}
       {...(who ? { leading: <Face who={who} size={FACE} live={false} /> } : { icon: "circle" as const })}
       label={label}
       {...(sub ? { sub } : {})}
-      checked={sameActor(who, pick.value)}
-      onPress={() => chose(() => pick.apply(who))}
+      checked={who ? list.some((a) => sameActor(a, who)) : list.length === 0}
+      onPress={() => {
+        if (who) set(toggleActor(list, who));
+        else if (list.length > 0) set([]);
+      }}
     />
   );
   return (
-    <SettingsPage title={t("mobile.issues.form.who")}>
+    <SettingsPage
+      title={t("mobile.issues.form.who")}
+      action={{ label: t("mobile.common.done"), onPress: () => goBack() }}
+    >
       {agents.length >= AGENT_SEARCH_FROM ? (
         <View style={styles.search}>
           <SearchField
@@ -88,6 +111,9 @@ function WhoPick({ pick }: { pick: Extract<TaskPick, { what: "who" }> }) {
           <Gap />
           <GroupedList>
             {meId ? row({ type: "person", id: meId }, t("mobile.issues.you")) : null}
+            {others.map((who) =>
+              row(who, dir.nameOf(who), who.type === "agent" ? dir.agentById.get(who.id)?.role : null),
+            )}
             {row(null, t("mobile.issues.nobody"))}
           </GroupedList>
         </>

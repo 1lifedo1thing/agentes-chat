@@ -447,6 +447,7 @@ export function AskCard({
   headless = false,
   kindNote,
   agentId,
+  asker,
   waitsFor,
   lead,
   well,
@@ -464,6 +465,8 @@ export function AskCard({
   /** Said after the kind on the top line ("sai da empresa" for a request that leaves the workspace). */
   kindNote?: string | undefined;
   agentId: string;
+  /** Another agent than the conversation's own asks here (work handed to it): "Atlas asks you". */
+  asker?: string;
   waitsFor: "you" | (string & {}) | null;
   lead: string;
   well?: AskWell | null;
@@ -541,7 +544,10 @@ export function AskCard({
         {more.content}
       </Animated.View>
     ) : null;
-  const kindWords = askKindWords(t, kind, waitsFor === "you" && !ended);
+  const kindWords =
+    asker && waitsFor === "you" && !ended
+      ? t("chat.request.asksYou", { name: asker })
+      : askKindWords(t, kind, waitsFor === "you" && !ended);
   return (
     // A plain view the conversation measures (never flattened away), around the card.
     <View ref={slot} collapsable={false} style={ownTop}>

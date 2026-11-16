@@ -69,6 +69,7 @@ import {
   useSettings,
   usesBrowser,
   useTaskManager,
+  useThreadActivity,
   useThreadInfo,
   useThreadMessages,
   useThreadMission,
@@ -273,7 +274,7 @@ import { ArtifactCard } from "@/components/artifacts/ArtifactCard";
 import { ImageSet } from "@/components/artifacts/ArtifactViewer";
 import { objectUrls } from "@/components/artifacts/FileView";
 import { ImageMaking } from "@/components/artifacts/ImageMaking";
-import { MessageWorkLine } from "@/components/BackgroundWork";
+import { HandedWorkLine, MessageWorkLine } from "@/components/BackgroundWork";
 import { HeldBrowserCard, RunBrowserCard, useHeldTakeover } from "@/components/browser/BrowserCard";
 import { BrowserHandoffCard } from "@/components/browser/BrowserHandoffCard";
 import { BrowserTrailCard } from "@/components/browser/BrowserTrailCard";
@@ -1204,6 +1205,9 @@ function ChannelView({
   const screenThread = thread?.id ?? null;
   useEffect(() => holdOnScreen({ channelId: channel.id, threadId: screenThread }), [channel.id, screenThread]);
   const lastId = lastPostedId(channelMessages.data);
+  // A reply in one of its threads counts in the channel's mark and is no message of this timeline: read again on it.
+  const threadReplies = useThreadActivity(org.id, channel.id);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a thread's reply marks the channel read again
   useEffect(() => {
     if (!isMember || !lastId) return;
     const mark = () => {
@@ -1212,7 +1216,7 @@ function ChannelView({
     mark();
     document.addEventListener("visibilitychange", mark);
     return () => document.removeEventListener("visibilitychange", mark);
-  }, [markChannelRead, channel.id, isMember, lastId]);
+  }, [markChannelRead, channel.id, isMember, lastId, threadReplies]);
   // A thread open in view: its replies are read (its unread and the Threads mark clear, on every device).
   const markThreadRead = useMarkThreadRead(org.id).mutate;
   const threadId = thread?.id;
@@ -1739,7 +1743,12 @@ function ChannelView({
   const asksOut = useAsksOutOfView(scroller, askRegistry, isMember);
   // …and all of them, in view or not: the bar says a hand-off waits on me from them.
   const pendingAsks = usePendingAsks(askRegistry);
-  const seeAsk = (id: string) => showRequest(scroller.current, id, !reducedMotion);
+  // "See" on the bar: the view stops following the end first (as `jumpTo` does), or the next row that grows while an
+  // agent writes pins it back down before it ever reaches the card.
+  const seeAsk = (id: string) => {
+    letGo();
+    showRequest(scroller.current, id, !reducedMotion);
+  };
   // …and what waits on me here with its card not loaded (older, or in a thread): the line counts it and goes to the
   // oldest (ADR 0172).
   const waitingOnMe = useWaitingOnMe(org.id).data?.items;
@@ -4463,10 +4472,16 @@ export const TimelineMessage = memo(function TimelineMessage({
     !live,
     reached,
   );
+  // Work it handed over that reports here: its line under this reply says what the pair row would.
+  const handedWorks = lastOfRun && !m.local ? (m.handedWorks ?? []) : [];
+  const paired = consults.filter((c) => !handedWorks.some((w) => w.handedBy?.consultationId === c.id));
   const pair =
-    m.author.type === "agent" && m.author.id && consults.length > 0 ? (
-      <ConsultPairRow askerId={m.author.id} items={consults} />
+    m.author.type === "agent" && m.author.id && paired.length > 0 ? (
+      <ConsultPairRow askerId={m.author.id} items={paired} />
     ) : null;
+  // Another agent's message in an agent's DM (it helps that agent): its name on its first line, the DM names only one.
+  const look = useContext(MessageLookContext);
+  const helpingLook = useMemo(() => (helping && look ? { ...look, names: true } : null), [helping, look]);
   // Nobody called it: it joined the conversation on its own (`meta.joined`).
   const joined = m.author.type === "agent" && meta.joined === true;
   const joinedTip = joined ? t("chat.joined.tip", agentGrammar(name)) : null;
@@ -4541,7 +4556,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   ]
     .filter(Boolean)
     .join(" · ");
-  return (
+  const row = (
     <>
       {pair}
       <Message
@@ -4864,15 +4879,22 @@ export const TimelineMessage = memo(function TimelineMessage({
               />
             ) : null}
             {/* A question to another agent (in their DM) carries the asking run: its work shows on that run's reply. */}
-            {m.author.type === "agent" && replyRun && !card && !m.local && !keptAll && !m.meta?.consultation && (
-              <SavedTools
-                runId={replyRun}
-                meta={m.meta}
-                agentName={agent?.name ?? name}
-                color={colorOf(agent)}
-                skipScreens={onCards}
-              />
-            )}
+            {m.author.type === "agent" &&
+              replyRun &&
+              !card &&
+              !m.local &&
+              !keptAll &&
+              !m.meta?.consultation &&
+              // A work's updates are steps of one work: the trace stays on its report.
+              !m.meta?.workUpdate && (
+                <SavedTools
+                  runId={replyRun}
+                  meta={m.meta}
+                  agentName={agent?.name ?? name}
+                  color={colorOf(agent)}
+                  skipScreens={onCards}
+                />
+              )}
             {/* What waits for a person's click comes last, after the words and the tools. */}
             {approvalId && (
               <MessageApproval messageId={m.id} approvalId={approvalId} agent={agent} members={dir.memberById} />
@@ -4895,7 +4917,7 @@ export const TimelineMessage = memo(function TimelineMessage({
             ) : (
               usageWait && !usageWait.canceled && !usageWait.ended && <UsageWaitCancel message={m} wait={usageWait} />
             )}
-            {question && <QuestionCard question={question} />}
+            {question && <QuestionCard question={question} asker={helping ? name : undefined} />}
             {secretRequest && <SecretCard request={secretRequest} runId={m.agentRunId} />}
             {browserHandoff && <BrowserHandoffCard handoff={browserHandoff} />}
             {missionDecision && <MissionDecisionCard message={missionDecision} />}
@@ -4912,6 +4934,10 @@ export const TimelineMessage = memo(function TimelineMessage({
                 inThread={!threadsView && (m.threadId ?? m.id) === (m.longWork.threadId ?? m.longWork.anchorMessageId)}
               />
             )}
+            {/* Work this run handed over, reporting here: one line each, under the reply that handed it. */}
+            {handedWorks.map((w) => (
+              <HandedWorkLine key={w.id} work={w} />
+            ))}
             {/* A "Responder" thread went on from here: its line (opens the panel). */}
             {threadLine && <ThreadReplyLine thread={threadLine.thread} count={threadLine.count} />}
             {feedback && (
@@ -4934,6 +4960,7 @@ export const TimelineMessage = memo(function TimelineMessage({
       </Message>
     </>
   );
+  return helpingLook ? <MessageLookContext.Provider value={helpingLook}>{row}</MessageLookContext.Provider> : row;
 });
 
 function isSecretRequest(v: unknown): v is SecretRequest {

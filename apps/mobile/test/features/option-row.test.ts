@@ -39,14 +39,16 @@ describe("OptionRow (#46, A11)", () => {
   });
 
   test("a task's Responsável shows who it is by their face, as a select shows its choice (#47)", () => {
-    // On the task's strip: its face, a glyph only while nobody has it.
+    // On the task's strip: its face (several: their faces overlapping), a glyph only while nobody has it.
     const screen = src("features/issues/IssueScreen.tsx");
     expect(screen).toContain(
-      '{...(assignee ? { leading: <Face who={assignee} size={20} live={false} /> } : { icon: "person" as const })}',
+      "? { leading: <AssigneeFace issue={{ assignees: i.assignees }} size={24} live={false} ring={c.sunken} /> }",
     );
+    expect(screen).toContain("? { leading: <Face who={i.assignees[0]} size={20} live={false} /> }");
+    expect(screen).toContain(': { icon: "person" as const })}');
     // The new task's Quem faz and a routine's agent lead with the chosen face too.
     expect(src("features/issues/NewIssueForm.tsx")).toContain(
-      "leading={who ? <Face who={who} size={OPTION_ROW.face} live={false} /> : undefined}",
+      "leading={only ? <Face who={only} size={OPTION_ROW.face} live={false} /> : undefined}",
     );
     expect(src("features/routines/RoutineForm.tsx")).toContain(
       "leading={agent ? <AgentFace agentId={agent.id} size={OPTION_ROW.face} live={false} /> : undefined}",

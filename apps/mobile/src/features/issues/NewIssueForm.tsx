@@ -9,7 +9,7 @@ import {
 } from "@agenteschat/client";
 import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { pickableProjects } from "@agenteschat/client/lib/issue-projects";
-import { PRIORITIES } from "@agenteschat/client/lib/issues";
+import { assigneeNames, PRIORITIES } from "@agenteschat/client/lib/issues";
 import { aiStateOf } from "@agenteschat/client/lib/no-ai";
 import { type AudienceChoice, EVERYONE } from "@agenteschat/client/lib/who-sees";
 import { useLocalSearchParams } from "expo-router";
@@ -35,10 +35,11 @@ const close = () => goBack("/issues");
 /**
  * "Nova tarefa", a screen pushed over Tarefas (the native bar: back, the title, "Criar"), on the settings' form page
  * (`SettingsPage`: a focused field scrolls clear of the keyboard on both systems, the bar over the keyboard walks
- * the fields): the title (the person taps it: the keyboard never comes up on its own), a description, who does it (an agent picked here is asked right away, as on the web: it starts and the status
- * moves on its own), its project, the priority, the due date and who sees it. Who does it, the project and who sees it
- * are picked on their own pushed screen (`TaskPickScreen`), the priority and the due date in the app's menu of
- * choices: nothing opens inside the form. From a board column's "+" (`column`), it goes in that column; from a
+ * the fields): the title (the person taps it: the keyboard never comes up on its own), a description, who does it
+ * (several at once, ADR 0188; the first agent picked is asked right away, as on the web: it starts and the status moves
+ * on its own), its project, the priority, the due date and who sees it. Who does it, the project and who sees it are
+ * picked on their own pushed screen (`TaskPickScreen`), the priority and the due date in the app's menu of choices:
+ * nothing opens inside the form. From a board column's "+" (`column`), it goes in that column; from a
  * project's tasks (`project`), it starts in that project.
  */
 export function NewIssueForm() {
@@ -59,7 +60,7 @@ export function NewIssueForm() {
   const column = columnId ? columns.data?.find((c) => c.id === columnId) : undefined;
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
-  const [who, setWho] = useState<Actor | null>(null);
+  const [who, setWho] = useState<Actor[]>([]);
   const [priority, setPriority] = useState<IssuePriority>("normal");
   const [due, setDue] = useState<DueChoice>("none");
   const [audience, setAudience] = useState<AudienceChoice>(EVERYONE);
@@ -70,7 +71,10 @@ export function NewIssueForm() {
   const leave = useUnsavedGuard(title.trim() !== "" || text.trim() !== "");
   const whoName = (a: Actor | null) =>
     !a ? t("mobile.issues.nobody") : a.type === "person" && a.id === meId ? t("mobile.issues.you") : dir.nameOf(a);
-  const whoRole = who?.type === "agent" ? (dir.agentById.get(who.id)?.role ?? "") : "";
+  const [only] = who;
+  const whoRole = who.length === 1 && only?.type === "agent" ? (dir.agentById.get(only.id)?.role ?? "") : "";
+  // The first agent picked starts on the task once it exists; the others it is given to only have it.
+  const starter = who.find((a) => a.type === "agent");
 
   const submit = () => {
     if (!ready) return;
@@ -80,7 +84,7 @@ export function NewIssueForm() {
         input: {
           title: title.trim(),
           description: text.trim(),
-          assignee: who?.type === "person" ? who : null,
+          assignees: who.filter((a) => a !== starter),
           priority,
           dueDate: dueDateOf(due),
           ...(project ? { projectId: project.id } : {}),
@@ -91,14 +95,14 @@ export function NewIssueForm() {
         onSuccess: (created) => {
           const issue = created as Issue;
           // New tasks land in A fazer's first column; another one was picked by its "+" (an agent's moves on).
-          if (column && who?.type !== "agent" && columnOfIssue(issue, columns.data ?? [])?.id !== column.id)
+          if (column && !starter && columnOfIssue(issue, columns.data ?? [])?.id !== column.id)
             action.mutate({ type: "update", id: issue.id, patch: { columnId: column.id } });
           // An agent picked here starts right away: assigned, its run linked, in progress (as on the web).
-          if (who?.type === "agent") start.run(issue, who.id, { created: true });
+          if (starter) start.run(issue, starter.id, { created: true });
           successHaptic();
           toast({
             title: t("mobile.issues.form.created", { number: issue.number }),
-            ...(who?.type === "agent" ? { agentId: who.id } : {}),
+            ...(starter ? { agentId: starter.id } : {}),
           });
           leave();
           close();
@@ -164,19 +168,26 @@ export function NewIssueForm() {
           <GroupedHeader>{t("mobile.issues.form.who")}</GroupedHeader>
           <GroupedList>
             <GroupedRow
-              label={whoName(who)}
-              leading={who ? <Face who={who} size={OPTION_ROW.face} live={false} /> : undefined}
-              icon={who ? undefined : "agent"}
+              label={
+                only
+                  ? assigneeNames(
+                      t,
+                      who.map((a) => whoName(a)),
+                    )
+                  : whoName(null)
+              }
+              leading={only ? <Face who={only} size={OPTION_ROW.face} live={false} /> : undefined}
+              icon={only ? undefined : "agent"}
               value={whoRole || undefined}
               chevron
               onPress={() => pickOn({ what: "who", value: who, apply: setWho })}
             />
           </GroupedList>
-          {who?.type === "agent" ? (
+          {starter ? (
             <GroupedFooter>
               {/* "Starts as soon as it's created" isn't true for an agent with no AI: it waits for one. */}
-              {aiStateOf(ai.data, who.id) === "no_ai"
-                ? t("mobile.ai.taskNoAi", { name: dir.agentById.get(who.id)?.name ?? "" })
+              {aiStateOf(ai.data, starter.id) === "no_ai"
+                ? t("mobile.ai.taskNoAi", { name: dir.agentById.get(starter.id)?.name ?? "" })
                 : t("mobile.issues.form.agentStarts")}
             </GroupedFooter>
           ) : null}

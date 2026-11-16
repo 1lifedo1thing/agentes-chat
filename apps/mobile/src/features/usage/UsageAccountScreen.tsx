@@ -1,12 +1,14 @@
-import type { PlanAccountUsage, PlanServes } from "@agenteschat/client";
+import type { PlanAccountUsage, PlanServes, PlanUseKind } from "@agenteschat/client";
 import { keys, useAiAccounts, useApi, usePlanUsage } from "@agenteschat/client";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { formatTokensShort, formatUsd } from "@agenteschat/client/lib/format";
 import {
+  accountKinds,
   accountName,
   accountShares,
   brandOf,
   groupUsageAccounts,
+  kindFacts,
   noWindowsText,
   planMeterText,
   servesTerms,
@@ -24,6 +26,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import { GROUPED_ROW, GroupedFooter, GroupedHeader, GroupedList, GroupedRow, SkeletonList, Text, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
+import { useOpenDm } from "../new/useOpenDm";
 import { AgentFace } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useErrorToast, usePullRefresh } from "../shared/hooks";
@@ -34,8 +37,9 @@ import { PlanMeter, PlanModels } from "./parts";
 /*
  * A plan account's usage, pushed from its row on Uso (ADR 0063), as the web's open `AccountRow`: its maker, address and
  * computer, every window with its bar split by agent in their colours and when it renews, its quotas per model, the
- * month's tokens, each agent with its part (a row to that agent's usage), and, for whoever connected it, who uses it
- * (ADR 0059 §3) and the way to the AI accounts screen where they rename it, sign in again or disconnect it.
+ * month's tokens, each agent with its part (a row to that agent's usage), what the use was for (the web's
+ * `KindShares`), and, for whoever connected it, who uses it (ADR 0059 §3) and the way to the AI accounts screen where
+ * they rename it, sign in again or disconnect it.
  */
 
 /** Opens an account of Uso by its row's key (one person's logins of one account are one row). */
@@ -155,6 +159,7 @@ function Detail({ account, money, several }: { account: PlanAccountUsage; money:
           </GroupedList>
         </>
       ) : null}
+      <Kinds account={account} window={window} />
       {account.mine && account.accountId && account.serves ? (
         <WhoUses accountId={account.accountId} account={account} />
       ) : null}
@@ -163,6 +168,55 @@ function Detail({ account, money, several }: { account: PlanAccountUsage; money:
           <View style={styles.gap} />
           <GroupedList>
             <GroupedRow icon="brain" label={t("mobile.ai.row")} chevron onPress={() => router.push("/ai-accounts")} />
+          </GroupedList>
+        </>
+      ) : null}
+    </>
+  );
+}
+
+// The web's swap, person and routines; a routine is a clock on the phone (`intent.ts`).
+const KIND_ICONS = { handoffs: "swap", people: "person", routines: "clock" } as const satisfies Record<
+  PlanUseKind,
+  string
+>;
+
+/**
+ * Under the agents, what the account's use was for, in the shared order with each fact whole; when handoffs led the
+ * week, why to ask the agent directly and a row that opens the DM with the agent that took most of it, ready to type:
+ * the web's `KindShares`.
+ */
+function Kinds({ account, window }: { account: PlanAccountUsage; window: string | null }) {
+  const { t, i18n } = useTranslation();
+  const dir = useDirectory();
+  const openDm = useOpenDm();
+  const kinds = accountKinds(account);
+  const target = account.hint ? dir.agentById.get(account.hint.agentId) : undefined;
+  if (kinds.length === 0) return null;
+  return (
+    <>
+      <GroupedHeader>{t("usage.kinds.label")}</GroupedHeader>
+      <GroupedList>
+        {kinds.map((k) => (
+          <GroupedRow
+            key={k.kind}
+            icon={KIND_ICONS[k.kind]}
+            label={t(`usage.kinds.${k.kind}`)}
+            sub={kindFacts(t, i18n.language, window, k).replace(/^ · /, "")}
+          />
+        ))}
+      </GroupedList>
+      {target ? (
+        <>
+          <GroupedFooter>{t("usage.hint.handoffs")}</GroupedFooter>
+          <View style={styles.gap} />
+          <GroupedList>
+            <GroupedRow
+              icon="chat"
+              label={t("usage.hint.message", { name: target.name })}
+              chevron
+              onPress={() => void openDm({ agentId: target.id }, { compose: true })}
+            />
           </GroupedList>
         </>
       ) : null}

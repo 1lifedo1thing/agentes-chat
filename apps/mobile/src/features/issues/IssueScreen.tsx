@@ -8,6 +8,7 @@ import {
   useAiStatus,
   useApi,
   useChannels,
+  useDms,
   useIssue,
   useIssueAction,
   useIssueColumns,
@@ -19,6 +20,7 @@ import { isGithubLink } from "@agenteschat/client/lib/github-link";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { webUrl } from "@agenteschat/client/lib/guards";
 import {
+  assigneeNames,
   canDeleteIssue,
   conversationLine,
   deleteIssueText,
@@ -29,6 +31,7 @@ import {
 import { aiStateOf } from "@agenteschat/client/lib/no-ai";
 import { shownSteps } from "@agenteschat/client/lib/work";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { TFunction } from "i18next";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
@@ -87,8 +90,8 @@ import {
   taskConversationHref,
   workLines,
 } from "./logic";
-import { GithubChip, ProjectDot, PropChip, useColumnLabel, useStepText } from "./parts";
-import { openTaskPick, sameActor, type TaskPick } from "./pick";
+import { AssigneeFace, GithubChip, ProjectDot, PropChip, useColumnLabel, useStepText } from "./parts";
+import { firstAgentAdded, openTaskPick, type TaskPick } from "./pick";
 import { useStartAgent } from "./useStartAgent";
 
 /**
@@ -259,18 +262,28 @@ function ConversationRow({ issue, onOpen }: { issue: Issue; onOpen: () => void }
  */
 function Head({ issue: i }: { issue: Issue }) {
   const { t, i18n } = useTranslation();
+  const c = useColors();
   const dir = useDirectory();
   const orgId = useOrgId();
   const channels = useChannels(orgId);
   const channel = i.channelId ? channels.data?.find((x) => x.id === i.channelId) : undefined;
+  // Handed from a DM with an agent: that DM, for whoever reads it.
+  const dms = useDms(orgId);
+  const source = i.source;
+  const dm =
+    source.type === "agent"
+      ? dms.data?.find((d) => d.channelId === source.channelId && d.with.type === "agent")
+      : undefined;
   const from =
     i.source.type === "message"
       ? t("mobile.issues.fromMessage")
-      : i.source.type === "agent"
-        ? t("mobile.issues.fromAgent")
-        : i.source.type === "webhook"
-          ? t("mobile.issues.fromWebhook", { provider: i.source.provider })
-          : null;
+      : dm
+        ? t("issues.fromDmText", { name: dm.with.name })
+        : i.source.type === "agent"
+          ? t("mobile.issues.fromAgent")
+          : i.source.type === "webhook"
+            ? t("mobile.issues.fromWebhook", { provider: i.source.provider })
+            : null;
   const creator = dir.nameOf(i.createdBy);
   // It starts the line now, under the title.
   const line = capitalize(
@@ -282,7 +295,6 @@ function Head({ issue: i }: { issue: Issue }) {
       .join(" · "),
     i18n.language,
   );
-  const assignee = i.assignee;
   const whoSees = useWhoSeesLabel();
   const pickers = useIssuePickers(i);
   const audience = i.audience ?? { mode: "everyone" as const };
@@ -311,8 +323,12 @@ function Head({ issue: i }: { issue: Issue }) {
         />
         <PropChip
           label={t("issues.form.assignee")}
-          value={assignee ? dir.nameOf(assignee) : t("issues.noAssignee")}
-          {...(assignee ? { leading: <Face who={assignee} size={20} live={false} /> } : { icon: "person" as const })}
+          value={whoText(t, dir, i) ?? t("issues.noAssignee")}
+          {...(i.assignees.length > 1
+            ? { leading: <AssigneeFace issue={{ assignees: i.assignees }} size={24} live={false} ring={c.sunken} /> }
+            : i.assignees[0]
+              ? { leading: <Face who={i.assignees[0]} size={20} live={false} /> }
+              : { icon: "person" as const })}
           onPress={pickers.pickAssignee}
         />
         <PropChip
@@ -437,10 +453,10 @@ function WorkCard({ issue: i }: { issue: Issue }) {
   const ai = useAiStatus(orgId);
   const reduced = useReducedMotion();
   const w = i.work;
-  if (!w || i.assignee?.type !== "agent" || !isOpen(i)) return null;
+  if (!w || !isOpen(i)) return null;
   // Stopped because the agent has nothing to think with: say so, and the way out is connecting one.
   const noAi = aiStateOf(ai.data, w.agentId) === "no_ai";
-  const agent = dir.agentById.get(i.assignee.id);
+  const agent = dir.agentById.get(w.agentId);
   const name = agent?.name ?? "";
   const color = agentLook(agent).color;
   const state = issueState(i);
@@ -460,7 +476,11 @@ function WorkCard({ issue: i }: { issue: Issue }) {
   return (
     <View style={[styles.work, surface]}>
       <View style={styles.workHead}>
-        <Face who={i.assignee} size={24} mode={state === "running" ? "run" : state === "stalled" ? "rest" : "idle"} />
+        <Face
+          who={{ type: "agent", id: w.agentId }}
+          size={24}
+          mode={state === "running" ? "run" : state === "stalled" ? "rest" : "idle"}
+        />
         <Text variant="body" numberOfLines={1} style={[styles.bold, styles.shrink]}>
           {name}
         </Text>
@@ -679,6 +699,20 @@ function Linked({ issue: i }: { issue: Issue }) {
   const orgId = useOrgId();
   const channels = useChannels(orgId);
   const rows: { key: string; icon: IconName; label: string; onPress: () => void }[] = [];
+  const dms = useDms(orgId);
+  const source = i.source;
+  const dm =
+    source.type === "agent"
+      ? dms.data?.find((d) => d.channelId === source.channelId && d.with.type === "agent")
+      : undefined;
+  if (dm && source.type === "agent") {
+    rows.push({
+      key: "source",
+      icon: "chat",
+      label: t("issues.fromDmText", { name: dm.with.name }),
+      onPress: () => router.push(chatHref(dm.channelId, null, source.messageId ?? null)),
+    });
+  }
   if (i.source.type === "message") {
     const { channelId } = i.source;
     const channel = channels.data?.find((x) => x.id === channelId);
@@ -805,10 +839,20 @@ function useFinish(i: Issue) {
   return { open, label: t(open ? "mobile.issues.finish" : "mobile.issues.reopen"), pending: action.isPending, run };
 }
 
+/** Who has a task, as a short list of names; nobody: nothing. */
+const whoText = (t: TFunction, dir: { nameOf: (who: Actor) => string }, i: Pick<Issue, "assignees">) =>
+  i.assignees.length > 0
+    ? assigneeNames(
+        t,
+        i.assignees.map((a) => dir.nameOf(a)),
+      )
+    : null;
+
 /**
- * What changes a task's fields: its project, its column (or its stage while the board's columns load), who does it (an
- * agent is asked and starts) and who sees it on their own pushed screens; its priority and its due date, short fixed
- * lists, in the app's menu of choices. The head's strip and "…" share them.
+ * What changes a task's fields: its project, its column (or its stage while the board's columns load), who does it
+ * (several, each tap saved at once; the first agent it gets is asked and starts) and who sees it on their own pushed
+ * screens; its priority and its due date, short fixed lists, in the app's menu of choices. The head's strip and "…"
+ * share them.
  */
 function useIssuePickers(i: Issue) {
   const { t } = useTranslation();
@@ -824,10 +868,17 @@ function useIssuePickers(i: Issue) {
       onSuccess: () => toast({ title: done ?? t("mobile.issues.changed") }),
       onError: failed,
     });
-  const assign = (who: Actor | null) => {
-    if (sameActor(who, i.assignee)) return;
-    if (who?.type === "agent") start.run(i, who.id, { done: t("mobile.issues.changed") });
-    else update({ type: "update", id: i.id, patch: { assignee: who } });
+  // One tap on the who picker, saved at once (ADR 0188). The first agent the task gets is asked and starts on it, the
+  // others it has staying, as a single pick always did; with an agent on it already, another one only gets the task.
+  // A save that fails says so and rejects, which takes the tap back on the picker; an agent that couldn't start stays
+  // the task's (`useStartAgent` says why), so that tap stays.
+  const assign = (next: Actor[], was: Actor[]) => {
+    const starter = firstAgentAdded(was, next);
+    if (starter) return start.run({ ...i, assignees: was }, starter.id, { done: t("mobile.issues.changed") });
+    return action.mutateAsync({ type: "update", id: i.id, patch: { assignees: next } }).catch((error: unknown) => {
+      failed();
+      throw error;
+    });
   };
   const pickOn = (pick: TaskPick) => {
     openTaskPick(pick);
@@ -861,7 +912,7 @@ function useIssuePickers(i: Issue) {
               onPress: () => update({ type: "update", id: i.id, patch: { status: s } }),
             })),
           ),
-    pickAssignee: () => pickOn({ what: "who", value: i.assignee, apply: assign }),
+    pickAssignee: () => pickOn({ what: "who", value: i.assignees, apply: assign }),
     pickProject: () =>
       pickOn({
         what: "project",
@@ -893,9 +944,9 @@ function useIssuePickers(i: Issue) {
 }
 
 /**
- * "…": talk about it, its column, priority, who does it (an agent is asked and starts), its GitHub link, who sees it,
- * showing the agent's work to everyone, stopping the agent, canceling and deleting it, as the web allows. Each item's
- * icon in our set (Android's list) and the matching SF Symbol (iOS's menu).
+ * "…": talk about it, its column, priority, who does it (the first agent it gets is asked and starts), its GitHub
+ * link, who sees it, showing the agent's work to everyone, stopping the agent, canceling and deleting it, as the web
+ * allows. Each item's icon in our set (Android's list) and the matching SF Symbol (iOS's menu).
  */
 function useIssueMenu(i: Issue): HeaderMenuItem[] {
   const { t } = useTranslation();
@@ -991,7 +1042,7 @@ function useIssueMenu(i: Issue): HeaderMenuItem[] {
       sf: "trash",
       destructive: true,
       onPress: () => {
-        const working = i.work && i.work.state !== "stalled" && i.assignee ? dir.nameOf(i.assignee) : null;
+        const working = i.work && i.work.state !== "stalled" ? dir.nameOf({ type: "agent", id: i.work.agentId }) : null;
         confirmAction({
           title: t("issues.delete.title", { number: i.number }),
           text: deleteIssueText(t, i, working),

@@ -9,11 +9,11 @@ const source = (file: string) => readFileSync(join(import.meta.dir, "../../src/f
 /** The name and the password on one screen: the password is cleared there, with the name in view. */
 const SAME_SCREEN = (onward: string) =>
   new RegExp(
-    `if \\(nameIsPassword\\(name, password\\)\\) \\{\\s*(?:\\/\\/[^\\n]*\\s*)*setPassword\\(""\\);\\s*setError\\(t\\("auth\\.flow\\.nameIsPassword"\\)\\);\\s*\\} else void ${onward}\\(\\);`,
+    `if \\(nameIsPassword\\(name, password\\)\\) \\{\\s*(?:\\/\\/[^\\n]*\\n\\s*)*setPassword\\(""\\);\\s*setError\\(t\\("auth\\.flow\\.nameIsPassword"\\)\\);\\s*\\} else void ${onward}\\(\\);`,
   );
 /** An email invitation's password, on a screen over its name's: back on the name, which says so. */
 const BACK_ON_NAME =
-  /if \(nameIsPassword\(name, password\)\) \{\s*(?:\/\/[^\n]*\s*)*setPassword\(""\);\s*updateEmailInvite\(token, \{ nameError: t\("auth\.flow\.nameIsPassword"\) \}\);\s*router\.back\(\);\s*\} else void signUp\(\);/;
+  /if \(nameIsPassword\(name, password\)\) \{\s*(?:\/\/[^\n]*\n\s*)*setPassword\(""\);\s*updateEmailInvite\(token, \{ nameError: t\("auth\.flow\.nameIsPassword"\) \}\);\s*router\.back\(\);\s*\} else void signUp\(\);/;
 
 describe("a password typed as the name, on the phone", () => {
   test("signing up: the name and the password on one screen, cleared there before the account", () => {

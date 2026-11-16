@@ -2738,6 +2738,13 @@
   "rightHand": {
     "label": "votre bras droit",
     "labelCapitalized": "Votre bras droit",
+    "unusable": {
+      "title": "Ne peut pas penser pour {{name}} pour l'instant",
+      "computerOnly": "Connecté sur {{computer}} uniquement. {{name}} pense avec un forfait connecté en tant que compte.",
+      "away": "À {{owner}}, sur {{computer}}, qui est absent.",
+      "awayYours": "À vous, sur {{computer}}, qui est absent.",
+      "connect": "Connecter un ordinateur"
+    },
     "newDot": "Nouveau",
     "actsAsYou": "agit avec vos permissions",
     "composerHint": "rien ne change sans vous",
@@ -3020,6 +3027,16 @@
       "invite_people_sent_many": "Invitations envoyées à <b>{{emails}}</b>.",
       "invite_people_sent_other": "Invitations envoyées à <b>{{emails}}</b>.",
       "remove_ai_key": "Supprimer la clé API « {{name}} »."
+    },
+    "brain": {
+      "unusable": {
+        "title": "Besoin d'un ordinateur",
+        "computerOnly": "De {{owner}}, connecté seulement sur {{computer}}. Lodi réfléchit avec un forfait connecté en tant que compte.",
+        "noComputer": "De {{owner}}. Il faut un ordinateur, et l'espace de travail n'en a aucun de connecté.",
+        "away": "De {{owner}}, sur {{computer}}, qui est absent.",
+        "connect": "Connecter un ordinateur",
+        "plans": "Voir les forfaits"
+      }
     }
   },
   "teamWeek": {
@@ -7985,7 +8002,8 @@
     "table": {
       "task": "Tâche",
       "github": "GitHub",
-      "sortBy": "Trier par {{column}}"
+      "sortBy": "Trier par {{column}}",
+      "resize": "Redimensionner la colonne {{column}}"
     },
     "fold": {
       "open": "Ouvrir {{name}}",
@@ -8070,6 +8088,7 @@
       "canceled": "La #{{number}} est revenue à sa place.",
       "assigned": "La #{{number}} est maintenant confiée à {{name}}.",
       "unassigned": "La #{{number}} n'a plus de responsable.",
+      "removed": "La #{{number}} n'est plus confiée à {{name}}.",
       "prioritized": "La #{{number}} a maintenant une priorité {{priority}}."
     },
     "canceledColumn": "Annulées",
@@ -8204,7 +8223,10 @@
         "failed": "La dernière exécution a échoué.",
         "canceled": "Quelqu'un a arrêté l'exécution.",
         "budget": "Le budget mensuel de l'agent est épuisé."
-      }
+      },
+      "finishedTitle": "{{name}} l'a terminée",
+      "finishedMeta": "{{when}} · confiée par {{name}}",
+      "answer": "Répondre"
     },
     "status": {
       "todo": "À faire",
@@ -8231,6 +8253,10 @@
       "high": "haute"
     },
     "noAssignee": "Aucun responsable",
+    "assignees": {
+      "people": "Personnes et agents",
+      "done": "Terminé"
+    },
     "agentRole": "Agent · {{role}}",
     "pr": "PR #{{number}}",
     "open": "#{{number}} {{title}}",
@@ -8378,7 +8404,9 @@
       "status_changed": "a changé le statut en {{status}}",
       "priority_changed": "a changé la priorité en {{priority}}",
       "assigned": "a attribué la tâche",
-      "unassigned": "a retiré le responsable",
+      "unassigned": "a retiré un responsable",
+      "assigned_named": "a attribué la tâche à {{name}}",
+      "unassigned_named": "a retiré {{name}} de la tâche",
       "due_date_set": "a fixé l'échéance au {{date}}",
       "due_date_removed": "a retiré l'échéance",
       "pr_linked": "a lié la PR #{{number}}",
@@ -8392,7 +8420,10 @@
       "criterion_checked": "a coché le critère « {{text}} »",
       "criterion_unchecked": "a décoché le critère « {{text}} »",
       "agent_asked": "a demandé à {{name}} de la faire"
-    }
+    },
+    "handedBy": "confiée par <0/>{{name}}",
+    "fromDm": "depuis <0>ta DM avec {{name}}</0>",
+    "fromDmText": "depuis ta DM avec {{name}}"
   },
   "routines": {
     "filters": "Filtrer les routines",
@@ -10738,10 +10769,10 @@
       "copiesRemoved_one": "{{count}} connexion inutilisée supprimée.",
       "copiesRemoved_many": "{{count}} connexions inutilisées supprimées.",
       "copiesRemoved_other": "{{count}} connexions inutilisées supprimées.",
-      "removeAllDone": "{{n}} connexions Grok supprimées.",
-      "removeAllText": "Elles cessent de réfléchir pour leurs agents sur {{computers}}. Les connexions des autres personnes ne sont pas touchées.",
-      "removeAllTitle": "Supprimer les {{n}} connexions Grok ?",
       "removeAllGrok": "Supprimer toutes les connexions Grok",
+      "removeAllTitle": "Supprimer les {{n}} connexions Grok ?",
+      "removeAllText": "Elles cessent de réfléchir pour leurs agents sur {{computers}}. Les connexions des autres personnes ne sont pas touchées.",
+      "removeAllDone": "{{n}} connexions Grok supprimées.",
       "disconnect": "Déconnecter",
       "renameTitle": "Renommer {{label}}",
       "nameLabel": "Nom",
@@ -17026,11 +17057,11 @@
       "rolesPersonal": "Ce que chaque personne ici peut faire. Les propriétaires peuvent tout faire."
     },
     "about": {
-      "basedOn": "Basé sur <site>agentes.chat</site> de Codari Global, LLC",
+      "basedOn": "Basé sur <site>agentes.chat</site> de AGENTESCHAT, LLC",
       "version": "Version",
       "license": "Logiciel libre sous la <license>GNU Affero General Public License v3</license>, sans garantie.",
       "source": "Code source",
-      "copyright": "Copyright © 2026 Codari Global, LLC et contributeurs"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC et contributeurs"
     },
     "title": "Paramètres",
     "account": {
@@ -17478,6 +17509,18 @@
       "see": "Voir son utilisation"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "Par type",
+      "handoffs": "Transmissions entre agents",
+      "people": "Conversations avec des personnes",
+      "routines": "Routines"
+    },
+    "hint": {
+      "handoffs": "Cette semaine, l’essentiel de l’utilisation vient d’agents qui se transmettent du travail. Pour un travail long, demandez directement à l’agent.",
+      "message": "Écrire à {{name}}"
+    }
+  },
   "usageViews": {
     "signedOut": "Déconnecté",
     "whose": "De {{name}}",
@@ -17666,12 +17709,35 @@
       "failed": "Bloqué · pas terminé",
       "failedWhy": "Bloqué · pas terminé : {{why}}"
     },
-    "working": "En arrière-plan"
+    "working": "En arrière-plan",
+    "handed": {
+      "lead": "Confié à <0/>{{name}}",
+      "working": "en cours",
+      "done": "terminé en {{duration}}",
+      "waitingYou": "attend ta réponse",
+      "waiting": "attend une réponse",
+      "waitingApprovalYou": "attend ton approbation",
+      "waitingApproval": "attend une approbation",
+      "waitingComputer": "attend l'ordinateur",
+      "paused": "en pause à la limite du forfait",
+      "queued": "en file d'attente",
+      "failed": "n'a pas abouti",
+      "stopped": "arrêté",
+      "step": "étape {{current}} sur {{total}}"
+    }
   },
   "chat": {
     "speedFallback": {
       "text": "ChatGPT a refusé la vitesse Rapide pour ce compte ou ce modèle, cette réponse est donc arrivée en standard.",
       "action": "Ouvrir l'agent"
+    },
+    "standIn": {
+      "needsComputer": "Répondu avec {{via}} : {{plan}} a besoin d'un ordinateur.",
+      "away": "Répondu avec {{via}} : l'ordinateur de {{plan}} est absent.",
+      "notShared": "Répondu avec {{via}} : {{plan}} ne sert que la personne qui l'a connecté.",
+      "limit": "Répondu avec {{via}} : {{plan}} a atteint sa limite.",
+      "cant": "Répondu avec {{via}} : {{plan}} ne peut pas penser pour l'instant.",
+      "change": "Changer"
     },
     "modelStandIn": {
       "text": "{{plan}} a refusé {{from}} avec cette clé. J'ai répondu avec {{to}}, qui fonctionne avec elle.",
@@ -18273,6 +18339,9 @@
       "interrupted": "Interrompu par un redémarrage du serveur. Redemandez pour continuer.",
       "step_limit": "Je n'avais plus d'étapes avant de terminer.",
       "stuck": "J'ai été bloqué et je me suis arrêté avant de terminer."
+    },
+    "request": {
+      "asksYou": "{{name}} te demande"
     }
   },
   "builtinTools": {

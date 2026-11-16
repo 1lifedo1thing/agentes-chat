@@ -1,7 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { audienceReady, closeTaskPick, openTaskPick, sameActor, taskPickNow } from "../../src/features/issues/pick";
+import {
+  audienceReady,
+  closeTaskPick,
+  firstAgentAdded,
+  openTaskPick,
+  sameActor,
+  taskPickNow,
+  toggleActor,
+} from "../../src/features/issues/pick";
 import { pushedByDefault } from "../main-stack";
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src/features", path), "utf8");
@@ -33,6 +41,23 @@ describe("a task's fields picked on their own screen", () => {
     expect(audienceReady({ mode: "people", userIds: [] })).toBe(false);
   });
 
+  test("who does it is several (ADR 0188): a tap adds one last or takes one off; the first agent a task gets starts", () => {
+    const ana = { type: "agent" as const, id: "a1" };
+    const bia = { type: "agent" as const, id: "a2" };
+    const me = { type: "person" as const, id: "me" };
+    expect(toggleActor([], ana)).toEqual([ana]);
+    expect(toggleActor([me], ana)).toEqual([me, ana]);
+    expect(toggleActor([me, ana], me)).toEqual([ana]);
+    // An agent and a person with the same id are two.
+    expect(toggleActor([ana], { type: "person", id: "a1" })).toEqual([ana, { type: "person", id: "a1" }]);
+    // The first agent put on it is asked; with an agent on it already, another one only gets the task.
+    expect(firstAgentAdded([me], [me, ana])).toEqual(ana);
+    expect(firstAgentAdded([], [ana])).toEqual(ana);
+    expect(firstAgentAdded([ana], [ana, bia])).toBeNull();
+    expect(firstAgentAdded([], [me])).toBeNull();
+    expect(firstAgentAdded([me, ana], [me])).toBeNull();
+  });
+
   test("its screen is pushed with the stack's bar, and goes back with nothing to pick for", () => {
     expect(pushedByDefault("issues/pick")).toBe(true);
     const screen = src("issues/TaskPickScreen.tsx");
@@ -41,8 +66,26 @@ describe("a task's fields picked on their own screen", () => {
     expect(screen).toContain("const [pick] = useState(taskPickNow);");
     expect(screen).toContain("return () => closeTaskPick(pick);");
     // A single choice goes back on its tap, its check on the one in use.
-    expect(screen).toContain("checked={sameActor(who, pick.value)}");
     expect(screen).toContain("checked={c.id === pick.value}");
+  });
+
+  test("who does it checks each one that has it, saves each tap at once and stays open until the bar's back", () => {
+    const screen = src("issues/TaskPickScreen.tsx");
+    const who = screen.slice(screen.indexOf("function WhoPick("), screen.indexOf("function ProjectPick("));
+    expect(who).toContain("checked={who ? list.some((a) => sameActor(a, who)) : list.length === 0}");
+    expect(who).toContain("if (who) set(toggleActor(list, who));");
+    // Written back with the list before it; a save that fails takes its tap back.
+    expect(who).toContain("Promise.resolve(pick.apply(next, was)).catch(");
+    // Never back on a tap: "Pronto" (and the system's back) go back.
+    expect(who).not.toContain("chose(");
+    expect(who).toContain('action={{ label: t("mobile.common.done"), onPress: () => goBack() }}');
+    // Nova tarefa follows each tap; a task saves it and asks the first agent it gets.
+    expect(src("issues/NewIssueForm.tsx")).toContain('pickOn({ what: "who", value: who, apply: setWho })');
+    const task = src("issues/IssueScreen.tsx");
+    expect(task).toContain('pickAssignee: () => pickOn({ what: "who", value: i.assignees, apply: assign }),');
+    expect(task).toContain('.mutateAsync({ type: "update", id: i.id, patch: { assignees: next } })');
+    for (const gone of ["AssigneePicker", 'toggle("who")', 'open === "who"'])
+      expect([gone, task.includes(gone) || src("issues/NewIssueForm.tsx").includes(gone)]).toEqual([gone, false]);
   });
 
   test("Nova tarefa opens nothing inside the form: many choices push the picker, a short list is the app's menu", () => {
