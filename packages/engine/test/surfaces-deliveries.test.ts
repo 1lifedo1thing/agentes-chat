@@ -10,6 +10,7 @@ import {
   drainOutbox,
   fallBack,
   insertMessage,
+  listDms,
   listSurfaceDeliveries,
   lodiFor,
   markChannelRead,
@@ -18,6 +19,7 @@ import {
   postFromSurface,
   pruneSurfaceRows,
   queueSurfaceDelivery,
+  readMarkFor,
   removeLink,
   SURFACE_FALLBACK_JOB,
   setSurface,
@@ -318,10 +320,45 @@ test("taken: sent marks the DM read up to the reply, unsent notifies in the app,
     .select()
     .from(channelReads)
     .where(and(eq(channelReads.channelId, first.channelId), eq(channelReads.userId, f.owner.id)));
-  expect(read?.lastReadAt.getTime()).toBe(first.createdAt.getTime());
+  expect(read?.lastReadAt.getTime()).toBe(readMarkFor(first).getTime());
   expect((await notificationsOf()).map((n) => n.kind)).toEqual(["agent_reply"]);
   expect(await takeDeliveries(deps(), { sent: [a], unsent: [b] })).toEqual({ sent: 0, unsent: 0, late: [a, b] });
   expect(await listSurfaceDeliveries(deps(), 50)).toEqual([]);
+});
+
+const unreadOf = async (channelId: string) =>
+  (await listDms(f.db, f.owner.id, f.org.id)).find((d) => d.channelId === channelId)?.unread;
+
+/** Takes the delivery of `message` as sent. */
+async function sent(message: { id: string }) {
+  await queueSurfaceDelivery(f.db, f.org.id, message.id);
+  const row = (await deliveries()).find((d) => d.messageId === message.id);
+  if (!row) throw new Error("not queued");
+  await takeDeliveries(deps(), { sent: [row.id], unsent: [] });
+}
+
+test("a sent reply reads as read in the app, and the agent's next message still counts", async () => {
+  const { id: linkId } = await link();
+  const run = await runOn(await said("hi", { via: linkId }));
+  const answer = await reply(run, "Hello");
+  expect(await unreadOf(answer.channelId)).toBe(1);
+  await sent(answer);
+  expect(await unreadOf(answer.channelId)).toBe(0);
+  // A message from the reply's own millisecond would read under the mark, which is one past it.
+  await Bun.sleep(2);
+  await reply(run, "One more thing");
+  expect(await unreadOf(answer.channelId)).toBe(1);
+});
+
+test("a sent reply that kept an earlier place than its post reads as read", async () => {
+  const { id: linkId } = await link();
+  const run = await runOn(await said("hi", { via: linkId }));
+  const answer = await reply(run, "Hello");
+  const placed = new Date(answer.createdAt.getTime() - 2 * 60_000);
+  await f.db.update(messages).set({ createdAt: placed }).where(eq(messages.id, answer.id));
+  expect(await unreadOf(answer.channelId)).toBe(1);
+  await sent({ id: answer.id });
+  expect(await unreadOf(answer.channelId)).toBe(0);
 });
 
 test("a sent reply never moves the read mark back", async () => {

@@ -20,6 +20,7 @@ import { markChannelRead } from "../dms";
 import { ForbiddenError, NotFoundError } from "../errors";
 import { isMediaAfterReply, mediaOf } from "../media";
 import { messageLink } from "../message-links";
+import { inMillisecondOf, readMarkFor } from "../message-place";
 import { fileIdsOf } from "../messages";
 import { notifyMessage, quietForPeople } from "../notification-producers";
 import { getMembership } from "../organizations";
@@ -255,12 +256,13 @@ async function markSent(deps: DeliveryDeps, rows: Closed[]) {
         and(
           eq(messages.orgId, row.orgId),
           eq(messages.id, row.messageId),
-          eq(messages.createdAt, row.messageCreatedAt),
+          inMillisecondOf(messages.createdAt, row.messageCreatedAt),
         ),
       );
-    if (!place || (place.readAt && place.readAt >= row.messageCreatedAt)) continue;
+    const mark = readMarkFor({ id: row.messageId, createdAt: row.messageCreatedAt });
+    if (!place || (place.readAt && place.readAt >= mark)) continue;
     try {
-      await markChannelRead(deps.db, place.userId, row.orgId, place.channelId, row.messageCreatedAt, deps.pubsub);
+      await markChannelRead(deps.db, place.userId, row.orgId, place.channelId, mark, deps.pubsub);
     } catch (error) {
       // No longer in the DM: there is no mark to move.
       if (!(error instanceof NotFoundError)) throw error;
@@ -321,7 +323,11 @@ async function messageOf(db: Executor, orgId: string, id: string, createdAt: Dat
     .select()
     .from(messages)
     .where(
-      and(eq(messages.orgId, orgId), eq(messages.id, id), createdAt ? eq(messages.createdAt, createdAt) : undefined),
+      and(
+        eq(messages.orgId, orgId),
+        eq(messages.id, id),
+        createdAt ? inMillisecondOf(messages.createdAt, createdAt) : undefined,
+      ),
     );
   return m ?? null;
 }
