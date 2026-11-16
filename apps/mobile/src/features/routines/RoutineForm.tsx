@@ -32,8 +32,7 @@ import {
 import { WEEKDAYS } from "@agenteschat/ui/recurrence";
 import { useDeferredValue, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -45,9 +44,7 @@ import {
   GroupedList,
   GroupedRow,
   type IconName,
-  Locked,
   OPTION_ROW,
-  SCREEN_X,
   Text,
   useToast,
 } from "@/ui";
@@ -59,10 +56,11 @@ import { closeOptionPick, openOptionPick, type PickChoice } from "../dashboards/
 import { MissingScreen } from "../dashboards/parts";
 import { routineHref } from "../links/logic";
 import { ZoneList } from "../me/AccountPage";
+import { SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useEdition, useMeId, useNamesComputers, useOrgId } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
-import { goBack, PushedHeader, successHaptic } from "../shared/parts";
+import { goBack, successHaptic } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { EventWebhookSetup } from "./EventWebhookSetup";
 import { useFailed, useMyZone, useSay, useTargetLabel } from "./hooks";
@@ -132,7 +130,9 @@ const zoneLabel = (zone: string, locale: string) =>
  * title, "Criar" or "Salvar"), the web's form for the phone: a starting point (new only), the agent, where it
  * delivers (a channel, the DM, a Drive document; a routine made in the chat keeps its conversation), what to do, a name, and when: a phrase the server reads ("toda segunda às 9h")
  * shown back as a sentence with the next runs and its time zone (a screen of its own), an event, or an email.
- * Then when it posts and what it may do on its own. Editing saves only what changed.
+ * Then when it posts and what it may do on its own. Editing saves only what changed. On the settings' form page: a
+ * focused field scrolls clear of the keyboard on both systems and the bar over the keyboard walks the fields; leaving
+ * after changing anything asks first.
  */
 export function RoutineForm({ editId }: { editId: string | null }) {
   const { t } = useTranslation();
@@ -153,7 +153,6 @@ export function RoutineForm({ editId }: { editId: string | null }) {
 function Form({ routine }: { routine: Routine | undefined }) {
   const { t, i18n } = useTranslation();
   const c = useColors();
-  const insets = useSafeAreaInsets();
   const orgId = useOrgId();
   const { org } = useOrg();
   const toast = useToast();
@@ -177,7 +176,14 @@ function Form({ routine }: { routine: Routine | undefined }) {
   // A routine still read in UTC (made before time zones) starts in my zone, with a hint to keep UTC.
   const utc = wasUtc(routine);
   const [d, setD] = useState<RoutineDraft>(() => draftOf(routine, utc ? myZone : savedZone || myZone));
-  const set = (patch: Partial<RoutineDraft>) => setD((x) => ({ ...x, ...patch }));
+  // Anything the person changed (the defaults filled in as lists load are not theirs): a back swipe asks first.
+  const [touched, setTouched] = useState(false);
+  const leave = useUnsavedGuard(touched);
+  const edit = (next: (x: RoutineDraft) => RoutineDraft) => {
+    setTouched(true);
+    setD(next);
+  };
+  const set = (patch: Partial<RoutineDraft>) => edit((x) => ({ ...x, ...patch }));
   // What the routine had, to tell whether "when" changed.
   const [savedRule] = useState(() => JSON.stringify(toApiRule(ruleOf(routine, savedZone || myZone))));
   // The agent and the lists to pick from (where it delivers, the mailbox, the folder, a starting point) are screens
@@ -199,7 +205,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
   const followsMyZone = !routine || utc;
   const setZone = (zone: string) => {
     setZoneTouched(true);
-    setD((x) => ({ ...x, rule: { ...x.rule, timezone: zone } }));
+    edit((x) => ({ ...x, rule: { ...x.rule, timezone: zone } }));
   };
   useEffect(() => {
     if (followsMyZone && !zoneTouched)
@@ -231,6 +237,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
   const [phrase, setPhrase] = useState(phraseOf(routine));
   const [phraseTyped, setPhraseTyped] = useState(false);
   const typePhrase = (text: string) => {
+    setTouched(true);
     setPhrase(text);
     setPhraseTyped(true);
   };
@@ -291,7 +298,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
               ? t("recurrence.s.monthly", { count: 1 })
               : t("mobile.routines.when.custom");
   const pickRule = (next: typeof d.rule) => {
-    setD((x) => ({ ...x, rule: next }));
+    edit((x) => ({ ...x, rule: next }));
     setRulePicked(true);
     setPhrase("");
     setPhraseTyped(false);
@@ -399,10 +406,10 @@ function Form({ routine }: { routine: Routine | undefined }) {
   const setFrom = (text: string) => {
     setFromText(text);
     const { valid } = splitAddresses(text);
-    setD((x) => ({ ...x, email: { ...x.email, filter: { ...x.email.filter, from: valid } } }));
+    edit((x) => ({ ...x, email: { ...x.email, filter: { ...x.email.filter, from: valid } } }));
   };
   const setFilter = (patch: { subject?: string; text?: string }) =>
-    setD((x) => ({ ...x, email: { ...x.email, filter: { ...x.email.filter, ...patch } } }));
+    edit((x) => ({ ...x, email: { ...x.email, filter: { ...x.email.filter, ...patch } } }));
   const fromBad = d.kind === "email" && from.invalid.length > 0;
   // "Email no MillionSend" (ADR 0130): the first connection, its inbox's address and the same filters.
   const hasMillionSend = d.kind === "connector" || eventConnections.length > 0;
@@ -420,7 +427,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
   const [msFromText, setMsFromText] = useState(() => (d.connector.filter.from ?? []).join(", "));
   const msFrom = splitAddresses(msFromText);
   const setConnectorFilter = (patch: { to?: string; from?: string[]; subject?: string }) =>
-    setD((x) => ({ ...x, connector: { ...x.connector, filter: { ...x.connector.filter, ...patch } } }));
+    edit((x) => ({ ...x, connector: { ...x.connector, filter: { ...x.connector.filter, ...patch } } }));
   const msFromBad = d.kind === "connector" && msFrom.invalid.length > 0;
 
   // What starts it: the clock, an event, an email (a mailbox's, MillionSend's) or a webhook call.
@@ -483,7 +490,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
     setTemplate(o);
     setPhrase("");
     setPhraseTyped(false);
-    setD((x) => ({
+    edit((x) => ({
       ...x,
       prompt: o.prompt,
       name: o.label,
@@ -506,6 +513,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
    * form when it was opened from there, else in place of the form.
    */
   const done = (saved: Routine | undefined) => {
+    leave();
     if (saved?.trigger.type === "webhook") router.dismissTo(routineHref(saved.id));
     else close();
   };
@@ -514,6 +522,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
     if (routine) {
       const patch = draftChanges(routine, d, savedRule, ruleTyped || rulePicked);
       if (Object.keys(patch).length === 0) {
+        leave();
         close();
         return;
       }
@@ -532,7 +541,10 @@ function Form({ routine }: { routine: Routine | undefined }) {
               agentId: d.agentId,
             });
             if (routine.trigger.type !== "webhook") done(saved as Routine);
-            else close();
+            else {
+              leave();
+              close();
+            }
           },
           onError: failed,
         },
@@ -590,31 +602,23 @@ function Form({ routine }: { routine: Routine | undefined }) {
       t("mail.routine.mailbox"),
       d.email.accountId,
       mailList.map((a) => ({ key: a.id, icon: "mail", label: a.address })),
-      (accountId) => setD((x) => ({ ...x, email: { ...x.email, accountId, folder: "" } })),
+      (accountId) => edit((x) => ({ ...x, email: { ...x.email, accountId, folder: "" } })),
     );
   const pickFolder = () =>
     pickFrom(
       t("mail.routine.folder"),
       d.email.folder,
       folderOptions.map((f) => ({ key: f.id, icon: "archive", label: f.label })),
-      (folder) => setD((x) => ({ ...x, email: { ...x.email, folder } })),
+      (folder) => edit((x) => ({ ...x, email: { ...x.email, folder } })),
     );
   const input = [fieldText("callout"), styles.input, { color: c.ink }];
   return (
-    <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-      <PushedHeader
-        title={editing ? t("routines.editTitle") : t("routines.new")}
-        solid={false}
-        grouped
-        action={{ label: editing ? t("common.save") : t("mobile.routines.create"), disabled: !ready, onPress: submit }}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        contentContainerStyle={[styles.in, { paddingBottom: 32 + insets.bottom }]}
-      >
-        <Locked when={action.isPending}>
+    <SettingsPage
+      title={editing ? t("routines.editTitle") : t("routines.new")}
+      action={{ label: editing ? t("common.save") : t("mobile.routines.create"), disabled: !ready, onPress: submit }}
+      locked={action.isPending}
+      toolbar
+    >
           {agents.length === 0 && !dir.loading ? <GroupedFooter>{t("routines.form.noAgents")}</GroupedFooter> : null}
           {!editing ? <TemplatePicker value={template?.value} onPick={pickTemplate} /> : null}
 
@@ -1003,9 +1007,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
               </GroupedList>
             </>
           ) : null}
-        </Locked>
-      </ScrollView>
-    </View>
+    </SettingsPage>
   );
 }
 
@@ -1026,8 +1028,6 @@ export function RoutineZonePage() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  in: { paddingHorizontal: SCREEN_X, paddingTop: 4 },
   gap: { height: 10 },
   sentence: { paddingHorizontal: GROUPED_ROW.padX, paddingVertical: 12, gap: 4 },
   // Under its label in a stacked field, on the label's column: the field gives the room around it.
