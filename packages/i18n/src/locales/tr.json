@@ -2636,6 +2636,13 @@
   "rightHand": {
     "label": "sağ kolun",
     "labelCapitalized": "Sağ kolun",
+    "unusable": {
+      "title": "Şu an {{name}} için düşünemiyor",
+      "computerOnly": "Yalnızca {{computer}} üzerinde oturum açık. {{name}}, hesap olarak oturum açılmış bir planla düşünür.",
+      "away": "{{owner}} adlı kişinin, {{computer}} üzerinde, şu an uzakta.",
+      "awayYours": "Senin, {{computer}} üzerinde, şu an uzakta.",
+      "connect": "Bilgisayar bağla"
+    },
     "newDot": "Yeni",
     "actsAsYou": "senin izinlerinle çalışır",
     "composerHint": "sen olmadan hiçbir şey değişmez",
@@ -10292,10 +10299,10 @@
       "removeCopies": "Kaldır",
       "copiesRemoved_one": "Kullanılmayan {{count}} giriş kaldırıldı.",
       "copiesRemoved_other": "Kullanılmayan {{count}} giriş kaldırıldı.",
-      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
-      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
-      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
       "removeAllGrok": "Tüm Grok oturumlarını kaldır",
+      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
+      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
+      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
       "disconnect": "Bağlantıyı kes",
       "renameTitle": "{{label}} adını değiştir",
       "nameLabel": "Ad",
@@ -17066,6 +17073,14 @@
     "speedFallback": {
       "text": "ChatGPT bu hesap veya model için Hızlı hızı reddetti, bu yüzden bu yanıt standart hızda geldi.",
       "action": "Ajanı aç"
+    },
+    "standIn": {
+      "needsComputer": "{{via}} ile yanıtladım: {{plan}} bir bilgisayara ihtiyaç duyuyor.",
+      "away": "{{via}} ile yanıtladım: {{plan}} bilgisayarı şu an uzakta.",
+      "notShared": "{{via}} ile yanıtladım: {{plan}} yalnızca onu bağlayan kişiye hizmet ediyor.",
+      "limit": "{{via}} ile yanıtladım: {{plan}} sınırına ulaştı.",
+      "cant": "{{via}} ile yanıtladım: {{plan}} şu an düşünemiyor.",
+      "change": "Değiştir"
     },
     "modelStandIn": {
       "text": "{{plan}} bu anahtarla {{from}} modelini reddetti. Onunla çalışan {{to}} ile yanıt verdim.",

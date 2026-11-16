@@ -2733,6 +2733,13 @@
   "rightHand": {
     "label": "il tuo braccio destro",
     "labelCapitalized": "Il tuo braccio destro",
+    "unusable": {
+      "title": "Non può pensare per {{name}} ora",
+      "computerOnly": "Connesso solo su {{computer}}. {{name}} pensa con un piano connesso come account.",
+      "away": "Di {{owner}}, su {{computer}}, che è assente.",
+      "awayYours": "Tuo, su {{computer}}, che è assente.",
+      "connect": "Connetti un computer"
+    },
     "newDot": "Nuovo",
     "actsAsYou": "agisce con i tuoi permessi",
     "composerHint": "nulla cambia senza di te",
@@ -10755,10 +10762,10 @@
       "copiesRemoved_one": "{{count}} accesso inutilizzato rimosso.",
       "copiesRemoved_many": "{{count}} accessi inutilizzati rimossi.",
       "copiesRemoved_other": "{{count}} accessi inutilizzati rimossi.",
-      "removeAllDone": "{{n}} accessi a Grok rimossi.",
-      "removeAllText": "Smettono di pensare per i loro agenti su {{computers}}. Gli accessi di altre persone non vengono toccati.",
-      "removeAllTitle": "Rimuovere tutti i {{n}} accessi a Grok?",
       "removeAllGrok": "Rimuovi tutti gli accessi a Grok",
+      "removeAllTitle": "Rimuovere tutti i {{n}} accessi a Grok?",
+      "removeAllText": "Smettono di pensare per i loro agenti su {{computers}}. Gli accessi di altre persone non vengono toccati.",
+      "removeAllDone": "{{n}} accessi a Grok rimossi.",
       "disconnect": "Scollega",
       "renameTitle": "Rinomina {{label}}",
       "nameLabel": "Nome",
@@ -17678,6 +17685,14 @@
     "speedFallback": {
       "text": "ChatGPT ha rifiutato la velocità Rapida per questo account o modello, quindi questa risposta è arrivata a velocità standard.",
       "action": "Apri agente"
+    },
+    "standIn": {
+      "needsComputer": "Ho risposto con {{via}}: {{plan}} ha bisogno di un computer.",
+      "away": "Ho risposto con {{via}}: il computer di {{plan}} è assente.",
+      "notShared": "Ho risposto con {{via}}: {{plan}} serve solo chi l'ha connesso.",
+      "limit": "Ho risposto con {{via}}: {{plan}} ha raggiunto il limite.",
+      "cant": "Ho risposto con {{via}}: {{plan}} non può pensare ora.",
+      "change": "Cambia"
     },
     "modelStandIn": {
       "text": "{{plan}} ha rifiutato {{from}} con questa chiave. Ho risposto con {{to}}, che funziona con essa.",

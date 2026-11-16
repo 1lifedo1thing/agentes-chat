@@ -2817,6 +2817,17 @@ export const en = {
     /** The same where it starts a line: under its name on its page and side panel, and on its phone settings row. */
     labelCapitalized: "Your right hand",
     /** The one-time dot on its row until it is first opened. */
+    /**
+     * In the dialog that picks its AI: plans it can't think with now, dimmed, each with why. `name` is the right
+     * hand's; `owner` a first name.
+     */
+    unusable: {
+      title: "Can't think for {{name}} now",
+      computerOnly: "Signed in on {{computer}} only. {{name}} thinks with a plan signed in as an account.",
+      away: "{{owner}}'s, on {{computer}}, which is away.",
+      awayYours: "Yours, on {{computer}}, which is away.",
+      connect: "Connect a computer",
+    },
     newDot: "New",
     /** In its DM's header, after the label. */
     actsAsYou: "acts with your permissions",
@@ -17456,6 +17467,18 @@ export const en = {
     speedFallback: {
       text: "ChatGPT refused Fast speed on this account or model, so this reply came at standard speed.",
       action: "Open agent",
+    },
+    /**
+     * Under the right hand's reply when another AI answered for its plan (`meta.noAi.standIn`): `via` is what answered
+     * (a key's or a plan's name, "Acme OpenAI"), `plan` the plan that couldn't ("Claude Max"). "Change" opens its page.
+     */
+    standIn: {
+      needsComputer: "Answered with {{via}}: {{plan}} needs a computer.",
+      away: "Answered with {{via}}: the computer {{plan}} is on is away.",
+      notShared: "Answered with {{via}}: {{plan}} serves only its owner.",
+      limit: "Answered with {{via}}: {{plan}} reached its limit.",
+      cant: "Answered with {{via}}: {{plan}} can't think right now.",
+      change: "Change",
     },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
