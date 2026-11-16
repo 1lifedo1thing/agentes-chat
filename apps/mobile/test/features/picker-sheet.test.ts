@@ -65,6 +65,9 @@ describe("every sheet is the system's own (TrueSheet), and a sheet's next step s
     expect(sheet).toContain("scrollableRef={scroll}");
     expect(sheet).not.toContain("PanResponder");
     expect(sheet).not.toContain("@gorhom/bottom-sheet");
+    // Solid, never see-through: the sheet's gray on every sheet (iOS 26 would draw Liquid Glass without a color).
+    expect(sheet).toContain("backgroundColor: inside.grouped,");
+    expect(sheet).not.toContain("GLASS");
     // The gestures' root always gets a style: without one it takes flex: 1, no height in a content-sized sheet.
     expect(sheet).toContain("<GestureHandlerRootView style={fill ? styles.fill : styles.fit}>");
   });

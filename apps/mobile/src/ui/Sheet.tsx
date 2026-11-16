@@ -2,15 +2,7 @@ import { type SheetDetent, TrueSheet } from "@lodev09/react-native-true-sheet";
 import { useNavigation } from "expo-router";
 import { type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Keyboard,
-  Platform,
-  ScrollView,
-  type ScrollViewInstance,
-  StyleSheet,
-  View,
-  type ViewStyle,
-} from "react-native";
+import { Keyboard, ScrollView, type ScrollViewInstance, StyleSheet, View, type ViewStyle } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hintBack } from "./hints";
@@ -31,14 +23,12 @@ export interface SheetProps {
   header?: ReactNode;
 }
 
-/** iOS 26 draws its sheets in Liquid Glass when no color is given; before it, and on Android, the sheet's own gray. */
-const GLASS = Platform.OS === "ios" && Number.parseInt(String(Platform.Version), 10) >= 26;
-
 /**
  * The bottom sheet (no dialogs on the phone): the system's own, through TrueSheet (iOS's sheet presentation, Android's
- * Material bottom sheet). The system draws it, its grabber and corners, dims the screen, drags it, and lifts it over
- * the keyboard; it takes its content's height, up to the screen's. A sheet presented while another is up stacks over
- * it, as the system's sheets do. Its content is on the sheet's colors (`sheetColors`) and scrolls.
+ * Material bottom sheet), on the sheet's solid gray. The system draws it, its grabber and corners, dims the screen,
+ * drags it, and lifts it over the keyboard; it takes its content's height, up to the screen's. A sheet presented while
+ * another is up stacks over it, as the system's sheets do. Its content is on the sheet's colors (`sheetColors`) and
+ * scrolls.
  */
 export function Sheet({ open, onClose, children, onGone, header }: SheetProps) {
   const ref = useRef<TrueSheet>(null);
@@ -69,7 +59,8 @@ export function Sheet({ open, onClose, children, onGone, header }: SheetProps) {
 
 /**
  * The look every sheet of the app shares, the ones a screen opens and the ones that are routes: the system's grabber
- * (named for screen readers) and corners, and Liquid Glass on iOS 26 or the sheet's gray.
+ * (named for screen readers) and corners, on the sheet's own solid gray (`sheetColors`), never see-through: iOS 26
+ * would draw Liquid Glass without a color, and a pinned bar on the sheet's gray read as a band over the glass.
  */
 function useSheetLook() {
   const { colors, scheme } = useTheme();
@@ -78,7 +69,7 @@ function useSheetLook() {
   return useMemo(
     () => ({
       grabber: true,
-      ...(GLASS ? {} : { backgroundColor: inside.grouped }),
+      backgroundColor: inside.grouped,
       accessibilityOptions: { grabberLabel: t("mobile.a11y.grabber") },
     }),
     [inside, t],

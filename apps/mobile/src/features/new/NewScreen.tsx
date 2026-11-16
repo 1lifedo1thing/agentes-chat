@@ -318,7 +318,8 @@ const TILE = 36;
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   // The sheet's bar: Cancelar at the left, the title centered, 50 tall, clear of the grabber (5 tall at 5 from the top).
-  head: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 50, marginTop: 14, paddingHorizontal: 16 },
+  // Its room over it is its own (padding, on its color): the list passing under it never shows above it.
+  head: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 64, paddingTop: 14, paddingHorizontal: 16 },
   cancel: { minWidth: 72, minHeight: 44, justifyContent: "center" },
   title: { flex: 1, textAlign: "center" },
   side: { minWidth: 72 },

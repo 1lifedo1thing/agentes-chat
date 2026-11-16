@@ -358,8 +358,9 @@ function Thumb({ file, more }: { file: SharedFile; more: number }) {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   grow: { flex: 1, minWidth: 0 },
-  // The sheet's bar as "Novo"'s: Cancelar at the left, the title centered, clear of the grabber.
-  head: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 50, marginTop: 14, paddingHorizontal: 16 },
+  // The sheet's bar as "Novo"'s: Cancelar at the left, the title centered, clear of the grabber, its room over it its
+  // own (padding, on its color) so the list passing under it never shows above it.
+  head: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 64, paddingTop: 14, paddingHorizontal: 16 },
   cancel: { minWidth: 72, minHeight: 44, justifyContent: "center" },
   title: { flex: 1, textAlign: "center" },
   side: { minWidth: 72 },
