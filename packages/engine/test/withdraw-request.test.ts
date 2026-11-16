@@ -348,8 +348,11 @@ describe("withdraw_request", () => {
     expect((await tool?.execute({ id: q?.id ?? "", reason: "they chose staging" }, ctx))?.content).toContain(
       "Withdrawn",
     );
-    const [marked] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.id, asking?.id ?? ""));
-    expect((marked?.transcript as { takenOver?: number }).takenOver).toBe(0);
+    const [marked] = await f.db
+      .select()
+      .from(schema.agentRuns)
+      .where(eq(schema.agentRuns.id, asking?.id ?? ""));
+    expect((marked?.transcript as { takenOver?: number } | undefined)?.takenOver).toBe(0);
     await drainOutbox(f.db, f.handlers);
     expect((await f.db.select().from(schema.agentRuns))[0]?.status).toBe("done");
     // Only its question card: the words it wrote after waking stay unposted.
