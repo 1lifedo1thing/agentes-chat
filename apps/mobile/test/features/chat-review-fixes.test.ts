@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { INLINE_HEIGHT } from "../../src/features/blocks/logic";
 import { keptHeightAfter } from "../../src/features/chat/kept-sizes";
-import { type Inline, tableColumnWidths, tableResolvesLate } from "../../src/features/chat/logic";
+import { type Inline, runInConversation, tableColumnWidths, tableResolvesLate } from "../../src/features/chat/logic";
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
 
@@ -125,5 +125,25 @@ describe("a live block that gets shorter while cut takes its real height", () =>
     const spec = src("features/blocks/SpecBlock.tsx");
     expect(spec).toContain("if (sized.key !== sizeKey) setSized({ key: sizeKey, height: keptSize(sizeKey) ?? 0 });");
     expect(spec).toContain("setSized((now) => (now.key === sizeKey ? { key: sizeKey, height: next } : now));");
+  });
+});
+
+describe("the instant 'pensando…' is skipped only for a run that will take the message", () => {
+  test("a run in the same conversation, as the server steers", () => {
+    const timeline = { threadId: null as unknown as string, triggerMessageId: "root" };
+    const mission = { threadId: "mission", triggerMessageId: "m9" };
+    // Writing in the timeline: the timeline's run takes it, a mission thread's run doesn't.
+    expect(runInConversation(timeline, null)).toBe(true);
+    expect(runInConversation(mission, null)).toBe(false);
+    // Writing in the mission's thread: its run takes it, the timeline's doesn't (unless it answers that root).
+    expect(runInConversation(mission, "mission")).toBe(true);
+    expect(runInConversation(timeline, "mission")).toBe(false);
+    expect(runInConversation(timeline, "root")).toBe(true);
+  });
+
+  test("a run waiting for an approval never takes a new message", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat).toContain('const AT_WORK: ReadonlySet<string> = new Set(["thinking", "queued", "running"]);');
+    expect(chat).toContain("AT_WORK.has(r.status) && runInConversation(r, local.threadId ?? null)");
   });
 });

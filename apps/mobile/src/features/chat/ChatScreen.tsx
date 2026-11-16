@@ -233,6 +233,7 @@ import {
   pinTarget,
   quietInset,
   readMark,
+  runInConversation,
   sameItems,
   stoppableInLine,
   workingEntries,
@@ -362,8 +363,12 @@ const FLASH_MS = 1600;
 const PICKER_COVERS_MS = 500;
 /** No questions to other agents here (yet): the same list each time, so the memos over it keep. */
 const NO_CONSULTATIONS: RunConsultation[] = [];
-/** A run in these takes a new message into its work (the server steers it there): no second "pensando…" for it. */
-const AT_WORK: ReadonlySet<string> = new Set(["thinking", "queued", "running", "waiting_approval"]);
+/**
+ * A run in these takes a new message of its conversation into its work (the server steers it there): no second
+ * "pensando…" for it. One waiting for an approval never does (the message gets a run of its own).
+ */
+const AT_WORK: ReadonlySet<string> = new Set(["thinking", "queued", "running"]);
+
 /**
  * The conversation's list, drawn again only when what it is handed changes: the screen redraws for someone typing, a
  * presence, an agent's step, and the list (a large component) was drawn again with each. Typed as the list itself: a
@@ -1051,7 +1056,10 @@ function Chat({
       // What waits behind it stays under it (`keepBehind`).
       if (waitingBehind.current.length > 0) keepBehind(local);
       if (isMediaAlone(local)) return;
-      const atWork = live.runs.some((r) => !r.provisional && r.agentId === dmAgentId && AT_WORK.has(r.status));
+      const atWork = live.runs.some(
+        (r) =>
+          !r.provisional && r.agentId === dmAgentId && AT_WORK.has(r.status) && runInConversation(r, local.threadId ?? null),
+      );
       if (dmAgentId && !atWork) live.expect(local.threadId ?? local.id, [dmAgentId], local.id);
       // A channel with agents: the router (or a mention) decides who answers, and `message.routed` always follows.
       if (channel && channelAgents.length > 0) live.picking(local.id);

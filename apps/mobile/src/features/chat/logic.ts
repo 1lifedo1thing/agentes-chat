@@ -793,6 +793,18 @@ export function tableResolvesLate(header: Inline[][], rows: Inline[][][]): boole
   );
 }
 
+/**
+ * Whether a run is in the conversation a message is sent to (`threadId`: the thread, null for the timeline), as the
+ * server steers a message into a run under way: a thread's reply into that thread's runs (or the one answering its root
+ * in the timeline, whose own thread is its root), a message in the timeline into the timeline's. A run in another
+ * thread of the same DM (a mission's) never takes it, so it doesn't stand for the reply that will come.
+ */
+export function runInConversation(run: Pick<LiveRun, "threadId" | "triggerMessageId">, threadId: string | null): boolean {
+  // Typed as always a thread, but null for a run in the timeline.
+  const own = (run.threadId as string | null) ?? null;
+  return threadId ? own === threadId || (own === null && run.triggerMessageId === threadId) : own === null;
+}
+
 /** Which sides of a table scrolled sideways hide columns (`x`: the scroll, `frame`: the box, `total`: the table). */
 export function tableHidden(x: number, frame: number, total: number): { left: boolean; right: boolean } {
   return { left: x > 1, right: frame > 0 && x + frame < total - 1 };
