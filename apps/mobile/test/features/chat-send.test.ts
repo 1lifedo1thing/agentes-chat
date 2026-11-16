@@ -30,7 +30,9 @@ describe("typing in the composer", () => {
     // Callbacks that never change: a send button drawn again set its gestures up on the native side each time.
     expect(box).toContain("const onButton = useLatest(press);");
     expect(box).toContain("const onHold = useLatest(holdSend);");
-    expect(box).toMatch(/<SendButton[\s\S]*?onPress=\{onButton\}[\s\S]*?holdHint=\{holdHint\}[\s\S]*?onHold=\{onHold\}/);
+    expect(box).toMatch(
+      /<SendButton[\s\S]*?onPress=\{onButton\}[\s\S]*?holdHint=\{holdHint\}[\s\S]*?onHold=\{onHold\}/,
+    );
     // The hold is a hint (a string) or nothing, never an object made in each draw.
     expect(box).not.toMatch(/const hold = working && has/);
   });
@@ -113,5 +115,7 @@ test("the words leave the field and land in the conversation in the same draw", 
   expect(hook).toMatch(/onOptimistic: \(local\) => \{\s*drawn\(\);\s*onOptimistic\?\.\(local\);/);
   // The optimistic copy is in the cache before the sender draws again: `onOptimistic` runs after it is written.
   const mutate = between(queries, "onMutate: ({ body, clientId, threadId, meta }) => {", "onSuccess:");
-  expect(mutate.indexOf("qc.setQueryData<Message[]>(key,")).toBeLessThan(mutate.indexOf("options.onOptimistic?.(local);"));
+  expect(mutate.indexOf("qc.setQueryData<Message[]>(key,")).toBeLessThan(
+    mutate.indexOf("options.onOptimistic?.(local);"),
+  );
 });
