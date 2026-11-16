@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
-import { type ReactNode, useCallback, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Platform, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import {
   GestureDetector,
@@ -20,8 +21,20 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { Icon } from "@/ui";
-import { clamp, fitted, maxZoom, panRoom, type Size, zoomInAt, zoomInRect } from "./zoom";
+import { Button, Icon, type IconName, Text, useReducedMotion } from "@/ui";
+import {
+  clamp,
+  dragWithin,
+  fitted,
+  maxZoom,
+  panRoom,
+  pinchRest,
+  resistedZoom,
+  rubberClamp,
+  type Size,
+  zoomInAt,
+  zoomInRect,
+} from "./zoom";
 
 export interface ZoomPictureProps {
   source: { uri: string; headers?: Record<string, string> | undefined };
@@ -32,29 +45,67 @@ export interface ZoomPictureProps {
   pull: PanGesture;
   /** Off while the pages slide: a touch then is the pager's. */
   enabled: boolean;
+  /** The page in sight: zoomed in, it shows the picture's own pixels; the pages beside it a copy the screen's size. */
+  active: boolean;
   /** A single tap (after a double tap's wait): the viewer shows or hides its bars. */
   onTap: () => void;
   /** Zoomed in, or back at 1×. */
   onZoom: (zoomed: boolean) => void;
+  /** "Try again" on a picture that couldn't load: its link is read again. */
+  onRetry: () => void;
 }
 
 /**
  * One picture in the viewer, whole on the screen, that zooms. On iOS the system zooms it (a scroll view's own pinch,
  * with its momentum, its edges and its bounce past the limits) and a double tap zooms in at the tapped spot through
- * the same scroll view, so it feels as the phone's photos do. Android has no zooming view, so there the pinch is ours:
- * around the fingers, the picture never leaves the screen's edges, a zoomed picture flung with one finger glides to a
- * stop, and a double tap springs in at the spot or back out. Up to twice the picture's own pixels (`maxZoom`).
+ * the same scroll view, so it feels as the phone's photos do. Android has no zooming view, so there the pinch is ours,
+ * with the same feel: around the fingers, giving a little past 1× and past the most it zooms and springing back, a
+ * zoomed picture dragged with one finger resisting past the screen's edges and flung to glide, bouncing off an edge it
+ * hits, and a double tap springs in at the spot or back out. Up to twice the picture's own pixels (`maxZoom`), shown at
+ * those pixels once zoomed (a copy the screen's size would only be magnified). With reduced motion the zoom jumps.
  */
-export function ZoomPicture({ source, cacheKey, screen, pull, enabled, onTap, onZoom }: ZoomPictureProps) {
+export function ZoomPicture({
+  source,
+  cacheKey,
+  screen,
+  pull,
+  enabled,
+  active,
+  onTap,
+  onZoom,
+  onRetry,
+}: ZoomPictureProps) {
+  const reduced = useReducedMotion();
   const [pixels, setPixels] = useState<Size | null>(null);
   const [failed, setFailed] = useState(false);
+  // Each "Try again" loads the picture again from the start.
+  const [tries, setTries] = useState(0);
+  // Zoomed in while in sight: the full picture, not one downscaled to the screen; the copy again once out of sight.
+  const [sharp, setSharp] = useState(false);
+  useEffect(() => {
+    if (!active) setSharp(false);
+  }, [active]);
+  const zoomChanged = useCallback(
+    (now: boolean) => {
+      if (now) setSharp(true);
+      onZoom(now);
+    },
+    [onZoom],
+  );
+  const retry = () => {
+    setFailed(false);
+    setTries((n) => n + 1);
+    onRetry();
+  };
   const picture = fitted(pixels ? pixels.width / pixels.height : null, screen);
   const max = maxZoom(pixels?.width, screen.width);
   const image = (
     <Image
+      key={tries}
       source={{ uri: source.uri, ...(source.headers ? { headers: source.headers } : {}), cacheKey }}
       recyclingKey={cacheKey}
       contentFit="contain"
+      allowDownscaling={!(active && sharp)}
       transition={160}
       onLoad={(e) => {
         if (e.source.width > 0 && e.source.height > 0) setPixels({ width: e.source.width, height: e.source.height });
@@ -64,22 +115,55 @@ export function ZoomPicture({ source, cacheKey, screen, pull, enabled, onTap, on
       accessible={false}
     />
   );
-  const zoom = { picture, screen, max, pull, enabled, onTap, onZoom, children: image };
+  const zoom = { picture, screen, max, pull, enabled, reduced, onTap, onZoom: zoomChanged, children: image };
   return (
     <View style={screen}>
       {Platform.OS === "ios" ? <SystemZoom {...zoom} /> : <OwnZoom {...zoom} />}
-      {pixels ? null : (
-        <View style={[StyleSheet.absoluteFill, styles.center]} pointerEvents="none">
-          {failed ? <Icon name="image" size={30} color={DIM} /> : <ActivityIndicator color="#fff" />}
-        </View>
-      )}
+      {pixels ? null : <PageWait failed={failed} onRetry={retry} />}
     </View>
   );
 }
 
+const WHITE = "#fff";
 const DIM = "rgba(255,255,255,0.6)";
-/** A double tap's zoom, in or out: settles without overshooting. */
+/** A double tap's zoom, in or out, and a pinch springing back inside its limits: settles without overshooting. */
 const ZOOM_SPRING = { dampingRatio: 1, duration: 360 };
+
+/**
+ * A viewer's page on its way (a spinner), or one that couldn't load: the words and "Try again", with its spinner
+ * while the link is read again (`retrying`). Only the button takes a touch: the rest of the page keeps the pull to
+ * close, so a page that never loads can still be swiped away.
+ */
+export function PageWait({
+  failed,
+  retrying = false,
+  icon = "image",
+  onRetry,
+}: {
+  failed: boolean;
+  retrying?: boolean;
+  icon?: IconName;
+  onRetry: () => void;
+}) {
+  const { t } = useTranslation();
+  if (!failed)
+    return (
+      <View style={[StyleSheet.absoluteFill, styles.center]} pointerEvents="none">
+        <ActivityIndicator color={WHITE} />
+      </View>
+    );
+  return (
+    <View style={[StyleSheet.absoluteFill, styles.center, styles.failed]} pointerEvents="box-none">
+      <View style={[styles.center, styles.failedWords]} pointerEvents="none">
+        <Icon name={icon} size={30} color={DIM} />
+        <Text variant="footnote" style={[styles.failedText, { color: DIM }]}>
+          {t("mobile.files.loadFailed")}
+        </Text>
+      </View>
+      <Button variant="secondary" size="sm" label={t("mobile.common.retry")} loading={retrying} onPress={onRetry} />
+    </View>
+  );
+}
 
 interface ZoomProps {
   /** The picture's box at 1×, centered on the screen. */
@@ -88,13 +172,15 @@ interface ZoomProps {
   max: number;
   pull: PanGesture;
   enabled: boolean;
+  /** Reduced motion: a double tap's zoom (and a pinch's way back inside its limits) is set at once. */
+  reduced: boolean;
   onTap: () => void;
   onZoom: (zoomed: boolean) => void;
   children: ReactNode;
 }
 
 /** iOS: the scroll view zooms, pans and bounces; ours are only the taps and the pull before them. */
-function SystemZoom({ picture, screen, max, pull, enabled, onTap, onZoom, children }: ZoomProps) {
+function SystemZoom({ picture, screen, max, pull, enabled, reduced, onTap, onZoom, children }: ZoomProps) {
   const scroll = useRef<ScrollViewInstance>(null);
   const zoomed = useSharedValue(false);
   // At 1× it doesn't bounce, so a vertical drag is the pull to close; zoomed, it does, as any scroll view.
@@ -114,9 +200,12 @@ function SystemZoom({ picture, screen, max, pull, enabled, onTap, onZoom, childr
       scheduleOnRN(zoomChanged, now);
     },
   });
-  const zoomTo = useCallback((rect: { x: number; y: number; width: number; height: number }) => {
-    scroll.current?.scrollResponderZoomTo({ ...rect, animated: true });
-  }, []);
+  const zoomTo = useCallback(
+    (rect: { x: number; y: number; width: number; height: number }) => {
+      scroll.current?.scrollResponderZoomTo({ ...rect, animated: !reduced });
+    },
+    [reduced],
+  );
   const tap = useTapGesture({
     enabled,
     onDeactivate: () => {
@@ -161,13 +250,18 @@ function SystemZoom({ picture, screen, max, pull, enabled, onTap, onZoom, childr
   );
 }
 
-/** Android: pinch around the fingers, a zoomed picture dragged and flung inside the screen's edges, double tap. */
-function OwnZoom({ picture, screen, max, pull, enabled, onTap, onZoom, children }: ZoomProps) {
+/**
+ * Android: pinch around the fingers, giving a little past the limits and springing back; a zoomed picture dragged
+ * with one finger, resisting past the screen's edges, and flung to glide, bouncing off an edge it hits; double tap.
+ */
+function OwnZoom({ picture, screen, max, pull, enabled, reduced, onTap, onZoom, children }: ZoomProps) {
   const scale = useSharedValue(1);
   const x = useSharedValue(0);
   const y = useSharedValue(0);
-  // Where the pinch started (its focal point from the screen's center), so each frame is worked out from there.
+  // Where the pinch started (its focal point from the screen's center), so each frame is worked out from there; and
+  // where the fingers are now, the spot it settles around when let go.
   const start = useSharedValue({ scale: 1, x: 0, y: 0, fx: 0, fy: 0 });
+  const focal = useSharedValue({ x: 0, y: 0 });
   const pinching = useSharedValue(false);
   const [zoomed, setZoomed] = useState(false);
   const zoomChanged = useCallback(
@@ -189,6 +283,26 @@ function OwnZoom({ picture, screen, max, pull, enabled, onTap, onZoom, children 
     cancelAnimation(x);
     cancelAnimation(y);
   };
+  // To a zoom and a place: sprung, or set at once with reduced motion.
+  const settle = (to: { scale: number; x: number; y: number }) => {
+    "worklet";
+    if (reduced) {
+      scale.value = to.scale;
+      x.value = to.x;
+      y.value = to.y;
+      return;
+    }
+    scale.value = withSpring(to.scale, ZOOM_SPRING);
+    x.value = withSpring(to.x, ZOOM_SPRING);
+    y.value = withSpring(to.y, ZOOM_SPRING);
+  };
+  // A one-finger fling on one axis: it glides to a stop, carried past an edge it reaches and sprung back to it (a
+  // scroll view's bounce); with reduced motion it stays where the finger left it, back inside the edges.
+  const glide = (from: number, velocity: number, room: number) => {
+    "worklet";
+    if (reduced || room <= 0) return clamp(from, -room, room);
+    return withDecay({ velocity, clamp: [-room, room], rubberBandEffect: true });
+  };
 
   const pinch = usePinchGesture({
     enabled,
@@ -196,31 +310,36 @@ function OwnZoom({ picture, screen, max, pull, enabled, onTap, onZoom, children 
       "worklet";
       stop();
       pinching.value = true;
-      start.value = {
-        scale: scale.value,
-        x: x.value,
-        y: y.value,
-        fx: e.focalX - screen.width / 2,
-        fy: e.focalY - screen.height / 2,
-      };
+      const fx = e.focalX - screen.width / 2;
+      const fy = e.focalY - screen.height / 2;
+      start.value = { scale: scale.value, x: x.value, y: y.value, fx, fy };
+      focal.value = { x: fx, y: fy };
     },
     onUpdate: (e) => {
       "worklet";
       const from = start.value;
-      const next = clamp(from.scale * e.scale, 1, max);
+      const fx = e.focalX - screen.width / 2;
+      const fy = e.focalY - screen.height / 2;
+      // Past 1× or the most it zooms, it gives a little, resisting, and springs back when let go.
+      const next = resistedZoom(from.scale * e.scale, 1, max);
       const grown = next / from.scale;
-      // The spot that was under the fingers stays under them, wherever they go; the picture stays over the screen.
+      // The spot that was under the fingers stays under them, wherever they go; past the screen's edges it resists.
       const room = panRoom(picture, next, screen);
       scale.value = next;
-      x.value = clamp(e.focalX - screen.width / 2 - grown * (from.fx - from.x), -room.x, room.x);
-      y.value = clamp(e.focalY - screen.height / 2 - grown * (from.fy - from.y), -room.y, room.y);
+      x.value = rubberClamp(fx - grown * (from.fx - from.x), -room.x, room.x, screen.width);
+      y.value = rubberClamp(fy - grown * (from.fy - from.y), -room.y, room.y, screen.height);
+      focal.value = { x: fx, y: fy };
+    },
+    onDeactivate: () => {
+      "worklet";
+      settle(pinchRest(picture, screen, { scale: scale.value, x: x.value, y: y.value }, focal.value, max));
     },
     onFinalize: () => {
       "worklet";
       pinching.value = false;
     },
   });
-  // One finger on a zoomed picture moves it (from where it is, so a pinch can turn into a drag), and a fling glides.
+  // One finger on a zoomed picture moves it, from where it is, and a fling glides.
   const pan = usePanGesture({
     enabled: enabled && zoomed,
     maxPointers: 1,
@@ -232,15 +351,16 @@ function OwnZoom({ picture, screen, max, pull, enabled, onTap, onZoom, children 
       "worklet";
       if (pinching.value) return;
       const room = panRoom(picture, scale.value, screen);
-      x.value = clamp(x.value + e.changeX, -room.x, room.x);
-      y.value = clamp(y.value + e.changeY, -room.y, room.y);
+      x.value = dragWithin(x.value, e.changeX, -room.x, room.x, screen.width);
+      y.value = dragWithin(y.value, e.changeY, -room.y, room.y, screen.height);
     },
     onDeactivate: (e) => {
       "worklet";
       if (pinching.value) return;
-      const room = panRoom(picture, scale.value, screen);
-      x.value = withDecay({ velocity: e.velocityX, clamp: [-room.x, room.x] });
-      y.value = withDecay({ velocity: e.velocityY, clamp: [-room.y, room.y] });
+      // The edges where the zoom comes to rest (a pinch's spring back may still be on its way there).
+      const room = panRoom(picture, clamp(scale.value, 1, max), screen);
+      x.value = glide(x.value, e.velocityX, room.x);
+      y.value = glide(y.value, e.velocityY, room.y);
     },
   });
   const tap = useTapGesture({
@@ -256,13 +376,11 @@ function OwnZoom({ picture, screen, max, pull, enabled, onTap, onZoom, children 
     onDeactivate: (e) => {
       "worklet";
       stop();
-      const to =
+      settle(
         scale.value > 1.01
           ? { scale: 1, x: 0, y: 0 }
-          : zoomInAt(picture, screen, { x: e.x - screen.width / 2, y: e.y - screen.height / 2 }, max);
-      scale.value = withSpring(to.scale, ZOOM_SPRING);
-      x.value = withSpring(to.x, ZOOM_SPRING);
-      y.value = withSpring(to.y, ZOOM_SPRING);
+          : zoomInAt(picture, screen, { x: e.x - screen.width / 2, y: e.y - screen.height / 2 }, max),
+      );
     },
   });
   const pinchAndPan = useSimultaneousGestures(pinch, pan);
@@ -281,4 +399,7 @@ function OwnZoom({ picture, screen, max, pull, enabled, onTap, onZoom, children 
 
 const styles = StyleSheet.create({
   center: { alignItems: "center", justifyContent: "center" },
+  failed: { gap: 16, paddingHorizontal: 32 },
+  failedWords: { gap: 10 },
+  failedText: { textAlign: "center" },
 });

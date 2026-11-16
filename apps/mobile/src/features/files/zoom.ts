@@ -18,14 +18,23 @@ export const DOUBLE_TAP_ZOOM = 2;
 /** Zooming stops at twice the picture's own pixels (past its sharpness, never mush), and never past 10×. */
 const PIXELS_ZOOM = 2;
 const ZOOM_CAP = 10;
-/** A slow pull closes the viewer past this far (in finger travel). */
+/** A pull closes the viewer when it would come to rest at least this far away (in points)… */
 export const DISMISS_DISTANCE = 100;
-/** A release faster than this (pt/s) is decided by its direction: a flick away closes, one back toward the middle stays. */
-export const DISMISS_VELOCITY = 200;
+/** …or this share of the screen's height, on a tall screen. */
+export const DISMISS_SHARE = 0.15;
+/**
+ * How far a let-go pull carries on, in seconds of its speed: where it would come to rest, as a scroll view's fast
+ * deceleration throws it. A flick adds real distance, a slow release barely any, so speed alone never closes it.
+ */
+export const PULL_PROJECTION = 0.1;
 /** Pulled half a screen away, the picture is this small. */
 export const DISMISS_MIN_SCALE = 0.75;
-/** How closely the picture follows the finger at the start of a pull; then less and less, as a scroll's edge does. */
+/** How closely the picture follows the finger sideways at the start of a pull; then less and less, as a scroll's edge. */
 const FOLLOW = 0.8;
+/** How a zoomed picture resists past its edges, and a pinch past 1× or its most: a scroll view's own rubber band. */
+export const EDGE_RESISTANCE = 0.55;
+/** Past 1× or the most it zooms, a pinch gives at most this share of that zoom more, resisting all the way. */
+export const ZOOM_GIVE = 0.25;
 
 export function clamp(value: number, min: number, max: number): number {
   "worklet";
@@ -97,19 +106,108 @@ export function zoomInAt(picture: Size, screen: Size, focal: Point, max: number)
   };
 }
 
-/** Whether letting go of a pull closes the viewer: a fast release by its direction, a slow one by how far it went. */
-export function pullCloses(translationY: number, velocityY: number): boolean {
+/**
+ * Damps a drag past an edge: it starts at `follow` times the finger and tapers off, never reaching `limit` (a scroll
+ * view's edge has the same feel).
+ */
+export function rubberBand(distance: number, limit: number, follow: number): number {
   "worklet";
-  return Math.abs(velocityY) > DISMISS_VELOCITY
-    ? velocityY * translationY >= 0
-    : Math.abs(translationY) > DISMISS_DISTANCE;
+  if (limit <= 0) return 0;
+  const damped = (1 - 1 / ((Math.abs(distance) * follow) / limit + 1)) * limit;
+  return Math.sign(distance) * damped;
 }
 
-/** Which way a closing pull leaves: where it was flung, else where it was pulled. */
-export function pullDirection(translationY: number, velocityY: number): 1 | -1 {
+/** `rubberBand` undone: how far the finger went for a damped distance. */
+export function unRubberBand(damped: number, limit: number, follow: number): number {
   "worklet";
-  const toward = Math.abs(velocityY) > DISMISS_VELOCITY ? velocityY : translationY;
-  return toward < 0 ? -1 : 1;
+  if (limit <= 0 || follow <= 0) return 0;
+  const part = Math.min(Math.abs(damped) / limit, 0.999);
+  return (Math.sign(damped) * part * limit) / (follow * (1 - part));
+}
+
+/**
+ * Where a position past `min` or `max` shows: inside, as it is; past an edge it gives, resisting more and more, never
+ * further than `limit` (a scroll view's edge). On an axis with no room (`max` = `min`) it doesn't move at all, as a
+ * scroll view whose content fits doesn't bounce that way.
+ */
+export function rubberClamp(value: number, min: number, max: number, limit: number): number {
+  "worklet";
+  if (max <= min) return min;
+  if (value > max) return max + rubberBand(value - max, limit, EDGE_RESISTANCE);
+  if (value < min) return min + rubberBand(value - min, limit, EDGE_RESISTANCE);
+  return value;
+}
+
+/**
+ * A drag's next position, moved by `change` from `position` (which may already be past an edge): the finger's own
+ * travel inside `min`…`max`, resisted past them (`rubberClamp`). It works from where the finger would be without the
+ * resistance, so a drag back in comes out of the stretch at the rate it went in.
+ */
+export function dragWithin(position: number, change: number, min: number, max: number, limit: number): number {
+  "worklet";
+  if (max <= min) return min;
+  let free = position;
+  if (position > max) free = max + unRubberBand(position - max, limit, EDGE_RESISTANCE);
+  else if (position < min) free = min + unRubberBand(position - min, limit, EDGE_RESISTANCE);
+  return rubberClamp(free + change, min, max, limit);
+}
+
+/** A pinch's zoom past `min` (1×) or `max`: a little more (`ZOOM_GIVE`), resisting all the way; it springs back after. */
+export function resistedZoom(scale: number, min: number, max: number): number {
+  "worklet";
+  if (scale > max) return max + rubberBand(scale - max, max * ZOOM_GIVE, EDGE_RESISTANCE);
+  if (scale < min) return min + rubberBand(scale - min, min * ZOOM_GIVE, EDGE_RESISTANCE);
+  return scale;
+}
+
+/**
+ * Where a pinch let go comes to rest: its zoom back inside 1×…`max` around the spot between the fingers (`focal`, from
+ * the screen's center), the picture back over the whole screen.
+ */
+export function pinchRest(
+  picture: Size,
+  screen: Size,
+  at: { scale: number } & Point,
+  focal: Point,
+  max: number,
+): { scale: number } & Point {
+  "worklet";
+  const scale = clamp(at.scale, 1, max);
+  const grown = scale / at.scale;
+  const room = panRoom(picture, scale, screen);
+  return {
+    scale,
+    x: clamp(focal.x - grown * (focal.x - at.x), -room.x, room.x),
+    y: clamp(focal.y - grown * (focal.y - at.y), -room.y, room.y),
+  };
+}
+
+/** Where a pull let go would come to rest: its travel and the way its speed carries it (`PULL_PROJECTION`). */
+export function pullProjection(travel: number, velocity: number): number {
+  "worklet";
+  return travel + velocity * PULL_PROJECTION;
+}
+
+/**
+ * Whether letting go of a pull closes the viewer: it would come to rest far enough away, either way
+ * (`pullProjection`). So a flick closes from a short pull, a slow release only past the distance, and one flung back
+ * toward the middle stays.
+ */
+export function pullCloses(travel: number, velocity: number, screenHeight: number): boolean {
+  "worklet";
+  return Math.abs(pullProjection(travel, velocity)) > Math.max(DISMISS_DISTANCE, screenHeight * DISMISS_SHARE);
+}
+
+/** Which way a closing pull leaves: toward where it would come to rest. */
+export function pullDirection(travel: number, velocity: number): 1 | -1 {
+  "worklet";
+  return pullProjection(travel, velocity) < 0 ? -1 : 1;
+}
+
+/** The speed a closing picture leaves with: its own, never back toward the middle (then it starts from still). */
+export function awaySpeed(direction: 1 | -1, velocity: number): number {
+  "worklet";
+  return direction > 0 ? Math.max(velocity, 0) : Math.min(velocity, 0);
 }
 
 /** A pull's progress, 0 at rest to 1 half a screen away: the black fades and the picture shrinks with it. */
@@ -119,21 +217,21 @@ export function pullProgress(translationY: number, screenHeight: number): number
 }
 
 /**
- * Damps a drag: it starts at `FOLLOW` times the finger and tapers off, never reaching `limit` (a scroll view's edge
- * has the same feel).
+ * Where the picture sits for a pull of the finger (`travelX`, `travelY`): up and down exactly with it, sideways more
+ * loosely, a little smaller as it goes. It shrinks around the spot the finger took (`grab`, from the picture's
+ * center), so that spot stays under the finger instead of sliding toward the middle.
  */
-export function rubberBand(distance: number, limit: number): number {
+export function pulledPlacement(
+  travelX: number,
+  travelY: number,
+  screen: Size,
+  grab: Point,
+): Point & { scale: number } {
   "worklet";
-  const damped = (1 - 1 / ((Math.abs(distance) * FOLLOW) / limit + 1)) * limit;
-  return Math.sign(distance) * damped;
-}
-
-/** Where the picture sits for a pull of the finger: following it, more loosely sideways, a little smaller as it goes. */
-export function pulledPlacement(translationX: number, translationY: number, screen: Size): Point & { scale: number } {
-  "worklet";
+  const scale = 1 - (1 - DISMISS_MIN_SCALE) * pullProgress(travelY, screen.height);
   return {
-    x: rubberBand(translationX, screen.width / 2),
-    y: rubberBand(translationY, screen.height),
-    scale: 1 - (1 - DISMISS_MIN_SCALE) * pullProgress(translationY, screen.height),
+    x: rubberBand(travelX, screen.width / 2, FOLLOW) + grab.x * (1 - scale),
+    y: travelY + grab.y * (1 - scale),
+    scale,
   };
 }

@@ -11,6 +11,8 @@ import {
   extensionOf,
   extLabel,
   fileInfo,
+  fileRoute,
+  isMediaFile,
   pageStep,
   resolveDownloadUrl,
   safeFileName,
@@ -23,18 +25,28 @@ import {
   withExtension,
 } from "../../src/features/files/logic";
 import {
+  awaySpeed,
   DISMISS_DISTANCE,
   DISMISS_MIN_SCALE,
-  DISMISS_VELOCITY,
+  DISMISS_SHARE,
   doubleTapZoom,
+  dragWithin,
+  EDGE_RESISTANCE,
   fitted,
   maxZoom,
+  PULL_PROJECTION,
   panRoom,
+  pinchRest,
   pullCloses,
   pullDirection,
   pulledPlacement,
   pullProgress,
+  pullProjection,
+  resistedZoom,
   rubberBand,
+  rubberClamp,
+  unRubberBand,
+  ZOOM_GIVE,
   zoomInAt,
   zoomInRect,
 } from "../../src/features/files/zoom";
@@ -282,11 +294,53 @@ describe("viewer", () => {
     expect(src("features/files/ImageViewer.tsx")).toContain("<ViewerVideo");
     const message = src("features/files/MessageFiles.tsx");
     expect(message).not.toContain('pathname: "/file/[id]"');
-    expect(src("features/drive/DriveCard.tsx")).toContain("VIDEO_EXT.has(extensionOf(a.title))");
-    expect(src("features/files/DocumentViewer.tsx")).toContain(
-      'const media = info?.view === "image" || info?.view === "video";',
-    );
-    expect(src("features/files/DocumentViewer.tsx")).not.toContain("<VideoPlayer");
+    expect(fileRoute({ id: "v1", version: 2, title: "abertura.mp4", kind: "file" }).pathname).toBe("/images");
+    // A file's link that turns out to be one still goes on to the viewer, in the file screen's place.
+    const document = src("features/files/DocumentViewer.tsx");
+    expect(document).toContain('const media = info?.view === "image" || info?.view === "video";');
+    expect(document).not.toContain("<VideoPlayer");
+  });
+
+  test("one way to open a file: a picture or a video straight in the viewer, among its neighbours; the rest in the file screen", () => {
+    const png = upload("print.png", "image/png");
+    const pdf = upload("Relatório.pdf", "application/pdf");
+    // By its details once loaded; before, by its name (as an upload stored without a type); a document is never one.
+    expect(isMediaFile({ id: "a", detail: { ...png, shownVersion: 1, version: 1 } })).toBe(true);
+    expect(isMediaFile({ id: "a", detail: { ...pdf, shownVersion: 1, version: 1 } })).toBe(false);
+    expect(isMediaFile({ id: "a", title: "story.MOV" })).toBe(true);
+    expect(isMediaFile({ id: "a", title: "notes.png", kind: "document" })).toBe(false);
+    expect(isMediaFile({ id: "a", title: "logo.svg" })).toBe(false);
+    expect(isMediaFile({ id: "a" })).toBe(false);
+    // A message with two pictures and a video: the tapped one is the viewer's place, the others on either side.
+    const media = [
+      { id: "p1", version: 1, title: "a.jpg" },
+      { id: "p2", title: "b.png", detail: { ...png, shownVersion: 3, version: 3 } },
+      { id: "v1", version: 2, title: "c.mp4" },
+    ];
+    expect(fileRoute(media[2] ?? { id: "" }, media, "deck")).toEqual({
+      pathname: "/images",
+      params: { files: "p1@1,p2@3,v1@2", at: "2", from: "deck" },
+    });
+    // Alone (or not among the neighbours given), it opens by itself; a file that isn't one goes to the file screen.
+    expect(fileRoute({ id: "x", title: "y.jpg" }, media)).toEqual({
+      pathname: "/images",
+      params: { files: "x", at: "0" },
+    });
+    expect(fileRoute({ id: "d", title: "Plano", kind: "document" }, media)).toEqual({
+      pathname: "/file/[id]",
+      params: { id: "d" },
+    });
+    // The file screen at an older version only when that's the one shown.
+    expect(fileRoute({ id: "d", detail: { ...pdf, shownVersion: 1, version: 3 } }).params).toEqual({ id: "d", v: "1" });
+    expect(fileRoute({ id: "d", detail: { ...pdf, shownVersion: 3, version: 3 } }).params).toEqual({ id: "d" });
+    expect(fileRoute({ id: "d", version: 4, title: "log.txt" }).params).toEqual({ id: "d", v: "4" });
+    // A deck opens through it, among the message's pictures and videos.
+    const deck = src("features/files/ImageStack.tsx");
+    expect(deck).toContain("openFile(tapped, siblings ?? deck, { from: key });");
+    expect(deck).not.toContain('pathname: "/images"');
+    // The viewer tells a deck the file the person stopped at; a video beside its pictures leaves it as it was.
+    expect(src("features/files/ImageViewer.tsx")).toContain("tellViewerPlace(from, currentId)");
+    expect(src("features/files/ImageStack.tsx")).toContain("if (at < 0) return;");
   });
 
   test("the pictures page on the system's pager and zoom with the system's own zoom on iOS", () => {
@@ -295,16 +349,72 @@ describe("viewer", () => {
     expect(viewer).toContain("scrollEnabled={!zoomed}");
     expect(viewer).not.toContain("zoom-toolkit");
     const zoom = src("features/files/ZoomPicture.tsx");
-    // iOS: the scroll view's own pinch, bounce and momentum; a double tap zooms through it.
+    // iOS: the scroll view's own pinch, bounce and momentum; a double tap zooms through it, at once with reduced motion.
     expect(zoom).toContain("maximumZoomScale={max}");
     expect(zoom).toContain("pinchGestureEnabled");
-    expect(zoom).toContain("scroll.current?.scrollResponderZoomTo({ ...rect, animated: true });");
-    // Android: a pinch of ours, inside the screen's edges, with a fling that glides.
+    expect(zoom).toContain("scroll.current?.scrollResponderZoomTo({ ...rect, animated: !reduced });");
+    // Android: a pinch of ours that gives a little past its limits and springs back, a drag that resists past the
+    // edges, a fling that glides and bounces off an edge it hits; with reduced motion, no glide and no spring.
     expect(zoom).toContain('Platform.OS === "ios" ? <SystemZoom {...zoom} /> : <OwnZoom {...zoom} />');
-    expect(zoom).toContain("withDecay({ velocity: e.velocityX, clamp: [-room.x, room.x] })");
+    expect(zoom).toContain("const next = resistedZoom(from.scale * e.scale, 1, max);");
+    expect(zoom).toContain(
+      "settle(pinchRest(picture, screen, { scale: scale.value, x: x.value, y: y.value }, focal.value, max));",
+    );
+    expect(zoom).toContain("x.value = dragWithin(x.value, e.changeX, -room.x, room.x, screen.width);");
+    expect(zoom).toContain("withDecay({ velocity, clamp: [-room, room], rubberBandEffect: true })");
+    expect(zoom).toContain("if (reduced || room <= 0) return clamp(from, -room, room);");
+    expect(zoom).toMatch(/if \(reduced\) \{\s*scale\.value = to\.scale;/);
     // The pull to close comes first, before the picture's own gestures.
     expect(zoom).toContain("useExclusiveGestures(pull, doubleTap, tap)");
     expect(zoom).toContain("useExclusiveGestures(pull, pinchAndPan, doubleTap, tap)");
+  });
+
+  test("a zoomed picture shows its own pixels, not a copy the screen's size magnified; the pages beside it stay light", () => {
+    const zoom = src("features/files/ZoomPicture.tsx");
+    expect(zoom).toContain("allowDownscaling={!(active && sharp)}");
+    expect(zoom).toContain("if (now) setSharp(true);");
+    expect(zoom).toContain("if (!active) setSharp(false);");
+    expect(src("features/files/ImageViewer.tsx")).toContain("active={active}");
+  });
+
+  test("past its limits a zoom gives a little and comes back; past its edges a picture resists, never stops dead", () => {
+    // The rubber band starts at its follow rate and never reaches its limit; undone, it gives the finger's travel back.
+    expect(rubberBand(10, 400, EDGE_RESISTANCE)).toBeCloseTo(10 * EDGE_RESISTANCE, 0);
+    expect(rubberBand(100_000, 400, EDGE_RESISTANCE)).toBeLessThan(400);
+    expect(rubberBand(-100, 800, 0.8)).toBeCloseTo(-rubberBand(100, 800, 0.8));
+    expect(unRubberBand(rubberBand(250, 400, EDGE_RESISTANCE), 400, EDGE_RESISTANCE)).toBeCloseTo(250);
+    // Inside the edges a drag is the finger's own; past one it resists more and more; on an axis with no room, none.
+    expect(rubberClamp(50, -100, 100, 400)).toBe(50);
+    expect(rubberClamp(200, -100, 100, 400)).toBeGreaterThan(100);
+    expect(rubberClamp(200, -100, 100, 400)).toBeLessThan(200);
+    expect(rubberClamp(-200, -100, 100, 400)).toBeCloseTo(-rubberClamp(200, -100, 100, 400));
+    expect(rubberClamp(30, 0, 0, 400)).toBe(0);
+    expect(dragWithin(90, 5, -100, 100, 400)).toBe(95);
+    expect(dragWithin(0, 30, 0, 0, 400)).toBe(0);
+    // Step by step past the edge is the same as one long drag, and back in it comes out of the stretch as it went in.
+    let at = 90;
+    for (let i = 0; i < 10; i++) at = dragWithin(at, 10, -100, 100, 400);
+    expect(at).toBeCloseTo(rubberClamp(190, -100, 100, 400));
+    for (let i = 0; i < 10; i++) at = dragWithin(at, -10, -100, 100, 400);
+    expect(at).toBeCloseTo(90);
+    // A pinch gives at most `ZOOM_GIVE` of its limit more, under 1× or over its most.
+    expect(resistedZoom(2, 1, 4)).toBe(2);
+    expect(resistedZoom(8, 1, 4)).toBeGreaterThan(4);
+    expect(resistedZoom(1000, 1, 4)).toBeLessThan(4 * (1 + ZOOM_GIVE));
+    expect(resistedZoom(0.2, 1, 4)).toBeLessThan(1);
+    expect(resistedZoom(0, 1, 4)).toBeGreaterThan(1 - ZOOM_GIVE);
+    // Let go, it comes back inside its limits around the fingers, over the whole screen.
+    const screen = { width: 400, height: 800 };
+    const wide = { width: 400, height: 200 };
+    const under = pinchRest(wide, screen, { scale: 0.8, x: 0, y: 0 }, { x: 50, y: 0 }, 4);
+    expect(under.scale).toBe(1);
+    expect(under.x).toBeCloseTo(0);
+    expect(under.y).toBeCloseTo(0);
+    const over = pinchRest(wide, screen, { scale: 5, x: 0, y: 0 }, { x: 100, y: 0 }, 4);
+    expect(over.scale).toBe(4);
+    // The spot between the fingers (100 from the middle) stays there: it was the picture's 20 at 5×, still at 4×.
+    expect(over.x + over.scale * 20).toBeCloseTo(100);
+    expect(pinchRest(wide, screen, { scale: 2, x: 900, y: 0 }, { x: 0, y: 0 }, 4).x).toBe(panRoom(wide, 2, screen).x);
   });
 
   test("the pull to close tracks the finger, can be caught again, and closes once", () => {
@@ -316,36 +426,104 @@ describe("viewer", () => {
     expect(viewer).toContain("if (closed.current) return;");
     // Only the picture in sight, at 1×, while the pages are still.
     expect(viewer).toContain("enabled: active && !zoomed && !paging,");
+    // It shrinks around the spot the finger took, from rest; caught mid-spring, around the one before.
+    expect(viewer).toContain("if (resting)");
+    expect(viewer).toContain("pulledPlacement(pullX.value, pullY.value, screen, grab.value)");
   });
 
-  test("a pull closes when flung away or let go far enough; flung back toward the middle it stays", () => {
-    // Slow: by distance.
-    expect(pullCloses(DISMISS_DISTANCE + 1, 0)).toBe(true);
-    expect(pullCloses(-(DISMISS_DISTANCE + 1), 0)).toBe(true);
-    expect(pullCloses(DISMISS_DISTANCE - 1, 0)).toBe(false);
-    // Fast: by direction, however short.
-    expect(pullCloses(20, DISMISS_VELOCITY + 100)).toBe(true);
-    expect(pullCloses(-20, -(DISMISS_VELOCITY + 100))).toBe(true);
-    expect(pullCloses(300, -(DISMISS_VELOCITY + 100))).toBe(false);
-    expect(pullDirection(300, -(DISMISS_VELOCITY + 100))).toBe(-1);
+  test("let go, a pull leaves or springs back from its own speed; with reduced motion it fades", () => {
+    const viewer = src("features/files/ImageViewer.tsx");
+    expect(viewer).toContain("if (pullCloses(travel, e.velocityY, screen.height)) {");
+    expect(viewer).toContain("velocity: awaySpeed(direction, e.velocityY),");
+    expect(viewer).toContain("pullX.value = withSpring(0, { ...BACK_SPRING, velocity: e.velocityX });");
+    expect(viewer).toContain("pullY.value = withSpring(0, { ...BACK_SPRING, velocity: e.velocityY });");
+    // A fade is an opacity change, kept with reduced motion (the system setting would skip it otherwise).
+    expect(viewer).toContain("if (reducedMotion) shown.value = withTiming(0, FADE_OUT);");
+    expect(viewer).toContain("const FADE_OUT = { duration: 180, reduceMotion: ReduceMotion.Never };");
+  });
+
+  test("a pull closes where it would come to rest far enough away: a flick or a long pull, never speed alone", () => {
+    const tall = 800;
+    const far = Math.max(DISMISS_DISTANCE, tall * DISMISS_SHARE);
+    expect(far).toBe(120);
+    expect(pullProjection(30, 1000)).toBeCloseTo(30 + 1000 * PULL_PROJECTION);
+    // Slow: by distance, either way.
+    expect(pullCloses(far + 1, 0, tall)).toBe(true);
+    expect(pullCloses(-(far + 1), 0, tall)).toBe(true);
+    expect(pullCloses(far - 1, 0, tall)).toBe(false);
+    // A flick closes a short pull; an easy release (what used to close any outward pull) doesn't.
+    expect(pullCloses(20, 2000, tall)).toBe(true);
+    expect(pullCloses(-20, -2000, tall)).toBe(true);
+    expect(pullCloses(20, 250, tall)).toBe(false);
+    expect(pullCloses(60, 400, tall)).toBe(false);
+    // Flung back toward the middle it stays; still far away when let go, it closes the way it was pulled.
+    expect(pullCloses(300, -2000, tall)).toBe(false);
+    expect(pullCloses(300, -500, tall)).toBe(true);
+    expect(pullDirection(300, -500)).toBe(1);
+    expect(pullDirection(20, -2000)).toBe(-1);
     expect(pullDirection(-150, 0)).toBe(-1);
     expect(pullDirection(150, 0)).toBe(1);
+    // A closing picture leaves at its own speed, never first back toward the middle.
+    expect(awaySpeed(1, 1500)).toBe(1500);
+    expect(awaySpeed(1, -500)).toBe(0);
+    expect(awaySpeed(-1, -1500)).toBe(-1500);
+    expect(awaySpeed(-1, 300)).toBe(0);
   });
 
-  test("a pulled picture follows the finger loosely, shrinks a little, and the black fades with it", () => {
+  test("a pulled picture stays under the finger up and down, follows it loosely sideways, and shrinks around it", () => {
     const screen = { width: 400, height: 800 };
-    expect(pulledPlacement(0, 0, screen)).toEqual({ x: 0, y: 0, scale: 1 });
-    const near = pulledPlacement(0, 40, screen);
-    // At first close to the finger (0.8 of it), never past it.
-    expect(near.y).toBeGreaterThan(30);
-    expect(near.y).toBeLessThan(40);
+    const grab = { x: 60, y: 250 };
+    // At rest it stays where it is.
+    expect(pulledPlacement(0, 0, screen, grab)).toEqual({ x: 0, y: 0, scale: 1 });
+    // The spot the finger took, wherever it moves the picture and however small it gets: exactly the finger's travel
+    // down and up, looser sideways (the spot on screen = the picture's move + its scale times the spot).
+    for (const travel of [40, 180, 400, -260]) {
+      const at = pulledPlacement(0, travel, screen, grab);
+      expect(at.y + at.scale * grab.y).toBeCloseTo(grab.y + travel);
+      expect(at.x + at.scale * grab.x).toBeCloseTo(grab.x);
+    }
+    const side = pulledPlacement(100, 0, screen, grab);
+    expect(side.x + side.scale * grab.x - grab.x).toBeGreaterThan(0);
+    expect(side.x + side.scale * grab.x - grab.x).toBeLessThan(100);
     // Half a screen away: three quarters of its size, the black gone.
-    expect(pulledPlacement(0, 400, screen).scale).toBeCloseTo(DISMISS_MIN_SCALE);
+    expect(pulledPlacement(0, 400, screen, grab).scale).toBeCloseTo(DISMISS_MIN_SCALE);
     expect(pullProgress(400, 800)).toBe(1);
     expect(pullProgress(-200, 800)).toBe(0.5);
-    // Sideways it follows more loosely than down.
-    expect(Math.abs(pulledPlacement(100, 0, screen).x)).toBeLessThan(pulledPlacement(0, 100, screen).y);
-    expect(rubberBand(-100, 800)).toBeCloseTo(-rubberBand(100, 800));
+  });
+
+  test("a page still loading, or one that couldn't, is swiped away like a picture and says so, with Try again", () => {
+    const viewer = src("features/files/ImageViewer.tsx");
+    // The waiting page and the video's page sit in the pull too, not only a loaded picture.
+    expect(viewer.match(/<GestureDetector gesture=\{pull\}>/g)?.length).toBe(2);
+    expect(viewer).toContain("failed={link.isError}");
+    expect(viewer).toContain("retrying={link.isFetching}");
+    const zoom = src("features/files/ZoomPicture.tsx");
+    expect(zoom).toContain('{t("mobile.files.loadFailed")}');
+    expect(zoom).toContain(
+      '<Button variant="secondary" size="sm" label={t("mobile.common.retry")} loading={retrying} onPress={onRetry} />',
+    );
+    // Only the button takes a touch: the rest of the page keeps the pull.
+    expect(zoom).toContain('pointerEvents="box-none"');
+    expect(zoom).toContain("{pixels ? null : <PageWait failed={failed} onRetry={retry} />}");
+  });
+
+  test("a video and a PDF read their link once: the app coming back or a new link never starts them over", () => {
+    const source = src("features/files/source.ts");
+    expect(source).toContain('staleTime: "static" as const,');
+    expect(source).toContain("refetchOnWindowFocus: false,");
+    expect(source).toContain("refetchOnReconnect: false,");
+    expect(source).toContain('queryKey: once ? [...shared, "once", view] : shared,');
+    const viewer = src("features/files/ImageViewer.tsx");
+    expect(viewer).toContain("useRemoteFile(orgId, id, version, { once: true })");
+    expect(viewer).toMatch(/key=\{`\$\{id\}@\$\{version \?\? "latest"\}`\}/);
+    // Never keyed on the link itself, which changes every few minutes.
+    expect(viewer).not.toMatch(/key=\{(video)?[sS]ource\.uri\}/);
+  });
+
+  test("on Android a video draws with the views around it, inside rounded corners and under a pull", () => {
+    const player = src("features/files/VideoPlayer.tsx");
+    expect(player).toContain('const SURFACE = "textureView";');
+    expect(player.match(/surfaceType=\{SURFACE\}/g)?.length).toBe(3);
   });
 
   test("a picture fits whole, zooms up to twice its own pixels, and a double tap zooms in at the spot", () => {
@@ -403,13 +581,21 @@ describe("a document's head", () => {
     expect(heading).not.toContain("numberOfLines={1}");
   });
 
-  test("a picture's head too: × and ⋯ on the first row, the name and its line on the row under them", () => {
+  test("a picture's head too: × alone on the first row, the name and its line on the row under it", () => {
     const viewer = readFileSync(join(import.meta.dir, "../../src/features/files/ImageViewer.tsx"), "utf8");
     const top = viewer.slice(viewer.indexOf("style={[styles.top,"), viewer.indexOf("</Chrome>"));
-    expect(top.indexOf('icon="more"')).toBeLessThan(top.indexOf("{info?.name"));
+    expect(top.indexOf('icon="x"')).toBeGreaterThan(-1);
+    expect(top.indexOf('icon="x"')).toBeLessThan(top.indexOf("{info?.name"));
     expect(top).toContain("numberOfLines={3}");
     expect(top).not.toContain("numberOfLines={1}");
     expect(viewer).toContain('title: { flexBasis: "100%", gap: 2 }');
+  });
+
+  test("a picture's actions are the row at the bottom, never repeated in a ⋯", () => {
+    const viewer = src("features/files/ImageViewer.tsx");
+    expect(viewer).not.toContain('icon="more"');
+    expect(viewer).not.toContain("actions.more");
+    expect(viewer).toContain('<Action icon="person" label={t("share.button")}');
   });
 
   test("among files a picture is only the picture, two to a row; a file takes the row, its name whole", () => {

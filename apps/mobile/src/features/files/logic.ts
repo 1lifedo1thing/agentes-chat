@@ -269,8 +269,64 @@ export function pageStep(index: number, by: -1 | 1, count: number): number | nul
 }
 
 /** `id@version` pairs for the picture viewer's route (`?files=a@2,b@1`), and back. */
-export function encodeFileList(files: { id: string; version?: number }[]): string {
+export function encodeFileList(files: { id: string; version?: number | undefined }[]): string {
   return files.map((f) => (f.version ? `${f.id}@${f.version}` : f.id)).join(",");
+}
+
+/** A file as it's opened from where it shows: what's known of it before (or once) its details load. */
+export interface FileRef {
+  id: string;
+  /** The version shown there, when it's a particular one. */
+  version?: number | undefined;
+  /** Its name: "print.png" already says it's a picture while its details load. */
+  title?: string | undefined;
+  kind?: ArtifactKind | undefined;
+  /** Its details, once loaded: what it is for sure. */
+  detail?: Pick<ArtifactDetail, "kind" | "title" | "content" | "shownVersion" | "version"> | undefined;
+}
+
+/**
+ * A picture or a video, which open in the picture viewer: by its details when they're known (`fileInfo`), else by
+ * its name, as `fileInfo` reads an upload stored without a type.
+ */
+export function isMediaFile(ref: FileRef): boolean {
+  if (ref.detail) {
+    const view = fileInfo(ref.detail).view;
+    return view === "image" || view === "video";
+  }
+  if (ref.kind !== undefined && ref.kind !== "file") return false;
+  const ext = extensionOf(ref.title ?? "");
+  return IMAGE_EXT.has(ext) || VIDEO_EXT.has(ext);
+}
+
+export type FileRoute =
+  | { pathname: "/images"; params: { files: string; at: string; from?: string } }
+  | { pathname: "/file/[id]"; params: { id: string; v?: string } };
+
+/**
+ * Where a file opens, the one way in from every place that shows one: a picture or a video straight in the picture
+ * viewer, among the pictures and videos beside it (`siblings`, in the order they show, so the viewer pages through
+ * them) at the one tapped; anything else in the file screen, at an older version when that's the one shown. `from`:
+ * the deck it opened from, told where the person stops.
+ */
+export function fileRoute(ref: FileRef, siblings?: readonly FileRef[], from?: string): FileRoute {
+  if (!isMediaFile(ref)) {
+    // Its details say whether the version shown is an older one; without them, the version the place names.
+    const older = ref.detail && ref.detail.shownVersion < ref.detail.version ? ref.detail.shownVersion : undefined;
+    const v = ref.detail ? older : ref.version;
+    return { pathname: "/file/[id]", params: { id: ref.id, ...(v ? { v: String(v) } : {}) } };
+  }
+  const media = (siblings ?? []).filter(isMediaFile);
+  const at = media.findIndex((f) => f.id === ref.id);
+  const pages = at >= 0 ? media : [ref];
+  return {
+    pathname: "/images",
+    params: {
+      files: encodeFileList(pages.map((f) => ({ id: f.id, version: f.detail?.shownVersion ?? f.version }))),
+      at: String(Math.max(at, 0)),
+      ...(from ? { from } : {}),
+    },
+  };
 }
 
 export function decodeFileList(raw: string | string[] | undefined): { id: string; version?: number }[] {
