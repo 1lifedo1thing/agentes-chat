@@ -1167,11 +1167,15 @@ function RowTile({ icon }: { icon: IconName }) {
 /** The @ field and the look list come back under the name once it is done. */
 const REST_IN = FadeIn.duration(200);
 
-const MARK = 36;
-const MARK_OVERLAP = 12;
+/**
+ * Three logos fanned in the row's 36-point lead column (`GROUPED_ROW.lead`), the front one whole and the two behind
+ * peeking 6 points each: wider, the stack ran out of the card past its left edge and under the title.
+ */
+const MARK = 24;
+const MARK_OVERLAP = 18;
 const hasLogo = (card: string): card is keyof typeof IMPORT_LOGO => card in IMPORT_LOGO;
 
-/** Up to three of the apps agents come from, their logos overlapping, each ringed in the row's colour. */
+/** Up to three of the apps agents come from, fanned in the lead column, each ringed in the row's colour. */
 function ImportMarks() {
   const { colors: c, scheme } = useTheme();
   return (
@@ -1210,13 +1214,13 @@ const styles = StyleSheet.create({
   mark: {
     width: MARK,
     height: MARK,
-    borderRadius: 10,
+    borderRadius: MARK / 3,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },
   markAfter: { marginLeft: -MARK_OVERLAP },
-  markLogo: { width: 22, height: 22 },
+  markLogo: { width: 16, height: 16 },
   foot: { paddingTop: 7, paddingHorizontal: 16 },
   stage: {
     height: 150,
