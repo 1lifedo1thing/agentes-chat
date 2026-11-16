@@ -567,7 +567,7 @@ describe("an account's use by kind", () => {
   test("a kind with a share of the week but no tokens this month (a week that began last month) stays listed", () => {
     const kinds = accountKinds({ kinds: [{ kind: "handoffs", tokens: 0, percent: 37 }] });
     expect(kinds.map((k) => k.kind)).toEqual(["handoffs"]);
-    expect(kindFacts(t, "en", "week", kinds[0]!)).toBe(" · week\u00a037%");
+    expect(kindFacts(t, "en", "week", { percent: 37, tokens: 0 })).toBe(" · week\u00a037%");
   });
 
   test("each fact stays whole: no breaking space inside one, a plain space around the dots", () => {
