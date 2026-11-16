@@ -53,7 +53,6 @@ import { useFailed } from "../routines/hooks";
 import { AgentFace } from "../shared/Face";
 import { useDirectory, useNow, useOrgId } from "../shared/hooks";
 import { goBack, PushedHeader, successHaptic, tapHaptic } from "../shared/parts";
-import { SheetHostProvider } from "../shared/SheetHost";
 import { closeAgentPick, openAgentPick } from "./agent-pick";
 import { useAgentLook, useWidgetAiWay, useWidgetWords } from "./hooks";
 import {
@@ -69,6 +68,7 @@ import {
   testPhase,
 } from "./logic";
 import { type PickItem, usePickMenu } from "./menu";
+import { closeOptionPick, openOptionPick } from "./option-pick";
 import { KindGlyph } from "./parts";
 import { BuildingSweep, WidgetBody, WidgetCard } from "./WidgetView";
 
@@ -87,14 +87,6 @@ const CONDITION_MAX = 200;
  * card. Testing again or leaving deletes the draft. `dashboardId`: the board it starts on (`home` for My Home).
  */
 export function NewWidgetScreen({ dashboardId }: { dashboardId: string }) {
-  return (
-    <SheetHostProvider>
-      <NewWidget dashboardId={dashboardId} />
-    </SheetHostProvider>
-  );
-}
-
-function NewWidget({ dashboardId }: { dashboardId: string }) {
   const { t } = useTranslation();
   const { colors: c } = useTheme();
   const insets = useSafeAreaInsets();
@@ -119,7 +111,6 @@ function NewWidget({ dashboardId }: { dashboardId: string }) {
   const [alert, setAlert] = useState(false);
   const [condition, setCondition] = useState("");
   const [dest, setDest] = useState(dashboardId);
-  const [pickDest, setPickDest] = useState(false);
   // The test: the draft it made (as it came back, until its live view loads), and what it was asked with.
   const [tested, setTested] = useState<{ widget: Widget; key: string } | null>(null);
   // The person's title; null keeps the agent's (it names the draft when the test is done).
@@ -147,6 +138,7 @@ function NewWidget({ dashboardId }: { dashboardId: string }) {
     return () => {
       live.current.gone = true;
       closeAgentPick();
+      closeOptionPick();
       const id = live.current.draftId;
       if (id && !live.current.confirmed) {
         live.current.draftId = null;
@@ -298,6 +290,20 @@ function NewWidget({ dashboardId }: { dashboardId: string }) {
     );
   };
 
+  /** Where it goes: the boards, pushed (the choice comes back through `option-pick`). */
+  const openDestinations = () => {
+    openOptionPick({
+      title: t("dashboards.newWidget.destination"),
+      value: destination?.id ?? null,
+      options: destinations.map((d) => ({
+        key: d.id,
+        icon: d.home ? "home" : "chart",
+        label: d.home ? t("dashboards.home") : (d.title ?? ""),
+      })),
+      apply: setDest,
+    });
+    router.push("/option-pick");
+  };
   /** "Who looks after it": its own screen, pushed (the choice comes back through `agent-pick`). */
   const openAgents = () => {
     if (agents.length === 0) return;
@@ -667,21 +673,8 @@ function NewWidget({ dashboardId }: { dashboardId: string }) {
                 label={t("dashboards.newWidget.destination")}
                 value={where}
                 chevron
-                onPress={() => setPickDest((v) => !v)}
+                onPress={openDestinations}
               />
-              {pickDest
-                ? destinations.map((d) => (
-                    <GroupedRow
-                      key={d.id}
-                      label={d.home ? t("dashboards.home") : (d.title ?? "")}
-                      checked={d.id === destination?.id}
-                      onPress={() => {
-                        setDest(d.id);
-                        setPickDest(false);
-                      }}
-                    />
-                  ))
-                : null}
             </GroupedList>
           </>
         ) : null}

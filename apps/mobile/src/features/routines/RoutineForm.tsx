@@ -30,14 +30,15 @@ import {
   zoneDisplayName,
 } from "@agenteschat/client/lib/routines";
 import { WEEKDAYS } from "@agenteschat/ui/recurrence";
-import { type ReactNode, useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
   Button,
   fieldText,
+  GROUPED_ROW,
   GroupedField,
   GroupedFooter,
   GroupedHeader,
@@ -46,6 +47,7 @@ import {
   type IconName,
   Locked,
   OPTION_ROW,
+  SCREEN_X,
   Segmented,
   Text,
   useToast,
@@ -53,6 +55,9 @@ import {
 import { router } from "@/ui/navigation";
 import { boldRuns } from "../chat/actions";
 import { AllowTalkAction } from "../chat/ReachLines";
+import { closeAgentPick, openAgentPick } from "../dashboards/agent-pick";
+import { closeOptionPick, openOptionPick, type PickChoice } from "../dashboards/option-pick";
+import { MissingScreen } from "../dashboards/parts";
 import { routineHref } from "../links/logic";
 import { ZoneList } from "../me/AccountPage";
 import { AgentFace } from "../shared/Face";
@@ -107,8 +112,6 @@ import { setRoutineZone, useRoutineZone } from "./zone";
 
 const PROMPT_LIMIT = { max: FIELD_LIMITS.routinePrompt };
 
-type Open = "agent" | "target" | "mailbox" | "folder" | null;
-
 const close = () => goBack("/routines");
 
 /** A zone as the form says it: "Horário de Brasília" (a friendly name) or the city. */
@@ -124,23 +127,16 @@ const zoneLabel = (zone: string, locale: string) =>
  */
 export function RoutineForm({ editId }: { editId: string | null }) {
   const { t } = useTranslation();
-  const c = useColors();
   const routines = useRoutines(useOrgId());
   const routine = editId ? routines.data?.find((r) => r.id === editId) : undefined;
   if (editId && !routine)
     return (
-      <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-        <PushedHeader title={t("routines.editTitle")} solid={false} grouped />
-        <View style={styles.center}>
-          {routines.isLoading ? (
-            <ActivityIndicator color={c.muted} />
-          ) : (
-            <Text tone="muted" style={styles.centerText}>
-              {routines.isError && !routines.data ? t("mobile.routines.loadFailed") : t("mobile.notFound.subtitle")}
-            </Text>
-          )}
-        </View>
-      </View>
+      <MissingScreen
+        title={t("routines.editTitle")}
+        state={routines.isLoading ? "loading" : routines.isError && !routines.data ? "failed" : "gone"}
+        onRetry={() => void routines.refetch()}
+        gone={t("mobile.notFound.subtitle")}
+      />
     );
   return <Form key={routine?.id ?? "new"} routine={routine} />;
 }
@@ -175,8 +171,19 @@ function Form({ routine }: { routine: Routine | undefined }) {
   const set = (patch: Partial<RoutineDraft>) => setD((x) => ({ ...x, ...patch }));
   // What the routine had, to tell whether "when" changed.
   const [savedRule] = useState(() => JSON.stringify(toApiRule(ruleOf(routine, savedZone || myZone))));
-  const [open, setOpen] = useState<Open>(null);
-  const toggle = (o: Exclude<Open, null>) => setOpen((v) => (v === o ? null : o));
+  // The agent and the lists to pick from (where it delivers, the mailbox, the folder, a starting point) are screens
+  // of their own, pushed over the form: what is picked there comes back through their stores, which end with it.
+  useEffect(
+    () => () => {
+      closeAgentPick();
+      closeOptionPick();
+    },
+    [],
+  );
+  const pickFrom = (title: string, value: string | null, options: PickChoice[], apply: (key: string) => void) => {
+    openOptionPick({ title, value, options, apply });
+    router.push("/option-pick");
+  };
 
   // My zone may arrive after the form opens (the people list loads): follow it until a zone is picked.
   const [zoneTouched, setZoneTouched] = useState(false);
@@ -515,16 +522,52 @@ function Form({ routine }: { routine: Routine | undefined }) {
   };
 
   const agent = dir.agentById.get(d.agentId);
-  const targets: { key: string; icon: IconName; label: string }[] = [
+  /** The agent: the app's agent picker, pushed (every agent of the workspace, as the web's form offers). */
+  const pickAgent = () => {
+    if (agents.length === 0) return;
+    openAgentPick({
+      agentId: d.agentId || null,
+      apply: (agentId) => set({ agentId }),
+      title: t("routines.form.agent"),
+      note: "",
+      everyone: true,
+    });
+    router.push("/agent-pick");
+  };
+  const targets: (PickChoice & { icon: IconName })[] = [
     // A routine made in the chat (a thread or a DM) keeps its conversation.
     ...(routine && targetChoice(routine.target) === TARGET_KEEP
       ? [{ key: TARGET_KEEP, icon: targetIcon(routine.target), label: targetLabel(routine.target) }]
       : []),
-    ...(channels.data ?? []).map((ch) => ({ key: ch.id, icon: "hash" as const, label: `#${ch.name}` })),
-    { key: TARGET_DM, icon: "chat", label: t("routines.target.dm") },
-    { key: TARGET_ARTIFACT, icon: "doc", label: t("routines.target.artifact") },
+    ...(channels.data ?? []).map((ch) => ({
+      key: ch.id,
+      icon: ch.visibility === "private" ? ("lock" as const) : ("hash" as const),
+      label: `#${ch.name}`,
+    })),
+    { key: TARGET_DM, icon: "chat", label: t("routines.target.dm"), sub: t("routines.panel.whereHint.dm") },
+    {
+      key: TARGET_ARTIFACT,
+      icon: "doc",
+      label: t("routines.target.artifact"),
+      sub: t("routines.panel.whereHint.artifact"),
+    },
   ];
   const target = targets.find((o) => o.key === d.target);
+  const pickTarget = () => pickFrom(t("routines.form.target"), d.target, targets, (key) => set({ target: key }));
+  const pickMailbox = () =>
+    pickFrom(
+      t("mail.routine.mailbox"),
+      d.email.accountId,
+      mailList.map((a) => ({ key: a.id, icon: "mail", label: a.address })),
+      (accountId) => setD((x) => ({ ...x, email: { ...x.email, accountId, folder: "" } })),
+    );
+  const pickFolder = () =>
+    pickFrom(
+      t("mail.routine.folder"),
+      d.email.folder,
+      folderOptions.map((f) => ({ key: f.id, icon: "archive", label: f.label })),
+      (folder) => setD((x) => ({ ...x, email: { ...x.email, folder } })),
+    );
   const input = [fieldText("callout"), styles.input, { color: c.ink }];
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
@@ -551,50 +594,14 @@ function Form({ routine }: { routine: Routine | undefined }) {
               leading={agent ? <AgentFace agentId={agent.id} size={OPTION_ROW.face} live={false} /> : undefined}
               icon={agent ? undefined : "agent"}
               value={agent?.role || undefined}
-              chevron
-              onPress={() => toggle("agent")}
+              chevron={agents.length > 0}
+              {...(agents.length > 0 ? { onPress: pickAgent } : {})}
             />
-            {open === "agent"
-              ? agents
-                  .filter((a) => a.id !== d.agentId)
-                  .map((a) => (
-                    <GroupedRow
-                      key={a.id}
-                      label={a.name}
-                      leading={<AgentFace agentId={a.id} size={OPTION_ROW.face} live={false} />}
-                      value={a.role || undefined}
-                      onPress={() => {
-                        set({ agentId: a.id });
-                        setOpen(null);
-                      }}
-                    />
-                  ))
-              : null}
           </GroupedList>
 
           <GroupedHeader>{t("routines.form.target")}</GroupedHeader>
           <GroupedList>
-            <GroupedRow
-              icon={target?.icon ?? "hash"}
-              label={target?.label ?? "#"}
-              chevron
-              onPress={() => toggle("target")}
-            />
-            {open === "target"
-              ? targets
-                  .filter((o) => o.key !== d.target)
-                  .map((o) => (
-                    <GroupedRow
-                      key={o.key}
-                      icon={o.icon}
-                      label={o.label}
-                      onPress={() => {
-                        set({ target: o.key });
-                        setOpen(null);
-                      }}
-                    />
-                  ))
-              : null}
+            <GroupedRow icon={target?.icon ?? "hash"} label={target?.label ?? "#"} chevron onPress={pickTarget} />
           </GroupedList>
           <GroupedHeader>{t("routines.form.what")}</GroupedHeader>
           {promptHidden ? (
@@ -787,47 +794,19 @@ function Form({ routine }: { routine: Routine | undefined }) {
                     label={t("mail.routine.mailbox")}
                     value={mailbox?.address}
                     chevron={mailList.length > 1}
-                    onPress={mailList.length > 1 ? () => toggle("mailbox") : undefined}
+                    {...(mailList.length > 1 ? { onPress: pickMailbox } : {})}
                   />
-                  {open === "mailbox"
-                    ? mailList
-                        .filter((a) => a.id !== d.email.accountId)
-                        .map((a) => (
-                          <GroupedRow
-                            key={a.id}
-                            label={a.address}
-                            onPress={() => {
-                              setD((x) => ({ ...x, email: { ...x.email, accountId: a.id, folder: "" } }));
-                              setOpen(null);
-                            }}
-                          />
-                        ))
-                    : null}
                   <GroupedRow
                     icon="archive"
                     label={t("mail.routine.folder")}
                     value={folderLabel}
-                    chevron
-                    onPress={() => toggle("folder")}
+                    chevron={folderOptions.length > 1}
+                    {...(folderOptions.length > 1 ? { onPress: pickFolder } : {})}
                   />
-                  {open === "folder"
-                    ? folderOptions
-                        .filter((f) => f.id !== d.email.folder)
-                        .map((f) => (
-                          <GroupedRow
-                            key={f.id}
-                            label={f.label}
-                            onPress={() => {
-                              setD((x) => ({ ...x, email: { ...x.email, folder: f.id } }));
-                              setOpen(null);
-                            }}
-                          />
-                        ))
-                    : null}
                 </GroupedList>
                 <GroupedHeader>{t("mail.routine.filters")}</GroupedHeader>
                 <GroupedList>
-                  <StackedField label={t("mail.routine.from")}>
+                  <GroupedField stacked label={t("mail.routine.from")}>
                     <TextInput
                       value={fromText}
                       onChangeText={setFrom}
@@ -839,23 +818,23 @@ function Form({ routine }: { routine: Routine | undefined }) {
                       accessibilityLabel={t("mail.routine.from")}
                       style={input}
                     />
-                  </StackedField>
-                  <StackedField label={t("mail.routine.subject")}>
+                  </GroupedField>
+                  <GroupedField stacked label={t("mail.routine.subject")}>
                     <TextInput
                       value={d.email.filter.subject ?? ""}
                       onChangeText={(subject) => setFilter({ subject })}
                       accessibilityLabel={t("mail.routine.subject")}
                       style={input}
                     />
-                  </StackedField>
-                  <StackedField label={t("mail.routine.text")}>
+                  </GroupedField>
+                  <GroupedField stacked label={t("mail.routine.text")}>
                     <TextInput
                       value={d.email.filter.text ?? ""}
                       onChangeText={(text) => setFilter({ text })}
                       accessibilityLabel={t("mail.routine.text")}
                       style={input}
                     />
-                  </StackedField>
+                  </GroupedField>
                 </GroupedList>
                 {fromBad ? (
                   <Text variant="footnote" tone="danger" style={styles.error} accessibilityLiveRegion="polite">
@@ -888,7 +867,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
               ) : null}
               <View style={styles.gap} />
               <GroupedList>
-                <StackedField label={t("mail.routine.inboxAddress")}>
+                <GroupedField stacked label={t("mail.routine.inboxAddress")}>
                   <TextInput
                     value={d.connector.filter.to ?? ""}
                     onChangeText={(to) => setConnectorFilter({ to })}
@@ -898,12 +877,12 @@ function Form({ routine }: { routine: Routine | undefined }) {
                     accessibilityLabel={t("mail.routine.inboxAddress")}
                     style={input}
                   />
-                </StackedField>
+                </GroupedField>
               </GroupedList>
               <GroupedFooter>{t("mail.routine.inboxAddressHelp")}</GroupedFooter>
               <GroupedHeader>{t("mail.routine.filters")}</GroupedHeader>
               <GroupedList>
-                <StackedField label={t("mail.routine.from")}>
+                <GroupedField stacked label={t("mail.routine.from")}>
                   <TextInput
                     value={msFromText}
                     onChangeText={(text) => {
@@ -918,15 +897,15 @@ function Form({ routine }: { routine: Routine | undefined }) {
                     accessibilityLabel={t("mail.routine.from")}
                     style={input}
                   />
-                </StackedField>
-                <StackedField label={t("mail.routine.subject")}>
+                </GroupedField>
+                <GroupedField stacked label={t("mail.routine.subject")}>
                   <TextInput
                     value={d.connector.filter.subject ?? ""}
                     onChangeText={(subject) => setConnectorFilter({ subject })}
                     accessibilityLabel={t("mail.routine.subject")}
                     style={input}
                   />
-                </StackedField>
+                </GroupedField>
               </GroupedList>
               {msFromBad ? (
                 <Text variant="footnote" tone="danger" style={styles.error} accessibilityLiveRegion="polite">
@@ -1007,18 +986,6 @@ function Form({ routine }: { routine: Routine | undefined }) {
   );
 }
 
-/** A field with its label above it (long labels: "Assunto contém"). */
-function StackedField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <View style={styles.stacked}>
-      <Text variant="footnote" tone="muted">
-        {label}
-      </Text>
-      {children}
-    </View>
-  );
-}
-
 /** "Fuso horário" of the routine form, pushed over it: a pick goes back into the form. */
 export function RoutineZonePage() {
   const { t } = useTranslation();
@@ -1037,13 +1004,11 @@ export function RoutineZonePage() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  in: { paddingHorizontal: 16, paddingTop: 4 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  centerText: { textAlign: "center" },
+  in: { paddingHorizontal: SCREEN_X, paddingTop: 4 },
   gap: { height: 10 },
-  sentence: { paddingHorizontal: 14, paddingVertical: 12, gap: 4 },
-  input: { flex: 1, paddingVertical: 12, paddingHorizontal: 0 },
-  stacked: { paddingHorizontal: 14, paddingTop: 10 },
+  sentence: { paddingHorizontal: GROUPED_ROW.padX, paddingVertical: 12, gap: 4 },
+  // Under its label in a stacked field, on the label's column: the field gives the room around it.
+  input: { paddingVertical: 2, paddingHorizontal: 0 },
   utc: { paddingTop: 7, paddingHorizontal: 16, gap: 4 },
   link: { fontWeight: "600", textDecorationLine: "underline" },
   pressed: { opacity: 0.6 },

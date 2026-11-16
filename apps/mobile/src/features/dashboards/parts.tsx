@@ -16,6 +16,8 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
 import {
   Button,
+  EmptyState,
+  GROUPED_ROW,
   GroupedFooter,
   GroupedHeader,
   GroupedList,
@@ -25,8 +27,10 @@ import {
   MEDIA_ROW,
   MediaRow,
   PressScale,
+  ROW_PRESS_DELAY,
   RoleMark,
   Segmented,
+  SkeletonList,
   Text,
   useTheme,
   useToast,
@@ -34,9 +38,10 @@ import {
 import { router } from "@/ui/navigation";
 import { useFailed } from "../routines/hooks";
 import { AgentFace } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useDirectory, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
-import { successHaptic, useSurface } from "../shared/parts";
+import { PushedHeader, successHaptic, useSurface } from "../shared/parts";
 import { DitherShape } from "./Dither";
 import { closeEditRoles, openEditRoles } from "./edit-roles";
 import { useAgentLook, useCustomRoles } from "./hooks";
@@ -54,6 +59,41 @@ import {
 import { usePickMenu } from "./menu";
 
 /** Pieces the dashboards' screens share (ADR 0135). */
+
+/**
+ * A pushed screen whose subject isn't here (a board, a widget, a routine): its bar over the grouped gray, then the
+ * rows' shape while it loads, why it couldn't load with Retry, or that it is gone (deleted, or not the viewer's to
+ * see). Never a bare spinner, never a dead end.
+ */
+export function MissingScreen({
+  title,
+  state,
+  onRetry,
+  gone,
+}: {
+  title: string;
+  state: "loading" | "failed" | "gone";
+  onRetry: () => void;
+  /** What "gone" means here ("Este painel não existe, ou você não o vê."). */
+  gone: string;
+}) {
+  const { t } = useTranslation();
+  const { colors: c } = useTheme();
+  return (
+    <View style={[styles.screen, { backgroundColor: c.grouped }]}>
+      <PushedHeader title={title} solid={false} grouped />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.missing}>
+        {state === "loading" ? (
+          <SkeletonList rows={3} />
+        ) : state === "failed" ? (
+          <LoadFailed onRetry={onRetry} />
+        ) : (
+          <EmptyState size="panel" icon="search" title={t("mobile.notFound.title")} subtitle={gone} />
+        )}
+      </ScrollView>
+    </View>
+  );
+}
 
 const THUMB_W = 56;
 const THUMB_H = 44;
@@ -108,7 +148,11 @@ export function useBoardByline() {
   };
 }
 
-/** A board in the Dashboards list: its thumbnail, its name (a lock when not the whole workspace's), who made it. */
+/**
+ * A board in the Dashboards list: its thumbnail, its name (a lock when not the whole workspace's), who made it, and the
+ * chevron, on a grouped row's measures (`GROUPED_ROW`). Its own row because the thumbnail is wider than a row's
+ * leading column; it lights a beat after the finger lands, as the grouped rows do.
+ */
 export function BoardRow({
   board,
   title,
@@ -126,6 +170,7 @@ export function BoardRow({
   return (
     <Pressable
       onPress={onPress}
+      unstable_pressDelay={ROW_PRESS_DELAY}
       accessibilityRole="button"
       accessibilityLabel={[title, sub].join(", ")}
       style={({ pressed }) => [styles.boardRow, pressed ? { backgroundColor: c.sunken } : null]}
@@ -494,12 +539,20 @@ export function AudienceFields({
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  missing: { paddingHorizontal: 16, paddingTop: 8 },
   grow: { flex: 1, minWidth: 0 },
   shrink: { flexShrink: 1 },
   semibold: { fontWeight: "600" },
   thumb: { width: THUMB_W, height: THUMB_H, borderRadius: 10, overflow: "hidden" },
-  // GroupedRow's 14 sides and 12 gap.
-  boardRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  boardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    minHeight: GROUPED_ROW.minHeight,
+    paddingHorizontal: GROUPED_ROW.padX,
+    paddingVertical: GROUPED_ROW.padY,
+  },
   titleLine: { flexDirection: "row", alignItems: "center", gap: 6 },
   audience: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 6 },
   role: { flexDirection: "row", alignItems: "center", gap: 4 },
