@@ -17554,6 +17554,7 @@
       "provider_wait_said": "{{provider}} bir hatayla yanıt verdi ({{detail}}). Yeniden deneyip çalışır çalışmaz yanıt vereceğim.",
       "provider_wait_ours": "Hesabınız değil, bizim tarafımızdaki bir sorun yapay zekamı engelliyor. Çözülür çözülmez yanıt vereceğim.",
       "provider_back": "Yapay zekam geri döndü.",
+      "confidential_removed": "Kaldırıldı: gizli metin {{days}} gün saklanır.",
       "brain_busy": "Bilgisayarım şu anda başka görevlerle meşgul. Boşalır boşalmaz yanıt vereceğim.",
       "brain_queued": "Hâlâ bilgisayarın sırasındayım. Boş belleği olur olmaz yanıt veririm.",
       "brain_interrupted": "{{brain}} bitirmeden durdu. Zaten yapılanlar tekrarlanmadı: {{tools}}.",

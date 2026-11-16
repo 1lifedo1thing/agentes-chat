@@ -17114,6 +17114,7 @@
       "provider_wait_said": "{{provider}} 返回了错误（{{detail}}）。我会重试，成功后尽快回复。",
       "provider_wait_ours": "问题在我们这边，不是你的账户，它挡住了我的 AI。解决后我会尽快回复。",
       "provider_back": "我的 AI 已恢复。",
+      "confidential_removed": "已移除：机密文本保留 {{days}} 天。",
       "brain_busy": "我的电脑正忙于其他任务。空闲后我会尽快回复。",
       "brain_queued": "我还在电脑的队列里。它一有空闲内存我就回复。",
       "brain_interrupted": "{{brain}} 在完成前停止了。已完成的不会重复：{{tools}}。",

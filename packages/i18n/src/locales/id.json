@@ -17098,6 +17098,7 @@
       "provider_wait_said": "{{provider}} menjawab dengan galat ({{detail}}). Aku coba lagi dan menjawab begitu berhasil.",
       "provider_wait_ours": "Ada masalah di pihak kami yang menghambat AI-ku, bukan akunmu. Aku akan menjawab begitu selesai.",
       "provider_back": "AI-ku sudah kembali.",
+      "confidential_removed": "Dihapus: teks rahasia disimpan selama {{days}} hari.",
       "brain_busy": "Komputerku sedang sibuk dengan tugas lain. Aku akan menjawab begitu ia luang.",
       "brain_queued": "Aku masih di antrean komputer. Aku jawab begitu ada memori kosong.",
       "brain_interrupted": "{{brain}} berhenti sebelum selesai. Sudah dikerjakan, tidak diulang: {{tools}}.",

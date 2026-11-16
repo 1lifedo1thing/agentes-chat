@@ -17693,6 +17693,7 @@
       "provider_wait_said": "{{provider}} antwoordde met een fout ({{detail}}). Ik probeer het opnieuw en antwoord zodra het werkt.",
       "provider_wait_ours": "Iets aan onze kant blokkeert mijn AI, niet jouw account. Ik antwoord zodra het is opgelost.",
       "provider_back": "Mijn AI is terug.",
+      "confidential_removed": "Verwijderd: vertrouwelijke tekst wordt {{days}} dagen bewaard.",
       "brain_busy": "Mijn computer is nu bezig met andere taken. Ik antwoord zodra hij vrij is.",
       "brain_queued": "Ik sta nog in de wachtrij van de computer. Ik antwoord zodra hij vrij geheugen heeft.",
       "brain_interrupted": "{{brain}} stopte voordat het klaar was. Al gedaan, niet herhaald: {{tools}}.",

@@ -17044,6 +17044,7 @@
       "provider_wait_said": "{{provider}}がエラーを返しました（{{detail}}）。もう一度試して、動き次第すぐに返信します。",
       "provider_wait_ours": "あなたのアカウントではなく、こちら側の問題でAIが止まっています。解決し次第すぐに返信します。",
       "provider_back": "AIが戻りました。",
+      "confidential_removed": "削除済み：機密テキストの保存期間は{{days}}日です。",
       "brain_busy": "コンピューターが現在ほかのタスクで埋まっています。空き次第すぐに返信します。",
       "brain_queued": "まだコンピューターの待ち行列にいます。空きメモリができたらすぐに返信します。",
       "brain_interrupted": "{{brain}}が完了前に停止しました。完了済みで繰り返さないもの: {{tools}}。",

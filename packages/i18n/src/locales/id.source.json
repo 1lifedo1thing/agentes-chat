@@ -43536,6 +43536,9 @@
   "chat.body.provider_back": {
     "value": "My AI is back."
   },
+  "chat.body.confidential_removed": {
+    "value": "Removed: confidential text is kept for {{days}} days."
+  },
   "chat.body.brain_busy": {
     "value": "My computer is busy with other tasks right now. I'll answer as soon as it's free."
   },

@@ -18183,6 +18183,7 @@
       "provider_wait_said": "{{provider}} ha risposto con un errore ({{detail}}). Riprovo e risponderò appena funziona.",
       "provider_wait_ours": "Qualcosa da parte nostra sta bloccando la mia IA, non il tuo account. Risponderò appena sarà risolto.",
       "provider_back": "La mia IA è tornata.",
+      "confidential_removed": "Rimosso: il testo riservato viene conservato per {{days}} giorni.",
       "brain_busy": "Il mio computer è occupato con altre attività in questo momento. Risponderò appena sarà libero.",
       "brain_queued": "Sono ancora in coda per il computer. Rispondo appena ha memoria libera.",
       "brain_interrupted": "{{brain}} si è fermato prima di finire. Già fatto, non ripetuto: {{tools}}.",

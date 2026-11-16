@@ -18725,6 +18725,7 @@
       "provider_wait_said": "{{provider}} odpowiedział błędem ({{detail}}). Spróbuję ponownie i odpowiem, gdy tylko zadziała.",
       "provider_wait_ours": "Coś po naszej stronie blokuje moją AI, a nie Twoje konto. Odpowiem, gdy tylko to naprawimy.",
       "provider_back": "Moja AI wróciła.",
+      "confidential_removed": "Usunięto: poufny tekst jest przechowywany przez {{days}} dni.",
       "brain_busy": "Mój komputer jest teraz zajęty innymi zadaniami. Odpowiem, gdy tylko się zwolni.",
       "brain_queued": "Wciąż jestem w kolejce do komputera. Odpowiem, gdy tylko będzie miał wolną pamięć.",
       "brain_interrupted": "{{brain}} przerwał przed zakończeniem. Już zrobione, bez powtarzania: {{tools}}.",

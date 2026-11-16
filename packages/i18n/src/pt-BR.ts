@@ -17928,6 +17928,7 @@ export const ptBR = {
         "{{provider}} respondeu com um erro ({{detail}}). Tento de novo e respondo assim que funcionar.",
       provider_wait_ours: "Algo do nosso lado está travando minha IA, não a sua conta. Respondo assim que resolver.",
       provider_back: "Minha IA voltou.",
+      confidential_removed: "Removido: texto confidencial fica guardado por {{days}} dias.",
       brain_busy: "Meu computador está ocupado com outras tarefas agora. Respondo assim que ele estiver livre.",
       brain_queued: "Ainda estou na fila do computador. Respondo assim que ele tiver memória livre.",
       brain_interrupted: "O {{brain}} parou antes de terminar. Já feito, sem repetir: {{tools}}.",

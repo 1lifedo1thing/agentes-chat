@@ -17623,6 +17623,7 @@
       "provider_wait_said": "{{provider}} hat mit einem Fehler geantwortet ({{detail}}). Ich versuche es erneut und antworte, sobald es klappt.",
       "provider_wait_ours": "Etwas auf unserer Seite blockiert meine KI, nicht dein Konto. Ich antworte, sobald es behoben ist.",
       "provider_back": "Meine KI ist wieder da.",
+      "confidential_removed": "Entfernt: Vertraulicher Text wird {{days}} Tage aufbewahrt.",
       "brain_busy": "Mein Computer ist gerade mit anderen Aufgaben beschäftigt. Ich antworte, sobald er frei ist.",
       "brain_queued": "Ich stehe noch in der Warteschlange des Computers. Ich antworte, sobald er freien Speicher hat.",
       "brain_interrupted": "{{brain}} hat aufgehört, bevor es fertig war. Schon erledigt, wird nicht wiederholt: {{tools}}.",
