@@ -103,8 +103,10 @@ describe("what loads from the server reads again on a pull", () => {
       "ai/AgentAiScreen.tsx",
     ]) {
       const screen = src(file);
-      expect({ file, pull: screen.includes("<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />") })
-        .toEqual({ file, pull: true });
+      expect({
+        file,
+        pull: screen.includes("<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />"),
+      }).toEqual({ file, pull: true });
       expect({ file, hook: screen.includes("usePullRefresh(") }).toEqual({ file, hook: true });
     }
     // The model's screen reads its brain again.
@@ -117,7 +119,9 @@ describe("the standard pieces", () => {
     const merge = src("agents/MergeReposSection.tsx");
     const screen = merge.slice(merge.indexOf("export function MergeReposScreen("));
     expect(screen.indexOf("<SearchField")).toBeLessThan(screen.indexOf('t("repos.merge.dialogDesc")'));
-    expect(screen).toContain('<EmptyState icon="code" title={t("repos.none")} subtitle={t("repos.merge.dialogDesc")} />');
+    expect(screen).toContain(
+      '<EmptyState icon="code" title={t("repos.none")} subtitle={t("repos.merge.dialogDesc")} />',
+    );
   });
 
   test("the color swatches and the team's channel cards answer a press with the kit's scale", () => {
@@ -145,7 +149,10 @@ test("a person's See my usage opens Uso on their own month, where the label says
 
 test("adding people to a cargo: Adicionar is the bar's word, never a docked button the search's keyboard hides", () => {
   const people = src("roles/PeopleScreen.tsx");
-  const add = people.slice(people.indexOf("export function AddToRoleScreen("), people.indexOf("export function PersonRolesScreen("));
+  const add = people.slice(
+    people.indexOf("export function AddToRoleScreen("),
+    people.indexOf("export function PersonRolesScreen("),
+  );
   expect(add).not.toContain("bottom={");
   expect(add).toContain("onPress: () => void add(),");
   expect(add).toContain("busy={busy}");

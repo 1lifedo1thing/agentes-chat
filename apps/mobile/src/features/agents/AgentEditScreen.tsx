@@ -214,12 +214,7 @@ export function AgentEditScreen({ id }: { id: string }) {
       )}
 
       {rightHand ? null : fields.has("role") ? (
-        <RoleInput
-          value={draft.role}
-          onChangeText={(v) => set("role", v)}
-          placeholder={t("agent.roleHelp")}
-          next
-        />
+        <RoleInput value={draft.role} onChangeText={(v) => set("role", v)} placeholder={t("agent.roleHelp")} next />
       ) : (
         readOnly(t("agent.roleLabel"), agent.role)
       )}

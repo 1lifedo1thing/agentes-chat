@@ -35,17 +35,7 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 import { StickerCanvas } from "@/agent/StickerCanvas";
 import { useOrg } from "@/providers/org";
-import {
-  AgentAvatar,
-  Button,
-  Icon,
-  LineIcon,
-  MEDIA_ROW,
-  MediaRow,
-  Sheet,
-  SheetBar,
-  Text,
-} from "@/ui";
+import { AgentAvatar, Button, Icon, LineIcon, MEDIA_ROW, MediaRow, Sheet, SheetBar, Text } from "@/ui";
 import { router } from "@/ui/navigation";
 import { fullLook } from "../agents/edit";
 import { openConnectAi } from "../ai/NoAiCard";

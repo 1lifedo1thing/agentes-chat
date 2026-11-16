@@ -276,31 +276,31 @@ function KeptCard({ message: m, card, hold }: { message: Message; card: NoAiCard
   // Paying has no button here: the sentence says where, or who can.
   return (
     <AskNote
-        agentId={card.agentId}
-        title={t("noAi.kept.title")}
-        hint={t(code === "payment" ? "noAi.kept.plan" : "standing.billing.sub")}
-        text={
-          paysHere(can(org, "manage_billing"))
-            ? t("common.joinSentences", { a: t(`noAi.kept.wait.${code}`), b: t("connectAi.billingWeb") })
-            : t("noAi.kept.askAdmin")
-        }
-        foot={
-          state === "held" && noTeam ? (
-            <AskFoot>
-              <AskButtons
-                primary={
-                  <Button
-                    variant="primary"
-                    size="card"
-                    wide
-                    label={t(modeKey(org, "teamPlan.start.templates"))}
-                    onPress={() => openTeamTemplates()}
-                  />
-                }
-              />
-            </AskFoot>
-          ) : null
-        }
-      />
+      agentId={card.agentId}
+      title={t("noAi.kept.title")}
+      hint={t(code === "payment" ? "noAi.kept.plan" : "standing.billing.sub")}
+      text={
+        paysHere(can(org, "manage_billing"))
+          ? t("common.joinSentences", { a: t(`noAi.kept.wait.${code}`), b: t("connectAi.billingWeb") })
+          : t("noAi.kept.askAdmin")
+      }
+      foot={
+        state === "held" && noTeam ? (
+          <AskFoot>
+            <AskButtons
+              primary={
+                <Button
+                  variant="primary"
+                  size="card"
+                  wide
+                  label={t(modeKey(org, "teamPlan.start.templates"))}
+                  onPress={() => openTeamTemplates()}
+                />
+              }
+            />
+          </AskFoot>
+        ) : null
+      }
+    />
   );
 }

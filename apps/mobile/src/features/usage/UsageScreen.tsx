@@ -111,9 +111,9 @@ export function UsageScreen({ initialView = "summary" }: { initialView?: "summar
         keyboardShouldPersistTaps="handled"
         // A drag down the page takes the number pad with it, as every page with a field.
         keyboardDismissMode="interactive"
-        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         bottomOffset={TOOLBAR_HEIGHT + 24}
         extraKeyboardSpace={TOOLBAR_HEIGHT}
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
         <Segmented

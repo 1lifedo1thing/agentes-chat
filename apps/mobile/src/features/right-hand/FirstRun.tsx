@@ -281,28 +281,28 @@ export function FirstRunCard({ agent, channelId }: { agent: Agent; channelId: st
 
   return (
     <SetupCardView
-        title={
-          run.state === "complete"
-            ? t("agentSetup.firstRun.complete")
-            : t(modeKey(org, "agentSetup.firstRun.title"), { org: org?.name ?? "" })
-        }
-        done={doneHere.length}
-        total={steps.length}
-        rows={shown.length > 0 ? shown : rows}
-        foot={
-          next === "about" && run.state !== "complete" ? (
-            <AboutYouAnswers
-              // The areas already tapped go along, so the screen opens with them picked.
-              onOther={(areas) => (areas ? openSetupStep(agent.id, "about", areas) : act.about())}
-              onSaved={(template) => {
-                if (teamOpen.current) openTeamTemplates(template ?? undefined);
-              }}
-            />
-          ) : asks.length > 0 ? (
-            <SetupAsks lead={t("agentSetup.firstRun.asks.lead")} asks={asks} />
-          ) : null
-        }
-      />
+      title={
+        run.state === "complete"
+          ? t("agentSetup.firstRun.complete")
+          : t(modeKey(org, "agentSetup.firstRun.title"), { org: org?.name ?? "" })
+      }
+      done={doneHere.length}
+      total={steps.length}
+      rows={shown.length > 0 ? shown : rows}
+      foot={
+        next === "about" && run.state !== "complete" ? (
+          <AboutYouAnswers
+            // The areas already tapped go along, so the screen opens with them picked.
+            onOther={(areas) => (areas ? openSetupStep(agent.id, "about", areas) : act.about())}
+            onSaved={(template) => {
+              if (teamOpen.current) openTeamTemplates(template ?? undefined);
+            }}
+          />
+        ) : asks.length > 0 ? (
+          <SetupAsks lead={t("agentSetup.firstRun.asks.lead")} asks={asks} />
+        ) : null
+      }
+    />
   );
 }
 
