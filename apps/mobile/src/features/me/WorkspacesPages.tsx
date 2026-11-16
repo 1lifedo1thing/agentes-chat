@@ -373,7 +373,8 @@ export function TeamServerPage() {
 }
 
 const styles = StyleSheet.create({
-  gap: { height: 22 },
+  // Between the workspaces and adding one: the room a group's header takes.
+  gap: { height: 20 },
   center: { textAlign: "center" },
   quiet: { paddingTop: 8 },
 });

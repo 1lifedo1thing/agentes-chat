@@ -2,12 +2,12 @@ import { useAuthConfig, useIssues, useMe, useOverview } from "@agenteschat/clien
 import { showsAbout } from "@agenteschat/client/lib/about";
 import { PHONE_APP_ICON } from "@agenteschat/client/lib/app-icons";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
-import { isAppLocale, localeInfo, readyLocales } from "@agenteschat/i18n/locale";
+import { isAppLocale, localeInfo } from "@agenteschat/i18n/locale";
 import Constants from "expo-constants";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { signOut } from "@/features/account";
@@ -22,6 +22,7 @@ import {
   Icon,
   PersonAvatar,
   PixelOrbit,
+  PressScale,
   SCREEN_X,
   Text,
   type ThemePreference,
@@ -44,7 +45,7 @@ import { openStatus } from "../status/StatusScreen";
 import { AppIconPicture, useAppIconName } from "./AppIconPage";
 import { useAppIcon } from "./app-icon";
 import { openIssuesWithMe, workspacesBeyond } from "./logic";
-import { useLanguageChoice, usePushSwitch, useSoundLabel, useStartLabel } from "./PreferencePages";
+import { usePushSwitch, useSoundLabel, useStartLabel } from "./PreferencePages";
 import { useChangePhoto } from "./parts";
 import { useWorkspacesAcross, WorkspaceMark } from "./WorkspacesPages";
 
@@ -85,6 +86,17 @@ const PHOTO_OVERLAP = 48;
 const HORIZON = 4;
 const HORIZON_FACE = 24;
 const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
+/**
+ * Each agent's rise onto the horizon, the nearest first, 40 ms apart: under 300 ms each, built once (never while
+ * rendering). The moment is rare (once a session), so it may delight; reduced motion keeps only a fade.
+ */
+const HORIZON_RISE = Array.from({ length: HORIZON }, (_, i) =>
+  FadeInUp.duration(280)
+    .delay(120 + i * 40)
+    .easing(EASE_OUT)
+    .withInitialValues({ opacity: 0, transform: [{ translateY: 8 }] }),
+);
+const HORIZON_FADE = FadeIn.duration(200);
 /** They rise onto the horizon once a session (the first Você opened), then simply stand there. */
 let horizonArrived = false;
 
@@ -95,9 +107,10 @@ let horizonArrived = false;
  * are, how many more and the unread elsewhere, opening the list by server (ADR 0154), with the workspace's settings
  * under it. Your agents, alive (a working one says what it does), "Ver todos" to the Agentes tab. Your work (Tarefas,
  * Propostas, Rotinas, Wiki, Drive, Painéis, Memória): what belongs to the workspace lives in Configurações, once. The
- * preferences; Sons and Aparência change in their row through the system's choice on iOS (a screen on Android, whose
- * dialog holds three buttons at most). Sair alone in red; the version is in Sobre. A settings page is opened many
- * times a day, so nothing here animates beyond the rows' press highlight and the platform's push. A personal workspace
+ * preferences; Sons and Aparência (a few fixed choices) change in their row through the app's short menu, Idioma (one of
+ * many) on its own pushed list. Sair alone in red; the version is in Sobre. A settings page is opened many times a day,
+ * so nothing here animates beyond the presses and the platform's push, but for your agents rising onto the horizon the
+ * first time it opens in a session. A personal workspace
  * (ADR 0159) is yours: no workspace name after your @, your face as its mark, and its work led by what its sidebar
  * keeps in sight (Routines, Drive), with Threads (no tab there) and Team (no row in Agents) in it.
  */
@@ -128,7 +141,6 @@ export function MeScreen() {
   const photo = usePersonPhoto(mine?.avatarUrl ?? mine?.image ?? me.data?.user.image);
   const { changePhoto, uploading } = useChangePhoto();
   const sounds = useSoundChoice();
-  const language = useLanguageChoice();
   const styleLabel = useSoundLabel();
   const startLabel = useStartLabel();
   const withMe = openIssuesWithMe(issues.data, meId);
@@ -207,8 +219,8 @@ export function MeScreen() {
   const soundValue = sounds === "off" ? t("mobile.me.soundsOff") : styleLabel(sounds);
   const themeValue = t(`mobile.theme.${theme.preference}`);
 
-  // Sons, Aparência and Idioma change in their row through the app's picker (the one in use checked, the languages
-  // searchable), never a screen of their own for one pick.
+  // Sons and Aparência, a few fixed choices, change in their row through the app's picker (the one in use checked);
+  // Idioma, one of many, is a pushed list of its own.
   const pickSound = () => {
     const choices: SoundChoice[] = ["tactile", "sky", "pixel", "off"];
     void pickOne({
@@ -232,15 +244,6 @@ export function MeScreen() {
       if (key) theme.setPreference(key as ThemePreference);
     });
   };
-  const pickLanguage = () =>
-    void pickOne({
-      title: t("mobile.me.language"),
-      value: language.choice,
-      options: readyLocales().map((l) => ({ key: l.code, label: l.native })),
-      search: true,
-    }).then((key) => {
-      if (key) language.pick(key as Parameters<typeof language.pick>[0]);
-    });
   const confirmSignOut = () =>
     confirmAction({
       title: t("mobile.me.signOutConfirm"),
@@ -276,13 +279,14 @@ export function MeScreen() {
           <HorizonTeam ids={myAgents.slice(0, HORIZON).map((a) => a.id)} />
         </View>
         <View style={styles.cover}>
-          <Pressable
+          {/* The design system's press (it gives a little under the finger, with its haptic), as every tappable face. */}
+          <PressScale
             onPress={changePhoto}
             disabled={uploading}
+            fill={false}
             accessibilityRole="button"
             accessibilityLabel={t("mobile.me.account.changePhoto")}
             accessibilityState={{ disabled: uploading, busy: uploading }}
-            style={({ pressed }) => (pressed ? styles.pressed : null)}
           >
             <WithPresence size={PHOTO + 6} presence={myPresence} ring={c.grouped}>
               <View style={[styles.ring, { borderColor: c.grouped }]}>
@@ -297,7 +301,7 @@ export function MeScreen() {
             >
               <Icon name="image" size={PHOTO_BADGE_ICON} color={c.onAction} />
             </View>
-          </Pressable>
+          </PressScale>
           <Text variant="display2" style={styles.center}>
             {name}
           </Text>
@@ -460,8 +464,8 @@ export function MeScreen() {
               icon="globe"
               label={t("mobile.me.language")}
               value={isAppLocale(i18n.language) ? localeInfo(i18n.language).native : i18n.language}
-              menu
-              onPress={pickLanguage}
+              chevron
+              onPress={() => open("/me/language")}
             />
             {about ? (
               <GroupedRow
@@ -517,15 +521,7 @@ function HorizonTeam({ ids }: { ids: string[] }) {
   // Alternate sides from the photo outward: 0 and 1 nearest, 2 and 3 beyond them.
   const left = ids.filter((_, i) => i % 2 === 0).reverse();
   const right = ids.filter((_, i) => i % 2 === 1);
-  const enter = (i: number) =>
-    !rise
-      ? undefined
-      : reducedMotion
-        ? FadeIn.duration(200)
-        : FadeInUp.duration(420)
-            .delay(160 + i * 60)
-            .easing(EASE_OUT)
-            .withInitialValues({ opacity: 0, transform: [{ translateY: 10 }] });
+  const enter = (i: number) => (!rise ? undefined : reducedMotion ? HORIZON_FADE : HORIZON_RISE[i]);
   const face = (id: string) => (
     <Animated.View key={id} entering={enter(ids.indexOf(id))}>
       <AgentFace
@@ -598,7 +594,6 @@ const styles = StyleSheet.create({
   // A ring in the page's color lifts the photo off the sky.
   ring: { borderRadius: 999, borderWidth: 3 },
   photoBusy: { width: PHOTO, height: PHOTO, borderRadius: PHOTO / 2 },
-  pressed: { opacity: 0.6 },
   photoBadge: {
     position: "absolute",
     top: PHOTO_BADGE_AT,

@@ -85,8 +85,12 @@ describe("what changes a picture shows it", () => {
     expect(flat("features/settings/GeneralScreen.tsx")).toContain(
       "<OrgAvatar logo={org?.logo} size={LOGO} /> {uploading ? <Uploading style={styles.logoBusy} /> : null}",
     );
-    // Your photo on Você no longer fades the whole button while it uploads: the spinner says it.
-    expect(flat("features/me/MeScreen.tsx")).toContain("style={({ pressed }) => (pressed ? styles.pressed : null)}");
+    // Your photo on Você no longer fades the whole button while it uploads: the spinner says it, and the press is the
+    // design system's (it gives a little under the finger).
+    expect(flat("features/me/MeScreen.tsx")).toContain(
+      "<PressScale onPress={changePhoto} disabled={uploading} fill={false}",
+    );
+    expect(flat("features/me/MeScreen.tsx")).not.toContain("opacity: 0.6");
   });
 });
 
