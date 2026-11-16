@@ -40,12 +40,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { useLivePaused } from "@/agent/live";
 import { loopStyle } from "@/agent/loop";
-import { Dither } from "@/sky/Dither";
-import { softTones } from "@/sky/math";
 import { CHROME_MAX_SCALE, haptics, Icon, PixelStop, Text, TOUCH, useReducedMotion, useTheme } from "@/ui";
 import { AgentFace, AgentWho, Face } from "../shared/Face";
 import { useDirectory, useNow } from "../shared/hooks";
-import { agentLook } from "../shared/logic";
 import {
   awayRun,
   type LineDrawn,
@@ -75,10 +72,10 @@ export function browsingRuns(runs: LiveRun[]): LiveRun[] {
 /**
  * The working line, as the web's activity bar above the composer (ChannelPage `ActivityBar`,
  * WorkingLine.tsx, `.ac-typing[data-active]`), one for everyone at work here and the one thing that says so while
- * their words wait for their replies (which show whole, once posted): a low glass pill as wide as the box under it
- * whatever it says, with a dithered band sweeping in the first agent's color behind it while agents work; a few small
- * faces, each on a plate and popping in (an agent on its own asking another shows both, with an arrow; three dots
- * first while only people type); one line with names in ink, crossfading whenever it changes ("Theo e mais 2 estão
+ * their words wait for their replies (which show whole, once posted): a bare line on the conversation's ground, as
+ * wide as the box under it whatever it says (no glass, no shadow, no band behind it: the faces and the words say it);
+ * a few small faces, each on a plate and popping in (an agent on its own asking another shows both, with an arrow;
+ * three dots first while only people type); one line with names in ink, crossfading whenever it changes ("Theo e mais 2 estão
  * trabalhando · Marina está digitando…"), who records a voice message last, after three bars and their faces ("Rui
  * está gravando áudio…"); the clock of a question that is out. One agent on its own: its face, its step after its
  * name ("escrevendo…" while it writes) with its time right after it ("16 s"), whoever types or records beside it,
@@ -112,7 +109,7 @@ export function WorkingLine({
 }) {
   const { t, i18n } = useTranslation();
   const dir = useDirectory();
-  const { colors: c, shadows } = useTheme();
+  const { colors: c } = useTheme();
   const reduced = useReducedMotion();
   const agentName = (id: string) => dir.agentById.get(id)?.name ?? t("channel.unknownAgent");
   const entries = workingEntries(runs, consults, agentName, typing, (id) => dir.memberById.get(id)?.name);
@@ -129,7 +126,6 @@ export function WorkingLine({
   // The one agent it speaks for; a question it asks keeps its own phrase.
   const away = awayRun(entries, runs);
   const step = away && lead && !lead.consult ? barStep(t, away, i18n.language, now) : null;
-  const color = lead ? agentLook(dir.agentById.get(lead.id)).color : null;
   const took = away ? barElapsed(t, entries, runs, now) : null;
   // Who types or records beside that agent, after its time ("· Marina digitando · Rui gravando áudio…"): the names give
   // way first, never what they do.
@@ -177,7 +173,7 @@ export function WorkingLine({
   const consultTime = barConsultTime(i18n.language, asking, now);
   const seeConsult = asking?.id && onSeeConsult ? () => onSeeConsult(asking.id as string) : undefined;
   const pop = reduced ? undefined : FACE_POP;
-  const plate = [styles.tok, { backgroundColor: c.glassSolid }];
+  const plate = [styles.tok, { backgroundColor: c.bg }];
   // The agents at work open the pill with their faces. Who records shows after the words with their mark, and so does
   // who types beside them: their faces come and go with the phrase as it turns, so they don't pop in again at each turn.
   const faces = barFaces(entries);
@@ -203,13 +199,10 @@ export function WorkingLine({
         // In and out on an ease-out, under 200 ms: the line is chrome that comes and goes many times a day.
         entering={reduced ? undefined : LINE_IN}
         exiting={reduced ? undefined : LINE_OUT}
-        style={[styles.pill, { backgroundColor: c.glassSolid, boxShadow: `${shadows.e1}, ${shadows.top}` }]}
+        style={styles.pill}
         accessibilityLiveRegion="polite"
       >
-        {color ? (
-          <Dither kind="sweep" tones={softTones(color, c.raised)} pixel={3} style={StyleSheet.absoluteFill} />
-        ) : null}
-        {color || !someoneTypes(entries) || bothAtIt(entries) ? null : <TypingDots color={c.muted} />}
+        {lead || !someoneTypes(entries) || bothAtIt(entries) ? null : <TypingDots color={c.muted} />}
         {faces.length > 0 ? (
           <View style={styles.stack} importantForAccessibility="no-hide-descendants">
             {faces.map((e, i) => {
@@ -668,7 +661,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   // As wide as the box under it, its edges on the box's, whatever it says: a turning phrase or a face coming and going
-  // never moves its edge.
+  // never moves its edge. Bare, as the return that rests in it (`Returns` `line`).
   dock: { paddingBottom: 6 },
   pill: {
     flexDirection: "row",
