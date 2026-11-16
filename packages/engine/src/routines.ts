@@ -1373,7 +1373,7 @@ export async function createRoutine(
   checkFrequency(trigger, input.target);
   if (!input.paused && startsRuns(trigger.triggerType, input.target)) await checkRoutineCap(db, orgId, agent.id);
   if (input.trigger.type === "email") await checkWatchable(db, orgId, agent.id, input.trigger.accountId, actorId);
-  if (input.trigger.type === "connector") await checkConnectorTrigger(db, orgId, agent.id, input.trigger);
+  if (input.trigger.type === "connector") await checkConnectorTrigger(db, orgId, agent.id, input.trigger, actorId);
   const hooks = input.trigger.type === "webhook" || input.trigger.type === "connector" ? hooksOf(deps) : null;
   const ownActions = ownActionsOf(input.ownActions ?? []);
   if (ownActions.length > 0) await requireActionApprover(db, actorId, orgId, agent.ownerUserId);
@@ -1698,7 +1698,7 @@ export async function updateRoutine(
         ? hadConnector
         : null;
   if (connectorTrigger && (patch.trigger?.type === "connector" || set.agentId)) {
-    await checkConnectorTrigger(db, orgId, agentId, connectorTrigger);
+    await checkConnectorTrigger(db, orgId, agentId, connectorTrigger, current.createdByUserId);
   }
   const active = patch.active ?? current.active;
   if (patch.active !== undefined) set.active = active;

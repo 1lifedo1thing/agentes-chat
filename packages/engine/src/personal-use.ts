@@ -1,8 +1,9 @@
 import { and, type Database, eq, schema } from "@agenteschat/db";
 import { getAgent } from "./agents";
 import { namesLabel, namesOf } from "./approvals";
-import { canTalkTo, speakerFor } from "./audience";
+import { canTalkTo, speakerFor, speakerOf } from "./audience";
 import { accountablePerson, type RunAuthority } from "./authority";
+import { getMembership } from "./organizations";
 import { routineCreatorOf } from "./requester";
 import { isRightHandId, rightHandReader } from "./right-hand";
 import type { ToolContext } from "./tools/types";
@@ -57,4 +58,25 @@ export async function personalUseCheck(
   const agent = await getAgent(ctx.db, ctx.orgId, ctx.agentId);
   const direct = !!agent && canTalkTo(agent, person, await speakerFor(ctx.db, ctx.orgId, person));
   return (ownerId) => !ownerId || direct || ownerId === person;
+}
+
+/**
+ * `personalUseCheck` for a routine, before any run: whether what its creator set up may hand this agent one person's
+ * own thing (a connection's events). The right hand only for its owner; another agent for its owner or a member the
+ * agent answers directly. A creator who left gets nothing.
+ */
+export async function creatorMayUse(
+  db: Database,
+  orgId: string,
+  agentId: string,
+  ownerId: string,
+  creatorId: string | null,
+) {
+  if (!creatorId) return false;
+  const membership = await getMembership(db, creatorId, orgId);
+  if (!membership) return false;
+  if (await isRightHandId(db, orgId, agentId)) return creatorId === ownerId;
+  if (creatorId === ownerId) return true;
+  const agent = await getAgent(db, orgId, agentId);
+  return !!agent && canTalkTo(agent, creatorId, speakerOf(membership));
 }
