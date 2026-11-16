@@ -1,4 +1,13 @@
-import { ApiError, keys, useApi, useWikiAction, useWikiPage, useWikiTree, type WikiPage } from "@agenteschat/client";
+import {
+  ApiError,
+  keys,
+  useApi,
+  useWikiAction,
+  useWikiPage,
+  useWikiTree,
+  type WikiPage,
+  type WikiPageSummary,
+} from "@agenteschat/client";
 import { type AudienceChoice, EVERYONE } from "@agenteschat/client/lib/who-sees";
 import { prefixLines, wikiQuery, wrapSelection } from "@agenteschat/client/lib/wiki";
 import { diffLines } from "@agenteschat/ui/diff";
@@ -42,6 +51,7 @@ import { router } from "@/ui/navigation";
 import { SheetHeader } from "../new/parts";
 import { useFailed } from "../routines/hooks";
 import { NEXT_FIELD } from "../settings/parts";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useOrgId } from "../shared/hooks";
 import { goBack, MONO, PushedHeader, successHaptic, Tile, tapHaptic } from "../shared/parts";
 import { useWhoSeesDraft, WhoSeesRows } from "../shared/WhoSees";
@@ -63,7 +73,9 @@ export function WikiWriteScreen(props: { slug: string } | { title: string; folde
   const orgId = useOrgId();
   const slug = "slug" in props ? props.slug : null;
   const page = useWikiPage(orgId, slug);
-  if (slug && !page.data) return <View style={styles.fill} />;
+  // The page to edit not here yet (it usually is: it was just open): its bar from the first frame, and if it failed
+  // to load, what happened and the way to ask again, never a blank screen.
+  if (slug && !page.data) return <WriterWaiting failed={page.isError} retry={() => void page.refetch()} />;
   return (
     <Writer
       page={page.data ?? null}
@@ -71,6 +83,19 @@ export function WikiWriteScreen(props: { slug: string } | { title: string; folde
       folder={"folder" in props ? props.folder : (page.data?.folder ?? "")}
       audience={"who" in props && props.who ? { mode: "people", userIds: props.who.split(",") } : EVERYONE}
     />
+  );
+}
+
+function WriterWaiting({ failed, retry }: { failed: boolean; retry: () => void }) {
+  const { t } = useTranslation();
+  const c = useColors();
+  return (
+    <View style={[styles.fill, { backgroundColor: c.bg }]}>
+      <PushedHeader title={t("wiki.edit")} solid={false} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic">
+        {failed ? <LoadFailed onRetry={retry} /> : null}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -231,6 +256,13 @@ function Writer({
     }
   };
 
+  // A link in the preview opens its page over the writing (back returns to it, nothing lost); one to a page that
+  // doesn't exist yet says so, instead of a tap that does nothing.
+  const previewLink = (_title: string, linked: WikiPageSummary | undefined) => {
+    if (linked) openWikiPage(linked.slug);
+    else toast({ title: t("wiki.missingTitle") });
+  };
+
   if (conflict && page) {
     return (
       <View style={[styles.fill, { backgroundColor: c.bg }]}>
@@ -304,7 +336,7 @@ function Writer({
           </Text>
           <View style={styles.body}>
             {body.trim() ? (
-              <WikiDoc body={body} pages={pages} onOpenLink={() => undefined} />
+              <WikiDoc body={body} pages={pages} onOpenLink={previewLink} />
             ) : (
               <Text variant="body" tone="faint">
                 {t("mobile.wiki.blank")}
