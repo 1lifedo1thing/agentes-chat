@@ -88,25 +88,37 @@ export function PickCategoryScreen({ channelId }: { channelId: string }) {
       >
         {t("mobile.categories.where", { channel: channel?.name ?? "" })}
       </GroupedHeader>
-      <GroupedList>
-        <GroupedRow
-          label={t("channelCategories.noCategory")}
-          sub={t("channelCategories.noCategoryDesc")}
-          checked={current === null}
-          disabled={place.isPending}
-          onPress={() => pick(null, t("channelCategories.noCategory"))}
-        />
-        {(categories.data ?? []).map((c) => (
+      {/* The choices once the categories are in: before, their rows' shape (never "No category" alone, checked). */}
+      {categories.data && channels.data ? (
+        <GroupedList>
           <GroupedRow
-            key={c.id}
-            label={c.name}
-            sub={channelLine(all, c.id, channelId) || t("channelCategories.moveEmptyCategory")}
-            checked={current === c.id}
+            label={t("channelCategories.noCategory")}
+            sub={t("channelCategories.noCategoryDesc")}
+            checked={current === null}
             disabled={place.isPending}
-            onPress={() => pick(c.id, c.name)}
+            onPress={() => pick(null, t("channelCategories.noCategory"))}
           />
-        ))}
-      </GroupedList>
+          {categories.data.map((c) => (
+            <GroupedRow
+              key={c.id}
+              label={c.name}
+              sub={channelLine(all, c.id, channelId) || t("channelCategories.moveEmptyCategory")}
+              checked={current === c.id}
+              disabled={place.isPending}
+              onPress={() => pick(c.id, c.name)}
+            />
+          ))}
+        </GroupedList>
+      ) : categories.isError || channels.isError ? (
+        <LoadFailed
+          onRetry={() => {
+            void categories.refetch();
+            void channels.refetch();
+          }}
+        />
+      ) : (
+        <SkeletonList rows={3} />
+      )}
       {arrangesCategories(org) ? (
         <>
           <Gap />
@@ -243,7 +255,10 @@ export function CategoriesScreen() {
   const categories = useChannelCategories(orgId);
   const list = categories.data ?? [];
   return (
-    <SettingsPage title={t("mobile.categories.title")}>
+    <SettingsPage
+      title={t("mobile.categories.title")}
+      onRefresh={() => Promise.allSettled([categories.refetch(), channels.refetch()])}
+    >
       <Gap />
       {categories.isLoading ? (
         <SkeletonList rows={3} />

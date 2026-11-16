@@ -107,3 +107,74 @@ describe("a connection's screen", () => {
     expect(route).toContain("<RenameConnectionScreen id={id ?? \"\"} />");
   });
 });
+
+describe("lists read again on a pull, and searches make room for the keyboard", () => {
+  test("Skills, the audit, invitations, devices, categories and workspaces pull to read again", () => {
+    for (const file of [
+      "features/settings/SkillsScreen.tsx",
+      "features/settings/AuditScreen.tsx",
+      "features/members/InvitesScreen.tsx",
+      "features/devices/DevicesScreen.tsx",
+      "features/categories/CategoryScreens.tsx",
+      "features/me/WorkspacesPages.tsx",
+    ])
+      expect({ file, pull: src(file).includes("onRefresh") }).toEqual({ file, pull: true });
+  });
+
+  test("a list with a search under a large title makes room for the keyboard, and a drag takes it away", () => {
+    expect(src("features/settings/SkillsScreen.tsx")).toContain("keyboard={searchable}");
+    expect(src("features/connectors/ConnectorsScreen.tsx")).toMatch(/\/\/ The search's results[^\n]*\n\s+keyboard\n/);
+    const zones = src("features/me/AccountPage.tsx");
+    expect(zones).toContain('keyboardDismissMode="on-drag"');
+    for (const file of [
+      "features/me/DeleteAccountScreen.tsx",
+      "features/computer/ComputerScreen.tsx",
+      "features/browser/ProfileLoginScreen.tsx",
+    ])
+      expect({ file, drag: src(file).includes('keyboardDismissMode="interactive"') }).toEqual({ file, drag: true });
+  });
+
+  test("Ferramentas is the settings page, its Save docked over the keyboard", () => {
+    const tools = src("features/connectors/ToolsScreen.tsx");
+    expect(tools).toContain("<SettingsPage");
+    expect(tools).not.toContain("<BottomBar");
+    expect(tools).not.toContain("<PushedHeader");
+  });
+
+  test("a profile's live view and a channel's category show their shape while they load", () => {
+    expect(src("features/browser/ProfileLoginScreen.tsx")).toContain("<SkeletonList rows={2} />");
+    const pick = src("features/categories/CategoryScreens.tsx");
+    const screen = pick.slice(pick.indexOf("export function PickCategoryScreen"), pick.indexOf("export function NewCategoryScreen"));
+    expect(screen).toContain("<SkeletonList rows={3} />");
+    expect(screen).toContain("<LoadFailed");
+  });
+});
+
+describe("forms", () => {
+  test("writing a skill walks its fields with the keyboard's bar; editing one too", () => {
+    const skills = src("features/settings/SkillsScreen.tsx");
+    expect(skills).toContain('toolbar={tab === "write"}');
+    expect(skills).toMatch(/minHeight=\{50\}\s+\{\.\.\.NEXT_FIELD\}\s+accessibilityLabel=\{t\("skills\.name"\)\}/);
+    const edit = skills.slice(skills.indexOf("export function EditSkillScreen"));
+    expect(edit).toMatch(/locked=\{action\.isPending\}[^>]*\btoolbar\b/);
+  });
+
+  test("the status line is named for screen readers", () => {
+    expect(src("features/status/StatusScreen.tsx")).toContain('accessibilityLabel={t("mobile.status.doing")}');
+  });
+
+  test("a workspace computer's address never renders as bare text: ternaries, not `&&`", () => {
+    const machine = src("features/settings/MachineScreen.tsx");
+    expect(machine).not.toMatch(/\{managed && [^\n]*&& \(/);
+    expect(machine).toContain("{managed && m.online && m.egress?.ip ? (");
+  });
+});
+
+describe("connecting a device", () => {
+  test("Done leaves the whole flow for the devices' list, the computer's page over it", () => {
+    const connect = src("features/devices/ConnectScreen.tsx");
+    expect(connect).toContain('router.dismissTo("/settings/devices");');
+    expect(connect).not.toContain("onPress={() => openComputer(");
+    expect(connect.match(/finishOn\(/g)?.length).toBe(3);
+  });
+});

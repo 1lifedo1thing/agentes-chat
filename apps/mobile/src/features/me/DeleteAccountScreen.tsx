@@ -187,6 +187,7 @@ export function DeleteAccountScreen() {
       <KeyboardAwareScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         bottomOffset={24}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >

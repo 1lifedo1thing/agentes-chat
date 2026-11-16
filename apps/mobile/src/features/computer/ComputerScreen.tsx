@@ -320,6 +320,7 @@ function ComputerView({ agentId, onLeave }: { agentId: string; onLeave: (held: B
         style={styles.fill}
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 24 }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
       >
         {body}

@@ -174,6 +174,8 @@ function Gallery() {
         ? { actions: [{ icon: "plus", sf: "plus", label: t("connectors.otherConnect"), onPress: openAddress }] }
         : {})}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
+      // The search's results make room for the keyboard, which a drag takes away.
+      keyboard
     >
       {composio.data && nearComposioLimit(composio.data) ? (
         <Text variant="small" tone="muted" style={styles.usage}>

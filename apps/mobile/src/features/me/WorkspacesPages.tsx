@@ -2,7 +2,7 @@ import { type Me, type OrgSummary, useApi, useMe } from "@agenteschat/client";
 import { workspaceNotes } from "@agenteschat/client/lib/deletion";
 import { CLOUD_SERVER, checkServer, normalizeServer, serverHost } from "@agenteschat/client/lib/server";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
@@ -46,6 +46,8 @@ import { orderedServers, type ServerWorkspaces, unreadElsewhere, workspacesOf } 
 
 /** How long a server's list stays fresh: each one is asked again after this when Workspaces opens. */
 const FRESH_MS = 30_000;
+/** Every server's list of workspaces (`useWorkspacesAcross`), read again together on Workspaces' pull. */
+const WORKSPACES_ACROSS = "workspaces-across";
 
 /**
  * Every workspace of every server this phone is signed in to (ADR 0154), grouped by server, each with its unread
@@ -62,7 +64,7 @@ export function useWorkspacesAcross(): { groups: ServerWorkspaces[]; elsewhere: 
   const servers = orderedServers(signedIn, server);
   const results = useQueries({
     queries: servers.map((s) => ({
-      queryKey: ["workspaces-across", s] as const,
+      queryKey: [WORKSPACES_ACROSS, s] as const,
       staleTime: FRESH_MS,
       queryFn: async (): Promise<{ me: Me | null; unread: { orgId: string; unread: number }[] }> => {
         const client = s === server ? api : createApi(s);
@@ -210,10 +212,15 @@ export function WorkspaceGroups({
 /** Workspaces: every server's, under a header each; tapping one opens it, on its server, without signing out. */
 export function WorkspacesPage() {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const { groups } = useWorkspacesAcross();
   const open = useOpenWorkspaceRow();
   return (
-    <Page title={t("mobile.me.workspaces")}>
+    <Page
+      title={t("mobile.me.workspaces")}
+      // A pull asks every server again (one that didn't answer may now).
+      onRefresh={() => qc.refetchQueries({ queryKey: [WORKSPACES_ACROSS] })}
+    >
       <WorkspaceGroups groups={groups} onOpen={open} />
       <View style={styles.gap} />
       <GroupedList>

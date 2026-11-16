@@ -584,6 +584,7 @@ function ZonePicker({
         keyExtractor={(r) => ("header" in r ? `h:${r.header}` : r.zone)}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         automaticallyAdjustKeyboardInsets
         initialNumToRender={20}
         contentContainerStyle={[styles.zoneList, { paddingBottom: 24 + insets.bottom }]}

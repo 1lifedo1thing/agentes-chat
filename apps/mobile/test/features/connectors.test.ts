@@ -330,8 +330,11 @@ describe("Ferramentas: Salvar stays at hand", () => {
   test("Salvar is pinned outside the scroll, and no changed tool waits for an Aceitar", async () => {
     const [screen, review] = await Promise.all([read("ToolsScreen.tsx"), read("ToolReview.tsx")]);
     expect(screen).not.toContain("ChangedTools");
-    // Salvar sits in the bar under the scroll, never at the end of a long list.
-    expect(screen.indexOf("<BottomBar")).toBeGreaterThan(screen.indexOf("</ScrollView>"));
+    // Salvar sits in the settings page's docked bar under the scroll (over the keyboard while the search is typed
+    // in), never at the end of a long list.
+    expect(screen).toContain("<SettingsPage");
+    expect(screen).toMatch(/bottom: \(\s+<Button/);
+    expect(screen).not.toContain("<ScrollView");
     expect(review).toMatch(/\{onSaveBar \? null : \(?\s*<Button/);
   });
 
