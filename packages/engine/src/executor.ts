@@ -745,6 +745,12 @@ export interface Transcript {
    */
   mootRequests?: Record<string, string>;
   requestMoot?: true;
+  /**
+   * Its own newer run here withdrew what it waited on (`withdraw_request`) and answers the person: the calls this one
+   * had made by then. Woken with no call made since, its words would only answer them a second time, so it ends
+   * without them (a person's message to it since makes it owe an answer again).
+   */
+  takenOver?: number;
   /** Time spent working before this claim (ms), without its waits: the long-work safety net counts it (ADR 0121). */
   activeMs?: number;
   /** The "unavailable" note already posted in this run (its code): not repeated while it waits. */
@@ -5327,6 +5333,10 @@ async function executeRunInner(
         !transcript.reacted &&
         !transcript.mediaSent &&
         (transcript.passed ||
+          (transcript.takenOver !== undefined &&
+            (transcript.executedCalls ?? 0) <= transcript.takenOver &&
+            updates.length === 0 &&
+            !saved) ||
           (!anythingPosted && (wantsQuiet || !said) && updates.length === 0 && !saved && !transcript.reported))
       ) {
         const how = transcript.passed ? "pass" : wantsQuiet ? "sentinel" : "empty";
