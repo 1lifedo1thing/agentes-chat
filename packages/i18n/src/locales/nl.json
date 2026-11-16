@@ -2202,7 +2202,7 @@
       "making": "Je code wordt gemaakt",
       "code": "Je code {{code}}",
       "open": "{{surface}} openen",
-      "stepScan": "Scan de code met je telefoon, of open de app hieronder",
+      "stepScan": "Scan de code met je telefoon, of open de app",
       "stepSend": "Stuur het bericht zoals het is",
       "stepSendText": "Dit gaat vanzelf verder zodra je bericht binnenkomt.",
       "stepConfirm": "Controleer de afzender en bevestig hier",

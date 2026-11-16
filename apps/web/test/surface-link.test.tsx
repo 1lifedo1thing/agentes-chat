@@ -17,7 +17,7 @@ const click = async (el: Element) => {
 };
 
 /** The longest name `SURFACE_NAME` allows (32 characters), with one long unbroken word. */
-const LONG_SURFACE = "Example Chat Teamsmessengerworld";
+const LONG_SURFACE = "Example Chat Longunbrokenwordxyz";
 const LONG_DISPLAY = "+1 555 0100 0100 0100 0100 0100 0100 0100 0100 0100 0100 0100 01";
 const LONG_HANDLE = "@ana.theo.example.chat.handle.without.any.space.to.break.at.all.x";
 const LONG_PROFILE = "Ana 🌟 مرحبا بالعالم من مساحة العمل Theo 🚀 שלום עולם ומה שלומכם";

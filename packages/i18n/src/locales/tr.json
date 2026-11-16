@@ -2202,7 +2202,7 @@
       "making": "Kodunuz oluşturuluyor",
       "code": "Kodunuz {{code}}",
       "open": "{{surface}} uygulamasını açın",
-      "stepScan": "Kodu telefonunuzla tarayın veya aşağıdan uygulamayı açın",
+      "stepScan": "Kodu telefonunuzla tarayın veya uygulamayı açın",
       "stepSend": "Mesajı olduğu gibi gönderin",
       "stepSendText": "Mesajınız ulaşınca bu adım kendiliğinden ilerler.",
       "stepConfirm": "Göndereni kontrol edin ve burada onaylayın",

@@ -2257,7 +2257,7 @@ export const ptBR = {
       making: "Gerando seu código",
       code: "Seu código {{code}}",
       open: "Abrir o {{surface}}",
-      stepScan: "Escaneie o código com o celular, ou abra o app abaixo",
+      stepScan: "Escaneie o código com o celular, ou abra o app",
       stepSend: "Envie a mensagem como está",
       stepSendText: "Isto avança sozinho quando sua mensagem chegar.",
       stepConfirm: "Confira o remetente e confirme aqui",

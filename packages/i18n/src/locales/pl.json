@@ -2329,7 +2329,7 @@
       "making": "Tworzenie kodu",
       "code": "Twój kod {{code}}",
       "open": "Otwórz {{surface}}",
-      "stepScan": "Zeskanuj kod telefonem albo otwórz aplikację poniżej",
+      "stepScan": "Zeskanuj kod telefonem albo otwórz aplikację",
       "stepSend": "Wyślij wiadomość bez zmian",
       "stepSendText": "To przejdzie dalej samo, gdy dotrze twoja wiadomość.",
       "stepConfirm": "Sprawdź nadawcę i potwierdź tutaj",
