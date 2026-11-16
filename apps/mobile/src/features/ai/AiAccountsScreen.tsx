@@ -36,13 +36,24 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
-import { Button, GroupedList, GroupedRow, InfoHint, Locked, ProviderLogo, Text, useToast } from "@/ui";
+import {
+  Button,
+  GroupedFooter,
+  GroupedHeader,
+  GroupedList,
+  GroupedRow,
+  Locked,
+  ProviderLogo,
+  SkeletonList,
+  Text,
+  useToast,
+} from "@/ui";
 import { router } from "@/ui/navigation";
 import { personalAiParts } from "../settings/logic";
-import { chooseAction } from "../settings/parts";
+import { chooseAction, Gap } from "../settings/parts";
 import { FirstUse, LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { PromptForm, SheetTitle } from "../shared/PromptForm";
@@ -54,12 +65,13 @@ import { openConnectAi } from "./NoAiCard";
 import { alertKeyRefused, Note, PasteField, PlanHoldNote, usePlanHold } from "./parts";
 
 /*
- * Contas de IA, as the web's Settings › Contas de IA (ADR 0059, ADR 0061): "Seus planos", first the sign-ins of the
- * computers the person connected ("Conta deste computador", the agents there think with them), then their own
- * accounts on every computer, each with its plan's meter and the agents it thinks for, renamed (in a sheet), signed
- * in again (a new key for a coding plan) on its plan's page of Connect an AI, given to one more agent where it thinks
- * for all of them, or disconnected here; then the workspace's API keys (admins), the default one, a key swapped (in a
- * sheet) or deleted. Connecting a new one is the same picker as everywhere ("Conectar uma IA").
+ * Contas de IA, as the web's Settings › Contas de IA (ADR 0059, ADR 0061), as the settings screens are: grouped lists
+ * under their headers. "Seus planos" (its ⓘ says where a plan lives): first the sign-ins of the computers the person
+ * connected ("Conta deste computador", the agents there think with them), then their own accounts on every computer,
+ * each with its plan's meter and the agents it thinks for, renamed (in a sheet), signed in again (a new key for a coding
+ * plan) on its plan's page of Connect an AI, given to one more agent where it thinks for all of them, or disconnected
+ * here; "Conectar uma IA" ends the list (the same picker as everywhere). Then the workspace's API keys (admins), the
+ * default one, a key swapped (in a sheet) or deleted, and "Adicionar chave" ending theirs.
  */
 
 type Account = AiAccountsView["accounts"][number];
@@ -231,6 +243,7 @@ function AiAccounts() {
 
   // Under a hold its note says what comes first: an invitation to connect a plan would contradict it.
   const none = !hold && ai.isSuccess && rows.length === 0 && own.length === 0;
+  const adds = !none && !hold;
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
       <PushedHeader
@@ -242,104 +255,84 @@ function AiAccounts() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
-        <View style={styles.sectionHead}>
-          <InfoHint
-            name={t("common.about", { label: t("aiAccounts.page.title") })}
-            text={t("aiAccounts.page.hint")}
-            variant="title"
-          >
-            <Text variant="title" tone="ink">
-              {t("aiAccounts.page.title")}
-            </Text>
-          </InfoHint>
-        </View>
-        {hold ? <PlanHoldNote org={org} /> : null}
-        {ai.isLoading ? <ActivityIndicator color={c.muted} /> : null}
+        <GroupedHeader
+          hint={{ name: t("common.about", { label: t("aiAccounts.page.title") }), text: t("aiAccounts.page.hint") }}
+        >
+          {t("aiAccounts.page.title")}
+        </GroupedHeader>
+        {ai.isLoading ? <SkeletonList rows={2} /> : null}
         {ai.isError && !ai.data ? <LoadFailed onRetry={() => void ai.refetch()} /> : null}
         {none ? (
           <FirstUse place="ai" size="panel" acts label={t("aiAccounts.page.connect")} onPress={() => openConnectAi()} />
         ) : null}
-        {/* Settings' own groups on the grouped gray: the mark in the 32 pt column, the hairline from the text on. */}
-        {own.length > 0 ? (
-          <GroupedList>
-            {own.map((o) => (
+        {/* One list, as Settings' own: the computers' sign-ins, the person's accounts, then the way to one more. The
+            mark sits in the rows' leading column and the hairlines start at the words. */}
+        <GroupedList>
+          {own.map((o) => (
+            <GroupedRow
+              key={o.key}
+              leading={<ProviderLogo id={o.kind} size="sm" />}
+              label={ownSignInTitle(t, o)}
+              sub={t("aiAccounts.page.ownOn", { computer: o.computer })}
+              below={
+                o.usage ? (
+                  <View style={styles.below}>
+                    <PlanMeter usage={o.usage} compact />
+                  </View>
+                ) : undefined
+              }
+            />
+          ))}
+          {rows.map((a) => {
+            const plan = planOf(a.provider);
+            const out = signInOf(a) === "signed_out";
+            const unknown = signInOf(a) === "unknown";
+            const facts = [
+              a.email ??
+                (a.keyHint
+                  ? t("aiAccounts.page.keyEnds", { hint: a.keyHint })
+                  : identityUnknown(a, machineOf(a))
+                    ? t("aiAccounts.page.identityUnknown")
+                    : null),
+              several ? t("aiAccounts.page.on", { computer: computerOf(a.computer) }) : null,
+              a.usedBy.length > 0
+                ? t("aiAccounts.page.usedBy", { count: a.usedBy.length, agents: names(a.usedBy) })
+                : t("aiAccounts.page.noAgent"),
+            ].filter(Boolean);
+            return (
               <GroupedRow
-                key={o.key}
-                leading={<ProviderLogo id={o.kind} size="sm" />}
-                label={ownSignInTitle(t, o)}
-                sub={t("aiAccounts.page.ownOn", { computer: o.computer })}
+                key={a.id}
+                leading={<ProviderLogo id={a.provider ?? a.kind} size="sm" off={out} />}
+                label={accountTitle(a)}
+                sub={facts.join(" · ")}
+                subLines={2}
+                more
+                onPress={() => actions(a)}
                 below={
-                  o.usage ? (
+                  out || unknown || a.usage || (plan && !plan.usage) ? (
                     <View style={styles.below}>
-                      <PlanMeter usage={o.usage} compact />
+                      {out ? (
+                        <Note icon="x">{plan ? t("aiAccounts.page.keyRefused") : t("aiAccounts.page.signedOut")}</Note>
+                      ) : null}
+                      {unknown ? <Note icon="info">{t("aiAccounts.page.statusUnknown")}</Note> : null}
+                      {a.usage ? (
+                        <PlanMeter usage={a.usage} compact />
+                      ) : plan && !plan.usage ? (
+                        <Text variant="footnote" tone="faint">
+                          {t("aiAccounts.usage.notShared", { maker: plan.maker })}
+                        </Text>
+                      ) : null}
                     </View>
                   ) : undefined
                 }
               />
-            ))}
-          </GroupedList>
-        ) : null}
-        {rows.length > 0 ? (
-          <GroupedList>
-            {rows.map((a) => {
-              const plan = planOf(a.provider);
-              const out = signInOf(a) === "signed_out";
-              const unknown = signInOf(a) === "unknown";
-              const facts = [
-                a.email ??
-                  (a.keyHint
-                    ? t("aiAccounts.page.keyEnds", { hint: a.keyHint })
-                    : identityUnknown(a, machineOf(a))
-                      ? t("aiAccounts.page.identityUnknown")
-                      : null),
-                several ? t("aiAccounts.page.on", { computer: computerOf(a.computer) }) : null,
-                a.usedBy.length > 0
-                  ? t("aiAccounts.page.usedBy", { count: a.usedBy.length, agents: names(a.usedBy) })
-                  : t("aiAccounts.page.noAgent"),
-              ].filter(Boolean);
-              return (
-                <GroupedRow
-                  key={a.id}
-                  leading={<ProviderLogo id={a.provider ?? a.kind} size="sm" off={out} />}
-                  label={accountTitle(a)}
-                  sub={facts.join(" · ")}
-                  more
-                  onPress={() => actions(a)}
-                  below={
-                    out || unknown || a.usage || (plan && !plan.usage) ? (
-                      <View style={styles.below}>
-                        {out ? (
-                          <Note icon="x">
-                            {plan ? t("aiAccounts.page.keyRefused") : t("aiAccounts.page.signedOut")}
-                          </Note>
-                        ) : null}
-                        {unknown ? <Note icon="info">{t("aiAccounts.page.statusUnknown")}</Note> : null}
-                        {a.usage ? (
-                          <PlanMeter usage={a.usage} compact />
-                        ) : plan && !plan.usage ? (
-                          <Text variant="small" tone="muted">
-                            {t("aiAccounts.usage.notShared", { maker: plan.maker })}
-                          </Text>
-                        ) : null}
-                      </View>
-                    ) : undefined
-                  }
-                />
-              );
-            })}
-          </GroupedList>
-        ) : null}
-        {none || hold ? null : (
-          <View style={styles.start}>
-            <Button
-              size="sm"
-              variant={rows.length || own.length ? "secondary" : "primary"}
-              icon="plus"
-              label={t("aiAccounts.page.connect")}
-              onPress={() => openConnectAi()}
-            />
-          </View>
-        )}
+            );
+          })}
+          {adds && ai.isSuccess ? (
+            <GroupedRow icon="plus" label={t("aiAccounts.page.connect")} onPress={() => openConnectAi()} />
+          ) : null}
+        </GroupedList>
+        {hold ? <PlanHoldNote org={org} inset /> : null}
         {can(org, "manage_credentials") ? <KeysSection locale={i18n.language} /> : null}
         <PersonalParts />
       </ScrollView>
@@ -357,7 +350,8 @@ function PersonalParts() {
   const parts = isPersonal(org) ? personalAiParts(org) : [];
   if (parts.length === 0) return null;
   return (
-    <View style={styles.keysHead}>
+    <>
+      <Gap />
       <GroupedList>
         {parts.map((s) => (
           <GroupedRow
@@ -371,7 +365,7 @@ function PersonalParts() {
           />
         ))}
       </GroupedList>
-    </View>
+    </>
   );
 }
 
@@ -383,7 +377,6 @@ function KeysSection({ locale }: { locale: string }) {
   const api = useApi();
   const qc = useQueryClient();
   const toast = useToast();
-  const c = useColors();
   const credentials = useCredentials(orgId);
   const settings = useSettings(orgId);
   const update = useUpdateSettings(orgId);
@@ -459,7 +452,13 @@ function KeysSection({ locale }: { locale: string }) {
       [
         ...(isDefault
           ? []
-          : [{ label: t("settings.makeDefault"), onPress: () => update.mutate({ defaultCredentialId: k.id }) }]),
+          : [
+              {
+                label: t("settings.makeDefault"),
+                // The "Padrão" moves to its row; a refusal says why.
+                onPress: () => update.mutate({ defaultCredentialId: k.id }, { onError: failed }),
+              },
+            ]),
         ...(held ? [] : [{ label: t("settings.rotate"), onPress: () => rotate(k) }]),
         ...(k.copies ? [{ label: t("settings.removeCopies"), onPress: () => removeCopies(k) }] : []),
         { label: t("settings.remove"), destructive: true, onPress: () => remove(k) },
@@ -469,58 +468,41 @@ function KeysSection({ locale }: { locale: string }) {
 
   return (
     <>
-      <View style={[styles.sectionHead, styles.keysHead]}>
-        <Text variant="title" tone="ink">
-          {t("settings.keysTitle")}
-        </Text>
-        <Text variant="small" tone="muted">
-          {t("settings.keysSubtitle")}
-        </Text>
-      </View>
-      {credentials.isLoading ? <ActivityIndicator color={c.muted} /> : null}
-      {credentials.isSuccess && live.length === 0 ? (
-        <Text variant="small" tone="muted">
-          {t("settings.noKeys")}
-        </Text>
-      ) : null}
-      {live.length > 0 ? (
-        <GroupedList>
-          {live.map((k) => {
-            const isDefault = settings.data?.defaultCredentialId === k.id;
-            return (
-              <GroupedRow
-                key={k.id}
-                leading={<ProviderLogo id={k.provider} size="sm" />}
-                label={k.label}
-                sub={[
-                  keyNamedAfterProvider(k) ? null : keySource(k),
-                  t("settings.keyEndsIn", { hint: k.keyHint }),
-                  t("settings.keyAdded", { when: relativeTime(t, locale, k.createdAt) }),
-                  keyCopiesLine(t, k),
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-                value={isDefault ? t("settings.default") : undefined}
-                more
-                onPress={() => actions(k, isDefault)}
-              />
-            );
-          })}
-        </GroupedList>
-      ) : null}
+      <GroupedHeader>{t("settings.keysTitle")}</GroupedHeader>
+      {credentials.isLoading ? <SkeletonList rows={2} /> : null}
+      {credentials.isError && !credentials.data ? <LoadFailed onRetry={() => void credentials.refetch()} /> : null}
+      <GroupedList>
+        {live.map((k) => {
+          const isDefault = settings.data?.defaultCredentialId === k.id;
+          return (
+            <GroupedRow
+              key={k.id}
+              leading={<ProviderLogo id={k.provider} size="sm" />}
+              label={k.label}
+              sub={[
+                keyNamedAfterProvider(k) ? null : keySource(k),
+                t("settings.keyEndsIn", { hint: k.keyHint }),
+                t("settings.keyAdded", { when: relativeTime(t, locale, k.createdAt) }),
+                keyCopiesLine(t, k),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+              subLines={2}
+              value={isDefault ? t("settings.default") : undefined}
+              more
+              onPress={() => actions(k, isDefault)}
+            />
+          );
+        })}
+        {credentials.isSuccess && !held ? (
+          <GroupedRow icon="plus" label={t("settings.addKey")} onPress={() => openConnectAi({ intent: "api_key" })} />
+        ) : null}
+      </GroupedList>
       {held ? (
-        <PlanHoldNote org={org} keys />
-      ) : (
-        <View style={styles.start}>
-          <Button
-            size="sm"
-            variant="secondary"
-            icon="plus"
-            label={t("settings.addKey")}
-            onPress={() => openConnectAi({ intent: "api_key" })}
-          />
-        </View>
-      )}
+        <PlanHoldNote org={org} keys inset />
+      ) : credentials.isSuccess ? (
+        <GroupedFooter>{live.length === 0 ? t("settings.noKeys") : t("settings.keysSubtitle")}</GroupedFooter>
+      ) : null}
     </>
   );
 }
@@ -583,9 +565,6 @@ function KeyPrompt({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   // The settings screens' side margin: the groups on the same 16 pt edge as everywhere else.
-  in: { paddingHorizontal: 16, paddingTop: 8, gap: 12 },
-  sectionHead: { gap: 4, paddingHorizontal: 2 },
-  keysHead: { marginTop: 20 },
+  in: { paddingHorizontal: 16, paddingTop: 8 },
   below: { gap: 8, marginTop: 6 },
-  start: { alignSelf: "flex-start" },
 });

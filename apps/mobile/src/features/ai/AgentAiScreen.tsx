@@ -20,22 +20,26 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { extraUsageOn, limitOffers, planState } from "@agenteschat/ui/plan-state";
 import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
   Glass,
+  GROUPED_ROW,
   GroupedFooter,
   GroupedHeader,
   GroupedList,
   GroupedRow,
+  motion,
   ProviderLogo,
+  SkeletonList,
   Text,
   useReducedMotion,
   useTheme,
 } from "@/ui";
 import { router } from "@/ui/navigation";
+import { Gap } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
@@ -186,11 +190,13 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
             {thinks.text}
           </Text>
         </View>
-        {hold ? <PlanHoldNote org={org} /> : null}
+        {hold ? <PlanHoldNote org={org} inset /> : null}
         {!allowed ? (
-          <Note icon="lock">{t("agentPage.lock.admins")}</Note>
+          <Note icon="lock" inset>
+            {t("agentPage.lock.admins")}
+          </Note>
         ) : brain.isPending ? (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
+          <SkeletonList rows={3} />
         ) : !view ? (
           <LoadFailed onRetry={() => void brain.refetch()} />
         ) : (
@@ -231,10 +237,12 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                   ) : null}
                 </GroupedList>
                 {kind === "antigravity" && geminiPersonal(current) ? (
-                  <Note icon="info">{t("connectAi.plan.gemini.warning")}</Note>
+                  <Note icon="info" inset>
+                    {t("connectAi.plan.gemini.warning")}
+                  </Note>
                 ) : null}
                 {lockedHere ? (
-                  <Note icon="lock">
+                  <Note icon="lock" inset>
                     {t("connectAi.accountsLocked", { name: pairer?.name.split(" ")[0] ?? "", computer })}
                   </Note>
                 ) : null}
@@ -296,31 +304,27 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                 {modelLimit ? <GroupedFooter>{modelLimit}</GroupedFooter> : null}
               </>
             ) : null}
-            <View style={styles.advanced}>
-              <GroupedList>
+            <Gap />
+            <GroupedList>
+              <GroupedRow
+                label={t("agentPage.work.brain.advanced.title")}
+                sub={advancedContents(t, {
+                  kind: view.brain,
+                  autoModel: isAuto(view.brain === "model" ? agent?.model : view.effectiveModel),
+                  speed: viewSpeedFits(view),
+                })}
+                chevron
+                onPress={() => openAgentAdvanced(agentId)}
+              />
+              {kind && view.canEdit && (view.account !== null || ownRow) && dir.agents.some((a) => a.id !== agentId) ? (
                 <GroupedRow
-                  label={t("agentPage.work.brain.advanced.title")}
-                  sub={advancedContents(t, {
-                    kind: view.brain,
-                    autoModel: isAuto(view.brain === "model" ? agent?.model : view.effectiveModel),
-                    speed: viewSpeedFits(view),
-                  })}
+                  label={t("agentPage.work.brain.copy.row")}
+                  sub={t("agentPage.work.brain.copy.rowLine")}
                   chevron
-                  onPress={() => openAgentAdvanced(agentId)}
+                  onPress={() => openAgentSetup(agentId)}
                 />
-                {kind &&
-                view.canEdit &&
-                (view.account !== null || ownRow) &&
-                dir.agents.some((a) => a.id !== agentId) ? (
-                  <GroupedRow
-                    label={t("agentPage.work.brain.copy.row")}
-                    sub={t("agentPage.work.brain.copy.rowLine")}
-                    chevron
-                    onPress={() => openAgentSetup(agentId)}
-                  />
-                ) : null}
-              </GroupedList>
-            </View>
+              ) : null}
+            </GroupedList>
             {view.canUsePlans ? (
               <>
                 <GroupedHeader>{t("mobile.ai.another")}</GroupedHeader>
@@ -343,8 +347,6 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
 
 /** How far the dock travels to leave the screen, past its own height. */
 const DOCK_OUT = 28;
-/** A drawer's spring: 300 ms, no bounce to speak of. */
-const DOCK_SPRING = { duration: 300, dampingRatio: 0.8 };
 
 /**
  * The effort, floating over the model list in the thumb's reach, whatever is scrolled under it. It slides away with
@@ -370,11 +372,12 @@ function EffortDock({
   const effort = useEffortChoice(agentId, view ? advancedOf(view).effort : undefined, scope);
   const out = useSharedValue(shown ? 0 : 1);
   const height = useSharedValue(0);
+  // A drawer's slide (`motion.sheet`); with reduced motion it is simply there or gone.
   useEffect(() => {
-    out.value = reduced ? (shown ? 0 : 1) : withSpring(shown ? 0 : 1, DOCK_SPRING);
+    out.set(reduced ? (shown ? 0 : 1) : withSpring(shown ? 0 : 1, motion.sheet));
   }, [shown, reduced, out]);
   const slid = useAnimatedStyle(() => ({
-    transform: [{ translateY: out.value * (height.value + insets.bottom + DOCK_OUT) }],
+    transform: [{ translateY: out.get() * (height.get() + insets.bottom + DOCK_OUT) }],
   }));
   return (
     <Animated.View
@@ -382,7 +385,7 @@ function EffortDock({
       accessibilityElementsHidden={!shown}
       importantForAccessibility={shown ? "auto" : "no-hide-descendants"}
       onLayout={(e) => {
-        height.value = e.nativeEvent.layout.height;
+        height.set(e.nativeEvent.layout.height);
         onHeight(e.nativeEvent.layout.height);
       }}
       style={[styles.dock, { bottom: insets.bottom + 8, boxShadow: shadows.e2 }, slid]}
@@ -434,11 +437,10 @@ export function AgentModelScreen({ agentId, scope }: { agentId: string; scope?: 
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 + (fixed ? dock : 0) }]}
       >
         {brain.isPending ? (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
-        ) : !view ? (
+          <SkeletonList rows={4} />
+        ) : !view || view.brain === "model" ? (
+          // An agent on an API key has no plan's models to pick here: what opened this can't be shown, as a failed load.
           <LoadFailed onRetry={() => void brain.refetch()} />
-        ) : view.brain === "model" ? (
-          <Note icon="x">{t("common.loadFailed")}</Note>
         ) : (
           modelSections(rows).map((s) => (
             <Fragment key={s.maker ?? ""}>
@@ -474,7 +476,11 @@ export function AgentModelScreen({ agentId, scope }: { agentId: string; scope?: 
             </Fragment>
           ))
         )}
-        {view && freeHint ? <Note icon="info">{freeHint}</Note> : null}
+        {view && freeHint ? (
+          <Note icon="info" inset>
+            {freeHint}
+          </Note>
+        ) : null}
       </ScrollView>
       {hasModels ? <EffortDock agentId={agentId} scope={scope} shown={fixed} onHeight={setDock} /> : null}
     </View>
@@ -486,10 +492,8 @@ const styles = StyleSheet.create({
   in: { paddingHorizontal: 16, paddingTop: 8 },
   hero: { alignItems: "center", gap: 10, paddingTop: 6, paddingBottom: 4 },
   center: { textAlign: "center" },
-  loading: { marginTop: 16 },
-  meter: { paddingHorizontal: 14, paddingVertical: 12, gap: 10 },
-  // A list without a header keeps a header's room above it.
-  advanced: { marginTop: 20 },
+  // On a grouped row's edges, as the rows under it.
+  meter: { paddingHorizontal: GROUPED_ROW.padX, paddingVertical: 12, gap: 10 },
   dock: { position: "absolute", left: 10, right: 10, borderRadius: 28 },
   dockGlass: {
     paddingHorizontal: 16,

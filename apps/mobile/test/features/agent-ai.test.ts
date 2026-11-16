@@ -548,9 +548,10 @@ describe("the agent's AI", () => {
     expect(makers).toContain("...PROVIDERS.map(");
     expect(connect.slice(connect.indexOf("function KeyPage("))).toContain("onPress={onMakers}");
     expect(connect).toContain("existingRows(t, gates.view, credentials.data ?? [], forAgent.name, i18n.language)");
-    // The workspace's keys only in Connect an AI (a sheet), as on the web: the first run's saved key already serves
-    // every agent with no plan.
-    expect(connect).toContain("useCredentials(orgId, mayAddKey && forAgent !== undefined && sheetTitle !== undefined)");
+    // The workspace's keys, for who may add them, on the flow's one screen: no sheet or inline variant is left.
+    expect(connect).toContain("useCredentials(orgId, mayAddKey && forAgent !== undefined)");
+    expect(connect).not.toContain("sheetTitle");
+    expect(connect).not.toContain("keyButton");
   });
 
   test("a card whose plan's sign-in ended: the agent says so, and Entrar de novo opens on its own plan", async () => {
@@ -611,7 +612,8 @@ describe("the agent's AI", () => {
     expect(screen).toContain(
       "const lockedHere = view !== undefined && kind !== null && !ownRow && choices.length === 0 && !adds;",
     );
-    expect(screen).toMatch(/\{lockedHere \? \(\s*<Note icon="lock">\s*\{t\("connectAi\.accountsLocked", \{/);
+    // On the groups' footer edge, under the list it stands for.
+    expect(screen).toMatch(/\{lockedHere \? \(\s*<Note icon="lock" inset>\s*\{t\("connectAi\.accountsLocked", \{/);
     expect(grouped).toContain("if (items.length === 0) return null;");
     // Still waiting, a waiting pill (its sentence wraps to two or three lines on a phone): the breathing mark and
     // Connect tinted for who may connect, a quiet bolt and who can for anyone else.
@@ -929,9 +931,12 @@ describe("the agent's AI", () => {
       expect([file, source.includes("<LoadFailed")]).toEqual([file, true]);
     }
     const [screen, ramp] = await Promise.all([read("AgentAiScreen.tsx"), read("EffortRamp.tsx")]);
-    expect(screen).toContain("const DOCK_SPRING = { duration: 300, dampingRatio: 0.8 };");
+    // The dock slides as a drawer (the theme's `motion.sheet`: 300 ms, 0.8), its shared values read and set as worklets
+    // want them (`.get()`/`.set()`), the same in the ramp.
+    expect(screen).toContain("withSpring(shown ? 0 : 1, motion.sheet)");
     expect(ramp).toContain("const FILL_SPRING = { duration: 300, dampingRatio: 0.8 };");
     expect(`${screen}${ramp}`).not.toContain("stiffness");
+    expect(`${screen}${ramp}`).not.toMatch(/\b(out|height|pos|step|track|clock)\.value\b/);
   });
 
   test("its page: the account first (the plan choice), then the model with how to give what it needs, a refused key's own row", async () => {
