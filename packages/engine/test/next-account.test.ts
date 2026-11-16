@@ -617,10 +617,7 @@ test("its own account signed out while a moved run waits on a person: the accoun
   expect(moveOf((await runs(fx))[0])?.to).toBe(OWN2);
   await usage(OWN1, 10);
   clearPlanLimits();
-  await fx.db
-    .update(schema.machineAccounts)
-    .set({ status: "signed_out" })
-    .where(eq(schema.machineAccounts.id, OWN1));
+  await fx.db.update(schema.machineAccounts).set({ status: "signed_out" }).where(eq(schema.machineAccounts.id, OWN1));
   await answerTheQuestion(fx);
   await drainOutbox(fx.db, handlers);
   expect(seen.map((t) => t.account?.id)).toEqual([OWN2, OWN2]);
@@ -873,7 +870,9 @@ test("a run that moves twice in one claim: each fresh session is told what the r
   const { fx, account } = await world({}, goesOn);
   await account(OWN2, fx.owner.id);
   await account(OWN3, fx.owner.id);
-  const refused: BrainEvent[] = [{ type: "error", code: "plan_limit", message: "You've hit your limit", worked: false }];
+  const refused: BrainEvent[] = [
+    { type: "error", code: "plan_limit", message: "You've hit your limit", worked: false },
+  ];
   const works = (command: string): BrainEvent[] => [
     { type: "usage", input: 100, output: 10, source: "plan", model: "sonnet" },
     { type: "tool_call", id: command, name: "Bash", input: { command }, executed: { content: "ok" } },
@@ -920,7 +919,9 @@ test("the moved line is said once per run, also when the run moves again after e
   await account(OWN2, fx.owner.id);
   await usage(OWN1, 100, iso(3600_000));
   await usage(OWN2, 10);
-  const refused: BrainEvent[] = [{ type: "error", code: "plan_limit", message: "You've hit your limit", worked: false }];
+  const refused: BrainEvent[] = [
+    { type: "error", code: "plan_limit", message: "You've hit your limit", worked: false },
+  ];
   const { brain, seen } = scripted((n) => (n === 0 ? refused : answers));
   await ask(fx);
   const handlers = handlersWith(fx, brain);
@@ -951,8 +952,8 @@ test("long work at the pause line of a teammate's account says so, naming whose 
   // Ten minutes and more of work by its first turn's end: a conversation's run is long work from there.
   const long: Brain = {
     kind: "claude_code",
-    async *run(turn) {
-      yield* brain.run(turn);
+    async *run(turn, io) {
+      yield* brain.run(turn, io);
       if (seen.length === 1) setSystemTime(later(11 * 60_000));
     },
   };

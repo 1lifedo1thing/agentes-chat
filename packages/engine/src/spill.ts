@@ -3,13 +3,7 @@ import { and, type Executor, eq, inArray, isNull, ne, or, schema, sql } from "@a
 import { isAutoModel } from "@agenteschat/providers";
 import { autoPlanModel, claudeCodeModel, NEXT_ACCOUNT_KINDS, planOf } from "@agenteschat/providers/plans";
 import type { Agent } from "./agents";
-import {
-  type BrainPlan,
-  computerBrainUnavailable,
-  NO_AI_CODES,
-  planIsOwners,
-  storedPlanUsage,
-} from "./brains/select";
+import { type BrainPlan, computerBrainUnavailable, NO_AI_CODES, planIsOwners, storedPlanUsage } from "./brains/select";
 import type { BrainAccount, BrainSession } from "./brains/types";
 import { machineRule, mayUseDevice } from "./devices";
 import type { MachineStatus } from "./machine-hub";
@@ -271,7 +265,8 @@ export async function movedAccountPlan(
   const own = plan.unavailable;
   const carried =
     own && own.code !== "plan_limit" && own.code !== "plan_not_owner" && !NO_AI_CODES.has(own.code) ? own : null;
-  const why = computerBrainUnavailable(plan.kind, machineId, status, Date.now(), account, true, usage, model) ?? carried;
+  const why =
+    computerBrainUnavailable(plan.kind, machineId, status, Date.now(), account, true, usage, model) ?? carried;
   const { unavailable: _, usage: _usage, ...rest } = plan;
   return { ...rest, account, ...(usage ? { usage } : {}), ...(why ? { unavailable: why } : {}) };
 }

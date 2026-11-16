@@ -4457,9 +4457,7 @@ async function executeRunInner(
       // At the plan's pause line long work goes on with the next account under it: it pauses on the last one. A free
       // account comes before its owner's paid extra usage too.
       const nextAccount =
-        pause?.source === "plan" || intoExtra
-          ? await moveToNextAccount(pause ? "line" : "extra", underTheLine)
-          : null;
+        pause?.source === "plan" || intoExtra ? await moveToNextAccount(pause ? "line" : "extra", underTheLine) : null;
       if (nextAccount?.plan) continue;
       // On another account at the line there: its own (tried already) takes it back into its owner's paid extra
       // usage. Otherwise the run is no longer moved and waits for the first reset of the two.
