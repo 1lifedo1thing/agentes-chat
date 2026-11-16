@@ -25,8 +25,9 @@ import { FilterChips, FilteredResults, OperatorPicker, SearchOptions } from "./S
 
 /**
  * "Buscar nesta conversa", the sheet the conversation's search button opens: the web's header search on the phone
- * (ADR 0123). The field focused, the filters offered here (a DM none of who or where), the recent searches of this
- * conversation on this phone; the results as the search tab's, a tap goes to the message (`onPick`).
+ * (ADR 0123). The field waits for the person's tap (a sheet never opens with the keyboard up over what it offers), the
+ * filters offered here (a DM none of who or where), the recent searches of this conversation on this phone; the
+ * results as the search tab's, a tap goes to the message (`onPick`).
  */
 export function ConversationSearch({ place, onPick }: { place: SearchPlace; onPick: (hit: SearchHit) => void }) {
   const { t } = useTranslation();
@@ -72,7 +73,6 @@ export function ConversationSearch({ place, onPick }: { place: SearchPlace; onPi
         onChangeText={change}
         onSubmitEditing={remember}
         placeholder={t("searchPage.searchHere")}
-        autoFocus
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"
