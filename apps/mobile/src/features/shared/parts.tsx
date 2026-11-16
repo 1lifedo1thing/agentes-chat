@@ -255,12 +255,11 @@ export function PushedHeader({
     () => ({
       ...(plate ? coverBarOptions : solid ? {} : scrollUnder),
       ...(barTone && !plate ? { headerStyle: { backgroundColor: barTone } } : null),
+      // Said either way: the screen's options merge, so one set without it kept the large title an earlier render
+      // turned on (an empty band over a view that draws none, a search that never folded the title away).
+      ...(IOS ? { headerLargeTitleEnabled: largeTitle } : null),
       ...(largeTitle && IOS
-        ? {
-            headerLargeTitleEnabled: true,
-            headerLargeTitleShadowVisible: false,
-            headerLargeTitleStyle: { color: colors.ink },
-          }
+        ? { headerLargeTitleShadowVisible: false, headerLargeTitleStyle: { color: colors.ink } }
         : null),
       title: text,
       headerTitle: custom
@@ -297,7 +296,7 @@ export function PushedHeader({
               </View>
             )
           : undefined,
-      ...(hasActions ? actionOptions : null),
+      ...(hasActions ? withWord(actionOptions, word, wordOff, () => press.current?.()) : null),
     }),
     [
       hasActions,
@@ -319,6 +318,46 @@ export function PushedHeader({
     ],
   );
   return <Stack.Screen options={options} />;
+}
+
+/**
+ * A word and buttons together on a bar (a task's "Concluir" beside its "…"): the word at the bar's end, the buttons
+ * before it (the system's own on iOS; on Android our capsule, then the word's button).
+ */
+function withWord(
+  opts: NativeStackNavigationOptions,
+  word: string | null,
+  disabled: boolean,
+  onPress: () => void,
+): NativeStackNavigationOptions {
+  if (word === null) return opts;
+  if (IOS) {
+    const items = opts.unstable_headerRightItems;
+    return {
+      ...opts,
+      unstable_headerRightItems: (props) => [
+        {
+          type: "button" as const,
+          label: word,
+          accessibilityLabel: word,
+          variant: liquidGlass ? ("prominent" as const) : ("done" as const),
+          disabled,
+          onPress,
+        },
+        ...(items?.(props) ?? []),
+      ],
+    };
+  }
+  const buttons = opts.headerRight;
+  return {
+    ...opts,
+    headerRight: (props) => (
+      <View style={[styles.headerRight, styles.headerWithWord]}>
+        {buttons?.(props)}
+        <Button size="sm" variant="primary" label={word} disabled={disabled} onPress={onPress} />
+      </View>
+    ),
+  };
 }
 
 /** A word on the right of a pushed screen's bar that saves (`PushedHeader`'s `action`). */
@@ -430,6 +469,7 @@ const styles = StyleSheet.create({
   headerTitle: { alignItems: Platform.OS === "ios" ? "center" : "flex-start", minWidth: 0 },
   titleText: { fontWeight: "600" },
   headerRight: { flexDirection: "row", alignItems: "center" },
+  headerWithWord: { gap: 8 },
 });
 
 /**

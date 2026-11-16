@@ -768,14 +768,9 @@ function IssueBar({ issue: i }: { issue: Issue }) {
     <PushedHeader
       title={`#${i.number}`}
       solid={false}
+      // Concluir (Reabrir) is the bar's word, the "…" beside it.
+      action={{ label: finish.label, disabled: finish.pending, onPress: finish.run }}
       actions={[
-        {
-          icon: finish.open ? "checkc" : "undo",
-          sf: finish.open ? "checkmark.circle" : "arrow.uturn.backward.circle",
-          label: finish.label,
-          disabled: finish.pending,
-          onPress: finish.run,
-        },
         {
           icon: "more",
           sf: "ellipsis",

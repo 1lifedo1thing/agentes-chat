@@ -12,3 +12,11 @@ test("a grouped list never slides: a part that opens or closes changes the form 
   expect(grouped).toContain("const ROW_IN = FadeIn.duration(motion.fast);");
   expect(grouped).toContain("<Animated.View key={child.key ?? i} entering={reducedMotion ? undefined : ROW_IN}>");
 });
+
+test("a pushed bar says whether its large title is on, and holds a word beside its buttons", () => {
+  const parts = readFileSync(join(import.meta.dir, "../src/features/shared/parts.tsx"), "utf8");
+  // Options merge: a set without it kept the large title an earlier render turned on (an empty band, a search that
+  // never folded the title away).
+  expect(parts).toContain("...(IOS ? { headerLargeTitleEnabled: largeTitle } : null),");
+  expect(parts).toContain("...(hasActions ? withWord(actionOptions, word, wordOff, () => press.current?.()) : null),");
+});

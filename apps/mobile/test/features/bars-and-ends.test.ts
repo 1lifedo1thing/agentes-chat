@@ -26,6 +26,6 @@ test("a pushed screen's large title is the system's on iOS, over a scroll view t
   expect(pushed).toContain('Platform.OS === "ios" ? <SystemLargeTitle {...props} /> : <DrawnLargeTitle {...props} />');
   expect(pushed).toContain('contentInsetAdjustmentBehavior="automatic"');
   const header = src("features/shared/parts.tsx");
-  expect(header).toContain("headerLargeTitleEnabled: true,");
+  expect(header).toContain("...(IOS ? { headerLargeTitleEnabled: largeTitle } : null),");
   expect(header).toContain("headerLargeTitleShadowVisible: false,");
 });

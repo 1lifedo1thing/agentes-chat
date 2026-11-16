@@ -62,9 +62,9 @@ describe("a task's fields picked on their own screen", () => {
     expect(pickers).toContain('router.push("/issues/pick");');
     expect(pickers.match(/choose\(\n?\s*t\("/g)?.length).toBe(3);
     expect(pickers).not.toContain("sheet.");
-    // The bar: Concluir and "…" as the system's bar buttons, "…" the system's menu on iOS and the app's on Android.
+    // The bar: Concluir (Reabrir) as its word, "…" beside it as the system's menu on iOS and the app's on Android.
     const bar = screen.slice(screen.indexOf("function IssueBar("), screen.indexOf("function useFinish("));
-    expect(bar).toContain('sf: finish.open ? "checkmark.circle" : "arrow.uturn.backward.circle",');
+    expect(bar).toContain("action={{ label: finish.label, disabled: finish.pending, onPress: finish.run }}");
     expect(bar).toContain("menu: items,");
     expect(bar).toContain("chooseAction(");
     for (const gone of ["FinishWord", "IconButton", "ActivityIndicator", "<ActionList"])
