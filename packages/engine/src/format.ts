@@ -176,14 +176,20 @@ export function tableToCsv(columns: string[], rows: string[][]): string {
 }
 
 const BARE_ADDRESS = /\bhttps?:\/\/[^\s<>`]+/gi;
-/** A Markdown link or image (its words, its address), or a bare address. */
-const LINK = /!?\[([^\]]*)\]\(([^)\s]*)\)|\bhttps?:\/\/[^\s<>`]+/gi;
+const LINK_JOINT = "](";
+/**
+ * A Markdown link or image (its words, its address), a bare address, or the joint of a link the first form let by.
+ * Every part is bounded or stops at the next `[`, so a text of nothing but brackets is read once, not once per
+ * bracket: this runs in the server's own thread on text a model wrote.
+ */
+const LINK = /!?\[([^\][]*)\]\(([^)\s]{0,2048})\)|\bhttps?:\/\/[^\s<>`]+|\]\(/gi;
 const asCode = (address: string) => `\`${address}\``;
 
 /**
  * Text with nothing an app turns into a link, by the apps' own grammar for one (`parseInline`): a Markdown link or
  * image keeps its words alone (its address, as code, when it has none), and a bare http address is wrapped as code.
- * Code, inline or fenced, stays as written: no app links inside it.
+ * A link that form does not take (an address longer than any real one) has its joint pulled apart instead. Code,
+ * inline or fenced, stays as written: no app links inside it.
  */
 export function inertLinks(text: string): string {
   return text
@@ -192,13 +198,15 @@ export function inertLinks(text: string): string {
       i % 2
         ? part
         : part.replace(LINK, (found: string, words?: string, address?: string) =>
-            words === undefined
-              ? asCode(found)
-              : words.trim()
-                ? words.replace(BARE_ADDRESS, asCode)
-                : address
-                  ? asCode(address)
-                  : "",
+            found === LINK_JOINT
+              ? "] ("
+              : words === undefined
+                ? asCode(found)
+                : words.trim()
+                  ? words.replace(BARE_ADDRESS, asCode)
+                  : address
+                    ? asCode(address)
+                    : "",
           ),
     )
     .join("");
