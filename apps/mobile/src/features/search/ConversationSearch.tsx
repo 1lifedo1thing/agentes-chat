@@ -16,7 +16,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, type TextInputInstance, View } from "react-native";
 import { STORED } from "@/lib/storage";
-import { SearchField } from "@/ui";
+import { SearchField, SHEET_X } from "@/ui";
 import { useOrgId } from "../shared/hooks";
 import { SheetTitle } from "../shared/PromptForm";
 import { useRecentSearches, useSearchDirectory } from "./hooks";
@@ -77,7 +77,7 @@ export function ConversationSearch({ place, onPick }: { place: SearchPlace; onPi
         autoCorrect={false}
         returnKeyType="search"
       />
-      {/* Edge to edge as in the search tab: these pad themselves, the sheet's own padding (18) is undone. */}
+      {/* Edge to edge as in the search tab: these pad themselves, the sheet's own side padding is undone. */}
       <View style={styles.bleed}>
         {scope.shown.length > 0 ? (
           <FilterChips
@@ -125,5 +125,5 @@ export function ConversationSearch({ place, onPick }: { place: SearchPlace; onPi
 }
 
 const styles = StyleSheet.create({
-  bleed: { marginHorizontal: -18, marginTop: 10 },
+  bleed: { marginHorizontal: -SHEET_X, marginTop: 10 },
 });
