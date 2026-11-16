@@ -225,6 +225,9 @@ describe("viewer", () => {
     // Pulled away at its own size, the picture follows the finger and a far or fast release closes the viewer.
     expect(viewer).toContain("onVerticalPull={onVerticalPull}");
     expect(viewer).toContain("Math.abs(pull.translateY) > DISMISS_DISTANCE");
+    // It closes once: a released pull is told again on every frame while the picture settles back.
+    expect(viewer).toContain("if (closing.value) return;");
+    expect(viewer).toContain("if (closed.current) return;");
     expect(DISMISS_DISTANCE).toBeGreaterThan(0);
     expect(viewer).not.toContain("usePinchGesture");
   });

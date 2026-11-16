@@ -86,10 +86,18 @@ function Viewer({
   const [chrome, setChrome] = useState(true);
   const drag = useSharedValue(0);
   const scale = useSharedValue(1);
+  // Closing once: the gallery tells a released pull again on every frame while the picture settles, and each close
+  // was another step back (the conversation went too).
+  const closing = useSharedValue(false);
   const current = files[index];
   const detail = useArtifact(orgId, current?.id ?? null, current?.version).data;
   const actions = useFileActions(detail);
-  const close = useCallback(() => goBack(), []);
+  const closed = useRef(false);
+  const close = useCallback(() => {
+    if (closed.current) return;
+    closed.current = true;
+    goBack();
+  }, []);
   useEffect(() => {
     if (from) tellViewerPlace(from, index);
   }, [from, index]);
@@ -113,17 +121,19 @@ function Viewer({
   const onVerticalPull = useCallback(
     (pull: VerticalPullOptions) => {
       "worklet";
+      if (closing.value) return;
       if (!pull.released) {
         drag.value = pull.translateY;
         return;
       }
       if (Math.abs(pull.translateY) > DISMISS_DISTANCE || Math.abs(pull.velocityY) > DISMISS_VELOCITY) {
+        closing.value = true;
         scheduleOnRN(close);
         return;
       }
       drag.value = withTiming(0, { duration: 200 });
     },
-    [drag, close],
+    [drag, close, closing],
   );
   const onTap = useCallback(() => setChrome((v) => !v), []);
 
