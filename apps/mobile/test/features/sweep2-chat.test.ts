@@ -97,3 +97,16 @@ describe("the conversation's sheets read as one family", () => {
     }
   });
 });
+
+describe("the kit's presses and rulers", () => {
+  test("a voice message's speed chip presses as the play button beside it does", () => {
+    const player = src("features/voice/VoiceMessage.tsx");
+    expect(player).toMatch(/<PressScale\s+to=\{0\.92\}\s+onPress=\{cycle\}/);
+    expect(player).not.toMatch(/<Pressable\s+onPress=\{cycle\}/);
+  });
+
+  test("the GIF categories run to the sheet's edges by the sheet's own side, not a number of their own", () => {
+    const media = src("features/chat/MediaPickerSheet.tsx");
+    expect(media).toContain("chips: { marginHorizontal: -SHEET_X }");
+  });
+});
