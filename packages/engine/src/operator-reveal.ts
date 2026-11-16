@@ -4,7 +4,7 @@ import { requireAgentDetails } from "./audience";
 import { recordAudit } from "./audit";
 import { readableChannelIds, requireChannelAccess } from "./channels";
 import { ConflictError, ForbiddenError, NotFoundError, TooManyError, ValidationError } from "./errors";
-import { cutText } from "./format";
+import { cutText, pgSafeText } from "./format";
 import { requireUsageAccess } from "./management";
 import { recordContentViewed } from "./operator-events";
 import { listedOf } from "./operator-paging";
@@ -584,8 +584,8 @@ export async function operatorReveal(
     await recordContentViewed(tx, {
       orgId,
       ref: `reveal:${kind}:${id}${seq === undefined ? "" : `:${seq}`}`,
-      reason: input.reason.trim(),
-      operator: input.operator,
+      reason: pgSafeText(input.reason).trim(),
+      operator: pgSafeText(input.operator),
       purpose,
       field,
       assistedByAi,
@@ -614,6 +614,8 @@ export async function operatorReveal(
   });
 
   const whole = neutralizeUntrusted(redactCredentials((await found.text()) ?? ""));
-  const text = cutText(whole.slice(offset), limit);
+  const rest = whole.slice(offset);
+  // A window of one that would stop before a pair gives the pair: the next read starts past what this one gave.
+  const text = cutText(rest, limit) || rest.slice(0, 2);
   return { kind, id, field, text, chars: whole.length, offset, more: offset + text.length < whole.length };
 }

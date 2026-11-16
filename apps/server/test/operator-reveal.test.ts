@@ -1183,6 +1183,26 @@ test("masking: a credential is gone as JSON writes it too, in any text", async (
   );
 });
 
+test("a window of one never stops before a pair; a character the record can't hold is left out of it, not a failure", async () => {
+  await db.update(schema.messages).set({ body: "😀 ok" }).where(eq(schema.messages.id, messages.other));
+  const json = ask("message", messages.other, "text", { requestId: requests.owner });
+  const first = (await (await call({ ...json, limit: 1 })).json()) as Answer;
+  const next = (await (await call({ ...json, offset: first.text.length || 2 })).json()) as Answer;
+  await forget();
+  const odd = await outcome({ ...json, operator: "call:7\0", reason: "Check why the export\ud83d stopped after it" });
+  expect({
+    first: [first.text, first.more],
+    next: next.text,
+    odd,
+    kept: (await events()).map((e) => [e.data.operator, e.data.reason]),
+  }).toEqual({
+    first: ["😀", true],
+    next: " ok",
+    odd: 200,
+    kept: [["call:7", "Check why the export stopped after it"]],
+  });
+});
+
 test("one at a time: one id, no list, range or search word; at most 2,000 characters; a reason that says a question", async () => {
   await forget();
   const good = ask("message", messages.asked, "text", { requestId: requests.owner });
