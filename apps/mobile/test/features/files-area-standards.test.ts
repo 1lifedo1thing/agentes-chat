@@ -108,10 +108,7 @@ describe("the Vault's flows are real navigation", () => {
     // The review takes the draft as it opens and drops it as it closes; without one it starts over.
     expect(env).toContain("const [draft] = useState(envDraftNow);");
     expect(env).toContain("useEffect(() => () => closeEnvDraft(draft), [draft]);");
-    const route = readFileSync(
-      join(import.meta.dir, "../../app/(app)/(main)/settings/vault-env-review.tsx"),
-      "utf8",
-    );
+    const route = readFileSync(join(import.meta.dir, "../../app/(app)/(main)/settings/vault-env-review.tsx"), "utf8");
     expect(route).toContain("<VaultEnvReviewScreen />");
   });
 
@@ -224,7 +221,7 @@ describe("the search tab", () => {
 
   test("a pull asks for the conversations and every search again", () => {
     const search = src("features/search/SearchScreen.tsx");
-    expect(search).toContain("qc.refetchQueries({ queryKey: searchQueryRoot(orgId), type: \"active\" })");
+    expect(search).toContain('qc.refetchQueries({ queryKey: searchQueryRoot(orgId), type: "active" })');
     expect(search).toContain("pull={pull}");
   });
 
@@ -239,6 +236,8 @@ describe("the search tab", () => {
     const filters = src("features/search/SearchFilters.tsx");
     expect(filters).not.toContain("<Pressable");
     expect(filters).not.toContain("styles.pressed");
-    expect(filters).toMatch(/<Button\s+variant="ghost"\s+size="sm"\s+icon="x"\s+label=\{t\("searchPage\.filtersApplied"/);
+    expect(filters).toMatch(
+      /<Button\s+variant="ghost"\s+size="sm"\s+icon="x"\s+label=\{t\("searchPage\.filtersApplied"/,
+    );
   });
 });

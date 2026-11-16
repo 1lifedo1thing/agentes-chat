@@ -1163,6 +1163,7 @@
     "place": "{{index}}/{{count}}",
     "previous": "前の画像",
     "next": "次の画像",
+    "noPreviewTitle": "プレビューなし",
     "noPreview": "このファイルはアプリでは開けません。別のアプリに送って開いてください。",
     "video": {
       "play": "再生",

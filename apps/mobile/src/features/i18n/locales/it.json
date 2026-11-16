@@ -1318,6 +1318,7 @@
     "place": "{{index}} di {{count}}",
     "previous": "Immagine precedente",
     "next": "Immagine successiva",
+    "noPreviewTitle": "Nessuna anteprima",
     "noPreview": "Questo file non si apre nell'app. Invialo a un'altra app per aprirlo.",
     "video": {
       "play": "Riproduci",

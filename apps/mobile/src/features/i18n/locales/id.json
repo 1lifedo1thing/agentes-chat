@@ -1163,6 +1163,7 @@
     "place": "{{index}} dari {{count}}",
     "previous": "Gambar sebelumnya",
     "next": "Gambar berikutnya",
+    "noPreviewTitle": "Tidak ada pratinjau",
     "noPreview": "File ini tidak bisa dibuka di aplikasi. Kirim ke aplikasi lain untuk membukanya.",
     "video": {
       "play": "Putar",

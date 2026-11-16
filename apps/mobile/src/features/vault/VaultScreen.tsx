@@ -61,11 +61,7 @@ export function VaultScreen() {
   if (!data) {
     return (
       <SettingsPage title={title}>
-        {vault.isError ? (
-          <LoadFailed onRetry={() => void vault.refetch()} />
-        ) : (
-          <SkeletonList rows={4} />
-        )}
+        {vault.isError ? <LoadFailed onRetry={() => void vault.refetch()} /> : <SkeletonList rows={4} />}
       </SettingsPage>
     );
   }
