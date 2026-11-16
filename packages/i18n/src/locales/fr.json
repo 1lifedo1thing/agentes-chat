@@ -1224,6 +1224,107 @@
         "held": "Connecter avec MCP fonctionnera dès que l'abonnement de l'espace de travail sera actif. Pour l'instant, importez les agents par ici.",
         "paused": "Connecter avec MCP est désactivé tant que cet espace de travail est en pause. Pour l'instant, importez les agents par ici."
       },
+      "haveFileButton": "J'ai un fichier ou un lien",
+      "sheet": {
+        "title": "Importer l'équipe depuis {{app}}",
+        "otherTitle": "Les importer depuis une autre app",
+        "workspaceTitle": "Les importer depuis un autre espace de travail",
+        "fileTitle": "Les importer depuis un fichier ou un lien",
+        "fileLead": "Le fichier de n'importe quelle app que nous connaissons. Il est reconnu tout seul.",
+        "useRequest": "Je préfère coller la demande et rapporter la réponse",
+        "backToMcp": "Retour à MCP",
+        "waitingMore": "En attente des suivants…",
+        "arrivedMore": "{{app}} est peut-être encore en train de les créer. Ceux qui arrivent ensuite s'affichent ici.",
+        "arrivedMoreAny": "Votre app d'IA est peut-être encore en train de les créer. Ceux qui arrivent ensuite s'affichent ici.",
+        "readHere": "Lu dans votre navigateur. Rien ne change ici tant que vous ne confirmez pas.",
+        "request": {
+          "grok-bot": {
+            "lead": "Le bot écrit tout ce qu'il a en JSON. Vous le collez ici et le vérifiez avant que rien ne soit créé.",
+            "copyStep": "Collez-la dans la discussion avec votre bot",
+            "answerStep": "Collez toute sa réponse ici",
+            "answerPlaceholder": "Le JSON renvoyé par le bot"
+          },
+          "chatgpt-dots": {
+            "lead": "Votre dot écrit tout ce qu'il a dans un fichier. Vous le déposez ici et le vérifiez avant que rien ne soit créé.",
+            "copyStep": "Collez-la dans une nouvelle discussion",
+            "answerStep": "Déposez ici le fichier qu'il crée"
+          },
+          "other": {
+            "copyStep": "Collez-la dans une nouvelle conversation dans l'autre app",
+            "answerStep": "Déposez le fichier qu'elle renvoie, ou collez sa réponse",
+            "answerPlaceholder": "La réponse, ou un lien GitHub"
+          }
+        },
+        "workspace": {
+          "download": "Téléchargez le fichier de l'autre espace de travail",
+          "where": "Là-bas, dans Paramètres › Importer et exporter › Télécharger le fichier.",
+          "open": "Ouvrir {{org}} dans un nouvel onglet",
+          "drop": "Déposez le .json ici"
+        },
+        "lead": "Votre assistant lit {{app}} sur cet ordinateur et écrit un fichier à l'endroit de votre choix. Vous vérifiez tout avant que rien ne soit créé.",
+        "leadCommand": "La commande lit {{app}} sur cet ordinateur et écrit un fichier à l'endroit de votre choix. Vous vérifiez tout avant que rien ne soit créé.",
+        "pasteAssistant": "Collez ceci dans votre assistant de code",
+        "pasteTerminal": "Collez ceci dans un terminal",
+        "pastePowerShell": "Collez ceci dans PowerShell",
+        "promptLabel": "Demande pour l'assistant de code",
+        "commandLabel": "Commande",
+        "copy": "Copier la demande",
+        "assistants": "Claude Code, Codex ou un autre qui exécute des commandes sur cet ordinateur.",
+        "commandHelp": "Elle demande où enregistrer et écrit un fichier. Rien n'est envoyé.",
+        "useCommand": "Je préfère lancer la commande moi-même",
+        "usePrompt": "Retour à la demande pour l'assistant",
+        "os": {
+          "label": "Système de cet ordinateur",
+          "unix": "Mac ou Linux",
+          "windows": "Windows"
+        },
+        "dropStep": "Déposez ici le fichier créé",
+        "drop": "Déposez le fichier ici",
+        "dropHelp": "{{file}}, dans le dossier que vous avez choisi",
+        "safe": "Lecture seule. Les clés, mots de passe et connexions de {{app}} ne sont jamais lus.",
+        "ready_one": "{{count}} agent prêt à venir",
+        "ready_many": "{{count}} agents prêts à venir",
+        "ready_other": "{{count}} agents prêts à venir",
+        "readyOther": "Prêt à venir",
+        "others_one": "Et {{count}} autre agent",
+        "others_many": "Et {{count}} autres agents",
+        "others_other": "Et {{count}} autres agents",
+        "routines_one": "{{count}} routine",
+        "routines_many": "{{count}} routines",
+        "routines_other": "{{count}} routines",
+        "notes_one": "{{count}} souvenir",
+        "notes_many": "{{count}} souvenirs",
+        "notes_other": "{{count}} souvenirs",
+        "skills_one": "{{count}} compétence",
+        "skills_many": "{{count}} compétences",
+        "skills_other": "{{count}} compétences",
+        "channels_one": "{{count}} canal",
+        "channels_many": "{{count}} canaux",
+        "channels_other": "{{count}} canaux",
+        "files_one": "{{count}} fichier des agents, copié dans le Drive",
+        "files_many": "{{count}} fichiers des agents, copiés dans le Drive",
+        "files_other": "{{count}} fichiers des agents, copiés dans le Drive",
+        "filesSize": "{{size}}. Tout l'espace de travail voit les dossiers.",
+        "after": "Ensuite, un clic pour chacun",
+        "bring_one": "Importer l'agent",
+        "bring_many": "Importer les {{count}} agents",
+        "bring_other": "Importer les {{count}} agents",
+        "choose": "Choisir ce qui vient avec",
+        "arrivedTitle": "L'équipe est là",
+        "arrived_one": "{{names}} est là.",
+        "arrived_many": "{{names}} sont là.",
+        "arrived_other": "{{names}} sont là.",
+        "arrivedOther_one": "{{count}} élément est là.",
+        "arrivedOther_many": "{{count}} éléments sont là.",
+        "arrivedOther_other": "{{count}} éléments sont là.",
+        "copying": "Copie des fichiers dans le Drive",
+        "copyCount": "{{done}} sur {{total}}",
+        "keepOpen": "Gardez cet onglet ouvert jusqu'à la fin.",
+        "missed_one": "{{count}} élément n'est pas venu. La liste indique pourquoi.",
+        "missed_many": "{{count}} éléments ne sont pas venus. La liste indique pourquoi pour chacun.",
+        "missed_other": "{{count}} éléments ne sont pas venus. La liste indique pourquoi pour chacun.",
+        "see": "Voir ce qui est arrivé"
+      },
       "otherName": "Une autre app",
       "agenteschatName": "agentes.chat",
       "where": {
@@ -2736,6 +2837,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Besoin d'un ordinateur",
+        "computerOnly": "De {{owner}}, connecté seulement sur {{computer}}. Lodi réfléchit avec un forfait connecté en tant que compte.",
+        "noComputer": "De {{owner}}. Il faut un ordinateur, et l'espace de travail n'en a aucun de connecté.",
+        "away": "De {{owner}}, sur {{computer}}, qui est absent.",
+        "connect": "Connecter un ordinateur",
+        "plans": "Voir les forfaits"
+      }
+    },
     "label": "votre bras droit",
     "labelCapitalized": "Votre bras droit",
     "unusable": {
@@ -3027,16 +3138,6 @@
       "invite_people_sent_many": "Invitations envoyées à <b>{{emails}}</b>.",
       "invite_people_sent_other": "Invitations envoyées à <b>{{emails}}</b>.",
       "remove_ai_key": "Supprimer la clé API « {{name}} »."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Besoin d'un ordinateur",
-        "computerOnly": "De {{owner}}, connecté seulement sur {{computer}}. Lodi réfléchit avec un forfait connecté en tant que compte.",
-        "noComputer": "De {{owner}}. Il faut un ordinateur, et l'espace de travail n'en a aucun de connecté.",
-        "away": "De {{owner}}, sur {{computer}}, qui est absent.",
-        "connect": "Connecter un ordinateur",
-        "plans": "Voir les forfaits"
-      }
     }
   },
   "teamWeek": {
@@ -7986,6 +8087,9 @@
     }
   },
   "issues": {
+    "handedBy": "confiée par <0/>{{name}}",
+    "fromDm": "depuis <0>ta DM avec {{name}}</0>",
+    "fromDmText": "depuis ta DM avec {{name}}",
     "delete": {
       "action": "Supprimer la tâche",
       "title": "Supprimer la tâche #{{number}} ?",
@@ -8206,6 +8310,9 @@
       "runningTitle_female": "{{name}} y travaille",
       "waitingTitle": "{{name}} vous attend",
       "waitingTitle_female": "{{name}} vous attend",
+      "finishedTitle": "{{name}} l'a terminée",
+      "finishedMeta": "{{when}} · confiée par {{name}}",
+      "answer": "Répondre",
       "stalledTitle": "{{name}} s'est arrêté {{when}}",
       "stalledTitle_female": "{{name}} s'est arrêtée {{when}}",
       "stalledText": "La tâche est toujours confiée à {{name}}, mais aucune exécution n'est en cours.",
@@ -8224,10 +8331,7 @@
         "failed": "La dernière exécution a échoué.",
         "canceled": "Quelqu'un a arrêté l'exécution.",
         "budget": "Le budget mensuel de l'agent est épuisé."
-      },
-      "finishedTitle": "{{name}} l'a terminée",
-      "finishedMeta": "{{when}} · confiée par {{name}}",
-      "answer": "Répondre"
+      }
     },
     "status": {
       "todo": "À faire",
@@ -8421,10 +8525,7 @@
       "criterion_checked": "a coché le critère « {{text}} »",
       "criterion_unchecked": "a décoché le critère « {{text}} »",
       "agent_asked": "a demandé à {{name}} de la faire"
-    },
-    "handedBy": "confiée par <0/>{{name}}",
-    "fromDm": "depuis <0>ta DM avec {{name}}</0>",
-    "fromDmText": "depuis ta DM avec {{name}}"
+    }
   },
   "routines": {
     "filters": "Filtrer les routines",
@@ -17633,6 +17734,21 @@
     "tomorrowAt": "demain à {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Confié à <0/>{{name}}",
+      "working": "en cours",
+      "done": "terminé en {{duration}}",
+      "waitingYou": "attend ta réponse",
+      "waiting": "attend une réponse",
+      "waitingApprovalYou": "attend ton approbation",
+      "waitingApproval": "attend une approbation",
+      "waitingComputer": "attend l'ordinateur",
+      "paused": "en pause à la limite du forfait",
+      "queued": "en file d'attente",
+      "failed": "n'a pas abouti",
+      "stopped": "arrêté",
+      "step": "étape {{current}} sur {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_many": "{{count}} min",
@@ -17710,24 +17826,12 @@
       "failed": "Bloqué · pas terminé",
       "failedWhy": "Bloqué · pas terminé : {{why}}"
     },
-    "working": "En arrière-plan",
-    "handed": {
-      "lead": "Confié à <0/>{{name}}",
-      "working": "en cours",
-      "done": "terminé en {{duration}}",
-      "waitingYou": "attend ta réponse",
-      "waiting": "attend une réponse",
-      "waitingApprovalYou": "attend ton approbation",
-      "waitingApproval": "attend une approbation",
-      "waitingComputer": "attend l'ordinateur",
-      "paused": "en pause à la limite du forfait",
-      "queued": "en file d'attente",
-      "failed": "n'a pas abouti",
-      "stopped": "arrêté",
-      "step": "étape {{current}} sur {{total}}"
-    }
+    "working": "En arrière-plan"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} te demande"
+    },
     "speedFallback": {
       "text": "ChatGPT a refusé la vitesse Rapide pour ce compte ou ce modèle, cette réponse est donc arrivée en standard.",
       "action": "Ouvrir l'agent"
@@ -18340,9 +18444,6 @@
       "interrupted": "Interrompu par un redémarrage du serveur. Redemandez pour continuer.",
       "step_limit": "Je n'avais plus d'étapes avant de terminer.",
       "stuck": "J'ai été bloqué et je me suis arrêté avant de terminer."
-    },
-    "request": {
-      "asksYou": "{{name}} te demande"
     }
   },
   "builtinTools": {

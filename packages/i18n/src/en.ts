@@ -1355,7 +1355,7 @@ export const en = {
         },
         workspace: {
           download: "Download the other workspace's file",
-          where: "There, in Settings › Import and export › Download the file.",
+          where: "There, in Settings\u00a0›\u00a0Import and export\u00a0›\u00a0Download the file.",
           open: "Open {{org}} in a new tab",
           drop: "Drop the .json here",
         },

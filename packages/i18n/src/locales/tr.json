@@ -1196,6 +1196,96 @@
         "held": "MCP ile bağlan, çalışma alanının planı etkinleşince kullanılabilir. Şimdilik ajanları bu yolla getirin.",
         "paused": "Bu çalışma alanı duraklatıldığı sürece MCP ile bağlan kapalı. Şimdilik ajanları bu yolla getirin."
       },
+      "haveFileButton": "Bir dosyam veya bağlantım var",
+      "sheet": {
+        "title": "Ekibi {{app}} uygulamasından getirin",
+        "otherTitle": "Başka bir uygulamadan getirin",
+        "workspaceTitle": "Başka bir çalışma alanından getirin",
+        "fileTitle": "Bir dosyadan veya bağlantıdan getirin",
+        "fileLead": "Tanıdığımız herhangi bir uygulamanın dosyası. Kendiliğinden tanınır.",
+        "useRequest": "İsteği yapıştırıp yanıtı getirmeyi tercih ederim",
+        "backToMcp": "MCP'ye dön",
+        "waitingMore": "Sıradakiler bekleniyor…",
+        "arrivedMore": "{{app}} hâlâ oluşturuyor olabilir. Sonradan gelenler burada görünür.",
+        "arrivedMoreAny": "Yapay zeka uygulamanız hâlâ oluşturuyor olabilir. Sonradan gelenler burada görünür.",
+        "readHere": "Tarayıcınızda okunur. Siz onaylayana kadar burada hiçbir şey değişmez.",
+        "request": {
+          "grok-bot": {
+            "lead": "Bot, sahip olduğu her şeyi JSON olarak yazar. Siz buraya yapıştırır ve bir şey oluşturulmadan önce kontrol edersiniz.",
+            "copyStep": "Botunuzla sohbete yapıştırın",
+            "answerStep": "Yanıtının tamamını buraya yapıştırın",
+            "answerPlaceholder": "Botun yanıt olarak verdiği JSON"
+          },
+          "chatgpt-dots": {
+            "lead": "Dot'unuz sahip olduğu her şeyi bir dosyaya yazar. Siz buraya bırakır ve bir şey oluşturulmadan önce kontrol edersiniz.",
+            "copyStep": "Yeni bir sohbete yapıştırın",
+            "answerStep": "Oluşturduğu dosyayı buraya bırakın"
+          },
+          "other": {
+            "copyStep": "Diğer uygulamada yeni bir sohbete yapıştırın",
+            "answerStep": "Döndürdüğü dosyayı bırakın ya da yanıtını yapıştırın",
+            "answerPlaceholder": "Yanıt ya da bir GitHub bağlantısı"
+          }
+        },
+        "workspace": {
+          "download": "Diğer çalışma alanının dosyasını indirin",
+          "where": "Orada: Ayarlar › İçe ve dışa aktarma › Dosyayı indir.",
+          "open": "{{org}} çalışma alanını yeni sekmede aç",
+          "drop": ".json dosyasını buraya bırakın"
+        },
+        "lead": "Asistanınız bu bilgisayardaki {{app}} verilerini okur ve seçtiğiniz yere bir dosya yazar. Bir şey oluşturulmadan önce her şeyi kontrol edersiniz.",
+        "leadCommand": "Komut, bu bilgisayardaki {{app}} verilerini okur ve seçtiğiniz yere bir dosya yazar. Bir şey oluşturulmadan önce her şeyi kontrol edersiniz.",
+        "pasteAssistant": "Bunu kodlama asistanınıza yapıştırın",
+        "pasteTerminal": "Bunu bir terminale yapıştırın",
+        "pastePowerShell": "Bunu PowerShell'e yapıştırın",
+        "promptLabel": "Kodlama asistanı için istek",
+        "commandLabel": "Komut",
+        "copy": "İsteği kopyala",
+        "assistants": "Claude Code, Codex ya da bu bilgisayarda komut çalıştıran başka bir asistan.",
+        "commandHelp": "Nereye kaydedileceğini sorar ve bir dosya yazar. Hiçbir şey gönderilmez.",
+        "useCommand": "Komutu kendim çalıştırmayı tercih ederim",
+        "usePrompt": "Asistan için isteğe dön",
+        "os": {
+          "label": "Bu bilgisayarın sistemi",
+          "unix": "Mac veya Linux",
+          "windows": "Windows"
+        },
+        "dropStep": "Yazdığı dosyayı buraya bırakın",
+        "drop": "Dosyayı buraya bırakın",
+        "dropHelp": "{{file}}, seçtiğiniz klasörde",
+        "safe": "Yalnızca okuma. {{app}} içindeki anahtarlar, şifreler ve oturum bilgileri asla okunmaz.",
+        "ready_one": "{{count}} ajan gelmeye hazır",
+        "ready_other": "{{count}} ajan gelmeye hazır",
+        "readyOther": "Gelmeye hazır",
+        "others_one": "Ve {{count}} ajan daha",
+        "others_other": "Ve {{count}} ajan daha",
+        "routines_one": "{{count}} rutin",
+        "routines_other": "{{count}} rutin",
+        "notes_one": "{{count}} bellek kaydı",
+        "notes_other": "{{count}} bellek kaydı",
+        "skills_one": "{{count}} beceri",
+        "skills_other": "{{count}} beceri",
+        "channels_one": "{{count}} kanal",
+        "channels_other": "{{count}} kanal",
+        "files_one": "Ajanlara ait {{count}} dosya, Drive'a kopyalanır",
+        "files_other": "Ajanlara ait {{count}} dosya, Drive'a kopyalanır",
+        "filesSize": "{{size}}. Klasörleri tüm çalışma alanı görür.",
+        "after": "Ardından, her biri tek tıkla",
+        "bring_one": "Ajanı getir",
+        "bring_other": "{{count}} ajanı getir",
+        "choose": "Neler geleceğini seç",
+        "arrivedTitle": "Ekip burada",
+        "arrived_one": "{{names}} burada.",
+        "arrived_other": "{{names}} burada.",
+        "arrivedOther_one": "{{count}} öğe burada.",
+        "arrivedOther_other": "{{count}} öğe burada.",
+        "copying": "Dosyalar Drive'a kopyalanıyor",
+        "copyCount": "{{done}}/{{total}}",
+        "keepOpen": "Bitene kadar bu sekmeyi açık tutun.",
+        "missed_one": "{{count}} öğe gelmedi. Nedeni listede.",
+        "missed_other": "{{count}} öğe gelmedi. Her birinin nedeni listede.",
+        "see": "Gelenleri gör"
+      },
       "otherName": "Başka bir uygulama",
       "agenteschatName": "agentes.chat",
       "where": {
@@ -2634,6 +2724,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Bir bilgisayar gerekiyor",
+        "computerOnly": "{{owner}} kişisine ait, yalnızca {{computer}} üzerinde oturum açık. Lodi, hesap olarak oturum açılmış bir planla düşünür.",
+        "noComputer": "{{owner}} kişisine ait. Bir bilgisayar gerekiyor ve çalışma alanında bağlı hiç yok.",
+        "away": "{{owner}} kişisine ait, {{computer}} üzerinde, şu an ulaşılamıyor.",
+        "connect": "Bilgisayar bağla",
+        "plans": "Planları gör"
+      }
+    },
     "label": "sağ kolun",
     "labelCapitalized": "Sağ kolun",
     "unusable": {
@@ -2915,16 +3015,6 @@
       "invite_people_sent_one": "<b>{{emails}}</b> adresine davet gönderildi.",
       "invite_people_sent_other": "<b>{{emails}}</b> adreslerine davet gönderildi.",
       "remove_ai_key": "\"{{name}}\" API anahtarını sil."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Bir bilgisayar gerekiyor",
-        "computerOnly": "{{owner}} kişisine ait, yalnızca {{computer}} üzerinde oturum açık. Lodi, hesap olarak oturum açılmış bir planla düşünür.",
-        "noComputer": "{{owner}} kişisine ait. Bir bilgisayar gerekiyor ve çalışma alanında bağlı hiç yok.",
-        "away": "{{owner}} kişisine ait, {{computer}} üzerinde, şu an ulaşılamıyor.",
-        "connect": "Bilgisayar bağla",
-        "plans": "Planları gör"
-      }
     }
   },
   "teamWeek": {
@@ -7676,6 +7766,9 @@
     }
   },
   "issues": {
+    "handedBy": "devreden: <0/>{{name}}",
+    "fromDm": "<0>{{name}} ile DM'inden</0>",
+    "fromDmText": "{{name}} ile DM'inden",
     "delete": {
       "action": "Görevi sil",
       "title": "#{{number}} görevi silinsin mi?",
@@ -7884,6 +7977,9 @@
       "label": "{{name}} çalışması",
       "runningTitle": "{{name}} bunun üzerinde çalışıyor",
       "waitingTitle": "{{name}} sizi bekliyor",
+      "finishedTitle": "{{name}} bitirdi",
+      "finishedMeta": "{{when}} · devreden: {{name}}",
+      "answer": "Yanıtla",
       "stalledTitle": "{{name}} durdu: {{when}}",
       "stalledText": "Görev hâlâ {{name}} üzerinde ama süren bir çalıştırma yok.",
       "started": "başladı: {{when}}",
@@ -7900,10 +7996,7 @@
         "failed": "Son çalıştırma başarısız oldu.",
         "canceled": "Biri çalıştırmayı durdurdu.",
         "budget": "Ajanın aylık bütçesi bitti."
-      },
-      "finishedTitle": "{{name}} bitirdi",
-      "finishedMeta": "{{when}} · devreden: {{name}}",
-      "answer": "Yanıtla"
+      }
     },
     "status": {
       "todo": "Yapılacak",
@@ -8089,10 +8182,7 @@
       "criterion_checked": "\"{{text}}\" kriterini işaretledi",
       "criterion_unchecked": "\"{{text}}\" kriterinin işaretini kaldırdı",
       "agent_asked": "{{name}} ajanından yapmasını istedi"
-    },
-    "handedBy": "devreden: <0/>{{name}}",
-    "fromDm": "<0>{{name}} ile DM'inden</0>",
-    "fromDmText": "{{name}} ile DM'inden"
+    }
   },
   "routines": {
     "filters": "Rutinleri filtrele",
@@ -14394,7 +14484,7 @@
       "ownerOnly": "Bu posta kutusuna erişimi yalnızca {{name}} verir.",
       "ownerOnlyUnknown": "Erişimi yalnızca bu posta kutusunu bağlayan kişi verebilir.",
       "onlyYou": "{{name}} bu posta kutusunu yalnızca senin için, DM'inde kullanır.",
-      "onlyYouAll": "{{name}} posta kutularını yalnızca senin için, DM'inde kullanır.",
+      "onlyYouAll": "{{name}}, posta kutularınızı yalnızca sizin için, DM'inizde kullanır.",
       "remove": "Erişimi kaldır",
       "removed": "{{name}} artık {{address}} adresine erişemiyor.",
       "saveError": {
@@ -17029,6 +17119,21 @@
     "tomorrowAt": "yarın {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Devredildi: <0/>{{name}}",
+      "working": "üzerinde çalışıyor",
+      "done": "{{duration}} içinde bitti",
+      "waitingYou": "yanıtını bekliyor",
+      "waiting": "bir yanıt bekliyor",
+      "waitingApprovalYou": "onayını bekliyor",
+      "waitingApproval": "onay bekliyor",
+      "waitingComputer": "bilgisayarı bekliyor",
+      "paused": "plan sınırında duraklatıldı",
+      "queued": "sırada",
+      "failed": "bitmedi",
+      "stopped": "durduruldu",
+      "step": "adım {{current}}/{{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} dk",
       "minutes_other": "{{count}} dk",
@@ -17104,24 +17209,12 @@
       "failed": "Engellendi · bitmedi",
       "failedWhy": "Engellendi · bitmedi: {{why}}"
     },
-    "working": "Arka planda",
-    "handed": {
-      "lead": "Devredildi: <0/>{{name}}",
-      "working": "üzerinde çalışıyor",
-      "done": "{{duration}} içinde bitti",
-      "waitingYou": "yanıtını bekliyor",
-      "waiting": "bir yanıt bekliyor",
-      "waitingApprovalYou": "onayını bekliyor",
-      "waitingApproval": "onay bekliyor",
-      "waitingComputer": "bilgisayarı bekliyor",
-      "paused": "plan sınırında duraklatıldı",
-      "queued": "sırada",
-      "failed": "bitmedi",
-      "stopped": "durduruldu",
-      "step": "adım {{current}}/{{total}}"
-    }
+    "working": "Arka planda"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} soruyor"
+    },
     "speedFallback": {
       "text": "ChatGPT bu hesap veya model için Hızlı hızı reddetti, bu yüzden bu yanıt standart hızda geldi.",
       "action": "Ajanı aç"
@@ -17714,9 +17807,6 @@
       "interrupted": "Sunucu yeniden başlatıldığı için kesildi. Devam etmek için yeniden sorun.",
       "step_limit": "Bitirmeden adımlarım tükendi.",
       "stuck": "Takıldım ve bitirmeden durdum."
-    },
-    "request": {
-      "asksYou": "{{name}} soruyor"
     }
   },
   "builtinTools": {

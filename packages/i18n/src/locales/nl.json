@@ -1196,6 +1196,96 @@
         "held": "Verbinden met MCP werkt zodra het abonnement van de werkruimte actief is. Haal de agents voorlopig op deze manier op.",
         "paused": "Verbinden met MCP staat uit zolang deze werkruimte gepauzeerd is. Haal de agents voorlopig op deze manier op."
       },
+      "haveFileButton": "Ik heb een bestand of link",
+      "sheet": {
+        "title": "Haal het team op uit {{app}}",
+        "otherTitle": "Haal ze op uit een andere app",
+        "workspaceTitle": "Haal ze op uit een andere werkruimte",
+        "fileTitle": "Haal ze op uit een bestand of link",
+        "fileLead": "Het bestand uit elke app die we kennen. Het wordt vanzelf herkend.",
+        "useRequest": "Ik plak liever het verzoek en breng het antwoord terug",
+        "backToMcp": "Terug naar MCP",
+        "waitingMore": "Wachten op de volgende…",
+        "arrivedMore": "{{app}} maakt ze misschien nog aan. Wie later komt, verschijnt hier.",
+        "arrivedMoreAny": "Je AI-app maakt ze misschien nog aan. Wie later komt, verschijnt hier.",
+        "readHere": "Gelezen in je browser. Hier verandert niets tot je bevestigt.",
+        "request": {
+          "grok-bot": {
+            "lead": "De bot schrijft alles wat hij heeft als JSON. Jij plakt het hier en controleert het voordat er iets wordt aangemaakt.",
+            "copyStep": "Plak het in de chat met de bot",
+            "answerStep": "Plak hier zijn hele antwoord",
+            "answerPlaceholder": "De JSON waarmee de bot antwoordde"
+          },
+          "chatgpt-dots": {
+            "lead": "Je dot schrijft alles wat hij heeft naar een bestand. Jij sleept het hierheen en controleert het voordat er iets wordt aangemaakt.",
+            "copyStep": "Plak het in een nieuwe chat",
+            "answerStep": "Sleep het bestand dat hij maakt hierheen"
+          },
+          "other": {
+            "copyStep": "Plak het in een nieuw gesprek in de andere app",
+            "answerStep": "Sleep het bestand dat hij teruggeeft hierheen, of plak zijn antwoord",
+            "answerPlaceholder": "Het antwoord, of een GitHub-link"
+          }
+        },
+        "workspace": {
+          "download": "Download het bestand van de andere werkruimte",
+          "where": "Daar, in Instellingen › Importeren en exporteren › Het bestand downloaden.",
+          "open": "{{org}} openen in een nieuw tabblad",
+          "drop": "Sleep de .json hierheen"
+        },
+        "lead": "Je assistent leest {{app}} op deze computer en schrijft een bestand waar jij kiest. Jij controleert alles voordat er iets wordt aangemaakt.",
+        "leadCommand": "De opdracht leest {{app}} op deze computer en schrijft een bestand waar jij kiest. Jij controleert alles voordat er iets wordt aangemaakt.",
+        "pasteAssistant": "Plak dit in je codeerassistent",
+        "pasteTerminal": "Plak dit in een terminal",
+        "pastePowerShell": "Plak dit in PowerShell",
+        "promptLabel": "Verzoek voor de codeerassistent",
+        "commandLabel": "Opdracht",
+        "copy": "Het verzoek kopiëren",
+        "assistants": "Claude Code, Codex of een andere die opdrachten uitvoert op deze computer.",
+        "commandHelp": "Vraagt waar je wilt opslaan en schrijft een bestand. Er wordt niets verstuurd.",
+        "useCommand": "Ik voer de opdracht liever zelf uit",
+        "usePrompt": "Terug naar het verzoek voor de assistent",
+        "os": {
+          "label": "Systeem van deze computer",
+          "unix": "Mac of Linux",
+          "windows": "Windows"
+        },
+        "dropStep": "Sleep het bestand dat wordt geschreven hierheen",
+        "drop": "Sleep het bestand hierheen",
+        "dropHelp": "{{file}}, in de map die je koos",
+        "safe": "Alleen lezen. Sleutels, wachtwoorden en logins in {{app}} worden nooit gelezen.",
+        "ready_one": "{{count}} agent klaar om mee te komen",
+        "ready_other": "{{count}} agents klaar om mee te komen",
+        "readyOther": "Klaar om mee te komen",
+        "others_one": "En nog {{count}} agent",
+        "others_other": "En nog {{count}} agents",
+        "routines_one": "{{count}} routine",
+        "routines_other": "{{count}} routines",
+        "notes_one": "{{count}} herinnering",
+        "notes_other": "{{count}} herinneringen",
+        "skills_one": "{{count}} skill",
+        "skills_other": "{{count}} skills",
+        "channels_one": "{{count}} kanaal",
+        "channels_other": "{{count}} kanalen",
+        "files_one": "{{count}} bestand van de agents, gekopieerd naar de Drive",
+        "files_other": "{{count}} bestanden van de agents, gekopieerd naar de Drive",
+        "filesSize": "{{size}}. De hele werkruimte ziet de mappen.",
+        "after": "Daarna één klik per stuk",
+        "bring_one": "De agent meenemen",
+        "bring_other": "De {{count}} agents meenemen",
+        "choose": "Kies wat er meekomt",
+        "arrivedTitle": "Het team is er",
+        "arrived_one": "{{names}} is er al.",
+        "arrived_other": "{{names}} zijn er al.",
+        "arrivedOther_one": "{{count}} item is er al.",
+        "arrivedOther_other": "{{count}} items zijn er al.",
+        "copying": "De bestanden naar de Drive kopiëren",
+        "copyCount": "{{done}} van {{total}}",
+        "keepOpen": "Houd dit tabblad open tot het klaar is.",
+        "missed_one": "{{count}} item is niet meegekomen. In de lijst staat waarom.",
+        "missed_other": "{{count}} items zijn niet meegekomen. In de lijst staat bij elk waarom.",
+        "see": "Bekijken wat er is binnengekomen"
+      },
       "otherName": "Een andere app",
       "agenteschatName": "agentes.chat",
       "where": {
@@ -2637,6 +2727,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Heeft een computer nodig",
+        "computerOnly": "Van {{owner}}, alleen aangemeld op {{computer}}. Lodi denkt met een plan dat als account is aangemeld.",
+        "noComputer": "Van {{owner}}. Er is een computer nodig, en de workspace heeft er geen verbonden.",
+        "away": "Van {{owner}}, op {{computer}}, die weg is.",
+        "connect": "Een computer verbinden",
+        "plans": "Plannen bekijken"
+      }
+    },
     "label": "je rechterhand",
     "labelCapitalized": "Je rechterhand",
     "unusable": {
@@ -2918,16 +3018,6 @@
       "invite_people_sent_one": "Uitnodiging verstuurd naar <b>{{emails}}</b>.",
       "invite_people_sent_other": "Uitnodigingen verstuurd naar <b>{{emails}}</b>.",
       "remove_ai_key": "API-sleutel \"{{name}}\" verwijderen."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Heeft een computer nodig",
-        "computerOnly": "Van {{owner}}, alleen aangemeld op {{computer}}. Lodi denkt met een plan dat als account is aangemeld.",
-        "noComputer": "Van {{owner}}. Er is een computer nodig, en de workspace heeft er geen verbonden.",
-        "away": "Van {{owner}}, op {{computer}}, die weg is.",
-        "connect": "Een computer verbinden",
-        "plans": "Plannen bekijken"
-      }
     }
   },
   "teamWeek": {
@@ -7756,6 +7846,9 @@
     }
   },
   "issues": {
+    "handedBy": "overgedragen door <0/>{{name}}",
+    "fromDm": "uit <0>je DM met {{name}}</0>",
+    "fromDmText": "uit je DM met {{name}}",
     "delete": {
       "action": "Taak verwijderen",
       "title": "Taak #{{number}} verwijderen?",
@@ -7967,6 +8060,9 @@
       "runningTitle_female": "{{name}} werkt eraan",
       "waitingTitle": "{{name}} wacht op jou",
       "waitingTitle_female": "{{name}} wacht op jou",
+      "finishedTitle": "{{name}} heeft het afgerond",
+      "finishedMeta": "{{when}} · overgedragen door {{name}}",
+      "answer": "Antwoorden",
       "stalledTitle": "{{name}} is gestopt {{when}}",
       "stalledTitle_female": "{{name}} is gestopt {{when}}",
       "stalledText": "De taak ligt nog bij {{name}}, maar er loopt geen run.",
@@ -7985,10 +8081,7 @@
         "failed": "De laatste run is mislukt.",
         "canceled": "Iemand heeft de run gestopt.",
         "budget": "Het maandbudget van de agent is op."
-      },
-      "finishedTitle": "{{name}} heeft het afgerond",
-      "finishedMeta": "{{when}} · overgedragen door {{name}}",
-      "answer": "Antwoorden"
+      }
     },
     "status": {
       "todo": "Te doen",
@@ -8178,10 +8271,7 @@
       "criterion_checked": "heeft het criterium \"{{text}}\" aangevinkt",
       "criterion_unchecked": "heeft het criterium \"{{text}}\" uitgevinkt",
       "agent_asked": "heeft {{name}} gevraagd het te doen"
-    },
-    "handedBy": "overgedragen door <0/>{{name}}",
-    "fromDm": "uit <0>je DM met {{name}}</0>",
-    "fromDmText": "uit je DM met {{name}}"
+    }
   },
   "routines": {
     "filters": "Routines filteren",
@@ -17156,6 +17246,21 @@
     "tomorrowAt": "morgen {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Overgedragen aan <0/>{{name}}",
+      "working": "bezig",
+      "done": "klaar in {{duration}}",
+      "waitingYou": "wacht op jouw antwoord",
+      "waiting": "wacht op een antwoord",
+      "waitingApprovalYou": "wacht op jouw goedkeuring",
+      "waitingApproval": "wacht op goedkeuring",
+      "waitingComputer": "wacht op de computer",
+      "paused": "gepauzeerd op de limiet van het plan",
+      "queued": "in de wachtrij",
+      "failed": "niet afgemaakt",
+      "stopped": "gestopt",
+      "step": "stap {{current}} van {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",
@@ -17231,24 +17336,12 @@
       "failed": "Geblokkeerd · niet afgemaakt",
       "failedWhy": "Geblokkeerd · niet afgemaakt: {{why}}"
     },
-    "working": "Op de achtergrond",
-    "handed": {
-      "lead": "Overgedragen aan <0/>{{name}}",
-      "working": "bezig",
-      "done": "klaar in {{duration}}",
-      "waitingYou": "wacht op jouw antwoord",
-      "waiting": "wacht op een antwoord",
-      "waitingApprovalYou": "wacht op jouw goedkeuring",
-      "waitingApproval": "wacht op goedkeuring",
-      "waitingComputer": "wacht op de computer",
-      "paused": "gepauzeerd op de limiet van het plan",
-      "queued": "in de wachtrij",
-      "failed": "niet afgemaakt",
-      "stopped": "gestopt",
-      "step": "stap {{current}} van {{total}}"
-    }
+    "working": "Op de achtergrond"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} vraagt je"
+    },
     "speedFallback": {
       "text": "ChatGPT weigerde de snelheid Snel voor dit account of model, dus dit antwoord kwam op standaardsnelheid.",
       "action": "Agent openen"
@@ -17853,9 +17946,6 @@
       "interrupted": "Onderbroken door een herstart van de server. Vraag het opnieuw om verder te gaan.",
       "step_limit": "Mijn stappen waren op voordat ik klaar was.",
       "stuck": "Ik liep vast en stopte voordat ik klaar was."
-    },
-    "request": {
-      "asksYou": "{{name}} vraagt je"
     }
   },
   "builtinTools": {

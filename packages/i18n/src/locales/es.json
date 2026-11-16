@@ -1223,6 +1223,107 @@
         "held": "Conectar con MCP funciona cuando el plan del espacio de trabajo esté activo. Por ahora, trae los agentes por aquí.",
         "paused": "Conectar con MCP está desactivado mientras este espacio de trabajo esté en pausa. Por ahora, trae los agentes por aquí."
       },
+      "haveFileButton": "Tengo un archivo o enlace",
+      "sheet": {
+        "title": "Traer el equipo de {{app}}",
+        "otherTitle": "Traerlos de otra app",
+        "workspaceTitle": "Traerlos de otro espacio de trabajo",
+        "fileTitle": "Traerlos de un archivo o enlace",
+        "fileLead": "El archivo de cualquier app que conocemos. Se reconoce solo.",
+        "useRequest": "Prefiero pegar el pedido y traer la respuesta",
+        "backToMcp": "Volver a MCP",
+        "waitingMore": "Esperando a los siguientes…",
+        "arrivedMore": "Puede que {{app}} todavía los esté creando. Los que lleguen después aparecerán aquí.",
+        "arrivedMoreAny": "Puede que tu app de IA todavía los esté creando. Los que lleguen después aparecerán aquí.",
+        "readHere": "Se lee en tu navegador. Nada cambia aquí hasta que confirmes.",
+        "request": {
+          "grok-bot": {
+            "lead": "El bot escribe todo lo que tiene en un JSON. Lo pegas aquí y lo revisas antes de que se cree nada.",
+            "copyStep": "Pégalo en el chat con tu bot",
+            "answerStep": "Pega aquí toda su respuesta",
+            "answerPlaceholder": "El JSON que respondió el bot"
+          },
+          "chatgpt-dots": {
+            "lead": "Tu dot escribe todo lo que tiene en un archivo. Lo sueltas aquí y lo revisas antes de que se cree nada.",
+            "copyStep": "Pégalo en un chat nuevo",
+            "answerStep": "Suelta aquí el archivo que genere"
+          },
+          "other": {
+            "copyStep": "Pégalo en una conversación nueva en la otra app",
+            "answerStep": "Suelta el archivo que te devuelva, o pega su respuesta",
+            "answerPlaceholder": "La respuesta, o un enlace de GitHub"
+          }
+        },
+        "workspace": {
+          "download": "Descarga el archivo del otro espacio de trabajo",
+          "where": "Allí, en Configuración › Importar y exportar › Descargar el archivo.",
+          "open": "Abrir {{org}} en una pestaña nueva",
+          "drop": "Suelta aquí el .json"
+        },
+        "lead": "Tu asistente lee {{app}} en esta computadora y guarda un archivo donde elijas. Revisas todo antes de que se cree nada.",
+        "leadCommand": "El comando lee {{app}} en esta computadora y guarda un archivo donde elijas. Revisas todo antes de que se cree nada.",
+        "pasteAssistant": "Pega esto en tu asistente de código",
+        "pasteTerminal": "Pega esto en una terminal",
+        "pastePowerShell": "Pega esto en PowerShell",
+        "promptLabel": "Pedido para el asistente de código",
+        "commandLabel": "Comando",
+        "copy": "Copiar el pedido",
+        "assistants": "Claude Code, Codex u otro que ejecute comandos en esta computadora.",
+        "commandHelp": "Pregunta dónde guardar y escribe un archivo. No se envía nada.",
+        "useCommand": "Prefiero ejecutar el comando por mi cuenta",
+        "usePrompt": "Volver al pedido para el asistente",
+        "os": {
+          "label": "Sistema de esta computadora",
+          "unix": "Mac o Linux",
+          "windows": "Windows"
+        },
+        "dropStep": "Suelta aquí el archivo que guarde",
+        "drop": "Suelta el archivo aquí",
+        "dropHelp": "{{file}}, en la carpeta que elegiste",
+        "safe": "Solo lectura. Las claves, contraseñas e inicios de sesión de {{app}} nunca se leen.",
+        "ready_one": "{{count}} agente listo para venir",
+        "ready_many": "{{count}} agentes listos para venir",
+        "ready_other": "{{count}} agentes listos para venir",
+        "readyOther": "Listo para venir",
+        "others_one": "Y {{count}} agente más",
+        "others_many": "Y {{count}} agentes más",
+        "others_other": "Y {{count}} agentes más",
+        "routines_one": "{{count}} rutina",
+        "routines_many": "{{count}} rutinas",
+        "routines_other": "{{count}} rutinas",
+        "notes_one": "{{count}} recuerdo",
+        "notes_many": "{{count}} recuerdos",
+        "notes_other": "{{count}} recuerdos",
+        "skills_one": "{{count}} habilidad",
+        "skills_many": "{{count}} habilidades",
+        "skills_other": "{{count}} habilidades",
+        "channels_one": "{{count}} canal",
+        "channels_many": "{{count}} canales",
+        "channels_other": "{{count}} canales",
+        "files_one": "{{count}} archivo de los agentes, copiado al Drive",
+        "files_many": "{{count}} archivos de los agentes, copiados al Drive",
+        "files_other": "{{count}} archivos de los agentes, copiados al Drive",
+        "filesSize": "{{size}}. Todo el espacio de trabajo ve las carpetas.",
+        "after": "Después, un clic cada uno",
+        "bring_one": "Traer el agente",
+        "bring_many": "Traer los {{count}} agentes",
+        "bring_other": "Traer los {{count}} agentes",
+        "choose": "Elegir qué se trae",
+        "arrivedTitle": "El equipo ya está aquí",
+        "arrived_one": "{{names}} ya está aquí.",
+        "arrived_many": "{{names}} ya están aquí.",
+        "arrived_other": "{{names}} ya están aquí.",
+        "arrivedOther_one": "{{count}} elemento ya está aquí.",
+        "arrivedOther_many": "{{count}} elementos ya están aquí.",
+        "arrivedOther_other": "{{count}} elementos ya están aquí.",
+        "copying": "Copiando los archivos al Drive",
+        "copyCount": "{{done}} de {{total}}",
+        "keepOpen": "Mantén esta pestaña abierta hasta que termine.",
+        "missed_one": "{{count}} elemento no vino. La lista dice por qué.",
+        "missed_many": "{{count}} elementos no vinieron. La lista dice por qué en cada uno.",
+        "missed_other": "{{count}} elementos no vinieron. La lista dice por qué en cada uno.",
+        "see": "Ver lo que llegó"
+      },
       "otherName": "Otra app",
       "agenteschatName": "agentes.chat",
       "where": {
@@ -2731,6 +2832,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Necesita un ordenador",
+        "computerOnly": "De {{owner}}, conectado solo en {{computer}}. Lodi piensa con un plan conectado como cuenta.",
+        "noComputer": "De {{owner}}. Necesita un ordenador y el espacio de trabajo no tiene ninguno conectado.",
+        "away": "De {{owner}}, en {{computer}}, que está ausente.",
+        "connect": "Conectar un ordenador",
+        "plans": "Ver planes"
+      }
+    },
     "label": "tu mano derecha",
     "labelCapitalized": "Tu mano derecha",
     "unusable": {
@@ -3022,16 +3133,6 @@
       "invite_people_sent_many": "Invitaciones enviadas a <b>{{emails}}</b>.",
       "invite_people_sent_other": "Invitaciones enviadas a <b>{{emails}}</b>.",
       "remove_ai_key": "Eliminar la clave de API «{{name}}»."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Necesita un ordenador",
-        "computerOnly": "De {{owner}}, conectado solo en {{computer}}. Lodi piensa con un plan conectado como cuenta.",
-        "noComputer": "De {{owner}}. Necesita un ordenador y el espacio de trabajo no tiene ninguno conectado.",
-        "away": "De {{owner}}, en {{computer}}, que está ausente.",
-        "connect": "Conectar un ordenador",
-        "plans": "Ver planes"
-      }
     }
   },
   "teamWeek": {
@@ -7934,6 +8035,9 @@
     }
   },
   "issues": {
+    "handedBy": "entregada por <0/>{{name}}",
+    "fromDm": "de <0>tu DM con {{name}}</0>",
+    "fromDmText": "de tu DM con {{name}}",
     "delete": {
       "action": "Eliminar tarea",
       "title": "¿Eliminar la tarea #{{number}}?",
@@ -8154,6 +8258,9 @@
       "runningTitle_female": "{{name}} está trabajando en ella",
       "waitingTitle": "{{name}} te está esperando",
       "waitingTitle_female": "{{name}} te está esperando",
+      "finishedTitle": "{{name}} la terminó",
+      "finishedMeta": "{{when}} · entregada por {{name}}",
+      "answer": "Responder",
       "stalledTitle": "{{name}} se detuvo {{when}}",
       "stalledTitle_female": "{{name}} se detuvo {{when}}",
       "stalledText": "La tarea sigue con {{name}}, pero no hay ninguna ejecución en curso.",
@@ -8172,10 +8279,7 @@
         "failed": "La última ejecución falló.",
         "canceled": "Alguien detuvo la ejecución.",
         "budget": "Se acabó el presupuesto mensual del agente."
-      },
-      "finishedTitle": "{{name}} la terminó",
-      "finishedMeta": "{{when}} · entregada por {{name}}",
-      "answer": "Responder"
+      }
     },
     "status": {
       "todo": "Por hacer",
@@ -8369,10 +8473,7 @@
       "criterion_checked": "marcó el criterio \"{{text}}\"",
       "criterion_unchecked": "desmarcó el criterio \"{{text}}\"",
       "agent_asked": "le pidió a {{name}} que lo hiciera"
-    },
-    "handedBy": "entregada por <0/>{{name}}",
-    "fromDm": "de <0>tu DM con {{name}}</0>",
-    "fromDmText": "de tu DM con {{name}}"
+    }
   },
   "routines": {
     "filters": "Filtrar rutinas",
@@ -17562,6 +17663,21 @@
     "tomorrowAt": "mañana {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Entregado a <0/>{{name}}",
+      "working": "trabajando en ello",
+      "done": "listo en {{duration}}",
+      "waitingYou": "esperando tu respuesta",
+      "waiting": "esperando una respuesta",
+      "waitingApprovalYou": "esperando tu aprobación",
+      "waitingApproval": "esperando aprobación",
+      "waitingComputer": "esperando el ordenador",
+      "paused": "en pausa en el límite del plan",
+      "queued": "en cola",
+      "failed": "no terminó",
+      "stopped": "detenido",
+      "step": "paso {{current}} de {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_many": "{{count}} min",
@@ -17639,24 +17755,12 @@
       "failed": "Bloqueado · no terminó",
       "failedWhy": "Bloqueado · no terminó: {{why}}"
     },
-    "working": "En segundo plano",
-    "handed": {
-      "lead": "Entregado a <0/>{{name}}",
-      "working": "trabajando en ello",
-      "done": "listo en {{duration}}",
-      "waitingYou": "esperando tu respuesta",
-      "waiting": "esperando una respuesta",
-      "waitingApprovalYou": "esperando tu aprobación",
-      "waitingApproval": "esperando aprobación",
-      "waitingComputer": "esperando el ordenador",
-      "paused": "en pausa en el límite del plan",
-      "queued": "en cola",
-      "failed": "no terminó",
-      "stopped": "detenido",
-      "step": "paso {{current}} de {{total}}"
-    }
+    "working": "En segundo plano"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} te pregunta"
+    },
     "speedFallback": {
       "text": "ChatGPT rechazó la velocidad Rápida en esta cuenta o modelo, así que esta respuesta salió en estándar.",
       "action": "Abrir agente"
@@ -18257,9 +18361,6 @@
       "interrupted": "Interrumpido por un reinicio del servidor. Vuelve a pedirlo para continuar.",
       "step_limit": "Me quedé sin pasos antes de terminar.",
       "stuck": "Me trabé y me detuve antes de terminar."
-    },
-    "request": {
-      "asksYou": "{{name}} te pregunta"
     }
   },
   "builtinTools": {

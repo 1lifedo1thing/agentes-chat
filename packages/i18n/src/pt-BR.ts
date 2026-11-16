@@ -1276,7 +1276,7 @@ export const ptBR = {
         },
         workspace: {
           download: "Baixe o arquivo do outro workspace",
-          where: "Lá, em Configurações › Importar e exportar › Baixar o arquivo.",
+          where: "Lá, em Configurações\u00a0›\u00a0Importar e exportar\u00a0›\u00a0Baixar o arquivo.",
           open: "Abrir {{org}} numa aba nova",
           drop: "Solte aqui o .json",
         },

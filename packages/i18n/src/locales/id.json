@@ -1170,6 +1170,85 @@
         "held": "Hubungkan dengan MCP bisa dipakai setelah paket ruang kerja aktif. Untuk sekarang, bawa agen lewat cara ini.",
         "paused": "Hubungkan dengan MCP nonaktif selama ruang kerja ini dijeda. Untuk sekarang, bawa agen lewat cara ini."
       },
+      "haveFileButton": "Aku punya file atau tautan",
+      "sheet": {
+        "title": "Bawa tim dari {{app}}",
+        "otherTitle": "Bawa dari aplikasi lain",
+        "workspaceTitle": "Bawa dari ruang kerja lain",
+        "fileTitle": "Bawa dari file atau tautan",
+        "fileLead": "File dari aplikasi apa pun yang kami kenal. File itu dikenali dengan sendirinya.",
+        "useRequest": "Aku lebih suka menempel permintaannya dan membawa balasannya",
+        "backToMcp": "Kembali ke MCP",
+        "waitingMore": "Menunggu yang berikutnya…",
+        "arrivedMore": "{{app}} mungkin masih membuatnya. Yang datang belakangan akan muncul di sini.",
+        "arrivedMoreAny": "Aplikasi AI-mu mungkin masih membuatnya. Yang datang belakangan akan muncul di sini.",
+        "readHere": "Dibaca di browsermu. Tidak ada yang berubah di sini sampai kamu mengonfirmasi.",
+        "request": {
+          "grok-bot": {
+            "lead": "Bot menulis semua yang dimilikinya sebagai JSON. Kamu menempelnya di sini dan memeriksanya sebelum apa pun dibuat.",
+            "copyStep": "Tempel di chat dengan bot-mu",
+            "answerStep": "Tempel seluruh balasannya di sini",
+            "answerPlaceholder": "JSON balasan bot"
+          },
+          "chatgpt-dots": {
+            "lead": "Dot-mu menulis semua yang dimilikinya ke sebuah file. Kamu meletakkannya di sini dan memeriksanya sebelum apa pun dibuat.",
+            "copyStep": "Tempel di chat baru",
+            "answerStep": "Letakkan di sini file yang dibuatnya"
+          },
+          "other": {
+            "copyStep": "Tempel di percakapan baru di aplikasi lain itu",
+            "answerStep": "Letakkan file yang dikembalikannya, atau tempel balasannya",
+            "answerPlaceholder": "Balasannya, atau tautan GitHub"
+          }
+        },
+        "workspace": {
+          "download": "Unduh file dari ruang kerja lain",
+          "where": "Di sana, di Pengaturan › Impor dan ekspor › Unduh file.",
+          "open": "Buka {{org}} di tab baru",
+          "drop": "Letakkan .json di sini"
+        },
+        "lead": "Asistenmu membaca {{app}} di komputer ini dan menulis file di tempat yang kamu pilih. Kamu memeriksa semuanya sebelum apa pun dibuat.",
+        "leadCommand": "Perintah ini membaca {{app}} di komputer ini dan menulis file di tempat yang kamu pilih. Kamu memeriksa semuanya sebelum apa pun dibuat.",
+        "pasteAssistant": "Tempel ini di asisten coding-mu",
+        "pasteTerminal": "Tempel ini di terminal",
+        "pastePowerShell": "Tempel ini di PowerShell",
+        "promptLabel": "Permintaan untuk asisten coding",
+        "commandLabel": "Perintah",
+        "copy": "Salin permintaan",
+        "assistants": "Claude Code, Codex, atau asisten lain yang bisa menjalankan perintah di komputer ini.",
+        "commandHelp": "Perintah ini menanyakan tempat menyimpan, lalu menulis file. Tidak ada yang dikirim.",
+        "useCommand": "Aku lebih suka menjalankan perintahnya sendiri",
+        "usePrompt": "Kembali ke permintaan untuk asisten",
+        "os": {
+          "label": "Sistem komputer ini",
+          "unix": "Mac atau Linux",
+          "windows": "Windows"
+        },
+        "dropStep": "Letakkan di sini file yang ditulisnya",
+        "drop": "Letakkan file di sini",
+        "dropHelp": "{{file}}, di folder yang kamu pilih",
+        "safe": "Hanya membaca. Kunci, kata sandi, dan login di {{app}} tidak pernah dibaca.",
+        "ready_other": "{{count}} agen siap dibawa",
+        "readyOther": "Siap dibawa",
+        "others_other": "Dan {{count}} agen lagi",
+        "routines_other": "{{count}} rutinitas",
+        "notes_other": "{{count}} memori",
+        "skills_other": "{{count}} skill",
+        "channels_other": "{{count}} kanal",
+        "files_other": "{{count}} file milik agen, disalin ke Drive",
+        "filesSize": "{{size}}. Seluruh ruang kerja bisa melihat foldernya.",
+        "after": "Setelah itu, satu klik untuk masing-masing",
+        "bring_other": "Bawa {{count}} agen",
+        "choose": "Pilih yang ikut dibawa",
+        "arrivedTitle": "Timnya sudah tiba",
+        "arrived_other": "{{names}} sudah di sini.",
+        "arrivedOther_other": "{{count}} item sudah di sini.",
+        "copying": "Menyalin file ke Drive",
+        "copyCount": "{{done}} dari {{total}}",
+        "keepOpen": "Biarkan tab ini tetap terbuka sampai selesai.",
+        "missed_other": "{{count}} item tidak ikut. Alasan masing-masing ada di daftar.",
+        "see": "Lihat yang sudah tiba"
+      },
       "otherName": "Aplikasi lain",
       "agenteschatName": "agentes.chat",
       "where": {
@@ -2544,6 +2623,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Butuh komputer",
+        "computerOnly": "Milik {{owner}}, masuk hanya di {{computer}}. Lodi berpikir dengan paket yang masuk sebagai akun.",
+        "noComputer": "Milik {{owner}}. Butuh komputer, dan workspace belum menghubungkan satu pun.",
+        "away": "Milik {{owner}}, di {{computer}}, yang sedang tidak aktif.",
+        "connect": "Hubungkan komputer",
+        "plans": "Lihat paket"
+      }
+    },
     "label": "tangan kanan Anda",
     "labelCapitalized": "Tangan kanan Anda",
     "unusable": {
@@ -2815,16 +2904,6 @@
       "invite_roles_other": "Dengan peran {{roles}}.",
       "invite_people_sent_other": "Undangan terkirim ke <b>{{emails}}</b>.",
       "remove_ai_key": "Hapus kunci API \"{{name}}\"."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Butuh komputer",
-        "computerOnly": "Milik {{owner}}, masuk hanya di {{computer}}. Lodi berpikir dengan paket yang masuk sebagai akun.",
-        "noComputer": "Milik {{owner}}. Butuh komputer, dan workspace belum menghubungkan satu pun.",
-        "away": "Milik {{owner}}, di {{computer}}, yang sedang tidak aktif.",
-        "connect": "Hubungkan komputer",
-        "plans": "Lihat paket"
-      }
     }
   },
   "teamWeek": {
@@ -7464,6 +7543,9 @@
     }
   },
   "issues": {
+    "handedBy": "diserahkan oleh <0/>{{name}}",
+    "fromDm": "dari <0>DM kamu dengan {{name}}</0>",
+    "fromDmText": "dari DM kamu dengan {{name}}",
     "delete": {
       "action": "Hapus tugas",
       "title": "Hapus tugas #{{number}}?",
@@ -7666,6 +7748,9 @@
       "runningTitle_female": "{{name}} sedang mengerjakannya",
       "waitingTitle": "{{name}} sedang menunggumu",
       "waitingTitle_female": "{{name}} sedang menunggumu",
+      "finishedTitle": "{{name}} menyelesaikannya",
+      "finishedMeta": "{{when}} · diserahkan oleh {{name}}",
+      "answer": "Jawab",
       "stalledTitle": "{{name}} berhenti {{when}}",
       "stalledTitle_female": "{{name}} berhenti {{when}}",
       "stalledText": "Tugas ini masih dipegang {{name}}, tapi tidak ada proses yang berjalan.",
@@ -7684,10 +7769,7 @@
         "failed": "Proses terakhir gagal.",
         "canceled": "Seseorang menghentikan prosesnya.",
         "budget": "Anggaran bulanan agen sudah habis."
-      },
-      "finishedTitle": "{{name}} menyelesaikannya",
-      "finishedMeta": "{{when}} · diserahkan oleh {{name}}",
-      "answer": "Jawab"
+      }
     },
     "status": {
       "todo": "Akan dikerjakan",
@@ -7873,10 +7955,7 @@
       "criterion_checked": "mencentang kriteria \"{{text}}\"",
       "criterion_unchecked": "menghapus centang kriteria \"{{text}}\"",
       "agent_asked": "meminta {{name}} mengerjakannya"
-    },
-    "handedBy": "diserahkan oleh <0/>{{name}}",
-    "fromDm": "dari <0>DM kamu dengan {{name}}</0>",
-    "fromDmText": "dari DM kamu dengan {{name}}"
+    }
   },
   "routines": {
     "filters": "Saring rutinitas",
@@ -13978,7 +14057,7 @@
       "ownerOnly": "Hanya {{name}} yang memberi akses ke kotak surat ini.",
       "ownerOnlyUnknown": "Hanya orang yang menghubungkan kotak surat ini yang bisa memberi akses.",
       "onlyYou": "{{name}} memakai kotak surat ini hanya untuk Anda, di DM Anda.",
-      "onlyYouAll": "{{name}} memakai kotak surat Anda hanya untuk Anda, di DM Anda.",
+      "onlyYouAll": "{{name}} memakai kotak suratmu hanya untukmu, di DM-mu.",
       "remove": "Cabut akses",
       "removed": "{{name}} tidak lagi punya akses ke {{address}}.",
       "saveError": {
@@ -16580,6 +16659,21 @@
     "tomorrowAt": "besok {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Diserahkan ke <0/>{{name}}",
+      "working": "sedang dikerjakan",
+      "done": "selesai dalam {{duration}}",
+      "waitingYou": "menunggu jawabanmu",
+      "waiting": "menunggu jawaban",
+      "waitingApprovalYou": "menunggu persetujuanmu",
+      "waitingApproval": "menunggu persetujuan",
+      "waitingComputer": "menunggu komputer",
+      "paused": "dijeda di batas paket",
+      "queued": "dalam antrean",
+      "failed": "tidak selesai",
+      "stopped": "dihentikan",
+      "step": "langkah {{current}} dari {{total}}"
+    },
     "duration": {
       "minutes_other": "{{count}} mnt",
       "hours_other": "{{count}} j",
@@ -16653,24 +16747,12 @@
       "failed": "Terhambat · tidak selesai",
       "failedWhy": "Terhambat · tidak selesai: {{why}}"
     },
-    "working": "Di latar belakang",
-    "handed": {
-      "lead": "Diserahkan ke <0/>{{name}}",
-      "working": "sedang dikerjakan",
-      "done": "selesai dalam {{duration}}",
-      "waitingYou": "menunggu jawabanmu",
-      "waiting": "menunggu jawaban",
-      "waitingApprovalYou": "menunggu persetujuanmu",
-      "waitingApproval": "menunggu persetujuan",
-      "waitingComputer": "menunggu komputer",
-      "paused": "dijeda di batas paket",
-      "queued": "dalam antrean",
-      "failed": "tidak selesai",
-      "stopped": "dihentikan",
-      "step": "langkah {{current}} dari {{total}}"
-    }
+    "working": "Di latar belakang"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} bertanya padamu"
+    },
     "speedFallback": {
       "text": "ChatGPT menolak kecepatan Cepat untuk akun atau model ini, jadi jawaban ini memakai kecepatan standar.",
       "action": "Buka agen"
@@ -17255,9 +17337,6 @@
       "interrupted": "Terputus karena server dimulai ulang. Minta lagi untuk melanjutkan.",
       "step_limit": "Langkahku habis sebelum selesai.",
       "stuck": "Aku macet dan berhenti sebelum selesai."
-    },
-    "request": {
-      "asksYou": "{{name}} bertanya padamu"
     }
   },
   "builtinTools": {

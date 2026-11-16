@@ -2942,6 +2942,234 @@
   "onboarding.import.aiApp.paused": {
     "value": "Connect with MCP is off while this workspace is paused. Bring the agents this way for now."
   },
+  "onboarding.import.haveFileButton": {
+    "value": "I have a file or link"
+  },
+  "onboarding.import.sheet.title": {
+    "value": "Bring the team from {{app}}"
+  },
+  "onboarding.import.sheet.otherTitle": {
+    "value": "Bring them from another app"
+  },
+  "onboarding.import.sheet.workspaceTitle": {
+    "value": "Bring them from another workspace"
+  },
+  "onboarding.import.sheet.fileTitle": {
+    "value": "Bring them from a file or link"
+  },
+  "onboarding.import.sheet.fileLead": {
+    "value": "The file from any app we know. It is recognized on its own."
+  },
+  "onboarding.import.sheet.useRequest": {
+    "value": "I'd rather paste the request and bring back the answer"
+  },
+  "onboarding.import.sheet.backToMcp": {
+    "value": "Back to MCP"
+  },
+  "onboarding.import.sheet.waitingMore": {
+    "value": "Waiting for the next ones…"
+  },
+  "onboarding.import.sheet.arrivedMore": {
+    "value": "{{app}} may still be creating them. Whoever comes later shows up here."
+  },
+  "onboarding.import.sheet.arrivedMoreAny": {
+    "value": "Your AI app may still be creating them. Whoever comes later shows up here."
+  },
+  "onboarding.import.sheet.readHere": {
+    "value": "Read in your browser. Nothing changes here until you confirm."
+  },
+  "onboarding.import.sheet.request.grok-bot.lead": {
+    "value": "The bot writes everything it has as JSON. You paste it here and check it before anything is made."
+  },
+  "onboarding.import.sheet.request.grok-bot.copyStep": {
+    "value": "Paste it in your chat with the bot"
+  },
+  "onboarding.import.sheet.request.grok-bot.answerStep": {
+    "value": "Paste its whole answer here"
+  },
+  "onboarding.import.sheet.request.grok-bot.answerPlaceholder": {
+    "value": "The JSON the bot answered"
+  },
+  "onboarding.import.sheet.request.chatgpt-dots.lead": {
+    "value": "Your dot writes everything it has to a file. You drop it here and check it before anything is made."
+  },
+  "onboarding.import.sheet.request.chatgpt-dots.copyStep": {
+    "value": "Paste it in a new chat"
+  },
+  "onboarding.import.sheet.request.chatgpt-dots.answerStep": {
+    "value": "Drop the file it makes here"
+  },
+  "onboarding.import.sheet.request.other.copyStep": {
+    "value": "Paste it in a new conversation in the other app"
+  },
+  "onboarding.import.sheet.request.other.answerStep": {
+    "value": "Drop the file it gives back, or paste its answer"
+  },
+  "onboarding.import.sheet.request.other.answerPlaceholder": {
+    "value": "The answer, or a GitHub link"
+  },
+  "onboarding.import.sheet.workspace.download": {
+    "value": "Download the other workspace's file"
+  },
+  "onboarding.import.sheet.workspace.where": {
+    "value": "There, in Settings › Import and export › Download the file."
+  },
+  "onboarding.import.sheet.workspace.open": {
+    "value": "Open {{org}} in a new tab"
+  },
+  "onboarding.import.sheet.workspace.drop": {
+    "value": "Drop the .json here"
+  },
+  "onboarding.import.sheet.lead": {
+    "value": "Your assistant reads {{app}} on this computer and writes a file where you choose. You check everything before anything is made."
+  },
+  "onboarding.import.sheet.leadCommand": {
+    "value": "The command reads {{app}} on this computer and writes a file where you choose. You check everything before anything is made."
+  },
+  "onboarding.import.sheet.pasteAssistant": {
+    "value": "Paste this in your coding assistant"
+  },
+  "onboarding.import.sheet.pasteTerminal": {
+    "value": "Paste this in a terminal"
+  },
+  "onboarding.import.sheet.pastePowerShell": {
+    "value": "Paste this in PowerShell"
+  },
+  "onboarding.import.sheet.promptLabel": {
+    "value": "Request for the coding assistant"
+  },
+  "onboarding.import.sheet.commandLabel": {
+    "value": "Command"
+  },
+  "onboarding.import.sheet.copy": {
+    "value": "Copy the request"
+  },
+  "onboarding.import.sheet.assistants": {
+    "value": "Claude Code, Codex or another one that runs commands on this computer."
+  },
+  "onboarding.import.sheet.commandHelp": {
+    "value": "It asks where to save and writes a file. Nothing is sent."
+  },
+  "onboarding.import.sheet.useCommand": {
+    "value": "I'd rather run the command myself"
+  },
+  "onboarding.import.sheet.usePrompt": {
+    "value": "Back to the request for the assistant"
+  },
+  "onboarding.import.sheet.os.label": {
+    "value": "This computer's system"
+  },
+  "onboarding.import.sheet.os.unix": {
+    "value": "Mac or Linux"
+  },
+  "onboarding.import.sheet.os.windows": {
+    "value": "Windows"
+  },
+  "onboarding.import.sheet.dropStep": {
+    "value": "Drop here the file it writes"
+  },
+  "onboarding.import.sheet.drop": {
+    "value": "Drop the file here"
+  },
+  "onboarding.import.sheet.dropHelp": {
+    "value": "{{file}}, in the folder you chose"
+  },
+  "onboarding.import.sheet.safe": {
+    "value": "Read only. Keys, passwords and sign-ins in {{app}} are never read."
+  },
+  "onboarding.import.sheet.ready": {
+    "value": {
+      "one": "{{count}} agent ready to come",
+      "other": "{{count}} agents ready to come"
+    }
+  },
+  "onboarding.import.sheet.readyOther": {
+    "value": "Ready to come"
+  },
+  "onboarding.import.sheet.others": {
+    "value": {
+      "one": "And {{count}} more agent",
+      "other": "And {{count}} more agents"
+    }
+  },
+  "onboarding.import.sheet.routines": {
+    "value": {
+      "one": "{{count}} routine",
+      "other": "{{count}} routines"
+    }
+  },
+  "onboarding.import.sheet.notes": {
+    "value": {
+      "one": "{{count}} memory",
+      "other": "{{count}} memories"
+    }
+  },
+  "onboarding.import.sheet.skills": {
+    "value": {
+      "one": "{{count}} skill",
+      "other": "{{count}} skills"
+    }
+  },
+  "onboarding.import.sheet.channels": {
+    "value": {
+      "one": "{{count}} channel",
+      "other": "{{count}} channels"
+    }
+  },
+  "onboarding.import.sheet.files": {
+    "value": {
+      "one": "{{count}} file of the agents, copied to the Drive",
+      "other": "{{count}} files of the agents, copied to the Drive"
+    }
+  },
+  "onboarding.import.sheet.filesSize": {
+    "value": "{{size}}. The whole workspace sees the folders."
+  },
+  "onboarding.import.sheet.after": {
+    "value": "Afterwards, one click each"
+  },
+  "onboarding.import.sheet.bring": {
+    "value": {
+      "one": "Bring the agent",
+      "other": "Bring the {{count}} agents"
+    }
+  },
+  "onboarding.import.sheet.choose": {
+    "value": "Choose what comes"
+  },
+  "onboarding.import.sheet.arrivedTitle": {
+    "value": "The team is here"
+  },
+  "onboarding.import.sheet.arrived": {
+    "value": {
+      "one": "{{names}} is here.",
+      "other": "{{names}} are here."
+    }
+  },
+  "onboarding.import.sheet.arrivedOther": {
+    "value": {
+      "one": "{{count}} item is here.",
+      "other": "{{count}} items are here."
+    }
+  },
+  "onboarding.import.sheet.copying": {
+    "value": "Copying the files to the Drive"
+  },
+  "onboarding.import.sheet.copyCount": {
+    "value": "{{done}} of {{total}}"
+  },
+  "onboarding.import.sheet.keepOpen": {
+    "value": "Keep this tab open until it ends."
+  },
+  "onboarding.import.sheet.missed": {
+    "value": {
+      "one": "{{count}} item didn't come. The list says why.",
+      "other": "{{count}} items didn't come. The list says why for each."
+    }
+  },
+  "onboarding.import.sheet.see": {
+    "value": "See what came"
+  },
   "onboarding.import.otherName": {
     "value": "Another app"
   },
@@ -6562,6 +6790,24 @@
   },
   "receipts.by.default": {
     "value": "Nobody was called, so {{name}} answered"
+  },
+  "rightHand.brain.unusable.title": {
+    "value": "Needs a computer"
+  },
+  "rightHand.brain.unusable.computerOnly": {
+    "value": "{{owner}}'s, signed in on {{computer}} only. Lodi thinks with a plan signed in as an account."
+  },
+  "rightHand.brain.unusable.noComputer": {
+    "value": "{{owner}}'s. It needs a computer, and the workspace has none connected."
+  },
+  "rightHand.brain.unusable.away": {
+    "value": "{{owner}}'s, on {{computer}}, which is away."
+  },
+  "rightHand.brain.unusable.connect": {
+    "value": "Connect a computer"
+  },
+  "rightHand.brain.unusable.plans": {
+    "value": "See plans"
   },
   "rightHand.label": {
     "value": "your right hand"
@@ -14624,7 +14870,9 @@
   "agentPage.access.filters.ask": {
     "value": "Ask for approval"
   },
-  "agentPage.access.setAll": "Change all",
+  "agentPage.access.setAll": {
+    "value": "Change all"
+  },
   "agentPage.access.connectors": {
     "value": "{{org}}'s connectors"
   },
@@ -18703,6 +18951,15 @@
   "scopes.custom_write.description": {
     "value": "Use the write tools. Those marked sensitive always ask for approval."
   },
+  "issues.handedBy": {
+    "value": "handed by <0/>{{name}}"
+  },
+  "issues.fromDm": {
+    "value": "from <0>your DM with {{name}}</0>"
+  },
+  "issues.fromDmText": {
+    "value": "from your DM with {{name}}"
+  },
   "issues.delete.action": {
     "value": "Delete task"
   },
@@ -19227,6 +19484,15 @@
   },
   "issues.work.waitingTitle": {
     "value": "{{name}} is waiting for you"
+  },
+  "issues.work.finishedTitle": {
+    "value": "{{name}} finished it"
+  },
+  "issues.work.finishedMeta": {
+    "value": "{{when}} · handed by {{name}}"
+  },
+  "issues.work.answer": {
+    "value": "Answer"
   },
   "issues.work.stalledTitle": {
     "value": "{{name}} stopped {{when}}"
@@ -28895,7 +29161,9 @@
   "access.cellAsks": {
     "value": "{{agent}} in {{resource}}: {{level}}, sensitive actions ask for approval"
   },
-  "access.asksList": "Asks for approval: {{tools}}",
+  "access.asksList": {
+    "value": "Asks for approval: {{tools}}"
+  },
   "access.asksMore": {
     "value": {
       "one": "and {{count}} more",
@@ -35494,7 +35762,9 @@
   "mail.agent.onlyYou": {
     "value": "{{name}} uses this mailbox only for you, in your DM."
   },
-  "mail.agent.onlyYouAll": "{{name}} uses your mailboxes only for you, in your DM.",
+  "mail.agent.onlyYouAll": {
+    "value": "{{name}} uses your mailboxes only for you, in your DM."
+  },
   "mail.agent.remove": {
     "value": "Remove access"
   },
@@ -42040,6 +42310,45 @@
   "format.tomorrowAt": {
     "value": "tomorrow {{time}}"
   },
+  "work.handed.lead": {
+    "value": "Handed to <0/>{{name}}"
+  },
+  "work.handed.working": {
+    "value": "working on it"
+  },
+  "work.handed.done": {
+    "value": "done in {{duration}}"
+  },
+  "work.handed.waitingYou": {
+    "value": "waiting for your answer"
+  },
+  "work.handed.waiting": {
+    "value": "waiting for an answer"
+  },
+  "work.handed.waitingApprovalYou": {
+    "value": "waiting for your approval"
+  },
+  "work.handed.waitingApproval": {
+    "value": "waiting for approval"
+  },
+  "work.handed.waitingComputer": {
+    "value": "waiting for the computer"
+  },
+  "work.handed.paused": {
+    "value": "paused at the plan's limit"
+  },
+  "work.handed.queued": {
+    "value": "in line"
+  },
+  "work.handed.failed": {
+    "value": "didn't finish"
+  },
+  "work.handed.stopped": {
+    "value": "stopped"
+  },
+  "work.handed.step": {
+    "value": "step {{current}} of {{total}}"
+  },
   "work.duration.minutes": {
     "value": {
       "one": "{{count}} min",
@@ -42237,6 +42546,9 @@
   },
   "work.working": {
     "value": "In the background"
+  },
+  "chat.request.asksYou": {
+    "value": "{{name}} asks you"
   },
   "chat.speedFallback.text": {
     "value": "ChatGPT refused Fast speed on this account or model, so this reply came at standard speed."
@@ -49270,83 +49582,5 @@
   },
   "feedback.offer.askFirst": {
     "value": "Ask before sending"
-  },
-  "rightHand.brain.unusable.title": {
-    "value": "Needs a computer"
-  },
-  "rightHand.brain.unusable.computerOnly": {
-    "value": "{{owner}}'s, signed in on {{computer}} only. Lodi thinks with a plan signed in as an account."
-  },
-  "rightHand.brain.unusable.noComputer": {
-    "value": "{{owner}}'s. It needs a computer, and the workspace has none connected."
-  },
-  "rightHand.brain.unusable.away": {
-    "value": "{{owner}}'s, on {{computer}}, which is away."
-  },
-  "rightHand.brain.unusable.connect": {
-    "value": "Connect a computer"
-  },
-  "rightHand.brain.unusable.plans": {
-    "value": "See plans"
-  },
-  "issues.handedBy": {
-    "value": "handed by <0/>{{name}}"
-  },
-  "issues.fromDm": {
-    "value": "from <0>your DM with {{name}}</0>"
-  },
-  "issues.fromDmText": {
-    "value": "from your DM with {{name}}"
-  },
-  "issues.work.finishedTitle": {
-    "value": "{{name}} finished it"
-  },
-  "issues.work.finishedMeta": {
-    "value": "{{when}} · handed by {{name}}"
-  },
-  "issues.work.answer": {
-    "value": "Answer"
-  },
-  "work.handed.lead": {
-    "value": "Handed to <0/>{{name}}"
-  },
-  "work.handed.working": {
-    "value": "working on it"
-  },
-  "work.handed.done": {
-    "value": "done in {{duration}}"
-  },
-  "work.handed.waitingYou": {
-    "value": "waiting for your answer"
-  },
-  "work.handed.waiting": {
-    "value": "waiting for an answer"
-  },
-  "work.handed.waitingApprovalYou": {
-    "value": "waiting for your approval"
-  },
-  "work.handed.waitingApproval": {
-    "value": "waiting for approval"
-  },
-  "work.handed.waitingComputer": {
-    "value": "waiting for the computer"
-  },
-  "work.handed.paused": {
-    "value": "paused at the plan's limit"
-  },
-  "work.handed.queued": {
-    "value": "in line"
-  },
-  "work.handed.failed": {
-    "value": "didn't finish"
-  },
-  "work.handed.stopped": {
-    "value": "stopped"
-  },
-  "work.handed.step": {
-    "value": "step {{current}} of {{total}}"
-  },
-  "chat.request.asksYou": {
-    "value": "{{name}} asks you"
   }
 }
