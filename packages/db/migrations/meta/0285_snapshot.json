@@ -1,6 +1,6 @@
 {
-  "id": "f4659317-2d59-4106-8ecc-5b3f6d47be6b",
-  "prevId": "778e54cf-d6b6-4d05-b445-50e1dbc6118b",
+  "id": "126e2bab-f67f-44d6-998c-e7c1bba9243e",
+  "prevId": "eefbf165-a463-4baf-9f94-b3c1e2cdfdc9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3637,97 +3637,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.confidential_threads": {
-      "name": "confidential_threads",
-      "schema": "",
-      "columns": {
-        "org_id": {
-          "name": "org_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel_id": {
-          "name": "channel_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "root_message_id": {
-          "name": "root_message_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "connection_ids": {
-          "name": "connection_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
-        },
-        "thinks_with": {
-          "name": "thinks_with",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "marked_at": {
-          "name": "marked_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "confidential_threads_marked_at_index": {
-          "name": "confidential_threads_marked_at_index",
-          "columns": [
-            {
-              "expression": "marked_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "confidential_threads_org_id_channel_id_channels_org_id_id_fk": {
-          "name": "confidential_threads_org_id_channel_id_channels_org_id_id_fk",
-          "tableFrom": "confidential_threads",
-          "tableTo": "channels",
-          "columnsFrom": [
-            "org_id",
-            "channel_id"
-          ],
-          "columnsTo": [
-            "org_id",
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "confidential_threads_org_id_root_message_id_pk": {
-          "name": "confidential_threads_org_id_root_message_id_pk",
-          "columns": [
-            "org_id",
-            "root_message_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.message_client_ids": {
       "name": "message_client_ids",
       "schema": "",
@@ -4145,6 +4054,22 @@
           ],
           "isUnique": false,
           "where": "\"messages\".\"author_agent_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "messages_agent_run_id_index": {
+          "name": "messages_agent_run_id_index",
+          "columns": [
+            {
+              "expression": "agent_run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"messages\".\"agent_run_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -14881,7 +14806,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "agent_budget_periods_org_id_period_start_index": {
+          "name": "agent_budget_periods_org_id_period_start_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "period_start",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "agent_budget_periods_org_id_agent_id_agents_org_id_id_fk": {
           "name": "agent_budget_periods_org_id_agent_id_agents_org_id_id_fk",
@@ -15563,6 +15510,28 @@
           "concurrently": true,
           "method": "btree",
           "with": {}
+        },
+        "agent_run_steps_tool_call_run_idx": {
+          "name": "agent_run_steps_tool_call_run_idx",
+          "columns": [
+            {
+              "expression": "run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "seq",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_run_steps\".\"kind\" = 'tool_call'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -15926,6 +15895,28 @@
           "method": "btree",
           "with": {}
         },
+        "agent_runs_org_id_brain_session_id_index": {
+          "name": "agent_runs_org_id_brain_session_id_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "brain_session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_runs\".\"brain_session_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "agent_runs_waiting_machine_idx": {
           "name": "agent_runs_waiting_machine_idx",
           "columns": [
@@ -16058,7 +16049,24 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "agent_scopes_connection_id_index": {
+          "name": "agent_scopes_connection_id_index",
+          "columns": [
+            {
+              "expression": "connection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_scopes\".\"connection_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "agent_scopes_org_id_agent_id_agents_org_id_id_fk": {
           "name": "agent_scopes_org_id_agent_id_agents_org_id_id_fk",
