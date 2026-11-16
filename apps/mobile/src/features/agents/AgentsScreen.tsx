@@ -234,7 +234,7 @@ function Agents() {
       ) : null}
       {/* Equipe's org chart and channels (ADR 0148). A personal workspace (ADR 0159) keeps it as the last row of You ›
           Work: one person's agents rarely need an org chart in sight. */}
-      {total > 0 && !isPersonal(org) ? <TeamEntry /> : null}
+      {total > 0 && !isPersonal(org) ? <TeamEntry divider={showsManager} /> : null}
       <LayoutAnimationConfig skipEntering>
         {waiting.length > 0 ? (
           <>
@@ -342,7 +342,7 @@ function ManagerRow({ working, waiting, onPress }: { working: number; waiting: n
       leading={<Tile icon="list" size={52} />}
       title={t("taskManager.title")}
       sub={
-        <Text variant="subhead" style={{ color: waiting > 0 ? c.amber : c.muted }} numberOfLines={1}>
+        <Text variant="small" style={[LIST_PREVIEW, { color: waiting > 0 ? c.amber : c.muted }]} numberOfLines={1}>
           {line}
         </Text>
       }

@@ -40,7 +40,7 @@ export function DeleteAgentScreen({ id, proposal }: { id: string; proposal?: str
 
   if (!agent) {
     return (
-      <SettingsPage title={t("agent.edit")}>
+      <SettingsPage title={t("agentPage.delete.button")}>
         <EmptyState icon="agent" title={t("mobile.agentEdit.missing")} />
       </SettingsPage>
     );

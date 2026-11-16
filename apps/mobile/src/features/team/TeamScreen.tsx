@@ -1,4 +1,4 @@
-import { type TeamAgent, useAgentGroups, useChannels, useMembers, useTeam } from "@agenteschat/client";
+import { type Agent, type TeamAgent, useAgentGroups, useChannels, useMembers, useTeam } from "@agenteschat/client";
 import { can } from "@agenteschat/client/lib/permissions";
 import { rightHandOf } from "@agenteschat/client/lib/right-hand";
 import {
@@ -12,7 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { EmptyState, Icon, IconButton, ListRow, SCREEN_X, SectionHeader, Text, weights } from "@/ui";
+import { EmptyState, Icon, IconButton, ListRow, SCREEN_X, SectionHeader, SkeletonList, Text, weights } from "@/ui";
 import { router } from "@/ui/navigation";
 import { chatHref } from "../links/logic";
 import { AgentFace, Face } from "../shared/Face";
@@ -93,6 +93,57 @@ export function TeamScreen() {
         : {})}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
     >
+      {team.isPending ? (
+        // The rows' own shape while the team loads, never an empty chart counting nobody.
+        <SkeletonList rows={4} />
+      ) : team.isError && !team.data ? (
+        // A team that didn't load is not an empty one: what happened, and the way to ask again.
+        <LoadFailed onRetry={() => void team.refetch()} />
+      ) : (
+        <TeamBody
+          lodi={lodi}
+          summary={summary}
+          chart={chart}
+          rooms={rooms}
+          outside={outside}
+          agents={agents}
+          channelName={channelName}
+          sectors={sectors}
+          groups={groups}
+          noSectors={noSectors}
+        />
+      )}
+    </PushedLargeTitle>
+  );
+}
+
+/** What Equipe shows once the team is in: the summary, the chart, the channels and the setores. */
+function TeamBody({
+  lodi,
+  summary,
+  chart,
+  rooms,
+  outside,
+  agents,
+  channelName,
+  sectors,
+  groups,
+  noSectors,
+}: {
+  lodi: Agent | undefined;
+  summary: string;
+  chart: ReturnType<typeof chartByPerson>;
+  rooms: ReturnType<typeof mapColumns>;
+  outside: TeamAgent[];
+  agents: TeamAgent[];
+  channelName: (id: string) => string;
+  sectors: ReturnType<typeof teamSections>;
+  groups: ReturnType<typeof useAgentGroups>;
+  noSectors: ReturnType<typeof noSectorsCopy>;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
       <Text variant="subhead" tone="muted" style={styles.summary}>
         {summary}
       </Text>
@@ -175,7 +226,7 @@ export function TeamScreen() {
           );
         })
       )}
-    </PushedLargeTitle>
+    </>
   );
 }
 

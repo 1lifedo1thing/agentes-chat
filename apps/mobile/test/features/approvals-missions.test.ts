@@ -260,8 +260,10 @@ describe("git requests on the phone", () => {
     );
     expect(screen).toContain("const rules = useApprovalRules(orgId, agentId);");
     expect(screen).toContain("const what = approvalRuleWords(t, rule);");
-    expect(screen).toContain("mayRemove ? (");
+    // The row's own ×, as the system's lists take a row out: never a hand-made row around a button.
+    expect(screen).toContain("{...(mayRemove && !remove.isPending");
     expect(screen).toContain("remove.mutate(rule.id, {");
+    expect(screen).not.toContain("function ButtonRow");
     const pt = await translator("pt-BR");
     expect(pt("agentPage.access.always.title")).toBe("Aprovado sempre");
     expect(pt("agentPage.access.always.remove", { what: approvalRuleWords(pt, rule) })).toBe(

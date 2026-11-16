@@ -7,8 +7,9 @@ import { StyleSheet, TextInput, View } from "react-native";
 import { GestureDetector, usePanGesture } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useDerivedValue, useSharedValue } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { Button, fieldText, Sheet, Text } from "@/ui";
+import { Button, fieldText, Sheet } from "@/ui";
 import { useColors } from "../shared/hooks";
+import { SheetTitle } from "../shared/PromptForm";
 import { hsvRgb, rgbHex, tileOf } from "./color-pick";
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
@@ -148,7 +149,7 @@ export function ColorSheet({
   return (
     <Sheet open={open} onClose={onClose}>
       <View style={styles.wrap}>
-        <Text variant="title">{t("look.customColor")}</Text>
+        <SheetTitle title={t("look.customColor")} />
         <GestureDetector gesture={area}>
           <View
             onLayout={(e) => {
@@ -229,7 +230,7 @@ export function ColorSheet({
             style={[styles.hex, fieldText("body"), { backgroundColor: c.raised, color: c.ink, borderColor: c.line }]}
           />
         </View>
-        <Button variant="primary" label={t("look.useColor")} onPress={done} />
+        <Button variant="primary" wide label={t("look.useColor")} onPress={done} />
       </View>
     </Sheet>
   );

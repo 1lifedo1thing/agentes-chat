@@ -21,7 +21,6 @@ import {
   type Level,
   type LevelState,
   levelOf,
-  nextLevel,
   resourcesOf,
 } from "@agenteschat/client/lib/access-levels";
 import { channelsAfter, sameAudience } from "@agenteschat/client/lib/agent-edit";
@@ -52,21 +51,24 @@ import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { EmptyState, fieldText, GroupedFooter, GroupedHeader, GroupedList, GroupedRow, RoleMark, Text } from "@/ui";
+import { EmptyState, GroupedFooter, GroupedHeader, GroupedList, GroupedRow, type IconName, RoleMark } from "@/ui";
 import { router } from "@/ui/navigation";
 import { openAgentAi } from "../../ai/AgentAiScreen";
 import { PlanReplies } from "../../ai/parts";
 import { useWidenAsk } from "../../chat/ReachLines";
 import { ConnectorIcon } from "../../connectors/ConnectorIcon";
 import { openTemplatesAfterAbout } from "../../right-hand/FirstRun";
+import { RowBones } from "../../roles/parts";
 import { useFailed } from "../../routines/hooks";
 import { resourceName, useConnectedById, useSetLevels } from "../../settings/hooks";
 import { SettingsPage } from "../../settings/parts";
-import { useColors, useDirectory, useMeId } from "../../shared/hooks";
-import { goBack, PushedHeader, successHaptic, tapHaptic } from "../../shared/parts";
+import { useDirectory, useMeId } from "../../shared/hooks";
+import { pickOne } from "../../shared/PickerSheet";
+import { goBack, successHaptic, tapHaptic } from "../../shared/parts";
 import { TextArea } from "../../shared/TextArea";
+import { BudgetField } from "../BudgetSection";
 import { useAgentChannels } from "./useAgentChannels";
 
 /*
@@ -96,7 +98,6 @@ export function SetupStepScreen({
 }) {
   const { t } = useTranslation();
   const { org } = useOrg();
-  const c = useColors();
   const dir = useDirectory();
   const agent = dir.agentById.get(agentId);
   const known = STEPS.find((s) => s === step);
@@ -106,10 +107,9 @@ export function SetupStepScreen({
   const firstRunScreen = known === "apps" || (known === "about" && isPersonal(org));
   if (!agent?.setup || !known || (firstRun ? !firstRunScreen : known === "about")) {
     return (
-      <View style={[styles.fill, { backgroundColor: c.bg }]}>
-        <PushedHeader title={t("agentSetup.title")} solid={false} />
+      <SettingsPage title={t("agentSetup.title")}>
         <EmptyState icon="agent" title={t("mobile.agentEdit.missing")} />
-      </View>
+      </SettingsPage>
     );
   }
   switch (known) {
@@ -220,7 +220,6 @@ function AboutYouStep({ typed }: { typed: string | null }) {
 function FirstRunAppsStep() {
   const { t } = useTranslation();
   const { orgId, org } = useOrg();
-  const c = useColors();
   const dir = useDirectory();
   const catalog = useCatalog();
   const connections = useConnections(orgId);
@@ -233,7 +232,7 @@ function FirstRunAppsStep() {
   return (
     <SettingsPage title={t(modeKey(org, "agentSetup.firstRun.apps.title"))}>
       <GroupedFooter>{t(modeKey(org, "agentSetup.firstRun.apps.desc"))}</GroupedFooter>
-      {catalog.isPending || connections.isPending ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
+      {catalog.isPending || connections.isPending ? <Bones /> : null}
       {list.length > 0 ? (
         <GroupedList>
           {list.map(({ def, suggested }) => (
@@ -288,11 +287,16 @@ function useStepSave(agent: Agent, step: SetupStep) {
   return { busy, run };
 }
 
-/** "What Leo can use": the workspace's apps, its role's at their suggestion; a tap moves a level on. */
+/** Each level's mark in the picker, as the app's level picker draws them: nothing, reading, writing. */
+const LEVEL_ICON: Record<Level, IconName> = { none: "eyeoff", read: "eye", write: "pen" };
+
+/**
+ * "What Leo can use": the workspace's apps, its role's at their suggestion; a level is chosen in the app's picker among
+ * the ones the app offers (its value's up-down mark), as everywhere else on the phone, never cycled by taps.
+ */
 function AppsStep({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
   const { orgId, org } = useOrg();
-  const c = useColors();
   const access = useAgentAccess(orgId, agent.id);
   const items = useConnectedById();
   const setLevels = useSetLevels();
@@ -332,7 +336,7 @@ function AppsStep({ agent }: { agent: Agent }) {
       }}
     >
       <GroupedFooter>{t("agentSetup.apps.desc")}</GroupedFooter>
-      {access.isPending ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
+      {access.isPending ? <Bones /> : null}
       {access.isSuccess && ordered.length === 0 ? (
         <GroupedFooter>{t(modeKey(org, "agentSetup.apps.empty"), { org: org?.name ?? "" })}</GroupedFooter>
       ) : null}
@@ -353,10 +357,21 @@ function AppsStep({ agent }: { agent: Agent }) {
                 label={name}
                 {...(sub ? { sub } : {})}
                 value={t(`access.level.${l}`)}
-                onPress={() => {
-                  tapHaptic();
-                  setDraft((d) => ({ ...d, [r.id]: nextLevel(r, l) }));
-                }}
+                menu
+                onPress={() =>
+                  void pickOne({
+                    title: name,
+                    value: l,
+                    options: r.levels.map((level) => ({
+                      key: level,
+                      label: t(`access.level.${level}`),
+                      leading: { kind: "icon" as const, name: LEVEL_ICON[level] },
+                    })),
+                  }).then((key) => {
+                    const picked = r.levels.find((level) => level === key);
+                    if (picked) setDraft((d) => ({ ...d, [r.id]: picked }));
+                  })
+                }
               />
             );
           })}
@@ -379,7 +394,6 @@ function AppsStep({ agent }: { agent: Agent }) {
 function WhereStep({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
   const { orgId, org } = useOrg();
-  const c = useColors();
   const api = useApi();
   const qc = useQueryClient();
   const meId = useMeId();
@@ -425,7 +439,7 @@ function WhereStep({ agent }: { agent: Agent }) {
       action={{ label: ok, onPress: () => void save(), disabled: !ready }}
     >
       <GroupedFooter>{t("agentSetup.where.desc")}</GroupedFooter>
-      {!ready ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
+      {!ready ? <Bones /> : null}
       {ready && order.length === 0 ? <GroupedFooter>{t("newAgent.noChannels")}</GroupedFooter> : null}
       {ready && order.length > 0 ? (
         <GroupedList>
@@ -589,7 +603,6 @@ function WhoStep({ agent }: { agent: Agent }) {
 function HowStep({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
   const { orgId, org } = useOrg();
-  const c = useColors();
   const update = useUpdateAgent(orgId, agent.id);
   const modelLabel = useModelLabel();
   const { busy, run } = useStepSave(agent, "how");
@@ -636,19 +649,7 @@ function HowStep({ agent }: { agent: Agent }) {
           >
             {t("agentSetup.how.budget")}
           </GroupedHeader>
-          <View style={[styles.budget, { backgroundColor: c.raised }]}>
-            <Text variant="body" tone="muted">
-              US$
-            </Text>
-            <TextInput
-              value={budget}
-              onChangeText={setBudget}
-              keyboardType="decimal-pad"
-              editable={!busy}
-              accessibilityLabel={t("agentSetup.how.budget")}
-              style={[styles.amount, fieldText("body"), { color: c.ink }]}
-            />
-          </View>
+          <BudgetField value={budget} onChangeText={setBudget} editable={!busy} label={t("agentSetup.how.budget")} />
           {budgetOk ? null : <GroupedFooter>{t("agent.budgetInvalid")}</GroupedFooter>}
         </>
       ) : null}
@@ -671,17 +672,17 @@ function HowStep({ agent }: { agent: Agent }) {
   );
 }
 
+/** A step's list while it loads: the rows' own shape, never a spinner. */
+function Bones() {
+  return (
+    <GroupedList>
+      <RowBones />
+      <RowBones name={56} />
+      <RowBones name={34} />
+    </GroupedList>
+  );
+}
+
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  loading: { marginVertical: 16 },
   plan: { marginTop: 18 },
-  budget: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    minHeight: 48,
-  },
-  amount: { flex: 1, paddingVertical: 12 },
 });
