@@ -237,7 +237,7 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
         : t("surface.link.title", { assistant: named, surface });
   const steps = (
     <ol className="dv-steps">
-      <Step state={step === "code" ? "current" : "done"} live={false} title={t("surface.link.stepScan", { surface })} />
+      <Step state={step === "code" ? "current" : "done"} live={false} title={t("surface.link.stepScan")} />
       <Step
         state={step === "code" ? "waiting" : step === "wait" ? "current" : "done"}
         title={t("surface.link.stepSend")}

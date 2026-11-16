@@ -5469,7 +5469,7 @@
     "value": "Open {{surface}}"
   },
   "surface.link.stepScan": {
-    "value": "Scan the code with your phone, or open {{surface}} here"
+    "value": "Scan the code with your phone, or open the app below"
   },
   "surface.link.stepSend": {
     "value": "Send the message as it is"

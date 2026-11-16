@@ -2365,7 +2365,7 @@ export const en = {
       /** Under the QR code: the code itself, for typing it by hand. */
       code: "Your code {{code}}",
       open: "Open {{surface}}",
-      stepScan: "Scan the code with your phone, or open {{surface}} here",
+      stepScan: "Scan the code with your phone, or open the app below",
       stepSend: "Send the message as it is",
       stepSendText: "This moves on by itself once your message arrives.",
       stepConfirm: "Check the sender and confirm here",

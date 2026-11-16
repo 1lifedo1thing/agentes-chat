@@ -2265,7 +2265,7 @@
       "making": "Creando tu código",
       "code": "Tu código {{code}}",
       "open": "Abrir {{surface}}",
-      "stepScan": "Escanea el código con tu celular, o abre {{surface}} aquí",
+      "stepScan": "Escanea el código con tu celular, o abre la app abajo",
       "stepSend": "Envía el mensaje tal como está",
       "stepSendText": "Esto avanza solo cuando llegue tu mensaje.",
       "stepConfirm": "Revisa el remitente y confirma aquí",

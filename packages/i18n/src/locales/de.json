@@ -2202,7 +2202,7 @@
       "making": "Dein Code wird erstellt",
       "code": "Dein Code {{code}}",
       "open": "{{surface}} öffnen",
-      "stepScan": "Scanne den Code mit deinem Handy oder öffne {{surface}} hier",
+      "stepScan": "Scanne den Code mit deinem Handy oder öffne die App unten",
       "stepSend": "Sende die Nachricht so, wie sie ist",
       "stepSendText": "Das geht von selbst weiter, sobald deine Nachricht ankommt.",
       "stepConfirm": "Prüfe den Absender und bestätige hier",

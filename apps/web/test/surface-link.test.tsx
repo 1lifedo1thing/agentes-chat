@@ -4,6 +4,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import { ApiError, keys, type Message, type SurfaceLink } from "@agenteschat/client";
+import { LOCALE_CODES } from "@agenteschat/i18n/locale";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { createFakeApi, ENG_ID, ORG_ID, seedState, withChatPrefs, withRightHand } from "./fake-api";
 import { renderApp, screen, settle, showIn } from "./render";
@@ -15,7 +16,8 @@ const click = async (el: Element) => {
   await settle(4);
 };
 
-const LONG_SURFACE = "Example Chat Messenger for Teams Everywhere International";
+/** The longest name `SURFACE_NAME` allows (32 characters), with one long unbroken word. */
+const LONG_SURFACE = "Example Chat Teamsmessengerworld";
 const LONG_DISPLAY = "+1 555 0100 0100 0100 0100 0100 0100 0100 0100 0100 0100 0100 01";
 const LONG_HANDLE = "@ana.theo.example.chat.handle.without.any.space.to.break.at.all.x";
 const LONG_PROFILE = "Ana 🌟 مرحبا بالعالم من مساحة العمل Theo 🚀 שלום עולם ומה שלומכם";
@@ -280,6 +282,26 @@ describe("the outside chat app's row in Notificações", () => {
     });
     await showIn(spaced.app.services, "de");
     expect(document.getElementById("notice-surface-status")?.textContent).toBe(`${LONG_DISPLAY} · ${LONG_PROFILE}`);
+  });
+
+  test("at the longest name, in every language: the steps leave the name to the button under them", async () => {
+    const { app, row } = await notifications({ name: LONG_SURFACE, links: [] });
+    await click(
+      within(row() as HTMLElement)
+        .getAllByRole("button")
+        .at(-1) as HTMLElement,
+    );
+    const open = screen().getByRole("dialog").querySelector("a[href]") as HTMLElement;
+    open.addEventListener("click", (e) => e.preventDefault());
+    await click(open);
+    // The wait: every step on screen, the send step with its line.
+    for (const lang of LOCALE_CODES) {
+      await showIn(app.services, lang);
+      const dialog = screen().getByRole("dialog");
+      expect(dialog.querySelectorAll(".dv-step__text")).toHaveLength(1);
+      for (const step of dialog.querySelectorAll(".dv-step")) expect(step.textContent).not.toContain(LONG_SURFACE);
+      expect(open.textContent).toContain(LONG_SURFACE);
+    }
   });
 });
 

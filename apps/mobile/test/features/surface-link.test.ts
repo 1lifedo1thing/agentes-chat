@@ -19,7 +19,8 @@ const NOW = Date.parse("2026-11-16T12:00:00.000Z");
 const SURFACE = "Example Chat";
 const LONG_DISPLAY = "+1 555 0100 0101 0102 0103 0104 0105 0106 0107 0108 0109 0110 0111";
 const LONG_PROFILE = "Ana 🌿 من فريق المبيعات Theo example.com 🚀 a very long profile name";
-const LONG_SURFACE = "Example Chat for Teams and Families Everywhere Around the World Plus";
+/** The longest name `SURFACE_NAME` allows (32 characters), with one long unbroken word. */
+const LONG_SURFACE = "Example Chat Teamsmessengerworld";
 
 const link = (over: Partial<SurfaceLink> = {}): SurfaceLink => ({
   id: "l1",
