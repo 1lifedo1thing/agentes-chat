@@ -98,6 +98,12 @@ export function unseenBelow(rows: readonly ScrollRow[], seenKey: string | null, 
  * hidden under it: the band's top (`top`, points under the bar) is given as an offset, in the share that keeps the row
  * at the same place in the band (`viewPosition` 0.5: centred in the band, 1: its end on the dock). A row taller than
  * the band (`band`, points) shows its start or its end (`tall`).
+ *
+ * A row the list never measured (far from where it drew) is only an estimate here: the list measures it during the
+ * glide and keeps it where the estimate put it, so a tall one landed with its middle in view, its start above the bar
+ * or its end (a request's card) under the dock. It gets the list's own fallback instead, which re-aims it once measured
+ * when it doesn't fit: its start under the bar (`top`), or its end on the dock (no offset: the list takes it off even
+ * when the fallback fires, and the end would sink under the dock).
  */
 export function bandAim(aim: {
   viewPosition: number;
@@ -106,10 +112,11 @@ export function bandAim(aim: {
   band: number;
   top: number;
   tall: "start" | "end";
-}): { viewPosition: number; viewOffset: number } {
+}): { viewPosition: number; viewOffset: number; viewPositionFallback?: "start" | "end" } {
   const { viewPosition, size, band, top, tall } = aim;
-  if (size !== undefined && size > band)
-    return tall === "start" ? { viewPosition: 0, viewOffset: top } : { viewPosition: 1, viewOffset: 0 };
+  if (size === undefined)
+    return { viewPosition, viewOffset: tall === "start" ? top : 0, viewPositionFallback: tall };
+  if (size > band) return tall === "start" ? { viewPosition: 0, viewOffset: top } : { viewPosition: 1, viewOffset: 0 };
   return { viewPosition, viewOffset: Math.round(top * (1 - viewPosition)) };
 }
 
