@@ -30,17 +30,17 @@ import {
 } from "react-native";
 import Animated, {
   Easing,
+  type EntryExitAnimationFunction,
   FadeIn,
   FadeOut,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  ZoomIn,
 } from "react-native-reanimated";
 import { useFrameTime } from "@/agent/live";
 import { Dither } from "@/sky/Dither";
 import { softTones } from "@/sky/math";
-import { CHROME_MAX_SCALE, haptics, Icon, PixelStop, Text, useReducedMotion, useTheme } from "@/ui";
+import { CHROME_MAX_SCALE, haptics, Icon, PixelStop, Text, TOUCH, useReducedMotion, useTheme } from "@/ui";
 import { AgentFace, AgentWho, Face } from "../shared/Face";
 import { useDirectory, useNow } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
@@ -301,7 +301,8 @@ export function WorkingLine({
           <Pressable
             onPress={seeConsult}
             accessibilityRole="button"
-            hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+            // A 16-point word about 20 wide: 14 above and below and 12 at its sides make the 44 a finger needs.
+            hitSlop={{ top: (TOUCH - SEE_LINE) / 2, bottom: (TOUCH - SEE_LINE) / 2, left: 12, right: 12 }}
             style={({ pressed }) => [styles.see, pressed && styles.pressed]}
           >
             <Text variant="caption" tone="ink2" maxFontSizeMultiplier={CHROME_MAX_SCALE} style={styles.seeText}>
@@ -320,8 +321,22 @@ export function WorkingLine({
 const LINE_EASE = Easing.bezier(0.23, 1, 0.32, 1);
 const LINE_IN = FadeIn.duration(160).easing(LINE_EASE);
 const LINE_OUT = FadeOut.duration(120).easing(LINE_EASE);
-/** A face popping in on its plate. */
-const FACE_POP = ZoomIn.springify().damping(11).stiffness(320).mass(0.6);
+/** The "View" word's line (caption, 16). */
+const SEE_LINE = 16;
+/**
+ * A face coming in on its plate: from 0.9 and fading, on the line's ease-out, never from nothing (a face growing out of
+ * a point read as a pop, many times a day).
+ */
+const FACE_POP: EntryExitAnimationFunction = () => {
+  "worklet";
+  return {
+    initialValues: { opacity: 0, transform: [{ scale: 0.9 }] },
+    animations: {
+      opacity: withTiming(1, { duration: 160, easing: LINE_EASE }),
+      transform: [{ scale: withTiming(1, { duration: 160, easing: LINE_EASE }) }],
+    },
+  };
+};
 
 /**
  * "Parar": last in the requests' line's pill after a thin rule (while it takes the working line's place), or at the

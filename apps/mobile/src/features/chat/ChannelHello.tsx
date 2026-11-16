@@ -3,7 +3,6 @@ import { greetingSuggestions } from "@agenteschat/client/lib/chat";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import Animated, {
   Easing,
   type SharedValue,
@@ -17,6 +16,7 @@ import { Button, Text, useReducedMotion } from "@/ui";
 import { AgentFace, Face } from "../shared/Face";
 import { useMeId } from "../shared/hooks";
 import { tapHaptic } from "../shared/parts";
+import { useKeyboardRoom } from "./keyboard-room";
 
 /** The channels whose greeting already played while the app runs: the crew rises once, then just stands there. */
 const GREETED = new Set<string>();
@@ -161,14 +161,14 @@ export function ChannelHello({
   const wordsIn = useRise(words, 6, moves);
   const startIn = [useRise(s0, 5, moves), useRise(s1, 4, moves), useRise(s2, 4, moves)];
 
-  // The composer rides the keyboard; the greeting gives way with it instead of staying under the keys.
-  const keyboard = useReanimatedKeyboardAnimation();
-  const above = useAnimatedStyle(() => ({ paddingBottom: Math.max(0, -keyboard.height.get() - keyboardLift) }));
+  // The composer rides the keyboard; the greeting gives way with it instead of staying under the keys
+  // (`useKeyboardRoom`: a translate while it moves, its room once it settles).
+  const above = useKeyboardRoom(keyboardLift);
 
   const line = topic?.trim() ? topic.trim() : t("chat.sayHiText");
 
   return (
-    <Animated.View style={[styles.grow, above]}>
+    <Animated.View style={[styles.grow, ...above]}>
       <ScrollView
         style={styles.grow}
         contentContainerStyle={[styles.content, { paddingBottom: bottomInset + 16 }]}

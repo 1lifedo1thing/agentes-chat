@@ -166,13 +166,22 @@ export function Table({
   const { fontScale } = useWindowDimensions();
   const [drawn, setDrawn] = useState<Record<number, number>>({});
   const [frame, setFrame] = useState(0);
+  // Where the scroll stood when an edge's fade last turned on or off: a scroll redraws the table only then, never at
+  // every frame of a swipe. Where it is now lives off React (`scrolled`) and catches the drawn one up when the box or
+  // the columns change size.
   const [x, setX] = useState(0);
+  const scrolled = useRef(0);
   const scroller = useRef<ComponentRef<typeof GestureScrollView>>(null);
   const flashed = useRef(false);
   const widths = tableColumnWidths(header, rows, drawn, fontScale);
   // The content's width said outright (not left to layout), so the box always knows it has more to scroll.
   const total = widths.reduce((sum, w) => sum + w, 0);
   const hidden = tableHidden(x, frame, total);
+  const onScroll = (offset: number) => {
+    scrolled.current = offset;
+    const now = tableHidden(offset, frame, total);
+    if (now.left !== hidden.left || now.right !== hidden.right) setX(offset);
+  };
   // A table wider than the message says so once: the system's scroll bar flashes, then the fade keeps saying it.
   useEffect(() => {
     if (flashed.current || !hidden.right) return;
@@ -218,6 +227,7 @@ export function Table({
               onLayout={(e) => {
                 const w = e.nativeEvent.layout.width;
                 setDrawn((d) => (d[col] === w ? d : { ...d, [col]: w }));
+                setX(scrolled.current);
               }}
             >
               {[h, ...rows.map((r) => r[col] ?? [])].map((inline, j) => (
@@ -246,8 +256,11 @@ export function Table({
           alwaysBounceHorizontal={false}
           showsHorizontalScrollIndicator
           scrollEventThrottle={16}
-          onLayout={(e) => setFrame(e.nativeEvent.layout.width)}
-          onScroll={(e) => setX(e.nativeEvent.contentOffset.x)}
+          onLayout={(e) => {
+            setFrame(e.nativeEvent.layout.width);
+            setX(scrolled.current);
+          }}
+          onScroll={(e) => onScroll(e.nativeEvent.contentOffset.x)}
           contentContainerStyle={{ width: total }}
         >
           <View style={{ width: total }}>

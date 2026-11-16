@@ -5,7 +5,6 @@ import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import Animated, {
   Easing,
   type SharedValue,
@@ -21,6 +20,7 @@ import { useColors } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { tapHaptic } from "../shared/parts";
 import { agentIntro, firstAskKind, firstAsks, isNewAgent } from "./intent";
+import { useKeyboardRoom } from "./keyboard-room";
 import { CHAT_TEXT_MAX_SCALE, chatNameOf, chatTimeOf, MSG_AVATAR, MSG_GAP, MSG_INSET } from "./logic";
 import { lookRows, useConversationLook } from "./look";
 
@@ -139,9 +139,9 @@ export function FirstDay({
     useRise(start2, START_RISE[2], plays),
   ];
 
-  // The composer rides the keyboard; the message gives way with it instead of staying under the keys.
-  const keyboard = useReanimatedKeyboardAnimation();
-  const above = useAnimatedStyle(() => ({ paddingBottom: Math.max(0, -keyboard.height.get() - keyboardLift) }));
+  // The composer rides the keyboard; the message gives way with it instead of staying under the keys (`useKeyboardRoom`:
+  // a translate while it moves, its room once it settles).
+  const above = useKeyboardRoom(keyboardLift);
 
   const body = (
     <Text variant="body" tone="ink" style={text} maxFontSizeMultiplier={text ? CHAT_TEXT_MAX_SCALE : undefined}>
@@ -150,7 +150,7 @@ export function FirstDay({
   );
 
   return (
-    <Animated.View style={[styles.grow, above]}>
+    <Animated.View style={[styles.grow, ...above]}>
       <ScrollView
         style={styles.grow}
         contentContainerStyle={[styles.content, { paddingBottom: bottomInset + 16 }]}

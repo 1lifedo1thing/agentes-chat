@@ -17,6 +17,7 @@ import { ActivityIndicator, ScrollView, type ScrollViewInstance, StyleSheet, Vie
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, LineIcon, PixelOrbit, Segmented, SheetSurface, Text, useRouteSheetScrollable } from "@/ui";
 import { chatHref } from "../links/logic";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId, useOrgId, useWhen } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
@@ -168,10 +169,15 @@ function Consultation({
           </ScrollView>
         ) : null}
         {query.isLoading ? <ActivityIndicator color={c.muted} /> : null}
+        {/* Didn't load: what happened and the way to ask again; loaded with nothing in it: that it isn't there. */}
         {!query.isLoading && !query.data ? (
-          <Text variant="small" tone="muted" style={styles.pad}>
-            {query.isError ? t("common.loadFailed") : t("chat.consultPanel.missing")}
-          </Text>
+          query.isError ? (
+            <LoadFailed onRetry={() => void query.refetch()} />
+          ) : (
+            <Text variant="small" tone="muted" style={styles.pad}>
+              {t("chat.consultPanel.missing")}
+            </Text>
+          )
         ) : null}
         {q ? (
           <View style={[styles.line, styles.pad]}>

@@ -25,7 +25,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { Button, fieldText, haptics, Segmented, Text, ToggleSwitch, useReducedMotion, useToast } from "@/ui";
+import { Button, fieldText, haptics, Segmented, Text, TOUCH, ToggleSwitch, useReducedMotion, useToast } from "@/ui";
 import { ChartView } from "../chat/ChartCard";
 import { Table } from "../chat/MessageSpans";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
@@ -411,10 +411,21 @@ function Label({ text, value }: { text: string; value?: string }) {
 }
 
 const THUMB = 22;
+/** The slider's row (`styles.slider`): its touch area reaches 44 above and below it. */
+const SLIDER_H = 36;
+const SLIDER_SLOP = { top: (TOUCH - SLIDER_H) / 2, bottom: (TOUCH - SLIDER_H) / 2 };
+
+/** A share of the track (0–1) as the part's value: snapped to its step and kept within its ends. */
+function stepAt(to: number, min: number, max: number, step: number) {
+  "worklet";
+  const exact = min + Math.round((to * (max - min)) / step) * step;
+  return Number(Math.min(max, Math.max(min, exact)).toFixed(10));
+}
 
 /**
  * The kit's slider on the phone: a track that fills with ink and a cut-corner thumb, dragged sideways (a vertical
- * drag stays the conversation's scroll) or tapped. It snaps to the part's step and says each new value as it lands.
+ * drag stays the conversation's scroll) or tapped. It snaps to the part's step and says each new value as it lands:
+ * the step is worked out on the UI thread as the thumb moves, and only a new one reaches the screen's state.
  */
 function Slider({
   part,
@@ -430,19 +441,24 @@ function Slider({
   const x = useSharedValue(share);
   const track = useSharedValue(0);
   const dragging = useSharedValue(false);
+  // The value the thumb last said, on the UI thread: the drag tells the screen only when it changes.
+  const said = useSharedValue(value);
   useEffect(() => {
     if (!dragging.value) x.value = share;
   }, [share, x, dragging]);
   const last = useRef(value);
+  // A value set from elsewhere (another device, the screen reader's step) is where the next drag starts from.
+  useEffect(() => {
+    last.current = value;
+    said.value = value;
+  }, [value, said]);
   const shareNow = useRef(share);
   shareNow.current = share;
   // Let go between two steps: the thumb lands on the step the value took.
   const settle = () => {
     x.value = withTiming(shareNow.current, { duration: 120 });
   };
-  const land = (to: number) => {
-    const exact = min + Math.round((to * (max - min)) / step) * step;
-    const next = Number(Math.min(max, Math.max(min, exact)).toFixed(10));
+  const land = (next: number) => {
     if (next === last.current) return;
     last.current = next;
     haptics.selection();
@@ -454,13 +470,17 @@ function Slider({
     if (w <= 0) return;
     const to = Math.min(1, Math.max(0, (px - THUMB / 2) / Math.max(1, w - THUMB)));
     x.value = to;
-    scheduleOnRN(land, to);
+    const next = stepAt(to, min, max, step);
+    if (next === said.value) return;
+    said.value = next;
+    scheduleOnRN(land, next);
   };
   const pan = usePanGesture({
-    // Sideways only: a vertical drag stays the conversation's scroll.
-    activeOffsetX: [-3, 3],
-    failOffsetY: [-14, 14],
+    // Sideways, once the finger clearly means it: a move up or down first fails it and the conversation scrolls.
+    activeOffsetX: [-10, 10],
+    failOffsetY: [-6, 6],
     maxPointers: 1,
+    hitSlop: SLIDER_SLOP,
     onActivate: (e) => {
       "worklet";
       dragging.value = true;
@@ -477,6 +497,7 @@ function Slider({
     },
   });
   const tap = useTapGesture({
+    hitSlop: SLIDER_SLOP,
     onDeactivate: (e) => {
       "worklet";
       if (e.canceled) return;
@@ -491,6 +512,8 @@ function Slider({
   return (
     <GestureDetector gesture={gesture}>
       <View
+        // 44 points to the finger over a 36-point row (the gestures' own slop reaches past it only on Android).
+        hitSlop={SLIDER_SLOP}
         style={styles.slider}
         onLayout={(e) => {
           setWidth(e.nativeEvent.layout.width);
@@ -661,7 +684,7 @@ const styles = StyleSheet.create({
   list: { gap: 2 },
   listRow: { flexDirection: "row", gap: 8 },
   label: { flexDirection: "row", alignItems: "baseline", gap: 12, marginBottom: 6 },
-  slider: { height: 36, justifyContent: "center" },
+  slider: { height: SLIDER_H, justifyContent: "center" },
   rail: { position: "absolute", left: 0, height: 6, borderRadius: 999, right: 0 },
   thumb: {
     position: "absolute",
