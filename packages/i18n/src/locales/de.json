@@ -2752,6 +2752,7 @@
     "sharedName": "{{name}} (geteilt)",
     "sharedPlace": "Wird in Kanälen und bei Arbeit genutzt, die von selbst läuft. Der ganze Workspace teilt sich diesen Platz. Bewahre hier nichts Privates auf.",
     "computerNoHome": "Noch kein Computer. Es gibt einen, sobald dieser Workspace einen eigenen Computer hat.",
+    "computerNoHomeServer": "Noch kein Browser. Richte <guide>diesen Server als Computer der Agenten</guide> ein, damit er einen bekommt.",
     "addComputer": "Computer hinzufügen",
     "computerOneUser": "Hier kein Computer. Der Computer des Workspace führt alle Agenten als einen einzigen Benutzer aus und kann den Platz jeder Person nicht getrennt halten. Ein Linux-Server, der mit der Option --system des Installers eingerichtet wurde, kann das.",
     "powers": {

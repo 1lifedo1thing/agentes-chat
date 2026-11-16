@@ -2872,6 +2872,9 @@ export const ptBR = {
       "Usado em canais e em trabalhos que rodam sozinhos. Todo o workspace compartilha este espaço. Não guarde nada privado aqui.",
     /** The row where it has none for anyone: the workspace has no computer of its own. */
     computerNoHome: "Ainda sem computador. Passa a ter um quando este workspace tiver um computador próprio.",
+    /** The same row on a self-hosted server: this server made the agents' computer gives it one. `guide`: the setup guide. */
+    computerNoHomeServer:
+      "Ainda sem navegador. Configure <guide>este servidor como o computador dos agentes</guide> para ele ter um.",
     addComputer: "Adicionar um computador",
     /** The row where the workspace's computer runs every agent as one OS user. */
     computerOneUser:

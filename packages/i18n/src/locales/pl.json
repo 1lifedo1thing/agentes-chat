@@ -2944,6 +2944,7 @@
     "sharedName": "{{name}} (wspólne)",
     "sharedPlace": "Używane w kanałach i w pracy, która działa sama. Cała przestrzeń robocza dzieli to miejsce. Nie trzymaj tu niczego prywatnego.",
     "computerNoHome": "Jeszcze bez komputera. Pojawi się, gdy ta przestrzeń robocza będzie miała własny komputer.",
+    "computerNoHomeServer": "Na razie bez przeglądarki. Skonfiguruj <guide>ten serwer jako komputer agentów</guide>, aby ją dostał.",
     "addComputer": "Dodaj komputer",
     "computerOneUser": "Tutaj nie ma komputera. Komputer przestrzeni roboczej uruchamia wszystkich agentów jako jednego użytkownika, więc nie może rozdzielić miejsc poszczególnych osób. Serwer Linux zainstalowany z opcją --system instalatora to potrafi.",
     "powers": {
