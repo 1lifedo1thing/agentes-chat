@@ -206,7 +206,8 @@ export function PersonLimitNote({ card }: { card: PersonLimitCard }) {
               <EventPillAction
                 key="see"
                 label={t("peopleUsage.card.see")}
-                onPress={() => router.push("/usage" as never)}
+                // Their own month, where the label says: Uso opened on its people's view.
+                onPress={() => router.push({ pathname: "/usage", params: { view: "people" } })}
               />,
             ]
           : null

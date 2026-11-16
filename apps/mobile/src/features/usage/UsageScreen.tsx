@@ -69,7 +69,7 @@ const ROW_MARK = LOGO_SIZES.sm[0];
 
 export const openAgentUsage = (agentId: string) => router.push(`/agent-usage/${agentId}` as never);
 
-export function UsageScreen() {
+export function UsageScreen({ initialView = "summary" }: { initialView?: "summary" | "people" }) {
   const { t, i18n } = useTranslation();
   const { orgId, org } = useOrg();
   const api = useApi();
@@ -87,7 +87,7 @@ export function UsageScreen() {
     void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
   }, [api, orgId]);
   // Uso › Pessoas (ADR 0141): each person's month for who sees money, else one's own.
-  const [view, setView] = useState<"summary" | "people">("summary");
+  const [view, setView] = useState<"summary" | "people">(initialView);
   // The viewer's own logins of one account are one row, as their plans group them.
   const mine = useAiAccounts(orgId);
   // A pull asks the plans for their usage again and reads every card again (the API's report only where it shows).

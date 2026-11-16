@@ -135,3 +135,10 @@ describe("the standard pieces", () => {
     expect(sector).toMatch(/remove\.ask\(group, \(\) => \{\s+leave\(\);\s+goBack\(\);/);
   });
 });
+
+test("a person's See my usage opens Uso on their own month, where the label says it goes", () => {
+  expect(src("usage/people.tsx")).toContain('router.push({ pathname: "/usage", params: { view: "people" } })');
+  expect(src("usage/UsageScreen.tsx")).toContain('useState<"summary" | "people">(initialView)');
+  const route = readFileSync(new URL("../../app/(app)/(main)/usage.tsx", import.meta.url), "utf8");
+  expect(route).toContain('<UsageScreen initialView={view === "people" ? "people" : "summary"} />');
+});
