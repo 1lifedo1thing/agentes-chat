@@ -5207,8 +5207,17 @@ html:not([data-pointer]) .catalog-tile:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.level-row__name--cut,
+.level-row__owner {
+  max-width: 100%;
+}
+/* After .level-row__name's flex, which would keep its text from ending in an ellipsis. */
+.level-row__name.level-row__name--cut {
+  display: block;
+}
 .level-row__owner {
   flex-basis: 100%;
+  min-width: 0;
   gap: var(--space-1);
 }
 .connected-row--meta .list-title {
@@ -5243,7 +5252,7 @@ html:not([data-pointer]) .catalog-tile:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 40px;
+  min-height: var(--control-h-md);
 }
 .connected-takeoff__name {
   flex: 1 1 auto;
