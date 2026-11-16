@@ -5,7 +5,7 @@
 - Extends: ADR 0002 (nothing private runs in the server process), ADR 0056 (the operator API's listener; hooks are pulled), ADR 0117 (outside content), ADR 0119 (`meta.via`), ADR 0177 (the right hand acts first)
 - Code: config `packages/config/src/schema.ts` (`SURFACE_BRIDGE_TOKEN`, `SURFACE_NAME`, `SURFACE_OPEN_URL`,
   `SURFACE_ONLY`) and its rules in `index.ts`; db `packages/db/src/schema/surfaces.ts` (`surface_links`,
-  `surface_deliveries`, `surface_calls`) and `voice_clips.via`, migration 0283; engine
+  `surface_deliveries`, `surface_calls`) and `voice_clips.via`, migration 0284; engine
   `packages/engine/src/surfaces/config.ts` (`setSurface`, `surfaceOn`, `surfaceAllowed`) and `links.ts` (codes,
   claim, confirm, unlink; revoked with `revokeUserApps` and `setUserBlocked`) and `inbound.ts` (`postFromSurface`,
   with `voice_clips.via` carried by the voice job) and `deliveries.ts` (`queueSurfaceDelivery` from the
