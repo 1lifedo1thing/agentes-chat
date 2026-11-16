@@ -13,6 +13,7 @@ import {
   desc,
   type Executor,
   eq,
+  gt,
   inArray,
   isNull,
   ne,
@@ -3607,7 +3608,8 @@ async function executeRunInner(
    * When the first secret or approval card a computer brain's bridged call posted in this run went up: the brain asks
    * mid-turn and writes after the call what the card is for ("I left a secure field here for the key"), so that text
    * is placed just before the card and reads first. A card another run posted (an approval joining an older card),
-   * or one older than a place can be kept (`PLACE_KEPT_MS`), stays as it is: null.
+   * one older than a place can be kept (`PLACE_KEPT_MS`), or one someone else wrote after (a reply takes no place
+   * before what people sent while it worked, ADR 0010): null, and the text goes at the end as before.
    */
   const bridgedCardAt = async (t: Transcript): Promise<Date | null> => {
     const calls = (t.pending?.calls ?? []).filter((c) => c.bridged);
@@ -3616,21 +3618,34 @@ async function executeRunInner(
     const cards = [
       ...(secretIds.length > 0
         ? await db
-            .select({ at: messages.createdAt })
+            .select({ at: messages.createdAt, channelId: messages.channelId })
             .from(secretRequests)
             .innerJoin(messages, and(eq(messages.id, secretRequests.messageId), eq(messages.agentRunId, run.id)))
             .where(inArray(secretRequests.id, secretIds))
         : []),
       ...(approvalIds.length > 0
         ? await db
-            .select({ at: messages.createdAt })
+            .select({ at: messages.createdAt, channelId: messages.channelId })
             .from(approvals)
             .innerJoin(messages, and(eq(messages.id, approvals.messageId), eq(messages.agentRunId, run.id)))
             .where(inArray(approvals.id, approvalIds))
         : []),
     ];
-    const first = cards.reduce<Date | null>((a, c) => (a && a <= c.at ? a : c.at), null);
-    return first && Date.now() - first.getTime() < PLACE_KEPT_MS ? first : null;
+    const first = cards.reduce<(typeof cards)[number] | null>((a, c) => (a && a.at <= c.at ? a : c), null);
+    if (!first || Date.now() - first.at.getTime() >= PLACE_KEPT_MS) return null;
+    const [after] = await db
+      .select({ id: messages.id })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.orgId, run.orgId),
+          eq(messages.channelId, first.channelId),
+          gt(messages.createdAt, first.at),
+          or(isNull(messages.agentRunId), ne(messages.agentRunId, run.id)),
+        ),
+      )
+      .limit(1);
+    return after ? null : first.at;
   };
 
   /**
