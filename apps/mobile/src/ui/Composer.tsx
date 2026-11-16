@@ -410,7 +410,12 @@ export function Composer({
     writeValueSync(STORED.stopSendTaught, "1");
   };
   const press = () => {
-    if (tooLong) return;
+    // Past the limit the words can't go (the line above the field says why and offers the way out): the tap is
+    // answered, never met with nothing.
+    if (tooLong) {
+      haptics.warning();
+      return;
+    }
     if (has) {
       haptics.light();
       const joins = Boolean(working) && !take;
