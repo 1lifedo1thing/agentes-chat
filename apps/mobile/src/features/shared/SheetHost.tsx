@@ -1,6 +1,6 @@
 import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, type ScrollViewInstance } from "react-native";
+import { Keyboard, ScrollView, type ScrollViewInstance } from "react-native";
 import { SheetContent, useSheetBody, useSheetProps } from "@/ui";
 
 /**
@@ -97,6 +97,9 @@ export function SheetHostProvider({ children }: { children: ReactNode }) {
         const over = list[1];
         if (over) void sheets.current.get(over.key)?.dismiss();
       } else {
+        // The screen's own field (the composer) lets go of the keyboard first, after the listeners (they read it still
+        // up): a step presents as it mounts, so the sheet's own present no longer does it.
+        Keyboard.dismiss();
         // A sheet still leaving makes way: what waited for it runs now.
         flush();
         setSteps([{ key: `step-${++seq.current}`, content: next }]);
@@ -139,7 +142,6 @@ export function SheetHostProvider({ children }: { children: ReactNode }) {
         <StepSheet
           key={step.key}
           step={step}
-          first={i === 0}
           open={i === 0 ? open : true}
           onClose={i === 0 ? announceClosed : noop}
           onGone={stepGone}
@@ -152,17 +154,20 @@ export function SheetHostProvider({ children }: { children: ReactNode }) {
 
 const noop = () => {};
 
-/** One step: a sheet of the system's, sized to its content, which scrolls. Steps after the first present as they mount. */
+/**
+ * One step: a sheet of the system's, sized to its content, which scrolls. Every step presents as it mounts, the first
+ * one too: a first step opened while the last sheet is still sliding away gets that sheet's recycled native view, and a
+ * `present()` call then answers "already presented" with nothing on the screen, leaving the host open for good (every
+ * sheet button dead, the conversation's list frozen). Presenting on mount, the system waits for it to be gone.
+ */
 function StepSheet({
   step,
-  first,
   open,
   onClose,
   onGone,
   register,
 }: {
   step: Step;
-  first: boolean;
   open: boolean;
   onClose: () => void;
   onGone: (key: string) => void;
@@ -171,7 +176,7 @@ function StepSheet({
   const ref = useRef<TrueSheet>(null);
   const scroll = useRef<ScrollViewInstance>(null);
   const body = useSheetBody();
-  const props = useSheetProps({ open, onClose, onGone: () => onGone(step.key), ref, presentOnMount: !first });
+  const props = useSheetProps({ open, onClose, onGone: () => onGone(step.key), ref, presentOnMount: true });
   useEffect(() => {
     register(step.key, ref.current);
     return () => register(step.key, null);

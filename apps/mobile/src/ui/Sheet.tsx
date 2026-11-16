@@ -147,7 +147,10 @@ export function useSheetProps({
   onClose: () => void;
   onGone?: (() => void) | undefined;
   ref: RefObject<TrueSheet | null>;
-  /** Present as it mounts (a sheet pushed over another), rather than when `open` turns true. */
+  /**
+   * Present as it mounts, rather than when `open` turns true: the system then waits out a sheet still leaving (or its
+   * recycled view) before presenting, where a `present()` call made meanwhile does nothing.
+   */
   presentOnMount?: boolean;
   /** The heights it may rest at (`Sheet`'s `detents`); its content's height by default. */
   detents?: SheetDetent[];
@@ -162,23 +165,34 @@ export function useSheetProps({
   goneRef.current = onGone;
 
   useEffect(() => {
-    if (presentOnMount) return;
+    // A sheet that presents as it mounts starts shown: `open` turning false still takes it away.
     if (open) {
       if (shown.current) return;
       shown.current = true;
       // The screen's own field (the composer) lets go of the keyboard first. Kept, iOS gave the keyboard back when
       // the sheet closed and the composer stayed under it.
       Keyboard.dismiss();
-      void ref.current?.present();
+      // A present that fails (no window to present from) ends as a dismissal would: left "shown", the owner would
+      // keep a sheet open that nobody sees.
+      void ref.current?.present().catch(() => {
+        shown.current = false;
+        if (openRef.current) closeRef.current();
+        goneRef.current?.();
+      });
     } else if (shown.current) {
       void ref.current?.dismiss();
     }
-  }, [open, presentOnMount, ref]);
+  }, [open, ref]);
 
   return {
     ...look,
     detents,
     ...(presentOnMount ? { initialDetentIndex: 0 } : {}),
+    // A present on mount can't be called off before it lands (the system answers "already dismissed" and presents
+    // anyway): one that lands after the owner closed it goes away again.
+    onDidPresent: () => {
+      if (!openRef.current) void ref.current?.dismiss();
+    },
     onDidDismiss: () => {
       shown.current = false;
       // Closed by the person: its owner hears it. Closed by its owner: nothing to tell.
