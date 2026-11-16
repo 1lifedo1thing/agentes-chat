@@ -7,7 +7,8 @@ import { Button, Locked, Text } from "@/ui";
 import { AuthScaffold, CENTER } from "@/ui/auth/AuthScaffold";
 import { PasswordField } from "@/ui/auth/PasswordField";
 import { haptics } from "@/ui/haptics";
-import { router } from "@/ui/navigation";
+import { landOn } from "@/ui/navigation";
+import { Quiet } from "./AuthFlow";
 import { refusalOf, refusalText } from "./human-check";
 
 /** Better Auth's refusals that mean the link itself no longer works: it expired or was used, or its account is gone. */
@@ -17,7 +18,8 @@ const LINK_GONE = new Set(["INVALID_TOKEN", "USER_NOT_FOUND"]);
  * "Esqueci a senha"'s link opened in the app (`/reset-password?token=`, a universal link / App Link): a new
  * password, then back to signing in. No token, or one the server says is no longer good: the link expired, and a
  * new one is asked for. Anything else (no connection, a limit, the server failing) is said under the field, which
- * keeps the password typed, to try again. The back circle leaves on every state, as a connect link's does.
+ * keeps the password typed, to try again. Opened over the app or the sign-in, the system's back returns there; the
+ * form's "Not now" leaves for the sign-in (the app, signed in) either way, as a connect link's does.
  */
 export function ResetPasswordScreen({ token }: { token: string | null }) {
   const { t } = useTranslation();
@@ -51,30 +53,24 @@ export function ResetPasswordScreen({ token }: { token: string | null }) {
       setPending(false);
     }
   };
-  const toSignIn = () => router.replace("/sign-in");
-  // Signed in already (a link opened on a phone that is), back is the app; otherwise the sign-in.
-  const leave = () => router.replace(session.signedIn ? "/" : "/sign-in");
+  const toSignIn = () => landOn("/sign-in");
+  // Signed in already (a link opened on a phone that is), leaving is for the app; otherwise the sign-in.
+  const leave = () => landOn(session.signedIn ? "/" : "/sign-in");
   if (state === "expired")
     return (
-      <AuthScaffold
-        title={t("mobile.reset.expired")}
-        subtitle={t("mobile.reset.expiredLead")}
-        expression="closed"
-        onBack={leave}
-      >
+      <AuthScaffold title={t("mobile.reset.expired")} subtitle={t("mobile.reset.expiredLead")} expression="closed">
         <Button variant="primary" wide label={t("mobile.reset.toSignIn")} onPress={toSignIn} />
       </AuthScaffold>
     );
   if (state === "done")
     return (
-      <AuthScaffold title={t("mobile.reset.done")} expression="happy" onBack={leave}>
+      <AuthScaffold title={t("mobile.reset.done")} expression="happy">
         <Button variant="primary" wide label={t("mobile.reset.toSignIn")} onPress={toSignIn} />
       </AuthScaffold>
     );
   return (
     <AuthScaffold
       title={t("mobile.reset.title")}
-      onBack={pending ? undefined : leave}
       agentMode={pending ? "run" : "idle"}
       {...(secret ? { expression: "closed" as const } : {})}
     >
@@ -104,6 +100,7 @@ export function ResetPasswordScreen({ token }: { token: string | null }) {
         disabled={!ready}
         onPress={() => void save()}
       />
+      {pending ? null : <Quiet label={t("mobile.auth.connect.notNow")} onPress={leave} />}
     </AuthScaffold>
   );
 }

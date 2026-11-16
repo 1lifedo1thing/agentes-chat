@@ -10,9 +10,10 @@ describe("the screens before the app never leave anyone without a way on", () =>
   test("the e-mail step: with the keyboard put away, Continue stands in for its return key", () => {
     const flow = flat("features/auth/AuthFlow.tsx");
     expect(flow).toContain("const keyboardUp = useKeyboardState((state) => state.isVisible);");
-    expect(flow).toContain('...(keyboardUp ? {} : { email: t("auth.flow.continue") }),');
-    // The button it draws is the steps' own, spinning while the lookup runs.
-    expect(flow).toContain('{submitLabel[step] ? ( <LastUsed on={step === "email" && lastWay === "email"}>');
+    // Continue, spinning while the lookup runs, only while the keyboard (and its blue key) is away.
+    expect(flow).toContain(
+      '{keyboardUp ? null : ( <LastUsed on={lastWay === "email"}> <Button variant="primary" wide label={t("auth.flow.continue")} loading={pending}',
+    );
   });
 
   test("asking to join by a link, typed: name, then e-mail, then the note, with the bar over the keyboard", () => {
@@ -41,15 +42,26 @@ describe("the screens before the app never leave anyone without a way on", () =>
     // The thrown case never says the link expired.
     const thrown = reset.slice(reset.indexOf("} catch (e) {"), reset.indexOf("} finally {"));
     expect(thrown).not.toContain('setState("expired")');
-    // A way out on every state, as a connect link has.
-    expect(reset).toContain('const leave = () => router.replace(session.signedIn ? "/" : "/sign-in");');
-    expect(reset.match(/onBack=\{(pending \? undefined : )?leave\}/g)?.length).toBe(3);
+    // A way out on every state, as a connect link has: no back drawn on the sky (the system's is there when a screen
+    // is under it), and "Not now" on the form, the sign-in on the others.
+    expect(reset).toContain('const leave = () => landOn(session.signedIn ? "/" : "/sign-in");');
+    expect(reset).not.toContain("onBack=");
+    expect(reset).toContain('{pending ? null : <Quiet label={t("mobile.auth.connect.notNow")} onPress={leave} />}');
+    expect(reset.match(/label=\{t\("mobile\.reset\.toSignIn"\)\} onPress=\{toSignIn\}/g)?.length).toBe(2);
   });
 
-  test("the link's three steps keep one sky", () => {
-    const steps = flat("features/auth/LinkSteps.tsx");
-    expect(steps).toContain('sky="low"');
-    expect(steps).not.toContain('sky={step === "you" ? "low" : "normal"}');
+  test("the link's three steps keep one sky, each on its own screen", () => {
+    const first = flat("features/auth/LinkSteps.tsx");
+    expect(first).toContain('sky="low"');
+    // The code and the person, pushed over the e-mail: the same low sky, so nothing jumps from one to the next.
+    const steps = src("features/auth/InviteSteps.tsx");
+    const code = steps.slice(
+      steps.indexOf("export function InviteCode("),
+      steps.indexOf("export async function sendJoinCode("),
+    );
+    const you = steps.slice(steps.indexOf("export function InviteYou("), steps.indexOf("function ResendLine("));
+    expect(code).toContain('sky="low"');
+    expect(you.match(/sky="low"/g)?.length).toBe(2);
   });
 
   test("busy buttons keep their words and spin", () => {

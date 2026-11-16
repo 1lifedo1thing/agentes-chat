@@ -327,7 +327,6 @@ export function TeamServerPage() {
       sky="low"
       title={t("mobile.me.teamServerQuestion")}
       subtitle={t("mobile.me.teamServerLeadShort")}
-      onBack={goBack}
       agentMode={busy ? "run" : "idle"}
     >
       <Locked when={busy} keepKeyboard>

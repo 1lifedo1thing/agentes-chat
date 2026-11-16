@@ -50,9 +50,9 @@ export default function MainStack() {
       "connectors/[id]": cover,
       // Você: a pushed page with a clear bar over its sky; its screens pushed over it on the grouped gray.
       "me/index": cover,
-      // On the sign-in's ruler: its own sky and back circle, no bar.
-      "me/team-server": base,
-      "me/scan": base,
+      // On the sign-in's ruler, its own sky (the scanner: the camera): a clear bar, the system's back over it.
+      "me/team-server": cover,
+      "me/scan": cover,
       "connectors/oauth": bare,
       // A bare link to a browser request: finds its conversation and replaces itself with it.
       "handoff/[id]": bare,

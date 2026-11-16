@@ -20,7 +20,8 @@ const SIGN_IN_WAIT_MS = 15_000;
  * A connect link, `agenteschat://connect?server=…[&token=…]` (the web app's QR code, the self-host setup):
  * the server is checked and shown under the question, on that server's own sky (dusk on a team's own: you see where
  * you are going), and nothing changes until the person confirms, so a QR code never points the app somewhere else on
- * its own. With a token, the app lands signed in.
+ * its own. With a token, the app lands signed in. Opened over the app or the sign-in, the system's back returns there;
+ * "Not now" (or Close, on a link that isn't one) leaves for the app's start either way.
  */
 export default function Connect() {
   const { t } = useTranslation();
@@ -65,8 +66,8 @@ export default function Connect() {
 
   if (!server)
     return (
-      <AuthScaffold title={t("mobile.auth.connect.notALink")} onBack={leave}>
-        <Button variant="primary" wide label={t("mobile.common.back")} onPress={leave} />
+      <AuthScaffold title={t("mobile.auth.connect.notALink")}>
+        <Button variant="primary" wide label={t("mobile.common.close")} onPress={leave} />
       </AuthScaffold>
     );
 
@@ -99,7 +100,6 @@ export default function Connect() {
       subtitle={host}
       subtitleStrong
       skyHost={host}
-      onBack={leave}
       agentMode={!check || busy || signingIn ? "run" : "idle"}
     >
       {plan.signOut && !stuck ? (

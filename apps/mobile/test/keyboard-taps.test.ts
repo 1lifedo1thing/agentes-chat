@@ -42,6 +42,9 @@ test("a field low on a page scrolls clear of the keyboard on Android too, never 
   expect(auth).toContain('mode="layout"');
   expect(auth).toContain("bottomOffset={bar + FIELD_CLEARANCE}");
   expect(auth).toContain("extraKeyboardSpace={bar}");
+  // A drag down the sign-in's screens takes the keyboard with the finger; no back circle drawn on its sky.
+  expect(auth).toContain('keyboardDismissMode="interactive"');
+  expect(auth).not.toContain("onBack");
   expect(source("features/onboarding/OnboardingFlow.tsx")).not.toContain("scrollToFocus");
   // A form of several fields gets the bar over the keyboard (‹ › and Done), and the page keeps clear of it.
   const page = source("features/settings/parts.tsx");

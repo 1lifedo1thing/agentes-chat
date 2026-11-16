@@ -1,6 +1,7 @@
 import { checkServer, parseConnectLink, serverHost } from "@agenteschat/client/lib/server";
 import { skyHourOf, workspaceInk } from "@agenteschat/ui/sky/workspace";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { type NativeStackNavigationOptions, Stack } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AppState, Linking, Pressable, StyleSheet, View, type ViewStyle } from "react-native";
@@ -21,7 +22,6 @@ import { Button } from "@/ui/Button";
 import { Glass } from "@/ui/Glass";
 import { haptics } from "@/ui/haptics";
 import { Icon } from "@/ui/Icon";
-import { IconButton } from "@/ui/IconButton";
 import { router } from "@/ui/navigation";
 import { Text } from "@/ui/Text";
 import { useReducedMotion } from "@/ui/theme";
@@ -42,6 +42,8 @@ const CORNERS_IN = FadeIn.duration(300).easing(EASE_OUT);
  */
 const LOCKED = 0.86;
 const LOCK = { duration: 380, dampingRatio: 0.78 } as const;
+/** The camera's bar: clear, its back button white over the picture whatever the theme. */
+const OVER_CAMERA: NativeStackNavigationOptions = { headerTintColor: "white" };
 
 /**
  * Escanear QR code: the camera, a target of four pixel corners and one glass line of help. Reads QR codes only. A
@@ -90,11 +92,7 @@ export default function Scan() {
   if (!permission) return null;
   if (!permission.granted)
     return (
-      <AuthScaffold
-        title={t("mobile.auth.scan.cameraTitle")}
-        subtitle={t("mobile.auth.scan.cameraText")}
-        onBack={() => router.back()}
-      >
+      <AuthScaffold title={t("mobile.auth.scan.cameraTitle")} subtitle={t("mobile.auth.scan.cameraText")}>
         {permission.canAskAgain ? (
           <Button variant="primary" wide label={t("mobile.auth.scan.allow")} onPress={() => void requestPermission()} />
         ) : (
@@ -145,9 +143,8 @@ export default function Scan() {
           </Animated.View>
         </Animated.View>
       </View>
-      <View style={[styles.back, { top: insets.top + 8 }]}>
-        <IconButton icon="back" label={t("mobile.common.back")} onPress={() => router.back()} plate />
-      </View>
+      {/* The system's back over the camera, in white: the bar is clear over the picture. */}
+      <Stack.Screen options={OVER_CAMERA} />
       {read ? (
         <Animated.View
           entering={reduced ? undefined : CARD_IN}
@@ -178,9 +175,10 @@ export default function Scan() {
               {notOurs ? t("mobile.auth.scan.notOurs") : t("mobile.auth.scan.hint")}
             </Text>
           </Glass>
-          {/* The camera comes first (a team's computer shows the code); the address stays one tap away. */}
+          {/* The camera comes first (a team's computer shows the code); the address stays one tap away, on the
+              address's screen right under this one (signed out, or a team's server added from Workspaces). */}
           <Pressable
-            onPress={() => router.replace("/server")}
+            onPress={() => router.back()}
             accessibilityRole="button"
             hitSlop={12}
             style={({ pressed }) => [styles.type, pressed && styles.pressed]}
@@ -220,7 +218,6 @@ const styles = StyleSheet.create({
   target: { width: TARGET, height: TARGET },
   corner: { position: "absolute", width: PX * 3, height: PX * 3 },
   arm: { position: "absolute" },
-  back: { position: "absolute", left: 16 },
   hint: { position: "absolute", left: 16, right: 16, alignItems: "center" },
   hintGlass: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, maxWidth: "100%" },
   hintText: { textAlign: "center" },

@@ -42,7 +42,7 @@ import { useHumanCheck } from "./HumanCheck";
 import { CheckCancelled, failureText } from "./human-check";
 import { InviteGone, InviteLoadFailed, InviteLoading } from "./InviteGone";
 import { forgetInvite, keepAsk, rememberInvite, waitingAsk } from "./invite";
-import { AgentsThere, DidYouMean, LeaveButton, Said, useLeaveInvite } from "./invite-parts";
+import { AgentsThere, CloseIfFirst, DidYouMean, LeaveButton, Said } from "./invite-parts";
 import type { Asked } from "./invite-steps";
 import { LinkSteps } from "./LinkSteps";
 
@@ -256,7 +256,6 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
   const [asking, setAsking] = useState(false);
   // The code that proved the account's address (for 30 minutes).
   const [proof, setProof] = useState<string | null>(null);
-  const leave = useLeaveInvite();
   const emailField = useRef<ComponentRef<typeof AuthField>>(null);
   const noteField = useRef<ComponentRef<typeof AuthField>>(null);
 
@@ -471,7 +470,6 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
       title={title}
       subtitle={subtitle}
       stepKey={view.state}
-      onBack={leave}
       // The form's fields (name, e-mail, the note): the bar over the keyboard walks them, as the link's steps do.
       toolbar={view.state === "form"}
       agentMode={asking ? "run" : "idle"}
@@ -479,6 +477,8 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
       overlay={human.view}
     >
       {body}
+      {/* Closed and let in have their own way on; the rest leave by the system's back, or Close with nothing under. */}
+      {view.state === "closed" || view.state === "in" || asking ? null : <CloseIfFirst />}
     </AuthScaffold>
   );
 }
