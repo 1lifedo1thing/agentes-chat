@@ -6569,6 +6569,21 @@
   "rightHand.labelCapitalized": {
     "value": "Your right hand"
   },
+  "rightHand.unusable.title": {
+    "value": "Can't think for {{name}} now"
+  },
+  "rightHand.unusable.computerOnly": {
+    "value": "Signed in on {{computer}} only. {{name}} thinks with a plan signed in as an account."
+  },
+  "rightHand.unusable.away": {
+    "value": "{{owner}}'s, on {{computer}}, which is away."
+  },
+  "rightHand.unusable.awayYours": {
+    "value": "Yours, on {{computer}}, which is away."
+  },
+  "rightHand.unusable.connect": {
+    "value": "Connect a computer"
+  },
   "rightHand.newDot": {
     "value": "New"
   },
@@ -42207,6 +42222,24 @@
   },
   "chat.speedFallback.action": {
     "value": "Open agent"
+  },
+  "chat.standIn.needsComputer": {
+    "value": "Answered with {{via}}: {{plan}} needs a computer."
+  },
+  "chat.standIn.away": {
+    "value": "Answered with {{via}}: the computer {{plan}} is on is away."
+  },
+  "chat.standIn.notShared": {
+    "value": "Answered with {{via}}: {{plan}} serves only its owner."
+  },
+  "chat.standIn.limit": {
+    "value": "Answered with {{via}}: {{plan}} reached its limit."
+  },
+  "chat.standIn.cant": {
+    "value": "Answered with {{via}}: {{plan}} can't think right now."
+  },
+  "chat.standIn.change": {
+    "value": "Change"
   },
   "chat.modelStandIn.text": {
     "value": "{{plan}} refused {{from}} with this key. I answered with {{to}}, which works with it."

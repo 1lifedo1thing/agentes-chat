@@ -2712,6 +2712,15 @@ export const ptBR = {
   rightHand: {
     label: "seu braço direito",
     labelCapitalized: "Seu braço direito",
+    unusable: {
+      title: "Não pensa pelo {{name}} agora",
+      title_female: "Não pensa pela {{name}} agora",
+      computerOnly: "Conectado só em {{computer}}. O {{name}} pensa com um plano conectado como conta.",
+      computerOnly_female: "Conectado só em {{computer}}. A {{name}} pensa com um plano conectado como conta.",
+      away: "De {{owner}}, em {{computer}}, que está ausente.",
+      awayYours: "Seu, em {{computer}}, que está ausente.",
+      connect: "Conectar um computador",
+    },
     newDot: "Novo",
     actsAsYou: "age com as suas permissões",
     composerHint: "nada muda sem você",
@@ -17381,6 +17390,14 @@ export const ptBR = {
     speedFallback: {
       text: "O ChatGPT recusou a velocidade Rápida nesta conta ou neste modelo, então esta resposta veio no padrão.",
       action: "Abrir agente",
+    },
+    standIn: {
+      needsComputer: "Respondi com {{via}}: {{plan}} precisa de um computador.",
+      away: "Respondi com {{via}}: o computador do {{plan}} está ausente.",
+      notShared: "Respondi com {{via}}: {{plan}} atende só quem o conectou.",
+      limit: "Respondi com {{via}}: {{plan}} chegou ao limite.",
+      cant: "Respondi com {{via}}: {{plan}} não consegue pensar agora.",
+      change: "Trocar",
     },
     /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
