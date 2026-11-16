@@ -2,11 +2,12 @@ import { useCatalog, useConnections, useCustomServers } from "@agenteschat/clien
 import { connectedItems, itemName } from "@agenteschat/client/lib/connected";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button } from "@/ui";
+import { Button, GroupedList } from "@/ui";
 import { router } from "@/ui/navigation";
+import { RowBones } from "../roles/parts";
 import { useColors, useOrgId } from "../shared/hooks";
 import { BottomBar, goBack, Loaded, PushedHeader } from "../shared/parts";
 import { ReviewStep, type SaveBar } from "./ToolReview";
@@ -37,7 +38,8 @@ export function ToolsScreen({ connectionId }: { connectionId: string }) {
   const [save, setSave] = useState<SaveBar | null>(null);
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-      <PushedHeader title={t("connectors.tools")} {...(name ? { subtitle: name } : {})} solid={false} />
+      {/* On the grouped gray: Android's opaque bar takes it too, no band above the groups. */}
+      <PushedHeader title={t("connectors.tools")} {...(name ? { subtitle: name } : {})} solid={false} grouped />
       <ScrollView
         style={styles.screen}
         contentInsetAdjustmentBehavior="automatic"
@@ -45,10 +47,14 @@ export function ToolsScreen({ connectionId }: { connectionId: string }) {
         automaticallyAdjustKeyboardInsets
         contentContainerStyle={[styles.page, { paddingBottom: save ? 24 : insets.bottom + 24 }]}
       >
-        {/* The tools fade in over the spinner; tools already here when the screen opens just show. */}
+        {/* The tools fade in over their rows' shape; tools already here when the screen opens just show. */}
         <LayoutAnimationConfig skipEntering>
           {loading ? (
-            <ActivityIndicator color={c.muted} />
+            // The rows' shape while the connection is read, never a bare spinner.
+            <GroupedList>
+              <RowBones />
+              <RowBones name={56} />
+            </GroupedList>
           ) : (
             <Loaded>
               <View style={styles.stack}>
