@@ -14,6 +14,7 @@ import { publishChannelEvent, publishMessageCreated, publishRouted } from "./eve
 import type { Judge } from "./judge";
 import { getMessage, insertMessage, type Message, messageView } from "./messages";
 import { can, type Membership, requireActiveMembership } from "./organizations";
+import { type RightHandStandIn, type StandInWhy, standInWhy } from "./right-hand";
 import { type RouterDeps, routeMessage } from "./router";
 import { bodyCode } from "./run-tools";
 import { type AgentRun, NO_AI, replyThreadOf } from "./runs";
@@ -96,8 +97,13 @@ export const noAiCardOf = (m: Pick<Message, "authorType" | "meta">): NoAiCard | 
   return m.authorType === "agent" && card && typeof card.agentId === "string" ? (card as NoAiCard) : null;
 };
 
-/** Agents with a card in this conversation within `NO_AI_CARD_EVERY_MS`. */
-async function cardsPosted(db: Executor, run: Pick<AgentRun, "orgId" | "channelId">, threadId: string | null) {
+/** Agents with a card (`code`: of that kind) in this conversation within `NO_AI_CARD_EVERY_MS`. */
+async function cardsPosted(
+  db: Executor,
+  run: Pick<AgentRun, "orgId" | "channelId">,
+  threadId: string | null,
+  code: string = NO_AI,
+) {
   const rows = await db
     .select({ agentId: messages.authorAgentId })
     .from(messages)
@@ -108,7 +114,7 @@ async function cardsPosted(db: Executor, run: Pick<AgentRun, "orgId" | "channelI
         threadId ? eq(messages.threadId, threadId) : isNull(messages.threadId),
         gt(messages.createdAt, new Date(Date.now() - NO_AI_CARD_EVERY_MS)),
         isNull(messages.deletedAt),
-        sql`${messages.meta}->>'bodyCode' = ${NO_AI}`,
+        sql`${messages.meta}->>'bodyCode' = ${code}`,
       ),
     );
   return rows.map((r) => r.agentId);
@@ -177,6 +183,74 @@ export async function postNoAiCard(
   const [view] = await withWikiLinks(db, run.orgId, [messageView(card)]);
   if (view) await publishMessageCreated(deps.pubsub, view);
   return card;
+}
+
+/** `bodyCode` of the right hand's line that another AI answered for its plan (`postStandInLine`). */
+export const STAND_IN_LINE = "right_hand_stand_in";
+
+const STAND_IN_TEXT: Record<StandInWhy, (via: string, plan: string) => string> = {
+  needsComputer: (via, plan) => `Answered with ${via}: ${plan} needs a computer.`,
+  away: (via, plan) => `Answered with ${via}: the computer ${plan} is on is away.`,
+  notShared: (via, plan) => `Answered with ${via}: ${plan} serves only its owner.`,
+  limit: (via, plan) => `Answered with ${via}: ${plan} reached its limit.`,
+  cant: (via, plan) => `Answered with ${via}: ${plan} can't think right now.`,
+};
+
+/**
+ * The right hand answered with another AI than its plan (`rightHandStandIn`): one quiet line under its reply says with
+ * what and why, with "Change" in the apps. Once per conversation every `NO_AI_CARD_EVERY_MS`. It rides on `meta.noAi`
+ * (with `standIn`) so the apps draw it where a no-AI card goes; it is never one (`bodyCode` is its own).
+ */
+export async function postStandInLine(
+  deps: { db: Database; pubsub: PubSub },
+  run: AgentRun,
+  standIn: Pick<RightHandStandIn, "via" | "plan" | "code">,
+): Promise<Message | null> {
+  const { db } = deps;
+  const threadId = replyThreadOf(run);
+  const why = standInWhy(standIn.code);
+  const line = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`stand-in:${run.channelId}:${threadId ?? ""}`}))`);
+    // A run that ended without a reply (it only acted, or chose to stay quiet) has nothing for the line to sit under.
+    const [reply] = await tx
+      .select({ id: messages.id })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.orgId, run.orgId),
+          eq(messages.channelId, run.channelId),
+          eq(messages.authorAgentId, run.agentId),
+          eq(messages.agentRunId, run.id),
+          isNull(messages.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!reply) return null;
+    if ((await cardsPosted(tx, run, threadId, STAND_IN_LINE)).includes(run.agentId)) return null;
+    const trigger = await getMessage(tx, run.orgId, run.triggerMessageId);
+    return insertMessage(tx, {
+      orgId: run.orgId,
+      channelId: run.channelId,
+      threadId,
+      author: { type: "agent", agentId: run.agentId, runId: run.id, hop: run.hop },
+      body: STAND_IN_TEXT[why](standIn.via, standIn.plan),
+      meta: {
+        ...bodyCode(STAND_IN_LINE, { via: standIn.via, plan: standIn.plan, why }),
+        noAi: {
+          agentId: run.agentId,
+          forUserId: trigger ? await requesterOf(tx, trigger) : null,
+          reason: standIn.code,
+          intent: "task",
+          standIn: { via: standIn.via, plan: standIn.plan, why },
+          runId: run.id,
+        },
+      },
+    });
+  });
+  if (!line) return null;
+  const [view] = await withWikiLinks(db, run.orgId, [messageView(line)]);
+  if (view) await publishMessageCreated(deps.pubsub, view);
+  return line;
 }
 
 export interface AnswerNowDeps extends AiStatusDeps {
