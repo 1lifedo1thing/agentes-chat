@@ -14,13 +14,12 @@ import { randomUUID } from "expo-crypto";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { type LayoutChangeEvent, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { type LayoutChangeEvent, Pressable, StyleSheet, View } from "react-native";
 import { GestureDetector, useExclusiveGestures, usePanGesture, useTapGesture } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import {
   Button,
-  fieldText,
   haptics,
   motion,
   PressScale,
@@ -37,6 +36,7 @@ import { useLayoutKey } from "../chat/look";
 import { Table } from "../chat/MessageSpans";
 import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
+import { TextArea } from "../shared/TextArea";
 import { INLINE_HEIGHT } from "./logic";
 
 type Sent = { text: string; at: string };
@@ -568,25 +568,19 @@ function Field({
   part: Extract<BlockViewPart, { kind: "field" }>;
   onChange: (value: string) => void;
 }) {
-  const c = useColors();
   const big = part.input === "textarea";
+  // The app's text field: one line, or a few for a long answer.
   return (
     <View>
       <Label text={part.label} />
-      <TextInput
+      <TextArea
         value={part.value}
         onChangeText={onChange}
         placeholder={part.placeholder}
-        placeholderTextColor={c.faint}
         multiline={big}
+        minHeight={big ? 88 : 44}
         keyboardType={part.input === "number" ? "decimal-pad" : "default"}
         accessibilityLabel={part.label}
-        style={[
-          styles.field,
-          fieldText("body"),
-          { color: c.ink, backgroundColor: c.raised, borderColor: c.line2 },
-          big ? styles.fieldBig : null,
-        ]}
       />
     </View>
   );
@@ -759,14 +753,6 @@ const styles = StyleSheet.create({
   cardOn: { borderWidth: 1.6 },
   cardHead: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: 8 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  field: {
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  fieldBig: { minHeight: 88, textAlignVertical: "top" },
   moreHead: { flexDirection: "row", marginLeft: -12 },
   moreBody: { gap: 10, marginTop: 6 },
 });

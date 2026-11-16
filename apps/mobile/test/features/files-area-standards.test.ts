@@ -42,6 +42,12 @@ describe("presses in the files, the blocks and the Drive are the kit's", () => {
     expect(spec).not.toContain("withSpring(0, { stiffness: 260, damping: 14 })");
   });
 
+  test("a block's field is the app's text field, never one drawn by the block", () => {
+    const spec = src("features/blocks/SpecBlock.tsx");
+    expect(spec).toContain("<TextArea");
+    expect(spec).not.toContain("<TextInput");
+  });
+
   test("a deck of pictures let go of settles on the app's snap", () => {
     const stack = src("features/files/ImageStack.tsx");
     expect(stack).toContain("const SETTLE = { ...motion.snap };");
