@@ -39,3 +39,14 @@ describe("answering an agent that waits: 'pensando…' comes once, not twice", (
     expect(sent).not.toContain("steeredRunIds.length > 0");
   });
 });
+
+describe("a reply that fit is never judged again over the keyboard", () => {
+  test("the keyboard coming up, and going to the end, drop the reply waiting to be read from the top", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat).toMatch(
+      /KeyboardEvents\.addListener\("keyboardWillShow", \(\) => \{\s*toReadRef\.current = null;\s*\}\);/,
+    );
+    const toEnd = chat.slice(chat.indexOf("const toEnd = useCallback(() => {"));
+    expect(toEnd.slice(0, toEnd.indexOf("}, [letGo]);"))).toContain("toReadRef.current = null;");
+  });
+});
