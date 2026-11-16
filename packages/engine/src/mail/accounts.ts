@@ -228,13 +228,20 @@ export async function listMailAccounts(
     orgId,
     rows.map((r) => r.id),
   );
-  return rows.map((r) => {
-    const v = mailAccountView(r, grants.get(r.id));
-    if (!r.createdByUserId || r.createdByUserId === actorId) return v;
-    // A label defaults to the address: one that holds it is left out too.
-    const label = r.address && v.label.toLowerCase().includes(r.address.toLowerCase()) ? "" : v.label;
-    return { ...v, label, address: "", lastError: null, preset: null, aliases: [], defaultFrom: null };
-  });
+  return rows.map((r) => mailAccountViewFor(r, grants.get(r.id), actorId));
+}
+
+/** A mailbox as `actorId` may see it: someone else's with its name, person and agents only, never its address. */
+function mailAccountViewFor(
+  r: MailAccountRow,
+  grants: Parameters<typeof mailAccountView>[1],
+  actorId: string,
+): MailAccountView {
+  const v = mailAccountView(r, grants);
+  if (!r.createdByUserId || r.createdByUserId === actorId) return v;
+  // A label defaults to the address: one that holds it is left out too.
+  const label = r.address && v.label.toLowerCase().includes(r.address.toLowerCase()) ? "" : v.label;
+  return { ...v, label, address: "", lastError: null, preset: null, aliases: [], defaultFrom: null };
 }
 
 /** Who may change or remove a mailbox: who connected it, or who manages connectors (ADR 0099 addendum). */
@@ -265,10 +272,10 @@ async function loadAccount(db: Database, orgId: string, id: string) {
   return row;
 }
 
-export async function getMailAccountView(db: Database, orgId: string, id: string) {
+export async function getMailAccountView(db: Database, orgId: string, id: string, actorId: string) {
   const row = await loadAccount(db, orgId, id);
   const grants = await mailGrants(db, orgId, [row.id]);
-  return mailAccountView(row, grants.get(row.id));
+  return mailAccountViewFor(row, grants.get(row.id), actorId);
 }
 
 async function assertAddressFree(db: Database, orgId: string, address: string, exceptId?: string) {
@@ -755,7 +762,7 @@ export async function updateMailAccount(
       });
     }
   }
-  return { ok: true, account: await getMailAccountView(deps.db, orgId, row.id) };
+  return { ok: true, account: await getMailAccountView(deps.db, orgId, row.id, actorId) };
 }
 
 /**
@@ -956,7 +963,11 @@ export async function listMailFolders(deps: MailDeps, actorId: string, orgId: st
  */
 export async function suggestMailAddresses(deps: MailDeps, actorId: string, orgId: string, accountId: string) {
   const row = await loadAccount(deps.db, orgId, accountId);
-  await requireMailboxManager(deps.db, actorId, orgId, row);
+  // It reads the mailbox's sent mail: only its person's (who manages connectors, for one left with no person).
+  if (row.createdByUserId !== actorId) {
+    if (row.createdByUserId) throw new NotFoundError("Mailbox not found", "mail.account_not_found");
+    await requirePermission(deps.db, actorId, orgId, "manage_connectors");
+  }
   let provider: MailProvider | null = null;
   try {
     provider = await openAccount(deps, row);

@@ -560,6 +560,11 @@ test("a mailbox is its person's on the list: others see it only when they manage
   expect((await listMailAccounts(f.db, f.owner.id, f.org.id)).map((a) => a.id)).toEqual([]);
   const [row] = await listMailAccounts(f.db, f.owner.id, f.org.id, { others: true });
   expect(row).toMatchObject({ id, ownerUserId: walter.id, address: "", aliases: [] });
+  // Tightening it answers with the same bare row, and its sent mail stays Walter's to read.
+  const tightened = await updateMailAccount(deps, f.owner.id, f.org.id, id, { offActions: ["delete"] });
+  expect(tightened).toMatchObject({ ok: true, account: { id, address: "", label: "", aliases: [] } });
+  await expect(suggestMailAddresses(deps, f.owner.id, f.org.id, id)).rejects.toBeInstanceOf(NotFoundError);
+  expect(Array.isArray(await suggestMailAddresses(deps, walter.id, f.org.id, id))).toBe(true);
   // Bia can't remove it; who manages connectors can, and so can Walter his own.
   await expect(revokeMailAccount(deps, bia.id, f.org.id, id)).rejects.toBeInstanceOf(NotFoundError);
   await revokeMailAccount(deps, f.owner.id, f.org.id, id);

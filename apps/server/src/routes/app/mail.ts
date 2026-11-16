@@ -352,7 +352,8 @@ export function mailRoutes(deps: AppDeps, log: Logger) {
       path: "/organizations/{orgId}/mail/accounts/{accountId}/suggested-addresses",
       tags,
       security,
-      summary: "Addresses this mailbox has sent from (its sent folder), to offer as its other addresses (admins)",
+      summary:
+        "Addresses this mailbox has sent from (its sent folder), to offer as its other addresses (its person only)",
       request: { params: AccountParams },
       responses: { 200: json(z.object({ addresses: z.array(z.string()) })), ...errors },
     }),
