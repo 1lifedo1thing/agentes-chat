@@ -17508,11 +17508,11 @@
       "rolesPersonal": "Что может делать каждый здесь. Владелец может всё."
     },
     "about": {
-      "basedOn": "Основано на <site>agentes.chat</site> от Codari Global, LLC",
+      "basedOn": "Основано на <site>agentes.chat</site> от AGENTESCHAT, LLC",
       "version": "Версия",
       "license": "Свободное ПО по лицензии <license>GNU Affero General Public License v3</license>, без гарантий.",
       "source": "Исходный код",
-      "copyright": "Copyright © 2026 Codari Global, LLC и участники"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC и участники"
     },
     "title": "Настройки",
     "account": {

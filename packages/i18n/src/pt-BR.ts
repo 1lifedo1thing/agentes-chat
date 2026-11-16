@@ -16733,11 +16733,11 @@ export const ptBR = {
       rolesPersonal: "O que cada pessoa daqui pode fazer. Quem é dono pode tudo.",
     },
     about: {
-      basedOn: "Baseado no <site>agentes.chat</site> da Codari Global, LLC",
+      basedOn: "Baseado no <site>agentes.chat</site> da AGENTESCHAT, LLC",
       version: "Versão",
       license: "Software livre sob a <license>GNU Affero General Public License v3</license>, sem garantia.",
       source: "Código-fonte",
-      copyright: "Copyright © 2026 Codari Global, LLC e colaboradores",
+      copyright: "Copyright © 2026 AGENTESCHAT, LLC e colaboradores",
     },
     title: "Configurações",
     account: {
