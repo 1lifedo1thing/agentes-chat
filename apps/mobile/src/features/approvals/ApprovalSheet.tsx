@@ -12,7 +12,7 @@ import { nextLabel } from "@agenteschat/client/lib/format";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -53,6 +53,7 @@ import {
   ApprovalEmailLetter,
   ApprovalUndoChip,
   approvalTitleText,
+  promptRefusal,
   traitKey,
   useCancelAhead,
   useConnectorNamer,
@@ -68,8 +69,10 @@ const SHORT_VALUE = 22;
  * and its title, "Pedido"), who asks with the action in words and whether it can be undone after it, where and the
  * fuse to its deadline under them at the sheet's width; then the request in groups (why, the service it goes through, the values it runs with, what
  * it affects) and, where its kind allows it, "Aprovar sempre" as a switch for next time. Two buttons side by side:
- * Recusar and Aprovar (held, for high risk). Recusar writes the optional reason in the sheet (the deep link's `refuse`
- * opens there; the cards ask in the system's alert).
+ * Recusar and Aprovar (held, for high risk). Recusar asks as the cards do: the system's alert with the optional
+ * reason on iOS; where alerts take no text (Android) the reason field shows in the sheet in answer to the tap (its
+ * keyboard up then), with Cancelar and Recusar. The deep link's `refuse` (Android's cards) opens there, the keyboard
+ * down until the person taps the field; its Cancelar closes the sheet, as the alert's leaves everything as it was.
  */
 export function ApprovalSheet({
   id,
@@ -103,15 +106,15 @@ export function ApprovalSheet({
   const origin = useOriginShort({ origin: a?.origin ?? null });
   const runAt = a?.runAt ? nextLabel(i18n.language, a.runAt) : null;
 
-  /** `withAlways`: "Aprovar sempre", this one and the agent's next ones of its kind. */
-  const done = (decision: "approve" | "refuse", withAlways = false) => {
+  /** `withAlways`: "Aprovar sempre", this one and the agent's next ones of its kind; `why`: a refusal's reason. */
+  const done = (decision: "approve" | "refuse", withAlways = false, why = reason) => {
     if (!a) return;
     decide.mutate(
       {
         id: a.id,
         decision,
         ...(withAlways ? { always: true } : {}),
-        ...(decision === "refuse" && reason.trim() ? { reason: reason.trim() } : {}),
+        ...(decision === "refuse" && why.trim() ? { reason: why.trim() } : {}),
       },
       {
         onSuccess: () => {
@@ -135,6 +138,12 @@ export function ApprovalSheet({
         onError: () => toast({ title: t("mobile.app.failed"), icon: "x" }),
       },
     );
+  };
+
+  // Recusar: the system's alert where it takes the reason (iOS), else the field in the sheet.
+  const askRefusal = () => {
+    if (Platform.OS === "ios") promptRefusal(t, name, (why) => done("refuse", false, why));
+    else setRefusing(true);
   };
 
   let body: ReactNode;
@@ -199,7 +208,8 @@ export function ApprovalSheet({
             onChangeText={setReason}
             placeholder={t(`mobile.approval.whyPlaceholder${g}`, { name })}
             accessibilityLabel={t(`mobile.approval.whyPlaceholder${g}`, { name })}
-            autoFocus
+            // Shown by Recusar in this sheet: the person is already writing. Opened on it: they tap it first.
+            autoFocus={!startRefusing}
           />
         </Locked>
         <View style={styles.pair}>
@@ -207,9 +217,9 @@ export function ApprovalSheet({
             <Button
               variant="secondary"
               wide
-              label={t("mobile.common.back")}
+              label={t("mobile.common.cancel")}
               disabled={decide.isPending}
-              onPress={() => setRefusing(false)}
+              onPress={startRefusing ? onClose : () => setRefusing(false)}
             />
           </View>
           <View style={styles.half}>
@@ -283,7 +293,7 @@ export function ApprovalSheet({
                   wide
                   label={t("mobile.approval.refuse")}
                   disabled={decide.isPending}
-                  onPress={() => setRefusing(true)}
+                  onPress={askRefusal}
                 />
               </View>
               <View style={styles.half}>
