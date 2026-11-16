@@ -1,18 +1,16 @@
 import { busyWidgets } from "@agenteschat/client";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, RefreshControl, StyleSheet, View } from "react-native";
-import { Button, IconButton, Text, useTheme } from "@/ui";
+import { RefreshControl, StyleSheet, View } from "react-native";
+import { IconButton } from "@/ui";
 import { router } from "@/ui/navigation";
 import { FirstUse } from "../shared/FirstUse";
 import { usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
-import { PushedHeader } from "../shared/parts";
-import { SheetHostProvider } from "../shared/SheetHost";
 import { useBoard } from "./hooks";
 import { HOME, phoneRows, widgetsInOrder } from "./logic";
 import { useBoardMenu } from "./menu";
-import { AudienceLine, ProposalBanner, useBoardByline } from "./parts";
+import { AudienceLine, MissingScreen, ProposalBanner, useBoardByline } from "./parts";
 import { WidgetPeek } from "./WidgetPeek";
 
 /** While a widget is being built or updated, the board is asked again this often (events usually come first). */
@@ -30,16 +28,7 @@ export const newWidgetHref = (dashboardId: string) => `/widget-new?dashboardId=$
  * made the first time it is opened.
  */
 export function BoardScreen({ id }: { id: string }) {
-  return (
-    <SheetHostProvider>
-      <Board id={id} />
-    </SheetHostProvider>
-  );
-}
-
-function Board({ id }: { id: string }) {
   const { t } = useTranslation();
-  const { colors: c } = useTheme();
   const { board, loading, failed, refetch } = useBoard(id);
   const menu = useBoardMenu(board);
   const pull = usePullRefresh(refetch);
@@ -52,21 +41,12 @@ function Board({ id }: { id: string }) {
   }, [busy, refetch]);
   if (!board) {
     return (
-      <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-        <PushedHeader title={id === HOME ? t("dashboards.home") : ""} solid={false} grouped />
-        <View style={styles.center}>
-          {loading ? (
-            <ActivityIndicator color={c.muted} />
-          ) : (
-            <>
-              <Text tone="muted" style={styles.centerText}>
-                {failed ? t("mobile.dashboards.loadFailed") : t("dashboards.errors.notFound")}
-              </Text>
-              <Button variant="secondary" size="sm" label={t("mobile.common.retry")} onPress={() => void refetch()} />
-            </>
-          )}
-        </View>
-      </View>
+      <MissingScreen
+        title={id === HOME ? t("dashboards.home") : ""}
+        state={loading ? "loading" : failed ? "failed" : "gone"}
+        onRetry={() => void refetch()}
+        gone={t("dashboards.errors.notFound")}
+      />
     );
   }
   const home = board.kind === "home";
@@ -90,7 +70,9 @@ function Board({ id }: { id: string }) {
             />
           ) : null}
           {board.canEdit ? <IconButton icon="plus" label={t("widgets.add.label")} onPress={add} /> : null}
-          {menu.any ? <IconButton icon="more" label={menu.label} onPress={menu.open} /> : null}
+          {/* The page's large title takes no native bar buttons yet: its "…" lists the board's choices in the app's
+              sheet on both systems. */}
+          {menu ? <IconButton icon="more" label={menu.label} onPress={menu.onPress} /> : null}
         </View>
       }
     >
@@ -125,10 +107,7 @@ function Board({ id }: { id: string }) {
 const GAP = 10;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
   in: { paddingHorizontal: 16, gap: 10 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingHorizontal: 32 },
-  centerText: { textAlign: "center" },
   barRight: { flexDirection: "row", alignItems: "center" },
   meta: { paddingHorizontal: 4 },
   grid: { gap: GAP },

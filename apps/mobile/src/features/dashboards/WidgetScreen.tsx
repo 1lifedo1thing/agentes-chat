@@ -18,11 +18,11 @@ import {
 import { upcomingAt, whenAt } from "@agenteschat/client/lib/format";
 import { plainInline } from "@agenteschat/client/lib/markdown";
 import { can } from "@agenteschat/client/lib/permissions";
-import { WIDGET_LIMITS, WIDGET_SCHEDULES } from "@agenteschat/ui/widgets/spec";
+import { WIDGET_SCHEDULES } from "@agenteschat/ui/widgets/spec";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, RefreshControl, StyleSheet, TextInput, View } from "react-native";
+import { Alert, RefreshControl, StyleSheet, TextInput, View } from "react-native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
@@ -49,46 +49,38 @@ import { boardHref, routineHref } from "../links/logic";
 import { useFailed } from "../routines/hooks";
 import { useDirectory, useMeId, useOrgId, usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
-import { goBack, PushedHeader, successHaptic } from "../shared/parts";
-import { TextArea } from "../shared/TextArea";
+import { goBack, successHaptic } from "../shared/parts";
 import { useAgentLook, useWidgetAiWay, useWidgetWords } from "./hooks";
 import { HOME, shownWidgetTitle } from "./logic";
+import { usePickMenu } from "./menu";
+import { MissingScreen } from "./parts";
+import { widgetEditHref } from "./WidgetEditScreen";
 import { WidgetCard } from "./WidgetView";
 
 /** Rows of the history shown (the server keeps the latest 20). */
 const HISTORY_SHOWN = 10;
-/** The longest alert condition the server takes (ADR 0135). */
-const CONDITION_MAX = 200;
 
 /**
  * A widget, pushed from its board (ADR 0135): the widget big, why it didn't update (with Resolve) or what its refresh
- * waits for (with Continue now on a pause), its title (renamed
- * in place; a person's title is kept: the agent no longer changes it), how it updates
- * (its schedule, picked in place; the alert and its condition; what the agent reads; its routine), the latest updates,
- * "Update now" and the remove; at the bottom, "Ask <agent> for a change" goes to the agent, who redoes it in place.
+ * waits for (with Continue now on a pause), its title (renamed on a screen of its own; a person's title is kept: the
+ * agent no longer changes it), how it updates (its schedule, picked in the app's picker; the alert and its condition,
+ * on a screen of its own; what the agent reads; its routine), the latest updates, "Update now" and the remove; at the
+ * bottom, "Ask <agent> for a change" goes to the agent, who redoes it in place.
  */
 export function WidgetScreen({ id }: { id: string }) {
   const { t } = useTranslation();
-  const { colors: c } = useTheme();
   const orgId = useOrgId();
   const q = useWidget(orgId, id);
   const w = q.data;
-  if (!w) {
+  if (!w)
     return (
-      <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-        <PushedHeader title="" solid={false} grouped />
-        <View style={styles.center}>
-          {q.isLoading ? (
-            <ActivityIndicator color={c.muted} />
-          ) : (
-            <Text tone="muted" style={styles.centerText}>
-              {t("dashboards.errors.widgetNotFound")}
-            </Text>
-          )}
-        </View>
-      </View>
+      <MissingScreen
+        title=""
+        state={q.isLoading ? "loading" : q.isError ? "failed" : "gone"}
+        onRetry={() => void q.refetch()}
+        gone={t("dashboards.errors.widgetNotFound")}
+      />
     );
-  }
   return <Detail key={w.id} widget={w} refetch={q.refetch} />;
 }
 
@@ -107,21 +99,13 @@ function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => P
   useBuildOnceAi(orgId, w, w.canEdit);
   const needsAi = useWidgetLacksAi(orgId, w);
   const aiWay = useWidgetAiWay(needsAi ? w.agentId : null, w.failure?.detail);
-  const [open, setOpen] = useState<"title" | "schedule" | "alert" | null>(null);
-  const [alertOn, setAlertOn] = useState(w.alert.enabled);
-  const [condition, setCondition] = useState(w.alert.condition);
-  const [title, setTitle] = useState(w.title);
+  const pick = usePickMenu();
   const home = w.dashboard.kind === "home";
   // A refresh that waits stands still: Update now on it goes on now, or says why it can't.
   const waiting = widgetWaiting(w, words.now);
   const status = widgetCardStatus(w, words.now);
   const busy = status === "building" || status === "updating";
   const shown = shownWidgetTitle(w.title, w.kind, (k) => t(k));
-  const toggle = (what: "title" | "schedule" | "alert") => {
-    // The title field opens with the widget's title as it is now (the agent may have named it meanwhile).
-    if (what === "title" && open !== "title") setTitle(w.title);
-    setOpen((v) => (v === what ? null : what));
-  };
 
   const updateNow = () =>
     refresh.mutate(w.id, {
@@ -129,7 +113,6 @@ function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => P
       onError: failed,
     });
   const setSchedule = (schedule: WidgetSchedule) => {
-    setOpen(null);
     if (schedule === w.schedule) return;
     update.mutate(
       { widgetId: w.id, schedule },
@@ -143,36 +126,13 @@ function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => P
       },
     );
   };
-  const saveTitle = () => {
-    const next = title.trim();
-    if (!next || update.isPending) return;
-    if (next === w.title) {
-      setOpen(null);
-      return;
-    }
-    update.mutate(
-      { widgetId: w.id, title: next },
-      {
-        onSuccess: () => {
-          successHaptic();
-          setOpen(null);
-          toast({ title: t("mobile.dashboards.widget.titleSaved") });
-        },
-        onError: failed,
-      },
-    );
-  };
-  const saveAlert = () =>
-    update.mutate(
-      { widgetId: w.id, alert: { enabled: alertOn, condition: condition.trim() } },
-      {
-        onSuccess: () => {
-          successHaptic();
-          setOpen(null);
-          toast({ title: t("mobile.dashboards.widget.alertSaved") });
-        },
-        onError: failed,
-      },
+  // How often: five schedules, the app's picker (as New widget's), the one in use checked.
+  const pickSchedule = () =>
+    pick(
+      t("dashboards.newWidget.updates"),
+      WIDGET_SCHEDULES.map((s) => ({ key: s, label: t(`widgets.schedules.${s}`) })),
+      w.schedule,
+      setSchedule,
     );
   // The same words as the web's confirmation (ADR 0135): its routine stops and its history goes.
   const confirmRemove = () =>
@@ -315,37 +275,8 @@ function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => P
                 label={t("mobile.dashboards.widget.title")}
                 value={shown}
                 chevron
-                onPress={() => toggle("title")}
+                onPress={() => router.push(widgetEditHref(w.id, "title"))}
               />
-              {open === "title" ? (
-                <View style={styles.alert}>
-                  <Locked when={update.isPending}>
-                    <TextArea
-                      value={title}
-                      onChangeText={setTitle}
-                      placeholder={t("mobile.dashboards.widget.titlePlaceholder")}
-                      accessibilityLabel={t("mobile.dashboards.widget.title")}
-                      multiline={false}
-                      minHeight={46}
-                      style={styles.condition}
-                      maxLength={WIDGET_LIMITS.title}
-                      returnKeyType="done"
-                      autoFocus
-                      onSubmitEditing={saveTitle}
-                    />
-                  </Locked>
-                  <View style={styles.alertSave}>
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      label={t("common.save")}
-                      loading={update.isPending}
-                      disabled={!title.trim()}
-                      onPress={saveTitle}
-                    />
-                  </View>
-                </View>
-              ) : null}
             </GroupedList>
           </>
         ) : null}
@@ -357,57 +288,17 @@ function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => P
             label={t(`widgets.schedules.${w.schedule}`)}
             sub={next}
             subLines={2}
-            chevron={w.canEdit}
-            {...(w.canEdit ? { onPress: () => toggle("schedule") } : {})}
+            menu={w.canEdit}
+            {...(w.canEdit ? { onPress: pickSchedule } : {})}
           />
-          {open === "schedule"
-            ? WIDGET_SCHEDULES.map((s) => (
-                <GroupedRow
-                  key={s}
-                  label={t(`widgets.schedules.${s}`)}
-                  checked={s === w.schedule}
-                  onPress={() => setSchedule(s)}
-                />
-              ))
-            : null}
           <GroupedRow
             icon="bell"
             label={alertLine}
             labelLines={2}
             sub={t("widgets.alert.where")}
             chevron={w.canEdit}
-            {...(w.canEdit ? { onPress: () => toggle("alert") } : {})}
+            {...(w.canEdit ? { onPress: () => router.push(widgetEditHref(w.id, "alert")) } : {})}
           />
-          {open === "alert" ? (
-            <View style={styles.alert}>
-              <Locked when={update.isPending} style={styles.alertFields}>
-                <GroupedRow label={t("widgets.alert.label")} toggle={alertOn} onPress={() => setAlertOn((v) => !v)} />
-                {alertOn ? (
-                  <TextArea
-                    value={condition}
-                    onChangeText={setCondition}
-                    placeholder={t("widgets.alert.placeholder")}
-                    accessibilityLabel={t("widgets.alert.condition")}
-                    multiline={false}
-                    minHeight={46}
-                    style={styles.condition}
-                    maxLength={CONDITION_MAX}
-                    returnKeyType="done"
-                    onSubmitEditing={saveAlert}
-                  />
-                ) : null}
-              </Locked>
-              <View style={styles.alertSave}>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  label={t("common.save")}
-                  loading={update.isPending}
-                  onPress={saveAlert}
-                />
-              </View>
-            </View>
-          ) : null}
           {w.sources.length > 0 ? (
             <GroupedRow
               icon="server"
@@ -570,19 +461,12 @@ function AskChange({ widget: w, name }: { widget: WidgetDetail; name: string }) 
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
   in: { paddingHorizontal: 16 },
   cares: { paddingHorizontal: 4, marginTop: -6, marginBottom: 10 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  centerText: { textAlign: "center" },
   grow: { flex: 1, minWidth: 0 },
   failure: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 4, paddingTop: 10 },
   // The icon on the reason's first line when it wraps (the button stays centered beside the reason).
   failureLine: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "flex-start", gap: 8 },
-  alert: { gap: 8, paddingBottom: 12 },
-  alertFields: { gap: 8 },
-  condition: { marginHorizontal: 14 },
-  alertSave: { alignItems: "flex-end", paddingHorizontal: 14 },
   gap: { height: 20 },
   dock: { position: "absolute", left: 0, right: 0, bottom: 0 },
   box: { paddingHorizontal: 12, paddingTop: 16 },

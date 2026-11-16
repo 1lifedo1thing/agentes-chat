@@ -4,13 +4,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Locked, Text, useTheme, useToast } from "@/ui";
+import { Filters, GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Locked, Text, useTheme, useToast } from "@/ui";
 import { useFailed } from "../routines/hooks";
 import { useOrgId } from "../shared/hooks";
 import { goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { useAgentLook } from "./hooks";
 import { destinationsOf, HOME, pinDraftNow, realBoardId, sizeFor } from "./logic";
-import { ChoiceChips, ScheduleChoice, SizeChoice } from "./parts";
+import { ScheduleChoice, SizeChoice } from "./parts";
 import { WidgetCard } from "./WidgetView";
 
 /**
@@ -102,7 +102,7 @@ export function PinScreen() {
                 <>
                   <GroupedHeader>{t("mobile.dashboards.pin.which")}</GroupedHeader>
                   <View style={styles.bleed}>
-                    <ChoiceChips
+                    <Filters
                       items={draft.blocks.map((b, i) => ({
                         key: String(i),
                         label: chartBlockToWidgetSpec(b)?.title ?? String(i + 1),

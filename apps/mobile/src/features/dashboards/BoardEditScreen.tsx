@@ -1,13 +1,14 @@
 import { type Dashboard, useDashboard, useUpdateDashboard } from "@agenteschat/client";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GroupedHeader, Locked, Text, useTheme, useToast } from "@/ui";
+import { GroupedHeader, Locked, useTheme, useToast } from "@/ui";
 import { useFailed } from "../routines/hooks";
 import { useOrgId } from "../shared/hooks";
 import { goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { TextArea } from "../shared/TextArea";
+import { MissingScreen } from "./parts";
 
 /** The longest name and description the server takes (ADR 0135). */
 const TITLE_MAX = 80;
@@ -16,24 +17,16 @@ const ABOUT_MAX = 280;
 /** "Rename" a dashboard, pushed from its "…" (ADR 0135): its name and what it is for. "Save" in the bar. */
 export function BoardEditScreen({ id }: { id: string }) {
   const { t } = useTranslation();
-  const { colors: c } = useTheme();
   const q = useDashboard(useOrgId(), id);
-  if (!q.data) {
+  if (!q.data)
     return (
-      <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-        <PushedHeader title={t("dashboards.rename")} solid={false} grouped />
-        <View style={styles.center}>
-          {q.isLoading ? (
-            <ActivityIndicator color={c.muted} />
-          ) : (
-            <Text tone="muted" style={styles.centerText}>
-              {t("dashboards.errors.notFound")}
-            </Text>
-          )}
-        </View>
-      </View>
+      <MissingScreen
+        title={t("dashboards.rename")}
+        state={q.isLoading ? "loading" : q.isError ? "failed" : "gone"}
+        onRetry={() => void q.refetch()}
+        gone={t("dashboards.errors.notFound")}
+      />
     );
-  }
   return <Form key={q.data.id} board={q.data} />;
 }
 
@@ -110,6 +103,4 @@ function Form({ board }: { board: Dashboard }) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   in: { paddingHorizontal: 16, paddingTop: 4 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  centerText: { textAlign: "center" },
 });

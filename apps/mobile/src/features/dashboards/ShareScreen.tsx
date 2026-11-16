@@ -8,14 +8,13 @@ import {
 } from "@agenteschat/client";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GroupedHeader, GroupedList, GroupedRow, Locked, Text, useTheme, useToast } from "@/ui";
 import { useFailed } from "../routines/hooks";
 import { Face } from "../shared/Face";
 import { useMeId, useOrgId } from "../shared/hooks";
 import { goBack, PushedHeader, successHaptic } from "../shared/parts";
-import { SheetHostProvider } from "../shared/SheetHost";
 import {
   type AudienceDraft,
   accessPerson,
@@ -25,7 +24,7 @@ import {
   roleNamesOf,
   shareInputOf,
 } from "./logic";
-import { AudienceFields } from "./parts";
+import { AudienceFields, MissingScreen } from "./parts";
 
 /**
  * Share a dashboard, pushed (ADR 0135): who sees it (the whole workspace, some roles, only you), who edits it (whoever
@@ -34,29 +33,17 @@ import { AudienceFields } from "./parts";
  */
 export function ShareScreen({ id }: { id: string }) {
   const { t } = useTranslation();
-  const { colors: c } = useTheme();
   const q = useDashboard(useOrgId(), id);
-  if (!q.data) {
+  if (!q.data)
     return (
-      <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-        <PushedHeader title={t("dashboards.share.action")} solid={false} grouped />
-        <View style={styles.center}>
-          {q.isLoading ? (
-            <ActivityIndicator color={c.muted} />
-          ) : (
-            <Text tone="muted" style={styles.centerText}>
-              {t("dashboards.errors.notFound")}
-            </Text>
-          )}
-        </View>
-      </View>
+      <MissingScreen
+        title={t("dashboards.share.action")}
+        state={q.isLoading ? "loading" : q.isError ? "failed" : "gone"}
+        onRetry={() => void q.refetch()}
+        gone={t("dashboards.errors.notFound")}
+      />
     );
-  }
-  return (
-    <SheetHostProvider>
-      <Form key={q.data.id} board={q.data} />
-    </SheetHostProvider>
-  );
+  return <Form key={q.data.id} board={q.data} />;
 }
 
 function Form({ board }: { board: Dashboard }) {
@@ -167,7 +154,5 @@ function Form({ board }: { board: Dashboard }) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   in: { paddingHorizontal: 16, paddingTop: 4 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
-  centerText: { textAlign: "center" },
   note: { paddingHorizontal: 16, paddingTop: 16 },
 });
