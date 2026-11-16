@@ -12,12 +12,14 @@ import {
   type Message,
   type MessageMedia,
   type MessagePin,
+  type MessageReceipt,
   newClientId,
   type ReceiptsState,
   type ReplyRef,
   type RunConsultation,
   type SearchHit,
   sendHelpers,
+  type ThreadInfo,
   typingIn,
   useAgentsBrowserHandoffs,
   useAiStatus,
@@ -94,7 +96,17 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useIsFocused, useIsPreview } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
-import { type ComponentRef, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ComponentRef,
+  memo,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -121,6 +133,7 @@ import Animated, {
   FadeInDown,
   FadeOut,
   Keyframe,
+  LayoutAnimationConfig,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -202,6 +215,7 @@ import { ConversationSwitcher } from "./ConversationSwitcher";
 import { takeComposerRequest, useComposerRequest } from "./composer-request";
 import { DATE_PILL_IDLE_MS, DatePill } from "./DatePill";
 import { DmComputerButton } from "./DmComputerButton";
+import { createDockHeight, type DockHeight } from "./dock-height";
 import { EventLine } from "./EventLine";
 import { FirstDay } from "./FirstDay";
 import { HeaderPill } from "./HeaderPill";
@@ -344,10 +358,18 @@ const SHOW_LIST_MS = 700;
 const SEEK_MAX_PAGES = 10;
 /** How long the message gone to stays lit. */
 const FLASH_MS = 1600;
+/** How long a photo or file picker takes to cover the screen as it opens (ms). */
+const PICKER_COVERS_MS = 500;
 /** No questions to other agents here (yet): the same list each time, so the memos over it keep. */
 const NO_CONSULTATIONS: RunConsultation[] = [];
 /** A run in these takes a new message into its work (the server steers it there): no second "pensando…" for it. */
 const AT_WORK: ReadonlySet<string> = new Set(["thinking", "queued", "running", "waiting_approval"]);
+/**
+ * The conversation's list, drawn again only when what it is handed changes: the screen redraws for someone typing, a
+ * presence, an agent's step, and the list (a large component) was drawn again with each. Typed as the list itself: a
+ * memo keeps its props but not its item type.
+ */
+const ConversationList = memo(KeyboardAwareLegendList) as unknown as typeof KeyboardAwareLegendList;
 
 /**
  * A conversation: a channel, a DM, a thread or a mission's thread (`threadId`). `handoffId`: a request
@@ -642,26 +664,26 @@ function Chat({
   const waitsKey = waitsNow.map((w) => `${w.agentId}:${w.runId}`).join(" ");
   // biome-ignore lint/correctness/useExhaustiveDependencies: new only when the waits change, not on every receipt
   const waits = useMemo(() => waitsNow, [waitsKey]);
+  // A thread's first line: in a DM, with whom (its channel name is internal, "dm-…"); in a channel, where. Its words and
+  // its count, not the lists' objects: the DM and channel lists are read again with each message, and the rows were
+  // all built again with them.
+  const startedText = isThread
+    ? thread.data?.channelKind === "dm" || dm
+      ? t("mobile.chat.startedWith", { name: dm?.with.name ?? "" })
+      : t("mobile.chat.startedIn", { channel: thread.data?.channelName ?? channel?.name ?? "" })
+    : "";
+  const replyCount = thread.data?.replyCount;
   // The messages' rows, built again only when the messages (or the thread's head) change: an agent's run events, many a
   // second while it works, touch only the live rows after them.
   const messageRows = useMemo<Row[]>(() => {
     if (isThread && threadId) {
       const root = list.find((m) => m.id === threadId);
       const replies = list.filter((m) => m.id !== threadId);
-      const info = thread.data;
       // A task's conversation (ADR 0145): its root stands for the task, one screen back; only the replies show.
       const head: Row[] =
         root && !taskConversationOf(root.meta)
           ? [
-              {
-                kind: "marker",
-                key: "started",
-                // In a DM, with whom (its channel name is internal, "dm-…"); in a channel, where.
-                text:
-                  info?.channelKind === "dm" || dm
-                    ? t("mobile.chat.startedWith", { name: dm?.with.name ?? "" })
-                    : t("mobile.chat.startedIn", { channel: info?.channelName ?? channel?.name ?? "" }),
-              },
+              { kind: "marker", key: "started", text: startedText },
               // The root as it started the thread (its mission card is pinned above already).
               {
                 kind: "message",
@@ -672,7 +694,7 @@ function Chat({
               {
                 kind: "marker",
                 key: "replies",
-                text: t("mobile.chat.replies", { count: info?.replyCount ?? replies.length }),
+                text: t("mobile.chat.replies", { count: replyCount ?? replies.length }),
               },
             ]
           : [];
@@ -681,7 +703,7 @@ function Chat({
     // A thread's replies live in the thread; the channel shows its link.
     const hidden = (m: Message) => superseded.has(m.id) || Boolean(m.threadId);
     return buildRows(list, hidden);
-  }, [isThread, threadId, list, thread.data, channel?.name, dm, superseded, t]);
+  }, [isThread, threadId, list, startedText, replyCount, superseded, t]);
   // What agents do here now, after the messages: browser cards, a picture on its way, turns waiting for a computer.
   const liveRows = useMemo<Row[]>(
     () => [
@@ -706,8 +728,14 @@ function Chat({
   // and posted nothing yet: its reply brings the row), and the working line without the questions a reply near the
   // end shows (an asker at work shows none: the line says them).
   // An exchange between the same two agents draws on its first asking run's reply (`asExchanges`).
-  const consultData = useConsultations(orgId, channelId).data;
+  const consultations = useConsultations(orgId, channelId);
+  const consultData = consultations.data;
   const consultList = useMemo(() => (consultData ? asExchanges(consultData) : NO_CONSULTATIONS), [consultData]);
+  // The threads' links under their roots and these questions load beside the messages and change rows: the list waits
+  // for them before it shows (`revealOpened`), so no row grows under the person as the conversation appears.
+  const rowsComplete = (isThread || !readable || channelThreads.isFetched) && consultations.isFetched;
+  const rowsCompleteRef = useRef(rowsComplete);
+  rowsCompleteRef.current = rowsComplete;
   const liveTurns = useMemo(
     () => new Set(atWork.flatMap((r) => (shownMessages.some((m) => m.agentRunId === r.runId) ? [] : [r.runId]))),
     [atWork, shownMessages],
@@ -779,16 +807,16 @@ function Chat({
   }, []);
   // The room the list shows rows in: under the floating bar (a pinned card already holds that room) and over the dock
   // riding the keyboard. Its top and the keyboard's share are set as the screen draws (`band.current`, below), the
-  // dock's height as it lays out (`boxHeight`, `onComposerBoxLayout`); it is read when the list is aimed, after that.
+  // dock's height as it lays out (`dock`, `onComposerBoxLayout`); it is read when the list is aimed, after that.
   const band = useRef({ top: 0, lift: 0 });
-  const boxHeight = useRef(0);
+  const [dock] = useState(createDockHeight);
   const roomNow = useCallback(() => {
     const state = listRef.current?.getState();
     if (!state) return null;
     const { top, lift } = band.current;
     const keyboard = KeyboardController.isVisible() ? Math.max(0, KeyboardController.state().height - lift) : 0;
-    return { state, top, height: state.scrollLength - top - boxHeight.current - keyboard };
-  }, []);
+    return { state, top, height: state.scrollLength - top - dock.get() - keyboard };
+  }, [dock]);
   /** `scrollToIndex`'s place for a row in that room (`bandAim`): sent to the top, it lands under the bar. */
   const aimAt = useCallback(
     (index: number, viewPosition: number, tall: "start" | "end") => {
@@ -961,24 +989,9 @@ function Chat({
   );
 
   // ── Read ──
-  // Seen up to the message posted last, wherever its place: the list's badges (a channel's or DM's, or a thread's)
-  // clear at once.
-  const markRead = useMarkChannelRead(orgId).mutate;
-  const markThreadRead = useMarkThreadRead(orgId).mutate;
-  // Peeked at from the list (iOS's long press preview): nothing is read until it is opened.
+  // Seen up to the message posted last (`ReadMark`, drawn with the screen). Peeked at from the list (iOS's long press
+  // preview): nothing is read until it is opened.
   const peeking = useIsPreview();
-  // Only in view (`focused`, the screen's, read above for "Novas"): under another screen, or with the app in the
-  // background, what arrives stays unread, and is read once the person is back on it.
-  const inFront = useAppActive();
-  // A reply in one of its threads counts in the conversation's mark and is no message of this list: read again on it.
-  const threadReplies = useThreadActivity(orgId, channelId);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a thread's reply marks the conversation read again
-  useEffect(() => {
-    if (peeking || !focused || !inFront || !member || !postedNow) return;
-    const mark = readMark(channelId, threadId);
-    if (mark.kind === "thread") markThreadRead(mark.id);
-    else markRead(mark.id);
-  }, [peeking, focused, inFront, markRead, markThreadRead, channelId, threadId, member, postedNow, threadReplies]);
 
   // ── Older pages (channel view) ──
   // The row above the oldest message shows a page loading and, when one didn't come, the way to ask again (`OlderRow`):
@@ -1319,6 +1332,17 @@ function Chat({
   const [pending, setPending] = useState<PendingFile[]>([]);
   // A picker is open or still handing its files over (a video being converted): a thumbnail says so in the field.
   const [preparing, setPreparing] = useState(false);
+  // That thumbnail only once the picker covers the screen: set as the picker opened, it came up in the dock for the
+  // moment before the picker did (growing the dock, moving the conversation), and a cancel took it away again.
+  const whilePicking = async <T,>(pick: () => Promise<T>): Promise<T> => {
+    const covered = setTimeout(() => setPreparing(true), PICKER_COVERS_MS);
+    try {
+      return await pick();
+    } finally {
+      clearTimeout(covered);
+      setPreparing(false);
+    }
+  };
   const [captionBack, setCaptionBack] = useState<{ text: string; at: number; join?: boolean } | null>(null);
   // The local files a take carried, by their uploaded ids: a refused take puts them back above the field.
   const sentWithVoice = useRef(new Map<string, PendingFile>());
@@ -1509,25 +1533,25 @@ function Chat({
       case "photos": {
         // iOS closes its picker as soon as the person picks and converts a video after (seconds for a long one), with
         // nothing on the screen: a thumbnail that says "preparing" holds the place until the files arrive.
-        setPreparing(true);
-        const res = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ["images", "videos"],
-          quality: 0.8,
-          // A video goes as 720p H.264 (iOS converts it as it is picked): the library's own (4K, HEVC) passed the
-          // upload limit in seconds, and H.264 plays in every browser. Android hands the original, checked by size.
-          videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
-          allowsMultipleSelection: true,
-          selectionLimit: Math.max(1, MAX_PENDING - pending.length),
-          orderedSelection: true,
-        }).finally(() => setPreparing(false));
+        const res = await whilePicking(() =>
+          ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images", "videos"],
+            quality: 0.8,
+            // A video goes as 720p H.264 (iOS converts it as it is picked): the library's own (4K, HEVC) passed the
+            // upload limit in seconds, and H.264 plays in every browser. Android hands the original, checked by size.
+            videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
+            allowsMultipleSelection: true,
+            selectionLimit: Math.max(1, MAX_PENDING - pending.length),
+            orderedSelection: true,
+          }),
+        );
         if (!res.canceled) addPending(res.assets.map(pickedAsset));
         return;
       }
       case "file": {
         // A large file is copied before the picker answers: the same "preparing" thumbnail meanwhile.
-        setPreparing(true);
-        const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, multiple: true }).finally(() =>
-          setPreparing(false),
+        const res = await whilePicking(() =>
+          DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, multiple: true }),
         );
         if (!res.canceled)
           addPending(
@@ -1562,25 +1586,25 @@ function Chat({
     (!isThread || thread.data?.state !== "archived") &&
     channel?.can?.post !== false &&
     (!dmAgent || canTalk(dmAgent));
-  // What a message's menu works with: the system's menu (iOS) and the app's sheet (Android) list the same actions.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: openNewMission and openRemind read the latest state when called
-  const menuOf = useCallback(
-    (m: Message): MessageActionsContext => ({
-      message: m,
-      canMission,
-      inThread: isThread,
-      thread: linkThreads.get(m.threadId ?? m.id),
-      onMission: (goal, rootId) => openNewMission(goal, rootId),
-      onRemind: (message) => openRemind({ message }),
-      onReply: canReply ? onReply : undefined,
-    }),
-    [canMission, isThread, linkThreads, canReply, onReply],
-  );
+  // What a message's menu works with: the system's menu (iOS, built by each row, `ChatMessage`) and the app's sheet
+  // (Android) list the same actions. What it calls keeps its identity, reading the screen as it is when called.
+  const onMission = useLatest((goal: string, rootId: string) => openNewMission(goal, rootId));
+  const onRemind = useLatest((message: Message) => openRemind({ message }));
   // The app's own sheet only where the platform has no menu of its own: on iOS a hold is the system's.
-  const onLongPress = useMemo(
-    () => (NATIVE_MENU ? undefined : (m: Message) => sheet.open(<MessageActions {...menuOf(m)} />)),
-    [sheet, menuOf],
+  const openActions = useLatest((m: Message) =>
+    sheet.open(
+      <MessageActions
+        message={m}
+        canMission={canMission}
+        inThread={isThread}
+        thread={linkThreads.get(m.threadId ?? m.id)}
+        onMission={onMission}
+        onRemind={onRemind}
+        onReply={canReply ? onReply : undefined}
+      />,
+    ),
   );
+  const onLongPress = NATIVE_MENU ? undefined : openActions;
 
   // ── Pins ──
   const rowsRef = useRef<Row[]>([]);
@@ -2188,27 +2212,11 @@ function Chat({
     markOffered();
   }, [offerAt, longWorkAt, mayOffer, markOffered]);
 
-  // A message's own row (`renderItem` wraps it in the swipe and the menu).
-  const rowOf = useCallback(
-    (item: Extract<Row, { kind: "message" }>) => (
-      <MessageRow
-        message={item.message}
-        grouped={item.grouped}
-        newTurn={item.newTurn}
-        run={runPosition(item.grouped, item.continued ?? false)}
-        above={item.above}
-        aboveThread={item.above && !isThread ? linkThreads.has(item.above.id) : false}
-        meId={meId}
-        thread={isThread ? undefined : linkThreads.get(item.message.id)}
-        inThread={isThread}
-        {...(onLongPress ? { onLongPress } : {})}
-        onRetry={onRetry}
-        onQuote={onQuote}
-        receipt={item.message.id === markAt ? receipt : undefined}
-        seenBy={item.message.id === seenId ? seenBy : undefined}
-      />
-    ),
-    [isThread, linkThreads, meId, onLongPress, onRetry, onQuote, markAt, receipt, seenId, seenBy],
+  // What every message row is handed alike (`ChatMessage`), each keeping its identity across the screen's redraws.
+  const onOfferDone = useCallback(() => setOfferAt(OFFER_DONE), []);
+  const hands = useMemo<RowHands>(
+    () => ({ onReply, onMission, onRemind, onLongPress, onRetry, onQuote, onResend, onOfferDone }),
+    [onReply, onMission, onRemind, onLongPress, onRetry, onQuote, onResend, onOfferDone],
   );
 
   const renderItem = useCallback(
@@ -2277,51 +2285,28 @@ function Chat({
           // An agent took an issue made from this conversation: one quiet line, not a voice.
           if (issueTakenOf(item.message.meta))
             return <IssueTakenLine message={item.message} gap={item.afterLine ? rhythm.part : rhythm.turn} />;
+          // Handed only what is its own (the rest is the same for every row): a receipt or a lit row redraws one row.
           return (
-            // New, it rises in, an agent's reply too: it shows whole, once, with nothing drawn before it to replace.
-            <Animated.View
-              entering={isFresh(item.key) ? ENTER : undefined}
-              style={item.message.id === flashId ? { backgroundColor: c.sunken } : undefined}
-            >
-              {/* Swipe right to answer it (a quote above the field); hold it for the system's menu (iOS) or the
-                  app's sheet. A message still on its way can't be swiped, and its menu offers only copying its words;
-                  the same views stand around it either way, so it isn't drawn again when it turns sent. */}
-              <SwipeReply enabled={canReply && !item.message.local} onReply={() => onReply(item.message)}>
-                {NATIVE_MENU ? (
-                  <MessageMenuFor
-                    context={menuOf(item.message)}
-                    href={chatHref(item.message.channelId, item.message.threadId, item.message.id)}
-                  >
-                    {/* One plain view for the menu to lift (the row can be a fragment: a pair row, a quote). */}
-                    <View collapsable={false}>{rowOf(item)}</View>
-                  </MessageMenuFor>
-                ) : (
-                  rowOf(item)
-                )}
-              </SwipeReply>
-              {item.message.author.type === "agent" && item.message.mentionedAgentIds.length > 1 ? (
-                <FanStrip message={item.message} receipt={receipts[item.message.id]} />
-              ) : null}
-              {item.message.meta?.everyoneShape ? (
-                <EveryoneLine
-                  message={item.message}
-                  receipt={receipts[item.message.id]}
-                  mine={item.message.author.id === meId}
-                />
-              ) : null}
-              {item.message.id === receiptId ? (
-                <AgentReceiptLine
-                  message={item.message}
-                  receipt={receipt}
-                  mine={item.message.author.id === meId}
-                  connectInline={connectInline}
-                  onRetry={onResend}
-                />
-              ) : null}
-              {item.message.id === offerAt ? (
-                <PushOfferLine agent={dir.nameOf(item.message.author)} onDone={() => setOfferAt(OFFER_DONE)} />
-              ) : null}
-            </Animated.View>
+            <ChatMessage
+              item={item}
+              fresh={isFresh(item.key)}
+              lit={item.message.id === flashId}
+              isThread={isThread}
+              meId={meId}
+              canReply={canReply}
+              canMission={canMission}
+              thread={isThread ? undefined : linkThreads.get(item.message.id)}
+              menuThread={linkThreads.get(item.message.threadId ?? item.message.id)}
+              aboveThread={item.above && !isThread ? linkThreads.has(item.above.id) : false}
+              markReceipt={item.message.id === markAt ? receipt : undefined}
+              seenBy={item.message.id === seenId ? seenBy : undefined}
+              fanReceipt={receipts[item.message.id]}
+              line={item.message.id === receiptId}
+              lineReceipt={item.message.id === receiptId ? receipt : undefined}
+              connectInline={connectInline}
+              offer={item.message.id === offerAt}
+              hands={hands}
+            />
           );
       }
     },
@@ -2330,23 +2315,25 @@ function Chat({
       rhythm,
       quiet,
       meId,
+      isThread,
       channelId,
       isFresh,
       openBrowsers,
       toggleBrowser,
       receiptId,
       receipt,
+      markAt,
+      seenId,
+      seenBy,
       connectInline,
-      onResend,
       consultFolds,
       flashId,
-      c.sunken,
       receipts,
-      rowOf,
       canReply,
-      onReply,
-      menuOf,
+      canMission,
+      linkThreads,
       offerAt,
+      hands,
       dir,
     ],
   );
@@ -2449,7 +2436,6 @@ function Chat({
       show.remove();
     };
   }, [keyboardAt]);
-  const [composerHeight, setComposerHeight] = useState(0);
   // Read while laying out the box: at the conversation's end and following it (not held where the person reads).
   const followingEnd = useRef(true);
   followingEnd.current = atEnd && !readHold;
@@ -2463,10 +2449,12 @@ function Chat({
   };
   const onComposerBoxLayout = (e: LayoutChangeEvent) => {
     const height = e.nativeEvent.layout.height;
-    const grew = boxHeight.current > 0 && height > boxHeight.current + 0.5;
-    boxHeight.current = height;
+    const before = dock.get();
+    const grew = before > 0 && height > before + 0.5;
     endInset.value = height;
-    setComposerHeight(height);
+    // Only what is drawn from it redraws (`DockHeight`); the waiting requests look again at their band's new bottom.
+    dock.set(height);
+    watchList();
     // The dock grew under the conversation (who is working, the reply bar, a taller field) while it follows its end.
     // The libraries cover only part of it: the keyboard's scroll view shifts the list by the grown inset only when it
     // rests at its end, and with the keyboard up the list learns the new inset without following it. A message just
@@ -2505,16 +2493,6 @@ function Chat({
     () => (hasPin ? styles.listPad : [styles.listPad, { paddingTop: headerHeight + 8 }]),
     [hasPin, headerHeight],
   );
-  // A DM's intro before its first message (the right hand's greeting, a new agent's checklist): below the bar, above
-  // the box, its buttons answering the first tap while the keyboard is up, the keyboard going with a drag and its last
-  // rows reachable above it.
-  const introScroll = {
-    contentContainerStyle: { paddingTop: headerHeight, paddingBottom: composerHeight },
-    scrollIndicatorInsets: { top: headerHeight, bottom: composerHeight },
-    keyboardShouldPersistTaps: "handled" as const,
-    keyboardDismissMode: "interactive" as const,
-    automaticallyAdjustKeyboardInsets: true,
-  };
 
   // ── Requests out of view ──
   // A waiting request shows while 40 points of its card do in the list's band: below the floating header (a pinned
@@ -2525,8 +2503,8 @@ function Chat({
   const askInsets = useCallback(() => {
     if (!listPlaced.current) return null;
     const keyboard = KeyboardController.isVisible() ? Math.max(0, KeyboardController.state().height - lift) : 0;
-    return { top: hasPin ? 0 : headerHeight, bottom: composerHeight + keyboard };
-  }, [hasPin, headerHeight, composerHeight, lift]);
+    return { top: hasPin ? 0 : headerHeight, bottom: dock.get() + keyboard };
+  }, [hasPin, headerHeight, lift, dock]);
   // A row the list doesn't draw now (outside what it keeps mounted) has no card: its request is out of view.
   const askDrawn = useCallback((messageId: string) => {
     const state = listRef.current?.getState();
@@ -2587,12 +2565,15 @@ function Chat({
   const atReadDone = useRef(false);
   const goingToLine = useRef(false);
   const revealOpened = useCallback(() => {
-    if (listReady.current && atReadDone.current && !goingToLine.current) revealList();
+    if (listReady.current && atReadDone.current && !goingToLine.current && rowsCompleteRef.current) revealList();
   }, [revealList]);
   const onListReady = useCallback(() => {
     listReady.current = true;
     revealOpened();
   }, [revealOpened]);
+  useEffect(() => {
+    if (rowsComplete) revealOpened();
+  }, [rowsComplete, revealOpened]);
   // The line at the top of the room under the bar, with no glide, what came since right under it (sent to the top as
   // is, it landed under the bar, the line and the first new message hidden). The list stops following its end there,
   // as when reading a long message from its top. The line is a row this same render puts in: the list has it a frame
@@ -2742,9 +2723,72 @@ function Chat({
     return state.listen("totalSize", watchList);
   }, [showList, watchList]);
 
+  // ── The list's own props ──
+  // The list is drawn again only when what it is handed changes (`ConversationList`): someone typing, a presence, an
+  // agent's step redraw the screen many times a minute and leave it alone. So nothing it is handed is made anew there.
+  const listIndicator = useMemo(() => ({ top: headerHeight }), [headerHeight]);
+  const onDragStart = useCallback(() => {
+    dragging.current = true;
+    showDay();
+  }, [showDay]);
+  const onScrollSettled = useCallback(() => {
+    releaseAtEnd();
+    hideDay();
+  }, [releaseAtEnd, hideDay]);
+  const openPinsHere = useLatest(openPins);
+  const goToPinHere = useLatest(goToPin);
+  // Before the conversation's start: the older pages' row (a spinner while one loads, the way to ask again when one
+  // didn't). At its start, once it is loaded: the pinned messages (pulling down past the first message reveals them),
+  // then the right hand's greeting or a new agent's checklist.
+  const listHeader = useMemo(
+    () =>
+      !atStart ? (
+        <OlderRow loading={loadingOlder} failed={olderFailed} onRetry={fetchOlder} />
+      ) : hasPins || (dmAgent && (rightHand || setupIntro)) ? (
+        <>
+          {hasPins ? (
+            <PinnedLines channelId={channelId} threadId={threadId} onOpen={openPinsHere} onPick={goToPinHere} />
+          ) : null}
+          {dmAgent && rightHand ? (
+            <RightHandIntro agent={dmAgent} channelId={channelId} waveFrom={waveFrom} />
+          ) : dmAgent && setupIntro ? (
+            <AgentSetupIntro agent={dmAgent} channelId={channelId} />
+          ) : null}
+        </>
+      ) : (
+        // The older pages' row keeps its room once the start is reached: taking it out moved every message up as the
+        // last page came in.
+        <View style={styles.older} />
+      ),
+    [
+      atStart,
+      loadingOlder,
+      olderFailed,
+      fetchOlder,
+      hasPins,
+      dmAgent,
+      rightHand,
+      setupIntro,
+      channelId,
+      threadId,
+      openPinsHere,
+      goToPinHere,
+      waveFrom,
+    ],
+  );
+
   return (
     <AskStoreProvider store={asks}>
       <AskProbes messages={shownMessages} />
+      <ReadMark
+        orgId={orgId}
+        channelId={channelId}
+        threadId={threadId}
+        member={member}
+        postedNow={postedNow}
+        peeking={peeking}
+        focused={focused}
+      />
       <View
         style={[styles.screen, { backgroundColor: c.bg }]}
         onTouchStart={touched ? undefined : () => setTouched(true)}
@@ -2763,14 +2807,7 @@ function Chat({
             ) : null}
           </View>
         ) : null}
-        {/* No `textInputNativeID`: with it the composer could stay down while the keyboard was up (iOS 26). Without it
-            iOS takes no offset (the keyboard starts following the finger at its own top edge); Android does. The
-            offset is whole points: a fractional one made the overscroll glitch. */}
-        <KeyboardGestureArea
-          style={styles.grow}
-          interpolator="ios"
-          offset={Math.round(Math.max(0, composerHeight - lift))}
-        >
+        <DockGestureArea dock={dock} lift={lift}>
           {loading ? null : (
             <>
               {/* Mounted before the first message too: a list that appears while the keyboard is already up never
@@ -2791,7 +2828,7 @@ function Chat({
                           <StoppedRunsContext.Provider value={stoppedRuns}>
                             <StopsMovedOnContext.Provider value={stopsMoved}>
                               <OpenedMessagesContext.Provider value={openedMessages}>
-                                <KeyboardAwareLegendList
+                                <ConversationList
                                   ref={listRef}
                                   style={styles.grow}
                                   data={shownRows}
@@ -2817,7 +2854,7 @@ function Chat({
                                   // bar's room is the content's top padding, the indicator kept below the bar.
                                   contentInsetAdjustmentBehavior="never"
                                   automaticallyAdjustContentInsets={false}
-                                  scrollIndicatorInsets={{ top: headerHeight }}
+                                  scrollIndicatorInsets={listIndicator}
                                   // Still while a sheet or the agent's computer covers the conversation.
                                   freeze={freeze}
                                   onReady={onListReady}
@@ -2827,19 +2864,10 @@ function Chat({
                                   onScroll={onListScroll}
                                   onViewableItemsChanged={onViewable}
                                   viewabilityConfig={STICKER_VIEW}
-                                  onScrollBeginDrag={() => {
-                                    dragging.current = true;
-                                    showDay();
-                                  }}
-                                  onScrollEndDrag={() => {
-                                    releaseAtEnd();
-                                    hideDay();
-                                  }}
+                                  onScrollBeginDrag={onDragStart}
+                                  onScrollEndDrag={onScrollSettled}
                                   onMomentumScrollBegin={showDay}
-                                  onMomentumScrollEnd={() => {
-                                    releaseAtEnd();
-                                    hideDay();
-                                  }}
+                                  onMomentumScrollEnd={onScrollSettled}
                                   onStartReachedThreshold={0.5}
                                   keyboardDismissMode="interactive"
                                   keyboardShouldPersistTaps="handled"
@@ -2851,35 +2879,7 @@ function Chat({
                                   keyboardLiftBehavior="whenAtEnd"
                                   contentInsetEndAdjustment={endInset}
                                   contentContainerStyle={listPad}
-                                  // Before the conversation's start: the older pages' row (a spinner while one loads, the
-                                  // way to ask again when one didn't). At its start, once it is loaded: the pinned messages
-                                  // (pulling down past the first message reveals them), then the right hand's greeting or a
-                                  // new agent's checklist.
-                                  ListHeaderComponent={
-                                    !atStart ? (
-                                      <OlderRow loading={loadingOlder} failed={olderFailed} onRetry={fetchOlder} />
-                                    ) : hasPins || (dmAgent && (rightHand || setupIntro)) ? (
-                                      <>
-                                        {hasPins ? (
-                                          <PinnedLines
-                                            channelId={channelId}
-                                            threadId={threadId}
-                                            onOpen={openPins}
-                                            onPick={goToPin}
-                                          />
-                                        ) : null}
-                                        {dmAgent && rightHand ? (
-                                          <RightHandIntro agent={dmAgent} channelId={channelId} waveFrom={waveFrom} />
-                                        ) : dmAgent && setupIntro ? (
-                                          <AgentSetupIntro agent={dmAgent} channelId={channelId} />
-                                        ) : null}
-                                      </>
-                                    ) : (
-                                      // The older pages' row keeps its room once the start is reached: taking it out
-                                      // moved every message up as the last page came in.
-                                      <View style={styles.older} />
-                                    )
-                                  }
+                                  ListHeaderComponent={listHeader}
                                 />
                               </OpenedMessagesContext.Provider>
                             </StopsMovedOnContext.Provider>
@@ -2892,49 +2892,68 @@ function Chat({
                 </View>
               </Animated.View>
               {showList ? null : (
-                // A conversation with nothing yet: the agent's first day or a quiet line, over the empty list.
-                <View style={StyleSheet.absoluteFill}>
-                  {dmAgent && rightHand ? (
-                    <ScrollView {...introScroll}>
-                      <RightHandIntro agent={dmAgent} channelId={channelId} waveFrom={waveFrom} />
-                    </ScrollView>
-                  ) : dmAgent && setupIntro ? (
-                    <ScrollView {...introScroll}>
-                      <AgentSetupIntro agent={dmAgent} channelId={channelId} />
-                    </ScrollView>
-                  ) : dmAgent && !isThread ? (
-                    <FirstDay
-                      agent={dmAgent}
-                      topInset={headerHeight}
-                      bottomInset={composerHeight}
-                      keyboardLift={lift}
-                      onAsk={onSend}
-                    />
-                  ) : channel && helloAgent && !dm && !isThread ? (
-                    <ChannelHello
-                      channelId={channelId}
-                      channel={channel.name}
-                      topic={channel.topic}
-                      agents={[helloAgent, ...talkable.filter((a) => a.id !== helloAgent.id)]}
-                      members={roster.data ?? []}
-                      topInset={headerHeight}
-                      bottomInset={composerHeight}
-                      keyboardLift={lift}
-                      onAsk={onSend}
-                    />
-                  ) : (
-                    <View style={[styles.center, { paddingBottom: composerHeight }]}>
-                      {/* No button: the composer under it is the next step. */}
-                      <FirstUse place="chat" size="panel" acts={member && channel?.can?.post !== false} />
-                    </View>
-                  )}
-                </View>
+                // A conversation with nothing yet: the agent's first day or a quiet line, over the empty list, above
+                // the dock (its height read here alone).
+                <DockRoom dock={dock}>
+                  {(dockHeight) => {
+                    // A DM's intro before its first message (the right hand's greeting, a new agent's checklist): below
+                    // the bar, above the box, its buttons answering the first tap while the keyboard is up, the
+                    // keyboard going with a drag and its last rows reachable above it.
+                    const introScroll = {
+                      contentContainerStyle: { paddingTop: headerHeight, paddingBottom: dockHeight },
+                      scrollIndicatorInsets: { top: headerHeight, bottom: dockHeight },
+                      keyboardShouldPersistTaps: "handled" as const,
+                      keyboardDismissMode: "interactive" as const,
+                      automaticallyAdjustKeyboardInsets: true,
+                    };
+                    return (
+                      <View style={StyleSheet.absoluteFill}>
+                        {dmAgent && rightHand ? (
+                          <ScrollView {...introScroll}>
+                            <RightHandIntro agent={dmAgent} channelId={channelId} waveFrom={waveFrom} />
+                          </ScrollView>
+                        ) : dmAgent && setupIntro ? (
+                          <ScrollView {...introScroll}>
+                            <AgentSetupIntro agent={dmAgent} channelId={channelId} />
+                          </ScrollView>
+                        ) : dmAgent && !isThread ? (
+                          <FirstDay
+                            agent={dmAgent}
+                            topInset={headerHeight}
+                            bottomInset={dockHeight}
+                            keyboardLift={lift}
+                            onAsk={onSend}
+                          />
+                        ) : channel && helloAgent && !dm && !isThread ? (
+                          <ChannelHello
+                            channelId={channelId}
+                            channel={channel.name}
+                            topic={channel.topic}
+                            agents={[helloAgent, ...talkable.filter((a) => a.id !== helloAgent.id)]}
+                            members={roster.data ?? []}
+                            topInset={headerHeight}
+                            bottomInset={dockHeight}
+                            keyboardLift={lift}
+                            onAsk={onSend}
+                          />
+                        ) : (
+                          <View style={[styles.center, { paddingBottom: dockHeight }]}>
+                            {/* No button: the composer under it is the next step. */}
+                            <FirstUse place="chat" size="panel" acts={member && channel?.can?.post !== false} />
+                          </View>
+                        )}
+                      </View>
+                    );
+                  }}
+                </DockRoom>
               )}
             </>
           )}
           {/* The messages on their way, or the list still placing itself at its end: their shape, never a blank screen. */}
           {loading || (showList && !placed) ? (
-            <ChatSkeleton look={rowLook} top={hasPin ? 0 : headerHeight} bottom={composerHeight} />
+            <DockRoom dock={dock}>
+              {(dockHeight) => <ChatSkeleton look={rowLook} top={hasPin ? 0 : headerHeight} bottom={dockHeight} />}
+            </DockRoom>
           ) : null}
           {!hasPin ? (
             // The conversation fades under the floating header, as it does under the box. Not under a pinned bar
@@ -3042,7 +3061,6 @@ function Chat({
                     working={working}
                     // GIFs and stickers live in the "+", with the photos: the field only sends.
                     onPlus={plusFromField}
-                    media={null}
                     draftKey={threadId ? `${channelId}:${threadId}` : channelId}
                     inputNativeID={COMPOSER_INPUT_ID}
                     float={composerFloat}
@@ -3087,11 +3105,212 @@ function Chat({
               </View>
             </KeyboardStickyView>
           )}
-        </KeyboardGestureArea>
+        </DockGestureArea>
       </View>
     </AskStoreProvider>
   );
 }
+
+/** The dock's height where it is drawn (`DockHeight`): what reads it redraws, not the conversation around it. */
+const useDockHeight = (dock: DockHeight) => useSyncExternalStore(dock.subscribe, dock.get, dock.get);
+
+/**
+ * The keyboard's gesture area around the conversation and its dock, its offset the dock's room above the keys: on
+ * Android the keyboard starts following a drag there. No `textInputNativeID`: with it the composer could stay down while
+ * the keyboard was up (iOS 26); without it iOS takes no offset (the keyboard follows the finger from its own top edge).
+ * The offset is whole points: a fractional one made the overscroll glitch.
+ */
+function DockGestureArea({ dock, lift, children }: { dock: DockHeight; lift: number; children: ReactNode }) {
+  const height = useDockHeight(dock);
+  return (
+    <KeyboardGestureArea style={styles.grow} interpolator="ios" offset={Math.round(Math.max(0, height - lift))}>
+      {children}
+    </KeyboardGestureArea>
+  );
+}
+
+/** What is drawn from the dock's height (an empty conversation's greeting, the skeleton), redrawn alone with it. */
+function DockRoom({ dock, children }: { dock: DockHeight; children: (height: number) => ReactNode }) {
+  const height = useDockHeight(dock);
+  return <>{children(height)}</>;
+}
+
+type MessageItem = Extract<Row, { kind: "message" }>;
+
+/** What every message row of the conversation is handed alike: callbacks that keep their identity. */
+interface RowHands {
+  onReply: (m: Message) => void;
+  onMission: (goal: string, threadId: string) => void;
+  onRemind: (m: Message) => void;
+  /** Where the platform has no menu of its own (Android): the app's sheet on a hold. */
+  onLongPress: ((m: Message) => void) | undefined;
+  onRetry: (m: Message) => void;
+  onQuote: (reply: ReplyRef) => void;
+  onResend: (m: Message) => Promise<unknown> | undefined;
+  onOfferDone: () => void;
+}
+
+/**
+ * A message's row with what stands around it: the swipe that answers it, the system's menu on a hold (iOS), and under
+ * it the strip of the agents it called, its receipt's line and the notifications' offer. Kept as it was unless what is
+ * its own changes: a receipt arriving, a thread's link or the lit row redraw that one row, never every row on screen
+ * with its menu (each builds its actions, with their queries, and the system's menu). A row mounted again as it
+ * scrolls back into view plays nothing in again (`skipEntering`); what shows up on it later still comes in.
+ */
+const ChatMessage = memo(function ChatMessage({
+  item,
+  fresh,
+  lit,
+  isThread,
+  meId,
+  canReply,
+  canMission,
+  thread,
+  menuThread,
+  aboveThread,
+  markReceipt,
+  seenBy,
+  fanReceipt,
+  line,
+  lineReceipt,
+  connectInline,
+  offer,
+  hands,
+}: {
+  item: MessageItem;
+  /** Just arrived at the bottom: it rises in, an agent's reply too (it shows whole, once, with nothing to replace). */
+  fresh: boolean;
+  /** The message gone to, lit for a moment. */
+  lit: boolean;
+  isThread: boolean;
+  meId: string | null;
+  canReply: boolean;
+  canMission: boolean;
+  /** The thread it starts, a link under it in the conversation. */
+  thread: ThreadInfo | undefined;
+  /** The thread its menu works with: the one it starts or the one it is in. */
+  menuThread: ThreadInfo | undefined;
+  aboveThread: boolean;
+  /** The agents' receipt its mark shows, on the row that wears it. */
+  markReceipt: MessageReceipt | undefined;
+  seenBy: string | undefined;
+  /** The receipt of an agent's message that called several agents, or of a mention of everyone. */
+  fanReceipt: MessageReceipt | undefined;
+  /** Its receipt's line under it (the one message that has it), with that receipt. */
+  line: boolean;
+  lineReceipt: MessageReceipt | undefined;
+  connectInline: boolean;
+  /** The notifications' offer under it. */
+  offer: boolean;
+  hands: RowHands;
+}) {
+  const m = item.message;
+  const c = useColors();
+  const dir = useDirectory();
+  const { onReply, onMission, onRemind } = hands;
+  const reply = useCallback(() => onReply(m), [onReply, m]);
+  const menu = useMemo<MessageActionsContext>(
+    () => ({
+      message: m,
+      canMission,
+      inThread: isThread,
+      thread: menuThread,
+      onMission,
+      onRemind,
+      onReply: canReply ? onReply : undefined,
+    }),
+    [m, canMission, isThread, menuThread, onMission, onRemind, canReply, onReply],
+  );
+  const row = (
+    <MessageRow
+      message={m}
+      grouped={item.grouped}
+      newTurn={item.newTurn}
+      run={runPosition(item.grouped, item.continued ?? false)}
+      above={item.above}
+      aboveThread={aboveThread}
+      meId={meId}
+      thread={thread}
+      inThread={isThread}
+      {...(hands.onLongPress ? { onLongPress: hands.onLongPress } : {})}
+      onRetry={hands.onRetry}
+      onQuote={hands.onQuote}
+      receipt={markReceipt}
+      seenBy={seenBy}
+    />
+  );
+  return (
+    <Animated.View entering={fresh ? ENTER : undefined} style={lit ? { backgroundColor: c.sunken } : undefined}>
+      {/* Swipe right to answer it (a quote above the field); hold it for the system's menu (iOS) or the app's sheet. A
+          message still on its way can't be swiped, and its menu offers only copying its words; the same views stand
+          around it either way, so it isn't drawn again when it turns sent. */}
+      <SwipeReply enabled={canReply && !m.local} onReply={reply}>
+        {NATIVE_MENU ? (
+          <MessageMenuFor context={menu} href={chatHref(m.channelId, m.threadId, m.id)}>
+            {/* One plain view for the menu to lift (the row can be a fragment: a pair row, a quote). */}
+            <View collapsable={false}>{row}</View>
+          </MessageMenuFor>
+        ) : (
+          row
+        )}
+      </SwipeReply>
+      <LayoutAnimationConfig skipEntering>
+        {m.author.type === "agent" && m.mentionedAgentIds.length > 1 ? (
+          <FanStrip message={m} receipt={fanReceipt} />
+        ) : null}
+        {m.meta?.everyoneShape ? <EveryoneLine message={m} receipt={fanReceipt} mine={m.author.id === meId} /> : null}
+        {line ? (
+          <AgentReceiptLine
+            message={m}
+            receipt={lineReceipt}
+            mine={m.author.id === meId}
+            connectInline={connectInline}
+            onRetry={hands.onResend}
+          />
+        ) : null}
+        {offer ? <PushOfferLine agent={dir.nameOf(m.author)} onDone={hands.onOfferDone} /> : null}
+      </LayoutAnimationConfig>
+    </Animated.View>
+  );
+});
+
+/**
+ * Marks the conversation read up to the message posted last, wherever its place: the list's badges (a channel's or a
+ * DM's, or a thread's) clear at once. Only in view (`focused`): under another screen, or with the app in the
+ * background, what arrives stays unread, and is read once the person is back on it. On its own: its requests' states
+ * and the threads' replies redraw it, not the whole conversation (twice for every message that landed).
+ */
+const ReadMark = memo(function ReadMark({
+  orgId,
+  channelId,
+  threadId,
+  member,
+  postedNow,
+  peeking,
+  focused,
+}: {
+  orgId: string;
+  channelId: string;
+  threadId: string | null;
+  member: boolean;
+  postedNow: string | undefined;
+  peeking: boolean;
+  focused: boolean;
+}) {
+  const markRead = useMarkChannelRead(orgId).mutate;
+  const markThreadRead = useMarkThreadRead(orgId).mutate;
+  const inFront = useAppActive();
+  // A reply in one of its threads counts in the conversation's mark and is no message of this list: read again on it.
+  const threadReplies = useThreadActivity(orgId, channelId);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a thread's reply marks the conversation read again
+  useEffect(() => {
+    if (peeking || !focused || !inFront || !member || !postedNow) return;
+    const mark = readMark(channelId, threadId);
+    if (mark.kind === "thread") markThreadRead(mark.id);
+    else markRead(mark.id);
+  }, [peeking, focused, inFront, markRead, markThreadRead, channelId, threadId, member, postedNow, threadReplies]);
+  return null;
+});
 
 /** The latest of a function behind one that never changes: what it is handed to isn't redrawn when the function is. */
 function useLatest<A extends unknown[], R>(fn: (...args: A) => R) {

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { createDockHeight } from "../../src/features/chat/dock-height";
 import {
   appendedKeys,
   bandAim,
@@ -8,6 +9,25 @@ import {
   type ScrollRow,
   unseenBelow,
 } from "../../src/features/chat/scroll";
+
+describe("the dock's height", () => {
+  test("tells who reads it when it changes, and only then", () => {
+    const dock = createDockHeight();
+    let told = 0;
+    const stop = dock.subscribe(() => told++);
+    expect(dock.get()).toBe(0);
+    dock.set(96);
+    dock.set(96);
+    expect(dock.get()).toBe(96);
+    expect(told).toBe(1);
+    dock.set(130);
+    expect(told).toBe(2);
+    stop();
+    dock.set(96);
+    expect(told).toBe(2);
+    expect(dock.get()).toBe(96);
+  });
+});
 
 describe("appendedKeys", () => {
   test("new rows at the bottom", () => {

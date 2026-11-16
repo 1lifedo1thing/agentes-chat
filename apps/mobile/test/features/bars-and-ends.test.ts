@@ -19,6 +19,20 @@ test("the dock grows at the conversation's end (who is working, the reply bar): 
   expect(chat).not.toContain("boxHeightRef");
 });
 
+test("the dock's height redraws only what is drawn from it, never the whole conversation", () => {
+  const chat = src("features/chat/ChatScreen.tsx");
+  // Held outside the screen's state: a field growing a line, the working line coming or going drew the whole screen.
+  expect(chat).not.toContain("setComposerHeight");
+  expect(chat).toContain("const [dock] = useState(createDockHeight);");
+  expect(chat).toMatch(/endInset\.value = height;[\s\S]{0,200}dock\.set\(height\);\s*watchList\(\);/);
+  // Read where it is drawn: the keyboard's gesture area, an empty conversation's greeting, the skeleton.
+  expect(chat).toContain("<DockGestureArea dock={dock} lift={lift}>");
+  expect(chat.match(/<DockRoom dock=\{dock\}>/g)).toHaveLength(2);
+  expect(chat).toContain(
+    "const useDockHeight = (dock: DockHeight) => useSyncExternalStore(dock.subscribe, dock.get, dock.get);",
+  );
+});
+
 test("above the conversation's end, the dock's height and the keyboard move nothing", () => {
   const chat = src("features/chat/ChatScreen.tsx");
   // The library's default moved the words being read each time an agent started or finished (the dock's height).
@@ -66,7 +80,7 @@ test("a long reply lands at its start only once it is measured, against the room
   expect(chat).toContain(
     "const keyboard = KeyboardController.isVisible() ? Math.max(0, KeyboardController.state().height - lift) : 0;",
   );
-  expect(chat).toContain("return { state, top, height: state.scrollLength - top - boxHeight.current - keyboard };");
+  expect(chat).toContain("return { state, top, height: state.scrollLength - top - dock.get() - keyboard };");
 });
 
 test('going to a message takes its place in the list\'s own rows, where the "Novas" line is one', () => {
@@ -117,4 +131,12 @@ test("a read that tells the receipts nothing new doesn't draw the conversation a
   expect(live).toContain(
     "if (seedReceipts(stateRef.current.receipts, messages) === stateRef.current.receipts) return;",
   );
+});
+
+test('a picker\'s "preparing" thumbnail comes only once the picker covers the screen', () => {
+  const chat = src("features/chat/ChatScreen.tsx");
+  // Set as the picker opened, it showed in the dock (growing it, moving the conversation) before the picker came up.
+  expect(chat).toContain("const covered = setTimeout(() => setPreparing(true), PICKER_COVERS_MS);");
+  expect(chat.match(/await whilePicking\(/g)).toHaveLength(2);
+  expect(chat).not.toMatch(/setPreparing\(true\);\s*const res = await/);
 });

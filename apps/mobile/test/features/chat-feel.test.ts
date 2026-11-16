@@ -31,9 +31,9 @@ describe("swiping a message to answer it", () => {
     expect(swipe).not.toContain("if (!enabled)");
     expect(swipe).toMatch(/usePanGesture\(\{\s*enabled,/);
     const chat = src("features/chat/ChatScreen.tsx");
-    expect(chat).toContain("<SwipeReply enabled={canReply && !item.message.local}");
+    expect(chat).toContain("<SwipeReply enabled={canReply && !m.local} onReply={reply}>");
     expect(chat).toMatch(/\{NATIVE_MENU \? \(\s*<MessageMenuFor/);
-    expect(chat).not.toContain("NATIVE_MENU && !item.message.local");
+    expect(chat).not.toContain("NATIVE_MENU && !m.local");
     // Its menu then holds what works before the server has it: no reactions, no empty palette.
     const menu = src("features/chat/MessageMenu.tsx");
     expect(menu).toContain("reactions={context.message.local ? NO_REACTIONS : QUICK_REACTIONS}");
@@ -42,6 +42,36 @@ describe("swiping a message to answer it", () => {
 });
 
 describe("the conversation's rows", () => {
+  test("a receipt, a thread's link or the lit row redraws its own row, never every row on screen with its menu", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    // Each message row is one memoized piece, handed what is its own and callbacks that keep their identity.
+    expect(chat).toContain("const ChatMessage = memo(function ChatMessage({");
+    expect(chat).toMatch(/const hands = useMemo<RowHands>\(\s*\(\) => \(\{ onReply, onMission, onRemind, onLongPress,/);
+    expect(chat).toContain("lit={item.message.id === flashId}");
+    expect(chat).toContain("markReceipt={item.message.id === markAt ? receipt : undefined}");
+    expect(chat).toContain("lineReceipt={item.message.id === receiptId ? receipt : undefined}");
+    // No callback or menu context made in the list's draw: each row builds its own, kept across redraws.
+    expect(chat).not.toContain("onReply={() => onReply(item.message)}");
+    expect(chat).toContain("const reply = useCallback(() => onReply(m), [onReply, m]);");
+    expect(chat).toContain("const menu = useMemo<MessageActionsContext>(");
+    // A row mounted again as it scrolls back plays nothing in again, its receipt's line included.
+    expect(chat).toMatch(/<LayoutAnimationConfig skipEntering>\s*\{m\.author\.type === "agent"/);
+  });
+
+  test("someone typing or an agent's step redraws the screen, not the list: nothing it is handed is made anew", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat).toContain(
+      "const ConversationList = memo(KeyboardAwareLegendList) as unknown as typeof KeyboardAwareLegendList;",
+    );
+    expect(chat).not.toContain("<KeyboardAwareLegendList");
+    const props = between(chat, "<ConversationList", "/>");
+    expect(props).toContain("scrollIndicatorInsets={listIndicator}");
+    expect(props).toContain("onScrollBeginDrag={onDragStart}");
+    expect(props).toContain("ListHeaderComponent={listHeader}");
+    // No handler or object written in the list's props.
+    expect(props).not.toMatch(/=\{\(\) =>|=\{\{/);
+  });
+
   test("a row holding the same as before is the same object, and an unchanged list is the same array", () => {
     type Row = { key: string } & Record<string, unknown>;
     const m1 = { id: "1" };
@@ -83,7 +113,8 @@ describe("the conversation's rows", () => {
     const messages = between(chat, "const messageRows = useMemo<Row[]>(() => {", "const liveRows");
     expect(messages).not.toContain("browsing");
     expect(messages).not.toContain("waits");
-    expect(messages).toContain("}, [isThread, threadId, list, thread.data, channel?.name, dm, superseded, t]);");
+    // Nor the DM and channel lists, read again with each message: only the thread head's words and count.
+    expect(messages).toContain("}, [isThread, threadId, list, startedText, replyCount, superseded, t]);");
     expect(chat).toContain("[browsing, held, making, waits],");
     expect(chat).toContain('() => messageRows.flatMap((r) => (r.kind === "message" ? [r.message] : [])),');
     expect(chat).toContain("shownRef.current = keepSameRows(shownRef.current, next);");

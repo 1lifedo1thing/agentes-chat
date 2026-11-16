@@ -334,9 +334,9 @@ const FACE_POP: EntryExitAnimationFunction = () => {
 };
 
 /**
- * "Parar": last in the requests' line's pill after a thin rule (while it takes the working line's place), or at the
- * end of the agent's live row (`place="row"`, no rule). One tap stops the agent, nothing asked, and "Parando…" while
- * it stops (in the row only its spinner, so the line keeps its width). 24 points drawn, 44 to the finger.
+ * "Parar": last in the requests' line's pill after a thin rule (while it takes the working line's place), or written
+ * out at the end of the working line (`place="word"`). One tap stops the agent, nothing asked, and "Parando…" while it
+ * stops. 24 points drawn, 44 to the finger.
  */
 export function LineStop({
   runs,
@@ -346,10 +346,10 @@ export function LineStop({
 }: {
   runs: LiveRun[];
   onStop: (run: LiveRun) => void;
-  /** The thin rule before it (left out after "Ver", which has its own, and in the row). */
+  /** The thin rule before it (left out after "Ver", which has its own). */
   rule?: boolean;
   /** `word`: "Parar" written out, at the end of the working line (one word for every run it stops). */
-  place?: "line" | "row" | "word";
+  place?: "line" | "word";
 }) {
   const { t } = useTranslation();
   const dir = useDirectory();
@@ -396,25 +396,16 @@ export function LineStop({
       </>
     );
   }
-  const inRow = place === "row";
-  const shape = inRow ? styles.rowStop : styles.stop;
   return (
     <>
       {rule ? <View style={[styles.sep, { backgroundColor: c.line }]} /> : null}
       {runs.map((r) =>
         r.stopping ? (
-          <View
-            key={r.runId}
-            style={inRow ? styles.rowStop : styles.stopping}
-            accessible
-            accessibilityLabel={t("run.stopping")}
-          >
+          <View key={r.runId} style={styles.stopping} accessible accessibilityLabel={t("run.stopping")}>
             <ActivityIndicator size="small" color={c.muted} />
-            {inRow ? null : (
-              <Text variant="caption" tone="muted">
-                {t("run.stopping")}
-              </Text>
-            )}
+            <Text variant="caption" tone="muted">
+              {t("run.stopping")}
+            </Text>
           </View>
         ) : (
           <Pressable
@@ -423,7 +414,7 @@ export function LineStop({
             accessibilityRole="button"
             accessibilityLabel={`${t("run.stop")} · ${nameOf(r)}`}
             hitSlop={10}
-            style={({ pressed }) => [shape, pressed && { backgroundColor: `${c.danger}1F` }]}
+            style={({ pressed }) => [styles.stop, pressed && { backgroundColor: `${c.danger}1F` }]}
           >
             {({ pressed }) => <PixelStop size={11} color={pressed ? c.danger : c.muted} />}
           </Pressable>
@@ -651,15 +642,6 @@ function TypingDots({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
-  // A stop at a row's end never raises the line it ends (24 points drawn in a 16-point line).
-  rowStop: {
-    width: 24,
-    height: 24,
-    marginVertical: -4,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   // As wide as the box under it, its edges on the box's, whatever it says: a turning phrase or a face coming and going
   // never moves its edge. Bare, as the return that rests in it (`Returns` `line`).
   dock: { paddingBottom: 6 },
