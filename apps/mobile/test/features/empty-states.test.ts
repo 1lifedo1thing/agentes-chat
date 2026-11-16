@@ -71,8 +71,9 @@ describe("who gets the first step", () => {
 
   test("the button only ever shows with `acts`, and a screen's own add buttons follow the same gate", () => {
     expect(source("shared/FirstUse.tsx")).toContain("acts && label && onPress");
-    expect(source("issues/IssuesScreen.tsx")).toContain('{...(mayNew ? { right: <IconButton icon="plus"');
-    expect(source("routines/RoutinesScreen.tsx")).toContain('{...(mayNew ? { right: <IconButton icon="plus"');
+    // The bar's "+" (the system's own button) shows only when the server says the person may add.
+    expect(source("issues/IssuesScreen.tsx")).toContain('{...(mayNew ? { actions: [{ icon: "plus", sf: "plus"');
+    expect(source("routines/RoutinesScreen.tsx")).toContain('{...(mayNew ? { actions: [{ icon: "plus", sf: "plus"');
   });
 });
 

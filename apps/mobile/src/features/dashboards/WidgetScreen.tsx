@@ -32,7 +32,6 @@ import {
   GroupedList,
   GroupedRow,
   Icon,
-  IconButton,
   LineIcon,
   Locked,
   PressScale,
@@ -184,11 +183,19 @@ function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => P
       keyboard
       bottomInset={w.canEdit ? 96 : 28}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
-      right={
-        w.canEdit ? (
-          <IconButton icon="play" label={t("widgets.menu.refresh")} onPress={updateNow} disabled={busy} />
-        ) : undefined
-      }
+      {...(w.canEdit
+        ? {
+            actions: [
+              {
+                icon: "play" as const,
+                sf: "arrow.clockwise" as const,
+                label: t("widgets.menu.refresh"),
+                disabled: busy,
+                onPress: updateNow,
+              },
+            ],
+          }
+        : {})}
       dock={w.canEdit ? <AskChange widget={w} name={look.name} /> : null}
     >
       <View style={styles.in}>

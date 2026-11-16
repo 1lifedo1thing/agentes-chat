@@ -11,7 +11,6 @@ import {
   Filters,
   GroupedList,
   GroupedRow,
-  IconButton,
   MEDIA_ROW,
   MediaRow,
   SCREEN_X,
@@ -110,7 +109,7 @@ export function RoutinesScreen() {
     <PushedLargeTitle
       title={t("routines.title")}
       grouped
-      {...(mayNew ? { right: <IconButton icon="plus" label={t("routines.new")} onPress={openNew} /> } : {})}
+      {...(mayNew ? { actions: [{ icon: "plus", sf: "plus", label: t("routines.new"), onPress: openNew }] } : {})}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
     >
       {routines.isLoading ? (

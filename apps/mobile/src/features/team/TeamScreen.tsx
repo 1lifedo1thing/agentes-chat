@@ -12,7 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { EmptyState, Icon, IconButton, ListRow, SCREEN_X, SectionHeader, SkeletonList, Text, weights } from "@/ui";
+import { EmptyState, Icon, ListRow, SCREEN_X, SectionHeader, SkeletonList, Text, weights } from "@/ui";
 import { router } from "@/ui/navigation";
 import { chatHref } from "../links/logic";
 import { AgentFace, Face } from "../shared/Face";
@@ -86,9 +86,9 @@ export function TeamScreen() {
       title={t("team.title")}
       {...(arranges
         ? {
-            right: (
-              <IconButton icon="plus" label={t("agentGroups.create")} onPress={() => router.push("/sector-new")} />
-            ),
+            actions: [
+              { icon: "plus", sf: "plus", label: t("agentGroups.create"), onPress: () => router.push("/sector-new") },
+            ],
           }
         : {})}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}

@@ -2,7 +2,6 @@ import { busyWidgets } from "@agenteschat/client";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, StyleSheet, View } from "react-native";
-import { IconButton } from "@/ui";
 import { router } from "@/ui/navigation";
 import { FirstUse } from "../shared/FirstUse";
 import { usePullRefresh } from "../shared/hooks";
@@ -60,21 +59,23 @@ export function BoardScreen({ id }: { id: string }) {
       title={title}
       grouped
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
-      right={
-        <View style={styles.barRight}>
-          {board.canManage && !home ? (
-            <IconButton
-              icon={board.audience === "workspace" ? "globe" : "lock"}
-              label={t("dashboards.share.action")}
-              onPress={share}
-            />
-          ) : null}
-          {board.canEdit ? <IconButton icon="plus" label={t("widgets.add.label")} onPress={add} /> : null}
-          {/* The page's large title takes no native bar buttons yet: its "…" lists the board's choices in the app's
-              sheet on both systems. */}
-          {menu ? <IconButton icon="more" label={menu.label} onPress={menu.onPress} /> : null}
-        </View>
-      }
+      // The system's own bar buttons: who sees it, a new widget and the "…" (the system's menu on iOS).
+      actions={[
+        ...(board.canManage && !home
+          ? [
+              {
+                icon: board.audience === "workspace" ? ("globe" as const) : ("lock" as const),
+                sf: board.audience === "workspace" ? ("globe" as const) : ("lock" as const),
+                label: t("dashboards.share.action"),
+                onPress: share,
+              },
+            ]
+          : []),
+        ...(board.canEdit
+          ? [{ icon: "plus" as const, sf: "plus" as const, label: t("widgets.add.label"), onPress: add }]
+          : []),
+        ...(menu ? [menu] : []),
+      ]}
     >
       <View style={styles.in}>
         {home ? null : (
@@ -108,7 +109,6 @@ const GAP = 10;
 
 const styles = StyleSheet.create({
   in: { paddingHorizontal: 16, gap: 10 },
-  barRight: { flexDirection: "row", alignItems: "center" },
   meta: { paddingHorizontal: 4 },
   grid: { gap: GAP },
   row: { flexDirection: "row", gap: GAP },

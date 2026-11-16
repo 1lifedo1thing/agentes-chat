@@ -18,7 +18,6 @@ import {
   EmptyState,
   Filters,
   Icon,
-  IconButton,
   LIST_PREVIEW,
   ListRow,
   SCREEN_X,
@@ -106,7 +105,7 @@ export function IssuesScreen() {
   return (
     <PushedLargeTitle
       title={t("mobile.issues.title")}
-      {...(mayNew ? { right: <IconButton icon="plus" label={t("mobile.issues.new")} onPress={openNew} /> } : {})}
+      {...(mayNew ? { actions: [{ icon: "plus", sf: "plus", label: t("mobile.issues.new"), onPress: openNew }] } : {})}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
     >
       {all.isLoading ? (
