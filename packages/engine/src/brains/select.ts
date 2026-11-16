@@ -829,7 +829,29 @@ export async function resolveBrain(
   const backSoon =
     status?.standby ||
     (unavailable?.code === "machine_offline" && gone < (await import("../machine-tasks")).TASK_OFFLINE_GRACE_MS);
-  if (unavailable && isRightHand(agent) && !mission && !options.thinker && !backSoon) {
+  // At its account's limit, the next account of the person it answers goes first (ADR 0041 §6, the executor's move):
+  // nothing stands in while one has room.
+  const movesOn =
+    unavailable?.code === "plan_limit" &&
+    !unavailable.scope &&
+    machineId &&
+    account &&
+    !options.thinker &&
+    isRightHand(agent) &&
+    Boolean(
+      (
+        await (
+          await import("../spill")
+        ).nextAccountPlan(
+          deps,
+          agent,
+          { kind, account, ...(runs ? { model: runs } : {}), session: { id: "", resume: false, machineId, cwd: "" } },
+          [account.id],
+          { forPerson: person },
+        )
+      ).plan,
+    );
+  if (unavailable && isRightHand(agent) && !mission && !options.thinker && !backSoon && !movesOn) {
     let standIn = await rightHandStandIn(deps, agent, person, unavailable.code).catch(() => null);
     if (standIn?.brainAccountId) {
       const thinker: Agent = {

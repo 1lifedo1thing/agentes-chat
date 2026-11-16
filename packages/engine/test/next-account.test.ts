@@ -19,6 +19,7 @@ import {
   postPersonMessage,
   RESUME_AFTER_MS,
   runRoutineNow,
+  STAND_IN_LINE,
   setAccountServes,
   setAgentBrain,
   thinkingAgent,
@@ -1222,4 +1223,60 @@ test("Lodi on its person's plan at the limit goes on with their next account ins
   const [run] = await fx.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, lodi.id));
   expect(run?.status).toBe("done");
   expect(moveOf(run)).toMatchObject({ from: OWN1, to: OWN2 });
+  // The move went first: nothing stood in for its plan.
+  const said = await listMessages(fx.db, fx.owner.id, fx.org.id, dm.id);
+  expect(said.filter((m) => m.meta.bodyCode === STAND_IN_LINE)).toEqual([]);
+});
+
+test("Lodi at its person's limit with no other account of theirs: a plan that serves everyone stands in, with its line", async () => {
+  // ADR 0137 §7 (amended 2026-11-15) over ADR 0041 §6 for the right hand: it moves only onto the person's accounts, and
+  // with none it is answered by what can think for them rather than failing on its no-AI line.
+  f = await setup({ rightHand: true });
+  const fx = f;
+  const { machineId } = await pairMachine({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, {
+    name: "Mac",
+    protocol: MACHINE_PROTOCOL_VERSION,
+    exec: true,
+  });
+  const ada = await addMember(fx.db, fx.org.id, "member", "ada");
+  const add = (id: string, createdBy: string, more: Partial<typeof schema.machineAccounts.$inferInsert> = {}) =>
+    fx.db.insert(schema.machineAccounts).values({
+      id,
+      orgId: fx.org.id,
+      machineId,
+      kind: "claude_code",
+      label: id.slice(-4),
+      status: "active",
+      createdBy,
+      shared: true,
+      ...more,
+    });
+  await add(OWN1, ada.id, { usage: reading(100) as never });
+  await add(WALTER_ALL, fx.owner.id);
+  await fx.db.insert(schema.rightHandBrains).values({
+    orgId: fx.org.id,
+    userId: ada.id,
+    brain: "claude_code",
+    brainModel: null,
+    brainAccountId: OWN1,
+  });
+  const [lodi] = await fx.db
+    .select()
+    .from(schema.agents)
+    .where(and(eq(schema.agents.orgId, fx.org.id), eq(schema.agents.builtin, "right_hand")));
+  if (!lodi) throw new Error("no right hand");
+  const { brain, seen } = scripted(() => answers);
+  const dm = await openPersonAgentDm(fx.db, fx.org.id, ada.id, lodi.id);
+  await postPersonMessage({ db: fx.db, pubsub: fx.pubsub }, ada.id, fx.org.id, dm.id, { body: "oi" });
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+  expect(seen.map((t) => t.account?.id)).toEqual([WALTER_ALL]);
+  const [run] = await fx.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, lodi.id));
+  expect(run?.status).toBe("done");
+  // Not a move: the run never went on along the order, so nothing of it counts as lent to it.
+  expect(moveOf(run)).toBeUndefined();
+  const said = await listMessages(fx.db, ada.id, fx.org.id, dm.id);
+  expect(said.filter((m) => m.meta.bodyCode === "plan_account_moved")).toEqual([]);
+  expect(said.filter((m) => m.meta.bodyCode === STAND_IN_LINE).map((m) => m.body)).toEqual([
+    "Answered with b001: a001 reached its limit.",
+  ]);
 });
