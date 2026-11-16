@@ -9,7 +9,7 @@
   (the `sealed` part of `insertMessageWithRuns`, `forRunId`, `messageView`), `run-resume.ts` (`deliverNoticeToRun`),
   `context.ts` (`buildRunContext`'s `unseal`), `live-steer.ts` (`renderSteered`), `executor.ts` (`followThread`,
   `CONFIDENTIAL_AI_CHANGED`), `routine-ledger.ts` (`closeRoutineRun`), `judge.ts` (`refuseConfidential`), `format.ts`
-  (`inertLinks`); schema `packages/db/src/schema/chat.ts` (`confidential_threads`, migrations 0282 and 0283); server
+  (`inertLinks`); schema `packages/db/src/schema/chat.ts` (`confidential_threads`, migrations 0284 and 0285); server
   `apps/server/src/workers.ts` (`confidentialPrune`); tests `packages/engine/test/confidential-results.test.ts`,
   `confidential-lock.test.ts`, `confidential-copies.test.ts`, `confidential-prune.test.ts`
 
@@ -226,7 +226,7 @@ accept, or what is asked from another conversation than the one it serves.
 
 ## Consequences
 
-- One new table, `confidential_threads` (migration 0282, and 0283 for `thinks_with`). No setting:
+- One new table, `confidential_threads` (migration 0284, and 0285 for `thinks_with`). No setting:
   `MCP_CALLER_IDENTITY` is the switch, and the key in a result's `_meta` is the server's to send.
 - Every tool call reads the run's row joined to that table (one query more, sent with the ones the call already
   made), and the message insert reads the table inside its one statement. An install with no confidential thread

@@ -1,6 +1,6 @@
 {
-  "id": "bbecd59c-e436-4e30-9465-3b8e3595ebf9",
-  "prevId": "0ac1f93b-1c40-43ff-b02e-fd0958669e32",
+  "id": "eefbf165-a463-4baf-9f94-b3c1e2cdfdc9",
+  "prevId": "b1c7274e-727e-41e8-8e97-370d297741b1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3633,97 +3633,6 @@
           ]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.confidential_threads": {
-      "name": "confidential_threads",
-      "schema": "",
-      "columns": {
-        "org_id": {
-          "name": "org_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel_id": {
-          "name": "channel_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "root_message_id": {
-          "name": "root_message_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "connection_ids": {
-          "name": "connection_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
-        },
-        "thinks_with": {
-          "name": "thinks_with",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "marked_at": {
-          "name": "marked_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "confidential_threads_marked_at_index": {
-          "name": "confidential_threads_marked_at_index",
-          "columns": [
-            {
-              "expression": "marked_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "confidential_threads_org_id_channel_id_channels_org_id_id_fk": {
-          "name": "confidential_threads_org_id_channel_id_channels_org_id_id_fk",
-          "tableFrom": "confidential_threads",
-          "tableTo": "channels",
-          "columnsFrom": [
-            "org_id",
-            "channel_id"
-          ],
-          "columnsTo": [
-            "org_id",
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "confidential_threads_org_id_root_message_id_pk": {
-          "name": "confidential_threads_org_id_root_message_id_pk",
-          "columns": [
-            "org_id",
-            "root_message_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -16169,6 +16078,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "consultation_id": {
+          "name": "consultation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "handed_thread_id": {
+          "name": "handed_thread_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "requested_by_user_id": {
           "name": "requested_by_user_id",
           "type": "text",
@@ -16294,6 +16215,22 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "agent_works_consultation_id_index": {
+          "name": "agent_works_consultation_id_index",
+          "columns": [
+            {
+              "expression": "consultation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_works\".\"consultation_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -16303,6 +16240,19 @@
           "tableTo": "issues",
           "columnsFrom": [
             "issue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "agent_works_consultation_id_agent_consultations_id_fk": {
+          "name": "agent_works_consultation_id_agent_consultations_id_fk",
+          "tableFrom": "agent_works",
+          "tableTo": "agent_consultations",
+          "columnsFrom": [
+            "consultation_id"
           ],
           "columnsTo": [
             "id"
@@ -19420,6 +19370,21 @@
           "columns": [
             {
               "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "usage_records_run_id_index": {
+          "name": "usage_records_run_id_index",
+          "columns": [
+            {
+              "expression": "run_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -27181,6 +27146,21 @@
             },
             {
               "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "routine_runs_agent_run_id_index": {
+          "name": "routine_runs_agent_run_id_index",
+          "columns": [
+            {
+              "expression": "agent_run_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
