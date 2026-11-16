@@ -9,6 +9,7 @@ import {
   fromMailLevel,
   MAIL_ACTIONS,
   mailAccessOf,
+  mailboxName,
   normalizePolicy,
   onlyForOwner,
   toMailLevel,
@@ -18,7 +19,7 @@ import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LevelRow, RulesToggle } from "@/components/AccessLevels";
-import { MailIcon, mailChoiceName } from "@/components/MailConnect";
+import { MailIcon } from "@/components/MailConnect";
 import { MailRulesPanel, rulesCount } from "@/components/MailRules";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
@@ -63,7 +64,7 @@ export function MailAccessCard() {
       />
       <ul className="level-list" aria-label={t("mail.agent.title")}>
         {list.map((account) => {
-          const name = account.address || account.label || mailChoiceName(t, choiceOf(account));
+          const name = account.address || mailboxName(t, account);
           const may = mailAccessOf(account, { userId: me.user.id, talks: canTalk(agent), managesAgent: can("levels") });
           return account.status === "pending" ? (
             <LevelRow

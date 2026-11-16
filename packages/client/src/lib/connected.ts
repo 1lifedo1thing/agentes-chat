@@ -1,7 +1,8 @@
 import type { TFunction } from "i18next";
 import type { Connection, ConnectOutcome, ConnectorDef, CustomServer } from "../api/types";
 import { exposedTools, sameServer, toolsToReview } from "./custom-tools";
-import { type Owned, ownerScopeOf } from "./owner-split";
+import { isolate } from "./format";
+import { type Owned, ownerScopeOf, ownerSplit, ownerTabOf } from "./owner-split";
 import { connectorName } from "./scopes";
 import { reviewToolsOf } from "./tool-review";
 
@@ -254,7 +255,7 @@ export const personalAllowed = (connectorId: string | null | undefined) =>
  * moving it to the team when they manage connectors. Someone else's personal one: who manages connectors removes it
  * or takes it off an agent, never opens it. The team's: every member sees it, who manages connectors changes it.
  */
-export function connectionActs(item: Owned, userId: string, managesConnectors: boolean) {
+export function connectionActs(item: Owned & { viaComposio?: boolean }, userId: string, managesConnectors: boolean) {
   const scope = ownerScopeOf(item, userId);
   const mine = scope === "mine";
   const team = scope === "team";
@@ -269,6 +270,57 @@ export function connectionActs(item: Owned, userId: string, managesConnectors: b
     giveToAgents: mine || (team && managesConnectors),
     /** "Tirar de um agente". */
     takeOffAgent: mine || managesConnectors,
-    moveToTeam: mine && managesConnectors,
+    /** A one-click account lives under its person's own id at the hosted adapter: it connects again for the team. */
+    moveToTeam: mine && managesConnectors && !item.viaComposio,
   };
 }
+
+export type ConnectionTab = "team" | "personal";
+
+/**
+ * Conectores split as the Vault's (ADR 0099 addendum), on the web and the phone: "Equipe | Pessoal" where the
+ * workspace has more than one person or someone has a personal connection. A mailbox is always its person's, so in a
+ * workspace of one it never splits the list: it stays in the one list. It opens as Skills does
+ * (`ownerTabOf`). Each tab's connections and mailboxes, and other people's
+ * personal ones (who manages connectors gets those from the server) for the group under Equipe. `databases`: the
+ * team's databases the list shows on Equipe, counted there.
+ */
+export function connectionTabs<I extends Owned, M extends Owned>(input: {
+  items: readonly I[];
+  mailboxes: readonly M[];
+  me: string;
+  members: number;
+  manages: boolean;
+  picked: ConnectionTab | null;
+  databases?: number;
+}) {
+  const byOwner = ownerSplit(input.items, input.me);
+  const mail = ownerSplit(input.mailboxes, input.me);
+  const shown = input.members > 1 || input.items.some((i) => i.ownerUserId);
+  const team = byOwner.team.length + mail.team.length + (input.databases ?? 0);
+  const mine = byOwner.mine.length + mail.mine.length;
+  const tab: ConnectionTab = ownerTabOf(shown, input.picked, input.manages, { team, mine });
+  const personal = tab === "personal";
+  return {
+    shown,
+    tab,
+    team,
+    mine,
+    items: personal ? byOwner.mine : byOwner.team,
+    mailboxes: !shown ? [...mail.team, ...mail.mine] : personal ? mail.mine : mail.team,
+    others: input.manages && !personal ? byOwner.others : [],
+    othersMail: input.manages && !personal ? mail.others : [],
+  };
+}
+
+/** "Pessoal de <name>": whose someone else's connection or mailbox is, the name kept in its own direction. */
+export const personalOfText = (t: TFunction, name: string) => t("connectors.personal.of", { name: isolate(name) });
+
+/**
+ * "Pessoal de <name>" as the words before and after the name, in the language's order, so a screen can cut the name
+ * alone in its own direction (a right-to-left name keeps its start).
+ */
+export const personalOfParts = (t: TFunction) => {
+  const [before = "", after = ""] = t("connectors.personal.of", { name: "\u0000" }).split("\u0000");
+  return { before, after };
+};

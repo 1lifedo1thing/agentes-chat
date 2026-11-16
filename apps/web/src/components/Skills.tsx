@@ -30,6 +30,7 @@ import {
   SKILL_ZIP_MB,
 } from "@agenteschat/client/lib/files";
 import { formatPercent, relativeTime } from "@agenteschat/client/lib/format";
+import { ownerTabOf } from "@agenteschat/client/lib/owner-split";
 import { can } from "@agenteschat/client/lib/permissions";
 import {
   changedByText,
@@ -229,7 +230,7 @@ export function SkillsSection({
   const everything = skills.data ?? [];
   const scopes = skillScopes(everything, me.user.id);
   const split = skillsSplit(dir.members.length, everything);
-  const scope: SkillScope = !split ? "team" : (picked ?? (admin ? "team" : "personal"));
+  const scope: SkillScope = ownerTabOf(split, picked, admin, { team: scopes.team.length, mine: scopes.mine.length });
   const list = scope === "team" ? scopes.team : scopes.mine;
   const usage = useSkillUsage(org.id, admin && everything.length > 0);
   const settings = useSkillSettings(org.id, admin);

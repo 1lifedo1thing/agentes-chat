@@ -23,3 +23,15 @@ export function ownerSplit<T extends Owned>(items: readonly T[], userId: string)
 /** Whether a list shows "Equipe | Pessoal": a workspace of one person keeps one list, unless personal ones exist. */
 export const ownerTabsShown = (members: number, items: readonly Owned[]) =>
   members > 1 || items.some((i) => i.ownerUserId);
+
+/**
+ * The tab a split list opens on, the same on Skills and Conectores: the one list when it doesn't split, else the
+ * person's pick, else Equipe for who manages that list (Pessoal when only their own are there) and Pessoal for
+ * everyone else.
+ */
+export const ownerTabOf = (
+  shown: boolean,
+  picked: "team" | "personal" | null,
+  manages: boolean,
+  count: { team: number; mine: number },
+) => (!shown ? "team" : (picked ?? (manages && (count.team > 0 || count.mine === 0) ? "team" : "personal")));

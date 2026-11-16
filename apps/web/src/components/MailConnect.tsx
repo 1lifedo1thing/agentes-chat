@@ -23,6 +23,8 @@ import {
   mailAccessOf,
   mailActionsChanged,
   mailActionsFrom,
+  mailboxName,
+  mailChoiceName,
   mailErrorOf,
   mailReviewTools,
   normalizePolicy,
@@ -50,7 +52,6 @@ import {
   useUnsavedInDialog,
 } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
@@ -79,7 +80,7 @@ import { useToast } from "@/lib/toast";
  * addresses the mailbox has (replies go out from the one the email arrived at).
  */
 
-export const mailChoiceName = (t: TFunction, choice: MailChoice) => t(`mail.choice.${choice}.name`);
+export { mailChoiceName };
 
 /** The catalog cards this server can connect (Gmail/Outlook need Composio; the rest IMAP). */
 export function mailChoices(providers: MailProviders | undefined): MailChoice[] {
@@ -1136,7 +1137,7 @@ export function MailDisconnectDialog({ account, onClose }: { account: MailAccoun
   const { disconnect } = useMailAction(org.id);
   // Someone else's mailbox comes without its address: its service names it, and it reads "Remover" as its row does.
   const theirs = account !== null && !account.address;
-  const name = account ? account.address || account.label || mailChoiceName(t, choiceOf(account)) : "";
+  const name = account ? account.address || mailboxName(t, account) : "";
   const using = account?.agents.length ?? 0;
   return (
     <Dialog

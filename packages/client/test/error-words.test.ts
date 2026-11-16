@@ -441,6 +441,8 @@ const PLAIN_LINE = new Set([
   "claude_auth.invalid",
   "claude_auth.unknown_org",
   "connector.key_too_short",
+  // A one-click connection is never offered "Passar para a equipe" (`connectionActs`), so only an API client meets this.
+  "connector.move_one_click",
   "connector.oauth_only",
   "connector.sensitive_tool",
   "context.changes_permissions",

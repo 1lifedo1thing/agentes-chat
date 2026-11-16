@@ -21,6 +21,8 @@ const click = async (el: Element, rounds = 4) => {
 const type = (el: Element, value: string) => act(async () => fireEvent.change(el, { target: { value } }));
 const section = () => screen().getByRole("region", { name: "Conectores" });
 const mcpSection = () => screen().getByRole("region", { name: "MCPs" });
+/** "Equipe | Pessoal": over both cards. */
+const ownerTabs = () => screen().getByRole("radiogroup", { name: "Conectores" });
 const flow = () => screen().getAllByRole("dialog").at(-1) as HTMLElement;
 const asMember = (state: State) => {
   const org = state.me?.organizations[0];
@@ -64,7 +66,7 @@ describe("Conectores: Equipe | Pessoal", () => {
     asMember(state);
     const api = createFakeApi(state);
     await openConnectors(api);
-    const tabs = within(section()).getByRole("radiogroup", { name: "Conectores" });
+    const tabs = ownerTabs();
     expect(
       within(tabs)
         .getByRole("radio", { name: /Pessoal/ })
@@ -103,7 +105,7 @@ describe("Conectores: Equipe | Pessoal", () => {
     const api = createFakeApi(state);
     await openConnectors(api);
     expect(
-      within(section())
+      within(ownerTabs())
         .getByRole("radio", { name: /Equipe/ })
         .getAttribute("aria-checked"),
     ).toBe("true");
@@ -181,8 +183,8 @@ describe("Conectores: Equipe | Pessoal", () => {
       ownerUserId: "u-walter",
     });
     await openConnectors(api);
-    await click(within(section()).getByRole("radio", { name: /Pessoal/ }));
-    expect(section().textContent).toContain("Só você vê estas conexões.");
+    await click(within(ownerTabs()).getByRole("radio", { name: /Pessoal/ }));
+    expect(document.body.textContent).toContain("Só você abre estas conexões.");
     await click(within(section()).getByRole("button", { name: /^Sentry/ }));
     const more = within(section()).getByRole("button", { name: "Mais ações de Sentry" });
     more.focus();
@@ -223,6 +225,34 @@ describe("Conectores: Equipe | Pessoal", () => {
   });
 });
 
+describe("Conectores: the split covers both cards", () => {
+  test("Pessoal with only a server by address: its note shows, no empty state says there is nothing", async () => {
+    const state = seedState({ connections: [] });
+    asMember(state);
+    const api = createFakeApi(state);
+    await personalServer(state, api, "u-walter", "https://notes.example.com/mcp", "Minhas notas");
+    await openConnectors(api);
+    expect(within(ownerTabs()).getByRole("radio", { name: /Pessoal/ }).textContent).toContain("1");
+    expect(document.body.textContent).toContain("Só você abre estas conexões.");
+    expect(section().textContent).not.toContain("Conecte suas próprias contas");
+    // The tabs sit over both cards, not inside the first.
+    expect(within(section()).queryByRole("radiogroup", { name: "Conectores" })).toBeNull();
+  });
+
+  test("others' personal connections stay a short group: five rows, the rest behind Ver todas", async () => {
+    const state = seedState({ connections: [] });
+    const api = createFakeApi(state);
+    for (let i = 1; i <= 7; i++)
+      await personalServer(state, api, "u-joao", `https://crm${i}.example.com/mcp`, `CRM ${i} do João`);
+    await openConnectors(api);
+    const others = screen().getByRole("region", { name: /Pessoais de outras pessoas/ });
+    expect(others.textContent).toContain("Pessoais de outras pessoas · 7");
+    expect(within(others).getAllByRole("button", { name: /^CRM \d do João/ })).toHaveLength(5);
+    await click(within(others).getByRole("button", { name: "Ver todas as 7" }));
+    expect(within(others).getAllByRole("button", { name: /^CRM \d do João/ })).toHaveLength(7);
+  });
+});
+
 describe("an agent's page: the team's connections, then the viewer's own, and others' only to turn off", () => {
   test("own personal one with its badge and ⓘ; another person's with Desligar alone", async () => {
     const state = seedState({ connections: [] });
@@ -248,6 +278,24 @@ describe("an agent's page: the team's connections, then the viewer's own, and ot
     await click(within(other).getByRole("button", { name: "Desligar CRM do João neste agente" }), 6);
     expect(state.calls.find((c) => c.method === "connectors.takeOffAgent")?.args).toEqual([ORG_ID, theirs.id, ADA_ID]);
     expect(screen().getByRole("list", { name: "Conectores" }).textContent).not.toContain("CRM do João");
+  });
+
+  test("another person's connection shows with no team connection at all, follows the search and counts as on", async () => {
+    const state = seedState({ connections: [] });
+    const api = createFakeApi(state);
+    await personalServer(state, api, "u-joao", "https://crm.example.com/mcp", "CRM do João");
+    await renderApp(`/org/${ORG_ID}/agents/${ADA_ID}?tab=access`, { api });
+    await settle(8);
+    const list = screen().getByRole("list", { name: "Conectores" });
+    expect(list.textContent).toContain("CRM do João");
+    // It is on (the agent holds it): "Com acesso" keeps it.
+    await click(
+      within(screen().getByRole("radiogroup", { name: /Filtrar|Mostrar/ })).getByRole("radio", { name: /Com acesso/ }),
+    );
+    expect(screen().getByRole("list", { name: "Conectores" }).textContent).toContain("CRM do João");
+    await type(screen().getByRole("searchbox", { name: /Buscar/ }), "zzz");
+    await settle(2);
+    expect(screen().queryByRole("list", { name: "Conectores" })?.textContent ?? "").not.toContain("CRM do João");
   });
 
   test("a member who doesn't own the agent sees no one else's personal connection on it", async () => {

@@ -2,7 +2,7 @@ import { useAgentAccess, useAgentSkills, useCatalog, useTakeConnectionOffAgent }
 import { type AccessResource, asksAt, LEVELS, type Level } from "@agenteschat/client/lib/access-levels";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { can as orgCan } from "@agenteschat/client/lib/permissions";
-import { modeKey } from "@agenteschat/client/lib/workspace-mode";
+import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { Button, Card, Chip, EmptyState, Icon, Menu, MenuItem, SearchField, Segmented, Toolbar } from "@agenteschat/ui";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -18,9 +18,11 @@ import {
 } from "@/components/AccessLevels";
 import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { LoadingLine } from "@/components/Loading";
+import { PersonalChip, PersonalOf } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";
 import { SkillPicker } from "@/components/Skills";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useFocusHome } from "@/hooks/useFocusHome";
 import { lookOf } from "@/lib/look";
 import { useToast } from "@/lib/toast";
 import { ApprovalRulesCard } from "./ApprovalRulesCard";
@@ -42,8 +44,14 @@ type AccessFilter = "all" | "on" | "ask";
  */
 export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced" }) {
   const { t } = useTranslation();
-  const { org } = useOrg();
+  const { org, me } = useOrg();
   const { agent, g, viewer, draft, setLevel, set, can, changeOf, resources, accessState } = useAgentEdit();
+  // Other people's personal connections this agent holds, for who may take them off (`seesOthersOnAgent`).
+  const seesOthers = viewer !== "member" || orgCan(org, "manage_connectors");
+  const othersTree = useAgentAccess(org.id, agent.id, seesOthers, { others: true });
+  const theirs = seesOthers
+    ? (othersTree.data?.connectors ?? []).filter((c) => c.ownerUserId && c.ownerUserId !== me.user.id)
+    : [];
   const items = useConnectedById();
   const personalOf = (r: AccessResource) => Boolean(r.connectionId && items.get(r.connectionId)?.ownerUserId);
   const skills = useAgentSkills(org.id, agent.id);
@@ -60,16 +68,18 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
     if (filter === "ask") return asksOf(r).length > 0;
     return true;
   });
+  // Someone else's connection here is on (the agent holds it) and asks its person, never this page.
+  const theirsShown = filter === "ask" ? [] : theirs.filter((c) => !needle || c.label.toLowerCase().includes(needle));
   const count = {
-    all: resources.length,
-    on: resources.filter((r) => level(r) !== "none").length,
+    all: resources.length + theirs.length,
+    on: resources.filter((r) => level(r) !== "none").length + theirs.length,
     ask: resources.filter((r) => asksOf(r).length > 0).length,
   };
   // The team's first, then the viewer's own personal ones.
   const connectors = shown
     .filter((r) => r.kind === "connector")
     .sort((a, b) => Number(personalOf(a)) - Number(personalOf(b)));
-  const noConnectors = resources.every((r) => r.kind !== "connector");
+  const noConnectors = resources.every((r) => r.kind !== "connector") && theirs.length === 0;
   const builtins = shown.filter((r) => r.kind === "builtin");
   const row = (r: AccessResource) => {
     const name = resourceName(t, r, items);
@@ -89,7 +99,7 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
         tag={
           personalOf(r) || changed ? (
             <>
-              {personalOf(r) && <Chip icon="lock">{t("vault.tab.personal")}</Chip>}
+              {personalOf(r) && <PersonalChip />}
               {changed && <ChangedTag changeKey={key} />}
             </>
           ) : undefined
@@ -124,10 +134,13 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
       {needle ? t("agentPage.access.noMatch", { q }) : t("agentPage.access.noneHere")}
     </EmptyState>
   );
+  // The team's connectors at once: a personal one stays at what its person chose.
   const allConnectors = (l: Level) => {
-    for (const r of resources) if (r.kind === "connector" && r.levels.includes(l)) setLevel(r.id, l);
+    for (const r of resources) if (r.kind === "connector" && !personalOf(r) && r.levels.includes(l)) setLevel(r.id, l);
   };
-  const connectorsTitle = t(modeKey(org, "agentPage.access.connectors"), { org: org.name });
+  // It holds the viewer's own connections too: not "da <org>" (a personal workspace's own words stay).
+  const connectorsTitle = isPersonal(org) ? t("agentPage.access.connectorsPersonal") : t("connectors.title");
+  useFocusHome("ac-connectors-card", ["ac-connectors"]);
   const library = skills.data ?? [];
   const enabled = new Set(draft.skills ?? []);
   const skillsEditable = can("skills") && draft.skills !== undefined;
@@ -178,7 +191,7 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
           ) : (
             <>
               {basic && (
-                <Card as="section" className="agp-card" aria-labelledby="ac-connectors">
+                <Card as="section" id="ac-connectors-card" className="agp-card" aria-labelledby="ac-connectors">
                   <CardHead
                     id="ac-connectors"
                     icon="plug"
@@ -207,10 +220,10 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
                   />
                   {noConnectors ? (
                     <NoConnectors look={lookOf(agent) ?? true} />
-                  ) : connectors.length ? (
+                  ) : connectors.length + theirsShown.length ? (
                     <ul className="level-list" aria-label={t("access.kind.connectors")}>
                       {connectors.map(row)}
-                      <OthersPersonalRows agent={agent} mayTakeOff={viewer !== "member"} />
+                      <OthersPersonalRows agent={agent} rows={theirsShown} />
                     </ul>
                   ) : (
                     empty
@@ -326,18 +339,20 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
  * Other people's personal connections this agent holds: whose each is, and Desligar, for who manages connectors or
  * agents and the agent's owner. Their tools and level stay their person's, so the row shows none.
  */
-function OthersPersonalRows({ agent, mayTakeOff }: { agent: { id: string; name: string }; mayTakeOff: boolean }) {
+function OthersPersonalRows({
+  agent,
+  rows,
+}: {
+  agent: { id: string; name: string };
+  rows: { connectionId: string; connector: string; label: string; ownerUserId?: string | null }[];
+}) {
   const { t, i18n } = useTranslation();
-  const { org, me } = useOrg();
+  const { org } = useOrg();
   const toast = useToast();
-  const may = mayTakeOff || orgCan(org, "manage_connectors");
-  const tree = useAgentAccess(org.id, agent.id, may, { others: true });
   const catalog = useCatalog();
   const dir = useDirectory(org.id);
   const takeOff = useTakeConnectionOffAgent(org.id);
-  if (!may) return null;
-  const theirs = (tree.data?.connectors ?? []).filter((c) => c.ownerUserId && c.ownerUserId !== me.user.id);
-  return theirs.map((c) => {
+  return rows.map((c) => {
     const def = catalog.data?.connectors.find((d) => d.id === c.connector) ?? null;
     const owner = (c.ownerUserId && dir.memberById.get(c.ownerUserId)?.name) || t("channel.unknownPerson");
     return (
@@ -349,7 +364,7 @@ function OthersPersonalRows({ agent, mayTakeOff }: { agent: { id: string; name: 
           <span className="level-row__name level-row__name--cut">{c.label}</span>
           <span className="ac-mediarow__meta level-row__owner ac-iconline">
             <Icon name="lock" size={14} />
-            <span>{t("connectors.personal.of", { name: owner })}</span>
+            <PersonalOf name={owner} />
           </span>
         </span>
         <span className="ac-mediarow__end">

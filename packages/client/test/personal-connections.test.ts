@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import type { Connection, CustomServer } from "../src/api/types";
-import { connectedItems, connectionActs, personalAllowed } from "../src/lib/connected";
+import {
+  connectedItems,
+  connectionActs,
+  connectionTabs,
+  personalAllowed,
+  personalOfParts,
+  personalOfText,
+} from "../src/lib/connected";
+import { mailboxName } from "../src/lib/mail";
 import { ownerScopeOf, ownerSplit } from "../src/lib/owner-split";
 
 const connection = (id: string, ownerUserId?: string | null): Connection => ({
@@ -89,5 +97,66 @@ describe("what a viewer may do with a row (the engine's rule)", () => {
     expect(personalAllowed("github")).toBe(false);
     expect(personalAllowed("linear")).toBe(true);
     expect(personalAllowed(null)).toBe(true);
+  });
+});
+
+describe("the shared split of Conectores (web and phone)", () => {
+  const mine = connection("c1", "walter");
+  const team = connection("c2", null);
+  const box = (id: string, ownerUserId: string | null) => ({ id, ownerUserId });
+
+  test("a workspace of one keeps one list with its own mailbox in it; a personal connection splits it", () => {
+    const alone = connectionTabs({
+      items: connectedItems([team], [], []),
+      mailboxes: [box("m1", "walter")],
+      me: "walter",
+      members: 1,
+      manages: true,
+      picked: null,
+    });
+    expect([alone.shown, alone.tab]).toEqual([false, "team"]);
+    expect(alone.mailboxes.map((m) => m.id)).toEqual(["m1"]);
+    const split = connectionTabs({
+      items: connectedItems([team, mine], [], []),
+      mailboxes: [box("m1", "walter")],
+      me: "walter",
+      members: 1,
+      manages: true,
+      picked: "personal",
+    });
+    expect(split.shown).toBe(true);
+    expect(split.mailboxes.map((m) => m.id)).toEqual(["m1"]);
+  });
+
+  test("the team's databases count on Equipe", () => {
+    const tabs = connectionTabs({
+      items: connectedItems([team], [], []),
+      mailboxes: [],
+      me: "walter",
+      members: 3,
+      manages: true,
+      picked: null,
+      databases: 2,
+    });
+    expect(tabs.team).toBe(3);
+  });
+
+  test("a one-click connection never offers to move to the team: it connects again for the team", () => {
+    expect(connectionActs({ ownerUserId: "walter" }, "walter", true).moveToTeam).toBe(true);
+    expect(connectionActs({ ownerUserId: "walter", viaComposio: true }, "walter", true).moveToTeam).toBe(false);
+  });
+
+  test("whose it is keeps a right-to-left name in its own direction, and someone else's mailbox goes by its service", () => {
+    const t = ((key: string, o?: Record<string, unknown>) =>
+      key === "connectors.personal.of"
+        ? `Pessoal de ${o?.name}`
+        : key === "mail.choice.gmail.name"
+          ? "Gmail"
+          : key) as never;
+    expect(personalOfText(t, "عبد الرحمن")).toBe("Pessoal de \u2068عبد الرحمن\u2069");
+    // The web cuts the name alone: the words around it, in the language's order.
+    expect(personalOfParts(t)).toEqual({ before: "Pessoal de ", after: "" });
+    expect(mailboxName(t, { label: "", provider: "gmail", preset: null })).toBe("Gmail");
+    expect(mailboxName(t, { label: "Vendas", provider: "gmail", preset: null })).toBe("Vendas");
   });
 });

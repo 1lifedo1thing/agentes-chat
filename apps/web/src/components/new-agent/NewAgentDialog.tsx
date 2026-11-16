@@ -11,6 +11,7 @@ import {
   useSkills,
 } from "@agenteschat/client";
 import { type Level, saveLevels } from "@agenteschat/client/lib/access-levels";
+import { personalAllowed } from "@agenteschat/client/lib/connected";
 import { errorText as failureText } from "@agenteschat/client/lib/errors";
 import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
@@ -1265,7 +1266,7 @@ function NewAgentDialog({
           suggested={Object.keys(starterApps({ role, starter: starter?.id ?? null }))}
           connected={new Set(connectedApps.keys())}
           onCard={new Set(appIds)}
-          canConnect={can(org, "manage_connectors")}
+          canConnect={(d) => can(org, "manage_connectors") || personalAllowed(d.id)}
           onUse={(d) => takeApp(d.id)}
           onConnect={connectApp}
           onClose={() => setPicking(false)}

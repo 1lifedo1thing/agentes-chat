@@ -1,5 +1,6 @@
+import { personalOfParts } from "@agenteschat/client/lib/connected";
 import { modeKey } from "@agenteschat/client/lib/workspace-mode";
-import { Field, Segmented, SettingNote } from "@agenteschat/ui";
+import { Chip, Field, Segmented, SettingNote } from "@agenteschat/ui";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
 
@@ -70,5 +71,26 @@ export function ForWhom({
       />
       {locked && <SettingNote icon="lock">{note}</SettingNote>}
     </Field>
+  );
+}
+
+/** The mark of a person's own connection beside its name: a lock and "Pessoal". */
+export function PersonalChip() {
+  const { t } = useTranslation();
+  return <Chip icon="lock">{t("vault.tab.personal")}</Chip>;
+}
+
+/** "Pessoal de <name>" on one line: only the name is cut, in its own direction, so a right-to-left name keeps its start. */
+export function PersonalOf({ name }: { name: string }) {
+  const { t } = useTranslation();
+  const { before, after } = personalOfParts(t);
+  return (
+    <span className="owner-of">
+      {before && <span className="owner-of__words">{before}</span>}
+      <bdi dir="auto" className="owner-of__name">
+        {name}
+      </bdi>
+      {after && <span className="owner-of__words">{after}</span>}
+    </span>
   );
 }

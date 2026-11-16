@@ -24,6 +24,7 @@ import {
   connectedIds,
   connectedItems,
   connectionActs,
+  connectionTabs,
   isMcpItem,
   itemName,
   outcomeText,
@@ -34,8 +35,8 @@ import { sameServer } from "@agenteschat/client/lib/custom-tools";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { relativeTime } from "@agenteschat/client/lib/format";
 import { appAccountsText, githubDisconnectNote } from "@agenteschat/client/lib/github-app";
-import { choiceOf, newestAccount } from "@agenteschat/client/lib/mail";
-import { ownerScopeOf, ownerSplit, ownerTabsShown } from "@agenteschat/client/lib/owner-split";
+import { choiceOf, mailboxName, newestAccount } from "@agenteschat/client/lib/mail";
+import { ownerScopeOf } from "@agenteschat/client/lib/owner-split";
 import { can } from "@agenteschat/client/lib/permissions";
 import { connectorBrand } from "@agenteschat/client/lib/scopes";
 import { modeKey } from "@agenteschat/client/lib/workspace-mode";
@@ -82,13 +83,13 @@ import {
   MailIcon,
   MailReconnectDialog,
   MailRow,
-  mailChoiceName,
   mailChoices,
 } from "@/components/MailConnect";
-import { type OwnerTab, OwnerTabs } from "@/components/OwnerScope";
+import { type OwnerTab, OwnerTabs, PersonalOf } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";
 import { useAgentsAccess } from "@/hooks/useAgentsAccess";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useFocusHome } from "@/hooks/useFocusHome";
 import { useRightHandLook } from "@/hooks/useRightHandLook";
 import { takesConnectorReturn } from "@/lib/desktop";
 import { navigateAway } from "@/lib/navigate";
@@ -184,18 +185,18 @@ export function ConnectorsSection({
   }, [mail, account, mailAccounts.data, mailAccounts.isError, me.user.id, t, toast]);
   const defs = catalog.data?.connectors ?? [];
   const everything = connectedItems(connections.data ?? [], servers.data ?? [], defs);
-  const byOwner = ownerSplit(everything, me.user.id);
-  const mailByOwner = ownerSplit(mailAccounts.data ?? [], me.user.id);
-  const tabs = ownerTabsShown(members, [...everything, ...(mailAccounts.data ?? [])]);
-  const teamCount = byOwner.team.length + mailByOwner.team.length + (databases.data?.length ?? 0);
-  const mineCount = byOwner.mine.length + mailByOwner.mine.length;
-  // Who manages connectors opens on Equipe, unless only their own are there; everyone else on Pessoal.
-  const scope: OwnerTab = !tabs
-    ? "team"
-    : (picked ?? (admin && (teamCount > 0 || mineCount === 0) ? "team" : "personal"));
+  const tabs = connectionTabs({
+    items: everything,
+    mailboxes: mailAccounts.data ?? [],
+    me: me.user.id,
+    members,
+    manages: admin,
+    picked,
+    databases: databases.data?.length ?? 0,
+  });
+  const scope = tabs.tab;
   const personal = scope === "personal";
-  const items = personal ? byOwner.mine : byOwner.team;
-  const accounts = personal ? mailByOwner.mine : mailByOwner.team;
+  const { items, mailboxes: accounts } = tabs;
   // Databases are the team's.
   const dbList = personal ? [] : (databases.data ?? []);
   const mayAdd = admin || personal;
@@ -272,21 +273,40 @@ export function ConnectorsSection({
     />
   );
   const loaded = connections.isSuccess && servers.isSuccess;
+  // Pessoal is one list across both cards: its empty state shows only when nothing at all is there.
   const noneYet =
     loaded &&
     !mailAccounts.isLoading &&
     !databases.isLoading &&
-    apps.length === 0 &&
+    (personal ? items.length : apps.length) === 0 &&
     accounts.length === 0 &&
     dbList.length === 0;
   const look = useRightHandLook();
   const [moving, setMoving] = useState<ConnectedItem | null>(null);
   const [takingOff, setTakingOff] = useState<ConnectedItem | null>(null);
-  const othersCount = byOwner.others.length + mailByOwner.others.length;
+  const othersCount = tabs.others.length + tabs.othersMail.length;
+  // A row taken off or removed leaves the focus on the list's heading, not on the page.
+  useFocusHome("conn-sec", ["connected-others", "sec-conn"]);
 
   return (
     <>
-      <Card aria-labelledby="sec-conn">
+      {/* The split covers both cards below, as the Vault's covers its whole list. */}
+      {tabs.shown && loaded && (
+        <OwnerTabs
+          label={t("connectors.title")}
+          value={scope}
+          onValueChange={setPicked}
+          team={tabs.team}
+          personal={tabs.mine}
+        />
+      )}
+      {personal && tabs.mine > 0 && (
+        <p className="small muted ac-iconline">
+          <Icon name="lock" size={14} />
+          <span>{t("connectors.personal.note")}</span>
+        </p>
+      )}
+      <Card id="conn-sec" aria-labelledby="sec-conn">
         <CardHeader
           id="sec-conn"
           icon="plug"
@@ -303,21 +323,6 @@ export function ConnectorsSection({
         />
         {composio.data && nearComposioLimit(composio.data) && (
           <p className="small muted">{composioUsageText(t, i18n.language, composio.data)}</p>
-        )}
-        {tabs && loaded && (
-          <OwnerTabs
-            label={t("connectors.title")}
-            value={scope}
-            onValueChange={setPicked}
-            team={teamCount}
-            personal={mineCount}
-          />
-        )}
-        {personal && !noneYet && (
-          <p className="small muted ac-iconline">
-            <Icon name="lock" size={14} />
-            <span>{t("connectors.personal.note")}</span>
-          </p>
         )}
         {(connections.isLoading || servers.isLoading) && <LoadingList count={2} trailing />}
         {noneYet && (
@@ -383,8 +388,8 @@ export function ConnectorsSection({
         )}
         {admin && !personal && othersCount > 0 && (
           <OthersPersonal
-            items={byOwner.others}
-            mail={mailByOwner.others}
+            items={tabs.others}
+            mail={tabs.othersMail}
             agents={agentList}
             onRemove={setRemoving}
             onRemoveMail={setRemovingMail}
@@ -407,7 +412,9 @@ export function ConnectorsSection({
             )
           }
         />
-        {loaded && mcps.length === 0 && <p className="small muted">{t("connectors.mcp.none")}</p>}
+        {loaded && mcps.length === 0 && !(personal && noneYet) && (
+          <p className="small muted">{t("connectors.mcp.none")}</p>
+        )}
         {mcps.length > 0 && (
           <List className="connected-list" aria-label={t("connectors.mcp.list")}>
             {mcps.map(row)}
@@ -442,7 +449,7 @@ export function ConnectorsSection({
             onPick: (choice) => {
               setAdding(false);
               // A mailbox is its person's: it shows under Pessoal.
-              if (tabs) setPicked("personal");
+              if (tabs.shown) setPicked("personal");
               setMailFlow({ step: 0, choice });
             },
           }}
@@ -796,8 +803,9 @@ function OthersPersonal({
   const { t } = useTranslation();
   const { org } = useOrg();
   const dir = useDirectory(org.id);
-  const ownerOf = (id: string | null | undefined) =>
-    t("connectors.personal.of", { name: (id && dir.memberById.get(id)?.name) || t("channel.unknownPerson") });
+  // A quiet group under the team's list: a few rows, the rest behind "Ver todas".
+  const [all, setAll] = useState(false);
+  const ownerOf = (id: string | null | undefined) => (id && dir.memberById.get(id)?.name) || t("channel.unknownPerson");
   const row = (
     key: string,
     icon: ReactNode,
@@ -815,7 +823,7 @@ function OthersPersonal({
       meta={
         <>
           <Icon name="lock" size={14} />
-          <span>{ownerOf(owner)}</span>
+          <PersonalOf name={ownerOf(owner)} />
         </>
       }
       using={using}
@@ -835,39 +843,50 @@ function OthersPersonal({
       }
     />
   );
+  const total = items.length + mail.length;
+  const rows = [
+    ...mail.map((account) =>
+      row(
+        `mail-${account.id}`,
+        <MailIcon choice={choiceOf(account)} />,
+        mailboxName(t, account),
+        account.ownerUserId,
+        agents.filter((a) => account.agents.some((x) => x.agentId === a.id)),
+        () => onRemoveMail(account),
+      ),
+    ),
+    ...items.map((item) => {
+      const name = itemName(t, item);
+      return row(
+        item.id,
+        <ConnectorIcon def={item.def} image={item.image} label={name} />,
+        name,
+        item.ownerUserId,
+        agents.filter((a) => item.agentIds.includes(a.id)),
+        () => onRemove(item),
+        () => onTakeOff(item),
+      );
+    }),
+  ];
   return (
     <section className="connected-others" aria-labelledby="connected-others">
       <h3 id="connected-others" className="ac-eyebrow">
-        {t("connectors.personal.others")} <span className="tabular">{items.length + mail.length}</span>
+        {t("connectors.personal.others")} · <span className="tabular">{total}</span>
       </h3>
       <List className="connected-list" aria-labelledby="connected-others">
-        {mail.map((account) => {
-          const choice = choiceOf(account);
-          return row(
-            `mail-${account.id}`,
-            <MailIcon choice={choice} />,
-            account.label || mailChoiceName(t, choice),
-            account.ownerUserId,
-            agents.filter((a) => account.agents.some((x) => x.agentId === a.id)),
-            () => onRemoveMail(account),
-          );
-        })}
-        {items.map((item) => {
-          const name = itemName(t, item);
-          return row(
-            item.id,
-            <ConnectorIcon def={item.def} image={item.image} label={name} />,
-            name,
-            item.ownerUserId,
-            agents.filter((a) => item.agentIds.includes(a.id)),
-            () => onRemove(item),
-            () => onTakeOff(item),
-          );
-        })}
+        {all ? rows : rows.slice(0, OTHERS_INLINE)}
       </List>
+      {!all && total > OTHERS_INLINE && (
+        <Button variant="link" onClick={() => setAll(true)}>
+          {t("connectors.personal.seeAll", { count: total })}
+        </Button>
+      )}
     </section>
   );
 }
+
+/** How many of other people's personal connections show before "Ver todas". */
+const OTHERS_INLINE = 5;
 
 /** "Tirar de um agente": the agents that hold someone else's personal connection, each with Tirar. */
 function TakeOffDialog({
