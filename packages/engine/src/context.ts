@@ -32,6 +32,7 @@ import {
   CONFIDENTIAL_STUB,
   confidentialThreadSql,
   isConfidential,
+  threadIsConfidential,
   unsealed,
 } from "./confidential";
 import { consultationOrigin, type HandOff, handOffsFrom } from "./consultations";
@@ -550,7 +551,7 @@ export interface RunContext {
   sessionPrompt: string[];
   /** A personal workspace (ADR 0159): the blocks the executor adds speak of one person and their agents too. */
   personal: boolean;
-  /** The run's own thread holds a confidential message (ADR 0189), as read when this was built. */
+  /** The run's own thread is a confidential one (ADR 0189), as read when this was built. */
   confidential: boolean;
 }
 
@@ -784,10 +785,15 @@ export async function buildRunContext(
   // A confidential message (ADR 0189) is read whole only in its own thread, by a run the lock holds. Anywhere else
   // the stub stands in its place, with nothing of its meta: a card keeps what its agent typed there.
   const ownThread = (m: Message) => m.id === run.threadRootId || m.threadId === run.threadRootId;
+  // By the thread's own row, never by a message's mark alone: a run of a confidential thread can write a marked
+  // message outside it (a report sent home), and a run asked under that message is neither locked nor a reader.
+  const sealedHere =
+    everything.some((m) => isConfidential(m.meta) && ownThread(m)) &&
+    (await threadIsConfidential(db, run.orgId, run.threadRootId));
   const fullHistory = everything.map((m) =>
     !isConfidential(m.meta)
       ? m
-      : options.unseal && ownThread(m)
+      : sealedHere && options.unseal && ownThread(m)
         ? unsealed(m)
         : { ...m, body: CONFIDENTIAL_STUB, meta: { confidential: true } },
   );
@@ -1346,7 +1352,7 @@ export async function buildRunContext(
       JSON.stringify(options.skills ?? []),
     ],
     personal,
-    confidential: everything.some((m) => isConfidential(m.meta) && ownThread(m)),
+    confidential: sealedHere,
   };
 }
 

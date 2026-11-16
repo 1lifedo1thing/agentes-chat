@@ -29,11 +29,11 @@ export const CONFIDENTIAL_NOT_SHOWN = "(confidential, not shown)";
 export const CONFIDENTIAL_OUTBOUND = "confidential.outbound";
 
 /**
- * A run's error when what thinks for it changed after it read a confidential thread: its transcript holds the words,
- * and another brain or provider would be handed them.
+ * A run's error when what thinks for it is not what first read its confidential thread: the same run on another brain
+ * or provider (its transcript holds the words), or another agent's run there. Either would hand the words on.
  */
 export const CONFIDENTIAL_AI_CHANGED =
-  "This conversation holds confidential text, and the AI this agent thinks with changed since it read it, so it stopped here. Ask again in a new message.";
+  "This conversation holds confidential text, which stays with the AI that first read it. This agent thinks with another one now, so it stopped here. Ask again in a new message.";
 
 /**
  * How long a confidential thread's words are kept.
@@ -45,13 +45,28 @@ export const CONFIDENTIAL_KEEP_DAYS = 60;
 export const confidentialThreadSql = (orgId: SQL, root: SQL): SQL =>
   sql`exists (select 1 from ${confidentialThreads} ct where ct.org_id = ${orgId} and ct.root_message_id = ${root})`;
 
-export async function threadIsConfidential(db: Executor, orgId: string, rootId: string): Promise<boolean> {
+/** A confidential thread as its row says: what thought for the run that marked it; null when it is not one. */
+export async function confidentialThread(
+  db: Executor,
+  orgId: string,
+  rootId: string,
+): Promise<{ thinksWith: string | null } | null> {
   const [row] = await db
-    .select({ id: confidentialThreads.rootMessageId })
+    .select({ thinksWith: confidentialThreads.thinksWith })
     .from(confidentialThreads)
     .where(and(eq(confidentialThreads.orgId, orgId), eq(confidentialThreads.rootMessageId, rootId)));
-  return Boolean(row);
+  return row ?? null;
 }
+
+export const threadIsConfidential = async (db: Executor, orgId: string, rootId: string): Promise<boolean> =>
+  (await confidentialThread(db, orgId, rootId)) !== null;
+
+/**
+ * Whether what thinks for a run (`ToolContext.thinksWith`) is what a confidential thread's words stay with: one
+ * provider reads them, so another agent named there, or the same one after its model changed, is handed the stub.
+ */
+export const thinksAsThread = (thread: { thinksWith: string | null }, thinksWith: string | undefined): boolean =>
+  thread.thinksWith === null || thread.thinksWith === thinksWith;
 
 /** Which of these threads (by root message) are confidential. */
 export async function confidentialRoots(db: Executor, rootIds: string[]): Promise<Set<string>> {
@@ -80,6 +95,8 @@ export interface RunConfidentiality {
   brain: string | null;
   /** The connections whose results marked the run's thread; null while the thread is not confidential. */
   connectionIds: string[] | null;
+  /** What thought for the run that marked the thread (`thinksAsThread`); null when unknown or not confidential. */
+  thinksWith: string | null;
 }
 
 /** A run's thread as the confidential mark sees it, with the brain it thinks with; null when the run is gone. */
@@ -89,7 +106,11 @@ export async function runConfidentiality(
   runId: string,
 ): Promise<RunConfidentiality | null> {
   const [row] = await db
-    .select({ brain: agentRuns.brain, connectionIds: confidentialThreads.connectionIds })
+    .select({
+      brain: agentRuns.brain,
+      connectionIds: confidentialThreads.connectionIds,
+      thinksWith: confidentialThreads.thinksWith,
+    })
     .from(agentRuns)
     .leftJoin(
       confidentialThreads,
@@ -139,18 +160,25 @@ async function sealMessages(tx: Executor, which: SQL): Promise<string[]> {
 
 /**
  * Makes a thread confidential, in the caller's transaction (with the step that carries the mark): its row, with the
- * connection that marked it, and on the first mark every message already there is sealed, the root included (it may
- * hold what a person pasted before any mark), and leaves the search index.
+ * connection that marked it and what thought for the run that read it (the first mark's stays), and on the first mark
+ * every message already there is sealed, the root included (it may hold what a person pasted before any mark), and
+ * leaves the search index.
  */
 export async function markThreadConfidential(
   tx: Executor,
-  thread: { orgId: string; channelId: string; rootId: string; connectionId?: string | null },
+  thread: {
+    orgId: string;
+    channelId: string;
+    rootId: string;
+    connectionId?: string | null;
+    thinksWith?: string | null;
+  },
 ): Promise<void> {
   const connection = thread.connectionId ?? null;
   const [row] = rowsOf<{ created: boolean }>(
-    await tx.execute(sql`insert into ${confidentialThreads} (org_id, channel_id, root_message_id, connection_ids)
+    await tx.execute(sql`insert into ${confidentialThreads} (org_id, channel_id, root_message_id, connection_ids, thinks_with)
       values (${thread.orgId}::uuid, ${thread.channelId}::uuid, ${thread.rootId}::uuid,
-        array_remove(array[${connection}::uuid], null))
+        array_remove(array[${connection}::uuid], null), ${thread.thinksWith ?? null})
       on conflict (org_id, root_message_id) do update set connection_ids =
         case when ${connection}::uuid is null or ${connection}::uuid = any(${confidentialThreads}.connection_ids)
           then ${confidentialThreads}.connection_ids

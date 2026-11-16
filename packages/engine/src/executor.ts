@@ -136,7 +136,15 @@ import {
 } from "./catch-up-triage";
 import { REACT_TOOL } from "./chat-tools";
 import { kickRoomQueue, publishQueueChanged, roomGate, roomHead } from "./computer-queue";
-import { CONFIDENTIAL_AI_CHANGED, isConfidential, isConfidentialRun, noteConfidentialRun } from "./confidential";
+import {
+  CONFIDENTIAL_AI_CHANGED,
+  confidentialThread,
+  isConfidential,
+  isConfidentialRun,
+  noteConfidentialRun,
+  thinksAsThread,
+  threadIsConfidential,
+} from "./confidential";
 import {
   announceConsultationChange,
   answersHandOffs,
@@ -1352,8 +1360,9 @@ async function executeRunInner(
   ]);
   let channelRow = firstChannel;
   // Asked by the root of a confidential thread (ADR 0189): every message of such a thread carries the mark, so the
-  // message that asked says it with no read of its own.
-  const sealedAtClaim = isConfidential(topTrigger?.meta);
+  // thread's row is read only for a message that carries it (a marked message can also sit outside such a thread).
+  const sealedAtClaim =
+    isConfidential(topTrigger?.meta) && (await threadIsConfidential(db, run.orgId, run.threadRootId));
   if (sealedAtClaim) noteConfidentialRun(run.id);
   // Where it answers. Long work (ADR 0121) moves it to its anchor's thread mid-run, a move a person asked for to
   // another place (`adoptWork`). In a confidential thread that is under the thread's root, whatever asked.
@@ -1716,6 +1725,11 @@ async function executeRunInner(
     loadedGroups: (run.transcript as unknown as Transcript | null)?.toolGroups ?? null,
     ...(run.background ? { background: true } : {}),
     ...(sealedAtClaim ? { confidential: true } : {}),
+    // A resumed run says what it thought with before this claim settles it again: an action a person approved runs
+    // before then, and its server is told too (ADR 0181).
+    ...((run.transcript as unknown as Transcript | null)?.thinksWith
+      ? { thinksWith: (run.transcript as unknown as Transcript).thinksWith }
+      : {}),
   };
   /**
    * A result this run read made its thread confidential (the gateway says so on `ctx`, ADR 0189): from then on it
@@ -1913,7 +1927,11 @@ async function executeRunInner(
   // Started by a routine: its answer carries the routine (the app shows a small tag on the
   // agent's message, since the routine's own call isn't shown), and it may end in silence.
   const triggerMessage = trigger ?? topTrigger ?? (await getMessage(db, run.orgId, run.triggerMessageId));
-  if (isConfidential(triggerMessage?.meta)) {
+  if (
+    !ctx.confidential &&
+    isConfidential(triggerMessage?.meta) &&
+    (await threadIsConfidential(db, run.orgId, run.threadRootId))
+  ) {
     ctx.confidential = true;
     noteConfidentialRun(run.id);
   }
@@ -2888,7 +2906,9 @@ async function executeRunInner(
     const rows = await renderSteered(db, run.orgId, ids, {
       beforeStart,
       workId: run.workId,
-      ...(brainPlan?.kind === "model" ? { unsealThread: run.threadRootId } : {}),
+      ...(brainPlan?.kind === "model"
+        ? { unseal: { threadRootId: run.threadRootId, thinksWith: ctx.thinksWith } }
+        : {}),
     });
     if (rows.length === 0) return null;
     const text = rows.map((m) => m.text).join("\n\n");
@@ -3085,13 +3105,18 @@ async function executeRunInner(
   const thinkerModel = await modelInfoFor(db, thinker.model, run.orgId);
   // One provider for a confidential thread's words (ADR 0189). A run that may hold them in its transcript goes on
   // with what it thought with before or not at all, and one whose context was read whole (`unseal`) thinks through
-  // the Model Gateway or not at all: any other brain or provider would be handed the words.
+  // the Model Gateway or not at all: any other brain or provider would be handed the words. So would a run that
+  // thinks with another provider than the thread's first reader: another agent named there, or this one after its
+  // model changed.
   const thinksOf = (kind: BrainPlan["kind"]) => (kind === "model" ? `model:${thinkerModel?.provider ?? ""}` : kind);
   const thinksWith = thinksOf(brainPlan.kind);
+  const sealedThread =
+    ctx.confidential && brainPlan.kind === "model" ? await confidentialThread(db, run.orgId, run.threadRootId) : null;
   if (
     ctx.confidential &&
     ((transcript.thinksWith?.startsWith("model:") && transcript.thinksWith !== thinksWith) ||
-      (brainPlan.kind !== "model" && brainOf(agent.brain) === "model"))
+      (brainPlan.kind !== "model" && brainOf(agent.brain) === "model") ||
+      (sealedThread !== null && !thinksAsThread(sealedThread, thinksWith)))
   ) {
     return fail(CONFIDENTIAL_AI_CHANGED);
   }

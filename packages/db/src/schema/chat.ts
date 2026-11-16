@@ -321,8 +321,9 @@ export const threads = pgTable(
 /**
  * Threads that hold a confidential tool result (ADR 0189): a run there reads on and sends nothing elsewhere, the
  * thread's text reaches no model outside it, and what was kept of it is blanked after a while. A row from the first
- * such result on; `connection_ids` are the connections whose results set the mark. Keyed by the root message (no
- * foreign key to the partitioned `messages`).
+ * such result on; `connection_ids` are the connections whose results set the mark, and `thinks_with` is what thought
+ * for the run that read the first one (`model:<provider>`): the thread's words go to that and to nothing else. Keyed
+ * by the root message (no foreign key to the partitioned `messages`).
  */
 export const confidentialThreads = pgTable(
   "confidential_threads",
@@ -331,6 +332,7 @@ export const confidentialThreads = pgTable(
     channelId: uuid().notNull(),
     rootMessageId: uuid().notNull(),
     connectionIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
+    thinksWith: text(),
     markedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

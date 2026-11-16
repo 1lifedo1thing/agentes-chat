@@ -8,15 +8,22 @@ import {
   createApiKeyConnection,
   createConnectorToolSource,
   createToolGateway,
+  decideApproval,
   drainOutbox,
   postPersonMessage,
   saveCustomTools,
 } from "../src";
+import { closeWorlds } from "./autonomy/harness";
+import { vaultWorld } from "./confidential-fixtures";
 import { fakeGithubMcp } from "./fake-mcp";
 import { type Fixture, setup } from "./fixtures";
 
 let f: Fixture;
-afterEach(() => f?.close());
+afterEach(async () => {
+  await f?.close();
+  f = undefined as unknown as Fixture;
+  await closeWorlds();
+});
 
 const SERVER = "https://tools.example.com/mcp";
 const SECRET = "test-secret-".padEnd(32, "x");
@@ -212,6 +219,44 @@ test("what thinks for the run and where it answers: a model the server calls say
   const computer = verified(statementOf(toolCalls(mcp).at(-1) as FakeMcp["requests"][number]), SECRET)?.claims;
   expect(computer).toMatchObject({ brain: "claude_code", channel: f.general.id, thread: ctx.threadRootId });
   expect(computer).not.toHaveProperty("provider");
+});
+
+test("an action a person approved says what thinks for the run too, when the run that comes back executes it", async () => {
+  const w = await vaultWorld({
+    agents: ["kai"],
+    changeAsks: true,
+    script: {
+      kai: [
+        { calls: [{ name: "vault_list_records", input: {} }] },
+        {
+          calls: [
+            {
+              name: "vault_change_record",
+              input: { id: "r1", note: "seen", why: "The person asked for this change to the record just now, here." },
+            },
+          ],
+        },
+        { text: "Changed." },
+      ],
+    },
+  });
+  const asked = await w.say("@kai list the records and change r1");
+  await w.settle();
+  const [approval] = await w.db.select().from(schema.approvals);
+  expect(approval?.status).toBe("pending");
+  await decideApproval({ db: w.db, pubsub: w.f.pubsub }, w.owner.id, w.org.id, approval?.id ?? "", {
+    decision: "approve",
+  });
+  await w.settle();
+  /** The claims of the one call the server got for a tool of its own (unverified: the signature is checked above). */
+  const claimsOf = (name: string) => {
+    const statement = w.vault.requests.find((r) => r.name === name)?.meta?.[CALLER_META_KEY];
+    const [, payload = ""] = typeof statement === "string" ? statement.split(".") : [];
+    return JSON.parse(Buffer.from(payload, "base64url").toString() || "{}") as Record<string, unknown>;
+  };
+  const said = { brain: "model", provider: "anthropic", channel: w.channelId, thread: asked.id };
+  expect(claimsOf("list_records")).toMatchObject(said);
+  expect(claimsOf("change_record")).toMatchObject(said);
 });
 
 test("nothing for a host that isn't listed, a listed one on another port or over http, or a catalog connector", async () => {

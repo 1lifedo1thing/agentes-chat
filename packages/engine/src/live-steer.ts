@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, type Executor, eq, inArray, isNull, schema, sql } from "@agenteschat/db";
 import type { SteerMessage, SteerReply } from "./brains/types";
-import { unsealed } from "./confidential";
+import { CONFIDENTIAL_STUB, confidentialThread, isConfidential, thinksAsThread, unsealed } from "./confidential";
 import { attachedLine, taskNotice } from "./context";
 import { publishChannelEvent } from "./events";
 import { ACTIVE_RUN_STATUSES, releaseInbox, stoppedToSend } from "./run-inbox";
@@ -121,7 +121,12 @@ export async function renderSteered(
   db: Executor,
   orgId: string,
   ids: string[],
-  options: { beforeStart?: boolean; workId?: string | null; unsealThread?: string } = {},
+  options: {
+    beforeStart?: boolean;
+    workId?: string | null;
+    /** The reading run thinks through the Model Gateway: its thread, and what it thinks with (`thinksAsThread`). */
+    unseal?: { threadRootId: string; thinksWith: string | undefined };
+  } = {},
 ): Promise<SteeredText[]> {
   if (ids.length === 0) return [];
   const stored = await db
@@ -137,9 +142,24 @@ export async function renderSteered(
     .leftJoin(users, eq(users.id, messages.authorUserId))
     .leftJoin(agents, eq(agents.id, messages.authorAgentId))
     .where(and(eq(messages.orgId, orgId), inArray(messages.id, ids), isNull(messages.deletedAt)));
-  // A reply in a confidential thread (ADR 0189): its words only for the run of that thread the lock holds.
-  const own = options.unsealThread;
-  const rows = stored.map((m) => (own && (m.threadId === own || m.id === own) ? unsealed(m) : m));
+  // A confidential message (ADR 0189): its words only for a run of its own thread that the lock holds and that
+  // thinks with what first read the thread. For any other reader the stub, with nothing of its meta (a notice's
+  // text is there).
+  const own = options.unseal;
+  const mine = (m: { id: string; threadId: string | null }) =>
+    own !== undefined && (m.threadId === own.threadRootId || m.id === own.threadRootId);
+  const thread =
+    own && stored.some((m) => isConfidential(m.meta) && mine(m))
+      ? await confidentialThread(db, orgId, own.threadRootId)
+      : null;
+  const reads = thread !== null && thinksAsThread(thread, own?.thinksWith);
+  const rows = stored.map((m) =>
+    !isConfidential(m.meta)
+      ? m
+      : reads && mine(m)
+        ? unsealed(m)
+        : { ...m, body: CONFIDENTIAL_STUB, meta: { confidential: true } as Record<string, unknown> },
+  );
   // Messages written in one transaction share its time (a report's notices): their ids keep the order.
   rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : 1));
   return rows.map((m) => {
