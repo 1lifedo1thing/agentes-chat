@@ -6,10 +6,11 @@ import { filePath } from "@agenteschat/client/lib/message-links";
 import { isEveryone, sortRoles } from "@agenteschat/client/lib/roles";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { serverUrl } from "@/lib/server";
 import {
   Button,
+  EmptyState,
   GroupedFooter,
   GroupedHeader,
   GroupedList,
@@ -19,6 +20,7 @@ import {
   Locked,
   RoleMark,
   SheetScreen,
+  SkeletonList,
   Text,
   textLineOf,
   useToast,
@@ -65,13 +67,14 @@ export function FileShareSheet({ id, onClose }: { id: string; onClose: () => voi
   const a = query.data;
   if (!a) {
     return (
-      <SheetScreen fit>
+      // The rows' shape while the file's details come; a file that's gone says so, a failure offers to try again.
+      <SheetScreen>
         {query.error instanceof ApiError && query.error.status === 404 ? (
-          <Text tone="muted">{t("errors.artifact.notFound")}</Text>
+          <EmptyState size="inline" icon="file" title={t("errors.artifact.notFound")} />
         ) : query.isError ? (
           <LoadFailed onRetry={() => void query.refetch()} />
         ) : (
-          <ActivityIndicator color={c.faint} />
+          <SkeletonList rows={4} />
         )}
       </SheetScreen>
     );

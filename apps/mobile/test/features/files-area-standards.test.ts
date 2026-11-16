@@ -103,6 +103,28 @@ describe("Compartilhar com…", () => {
   });
 });
 
+describe("a file's screen and its share sheet", () => {
+  test("a type the app doesn't draw says it has no preview, never the name the bar already shows", () => {
+    const viewer = src("features/files/DocumentViewer.tsx");
+    expect(viewer).toContain('title={t("mobile.files.noPreviewTitle")}');
+    expect(viewer).not.toContain("title={info.name}");
+  });
+
+  test("a page, a PDF or a text loads in a page's shape, never a spinner", () => {
+    const viewer = src("features/files/DocumentViewer.tsx");
+    expect(viewer).not.toContain("ActivityIndicator");
+    expect(viewer.match(/renderLoading=\{\(\) => <PageBones cover \/>\}/g)?.length).toBe(2);
+    expect(src("features/files/PageBones.tsx")).toContain("const pulse = usePulse();");
+  });
+
+  test("the share sheet loads in its rows' shape; a file that's gone says so as an empty state", () => {
+    const sheet = src("features/files/ShareSheet.tsx");
+    expect(sheet).not.toContain("ActivityIndicator");
+    expect(sheet).toContain("<SkeletonList rows={4} />");
+    expect(sheet).toContain('<EmptyState size="inline" icon="file" title={t("errors.artifact.notFound")} />');
+  });
+});
+
 describe("the search tab", () => {
   test("opens with the keyboard down: the field takes the focus only when the person taps it", () => {
     const search = src("features/search/SearchScreen.tsx");
