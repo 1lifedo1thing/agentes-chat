@@ -518,6 +518,47 @@ describe("OpenBot.run", () => {
     const newer = JSON.stringify({ ...transfer, version: 2 });
     expect(code(() => parseImport([{ name: "openbot-transfer.json", text: newer }]))).toBe("newerVersion");
   });
+
+  test("each agent keeps the colour the app draws it in: its own, its hue's, or the one its seed picks", () => {
+    const agent = (key: string, look: object) => ({
+      key,
+      name: key,
+      title: "",
+      description: "",
+      avatar: null,
+      provider: "claude",
+      model: "claude-sonnet-5-5",
+      reasoningEffort: "medium",
+      notifications: true,
+      skills: [],
+      files: null,
+      routines: [],
+      memories: [],
+      ...look,
+    });
+    const transfer = {
+      format: "openbot-instance-transfer",
+      version: 1,
+      source: { appVersion: "", exportedAt: "2026-11-16T12:00:00Z" },
+      agents: [
+        agent("own", { avatarSeed: "s", avatarHue: 55, avatarColor: "#12AB34" }),
+        agent("hue", { avatarSeed: "s", avatarHue: 245 }),
+        // Not a colour: the hue's instead.
+        agent("odd", { avatarSeed: "s", avatarHue: 185, avatarColor: "red" }),
+        agent("seed", { avatarSeed: "scout", avatarHue: null }),
+      ],
+      settings: { mcpServers: [], customProviders: [], customAgents: [], sidebarSections: [], routineFlows: [] },
+      shared: null,
+      signedIn: [],
+    };
+    const b = parseImport([{ name: "openbot-transfer.json", text: JSON.stringify(transfer) }], { models: MODELS });
+    expect(b.agents.map((a) => [a.key, a.appearance.color])).toEqual([
+      ["own", "#12ab34"],
+      ["hue", "#5d67ee"],
+      ["odd", "#2fbfa0"],
+      ["seed", "#e8483f"],
+    ]);
+  });
 });
 
 describe("OpenClaw", () => {

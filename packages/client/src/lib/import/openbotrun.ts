@@ -37,6 +37,52 @@ const IMPORT = "openbot-agent-import";
 const TRANSFER = "openbot-instance-transfer";
 const APPS: Record<string, string> = { "grok-bot": "Grok Bot" };
 
+/**
+ * The colour the app draws an agent in (`packages/brand/src/bloub-avatar.ts`, on its avatar library's palette): its
+ * own `avatarColor` (`#rrggbb`), else its hue's (one of ten), else the one its seed picks among eight (FNV-1a of
+ * `<seed>:color`). The face itself is the app's own drawing: here the agent gets a face of ours, in that colour.
+ */
+const PALETTE = {
+  red: "#e8483f",
+  orange: "#f08a24",
+  amber: "#f0b429",
+  green: "#3ecf8e",
+  turquoise: "#2fbfa0",
+  blue: "#3b93f0",
+  violet: "#8b5cf6",
+  pink: "#e152b0",
+} as const;
+const HUE_COLORS: Record<number, `#${string}`> = {
+  0: PALETTE.red,
+  30: PALETTE.orange,
+  55: PALETTE.amber,
+  100: "#8ece34",
+  150: PALETTE.green,
+  185: PALETTE.turquoise,
+  215: PALETTE.blue,
+  245: "#5d67ee",
+  280: PALETTE.violet,
+  320: PALETTE.pink,
+};
+const SEED_COLORS = Object.values(PALETTE);
+const HEX = /^#[0-9a-f]{6}$/i;
+
+export function openbotColor(agent: Record<string, unknown>): `#${string}` | undefined {
+  const own = str(agent.avatarColor);
+  if (HEX.test(own)) return own.toLowerCase() as `#${string}`;
+  const hue = typeof agent.avatarHue === "number" ? HUE_COLORS[agent.avatarHue] : undefined;
+  if (hue) return hue;
+  const seed = str(agent.avatarSeed);
+  if (!seed) return undefined;
+  const value = `${seed}:color`;
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return SEED_COLORS[(hash >>> 0) % SEED_COLORS.length];
+}
+
 function manifest(files: ImportFile[]) {
   for (const file of files) {
     const doc = jsonOf(file);
@@ -84,6 +130,7 @@ export function parse(files: ImportFile[], d: Draft) {
       instructions: full?.trim() || str(a.description),
       ...(transfer ? { model: [str(a.provider), str(a.model)].filter(Boolean).join("/") } : {}),
       seed: str(a.avatarSeed) || key,
+      color: openbotColor(a),
       skills,
     });
     if (folder(a.avatar)) {
