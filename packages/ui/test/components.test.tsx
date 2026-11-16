@@ -65,11 +65,17 @@ describe("Button", () => {
   test("its words are one label a narrow place can cut, its icon and keys beside it; an element child stays as written", () => {
     render(
       <>
-        <Button icon="message">Falar com o Assistente de Atendimento</Button>
-        <Button kbd={["⌘", "↵"]}>Enviar {2} itens</Button>
-        <Button>
-          <b>Negrito</b>
-        </Button>
+        <div>
+          <Button icon="message">Falar com o Assistente de Atendimento</Button>
+        </div>
+        <div>
+          <Button kbd={["⌘", "↵"]}>Enviar {2} itens</Button>
+        </div>
+        <div>
+          <Button>
+            <b>Negrito</b>
+          </Button>
+        </div>
       </>,
     );
     const talk = body().getByRole("button", { name: "Falar com o Assistente de Atendimento" });
