@@ -405,9 +405,9 @@ describe("working line", () => {
     expect(line).toContain("const plate = [styles.tok, { backgroundColor: c.bg }];");
     // The requests' lines that take its place are as bare.
     const asks = await source("features/chat/asks.tsx");
-    const bars = asks.slice(asks.indexOf("export function AskBar("), asks.indexOf("const styles"));
-    expect(bars).not.toContain("glassSolid");
-    expect(bars).not.toContain("<Sky");
+    const askLines = asks.slice(asks.indexOf("export function AskBar("), asks.indexOf("const styles"));
+    expect(askLines).not.toContain("glassSolid");
+    expect(askLines).not.toContain("<Sky");
     expect(line).toContain("{faces.length > 0 ? (");
     expect(line).toContain('faces={{ typing: groupFaces("typing"), voice: groupFaces("recordingVoice") }}');
     const words = lines.slice(lines.indexOf("function BarWords("), lines.indexOf("function TypingDots("));

@@ -13700,8 +13700,7 @@ html:not([data-pointer]) .channel__latest-btn.ac-btn:focus-visible {
 }
 /* A rule of its own: in one list with the time's, the build wraps both in `:is()` and one would take the other's
    weight. */
-.ac-typing__text:has(> .ac-typing__agents > .ac-typing__step)
-+ :is(.ac-typing__browser, .ac-typing__sep) {
+.ac-typing__text:has(> .ac-typing__agents > .ac-typing__step) + :is(.ac-typing__browser, .ac-typing__sep) {
   margin-left: auto;
 }
 .ac-typing__text + .ac-typing__elapsed + :is(.ac-typing__browser, .ac-typing__sep) {

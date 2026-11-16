@@ -54,7 +54,10 @@ test("what ships keeps the bar above the composer one low width, the composer's:
   expect(last(".ac-typing__text+.ac-typing__elapsed", "margin-left")).toBeUndefined();
   expect(last(".ac-typing__elapsed", "font-weight")).toBe("400");
   expect(
-    last(".ac-typing__text:has(>.ac-typing__agents>.ac-typing__step)+:is(.ac-typing__browser,.ac-typing__sep)", "margin-left"),
+    last(
+      ".ac-typing__text:has(>.ac-typing__agents>.ac-typing__step)+:is(.ac-typing__browser,.ac-typing__sep)",
+      "margin-left",
+    ),
   ).toBe("auto");
   expect(last(".ac-typing__text+.ac-typing__elapsed+:is(.ac-typing__browser,.ac-typing__sep)", "margin-left")).toBe(
     "auto",
