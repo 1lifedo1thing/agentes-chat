@@ -1598,7 +1598,11 @@ async function executeRunInner(
     await deferred;
     const plan = brainPlan && isComputerBrain(brainPlan.kind) ? BRAIN_PLAN_NAMES[brainPlan.kind] : undefined;
     failCause = { ...(ledger ? { code: ledger.code } : {}), ...(plan ? { plan } : {}) };
-    await addRunStep(db, run, "error", { reason });
+    // With `no_ai`, why (`failNoAi`): the run's own error says only that, and the card that says more may not be posted.
+    await addRunStep(db, run, "error", {
+      reason,
+      ...(reason === NO_AI && ledger?.detail ? { code: ledger.detail } : {}),
+    });
     const failed = await transitionRun(db, run.id, "running", "failed", {
       error: reason,
       ...(brainFailure ? { failure: brainFailure } : {}),
