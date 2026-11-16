@@ -1,14 +1,24 @@
 import {
+  keys,
   type SurfaceLink,
   type SurfaceLinkCode,
+  type SurfaceLinks,
   useAgents,
   useConfirmSurfaceLink,
   useMintSurfaceCode,
   useRemoveSurfaceLink,
   useSurfaceLinks,
 } from "@agenteschat/client";
-import { errorText } from "@agenteschat/client/lib/errors";
-import { type SurfaceRow, surfaceRowOf } from "@agenteschat/client/lib/surface-links";
+import { errorCode, errorText } from "@agenteschat/client/lib/errors";
+import { rightHandName } from "@agenteschat/client/lib/right-hand";
+import {
+  codeDeadline,
+  LINK_POLL_MS,
+  newlyLinked,
+  type SurfaceRow,
+  surfaceRowOf,
+} from "@agenteschat/client/lib/surface-links";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Linking, StyleSheet, View } from "react-native";
@@ -18,18 +28,7 @@ import { Button, GroupedList, GroupedRow, haptics, Sheet, Text, useToast } from 
 import { confirmAction } from "../settings/parts";
 import { useColors, useNow } from "../shared/hooks";
 import { MONO } from "../shared/parts";
-import {
-  assistantName,
-  codeDeadline,
-  codeIsStale,
-  codeLeftText,
-  LINK_POLL_MS,
-  linkAssistant,
-  linkRanOut,
-  linkStep,
-  senderName,
-  surfaceRowText,
-} from "./surface";
+import { codeIsStale, codeLeftText, linkAssistant, linkRanOut, linkStep, surfaceRowText } from "./surface";
 
 /**
  * The outside chat surface's row in Notificações (ADR 0187), only where this account may link it: none opens the
@@ -47,12 +46,13 @@ export function SurfaceLinkRow() {
   const now = useNow(open ? 5_000 : 60_000);
   const row = surfaceRowOf(links.data, now);
   if (row.kind === "hidden") return null;
-  const text = surfaceRowText(t, row, assistantName(agents.data));
+  const assistant = rightHandName(agents.data);
+  const text = surfaceRowText(t, row, assistant);
   const unlink = (link: SurfaceLink) =>
     confirmAction({
-      title: t("mobile.surface.unlinkTitle", { surface: row.surface }),
-      text: t("mobile.surface.unlinkText", { sender: senderName(link, row.surface) }),
-      action: t("mobile.surface.unlink"),
+      title: t("surface.row.unlinkTitle", { surface: row.surface }),
+      text: t("surface.row.unlinkText", { assistant: assistant ?? t("rightHand.labelCapitalized") }),
+      action: t("surface.row.unlink"),
       cancel: t("mobile.common.cancel"),
       onConfirm: () =>
         remove.mutate(link.id, {
@@ -73,7 +73,7 @@ export function SurfaceLinkRow() {
           {...(text.value ? { value: text.value } : {})}
           disabled={remove.isPending}
           {...(row.kind === "active"
-            ? { remove: { label: t("mobile.surface.unlink"), onPress: () => unlink(row.link) } }
+            ? { remove: { label: t("surface.row.unlink"), onPress: () => unlink(row.link) } }
             : { chevron: true, onPress: () => setOpen(true) })}
         />
       </GroupedList>
@@ -96,11 +96,26 @@ function SurfaceLinkSheet({
   onClose: () => void;
   row: Exclude<SurfaceRow, { kind: "hidden" }>;
 }) {
+  const { data } = useSurfaceLinks();
   const [linked, setLinked] = useState<SurfaceLink | null>(null);
+  // The active links when the sheet opened: one more, confirmed on another device, ends it as linked.
+  const [before, setBefore] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (open && data) setBefore((b) => b ?? data.links.filter((l) => l.status === "active").map((l) => l.id));
+  }, [open, data]);
+  const done = linked ?? (before && newlyLinked(data, before));
   // Cleared once the sheet is gone, so the linked step stays on screen while it slides away.
   return (
-    <Sheet open={open} onClose={onClose} onGone={() => setLinked(null)} solid>
-      <LinkSteps row={row} linked={linked} onLinked={setLinked} onClose={onClose} />
+    <Sheet
+      open={open}
+      onClose={onClose}
+      onGone={() => {
+        setLinked(null);
+        setBefore(null);
+      }}
+      solid
+    >
+      <LinkSteps row={row} linked={done} onLinked={setLinked} onClose={onClose} />
     </Sheet>
   );
 }
@@ -120,7 +135,8 @@ function LinkSteps({
   const { orgId } = useOrg();
   const links = useSurfaceLinks();
   const step = linkStep(row, Boolean(linked));
-  const linkOrg = row.kind === "pending" ? (row.link.orgId ?? orgId) : orgId;
+  // The link answers in its own workspace, which may not be the one the phone is in (a code made elsewhere).
+  const linkOrg = (linked ?? (row.kind === "pending" ? row.link : null))?.orgId ?? orgId;
   const assistant = linkAssistant(useAgents(linkOrg), t("rightHand.labelCapitalized"));
   // The failure of the last action, said in whichever step follows it (a refused confirm lands back on the code).
   const [error, setError] = useState<string | null>(null);
@@ -145,11 +161,9 @@ function LinkSteps({
   if (step === "linked" && linked)
     return (
       <View style={styles.col}>
-        <Text variant="title">{t("mobile.surface.linkedTitle", { surface: row.surface })}</Text>
+        <Text variant="title">{t("surface.link.doneTitle", { surface: row.surface })}</Text>
         <Text variant="body" tone="muted">
-          {assistant
-            ? t("mobile.surface.linkedText", { assistant, sender: senderName(linked, row.surface) })
-            : senderName(linked, row.surface)}
+          {t("surface.link.doneText", { assistant: assistant ?? t("rightHand.labelCapitalized") })}
         </Text>
         <Button variant="primary" wide label={t("mobile.common.done")} onPress={onClose} />
       </View>
@@ -204,12 +218,11 @@ function CodeStep({
     if (stale && !isPending && !failed) make();
   }, [stale, isPending, failed]);
 
-  const title = assistant
-    ? t("mobile.surface.talkTitle", { assistant, surface })
-    : t("mobile.surface.title", { surface });
   return (
     <View style={styles.col}>
-      <Text variant="title">{title}</Text>
+      <Text variant="title">
+        {t("surface.link.title", { assistant: assistant ?? t("rightHand.labelCapitalized"), surface })}
+      </Text>
       <Text variant="body" tone="muted">
         {t("mobile.surface.codeText")}
       </Text>
@@ -224,7 +237,7 @@ function CodeStep({
             variant="primary"
             wide
             wrap
-            label={t("mobile.surface.open", { surface })}
+            label={t("surface.link.open", { surface })}
             onPress={() => {
               setError(null);
               void Linking.openURL(code.made.openUrl).catch(() =>
@@ -299,17 +312,28 @@ function ConfirmStep({
       },
     });
   };
-  // The sender's pending link ends, and the sheet goes back to a fresh code.
+  const qc = useQueryClient();
+  // The sender's pending link ends, out of the cache too so its card never comes back, and the sheet goes back to a
+  // fresh code.
   const notMe = () => {
-    setError(null);
-    remove.mutate(link.id, { onError: (e) => setError(errorText(t, e)) });
+    const fresh = () => {
+      qc.setQueryData<SurfaceLinks>(
+        keys.surfaceLinks,
+        (d) => d && { ...d, links: d.links.filter((l) => l.id !== link.id) },
+      );
+      setError(null);
+    };
+    remove.mutate(link.id, {
+      onSuccess: fresh,
+      onError: (e) => (errorCode(e) === "surface.link_gone" ? fresh() : setError(errorText(t, e))),
+    });
   };
   return (
     <View style={styles.col}>
-      <Text variant="title">{t("mobile.surface.confirmTitle", { surface })}</Text>
+      <Text variant="title">{t("surface.link.confirmTitle", { surface })}</Text>
       <View style={[styles.sender, { backgroundColor: c.sunken }]}>
         <Text variant="small" tone="muted">
-          {t("mobile.surface.sentBy")}
+          {t("surface.link.sentBy")}
         </Text>
         {link.display ? (
           <Text variant="body" selectable style={styles.strong}>
@@ -323,7 +347,7 @@ function ConfirmStep({
         ) : null}
       </View>
       <Text variant="body" tone="muted">
-        {t("mobile.surface.onlyYou")}
+        {t("surface.link.onlyYou")}
       </Text>
       {error ? (
         <Text variant="small" tone="danger" accessibilityLiveRegion="polite">
@@ -340,7 +364,7 @@ function ConfirmStep({
       <Button
         variant="primary"
         wide
-        label={t("mobile.surface.confirm")}
+        label={t("surface.link.confirm")}
         loading={confirm.isPending}
         disabled={!assistant || remove.isPending}
         onPress={yes}
@@ -348,7 +372,7 @@ function ConfirmStep({
       <Button
         variant="ghost"
         wide
-        label={t("mobile.surface.notMe")}
+        label={t("surface.link.notMe")}
         loading={remove.isPending}
         disabled={confirm.isPending}
         onPress={notMe}

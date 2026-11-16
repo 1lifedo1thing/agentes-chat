@@ -2883,25 +2883,9 @@
     }
   },
   "surface": {
-    "link": "Bağla",
     "on": "Açık",
-    "rowNone": "{{assistant}} size oradan mesaj gönderebilir",
-    "rowPending": "Onayınız bekleniyor",
-    "unlink": "Bağlantıyı kaldır",
-    "unlinkTitle": "{{surface}} bağlantısı kaldırılsın mı?",
-    "unlinkText": "{{sender}} kaynaklı mesajlar artık çalışma alanlarınıza ulaşmaz.",
-    "title": "{{surface}} bağla",
-    "talkTitle": "{{surface}} üzerinden {{assistant}} ile konuşun",
     "codeText": "Orada açılan mesajı gönderin, sonra buraya dönün.",
-    "open": "{{surface}} uygulamasını aç",
     "openFailed": "{{surface}} bu telefonda açılamadı. Bunun yerine aşağıdaki kodu oraya gönderin.",
-    "orType": "Ya da bu kodu oraya gönderin",
-    "confirmTitle": "{{surface}} üzerindeki bu kişi siz misiniz?",
-    "sentBy": "Kodunuzu bu gönderen gönderdi",
-    "onlyYou": "Yalnızca sizseniz bağlayın.",
-    "confirm": "Evet, bağla",
-    "notMe": "Ben değilim",
-    "linkedTitle": "{{surface}} bağlandı",
-    "linkedText": "{{assistant}} artık size {{sender}} üzerinden ulaşabilir."
+    "orType": "Ya da bu kodu oraya gönderin"
   }
 }

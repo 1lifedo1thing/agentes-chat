@@ -2990,25 +2990,9 @@
     }
   },
   "surface": {
-    "link": "Collega",
     "on": "Attivo",
-    "rowNone": "{{assistant}} può scriverti lì",
-    "rowPending": "In attesa della tua conferma",
-    "unlink": "Scollega",
-    "unlinkTitle": "Scollegare {{surface}}?",
-    "unlinkText": "I messaggi da {{sender}} non arrivano più ai tuoi spazi di lavoro.",
-    "title": "Collega {{surface}}",
-    "talkTitle": "Parla con {{assistant}} su {{surface}}",
     "codeText": "Invia il messaggio che si apre lì, poi torna qui.",
-    "open": "Apri {{surface}}",
     "openFailed": "Impossibile aprire {{surface}} su questo telefono. Invia lì il codice qui sotto.",
-    "orType": "Oppure invia questo codice lì",
-    "confirmTitle": "Sei tu su {{surface}}?",
-    "sentBy": "Questo mittente ha inviato il tuo codice",
-    "onlyYou": "Collegalo solo se sei tu.",
-    "confirm": "Sì, collega",
-    "notMe": "Non sono io",
-    "linkedTitle": "{{surface}} è collegato",
-    "linkedText": "Ora {{assistant}} può raggiungerti su {{sender}}."
+    "orType": "Oppure invia questo codice lì"
   }
 }

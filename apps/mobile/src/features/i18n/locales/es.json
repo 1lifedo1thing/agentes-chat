@@ -2990,25 +2990,9 @@
     }
   },
   "surface": {
-    "link": "Vincular",
     "on": "Activado",
-    "rowNone": "{{assistant}} puede escribirte allí",
-    "rowPending": "Esperando tu confirmación",
-    "unlink": "Desvincular",
-    "unlinkTitle": "¿Desvincular {{surface}}?",
-    "unlinkText": "Los mensajes de {{sender}} dejan de llegar a tus espacios de trabajo.",
-    "title": "Vincular {{surface}}",
-    "talkTitle": "Habla con {{assistant}} en {{surface}}",
     "codeText": "Envía el mensaje que se abre allí y vuelve aquí.",
-    "open": "Abrir {{surface}}",
     "openFailed": "No se pudo abrir {{surface}} en este teléfono. Envíale el código de abajo.",
-    "orType": "O envía este código allí",
-    "confirmTitle": "¿Eres tú en {{surface}}?",
-    "sentBy": "Este remitente envió tu código",
-    "onlyYou": "Vincúlalo solo si eres tú.",
-    "confirm": "Sí, vincular",
-    "notMe": "No soy yo",
-    "linkedTitle": "{{surface}} vinculado",
-    "linkedText": "{{assistant}} ya puede escribirte en {{sender}}."
+    "orType": "O envía este código allí"
   }
 }

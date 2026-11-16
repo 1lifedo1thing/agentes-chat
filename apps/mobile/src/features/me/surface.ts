@@ -1,8 +1,7 @@
-import type { Agent, SurfaceLink, SurfaceLinkCode, SurfaceLinks } from "@agenteschat/client";
+import type { Agent, SurfaceLink, SurfaceLinks } from "@agenteschat/client";
 import { formatTimeLeft } from "@agenteschat/client/lib/actions";
-import { capitalize } from "@agenteschat/client/lib/format";
-import { rightHandOf } from "@agenteschat/client/lib/right-hand";
-import type { SurfaceRow } from "@agenteschat/client/lib/surface-links";
+import { rightHandName } from "@agenteschat/client/lib/right-hand";
+import { RENEW_BEFORE_MS, type SurfaceRow, surfaceViaName } from "@agenteschat/client/lib/surface-links";
 import { surfaceVia } from "@agenteschat/client/lib/via";
 import type { TFunction } from "i18next";
 
@@ -10,29 +9,10 @@ import type { TFunction } from "i18next";
 
 export type LinkStep = "code" | "confirm" | "linked";
 
-/** While the code waits to come back from the surface, the links are read this often besides the live event. */
-export const LINK_POLL_MS = 3000;
-
-/** A fresh code this long before the shown one runs out: someone still typing it never holds a dead one. */
-export const RENEW_BEFORE_MS = 30_000;
-
 /** The sheet's step: a pending link waits on the person's confirm, whatever else is linked. */
 export function linkStep(row: SurfaceRow, linked: boolean): LinkStep {
   if (linked) return "linked";
   return row.kind === "pending" ? "confirm" : "code";
-}
-
-/** How long the server keeps a code. */
-export const CODE_TTL_MS = 10 * 60_000;
-
-/**
- * When the code stops working, on this device's clock: the server's `expiresAt`, unless the two clocks disagree so
- * much that it reads as gone or past the server's own 10 minutes; then 10 minutes from the answer. Read as-is, a phone
- * running minutes fast would ask for a new code on every repaint.
- */
-export function codeDeadline(code: Pick<SurfaceLinkCode, "expiresAt">, receivedAt: number) {
-  const left = Date.parse(code.expiresAt) - receivedAt;
-  return left > 2 * RENEW_BEFORE_MS && left <= CODE_TTL_MS ? receivedAt + left : receivedAt + CODE_TTL_MS;
 }
 
 /** No code yet, or the shown one is about to run out. */
@@ -43,10 +23,6 @@ export const codeIsStale = (deadline: number | null, now: number) =>
 export const codeLeftText = (t: TFunction, deadline: number, now: number) =>
   t("openOnPhone.validFor", { time: formatTimeLeft(Math.max(0, deadline - now)) });
 
-/** The workspace's right hand by name, or null while the agents load. */
-export const assistantName = (agents: readonly Pick<Agent, "builtin" | "name">[] | undefined) =>
-  (agents ? rightHandOf(agents)?.name : undefined) ?? null;
-
 /**
  * Who the consent line and the sheet name: null only while the agents load. A workspace with no right hand, or agents
  * that failed to load, gets the generic label, and the server's confirm says why when it refuses.
@@ -54,19 +30,11 @@ export const assistantName = (agents: readonly Pick<Agent, "builtin" | "name">[]
 export const linkAssistant = (
   agents: { isPending: boolean; data?: readonly Pick<Agent, "builtin" | "name">[] | undefined },
   fallback: string,
-) => (agents.isPending ? null : (assistantName(agents.data) ?? fallback));
+) => (agents.isPending ? null : (rightHandName(agents.data) ?? fallback));
 
 /** A pending link whose 10 minutes ran out on this device's clock; a link removed by "Not me" has not. */
 export const linkRanOut = (link: Pick<SurfaceLink, "expiresAt">, now: number) =>
   link.expiresAt !== null && Date.parse(link.expiresAt) <= now;
-
-/** The surface's name for a message's `via` (its id, the name lower-cased): the server's when it matches, else the id. */
-export const surfaceViaName = (id: string, name: string | null | undefined, locale?: string) =>
-  name && name.toLowerCase() === id.toLowerCase() ? name : capitalize(id, locale);
-
-/** Who sent the code, as the surface shows them: the display, else the profile name, else the surface itself. */
-export const senderName = (link: Pick<SurfaceLink, "display" | "profileName">, surface: string) =>
-  link.display ?? link.profileName ?? surface;
 
 /** What the row says beside the surface's name. */
 export function surfaceRowText(
@@ -74,7 +42,7 @@ export function surfaceRowText(
   row: Exclude<SurfaceRow, { kind: "hidden" }>,
   assistant: string | null,
 ): { sub?: string; below?: string; value?: string } {
-  if (row.kind === "pending") return { sub: t("mobile.surface.rowPending") };
+  if (row.kind === "pending") return { sub: t("surface.row.pending") };
   if (row.kind === "active") {
     const { display, profileName } = row.link;
     return {
@@ -83,7 +51,7 @@ export function surfaceRowText(
       value: t("mobile.surface.on"),
     };
   }
-  return { ...(assistant ? { sub: t("mobile.surface.rowNone", { assistant }) } : {}), value: t("mobile.surface.link") };
+  return { ...(assistant ? { sub: t("surface.row.none", { assistant }) } : {}), value: t("surface.row.link") };
 }
 
 /** The tag on a person's message written on the surface, or null. `data`: the links answer, for the surface's name. */

@@ -3123,25 +3123,9 @@
     }
   },
   "surface": {
-    "link": "Połącz",
     "on": "Włączone",
-    "rowNone": "{{assistant}} może tam do Ciebie pisać",
-    "rowPending": "Czeka na Twoje potwierdzenie",
-    "unlink": "Rozłącz",
-    "unlinkTitle": "Rozłączyć {{surface}}?",
-    "unlinkText": "Wiadomości od {{sender}} przestaną trafiać do Twoich przestrzeni roboczych.",
-    "title": "Połącz {{surface}}",
-    "talkTitle": "Rozmawiaj z {{assistant}} w {{surface}}",
     "codeText": "Wyślij wiadomość, która się tam otworzy, a potem wróć tutaj.",
-    "open": "Otwórz {{surface}}",
     "openFailed": "Nie udało się otworzyć {{surface}} na tym telefonie. Zamiast tego wyślij tam kod poniżej.",
-    "orType": "Albo wyślij tam ten kod",
-    "confirmTitle": "Czy to Ty w {{surface}}?",
-    "sentBy": "Ten nadawca wysłał Twój kod",
-    "onlyYou": "Połącz tylko, jeśli to Ty.",
-    "confirm": "Tak, połącz",
-    "notMe": "To nie ja",
-    "linkedTitle": "{{surface}} połączono",
-    "linkedText": "{{assistant}} może teraz pisać do Ciebie pod {{sender}}."
+    "orType": "Albo wyślij tam ten kod"
   }
 }

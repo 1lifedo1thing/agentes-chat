@@ -6996,64 +6996,16 @@
   "empty.audit.text": {
     "value": "When an agent does something outside the conversation, it shows up here."
   },
-  "surface.link": {
-    "value": "Link"
-  },
   "surface.on": {
     "value": "On"
   },
-  "surface.rowNone": {
-    "value": "{{assistant}} can message you there"
-  },
-  "surface.rowPending": {
-    "value": "Waiting for you to confirm"
-  },
-  "surface.unlink": {
-    "value": "Unlink"
-  },
-  "surface.unlinkTitle": {
-    "value": "Unlink {{surface}}?"
-  },
-  "surface.unlinkText": {
-    "value": "Messages from {{sender}} stop reaching your workspaces."
-  },
-  "surface.title": {
-    "value": "Link {{surface}}"
-  },
-  "surface.talkTitle": {
-    "value": "Talk to {{assistant}} on {{surface}}"
-  },
   "surface.codeText": {
     "value": "Send the message that opens there, then come back here."
-  },
-  "surface.open": {
-    "value": "Open {{surface}}"
   },
   "surface.openFailed": {
     "value": "Couldn't open {{surface}} on this phone. Send it the code below instead."
   },
   "surface.orType": {
     "value": "Or send this code there"
-  },
-  "surface.confirmTitle": {
-    "value": "Is this you on {{surface}}?"
-  },
-  "surface.sentBy": {
-    "value": "This sender sent your code"
-  },
-  "surface.onlyYou": {
-    "value": "Link it only if this is you."
-  },
-  "surface.confirm": {
-    "value": "Yes, link it"
-  },
-  "surface.notMe": {
-    "value": "Not me"
-  },
-  "surface.linkedTitle": {
-    "value": "{{surface}} is linked"
-  },
-  "surface.linkedText": {
-    "value": "{{assistant}} can now reach you at {{sender}}."
   }
 }

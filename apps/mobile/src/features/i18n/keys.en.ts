@@ -3049,29 +3049,11 @@ export const featureKeysEn = {
   },
   /** Linking the outside chat app in Notificações (ADR 0187). {{surface}} is that app's name, as the server sets it. */
   surface: {
-    /** The row's button and state. */
-    link: "Link",
+    /** The row's state while a sender is linked. */
     on: "On",
-    /** {{assistant}}: the workspace's built-in assistant by name. */
-    rowNone: "{{assistant}} can message you there",
-    rowPending: "Waiting for you to confirm",
-    unlink: "Unlink",
-    unlinkTitle: "Unlink {{surface}}?",
-    /** {{sender}}: how the chat app shows the sender (a number or a handle). */
-    unlinkText: "Messages from {{sender}} stop reaching your workspaces.",
-    title: "Link {{surface}}",
-    talkTitle: "Talk to {{assistant}} on {{surface}}",
     codeText: "Send the message that opens there, then come back here.",
-    open: "Open {{surface}}",
     openFailed: "Couldn't open {{surface}} on this phone. Send it the code below instead.",
     orType: "Or send this code there",
-    confirmTitle: "Is this you on {{surface}}?",
-    sentBy: "This sender sent your code",
-    onlyYou: "Link it only if this is you.",
-    confirm: "Yes, link it",
-    notMe: "Not me",
-    linkedTitle: "{{surface}} is linked",
-    linkedText: "{{assistant}} can now reach you at {{sender}}.",
   },
 };
 

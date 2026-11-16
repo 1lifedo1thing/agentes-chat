@@ -3,18 +3,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ApiError, type SurfaceLink, type SurfaceLinks } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { surfaceRowOf } from "@agenteschat/client/lib/surface-links";
+import { RENEW_BEFORE_MS, surfaceRowOf } from "@agenteschat/client/lib/surface-links";
 import {
-  assistantName,
-  CODE_TTL_MS,
-  codeDeadline,
   codeIsStale,
   codeLeftText,
   linkAssistant,
   linkRanOut,
   linkStep,
-  RENEW_BEFORE_MS,
-  senderName,
   surfaceRowText,
   surfaceTagText,
 } from "../../src/features/me/surface";
@@ -62,7 +57,7 @@ describe("the row in Notificações", () => {
     const pending = surfaceRowOf(links([link()]), NOW);
     if (pending.kind === "hidden") throw new Error("hidden");
     expect(pending.kind).toBe("pending");
-    expect(surfaceRowText(t, pending, "Lodi")).toEqual({ sub: "Waiting for you to confirm" });
+    expect(surfaceRowText(t, pending, "Lodi")).toEqual({ sub: "A sender is waiting for you to confirm" });
 
     const active = surfaceRowOf(links([link({ status: "active", expiresAt: null })]), NOW);
     if (active.kind === "hidden") throw new Error("hidden");
@@ -95,14 +90,14 @@ describe("the row in Notificações", () => {
     expect(page).toContain("<SurfaceLinkRow />");
   });
 
-  test("unlink's words name the sender", async () => {
+  test("unlink says the web's words, naming the right hand", async () => {
     const t = await translator("en");
-    expect(t("mobile.surface.unlinkTitle", { surface: SURFACE })).toBe("Unlink Example Chat?");
-    expect(t("mobile.surface.unlinkText", { sender: senderName(link(), SURFACE) })).toBe(
-      "Messages from +1 555 0100 stop reaching your workspaces.",
+    expect(t("surface.row.unlinkTitle", { surface: SURFACE })).toBe("Unlink Example Chat?");
+    expect(t("surface.row.unlinkText", { assistant: "Lodi" })).toBe(
+      "Lodi stops answering you there. You can link it again any time.",
     );
-    expect(senderName(link({ display: null }), SURFACE)).toBe("Ana");
-    expect(senderName(link({ display: null, profileName: null }), SURFACE)).toBe(SURFACE);
+    const src = readFileSync(join(import.meta.dir, "../../src/features/me/SurfaceLink.tsx"), "utf8");
+    expect(src).toContain('t("surface.row.unlinkText", { assistant: assistant ?? t("rightHand.labelCapitalized") })');
   });
 });
 
@@ -116,11 +111,7 @@ describe("the sheet", () => {
     expect(linkStep(surfaceRowOf(links([old]), NOW), false)).toBe("code");
   });
 
-  test("a fresh code before the shown one runs out, whatever the phone's clock says", () => {
-    const code = { expiresAt: new Date(NOW + 9 * 60_000).toISOString() };
-    expect(codeDeadline(code, NOW)).toBe(NOW + 9 * 60_000);
-    // A phone 15 minutes fast reads the code as long gone: it counts the server's 10 minutes from the answer.
-    expect(codeDeadline(code, NOW + 15 * 60_000)).toBe(NOW + 15 * 60_000 + CODE_TTL_MS);
+  test("a fresh code before the shown one runs out", () => {
     expect(codeIsStale(null, NOW)).toBe(true);
     expect(codeIsStale(NOW + RENEW_BEFORE_MS + 1, NOW)).toBe(false);
     expect(codeIsStale(NOW + RENEW_BEFORE_MS, NOW)).toBe(true);
@@ -138,14 +129,14 @@ describe("the sheet", () => {
     expect(src).toContain("setInterval(() => void refetch(), LINK_POLL_MS)");
     expect(src).toContain("useAppActive()");
     expect(src).toContain("{code.made.code}");
-    expect(src).toMatch(/label=\{t\("mobile\.surface\.open", \{ surface \}\)\}/);
+    expect(src).toMatch(/label=\{t\("surface\.link\.open", \{ surface \}\)\}/);
     expect(src).not.toMatch(/QrCode/);
   });
 
   test("the consent line sits directly above Confirm, in the recorded words", async () => {
     const src = readFileSync(join(import.meta.dir, "../../src/features/me/SurfaceLink.tsx"), "utf8");
     const consent = src.indexOf('t("surface.link.consent"');
-    const confirm = src.indexOf('label={t("mobile.surface.confirm")}');
+    const confirm = src.indexOf('label={t("surface.link.confirm")}');
     expect(consent).toBeGreaterThan(0);
     expect(confirm).toBeGreaterThan(consent);
     expect(src.slice(consent, confirm)).not.toMatch(/<Text/);
@@ -157,14 +148,19 @@ describe("the sheet", () => {
     expect(pt("surface.link.consent", { assistant: "Lodi", surface: SURFACE })).toContain("Escreva parar");
   });
 
-  test("the assistant is the workspace's right hand", () => {
-    expect(
-      assistantName([
-        { builtin: null, name: "Theo" },
-        { builtin: "right_hand", name: "Lodi" },
-      ]),
-    ).toBe("Lodi");
-    expect(assistantName(undefined)).toBeNull();
+  test("a link confirmed on another device while the sheet is open ends it as linked", () => {
+    const src = readFileSync(join(import.meta.dir, "../../src/features/me/SurfaceLink.tsx"), "utf8");
+    expect(src).toContain("const done = linked ?? (before && newlyLinked(data, before));");
+    expect(src).toContain("<LinkSteps row={row} linked={done}");
+  });
+
+  test("Not me drops the refused sender from the cache before the fresh code, so it never flashes back", () => {
+    const src = readFileSync(join(import.meta.dir, "../../src/features/me/SurfaceLink.tsx"), "utf8");
+    const notMe = src.slice(src.indexOf("const notMe = () => {"), src.indexOf("return (", src.indexOf("const notMe")));
+    expect(notMe.indexOf("qc.setQueryData")).toBeGreaterThan(0);
+    expect(notMe.indexOf("qc.setQueryData")).toBeLessThan(notMe.indexOf("setError(null)"));
+    expect(notMe).toContain("onSuccess: fresh");
+    expect(notMe).toContain('errorCode(e) === "surface.link_gone" ? fresh()');
   });
 
   test("the confirm step waits only while the agents load, then names the right hand or the generic label", () => {
