@@ -32,6 +32,7 @@ export interface EnvVarDefinition {
     | "Email for agents"
     | "Push"
     | "Operator"
+    | "Chat surfaces"
     | "Usage report"
     | "Observability";
   /** Example value for docs. Never a real secret. */
@@ -1091,8 +1092,52 @@ export const envVars = {
   OPERATOR_API_PORT: {
     schema: z.coerce.number().int().min(1).max(65535).default(3001),
     description:
-      "Port of the operator API's listener, on the same `HOST`; only with `OPERATOR_API_TOKEN`. The compose file doesn't publish it: containers on the same Docker network reach it as `agentes:3001`.",
+      "Port of the operator API's listener, on the same `HOST`; only with `OPERATOR_API_TOKEN` or `SURFACE_BRIDGE_TOKEN`. The compose file doesn't publish it: containers on the same Docker network reach it as `agentes:3001`.",
     section: "Operator",
+  },
+  SURFACE_BRIDGE_TOKEN: {
+    schema: z
+      .string()
+      .min(32, "must be at least 32 characters. Generate one with `openssl rand -base64 48`")
+      .optional(),
+    description:
+      "Turns on the bridge for an outside chat surface (ADR 0187): `/api/surface/v1` on the operator API's listener (`OPERATOR_API_PORT`), called with this value as `Authorization: Bearer` by a separate service of yours that carries people's messages between a chat app and their DM with the workspace's assistant. It can post as any linked person into that DM and read every reply sent to linked people, so never publish that port or put it behind your reverse proxy. It opens nothing under `/api/operator/v1`, and the operator tokens don't open the bridge. Needs `SURFACE_NAME` and `SURFACE_OPEN_URL`, and must differ from both operator tokens. Unset (default): no bridge, nothing recorded, no row in the apps. Generate with `openssl rand -base64 48`.",
+    section: "Chat surfaces",
+    example: "<output of openssl rand -base64 48>",
+    secret: true,
+  },
+  SURFACE_NAME: {
+    schema: z.string().trim().min(1).max(32).optional(),
+    description:
+      "The chat surface's name as people and the assistant read it, in settings and in the assistant's instructions. Only with `SURFACE_BRIDGE_TOKEN`.",
+    section: "Chat surfaces",
+    example: "Telegram",
+  },
+  SURFACE_OPEN_URL: {
+    schema: z
+      .url({ protocol: /^https$/ })
+      .refine((url) => url.split("{text}").length === 2, "must hold {text} once")
+      .optional(),
+    description:
+      "An `https://` address that opens a chat with the surface's account with a text already typed: `{text}` (once) is replaced by the linking code. Only with `SURFACE_BRIDGE_TOKEN`.",
+    section: "Chat surfaces",
+    example: "https://chat.example.com/open?text={text}",
+  },
+  SURFACE_ONLY: {
+    schema: z
+      .string()
+      .optional()
+      .transform((value) =>
+        value
+          ?.split(",")
+          .map((entry) => entry.trim().toLowerCase())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.email()).optional()),
+    description:
+      "While you try the surface out: only the accounts with these emails (separated by commas) may link it; nobody else sees its row. Only with `SURFACE_BRIDGE_TOKEN`. Unset (default): everyone may.",
+    section: "Chat surfaces",
+    example: "you@example.com",
   },
   SUPPORT_EMAIL: {
     schema: z.email().optional(),

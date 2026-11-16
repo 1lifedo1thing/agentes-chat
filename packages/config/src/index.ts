@@ -65,6 +65,20 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (config.OPERATOR_API_READ_TOKEN && config.OPERATOR_API_READ_TOKEN === config.OPERATOR_API_TOKEN) {
     throw new ConfigError(["OPERATOR_API_READ_TOKEN must differ from OPERATOR_API_TOKEN"]);
   }
+  if (config.SURFACE_BRIDGE_TOKEN && !(config.SURFACE_NAME && config.SURFACE_OPEN_URL)) {
+    throw new ConfigError(["SURFACE_BRIDGE_TOKEN needs SURFACE_NAME and SURFACE_OPEN_URL"]);
+  }
+  if (!config.SURFACE_BRIDGE_TOKEN && (config.SURFACE_NAME || config.SURFACE_OPEN_URL || config.SURFACE_ONLY)) {
+    throw new ConfigError(["SURFACE_NAME, SURFACE_OPEN_URL and SURFACE_ONLY need SURFACE_BRIDGE_TOKEN"]);
+  }
+  // Equal, one token would open both doors, and each must reach only its own.
+  if (
+    config.SURFACE_BRIDGE_TOKEN &&
+    (config.SURFACE_BRIDGE_TOKEN === config.OPERATOR_API_TOKEN ||
+      config.SURFACE_BRIDGE_TOKEN === config.OPERATOR_API_READ_TOKEN)
+  ) {
+    throw new ConfigError(["SURFACE_BRIDGE_TOKEN must differ from OPERATOR_API_TOKEN and OPERATOR_API_READ_TOKEN"]);
+  }
   if (config.MACHINE_PROVISIONING === "external" && config.HOST_COMPUTER_TOKEN) {
     throw new ConfigError([
       "HOST_COMPUTER_TOKEN can't be set with MACHINE_PROVISIONING=external: every workspace gets its own computer, and no other computer joins it",

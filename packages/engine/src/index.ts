@@ -311,6 +311,7 @@ export * from "./storage";
 export * from "./streams";
 export * from "./stretch";
 export * from "./stuck";
+export * from "./surfaces/config";
 export * from "./talker";
 export * from "./task-access";
 export * from "./task-conversation";

@@ -153,6 +153,47 @@ describe("loadConfig", () => {
     );
   });
 
+  test("the chat surface bridge: its token needs a name and an address, the rest need the token, never an operator token", () => {
+    const token = "b".repeat(32);
+    const surface = {
+      SURFACE_BRIDGE_TOKEN: token,
+      SURFACE_NAME: "Telegram",
+      SURFACE_OPEN_URL: "https://chat.example.com/open?text={text}",
+    };
+    const on = loadConfig({ ...valid, ...surface, SURFACE_ONLY: " A@Example.com, b@example.com ," });
+    expect(on.SURFACE_ONLY).toEqual(["a@example.com", "b@example.com"]);
+    expect(redactConfig(on).SURFACE_BRIDGE_TOKEN).toBe("********");
+    expect(loadConfig(valid).SURFACE_BRIDGE_TOKEN).toBeUndefined();
+    expect(() => loadConfig({ ...valid, SURFACE_BRIDGE_TOKEN: token })).toThrow(
+      /SURFACE_BRIDGE_TOKEN needs SURFACE_NAME and SURFACE_OPEN_URL/,
+    );
+    expect(() => loadConfig({ ...valid, ...surface, SURFACE_NAME: "" })).toThrow(/needs SURFACE_NAME/);
+    for (const alone of [
+      { SURFACE_NAME: "Telegram" },
+      { SURFACE_OPEN_URL: surface.SURFACE_OPEN_URL },
+      { SURFACE_ONLY: "a@example.com" },
+    ]) {
+      expect(() => loadConfig({ ...valid, ...alone })).toThrow(/need SURFACE_BRIDGE_TOKEN/);
+    }
+    expect(() => loadConfig({ ...valid, ...surface, OPERATOR_API_TOKEN: token })).toThrow(
+      /SURFACE_BRIDGE_TOKEN must differ/,
+    );
+    expect(() =>
+      loadConfig({ ...valid, ...surface, OPERATOR_API_TOKEN: "o".repeat(32), OPERATOR_API_READ_TOKEN: token }),
+    ).toThrow(/SURFACE_BRIDGE_TOKEN must differ/);
+    for (const url of [
+      "https://chat.example.com/open",
+      "https://chat.example.com/{text}?text={text}",
+      "http://chat.example.com/open?text={text}",
+    ]) {
+      expect(() => loadConfig({ ...valid, ...surface, SURFACE_OPEN_URL: url })).toThrow(/SURFACE_OPEN_URL/);
+    }
+    expect(() => loadConfig({ ...valid, ...surface, SURFACE_BRIDGE_TOKEN: "short" })).toThrow(
+      /SURFACE_BRIDGE_TOKEN: must be at least 32 characters/,
+    );
+    expect(() => loadConfig({ ...valid, ...surface, SURFACE_ONLY: "not-an-email" })).toThrow(/SURFACE_ONLY/);
+  });
+
   test("MCP_CALLER_IDENTITY: host=secret pairs, a bare lower-case host and a long secret, each host once, never shown", () => {
     const secret = "s".repeat(32);
     const padded = `${"p".repeat(30)}==`;

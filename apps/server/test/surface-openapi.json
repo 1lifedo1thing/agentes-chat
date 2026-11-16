@@ -1,0 +1,105 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "agentes.chat chat surface bridge",
+    "version": "test",
+    "description": "For the separate service that carries linked people's messages between an outside chat surface and their DM with the workspace's right hand (ADR 0187). Every call is recorded (route, answer, whom it touched; never content)."
+  },
+  "servers": [
+    {
+      "url": "/api/surface/v1"
+    }
+  ],
+  "security": [
+    {
+      "surface": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "surface": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "This server's `SURFACE_BRIDGE_TOKEN`. It opens only these routes; the operator API's tokens are refused here."
+      }
+    },
+    "schemas": {
+      "SurfaceHealth": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [true]
+          },
+          "surface": {
+            "type": "string",
+            "description": "This server's `SURFACE_NAME`."
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": ["ok", "surface", "version"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "invalid_request",
+                "description": "Stable: the app translates it."
+              },
+              "message": {
+                "type": "string",
+                "example": "name: Required",
+                "description": "English fallback."
+              },
+              "params": {
+                "type": "object",
+                "additionalProperties": {},
+                "description": "Values for the translated message (names, limits…)."
+              }
+            },
+            "required": ["code", "message"]
+          }
+        },
+        "required": ["error"]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Surface"],
+        "summary": "Whether the bridge answers, and for which surface",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurfaceHealth"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong bridge token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}
