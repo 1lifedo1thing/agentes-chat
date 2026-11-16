@@ -2447,7 +2447,6 @@ export const featureKeysEn = {
     noMatch: "No role matches “{{q}}”.",
     tooMany: "This workspace already has 100 roles. Delete one to create another.",
     loadFailed: "Couldn't load the roles. {{cause}}",
-    backToList: "Back to roles",
     /** A role nobody holds yet, at the start of its glance line. */
     nobody: "Nobody",
     /** What a role adds to what Everyone can, under its name: "+3 permissions · +2 channels · +1 agent". */

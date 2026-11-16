@@ -121,7 +121,7 @@ describe("who approves for me: one row and the app's picker", () => {
 
 describe("a countdown repaints only itself", () => {
   test.each([
-    ["features/auth/LinkSteps.tsx", "function ResendLine("],
+    ["features/auth/InviteSteps.tsx", "function ResendLine("],
     ["features/auth/InviteScreen.tsx", "function ProofSlot("],
     ["features/devices/AndroidSetupScreen.tsx", "function SlowHelp("],
     ["features/settings/parts.tsx", "export function ResendCode("],

@@ -2512,7 +2512,6 @@
     "noMatch": "Żadna rola nie pasuje do „{{q}}”.",
     "tooMany": "Ta przestrzeń robocza ma już 100 ról. Usuń jedną, aby utworzyć kolejną.",
     "loadFailed": "Nie udało się wczytać ról. {{cause}}",
-    "backToList": "Wróć do ról",
     "nobody": "Nikt",
     "reach": {
       "permissions_one": "{{count}} uprawnienie",

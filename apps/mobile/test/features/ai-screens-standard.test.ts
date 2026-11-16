@@ -59,7 +59,7 @@ describe("headers: the native bar's, never one drawn in the content", () => {
     const hero = steps.slice(steps.indexOf("function Hero("), steps.indexOf("function CliMissingCard("));
     expect(hero).not.toContain("title2");
     expect(hero).not.toContain('accessibilityRole="header"');
-    expect(steps).toContain(": planTitle(t, view.choice);");
+    expect(sheet).toContain("return planTitle(t, view.choice);");
     // The flow lives on its screen only: no sheet head, no back row of its own.
     expect(steps).not.toContain("SheetHeader");
     expect(steps).not.toContain("backRow");
@@ -106,7 +106,8 @@ test("a row that opens a choice in place wears the up-down mark, never a chevron
   expect(settings).not.toContain("chevron={!hold}");
   const mine = settings.slice(settings.indexOf("export function RightHandMine("), settings.indexOf("const KEY = "));
   expect(mine.slice(mine.lastIndexOf("<GroupedRow"))).toContain("menu\n");
-  expect(source("ai/ConnectAiSteps.tsx")).toContain("{...(agents.length > 1 ? { menu: true, onPress: pick } : {})}");
+  // A plan's agent is picked on the agent picker's pushed screen: its row wears the chevron.
+  expect(source("ai/ConnectAiSteps.tsx")).toContain("{...(agents.length > 1 ? { chevron: true, onPress: pick } : {})}");
 });
 
 describe("rows and notes on the groups' edges", () => {

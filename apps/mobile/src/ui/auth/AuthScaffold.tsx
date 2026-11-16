@@ -9,7 +9,6 @@ import { AgentAvatar } from "@/agent/AgentAvatar";
 import type { AgentLookInput } from "@/agent/looks";
 import type { AgentMode } from "@/agent/poses";
 import { Sky, WorkspaceSky } from "@/sky/Sky";
-import { IconButton } from "../IconButton";
 import { usePulse } from "../Skeleton";
 import { Text } from "../Text";
 import { useTheme } from "../theme";
@@ -64,10 +63,9 @@ export interface AuthScaffoldProps {
   subtitleStrong?: boolean;
   /** Where this question stands among several ("1 de 3 · Seu e-mail"), over the title. */
   progress?: string;
-  onBack?: () => void;
   children?: ReactNode;
   footer?: ReactNode;
-  /** A new key fades the question in (the steps of one screen). */
+  /** A new key fades the question in (a screen whose question changes with an answer: sent, approved, expired). */
   stepKey?: string;
   /** The agent works while a request is out ("run": writing dashes), sleeps while nothing answers, and reacts with a face. */
   agentMode?: AgentMode;
@@ -94,14 +92,14 @@ export interface AuthScaffoldProps {
 
 /**
  * One calm question per screen: a low pixel sky with the agent on its edge, the question as the title, the answer
- * below, the keyboard open from start to end with its return key as the action. Margin 16, rhythm in 8.
+ * below, the keyboard open from start to end with its return key as the action. Margin 16, rhythm in 8. No back of
+ * its own: each step is a screen of its stack, whose clear bar puts the system's back over the sky.
  */
 export function AuthScaffold({
   title,
   subtitle,
   subtitleStrong = false,
   progress,
-  onBack,
   children,
   footer,
   stepKey,
@@ -130,7 +128,8 @@ export function AuthScaffold({
         bottomOffset={bar + FIELD_CLEARANCE}
         extraKeyboardSpace={bar}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="none"
+        // A drag down the screen takes the keyboard down with the finger, as the system's own forms do.
+        keyboardDismissMode="interactive"
         contentContainerStyle={{ flexGrow: 1, paddingBottom: insets.bottom + 16 }}
       >
         <View
@@ -146,11 +145,6 @@ export function AuthScaffold({
           <View style={{ flex: 1, alignItems: "center", justifyContent: "flex-end", marginBottom: -AGENT_OVERLAP }}>
             {hero ?? <AgentAvatar agent={agent} size={AGENT} mode={agentMode} expression={expression} />}
           </View>
-          {onBack ? (
-            <View style={{ position: "absolute", top: insets.top + 8, left: 16 }}>
-              <IconButton icon="back" label={t("mobile.common.back")} onPress={onBack} plate />
-            </View>
-          ) : null}
         </View>
         <Animated.View
           key={stepKey}

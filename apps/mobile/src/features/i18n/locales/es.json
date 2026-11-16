@@ -2399,7 +2399,6 @@
     "noMatch": "Ningún rol coincide con “{{q}}”.",
     "tooMany": "Este espacio de trabajo ya tiene 100 roles. Elimina uno para crear otro.",
     "loadFailed": "No pude cargar los roles. {{cause}}",
-    "backToList": "Volver a los roles",
     "nobody": "Nadie",
     "reach": {
       "permissions_one": "{{count}} permiso",

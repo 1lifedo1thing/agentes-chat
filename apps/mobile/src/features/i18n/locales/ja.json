@@ -2194,7 +2194,6 @@
     "noMatch": "「{{q}}」に一致するロールはありません。",
     "tooMany": "このワークスペースにはすでに100個のロールがあります。新しく作成するには1つ削除してください。",
     "loadFailed": "ロールを読み込めませんでした。{{cause}}",
-    "backToList": "ロールに戻る",
     "nobody": "なし",
     "reach": {
       "permissions_other": "{{count}}件の権限",

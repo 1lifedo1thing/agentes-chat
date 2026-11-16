@@ -154,14 +154,15 @@ export function ServerDownPanel({ down }: { down: ServerDown }) {
         <AuthLink label={t("mobile.auth.server.down.switchServer")} onPress={() => setSwitching(true)} />
         <AuthLink label={t("mobile.org.signOut")} onPress={() => void signOut()} />
       </View>
-      {/* Over the splash, which covers the navigator: the address screen comes up whole, its back circle closing it. */}
+      {/* Over the splash, which covers the navigator: the address screen comes up whole, as a window of its own that
+          Cancel (or the system's back on Android) closes. */}
       <Modal
         visible={switching}
         animationType="slide"
         supportedOrientations={["portrait", "landscape"]}
         onRequestClose={() => setSwitching(false)}
       >
-        <ServerAddress onDone={() => setSwitching(false)} scan={false} />
+        <ServerAddress onDone={() => setSwitching(false)} onCancel={() => setSwitching(false)} scan={false} />
       </Modal>
     </View>
   );

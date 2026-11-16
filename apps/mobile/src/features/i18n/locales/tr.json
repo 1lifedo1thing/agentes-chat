@@ -2300,7 +2300,6 @@
     "noMatch": "“{{q}}” ile eşleşen rol yok.",
     "tooMany": "Bu çalışma alanında zaten 100 rol var. Yenisini oluşturmak için birini silin.",
     "loadFailed": "Roller yüklenemedi. {{cause}}",
-    "backToList": "Rollere dön",
     "nobody": "Kimse",
     "reach": {
       "permissions_one": "{{count}} izin",

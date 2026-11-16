@@ -165,15 +165,16 @@ describe("members", () => {
 });
 
 describe("Connect an AI and the right hand's cards", () => {
-  test("a new page of Connect an AI starts at its top and fades in", () => {
+  test("a new page of Connect an AI is a screen pushed over the last, never one swapped in place", () => {
     const sheet = src("ai/ConnectAi.tsx");
+    // Each page its own screen: it starts at its top and slides in with the system's push.
+    expect(sheet).not.toContain("scrollTo(");
     expect(sheet).toContain(
-      'scroll.current?.scrollTo({ y: Platform.OS === "ios" ? -barHeight : 0, animated: false });',
+      "const go = (next: PushedPage) => router.push(connectAiHref(flowId, depth + 1, next) as never);",
     );
-    expect(sheet).toContain("onView={onView}");
     const steps = src("ai/ConnectAiSteps.tsx");
-    expect(steps).toContain("<Animated.View key={pageKey} entering={reduced ? undefined : PAGE_IN}>");
-    expect(steps).toContain("const PAGE_IN = FadeIn.duration(160);");
+    expect(steps).not.toContain("<Animated.View key={pageKey}");
+    expect(steps).not.toContain("PAGE_IN");
   });
 
   test("the team card's chips and the weekly card's link take a finger's 44 points", () => {

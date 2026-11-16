@@ -2194,7 +2194,6 @@
     "noMatch": "没有与“{{q}}”匹配的角色。",
     "tooMany": "这个工作区已有 100 个角色。删除一个才能创建新的。",
     "loadFailed": "无法加载角色。{{cause}}",
-    "backToList": "返回角色",
     "nobody": "无人",
     "reach": {
       "permissions_other": "{{count}} 项权限",

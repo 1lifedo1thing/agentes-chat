@@ -5646,9 +5646,6 @@
   "roles.loadFailed": {
     "value": "Couldn't load the roles. {{cause}}"
   },
-  "roles.backToList": {
-    "value": "Back to roles"
-  },
   "roles.nobody": {
     "value": "Nobody"
   },

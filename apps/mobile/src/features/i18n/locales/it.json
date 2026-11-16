@@ -2399,7 +2399,6 @@
     "noMatch": "Nessun ruolo corrisponde a “{{q}}”.",
     "tooMany": "Questo spazio di lavoro ha già 100 ruoli. Eliminane uno per crearne un altro.",
     "loadFailed": "Non è stato possibile caricare i ruoli. {{cause}}",
-    "backToList": "Torna ai ruoli",
     "nobody": "Nessuno",
     "reach": {
       "permissions_one": "{{count}} permesso",
