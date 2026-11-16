@@ -38,6 +38,25 @@ test("the dock settles on the system's word once the keyboard is shown or gone",
   const chat = src("features/chat/ChatScreen.tsx");
   expect(chat).toContain('Keyboard.addListener("keyboardDidHide", () => settle(0))');
   expect(chat).toContain('Keyboard.addListener("keyboardDidShow", (e) => settle(e.endCoordinates.height))');
+  // On iOS only: Android's height leaves out the navigation bar the keyboard library counts edge to edge, so a late
+  // event sank the box behind the keys (and the library ends every move there itself).
+  expect(chat).toMatch(
+    /useEffect\(\(\) => \{\s*if \(Platform\.OS !== "ios"\) return;\s*const settle = \(height: number\) => \{/,
+  );
+});
+
+test("a cover freezes the list only once a keyboard that was up has gone: no keyboard-tall gap over the dock after", () => {
+  const chat = src("features/chat/ChatScreen.tsx");
+  expect(chat).toMatch(
+    /const cover = useCallback\(\(\) => \{\s*covered\.current = true;\s*if \(KeyboardController\.isVisible\(\)\) freezeOnHide\.current = true;\s*else freeze\.value = true;/,
+  );
+  expect(chat).toMatch(
+    /KeyboardEvents\.addListener\("keyboardDidHide", \(\) => \{\s*if \(!freezeOnHide\.current\) return;\s*freezeOnHide\.current = false;\s*if \(covered\.current\) freeze\.value = true;/,
+  );
+  // The cover gone first: nothing left to freeze.
+  expect(chat).toMatch(
+    /const uncover = useCallback\(\(\) => \{\s*covered\.current = false;\s*freezeOnHide\.current = false;/,
+  );
 });
 
 test("no suggestion pills over the conversation", () => {

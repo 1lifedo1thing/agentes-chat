@@ -109,6 +109,7 @@ import {
 } from "react-native";
 import {
   KeyboardController,
+  KeyboardEvents,
   KeyboardGestureArea,
   KeyboardStickyView,
   useKeyboardHandler,
@@ -1737,19 +1738,32 @@ function Chat({
     },
     [stickers],
   );
-  // While something covers the conversation (a sheet, the agent's computer) the list ignores the keyboard: it
-  // leaving under the cover, or coming back, must not move it (Bluesky and Mattermost freeze or dismiss first too).
+  // While something covers the conversation (a sheet, the agent's computer) the list ignores the keyboard: one that
+  // opens and closes under the cover (a sheet's own field) must not move it. A keyboard already up leaves first, the
+  // list going down with it as with any keyboard closing: frozen while it left, the list kept its room, and a
+  // keyboard-tall gap stood over the dock until it dropped all at once after the cover closed.
   const freeze = useSharedValue(false);
   const covered = useRef(false);
+  const freezeOnHide = useRef(false);
   const cover = useCallback(() => {
     covered.current = true;
-    freeze.value = true;
+    if (KeyboardController.isVisible()) freezeOnHide.current = true;
+    else freeze.value = true;
   }, [freeze]);
   const uncover = useCallback(() => {
     covered.current = false;
+    freezeOnHide.current = false;
     setTimeout(() => {
       if (!covered.current) freeze.value = false;
     }, FREEZE_AFTER_MS);
+  }, [freeze]);
+  useEffect(() => {
+    const gone = KeyboardEvents.addListener("keyboardDidHide", () => {
+      if (!freezeOnHide.current) return;
+      freezeOnHide.current = false;
+      if (covered.current) freeze.value = true;
+    });
+    return () => gone.remove();
   }, [freeze]);
   // Every sheet of this screen says when it opens (before the keyboard leaves) and closes: one place for all of
   // them (the header's, a message's, the composer's).
@@ -2302,8 +2316,11 @@ function Chat({
   );
   // And the system's own word once the keyboard is fully shown or gone: a drag down that let go mid-way could end with
   // no final move at all, the dock left floating over the conversation with the keyboard gone (seen on a phone). The
-  // system tells JS when the keyboard finished hiding or showing; that settles both.
+  // system tells JS when the keyboard finished hiding or showing; that settles both. On iOS only: there the system's
+  // height is the library's (the keyboard's frame), while Android's leaves out the navigation bar the library counts
+  // edge to edge, so a late event sank the box that far behind the keys; and there the library ends every move itself.
   useEffect(() => {
+    if (Platform.OS !== "ios") return;
     const settle = (height: number) => {
       keyboardAt.height.value = -height;
       keyboardAt.progress.value = height > 0 ? 1 : 0;
