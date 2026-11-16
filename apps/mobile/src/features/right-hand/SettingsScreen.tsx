@@ -38,7 +38,6 @@ import {
   GroupedHeader,
   GroupedList,
   GroupedRow,
-  PressScale,
   ProviderLogo,
   Text,
   useToast,
@@ -560,12 +559,49 @@ function OwnRows({ name }: { name: string }) {
   const set = useSetTeamWeekPrefs(orgId);
   const settings = useSettings(orgId).data;
   const setSettings = useUpdateSettings(orgId);
+  // The workspace's switches flipped on the tap, by name, while their save is on its way.
+  const [flips, setFlips] = useState<ReadonlyMap<string, boolean>>(() => new Map());
   if (!prefs) return null;
   const g = agentGrammar(name);
-  const save = (patch: LodiPrefsPatch) => set.mutate(patch, { onError: failed });
+  // The prefs' save shows a change at once and puts it back if the server refuses it: a row whose own save is on its
+  // way waits for it, every other row stays live.
+  const savingPrefs = set.isPending ? set.variables : undefined;
+  const save = (patch: LodiPrefsPatch) => {
+    if (savingPrefs && Object.keys(patch).some((k) => k in savingPrefs)) return;
+    void set.mutateAsync(patch).catch(failed);
+  };
+  const flipSetting = (id: "teamWatch" | "welcomePeople", next: boolean) => {
+    if (flips.has(id)) return;
+    setFlips((now) => new Map(now).set(id, next));
+    void setSettings
+      .mutateAsync({ [id]: next })
+      .catch(failed)
+      .finally(() =>
+        setFlips((now) => {
+          const left = new Map(now);
+          left.delete(id);
+          return left;
+        }),
+      );
+  };
   const locale = i18n.language;
   const about = (label: string, text: string) => ({ name: t("common.about", { label }), text });
-  const hours = Array.from({ length: 24 }, (_, h) => ({ value: h, label: hourText(locale, h) }));
+  // A day or an hour in the app's picker, as the "Your AI" row picks: the one in use checked, a search over the hours.
+  const pick = (
+    title: string,
+    value: number,
+    options: { value: number; label: string }[],
+    onPick: (v: number) => void,
+  ) =>
+    void pickOne({
+      title,
+      value: String(value),
+      options: options.map((o) => ({ key: String(o.value), label: o.label })),
+    }).then((key) => {
+      if (key !== null && Number(key) !== value) onPick(Number(key));
+    });
+  const hours = () => Array.from({ length: 24 }, (_, h) => ({ value: h, label: hourText(locale, h) }));
+  const days = () => [1, 2, 3, 4, 5, 6, 0].map((d) => ({ value: d, label: dayText(locale, d) }));
   const dayOn = teamWeekOn(prefs, "day", admin);
   const weekOn = teamWeekOn(prefs, "week", admin);
   const dayLabel = t("teamWeek.settings.dayLabel");
@@ -596,15 +632,14 @@ function OwnRows({ name }: { name: string }) {
           label={dayLabel}
           hint={about(dayLabel, t("teamWeek.settings.dayHelp", g))}
           toggle={dayOn}
-          disabled={set.isPending}
           onPress={() => save({ dayOff: dayOn })}
         />
         {dayOn ? (
-          <Pills
+          <GroupedRow
             label={t("teamWeek.schedule.hour")}
-            value={prefs.dayHour}
-            options={hours}
-            onPick={(dayHour) => save({ dayHour })}
+            value={hourText(locale, prefs.dayHour)}
+            menu
+            onPress={() => pick(t("teamWeek.schedule.hour"), prefs.dayHour, hours(), (dayHour) => save({ dayHour }))}
           />
         ) : null}
         {admin ? (
@@ -613,24 +648,23 @@ function OwnRows({ name }: { name: string }) {
             label={weekLabel}
             hint={about(weekLabel, t("teamWeek.settings.help", g))}
             toggle={weekOn}
-            disabled={set.isPending}
             onPress={() => save({ weekOff: weekOn })}
           />
         ) : null}
         {admin && weekOn ? (
-          <Pills
+          <GroupedRow
             label={t("teamWeek.schedule.day")}
-            value={prefs.day}
-            options={[1, 2, 3, 4, 5, 6, 0].map((d) => ({ value: d, label: dayText(locale, d) }))}
-            onPick={(day) => save({ day })}
+            value={dayText(locale, prefs.day)}
+            menu
+            onPress={() => pick(t("teamWeek.schedule.day"), prefs.day, days(), (day) => save({ day }))}
           />
         ) : null}
         {admin && weekOn ? (
-          <Pills
+          <GroupedRow
             label={t("teamWeek.schedule.hour")}
-            value={prefs.weekHour}
-            options={hours}
-            onPick={(weekHour) => save({ weekHour })}
+            value={hourText(locale, prefs.weekHour)}
+            menu
+            onPress={() => pick(t("teamWeek.schedule.hour"), prefs.weekHour, hours(), (weekHour) => save({ weekHour }))}
           />
         ) : null}
         {mine.map((r) => {
@@ -642,14 +676,13 @@ function OwnRows({ name }: { name: string }) {
               label={label}
               hint={about(label, t(`rightHand.settings.own.${r.id}Help`, g))}
               toggle={!prefs[r.off]}
-              disabled={set.isPending}
               onPress={() => save({ [r.off]: !prefs[r.off] })}
             />
           );
         })}
         {everyones.map((r) => {
           const label = t(`rightHand.settings.own.${r.words}`);
-          const on = settings?.[r.id] !== false;
+          const on = flips.get(r.id) ?? settings?.[r.id] !== false;
           return (
             <GroupedRow
               key={r.id}
@@ -658,8 +691,7 @@ function OwnRows({ name }: { name: string }) {
               sub={t("rightHand.settings.groupWorkspace")}
               hint={about(label, t(`rightHand.settings.own.${r.words}Help`, g))}
               toggle={on}
-              disabled={setSettings.isPending}
-              onPress={() => setSettings.mutate({ [r.id]: !on }, { onError: failed })}
+              onPress={() => flipSetting(r.id, !on)}
             />
           );
         })}
@@ -668,58 +700,9 @@ function OwnRows({ name }: { name: string }) {
   );
 }
 
-/** A choice of a few short values as pills that wrap (the days, the hours), the picked one filled. */
-function Pills({
-  label,
-  value,
-  options,
-  onPick,
-}: {
-  label: string;
-  value: number;
-  options: { value: number; label: string }[];
-  onPick: (value: number) => void;
-}) {
-  const c = useColors();
-  return (
-    <View accessibilityRole="radiogroup" accessibilityLabel={label} style={styles.pills}>
-      <Text variant="footnote" tone="muted" style={styles.pillsLabel}>
-        {label}
-      </Text>
-      <View style={styles.pillRow}>
-        {options.map((o) => {
-          const on = o.value === value;
-          return (
-            <PressScale
-              key={o.value}
-              to={0.95}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: on }}
-              onPress={() => !on && onPick(o.value)}
-              style={[styles.pill, { backgroundColor: on ? c.ink : c.sunken }]}
-              contentStyle={styles.pillIn}
-            >
-              <Text variant="footnote" style={{ color: on ? c.bg : c.ink }}>
-                {o.label}
-              </Text>
-            </PressScale>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   // Over a list's own header: the lists' 16 sides, a section's room above.
   groupTitle: { paddingTop: 24, paddingHorizontal: 16 },
-  // Inside a group: its rows' 14 sides.
-  pills: { paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
-  pillsLabel: { fontWeight: "600" },
-  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  pill: { minHeight: 32, borderRadius: 10, borderBottomLeftRadius: 3 },
-  // The whole pill presses: its padding is the press area's.
-  pillIn: { paddingHorizontal: 12, justifyContent: "center" },
   // One row of a group, as GroupedRow's.
   budget: {
     flexDirection: "row",
