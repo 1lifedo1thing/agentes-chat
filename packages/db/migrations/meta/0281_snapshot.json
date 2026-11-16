@@ -1,6 +1,6 @@
 {
-  "id": "ed730449-7db3-4a0a-aa45-6ddb2aa10e00",
-  "prevId": "3ed711ce-65d1-40e6-b020-c98d8ae7485c",
+  "id": "dabf9318-9630-427f-8dc9-9337f23d4a63",
+  "prevId": "0034e02b-3657-470a-975e-547337bb184f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -18097,6 +18097,12 @@
         "last_error": {
           "name": "last_error",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_status": {
+          "name": "last_error_status",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },

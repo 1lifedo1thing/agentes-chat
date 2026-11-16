@@ -2544,18 +2544,15 @@
     }
   },
   "rightHand": {
-    "brain": {
-      "unusable": {
-        "title": "컴퓨터가 필요해요",
-        "computerOnly": "{{owner}}의 것, {{computer}}에서만 로그인됨. Lodi는 계정으로 로그인한 플랜으로 생각해요.",
-        "noComputer": "{{owner}}의 것. 컴퓨터가 필요한데 워크스페이스에 연결된 컴퓨터가 없어요.",
-        "away": "{{owner}}의 것, {{computer}}에 있지만 자리를 비웠어요.",
-        "connect": "컴퓨터 연결",
-        "plans": "플랜 보기"
-      }
-    },
     "label": "당신의 오른팔",
     "labelCapitalized": "당신의 오른팔",
+    "unusable": {
+      "title": "지금은 {{name}} 대신 생각할 수 없음",
+      "computerOnly": "{{computer}}에서만 로그인됨. {{name}}은(는) 계정으로 로그인된 플랜으로 생각합니다.",
+      "away": "{{owner}}님의 것, {{computer}}에 있으며 자리를 비웠습니다.",
+      "awayYours": "내 것, {{computer}}에 있으며 자리를 비웠습니다.",
+      "connect": "컴퓨터 연결"
+    },
     "newDot": "신규",
     "actsAsYou": "당신의 권한으로 일해요",
     "composerHint": "당신 없이는 아무것도 바뀌지 않아요",
@@ -2818,6 +2815,16 @@
       "invite_roles_other": "{{roles}} 역할로 초대해요.",
       "invite_people_sent_other": "<b>{{emails}}</b>에게 초대를 보냈어요.",
       "remove_ai_key": "API 키 \"{{name}}\"을(를) 삭제합니다."
+    },
+    "brain": {
+      "unusable": {
+        "title": "컴퓨터가 필요해요",
+        "computerOnly": "{{owner}}의 것, {{computer}}에서만 로그인됨. Lodi는 계정으로 로그인한 플랜으로 생각해요.",
+        "noComputer": "{{owner}}의 것. 컴퓨터가 필요한데 워크스페이스에 연결된 컴퓨터가 없어요.",
+        "away": "{{owner}}의 것, {{computer}}에 있지만 자리를 비웠어요.",
+        "connect": "컴퓨터 연결",
+        "plans": "플랜 보기"
+      }
     }
   },
   "teamWeek": {
@@ -7425,9 +7432,6 @@
     }
   },
   "issues": {
-    "handedBy": "<0/>{{name}}이(가) 넘김",
-    "fromDm": "<0>{{name}}와(과)의 DM</0>에서",
-    "fromDmText": "{{name}}와(과)의 DM에서",
     "delete": {
       "action": "작업 삭제",
       "title": "작업 #{{number}}을(를) 삭제할까요?",
@@ -7625,9 +7629,6 @@
       "label": "{{name}}의 작업",
       "runningTitle": "{{name}}이(가) 작업 중이에요",
       "waitingTitle": "{{name}}이(가) 나를 기다리고 있어요",
-      "finishedTitle": "{{name}}이(가) 마쳤어요",
-      "finishedMeta": "{{when}} · {{name}}이(가) 넘김",
-      "answer": "답하기",
       "stalledTitle": "{{name}}이(가) {{when}} 멈췄어요",
       "stalledText": "작업은 아직 {{name}}에게 있지만 진행 중인 실행이 없어요.",
       "started": "{{when}} 시작",
@@ -7644,7 +7645,10 @@
         "failed": "마지막 실행이 실패했어요.",
         "canceled": "누군가 실행을 중지했어요.",
         "budget": "에이전트의 월 예산이 떨어졌어요."
-      }
+      },
+      "finishedTitle": "{{name}}이(가) 마쳤어요",
+      "finishedMeta": "{{when}} · {{name}}이(가) 넘김",
+      "answer": "답하기"
     },
     "status": {
       "todo": "할 일",
@@ -7820,7 +7824,10 @@
       "criterion_checked": "조건 \"{{text}}\"을(를) 체크했어요",
       "criterion_unchecked": "조건 \"{{text}}\"의 체크를 해제했어요",
       "agent_asked": "{{name}}에게 맡겼어요"
-    }
+    },
+    "handedBy": "<0/>{{name}}이(가) 넘김",
+    "fromDm": "<0>{{name}}와(과)의 DM</0>에서",
+    "fromDmText": "{{name}}와(과)의 DM에서"
   },
   "routines": {
     "filters": "루틴 필터",
@@ -15955,11 +15962,11 @@
       "rolesPersonal": "여기 있는 사람마다 할 수 있는 일. 소유자는 모든 걸 할 수 있어요."
     },
     "about": {
-      "basedOn": "Codari Global, LLC의 <site>agentes.chat</site> 기반",
+      "basedOn": "AGENTESCHAT, LLC의 <site>agentes.chat</site> 기반",
       "version": "버전",
       "license": "<license>GNU Affero General Public License v3</license>에 따른 자유 소프트웨어이며 보증은 없습니다.",
       "source": "소스 코드",
-      "copyright": "Copyright © 2026 Codari Global, LLC 및 기여자"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC 및 기여자"
     },
     "title": "설정",
     "account": {
@@ -16387,7 +16394,7 @@
       "see": "사용량 보기"
     }
   },
-  "usageViews": {
+  "usage": {
     "kinds": {
       "label": "종류별",
       "handoffs": "에이전트 간 인계",
@@ -16395,9 +16402,11 @@
       "routines": "루틴"
     },
     "hint": {
-      "handoffs": "이번 주 사용량 대부분은 에이전트끼리 일을 넘긴 데서 나왔어요. 긴 작업은 에이전트에게 직접 요청하세요.",
+      "handoffs": "이번 주 사용량의 대부분은 에이전트끼리 작업을 넘긴 데서 나왔습니다. 긴 작업은 에이전트에게 직접 요청하세요.",
       "message": "{{name}}에게 메시지"
-    },
+    }
+  },
+  "usageViews": {
     "signedOut": "로그아웃됨",
     "whose": "{{name}}의 계정",
     "serves": {
@@ -16500,21 +16509,6 @@
     "tomorrowAt": "내일 {{time}}"
   },
   "work": {
-    "handed": {
-      "lead": "<0/>{{name}}에게 넘김",
-      "working": "작업 중",
-      "done": "{{duration}} 만에 끝남",
-      "waitingYou": "내 답변 대기 중",
-      "waiting": "답변 대기 중",
-      "waitingApprovalYou": "내 승인 대기 중",
-      "waitingApproval": "승인 대기 중",
-      "waitingComputer": "컴퓨터 대기 중",
-      "paused": "요금제 한도로 일시 중지",
-      "queued": "대기 중",
-      "failed": "끝내지 못했어요",
-      "stopped": "중지됨",
-      "step": "{{total}}단계 중 {{current}}단계"
-    },
     "duration": {
       "minutes_other": "{{count}}분",
       "hours_other": "{{count}}시간",
@@ -16588,22 +16582,35 @@
       "failed": "막힘 · 끝내지 못함",
       "failedWhy": "막힘 · 끝내지 못함: {{why}}"
     },
-    "working": "백그라운드"
+    "working": "백그라운드",
+    "handed": {
+      "lead": "<0/>{{name}}에게 넘김",
+      "working": "작업 중",
+      "done": "{{duration}} 만에 끝남",
+      "waitingYou": "내 답변 대기 중",
+      "waiting": "답변 대기 중",
+      "waitingApprovalYou": "내 승인 대기 중",
+      "waitingApproval": "승인 대기 중",
+      "waitingComputer": "컴퓨터 대기 중",
+      "paused": "요금제 한도로 일시 중지",
+      "queued": "대기 중",
+      "failed": "끝내지 못했어요",
+      "stopped": "중지됨",
+      "step": "{{total}}단계 중 {{current}}단계"
+    }
   },
   "chat": {
-    "request": {
-      "asksYou": "{{name}}의 질문"
+    "speedFallback": {
+      "text": "ChatGPT가 이 계정이나 모델에서 빠른 속도를 거부해서 이 답변은 표준 속도로 왔어요.",
+      "action": "에이전트 열기"
     },
     "standIn": {
       "needsComputer": "{{via}}(으)로 답했어요: {{plan}}에는 컴퓨터가 필요해요.",
       "away": "{{via}}(으)로 답했어요: {{plan}}의 컴퓨터가 자리를 비웠어요.",
-      "notShared": "{{via}}(으)로 답했어요: {{plan}}은(는) 소유자만 써요.",
+      "notShared": "{{via}}(으)로 답했어요: {{plan}}은(는) 연결한 사람만 쓸 수 있어요.",
       "limit": "{{via}}(으)로 답했어요: {{plan}}이(가) 한도에 도달했어요.",
-      "change": "바꾸기"
-    },
-    "speedFallback": {
-      "text": "ChatGPT가 이 계정이나 모델에서 빠른 속도를 거부해서 이 답변은 표준 속도로 왔어요.",
-      "action": "에이전트 열기"
+      "cant": "{{via}}(으)로 답했어요: {{plan}}이(가) 지금 생각할 수 없어요.",
+      "change": "변경"
     },
     "modelStandIn": {
       "text": "{{plan}}이(가) 이 키로 {{from}}을(를) 거부했어요. 이 키로 작동하는 {{to}}(으)로 답했어요.",
@@ -17177,6 +17184,9 @@
       "interrupted": "서버 재시작으로 중단됐어요. 계속하려면 다시 요청하세요.",
       "step_limit": "끝내기 전에 단계를 모두 썼어요.",
       "stuck": "막혀서 끝내기 전에 멈췄어요."
+    },
+    "request": {
+      "asksYou": "{{name}}의 질문"
     }
   },
   "builtinTools": {

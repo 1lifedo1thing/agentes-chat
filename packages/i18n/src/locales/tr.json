@@ -2634,18 +2634,15 @@
     }
   },
   "rightHand": {
-    "brain": {
-      "unusable": {
-        "title": "Bir bilgisayar gerekiyor",
-        "computerOnly": "{{owner}} kişisine ait, yalnızca {{computer}} üzerinde oturum açık. Lodi, hesap olarak oturum açılmış bir planla düşünür.",
-        "noComputer": "{{owner}} kişisine ait. Bir bilgisayar gerekiyor ve çalışma alanında bağlı hiç yok.",
-        "away": "{{owner}} kişisine ait, {{computer}} üzerinde, şu an ulaşılamıyor.",
-        "connect": "Bilgisayar bağla",
-        "plans": "Planları gör"
-      }
-    },
     "label": "sağ kolun",
     "labelCapitalized": "Sağ kolun",
+    "unusable": {
+      "title": "Şu an {{name}} için düşünemiyor",
+      "computerOnly": "Yalnızca {{computer}} üzerinde oturum açık. {{name}}, hesap olarak oturum açılmış bir planla düşünür.",
+      "away": "{{owner}} adlı kişinin, {{computer}} üzerinde, şu an uzakta.",
+      "awayYours": "Senin, {{computer}} üzerinde, şu an uzakta.",
+      "connect": "Bilgisayar bağla"
+    },
     "newDot": "Yeni",
     "actsAsYou": "senin izinlerinle çalışır",
     "composerHint": "sen olmadan hiçbir şey değişmez",
@@ -2918,6 +2915,16 @@
       "invite_people_sent_one": "<b>{{emails}}</b> adresine davet gönderildi.",
       "invite_people_sent_other": "<b>{{emails}}</b> adreslerine davet gönderildi.",
       "remove_ai_key": "\"{{name}}\" API anahtarını sil."
+    },
+    "brain": {
+      "unusable": {
+        "title": "Bir bilgisayar gerekiyor",
+        "computerOnly": "{{owner}} kişisine ait, yalnızca {{computer}} üzerinde oturum açık. Lodi, hesap olarak oturum açılmış bir planla düşünür.",
+        "noComputer": "{{owner}} kişisine ait. Bir bilgisayar gerekiyor ve çalışma alanında bağlı hiç yok.",
+        "away": "{{owner}} kişisine ait, {{computer}} üzerinde, şu an ulaşılamıyor.",
+        "connect": "Bilgisayar bağla",
+        "plans": "Planları gör"
+      }
     }
   },
   "teamWeek": {
@@ -7668,9 +7675,6 @@
     }
   },
   "issues": {
-    "handedBy": "devreden: <0/>{{name}}",
-    "fromDm": "<0>{{name}} ile DM'inden</0>",
-    "fromDmText": "{{name}} ile DM'inden",
     "delete": {
       "action": "Görevi sil",
       "title": "#{{number}} görevi silinsin mi?",
@@ -7877,9 +7881,6 @@
       "label": "{{name}} çalışması",
       "runningTitle": "{{name}} bunun üzerinde çalışıyor",
       "waitingTitle": "{{name}} sizi bekliyor",
-      "finishedTitle": "{{name}} bitirdi",
-      "finishedMeta": "{{when}} · devreden: {{name}}",
-      "answer": "Yanıtla",
       "stalledTitle": "{{name}} durdu: {{when}}",
       "stalledText": "Görev hâlâ {{name}} üzerinde ama süren bir çalıştırma yok.",
       "started": "başladı: {{when}}",
@@ -7896,7 +7897,10 @@
         "failed": "Son çalıştırma başarısız oldu.",
         "canceled": "Biri çalıştırmayı durdurdu.",
         "budget": "Ajanın aylık bütçesi bitti."
-      }
+      },
+      "finishedTitle": "{{name}} bitirdi",
+      "finishedMeta": "{{when}} · devreden: {{name}}",
+      "answer": "Yanıtla"
     },
     "status": {
       "todo": "Yapılacak",
@@ -8076,7 +8080,10 @@
       "criterion_checked": "\"{{text}}\" kriterini işaretledi",
       "criterion_unchecked": "\"{{text}}\" kriterinin işaretini kaldırdı",
       "agent_asked": "{{name}} ajanından yapmasını istedi"
-    }
+    },
+    "handedBy": "devreden: <0/>{{name}}",
+    "fromDm": "<0>{{name}} ile DM'inden</0>",
+    "fromDmText": "{{name}} ile DM'inden"
   },
   "routines": {
     "filters": "Rutinleri filtrele",
@@ -16458,11 +16465,11 @@
       "rolesPersonal": "Buradaki her kişinin neler yapabileceği. Sahip her şeyi yapabilir."
     },
     "about": {
-      "basedOn": "Codari Global, LLC tarafından geliştirilen <site>agentes.chat</site> tabanlı",
+      "basedOn": "AGENTESCHAT, LLC tarafından geliştirilen <site>agentes.chat</site> tabanlı",
       "version": "Sürüm",
       "license": "<license>GNU Affero General Public License v3</license> kapsamında özgür yazılım, garantisi yoktur.",
       "source": "Kaynak kodu",
-      "copyright": "Copyright © 2026 Codari Global, LLC ve katkıda bulunanlar"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC ve katkıda bulunanlar"
     },
     "title": "Ayarlar",
     "account": {
@@ -16900,7 +16907,7 @@
       "see": "Kullanımı gör"
     }
   },
-  "usageViews": {
+  "usage": {
     "kinds": {
       "label": "Türe göre",
       "handoffs": "Ajanlar arası devirler",
@@ -16908,9 +16915,11 @@
       "routines": "Rutinler"
     },
     "hint": {
-      "handoffs": "Bu haftaki kullanımın çoğu, ajanların birbirine iş devretmesinden geldi. Uzun işler için doğrudan ajana sor.",
-      "message": "{{name}} kişisine mesaj gönder"
-    },
+      "handoffs": "Bu haftaki kullanımın çoğu, ajanların birbirine iş devretmesinden geldi. Uzun işler için doğrudan ajana sorun.",
+      "message": "{{name}} ile mesajlaş"
+    }
+  },
+  "usageViews": {
     "signedOut": "Oturum kapatıldı",
     "whose": "{{name}} hesabı",
     "serves": {
@@ -17011,21 +17020,6 @@
     "tomorrowAt": "yarın {{time}}"
   },
   "work": {
-    "handed": {
-      "lead": "Devredildi: <0/>{{name}}",
-      "working": "üzerinde çalışıyor",
-      "done": "{{duration}} içinde bitti",
-      "waitingYou": "yanıtını bekliyor",
-      "waiting": "bir yanıt bekliyor",
-      "waitingApprovalYou": "onayını bekliyor",
-      "waitingApproval": "onay bekliyor",
-      "waitingComputer": "bilgisayarı bekliyor",
-      "paused": "plan sınırında duraklatıldı",
-      "queued": "sırada",
-      "failed": "bitmedi",
-      "stopped": "durduruldu",
-      "step": "adım {{current}}/{{total}}"
-    },
     "duration": {
       "minutes_one": "{{count}} dk",
       "minutes_other": "{{count}} dk",
@@ -17101,22 +17095,35 @@
       "failed": "Engellendi · bitmedi",
       "failedWhy": "Engellendi · bitmedi: {{why}}"
     },
-    "working": "Arka planda"
+    "working": "Arka planda",
+    "handed": {
+      "lead": "Devredildi: <0/>{{name}}",
+      "working": "üzerinde çalışıyor",
+      "done": "{{duration}} içinde bitti",
+      "waitingYou": "yanıtını bekliyor",
+      "waiting": "bir yanıt bekliyor",
+      "waitingApprovalYou": "onayını bekliyor",
+      "waitingApproval": "onay bekliyor",
+      "waitingComputer": "bilgisayarı bekliyor",
+      "paused": "plan sınırında duraklatıldı",
+      "queued": "sırada",
+      "failed": "bitmedi",
+      "stopped": "durduruldu",
+      "step": "adım {{current}}/{{total}}"
+    }
   },
   "chat": {
-    "request": {
-      "asksYou": "{{name}} soruyor"
-    },
-    "standIn": {
-      "needsComputer": "{{via}} ile yanıtladım: {{plan}} bir bilgisayar gerektiriyor.",
-      "away": "{{via}} ile yanıtladım: {{plan}} bilgisayarı şu an ulaşılamıyor.",
-      "notShared": "{{via}} ile yanıtladım: {{plan}} yalnızca sahibine hizmet ediyor.",
-      "limit": "{{via}} ile yanıtladım: {{plan}} sınırına ulaştı.",
-      "change": "Değiştir"
-    },
     "speedFallback": {
       "text": "ChatGPT bu hesap veya model için Hızlı hızı reddetti, bu yüzden bu yanıt standart hızda geldi.",
       "action": "Ajanı aç"
+    },
+    "standIn": {
+      "needsComputer": "{{via}} ile yanıtladım: {{plan}} bir bilgisayara ihtiyaç duyuyor.",
+      "away": "{{via}} ile yanıtladım: {{plan}} bilgisayarı şu an uzakta.",
+      "notShared": "{{via}} ile yanıtladım: {{plan}} yalnızca onu bağlayan kişiye hizmet ediyor.",
+      "limit": "{{via}} ile yanıtladım: {{plan}} sınırına ulaştı.",
+      "cant": "{{via}} ile yanıtladım: {{plan}} şu an düşünemiyor.",
+      "change": "Değiştir"
     },
     "modelStandIn": {
       "text": "{{plan}} bu anahtarla {{from}} modelini reddetti. Onunla çalışan {{to}} ile yanıt verdim.",
@@ -17698,6 +17705,9 @@
       "interrupted": "Sunucu yeniden başlatıldığı için kesildi. Devam etmek için yeniden sorun.",
       "step_limit": "Bitirmeden adımlarım tükendi.",
       "stuck": "Takıldım ve bitirmeden durdum."
+    },
+    "request": {
+      "asksYou": "{{name}} soruyor"
     }
   },
   "builtinTools": {

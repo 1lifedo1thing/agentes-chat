@@ -2638,18 +2638,15 @@
     }
   },
   "rightHand": {
-    "brain": {
-      "unusable": {
-        "title": "Braucht einen Computer",
-        "computerOnly": "Von {{owner}}, nur auf {{computer}} angemeldet. Lodi denkt mit einem Plan, der als Konto angemeldet ist.",
-        "noComputer": "Von {{owner}}. Braucht einen Computer, und der Workspace hat keinen verbunden.",
-        "away": "Von {{owner}}, auf {{computer}}, der gerade weg ist.",
-        "connect": "Computer verbinden",
-        "plans": "Pläne ansehen"
-      }
-    },
     "label": "deine rechte Hand",
     "labelCapitalized": "Deine rechte Hand",
+    "unusable": {
+      "title": "Kann gerade nicht für {{name}} denken",
+      "computerOnly": "Nur auf {{computer}} angemeldet. {{name}} denkt mit einem Plan, der als Konto angemeldet ist.",
+      "away": "Von {{owner}}, auf {{computer}}, der gerade nicht erreichbar ist.",
+      "awayYours": "Deiner, auf {{computer}}, der gerade nicht erreichbar ist.",
+      "connect": "Computer verbinden"
+    },
     "newDot": "Neu",
     "actsAsYou": "handelt mit deinen Berechtigungen",
     "composerHint": "nichts ändert sich ohne dich",
@@ -2922,6 +2919,16 @@
       "invite_people_sent_one": "Einladung an <b>{{emails}}</b> gesendet.",
       "invite_people_sent_other": "Einladungen an <b>{{emails}}</b> gesendet.",
       "remove_ai_key": "API-Schlüssel „{{name}}“ löschen."
+    },
+    "brain": {
+      "unusable": {
+        "title": "Braucht einen Computer",
+        "computerOnly": "Von {{owner}}, nur auf {{computer}} angemeldet. Lodi denkt mit einem Plan, der als Konto angemeldet ist.",
+        "noComputer": "Von {{owner}}. Braucht einen Computer, und der Workspace hat keinen verbunden.",
+        "away": "Von {{owner}}, auf {{computer}}, der gerade weg ist.",
+        "connect": "Computer verbinden",
+        "plans": "Pläne ansehen"
+      }
     }
   },
   "teamWeek": {
@@ -7708,9 +7715,6 @@
     }
   },
   "issues": {
-    "handedBy": "übergeben von <0/>{{name}}",
-    "fromDm": "aus <0>deiner DM mit {{name}}</0>",
-    "fromDmText": "aus deiner DM mit {{name}}",
     "delete": {
       "action": "Aufgabe löschen",
       "title": "Aufgabe #{{number}} löschen?",
@@ -7917,9 +7921,6 @@
       "label": "Arbeit von {{name}}",
       "runningTitle": "{{name}} arbeitet daran",
       "waitingTitle": "{{name}} wartet auf dich",
-      "finishedTitle": "{{name}} hat es erledigt",
-      "finishedMeta": "{{when}} · übergeben von {{name}}",
-      "answer": "Antworten",
       "stalledTitle": "{{name}} hat {{when}} aufgehört",
       "stalledText": "Die Aufgabe liegt noch bei {{name}}, aber gerade läuft keine Ausführung.",
       "started": "begonnen {{when}}",
@@ -7936,7 +7937,10 @@
         "failed": "Die letzte Ausführung ist fehlgeschlagen.",
         "canceled": "Jemand hat die Ausführung gestoppt.",
         "budget": "Das Monatsbudget des Agenten ist aufgebraucht."
-      }
+      },
+      "finishedTitle": "{{name}} hat es erledigt",
+      "finishedMeta": "{{when}} · übergeben von {{name}}",
+      "answer": "Antworten"
     },
     "status": {
       "todo": "Zu erledigen",
@@ -8116,7 +8120,10 @@
       "criterion_checked": "hat das Kriterium „{{text}}“ abgehakt",
       "criterion_unchecked": "hat das Kriterium „{{text}}“ wieder geöffnet",
       "agent_asked": "hat {{name}} gebeten, sie zu erledigen"
-    }
+    },
+    "handedBy": "übergeben von <0/>{{name}}",
+    "fromDm": "aus <0>deiner DM mit {{name}}</0>",
+    "fromDmText": "aus deiner DM mit {{name}}"
   },
   "routines": {
     "filters": "Routinen filtern",
@@ -16521,11 +16528,11 @@
       "rolesPersonal": "Was jede Person hier tun kann. Inhaber können alles."
     },
     "about": {
-      "basedOn": "Basiert auf <site>agentes.chat</site> von Codari Global, LLC",
+      "basedOn": "Basiert auf <site>agentes.chat</site> von AGENTESCHAT, LLC",
       "version": "Version",
       "license": "Freie Software unter der <license>GNU Affero General Public License v3</license>, ohne Gewährleistung.",
       "source": "Quellcode",
-      "copyright": "Copyright © 2026 Codari Global, LLC und Mitwirkende"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC und Mitwirkende"
     },
     "title": "Einstellungen",
     "account": {
@@ -16963,17 +16970,19 @@
       "see": "Nutzung ansehen"
     }
   },
-  "usageViews": {
+  "usage": {
     "kinds": {
       "label": "Nach Art",
       "handoffs": "Übergaben zwischen Agenten",
-      "people": "Gespräche mit Personen",
+      "people": "Gespräche mit Menschen",
       "routines": "Routinen"
     },
     "hint": {
-      "handoffs": "Der Großteil der Nutzung dieser Woche kam von Agenten, die sich gegenseitig Arbeit übergeben. Bitte den Agenten bei langer Arbeit direkt.",
+      "handoffs": "Der Großteil der Nutzung dieser Woche kam von Agenten, die einander Arbeit übergeben. Für lange Aufgaben frag den Agenten direkt.",
       "message": "{{name}} schreiben"
-    },
+    }
+  },
+  "usageViews": {
     "signedOut": "Abgemeldet",
     "whose": "von {{name}}",
     "serves": {
@@ -17080,21 +17089,6 @@
     "tomorrowAt": "morgen {{time}}"
   },
   "work": {
-    "handed": {
-      "lead": "Übergeben an <0/>{{name}}",
-      "working": "arbeitet daran",
-      "done": "fertig in {{duration}}",
-      "waitingYou": "wartet auf deine Antwort",
-      "waiting": "wartet auf eine Antwort",
-      "waitingApprovalYou": "wartet auf deine Freigabe",
-      "waitingApproval": "wartet auf Freigabe",
-      "waitingComputer": "wartet auf den Computer",
-      "paused": "pausiert am Limit des Plans",
-      "queued": "in der Warteschlange",
-      "failed": "nicht fertig geworden",
-      "stopped": "gestoppt",
-      "step": "Schritt {{current}} von {{total}}"
-    },
     "duration": {
       "minutes_one": "{{count}} Min.",
       "minutes_other": "{{count}} Min.",
@@ -17170,22 +17164,35 @@
       "failed": "Blockiert · nicht fertig geworden",
       "failedWhy": "Blockiert · nicht fertig geworden: {{why}}"
     },
-    "working": "Im Hintergrund"
+    "working": "Im Hintergrund",
+    "handed": {
+      "lead": "Übergeben an <0/>{{name}}",
+      "working": "arbeitet daran",
+      "done": "fertig in {{duration}}",
+      "waitingYou": "wartet auf deine Antwort",
+      "waiting": "wartet auf eine Antwort",
+      "waitingApprovalYou": "wartet auf deine Freigabe",
+      "waitingApproval": "wartet auf Freigabe",
+      "waitingComputer": "wartet auf den Computer",
+      "paused": "pausiert am Limit des Plans",
+      "queued": "in der Warteschlange",
+      "failed": "nicht fertig geworden",
+      "stopped": "gestoppt",
+      "step": "Schritt {{current}} von {{total}}"
+    }
   },
   "chat": {
-    "request": {
-      "asksYou": "{{name}} fragt dich"
-    },
-    "standIn": {
-      "needsComputer": "Mit {{via}} geantwortet: {{plan}} braucht einen Computer.",
-      "away": "Mit {{via}} geantwortet: Der Computer von {{plan}} ist weg.",
-      "notShared": "Mit {{via}} geantwortet: {{plan}} steht nur seinem Besitzer zur Verfügung.",
-      "limit": "Mit {{via}} geantwortet: {{plan}} hat sein Limit erreicht.",
-      "change": "Ändern"
-    },
     "speedFallback": {
       "text": "ChatGPT hat die schnelle Geschwindigkeit für dieses Konto oder Modell abgelehnt. Diese Antwort kam deshalb in Standardgeschwindigkeit.",
       "action": "Agent öffnen"
+    },
+    "standIn": {
+      "needsComputer": "Mit {{via}} geantwortet: {{plan}} braucht einen Computer.",
+      "away": "Mit {{via}} geantwortet: Der Computer von {{plan}} ist nicht erreichbar.",
+      "notShared": "Mit {{via}} geantwortet: {{plan}} ist nur für die Person, die ihn verbunden hat.",
+      "limit": "Mit {{via}} geantwortet: {{plan}} hat sein Limit erreicht.",
+      "cant": "Mit {{via}} geantwortet: {{plan}} kann gerade nicht denken.",
+      "change": "Ändern"
     },
     "modelStandIn": {
       "text": "{{plan}} hat {{from}} mit diesem Schlüssel abgelehnt. Ich habe mit {{to}} geantwortet, das damit funktioniert.",
@@ -17767,6 +17774,9 @@
       "interrupted": "Durch einen Neustart des Servers unterbrochen. Frag noch einmal, um weiterzumachen.",
       "step_limit": "Mir sind die Schritte ausgegangen, bevor ich fertig war.",
       "stuck": "Ich bin hängen geblieben und habe aufgehört, bevor ich fertig war."
+    },
+    "request": {
+      "asksYou": "{{name}} fragt dich"
     }
   },
   "builtinTools": {

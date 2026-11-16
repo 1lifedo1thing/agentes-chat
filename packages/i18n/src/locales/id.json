@@ -2544,18 +2544,15 @@
     }
   },
   "rightHand": {
-    "brain": {
-      "unusable": {
-        "title": "Butuh komputer",
-        "computerOnly": "Milik {{owner}}, masuk hanya di {{computer}}. Lodi berpikir dengan paket yang masuk sebagai akun.",
-        "noComputer": "Milik {{owner}}. Butuh komputer, dan workspace belum menghubungkan satu pun.",
-        "away": "Milik {{owner}}, di {{computer}}, yang sedang tidak aktif.",
-        "connect": "Hubungkan komputer",
-        "plans": "Lihat paket"
-      }
-    },
     "label": "tangan kanan Anda",
     "labelCapitalized": "Tangan kanan Anda",
+    "unusable": {
+      "title": "Tidak bisa berpikir untuk {{name}} sekarang",
+      "computerOnly": "Hanya masuk di {{computer}}. {{name}} berpikir dengan paket yang masuk sebagai akun.",
+      "away": "Milik {{owner}}, di {{computer}}, yang sedang tidak aktif.",
+      "awayYours": "Milik Anda, di {{computer}}, yang sedang tidak aktif.",
+      "connect": "Hubungkan komputer"
+    },
     "newDot": "Baru",
     "actsAsYou": "bertindak dengan izin Anda",
     "composerHint": "tak ada yang berubah tanpa Anda",
@@ -2818,6 +2815,16 @@
       "invite_roles_other": "Dengan peran {{roles}}.",
       "invite_people_sent_other": "Undangan terkirim ke <b>{{emails}}</b>.",
       "remove_ai_key": "Hapus kunci API \"{{name}}\"."
+    },
+    "brain": {
+      "unusable": {
+        "title": "Butuh komputer",
+        "computerOnly": "Milik {{owner}}, masuk hanya di {{computer}}. Lodi berpikir dengan paket yang masuk sebagai akun.",
+        "noComputer": "Milik {{owner}}. Butuh komputer, dan workspace belum menghubungkan satu pun.",
+        "away": "Milik {{owner}}, di {{computer}}, yang sedang tidak aktif.",
+        "connect": "Hubungkan komputer",
+        "plans": "Lihat paket"
+      }
     }
   },
   "teamWeek": {
@@ -7456,9 +7463,6 @@
     }
   },
   "issues": {
-    "handedBy": "diserahkan oleh <0/>{{name}}",
-    "fromDm": "dari <0>DM kamu dengan {{name}}</0>",
-    "fromDmText": "dari DM kamu dengan {{name}}",
     "delete": {
       "action": "Hapus tugas",
       "title": "Hapus tugas #{{number}}?",
@@ -7659,9 +7663,6 @@
       "runningTitle_female": "{{name}} sedang mengerjakannya",
       "waitingTitle": "{{name}} sedang menunggumu",
       "waitingTitle_female": "{{name}} sedang menunggumu",
-      "finishedTitle": "{{name}} menyelesaikannya",
-      "finishedMeta": "{{when}} · diserahkan oleh {{name}}",
-      "answer": "Jawab",
       "stalledTitle": "{{name}} berhenti {{when}}",
       "stalledTitle_female": "{{name}} berhenti {{when}}",
       "stalledText": "Tugas ini masih dipegang {{name}}, tapi tidak ada proses yang berjalan.",
@@ -7680,7 +7681,10 @@
         "failed": "Proses terakhir gagal.",
         "canceled": "Seseorang menghentikan prosesnya.",
         "budget": "Anggaran bulanan agen sudah habis."
-      }
+      },
+      "finishedTitle": "{{name}} menyelesaikannya",
+      "finishedMeta": "{{when}} · diserahkan oleh {{name}}",
+      "answer": "Jawab"
     },
     "status": {
       "todo": "Akan dikerjakan",
@@ -7860,7 +7864,10 @@
       "criterion_checked": "mencentang kriteria \"{{text}}\"",
       "criterion_unchecked": "menghapus centang kriteria \"{{text}}\"",
       "agent_asked": "meminta {{name}} mengerjakannya"
-    }
+    },
+    "handedBy": "diserahkan oleh <0/>{{name}}",
+    "fromDm": "dari <0>DM kamu dengan {{name}}</0>",
+    "fromDmText": "dari DM kamu dengan {{name}}"
   },
   "routines": {
     "filters": "Saring rutinitas",
@@ -16017,11 +16024,11 @@
       "rolesPersonal": "Apa yang bisa dilakukan setiap orang di sini. Pemilik bisa melakukan semuanya."
     },
     "about": {
-      "basedOn": "Berdasarkan <site>agentes.chat</site> oleh Codari Global, LLC",
+      "basedOn": "Berdasarkan <site>agentes.chat</site> oleh AGENTESCHAT, LLC",
       "version": "Versi",
       "license": "Perangkat lunak bebas di bawah <license>GNU Affero General Public License v3</license>, tanpa jaminan.",
       "source": "Kode sumber",
-      "copyright": "Copyright © 2026 Codari Global, LLC dan para kontributor"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC dan para kontributor"
     },
     "title": "Pengaturan",
     "account": {
@@ -16449,17 +16456,19 @@
       "see": "Lihat pemakaian"
     }
   },
-  "usageViews": {
+  "usage": {
     "kinds": {
       "label": "Menurut jenis",
-      "handoffs": "Serah terima antar-agen",
+      "handoffs": "Serah terima antaragen",
       "people": "Percakapan dengan orang",
       "routines": "Rutinitas"
     },
     "hint": {
-      "handoffs": "Sebagian besar pemakaian minggu ini berasal dari agen yang saling menyerahkan pekerjaan. Untuk pekerjaan panjang, minta langsung ke agennya.",
+      "handoffs": "Sebagian besar penggunaan minggu ini berasal dari agen yang saling menyerahkan pekerjaan. Untuk pekerjaan panjang, minta langsung ke agennya.",
       "message": "Kirim pesan ke {{name}}"
-    },
+    }
+  },
+  "usageViews": {
     "signedOut": "Sudah keluar",
     "whose": "Milik {{name}}",
     "serves": {
@@ -16562,21 +16571,6 @@
     "tomorrowAt": "besok {{time}}"
   },
   "work": {
-    "handed": {
-      "lead": "Diserahkan ke <0/>{{name}}",
-      "working": "sedang dikerjakan",
-      "done": "selesai dalam {{duration}}",
-      "waitingYou": "menunggu jawabanmu",
-      "waiting": "menunggu jawaban",
-      "waitingApprovalYou": "menunggu persetujuanmu",
-      "waitingApproval": "menunggu persetujuan",
-      "waitingComputer": "menunggu komputer",
-      "paused": "dijeda di batas paket",
-      "queued": "dalam antrean",
-      "failed": "tidak selesai",
-      "stopped": "dihentikan",
-      "step": "langkah {{current}} dari {{total}}"
-    },
     "duration": {
       "minutes_other": "{{count}} mnt",
       "hours_other": "{{count}} j",
@@ -16650,22 +16644,35 @@
       "failed": "Terhambat · tidak selesai",
       "failedWhy": "Terhambat · tidak selesai: {{why}}"
     },
-    "working": "Di latar belakang"
+    "working": "Di latar belakang",
+    "handed": {
+      "lead": "Diserahkan ke <0/>{{name}}",
+      "working": "sedang dikerjakan",
+      "done": "selesai dalam {{duration}}",
+      "waitingYou": "menunggu jawabanmu",
+      "waiting": "menunggu jawaban",
+      "waitingApprovalYou": "menunggu persetujuanmu",
+      "waitingApproval": "menunggu persetujuan",
+      "waitingComputer": "menunggu komputer",
+      "paused": "dijeda di batas paket",
+      "queued": "dalam antrean",
+      "failed": "tidak selesai",
+      "stopped": "dihentikan",
+      "step": "langkah {{current}} dari {{total}}"
+    }
   },
   "chat": {
-    "request": {
-      "asksYou": "{{name}} bertanya padamu"
-    },
-    "standIn": {
-      "needsComputer": "Dijawab dengan {{via}}: {{plan}} butuh komputer.",
-      "away": "Dijawab dengan {{via}}: komputer tempat {{plan}} sedang tidak aktif.",
-      "notShared": "Dijawab dengan {{via}}: {{plan}} hanya melayani pemiliknya.",
-      "limit": "Dijawab dengan {{via}}: {{plan}} sudah mencapai batasnya.",
-      "change": "Ubah"
-    },
     "speedFallback": {
       "text": "ChatGPT menolak kecepatan Cepat untuk akun atau model ini, jadi jawaban ini memakai kecepatan standar.",
       "action": "Buka agen"
+    },
+    "standIn": {
+      "needsComputer": "Dijawab dengan {{via}}: {{plan}} perlu komputer.",
+      "away": "Dijawab dengan {{via}}: komputer {{plan}} sedang tidak aktif.",
+      "notShared": "Dijawab dengan {{via}}: {{plan}} hanya melayani pemiliknya.",
+      "limit": "Dijawab dengan {{via}}: {{plan}} sudah mencapai batasnya.",
+      "cant": "Dijawab dengan {{via}}: {{plan}} tidak bisa berpikir sekarang.",
+      "change": "Ubah"
     },
     "modelStandIn": {
       "text": "{{plan}} menolak {{from}} dengan kunci ini. Aku menjawab dengan {{to}}, yang berfungsi dengannya.",
@@ -17239,6 +17246,9 @@
       "interrupted": "Terputus karena server dimulai ulang. Minta lagi untuk melanjutkan.",
       "step_limit": "Langkahku habis sebelum selesai.",
       "stuck": "Aku macet dan berhenti sebelum selesai."
+    },
+    "request": {
+      "asksYou": "{{name}} bertanya padamu"
     }
   },
   "builtinTools": {

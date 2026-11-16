@@ -6563,29 +6563,26 @@
   "receipts.by.default": {
     "value": "Nobody was called, so {{name}} answered"
   },
-  "rightHand.brain.unusable.title": {
-    "value": "Needs a computer"
-  },
-  "rightHand.brain.unusable.computerOnly": {
-    "value": "{{owner}}'s, signed in on {{computer}} only. Lodi thinks with a plan signed in as an account."
-  },
-  "rightHand.brain.unusable.noComputer": {
-    "value": "{{owner}}'s. It needs a computer, and the workspace has none connected."
-  },
-  "rightHand.brain.unusable.away": {
-    "value": "{{owner}}'s, on {{computer}}, which is away."
-  },
-  "rightHand.brain.unusable.connect": {
-    "value": "Connect a computer"
-  },
-  "rightHand.brain.unusable.plans": {
-    "value": "See plans"
-  },
   "rightHand.label": {
     "value": "your right hand"
   },
   "rightHand.labelCapitalized": {
     "value": "Your right hand"
+  },
+  "rightHand.unusable.title": {
+    "value": "Can't think for {{name}} now"
+  },
+  "rightHand.unusable.computerOnly": {
+    "value": "Signed in on {{computer}} only. {{name}} thinks with a plan signed in as an account."
+  },
+  "rightHand.unusable.away": {
+    "value": "{{owner}}'s, on {{computer}}, which is away."
+  },
+  "rightHand.unusable.awayYours": {
+    "value": "Yours, on {{computer}}, which is away."
+  },
+  "rightHand.unusable.connect": {
+    "value": "Connect a computer"
   },
   "rightHand.newDot": {
     "value": "New"
@@ -18703,15 +18700,6 @@
   "scopes.custom_write.description": {
     "value": "Use the write tools. Those marked sensitive always ask for approval."
   },
-  "issues.handedBy": {
-    "value": "handed by <0/>{{name}}"
-  },
-  "issues.fromDm": {
-    "value": "from <0>your DM with {{name}}</0>"
-  },
-  "issues.fromDmText": {
-    "value": "from your DM with {{name}}"
-  },
   "issues.delete.action": {
     "value": "Delete task"
   },
@@ -19230,15 +19218,6 @@
   },
   "issues.work.waitingTitle": {
     "value": "{{name}} is waiting for you"
-  },
-  "issues.work.finishedTitle": {
-    "value": "{{name}} finished it"
-  },
-  "issues.work.finishedMeta": {
-    "value": "{{when}} · handed by {{name}}"
-  },
-  "issues.work.answer": {
-    "value": "Answer"
   },
   "issues.work.stalledTitle": {
     "value": "{{name}} stopped {{when}}"
@@ -40685,7 +40664,7 @@
     "value": "What each person here can do. The owner can do everything."
   },
   "settings.about.basedOn": {
-    "value": "Based on <site>agentes.chat</site> by Codari Global, LLC"
+    "value": "Based on <site>agentes.chat</site> by AGENTESCHAT, LLC"
   },
   "settings.about.version": {
     "value": "Version"
@@ -40697,7 +40676,7 @@
     "value": "Source code"
   },
   "settings.about.copyright": {
-    "value": "Copyright © 2026 Codari Global, LLC and contributors"
+    "value": "Copyright © 2026 AGENTESCHAT, LLC and contributors"
   },
   "settings.title": {
     "value": "Settings"
@@ -41776,22 +41755,22 @@
   "peopleUsage.actions.see": {
     "value": "See their usage"
   },
-  "usageViews.kinds.label": {
+  "usage.kinds.label": {
     "value": "By kind"
   },
-  "usageViews.kinds.handoffs": {
+  "usage.kinds.handoffs": {
     "value": "Handoffs between agents"
   },
-  "usageViews.kinds.people": {
+  "usage.kinds.people": {
     "value": "Conversations with people"
   },
-  "usageViews.kinds.routines": {
+  "usage.kinds.routines": {
     "value": "Routines"
   },
-  "usageViews.hint.handoffs": {
+  "usage.hint.handoffs": {
     "value": "Most of this week's use came from agents handing work to each other. Ask the agent directly for long work."
   },
-  "usageViews.hint.message": {
+  "usage.hint.message": {
     "value": "Message {{name}}"
   },
   "usageViews.signedOut": {
@@ -42040,45 +42019,6 @@
   "format.tomorrowAt": {
     "value": "tomorrow {{time}}"
   },
-  "work.handed.lead": {
-    "value": "Handed to <0/>{{name}}"
-  },
-  "work.handed.working": {
-    "value": "working on it"
-  },
-  "work.handed.done": {
-    "value": "done in {{duration}}"
-  },
-  "work.handed.waitingYou": {
-    "value": "waiting for your answer"
-  },
-  "work.handed.waiting": {
-    "value": "waiting for an answer"
-  },
-  "work.handed.waitingApprovalYou": {
-    "value": "waiting for your approval"
-  },
-  "work.handed.waitingApproval": {
-    "value": "waiting for approval"
-  },
-  "work.handed.waitingComputer": {
-    "value": "waiting for the computer"
-  },
-  "work.handed.paused": {
-    "value": "paused at the plan's limit"
-  },
-  "work.handed.queued": {
-    "value": "in line"
-  },
-  "work.handed.failed": {
-    "value": "didn't finish"
-  },
-  "work.handed.stopped": {
-    "value": "stopped"
-  },
-  "work.handed.step": {
-    "value": "step {{current}} of {{total}}"
-  },
   "work.duration.minutes": {
     "value": {
       "one": "{{count}} min",
@@ -42277,8 +42217,11 @@
   "work.working": {
     "value": "In the background"
   },
-  "chat.request.asksYou": {
-    "value": "{{name}} asks you"
+  "chat.speedFallback.text": {
+    "value": "ChatGPT refused Fast speed on this account or model, so this reply came at standard speed."
+  },
+  "chat.speedFallback.action": {
+    "value": "Open agent"
   },
   "chat.standIn.needsComputer": {
     "value": "Answered with {{via}}: {{plan}} needs a computer."
@@ -42292,14 +42235,11 @@
   "chat.standIn.limit": {
     "value": "Answered with {{via}}: {{plan}} reached its limit."
   },
+  "chat.standIn.cant": {
+    "value": "Answered with {{via}}: {{plan}} can't think right now."
+  },
   "chat.standIn.change": {
     "value": "Change"
-  },
-  "chat.speedFallback.text": {
-    "value": "ChatGPT refused Fast speed on this account or model, so this reply came at standard speed."
-  },
-  "chat.speedFallback.action": {
-    "value": "Open agent"
   },
   "chat.modelStandIn.text": {
     "value": "{{plan}} refused {{from}} with this key. I answered with {{to}}, which works with it."
@@ -49309,5 +49249,83 @@
   },
   "feedback.offer.askFirst": {
     "value": "Ask before sending"
+  },
+  "rightHand.brain.unusable.title": {
+    "value": "Needs a computer"
+  },
+  "rightHand.brain.unusable.computerOnly": {
+    "value": "{{owner}}'s, signed in on {{computer}} only. Lodi thinks with a plan signed in as an account."
+  },
+  "rightHand.brain.unusable.noComputer": {
+    "value": "{{owner}}'s. It needs a computer, and the workspace has none connected."
+  },
+  "rightHand.brain.unusable.away": {
+    "value": "{{owner}}'s, on {{computer}}, which is away."
+  },
+  "rightHand.brain.unusable.connect": {
+    "value": "Connect a computer"
+  },
+  "rightHand.brain.unusable.plans": {
+    "value": "See plans"
+  },
+  "issues.handedBy": {
+    "value": "handed by <0/>{{name}}"
+  },
+  "issues.fromDm": {
+    "value": "from <0>your DM with {{name}}</0>"
+  },
+  "issues.fromDmText": {
+    "value": "from your DM with {{name}}"
+  },
+  "issues.work.finishedTitle": {
+    "value": "{{name}} finished it"
+  },
+  "issues.work.finishedMeta": {
+    "value": "{{when}} · handed by {{name}}"
+  },
+  "issues.work.answer": {
+    "value": "Answer"
+  },
+  "work.handed.lead": {
+    "value": "Handed to <0/>{{name}}"
+  },
+  "work.handed.working": {
+    "value": "working on it"
+  },
+  "work.handed.done": {
+    "value": "done in {{duration}}"
+  },
+  "work.handed.waitingYou": {
+    "value": "waiting for your answer"
+  },
+  "work.handed.waiting": {
+    "value": "waiting for an answer"
+  },
+  "work.handed.waitingApprovalYou": {
+    "value": "waiting for your approval"
+  },
+  "work.handed.waitingApproval": {
+    "value": "waiting for approval"
+  },
+  "work.handed.waitingComputer": {
+    "value": "waiting for the computer"
+  },
+  "work.handed.paused": {
+    "value": "paused at the plan's limit"
+  },
+  "work.handed.queued": {
+    "value": "in line"
+  },
+  "work.handed.failed": {
+    "value": "didn't finish"
+  },
+  "work.handed.stopped": {
+    "value": "stopped"
+  },
+  "work.handed.step": {
+    "value": "step {{current}} of {{total}}"
+  },
+  "chat.request.asksYou": {
+    "value": "{{name}} asks you"
   }
 }
