@@ -2973,6 +2973,8 @@ export const en = {
       "Used in channels and in work that runs on its own. The whole workspace shares this place. Keep nothing private here.",
     /** The row where it has none for anyone: the workspace has no computer of its own. */
     computerNoHome: "No computer yet. It gets one when this workspace has a computer of its own.",
+    /** The same row on a self-hosted server: this server made the agents' computer gives it one. `guide`: the setup guide. */
+    computerNoHomeServer: "No browser yet. Set up <guide>this server as the agents' computer</guide> to give it one.",
     addComputer: "Add a computer",
     /** The row where the workspace's computer runs every agent as one OS user. */
     computerOneUser:

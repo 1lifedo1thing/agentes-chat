@@ -2850,6 +2850,7 @@
     "sharedName": "{{name}} (partagé)",
     "sharedPlace": "Utilisé dans les canaux et pour le travail qui s'exécute tout seul. Tout le workspace partage cet espace. N'y gardez rien de privé.",
     "computerNoHome": "Pas encore d'ordinateur. Il en aura un quand ce workspace aura son propre ordinateur.",
+    "computerNoHomeServer": "Pas encore de navigateur. Configurez <guide>ce serveur comme ordinateur des agents</guide> pour lui en donner un.",
     "addComputer": "Ajouter un ordinateur",
     "computerOneUser": "Pas d'ordinateur ici. L'ordinateur du workspace exécute tous les agents sous un seul utilisateur et ne peut donc pas séparer l'espace de chaque personne. Un serveur Linux installé avec l'option --system de l'installateur le peut.",
     "powers": {

@@ -6851,6 +6851,9 @@
   "rightHand.computerNoHome": {
     "value": "No computer yet. It gets one when this workspace has a computer of its own."
   },
+  "rightHand.computerNoHomeServer": {
+    "value": "No browser yet. Set up <guide>this server as the agents' computer</guide> to give it one."
+  },
   "rightHand.addComputer": {
     "value": "Add a computer"
   },
