@@ -510,7 +510,7 @@ describe("Perfil: agora, cada coisa uma vez", () => {
       "      {knows.data ? memoryKnows : knows.isError ? memoryFailed : null}\n      {/* What people told it to always do, under what it learned, as the web's Memória. */}\n      <GivenRules agentId={id} name={name} rightHand={rightHand} />",
     );
     expect(screen).toContain(
-      '<MergeReposSection agentId={id} name={name} mayEdit={mine || can(org, "manage_agents")} />',
+      '<MergeReposSection agentId={id} mayEdit={mine || can(org, "manage_agents")} />',
     );
     expect(screen).toContain(
       '<GroupedHeader>{t("rightHand.settings.mine")}</GroupedHeader>\n            <RightHandMine',

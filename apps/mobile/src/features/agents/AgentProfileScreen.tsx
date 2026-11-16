@@ -698,7 +698,7 @@ function Profile({ id }: { id: string }) {
       ) : (
         <>
           <AlwaysApproved agentId={id} name={name} mayRemove={mine || can(org, "approve_actions")} />
-          <MergeReposSection agentId={id} name={name} mayEdit={mine || can(org, "manage_agents")} />
+          <MergeReposSection agentId={id} mayEdit={mine || can(org, "manage_agents")} />
           {ownerLine ? (
             <View style={styles.apart}>
               <GroupedList>

@@ -1216,7 +1216,10 @@ describe("the agent's AI", () => {
       new URL("../../src/features/agents/NewAgentScreen.tsx", import.meta.url).pathname,
     ).text();
     expect(screen).toContain("openConnectAi({ agentId: agent.id, plan: thinks.connect })");
-    expect(screen).toContain("<BrainPickSheet");
+    // "Quem pensa" is chosen on its own pushed screen, never a sheet over the form (ADR 0135).
+    expect(screen).toContain("openBrainPick({");
+    expect(screen).toContain('router.push("/agent-brain");');
+    expect(screen).not.toContain("BrainPickSheet");
     // No last setup: a plan account of mine (one connected before I had an agent) thinks for it, as on the web.
     expect(screen).toContain("(proposed || start ? null : (ownPlan ?? null))");
     expect(screen).toContain("const ownPlan = planAccountOption(brainOptions);");

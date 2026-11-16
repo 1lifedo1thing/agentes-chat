@@ -282,9 +282,12 @@ describe("creating an agent on the phone", () => {
     expect(screen).not.toContain("nextLevel");
     expect(screen).toContain("const chooseLevel = (title: string, current: string, choose: (level: Level) => void) =>");
     expect(screen).toContain("chooseLevel(app, level, (l) => setProposedLevels((p) => ({ ...p, [i.id]: l })))");
-    // The look in the list: swatches checked inside, the eyes and the accessory each in a sheet of checked rows.
+    // The look in the list: swatches checked inside, the eyes and the accessory each on a pushed screen of checked
+    // rows (ADR 0135: screens, never sheets).
     expect(screen).toContain("<LookList look={look} onChange={setLook} />");
     expect(look).toContain("checked={o.key === value}");
+    expect(look).toContain('router.push("/agent-look");');
+    expect(look).not.toContain("<Sheet");
   });
 
   test("the custom color sheet: starts from the current color, applies it on done, keeps the drag from the scroll", async () => {

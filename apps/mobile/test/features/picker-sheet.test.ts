@@ -36,10 +36,14 @@ describe("pickers are the app's sheet, never the system's alert list", () => {
   });
 
   test("the pickers go through pickOne, with who or what each option is", () => {
+    // A person for a setor is one of many: chosen on the people's own pushed screen (ADR 0135), each with their photo.
     const sector = src("features/team/SectorScreen.tsx");
-    expect(sector).toContain("pickOne({");
-    expect(sector).toContain('leading: { kind: "person" as const, userId: m.userId }');
-    expect(sector).not.toContain("chooseAction");
+    expect(sector).toContain("openPersonChoose({");
+    expect(sector).toContain('router.push("/person-choose")');
+    expect(sector).not.toContain("pickOne(");
+    expect(src("features/team/PersonChooseScreen.tsx")).toContain(
+      '<Face who={{ type: "person", id: p.userId }} size={36} live={false} />',
+    );
     for (const file of [
       "features/me/MeScreen.tsx",
       "features/routines/RoutineForm.tsx",

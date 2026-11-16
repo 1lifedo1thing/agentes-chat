@@ -37,7 +37,7 @@ export function AgentMoreScreen({ agentId }: { agentId: string }) {
         </>
       ) : null}
       <AlwaysApproved agentId={agentId} name={name} mayRemove={mine || can(org, "approve_actions")} />
-      <MergeReposSection agentId={agentId} name={name} mayEdit={mine || can(org, "manage_agents")} />
+      <MergeReposSection agentId={agentId} mayEdit={mine || can(org, "manage_agents")} />
       {/* Deleting for good asks for its name on a screen of its own (ADR 0082). */}
       {admin && agent && !rightHand ? (
         <GroupedList>
