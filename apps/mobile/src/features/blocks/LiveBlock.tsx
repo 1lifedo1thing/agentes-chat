@@ -9,11 +9,12 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
-import { Button, IconButton, Sky, Text, useTheme, useToast } from "@/ui";
+import { Button, IconButton, SCREEN_X, Sky, Text, useTheme, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
-import { PushedHeader, tapHaptic } from "../shared/parts";
+import { PushedHeader } from "../shared/parts";
 import { hostScript, INLINE_HEIGHT, ISOLATED_WEB_VIEW, themeScript, withLiveBlock } from "./logic";
 import { SpecBlock } from "./SpecBlock";
 
@@ -210,7 +211,6 @@ export function LiveBlock({
   // Taller than the card: cut with a fade, "Ver mais" under it, which opens it whole for good.
   const tall = !screen && height > INLINE_HEIGHT;
   const openWhole = () => {
-    tapHaptic();
     keptOf(blockKey).open = true;
     setOpen(true);
   };
@@ -239,7 +239,6 @@ export function LiveBlock({
     if (!draft?.ready || reply.isPending) return;
     // A page can't swap the words under a tap: a text that just changed needs a moment on screen.
     if (Date.now() - changedAt.current < DRAFT_SETTLE_MS) return;
-    tapHaptic();
     const text = draft.text;
     reply.mutate(
       { text, clientId: randomUUID() },
@@ -268,7 +267,6 @@ export function LiveBlock({
           wide
           label={t("mobile.blocks.runPage")}
           onPress={() => {
-            tapHaptic();
             keptOf(blockKey).run = true;
             setRun(true);
           }}
@@ -368,10 +366,7 @@ export function LiveBlockCard({ id, version }: { id: string; version?: number })
     );
   }
   const agentId = a.createdBy.id;
-  const open = () => {
-    tapHaptic();
-    router.push({ pathname: "/block/[id]", params: { id: a.id, v: String(a.shownVersion) } });
-  };
+  const open = () => router.push({ pathname: "/block/[id]", params: { id: a.id, v: String(a.shownVersion) } });
   return (
     <View style={[styles.card, { backgroundColor: c.raised, borderColor: c.line2 }]}>
       <Sky
@@ -417,15 +412,11 @@ export function BlockScreen({ id, version }: { id: string; version?: number }) {
   const insets = useSafeAreaInsets();
   const a = query.data;
   if (a?.content.kind !== "block") {
+    // The bar is there from the first frame (the way back included); a failure offers to try again.
     return (
       <View style={[styles.fill, styles.center, { backgroundColor: c.bg }]}>
-        {query.isError ? (
-          <Text variant="body" tone="muted">
-            {t("mobile.files.loadFailed")}
-          </Text>
-        ) : (
-          <ActivityIndicator color={c.faint} />
-        )}
+        <PushedHeader title="" />
+        {query.isError ? <LoadFailed onRetry={() => void query.refetch()} /> : <ActivityIndicator color={c.faint} />}
       </View>
     );
   }
@@ -491,7 +482,7 @@ const styles = StyleSheet.create({
   foot: { gap: 8, padding: 12, borderTopWidth: StyleSheet.hairlineWidth },
   sent: { flexDirection: "row", alignItems: "center", gap: 8 },
   mark: { width: 5, height: 5 },
-  keep: { paddingHorizontal: 16, paddingVertical: 12 },
+  keep: { paddingHorizontal: SCREEN_X, paddingTop: 12 },
   gate: { gap: 8, padding: 14 },
   screenBody: { paddingVertical: 8 },
 });

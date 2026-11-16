@@ -16,23 +16,27 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type LayoutChangeEvent, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { GestureDetector, useExclusiveGestures, usePanGesture, useTapGesture } from "react-native-gesture-handler";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { Button, fieldText, haptics, Segmented, Text, TOUCH, ToggleSwitch, useReducedMotion, useToast } from "@/ui";
+import {
+  Button,
+  fieldText,
+  haptics,
+  motion,
+  PressScale,
+  Segmented,
+  Text,
+  TOUCH,
+  ToggleSwitch,
+  useReducedMotion,
+  useToast,
+} from "@/ui";
 import { ChartView } from "../chat/ChartCard";
 import { keepSize, keptSize } from "../chat/kept-sizes";
 import { useLayoutKey } from "../chat/look";
 import { Table } from "../chat/MessageSpans";
-import { useColors, useDirectory, useOrgId } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
-import { tapHaptic } from "../shared/parts";
 import { INLINE_HEIGHT } from "./logic";
 
 type Sent = { text: string; at: string };
@@ -114,14 +118,12 @@ export function SpecBlock({
 
   const tall = !screen && height > INLINE_HEIGHT;
   const openWhole = () => {
-    tapHaptic();
     keptOf(blockKey).open = true;
     setOpen(true);
   };
   const send = () => {
     const draft = view.send;
     if (!draft?.ready || reply.isPending) return;
-    tapHaptic();
     const text = draft.text;
     reply.mutate(
       { text, clientId: randomUUID() },
@@ -374,17 +376,21 @@ function Part({ part: p, values, accent }: { part: BlockViewPart; values: Values
       if (!p.pick) return <View style={look}>{inner}</View>;
       const pick = p.pick;
       return (
-        <Pressable
+        // A pick among cards: the selection's tick, not a press's tap.
+        <PressScale
+          to={0.98}
+          haptic={false}
+          fill={false}
           accessibilityRole="button"
           accessibilityState={{ selected: p.selected }}
           onPress={() => {
             haptics.selection();
             values.set({ [pick.name]: pick.value });
           }}
-          style={({ pressed }) => [look, pressed ? styles.pressed : null]}
+          style={look}
         >
           {inner}
-        </Pressable>
+        </PressScale>
       );
     }
     case "actions":
@@ -402,7 +408,6 @@ function Part({ part: p, values, accent }: { part: BlockViewPart; values: Values
               size="sm"
               label={b.label}
               onPress={() => {
-                tapHaptic();
                 if (b.set) values.set(b.set);
                 if (b.draw) void values.draw(b.draw.name, b.draw.options);
               }}
@@ -474,7 +479,7 @@ function Slider({
   shareNow.current = share;
   // Let go between two steps: the thumb lands on the step the value took.
   const settle = () => {
-    x.value = withTiming(shareNow.current, { duration: 120 });
+    x.value = withTiming(shareNow.current, { duration: 120, easing: motion.easeOut });
   };
   const land = (next: number) => {
     if (next === last.current) return;
@@ -602,20 +607,16 @@ function More({
   const [open, setOpen] = useState(false);
   return (
     <View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        onPress={() => {
-          tapHaptic();
-          setOpen((o) => !o);
-        }}
-        hitSlop={8}
-        style={styles.moreHead}
-      >
-        <Text variant="footnote" tone="muted" style={styles.bold}>
-          {open ? "▾" : "▸"} {label || t("mobile.blocks.more")}
-        </Text>
-      </Pressable>
+      {/* Its chevron says which way it goes; the text lines up with the block's (a button's own inset taken back). */}
+      <View style={styles.moreHead}>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={open ? "chev" : "right"}
+          label={label || t("mobile.blocks.more")}
+          onPress={() => setOpen((o) => !o)}
+        />
+      </View>
       {open ? (
         <View style={styles.moreBody}>
           <Parts parts={parts} values={values} accent={accent} />
@@ -625,9 +626,13 @@ function More({
   );
 }
 
-/** The block's answer, large. A value the server just drew rolls into place, the same moment for everyone. */
+/**
+ * The block's answer, large. A value the server just drew rolls into place, the same moment for everyone; the tap of
+ * success only on the phone of who drew it.
+ */
 function Result({ label, text, change }: { label: string; text: string; change: BlockChange | undefined }) {
   const c = useColors();
+  const meId = useMeId();
   const reduced = useReducedMotion();
   const y = useSharedValue(0);
   const fade = useSharedValue(1);
@@ -639,13 +644,12 @@ function Result({ label, text, change }: { label: string; text: string; change: 
       first.current = false;
       return;
     }
-    if (!drawnAt || reduced) return;
-    y.value = withSequence(withTiming(-28, { duration: 0 }), withSpring(0, { stiffness: 260, damping: 14 }));
-    fade.value = withSequence(
-      withTiming(0, { duration: 0 }),
-      withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) }),
-    );
-    haptics.success();
+    if (!drawnAt) return;
+    if (change?.by === meId) haptics.success();
+    if (reduced) return;
+    // In from above on the app's ease-out, no bounce: nothing was thrown.
+    y.value = withSequence(withTiming(-28, { duration: 0 }), withTiming(0, { duration: 260, easing: motion.easeOut }));
+    fade.value = withSequence(withTiming(0, { duration: 0 }), withTiming(1, { duration: 260, easing: motion.easeOut }));
   }, [drawnAt]);
   const rolled = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }], opacity: fade.value }));
   return (
@@ -753,7 +757,6 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   cardOn: { borderWidth: 1.6 },
-  pressed: { opacity: 0.85 },
   cardHead: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: 8 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   field: {
@@ -764,6 +767,6 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   fieldBig: { minHeight: 88, textAlignVertical: "top" },
-  moreHead: { alignSelf: "flex-start", minHeight: 28, justifyContent: "center" },
+  moreHead: { flexDirection: "row", marginLeft: -12 },
   moreBody: { gap: 10, marginTop: 6 },
 });
