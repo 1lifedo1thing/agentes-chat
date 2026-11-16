@@ -18,7 +18,8 @@ import type { NewMissionStart } from "./new-mission";
 /**
  * "Começar uma missão" / "Transformar em missão", a screen pushed over the conversation: the goal, who does it (the
  * agents that can run one for you, each with its computer or why it can't) and the bar's word that asks for the plan.
- * The agent makes a plan and waits for "Começar". Leaving with a goal typed asks first.
+ * The agent makes a plan and waits for "Começar". Leaving with a goal typed asks first. The goal's field waits for the
+ * person's tap: the screen never opens with the keyboard up over who does it.
  */
 export function NewMissionScreen({
   channelId,
@@ -75,7 +76,6 @@ export function NewMissionScreen({
         onChangeText={setGoal}
         placeholder={t("mobile.newMission.placeholder")}
         accessibilityLabel={t("mobile.newMission.placeholder")}
-        autoFocus={!initialGoal}
       />
       <GroupedFooter>{t("mobile.newMission.intro")}</GroupedFooter>
       <GroupedHeader>{t("mobile.newMission.who")}</GroupedHeader>

@@ -96,7 +96,7 @@ describe("nobody will answer: the receipt's sheet, never a line", () => {
   test("the sheet says it and offers each agent it reached to call, with its @handle put in the box", () => {
     const receipts = src("features/chat/AgentReceipts.tsx");
     expect(receipts).toContain('t(mentionNeeded ? "receipts.mentionNeeded" : "receipts.nobody")');
-    expect(receipts).toContain('<SectionHeader title={t("channel.callAgent")} />');
+    expect(receipts).toContain('<GroupedHeader>{t("channel.callAgent")}</GroupedHeader>');
     expect(receipts).toMatch(/requestComposerText\(m\.channelId, `@\$\{c\.handle\} `\)/);
     // The marks are the clock, one tick and two.
     expect(receipts).toMatch(/if \(mark === "none"\) return null;\s*return <Icon name=\{mark\}/);

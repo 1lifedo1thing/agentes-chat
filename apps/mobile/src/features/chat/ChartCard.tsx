@@ -20,7 +20,17 @@ import { useTranslation } from "react-i18next";
 import { type LayoutChangeEvent, Pressable, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, useDerivedValue, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Icon, motion, PressScale, SheetBar, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
+import {
+  EmptyState,
+  Icon,
+  motion,
+  PressScale,
+  SheetBar,
+  Text,
+  useReducedMotion,
+  useRouteSheetScrollable,
+  useTheme,
+} from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors } from "../shared/hooks";
 import type { Inline } from "./logic";
@@ -121,10 +131,13 @@ export function ChartSheet() {
   const chart = opened;
   if (!chart) {
     return (
-      <View style={[styles.sheet, styles.gone]}>
-        <Text variant="body" tone="muted">
-          {t("mobile.chart.gone")}
-        </Text>
+      // Opened again with nothing to show (the app started over on it): said as every empty place says it, with the
+      // sheet's bar to close it.
+      <View style={styles.sheet}>
+        <SheetBar onClose={() => router.back()} />
+        <View style={styles.gone}>
+          <EmptyState size="panel" icon="chart" title={t("mobile.chart.gone")} />
+        </View>
       </View>
     );
   }
@@ -590,7 +603,7 @@ const styles = StyleSheet.create({
   number: { flexDirection: "row", alignItems: "flex-end", gap: 14 },
   numValue: { fontWeight: "700", letterSpacing: -0.5, fontVariant: ["tabular-nums"] },
   sheet: { flex: 1 },
-  gone: { alignItems: "center", justifyContent: "center", padding: 24 },
+  gone: { flex: 1, justifyContent: "center", padding: 24 },
   sheetTitle: { paddingHorizontal: 16 },
   sheetBody: { paddingHorizontal: 16, paddingTop: 14, gap: 20 },
 });

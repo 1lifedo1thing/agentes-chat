@@ -61,11 +61,14 @@ function useRise(value: SharedValue<number>, rise: number, moves: boolean) {
  */
 export function FirstDay({
   agent,
+  topInset,
   bottomInset,
   keyboardLift,
   onAsk,
 }: {
   agent: Agent;
+  /** Room for the clear bar over the top: a greeting taller than the room above the keys scrolls out from under it. */
+  topInset: number;
   /** Room for the composer floating over the bottom. */
   bottomInset: number;
   /** How much of the composer's bottom padding hides behind the open keyboard. */
@@ -153,7 +156,8 @@ export function FirstDay({
     <Animated.View style={[styles.grow, ...above]}>
       <ScrollView
         style={styles.grow}
-        contentContainerStyle={[styles.content, { paddingBottom: bottomInset + 16 }]}
+        contentContainerStyle={[styles.content, { paddingTop: topInset + 8, paddingBottom: bottomInset + 16 }]}
+        scrollIndicatorInsets={{ top: topInset, bottom: bottomInset }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
@@ -224,7 +228,7 @@ export function FirstDay({
 const styles = StyleSheet.create({
   grow: { flex: 1 },
   // The message sits at the bottom, over the composer, where a conversation's latest message is.
-  content: { flexGrow: 1, justifyContent: "flex-end", paddingTop: 8 },
+  content: { flexGrow: 1, justifyContent: "flex-end" },
   // The chat's row: the face at the inset, the words on the chat's text column (MSG_TEXT).
   row: { flexDirection: "row", gap: MSG_GAP, paddingLeft: MSG_INSET, paddingRight: 16 },
   avatar: { width: MSG_AVATAR },

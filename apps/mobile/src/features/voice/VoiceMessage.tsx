@@ -232,19 +232,22 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
             </Text>
           )}
           {canPlay ? (
-            <Pressable
+            // The kit's press, as the play button beside it: the chip eases down under the finger.
+            <PressScale
+              to={0.92}
               onPress={cycle}
               accessibilityRole="button"
               accessibilityLabel={t("voice.speed")}
               accessibilityValue={{ text: `${speedFormat.format(rate)}×` }}
               // 22 drawn, the 44 a finger needs.
               hitSlop={(TOUCH - SPEED_H) / 2}
-              style={({ pressed }) => [styles.speed, { backgroundColor: c.sunken }, pressed && styles.pressed]}
+              style={[styles.speed, { backgroundColor: c.sunken }]}
+              contentStyle={styles.speedIn}
             >
               <Text variant="caption" tone="muted" style={styles.speedText}>
                 {`${speedFormat.format(rate)}×`}
               </Text>
-            </Pressable>
+            </PressScale>
           ) : null}
         </View>
         {words ? (
@@ -306,14 +309,8 @@ const styles = StyleSheet.create({
   dim: { opacity: 0.5, marginLeft: 6 },
   time: { minWidth: 30, textAlign: "right", fontVariant: ["tabular-nums"] },
   // A count chip: the number on a sunken pill.
-  speed: {
-    height: SPEED_H,
-    minWidth: 32,
-    paddingHorizontal: 7,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  speed: { height: SPEED_H, minWidth: 32, borderRadius: 11 },
+  speedIn: { paddingHorizontal: 7, alignItems: "center", justifyContent: "center" },
   speedText: { fontVariant: ["tabular-nums"], fontWeight: "600" },
   pressed: { opacity: 0.6 },
   retry: { fontWeight: "600", textDecorationLine: "underline" },

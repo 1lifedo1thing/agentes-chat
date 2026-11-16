@@ -33,7 +33,7 @@ import {
 import Animated from "react-native-reanimated";
 import { StickerCanvas, StickerStageContext, useStickerLive } from "@/agent/StickerCanvas";
 import { createStickerStage } from "@/agent/sticker-stage";
-import { Button, EmptyState, Filters, PressScale, SearchField, Segmented, Text, usePulse } from "@/ui";
+import { Button, EmptyState, Filters, PressScale, SearchField, Segmented, SHEET_X, Text, usePulse } from "@/ui";
 import { useReducedMotion } from "@/ui/theme";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
   picker: { gap: 10 },
   tabs: { alignItems: "center" },
   // Runs past the sheet's padding, so a long last chip scrolls instead of being cut at it.
-  chips: { marginHorizontal: -16 },
+  chips: { marginHorizontal: -SHEET_X },
   grow: { flex: 1 },
   bones: { flexDirection: "row", gap: GIF_GAP },
   boneColumn: { flex: 1, gap: GIF_GAP },

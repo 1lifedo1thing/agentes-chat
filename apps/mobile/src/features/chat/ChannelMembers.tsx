@@ -24,7 +24,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, View } from "react-native";
+import { RefreshControl, StyleSheet, View } from "react-native";
+import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -33,6 +34,8 @@ import {
   GroupedHeader,
   GroupedList,
   GroupedRow,
+  Locked,
+  SCREEN_X,
   SearchField,
   SkeletonList,
   useToast,
@@ -41,7 +44,8 @@ import { router } from "@/ui/navigation";
 import { chooseAction, confirmAction, Gap, SettingsPage } from "../settings/parts";
 import { AgentFace, Face, OpensAgent } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useMeId, useNow, useOrgId } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, useNow, useOrgId, usePullRefresh } from "../shared/hooks";
+import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { goBack, Loaded, successHaptic, tapHaptic } from "../shared/parts";
 import { usePresenceOf } from "../status/hooks";
 import { lineText } from "../status/logic";
@@ -125,10 +129,11 @@ function useRemoveMember(channelId: string, channelName: string) {
 }
 
 /**
- * Who is in a channel (the web's channel details on the phone), a screen pushed over the conversation (managing is a
- * screen, never a sheet): agents and people in groups, off ones under Offline, each agent with what it does and how it
- * answers here. Whoever may manage the channel adds people and agents and takes them out; an agent's owner sets how
- * it answers; everyone reads the list. Muting and leaving the channel close it.
+ * Who is in a channel (the web's channel details on the phone), a list screen pushed over the conversation (managing
+ * is a screen, never a sheet), under the system's large title as the app's other pushed lists: the search first when
+ * the list is long, agents and people in groups, off ones under Offline, each agent with what it does and how it
+ * answers here; a pull reads who is in again. Whoever may manage the channel adds people and agents and takes them
+ * out; an agent's owner sets how it answers; everyone reads the list. Muting and leaving the channel close it.
  */
 export function ChannelMembersScreen({ channelId }: { channelId: string }) {
   const { t, i18n } = useTranslation();
@@ -138,6 +143,7 @@ export function ChannelMembersScreen({ channelId }: { channelId: string }) {
   const meId = useMeId();
   const c = useColors();
   const roster = useRoster(orgId, channelId);
+  const pull = usePullRefresh(roster.refetch);
   const routing = useAiStatus(orgId).data?.routing;
   const channels = useChannels(orgId).data;
   const channel = channels?.find((x) => x.id === channelId);
@@ -224,79 +230,92 @@ export function ChannelMembersScreen({ channelId }: { channelId: string }) {
   };
 
   return (
-    <SettingsPage
+    <PushedLargeTitle
       title={t("shell.members")}
-      {...(channel
-        ? { subtitle: `#${channelName}${roster.data ? ` · ${t("mobile.chat.here", { count: all.length })}` : ""}` }
-        : {})}
-      locked={removal.pending}
+      grouped
+      keyboard
+      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
     >
-      <GroupedFooter>{t("channelMembers.caption")}</GroupedFooter>
-      <Gap />
-      {all.length > SEARCH_FROM ? (
-        <View style={styles.search}>
-          <SearchField value={q} onChangeText={setQ} placeholder={t("channel.detailsSearch")} autoCorrect={false} />
-        </View>
-      ) : null}
-      {editable && !needle ? (
-        <GroupedList>
-          <GroupedRow
-            icon="plus"
-            label={t("channelMembers.addRow")}
-            onPress={() => router.push(channelMembersHrefs.add(channelId))}
-          />
-        </GroupedList>
-      ) : null}
-      {roster.isPending ? (
-        <SkeletonList rows={4} />
-      ) : roster.isError ? (
-        <LoadFailed onRetry={() => void roster.refetch()} />
-      ) : needle && shown.length === 0 ? (
-        <EmptyState
-          size="inline"
-          title={t("channel.detailsEmpty", { q: q.trim() })}
-          action={<Button variant="secondary" size="sm" label={t("filters.clearSearch")} onPress={() => setQ("")} />}
-        />
-      ) : (
-        <Loaded>
-          {groups.map((g) =>
-            g.rows.length > 0 ? (
-              <Fragment key={g.key}>
-                <GroupedHeader>{`${label[g.key]} · ${g.count}`}</GroupedHeader>
-                <GroupedList>
-                  {g.rows.map((w) => {
-                    const mine = w.kind === "person" && w.id === meId;
-                    const face = (
-                      <Face who={{ type: w.kind, id: w.id }} size={FACE} live={false} presence ring={c.raised} />
-                    );
-                    return (
-                      <GroupedRow
-                        key={`${w.kind}:${w.id}`}
-                        // An agent's face opens its profile, as on every surface about it; the row opens its options.
-                        leading={w.kind === "agent" ? <OpensAgent agentId={w.id}>{face}</OpensAgent> : face}
-                        label={mine ? `${w.name}${t("common.youSuffix")}` : w.name}
-                        sub={subtitleOf(w)}
-                        subLines={w.kind === "agent" ? 2 : 1}
-                        // Off for now (the web's Offline rows): in faint, under its own header.
-                        faint={off(w)}
-                        {...opens(w, mine)}
-                      />
-                    );
-                  })}
-                </GroupedList>
-              </Fragment>
-            ) : null,
-          )}
-        </Loaded>
-      )}
-      {channel?.isMember ? (
-        <>
+      {/* The settings pages' body (`SettingsPage`): their sides, and what was there as it opened doesn't fade in. */}
+      <Locked when={removal.pending} style={styles.page}>
+        <LayoutAnimationConfig skipEntering>
+          {all.length > SEARCH_FROM ? (
+            <View style={styles.search}>
+              <SearchField
+                value={q}
+                onChangeText={setQ}
+                placeholder={t("channel.detailsSearch")}
+                accessibilityLabel={t("channel.detailsSearch")}
+                autoCorrect={false}
+                returnKeyType="search"
+              />
+            </View>
+          ) : null}
+          <GroupedFooter>{t("channelMembers.caption")}</GroupedFooter>
           <Gap />
-          <ChannelOwnActions channel={channel} />
-        </>
-      ) : null}
-      {editable ? null : <GroupedFooter>{t("channelMembers.readOnly")}</GroupedFooter>}
-    </SettingsPage>
+          {editable && !needle ? (
+            <GroupedList>
+              <GroupedRow
+                icon="plus"
+                label={t("channelMembers.addRow")}
+                onPress={() => router.push(channelMembersHrefs.add(channelId))}
+              />
+            </GroupedList>
+          ) : null}
+          {roster.isPending ? (
+            <SkeletonList rows={4} />
+          ) : roster.isError ? (
+            <LoadFailed onRetry={() => void roster.refetch()} />
+          ) : needle && shown.length === 0 ? (
+            <EmptyState
+              size="inline"
+              title={t("channel.detailsEmpty", { q: q.trim() })}
+              action={
+                <Button variant="secondary" size="sm" label={t("filters.clearSearch")} onPress={() => setQ("")} />
+              }
+            />
+          ) : (
+            <Loaded>
+              {groups.map((g) =>
+                g.rows.length > 0 ? (
+                  <Fragment key={g.key}>
+                    <GroupedHeader>{`${label[g.key]} · ${g.count}`}</GroupedHeader>
+                    <GroupedList>
+                      {g.rows.map((w) => {
+                        const mine = w.kind === "person" && w.id === meId;
+                        const face = (
+                          <Face who={{ type: w.kind, id: w.id }} size={FACE} live={false} presence ring={c.raised} />
+                        );
+                        return (
+                          <GroupedRow
+                            key={`${w.kind}:${w.id}`}
+                            // An agent's face opens its profile, as on every surface about it; the row its options.
+                            leading={w.kind === "agent" ? <OpensAgent agentId={w.id}>{face}</OpensAgent> : face}
+                            label={mine ? `${w.name}${t("common.youSuffix")}` : w.name}
+                            sub={subtitleOf(w)}
+                            subLines={w.kind === "agent" ? 2 : 1}
+                            // Off for now (the web's Offline rows): in faint, under its own header.
+                            faint={off(w)}
+                            {...opens(w, mine)}
+                          />
+                        );
+                      })}
+                    </GroupedList>
+                  </Fragment>
+                ) : null,
+              )}
+            </Loaded>
+          )}
+          {channel?.isMember ? (
+            <>
+              <Gap />
+              <ChannelOwnActions channel={channel} />
+            </>
+          ) : null}
+          {editable ? null : <GroupedFooter>{t("channelMembers.readOnly")}</GroupedFooter>}
+        </LayoutAnimationConfig>
+      </Locked>
+    </PushedLargeTitle>
   );
 }
 
@@ -432,17 +451,19 @@ export function ChannelAgentScreen({ channelId, agentId }: { channelId: string; 
       ) : member ? (
         <>
           <Gap />
-          <GroupedList>
-            <GroupedRow
-              leading={<AgentFace agentId={agentId} size={36} live={false} />}
-              label={name}
-              sub={lineOf(t, who, routing)}
-              subLines={0}
-              {...(agent && opensDetails(agent)
-                ? { chevron: true, onPress: () => router.push(`/agent/${agentId}`) }
-                : {})}
-            />
-          </GroupedList>
+          {/* The bar already says its name: the row is the way to its profile, not its name again. */}
+          {agent && opensDetails(agent) ? (
+            <GroupedList>
+              <GroupedRow
+                leading={<AgentFace agentId={agentId} size={FACE} live={false} />}
+                label={t("profile.viewProfile")}
+                chevron
+                onPress={() => router.push(`/agent/${agentId}`)}
+              />
+            </GroupedList>
+          ) : null}
+          {/* How it answers here: the choice for whoever may set it, else said in a line. */}
+          {setsReply ? null : <GroupedFooter>{lineOf(t, who, routing)}</GroupedFooter>}
           {setsReply ? (
             <>
               <GroupedHeader>{t("channelMembers.replyHeading", g)}</GroupedHeader>
@@ -580,10 +601,20 @@ export function AddChannelMembersScreen({ channelId }: { channelId: string }) {
       busy={add.isPending}
     >
       <View style={styles.search}>
-        <SearchField value={q} onChangeText={setQ} placeholder={t("channelMembers.addSearch")} autoCorrect={false} />
+        <SearchField
+          value={q}
+          onChangeText={setQ}
+          placeholder={t("channelMembers.addSearch")}
+          accessibilityLabel={t("channelMembers.addSearch")}
+          autoCorrect={false}
+          returnKeyType="search"
+        />
       </View>
       {roster.isPending || dir.loading ? (
         <SkeletonList rows={4} />
+      ) : roster.isError ? (
+        // Who is in already didn't load: listing everyone would offer to add them again.
+        <LoadFailed onRetry={() => void roster.refetch()} />
       ) : rows.length === 0 ? (
         <EmptyState
           size="inline"
@@ -638,5 +669,7 @@ export function AddChannelMembersScreen({ channelId }: { channelId: string }) {
 }
 
 const styles = StyleSheet.create({
+  // A settings page's sides and top (`SettingsPage`'s body), under the large title.
+  page: { paddingHorizontal: SCREEN_X, paddingTop: 4 },
   search: { paddingBottom: 12 },
 });
