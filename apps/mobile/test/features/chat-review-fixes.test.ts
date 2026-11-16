@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { type Inline, tableColumnWidths, tableResolvesLate } from "../../src/features/chat/logic";
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
 
@@ -48,5 +49,33 @@ describe("a reply that fit is never judged again over the keyboard", () => {
     );
     const toEnd = chat.slice(chat.indexOf("const toEnd = useCallback(() => {"));
     expect(toEnd.slice(0, toEnd.indexOf("}, [letGo]);"))).toContain("toReadRef.current = null;");
+  });
+});
+
+describe("a table's columns never go back to the letters' guess, and follow cells that load later", () => {
+  const cell = (text: string, kind: "text" | "bold" = "text"): Inline[] => [{ kind, text }];
+  test("a table holding a pill, a channel or a mention keeps measuring; words alone measure once", () => {
+    const header = [cell("Arquivo"), cell("Status")];
+    expect(tableResolvesLate(header, [[cell("Relatório"), cell("ok", "bold")]])).toBe(false);
+    const file: Inline[] = [{ kind: "link", text: "x", href: "https://example.test/f/1" }];
+    expect(tableResolvesLate(header, [[file, cell("ok")]])).toBe(true);
+    const id: Inline[] = [{ kind: "id", text: "0193", id: "0193" }];
+    expect(tableResolvesLate(header, [[cell("a"), id]])).toBe(true);
+    const channel: Inline[] = [{ kind: "channel", text: "#geral", name: "geral" }];
+    expect(tableResolvesLate([channel, cell("b")], [])).toBe(true);
+    expect(tableResolvesLate(header, [[[{ kind: "mention", text: "@ada" }], cell("c")]])).toBe(true);
+  });
+
+  test("new cells draw at the widths measured last, not at the guess", () => {
+    const header = [cell("Valor")];
+    const rows = [[cell("R$ 1.234.567.890,00")]];
+    // The guess by letters is far from the 120 measured last, which is what new cells draw at until measured.
+    expect(tableColumnWidths(header, rows, {})[0]).not.toBe(121);
+    expect(tableColumnWidths(header, rows, { 0: 120 })[0]).toBe(121);
+    const spans = src("features/chat/MessageSpans.tsx");
+    expect(spans).toContain("const widths = tableColumnWidths(header, rows, { ...measured.before, ...drawn }, fontScale);");
+    // The copy's own measures keep what was measured before (`...m`), and a copy per content says every column.
+    expect(spans).toContain("m.key !== columnsKey || m.columns[col] === w ? m : { ...m, columns: { ...m.columns, [col]: w } },");
+    expect(spans).toMatch(/\{unmeasured \|\| late \? \(\s*<View\s*key=\{columnsKey\}/);
   });
 });
