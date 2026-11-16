@@ -19,8 +19,7 @@
     "down": "下移",
     "position": "第 {{at}} 个，共 {{count}} 个。",
     "channelPosition": "第 {{at}} 个，共 {{count}} 个。",
-    "itsChannels": "频道",
-    "seeAll": "查看全部"
+    "itsChannels": "频道"
   },
   "blocks": {
     "send": "发送",
@@ -182,16 +181,9 @@
       "text": "它可能已停机，或不在你的网络中。恢复后你的聊天会自动显示。",
       "kept": "正在显示应用中已有的内容。"
     },
-    "section": {
-      "agents": "智能体",
-      "channels": "频道",
-      "people": "成员"
-    },
-    "seeAll": {
-      "agents": "查看所有智能体",
-      "channels": "查看所有频道",
-      "people": "查看所有成员"
-    },
+    "pinned": "已置顶",
+    "recent": "最近",
+    "seeAll": "查看所有聊天",
     "wait": {
       "verb": {
         "approval": "需要你确认",

@@ -20,8 +20,7 @@
     "down": "Aşağı taşı",
     "position": "{{at}} / {{count}}.",
     "channelPosition": "{{at}} / {{count}}.",
-    "itsChannels": "Kanallar",
-    "seeAll": "Tümünü gör"
+    "itsChannels": "Kanallar"
   },
   "blocks": {
     "send": "Gönder",
@@ -188,16 +187,9 @@
       "text": "Sunucu kapalı ya da ağınızın dışında olabilir. Tekrar açıldığında sohbetleriniz kendiliğinden görünür.",
       "kept": "Uygulamada zaten olanlar gösteriliyor."
     },
-    "section": {
-      "agents": "Ajanlar",
-      "channels": "Kanallar",
-      "people": "Kişiler"
-    },
-    "seeAll": {
-      "agents": "Tüm ajanları gör",
-      "channels": "Tüm kanalları gör",
-      "people": "Tüm kişileri gör"
-    },
+    "pinned": "Sabitlenenler",
+    "recent": "Son sohbetler",
+    "seeAll": "Tüm sohbetleri gör",
     "wait": {
       "verb": {
         "approval": "onayınızı bekliyor",

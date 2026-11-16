@@ -21,8 +21,7 @@
     "down": "Descendre",
     "position": "{{at}} sur {{count}}.",
     "channelPosition": "{{at}} sur {{count}}.",
-    "itsChannels": "Canaux",
-    "seeAll": "Tout voir"
+    "itsChannels": "Canaux"
   },
   "blocks": {
     "send": "Envoyer",
@@ -194,16 +193,9 @@
       "text": "Il est peut-être hors service ou en dehors de votre réseau. Vos discussions s'afficheront d'elles-mêmes dès son retour.",
       "kept": "Affichage de ce qui était déjà dans l'app."
     },
-    "section": {
-      "agents": "Agents",
-      "channels": "Canaux",
-      "people": "Personnes"
-    },
-    "seeAll": {
-      "agents": "Voir tous les agents",
-      "channels": "Voir tous les canaux",
-      "people": "Voir toutes les personnes"
-    },
+    "pinned": "Épinglés",
+    "recent": "Récents",
+    "seeAll": "Voir toutes les discussions",
     "wait": {
       "verb": {
         "approval": "a besoin de votre accord",

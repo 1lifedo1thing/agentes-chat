@@ -21,8 +21,7 @@
     "down": "Bajar",
     "position": "{{at}} de {{count}}.",
     "channelPosition": "{{at}} de {{count}}.",
-    "itsChannels": "Canales",
-    "seeAll": "Ver todo"
+    "itsChannels": "Canales"
   },
   "blocks": {
     "send": "Enviar",
@@ -194,16 +193,9 @@
       "text": "Puede estar caído o fuera de tu red. Tus chats aparecen solos cuando vuelva.",
       "kept": "Mostrando lo que ya estaba en la app."
     },
-    "section": {
-      "agents": "Agentes",
-      "channels": "Canales",
-      "people": "Personas"
-    },
-    "seeAll": {
-      "agents": "Ver todos los agentes",
-      "channels": "Ver todos los canales",
-      "people": "Ver todas las personas"
-    },
+    "pinned": "Fijados",
+    "recent": "Recientes",
+    "seeAll": "Ver todos los chats",
     "wait": {
       "verb": {
         "approval": "necesita tu aprobación",

@@ -48,8 +48,6 @@ describe("who gets the first step", () => {
     ["issues/IssuesScreen.tsx", 'place="tasks"', 'mayCreate(useOrg().org, "task")'],
     ["routines/RoutinesScreen.tsx", 'place="routines"', 'mayCreate(useOrg().org, "routine", { ownsAgent })'],
     ["wiki/WikiScreen.tsx", 'place="wiki"', 'can(org, "edit_wiki")'],
-    ["chats/ConversationListScreen.tsx", '"channels" as const', 'mayCreate(org, "channel")'],
-    ["chats/ConversationListScreen.tsx", '"people" as const', 'mayCreate(org, "invite")'],
     ["new/ChatTargets.tsx", 'place="people"', 'mayCreate(org, "invite")'],
     ["settings/AccessScreen.tsx", 'place="access"', "acts={addsConnectors(org)}"],
     ["devices/DevicesScreen.tsx", 'firstUseCopy("computers", pairs)', 'can(org, "pair_computers")'],

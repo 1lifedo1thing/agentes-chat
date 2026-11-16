@@ -19,8 +19,7 @@
     "down": "아래로 이동",
     "position": "{{count}}개 중 {{at}}번째.",
     "channelPosition": "{{count}}개 중 {{at}}번째.",
-    "itsChannels": "채널",
-    "seeAll": "모두 보기"
+    "itsChannels": "채널"
   },
   "blocks": {
     "send": "보내기",
@@ -182,16 +181,9 @@
       "text": "서버가 꺼져 있거나 네트워크 밖에 있을 수 있어요. 다시 켜지면 채팅이 알아서 나타나요.",
       "kept": "앱에 이미 있던 내용을 보여 드리고 있어요."
     },
-    "section": {
-      "agents": "에이전트",
-      "channels": "채널",
-      "people": "사람"
-    },
-    "seeAll": {
-      "agents": "모든 에이전트 보기",
-      "channels": "모든 채널 보기",
-      "people": "모든 사람 보기"
-    },
+    "pinned": "고정됨",
+    "recent": "최근",
+    "seeAll": "모든 채팅 보기",
     "wait": {
       "verb": {
         "approval": "승인을 기다려요",

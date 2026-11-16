@@ -22,8 +22,7 @@
     "down": "Przesuń w dół",
     "position": "{{at}} z {{count}}.",
     "channelPosition": "{{at}} z {{count}}.",
-    "itsChannels": "Kanały",
-    "seeAll": "Zobacz wszystkie"
+    "itsChannels": "Kanały"
   },
   "blocks": {
     "send": "Wyślij",
@@ -200,16 +199,9 @@
       "text": "Serwer może nie działać albo być poza twoją siecią. Czaty pojawią się same, gdy wróci.",
       "kept": "Pokazujemy to, co było już w aplikacji."
     },
-    "section": {
-      "agents": "Agenci",
-      "channels": "Kanały",
-      "people": "Osoby"
-    },
-    "seeAll": {
-      "agents": "Zobacz wszystkich agentów",
-      "channels": "Zobacz wszystkie kanały",
-      "people": "Zobacz wszystkie osoby"
-    },
+    "pinned": "Przypięte",
+    "recent": "Ostatnie",
+    "seeAll": "Zobacz wszystkie czaty",
     "wait": {
       "verb": {
         "approval": "potrzebuje twojej zgody",

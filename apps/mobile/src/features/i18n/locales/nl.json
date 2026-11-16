@@ -20,8 +20,7 @@
     "down": "Omlaag",
     "position": "{{at}} van {{count}}.",
     "channelPosition": "{{at}} van {{count}}.",
-    "itsChannels": "Kanalen",
-    "seeAll": "Alles bekijken"
+    "itsChannels": "Kanalen"
   },
   "blocks": {
     "send": "Versturen",
@@ -188,16 +187,9 @@
       "text": "Misschien is hij offline of buiten je netwerk. Je gesprekken verschijnen vanzelf zodra hij terug is.",
       "kept": "Je ziet wat al in de app stond."
     },
-    "section": {
-      "agents": "Agents",
-      "channels": "Kanalen",
-      "people": "Mensen"
-    },
-    "seeAll": {
-      "agents": "Alle agents bekijken",
-      "channels": "Alle kanalen bekijken",
-      "people": "Alle mensen bekijken"
-    },
+    "pinned": "Vastgezet",
+    "recent": "Recent",
+    "seeAll": "Alle gesprekken bekijken",
     "wait": {
       "verb": {
         "approval": "heeft je akkoord nodig",

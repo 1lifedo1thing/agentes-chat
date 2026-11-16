@@ -5,18 +5,12 @@ import Animated, { FadeIn, LayoutAnimationConfig, useAnimatedStyle, withTiming }
 import { readValueSync, STORED, writeValue } from "@/lib/storage";
 import { Count, Icon, IconButton, LIST_INSET, ROW_PRESS_DELAY, SCREEN_X, Text, useReducedMotion, weights } from "@/ui";
 import { useColors } from "../shared/hooks";
-import {
-  HOME_SECTIONS,
-  type HomeSection,
-  parseCollapsed,
-  parseHomeCollapsed,
-  toggleCollapsed,
-  toggleHomeCollapsed,
-} from "./logic";
+import { HOME_SECTIONS, type HomeSection, parseCollapsed, toggleCollapsed } from "./logic";
 
 /**
- * The sections the person collapsed, remembered across launches: Conversas' by default, or another list's
- * (`store`, `keys`: the Threads tab's Missões and Threads; null `keys`: any ids, Agentes' groups).
+ * The sections the person collapsed, remembered across launches: Conversas' by default (Início's widgets, the pinned
+ * strip, Recentes, the other channels; a key it no longer has is dropped), or another list's (`store`, `keys`: the
+ * Threads tab's Missões and Threads; null `keys`: any ids, Agentes' groups).
  */
 export function useCollapsedSections<K extends string = HomeSection>(
   store: string = STORED.homeCollapsed,
@@ -36,19 +30,6 @@ export function useCollapsedSections<K extends string = HomeSection>(
   return { collapsed, toggle };
 }
 
-/** Conversas' closed sections, remembered: the fixed ones and the channel categories (any key, ADR 0080). */
-export function useHomeCollapsed() {
-  const [collapsed, setCollapsed] = useState<string[]>(() => parseHomeCollapsed(readValueSync(STORED.homeCollapsed)));
-  const toggle = useCallback((key: string) => {
-    setCollapsed((list) => {
-      const next = toggleHomeCollapsed(list, key);
-      void writeValue(STORED.homeCollapsed, next.length > 0 ? JSON.stringify(next) : null);
-      return next;
-    });
-  }, []);
-  return { collapsed, toggle };
-}
-
 /**
  * A section of Conversas: the title, its count (medium, faint) and a chevron that
  * turns when collapsed; tapping the header collapses or opens it. No `count` while its rows load: a "0" that turns
@@ -60,7 +41,6 @@ export function CollapsibleSection({
   collapsed,
   onToggle,
   menu,
-  kept,
   children,
 }: {
   title: string;
@@ -68,12 +48,10 @@ export function CollapsibleSection({
   collapsed: boolean;
   onToggle: () => void;
   /**
-   * A channel category's or a setor's menu, for who may change it: a long press on the header, and a "…" before the
-   * chevron, so it is found without knowing the long press.
+   * A setor's menu, for who may change it: a long press on the header, and a "…" before the chevron, so it is found
+   * without knowing the long press.
    */
   menu?: { label: string; onPress: () => void };
-  /** Shown while closed (a category's unread channels). */
-  kept?: ReactNode;
   children: ReactNode;
 }) {
   const c = useColors();
@@ -116,7 +94,6 @@ export function CollapsibleSection({
           <Icon name="chev" size={15} color={c.faint} />
         </Animated.View>
       </Pressable>
-      {collapsed ? (kept ?? null) : null}
       {/* Opened while the list shows, its rows fade in; open when the list mounts, they just show. */}
       <LayoutAnimationConfig skipEntering>
         {collapsed ? null : (
@@ -128,7 +105,7 @@ export function CollapsibleSection({
 }
 
 /**
- * "Ver todos os agentes" under a section's first rows, aligned with the text column (`.more`). A full-width row: it
+ * "Ver todas as conversas" under a section's first rows, aligned with the text column (`.more`). A full-width row: it
  * lights a beat after the finger lands, as the list's rows do, so a scroll starting on it never flashes it.
  */
 export function SeeAllRow({ label, onPress }: { label: string; onPress: () => void }) {

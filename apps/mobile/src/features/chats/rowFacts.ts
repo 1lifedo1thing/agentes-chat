@@ -233,6 +233,18 @@ export function rowFacts(r: ConversationRow, agent: AgentRowState | undefined, c
   };
 }
 
+/**
+ * The mark a face on the pinned strip carries before its name, standing for its row's second line (the strip has no
+ * room for the words): the orbit at work, the amber square while it waits on you, a clock for a wait elsewhere (its
+ * offline computer, a return); none over a last message.
+ */
+export function faceMark(line: RowLine): RowMark {
+  if (line.kind === "doing") return "orbit";
+  if (line.kind === "away") return "clock";
+  if (line.kind === "state") return line.amber ? "wait" : line.mark;
+  return null;
+}
+
 /** Two plain values (what the rows and their facts hold) equal all the way down. */
 export function samePlain(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;

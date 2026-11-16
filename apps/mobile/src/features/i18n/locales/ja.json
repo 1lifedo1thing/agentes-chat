@@ -19,8 +19,7 @@
     "down": "下へ移動",
     "position": "{{count}}中{{at}}番目。",
     "channelPosition": "{{count}}中{{at}}番目。",
-    "itsChannels": "チャンネル",
-    "seeAll": "すべて表示"
+    "itsChannels": "チャンネル"
   },
   "blocks": {
     "send": "送信",
@@ -182,16 +181,9 @@
       "text": "停止しているか、ネットワークの外にある可能性があります。復旧するとチャットが自動で表示されます。",
       "kept": "アプリにすでにあった内容を表示しています。"
     },
-    "section": {
-      "agents": "エージェント",
-      "channels": "チャンネル",
-      "people": "人"
-    },
-    "seeAll": {
-      "agents": "すべてのエージェントを表示",
-      "channels": "すべてのチャンネルを表示",
-      "people": "すべての人を表示"
-    },
+    "pinned": "ピン留め",
+    "recent": "最近",
+    "seeAll": "すべてのチャットを表示",
     "wait": {
       "verb": {
         "approval": "があなたのOKを待っています",
