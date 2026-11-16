@@ -1745,12 +1745,17 @@ export function cacheAgentProposal(
 
 /**
  * A new message's `clientId`: sent again with the same one (its answer was lost), it's written only once. A v4 UUID
- * also on a plain-http page, where `crypto.randomUUID` is missing but `getRandomValues` isn't, since some routes take
- * only a UUID.
+ * everywhere, since some routes take only a UUID: on a plain-http page `crypto.randomUUID` is missing but
+ * `getRandomValues` isn't, and the phone's JavaScript engine has no `crypto` at all (reading `crypto.randomUUID` there
+ * threw on every send and closed the app), so its bytes come from `Math.random`: an id that only has to be unique, not
+ * secret.
  */
 export const newClientId = (): string => {
-  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  const b = crypto.getRandomValues(new Uint8Array(16));
+  const c = (globalThis as { crypto?: Partial<Crypto> }).crypto;
+  if (typeof c?.randomUUID === "function") return c.randomUUID();
+  const b = new Uint8Array(16);
+  if (typeof c?.getRandomValues === "function") c.getRandomValues(b);
+  else for (let i = 0; i < b.length; i++) b[i] = Math.floor(Math.random() * 256);
   b[6] = ((b[6] ?? 0) & 0x0f) | 0x40;
   b[8] = ((b[8] ?? 0) & 0x3f) | 0x80;
   const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
