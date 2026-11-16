@@ -125,6 +125,30 @@ describe("a file's screen and its share sheet", () => {
   });
 });
 
+describe("a block opened whole", () => {
+  test("loads in a page's shape under its bar, never a lone spinner", () => {
+    const block = src("features/blocks/LiveBlock.tsx");
+    const screen = block.slice(block.indexOf("export function BlockScreen("));
+    expect(screen).not.toContain("ActivityIndicator");
+    expect(screen).toContain("<PageBones />");
+  });
+
+  test("its fields stay above the keyboard and a drag takes the keyboard down", () => {
+    const block = src("features/blocks/LiveBlock.tsx");
+    const screen = block.slice(block.indexOf("export function BlockScreen("));
+    expect(screen).toContain('keyboardShouldPersistTaps="handled"');
+    expect(screen).toContain('keyboardDismissMode="interactive"');
+    expect(screen).toContain("automaticallyAdjustKeyboardInsets");
+  });
+
+  test("Keep in Drive that failed says why, not a generic line", () => {
+    const block = src("features/blocks/LiveBlock.tsx");
+    const screen = block.slice(block.indexOf("export function BlockScreen("));
+    expect(screen).toContain("onError: failed,");
+    expect(screen).not.toContain('t("mobile.blocks.sendFailed")');
+  });
+});
+
 describe("the search tab", () => {
   test("opens with the keyboard down: the field takes the focus only when the person taps it", () => {
     const search = src("features/search/SearchScreen.tsx");

@@ -11,8 +11,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { Button, IconButton, SCREEN_X, Sky, Text, useTheme, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
+import { PageBones } from "../files/PageBones";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useOrgId } from "../shared/hooks";
+import { useColors, useDirectory, useErrorToast, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { PushedHeader } from "../shared/parts";
 import { hostScript, INLINE_HEIGHT, ISOLATED_WEB_VIEW, themeScript, withLiveBlock } from "./logic";
@@ -285,10 +286,15 @@ export function LiveBlock({
     <View style={screen ? styles.fill : undefined}>
       <View style={screen ? styles.fill : [styles.view, { height: tall && open ? height : INLINE_HEIGHT }]}>
         {(screen || allowed) && !shared.loaded ? (
-          // Everyone's state first: a page that started from its own would show something else for a moment.
-          <View style={[styles.asleep, styles.fill]}>
-            <ActivityIndicator color={c.faint} />
-          </View>
+          // Everyone's state first: a page that started from its own would show something else for a moment. On its
+          // own screen, the page's shape meanwhile; in the card, its wheel.
+          screen ? (
+            <PageBones />
+          ) : (
+            <View style={[styles.asleep, styles.fill]}>
+              <ActivityIndicator color={c.faint} />
+            </View>
+          )
         ) : screen || allowed ? (
           <BlockWebView
             blockKey={blockKey}
@@ -406,17 +412,25 @@ export function BlockScreen({ id, version }: { id: string; version?: number }) {
   const c = useColors();
   const orgId = useOrgId();
   const toast = useToast();
+  const failed = useErrorToast();
   const query = useArtifact(orgId, id, version);
   const keep = useKeepBlock(orgId, id);
   // The screen's end stays above the home indicator: the button, or the block's last lines when there is none.
   const insets = useSafeAreaInsets();
   const a = query.data;
   if (a?.content.kind !== "block") {
-    // The bar is there from the first frame (the way back included); a failure offers to try again.
+    // The bar is there from the first frame (the way back included); the page's shape while it comes, a failure
+    // offers to try again.
     return (
-      <View style={[styles.fill, styles.center, { backgroundColor: c.bg }]}>
+      <View style={[styles.fill, { backgroundColor: c.bg }]}>
         <PushedHeader title="" />
-        {query.isError ? <LoadFailed onRetry={() => void query.refetch()} /> : <ActivityIndicator color={c.faint} />}
+        {query.isError ? (
+          <View style={[styles.fill, styles.center]}>
+            <LoadFailed onRetry={() => void query.refetch()} />
+          </View>
+        ) : (
+          <PageBones />
+        )}
       </View>
     );
   }
@@ -424,8 +438,12 @@ export function BlockScreen({ id, version }: { id: string; version?: number }) {
     <View style={[styles.fill, { backgroundColor: c.bg }]}>
       <PushedHeader title={a.title} />
       {a.content.spec ? (
+        // Its fields stay above the keyboard, a tap on a control keeps it up, a drag takes it down.
         <ScrollView
           style={styles.fill}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
           contentContainerStyle={[styles.screenBody, a.inDrive ? { paddingBottom: insets.bottom + 8 } : null]}
         >
           <SpecBlock id={a.id} version={a.shownVersion} spec={a.content.spec} agentId={a.createdBy.id} screen />
@@ -444,7 +462,8 @@ export function BlockScreen({ id, version }: { id: string; version?: number }) {
             onPress={() =>
               keep.mutate(undefined, {
                 onSuccess: () => toast({ title: t("mobile.blocks.kept"), icon: "check" }),
-                onError: () => toast({ title: t("mobile.blocks.sendFailed"), icon: "x" }),
+                // Why it wasn't kept, in the person's words.
+                onError: failed,
               })
             }
           />
