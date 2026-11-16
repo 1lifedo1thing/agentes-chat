@@ -382,6 +382,7 @@
     "unmuted": "#{{channel}} reactivado",
     "headerAgent": "{{who}}. Abrir el perfil",
     "headerChannel": "{{who}}. Opciones",
+    "headerMembers": "{{who}}. Ver quién está aquí",
     "switchHint": "Mantén presionado para cambiar de conversación",
     "switchTitle": "Cambiar de conversación",
     "switchSearch": "Buscar conversaciones",

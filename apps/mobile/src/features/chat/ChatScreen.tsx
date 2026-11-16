@@ -1910,7 +1910,8 @@ function Chat({
         onPress={openMembers}
         extraActions={(queueShown ? 1 : 0) + (searchPlace ? 1 : 0)}
         {...hold}
-        label={t("mobile.chat.headerChannel", { who: who(title, subtitle ?? "") })}
+        // A channel's pill opens who is in it, and says so (its "…" holds the options).
+        label={t("mobile.chat.headerMembers", { who: who(title, subtitle ?? "") })}
       />
     ) : null;
   // An agent's DM also opens its tasks while it has some (ADR 0128), pushed like a thread, and its computer (as the

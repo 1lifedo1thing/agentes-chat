@@ -367,6 +367,7 @@
     "unmuted": "Stummschaltung für #{{channel}} aufgehoben",
     "headerAgent": "{{who}}. Profil öffnen",
     "headerChannel": "{{who}}. Optionen",
+    "headerMembers": "{{who}}. Sehen, wer hier ist",
     "switchHint": "Gedrückt halten, um die Unterhaltung zu wechseln",
     "switchTitle": "Unterhaltung wechseln",
     "switchSearch": "Unterhaltungen durchsuchen",

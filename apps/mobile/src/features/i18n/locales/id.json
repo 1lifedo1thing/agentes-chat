@@ -352,6 +352,7 @@
     "unmuted": "#{{channel}} tidak lagi dibisukan",
     "headerAgent": "{{who}}. Buka profil",
     "headerChannel": "{{who}}. Opsi",
+    "headerMembers": "{{who}}. Lihat siapa saja di sini",
     "switchHint": "Tahan untuk berganti percakapan",
     "switchTitle": "Ganti percakapan",
     "switchSearch": "Cari percakapan",

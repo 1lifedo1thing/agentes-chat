@@ -397,6 +397,7 @@
     "unmuted": "Wyłączono wyciszenie #{{channel}}",
     "headerAgent": "{{who}}. Otwórz profil",
     "headerChannel": "{{who}}. Opcje",
+    "headerMembers": "{{who}}. Zobacz, kto tu jest",
     "switchHint": "Przytrzymaj, aby przełączyć rozmowę",
     "switchTitle": "Przełącz rozmowę",
     "switchSearch": "Szukaj rozmów",

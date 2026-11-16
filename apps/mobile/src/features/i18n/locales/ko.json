@@ -352,6 +352,7 @@
     "unmuted": "#{{channel}} 알림을 켰어요",
     "headerAgent": "{{who}}. 프로필 열기",
     "headerChannel": "{{who}}. 옵션",
+    "headerMembers": "{{who}}. 참여자 보기",
     "switchHint": "길게 눌러 대화 전환",
     "switchTitle": "대화 전환",
     "switchSearch": "대화 검색",

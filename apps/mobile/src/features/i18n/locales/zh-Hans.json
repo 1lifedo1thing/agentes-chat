@@ -352,6 +352,7 @@
     "unmuted": "已取消 #{{channel}} 的免打扰",
     "headerAgent": "{{who}}。打开资料",
     "headerChannel": "{{who}}。选项",
+    "headerMembers": "{{who}}。查看成员",
     "switchHint": "长按以切换对话",
     "switchTitle": "切换对话",
     "switchSearch": "搜索对话",

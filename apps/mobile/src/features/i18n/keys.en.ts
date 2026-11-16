@@ -391,6 +391,7 @@ export const featureKeysEn = {
     unmuted: "#{{channel}} unmuted",
     headerAgent: "{{who}}. Open the profile",
     headerChannel: "{{who}}. Options",
+    headerMembers: "{{who}}. See who is here",
     switchHint: "Hold to switch conversations",
     switchTitle: "Switch conversation",
     switchSearch: "Search conversations",

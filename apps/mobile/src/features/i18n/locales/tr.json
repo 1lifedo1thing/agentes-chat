@@ -367,6 +367,7 @@
     "unmuted": "#{{channel}} sesi açıldı",
     "headerAgent": "{{who}}. Profili aç",
     "headerChannel": "{{who}}. Seçenekler",
+    "headerMembers": "{{who}}. Kimlerin burada olduğunu gör",
     "switchHint": "Sohbet değiştirmek için basılı tutun",
     "switchTitle": "Sohbet değiştir",
     "switchSearch": "Sohbetlerde ara",

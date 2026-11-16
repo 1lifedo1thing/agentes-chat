@@ -367,6 +367,7 @@
     "unmuted": "#{{channel}} niet meer gedempt",
     "headerAgent": "{{who}}. Open het profiel",
     "headerChannel": "{{who}}. Opties",
+    "headerMembers": "{{who}}. Bekijk wie er is",
     "switchHint": "Ingedrukt houden om van gesprek te wisselen",
     "switchTitle": "Van gesprek wisselen",
     "switchSearch": "Gesprekken zoeken",

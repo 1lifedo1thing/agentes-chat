@@ -884,6 +884,9 @@
   "chat.headerChannel": {
     "value": "{{who}}. Options"
   },
+  "chat.headerMembers": {
+    "value": "{{who}}. See who is here"
+  },
   "chat.switchHint": {
     "value": "Hold to switch conversations"
   },

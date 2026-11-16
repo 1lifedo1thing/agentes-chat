@@ -29,6 +29,8 @@ describe("managing a channel's members is screens, not sheet steps", () => {
       /const openMembers = \(\) => \{\s*if \(!channel\) return;\s*leavePlace\(\);\s*router\.push\(channelMembersHrefs\.list\(channelId\)\);/,
     );
     expect(chat).toMatch(/\(\) => \{\s*sheet\.close\(\);\s*openMembers\(\);\s*\}/);
+    // The channel's pill says what a tap does: it shows who is here (the "…" holds the options).
+    expect(chat).toMatch(/onPress=\{openMembers\}[\s\S]{0,300}label=\{t\("mobile\.chat\.headerMembers"/);
   });
 
   test("on the grouped page: grouped rows, the rows' shape while loading, a retry when it failed, a clear for a search", () => {

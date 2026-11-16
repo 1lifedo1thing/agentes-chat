@@ -384,6 +384,7 @@ export const featureKeysPtBR = {
     unmuted: "#{{channel}} reativado",
     headerAgent: "{{who}}. Abrir o perfil",
     headerChannel: "{{who}}. Opções",
+    headerMembers: "{{who}}. Ver quem está aqui",
     switchHint: "Segure para trocar de conversa",
     switchTitle: "Trocar de conversa",
     switchSearch: "Buscar conversa",

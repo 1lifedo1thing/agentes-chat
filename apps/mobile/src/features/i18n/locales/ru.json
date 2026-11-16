@@ -397,6 +397,7 @@
     "unmuted": "Звук в #{{channel}} включён",
     "headerAgent": "{{who}}. Открыть профиль",
     "headerChannel": "{{who}}. Параметры",
+    "headerMembers": "{{who}}. Посмотреть, кто здесь",
     "switchHint": "Удерживайте, чтобы сменить разговор",
     "switchTitle": "Сменить разговор",
     "switchSearch": "Поиск по разговорам",
