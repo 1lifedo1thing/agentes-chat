@@ -178,10 +178,18 @@ describe("bandAim", () => {
     const end = bandAim({ ...room, viewPosition: 0.5, size: 650, tall: "end" });
     expect(rowTop(end, 650) + 650).toBe(LIST - DOCK);
   });
-  test("a row not measured yet is aimed as asked, in the room", () => {
-    const aim = bandAim({ ...room, viewPosition: 0.4, size: undefined, tall: "start" });
-    expect(aim).toEqual({ viewPosition: 0.4, viewOffset: 66 });
-    expect(rowTop(aim, 60)).toBeGreaterThanOrEqual(110);
+  test("a row not measured yet gets the list's fallback: a tall one shows its start under the bar or its end on the dock", () => {
+    const start = bandAim({ ...room, viewPosition: 0.4, size: undefined, tall: "start" });
+    expect(start).toEqual({ viewPosition: 0.4, viewOffset: 110, viewPositionFallback: "start" });
+    // Short, it lands in the room; taller than the list, the fallback puts its start under the bar (the offset).
+    expect(rowTop(start, 60)).toBeGreaterThanOrEqual(110);
+    expect(rowTop({ viewPosition: 0, viewOffset: start.viewOffset }, 900)).toBe(110);
+    // "Ver" on the requests: no offset, so the fallback's end lands on the dock, never under it.
+    const end = bandAim({ ...room, viewPosition: 0.5, size: undefined, tall: "end" });
+    expect(end).toEqual({ viewPosition: 0.5, viewOffset: 0, viewPositionFallback: "end" });
+    expect(rowTop({ viewPosition: 1, viewOffset: end.viewOffset }, 900) + 900).toBe(LIST - DOCK);
+    // Short, its end (the request's card) stays over the dock.
+    expect(rowTop(end, 400) + 400).toBeLessThanOrEqual(LIST - DOCK);
   });
   test("under a pinned card the list starts below the bar: no offset", () => {
     expect(bandAim({ band: 500, top: 0, viewPosition: 0, size: 60, tall: "start" })).toEqual({

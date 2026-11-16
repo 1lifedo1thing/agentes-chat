@@ -145,6 +145,23 @@ const byTime = (a: Pick<Message, "createdAt" | "id">, b: Pick<Message, "createdA
   a.createdAt === b.createdAt ? a.id.localeCompare(b.id) : a.createdAt < b.createdAt ? -1 : 1;
 
 /** Top-level messages plus loaded thread replies (agents answer inside the thread of the message that called them). */
+/**
+ * The messages of older pages with their pin as the pins list says (`pins`, once loaded). Those pages live in the
+ * screen's own state, which no cache update reaches: pinned from its menu, an older message kept "Fixar" there and no
+ * mark. Rows whose pin is right stay the same objects, and so does the list when none changes.
+ */
+export function pinnedAsListed(older: Message[], pins: readonly { messageId: string }[] | undefined): Message[] {
+  if (!pins) return older;
+  const ids = new Set(pins.map((p) => p.messageId));
+  let changed = false;
+  const next = older.map((m) => {
+    if (ids.has(m.id) === Boolean(m.pinned)) return m;
+    changed = true;
+    return { ...m, pinned: ids.has(m.id) };
+  });
+  return changed ? next : older;
+}
+
 export function mergeTimeline(topLevel: Message[], threads: (Message[] | undefined)[]): Message[] {
   const seen = new Map<string, Message>();
   for (const m of topLevel) seen.set(m.id, m);
@@ -778,6 +795,34 @@ export function tableKey(header: Inline[][], rows: Inline[][][]): string {
   for (const h of header) cell(h);
   for (const r of rows) for (const c of r) cell(c);
   return `${header.length}x${rows.length}:${(hash >>> 0).toString(36)}`;
+}
+
+/**
+ * Whether a table's cells hold spans drawn wider once something loads after they mount: a file, message or id pill (an
+ * icon until its query answers, then its title), a channel's name, a mention. Measured once at the icon, their column
+ * stayed narrow and the title wrapped in it for the rest of the session; such a table keeps measuring.
+ */
+export function tableResolvesLate(header: Inline[][], rows: Inline[][][]): boolean {
+  return [header, ...rows].some((r) =>
+    r.some((cell) =>
+      cell.some((s) => s.kind === "link" || s.kind === "id" || s.kind === "channel" || s.kind === "mention"),
+    ),
+  );
+}
+
+/**
+ * Whether a run is in the conversation a message is sent to (`threadId`: the thread, null for the timeline), as the
+ * server steers a message into a run under way: a thread's reply into that thread's runs (or the one answering its root
+ * in the timeline, whose own thread is its root), a message in the timeline into the timeline's. A run in another
+ * thread of the same DM (a mission's) never takes it, so it doesn't stand for the reply that will come.
+ */
+export function runInConversation(
+  run: Pick<LiveRun, "threadId" | "triggerMessageId">,
+  threadId: string | null,
+): boolean {
+  // Typed as always a thread, but null for a run in the timeline.
+  const own = (run.threadId as string | null) ?? null;
+  return threadId ? own === threadId || (own === null && run.triggerMessageId === threadId) : own === null;
 }
 
 /** Which sides of a table scrolled sideways hide columns (`x`: the scroll, `frame`: the box, `total`: the table). */

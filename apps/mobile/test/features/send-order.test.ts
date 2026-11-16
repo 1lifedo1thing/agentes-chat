@@ -57,7 +57,7 @@ describe("what I send while my files go up", () => {
 
   test("the screen sends behind its files while they go up, and their request goes before what waits", () => {
     const chat = src("features/chat/ChatScreen.tsx");
-    expect(chat).toContain("behindFiles(() => deliverFiles(local, how));");
+    expect(chat).toContain("return deliverFiles(local, how);");
     expect(chat).toContain("behindFiles(() => deliverFilesRef.current(m));");
     // Words, GIFs and stickers, the summary and what another app shared all go the same way.
     expect(chat).toContain('sendText(text, how === "now" ? { ...meta, steer: "now" } : meta);');

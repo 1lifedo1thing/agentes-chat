@@ -122,7 +122,7 @@ describe("every sheet is the system's own (TrueSheet), and a sheet's next step s
   test("a step is a sheet over the one before: forward with push, back with back() or a flick down", () => {
     const host = src("features/shared/SheetHost.tsx");
     expect(host).toContain("<TrueSheet ref={ref} {...props} scrollableRef={scroll}>");
-    expect(host).toContain("presentOnMount: !first");
+    expect(host).toContain("presentOnMount: true");
     const chat = src("features/chat/ChatScreen.tsx");
     for (const next of ["sheet.push(<PinsSheet", "sheet.push(<ConversationSearch"]) {
       expect({ next, pushed: chat.includes(next) }).toEqual({ next, pushed: true });

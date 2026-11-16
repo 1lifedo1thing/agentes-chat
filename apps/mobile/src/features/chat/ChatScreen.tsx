@@ -230,9 +230,11 @@ import {
   mayStopRun,
   mergeTimeline,
   parseSlash,
+  pinnedAsListed,
   pinTarget,
   quietInset,
   readMark,
+  runInConversation,
   sameItems,
   stoppableInLine,
   workingEntries,
@@ -362,8 +364,12 @@ const FLASH_MS = 1600;
 const PICKER_COVERS_MS = 500;
 /** No questions to other agents here (yet): the same list each time, so the memos over it keep. */
 const NO_CONSULTATIONS: RunConsultation[] = [];
-/** A run in these takes a new message into its work (the server steers it there): no second "pensando…" for it. */
-const AT_WORK: ReadonlySet<string> = new Set(["thinking", "queued", "running", "waiting_approval"]);
+/**
+ * A run in these takes a new message of its conversation into its work (the server steers it there): no second
+ * "pensando…" for it. One waiting for an approval never does (the message gets a run of its own).
+ */
+const AT_WORK: ReadonlySet<string> = new Set(["thinking", "queued", "running"]);
+
 /**
  * The conversation's list, drawn again only when what it is handed changes: the screen redraws for someone typing, a
  * presence, an agent's step, and the list (a large component) was drawn again with each. Typed as the list itself: a
@@ -498,14 +504,18 @@ function Chat({
   );
   const [older, setOlder] = useState<Message[]>([]);
   const [olderDone, setOlderDone] = useState(false);
+  // Something is pinned here: its lines wait above the first message (`PinnedLines`). Older pages take their pins from
+  // it (`pinnedAsListed`): no cache update reaches them.
+  const pinsData = usePins(orgId, channelId, member).data;
+  const olderPinned = useMemo(() => pinnedAsListed(older, pinsData), [older, pinsData]);
   const list = useMemo(() => {
     if (isThread) {
       // My replies still sending wait in the channel's list.
       const mine = (top.data ?? []).filter((m) => m.local && m.threadId === threadId);
       return mergeTimeline(threadMessages.data ?? [], [mine]);
     }
-    return mergeTimeline([...older, ...(top.data ?? [])], []);
-  }, [isThread, threadId, top.data, threadMessages.data, older]);
+    return mergeTimeline([...olderPinned, ...(top.data ?? [])], []);
+  }, [isThread, threadId, top.data, threadMessages.data, olderPinned]);
   // Messages said in the channel itself: a "thinking" row the app guessed hangs off one of them.
   const topIds = useMemo(() => new Set(list.flatMap((m) => (m.threadId ? [] : [m.id]))), [list]);
   // A DM with a person: their face beside my latest message once they read it (live: `channel.read`).
@@ -732,8 +742,14 @@ function Chat({
   const consultData = consultations.data;
   const consultList = useMemo(() => (consultData ? asExchanges(consultData) : NO_CONSULTATIONS), [consultData]);
   // The threads' links under their roots and these questions load beside the messages and change rows: the list waits
-  // for them before it shows (`revealOpened`), so no row grows under the person as the conversation appears.
-  const rowsComplete = (isThread || !readable || channelThreads.isFetched) && consultations.isFetched;
+  // for them before it shows (`revealOpened`), so no row grows under the person as the conversation appears. Only on
+  // a first read: messages already on the phone (in memory, or the snapshot, which keeps both lists with them) show at
+  // once, as they did, never held behind two reads from the network (the whole fallback offline).
+  const openedOnPhone = useRef(
+    isThread ? threadMessages.data !== undefined && !threadMessages.isPlaceholderData : top.data !== undefined,
+  ).current;
+  const rowsComplete =
+    openedOnPhone || ((isThread || !readable || channelThreads.isFetched) && consultations.isFetched);
   const rowsCompleteRef = useRef(rowsComplete);
   rowsCompleteRef.current = rowsComplete;
   const liveTurns = useMemo(
@@ -916,6 +932,9 @@ function Chat({
   }, [rows, dividerKey]);
   const toEnd = useCallback(() => {
     letGo();
+    // Going to the end (a send, the round button) leaves nothing waiting to be read from the top: the room may have
+    // shrunk since (the dock grew), and a reply that fit would be taken for a tall one as my message lands.
+    toReadRef.current = null;
     setReadHold(false);
     setAtEnd(true);
     requestAnimationFrame(() => void listRef.current?.scrollToEnd({ animated: true }));
@@ -1042,17 +1061,25 @@ function Chat({
       // What waits behind it stays under it (`keepBehind`).
       if (waitingBehind.current.length > 0) keepBehind(local);
       if (isMediaAlone(local)) return;
-      const atWork = live.runs.some((r) => !r.provisional && r.agentId === dmAgentId && AT_WORK.has(r.status));
+      const atWork = live.runs.some(
+        (r) =>
+          !r.provisional &&
+          r.agentId === dmAgentId &&
+          AT_WORK.has(r.status) &&
+          runInConversation(r, local.threadId ?? null),
+      );
       if (dmAgentId && !atWork) live.expect(local.threadId ?? local.id, [dmAgentId], local.id);
       // A channel with agents: the router (or a mention) decides who answers, and `message.routed` always follows.
       if (channel && channelAgents.length > 0) live.picking(local.id);
     },
     // Its server id: what was guessed on its copy moves there (in the same update when the socket's copy comes first).
-    // Taken into work already going after all (the server steered it), its "pensando…" goes: no second run comes.
+    // Taken into work already going here after all (the server steered it into a run with its own row), its
+    // "pensando…" goes: no second run comes. Steered into a run waiting with no row (a wait this message ends), the
+    // guess stays until the run resumes and takes its place: dropped now, the line went and came back a moment later.
     onSent: (message, local) => {
       live.retarget(local.id, message.id);
-      if (Array.isArray(message.meta?.steeredRunIds) && message.meta.steeredRunIds.length > 0)
-        live.forget(message.id, false);
+      const steered = Array.isArray(message.meta?.steeredRunIds) ? (message.meta.steeredRunIds as string[]) : [];
+      if (live.runs.some((r) => !r.provisional && steered.includes(r.runId))) live.forget(message.id, false);
     },
     // Why, in words: the failed row under it says the same and keeps the text. Not sent, nothing answers it yet.
     onFailed: (error, { clientId, waits }) => {
@@ -1436,7 +1463,13 @@ function Chat({
     const sent = new Set(files.map((f) => f.id));
     setPending((now) => now.filter((f) => !sent.has(f.id)));
     toEnd();
-    behindFiles(() => deliverFiles(local, how));
+    // Behind files still going up, it waits as words do (`sendText`): kept under them as they go (`keepBehind`), where
+    // dated when sent it jumped above them (and what was sent between) when they went.
+    if (filesAhead.current) waitingBehind.current.push(clientId);
+    behindFiles(() => {
+      waitingBehind.current = waitingBehind.current.filter((id) => id !== clientId);
+      return deliverFiles(local, how);
+    });
   };
   /** A just-sent message's files go up, then the message goes with them; one that can't turns it "Não foi enviada". */
   const deliverFiles = async (local: Message, how?: SendHow) => {
@@ -1887,13 +1920,23 @@ function Chat({
     if (KeyboardController.isVisible()) freezeOnHide.current = true;
     else freeze.value = true;
   }, [freeze]);
-  const uncover = useCallback(() => {
-    covered.current = false;
-    freezeOnHide.current = false;
-    setTimeout(() => {
-      if (!covered.current) freeze.value = false;
-    }, FREEZE_AFTER_MS);
-  }, [freeze]);
+  // `now`: back on screen (a pushed screen popped), released at once when no keyboard is up or leaving: kept frozen
+  // a moment more, a quick tap on the field raised the keyboard and the dock over the last messages, and the list
+  // snapped up after. A keyboard still about (a form sent from JS, closing as it pops) keeps the delay.
+  const uncover = useCallback(
+    (now = false) => {
+      covered.current = false;
+      freezeOnHide.current = false;
+      if (now && !KeyboardController.isVisible()) {
+        freeze.value = false;
+        return;
+      }
+      setTimeout(() => {
+        if (!covered.current) freeze.value = false;
+      }, FREEZE_AFTER_MS);
+    },
+    [freeze],
+  );
   useEffect(() => {
     const gone = KeyboardEvents.addListener("keyboardDidHide", () => {
       if (!freezeOnHide.current) return;
@@ -1938,7 +1981,7 @@ function Chat({
       if (!left.current) return;
       left.current = false;
       holdPlace(away.current);
-      uncover();
+      uncover(true);
     }, [holdPlace, uncover]),
   );
   const openOptions = () =>
@@ -1982,6 +2025,8 @@ function Chat({
   // Holding the pill: "Trocar de conversa". The pick swaps the conversation in place (the route's params; the
   // screen is keyed by them), not a new screen sliding in: the slide made the header's pill jump at its end.
   // The swap waits for the sheet to be gone (it lives in this screen, which the swap remounts): `sheet.close` says when.
+  // The params merge, so the message this one opened at (`m`, from a notification) goes too: kept, the next
+  // conversation paged back through its history looking for it, then said it couldn't reach it.
   const hold = {
     onHold: () => {
       sheet.open(
@@ -1989,7 +2034,7 @@ function Chat({
           channelId={channelId}
           onPick={(id) => {
             if (id === channelId) sheet.close();
-            else sheet.close(() => router.setParams({ channelId: id, thread: "", handoff: "" }));
+            else sheet.close(() => router.setParams({ channelId: id, thread: "", handoff: "", m: "" }));
           }}
         />,
       );
@@ -2122,8 +2167,6 @@ function Chat({
       : t("mobile.chat.messageIn", { channel: channel ? `#${channel.name}` : "" });
   rowsRef.current = rows;
   const pinned = mission && isOpenMission(mission) ? mission : null;
-  // Something is pinned here: its lines wait above the first message (`PinnedLines`).
-  const pinsData = usePins(orgId, channelId, member).data;
   const hasPins = useMemo(() => pinsIn(pinsData ?? [], threadId).length > 0, [pinsData, threadId]);
 
   // ── Agents' receipts and "no AI" ──
@@ -2715,6 +2758,14 @@ function Chat({
     if (!state) return;
     return state.listen("totalSize", checkReading);
   }, [showList, checkReading]);
+  // A reply is judged against the room it landed in. One that fit with the keyboard down is never judged again over
+  // the keyboard: a row changing size while the person types pulled the conversation up to that old reply's first line.
+  useEffect(() => {
+    const shown = KeyboardEvents.addListener("keyboardWillShow", () => {
+      toReadRef.current = null;
+    });
+    return () => shown.remove();
+  }, []);
   // Rows growing or shrinking (a reply streaming, a card opening) move the waiting requests' cards and the live rows.
   useEffect(() => {
     if (!showList) return;

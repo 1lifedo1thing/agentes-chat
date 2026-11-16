@@ -69,7 +69,7 @@ test("a cover freezes the list only once a keyboard that was up has gone: no key
   );
   // The cover gone first: nothing left to freeze.
   expect(chat).toMatch(
-    /const uncover = useCallback\(\(\) => \{\s*covered\.current = false;\s*freezeOnHide\.current = false;/,
+    /const uncover = useCallback\(\s*\(now = false\) => \{\s*covered\.current = false;\s*freezeOnHide\.current = false;/,
   );
 });
 
