@@ -14,7 +14,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -27,6 +26,7 @@ import {
   PixelOrbit,
   SHEET_X,
   SheetBar,
+  SheetContent,
   SheetSurface,
   Text,
   useReducedMotion,
@@ -63,10 +63,11 @@ const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
  * own, then the agents, the one you talk to most recently first, faces at 36; one tap picks, "Enviar para Dora" sends.
  * Sending, the agent's face catches it (a short pop, its "thinking" look, one light tap) and its conversation opens,
  * where the photos and the words go out through the conversation's own sending, so the agent starts reading at once.
+ * The send button is the sheet's own footer: pinned to its bottom edge, it rises over the keyboard while the line is
+ * typed, so sending never waits for the keyboard to go.
  */
 export function ShareScreen() {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const navigation = useTrueSheetNavigation();
   const reduced = useReducedMotion();
   const { colors } = useTheme();
@@ -142,7 +143,37 @@ export function ShareScreen() {
     }
   };
 
-  // The list is the sheet's scroll view (dragging at its top moves the sheet, the keyboard insets it).
+  // The send button as the sheet's footer (TrueSheet's own, set on the route): it floats over the list at the sheet's
+  // bottom edge, over the home indicator at rest and right over the keyboard while it is up; the sheet keeps the
+  // list's last rows clear of it. It presses the latest `send` (the footer is drawn from the options it was set with).
+  const sendNow = useRef(send);
+  sendNow.current = send;
+  const label = picked ? t("mobile.share.send", { name: picked.name }) : t("mobile.share.pick");
+  const ready = picked !== null && !sending;
+  const hasShare = shared !== null;
+  useEffect(() => {
+    navigation.setOptions({
+      footer: hasShare ? (
+        <SheetContent>
+          <View style={styles.bar}>
+            <Button
+              variant="primary"
+              wide
+              label={label}
+              disabled={!ready}
+              loading={sending}
+              onPress={() => void sendNow.current()}
+            />
+          </View>
+        </SheetContent>
+      ) : undefined,
+      footerStyle: { backgroundColor: colors.grouped },
+      footerOptions: { position: "absolute" },
+    });
+  }, [navigation, hasShare, label, ready, sending, colors.grouped]);
+
+  // The list is the sheet's scroll view (dragging at its top moves the sheet; the sheet insets it for the keyboard
+  // and the footer).
   const scroll = useRef<ScrollViewInstance>(null);
   useRouteSheetScrollable(scroll);
   return (
@@ -156,7 +187,6 @@ export function ShareScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
-          automaticallyAdjustKeyboardInsets
           contentContainerStyle={styles.scroll}
         >
           <SheetBar title={t("mobile.share.title")} onClose={cancel} />
@@ -238,18 +268,6 @@ export function ShareScreen() {
             )}
           </View>
         </ScrollView>
-        {shared ? (
-          <View style={[styles.bar, { paddingBottom: 12 + insets.bottom, backgroundColor: colors.grouped }]}>
-            <Button
-              variant="primary"
-              wide
-              label={picked ? t("mobile.share.send", { name: picked.name }) : t("mobile.share.pick")}
-              disabled={!picked || sending}
-              loading={sending}
-              onPress={() => void send()}
-            />
-          </View>
-        ) : null}
       </View>
     </SheetSurface>
   );
@@ -372,5 +390,6 @@ const styles = StyleSheet.create({
   },
   moreText: { color: "#fff", fontVariant: ["tabular-nums"] },
   fileLine: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 24 },
-  bar: { paddingHorizontal: SHEET_X, paddingTop: 12 },
+  // The footer's own room; the sheet adds the home indicator's under it at rest.
+  bar: { paddingHorizontal: SHEET_X, paddingVertical: 12 },
 });

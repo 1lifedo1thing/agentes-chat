@@ -152,7 +152,18 @@ describe("Compartilhar com…", () => {
     expect(share).toContain("<TextArea");
     expect(share).not.toContain("<TextInput");
     expect(share).toContain("content: { paddingHorizontal: SHEET_X, paddingTop: 8 },");
-    expect(share).toContain("bar: { paddingHorizontal: SHEET_X, paddingTop: 12 },");
+    expect(share).toContain("bar: { paddingHorizontal: SHEET_X, paddingVertical: 12 },");
+  });
+
+  test("the send button is the sheet's own footer: it rides over the keyboard while the line is typed", () => {
+    const share = src("features/share/ShareScreen.tsx");
+    expect(share).toContain('footerOptions: { position: "absolute" },');
+    expect(share).toContain("footerStyle: { backgroundColor: colors.grouped },");
+    // In the sheet's colors, pressing the latest send; the list leaves the keyboard's and the footer's inset to the sheet.
+    expect(share).toMatch(/footer: hasShare \? \(\s*<SheetContent>/);
+    expect(share).toContain("onPress={() => void sendNow.current()}");
+    expect(share).not.toContain("automaticallyAdjustKeyboardInsets");
+    expect(share).not.toContain("insets.bottom");
   });
 });
 
