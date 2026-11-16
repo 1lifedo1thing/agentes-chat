@@ -1,4 +1,5 @@
 import { useWikiGraph } from "@agenteschat/client";
+import { useHeaderHeight } from "expo-router/react-navigation";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
@@ -42,6 +43,7 @@ export function WikiMapScreen() {
   const orgId = useOrgId();
   const graph = useWikiGraph(orgId, true);
   const insets = useSafeAreaInsets();
+  const headerHeight = useHeaderHeight();
   const { height } = useWindowDimensions();
   const [filter, setFilter] = useState<MapFilter>("all");
   const [picked, setPicked] = useState<string | null>(null);
@@ -70,7 +72,8 @@ export function WikiMapScreen() {
       ) : null}
       <PushedHeader title={t("wiki.graph")} solid={false} />
       {items.length > 1 ? (
-        <View style={[styles.filters, { top: insets.top + 52 }]}>
+        // Right under the bar, wherever the system put its bottom edge (never a guessed height).
+        <View style={[styles.filters, { top: headerHeight + 8 }]}>
           <Filters
             items={items}
             value={filter}

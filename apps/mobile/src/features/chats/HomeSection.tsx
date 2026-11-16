@@ -51,7 +51,8 @@ export function useHomeCollapsed() {
 
 /**
  * A section of Conversas: the title, its count (medium, faint) and a chevron that
- * turns when collapsed; tapping the header collapses or opens it.
+ * turns when collapsed; tapping the header collapses or opens it. No `count` while its rows load: a "0" that turns
+ * into the real count a moment later is a number that lied.
  */
 export function CollapsibleSection({
   title,
@@ -63,7 +64,7 @@ export function CollapsibleSection({
   children,
 }: {
   title: string;
-  count: number;
+  count?: number;
   collapsed: boolean;
   onToggle: () => void;
   /**
@@ -104,7 +105,7 @@ export function CollapsibleSection({
         <Text variant="small" tone="ink" style={styles.title} accessibilityRole="header" numberOfLines={1}>
           {title}
         </Text>
-        <Count value={count} size={15} weight={weights.medium} color={c.faint} />
+        {count === undefined ? null : <Count value={count} size={15} weight={weights.medium} color={c.faint} />}
         <View style={styles.grow} />
         {menu ? (
           <View style={styles.menu}>

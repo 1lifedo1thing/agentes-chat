@@ -3,9 +3,10 @@ import { RefreshControl } from "react-native";
 import { STORED } from "@/lib/storage";
 import { Button, LargeTitleScreen, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
+import { LoadFailed } from "../shared/FirstUse";
 import { usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
-import { RetryLine, TeamSkyEmpty } from "../shared/TeamSkyEmpty";
+import { TeamSkyEmpty } from "../shared/TeamSkyEmpty";
 import { useTabHeader } from "../shared/tabHeader";
 import { ConversationItem } from "./ConversationRowView";
 import { CollapsibleSection, useCollapsedSections } from "./HomeSection";
@@ -38,26 +39,26 @@ export function ThreadsScreen({ pushed = false }: { pushed?: boolean }) {
   const body = (
     <>
       {list.loading ? (
+        // The sections as they will stand (closed if closed, no count until known): nothing moves when rows land.
         <>
           <CollapsibleSection
             title={t("mobile.threads.section.missions")}
-            count={0}
-            collapsed={false}
-            onToggle={() => {}}
+            collapsed={collapsed.includes("missions")}
+            onToggle={() => toggle("missions")}
           >
             <SkeletonList rows={2} />
           </CollapsibleSection>
           <CollapsibleSection
             title={t("mobile.threads.section.threads")}
-            count={0}
-            collapsed={false}
-            onToggle={() => {}}
+            collapsed={collapsed.includes("threads")}
+            onToggle={() => toggle("threads")}
           >
             <SkeletonList rows={3} />
           </CollapsibleSection>
         </>
       ) : list.failed && rows.length === 0 ? (
-        <RetryLine onRetry={() => void list.refetch()} />
+        // Nothing kept to read: the list's error, with the way to ask again.
+        <LoadFailed onRetry={() => void list.refetch()} />
       ) : rows.length === 0 ? (
         <TeamSkyEmpty
           title={t("mobile.empty.threads.title")}

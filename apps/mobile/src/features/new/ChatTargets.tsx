@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet } from "react-native";
+import { View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { EmptyState, Icon, Text } from "@/ui";
+import { EmptyState, GroupedHeader, Icon } from "@/ui";
 import { router } from "@/ui/navigation";
 import { AgentFace, Face } from "../shared/Face";
 import { FirstUse } from "../shared/FirstUse";
@@ -11,9 +11,9 @@ import { ActionList } from "../shared/parts";
 import { chatMatches, mayCreate } from "./logic";
 
 /**
- * Who a conversation can start with, for the words typed: "Agents" and "People", each a card of rows (face, name,
- * role, chevron), or a line when nobody matches. Used by "New"'s search and by "Chat with…"; the parent lays it out
- * in a column with a gap.
+ * Who a conversation can start with, for the words typed: "Agents" and "People", each a grouped list under its
+ * header (face, name, role, chevron), or a line when nobody matches. Used by "Chat with…"; the parent lays it out in a
+ * column with a gap.
  */
 export function ChatTargets({
   q,
@@ -36,11 +36,10 @@ export function ChatTargets({
   const chevron = <Icon name="right" size={16} color={c.faint} />;
   return (
     <>
+      {/* Each header with its list in one block: the sheet's gap goes between groups, not under a header. */}
       {found.agents.length > 0 ? (
-        <>
-          <Text variant="label" accessibilityRole="header" style={styles.sec}>
-            {t("mobile.find.agents")}
-          </Text>
+        <View>
+          <GroupedHeader>{t("mobile.find.agents")}</GroupedHeader>
           <ActionList
             items={found.agents.map((a) => ({
               key: a.id,
@@ -51,13 +50,11 @@ export function ChatTargets({
               onPress: () => onAgent(a.id),
             }))}
           />
-        </>
+        </View>
       ) : null}
       {found.people.length > 0 ? (
-        <>
-          <Text variant="label" accessibilityRole="header" style={styles.sec}>
-            {t("mobile.new.people")}
-          </Text>
+        <View>
+          <GroupedHeader>{t("mobile.new.people")}</GroupedHeader>
           <ActionList
             items={found.people.map((p) => ({
               key: p.userId,
@@ -67,7 +64,7 @@ export function ChatTargets({
               onPress: () => onPerson(p.userId),
             }))}
           />
-        </>
+        </View>
       ) : null}
       {found.agents.length + found.people.length === 0 && !dir.loading ? (
         q.trim() ? (
@@ -85,7 +82,3 @@ export function ChatTargets({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  sec: { paddingHorizontal: 4, paddingTop: 10 },
-});
