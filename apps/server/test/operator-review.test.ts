@@ -67,6 +67,23 @@ beforeAll(async () => {
           ],
         };
       }
+      if (last.includes("settings")) {
+        return {
+          chunks: [],
+          toolUses: [
+            {
+              name: "lookup",
+              input: {
+                q: "settings",
+                max_tokens: 4096,
+                usage: { input_tokens: 12, output_tokens: 3, total_tokens: 15 },
+                body: JSON.stringify({ model: "x", max_tokens: 8, access_token: SECRETS.bearer }),
+                request: { body: JSON.stringify({ password: SECRETS.password, completion_tokens: 3 }) },
+              },
+            },
+          ],
+        };
+      }
       if (last.includes("everything")) {
         return {
           chunks: [],
@@ -210,6 +227,21 @@ test("a run's review: the request, its tool calls and the reply, credentials mas
     data: { ref: `run:${runId}`, reason: "sample", operator: "sampler" },
   });
   expect(JSON.stringify(viewed)).not.toContain("launch");
+});
+
+test("a run's review: a count of tokens reads as it is, and a credential written as JSON inside a string is masked", async () => {
+  const runId = await runFor("@dev look up the settings");
+  const { text } = await body<{ text: string }>(await review(`run/${runId}`));
+  for (const shown of [
+    "max_tokens: 4096",
+    // In the order the database keeps a record's fields.
+    'usage: {"input_tokens":12,"total_tokens":15,"output_tokens":3}',
+    'body: {"model":"x","max_tokens":8,"access_token":***}',
+    String.raw`request: {"body":"{\"password\":***,\"completion_tokens\":3}"}`,
+  ]) {
+    expect(text).toContain(shown);
+  }
+  expectNoSecret(text);
 });
 
 test("the review block holds at most 12 KB, keeps the request and the reply, and says what it left out", async () => {

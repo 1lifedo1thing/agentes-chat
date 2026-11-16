@@ -1,17 +1,57 @@
+/** How a credential's name ends where a shell or a header writes it (`PASSWORD=`, `x-api-key:`). */
+const NAME = "password|passwd|secret|token|api[_-]?key";
 /**
- * A name that ends as a credential's does, and its value, as a shell, a header or JSON writes them: the name's
- * closing quote, a quoted value whole.
+ * How a field's own name ends when its value is a credential: `NAME`'s words, and those that are prose anywhere but
+ * in a field's name (`Authorization`, `Set-Cookie`). Never a plural, which is how a count is named (`max_tokens`),
+ * nor a page cursor (`next_page_token`).
  */
-const SECRET_VALUE = /((?:password|passwd|secret|token|api[_-]?key)["']?\s*[=:]\s*)("(?:[^"\\]|\\.)*"|'[^']*'|\S+)/gi;
-/** A field's name that says its value is a credential, wherever the word stands (`x-api-key`, `Authorization`). */
-export const SECRET_FIELD =
-  /pass(word|wd|phrase)?$|secret|token|api[_-]?key|authorization|cookie|credential|private[_-]?key/i;
+const FIELD = `(?:${[
+  "pass(?:word|wd|phrase)",
+  "secret(?:[_-]?(?:access[_-]?)?key)?",
+  "(?<!(?:page|next|prev(?:ious)?|continuation|cursor|sync)[_-]?)token",
+  "api[_-]?key",
+  "private[_-]?key",
+  "authorization",
+  "cookie",
+].join("|")})`;
+const FIELD_NAME = new RegExp(`${FIELD}$`, "i");
+
+/**
+ * A quoted value, whole, however many times the text it sits in was itself written as a JSON string: each time
+ * doubles the backslashes before a quote and adds one. So the value ends at the quote with as many backslashes as
+ * the one that opened it (or that many and escaped backslashes of its own), or with fewer: the string around it
+ * ended first. One with no such end is masked as far as its next quote, an unquoted value up to its first space.
+ * `group` is the number of its first capturing group.
+ */
+function valueAt(group: number) {
+  const [slashes, quote] = [`\\${group}`, `\\${group + 1}`];
+  const quoted = String.raw`(\\*)(["'])[\s\S]*?(?<!\\)(?:${slashes}(?:${slashes}${slashes}\\\\)*|(?!${slashes})\\*)${quote}`;
+  return String.raw`(?:${quoted}|"[^"]*"|'[^']*'|\S+)`;
+}
+
+/** `password=…`, `token: …`: the value up to its first space, or a quoted one whole. `%3D` is `=` in an address. */
+const NAMED_VALUE = new RegExp(String.raw`((?:${NAME})\s*(?:[=:]|%(?:25)*3[AD])\s*)${valueAt(2)}`, "gi");
+/**
+ * `"password": "…"`, as JSON, a Python dict or a Ruby hash writes a field: only a text, and never an empty one. A
+ * number, `true`, `false` or `null` under such a name is no credential.
+ */
+const FIELD_VALUE = new RegExp(
+  String.raw`(${FIELD}\\*["']\s*(?:=>?|:)\s*)(?=\\*["'])(?!(\\*)(["'])\2\3)${valueAt(4)}`,
+  "gi",
+);
+/** The same field where its quotes are written out: percent-encoded in an address, an HTML entity, a code point in a log. */
+const WRITTEN_QUOTE = String.raw`%(?:25)*2[27]|&(?:amp;)*(?:quot|apos|#0*3[49]|#x0*2[27]);|\\+(?:u00|x)2[27]`;
+const WRITTEN_GAP = String.raw`(?:\s|\+|%(?:25)*20)*`;
+const WRITTEN_FIELD_VALUE = new RegExp(
+  String.raw`(${FIELD}(${WRITTEN_QUOTE})${WRITTEN_GAP}(?::|%(?:25)*3A)${WRITTEN_GAP})\2(?!\2)(?:[\s\S]*?(?<!\\|%(?:25)*5C)\2|\S*)`,
+  "gi",
+);
 
 /**
  * Masks what looks like a credential in free text that leaves its place (the runner's diagnostics and
  * activity log, the operator API's review block): machine tokens, bearer headers, common API key shapes,
- * `password=`/`token:` values, also as JSON writes them (`"password": "…"`). The agent's own secrets are masked by
- * their values (ADR 0027) before this.
+ * `password=`/`token:` values, and a field named for a credential as JSON writes it (`"password": "…"`), at any
+ * depth of JSON inside a JSON string. The agent's own secrets are masked by their values (ADR 0027) before this.
  */
 export function redactCommon(text: string): string {
   return text
@@ -21,18 +61,21 @@ export function redactCommon(text: string): string {
     .replace(/\b(gh[pousr]_[A-Za-z0-9._-]{20,}|github_pat_[A-Za-z0-9_]{20,})/g, "gh_***")
     .replace(/\b(xox[abposr]-[A-Za-z0-9-]{10,})/g, "xox-***")
     .replace(/\b(AKIA[0-9A-Z]{16})\b/g, "AKIA***")
-    .replace(SECRET_VALUE, "$1***");
+    .replace(FIELD_VALUE, "$1***")
+    .replace(WRITTEN_FIELD_VALUE, "$1***")
+    .replace(NAMED_VALUE, "$1***");
 }
 
 /**
- * A value with every field named for a credential masked, at any depth and whatever it holds: in text, a value
- * with spaces or a nested one would be masked only up to its first space.
+ * A value with every text under a field named for a credential masked, at any depth: in text, a value with spaces
+ * is masked only up to its first space. A number, `true`, `false` or `null` stays: it is a count or a switch.
  */
-export function maskSecretFields(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(maskSecretFields);
+export function maskSecretFields(value: unknown, named = false): unknown {
+  if (typeof value === "string") return named && value ? "***" : value;
+  if (Array.isArray(value)) return value.map((v) => maskSecretFields(v, named));
   if (!value || typeof value !== "object") return value;
   return Object.fromEntries(
-    Object.entries(value).map(([key, v]) => [key, SECRET_FIELD.test(key) ? "***" : maskSecretFields(v)]),
+    Object.entries(value).map(([key, v]) => [key, maskSecretFields(v, named || FIELD_NAME.test(key))]),
   );
 }
 

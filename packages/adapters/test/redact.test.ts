@@ -28,7 +28,11 @@ test("output full of spaces is read in linear time", () => {
   expect(performance.now() - started).toBeLessThan(1000);
 });
 
-test("a credential is masked as JSON writes it too, and a field named for one whatever it holds", () => {
+/** `text` written as a JSON string `times` over: each time doubles the backslashes before a quote and adds one. */
+const written = (text: string, times: number): string =>
+  times === 0 ? text : written(JSON.stringify(text), times - 1);
+
+test("a credential is masked as JSON writes it too, and under a field named for one at any depth", () => {
   const json = [
     '{"user":"ana","password":"hunter2-fake"}',
     '{"x-api-key": "fake-header-key", "client_secret":"fake \\" secret"}',
@@ -48,16 +52,118 @@ test("a credential is masked as JSON writes it too, and a field named for one wh
     maskSecretFields({
       q: "launch",
       password: "correct horse fake",
-      auth: { username: "ana", accessToken: { value: "a b" } },
+      auth: { username: "ana", accessToken: { value: "a b", expiresIn: 3600 } },
       headers: [{ "x-api-key": "fake-key" }, { Authorization: "fake raw value", Cookie: "session=fake" }],
-      env: { AWS_SECRET_ACCESS_KEY: "fake-aws-secret" },
+      env: { AWS_SECRET_ACCESS_KEY: "fake-aws-secret", secretKey: "fake secret key", passphrase: "fake phrase" },
     }),
   ).toEqual({
     q: "launch",
     password: "***",
-    auth: { username: "ana", accessToken: "***" },
+    auth: { username: "ana", accessToken: { value: "***", expiresIn: 3600 } },
     headers: [{ "x-api-key": "***" }, { Authorization: "***", Cookie: "***" }],
-    env: { AWS_SECRET_ACCESS_KEY: "***" },
+    env: { AWS_SECRET_ACCESS_KEY: "***", secretKey: "***", passphrase: "***" },
   });
   expect(maskSecretFields("password: x")).toBe("password: x");
+});
+
+test("a credential written as JSON inside a string is masked, however many times that string was written as JSON", () => {
+  // One backslash before each quote, then three, then seven: JSON in JSON in JSON.
+  for (const name of ["token", "access_token", "api_key", "password", "secret"]) {
+    for (const times of [0, 1, 2, 3]) {
+      const record = (value: string) => written(JSON.stringify({ user: "ana", [name]: value, n: 1 }), times);
+      expect({ name, times, masked: redactCommon(record('fake "quoted" value \\')) }).toEqual({
+        name,
+        times,
+        masked: record("@@").replace(/\\*"@@\\*"/, "***"),
+      });
+    }
+  }
+  const once = String.raw`{"status":200,"body":"{\"access_token\":\"fake-in-a-body\",\"expires_in\":3600}"}`;
+  expect(redactCommon(once)).toBe(String.raw`{"status":200,"body":"{\"access_token\":***,\"expires_in\":3600}"}`);
+  // A value cut off before its closing quote is masked as far as it goes; one whose string ended first, to there.
+  expect(redactCommon('{"access_token":"fake-cut-off')).toBe('{"access_token":***');
+  expect(redactCommon(String.raw`{"body":"{\"token\":\"fake-cut","status":200}`)).toBe(
+    String.raw`{"body":"{\"token\":***,"status":200}`,
+  );
+});
+
+test("a count of tokens is no credential, nor is a number, a switch, nothing or a page cursor under a credential's name", () => {
+  const counts = {
+    max_tokens: 4096,
+    input_tokens: 12,
+    output_tokens: 3,
+    total_tokens: 15,
+    prompt_tokens: 12,
+    completion_tokens: 3,
+    cache_read_input_tokens: 0,
+    cache_creation_input_tokens: 0,
+    maxOutputTokens: 4096,
+  };
+  const shown = [
+    JSON.stringify(counts),
+    written(JSON.stringify({ usage: counts }), 2),
+    Object.entries(counts)
+      .map(([name, n]) => `${name}=${n} ${name}: ${n}`)
+      .join("\n"),
+    '{"token":5,"secret":false,"password":null,"api_key":true,"user":"ana"}',
+    '{"password":"","user":"ana"}',
+    '{"next_page_token":"fake-cursor","nextPageToken":"fake-cursor","token_type":"bearer","credentials":"include"}',
+  ];
+  for (const text of shown) expect(redactCommon(text)).toBe(text);
+  const record = {
+    usage: counts,
+    tokens: { input: 12, output: 3 },
+    token: 5,
+    secret: false,
+    password: null,
+    api_key: "",
+    next_page_token: "fake-cursor",
+    token_type: "bearer",
+    bypass: "never",
+  };
+  expect(maskSecretFields(record)).toEqual(record);
+});
+
+test("the same credential as other writers spell it", () => {
+  const spelled: [text: string, masked: string][] = [
+    // A Python dict, a Ruby hash.
+    ["{'access_token': 'fake py', 'n': 1}", "{'access_token': ***, 'n': 1}"],
+    ["'password' => 'fake rb', 'n' => 1", "'password' => ***, 'n' => 1"],
+    // JSON in an address's query, and a name=value pair in an address inside one.
+    [
+      "https://app.example.com/x?state=%7B%22token%22%3A%22fake-url%22%2C%22n%22%3A1%7D&a=1",
+      "https://app.example.com/x?state=%7B%22token%22%3A***%2C%22n%22%3A1%7D&a=1",
+    ],
+    [
+      "https://app.example.com/cb?next=https%3A%2F%2Fb.example.com%2F%3Ftoken%3Dfake-url%26a%3D1 then",
+      "https://app.example.com/cb?next=https%3A%2F%2Fb.example.com%2F%3Ftoken%3D*** then",
+    ],
+    // JSON in a page's attribute, and with its quotes written as their code point.
+    [
+      'data-x="{&quot;password&quot;:&quot;fake html&quot;,&quot;n&quot;:1}" class',
+      'data-x="{&quot;password&quot;:***,&quot;n&quot;:1}" class',
+    ],
+    [
+      '{"body":"{\\u0022api_key\\u0022:\\u0022fake-u\\u0022,\\u0022n\\u0022:1}"}',
+      '{"body":"{\\u0022api_key\\u0022:***,\\u0022n\\u0022:1}"}',
+    ],
+    // A request's body as a web server's log keeps it.
+    ["body: {\\x22password\\x22:\\x22fake log\\x22,\\x22n\\x22:1}", "body: {\\x22password\\x22:***,\\x22n\\x22:1}"],
+    // A header inside a string, with a scheme or without, and a shell's quoted value there.
+    [
+      String.raw`{"headers":"{\"Authorization\":\"Token fake-raw\",\"Cookie\":\"sid=fake\",\"accept\":\"*/*\"}"}`,
+      String.raw`{"headers":"{\"Authorization\":***,\"Cookie\":***,\"accept\":\"*/*\"}"}`,
+    ],
+    [
+      String.raw`{"command":"curl -H \"Authorization: Bearer fake-bearer-0000\" https://api.example.com"}`,
+      String.raw`{"command":"curl -H \"Authorization: Bearer ***\" https://api.example.com"}`,
+    ],
+    [
+      String.raw`{"command":"export TOKEN=\"fake with space\" && run"}`,
+      '{"command":"export TOKEN=*** && run"}',
+    ],
+    // A value on several lines.
+    ['"token":\n  "fake first\nfake second",\n"n": 1', '"token":\n  ***,\n"n": 1'],
+  ];
+  for (const [text, masked] of spelled) expect(redactCommon(text)).toBe(masked);
 });

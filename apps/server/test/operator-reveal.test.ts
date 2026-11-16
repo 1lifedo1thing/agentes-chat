@@ -353,6 +353,33 @@ beforeAll(async () => {
         isError: true,
       },
     ],
+    // A call and an answer that carry JSON inside a string: a credential behind escaped quotes, beside counts.
+    [
+      "tool_call",
+      {
+        toolUseId: "j",
+        name: "fetch",
+        input: {
+          url: "https://api.example.com/v1/token",
+          max_tokens: 4096,
+          usage: { input_tokens: 12, output_tokens: 3, total_tokens: 15 },
+          request: { body: JSON.stringify({ grant_type: "refresh", client_secret: "fake nested json secret" }) },
+          args: ["--data", JSON.stringify({ password: 'fake "arg" password' })],
+        },
+      },
+    ],
+    [
+      "tool_result",
+      {
+        toolUseId: "j",
+        name: "fetch",
+        content: JSON.stringify({
+          status: 200,
+          body: JSON.stringify({ access_token: "fake-body-access", expires_in: 3600, max_tokens: 4096 }),
+        }),
+        isError: true,
+      },
+    ],
   ]);
   runs.gone = await run("failed", {
     channelId: w.goneId,
@@ -1144,9 +1171,9 @@ test("masking before the cut: credentials are gone whichever window is asked, an
   expect((await read(whole.chars + 50, 10)).text).toBe("");
 });
 
-test("masking: a field named like a secret is gone whatever it holds, at any depth of a call's input and of a result", async () => {
+test("masking: a text under a field named for a credential is gone, at any depth of a call's input and of a result", async () => {
   const of = { runId: runs.keys };
-  const answered = '{"ok":false,"session":{"token":***,"password":***},"Authorization":"***"}';
+  const answered = '{"ok":false,"session":{"token":***,"password":***},"Authorization":***}';
   expect({
     input: await text(step(runs.keys, 1, "input", of)),
     result: await text(step(runs.keys, 2, "result", of)),
@@ -1165,12 +1192,14 @@ test("masking: a field named like a secret is gone whatever it holds, at any dep
   });
 });
 
-test("masking: a credential is gone as JSON writes it too, in any text", async () => {
+test("masking: a credential is gone as JSON writes it too, in any text; a count of tokens is not one", async () => {
   const json = [
     '{"password":"hunter2-json-fake"}',
     '{"api_key": "fake-json-api-key", "client_secret":"fake \\" json-client-secret"}',
     '{"access_token":"fake-json-access","refresh_token":"fake-json-refresh","max_tokens":4096}',
     "password=hunter2-plain-fake and api_key: fake-plain-api-key",
+    '{"usage":{"input_tokens":12,"output_tokens":3,"total_tokens":15},"token":5,"secret":false,"password":null}',
+    "max_tokens=4096 prompt_tokens: 12 completion_tokens: 3 cache_read_input_tokens: 0",
   ].join("\n");
   await db.update(schema.messages).set({ body: json }).where(eq(schema.messages.id, messages.other));
   expect(await text(ask("message", messages.other, "text", { requestId: requests.owner }))).toBe(
@@ -1179,8 +1208,41 @@ test("masking: a credential is gone as JSON writes it too, in any text", async (
       '{"api_key": ***, "client_secret":***}',
       '{"access_token":***,"refresh_token":***,"max_tokens":4096}',
       "password=*** and api_key: ***",
+      '{"usage":{"input_tokens":12,"output_tokens":3,"total_tokens":15},"token":5,"secret":false,"password":null}',
+      "max_tokens=4096 prompt_tokens: 12 completion_tokens: 3 cache_read_input_tokens: 0",
     ].join("\n"),
   );
+});
+
+test("masking: a credential written as JSON inside a string is gone, at any depth of escaping, and the counts beside it stay", async () => {
+  const of = { runId: runs.keys };
+  // A message that quotes JSON as a log or another JSON wrote it: one backslash before each quote, three, seven.
+  const quoting = [
+    String.raw`the call sent {\"api_key\":\"fake-quoted-once\",\"max_tokens\":4096} and`,
+    String.raw`the log kept {\\\"token\\\":\\\"fake quoted twice\\\",\\\"n\\\":1} and`,
+    String.raw`its copy {\\\\\\\"secret\\\\\\\":\\\\\\\"fake-quoted-thrice\\\\\\\",\\\\\\\"n\\\\\\\":1}`,
+  ].join("\n");
+  await db.update(schema.messages).set({ body: quoting }).where(eq(schema.messages.id, messages.other));
+  expect({
+    input: await text(step(runs.keys, 3, "input", of)),
+    result: await text(step(runs.keys, 4, "result", of)),
+    message: await text(ask("message", messages.other, "text", { requestId: requests.owner })),
+  }).toEqual({
+    // A string below the top level is written with its quotes escaped. In the order the database keeps the fields.
+    input: [
+      "url: https://api.example.com/v1/token",
+      String.raw`args: ["--data","{\"password\":***}"]`,
+      'usage: {"input_tokens":12,"total_tokens":15,"output_tokens":3}',
+      String.raw`request: {"body":"{\"grant_type\":\"refresh\",\"client_secret\":***}"}`,
+      "max_tokens: 4096",
+    ].join("\n"),
+    result: String.raw`{"status":200,"body":"{\"access_token\":***,\"expires_in\":3600,\"max_tokens\":4096}"}`,
+    message: [
+      String.raw`the call sent {\"api_key\":***,\"max_tokens\":4096} and`,
+      String.raw`the log kept {\\\"token\\\":***,\\\"n\\\":1} and`,
+      String.raw`its copy {\\\\\\\"secret\\\\\\\":***,\\\\\\\"n\\\\\\\":1}`,
+    ].join("\n"),
+  });
 });
 
 test("a window of one never stops before a pair; a character the record can't hold is left out of it, not a failure", async () => {
