@@ -125,7 +125,9 @@ export function summary(c: Collected["counts"]): string {
 /** What stayed on the computer, as one line; "" when nothing did. */
 export function leftLine(left: Collected["left"]): string {
   const parts = [
-    left.secrets ? `${plural(left.secrets, "file")} that hold keys or sign-ins` : "",
+    left.secrets
+      ? `${plural(left.secrets, "file")} that ${left.secrets === 1 ? "holds" : "hold"} keys or sign-ins`
+      : "",
     left.large ? `${plural(left.large, "file")} over 50 MB` : "",
     left.links ? plural(left.links, "link") : "",
     left.over ? `${plural(left.over, "file")} past what one export carries` : "",

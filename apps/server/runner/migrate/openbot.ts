@@ -323,10 +323,13 @@ function read(query: Query, options: OpenBotOptions): Collected {
       headers: [],
     };
   });
-  if (mcpServers.length > 0) {
-    notes.push(`${mcpServers.length} MCP server(s) come by name only: connect them again on agentes.chat.`);
+  if (mcpServers.length === 1) {
+    notes.push("1 MCP server comes by name only: connect it again on agentes.chat.");
+  } else if (mcpServers.length > 1) {
+    notes.push(`${mcpServers.length} MCP servers come by name only: connect them again on agentes.chat.`);
   }
-  if (hookCount > 0) notes.push(`${hookCount} routine(s) start from a webhook: they are listed, to set up again.`);
+  if (hookCount === 1) notes.push("1 routine starts from a webhook: it is listed, to set up again.");
+  else if (hookCount > 1) notes.push(`${hookCount} routines start from a webhook: they are listed, to set up again.`);
 
   const manifest = {
     format: "openbot-instance-transfer",
