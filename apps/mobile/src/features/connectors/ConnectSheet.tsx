@@ -355,14 +355,9 @@ function DoneStep({
       <Button
         variant="primary"
         wide
-        label={
-          save.isPending
-            ? t("mobile.connectors.review.saving")
-            : waiting
-              ? t("connectFlow.next")
-              : t("connectFlow.done.ok")
-        }
-        disabled={!summary || save.isPending}
+        label={waiting ? t("connectFlow.next") : t("connectFlow.done.ok")}
+        disabled={!summary}
+        loading={save.isPending}
         onPress={() => (waiting ? apply(waiting) : sheet.close())}
       />
       <Button
@@ -715,8 +710,8 @@ function ConnectStep({
         <Button
           variant="primary"
           wide
-          label={busy ? t("mobile.connectors.working") : t("githubApp.install")}
-          disabled={busy}
+          label={t("githubApp.install")}
+          loading={busy}
           onPress={() => void installApp()}
         />
         <Button
@@ -794,13 +789,9 @@ function ConnectStep({
               variant="primary"
               wide
               label={
-                busy
-                  ? t("mobile.connectors.working")
-                  : viaComposio
-                    ? t("connectFlow.continueInComposio")
-                    : t("mobile.connectors.signIn", { name: shownName })
+                viaComposio ? t("connectFlow.continueInComposio") : t("mobile.connectors.signIn", { name: shownName })
               }
-              disabled={busy}
+              loading={busy}
               onPress={() => void signIn()}
             />
           ) : (
@@ -864,8 +855,8 @@ function ConnectStep({
               <Button
                 variant="primary"
                 wide
-                label={busy ? t("mobile.connectors.working") : t("mobile.connectors.connect")}
-                disabled={busy}
+                label={t("mobile.connectors.connect")}
+                loading={busy}
                 onPress={() => void submitKey()}
               />
             </>

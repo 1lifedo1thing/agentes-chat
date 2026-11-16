@@ -7,7 +7,7 @@ import Constants from "expo-constants";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { signOut } from "@/features/account";
@@ -30,6 +30,7 @@ import {
 } from "@/ui";
 import { CoverBarBackdrop, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
+import { confirmAction, Uploading } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
@@ -241,17 +242,16 @@ export function MeScreen() {
       if (key) language.pick(key as Parameters<typeof language.pick>[0]);
     });
   const confirmSignOut = () =>
-    Alert.alert(t("mobile.me.signOutConfirm"), t("mobile.me.signOutConfirmText"), [
-      { text: t("mobile.common.cancel"), style: "cancel" },
-      {
-        text: t("mobile.me.signOut"),
-        style: "destructive",
-        onPress: () => {
-          goBack();
-          void signOut();
-        },
+    confirmAction({
+      title: t("mobile.me.signOutConfirm"),
+      text: t("mobile.me.signOutConfirmText"),
+      action: t("mobile.me.signOut"),
+      cancel: t("mobile.common.cancel"),
+      onConfirm: () => {
+        goBack();
+        void signOut();
       },
-    ]);
+    });
 
   return (
     <View style={[styles.fill, { backgroundColor: c.grouped }]}>
@@ -281,11 +281,13 @@ export function MeScreen() {
             disabled={uploading}
             accessibilityRole="button"
             accessibilityLabel={t("mobile.me.account.changePhoto")}
-            style={({ pressed }) => (pressed || uploading ? styles.pressed : null)}
+            accessibilityState={{ disabled: uploading, busy: uploading }}
+            style={({ pressed }) => (pressed ? styles.pressed : null)}
           >
             <WithPresence size={PHOTO + 6} presence={myPresence} ring={c.grouped}>
               <View style={[styles.ring, { borderColor: c.grouped }]}>
                 <PersonAvatar name={name || "?"} size={PHOTO} photo={photo} />
+                {uploading ? <Uploading style={styles.photoBusy} /> : null}
               </View>
             </WithPresence>
             {/* A touch screen has no hover: the photo badge says the face changes it (presence keeps its corner). */}
@@ -595,6 +597,7 @@ const styles = StyleSheet.create({
   cover: { alignItems: "center", gap: 6, marginTop: -PHOTO_OVERLAP, paddingHorizontal: 16 },
   // A ring in the page's color lifts the photo off the sky.
   ring: { borderRadius: 999, borderWidth: 3 },
+  photoBusy: { width: PHOTO, height: PHOTO, borderRadius: PHOTO / 2 },
   pressed: { opacity: 0.6 },
   photoBadge: {
     position: "absolute",

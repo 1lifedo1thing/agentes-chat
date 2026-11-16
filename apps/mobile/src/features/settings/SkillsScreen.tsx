@@ -83,7 +83,7 @@ import { router } from "@/ui/navigation";
 import { Note } from "../ai/parts";
 import { MessageText } from "../chat/MessageText";
 import { ConnectSheet } from "../connectors/ConnectSheet";
-import { FirstUse } from "../shared/FirstUse";
+import { FirstUse, LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useErrorToast } from "../shared/hooks";
 import { goBack, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
@@ -94,6 +94,15 @@ import { confirmAction, Gap, SettingsPage } from "./parts";
 
 /** Opens a skill of the library (its page). */
 const openSkill = (id: string) => router.push(`/settings/skills/${id}`);
+
+/**
+ * The change to skill `id` an action is saving, if that's what it does: a switch shows it at once. The action stays
+ * pending until the library is read again (`useSkillAction` waits for it), so the saved value takes over unseen.
+ */
+function pendingPatch(action: ReturnType<typeof useSkillAction>, id: string) {
+  const v = action.isPending ? action.variables : undefined;
+  return v?.type === "update" && v.id === id ? v.patch : undefined;
+}
 
 type SkillScope = "team" | "personal";
 
@@ -124,6 +133,11 @@ export function SkillsScreen() {
   const usage = useSkillUsage(orgId, admin && list.length > 0);
   const settings = useSkillSettings(orgId, admin);
   const action = useSkillAction(orgId);
+  // What is being saved shows at once: the switch moves as it is tapped (the action stays pending until the library is
+  // read again, so the saved value takes over with no flicker).
+  const pendingSettings =
+    action.isPending && action.variables?.type === "settings" ? action.variables.settings : undefined;
+  const improves = pendingSettings?.agentsImprove ?? settings.data?.agentsImprove ?? true;
   const failed = useErrorToast();
   const toast = useToast();
   const dir = useDirectory();
@@ -194,13 +208,9 @@ export function SkillsScreen() {
                     name: t("common.about", { label: t("skills.agentsImprove") }),
                     text: t("skills.agentsImproveHelp"),
                   }}
-                  toggle={settings.data.agentsImprove}
-                  disabled={action.isPending}
+                  toggle={improves}
                   onPress={() =>
-                    action.mutate(
-                      { type: "settings", settings: { agentsImprove: !settings.data?.agentsImprove } },
-                      { onError: failed },
-                    )
+                    action.mutate({ type: "settings", settings: { agentsImprove: !improves } }, { onError: failed })
                   }
                 />
               </GroupedList>
@@ -219,11 +229,7 @@ export function SkillsScreen() {
             <Gap />
           )}
           {skills.isLoading ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
-          {skills.isError && !skills.data ? (
-            <View style={styles.note}>
-              <Note icon="x">{t("common.loadFailed")}</Note>
-            </View>
-          ) : null}
+          {skills.isError && !skills.data ? <LoadFailed onRetry={() => void skills.refetch()} /> : null}
           {none && scope === "personal" ? (
             <EmptyState
               size="panel"
@@ -368,12 +374,7 @@ export function SkillScreen({ id }: { id: string }) {
   return (
     <SettingsPage title={s?.name ?? t("skills.title")} subtitle={subtitle}>
       {skill.isLoading ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
-      {skill.isError && !s ? (
-        <View style={[styles.note, styles.retry]}>
-          <Note icon="x">{t("common.loadFailed")}</Note>
-          <Button size="sm" variant="secondary" label={t("common.retry")} onPress={() => void skill.refetch()} />
-        </View>
-      ) : null}
+      {skill.isError && !s ? <LoadFailed onRetry={() => void skill.refetch()} /> : null}
       {s ? (
         <>
           {s.description ? <GroupedFooter>{s.description}</GroupedFooter> : null}
@@ -509,6 +510,8 @@ function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
   const action = useSkillAction(orgId);
   const agents = useAgents(orgId);
   if (s.source !== "url" || !s.sourceUrl) return null;
+  // "Update by itself" shows what is being saved at once (the action stays pending until the skill is read again).
+  const autoUpdate = pendingPatch(action, s.id)?.autoUpdate ?? s.autoUpdate ?? false;
   const words = skillUpdateWords(t, i18n.language, s);
   const waiting = words.waiting;
   const nameOf = (id: string) => agents.data?.find((a) => a.id === id)?.name ?? t("channel.unknownAgent");
@@ -616,10 +619,9 @@ function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
         <GroupedRow
           label={t("skills.autoUpdate")}
           hint={{ name: t("common.about", { label: t("skills.autoUpdate") }), text: t("skills.autoUpdateHelp") }}
-          toggle={s.autoUpdate ?? false}
-          disabled={action.isPending}
+          toggle={autoUpdate}
           onPress={() =>
-            action.mutate({ type: "update", id: s.id, patch: { autoUpdate: !s.autoUpdate } }, { onError: failed })
+            action.mutate({ type: "update", id: s.id, patch: { autoUpdate: !autoUpdate } }, { onError: failed })
           }
         />
         {words.last ? (
@@ -676,7 +678,9 @@ function AgentImprove({ skill: s }: { skill: SkillDetail }) {
   if (s.origin === "agent") return null;
   const change = s.lastUpdate?.agentId ? s.lastUpdate : null;
   const nameOf = (id: string) => agents.data?.find((a) => a.id === id)?.name ?? t("channel.unknownAgent");
-  const on = s.agentsImprove ?? settings.data?.agentsImprove ?? true;
+  // What is being saved shows at once, as the library's switch does.
+  const saving = pendingPatch(action, s.id)?.agentsImprove;
+  const on = (typeof saving === "boolean" ? saving : s.agentsImprove) ?? settings.data?.agentsImprove ?? true;
   return (
     <>
       <Gap />
@@ -685,7 +689,6 @@ function AgentImprove({ skill: s }: { skill: SkillDetail }) {
           label={t("skills.agentsImproveThis")}
           labelLines={2}
           toggle={on}
-          disabled={action.isPending}
           onPress={() =>
             action.mutate({ type: "update", id: s.id, patch: { agentsImprove: !on } }, { onError: failed })
           }
@@ -1283,9 +1286,7 @@ export function EditSkillScreen({ id }: { id: string }) {
     >
       {!form ? (
         skill.isError ? (
-          <View style={styles.note}>
-            <Note icon="x">{t("common.loadFailed")}</Note>
-          </View>
+          <LoadFailed onRetry={() => void skill.refetch()} />
         ) : (
           <ActivityIndicator color={c.muted} style={styles.loading} />
         )
@@ -1326,7 +1327,6 @@ export function EditSkillScreen({ id }: { id: string }) {
 
 const styles = StyleSheet.create({
   note: { paddingHorizontal: 4, paddingTop: 10 },
-  retry: { gap: 10, alignItems: "flex-start" },
   search: { paddingTop: 14, paddingBottom: 8 },
   loading: { marginVertical: 16 },
   page: { paddingHorizontal: 16, paddingVertical: 14 },

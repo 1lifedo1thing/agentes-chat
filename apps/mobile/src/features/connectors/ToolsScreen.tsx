@@ -67,7 +67,14 @@ export function ToolsScreen({ connectionId }: { connectionId: string }) {
       </ScrollView>
       {save ? (
         <BottomBar bottom={insets.bottom}>
-          <Button variant="primary" wide label={save.label} disabled={save.busy} onPress={save.onPress} />
+          <Button
+            variant="primary"
+            wide
+            label={save.label}
+            disabled={save.busy}
+            loading={save.saving}
+            onPress={save.onPress}
+          />
         </BottomBar>
       ) : null}
     </View>

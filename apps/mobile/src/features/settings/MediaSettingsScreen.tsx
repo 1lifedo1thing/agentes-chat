@@ -9,6 +9,7 @@ import { useOrg } from "@/providers/org";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, useToast } from "@/ui";
 import { Note } from "../ai/parts";
 import { AgentFace } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors } from "../shared/hooks";
 import { Loaded } from "../shared/parts";
 import { SettingsPage } from "./parts";
@@ -38,9 +39,7 @@ export function MediaSettingsScreen() {
     return (
       <SettingsPage title={title}>
         {settings.isError ? (
-          <View style={styles.note}>
-            <Note icon="x">{t("common.loadFailed")}</Note>
-          </View>
+          <LoadFailed onRetry={() => void settings.refetch()} />
         ) : (
           <ActivityIndicator color={c.muted} style={styles.loading} />
         )}

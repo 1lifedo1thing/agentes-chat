@@ -12,7 +12,11 @@ import { openRightHandSettings } from "../right-hand/SettingsScreen";
 import { usePersonalView } from "../settings/hooks";
 import { AgentFace, Face } from "../shared/Face";
 import { useDirectory, useMeId } from "../shared/hooks";
+import { pickOne } from "../shared/PickerSheet";
 import { Page } from "./parts";
+
+/** The picker's key for "No one" (no cover). */
+const NOBODY = "\u0000nobody";
 
 /**
  * Perfil › Aprovações (ADR 0139), the web's Configurações › Você › Aprovações: who approves for me (one person or
@@ -47,6 +51,30 @@ export function ApprovalsPage() {
   const people = [...dir.memberById.values()].filter((m) => m.userId !== meId);
   const endDay = cover?.endsAt ? toYmd(new Date(cover.endsAt)) : null;
   const days = DUE_CHOICES.filter((c) => c !== "none").map((c) => ({ choice: c, day: dueDateOf(c) as string }));
+  // One person or no one, in the app's picker with its search ("No one" first, then each person with their photo),
+  // the one in place checked: every member listed on the page made it as long as the team.
+  const pickCover = () =>
+    void pickOne({
+      title: t("approvalCover.title"),
+      value: cover?.userId || NOBODY,
+      search: true,
+      options: [
+        { key: NOBODY, label: t("approvalCover.nobody"), leading: { kind: "icon", name: "x" } },
+        ...people.map((m) => ({
+          key: m.userId,
+          label: m.name,
+          ...(m.handle ? { sub: `@${m.handle}` } : {}),
+          leading: { kind: "person" as const, userId: m.userId },
+        })),
+      ],
+    }).then((key) => {
+      if (key === null) return;
+      const userId = key === NOBODY ? "" : key;
+      if (userId !== (cover?.userId ?? "")) save({ userId });
+    });
+  const coverName = cover?.userId
+    ? (dir.memberById.get(cover.userId)?.name ?? t("channel.unknownPerson"))
+    : t("approvalCover.nobody");
   return (
     <Page title={t("settings.section.approvals")}>
       {/* Alone in a personal workspace there is no one to approve for you (ADR 0159), unless a cover is already set,
@@ -56,19 +84,15 @@ export function ApprovalsPage() {
           <GroupedHeader>{t("approvalCover.title")}</GroupedHeader>
           <GroupedList>
             <GroupedRow
-              label={t("approvalCover.nobody")}
-              checked={!cover}
-              onPress={() => cover && save({ userId: "" })}
+              icon="person"
+              label={t("approvalCover.person")}
+              value={coverName}
+              {...(cover?.userId
+                ? { valueLeading: <Face who={{ type: "person", id: cover.userId }} size={22} /> }
+                : {})}
+              menu
+              onPress={pickCover}
             />
-            {people.map((m) => (
-              <GroupedRow
-                key={m.userId}
-                leading={<Face who={{ type: "person", id: m.userId }} size={28} />}
-                label={m.name}
-                checked={cover?.userId === m.userId}
-                onPress={() => save({ userId: m.userId })}
-              />
-            ))}
           </GroupedList>
           <GroupedFooter>{t("approvalCover.subtitle")}</GroupedFooter>
           {cover ? (
