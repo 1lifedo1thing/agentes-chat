@@ -89,7 +89,7 @@ describe("a personal workspace's words on the phone (ADR 0159)", () => {
   });
 
   test("the workspace's own computer is its person's agents', where missions wait for it too", () => {
-    expect(src("chat/sheets.tsx")).toContain(
+    expect(src("chat/NewMissionScreen.tsx")).toContain(
       't(modeKey(org, "computerSetup.titleInSentence"), { org: org?.name ?? "" })',
     );
   });

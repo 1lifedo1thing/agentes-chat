@@ -124,12 +124,14 @@ describe("every sheet is the system's own (TrueSheet), and a sheet's next step s
     expect(host).toContain("<TrueSheet ref={ref} {...props} scrollableRef={scroll}>");
     expect(host).toContain("presentOnMount: !first");
     const chat = src("features/chat/ChatScreen.tsx");
-    for (const next of ["sheet.push(<PinsSheet", "sheet.push(<ConversationSearch", "sheet.push(<ChannelMembersSheet"]) {
+    for (const next of ["sheet.push(<PinsSheet", "sheet.push(<ConversationSearch"]) {
       expect({ next, pushed: chat.includes(next) }).toEqual({ next, pushed: true });
     }
+    // Managing who is in a channel is screens pushed over the conversation, never sheet steps.
+    expect(chat).not.toContain("<ChannelMembersSheet");
     const members = src("features/chat/ChannelMembers.tsx");
-    expect(members).toContain("sheet.push(<MemberOptions");
-    expect(members).toContain("sheet.push(<AddChannelMembers");
-    expect(members).toContain("const back = () => sheet.back();");
+    expect(members).not.toContain("useSheet");
+    expect(members).toContain("router.push(channelMembersHrefs.agent(channelId, w.id))");
+    expect(members).toContain("router.push(channelMembersHrefs.add(channelId))");
   });
 });

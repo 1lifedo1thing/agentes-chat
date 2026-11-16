@@ -153,6 +153,8 @@ export function AllowTalkAction({ agent, userId }: { agent: Agent; userId: strin
   return (
     <RowAction
       label={t("reach.allow", { person, context: g.context })}
+      // Off while it saves and once done: a second tap isn't offered (the toast says it took).
+      disabled={save.busy || save.done}
       onPress={() => {
         if (save.busy || save.done) return;
         tapHaptic();

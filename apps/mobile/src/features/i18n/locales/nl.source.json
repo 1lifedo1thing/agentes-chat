@@ -860,11 +860,32 @@
       "other": "{{count}} here"
     }
   },
+  "chat.membersAdd": {
+    "value": "Add"
+  },
+  "chat.membersAdded": {
+    "value": {
+      "one": "{{count}} added to #{{channel}}",
+      "other": "{{count}} added to #{{channel}}"
+    }
+  },
+  "chat.memberRemoved": {
+    "value": "{{name}} is out of #{{channel}}"
+  },
+  "chat.muted": {
+    "value": "#{{channel}} muted"
+  },
+  "chat.unmuted": {
+    "value": "#{{channel}} unmuted"
+  },
   "chat.headerAgent": {
     "value": "{{who}}. Open the profile"
   },
   "chat.headerChannel": {
     "value": "{{who}}. Options"
+  },
+  "chat.headerMembers": {
+    "value": "{{who}}. See who is here"
   },
   "chat.switchHint": {
     "value": "Hold to switch conversations"
@@ -1546,6 +1567,9 @@
   },
   "newMission.placeholder": {
     "value": "What needs to get done?"
+  },
+  "newMission.who": {
+    "value": "Who does it"
   },
   "newMission.submit": {
     "value": "Ask for a plan"

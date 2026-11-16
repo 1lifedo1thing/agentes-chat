@@ -18,9 +18,9 @@ import { Canvas, Circle, Group, Path, Skia } from "@shopify/react-native-skia";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type LayoutChangeEvent, Pressable, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
-import Animated, { Easing, FadeIn, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { FadeIn, useDerivedValue, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Icon, PressScale, SheetBar, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
+import { Icon, motion, PressScale, SheetBar, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors } from "../shared/hooks";
 import type { Inline } from "./logic";
@@ -33,7 +33,11 @@ const keyOf = (spec: ChartSpec) => JSON.stringify([spec.type, spec.title, spec.l
 /** The chart open in full screen (a route can't carry the data in its URL). */
 let opened: { spec: ChartSpec; accent: AgentColorName } | null = null;
 
-const EASE = Easing.out(Easing.cubic);
+/**
+ * A chart draws itself in once, the first time it shows (rare, and it explains the data: its bars grow from zero, its
+ * line runs left to right), on the strong ease-out every entrance uses.
+ */
+const EASE = motion.easeOut;
 
 /**
  * A chart in a message: clean shapes (rounded bars, a smooth
@@ -307,7 +311,11 @@ function Bar({
   useEffect(() => {
     grown.value = reduced ? width : withTiming(width, { duration: 600, easing: EASE });
   }, [width, reduced, grown]);
-  const style = useAnimatedStyle(() => ({ width: grown.value }));
+  // The bar grows by its clip, on the canvas: the cells stay where they are drawn, and no view is laid out again
+  // while it grows (a width that changes every frame laid the row out every frame).
+  const clip = useDerivedValue(() =>
+    Skia.RRectXY(Skia.XYWHRect(0, 0, Math.max(0, grown.value), height), BAR_RADIUS, BAR_RADIUS),
+  );
   const cols = Math.max(1, Math.round(width / CHART_CELL));
   const rows = Math.max(1, Math.round(height / CHART_CELL));
   const ramp = useMemo(() => chartRamp(accent), [accent]);
@@ -315,13 +323,13 @@ function Bar({
   const tone = useMemo(() => (v: number) => ramp[v], [ramp]);
   return (
     <View style={[StyleSheet.absoluteFill, styles.railTrack, { backgroundColor: c.plate }]}>
-      <Animated.View style={[styles.fill, style]}>
-        {width > 0 ? (
-          <Canvas style={{ width, height }}>
+      {width > 0 ? (
+        <Canvas style={{ width, height }}>
+          <Group clip={clip}>
             <Cells paths={paths} tone={tone} />
-          </Canvas>
-        ) : null}
-      </Animated.View>
+          </Group>
+        </Canvas>
+      ) : null}
     </View>
   );
 }
@@ -484,6 +492,8 @@ function Pie({ spec, accent, big }: { spec: ChartSpec; accent: AgentColorName; b
               // biome-ignore lint/suspicious/noArrayIndexKey: the slices, in order
               key={i}
               onPress={() => setPicked((p) => (p === i ? null : i))}
+              accessibilityRole="button"
+              accessibilityLabel={`${label}: ${formatChartValue(values[i] ?? 0, spec.unit, i18n.language)}`}
               style={({ pressed }) => [
                 styles.legendRow,
                 picked !== null && picked !== i ? styles.dim : null,
@@ -549,6 +559,9 @@ function BigNumber({
   );
 }
 
+/** A bar's rounded ends, its track's and its fill's. */
+const BAR_RADIUS = 6;
+
 const styles = StyleSheet.create({
   card: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, overflow: "hidden" },
   top: { flexDirection: "row", alignItems: "flex-start", gap: 4, paddingLeft: 14, paddingRight: 4, paddingTop: 10 },
@@ -563,8 +576,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.6 },
   barLabel: { width: "34%" },
   rail: { flex: 1 },
-  railTrack: { borderRadius: 6, overflow: "hidden" },
-  fill: { height: "100%", borderRadius: 6, overflow: "hidden" },
+  railTrack: { borderRadius: BAR_RADIUS, overflow: "hidden" },
   barValue: { minWidth: 44, textAlign: "right", fontWeight: "600", fontVariant: ["tabular-nums"] },
   xLabels: { flexDirection: "row", justifyContent: "space-between", paddingTop: 6, paddingHorizontal: 2 },
   picked: { paddingTop: 8, fontVariant: ["tabular-nums"] },

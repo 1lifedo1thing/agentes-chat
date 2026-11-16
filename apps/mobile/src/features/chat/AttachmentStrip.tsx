@@ -1,9 +1,9 @@
 import { formatBytes } from "@agenteschat/client/lib/files";
 import { Image } from "expo-image";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
-import { Icon, Text, useTheme } from "@/ui";
+import { Icon, PressScale, Text, useTheme } from "@/ui";
 import { extensionOf, extLabel, videoClock } from "../files/logic";
 import { FileTile } from "../files/MessageFiles";
 import { VideoFirstFrame } from "../files/VideoPlayer";
@@ -148,16 +148,18 @@ function Tile({ file: f, onRemove }: { file: PendingFile; onRemove: () => void }
       {/* What a screen reader says of it; its × stays a button of its own. */}
       <View style={StyleSheet.absoluteFill} accessible accessibilityLabel={label} />
       {f.state === "sending" ? null : (
-        // 22 drawn in the thumbnail's own corner, 44 to the finger.
-        <Pressable
+        // 22 drawn in the thumbnail's own corner, 44 to the finger; the kit's press, as every control.
+        <PressScale
+          to={0.85}
           onPress={onRemove}
           accessibilityRole="button"
           accessibilityLabel={t("mobile.chat.attach.remove", { name: f.name })}
           hitSlop={11}
-          style={({ pressed }) => [styles.x, pressed && styles.pressed]}
+          style={styles.x}
+          contentStyle={styles.xIn}
         >
           <Icon name="x" size={11} color="#fff" />
-        </Pressable>
+        </PressScale>
       )}
     </View>
   );
@@ -202,8 +204,6 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: "rgba(0,0,0,0.6)",
-    alignItems: "center",
-    justifyContent: "center",
   },
-  pressed: { opacity: 0.7 },
+  xIn: { alignItems: "center", justifyContent: "center" },
 });

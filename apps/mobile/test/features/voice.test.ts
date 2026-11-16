@@ -107,7 +107,7 @@ describe("voice gestures and wave", () => {
   test("speed goes round", () => {
     expect([nextSpeed(1), nextSpeed(1.5), nextSpeed(2)]).toEqual([1.5, 2, 1]);
   });
-  test("a played wave's handle stands flush with its left end before the first column at 0:00, and flush with its right end after the last at the end, as WhatsApp's dot", () => {
+  test("a played wave's handle stands flush with its left end before the first column at 0:00, and flush with its right end after the last at the end", () => {
     // Every room the columns leave over (0 to 5), a width between whole points, and the phones' own.
     for (const width of [180, 181, 182, 183, 184, 185, 233.5, 300]) {
       const { count, start } = playedColumns(width);

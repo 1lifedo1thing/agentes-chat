@@ -29,6 +29,7 @@ import {
   View,
 } from "react-native";
 import Animated, {
+  css,
   Easing,
   type EntryExitAnimationFunction,
   FadeIn,
@@ -37,7 +38,8 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { useFrameTime } from "@/agent/live";
+import { useLivePaused } from "@/agent/live";
+import { loopStyle } from "@/agent/loop";
 import { Dither } from "@/sky/Dither";
 import { softTones } from "@/sky/math";
 import { CHROME_MAX_SCALE, haptics, Icon, PixelStop, Text, TOUCH, useReducedMotion, useTheme } from "@/ui";
@@ -582,53 +584,75 @@ function BarWords({
   );
 }
 
+/** One round of the typing dots and of the recording bars. */
+const MARK_ROUND_MS = 1200;
+/** A bar at rest: a third of its height. */
+const BAR_LOW = 0.34;
+/** A bar's round: tallest at 40% of it, low again by 80% (the web's `.ac-typing__bars`). */
+const BAR_ROUND = css.keyframes({
+  0: { transform: [{ scaleY: BAR_LOW }] },
+  0.4: { transform: [{ scaleY: 1 }] },
+  0.8: { transform: [{ scaleY: BAR_LOW }] },
+  1: { transform: [{ scaleY: BAR_LOW }] },
+});
+/** A dot's round: up and bright at 30% of it, back down by 60% (the web's `.ac-typing__dots`). */
+const DOT_ROUND = css.keyframes({
+  0: { opacity: 0.4, transform: [{ translateY: 0 }] },
+  0.3: { opacity: 1, transform: [{ translateY: -2 }] },
+  0.6: { opacity: 0.4, transform: [{ translateY: 0 }] },
+  1: { opacity: 0.4, transform: [{ translateY: 0 }] },
+});
+/**
+ * Mark `i` of a row trails the one before it by `lag` ms. The delay is negative (a round earlier), so every mark starts
+ * at once, already that far into its round: none sits still at mount waiting for its turn.
+ */
+const trailing = (i: number, lag: number) => i * lag - MARK_ROUND_MS;
+
 /**
  * Three bars rising and falling in turn while someone records a voice message (the web's `.ac-typing__bars`), where
- * the dots are for typing; still with Reduce Motion.
+ * the dots are for typing. They loop on the UI thread (a CSS animation: no render per frame while someone records),
+ * hold while the screen isn't showing (`LivePause`), and stand still with Reduce Motion.
  */
 function RecordingBars({ color }: { color: string }) {
   const reduced = useReducedMotion();
-  const t = useFrameTime(!reduced, 0);
+  const paused = useLivePaused();
   return (
     <View style={styles.bars} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {[0.34, 0.75, 0.5].map((still, i) => {
-        // A 1.2 s round, each bar 0.2 s after the one before: tallest at 40% of its round.
-        const at = (((t - i * 0.2) % 1.2) + 1.2) % 1.2;
-        const up = Math.max(0, 1 - Math.abs(at / 1.2 - 0.4) / 0.4);
-        return (
-          <View
-            key={still}
-            style={[
-              styles.bar,
-              { backgroundColor: color, transform: [{ scaleY: reduced ? still : 0.34 + 0.66 * up }] },
-            ]}
-          />
-        );
-      })}
+      {[0.34, 0.75, 0.5].map((still, i) => (
+        <Animated.View
+          key={still}
+          style={[
+            styles.bar,
+            { backgroundColor: color, transform: [{ scaleY: reduced ? still : BAR_LOW }] },
+            // Each bar 0.2 s after the one before.
+            reduced ? null : loopStyle(BAR_ROUND, MARK_ROUND_MS, "linear", trailing(i, 200), paused),
+          ]}
+        />
+      ))}
     </View>
   );
 }
 
-/** Three dots rising in turn while only people type (the web's `.ac-typing__dots`); still with Reduce Motion. */
+/**
+ * Three dots rising in turn while only people type (the web's `.ac-typing__dots`), on the UI thread as the bars are;
+ * still with Reduce Motion.
+ */
 function TypingDots({ color }: { color: string }) {
   const reduced = useReducedMotion();
-  const t = useFrameTime(!reduced, 0);
+  const paused = useLivePaused();
   return (
     <View style={styles.dots} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {[0, 1, 2].map((i) => {
-        // A 1.2 s round, each dot 0.15 s after the one before: up and bright at 30% of its round.
-        const at = (((t - i * 0.15) % 1.2) + 1.2) % 1.2;
-        const up = reduced ? 0 : Math.max(0, 1 - Math.abs(at / 1.2 - 0.3) / 0.3);
-        return (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              { backgroundColor: color, opacity: 0.4 + 0.6 * up, transform: [{ translateY: -2 * up }] },
-            ]}
-          />
-        );
-      })}
+      {[0, 1, 2].map((i) => (
+        <Animated.View
+          key={i}
+          style={[
+            styles.dot,
+            { backgroundColor: color, opacity: 0.4 },
+            // Each dot 0.15 s after the one before.
+            reduced ? null : loopStyle(DOT_ROUND, MARK_ROUND_MS, "linear", trailing(i, 150), paused),
+          ]}
+        />
+      ))}
     </View>
   );
 }

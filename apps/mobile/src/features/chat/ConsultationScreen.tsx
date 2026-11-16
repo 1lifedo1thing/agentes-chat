@@ -13,9 +13,20 @@ import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { groupsWith } from "@agenteschat/client/lib/timeline";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
+import { ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, LineIcon, PixelOrbit, Segmented, SheetSurface, Text, useRouteSheetScrollable } from "@/ui";
+import {
+  Button,
+  EmptyState,
+  LineIcon,
+  PixelOrbit,
+  SCREEN_X,
+  Segmented,
+  SHEET_X,
+  SheetSurface,
+  Text,
+  useRouteSheetScrollable,
+} from "@/ui";
 import { chatHref } from "../links/logic";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId, useOrgId, useWhen } from "../shared/hooks";
@@ -23,6 +34,7 @@ import { agentLook } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
 import { FocusLive, goBack } from "../shared/parts";
 import { SheetHostProvider } from "../shared/SheetHost";
+import { ChatSkeleton } from "./ChatSkeleton";
 import { consultLineLabel } from "./ConsultGroup";
 import { requestComposerText } from "./composer-request";
 import { RowLookContext, useConversationLook } from "./look";
@@ -113,8 +125,9 @@ function Consultation({
     if (asker) requestComposerText(channelId, `@${asker.handle} `);
     goBack(chatHref(channelId));
   };
+  // The screen's `SheetSurface` holds this (one surface: a second one stepped the sheet's colors twice in dark mode).
   return (
-    <SheetSurface>
+    <>
       <ScrollView
         ref={scroll}
         style={[styles.screen, { backgroundColor: c.bg }]}
@@ -168,15 +181,18 @@ function Consultation({
             />
           </ScrollView>
         ) : null}
-        {query.isLoading ? <ActivityIndicator color={c.muted} /> : null}
+        {/* Loading: the shape of the messages coming, in this conversation's look, as the conversation shows it. */}
+        {query.isLoading ? (
+          <View style={styles.loading}>
+            <ChatSkeleton look={look} top={0} bottom={0} />
+          </View>
+        ) : null}
         {/* Didn't load: what happened and the way to ask again; loaded with nothing in it: that it isn't there. */}
         {!query.isLoading && !query.data ? (
           query.isError ? (
             <LoadFailed onRetry={() => void query.refetch()} />
           ) : (
-            <Text variant="small" tone="muted" style={styles.pad}>
-              {t("chat.consultPanel.missing")}
-            </Text>
+            <EmptyState size="inline" title={t("chat.consultPanel.missing")} />
           )
         ) : null}
         {q ? (
@@ -255,21 +271,24 @@ function Consultation({
           />
         ) : null}
       </View>
-    </SheetSurface>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  // Under the sheet's grabber, the list's side inset.
-  head: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12 },
+  // Under the sheet's grabber at every sheet's top (`useSheetBody`), at every sheet's sides.
+  head: { paddingHorizontal: SHEET_X, paddingTop: 24, paddingBottom: 12 },
   list: { gap: 2 },
-  pad: { paddingHorizontal: 16 },
+  pad: { paddingHorizontal: SCREEN_X },
+  // Room for a few turns of the skeleton, which sits at the bottom of what it is given (cut at its top).
+  loading: { height: 320 },
   // Sentences that wrap: the icon stays on their first line (`LineIcon`), not between the lines.
   line: { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 6 },
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
   answer: { gap: 4, paddingVertical: 8 },
-  foot: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 12, paddingTop: 8, gap: 8 },
+  // The screen's side inset, as the title and the lines above it.
+  foot: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: SCREEN_X, paddingTop: 8, gap: 8 },
   note: { flexDirection: "row", alignItems: "flex-start", gap: 10, padding: 12, borderRadius: 14 },
 });
