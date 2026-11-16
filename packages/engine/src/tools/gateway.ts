@@ -33,6 +33,7 @@ import {
 } from "../authority";
 import { type CostKind, costlyGate, costlyKind, LONG_STEPS, unrequested } from "../brakes";
 import {
+  CONFIDENTIAL_OUTBOUND,
   CONFIDENTIAL_STUB,
   markThreadConfidential,
   type RunConfidentiality,
@@ -69,6 +70,7 @@ import {
 import { carriesCredential, promptAnswer, toolCommand, toolDetail } from "../tool-detail";
 import { untrustedBlock } from "../untrusted";
 import { checkToolCall } from "./checks";
+import { CONFIDENTIAL_REFUSAL, confidentialLockAllows } from "./confidential-lock";
 import { connectorFirst } from "./connector-first";
 import { type BlockedTool, compactSchema, presentTools, resolveCall } from "./directory";
 import { canonicalJson, validateJson } from "./json-schema";
@@ -569,6 +571,13 @@ const readsOutsideText = (tool: ToolDefinition, output: ToolOutput) =>
  */
 const readsConfidential = (ctx: ToolContext, sealed: RunConfidentiality | null) =>
   !ctx.bridge && sealed?.brain === "model";
+
+const lockAllows = (
+  ctx: ToolContext,
+  tool: ToolDefinition,
+  marking: readonly string[],
+  authority: RunAuthority | null,
+) => confidentialLockAllows(tool, { own: ownTool(tool), marking, authority, channelId: ctx.channelId });
 
 /** A confidential answer for a caller that may not read it: the stub, with nothing of the mark left on it. */
 const stubbed = (output: ToolOutput): ToolOutput => ({
@@ -1128,6 +1137,12 @@ export function createToolGateway(deps: {
       const access = accessWithNeeds(await freshGrantedKeys(ctx.db, ctx.orgId, ctx.agentId), tool);
       if (!isAllowed(access.state))
         return `Not allowed: this agent lost the scope ${access.of.scope} since the approval. An admin can give it back on the agent's page in Tools and access (in Portuguese, Ferramentas e acesso); then asking again runs it`;
+      // Approved before its thread turned confidential (ADR 0187): the lock decides now, as for a call made now.
+      const sealed = ctx.runId ? await runConfidentiality(ctx.db, ctx.orgId, ctx.runId) : null;
+      if (sealed?.connectionIds) ctx.confidential = true;
+      if (sealed?.connectionIds && !lockAllows(ctx, tool, sealed.connectionIds, await authorityOf(ctx))) {
+        return CONFIDENTIAL_REFUSAL;
+      }
       // Rules about the arguments again: a repository or recipient may have been removed while waiting.
       const check = await checkToolCall(tool, approval.params, ctx);
       return check.ok ? null : check.message;
@@ -1137,8 +1152,13 @@ export function createToolGateway(deps: {
     /** The connection whose confidential answer this run read; undefined: none. */
     let marks: string | null | undefined;
     const refused = await refusal();
-    if (refused || !tool) output = { content: refused ?? "Not allowed", isError: true };
-    else {
+    if (refused || !tool) {
+      output = {
+        content: refused ?? "Not allowed",
+        isError: true,
+        ...(refused === CONFIDENTIAL_REFUSAL ? { data: { code: CONFIDENTIAL_OUTBOUND } } : {}),
+      };
+    } else {
       // Claim the execution first: a retried job never runs the action twice. One approved ahead may have been
       // withdrawn or lapsed since it was read: only a row still approved runs.
       const claimed = await ctx.db
@@ -1218,6 +1238,7 @@ export function createToolGateway(deps: {
           outcome,
           reason: outcome === "done" ? null : shown(output.content),
           approvalId: approval.id,
+          confidential: ctx.confidential === true,
         });
       }
     }
@@ -1335,6 +1356,7 @@ export function createToolGateway(deps: {
           outcome,
           approvalRules: approvedBy,
           unasked: unasked && outcome !== "refused",
+          confidential: ctx.confidential === true,
           ...extra,
         });
       };
@@ -1409,6 +1431,14 @@ export function createToolGateway(deps: {
       if (decision.action === "refuse") {
         return finish(
           { content: decision.reason, isError: true, data: { code: "tool.not_allowed", refusal: "policy" } },
+          "refused",
+        );
+      }
+      // A confidential thread's lock (ADR 0187), before anything asks a person: a card is what an agent that never
+      // asks would have lifted.
+      if (sealed?.connectionIds && !lockAllows(ctx, tool, sealed.connectionIds, authority)) {
+        return finish(
+          { content: CONFIDENTIAL_REFUSAL, isError: true, data: { code: CONFIDENTIAL_OUTBOUND } },
           "refused",
         );
       }
