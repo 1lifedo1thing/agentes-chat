@@ -3,16 +3,28 @@ import {
   useCatalog,
   useComposioUsage,
   useConnections,
+  useCustomServerAction,
   useCustomServers,
+  useDisconnect,
   useMailAccounts,
+  useMailAction,
+  useMembers,
+  useTakeConnectionOffAgent,
 } from "@agenteschat/client";
 import { composioOffText, composioUsageText, nearComposioLimit } from "@agenteschat/client/lib/composio";
-import { type ConnectedItem, connectedItems, isMcpItem, itemName } from "@agenteschat/client/lib/connected";
+import {
+  type ConnectedItem,
+  connectedItems,
+  connectionActs,
+  isMcpItem,
+  itemName,
+  personalAllowed,
+} from "@agenteschat/client/lib/connected";
 import { settingsFrozen } from "@agenteschat/client/lib/deletion";
 import { choiceOf, MAIL_BRANDS } from "@agenteschat/client/lib/mail";
 import { can } from "@agenteschat/client/lib/permissions";
 import { connectorDescription, connectorName } from "@agenteschat/client/lib/scopes";
-import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
+import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useLocalSearchParams } from "expo-router";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,6 +44,9 @@ import {
   Button,
   EmptyState,
   Filters,
+  GroupedHeader,
+  GroupedList,
+  GroupedRow,
   Icon,
   IconButton,
   LineIcon,
@@ -39,13 +54,17 @@ import {
   PressScale,
   SearchField,
   SectionHeader,
+  Segmented,
   SkeletonList,
   Text,
   useReducedMotion,
+  useToast,
 } from "@/ui";
+import { Note } from "../ai/parts";
+import { chooseAction, confirmAction } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { firstUseCopy } from "../shared/first-use";
-import { useColors, useDirectory, useOrgId, usePullRefresh } from "../shared/hooks";
+import { useColors, useDirectory, useErrorToast, useMeId, useOrgId, usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { useSurface } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
@@ -54,7 +73,9 @@ import { ConnectorIcon } from "./ConnectorIcon";
 import { AddressSheet, ConnectSheet, ServerSheet } from "./ConnectSheet";
 import {
   CATEGORIES,
+  type ConnectionTab,
   connectionOf,
+  connectionTabs,
   galleryTiles,
   isHttpsUrl,
   SUGGESTED,
@@ -94,26 +115,44 @@ function Gallery() {
   const sheet = useSheet();
   const catalog = useCatalog();
   const composio = useComposioUsage(orgId);
-  const connections = useConnections(orgId);
+  const me = useMeId() ?? "";
+  const members = useMembers(orgId).data?.length ?? 0;
+  // The team's connections are for who manages connectors; every member connects their own (Pessoal). Being deleted,
+  // nothing connects, as on the web: what is connected still opens.
+  const frozen = settingsFrozen(org, "connectors");
+  const manages = can(org, "manage_connectors");
+  // Who manages connectors also gets other people's personal ones, as bare rows.
+  const others = { others: manages };
+  const connections = useConnections(orgId, true, others);
   // Servers connected by address (a vendor's own, like Sentry's) come from their own list, as on the web.
-  const servers = useCustomServers(orgId);
+  const servers = useCustomServers(orgId, true, others);
   // Mailboxes (ADR 0038): rows of what is connected; they connect on the web.
-  const mailAccounts = useMailAccounts(orgId);
-  const mailboxes = shownMailboxes(mailAccounts.data ?? []);
+  const mailAccounts = useMailAccounts(orgId, true, others);
   const pull = usePullRefresh(async () => {
     await Promise.all([catalog.refetch(), connections.refetch(), servers.refetch(), mailAccounts.refetch()]);
   });
-  // Connecting is for who manages connectors (the server checks it too). Being deleted, nothing connects, as on the
-  // web: what is connected still opens.
-  const frozen = settingsFrozen(org, "connectors");
-  const admin = can(org, "manage_connectors") && !frozen;
+  const [picked, setPicked] = useState<ConnectionTab | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
-  const list = catalog.data?.connectors ?? [];
-  const items = useMemo(
+  const everything = useMemo(
     () => connectedItems(connections.data ?? [], servers.data ?? [], catalog.data?.connectors ?? []),
     [connections.data, servers.data, catalog.data],
   );
+  const tabs = connectionTabs({
+    items: everything,
+    mailboxes: shownMailboxes(mailAccounts.data ?? []),
+    me,
+    members,
+    manages,
+    picked,
+  });
+  const personal = tabs.tab === "personal";
+  const { items, mailboxes } = tabs;
+  const admin = manages && !frozen;
+  // Adding: the team's for who manages connectors, one's own for everyone.
+  const mayAdd = !frozen && (manages || personal);
+  // GitHub connects for the team only: not offered on Pessoal.
+  const list = (catalog.data?.connectors ?? []).filter((d) => !personal || personalAllowed(d.id));
   const apps = items.filter((i) => !isMcpItem(i));
   const mcps = items.filter(isMcpItem);
   const connectedCount = items.length + mailboxes.length;
@@ -131,16 +170,19 @@ function Gallery() {
   const rows = galleryTiles(rest, items).filter((x) => x.opens && (searching || !x.connected));
   // What waits on the person among the connected: a sign-in that stopped, tools that couldn't be read, tools to
   // decide (admins).
-  const waiting = items.filter((i) => i.needsReconnect || i.toolsError || (admin && i.pending > 0));
+  const waiting = items.filter(
+    (i) => i.needsReconnect || i.toolsError || (connectionActs(i, me, manages).change && i.pending > 0),
+  );
   // Without Composio here, the services that connect only through it are left out: admins read why.
   const composioOff = admin ? composioOffText(t, list, SUGGESTED) : null;
   const open = (def: ConnectorDef) => {
     const existing = connectionOf(def, items);
     if (existing) openConnection(existing.id);
-    else sheet.open(<ConnectSheet def={def} />);
+    else sheet.open(<ConnectSheet def={def} personal={personal} />);
   };
   // Connecting by an address: the one typed in the search when it is one.
-  const openAddress = () => sheet.open(<AddressSheet {...(isHttpsUrl(q.trim()) ? { url: q.trim() } : {})} />);
+  const openAddress = () =>
+    sheet.open(<AddressSheet personal={personal} {...(isHttpsUrl(q.trim()) ? { url: q.trim() } : {})} />);
   // A connection opens its own screen (a server connected by an address we don't know included).
   const openItem = (item: ConnectedItem) => openConnection(item.id);
   // From an agent's card in the chat (`?connect=<catalog id>` or `?mcp=<address>`, `?mcp=` alone: any address): the
@@ -148,11 +190,15 @@ function Gallery() {
   const { connected, connect, mcp } = useLocalSearchParams<{ connected?: string; connect?: string; mcp?: string }>();
   const offered = useRef(false);
   useEffect(() => {
-    if (offered.current || (connect === undefined && mcp === undefined) || !catalog.data || !admin) return;
+    if (offered.current || (connect === undefined && mcp === undefined) || !catalog.data || frozen) return;
+    // Who may not add the team's connects it as their own, on Pessoal; GitHub stays with who manages connectors.
+    if (!manages && !personalAllowed(connect)) return;
     offered.current = true;
     const def = connect ? catalog.data.connectors.find((d) => d.id === connect) : undefined;
-    if (def) open(def);
-    else sheet.open(<AddressSheet url={mcp || undefined} />);
+    const theirs = !manages || personal;
+    if (!manages) setPicked("personal");
+    if (def) sheet.open(<ConnectSheet def={def} personal={theirs} />);
+    else sheet.open(<AddressSheet url={mcp || undefined} personal={theirs} />);
   });
   // Back from a sign-in that finished on the link route (`?connected=<id>`): the confirmation, as the web shows
   // for the connection that just came in (admins; anyone else had the toast).
@@ -160,18 +206,23 @@ function Gallery() {
   useEffect(() => {
     if (!connected || returned.current === connected || !connections.data || !servers.data || !catalog.data) return;
     returned.current = connected;
-    const item = items.find((i) => i.id === connected);
-    if (!item || !admin) return;
+    const item = everything.find((i) => i.id === connected);
+    if (!item || frozen || !connectionActs(item, me, manages).change) return;
+    if (item.ownerUserId) setPicked("personal");
     sheet.open(
-      item.def ? <ConnectSheet def={item.def} item={item} start="done" /> : <ServerSheet item={item} start="done" />,
+      item.def ? (
+        <ConnectSheet def={item.def} item={item} start="done" personal={Boolean(item.ownerUserId)} />
+      ) : (
+        <ServerSheet item={item} start="done" />
+      ),
     );
-  }, [connected, connections.data, servers.data, catalog.data, items, admin, sheet]);
+  }, [connected, connections.data, servers.data, catalog.data, everything, me, manages, frozen, sheet]);
 
   return (
     <PushedLargeTitle
       title={t("mobile.connectors.title")}
       // Adding by an address lives in the bar, as every list's "+".
-      {...(admin
+      {...(mayAdd
         ? { right: <IconButton icon="plus" label={t("connectors.otherConnect")} onPress={openAddress} /> }
         : {})}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
@@ -180,6 +231,24 @@ function Gallery() {
         <Text variant="small" tone="muted" style={styles.usage}>
           {composioUsageText(t, i18n.language, composio.data)}
         </Text>
+      ) : null}
+      {tabs.shown && connections.isSuccess && servers.isSuccess ? (
+        <View style={styles.tabs}>
+          <Segmented
+            wide
+            items={[
+              { key: "team", label: t(modeKey(org, "vault.tab.team")), count: tabs.team },
+              { key: "personal", label: t("vault.tab.personal"), count: tabs.mine },
+            ]}
+            value={tabs.tab}
+            onChange={(k) => setPicked(k as ConnectionTab)}
+          />
+        </View>
+      ) : null}
+      {personal && connectedCount > 0 ? (
+        <View style={styles.personalNote}>
+          <Note icon="lock">{t("connectors.personal.note")}</Note>
+        </View>
       ) : null}
       <View style={styles.search}>
         <SearchField
@@ -208,10 +277,10 @@ function Gallery() {
       ) : (
         <>
           {/* A pasted address connects a server by it, from the search itself. */}
-          {searching && admin && isHttpsUrl(q.trim()) ? <AddressRow url={q.trim()} onPress={openAddress} /> : null}
+          {searching && mayAdd && isHttpsUrl(q.trim()) ? <AddressRow url={q.trim()} onPress={openAddress} /> : null}
           {searching ? null : (
             <>
-              {admin || connectedCount > 0 ? (
+              {mayAdd || connectedCount > 0 ? (
                 <>
                   <SectionHeader
                     title={t("mobile.connectors.connected")}
@@ -238,25 +307,30 @@ function Gallery() {
                         <ConnectedTile
                           key={item.id}
                           item={item}
-                          review={admin && item.pending > 0}
+                          review={connectionActs(item, me, manages).change && item.pending > 0}
                           fresh={item.id === connected}
                           onPress={() => openItem(item)}
                         />
                       ))}
                       {/* Adding comes after what is there: the row reads what is connected first. */}
-                      {admin ? <AddTile onPress={() => sheet.open(<AddressSheet />)} /> : null}
+                      {mayAdd ? <AddTile onPress={() => sheet.open(<AddressSheet personal={personal} />)} /> : null}
                     </LayoutAnimationConfig>
                   </ScrollView>
                   {waiting.length > 0 ? (
                     <WaitLine
                       items={waiting}
                       admin={admin}
-                      onOpen={(i) => (admin && i.pending > 0 ? openTools(i.id) : openItem(i))}
+                      onOpen={(i) =>
+                        connectionActs(i, me, manages).change && i.pending > 0 ? openTools(i.id) : openItem(i)
+                      }
                     />
                   ) : null}
                 </>
               ) : null}
-              {connectedCount === 0 ? <EmptyHint acts={admin} /> : null}
+              {connectedCount === 0 ? <EmptyHint acts={mayAdd} personal={personal} /> : null}
+              {tabs.others.length + tabs.othersMail.length > 0 ? (
+                <OthersPersonal items={tabs.others} mailboxes={tabs.othersMail} />
+              ) : null}
             </>
           )}
           {!searching && suggestions.length > 0 ? (
@@ -264,7 +338,7 @@ function Gallery() {
               {/* A personal workspace's are suggested for its person, never "for Personal" (ADR 0159). */}
               <SectionHeader
                 title={
-                  isPersonal(org)
+                  isPersonal(org) || personal
                     ? t("connectors.suggestedPersonal")
                     : t("mobile.connectors.suggested", { org: org?.name ?? "" })
                 }
@@ -300,7 +374,7 @@ function Gallery() {
               size="inline"
               title={t("mobile.connectors.noResults")}
               action={
-                admin ? (
+                mayAdd ? (
                   <Button variant="secondary" size="sm" label={t("connectors.otherConnect")} onPress={openAddress} />
                 ) : (
                   <Button
@@ -345,9 +419,11 @@ function Gallery() {
  * Nothing connected yet: who would use it, in a line, with the real faces. No button: the catalog right under it is
  * the next step (who can't connect is told who does).
  */
-function EmptyHint({ acts }: { acts: boolean }) {
+function EmptyHint({ acts, personal }: { acts: boolean; personal: boolean }) {
   const { t } = useTranslation();
-  const copy = firstUseCopy("connectors", acts);
+  const copy = personal
+    ? { title: "connectors.personal.emptyTitle", text: "connectors.personal.emptyText" }
+    : firstUseCopy("connectors", acts);
   const c = useColors();
   const dir = useDirectory();
   const faces = dir.agents.slice(0, 3);
@@ -369,6 +445,128 @@ function EmptyHint({ acts }: { acts: boolean }) {
         </Text>
       </View>
     </View>
+  );
+}
+
+/**
+ * Other people's personal connections and mailboxes, for who manages connectors, in a quiet group under the team's:
+ * the service, its name and whose it is, the agents that hold it. Never its account, tools or settings. A tap offers
+ * only "Tirar de um agente" (a connection some agent holds) and "Remover".
+ */
+function OthersPersonal({
+  items,
+  mailboxes,
+}: {
+  items: ConnectedItem[];
+  mailboxes: { id: string; label: string; ownerUserId?: string | null; agents: { agentId: string }[] }[];
+}) {
+  const { t } = useTranslation();
+  const orgId = useOrgId();
+  const dir = useDirectory();
+  const toast = useToast();
+  const failed = useErrorToast();
+  const takeOff = useTakeConnectionOffAgent(orgId);
+  const { disconnect: removeMail } = useMailAction(orgId);
+  const { disconnect: removeServer } = useCustomServerAction(orgId);
+  const removeConnection = useDisconnect(orgId);
+  const busy = takeOff.isPending || removeMail.isPending || removeServer.isPending || removeConnection.isPending;
+  const ownerOf = (id: string | null | undefined) =>
+    t("connectors.personal.of", { name: (id && dir.memberById.get(id)?.name) || t("channel.unknownPerson") });
+  const holders = (ids: string[]) =>
+    ids.map((id) => dir.agentById.get(id)).filter((a): a is NonNullable<typeof a> => Boolean(a));
+  const remove = (name: string, run: (done: { onSuccess: () => void; onError: (e: unknown) => void }) => void) =>
+    confirmAction({
+      title: t("connectors.personal.removeTitle", { name }),
+      action: t("connectors.personal.remove"),
+      cancel: t("common.cancel"),
+      onConfirm: () =>
+        run({
+          onSuccess: () => toast({ title: t("mobile.connectors.disconnected", { name }), icon: "check" }),
+          onError: failed,
+        }),
+    });
+  const offAgent = (item: ConnectedItem, name: string) =>
+    chooseAction(
+      t("connectors.personal.takeOffTitle", { name }),
+      holders(item.agentIds).map((a) => ({
+        label: a.name,
+        onPress: () =>
+          takeOff.mutate(
+            { connectionId: item.id, agentId: a.id },
+            {
+              onSuccess: () =>
+                toast({ title: t("connectors.personal.takenOff", { name, agent: a.name }), icon: "check" }),
+              onError: failed,
+            },
+          ),
+      })),
+      t("common.cancel"),
+    );
+  const actions = (item: ConnectedItem) => {
+    const name = itemName(t, item);
+    chooseAction(
+      name,
+      [
+        ...(item.agentIds.length > 0
+          ? [{ label: t("connectors.personal.takeOff"), onPress: () => offAgent(item, name) }]
+          : []),
+        {
+          label: t("connectors.personal.remove"),
+          destructive: true,
+          onPress: () =>
+            remove(name, (done) =>
+              item.custom ? removeServer.mutate(item.id, done) : removeConnection.mutate(item.id, done),
+            ),
+        },
+      ],
+      t("common.cancel"),
+    );
+  };
+  const usedBy = (ids: string[]) =>
+    holders(ids)
+      .map((a) => a.name)
+      .join(", ");
+  return (
+    <>
+      <GroupedHeader>{`${t("connectors.personal.others")} · ${items.length + mailboxes.length}`}</GroupedHeader>
+      <View style={styles.others}>
+        <GroupedList>
+          {mailboxes.map((m) => (
+            <GroupedRow
+              key={`mail-${m.id}`}
+              icon="mail"
+              label={m.label}
+              sub={ownerOf(m.ownerUserId)}
+              {...(m.agents.length > 0 ? { below: <UsedBy names={usedBy(m.agents.map((a) => a.agentId))} /> } : {})}
+              value={t("connectors.personal.remove")}
+              disabled={busy}
+              onPress={() => remove(m.label, (done) => removeMail.mutate(m.id, done))}
+            />
+          ))}
+          {items.map((item) => (
+            <GroupedRow
+              key={item.id}
+              leading={<ConnectorIcon def={item.def} image={item.image} label={itemName(t, item)} size={30} />}
+              label={itemName(t, item)}
+              sub={ownerOf(item.ownerUserId)}
+              {...(item.agentIds.length > 0 ? { below: <UsedBy names={usedBy(item.agentIds)} /> } : {})}
+              more
+              disabled={busy}
+              onPress={() => actions(item)}
+            />
+          ))}
+        </GroupedList>
+      </View>
+    </>
+  );
+}
+
+/** The agents that hold someone else's connection, on one line cut at the row's edge. */
+function UsedBy({ names }: { names: string }) {
+  return (
+    <Text variant="footnote" tone="faint" numberOfLines={1}>
+      {names}
+    </Text>
   );
 }
 
@@ -635,6 +833,9 @@ function ServiceRow({
 
 const styles = StyleSheet.create({
   search: { paddingHorizontal: 16, paddingBottom: 6 },
+  tabs: { paddingHorizontal: 16, paddingBottom: 12 },
+  personalNote: { paddingHorizontal: 16, paddingBottom: 8 },
+  others: { paddingHorizontal: 16 },
   note: { paddingHorizontal: 16, paddingTop: 16 },
   usage: { paddingHorizontal: 16, paddingBottom: 8 },
   center: { alignItems: "center", gap: 12, paddingVertical: 48, paddingHorizontal: 24 },

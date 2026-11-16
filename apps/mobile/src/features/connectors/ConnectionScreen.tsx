@@ -3,12 +3,14 @@ import {
   useConnections,
   useCustomServerAction,
   useCustomServers,
+  useMoveConnectionToTeam,
   useRenameConnection,
 } from "@agenteschat/client";
 import {
   accountUnchecked,
   type ConnectedItem,
   connectedItems,
+  connectionActs,
   itemName,
   reconnectAddsText,
 } from "@agenteschat/client/lib/connected";
@@ -37,8 +39,9 @@ import {
 } from "@/ui";
 import { CoverBarBackdrop, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
-import { chooseAction } from "../settings/parts";
-import { useColors, useOrgId } from "../shared/hooks";
+import { Note } from "../ai/parts";
+import { chooseAction, confirmAction } from "../settings/parts";
+import { useColors, useErrorToast, useMeId, useOrgId } from "../shared/hooks";
 import { errorHaptic, goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { AgentLevelList, DisconnectRow } from "./Access";
@@ -79,8 +82,10 @@ function Connection({ id }: { id: string }) {
   const catalog = useCatalog();
   const connections = useConnections(orgId);
   const servers = useCustomServers(orgId);
-  const admin = can(org, "manage_connectors");
+  const me = useMeId() ?? "";
   const { refresh } = useCustomServerAction(orgId);
+  const move = useMoveConnectionToTeam(orgId);
+  const failed = useErrorToast();
   const toast = useToast();
   const sheet = useSheet();
   const { y, onScroll } = useCoverScroll();
@@ -88,6 +93,9 @@ function Connection({ id }: { id: string }) {
     (i) => i.id === id,
   );
   const loading = !item && (catalog.isPending || connections.isPending || servers.isPending);
+  // The team's: who manages connectors changes it. One's own: its person, who may also hand it to the team.
+  const acts = connectionActs(item ?? {}, me, can(org, "manage_connectors"));
+  const admin = Boolean(item) && acts.change;
   const name = item ? itemName(t, item) : "";
   // The account when it says something the name doesn't (a server's host often is its name), else how it connects
   // through Composio (its address means nothing to people), else the category.
@@ -105,18 +113,36 @@ function Connection({ id }: { id: string }) {
   const actions = item ? accountActions(item) : [];
   const sent = item?.server?.headerNames ?? [];
   // "…": renaming, the one thing about the account that isn't a step of its own.
+  const toTeam = () =>
+    confirmAction({
+      title: t("connectors.personal.moveTitle", { name }),
+      text: t("connectors.personal.moveText"),
+      action: t("connectors.personal.moveToTeam"),
+      cancel: t("common.cancel"),
+      destructive: false,
+      onConfirm: () =>
+        item &&
+        move.mutate(item.id, {
+          onSuccess: () => {
+            successHaptic();
+            toast({ title: t("connectors.personal.moved", { name }), icon: "check" });
+          },
+          onError: failed,
+        }),
+    });
+  const choices = [
+    ...(acts.rename && item && actions.includes("rename")
+      ? [{ label: t("connectors.rename"), onPress: () => sheet.open(<RenameSheet item={item} />) }]
+      : []),
+    ...(acts.moveToTeam && item ? [{ label: t("connectors.personal.moveToTeam"), onPress: toTeam }] : []),
+  ];
   const more =
-    admin && item && actions.includes("rename") ? (
+    item && choices.length > 0 ? (
       <IconButton
         icon="more"
-        label={t("connectors.rename")}
-        onPress={() =>
-          chooseAction(
-            name,
-            [{ label: t("connectors.rename"), onPress: () => sheet.open(<RenameSheet item={item} />) }],
-            t("common.cancel"),
-          )
-        }
+        label={choices.length > 1 ? t("mobile.chat.options") : (choices[0]?.label ?? "")}
+        disabled={move.isPending}
+        onPress={() => chooseAction(name, choices, t("common.cancel"))}
       />
     ) : undefined;
 
@@ -148,6 +174,11 @@ function Connection({ id }: { id: string }) {
           ) : null}
         </View>
 
+        {item?.ownerUserId ? (
+          <View style={styles.personal}>
+            <Note icon="lock">{t("connectors.personal.note")}</Note>
+          </View>
+        ) : null}
         {loading ? (
           <ActivityIndicator color={c.muted} style={styles.loading} />
         ) : item ? (
@@ -182,7 +213,7 @@ function Connection({ id }: { id: string }) {
                 {reconnectAddsText(t, item)}
               </Text>
             ) : null}
-            <AgentLevelList connectionId={id} />
+            <AgentLevelList connectionId={id} personal={Boolean(item.ownerUserId)} />
             {/* Everyone sees the accounts the app is installed on; only admins get its actions. */}
             {item.def?.id === "github" && !item.viaComposio ? (
               <GitHubAppGroup
@@ -342,5 +373,6 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 16 },
   problem: { gap: 12 },
   lead: { paddingHorizontal: 16, paddingTop: 12 },
+  personal: { paddingHorizontal: 32, paddingTop: 4 },
   gap: { height: 24 },
 });

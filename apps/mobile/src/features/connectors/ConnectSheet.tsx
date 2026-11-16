@@ -14,18 +14,22 @@ import {
   useCustomServers,
   useGitHubApp,
   useGithubAccess,
+  useMembers,
   useStartOAuth,
 } from "@agenteschat/client";
 import { composioConnectText } from "@agenteschat/client/lib/composio";
 import {
   type ConnectedItem,
   connectedItems,
+  connectionActs,
   itemName,
   orgAccessChange,
   outcomeText,
+  personalAllowed,
 } from "@agenteschat/client/lib/connected";
 import { sameServer } from "@agenteschat/client/lib/custom-tools";
 import { knownErrorText, oauthReturnText } from "@agenteschat/client/lib/errors";
+import { ownerSplit } from "@agenteschat/client/lib/owner-split";
 import { can } from "@agenteschat/client/lib/permissions";
 import {
   BLANK_HEADER,
@@ -56,12 +60,14 @@ import {
   InfoHint,
   LineIcon,
   Locked,
+  Segmented,
   Text,
   useTheme,
   useToast,
 } from "@/ui";
 import { router } from "@/ui/navigation";
-import { useColors, useOrgId } from "../shared/hooks";
+import { Note } from "../ai/parts";
+import { useColors, useMeId, useOrgId } from "../shared/hooks";
 import { errorHaptic, successHaptic } from "../shared/parts";
 import { useSheet } from "../shared/SheetHost";
 import { AgentLevelList, WaitTile } from "./Access";
@@ -95,7 +101,8 @@ import { openTools } from "./ToolsScreen";
  * connected more than once; `start`, back from a sign-in that finished elsewhere). `mode` starts at connecting:
  * `add`, another account of the service, or `reconnect`, a new sign-in for `item` (a toast says it, and the sheet
  * closes). `account`: GitHub's sign-in alone, without the agentes.chat app first (GitHub through the app alone
- * connecting an account).
+ * connecting an account). `personal`: opened from Pessoal, so a connection already there is the person's own and a new
+ * one starts as theirs (who may not add the team's connects their own whatever this says).
  */
 export function ConnectSheet({
   def,
@@ -103,12 +110,14 @@ export function ConnectSheet({
   start,
   mode,
   account = false,
+  personal = false,
 }: {
   def: ConnectorDef;
   item?: ConnectedItem;
   start?: Step;
   mode?: "add" | "reconnect";
   account?: boolean;
+  personal?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const c = useColors();
@@ -118,13 +127,19 @@ export function ConnectSheet({
   const connections = useConnections(orgId);
   const servers = useCustomServers(orgId);
   const admin = can(org, "manage_connectors");
+  const me = useMeId() ?? "";
   const sheet = useSheet();
-  const existing =
-    item ??
-    connectionOf(def, connectedItems(connections.data ?? [], servers.data ?? [], catalog.data?.connectors ?? [def]));
+  const [mine, setMine] = useState(personal || !admin);
+  const owned = ownerSplit(
+    connectedItems(connections.data ?? [], servers.data ?? [], catalog.data?.connectors ?? [def]),
+    me,
+  );
+  const existing = item ?? connectionOf(def, mine ? owned.mine : owned.team);
+  // A new one: the team's for who manages connectors, one's own for anyone (GitHub only for the team).
+  const mayConnect = existing ? connectionActs(existing, me, admin).change : admin || personalAllowed(def.id);
   const connecting = Boolean(mode) || account;
   const [connectionId, setConnectionId] = useState<string | null>(connecting ? null : (existing?.id ?? null));
-  const [step, setStep] = useState<Step>(() => (connecting ? "connect" : firstStep(existing, admin, start)));
+  const [step, setStep] = useState<Step>(() => (connecting ? "connect" : firstStep(existing, mayConnect, start)));
   const service = connectorName(t, def);
   const name =
     mode === "reconnect" && item
@@ -168,7 +183,7 @@ export function ConnectSheet({
               </View>
             ))}
           </View>
-          {admin ? (
+          {mayConnect ? (
             <Button variant="primary" wide label={t("mobile.connectors.connect")} onPress={() => setStep("connect")} />
           ) : (
             <Text variant="small" tone="muted">
@@ -184,6 +199,8 @@ export function ConnectSheet({
           item={mode ? item : undefined}
           reconnect={mode === "reconnect"}
           accountOnly={connecting}
+          personal={mine}
+          onPersonal={setMine}
           onConnected={(id) => {
             setConnectionId(id);
             setStep("done");
@@ -191,7 +208,13 @@ export function ConnectSheet({
           onDone={sheet.close}
         />
       ) : connectionId && step === "done" ? (
-        <DoneStep connectionId={connectionId} def={def} name={service} onAdjust={() => setStep("review")} />
+        <DoneStep
+          connectionId={connectionId}
+          def={def}
+          name={service}
+          personal={item ? Boolean(item.ownerUserId) : mine}
+          onAdjust={() => setStep("review")}
+        />
       ) : connectionId ? (
         <ConnectedSteps
           step={step}
@@ -214,13 +237,18 @@ export function AddressSheet({
   item,
   mode,
   url,
+  personal = false,
 }: {
   item?: ConnectedItem;
   mode?: "add" | "reconnect";
   url?: string;
+  /** Opened from Pessoal: a new server starts as the person's own. */
+  personal?: boolean;
 } = {}) {
   const { t } = useTranslation();
+  const { org } = useOrg();
   const sheet = useSheet();
+  const [mine, setMine] = useState(item ? Boolean(item.ownerUserId) : personal || !can(org, "manage_connectors"));
   const [connected, setConnected] = useState<{ id: string; name: string } | null>(null);
   const [step, setStep] = useState<Step>("connect");
   const title =
@@ -250,7 +278,13 @@ export function AddressSheet({
       </View>
       <Progress steps={ADDRESS_STEPS} step={step} />
       {connected && step === "done" ? (
-        <DoneStep connectionId={connected.id} def={null} name={connected.name} onAdjust={() => setStep("who")} />
+        <DoneStep
+          connectionId={connected.id}
+          def={null}
+          name={connected.name}
+          personal={mine}
+          onAdjust={() => setStep("who")}
+        />
       ) : connected ? (
         <ConnectedSteps step={step} onStep={setStep} connectionId={connected.id} def={null} name={connected.name} />
       ) : (
@@ -260,6 +294,8 @@ export function AddressSheet({
           item={item}
           initialUrl={url}
           reconnect={mode === "reconnect"}
+          personal={mine}
+          onPersonal={setMine}
           onConnected={(id, name) => {
             setConnected({ id, name });
             setStep("done");
@@ -278,9 +314,10 @@ export function AddressSheet({
 export function ServerSheet({ item, start }: { item: ConnectedItem; start?: Step }) {
   const { t } = useTranslation();
   const { org } = useOrg();
-  const admin = can(org, "manage_connectors");
+  const me = useMeId() ?? "";
+  const changes = connectionActs(item, me, can(org, "manage_connectors")).change;
   // Its tools never hold this sheet: they wait on the connection's screen.
-  const [step, setStep] = useState<Step>(() => firstStep(item, admin, start === "review" ? "who" : start));
+  const [step, setStep] = useState<Step>(() => firstStep(item, changes, start === "review" ? "who" : start));
   const name = itemName(t, item);
   return (
     <View style={styles.body}>
@@ -299,7 +336,13 @@ export function ServerSheet({ item, start }: { item: ConnectedItem; start?: Step
       </View>
       <Progress steps={ADDRESS_STEPS} step={step} />
       {step === "done" ? (
-        <DoneStep connectionId={item.id} def={item.def} name={name} onAdjust={() => setStep("who")} />
+        <DoneStep
+          connectionId={item.id}
+          def={item.def}
+          name={name}
+          personal={Boolean(item.ownerUserId)}
+          onAdjust={() => setStep("who")}
+        />
       ) : (
         <ConnectedSteps step={step} onStep={setStep} connectionId={item.id} def={item.def} name={name} item={item} />
       )}
@@ -310,17 +353,20 @@ export function ServerSheet({ item, start }: { item: ConnectedItem; start?: Step
 /**
  * The end of connecting, as on the web: a check, "<name> conectado" and who can use it with how many actions ask,
  * then "Pronto". A server whose tools no one gave a level yet says so instead, and "Continuar" saves the levels we
- * suggest: agents get none before that. "Ajustar" goes on to the detail.
+ * suggest: agents get none before that. "Ajustar" goes on to the detail. A personal one says its agents use it when
+ * its person asks, in their own conversation.
  */
 function DoneStep({
   connectionId,
   def,
   name,
+  personal,
   onAdjust,
 }: {
   connectionId: string;
   def: ConnectorDef | null;
   name: string;
+  personal: boolean;
   onAdjust: () => void;
 }) {
   const { t } = useTranslation();
@@ -349,7 +395,10 @@ function DoneStep({
   };
   return (
     <>
-      <ConnectedNote name={name} text={summary?.text ?? null} />
+      <ConnectedNote
+        name={name}
+        text={personal && summary && !waiting ? t("connectors.personal.done") : (summary?.text ?? null)}
+      />
       {summary?.unreadable ? <Problem text={t("toolReview.unreadable", { reason: summary.unreadable })} /> : null}
       {failed ? <Problem key={failed} text={failed} /> : null}
       <Button
@@ -405,18 +454,19 @@ function ConnectedSteps({
   const catalog = useCatalog();
   const connections = useConnections(orgId);
   const servers = useCustomServers(orgId);
-  const admin = can(org, "manage_connectors");
+  const me = useMeId() ?? "";
   const live =
     connectedItems(connections.data ?? [], servers.data ?? [], catalog.data?.connectors ?? []).find(
       (i) => i.id === connectionId,
     ) ?? item;
+  const admin = live ? connectionActs(live, me, can(org, "manage_connectors")).change : can(org, "manage_connectors");
   if (step === "review") {
     return <ReviewStep connectionId={connectionId} def={def} name={name} onNext={() => onStep("who")} />;
   }
   const waiting = admin && live ? live.pending : 0;
   return (
     <>
-      <AgentLevelList connectionId={connectionId} />
+      <AgentLevelList connectionId={connectionId} personal={Boolean(live?.ownerUserId)} />
       {waiting > 0 ? (
         // What the server's tools need from the person, one tap away, never in the way of finishing.
         <GroupedList>
@@ -492,7 +542,9 @@ export function ConnectedNote({ name, text }: { name: string; text: string | nul
  * goes on (`onConnected`); a new sign-in, or the same account again, ends with a toast (`onDone`). GitHub, where
  * the server has the agentes.chat app (ADR 0156), offers the app first and an account as the other way, unless
  * `accountOnly` (a sign-in asked for as such). A server by address the catalog doesn't list also takes request headers
- * (ADR 0186), under its key: with a key or alone.
+ * (ADR 0186), under its key: with a key or alone. Where the workspace has more than one person, a new connection asks
+ * "Para quem": the person's own (Pessoal, which any member adds) or the team's (who manages connectors). Another
+ * account or a new sign-in keeps its owner.
  */
 function ConnectStep({
   def,
@@ -501,6 +553,8 @@ function ConnectStep({
   initialUrl,
   reconnect = false,
   accountOnly = false,
+  personal,
+  onPersonal,
   onConnected,
   onDone,
 }: {
@@ -511,10 +565,14 @@ function ConnectStep({
   initialUrl?: string;
   reconnect?: boolean;
   accountOnly?: boolean;
+  /** "Para quem" on Pessoal. */
+  personal: boolean;
+  onPersonal: (personal: boolean) => void;
   onConnected: (connectionId: string, name: string) => void;
   onDone: () => void;
 }) {
   const { t } = useTranslation();
+  const { org } = useOrg();
   const c = useColors();
   const qc = useQueryClient();
   const toast = useToast();
@@ -525,6 +583,12 @@ function ConnectStep({
   const complete = useCompleteOAuth(orgId);
   const withKey = useConnectWithKey(orgId);
   const { connect } = useCustomServerAction(orgId);
+  const admin = can(org, "manage_connectors");
+  const members = useMembers(orgId).data?.length ?? 0;
+  const teamOnly = !personalAllowed(def?.id ?? item?.def?.id);
+  const theirs = item ? Boolean(item.ownerUserId) : !teamOnly && (personal || !admin);
+  const forWhom = !item && !teamOnly && members > 1;
+  const mine = theirs ? { personal: true } : {};
   const fixed = item?.server?.serverUrl;
   const byAddress = fixed !== undefined || def === null || def.kind === "remote_mcp";
   const askUrl = fixed === undefined && def === null;
@@ -646,6 +710,7 @@ function ConnectStep({
           ...(label ? { label } : {}),
           ...(connectionId ? { connectionId } : {}),
           ...(headers ? { headers } : {}),
+          ...mine,
         });
         if (res.status === "oauth") return void (await signInWith(res.authorizeUrl));
         if (res.status === "needs_key") {
@@ -657,7 +722,7 @@ function ConnectStep({
         return await connected(res.server.id, res.server.label, res.outcome);
       }
       if (!def) return;
-      const authorizeUrl = await start.mutateAsync({ connector: def.id, returnTo: APP_OAUTH_RETURN });
+      const authorizeUrl = await start.mutateAsync({ connector: def.id, returnTo: APP_OAUTH_RETURN, ...mine });
       await signInWith(authorizeUrl);
     } catch (error) {
       failed(error);
@@ -681,12 +746,13 @@ function ConnectStep({
           ...(label ? { label } : {}),
           ...(connectionId ? { connectionId } : {}),
           ...(headers ? { headers } : {}),
+          ...mine,
         });
         if (res.status === "connected") return await connected(res.server.id, res.server.label, res.outcome);
         return fail();
       }
       if (!def) return;
-      const conn = await withKey.mutateAsync({ connector: def.id, apiKey: key.trim() });
+      const conn = await withKey.mutateAsync({ connector: def.id, apiKey: key.trim(), ...mine });
       // One account per catalog connector: connecting it again is its new sign-in.
       await connected(conn.id, name, reconnect ? "reconnected" : "connected");
     } catch (error) {
@@ -735,6 +801,23 @@ function ConnectStep({
   }
   return (
     <>
+      {forWhom ? (
+        <Locked when={busy} style={styles.fieldBox}>
+          <Text variant="footnote" tone="faint">
+            {t("connectors.personal.forWhom")}
+          </Text>
+          <Segmented
+            wide
+            items={[
+              { key: "personal", label: t("vault.tab.personal") },
+              { key: "team", label: t(modeKey(org, "vault.tab.team")), disabled: !admin },
+            ]}
+            value={theirs ? "personal" : "team"}
+            onChange={(k) => onPersonal(k === "personal")}
+          />
+          {admin ? null : <Note icon="lock">{t("connectors.personal.teamLocked")}</Note>}
+        </Locked>
+      ) : null}
       {viaComposio && def ? (
         <Text variant="small" tone="muted">
           {composioConnectText(t, def)}

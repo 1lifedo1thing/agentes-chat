@@ -53,7 +53,12 @@ describe("who gets the first step", () => {
     ["new/ChatTargets.tsx", 'place="people"', 'mayCreate(org, "invite")'],
     ["settings/AccessScreen.tsx", 'place="access"', "acts={addsConnectors(org)}"],
     ["devices/DevicesScreen.tsx", 'firstUseCopy("computers", pairs)', 'can(org, "pair_computers")'],
-    ["connectors/ConnectorsScreen.tsx", 'firstUseCopy("connectors", acts)', "<EmptyHint acts={admin} />"],
+    // Every member adds their own on Pessoal: the team's side stays with who manages connectors.
+    [
+      "connectors/ConnectorsScreen.tsx",
+      'firstUseCopy("connectors", acts)',
+      "const mayAdd = !frozen && (manages || personal);",
+    ],
   ])("%s gates %s on the permission", (file, place, gate) => {
     const code = source(file);
     expect(code).toContain(place);
