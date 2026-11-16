@@ -14,8 +14,9 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { GroupedFooter, RoleMark, useToast } from "@/ui";
 import { Note } from "../ai/parts";
-import { SettingsPage } from "../settings/parts";
+import { SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { AccessList, type AccessListRow } from "../shared/AccessList";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { goBack, successHaptic } from "../shared/parts";
 import { accessProblem, accessSentence, forScope, sameAccess } from "./logic";
@@ -36,14 +37,18 @@ export function VaultAccessScreen({ itemId, connectionId }: { itemId?: string; c
   const vault = useVault(orgId, Boolean(connectionId));
   const connection = connectionId ? vault.data?.connections.find((x) => x.id === connectionId) : undefined;
   const target = itemId ? item.data : connection;
-  const failed = itemId ? item.isError : vault.isError || (vault.isSuccess && !connection);
+  const failed = itemId ? item.isError : vault.isError;
+  // The connection is gone (disconnected meanwhile): nothing to ask again for.
+  const gone = !itemId && vault.isSuccess && !connection;
   if (!target) {
     return (
       <SettingsPage title={t("mobile.vault.access.title")}>
-        {failed ? (
+        {gone ? (
           <View style={styles.note}>
-            <Note icon="x">{t("common.loadFailed")}</Note>
+            <Note icon="x">{t("mobile.vault.connection.gone")}</Note>
           </View>
+        ) : failed ? (
+          <LoadFailed onRetry={() => void (itemId ? item.refetch() : vault.refetch())} />
         ) : (
           <ActivityIndicator color={c.muted} style={styles.loading} />
         )}
@@ -83,6 +88,8 @@ function AccessForm({
   const [draft, setDraft] = useState<VaultAccess>(initial);
   const changed = !sameAccess(forScope(draft, scope), forScope(initial, scope));
   const busy = updateItem.isPending || updateConnection.isPending;
+  // Back with access changed and not saved asks first, as every form here does.
+  const leave = useUnsavedGuard(changed);
 
   const save = () => {
     const access = forScope(draft, scope);
@@ -92,6 +99,7 @@ function AccessForm({
       onSuccess: () => {
         successHaptic();
         toast({ title: t("mobile.vault.access.saved") });
+        leave();
         goBack();
       },
       onError: (err: unknown) => toast({ title: errorText(t, err, i18n.language), icon: "x" }),

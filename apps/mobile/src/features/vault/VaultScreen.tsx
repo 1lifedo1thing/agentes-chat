@@ -15,6 +15,7 @@ import {
   GroupedHeader,
   GroupedList,
   GroupedRow,
+  IconButton,
   type IconName,
   SearchField,
   Segmented,
@@ -71,27 +72,17 @@ export function VaultScreen() {
   }
   const current = tab ?? firstTab(data);
   const counts = vaultCounts(data);
-  // A new item starts where the person is: the team's tab adds to the team when they may.
-  const newScope = current === "team" && data.canManageTeam ? "team" : "personal";
-  const tabEmpty = current === newScope && !data.items.some((i) => i.scope === current);
+  // A new item starts where the person is: the team's tab adds to the team when they may, the person's own always.
+  const adds = current === "personal" || (current === "team" && data.canManageTeam);
+  const create = () => router.push(vaultHref.create(current === "team" ? "team" : "personal") as never);
   return (
-    <SettingsPage title={title}>
+    // "+" in the bar, as every list that adds: the tabs keep their place whichever tab is shown.
+    <SettingsPage
+      title={title}
+      {...(adds ? { right: <IconButton icon="plus" label={t("mobile.vault.newItem")} onPress={create} /> } : {})}
+    >
       <Loaded>
         <GroupedFooter>{t("settings.sectionText.vault")}</GroupedFooter>
-        {/* Empty, the button in the tab's empty state is the one way to add. */}
-        {tabEmpty ? null : (
-          <>
-            <Gap />
-            <GroupedList>
-              <GroupedRow
-                icon="plus"
-                label={t("mobile.vault.newItem")}
-                chevron
-                onPress={() => router.push(vaultHref.create(newScope) as never)}
-              />
-            </GroupedList>
-          </>
-        )}
         <View style={styles.tabs}>
           <Segmented
             items={[
@@ -105,11 +96,7 @@ export function VaultScreen() {
         </View>
         {/* Another tab's rows fade in where the last one's were. */}
         <Loaded key={current}>
-          {current === "connections" ? (
-            <Connections data={data} />
-          ) : (
-            <Items data={data} tab={current} onNew={() => router.push(vaultHref.create(newScope) as never)} />
-          )}
+          {current === "connections" ? <Connections data={data} /> : <Items data={data} tab={current} onNew={create} />}
         </Loaded>
       </Loaded>
     </SettingsPage>

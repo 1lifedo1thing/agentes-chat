@@ -6,6 +6,7 @@ import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, useToast } from 
 import { router } from "@/ui/navigation";
 import { Note } from "../ai/parts";
 import { confirmAction, Gap, SettingsPage } from "../settings/parts";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useNow, useOrgId } from "../shared/hooks";
 import { goBack, successHaptic } from "../shared/parts";
 import { accessSentence, agentsSummary, connectionLine, connectionState, peopleSummary, vaultHref } from "./logic";
@@ -29,9 +30,11 @@ export function VaultConnectionScreen({ id }: { id: string }) {
   if (!conn) {
     return (
       <SettingsPage title={t("settings.section.vault")}>
-        {vault.isError || vault.isSuccess ? (
+        {vault.isError ? (
+          <LoadFailed onRetry={() => void vault.refetch()} />
+        ) : vault.isSuccess ? (
           <View style={styles.note}>
-            <Note icon="x">{vault.isError ? t("common.loadFailed") : t("mobile.vault.connection.gone")}</Note>
+            <Note icon="x">{t("mobile.vault.connection.gone")}</Note>
           </View>
         ) : (
           <ActivityIndicator color={c.muted} style={styles.loading} />

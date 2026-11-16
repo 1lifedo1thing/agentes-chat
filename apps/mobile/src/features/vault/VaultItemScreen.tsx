@@ -17,7 +17,7 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { Note } from "../ai/parts";
-import { confirmAction, Gap, NEXT_FIELD, SettingsPage } from "../settings/parts";
+import { confirmAction, Gap, NEXT_FIELD, SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { Face } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useNow, useOrgId } from "../shared/hooks";
@@ -93,6 +93,8 @@ function ItemPage({ item }: { item: VaultItemDetail }) {
   const ownFields = editable && !external;
   const patch = itemPatch(item, form);
   const dirty = !patchEmpty(patch);
+  // Back with changes not saved asks first (a new password typed here exists nowhere else yet).
+  const leave = useUnsavedGuard(dirty);
   // Someone else saved it meanwhile (the page refetched): untouched fields follow.
   // biome-ignore lint/correctness/useExhaustiveDependencies: only a newer save resets the form
   useEffect(() => {
@@ -154,6 +156,7 @@ function ItemPage({ item }: { item: VaultItemDetail }) {
           onSuccess: () => {
             successHaptic();
             toast({ title: t("mobile.vault.item.deleted"), icon: "trash" });
+            leave();
             goBack();
           },
           onError: failed,

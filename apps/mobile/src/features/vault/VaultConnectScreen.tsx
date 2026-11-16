@@ -16,6 +16,7 @@ import { router } from "@/ui/navigation";
 import { Note, openPage } from "../ai/parts";
 import { ConnectedNote } from "../connectors/ConnectSheet";
 import { SettingsPage } from "../settings/parts";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useOrgId } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
 import { goBack, successHaptic, Tile } from "../shared/parts";
@@ -46,9 +47,11 @@ export function VaultConnectScreen({ kind, connectionId }: { kind: string; conne
   if (!source || (connectionId && !connection)) {
     return (
       <SettingsPage title={t("settings.section.vault")}>
-        {vault.isError || vault.isSuccess ? (
+        {vault.isError ? (
+          <LoadFailed onRetry={() => void vault.refetch()} />
+        ) : vault.isSuccess ? (
           <View style={styles.note}>
-            <Note icon="x">{vault.isError ? t("common.loadFailed") : t("mobile.vault.connect.unknown")}</Note>
+            <Note icon="x">{t("mobile.vault.connect.unknown")}</Note>
           </View>
         ) : (
           <ActivityIndicator color={c.muted} style={styles.loading} />
