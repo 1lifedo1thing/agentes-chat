@@ -22,6 +22,7 @@ import { approvalRuleServer, approvalRuleWords, approvalTitle } from "@agentesch
 import { listsAgent, seesDetails } from "@agenteschat/client/lib/audience";
 import { brainLine } from "@agenteschat/client/lib/brain";
 import { effortLevel } from "@agenteschat/client/lib/brain-advanced";
+import { personalOfText } from "@agenteschat/client/lib/connected";
 import { modelUnpriced } from "@agenteschat/client/lib/endpoints";
 import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { formatPercent, lowerFirst, timeLeft } from "@agenteschat/client/lib/format";
@@ -627,9 +628,7 @@ function Profile({ id }: { id: string }) {
                       />
                     }
                     label={c.label}
-                    sub={t("connectors.personal.of", {
-                      name: dir.memberById.get(c.ownerUserId ?? "")?.name ?? t("channel.unknownPerson"),
-                    })}
+                    sub={personalOfText(t, dir.memberById.get(c.ownerUserId ?? "")?.name ?? t("channel.unknownPerson"))}
                     subLines={1}
                     below={
                       <View style={styles.remove}>

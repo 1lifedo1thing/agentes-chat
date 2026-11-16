@@ -1,5 +1,6 @@
 import {
   type ConnectorDef,
+  type MailAccount,
   useCatalog,
   useComposioUsage,
   useConnections,
@@ -19,9 +20,10 @@ import {
   isMcpItem,
   itemName,
   personalAllowed,
+  personalOfText,
 } from "@agenteschat/client/lib/connected";
 import { settingsFrozen } from "@agenteschat/client/lib/deletion";
-import { choiceOf, MAIL_BRANDS } from "@agenteschat/client/lib/mail";
+import { choiceOf, MAIL_BRANDS, mailboxName } from "@agenteschat/client/lib/mail";
 import { can } from "@agenteschat/client/lib/permissions";
 import { connectorDescription, connectorName } from "@agenteschat/client/lib/scopes";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
@@ -458,7 +460,7 @@ function OthersPersonal({
   mailboxes,
 }: {
   items: ConnectedItem[];
-  mailboxes: { id: string; label: string; ownerUserId?: string | null; agents: { agentId: string }[] }[];
+  mailboxes: Pick<MailAccount, "id" | "label" | "provider" | "preset" | "ownerUserId" | "agents">[];
 }) {
   const { t } = useTranslation();
   const orgId = useOrgId();
@@ -471,7 +473,7 @@ function OthersPersonal({
   const removeConnection = useDisconnect(orgId);
   const busy = takeOff.isPending || removeMail.isPending || removeServer.isPending || removeConnection.isPending;
   const ownerOf = (id: string | null | undefined) =>
-    t("connectors.personal.of", { name: (id && dir.memberById.get(id)?.name) || t("channel.unknownPerson") });
+    personalOfText(t, (id && dir.memberById.get(id)?.name) || t("channel.unknownPerson"));
   const holders = (ids: string[]) =>
     ids.map((id) => dir.agentById.get(id)).filter((a): a is NonNullable<typeof a> => Boolean(a));
   const remove = (name: string, run: (done: { onSuccess: () => void; onError: (e: unknown) => void }) => void) =>
@@ -531,18 +533,34 @@ function OthersPersonal({
       <GroupedHeader>{`${t("connectors.personal.others")} · ${items.length + mailboxes.length}`}</GroupedHeader>
       <View style={styles.others}>
         <GroupedList>
-          {mailboxes.map((m) => (
-            <GroupedRow
-              key={`mail-${m.id}`}
-              icon="mail"
-              label={m.label}
-              sub={ownerOf(m.ownerUserId)}
-              {...(m.agents.length > 0 ? { below: <UsedBy names={usedBy(m.agents.map((a) => a.agentId))} /> } : {})}
-              value={t("connectors.personal.remove")}
-              disabled={busy}
-              onPress={() => remove(m.label, (done) => removeMail.mutate(m.id, done))}
-            />
-          ))}
+          {mailboxes.map((m) => {
+            const name = mailboxName(t, m);
+            return (
+              <GroupedRow
+                key={`mail-${m.id}`}
+                icon="mail"
+                label={name}
+                sub={ownerOf(m.ownerUserId)}
+                {...(m.agents.length > 0 ? { below: <UsedBy names={usedBy(m.agents.map((a) => a.agentId))} /> } : {})}
+                more
+                disabled={busy}
+                // The same choice a connection's row opens, with only Remover: a mailbox has no take-off here.
+                onPress={() =>
+                  chooseAction(
+                    name,
+                    [
+                      {
+                        label: t("connectors.personal.remove"),
+                        destructive: true,
+                        onPress: () => remove(name, (done) => removeMail.mutate(m.id, done)),
+                      },
+                    ],
+                    t("common.cancel"),
+                  )
+                }
+              />
+            );
+          })}
           {items.map((item) => (
             <GroupedRow
               key={item.id}

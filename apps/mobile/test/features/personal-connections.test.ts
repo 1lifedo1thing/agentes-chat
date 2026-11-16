@@ -87,7 +87,7 @@ describe("Conectores on the phone: Equipe | Pessoal as the web's (ADR 0099 adden
     expect(tabs("bia", false, [team, walters], 3, "team").others).toEqual([]);
   });
 
-  test("who manages connectors with only their own opens on Pessoal; a workspace of one keeps one list", () => {
+  test("who manages connectors with only their own opens on Pessoal, as on Skills; a workspace of one keeps one list", () => {
     const walter = connectionTabs({
       items: connectedItems([walters], [], catalog),
       mailboxes: [],
@@ -106,6 +106,16 @@ describe("Conectores on the phone: Equipe | Pessoal as the web's (ADR 0099 adden
       picked: "personal",
     });
     expect([alone.shown, alone.tab]).toEqual([false, "team"]);
+    // Their own mailbox (every mailbox has its person) stays in that one list.
+    const withMail = connectionTabs({
+      items: connectedItems([team], [], catalog),
+      mailboxes: [mail("m-walter", "walter")],
+      me: "walter",
+      members: 1,
+      manages: true,
+      picked: null,
+    });
+    expect([withMail.shown, withMail.mailboxes.map((m) => m.id)]).toEqual([false, ["m-walter"]]);
   });
 
   test("the screen reads others' rows only for who manages connectors, with Pessoal's own Adicionar", () => {
@@ -225,6 +235,6 @@ describe("An agent's screen: the viewer's own marked Pessoal, someone else's onl
     const mailSection = src("features/agents/AgentMailSection.tsx");
     expect(mailSection).toContain("useMailAccounts(orgId, enabled, { others: true })");
     expect(mailSection).toContain("a.agents.some((x) => x.agentId === agentId)");
-    expect(mailSection).toContain("address: account.address || account.label");
+    expect(mailSection).toContain("address: account.address || mailboxName(t, account)");
   });
 });

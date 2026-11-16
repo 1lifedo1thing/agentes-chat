@@ -2,7 +2,7 @@ import { type AgentMailbox, useAgentMail, useMailAccounts, useSetAgentMail } fro
 import type { Level } from "@agenteschat/client/lib/access-levels";
 import { canTalk } from "@agenteschat/client/lib/audience";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { defaultPolicy, mailAccessOf, onlyForOwner, toMailLevel } from "@agenteschat/client/lib/mail";
+import { defaultPolicy, mailAccessOf, mailboxName, onlyForOwner, toMailLevel } from "@agenteschat/client/lib/mail";
 import { can } from "@agenteschat/client/lib/permissions";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/providers/org";
@@ -75,7 +75,7 @@ export function useAgentMailboxes(agentId: string, enabled = true): MailboxLine[
     const theirs = account.ownerUserId !== meId;
     return {
       id: account.id,
-      address: account.address || account.label,
+      address: account.address || mailboxName(t, account),
       level: t(`access.level.${level}`),
       sub: theirs ? (owner ? t("mail.agent.ownerOnly", { name: owner }) : t("mail.agent.ownerOnlyUnknown")) : null,
       hint:

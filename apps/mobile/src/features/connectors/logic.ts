@@ -2,9 +2,10 @@ import type { ConnectorCategory, ConnectorDef, CustomConnectStart } from "@agent
 import { hiddenWithoutComposio } from "@agenteschat/client/lib/composio";
 import { CONNECTOR_MARK, type ConnectedItem, OWN_MARK, SERVER_ICON } from "@agenteschat/client/lib/connected";
 import { heldWhole, joinNames } from "@agenteschat/client/lib/format";
-import { type Owned, ownerSplit, ownerTabsShown } from "@agenteschat/client/lib/owner-split";
 import { mixHex } from "@agenteschat/ui/agent/engine";
 import type { TFunction } from "i18next";
+
+export { type ConnectionTab, connectionTabs } from "@agenteschat/client/lib/connected";
 
 /**
  * The connectors gallery on the phone: pure pieces the screen and
@@ -34,43 +35,6 @@ export const CATEGORIES: ConnectorCategory[] = [
  */
 export function connectionOf(def: ConnectorDef, items: ConnectedItem[]): ConnectedItem | undefined {
   return items.find((i) => i.def?.id === def.id);
-}
-
-export type ConnectionTab = "team" | "personal";
-
-/**
- * Conectores split as the web's (ADR 0099 addendum): "Equipe | Pessoal" where the workspace has more than one person
- * or personal ones exist. Who manages connectors opens on Equipe unless only their own are there, everyone else on
- * Pessoal. Each tab's connections and mailboxes, and other people's personal ones (who manages connectors gets those
- * from the server) for the group under Equipe.
- */
-export function connectionTabs<M extends Owned>(input: {
-  items: ConnectedItem[];
-  mailboxes: M[];
-  me: string;
-  members: number;
-  manages: boolean;
-  picked: ConnectionTab | null;
-}) {
-  const byOwner = ownerSplit(input.items, input.me);
-  const mail = ownerSplit(input.mailboxes, input.me);
-  const shown = ownerTabsShown(input.members, [...input.items, ...input.mailboxes]);
-  const team = byOwner.team.length + mail.team.length;
-  const mine = byOwner.mine.length + mail.mine.length;
-  const tab: ConnectionTab = !shown
-    ? "team"
-    : (input.picked ?? (input.manages && (team > 0 || mine === 0) ? "team" : "personal"));
-  const personal = tab === "personal";
-  return {
-    shown,
-    tab,
-    team,
-    mine,
-    items: personal ? byOwner.mine : byOwner.team,
-    mailboxes: personal ? mail.mine : mail.team,
-    others: input.manages && !personal ? byOwner.others : [],
-    othersMail: input.manages && !personal ? mail.others : [],
-  };
 }
 
 /**
