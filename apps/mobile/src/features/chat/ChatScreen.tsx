@@ -1161,6 +1161,8 @@ function Chat({
   // send uploads them and sends everything as one message. A thumbnail dims while its upload runs; one that fails
   // stays, marked, and the caption comes back to the field, so nothing typed is lost.
   const [pending, setPending] = useState<PendingFile[]>([]);
+  // A picker is open or still handing its files over (a video being converted): a thumbnail says so in the field.
+  const [preparing, setPreparing] = useState(false);
   const [captionBack, setCaptionBack] = useState<{ text: string; at: number; join?: boolean } | null>(null);
   // The local files a take carried, by their uploaded ids: a refused take puts them back above the field.
   const sentWithVoice = useRef(new Map<string, PendingFile>());
@@ -1297,6 +1299,9 @@ function Chat({
         return;
       }
       case "photos": {
+        // iOS closes its picker as soon as the person picks and converts a video after (seconds for a long one), with
+        // nothing on the screen: a thumbnail that says "preparing" holds the place until the files arrive.
+        setPreparing(true);
         const res = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ["images", "videos"],
           quality: 0.8,
@@ -1306,12 +1311,16 @@ function Chat({
           allowsMultipleSelection: true,
           selectionLimit: Math.max(1, MAX_PENDING - pending.length),
           orderedSelection: true,
-        });
+        }).finally(() => setPreparing(false));
         if (!res.canceled) addPending(res.assets.map(pickedAsset));
         return;
       }
       case "file": {
-        const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, multiple: true });
+        // A large file is copied before the picker answers: the same "preparing" thumbnail meanwhile.
+        setPreparing(true);
+        const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, multiple: true }).finally(() =>
+          setPreparing(false),
+        );
         if (!res.canceled)
           addPending(
             res.assets.map((a) => ({
@@ -2135,8 +2144,11 @@ function Chat({
   );
   // Photos and files waiting to go, inside the field over their caption.
   const composerAttachments = useMemo(
-    () => (pending.length > 0 ? <AttachmentStrip files={pending} onRemove={removeFromStrip} /> : undefined),
-    [pending, removeFromStrip],
+    () =>
+      pending.length > 0 || preparing ? (
+        <AttachmentStrip files={pending} preparing={preparing} onRemove={removeFromStrip} />
+      ) : undefined,
+    [pending, preparing, removeFromStrip],
   );
   const everyoneOffered = offersEveryone(org, Boolean(dm));
   const mentionCard = useCallback<NonNullable<ComposerProps["mention"]>>(

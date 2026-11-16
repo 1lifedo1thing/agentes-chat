@@ -432,6 +432,7 @@
       "waiting": "{{name}}，等待发送",
       "sending": "{{name}}，正在发送",
       "failed": "{{name}}，未发送：再次发送即可重试",
+      "preparing": "正在准备文件…",
       "tooMany": "每条消息最多 {{count}} 个文件。"
     },
     "swipeReply": "向右滑动以回复",

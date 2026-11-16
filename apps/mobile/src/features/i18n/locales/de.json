@@ -447,6 +447,7 @@
       "waiting": "{{name}}, wartet auf das Senden",
       "sending": "{{name}}, wird gesendet",
       "failed": "{{name}}, nicht gesendet: zum erneuten Versuch senden",
+      "preparing": "Dateien werden vorbereitet…",
       "tooMany": "Bis zu {{count}} Dateien pro Nachricht."
     },
     "swipeReply": "Zum Antworten nach rechts wischen",

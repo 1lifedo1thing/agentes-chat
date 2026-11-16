@@ -1085,6 +1085,9 @@
   "chat.attach.failed": {
     "value": "{{name}}, didn't go: send to try again"
   },
+  "chat.attach.preparing": {
+    "value": "Getting the files ready…"
+  },
   "chat.attach.tooMany": {
     "value": "Up to {{count}} files per message."
   },

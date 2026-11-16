@@ -477,6 +477,8 @@ export const featureKeysEn = {
       sending: "{{name}}, sending",
       /** One that didn't go: it stays, and send tries it again. */
       failed: "{{name}}, didn't go: send to try again",
+      /** A picker still handing its files over (a video being converted). */
+      preparing: "Getting the files ready…",
       tooMany: "Up to {{count}} files per message.",
     },
     /** Swiping a message to the right. */

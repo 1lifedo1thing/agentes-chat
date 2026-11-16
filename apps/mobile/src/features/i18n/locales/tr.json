@@ -447,6 +447,7 @@
       "waiting": "{{name}}, gönderilmeyi bekliyor",
       "sending": "{{name}}, gönderiliyor",
       "failed": "{{name}}, gönderilemedi: yeniden denemek için gönderin",
+      "preparing": "Dosyalar hazırlanıyor…",
       "tooMany": "Mesaj başına en fazla {{count}} dosya."
     },
     "swipeReply": "Yanıtlamak için sağa kaydırın",

@@ -462,6 +462,7 @@
       "waiting": "{{name}}, en attente d'envoi",
       "sending": "{{name}}, envoi en cours",
       "failed": "{{name}}, non envoyé : envoyez pour réessayer",
+      "preparing": "Préparation des fichiers…",
       "tooMany": "Jusqu'à {{count}} fichiers par message."
     },
     "swipeReply": "Balayez vers la droite pour répondre",

@@ -464,6 +464,7 @@ export const featureKeysPtBR = {
       waiting: "{{name}}, esperando para enviar",
       sending: "{{name}}, enviando",
       failed: "{{name}}, não foi: envie para tentar de novo",
+      preparing: "Preparando os arquivos…",
       tooMany: "Até {{count}} arquivos por mensagem.",
     },
     swipeReply: "Deslize para a direita para responder",

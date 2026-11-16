@@ -477,6 +477,7 @@
       "waiting": "{{name}}, czeka na wysłanie",
       "sending": "{{name}}, wysyłanie",
       "failed": "{{name}}, nie wysłano: wyślij, aby spróbować ponownie",
+      "preparing": "Przygotowywanie plików…",
       "tooMany": "Maksymalna liczba plików w wiadomości: {{count}}."
     },
     "swipeReply": "Przesuń w prawo, aby odpowiedzieć",

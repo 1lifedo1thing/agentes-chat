@@ -43,11 +43,23 @@ const isVideo = (f: PendingFile) => f.type.startsWith("video/");
  * phone's own messages hold it: a row of thumbnails one height tall, a photo in its own shape, a video at its first
  * frame with its length, a file as a card with its type, name and size. Each has one × in its corner to take it out.
  * Sending, a thumbnail dims under a spinner; one that didn't go dims under the try-again mark and stays (send tries it
- * again; the toast said why). A thumbnail that leaves fades and the others close the gap. More come from the "+".
+ * again; the toast said why). While a picker still hands files over (iOS converts a video after its picker closes), a
+ * thumbnail with a spinner holds their place. A thumbnail that leaves fades and the others close the gap. More come
+ * from the "+".
  */
-export function AttachmentStrip({ files, onRemove }: { files: PendingFile[]; onRemove: (id: string) => void }) {
-  const { reducedMotion } = useTheme();
-  if (files.length === 0) return null;
+export function AttachmentStrip({
+  files,
+  preparing = false,
+  onRemove,
+}: {
+  files: PendingFile[];
+  /** A picker is still handing files over (iOS converting a video): a thumbnail with a spinner holds their place. */
+  preparing?: boolean;
+  onRemove: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const { colors: c, reducedMotion } = useTheme();
+  if (files.length === 0 && !preparing) return null;
   const motion = reducedMotion ? {} : { entering: TILE_IN, exiting: TILE_OUT, layout: TILE_MOVE };
   return (
     <ScrollView
@@ -62,6 +74,17 @@ export function AttachmentStrip({ files, onRemove }: { files: PendingFile[]; onR
           <Tile file={f} onRemove={() => onRemove(f.id)} />
         </Animated.View>
       ))}
+      {preparing ? (
+        <Animated.View
+          key="preparing"
+          {...motion}
+          style={[styles.tile, styles.preparing, { width: TILE_H, backgroundColor: c.sunken, borderColor: c.line2 }]}
+          accessible
+          accessibilityLabel={t("mobile.chat.attach.preparing")}
+        >
+          <ActivityIndicator color={c.faint} />
+        </Animated.View>
+      ) : null}
     </ScrollView>
   );
 }
@@ -162,6 +185,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 8 },
   tile: { height: TILE_H, borderRadius: RADIUS, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth },
   // A file: its type's tile and its words side by side, room on the right for the ×.
+  preparing: { alignItems: "center", justifyContent: "center" },
   fileTile: { flexDirection: "row", alignItems: "center", gap: 10, paddingLeft: 12, paddingRight: 28 },
   fileText: { flex: 1, minWidth: 0, gap: 2 },
   fileName: { fontWeight: "600" },

@@ -447,6 +447,7 @@
       "waiting": "{{name}}, wacht op versturen",
       "sending": "{{name}}, wordt verstuurd",
       "failed": "{{name}}, niet verstuurd: verstuur om het opnieuw te proberen",
+      "preparing": "Bestanden voorbereiden…",
       "tooMany": "Maximaal {{count}} bestanden per bericht."
     },
     "swipeReply": "Veeg naar rechts om te antwoorden",

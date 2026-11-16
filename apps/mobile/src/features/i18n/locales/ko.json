@@ -432,6 +432,7 @@
       "waiting": "{{name}}, 전송 대기 중",
       "sending": "{{name}}, 보내는 중",
       "failed": "{{name}}, 보내지 못함: 보내기를 눌러 다시 시도",
+      "preparing": "파일을 준비하는 중…",
       "tooMany": "메시지 하나에 파일은 최대 {{count}}개까지예요."
     },
     "swipeReply": "오른쪽으로 밀어서 답장",

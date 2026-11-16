@@ -432,6 +432,7 @@
       "waiting": "{{name}}, menunggu dikirim",
       "sending": "{{name}}, sedang dikirim",
       "failed": "{{name}}, belum terkirim: kirim untuk mencoba lagi",
+      "preparing": "Menyiapkan file…",
       "tooMany": "Maksimal {{count}} file per pesan."
     },
     "swipeReply": "Geser ke kanan untuk membalas",
