@@ -236,6 +236,7 @@ import { computerBackSoon, type MachineCaller } from "./machine-hub";
 import { TASK_OFFLINE_GRACE_MS } from "./machine-tasks";
 import { getMachine } from "./machines";
 import { MEDIA_TOOLS } from "./media";
+import { PLACE_KEPT_MS } from "./message-place";
 import {
   getMessage,
   insertMessage,
@@ -3603,6 +3604,36 @@ async function executeRunInner(
   };
 
   /**
+   * When the first secret or approval card a computer brain's bridged call posted in this run went up: the brain asks
+   * mid-turn and writes after the call what the card is for ("I left a secure field here for the key"), so that text
+   * is placed just before the card and reads first. A card another run posted (an approval joining an older card),
+   * or one older than a place can be kept (`PLACE_KEPT_MS`), stays as it is: null.
+   */
+  const bridgedCardAt = async (t: Transcript): Promise<Date | null> => {
+    const calls = (t.pending?.calls ?? []).filter((c) => c.bridged);
+    const secretIds = calls.flatMap((c) => (c.secretRequestId ? [c.secretRequestId] : []));
+    const approvalIds = calls.flatMap((c) => (c.approvalId ? [c.approvalId] : []));
+    const cards = [
+      ...(secretIds.length > 0
+        ? await db
+            .select({ at: messages.createdAt })
+            .from(secretRequests)
+            .innerJoin(messages, and(eq(messages.id, secretRequests.messageId), eq(messages.agentRunId, run.id)))
+            .where(inArray(secretRequests.id, secretIds))
+        : []),
+      ...(approvalIds.length > 0
+        ? await db
+            .select({ at: messages.createdAt })
+            .from(approvals)
+            .innerJoin(messages, and(eq(messages.id, approvals.messageId), eq(messages.agentRunId, run.id)))
+            .where(inArray(approvals.id, approvalIds))
+        : []),
+    ];
+    const first = cards.reduce<Date | null>((a, c) => (a && a <= c.at ? a : c.at), null);
+    return first && Date.now() - first.getTime() < PLACE_KEPT_MS ? first : null;
+  };
+
+  /**
    * A computer brain's call through the bridge paused the run during the turn
    * (`suspendRunForTool` posted the card and moved it to `waiting_*`): keep the
    * pending calls it recorded, post what the brain said if it says more than the card, and stop here.
@@ -3629,6 +3660,10 @@ async function executeRunInner(
     if (asked && textBefore) {
       text = stripSentinel(textBefore(asked.askedAt, ASKED_GRACE_MS));
       at = new Date(asked.cardAt.getTime() - 1);
+    } else if (text) {
+      // A secret or an approval: what it wrote says what the card is for, so it reads before the card.
+      const cardAt = await bridgedCardAt(t);
+      if (cardAt) at = new Date(cardAt.getTime() - 1);
     }
     // A background run never posts by itself (ADR 0053 §5): its cards speak for it.
     if (run.background || repeatsLastPost(text)) text = "";
