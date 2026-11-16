@@ -60,3 +60,26 @@ describe("Workspaces' ways in", () => {
     expect(pages).not.toContain('icon="back"');
   });
 });
+
+describe("requests to join", () => {
+  const route = (path: string) => readFileSync(join(import.meta.dir, "..", "..", "app", "(app)", path), "utf8");
+
+  test("a pushed screen with the system's bar, so each card's choices push over it", () => {
+    // Out of the sheets: a choice pushed from a sheet would land under it, or close it with the card's draft.
+    expect(route("_layout.tsx")).not.toContain('name="join-requests"');
+    expect(route("(main)/join-requests.tsx")).toContain("<JoinRequestsScreen focus={request} />");
+    expect(ownOptionsOf("join-requests")).toBeNull();
+    const screen = src("features/members/JoinRequestsScreen.tsx");
+    expect(screen).toContain("<SettingsPage");
+    expect(screen).not.toContain("SheetScreen");
+    expect(screen).toContain("onRefresh={() => Promise.allSettled([list.refetch(), roles.refetch()])}");
+    // An empty list needs no Close of its own: the system's back is there.
+    expect(screen).not.toContain("onClose");
+  });
+
+  test("denying's reason opens on the tap that asks for it, and its way out is Cancel, never a drawn Back", () => {
+    const screen = src("features/members/JoinRequestsScreen.tsx");
+    expect(screen).not.toContain('t("mobile.common.back")');
+    expect(screen).toContain('label={t("mobile.common.cancel")}');
+  });
+});

@@ -589,7 +589,7 @@ describe("Configurações › Pessoas: Membros · Convites · Cargos", () => {
   });
 
   test("a request's review starts on its link's choices, and a full link waits for a bigger maximum", () => {
-    const sheet = src("features/members/JoinRequestsSheet.tsx");
+    const sheet = src("features/members/JoinRequestsScreen.tsx");
     expect(sheet).toContain("const { given, leftOut } = approvalCargos(roles, r.link?.roleIds ?? []);");
     expect(sheet).toContain("disabled={busy || full || linkFull || !draft}");
     expect(sheet).toContain('t("errors.join.linkFullApproval")');
@@ -711,7 +711,7 @@ describe("the worst case (break-ui): long names, one of each, a thousand of them
     expect(convites).toContain('<GroupedFooter>{t("members.invitations.empty")}</GroupedFooter>');
     expect(convites).toContain('label={t("members.copyInviteLink")}');
     // A request's card waits for the cargos, so it opens on its link's choices.
-    expect(src("features/members/JoinRequestsSheet.tsx")).toContain("else if (!list.data || !roles.data)");
+    expect(src("features/members/JoinRequestsScreen.tsx")).toContain("else if (!list.data || !roles.data)");
     // Convidar opens on its cargo in the first frame.
     expect(src("features/members/InvitePeople.tsx")).toContain("const draft = useInviteDraft(KEY) ?? opening;");
   });

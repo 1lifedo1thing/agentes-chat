@@ -153,7 +153,7 @@ describe("members", () => {
     expect(page).toContain("<Page");
     expect(page).not.toContain("MembersFrame");
     expect(page).toContain("onRefresh={() => Promise.allSettled([people.refetch(), rolesQ.refetch()])}");
-    expect(src("members/JoinRequestsSheet.tsx")).toContain("<LoadFailed");
+    expect(src("members/JoinRequestsScreen.tsx")).toContain("<LoadFailed");
   });
 
   test("Remove and Leave confirm at once: what goes with the person is read as the row's menu opens", () => {

@@ -48,7 +48,7 @@ describe("lists load, fail and empty in the app's own states", () => {
   test("loading shows the rows' shape, never a bare spinner", () => {
     for (const file of [
       "members/MembersPage.tsx",
-      "members/JoinRequestsSheet.tsx",
+      "members/JoinRequestsScreen.tsx",
       "devices/DevicesScreen.tsx",
       "devices/AudienceScreen.tsx",
       "devices/PhoneScreen.tsx",
@@ -165,7 +165,7 @@ describe("sheets read as the app's sheets", () => {
   });
 
   test("a join request's card fades in and out; nothing stretches its frame as its answer changes", () => {
-    const requests = read("members/JoinRequestsSheet.tsx");
+    const requests = read("members/JoinRequestsScreen.tsx");
     expect(requests).not.toContain("LinearTransition");
     expect(requests).not.toContain("layout=");
   });
