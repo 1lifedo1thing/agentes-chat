@@ -5,6 +5,7 @@ import { haptics } from "./haptics";
 import { Icon, type IconName } from "./Icon";
 import { InfoHint, useInfoHint } from "./InfoHint";
 import { MEDIA_ROW } from "./media-row";
+import { ROW_PRESS_DELAY } from "./PressScale";
 import { GROUPED_ROW } from "./rhythm";
 import { Text, textLineOf } from "./Text";
 import { ToggleSwitch } from "./Toggle";
@@ -481,6 +482,7 @@ function Row({
   return (
     <Pressable
       onPress={press}
+      unstable_pressDelay={ROW_PRESS_DELAY}
       // A row of buttons stays enabled with nothing to press itself: VoiceOver still offers its actions.
       disabled={disabled || (!onPress && !actions.length)}
       accessibilityRole={toggle !== undefined ? "switch" : "button"}
@@ -503,6 +505,8 @@ function Row({
         flat ? styles.media : tall ? styles.tall : null,
         tree === "mid" || tree === "end" ? styles.nested : null,
         pressed && onPress ? { backgroundColor: c.sunken } : null,
+        // Off, it looks off: a tap that does nothing never looks like one that should.
+        disabled ? styles.off : null,
       ]}
     >
       {tree ? <TreeLines tree={tree} color={c.line2} /> : null}
@@ -688,6 +692,7 @@ function StackedField({ label, hint, children, onPress }: Omit<GroupedFieldProps
 }
 
 const styles = StyleSheet.create({
+  off: { opacity: 0.4 },
   marked: { fontWeight: "600" },
   list: { borderRadius: 14, overflow: "hidden" },
   divider: { height: StyleSheet.hairlineWidth },

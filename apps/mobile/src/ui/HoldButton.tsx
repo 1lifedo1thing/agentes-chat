@@ -8,11 +8,11 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { BUTTON_SIZES, type ButtonSize, primaryLook, slopOf } from "./Button";
 import { haptics } from "./haptics";
+import { PRESS_IN, PRESS_OUT } from "./PressScale";
 import { systemText } from "./Text";
 import { useTheme } from "./theme";
 import { CHROME_MAX_SCALE, weights } from "./type-scale";
@@ -55,7 +55,7 @@ export function HoldButton({ label, onConfirm, durationMs = 700, disabled = fals
   const start = () => {
     haptics.light();
     fill.value = withTiming(1, { duration: durationMs, easing: Easing.linear });
-    press.value = theme.reducedMotion ? 1 : withSpring(1, theme.motion.press);
+    press.value = theme.reducedMotion ? 1 : withTiming(1, PRESS_IN);
     timer.current = setTimeout(() => {
       timer.current = null;
       press.value = withTiming(0, { duration: 120 });
@@ -70,7 +70,7 @@ export function HoldButton({ label, onConfirm, durationMs = 700, disabled = fals
     timer.current = null;
     cancelAnimation(fill);
     fill.value = withTiming(0, { duration: 180, easing: Easing.bezier(0.23, 1, 0.32, 1) });
-    press.value = theme.reducedMotion ? 0 : withSpring(0, theme.motion.press);
+    press.value = theme.reducedMotion ? 0 : withTiming(0, PRESS_OUT);
   };
 
   const fillStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: fill.value }] }));

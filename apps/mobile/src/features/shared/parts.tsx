@@ -21,6 +21,7 @@ import {
   Icon,
   type IconName,
   LivePause,
+  ROW_PRESS_DELAY,
   Text,
   ToggleSwitch,
   textLineOf,
@@ -128,6 +129,7 @@ function ActionRow({ item: it, leading }: { item: ActionItem; leading: ReactNode
           : press
       }
       disabled={it.disabled || !it.onPress}
+      unstable_pressDelay={ROW_PRESS_DELAY}
       accessibilityRole={it.checked === undefined ? "button" : "switch"}
       {...(it.checked === undefined ? {} : { accessibilityState: { checked: it.checked } })}
       accessibilityLabel={it.hint ? `${it.label}. ${it.hint}` : it.label}
@@ -135,7 +137,7 @@ function ActionRow({ item: it, leading }: { item: ActionItem; leading: ReactNode
         styles.action,
         tall && styles.actionTall,
         pressed && { backgroundColor: c.sunken },
-        it.disabled && { opacity: 0.5 },
+        it.disabled && { opacity: 0.4 },
       ]}
     >
       {leading ? (

@@ -39,7 +39,7 @@ import { readValueSync, STORED, writeValueSync } from "@/lib/storage";
 import { Glass } from "./Glass";
 import { haptics } from "./haptics";
 import { Icon, type IconName } from "./Icon";
-import { PressScale } from "./PressScale";
+import { PRESS_IN, PRESS_OUT, PressScale } from "./PressScale";
 import { systemText } from "./Text";
 import { useTheme } from "./theme";
 import { CHROME_MAX_SCALE, weights } from "./type-scale";
@@ -557,7 +557,7 @@ function SendButton({
     onBegin: () => {
       "worklet";
       held.value = false;
-      pressed.value = reducedMotion ? 1 : withSpring(1, motion.press);
+      pressed.value = reducedMotion ? 1 : withTiming(1, PRESS_IN);
       ring.value = withTiming(1, { duration: HOLD_SEND_MS, easing: Easing.linear });
     },
     onActivate: () => {
@@ -568,7 +568,7 @@ function SendButton({
     },
     onFinalize: () => {
       "worklet";
-      pressed.value = reducedMotion ? 0 : withSpring(0, motion.press);
+      pressed.value = reducedMotion ? 0 : withTiming(0, PRESS_OUT);
       if (held.value) return;
       cancelAnimation(ring);
       ring.value = withTiming(0, { duration: 150, easing: EASE_OUT });

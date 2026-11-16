@@ -84,7 +84,7 @@ export { OptionTile } from "./OptionTile";
 export { OPTION_ROW } from "./option-row";
 export { PictureEdge } from "./PictureEdge";
 export { PresenceBadge, type PresenceBadgeProps, WithPresence } from "./PresenceBadge";
-export { PressScale, type PressScaleProps } from "./PressScale";
+export { PRESS_IN, PRESS_OUT, PressScale, type PressScaleProps, ROW_PRESS_DELAY } from "./PressScale";
 export { ProviderLogo, type ProviderLogoProps, ProviderQuad, ProviderStack } from "./ProviderLogo";
 export { PULL_TINT, PullOrbit } from "./PullOrbit";
 export { type BadgePresence, badgeCell } from "./presence-badge";
