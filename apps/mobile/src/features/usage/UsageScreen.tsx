@@ -36,7 +36,7 @@ import { PLAN_ALMOST, PLAN_TONE, planLevel, planLine } from "@agenteschat/ui/pla
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Keyboard, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Keyboard, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,6 +50,7 @@ import {
   MediaRow,
   ProviderLogo,
   Segmented,
+  SkeletonList,
   Text,
   useTheme,
   useToast,
@@ -126,7 +127,7 @@ export function UsageScreen() {
         {/* A view switched to, or numbers that came in, fade in; what is here when the screen opens just shows. */}
         <LayoutAnimationConfig skipEntering>
           {view === "people" ? <Loaded>{allowed ? <PeopleList /> : <MyUsageCard />}</Loaded> : null}
-          {view === "people" ? null : usage.isLoading ? <ActivityIndicator color={c.muted} /> : null}
+          {view === "people" ? null : usage.isLoading ? <SkeletonList rows={3} /> : null}
           {view === "people" ? null : !usage.isLoading && !data ? (
             <LoadFailed onRetry={() => void usage.refetch()} />
           ) : null}

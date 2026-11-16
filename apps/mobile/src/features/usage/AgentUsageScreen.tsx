@@ -21,12 +21,13 @@ import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { gradientOf } from "@agenteschat/ui/agent/engine";
 import { type ReactNode, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
-import { Button, Icon, InfoHint, ProviderLogo, Text } from "@/ui";
+import { Button, Icon, InfoHint, ProviderLogo, SkeletonList, Text } from "@/ui";
 import { openAgentAi } from "../ai/AgentAiScreen";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { Loaded, PushedHeader } from "../shared/parts";
@@ -85,12 +86,8 @@ export function AgentUsageScreen({ agentId }: { agentId: string }) {
       >
         {/* The numbers fade in over the spinner; numbers already here when the screen opens just show. */}
         <LayoutAnimationConfig skipEntering>
-          {usage.isLoading ? <ActivityIndicator color={c.muted} /> : null}
-          {!usage.isLoading && !data ? (
-            <Text variant="small" tone="muted">
-              {t("common.loadFailed")}
-            </Text>
-          ) : null}
+          {usage.isLoading ? <SkeletonList rows={3} /> : null}
+          {!usage.isLoading && !data ? <LoadFailed onRetry={() => void usage.refetch()} /> : null}
           {data ? (
             <Loaded>
               <View style={styles.stack}>
@@ -135,14 +132,15 @@ function Month({ data, name, tones }: { data: AgentPlanUsage; name: string; tone
   });
   const used = data.sources.filter((s) => s.tokens > 0);
   return (
-    <UsageCard icon="chart" title={t("usageViews.agent.title", g)}>
+    // The bar says whose usage it is: the card says what it draws, the month day by day.
+    <UsageCard icon="chart" title={t("usageViews.agent.daysLabel", { month })}>
       {data.tokens === 0 ? (
         <Text variant="small" tone="muted">
           {t("usageViews.agent.empty", { ...g, month })}
         </Text>
       ) : (
         <>
-          <Text variant="title" tone="ink" style={styles.sentence}>
+          <Text variant="body" tone="ink" style={styles.sentence}>
             {t("usageViews.agent.sentence", {
               ...g,
               month,
@@ -347,7 +345,8 @@ const styles = StyleSheet.create({
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
   tabular: { fontVariant: ["tabular-nums"] },
-  sentence: { fontWeight: "500", lineHeight: 26 },
+  // The month in one sentence, read before the chart: the body's size, a step heavier.
+  sentence: { fontWeight: "500" },
   legend: { flexDirection: "row", flexWrap: "wrap", rowGap: 4, columnGap: 14 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
   // The figures under the account, as wide as the row: beside it, a narrow column squeezed them and the name.
