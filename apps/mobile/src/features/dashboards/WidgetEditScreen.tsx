@@ -2,13 +2,11 @@ import { useUpdateWidget, useWidget, type WidgetDetail } from "@agenteschat/clie
 import { WIDGET_LIMITS } from "@agenteschat/ui/widgets/spec";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Locked, SCREEN_X, useTheme, useToast } from "@/ui";
+import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, useToast } from "@/ui";
 import { useFailed } from "../routines/hooks";
-import { Gap } from "../settings/parts";
+import { Gap, SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { useOrgId } from "../shared/hooks";
-import { goBack, PushedHeader, successHaptic } from "../shared/parts";
+import { goBack, successHaptic } from "../shared/parts";
 import { TextArea } from "../shared/TextArea";
 import { MissingScreen } from "./parts";
 
@@ -24,7 +22,7 @@ export const widgetEditHref = (id: string, field: WidgetField) => `/widget-edit/
 /**
  * A widget's title or its alert, pushed from its screen (screens, never a form opened in place inside a card): the
  * field on the grouped gray and "Salvar" in the bar, which goes back once it took. A person's title is kept: the agent
- * no longer renames the widget.
+ * no longer renames the widget. The keyboard comes up when the person taps the field; leaving with changes asks first.
  */
 export function WidgetEditScreen({ id, field }: { id: string; field: WidgetField }) {
   const { t } = useTranslation();
@@ -46,7 +44,10 @@ export function WidgetEditScreen({ id, field }: { id: string; field: WidgetField
   );
 }
 
-/** The screen both forms stand on: the bar with "Salvar", the grouped gray, a field that clears the keyboard. */
+/**
+ * The screen both forms stand on: the settings' form page (the bar with "Salvar", the grouped gray, a field that clears
+ * the keyboard on both systems).
+ */
 function FormPage({
   title,
   ready,
@@ -61,25 +62,10 @@ function FormPage({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
-  const { colors: c } = useTheme();
-  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-      <PushedHeader
-        title={title}
-        solid={false}
-        grouped
-        action={{ label: t("common.save"), disabled: !ready, onPress: onSave }}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        contentContainerStyle={[styles.in, { paddingBottom: 24 + insets.bottom }]}
-      >
-        <Locked when={busy}>{children}</Locked>
-      </ScrollView>
-    </View>
+    <SettingsPage title={title} action={{ label: t("common.save"), disabled: !ready, onPress: onSave }} locked={busy}>
+      {children}
+    </SettingsPage>
   );
 }
 
@@ -91,6 +77,7 @@ function TitleForm({ widget: w, title: screenTitle }: { widget: WidgetDetail; ti
   const update = useUpdateWidget(useOrgId());
   const [title, setTitle] = useState(w.title);
   const next = title.trim();
+  const leave = useUnsavedGuard(next !== w.title);
   const ready = next.length > 0 && !update.isPending;
   const save = () => {
     if (!ready) return;
@@ -104,6 +91,7 @@ function TitleForm({ widget: w, title: screenTitle }: { widget: WidgetDetail; ti
         onSuccess: () => {
           successHaptic();
           toast({ title: t("mobile.dashboards.widget.titleSaved") });
+          leave();
           goBack();
         },
         onError: failed,
@@ -122,7 +110,6 @@ function TitleForm({ widget: w, title: screenTitle }: { widget: WidgetDetail; ti
         minHeight={50}
         maxLength={WIDGET_LIMITS.title}
         returnKeyType="done"
-        autoFocus
         onSubmitEditing={save}
       />
     </FormPage>
@@ -137,11 +124,13 @@ function AlertForm({ widget: w, title }: { widget: WidgetDetail; title: string }
   const update = useUpdateWidget(useOrgId());
   const [on, setOn] = useState(w.alert.enabled);
   const [condition, setCondition] = useState(w.alert.condition);
+  const next = { enabled: on, condition: on ? condition.trim() : "" };
+  const changed = next.enabled !== w.alert.enabled || next.condition !== w.alert.condition.trim();
+  const leave = useUnsavedGuard(changed);
   const ready = !update.isPending;
   const save = () => {
     if (!ready) return;
-    const next = { enabled: on, condition: on ? condition.trim() : "" };
-    if (next.enabled === w.alert.enabled && next.condition === w.alert.condition.trim()) {
+    if (!changed) {
       goBack();
       return;
     }
@@ -151,6 +140,7 @@ function AlertForm({ widget: w, title }: { widget: WidgetDetail; title: string }
         onSuccess: () => {
           successHaptic();
           toast({ title: t("mobile.dashboards.widget.alertSaved") });
+          leave();
           goBack();
         },
         onError: failed,
@@ -183,8 +173,3 @@ function AlertForm({ widget: w, title }: { widget: WidgetDetail; title: string }
     </FormPage>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  in: { paddingHorizontal: SCREEN_X, paddingTop: 4 },
-});

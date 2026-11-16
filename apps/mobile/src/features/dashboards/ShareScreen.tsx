@@ -12,6 +12,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GroupedHeader, GroupedList, GroupedRow, Locked, Text, useTheme, useToast } from "@/ui";
 import { useFailed } from "../routines/hooks";
+import { useUnsavedGuard } from "../settings/parts";
 import { Face } from "../shared/Face";
 import { useMeId, useOrgId } from "../shared/hooks";
 import { goBack, PushedHeader, successHaptic } from "../shared/parts";
@@ -29,7 +30,7 @@ import { AudienceFields, MissingScreen } from "./parts";
 /**
  * Share a dashboard, pushed (ADR 0135): who sees it (the whole workspace, some roles, only you), who edits it (whoever
  * sees it, only you and admins, or some roles), what showing it exposes, and who has access with these choices,
- * person by person. "Save" in the bar.
+ * person by person. "Save" in the bar; leaving with a change not saved asks first.
  */
 export function ShareScreen({ id }: { id: string }) {
   const { t } = useTranslation();
@@ -58,6 +59,8 @@ function Form({ board }: { board: Dashboard }) {
   const roles = useRoles(orgId);
   const share = useShareDashboard(orgId);
   const [draft, setDraft] = useState<AudienceDraft>(() => audienceDraftOf(board));
+  // Who sees or edits it changed and not saved: a back swipe asks first.
+  const leave = useUnsavedGuard(board.kind === "board" && audienceChanged(board, draft));
   const roleList = roles.data?.roles ?? [];
   const people = useMemo(() => {
     const list = [...(members.data ?? [])].sort(
@@ -96,6 +99,7 @@ function Form({ board }: { board: Dashboard }) {
                   ? t("dashboards.share.nowPrivate", { title })
                   : t("dashboards.share.nowRoles", { title, roles: roleNamesOf(draft.roleIds, roleList).join(", ") }),
           });
+          leave();
           goBack();
         },
         onError: failed,

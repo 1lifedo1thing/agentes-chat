@@ -28,7 +28,8 @@ import {
 } from "@agenteschat/ui/widgets/spec";
 import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -50,6 +51,7 @@ import {
 import { router } from "@/ui/navigation";
 import { boardHref } from "../links/logic";
 import { useFailed } from "../routines/hooks";
+import { useUnsavedGuard } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { useDirectory, useNow, useOrgId } from "../shared/hooks";
 import { goBack, PushedHeader, successHaptic, tapHaptic } from "../shared/parts";
@@ -75,6 +77,8 @@ import { BuildingSweep, WidgetBody, WidgetCard } from "./WidgetView";
 /** The longest ask and alert condition the server takes (ADR 0135). */
 const PROMPT_MAX = 2000;
 const CONDITION_MAX = 200;
+/** Between a focused field and the keyboard when the page scrolls it into view (the settings' pages' room). */
+const FIELD_CLEARANCE = 24;
 
 /**
  * "New widget", pushed (never a sheet; ADR 0135). The card is the form: the ask is typed inside the card, with the
@@ -84,7 +88,9 @@ const CONDITION_MAX = 200;
  * ask folds into one line that opens it again, and "Create" confirms the draft. While it builds the card says the step
  * its agent is in and for how long, and Stop ends the build with the ask as it was typed. Changing the ask, the agent or the
  * format after a test marks it stale (Test again); a failed test says why, with Try again. Where it goes sits under the
- * card. Testing again or leaving deletes the draft. `dashboardId`: the board it starts on (`home` for My Home).
+ * card. Testing again or leaving deletes the draft; leaving with an ask typed asks first. The page scrolls a focused field
+ * clear of the keyboard on both systems, and no field takes the focus as it opens (the ask does when its folded line is
+ * tapped). `dashboardId`: the board it starts on (`home` for My Home).
  */
 export function NewWidgetScreen({ dashboardId }: { dashboardId: string }) {
   const { t } = useTranslation();
@@ -120,6 +126,8 @@ export function NewWidgetScreen({ dashboardId }: { dashboardId: string }) {
   // A test being sent, and when the build under way started.
   const [sending, setSending] = useState(false);
   const [since, setSince] = useState(0);
+  // An ask typed and not on a board yet: a back swipe asks before it (and its draft) go.
+  const leave = useUnsavedGuard(text.trim() !== "");
   // The first agent until the person picks one.
   useEffect(() => {
     const first = agents[0];
@@ -278,6 +286,7 @@ export function NewWidgetScreen({ dashboardId }: { dashboardId: string }) {
         onSuccess: () => {
           successHaptic();
           toast({ title: t("dashboards.newWidget.created", { where }), agentId: draft.agentId });
+          leave();
           // From the board it goes on: back to it; else to that board.
           if (destination && destination.id === dashboardId) goBack();
           else router.replace(boardHref(destination?.id));
@@ -628,10 +637,12 @@ export function NewWidgetScreen({ dashboardId }: { dashboardId: string }) {
             : { label: t(`dashboards.newWidget.${barLabel}`), disabled: !ready, onPress: runTest }
         }
       />
-      <ScrollView
+      <KeyboardAwareScrollView
+        style={styles.screen}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="interactive"
+        bottomOffset={FIELD_CLEARANCE}
         contentContainerStyle={[styles.in, { paddingBottom: 24 + insets.bottom }]}
       >
         <WidgetCard
@@ -678,7 +689,7 @@ export function NewWidgetScreen({ dashboardId }: { dashboardId: string }) {
             </GroupedList>
           </>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }

@@ -36,6 +36,7 @@ import {
   useToast,
 } from "@/ui";
 import { useFailed } from "../routines/hooks";
+import { useUnsavedGuard } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { useDirectory, useOrgId } from "../shared/hooks";
 import { goBack, PushedHeader, successHaptic, useSurface } from "../shared/parts";
@@ -61,7 +62,8 @@ const FOOT_GAP = 2;
 /**
  * Organize a board on the phone, pushed from its "…" (ADR 0135): each widget in the board's order, held and dragged
  * to a new place (the others slide out of its way) or moved with Move up and Move down, its size (S, M, L, drawn as
- * the room it takes) and Remove. "Done" saves the order and sizes at once; a home board's tiles keep their places.
+ * the room it takes) and Remove. "Done" saves the order and sizes at once (leaving without it asks first); a home
+ * board's tiles keep their places.
  * `id` is `home` for My Home.
  */
 export function OrganizeScreen({ id }: { id: string }) {
@@ -94,6 +96,13 @@ function Arrange({ board }: { board: Dashboard }) {
   const [items, setItems] = useState<BoardItem[]>(before);
   const home = board.kind === "home";
   const widgets = items.flatMap((item) => (item.type === "widget" ? [item] : []));
+  // A new order or size not saved asks before a back swipe drops it (a widget removed here is already gone).
+  const leave = useUnsavedGuard(
+    layoutChanged(
+      before.filter((x) => items.some((i) => i.id === x.id)),
+      items,
+    ),
+  );
 
   // The rows stand in a column of their own, each at its place in `order` (shared with the UI thread): a drag or a
   // move changes the order and every row springs to its new place; the screen's state follows on the drop.
@@ -149,6 +158,7 @@ function Arrange({ board }: { board: Dashboard }) {
         onSuccess: () => {
           successHaptic();
           toast({ title: t("mobile.dashboards.organize.saved") });
+          leave();
           goBack();
         },
         onError: failed,

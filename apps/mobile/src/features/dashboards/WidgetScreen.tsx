@@ -22,7 +22,7 @@ import { WIDGET_SCHEDULES } from "@agenteschat/ui/widgets/spec";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, RefreshControl, StyleSheet, TextInput, View } from "react-native";
+import { Alert, RefreshControl, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import { KeyboardStickyView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
@@ -47,8 +47,7 @@ import { openComputer } from "../computer/AgentComputerRow";
 import { boardHref, routineHref } from "../links/logic";
 import { useFailed } from "../routines/hooks";
 import { useDirectory, useMeId, useOrgId, usePullRefresh } from "../shared/hooks";
-import { PushedLargeTitle } from "../shared/PushedLargeTitle";
-import { goBack, successHaptic } from "../shared/parts";
+import { FocusLive, goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { useAgentLook, useWidgetAiWay, useWidgetWords } from "./hooks";
 import { HOME, shownWidgetTitle } from "./logic";
 import { usePickMenu } from "./menu";
@@ -60,7 +59,8 @@ import { WidgetCard } from "./WidgetView";
 const HISTORY_SHOWN = 10;
 
 /**
- * A widget, pushed from its board (ADR 0135): the widget big, why it didn't update (with Resolve) or what its refresh
+ * A widget, pushed from its board (ADR 0135), its name in the compact bar (a detail, not a list: no large title) and
+ * not again in its card, which draws just its data: the widget big, why it didn't update (with Resolve) or what its refresh
  * waits for (with Continue now on a pause), its title (renamed on a screen of its own; a person's title is kept: the
  * agent no longer changes it), how it updates (its schedule, picked in the app's picker; the alert and its condition,
  * on a screen of its own; what the agent reads; its routine), the latest updates, "Update now" and the remove; at the
@@ -86,6 +86,7 @@ export function WidgetScreen({ id }: { id: string }) {
 function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => Promise<unknown> }) {
   const { t, i18n } = useTranslation();
   const { colors: c } = useTheme();
+  const insets = useSafeAreaInsets();
   const orgId = useOrgId();
   const toast = useToast();
   const failed = useFailed();
@@ -177,34 +178,44 @@ function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => P
     return notes.filter(Boolean).join(" · ");
   };
   return (
-    <PushedLargeTitle
-      title={shown}
-      grouped
-      keyboard
-      bottomInset={w.canEdit ? 96 : 28}
-      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
-      {...(w.canEdit
-        ? {
-            actions: [
-              {
-                icon: "play" as const,
-                sf: "arrow.clockwise" as const,
-                label: t("widgets.menu.refresh"),
-                disabled: busy,
-                onPress: updateNow,
-              },
-            ],
-          }
-        : {})}
-      dock={w.canEdit ? <AskChange widget={w} name={look.name} /> : null}
-    >
+    <View style={[styles.screen, { backgroundColor: c.grouped }]}>
+      <PushedHeader
+        title={shown}
+        solid={false}
+        grouped
+        {...(w.canEdit
+          ? {
+              actions: [
+                {
+                  icon: "play" as const,
+                  sf: "arrow.clockwise" as const,
+                  label: t("widgets.menu.refresh"),
+                  disabled: busy,
+                  onPress: updateNow,
+                },
+              ],
+            }
+          : {})}
+      />
+      <FocusLive>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
+          // The ask at the bottom: the keyboard drags away with the page, and the page's end clears it.
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: insets.bottom + (w.canEdit ? 96 : 28) }}
+        >
       <View style={styles.in}>
-        {/* Who looks after it, under the title (as a board's line), not as a subtitle in the bar. */}
+        {/* Who looks after it, first under the bar (as a board's line), not as a subtitle in the bar. */}
         <Text variant="footnote" tone="muted" style={styles.cares}>
           {t("mobile.dashboards.widget.caresFor", { name: look.name })}
         </Text>
         <WidgetCard
           big
+          // Its name is the bar's: the card under it draws the data alone.
+          head={null}
           widget={{
             title: w.title,
             kind: w.kind,
@@ -363,7 +374,10 @@ function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => P
           </>
         ) : null}
       </View>
-    </PushedLargeTitle>
+        </ScrollView>
+      </FocusLive>
+      {w.canEdit ? <AskChange widget={w} name={look.name} /> : null}
+    </View>
   );
 }
 
@@ -468,8 +482,9 @@ function AskChange({ widget: w, name }: { widget: WidgetDetail; name: string }) 
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   in: { paddingHorizontal: 16 },
-  cares: { paddingHorizontal: 4, marginTop: -6, marginBottom: 10 },
+  cares: { paddingHorizontal: 4, paddingTop: 8, marginBottom: 10 },
   grow: { flex: 1, minWidth: 0 },
   failure: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 4, paddingTop: 10 },
   // The icon on the reason's first line when it wraps (the button stays centered beside the reason).
