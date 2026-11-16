@@ -1150,7 +1150,7 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
    above the composer. Its room opens and closes in a short glide, so the messages above (kept at the bottom) move with
    it instead of jumping its height. */
 /* Its room opens and closes in a glide: by its cap (`max-height`), since a name that wraps makes it taller. Work and a
-   return share the box: from one to the other the glass, its shadow and its words change in place. */
+   return share the box: from one to the other its words change in place. */
 .channel__composer > .ac-typing:not([data-active="true"]):not([data-rest="true"]) {
   min-height: 0;
   max-height: 0;
@@ -1160,9 +1160,7 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
   .channel__composer > .ac-typing {
     transition:
       max-height 180ms ease-out,
-      margin 180ms ease-out,
-      background-color 180ms ease-out,
-      box-shadow 180ms ease-out;
+      margin 180ms ease-out;
   }
 }
 /* Messages fade out at the list's bottom edge, above the composer: a mask on the list itself, so a hovered
@@ -7380,18 +7378,15 @@ html:not([data-pointer]) .run-continue:focus-visible {
   margin: -4px 0 0;
   color: var(--ink2);
 }
-/* The activity bar while someone works: one low pill as wide as the composer under it, its edges on the composer's
-   (orbit · faces · words · time | Ver ■), the line that says who works while their words wait for the message: a
-   turning phrase, a ticking clock or a control coming and going never moves its edge, the words take what the rest
-   leaves. One line, unless an agent's name needs a second: a name is never cut. Solid: a blur here would redo itself
-   on every frame of what scrolls behind it. */
+/* The activity bar while someone works: one bare line as wide as the composer under it, its edges on the composer's
+   (faces · words · time | Ver), the line that says who works while their words wait for the message: a turning
+   phrase, a ticking clock or a control coming and going never moves its edge, the words take what the rest leaves.
+   No glass, no shadow, no band behind it: the faces and the words say it. One line, unless an agent's name needs a
+   second: a name is never cut. */
 .ac-typing[data-active="true"] {
   min-height: 28px;
   max-height: 64px;
   padding: 2px 8px;
-  border-radius: var(--radius-full);
-  background: var(--glass-solid);
-  box-shadow: var(--e1), var(--top);
 }
 /* Faces opening the pill sit as far in as the globe's ink at the other end. */
 .ac-typing[data-active="true"]:has(> .ac-typing__avatars):not(:has(> .ac-typing__dots, > .ac-pixspin)) {
@@ -7422,16 +7417,16 @@ html:not([data-pointer]) .run-continue:focus-visible {
 .ac-typing[data-rest="true"] > .ac-typing__menu:last-child {
   margin-right: -6px;
 }
-/* At rest (ADR 0037 addendum of 2026-11-13): a return waits here and nobody works. The live pill's box, bare (no glass,
-   no shadow, no sky) and one line high, so work taking it moves nothing: faces · clock · "Ada retorna às 00:32 · her
-   words" · +1 · ⋯. The faces' plates take the conversation's ground. */
+/* At rest (ADR 0037 addendum of 2026-11-13): a return waits here and nobody works. The live line's box, one line high,
+   so work taking it moves nothing: faces · clock · "Ada retorna às 00:32 · her words" · +1 · ⋯. */
 .ac-typing[data-rest="true"] {
   min-height: 28px;
   max-height: 28px;
   padding: 2px 8px 2px 7px;
   border-radius: var(--radius-full);
 }
-.ac-typing[data-rest="true"] .ac-typing__tok {
+/* The faces' plates take the conversation's ground, at work and at rest. */
+.ac-typing .ac-typing__tok {
   background: var(--pane);
 }
 .ac-typing__rest-mark {
@@ -7898,29 +7893,6 @@ html:not([data-pointer]) .sky-welcome__close:focus-visible {
   .sky-welcome__crew {
     display: none;
   }
-}
-
-/* Channel activity bar: a light sweep in the working agent's color */
-.ac-typing[data-active="true"] {
-  position: relative;
-  overflow: hidden;
-}
-.ac-typing[data-active="true"] > :not(.ac-typing__sky) {
-  position: relative;
-}
-.ac-typing__sky {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: inherit;
-}
-/* Dark: the band stays a hint, so the words keep their contrast. */
-[data-theme="dark"] .ac-typing__sky {
-  opacity: 0.45;
-}
-/* A hand-off that waits on someone else (ADR 0095 addendum): its sky quieter still. */
-.ac-typing[data-consult="wait"] .ac-typing__sky {
-  opacity: 0.22;
 }
 
 /* The workspace opening */
