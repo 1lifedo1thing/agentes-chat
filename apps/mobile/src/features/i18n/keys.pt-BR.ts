@@ -2074,6 +2074,8 @@ export const featureKeysPtBR = {
       stop: "Parar de esperar",
       useInstead: "Use {{name}} em vez disso",
       none: "Nenhum outro dispositivo que você pode usar está pronto.",
+      tried: "Tentando {{device}} de novo.",
+      stopped: "A espera por {{device}} parou.",
     },
   },
   connectors: {

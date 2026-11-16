@@ -357,12 +357,22 @@ describe("Ferramentas: Salvar stays at hand", () => {
 describe("a connection's screen and the gallery, at a finger's reach", () => {
   const read = (path: string) => readFileSync(join(import.meta.dir, "../../src/features/connectors", path), "utf8");
 
-  test("renaming opens straight from the bar, with no menu of one item in between", () => {
+  test("renaming opens straight from the bar's own button, with no menu of one item in between", () => {
     const screen = read("ConnectionScreen.tsx");
+    // The system's bar button (`actions`), never a view of ours drawn in the bar.
     expect(screen).toMatch(
-      /<IconButton\s+icon="pen"\s+label=\{t\("connectors\.rename"\)\}\s+onPress=\{\(\) => sheet\.open\(<RenameSheet item=\{item\} \/>\)\}/,
+      /icon: "pen",\s+sf: "pencil",\s+label: t\("connectors\.rename"\),\s+onPress: \(\) => sheet\.open\(<RenameSheet item=\{item\} \/>\),/,
     );
+    expect(screen).toContain("{...(rename ? { actions: [rename] } : {})}");
+    expect(screen).not.toContain("<IconButton");
     expect(screen).not.toContain("chooseAction(");
+  });
+
+  test("a connection that didn't load, or is gone, says so instead of a blank page", () => {
+    const screen = read("ConnectionScreen.tsx");
+    expect(screen).toContain("<LoadFailed onRetry=");
+    expect(screen).toContain('<EmptyState size="inline" title={t("common.gone")} />');
+    expect(screen).not.toContain("ActivityIndicator");
   });
 
   test("the amber line of what waits on you is a 44-point target", () => {

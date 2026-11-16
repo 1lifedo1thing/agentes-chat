@@ -2232,7 +2232,9 @@
       "other": "Użyj innego urządzenia",
       "stop": "Przestań czekać",
       "useInstead": "Użyj zamiast tego {{name}}",
-      "none": "Żadne inne urządzenie, którego możesz użyć, nie jest gotowe."
+      "none": "Żadne inne urządzenie, którego możesz użyć, nie jest gotowe.",
+      "tried": "Ponawiam próbę z {{device}}.",
+      "stopped": "Już nie czekam na {{device}}."
     }
   },
   "connectors": {

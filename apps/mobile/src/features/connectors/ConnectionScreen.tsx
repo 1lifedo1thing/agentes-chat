@@ -19,27 +19,31 @@ import { connectorBrand } from "@agenteschat/client/lib/scopes";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
   Button,
-  fieldText,
+  EmptyState,
   GroupedFooter,
   GroupedHeader,
   GroupedList,
   GroupedRow,
-  IconButton,
+  type HeaderAction,
   Locked,
   Text,
   useToast,
 } from "@/ui";
 import { CoverBarBackdrop, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
+import { RowBones } from "../roles/parts";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useOrgId } from "../shared/hooks";
+import { SheetTitle } from "../shared/PromptForm";
 import { errorHaptic, goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
+import { TextArea } from "../shared/TextArea";
 import { AgentLevelList, DisconnectRow } from "./Access";
 import { ConnectorIcon } from "./ConnectorIcon";
 import { AddressSheet, ConnectSheet } from "./ConnectSheet";
@@ -103,16 +107,22 @@ function Connection({ id }: { id: string }) {
   const waiting = admin && item ? item.pending : 0;
   const actions = item ? accountActions(item) : [];
   const sent = item?.server?.headerNames ?? [];
-  // Renaming, the one thing about the account that isn't a step of its own: the bar's pen opens it straight away (a
-  // menu of one item that opened another sheet was a step for nothing).
-  const more =
-    admin && item && actions.includes("rename") ? (
-      <IconButton icon="pen" label={t("connectors.rename")} onPress={() => sheet.open(<RenameSheet item={item} />)} />
-    ) : undefined;
+  // Renaming, the one thing about the account that isn't a step of its own: the bar's pen (the system's own bar
+  // button) opens it straight away (a menu of one item that opened another sheet was a step for nothing).
+  const rename: HeaderAction | null =
+    admin && item && actions.includes("rename")
+      ? {
+          icon: "pen",
+          sf: "pencil",
+          label: t("connectors.rename"),
+          onPress: () => sheet.open(<RenameSheet item={item} />),
+        }
+      : null;
+  const missing = !item && !loading;
 
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-      <PushedHeader title={name} plate solid={false} {...(more ? { right: more } : {})} />
+      <PushedHeader title={name} plate solid={false} {...(rename ? { actions: [rename] } : {})} />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -139,7 +149,20 @@ function Connection({ id }: { id: string }) {
         </View>
 
         {loading ? (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
+          // The groups' shape while they load: nothing jumps when they come.
+          <View style={styles.body}>
+            <GroupedHeader>{t("mobile.connectors.whoTitle")}</GroupedHeader>
+            <GroupedList>
+              <RowBones />
+              <RowBones name={56} />
+            </GroupedList>
+          </View>
+        ) : missing && (catalog.isError || connections.isError || servers.isError) ? (
+          // Not loaded is not gone: what happened, and the way to ask again.
+          <LoadFailed onRetry={() => void Promise.all([catalog.refetch(), connections.refetch(), servers.refetch()])} />
+        ) : missing ? (
+          // Disconnected meanwhile (here, on the web, by someone else): said, never a blank page.
+          <EmptyState size="inline" title={t("common.gone")} />
         ) : item ? (
           <View style={styles.body}>
             {item.needsReconnect ? (
@@ -259,10 +282,12 @@ function Connection({ id }: { id: string }) {
   );
 }
 
-/** "Renomear": the account's name, which people and agents tell it apart by (its tools keep their names). */
+/**
+ * "Renomear": the account's name, which people and agents tell it apart by (its tools keep their names). The sheet's
+ * title and its line, the sheets' one field on one line, then Salvar.
+ */
 function RenameSheet({ item }: { item: ConnectedItem }) {
   const { t } = useTranslation();
-  const c = useColors();
   const sheet = useSheet();
   const toast = useToast();
   const orgId = useOrgId();
@@ -289,23 +314,24 @@ function RenameSheet({ item }: { item: ConnectedItem }) {
   };
   return (
     <View style={styles.sheet}>
-      <Text variant="title">{t("connectors.renameTitle", { name: itemName(t, item) })}</Text>
-      <Text variant="small" tone="muted">
-        {t("connectors.renameHelp")}
-      </Text>
+      <SheetTitle
+        title={t("connectors.renameTitle", { name: itemName(t, item) })}
+        subtitle={t("connectors.renameHelp")}
+      />
       <Locked when={rename.isPending}>
-        <TextInput
+        <TextArea
           value={label}
           onChangeText={(v) => {
             setLabel(v);
             setError(null);
           }}
+          multiline={false}
+          minHeight={50}
           maxLength={80}
           autoFocus
           returnKeyType="done"
           onSubmitEditing={save}
           accessibilityLabel={t("connectFlow.name")}
-          style={[styles.field, { backgroundColor: c.raised, color: c.ink, borderColor: c.line }]}
         />
       </Locked>
       {error ? <Problem text={error} /> : null}
@@ -317,17 +343,9 @@ function RenameSheet({ item }: { item: ConnectedItem }) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   sheet: { gap: 14 },
-  field: {
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    ...fieldText("body"),
-  },
   head: { alignItems: "center", gap: 8, paddingHorizontal: 24, paddingBottom: 6 },
   center: { textAlign: "center" },
   bold: { fontWeight: "600" },
-  loading: { marginTop: 24 },
   // The pushed screens' 16-point margin (the connectors list and the settings screens use it too).
   body: { paddingHorizontal: 16 },
   problem: { gap: 12 },

@@ -2034,7 +2034,9 @@
       "other": "Ander apparaat gebruiken",
       "stop": "Stoppen met wachten",
       "useInstead": "Gebruik {{name}} in plaats daarvan",
-      "none": "Geen ander apparaat dat je kunt gebruiken is klaar."
+      "none": "Geen ander apparaat dat je kunt gebruiken is klaar.",
+      "tried": "{{device}} wordt opnieuw geprobeerd.",
+      "stopped": "Er wordt niet meer op {{device}} gewacht."
     }
   },
   "connectors": {

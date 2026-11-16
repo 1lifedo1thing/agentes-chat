@@ -44,7 +44,7 @@ import * as Clipboard from "expo-clipboard";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 import Animated, { Easing, FadeIn, ZoomIn } from "react-native-reanimated";
 import { useOrg } from "@/providers/org";
 import {
@@ -62,6 +62,7 @@ import {
 } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors, useOrgId } from "../shared/hooks";
+import { SheetTitle } from "../shared/PromptForm";
 import { errorHaptic, successHaptic } from "../shared/parts";
 import { useSheet } from "../shared/SheetHost";
 import { AgentLevelList, WaitTile } from "./Access";
@@ -141,17 +142,15 @@ export function ConnectSheet({
   );
   return (
     <View style={styles.body}>
-      <View style={styles.head}>
-        <ConnectorIcon def={def} label={service} size={52} check={Boolean(connectionId)} />
-        <View style={styles.grow}>
-          <Text variant="title">{name}</Text>
-          <Text variant="small" tone="muted">
-            {def.via === "composio"
-              ? `${t(`connectors.category.${def.category}`)} · ${t("connectors.composio.via")}`
-              : t(`connectors.category.${def.category}`)}
-          </Text>
-        </View>
-      </View>
+      <SheetTitle
+        leading={<ConnectorIcon def={def} label={service} size={52} check={Boolean(connectionId)} />}
+        title={name}
+        subtitle={
+          def.via === "composio"
+            ? `${t(`connectors.category.${def.category}`)} · ${t("connectors.composio.via")}`
+            : t(`connectors.category.${def.category}`)
+        }
+      />
       <Progress steps={CATALOG_STEPS} step={step} />
       {step === "about" ? (
         <>
@@ -231,23 +230,23 @@ export function AddressSheet({
         : t("mobile.connectors.addressTitle");
   return (
     <View style={styles.body}>
-      <View style={styles.head}>
-        <ConnectorIcon
-          def={item?.def ?? null}
-          image={item?.image}
-          label={connected?.name ?? item?.label ?? "+"}
-          size={52}
-          check={Boolean(connected)}
-        />
-        <View style={styles.grow}>
-          <Text variant="title">{title}</Text>
-          <Text variant="small" tone="muted" numberOfLines={1}>
-            {item?.viaComposio
-              ? t("connectors.composio.via")
-              : (item?.server?.serverUrl ?? t("mobile.connectors.addressHelp"))}
-          </Text>
-        </View>
-      </View>
+      <SheetTitle
+        leading={
+          <ConnectorIcon
+            def={item?.def ?? null}
+            image={item?.image}
+            label={connected?.name ?? item?.label ?? "+"}
+            size={52}
+            check={Boolean(connected)}
+          />
+        }
+        title={title}
+        subtitle={
+          item?.viaComposio
+            ? t("connectors.composio.via")
+            : (item?.server?.serverUrl ?? t("mobile.connectors.addressHelp"))
+        }
+      />
       <Progress steps={ADDRESS_STEPS} step={step} />
       {connected && step === "done" ? (
         <DoneStep connectionId={connected.id} def={null} name={connected.name} onAdjust={() => setStep("who")} />
@@ -284,19 +283,11 @@ export function ServerSheet({ item, start }: { item: ConnectedItem; start?: Step
   const name = itemName(t, item);
   return (
     <View style={styles.body}>
-      <View style={styles.head}>
-        <ConnectorIcon def={item.def} image={item.image} label={name} size={52} check />
-        <View style={styles.grow}>
-          <Text variant="title" numberOfLines={1}>
-            {name}
-          </Text>
-          {item.account ? (
-            <Text variant="small" tone="muted" numberOfLines={1}>
-              {item.account}
-            </Text>
-          ) : null}
-        </View>
-      </View>
+      <SheetTitle
+        leading={<ConnectorIcon def={item.def} image={item.image} label={name} size={52} check />}
+        title={name}
+        {...(item.account ? { subtitle: item.account } : {})}
+      />
       <Progress steps={ADDRESS_STEPS} step={step} />
       {step === "done" ? (
         <DoneStep connectionId={item.id} def={item.def} name={name} onAdjust={() => setStep("who")} />
@@ -816,22 +807,12 @@ function ConnectStep({
                     accessibilityLabel={keyLabel}
                     style={[field, styles.grow]}
                   />
-                  <Pressable
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    label={t("mobile.connectors.paste")}
                     onPress={() => void Clipboard.getStringAsync().then((v) => setKey(v.trim()))}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("mobile.connectors.paste")}
-                    // 40 tall beside the field: 44 to the finger.
-                    hitSlop={4}
-                    style={({ pressed }) => [
-                      styles.paste,
-                      { borderColor: c.line },
-                      pressed ? { backgroundColor: c.sunken } : null,
-                    ]}
-                  >
-                    <Text variant="small" style={styles.bold}>
-                      {t("mobile.connectors.paste")}
-                    </Text>
-                  </Pressable>
+                  />
                 </View>
               </Locked>
               {canHeaders ? (
@@ -913,7 +894,6 @@ export function Progress({ steps, step }: { steps: Step[]; step: Step }) {
 
 const styles = StyleSheet.create({
   body: { gap: 14 },
-  head: { flexDirection: "row", alignItems: "center", gap: 12 },
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
   label: { letterSpacing: 0.3 },
@@ -931,12 +911,6 @@ const styles = StyleSheet.create({
     ...fieldText("body"),
   },
   keyRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  paste: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
   note: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
   // A neutral card with a colored badge: the outcome of connecting (`Problem` draws what went wrong the same).
   notice: {

@@ -2128,7 +2128,9 @@
       "other": "Utiliser un autre appareil",
       "stop": "Arrêter d'attendre",
       "useInstead": "Utiliser plutôt {{name}}",
-      "none": "Aucun autre appareil que vous pouvez utiliser n'est prêt."
+      "none": "Aucun autre appareil que vous pouvez utiliser n'est prêt.",
+      "tried": "Nouvel essai avec {{device}}.",
+      "stopped": "On n'attend plus {{device}}."
     }
   },
   "connectors": {

@@ -96,10 +96,13 @@ export function SuggestPersonScreen() {
           />
         </View>
       </GroupedList>
+      {/* Under the address, as the forms' footers: in red, read out as it comes. */}
       {error ? (
-        <Text variant="footnote" tone="danger" style={styles.error} accessibilityLiveRegion="polite">
-          {error}
-        </Text>
+        <GroupedFooter>
+          <Text variant="footnote" tone="danger" accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        </GroupedFooter>
       ) : null}
       <GroupedHeader>
         {t("common.joinSentences", { a: t("members.suggest.who"), b: t("members.dialog.optional") })}
@@ -120,5 +123,4 @@ export function SuggestPersonScreen() {
 const styles = StyleSheet.create({
   field: { minHeight: GROUPED_ROW.minHeight, paddingHorizontal: GROUPED_ROW.padX, justifyContent: "center" },
   input: { paddingVertical: GROUPED_ROW.tallPadY, paddingHorizontal: 0 },
-  error: { paddingTop: 8, paddingHorizontal: 16 },
 });

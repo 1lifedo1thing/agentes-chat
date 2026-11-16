@@ -6,7 +6,7 @@ import { ComputerScreen } from "@/features/computer/ComputerScreen";
 import { FocusLive } from "@/features/shared/parts";
 
 /**
- * An agent's computer, full screen (presentation set in `_layout`; from its profile's Computador). `seat=shared`: the
+ * An agent's computer, pushed with its bar (options set in `_layout`; from its profile's Computador). `seat=shared`: the
  * right hand's shared place on the workspace's computer (ADR 0175), which everything on the screen then reads and
  * drives instead of the viewer's own.
  */

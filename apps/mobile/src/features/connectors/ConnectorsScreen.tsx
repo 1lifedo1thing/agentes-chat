@@ -37,15 +37,15 @@ import {
   LineIcon,
   Locked,
   PressScale,
+  ROW_PRESS_DELAY,
   SearchField,
   SectionHeader,
   SkeletonList,
   Text,
   useReducedMotion,
 } from "@/ui";
-import { AgentFace } from "../shared/Face";
-import { firstUseCopy } from "../shared/first-use";
-import { useColors, useDirectory, useOrgId, usePullRefresh } from "../shared/hooks";
+import { FirstUse, LoadFailed } from "../shared/FirstUse";
+import { useColors, useOrgId, usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { useSurface } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
@@ -194,17 +194,8 @@ function Gallery() {
         // Loading: the rows' own shape, never a spinner.
         <SkeletonList rows={4} />
       ) : catalog.isError && !catalog.data ? (
-        <View style={styles.center}>
-          <Text tone="muted" style={styles.centerText}>
-            {t("mobile.connectors.loadFailed")}
-          </Text>
-          <Button
-            variant="secondary"
-            size="sm"
-            label={t("mobile.common.retry")}
-            onPress={() => void catalog.refetch()}
-          />
-        </View>
+        // A catalog that didn't load is not an empty one: what happened, and the way to ask again.
+        <LoadFailed onRetry={() => void catalog.refetch()} />
       ) : (
         <>
           {/* A pasted address connects a server by it, from the search itself. */}
@@ -256,7 +247,9 @@ function Gallery() {
                   ) : null}
                 </>
               ) : null}
-              {connectedCount === 0 ? <EmptyHint acts={admin} /> : null}
+              {/* Nothing connected yet: what connecting gives, as every empty place says it. No button: the
+                  catalog right under it is the next step (who can't connect is told who does). */}
+              {connectedCount === 0 ? <FirstUse place="connectors" acts={admin} size="inline" /> : null}
             </>
           )}
           {!searching && suggestions.length > 0 ? (
@@ -342,37 +335,6 @@ function Gallery() {
 }
 
 /**
- * Nothing connected yet: who would use it, in a line, with the real faces. No button: the catalog right under it is
- * the next step (who can't connect is told who does).
- */
-function EmptyHint({ acts }: { acts: boolean }) {
-  const { t } = useTranslation();
-  const copy = firstUseCopy("connectors", acts);
-  const c = useColors();
-  const dir = useDirectory();
-  const faces = dir.agents.slice(0, 3);
-  return (
-    <View style={[styles.empty, { borderColor: c.line }]}>
-      <View style={styles.faces}>
-        {faces.map((a, i) => (
-          <View key={a.id} style={i > 0 ? styles.overlap : undefined}>
-            <AgentFace agentId={a.id} size={34} live={false} />
-          </View>
-        ))}
-      </View>
-      <View style={styles.hintText}>
-        <Text variant="body" style={styles.bold}>
-          {t(copy.title)}
-        </Text>
-        <Text variant="small" tone="muted">
-          {t(copy.text)}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-/**
  * What waits on the person, in one line under the connected row, in the waiting color: tools to decide ("2
  * ferramentas precisam de você · Serviço T"), a sign-in that stopped, tools that couldn't be read. The first
  * service names what, every one waiting is named after it. A tap opens where it is decided.
@@ -399,11 +361,15 @@ function WaitLine({
         : "";
   const names = items.map((i) => itemName(t, i)).join(", ");
   return (
-    <Pressable
+    // It opens a screen: the press shows, with no haptic (plain navigation).
+    <PressScale
+      haptic={false}
+      fill={false}
       onPress={() => onOpen(first)}
       accessibilityRole="button"
       accessibilityLabel={`${what} · ${names}`}
-      style={({ pressed }) => [styles.wait, pressed && styles.pressed]}
+      style={styles.waitPress}
+      contentStyle={styles.wait}
     >
       <LineIcon variant="small" name="wait" size={16} color={c.amber} />
       <Text variant="small" numberOfLines={1} style={styles.grow}>
@@ -414,7 +380,7 @@ function WaitLine({
           {` · ${names}`}
         </Text>
       </Text>
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -513,21 +479,27 @@ function MiniTile({ onPress, label, children }: { onPress: () => void; label: st
 function AddressRow({ url, onPress }: { url: string; onPress: () => void }) {
   const { t } = useTranslation();
   const surface = useSurface();
+  // The suggestions' own card, with "Conectar" where the eye lands: it opens the sheet, so no haptic of its own.
   return (
-    <Pressable
+    <PressScale
+      haptic={false}
+      fill={false}
       onPress={onPress}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.card, styles.address, surface, pressed && styles.pressed]}
+      accessibilityLabel={`${t("connectors.otherConnect")}. ${url}`}
+      style={[styles.card, styles.address, surface]}
+      contentStyle={styles.cardIn}
     >
-      <View style={[styles.cardText, styles.addressText]}>
+      <View style={styles.grow}>
         <Text variant="body" numberOfLines={1} style={styles.bold}>
           {t("connectors.otherConnect")}
         </Text>
-        <Text variant="small" tone="muted" numberOfLines={1}>
+        <Text variant="subhead" tone="muted" numberOfLines={1}>
           {url}
         </Text>
       </View>
-    </Pressable>
+      <ConnectWord />
+    </PressScale>
   );
 }
 
@@ -612,8 +584,10 @@ function ServiceRow({
 }) {
   const c = useColors();
   return (
+    // A row of a list: it lights as the settings' rows do, a beat late so a scroll never flashes it.
     <Pressable
       onPress={onPress}
+      unstable_pressDelay={ROW_PRESS_DELAY}
       accessibilityRole="button"
       accessibilityLabel={`${name}. ${text}`}
       style={({ pressed }) => [styles.service, pressed && { backgroundColor: c.sunken }]}
@@ -637,8 +611,6 @@ const styles = StyleSheet.create({
   search: { paddingHorizontal: 16, paddingBottom: 6 },
   note: { paddingHorizontal: 16, paddingTop: 16 },
   usage: { paddingHorizontal: 16, paddingBottom: 8 },
-  center: { alignItems: "center", gap: 12, paddingVertical: 48, paddingHorizontal: 24 },
-  centerText: { textAlign: "center" },
   row: { gap: 16, paddingHorizontal: 16, paddingBottom: 6 },
   mini: { width: 64 },
   miniIn: { alignItems: "center", gap: 6 },
@@ -653,29 +625,15 @@ const styles = StyleSheet.create({
   },
   // On the margin of 16, under the connected row: one line with its icon beside it, its row a finger's 44 points tall
   // (the line alone was a 20-point target), so the space above and below it is part of the tap.
-  wait: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 16, minHeight: 44 },
-  // A column: the team's faces on top, then the line, its text and "Pelo endereço" (in a row the faces
-  // took a third of the width and the text wrapped into a narrow block).
-  empty: {
-    gap: 10,
-    marginHorizontal: 16,
-    marginTop: 8,
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  faces: { flexDirection: "row" },
-  overlap: { marginLeft: -8 },
+  waitPress: { marginHorizontal: 16 },
+  wait: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
-  hintText: { gap: 2 },
   suggestions: { gap: 12, paddingHorizontal: 16 },
   filters: { paddingBottom: 4 },
   // The app's card with its cut corner (no hairline box), as every card standing on the page.
   card: { borderRadius: 20, borderBottomLeftRadius: 6 },
   cardIn: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },
-  cardText: { flex: 1, minWidth: 0, paddingVertical: 12, paddingRight: 14 },
-  pressed: { opacity: 0.85 },
   list: { paddingTop: 4 },
   service: {
     flexDirection: "row",
@@ -704,6 +662,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  address: { marginHorizontal: 16, marginTop: 8, flexDirection: "row", alignItems: "center", overflow: "hidden" },
-  addressText: { paddingLeft: 16 },
+  address: { marginHorizontal: 16, marginTop: 8 },
 });

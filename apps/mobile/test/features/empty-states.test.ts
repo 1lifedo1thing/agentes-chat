@@ -53,7 +53,7 @@ describe("who gets the first step", () => {
     ["new/ChatTargets.tsx", 'place="people"', 'mayCreate(org, "invite")'],
     ["settings/AccessScreen.tsx", 'place="access"', "acts={addsConnectors(org)}"],
     ["devices/DevicesScreen.tsx", 'firstUseCopy("computers", pairs)', 'can(org, "pair_computers")'],
-    ["connectors/ConnectorsScreen.tsx", 'firstUseCopy("connectors", acts)', "<EmptyHint acts={admin} />"],
+    ["connectors/ConnectorsScreen.tsx", 'place="connectors"', "acts={admin}"],
   ])("%s gates %s on the permission", (file, place, gate) => {
     const code = source(file);
     expect(code).toContain(place);

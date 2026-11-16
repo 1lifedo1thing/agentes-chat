@@ -1935,7 +1935,9 @@
       "other": "Pakai perangkat lain",
       "stop": "Berhenti menunggu",
       "useInstead": "Pakai {{name}} saja",
-      "none": "Tidak ada perangkat lain yang bisa kamu pakai yang sedang siap."
+      "none": "Tidak ada perangkat lain yang bisa kamu pakai yang sedang siap.",
+      "tried": "Mencoba {{device}} lagi.",
+      "stopped": "Tidak lagi menunggu {{device}}."
     }
   },
   "connectors": {
