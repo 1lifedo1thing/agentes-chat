@@ -1,5 +1,5 @@
 {
-  "id": "54044997-78a6-4862-aa88-79b287c2d4aa",
+  "id": "126e2bab-f67f-44d6-998c-e7c1bba9243e",
   "prevId": "eefbf165-a463-4baf-9f94-b3c1e2cdfdc9",
   "version": "7",
   "dialect": "postgresql",
@@ -4054,6 +4054,22 @@
           ],
           "isUnique": false,
           "where": "\"messages\".\"author_agent_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "messages_agent_run_id_index": {
+          "name": "messages_agent_run_id_index",
+          "columns": [
+            {
+              "expression": "agent_run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"messages\".\"agent_run_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -8859,154 +8875,6 @@
           "nullsNotDistinct": false,
           "columns": [
             "token_hash"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.support_requests": {
-      "name": "support_requests",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "org_id": {
-          "name": "org_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "ref": {
-          "name": "ref",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "about_kind": {
-          "name": "about_kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "message_id": {
-          "name": "message_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "text": {
-          "name": "text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "about": {
-          "name": "about",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "support_requests_org_id_created_at_index": {
-          "name": "support_requests_org_id_created_at_index",
-          "columns": [
-            {
-              "expression": "org_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "support_requests_user_id_index": {
-          "name": "support_requests_user_id_index",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "support_requests_org_id_organizations_id_fk": {
-          "name": "support_requests_org_id_organizations_id_fk",
-          "tableFrom": "support_requests",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "support_requests_user_id_users_id_fk": {
-          "name": "support_requests_user_id_users_id_fk",
-          "tableFrom": "support_requests",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "support_requests_orgId_source_ref_unique": {
-          "name": "support_requests_orgId_source_ref_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "org_id",
-            "source",
-            "ref"
           ]
         }
       },
@@ -14938,7 +14806,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "agent_budget_periods_org_id_period_start_index": {
+          "name": "agent_budget_periods_org_id_period_start_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "period_start",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "agent_budget_periods_org_id_agent_id_agents_org_id_id_fk": {
           "name": "agent_budget_periods_org_id_agent_id_agents_org_id_id_fk",
@@ -15620,6 +15510,28 @@
           "concurrently": true,
           "method": "btree",
           "with": {}
+        },
+        "agent_run_steps_tool_call_run_idx": {
+          "name": "agent_run_steps_tool_call_run_idx",
+          "columns": [
+            {
+              "expression": "run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "seq",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_run_steps\".\"kind\" = 'tool_call'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -15983,6 +15895,28 @@
           "method": "btree",
           "with": {}
         },
+        "agent_runs_org_id_brain_session_id_index": {
+          "name": "agent_runs_org_id_brain_session_id_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "brain_session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_runs\".\"brain_session_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "agent_runs_waiting_machine_idx": {
           "name": "agent_runs_waiting_machine_idx",
           "columns": [
@@ -16115,7 +16049,24 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "agent_scopes_connection_id_index": {
+          "name": "agent_scopes_connection_id_index",
+          "columns": [
+            {
+              "expression": "connection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_scopes\".\"connection_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "agent_scopes_org_id_agent_id_agents_org_id_id_fk": {
           "name": "agent_scopes_org_id_agent_id_agents_org_id_id_fk",
