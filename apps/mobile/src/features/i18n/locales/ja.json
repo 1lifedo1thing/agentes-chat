@@ -443,13 +443,6 @@
     },
     "swipeReply": "右にスワイプして返信",
     "intent": {
-      "suggest": {
-        "merge": "そのままマージして",
-        "review": "先に{{name}}にレビューを頼んで",
-        "seeChange": "何が変わったか見せて",
-        "summarize": "3つのポイントでまとめて",
-        "nextStep": "次のステップは？"
-      },
       "arrived": "{{name}}がチームに加わりました",
       "meet": "{{name}}との最初の会話",
       "roleIntro": "チームの{{role}}です。普段の言葉で頼んでください。",

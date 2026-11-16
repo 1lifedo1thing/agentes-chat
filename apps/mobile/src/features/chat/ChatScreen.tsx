@@ -151,7 +151,7 @@ import {
   useTheme,
   useToast,
 } from "@/ui";
-import { ComposerFloat, createComposerFloat, PILLS_ROOM } from "@/ui/Composer";
+import { ComposerFloat, createComposerFloat } from "@/ui/Composer";
 import { router } from "@/ui/navigation";
 import { AgentSetupIntro, useSetupSteps } from "../agents/setup/SetupCard";
 import { usePlanHold } from "../ai/parts";
@@ -204,7 +204,6 @@ import { DmComputerButton } from "./DmComputerButton";
 import { EventLine } from "./EventLine";
 import { FirstDay } from "./FirstDay";
 import { HeaderPill } from "./HeaderPill";
-import { composerSuggestions } from "./intent";
 import { IssueTakenLine } from "./issue-work";
 import { browsingRuns, WorkingLine } from "./LiveRows";
 import { useChatLive } from "./live";
@@ -1970,25 +1969,6 @@ function Chat({
       ? // One line on the phone: the right hand's "nada muda sem você" doesn't fit beside its name.
         t("mobile.chat.messageTo", { name: dm.with.name })
       : t("mobile.chat.messageIn", { channel: channel ? `#${channel.name}` : "" });
-  // What to say next comes from the latest card: a code change, a file; none
-  // while the agent works, asks or waits for an approval.
-  const people = useMemo(
-    () => [...dir.memberById.values()].map((p) => ({ id: p.userId, name: p.name })),
-    [dir.memberById],
-  );
-  const suggestionsNow = useMemo(
-    () =>
-      composerSuggestions({ messages: list, meId, people }).map((x) => ({
-        icon: x.icon,
-        label: t(`mobile.chat.intent.suggest.${x.key}`, x.values ?? {}),
-      })),
-    [list, meId, people, t],
-  );
-  // The same array while the pills say the same: every message rebuilds them, and the field is drawn only for what it
-  // shows (`ChatComposer`).
-  const suggestionsKey = suggestionsNow.map((s) => `${s.icon}:${s.label}`).join("|");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `suggestionsKey` stands for the pills
-  const suggestions = useMemo(() => suggestionsNow, [suggestionsKey]);
   rowsRef.current = rows;
   const pinned = mission && isOpenMission(mission) ? mission : null;
   // Something is pinned here: its lines wait above the first message (`PinnedLines`).
@@ -2298,20 +2278,13 @@ function Chat({
   // The composer floats over the list's bottom and rides the keyboard (KeyboardStickyView); the list's end
   // inset is the composer's height plus the keyboard, moved on the UI thread frame by frame (also while the
   // keyboard is dragged down interactively).
-  // The "@" picker and the suggestion pills float above the box, outside what is measured (`ComposerFloat`): they come
-  // and go as the person types and the conversation stays where it is. While there are suggestions the list keeps their
-  // row's room at its end (`PILLS_ROOM`), so the pills never cover its last lines and typing, which hides them, moves
-  // nothing; the room goes with the suggestions (a reply, a message sent), when the list moves anyway.
+  // The "@" picker floats above the box, outside what is measured (`ComposerFloat`): it comes and goes as the person
+  // types and the conversation stays where it is. No suggestion pills over the conversation: always there, they read
+  // as noise (the owner had them removed).
   const composerRef = useRef<ComponentRef<typeof View>>(null);
   const [composerFloat] = useState(createComposerFloat);
-  const composerShown =
-    !peeking && member && !org?.deletion && !(dmAgent && !canTalk(dmAgent)) && channel?.can?.post !== false;
-  const pillsRoom = composerShown && suggestions.length > 0 ? PILLS_ROOM : 0;
   const boxHeight = useRef(0);
   const endInset = useSharedValue(0);
-  useEffect(() => {
-    endInset.value = boxHeight.current + pillsRoom;
-  }, [endInset, pillsRoom]);
   // On iOS the keyboard library moves what rides the keyboard (the composer's dock) when a move starts and while
   // the keyboard is dragged, and never when the move ends, while the list takes its room from the start and the
   // end. A last event that wasn't the final state left the box up at the keyboard's height over a list that had
@@ -2327,26 +2300,50 @@ function Chat({
     },
     [],
   );
+  // And the system's own word once the keyboard is fully shown or gone: a drag down that let go mid-way could end with
+  // no final move at all, the dock left floating over the conversation with the keyboard gone (seen on a phone). The
+  // system tells JS when the keyboard finished hiding or showing; that settles both.
+  useEffect(() => {
+    const settle = (height: number) => {
+      keyboardAt.height.value = -height;
+      keyboardAt.progress.value = height > 0 ? 1 : 0;
+    };
+    const hide = Keyboard.addListener("keyboardDidHide", () => settle(0));
+    const show = Keyboard.addListener("keyboardDidShow", (e) => settle(e.endCoordinates.height));
+    return () => {
+      hide.remove();
+      show.remove();
+    };
+  }, [keyboardAt]);
   const [composerHeight, setComposerHeight] = useState(0);
   // Read while laying out the box: at the conversation's end and following it (not held where the person reads).
   const followingEnd = useRef(true);
   followingEnd.current = atEnd && !readHold;
+  // Whether the conversation follows its end right now. The screen's `atEnd` is false while the list is still on its
+  // way down to a message just sent; the list's own follow (`maintainScrollAtEnd`) is on then, and is what counts.
+  const followsEnd = () => {
+    if (readHold) return false;
+    if (followingEnd.current) return true;
+    const state = listRef.current?.getState();
+    return !!state && (state.isFollowingEnd || state.isAtEnd);
+  };
   const onComposerBoxLayout = (e: LayoutChangeEvent) => {
     const height = e.nativeEvent.layout.height;
     const grew = boxHeight.current > 0 && height > boxHeight.current + 0.5;
     boxHeight.current = height;
-    endInset.value = height + pillsRoom;
+    endInset.value = height;
     setComposerHeight(height);
     // The dock grew under the conversation (who is working, the reply bar, a taller field) while it follows its end.
-    // The list shifts by the grown inset itself when it rests at its end (`keyboardLiftBehavior="whenAtEnd"`); one
-    // still scrolling down (a sent message landing as an agent starts thinking) is left short, the dock over its last
-    // lines. Two frames on, once the inset is in, only a list left short goes on to the end: the one place that does,
-    // since a second scroll over the list's own shift jumped.
-    if (grew && followingEnd.current)
+    // The libraries cover only part of it: the keyboard's scroll view shifts the list by the grown inset only when it
+    // rests at its end, and with the keyboard up the list learns the new inset without following it. A message just
+    // sent is still scrolling down when an agent starts thinking, so its last lines stayed under the working line.
+    // Two frames on, once the inset is in (the list's distance counts it), a list left short goes on to the end: one
+    // that the scroll view already shifted is at its end and isn't moved twice.
+    if (grew && followsEnd())
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
           const state = listRef.current?.getState();
-          if (followingEnd.current && state && state.distanceFromEnd > END_SLACK)
+          if (followsEnd() && state && state.distanceFromEnd > END_SLACK)
             void listRef.current?.scrollToEnd({ animated: true });
         }),
       );
@@ -2782,8 +2779,8 @@ function Chat({
                   <ToLatest unseen={unseen} onPress={toEnd} />
                 </View>
               ) : null}
-              {/* The "@" picker and the suggestion pills, right above the box and outside it: the box's height insets
-                  the list, and these come and go with each key typed. */}
+              {/* The "@" picker, right above the box and outside it: the box's height insets the list, and the picker
+                  comes and goes with each key typed. */}
               <View style={styles.float} pointerEvents="box-none">
                 <ComposerFloat slot={composerFloat} />
               </View>
@@ -2858,7 +2855,6 @@ function Chat({
                     media={null}
                     draftKey={threadId ? `${channelId}:${threadId}` : channelId}
                     inputNativeID={COMPOSER_INPUT_ID}
-                    {...(suggestions.length > 0 ? { suggestions } : {})}
                     float={composerFloat}
                     mentionAt={refQuery}
                     insertMention={insertRef}

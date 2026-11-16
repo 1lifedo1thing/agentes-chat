@@ -459,13 +459,6 @@
     },
     "swipeReply": "Veeg naar rechts om te antwoorden",
     "intent": {
-      "suggest": {
-        "merge": "Ga je gang en merge",
-        "review": "Vraag {{name}} om het eerst na te kijken",
-        "seeChange": "Laat me zien wat er veranderd is",
-        "summarize": "Vat het samen in 3 punten",
-        "nextStep": "Wat is de volgende stap?"
-      },
       "arrived": "{{name}} is bij het team gekomen",
       "meet": "Je eerste gesprek met {{name}}",
       "roleIntro": "{{role}} in je team. Vraag het in gewone woorden.",

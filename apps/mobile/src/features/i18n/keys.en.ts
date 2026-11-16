@@ -492,13 +492,6 @@ export const featureKeysEn = {
     swipeReply: "Swipe right to reply",
     // intentional: chat
     intent: {
-      suggest: {
-        merge: "Go ahead and merge",
-        review: "Ask {{name}} to review first",
-        seeChange: "Show me what changed",
-        summarize: "Sum it up in 3 points",
-        nextStep: "What's the next step?",
-      },
       arrived: "{{name}} joined the team",
       meet: "Your first conversation with {{name}}",
       roleIntro: "{{role}} on your team. Ask in plain words.",

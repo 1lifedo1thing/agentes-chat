@@ -443,13 +443,6 @@
     },
     "swipeReply": "Geser ke kanan untuk membalas",
     "intent": {
-      "suggest": {
-        "merge": "Silakan merge",
-        "review": "Minta {{name}} meninjau dulu",
-        "seeChange": "Tunjukkan apa yang berubah",
-        "summarize": "Rangkum dalam 3 poin",
-        "nextStep": "Apa langkah berikutnya?"
-      },
       "arrived": "{{name}} bergabung dengan tim",
       "meet": "Percakapan pertamamu dengan {{name}}",
       "roleIntro": "{{role}} di timmu. Minta dengan kata-kata biasa.",

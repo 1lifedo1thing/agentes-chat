@@ -443,13 +443,6 @@
     },
     "swipeReply": "向右滑动以回复",
     "intent": {
-      "suggest": {
-        "merge": "直接合并吧",
-        "review": "先让 {{name}} 审阅",
-        "seeChange": "给我看看改了什么",
-        "summarize": "用 3 点总结一下",
-        "nextStep": "下一步是什么？"
-      },
       "arrived": "{{name}} 加入了团队",
       "meet": "你和 {{name}} 的第一次对话",
       "roleIntro": "你团队的{{role}}。用平常的话提问就行。",

@@ -459,13 +459,6 @@
     },
     "swipeReply": "Yanıtlamak için sağa kaydırın",
     "intent": {
-      "suggest": {
-        "merge": "Birleştirebilirsin",
-        "review": "Önce {{name}} incelesin",
-        "seeChange": "Neyin değiştiğini göster",
-        "summarize": "3 maddede özetle",
-        "nextStep": "Sonraki adım ne?"
-      },
       "arrived": "{{name}} ekibe katıldı",
       "meet": "{{name}} ile ilk sohbetiniz",
       "roleIntro": "Ekibinizde {{role}}. Sade bir dille isteyin.",

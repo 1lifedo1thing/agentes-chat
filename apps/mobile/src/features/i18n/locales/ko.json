@@ -443,13 +443,6 @@
     },
     "swipeReply": "오른쪽으로 밀어서 답장",
     "intent": {
-      "suggest": {
-        "merge": "머지 진행해 줘",
-        "review": "{{name}}에게 먼저 검토 요청해 줘",
-        "seeChange": "무엇이 바뀌었는지 보여 줘",
-        "summarize": "3가지로 요약해 줘",
-        "nextStep": "다음 단계는 뭐야?"
-      },
       "arrived": "{{name}}이(가) 팀에 합류했어요",
       "meet": "{{name}}와(과)의 첫 대화",
       "roleIntro": "팀의 {{role}}이에요. 편하게 말로 요청하세요.",

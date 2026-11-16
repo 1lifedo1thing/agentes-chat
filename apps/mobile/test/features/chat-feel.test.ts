@@ -89,12 +89,6 @@ describe("the conversation's rows", () => {
     expect(chat).toContain("shownRef.current = keepSameRows(shownRef.current, next);");
   });
 
-  test("the pills are new only when what they say changes: the field isn't redrawn by every message", () => {
-    const chat = src("features/chat/ChatScreen.tsx");
-    expect(chat).toContain(`const suggestionsKey = suggestionsNow.map((s) => \`\${s.icon}:\${s.label}\`).join("|");`);
-    expect(chat).toContain("const suggestions = useMemo(() => suggestionsNow, [suggestionsKey]);");
-  });
-
   test("a new row rises in on the strong ease-out", () => {
     const chat = src("features/chat/ChatScreen.tsx");
     expect(chat).toContain("const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);");
@@ -173,11 +167,10 @@ describe("the composer", () => {
     expect(float).toBeGreaterThan(button);
     expect(chat.indexOf("ref={composerRef}", dock)).toBeGreaterThan(float);
     expect(chat).toContain("float={composerFloat}");
-    // While there are suggestions the list keeps the pills' room, so they never cover its last lines.
-    expect(composer).toContain("export const PILLS_ROOM = PILL + PILLS_GAP;");
-    expect(composer).toContain("pill: { height: PILL, borderRadius: 999 },");
-    expect(chat).toContain("const pillsRoom = composerShown && suggestions.length > 0 ? PILLS_ROOM : 0;");
-    expect(chat).toContain("endInset.value = height + pillsRoom;");
+    // No suggestion pills over the conversation: the list's end inset is the box alone.
+    expect(chat).not.toContain("composerSuggestions");
+    expect(chat).not.toContain("PILLS_ROOM");
+    expect(chat).toContain("endInset.value = height;");
     expect(chat).toContain("contentInsetEndAdjustment={endInset}");
   });
 

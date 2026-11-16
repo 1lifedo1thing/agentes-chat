@@ -491,13 +491,6 @@
     },
     "swipeReply": "Przesuń w prawo, aby odpowiedzieć",
     "intent": {
-      "suggest": {
-        "merge": "Śmiało, zrób merge",
-        "review": "Poproś najpierw o przegląd: {{name}}",
-        "seeChange": "Pokaż mi, co się zmieniło",
-        "summarize": "Podsumuj to w 3 punktach",
-        "nextStep": "Jaki jest następny krok?"
-      },
       "arrived": "{{name}} dołącza do zespołu",
       "meet": "Twoja pierwsza rozmowa z: {{name}}",
       "roleIntro": "{{role}} w twoim zespole. Pytaj zwykłymi słowami.",

@@ -1115,21 +1115,6 @@
   "chat.swipeReply": {
     "value": "Swipe right to reply"
   },
-  "chat.intent.suggest.merge": {
-    "value": "Go ahead and merge"
-  },
-  "chat.intent.suggest.review": {
-    "value": "Ask {{name}} to review first"
-  },
-  "chat.intent.suggest.seeChange": {
-    "value": "Show me what changed"
-  },
-  "chat.intent.suggest.summarize": {
-    "value": "Sum it up in 3 points"
-  },
-  "chat.intent.suggest.nextStep": {
-    "value": "What's the next step?"
-  },
   "chat.intent.arrived": {
     "value": "{{name}} joined the team"
   },

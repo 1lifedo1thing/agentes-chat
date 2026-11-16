@@ -477,13 +477,6 @@ export const featureKeysPtBR = {
     swipeReply: "Deslize para a direita para responder",
     // intentional: chat
     intent: {
-      suggest: {
-        merge: "Pode fazer o merge",
-        review: "Pede para {{name}} revisar antes",
-        seeChange: "Me mostra o que mudou",
-        summarize: "Resume em 3 pontos",
-        nextStep: "Qual é o próximo passo?",
-      },
       arrived: "{{name}} chegou na equipe",
       meet: "Sua primeira conversa com {{name}}",
       roleIntro: "{{role}} na sua equipe. Peça em palavras simples.",
