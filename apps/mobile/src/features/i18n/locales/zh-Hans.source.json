@@ -3300,9 +3300,6 @@
   "drive.search": {
     "value": "Search the Drive"
   },
-  "drive.types": {
-    "value": "File types"
-  },
   "drive.type.all": {
     "value": "All"
   },
@@ -3344,9 +3341,6 @@
   },
   "drive.noResults": {
     "value": "Nothing with these filters."
-  },
-  "drive.loadFailed": {
-    "value": "Couldn't load the Drive."
   },
   "drive.more": {
     "value": "Show more"

@@ -160,7 +160,10 @@ export function PageWait({
           {t("mobile.files.loadFailed")}
         </Text>
       </View>
-      <Button variant="secondary" size="sm" label={t("mobile.common.retry")} loading={retrying} onPress={onRetry} />
+      {/* A row of its own: the button keeps to its width, centred under the words. */}
+      <View style={styles.retry}>
+        <Button variant="secondary" size="sm" label={t("mobile.common.retry")} loading={retrying} onPress={onRetry} />
+      </View>
     </View>
   );
 }
@@ -399,6 +402,7 @@ function OwnZoom({ picture, screen, max, pull, enabled, reduced, onTap, onZoom, 
 
 const styles = StyleSheet.create({
   center: { alignItems: "center", justifyContent: "center" },
+  retry: { flexDirection: "row" },
   failed: { gap: 16, paddingHorizontal: 32 },
   failedWords: { gap: 10 },
   failedText: { textAlign: "center" },

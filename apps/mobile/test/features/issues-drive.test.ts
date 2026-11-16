@@ -689,10 +689,11 @@ describe("an agent picked for a task that couldn't start", () => {
 });
 
 describe("the Drive past what loaded", () => {
-  test("Mostrar mais brings the server's next page once the loaded files are shown", () => {
+  test("Mostrar mais shows more, and the server's next page comes by itself once the loaded files are shown", () => {
     const screen = readFileSync(join(import.meta.dir, "../../src/features/drive/DriveScreen.tsx"), "utf8");
-    expect(screen).toContain("void list.fetchNextPage()");
-    expect(screen).toContain("visible < total || list.hasNextPage");
+    expect(screen).toContain("if (looking) void fetchNextPage();");
+    expect(screen).toContain("visible < matches.length || hasNextPage");
+    expect(screen).toContain("onPress={() => {\n                    setShown((n) => n + PAGE);");
   });
 });
 

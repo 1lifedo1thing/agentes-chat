@@ -1258,7 +1258,6 @@
   "drive": {
     "title": "Drive",
     "search": "搜索 Drive",
-    "types": "文件类型",
     "type": {
       "all": "全部",
       "documents": "文档",
@@ -1279,7 +1278,6 @@
     },
     "by": "{{name}} · {{when}}",
     "noResults": "没有符合这些筛选条件的内容。",
-    "loadFailed": "无法加载 Drive。",
     "more": "显示更多"
   },
   "constellation": {

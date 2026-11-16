@@ -1258,7 +1258,6 @@
   "drive": {
     "title": "Drive",
     "search": "Cari di Drive",
-    "types": "Jenis file",
     "type": {
       "all": "Semua",
       "documents": "Dokumen",
@@ -1279,7 +1278,6 @@
     },
     "by": "{{name}} · {{when}}",
     "noResults": "Tidak ada hasil dengan filter ini.",
-    "loadFailed": "Tidak bisa memuat Drive.",
     "more": "Tampilkan lainnya"
   },
   "constellation": {

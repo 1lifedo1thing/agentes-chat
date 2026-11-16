@@ -1413,7 +1413,6 @@
   "drive": {
     "title": "Drive",
     "search": "Buscar en el Drive",
-    "types": "Tipos de archivo",
     "type": {
       "all": "Todos",
       "documents": "Documentos",
@@ -1434,7 +1433,6 @@
     },
     "by": "{{name}} · {{when}}",
     "noResults": "Nada con estos filtros.",
-    "loadFailed": "No se pudo cargar el Drive.",
     "more": "Mostrar más"
   },
   "constellation": {

@@ -1258,7 +1258,6 @@
   "drive": {
     "title": "Drive",
     "search": "Driveを検索",
-    "types": "ファイルの種類",
     "type": {
       "all": "すべて",
       "documents": "ドキュメント",
@@ -1279,7 +1278,6 @@
     },
     "by": "{{name}} · {{when}}",
     "noResults": "この条件に一致するものはありません。",
-    "loadFailed": "Driveを読み込めませんでした。",
     "more": "もっと見る"
   },
   "constellation": {

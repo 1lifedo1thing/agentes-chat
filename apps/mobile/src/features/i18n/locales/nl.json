@@ -1337,7 +1337,6 @@
   "drive": {
     "title": "Drive",
     "search": "Zoeken in Drive",
-    "types": "Bestandstypen",
     "type": {
       "all": "Alles",
       "documents": "Documenten",
@@ -1358,7 +1357,6 @@
     },
     "by": "{{name}} · {{when}}",
     "noResults": "Niets met deze filters.",
-    "loadFailed": "De Drive kon niet worden geladen.",
     "more": "Meer tonen"
   },
   "constellation": {

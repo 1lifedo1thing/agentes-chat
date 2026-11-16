@@ -690,7 +690,8 @@ const styles = StyleSheet.create({
   cut: { overflow: "hidden" },
   unmeasured: { maxHeight: INLINE_HEIGHT, overflow: "hidden" },
   fade: { position: "absolute", left: 0, right: 0, bottom: 0, height: 56 },
-  more: { alignItems: "center", paddingBottom: 8 },
+  // "Ver mais" centred under the cut (a button keeps to its own width at the row's start).
+  more: { flexDirection: "row", justifyContent: "center", paddingBottom: 8 },
   foot: { gap: 8, padding: 12, borderTopWidth: StyleSheet.hairlineWidth },
   sent: { flexDirection: "row", alignItems: "center", gap: 8 },
   mark: { width: 5, height: 5 },
