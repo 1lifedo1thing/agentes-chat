@@ -100,7 +100,11 @@ export function AuditScreen({ agentId: first = null }: { agentId?: string | null
   useEffect(() => closeAgentPick, []);
 
   return (
-    <SettingsPage title={t("settings.section.audit")} largeTitle>
+    <SettingsPage
+      title={t("settings.section.audit")}
+      largeTitle
+      {...(admin ? { onRefresh: () => audit.refetch() } : {})}
+    >
       <GroupedFooter>{t("settings.sectionText.audit")}</GroupedFooter>
       {!admin ? (
         <View style={styles.note}>

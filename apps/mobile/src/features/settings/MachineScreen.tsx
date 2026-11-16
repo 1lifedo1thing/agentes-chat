@@ -254,19 +254,20 @@ export function MachineScreen({ machineId }: { machineId: string }) {
             {line}
           </Text>
         ))}
-        {managed && m.online && m.egressWaiting && (
+        {/* Ternaries, never `&&` on a value: an empty address would be bare text outside a <Text>, a crash. */}
+        {managed && m.online && m.egressWaiting ? (
           <Text variant="small" tone="muted" style={styles.center}>
             {t("machines.egress.waiting")}
           </Text>
-        )}
-        {managed && m.networkTransition && (
+        ) : null}
+        {managed && m.networkTransition ? (
           <Text variant="small" tone="muted" style={styles.center}>
             {t(m.networkTransition.state === "draining" ? "machines.egress.draining" : "machines.egress.restart", {
               when: formatTime(i18n.language, m.networkTransition.deadline),
             })}
           </Text>
-        )}
-        {managed && m.online && m.egress?.ip && (
+        ) : null}
+        {managed && m.online && m.egress?.ip ? (
           <View style={styles.egress}>
             {countryFlagSvg(m.egress.country) ? (
               <SvgXml xml={countryFlagSvg(m.egress.country) as string} width={20} height={14} />
@@ -277,7 +278,7 @@ export function MachineScreen({ machineId }: { machineId: string }) {
               {t("machines.egress.line", { ip: m.egress.ip })}
             </Text>
           </View>
-        )}
+        ) : null}
         {m.workspace && m.mode !== "system" ? (
           <Text variant="small" tone="muted" style={styles.center}>
             {t("machines.workspace")}{" "}
@@ -1084,7 +1085,6 @@ export function RenameMachineScreen({ machineId }: { machineId: string }) {
         multiline={false}
         minHeight={50}
         maxLength={80}
-        autoFocus
         returnKeyType="done"
         onSubmitEditing={save}
         accessibilityLabel={t("machines.name")}

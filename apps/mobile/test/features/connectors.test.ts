@@ -330,8 +330,11 @@ describe("Ferramentas: Salvar stays at hand", () => {
   test("Salvar is pinned outside the scroll, and no changed tool waits for an Aceitar", async () => {
     const [screen, review] = await Promise.all([read("ToolsScreen.tsx"), read("ToolReview.tsx")]);
     expect(screen).not.toContain("ChangedTools");
-    // Salvar sits in the bar under the scroll, never at the end of a long list.
-    expect(screen.indexOf("<BottomBar")).toBeGreaterThan(screen.indexOf("</ScrollView>"));
+    // Salvar sits in the settings page's docked bar under the scroll (over the keyboard while the search is typed
+    // in), never at the end of a long list.
+    expect(screen).toContain("<SettingsPage");
+    expect(screen).toMatch(/bottom: \(\s+<Button/);
+    expect(screen).not.toContain("<ScrollView");
     expect(review).toMatch(/\{onSaveBar \? null : \(?\s*<Button/);
   });
 
@@ -361,7 +364,7 @@ describe("a connection's screen and the gallery, at a finger's reach", () => {
     const screen = read("ConnectionScreen.tsx");
     // The system's bar button (`actions`), never a view of ours drawn in the bar.
     expect(screen).toMatch(
-      /icon: "pen",\s+sf: "pencil",\s+label: t\("connectors\.rename"\),\s+onPress: \(\) => sheet\.open\(<RenameSheet item=\{item\} \/>\),/,
+      /icon: "pen",\s+sf: "pencil",\s+label: t\("connectors\.rename"\),\s+onPress: \(\) => openRename\(item\.id\),/,
     );
     expect(screen).toContain("{...(rename ? { actions: [rename] } : {})}");
     expect(screen).not.toContain("<IconButton");

@@ -141,6 +141,8 @@ function Invites() {
     <SettingsPage
       title={title}
       actions={[{ icon: "plus", sf: "plus", label: t("members.inviteTitle"), onPress: invite }]}
+      // A pull reads who waits, the links and the invitations sent again.
+      onRefresh={() => Promise.allSettled([requests.refetch(), links.refetch(), invitations.refetch()])}
     >
       <MembersFullNote />
       {failedToLoad ? (

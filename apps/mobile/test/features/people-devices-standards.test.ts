@@ -48,7 +48,7 @@ describe("lists load, fail and empty in the app's own states", () => {
   test("loading shows the rows' shape, never a bare spinner", () => {
     for (const file of [
       "members/MembersPage.tsx",
-      "members/JoinRequestsSheet.tsx",
+      "members/JoinRequestsScreen.tsx",
       "devices/DevicesScreen.tsx",
       "devices/AudienceScreen.tsx",
       "devices/PhoneScreen.tsx",
@@ -151,8 +151,9 @@ describe("sheets read as the app's sheets", () => {
       expect(code).not.toContain("styles.head");
       expect(code).not.toContain('<Text variant="title"');
     }
+    // Renaming is a pushed screen now (a form: screens, not sheets): the app's one-line field, its help under it.
     const rename = read("connectors/ConnectionScreen.tsx");
-    expect(rename).toContain('subtitle={t("connectors.renameHelp")}');
+    expect(rename).toContain('<GroupedFooter>{t("connectors.renameHelp")}</GroupedFooter>');
     expect(rename).toContain("multiline={false}");
     expect(rename).not.toContain("styles.field");
   });
@@ -165,7 +166,7 @@ describe("sheets read as the app's sheets", () => {
   });
 
   test("a join request's card fades in and out; nothing stretches its frame as its answer changes", () => {
-    const requests = read("members/JoinRequestsSheet.tsx");
+    const requests = read("members/JoinRequestsScreen.tsx");
     expect(requests).not.toContain("LinearTransition");
     expect(requests).not.toContain("layout=");
   });

@@ -92,7 +92,7 @@ import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { TextArea } from "../shared/TextArea";
 import { useStepText } from "./hooks";
 import { isGithubSkillLink, SKILLS_INLINE, searchSkills, skillLine, skillSourceKey } from "./logic";
-import { confirmAction, Gap, SettingsPage, useUnsavedGuard } from "./parts";
+import { confirmAction, Gap, NEXT_FIELD, SettingsPage, useUnsavedGuard } from "./parts";
 
 /** Opens a skill of the library (its page). */
 const openSkill = (id: string) => router.push(`/settings/skills/${id}`);
@@ -167,6 +167,9 @@ export function SkillsScreen() {
     <SettingsPage
       title={t("skills.title")}
       largeTitle
+      // The search's results make room for the keyboard; a pull reads the library again.
+      keyboard={searchable}
+      onRefresh={() => Promise.allSettled([skills.refetch(), settings.refetch()])}
       // Installing lives in the bar, as every list's "+".
       {...(mayInstall && !unavailable && skills.isSuccess
         ? { actions: [{ icon: "plus", sf: "plus", label: t("skills.install"), onPress: install }] }
@@ -1039,6 +1042,8 @@ function InstallSkill({
             }
       }
       locked={busy}
+      // Writing one is a form of three fields: the system's bar over the keyboard walks them (‹ › and Done).
+      toolbar={tab === "write"}
     >
       <View style={styles.tabs}>
         <Segmented
@@ -1252,6 +1257,7 @@ function InstallSkill({
             onChangeText={(name) => setForm((f) => ({ ...f, name }))}
             multiline={false}
             minHeight={50}
+            {...NEXT_FIELD}
             accessibilityLabel={t("skills.name")}
           />
           <GroupedHeader
@@ -1334,6 +1340,8 @@ export function EditSkillScreen({ id }: { id: string }) {
       subtitle={s?.name}
       action={{ label: t("skills.save"), disabled: !ready, onPress: save }}
       locked={action.isPending}
+      // Two long fields: the system's bar over the keyboard walks them and puts it away (‹ › and Done).
+      toolbar
     >
       {!form ? (
         skill.isError ? (

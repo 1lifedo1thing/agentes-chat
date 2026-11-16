@@ -83,7 +83,6 @@ function AppSheets() {
       <Sheet.Screen name="share-to" options={sheet([0.72, 1])} />
       {/* A request reads as grouped facts (its white groups on the sheet's gray), as the system's own sheets do. */}
       <Sheet.Screen name="approval/[id]" options={sheet([0.64, 1])} />
-      <Sheet.Screen name="join-requests" options={sheet([0.7, 1])} />
       <Sheet.Screen name="switch-computer/[machineId]" options={sheet([0.8, 1])} />
       <Sheet.Screen name="computer-setup" options={sheet([0.7, 1])} />
       {/* The workspaces as a sheet, from a long press on the workspace's mark in the bar (ADR 0154). */}

@@ -503,8 +503,11 @@ describe("Convidar pessoas on the phone", () => {
   test("it sends every good address with the cargos, channels and agents; while it sends nothing goes back", () => {
     expect(invite).toContain("emails: ready.map((a) => a.email),");
     expect(invite).toMatch(/usePreventRemove\(sending, \(\{ repeat \}\) => \{\s*if \(leaving\.current\) repeat\(\);/);
-    // A finished send goes back itself, past the hold the screen hasn't let go of yet.
-    expect(invite).toMatch(/leaving\.current = true;\s*goBack\(\);/);
+    // A finished send goes back itself, past the hold the screen hasn't let go of yet (the question under the form
+    // too, in a personal workspace).
+    expect(invite).toMatch(
+      /leaving\.current = true;[\s\S]*?if \(family && router\.canDismiss\(\)\) router\.dismiss\(2\);\s*else goBack\(\);/,
+    );
     // A refused pick marks its token and says why, the form kept as it was.
     expect(invite).toContain('if (!refusedBy(e)) toast({ title: errorText(t, e, i18n.language), icon: "x" });');
     expect(invite).toContain('playSound("approved");');
@@ -589,7 +592,7 @@ describe("Configurações › Pessoas: Membros · Convites · Cargos", () => {
   });
 
   test("a request's review starts on its link's choices, and a full link waits for a bigger maximum", () => {
-    const sheet = src("features/members/JoinRequestsSheet.tsx");
+    const sheet = src("features/members/JoinRequestsScreen.tsx");
     expect(sheet).toContain("const { given, leftOut } = approvalCargos(roles, r.link?.roleIds ?? []);");
     expect(sheet).toContain("disabled={busy || full || linkFull || !draft}");
     expect(sheet).toContain('t("errors.join.linkFullApproval")');
@@ -711,7 +714,7 @@ describe("the worst case (break-ui): long names, one of each, a thousand of them
     expect(convites).toContain('<GroupedFooter>{t("members.invitations.empty")}</GroupedFooter>');
     expect(convites).toContain('label={t("members.copyInviteLink")}');
     // A request's card waits for the cargos, so it opens on its link's choices.
-    expect(src("features/members/JoinRequestsSheet.tsx")).toContain("else if (!list.data || !roles.data)");
+    expect(src("features/members/JoinRequestsScreen.tsx")).toContain("else if (!list.data || !roles.data)");
     // Convidar opens on its cargo in the first frame.
     expect(src("features/members/InvitePeople.tsx")).toContain("const draft = useInviteDraft(KEY) ?? opening;");
   });

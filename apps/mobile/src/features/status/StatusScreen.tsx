@@ -207,6 +207,7 @@ function StatusEditor() {
             maxLength={TEXT_MAX}
             returnKeyType="done"
             autoCapitalize="sentences"
+            accessibilityLabel={t("mobile.status.doing")}
             style={[fieldText("body"), styles.input, { color: c.ink }]}
           />
           {d.text ? (

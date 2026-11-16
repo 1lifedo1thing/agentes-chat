@@ -7,17 +7,18 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  RefreshControl,
   StyleSheet,
   type TextInputProps,
   View,
   type ViewStyle,
 } from "react-native";
-import { KeyboardAwareScrollView, KeyboardController } from "react-native-keyboard-controller";
+import { KeyboardAwareScrollView, KeyboardController, KeyboardStickyView } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, GroupedList, GroupedRow, type HeaderAction, type IconName, Locked, Text, useToast } from "@/ui";
 import { KeyboardBar, TOOLBAR_HEIGHT } from "@/ui/auth/AuthScaffold";
-import { useColors, useNow } from "../shared/hooks";
+import { useColors, useNow, usePullRefresh } from "../shared/hooks";
 import { showActionSheet } from "../shared/PickerSheet";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { BottomBar, copyText, type HeaderWordAction, MONO, PushedHeader, successHaptic } from "../shared/parts";
@@ -37,9 +38,10 @@ const FIELD_CLEARANCE = 24;
 /**
  * A settings screen: the native bar (back, the title, a line under it, a word that saves on the right) over the
  * grouped gray, which scrolls under it. A focused field scrolls clear of the keyboard on both systems (the keyboard
- * library's scroll view: with its provider on, Android no longer resizes the window by itself). `largeTitle`: a list
- * of places to go (the workspace's settings, Skills, the audit) takes the pushed lists' large title instead
- * (`PushedLargeTitle`, as Drive and Connectors), with no word in the bar and no form under it.
+ * library's scroll view: with its provider on, Android no longer resizes the window by itself), and a drag down the
+ * page takes the keyboard with it. `largeTitle`: a list of places to go (the workspace's settings, Skills, the audit)
+ * takes the pushed lists' large title instead (`PushedLargeTitle`, as Drive and Connectors), with no word in the bar
+ * and no form under it. `onRefresh`: a list read from the server is read again on a pull.
  */
 export function SettingsPage(props: SettingsPageProps) {
   return props.largeTitle ? <LargeTitlePage {...props} /> : <CompactPage {...props} />;
@@ -61,17 +63,45 @@ interface SettingsPageProps {
   frozen?: boolean;
   /** A form of several fields: the system's bar over the keyboard (‹ › between them, Done), the page clear of it. */
   toolbar?: boolean;
-  /** The page's one main action, docked under it ("Done" at the end of a guide). */
+  /** The page's one main action, docked under it ("Done" at the end of a guide); it rides over the keyboard. */
   bottom?: ReactNode;
   /** A list screen: the system's large title (drawn on Android), folding into the bar as the list scrolls. */
   largeTitle?: boolean;
+  /** A large-title list with a search: the list makes room for the keyboard (a form page always does). */
+  keyboard?: boolean;
+  /** A pull reads the page's lists again; the spinner shows only for the person's own pull (`usePullRefresh`). */
+  onRefresh?: () => Promise<unknown>;
   children?: ReactNode;
 }
 
+const NOTHING_TO_READ = () => Promise.resolve();
+
+/** The page's pull to refresh, when it reads something from the server (`onRefresh`). */
+function usePageRefresh(onRefresh: (() => Promise<unknown>) | undefined) {
+  const pull = usePullRefresh(onRefresh ?? NOTHING_TO_READ);
+  return onRefresh ? <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} /> : undefined;
+}
+
 /** A list of the workspace's settings under a large title: no subtitle, word or docked action (those are forms'). */
-function LargeTitlePage({ title, right, actions, locked = false, frozen = false, children }: SettingsPageProps) {
+function LargeTitlePage({
+  title,
+  right,
+  actions,
+  locked = false,
+  frozen = false,
+  keyboard = false,
+  onRefresh,
+  children,
+}: SettingsPageProps) {
+  const refreshControl = usePageRefresh(onRefresh);
   return (
-    <PushedLargeTitle title={title} grouped {...(actions ? { actions } : right ? { right } : {})}>
+    <PushedLargeTitle
+      title={title}
+      grouped
+      keyboard={keyboard}
+      {...(refreshControl ? { refreshControl } : {})}
+      {...(actions ? { actions } : right ? { right } : {})}
+    >
       <View style={styles.body}>
         <Locked when={locked || frozen} readable={frozen && !locked}>
           <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
@@ -92,11 +122,18 @@ function CompactPage({
   frozen = false,
   toolbar = false,
   bottom,
+  onRefresh,
   children,
 }: SettingsPageProps) {
   const c = useColors();
   const insets = useSafeAreaInsets();
-  const bar = toolbar ? TOOLBAR_HEIGHT : 0;
+  const refreshControl = usePageRefresh(onRefresh);
+  // The docked action rides over the keyboard (over the system's bar too, with a form's ‹ ›): what it covers there
+  // (its height less the home indicator's room, which drops behind the keyboard) is kept clear of a focused field.
+  const [dockHeight, setDockHeight] = useState(0);
+  const toolbarRoom = toolbar ? TOOLBAR_HEIGHT : 0;
+  const docked = bottom ? Math.max(0, dockHeight - insets.bottom) : 0;
+  const bar = toolbarRoom + docked;
   return (
     <View style={[styles.fill, { backgroundColor: c.grouped }]}>
       <PushedHeader
@@ -118,16 +155,26 @@ function CompactPage({
         style={styles.fill}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         bottomOffset={bar + FIELD_CLEARANCE}
-        extraKeyboardSpace={bar}
-        contentContainerStyle={[styles.body, { paddingBottom: 24 + insets.bottom }]}
+        extraKeyboardSpace={toolbarRoom}
+        {...(refreshControl ? { refreshControl } : {})}
+        // A docked action holds the home indicator's room itself.
+        contentContainerStyle={[styles.body, { paddingBottom: bottom ? 24 : 24 + insets.bottom }]}
       >
         {/* What is there as the screen opens doesn't fade in; what loads while it is watched does (`Loaded`). */}
         <Locked when={locked || busy || frozen} readable={frozen && !locked && !busy}>
           <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
         </Locked>
       </KeyboardAwareScrollView>
-      {bottom ? <BottomBar bottom={insets.bottom}>{bottom}</BottomBar> : null}
+      {bottom ? (
+        <KeyboardStickyView
+          offset={{ opened: insets.bottom - toolbarRoom }}
+          onLayout={(e) => setDockHeight(e.nativeEvent.layout.height)}
+        >
+          <BottomBar bottom={insets.bottom}>{bottom}</BottomBar>
+        </KeyboardStickyView>
+      ) : null}
       {toolbar ? <KeyboardBar /> : null}
     </View>
   );

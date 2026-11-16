@@ -22,7 +22,7 @@ import { can } from "@agenteschat/client/lib/permissions";
 import { Fragment, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Share, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
-import Animated, { FadeIn, FadeOut, LayoutAnimationConfig } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -31,16 +31,15 @@ import {
   GROUPED_ROW,
   Locked,
   PersonAvatar,
-  SheetScreen,
   SkeletonList,
   Text,
   useReducedMotion,
   useToast,
 } from "@/ui";
 import { Note } from "../ai/parts";
+import { SettingsPage } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors } from "../shared/hooks";
-import { SheetTitle } from "../shared/PromptForm";
 import { errorHaptic, successHaptic, useSurface } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { EMPTY_INVITE, useDraftStart, useInviteDraft } from "./draft";
@@ -50,14 +49,15 @@ import { MembersFullNote } from "./MembersFullNote";
 
 const REASON_LIMIT = { max: JOIN_REASON_MAX };
 /**
- * Requests to join through an invitation link (ADR 0068, 0184), as a native form sheet: the web's Convites › Esperando
- * você on the phone, opened by the push, Atividade's card and `agenteschat://join-requests`. Each is approved with
- * what its link gives (Cargo, Canais, Agentes, changed here first if need be; a suggestion starts on nothing past
- * Todos), or denied with a reason the person reads in the email. On a server that sends no email, approving hands the
- * approver the invitation's link to share. `focus`: the request tapped on Convites, on top. With no room left nobody
- * can be approved, as on the web.
+ * Requests to join through an invitation link (ADR 0068, 0184), a screen pushed with the system's bar (the workspace
+ * under its title): the web's Convites › Esperando você on the phone, opened by the push, Atividade's card and
+ * `agenteschat://join-requests`. Each is approved with what its link gives (Cargo, Canais, Agentes, changed here first
+ * if need be, each on its pushed choice over this screen; a suggestion starts on nothing past Todos), or denied with a
+ * reason the person reads in the email. On a server that sends no email, approving hands the approver the invitation's
+ * link to share. `focus`: the request tapped on Convites, on top. With no room left nobody can be approved, as on the
+ * web. A pull reads the requests again.
  */
-export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefined; onClose: () => void }) {
+export function JoinRequestsScreen({ focus }: { focus?: string | undefined }) {
   const { t } = useTranslation();
   const { orgId, org } = useOrg();
   const allowed = can(org, "invite_people");
@@ -86,13 +86,7 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
         // The shape of what is coming, never a bare spinner.
         <SkeletonList rows={2} />
       );
-  else if (list.data.length === 0)
-    body = (
-      <>
-        <EmptyState size="inline" title={t("members.requests.empty")} />
-        <Button variant="secondary" wide label={t("mobile.common.close")} onPress={onClose} />
-      </>
-    );
+  else if (list.data.length === 0) body = <EmptyState size="inline" title={t("members.requests.empty")} />;
   else
     body = focusedFirst(list.data, focus).map((r) => (
       <RequestCard
@@ -108,18 +102,21 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
     ));
 
   return (
-    <SheetScreen>
-      <SheetTitle title={t("members.requests.title")} subtitle={orgName || undefined} />
-      {/* Cards answered here leave, and the links handed over arrive, while the sheet is open: they fade. Those there as
-          it opens simply are. */}
-      <LayoutAnimationConfig skipEntering>
+    <SettingsPage
+      title={t("members.requests.title")}
+      {...(orgName ? { subtitle: orgName } : {})}
+      onRefresh={() => Promise.allSettled([list.refetch(), roles.refetch()])}
+    >
+      {/* Cards answered here leave, and the links handed over arrive, while the screen is open: they fade. Those there
+          as it opens simply are (the page skips its first entering). */}
+      <View style={styles.list}>
         {handOffs.map((h) => (
           <HandOff key={h.url} name={h.name} onShare={() => share(h.url)} />
         ))}
         <MembersFullNote />
         {body}
-      </LayoutAnimationConfig>
-    </SheetScreen>
+      </View>
+    </SettingsPage>
   );
 }
 
@@ -127,7 +124,7 @@ const CARD_IN = FadeIn.duration(160);
 const CARD_OUT = FadeOut.duration(120);
 
 /**
- * A card of the sheet that comes or goes while it is watched: it fades (none of it with reduced motion). No layout
+ * A card of the screen that comes or goes while it is watched: it fades (none of it with reduced motion). No layout
  * transition: one would also stretch a card's own frame when denying swaps its answer for the reason field, the
  * words spilling past its edge while it grew.
  */
@@ -290,10 +287,11 @@ function RequestCard({
               />
             </View>
             <View style={styles.grow}>
+              {/* Not denying after all: the card's answer comes back (a word for what it does, never a "Back"). */}
               <Button
                 variant="ghost"
                 wide
-                label={t("mobile.common.back")}
+                label={t("mobile.common.cancel")}
                 disabled={busy}
                 onPress={() => setDenying(false)}
               />
@@ -364,6 +362,8 @@ function HandOff({ name, onShare }: { name: string; onShare: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  // The cards on the grouped gray, a group's room above the first and between them.
+  list: { gap: 12, paddingTop: 14 },
   card: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 14, gap: 10 },
   // The card's own column inside the swap.
   swap: { gap: 10 },

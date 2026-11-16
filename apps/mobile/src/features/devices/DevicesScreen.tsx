@@ -47,7 +47,10 @@ export function DevicesScreen() {
   const managed = useMachines(orgId).data?.find((m) => m.kind === "managed");
   const requests = list.data?.requests ?? [];
   return (
-    <SettingsPage title={t("mobile.devices.title")}>
+    <SettingsPage
+      title={t("mobile.devices.title")}
+      onRefresh={() => Promise.allSettled([list.refetch(), setup.refetch()])}
+    >
       {/* The workspace's own computer on its way: its wait until it is ready, then it is a row like the others. */}
       {setupPending(view) ? (
         <>

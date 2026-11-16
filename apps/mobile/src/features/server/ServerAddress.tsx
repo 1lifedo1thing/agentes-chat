@@ -15,9 +15,9 @@ import { Text } from "@/ui/Text";
 import { useToast } from "@/ui/Toast";
 
 /**
- * "Onde fica o seu agentes.chat?": the team's own server (self-hosted, usually on Tailscale), by address with the
- * URL keyboard open and its return key as the action, or by the QR code the web app shows. The server is checked
- * before anything changes. `onDone` leaves it (back on the sign-in, or closing the sheet it was opened in); `scan`
+ * "Onde fica o seu agentes.chat?": the team's own server (self-hosted, usually on Tailscale), by address (the URL
+ * keyboard once the field is tapped, never on its own as the screen opens, its return key as the action), or by the
+ * QR code the web app shows. The server is checked before anything changes. `onDone` leaves it (back on the sign-in, or closing the sheet it was opened in); `scan`
  * off where the camera's screen can't be pushed (over the waiting splash).
  */
 export function ServerAddress({ onDone, scan = true }: { onDone: () => void; scan?: boolean }) {
@@ -81,7 +81,6 @@ export function ServerAddress({ onDone, scan = true }: { onDone: () => void; sca
           enablesReturnKeyAutomatically
           onSubmitEditing={() => void submit()}
           accessibilityLabel={t("mobile.auth.server.label")}
-          autoFocus
         />
       </Locked>
       {error ? (

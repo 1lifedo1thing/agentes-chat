@@ -149,11 +149,11 @@ describe("members", () => {
   test("a list that didn't load says so with Try again, and the page pulls to read it again", () => {
     const page = src("members/MembersPage.tsx");
     expect(page).toContain("<LoadFailed onRetry={() => void people.refetch()} />");
-    expect(page).toContain(
-      "refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}",
-    );
-    expect(page).toContain("usePullRefresh(() => Promise.allSettled([people.refetch(), rolesQ.refetch()]))");
-    expect(src("members/JoinRequestsSheet.tsx")).toContain("<LoadFailed");
+    // Você's own page frame (`Page`), its pull reading the people and their roles again: no frame of its own.
+    expect(page).toContain("<Page");
+    expect(page).not.toContain("MembersFrame");
+    expect(page).toContain("onRefresh={() => Promise.allSettled([people.refetch(), rolesQ.refetch()])}");
+    expect(src("members/JoinRequestsScreen.tsx")).toContain("<LoadFailed");
   });
 
   test("Remove and Leave confirm at once: what goes with the person is read as the row's menu opens", () => {

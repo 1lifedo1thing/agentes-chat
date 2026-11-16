@@ -2,7 +2,7 @@ import { useBrowserProfiles, useMachines } from "@agenteschat/client";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { EmptyState, Text } from "@/ui";
+import { EmptyState, SkeletonList, Text } from "@/ui";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useOrgId } from "../shared/hooks";
 import { PushedHeader } from "../shared/parts";
@@ -32,6 +32,7 @@ export function ProfileLoginScreen({ profileId }: { profileId: string }) {
           style={styles.fill}
           contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 24 }]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
           automaticallyAdjustKeyboardInsets
         >
           {/* Where it runs and who waits, whole: the bar's one line would cut it. */}
@@ -55,7 +56,10 @@ export function ProfileLoginScreen({ profileId }: { profileId: string }) {
           ) : profiles.data ? (
             // Removed meanwhile (on the computer's page, or the web): said, never a blank screen.
             <EmptyState size="inline" title={t("common.gone")} />
-          ) : null}
+          ) : (
+            // The profiles still on their way: the shape of what comes, never a blank screen.
+            <SkeletonList rows={2} />
+          )}
         </ScrollView>
       </View>
     </SheetHostProvider>

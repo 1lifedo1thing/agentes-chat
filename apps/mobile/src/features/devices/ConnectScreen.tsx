@@ -19,6 +19,15 @@ import { useConnectLink, useDeviceMutation, useDevices } from "./queries";
 const openConnect = (kind: ConnectKind) => router.push({ pathname: "/settings/devices/connect", params: { kind } });
 
 /**
+ * Done, once the computer is in: the whole flow goes (its steps never stay under the computer's page, for the back to
+ * walk through again), back to the devices' list, and the computer's page opens over it.
+ */
+const finishOn = (machineId: string) => {
+  router.dismissTo("/settings/devices");
+  openComputer(machineId);
+};
+
+/**
  * "Conectar um dispositivo": this phone (its own guide), another computer through the desktop app on it, or a server
  * (or a computer without the app) with a one-line link, which works once for 10 minutes and grants nothing by itself:
  * the computer that runs it asks to join, live here.
@@ -83,7 +92,7 @@ function AppFlow() {
       {...(found
         ? {
             bottom: (
-              <Button variant="primary" wide label={t("mobile.common.done")} onPress={() => openComputer(found.id)} />
+              <Button variant="primary" wide label={t("mobile.common.done")} onPress={() => finishOn(found.id)} />
             ),
           }
         : {})}
@@ -141,7 +150,7 @@ function LinkFlow({ kind }: { kind: "server" | "computer" }) {
                 variant="primary"
                 wide
                 label={t("mobile.common.done")}
-                onPress={() => (state.machineId ? openComputer(state.machineId) : undefined)}
+                onPress={() => (state.machineId ? finishOn(state.machineId) : undefined)}
               />
             ),
           }

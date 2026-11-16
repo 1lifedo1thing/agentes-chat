@@ -90,7 +90,6 @@ export function SuggestPersonScreen() {
             returnKeyType="next"
             submitBehavior="submit"
             onSubmitEditing={() => noteField.current?.focus()}
-            autoFocus
             accessibilityLabel={t("members.suggest.email")}
             style={[fieldText("callout"), styles.input, { color: c.ink }]}
           />
