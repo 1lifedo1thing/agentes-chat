@@ -203,9 +203,13 @@ describe("who or what stopped a run, from its error", () => {
     expect(closed("suspended", "Lena wrote this reason")).toEqual(system("workspace_suspended"));
     expect(stopOf(new OrgDeletingError(null).message)).toEqual(system("workspace_deleting"));
     // A reason the list doesn't hold, and anything else in its place.
-    for (const unknown of ["routine_some_new_code", "mission_some_new_reason", "Lena wrote this", "", null]) {
+    for (const unknown of ["routine_some_new_code", "mission_some_new_reason", "Lena wrote this"]) {
       expect(stopOf(unknown)).toEqual(system("other"));
     }
+    // An older row's stop by a mission with nobody behind it is no person's.
+    expect(stopOf("canceled_by:mission")).toEqual(system("other"));
+    // No error kept: nothing says who stopped it.
+    for (const none of ["", null, undefined]) expect(stopOf(none)).toBeNull();
   });
 
   test("a workspace put on hold stops its runs, and each says so", async () => {

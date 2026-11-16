@@ -4057,7 +4057,7 @@
               }
             },
             "required": ["by", "userId", "agentId", "reason"],
-            "description": "Who or what stopped it. Null unless `status` is `canceled`."
+            "description": "Who or what stopped it. Null unless `status` is `canceled`, and for a canceled run that kept no error: nothing says who stopped it."
           },
           "errorCode": {
             "type": ["string", "null"],
@@ -5141,7 +5141,7 @@
                         }
                       },
                       "required": ["by", "userId", "agentId", "reason"],
-                      "description": "Who or what stopped it. Null unless `status` is `canceled`."
+                      "description": "Who or what stopped it. Null unless `status` is `canceled`, and for a canceled run that kept no error: nothing says who stopped it."
                     },
                     "errorCode": {
                       "type": ["string", "null"],

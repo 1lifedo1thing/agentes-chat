@@ -1214,6 +1214,7 @@ test("a tool call's input digest: equal inputs of one workspace match, the state
   ];
   for (const [name, input] of inputs) await addRunStep(t.db, run, "tool_call", { toolUseId: name, name, input });
   await addRunStep(t.db, run, "tool_call", { toolUseId: "none", name: "none" });
+  await addRunStep(t.db, run, "tool_call", { toolUseId: "null", name: "null", input: null });
 
   const calls = await callsOf(run);
   const steps = (await traceOf(run.id)).steps.filter((s) => s.kind === "tool_call");
@@ -1222,6 +1223,8 @@ test("a tool call's input digest: equal inputs of one workspace match, the state
   expect(steps.map((s) => [s.tool, s.inputDigest])).toEqual(calls.map((c) => [c.tool, c.inputDigest]).reverse());
   for (const [name] of inputs) expect({ name, digest: digest(name) }).toEqual({ name, digest: DIGEST });
   expect(digest("none")).toBeNull();
+  // A null stored in the input's place is no input either: no digest that every such call would share.
+  expect(calls.find((c) => c.tool === "null")).toMatchObject({ inputDigest: null, inputChars: 0 });
   expect(digest("reordered")).toBe(digest("same"));
   expect(digest("one_why")).toBe(digest("same"));
   expect(digest("another_why")).toBe(digest("same"));
@@ -1284,6 +1287,15 @@ test("a failed tool result's class: from the status or the code the server kept,
     // What is stored in the status's place and is no whole number is no status.
     ["s-words", { content: "canary", data: { code: "tool.failed", status: "canary 404" } }, "other"],
     ["s-fraction", { content: "canary", data: { code: "tool.failed", status: 404.5 } }, "other"],
+    // A tool's own number under the same name is no status of a failure: of a result that did not fail, of one the
+    // gateway did not mark as thrown, or outside what the gateway writes.
+    ["own-ok", { content: "canary", isError: false, data: { url: "https://example.com", status: 200 } }, null],
+    ["own-thrown-ok", { content: "canary", isError: false, data: { code: "tool.failed", status: 503 } }, null],
+    ["own-failed", { content: "canary", data: { status: 503 } }, "other"],
+    ["own-coded", { content: "canary", data: { code: "tool.invalid_input", status: 404 } }, "invalid_arguments"],
+    ["s-far", { content: "canary", data: { code: "tool.failed", status: 77410 } }, "other"],
+    ["s-low", { content: "canary", data: { code: "tool.failed", status: 99 } }, "other"],
+    ["rpc-far", { content: "canary", data: { code: "tool.failed", status: -31999 } }, "other"],
     // It did not fail, the server refused it, or it has no result yet.
     ["fine", { content: "canary not found", isError: false }, null],
     ["refused", { content: "Not allowed: canary", data: { refusal: "noAccess" } }, null],
@@ -1328,7 +1340,7 @@ test("a failed tool result's class: from the status or the code the server kept,
 });
 
 test("a canceled run says who or what stopped it; the system's stop reads run.canceled, in a list, a filter and a count", async () => {
-  const stops: [error: string, canceled: Record<string, unknown>, errorCode: string][] = [
+  const stops: [error: string | null, canceled: Record<string, unknown> | null, errorCode: string | null][] = [
     [`canceled_by:${ownerId}`, { by: "person", userId: ownerId, agentId: null, reason: null }, "run.canceled"],
     [
       `canceled_by:${ownerId}|agent:${org.agentId}`,
@@ -1358,6 +1370,10 @@ test("a canceled run says who or what stopped it; the system's stop reads run.ca
       { by: "agent", userId: null, agentId: null, reason: null },
       "run.canceled",
     ],
+    // An older row's stop by a mission with nobody behind it is the system's, never a person named so.
+    ["canceled_by:mission", { by: "system", userId: null, agentId: null, reason: "other" }, "run.canceled"],
+    // A canceled run that kept no error says nothing of who stopped it.
+    [null, null, null],
   ];
   const made: string[] = [];
   for (const [error] of stops) made.push((await bareRun({ status: "canceled", error, finishedAt: new Date() })).id);

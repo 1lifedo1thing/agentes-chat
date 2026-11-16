@@ -427,10 +427,11 @@ const builtInSql = (data: SQL) => sql<boolean>`coalesce(${data}->'builtIn' = 'tr
 
 // A tool call's input, hashed where it is stored: like its length, it says something of the input without the input
 // being read out (`inputDigestOf` keys it). Without its top-level `why`: the gateway stores the call as the agent
-// made it, its stated reason included, and two calls for the same thing rarely word that the same.
+// made it, its stated reason included, and two calls for the same thing rarely word that the same. A JSON null in
+// the input's place is no input, as its length says.
 const inputHashSql = (data: SQL) => sql<string | null>`encode(sha256(convert_to((case
   when jsonb_typeof(${data}->'input') = 'object' then (${data}->'input') - 'why'
-  else ${data}->'input' end)::text, 'UTF8')), 'hex')`;
+  when jsonb_typeof(${data}->'input') <> 'null' then ${data}->'input' end)::text, 'UTF8')), 'hex')`;
 const inputDigestOf = (secret: string, orgId: string, hash: string | null) =>
   hash && /^[0-9a-f]{64}$/.test(hash) ? operatorInputDigest(secret, orgId, hash) : null;
 
@@ -448,10 +449,16 @@ export const OPERATOR_ERROR_CLASSES = [
 ] as const;
 type ErrorClass = (typeof OPERATOR_ERROR_CLASSES)[number];
 
-// The number a failed call's thrown error carried, kept by the Tool Gateway: an HTTP status or a JSON-RPC code.
-const errorStatusSql = (data: SQL) => sql<number | null>`(case
-  when jsonb_typeof(${data}->'data'->'status') = 'number' and ${data}->'data'->>'status' ~ '^-?[0-9]{1,9}$'
-  then (${data}->'data'->>'status')::int end)`;
+// The number a failed call's thrown error carried, kept by the Tool Gateway beside its `tool.failed`: an HTTP status
+// or a JSON-RPC code. A result's `data` is its tool's own, and a tool keeps numbers of its own under `status` (a page
+// read fine has one), so only the gateway's is read: a failed result with that code, within what the gateway writes.
+const errorStatusSql = (data: SQL) => {
+  const status = sql`(${data}->'data'->>'status')::int`;
+  return sql<number | null>`(case
+    when ${data}->'isError' = 'true'::jsonb and ${data}->'data'->>'code' = 'tool.failed'
+      and jsonb_typeof(${data}->'data'->'status') = 'number' and ${data}->'data'->>'status' ~ '^-?[0-9]{3,5}$'
+    then case when ${status} between 100 and 599 or ${status} between -32768 and -32000 then ${status} end end)`;
+};
 
 // A failed result's class, worked out where the result is stored, so its text is never read out. The first that
 // answers wins: the stored status, then the gateway's own code, both exact; then what the result's first words say,

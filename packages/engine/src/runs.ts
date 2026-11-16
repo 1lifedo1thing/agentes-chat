@@ -489,17 +489,22 @@ export const STOPPED_BY = ["person", "agent", "system"] as const;
 
 /**
  * Who or what stopped a canceled run, from its error (`stopError`): the person, the agent that stopped it at that
- * person's word, or the system with its reason as a listed word. Never the error's text.
+ * person's word, or the system with its reason as a listed word. Never the error's text. Null: the run kept no error,
+ * so nothing says who stopped it.
  */
 export function stopOf(error: string | null | undefined): {
   by: (typeof STOPPED_BY)[number];
   userId: string | null;
   agentId: string | null;
   reason: SystemStopReason | null;
-} {
+} | null {
+  if (!error) return null;
   const person = personStopOf(error);
-  if (person) return { by: person.agentId ? "agent" : "person", ...person, reason: null };
-  return { by: "system", userId: null, agentId: null, reason: systemStopReason(error ?? "") };
+  // Older rows hold `canceled_by:mission` for a mission's stop with nobody behind it: no person's id, and which of
+  // the mission's reasons it was is not kept.
+  if (person && person.userId !== "mission")
+    return { by: person.agentId ? "agent" : "person", ...person, reason: null };
+  return { by: "system", userId: null, agentId: null, reason: systemStopReason(error) };
 }
 
 /** Who canceled: the person behind the stop, also when the right hand did it at their word. */

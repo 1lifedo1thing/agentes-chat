@@ -108,7 +108,10 @@ const Run = z
         }),
       })
       .nullable()
-      .openapi({ description: "Who or what stopped it. Null unless `status` is `canceled`." }),
+      .openapi({
+        description:
+          "Who or what stopped it. Null unless `status` is `canceled`, and for a canceled run that kept no error: nothing says who stopped it.",
+      }),
     errorCode: z.string().nullable().openapi({
       description:
         "The app's code for `error`: `run.no_ai`, `run.budget_exceeded`, `run.provider_rate_limit`, `run.cli_failed`, `run.canceled`… and `run.failed` for anything unrecognized. A run the system stopped reads `run.canceled` too, where the app has no code of its own for the reason: `canceled` says which.",
