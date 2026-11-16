@@ -19,7 +19,8 @@ import { effortReach, effortStep } from "./effort";
 
 const HEIGHT = 46;
 const CELL = 3;
-const FILL_SPRING = { stiffness: 220, damping: 22, mass: 1 };
+/** The fill settling on its step after a drag or a tap: 300 ms, a touch of give and no real bounce. */
+const FILL_SPRING = { duration: 300, dampingRatio: 0.8 };
 
 /** Compiled once; null if the device refuses it (the names under the ramp still choose). */
 let effect: ReturnType<typeof Skia.RuntimeEffect.Make> | undefined;

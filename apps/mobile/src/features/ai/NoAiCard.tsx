@@ -34,7 +34,8 @@ type Answer = "pending" | "answering" | "still_missing";
  * Opens "Conectar uma IA" (the web's `connect.open`): `from`, the message answered once the agent has an AI;
  * `intent`, the step it asked for; `provider`, the key's maker it named; `agentId`, the agent to connect; `plan`, the
  * plan's page it opens on (Sign in again: the agent's own); `email`, one more login of the account with this email
- * (one other agents use), Claude's hint.
+ * (one other agents use), Claude's hint; `again`, with `plan`, one of the person's logins signed in again on that
+ * plan's page (a new key for a coding plan's), `email` then its own.
  */
 export const openConnectAi = (
   request: {
@@ -46,6 +47,7 @@ export const openConnectAi = (
     email?: string;
     /** "1": from the create-agent step, for the agent being made (a plan signs in for the agents I create). */
     forNew?: string;
+    again?: string;
   } = {},
 ) => {
   const query = Object.entries(request)

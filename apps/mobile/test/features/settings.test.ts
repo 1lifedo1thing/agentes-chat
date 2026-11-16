@@ -257,7 +257,7 @@ describe("a personal workspace's settings on the phone (ADR 0159 §3): one short
     expect(src("me/ApprovalsPage.tsx")).toContain("{solo && !cover ? null : (");
     // Answers other people on a plan: hidden while off, but on the agent's Advanced, where the switch always is.
     expect(src("ai/parts.tsx")).toContain("if (solo && !on && !keep) return null;");
-    expect(src("ai/AgentAdvancedScreen.tsx")).toMatch(/disabled=\{busy\}\s+keep\s+\/>/);
+    expect(src("ai/AgentAdvancedScreen.tsx")).toMatch(/coding=\{planOf\(current\?\.provider\)\}\s+keep\s+\/>/);
     // Delegated approvals move from You to Advanced in a personal workspace.
     expect(src("me/MeScreen.tsx")).toMatch(/\{personal \? null : \(\s+<GroupedRow\s+key="approvals"/);
   });

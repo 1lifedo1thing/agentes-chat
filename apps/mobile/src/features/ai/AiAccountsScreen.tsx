@@ -26,38 +26,40 @@ import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { errorText, keyRefusal } from "@agenteschat/client/lib/errors";
 import { joinNames, relativeTime } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { agentAi, aiStateOf } from "@agenteschat/client/lib/no-ai";
+import { agentAi, aiStateOf, planOfAccount } from "@agenteschat/client/lib/no-ai";
 import { can } from "@agenteschat/client/lib/permissions";
 import { settingsSectionNameKey, settingsSectionTextKey } from "@agenteschat/client/lib/personal-view";
-import { planOf, signInProviderOf } from "@agenteschat/client/lib/plans";
+import { planOf } from "@agenteschat/client/lib/plans";
 import { keyCopiesLine, keyName, keyNamedAfterProvider, keySource, shownKeys } from "@agenteschat/client/lib/providers";
+import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
-import { Button, GroupedList, GroupedRow, InfoHint, ProviderLogo, Text, useToast } from "@/ui";
+import { Button, GroupedList, GroupedRow, InfoHint, Locked, ProviderLogo, Text, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { personalAiParts } from "../settings/logic";
 import { chooseAction } from "../settings/parts";
-import { FirstUse } from "../shared/FirstUse";
+import { FirstUse, LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId } from "../shared/hooks";
+import { PromptForm, SheetTitle } from "../shared/PromptForm";
 import { errorHaptic, PushedHeader, successHaptic } from "../shared/parts";
+import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { PlanMeter } from "../usage/parts";
-import { AddAccount } from "./AddAccount";
 import { openKeyForAll } from "./KeyForAllScreen";
 import { openConnectAi } from "./NoAiCard";
-import { alertKeyRefused, Note, PlanHoldNote, usePlanHold } from "./parts";
+import { alertKeyRefused, Note, PasteField, PlanHoldNote, usePlanHold } from "./parts";
 
 /*
  * Contas de IA, as the web's Settings › Contas de IA (ADR 0059, ADR 0061): "Seus planos", first the sign-ins of the
  * computers the person connected ("Conta deste computador", the agents there think with them), then their own
- * accounts on every computer, each with its plan's meter and the agents it thinks for, renamed, signed in again (a new
- * key for a coding plan), given to one more agent where it thinks for all of them, or disconnected here; then the
- * workspace's API keys (admins), the default one, a key
- * swapped or deleted. Connecting a new one is the same picker as everywhere ("Conectar uma IA").
+ * accounts on every computer, each with its plan's meter and the agents it thinks for, renamed (in a sheet), signed
+ * in again (a new key for a coding plan) on its plan's page of Connect an AI, given to one more agent where it thinks
+ * for all of them, or disconnected here; then the workspace's API keys (admins), the default one, a key swapped (in a
+ * sheet) or deleted. Connecting a new one is the same picker as everywhere ("Conectar uma IA").
  */
 
 type Account = AiAccountsView["accounts"][number];
@@ -68,7 +70,20 @@ type Account = AiAccountsView["accounts"][number];
  */
 const choose = chooseAction;
 
+/** An account's name, as the server keeps it. */
+const NAME_LIMIT = { max: 40 };
+/** No provider's key is shorter: a key cut short never goes. */
+const KEY_MIN = 8;
+
 export function AiAccountsScreen() {
+  return (
+    <SheetHostProvider>
+      <AiAccounts />
+    </SheetHostProvider>
+  );
+}
+
+function AiAccounts() {
   const { t, i18n } = useTranslation();
   const { orgId, org } = useOrg();
   /** A computer's name in this workspace's words (a personal one's: its person's agents', ADR 0159). */
@@ -83,7 +98,7 @@ export function AiAccountsScreen() {
   const dir = useDirectory();
   const meId = useMeId();
   const status = useAiStatus(orgId);
-  const [again, setAgain] = useState<Account | null>(null);
+  const sheet = useSheet();
   const hold = usePlanHold(orgId, org);
   // Looking at the plans: their usage is looked up again (it comes back as `machine.updated`).
   useEffect(() => {
@@ -98,29 +113,45 @@ export function AiAccountsScreen() {
     toast({ title: t("agentPage.work.failed"), icon: "x" });
   };
 
-  const rename = (a: Account) => {
-    if (Platform.OS !== "ios") return;
-    Alert.prompt(
-      t("aiAccounts.page.renameTitle", { label: a.label }),
-      t("aiAccounts.done.name"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("common.save"),
-          onPress: (value?: string) => {
-            const name = (value ?? "").trim().slice(0, 40);
-            if (!name || name === a.label) return;
-            api.machines.renameAccount(orgId, a.machineId, a.id, name).then(() => {
-              successHaptic();
-              toast({ title: t("aiAccounts.page.renamed", { label: name }), icon: "check" });
-              refetch();
-            }, failed);
-          },
-        },
-      ],
-      "plain-text",
-      a.label,
+  // Renaming in the app's own sheet, on every system (the system's text prompt is iOS's alone).
+  const rename = (a: Account) =>
+    sheet.open(
+      <PromptForm
+        title={t("aiAccounts.page.renameTitle", { label: a.label })}
+        intro={t("aiAccounts.done.name")}
+        placeholder={t("aiAccounts.page.nameLabel")}
+        submitLabel={t("common.save")}
+        initial={a.label}
+        limit={NAME_LIMIT}
+        onSubmit={async (text) => {
+          // A name is one line, however it was typed or pasted.
+          const name = text.replace(/\s+/g, " ").trim();
+          if (!name || name === a.label) return sheet.close();
+          try {
+            await api.machines.renameAccount(orgId, a.machineId, a.id, name);
+            successHaptic();
+            toast({ title: t("aiAccounts.page.renamed", { label: name }), icon: "check" });
+            refetch();
+            sheet.close();
+          } catch {
+            failed();
+          }
+        }}
+      />,
     );
+  // Signing in again (a coding plan's new key) on its plan's page of Connect an AI, a screen with room for the keyboard:
+  // that exact login, for one of the person's agents that thinks with it, else on its own.
+  const signInAgain = (a: Account) => {
+    const agentId = a.usedByIds?.find((id) => {
+      const agent = dir.agentById.get(id);
+      return agent !== undefined && (agent.ownerUserId === meId || isRightHand(agent));
+    });
+    openConnectAi({
+      plan: planOfAccount(a),
+      again: a.id,
+      ...(a.email ? { email: a.email } : {}),
+      ...(agentId ? { agentId } : {}),
+    });
   };
   const names = (list: string[]) => joinNames(list, t);
   const machineOf = (a: Account) => machines.data?.find((m) => m.id === a.machineId);
@@ -183,12 +214,12 @@ export function AiAccountsScreen() {
         ...(plan && a.status === "active"
           ? [{ label: t("aiAccounts.page.useAll"), onPress: () => openKeyForAll(a.machineId, a.id) }]
           : []),
-        ...(Platform.OS === "ios" ? [{ label: t("aiAccounts.page.rename"), onPress: () => rename(a) }] : []),
+        { label: t("aiAccounts.page.rename"), onPress: () => rename(a) },
         ...(out || plan
           ? [
               {
                 label: plan ? t("aiAccounts.page.newKey") : t("aiAccounts.page.signInAgain"),
-                onPress: () => setAgain(a),
+                onPress: () => signInAgain(a),
               },
             ]
           : []),
@@ -222,9 +253,9 @@ export function AiAccountsScreen() {
             </Text>
           </InfoHint>
         </View>
-        {hold && !again ? <PlanHoldNote org={org} /> : null}
+        {hold ? <PlanHoldNote org={org} /> : null}
         {ai.isLoading ? <ActivityIndicator color={c.muted} /> : null}
-        {ai.isError ? <Note icon="x">{t("common.loadFailed")}</Note> : null}
+        {ai.isError && !ai.data ? <LoadFailed onRetry={() => void ai.refetch()} /> : null}
         {none ? (
           <FirstUse place="ai" size="panel" acts label={t("aiAccounts.page.connect")} onPress={() => openConnectAi()} />
         ) : null}
@@ -298,34 +329,6 @@ export function AiAccountsScreen() {
             })}
           </GroupedList>
         ) : null}
-        {again ? (
-          // On the page, not in a card: the steps draw their own.
-          <View style={styles.again}>
-            <View style={styles.againHead}>
-              <Text variant="callout" tone="ink" style={[styles.bold, styles.grow]}>
-                {again.label}
-              </Text>
-              <Button size="sm" variant="ghost" label={t("common.back")} onPress={() => setAgain(null)} />
-            </View>
-            {hold ? (
-              <PlanHoldNote org={org} />
-            ) : (
-              <AddAccount
-                machineId={again.machineId}
-                kind={again.kind}
-                computer={again.computer}
-                again={again.id}
-                email={again.email}
-                local={ai.data?.computers.find((x) => x.machineId === again.machineId)?.mine}
-                {...(signInProviderOf(again.provider) ? { provider: signInProviderOf(again.provider) } : {})}
-                onAdded={() => {
-                  setAgain(null);
-                  refetch();
-                }}
-              />
-            )}
-          </View>
-        ) : null}
         {none || hold ? null : (
           <View style={styles.start}>
             <Button
@@ -394,36 +397,32 @@ function KeysSection({ locale }: { locale: string }) {
     else toast({ title: errorText(t, error), icon: "x" });
   };
   const platform = usePlatformKey(orgId);
+  const sheet = useSheet();
 
-  const rotate = (k: Credential) => {
-    if (Platform.OS !== "ios") return;
-    Alert.prompt(
-      t("settings.rotateTitle", { label: k.label }),
-      t("settings.rotateHelp"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("settings.saveKey"),
-          onPress: (value?: string) => {
-            const apiKey = (value ?? "").trim();
-            if (apiKey.length < 8) return;
-            api.agents.rotateCredential(orgId, k.id, { apiKey }).then((saved) => {
-              successHaptic();
-              toast({
-                title:
-                  saved.check === "unchecked"
-                    ? t("connectAi.key.savedUnchecked", { provider: keyName(k) })
-                    : t("settings.rotated"),
-                icon: "check",
-              });
-              refetch();
-            }, failed);
-          },
-        },
-      ],
-      "secure-text",
+  // Replacing a key in the app's own sheet, on every system: the new key hidden as it is typed or pasted. A refused
+  // key keeps the sheet open, with what it said.
+  const rotate = (k: Credential) =>
+    sheet.open(
+      <KeyPrompt
+        title={t("settings.rotateTitle", { label: k.label })}
+        intro={t("settings.rotateHelp")}
+        submitLabel={t("settings.saveKey")}
+        onSubmit={(apiKey) =>
+          api.agents.rotateCredential(orgId, k.id, { apiKey }).then((saved) => {
+            successHaptic();
+            toast({
+              title:
+                saved.check === "unchecked"
+                  ? t("connectAi.key.savedUnchecked", { provider: keyName(k) })
+                  : t("settings.rotated"),
+              icon: "check",
+            });
+            refetch();
+            sheet.close();
+          }, failed)
+        }
+      />,
     );
-  };
   const remove = (k: Credential) =>
     Alert.alert(t("settings.removeTitle", { label: k.label }), keyRemovalText(t, k, all, platform.data === true), [
       { text: t("common.cancel"), style: "cancel" },
@@ -461,7 +460,7 @@ function KeysSection({ locale }: { locale: string }) {
         ...(isDefault
           ? []
           : [{ label: t("settings.makeDefault"), onPress: () => update.mutate({ defaultCredentialId: k.id }) }]),
-        ...(Platform.OS === "ios" && !held ? [{ label: t("settings.rotate"), onPress: () => rotate(k) }] : []),
+        ...(held ? [] : [{ label: t("settings.rotate"), onPress: () => rotate(k) }]),
         ...(k.copies ? [{ label: t("settings.removeCopies"), onPress: () => removeCopies(k) }] : []),
         { label: t("settings.remove"), destructive: true, onPress: () => remove(k) },
       ],
@@ -526,6 +525,61 @@ function KeysSection({ locale }: { locale: string }) {
   );
 }
 
+/**
+ * One key asked in a sheet, as `PromptForm` asks one text: the title, a line of help, the key (hidden, with Paste while
+ * the field is empty) and one button that waits for the save. Anything shorter than a key never goes.
+ */
+function KeyPrompt({
+  title,
+  intro,
+  submitLabel,
+  onSubmit,
+}: {
+  title: string;
+  intro: string;
+  submitLabel: string;
+  onSubmit: (key: string) => Promise<unknown>;
+}) {
+  const [key, setKey] = useState("");
+  const [busy, setBusy] = useState(false);
+  const ready = key.trim().length >= KEY_MIN;
+  const submit = async () => {
+    if (!ready || busy) return;
+    setBusy(true);
+    try {
+      await onSubmit(key.trim());
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <SheetTitle title={title} />
+      <Text variant="body" tone="muted">
+        {intro}
+      </Text>
+      <Locked when={busy}>
+        <PasteField
+          value={key}
+          onChangeText={setKey}
+          onPasted={setKey}
+          label={title}
+          secret
+          onSubmit={() => void submit()}
+        />
+      </Locked>
+      <Button
+        variant="primary"
+        wide
+        label={submitLabel}
+        loading={busy}
+        disabled={!ready}
+        onPress={() => void submit()}
+      />
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   // The settings screens' side margin: the groups on the same 16 pt edge as everywhere else.
@@ -533,9 +587,5 @@ const styles = StyleSheet.create({
   sectionHead: { gap: 4, paddingHorizontal: 2 },
   keysHead: { marginTop: 20 },
   below: { gap: 8, marginTop: 6 },
-  bold: { fontWeight: "600" },
-  grow: { flex: 1, minWidth: 0 },
   start: { alignSelf: "flex-start" },
-  again: { gap: 12 },
-  againHead: { flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 2 },
 });
