@@ -1,17 +1,20 @@
 import { afterEach, expect, test } from "bun:test";
 import { ACCOUNTS_PROTOCOL, MACHINE_PROTOCOL_VERSION } from "@agenteschat/adapters";
-import { and, eq, schema } from "@agenteschat/db";
+import { and, eq, schema, sql } from "@agenteschat/db";
 import {
   type Brain,
   createJobHandlers,
   drainOutbox,
+  getAgentBrain,
   type MachineStatus,
   openPersonAgentDm,
   postPersonMessage,
+  postStandInLine,
   RIGHT_HAND,
   STAND_IN_LINE,
   servingPlanFor,
   servingPlans,
+  setAccountServes,
   setAgentBrain,
   standInWhy,
 } from "../src";
@@ -128,6 +131,50 @@ test("a computer's own sign-in only, plus a key: Lodi answers on the key, shows 
   await postPersonMessage({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, dm.id, { body: "And now?" });
   await drainOutbox(fx.db, handlers);
   expect(await lines(dm.id)).toHaveLength(1);
+});
+
+test("a plan kept to its owner: another person's 'Your AI' names the key that answers them, not nobody", async () => {
+  const { fx, laptop, joao, account, lodi } = await world();
+  await account(WALTERS, laptop, "Claude Max");
+  await setAgentBrain({ db: fx.db }, fx.owner.id, fx.org.id, (await lodi()).id, {
+    brain: "claude_code",
+    account: WALTERS,
+  });
+  await setAccountServes({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, WALTERS, "owner");
+  const agentId = (await lodi()).id;
+  expect(await getAgentBrain({ db: fx.db }, joao.id, fx.org.id, agentId, "mine")).toMatchObject({
+    workspaceAi: { brain: "model", servesYou: true, key: { label: "main" } },
+  });
+  expect(await getAgentBrain({ db: fx.db }, fx.owner.id, fx.org.id, agentId, "mine")).toMatchObject({
+    workspaceAi: { brain: "claude_code", ownerId: fx.owner.id, servesYou: true },
+  });
+});
+
+test("a run that ended with no reply gets no stand-in line", async () => {
+  const { fx, lodi, lines } = await world();
+  await fx.db
+    .update(schema.agents)
+    .set({ brain: "claude_code", brainAccountId: null })
+    .where(eq(schema.agents.id, (await lodi()).id));
+  const agent = await lodi();
+  const machines = { status: async (id: string) => statusOf(id) };
+  const handlers = createJobHandlers({ ...fx.jobDeps, machines });
+  const dm = await openPersonAgentDm(fx.db, fx.org.id, fx.owner.id, agent.id);
+  await postPersonMessage({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, dm.id, { body: "Hi" });
+  await drainOutbox(fx.db, handlers);
+  const [run] = await fx.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, agent.id));
+  if (!run) throw new Error("no run");
+  // The reply and its line gone: the same run, as if it had said nothing, posts no line.
+  await fx.db.update(schema.messages).set({ deletedAt: new Date() }).where(eq(schema.messages.agentRunId, run.id));
+  const standIn = { via: "main", plan: "Claude", code: "no_computer" };
+  expect(await postStandInLine({ db: fx.db, pubsub: fx.pubsub }, run, standIn)).toBeNull();
+  // With its reply back, the line comes.
+  await fx.db
+    .update(schema.messages)
+    .set({ deletedAt: null })
+    .where(and(eq(schema.messages.agentRunId, run.id), sql`${schema.messages.meta}->>'bodyCode' is null`));
+  expect(await postStandInLine({ db: fx.db, pubsub: fx.pubsub }, run, standIn)).not.toBeNull();
+  expect((await lines(dm.id)).filter((m) => !m.deletedAt)).toHaveLength(1);
 });
 
 test("the workspace's own computer comes first, then a computer online, then the person's own, then room", async () => {

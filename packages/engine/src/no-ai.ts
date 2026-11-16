@@ -210,6 +210,21 @@ export async function postStandInLine(
   const why = standInWhy(standIn.code);
   const line = await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`stand-in:${run.channelId}:${threadId ?? ""}`}))`);
+    // A run that ended without a reply (it only acted, or chose to stay quiet) has nothing for the line to sit under.
+    const [reply] = await tx
+      .select({ id: messages.id })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.orgId, run.orgId),
+          eq(messages.channelId, run.channelId),
+          eq(messages.authorAgentId, run.agentId),
+          eq(messages.agentRunId, run.id),
+          isNull(messages.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!reply) return null;
     if ((await cardsPosted(tx, run, threadId, STAND_IN_LINE)).includes(run.agentId)) return null;
     const trigger = await getMessage(tx, run.orgId, run.triggerMessageId);
     return insertMessage(tx, {

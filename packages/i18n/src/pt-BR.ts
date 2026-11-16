@@ -17378,7 +17378,6 @@ export const ptBR = {
       text: "O ChatGPT recusou a velocidade Rápida nesta conta ou neste modelo, então esta resposta veio no padrão.",
       action: "Abrir agente",
     },
-    /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     standIn: {
       needsComputer: "Respondi com {{via}}: {{plan}} precisa de um computador.",
       away: "Respondi com {{via}}: o computador do {{plan}} está ausente.",
@@ -17387,6 +17386,7 @@ export const ptBR = {
       cant: "Respondi com {{via}}: {{plan}} não consegue pensar agora.",
       change: "Trocar",
     },
+    /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
       text: "O {{plan}} recusou o {{from}} com esta chave. Respondi com o {{to}}, que funciona nela.",
       useAll: "Usar o {{model}} em todos",

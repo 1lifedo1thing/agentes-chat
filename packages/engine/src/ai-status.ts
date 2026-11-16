@@ -133,10 +133,12 @@ export async function agentAiState(
 ): Promise<AgentAi> {
   const person = run ? await rightHandPerson(deps.db, given, run) : (viewer ?? null);
   const agent = await thinkingAgent(deps.db, given, person);
-  // The right hand never stays without an AI while another can think for it (ADR 0137 §7, amended 2026-11-15).
+  const mission = run ? await missionTurnFor(deps.db, run).catch(() => null) : null;
+  // The right hand never stays without an AI while another can think for it (ADR 0137 §7, amended 2026-11-15). A
+  // mission's turn keeps its session's computer (`resolveBrain`): only the key may take it over.
   const standIn = async (code: string): Promise<AgentAi | null> => {
     if (!isRightHand(agent)) return null;
-    const s = await rightHandStandIn(deps, agent, person, code).catch(() => null);
+    const s = await rightHandStandIn(deps, agent, person, code, { keyOnly: Boolean(mission) }).catch(() => null);
     return s ? { state: "ready", standIn: { via: s.via, plan: s.plan, code: s.code } } : null;
   };
   // The workspace's plan while it serves only its owner: it thinks for nobody else, so for no work nobody is behind
@@ -152,7 +154,6 @@ export async function agentAiState(
     if (!person && background)
       return (await standIn("plan_unattended")) ?? { state: "no_ai", reason: "plan_not_shared" };
   }
-  const mission = run ? await missionTurnFor(deps.db, run).catch(() => null) : null;
   const kind = mission?.brain ?? brainOf(agent.brain);
   if (kind === "model") {
     if (!(await modelReady(deps, agent))) {
