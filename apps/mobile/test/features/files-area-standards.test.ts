@@ -93,6 +93,59 @@ describe("the Vault's screens", () => {
   });
 });
 
+describe("the Vault's flows are real navigation", () => {
+  test("Import .env is two pushed screens: the review is its own route, the keys handed over in a draft", () => {
+    const env = src("features/vault/VaultEnvScreen.tsx");
+    // No step swapped in place: the paste step pushes the review, the system's back comes back to the paste.
+    expect(env).not.toContain("if (!file)");
+    expect(env).toContain("openEnvDraft({ file: parsed, scope: asked, leave });");
+    expect(env).toContain("router.push(vaultHref.envReview as never);");
+    // No drawn way back ("Import another"): the system's back is it.
+    expect(env).not.toContain('t("vault.import.another")');
+    // Saved, the whole flow closes back to the Vault without asking about the paste.
+    expect(env).toContain("draft.leave();");
+    expect(env).toContain("router.dismissTo(vaultHref.list as never);");
+    // The review takes the draft as it opens and drops it as it closes; without one it starts over.
+    expect(env).toContain("const [draft] = useState(envDraftNow);");
+    expect(env).toContain("useEffect(() => () => closeEnvDraft(draft), [draft]);");
+    const route = readFileSync(
+      join(import.meta.dir, "../../app/(app)/(main)/settings/vault-env-review.tsx"),
+      "utf8",
+    );
+    expect(route).toContain("<VaultEnvReviewScreen />");
+  });
+
+  test("connecting a password manager ends on the connection's page, never a done step drawn in place", () => {
+    const connect = src("features/vault/VaultConnectScreen.tsx");
+    expect(connect).not.toContain("setMade");
+    expect(connect).not.toContain("ConnectedNote");
+    expect(connect).toContain("router.replace(vaultHref.connection(connected.id) as never);");
+    expect(connect).toContain('title: t("mobile.vault.connect.connected", { name: source.name }),');
+    // Its page waits for the Vault read again before it says a connection is gone.
+    expect(src("features/vault/VaultConnectionScreen.tsx")).toContain("vault.isSuccess && !vault.isFetching ? (");
+  });
+
+  test("a connection's fields walk with the return key, under the keyboard's bar", () => {
+    const connect = src("features/vault/VaultConnectScreen.tsx");
+    expect(connect).toContain('{...(f.id === lastTyped ? { returnKeyType: "done" as const } : NEXT_FIELD)}');
+    expect(connect).toMatch(/locked=\{busy\}\s+toolbar\s+>/);
+  });
+
+  test("the Vault's pages load in their rows' shape, never a spinner", () => {
+    for (const file of [
+      "features/vault/VaultScreen.tsx",
+      "features/vault/VaultItemScreen.tsx",
+      "features/vault/VaultAccessScreen.tsx",
+      "features/vault/VaultConnectScreen.tsx",
+      "features/vault/VaultConnectionScreen.tsx",
+    ]) {
+      const s = src(file);
+      expect({ file, spinner: s.includes("ActivityIndicator") }).toEqual({ file, spinner: false });
+      expect({ file, skeleton: s.includes("<SkeletonList rows={4} />") }).toEqual({ file, skeleton: true });
+    }
+  });
+});
+
 describe("Compartilhar com…", () => {
   test("the line to send is the app's text field, the sheet keeps a sheet's margins", () => {
     const share = src("features/share/ShareScreen.tsx");
