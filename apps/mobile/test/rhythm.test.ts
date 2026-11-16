@@ -48,7 +48,7 @@ test("the kit's screens, grouped rows and toolbar controls read those numbers in
   expect(source("Segmented.tsx")).toContain("minHeight: TOOL_H - 2 * PAD");
   expect(source("Filters.tsx")).toContain("minHeight: TOOL_H");
   expect(source("Filters.tsx")).toContain("gap: 8");
-  expect(source("LargeTitleScreen.tsx")).toContain("paddingHorizontal: SCREEN_X");
+  expect(source("LargeTitleHead.tsx")).toContain("paddingHorizontal: SCREEN_X");
   expect(source("SectionHeader.tsx")).toContain("paddingHorizontal: SCREEN_X");
   expect(source("Row.tsx")).toContain("paddingHorizontal: CARD_PAD");
 });
