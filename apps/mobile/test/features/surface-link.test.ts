@@ -10,6 +10,8 @@ import {
   codeDeadline,
   codeIsStale,
   codeLeftText,
+  linkAssistant,
+  linkRanOut,
   linkStep,
   RENEW_BEFORE_MS,
   senderName,
@@ -165,6 +167,32 @@ describe("the sheet", () => {
     expect(assistantName(undefined)).toBeNull();
   });
 
+  test("the confirm step waits only while the agents load, then names the right hand or the generic label", () => {
+    const lodi = [{ builtin: "right_hand" as const, name: "Lodi" }];
+    expect(linkAssistant({ isPending: true, data: undefined }, "Your right hand")).toBeNull();
+    expect(linkAssistant({ isPending: false, data: lodi }, "Your right hand")).toBe("Lodi");
+    // No right hand in that workspace, or the agents failed: the server's confirm says why if it refuses.
+    expect(linkAssistant({ isPending: false, data: [{ builtin: null, name: "Theo" }] }, "Your right hand")).toBe(
+      "Your right hand",
+    );
+    expect(linkAssistant({ isPending: false, data: undefined }, "Your right hand")).toBe("Your right hand");
+  });
+
+  test("a pending link that runs out drops the confirm step and says why, one removed by Not me does not", async () => {
+    const pending = link();
+    const later = Date.parse(pending.expiresAt as string) + 1;
+    expect(surfaceRowOf(links([pending]), NOW).kind).toBe("pending");
+    expect(surfaceRowOf(links([pending]), later).kind).toBe("none");
+    expect(linkRanOut(pending, later)).toBe(true);
+    expect(linkRanOut(pending, NOW)).toBe(false);
+    expect(linkRanOut(link({ expiresAt: null }), later)).toBe(false);
+    const src = readFileSync(join(import.meta.dir, "../../src/features/me/SurfaceLink.tsx"), "utf8");
+    expect(src).toContain("surfaceRowOf(links.data, now)");
+    expect(src).toContain('setError(t("errors.surface.linkGone"))');
+    const t = await translator("en");
+    expect(t("errors.surface.linkGone")).toContain("Make a new code");
+  });
+
   test("failures say the cause and a way out", async () => {
     const t = await translator("en");
     for (const code of ["surface.link_gone", "surface.taken", "surface.no_assistant", "surface.not_allowed"]) {
@@ -190,15 +218,27 @@ describe("the mark on messages", () => {
     expect(surfaceTagText(t, { via: { ...via.via, forwarded: true } }, "Ana", data)?.label).toBe(
       "forwarded via Example Chat",
     );
-    // Before the links answer is read, the id stands in for the name.
-    expect(surfaceTagText(t, via, "Ana", undefined)?.label).toBe("via example chat");
+    // Before the links answer is read, or after the surface was renamed, the id stands in, capitalized as on the web.
+    expect(surfaceTagText(t, via, "Ana", undefined)?.label).toBe("via Example chat");
+    expect(surfaceTagText(t, via, "Ana", links([], { surface: { name: "Renamed" } }))?.label).toBe("via Example chat");
+    const long = { via: { kind: "surface", surface: LONG_SURFACE.toLowerCase() } };
+    expect(surfaceTagText(t, long, "Ana", links([], { surface: { name: LONG_SURFACE } }))?.label).toBe(
+      `via ${LONG_SURFACE}`,
+    );
     expect(surfaceTagText(t, { via: { kind: "app", name: "Claude" } }, "Ana", data)).toBeNull();
     expect(surfaceTagText(t, null, "Ana", data)).toBeNull();
   });
 
-  test("only a person's message carries it, with a generic chat icon", () => {
+  test("only a person's message carries it: a glyph before the time on my own rows, a whole tag on others'", () => {
     const src = readFileSync(join(import.meta.dir, "../../src/features/chat/MessageRow.tsx"), "utf8");
     expect(src).toMatch(/m\.author\.type === "person"\s*\?\s*surfaceTagText/);
-    expect(src).toContain('<Tag icon="chat" label={surfaceTag.label} hint={surfaceTag.hint} />');
+    // My own rows never draw the name line, so the mark rides in both of their time lines, ahead of the time.
+    const own = src.slice(src.indexOf("if (onRight) {"), src.indexOf("const who = (inBubble: boolean)"));
+    expect(own.match(/\{surfaceTag \? <SurfaceMark tag=\{surfaceTag\}/g)?.length).toBe(2);
+    expect(own.indexOf("<SurfaceMark")).toBeLessThan(own.indexOf("when.time(m.createdAt)"));
+    expect(src).toMatch(/accessibilityLabel=\{tag\.label\} accessibilityHint=\{tag\.hint\}/);
+    // Others' rows: the tag counts as one, so a bubble with no names still shows its line, and wraps a long name.
+    expect(src).toContain('<Tag icon="chat" label={surfaceTag.label} hint={surfaceTag.hint} wrap />');
+    expect(src).toMatch(/const tagged = Boolean\([^)]*surfaceTag/);
   });
 });

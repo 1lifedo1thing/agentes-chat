@@ -9,7 +9,7 @@ import {
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { type SurfaceRow, surfaceRowOf } from "@agenteschat/client/lib/surface-links";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Linking, StyleSheet, View } from "react-native";
 import { useAppActive } from "@/lib/useAppActive";
@@ -24,6 +24,8 @@ import {
   codeIsStale,
   codeLeftText,
   LINK_POLL_MS,
+  linkAssistant,
+  linkRanOut,
   linkStep,
   senderName,
   surfaceRowText,
@@ -41,7 +43,9 @@ export function SurfaceLinkRow() {
   const agents = useAgents(orgId);
   const remove = useRemoveSurfaceLink();
   const [open, setOpen] = useState(false);
-  const row = surfaceRowOf(links.data);
+  // The server sends no event when a pending link runs out, so the clock drops it, quickly while the sheet is open.
+  const now = useNow(open ? 5_000 : 60_000);
+  const row = surfaceRowOf(links.data, now);
   if (row.kind === "hidden") return null;
   const text = surfaceRowText(t, row, assistantName(agents.data));
   const unlink = (link: SurfaceLink) =>
@@ -117,9 +121,17 @@ function LinkSteps({
   const links = useSurfaceLinks();
   const step = linkStep(row, Boolean(linked));
   const linkOrg = row.kind === "pending" ? (row.link.orgId ?? orgId) : orgId;
-  const assistant = assistantName(useAgents(linkOrg).data);
+  const assistant = linkAssistant(useAgents(linkOrg), t("rightHand.labelCapitalized"));
   // The failure of the last action, said in whichever step follows it (a refused confirm lands back on the code).
   const [error, setError] = useState<string | null>(null);
+  // A confirm step that ran out falls back to a fresh code, saying why.
+  const pendingLink = row.kind === "pending" ? row.link : null;
+  const lastPending = useRef<SurfaceLink | null>(null);
+  useEffect(() => {
+    const last = lastPending.current;
+    lastPending.current = pendingLink;
+    if (!pendingLink && last && linkRanOut(last, Date.now())) setError(t("errors.surface.linkGone"));
+  }, [pendingLink, t]);
   const active = useAppActive();
   const waiting = step === "code";
   const { refetch } = links;

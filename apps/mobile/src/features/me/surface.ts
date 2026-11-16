@@ -1,6 +1,7 @@
 import type { Agent, SurfaceLink, SurfaceLinkCode, SurfaceLinks } from "@agenteschat/client";
 import { formatTimeLeft } from "@agenteschat/client/lib/actions";
-import { isRightHand } from "@agenteschat/client/lib/right-hand";
+import { capitalize } from "@agenteschat/client/lib/format";
+import { rightHandOf } from "@agenteschat/client/lib/right-hand";
 import type { SurfaceRow } from "@agenteschat/client/lib/surface-links";
 import { surfaceVia } from "@agenteschat/client/lib/via";
 import type { TFunction } from "i18next";
@@ -44,7 +45,24 @@ export const codeLeftText = (t: TFunction, deadline: number, now: number) =>
 
 /** The workspace's right hand by name, or null while the agents load. */
 export const assistantName = (agents: readonly Pick<Agent, "builtin" | "name">[] | undefined) =>
-  agents?.find((a) => isRightHand(a))?.name ?? null;
+  (agents ? rightHandOf(agents)?.name : undefined) ?? null;
+
+/**
+ * Who the consent line and the sheet name: null only while the agents load. A workspace with no right hand, or agents
+ * that failed to load, gets the generic label, and the server's confirm says why when it refuses.
+ */
+export const linkAssistant = (
+  agents: { isPending: boolean; data?: readonly Pick<Agent, "builtin" | "name">[] | undefined },
+  fallback: string,
+) => (agents.isPending ? null : (assistantName(agents.data) ?? fallback));
+
+/** A pending link whose 10 minutes ran out on this device's clock; a link removed by "Not me" has not. */
+export const linkRanOut = (link: Pick<SurfaceLink, "expiresAt">, now: number) =>
+  link.expiresAt !== null && Date.parse(link.expiresAt) <= now;
+
+/** The surface's name for a message's `via` (its id, the name lower-cased): the server's when it matches, else the id. */
+export const surfaceViaName = (id: string, name: string | null | undefined, locale?: string) =>
+  name && name.toLowerCase() === id.toLowerCase() ? name : capitalize(id, locale);
 
 /** Who sent the code, as the surface shows them: the display, else the profile name, else the surface itself. */
 export const senderName = (link: Pick<SurfaceLink, "display" | "profileName">, surface: string) =>
@@ -74,10 +92,11 @@ export function surfaceTagText(
   meta: Record<string, unknown> | null | undefined,
   person: string,
   data: SurfaceLinks | null | undefined,
+  locale?: string,
 ): { label: string; hint: string } | null {
   const via = surfaceVia(meta);
   if (!via) return null;
-  const surface = data?.surface?.name ?? via.surface;
+  const surface = surfaceViaName(via.surface, data?.surface?.name, locale);
   return via.forwarded
     ? { label: t("surface.forwarded", { surface }), hint: t("surface.forwardedTip", { person, surface }) }
     : { label: t("surface.via", { surface }), hint: t("surface.viaTip", { person, surface }) };
