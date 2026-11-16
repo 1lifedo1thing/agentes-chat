@@ -207,173 +207,173 @@ function Detail({ widget: w, refetch }: { widget: WidgetDetail; refetch: () => P
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: insets.bottom + (w.canEdit ? 96 : 28) }}
         >
-      <View style={styles.in}>
-        {/* Who looks after it, first under the bar (as a board's line), not as a subtitle in the bar. */}
-        <Text variant="footnote" tone="muted" style={styles.cares}>
-          {t("mobile.dashboards.widget.caresFor", { name: look.name })}
-        </Text>
-        <WidgetCard
-          big
-          // Its name is the bar's: the card under it draws the data alone.
-          head={null}
-          widget={{
-            title: w.title,
-            kind: w.kind,
-            spec: w.spec,
-            status: w.status,
-            agentId: w.agentId,
-            refreshedAt: w.refreshedAt,
-            schedule: w.schedule,
-            w: 2,
-            needsAi,
-            wait: w.wait,
-          }}
-        />
-        {waiting?.code === "usage_pause" && w.canEdit ? (
-          <View style={styles.failure}>
-            <Text variant="footnote" tone="muted" style={styles.grow}>
-              {t(
-                !waiting.canContinue
-                  ? "usageCard.forbidden"
-                  : waiting.source === "budget"
-                    ? "usageCard.hintBudget"
-                    : "usageCard.hint",
-              )}
+          <View style={styles.in}>
+            {/* Who looks after it, first under the bar (as a board's line), not as a subtitle in the bar. */}
+            <Text variant="footnote" tone="muted" style={styles.cares}>
+              {t("mobile.dashboards.widget.caresFor", { name: look.name })}
             </Text>
-            <Button
-              size="sm"
-              variant="secondary"
-              label={t("usageCard.continue")}
-              loading={refresh.isPending}
-              disabled={!waiting.canContinue}
-              onPress={updateNow}
+            <WidgetCard
+              big
+              // Its name is the bar's: the card under it draws the data alone.
+              head={null}
+              widget={{
+                title: w.title,
+                kind: w.kind,
+                spec: w.spec,
+                status: w.status,
+                agentId: w.agentId,
+                refreshedAt: w.refreshedAt,
+                schedule: w.schedule,
+                w: 2,
+                needsAi,
+                wait: w.wait,
+              }}
             />
-          </View>
-        ) : waiting ? (
-          <WaitFix agentId={w.agentId} wait={waiting} />
-        ) : null}
-        {w.status === "failed" && w.failure ? (
-          <View style={styles.failure}>
-            <View style={styles.failureLine}>
-              <LineIcon name={needsAi ? "bolt" : "info"} size={13} color={c.warn} variant="footnote" />
-              <View style={styles.grow}>
-                <Text variant="footnote" style={{ color: c.warn }}>
-                  {words.failure(w)}
+            {waiting?.code === "usage_pause" && w.canEdit ? (
+              <View style={styles.failure}>
+                <Text variant="footnote" tone="muted" style={styles.grow}>
+                  {t(
+                    !waiting.canContinue
+                      ? "usageCard.forbidden"
+                      : waiting.source === "budget"
+                        ? "usageCard.hintBudget"
+                        : "usageCard.hint",
+                  )}
                 </Text>
-                {aiWay && "locked" in aiWay ? (
-                  <Text variant="footnote" tone="muted">
-                    {aiWay.locked}
-                  </Text>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  label={t("usageCard.continue")}
+                  loading={refresh.isPending}
+                  disabled={!waiting.canContinue}
+                  onPress={updateNow}
+                />
+              </View>
+            ) : waiting ? (
+              <WaitFix agentId={w.agentId} wait={waiting} />
+            ) : null}
+            {w.status === "failed" && w.failure ? (
+              <View style={styles.failure}>
+                <View style={styles.failureLine}>
+                  <LineIcon name={needsAi ? "bolt" : "info"} size={13} color={c.warn} variant="footnote" />
+                  <View style={styles.grow}>
+                    <Text variant="footnote" style={{ color: c.warn }}>
+                      {words.failure(w)}
+                    </Text>
+                    {aiWay && "locked" in aiWay ? (
+                      <Text variant="footnote" tone="muted">
+                        {aiWay.locked}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+                {/* No AI to build with: Connect (or who can), never Resolve, which comes back once one is there. */}
+                {needsAi ? (
+                  aiWay && "connect" in aiWay ? (
+                    <Button size="sm" variant="secondary" label={t("noAi.action")} onPress={aiWay.connect} />
+                  ) : null
+                ) : w.canEdit ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    label={t("widgets.failure.resolve")}
+                    loading={refresh.isPending}
+                    onPress={updateNow}
+                  />
                 ) : null}
               </View>
-            </View>
-            {/* No AI to build with: Connect (or who can), never Resolve, which comes back once one is there. */}
-            {needsAi ? (
-              aiWay && "connect" in aiWay ? (
-                <Button size="sm" variant="secondary" label={t("noAi.action")} onPress={aiWay.connect} />
-              ) : null
-            ) : w.canEdit ? (
-              <Button
-                size="sm"
-                variant="secondary"
-                label={t("widgets.failure.resolve")}
-                loading={refresh.isPending}
-                onPress={updateNow}
+            ) : null}
+
+            {w.canEdit ? (
+              <>
+                <View style={styles.gap} />
+                <GroupedList>
+                  <GroupedRow
+                    icon="pen"
+                    label={t("mobile.dashboards.widget.title")}
+                    value={shown}
+                    chevron
+                    onPress={() => router.push(widgetEditHref(w.id, "title"))}
+                  />
+                </GroupedList>
+              </>
+            ) : null}
+
+            <GroupedHeader>{t("widgets.panel.how")}</GroupedHeader>
+            <GroupedList>
+              <GroupedRow
+                icon="clock"
+                label={t(`widgets.schedules.${w.schedule}`)}
+                sub={next}
+                subLines={2}
+                menu={w.canEdit}
+                {...(w.canEdit ? { onPress: pickSchedule } : {})}
               />
+              <GroupedRow
+                icon="bell"
+                label={alertLine}
+                labelLines={2}
+                sub={t("widgets.alert.where")}
+                chevron={w.canEdit}
+                {...(w.canEdit ? { onPress: () => router.push(widgetEditHref(w.id, "alert")) } : {})}
+              />
+              {w.sources.length > 0 ? (
+                <GroupedRow
+                  icon="server"
+                  label={w.sources.join(" · ")}
+                  labelLines={2}
+                  sub={t("widgets.panel.reads", { name: look.name })}
+                />
+              ) : null}
+              {w.routineId && w.schedule !== "manual" ? (
+                <GroupedRow
+                  icon="list"
+                  label={t("mobile.dashboards.widget.routine")}
+                  chevron
+                  onPress={() => router.push(routineHref(w.routineId))}
+                />
+              ) : null}
+              <GroupedRow
+                icon="chart"
+                label={home ? t("dashboards.home") : w.dashboard.title}
+                sub={t("mobile.dashboards.widget.onBoard")}
+                chevron
+                onPress={() => router.push(boardHref(home ? HOME : w.dashboard.id))}
+              />
+            </GroupedList>
+
+            <GroupedHeader>{t("widgets.panel.history")}</GroupedHeader>
+            <GroupedList>
+              {history.length === 0 ? (
+                <GroupedRow label={t("widgets.panel.noHistory")} faint />
+              ) : (
+                history.map((u) => (
+                  <GroupedRow
+                    key={u.id}
+                    label={historyLabel(u)}
+                    labelLines={2}
+                    sub={whenAt(t, i18n.language, u.at)}
+                    belowText={historyNote(u)}
+                  />
+                ))
+              )}
+            </GroupedList>
+
+            {w.canEdit ? (
+              <>
+                <View style={styles.gap} />
+                <GroupedList>
+                  <GroupedRow
+                    icon="trash"
+                    label={home ? t("widgets.menu.removeHome") : t("widgets.menu.removeBoard")}
+                    danger
+                    disabled={remove.isPending}
+                    onPress={confirmRemove}
+                  />
+                </GroupedList>
+              </>
             ) : null}
           </View>
-        ) : null}
-
-        {w.canEdit ? (
-          <>
-            <View style={styles.gap} />
-            <GroupedList>
-              <GroupedRow
-                icon="pen"
-                label={t("mobile.dashboards.widget.title")}
-                value={shown}
-                chevron
-                onPress={() => router.push(widgetEditHref(w.id, "title"))}
-              />
-            </GroupedList>
-          </>
-        ) : null}
-
-        <GroupedHeader>{t("widgets.panel.how")}</GroupedHeader>
-        <GroupedList>
-          <GroupedRow
-            icon="clock"
-            label={t(`widgets.schedules.${w.schedule}`)}
-            sub={next}
-            subLines={2}
-            menu={w.canEdit}
-            {...(w.canEdit ? { onPress: pickSchedule } : {})}
-          />
-          <GroupedRow
-            icon="bell"
-            label={alertLine}
-            labelLines={2}
-            sub={t("widgets.alert.where")}
-            chevron={w.canEdit}
-            {...(w.canEdit ? { onPress: () => router.push(widgetEditHref(w.id, "alert")) } : {})}
-          />
-          {w.sources.length > 0 ? (
-            <GroupedRow
-              icon="server"
-              label={w.sources.join(" · ")}
-              labelLines={2}
-              sub={t("widgets.panel.reads", { name: look.name })}
-            />
-          ) : null}
-          {w.routineId && w.schedule !== "manual" ? (
-            <GroupedRow
-              icon="list"
-              label={t("mobile.dashboards.widget.routine")}
-              chevron
-              onPress={() => router.push(routineHref(w.routineId))}
-            />
-          ) : null}
-          <GroupedRow
-            icon="chart"
-            label={home ? t("dashboards.home") : w.dashboard.title}
-            sub={t("mobile.dashboards.widget.onBoard")}
-            chevron
-            onPress={() => router.push(boardHref(home ? HOME : w.dashboard.id))}
-          />
-        </GroupedList>
-
-        <GroupedHeader>{t("widgets.panel.history")}</GroupedHeader>
-        <GroupedList>
-          {history.length === 0 ? (
-            <GroupedRow label={t("widgets.panel.noHistory")} faint />
-          ) : (
-            history.map((u) => (
-              <GroupedRow
-                key={u.id}
-                label={historyLabel(u)}
-                labelLines={2}
-                sub={whenAt(t, i18n.language, u.at)}
-                belowText={historyNote(u)}
-              />
-            ))
-          )}
-        </GroupedList>
-
-        {w.canEdit ? (
-          <>
-            <View style={styles.gap} />
-            <GroupedList>
-              <GroupedRow
-                icon="trash"
-                label={home ? t("widgets.menu.removeHome") : t("widgets.menu.removeBoard")}
-                danger
-                disabled={remove.isPending}
-                onPress={confirmRemove}
-              />
-            </GroupedList>
-          </>
-        ) : null}
-      </View>
         </ScrollView>
       </FocusLive>
       {w.canEdit ? <AskChange widget={w} name={look.name} /> : null}
