@@ -8,6 +8,7 @@ import {
   createApiKeyConnection,
   createConnectorToolSource,
   createToolGateway,
+  drainOutbox,
   postPersonMessage,
   saveCustomTools,
 } from "../src";
@@ -123,6 +124,8 @@ test("a listed host: each tool call carries a statement signed with its secret t
     run: ctx.runId,
     conn,
     user: f.owner.id,
+    channel: f.general.id,
+    thread: ctx.threadRootId,
     iat,
     exp: iat + 60,
     jti: expect.stringMatching(/^[0-9a-f-]{36}$/),
@@ -156,11 +159,59 @@ test("a run nobody is behind names no person, and a call outside any run names n
   await tool?.execute(INPUT, { ...ctx, runId: "" });
 
   const [routine, noRun] = toolCalls(mcp).map((r) => verified(statementOf(r), SECRET)?.claims);
-  expect(routine).toMatchObject({ org: f.org.id, agent: f.agent.id, run: ctx.runId });
+  // A routine's own run: the conversation it answers in is its room, and the thread's root is what woke it.
+  expect(routine).toMatchObject({
+    org: f.org.id,
+    agent: f.agent.id,
+    run: ctx.runId,
+    channel: ctx.channelId,
+    thread: ctx.threadRootId,
+  });
   expect(routine).not.toHaveProperty("user");
+  // Nobody said what thinks for either call, so neither statement says.
+  expect(routine).not.toHaveProperty("brain");
+  expect(routine).not.toHaveProperty("provider");
   expect(noRun).toMatchObject({ org: f.org.id, agent: f.agent.id });
   expect(noRun).not.toHaveProperty("run");
   expect(noRun).not.toHaveProperty("user");
+});
+
+test("what thinks for the run and where it answers: a model the server calls says its provider, a program on a computer only its kind", async () => {
+  const mcp = fakeGithubMcp();
+  let source: ReturnType<typeof createConnectorToolSource> | null = null;
+  f = await setup({
+    toolSources: [{ name: "connectors", tools: (ctx) => (source ? source.tools(ctx) : Promise.resolve([])) }],
+    reply: (req) =>
+      JSON.stringify(req.messages).includes("pull_request_read")
+        ? { chunks: ["Read."] }
+        : { chunks: [], toolUses: [{ name: "tools_pull_request_read", input: INPUT }] },
+  });
+  const deps = depsOf(f, mcp);
+  await connectTools(f, deps);
+  source = createConnectorToolSource({ ...deps, callerIdentity: new Map([["tools.example.com", SECRET]]) });
+  // A person's run, through the server's own model loop.
+  const asked = await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
+    body: "@dev read pull request 42",
+  });
+  await drainOutbox(f.db, f.handlers);
+  const [run] = await f.db.select().from(schema.agentRuns);
+  const [own] = toolCalls(mcp).map((r) => verified(statementOf(r), SECRET)?.claims);
+  expect(own).toMatchObject({
+    run: run?.id,
+    user: f.owner.id,
+    brain: "model",
+    provider: "anthropic",
+    channel: f.general.id,
+    thread: asked.id,
+  });
+
+  // A program on a computer, whose calls come back through the bridge: its kind, and no provider.
+  const ctx = await runContext(f);
+  const tool = (await source.tools(ctx)).find((t) => t.name === "tools_pull_request_read");
+  await tool?.execute(INPUT, { ...ctx, thinksWith: "claude_code", bridge: { machineId: "m1" } });
+  const computer = verified(statementOf(toolCalls(mcp).at(-1) as FakeMcp["requests"][number]), SECRET)?.claims;
+  expect(computer).toMatchObject({ brain: "claude_code", channel: f.general.id, thread: ctx.threadRootId });
+  expect(computer).not.toHaveProperty("provider");
 });
 
 test("nothing for a host that isn't listed, a listed one on another port or over http, or a catalog connector", async () => {

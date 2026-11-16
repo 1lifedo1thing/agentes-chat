@@ -396,8 +396,9 @@ export function createConnectorToolSource(
 
   /**
    * What a tool call to a listed host carries in `params._meta` (ADR 0181): a JWT signed with that host's secret that
-   * says which workspace, agent, run and connection is calling, and the person the run acts for. Nothing for any other
-   * host, nor over http, where anyone on the way could read it and send it again within its life.
+   * says which workspace, agent, run and connection is calling, the person the run acts for, what thinks for the run
+   * and the conversation it answers in. Nothing for any other host, nor over http, where anyone on the way could read
+   * it and send it again within its life.
    */
   async function callerStatement(connection: ConnectorConnection, ctx: ToolContext) {
     const secret = listedSecret(connection);
@@ -406,6 +407,8 @@ export function createConnectorToolSource(
     // Who the audit log's `tool.call` row says is behind the run; a call with no run has nobody.
     const user = ctx.runId ? (await runAuthorityById(ctx.db, ctx.orgId, ctx.runId)).personId : null;
     const iat = Math.floor((deps.now?.() ?? new Date()).getTime() / 1000);
+    // `model:<provider>`, or the kind of a program on a computer (`ToolContext.thinksWith`).
+    const [brain, provider] = (ctx.thinksWith ?? "").split(":");
     const claims = {
       iss: new URL(deps.publicUrl).origin,
       aud: url.host,
@@ -414,6 +417,10 @@ export function createConnectorToolSource(
       ...(ctx.runId ? { run: ctx.runId } : {}),
       conn: connection.id,
       ...(user ? { user } : {}),
+      ...(brain ? { brain } : {}),
+      ...(provider ? { provider } : {}),
+      channel: ctx.channelId,
+      ...(ctx.threadRootId ? { thread: ctx.threadRootId } : {}),
       iat,
       exp: iat + CALLER_STATEMENT_SECONDS,
       jti: crypto.randomUUID(),

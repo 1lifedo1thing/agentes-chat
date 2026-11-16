@@ -633,6 +633,7 @@ async function locate(db: Database, id: BridgeIdentity): Promise<Located> {
       threadRootId: run.threadRootId,
       triggerMessageId: run.triggerMessageId,
       ...(id.machineId ? { bridge: { machineId: id.machineId } } : {}),
+      ...(run.brain ? { thinksWith: run.brain } : {}),
       // Tools on demand (ADR 0043): the same list the run's turns see.
       loadedGroups: loadedGroupsOf(run.transcript),
       ...(run.background ? { background: true } : {}),
@@ -845,7 +846,7 @@ export async function postPauseCards(tx: Executor, run: AgentRun, requests: Paus
   const trigger = await runTriggerOf(tx, run);
   const extra = runMessageMeta(run, trigger);
   const brief = run.background ? routineBriefOf(trigger?.meta) : null;
-  // A question is answered by a reply where it was asked: in a confidential thread (ADR 0187) that is under its
+  // A question is answered by a reply where it was asked: in a confidential thread (ADR 0189) that is under its
   // root, and the message that asked carries the thread's mark.
   const confidential = isConfidential(trigger?.meta);
   const home = brief?.deliverTo ?? { channelId: run.channelId, threadId: replyThreadOf({ ...run, confidential }) };
