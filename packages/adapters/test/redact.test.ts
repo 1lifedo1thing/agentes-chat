@@ -159,6 +159,9 @@ test("the same credential as other writers spell it", () => {
       String.raw`{"command":"curl -H \"Authorization: Bearer ***\" https://api.example.com"}`,
     ],
     [String.raw`{"command":"export TOKEN=\"fake with space\" && run"}`, '{"command":"export TOKEN=*** && run"}'],
+    // A value on the line after its name; and a name left empty above another credential, which keeps its own value.
+    ["password:\n  hunter2-fake\nport: 5432", "password:\n  ***\nport: 5432"],
+    ["DB_PASSWORD:\n  API_TOKEN: fake-next-line\n  PORT: 5432", "DB_PASSWORD:\n  API_TOKEN: ***\n  PORT: 5432"],
     // A value on several lines.
     ['"token":\n  "fake first\nfake second",\n"n": 1', '"token":\n  ***,\n"n": 1'],
   ];

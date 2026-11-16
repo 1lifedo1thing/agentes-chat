@@ -29,8 +29,17 @@ function valueAt(group: number) {
   return String.raw`(?:${quoted}|"[^"]*"|'[^']*'|\S+)`;
 }
 
-/** `password=…`, `token: …`: the value up to its first space, or a quoted one whole. `%3D` is `=` in an address. */
-const NAMED_VALUE = new RegExp(String.raw`((?:${NAME})\s*(?:[=:]|%(?:25)*3[AD])\s*)${valueAt(2)}`, "gi");
+/** What stands between a name and its value: `=` or `:`, also as an address writes them (`%3D`). */
+const IS = "(?:[=:]|%(?:25)*3[AD])";
+/**
+ * `password=…`, `token: …`: the value up to its first space, or a quoted one whole. A name with nothing after it on
+ * its line takes the next line as its value, unless that line names a credential of its own: masking that name
+ * would leave its value.
+ */
+const NAMED_VALUE = new RegExp(
+  String.raw`((?:${NAME})\s*${IS}(?:[^\S\n]*(?=\S)|\s*(?![\w.-]*(?:${NAME})\s*${IS})))${valueAt(2)}`,
+  "gi",
+);
 /**
  * `"password": "…"`, as JSON, a Python dict or a Ruby hash writes a field: only a text, and never an empty one. A
  * number, `true`, `false` or `null` under such a name is no credential.
