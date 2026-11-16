@@ -765,8 +765,10 @@ async function notifyTaskMessage(deps: NotificationDeps, message: typeof message
   const author =
     message.authorType === "person" ? message.authorUserId : message.authorAgentId ? message.authorAgentId : null;
   if (!issue || !author) return;
-  const text = readableBody(message.body, message.meta);
-  if (!text.trim()) return;
+  // A message of a confidential thread (ADR 0189) is told with no word of it.
+  const sealed = isConfidential(message.meta);
+  const text = sealed ? "" : readableBody(message.body, message.meta);
+  if (!text.trim() && !sealed) return;
   await notifyIssueComment(deps, { type: message.authorType, id: author }, issue.id, message.id, text, {
     messageId: message.id,
   });
