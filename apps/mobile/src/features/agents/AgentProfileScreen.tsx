@@ -54,6 +54,7 @@ import {
   Locked,
   PixelOrbit,
   ProviderLogo,
+  SCREEN_X,
   Segmented,
   Sky,
   SwipeRow,
@@ -107,7 +108,6 @@ import {
 import { MergeReposSection } from "./MergeReposSection";
 import { MonthPixels } from "./MonthPixels";
 import { openAgentMore } from "./more-link";
-import { AgentSetupCard } from "./setup/SetupCard";
 import { useMemoryOriginText } from "./useMemoryOriginText";
 import { agoShort, workTitle, workWhere } from "./work";
 
@@ -136,11 +136,12 @@ type ProfileTab = "today" | "access" | "memory";
 
 /**
  * An agent's profile as a teammate: its sky and living body (its presence on the badge), its name and one plain line
- * of what it does, Chat, then three views on the grouped gray. Today: what waits on you,
- * what it is on now, what it did for you and its month in one row. Access: what it thinks with, what it can use (apps,
- * areas and mailboxes in one list), what it runs without asking and who answers for it. Memory: what it knows about
- * you and how it works (tap to correct or forget, for its owner and admins). Someone it doesn't answer sees only what
- * it is on now.
+ * of what it does, Chat, its computer (whichever view is open), then three views on the grouped gray. Today: what
+ * waits on you, what it is on now, what it did for you and its month in one row. Access: what it thinks with, what it
+ * can use (apps, areas and mailboxes in one list), what it runs without asking and who answers for it. Memory: what it
+ * knows about you and how it works (tap to correct or forget, for its owner and admins). Someone it doesn't answer sees
+ * only what it is on now. A new agent's checklist is its DM's (ADR 0155 §2), never here: on its page it read as a to-do
+ * list about the page's subject, between its head and what it is on.
  */
 export function AgentProfileScreen({ id }: { id: string }) {
   const { t } = useTranslation();
@@ -506,9 +507,6 @@ function Profile({ id }: { id: string }) {
   const todayView = (
     <>
       {nowBlock}
-      <AgentComputerCard agentId={id} />
-      {/* What it keeps running there (ADR 0176), for whoever may watch its computer. */}
-      <KeptRunningList agentId={id} />
       {/* What it thinks with and how much of it is used this month, one row (ADR 0063 §5): the plan or key as its
           name, the usage under it. The usage page has the rest. */}
       <GroupedHeader>{t("mobile.intentAgents.thinks")}</GroupedHeader>
@@ -776,7 +774,7 @@ function Profile({ id }: { id: string }) {
               {t("rightHand.profile.nameStory")}
             </Text>
           ) : null}
-          {/* One action under the name, as wide as its word: its computer is a card in Hoje, with its picture. */}
+          {/* One action under the name, as wide as its word: its computer is the card under it, with its picture. */}
           <View style={styles.acts}>
             {details || !ownerId ? (
               <Button
@@ -802,13 +800,6 @@ function Profile({ id }: { id: string }) {
           ) : null}
           {agent ? <LetMeTalkButton agent={agent} /> : null}
         </View>
-
-        {/* A new agent's checklist (ADR 0155 §2), while something is left. */}
-        {agent && !rightHand ? (
-          <View style={styles.setup}>
-            <AgentSetupCard agent={agent} place="profile" />
-          </View>
-        ) : null}
 
         {rightHand && agent ? (
           <View style={styles.page}>
@@ -838,6 +829,14 @@ function Profile({ id }: { id: string }) {
           </View>
         ) : details ? (
           <>
+            {/* Its computer first, above the views, so it reads whichever one is open; what it keeps running there
+                (ADR 0176) right under it. Both only for whoever may watch its computer. */}
+            <View style={styles.page}>
+              <AgentComputerCard agentId={id} style={styles.computer} />
+              <KeptRunningList agentId={id} />
+            </View>
+            {/* The views as the app's other view switches (the tasks' List · Board): a toolbar's control at the page's
+                width, where it stays when the view under it changes. */}
             <View style={styles.tabs}>
               <Segmented
                 items={[
@@ -848,7 +847,6 @@ function Profile({ id }: { id: string }) {
                 value={tab}
                 onChange={(k) => setTab(k as ProfileTab)}
                 wide
-                size="page"
               />
             </View>
             {/* Views are peers: a switch shows the other at once, never animated (it happens many times a visit). */}
@@ -1138,18 +1136,18 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   // Not clipped: on a pull the sky grows up into the gap above the content.
   cover: { height: COVER_HEIGHT, alignItems: "center", justifyContent: "flex-end", paddingBottom: COVER_FOOT },
-  // Face, name 28, what it does 15: 8 apart; the buttons 16 under them.
-  prof: { paddingHorizontal: 24, gap: 8 },
+  // Face, name 28, what it does 15: 8 apart; the buttons 16 under them. At the page's sides, as everything under it.
+  prof: { paddingHorizontal: SCREEN_X, gap: 8 },
   center: { textAlign: "center" },
   // Chat alone, centered under the words at its own width; 16 under them (8 of `prof` and 8 here).
   acts: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8 },
-  setup: { paddingHorizontal: 16, marginTop: 22 },
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
   pressed: { opacity: 0.6 },
-  // `Segmented` sizes to its labels: a row centers it under the centered head, 16 under the buttons.
-  tabs: { paddingHorizontal: 16, paddingTop: 16 },
-  page: { paddingHorizontal: 16 },
+  // The head, the computer, the views and the lists 24 apart: the same step between each block of the page.
+  computer: { marginTop: 24 },
+  tabs: { paddingHorizontal: SCREEN_X, paddingTop: 24 },
+  page: { paddingHorizontal: SCREEN_X },
   block: { marginTop: 16 },
   // The orbit centered in the row's 36 leading column, where a tile would sit.
   orbit: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
