@@ -59,6 +59,31 @@ test("a cover freezes the list only once a keyboard that was up has gone: no key
   );
 });
 
+test("a long reply lands at its start only once it is measured, against the room the keyboard leaves", () => {
+  const chat = src("features/chat/ChatScreen.tsx");
+  // The list says a new size from its estimate before it measures the row: an unknown size never counts as tall.
+  expect(chat).toContain("if (size === undefined || size <= room.height - BAND_GAP) return;");
+  expect(chat).toContain(
+    "const keyboard = KeyboardController.isVisible() ? Math.max(0, KeyboardController.state().height - lift) : 0;",
+  );
+  expect(chat).toContain("return { state, top, height: state.scrollLength - top - boxHeight.current - keyboard };");
+});
+
+test('going to a message takes its place in the list\'s own rows, where the "Novas" line is one', () => {
+  const chat = src("features/chat/ChatScreen.tsx");
+  expect(chat).not.toContain("rowsRef.current.findIndex(");
+  expect(chat).toContain("const index = key === undefined ? undefined : listRef.current?.getState().indexByKey(key);");
+  // Pins, "Ver resultado" and "Ver" land in the room under the bar.
+  expect(chat).toContain('...aimAt(index, 0.4, "start")');
+  expect(chat).toContain('...aimAt(index, 0.5, "end")');
+});
+
+test('held where the list landed at its end (the "Novas" line, "Ver"), it follows again: no round button over nothing', () => {
+  const chat = src("features/chat/ChatScreen.tsx");
+  expect(chat).toContain('...aimAt(index, 0.5, "end") })?.then(releaseAtEnd);');
+  expect(chat).toMatch(/goingToLine\.current = false;\s*\/\/[^\n]*\n\s*releaseAtEnd\(\);\s*revealOpened\(\);/);
+});
+
 test("no suggestion pills over the conversation", () => {
   const chat = src("features/chat/ChatScreen.tsx");
   expect(chat).not.toContain("composerSuggestions");

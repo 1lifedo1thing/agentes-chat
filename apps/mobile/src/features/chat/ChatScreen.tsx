@@ -241,6 +241,7 @@ import { ReturnLine, ReturnsSheet, useReturnsHere } from "./Returns";
 import { SwipeReply } from "./SwipeReply";
 import {
   appendedKeys,
+  bandAim,
   lastSeenKey,
   type Place,
   placeCorrection,
@@ -319,6 +320,8 @@ const ENTER = new Keyframe({
 const FRESH_MS = 800;
 /** How close to the end a scroll has to stop for a list held at a long message's start to follow again. */
 const READ_RELEASE_PX = 24;
+/** A row the list takes to the top of the room (a long reply's start, the "Novas" line) sits this far under the bar. */
+const BAND_GAP = 8;
 /** The row above the oldest loaded message while older ones exist: one height whether it waits, loads or is empty. */
 const OLDER_ROW = 44;
 /** How far from its end a list that follows it may rest (rounding) before it is taken there. */
@@ -771,6 +774,27 @@ function Chat({
     holding.current++;
     aimed.current++;
   }, []);
+  // The room the list shows rows in: under the floating bar (a pinned card already holds that room) and over the dock
+  // riding the keyboard. Its top and the keyboard's share are set as the screen draws (`band.current`, below), the
+  // dock's height as it lays out (`boxHeight`, `onComposerBoxLayout`); it is read when the list is aimed, after that.
+  const band = useRef({ top: 0, lift: 0 });
+  const boxHeight = useRef(0);
+  const roomNow = useCallback(() => {
+    const state = listRef.current?.getState();
+    if (!state) return null;
+    const { top, lift } = band.current;
+    const keyboard = KeyboardController.isVisible() ? Math.max(0, KeyboardController.state().height - lift) : 0;
+    return { state, top, height: state.scrollLength - top - boxHeight.current - keyboard };
+  }, []);
+  /** `scrollToIndex`'s place for a row in that room (`bandAim`): sent to the top, it lands under the bar. */
+  const aimAt = useCallback(
+    (index: number, viewPosition: number, tall: "start" | "end") => {
+      const room = roomNow();
+      if (!room) return { viewPosition };
+      return bandAim({ viewPosition, size: room.state.sizeAtIndex(index), band: room.height, top: room.top, tall });
+    },
+    [roomNow],
+  );
   const scrollRows = useMemo<ScrollRow[]>(
     () =>
       rows.map((r) => ({
@@ -866,11 +890,18 @@ function Chat({
     requestAnimationFrame(() => void listRef.current?.scrollToEnd({ animated: true }));
   }, [letGo]);
 
+  // The person is at the end of what they were reading (they scrolled there, or the list landed there): the list
+  // follows again, and the round button, with nothing below to go to, goes.
+  const releaseAtEnd = useCallback(() => {
+    const state = listRef.current?.getState();
+    if (state && state.distanceFromEnd <= READ_RELEASE_PX) setReadHold(false);
+  }, []);
   // "Ver" on the requests' line: the list goes to the request and stays there. It stops following the end, as
   // when reading a long message from its top, so a reply streaming in doesn't pull it back down; reaching the end,
-  // sending or the pill follow again. The card ends its message: a message taller than the screen shows its end.
+  // sending or the pill follow again. The card ends its message: in the middle of the room, or, a message taller than
+  // the room, its end.
   const holdAt = useCallback(
-    (messageId: string | undefined, viewPosition = 0.5, animated = true) => {
+    (messageId: string | undefined) => {
       const key = messageId ? rows.find((r) => r.kind === "message" && r.message.id === messageId)?.key : undefined;
       if (!key) return false;
       letGo();
@@ -879,11 +910,11 @@ function Chat({
       requestAnimationFrame(() => {
         const index = listRef.current?.getState().indexByKey(key);
         if (index === undefined) return;
-        void listRef.current?.scrollToIndex({ index, animated, viewPosition, viewPositionFallback: "end" });
+        void listRef.current?.scrollToIndex({ index, animated: true, ...aimAt(index, 0.5, "end") })?.then(releaseAtEnd);
       });
       return true;
     },
-    [rows, letGo],
+    [rows, letGo, aimAt, releaseAtEnd],
   );
   const seeAsk = useCallback(() => void holdAt(awayAsk?.ask.messageId), [awayAsk, holdAt]);
   // What waits on me here with its card not loaded (older, or in a thread): the line counts it and opens the oldest.
@@ -1497,7 +1528,7 @@ function Chat({
       setSeek(null);
       seekPressed.current = false;
       letGo();
-      void listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.4 });
+      void listRef.current?.scrollToIndex({ index, animated: true, ...aimAt(index, 0.4, "start") });
       setFlashId(seek);
       return;
     }
@@ -1530,6 +1561,7 @@ function Chat({
     loadingOlder,
     fetchOlder,
     letGo,
+    aimAt,
     t,
     toast,
   ]);
@@ -1592,13 +1624,18 @@ function Chat({
   };
   const openSearch = () =>
     searchPlace ? sheet.push(<ConversationSearch place={searchPlace} onPick={goToHit} />) : undefined;
-  // "Ver resultado" on a work's line: its report, when this conversation shows it.
-  const jumpToMessage = useCallback((messageId: string) => {
-    const index = rowsRef.current.findIndex((r) => r.kind === "message" && r.message.id === messageId);
-    if (index < 0) return false;
-    void listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.4 });
-    return true;
-  }, []);
+  // "Ver resultado" on a work's line: its report, when this conversation shows it. Its place is the list's, by its key:
+  // counted in the rows, it fell one short under the "Novas" line (a row of the list's own).
+  const jumpToMessage = useCallback(
+    (messageId: string) => {
+      const key = rowsRef.current.find((r) => r.kind === "message" && r.message.id === messageId)?.key;
+      const index = key === undefined ? undefined : listRef.current?.getState().indexByKey(key);
+      if (index === undefined) return false;
+      void listRef.current?.scrollToIndex({ index, animated: true, ...aimAt(index, 0.4, "start") });
+      return true;
+    },
+    [aimAt],
+  );
   // Who is in the channel: managing it is a screen pushed over the conversation (its place kept for the way back).
   const openMembers = () => {
     if (!channel) return;
@@ -2307,7 +2344,6 @@ function Chat({
   // as noise (the owner had them removed).
   const composerRef = useRef<ComponentRef<typeof View>>(null);
   const [composerFloat] = useState(createComposerFloat);
-  const boxHeight = useRef(0);
   const endInset = useSharedValue(0);
   // On iOS the keyboard library moves what rides the keyboard (the composer's dock) when a move starts and while
   // the keyboard is dragged, and never when the move ends, while the list takes its room from the start and the
@@ -2391,6 +2427,7 @@ function Chat({
   // The conversation starts below the clear bar by our own padding, on both platforms (the pinned card, when there
   // is one, already holds that room). iOS's automatic inset made keyboard moves land short at the end.
   const hasPin = pinned !== null;
+  band.current = { top: hasPin ? 0 : headerHeight, lift };
   // The conversation's first message is loaded (a thread loads whole): what sits above it can show.
   const atStart = isThread || olderDone || (top.data?.length ?? 0) < MESSAGES_PAGE;
   const listPad = useMemo(
@@ -2433,8 +2470,8 @@ function Chat({
     if (state) setFar(screenAboveEnd(state.distanceFromEnd, state.scrollLength));
   }, [watchList]);
 
-  // The list shows once it sits at the end (no frame of it placing itself), as Bluesky's and Expensify's do; from
-  // a little opacity, not none, so the glass inside rows keeps drawing.
+  // The list shows once it sits where it opens, at the end or at the "Novas" line (no frame of it placing itself), as
+  // Bluesky's and Expensify's do; from a little opacity, not none, so the glass inside rows keeps drawing.
   const listShown = useSharedValue(0.05);
   const listFade = useAnimatedStyle(() => ({ opacity: listShown.value }));
   // Until then the conversation's skeleton stands where the messages will (`ChatSkeleton`), and leaves as they fade in.
@@ -2464,26 +2501,82 @@ function Chat({
   }, [showList]);
 
   // "Última mensagem lida" with something unread: it opens at the "Novas" line, kept as it was on opening because
-  // reading moves it. Threads open at their end.
-  // Read as the lists arrive: a notification can open it before them.
+  // reading moves it. Threads open at their end, and a conversation asked to open at a message (a pin) at that message.
+  // Read as the lists arrive: a notification can open it before them; one they don't have opens at its end.
   const readFrom = useRef<{ at: string | null | undefined } | null | undefined>(undefined);
-  if (readFrom.current === undefined && (channel || dm))
+  if (readFrom.current === undefined && (isThread || focusId || channel || dm || unlisted))
     readFrom.current =
-      !isThread && opensAtLastRead(org?.chatPrefs, channel?.unreadCount ?? dm?.unread ?? 0)
+      !isThread && !focusId && opensAtLastRead(org?.chatPrefs, channel?.unreadCount ?? dm?.unread ?? 0)
         ? { at: channel?.lastReadAt ?? dm?.lastReadAt }
         : null;
+  const openFrom = readFrom.current;
+  // The list laid out (`onReady`) shows only once where it opens is settled: placed at its end and taken to the line
+  // after, it showed its end and then jumped. `SHOW_LIST_MS` still shows it whatever happens.
+  const listReady = useRef(false);
   const atReadDone = useRef(false);
+  const goingToLine = useRef(false);
+  const revealOpened = useCallback(() => {
+    if (listReady.current && atReadDone.current && !goingToLine.current) revealList();
+  }, [revealList]);
+  const onListReady = useCallback(() => {
+    listReady.current = true;
+    revealOpened();
+  }, [revealOpened]);
+  // The line at the top of the room under the bar, with no glide, what came since right under it (sent to the top as
+  // is, it landed under the bar, the line and the first new message hidden). The list stops following its end there,
+  // as when reading a long message from its top. The line is a row this same render puts in: the list has it a frame
+  // or two on.
+  const openAtLine = useCallback(
+    (key: string) =>
+      new Promise<void>((landed) => {
+        letGo();
+        setReadHold(true);
+        let frames = 0;
+        const go = () => {
+          const list = listRef.current;
+          const line = list?.getState().indexByKey(DIVIDER_KEY);
+          if (list && line === undefined && ++frames < 4) {
+            requestAnimationFrame(go);
+            return;
+          }
+          const index = line ?? list?.getState().indexByKey(key);
+          if (!list || index === undefined) {
+            landed();
+            return;
+          }
+          const viewOffset = band.current.top + BAND_GAP;
+          void list.scrollToIndex({ index, animated: false, viewPosition: 0, viewOffset }).finally(landed);
+        };
+        // After the render that turns following off, so the end doesn't pull it back down.
+        requestAnimationFrame(go);
+      }),
+    [letGo],
+  );
   useEffect(() => {
-    const from = readFrom.current;
-    if (atReadDone.current || !from || !showList || !top.data || rows.length === 0) return;
-    const id = firstUnreadId(list, from.at, meId);
+    if (atReadDone.current || openFrom === undefined) return;
+    if (openFrom === null) {
+      atReadDone.current = true;
+      revealOpened();
+      return;
+    }
+    if (!showList || !top.data || rows.length === 0) return;
+    const id = firstUnreadId(list, openFrom.at, meId);
     const key = rows.find((r) => r.kind === "message" && r.message.id === id)?.key;
     // A page kept from an earlier visit has none of them: wait for the fresh one.
     atReadDone.current = Boolean(key) || !top.isFetching;
-    if (!key) return;
+    if (!key) {
+      revealOpened();
+      return;
+    }
     setPlacedDivider(key);
-    holdAt(id ?? undefined, 0, false);
-  }, [showList, top.data, top.isFetching, rows, list, meId, holdAt]);
+    goingToLine.current = true;
+    void openAtLine(key).then(() => {
+      goingToLine.current = false;
+      // All that came since fits above the dock: at the end already, it follows it.
+      releaseAtEnd();
+      revealOpened();
+    });
+  }, [openFrom, showList, top.data, top.isFetching, rows, list, meId, openAtLine, releaseAtEnd, revealOpened]);
 
   // Opened with something unread that isn't at its end: a reply in a thread, one link under its root, maybe far
   // above. That root comes into view, flashed, instead of an end with nothing new (as on the web). Once, with what
@@ -2543,23 +2636,27 @@ function Chat({
     }
     readPrevRef.current = rowKeys;
   }, [rowKeys, scrollRows]);
-  const readRoom = headerHeight + 8;
+  // Taller than the room it shows in (under the bar, over the dock and the keyboard). The list says the new size before
+  // it measures the row (an estimate): a row not measured yet waits for its own size, never taken for a tall one.
   const checkReading = useCallback(() => {
     const key = toReadRef.current;
-    const state = listRef.current?.getState();
-    if (!key || !state) return;
-    const index = state.indexByKey(key);
+    const room = roomNow();
+    if (!key || !room) return;
+    const index = room.state.indexByKey(key);
     if (index === undefined) return;
-    if (state.sizeAtIndex(index) <= state.scrollLength - readRoom - composerHeight) return;
+    // Typed as always known; it is the measured size, and a row not measured yet has none.
+    const size: number | undefined = room.state.sizeAtIndex(index);
+    if (size === undefined || size <= room.height - BAND_GAP) return;
     toReadRef.current = null;
     landedRef.current.add(key);
     if (!atEndRef.current) return;
     setReadHold(true);
     // After the render that turns following off, so the end doesn't pull it back down.
     requestAnimationFrame(() => {
-      void listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0, viewOffset: readRoom });
+      const viewOffset = band.current.top + BAND_GAP;
+      void listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0, viewOffset });
     });
-  }, [readRoom, composerHeight]);
+  }, [roomNow]);
   useEffect(() => {
     if (!showList) return;
     const state = listRef.current?.getState();
@@ -2573,11 +2670,6 @@ function Chat({
     if (!state) return;
     return state.listen("totalSize", watchList);
   }, [showList, watchList]);
-  // The person scrolled down to the end of what they were reading: the list follows again.
-  const releaseAtEnd = useCallback(() => {
-    const state = listRef.current?.getState();
-    if (state && state.distanceFromEnd <= READ_RELEASE_PX) setReadHold(false);
-  }, []);
 
   return (
     <AskStoreProvider store={asks}>
@@ -2657,7 +2749,7 @@ function Chat({
                                   scrollIndicatorInsets={{ top: headerHeight }}
                                   // Still while a sheet or the agent's computer covers the conversation.
                                   freeze={freeze}
-                                  onReady={revealList}
+                                  onReady={onListReady}
                                   onStartReached={loadOlder}
                                   // A look at the waiting requests' cards and the live rows, once a frame and only while
                                   // there is one.

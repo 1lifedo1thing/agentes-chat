@@ -93,6 +93,27 @@ export function unseenBelow(rows: readonly ScrollRow[], seenKey: string | null, 
 }
 
 /**
+ * Where a row goes so it shows in the band between the floating bar and the dock, as `scrollToIndex` takes it. The list
+ * places a row in its whole height, whose top runs under the bar, so a row sent to the top (`viewPosition` 0) landed
+ * hidden under it: the band's top (`top`, points under the bar) is given as an offset, in the share that keeps the row
+ * at the same place in the band (`viewPosition` 0.5: centred in the band, 1: its end on the dock). A row taller than
+ * the band (`band`, points) shows its start or its end (`tall`).
+ */
+export function bandAim(aim: {
+  viewPosition: number;
+  /** The row's measured height, if the list has it. */
+  size: number | undefined;
+  band: number;
+  top: number;
+  tall: "start" | "end";
+}): { viewPosition: number; viewOffset: number } {
+  const { viewPosition, size, band, top, tall } = aim;
+  if (size !== undefined && size > band)
+    return tall === "start" ? { viewPosition: 0, viewOffset: top } : { viewPosition: 1, viewOffset: 0 };
+  return { viewPosition, viewOffset: Math.round(top * (1 - viewPosition)) };
+}
+
+/**
  * Where the person is in the conversation, kept while something covers it (a sheet, the agent's computer): at the
  * end, or reading, with the scroll, a row on screen and where that row was (rows above can change size meanwhile).
  */
