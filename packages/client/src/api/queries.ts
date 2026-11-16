@@ -148,6 +148,7 @@ import type {
   MailImapInput,
   Me,
   Message,
+  ModelTier,
   MoveAgentsInput,
   NoticeCategory,
   NoticePrefs,
@@ -2694,13 +2695,57 @@ export const useSettings = (orgId: string) => {
   return useQuery({ queryKey: keys.settings(orgId), queryFn: () => api.orgs.settings(orgId) });
 };
 
-export function useUpdateSettings(orgId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: Parameters<ApiClient["orgs"]["updateSettings"]>[1]) => api.orgs.updateSettings(orgId, input),
+/** What `orgs.updateSettings` takes: the settings that change, each optional. */
+export type OrgSettingsInput = Parameters<ApiClient["orgs"]["updateSettings"]>[1];
+
+/**
+ * The workspace's settings with a change shown before the server answers (a model of null is the default's). The
+ * context waits for the answer: the first run reads it to know its step, so it moves on only once the context is saved
+ * (and a refusal never sends it back a step with the words gone).
+ */
+export function settingsWith(settings: OrgSettings, input: OrgSettingsInput): OrgSettings {
+  const { autoModels, ...rest } = input;
+  delete rest.context;
+  if (!autoModels) return { ...settings, ...rest };
+  const models = { ...settings.autoModels };
+  for (const [provider, tiers] of Object.entries(autoModels)) {
+    const own = { ...models[provider] };
+    for (const [tier, model] of Object.entries(tiers ?? {})) {
+      if (model) own[tier as ModelTier] = model;
+      else delete own[tier as ModelTier];
+    }
+    models[provider] = own;
+  }
+  return { ...settings, ...rest, autoModels: models };
+}
+
+/**
+ * `useUpdateSettings`'s mutation, for a `MutationObserver` outside React (tests). The change shows in the settings at
+ * once (a switch moves as it is tapped, not when the server answers; the context once saved, `settingsWith`), and a
+ * refusal puts back what was there. With
+ * several in flight, only the last answer is written (an earlier one would flick a later change back meanwhile), and
+ * once the last one settles the settings are read again, so answers that crossed on the way leave the server's truth.
+ */
+export function updateSettingsMutation(api: ApiClient, qc: QueryClient, orgId: string) {
+  const key = keys.settings(orgId);
+  const mutationKey = ["org", orgId, "settings", "update"] as const;
+  // Counted while this one's own callbacks run: it is still pending then.
+  const alone = () => qc.isMutating({ mutationKey }) <= 1;
+  return mutationOptions({
+    mutationKey,
+    mutationFn: (input: OrgSettingsInput) => api.orgs.updateSettings(orgId, input),
+    onMutate: async (input: OrgSettingsInput) => {
+      // A read on its way would land over the change shown.
+      await qc.cancelQueries({ queryKey: key });
+      const before = qc.getQueryData<OrgSettings>(key);
+      if (before) qc.setQueryData<OrgSettings>(key, settingsWith(before, input));
+      return { before };
+    },
+    onError: (_e, _input, context) => {
+      if (context?.before && alone()) qc.setQueryData(key, context.before);
+    },
     onSuccess: (settings) => {
-      qc.setQueryData(keys.settings(orgId), settings);
+      if (alone()) qc.setQueryData(key, settings);
       void qc.invalidateQueries({ queryKey: keys.me });
       void qc.invalidateQueries({ queryKey: keys.overview(orgId) });
       // The default agent budget moves every percentage that follows it.
@@ -2712,7 +2757,17 @@ export function useUpdateSettings(orgId: string) {
         predicate: (q) => q.queryKey[0] === "org" && q.queryKey[1] === orgId && q.queryKey[4] === "detail",
       });
     },
+    onSettled: () => {
+      if (alone()) void qc.invalidateQueries({ queryKey: key });
+    },
   });
+}
+
+/** The workspace's settings, saved as they change: see `updateSettingsMutation`. */
+export function useUpdateSettings(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation(updateSettingsMutation(api, qc, orgId));
 }
 
 /** Sets the workspace's approvals level: the settings and every agent's level show it at once. */
