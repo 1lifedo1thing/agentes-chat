@@ -12,12 +12,12 @@ import { CHROME_MAX_SCALE, weights } from "./type-scale";
 
 export type SegmentedProps = FiltersProps & {
   /**
-   * As wide as its box, the segments sharing it evenly (a screen's views, as an agent's Hoje · Acesso · Memória).
+   * As wide as its box, the segments sharing it evenly (a screen's views, as an agent's Today · Access · Memory).
    * `fit`: each as wide as its words first, so long labels stay on one line (a form's choice).
    */
   wide?: boolean | "fit";
   /**
-   * `page`: the views of a whole screen (an agent's Hoje · Acesso · Memória). As tall as the screen's own button (48),
+   * `page`: the views of a whole screen beside its 48-point buttons (a proposal's or a document's views). As tall as the screen's own button (48),
    * its words a size up: at a toolbar's 32 it read as a filter beside a 48 button and 52 rows.
    */
   size?: "page";
