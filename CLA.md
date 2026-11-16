@@ -1,6 +1,9 @@
 # agentes.chat Contributor License Agreement
 
-Version 1.0
+Version 1.1
+
+Version 1.1 names AGENTESCHAT, LLC, which succeeded Codari Global, LLC. Agreements accepted under version 1.0
+carry over to it as its successor.
 
 Thank you for contributing to agentes.chat. This agreement is between you and AGENTESCHAT, LLC
 ("AGENTESCHAT"), which maintains agentes.chat. It lets AGENTESCHAT distribute your contribution under the

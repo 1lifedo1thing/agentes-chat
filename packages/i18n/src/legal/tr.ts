@@ -8,7 +8,7 @@ export const legalTr: Partial<Record<LegalKind, LegalDocument>> = {
       "agentes.chat'in kullanımına ilişkin sözleşme: çalışma alanınız, ajanlarınız ve her bir tarafın neden sorumlu olduğu.",
     courtesy:
       "Bu metin bir nezaket çevirisidir. İngilizce sürümden farklılık göstermesi hâlinde İngilizce sürüm esas alınır.",
-    updated: "2026-11-13",
+    updated: "2026-11-16",
     sections: [
       {
         id: "agreement",
@@ -150,7 +150,7 @@ export const legalTr: Partial<Record<LegalKind, LegalDocument>> = {
         id: "law",
         heading: "16. Uygulanacak hukuk",
         blocks: [
-          "İşbu Koşullar, kanunlar ihtilafı kuralları hariç olmak üzere ABD'nin Wyoming eyaleti kanunlarına tabidir ve taraflar Wyoming'de bulunan eyalet ve federal mahkemelerin münhasır yargı yetkisini kabul eder. Brezilya gibi, kanunu size feragat edilemeyen haklar veya yetkili mahkeme hakkı tanıyan bir yargı bölgesinde tüketiciyseniz, bu haklarınız saklıdır.",
+          "İşbu Koşullar, kanunlar ihtilafı kuralları hariç olmak üzere ABD'nin Delaware eyaleti kanunlarına tabidir ve taraflar Delaware'de bulunan eyalet ve federal mahkemelerin münhasır yargı yetkisini kabul eder. Brezilya gibi, kanunu size feragat edilemeyen haklar veya yetkili mahkeme hakkı tanıyan bir yargı bölgesinde tüketiciyseniz, bu haklarınız saklıdır.",
         ],
       },
       {
@@ -175,7 +175,7 @@ export const legalTr: Partial<Record<LegalKind, LegalDocument>> = {
       "Neleri topladığımız, ajanların neyi nereye gönderdiği, çalışma alanınızı kimlerin görebildiği ve sahip olduğunuz haklar.",
     courtesy:
       "Bu metin bir nezaket çevirisidir. İngilizce sürümden farklılık göstermesi hâlinde İngilizce sürüm esas alınır.",
-    updated: "2026-11-14",
+    updated: "2026-11-16",
     sections: [
       {
         id: "overview",

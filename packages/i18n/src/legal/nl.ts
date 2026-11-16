@@ -8,7 +8,7 @@ export const legalNl: Partial<Record<LegalKind, LegalDocument>> = {
       "De overeenkomst voor het gebruik van agentes.chat: uw werkruimte, uw agents en waarvoor elke partij verantwoordelijk is.",
     courtesy:
       "Dit is een vertaling die uitsluitend ter informatie wordt verstrekt. Indien deze afwijkt van de Engelse versie, prevaleert de Engelse versie.",
-    updated: "2026-11-13",
+    updated: "2026-11-16",
     sections: [
       {
         id: "agreement",
@@ -150,7 +150,7 @@ export const legalNl: Partial<Record<LegalKind, LegalDocument>> = {
         id: "law",
         heading: "16. Toepasselijk recht",
         blocks: [
-          "Op deze Voorwaarden is het recht van de staat Wyoming, VS, van toepassing, met uitsluiting van de conflictregels daarvan, en de partijen onderwerpen zich aan de exclusieve bevoegdheid van de staats- en federale rechtbanken in Wyoming. Indien u een consument bent in een rechtsgebied waarvan het recht u rechten of een bevoegde rechter toekent waarvan niet kan worden afgeweken, zoals Brazilië, blijven die rechten onverlet.",
+          "Op deze Voorwaarden is het recht van de staat Delaware, VS, van toepassing, met uitsluiting van de conflictregels daarvan, en de partijen onderwerpen zich aan de exclusieve bevoegdheid van de staats- en federale rechtbanken in Delaware. Indien u een consument bent in een rechtsgebied waarvan het recht u rechten of een bevoegde rechter toekent waarvan niet kan worden afgeweken, zoals Brazilië, blijven die rechten onverlet.",
         ],
       },
       {
@@ -174,7 +174,7 @@ export const legalNl: Partial<Record<LegalKind, LegalDocument>> = {
     summary: "Wat wij verzamelen, wat agents waarheen sturen, wie uw werkruimte kan zien en welke rechten u hebt.",
     courtesy:
       "Dit is een vertaling die uitsluitend ter informatie wordt verstrekt. Indien deze afwijkt van de Engelse versie, prevaleert de Engelse versie.",
-    updated: "2026-11-14",
+    updated: "2026-11-16",
     sections: [
       {
         id: "overview",

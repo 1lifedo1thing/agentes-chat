@@ -8,7 +8,7 @@ export const legalDe: Partial<Record<LegalKind, LegalDocument>> = {
       "Die Vereinbarung über die Nutzung von agentes.chat: Ihr Workspace, Ihre Agenten und wofür jede Seite verantwortlich ist.",
     courtesy:
       "Dies ist eine unverbindliche Übersetzung. Weicht sie von der englischen Fassung ab, ist die englische Fassung maßgeblich.",
-    updated: "2026-11-13",
+    updated: "2026-11-16",
     sections: [
       {
         id: "agreement",
@@ -150,7 +150,7 @@ export const legalDe: Partial<Record<LegalKind, LegalDocument>> = {
         id: "law",
         heading: "16. Anwendbares Recht",
         blocks: [
-          "Diese Bedingungen unterliegen dem Recht des Bundesstaates Wyoming, USA, unter Ausschluss seiner kollisionsrechtlichen Bestimmungen, und die Parteien unterwerfen sich der ausschließlichen Zuständigkeit der einzelstaatlichen Gerichte und der Bundesgerichte mit Sitz in Wyoming. Wenn Sie Verbraucher in einer Rechtsordnung sind, deren Recht Ihnen unabdingbare Rechte oder einen unabdingbaren Gerichtsstand gewährt, wie etwa Brasilien, bleiben diese Rechte unberührt.",
+          "Diese Bedingungen unterliegen dem Recht des Bundesstaates Delaware, USA, unter Ausschluss seiner kollisionsrechtlichen Bestimmungen, und die Parteien unterwerfen sich der ausschließlichen Zuständigkeit der einzelstaatlichen Gerichte und der Bundesgerichte mit Sitz in Delaware. Wenn Sie Verbraucher in einer Rechtsordnung sind, deren Recht Ihnen unabdingbare Rechte oder einen unabdingbaren Gerichtsstand gewährt, wie etwa Brasilien, bleiben diese Rechte unberührt.",
         ],
       },
       {
@@ -175,7 +175,7 @@ export const legalDe: Partial<Record<LegalKind, LegalDocument>> = {
       "Welche Daten wir erheben, was Agenten wohin senden, wer Ihren Workspace sehen kann und welche Rechte Sie haben.",
     courtesy:
       "Dies ist eine unverbindliche Übersetzung. Weicht sie von der englischen Fassung ab, ist die englische Fassung maßgeblich.",
-    updated: "2026-11-14",
+    updated: "2026-11-16",
     sections: [
       {
         id: "overview",

@@ -6,7 +6,7 @@ export const legalEs: Partial<Record<LegalKind, LegalDocument>> = {
     title: "Términos de uso",
     summary: "El acuerdo para usar agentes.chat: su espacio de trabajo, sus agentes y de qué responde cada parte.",
     courtesy: "Esta es una traducción de cortesía. Si difiere de la versión en inglés, prevalece la versión en inglés.",
-    updated: "2026-11-13",
+    updated: "2026-11-16",
     sections: [
       {
         id: "agreement",
@@ -148,7 +148,7 @@ export const legalEs: Partial<Record<LegalKind, LegalDocument>> = {
         id: "law",
         heading: "16. Ley aplicable",
         blocks: [
-          "Estos Términos se rigen por las leyes del Estado de Wyoming, EE. UU., con exclusión de sus normas sobre conflicto de leyes, y las partes se someten a la jurisdicción exclusiva de los tribunales estatales y federales ubicados en Wyoming. Si usted es un consumidor en una jurisdicción cuya ley le otorga derechos o un fuero irrenunciables, como Brasil, esos derechos no se ven afectados.",
+          "Estos Términos se rigen por las leyes del Estado de Delaware, EE. UU., con exclusión de sus normas sobre conflicto de leyes, y las partes se someten a la jurisdicción exclusiva de los tribunales estatales y federales ubicados en Delaware. Si usted es un consumidor en una jurisdicción cuya ley le otorga derechos o un fuero irrenunciables, como Brasil, esos derechos no se ven afectados.",
         ],
       },
       {
@@ -172,7 +172,7 @@ export const legalEs: Partial<Record<LegalKind, LegalDocument>> = {
     summary:
       "Qué recopilamos, qué envían los agentes y adónde, quién puede ver su espacio de trabajo y qué derechos tiene usted.",
     courtesy: "Esta es una traducción de cortesía. Si difiere de la versión en inglés, prevalece la versión en inglés.",
-    updated: "2026-11-14",
+    updated: "2026-11-16",
     sections: [
       {
         id: "overview",

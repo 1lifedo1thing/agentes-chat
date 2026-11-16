@@ -39,9 +39,10 @@ outside contribution would stay AGPL-only.
    `signatures/version1/cla.json` on the `cla-signatures` branch (outside main, unprotected) and locks the merged
    pull request's conversation so the comment stays. The bot links the agreement at the tag `cla-v1.0`, so the
    text someone accepted can't change under them. A new version of `CLA.md` gets a new tag and a new signatures
-   path, so everyone accepts it again. The job's check, `CLA`, becomes required on main once every open pull
-   request has a run of it. A pull request that was open before the workflow existed gets its run from the `cla`
-   label: a comment's run belongs to main and leaves no check on the pull request.
+   path, so everyone accepts it again. 2026-11-16: version 1.1 names AGENTESCHAT, LLC as successor; signatures carry
+   over (same signatures path, new tag `cla-v1.1`). The job's check, `CLA`, becomes required on main once every
+   open pull request has a run of it. A pull request that was open before the workflow existed gets its run from the
+   `cla` label: a comment's run belongs to main and leaves no check on the pull request.
 4. **Every pull request is checked, commit by commit.** A maintainer's integration branch can carry an outside
    author's commits, so the check doesn't go by who opened the pull request. The maintainers are exempt by name,
    which keeps a maintainer's fix on a contributor's pull request from asking the maintainer to sign. Bots

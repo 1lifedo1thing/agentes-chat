@@ -8,7 +8,7 @@ export const legalId: Partial<Record<LegalKind, LegalDocument>> = {
       "Perjanjian untuk menggunakan agentes.chat: ruang kerja Anda, agen Anda, dan apa yang menjadi tanggung jawab masing-masing pihak.",
     courtesy:
       "Dokumen ini adalah terjemahan yang disediakan semata-mata untuk kemudahan. Apabila terdapat perbedaan dengan versi bahasa Inggris, versi bahasa Inggris yang berlaku.",
-    updated: "2026-11-13",
+    updated: "2026-11-16",
     sections: [
       {
         id: "agreement",
@@ -150,7 +150,7 @@ export const legalId: Partial<Record<LegalKind, LegalDocument>> = {
         id: "law",
         heading: "16. Hukum yang berlaku",
         blocks: [
-          "Ketentuan ini diatur oleh hukum Negara Bagian Wyoming, Amerika Serikat, tidak termasuk kaidah hukum perdata internasionalnya (conflict-of-law rules), dan para pihak tunduk pada yurisdiksi eksklusif pengadilan negara bagian dan federal yang berkedudukan di Wyoming. Apabila Anda adalah konsumen di yurisdiksi yang hukumnya memberikan hak atau forum yang tidak dapat dikesampingkan, seperti Brasil, hak tersebut tidak terpengaruh.",
+          "Ketentuan ini diatur oleh hukum Negara Bagian Delaware, Amerika Serikat, tidak termasuk kaidah hukum perdata internasionalnya (conflict-of-law rules), dan para pihak tunduk pada yurisdiksi eksklusif pengadilan negara bagian dan federal yang berkedudukan di Delaware. Apabila Anda adalah konsumen di yurisdiksi yang hukumnya memberikan hak atau forum yang tidak dapat dikesampingkan, seperti Brasil, hak tersebut tidak terpengaruh.",
         ],
       },
       {
@@ -175,7 +175,7 @@ export const legalId: Partial<Record<LegalKind, LegalDocument>> = {
       "Apa yang kami kumpulkan, apa yang dikirim agen dan ke mana, siapa yang dapat melihat ruang kerja Anda, dan hak-hak yang Anda miliki.",
     courtesy:
       "Dokumen ini adalah terjemahan yang disediakan semata-mata untuk kemudahan. Apabila terdapat perbedaan dengan versi bahasa Inggris, versi bahasa Inggris yang berlaku.",
-    updated: "2026-11-14",
+    updated: "2026-11-16",
     sections: [
       {
         id: "overview",

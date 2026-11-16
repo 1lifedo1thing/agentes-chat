@@ -8,7 +8,7 @@ export const legalIt: Partial<Record<LegalKind, LegalDocument>> = {
       "L'accordo per l'utilizzo di agentes.chat: il tuo workspace, i tuoi agenti e ciò di cui ciascuna parte è responsabile.",
     courtesy:
       "La presente è una traduzione di cortesia. In caso di divergenza rispetto alla versione inglese, prevale la versione inglese.",
-    updated: "2026-11-13",
+    updated: "2026-11-16",
     sections: [
       {
         id: "agreement",
@@ -150,7 +150,7 @@ export const legalIt: Partial<Record<LegalKind, LegalDocument>> = {
         id: "law",
         heading: "16. Legge applicabile",
         blocks: [
-          "I presenti Termini sono disciplinati dalle leggi dello Stato del Wyoming, USA, a esclusione delle sue norme sui conflitti di leggi, e le parti si sottomettono alla giurisdizione esclusiva dei tribunali statali e federali con sede nel Wyoming. Se sei un consumatore in una giurisdizione la cui legge ti riconosce diritti o un foro competente a cui non è possibile rinunciare, come il Brasile, tali diritti restano impregiudicati.",
+          "I presenti Termini sono disciplinati dalle leggi dello Stato del Delaware, USA, a esclusione delle sue norme sui conflitti di leggi, e le parti si sottomettono alla giurisdizione esclusiva dei tribunali statali e federali con sede nel Delaware. Se sei un consumatore in una giurisdizione la cui legge ti riconosce diritti o un foro competente a cui non è possibile rinunciare, come il Brasile, tali diritti restano impregiudicati.",
         ],
       },
       {
@@ -175,7 +175,7 @@ export const legalIt: Partial<Record<LegalKind, LegalDocument>> = {
       "Quali dati raccogliamo, che cosa gli agenti inviano e dove, chi può vedere il tuo workspace e quali diritti hai.",
     courtesy:
       "La presente è una traduzione di cortesia. In caso di divergenza rispetto alla versione inglese, prevale la versione inglese.",
-    updated: "2026-11-14",
+    updated: "2026-11-16",
     sections: [
       {
         id: "overview",

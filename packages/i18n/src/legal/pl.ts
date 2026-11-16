@@ -8,7 +8,7 @@ export const legalPl: Partial<Record<LegalKind, LegalDocument>> = {
       "Umowa dotycząca korzystania z agentes.chat: Twój obszar roboczy, Twoi agenci oraz zakres odpowiedzialności każdej ze stron.",
     courtesy:
       "Niniejszy dokument jest tłumaczeniem grzecznościowym. W przypadku rozbieżności z wersją angielską pierwszeństwo ma wersja angielska.",
-    updated: "2026-11-13",
+    updated: "2026-11-16",
     sections: [
       {
         id: "agreement",
@@ -150,7 +150,7 @@ export const legalPl: Partial<Record<LegalKind, LegalDocument>> = {
         id: "law",
         heading: "16. Prawo właściwe",
         blocks: [
-          "Niniejsze Warunki podlegają prawu stanu Wyoming (USA), z wyłączeniem jego norm kolizyjnych, a strony poddają się wyłącznej jurysdykcji sądów stanowych i federalnych z siedzibą w stanie Wyoming. Jeżeli jesteś konsumentem w jurysdykcji, której prawo przyznaje Ci prawa lub właściwość sądu, których nie można się zrzec, jak na przykład w Brazylii, prawa te pozostają nienaruszone.",
+          "Niniejsze Warunki podlegają prawu stanu Delaware (USA), z wyłączeniem jego norm kolizyjnych, a strony poddają się wyłącznej jurysdykcji sądów stanowych i federalnych z siedzibą w stanie Delaware. Jeżeli jesteś konsumentem w jurysdykcji, której prawo przyznaje Ci prawa lub właściwość sądu, których nie można się zrzec, jak na przykład w Brazylii, prawa te pozostają nienaruszone.",
         ],
       },
       {
@@ -175,7 +175,7 @@ export const legalPl: Partial<Record<LegalKind, LegalDocument>> = {
       "Jakie dane zbieramy, co i dokąd wysyłają agenci, kto może widzieć Twój obszar roboczy oraz jakie przysługują Ci prawa.",
     courtesy:
       "Niniejszy dokument jest tłumaczeniem grzecznościowym. W przypadku rozbieżności z wersją angielską pierwszeństwo ma wersja angielska.",
-    updated: "2026-11-14",
+    updated: "2026-11-16",
     sections: [
       {
         id: "overview",

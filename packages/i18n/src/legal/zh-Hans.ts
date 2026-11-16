@@ -6,7 +6,7 @@ export const legalZhHans: Partial<Record<LegalKind, LegalDocument>> = {
     title: "使用条款",
     summary: "使用 agentes.chat 的协议：您的工作区、您的智能体，以及双方各自承担的责任。",
     courtesy: "本文件为礼节性译本。如本译本与英文版本存在任何差异，以英文版本为准。",
-    updated: "2026-11-13",
+    updated: "2026-11-16",
     sections: [
       {
         id: "agreement",
@@ -148,7 +148,7 @@ export const legalZhHans: Partial<Record<LegalKind, LegalDocument>> = {
         id: "law",
         heading: "16. 适用法律",
         blocks: [
-          "本条款受美国怀俄明州法律管辖（不包括其法律冲突规则），双方服从位于怀俄明州的州法院和联邦法院的专属管辖。如果您是某一司法管辖区（例如巴西）的消费者，而该地法律赋予您不可放弃的权利或管辖地，则这些权利不受影响。",
+          "本条款受美国特拉华州（Delaware）法律管辖（不包括其法律冲突规则），双方服从位于特拉华州的州法院和联邦法院的专属管辖。如果您是某一司法管辖区（例如巴西）的消费者，而该地法律赋予您不可放弃的权利或管辖地，则这些权利不受影响。",
         ],
       },
       {
@@ -171,7 +171,7 @@ export const legalZhHans: Partial<Record<LegalKind, LegalDocument>> = {
     title: "隐私政策",
     summary: "我们收集哪些数据、智能体将数据发送至何处、谁能看到您的工作区，以及您享有的权利。",
     courtesy: "本文件为礼节性译本。如本译本与英文版本存在任何差异，以英文版本为准。",
-    updated: "2026-11-14",
+    updated: "2026-11-16",
     sections: [
       {
         id: "overview",

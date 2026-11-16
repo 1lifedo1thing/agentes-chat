@@ -3,7 +3,7 @@ import type { LegalDocument } from "./types";
 export const termsEn: LegalDocument = {
   title: "Terms of Use",
   summary: "The agreement for using agentes.chat: your workspace, your agents, and what each side is responsible for.",
-  updated: "2026-11-13",
+  updated: "2026-11-16",
   sections: [
     {
       id: "agreement",
@@ -145,7 +145,7 @@ export const termsEn: LegalDocument = {
       id: "law",
       heading: "16. Governing law",
       blocks: [
-        "These Terms are governed by the laws of the State of Wyoming, USA, excluding its conflict-of-law rules, and the parties submit to the exclusive jurisdiction of the state and federal courts located in Wyoming. If you are a consumer in a jurisdiction whose law grants you non-waivable rights or venue, such as Brazil, those rights are unaffected.",
+        "These Terms are governed by the laws of the State of Delaware, USA, excluding its conflict-of-law rules, and the parties submit to the exclusive jurisdiction of the state and federal courts located in Delaware. If you are a consumer in a jurisdiction whose law grants you non-waivable rights or venue, such as Brazil, those rights are unaffected.",
       ],
     },
     {

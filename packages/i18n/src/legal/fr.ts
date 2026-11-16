@@ -8,7 +8,7 @@ export const legalFr: Partial<Record<LegalKind, LegalDocument>> = {
       "Le contrat d'utilisation d'agentes.chat : votre espace de travail, vos agents et les responsabilités de chaque partie.",
     courtesy:
       "Ceci est une traduction de courtoisie. En cas de divergence avec la version anglaise, la version anglaise prévaut.",
-    updated: "2026-11-13",
+    updated: "2026-11-16",
     sections: [
       {
         id: "agreement",
@@ -150,7 +150,7 @@ export const legalFr: Partial<Record<LegalKind, LegalDocument>> = {
         id: "law",
         heading: "16. Droit applicable",
         blocks: [
-          "Les présentes Conditions sont régies par le droit de l'État du Wyoming (États-Unis), à l'exclusion de ses règles de conflit de lois, et les parties se soumettent à la compétence exclusive des juridictions étatiques et fédérales situées dans le Wyoming. Si vous êtes un consommateur relevant d'une juridiction dont la loi vous accorde des droits ou un for auxquels il ne peut être renoncé, comme le Brésil, ces droits ne sont pas affectés.",
+          "Les présentes Conditions sont régies par le droit de l'État du Delaware (États-Unis), à l'exclusion de ses règles de conflit de lois, et les parties se soumettent à la compétence exclusive des juridictions étatiques et fédérales situées dans le Delaware. Si vous êtes un consommateur relevant d'une juridiction dont la loi vous accorde des droits ou un for auxquels il ne peut être renoncé, comme le Brésil, ces droits ne sont pas affectés.",
         ],
       },
       {
@@ -175,7 +175,7 @@ export const legalFr: Partial<Record<LegalKind, LegalDocument>> = {
       "Ce que nous collectons, ce que les agents envoient et à qui, qui peut voir votre espace de travail, et les droits dont vous disposez.",
     courtesy:
       "Ceci est une traduction de courtoisie. En cas de divergence avec la version anglaise, la version anglaise prévaut.",
-    updated: "2026-11-14",
+    updated: "2026-11-16",
     sections: [
       {
         id: "overview",

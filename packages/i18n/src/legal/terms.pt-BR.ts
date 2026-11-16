@@ -3,7 +3,7 @@ import type { LegalDocument } from "./types";
 export const termsPtBR: LegalDocument = {
   title: "Termos de uso",
   summary: "O acordo para usar o agentes.chat: o seu workspace, os seus agentes e pelo que cada lado responde.",
-  updated: "2026-11-13",
+  updated: "2026-11-16",
   sections: [
     {
       id: "agreement",
@@ -145,7 +145,7 @@ export const termsPtBR: LegalDocument = {
       id: "law",
       heading: "16. Lei aplicável",
       blocks: [
-        "Estes Termos são regidos pelas leis do estado de Wyoming, EUA, sem as suas regras de conflito de leis, e as partes se submetem à jurisdição exclusiva dos tribunais estaduais e federais de Wyoming. Se você é consumidor num país cuja lei lhe dá direitos ou foro irrenunciáveis, como o Brasil, esses direitos continuam valendo.",
+        "Estes Termos são regidos pelas leis do estado de Delaware, EUA, sem as suas regras de conflito de leis, e as partes se submetem à jurisdição exclusiva dos tribunais estaduais e federais de Delaware. Se você é consumidor num país cuja lei lhe dá direitos ou foro irrenunciáveis, como o Brasil, esses direitos continuam valendo.",
       ],
     },
     {
