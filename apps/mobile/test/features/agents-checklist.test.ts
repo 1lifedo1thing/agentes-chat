@@ -39,3 +39,28 @@ describe("the keyboard waits for a tap", () => {
     expect(src("usage/UsageScreen.tsx")).toContain('keyboardDismissMode="interactive"');
   });
 });
+
+describe("one bar, said once", () => {
+  test("a cargo's page names it in its bar only: the head under it is its mark and its glance", () => {
+    const parts = src("roles/parts.tsx");
+    const head = parts.slice(parts.indexOf("export function CargoHead("), parts.indexOf("/** Back to the list"));
+    expect(head).not.toContain("roleName(");
+    expect(head).toContain("glanceLine(t, role, everyone, areas, people)");
+    expect(src("roles/RoleScreen.tsx")).toContain("<SettingsPage title={name} locked={busy}>");
+  });
+
+  test("the cargos' code cites what it does, never the screens' working names", () => {
+    for (const file of [
+      "roles/AgentsScreen.tsx",
+      "roles/ChannelsScreen.tsx",
+      "roles/LookScreen.tsx",
+      "roles/PeopleScreen.tsx",
+      "roles/PermissionsScreen.tsx",
+      "roles/RoleScreen.tsx",
+      "roles/RolesScreen.tsx",
+      "roles/logic.ts",
+      "roles/parts.tsx",
+    ])
+      expect({ file, ids: src(file).match(/\b[PW]\d{1,2}b?\b/g) ?? [] }).toEqual({ file, ids: [] });
+  });
+});

@@ -165,7 +165,7 @@ const person = (userId: string, over: Partial<Person> = {}) =>
   ({ userId, name: userId, email: `${userId}@example.com`, role: "member", roleIds: [], ...over }) as Person;
 const owner = { role: "owner", userId: "me" } as const;
 
-describe("Cargos on the phone: where they live (P1, plan §1.4)", () => {
+describe("Cargos on the phone: where they live", () => {
   test("in Configurações › Workspace › Pessoas for who manages roles, each screen in the stack", () => {
     const org = (permissions: string[]) => ({ id: "o", name: "Acme", role: "member" as const, permissions });
     expect(visibleSections(org(["read", "manage_roles"])).map((s) => s.id)).toContain("roles");
@@ -190,7 +190,7 @@ describe("Cargos on the phone: where they live (P1, plan §1.4)", () => {
   });
 });
 
-describe("What a cargo adds (P2, P3)", () => {
+describe("What a cargo adds", () => {
   test("its reach line, Todos' without the +, Administrador in words", async () => {
     const t = await translator("pt-BR");
     expect(reachLine(t, suporte, everyone, AREAS)).toBe("+3 permissões · +2 canais · +1 agente");
@@ -219,7 +219,7 @@ describe("What a cargo adds (P2, P3)", () => {
   });
 });
 
-describe("Permissões (P4): the Todos trap is gone", () => {
+describe("Permissões: the Todos trap is gone", () => {
   test("one flat list in the web's groups, the computers in their place, Administrador last under Avançado", async () => {
     const t = await translator("pt-BR");
     const groups = permissionGroups(t, suporte, data, owner);
@@ -326,7 +326,7 @@ describe("Permissões (P4): the Todos trap is gone", () => {
   });
 });
 
-describe("Quem pode (P5): Todos and the cargos in one call", () => {
+describe("Quem pode: Todos and the cargos in one call", () => {
   const people = [
     person("me", { role: "owner" }),
     person("carla", { roleIds: ["suporte"] }),
@@ -417,7 +417,7 @@ describe("Quem pode (P5): Todos and the cargos in one call", () => {
   });
 });
 
-describe("Canais (P6, P6b)", () => {
+describe("Canais and Quem vê", () => {
   const channel = (over: Partial<Channel> & { id: string }): Channel => ({
     name: over.id,
     topic: "",
@@ -442,7 +442,7 @@ describe("Canais (P6, P6b)", () => {
     expect(channelAudienceLine(t, diretoria, roles)).toBe("Privado");
   });
 
-  test("a tap follows W5's table, and Todos opens a channel to everyone", () => {
+  test("a tap on a channel does what its kind asks, and Todos opens a channel to everyone", () => {
     expect(channelIntent(suporte, general, true)).toEqual({ kind: "fixed" });
     expect(channelIntent(suporte, clientes, false)).toEqual({ kind: "locked" });
     expect(channelIntent(suporte, clientes, true)).toEqual({ kind: "who" });
@@ -495,7 +495,7 @@ describe("Canais (P6, P6b)", () => {
   });
 });
 
-describe("Agentes (P7, P7b)", () => {
+describe("Agentes and Quem fala com", () => {
   const max = agent({ id: "max", name: "Max", ownerUserId: "ana" });
   const people = [person("ana"), person("carla", { roleIds: ["suporte"] }), person("rui")];
   const nameOf = (id: string) => people.find((p) => p.userId === id)?.name;
@@ -519,7 +519,7 @@ describe("Agentes (P7, P7b)", () => {
     expect(agentTicked(everyone, limitedMax)).toBe(false);
   });
 
-  test("a tap follows W7's table: narrow from everyone, drop or add the cargo, open to everyone from Todos", () => {
+  test("a tap on an agent: narrow from everyone, drop or add the cargo, open to everyone from Todos", () => {
     expect(agentIntent(suporte, max, roles)).toEqual({
       kind: "who",
       start: { mode: "people", userIds: [], roleIds: ["admin", "fin"], consultable: true },
@@ -562,7 +562,7 @@ describe("Agentes (P7, P7b)", () => {
     const open = { ...max, audience: { mode: "everyone" as const, userIds: [], roleIds: [], consultable: false } };
     expect(sent(agentIntent(suporte, open, roles))).toBe(false);
     expect(sent(agentIntent(everyone, closed, roles))).toBe(false);
-    // P7b: whatever is picked, Salvar sends the saved switch.
+    // Quem fala com: whatever is picked, Salvar sends the saved switch.
     expect(agentWhoPatch({ mode: "people", userIds: ["rui"], roleIds: [] }, { consultable: false })).toEqual({
       mode: "people",
       userIds: ["rui"],
@@ -593,7 +593,7 @@ describe("Agentes (P7, P7b)", () => {
   });
 });
 
-describe("The order (P2's Ordenar), people and new cargos", () => {
+describe("The order (Cargos' Ordenar), people and new cargos", () => {
   const list = [admin, suporte, fin];
 
   test("▲ and ▼ move a cargo among those below the viewer; OK saves only a changed order", () => {

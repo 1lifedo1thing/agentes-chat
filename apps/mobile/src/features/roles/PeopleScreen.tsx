@@ -54,7 +54,7 @@ function useTakeOut() {
 }
 
 /**
- * A cargo's people (P8): Adicionar pessoas, then each person with an × that takes them out ("Tirar Carla de Suporte"),
+ * A cargo's people: Adicionar pessoas, then each person with an × that takes them out ("Tirar Carla de Suporte"),
  * or "Acima do seu cargo" for someone the viewer may not change. A search past eight.
  */
 export function RolePeopleScreen({ roleId }: { roleId: string }) {
@@ -248,7 +248,7 @@ export function AddToRoleScreen({ roleId }: { roleId: string }) {
 }
 
 /**
- * Cargos de Carla (P11), from Membros: a switch per cargo the viewer may give, each saving on its own (the mailbox
+ * Cargos de Carla, from Membros: a switch per cargo the viewer may give, each saving on its own (the mailbox
  * question first when it would take one), every switch off while one saves. Todos is everyone's: said under them.
  */
 export function PersonRolesScreen({ userId }: { userId: string }) {
