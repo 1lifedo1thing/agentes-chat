@@ -1,6 +1,6 @@
 # 0056. Operator API and external provisioning
 
-- Status: Accepted (2026-10-24). Amended 2026-10-25 by ADR 0065 (§10: the ready time and when the wait began, the ready email, no pairing with external provisioning, no approval step), 2026-10-26 (§10: a workspace on hold or suspended waits for no computer), 2026-10-27 by ADR 0079 (§4: limits and meters; §5: `platform_ai.threshold`; §8: billing holds, limits and the create refusal) and ADR 0076 (§5, §6: screened sessions), 2026-10-29 by ADR 0078 (the sign-up mode, the waiting list and early-access invitations), 2026-10-30 by ADR 0082 (§5: `agent.deleted`) and ADR 0088 (§4: a workspace's deletion and deletion hold; §5: the deletion's events; §8: a deletion is no standing; §9: the deletion hold; §10: a workspace being deleted waits for no computer), and 2026-10-31 by ADR 0089 (§5: `run.hop_limit`) and ADR 0103 (§4: the analytics reads), and 2026-11-02 by ADR 0127 (§4: the work analytics reads), and 2026-11-05 by ADR 0150 (§4: the Claude sign-in policy and the AI-accounts reads; §5: `account.failure` and a failed `run.finished`'s `failure`), and 2026-11-09 by ADR 0161 (§5: `machine.wake_wanted`; §10: the workspace's computer in standby, `busy` and `lastUsedAt`), and 2026-11-13 (§2: a second, read-only token; §4: the lookups, runs and conversations, and jobs and usage; §10: what is on a computer; the addenda below)
+- Status: Accepted (2026-10-24). Amended 2026-10-25 by ADR 0065 (§10: the ready time and when the wait began, the ready email, no pairing with external provisioning, no approval step), 2026-10-26 (§10: a workspace on hold or suspended waits for no computer), 2026-10-27 by ADR 0079 (§4: limits and meters; §5: `platform_ai.threshold`; §8: billing holds, limits and the create refusal) and ADR 0076 (§5, §6: screened sessions), 2026-10-29 by ADR 0078 (the sign-up mode, the waiting list and early-access invitations), 2026-10-30 by ADR 0082 (§5: `agent.deleted`) and ADR 0088 (§4: a workspace's deletion and deletion hold; §5: the deletion's events; §8: a deletion is no standing; §9: the deletion hold; §10: a workspace being deleted waits for no computer), and 2026-10-31 by ADR 0089 (§5: `run.hop_limit`) and ADR 0103 (§4: the analytics reads), and 2026-11-02 by ADR 0127 (§4: the work analytics reads), and 2026-11-05 by ADR 0150 (§4: the Claude sign-in policy and the AI-accounts reads; §5: `account.failure` and a failed `run.finished`'s `failure`), and 2026-11-09 by ADR 0161 (§5: `machine.wake_wanted`; §10: the workspace's computer in standby, `busy` and `lastUsedAt`), and 2026-11-13 (§2: a second, read-only token; §4: the lookups, runs and conversations, and jobs and usage; §10: what is on a computer; the addenda below), and 2026-11-16 (§2: a third token for the reveal door alone; §5: `support.requested`, and what a `content.viewed` of that door holds; the addendum on the reveal door and support requests)
 - Date: 2026-10-24
 - Extends: ADR 0002 (nothing private runs in the server process), ADR 0004 (configuration), ADR 0025 (connected computers)
 
@@ -21,7 +21,7 @@ The app API (`/api/app/*`) is the wrong door for them: it acts as one person (co
 ### 2. One bearer token
 
 - Every request carries `Authorization: Bearer <OPERATOR_API_TOKEN>`, compared in constant time. Anything else is a 401, on every path under the prefix (unknown ones and the OpenAPI document too), so nothing about the API answers without it.
-- A second token that only reads may be set beside it (added 2026-11-13, the addendum below).
+- A second token that only reads may be set beside it (added 2026-11-13, the addendum below), and a third that opens the reveal door and nothing else (added 2026-11-16, the last addendum).
 - No cookies and no CORS headers, so a web page can't call it on a visitor's behalf.
 - The token reaches every workspace and account on the instance. It lives only in the server's environment and the caller's, is never logged (`secret: true` in the schema), and is rotated by hand.
 
@@ -74,11 +74,12 @@ The reads live in `packages/engine/src/operator.ts` and pick every field by name
 | `run.hop_limit` | the depth backstop (`AGENT_MAX_HOPS`) stopped an agent's hand-off: the per-stretch limits stop agents long before, so some path lost its stretch (ADR 0089) | `messageId`, `hop` |
 | `task.finished` | a task on a computer ends (done, failed, canceled, or interrupted for good) | `taskId`, `agentId`, `executor`, `status` |
 | `desktop_control.ended` | a screened segment of a person's control of an agent's screen ends, having read something (ADR 0076; only with `SESSION_SCREENING`); `userId` is who was in control | `agentId`, `segmentId`, `startedAt`, `endedAt`, `screens` (how many) |
-| `content.viewed` | a review block is read (§6) | `ref` (`run:<id>`, `task:<id>` or `session:<id>`), `reason`, `operator` |
+| `content.viewed` | a review block is read (§6), or one field of one record through the reveal door (the addendum of 2026-11-16) | `ref` (`run:<id>`, `task:<id>` or `session:<id>`; of the reveal door `reveal:<kind>:<id>`, with `:<seq>` for a run's step), `reason`, `operator`; of the reveal door also `purpose`, `field`, `assistedByAi` and the proof's ids (`requestId`, `runId`) with a request's `source` |
+| `support.requested` | a member asked whoever runs the server for help, or the operator recorded that one did (the addendum of 2026-11-16); `userId` is that member | `requestId`, `source` (`form`, `offer`, `email`, `operator`) |
 | `platform_ai.threshold` | a workspace's usage billed to the platform this UTC month first reaches 50%, and first reaches 100%, of its `platformUsdPerMonth` limit (ADR 0079) | `month`, `percent` (50 or 100), `spentUsd`, `limitUsd` |
 
 - **Metadata only.** Ids, counts, domains and where a sign-in came from: never a message, prompt, subject, address list, file, credential or token. Content leaves only through §6.
-- **Off by default.** Events are recorded only while the operator API is on (`OPERATOR_API_TOKEN` set); without it the table stays empty. `content.viewed` is always recorded, since a review block can't be read without the API.
+- **Off by default.** Events are recorded only while the operator API is on (`OPERATOR_API_TOKEN` set); without it the table stays empty. `content.viewed` is always recorded, since neither a review block nor the reveal door can be read without the API.
 - **No foreign keys.** An event outlives the workspace or account it names: that is when an abuse case needs it.
 - **Paging never skips an event.** Ids and timestamps are taken before a transaction commits, so a slow transaction can commit an event that sorts before one already served. Each row keeps the id of the transaction that wrote it (`xid8`, from `pg_current_xact_id()`); the feed is ordered by it and serves only rows whose transaction is below `pg_snapshot_xmin(pg_current_snapshot())`, the point below which every transaction has ended. A row committed later always sorts after the cursor. The cost: a long transaction anywhere on the database holds the feed back until it ends; nothing is lost meanwhile.
 - **`next`** is opaque. Pass it as `after`; an empty page returns the same value, so the caller polls with it until something new comes. Callers skip types they don't know: new types and fields keep `v1`.
@@ -399,3 +400,102 @@ Known limits:
 - The class and the digest are worked out for every row a read returns, in the statement that reads them. On a workspace with very many tool calls in the range this adds to a read that already pairs every call with its result; the cost was not measured.
 
 The stored codes and status are written in `packages/engine/src/tools/gateway.ts`, the reason of a `no_ai` run in `executor.ts`, the router's marks in `router.ts`, a job's status in `outbox.ts`. The lists are beside what writes them: `SYSTEM_STOP_REASONS` and `stopOf` (`runs.ts`), `NO_AI_CARD_REASONS` (`no-ai.ts`), `RELEASE_REASONS` (`run-inbox.ts`), `planOfWaitKey` (`usage-pause.ts`), `operatorInputDigest` (`crypto.ts`). The reads are in `packages/engine/src/operator-runs.ts`, `operator-jobs.ts` and `operator-workspace.ts` (`AUDIT_FACTS`), the routes in `apps/server/src/operator/runs.ts` and `workspace.ts`, the tests in `apps/server/test/operator-runs.test.ts`, `operator-jobs.test.ts` and `operator-workspace.test.ts`.
+
+## Addendum (2026-11-16): the reveal door and support requests
+
+The reads above answer what happened without a word anyone wrote, and that is where most questions end. Some don't: a member writes that an agent answered the wrong thing, or a run failed on a tool's own error, and whoever runs the server can't tell why without the message, the step or the instructions themselves. Until now that took a database shell, with no reason given, no record and nothing the workspace could see. This adds one narrow door, off by default, where each read is one field of one record, for a purpose a record of the workspace proves, on record before any text is read, and visible to the workspace in its own audit log. The review blocks of §6 are as they were.
+
+| Method, path | Token | Answer |
+| --- | --- | --- |
+| `POST /reveal/orgs/{orgId}` | reveal | `{ kind, id, field, text, chars, offset, more }`: one field of one record of the workspace, at most 2,000 characters from `offset` |
+| `GET /orgs/{orgId}/support-requests?limit&cursor` | read or full | The times its members asked for help, newest first, in keyset pages of up to 200: `id, userId, source, aboutKind, messageId, hasWords, createdAt`. Never the words |
+| `POST /orgs/{orgId}/support-requests` | full | `{ userId, source: email \| operator, ref, text? }` → the request as the list gives it: the operator records that a member asked for help another way. The account must be a member the app would let in now, else 404; the same `source` and `ref` again answer the first request and write nothing |
+
+### A token of its own
+
+- **`OPERATOR_API_REVEAL_TOKEN`** (optional, at least 32 characters, `secret: true`) needs `OPERATOR_API_TOKEN` and must differ from it and from the read token: the server refuses to start otherwise.
+- **Under `/reveal/` only this token is taken, and only for `POST`.** The full token and the read token answer 403 there, and the reveal token answers 403 everywhere else, the OpenAPI document included. The token that suspends workspaces and the one that fills dashboards must not also read what people wrote, and the one that reads must do nothing else, so a caller holds exactly the doors its work needs and a leaked token opens one.
+- **Unset, which is the default, every path under `/reveal/` answers 403 to anyone**, with or without a token, so a caller can tell a closed door from a wrong token (401). Nothing is read and nothing is written.
+- **Decided in the one middleware** (`apps/server/src/operator/app.ts`), by path and method, as the read token is. A route added under `/reveal/` is behind this token from the day it ships.
+
+### What can be read
+
+A closed table (`REVEAL_FIELDS` in `packages/engine/src/operator-reveal.ts`): a `message`'s `text`; a `run_step`'s `input` (a tool call's arguments, as `key: value` lines), `result`, `narration` or `error` (a failed tool result's text, or an error step's), named by its run's id and `seq`; an `agent`'s `instructions`; a `routine`'s `name` or `instructions`; a `task`'s `command`, `prompt` or `result`; a `channel`'s `name`; a `connection`'s `label`, `host` or `last_error`; a `support_request`'s `text` or `about`.
+
+- **One record a call.** The request takes one `kind`, one `id` and one `field`, and refuses anything else it is sent: a list of ids, a range of dates, a search word (400). A longer field is read on from `offset`, each call on record.
+- **Never** a file, an attachment, a picture or a voice note, a wiki page, a memory, a notification's words, a job's payload, a run's whole transcript, a credential, a token, a session, a hash, a code, or anything deleted. None of them is a kind.
+- **One 404 for what is not there.** A record of another workspace under this workspace's path, a deleted message, a field that holds nothing and an id nobody has answer the same body. An `error` asked of something that did not fail is 409 `reveal.no_error`.
+
+### Two purposes, each proved by a record
+
+A read names why it is made (`purpose`) and the record that makes that true. The server checks the record itself: the caller sends an id, never the proof.
+
+- **`member_request`, with `requestId`.** A support request of this workspace made in the last 30 days (403 `reveal.no_request`), whose account is still a member the app lets in (`reveal.requester`). What opens is what that member reads in the app now, by the app's own checks (`reveal.not_visible` otherwise): a message or a channel's name by `requireChannelAccess`; a run's step by who may see the agent's runs and reads the conversation it ran in, as the app's run history does; an agent's instructions by `requireAgentDetails`; a routine by the app's own view of it (its name to who sees it, its instructions to who reads it); a connection by the workspace's own list; and the request's own words to that request and no other. A task's command, prompt and result open as its run's steps do: they are what the run told it and what it answered, which the app shows in the steps and never on the task's card. A member asking for help can never widen what anyone reads: the operator sees at most what that person sees.
+- **`fault`, with `runId`.** A run of this workspace made in the last 14 days, or, when the call also names a support request (`requestId`) of this workspace made in the last 30 days, up to 14 days before that request: a member's report must not outlive the run it is about (`reveal.no_fault` otherwise; a `requestId` that is no such request is `reveal.no_request`).
+  - **Failed or stuck.** Its status is `failed`, or it has stood still for over an hour with no move that is a person's to make: `queued`, at work, or waiting on its computer, its agent's line of long work, its plan, its budget or a provider's outage, as `shown` tells them apart in the reads of 2026-11-13. A run that waits for a person's answer or for an approval is that person's to move, and is no fault.
+  - **What hangs on such a run:** its steps, the message that started it and the ones it wrote, its agent's instructions, the routine that started it, a task it started. Anything else is 403 `reveal.not_the_fault`.
+  - **A run that went on past a failure** (it ended another way, or still runs, and one of its steps is an error or a failed tool result) opens that step's `error` and the `input` of the call whose result failed, and nothing else of itself.
+  - With no failed step and not stuck: `reveal.no_fault`.
+- **A purpose the route does not know is a 400.** Every read this door makes writes an entry the workspace sees.
+
+### Direct conversations
+
+- Under `member_request` a direct conversation opens only to someone in it. An administrator reads every channel and no direct conversation, here as in the app.
+- Under `fault` nothing of a direct conversation opens (403 `reveal.direct_conversation`): not the run's steps, not the message that started it. Of a run that worked in one, its agent's instructions and its routine still open.
+- The audit entry of a read in a direct conversation names no record (below).
+
+### The record comes first
+
+Once the checks pass, one transaction writes two rows, and only after it commits is the text read:
+
+- **A `content.viewed` event** (§5), for the operator's own feed: `ref` (`reveal:<kind>:<id>`), the `purpose`, the `field`, the `reason`, `operator`, `assistedByAi` and the proof's ids.
+- **An entry in the workspace's audit log** (`operator.content_read`, actor `system`): the record's kind and id, and in its details `field`, `seq`, the window asked for (`offset`, `limit`), `purpose`, `assistedByAi`, and the proof: for a request `requestId` and how it arrived (`source`), with the member as `onBehalfOfUserId`; for a fault `runId`, and `requestId` when one was named, with no member, since a fault is read at nobody's request.
+- **The reason is not in the audit entry.** It is a sentence the caller typed, checked for its shape alone (20 to 200 characters, one line, no email or web address). An entry the workspace's admins read must hold only what the server itself can vouch for: what was read, the purpose and the record that proves it.
+- **Of a direct conversation the entry has no id and no `seq`**, only `direct: true`. Whoever holds `view_audit` reads every entry, and would otherwise learn which message of two other people was read.
+- **An attempt that fails after the record stays on record.** A read whose record can't be written returns nothing.
+- The apps say the entry in words (`auditPhrase` in `packages/client/src/lib/audit.ts`): who read what, at whose request and how it arrived, or to diagnose a failed or stuck run, and whether an AI assistant read with them.
+
+### What leaves, and how
+
+- **Credentials are masked over the whole field before it is cut** (`redactCredentials`): API keys and tokens by their shapes, `Bearer` headers, `password=` and `token:` values, an address's user and password, private keys. A window's edge never splits a key in two. A tool call's input is written as `key: value` lines, so a field named like a secret is masked whatever it holds.
+- **Characters that hide or reorder text are removed, and any copy of an envelope's markers is neutralised** (`neutralizeUntrusted`), since the reader may be a model: the text is data, never instructions.
+- **Addresses and phone numbers stay.** "The agent wrote to the wrong person" is a report whose cause is an address.
+- **Nothing of the text is logged or reported.** A test fails the read after the text is in the server's hands and finds no word of it in a log line or an error report.
+
+### The door's own limits
+
+On an instance with nothing in front of the API, these are all that bounds a holder of the token:
+
+- **30 calls a minute**, counted by the server's rate limiter (429 `reveal.limit_minute`).
+- **100 reads of one workspace in 24 hours** (429 `reveal.limit_workspace`), counted from the `content.viewed` events the door wrote, so the count outlives a restart.
+
+### Support requests
+
+A read for a member rests on a record that the member asked. That record did not exist: a feedback was an email and nothing else (ADR 0160).
+
+- **`support_requests`** (migration 0281): the workspace, the account, `source`, `ref` (the writer's own id for it), the time, two facts about the thing reported and two texts. It goes with its workspace or its account.
+- **Four sources.** `form`: the apps' feedback form, for a member of the workspace it names. `offer`: a person's own send of a report an agent offered. `email` and `operator`: recorded by the operator through `POST /orgs/{orgId}/support-requests`, for a request that reached it outside the app. **Never an agent's send**, neither `send_feedback` nor a report that goes with a reply: an agent can be steered, and a request it wrote would open its person's whole view.
+- **The two facts are kept as nobody's words.** `aboutKind` is one of `message`, `agent_message`, `card` and `other`: the form's own word is mapped onto that list and any other word it sends is kept as `other`, never stored. `messageId` is the form's "Message id" fact, kept only when it is a message of that workspace. They let a diagnosis start from the reported message with the reads of 2026-11-13, before a word is read. A request the operator recorded has neither.
+- **The two texts are kept only where the reveal token is set**: what the member wrote (`text`) and what the thing they reported says (`about`), 4,000 characters each. Everywhere else the row holds ids alone.
+- **`support.requested`** (§5) tells the operator's feed of each new request: ids and the source.
+- **Kept:** a daily sweep (`sweepSupportRequests`) drops the words at 90 days and the row at 365. The row is the proof of every read made under it, so it lives as long as an operator's own record of those reads reasonably does. A request opens content for 30 days from its time.
+
+### What an operator who sets the token owes its workspaces
+
+Setting `OPERATOR_API_REVEAL_TOKEN` makes whoever runs the server a reader of its workspaces' content, one field at a time. The server records each read and shows it to the workspace. It can't make the operator's own terms true. So an operator that sets it:
+
+- tells its workspaces, before the first read, that it may read content for these two purposes, and who or what reads with it (`assistedByAi`);
+- sends `assistedByAi` and `operator` truthfully: both are the caller's word;
+- records a request with `source` `operator` only for a request the member really made, since the audit entry then says a read was made at that member's request;
+- keeps what it reads no longer than it told them.
+
+### Known limits
+
+- **Since when a run stands still** is read from its row: a queued run since it was made, a working one since its work now began (`working_since`, which counts again from each thing it posts), a waiting one since its row last moved (`updated_at`). Nothing stores when a wait began.
+- **A `connection` is a connected app or server** (`connector_connections`). A mailbox's and a database's label and last error are not kinds yet, though `GET /orgs/{orgId}/connections` lists them.
+- **The audit entry holds the window asked for, not the characters given**: it is written before the text is read.
+- **The minute is counted per process** unless the server's rate limiter is a shared one. Two reads at the same instant can pass one over the day's count.
+- **Masking knows shapes.** A credential of a shape it doesn't know leaves with the text around it.
+- **The review blocks of §6 are as they were**: the full token reads them, and they write an event and no audit entry.
+
+The door is in `packages/engine/src/operator-reveal.ts` and `apps/server/src/operator/reveal.ts`, support requests in `packages/engine/src/support-requests.ts` and `apps/server/src/operator/support.ts`, the tests in `apps/server/test/operator-reveal.test.ts` and `operator-support-requests.test.ts`.
