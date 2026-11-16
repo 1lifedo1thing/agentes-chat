@@ -6,8 +6,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text as RNText, StyleSheet, View } from "react-native";
-import { Icon, type IconName, LineIcon, Text } from "@/ui";
+import { Text as RNText, StyleSheet, View } from "react-native";
+import { Icon, type IconName, LineIcon, PressScale, Text } from "@/ui";
 import { MessageText } from "../chat/MessageText";
 import { useColors, useOrgId } from "../shared/hooks";
 import { MONO } from "../shared/parts";
@@ -95,16 +95,14 @@ export function AttachmentTile({
     if (detail) openFile({ id: file.id, version: file.version, title: file.title, detail }, siblings);
   };
   return (
-    <Pressable
+    // Opening it is navigation: the tile gives under the finger, no tap.
+    <PressScale
+      haptic={false}
       onPress={open}
       disabled={!detail}
       accessibilityRole={picture ? "imagebutton" : "button"}
       accessibilityLabel={`${name}, ${meta}`}
-      style={({ pressed }) => [
-        styles.tile,
-        { width, backgroundColor: c.raised, borderColor: picture ? c.line : c.line2 },
-        pressed && styles.pressed,
-      ]}
+      style={[styles.tile, { width, backgroundColor: c.raised, borderColor: picture ? c.line : c.line2 }]}
     >
       <View
         style={[
@@ -136,7 +134,7 @@ export function AttachmentTile({
           </View>
         </View>
       )}
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -337,7 +335,6 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  pressed: { opacity: 0.85 },
   cover: { overflow: "hidden" },
   coverOverFoot: { borderBottomWidth: StyleSheet.hairlineWidth },
   // The icon on the name's first line, however many lines the name wraps to.

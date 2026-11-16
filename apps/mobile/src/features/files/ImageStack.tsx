@@ -13,7 +13,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { haptics, Icon, Text, useReducedMotion, useTheme } from "@/ui";
+import { haptics, Icon, motion, Text, useReducedMotion, useTheme } from "@/ui";
 import { useColors, useOrgId } from "../shared/hooks";
 import { DECK_DRAG, DECK_RISE, deckCard, deckIndex, deckTarget, wrapPlace } from "./deck";
 import type { FileRef } from "./logic";
@@ -31,7 +31,8 @@ export interface StackImage {
 const SIDE = 7;
 /** More pictures than this say "3 de 7" instead of dots. */
 const MAX_DOTS = 5;
-const SETTLE = { stiffness: 190, damping: 25, mass: 1 };
+/** A deck let go of: back into place keeping the finger's speed (the app's snap; a plain object the worklet reads). */
+const SETTLE = { ...motion.snap };
 
 /**
  * Two or more pictures in a message: a deck to swipe through, its dots under it. A tap opens the viewer at the

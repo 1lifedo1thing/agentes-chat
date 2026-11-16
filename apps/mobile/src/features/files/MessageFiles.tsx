@@ -4,8 +4,8 @@ import { keepWhole } from "@agenteschat/client/lib/format";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, Text as RNText, StyleSheet, View } from "react-native";
-import { Icon, Text } from "@/ui";
+import { ActivityIndicator, Text as RNText, StyleSheet, View } from "react-native";
+import { Icon, PressScale, Text } from "@/ui";
 import { ChoicesCard } from "../blocks/ChoicesCard";
 import { LiveBlockCard } from "../blocks/LiveBlock";
 import { PollCard } from "../blocks/PollCard";
@@ -187,16 +187,13 @@ function InlineImage({
   const link = useRemoteFile(orgId, file.id, version);
   const [failed, setFailed] = useState(false);
   return (
-    <Pressable
+    <PressScale
+      haptic={false}
       onPress={onPress}
       accessibilityRole="imagebutton"
       accessibilityLabel={label || t("mobile.files.openImage")}
       accessibilityHint={t("mobile.files.openImage")}
-      style={({ pressed }) => [
-        styles.shot,
-        { width, height, backgroundColor: c.sunken, borderColor: c.line2 },
-        pressed && styles.pressed,
-      ]}
+      style={[styles.shot, { width, height, backgroundColor: c.sunken, borderColor: c.line2 }]}
     >
       {link.data && !failed ? (
         <Image
@@ -214,7 +211,7 @@ function InlineImage({
           <Icon name="image" size={22} color={c.faint} />
         </View>
       ) : null}
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -478,7 +475,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  pressed: { opacity: 0.85 },
   // A file on its way up dims under a spinner; a video's length sits in its corner, as on a sent one.
   veil: { backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
   length: {

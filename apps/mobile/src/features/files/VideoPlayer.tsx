@@ -2,10 +2,9 @@ import { useEventListener } from "expo";
 import { type VideoPlayer as Player, useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text as RNText, StyleSheet, View } from "react-native";
-import { Icon } from "@/ui";
+import { Text as RNText, StyleSheet, View } from "react-native";
+import { Icon, PressScale } from "@/ui";
 import { useColors } from "../shared/hooks";
-import { tapHaptic } from "../shared/parts";
 import { videoClock, videoHeight } from "./logic";
 
 /**
@@ -77,23 +76,14 @@ function InlineVideo({
   });
   const length = duration > 0 ? videoClock(duration) : "";
   return (
-    <Pressable
-      onPress={
-        onOpen
-          ? () => {
-              tapHaptic();
-              onOpen();
-            }
-          : undefined
-      }
+    // Opening it is navigation, as opening a picture: the press shows it, no tap.
+    <PressScale
+      haptic={false}
+      onPress={onOpen}
       disabled={!onOpen}
       accessibilityRole="button"
       accessibilityLabel={`${t("mobile.files.video.play")}: ${name}${length ? `, ${length}` : ""}`}
-      style={({ pressed }) => [
-        styles.inline,
-        { width, height: videoHeight(width), backgroundColor: c.sunken, borderColor: c.line2 },
-        pressed && styles.pressed,
-      ]}
+      style={[styles.inline, { width, height: videoHeight(width), backgroundColor: c.sunken, borderColor: c.line2 }]}
     >
       <VideoView
         player={player}
@@ -114,7 +104,7 @@ function InlineVideo({
           <RNText style={styles.lengthText}>{length}</RNText>
         </View>
       ) : null}
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -214,7 +204,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   length: {
     position: "absolute",
     left: 8,
