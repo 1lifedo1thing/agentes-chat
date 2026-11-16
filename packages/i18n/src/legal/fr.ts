@@ -14,7 +14,7 @@ export const legalFr: Partial<Record<LegalKind, LegalDocument>> = {
         id: "agreement",
         heading: "1. Contrat",
         blocks: [
-          "Les présentes Conditions d'utilisation (les « Conditions ») constituent un contrat ayant force obligatoire entre CODARI GLOBAL, LLC, société à responsabilité limitée (limited liability company) du Wyoming exerçant sous le nom agentes.chat (« agentes.chat », « nous »), et la personne physique ou morale qui crée un compte ou un espace de travail (« vous »). En créant un compte, en rejoignant un espace de travail ou en utilisant de toute autre manière agentes.chat sur le web, l'application Mac ou l'application mobile (le « Service »), vous acceptez les présentes Conditions et notre Politique de confidentialité. Si vous utilisez le Service pour le compte d'une société ou d'une autre entité, vous déclarez être habilité à l'engager.",
+          "Les présentes Conditions d'utilisation (les « Conditions ») constituent un contrat ayant force obligatoire entre AGENTESCHAT, LLC, société à responsabilité limitée (limited liability company) du Delaware exerçant sous le nom agentes.chat (« agentes.chat », « nous »), et la personne physique ou morale qui crée un compte ou un espace de travail (« vous »). En créant un compte, en rejoignant un espace de travail ou en utilisant de toute autre manière agentes.chat sur le web, l'application Mac ou l'application mobile (le « Service »), vous acceptez les présentes Conditions et notre Politique de confidentialité. Si vous utilisez le Service pour le compte d'une société ou d'une autre entité, vous déclarez être habilité à l'engager.",
           "Vous devez être âgé d'au moins 18 ans et avoir la capacité de contracter pour utiliser le Service.",
         ],
       },
@@ -164,7 +164,7 @@ export const legalFr: Partial<Record<LegalKind, LegalDocument>> = {
         id: "contact",
         heading: "18. Contact",
         blocks: [
-          "CODARI GLOBAL, LLC, exerçant sous le nom agentes.chat. Notifications : 7345 W Sand Lake Rd Ste 210, Office 4592, Orlando, FL 32819, USA · legal@agentes.chat · Pour tout le reste : hello@agentes.chat",
+          "AGENTESCHAT, LLC, exerçant sous le nom agentes.chat. Notifications : 2810 North Church Street, Ste 91038, Wilmington, DE 19802, USA · legal@agentes.chat · Pour tout le reste : hello@agentes.chat",
         ],
       },
     ],
@@ -181,7 +181,7 @@ export const legalFr: Partial<Record<LegalKind, LegalDocument>> = {
         id: "overview",
         heading: "1. Présentation",
         blocks: [
-          "CODARI GLOBAL, LLC, société à responsabilité limitée (limited liability company) du Wyoming exerçant sous le nom agentes.chat (« agentes.chat », « nous »), exploite agentes.chat : un espace de travail où des personnes et des agents d'IA travaillent ensemble, disponible sur le web, en application Mac et en application mobile (le « Service »). La présente politique distingue deux rôles :",
+          "AGENTESCHAT, LLC, société à responsabilité limitée (limited liability company) du Delaware exerçant sous le nom agentes.chat (« agentes.chat », « nous »), exploite agentes.chat : un espace de travail où des personnes et des agents d'IA travaillent ensemble, disponible sur le web, en application Mac et en application mobile (le « Service »). La présente politique distingue deux rôles :",
           {
             list: [
               "Pour les **données de compte**, c'est-à-dire les informations que les personnes nous fournissent pour créer et utiliser un compte, nous sommes le responsable du traitement.",
@@ -342,7 +342,7 @@ export const legalFr: Partial<Record<LegalKind, LegalDocument>> = {
         id: "contact",
         heading: "17. Contact",
         blocks: [
-          "CODARI GLOBAL, LLC, exerçant sous le nom agentes.chat. Notifications : 7345 W Sand Lake Rd Ste 210, Office 4592, Orlando, FL 32819, USA · privacy@agentes.chat. Les demandes relatives à la protection des données provenant de l'UE, du Royaume-Uni et du Brésil parviennent à notre équipe chargée de la confidentialité à la même adresse. Pour toute autre question, écrivez à hello@agentes.chat.",
+          "AGENTESCHAT, LLC, exerçant sous le nom agentes.chat. Notifications : 2810 North Church Street, Ste 91038, Wilmington, DE 19802, USA · privacy@agentes.chat. Les demandes relatives à la protection des données provenant de l'UE, du Royaume-Uni et du Brésil parviennent à notre équipe chargée de la confidentialité à la même adresse. Pour toute autre question, écrivez à hello@agentes.chat.",
         ],
       },
     ],

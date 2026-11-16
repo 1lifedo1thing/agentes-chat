@@ -9,7 +9,7 @@ export const termsPtBR: LegalDocument = {
       id: "agreement",
       heading: "1. Acordo",
       blocks: [
-        'Estes Termos de uso (os "Termos") são um acordo vinculante entre a CODARI GLOBAL, LLC, sociedade de responsabilidade limitada do estado de Wyoming (EUA) que atua sob o nome agentes.chat ("agentes.chat", "nós"), e a pessoa ou entidade que cria uma conta ou um workspace ("você"). Ao criar uma conta, entrar num workspace ou usar de outra forma o agentes.chat na web, no app de Mac ou no app de celular (o "Serviço"), você aceita estes Termos e a nossa Política de privacidade. Se você usa o Serviço em nome de uma empresa ou outra entidade, declara que tem poderes para obrigá-la.',
+        'Estes Termos de uso (os "Termos") são um acordo vinculante entre a AGENTESCHAT, LLC, sociedade de responsabilidade limitada do estado de Delaware (EUA) que atua sob o nome agentes.chat ("agentes.chat", "nós"), e a pessoa ou entidade que cria uma conta ou um workspace ("você"). Ao criar uma conta, entrar num workspace ou usar de outra forma o agentes.chat na web, no app de Mac ou no app de celular (o "Serviço"), você aceita estes Termos e a nossa Política de privacidade. Se você usa o Serviço em nome de uma empresa ou outra entidade, declara que tem poderes para obrigá-la.',
         "Para usar o Serviço, você precisa ter pelo menos 18 anos e capacidade para firmar contratos.",
       ],
     },
@@ -159,7 +159,7 @@ export const termsPtBR: LegalDocument = {
       id: "contact",
       heading: "18. Contato",
       blocks: [
-        "CODARI GLOBAL, LLC, que atua sob o nome agentes.chat. Endereço para notificações: 7345 W Sand Lake Rd Ste 210, Office 4592, Orlando, FL 32819, EUA · legal@agentes.chat · Para o resto: hello@agentes.chat",
+        "AGENTESCHAT, LLC, que atua sob o nome agentes.chat. Endereço para notificações: 2810 North Church Street, Ste 91038, Wilmington, DE 19802, EUA · legal@agentes.chat · Para o resto: hello@agentes.chat",
       ],
     },
   ],

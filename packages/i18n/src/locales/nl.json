@@ -16569,11 +16569,11 @@
       "rolesPersonal": "Wat ieder hier kan doen. Eigenaren kunnen alles."
     },
     "about": {
-      "basedOn": "Gebaseerd op <site>agentes.chat</site> van Codari Global, LLC",
+      "basedOn": "Gebaseerd op <site>agentes.chat</site> van AGENTESCHAT, LLC",
       "version": "Versie",
       "license": "Vrije software onder de <license>GNU Affero General Public License v3</license>, zonder garantie.",
       "source": "Broncode",
-      "copyright": "Copyright © 2026 Codari Global, LLC en bijdragers"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC en bijdragers"
     },
     "title": "Instellingen",
     "account": {

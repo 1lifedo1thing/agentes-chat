@@ -15947,11 +15947,11 @@
       "rolesPersonal": "ここで各メンバーができること。オーナーはすべてできます。"
     },
     "about": {
-      "basedOn": "Codari Global, LLC の <site>agentes.chat</site> をもとにしています",
+      "basedOn": "AGENTESCHAT, LLC の <site>agentes.chat</site> をもとにしています",
       "version": "バージョン",
       "license": "<license>GNU Affero General Public License v3</license> のもとで提供される自由ソフトウェアです。保証はありません。",
       "source": "ソースコード",
-      "copyright": "Copyright © 2026 Codari Global, LLC およびコントリビューター"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC およびコントリビューター"
     },
     "title": "設定",
     "account": {

@@ -16819,14 +16819,14 @@ export const en = {
     },
     /**
      * The license's required attribution (AGPL-3.0 section 7(b), see NOTICE): translate it, but keep
-     * "agentes.chat" and "Codari Global, LLC" and its meaning.
+     * "agentes.chat" and "AGENTESCHAT, LLC" and its meaning.
      */
     about: {
-      basedOn: "Based on <site>agentes.chat</site> by Codari Global, LLC",
+      basedOn: "Based on <site>agentes.chat</site> by AGENTESCHAT, LLC",
       version: "Version",
       license: "Free software under the <license>GNU Affero General Public License v3</license>, with no warranty.",
       source: "Source code",
-      copyright: "Copyright © 2026 Codari Global, LLC and contributors",
+      copyright: "Copyright © 2026 AGENTESCHAT, LLC and contributors",
     },
     title: "Settings",
     account: {

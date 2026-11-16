@@ -14,7 +14,7 @@ export const legalNl: Partial<Record<LegalKind, LegalDocument>> = {
         id: "agreement",
         heading: "1. Overeenkomst",
         blocks: [
-          'Deze Gebruiksvoorwaarden (de "Voorwaarden") vormen een bindende overeenkomst tussen CODARI GLOBAL, LLC, een limited liability company naar het recht van Wyoming die handelt onder de naam agentes.chat ("agentes.chat", "wij", "ons"), en de persoon of entiteit die een account of een werkruimte aanmaakt ("u"). Door een account aan te maken, lid te worden van een werkruimte of agentes.chat anderszins te gebruiken via het web, de Mac-app of de telefoonapp (de "Dienst"), aanvaardt u deze Voorwaarden en ons Privacybeleid. Indien u de Dienst gebruikt namens een bedrijf of andere entiteit, verklaart u bevoegd te zijn deze te binden.',
+          'Deze Gebruiksvoorwaarden (de "Voorwaarden") vormen een bindende overeenkomst tussen AGENTESCHAT, LLC, een limited liability company naar het recht van Delaware die handelt onder de naam agentes.chat ("agentes.chat", "wij", "ons"), en de persoon of entiteit die een account of een werkruimte aanmaakt ("u"). Door een account aan te maken, lid te worden van een werkruimte of agentes.chat anderszins te gebruiken via het web, de Mac-app of de telefoonapp (de "Dienst"), aanvaardt u deze Voorwaarden en ons Privacybeleid. Indien u de Dienst gebruikt namens een bedrijf of andere entiteit, verklaart u bevoegd te zijn deze te binden.',
           "Om de Dienst te gebruiken, moet u ten minste 18 jaar oud zijn en bevoegd zijn een overeenkomst aan te gaan.",
         ],
       },
@@ -164,7 +164,7 @@ export const legalNl: Partial<Record<LegalKind, LegalDocument>> = {
         id: "contact",
         heading: "18. Contact",
         blocks: [
-          "CODARI GLOBAL, LLC, handelend onder de naam agentes.chat. Kennisgevingen: 7345 W Sand Lake Rd Ste 210, Office 4592, Orlando, FL 32819, USA · legal@agentes.chat · Al het overige: hello@agentes.chat",
+          "AGENTESCHAT, LLC, handelend onder de naam agentes.chat. Kennisgevingen: 2810 North Church Street, Ste 91038, Wilmington, DE 19802, USA · legal@agentes.chat · Al het overige: hello@agentes.chat",
         ],
       },
     ],
@@ -180,7 +180,7 @@ export const legalNl: Partial<Record<LegalKind, LegalDocument>> = {
         id: "overview",
         heading: "1. Overzicht",
         blocks: [
-          'CODARI GLOBAL, LLC, een limited liability company naar het recht van Wyoming die handelt onder de naam agentes.chat ("agentes.chat", "wij"), exploiteert agentes.chat: een werkruimte waarin mensen en AI-agents samenwerken, beschikbaar via het web, als Mac-app en als telefoonapp (de "Dienst"). Dit beleid onderscheidt twee rollen:',
+          'AGENTESCHAT, LLC, een limited liability company naar het recht van Delaware die handelt onder de naam agentes.chat ("agentes.chat", "wij"), exploiteert agentes.chat: een werkruimte waarin mensen en AI-agents samenwerken, beschikbaar via het web, als Mac-app en als telefoonapp (de "Dienst"). Dit beleid onderscheidt twee rollen:',
           {
             list: [
               "Voor **accountgegevens**, de informatie die personen ons verstrekken om een account aan te maken en te gebruiken, zijn wij de verwerkingsverantwoordelijke.",
@@ -341,7 +341,7 @@ export const legalNl: Partial<Record<LegalKind, LegalDocument>> = {
         id: "contact",
         heading: "17. Contact",
         blocks: [
-          "CODARI GLOBAL, LLC, handelend onder de naam agentes.chat. Kennisgevingen: 7345 W Sand Lake Rd Ste 210, Office 4592, Orlando, FL 32819, USA · privacy@agentes.chat. Vragen over gegevensbescherming uit de EU, het Verenigd Koninkrijk en Brazilië bereiken ons privacyteam via hetzelfde adres. Voor al het overige kunt u schrijven naar hello@agentes.chat.",
+          "AGENTESCHAT, LLC, handelend onder de naam agentes.chat. Kennisgevingen: 2810 North Church Street, Ste 91038, Wilmington, DE 19802, USA · privacy@agentes.chat. Vragen over gegevensbescherming uit de EU, het Verenigd Koninkrijk en Brazilië bereiken ons privacyteam via hetzelfde adres. Voor al het overige kunt u schrijven naar hello@agentes.chat.",
         ],
       },
     ],

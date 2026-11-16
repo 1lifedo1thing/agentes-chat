@@ -22,16 +22,16 @@ outside contribution would stay AGPL-only.
 ## Decision
 
 1. **Two licenses, one codebase.** The public license doesn't change: AGPL-3.0-only with the terms in `NOTICE`
-   (the app stores permission and the attribution), and MIT for the packages that say so. Codari also licenses
+   (the app stores permission and the attribution), and MIT for the packages that say so. AGENTESCHAT also licenses
    the same code under commercial terms, by contract (`COMMERCIAL.md`). The code knows nothing of it: no license
    key or check, which anyone could remove from AGPL code anyway, and nothing that behaves differently.
 2. **A contributor license agreement.** Every outside contribution comes in under `CLA.md`, based on the Apache
-   Individual Contributor License Agreement: the contributor keeps the copyright and grants Codari, its successors
+   Individual Contributor License Agreement: the contributor keeps the copyright and grants AGENTESCHAT, its successors
    and the recipients of what it distributes a perpetual, worldwide, irrevocable copyright license, with the right
    to sublicense and relicense under any terms, commercial ones included, and a patent license; they state the
    code is theirs to give (with their employer's permission where it has rights in it), and someone accepting for
    a company binds the company, so the one text covers people and companies. Contributions are still licensed to
-   everyone under the license of the code they go into, as before; the agreement adds Codari's rights on top.
+   everyone under the license of the code they go into, as before; the agreement adds AGENTESCHAT's rights on top.
 3. **Asked in the pull request.** `.github/workflows/cla.yml` runs the CLA Assistant Lite action
    (`contributor-assistant/github-action`, pinned to a commit) on `pull_request_target` and on comments: the
    workflow file is always main's, and the pull request's code is never checked out. The bot comments on a first
@@ -63,7 +63,7 @@ outside contribution would stay AGPL-only.
 - The signatures live in this repository, versioned, with no third-party service holding them.
 - The README, `SELF_HOSTING.md` and `CONTRIBUTING.md` no longer say there is nothing to sign or no paid tier;
   self-hosting stays free under the AGPL.
-- The team's own code being Codari's rests on its contracts, not on this agreement.
+- The team's own code being AGENTESCHAT's rests on its contracts, not on this agreement.
 
 ## Alternatives considered
 

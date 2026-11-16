@@ -13,7 +13,7 @@ export const legalJa: Partial<Record<LegalKind, LegalDocument>> = {
         id: "agreement",
         heading: "1. 契約",
         blocks: [
-          "本利用規約（以下「本規約」）は、agentes.chat の名称で事業を行うワイオミング州の有限責任会社である CODARI GLOBAL, LLC（以下「agentes.chat」または「当社」）と、アカウントまたはワークスペースを作成する個人または団体（以下「お客様」）との間の拘束力ある契約です。アカウントの作成、ワークスペースへの参加、その他ウェブ、Mac アプリまたはスマートフォンアプリ上での agentes.chat（以下「本サービス」）の利用により、お客様は本規約および当社のプライバシーポリシーを承諾します。お客様が会社その他の団体のために本サービスを利用する場合、お客様は当該団体を拘束する権限を有することを表明します。",
+          "本利用規約（以下「本規約」）は、agentes.chat の名称で事業を行うデラウェア州の有限責任会社である AGENTESCHAT, LLC（以下「agentes.chat」または「当社」）と、アカウントまたはワークスペースを作成する個人または団体（以下「お客様」）との間の拘束力ある契約です。アカウントの作成、ワークスペースへの参加、その他ウェブ、Mac アプリまたはスマートフォンアプリ上での agentes.chat（以下「本サービス」）の利用により、お客様は本規約および当社のプライバシーポリシーを承諾します。お客様が会社その他の団体のために本サービスを利用する場合、お客様は当該団体を拘束する権限を有することを表明します。",
           "本サービスを利用するには、18 歳以上であり、かつ契約を締結する能力を有している必要があります。",
         ],
       },
@@ -163,7 +163,7 @@ export const legalJa: Partial<Record<LegalKind, LegalDocument>> = {
         id: "contact",
         heading: "18. お問い合わせ",
         blocks: [
-          "CODARI GLOBAL, LLC（agentes.chat の名称で事業を行っています）。通知先：7345 W Sand Lake Rd Ste 210, Office 4592, Orlando, FL 32819, USA · legal@agentes.chat · その他のお問い合わせ：hello@agentes.chat",
+          "AGENTESCHAT, LLC（agentes.chat の名称で事業を行っています）。通知先：2810 North Church Street, Ste 91038, Wilmington, DE 19802, USA · legal@agentes.chat · その他のお問い合わせ：hello@agentes.chat",
         ],
       },
     ],
@@ -179,7 +179,7 @@ export const legalJa: Partial<Record<LegalKind, LegalDocument>> = {
         id: "overview",
         heading: "1. 概要",
         blocks: [
-          "agentes.chat の名称で事業を行うワイオミング州の有限責任会社である CODARI GLOBAL, LLC（以下「agentes.chat」または「当社」）は、人と AI エージェントが共に働くワークスペースであり、ウェブ、Mac アプリおよびスマートフォンアプリで利用できる agentes.chat（以下「本サービス」）を運営しています。本ポリシーでは、次の 2 つの役割を区別します。",
+          "agentes.chat の名称で事業を行うデラウェア州の有限責任会社である AGENTESCHAT, LLC（以下「agentes.chat」または「当社」）は、人と AI エージェントが共に働くワークスペースであり、ウェブ、Mac アプリおよびスマートフォンアプリで利用できる agentes.chat（以下「本サービス」）を運営しています。本ポリシーでは、次の 2 つの役割を区別します。",
           {
             list: [
               "**アカウントデータ**（アカウントを作成し利用するために人が当社に提供する情報）については、当社がデータ管理者です。",
@@ -340,7 +340,7 @@ export const legalJa: Partial<Record<LegalKind, LegalDocument>> = {
         id: "contact",
         heading: "17. お問い合わせ",
         blocks: [
-          "CODARI GLOBAL, LLC（agentes.chat の名称で事業を行っています）。通知先：7345 W Sand Lake Rd Ste 210, Office 4592, Orlando, FL 32819, USA · privacy@agentes.chat。EU、英国およびブラジルのデータ保護に関するお問い合わせは、同じアドレスで当社のプライバシーチームに届きます。その他のお問い合わせは hello@agentes.chat までご連絡ください。",
+          "AGENTESCHAT, LLC（agentes.chat の名称で事業を行っています）。通知先：2810 North Church Street, Ste 91038, Wilmington, DE 19802, USA · privacy@agentes.chat。EU、英国およびブラジルのデータ保護に関するお問い合わせは、同じアドレスで当社のプライバシーチームに届きます。その他のお問い合わせは hello@agentes.chat までご連絡ください。",
         ],
       },
     ],
