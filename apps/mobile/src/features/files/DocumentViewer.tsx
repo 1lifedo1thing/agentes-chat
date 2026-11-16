@@ -1,6 +1,7 @@
 import { type ArtifactDetail, useApi, useArtifact } from "@agenteschat/client";
 import { formatJson, highlightCode } from "@agenteschat/client/lib/code";
 import { isJsonFile } from "@agenteschat/client/lib/files";
+import { isolatedPage, STORAGE_STANDINS } from "@agenteschat/client/lib/isolated-page";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,13 +9,14 @@ import { ActivityIndicator, Platform, Text as RNText, ScrollView, StyleSheet, Vi
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { Button, CARD_PAD, IconButton, SCREEN_X, Text, ToastHost, useToast } from "@/ui";
+import { ISOLATED_WEB_VIEW } from "../blocks/logic";
 import { CodeText, RawToggle } from "../chat/CodeCard";
 import { MessageText } from "../chat/MessageText";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { copyText, goBack, MONO } from "../shared/parts";
 import { useFileActions } from "./actions";
-import { type FileInfo, fileInfo } from "./logic";
+import { type FileInfo, fileInfo, textChunks } from "./logic";
 import { FileTile, useFileLine } from "./MessageFiles";
 import { openFile } from "./open";
 import { fileText, useRemoteFile } from "./source";
@@ -102,6 +104,8 @@ function Viewer({ id, version }: { id: string; version?: number }) {
           <Center>
             <ActivityIndicator color={c.faint} />
           </Center>
+        ) : info.view === "html" ? (
+          <HtmlPage detail={detail} />
         ) : info.view === "markdown" || info.view === "text" ? (
           <TextPage detail={detail} markdown={info.view === "markdown"} json={isJsonFile(info.name, info.mime)} />
         ) : pdf ? (
@@ -177,9 +181,13 @@ function TextPage({ detail, markdown, json }: { detail: ArtifactDetail; markdown
               <CodeText lines={highlightCode(raw ? text.data : formatted, "json")} wrap />
             </View>
           ) : (
-            <RNText selectable style={[styles.mono, { color: c.ink2 }]}>
-              {text.data}
-            </RNText>
+            // In pieces: a long file in one text view was taller than the phone draws, and showed blank.
+            textChunks(text.data).map((piece, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text, in order
+              <RNText key={i} selectable style={[styles.mono, { color: c.ink2 }]}>
+                {piece}
+              </RNText>
+            ))
           )}
         </ScrollView>
       ) : text.isError ? (
@@ -234,6 +242,52 @@ function PdfPage({ detail }: { detail: ArtifactDetail }) {
   );
 }
 
+/** Before a page's own head: the phone's width, and stand-ins for the storage a page here has none of. */
+const PAGE_HEAD = `<meta name="viewport" content="width=device-width, initial-scale=1"><script>(function(){${STORAGE_STANDINS}})();</script>`;
+
+/**
+ * A page (an HTML file, a page an agent made) drawn as a page, apart from the app as everything an agent writes runs
+ * (ADR 0019: `ISOLATED_WEB_VIEW` with `isolatedPage`'s policy: no network, cookies, storage or way off it), at the
+ * phone's width, scrolling by itself. On white, as a page is when it sets no background of its own.
+ */
+function HtmlPage({ detail }: { detail: ArtifactDetail }) {
+  const c = useColors();
+  const inline = detail.content.kind === "html" ? detail.content.html : undefined;
+  const text = useFileText(detail, inline === undefined);
+  const html = inline ?? text.data;
+  const page = useMemo(() => (html !== undefined ? isolatedPage(html, PAGE_HEAD) : null), [html]);
+  // A page the system ended (long in the background) comes back.
+  const [life, setLife] = useState(0);
+  return (
+    <View style={[styles.page, styles.clip, styles.white]}>
+      {page !== null ? (
+        <WebView
+          key={life}
+          source={{ html: page }}
+          {...ISOLATED_WEB_VIEW}
+          startInLoadingState
+          renderLoading={() => (
+            <Center>
+              <ActivityIndicator color={c.faint} />
+            </Center>
+          )}
+          onContentProcessDidTerminate={() => setLife((n) => n + 1)}
+          onRenderProcessGone={() => setLife((n) => n + 1)}
+          style={styles.web}
+        />
+      ) : text.isError ? (
+        <Center>
+          <LoadFailed onRetry={() => void text.refetch()} />
+        </Center>
+      ) : (
+        <Center>
+          <ActivityIndicator color={c.faint} />
+        </Center>
+      )}
+    </View>
+  );
+}
+
 /** A type the app doesn't draw: its card, big, and Compartilhar opens it elsewhere. */
 function BigCard({ info }: { info: FileInfo }) {
   const { t } = useTranslation();
@@ -264,6 +318,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 6 },
   page: { flex: 1, marginTop: 4, marginHorizontal: 16, borderTopLeftRadius: 14, borderTopRightRadius: 14 },
   clip: { overflow: "hidden" },
+  white: { backgroundColor: "#fff" },
   pageInner: { paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: 32 },
   mono: { fontFamily: MONO, fontSize: 13, lineHeight: 19 },
   json: { gap: 10, alignItems: "flex-start" },

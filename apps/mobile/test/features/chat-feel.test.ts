@@ -131,11 +131,19 @@ describe("older pages", () => {
 });
 
 describe('the "New" line', () => {
-  test("faded, it keeps its row until the person leaves the end or the screen", () => {
+  test("it comes in the same frame as the first new row and stays put until the person leaves the screen", () => {
     const chat = src("features/chat/ChatScreen.tsx");
-    expect(chat).not.toContain("setDivider((d) => (d?.fading ? null : d)), 700)");
-    expect(chat).toContain("if (divider?.fading && (!atEnd || !focused)) setDivider((d) => (d?.fading ? null : d));");
-    expect(chat).toContain("if (!divider || divider.fading || !reached || !atEnd) return;");
+    // Derived in the render that brings the row (put a render later, it pushed the row down under the person's eyes).
+    expect(chat).toContain("const dividerKey = placedDivider ?? unseen.firstKey;");
+    expect(chat).toContain("if (!focused) setPlacedDivider(null);");
+    // Never faded or taken out while the conversation shows: a row going away moved every message under it.
+    expect(chat).not.toContain("DIVIDER_FADE_MS");
+    expect(between(chat, "function UnseenLine()", "\n}\n")).not.toContain("withTiming");
+  });
+
+  test("the older pages' row keeps its room once the start is reached", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat).toContain("<View style={styles.older} />");
   });
 });
 

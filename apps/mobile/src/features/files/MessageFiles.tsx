@@ -9,6 +9,7 @@ import { Icon, Text } from "@/ui";
 import { ChoicesCard } from "../blocks/ChoicesCard";
 import { LiveBlockCard } from "../blocks/LiveBlock";
 import { PollCard } from "../blocks/PollCard";
+import { useKeptWidth } from "../chat/look";
 import { useColors, useOrgId } from "../shared/hooks";
 import { useSurface } from "../shared/parts";
 import { AttachmentTile } from "./AttachmentTile";
@@ -61,7 +62,9 @@ export function MessageFiles({ files, align = "start" }: { files: MessageFile[];
     orgId,
     live.map((f) => (f.version !== undefined ? { id: f.id, version: f.version } : { id: f.id })),
   );
-  const [width, setWidth] = useState(0);
+  // The room the files have, kept across the list's unmounts: a row coming back draws its pictures at their size from
+  // its first frame, not at the widest and then narrower (shorter), moving the rows under it.
+  const [width, onWidth] = useKeptWidth(`files:${align}`);
 
   const images: { file: MessageFile; detail: ArtifactDetail | undefined }[] = [];
   // What lives in the conversation isn't a file: the thing itself (ADR 0113).
@@ -116,7 +119,7 @@ export function MessageFiles({ files, align = "start" }: { files: MessageFile[];
   };
 
   return (
-    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={[styles.wrap, align === "end" && styles.end]}>
+    <View onLayout={onWidth} style={[styles.wrap, align === "end" && styles.end]}>
       {pictures.length > 1 ? <ImageStack images={pictures} width={blockWidth} siblings={media} /> : null}
       {only && onlyBox && pictures.length === 1 ? (
         <View style={{ width: onlyBox.width }}>
@@ -279,7 +282,8 @@ export function LocalFiles({
   sending: boolean;
 }) {
   const c = useColors();
-  const [width, setWidth] = useState(0);
+  // The same room as the sent ones' (`MessageFiles`), kept the same way.
+  const [width, onWidth] = useKeptWidth(`files:${align}`);
   const blockWidth = Math.min(width || MAX_WIDTH, MAX_WIDTH);
   // Laid out as `MessageFiles` lays out the sent ones, so nothing moves when the server's copy takes the place.
   const pictures = useMemo(() => files.filter((f) => f.type.startsWith("image/")), [files]);
@@ -306,7 +310,7 @@ export function LocalFiles({
     [pictures],
   );
   return (
-    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={[styles.wrap, align === "end" && styles.end]}>
+    <View onLayout={onWidth} style={[styles.wrap, align === "end" && styles.end]}>
       {others.length === 0 && pictures.length > 1 ? (
         <View>
           <ImageStack images={deck} width={blockWidth} openable={false} />

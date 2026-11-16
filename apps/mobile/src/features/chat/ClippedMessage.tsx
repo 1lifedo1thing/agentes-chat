@@ -1,4 +1,4 @@
-import { clippedHeight } from "@agenteschat/client/lib/message-length";
+import { clippedHeight, LONG_MESSAGE } from "@agenteschat/client/lib/message-length";
 import { LinearGradient } from "expo-linear-gradient";
 import { type ComponentRef, createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,6 +6,8 @@ import { AccessibilityInfo, Pressable, StyleSheet, View } from "react-native";
 import Animated, { Easing, LinearTransition } from "react-native-reanimated";
 import { useOrg } from "@/providers/org";
 import { motion, Text, useReducedMotion } from "@/ui";
+import { keepSize, keptSize } from "./kept-sizes";
+import { useLayoutKey } from "./look";
 import { withOpacity } from "./turn";
 
 /** How much of the clipped words fades out at their end. */
@@ -55,10 +57,15 @@ export function ClippedMessage({
   const [tapped, setTapped] = useState(false);
   const fullMessages = useOrg().org?.chatPrefs?.fullMessages === true;
   const open = fullMessages || tapped || Boolean(screen?.has(id));
-  const [height, setHeight] = useState(0);
+  // How tall the words are whole, kept across the list's unmounts (`kept-sizes.ts`): a row coming back is cut from its
+  // first frame. Never measured yet, they show no taller than a whole message may (`LONG_MESSAGE.over`): a long one
+  // drew whole for a frame and then shrank, moving every row under it as the person scrolled.
+  const sizeKey = `words:${id}:${useLayoutKey()}`;
+  const [height, setHeight] = useState(() => keptSize(sizeKey) ?? 0);
   const cut = clippedHeight(height);
   const foldable = cut !== null || lead != null;
   const shows = open ? null : cut;
+  const unmeasured = height === 0 && !open && lead == null;
   const words = useRef<ComponentRef<typeof View>>(null);
   useEffect(() => {
     if (tapped && words.current) AccessibilityInfo.sendAccessibilityEvent(words.current, "focus");
@@ -68,9 +75,22 @@ export function ClippedMessage({
     <View>
       <Animated.View
         layout={tapped && !reduced ? REVEAL : undefined}
-        style={foldable ? [styles.clip, shows === null ? undefined : { maxHeight: shows }] : undefined}
+        style={
+          foldable
+            ? [styles.clip, shows === null ? undefined : { maxHeight: shows }]
+            : unmeasured
+              ? styles.unmeasured
+              : undefined
+        }
       >
-        <View ref={words} onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
+        <View
+          ref={words}
+          onLayout={(e) => {
+            const whole = e.nativeEvent.layout.height;
+            keepSize(sizeKey, whole);
+            setHeight(whole);
+          }}
+        >
           {open || lead == null ? children : lead}
         </View>
         {(shows === null ? [] : behind).map((color, i) => (
@@ -105,6 +125,7 @@ export function ClippedMessage({
 
 const styles = StyleSheet.create({
   clip: { overflow: "hidden" },
+  unmeasured: { maxHeight: LONG_MESSAGE.over, overflow: "hidden" },
   fade: { position: "absolute", left: 0, right: 0, bottom: 0, height: FADE },
   more: { alignSelf: "flex-start", marginTop: 4 },
   moreText: { fontWeight: "600", textDecorationLine: "underline" },

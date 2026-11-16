@@ -8,7 +8,7 @@ import { filePath } from "@agenteschat/client/lib/message-links";
  */
 
 /** How the app shows a file: inline picture or video, the document screen (Markdown, text, PDF), or only its card. */
-export type FileView = "image" | "video" | "markdown" | "text" | "pdf" | "other";
+export type FileView = "image" | "video" | "markdown" | "text" | "pdf" | "html" | "other";
 
 /** The word under the name ("Imagem", "PDF", "Documento"…): `mobile.files.type.<key>`. */
 export type FileTypeKey =
@@ -115,13 +115,15 @@ export function fileInfo(a: Pick<ArtifactDetail, "kind" | "title" | "content">):
     if (IMAGE_TYPES.has(mime) || (untyped && IMAGE_EXT.has(ext))) view = "image";
     else if (VIDEO_TYPES.has(mime) || (untyped && VIDEO_EXT.has(ext))) view = "video";
     else if (mime === "application/pdf" || ext === "pdf") view = "pdf";
+    // A page is shown as a page (its source isn't the point), before the text types it is one of.
+    else if (mime === "text/html" || ext === "html" || ext === "htm") view = "html";
     else if (MARKDOWN_EXT.has(ext) || mime === "text/markdown") view = "markdown";
     else if (TEXT_EXT.has(ext) || mime.startsWith("text/")) view = "text";
     return { name, view, type: fileType(name, mime, view), ext: extLabel(ext), size: c.size, mime };
   }
   const ext = KIND_EXT[c.kind];
   const name = withExtension(a.title, ext);
-  const view: FileView = c.kind === "document" ? "markdown" : "other";
+  const view: FileView = c.kind === "document" ? "markdown" : c.kind === "html" ? "html" : "other";
   const size = c.kind === "document" ? utf8Bytes(c.markdown) : null;
   return { name, view, type: KIND_TYPE[c.kind], ext: extLabel(ext), size, mime: "" };
 }
@@ -354,4 +356,26 @@ export function whereKnown(ref: FileRef): boolean {
   if (ref.detail) return true;
   if (ref.kind !== undefined && ref.kind !== "file") return true;
   return isMediaFile(ref) || DOCUMENT_EXT.has(extensionOf(ref.title ?? ""));
+}
+
+/**
+ * A long text in pieces of at most `lines` lines and about `chars` characters each: one text view as tall as a long
+ * file goes past what the phone can draw in one piece, and showed blank.
+ */
+export function textChunks(text: string, lines = 120, chars = 6000): string[] {
+  const all = text.split("\n");
+  const out: string[] = [];
+  let piece: string[] = [];
+  let size = 0;
+  for (const line of all) {
+    if (piece.length > 0 && (piece.length >= lines || size + line.length > chars)) {
+      out.push(piece.join("\n"));
+      piece = [];
+      size = 0;
+    }
+    piece.push(line);
+    size += line.length + 1;
+  }
+  if (piece.length > 0 || out.length === 0) out.push(piece.join("\n"));
+  return out;
 }
