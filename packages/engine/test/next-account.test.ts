@@ -892,6 +892,29 @@ test("a run that moves twice in one claim: each fresh session is told what the r
   expect(last.split("Already done in this run").length).toBe(2);
 });
 
+test("the first turn on the account a run moved to refused for room: the next claim's fresh session is still told what ran", async () => {
+  const { fx, account } = await world({}, goesOn);
+  await account(OWN2, fx.owner.id);
+  const turns: BrainEvent[][] = [
+    [
+      { type: "usage", input: 100, output: 10, source: "plan", model: "sonnet" },
+      { type: "tool_call", id: "c1", name: "Bash", input: { command: "git push" }, executed: { content: "ok" } },
+      { type: "done", text: "Rodei git push, vou seguir." },
+    ],
+    [{ type: "error", code: "plan_limit", message: "You've hit your limit", worked: false }],
+    [{ type: "error", code: "busy", message: "No room for another turn", retryable: true }],
+  ];
+  const { brain, seen } = scripted((n) => turns[n] ?? answers);
+  await ask(fx);
+  const handlers = handlersWith(fx, brain);
+  await drainOutbox(fx.db, handlers);
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN1, OWN1, OWN2]);
+  await drainOutbox(fx.db, handlers, { now: later(60_000) });
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN1, OWN1, OWN2, OWN2]);
+  expect(seen[3]?.session?.resume).toBe(false);
+  expect(await turnPrompt(fx)).toContain("Already done in this run, do not repeat: Bash(git push)");
+});
+
 test("a budget wait never moves an account", async () => {
   f = await setup({ budgetNanoUsd: 0, reply: () => ({ chunks: ["pela API"] }) });
   await ask(f);

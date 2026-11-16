@@ -845,8 +845,9 @@ export const sessionLostNote = (folder: string) =>
  * What a computer brain reads first in the fresh session of the account its run moved to (`Transcript.accountMove`):
  * `done`, what the run already ran, as a dropped turn's resume names it.
  */
+const MOVED_NOTE_HEAD = "# Your session\nYour plan's account hit its limit";
 export const movedSessionNote = (done: readonly string[]) =>
-  `# Your session\nYour plan's account hit its limit, so this run goes on with another account, in a fresh session: it knows this conversation, not what you ran before in this run.${done.length > 0 ? ` Already done in this run, do not repeat: ${[...new Set(done)].join(", ")}.` : ""} Look at what is on disk before you go on.`;
+  `${MOVED_NOTE_HEAD}, so this run goes on with another account, in a fresh session: it knows this conversation, not what you ran before in this run.${done.length > 0 ? ` Already done in this run, do not repeat: ${[...new Set(done)].join(", ")}.` : ""} Look at what is on disk before you go on.`;
 
 /**
  * What a mission's main session reads when its agent's settings changed since it started (`BrainPlan.settingsChanged`);
@@ -3319,18 +3320,20 @@ async function executeRunInner(
     ...(await executedSince(db, run.id, 0, [])).map((c) => c.label),
     ...((transcript as Transcript).harnessTried ?? []),
   ];
-  /** The session last told what the run already did (`movedSessionNote`), the prompt it made and the one before it. */
-  let noted: { session: string; prompt: string; before: string | null } | null = null;
+  /** The session last told what the run already did (`movedSessionNote`). */
+  let notedFor: string | null = null;
   /** Each fresh session reads what the run already did first, when it did anything, once. */
   const noteMoved = async () => {
     const session = plan.session?.id;
-    if (plan.kind === "model" || !session || noted?.session === session) return;
+    if (plan.kind === "model" || !session || notedFor === session) return;
     const done = await doneInRun();
     if (run.turns === 0 && done.length === 0) return;
-    // A move before the last note's prompt went through replaces that note: never two of them stacked.
-    const before = noted && nextPrompt === noted.prompt ? noted.before : nextPrompt;
+    notedFor = session;
+    // A note an earlier move left on a prompt that never went through is replaced: never two of them stacked.
+    const before = nextPrompt?.startsWith(MOVED_NOTE_HEAD)
+      ? nextPrompt.slice(nextPrompt.indexOf("\n\n") + 2) || null
+      : nextPrompt;
     nextPrompt = [movedSessionNote(done), before ?? triggerText].join("\n\n");
-    noted = { session, prompt: nextPrompt, before };
   };
   if (transcript.freshSession !== undefined && plan.kind !== "model" && transcript.freshSession === plan.session?.id)
     await noteMoved();
@@ -4615,7 +4618,6 @@ async function executeRunInner(
           runId: run.id,
         });
         transcript.turnPrompt = prompt;
-        delete transcript.freshSession;
         await saveTranscript(db, transcript);
         if (admitted && !admitted.fromLine) await publishQueueChanged(deps.pubsub, run.orgId, admitted.machineId);
       }
@@ -4803,6 +4805,8 @@ async function executeRunInner(
           computerTurns++;
           nextPrompt = null;
           carried = null;
+          // The fresh session answered a turn: from now on it is one to resume, its note read.
+          delete transcript.freshSession;
           // The account it ran with (ADR 0041): when it was last used and last answered, after the turn.
           const account = turnPlan.account;
           if (account && account.id !== touchedAccount) {
@@ -4864,6 +4868,8 @@ async function executeRunInner(
           delete transcript.roomWaitSince;
           delete transcript.roomOrderSince;
         }
+        // A turn that said or did something there made the fresh session one only it may go on in.
+        if (executedNow.length > 0 || deltas.text()) delete transcript.freshSession;
         if (turnAbort?.signal.aborted) {
           await interruptedTurn(turn, deltas.text());
           continue;
