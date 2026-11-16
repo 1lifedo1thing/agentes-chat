@@ -32,19 +32,14 @@ import { WAVE_SECONDS } from "@agenteschat/ui/agent/stickers";
 import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { StickerCanvas } from "@/agent/StickerCanvas";
 import { useOrg } from "@/providers/org";
 import {
   AgentAvatar,
   Button,
-  fieldText,
-  GroupedField,
-  GroupedHeader,
-  GroupedList,
   Icon,
   LineIcon,
-  Locked,
   MEDIA_ROW,
   MediaRow,
   Sheet,
@@ -62,14 +57,14 @@ import { useFailed } from "../routines/hooks";
 import { proposedRoutineWhen } from "../routines/rule";
 import { useColors, useDirectory, useMeId, useWhen } from "../shared/hooks";
 import { tapHaptic } from "../shared/parts";
-import { overLimit, TextArea } from "../shared/TextArea";
+import { openTeamAdjust } from "./TeamAdjustScreen";
 
 /**
  * The right hand's team setup on the phone (ADR 0137 §10), as on the web: answers to tap as chips (each the person's
- * own message), the team card as stacked rows with the same buttons, the map as a sheet (the templates are pushed
- * screens: `TeamTemplates.tsx`). In a personal workspace (ADR 0159) the words are about the person's agents, and an
- * agent with no channel lives in its DM with the person: no channel is named for it and, when none has one, there is no
- * map to see.
+ * own message), the team card as stacked rows with the same buttons, the map as a sheet (the templates and an agent's
+ * "Adjust" are pushed screens: `TeamTemplates.tsx`, `TeamAdjustScreen.tsx`). In a personal workspace (ADR 0159) the
+ * words are about the person's agents, and an agent with no channel lives in its DM with the person: no channel is named
+ * for it and, when none has one, there is no map to see.
  */
 
 /** One answer to tap, as the right hand's questions draw them: the ink face with a check once picked. */
@@ -341,7 +336,6 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
   const team = useTeamCard(orgId, { channelId: m.channelId, messageId: m.id });
   // Made here and now, on a hold: when the new agents' wave started.
   const [waveFrom, setWaveFrom] = useState<number>();
-  const [adjusting, setAdjusting] = useState<TeamAgentDraft | null>(null);
   const [map, setMap] = useState(false);
   const plan = card.params;
   const status = teamStatus(card);
@@ -419,7 +413,9 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
               plan={plan}
               reviewer={dir.agents.find(isRightHand)?.name ?? RIGHT_HAND_DEFAULT.name}
               personal={personal}
-              onAdjust={decides ? setAdjusting : undefined}
+              onAdjust={
+                decides ? (agent) => openTeamAdjust({ channelId: m.channelId, messageId: m.id, agent }) : undefined
+              }
             />
             {open && card.error ? (
               <Text variant="small" tone="danger" accessibilityRole="alert">
@@ -459,18 +455,6 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
               />
             ) : null}
           </AskFoot>
-        }
-      />
-      <AdjustSheet
-        agent={adjusting}
-        saving={team.adjust.isPending}
-        onClose={() => setAdjusting(null)}
-        onSave={(patch) =>
-          adjusting &&
-          team.adjust.mutate(
-            { handle: adjusting.handle, patch },
-            { onSuccess: () => setAdjusting(null), onError: failed },
-          )
         }
       />
       <TeamMapSheet plan={plan} open={map} onClose={() => setMap(false)} />
@@ -594,115 +578,6 @@ function FirstTasks({ message: m, card, held }: { message: Message; card: TeamPr
   );
 }
 
-type AdjustPatch = {
-  name: string;
-  role: string;
-  line: string;
-  channel: string;
-  instructions: string;
-  firstTask: string;
-};
-
-/**
- * "Ajustar": the agent's draft on the card, edited in a sheet before the team exists: the sheet's bar with the agent's
- * name and its ×, then the draft as a settings form (the short fields in one group, the long ones each under its
- * header) and Save.
- */
-function AdjustSheet({
-  agent,
-  saving,
-  onSave,
-  onClose,
-}: {
-  agent: TeamAgentDraft | null;
-  saving: boolean;
-  onSave: (patch: AdjustPatch) => void;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <Sheet
-      open={agent !== null}
-      onClose={onClose}
-      header={agent ? <SheetBar title={t("teamPlan.adjust.title", { name: agent.name })} onClose={onClose} /> : null}
-    >
-      {agent ? <AdjustForm key={agent.handle} agent={agent} saving={saving} onSave={onSave} /> : null}
-    </Sheet>
-  );
-}
-
-/** The first task's length, as the card's own field kept it. */
-const FIRST_TASK = { max: 500 };
-
-function AdjustForm({
-  agent,
-  saving,
-  onSave,
-}: {
-  agent: TeamAgentDraft;
-  saving: boolean;
-  onSave: (patch: AdjustPatch) => void;
-}) {
-  const { t } = useTranslation();
-  const c = useColors();
-  const [v, setV] = useState<AdjustPatch>({
-    name: agent.name,
-    role: agent.role,
-    line: agent.line,
-    channel: agent.channel,
-    instructions: agent.instructions,
-    firstTask: agent.firstTask ?? "",
-  });
-  const input = (key: keyof AdjustPatch, label: string, max: number) => (
-    <GroupedField key={key} label={label}>
-      <TextInput
-        value={v[key]}
-        maxLength={max}
-        accessibilityLabel={label}
-        onChangeText={(text) => setV((p) => ({ ...p, [key]: text }))}
-        style={[styles.input, fieldText("callout"), { color: c.ink }]}
-      />
-    </GroupedField>
-  );
-  return (
-    <Locked when={saving} style={styles.form}>
-      <GroupedList>
-        {input("name", t("teamPlan.adjust.name"), 80)}
-        {input("role", t("teamPlan.adjust.role"), 200)}
-        {input("line", t("teamPlan.adjust.line"), 300)}
-        {/* An agent with no channel lives in its DM with the person (ADR 0159): nothing to name. */}
-        {agent.channel ? input("channel", t("teamPlan.adjust.channel"), 80) : null}
-      </GroupedList>
-      <View>
-        <GroupedHeader>{t("teamPlan.adjust.instructions")}</GroupedHeader>
-        <TextArea
-          value={v.instructions}
-          accessibilityLabel={t("teamPlan.adjust.instructions")}
-          onChangeText={(text) => setV((p) => ({ ...p, instructions: text }))}
-        />
-      </View>
-      <View>
-        <GroupedHeader>{t("teamPlan.adjust.firstTask")}</GroupedHeader>
-        <TextArea
-          value={v.firstTask}
-          limit={FIRST_TASK}
-          accessibilityLabel={t("teamPlan.adjust.firstTask")}
-          onChangeText={(text) => setV((p) => ({ ...p, firstTask: text }))}
-        />
-      </View>
-      <Button
-        variant="primary"
-        wide
-        label={t("common.save")}
-        loading={saving}
-        // Past its limit the task stays as typed, its line saying so: nothing is saved cut.
-        disabled={overLimit(v.firstTask, FIRST_TASK)}
-        onPress={() => onSave(v)}
-      />
-    </Locked>
-  );
-}
-
 /**
  * "See as a map" as a sheet under its bar: the people, a block per channel with its agents and routines, the weekly
  * reviewer. An agent with no channel (it lives in its DM with the person, ADR 0159) has a block of its own, with no
@@ -813,7 +688,5 @@ const styles = StyleSheet.create({
   bold: { fontWeight: "600" },
   // A sheet's content under its bar: the sheet's sides come from the sheet, its blocks 12 apart.
   form: { gap: 12, paddingBottom: 16 },
-  // A one-line field's input in a grouped field row.
-  input: { flex: 1, paddingVertical: 12, paddingHorizontal: 0 },
   mapCol: { gap: 8, padding: 12, borderRadius: 14, borderWidth: 1, borderStyle: "dashed" },
 });

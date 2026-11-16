@@ -68,12 +68,27 @@ describe("one bar, said once", () => {
 
 describe("real navigation", () => {
   test("the team templates and one template's team are routes of their own, pushed with their bar and back", () => {
-    for (const route of ["team-templates", "team-template"])
+    for (const route of ["team-templates", "team-template", "team-adjust"])
       expect({ route, pushed: pushedByDefault(route) }).toEqual({ route, pushed: true });
     // A template the first run points to opens over the list, so the system's back goes to the others.
     const templates = src("right-hand/TeamTemplates.tsx");
     expect(templates).toMatch(
       /router\.push\("\/team-templates"\);\s+if \(template\) router\.push\(\{ pathname: "\/team-template", params: \{ id: template \} \}\);/,
     );
+  });
+});
+
+describe("forms are pushed screens, not sheets", () => {
+  test("Adjust on the team card is a settings page: rows that walk with Next, Save in the bar, a guard on leaving", () => {
+    const card = src("right-hand/TeamCard.tsx");
+    expect(card).not.toContain("AdjustSheet");
+    expect(card).toContain("openTeamAdjust({ channelId: m.channelId, messageId: m.id, agent })");
+    const screen = src("right-hand/TeamAdjustScreen.tsx");
+    expect(screen).not.toContain("<Sheet");
+    expect(screen).toContain('action={{ label: t("common.save"), onPress: save, disabled: !ready }}');
+    expect(screen).toMatch(/<SettingsPage[\s\S]*?\btoolbar\b[\s\S]*?>/);
+    expect(screen).toContain("{...NEXT_FIELD}");
+    expect(screen).toContain("const leave = useUnsavedGuard(changed && !adjust.isPending);");
+    expect(screen).not.toContain("autoFocus");
   });
 });
