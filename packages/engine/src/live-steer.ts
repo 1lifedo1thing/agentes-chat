@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, type Executor, eq, inArray, isNull, schema, sql } from "@agenteschat/db";
 import type { SteerMessage, SteerReply } from "./brains/types";
+import { unsealed } from "./confidential";
 import { attachedLine, taskNotice } from "./context";
 import { publishChannelEvent } from "./events";
 import { ACTIVE_RUN_STATUSES, releaseInbox, stoppedToSend } from "./run-inbox";
@@ -120,12 +121,13 @@ export async function renderSteered(
   db: Executor,
   orgId: string,
   ids: string[],
-  options: { beforeStart?: boolean; workId?: string | null } = {},
+  options: { beforeStart?: boolean; workId?: string | null; unsealThread?: string } = {},
 ): Promise<SteeredText[]> {
   if (ids.length === 0) return [];
-  const rows = await db
+  const stored = await db
     .select({
       id: messages.id,
+      threadId: messages.threadId,
       body: messages.body,
       meta: messages.meta,
       name: sql<string | null>`coalesce(${users.name}, ${agents.name})`,
@@ -135,6 +137,9 @@ export async function renderSteered(
     .leftJoin(users, eq(users.id, messages.authorUserId))
     .leftJoin(agents, eq(agents.id, messages.authorAgentId))
     .where(and(eq(messages.orgId, orgId), inArray(messages.id, ids), isNull(messages.deletedAt)));
+  // A reply in a confidential thread (ADR 0187): its words only for the run of that thread the lock holds.
+  const own = options.unsealThread;
+  const rows = stored.map((m) => (own && (m.threadId === own || m.id === own) ? unsealed(m) : m));
   // Messages written in one transaction share its time (a report's notices): their ids keep the order.
   rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : 1));
   return rows.map((m) => {

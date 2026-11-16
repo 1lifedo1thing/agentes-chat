@@ -65,6 +65,7 @@ export * from "./chat-prefs";
 export * from "./chat-tools";
 export * from "./claude-auth-policy";
 export * from "./computer-queue";
+export * from "./confidential";
 export * from "./connector-triggers";
 export * from "./connector-usage";
 export * from "./connectors/catalog";

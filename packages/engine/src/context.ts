@@ -27,6 +27,13 @@ import { isSandboxedBrain } from "./brains/types";
 import { caches } from "./cache";
 import { summarizeScopes } from "./capabilities";
 import { peopleAllIn } from "./channels";
+import {
+  CONFIDENTIAL_NOT_SHOWN,
+  CONFIDENTIAL_STUB,
+  confidentialThreadSql,
+  isConfidential,
+  unsealed,
+} from "./confidential";
 import { consultationOrigin, type HandOff, handOffsFrom } from "./consultations";
 import { teamMemoryForPrompt } from "./context/tools";
 import { widgetRunContext } from "./dashboards/refresh-context";
@@ -287,6 +294,8 @@ type ActionRow = {
   kind: string;
   name: string;
   run_id: string;
+  /** Its run answers in a confidential thread (ADR 0187). */
+  confidential: boolean;
 };
 
 /** Reads that would crowd "your recent work" (the actions themselves are what matters). */
@@ -595,6 +604,11 @@ export async function buildRunContext(
     ai?: Omit<AiStatusDeps, "db">;
     /** Each workspace gets its own computer here; absent: people connect theirs. */
     workspaceComputer?: WorkspaceComputer;
+    /**
+     * The run thinks through the Model Gateway, so it reads the words of its own thread when that thread is
+     * confidential (ADR 0187). Any other run, and every run outside that thread, reads the stub.
+     */
+    unseal?: boolean;
   },
 ): Promise<RunContext> {
   // Independent lookups go out together (the database may be remote); org,
@@ -761,10 +775,20 @@ export async function buildRunContext(
     before.splice(before.length - historyStart([...before].reverse().map((m) => m.id)));
   }
   const rangeCut = range !== null && (before.length < fetched || fetched >= Math.max(1, options.maxMessages - 1));
-  const fullHistory: Message[] = background
+  const everything: Message[] = background
     ? [trigger]
     : [...before.reverse(), ...(root ? [rangeRoot(root, range !== null)] : []), ...thread.reverse()];
-  if (!fullHistory.some((m) => m.id === trigger.id)) fullHistory.push(trigger);
+  if (!everything.some((m) => m.id === trigger.id)) everything.push(trigger);
+  // A confidential message (ADR 0187) is read whole only in its own thread, by a run the lock holds. Anywhere else
+  // the stub stands in its place, with nothing of its meta: a card keeps what its agent typed there.
+  const ownThread = (m: Message) => m.id === run.threadRootId || m.threadId === run.threadRootId;
+  const fullHistory = everything.map((m) =>
+    !isConfidential(m.meta)
+      ? m
+      : options.unseal && ownThread(m)
+        ? unsealed(m)
+        : { ...m, body: CONFIDENTIAL_STUB, meta: { confidential: true } },
+  );
   // The agents' DM (ADR 0053 §9): a run reads only the exchanges made for the same person.
   const agentsDm = !background && isAgentOnlyDm(channel) && !isRoutineRoomKey(channel.dmKey);
   const samePerson = agentsDm ? await forSamePerson(db, run, fullHistory, trigger.id) : null;
@@ -833,7 +857,8 @@ export async function buildRunContext(
     : sql`r.thread_root_id = ${run.threadRootId}::uuid`;
   const actionRows = rowsOf<ActionRow>(
     await db.execute(sql`with here_readers as materialized ${channelReadersSql(sql`${run.orgId}::uuid`, sql`${run.channelId}::uuid`)}
-      (select s.data, s.created_at, a.handle, false as elsewhere, c.kind, c.name, r.id as run_id
+      (select s.data, s.created_at, a.handle, false as elsewhere, c.kind, c.name, r.id as run_id,
+          ${confidentialThreadSql(sql`r.org_id`, sql`r.thread_root_id`)} as confidential
         from agent_run_steps s
         join agent_runs r on r.id = s.run_id
         join agents a on a.id = r.agent_id
@@ -850,7 +875,8 @@ export async function buildRunContext(
           and r.id <> ${run.id}::uuid and s.kind = 'tool_result'
         order by s.created_at desc limit 40)
       union all
-      (select s.data, s.created_at, null as handle, true as elsewhere, c.kind, c.name, r.id as run_id
+      (select s.data, s.created_at, null as handle, true as elsewhere, c.kind, c.name, r.id as run_id,
+          ${confidentialThreadSql(sql`r.org_id`, sql`r.thread_root_id`)} as confidential
         from agent_run_steps s
         join agent_runs r on r.id = s.run_id
         join channels c on c.id = r.channel_id
@@ -873,18 +899,21 @@ export async function buildRunContext(
             select 1 from here_readers h where not ${channelReaderSql(sql`r.channel_id`, sql`h.user_id`)}))
         order by s.created_at desc limit 30)`),
   );
-  // A result read from outside never shows here (ADR 0117): only that the tool read it.
-  const firstLine = (d: { content?: unknown; data?: { outside?: unknown } }) =>
-    d.data?.outside === true
-      ? "(read outside text, not shown)"
-      : neutralizeUntrusted(
-          cutText(
-            String(d.content ?? "")
-              .split("\n")[0]
-              ?.replace(/\s+/g, " ") ?? "",
-            140,
-          ),
-        );
+  // A result read from outside never shows here (ADR 0117): only that the tool read it. Nor does anything a run of
+  // a confidential thread did (ADR 0187): what it called next may repeat what it read.
+  const firstLine = (d: { content?: unknown; data?: { outside?: unknown } }, confidential: boolean) =>
+    confidential
+      ? CONFIDENTIAL_NOT_SHOWN
+      : d.data?.outside === true
+        ? "(read outside text, not shown)"
+        : neutralizeUntrusted(
+            cutText(
+              String(d.content ?? "")
+                .split("\n")[0]
+                ?.replace(/\s+/g, " ") ?? "",
+              140,
+            ),
+          );
   // Oldest first in each block (a union keeps no order of its own).
   const time = (r: ActionRow) => new Date(r.created_at).getTime();
   actionRows.sort((x, y) => time(x) - time(y));
@@ -894,7 +923,7 @@ export async function buildRunContext(
       .filter((r) => !r.elsewhere && (!samePerson || samePerson.runIds.has(r.run_id)))
       .map((a) => {
         const d = a.data as { name?: string; content?: string; isError?: boolean; data?: { outside?: unknown } };
-        const line = `- @${a.handle} ${d.name ?? "?"} → ${firstLine(d)} (${d.isError ? "error" : "ok"})`;
+        const line = `- @${a.handle} ${d.name ?? "?"} → ${firstLine(d, a.confidential)} (${d.isError ? "error" : "ok"})`;
         return { key: line, line };
       }),
     RECENT_ACTIONS_MAX,
@@ -914,8 +943,8 @@ export async function buildRunContext(
           a.kind === "dm" ? `DM with ${requester ? requesterName : (behindName ?? requesterName)}` : `#${a.name}`;
         // Keyed without the time: the same call repeated shows once, with its latest time.
         return {
-          key: `${where}|${d.name}|${firstLine(d)}`,
-          line: `- ${where}, ${ago(new Date(a.created_at))}: ${d.name ?? "?"} → ${firstLine(d)}`,
+          key: `${where}|${d.name}|${firstLine(d, a.confidential)}`,
+          line: `- ${where}, ${ago(new Date(a.created_at))}: ${d.name ?? "?"} → ${firstLine(d, a.confidential)}`,
         };
       }),
     WORK_ELSEWHERE_MAX,

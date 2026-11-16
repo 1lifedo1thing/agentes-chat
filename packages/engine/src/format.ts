@@ -174,3 +174,32 @@ export function tableToCsv(columns: string[], rows: string[][]): string {
   const cell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
   return [columns, ...rows].map((r) => r.map(cell).join(",")).join("\r\n");
 }
+
+const BARE_ADDRESS = /\bhttps?:\/\/[^\s<>`]+/gi;
+/** A Markdown link or image (its words, its address), or a bare address. */
+const LINK = /!?\[([^\]]*)\]\(([^)\s]*)\)|\bhttps?:\/\/[^\s<>`]+/gi;
+const asCode = (address: string) => `\`${address}\``;
+
+/**
+ * Text with nothing an app turns into a link, by the apps' own grammar for one (`parseInline`): a Markdown link or
+ * image keeps its words alone (its address, as code, when it has none), and a bare http address is wrapped as code.
+ * Code, inline or fenced, stays as written: no app links inside it.
+ */
+export function inertLinks(text: string): string {
+  return text
+    .split(/(```[\s\S]*?```|`[^`\n]+`)/)
+    .map((part, i) =>
+      i % 2
+        ? part
+        : part.replace(LINK, (found: string, words?: string, address?: string) =>
+            words === undefined
+              ? asCode(found)
+              : words.trim()
+                ? words.replace(BARE_ADDRESS, asCode)
+                : address
+                  ? asCode(address)
+                  : "",
+          ),
+    )
+    .join("");
+}

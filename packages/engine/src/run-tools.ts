@@ -6,6 +6,7 @@ import { openApprovalCard, publishApproval, supersedeApprovals } from "./approva
 import { runAuthorityById } from "./authority";
 import type { BrainTool, ToolResult } from "./brains/types";
 import { readableChannelIds } from "./channels";
+import { isConfidential } from "./confidential";
 import { announceConsultationChange, consultationCardThread, consultationOrigin } from "./consultations";
 import { NotFoundError } from "./errors";
 import { type MemoryUpdate, publishChannelEvent, publishMessageCreated, takeStepWords } from "./events";
@@ -844,7 +845,10 @@ export async function postPauseCards(tx: Executor, run: AgentRun, requests: Paus
   const trigger = await runTriggerOf(tx, run);
   const extra = runMessageMeta(run, trigger);
   const brief = run.background ? routineBriefOf(trigger?.meta) : null;
-  const home = brief?.deliverTo ?? { channelId: run.channelId, threadId: replyThreadOf(run) };
+  // A question is answered by a reply where it was asked: in a confidential thread (ADR 0187) that is under its
+  // root, and the message that asked carries the thread's mark.
+  const confidential = isConfidential(trigger?.meta);
+  const home = brief?.deliverTo ?? { channelId: run.channelId, threadId: replyThreadOf({ ...run, confidential }) };
   // A consulted run asks from the agents' DM, which no person reads: its questions and secret requests go where
   // the person behind it asked, like its approvals (the gateway already placed those). Only a DM run answers one.
   const origin =
