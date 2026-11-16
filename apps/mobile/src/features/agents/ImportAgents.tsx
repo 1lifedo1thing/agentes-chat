@@ -61,15 +61,6 @@ import {
 import { IMPORT_LOGO } from "./import-logos";
 import type { AgentImport } from "./useAgentImport";
 
-/**
- * "Trazer agentes de outro app" as a step of Criar agente, on the grouped gray as the other steps: pick the app (its
- * short how-to under the list), then choose its files or paste its reply; the plan shows the agents found and what
- * comes with them, as the lists' own rows. The footer's button imports.
- */
-export function ImportAgents({ imp, orgId }: { imp: AgentImport; orgId: string }) {
-  return imp.planned ? <Preview imp={imp} orgId={orgId} /> : <Picker imp={imp} orgId={orgId} />;
-}
-
 /** A source's mark in its row: a list row's tile. */
 const MARK = 32;
 
@@ -98,7 +89,12 @@ function SourceMark({ card, size = MARK }: { card: ImportCard; size?: number }) 
   );
 }
 
-function Picker({ imp, orgId }: { imp: AgentImport; orgId: string }) {
+/**
+ * "Trazer agentes de outro app", its first screen, on the grouped gray as Criar agente's steps: pick the app (its short
+ * how-to under the list), then choose its files or paste its reply. What the read finds opens on a screen of its own
+ * (`ImportPreview`).
+ */
+export function ImportPicker({ imp, orgId }: { imp: AgentImport; orgId: string }) {
   const { t, i18n } = useTranslation();
   const { colors: c } = useTheme();
   const apps = useApps(orgId);
@@ -491,8 +487,11 @@ function RequestSteps({ card }: { card: "grok-bot" | "chatgpt-dots" | "other" })
   );
 }
 
-/** The plan: the agents found, each to check or uncheck, then what comes with them and what stays behind. */
-function Preview({ imp, orgId }: { imp: AgentImport; orgId: string }) {
+/**
+ * The plan, pushed over the picker: the agents found, each to check or uncheck, then what comes with them and what
+ * stays behind, as the lists' own rows. Another file or reply is the system's back away; the bar's button imports.
+ */
+export function ImportPreview({ imp, orgId }: { imp: AgentImport; orgId: string }) {
   const { t } = useTranslation();
   const planned = imp.planned;
   if (!planned) return null;
@@ -507,21 +506,12 @@ function Preview({ imp, orgId }: { imp: AgentImport; orgId: string }) {
 
   return (
     <>
-      {/* The name whole, Trocar arquivo beside it while it fits its line, under it from its edge otherwise. */}
+      {/* The name whole, on as many lines as it takes beside the source's mark. */}
       <View style={styles.previewHead}>
         <SourceMark card={origin.card} size={44} />
-        <View style={[ACT_LINE.row, styles.line]}>
-          <Text variant="title" accessibilityRole="header" style={ACT_LINE.text}>
-            {bundle.source.name}
-          </Text>
-          <Button
-            variant="secondary"
-            size="sm"
-            label={planned.from === "files" ? t("onboarding.import.change") : t("mobile.newAgent.import.change")}
-            disabled={applying}
-            onPress={imp.reset}
-          />
-        </View>
+        <Text variant="title" accessibilityRole="header" style={styles.fill}>
+          {bundle.source.name}
+        </Text>
       </View>
       <Text variant="footnote" tone="muted">
         {[origin.app ? t("onboarding.import.from", { app: origin.app }) : t("onboarding.import.fromOther"), summary]

@@ -850,9 +850,6 @@
     "keepEditing": "Continuer à modifier"
   },
   "newAgent": {
-    "leaveTitle": "Partir sans créer ?",
-    "leaveText": "L'agent commencé ne sera pas créé.",
-    "keepGoing": "Continuer la création",
     "identityQuestion": "Qui est l'agent ?",
     "identityLead": "Son nom, comment l'appeler dans la discussion et son visage.",
     "handleMention": "Mentionnez @{{handle}} pour l'appeler.",
@@ -878,7 +875,6 @@
       "archive": "Le téléphone n'ouvre pas les fichiers .zip ou .tar.gz. Dans l'app Fichiers, touchez le .zip pour le décompresser et choisissez les fichiers qu'il contient, ou importez sur l'ordinateur.",
       "privacy": "Lu sur ce téléphone. Les fichiers de clés et d'identifiants ne sont jamais ouverts.",
       "also": "Vient aussi",
-      "change": "Changer",
       "arrived_one": "{{count}} agent est arrivé : {{name}}",
       "arrived_many": "{{count}} agents sont arrivés",
       "arrived_other": "{{count}} agents sont arrivés",

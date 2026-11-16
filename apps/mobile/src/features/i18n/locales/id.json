@@ -802,9 +802,6 @@
     "keepEditing": "Lanjut mengedit"
   },
   "newAgent": {
-    "leaveTitle": "Keluar tanpa membuat?",
-    "leaveText": "Agen yang kamu mulai tidak akan dibuat.",
-    "keepGoing": "Lanjut membuat",
     "identityQuestion": "Siapa agennya?",
     "identityLead": "Namanya, cara memanggilnya di obrolan, dan wajahnya.",
     "handleMention": "Sebut @{{handle}} untuk memanggilnya.",
@@ -830,7 +827,6 @@
       "archive": "Ponsel tidak bisa membuka file .zip atau .tar.gz. Di aplikasi File, ketuk .zip untuk mengekstraknya lalu pilih file di dalamnya, atau impor di komputer.",
       "privacy": "Dibaca di ponsel ini. File kunci dan login tidak pernah dibuka.",
       "also": "Ikut terbawa juga",
-      "change": "Ganti",
       "arrived_other": "{{count}} agen tiba",
       "partial": "{{done}} dari {{total}} tiba. Impor lagi untuk membawa sisanya."
     }

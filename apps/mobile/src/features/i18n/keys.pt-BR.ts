@@ -853,9 +853,6 @@ export const featureKeysPtBR = {
     keepEditing: "Continuar editando",
   },
   newAgent: {
-    leaveTitle: "Sair sem criar?",
-    leaveText: "O agente que você começou não será criado.",
-    keepGoing: "Continuar criando",
     /** The second step asks who the agent is: a question and one line, as the other steps. */
     identityQuestion: "Quem é o agente?",
     identityLead: "Nome, como chamar no chat e o rosto.",
@@ -889,7 +886,6 @@ export const featureKeysPtBR = {
         "O celular não abre .zip nem .tar.gz. No app Arquivos, toque no .zip para descompactar e escolha os arquivos de dentro, ou importe pelo computador.",
       privacy: "Lido neste celular. Arquivos de chaves e logins nunca são abertos.",
       also: "Também vem junto",
-      change: "Trocar",
       arrived_one: "{{name}} chegou",
       arrived_other: "{{count}} agentes chegaram",
       partial: "{{done}} de {{total}} chegaram. Importar de novo traz o resto.",

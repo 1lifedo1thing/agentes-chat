@@ -1238,7 +1238,7 @@ describe("the agent's AI", () => {
     const read = (path: string) => Bun.file(new URL(`../../${path}`, import.meta.url).pathname).text();
     const [sheet, route, screen, steps] = await Promise.all([
       read("src/features/ai/ConnectAi.tsx"),
-      read("app/(app)/(main)/new-agent.tsx"),
+      read("app/(app)/(main)/new-agent/index.tsx"),
       read("src/features/agents/NewAgentScreen.tsx"),
       read("src/features/ai/ConnectAiSteps.tsx"),
     ]);

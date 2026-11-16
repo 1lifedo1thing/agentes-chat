@@ -267,24 +267,26 @@ describe("creating an agent on the phone", () => {
     );
   });
 
-  test("Create agent on the grouped gray: the step said once, presets as checked rows, a level picked from a list", async () => {
+  test("Create agent on the grouped gray: the step in the bar, presets as checked rows, a level picked from a list", async () => {
     // The screens are components the tests can't render: what they wire in, as text.
     const read = (f: string) => Bun.file(new URL(`../../src/features/agents/${f}`, import.meta.url).pathname).text();
     const [screen, look] = await Promise.all([read("NewAgentScreen.tsx"), read("LookPicker.tsx")]);
-    // Not in the header's subtitle: once, under the bar ("2 of 4 · Who it is").
+    // Where the step stands is the native bar's subtitle ("2 of 4"), never a bar of its own drawn under it.
     expect(screen).not.toContain("newAgent.stepOf");
-    expect(screen).toContain('t("mobile.choices.step", { step: index + 1, total })');
+    expect(screen).toContain('return at ? t("mobile.choices.step", at) : undefined;');
+    expect(screen).toContain("{...(subtitle ? { subtitle } : {})}");
+    expect(screen).not.toContain("function StepBar");
     // A role is a row with the check, never a ringed card; with none chosen yet there is no bar to press.
     expect(screen).toContain("checked={role === id}");
     expect(screen).not.toContain("RoleCard");
-    expect(screen).toContain("const footer = importing || backs || goes;");
+    expect(screen).toMatch(/bar=\{\s*change \|\| role !== null \?/);
     // A proposal's levels come from the app's picker of the three, never cycled by taps.
     expect(screen).not.toContain("nextLevel");
     expect(screen).toContain("const chooseLevel = (title: string, current: string, choose: (level: Level) => void) =>");
-    expect(screen).toContain("chooseLevel(app, level, (l) => setProposedLevels((p) => ({ ...p, [i.id]: l })))");
+    expect(screen).toContain("chooseLevel(app, level, (l) => setProposedLevel(i.id, l))");
     // The look in the list: swatches checked inside, the eyes and the accessory each on a pushed screen of checked
     // rows (ADR 0135: screens, never sheets).
-    expect(screen).toContain("<LookList look={look} onChange={setLook} />");
+    expect(screen).toContain("<LookList look={look} onChange={(value) => editNewAgent({ look: value })} />");
     expect(look).toContain("checked={o.key === value}");
     expect(look).toContain('router.push("/agent-look");');
     expect(look).not.toContain("<Sheet");
