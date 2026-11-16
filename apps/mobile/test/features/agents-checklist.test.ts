@@ -68,7 +68,7 @@ describe("one bar, said once", () => {
 
 describe("real navigation", () => {
   test("the team templates and one template's team are routes of their own, pushed with their bar and back", () => {
-    for (const route of ["team-templates", "team-template", "team-adjust"])
+    for (const route of ["team-templates", "team-template", "team-adjust", "ai-account-rename"])
       expect({ route, pushed: pushedByDefault(route) }).toEqual({ route, pushed: true });
     // A template the first run points to opens over the list, so the system's back goes to the others.
     const templates = src("right-hand/TeamTemplates.tsx");
