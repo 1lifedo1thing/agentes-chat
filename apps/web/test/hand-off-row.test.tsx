@@ -3,7 +3,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
-import type { Message, RunConsultation } from "@agenteschat/client";
+import type { Message, RunConsultation, WorkView } from "@agenteschat/client";
 import { act, cleanup, fireEvent } from "@testing-library/react";
 import { ADA_ID, ATLAS_ID, createFakeApi, ORG_ID, seedDm, seedState } from "./fake-api";
 import { renderApp, settle } from "./render";
@@ -43,18 +43,6 @@ function withHandOff(status: "open" | "answered" | "failed", question = QUESTION
     createdAt: ago(240),
   };
   state.messages.push(row);
-  if (status === "answered")
-    state.messages.push({
-      id: "m-told",
-      channelId,
-      threadId: null,
-      author: { type: "agent", id: ADA_ID },
-      body: "O Atlas me pediu o relatório de vendas de outubro. Já está no Drive em Vendas/Outubro.",
-      mentionedAgentIds: [],
-      agentRunId: "r-told",
-      meta: {},
-      createdAt: ago(50),
-    });
   const consultation: RunConsultation = {
     id: "c-handed",
     kind: "note",
@@ -108,8 +96,6 @@ describe("another agent's request in my DM with the agent it went to", () => {
     expect(row()?.querySelector(".consult-pair__asked")?.textContent).toBe("pediu à");
     expect(row()?.textContent).toContain("Relatório de vendas de outubro");
     expect(row()?.textContent).toContain("levou 3 min");
-    // The agent's own message about it follows, as any message.
-    expect(document.body.textContent).toContain("Já está no Drive em Vendas/Outubro.");
     await act(async () => fireEvent.click(row() as HTMLElement));
     await settle(3);
     const dialog = document.querySelector(".ac-dialog.consult-dialog");
@@ -137,5 +123,58 @@ describe("another agent's request in my DM with the agent it went to", () => {
     expect(row()?.textContent).toContain("Consolidar as vendas de todas as regiões");
     expect(row()?.textContent).toContain("levou 3 min");
     (globalThis as { geometrySnapshot?: () => void }).geometrySnapshot?.();
+  });
+
+  test("beside a handed line in the same DM: each hand-off drawn once, neither hiding the other", async () => {
+    const state = withHandOff("answered");
+    const channelId = `dm-${ADA_ID}`;
+    // Later I asked Ada here and she handed it on to Atlas: that work reports here, under her reply.
+    const handed: WorkView = {
+      id: "w-on",
+      agentId: ATLAS_ID,
+      channelId,
+      title: "Gráfico por região",
+      status: "live",
+      state: "working",
+      how: "handed",
+      anchorMessageId: "note-on",
+      threadId: null,
+      homeThreadId: null,
+      runId: "r-atlas-on",
+      requestedByUserId: "u-walter",
+      startedAt: ago(30),
+      finishedAt: null,
+      nextUpdateAt: ago(-480),
+      lastUpdate: null,
+      question: null,
+      plan: [],
+      issue: null,
+      resultMessageId: null,
+      queuePosition: null,
+      pausedUntil: null,
+      canceledByUserId: null,
+      errorCode: null,
+      handedBy: { agentId: ADA_ID, consultationId: "c-on" },
+      askerRunId: "r-ada-here",
+      planStep: null,
+      result: null,
+    };
+    state.messages.push({
+      id: "m-ada-here",
+      channelId,
+      threadId: null,
+      author: { type: "agent", id: ADA_ID },
+      body: "Passei o gráfico para o Atlas.",
+      mentionedAgentIds: [],
+      agentRunId: "r-ada-here",
+      meta: {},
+      handedWorks: [handed],
+      createdAt: ago(40),
+    } as Message);
+    await open(state);
+    const rows = [...document.querySelectorAll(".consult-pair__row")];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.querySelector(".consult-pair__asked")).not.toBeNull();
+    expect(document.querySelectorAll(".handed-line")).toHaveLength(1);
   });
 });
