@@ -8,6 +8,7 @@ import { GestureDetector, GestureHandlerRootView, usePanGesture } from "react-na
 import PagerView from "react-native-pager-view";
 import Animated, {
   cancelAnimation,
+  ReduceMotion,
   type SharedValue,
   useAnimatedStyle,
   useDerivedValue,
@@ -25,18 +26,19 @@ import { decodeFileList, fileInfo, pageStep } from "./logic";
 import { useRemoteFile } from "./source";
 import { ViewerVideo } from "./VideoPlayer";
 import { tellViewerPlace } from "./viewer-place";
-import { ZoomPicture } from "./ZoomPicture";
-import { pullCloses, pullDirection, pulledPlacement, pullProgress, type Size } from "./zoom";
+import { PageWait, ZoomPicture } from "./ZoomPicture";
+import { awaySpeed, pullCloses, pullDirection, pulledPlacement, pullProgress, type Size } from "./zoom";
 
 /**
  * Pictures and videos, full screen, as the phone's own photos: one viewer for both, wherever they open from (a
  * message, the Drive, a file's link). Black, the name, "2 de 4" and who sent it on top; pinch to zoom, double tap to
  * zoom in at that spot or back out (`ZoomPicture`: the system's own zoom on iOS); a video plays in the system's player
  * between the bars, while it is the one in sight; swipe between them on the system's pager, a little black between
- * them as they slide, or ‹ › on the sides; pull down (or up) to close, the picture or video following the finger,
- * smaller as it goes, as the black fades, and let go far or fast enough it carries on away as the viewer closes, else
- * it springs back; and Compartilhar, Enviar, Salvar em Fotos, Ver no Drive at the bottom. A tap on a picture hides and
- * shows the bars; zooming in hides them.
+ * them as they slide, or ‹ › on the sides; pull down (or up) to close, the picture or video under the finger, smaller
+ * as it goes, as the black fades, and let go where it would carry on far enough (a flick or a long pull) it leaves at
+ * its own speed as the viewer closes, else it springs back from that speed; and Share, Send, Save to Photos, View in
+ * Drive at the bottom, the file's only actions (no "…" repeating them). A tap on a picture hides and shows the bars;
+ * zooming in hides them. With reduced motion a closing picture fades instead of flying off.
  */
 export function ImageViewer({
   files: rawFiles,
@@ -67,10 +69,15 @@ const SCRIM = "rgba(0,0,0,0.45)";
 const ROUND = 44;
 /** The black between two pictures as they slide. */
 const GAP = 20;
-/** A pull let go short of closing: back fast, with the slightest bounce (it was thrown). */
+/** A pull let go short of closing: back fast from the speed it was let go at, with the slightest bounce (it was thrown). */
 const BACK_SPRING = { stiffness: 700, damping: 50, mass: 1 };
 /** A pull that closes: the picture carries on the way it was going, at the speed it left the finger. */
 const AWAY_SPRING = { stiffness: 180, damping: 26, mass: 1, overshootClamping: true };
+/**
+ * A pull that closes with reduced motion: the picture fades where it was let go, as the screen does. An opacity
+ * change, kept with reduced motion (the system setting would otherwise skip it).
+ */
+const FADE_OUT = { duration: 180, reduceMotion: ReduceMotion.Never };
 
 function Viewer({
   rawFiles,
@@ -98,7 +105,8 @@ function Viewer({
   const [chrome, setChrome] = useState(true);
   // How tall the bars are: a video sits between them, its own controls clear of ours.
   const [bars, setBars] = useState({ top: 0, bottom: 0 });
-  // The pull to close, in finger travel (the picture follows it loosely), and how far a closing picture carried on.
+  // The pull to close, in finger travel (the picture follows it exactly down and up, loosely sideways), and how far a
+  // closing picture carried on.
   const pullX = useSharedValue(0);
   const pullY = useSharedValue(0);
   const away = useSharedValue(0);
@@ -114,9 +122,10 @@ function Viewer({
     closed.current = true;
     goBack();
   }, []);
+  const currentId = current?.id;
   useEffect(() => {
-    if (from) tellViewerPlace(from, index);
-  }, [from, index]);
+    if (from && currentId) tellViewerPlace(from, currentId);
+  }, [from, currentId]);
 
   // Zoomed in, the pager holds still (the fingers move the picture), the side buttons step aside and the bars go.
   const onZoom = useCallback((now: boolean) => {
@@ -195,10 +204,9 @@ function Viewer({
         style={[styles.top, { paddingTop: insets.top + 8 }]}
         onHeight={(top) => setBars((b) => (b.top === top ? b : { ...b, top }))}
       >
+        {/* × alone: the file's actions are the row at the bottom, never repeated in a "…" here. */}
         <Round icon="x" label={t("mobile.common.close")} onPress={close} />
-        <View style={styles.spacer} />
-        <Round icon="more" label={t("mobile.files.more")} onPress={() => actions.more(true)} disabled={!detail} />
-        {/* The name and its line on a row of their own under the buttons, the screen's width: never cut beside them. */}
+        {/* The name and its line on a row of their own under the button, the screen's width: never cut beside it. */}
         <View style={styles.title}>
           <Text variant="subhead" style={[styles.bold, { color: WHITE }]} numberOfLines={3}>
             {info?.name ?? ""}
@@ -257,10 +265,11 @@ function Viewer({
 }
 
 /**
- * One page: a picture (`ZoomPicture`) or a video (`ViewerVideo`, between the bars, playing while in sight) and, on the
- * one in sight at 1×, the pull to close. The pull tracks the finger 1:1 (the picture follows it loosely,
- * `pulledPlacement`) and can be caught again while it springs back; let go, a fast release is decided by its direction
- * and a slow one by its distance (`pullCloses`).
+ * One page: a picture (`ZoomPicture`) or a video (`PageVideo`, between the bars, playing while in sight) and, on the
+ * one in sight at 1×, the pull to close, there from the first frame: a page still loading, or one that couldn't, is
+ * swiped away as a picture is. The picture stays under the finger (`pulledPlacement`) and can be caught again while it
+ * springs back; let go, where it would come to rest decides (`pullCloses`), and it leaves or springs back from the
+ * speed it was let go at.
  */
 function Page({
   id,
@@ -293,14 +302,14 @@ function Page({
   onVideo: () => void;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
   const orgId = useOrgId();
-  const link = useRemoteFile(orgId, id, version);
+  const { reducedMotion } = useTheme();
   const artifact = useArtifact(orgId, id, version);
   const info = artifact.data ? fileInfo(artifact.data) : null;
   // Known once its details load (a picture when they can't).
   const video = info ? info.view === "video" : artifact.isError ? false : null;
-  const [unplayable, setUnplayable] = useState(false);
+  // A picture's link is the one the message or the Drive already holds, so it shows at once; a video reads its own.
+  const link = useRemoteFile(orgId, video ? null : id, version);
   const [zoomed, setZoomed] = useState(false);
   useEffect(() => {
     if (active && video) onVideo();
@@ -312,18 +321,29 @@ function Page({
     },
     [active, onZoom],
   );
-  // Where a pull caught mid-spring started from, so the picture stays under the finger.
+  // Where a pull caught mid-spring started from, so the picture stays under the finger; the spot the finger took, from
+  // the picture's center, which the picture shrinks around; and how much of it shows (it fades out with reduced motion).
   const from = useSharedValue({ x: 0, y: 0 });
+  const grab = useSharedValue({ x: 0, y: 0 });
+  const shown = useSharedValue(1);
   const pull = usePanGesture({
     enabled: active && !zoomed && !paging,
     activeOffsetY: [-10, 10],
     failOffsetX: [-10, 10],
     maxPointers: 1,
-    onActivate: () => {
+    onActivate: (e) => {
       "worklet";
+      const resting = Math.abs(pullX.value) < 0.5 && Math.abs(pullY.value) < 0.5;
       cancelAnimation(pullX);
       cancelAnimation(pullY);
       from.value = { x: pullX.value, y: pullY.value };
+      // From rest, where the finger is (in the window, as the picture fills it). Caught mid-spring, the spot it took
+      // before, so the picture doesn't jump.
+      if (resting)
+        grab.value = {
+          x: e.absoluteX - e.translationX - screen.width / 2,
+          y: e.absoluteY - e.translationY - screen.height / 2,
+        };
     },
     onUpdate: (e) => {
       "worklet";
@@ -335,52 +355,45 @@ function Page({
       "worklet";
       if (leaving.value) return;
       const travel = from.value.y + e.translationY;
-      if (pullCloses(travel, e.velocityY)) {
+      if (pullCloses(travel, e.velocityY, screen.height)) {
         leaving.value = true;
-        away.value = withSpring(pullDirection(travel, e.velocityY) * screen.height, {
-          ...AWAY_SPRING,
-          velocity: e.velocityY,
-        });
+        if (reducedMotion) shown.value = withTiming(0, FADE_OUT);
+        else {
+          const direction = pullDirection(travel, e.velocityY);
+          // The picture follows the finger 1:1 up and down, so the finger's speed is its own.
+          away.value = withSpring(direction * screen.height, {
+            ...AWAY_SPRING,
+            velocity: awaySpeed(direction, e.velocityY),
+          });
+        }
         scheduleOnRN(onClose);
         return;
       }
-      pullX.value = withSpring(0, BACK_SPRING);
-      pullY.value = withSpring(0, BACK_SPRING);
+      pullX.value = withSpring(0, { ...BACK_SPRING, velocity: e.velocityX });
+      pullY.value = withSpring(0, { ...BACK_SPRING, velocity: e.velocityY });
     },
   });
   const placed = useAnimatedStyle(() => {
-    if (!active) return { transform: [{ translateX: 0 }, { translateY: 0 }, { scale: 1 }] };
-    const at = pulledPlacement(pullX.value, pullY.value, screen);
-    return { transform: [{ translateX: at.x }, { translateY: at.y + away.value }, { scale: at.scale }] };
+    if (!active) return { opacity: 1, transform: [{ translateX: 0 }, { translateY: 0 }, { scale: 1 }] };
+    const at = pulledPlacement(pullX.value, pullY.value, screen, grab.value);
+    return {
+      opacity: shown.value,
+      transform: [{ translateX: at.x }, { translateY: at.y + away.value }, { scale: at.scale }],
+    };
   });
   const key = `${id}@${version ?? "latest"}`;
-  const videoSource = useMemo(
-    () => (link.data ? { uri: link.data.uri, ...(link.data.headers ? { headers: link.data.headers } : {}) } : null),
-    [link.data],
-  );
   return (
     <Animated.View style={[screen, placed]}>
-      {video && videoSource ? (
+      {video ? (
         <GestureDetector gesture={pull}>
           <View style={screen} collapsable={false}>
-            <View style={[styles.videoFrame, { top: bars.top, bottom: bars.bottom }]}>
-              {unplayable ? (
-                <View style={[StyleSheet.absoluteFill, styles.center, styles.cantPlay]}>
-                  <Icon name="play" size={30} color={DIM} />
-                  <Text variant="footnote" style={[styles.cantPlayText, { color: DIM }]}>
-                    {t("mobile.files.video.cantPlay")}
-                  </Text>
-                </View>
-              ) : (
-                <ViewerVideo
-                  key={videoSource.uri}
-                  source={videoSource}
-                  name={info?.name ?? ""}
-                  active={active}
-                  onFailed={() => setUnplayable(true)}
-                />
-              )}
-            </View>
+            <PageVideo
+              id={id}
+              {...(version !== undefined ? { version } : {})}
+              name={info?.name ?? ""}
+              active={active}
+              bars={bars}
+            />
           </View>
         </GestureDetector>
       ) : video === false && link.data ? (
@@ -390,15 +403,73 @@ function Page({
           screen={screen}
           pull={pull}
           enabled={!paging}
+          active={active}
           onTap={onTap}
           onZoom={zoomChanged}
+          onRetry={() => void link.refetch()}
         />
       ) : (
-        <View style={[StyleSheet.absoluteFill, styles.center]}>
-          {link.isError ? <Icon name="image" size={30} color={DIM} /> : <ActivityIndicator color={WHITE} />}
-        </View>
+        <GestureDetector gesture={pull}>
+          <View style={screen} collapsable={false}>
+            <PageWait
+              failed={link.isError}
+              retrying={link.isFetching}
+              onRetry={() => {
+                void link.refetch();
+                if (artifact.isError) void artifact.refetch();
+              }}
+            />
+          </View>
+        </GestureDetector>
       )}
     </Animated.View>
+  );
+}
+
+/**
+ * A video's page: the system's player between the bars, playing while in sight, from a link of its own read once
+ * (`once`), so the app coming back to the front, or a new link anywhere, never starts it over. One this phone can't
+ * play says so (it can still be sent, shared or opened in the Drive below).
+ */
+function PageVideo({
+  id,
+  version,
+  name,
+  active,
+  bars,
+}: {
+  id: string;
+  version?: number;
+  name: string;
+  active: boolean;
+  bars: { top: number; bottom: number };
+}) {
+  const { t } = useTranslation();
+  const orgId = useOrgId();
+  const link = useRemoteFile(orgId, id, version, { once: true });
+  const [unplayable, setUnplayable] = useState(false);
+  const source = useMemo(() => (link.data ? { uri: link.data.uri, headers: link.data.headers } : null), [link.data]);
+  return (
+    <View style={[styles.videoFrame, { top: bars.top, bottom: bars.bottom }]}>
+      {unplayable ? (
+        <View style={[StyleSheet.absoluteFill, styles.center, styles.cantPlay]}>
+          <Icon name="play" size={30} color={DIM} />
+          <Text variant="footnote" style={[styles.cantPlayText, { color: DIM }]}>
+            {t("mobile.files.video.cantPlay")}
+          </Text>
+        </View>
+      ) : source ? (
+        <ViewerVideo
+          key={`${id}@${version ?? "latest"}`}
+          source={source}
+          name={name}
+          active={active}
+          onFailed={() => setUnplayable(true)}
+        />
+      ) : (
+        <PageWait icon="play" failed={link.isError} retrying={link.isFetching} onRetry={() => void link.refetch()} />
+      )}
+    </View>
   );
 }
 
@@ -518,7 +589,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingBottom: 10,
   },
-  spacer: { flex: 1 },
   title: { flexBasis: "100%", gap: 2 },
   bold: { fontWeight: "600" },
   round: { width: ROUND, height: ROUND, borderRadius: ROUND / 2 },

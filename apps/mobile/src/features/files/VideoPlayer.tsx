@@ -8,6 +8,13 @@ import { useColors } from "../shared/hooks";
 import { tapHaptic } from "../shared/parts";
 import { videoClock, videoHeight } from "./logic";
 
+/**
+ * Android draws a video on a SurfaceView by default, a window of its own that ignores the rounded corners it sits in
+ * and lags behind a moving or shrinking parent (the viewer's pull to close); a TextureView is drawn with the views
+ * around it. iOS ignores the prop.
+ */
+const SURFACE = "textureView";
+
 /** Only one video plays at a time: starting one pauses the one before. */
 let current: Player | null = null;
 function claim(player: Player) {
@@ -27,7 +34,7 @@ export interface VideoPlayerProps {
   name: string;
   /** Its width in the message (one shape, the video whole in it). */
   width?: number;
-  /** An inline video's tap: opens it on the file screen, where it plays. */
+  /** An inline video's tap: opens it in the picture viewer, where it plays. */
   onOpen?: () => void;
   /** It can't play on this device (a format it lacks): the caller shows the file's card instead. */
   onFailed?: () => void;
@@ -93,6 +100,7 @@ function InlineVideo({
         nativeControls={false}
         contentFit="contain"
         allowsPictureInPicture={false}
+        surfaceType={SURFACE}
         pointerEvents="none"
         style={StyleSheet.absoluteFill}
       />
@@ -156,6 +164,7 @@ export function ViewerVideo({
       contentFit="contain"
       fullscreenOptions={{ enable: true }}
       allowsPictureInPicture={false}
+      surfaceType={SURFACE}
       accessibilityLabel={name}
       style={StyleSheet.absoluteFill}
     />
@@ -173,6 +182,7 @@ export function VideoFirstFrame({ uri }: { uri: string }) {
       nativeControls={false}
       contentFit="cover"
       allowsPictureInPicture={false}
+      surfaceType={SURFACE}
       pointerEvents="none"
       style={StyleSheet.absoluteFill}
     />

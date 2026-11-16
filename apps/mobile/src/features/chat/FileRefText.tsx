@@ -7,6 +7,7 @@ import { serverUrl } from "@/lib/server";
 import { useOrg } from "@/providers/org";
 import { Icon } from "@/ui";
 import { router } from "@/ui/navigation";
+import { openFile } from "../files/open";
 import { appLinkFromUrl } from "../links/app-links";
 import { useColors } from "../shared/hooks";
 
@@ -31,7 +32,7 @@ export function FilePillText({
   const here = useOrg().orgId;
   const open = () => {
     if (orgId === here) {
-      router.push({ pathname: "/file/[id]", params: { id, ...(version ? { v: String(version) } : {}) } });
+      openFile({ id, title, ...(version ? { version } : {}) });
       return;
     }
     const other = appLinkFromUrl(`${serverUrl().replace(/\/+$/, "")}${filePath(orgId, id, version)}`);

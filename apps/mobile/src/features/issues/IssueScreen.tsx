@@ -64,6 +64,7 @@ import { router } from "@/ui/navigation";
 import { openConnectAi } from "../ai/NoAiCard";
 import { MessageText } from "../chat/MessageText";
 import { IssueWorkLine, useShareWork } from "../chat/WorkLine";
+import { openFile } from "../files/open";
 import { chatHref } from "../links/logic";
 import { confirmAction } from "../settings/parts";
 import { Face } from "../shared/Face";
@@ -715,7 +716,7 @@ function Linked({ issue: i }: { issue: Issue }) {
       key: `a:${a.id}`,
       icon: "doc",
       label: a.title,
-      onPress: () => router.push({ pathname: "/file/[id]", params: { id: a.id } }),
+      onPress: () => openFile({ id: a.id, title: a.title }),
     });
   for (const pr of i.pullRequests)
     rows.push({

@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, Text as RNText, StyleSheet, View } from "react-native";
 import { Icon, Text } from "@/ui";
-import { router } from "@/ui/navigation";
 import { ChoicesCard } from "../blocks/ChoicesCard";
 import { LiveBlockCard } from "../blocks/LiveBlock";
 import { PollCard } from "../blocks/PollCard";
@@ -16,10 +15,10 @@ import { AttachmentTile } from "./AttachmentTile";
 import { ImageStack, type StackImage } from "./ImageStack";
 import { isLocalMedia, type LocalFile, localRatio } from "./local-files";
 import {
-  encodeFileList,
   extensionOf,
   extLabel,
   type FileInfo,
+  type FileRef,
   fileInfo,
   IMAGE_EXT,
   singleImageBox,
@@ -27,6 +26,7 @@ import {
   videoClock,
   videoHeight,
 } from "./logic";
+import { openFile } from "./open";
 import { rememberLocalCopy, useArtifacts, useRemoteFile } from "./source";
 import { VideoFirstFrame, VideoPlayer } from "./VideoPlayer";
 
@@ -104,21 +104,20 @@ export function MessageFiles({ files, align = "start" }: { files: MessageFile[];
         pictureRatio(only.detail?.content.kind === "file" ? only.detail.content : null) ?? pictureRatio(only.file),
       )
     : null;
+  // The message's pictures and videos in the order they show (pictures, then videos; beside other files the videos
+  // come first, the pictures among the tiles): whichever is tapped, the viewer pages through them all.
+  const media: FileRef[] = (tiles.length > 0 ? [...videos, ...images] : [...pictures, ...videos]).map(
+    ({ file, detail }) => ({ id: file.id, version: file.version, title: file.title, detail }),
+  );
   // Opening a file or a picture is plain navigation: the press shows it, with no haptic.
   const openOnly = () => {
-    if (!only) return;
-    router.push({
-      pathname: "/images",
-      params: {
-        files: encodeFileList([{ id: only.file.id, version: only.detail?.shownVersion ?? only.file.version }]),
-        at: "0",
-      },
-    });
+    if (only)
+      openFile({ id: only.file.id, version: only.file.version, title: only.file.title, detail: only.detail }, media);
   };
 
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={[styles.wrap, align === "end" && styles.end]}>
-      {pictures.length > 1 ? <ImageStack images={pictures} width={blockWidth} /> : null}
+      {pictures.length > 1 ? <ImageStack images={pictures} width={blockWidth} siblings={media} /> : null}
       {only && onlyBox && pictures.length === 1 ? (
         <View style={{ width: onlyBox.width }}>
           <InlineImage
@@ -131,7 +130,7 @@ export function MessageFiles({ files, align = "start" }: { files: MessageFile[];
         </View>
       ) : null}
       {videos.map(({ file, detail }) => (
-        <InlineVideo key={file.id} file={file} detail={detail} width={blockWidth} />
+        <InlineVideo key={file.id} file={file} detail={detail} width={blockWidth} siblings={media} />
       ))}
       {blocks.map((b) =>
         b.kind === "poll" ? (
@@ -153,6 +152,7 @@ export function MessageFiles({ files, align = "start" }: { files: MessageFile[];
               picture={picture}
               width={picture ? halfWidth : blockWidth}
               single={tiles.length === 1}
+              siblings={media}
             />
           ))}
         </View>
@@ -215,40 +215,39 @@ function InlineImage({
   );
 }
 
-/** A video on a message: it plays in place; one this phone can't play becomes the file's card. */
+/**
+ * A video on a message: its first frame; a tap opens it in the viewer among the message's pictures and videos
+ * (`siblings`); one this phone can't play becomes the file's card. Its link is read once, at the version the message
+ * names, so a link refreshed later never reloads the frame (a flash); it's read again when the row comes back.
+ */
 function InlineVideo({
   file,
   detail,
   width,
+  siblings,
 }: {
   file: MessageFile;
   detail: ArtifactDetail | undefined;
   width: number;
+  siblings: readonly FileRef[];
 }) {
   const orgId = useOrgId();
   const c = useColors();
-  const version = detail?.shownVersion ?? file.version;
-  const link = useRemoteFile(orgId, file.id, version);
+  const link = useRemoteFile(orgId, file.id, file.version, { once: true });
   const [failed, setFailed] = useState(false);
-  const source = useMemo(
-    () => (link.data ? { uri: link.data.uri, ...(link.data.headers ? { headers: link.data.headers } : {}) } : null),
-    [link.data],
-  );
-  if (failed || link.isError) return <AttachmentTile file={file} detail={detail} width={width} single />;
+  const source = useMemo(() => (link.data ? { uri: link.data.uri, headers: link.data.headers } : null), [link.data]);
+  if (failed || link.isError)
+    return <AttachmentTile file={file} detail={detail} width={width} single siblings={siblings} />;
   const info = detail ? fileInfo(detail) : null;
   // In the same viewer as the pictures: one place where media opens.
   const open = () => {
-    if (!detail) return;
-    router.push({
-      pathname: "/images",
-      params: { files: encodeFileList([{ id: file.id, version: detail.shownVersion }]), at: "0" },
-    });
+    if (detail) openFile({ id: file.id, version: file.version, title: file.title, detail }, siblings);
   };
   return (
     <View>
       {source ? (
         <VideoPlayer
-          key={source.uri}
+          key={`${file.id}@${file.version ?? "latest"}`}
           source={source}
           name={info?.name || file.title}
           width={width}

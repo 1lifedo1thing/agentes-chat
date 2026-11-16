@@ -72,6 +72,7 @@ import { LetMeTalkButton } from "../chat/ReachLines";
 import { AgentComputerCard } from "../computer/AgentComputerRow";
 import { KeptRunningList } from "../computer/KeptRunning";
 import { ConnectorIcon } from "../connectors/ConnectorIcon";
+import { openFile } from "../files/open";
 import { chatHref } from "../links/logic";
 import { UsageQueueSheet } from "../queue/UsageQueueSheet";
 import { openRightHandSettings, RightHandMine } from "../right-hand/SettingsScreen";
@@ -305,7 +306,7 @@ function Profile({ id }: { id: string }) {
     if (!href) return;
     if (href.kind === "issue") router.push(`/issues/${href.number}`);
     else if (href.kind === "chat") router.push(chatHref(href.channelId, href.threadId));
-    else if (href.kind === "file") router.push({ pathname: "/file/[id]", params: { id: href.id } });
+    else if (href.kind === "file") openFile({ id: href.id });
     else router.push(`/approval/${href.id}`);
   };
 
