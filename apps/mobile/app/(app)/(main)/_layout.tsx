@@ -43,6 +43,8 @@ export default function MainStack() {
     const own: Record<string, NativeStackNavigationOptions> = {
       "(tabs)": base,
       "chat/[channelId]": solid,
+      // Writing a wiki page: its text and the tools over the keys lay out below an opaque bar (nothing under it).
+      "wiki-write": solid,
       "block/[id]": solid,
       "agent/[id]": cover,
       // The wiki's graph: its night fills the screen behind the bar.

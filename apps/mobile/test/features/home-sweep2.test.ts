@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { ownOptionsOf } from "../main-stack";
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
 
@@ -77,6 +78,13 @@ describe("headers", () => {
     const layout = readFileSync(join(import.meta.dir, "../../app/(app)/(main)/_layout.tsx"), "utf8");
     expect(layout).toContain('"wiki-map": cover,');
     expect(layout).not.toContain('"wiki-map": solid,');
+  });
+
+  test("writing a wiki page lays out below an opaque bar, from the first frame to a conflict", () => {
+    expect(ownOptionsOf("wiki-write")).toBe("solid,");
+    const write = src("features/wiki/WikiWrite.tsx");
+    // A clear bar set while the page loaded (or on a conflict) would stay clear over the text: options merge.
+    expect(write).not.toContain("solid={false}");
   });
 
   test("a page's history names the page under its title, never 'History of' under 'History'", () => {

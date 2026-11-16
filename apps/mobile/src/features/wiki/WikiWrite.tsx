@@ -92,8 +92,9 @@ function WriterWaiting({ failed, retry }: { failed: boolean; retry: () => void }
   const c = useColors();
   return (
     <View style={[styles.fill, { backgroundColor: c.bg }]}>
-      <PushedHeader title={t("wiki.edit")} solid={false} />
-      <ScrollView contentInsetAdjustmentBehavior="automatic">
+      {/* The writing's opaque bar from the first frame (a clear one here stayed clear over the text once it came). */}
+      <PushedHeader title={t("wiki.edit")} />
+      <ScrollView>
         {failed ? <LoadFailed onRetry={retry} /> : null}
       </ScrollView>
     </View>
@@ -271,11 +272,8 @@ function Writer({
   if (conflict && page) {
     return (
       <View style={[styles.fill, { backgroundColor: c.bg }]}>
-        <PushedHeader title={t("wiki.conflictTitle")} solid={false} />
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={[styles.conflict, { paddingBottom: insets.bottom + 24 }]}
-        >
+        <PushedHeader title={t("wiki.conflictTitle")} />
+        <ScrollView contentContainerStyle={[styles.conflict, { paddingBottom: insets.bottom + 24 }]}>
           {/* The bar says what this is ("Conflito"); the words under it say what happened. */}
           <Text variant="subhead" tone="muted">
             {t("mobile.wiki.conflictText", { version: conflict.version })}
