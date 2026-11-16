@@ -3,7 +3,7 @@ import { relativeTime } from "@agenteschat/client/lib/format";
 import { can } from "@agenteschat/client/lib/permissions";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, RefreshControl, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
@@ -27,7 +27,7 @@ import { useFailed } from "../routines/hooks";
 import { Gap, SettingsPage } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useOrgId } from "../shared/hooks";
+import { useColors, useDirectory, useOrgId, usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { successHaptic, Tile } from "../shared/parts";
 
@@ -89,6 +89,7 @@ export function WikiTrashScreen() {
   const toast = useToast();
   const failed = useFailed();
   const trash = useWikiTrash(orgId);
+  const pull = usePullRefresh(trash.refetch);
   const bulk = useWikiBulk(orgId);
   const writes = can(org, "edit_wiki");
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -155,7 +156,12 @@ export function WikiTrashScreen() {
   return (
     // The large title's scroll view is the screen's own first view (the system folds the title as it scrolls): the
     // chosen pages' bar goes in its dock, never in a view around it.
-    <PushedLargeTitle title={t("wiki.trash.title")} bottomInset={picked.size ? 110 : 24} dock={bar}>
+    <PushedLargeTitle
+      title={t("wiki.trash.title")}
+      bottomInset={picked.size ? 110 : 24}
+      dock={bar}
+      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
+    >
       <Text variant="subhead" tone="muted" style={styles.lead}>
         {t("wiki.trash.text")}
       </Text>

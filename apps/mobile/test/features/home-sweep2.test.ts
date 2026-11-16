@@ -66,3 +66,47 @@ describe("New and Chat with…", () => {
     expect(form).not.toContain('t("mobile.app.failed")');
   });
 });
+
+describe("headers", () => {
+  test("the wiki's graph: a clear bar on both platforms, its title, back and status bar white over the night", () => {
+    const map = src("features/wiki/WikiMap.tsx");
+    expect(map).toContain('<PushedHeader title={t("wiki.graph")} plate />');
+    expect(map).toContain('headerTintColor: "#ffffff", headerTitleStyle: { color: "#ffffff" }');
+    expect(map).toContain('{focused ? <StatusBar style="light" /> : null}');
+    // Under a clear bar the filters' `headerHeight + 8` is right on both platforms (an opaque one doubled it).
+    const layout = readFileSync(join(import.meta.dir, "../../app/(app)/(main)/_layout.tsx"), "utf8");
+    expect(layout).toContain('"wiki-map": cover,');
+    expect(layout).not.toContain('"wiki-map": solid,');
+  });
+
+  test("a page's history names the page under its title, never 'History of' under 'History'", () => {
+    const wiki = src("features/wiki/WikiScreen.tsx");
+    const history = wiki.slice(wiki.indexOf("export function WikiHistoryScreen"));
+    expect(history).not.toContain("wiki.historyTitle");
+    expect(history).toContain("{page.data.title}");
+  });
+
+  test("the wiki's search sits under its large title as Drive's", () => {
+    expect(src("features/wiki/WikiScreen.tsx")).toContain("search: { paddingHorizontal: SCREEN_X, paddingBottom: 10 },");
+  });
+});
+
+describe("lists that load from the server refresh on a pull", () => {
+  test.each([
+    ["features/wiki/WikiScreen.tsx", 3],
+    ["features/wiki/WikiBulk.tsx", 1],
+    ["features/memory/MemoryScreen.tsx", 1],
+    ["features/chats/ArchivedChannelsScreen.tsx", 1],
+  ])("%s", (file, pulls) => {
+    // The wiki's home, a page and a page's history each have one; the trash, Memória and the archived channels too.
+    const found = src(file).match(/refreshControl=\{<RefreshControl refreshing=\{pull\.refreshing\}/g)?.length ?? 0;
+    expect({ file, pulls: found }).toEqual({ file, pulls });
+  });
+
+  test("Memória's rows are the list's own, as the wiki's beside it", () => {
+    const memory = src("features/memory/MemoryScreen.tsx");
+    expect(memory).toContain("<ListRow");
+    expect(memory).toContain("size={LIST_AVATAR - 2}");
+    expect(memory).not.toContain("<Row\n");
+  });
+});
