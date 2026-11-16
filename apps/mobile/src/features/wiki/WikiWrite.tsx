@@ -23,10 +23,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Button,
   DiffView,
-  fieldText,
+  GroupedField,
   GroupedFooter,
+  GroupedHeader,
   GroupedList,
-  GroupedRow,
   Icon,
   type IconName,
   Locked,
@@ -34,14 +34,17 @@ import {
   Segmented,
   SheetScreen,
   Text,
+  useFieldText,
   useReducedMotion,
   useToast,
 } from "@/ui";
 import { router } from "@/ui/navigation";
+import { SheetHeader } from "../new/parts";
 import { useFailed } from "../routines/hooks";
+import { NEXT_FIELD } from "../settings/parts";
 import { useColors, useOrgId } from "../shared/hooks";
 import { goBack, MONO, PushedHeader, successHaptic, Tile, tapHaptic } from "../shared/parts";
-import { useWhoSeesDraft, useWhoSeesLabel, WhoSeesRows } from "../shared/WhoSees";
+import { useWhoSeesDraft, WhoSeesRows } from "../shared/WhoSees";
 import { foldersIn, suggestPages } from "./logic";
 import { WikiDoc } from "./WikiDoc";
 import { cleanFolder, FolderChips, openWikiPage } from "./WikiScreen";
@@ -236,9 +239,7 @@ function Writer({
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={[styles.conflict, { paddingBottom: insets.bottom + 24 }]}
         >
-          <Text variant="title2" accessibilityRole="header">
-            {t("wiki.conflictTitle")}
-          </Text>
+          {/* The bar says what this is ("Conflito"); the words under it say what happened. */}
           <Text variant="subhead" tone="muted">
             {t("mobile.wiki.conflictText", { version: conflict.version })}
           </Text>
@@ -428,7 +429,8 @@ function Writer({
 }
 
 /**
- * "Nova página" (a short sheet over the wiki): the title, the folder with the folders in use as shortcuts, and
+ * "Nova página" (a sheet over the wiki): the sheet's bar, then the title and the folder as a form's fields, the folders
+ * in use as one-tap choices, who sees it (the web's three choices, the people under them when it's some of them), and
  * "Criar e escrever", which closes the sheet and opens the writing. Nothing is created until Salvar there.
  */
 export function WikiNewSheet({
@@ -440,14 +442,13 @@ export function WikiNewSheet({
 }) {
   const { t } = useTranslation();
   const c = useColors();
+  const words = useFieldText("body");
   const orgId = useOrgId();
   const toast = useToast();
   const tree = useWikiTree(orgId);
   const [title, setTitle] = useState(initialTitle);
   const [folder, setFolder] = useState(initialFolder);
   const sees = useWhoSeesDraft(EVERYONE);
-  const seesLabel = useWhoSeesLabel();
-  const [choosing, setChoosing] = useState(false);
   const folders = foldersIn(tree.data ?? []);
   const existing = (tree.data ?? []).find((p) => p.title.toLowerCase() === title.trim().toLowerCase());
   const go = () => {
@@ -463,55 +464,49 @@ export function WikiNewSheet({
       router.push({ pathname: "/wiki-write", params: { title: name, folder: cleanFolder(folder), ...who } });
     }
   };
-  const field = [styles.field, fieldText("body"), { backgroundColor: c.sunken, color: c.ink }];
+  const input = [styles.input, words, { color: c.ink }];
   return (
     <SheetScreen>
-      <Text variant="title2" accessibilityRole="header">
-        {t("wiki.newPage")}
-      </Text>
-      <TextInput
-        value={title}
-        onChangeText={setTitle}
-        autoFocus={!initialTitle}
-        placeholder={t("wiki.form.titlePlaceholder")}
-        placeholderTextColor={c.faint}
-        accessibilityLabel={t("wiki.form.title")}
-        returnKeyType="next"
-        style={field}
-      />
-      <TextInput
-        value={folder}
-        onChangeText={setFolder}
-        placeholder={t("wiki.form.folder")}
-        placeholderTextColor={c.faint}
-        accessibilityLabel={t("wiki.form.folder")}
-        autoCapitalize="words"
-        returnKeyType="done"
-        onSubmitEditing={go}
-        style={field}
-      />
-      {folders.length > 0 ? <FolderChips folders={folders} value={cleanFolder(folder)} onPick={setFolder} /> : null}
-      {existing ? (
-        <Text variant="footnote" tone="faint">
-          {t("mobile.wiki.exists")}
-        </Text>
-      ) : (
+      <SheetHeader title={t("wiki.newPage")} />
+      <View>
         <GroupedList>
-          <GroupedRow
-            icon={sees.choice.mode === "everyone" ? "globe" : "lock"}
-            label={t("whoSees.label")}
-            value={seesLabel(sees.choice)}
-            chevron
-            onPress={() => setChoosing((v) => !v)}
-          />
+          <GroupedField label={t("wiki.form.title")}>
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              autoFocus={!initialTitle}
+              placeholder={t("wiki.form.titlePlaceholder")}
+              placeholderTextColor={c.faint}
+              {...NEXT_FIELD}
+              style={input}
+            />
+          </GroupedField>
+          <GroupedField label={t("wiki.form.folder")}>
+            <TextInput
+              value={folder}
+              onChangeText={setFolder}
+              placeholder={t("wiki.form.folderPlaceholder")}
+              placeholderTextColor={c.faint}
+              autoCapitalize="words"
+              returnKeyType="done"
+              onSubmitEditing={go}
+              style={input}
+            />
+          </GroupedField>
         </GroupedList>
-      )}
-      {choosing && !existing ? (
-        <>
-          <WhoSeesRows draft={sees} />
+        {existing ? <GroupedFooter>{t("mobile.wiki.exists")}</GroupedFooter> : null}
+      </View>
+      {folders.length > 0 ? <FolderChips folders={folders} value={cleanFolder(folder)} onPick={setFolder} /> : null}
+      {/* Who sees it, always in sight as a choice of three: never a row that opens a list under itself. */}
+      {existing ? null : (
+        <View>
+          <GroupedHeader>{t("whoSees.label")}</GroupedHeader>
+          <View style={styles.sees}>
+            <WhoSeesRows draft={sees} />
+          </View>
           <GroupedFooter>{t("whoSees.admins")}</GroupedFooter>
-        </>
-      ) : null}
+        </View>
+      )}
       <Button
         variant="primary"
         wide
@@ -561,5 +556,8 @@ const styles = StyleSheet.create({
   conflict: { paddingHorizontal: 16, paddingTop: 12, gap: 8 },
   gapTop: { marginTop: 8 },
   acts: { gap: 6, marginTop: 12 },
-  field: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  // A form field's input in its row (the label's column beside it).
+  input: { flex: 1, paddingVertical: 12, paddingHorizontal: 0 },
+  // The three choices and the people under them, apart as two groups.
+  sees: { gap: 12 },
 });
