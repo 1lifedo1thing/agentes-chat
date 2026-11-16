@@ -6,7 +6,7 @@ import { memoryLine } from "@agenteschat/client/lib/proposals";
 import { rightHandOf } from "@agenteschat/client/lib/right-hand";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
@@ -19,6 +19,7 @@ import {
   SCREEN_X,
   SearchField,
   SectionHeader,
+  SkeletonList,
   Text,
   useReducedMotion,
   useToast,
@@ -32,7 +33,7 @@ import { aroundStar, memoryMap } from "../constellation/logic";
 import { useOpenDm } from "../new/useOpenDm";
 import { useFailed } from "../routines/hooks";
 import { Face } from "../shared/Face";
-import { FirstUse } from "../shared/FirstUse";
+import { FirstUse, LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { genderOf } from "../shared/logic";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
@@ -48,7 +49,6 @@ const openMemory = (id: string) => router.push(`/memory/${id}`);
  */
 export function MemoryScreen({ agent: initialAgent }: { agent?: string } = {}) {
   const { t, i18n } = useTranslation();
-  const c = useColors();
   const orgId = useOrgId();
   const dir = useDirectory();
   const memories = useOrgMemories(orgId);
@@ -100,18 +100,9 @@ export function MemoryScreen({ agent: initialAgent }: { agent?: string } = {}) {
           returnKeyType="search"
         />
       </View>
-      {memories.isLoading ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
-      {memories.isError && !memories.data ? (
-        <View style={styles.center}>
-          <Text tone="muted">{t("common.loadFailed")}</Text>
-          <Button
-            variant="secondary"
-            size="sm"
-            label={t("mobile.common.retry")}
-            onPress={() => void memories.refetch()}
-          />
-        </View>
-      ) : null}
+      {/* Loading: the rows' own shape; failed: what happened and the way to ask again. */}
+      {memories.isLoading ? <SkeletonList rows={4} /> : null}
+      {memories.isError && !memories.data ? <LoadFailed onRetry={() => void memories.refetch()} /> : null}
       {memories.isSuccess && (memories.data ?? []).length === 0 ? (
         <FirstUse
           place="memory"
@@ -216,14 +207,19 @@ function MemoryDetail({ id }: { id: string }) {
     [memories.data, dir.agents, agentId],
   );
   if (!m) {
+    // Still loading: the rows' shape; a list that didn't load is not a memory that's gone.
     return (
       <View style={[styles.fill, { backgroundColor: c.bg }]}>
         <PushedHeader solid={false} />
-        {memories.isLoading ? (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
-        ) : (
-          <EmptyState icon="brain" title={t("mobile.memory.gone")} />
-        )}
+        <ScrollView contentInsetAdjustmentBehavior="automatic">
+          {memories.isLoading ? (
+            <SkeletonList rows={3} />
+          ) : memories.isError && !memories.data ? (
+            <LoadFailed onRetry={() => void memories.refetch()} />
+          ) : (
+            <EmptyState size="page" icon="brain" title={t("mobile.memory.gone")} />
+          )}
+        </ScrollView>
       </View>
     );
   }
@@ -386,8 +382,6 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   lead: { paddingHorizontal: SCREEN_X, marginTop: -4 },
   search: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
-  loading: { marginVertical: 24 },
-  center: { alignItems: "center", gap: 12, paddingVertical: 48, paddingHorizontal: 24 },
   body: { paddingHorizontal: SCREEN_X, paddingTop: 14, gap: 10 },
   who: { flexDirection: "row", alignItems: "center", gap: 6 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
