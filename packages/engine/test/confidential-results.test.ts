@@ -272,6 +272,66 @@ describe("the thread", () => {
     expect(JSON.stringify(await w.db.select().from(schema.searchDocuments))).not.toContain(CANARY);
   });
 
+  test("a notice for an ended run of the thread stays in the thread: not where its routine reports, nor where its long work reported", async () => {
+    const notice = { kind: "wait_result" as const, text: `The late result says ${CANARY}.` };
+    /** Where the notice landed, and the thread of the run it woke. */
+    const told = async (w: VaultWorld, run: Parameters<typeof deliverNoticeToRun>[1]) => {
+      const { message, runs } = await w.db.transaction((tx) => deliverNoticeToRun(tx, run, notice));
+      return { at: [message.channelId, message.threadId], body: message.body, woke: runs.map((r) => r.threadRootId) };
+    };
+
+    // A routine's own run reads the record in its room and ends; the routine reports in the scenario's channel.
+    const w = await vaultWorld({
+      agents: ["kai"],
+      script: { kai: ({ n }) => (n === 1 ? { calls: [READ] } : { text: "Read." }) },
+    });
+    const deps = { db: w.db, pubsub: w.f.pubsub, context: w.f.context };
+    const routine = await createRoutine(deps, w.owner.id, w.org.id, {
+      name: "Records",
+      agentId: w.agents.kai?.id ?? "",
+      prompt: "Read record r1.",
+      target: { type: "channel", channelId: w.channelId },
+      trigger: { type: "schedule", phrase: "todo dia às 8h" },
+    });
+    await runRoutineNow(deps, w.owner.id, w.org.id, routine.id);
+    await w.settle();
+    const [own] = await w.runs("kai");
+    if (!own) throw new Error("no run");
+    expect([own.background, own.status, own.channelId === w.channelId]).toEqual([true, "done", false]);
+    expect((await sealedThreads(w)).map((t) => t.rootMessageId)).toEqual([own.threadRootId]);
+    expect(await told(w, own)).toEqual({
+      at: [own.channelId, own.threadRootId],
+      body: CONFIDENTIAL_STUB,
+      woke: [own.threadRootId],
+    });
+    // Nothing was written where the routine reports, which other people and agents read.
+    expect(await w.stored()).toEqual([]);
+
+    // A long work with a thread of its own, marked while it ran, then ended: its home is the main timeline.
+    const v = await vaultWorld({ agents: ["kai"] });
+    await v.say("@kai run the migration");
+    await v.db.update(schema.agentRuns).set({ status: "running", startedAt: new Date(), heartbeatAt: new Date() });
+    const [started] = await v.runs("kai");
+    const moved = await moveToBackground({ db: v.db, pubsub: v.f.pubsub }, started?.id ?? "", {
+      how: "agent",
+      title: "Migration",
+      say: "On it.",
+    });
+    const [working] = await v.runs("kai");
+    if (!moved || !working) throw new Error("not moved");
+    expect(working.threadRootId).toBe(moved.anchor.id);
+    await v.db.transaction((tx) =>
+      markThreadConfidential(tx, { orgId: v.org.id, channelId: v.channelId, rootId: working.threadRootId }),
+    );
+    await v.db.update(schema.agentRuns).set({ status: "done", finishedAt: new Date() });
+    await v.db.update(schema.agentWorks).set({ status: "done", finishedAt: new Date() });
+    expect(await told(v, working)).toEqual({
+      at: [v.channelId, working.threadRootId],
+      body: CONFIDENTIAL_STUB,
+      woke: [working.threadRootId],
+    });
+  });
+
   test("a marked message outside any confidential thread is the stub for a run asked under it; a thread's words are read back only by what first read them", async () => {
     const w = await vaultWorld({
       agents: ["kai"],
@@ -391,6 +451,32 @@ describe("a run that does not think through the Model Gateway", () => {
     }
     expect(await sealedThreads(w)).toEqual([]);
     expect(JSON.stringify(await w.stored())).not.toMatch(/"confidential"|sealedBody/);
+  });
+
+  test("a run that thinks with another provider than the thread's first reader is given the stub for a result", async () => {
+    const w = await vaultWorld({ agents: ["kai"] });
+    const gateway = gatewayOf(w);
+    const first = await runOf(w, "model");
+    const read = await gateway.invoke({ ...first.ctx, thinksWith: "model:anthropic" }, { toolUseId: "t1", ...READ });
+    expect(read).toMatchObject({ type: "result", output: { content: expect.stringContaining(CANARY) } });
+    expect((await sealedThreads(w)).map((t) => t.thinksWith)).toEqual(["model:anthropic"]);
+    // Runs of the same thread that were already going when it was marked, so nothing ended them before their call.
+    const later = async (thinksWith: string) => {
+      const asked = await w.past("ana", "and again?", 0, first.asked.id);
+      const [run] = await w.db
+        .insert(schema.agentRuns)
+        .values({ ...first.run, id: crypto.randomUUID(), triggerMessageId: asked.id, createdAt: new Date() })
+        .returning();
+      if (!run) throw new Error("no run");
+      const out = await gateway.invoke({ ...first.ctx, runId: run.id, thinksWith }, { toolUseId: "t2", ...READ });
+      return { out, kept: JSON.stringify(await w.steps([run.id])) };
+    };
+    const other = await later("model:openai");
+    expect(other.out).toMatchObject({ type: "result", output: { content: CONFIDENTIAL_STUB } });
+    expect(other.kept).not.toContain(CANARY);
+    const same = await later("model:anthropic");
+    expect(same.out).toMatchObject({ type: "result", output: { content: expect.stringContaining(CANARY) } });
+    expect(same.kept).toContain(CANARY);
   });
 
   test("in a confidential thread its context holds the stub for the thread's own messages too", async () => {

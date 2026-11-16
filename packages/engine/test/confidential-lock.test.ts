@@ -12,12 +12,14 @@ import {
   createSetStatusToolSource,
   createSetupToolSource,
   createTeamStatusToolSource,
+  createToolGateway,
   createUsageToolSource,
   createWebToolSource,
   createWithdrawRequestToolSource,
   createWorkspaceToolSource,
   decideApproval,
   grantScopes,
+  markThreadConfidential,
   postPersonMessage,
   type ToolContext,
   type ToolDefinition,
@@ -496,6 +498,78 @@ describe("in a run", () => {
     expect(still?.status).toBe("waiting_input");
     expect((await w.db.select().from(schema.agentQuestions))[0]?.status).toBe("open");
     expect(JSON.stringify([still, await w.steps([still?.id ?? ""])])).not.toContain(CANARY);
+  });
+
+  test("withdraw_request in the thread carries no reason: the run that waits is told only that it was withdrawn", async () => {
+    const w = await vaultWorld({
+      agents: ["kai"],
+      people: ["bia"],
+      script: {
+        kai: [
+          {
+            calls: [
+              {
+                name: "ask_user",
+                input: { question: "Which plan?", why: "Only the person knows which plan they mean." },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const topic = await w.say("About the plans.");
+    await w.say("@kai which plan do we use?", { threadId: topic.id });
+    await w.settle();
+    const [waiting] = await w.runs("kai");
+    const [question] = await w.db.select().from(schema.agentQuestions);
+    if (!waiting || !question) throw new Error("no question");
+    expect([waiting.status, waiting.threadRootId]).toEqual(["waiting_input", topic.id]);
+    // The thread is confidential by now, and a newer run of the agent there takes the question back.
+    await w.db.transaction((tx) =>
+      markThreadConfidential(tx, { orgId: w.org.id, channelId: w.channelId, rootId: topic.id }),
+    );
+    const [again] = await w.db
+      .insert(schema.messages)
+      .values({
+        orgId: w.org.id,
+        channelId: w.channelId,
+        threadId: topic.id,
+        authorType: "person",
+        authorUserId: w.people.bia?.id,
+        body: "@kai never mind the plan",
+      })
+      .returning();
+    const [newer] = await w.db
+      .insert(schema.agentRuns)
+      .values({
+        ...waiting,
+        id: crypto.randomUUID(),
+        triggerMessageId: again?.id ?? "",
+        status: "running",
+        transcript: null,
+        createdAt: new Date(),
+      })
+      .returning();
+    const ctx: ToolContext = {
+      db: w.db,
+      orgId: w.org.id,
+      agentId: waiting.agentId,
+      runId: newer?.id ?? "",
+      channelId: w.channelId,
+      threadRootId: topic.id,
+      triggerMessageId: again?.id ?? "",
+    };
+    const out = await createToolGateway({ sources: [createWithdrawRequestToolSource()] }).invoke(ctx, {
+      toolUseId: "t1",
+      name: "withdraw_request",
+      input: { id: question.id, reason: `it said ${CANARY}` },
+    });
+    expect(out).toMatchObject({ type: "result", output: { content: expect.stringContaining("Withdrawn") } });
+    expect((await w.db.select().from(schema.agentQuestions))[0]?.status).not.toBe("open");
+    // What the waiting run's call reads says it was withdrawn, and nothing of why.
+    const [told] = await w.runs("kai");
+    expect(JSON.stringify(told?.transcript)).toContain("You withdrew this question yourself");
+    expect(JSON.stringify(told)).not.toContain(CANARY);
   });
 
   test("an action of another tool approved before the mark does not run after it", async () => {

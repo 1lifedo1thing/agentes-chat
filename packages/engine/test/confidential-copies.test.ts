@@ -5,6 +5,7 @@ import { systemText } from "@agenteschat/providers";
 import {
   afterTurnDone,
   CONFIDENTIAL_AI_CHANGED,
+  CONFIDENTIAL_NOT_SHOWN,
   CONFIDENTIAL_STUB,
   createCredential,
   createRoutine,
@@ -14,6 +15,7 @@ import {
   learnRun,
   loadThread,
   notifyQuestion,
+  operatorReview,
   queueApprovalDigests,
   runRoutineNow,
 } from "../src";
@@ -491,6 +493,46 @@ test("a write of the marking connection is no team action: its arguments stay wi
   const actions = await w.db.select().from(schema.teamActions);
   expect(actions.map((a) => a.tool)).toEqual(["vault_change_record"]);
   expect(within(await w.tablesHolding(CANARY), OWN)).toEqual([]);
+});
+
+test("a write of the marking connection that a person approved is no team action either", async () => {
+  const w = await vaultWorld({
+    agents: ["kai"],
+    changeAsks: true,
+    script: {
+      kai: [
+        { calls: [READ] },
+        {
+          calls: [
+            {
+              name: "vault_change_record",
+              input: {
+                id: `${CANARY}@example.com`,
+                note: `the customer wrote ${CANARY}`,
+                why: "The person asked for this change to the record just now, in this thread.",
+              },
+            },
+          ],
+        },
+        { text: "Done." },
+      ],
+    },
+  });
+  await w.say("@kai read record r1 and change it");
+  await w.settle();
+  const [approval] = await w.db.select().from(schema.approvals);
+  await decideApproval({ db: w.db, pubsub: w.f.pubsub }, w.owner.id, w.org.id, approval?.id ?? "", {
+    decision: "approve",
+  });
+  await w.settle();
+  await w.advance(10);
+  // The approved write went out to the server that marked the thread.
+  expect(w.vault.requests.map((r) => r.name)).toEqual(["read_record", "change_record"]);
+  expect((await w.db.select().from(schema.approvals))[0]?.executedAt).not.toBeNull();
+  // Its targets and words are kept nowhere a team's other agents search.
+  expect(await w.db.select().from(schema.teamActions)).toEqual([]);
+  expect(JSON.stringify(await w.db.select().from(schema.searchDocuments))).not.toContain(CANARY);
+  expect(within(await w.tablesHolding(CANARY), [...OWN, "approvals"])).toEqual([]);
 });
 
 test("a run another agent asked: what it would ask a person, or have them approve, is refused, and its answer goes back as the stub", async () => {
