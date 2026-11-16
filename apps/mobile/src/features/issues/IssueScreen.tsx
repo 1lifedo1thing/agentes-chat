@@ -2,7 +2,6 @@ import {
   type Actor,
   ApiError,
   type Issue,
-  type IssueColumn,
   type IssuePriority,
   type IssueStatus,
   keys,
@@ -16,7 +15,7 @@ import {
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { capitalize, dueLabel, relativeTime } from "@agenteschat/client/lib/format";
-import { githubLinkLabel, isGithubLink } from "@agenteschat/client/lib/github-link";
+import { isGithubLink } from "@agenteschat/client/lib/github-link";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { webUrl } from "@agenteschat/client/lib/guards";
 import {
@@ -33,7 +32,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
   Linking,
   Pressable,
   RefreshControl,
@@ -46,34 +44,34 @@ import Animated, { FadeIn, LayoutAnimationConfig, LinearTransition } from "react
 import { useOrg } from "@/providers/org";
 import {
   Button,
+  EmptyState,
   GroupedHeader,
+  type HeaderMenuItem,
   Icon,
-  IconButton,
   type IconName,
   LineIcon,
   Locked,
-  OPTION_ROW,
   PixelOrbit,
+  PressScale,
   SCREEN_X,
+  SkeletonList,
   Text,
   useReducedMotion,
   useToast,
 } from "@/ui";
-import { SocialMark } from "@/ui/auth/SocialMarks";
 import { router } from "@/ui/navigation";
 import { openConnectAi } from "../ai/NoAiCard";
 import { MessageText } from "../chat/MessageText";
 import { IssueWorkLine, useShareWork } from "../chat/WorkLine";
 import { openFile } from "../files/open";
 import { chatHref } from "../links/logic";
-import { confirmAction } from "../settings/parts";
+import { type ActionChoice, chooseAction, confirmAction } from "../settings/parts";
 import { Face } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId, useNow, useOrgId, usePullRefresh } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
 import {
-  type ActionItem,
-  ActionList,
   errorHaptic,
   FocusLive,
   MentionCount,
@@ -87,25 +85,25 @@ import { TextArea } from "../shared/TextArea";
 import { useWhoSeesLabel } from "../shared/WhoSees";
 import { IssueActivityFeed } from "./IssueActivity";
 import {
-  columnChoices,
   columnOfIssue,
   criteriaProgress,
   DUE_CHOICES,
   dueDateOf,
   issueState,
   minutesSince,
-  stageCustomized,
   taskConversationHref,
   workLines,
 } from "./logic";
-import { GithubChip, ProjectDot, PropChip, useColumnLabel, useProjectItems, useStepText } from "./parts";
+import { GithubChip, ProjectDot, PropChip, useColumnLabel, useStepText } from "./parts";
+import { openTaskPick, sameActor, type TaskPick } from "./pick";
 import { useStartAgent } from "./useStartAgent";
 
 /**
- * One task (called "tarefa" in the app): where it came from, the big title, its state, priority
- * and who has it; the agent's card with its live steps; the description, the acceptance criteria (checked
- * here too), what is linked (the source message, Drive files, PRs) and its sub-issues. Conversar and Concluir
- * at the bottom; "…" moves it to another board column, changes priority and who does it, as the web allows.
+ * One task (called "tarefa" in the app): where it came from, the big title, its fields as the web's strip (each opens
+ * its picker); the agent's card with its live steps; its conversation; the description, the acceptance criteria
+ * (checked here too), what is linked (the source message, Drive files, PRs), its sub-issues and its activity. The bar:
+ * the number, Concluir (Reabrir) and "…" (`IssueBar`). While it loads, the rows' shape; gone or out of reach, it says
+ * so; a failed load offers to try again.
  */
 export function IssueScreen({ number, focusId = null }: { number: number; focusId?: string | null }) {
   return (
@@ -129,7 +127,6 @@ function IssueView({ number, focusId }: { number: number; focusId: string | null
       issue.data ? qc.refetchQueries({ queryKey: keys.issueActivity(orgId, issue.data.id) }) : null,
     ]),
   );
-  const sheet = useSheet();
   // Out of reach since it opened (someone changed who sees it): what's on screen goes.
   const i = issue.error instanceof ApiError && issue.error.status === 404 ? undefined : issue.data;
   const openConversation = useOpenConversation();
@@ -141,37 +138,26 @@ function IssueView({ number, focusId }: { number: number; focusId: string | null
     openConversation(i, focusId);
   }, [i, focusId, openConversation]);
   if (!i) {
+    const gone = issue.error instanceof ApiError && issue.error.status === 404;
     return (
       <View style={[styles.screen, { backgroundColor: c.bg }]}>
         <PushedHeader title={`#${number}`} solid={false} />
-        <View style={styles.center}>
-          {issue.isError ? (
-            <Text tone="muted" style={styles.centerText}>
-              {t("issues.notFound")}
-            </Text>
+        <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll}>
+          {gone ? (
+            <EmptyState size="page" icon="issue" title={t("issues.notFound")} />
+          ) : issue.isError ? (
+            <LoadFailed onRetry={() => void issue.refetch()} />
           ) : (
-            <ActivityIndicator color={c.muted} />
+            // Loading: the rows' own shape, never a spinner.
+            <SkeletonList rows={3} />
           )}
-        </View>
+        </ScrollView>
       </View>
     );
   }
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <PushedHeader
-        title={`#${i.number}`}
-        solid={false}
-        right={
-          <View style={styles.barRight}>
-            <FinishWord issue={i} />
-            <IconButton
-              icon="more"
-              label={t("mobile.issues.more")}
-              onPress={() => sheet.open(<IssueMenu issue={i} />)}
-            />
-          </View>
-        }
-      />
+      <IssueBar issue={i} />
       <FocusLive>
         <ScrollView
           ref={scroll}
@@ -220,7 +206,8 @@ function useOpenConversation() {
 
 /**
  * The task's conversation, one row: who took part, "6 mensagens", "Trabalhando" while an agent is at it, else when
- * it last moved; nobody yet: "Conversar sobre a tarefa". Opens the thread screen.
+ * it last moved; nobody yet: "Conversar sobre a tarefa". Opens the thread screen; the card gives under the finger as
+ * the app's cards do (`PressScale`).
  */
 function ConversationRow({ issue, onOpen }: { issue: Issue; onOpen: () => void }) {
   const { t, i18n } = useTranslation();
@@ -236,7 +223,9 @@ function ConversationRow({ issue, onOpen }: { issue: Issue; onOpen: () => void }
       ? relativeTime(t, i18n.language, line.lastAt)
       : null;
   return (
-    <Pressable
+    <PressScale
+      fill={false}
+      haptic={false}
       accessibilityRole="button"
       accessibilityLabel={[
         t("issues.conversation.title"),
@@ -247,7 +236,8 @@ function ConversationRow({ issue, onOpen }: { issue: Issue; onOpen: () => void }
         .filter(Boolean)
         .join(", ")}
       onPress={onOpen}
-      style={({ pressed }) => [styles.talk, surface, pressed && styles.pressed]}
+      style={[styles.talk, surface]}
+      contentStyle={styles.talkIn}
     >
       <Icon name="chat" size={18} color={c.muted} />
       {line ? (
@@ -267,7 +257,7 @@ function ConversationRow({ issue, onOpen }: { issue: Issue; onOpen: () => void }
       ) : null}
       <MentionCount count={mentions} />
       <Icon name="right" size={16} color={c.faint} />
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -763,199 +753,169 @@ function SubIssues({ issue: i }: { issue: Issue }) {
   );
 }
 
-/** Concluir / Reabrir, the word in the bar. */
-function FinishWord({ issue: i }: { issue: Issue }) {
+/**
+ * The task's bar: its number, then two of the system's bar buttons (our icon buttons on Android): Concluir (Reabrir
+ * once it's done), and "…" with what else changes it, the system's own menu on iOS and the same choices in the app's
+ * menu on Android (`HeaderAction.menu`). The fields that have many choices open their pushed picker from there, as from
+ * the head's strip.
+ */
+function IssueBar({ issue: i }: { issue: Issue }) {
   const { t } = useTranslation();
-  const c = useColors();
-  const orgId = useOrgId();
-  const action = useIssueAction(orgId);
+  const finish = useFinish(i);
+  const items = useIssueMenu(i);
+  const more = t("mobile.issues.more");
+  return (
+    <PushedHeader
+      title={`#${i.number}`}
+      solid={false}
+      actions={[
+        {
+          icon: finish.open ? "checkc" : "undo",
+          sf: finish.open ? "checkmark.circle" : "arrow.uturn.backward.circle",
+          label: finish.label,
+          disabled: finish.pending,
+          onPress: finish.run,
+        },
+        {
+          icon: "more",
+          sf: "ellipsis",
+          label: more,
+          menu: items,
+          onPress: () =>
+            chooseAction(
+              more,
+              items.map((m) => ({
+                label: m.label,
+                icon: m.icon,
+                ...(m.destructive ? { destructive: true } : {}),
+                onPress: m.onPress,
+              })),
+              t("common.cancel"),
+            ),
+        },
+      ]}
+    />
+  );
+}
+
+/** Concluir / Reabrir: done with a success tap and a toast, or why it failed. */
+function useFinish(i: Issue) {
+  const { t } = useTranslation();
+  const action = useIssueAction(useOrgId());
   const toast = useToast();
   const open = isOpen(i);
   const status: IssueStatus = open ? "done" : "todo";
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={action.isPending}
-      hitSlop={6}
-      style={({ pressed }) => [styles.barWord, pressed && styles.pressedWord]}
-      onPress={() =>
-        action.mutate(
-          { type: "update", id: i.id, patch: { status } },
-          {
-            onSuccess: () => {
-              successHaptic();
-              toast({
-                title: t(open ? "mobile.issues.finished" : "mobile.issues.reopened", { number: i.number }),
-              });
-            },
-            onError: () => {
-              errorHaptic();
-              toast({ title: t("mobile.app.failed"), icon: "x" });
-            },
-          },
-        )
-      }
-    >
-      <Text variant="callout" style={[styles.bold, { color: c.agent }]}>
-        {t(open ? "mobile.issues.finish" : "mobile.issues.reopen")}
-      </Text>
-    </Pressable>
-  );
+  const run = () =>
+    action.mutate(
+      { type: "update", id: i.id, patch: { status } },
+      {
+        onSuccess: () => {
+          successHaptic();
+          toast({ title: t(open ? "mobile.issues.finished" : "mobile.issues.reopened", { number: i.number }) });
+        },
+        onError: () => {
+          errorHaptic();
+          toast({ title: t("mobile.app.failed"), icon: "x" });
+        },
+      },
+    );
+  return { open, label: t(open ? "mobile.issues.finish" : "mobile.issues.reopen"), pending: action.isPending, run };
 }
 
 /**
- * The column picker: the board's columns grouped by stage (the stage as the header; a column without a name
- * reads as its stage). A board that isn't customized shows just the stages. Choosing one sends `columnId`.
- */
-function ColumnPicker({
-  issue: i,
-  columns,
-  onPick,
-}: {
-  issue: Issue;
-  columns: IssueColumn[];
-  onPick: (c: IssueColumn) => void;
-}) {
-  const { t } = useTranslation();
-  const columnLabel = useColumnLabel();
-  const current = columnOfIssue(i, columns)?.id;
-  const stages = columnChoices(columns);
-  const item = (c: IssueColumn): ActionItem => ({
-    key: c.id,
-    label: columnLabel(c),
-    ...(c.id === current ? { trailing: <Icon name="check" size={18} /> } : {}),
-    onPress: () => onPick(c),
-  });
-  if (!stages.some((s) => stageCustomized(s.columns)))
-    return <ActionList items={stages.flatMap((s) => s.columns.map(item))} />;
-  return (
-    <>
-      {stages.map((s) => (
-        <View key={s.stage} style={styles.pickerStage}>
-          <Text variant="label" accessibilityRole="header" style={styles.pickerTitle}>
-            {t(`mobile.issues.section.${s.stage}`)}
-          </Text>
-          <ActionList items={s.columns.map(item)} />
-        </View>
-      ))}
-    </>
-  );
-}
-
-/**
- * What changes a task's fields, one sheet each: its project, its column (or its stage while the board's columns load), who does
- * it (an agent is asked and starts), its priority, its due date and who sees it. The head's strip and "…" share them.
+ * What changes a task's fields: its project, its column (or its stage while the board's columns load), who does it (an
+ * agent is asked and starts) and who sees it on their own pushed screens; its priority and its due date, short fixed
+ * lists, in the app's menu of choices. The head's strip and "…" share them.
  */
 function useIssuePickers(i: Issue) {
   const { t } = useTranslation();
-  const sheet = useSheet();
   const orgId = useOrgId();
-  const dir = useDirectory();
-  const meId = useMeId();
   const action = useIssueAction(orgId);
   const start = useStartAgent();
   const columns = useIssueColumns(orgId);
   const columnLabel = useColumnLabel();
   const toast = useToast();
   const failed = () => toast({ title: t("mobile.app.failed"), icon: "x" });
-  const update = (patch: Parameters<typeof action.mutate>[0], done?: string) => {
-    sheet.close();
+  const update = (patch: Parameters<typeof action.mutate>[0], done?: string) =>
     action.mutate(patch, {
       onSuccess: () => toast({ title: done ?? t("mobile.issues.changed") }),
       onError: failed,
     });
-  };
   const assign = (who: Actor | null) => {
-    if (who?.type === "agent") {
-      sheet.close();
-      start.run(i, who.id, { done: t("mobile.issues.changed") });
-    } else update({ type: "update", id: i.id, patch: { assignee: who } });
+    if (sameActor(who, i.assignee)) return;
+    if (who?.type === "agent") start.run(i, who.id, { done: t("mobile.issues.changed") });
+    else update({ type: "update", id: i.id, patch: { assignee: who } });
   };
-  const same = (a: Actor | null, b: Actor | null) => (a?.type ?? null) === (b?.type ?? null) && a?.id === b?.id;
-  // From the task's menu, the next page of that sheet; from the screen's rows, a sheet.
-  const pick = (items: ActionItem[]) => sheet.push(<ActionList items={items} />);
-  const checked = (on: boolean) => (on ? { trailing: <Icon name="check" size={18} /> } : {});
-  const statusItems = (): ActionItem[] =>
-    STATUSES.map((s) => ({
-      key: s,
-      label: t(`issues.status.${s}`),
-      ...checked(s === i.status),
-      onPress: () => update({ type: "update", id: i.id, patch: { status: s } }),
-    }));
-  const people: Actor[] = [
-    ...dir.agents.filter((a) => a.canTalk !== false).map((a) => ({ type: "agent" as const, id: a.id })),
-    ...(meId ? [{ type: "person" as const, id: meId }] : []),
-  ];
+  const pickOn = (pick: TaskPick) => {
+    openTaskPick(pick);
+    router.push("/issues/pick");
+  };
+  const choose = (title: string, options: ActionChoice[]) => chooseAction(title, options, t("common.cancel"));
   const board = columns.data ?? [];
   const column = columnOfIssue(i, board);
-  const projectItems = useProjectItems();
   return {
     column,
     columnLabel,
     // Columns not loaded (or failed): the stages, as before the board had columns.
     pickColumn: () =>
       board.length > 0
-        ? sheet.push(
-            <ColumnPicker
-              issue={i}
-              columns={board}
-              onPick={(c) =>
-                update(
-                  { type: "update", id: i.id, patch: { columnId: c.id } },
-                  t("mobile.issues.moved", { number: i.number, column: columnLabel(c) }),
-                )
-              }
-            />,
-          )
-        : pick(statusItems()),
-    pickAssignee: () =>
-      pick([
-        ...people.map((who) => ({
-          key: `${who.type}:${who.id}`,
-          label: who.type === "person" && who.id === meId ? t("mobile.issues.you") : dir.nameOf(who),
-          leading: <Face who={who} size={OPTION_ROW.face} live={false} />,
-          ...checked(same(who, i.assignee)),
-          onPress: () => assign(who),
-        })),
-        {
-          key: "nobody",
-          icon: "circle" as const,
-          label: t("mobile.issues.nobody"),
-          ...checked(i.assignee === null),
-          onPress: () => assign(null),
-        },
-      ]),
+        ? pickOn({
+            what: "column",
+            value: column?.id ?? null,
+            apply: (c) => {
+              if (c.id === column?.id) return;
+              update(
+                { type: "update", id: i.id, patch: { columnId: c.id } },
+                t("mobile.issues.moved", { number: i.number, column: columnLabel(c) }),
+              );
+            },
+          })
+        : choose(
+            t("issues.column"),
+            STATUSES.map((s) => ({
+              label: t(`issues.status.${s}`),
+              checked: s === i.status,
+              onPress: () => update({ type: "update", id: i.id, patch: { status: s } }),
+            })),
+          ),
+    pickAssignee: () => pickOn({ what: "who", value: i.assignee, apply: assign }),
     pickProject: () =>
-      pick(projectItems(i.project, (projectId) => update({ type: "update", id: i.id, patch: { projectId } }))),
+      pickOn({
+        what: "project",
+        value: i.project ?? null,
+        apply: (projectId) => {
+          if (projectId !== (i.project?.id ?? null)) update({ type: "update", id: i.id, patch: { projectId } });
+        },
+      }),
     pickPriority: () =>
-      pick(
+      choose(
+        t("issues.form.priority"),
         PRIORITIES.map((p: IssuePriority) => ({
-          key: p,
           label: t(`issues.priority.${p}`),
-          ...checked(p === i.priority),
+          checked: p === i.priority,
           onPress: () => update({ type: "update", id: i.id, patch: { priority: p } }),
         })),
       ),
     pickDue: () =>
-      pick(
+      choose(
+        t("issues.due"),
         DUE_CHOICES.map((d) => ({
-          key: d,
           label: t(`mobile.issues.form.dueChoice.${d}`),
-          ...checked(dueDateOf(d) === i.dueDate),
+          checked: dueDateOf(d) === i.dueDate,
           onPress: () => update({ type: "update", id: i.id, patch: { dueDate: dueDateOf(d) } }),
         })),
       ),
-    pickWhoSees: () => {
-      sheet.close();
-      router.push({ pathname: "/who-sees", params: { number: i.number } });
-    },
+    pickWhoSees: () => router.push({ pathname: "/who-sees", params: { number: i.number } }),
   };
 }
 
-/** "…": its column, priority, who does it (an agent is asked and starts), stop the agent, cancel. */
-function IssueMenu({ issue: i }: { issue: Issue }) {
+/**
+ * "…": talk about it, its column, priority, who does it (an agent is asked and starts), its GitHub link, who sees it,
+ * showing the agent's work to everyone, stopping the agent, canceling and deleting it, as the web allows. Each item's
+ * icon in our set (Android's list) and the matching SF Symbol (iOS's menu).
+ */
+function useIssueMenu(i: Issue): HeaderMenuItem[] {
   const { t } = useTranslation();
-  const c = useColors();
   const sheet = useSheet();
   const orgId = useOrgId();
   const api = useApi();
@@ -973,107 +933,81 @@ function IssueMenu({ issue: i }: { issue: Issue }) {
     onSettled: () => void qc.invalidateQueries({ queryKey: keys.issues(orgId) }),
   });
   const failed = () => toast({ title: t("mobile.app.failed"), icon: "x" });
-  const update = (patch: Parameters<typeof action.mutate>[0], done?: string) => {
-    sheet.close();
-    action.mutate(patch, {
-      onSuccess: () => toast({ title: done ?? t("mobile.issues.changed") }),
-      onError: failed,
-    });
-  };
-  const whoSees = useWhoSeesLabel();
   const w = i.work;
-  const items: ActionItem[] = [
+  const items: HeaderMenuItem[] = [
     {
-      key: "talk",
-      icon: "chat" as const,
       label: t("mobile.issues.talk"),
-      onPress: () => {
-        sheet.close();
-        openConversation(i);
-      },
+      icon: "chat",
+      sf: "bubble.left.and.bubble.right",
+      onPress: () => openConversation(i),
     },
     {
-      key: "column",
-      icon: "circle",
       label: t("mobile.issues.actions.status"),
-      hint: pickers.column ? pickers.columnLabel(pickers.column) : t(`issues.status.${i.status}`),
+      icon: "circle",
+      sf: "rectangle.split.3x1",
       onPress: pickers.pickColumn,
     },
+    { label: t("mobile.issues.actions.priority"), icon: "flag", sf: "flag", onPress: pickers.pickPriority },
     {
-      key: "priority",
-      icon: "flag",
-      label: t("mobile.issues.actions.priority"),
-      hint: t(`issues.priority.${i.priority}`),
-      onPress: pickers.pickPriority,
-    },
-    {
-      key: "assignee",
-      // Who it is, by their face, as a select shows its choice; a glyph only while nobody is.
-      ...(i.assignee
-        ? { leading: <Face who={i.assignee} size={OPTION_ROW.face} live={false} /> }
-        : { icon: "agent" as const }),
       label: t("mobile.issues.actions.assignee"),
-      hint: i.assignee ? dir.nameOf(i.assignee) : t("mobile.issues.nobody"),
+      icon: "agent",
+      sf: "person.crop.circle",
       onPress: pickers.pickAssignee,
     },
     {
-      key: "github",
-      leading: <SocialMark provider="github" color={c.ink} size={18} />,
       label: t("issues.github.label"),
-      ...(i.githubUrl ? { hint: githubLinkLabel(i.githubUrl) } : {}),
-      onPress: () => sheet.push(<GithubLinkForm issue={i} />),
+      icon: "link",
+      sf: "link",
+      onPress: () => sheet.open(<GithubLinkForm issue={i} />),
     },
     {
-      key: "audience",
-      icon: i.audience?.mode === "people" ? "lock" : "globe",
       label: t("whoSees.label"),
-      hint: whoSees(i.audience ?? { mode: "everyone" }),
+      icon: i.audience?.mode === "people" ? "lock" : "globe",
+      sf: "eye",
       onPress: pickers.pickWhoSees,
     },
   ];
   // Mostrar para todos lives here, not as a fourth action on the work's card (one row of actions there).
   if (shareWork)
     items.push({
-      key: "share",
-      icon: "globe",
       label: t("work.shareEveryone"),
+      icon: "globe",
+      sf: "globe",
       onPress: () => {
-        sheet.close();
         if (!shareWork.pending) shareWork.share();
       },
     });
   if (w?.state === "running" && w.runId) {
     const runId = w.runId;
     items.push({
-      key: "stop",
-      icon: "pause",
       label: t("issues.work.stop"),
-      onPress: () => {
-        sheet.close();
-        stop.mutate(runId, { onError: failed });
-      },
+      icon: "pause",
+      sf: "stop.circle",
+      onPress: () => stop.mutate(runId, { onError: failed }),
     });
   }
   if (isOpen(i))
     items.push({
-      key: "cancel",
-      icon: "x",
-      danger: true,
       label: t("mobile.issues.actions.cancel"),
+      icon: "x",
+      sf: "xmark.circle",
+      destructive: true,
       onPress: () =>
-        update(
+        action.mutate(
           { type: "update", id: i.id, patch: { status: "canceled" } },
-          t("mobile.issues.actions.canceled", { number: i.number }),
+          {
+            onSuccess: () => toast({ title: t("mobile.issues.actions.canceled", { number: i.number }) }),
+            onError: failed,
+          },
         ),
     });
   if (canDeleteIssue(org, i, meId))
     items.push({
-      key: "delete",
-      icon: "trash",
-      danger: true,
       label: t("issues.delete.action"),
+      icon: "trash",
+      sf: "trash",
+      destructive: true,
       onPress: () => {
-        sheet.close();
         const working = i.work && i.work.state !== "stalled" && i.assignee ? dir.nameOf(i.assignee) : null;
         confirmAction({
           title: t("issues.delete.title", { number: i.number }),
@@ -1094,7 +1028,7 @@ function IssueMenu({ issue: i }: { issue: Issue }) {
         });
       },
     });
-  return <ActionList items={items} />;
+  return items;
 }
 
 /** A criterion's check box, a link's tile, and the body's line (iOS) the box centers on. */
@@ -1104,8 +1038,6 @@ const BODY_LINE = 22;
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  centerText: { textAlign: "center" },
   head: { paddingHorizontal: SCREEN_X, paddingTop: 6, gap: 6, marginBottom: 14 },
   bigTitle: { marginVertical: 4 },
   number: { fontWeight: "500" },
@@ -1146,23 +1078,9 @@ const styles = StyleSheet.create({
   },
   struck: { textDecorationLine: "line-through" },
   link: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 10 },
-  pickerStage: { gap: 6 },
-  pickerTitle: { paddingHorizontal: 4 },
   tile: { width: TILE, height: TILE, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   scroll: { paddingBottom: 40 },
-  talk: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
+  talk: { marginHorizontal: 16, marginTop: 12, borderRadius: 14 },
+  talkIn: { paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", alignItems: "center", gap: 10 },
   faces: { flexDirection: "row", gap: 2 },
-  barRight: { flexDirection: "row", alignItems: "center", gap: 2 },
-  barWord: { paddingHorizontal: 10, height: 36, justifyContent: "center" },
-  pressed: { opacity: 0.85 },
-  pressedWord: { opacity: 0.6 },
 });

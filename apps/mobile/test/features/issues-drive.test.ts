@@ -22,6 +22,7 @@ import {
   passesFilter,
   taskConversationHref,
   taskListSections,
+  taskTitleText,
   waitsOnYou,
   workLines,
 } from "../../src/features/issues/logic";
@@ -496,15 +497,21 @@ describe("a task's number and title on one row; its conversation on the card", (
     expect(conversationLine(issue({ number: 5, conversation: talk(2, true) }))?.working).toBe(true);
   });
 
-  test("the board card in the web card's three parts: the title whole, one row of facts, who has it and one state", async () => {
+  test("the board card in the web card's three parts: the title in the cards' type, one row of facts, who has it and one state", async () => {
     const parts = await read("issues/parts.tsx");
     const card = parts.slice(
       parts.indexOf("export const BoardCard"),
       parts.indexOf("const styles = StyleSheet.create("),
     );
-    // The title whole: no number in it, never cut, its `code` as the inline code pill (as the web's card).
-    expect(card).toContain('<TaskTitle title={i.title} variant="callout" style={styles.title} />');
-    expect(card).not.toContain("numberOfLines");
+    // The title in the cards' type (the Drive's subhead, semibold), three lines at most (its screen says it whole): no
+    // number in it, its `code` as the inline code pill (as the web's card).
+    expect(card).toContain(
+      '<TaskTitle title={i.title} variant="subhead" numberOfLines={CARD_TITLE_LINES} style={styles.title} />',
+    );
+    expect(card).toContain("const CARD_TITLE_LINES = 3;");
+    // It gives under the finger as the Drive's cards do, never a hand-made press.
+    expect(card).toContain("<PressScale");
+    expect(card).not.toContain("<Pressable");
     const title = parts.slice(parts.indexOf("export function TaskTitle("), parts.indexOf("const STATE_ICON"));
     expect(title).toContain("codeAndBoldParts(title)");
     expect(title).not.toContain("numberOfLines");
@@ -560,15 +567,49 @@ describe("a task's number and title on one row; its conversation on the card", (
     expect(card).toContain("entering={reduced ? undefined : FadeIn.duration(200)}");
   });
 
-  test("a row in the list says the card's one state in its words, else its due date; its title and name whole", async () => {
+  test("a row in the list says the card's one state in its words, else its due date; the title in the rows' type", async () => {
     const screen = await read("issues/IssuesScreen.tsx");
     const row = screen.slice(screen.indexOf("function TaskRow("), screen.indexOf("function Board("));
     expect(row).toContain("useCardState(i)");
     expect(row).toContain("<StateWords issue={i} state={state} words={words} />");
     expect(row).not.toContain("mobile.issues.waitsYou");
-    expect(row).toContain('title={<TaskTitle title={i.title} variant="title" />}');
+    // The app's list row and its own title (no bold title of a size of its own), two lines at most, its marks left out.
+    expect(row).toContain("<ListRow");
+    expect(row).toContain("const title = taskTitleText(i.title);");
+    expect(row).toMatch(/title=\{title\}\s*titleLines=\{2\}/);
+    expect(row).not.toContain("TaskTitle");
     expect(row).not.toContain("numberOfLines");
+    // The check in the lead column, where the app's other lists put a face.
+    expect(row).toContain(
+      'leading={<Icon name={done ? "checkc" : "circle"} size={CHECK} color={done ? c.ok : c.faint} />}',
+    );
     expect(screen).toMatch(/subLine: \{ flexDirection: "row", flexWrap: "wrap",/);
+    expect(taskTitleText("Fix the `login` **now**")).toBe("Fix the login now");
+  });
+
+  test("one header in both views: the system's large title, the views first under it, never a title of its own", async () => {
+    const screen = await read("issues/IssuesScreen.tsx");
+    // Lista and Quadro share the one PushedLargeTitle: same place and type for the title, one pull to refresh.
+    expect(screen.match(/<PushedLargeTitle\b/g)).toHaveLength(1);
+    for (const gone of ["useHeaderHeight", 'variant="display"', "<PushedHeader", "paddingTop: Platform"])
+      expect([gone, screen.includes(gone)]).toEqual([gone, false]);
+    // The views first under the title, before Lista's search and Quadro's stages: the control never moves.
+    const views = screen.indexOf("<Segmented");
+    expect(views).toBeGreaterThan(-1);
+    expect(views).toBeLessThan(screen.indexOf("<Board issues={list}"));
+    expect(views).toBeLessThan(screen.indexOf("<TaskList issues={list}"));
+    const list = screen.slice(screen.indexOf("function TaskList("), screen.indexOf("function TaskRow("));
+    expect(list).toContain("<SearchField");
+    const board = screen.slice(screen.indexOf("function Board("), screen.indexOf("function Column("));
+    expect(board.indexOf("<Filters")).toBeLessThan(board.indexOf("ref={pager}"));
+    // A column is as long as its cards: the page scrolls it, with no scroll or refresh of its own.
+    const column = screen.slice(screen.indexOf("function Column("), screen.indexOf("const styles"));
+    expect(column).not.toContain("ScrollView");
+    expect(column).not.toContain("RefreshControl");
+    // A search or a project with nothing says so, with the way to clear it; a failed load offers to try again.
+    expect(list).toContain('label={t("filters.clearSearch")} onPress={() => setQ("")}');
+    expect(list).toContain('label={t("filters.clearAll")} onPress={onAllProjects}');
+    expect(screen).toContain("<LoadFailed onRetry={() => void issues.refetch()} />");
   });
 
   test('A fazer\'s columns on the board take "+" for a task in them, for who may create tasks', async () => {
@@ -588,7 +629,7 @@ describe("a task's number and title on one row; its conversation on the card", (
     // From a project's tasks, the new one starts in that project too.
     expect(screen).toContain('pathname: "/issues/new",');
     expect(screen).toContain("params: { column, ...(project && project !== NO_PROJECT ? { project } : {}) },");
-    expect(screen).toContain("<Board right={right} views={views} mayNew={mayNew} project={shown} />");
+    expect(screen).toContain("<Board issues={list} columns={columns.data ?? []} mayNew={mayNew} project={shown} />");
     // Nova tarefa says the column and puts the task there (an agent picked starts it and moves it on).
     const form = await read("issues/NewIssueForm.tsx");
     expect(form).toContain("useLocalSearchParams<{ column?: string; project?: string }>()");
@@ -628,7 +669,7 @@ describe("a task's number and title on one row; its conversation on the card", (
     expect(parts).toMatch(/prop: \{[^}]*alignItems: "flex-start",[^}]*paddingVertical: \(TOOL_H - PROP_LINE\) \/ 2,/);
     expect(chip).toContain("hitSlop={{ top: (TOUCH - TOOL_H) / 2, bottom: (TOUCH - TOOL_H) / 2 }}");
     // The head and "…" open the same pickers.
-    const menu = screen.slice(screen.indexOf("function IssueMenu("));
+    const menu = screen.slice(screen.indexOf("function useIssueMenu("));
     for (const picker of ["pickColumn", "pickPriority", "pickAssignee", "pickWhoSees"])
       expect(menu).toContain(`pickers.${picker}`);
   });
@@ -652,8 +693,8 @@ describe("a task's GitHub link", () => {
     const screen = source("IssueScreen.tsx");
     expect(screen).toContain("<GithubChip url={i.githubUrl} />");
     expect(screen).toContain("webUrl(i.githubUrl)");
-    // From the task's menu, the link's form is the next page of that sheet.
-    expect(screen).toContain("sheet.push(<GithubLinkForm issue={i} />)");
+    // From the task's menu (the bar's "…"), the link's form opens in the screen's sheet.
+    expect(screen).toContain("sheet.open(<GithubLinkForm issue={i} />)");
     expect(screen).toContain("<Locked when={action.isPending}>");
   });
 
