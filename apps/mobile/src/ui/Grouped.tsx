@@ -1,6 +1,6 @@
 import { Children, isValidElement, type ReactNode } from "react";
 import { type AccessibilityActionEvent, Pressable, StyleSheet, View } from "react-native";
-import Animated, { FadeIn, FadeOut, LayoutAnimationConfig, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeIn, LayoutAnimationConfig } from "react-native-reanimated";
 import { haptics } from "./haptics";
 import { Icon, type IconName } from "./Icon";
 import { InfoHint, useInfoHint } from "./InfoHint";
@@ -34,10 +34,12 @@ const TREE_ELBOW = GROUPED_ROW.tallPadY + 24;
 /** The branch's curve into the nested row; a `mid` row's trunk carries on from where the curve leaves it. */
 const TREE_CURVE = 6;
 
-/** A row that comes or goes while the list is on screen fades; what is around it slides into place. */
+/**
+ * A row that comes while the list is on screen fades in where it lands. Nothing slides: a card growing and the groups
+ * under it gliding (each view on its own layout transition) jerked the whole form whenever a part of it opened, and a
+ * row leaving faded over what had already taken its place. A choice among many opens its own screen instead.
+ */
 const ROW_IN = FadeIn.duration(motion.fast);
-const ROW_OUT = FadeOut.duration(motion.fast);
-const SLIDE = LinearTransition.duration(motion.base);
 
 /**
  * Whether a row of the list has a leading column (an icon's tile, a face): read off the row itself, or off the row a
@@ -69,17 +71,9 @@ export function GroupedList({ children }: { children?: ReactNode }) {
   return (
     // The rows it opens with appear with the screen, and when the whole group goes its rows go with it: neither fades.
     <LayoutAnimationConfig skipEntering skipExiting>
-      <Animated.View
-        layout={reducedMotion ? undefined : SLIDE}
-        style={[styles.list, { backgroundColor: c.raised, boxShadow: `${shadows.e1}, ${shadows.top}` }]}
-      >
+      <View style={[styles.list, { backgroundColor: c.raised, boxShadow: `${shadows.e1}, ${shadows.top}` }]}>
         {items.map((child, i) => (
-          <Animated.View
-            key={child.key ?? i}
-            entering={reducedMotion ? undefined : ROW_IN}
-            exiting={reducedMotion ? undefined : ROW_OUT}
-            layout={reducedMotion ? undefined : SLIDE}
-          >
+          <Animated.View key={child.key ?? i} entering={reducedMotion ? undefined : ROW_IN}>
             {i > 0 ? (
               <View
                 style={[
@@ -97,7 +91,7 @@ export function GroupedList({ children }: { children?: ReactNode }) {
             {child}
           </Animated.View>
         ))}
-      </Animated.View>
+      </View>
     </LayoutAnimationConfig>
   );
 }
@@ -109,12 +103,8 @@ interface GroupedHeaderProps {
   hint?: { name: string; text: string };
 }
 
-/**
- * The small uppercase header of a group (it slides with the groups when one above grows or shrinks), with `aside`
- * at the end of its line: a small text action.
- */
+/** The small uppercase header of a group, with `aside` at the end of its line: a small text action. */
 export function GroupedHeader({ children, aside, hint }: GroupedHeaderProps) {
-  const { reducedMotion } = useTheme();
   if (hint)
     return (
       <HintedHeader aside={aside} hint={hint}>
@@ -122,21 +112,20 @@ export function GroupedHeader({ children, aside, hint }: GroupedHeaderProps) {
       </HintedHeader>
     );
   return (
-    <Animated.View layout={reducedMotion ? undefined : SLIDE} style={aside ? styles.headerRow : null}>
+    <View style={aside ? styles.headerRow : null}>
       <Text variant="footnote" tone="faint" accessibilityRole="header" style={[styles.header, styles.shrink]}>
         {children.toLocaleUpperCase()}
       </Text>
       {aside ? <View style={styles.headerAside}>{aside}</View> : null}
-    </Animated.View>
+    </View>
   );
 }
 
 /** The header's words and ⓘ on one line, the aside at its end, the hint's text under them inside the header's room. */
 function HintedHeader({ children, aside, hint }: GroupedHeaderProps & { hint: { name: string; text: string } }) {
-  const { reducedMotion } = useTheme();
   const info = useInfoHint({ ...hint, variant: "footnote" });
   return (
-    <Animated.View layout={reducedMotion ? undefined : SLIDE} style={styles.headerRoom}>
+    <View style={styles.headerRoom}>
       <View style={styles.headerLine}>
         <View style={[styles.headerWords, styles.shrink]}>
           <Text variant="footnote" tone="faint" accessibilityRole="header" style={[styles.headerCaps, styles.shrink]}>
@@ -147,7 +136,7 @@ function HintedHeader({ children, aside, hint }: GroupedHeaderProps & { hint: { 
         {aside}
       </View>
       {info.text}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -160,23 +149,20 @@ export function GroupedFooter({
   /** An ⓘ after the footer's one sentence, with the rest of the explanation; its text shows under the sentence. */
   hint?: { name: string; text: string };
 }) {
-  const { reducedMotion } = useTheme();
   if (hint)
     return (
-      <Animated.View layout={reducedMotion ? undefined : SLIDE} style={styles.footer}>
+      <View style={styles.footer}>
         <InfoHint {...hint} variant="footnote">
           <Text variant="footnote" tone="faint">
             {children}
           </Text>
         </InfoHint>
-      </Animated.View>
+      </View>
     );
   return (
-    <Animated.View layout={reducedMotion ? undefined : SLIDE}>
-      <Text variant="footnote" tone="faint" style={styles.footer}>
-        {children}
-      </Text>
-    </Animated.View>
+    <Text variant="footnote" tone="faint" style={styles.footer}>
+      {children}
+    </Text>
   );
 }
 
