@@ -1620,6 +1620,24 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         };
       },
     },
+    surfaces: {
+      list: async () => {
+        log("surfaces.list");
+        return { surface: null, allowed: false, links: [] };
+      },
+      mintCode: async (orgId) => {
+        log("surfaces.mintCode", orgId);
+        throw new ApiError(404, "surface.off", "Outside chat surfaces are off on this server");
+      },
+      confirm: async (linkId) => {
+        log("surfaces.confirm", linkId);
+        throw new ApiError(404, "surface.link_gone", "This link is no longer waiting");
+      },
+      remove: async (linkId) => {
+        log("surfaces.remove", linkId);
+        throw new ApiError(404, "surface.link_gone", "This link is gone");
+      },
+    },
     push: {
       webKey: async () => state.webPushKey ?? null,
       register: async (input) => {

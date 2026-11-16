@@ -71,6 +71,7 @@ The reads live in `packages/engine/src/operator.ts` and pick every field by name
 | `run.finished` | an agent's run ends (done, failed or canceled) | `runId`, `agentId`, `brain`, `status`, `toolCalls`; a failed one `failure` (`code`, `cause`, ADR 0150 §5) |
 | `account.failure` | a turn on a computer's AI account fails for a provider's or sign-in reason, at most once per account and cause every 10 minutes (ADR 0150 §5) | `accountId`, `machineId`, `kind`, `authMethod`, `cause`, `code`, `httpStatus`, `runnerVersion`, `protocol` |
 | `machine.wake_wanted` | something wants the workspace's computer while it is in standby: a run (`run`), a person opening its view (`view`) or a request to it (`call`), at most once per computer every 10 seconds (ADR 0161) | `machineId`, `why` |
+| `surface.cap_reached` | the outside chat surface bridge refused calls past a cap across all senders (claims or posts), at most once per cap an hour (ADR 0187) | `cap` |
 | `run.hop_limit` | the depth backstop (`AGENT_MAX_HOPS`) stopped an agent's hand-off: the per-stretch limits stop agents long before, so some path lost its stretch (ADR 0089) | `messageId`, `hop` |
 | `task.finished` | a task on a computer ends (done, failed, canceled, or interrupted for good) | `taskId`, `agentId`, `executor`, `status` |
 | `desktop_control.ended` | a screened segment of a person's control of an agent's screen ends, having read something (ADR 0076; only with `SESSION_SCREENING`); `userId` is who was in control | `agentId`, `segmentId`, `startedAt`, `endedAt`, `screens` (how many) |

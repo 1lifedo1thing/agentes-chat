@@ -6618,7 +6618,7 @@ export function applyUnreadEvent(qc: QueryClient, orgId: string, event: { type: 
   else if (e.type === "thread.read") {
     clearThreadUnread(qc, orgId, e.threadId);
     refreshThreadUnread(qc, orgId);
-  }
+  } else if (e.type === "surface_link.changed") void qc.invalidateQueries({ queryKey: keys.surfaceLinks });
 }
 
 /**

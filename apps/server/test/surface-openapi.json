@@ -67,6 +67,84 @@
           }
         },
         "required": ["error"]
+      },
+      "SurfaceClaimed": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending"]
+          },
+          "linkId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "The person confirms in the app before this."
+          },
+          "locale": {
+            "type": "string",
+            "description": "The account's app language, for the service's own words."
+          }
+        },
+        "required": ["status", "linkId", "expiresAt", "locale"]
+      },
+      "SurfaceClaim": {
+        "type": "object",
+        "properties": {
+          "externalId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "The surface's stable, opaque id for the sender. Never a phone number or any address that can change hands."
+          },
+          "display": {
+            "type": ["string", "null"],
+            "maxLength": 64,
+            "description": "What the surface shows of the sender (a number, a handle). Shown only."
+          },
+          "profileName": {
+            "type": ["string", "null"],
+            "maxLength": 64,
+            "description": "The sender's own name there. Untrusted."
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "description": "As typed: case, spaces and dashes don't matter."
+          }
+        },
+        "required": ["externalId", "display", "profileName", "code"],
+        "additionalProperties": false
+      },
+      "SurfaceUnlinked": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["unlinked", "none"]
+          }
+        },
+        "required": ["status"]
+      },
+      "SurfaceUnlink": {
+        "type": "object",
+        "properties": {
+          "externalId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "The surface's stable, opaque id for the sender. Never a phone number or any address that can change hands."
+          },
+          "reason": {
+            "type": "string",
+            "enum": ["asked", "identity_changed"]
+          }
+        },
+        "required": ["externalId", "reason"],
+        "additionalProperties": false
       }
     },
     "parameters": {}
@@ -83,6 +161,134 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SurfaceHealth"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong bridge token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/links/claim": {
+      "post": {
+        "tags": ["Surface"],
+        "summary": "A link code typed on the surface: a pending link the person confirms in the app",
+        "description": "Never makes a link active. Wrong, used and expired codes all answer `surface.code_gone`; each try counts against the sender's 5 an hour.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurfaceClaim"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurfaceClaimed"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong bridge token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Wrong, used or expired code (`surface.code_gone`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The sender is linked to another account (`surface.taken`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`surface.claim_limit` (this sender) or `surface.busy` (all senders), with `retryIn`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/links/unlink": {
+      "post": {
+        "tags": ["Surface"],
+        "summary": "End a sender's link: they asked, or their identity on the surface changed",
+        "description": "Pending links of the sender go too. A second call answers `none`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurfaceUnlink"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurfaceUnlinked"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }

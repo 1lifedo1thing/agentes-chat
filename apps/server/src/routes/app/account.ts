@@ -63,6 +63,7 @@ import {
   settleJoinRequests,
   signInOptions,
   soleOwnerRefusal,
+  surfaceOn,
   toldReason,
   USER_LOCALES,
   undoEmailChange,
@@ -393,6 +394,10 @@ export function accountRoutes(deps: AppDeps) {
                 description:
                   "The same for the phone app (`SENTRY_MOBILE_DSN`, else `SENTRY_WEB_DSN`); `release` is the server's, the app files its reports under its own.",
               }),
+            surface: z.boolean().openapi({
+              description:
+                "An outside chat surface is bridged (`SURFACE_BRIDGE_TOKEN`, ADR 0187). Whether this account may link it is `GET /api/app/me/surface-links`'s `allowed`.",
+            }),
           }),
         ),
       },
@@ -416,6 +421,7 @@ export function accountRoutes(deps: AppDeps) {
           turnstileSiteKey: deps.adapters.humanCheck?.siteKey ?? null,
           errorReports: reportsTo(config.SENTRY_WEB_DSN),
           mobileErrorReports: reportsTo(config.SENTRY_MOBILE_DSN ?? config.SENTRY_WEB_DSN),
+          surface: surfaceOn() !== null,
         },
         200,
       );

@@ -1,5 +1,15 @@
 import { schema } from "@agenteschat/db";
-import { SURFACE_PREFIX, safeEqual, sha256 } from "@agenteschat/engine";
+import {
+  activeLink,
+  claimLink,
+  retryInSeconds,
+  SURFACE_PREFIX,
+  safeEqual,
+  sha256,
+  TooManyError,
+  takeSurfaceCap,
+  unlinkExternal,
+} from "@agenteschat/engine";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { apiError, domainErrorResponse, errorResponse, routeOf, validationHook } from "../http/errors";
 import { type AppDeps, json } from "../routes/app/context";
@@ -19,6 +29,41 @@ const errors = {
   400: errorResponse("Invalid request"),
   401: errorResponse("Missing or wrong bridge token"),
 };
+
+const CLAIMS_PER_SENDER = { limit: 5, windowMs: 3_600_000 };
+
+const ExternalId = z.string().min(1).max(128).openapi({
+  description:
+    "The surface's stable, opaque id for the sender. Never a phone number or any address that can change hands.",
+});
+
+const Claim = z
+  .object({
+    externalId: ExternalId,
+    display: z
+      .string()
+      .max(64)
+      .nullable()
+      .openapi({ description: "What the surface shows of the sender (a number, a handle). Shown only." }),
+    profileName: z.string().max(64).nullable().openapi({ description: "The sender's own name there. Untrusted." }),
+    code: z.string().min(1).max(32).openapi({ description: "As typed: case, spaces and dashes don't matter." }),
+  })
+  .strict()
+  .openapi("SurfaceClaim");
+
+const Claimed = z
+  .object({
+    status: z.literal("pending"),
+    linkId: z.uuid(),
+    expiresAt: z.string().openapi({ description: "The person confirms in the app before this." }),
+    locale: z.string().openapi({ description: "The account's app language, for the service's own words." }),
+  })
+  .openapi("SurfaceClaimed");
+
+const Unlink = z
+  .object({ externalId: ExternalId, reason: z.enum(["asked", "identity_changed"]) })
+  .strict()
+  .openapi("SurfaceUnlink");
 
 const Health = z
   .object({
@@ -93,6 +138,67 @@ export function createSurfaceApp(deps: AppDeps, token: string, version: string) 
       responses: { 200: json(Health), 401: errors[401] },
     }),
     (c) => c.json({ ok: true as const, surface: deps.config.SURFACE_NAME ?? "", version }, 200),
+  );
+
+  api.openapi(
+    createRoute({
+      method: "post",
+      path: "/links/claim",
+      tags,
+      summary: "A link code typed on the surface: a pending link the person confirms in the app",
+      description:
+        "Never makes a link active. Wrong, used and expired codes all answer `surface.code_gone`; each try counts against the sender's 5 an hour.",
+      request: { body: { required: true, content: { "application/json": { schema: Claim } } } },
+      responses: {
+        201: json(Claimed),
+        ...errors,
+        404: errorResponse("Wrong, used or expired code (`surface.code_gone`)"),
+        409: errorResponse("The sender is linked to another account (`surface.taken`)"),
+        429: errorResponse("`surface.claim_limit` (this sender) or `surface.busy` (all senders), with `retryIn`"),
+      },
+    }),
+    async (c) => {
+      const input = c.req.valid("json");
+      const audit = c.get("audit");
+      audit.externalId = input.externalId;
+      await takeSurfaceCap({ db: deps.db, rateLimiter: deps.adapters.rateLimiter, warn: deps.log?.warn }, "claims");
+      const tries = await deps.adapters.rateLimiter.consume(
+        `surface:claim:${sha256(input.externalId)}`,
+        CLAIMS_PER_SENDER,
+      );
+      if (!tries.allowed) {
+        throw new TooManyError("Too many codes from this sender", "surface.claim_limit", {
+          retryIn: retryInSeconds(tries.resetAt),
+        });
+      }
+      const { link, expiresAt, locale } = await claimLink({ db: deps.db, pubsub: deps.adapters.pubsub }, input);
+      Object.assign(audit, { linkId: link.id, userId: link.userId, orgId: link.orgId ?? undefined });
+      return c.json({ status: "pending" as const, linkId: link.id, expiresAt: expiresAt.toISOString(), locale }, 201);
+    },
+  );
+
+  api.openapi(
+    createRoute({
+      method: "post",
+      path: "/links/unlink",
+      tags,
+      summary: "End a sender's link: they asked, or their identity on the surface changed",
+      description: "Pending links of the sender go too. A second call answers `none`.",
+      request: { body: { required: true, content: { "application/json": { schema: Unlink } } } },
+      responses: {
+        200: json(z.object({ status: z.enum(["unlinked", "none"]) }).openapi("SurfaceUnlinked")),
+        ...errors,
+      },
+    }),
+    async (c) => {
+      const { externalId, reason } = c.req.valid("json");
+      const audit = c.get("audit");
+      audit.externalId = externalId;
+      const link = await activeLink(deps.db, externalId);
+      if (link) Object.assign(audit, { linkId: link.id, userId: link.userId, orgId: link.orgId ?? undefined });
+      const status = await unlinkExternal({ db: deps.db, pubsub: deps.adapters.pubsub }, externalId, reason);
+      return c.json({ status }, 200);
+    },
   );
 
   api.doc31("/openapi.json", {

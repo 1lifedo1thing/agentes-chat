@@ -40,7 +40,8 @@ export type OperatorEventType =
   | "content.viewed"
   | "platform_ai.threshold"
   | "account.failure"
-  | "machine.wake_wanted";
+  | "machine.wake_wanted"
+  | "surface.cap_reached";
 
 export interface OperatorEvent {
   type: OperatorEventType;

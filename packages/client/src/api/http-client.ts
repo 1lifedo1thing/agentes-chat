@@ -235,6 +235,9 @@ import type {
   StorageMigration,
   StorageTestResult,
   SuggestedAi,
+  SurfaceLink,
+  SurfaceLinkCode,
+  SurfaceLinks,
   TaskManagerView,
   TaskOutput,
   TaskSteps,
@@ -631,6 +634,12 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       restore: () => request<void>("/api/app/account/deletion", { method: "DELETE" }),
       changeEmail: (input) => request<EmailChange>("/api/app/account/email", { json: input }),
       undoEmailChange: (token) => request<{ email: string }>("/api/app/email-undo", { json: { token } }),
+    },
+    surfaces: {
+      list: () => request<SurfaceLinks>("/api/app/me/surface-links"),
+      mintCode: (orgId) => request<SurfaceLinkCode>(`${org(orgId)}/surface-link/code`, { json: {} }),
+      confirm: (linkId) => request<SurfaceLink>(`/api/app/me/surface-links/${enc(linkId)}/confirm`, { json: {} }),
+      remove: (linkId) => request<void>(`/api/app/me/surface-links/${enc(linkId)}`, { method: "DELETE" }),
     },
     push: {
       webKey: async () =>

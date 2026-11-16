@@ -6,9 +6,10 @@
 - Code: config `packages/config/src/schema.ts` (`SURFACE_BRIDGE_TOKEN`, `SURFACE_NAME`, `SURFACE_OPEN_URL`,
   `SURFACE_ONLY`) and its rules in `index.ts`; db `packages/db/src/schema/surfaces.ts` (`surface_links`,
   `surface_deliveries`, `surface_calls`) and `voice_clips.via`, migration 0280; engine
-  `packages/engine/src/surfaces/config.ts` (`setSurface`, `surfaceOn`, `surfaceAllowed`); server
+  `packages/engine/src/surfaces/config.ts` (`setSurface`, `surfaceOn`, `surfaceAllowed`) and `links.ts` (codes,
+  claim, confirm, unlink; revoked with `revokeUserApps` and `setUserBlocked`); server
   `apps/server/src/surface/app.ts` (`createSurfaceApp`), served by `operatorFetch` in
-  `apps/server/src/operator/app.ts`; contract `apps/server/test/surface-openapi.json`
+  `apps/server/src/operator/app.ts`; app routes `apps/server/src/routes/app/surfaces.ts`; contract `apps/server/test/surface-openapi.json`
 
 ## Context
 
