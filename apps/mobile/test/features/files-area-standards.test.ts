@@ -58,7 +58,7 @@ describe("presses in the files, the blocks and the Drive are the kit's", () => {
 describe("the Vault's screens", () => {
   test("New item is the bar's +, so the tabs never move when another tab shows", () => {
     const vault = src("features/vault/VaultScreen.tsx");
-    expect(vault).toContain('right: <IconButton icon="plus" label={t("mobile.vault.newItem")} onPress={create} />');
+    expect(vault).toContain('actions: [{ icon: "plus", sf: "plus", label: t("mobile.vault.newItem"), onPress: create }]');
     expect(vault).not.toContain("tabEmpty");
     expect(vault.indexOf("<Segmented")).toBeLessThan(vault.indexOf("<Items"));
   });

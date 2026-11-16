@@ -577,7 +577,8 @@ describe("Configurações › Pessoas: Membros · Convites · Cargos", () => {
     expect(members).not.toContain("SentInvitations");
     const convites = src("features/members/InvitesScreen.tsx");
     expect(convites).toContain('router.push({ pathname: "/join-requests", params: { request: r.id } })');
-    expect(convites).toContain('right={<IconButton icon="plus" label={t("members.inviteTitle")} onPress={invite} />}');
+    // The bar's "+" is the system's own button (`SettingsPage` `actions`).
+    expect(convites).toMatch(/actions=\{\[\{ icon: "plus", sf: "plus", label: t\("members\.inviteTitle"\), onPress: invite \}\]\}/);
     // An e-mail invitation's sheet: Editar in place of Mudar o papel; expired, Renovar and Tirar.
     const sheets = src("features/members/InviteSheets.tsx");
     expect(sheets).toContain('label: t("invites.edit"),');

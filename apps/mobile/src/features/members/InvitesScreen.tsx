@@ -21,17 +21,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Share, StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import {
-  GroupedFooter,
-  GroupedHeader,
-  GroupedList,
-  GroupedRow,
-  IconButton,
-  Locked,
-  PersonAvatar,
-  Text,
-  useToast,
-} from "@/ui";
+import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Locked, PersonAvatar, Text, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { CargoMark, RowBones } from "../roles/parts";
 import { Gap, SettingsPage } from "../settings/parts";
@@ -148,7 +138,10 @@ function Invites() {
   };
 
   return (
-    <SettingsPage title={title} right={<IconButton icon="plus" label={t("members.inviteTitle")} onPress={invite} />}>
+    <SettingsPage
+      title={title}
+      actions={[{ icon: "plus", sf: "plus", label: t("members.inviteTitle"), onPress: invite }]}
+    >
       <MembersFullNote />
       {failedToLoad ? (
         // A list that didn't load is not an empty one: what happened, and the way to ask again.

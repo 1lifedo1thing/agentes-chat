@@ -15,7 +15,6 @@ import {
   GroupedHeader,
   GroupedList,
   GroupedRow,
-  IconButton,
   type IconName,
   SearchField,
   Segmented,
@@ -79,7 +78,7 @@ export function VaultScreen() {
     // "+" in the bar, as every list that adds: the tabs keep their place whichever tab is shown.
     <SettingsPage
       title={title}
-      {...(adds ? { right: <IconButton icon="plus" label={t("mobile.vault.newItem")} onPress={create} /> } : {})}
+      {...(adds ? { actions: [{ icon: "plus", sf: "plus", label: t("mobile.vault.newItem"), onPress: create }] } : {})}
     >
       <Loaded>
         <GroupedFooter>{t("settings.sectionText.vault")}</GroupedFooter>

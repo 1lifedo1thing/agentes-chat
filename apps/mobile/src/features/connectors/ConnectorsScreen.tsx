@@ -33,7 +33,6 @@ import {
   EmptyState,
   Filters,
   Icon,
-  IconButton,
   LineIcon,
   Locked,
   PressScale,
@@ -172,7 +171,7 @@ function Gallery() {
       title={t("mobile.connectors.title")}
       // Adding by an address lives in the bar, as every list's "+".
       {...(admin
-        ? { right: <IconButton icon="plus" label={t("connectors.otherConnect")} onPress={openAddress} /> }
+        ? { actions: [{ icon: "plus", sf: "plus", label: t("connectors.otherConnect"), onPress: openAddress }] }
         : {})}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
     >

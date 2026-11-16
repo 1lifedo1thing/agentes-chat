@@ -15,7 +15,7 @@ import {
 import { KeyboardAwareScrollView, KeyboardController } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, GroupedList, GroupedRow, type IconName, Locked, Text, useToast } from "@/ui";
+import { Button, GroupedList, GroupedRow, type HeaderAction, type IconName, Locked, Text, useToast } from "@/ui";
 import { KeyboardBar, TOOLBAR_HEIGHT } from "@/ui/auth/AuthScaffold";
 import { useColors, useNow } from "../shared/hooks";
 import { showActionSheet } from "../shared/PickerSheet";
@@ -49,8 +49,10 @@ interface SettingsPageProps {
   title: string;
   subtitle?: string | undefined;
   action?: HeaderWordAction;
-  /** An icon button on the bar's right in place of a word (Convites' "+"). */
+  /** An icon button on the bar's right in place of a word. Prefer `actions`. */
   right?: ReactNode;
+  /** The bar's buttons as the system's own (Convites' "+", a "…" menu): `PushedHeader`'s `actions`. */
+  actions?: HeaderAction[];
   /** The action's word is saving: a spinner in its place, the page locked under it. */
   busy?: boolean;
   /** The page's form is sending: its controls are off, the page still scrolls. */
@@ -67,9 +69,9 @@ interface SettingsPageProps {
 }
 
 /** A list of the workspace's settings under a large title: no subtitle, word or docked action (those are forms'). */
-function LargeTitlePage({ title, right, locked = false, frozen = false, children }: SettingsPageProps) {
+function LargeTitlePage({ title, right, actions, locked = false, frozen = false, children }: SettingsPageProps) {
   return (
-    <PushedLargeTitle title={title} grouped {...(right ? { right } : {})}>
+    <PushedLargeTitle title={title} grouped {...(actions ? { actions } : right ? { right } : {})}>
       <View style={styles.body}>
         <Locked when={locked || frozen} readable={frozen && !locked}>
           <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
@@ -84,6 +86,7 @@ function CompactPage({
   subtitle,
   action,
   right,
+  actions,
   busy = false,
   locked = false,
   frozen = false,
@@ -101,7 +104,15 @@ function CompactPage({
         {...(subtitle ? { subtitle } : {})}
         solid={false}
         grouped
-        {...(busy ? { right: <ActivityIndicator color={c.muted} /> } : action ? { action } : right ? { right } : {})}
+        {...(busy
+          ? { right: <ActivityIndicator color={c.muted} /> }
+          : action
+            ? { action }
+            : actions
+              ? { actions }
+              : right
+                ? { right }
+                : {})}
       />
       <KeyboardAwareScrollView
         style={styles.fill}

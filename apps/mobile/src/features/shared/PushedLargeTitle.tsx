@@ -3,14 +3,18 @@ import type { ReactElement, ReactNode } from "react";
 import { Platform, type RefreshControlProps, ScrollView, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BAR_TITLE_FROM, BAR_TITLE_TO, LargeTitleHead, useLargeTitleScroll } from "@/ui";
+import { BAR_TITLE_FROM, BAR_TITLE_TO, type HeaderAction, LargeTitleHead, useLargeTitleScroll } from "@/ui";
 import { FadingHeaderTitle } from "@/ui/cover";
 import { useColors } from "./hooks";
-import { FocusLive, PushedHeader } from "./parts";
+import { FocusLive, type HeaderWordAction, PushedHeader } from "./parts";
 
 type PushedLargeTitleProps = {
   title: string;
   right?: ReactNode;
+  /** The bar's buttons as the system's own ("+", a "…" menu): `PushedHeader`'s `actions`, in place of `right`. */
+  actions?: HeaderAction[];
+  /** A word on the right of the bar (a selection's "Cancelar"): `PushedHeader`'s `action`. */
+  action?: HeaderWordAction;
   refreshControl?: ReactElement<RefreshControlProps>;
   onScrollBeginDrag?: () => void;
   /** Room under the content (a bottom bar over it needs more). */
@@ -41,6 +45,8 @@ export function PushedLargeTitle(props: PushedLargeTitleProps) {
 function SystemLargeTitle({
   title,
   right,
+  actions,
+  action,
   refreshControl,
   onScrollBeginDrag,
   bottomInset = 24,
@@ -54,7 +60,15 @@ function SystemLargeTitle({
   const insets = useSafeAreaInsets();
   return (
     <>
-      <PushedHeader title={title} right={right} solid={false} grouped={grouped} largeTitle={!collapsed} />
+      <PushedHeader
+        title={title}
+        right={right}
+        {...(actions ? { actions } : {})}
+        {...(action ? { action } : {})}
+        solid={false}
+        grouped={grouped}
+        largeTitle={!collapsed}
+      />
       <FocusLive>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
@@ -78,6 +92,8 @@ function SystemLargeTitle({
 function DrawnLargeTitle({
   title,
   right,
+  actions,
+  action,
   refreshControl,
   onScrollBeginDrag,
   bottomInset = 24,
@@ -97,6 +113,8 @@ function DrawnLargeTitle({
       <PushedHeader
         title={<FadingHeaderTitle y={scroll.y} from={BAR_TITLE_FROM} to={BAR_TITLE_TO} text={title} />}
         right={right}
+        {...(actions ? { actions } : {})}
+        {...(action ? { action } : {})}
         solid={false}
         grouped={grouped}
       />

@@ -36,7 +36,6 @@ import {
   GroupedList,
   type HeaderAction,
   Icon,
-  IconButton,
   type IconName,
   ListRow,
   Locked,
@@ -196,19 +195,30 @@ export function WikiScreen({ folder = "" }: { folder?: string }) {
       ? [
           {
             icon: "members" as const,
+            sf: "person.2" as const,
             label: folder ? t("wiki.audience") : t("wiki.audienceRootTitle"),
             onPress: () => router.push({ pathname: "/wiki-audience", params: folder ? { folder } : { root: "1" } }),
           },
         ]
       : []),
     ...(writes && pages.length > 0
-      ? [{ icon: "checkc" as const, label: t("wiki.bulk.select"), onPress: () => setSelecting(true) }]
+      ? [
+          {
+            icon: "checkc" as const,
+            sf: "checkmark.circle" as const,
+            label: t("wiki.bulk.select"),
+            onPress: () => setSelecting(true),
+          },
+        ]
       : []),
-    ...(!folder && writes ? [{ icon: "trash" as const, label: t("wiki.trash.title"), onPress: openWikiTrash }] : []),
+    ...(!folder && writes
+      ? [{ icon: "trash" as const, sf: "trash" as const, label: t("wiki.trash.title"), onPress: openWikiTrash }]
+      : []),
     ...(folder && writes
       ? [
           {
             icon: "trash" as const,
+            sf: "trash" as const,
             label: t("wiki.bulk.deleteFolder", { folder }),
             destructive: true,
             onPress: () =>
@@ -262,25 +272,35 @@ export function WikiScreen({ folder = "" }: { folder?: string }) {
       title={title}
       bottomInset={selecting ? 96 : 24}
       dock={pickBar}
-      right={
-        selecting ? (
-          <Button variant="secondary" size="sm" label={t("common.cancel")} onPress={stopSelecting} />
-        ) : writes || menu.length > 0 ? (
-          <View style={styles.headActs}>
-            {writes ? (
-              <IconButton icon="plus" label={t("wiki.newPage")} onPress={() => newWikiPage(folder ? { folder } : {})} />
-            ) : null}
-            {menu.length > 0 ? (
-              <IconButton
-                icon="more"
-                label={t("mobile.wiki.more")}
-                disabled={bulkDelete.pending}
-                onPress={() => chooseAction(title, menu, t("common.cancel"))}
-              />
-            ) : null}
-          </View>
-        ) : undefined
-      }
+      // Choosing pages, the bar's word ends the choice; otherwise the system's own "+" and "…" (its menu on iOS).
+      {...(selecting
+        ? { action: { label: t("common.cancel"), onPress: stopSelecting } }
+        : {
+            actions: [
+              ...(writes
+                ? [
+                    {
+                      icon: "plus" as const,
+                      sf: "plus" as const,
+                      label: t("wiki.newPage"),
+                      onPress: () => newWikiPage(folder ? { folder } : {}),
+                    },
+                  ]
+                : []),
+              ...(menu.length > 0
+                ? [
+                    {
+                      icon: "more" as const,
+                      sf: "ellipsis" as const,
+                      label: t("mobile.wiki.more"),
+                      disabled: bulkDelete.pending,
+                      onPress: () => chooseAction(title, menu, t("common.cancel")),
+                      menu,
+                    },
+                  ]
+                : []),
+            ],
+          })}
     >
       <View style={styles.search}>
         <SearchField
@@ -1147,7 +1167,6 @@ const styles = StyleSheet.create({
   bandFace: { position: "absolute", left: 16, bottom: 12 },
   around: { marginHorizontal: 16, borderRadius: 20, overflow: "hidden" },
   graphCard: { marginTop: 0 },
-  headActs: { flexDirection: "row", gap: 4 },
   pickBar: {
     position: "absolute",
     left: 0,

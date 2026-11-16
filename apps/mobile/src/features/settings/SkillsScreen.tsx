@@ -73,7 +73,6 @@ import {
   GroupedHeader,
   GroupedList,
   GroupedRow,
-  IconButton,
   SCREEN_X,
   SearchField,
   Segmented,
@@ -170,7 +169,7 @@ export function SkillsScreen() {
       largeTitle
       // Installing lives in the bar, as every list's "+".
       {...(mayInstall && !unavailable && skills.isSuccess
-        ? { right: <IconButton icon="plus" label={t("skills.install")} onPress={install} /> }
+        ? { actions: [{ icon: "plus", sf: "plus", label: t("skills.install"), onPress: install }] }
         : {})}
     >
       {searchable ? (

@@ -9,7 +9,6 @@ import {
   Button,
   EmptyState,
   Filters,
-  IconButton,
   SCREEN_X,
   SearchField,
   SectionHeader,
@@ -115,9 +114,9 @@ export function DriveScreen({ highlightId = null }: { highlightId?: string | nul
       title={t("mobile.drive.title")}
       {...(mayUpload
         ? {
-            right: (
-              <IconButton icon="plus" label={t("files.upload")} disabled={uploader.busy} onPress={uploader.pick} />
-            ),
+            actions: [
+              { icon: "plus", sf: "plus", label: t("files.upload"), disabled: uploader.busy, onPress: uploader.pick },
+            ],
           }
         : {})}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
