@@ -361,7 +361,7 @@ describe("a connection's screen and the gallery, at a finger's reach", () => {
     const screen = read("ConnectionScreen.tsx");
     // The system's bar button (`actions`), never a view of ours drawn in the bar.
     expect(screen).toMatch(
-      /icon: "pen",\s+sf: "pencil",\s+label: t\("connectors\.rename"\),\s+onPress: \(\) => sheet\.open\(<RenameSheet item=\{item\} \/>\),/,
+      /icon: "pen",\s+sf: "pencil",\s+label: t\("connectors\.rename"\),\s+onPress: \(\) => openRename\(item\.id\),/,
     );
     expect(screen).toContain("{...(rename ? { actions: [rename] } : {})}");
     expect(screen).not.toContain("<IconButton");

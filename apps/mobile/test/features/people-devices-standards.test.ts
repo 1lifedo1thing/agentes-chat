@@ -151,8 +151,9 @@ describe("sheets read as the app's sheets", () => {
       expect(code).not.toContain("styles.head");
       expect(code).not.toContain('<Text variant="title"');
     }
+    // Renaming is a pushed screen now (a form: screens, not sheets): the app's one-line field, its help under it.
     const rename = read("connectors/ConnectionScreen.tsx");
-    expect(rename).toContain('subtitle={t("connectors.renameHelp")}');
+    expect(rename).toContain('<GroupedFooter>{t("connectors.renameHelp")}</GroupedFooter>');
     expect(rename).toContain("multiline={false}");
     expect(rename).not.toContain("styles.field");
   });

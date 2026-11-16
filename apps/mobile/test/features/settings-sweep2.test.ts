@@ -83,3 +83,27 @@ describe("requests to join", () => {
     expect(screen).toContain('label={t("mobile.common.cancel")}');
   });
 });
+
+describe("a connection's screen", () => {
+  test("its name is said once: the bar's title comes in as the name under the mark scrolls away", () => {
+    const screen = src("features/connectors/ConnectionScreen.tsx");
+    expect(screen).toMatch(/<PushedHeader\s+title=\{\s*<FadingHeaderTitle/);
+    expect(screen).toContain("from={nameBox.top - headerHeight}");
+    expect(screen).not.toContain("<PushedHeader title={name}");
+  });
+
+  test("renaming is a pushed screen with Save in the bar, and its field waits for a tap", () => {
+    const screen = src("features/connectors/ConnectionScreen.tsx");
+    expect(screen).toContain('router.push({ pathname: "/connectors/rename", params: { id } })');
+    expect(screen).not.toContain("RenameSheet");
+    const rename = screen.slice(screen.indexOf("export function RenameConnectionScreen"));
+    expect(rename).toContain('action={{ label: t("common.save"), disabled: !ready, onPress: save }}');
+    expect(rename).toContain("useUnsavedGuard(");
+    expect(rename).not.toContain("autoFocus");
+    const route = readFileSync(
+      join(import.meta.dir, "..", "..", "app", "(app)", "(main)", "connectors", "rename.tsx"),
+      "utf8",
+    );
+    expect(route).toContain("<RenameConnectionScreen id={id ?? \"\"} />");
+  });
+});

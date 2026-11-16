@@ -31,16 +31,16 @@ import {
   GroupedList,
   GroupedRow,
   type HeaderAction,
-  Locked,
+  SkeletonList,
   Text,
   useToast,
 } from "@/ui";
-import { CoverBarBackdrop, useCoverScroll } from "@/ui/cover";
+import { CoverBarBackdrop, FadingHeaderTitle, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
 import { RowBones } from "../roles/parts";
+import { SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useOrgId } from "../shared/hooks";
-import { SheetTitle } from "../shared/PromptForm";
 import { errorHaptic, goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { TextArea } from "../shared/TextArea";
@@ -55,9 +55,13 @@ import { openTools } from "./ToolsScreen";
 /** Opens a connection's own screen (from its tile or its icon in Conectores). */
 export const openConnection = (id: string) => router.push(`/connectors/${id}`);
 
+/** Renomear, pushed over a connection's screen. */
+const openRename = (id: string) => router.push({ pathname: "/connectors/rename", params: { id } });
+
 /**
  * A connection, a screen pushed over Conectores, laid out as the phone's settings (groups on the grouped gray): the
- * bar reads its name, with a pen for renaming; its mark with the check, its name and its account under it; who uses
+ * clear bar with a pen for renaming (its own screen), its title coming in once the name under the mark scrolls away
+ * under it; its mark with the check, its name and its account under it; who uses
  * it (one row per agent, the level as its value, changed in place), what always asks as that group's footer; its
  * tools as one row (what waits on you under it, in amber; a screen of their own); the account (which, Reconectar,
  * another account of an MCP server, each in a sheet, and under them the request headers a server by address also
@@ -87,6 +91,9 @@ function Connection({ id }: { id: string }) {
   const toast = useToast();
   const sheet = useSheet();
   const { y, onScroll } = useCoverScroll();
+  // Where the name sits under the clear bar: the bar's own title comes in only as it scrolls away under it, never
+  // the same words twice on screen.
+  const [nameBox, setNameBox] = useState({ top: 0, bottom: 0 });
   const item = connectedItems(connections.data ?? [], servers.data ?? [], catalog.data?.connectors ?? []).find(
     (i) => i.id === id,
   );
@@ -107,22 +114,34 @@ function Connection({ id }: { id: string }) {
   const waiting = admin && item ? item.pending : 0;
   const actions = item ? accountActions(item) : [];
   const sent = item?.server?.headerNames ?? [];
-  // Renaming, the one thing about the account that isn't a step of its own: the bar's pen (the system's own bar
-  // button) opens it straight away (a menu of one item that opened another sheet was a step for nothing).
+  // Renaming: the bar's pen (the system's own bar button) pushes its screen straight away (a menu of one item in
+  // between was a step for nothing).
   const rename: HeaderAction | null =
     admin && item && actions.includes("rename")
       ? {
           icon: "pen",
           sf: "pencil",
           label: t("connectors.rename"),
-          onPress: () => sheet.open(<RenameSheet item={item} />),
+          onPress: () => openRename(item.id),
         }
       : null;
   const missing = !item && !loading;
 
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-      <PushedHeader title={name} plate solid={false} {...(rename ? { actions: [rename] } : {})} />
+      <PushedHeader
+        title={
+          <FadingHeaderTitle
+            y={y}
+            from={nameBox.top - headerHeight}
+            to={nameBox.bottom - headerHeight}
+            text={name}
+          />
+        }
+        plate
+        solid={false}
+        {...(rename ? { actions: [rename] } : {})}
+      />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -138,7 +157,15 @@ function Connection({ id }: { id: string }) {
             size={60}
             check={Boolean(item)}
           />
-          <Text variant="title2" numberOfLines={2} style={styles.center}>
+          <Text
+            variant="title2"
+            numberOfLines={2}
+            style={styles.center}
+            onLayout={(e) => {
+              const { y: top, height } = e.nativeEvent.layout;
+              setNameBox({ top, bottom: top + height });
+            }}
+          >
             {name}
           </Text>
           {sub ? (
@@ -283,66 +310,91 @@ function Connection({ id }: { id: string }) {
 }
 
 /**
- * "Renomear": the account's name, which people and agents tell it apart by (its tools keep their names). The sheet's
- * title and its line, the sheets' one field on one line, then Salvar.
+ * Renomear, pushed over a connection's screen: the account's name, which people and agents tell it apart by (its tools
+ * keep their names), the field on one line with the line under it saying so; "Salvar" in the bar saves and goes back,
+ * and back with a new name not saved asks first.
  */
-function RenameSheet({ item }: { item: ConnectedItem }) {
+export function RenameConnectionScreen({ id }: { id: string }) {
   const { t } = useTranslation();
-  const sheet = useSheet();
   const toast = useToast();
   const orgId = useOrgId();
+  const catalog = useCatalog();
+  const connections = useConnections(orgId);
+  const servers = useCustomServers(orgId);
   const rename = useRenameConnection(orgId);
-  const [label, setLabel] = useState(item.label);
+  const item = connectedItems(connections.data ?? [], servers.data ?? [], catalog.data?.connectors ?? []).find(
+    (i) => i.id === id,
+  );
+  const loading = !item && (catalog.isPending || connections.isPending || servers.isPending);
+  const failed = !item && (catalog.isError || connections.isError || servers.isError);
+  const [label, setLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const value = label ?? item?.label ?? "";
+  const wanted = value.trim();
+  const ready = Boolean(item) && wanted.length > 0 && wanted !== item?.label && !rename.isPending;
+  const leave = useUnsavedGuard(Boolean(item) && label !== null && wanted !== item?.label);
   const save = () => {
-    const wanted = label.trim();
-    if (!wanted || wanted === item.label) return sheet.close();
+    if (!item || !ready) return;
     rename.mutate(
       { id: item.id, label: wanted },
       {
         onSuccess: (saved) => {
           successHaptic();
-          sheet.close();
           toast({ title: t("connectors.renamed", { name: saved.label }) });
+          leave();
+          goBack();
         },
-        onError: (failed) => {
+        onError: (err) => {
           errorHaptic();
-          setError(knownErrorText(t, failed) ?? t("mobile.connectors.renameFailed"));
+          setError(knownErrorText(t, err) ?? t("mobile.connectors.renameFailed"));
         },
       },
     );
   };
   return (
-    <View style={styles.sheet}>
-      <SheetTitle
-        title={t("connectors.renameTitle", { name: itemName(t, item) })}
-        subtitle={t("connectors.renameHelp")}
-      />
-      <Locked when={rename.isPending}>
-        <TextArea
-          value={label}
-          onChangeText={(v) => {
-            setLabel(v);
-            setError(null);
-          }}
-          multiline={false}
-          minHeight={50}
-          maxLength={80}
-          autoFocus
-          returnKeyType="done"
-          onSubmitEditing={save}
-          accessibilityLabel={t("connectFlow.name")}
-        />
-      </Locked>
-      {error ? <Problem text={error} /> : null}
-      <Button variant="primary" wide label={t("common.save")} loading={rename.isPending} onPress={save} />
-    </View>
+    <SettingsPage
+      title={t("connectors.rename")}
+      {...(item ? { subtitle: itemName(t, item) } : {})}
+      action={{ label: t("common.save"), disabled: !ready, onPress: save }}
+      locked={rename.isPending}
+    >
+      {item ? (
+        <>
+          <GroupedHeader>{t("connectFlow.name")}</GroupedHeader>
+          <TextArea
+            value={value}
+            onChangeText={(v) => {
+              setLabel(v);
+              setError(null);
+            }}
+            multiline={false}
+            minHeight={50}
+            maxLength={80}
+            returnKeyType="done"
+            onSubmitEditing={save}
+            accessibilityLabel={t("connectFlow.name")}
+          />
+          {error ? (
+            <Text variant="footnote" tone="danger" style={styles.error} accessibilityLiveRegion="polite">
+              {error}
+            </Text>
+          ) : (
+            <GroupedFooter>{t("connectors.renameHelp")}</GroupedFooter>
+          )}
+        </>
+      ) : loading ? (
+        <SkeletonList rows={1} />
+      ) : failed ? (
+        <LoadFailed onRetry={() => void Promise.all([catalog.refetch(), connections.refetch(), servers.refetch()])} />
+      ) : (
+        <EmptyState size="inline" title={t("common.gone")} />
+      )}
+    </SettingsPage>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  sheet: { gap: 14 },
   head: { alignItems: "center", gap: 8, paddingHorizontal: 24, paddingBottom: 6 },
   center: { textAlign: "center" },
   bold: { fontWeight: "600" },
@@ -351,4 +403,5 @@ const styles = StyleSheet.create({
   problem: { gap: 12 },
   lead: { paddingHorizontal: 16, paddingTop: 12 },
   gap: { height: 24 },
+  error: { paddingTop: 8, paddingHorizontal: 16 },
 });
