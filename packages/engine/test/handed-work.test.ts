@@ -143,7 +143,7 @@ describe("work handed to another agent reports where the person asked (F1)", () 
     // Its card on the board, made by the agent that handed it, from where the person asked.
     const issue = await getIssue(f.db, { type: "person", userId: f.owner.id }, f.org.id, { id: w?.issueId ?? "" });
     expect(issue).toMatchObject({
-      assignee: { type: "agent", id: atlas.id },
+      assignees: [{ type: "agent", id: atlas.id }],
       createdBy: { type: "agent", id: f.agent.id },
       source: { type: "agent", agentId: f.agent.id, channelId: f.general.id, messageId: dev.triggerMessageId },
     });
