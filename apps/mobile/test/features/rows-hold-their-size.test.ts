@@ -63,25 +63,37 @@ describe("a table's key", () => {
 describe("rows that measure themselves come back at their size", () => {
   test("a long message is cut from its first frame when it comes back, and never draws whole before its first measure", () => {
     const clip = src("features/chat/ClippedMessage.tsx");
-    expect(clip).toMatch(/const sizeKey = `words:\$\{id\}:\$\{useLayoutKey\(\)\}`;/);
+    // Kept by what it shows: an agent's message to another shows its start here and whole on its thread's screen.
+    expect(clip).toMatch(
+      /const sizeKey = `words:\$\{id\}:\$\{open \|\| lead == null \? "whole" : "lead"\}:\$\{useLayoutKey\(\)\}`;/,
+    );
     expect(clip).toContain("const [height, setHeight] = useState(() => keptSize(sizeKey) ?? 0);");
     expect(clip).toContain("const unmeasured = height === 0 && !open && lead == null;");
-    expect(clip).toContain('unmeasured: { maxHeight: LONG_MESSAGE.over, overflow: "hidden" },');
+    expect(clip).toContain('unmeasured: { maxHeight: LONG_MESSAGE.over + PAST_RULE, overflow: "hidden" },');
     expect(clip).toMatch(/keepSize\(sizeKey, next\);\s*setHeight\(next\);/);
   });
 
   test("a table lays out at its measured columns when it comes back", () => {
     const spans = src("features/chat/MessageSpans.tsx");
     expect(spans).toMatch(/const columnsKey = `table:\$\{content\}:\$\{useLayoutKey\(\)\}`;/);
-    expect(spans).toContain("useState<Record<number, number>>(() => ({ ...keptColumns(columnsKey) }));");
+    expect(spans).toContain(
+      "const [measured, setMeasured] = useState(() => ({ key: columnsKey, columns: { ...keptColumns(columnsKey) } }));",
+    );
+    // New cells, another width or text size: measured anew.
+    expect(spans).toContain(
+      "if (measured.key !== columnsKey) setMeasured({ key: columnsKey, columns: { ...keptColumns(columnsKey) } });",
+    );
     expect(spans).toContain("if (Object.keys(drawn).length > 0) keepColumns(columnsKey, drawn);");
+    // Its unseen copy only while a column has no width yet: coming back, each cell is drawn once.
+    expect(spans).toContain("const unmeasured = header.some((_, col) => drawn[col] === undefined);");
+    expect(spans).toContain("{unmeasured ? (");
   });
 
   test("a block is cut from its first frame when it comes back, and no taller than its card before its first measure", () => {
     const spec = src("features/blocks/SpecBlock.tsx");
     expect(spec).toContain("const [height, setHeight] = useState(() => keptSize(sizeKey) ?? 0);");
-    expect(spec).toContain('unmeasured: { maxHeight: INLINE_HEIGHT, overflow: "hidden" },');
-    expect(spec).toMatch(/keepSize\(sizeKey, whole\);\s*setHeight\(whole\);/);
+    expect(spec).toContain('unmeasured: { maxHeight: INLINE_HEIGHT + PAST_RULE, overflow: "hidden" },');
+    expect(spec).toMatch(/keepSize\(sizeKey, next\);\s*setHeight\(next\);/);
   });
 
   test("pictures and GIFs take the room kept for their side, sent and still sending alike", () => {
