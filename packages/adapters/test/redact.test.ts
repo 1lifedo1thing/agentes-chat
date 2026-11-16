@@ -158,10 +158,7 @@ test("the same credential as other writers spell it", () => {
       String.raw`{"command":"curl -H \"Authorization: Bearer fake-bearer-0000\" https://api.example.com"}`,
       String.raw`{"command":"curl -H \"Authorization: Bearer ***\" https://api.example.com"}`,
     ],
-    [
-      String.raw`{"command":"export TOKEN=\"fake with space\" && run"}`,
-      '{"command":"export TOKEN=*** && run"}',
-    ],
+    [String.raw`{"command":"export TOKEN=\"fake with space\" && run"}`, '{"command":"export TOKEN=*** && run"}'],
     // A value on several lines.
     ['"token":\n  "fake first\nfake second",\n"n": 1', '"token":\n  ***,\n"n": 1'],
   ];

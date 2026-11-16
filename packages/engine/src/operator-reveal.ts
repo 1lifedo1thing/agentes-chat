@@ -251,7 +251,8 @@ const findStep: Find = async (db, orgId, { id, seq, field }) => {
     result_failed: boolean;
     narrated: boolean;
   }>(
-    await db.execute(sql`select r.agent_id, r.channel_id, ${directOf("r.channel_id", "r.trigger_message_id")} as direct, s.kind,
+    await db.execute(sql`select r.agent_id, r.channel_id, s.kind,
+        ${directOf("r.channel_id", "r.trigger_message_id")} as direct,
         (s.kind = 'error' or (s.kind = 'tool_result' and s.data->'isError' = 'true'::jsonb)) as failed,
         (s.kind = 'tool_call' and exists (select 1 from ${agentRunSteps} o where o.run_id = s.run_id
           and o.kind = 'tool_result' and o.data->>'toolUseId' = s.data->>'toolUseId'

@@ -39,7 +39,7 @@ const FIELD_VALUE = new RegExp(
   String.raw`(${FIELD}\\*["']\s*(?:=>?|:)\s*)(?=\\*["'])(?!(\\*)(["'])\2\3)${valueAt(4)}`,
   "gi",
 );
-/** The same field where its quotes are written out: percent-encoded in an address, an HTML entity, a code point in a log. */
+/** The same field with its quotes written out: percent-encoded in an address, an HTML entity, a log's code point. */
 const WRITTEN_QUOTE = String.raw`%(?:25)*2[27]|&(?:amp;)*(?:quot|apos|#0*3[49]|#x0*2[27]);|\\+(?:u00|x)2[27]`;
 const WRITTEN_GAP = String.raw`(?:\s|\+|%(?:25)*20)*`;
 const WRITTEN_FIELD_VALUE = new RegExp(
