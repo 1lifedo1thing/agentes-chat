@@ -828,9 +828,14 @@ export async function resolveBrain(
           // "Automático" runs another model where the one it maps to is held (`autoPlanModel`).
           isAutoModel(runs) ? autoPlanModel(account?.provider, runs, usage) : runs,
         ));
-  // The right hand's plan can't think now (and its computer isn't one in standby, which the run wakes): another plan
-  // or the workspace's key thinks for it (ADR 0137 §7, amended 2026-11-15).
-  if (unavailable && isRightHand(agent) && !mission && !options.thinker && !status?.standby) {
+  // The right hand's plan can't think now: another plan or the workspace's key thinks for it (ADR 0137 §7, amended
+  // 2026-11-15). Not while its computer is coming back (`computerBackSoon` waits for it, as `agentAiState` says):
+  // one in standby, which the run wakes, or one gone less than the outage grace (a server restart, its runner redialing).
+  const gone = status?.lastSeenAt ? Date.now() - Date.parse(status.lastSeenAt) : Number.POSITIVE_INFINITY;
+  const backSoon =
+    status?.standby ||
+    (unavailable?.code === "machine_offline" && gone < (await import("../machine-tasks")).TASK_OFFLINE_GRACE_MS);
+  if (unavailable && isRightHand(agent) && !mission && !options.thinker && !backSoon) {
     let standIn = await rightHandStandIn(deps, agent, person, unavailable.code).catch(() => null);
     if (standIn?.brainAccountId) {
       const thinker: Agent = {

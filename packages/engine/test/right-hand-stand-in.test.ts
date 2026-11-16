@@ -192,6 +192,44 @@ test("a plan on a laptop that is away: the chat and its routines answer on the k
   ]);
 });
 
+test("a computer gone a moment ago (a restart) is waited for: its own plan answers, nothing stands in", async () => {
+  const { fx, laptop, account, lodi, lines } = await world();
+  await account(WALTERS, laptop, "Claude Max");
+  await setAgentBrain({ db: fx.db }, fx.owner.id, fx.org.id, (await lodi()).id, {
+    brain: "claude_code",
+    account: WALTERS,
+  });
+  const agent = await lodi();
+  // Away for the run's first look (a server restart), back a moment later.
+  let backAt = 0;
+  const machines = {
+    status: async (id: string) => {
+      if (!backAt) backAt = Date.now() + 600;
+      return Date.now() < backAt
+        ? statusOf(id, { online: false, lastSeenAt: new Date(Date.now() - 5_000).toISOString() })
+        : statusOf(id);
+    },
+  };
+  const brain: Brain = {
+    kind: "claude_code",
+    async *run() {
+      yield { type: "done", text: "from the plan" };
+    },
+  };
+  const handlers = createJobHandlers({
+    ...fx.jobDeps,
+    brains: { claude_code: () => brain },
+    machines,
+    computerBlipWaitMs: 2_000,
+  });
+  const dm = await openPersonAgentDm(fx.db, fx.org.id, fx.owner.id, agent.id);
+  await postPersonMessage({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, dm.id, { body: "Hi" });
+  await drainOutbox(fx.db, handlers);
+  const [run] = await fx.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, agent.id));
+  expect(run).toMatchObject({ status: "done", brain: "claude_code" });
+  expect(await lines(dm.id)).toEqual([]);
+});
+
 test("another plan online stands in before the key, and thinks on its own computer", async () => {
   const { fx, pair, laptop, account, lodi, lines } = await world();
   const office = await pair("Office");
