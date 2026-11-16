@@ -18,15 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  AccessibilityInfo,
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  type TextInputInstance,
-  View,
-} from "react-native";
+import { AccessibilityInfo, StyleSheet, TextInput, type TextInputInstance, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -36,7 +28,7 @@ import {
   GroupedHeader,
   GroupedList,
   GroupedRow,
-  InfoHint,
+  SkeletonList,
   Text,
   useToast,
 } from "@/ui";
@@ -47,6 +39,7 @@ import { useMemoryOriginText } from "../agents/useMemoryOriginText";
 import { Note } from "../ai/parts";
 import { ZoneList } from "../me/AccountPage";
 import { PHOTO_MAX_BASE64, photoContentType } from "../me/logic";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors } from "../shared/hooks";
 import { OrgAvatar } from "../shared/OrgAvatar";
 import { errorHaptic, goBack, MONO, successHaptic } from "../shared/parts";
@@ -296,18 +289,16 @@ export function GeneralScreen() {
         {uploading ? <Uploading style={styles.logoBusy} /> : null}
       </View>
       {editable ? (
-        <Pressable
-          onPress={changeLogo}
-          disabled={uploading}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: uploading, busy: uploading }}
-          hitSlop={12}
-          style={({ pressed }) => (pressed ? styles.pressed : null)}
-        >
-          <Text variant="subhead" tone={uploading ? "faint" : "ink2"} style={styles.semibold}>
-            {org?.logo ? t("orgLogo.change") : t("orgLogo.add")}
-          </Text>
-        </Pressable>
+        // The design system's text button (its press and haptic), centered under the logo by its own box.
+        <View>
+          <Button
+            variant="text"
+            size="sm"
+            label={org?.logo ? t("orgLogo.change") : t("orgLogo.add")}
+            disabled={uploading}
+            onPress={changeLogo}
+          />
+        </View>
       ) : null}
     </View>
   );
@@ -372,22 +363,20 @@ export function GeneralScreen() {
       />
     </GroupedList>
   );
+  // The context is one field of the form: a group header over it (its ⓘ says who reads it), never a heading of its own.
   const contextPart = (
     <>
-      <View style={styles.contextHead}>
-        <InfoHint
-          name={t("common.about", { label: contextTitle })}
-          text={t("common.joinSentences", {
+      <GroupedHeader
+        hint={{
+          name: t("common.about", { label: contextTitle }),
+          text: t("common.joinSentences", {
             a: t("settings.contextSubtitle"),
             b: t(modeKey(org, "settings.contextHelp"), { name: orgName }),
-          })}
-          variant="title"
-        >
-          <Text variant="title" tone="ink">
-            {contextTitle}
-          </Text>
-        </InfoHint>
-      </View>
+          }),
+        }}
+      >
+        {contextTitle}
+      </GroupedHeader>
       <TextArea
         ref={contextField}
         value={context}
@@ -401,7 +390,7 @@ export function GeneralScreen() {
       />
       {editable && missing.length > 0 ? (
         <View style={styles.ideas}>
-          <Text variant="small" tone="muted">
+          <Text variant="footnote" tone="faint" style={styles.ideasLead}>
             {t("settings.contextMissing")}
           </Text>
           <View style={styles.ideaRow}>
@@ -438,7 +427,14 @@ export function GeneralScreen() {
           <Note icon="lock">{t("settings.readOnly")}</Note>
         </View>
       ) : null}
-      {personal ? (
+      {/* The form fills from the settings: until they come, the rows' shape (typing into an empty form would be lost). */}
+      {!settings.data ? (
+        settings.isError ? (
+          <LoadFailed onRetry={() => void settings.refetch()} />
+        ) : (
+          <SkeletonList rows={3} />
+        )
+      ) : personal ? (
         // About you: what the agents know about the person first; the workspace's own rows under "This workspace".
         <>
           {contextPart}
@@ -593,8 +589,10 @@ export function TelemetryScreen() {
             </Text>
           </View>
         </GroupedList>
+      ) : telemetry.isError ? (
+        <LoadFailed onRetry={() => void refetch()} />
       ) : telemetry.isLoading ? (
-        <ActivityIndicator color={c.muted} />
+        <SkeletonList rows={3} />
       ) : null}
     </SettingsPage>
   );
@@ -628,11 +626,10 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: LOGO * 0.3,
     borderBottomLeftRadius: LOGO * 0.09,
   },
-  semibold: { fontWeight: "600" },
-  pressed: { opacity: 0.6 },
   input: { flex: 1, paddingVertical: 12, paddingHorizontal: 0 },
-  contextHead: { paddingHorizontal: 4, paddingTop: 24, paddingBottom: 10 },
-  ideas: { gap: 8, paddingHorizontal: 4, paddingTop: 10 },
+  // "Still to say:" where a footer's words start, the ideas' buttons from the field's edge under it.
+  ideas: { gap: 8, paddingTop: 10 },
+  ideasLead: { paddingHorizontal: 16 },
   ideaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   code: { paddingHorizontal: 14, paddingVertical: 12 },
   mono: { fontFamily: MONO, fontSize: 12, lineHeight: 17 },

@@ -40,10 +40,11 @@ describe("pickers are the app's sheet, never the system's alert list", () => {
     expect(sector).toContain("pickOne({");
     expect(sector).toContain('leading: { kind: "person" as const, userId: m.userId }');
     expect(sector).not.toContain("chooseAction");
+    // The audit's agent is one of many: it is picked on the shared agent picker's pushed screen instead
+    // (settings-sweep.test.ts).
     for (const file of [
       "features/me/MeScreen.tsx",
       "features/routines/RoutineForm.tsx",
-      "features/settings/AuditScreen.tsx",
       "features/computer/usePickComputer.ts",
       "features/vault/VaultConnectScreen.tsx",
       "features/connectors/ToolReview.tsx",

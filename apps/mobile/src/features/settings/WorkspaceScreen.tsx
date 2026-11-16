@@ -48,8 +48,9 @@ const SHORT: Partial<Record<SettingsSection, string>> = {
  * entries as groups, each thing once. Workspace: the workspace itself (its mark, its name, what Geral holds) and GIFs.
  * Pessoas, IA e uso, Conectores, Avançado: one neutral tile and one short value per row (a count or a state), the
  * area's own screen says the rest. Owners get "Apagar <nome>" alone in red at the end, behind the
- * system's alert (one firm haptic as it confirms), then the proof and the hold. Opened often, so nothing animates
- * here beyond the rows' press highlight and the platform's push. A personal workspace gets its short list instead
+ * system's alert (one firm haptic as it confirms), then the proof and the hold. A list of places to go, so it takes the
+ * pushed lists' large title. Opened often, so nothing animates here beyond the rows' press highlight and the
+ * platform's push. A personal workspace gets its short list instead
  * (ADR 0159 §3, `PersonalSettingsList`).
  */
 export function WorkspaceScreen() {
@@ -62,7 +63,7 @@ function TeamSettingsList() {
   const { t } = useTranslation();
   const { org } = useOrg();
   return (
-    <SettingsPage title={t("settings.title")}>
+    <SettingsPage title={t("settings.title")} largeTitle>
       <SectionGroups areas={visibleSections(org)} />
       <DeleteWorkspaceRow />
     </SettingsPage>
@@ -81,7 +82,7 @@ function PersonalSettingsList({ others }: { others: number | undefined }) {
   const { main } = personalSections(org, others);
   const values = useAreaValues(main);
   return (
-    <SettingsPage title={t("settings.title")}>
+    <SettingsPage title={t("settings.title")} largeTitle>
       <Gap />
       <GroupedList>
         <GroupedRow

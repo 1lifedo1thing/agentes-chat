@@ -19,10 +19,21 @@ import { Canvas, createPicture, Picture } from "@shopify/react-native-skia";
 import { LinearGradient } from "expo-linear-gradient";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Image, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Image, Platform, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { asCtx, compile, RecordingContext } from "@/agent/recorder";
 import { replay } from "@/agent/skia-ctx";
-import { AgentAvatar, Button, GroupedFooter, GroupedHeader, GroupedList, Icon, Text, useTheme, useToast } from "@/ui";
+import {
+  AgentAvatar,
+  Button,
+  GroupedFooter,
+  GroupedHeader,
+  GroupedList,
+  Icon,
+  PressScale,
+  Text,
+  useTheme,
+  useToast,
+} from "@/ui";
 import { useColors } from "../shared/hooks";
 import { tapHaptic } from "../shared/parts";
 import { APP_ICON_PICTURES, MADE_ICON_SKY_PICTURES, useAppIcon } from "./app-icon";
@@ -350,7 +361,7 @@ function AppIconMaker({ current, set }: { current: PhoneIcon; set: (icon: PhoneI
   );
 }
 
-/** One choice among its group's: pressed, it gives a little. */
+/** One choice among its group's: the design system's press (it gives a little); the pick's own tap is its haptic. */
 function Choice({
   on,
   label,
@@ -363,20 +374,22 @@ function Choice({
   label: string;
   onPress: () => void;
   slop?: number;
-  style?: object;
+  style?: StyleProp<ViewStyle>;
   children: ReactNode;
 }) {
   return (
-    <Pressable
+    <PressScale
       onPress={onPress}
+      haptic={false}
       accessibilityRole="radio"
       accessibilityLabel={label}
       accessibilityState={{ selected: on }}
       {...(slop ? { hitSlop: slop } : {})}
-      style={({ pressed }) => [style, pressed && styles.pressed]}
+      style={style}
+      contentStyle={styles.choiceIn}
     >
       {children}
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -386,15 +399,23 @@ const styles = StyleSheet.create({
   plate: { borderWidth: 2, alignItems: "center", justifyContent: "center" },
   skies: { flexDirection: "row", gap: 8, padding: 12 },
   half: { flex: 1 },
-  sky: { flexDirection: "row", justifyContent: "flex-start", gap: 10, padding: 8, borderRadius: 14 },
+  sky: {
+    alignSelf: "stretch",
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    gap: 10,
+    padding: 8,
+    borderRadius: 14,
+  },
   colors: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12 },
   color: { width: 30, height: 30, borderRadius: 999, alignItems: "center", justifyContent: "center" },
   grid: { flexDirection: "row", flexWrap: "wrap", rowGap: 10, paddingHorizontal: 8, paddingVertical: 12 },
-  fifth: { width: "20%", alignItems: "center" },
-  fourth: { width: "25%", alignItems: "center" },
+  fifth: { width: "20%" },
+  fourth: { width: "25%" },
+  // A choice's mark centered in its share of the row; a plate (`sky`) stretches across it.
+  choiceIn: { alignItems: "center" },
   face: { width: 52, height: 52, borderRadius: 16 },
   wearing: { width: 64, height: 64, borderRadius: 20 },
   readies: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 12 },
   ready: { borderWidth: 2, borderRadius: 15, padding: 2 },
-  pressed: { transform: [{ scale: 0.96 }] },
 });

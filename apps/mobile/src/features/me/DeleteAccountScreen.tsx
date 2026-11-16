@@ -17,15 +17,28 @@ import { settingUp } from "@agenteschat/client/lib/guards";
 import { typedCode } from "@agenteschat/client/lib/join-requests";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { deleteAccount } from "@/features/account";
-import { Button, CARD_PAD, Card, HoldButton, type IconName, LineIcon, Locked, SCREEN_X, Text, useToast } from "@/ui";
+import {
+  Button,
+  CARD_PAD,
+  Card,
+  HoldButton,
+  type IconName,
+  LineIcon,
+  Locked,
+  SCREEN_X,
+  SkeletonList,
+  Text,
+  useToast,
+} from "@/ui";
 import { AuthField } from "@/ui/auth/AuthField";
 import { PasswordField } from "@/ui/auth/PasswordField";
 import { openWebPath } from "../links/open-web";
 import { ResendCode } from "../settings/parts";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors } from "../shared/hooks";
 import { PushedHeader } from "../shared/parts";
 import { preflightMissing } from "./logic";
@@ -42,8 +55,8 @@ const LINE_ICON: Record<AccountDeletionLine["kind"], IconName> = {
 };
 
 /**
- * Apagar conta (App Store 5.1.1(v)). The title and first line say it's the whole account, not one workspace, 7 days out
- * with a way back until then. What goes and what stays, from the preflight (each workspace that closes with what it holds, what they leave, the computers
+ * Apagar conta (App Store 5.1.1(v)), under the bar's title as every pushed screen (no heading drawn of its own). The
+ * first line says it's the whole account, not one workspace, 7 days out with a way back until then. What goes and what stays, from the preflight (each workspace that closes with what it holds, what they leave, the computers
  * removed, what stays behind with where to disconnect it on the website, and where plans are billed that theirs stop
  * renewing), the way to delete just a workspace on the website, then a hold. A workspace that still needs this person
  * as its only owner comes first, with its two ways out on the website (People, or deleting it; its onboarding, while
@@ -177,7 +190,6 @@ export function DeleteAccountScreen() {
         bottomOffset={24}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
-        <Text variant="display">{t("deleteAccount.title")}</Text>
         <Text variant="body" tone="muted">
           {t("deleteAccount.intro")} {t(legacy ? "mobile.delete.intro" : "mobile.delete.introGrace")}
         </Text>
@@ -216,9 +228,9 @@ export function DeleteAccountScreen() {
           </Card>
         ) : null}
         {plan.isError && !legacy ? (
-          <Button variant="secondary" label={t("mobile.common.retry")} onPress={() => void plan.refetch()} />
+          <LoadFailed onRetry={() => void plan.refetch()} />
         ) : !plan.data && !legacy ? (
-          <ActivityIndicator color={c.muted} />
+          <SkeletonList rows={2} />
         ) : blockers.length > 0 || blockedBy.length > 0 ? (
           <Card>
             <View style={styles.list}>

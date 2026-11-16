@@ -174,7 +174,6 @@ describe("Apagar conta on the phone's closed screens and first run", () => {
     // Workspaces, every server's (ADR 0154): the note first, else the role.
     expect(read("features/me/WorkspacesPages.tsx")).toContain("sub={notes.get(o.id) ?? ");
     const screen = read("features/me/DeleteAccountScreen.tsx");
-    expect(screen).toContain('t("deleteAccount.title")');
     expect(screen).toContain('t("deleteAccount.intro")');
     expect(screen).toContain('t("deleteAccount.oneWorkspace")');
     expect(screen).toContain("notes,\n");

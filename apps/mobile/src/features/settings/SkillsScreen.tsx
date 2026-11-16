@@ -62,7 +62,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -73,8 +73,11 @@ import {
   GroupedHeader,
   GroupedList,
   GroupedRow,
+  IconButton,
+  SCREEN_X,
   SearchField,
   Segmented,
+  SkeletonList,
   Text,
   useToast,
 } from "@/ui";
@@ -90,7 +93,7 @@ import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { TextArea } from "../shared/TextArea";
 import { useStepText } from "./hooks";
 import { isGithubSkillLink, SKILLS_INLINE, searchSkills, skillLine, skillSourceKey } from "./logic";
-import { confirmAction, Gap, SettingsPage } from "./parts";
+import { confirmAction, Gap, SettingsPage, useUnsavedGuard } from "./parts";
 
 /** Opens a skill of the library (its page). */
 const openSkill = (id: string) => router.push(`/settings/skills/${id}`);
@@ -118,12 +121,12 @@ function useSkillScopes(orgId: string) {
 /**
  * Skills, as the web's, for every member: the team's library (who manages agents changes it) and, where the
  * workspace has more than one person, "Equipe | Pessoal" as the Vault has (ADR 0144). Each skill with what it is for,
- * where it came from, its version and how many agents use it; "Instalar skill" first, a search once the list is long.
- * Who manages agents also sees others' personal skills under the team's, name and person only, to remove.
+ * where it came from, its version and how many agents use it; a list under a large title, "Instalar skill" as the
+ * bar's "+", a search first once the library is long. Who manages agents also sees others' personal skills under the
+ * team's, name and person only, each taken out with its row's ×.
  */
 export function SkillsScreen() {
   const { t } = useTranslation();
-  const c = useColors();
   const { orgId, org } = useOrg();
   const admin = can(org, "manage_agents");
   const { skills, split, team, mine, others } = useSkillScopes(orgId);
@@ -159,12 +162,31 @@ export function SkillsScreen() {
           { onSuccess: () => toast({ title: t("skills.removed", { name }), icon: "check" }), onError: failed },
         ),
     });
+  // The search shows by the whole library's size, not the shown scope's, so switching Equipe | Pessoal never moves it.
+  const searchable = team.length + mine.length > SKILLS_INLINE;
   return (
-    <SettingsPage title={t("skills.title")}>
-      <GroupedFooter>{t("settings.sectionText.skills")}</GroupedFooter>
+    <SettingsPage
+      title={t("skills.title")}
+      largeTitle
+      // Installing lives in the bar, as every list's "+".
+      {...(mayInstall && !unavailable && skills.isSuccess
+        ? { right: <IconButton icon="plus" label={t("skills.install")} onPress={install} /> }
+        : {})}
+    >
+      {searchable ? (
+        <View style={styles.search}>
+          <SearchField
+            value={q}
+            onChangeText={setQ}
+            placeholder={t("skills.search")}
+            accessibilityLabel={t("skills.search")}
+          />
+        </View>
+      ) : null}
       {split && skills.isSuccess ? (
         <View style={styles.tabs}>
           <Segmented
+            wide
             items={[
               { key: "team", label: t(modeKey(org, "vault.tab.team")), count: team.length },
               { key: "personal", label: t("vault.tab.personal"), count: mine.length },
@@ -174,6 +196,7 @@ export function SkillsScreen() {
           />
         </View>
       ) : null}
+      <GroupedFooter>{t("settings.sectionText.skills")}</GroupedFooter>
       {scope === "personal" && list.length > 0 ? (
         <View style={styles.note}>
           <Note icon="lock">{t("skills.personal.note")}</Note>
@@ -189,14 +212,6 @@ export function SkillsScreen() {
         </View>
       ) : (
         <>
-          {none || !mayInstall ? null : (
-            <>
-              <Gap />
-              <GroupedList>
-                <GroupedRow icon="plus" label={t("skills.install")} chevron onPress={install} />
-              </GroupedList>
-            </>
-          )}
           {scope === "team" && settings.data ? (
             <>
               <Gap />
@@ -216,19 +231,8 @@ export function SkillsScreen() {
               </GroupedList>
             </>
           ) : null}
-          {list.length > SKILLS_INLINE ? (
-            <View style={styles.search}>
-              <SearchField
-                value={q}
-                onChangeText={setQ}
-                placeholder={t("skills.search")}
-                accessibilityLabel={t("skills.search")}
-              />
-            </View>
-          ) : (
-            <Gap />
-          )}
-          {skills.isLoading ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
+          <Gap />
+          {skills.isLoading ? <SkeletonList rows={4} /> : null}
           {skills.isError && !skills.data ? <LoadFailed onRetry={() => void skills.refetch()} /> : null}
           {none && scope === "personal" ? (
             <EmptyState
@@ -285,9 +289,10 @@ export function SkillsScreen() {
                         {t("skills.usedBy", { count: s.agentsCount ?? 0 })}
                       </Text>
                     }
-                    value={t("skills.remove")}
-                    disabled={action.isPending}
-                    onPress={() => removeOthers(s.id, s.name)}
+                    // The row's ×: who manages agents takes it out (the system's confirmation first).
+                    {...(action.isPending
+                      ? {}
+                      : { remove: { label: t("skills.remove"), onPress: () => removeOthers(s.id, s.name) } })}
                   />
                 ))}
               </GroupedList>
@@ -373,7 +378,7 @@ export function SkillScreen({ id }: { id: string }) {
 
   return (
     <SettingsPage title={s?.name ?? t("skills.title")} subtitle={subtitle}>
-      {skill.isLoading ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
+      {skill.isLoading ? <SkeletonList rows={3} /> : null}
       {skill.isError && !s ? <LoadFailed onRetry={() => void skill.refetch()} /> : null}
       {s ? (
         <>
@@ -465,7 +470,7 @@ function PendingDiff({ skill: s }: { skill: SkillDetail }) {
   return (
     <>
       {views.length > 1 ? (
-        <View style={styles.tabs}>
+        <View style={styles.bleed}>
           <Filters
             items={views.map((v) => ({ key: v.id, label: t(`skills.diff.${v.id}`) }))}
             value={view?.id ?? "link"}
@@ -638,27 +643,63 @@ function SourceUpdate({ skill: s }: { skill: SkillDetail }) {
   );
 }
 
-/** One change an agent made, as the web's: who and when; a tap opens its diff in place. */
-function ChangeRow({ change: c, agent }: { change: SkillAgentChange; agent: string }) {
+/**
+ * One change an agent made, as the web's: who and when; a tap pushes its diff on a screen of its own (a diff opened
+ * inside the list grew the card under the finger and pushed everything after it down).
+ */
+function ChangeRow({ skillId, change: c, agent }: { skillId: string; change: SkillAgentChange; agent: string }) {
   const { t, i18n } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const line = t("skills.agentChange", { agent, when: relativeTime(t, i18n.language, c.at) });
   return (
-    <>
-      <GroupedRow
-        icon="eye"
-        label={line}
-        labelLines={2}
-        sub={c.undone ? t("skills.history.undone") : undefined}
-        value={t(open ? "skills.history.hide" : "skills.history.show")}
-        onPress={() => setOpen(!open)}
-      />
-      {open ? (
-        <View style={styles.page}>
-          <DiffView lines={diffLines(c.before.split("\n"), c.after.split("\n"))} />
-        </View>
-      ) : null}
-    </>
+    <GroupedRow
+      icon="eye"
+      label={t("skills.agentChange", { agent, when: relativeTime(t, i18n.language, c.at) })}
+      labelLines={2}
+      {...(c.undone ? { sub: t("skills.history.undone") } : {})}
+      chevron
+      onPress={() => router.push({ pathname: "/settings/skills/change", params: { id: skillId, change: c.id } })}
+    />
+  );
+}
+
+/**
+ * What an agent changed in a skill, pushed from its page's history: who and when under the title, then the diff of
+ * its instructions, as the web's sheet draws it.
+ */
+export function SkillChangeScreen({ id, changeId }: { id: string; changeId: string }) {
+  const { t, i18n } = useTranslation();
+  const { orgId } = useOrg();
+  const skill = useSkill(orgId, id || null);
+  const agents = useAgents(orgId);
+  const change = skill.data?.changes?.find((x) => x.id === changeId);
+  const agent = change ? (agents.data?.find((a) => a.id === change.agentId)?.name ?? t("channel.unknownAgent")) : "";
+  // Who and when under the title, and that it was undone, as its row in the history says it.
+  const line = change
+    ? [
+        t("skills.agentChange", { agent, when: relativeTime(t, i18n.language, change.at) }),
+        change.undone ? t("skills.history.undone") : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : undefined;
+  return (
+    <SettingsPage title={skill.data?.name ?? t("skills.history.title")} subtitle={line}>
+      {change ? (
+        <>
+          <Gap />
+          <GroupedList>
+            <View style={styles.page}>
+              <DiffView lines={diffLines(change.before.split("\n"), change.after.split("\n"))} />
+            </View>
+          </GroupedList>
+        </>
+      ) : skill.isLoading ? (
+        <SkeletonList rows={3} />
+      ) : skill.isError ? (
+        <LoadFailed onRetry={() => void skill.refetch()} />
+      ) : (
+        <EmptyState size="inline" title={t("common.gone")} />
+      )}
+    </SettingsPage>
   );
 }
 
@@ -725,7 +766,7 @@ function AgentImprove({ skill: s }: { skill: SkillDetail }) {
           ) : (
             <GroupedList>
               {s.changes.map((c) => (
-                <ChangeRow key={c.id} change={c} agent={nameOf(c.agentId)} />
+                <ChangeRow key={c.id} skillId={s.id} change={c} agent={nameOf(c.agentId)} />
               ))}
             </GroupedList>
           )}
@@ -1002,6 +1043,7 @@ function InstallSkill({
     >
       <View style={styles.tabs}>
         <Segmented
+          wide
           items={[
             { key: "github", label: t("skills.tab.github") },
             { key: "zip", label: t("skills.tab.zip") },
@@ -1019,6 +1061,7 @@ function InstallSkill({
           <GroupedHeader>{t("skills.personal.forWhom")}</GroupedHeader>
           <View style={styles.tabs}>
             <Segmented
+              wide
               items={[
                 { key: "personal", label: t("vault.tab.personal") },
                 { key: "team", label: t(modeKey(org, "vault.tab.team")) },
@@ -1251,7 +1294,6 @@ function InstallSkill({
  */
 export function EditSkillScreen({ id }: { id: string }) {
   const { t } = useTranslation();
-  const c = useColors();
   const toast = useToast();
   const { orgId } = useOrg();
   const skill = useSkill(orgId, id || null);
@@ -1263,6 +1305,15 @@ export function EditSkillScreen({ id }: { id: string }) {
     if (s && !form) setForm({ description: s.description, body: s.body, defaultForNewAgents: s.defaultForNewAgents });
   }, [s, form]);
   const ready = Boolean(form?.description.trim()) && !action.isPending;
+  // Back with what was typed and not saved asks first, as every form does.
+  const dirty = Boolean(
+    s &&
+      form &&
+      (form.description !== s.description ||
+        form.body !== s.body ||
+        form.defaultForNewAgents !== s.defaultForNewAgents),
+  );
+  const leave = useUnsavedGuard(dirty);
   const save = () => {
     if (!s || !form || !ready) return;
     action.mutate(
@@ -1271,6 +1322,7 @@ export function EditSkillScreen({ id }: { id: string }) {
         onSuccess: () => {
           successHaptic();
           toast({ title: t("skills.saved", { name: s.name }), icon: "check" });
+          leave();
           goBack();
         },
         onError: (e) => toast({ title: errorText(t, e), icon: "x" }),
@@ -1288,7 +1340,7 @@ export function EditSkillScreen({ id }: { id: string }) {
         skill.isError ? (
           <LoadFailed onRetry={() => void skill.refetch()} />
         ) : (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
+          <SkeletonList rows={3} />
         )
       ) : (
         <>
@@ -1327,11 +1379,12 @@ export function EditSkillScreen({ id }: { id: string }) {
 
 const styles = StyleSheet.create({
   note: { paddingHorizontal: 4, paddingTop: 10 },
-  search: { paddingTop: 14, paddingBottom: 8 },
-  loading: { marginVertical: 16 },
+  search: { paddingTop: 4, paddingBottom: 8 },
   page: { paddingHorizontal: 16, paddingVertical: 14 },
   diff: { gap: 8, paddingTop: 10, paddingHorizontal: 4 },
-  tabs: { paddingTop: 10, paddingHorizontal: 4 },
+  tabs: { paddingTop: 10 },
+  // Under the page's 16 at its sides: the chips' own row runs from edge to edge.
+  bleed: { paddingTop: 10, marginHorizontal: -SCREEN_X },
   error: { paddingTop: 8, paddingHorizontal: 16 },
   hidden: { gap: 12, paddingHorizontal: 4, paddingTop: 10, alignItems: "flex-start" },
 });

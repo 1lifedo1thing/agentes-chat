@@ -7,7 +7,7 @@ import { filterZones, type ZoneOption, zoneOptions } from "@agenteschat/ui/timez
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FlatList, Pressable, StyleSheet, TextInput, type TextInputInstance, View } from "react-native";
+import { FlatList, StyleSheet, TextInput, type TextInputInstance, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { authClient } from "@/lib/auth";
 import { serverUrl } from "@/lib/server";
@@ -15,6 +15,7 @@ import { useOrg, useOrgMaybe } from "@/providers/org";
 import {
   Button,
   fieldText,
+  GROUPED_ROW,
   GroupedField,
   GroupedFooter,
   GroupedHeader,
@@ -22,6 +23,7 @@ import {
   GroupedRow,
   PersonAvatar,
   SearchField,
+  SHEET_X,
   Sheet,
   Text,
   useTheme,
@@ -141,18 +143,16 @@ export function AccountPage() {
           <PersonAvatar name={draft.name || "?"} size={PHOTO} photo={photo} />
           {uploading ? <Uploading style={styles.photoBusy} /> : null}
         </View>
-        <Pressable
-          onPress={changePhoto}
-          disabled={uploading}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: uploading, busy: uploading }}
-          hitSlop={12}
-          style={({ pressed }) => (pressed ? styles.pressed : null)}
-        >
-          <Text variant="subhead" tone={uploading ? "faint" : "ink2"} style={styles.semibold}>
-            {t("mobile.me.account.changePhoto")}
-          </Text>
-        </Pressable>
+        {/* The design system's text button (its press and haptic), centered under the photo by its own box. */}
+        <View>
+          <Button
+            variant="text"
+            size="sm"
+            label={t("mobile.me.account.changePhoto")}
+            disabled={uploading}
+            onPress={changePhoto}
+          />
+        </View>
       </View>
       <GroupedList>
         <GroupedField label={t("mobile.me.account.name")}>
@@ -659,13 +659,11 @@ function ZoneRow({
 }
 
 const styles = StyleSheet.create({
-  // The zones sheet's bar and search, on the sheet's own 18 margin, over the list.
-  sheetHead: { paddingHorizontal: 18, paddingBottom: 8, gap: 4 },
+  // The zones sheet's bar and search, on every sheet's side margin, over the list.
+  sheetHead: { paddingHorizontal: SHEET_X, paddingBottom: 8, gap: 4 },
   fill: { flex: 1 },
   photo: { alignItems: "center", gap: 8, paddingTop: 6, paddingBottom: 14 },
   photoBusy: { width: PHOTO, height: PHOTO, borderRadius: PHOTO / 2 },
-  semibold: { fontWeight: "600" },
-  pressed: { opacity: 0.6 },
   input: { flex: 1, paddingVertical: 12, paddingHorizontal: 0 },
   handle: { flexDirection: "row", alignItems: "center", gap: 1 },
   error: { paddingTop: 8, paddingHorizontal: 16 },
@@ -680,9 +678,9 @@ const styles = StyleSheet.create({
   zoneClip: { overflow: "hidden", marginHorizontal: -6, paddingHorizontal: 6 },
   zoneClipFirst: { marginTop: -6, paddingTop: 6 },
   zoneClipLast: { marginBottom: -6, paddingBottom: 6 },
-  // GroupedList's numbers: radius 14, the hairline inset 14 to the text.
+  // GroupedList's numbers: radius 14, the hairline from the row's text on.
   zoneRow: { overflow: "hidden" },
   zoneFirst: { borderTopLeftRadius: 14, borderTopRightRadius: 14 },
   zoneLast: { borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
-  zoneDivider: { height: StyleSheet.hairlineWidth, marginLeft: 14 },
+  zoneDivider: { height: StyleSheet.hairlineWidth, marginLeft: GROUPED_ROW.padX },
 });

@@ -12,20 +12,22 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, StyleSheet, TextInput } from "react-native";
+import { StyleSheet, TextInput } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
+  EmptyState,
   GroupedField,
   GroupedFooter,
   GroupedHeader,
   GroupedList,
   GroupedRow,
-  Text,
+  SkeletonList,
   useFieldText,
   useToast,
 } from "@/ui";
 import { router } from "@/ui/navigation";
-import { Gap, SettingsPage } from "../settings/parts";
+import { confirmAction, Gap, SettingsPage, useUnsavedGuard } from "../settings/parts";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useMeId, useOrgId } from "../shared/hooks";
 import { successHaptic } from "../shared/parts";
 import { arrangesCategories, categoryHrefs, channelSteps, movesChannel, stepBefore } from "./logic";
@@ -112,6 +114,7 @@ export function PickCategoryScreen({ channelId }: { channelId: string }) {
             <GroupedRow
               icon="plus"
               label={t("channelCategories.newCategory")}
+              chevron
               onPress={() => router.push(categoryHrefs.create(channelId))}
             />
           </GroupedList>
@@ -158,6 +161,8 @@ export function NewCategoryScreen({ channelId }: { channelId?: string }) {
     (categories.data ?? []).some((x) => x.name.trim().toLowerCase() === name.trim().toLowerCase()),
     create.isPending || create.isSuccess,
   );
+  // Back with a name typed and not created asks first, as every form does.
+  const leave = useUnsavedGuard(name.trim().length > 0 && !create.isSuccess);
   const save = () => {
     if (!name.trim()) return toast({ title: t("channelCategories.nameEmpty"), icon: "x" });
     if (taken) return toast({ title: t("channelCategories.nameTaken", { name: name.trim() }), icon: "x" });
@@ -168,6 +173,7 @@ export function NewCategoryScreen({ channelId }: { channelId?: string }) {
         onSuccess: (category) => {
           successHaptic();
           toast({ title: t("channelCategories.created", { name: category.name }) });
+          leave();
           router.back();
         },
         onError: (e) => toast({ title: errorText(t, e), icon: "x" }),
@@ -240,7 +246,11 @@ export function CategoriesScreen() {
   return (
     <SettingsPage title={t("mobile.categories.title")}>
       <Gap />
-      {list.length > 0 ? (
+      {categories.isLoading ? (
+        <SkeletonList rows={3} />
+      ) : categories.isError && !categories.data ? (
+        <LoadFailed onRetry={() => void categories.refetch()} />
+      ) : list.length > 0 ? (
         <GroupedList>
           {list.map((x) => {
             const n = (channels.data ?? []).filter((c) => c.categoryId === x.id).length;
@@ -256,15 +266,14 @@ export function CategoriesScreen() {
           })}
         </GroupedList>
       ) : (
-        <Text tone="faint" style={styles.empty}>
-          {t("mobile.categories.none")}
-        </Text>
+        <EmptyState size="inline" title={t("mobile.categories.none")} />
       )}
       <Gap />
       <GroupedList>
         <GroupedRow
           icon="plus"
           label={t("channelCategories.newCategory")}
+          chevron
           onPress={() => router.push(categoryHrefs.create())}
         />
       </GroupedList>
@@ -291,11 +300,16 @@ export function EditCategoryScreen({ categoryId }: { categoryId: string }) {
   const value = name ?? category?.name ?? "";
   const ids = list.map((x) => x.id);
   const inIt = (channels.data ?? []).filter((x) => x.categoryId === categoryId);
+  // Back with a new name not saved asks first; deleting it leaves at once.
+  const leave = useUnsavedGuard(Boolean(category) && name !== null && name.trim() !== category?.name);
   const save = () => {
     if (!category) return;
     const next = value.trim();
     if (!next) return toast({ title: t("channelCategories.nameEmpty"), icon: "x" });
-    if (next === category.name) return router.back();
+    if (next === category.name) {
+      leave();
+      return router.back();
+    }
     if (list.some((x) => x.id !== categoryId && x.name.trim().toLowerCase() === next.toLowerCase()))
       return toast({ title: t("channelCategories.nameTaken", { name: next }), icon: "x" });
     rename.mutate(
@@ -303,6 +317,7 @@ export function EditCategoryScreen({ categoryId }: { categoryId: string }) {
       {
         onSuccess: () => {
           successHaptic();
+          leave();
           router.back();
         },
         onError: (e) => toast({ title: errorText(t, e), icon: "x" }),
@@ -317,27 +332,28 @@ export function EditCategoryScreen({ categoryId }: { categoryId: string }) {
       { onError: (e) => toast({ title: errorText(t, e), icon: "x" }) },
     );
   };
-  const askDelete = () =>
-    category &&
-    Alert.alert(t("mobile.categories.deleteTitle", { name: category.name }), t("channelCategories.deleteDesc"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("channelCategories.delete"),
-        style: "destructive",
-        onPress: () =>
-          remove.mutate(categoryId, {
-            onSuccess: () => {
-              toast({
-                title: inIt.length
-                  ? t("channelCategories.deleted", { name: category.name, count: inIt.length })
-                  : t("channelCategories.deletedEmpty", { name: category.name }),
-              });
-              router.back();
-            },
-            onError: (e) => toast({ title: errorText(t, e), icon: "x" }),
-          }),
-      },
-    ]);
+  const askDelete = () => {
+    if (!category) return;
+    confirmAction({
+      title: t("mobile.categories.deleteTitle", { name: category.name }),
+      text: t("channelCategories.deleteDesc"),
+      action: t("channelCategories.delete"),
+      cancel: t("common.cancel"),
+      onConfirm: () =>
+        remove.mutate(categoryId, {
+          onSuccess: () => {
+            toast({
+              title: inIt.length
+                ? t("channelCategories.deleted", { name: category.name, count: inIt.length })
+                : t("channelCategories.deletedEmpty", { name: category.name }),
+            });
+            leave();
+            router.back();
+          },
+          onError: (e) => toast({ title: errorText(t, e), icon: "x" }),
+        }),
+    });
+  };
   const at = ids.indexOf(categoryId);
   return (
     <SettingsPage
@@ -403,5 +419,4 @@ export function useMovesChannel(channelId: string) {
 
 const styles = StyleSheet.create({
   input: { flex: 1, paddingVertical: 12, paddingHorizontal: 0 },
-  empty: { textAlign: "center", paddingVertical: 24 },
 });
