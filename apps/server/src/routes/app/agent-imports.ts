@@ -124,6 +124,7 @@ const Bundle = z
             z.object({ rule: BundleRule }),
             z.object({ at: z.string().max(40) }),
           ]),
+          paused: z.boolean().optional(),
         }),
       )
       .max(IMPORT_LIMITS.routines),

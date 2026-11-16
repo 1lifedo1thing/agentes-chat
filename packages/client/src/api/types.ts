@@ -5352,6 +5352,8 @@ export interface BundleRoutine {
   /** Key of a channel in the bundle; null posts in the importer's DM with the agent. */
   channel: string | null;
   trigger: { cron: string; timezone: string | null } | { rule: ApiRule } | { at: string };
+  /** It was off where it comes from, so it arrives off. Only when it is made: an update keeps it as the person left it. */
+  paused?: boolean;
 }
 
 export interface BundleNote {

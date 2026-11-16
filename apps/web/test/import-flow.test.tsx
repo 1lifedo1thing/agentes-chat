@@ -1005,6 +1005,177 @@ describe("Configurações → Importar e exportar", () => {
     ).toBe(`/org/${ORG_ID}/settings/connectors`);
   });
 
+  describe("an app that keeps its agents on the person's computer", () => {
+    /** What `agentes-runner migrate --from openbot` writes: OpenBot's own transfer file, a skill and a workspace. */
+    const migrated = () =>
+      new File(
+        [
+          zip({
+            "openbot-transfer.json": JSON.stringify({
+              format: "openbot-instance-transfer",
+              version: 1,
+              source: { appVersion: "", exportedAt: "2026-11-16T12:00:00.000Z" },
+              agents: [
+                {
+                  key: "scout",
+                  name: "Scout",
+                  title: "Pesquisa de mercado",
+                  description: "You look things up.",
+                  avatarSeed: "s1",
+                  avatarHue: 120,
+                  avatar: null,
+                  provider: "claude",
+                  model: "claude-opus",
+                  reasoningEffort: "high",
+                  notifications: true,
+                  skills: ["agents/scout/skills/research"],
+                  files: "agents/scout/workspace",
+                  routines: [
+                    {
+                      key: "r1",
+                      name: "Daily",
+                      instruction: "Check prices",
+                      active: false,
+                      timezone: "America/Sao_Paulo",
+                      schedule: { kind: "daily", time: "09:00" },
+                    },
+                  ],
+                  webhookRoutines: [{ key: "r2", name: "On push", instruction: "x", active: true, timezone: "" }],
+                  memories: [{ text: "Likes short answers" }],
+                },
+              ],
+              settings: {
+                mcpServers: [],
+                customProviders: [],
+                customAgents: [],
+                sidebarSections: [],
+                routineFlows: [],
+              },
+              shared: null,
+              signedIn: [],
+              channels: [
+                {
+                  key: "launch",
+                  name: "Launch",
+                  title: "",
+                  instructions: "",
+                  members: ["scout"],
+                  lead: null,
+                  image: null,
+                  archived: false,
+                  memories: [],
+                  routines: [],
+                },
+                {
+                  key: "old",
+                  name: "Old",
+                  title: "",
+                  instructions: "",
+                  members: ["scout"],
+                  lead: null,
+                  image: null,
+                  archived: true,
+                  memories: [],
+                  routines: [],
+                },
+              ],
+            }),
+            "agents/scout/skills/research/SKILL.md": "---\nname: research\ndescription: Look it up\n---\n\nLook it up.",
+            "agents/scout/workspace/reports/week.md": "# Week\n",
+          }).slice(),
+        ],
+        "agentes-chat-import-openbot.zip",
+      );
+    const sheetOf = (name: string) => screen().getByRole("dialog", { name });
+    const field = (sheet: HTMLElement, label: string) => within(sheet).getByLabelText(label) as HTMLTextAreaElement;
+
+    test("its card opens a sheet: the request for a coding assistant, or the command, for this computer's system", async () => {
+      await go();
+      await click(button("OpenBot.run"), 6);
+      const sheet = sheetOf("Trazer o time do OpenBot");
+      const request = field(sheet, "Pedido para o assistente de código").value;
+      expect(request).toContain("Move my OpenBot agents to agentes.chat.");
+      expect(request).toContain("Ask me where to save the export file.");
+      expect(request).toContain('/migrate.sh | sh -s -- --from openbot --out "<folder>" --json');
+      expect(request).toContain("agentes-chat-import-openbot.zip");
+      expect(sheet.textContent).toContain("Só leitura. Chaves, senhas e sessões do OpenBot nunca são lidas.");
+      expect(sheet.textContent).toContain("agentes-chat-import-openbot.zip, na pasta que você escolheu");
+
+      await click(within(sheet).getByRole("radio", { name: "Windows" }), 2);
+      expect(field(sheet, "Pedido para o assistente de código").value).toContain(
+        '/migrate.ps1))) -From openbot -Out "<folder>" -Json',
+      );
+      await click(within(sheet).getByRole("button", { name: "Prefiro rodar o comando eu mesmo" }), 2);
+      expect(sheet.textContent).toContain("Cole no PowerShell");
+      expect(field(sheet, "Comando").value).toMatch(
+        /^& \(\[scriptblock\]::Create\(\(irm \S+\/migrate\.ps1\)\)\) -From openbot$/,
+      );
+      await click(within(sheet).getByRole("radio", { name: "Mac ou Linux" }), 2);
+      expect(sheet.textContent).toContain("Cole no terminal");
+      expect(field(sheet, "Comando").value).toMatch(/^curl -fsSL \S+\/migrate\.sh \| sh -s -- --from openbot$/);
+
+      // Each app on a computer has the same sheet, in its own name.
+      await click(within(sheet).getByRole("button", { name: "Fechar" }), 4);
+      // No card stays picked under it, and no steps of another way in: the drop zone is still there.
+      expect(button("OpenBot.run").getAttribute("aria-pressed")).toBe("false");
+      expect(screen().queryByRole("radiogroup", { name: "Como trazer" })).toBeNull();
+      expect(text()).toContain("Já tem um arquivo de outro app? Solte aqui: ele é reconhecido sozinho.");
+      await click(button("Hermes Agent"), 6);
+      expect(field(sheetOf("Trazer o time do Hermes"), "Pedido para o assistente de código").value).toContain(
+        "--from hermes",
+      );
+    });
+
+    test("the file dropped there: who comes, then they are made and the sheet says they arrived", async () => {
+      const { state } = await go();
+      await click(button("OpenBot.run"), 6);
+      const input = within(sheetOf("Trazer o time do OpenBot")).getByLabelText("Arquivos para importar");
+      Object.defineProperty(input, "files", { configurable: true, value: [migrated()] });
+      await act(async () => fireEvent.change(input));
+      await settle(12);
+
+      const ready = sheetOf("1 agente pronto para vir");
+      expect(ready.textContent).toContain("Scout");
+      expect(ready.textContent).toContain("Pesquisa de mercado");
+      expect(ready.textContent).toContain("1 rotina");
+      expect(ready.textContent).toContain("1 memória");
+      expect(ready.textContent).toContain("1 skill");
+      expect(ready.textContent).toContain("1 arquivo dos agentes, copiado para o Drive");
+      // The archived channel stays behind; nothing is made before the button.
+      expect(ready.textContent).toContain("1 canal");
+      expect(applies(state).every((a) => a.dryRun)).toBe(true);
+      // The routine was off there, so it comes off; the webhook one is only listed.
+      const [plan] = applies(state);
+      expect(plan?.bundle.routines).toMatchObject([{ name: "Daily", paused: true }]);
+      expect(plan?.bundle.channels.map((c) => c.name)).toEqual(["launch"]);
+      expect(plan?.bundle.leftOut).toContainEqual({ kind: "routine", label: "On push (Scout)" });
+
+      await click(within(ready).getByRole("button", { name: "Trazer o agente" }), 30);
+      const here = sheetOf("O time chegou");
+      expect(here.textContent).toContain("Scout já está aqui.");
+      expect(state.agents.some((a) => a.name === "Scout")).toBe(true);
+      expect(calls(state, "imports.copyFile")).toHaveLength(1);
+
+      // Closing it leaves the import's own report on the page.
+      await click(within(here).getByRole("button", { name: "Ver o que chegou" }), 6);
+      expect(screen().queryByRole("dialog")).toBeNull();
+      expect(screen().getByRole("region", { name: "Chegou tudo" })).toBeTruthy();
+    });
+
+    test("Escolher o que vem closes the sheet on the full preview, with nothing made", async () => {
+      const { state } = await go();
+      await click(button("OpenBot.run"), 6);
+      const input = within(sheetOf("Trazer o time do OpenBot")).getByLabelText("Arquivos para importar");
+      Object.defineProperty(input, "files", { configurable: true, value: [migrated()] });
+      await act(async () => fireEvent.change(input));
+      await settle(12);
+      await click(within(sheetOf("1 agente pronto para vir")).getByRole("button", { name: "Escolher o que vem" }), 6);
+      expect(screen().queryByRole("dialog")).toBeNull();
+      expect(screen().getByRole("checkbox", { name: "Trazer Scout" })).toBeTruthy();
+      expect(applies(state).every((a) => a.dryRun)).toBe(true);
+    });
+  });
+
   describe("an OpenBot.run export with the agents' own files", () => {
     const openbot = (name: string) => readFileSync(join(FIXTURES, "openbot-run", name), "utf8");
     /** As the OpenBot.run export comes: a .zip with its folder inside, made on a Mac. */

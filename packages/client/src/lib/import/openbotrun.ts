@@ -28,7 +28,8 @@ import {
  * - `openbot-transfer.json` (`openbot-instance-transfer` v1), a server's
  *   transfer file (`docs/architecture/agents.md`, "Instance transfer"): the
  *   same per agent plus its model, and the server's MCP servers with every
- *   value already emptied.
+ *   value already emptied. `agentes-runner migrate --from openbot` writes this
+ *   format too, from the app's own database.
  * Agent paths are always inside `agents/<key>/`.
  */
 
@@ -54,9 +55,10 @@ export function parse(files: ImportFile[], d: Draft) {
   d.used.add(file.name);
   const source = obj(doc.source);
   const app = str(source.app);
-  d.name = APPS[app] ?? app;
-  d.ref = app || "openbot";
   const transfer = doc.format === TRANSFER;
+  // A transfer names no app; its server may have a name of its own.
+  d.name = APPS[app] ?? (app || (transfer ? str(obj(doc.serverIdentity).name) || "OpenBot" : ""));
+  d.ref = app || "openbot";
 
   const names = new Map<string, string>();
   for (const a of list(doc.agents).map(obj)) {
@@ -91,6 +93,8 @@ export function parse(files: ImportFile[], d: Draft) {
     // The rest of the folder is the agent's own files: they can go to its folder in the Drive.
     if (files) d.filesIn(key, files);
     for (const r of [...list(a.routines), ...list(a.oneTimeRoutines)].map(obj)) routine(r, key, null, name, d);
+    // A routine a webhook starts has no schedule to bring: listed, to set up again.
+    for (const r of list(a.webhookRoutines).map(obj)) d.left("routine", `${str(r.name)} (${name})`);
     list(a.memories).forEach((m, i) => {
       d.note({ key: `${key}/memory-${i + 1}`, agent: key, kind: "fact", content: str(m) || str(obj(m).text) });
     });
@@ -101,7 +105,8 @@ export function parse(files: ImportFile[], d: Draft) {
     const members = list(c.members)
       .map(str)
       .filter((k) => names.has(k));
-    if (!key || members.length === 0) continue;
+    // An archived channel is one the person put away.
+    if (!key || members.length === 0 || c.archived === true) continue;
     const lead = members.includes(str(c.lead)) ? str(c.lead) : "";
     // A group chat with a lead answers through it; without one, every member may answer.
     d.channel({
@@ -111,9 +116,16 @@ export function parse(files: ImportFile[], d: Draft) {
       agents: members.map((k) => ({ key: k, autoReply: !lead || k === lead })),
     });
     for (const r of list(c.routines).map(obj)) routine(r, lead || (members[0] as string), key, str(c.name) || key, d);
+    for (const r of list(c.webhookRoutines).map(obj)) d.left("routine", `${str(r.name)} (${str(c.name) || key})`);
     list(c.memories).forEach((m, i) => {
       d.note({ key: `${key}/memory-${i + 1}`, agent: null, kind: "fact", content: str(m) });
     });
+  }
+
+  // The server's shared skills that no agent had (`library/<slug>/`): they come too, on for nobody.
+  for (const s of list(doc.sharedSkills).map(obj)) {
+    const dir = str(s.path).replace(/\/+$/, "");
+    if (dir.startsWith("library/")) d.skillDir(dir, str(s.slug) || baseName(dir));
   }
 
   const settings = obj(doc.settings);
@@ -123,6 +135,7 @@ export function parse(files: ImportFile[], d: Draft) {
   }
   for (const p of list(settings.customProviders).map(obj)) d.left("model", str(p.name) || str(p.id));
   for (const a of list(settings.customAgents).map(obj)) d.left("remote", str(a.name) || str(a.id));
+  for (const w of list(settings.workflows).map(obj)) d.left("routine", str(w.name) || str(w.key) || str(w.id));
   for (const f of list(settings.routineFlows).map(obj)) {
     d.left(
       "routine",
@@ -141,6 +154,7 @@ function routine(r: Record<string, unknown>, agent: string, channel: string | nu
     channel,
     trigger: schedule(obj(r.schedule), str(r.timezone) || null),
     label: `${name} (${owner})`,
+    paused: r.active === false,
   });
 }
 

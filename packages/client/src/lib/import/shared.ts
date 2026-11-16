@@ -732,6 +732,8 @@ export class Draft {
     channel?: string | null;
     trigger: Trigger | null;
     label?: string;
+    /** Off in the source: it arrives off. */
+    paused?: boolean;
   }) {
     if (!r.trigger || !r.prompt.trim() || !r.agent) {
       this.left("routine", r.label ?? r.name);
@@ -747,6 +749,7 @@ export class Draft {
       prompt: r.prompt.trim(),
       channel: r.channel ?? null,
       trigger: r.trigger,
+      ...(r.paused ? { paused: true } : {}),
     });
   }
 

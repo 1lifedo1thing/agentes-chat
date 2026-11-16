@@ -10,6 +10,7 @@ import { aiAppImport } from "@agenteschat/client/lib/apps";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { formatBytes, MAX_UPLOAD_MB } from "@agenteschat/client/lib/files";
 import { joinNames } from "@agenteschat/client/lib/format";
+import { type ComputerCard, isComputerCard } from "@agenteschat/client/lib/import/computer";
 import { frontmatter, PASTED } from "@agenteschat/client/lib/import/shared";
 import { can, makesAgents } from "@agenteschat/client/lib/permissions";
 import {
@@ -57,6 +58,7 @@ import { AgentAvatar } from "@/components/AgentAvatar";
 import { ClientSteps } from "@/components/AiApps";
 import { HelpLink } from "@/components/HelpLink";
 import { ImportFailureNote } from "@/components/ImportFailure";
+import { ImportFromComputer } from "@/components/ImportFromComputer";
 import { useOrg } from "@/components/org-context";
 import {
   type AgentFile,
@@ -485,10 +487,35 @@ export function ImportFlow({
   standalone?: boolean;
   level?: 2 | 3;
 }) {
-  if (flow.planned && flow.report)
-    return <ImportReport flow={flow} orgId={orgId} level={level} onAnother={flow.reset} linked={standalone} />;
-  if (flow.planned) return <Preview flow={flow} orgId={orgId} standalone={standalone} level={level} />;
-  return <Picker flow={flow} orgId={orgId} linked={standalone} />;
+  // An app that keeps its agents on the person's computer: its card opens the sheet, over whichever step shows.
+  // Picked before this showed (the onboarding's own cards): its sheet is open from the start.
+  const [computer, setComputer] = useState<ComputerCard | null>(() =>
+    !flow.planned && isComputerCard(flow.card) ? flow.card : null,
+  );
+  const index = useBundleIndex(flow);
+  const todo = flow.planned?.bundle.todo ?? [];
+  return (
+    <>
+      {flow.planned && flow.report ? (
+        <ImportReport flow={flow} orgId={orgId} level={level} onAnother={flow.reset} linked={standalone} />
+      ) : flow.planned ? (
+        <Preview flow={flow} orgId={orgId} standalone={standalone} level={level} />
+      ) : (
+        <Picker flow={flow} orgId={orgId} linked={standalone} onComputer={setComputer} />
+      )}
+      <ImportFromComputer
+        flow={flow}
+        card={computer}
+        onClose={() => setComputer(null)}
+        standalone={standalone}
+        todos={
+          todo.length > 0 ? (
+            <Todos todo={todo} nameOf={index.nameOf} orgId={orgId} linked={standalone && flow.report !== null} />
+          ) : null
+        }
+      />
+    </>
+  );
 }
 
 function Heading({ level, ...rest }: { level: 2 | 3 | 4 } & ComponentProps<"h2">) {
@@ -524,11 +551,13 @@ export function useImportMethod(flow: ImportFlowState, orgId: string) {
   const apps = useApps(orgId);
   const standing = useMe().data?.organizations.find((o) => o.id === orgId)?.standing;
   const mcp = aiAppImport(t, apps.data, standing);
+  // An app on the person's computer has its sheet, never steps here: under it the picker is as with no card.
+  const card = isComputerCard(flow.card) ? null : flow.card;
   const method: ImportMethod | null =
-    !flow.card || !mcpClient(flow.card)
+    !card || !mcpClient(card)
       ? "prompt"
       : mcp
-        ? ((mcp.available ? flow.methods[flow.card] : undefined) ?? defaultMethod(flow.card, mcp.available))
+        ? ((mcp.available ? flow.methods[card] : undefined) ?? defaultMethod(card, mcp.available))
         : apps.isError
           ? "prompt"
           : null;
@@ -539,7 +568,18 @@ export function useImportMethod(flow: ImportFlowState, orgId: string) {
  * Pick the app, then connect it with MCP (where it takes it, and apps reach this server), or drop, choose, link or
  * paste: the source is recognized either way, and a dropped file is read on either path.
  */
-function Picker({ flow, orgId, linked }: { flow: ImportFlowState; orgId: string; linked: boolean }) {
+function Picker({
+  flow,
+  orgId,
+  linked,
+  onComputer,
+}: {
+  flow: ImportFlowState;
+  orgId: string;
+  linked: boolean;
+  /** A card whose app is on the person's computer was picked: its sheet opens, and no card stays picked. */
+  onComputer: (card: ComputerCard) => void;
+}) {
   const { t } = useTranslation();
   const { mcp, method } = useImportMethod(flow, orgId);
   const filesInput = useRef<HTMLInputElement>(null);
@@ -588,8 +628,13 @@ function Picker({ flow, orgId, linked }: { flow: ImportFlowState; orgId: string;
           <OptionCard
             key={c}
             stacked
-            pressed={flow.card === c}
-            onClick={() => flow.setCard(flow.card === c ? null : c)}
+            pressed={flow.card === c && !isComputerCard(c)}
+            onClick={() => {
+              if (isComputerCard(c)) {
+                flow.setCard(null);
+                onComputer(c);
+              } else flow.setCard(flow.card === c ? null : c);
+            }}
             className="imp-source"
           >
             <SourceMark card={c} />
@@ -598,7 +643,7 @@ function Picker({ flow, orgId, linked }: { flow: ImportFlowState; orgId: string;
         ))}
       </div>
 
-      {flow.card && (
+      {flow.card && !isComputerCard(flow.card) && (
         <SourceSteps
           key={flow.card}
           card={flow.card}
@@ -611,6 +656,12 @@ function Picker({ flow, orgId, linked }: { flow: ImportFlowState; orgId: string;
         />
       )}
 
+      {(!flow.card || isComputerCard(flow.card)) && !busy && (
+        <p className="imp-tip ac-iconline">
+          <Icon name="info" size={16} />
+          <span>{t("onboarding.import.haveFile")}</span>
+        </p>
+      )}
       {busy ? (
         <div className="imp-reading">
           <span className="imp-reading__text" role="status">

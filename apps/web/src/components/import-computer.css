@@ -1,0 +1,165 @@
+/* Bringing a team from an app on the person's computer (ImportFromComputer.tsx): the sheet under the crossing. */
+.imp-sheet__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.imp-sheet__text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+.imp-sheet__sub {
+  margin: 0 0 calc(var(--space-2) * -1);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+.imp-sheet__alt {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  font-size: 13.5px;
+}
+
+/* The two steps: a number, then what to do under its title. */
+.imp-do {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.imp-do > li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.imp-do__n {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--plate);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.imp-do__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.imp-do__body > b {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 24px;
+}
+/* The command is one line or two: no taller than it. */
+.imp-do__text.ac-input[data-command] {
+  min-height: 0;
+}
+.imp-do__body .imp-other__copy {
+  justify-content: space-between;
+}
+.imp-do__hint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+.imp-do__alt {
+  align-self: flex-start;
+  font-size: 13px;
+}
+.imp-do .imp-reading {
+  border: 1.5px dashed var(--line2);
+  border-radius: var(--radius-lg);
+}
+
+/* Who is coming: a face, a name and a role each, rows divided by a line. */
+.imp-team {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.imp-team li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.imp-team__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 14.5px;
+  line-height: 20px;
+}
+.imp-team__text b {
+  font-weight: 500;
+}
+.imp-team__text span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.imp-team__faces {
+  display: inline-flex;
+  flex: none;
+}
+.imp-team__faces > * + * {
+  margin-left: -8px;
+}
+
+/* The agents' files on their way to the Drive. */
+.imp-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.imp-copy__line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14.5px;
+  line-height: 20px;
+}
+.imp-copy__line b {
+  font-weight: 650;
+}
+.imp-copy__count {
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.imp-copy__bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--plate);
+}
+.imp-copy__bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--ink);
+  transition: width 0.2s ease-out;
+}

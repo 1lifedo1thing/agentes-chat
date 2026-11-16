@@ -75,6 +75,8 @@ export interface BundleRoutine {
   prompt: string;
   channel: string | null;
   trigger: BundleTrigger;
+  /** Off where it comes from: made paused. An update keeps it as the person left it, and the hash leaves it out. */
+  paused?: boolean;
 }
 
 export const NOTE_KINDS = ["fact", "preference", "decision", "note", "lesson"] as const;
@@ -192,7 +194,15 @@ type Work =
     }
   | { kind: "skill"; skill: ParsedSkill }
   | { kind: "channel"; name: string; topic: string; adopt: boolean; agents: { key: string; autoReply: boolean }[] }
-  | { kind: "routine"; name: string; prompt: string; agent: string; channel: string | null; trigger: BundleTrigger }
+  | {
+      kind: "routine";
+      name: string;
+      prompt: string;
+      agent: string;
+      channel: string | null;
+      trigger: BundleTrigger;
+      paused: boolean;
+    }
   | { kind: "note"; agent: string | null; noteKind: BundleNote["kind"]; title: string; content: string };
 
 export type PlannedItem = ImportItemResult & { hash: string; work?: Work };
@@ -467,7 +477,9 @@ export function planImport(input: ImportInput, state: ImportState): { items: Pla
   for (const r of bundle.routines) {
     if (!take("routine", r.key)) continue;
     const trimmed: string[] = [];
-    const hash = digest(r);
+    // On or off is the person's once it is here: never a reason to update.
+    const { paused, ...hashed } = r;
+    const hash = digest(hashed);
     const name = fit(r.name.trim(), FIELD.routineName, "name", trimmed);
     const prompt = fit(r.prompt.trim(), FIELD.prompt, "prompt", trimmed);
     const item = { kind: "routine" as const, key: r.key, label: name || prompt.slice(0, 60) || r.key, hash };
@@ -488,7 +500,15 @@ export function planImport(input: ImportInput, state: ImportState): { items: Pla
       ...item,
       ...compare("routine", r.key, hash),
       trimmed,
-      work: { kind: "routine", name, prompt, agent: r.agent, channel: r.channel, trigger: r.trigger },
+      work: {
+        kind: "routine",
+        name,
+        prompt,
+        agent: r.agent,
+        channel: r.channel,
+        trigger: r.trigger,
+        paused: paused === true,
+      },
     });
   }
 
@@ -806,7 +826,8 @@ export async function applyImport(
           await remember(item, item.targetId);
           return;
         }
-        const routine = await createRoutine(routineDeps, actorId, orgId, fields).catch((error) => {
+        const made = work.paused ? { ...fields, paused: true } : fields;
+        const routine = await createRoutine(routineDeps, actorId, orgId, made).catch((error) => {
           if (!(error instanceof ValidationError && error.code === "routine.too_many")) throw error;
           item.reason = "too_many_routines";
           return createRoutine(routineDeps, actorId, orgId, { ...fields, paused: true });
