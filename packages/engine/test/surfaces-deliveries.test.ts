@@ -4,6 +4,7 @@ import { and, eq, schema } from "@agenteschat/db";
 import {
   claimLink,
   confirmLink,
+  createArtifact,
   createFileArtifact,
   deliveryFile,
   drainOutbox,
@@ -22,6 +23,7 @@ import {
   setSurface,
   surfaceOfRun,
   takeDeliveries,
+  tellSurfaceVoiceDropped,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
 
@@ -30,7 +32,12 @@ const { surfaceDeliveries, notifications, outbox, channelReads, agentRuns, messa
 let f: Fixture;
 beforeEach(async () => {
   f = await setup({ rightHand: true });
-  setSurface({ id: "telegram", name: "Telegram", openUrl: "https://chat.example.com/open?text={text}", only: null });
+  setSurface({
+    id: "example chat",
+    name: "Example Chat",
+    openUrl: "https://chat.example.com/open?text={text}",
+    only: null,
+  });
 });
 afterEach(async () => {
   setSurface(null);
@@ -69,7 +76,7 @@ async function said(body: string, options: { via?: string; userId?: string; meta
     author: { type: "person", userId },
     body,
     meta: {
-      ...(options.via ? { via: { kind: "surface", surface: "telegram", linkId: options.via } } : {}),
+      ...(options.via ? { via: { kind: "surface", surface: "example chat", linkId: options.via } } : {}),
       ...options.meta,
     },
   });
@@ -389,4 +396,52 @@ test("a file's bytes only for a file of that delivery's reply", async () => {
   expect(await errorOf(deliveryFile(deps(), crypto.randomUUID(), mine.id))).toBe("surface.file_gone");
   await removeLink({ db: f.db }, f.owner.id, linkId);
   expect(await errorOf(deliveryFile(deps(), row?.id ?? "", mine.id))).toBe("surface.file_gone");
+});
+
+test("the notifications.message job run twice for one reply makes one delivery and one fallback job", async () => {
+  const { id: linkId } = await link();
+  const run = await runOn(await said("what's on today?", { via: linkId }));
+  const answer = await reply(run, "Two meetings.");
+  await runHook(answer.id);
+  await runHook(answer.id);
+  expect(await deliveries()).toHaveLength(1);
+  expect(await f.db.select().from(outbox).where(eq(outbox.kind, SURFACE_FALLBACK_JOB))).toHaveLength(1);
+  expect((await notificationsOf()).filter((n) => n.kind === "agent_reply")).toEqual([]);
+});
+
+test("a reply carrying a document has a card that opens it in the app", async () => {
+  const { id: linkId } = await link();
+  const run = await runOn(await said("the weekly report, please", { via: linkId }));
+  const dm = await dmOf();
+  const doc = await createArtifact(
+    f.artifactDeps,
+    { type: "agent", agentId: (await lodi()).id, channelId: dm.id },
+    f.org.id,
+    { title: "Weekly report", content: { kind: "document", markdown: "All good." } },
+  );
+  const answer = await reply(run, "Here is the report.", { artifacts: [{ id: doc.id, version: 1, title: doc.title }] });
+  expect(await queueSurfaceDelivery(f.db, f.org.id, answer.id)).toBe(true);
+  const [listed] = await listSurfaceDeliveries(deps(), 10);
+  expect(listed).toMatchObject({ text: "Here is the report.", files: [] });
+  expect(listed?.card?.kind).toBe("artifact");
+  expect(listed?.card?.url).toContain(`m=${answer.id}`);
+});
+
+test("a dropped voice note from the surface: the right hand says so in the person's language, delivered there", async () => {
+  const { id: linkId } = await link();
+  await tellSurfaceVoiceDropped(deps(), {
+    orgId: f.org.id,
+    userId: f.owner.id,
+    via: { kind: "surface", surface: "example chat", linkId },
+  });
+  const [listed] = await listSurfaceDeliveries(deps(), 10);
+  expect(listed).toMatchObject({ kind: "reply", linkId, inReplyTo: null });
+  expect(listed?.text).toBe("Não consegui entender esse áudio. Pode mandar de novo ou escrever?");
+  // Another link's clip, or one with no link now, tells nobody on the surface.
+  await tellSurfaceVoiceDropped(deps(), {
+    orgId: f.org.id,
+    userId: f.owner.id,
+    via: { kind: "surface", surface: "example chat", linkId: crypto.randomUUID() },
+  });
+  expect(await deliveries()).toHaveLength(1);
 });

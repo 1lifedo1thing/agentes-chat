@@ -18255,6 +18255,7 @@
       "issue_work_start": "Merci de faire la tâche #{{number}}.",
       "issue_taken": "A pris la tâche #{{number}}.",
       "surfaceUnlinked": "{{surface}} a été délié parce que son identité a changé. Lie-le à nouveau dans les Paramètres si c'était toi.",
+      "surfaceVoiceDropped": "Je n'ai pas compris ce message vocal. Tu peux le renvoyer ou l'écrire ?",
       "done": "C'est fait.",
       "stretch_paused_runs_one": "{{agents}} s'est arrêté pour faire le point avec vous avant de continuer",
       "stretch_paused_runs_many": "{{agents}} se sont arrêtés pour faire le point avec vous avant de continuer",

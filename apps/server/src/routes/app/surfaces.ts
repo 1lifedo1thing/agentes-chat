@@ -146,12 +146,17 @@ export function surfaceRoutes(deps: AppDeps) {
         404: errorResponse(
           "Not mine, not pending or older than 10 minutes (`surface.link_gone`), or off (`surface.off`)",
         ),
+        403: errorResponse("Not among who may link now (`surface.not_allowed`)"),
         409: errorResponse("`surface.taken`, `surface.no_workspace` or `surface.no_assistant`"),
       },
     }),
     async (c) => {
       const { id } = c.req.valid("param");
-      return c.json(await confirmLink(linkDeps, c.get("user").id, id), 200);
+      const user = c.get("user");
+      if (surfaceOn() && !surfaceAllowed(user.email)) {
+        return apiError(c, 403, "surface.not_allowed", "Linking isn't open to this account yet");
+      }
+      return c.json(await confirmLink(linkDeps, user.id, id), 200);
     },
   );
 
@@ -184,11 +189,11 @@ export function surfaceRoutes(deps: AppDeps) {
       tags,
       summary: "“Not you? Unlink it”: end the outside chat surface link the email told about",
       description:
-        'Public, from the undo page the "linked" email links to (`/email-undo?kind=surface&token=`), never from the link itself: mail scanners open links. Once, within 7 days: ends that link if it is still active (`unlinked` false when it already ended). 404 `surface.undo_gone` once used or run out. 10 tries per 10 minutes per IP address (429 `rate_limited`).',
+        'Public, from the undo page the "linked" email links to (`/email-undo?kind=surface&token=`), never from the link itself: mail scanners open links. Once, within 7 days: ends that link if it is still active (`unlinked` false when it already ended); `surface` and `display` name what the email told about. 404 `surface.undo_gone` once used or run out. 10 tries per 10 minutes per IP address (429 `rate_limited`).',
       request: { body: body(z.object({ token: z.string().min(16).max(200) })) },
       responses: {
         ...errors,
-        200: json(z.object({ unlinked: z.boolean() })),
+        200: json(z.object({ unlinked: z.boolean(), surface: z.string(), display: z.string().nullable() })),
         404: errorResponse("Used or run out (`surface.undo_gone`)"),
         429: errorResponse("Too many tries (`rate_limited`)"),
       },

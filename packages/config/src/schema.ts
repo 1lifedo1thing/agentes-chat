@@ -1109,9 +1109,9 @@ export const envVars = {
   SURFACE_NAME: {
     schema: z.string().trim().min(1).max(32).optional(),
     description:
-      "The chat surface's name as people and the assistant read it, in settings and in the assistant's instructions. Only with `SURFACE_BRIDGE_TOKEN`.",
+      "The chat surface's name as people and the assistant read it, in settings and in the assistant's instructions. Only with `SURFACE_BRIDGE_TOKEN`. Its lower-cased form is what stored links are keyed by: changing it (even its capitals) ends every link, silently.",
     section: "Chat surfaces",
-    example: "Telegram",
+    example: "Example Chat",
   },
   SURFACE_OPEN_URL: {
     schema: z

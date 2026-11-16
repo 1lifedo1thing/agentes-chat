@@ -1,3 +1,4 @@
+import { retryInSeconds } from "@agenteschat/adapters";
 import { schema } from "@agenteschat/db";
 import {
   ARTIFACT_LIMITS,
@@ -9,7 +10,6 @@ import {
   MAX_MESSAGE_ATTACHMENTS,
   MAX_MESSAGE_LENGTH,
   postFromSurface,
-  retryInSeconds,
   SURFACE_PREFIX,
   safeEqual,
   sha256,
@@ -159,7 +159,7 @@ const Delivery = z
       .nullable(),
     card: z
       .object({
-        kind: z.enum(["question", "approval", "secret", "block", "poll", "choices"]),
+        kind: z.enum(["question", "approval", "secret", "block", "poll", "choices", "artifact"]),
         url: z.string().openapi({ description: "Where the card opens in the app." }),
       })
       .nullable(),
@@ -263,7 +263,7 @@ export function createSurfaceApp(deps: AppDeps, token: string, version: string) 
       const input = c.req.valid("json");
       const audit = c.get("audit");
       audit.externalId = input.externalId;
-      await takeSurfaceCap({ db: deps.db, rateLimiter: deps.adapters.rateLimiter, warn: deps.log?.warn }, "claims");
+      // The sender's own limit first, so one sender's refused tries never spend the cap shared by everyone.
       const tries = await deps.adapters.rateLimiter.consume(
         `surface:claim:${sha256(input.externalId)}`,
         CLAIMS_PER_SENDER,
@@ -273,6 +273,7 @@ export function createSurfaceApp(deps: AppDeps, token: string, version: string) 
           retryIn: retryInSeconds(tries.resetAt),
         });
       }
+      await takeSurfaceCap({ db: deps.db, rateLimiter: deps.adapters.rateLimiter, warn: deps.log?.warn }, "claims");
       const { link, expiresAt, locale } = await claimLink({ db: deps.db, pubsub: deps.adapters.pubsub }, input);
       Object.assign(audit, { linkId: link.id, userId: link.userId, orgId: link.orgId ?? undefined });
       return c.json({ status: "pending" as const, linkId: link.id, expiresAt: expiresAt.toISOString(), locale }, 201);

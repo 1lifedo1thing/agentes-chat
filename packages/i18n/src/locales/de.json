@@ -17701,6 +17701,7 @@
       "issue_work_start": "Bitte erledige Aufgabe #{{number}}.",
       "issue_taken": "Aufgabe #{{number}} übernommen.",
       "surfaceUnlinked": "{{surface}} wurde getrennt, weil sich die Identität geändert hat. Verknüpfe es in den Einstellungen neu, wenn du das warst.",
+      "surfaceVoiceDropped": "Ich konnte die Sprachnachricht nicht verstehen. Kannst du sie noch mal schicken oder es schreiben?",
       "done": "Fertig.",
       "stretch_paused_runs_one": "{{agents}} hat kurz angehalten, um sich mit dir abzustimmen, bevor es weitergeht",
       "stretch_paused_runs_other": "{{agents}} haben kurz angehalten, um sich mit dir abzustimmen, bevor es weitergeht",

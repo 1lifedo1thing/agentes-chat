@@ -67,6 +67,8 @@ export const surfaceDeliveries = pgTable(
     check("surface_deliveries_kind", sql`${t.kind} in ('reply', 'linked')`),
     check("surface_deliveries_outcome", sql`${t.outcome} in ('sent', 'unsent', 'fallback', 'dropped')`),
     index("surface_deliveries_open").on(t.createdAt).where(sql`${t.takenAt} is null`),
+    // A retried `notifications.message` job finds the reply's row instead of sending it twice.
+    uniqueIndex("surface_deliveries_one_per_reply").on(t.messageId).where(sql`${t.kind} = 'reply'`),
   ],
 );
 

@@ -17176,6 +17176,7 @@
       "issue_work_start": "Tolong kerjakan tugas #{{number}}.",
       "issue_taken": "Mengambil tugas #{{number}}.",
       "surfaceUnlinked": "Tautan {{surface}} diputus karena identitasnya berubah. Tautkan lagi di Pengaturan kalau itu kamu.",
+      "surfaceVoiceDropped": "Aku tidak bisa menangkap pesan suara itu. Bisa kirim lagi atau ketik saja?",
       "done": "Selesai.",
       "stretch_paused_runs_other": "{{agents}} berhenti sebentar untuk memastikan denganmu sebelum lanjut",
       "stretch_paused_spend_other": "{{agents}} berhenti untuk memastikan denganmu · memakai {{percent}}% anggaran bulan ini",

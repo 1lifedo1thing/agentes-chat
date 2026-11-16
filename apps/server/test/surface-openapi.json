@@ -349,7 +349,7 @@
             "properties": {
               "kind": {
                 "type": "string",
-                "enum": ["question", "approval", "secret", "block", "poll", "choices"]
+                "enum": ["question", "approval", "secret", "block", "poll", "choices", "artifact"]
               },
               "url": {
                 "type": "string",

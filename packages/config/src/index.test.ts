@@ -157,7 +157,7 @@ describe("loadConfig", () => {
     const token = "b".repeat(32);
     const surface = {
       SURFACE_BRIDGE_TOKEN: token,
-      SURFACE_NAME: "Telegram",
+      SURFACE_NAME: "Example Chat",
       SURFACE_OPEN_URL: "https://chat.example.com/open?text={text}",
     };
     const on = loadConfig({ ...valid, ...surface, SURFACE_ONLY: " A@Example.com, b@example.com ," });
@@ -169,7 +169,7 @@ describe("loadConfig", () => {
     );
     expect(() => loadConfig({ ...valid, ...surface, SURFACE_NAME: "" })).toThrow(/needs SURFACE_NAME/);
     for (const alone of [
-      { SURFACE_NAME: "Telegram" },
+      { SURFACE_NAME: "Example Chat" },
       { SURFACE_OPEN_URL: surface.SURFACE_OPEN_URL },
       { SURFACE_ONLY: "a@example.com" },
     ]) {

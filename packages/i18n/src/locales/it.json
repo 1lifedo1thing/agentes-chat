@@ -18261,6 +18261,7 @@
       "issue_work_start": "Per favore, fai l'attività #{{number}}.",
       "issue_taken": "Ho preso l'attività #{{number}}.",
       "surfaceUnlinked": "{{surface}} è stato scollegato perché la sua identità è cambiata. Collegalo di nuovo nelle Impostazioni se sei stato tu.",
+      "surfaceVoiceDropped": "Non sono riuscito a capire quel vocale. Puoi rimandarlo o scriverlo?",
       "done": "Fatto.",
       "stretch_paused_runs_one": "{{agents}} si è fermato per sentirti prima di andare avanti",
       "stretch_paused_runs_many": "{{agents}} si sono fermati per sentirti prima di andare avanti",

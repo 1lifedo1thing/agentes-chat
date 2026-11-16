@@ -1,17 +1,17 @@
 # 0187. Outside chat surfaces: a bridge that lets a separate service carry a person's conversation with the right hand
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-16
 - Extends: ADR 0002 (nothing private runs in the server process), ADR 0056 (the operator API's listener; hooks are pulled), ADR 0117 (outside content), ADR 0119 (`meta.via`), ADR 0177 (the right hand acts first)
 - Code: config `packages/config/src/schema.ts` (`SURFACE_BRIDGE_TOKEN`, `SURFACE_NAME`, `SURFACE_OPEN_URL`,
   `SURFACE_ONLY`) and its rules in `index.ts`; db `packages/db/src/schema/surfaces.ts` (`surface_links`,
-  `surface_deliveries`, `surface_calls`) and `voice_clips.via`, migration 0280; engine
+  `surface_deliveries`, `surface_calls`) and `voice_clips.via`, migration 0281; engine
   `packages/engine/src/surfaces/config.ts` (`setSurface`, `surfaceOn`, `surfaceAllowed`) and `links.ts` (codes,
   claim, confirm, unlink; revoked with `revokeUserApps` and `setUserBlocked`) and `inbound.ts` (`postFromSurface`,
   with `voice_clips.via` carried by the voice job) and `deliveries.ts` (`queueSurfaceDelivery` from the
   `notifications.message` job, which shares `quietForPeople` with `notifyMessage`; the `surface.fallback` job;
   `pruneSurfaceRows` beside the message partitions upkeep) and `turn.ts` (`surfaceRefusal`, called by the tool gateway;
-  the turn's line is in `context.ts`); the `surface_linked` and `surface_unlinked` emails in `email.ts`, undone by
+  the turn's line is in `context.ts`; a forwarded message steered into a run counts in `outside.ts`); the `surface_linked` and `surface_unlinked` emails in `email.ts`, undone by
   `undoSurfaceLink` (`POST /api/app/surface-undo`); server
   `apps/server/src/surface/app.ts` (`createSurfaceApp`), served by `operatorFetch` in
   `apps/server/src/operator/app.ts`; app routes `apps/server/src/routes/app/surfaces.ts`; contract `apps/server/test/surface-openapi.json`
@@ -33,7 +33,7 @@ the `notifications.message` job runs once for every message a run posts; `meta.v
 
 ### 1. Off unless configured, served apart, its own token
 - `SURFACE_BRIDGE_TOKEN` (at least 32 characters, different from both operator tokens) turns the bridge on.
-  `SURFACE_NAME` (what people and the agent read, e.g. "Telegram") and `SURFACE_OPEN_URL` (`https://`, holding `{text}`
+  `SURFACE_NAME` (what people and the agent read, e.g. "Example Chat") and `SURFACE_OPEN_URL` (`https://`, holding `{text}`
   once: opens a chat with the surface's account with a text typed in) are required with it; `SURFACE_ONLY` (emails)
   limits linking to some accounts while the operator tests. Unset: no route below answers, nothing is written, no row
   shows in the apps, and the right hand never hears of a surface. One surface per server; its id in rows is the
@@ -118,8 +118,14 @@ the app.
 - On a surface turn the tool gateway refuses, with one line telling the person to do it in the app: card and block
   tools; anything that needs a person's approval (merge, deploy, rollback, any sensitive tool), whatever the agent's
   approval level; tools whose names send, delete or pay; tools about roles, budgets, billing or money; and routines that
-  post elsewhere or act for another agent. Tools stay listed, so the prompt cache holds. A later decision (a PIN
-  confirmed in the app) may lift this per act.
+  post elsewhere or act for another agent; the right hand's catch-all `workspace_action` beyond the person's own status,
+  notifications and time zone, and its proposals to change an agent's settings or instructions; work that runs apart
+  from the turn (an asking reminder, a routine run now, Vault keys for a routine); and a connector's executor unless
+  every action its input names is neither sensitive nor about money or roles. An agent asked or told by a surface turn
+  (`ask_agent`, `tell_agent`, up the chain) is held to the same refusals. Tools stay listed, so the prompt cache holds.
+  A later decision may lift this per act.
+- A forwarded message steered into a running turn makes that run one that read outside content (ADR 0117), as it
+  would if it had started the run.
 - The right hand deciding cards for the person (ADR 0139) never acts on a surface conversation: every one is with the
   right hand, so its cards are its own.
 
@@ -128,16 +134,8 @@ Act for someone with no active link, in any conversation but their DM with the r
 not a member of in good standing; read anything but its own deliveries and their files; mint a sign-in, a session, a
 password or email change; decide an approval; write `meta` other than `via` and the forwarded mark.
 
-### Later (each its own change, recorded so the shape holds)
-- What a surface may send first (a daily unread nudge, a weekly recap) through a pulled `attention` route, honouring
-  quiet hours in a time zone kept on the link and the surface's own stop word.
-- A PIN for sensitive acts: chosen on the surface but pending until confirmed once from a signed-in app or an emailed
-  link, with an email when set; 3 wrong tries lock it 15 minutes and 5 wrong in a day turn it off until reset in the
-  app; single use per act; hashed with a server pepper.
-- Single-purpose pages opened from a surface (`/v`, key after `#`, a view session that never becomes a sign-in): every
-  path and body parameter bound to the view row; the screen socket takes an explicit view marker and never falls back
-  to a full session, nor the reverse; the PIN checked when the page opens, not only when the link is made.
-- Several accounts behind one sender (lifting the unique index in its own change).
+### Later
+What a surface may send first, and a confirmation for sensitive acts, are later decisions, each with its own ADR.
 
 ## Consequences
 

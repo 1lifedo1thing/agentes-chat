@@ -518,7 +518,7 @@ export interface ApiClient {
     /** Cancels a pending link or unlinks an active one. `surface.link_gone` (404). */
     remove(linkId: string): Promise<void>;
     /** "Not you? Unlink it" from the "linked" email: no session needed. `surface.undo_gone` (404), `rate_limited` (429). */
-    undo(token: string): Promise<{ unlinked: boolean }>;
+    undo(token: string): Promise<{ unlinked: boolean; surface: string; display: string | null }>;
   };
   /** Where my pushes go: phones (ADR 0035) and browsers (ADR 0071). Per person, not per organization. */
   push: {

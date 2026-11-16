@@ -1,10 +1,10 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import type { PubSub, RateLimiter } from "@agenteschat/adapters";
+import { type PubSub, type RateLimiter, retryInSeconds } from "@agenteschat/adapters";
 import { and, asc, type Database, desc, type Executor, eq, gt, lte, or, type SQL, schema, sql } from "@agenteschat/db";
 import { CODE_ALPHABET, newConfirmationCode } from "../codes";
 import { sha256 } from "../crypto";
 import { emailLocale, queueEmail } from "../email";
-import { ConflictError, ForbiddenError, NotFoundError, TooManyError } from "../errors";
+import { ConflictError, ForbiddenError, isUniqueViolation, NotFoundError, TooManyError } from "../errors";
 import { publishUserEvent } from "../events";
 import { recordOperatorEvent } from "../operator-events";
 import { getMembership } from "../organizations";
@@ -178,7 +178,7 @@ export async function confirmLink(deps: LinkDeps, userId: string, linkId: string
   // The right hand is asked before the transaction: its reads take a `Database`, not the transaction's handle.
   const [first] = await deps.db.select({ orgId: surfaceLinks.orgId }).from(surfaceLinks).where(pendingWhere);
   const assistant = first?.orgId ? await lodiFor(deps.db, first.orgId, userId) : null;
-  const { link, replaced } = await deps.db.transaction(async (tx) => {
+  const confirmed = deps.db.transaction(async (tx) => {
     const [pending] = await tx.select().from(surfaceLinks).where(pendingWhere).for("update");
     if (!pending) throw new NotFoundError("This link is no longer waiting", "surface.link_gone");
     const taken = await activeLink(tx, pending.externalId);
@@ -207,6 +207,11 @@ export async function confirmLink(deps: LinkDeps, userId: string, linkId: string
     await tx.insert(surfaceDeliveries).values({ orgId: active.orgId, linkId: active.id, kind: "linked" });
     if (deps.publicUrl) await queueLinkedEmail(tx, deps.publicUrl, active);
     return { link: active, replaced };
+  });
+  // Only the pending row is locked: a confirm racing for the same sender or account loses on the unique index.
+  const { link, replaced } = await confirmed.catch((error: unknown) => {
+    if (isUniqueViolation(error)) throw new ConflictError("This sender is linked to another account", "surface.taken");
+    throw error;
   });
   for (const old of replaced) await changed(deps, old, "gone");
   await changed(deps, link, "active");
@@ -237,39 +242,44 @@ export async function unlinkExternal(
   reason: "asked" | "identity_changed",
 ): Promise<"unlinked" | "none"> {
   const surface = requireSurface();
-  const gone = await deps.db
-    .delete(surfaceLinks)
-    .where(and(eq(surfaceLinks.surface, surface.id), eq(surfaceLinks.externalId, externalId)))
-    .returning();
+  // The delete and the email commit together, so a retry that finds nothing left has nothing left to send.
+  const { gone, active } = await deps.db.transaction(async (tx) => {
+    const gone = await tx
+      .delete(surfaceLinks)
+      .where(and(eq(surfaceLinks.surface, surface.id), eq(surfaceLinks.externalId, externalId)))
+      .returning();
+    const active = gone.find((l) => l.status === "active");
+    // The person didn't ask: they hear it in the app and by email, since the surface no longer reaches them.
+    if (active && reason === "identity_changed" && deps.publicUrl) {
+      const [user] = await tx
+        .select({ email: users.email, locale: users.locale })
+        .from(users)
+        .where(eq(users.id, active.userId));
+      if (user) {
+        await queueEmail(tx, {
+          orgId: null,
+          key: `surface-unlinked:${active.id}`,
+          to: [user.email],
+          template: {
+            kind: "surface_unlinked",
+            locale: emailLocale(user.locale),
+            surface: surface.name,
+            display: shownAs(active),
+            url: deps.publicUrl,
+          },
+        });
+      }
+    }
+    return { gone, active };
+  });
   for (const link of gone) await changed(deps, link, "gone");
-  const active = gone.find((l) => l.status === "active");
-  // The person didn't ask: they hear it in the app and by email, since the surface no longer reaches them.
-  if (active && reason === "identity_changed") {
-    const [user] = await deps.db
-      .select({ email: users.email, locale: users.locale })
-      .from(users)
-      .where(eq(users.id, active.userId));
-    if (deps.publicUrl && user) {
-      await queueEmail(deps.db, {
-        orgId: null,
-        key: `surface-unlinked:${active.id}`,
-        to: [user.email],
-        template: {
-          kind: "surface_unlinked",
-          locale: emailLocale(user.locale),
-          surface: surface.name,
-          display: shownAs(active),
-          url: deps.publicUrl,
-        },
-      });
-    }
-    if (active.orgId) {
-      await postFromLodi(deps, active.orgId, active.userId, {
-        bodyCode: "surfaceUnlinked",
-        bodyParams: { surface: surface.name },
-        push: true,
-      });
-    }
+  if (active?.orgId && reason === "identity_changed") {
+    // The unlink and its email stand even when this line can't be posted now; a retry would find no link.
+    await postFromLodi(deps, active.orgId, active.userId, {
+      bodyCode: "surfaceUnlinked",
+      bodyParams: { surface: surface.name },
+      push: true,
+    }).catch(() => null);
   }
   return active ? "unlinked" : "none";
 }
@@ -278,7 +288,10 @@ export async function unlinkExternal(
  * "Not you? Unlink it" from the "linked" email, through the undo page: once, within `SURFACE_UNDO_MS`, it ends that
  * link if it is still active. `surface.undo_gone` when used or run out.
  */
-export async function undoSurfaceLink(deps: LinkDeps, token: string): Promise<{ unlinked: boolean }> {
+export async function undoSurfaceLink(
+  deps: LinkDeps,
+  token: string,
+): Promise<{ unlinked: boolean; surface: string; display: string | null }> {
   // The delete is the single use: a second one at the same moment waits for this one and finds nothing.
   const [row] = await deps.db
     .delete(verifications)
@@ -293,13 +306,16 @@ export async function undoSurfaceLink(deps: LinkDeps, token: string): Promise<{ 
     )
     .returning();
   for (const link of gone) await changed(deps, link, "gone");
-  return { unlinked: gone.length > 0 };
+  // What the email named, kept with the token: the link may have ended before the undo.
+  return { unlinked: gone.length > 0, surface: surfaceOn()?.name ?? "", display: undo.display };
 }
 
-function undoValue(value: string): { userId: string; linkId: string } | null {
+function undoValue(value: string): { userId: string; linkId: string; display: string | null } | null {
   try {
     const v = JSON.parse(value) as Record<string, unknown>;
-    return typeof v.userId === "string" && typeof v.linkId === "string" ? { userId: v.userId, linkId: v.linkId } : null;
+    return typeof v.userId === "string" && typeof v.linkId === "string"
+      ? { userId: v.userId, linkId: v.linkId, display: typeof v.display === "string" ? v.display : null }
+      : null;
   } catch {
     return null;
   }
@@ -322,7 +338,7 @@ async function queueLinkedEmail(tx: Executor, publicUrl: string, link: SurfaceLi
   await tx.insert(verifications).values({
     id: randomUUID(),
     identifier: undoId(token),
-    value: JSON.stringify({ userId: link.userId, linkId: link.id }),
+    value: JSON.stringify({ userId: link.userId, linkId: link.id, display: shownAs(link) }),
     expiresAt: new Date(now.getTime() + SURFACE_UNDO_MS),
     createdAt: now,
     updatedAt: now,
@@ -413,9 +429,6 @@ export const SURFACE_CAPS = {
   posts: { limit: 600, windowMs: 60_000 },
 } as const;
 const ALERT_EVERY = { limit: 1, windowMs: 3_600_000 };
-
-/** Seconds until a rate limit's window opens again, at least 1. */
-export const retryInSeconds = (resetAt: Date) => Math.max(1, Math.ceil((resetAt.getTime() - Date.now()) / 1000));
 
 /**
  * Counts one call against a cap across every sender. Past it, operators get one `surface.cap_reached` event an hour

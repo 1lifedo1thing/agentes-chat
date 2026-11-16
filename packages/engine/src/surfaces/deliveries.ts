@@ -26,7 +26,7 @@ import { getMembership } from "../organizations";
 import { enqueue } from "../outbox";
 import { personLocale } from "../requester";
 import { RIGHT_HAND } from "../right-hand";
-import { lodiFor } from "../right-hand-proactive";
+import { lodiFor, postFromLodi } from "../right-hand-proactive";
 import { surfaceOn } from "./config";
 import { activeLinkOf } from "./links";
 
@@ -46,7 +46,7 @@ const SURFACE_CALL_KEEP_MS = 90 * 24 * 3600_000;
 
 export type DeliveryDeps = { db: Database; pubsub?: PubSub; artifacts?: ArtifactDeps };
 type Outcome = "sent" | "unsent" | "fallback" | "dropped";
-type CardKind = "question" | "approval" | "secret" | "block" | "poll" | "choices";
+type CardKind = "question" | "approval" | "secret" | "block" | "poll" | "choices" | "artifact";
 
 export interface SurfaceDeliveryView {
   id: string;
@@ -153,28 +153,59 @@ export async function queueSurfaceDelivery(db: Database, orgId: string, messageI
   if (!member) return false;
   const link = await activeLinkOf(db, turn.userId);
   if (!link || link.orgId !== orgId) return false;
-  await db.transaction(async (tx) => {
-    const [row] = await tx
-      .insert(surfaceDeliveries)
-      .values({
-        orgId,
-        linkId: link.id,
-        kind: "reply",
-        messageId: message.id,
-        messageCreatedAt: message.createdAt,
-        inReplyTo: turn.messageId,
-      })
-      .returning({ id: surfaceDeliveries.id });
-    if (!row) throw new Error("surface delivery not written");
-    await enqueue(tx, {
-      orgId,
-      kind: SURFACE_FALLBACK_JOB,
-      payload: { deliveryId: row.id },
-      runAt: new Date(Date.now() + SURFACE_FALLBACK_MS),
-      dedupeKey: `surface.fallback:${row.id}`,
-    });
-  });
+  await db.transaction((tx) => insertReply(tx, { orgId, linkId: link.id, message, inReplyTo: turn.messageId }));
   return true;
+}
+
+/** A reply's delivery and its fallback job. Nothing when the message already has one (a retried job). */
+async function insertReply(
+  tx: Executor,
+  input: { orgId: string; linkId: string; message: { id: string; createdAt: Date }; inReplyTo: string | null },
+) {
+  const [row] = await tx
+    .insert(surfaceDeliveries)
+    .values({
+      orgId: input.orgId,
+      linkId: input.linkId,
+      kind: "reply",
+      messageId: input.message.id,
+      messageCreatedAt: input.message.createdAt,
+      inReplyTo: input.inReplyTo,
+    })
+    .onConflictDoNothing({
+      target: surfaceDeliveries.messageId,
+      where: sql`${surfaceDeliveries.kind} = 'reply'`,
+    })
+    .returning({ id: surfaceDeliveries.id });
+  if (!row) return;
+  await enqueue(tx, {
+    orgId: input.orgId,
+    kind: SURFACE_FALLBACK_JOB,
+    payload: { deliveryId: row.id },
+    runAt: new Date(Date.now() + SURFACE_FALLBACK_MS),
+    dedupeKey: `surface.fallback:${row.id}`,
+  });
+}
+
+/**
+ * A voice note from the surface that its job dropped (no words, or refused): no message and no run follow, so the
+ * right hand says so in the person's language and the line goes back out on the surface.
+ */
+export async function tellSurfaceVoiceDropped(
+  deps: { db: Database; pubsub?: PubSub },
+  clip: { orgId: string; userId: string; via: Record<string, unknown> },
+): Promise<void> {
+  const surface = surfaceOn();
+  if (!surface || clip.via.kind !== "surface") return;
+  const link = await activeLinkOf(deps.db, clip.userId);
+  if (!link || link.orgId !== clip.orgId || link.id !== clip.via.linkId) return;
+  const id = await postFromLodi(deps, clip.orgId, clip.userId, { bodyCode: "surfaceVoiceDropped", push: false });
+  if (!id) return;
+  const [message] = await deps.db
+    .select({ id: messages.id, createdAt: messages.createdAt })
+    .from(messages)
+    .where(and(eq(messages.orgId, clip.orgId), eq(messages.id, id)));
+  if (message) await insertReply(deps.db, { orgId: clip.orgId, linkId: link.id, message, inReplyTo: null });
 }
 
 type Closed = Pick<
@@ -332,7 +363,9 @@ async function contentOf(db: Executor, orgId: string, m: StoredMessage) {
         ? "secret"
         : ((attached.find((a) => a.kind === "block" || a.kind === "poll" || a.kind === "choices")?.kind as
             | CardKind
-            | undefined) ?? null);
+            | undefined) ??
+          // A document, table, diff or the like has no bytes to send: the person opens it in the app.
+          (attached.some((a) => a.kind !== "file") ? "artifact" : null));
   const [question] =
     typeof meta.questionId === "string"
       ? await db

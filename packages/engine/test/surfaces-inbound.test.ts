@@ -5,10 +5,11 @@ import {
   type SpeechEngine,
   type SpeechProviderId,
 } from "@agenteschat/adapters";
-import { and, eq, schema } from "@agenteschat/db";
+import { and, eq, isNull, schema } from "@agenteschat/db";
 import {
   claimLink,
   confirmLink,
+  listSurfaceDeliveries,
   lodiFor,
   mintLinkCode,
   postFromSurface,
@@ -29,7 +30,12 @@ let limited: string[];
 
 beforeEach(async () => {
   f = await setup({ rightHand: true });
-  setSurface({ id: "telegram", name: "Telegram", openUrl: "https://chat.example.com/open?text={text}", only: null });
+  setSurface({
+    id: "example chat",
+    name: "Example Chat",
+    openUrl: "https://chat.example.com/open?text={text}",
+    only: null,
+  });
   const inner = createMemoryRateLimiter();
   limited = [];
   limiter = {
@@ -115,7 +121,7 @@ test("text from a linked sender is the person's DM message to the right hand, an
   const lodi = await lodiFor(f.db, f.org.id);
   expect(m.authorUserId).toBe(f.owner.id);
   expect(m.body).toBe("What's on today?");
-  expect(m.meta.via).toMatchObject({ kind: "surface", surface: "telegram" });
+  expect(m.meta.via).toMatchObject({ kind: "surface", surface: "example chat" });
   expect(m.meta.readOutside).toBeUndefined();
   const [channel] = await f.db.select().from(schema.channels).where(eq(schema.channels.id, m.channelId));
   expect(channel?.kind).toBe("dm");
@@ -139,7 +145,7 @@ test("the same inbound id twice: one message, the second a duplicate that spends
   expect(again).toMatchObject({ status: "duplicate", messageId: first.messageId });
   expect(limited.length).toBe(spent);
   const m = await messageOf(first.messageId);
-  expect(m.meta.clientId).toBe(surfaceClientId("telegram", "in-1"));
+  expect(m.meta.clientId).toBe(surfaceClientId("example chat", "in-1"));
   const all = await f.db.select().from(messages).where(eq(messages.channelId, m.channelId));
   expect(all.filter((x) => x.authorUserId === f.owner.id)).toHaveLength(1);
 });
@@ -182,7 +188,7 @@ test("a voice note within the rules is queued, then posted by its job with the s
   );
   expect(posted).toMatchObject({ status: "queued", messageId: null, voiceAsFile: false });
   const [clip] = await f.db.select().from(voiceClips).where(eq(voiceClips.userId, f.owner.id));
-  expect(clip?.via).toMatchObject({ kind: "surface", surface: "telegram" });
+  expect(clip?.via).toMatchObject({ kind: "surface", surface: "example chat" });
   const jobs = await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "voice.transcribe"));
   expect(jobs).toHaveLength(1);
   expect(
@@ -270,4 +276,89 @@ test("the day's 301st post is refused with the day window", async () => {
     code: "surface.rate_limited",
     params: { window: "day" },
   });
+});
+
+const liveFiles = () =>
+  f.db
+    .select({ id: schema.artifacts.id, title: schema.artifacts.title })
+    .from(schema.artifacts)
+    .where(and(eq(schema.artifacts.orgId, f.org.id), isNull(schema.artifacts.deletedAt)));
+
+test("a silent voice note from the surface is dropped: the right hand says so there, and a resend is a duplicate", async () => {
+  const { id: linkId } = await link();
+  const v = voiceDeps([speech("")]);
+  const voice = { type: "audio/ogg", bytes: bytes(4000), durationMs: 2500 };
+  expect(await post({ inboundId: "voice-silent", voice }, { voice: v })).toMatchObject({ status: "queued" });
+  const [clip] = await f.db.select().from(voiceClips).where(eq(voiceClips.userId, f.owner.id));
+  await transcribeVoiceClip(v, clip?.id ?? "", { finalAttempt: false });
+  const [dropped] = await f.db
+    .select()
+    .from(voiceClips)
+    .where(eq(voiceClips.id, clip?.id ?? ""));
+  expect(dropped?.status).toBe("dropped");
+  const listed = (await listSurfaceDeliveries({ db: f.db, pubsub: f.pubsub }, 10)).filter((d) => d.kind === "reply");
+  expect(listed).toHaveLength(1);
+  expect(listed[0]).toMatchObject({
+    linkId,
+    text: "Não consegui entender esse áudio. Pode mandar de novo ou escrever?",
+  });
+  expect(await post({ inboundId: "voice-silent", voice }, { voice: v })).toMatchObject({
+    status: "duplicate",
+    messageId: null,
+  });
+});
+
+test("a voice note with words typed and a file: the posted message carries both", async () => {
+  await link();
+  const v = voiceDeps();
+  await post(
+    {
+      inboundId: "voice-text",
+      text: "see the photo",
+      files: [{ name: "photo.png", type: "image/png", bytes: bytes(10) }],
+      voice: { type: "audio/ogg", bytes: bytes(4000), durationMs: 2500 },
+    },
+    { voice: v },
+  );
+  const [clip] = await f.db.select().from(voiceClips).where(eq(voiceClips.userId, f.owner.id));
+  await transcribeVoiceClip(v, clip?.id ?? "", { finalAttempt: false });
+  const [sent] = await f.db
+    .select()
+    .from(voiceClips)
+    .where(eq(voiceClips.id, clip?.id ?? ""));
+  const m = await messageOf(sent?.messageId ?? null);
+  expect(m.body).toBe("see the photo\n\nAda, puxa as vendas");
+  expect((m.meta.artifacts as { title: string }[]).map((a) => a.title)).toEqual(["photo.png"]);
+});
+
+test("taken off the list of who may use the surface: the link no longer posts", async () => {
+  await link();
+  setSurface({
+    id: "example chat",
+    name: "Example Chat",
+    openUrl: "https://chat.example.com/open?text={text}",
+    only: ["someone@example.com"],
+  });
+  expect(await errorOf(post({ text: "hi" }))).toBe("surface.unlinked");
+  setSurface({
+    id: "example chat",
+    name: "Example Chat",
+    openUrl: "https://chat.example.com/open?text={text}",
+    only: [f.owner.email],
+  });
+  expect((await post({ text: "hi" })).status).toBe("posted");
+});
+
+test("files of a refused post, or of a resend that lost the race, are not left behind", async () => {
+  await link();
+  const file = { name: "notes.txt", type: "text/plain", bytes: new TextEncoder().encode("hello") };
+  expect(await errorOf(post({ text: "x".repeat(100_001), files: [file] }))).not.toBe("ok");
+  expect(await liveFiles()).toEqual([]);
+
+  const [a, b] = await Promise.all([
+    post({ inboundId: "in-race", text: "hi", files: [file] }),
+    post({ inboundId: "in-race", text: "hi", files: [file] }),
+  ]);
+  expect(a.messageId).toBe(b.messageId);
+  expect(await liveFiles()).toHaveLength(1);
 });

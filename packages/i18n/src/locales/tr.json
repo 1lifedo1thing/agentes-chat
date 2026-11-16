@@ -17632,6 +17632,7 @@
       "issue_work_start": "Lütfen #{{number}} görevini yap.",
       "issue_taken": "#{{number}} görevini aldım.",
       "surfaceUnlinked": "{{surface}} kimliği değiştiği için ayrıldı. Sensen Ayarlar'dan yeniden bağla.",
+      "surfaceVoiceDropped": "O sesli mesajı anlayamadım. Tekrar gönderebilir ya da yazabilir misin?",
       "done": "Bitti.",
       "stretch_paused_runs_one": "{{agents}} devam etmeden önce size danışmak için durdu",
       "stretch_paused_runs_other": "{{agents}} devam etmeden önce size danışmak için durdu",

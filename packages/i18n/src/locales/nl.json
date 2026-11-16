@@ -17771,6 +17771,7 @@
       "issue_work_start": "Wil je taak #{{number}} doen?",
       "issue_taken": "Taak #{{number}} opgepakt.",
       "surfaceUnlinked": "{{surface}} is ontkoppeld omdat de identiteit is veranderd. Koppel het opnieuw in Instellingen als jij het was.",
+      "surfaceVoiceDropped": "Ik kon dat spraakbericht niet verstaan. Kun je het opnieuw sturen of typen?",
       "done": "Klaar.",
       "stretch_paused_runs_one": "{{agents}} stopte even om met je te overleggen voordat het verdergaat",
       "stretch_paused_runs_other": "{{agents}} stopten even om met je te overleggen voordat ze verdergaan",

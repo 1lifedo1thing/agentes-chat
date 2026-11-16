@@ -640,7 +640,10 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       mintCode: (orgId) => request<SurfaceLinkCode>(`${org(orgId)}/surface-link/code`, { json: {} }),
       confirm: (linkId) => request<SurfaceLink>(`/api/app/me/surface-links/${enc(linkId)}/confirm`, { json: {} }),
       remove: (linkId) => request<void>(`/api/app/me/surface-links/${enc(linkId)}`, { method: "DELETE" }),
-      undo: (token) => request<{ unlinked: boolean }>("/api/app/surface-undo", { json: { token } }),
+      undo: (token) =>
+        request<{ unlinked: boolean; surface: string; display: string | null }>("/api/app/surface-undo", {
+          json: { token },
+        }),
     },
     push: {
       webKey: async () =>

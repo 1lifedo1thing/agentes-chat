@@ -1,5 +1,5 @@
 {
-  "id": "c1f6b3d0-5faa-4d77-aabd-ef34abbc241b",
+  "id": "9d00e850-0957-47c1-902d-24072aebbe1f",
   "prevId": "0034e02b-3657-470a-975e-547337bb184f",
   "version": "7",
   "dialect": "postgresql",
@@ -21725,6 +21725,22 @@
           ],
           "isUnique": false,
           "where": "\"surface_deliveries\".\"taken_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "surface_deliveries_one_per_reply": {
+          "name": "surface_deliveries_one_per_reply",
+          "columns": [
+            {
+              "expression": "message_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"surface_deliveries\".\"kind\" = 'reply'",
           "concurrently": false,
           "method": "btree",
           "with": {}

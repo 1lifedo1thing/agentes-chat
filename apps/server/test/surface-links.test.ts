@@ -19,7 +19,7 @@ beforeAll(async () => {
       ALLOW_SIGNUP: "true",
       OPERATOR_API_TOKEN: OPERATOR,
       SURFACE_BRIDGE_TOKEN: BRIDGE,
-      SURFACE_NAME: "Telegram",
+      SURFACE_NAME: "Example Chat",
       SURFACE_OPEN_URL: "https://chat.example.com/open?text={text}",
     },
   });
@@ -111,15 +111,17 @@ test("while only some may link, others are told allowed: false and can't mint", 
   await signUp(bea, "bea@example.com");
   const beaOrg = await workspace(bea, "Beta");
   setSurface({
-    id: "telegram",
-    name: "Telegram",
+    id: "example chat",
+    name: "Example Chat",
     openUrl: "https://chat.example.com/open?text={text}",
     only: ["ana@example.com"],
   });
   expect((await list(bea)).allowed).toBe(false);
   const refused = await mint(bea, beaOrg);
   expect([refused.status, refused.body.error?.code]).toEqual([403, "surface.not_allowed"]);
-  expect(await list()).toMatchObject({ surface: { name: "Telegram" }, allowed: true });
+  const confirm = await bea(`/api/app/me/surface-links/${Bun.randomUUIDv7()}/confirm`, { json: {} });
+  expect([confirm.status, await errorCode(confirm)]).toEqual([403, "surface.not_allowed"]);
+  expect(await list()).toMatchObject({ surface: { name: "Example Chat" }, allowed: true });
   expect((await mint()).status).toBe(201);
   // Not a member of the workspace asked for.
   setSurface(surfaceFromConfig(t.config));
@@ -237,13 +239,24 @@ test("the linked email's undo: public, once, then surface.undo_gone; 429 past 10
   const stranger = browser(t);
   const undo = (value: string) => stranger("/api/app/surface-undo", { json: { token: value } });
   const first = await undo(token);
-  expect([first.status, await first.json()]).toEqual([200, { unlinked: true }]);
+  expect([first.status, await first.json()]).toEqual([
+    200,
+    { unlinked: true, surface: "Example Chat", display: "+1 555 0100" },
+  ]);
   expect((await list(eve)).links).toEqual([]);
   const again = await undo(token);
   expect([again.status, await errorCode(again)]).toEqual([404, "surface.undo_gone"]);
   for (let i = 0; i < 8; i++) expect((await undo(`wrong-token-${i}`.padEnd(32, "0"))).status).toBe(404);
   const over = await undo(token);
   expect([over.status, await errorCode(over)]).toEqual([429, "rate_limited"]);
+});
+
+test("one sender's refused claims don't spend the cap shared by every sender", async () => {
+  for (let i = 0; i < 130; i++) {
+    const res = await claim("AAAA-AAAA", "sender-flood");
+    expect(res.code).toBe(i < 5 ? "surface.code_gone" : "surface.claim_limit");
+  }
+  expect((await claim((await mint()).body.code, "sender-after-flood")).status).toBe(201);
 });
 
 // Last: it spends the claims cap across all senders for the rest of the file.

@@ -18027,6 +18027,7 @@ export const ptBR = {
       issue_taken: "Peguei a tarefa #{{number}}.",
       surfaceUnlinked:
         "{{surface}} foi desvinculado porque a identidade mudou. Vincule de novo em Configurações se foi você.",
+      surfaceVoiceDropped: "Não consegui entender esse áudio. Pode mandar de novo ou escrever?",
       done: "Pronto.",
       /**
        * A stretch's pause card (ADR 0089): `agents` their names, `count` how many; `percent` the share of each one's

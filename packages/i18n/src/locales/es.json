@@ -18172,6 +18172,7 @@
       "issue_work_start": "Por favor, haz la tarea #{{number}}.",
       "issue_taken": "Tomé la tarea #{{number}}.",
       "surfaceUnlinked": "{{surface}} se desvinculó porque su identidad cambió. Vincúlalo de nuevo en Configuración si fuiste tú.",
+      "surfaceVoiceDropped": "No pude entender esa nota de voz. ¿Puedes enviarla de nuevo o escribirlo?",
       "done": "Listo.",
       "stretch_paused_runs_one": "{{agents}} se detuvo para consultarte antes de seguir",
       "stretch_paused_runs_many": "{{agents}} se detuvieron para consultarte antes de seguir",

@@ -18113,6 +18113,8 @@ export const en = {
       /** An outside chat surface (ADR 0187) unlinked the account on its own; the surface no longer reaches them. */
       surfaceUnlinked:
         "{{surface}} was unlinked because its identity changed. Link it again in Settings if it was you.",
+      /** A voice note sent from an outside chat surface had no words to post; the line goes back out there. */
+      surfaceVoiceDropped: "I couldn't make out that voice note. Could you send it again, or type it?",
       done: "Done.",
       stretch_paused_runs_one: "{{agents}} paused to check with you before going on",
       stretch_paused_runs_other: "{{agents}} paused to check with you before going on",

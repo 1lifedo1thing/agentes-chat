@@ -10,7 +10,7 @@ const OPERATOR = "operator-test-token-".padEnd(48, "x");
 const BRIDGE = "bridge-test-token-".padEnd(48, "y");
 const SURFACE_ENV = {
   SURFACE_BRIDGE_TOKEN: BRIDGE,
-  SURFACE_NAME: "Telegram",
+  SURFACE_NAME: "Example Chat",
   SURFACE_OPEN_URL: "https://chat.example.com/open?text={text}",
 };
 
@@ -59,7 +59,7 @@ test("the bridge token alone: the bridge answers with it, and nothing under the 
   const fetch = listener(testConfig(SURFACE_ENV));
   const ok = await call(fetch, HEALTH, BRIDGE);
   expect(ok.status).toBe(200);
-  expect(ok.body).toEqual({ ok: true, surface: "Telegram", version: "test" });
+  expect(ok.body).toEqual({ ok: true, surface: "Example Chat", version: "test" });
   expect((await call(fetch, HEALTH, null)).status).toBe(401);
   const wrong = await call(fetch, HEALTH, "w".repeat(48));
   expect([wrong.status, wrong.code]).toEqual([401, "unauthorized"]);
@@ -186,7 +186,7 @@ test("a text message posts as the linked person in their DM, recorded with whom 
   expect(res.body).toMatchObject({ status: "posted", voiceAsFile: false, orgId: anaOrg, orgName: "Acme" });
   const m = await stored(res.body.messageId);
   expect(m.body).toBe("Bom dia");
-  expect(m.meta.via).toMatchObject({ kind: "surface", surface: "telegram" });
+  expect(m.meta.via).toMatchObject({ kind: "surface", surface: "example chat" });
   const again = await send({ externalId: SENDER, inboundId: "in-text-1", text: "Bom dia" });
   expect(again.body).toMatchObject({ status: "duplicate", messageId: res.body.messageId });
   const [row] = await t.db.select().from(schema.surfaceCalls).orderBy(asc(schema.surfaceCalls.id)).limit(1);
@@ -251,7 +251,7 @@ test("a person posting in the app can't set the surface mark", async () => {
   const posted = await send({ externalId: SENDER, inboundId: "in-app-1", text: "from the surface" });
   const dm = (await stored(posted.body.messageId)).channelId;
   const res = await b(`/api/app/organizations/${anaOrg}/channels/${dm}/messages`, {
-    json: { body: "from the app", meta: { via: { kind: "surface", surface: "telegram" } } },
+    json: { body: "from the app", meta: { via: { kind: "surface", surface: "example chat" } } },
   });
   if (res.status === 201) {
     const m = await stored(((await res.json()) as { id: string }).id);

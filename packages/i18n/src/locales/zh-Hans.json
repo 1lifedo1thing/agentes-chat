@@ -17192,6 +17192,7 @@
       "issue_work_start": "请完成任务 #{{number}}。",
       "issue_taken": "接手了任务 #{{number}}。",
       "surfaceUnlinked": "{{surface}} 因身份变更已解除关联。如果是你，请在设置中重新关联。",
+      "surfaceVoiceDropped": "我没听清那条语音消息。可以再发一次，或者打字告诉我吗？",
       "done": "完成。",
       "stretch_paused_runs_other": "{{agents}} 暂停下来，先向你确认再继续",
       "stretch_paused_spend_other": "{{agents}} 暂停下来向你确认 · 每个已用掉本月预算的 {{percent}}%",

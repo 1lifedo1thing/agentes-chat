@@ -270,7 +270,7 @@ describe("the right hand approves for a person (ADR 0139 §2)", () => {
     const { lodi } = await world();
     await on();
     const surfaceAsk = await runFor({ userId: f.owner.id }, lodi.id, {
-      via: { kind: "surface", surface: "telegram", linkId: crypto.randomUUID() },
+      via: { kind: "surface", surface: "example chat", linkId: crypto.randomUUID() },
     });
     const relay = await insertMessage(f.db, {
       orgId: f.org.id,

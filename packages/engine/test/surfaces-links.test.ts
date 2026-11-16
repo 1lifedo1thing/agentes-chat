@@ -24,7 +24,12 @@ let f: Fixture;
 
 beforeEach(async () => {
   f = await setup({ rightHand: true });
-  setSurface({ id: "telegram", name: "Telegram", openUrl: "https://chat.example.com/open?text={text}", only: null });
+  setSurface({
+    id: "example chat",
+    name: "Example Chat",
+    openUrl: "https://chat.example.com/open?text={text}",
+    only: null,
+  });
 });
 afterEach(async () => {
   setSurface(null);
@@ -245,7 +250,7 @@ test("confirm emails the account once that the surface was linked, with a single
   expect(more).toEqual([]);
   expect(sent?.to).toEqual([f.owner.email]);
   expect(sent?.template).toMatchObject({
-    surface: "Telegram",
+    surface: "Example Chat",
     display: "+1 555 0100",
     orgName: "Acme",
     locale: "pt-BR",
@@ -258,7 +263,11 @@ test("confirm emails the account once that the surface was linked, with a single
 
   const events: RealtimeEvent[] = [];
   f.pubsub.subscribe(userTopic(f.org.id, f.owner.id), (e) => events.push(e));
-  expect(await undoSurfaceLink(deps(), token)).toEqual({ unlinked: true });
+  expect(await undoSurfaceLink(deps(), token)).toEqual({
+    unlinked: true,
+    surface: "Example Chat",
+    display: "+1 555 0100",
+  });
   expect(await links()).toEqual([]);
   expect(events).toContainEqual({ type: "surface_link.changed", linkId: link.id, status: "gone" });
   expect(await errorOf(undoSurfaceLink(deps(), token))).toBe("surface.undo_gone");
@@ -272,7 +281,11 @@ test("the undo only ends the link it was sent for, and runs out after 7 days", a
   // A newer link replaced it: the old email's undo leaves the new one alone.
   const second = await claim(await codeOf(), "sender-new-phone");
   await confirmLink(mailing(), f.owner.id, second.link.id);
-  expect(await undoSurfaceLink(deps(), firstToken)).toEqual({ unlinked: false });
+  expect(await undoSurfaceLink(deps(), firstToken)).toEqual({
+    unlinked: false,
+    surface: "Example Chat",
+    display: "+1 555 0100",
+  });
   expect((await activeLinkOf(f.db, f.owner.id))?.id).toBe(second.link.id);
 
   const secondToken =
@@ -308,12 +321,26 @@ test("an identity change emails the account and posts one line in its DM with th
   expect(more).toEqual([]);
   expect(sent).toMatchObject({
     to: [f.owner.email],
-    template: { surface: "Telegram", display: "+1 555 0100", url: "https://chat.example.com/" },
+    template: { surface: "Example Chat", display: "+1 555 0100", url: "https://chat.example.com/" },
   });
   const lines = (await f.db.select().from(schema.messages)).filter((m) => m.meta.bodyCode === "surfaceUnlinked");
   expect(lines).toHaveLength(1);
-  expect(lines[0]?.meta.bodyParams).toEqual({ surface: "Telegram" });
+  expect(lines[0]?.meta.bodyParams).toEqual({ surface: "Example Chat" });
   expect(lines[0]?.body).toBe(
-    "Telegram foi desvinculado porque a identidade mudou. Vincule de novo em Configurações se foi você.",
+    "Example Chat foi desvinculado porque a identidade mudou. Vincule de novo em Configurações se foi você.",
   );
+});
+
+test("two confirms racing for one sender: one links, the other is surface.taken, never an internal error", async () => {
+  const bea = await addMember(f.db, f.org.id, "member", "bea");
+  const mine = await claim(await codeOf());
+  const hers = await claim(await codeOf(bea.id));
+  const results = await Promise.allSettled([
+    confirmLink(deps(), f.owner.id, mine.link.id),
+    confirmLink(deps(), bea.id, hers.link.id),
+  ]);
+  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  const refused = results.find((r) => r.status === "rejected");
+  expect((refused as PromiseRejectedResult | undefined)?.reason?.code).toBe("surface.taken");
+  expect(await f.db.select().from(schema.surfaceLinks).where(eq(schema.surfaceLinks.status, "active"))).toHaveLength(1);
 });

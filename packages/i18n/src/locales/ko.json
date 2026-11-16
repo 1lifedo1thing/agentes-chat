@@ -17114,6 +17114,7 @@
       "issue_work_start": "작업 #{{number}}을(를) 진행해 주세요.",
       "issue_taken": "작업 #{{number}}을(를) 맡았어요.",
       "surfaceUnlinked": "{{surface}}은(는) 신원이 바뀌어 연결이 해제되었습니다. 본인이라면 설정에서 다시 연결하세요.",
+      "surfaceVoiceDropped": "그 음성 메시지를 알아듣지 못했어요. 다시 보내거나 글로 써 주실래요?",
       "done": "완료했어요.",
       "stretch_paused_runs_other": "{{agents}}이(가) 계속하기 전에 확인하려고 멈췄어요",
       "stretch_paused_spend_other": "{{agents}}이(가) 확인하려고 멈췄어요 · 각자 이번 달 예산의 {{percent}}%를 사용",

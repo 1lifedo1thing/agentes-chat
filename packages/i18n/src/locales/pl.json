@@ -18803,6 +18803,7 @@
       "issue_work_start": "Zrób proszę zadanie #{{number}}.",
       "issue_taken": "Biorę zadanie #{{number}}.",
       "surfaceUnlinked": "{{surface}} odłączono, bo zmieniła się tożsamość. Połącz ponownie w Ustawieniach, jeśli to Ty.",
+      "surfaceVoiceDropped": "Nie udało mi się zrozumieć tej wiadomości głosowej. Wyślesz ją jeszcze raz albo napiszesz?",
       "done": "Gotowe.",
       "stretch_paused_runs_one": "{{agents}} zatrzymuje się, żeby sprawdzić to z tobą, zanim pójdzie dalej",
       "stretch_paused_runs_few": "{{agents}} zatrzymują się, żeby sprawdzić to z tobą, zanim pójdą dalej",

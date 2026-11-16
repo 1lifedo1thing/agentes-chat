@@ -1637,6 +1637,10 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         log("surfaces.remove", linkId);
         throw new ApiError(404, "surface.link_gone", "This link is gone");
       },
+      undo: async () => {
+        log("surfaces.undo");
+        throw new ApiError(404, "surface.undo_gone", "This link expired or was already used");
+      },
     },
     push: {
       webKey: async () => state.webPushKey ?? null,

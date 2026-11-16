@@ -330,7 +330,7 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
   "surface_linked.en": {
     kind: "surface_linked",
     locale: "en",
-    surface: "Telegram",
+    surface: "Example Chat",
     display: "+1 555 0100",
     orgName: "Souza Bakery",
     url: `${APP}/email-undo?kind=surface&token=Hk2dQ9xWm4Lp7Rt1Vb8Nc3Zs6Yf0Ja5Ue`,
@@ -338,7 +338,7 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
   "surface_linked.pt-BR": {
     kind: "surface_linked",
     locale: "pt-BR",
-    surface: "Telegram",
+    surface: "Example Chat",
     display: "+1 555 0100",
     orgName: "Padaria Souza",
     url: `${APP}/email-undo?kind=surface&token=Hk2dQ9xWm4Lp7Rt1Vb8Nc3Zs6Yf0Ja5Ue`,
@@ -347,14 +347,14 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
   "surface_unlinked.en": {
     kind: "surface_unlinked",
     locale: "en",
-    surface: "Telegram",
+    surface: "Example Chat",
     display: "+1 555 0100",
     url: APP,
   },
   "surface_unlinked.pt-BR": {
     kind: "surface_unlinked",
     locale: "pt-BR",
-    surface: "Telegram",
+    surface: "Example Chat",
     display: "+1 555 0100",
     url: APP,
   },

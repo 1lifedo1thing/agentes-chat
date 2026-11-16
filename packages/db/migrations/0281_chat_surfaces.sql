@@ -48,6 +48,7 @@ ALTER TABLE "surface_links" ADD CONSTRAINT "surface_links_user_id_users_id_fk" F
 ALTER TABLE "surface_links" ADD CONSTRAINT "surface_links_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "surface_calls_at_index" ON "surface_calls" USING btree ("at");--> statement-breakpoint
 CREATE INDEX "surface_deliveries_open" ON "surface_deliveries" USING btree ("created_at") WHERE "surface_deliveries"."taken_at" is null;--> statement-breakpoint
+CREATE UNIQUE INDEX "surface_deliveries_one_per_reply" ON "surface_deliveries" USING btree ("message_id") WHERE "surface_deliveries"."kind" = 'reply';--> statement-breakpoint
 CREATE UNIQUE INDEX "surface_links_one_per_sender" ON "surface_links" USING btree ("surface","external_id") WHERE "surface_links"."status" = 'active';--> statement-breakpoint
 CREATE UNIQUE INDEX "surface_links_one_per_account" ON "surface_links" USING btree ("user_id","surface") WHERE "surface_links"."status" = 'active';--> statement-breakpoint
 CREATE INDEX "surface_links_user_id_index" ON "surface_links" USING btree ("user_id");
