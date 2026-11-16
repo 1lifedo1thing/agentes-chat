@@ -12,7 +12,7 @@ import { can } from "@agenteschat/client/lib/permissions";
 import { storageUsageLine } from "@agenteschat/client/lib/storage";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -24,6 +24,7 @@ import {
   GroupedRow,
   type IconName,
   Locked,
+  SkeletonList,
   Text,
   useToast,
 } from "@/ui";
@@ -46,7 +47,6 @@ const STEP_ICON: Record<"ok" | "failed" | "skipped", IconName> = { ok: "check", 
  */
 export function StorageScreen() {
   const { t, i18n } = useTranslation();
-  const c = useColors();
   const { orgId, org } = useOrg();
   const admin = can(org, "configure");
   const storage = useStorage(orgId, admin);
@@ -70,9 +70,7 @@ export function StorageScreen() {
           <Note icon="lock">{t("settings.readOnly")}</Note>
         </View>
       ) : null}
-      {admin && (storage.isLoading || (storage.data && !edition)) ? (
-        <ActivityIndicator color={c.muted} style={styles.loading} />
-      ) : null}
+      {admin && (storage.isLoading || (storage.data && !edition)) ? <SkeletonList rows={2} /> : null}
       {admin && storage.isError && !storage.data ? <LoadFailed onRetry={() => void storage.refetch()} /> : null}
       {config && edition ? (
         <>
@@ -374,7 +372,6 @@ function TestSteps({ result }: { result: StorageTestResult }) {
 
 const styles = StyleSheet.create({
   note: { paddingHorizontal: 4, paddingTop: 10 },
-  loading: { marginVertical: 16 },
   input: { flex: 1, paddingVertical: 12, paddingHorizontal: 0 },
   progress: { gap: 8, paddingHorizontal: 14, paddingVertical: 14 },
   error: { paddingTop: 8, paddingHorizontal: 16 },

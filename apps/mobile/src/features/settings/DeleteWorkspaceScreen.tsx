@@ -105,7 +105,7 @@ export function DeleteWorkspaceScreen() {
       <View style={styles.proof}>
         {proof === "code" && !sent ? (
           <>
-            <Text variant="body" tone="ink2">
+            <Text variant="body" tone="ink2" style={styles.words}>
               {t("proof.willSend", { email: me?.user.email ?? "" })}
             </Text>
             <Button variant="secondary" label={t("proof.send")} loading={sending} onPress={() => void sendCode()} />
@@ -129,7 +129,7 @@ export function DeleteWorkspaceScreen() {
                 returnKeyType="done"
               />
             </Locked>
-            <Text variant="small" tone="muted">
+            <Text variant="small" tone="muted" style={styles.words}>
               {t("proof.sent", { email: sent.email })}
             </Text>
             <ResendCode resendAt={sent.resendAt} disabled={busy} sending={sending} onPress={() => void sendCode()} />
@@ -151,12 +151,12 @@ export function DeleteWorkspaceScreen() {
         ) : null}
         {proof === "addPassword" ? (
           me?.user.confirmsOnThisMac ? (
-            <Text variant="body" tone="ink2">
+            <Text variant="body" tone="ink2" style={styles.words}>
               {t("mobile.delete.onThisComputer")}
             </Text>
           ) : (
             <>
-              <Text variant="body" tone="ink2">
+              <Text variant="body" tone="ink2" style={styles.words}>
                 {t("mobile.delete.addPasswordFirst")}
               </Text>
               <Button
@@ -168,7 +168,7 @@ export function DeleteWorkspaceScreen() {
           )
         ) : null}
         {refused ? (
-          <Text variant="small" tone="danger" accessibilityLiveRegion="polite">
+          <Text variant="small" tone="danger" style={styles.words} accessibilityLiveRegion="polite">
             {refused}
           </Text>
         ) : null}
@@ -179,6 +179,8 @@ export function DeleteWorkspaceScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Words off the cards start where a group's header and footer do; fields and buttons keep the cards' edge.
   intro: { paddingHorizontal: 16 },
+  words: { paddingHorizontal: 16 },
   proof: { gap: 12, paddingTop: 24 },
 });

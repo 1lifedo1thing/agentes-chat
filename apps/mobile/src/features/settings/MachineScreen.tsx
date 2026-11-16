@@ -54,7 +54,7 @@ import { countryFlagSvg } from "@agenteschat/ui/brand/flags";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { ComputerPortrait } from "@/computer/ComputerPortrait";
 import { useOrg } from "@/providers/org";
@@ -68,11 +68,12 @@ import {
   Icon,
   type IconName,
   ProviderLogo,
+  SkeletonList,
   Text,
   useToast,
 } from "@/ui";
 import { router } from "@/ui/navigation";
-import { Note, openPage } from "../ai/parts";
+import { openPage } from "../ai/parts";
 import { openComputer } from "../computer/AgentComputerRow";
 import { ComputerSection } from "../devices/ComputerSection";
 import { findDevice } from "../devices/logic";
@@ -80,6 +81,7 @@ import { StatusLine } from "../devices/parts";
 import { useDevices } from "../devices/queries";
 import { MachineToolButton } from "../devices/ToolOneClick";
 import { AgentFace } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { goBack, MONO, successHaptic } from "../shared/parts";
 import { TextArea } from "../shared/TextArea";
@@ -138,11 +140,9 @@ export function MachineScreen({ machineId }: { machineId: string }) {
     return (
       <SettingsPage title={t("machines.page.back")}>
         {machines.isLoading ? (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
+          <SkeletonList rows={4} />
         ) : machines.isError && !machines.data ? (
-          <View style={styles.note}>
-            <Note icon="x">{t("common.loadFailed")}</Note>
-          </View>
+          <LoadFailed onRetry={() => void machines.refetch()} />
         ) : (
           <View style={styles.missing}>
             <EmptyState title={t("machines.page.notFound")} subtitle={t("machines.page.notFoundText")} />
@@ -267,7 +267,7 @@ export function MachineScreen({ machineId }: { machineId: string }) {
           </Text>
         )}
         {managed && m.online && m.egress?.ip && (
-          <View style={{ flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" }}>
+          <View style={styles.egress}>
             {countryFlagSvg(m.egress.country) ? (
               <SvgXml xml={countryFlagSvg(m.egress.country) as string} width={20} height={14} />
             ) : (
@@ -296,7 +296,8 @@ export function MachineScreen({ machineId }: { machineId: string }) {
               icon={pausedNow ? "play" : "pause"}
               label={t(pausedNow ? "machines.remotePause.resume" : "machines.remotePause.button")}
               {...(m.remotePause ? {} : { sub: t("machines.remotePause.outdated"), subLines: 3 })}
-              {...(pausedNow ? {} : { chevron: true })}
+              // Pausing lists how long in the app's short menu: the three dots of a row that opens one.
+              {...(pausedNow ? {} : { more: true })}
               disabled={!m.remotePause || pause.isPending}
               onPress={pausedNow ? () => setPause("resume") : askPause}
             />
@@ -682,7 +683,7 @@ function ProfilesSection({ machine: m }: { machine: Machine }) {
             value={t("browser.profiles.agents", { count: p.agentIds.length })}
             {...(drive
               ? {
-                  chevron: true,
+                  more: true,
                   onPress: () =>
                     chooseAction(
                       p.name,
@@ -834,7 +835,7 @@ function BrowserSection({ machine: m, onTurnOff }: { machine: Machine; onTurnOff
                     subLines={2}
                     media
                     {...(waiting ? { value: t("browser.machine.waitingChip") } : {})}
-                    chevron
+                    more
                     onPress={() => use(agent.id, agent.name)}
                   />
                 );
@@ -988,7 +989,6 @@ function GrantSection({ machine: m }: { machine: Machine }) {
  */
 export function FolderScreen({ machineId, path }: { machineId: string; path: string }) {
   const { t } = useTranslation();
-  const c = useColors();
   const machines = useMachines(useOrgId());
   const m = machines.data?.find((x) => x.id === machineId);
   const nameOf = useAgentName(m);
@@ -998,7 +998,8 @@ export function FolderScreen({ machineId, path }: { machineId: string; path: str
   return (
     <SettingsPage title={folder}>
       <GroupedFooter>{path}</GroupedFooter>
-      {machines.isLoading ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
+      {machines.isLoading ? <SkeletonList rows={2} /> : null}
+      {machines.isError && !machines.data ? <LoadFailed onRetry={() => void machines.refetch()} /> : null}
       {grant && m && canReduceAccess(m) ? (
         <>
           <GroupedHeader>{t("machines.access.usedBy", { folder })}</GroupedHeader>
@@ -1009,8 +1010,11 @@ export function FolderScreen({ machineId, path }: { machineId: string; path: str
                   key={id}
                   leading={<AgentFace agentId={id} size={30} live={false} />}
                   label={nameOf(id)}
-                  value={t("machines.access.remove")}
-                  onPress={() => askReduce({ kind: "folder", path, agent: { id, name: nameOf(id) } })}
+                  // The row's ×: this agent alone off the folder (the system's confirmation first).
+                  remove={{
+                    label: t("machines.access.remove"),
+                    onPress: () => askReduce({ kind: "folder", path, agent: { id, name: nameOf(id) } }),
+                  }}
                 />
               ))}
             </GroupedList>
@@ -1095,10 +1099,9 @@ export function RenameMachineScreen({ machineId }: { machineId: string }) {
 }
 
 const styles = StyleSheet.create({
-  note: { paddingHorizontal: 4, paddingTop: 10 },
   oneClicks: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  loading: { marginVertical: 16 },
   missing: { paddingTop: 40 },
+  egress: { flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
   head: { alignItems: "center", gap: 8, paddingTop: 10, paddingBottom: 6, paddingHorizontal: 8 },
   chips: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 6, paddingBottom: 2 },
   center: { textAlign: "center" },

@@ -19,6 +19,7 @@ import { Button, GroupedList, GroupedRow, type IconName, Locked, Text, useToast 
 import { KeyboardBar, TOOLBAR_HEIGHT } from "@/ui/auth/AuthScaffold";
 import { useColors, useNow } from "../shared/hooks";
 import { showActionSheet } from "../shared/PickerSheet";
+import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { BottomBar, copyText, type HeaderWordAction, MONO, PushedHeader, successHaptic } from "../shared/parts";
 
 /**
@@ -36,20 +37,15 @@ const FIELD_CLEARANCE = 24;
 /**
  * A settings screen: the native bar (back, the title, a line under it, a word that saves on the right) over the
  * grouped gray, which scrolls under it. A focused field scrolls clear of the keyboard on both systems (the keyboard
- * library's scroll view: with its provider on, Android no longer resizes the window by itself).
+ * library's scroll view: with its provider on, Android no longer resizes the window by itself). `largeTitle`: a list
+ * of places to go (the workspace's settings, Skills, the audit) takes the pushed lists' large title instead
+ * (`PushedLargeTitle`, as Drive and Connectors), with no word in the bar and no form under it.
  */
-export function SettingsPage({
-  title,
-  subtitle,
-  action,
-  right,
-  busy = false,
-  locked = false,
-  frozen = false,
-  toolbar = false,
-  bottom,
-  children,
-}: {
+export function SettingsPage(props: SettingsPageProps) {
+  return props.largeTitle ? <LargeTitlePage {...props} /> : <CompactPage {...props} />;
+}
+
+interface SettingsPageProps {
   title: string;
   subtitle?: string | undefined;
   action?: HeaderWordAction;
@@ -65,8 +61,36 @@ export function SettingsPage({
   toolbar?: boolean;
   /** The page's one main action, docked under it ("Done" at the end of a guide). */
   bottom?: ReactNode;
+  /** A list screen: the system's large title (drawn on Android), folding into the bar as the list scrolls. */
+  largeTitle?: boolean;
   children?: ReactNode;
-}) {
+}
+
+/** A list of the workspace's settings under a large title: no subtitle, word or docked action (those are forms'). */
+function LargeTitlePage({ title, right, locked = false, frozen = false, children }: SettingsPageProps) {
+  return (
+    <PushedLargeTitle title={title} grouped {...(right ? { right } : {})}>
+      <View style={styles.body}>
+        <Locked when={locked || frozen} readable={frozen && !locked}>
+          <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
+        </Locked>
+      </View>
+    </PushedLargeTitle>
+  );
+}
+
+function CompactPage({
+  title,
+  subtitle,
+  action,
+  right,
+  busy = false,
+  locked = false,
+  frozen = false,
+  toolbar = false,
+  bottom,
+  children,
+}: SettingsPageProps) {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const bar = toolbar ? TOOLBAR_HEIGHT : 0;
