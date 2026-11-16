@@ -717,7 +717,9 @@ function RowBody({
         </Text>
       ) : null}
       {helping ? <HelpingTag consultation={helping} channelId={m.channelId} /> : null}
-      {!reminder && !routine && !talker && !helping && agent?.role && !bubbled && !compact ? (
+      {/* The agent's role tells agents apart where several speak; in a DM (`look.names` off) the bar under its name
+          already says it, and it isn't said again on every turn. */}
+      {!reminder && !routine && !talker && !helping && agent?.role && look.names && !bubbled && !compact ? (
         <Text variant="caption" tone="faint" numberOfLines={1} style={styles.shrink}>
           {agent.role}
         </Text>
