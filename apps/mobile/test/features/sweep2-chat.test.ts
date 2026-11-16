@@ -38,3 +38,33 @@ describe("an empty conversation scrolls clear of the bar and the keyboard", () =
     expect(chat.match(/<ScrollView \{\.\.\.introScroll\}>/g)).toHaveLength(2);
   });
 });
+
+describe("a channel's members", () => {
+  const members = () => src("features/chat/ChannelMembers.tsx");
+  const screen = (name: string) => {
+    const file = members();
+    const at = file.indexOf(`export function ${name}(`);
+    const next = file.indexOf("\nexport function ", at + 1);
+    return file.slice(at, next < 0 ? undefined : next);
+  };
+
+  test("the list is a pushed list under the large title, read again on a pull, the search first under the title", () => {
+    const list = screen("ChannelMembersScreen");
+    expect(list).toMatch(/<PushedLargeTitle\s+title=\{t\("shell\.members"\)\}\s+grouped\s+keyboard\s+refreshControl=/);
+    expect(list).toContain("const pull = usePullRefresh(roster.refetch);");
+    expect(list.indexOf("<SearchField")).toBeLessThan(list.indexOf('t("channelMembers.caption")'));
+    expect(list).toContain("<Locked when={removal.pending}");
+  });
+
+  test("one agent's screen doesn't say its name again under the bar that says it", () => {
+    const agent = screen("ChannelAgentScreen");
+    expect(agent).toContain("<SettingsPage title={name}");
+    expect(agent).not.toContain("label={name}");
+    expect(agent).toContain('label={t("profile.viewProfile")}');
+  });
+
+  test("adding people says when who is in already didn't load, instead of offering everyone again", () => {
+    const add = screen("AddChannelMembersScreen");
+    expect(add).toMatch(/roster\.isError \? \([\s\S]{0,140}<LoadFailed onRetry=\{\(\) => void roster\.refetch\(\)\} \/>/);
+  });
+});
