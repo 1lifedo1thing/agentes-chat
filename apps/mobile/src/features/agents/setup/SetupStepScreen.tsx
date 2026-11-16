@@ -201,14 +201,18 @@ function AboutYouStep({ typed }: { typed: string | null }) {
       >
         {t("agentSetup.firstRun.about.linePersonal")}
       </GroupedHeader>
-      <TextArea
-        value={shown}
-        onChangeText={setLine}
-        accessibilityLabel={t("agentSetup.firstRun.about.linePersonal")}
-        minHeight={88}
-        scrollEnabled={false}
-        editable={!save.isPending}
-      />
+      {/* The list draws the field's surface, as Edit agent's fields. */}
+      <GroupedList>
+        <TextArea
+          value={shown}
+          onChangeText={setLine}
+          accessibilityLabel={t("agentSetup.firstRun.about.linePersonal")}
+          minHeight={88}
+          scrollEnabled={false}
+          editable={!save.isPending}
+          style={styles.bare}
+        />
+      </GroupedList>
     </SettingsPage>
   );
 }
@@ -629,15 +633,19 @@ function HowStep({ agent }: { agent: Agent }) {
       action={{ label: t("common.save"), onPress: () => void save(), disabled: !budgetOk }}
     >
       <GroupedHeader>{t("agentSetup.how.instructions")}</GroupedHeader>
-      <TextArea
-        value={instructions}
-        onChangeText={setInstructions}
-        placeholder={t("newAgent.instructionsPlaceholder")}
-        accessibilityLabel={t("agentSetup.how.instructions")}
-        minHeight={180}
-        scrollEnabled={false}
-        editable={!busy}
-      />
+      {/* The same field as Edit agent's instructions: the list draws its surface. */}
+      <GroupedList>
+        <TextArea
+          value={instructions}
+          onChangeText={setInstructions}
+          placeholder={t("newAgent.instructionsPlaceholder")}
+          accessibilityLabel={t("agentSetup.how.instructions")}
+          minHeight={180}
+          scrollEnabled={false}
+          editable={!busy}
+          style={styles.bare}
+        />
+      </GroupedList>
       <GroupedFooter>{t(modeKey(org, "agentSetup.how.desc"))}</GroupedFooter>
       {seesBudget ? (
         <>
@@ -685,4 +693,6 @@ function Bones() {
 
 const styles = StyleSheet.create({
   plan: { marginTop: 18 },
+  // A field inside a grouped list: the list is its surface.
+  bare: { borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
 });

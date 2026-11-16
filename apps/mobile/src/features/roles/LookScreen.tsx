@@ -216,17 +216,21 @@ export function RenameRoleScreen({ roleId }: { roleId: string }) {
       <GroupedHeader hint={{ name: t("common.about", { label: t("rolesPage.name") }), text: t("rolesPage.nameDesc") }}>
         {t("rolesPage.name")}
       </GroupedHeader>
-      <TextArea
-        value={value}
-        onChangeText={setDraft}
-        multiline={false}
-        minHeight={50}
-        maxLength={NAME_MAX}
-        autoFocus
-        returnKeyType="done"
-        onSubmitEditing={save}
-        accessibilityLabel={t("rolesPage.name")}
-      />
+      {/* A field row of the page, the list its surface, as every field of the settings pages. */}
+      <GroupedList>
+        <TextArea
+          value={value}
+          onChangeText={setDraft}
+          multiline={false}
+          minHeight={50}
+          maxLength={NAME_MAX}
+          autoFocus
+          returnKeyType="done"
+          onSubmitEditing={save}
+          accessibilityLabel={t("rolesPage.name")}
+          style={styles.bare}
+        />
+      </GroupedList>
       {draft !== null && !next ? <GroupedFooter>{t("errors.role.nameRequired")}</GroupedFooter> : null}
     </SettingsPage>
   );
@@ -285,18 +289,21 @@ export function NewRoleScreen() {
       busy={create.isPending}
     >
       <GroupedHeader>{t("rolesPage.name")}</GroupedHeader>
-      <TextArea
-        value={name}
-        onChangeText={setName}
-        multiline={false}
-        minHeight={50}
-        maxLength={NAME_MAX}
-        autoFocus
-        returnKeyType="done"
-        onSubmitEditing={submit}
-        placeholder={t("rolesPage.namePlaceholder")}
-        accessibilityLabel={t("rolesPage.name")}
-      />
+      <GroupedList>
+        <TextArea
+          value={name}
+          onChangeText={setName}
+          multiline={false}
+          minHeight={50}
+          maxLength={NAME_MAX}
+          autoFocus
+          returnKeyType="done"
+          onSubmitEditing={submit}
+          placeholder={t("rolesPage.namePlaceholder")}
+          accessibilityLabel={t("rolesPage.name")}
+          style={styles.bare}
+        />
+      </GroupedList>
       <Gap />
       <GroupedList>
         <GroupedRow
@@ -317,6 +324,8 @@ export function NewRoleScreen() {
 }
 
 const styles = StyleSheet.create({
+  // A field inside a grouped list: the list is its surface.
+  bare: { borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
   swatches: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 12 },
   // The ring's circle sits 2 out from the mark's, 2 wide: concentric.
   swatch: { padding: 2, borderRadius: 19, borderWidth: 2 },

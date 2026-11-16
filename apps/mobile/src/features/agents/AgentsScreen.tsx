@@ -80,8 +80,11 @@ import { agoShort, workTitle } from "./work";
 const LIVE_ROWS = 8;
 /** While Agentes is on screen, how often it asks whether the task manager is there (the manager itself: seconds). */
 const TASKS_POLL_MS = 15_000;
-/** A row's state line changes in place (a run starts, a request lands): it crosses over, never pops. */
-const STATE_IN = FadeIn.duration(160);
+/**
+ * A row's state line changes in place (a run starts, a request lands): it crosses over, never pops; under 150 ms, as
+ * something seen many times a day (animate-expo's gate).
+ */
+const STATE_IN = FadeIn.duration(140);
 /** Back from a routine: the body comes back into its sky's frame. */
 const FACE_IN = FadeIn.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1));
 
@@ -677,8 +680,9 @@ function useGreeting(order: readonly string[]): string | null {
 }
 
 /**
- * A newcomer's row coming in: from a little below and a touch small, on a spring with a small bounce (a rare moment,
- * the one place this list is allowed one). Reduced motion: it only fades in. Every other row: no style at all.
+ * A newcomer's row coming in: from a little below and a touch small, settling on a spring without overshoot (a rare
+ * moment, but no finger threw it: nothing to bounce from). Reduced motion: it only fades in. Every other row: no style
+ * at all.
  */
 function useArrival(arriving: boolean, reduced: boolean) {
   const shown = useSharedValue(1);
@@ -686,7 +690,7 @@ function useArrival(arriving: boolean, reduced: boolean) {
     if (!arriving) return;
     shown.set(0);
     shown.set(
-      reduced ? withTiming(1, { duration: 200 }) : withDelay(120, withSpring(1, { duration: 520, dampingRatio: 0.72 })),
+      reduced ? withTiming(1, { duration: 200 }) : withDelay(120, withSpring(1, { duration: 400, dampingRatio: 1 })),
     );
   }, [arriving, reduced, shown]);
   return useAnimatedStyle(() => {
