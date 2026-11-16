@@ -44,8 +44,9 @@ export default function MainStack() {
       "(tabs)": base,
       "chat/[channelId]": solid,
       "block/[id]": solid,
-      "wiki-map": solid,
       "agent/[id]": cover,
+      // The wiki's graph: its night fills the screen behind the bar.
+      "wiki-map": cover,
       "connectors/[id]": cover,
       // Você: a pushed page with a clear bar over its sky; its screens pushed over it on the grouped gray.
       "me/index": cover,
