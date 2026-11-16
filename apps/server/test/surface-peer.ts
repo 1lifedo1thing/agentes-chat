@@ -33,8 +33,11 @@ const PEOPLE = ["owner", "ana", "theo", "bea"];
 const lastLine = (request: ModelRequest) => {
   const last = [...request.messages].reverse().find((m) => m.role === "user");
   const text = last ? textOf(last.content).trim() : "";
+  // A message that came through a surface ends with core's own note on a line of its own, "(sent by … through …)":
+  // the person's words are the line before it.
+  const lines = text.split("\n").filter((line) => !/^\(.*\)$/.test(line.trim()));
   // Without the "[name]: " the conversation puts before each person's line.
-  return (text.split("\n").at(-1) ?? "").replace(/^\[[^\]]*\]:\s*/, "").trim();
+  return (lines.at(-1) ?? "").replace(/^\[[^\]]*\]:\s*/, "").trim();
 };
 
 const t = await createTestServer({
