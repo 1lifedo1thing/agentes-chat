@@ -1,0 +1,1090 @@
+import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
+import { createFakeErrorReporter, createMemoryRateLimiter } from "@agenteschat/adapters";
+import { testConfig } from "@agenteschat/config";
+import { asc, type Database, desc, eq, schema } from "@agenteschat/db";
+import { addRunStep, REVEAL_FIELDS, REVEAL_PER_WORKSPACE_DAY } from "@agenteschat/engine";
+import { createLogger } from "../src/logger";
+import { createOperatorApp, type OperatorDeps } from "../src/operator/app";
+import { poison } from "./canary";
+import { browser, createTestServer, joinByInvitation, seedOrg, signUp, type TestServer } from "./harness";
+
+/**
+ * The operator API's reveal door (ADR 0056): one field of one record, with a reason, for a member who asked for
+ * help or to diagnose a run that failed or got stuck. What opens is what the proof opens and no more; the read is
+ * on record before the text is read; a workspace that nobody reads this way sees nothing change.
+ */
+
+const TOKEN = "operator-test-token-".padEnd(48, "x");
+const READ = "operator-read-token-".padEnd(48, "x");
+const REVEAL = "operator-reveal-token-".padEnd(48, "x");
+const UNKNOWN = "0b0b0b0b-0b0b-4b0b-8b0b-0b0b0b0b0b0b";
+const REASON = "Check whether the two approval requests asked for the same command";
+const HOUR = 3600_000;
+const DAY = 24 * HOUR;
+const ago = (ms: number) => new Date(Date.now() - ms);
+
+type Answer = { kind: string; id: string; field: string; text: string; chars: number; offset: number; more: boolean };
+type Refusal = { error: { code: string; message: string } };
+
+let t: TestServer;
+let db: Database;
+let deps: OperatorDeps;
+let app: ReturnType<typeof createOperatorApp>;
+/** Everything the tests name: ids of people, places and records of the workspace, and of another one. */
+const w = {} as Record<
+  | "orgId"
+  | "otherOrgId"
+  | "ownerId"
+  | "biaId"
+  | "adaId"
+  | "caioId"
+  | "devId"
+  | "botId"
+  | "generalId"
+  | "secretId"
+  | "dmId"
+  | "connectionId"
+  | "routineId"
+  | "taskId",
+  string
+>;
+const messages = {} as Record<"asked" | "written" | "other" | "secret" | "dm" | "deleted" | "foreign", string>;
+const runs = {} as Record<
+  | "failed"
+  | "others"
+  | "running"
+  | "fresh"
+  | "onPlan"
+  | "onPerson"
+  | "onApproval"
+  | "recovered"
+  | "clean"
+  | "old"
+  | "older"
+  | "direct"
+  | "foreign",
+  string
+>;
+const requests = {} as Record<
+  "owner" | "bia" | "ada" | "byHand" | "stale" | "left" | "tenDays" | "yesterday" | "foreign",
+  string
+>;
+
+/** The message each run answers. */
+const asking = new Map<string, string>();
+
+const call = (json: unknown, options: { token?: string; orgId?: string; on?: typeof app } = {}) =>
+  (options.on ?? app).request(`/api/operator/v1/reveal/orgs/${options.orgId ?? w.orgId}`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${options.token ?? REVEAL}`, "content-type": "application/json" },
+    body: JSON.stringify(json),
+  });
+const ask = (kind: string, id: string, field: string, proof: Record<string, unknown>) => ({
+  kind,
+  id,
+  field,
+  reason: REASON,
+  operator: "call:7",
+  assistedByAi: true,
+  ...("runId" in proof ? { purpose: "fault" } : { purpose: "member_request" }),
+  ...proof,
+});
+/** The answer's status and, for a refusal, its code. */
+async function outcome(json: unknown, options?: Parameters<typeof call>[1]) {
+  const res = await call(json, options);
+  return res.status === 200 ? 200 : [res.status, ((await res.json()) as Refusal).error.code];
+}
+async function text(json: unknown) {
+  const res = await call(json);
+  if (res.status !== 200) throw new Error(`refused: ${await res.text()}`);
+  return ((await res.json()) as Answer).text;
+}
+const events = () =>
+  db
+    .select()
+    .from(schema.operatorEvents)
+    .where(eq(schema.operatorEvents.type, "content.viewed"))
+    .orderBy(asc(schema.operatorEvents.createdAt));
+const auditLines = (orgId = w.orgId) =>
+  db
+    .select()
+    .from(schema.auditLog)
+    .where(eq(schema.auditLog.orgId, orgId))
+    .orderBy(desc(schema.auditLog.createdAt))
+    .then((rows) => rows.filter((r) => r.action === "operator.content_read"));
+const forget = async () => {
+  await db.delete(schema.operatorEvents);
+  await db.delete(schema.auditLog).where(eq(schema.auditLog.action, "operator.content_read"));
+};
+
+beforeAll(async () => {
+  t = await createTestServer({
+    env: {
+      OPERATOR_API_TOKEN: TOKEN,
+      OPERATOR_API_READ_TOKEN: READ,
+      OPERATOR_API_REVEAL_TOKEN: REVEAL,
+      ALLOW_SIGNUP: "true",
+    },
+  });
+  db = t.db;
+  // The tests' own door counts no minute: the one about its limits brings a clock.
+  const unlimited = { consume: async () => ({ allowed: true, remaining: 1, resetAt: new Date(0) }) };
+  deps = { db, config: t.config, version: "test", log: createLogger("error"), rateLimiter: unlimited };
+  app = createOperatorApp(deps, TOKEN, READ, REVEAL);
+
+  const userId = async (email: string) =>
+    (await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, email)))[0]?.id ?? "";
+  const owner = browser(t);
+  await signUp(owner, "owner@example.com");
+  const org = await seedOrg(owner);
+  const { orgId } = org;
+  await joinByInvitation(t, owner, orgId, "bia@example.com");
+  await joinByInvitation(t, owner, orgId, "ada@example.com", { role: "admin" });
+  await joinByInvitation(t, owner, orgId, "caio@example.com");
+  Object.assign(w, {
+    orgId,
+    generalId: org.channelId,
+    devId: org.agentId,
+    ownerId: await userId("owner@example.com"),
+    biaId: await userId("bia@example.com"),
+    adaId: await userId("ada@example.com"),
+    caioId: await userId("caio@example.com"),
+  });
+  // Caio asked, and then left.
+  await db.delete(schema.organizationMembers).where(eq(schema.organizationMembers.userId, w.caioId));
+  await db
+    .update(schema.agents)
+    .set({ ownerUserId: w.ownerId, instructions: "canary-instructions: answer in rhyme" })
+    .where(eq(schema.agents.id, w.devId));
+
+  const one = async <T extends { id: string }>(rows: Promise<T[]>) => (await rows)[0]?.id ?? "";
+  // Bia's own agent, which answers nobody else.
+  w.botId = await one(
+    db
+      .insert(schema.agents)
+      .values({
+        orgId,
+        name: "Bot",
+        handle: "bot",
+        model: "x",
+        ownerUserId: w.biaId,
+        audienceMode: "owner",
+        instructions: "canary-bot",
+      })
+      .returning({ id: schema.agents.id }),
+  );
+  const channel = (name: string, kind: "channel" | "dm", members: { userId?: string; agentId?: string }[]) =>
+    one(
+      db
+        .insert(schema.channels)
+        .values({ orgId, name, kind, visibility: "private", dmKey: kind === "dm" ? name : null })
+        .returning({ id: schema.channels.id }),
+    ).then(async (channelId) => {
+      await db.insert(schema.channelMembers).values(members.map((m) => ({ orgId, channelId, ...m })));
+      return channelId;
+    });
+  w.secretId = await channel("canary-plans", "channel", [{ userId: w.ownerId }, { agentId: w.devId }]);
+  w.dmId = await channel("dm-owner-dev", "dm", [{ userId: w.ownerId }, { agentId: w.devId }]);
+  await db
+    .insert(schema.channelMembers)
+    .values([
+      { orgId, channelId: w.generalId, userId: w.biaId },
+      { orgId, channelId: w.generalId, agentId: w.botId },
+    ])
+    .onConflictDoNothing();
+
+  const say = (channelId: string, body: string, over: Partial<typeof schema.messages.$inferInsert> = {}) =>
+    one(
+      db
+        .insert(schema.messages)
+        .values({ orgId, channelId, authorType: "person", authorUserId: w.ownerId, body, ...over })
+        .returning({ id: schema.messages.id }),
+    );
+  messages.asked = await say(
+    w.generalId,
+    "canary-asked: @dev export the report. Write to ana@example.com or +55 11 91234-5678",
+  );
+  messages.other = await say(w.generalId, "canary-other message of the same channel");
+  messages.secret = await say(w.secretId, "canary-secret plans");
+  messages.dm = await say(w.dmId, "canary-direct words");
+  messages.deleted = await say(w.generalId, "canary-deleted words", { deletedAt: new Date() });
+
+  // One run per agent and message: each answers a message of its own unless it is told which.
+  const run = async (
+    status: (typeof schema.agentRuns.$inferInsert)["status"],
+    over: Partial<typeof schema.agentRuns.$inferInsert> = {},
+  ) => {
+    const asked = over.triggerMessageId ?? (await say(over.channelId ?? w.generalId, "canary-asked again"));
+    const id = await one(
+      db
+        .insert(schema.agentRuns)
+        .values({
+          orgId,
+          agentId: w.devId,
+          channelId: w.generalId,
+          threadRootId: asked,
+          triggerMessageId: asked,
+          trigger: "mention",
+          hop: 1,
+          status,
+          brain: "model",
+          createdAt: ago(DAY),
+          startedAt: ago(DAY),
+          updatedAt: ago(DAY),
+          ...over,
+        })
+        .returning({ id: schema.agentRuns.id }),
+    );
+    asking.set(id, asked);
+    return id;
+  };
+  const steps = async (
+    runId: string,
+    list: [kind: Parameters<typeof addRunStep>[2], data: Record<string, unknown>][],
+  ) => {
+    for (const [kind, data] of list) await addRunStep(db, { id: runId, orgId }, kind, data);
+  };
+  const aCall = (id: string): Parameters<typeof steps>[1][number] => [
+    "tool_call",
+    {
+      toolUseId: id,
+      name: "lookup",
+      input: { q: `canary-input-${id}`, password: "hunter2-fake" },
+      detail: "canary-detail",
+    },
+  ];
+  const aResult = (id: string, failed = false): Parameters<typeof steps>[1][number] => [
+    "tool_result",
+    { toolUseId: id, name: "lookup", content: `canary-result-${id}`, ...(failed ? { isError: true } : {}) },
+  ];
+
+  runs.failed = await run("failed", { error: "cli_failed: canary-error", triggerMessageId: messages.asked });
+  await steps(runs.failed, [
+    aCall("a"),
+    aResult("a"),
+    ["model_call", { model: "x", narration: "canary-narration" }],
+    ["error", { reason: "cli_failed: canary-step-error", message: "canary-step-message" }],
+  ]);
+  messages.written = await say(w.generalId, "canary-written by the run", {
+    authorType: "agent",
+    authorUserId: null,
+    authorAgentId: w.devId,
+    agentRunId: runs.failed,
+  });
+  runs.others = await run("failed", {
+    agentId: w.botId,
+    triggerMessageId: messages.other,
+    threadRootId: messages.other,
+  });
+  await steps(runs.others, [aCall("o"), aResult("o")]);
+  runs.running = await run("running", { createdAt: ago(2 * HOUR), startedAt: ago(2 * HOUR), updatedAt: ago(60_000) });
+  await steps(runs.running, [aCall("r")]);
+  runs.fresh = await run("running", { createdAt: ago(600_000), startedAt: ago(600_000) });
+  await steps(runs.fresh, [aCall("f")]);
+  runs.onPlan = await run("waiting_input", {
+    updatedAt: ago(2 * HOUR),
+    transcript: { waitingForBrain: { code: "plan_limit" } },
+  });
+  await steps(runs.onPlan, [aCall("p")]);
+  runs.onPerson = await run("waiting_input", { updatedAt: ago(2 * HOUR) });
+  await steps(runs.onPerson, [aCall("q")]);
+  runs.onApproval = await run("waiting_approval", { updatedAt: ago(2 * HOUR) });
+  await steps(runs.onApproval, [aCall("v")]);
+  runs.recovered = await run("done");
+  await steps(runs.recovered, [
+    aCall("a"),
+    aResult("a"),
+    aCall("b"),
+    aResult("b", true),
+    ["model_call", { narration: "canary-after" }],
+  ]);
+  runs.clean = await run("done");
+  await steps(runs.clean, [aCall("c"), aResult("c")]);
+  runs.old = await run("failed", { createdAt: ago(15 * DAY) });
+  await steps(runs.old, [aCall("d")]);
+  runs.older = await run("failed", { createdAt: ago(20 * DAY) });
+  await steps(runs.older, [aCall("e")]);
+  runs.direct = await run("failed", { channelId: w.dmId, triggerMessageId: messages.dm, threadRootId: messages.dm });
+  await steps(runs.direct, [aCall("m")]);
+
+  w.routineId = await one(
+    db
+      .insert(schema.routines)
+      .values({
+        orgId,
+        agentId: w.devId,
+        name: "canary-routine-name",
+        prompt: "canary-routine-instructions",
+        target: { type: "channel", channelId: w.generalId },
+        triggerType: "schedule",
+        cron: "0 9 * * *",
+        timezone: "UTC",
+        createdByUserId: w.ownerId,
+      })
+      .returning({ id: schema.routines.id }),
+  );
+  await db.insert(schema.routineRuns).values(
+    [runs.failed, runs.direct].map((agentRunId, n) => ({
+      orgId,
+      routineId: w.routineId,
+      at: ago(DAY + n * HOUR),
+      trigger: "schedule",
+      status: "failed",
+      agentRunId,
+    })),
+  );
+  const machineId = await one(
+    db.insert(schema.machines).values({ orgId, name: "Box" }).returning({ id: schema.machines.id }),
+  );
+  w.taskId = await one(
+    db
+      .insert(schema.machineTasks)
+      .values({
+        orgId,
+        agentId: w.devId,
+        machineId,
+        channelId: w.generalId,
+        runId: runs.failed,
+        title: "canary-task-title",
+        executor: "claude",
+        command: "canary-task-command",
+        prompt: "canary-task-prompt",
+        result: "canary-task-result",
+        lastLine: "canary-task-line",
+        status: "done",
+      })
+      .returning({ id: schema.machineTasks.id }),
+  );
+  w.connectionId = await one(
+    db
+      .insert(schema.connectorConnections)
+      .values({
+        orgId,
+        connector: "custom:billing",
+        label: "canary-connection-label",
+        serverUrl: "https://mcp.example.com/canary-path?access=canary-query",
+        authType: "api_key",
+        toolPrefix: "billing",
+        accountLabel: "canary-account",
+        lastError: "canary-connection-error",
+      })
+      .returning({ id: schema.connectorConnections.id }),
+  );
+
+  // Another workspace, with a message, a failed run and a request of its own.
+  const zed = browser(t);
+  await signUp(zed, "zed@example.com");
+  const other = await seedOrg(zed);
+  w.otherOrgId = other.orgId;
+  const zedId = await userId("zed@example.com");
+  messages.foreign = await one(
+    db
+      .insert(schema.messages)
+      .values({
+        orgId: other.orgId,
+        channelId: other.channelId,
+        authorType: "person",
+        authorUserId: zedId,
+        body: "canary-foreign",
+      })
+      .returning({ id: schema.messages.id }),
+  );
+  runs.foreign = await one(
+    db
+      .insert(schema.agentRuns)
+      .values({
+        orgId: other.orgId,
+        agentId: other.agentId,
+        channelId: other.channelId,
+        threadRootId: messages.foreign,
+        triggerMessageId: messages.foreign,
+        trigger: "mention",
+        hop: 1,
+        status: "failed",
+      })
+      .returning({ id: schema.agentRuns.id }),
+  );
+  await addRunStep(db, { id: runs.foreign, orgId: other.orgId }, "tool_call", {
+    toolUseId: "z",
+    name: "x",
+    input: { q: "canary-foreign-input" },
+  });
+
+  const request = (userId: string, source: string, over: Partial<typeof schema.supportRequests.$inferInsert> = {}) =>
+    one(
+      db
+        .insert(schema.supportRequests)
+        .values({ orgId, userId, source, text: "canary-request-text", about: "canary-request-about", ...over })
+        .returning({ id: schema.supportRequests.id }),
+    );
+  requests.owner = await request(w.ownerId, "form");
+  requests.bia = await request(w.biaId, "offer");
+  requests.ada = await request(w.adaId, "email", { ref: "mail-1" });
+  requests.byHand = await request(w.ownerId, "operator", { ref: "record-1", text: null, about: null });
+  requests.stale = await request(w.ownerId, "form", { createdAt: ago(31 * DAY) });
+  requests.left = await request(w.caioId, "form");
+  requests.tenDays = await request(w.ownerId, "form", { createdAt: ago(10 * DAY) });
+  requests.yesterday = await request(w.ownerId, "form", { createdAt: ago(DAY) });
+  requests.foreign = await request(zedId, "form", { orgId: other.orgId });
+});
+
+afterAll(() => t.close());
+// Each test starts with nothing read: the day's count is the events themselves.
+beforeEach(() => forget());
+
+const step = (runId: string, seq: number, field: string, proof: Record<string, unknown>) => ({
+  ...ask("run_step", runId, field, proof),
+  seq,
+});
+
+test("the tokens: the reveal token opens the door and nothing else; the other two never do; with none set it is closed to all", async () => {
+  const good = ask("message", messages.asked, "text", { requestId: requests.owner });
+  expect(await outcome(good)).toBe(200);
+  for (const token of [TOKEN, READ]) expect(await outcome(good, { token })).toEqual([403, "forbidden"]);
+  expect(await outcome(good, { token: "wrong" })).toEqual([401, "unauthorized"]);
+  const get = await app.request(`/api/operator/v1/reveal/orgs/${w.orgId}`, {
+    headers: { authorization: `Bearer ${REVEAL}` },
+  });
+  expect(get.status).toBe(403);
+  for (const path of ["/health", `/orgs/${w.orgId}`, `/orgs/${w.orgId}/support-requests`, "/openapi.json"]) {
+    const res = await app.request(`/api/operator/v1${path}`, { headers: { authorization: `Bearer ${REVEAL}` } });
+    expect({ path, status: res.status }).toEqual({ path, status: 403 });
+  }
+  // A server that set no reveal token: whoever asks, nothing is read and nothing is written.
+  await forget();
+  const closed = createOperatorApp(deps, TOKEN, READ);
+  for (const token of [TOKEN, READ, REVEAL, "wrong"]) {
+    expect({ token, answer: await outcome(good, { token, on: closed }) }).toEqual({
+      token,
+      answer: [403, "forbidden"],
+    });
+  }
+  expect([await events(), await auditLines()]).toEqual([[], []]);
+  // Two tokens equal would give one door's key to the other.
+  for (const same of [TOKEN, READ]) {
+    expect(() =>
+      testConfig({ OPERATOR_API_TOKEN: TOKEN, OPERATOR_API_READ_TOKEN: READ, OPERATOR_API_REVEAL_TOKEN: same }),
+    ).toThrow(/OPERATOR_API_REVEAL_TOKEN must differ/);
+  }
+});
+
+test("each kind and field gives its own text; another workspace's record, a deleted one and nobody's are one 404", async () => {
+  const mine = { requestId: requests.owner };
+  const given: [json: Record<string, unknown>, text: string][] = [
+    [ask("message", messages.secret, "text", mine), "canary-secret plans"],
+    [step(runs.failed, 1, "input", mine), "q: canary-input-a\npassword: ***"],
+    [step(runs.failed, 2, "result", mine), "canary-result-a"],
+    [step(runs.failed, 3, "narration", mine), "canary-narration"],
+    [step(runs.failed, 4, "error", mine), "cli_failed: canary-step-error: canary-step-message"],
+    [step(runs.recovered, 4, "error", mine), "canary-result-b"],
+    [ask("agent", w.devId, "instructions", mine), "canary-instructions: answer in rhyme"],
+    [ask("routine", w.routineId, "name", mine), "canary-routine-name"],
+    [ask("routine", w.routineId, "instructions", mine), "canary-routine-instructions"],
+    [ask("task", w.taskId, "command", mine), "canary-task-command"],
+    [ask("task", w.taskId, "prompt", mine), "canary-task-prompt"],
+    [ask("task", w.taskId, "result", mine), "canary-task-result"],
+    [ask("channel", w.secretId, "name", mine), "canary-plans"],
+    [ask("connection", w.connectionId, "label", mine), "canary-connection-label"],
+    [ask("connection", w.connectionId, "host", mine), "mcp.example.com"],
+    [ask("connection", w.connectionId, "last_error", mine), "canary-connection-error"],
+    [ask("support_request", requests.owner, "text", mine), "canary-request-text"],
+    [ask("support_request", requests.owner, "about", mine), "canary-request-about"],
+  ];
+  // The table is closed, and this list is all of it.
+  const fields = new Set(given.map(([json]) => `${json.kind}.${json.field}`));
+  expect([...fields].sort()).toEqual(
+    Object.entries(REVEAL_FIELDS)
+      .flatMap(([kind, list]) => list.map((field) => `${kind}.${field}`))
+      .sort(),
+  );
+  for (const [json, expected] of given) {
+    const res = await call(json);
+    const answer = (await res.json()) as Answer;
+    expect({ asked: `${json.kind}.${json.field}`, status: res.status, text: answer.text }).toEqual({
+      asked: `${json.kind}.${json.field}`,
+      status: 200,
+      text: expected,
+    });
+    expect(answer).toEqual({
+      kind: json.kind as string,
+      id: json.id as string,
+      field: json.field as string,
+      text: expected,
+      chars: expected.length,
+      offset: 0,
+      more: false,
+    });
+  }
+
+  const gone = await call(ask("message", UNKNOWN, "text", mine));
+  const nobody = await gone.text();
+  expect(gone.status).toBe(404);
+  const same: [what: string, json: Record<string, unknown>, orgId?: string][] = [
+    ["another workspace's message", ask("message", messages.foreign, "text", mine)],
+    ["another workspace's step", step(runs.foreign, 1, "input", mine)],
+    ["another workspace's request", ask("support_request", requests.foreign, "text", mine)],
+    ["a deleted message", ask("message", messages.deleted, "text", mine)],
+    ["a step the run doesn't have", step(runs.failed, 99, "input", mine)],
+    ["a field the step doesn't have", step(runs.failed, 1, "narration", mine)],
+    ["a direct conversation's made-up name", ask("channel", w.dmId, "name", mine)],
+    ["a request with no words", ask("support_request", requests.byHand, "text", { requestId: requests.byHand })],
+    ["a workspace nobody has", ask("message", messages.asked, "text", mine), UNKNOWN],
+  ];
+  for (const [what, json, orgId] of same) {
+    const res = await call(json, { orgId });
+    expect({ what, status: res.status, body: (await res.text()).replace(String(json.id), UNKNOWN) }).toEqual({
+      what,
+      status: 404,
+      body: nobody,
+    });
+  }
+  // An error is asked of something that failed.
+  expect(await outcome(step(runs.failed, 2, "error", mine))).toEqual([409, "reveal.no_error"]);
+});
+
+test("member_request: the request is this workspace's and young, its member still one, and they read the record now", async () => {
+  const message = (requestId: string, id = messages.asked) => outcome(ask("message", id, "text", { requestId }));
+  expect(await message(UNKNOWN)).toEqual([403, "reveal.no_request"]);
+  expect(await message(requests.stale)).toEqual([403, "reveal.no_request"]);
+  expect(await message(requests.foreign)).toEqual([403, "reveal.no_request"]);
+  expect(await message(requests.left)).toEqual([403, "reveal.requester"]);
+  // Each of the four ways a request arrives opens what its member reads.
+  for (const id of [requests.owner, requests.bia, requests.ada, requests.byHand]) expect(await message(id)).toBe(200);
+
+  // A private channel: its member and an administrator read it, another member doesn't.
+  expect(await message(requests.owner, messages.secret)).toBe(200);
+  expect(await message(requests.ada, messages.secret)).toBe(200);
+  expect(await message(requests.bia, messages.secret)).toEqual([403, "reveal.not_visible"]);
+  expect(await outcome(ask("channel", w.secretId, "name", { requestId: requests.bia }))).toEqual([
+    403,
+    "reveal.not_visible",
+  ]);
+
+  // A run's steps: a plain member in the channel doesn't see how someone else's agent worked; its owner and an
+  // administrator do. Her own agent's, she does.
+  const aStep = (requestId: string, runId = runs.failed) => outcome(step(runId, 1, "input", { requestId }));
+  expect(await aStep(requests.bia)).toEqual([403, "reveal.not_visible"]);
+  expect(await aStep(requests.owner)).toBe(200);
+  expect(await aStep(requests.ada)).toBe(200);
+  expect(await aStep(requests.bia, runs.others)).toBe(200);
+  expect(await outcome(ask("task", w.taskId, "prompt", { requestId: requests.bia }))).toEqual([
+    403,
+    "reveal.not_visible",
+  ]);
+  // How an agent works is its owner's, an administrator's and whoever it answers to see.
+  expect(await outcome(ask("agent", w.botId, "instructions", { requestId: requests.bia }))).toBe(200);
+  expect(await outcome(ask("agent", w.botId, "instructions", { requestId: requests.ada }))).toBe(200);
+  // An agent that answers only its owner: neither its instructions nor its routine are hers to see.
+  await db.update(schema.agents).set({ audienceMode: "owner" }).where(eq(schema.agents.id, w.devId));
+  for (const json of [ask("agent", w.devId, "instructions", {}), ask("routine", w.routineId, "name", {})]) {
+    expect(await outcome({ ...json, requestId: requests.bia })).toEqual([403, "reveal.not_visible"]);
+  }
+  // Once it answers everyone: how it works, and the routine of a channel she is in, with its instructions.
+  await db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, w.devId));
+  for (const json of [
+    ask("agent", w.devId, "instructions", {}),
+    ask("routine", w.routineId, "name", {}),
+    ask("routine", w.routineId, "instructions", {}),
+  ]) {
+    expect(await outcome({ ...json, requestId: requests.bia })).toBe(200);
+  }
+
+  // A direct conversation: who is in it, never an administrator who is not.
+  expect(await message(requests.owner, messages.dm)).toBe(200);
+  expect(await message(requests.ada, messages.dm)).toEqual([403, "reveal.not_visible"]);
+  expect(await outcome(step(runs.direct, 1, "input", { requestId: requests.ada }))).toEqual([
+    403,
+    "reveal.not_visible",
+  ]);
+
+  // A request's own words, and nobody else's.
+  const words = (id: string, requestId: string) => outcome(ask("support_request", id, "about", { requestId }));
+  expect(await words(requests.bia, requests.bia)).toBe(200);
+  expect(await words(requests.owner, requests.bia)).toEqual([403, "reveal.not_visible"]);
+  expect(await words(requests.bia, requests.ada)).toEqual([403, "reveal.not_visible"]);
+});
+
+test("fault: a run that failed or stands still, in its days, opens what hangs on it and nothing else", async () => {
+  const input = (runId: string, over: Record<string, unknown> = {}) =>
+    outcome(step(runId, 1, "input", { runId, ...over }));
+  // No fault: it ended well, it is still at work, or the next move is a person's.
+  for (const runId of [runs.clean, runs.fresh, runs.onPerson, runs.onApproval]) {
+    expect({ runId, answer: await input(runId) }).toEqual({ runId, answer: [403, "reveal.no_fault"] });
+  }
+  // Nor a run nobody has, or another workspace's.
+  for (const runId of [UNKNOWN, runs.foreign]) {
+    expect(await outcome(ask("message", messages.asked, "text", { runId }))).toEqual([403, "reveal.no_fault"]);
+  }
+  // Stuck: at work for two hours, or two hours on its plan.
+  expect(await input(runs.running)).toBe(200);
+  expect(await input(runs.onPlan)).toBe(200);
+
+  // Its days: 14 from the run, or 14 back from the report that names it.
+  expect(await input(runs.old)).toEqual([403, "reveal.no_fault"]);
+  expect(await input(runs.older)).toEqual([403, "reveal.no_fault"]);
+  expect(await input(runs.older, { requestId: requests.tenDays })).toBe(200);
+  expect(await input(runs.older, { requestId: requests.yesterday })).toEqual([403, "reveal.no_fault"]);
+  for (const requestId of [requests.foreign, requests.stale, UNKNOWN]) {
+    expect(await input(runs.failed, { requestId })).toEqual([403, "reveal.no_request"]);
+  }
+
+  // What hangs on a failed run, and on one that stands still.
+  const of = { runId: runs.failed };
+  const hangs = [
+    step(runs.failed, 1, "input", of),
+    step(runs.failed, 2, "result", of),
+    step(runs.failed, 3, "narration", of),
+    step(runs.failed, 4, "error", of),
+    ask("message", messages.asked, "text", of),
+    ask("message", messages.written, "text", of),
+    ask("agent", w.devId, "instructions", of),
+    ask("routine", w.routineId, "name", of),
+    ask("routine", w.routineId, "instructions", of),
+    ask("task", w.taskId, "command", of),
+    ask("message", asking.get(runs.running) ?? "", "text", { runId: runs.running }),
+    ask("agent", w.devId, "instructions", { runId: runs.onPlan }),
+  ];
+  for (const json of hangs) expect({ json, answer: await outcome(json) }).toEqual({ json, answer: 200 });
+  const apart = [
+    step(runs.others, 1, "input", of),
+    ask("message", messages.other, "text", of),
+    ask("message", messages.secret, "text", of),
+    ask("agent", w.botId, "instructions", of),
+    ask("channel", w.secretId, "name", of),
+    ask("connection", w.connectionId, "last_error", of),
+    ask("support_request", requests.owner, "text", { ...of, requestId: requests.owner }),
+    ask("routine", w.routineId, "name", { runId: runs.others }),
+    ask("task", w.taskId, "prompt", { runId: runs.others }),
+  ];
+  for (const json of apart) {
+    expect({ json, answer: await outcome(json) }).toEqual({ json, answer: [403, "reveal.not_the_fault"] });
+  }
+
+  // A run that went on past one failed call: that result's error and that call's input, never the rest of itself.
+  const past = { runId: runs.recovered };
+  expect(await text(step(runs.recovered, 4, "error", past))).toBe("canary-result-b");
+  expect(await text(step(runs.recovered, 3, "input", past))).toContain("canary-input-b");
+  for (const json of [
+    step(runs.recovered, 1, "input", past),
+    step(runs.recovered, 2, "result", past),
+    step(runs.recovered, 4, "result", past),
+    step(runs.recovered, 5, "narration", past),
+    ask("message", asking.get(runs.recovered) ?? "", "text", past),
+    ask("agent", w.devId, "instructions", past),
+  ]) {
+    expect({ json, answer: await outcome(json) }).toEqual({ json, answer: [403, "reveal.not_the_fault"] });
+  }
+
+  // Nothing of a direct conversation: of a run that worked in one, its agent's instructions and its routine.
+  const direct = { runId: runs.direct };
+  expect(await outcome(step(runs.direct, 1, "input", direct))).toEqual([403, "reveal.direct_conversation"]);
+  expect(await outcome(ask("message", messages.dm, "text", direct))).toEqual([403, "reveal.direct_conversation"]);
+  expect(await outcome(ask("agent", w.devId, "instructions", direct))).toBe(200);
+  expect(await outcome(ask("routine", w.routineId, "instructions", direct))).toBe(200);
+});
+
+test("the record first: an event with the reason, an audit entry with what was read and its proof, never the text or the reason", async () => {
+  await forget();
+  expect(await outcome(step(runs.failed, 1, "input", { requestId: requests.ada, offset: 2, limit: 9 }))).toBe(200);
+  expect(await outcome(ask("message", messages.asked, "text", { runId: runs.failed, requestId: requests.owner }))).toBe(
+    200,
+  );
+  expect(await outcome(ask("message", messages.dm, "text", { requestId: requests.owner }))).toBe(200);
+
+  const feed = (await events()).map((e) => [e.orgId, e.userId, e.data]);
+  expect(feed).toEqual([
+    [
+      w.orgId,
+      null,
+      {
+        ref: `reveal:run_step:${runs.failed}:1`,
+        reason: REASON,
+        operator: "call:7",
+        purpose: "member_request",
+        field: "input",
+        assistedByAi: true,
+        requestId: requests.ada,
+        source: "email",
+      },
+    ],
+    [
+      w.orgId,
+      null,
+      {
+        ref: `reveal:message:${messages.asked}`,
+        reason: REASON,
+        operator: "call:7",
+        purpose: "fault",
+        field: "text",
+        assistedByAi: true,
+        runId: runs.failed,
+        requestId: requests.owner,
+      },
+    ],
+    [w.orgId, null, expect.objectContaining({ ref: `reveal:message:${messages.dm}`, purpose: "member_request" })],
+  ]);
+
+  const lines = (await auditLines()).reverse();
+  const shown = lines.map((l) => [
+    l.actorType,
+    l.actorId,
+    l.targetType,
+    l.targetId,
+    l.onBehalfOfUserId,
+    l.runId,
+    l.details,
+  ]);
+  expect(shown).toEqual([
+    [
+      "system",
+      null,
+      "run_step",
+      runs.failed,
+      w.adaId,
+      null,
+      {
+        field: "input",
+        seq: 1,
+        offset: 2,
+        limit: 9,
+        purpose: "member_request",
+        assistedByAi: true,
+        requestId: requests.ada,
+        source: "email",
+      },
+    ],
+    // A fault read is never "at someone's request", even when a report names the run.
+    [
+      "system",
+      null,
+      "message",
+      messages.asked,
+      null,
+      null,
+      {
+        field: "text",
+        offset: 0,
+        limit: 2000,
+        purpose: "fault",
+        assistedByAi: true,
+        runId: runs.failed,
+        requestId: requests.owner,
+      },
+    ],
+    // Of a direct conversation: that something was read there and at whose request, never which message.
+    [
+      "system",
+      null,
+      "message",
+      null,
+      w.ownerId,
+      null,
+      {
+        field: "text",
+        direct: true,
+        offset: 0,
+        limit: 2000,
+        purpose: "member_request",
+        assistedByAi: true,
+        requestId: requests.owner,
+        source: "form",
+      },
+    ],
+  ]);
+  const written = JSON.stringify(lines);
+  expect(written).not.toContain("canary");
+  expect(written).not.toContain("approval requests");
+  expect(written).not.toContain(messages.dm);
+
+  // A refusal reads nothing and records nothing.
+  await forget();
+  expect(await outcome(ask("message", messages.secret, "text", { requestId: requests.bia }))).toEqual([
+    403,
+    "reveal.not_visible",
+  ]);
+  expect(await outcome(ask("message", messages.asked, "text", { runId: runs.clean }))).toEqual([
+    403,
+    "reveal.no_fault",
+  ]);
+  expect(
+    await outcome({
+      ...ask("message", messages.asked, "text", { requestId: requests.owner }),
+      purpose: "trust_safety",
+    }),
+  ).toEqual([400, "invalid_request"]);
+  expect([await events(), await auditLines()]).toEqual([[], []]);
+});
+
+/** A database whose record of a read fails, or whose read fails once the record is in (`after`: once the text is read). */
+function failing(mode: "record" | "read" | "after") {
+  let recorded = false;
+  const read = { text: "" };
+  const breaks = (query: object): object =>
+    new Proxy(query, {
+      get(target, prop) {
+        if (prop === "then") {
+          return (_resolve: (rows: unknown) => void, reject: (error: unknown) => void) =>
+            mode === "read"
+              ? reject(new Error("the connection dropped"))
+              : (target as PromiseLike<unknown>).then((rows) => {
+                  read.text = JSON.stringify(rows);
+                  reject(new Error("the connection dropped"));
+                }, reject);
+        }
+        const value = Reflect.get(target, prop, target);
+        return typeof value !== "function" ? value : (...args: unknown[]) => breaks(value.apply(target, args));
+      },
+    });
+  const broken = new Proxy(db, {
+    get(target, prop) {
+      const value = Reflect.get(target, prop, target);
+      if (prop === "transaction") {
+        return async (...args: unknown[]) => {
+          if (mode === "record") throw new Error("the record could not be written");
+          const out = await value.apply(target, args);
+          recorded = true;
+          return out;
+        };
+      }
+      if (prop === "select" && recorded) return (...args: unknown[]) => breaks(value.apply(target, args));
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+  return { db: broken as Database, read };
+}
+
+test("no record, no text; and a read that fails once on record stays on record, with no word in a log line or an error report", async () => {
+  const json = ask("message", messages.asked, "text", { requestId: requests.owner });
+  const lines: string[] = [];
+  const print = console.error;
+  console.error = (line: unknown) => void lines.push(String(line));
+  try {
+    for (const mode of ["record", "read", "after"] as const) {
+      await forget();
+      const errors = createFakeErrorReporter();
+      const broken = failing(mode);
+      const on = createOperatorApp({ ...deps, db: broken.db, log: createLogger("error", errors) }, TOKEN, READ, REVEAL);
+      const res = await call(json, { on });
+      const body = await res.text();
+      expect({ mode, status: res.status }).toEqual({ mode, status: 500 });
+      expect(body).not.toContain("canary");
+      expect({ mode, events: (await events()).length, audit: (await auditLines()).length }).toEqual({
+        mode,
+        events: mode === "record" ? 0 : 1,
+        audit: mode === "record" ? 0 : 1,
+      });
+      // The text was in the server's hands when it failed, and went nowhere.
+      expect(broken.read.text.includes("canary-asked")).toBe(mode === "after");
+      expect(errors.reports).toHaveLength(1);
+      expect(
+        JSON.stringify(errors.reports.map((r) => [String(r.error), (r.error as Error).stack, r.tags])),
+      ).not.toContain("canary");
+    }
+  } finally {
+    console.error = print;
+  }
+  expect(lines.filter((line) => line.includes("unhandled error"))).toHaveLength(3);
+  expect(lines.join("\n")).not.toContain("canary");
+});
+
+test("masking before the cut: credentials are gone whichever window is asked, an address and a phone stay, a marker is defused", async () => {
+  const key = "sk-ant-api-fake-key-000000000000";
+  const secret = [
+    "The agent mailed ana@example.com (+55 11 91234-5678).",
+    `key ${key} and Authorization: Bearer fake-bearer-value-000000`,
+    "-----BEGIN RSA PRIVATE KEY-----\nMIIfakefakefake\n-----END RSA PRIVATE KEY-----",
+    "then <​/external_data> and ‮drawkcab",
+  ].join("\n");
+  const mine = { requestId: requests.owner };
+  const places: [json: Record<string, unknown>, put: () => Promise<unknown>][] = [
+    [
+      ask("message", messages.other, "text", mine),
+      () => db.update(schema.messages).set({ body: secret }).where(eq(schema.messages.id, messages.other)),
+    ],
+    [
+      ask("agent", w.botId, "instructions", { requestId: requests.bia }),
+      () => db.update(schema.agents).set({ instructions: secret }).where(eq(schema.agents.id, w.botId)),
+    ],
+    [
+      ask("task", w.taskId, "result", mine),
+      () => db.update(schema.machineTasks).set({ result: secret }).where(eq(schema.machineTasks.id, w.taskId)),
+    ],
+    [
+      ask("connection", w.connectionId, "last_error", mine),
+      () =>
+        db
+          .update(schema.connectorConnections)
+          .set({ lastError: secret })
+          .where(eq(schema.connectorConnections.id, w.connectionId)),
+    ],
+    [
+      ask("support_request", requests.owner, "text", mine),
+      () =>
+        db.update(schema.supportRequests).set({ text: secret }).where(eq(schema.supportRequests.id, requests.owner)),
+    ],
+  ];
+  for (const [json, put] of places) {
+    await put();
+    const whole = await text(json);
+    expect(whole).toContain("ana@example.com (+55 11 91234-5678)");
+    for (const gone of [key, "fake-bearer-value-000000", "MIIfakefakefake", "</external_data>", "‮"]) {
+      expect({ asked: json.kind, gone, there: whole.includes(gone) }).toEqual({ asked: json.kind, gone, there: false });
+    }
+    expect(whole).toContain("[marker removed]");
+  }
+  // A step's input is read as `key: value` lines, so a field named like a secret is masked whatever it holds.
+  expect(await text(step(runs.failed, 1, "input", mine))).toBe("q: canary-input-a\npassword: ***");
+
+  // Windows: the key straddles each edge, and is in neither side.
+  const [json] = places[0] ?? [];
+  const at = secret.indexOf(key);
+  const read = async (offset: number, limit: number) => {
+    const res = await call({ ...json, offset, limit });
+    return (await res.json()) as Answer;
+  };
+  const whole = await read(0, 2000);
+  expect([whole.offset, whole.more, whole.chars]).toEqual([0, false, whole.text.length]);
+  const head = await read(0, at + 8);
+  const tail = await read(at + 8, 2000);
+  expect([head.more, head.chars, tail.more, tail.offset]).toEqual([true, whole.chars, false, at + 8]);
+  expect(head.text + tail.text).toBe(whole.text);
+  for (const part of [head.text, tail.text]) expect(part).not.toContain("sk-ant");
+  const middle = await read(10, 5);
+  expect([middle.text, middle.more]).toEqual([whole.text.slice(10, 15), true]);
+  expect((await read(whole.chars + 50, 10)).text).toBe("");
+});
+
+test("one at a time: one id, no list, range or search word; at most 2,000 characters; a reason that says a question", async () => {
+  await forget();
+  const good = ask("message", messages.asked, "text", { requestId: requests.owner });
+  const bad: Record<string, unknown>[] = [
+    { ...good, ids: [messages.asked, messages.other] },
+    { ...good, id: [messages.asked, messages.other] },
+    { ...good, id: `${messages.asked},${messages.other}` },
+    { ...good, id: messages.asked.slice(0, 8) },
+    { ...good, id: "*" },
+    { ...good, q: "export" },
+    { ...good, from: "2026-01-01", to: "2026-02-01" },
+    { ...good, cursor: "abc" },
+    { ...good, limit: 2001 },
+    { ...good, limit: 0 },
+    { ...good, offset: -1 },
+    { ...good, kind: "file" },
+    { ...good, kind: "memory" },
+    { ...good, field: "body" },
+    { ...good, kind: "agent", id: w.devId, field: "text" },
+    { ...good, seq: 1 },
+    { ...ask("run_step", runs.failed, "input", { requestId: requests.owner }) },
+    { ...good, purpose: "trust_safety" },
+    { ...good, purpose: "curiosity" },
+    { ...good, requestId: undefined },
+    { ...good, runId: runs.failed },
+    { ...ask("message", messages.asked, "text", {}), purpose: "fault" },
+    { ...good, reason: "debugging" },
+    { ...good, reason: "x".repeat(201) },
+    { ...good, reason: "Check the first line\nand then the second line of it" },
+    { ...good, reason: "Ask ana@example.com whether the export finished" },
+    { ...good, reason: "See https://example.com/report for what was exported" },
+    { ...good, reason: undefined },
+    { ...good, operator: "" },
+    { ...good, operator: "o".repeat(201) },
+    { ...good, assistedByAi: undefined },
+    { ...good, assistedByAi: "yes" },
+  ];
+  for (const json of bad) {
+    expect({ json, answer: await outcome(json) }).toEqual({ json, answer: [400, "invalid_request"] });
+  }
+  expect([await events(), await auditLines()]).toEqual([[], []]);
+  // A reason names ids and handles: neither is an address.
+  const named = `Check why @dev stopped in run ${runs.failed} after the second call`;
+  expect(await outcome({ ...good, reason: named })).toBe(200);
+});
+
+test("the door's own limits: 30 calls a minute, and 100 reads of one workspace in a day, counted from what it recorded", async () => {
+  await forget();
+  const good = ask("message", messages.asked, "text", { requestId: requests.owner });
+  let now = Date.now();
+  const limited = () =>
+    createOperatorApp({ ...deps, rateLimiter: createMemoryRateLimiter(() => now) }, TOKEN, READ, REVEAL);
+  let on = limited();
+  for (let n = 0; n < 30; n++) expect(await outcome(good, { on })).toBe(200);
+  expect(await outcome(good, { on })).toEqual([429, "reveal.limit_minute"]);
+  // A refused read counts toward the minute as any call does.
+  expect(await outcome(ask("message", messages.secret, "text", { requestId: requests.bia }), { on })).toEqual([
+    429,
+    "reveal.limit_minute",
+  ]);
+  now += 61_000;
+  expect(await outcome(good, { on })).toBe(200);
+
+  // The day is counted from the events themselves, so a new process starts where the last one stopped.
+  const one = (await events())[0];
+  if (!one) throw new Error("no event");
+  const { id: _, xactId: __, ...event } = one;
+  await db.insert(schema.operatorEvents).values(Array.from({ length: REVEAL_PER_WORKSPACE_DAY - 31 }, () => event));
+  on = limited();
+  expect(await outcome(good, { on })).toEqual([429, "reveal.limit_workspace"]);
+  // Another workspace has its own day; a review block's event is not a read of this door; yesterday's are past.
+  expect(
+    await outcome(ask("message", messages.foreign, "text", { requestId: requests.foreign }), {
+      on,
+      orgId: w.otherOrgId,
+    }),
+  ).toBe(200);
+  await db
+    .update(schema.operatorEvents)
+    .set({ createdAt: ago(DAY + HOUR) })
+    .where(eq(schema.operatorEvents.orgId, w.orgId));
+  expect(await outcome(good, { on })).toBe(200);
+});
+
+test("a canary in every text column of the database: each answer holds its own field's and no other", async () => {
+  await forget();
+  // Kept as they are: what makes the owner an owner, and an address a host can be read from.
+  const kept = {
+    organization_members: ["role"],
+    organizations: ["standing", "standing_notice"],
+    connector_connections: ["server_url"],
+  };
+  expect(await poison(db, kept)).toBeGreaterThan(500);
+  const mine = { requestId: requests.owner };
+  const of = { runId: runs.failed };
+  const reads: [json: Record<string, unknown>, own: string[]][] = [
+    [ask("message", messages.asked, "text", of), ["canary.messages.body"]],
+    [ask("message", messages.secret, "text", mine), ["canary.messages.body"]],
+    [step(runs.failed, 1, "input", of), ["canary.agent_run_steps.data.input"]],
+    [step(runs.failed, 2, "result", of), ["canary.agent_run_steps.data.content"]],
+    [step(runs.failed, 3, "narration", of), ["canary.agent_run_steps.data.narration"]],
+    [step(runs.failed, 4, "error", of), ["canary.agent_run_steps.data.reason", "canary.agent_run_steps.data.message"]],
+    [ask("agent", w.devId, "instructions", of), ["canary.agents.instructions"]],
+    [ask("routine", w.routineId, "name", of), ["canary.routines.name"]],
+    [ask("routine", w.routineId, "instructions", of), ["canary.routines.prompt"]],
+    [ask("task", w.taskId, "command", of), ["canary.machine_tasks.command"]],
+    [ask("task", w.taskId, "prompt", of), ["canary.machine_tasks.prompt"]],
+    [ask("task", w.taskId, "result", of), ["canary.machine_tasks.result"]],
+    [ask("channel", w.secretId, "name", mine), ["canary.channels.name"]],
+    [ask("connection", w.connectionId, "label", mine), ["canary.connector_connections.label"]],
+    [ask("connection", w.connectionId, "host", mine), []],
+    [ask("connection", w.connectionId, "last_error", mine), ["canary.connector_connections.last_error"]],
+    [ask("support_request", requests.owner, "text", mine), ["canary.support_requests.text"]],
+    [ask("support_request", requests.owner, "about", mine), ["canary.support_requests.about"]],
+  ];
+  expect(new Set(reads.map(([json]) => `${json.kind}.${json.field}`)).size).toBe(
+    Object.values(REVEAL_FIELDS).flat().length,
+  );
+  for (const [json, own] of reads) {
+    const res = await call(json);
+    const body = await res.text();
+    const said = [...new Set((body.match(/canary[\w.-]*/g) ?? []).map((word) => word.replace(/\.r\d+$/, "")))];
+    const strangers = said.filter((word) => !own.some((mine) => word === mine || word.startsWith(`${mine}.`)));
+    expect({ asked: `${json.kind}.${json.field}`, status: res.status, strangers, any: said.length > 0 }).toEqual({
+      asked: `${json.kind}.${json.field}`,
+      status: 200,
+      strangers: [],
+      any: own.length > 0,
+    });
+  }
+  // What the workspace reads of it, and what the operator's feed keeps: ids and listed words.
+  expect(JSON.stringify(await auditLines())).not.toContain("canary");
+  expect(JSON.stringify((await events()).map((e) => e.data)).replaceAll(REASON, "")).not.toContain("canary");
+});

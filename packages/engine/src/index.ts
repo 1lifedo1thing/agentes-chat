@@ -237,6 +237,7 @@ export {
 export * from "./operator-lookups";
 export * from "./operator-machines";
 export * from "./operator-people";
+export * from "./operator-reveal";
 export * from "./operator-review";
 export * from "./operator-runs";
 export * from "./operator-workspace";

@@ -204,8 +204,8 @@ test("the reveal token: POST under /reveal and nothing else; the other two never
   const door = `/reveal/orgs/${acme.orgId}`;
 
   const open = createOperatorApp(deps, TOKEN, READ, REVEAL);
-  // Past the door: what answers is whatever is behind it, never the door.
-  expect(await answer(await as(open, REVEAL, door, "POST"))).toEqual([404, "not_found"]);
+  // Past the door: an empty body is the route's own refusal, never the door's.
+  expect(await answer(await as(open, REVEAL, door, "POST"))).toEqual([400, "invalid_request"]);
   for (const method of ["GET", "HEAD", "PUT", "DELETE"]) {
     expect({ method, status: (await as(open, REVEAL, door, method)).status }).toEqual({ method, status: 403 });
   }
@@ -261,7 +261,7 @@ test("the reveal token: POST under /reveal and nothing else; the other two never
   try {
     const url = `http://127.0.0.1:${server.port}/api/operator/v1`;
     const headers = { authorization: `Bearer ${REVEAL}` };
-    expect((await fetch(`${url}${door}`, { method: "POST", headers })).status).toBe(404);
+    expect((await fetch(`${url}${door}`, { method: "POST", headers })).status).toBe(400);
     expect((await fetch(`${url}/health`, { headers })).status).toBe(403);
   } finally {
     await server.stop(true);

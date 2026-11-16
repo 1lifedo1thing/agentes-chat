@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { type Database, eq, rowsOf, schema, sql, tracingLogger } from "@agenteschat/db";
+import { eq, rowsOf, schema, sql, tracingLogger } from "@agenteschat/db";
 import {
   addRunStep,
   countComposio,
@@ -10,6 +10,7 @@ import {
 } from "@agenteschat/engine";
 import { createLogger } from "../src/logger";
 import { createOperatorApp } from "../src/operator/app";
+import { poison } from "./canary";
 import { type Browser, browser, createTestServer, joinByInvitation, seedOrg, signUp, type TestServer } from "./harness";
 
 /**
@@ -152,68 +153,9 @@ const PLACES: [what: string, table: string, value: string, where?: string][] = [
   ["what the thing they reported says", "support_requests", "about"],
 ];
 
-// Every column that holds text (a string, an array of them or JSON), but the ids a foreign key ties at either end.
-const TEXT_COLUMNS = `
-  select c.relname as "table", a.attname as "column",
-    case when t.typname = 'jsonb' then 'json' when t.typcategory = 'A' then 'array' else 'text' end as "type"
-  from pg_class c
-  join pg_namespace n on n.oid = c.relnamespace
-  join pg_attribute a on a.attrelid = c.oid
-  join pg_type t on t.oid = a.atttypid
-  left join pg_type e on e.oid = t.typelem and t.typcategory = 'A'
-  where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relispartition
-    and a.attnum > 0 and not a.attisdropped and a.attgenerated = ''
-    and (t.typcategory = 'S' or t.typname = 'jsonb' or e.typcategory = 'S')
-    and not exists (select 1 from pg_constraint k where k.contype = 'f'
-      and ((k.conrelid = c.oid and a.attnum = any(k.conkey)) or (k.confrelid = c.oid and a.attnum = any(k.confkey))))
-  order by 1, 2`;
-
 const TABLES = `
   select c.relname as "name" from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'public' and c.relkind in ('r', 'p') and not c.relispartition order by 1`;
-
-// A JSON value with every string in it replaced by the path that leads to it, but ids, times and what `keep` names.
-const CANARY_JSON = `
-  create function canary_json(j jsonb, path text, keep text[]) returns jsonb language plpgsql as $$
-  begin
-    if path = any(keep) then return j; end if;
-    case jsonb_typeof(j)
-      when 'string' then
-        if (j #>> '{}') ~ '^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z)$'
-        then return j; end if;
-        return to_jsonb(path);
-      when 'object' then
-        return coalesce((select jsonb_object_agg(e.key, canary_json(e.value, path || '.' || e.key, keep))
-          from jsonb_each(j) e), '{}'::jsonb);
-      when 'array' then
-        return coalesce((select jsonb_agg(canary_json(e.value, path, keep) order by e.n)
-          from jsonb_array_elements(j) with ordinality e(value, n)), '[]'::jsonb);
-      else return j;
-    end case;
-  end $$`;
-
-/** Gives every text column outside `KEPT` a canary that names it, in every row; returns how many columns. */
-async function poison(db: Database) {
-  const columns = rowsOf<{ table: string; column: string; type: "text" | "array" | "json" }>(
-    await db.execute(sql.raw(TEXT_COLUMNS)),
-  );
-  const kept = Object.entries(KEPT).flatMap(([table, names]) => names.map((name) => `${table}.${name}`));
-  const keep = `array[${kept.map((k) => `'canary.${k}'`).join(", ")}]::text[]`;
-  await db.execute(sql.raw("create sequence canary_n"));
-  await db.execute(sql.raw(CANARY_JSON));
-  let poisoned = 0;
-  for (const { table, column, type } of columns) {
-    if (kept.includes(`${table}.${column}`)) continue;
-    const name = `canary.${table}.${column}`;
-    // Numbered: some of these columns are unique.
-    const mark = `'${name}.r' || nextval('canary_n')`;
-    const value =
-      type === "text" ? mark : type === "array" ? `array[${mark}]` : `canary_json("${column}", '${name}', ${keep})`;
-    await db.execute(sql.raw(`update "${table}" set "${column}" = ${value}`));
-    poisoned += 1;
-  }
-  return poisoned;
-}
 
 const tools: ToolSource = {
   name: "test-tools",
@@ -1054,7 +996,7 @@ test("no GET says what anyone wrote or a secret, as the history was written", as
 });
 
 test("no GET says anything else the database holds: a canary in every other text column, and none comes back", async () => {
-  expect(await poison(t.db)).toBeGreaterThan(500);
+  expect(await poison(t.db, KEPT)).toBeGreaterThan(500);
   expect(await unmarked()).toEqual([]);
   expect(await readEverything()).toEqual(NOTHING);
 });

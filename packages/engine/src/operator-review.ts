@@ -59,7 +59,7 @@ const quoted = (source: string, text: string, max: number) =>
   untrustedBlock(source, maskCredentials(redactCommon(text)), max);
 
 /** A tool's input as `key: value` lines, so a `password: …` or `token: …` field is masked like free text. */
-const inputLines = (input: unknown) =>
+export const inputLines = (input: unknown) =>
   input && typeof input === "object" && !Array.isArray(input)
     ? Object.entries(input)
         .map(([key, value]) => `${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`)
