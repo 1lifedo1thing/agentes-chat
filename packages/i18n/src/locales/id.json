@@ -14245,7 +14245,7 @@
   },
   "errors": {
     "surface": {
-      "off": "Server ini tidak lagi menautkan aplikasi chat. Muat ulang untuk melihat pengaturanmu yang sekarang.",
+      "off": "Penautan aplikasi chat sudah dimatikan. Muat ulang untuk melihat pengaturanmu yang sekarang.",
       "notAllowed": "Menautkan aplikasi chat belum dibuka untuk akunmu. Tetap pakai aplikasi di sini sampai dibuka.",
       "noAssistant": "Asisten di ruang kerja ini tidak diatur untuk bicara denganmu. Pilih ruang kerja lain untuk ditautkan.",
       "noWorkspace": "Kamu tidak lagi ada di ruang kerja ini. Pilih ruang kerja lain untuk ditautkan.",

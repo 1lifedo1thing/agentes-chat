@@ -36150,7 +36150,7 @@
     "value": "{{index}} of {{count}}"
   },
   "errors.surface.off": {
-    "value": "This server doesn't link chat apps anymore. Reload to see your settings as they are now."
+    "value": "Linking chat apps was turned off. Reload to see your settings as they are now."
   },
   "errors.surface.notAllowed": {
     "value": "Linking a chat app isn't open to your account yet. Keep using the app here until it opens."

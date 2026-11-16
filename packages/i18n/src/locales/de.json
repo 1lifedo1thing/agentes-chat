@@ -14730,7 +14730,7 @@
   },
   "errors": {
     "surface": {
-      "off": "Dieser Server verknüpft keine Chat-Apps mehr. Lade neu, um deine Einstellungen im aktuellen Stand zu sehen.",
+      "off": "Das Verknüpfen von Chat-Apps wurde ausgeschaltet. Lade neu, um deine Einstellungen im aktuellen Stand zu sehen.",
       "notAllowed": "Das Verknüpfen einer Chat-App ist für dein Konto noch nicht freigegeben. Nutze bis dahin die App hier.",
       "noAssistant": "Der Assistent in diesem Workspace darf nicht mit dir sprechen. Wähl einen anderen Workspace zum Verknüpfen.",
       "noWorkspace": "Du bist nicht mehr in diesem Workspace. Wähl einen anderen Workspace zum Verknüpfen.",

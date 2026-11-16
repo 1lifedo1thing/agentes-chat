@@ -14794,7 +14794,7 @@
   },
   "errors": {
     "surface": {
-      "off": "Deze server koppelt geen chat-apps meer. Laad opnieuw om je instellingen te zien zoals ze nu zijn.",
+      "off": "Het koppelen van chat-apps is uitgezet. Laad opnieuw om je instellingen te zien zoals ze nu zijn.",
       "notAllowed": "Een chat-app koppelen is nog niet open voor je account. Gebruik de app hier tot het opengaat.",
       "noAssistant": "De assistent in deze werkruimte mag niet met je praten. Kies een andere werkruimte om te koppelen.",
       "noWorkspace": "Je zit niet meer in deze werkruimte. Kies een andere werkruimte om te koppelen.",

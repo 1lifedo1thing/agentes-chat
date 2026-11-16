@@ -15232,7 +15232,7 @@
   },
   "errors": {
     "surface": {
-      "off": "Ce serveur ne relie plus d'apps de chat. Rechargez pour voir vos paramètres tels qu'ils sont maintenant.",
+      "off": "La liaison des apps de chat a été désactivée. Rechargez pour voir vos paramètres tels qu'ils sont maintenant.",
       "notAllowed": "Relier une app de chat n'est pas encore ouvert à votre compte. Continuez à utiliser l'app ici en attendant.",
       "noAssistant": "L'assistant de cet espace de travail n'est pas autorisé à vous parler. Choisissez un autre espace de travail à relier.",
       "noWorkspace": "Vous n'êtes plus dans cet espace de travail. Choisissez un autre espace de travail à relier.",
