@@ -1,7 +1,17 @@
 import { Database } from "bun:sqlite";
 import { afterEach, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { migrate } from "../../runner/migrate";
@@ -87,6 +97,8 @@ function openbot(home: string) {
   symlinkSync(path.join(scout, "reports", "week.md"), path.join(scout, "link.md"));
 
   const db = new Database(path.join(data, "openbot.db"));
+  // As the app keeps it: in WAL mode, which leaves no log beside it once closed (read-only, SQLite can't open that).
+  db.exec("PRAGMA journal_mode = WAL");
   db.exec(`
     CREATE TABLE projection_agents (agent_id TEXT PRIMARY KEY, thread_id TEXT, model TEXT NOT NULL, updated_at TEXT,
       sort_order INTEGER NOT NULL, agent_json TEXT NOT NULL, last_event_sequence INTEGER NOT NULL);
@@ -170,12 +182,17 @@ function openbot(home: string) {
 
 test("OpenBot on this computer becomes its own transfer file, with nothing that holds a key", async () => {
   const home = temp();
-  openbot(home);
+  const data = openbot(home);
   const out = path.join(home, "out");
   const run = io(home);
-  const code = await migrate({ from: "openbot", out, json: true, noFiles: false }, run.io);
+  // Nothing may be written in the app's folder: its database in WAL mode is read from a copy.
+  chmodSync(data, 0o555);
+  const code = await migrate({ from: "openbot", out, json: true, noFiles: false }, run.io).finally(() =>
+    chmodSync(data, 0o755),
+  );
   expect(run.err).toEqual([]);
   expect(code).toBe(0);
+  expect(readdirSync(data)).toEqual(["openbot.db"]);
   const result = JSON.parse(run.out.join("")) as {
     ok: boolean;
     file: string;

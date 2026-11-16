@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, realpathSync, statSync } from "node:fs";
+import { copyFileSync, existsSync, mkdtempSync, readdirSync, realpathSync, rmSync, statSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { Budget, type Collected, type Entry, MigrateError, noCounts, noLeft, tilde, walk } from "./collect";
 
@@ -8,7 +9,7 @@ import { Budget, type Collected, type Entry, MigrateError, noCounts, noLeft, til
  * Transfer makes (`openbot-instance-transfer` v1, `docs/architecture/agents.md`, "Instance transfer"), which the
  * import page already reads (`packages/client/src/lib/import/openbotrun.ts`). Read from where the app keeps it:
  * `openbot.db` in its data folder (SQLite; `src/backend/openbot-database-schema.ts`, `channel-schema.ts`,
- * `mcp-schema.ts`) and each agent's workspace folder. Opened read-only.
+ * `mcp-schema.ts`) and each agent's workspace folder. The app's own files are only read (see `openDatabase`).
  *
  * Never read: the values of MCP variables and headers, a webhook's address and secret, provider sign-ins, browser
  * data, chats. An MCP address keeps only its origin, as the app's own export does (a path can hold a key).
@@ -27,29 +28,52 @@ export function openbotDataDir(home: string, env: NodeJS.ProcessEnv, platform: N
 
 /**
  * A reader for the database, with what this runtime has: Bun's or Node's own SQLite (the names are built at run
- * time, so a bundle for one runtime never resolves the other's), else the `sqlite3` command.
+ * time, so a bundle for one runtime never resolves the other's), else the `sqlite3` command. The app keeps it in WAL
+ * mode, which SQLite can't open read-only unless the files beside it exist (it would make them in the app's folder,
+ * and it can't), so a copy is read: the database and its log, in a temporary folder only this user can open, removed
+ * on close. The app's own files are never written.
  */
 export async function openDatabase(file: string): Promise<{ query: Query; close: () => void }> {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "agentes-migrate-"));
+  const removeCopy = () => rmSync(dir, { recursive: true, force: true });
+  const copy = path.join(dir, "openbot.db");
+  try {
+    copyFileSync(file, copy);
+    // The log holds what the app wrote last and hasn't moved into the database yet (only while it runs).
+    if (existsSync(`${file}-wal`)) copyFileSync(`${file}-wal`, `${copy}-wal`);
+  } catch (error) {
+    removeCopy();
+    throw new MigrateError(
+      "unreadable",
+      `Couldn't read ${path.basename(file)}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
   const load = async (name: string) => (await import(name)) as Record<string, unknown>;
   type Db = { prepare: (sql: string) => { all: () => Row[] }; close: () => void };
   let db: Db | null = null;
   try {
     if (process.versions.bun) {
       const { Database } = await load(["bun", "sqlite"].join(":"));
-      db = new (Database as new (file: string, options: object) => Db)(file, { readonly: true });
+      db = new (Database as new (file: string) => Db)(copy);
     } else {
       const { DatabaseSync } = await load(["node", "sqlite"].join(":"));
-      db = new (DatabaseSync as new (file: string, options: object) => Db)(file, { readOnly: true });
+      db = new (DatabaseSync as new (file: string) => Db)(copy);
     }
   } catch {
     db = null;
   }
   if (db) {
     const open = db;
-    return { query: (sql) => open.prepare(sql).all(), close: () => open.close() };
+    return {
+      query: (sql) => open.prepare(sql).all(),
+      close: () => {
+        open.close();
+        removeCopy();
+      },
+    };
   }
   const query: Query = (sql) => {
-    const out = execFileSync("sqlite3", ["-readonly", "-json", file, sql], {
+    const out = execFileSync("sqlite3", ["-json", copy, sql], {
       encoding: "utf8",
       maxBuffer: 512 * 1024 * 1024,
       stdio: ["ignore", "pipe", "pipe"],
@@ -59,12 +83,13 @@ export async function openDatabase(file: string): Promise<{ query: Query; close:
   try {
     query("SELECT 1 AS ok");
   } catch {
+    removeCopy();
     throw new MigrateError(
       "tool_missing",
       "Reading OpenBot's database needs Bun, Node.js 22.5 or newer, or the sqlite3 command on this computer.",
     );
   }
-  return { query, close: () => {} };
+  return { query, close: removeCopy };
 }
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
