@@ -2761,5 +2761,27 @@
       "title": "확인할 것이 없어요",
       "text": "에이전트가 대화 밖에서 무언가를 하면 여기에 나타나요."
     }
+  },
+  "surface": {
+    "link": "연결",
+    "on": "켜짐",
+    "rowNone": "{{assistant}}이(가) 그곳으로 메시지를 보낼 수 있어요",
+    "rowPending": "확인을 기다리는 중",
+    "unlink": "연결 해제",
+    "unlinkTitle": "{{surface}} 연결을 해제할까요?",
+    "unlinkText": "{{sender}}의 메시지가 더 이상 워크스페이스에 도착하지 않아요.",
+    "title": "{{surface}} 연결",
+    "talkTitle": "{{surface}}에서 {{assistant}}와(과) 대화하기",
+    "codeText": "그곳에서 열리는 메시지를 보낸 다음 여기로 돌아오세요.",
+    "open": "{{surface}} 열기",
+    "openFailed": "이 휴대폰에서 {{surface}}을(를) 열 수 없어요. 대신 아래 코드를 보내세요.",
+    "orType": "또는 이 코드를 보내세요",
+    "confirmTitle": "{{surface}}의 이 사람이 본인인가요?",
+    "sentBy": "이 발신자가 코드를 보냈어요",
+    "onlyYou": "본인일 때만 연결하세요.",
+    "confirm": "네, 연결할게요",
+    "notMe": "제가 아니에요",
+    "linkedTitle": "{{surface}} 연결됨",
+    "linkedText": "이제 {{assistant}}이(가) {{sender}}(으)로 연락할 수 있어요."
   }
 }

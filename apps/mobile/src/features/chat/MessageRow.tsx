@@ -8,6 +8,7 @@ import {
   type ReplyRef,
   type RunConsultation,
   type ScreenKind,
+  type SurfaceLinks,
   type ThreadInfo,
   useApi,
   useConsultations,
@@ -95,6 +96,7 @@ import { deviceWaitOf } from "../devices/logic";
 import { WaitToolOffAction } from "../devices/ToolOneClick";
 import { MessageFiles } from "../files/MessageFiles";
 import { consultationHref, routineHref } from "../links/logic";
+import { surfaceTagText } from "../me/surface";
 import { DecisionCard, MissionCard, PlanCard, ReviewCard, SetupFailedCard } from "../missions/cards";
 import { AwayPill, BrainWait } from "../outages/WaitCard";
 import { SettingsProposals } from "../right-hand/SettingsCard";
@@ -242,6 +244,9 @@ export const MessageRow = memo(function MessageRow({
   // A person's message sent through a connected AI app (ADR 0119): "via Claude".
   const via = m.author.type === "person" ? appVia(meta) : null;
   const viaMark = via?.brand ? APP_BRANDS[via.brand] : undefined;
+  // Written on the outside chat surface (ADR 0187): "via <surface>", or that it was forwarded there.
+  const surfaceTag =
+    m.author.type === "person" ? surfaceTagText(t, meta, name, qc.getQueryData<SurfaceLinks>(keys.surfaceLinks)) : null;
   // What the server wrote itself is said in the person's language; a stopped reply drops the server's note. Where a
   // task ran is said only where the workspace has more than one computer.
   const names = useNamesComputers();
@@ -640,6 +645,7 @@ export const MessageRow = memo(function MessageRow({
           hint={t("apps.viaTip", { person: name, name: via.name })}
         />
       ) : null}
+      {surfaceTag ? <Tag icon="chat" label={surfaceTag.label} hint={surfaceTag.hint} /> : null}
       {routine ? (
         // The tag opens the routine (Rotinas, as on the web); "Ver relatório" beside it unfolds the report.
         <Tag
@@ -1159,7 +1165,7 @@ function Tag({
   onPress,
   hint,
 }: {
-  icon: "bell" | "clock" | "sparkle";
+  icon: "bell" | "chat" | "clock" | "sparkle";
   /** In place of the icon (an app's mark). */
   lead?: ReactNode;
   label: string;
