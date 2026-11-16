@@ -5,12 +5,7 @@ import {
   useCustomServers,
   useRenameConnection,
 } from "@agenteschat/client";
-import {
-  accountUnchecked,
-  connectedItems,
-  itemName,
-  reconnectAddsText,
-} from "@agenteschat/client/lib/connected";
+import { accountUnchecked, connectedItems, itemName, reconnectAddsText } from "@agenteschat/client/lib/connected";
 import { knownErrorText } from "@agenteschat/client/lib/errors";
 import { appAccountsText } from "@agenteschat/client/lib/github-app";
 import { can } from "@agenteschat/client/lib/permissions";
