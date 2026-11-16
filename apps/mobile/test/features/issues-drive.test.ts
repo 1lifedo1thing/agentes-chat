@@ -542,9 +542,10 @@ describe("a task's number and title on one row; its conversation on the card", (
     expect(facts).not.toContain("GithubChip");
     const screen = await read("issues/IssueScreen.tsx");
     const head = screen.slice(screen.indexOf("function Head("), screen.indexOf("function WorkCard("));
-    expect(head).toMatch(
-      /accessibilityRole="header"[^>]*>\s*<Text variant="display2" tone="faint"[^>]*>\s*#\{i\.number\}/,
-    );
+    // The number is the bar's ("#134"): the heading under it is the title alone, never the number said twice.
+    expect(head).toMatch(/accessibilityRole="header"[^>]*>\s*\{i\.title\}\s*<\/Text>/);
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: the bar's own template, read as source text
+    expect(screen).toContain("title={`#${i.number}`}");
     // "Criada por…" under the title, the number no longer in it.
     expect(head.indexOf('accessibilityRole="header"')).toBeLessThan(head.indexOf("{line}"));
     expect(head).not.toMatch(/`#\$\{i\.number\}`,/);

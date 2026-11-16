@@ -5,7 +5,7 @@ import { rightHandOf } from "@agenteschat/client/lib/right-hand";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { Button, EmptyState, GroupedHeader, GroupedList, IconButton, SkeletonList } from "@/ui";
+import { Button, EmptyState, GroupedHeader, GroupedList, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
 import { boardHref } from "../links/logic";
 import { useOpenDm } from "../new/useOpenDm";
@@ -21,7 +21,8 @@ export const openNewBoard = () => router.push("/board-new");
 /**
  * Dashboards, pushed from "See all" over the home's widgets (ADR 0135; the tab bar stays as it is): My Home on top (the
  * person's own widgets), then the boards of the whole workspace, of the person's roles and only theirs, each with a
- * thumbnail of its widgets (the one on Início says "On Home"). A row pushes the board; "+" in the bar makes a new one.
+ * thumbnail of its widgets (the one on Início says "On Home"). A row pushes the board; "+" in the bar (the system's
+ * own bar button) makes a new one.
  * With only My Home, the right hand under it says what a dashboard is, with Novo painel and an ask to it, as the
  * web's: the bar's "+" steps aside, one way in.
  */
@@ -60,7 +61,7 @@ export function DashboardsScreen() {
   return (
     <PushedLargeTitle
       title={t("dashboards.title")}
-      right={first ? undefined : <IconButton icon="plus" label={t("dashboards.new")} onPress={openNewBoard} />}
+      {...(first ? {} : { actions: [{ icon: "plus", sf: "plus", label: t("dashboards.new"), onPress: openNewBoard }] })}
       grouped
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
     >

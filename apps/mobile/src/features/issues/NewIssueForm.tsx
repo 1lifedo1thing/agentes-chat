@@ -12,17 +12,16 @@ import { pickableProjects } from "@agenteschat/client/lib/issue-projects";
 import { PRIORITIES } from "@agenteschat/client/lib/issues";
 import { aiStateOf } from "@agenteschat/client/lib/no-ai";
 import { type AudienceChoice, EVERYONE } from "@agenteschat/client/lib/who-sees";
-import { useLocalSearchParams, usePreventRemove } from "expo-router";
-import { useRef, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Locked, OPTION_ROW, useToast } from "@/ui";
+import { StyleSheet, View } from "react-native";
+import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, OPTION_ROW, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
-import { chooseAction } from "../settings/parts";
+import { chooseAction, NEXT_FIELD, SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { Face } from "../shared/Face";
-import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
-import { goBack, PushedHeader, successHaptic } from "../shared/parts";
+import { useDirectory, useMeId, useOrgId } from "../shared/hooks";
+import { goBack, successHaptic } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { useWhoSeesLabel } from "../shared/WhoSees";
 import { columnOfIssue, DUE_CHOICES, type DueChoice, dueDateOf } from "./logic";
@@ -34,8 +33,9 @@ const DESCRIPTION_LIMIT = { max: FIELD_LIMITS.issueDescription };
 const close = () => goBack("/issues");
 
 /**
- * "Nova tarefa", a screen pushed over Tarefas (the native bar: back, the title, "Criar"): the title, a
- * description, who does it (an agent picked here is asked right away, as on the web: it starts and the status
+ * "Nova tarefa", a screen pushed over Tarefas (the native bar: back, the title, "Criar"), on the settings' form page
+ * (`SettingsPage`: a focused field scrolls clear of the keyboard on both systems, the bar over the keyboard walks
+ * the fields): the title (the person taps it: the keyboard never comes up on its own), a description, who does it (an agent picked here is asked right away, as on the web: it starts and the status
  * moves on its own), its project, the priority, the due date and who sees it. Who does it, the project and who sees it
  * are picked on their own pushed screen (`TaskPickScreen`), the priority and the due date in the app's menu of
  * choices: nothing opens inside the form. From a board column's "+" (`column`), it goes in that column; from a
@@ -43,8 +43,6 @@ const close = () => goBack("/issues");
  */
 export function NewIssueForm() {
   const { t } = useTranslation();
-  const c = useColors();
-  const insets = useSafeAreaInsets();
   const toast = useToast();
   const dir = useDirectory();
   const meId = useMeId();
@@ -69,14 +67,7 @@ export function NewIssueForm() {
   const ready =
     title.trim().length > 0 && !overLimit(text, DESCRIPTION_LIMIT) && !action.isPending && audienceReady(audience);
   // A back swipe with a task half written asks first, as the web's dialog keeps it from a stray click.
-  const done = useRef(false);
-  usePreventRemove(title.trim() !== "" || text.trim() !== "", ({ repeat }) => {
-    if (done.current) return repeat();
-    Alert.alert(t("edit.unsaved"), undefined, [
-      { text: t("edit.keepEditing"), style: "cancel" },
-      { text: t("edit.discard"), style: "destructive", onPress: repeat },
-    ]);
-  });
+  const leave = useUnsavedGuard(title.trim() !== "" || text.trim() !== "");
   const whoName = (a: Actor | null) =>
     !a ? t("mobile.issues.nobody") : a.type === "person" && a.id === meId ? t("mobile.issues.you") : dir.nameOf(a);
   const whoRole = who?.type === "agent" ? (dir.agentById.get(who.id)?.role ?? "") : "";
@@ -109,7 +100,7 @@ export function NewIssueForm() {
             title: t("mobile.issues.form.created", { number: issue.number }),
             ...(who?.type === "agent" ? { agentId: who.id } : {}),
           });
-          done.current = true;
+          leave();
           close();
         },
         onError: () => toast({ title: t("mobile.issues.form.createFailed"), icon: "x" }),
@@ -144,107 +135,96 @@ export function NewIssueForm() {
       t("common.cancel"),
     );
   return (
-    <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-      <PushedHeader
-        title={t("mobile.issues.form.title")}
-        solid={false}
-        grouped
-        action={{ label: t("mobile.issues.form.create"), disabled: !ready, onPress: submit }}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        contentContainerStyle={[styles.in, { paddingBottom: 24 + insets.bottom }]}
-      >
-        <Locked when={action.isPending} style={styles.fields}>
-          <TextArea
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t("mobile.issues.form.titlePlaceholder")}
-            accessibilityLabel={t("issues.form.title")}
-            multiline={false}
-            minHeight={50}
-            autoFocus
-            returnKeyType="next"
-            maxLength={300}
-          />
-          <TextArea
-            value={text}
-            onChangeText={setText}
-            placeholder={t("mobile.issues.form.description")}
-            accessibilityLabel={t("mobile.issues.form.description")}
-            minHeight={96}
-            limit={DESCRIPTION_LIMIT}
-          />
-          <View>
-            <GroupedHeader>{t("mobile.issues.form.who")}</GroupedHeader>
-            <GroupedList>
-              <GroupedRow
-                label={whoName(who)}
-                leading={who ? <Face who={who} size={OPTION_ROW.face} live={false} /> : undefined}
-                icon={who ? undefined : "agent"}
-                value={whoRole || undefined}
-                chevron
-                onPress={() => pickOn({ what: "who", value: who, apply: setWho })}
-              />
-            </GroupedList>
-            {who?.type === "agent" ? (
-              <GroupedFooter>
-                {/* "Starts as soon as it's created" isn't true for an agent with no AI: it waits for one. */}
-                {aiStateOf(ai.data, who.id) === "no_ai"
-                  ? t("mobile.ai.taskNoAi", { name: dir.agentById.get(who.id)?.name ?? "" })
-                  : t("mobile.issues.form.agentStarts")}
-              </GroupedFooter>
+    <SettingsPage
+      title={t("mobile.issues.form.title")}
+      action={{ label: t("mobile.issues.form.create"), disabled: !ready, onPress: submit }}
+      locked={action.isPending}
+      toolbar
+    >
+      <View style={styles.fields}>
+        <TextArea
+          value={title}
+          onChangeText={setTitle}
+          placeholder={t("mobile.issues.form.titlePlaceholder")}
+          accessibilityLabel={t("issues.form.title")}
+          multiline={false}
+          minHeight={50}
+          maxLength={300}
+          {...NEXT_FIELD}
+        />
+        <TextArea
+          value={text}
+          onChangeText={setText}
+          placeholder={t("mobile.issues.form.description")}
+          accessibilityLabel={t("mobile.issues.form.description")}
+          minHeight={96}
+          limit={DESCRIPTION_LIMIT}
+        />
+        <View>
+          <GroupedHeader>{t("mobile.issues.form.who")}</GroupedHeader>
+          <GroupedList>
+            <GroupedRow
+              label={whoName(who)}
+              leading={who ? <Face who={who} size={OPTION_ROW.face} live={false} /> : undefined}
+              icon={who ? undefined : "agent"}
+              value={whoRole || undefined}
+              chevron
+              onPress={() => pickOn({ what: "who", value: who, apply: setWho })}
+            />
+          </GroupedList>
+          {who?.type === "agent" ? (
+            <GroupedFooter>
+              {/* "Starts as soon as it's created" isn't true for an agent with no AI: it waits for one. */}
+              {aiStateOf(ai.data, who.id) === "no_ai"
+                ? t("mobile.ai.taskNoAi", { name: dir.agentById.get(who.id)?.name ?? "" })
+                : t("mobile.issues.form.agentStarts")}
+            </GroupedFooter>
+          ) : null}
+        </View>
+        <View>
+          <GroupedHeader>{t("mobile.issues.form.details")}</GroupedHeader>
+          <GroupedList>
+            {column ? (
+              <GroupedRow icon="circle" label={t("issues.column")} sub={columnLabel(column)} subLines={0} />
             ) : null}
-          </View>
-          <View>
-            <GroupedHeader>{t("mobile.issues.form.details")}</GroupedHeader>
-            <GroupedList>
-              {column ? (
-                <GroupedRow icon="circle" label={t("issues.column")} sub={columnLabel(column)} subLines={0} />
-              ) : null}
-              {projects.length > 0 ? (
-                <GroupedRow
-                  leading={<ProjectDot color={project?.color} />}
-                  label={t("issues.projects.label")}
-                  value={project?.name ?? t("issues.projects.none")}
-                  chevron
-                  onPress={() => pickOn({ what: "project", value: project, apply: setProjectId })}
-                />
-              ) : null}
+            {projects.length > 0 ? (
               <GroupedRow
-                icon="flag"
-                label={t("issues.form.priority")}
-                value={t(`issues.priority.${priority}`)}
-                menu
-                onPress={pickPriority}
-              />
-              <GroupedRow
-                icon="clock"
-                label={t("mobile.issues.form.due")}
-                value={t(`mobile.issues.form.dueChoice.${due}`)}
-                menu
-                onPress={pickDue}
-              />
-              <GroupedRow
-                icon={audience.mode === "everyone" ? "globe" : "lock"}
-                label={t("whoSees.label")}
-                value={seesLabel(audience)}
+                leading={<ProjectDot color={project?.color} />}
+                label={t("issues.projects.label")}
+                value={project?.name ?? t("issues.projects.none")}
                 chevron
-                onPress={() => pickOn({ what: "sees", value: audience, apply: setAudience })}
+                onPress={() => pickOn({ what: "project", value: project, apply: setProjectId })}
               />
-            </GroupedList>
-          </View>
-        </Locked>
-      </ScrollView>
-    </View>
+            ) : null}
+            <GroupedRow
+              icon="flag"
+              label={t("issues.form.priority")}
+              value={t(`issues.priority.${priority}`)}
+              menu
+              onPress={pickPriority}
+            />
+            <GroupedRow
+              icon="clock"
+              label={t("mobile.issues.form.due")}
+              value={t(`mobile.issues.form.dueChoice.${due}`)}
+              menu
+              onPress={pickDue}
+            />
+            <GroupedRow
+              icon={audience.mode === "everyone" ? "globe" : "lock"}
+              label={t("whoSees.label")}
+              value={seesLabel(audience)}
+              chevron
+              onPress={() => pickOn({ what: "sees", value: audience, apply: setAudience })}
+            />
+          </GroupedList>
+        </View>
+      </View>
+    </SettingsPage>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  // A form's 16 pt sides, as Nova rotina's.
-  in: { paddingHorizontal: 16, paddingTop: 8, gap: 12 },
-  fields: { gap: 12 },
+  // Under the page's own 4 pt top: the fields 8 under the bar, 12 apart.
+  fields: { paddingTop: 4, gap: 12 },
 });

@@ -611,7 +611,6 @@
     "minuteLess": "{{n}} minuten eerder",
     "minuteMore": "{{n}} minuten later",
     "submit": "Herinner me op dit tijdstip",
-    "quick": "Snelle tijden bekijken",
     "done": "Herinnering ingesteld",
     "error": {
       "noAgent": "Geen agent hier kan je herinneren",

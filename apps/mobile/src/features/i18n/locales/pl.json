@@ -643,7 +643,6 @@
     "minuteLess": "{{n}} min wcześniej",
     "minuteMore": "{{n}} min później",
     "submit": "Przypomnij mi o tej godzinie",
-    "quick": "Zobacz szybkie terminy",
     "done": "Przypomnienie ustawione",
     "error": {
       "noAgent": "Żaden agent tutaj nie może ci przypomnieć",

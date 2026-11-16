@@ -595,7 +595,6 @@
     "minuteLess": "{{n}}분 앞으로",
     "minuteMore": "{{n}}분 뒤로",
     "submit": "이 시간에 알려 줘",
-    "quick": "빠른 시간 보기",
     "done": "리마인더 설정됨",
     "error": {
       "noAgent": "여기에는 알려 줄 에이전트가 없어요",

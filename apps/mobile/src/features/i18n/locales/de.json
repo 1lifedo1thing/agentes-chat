@@ -611,7 +611,6 @@
     "minuteLess": "{{n}} Minuten früher",
     "minuteMore": "{{n}} Minuten später",
     "submit": "Zu dieser Zeit erinnern",
-    "quick": "Schnelle Zeiten ansehen",
     "done": "Erinnerung eingestellt",
     "error": {
       "noAgent": "Kein Agent hier kann dich erinnern",

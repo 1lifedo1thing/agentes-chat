@@ -7,7 +7,7 @@ import {
   useThreadTasks,
 } from "@agenteschat/client";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut, LayoutAnimationConfig, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ComputerIcon, ComputerPortrait, useComputerKind } from "@/computer/ComputerPortrait";
@@ -33,7 +33,16 @@ import { ThreadOptions } from "../chat/sheets";
 import { chatHref } from "../links/logic";
 import { AgentFace } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useEdition, useNamesComputers, useNow, useOrgId, useWhen } from "../shared/hooks";
+import {
+  useColors,
+  useDirectory,
+  useEdition,
+  useNamesComputers,
+  useNow,
+  useOrgId,
+  usePullRefresh,
+  useWhen,
+} from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { MONO, PushedHeader, Tile } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
@@ -53,7 +62,8 @@ import {
 /**
  * A mission (ADR 0029): "Missão" in the bar with its options (the thread's) as the system's bar button, the mission's
  * name as the page's heading, how far it got (the plan as pixel cells), its conversation, what waits on you, who works
- * on the computer now, the plan and the decisions taken. While it loads, the rows' shape; gone, it says so.
+ * on the computer now, the plan and the decisions taken. While it loads, the rows' shape; gone, it says so. Pulling
+ * down asks for all of it again.
  */
 export function MissionScreen({ id }: { id: string }) {
   return (
@@ -78,6 +88,9 @@ function Mission({ id }: { id: string }) {
   const tasks = useThreadTasks(orgId, m?.threadId);
   const reviews = useMissionReviews(orgId, id);
   const decisions = useMissionDecisions(orgId, id);
+  const pull = usePullRefresh(() =>
+    Promise.all([mission.refetch(), thread.refetch(), tasks.refetch(), reviews.refetch(), decisions.refetch()]),
+  );
   const computer = useComputerKind(orgId, m?.machine?.id);
   const cloud = useEdition() === "cloud";
   const names = useNamesComputers();
@@ -146,6 +159,7 @@ function Mission({ id }: { id: string }) {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
       >
         <View style={styles.head}>

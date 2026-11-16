@@ -627,7 +627,6 @@
     "minuteLess": "{{n}} minutos antes",
     "minuteMore": "{{n}} minutos después",
     "submit": "Recordarme a esta hora",
-    "quick": "Ver horarios rápidos",
     "done": "Recordatorio listo",
     "error": {
       "noAgent": "Ningún agente de aquí puede recordártelo",

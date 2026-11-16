@@ -31,15 +31,7 @@ import { shownSteps } from "@agenteschat/client/lib/work";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Linking,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  type ScrollViewInstance,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, LayoutAnimationConfig, LinearTransition } from "react-native-reanimated";
 import { useOrg } from "@/providers/org";
 import {
@@ -74,6 +66,7 @@ import { SheetTitle } from "../shared/PromptForm";
 import {
   errorHaptic,
   FocusLive,
+  goBack,
   MentionCount,
   PushedHeader,
   successHaptic,
@@ -99,7 +92,8 @@ import { openTaskPick, sameActor, type TaskPick } from "./pick";
 import { useStartAgent } from "./useStartAgent";
 
 /**
- * One task (called "tarefa" in the app): where it came from, the big title, its fields as the web's strip (each opens
+ * One task (called "tarefa" in the app): its number in the bar, the big title under it (the number said once, in the
+ * bar), where it came from, its fields as the web's strip (each opens
  * its picker); the agent's card with its live steps; its conversation; the description, the acceptance criteria
  * (checked here too), what is linked (the source message, Drive files, PRs), its sub-issues and its activity. The bar:
  * the number, Concluir (Reabrir) and "…" (`IssueBar`). While it loads, the rows' shape; gone or out of reach, it says
@@ -117,7 +111,6 @@ function IssueView({ number, focusId }: { number: number; focusId: string | null
   const { t } = useTranslation();
   const c = useColors();
   const orgId = useOrgId();
-  const scroll = useRef<ScrollViewInstance>(null);
   const issue = useIssue(orgId, number);
   const qc = useQueryClient();
   // Pulling down brings the activity too (comments, events), not only the task.
@@ -160,7 +153,6 @@ function IssueView({ number, focusId }: { number: number; focusId: string | null
       <IssueBar issue={i} />
       <FocusLive>
         <ScrollView
-          ref={scroll}
           contentInsetAdjustmentBehavior="automatic"
           automaticallyAdjustKeyboardInsets
           keyboardDismissMode="interactive"
@@ -262,8 +254,8 @@ function ConversationRow({ issue, onOpen }: { issue: Issue; onOpen: () => void }
 }
 
 /**
- * "#134" and the title on one row, "Criada pelo Atlas a partir do Sentry · #tech" under it, then its fields as the
- * web's strip, in its order: Coluna, Responsável, Prioridade, Prazo, Quem vê, each opening its picker; its GitHub link.
+ * The title (its "#134" is the bar's: never said twice, one under the other), "Criada pelo Atlas a partir do Sentry ·
+ * #tech" under it, then its fields as the web's strip, in its order: Coluna, Responsável, Prioridade, Prazo, Quem vê, each opening its picker; its GitHub link.
  */
 function Head({ issue: i }: { issue: Issue }) {
   const { t, i18n } = useTranslation();
@@ -297,9 +289,6 @@ function Head({ issue: i }: { issue: Issue }) {
   return (
     <View style={styles.head}>
       <Text variant="display2" accessibilityRole="header" style={styles.bigTitle} maxFontSizeMultiplier={1.4}>
-        <Text variant="display2" tone="faint" style={styles.number} maxFontSizeMultiplier={1.4}>
-          #{i.number}
-        </Text>{" "}
         {i.title}
       </Text>
       {line ? (
@@ -413,7 +402,6 @@ function GithubLinkForm({ issue: i }: { issue: Issue }) {
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
-          autoFocus
         />
       </Locked>
       {invalid ? (
@@ -1015,7 +1003,8 @@ function useIssueMenu(i: Issue): HeaderMenuItem[] {
               {
                 onSuccess: () => {
                   toast({ title: t("issues.delete.done", { number: i.number }) });
-                  router.back();
+                  // Opened from a link with nothing under it: Tarefas, never a dead end.
+                  goBack("/issues");
                 },
                 onError: failed,
               },
@@ -1035,7 +1024,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   head: { paddingHorizontal: SCREEN_X, paddingTop: 6, gap: 6, marginBottom: 14 },
   bigTitle: { marginVertical: 4 },
-  number: { fontWeight: "500" },
   chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
   // The screen's cards: on the 16 margin, 12 apart (the conversation's card gap, CHAT_RHYTHM.card), radius 20 with the
   // cut corner. Measured: work card 16 → 16 from the edges, text at 16 + 14 + 24 face + 8 = 62; the work line's card on

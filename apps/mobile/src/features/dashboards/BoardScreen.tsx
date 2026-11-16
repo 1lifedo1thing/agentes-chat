@@ -19,8 +19,8 @@ const BUSY_POLL_MS = 15_000;
 export const newWidgetHref = (dashboardId: string) => `/widget-new?dashboardId=${dashboardId}` as const;
 
 /**
- * A dashboard, pushed (ADR 0135), with a large title as Routines: its name in the content, scrolling away under the
- * glass bar, whose own title fades in. Under the name, who made it, who sees it and how many widgets; an agent's
+ * A dashboard, pushed (ADR 0135), with a large title as Routines (the system's on iOS, folding into the bar as it
+ * scrolls; drawn on Android, the bar's title fading in). Under the name, who made it, who sees it and how many widgets; an agent's
  * request to publish it; then its widgets on two columns (a 2-wide one takes the whole row, a 2-high one draws its
  * data big), or "Add widget" when empty. Share (the globe or the lock), "+" and "…" (Organize, Rename, Pin, Delete)
  * in the bar. `id` is `home` for My Home,
