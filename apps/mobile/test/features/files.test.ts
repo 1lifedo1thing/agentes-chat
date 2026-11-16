@@ -21,7 +21,22 @@ import {
   videoHeight,
   withExtension,
 } from "../../src/features/files/logic";
-import { DISMISS_DISTANCE } from "../../src/features/files/zoom";
+import {
+  DISMISS_DISTANCE,
+  DISMISS_MIN_SCALE,
+  DISMISS_VELOCITY,
+  doubleTapZoom,
+  fitted,
+  maxZoom,
+  panRoom,
+  pullCloses,
+  pullDirection,
+  pulledPlacement,
+  pullProgress,
+  rubberBand,
+  zoomInAt,
+  zoomInRect,
+} from "../../src/features/files/zoom";
 import { ICONS } from "../../src/ui/icons.data";
 
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src", file), "utf8");
@@ -192,7 +207,7 @@ describe("viewer", () => {
     expect(pageStep(0, 1, 1)).toBeNull();
   });
 
-  test("several pictures: 2 de 4 in the head, ‹ › on the sides (gone while zoomed) slide the gallery as a swipe", () => {
+  test("several pictures: 2 de 4 in the head, ‹ › on the sides (gone while zoomed) slide the pager as a swipe", () => {
     const viewer = src("features/files/ImageViewer.tsx");
     expect(viewer).toContain(
       'files.length > 1 ? t("mobile.files.place", { index: index + 1, count: files.length }) : ""',
@@ -205,7 +220,7 @@ describe("viewer", () => {
       '<Round icon="right" label={t("mobile.files.next")} plate={SCRIM} onPress={() => turn(next)} />',
     );
     expect(viewer).toContain("visible={chrome && !zoomed}");
-    expect(viewer).toContain("gallery.current?.setIndex(to);");
+    expect(viewer).toContain("else pager.current?.setPage(to);");
     // The count took the dots' place: one place says where you are.
     expect(viewer).not.toContain("styles.dots");
   });
@@ -218,18 +233,91 @@ describe("viewer", () => {
     expect(src("features/files/ImageViewer.tsx")).toContain('const SCRIM = "rgba(0,0,0,0.45)";');
   });
 
-  test("the pictures zoom, move, page and close in react-native-zoom-toolkit's Gallery, never in gestures drawn here", () => {
+  test("the pictures page on the system's pager and zoom with the system's own zoom on iOS", () => {
     const viewer = src("features/files/ImageViewer.tsx");
-    expect(viewer).toContain('from "react-native-zoom-toolkit"');
-    expect(viewer).toContain("maxScale={MAX_ZOOM}");
-    // Pulled away at its own size, the picture follows the finger and a far or fast release closes the viewer.
-    expect(viewer).toContain("onVerticalPull={onVerticalPull}");
-    expect(viewer).toContain("Math.abs(pull.translateY) > DISMISS_DISTANCE");
-    // It closes once: a released pull is told again on every frame while the picture settles back.
-    expect(viewer).toContain("if (closing.value) return;");
+    expect(viewer).toContain('import PagerView from "react-native-pager-view";');
+    expect(viewer).toContain("scrollEnabled={!zoomed}");
+    expect(viewer).not.toContain("zoom-toolkit");
+    const zoom = src("features/files/ZoomPicture.tsx");
+    // iOS: the scroll view's own pinch, bounce and momentum; a double tap zooms through it.
+    expect(zoom).toContain("maximumZoomScale={max}");
+    expect(zoom).toContain("pinchGestureEnabled");
+    expect(zoom).toContain("scroll.current?.scrollResponderZoomTo({ ...rect, animated: true });");
+    // Android: a pinch of ours, inside the screen's edges, with a fling that glides.
+    expect(zoom).toContain('Platform.OS === "ios" ? <SystemZoom {...zoom} /> : <OwnZoom {...zoom} />');
+    expect(zoom).toContain("withDecay({ velocity: e.velocityX, clamp: [-room.x, room.x] })");
+    // The pull to close comes first, before the picture's own gestures.
+    expect(zoom).toContain("useExclusiveGestures(pull, doubleTap, tap)");
+    expect(zoom).toContain("useExclusiveGestures(pull, pinchAndPan, doubleTap, tap)");
+  });
+
+  test("the pull to close tracks the finger, can be caught again, and closes once", () => {
+    const viewer = src("features/files/ImageViewer.tsx");
+    expect(viewer).toContain("pullY.value = from.value.y + e.translationY;");
+    expect(viewer).toContain("from.value = { x: pullX.value, y: pullY.value };");
+    // A closing picture takes no other pull, and closing is one step back, never two (the conversation went too).
+    expect(viewer).toContain("if (leaving.value) return;");
     expect(viewer).toContain("if (closed.current) return;");
-    expect(DISMISS_DISTANCE).toBeGreaterThan(0);
-    expect(viewer).not.toContain("usePinchGesture");
+    // Only the picture in sight, at 1×, while the pages are still.
+    expect(viewer).toContain("enabled: active && !zoomed && !paging,");
+  });
+
+  test("a pull closes when flung away or let go far enough; flung back toward the middle it stays", () => {
+    // Slow: by distance.
+    expect(pullCloses(DISMISS_DISTANCE + 1, 0)).toBe(true);
+    expect(pullCloses(-(DISMISS_DISTANCE + 1), 0)).toBe(true);
+    expect(pullCloses(DISMISS_DISTANCE - 1, 0)).toBe(false);
+    // Fast: by direction, however short.
+    expect(pullCloses(20, DISMISS_VELOCITY + 100)).toBe(true);
+    expect(pullCloses(-20, -(DISMISS_VELOCITY + 100))).toBe(true);
+    expect(pullCloses(300, -(DISMISS_VELOCITY + 100))).toBe(false);
+    expect(pullDirection(300, -(DISMISS_VELOCITY + 100))).toBe(-1);
+    expect(pullDirection(-150, 0)).toBe(-1);
+    expect(pullDirection(150, 0)).toBe(1);
+  });
+
+  test("a pulled picture follows the finger loosely, shrinks a little, and the black fades with it", () => {
+    const screen = { width: 400, height: 800 };
+    expect(pulledPlacement(0, 0, screen)).toEqual({ x: 0, y: 0, scale: 1 });
+    const near = pulledPlacement(0, 40, screen);
+    // At first close to the finger (0.8 of it), never past it.
+    expect(near.y).toBeGreaterThan(30);
+    expect(near.y).toBeLessThan(40);
+    // Half a screen away: three quarters of its size, the black gone.
+    expect(pulledPlacement(0, 400, screen).scale).toBeCloseTo(DISMISS_MIN_SCALE);
+    expect(pullProgress(400, 800)).toBe(1);
+    expect(pullProgress(-200, 800)).toBe(0.5);
+    // Sideways it follows more loosely than down.
+    expect(Math.abs(pulledPlacement(100, 0, screen).x)).toBeLessThan(pulledPlacement(0, 100, screen).y);
+    expect(rubberBand(-100, 800)).toBeCloseTo(-rubberBand(100, 800));
+  });
+
+  test("a picture fits whole, zooms up to twice its own pixels, and a double tap zooms in at the spot", () => {
+    const screen = { width: 400, height: 800 };
+    // A wide picture is as wide as the screen; a tall one as tall.
+    expect(fitted(2, screen)).toEqual({ width: 400, height: 200 });
+    expect(fitted(0.25, screen)).toEqual({ width: 200, height: 800 });
+    expect(fitted(null, screen)).toEqual(screen);
+    expect(maxZoom(undefined, 400)).toBe(2);
+    expect(maxZoom(1200, 400)).toBe(6);
+    expect(maxZoom(100_000, 400)).toBe(10);
+    // A wide picture zooms in enough to fill the screen's height.
+    const wide = { width: 400, height: 200 };
+    expect(doubleTapZoom(wide, screen, 10)).toBe(4);
+    expect(doubleTapZoom(wide, screen, 3)).toBe(3);
+    // iOS: the part to show keeps the tapped spot under the finger, inside the picture.
+    const rect = zoomInRect(wide, screen, { x: 100, y: 400 }, 10);
+    expect(rect.width).toBe(100);
+    expect(rect.height).toBe(200);
+    expect(rect.x).toBe(75);
+    expect(rect.y).toBe(0);
+    // Android: the same spot stays under the finger, the picture over the whole screen.
+    const at = zoomInAt(wide, screen, { x: -100, y: 0 }, 10);
+    expect(at.scale).toBe(4);
+    expect(at.x).toBe(300);
+    expect(at.y).toBeCloseTo(0);
+    expect(panRoom(wide, 4, screen)).toEqual({ x: 600, y: 0 });
+    expect(panRoom(wide, 1, screen)).toEqual({ x: 0, y: 0 });
   });
 
   test("a video plays in the system's player with its controls, never controls of ours over it", () => {
