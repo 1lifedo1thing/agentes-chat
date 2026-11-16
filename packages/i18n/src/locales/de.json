@@ -17636,6 +17636,8 @@
       "plan_limit_wait": "Das {{plan}}-Abo hat sein Limit erreicht. Ich antworte {{when}}, wenn es sich zurücksetzt. Wird es in {{plan}} früher freigegeben, merke ich das und antworte sofort.",
       "plan_limit_wait_unknown": "Das {{plan}}-Abo hat sein Limit erreicht. Ich antworte, sobald es sich zurücksetzt.",
       "plan_account_moved": "Das Konto {{from}} hat sein Limit erreicht. Ich mache mit dem Konto {{to}} weiter.",
+      "plan_account_moved_line": "Das Konto {{from}} ist fast am Limit. Ich mache mit dem Konto {{to}} weiter.",
+      "plan_account_moved_extra": "Das Konto {{from}} würde bezahlte Zusatznutzung verbrauchen. Ich mache mit dem Konto {{to}} weiter.",
       "plan_limit_all_wait": "Alle {{accounts}} {{plan}}-Konten haben ihr Limit erreicht. Ich antworte {{when}}, wenn sich das erste zurücksetzt.",
       "plan_limit_all_wait_unknown": "Alle {{accounts}} {{plan}}-Konten haben ihr Limit erreicht. Ich antworte, sobald sich eines zurücksetzt.",
       "plan_model_limit_wait": "{{model}} hat sein eigenes Limit bei {{plan}} erreicht. Die anderen Modelle des Abos funktionieren weiter: Wechsle das Modell von {{agent}} oder warte, bis es sich {{when}} zurücksetzt.",

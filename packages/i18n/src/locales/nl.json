@@ -17705,6 +17705,8 @@
       "plan_limit_wait": "Het {{plan}}-abonnement heeft de limiet bereikt. Ik antwoord {{when}}, als de limiet is gereset. Wordt het eerder vrijgegeven in {{plan}}, dan merk ik dat en antwoord ik meteen.",
       "plan_limit_wait_unknown": "Het {{plan}}-abonnement heeft de limiet bereikt. Ik antwoord zodra de limiet reset.",
       "plan_account_moved": "Het account {{from}} heeft de limiet bereikt. Ik ga verder met het account {{to}}.",
+      "plan_account_moved_line": "Het account {{from}} zit bijna aan zijn limiet. Ik ga verder met het account {{to}}.",
+      "plan_account_moved_extra": "Het account {{from}} zou betaald extra gebruik aanspreken. Ik ga verder met het account {{to}}.",
       "plan_limit_all_wait": "Alle {{accounts}} {{plan}}-accounts hebben de limiet bereikt. Ik antwoord {{when}}, als de eerste is gereset.",
       "plan_limit_all_wait_unknown": "Alle {{accounts}} {{plan}}-accounts hebben de limiet bereikt. Ik antwoord zodra er een is gereset.",
       "plan_model_limit_wait": "{{model}} heeft zijn eigen limiet bij {{plan}} bereikt. De andere modellen van het abonnement blijven werken: kies een ander model voor {{agent}} of wacht tot het {{when}} wordt gereset.",

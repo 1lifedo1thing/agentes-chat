@@ -435,6 +435,7 @@ const {
   outbox,
   routineRuns,
   secretRequests,
+  machineAccounts,
   users,
 } = schema;
 /** A bridged call can land a moment after the text the brain streamed before it: its text up to this much later counts as before. */
@@ -736,10 +737,12 @@ export interface Transcript {
   /** Its plan's limit moved it to the next account in the workspace's order (ADR 0041 §6), in a session of its own there. */
   accountMove?: AccountMove;
   /**
-   * The fresh session a move to another account (or back) gave this run: until a turn goes out in it, it is never
-   * resumed and its first prompt says what the run already did (`movedSessionNote`).
+   * The fresh session a move to another account (or back) gave this run: until a turn runs in it, it is never resumed
+   * and its first prompt says what the run already did (`movedSessionNote`).
    */
   freshSession?: string;
+  /** The conversation heard that this run went on with another account: once per run, whatever moved it since. */
+  accountMoveSaid?: true;
   /** Caught up after a long wait on its plan or budget (`catch-up.ts`): since when it paused; whether it may pass. */
   catchUp?: { since: number; mayPass?: true };
   /** The check before that catch-up (`catch-up-triage.ts`): its last verdict, reused while nothing new came in. */
@@ -3375,9 +3378,11 @@ async function executeRunInner(
    * At its plan's limit the run goes on with the next account of the workspace's order (ADR 0041 §6), in a fresh
    * session there with the conversation so far, and says so once per run. Never a turn the plan cut after it worked
    * (`turnStaysOnItsComputer`: a fresh session can't see what it did there), nor a spilled run. `room`: long work also
-   * needs the next account under the pause line. What `nextAccountPlan` found; null where no move is looked for.
+   * needs the next account under the pause line. `cause`: what moved it, as its line says (the plan's limit, the pause
+   * line or the paid extra usage it would go into). What `nextAccountPlan` found; null where no move is looked for.
    */
   const moveToNextAccount = async (
+    cause: "limit" | "line" | "extra",
     room?: (usage: PlanUsage | null, accountId: string) => boolean,
   ): Promise<NextAccount | null> => {
     const t = transcript as Transcript;
@@ -3412,22 +3417,37 @@ async function executeRunInner(
     await noteMoved();
     later(() => addRunStep(db, run, "context", { accountMove: t.accountMove }));
     await deferred;
-    // One line per run, never a routine's (Rotinas says what it thinks with): a refusal by the next account moves on
-    // without another. A teammate's account is named with its owner: two people's accounts often share a label.
-    const toName = next.lenderName ? `${to.label} (${next.lenderName})` : to.label;
-    const note =
-      prev || run.background || viaRoutine !== null
-        ? null
-        : await db.transaction((tx) =>
-            post(
-              tx,
-              replyThreadId,
-              `The ${home.label} account hit its limit. I'm going on with the ${toName} account.`,
-              bodyCode("plan_account_moved", { from: home.label, to: toName }),
-              undefined,
-              true,
-            ),
-          );
+    // One line per run, never a routine's (Rotinas says what it thinks with), nor a move back to its own account.
+    // Someone else's account is named with its owner, either side: two people's accounts often share a label.
+    const say = !t.accountMoveSaid && to.id !== own && !run.background && viaRoutine === null;
+    let note: Message | null = null;
+    if (say) {
+      t.accountMoveSaid = true;
+      const ownerId = (await planAgent()).ownerUserId;
+      const [from] = await db
+        .select({ createdBy: machineAccounts.createdBy, name: users.name })
+        .from(machineAccounts)
+        .leftJoin(users, eq(users.id, machineAccounts.createdBy))
+        .where(and(eq(machineAccounts.id, home.id), eq(machineAccounts.orgId, run.orgId)));
+      const fromName = from?.name && from.createdBy !== ownerId ? `${home.label} (${from.name})` : home.label;
+      const toName = next.lenderName ? `${to.label} (${next.lenderName})` : to.label;
+      const [code, why] =
+        cause === "line"
+          ? (["plan_account_moved_line", "is near its limit"] as const)
+          : cause === "extra"
+            ? (["plan_account_moved_extra", "would go into paid extra usage"] as const)
+            : (["plan_account_moved", "hit its limit"] as const);
+      note = await db.transaction((tx) =>
+        post(
+          tx,
+          replyThreadId,
+          `The ${fromName} account ${why}. I'm going on with the ${toName} account.`,
+          bodyCode(code, { from: fromName, to: toName }),
+          undefined,
+          true,
+        ),
+      );
+    }
     await saveTranscript(db, t);
     if (note) {
       const [view] = await withWikiLinks(db, run.orgId, [messageView(note)]);
@@ -3459,7 +3479,7 @@ async function executeRunInner(
     // The account's limit (not one model's): the next account in the order takes the turn, the right hand's too.
     const next =
       u.code === "plan_limit" && !u.scope
-        ? await moveToNextAccount((await longNow()) ? underTheLine : undefined)
+        ? await moveToNextAccount("limit", (await longNow()) ? underTheLine : undefined)
         : null;
     if (next?.plan) return "moved";
     const machineId = plan.session?.machineId ?? agent.machineId ?? null;
@@ -4438,7 +4458,7 @@ async function executeRunInner(
       // account comes before its owner's paid extra usage too.
       const nextAccount =
         pause?.source === "plan" || intoExtra
-          ? await moveToNextAccount(underTheLine)
+          ? await moveToNextAccount(pause ? "line" : "extra", underTheLine)
           : null;
       if (nextAccount?.plan) continue;
       // On another account at the line there: its own (tried already) takes it back into its owner's paid extra
@@ -4448,6 +4468,7 @@ async function executeRunInner(
       if (pause?.source === "plan" && moved) {
         triedThisClaim.delete(moved.from);
         const back = await moveToNextAccount(
+          "line",
           (usage, id) =>
             id === moved.from && longWorkHasRoom(planReading(usage, plan.model ?? null, paysExtraUsage(agent))),
         );

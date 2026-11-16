@@ -18028,6 +18028,11 @@ export const en = {
       plan_limit_wait_unknown: "The {{plan}} plan hit its limit. I'll answer as soon as it resets.",
       /** The run went on with the next account of the order at its plan's limit (ADR 0041 §6). */
       plan_account_moved: "The {{from}} account hit its limit. I'm going on with the {{to}} account.",
+      /** The same, for long work at the pause line (95%) of its account. */
+      plan_account_moved_line: "The {{from}} account is near its limit. I'm going on with the {{to}} account.",
+      /** The same, for long work that would go on into its account's paid extra usage. */
+      plan_account_moved_extra:
+        "The {{from}} account would go into paid extra usage. I'm going on with the {{to}} account.",
       /** Every account of the order at its limit: `accounts` of them, `when` the first resets. */
       plan_limit_all_wait:
         "All {{accounts}} {{plan}} accounts hit their limit. I'll answer {{when}}, when the first one resets.",

@@ -18737,6 +18737,8 @@
       "plan_limit_wait": "Plan {{plan}} osiągnął limit. Odpowiem {{when}}, gdy się odnowi. Jeśli zostanie odblokowany wcześniej w {{plan}}, zauważę to i od razu odpowiem.",
       "plan_limit_wait_unknown": "Plan {{plan}} osiągnął limit. Odpowiem, gdy tylko się odnowi.",
       "plan_account_moved": "Konto {{from}} osiągnęło limit. Kontynuuję na koncie {{to}}.",
+      "plan_account_moved_line": "Konto {{from}} jest blisko limitu. Kontynuuję na koncie {{to}}.",
+      "plan_account_moved_extra": "Konto {{from}} weszłoby w płatne dodatkowe użycie. Kontynuuję na koncie {{to}}.",
       "plan_limit_all_wait": "Wszystkie konta {{plan}} ({{accounts}}) osiągnęły limit. Odpowiem {{when}}, gdy odnowi się pierwsze.",
       "plan_limit_all_wait_unknown": "Wszystkie konta {{plan}} ({{accounts}}) osiągnęły limit. Odpowiem, gdy tylko któreś się odnowi.",
       "plan_model_limit_wait": "{{model}} osiągnął własny limit w {{plan}}. Pozostałe modele planu działają dalej: zmień model agenta {{agent}} albo poczekaj, aż się odnowi {{when}}.",

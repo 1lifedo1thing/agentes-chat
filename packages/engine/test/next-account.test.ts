@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, setSystemTime, test } from "bun:test";
 import { MACHINE_PROTOCOL_VERSION } from "@agenteschat/adapters";
 import { and, eq, schema } from "@agenteschat/db";
 import {
@@ -913,6 +913,60 @@ test("the first turn on the account a run moved to refused for room: the next cl
   expect(seen.map((t) => t.account?.id)).toEqual([OWN1, OWN1, OWN2, OWN2]);
   expect(seen[3]?.session?.resume).toBe(false);
   expect(await turnPrompt(fx)).toContain("Already done in this run, do not repeat: Bash(git push)");
+});
+
+test("the moved line is said once per run, also when the run moves again after every account was limited", async () => {
+  const { fx, account, usage } = await world();
+  await account(OWN2, fx.owner.id);
+  await usage(OWN1, 100, iso(3600_000));
+  await usage(OWN2, 10);
+  const refused: BrainEvent[] = [{ type: "error", code: "plan_limit", message: "You've hit your limit", worked: false }];
+  const { brain, seen } = scripted((n) => (n === 0 ? refused : answers));
+  await ask(fx);
+  const handlers = handlersWith(fx, brain);
+  await drainOutbox(fx.db, handlers);
+  const [parked] = await runs(fx);
+  expect(moveOf(parked)).toBeUndefined();
+  expect(await notes(fx, "plan_account_moved")).toHaveLength(1);
+
+  // Its own account still at its limit when it wakes: it moves again, without a second line.
+  await usage(OWN1, 100, iso(5 * 3600_000));
+  clearPlanLimits();
+  await drainOutbox(fx.db, handlers, { now: later(3600_000 + RESUME_AFTER_MS + 1000) });
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN2, OWN2]);
+  expect((await runs(fx))[0]?.status).toBe("done");
+  expect(await notes(fx, "plan_account_moved")).toHaveLength(1);
+});
+
+test("long work at the pause line of a teammate's account says so, naming whose account it leaves and whose it takes", async () => {
+  const { fx, walter, account, usage } = await world({}, goesOn);
+  await account(WALTER_ALL, walter.id);
+  await fx.db
+    .update(schema.agents)
+    .set({ brainAccountId: WALTER_ALL, brainAccountLentBy: walter.id })
+    .where(eq(schema.agents.id, fx.agent.id));
+  await usage(WALTER_ALL, 40);
+  await usage(OWN1, 40);
+  const { brain, seen } = fillsTheWeek(fx);
+  // Ten minutes and more of work by its first turn's end: a conversation's run is long work from there.
+  const long: Brain = {
+    kind: "claude_code",
+    async *run(turn) {
+      yield* brain.run(turn);
+      if (seen.length === 1) setSystemTime(later(11 * 60_000));
+    },
+  };
+  try {
+    await ask(fx);
+    await drainOutbox(fx.db, handlersWith(fx, long));
+  } finally {
+    setSystemTime();
+  }
+  expect(seen.map((t) => t.account?.id)).toEqual([WALTER_ALL, OWN1]);
+  const [line, ...more] = await notes(fx, "plan_account_moved_line");
+  expect(more).toHaveLength(0);
+  expect(line?.meta.bodyParams).toEqual({ from: `Conta b001 (${walter.name})`, to: "Conta a001" });
+  expect(await notes(fx, "plan_account_moved")).toHaveLength(0);
 });
 
 test("a budget wait never moves an account", async () => {

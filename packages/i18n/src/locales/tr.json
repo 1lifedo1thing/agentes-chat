@@ -17567,6 +17567,8 @@
       "plan_limit_wait": "{{plan}} planı sınırına ulaştı. Sıfırlandığında, {{when}}, yanıt vereceğim. {{plan}} tarafında daha önce açılırsa fark eder ve hemen yanıt veririm.",
       "plan_limit_wait_unknown": "{{plan}} planı sınırına ulaştı. Sıfırlanır sıfırlanmaz yanıt vereceğim.",
       "plan_account_moved": "{{from}} hesabı sınırına ulaştı. {{to}} hesabıyla devam ediyorum.",
+      "plan_account_moved_line": "{{from}} hesabı sınırına yaklaştı. {{to}} hesabıyla devam ediyorum.",
+      "plan_account_moved_extra": "{{from}} hesabı ücretli ek kullanıma geçecekti. {{to}} hesabıyla devam ediyorum.",
       "plan_limit_all_wait": "{{accounts}} {{plan}} hesabının hepsi sınırına ulaştı. İlki sıfırlandığında, {{when}}, yanıt vereceğim.",
       "plan_limit_all_wait_unknown": "{{accounts}} {{plan}} hesabının hepsi sınırına ulaştı. Biri sıfırlanır sıfırlanmaz yanıt vereceğim.",
       "plan_model_limit_wait": "{{model}}, {{plan}} üzerinde kendi sınırına ulaştı. Planın diğer modelleri çalışmaya devam ediyor: {{agent}} için modeli değiştirin veya sıfırlanmasını bekleyin ({{when}}).",

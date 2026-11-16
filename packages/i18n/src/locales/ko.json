@@ -17049,6 +17049,8 @@
       "plan_limit_wait": "{{plan}} 요금제가 한도에 도달했어요. 초기화되는 {{when}}에 답할게요. {{plan}}에서 더 일찍 풀리면 바로 알아채고 답할게요.",
       "plan_limit_wait_unknown": "{{plan}} 요금제가 한도에 도달했어요. 초기화되는 대로 답할게요.",
       "plan_account_moved": "{{from}} 계정이 한도에 도달했어요. {{to}} 계정으로 이어갈게요.",
+      "plan_account_moved_line": "{{from}} 계정이 한도에 가까워졌어요. {{to}} 계정으로 계속할게요.",
+      "plan_account_moved_extra": "{{from}} 계정은 유료 추가 사용량으로 넘어가요. {{to}} 계정으로 계속할게요.",
       "plan_limit_all_wait": "{{plan}} 계정 {{accounts}}개가 모두 한도에 도달했어요. 첫 계정이 초기화되는 {{when}}에 답할게요.",
       "plan_limit_all_wait_unknown": "{{plan}} 계정 {{accounts}}개가 모두 한도에 도달했어요. 하나라도 초기화되는 대로 답할게요.",
       "plan_model_limit_wait": "{{model}} 모델이 {{plan}}에서 자체 한도에 도달했어요. 요금제의 다른 모델은 계속 쓸 수 있어요. {{agent}}의 모델을 바꾸거나 {{when}}에 초기화될 때까지 기다리세요.",

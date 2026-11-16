@@ -17111,6 +17111,8 @@
       "plan_limit_wait": "Paket {{plan}} mencapai batasnya. Aku akan menjawab {{when}}, saat batasnya direset. Kalau dibuka lebih awal di {{plan}}, aku akan tahu dan langsung menjawab.",
       "plan_limit_wait_unknown": "Paket {{plan}} mencapai batasnya. Aku akan menjawab begitu batasnya direset.",
       "plan_account_moved": "Akun {{from}} mencapai batasnya. Aku lanjut dengan akun {{to}}.",
+      "plan_account_moved_line": "Akun {{from}} hampir mencapai batasnya. Saya lanjut dengan akun {{to}}.",
+      "plan_account_moved_extra": "Akun {{from}} akan masuk ke penggunaan tambahan berbayar. Saya lanjut dengan akun {{to}}.",
       "plan_limit_all_wait": "Semua {{accounts}} akun {{plan}} mencapai batasnya. Aku akan menjawab {{when}}, saat akun pertama direset.",
       "plan_limit_all_wait_unknown": "Semua {{accounts}} akun {{plan}} mencapai batasnya. Aku akan menjawab begitu salah satunya direset.",
       "plan_model_limit_wait": "{{model}} mencapai batasnya sendiri di {{plan}}. Model lain di paket tetap berfungsi: ganti model {{agent}} atau tunggu sampai direset {{when}}.",

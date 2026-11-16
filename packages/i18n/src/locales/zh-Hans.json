@@ -17126,6 +17126,8 @@
       "plan_limit_wait": "{{plan}} 套餐已达限额。{{when}}重置后我会回复。如果在 {{plan}} 中提前解除，我会察觉并立即回复。",
       "plan_limit_wait_unknown": "{{plan}} 套餐已达限额。重置后我会立即回复。",
       "plan_account_moved": "{{from}} 账号已达限额。我改用 {{to}} 账号继续。",
+      "plan_account_moved_line": "{{from}} 账号快到上限了。我改用 {{to}} 账号继续。",
+      "plan_account_moved_extra": "{{from}} 账号会进入付费额外用量。我改用 {{to}} 账号继续。",
       "plan_limit_all_wait": "{{plan}} 的 {{accounts}} 个账号都已达限额。{{when}}第一个重置后我会回复。",
       "plan_limit_all_wait_unknown": "{{plan}} 的 {{accounts}} 个账号都已达限额。任意一个重置后我会立即回复。",
       "plan_model_limit_wait": "{{model}} 在 {{plan}} 中达到了自身的限额。套餐里的其他模型仍可正常使用：更换 {{agent}} 的模型，或等它{{when}}重置。",
