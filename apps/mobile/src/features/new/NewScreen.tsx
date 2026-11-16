@@ -1,13 +1,13 @@
 import { markTerms } from "@agenteschat/client/lib/search-filters";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { type AgentPresetColor, gradientOf, mixHex } from "@agenteschat/ui/agent/engine";
-import { type NativeStackNavigationOptions, useIsFocused, useNavigation } from "expo-router";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useTrueSheetNavigation } from "@lodev09/react-native-true-sheet/navigation/expo-router";
+import { useIsFocused } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BackHandler,
   Keyboard,
-  Pressable,
   ScrollView,
   type ScrollViewInstance,
   StyleSheet,
@@ -27,6 +27,7 @@ import {
   Icon,
   type IconName,
   PixelOrbit,
+  SheetBar,
   SheetSurface,
   Text,
   useReducedMotion,
@@ -50,19 +51,19 @@ const DETENTS_TYPING = [1];
 
 /**
  * "New", the "+" of the tabs, as the system's new message: a sheet over the list (the native form sheet: it tracks
- * the finger, a drag or a flick puts it away, the screen behind steps back), on the grouped gray, "Cancelar" in its
- * corner and the "Para:" field on top (nothing focused until the person taps). Under it, everything as rows: what
- * to start, each with its icon on a soft tile of its color (found at a glance); the agents, the one you talked to
- * last first, a tap opening your conversation ready to type; then the people, and "Invite people" at their end.
- * Typing raises the sheet to the full detent with the keyboard and filters the same agents and people (what to
- * start steps aside); cancelling puts the sheet away.
+ * the finger, a drag or a flick puts it away, the screen behind steps back), on the grouped gray, the task sheets'
+ * bar (`SheetBar`, × in its corner) and the "Para:" field on top (nothing focused until the person taps). Under it,
+ * everything as rows: what to start, each with its icon on a soft tile of its color (found at a glance); the agents,
+ * the one you talked to last first, a tap opening your conversation ready to type; then the people, and "Invite
+ * people" at their end. Typing raises the sheet to the full detent with the keyboard and filters the same agents and
+ * people (what to start steps aside); × puts the sheet away.
  */
 export function NewScreen() {
   const { t } = useTranslation();
   const focused = useIsFocused();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useTrueSheetNavigation();
   const { colors } = useTheme();
   const { org } = useOrg();
   const meId = useMeId();
@@ -93,10 +94,9 @@ export function NewScreen() {
   };
 
   // The keyboard up: the sheet rises to the whole screen (the system animates the detent change); down, it may rest
-  // at two thirds again.
+  // at two thirds again. The route is a TrueSheet screen (`app/(app)/_layout.tsx`): its heights are its `detents`.
   useEffect(() => {
-    const options: NativeStackNavigationOptions = { sheetAllowedDetents: typing ? DETENTS_TYPING : DETENTS_REST };
-    navigation.setOptions(options);
+    navigation.setOptions({ detents: typing ? DETENTS_TYPING : DETENTS_REST });
   }, [navigation, typing]);
 
   // Android's back drops the keyboard first (as the field's blur does), not the sheet.
@@ -130,22 +130,7 @@ export function NewScreen() {
         automaticallyAdjustKeyboardInsets
         contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
       >
-        <SheetBar>
-          <Pressable
-            onPress={cancel}
-            accessibilityRole="button"
-            hitSlop={10}
-            style={({ pressed }) => [styles.cancel, pressed && styles.pressed]}
-          >
-            <Text variant="body" tone="ink2">
-              {t("mobile.common.cancel")}
-            </Text>
-          </Pressable>
-          <Text variant="title" style={styles.title} accessibilityRole="header" numberOfLines={1}>
-            {t("mobile.new.title")}
-          </Text>
-          <View style={styles.side} />
-        </SheetBar>
+        <SheetBar title={t("mobile.new.title")} onClose={cancel} />
         <Animated.View layout={layout}>
           {/* "Para:" and the words, white with a hairline on the gray, as the system's new message. */}
           <View style={styles.search}>
@@ -307,23 +292,11 @@ function TintTile({ icon, color }: { icon: IconName; color: AgentPresetColor }) 
 
 /** The faces in the rows: framed in their skies at 36 (the list's small size); the tiles match them. */
 const FACE = 36;
-/** The sheet's bar, on the sheet's own color so the list passes under it when pinned. */
-function SheetBar({ children }: { children: ReactNode }) {
-  const { colors } = useTheme();
-  return <View style={[styles.head, { backgroundColor: colors.grouped }]}>{children}</View>;
-}
 
 const TILE = 36;
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  // The sheet's bar: Cancelar at the left, the title centered, 50 tall, clear of the grabber (5 tall, 5 from the top).
-  // Its room over it is its own (padding, on its color): the list passing under it never shows above it.
-  head: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 64, paddingTop: 14, paddingHorizontal: 16 },
-  cancel: { minWidth: 72, minHeight: 44, justifyContent: "center" },
-  title: { flex: 1, textAlign: "center" },
-  side: { minWidth: 72 },
-  pressed: { opacity: 0.6 },
   search: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
   field: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44, paddingHorizontal: 14, borderRadius: 14 },
   input: { flex: 1, minWidth: 0, paddingVertical: 0 },

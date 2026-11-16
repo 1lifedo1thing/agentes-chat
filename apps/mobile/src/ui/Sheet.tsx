@@ -7,7 +7,11 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { hintBack } from "./hints";
 import { sheetColors } from "./palette";
+import { SHEET_GAP, SHEET_X } from "./rhythm";
 import { ThemeColorsOverride, useTheme } from "./theme";
+
+/** A sheet's own height: its content's, up to the screen's. */
+const AUTO: SheetDetent[] = ["auto"];
 
 export interface SheetProps {
   open: boolean;
@@ -19,33 +23,53 @@ export interface SheetProps {
    * for it: presented over a sheet still leaving, iOS dismisses it with the sheet, and its answer never comes.
    */
   onGone?: () => void;
-  /** Pinned over the content while it scrolls (a picker's bar and its search). */
+  /**
+   * Pinned over the content while it scrolls (a picker's bar and its search). It brings its own room under the
+   * grabber (`SheetBar` does).
+   */
   header?: ReactNode;
+  /**
+   * The heights it may rest at: fractions of the screen, or `"auto"` (the default) for its content's height. A sheet
+   * whose content changes as the person works in it (a list filtered by what they type) takes fixed ones, so it
+   * doesn't jump at every keystroke or collapse when nothing matches; its content then fills them.
+   */
+  detents?: SheetDetent[];
 }
 
 /**
  * The bottom sheet (no dialogs on the phone): the system's own, through TrueSheet (iOS's sheet presentation, Android's
  * Material bottom sheet), on the sheet's solid gray. The system draws it, its grabber and corners, dims the screen,
- * drags it, and lifts it over the keyboard; it takes its content's height, up to the screen's. A sheet presented while
- * another is up stacks over it, as the system's sheets do. Its content is on the sheet's colors (`sheetColors`) and
- * scrolls.
+ * drags it, and lifts it over the keyboard; by default it takes its content's height, up to the screen's. A sheet
+ * presented while another is up stacks over it, as the system's sheets do. Its content is on the sheet's colors
+ * (`sheetColors`) and scrolls.
  */
-export function Sheet({ open, onClose, children, onGone, header }: SheetProps) {
+export function Sheet({ open, onClose, children, onGone, header, detents }: SheetProps) {
   const ref = useRef<TrueSheet>(null);
   const scroll = useRef<ScrollViewInstance>(null);
   // Under a header the content starts right away; alone, it leaves the grabber its room.
   const body = useSheetBody(header ? 8 : 24);
-  const props = useSheetProps({ open, onClose, onGone, ref });
+  const props = useSheetProps({ open, onClose, onGone, ref, ...(detents ? { detents } : {}) });
+  const fill = !props.detents.includes("auto");
   return (
     <TrueSheet
       ref={ref}
       {...props}
       scrollableRef={scroll}
-      {...(header ? { header: <View style={styles.header}>{header}</View> } : {})}
+      {...(fill ? { style: styles.fill } : {})}
+      {...(header
+        ? {
+            header: (
+              <View>
+                <OnSheet>{header}</OnSheet>
+              </View>
+            ),
+          }
+        : {})}
     >
-      <SheetContent>
+      <SheetContent fill={fill}>
         <ScrollView
           ref={scroll}
+          style={fill ? styles.fill : undefined}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={body}
@@ -105,9 +129,9 @@ export function useRouteSheetScrollable(ref: RefObject<ScrollViewInstance | null
 }
 
 /**
- * What every sheet a screen opens shares, for `<TrueSheet>`: content-sized, `Sheet`'s look, Android's back (an open ⓘ
- * goes with the sheet), and `open` driving present and dismiss with `onClose` when the person closes it and `onGone`
- * once it is off the screen.
+ * What every sheet a screen opens shares, for `<TrueSheet>`: content-sized unless `detents` says otherwise, `Sheet`'s
+ * look, Android's back (an open ⓘ goes with the sheet), and `open` driving present and dismiss with `onClose` when the
+ * person closes it and `onGone` once it is off the screen.
  */
 export function useSheetProps({
   open,
@@ -115,6 +139,7 @@ export function useSheetProps({
   onGone,
   ref,
   presentOnMount = false,
+  detents = AUTO,
 }: {
   open: boolean;
   onClose: () => void;
@@ -122,6 +147,8 @@ export function useSheetProps({
   ref: RefObject<TrueSheet | null>;
   /** Present as it mounts (a sheet pushed over another), rather than when `open` turns true. */
   presentOnMount?: boolean;
+  /** The heights it may rest at (`Sheet`'s `detents`); its content's height by default. */
+  detents?: SheetDetent[];
 }) {
   const look = useSheetLook();
   const shown = useRef(presentOnMount);
@@ -148,7 +175,7 @@ export function useSheetProps({
 
   return {
     ...look,
-    detents: ["auto" as const],
+    detents,
     ...(presentOnMount ? { initialDetentIndex: 0 } : {}),
     onDidDismiss: () => {
       shown.current = false;
@@ -170,24 +197,35 @@ export function useSheetProps({
  * sheet came up empty.
  */
 export function SheetContent({ children, fill = false }: { children: ReactNode; fill?: boolean }) {
-  const { colors, scheme } = useTheme();
-  const inside = useMemo(() => sheetColors(colors, scheme), [colors, scheme]);
   return (
     <GestureHandlerRootView style={fill ? styles.fill : styles.fit}>
-      <ThemeColorsOverride colors={inside}>{children}</ThemeColorsOverride>
+      <OnSheet>{children}</OnSheet>
     </GestureHandlerRootView>
   );
 }
 
-/** The padding of a sheet's content: 18 at the sides, `top` (room for the grabber), room over the bottom edge. */
+/** What sits on the sheet reads the sheet's colors: its content, and the header pinned over it outside the content. */
+function OnSheet({ children }: { children: ReactNode }) {
+  const { colors, scheme } = useTheme();
+  const inside = useMemo(() => sheetColors(colors, scheme), [colors, scheme]);
+  return <ThemeColorsOverride colors={inside}>{children}</ThemeColorsOverride>;
+}
+
+/**
+ * The body of every sheet's content (a screen's sheets, their steps, the sheets that are routes): `SHEET_X` at the
+ * sides, `top` (room for the grabber), room over the bottom edge, and `SHEET_GAP` between its blocks.
+ */
 export function useSheetBody(top = 24): ViewStyle {
   const insets = useSafeAreaInsets();
-  return { paddingHorizontal: 18, paddingTop: top, paddingBottom: 24 + Math.max(0, insets.bottom - 8) };
+  return {
+    paddingHorizontal: SHEET_X,
+    paddingTop: top,
+    paddingBottom: 24 + Math.max(0, insets.bottom - 8),
+    gap: SHEET_GAP,
+  };
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   fit: { alignSelf: "stretch" },
-  // The header spans the sheet, under the grabber's room.
-  header: { paddingTop: 24 },
 });

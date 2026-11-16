@@ -91,7 +91,7 @@ export { type BadgePresence, badgeCell } from "./presence-badge";
 export { RoleMark } from "./RoleMark";
 export { Row, type RowProps } from "./Row";
 export { ROW_CARD_INSET, RowAction } from "./RowAction";
-export { CARD_PAD, GROUPED_ROW, SCREEN_X, TOOL_H, TOUCH } from "./rhythm";
+export { CARD_PAD, GROUPED_ROW, SCREEN_X, SHEET_BAR, SHEET_GAP, SHEET_X, TOOL_H, TOUCH } from "./rhythm";
 export { roleMarkFit, roleMarkIcon } from "./role-mark";
 export { SearchField, type SearchFieldProps } from "./SearchField";
 export { Section, type SectionProps } from "./Section";
@@ -106,6 +106,7 @@ export {
   useSheetBody,
   useSheetProps,
 } from "./Sheet";
+export { SheetBar, type SheetBarProps } from "./SheetBar";
 export { SheetScreen, type SheetScreenProps } from "./SheetScreen";
 export { SheetSurface } from "./SheetSurface";
 export { SkeletonList, SkeletonRow, usePulse } from "./Skeleton";

@@ -58,10 +58,12 @@ describe("pickers are the app's sheet, never the system's alert list", () => {
 });
 
 describe("every sheet is the system's own (TrueSheet), and a sheet's next step stacks over it", () => {
-  test("the sheet is TrueSheet, sized to its content, never one drawn and dragged here", () => {
+  test("the sheet is TrueSheet, sized to its content unless it says otherwise, never one drawn and dragged here", () => {
     const sheet = src("ui/Sheet.tsx");
     expect(sheet).toContain('from "@lodev09/react-native-true-sheet"');
-    expect(sheet).toContain('detents: ["auto" as const]');
+    expect(sheet).toContain('const AUTO: SheetDetent[] = ["auto"];');
+    expect(sheet).toMatch(/presentOnMount = false,\s*detents = AUTO,/);
+    expect(sheet).toMatch(/return \{\s*\.\.\.look,\s*detents,/);
     expect(sheet).toContain("scrollableRef={scroll}");
     expect(sheet).not.toContain("PanResponder");
     expect(sheet).not.toContain("@gorhom/bottom-sheet");
@@ -70,6 +72,33 @@ describe("every sheet is the system's own (TrueSheet), and a sheet's next step s
     expect(sheet).not.toContain("GLASS");
     // The gestures' root always gets a style: without one it takes flex: 1, no height in a content-sized sheet.
     expect(sheet).toContain("<GestureHandlerRootView style={fill ? styles.fill : styles.fit}>");
+  });
+
+  test("a sheet of fixed heights fills them; a picker with a search rests at 70% and takes the screen while typed in", () => {
+    const sheet = src("ui/Sheet.tsx");
+    expect(sheet).toContain(
+      "const props = useSheetProps({ open, onClose, onGone, ref, ...(detents ? { detents } : {}) });",
+    );
+    expect(sheet).toContain('const fill = !props.detents.includes("auto");');
+    expect(sheet).toContain("<SheetContent fill={fill}>");
+    expect(sheet).toContain("style={fill ? styles.fill : undefined}");
+    // Its pinned header reads the sheet's colors, as its content does.
+    expect(sheet).toContain("<OnSheet>{header}</OnSheet>");
+    const picker = src("features/shared/PickerSheet.tsx");
+    expect(picker).toContain("const SEARCH_DETENTS = [0.7, 1];");
+    expect(picker).toContain("const TYPING_DETENTS = [1];");
+    expect(picker).toContain("{...(searchable ? { detents: typing ? TYPING_DETENTS : SEARCH_DETENTS } : {})}");
+    expect(picker).toContain("onFocus={() => setTyping(true)}");
+    expect(picker).toContain("onBlur={() => setTyping(false)}");
+    // A new ask starts at rest.
+    expect(picker).toMatch(/setQuery\(""\);\s*setTyping\(false\);/);
+  });
+
+  test("a pick's bar is the task sheets' bar: × at the left, the title centered; a menu of actions keeps no bar", () => {
+    const picker = src("features/shared/PickerSheet.tsx");
+    expect(picker).toContain("<SheetBar title={ask.title} onClose={() => finish(null)} />");
+    expect(picker).not.toContain('t("mobile.common.cancel")');
+    expect(picker).toContain('ask?.mode === "pick" ? (');
   });
 
   test("the sheets that are routes are TrueSheet's too, on the same look: none is react-native-screens' form sheet", () => {

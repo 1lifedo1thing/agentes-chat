@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { CARD_PAD, GROUPED_ROW, SCREEN_X, TOOL_H, TOUCH } from "../src/ui/rhythm";
+import { CARD_PAD, GROUPED_ROW, SCREEN_X, SHEET_BAR, SHEET_GAP, SHEET_X, TOOL_H, TOUCH } from "../src/ui/rhythm";
 
 const SRC = join(import.meta.dir, "../src");
 const source = (file: string) => readFileSync(new URL(`../src/ui/${file}`, import.meta.url), "utf8");
@@ -18,6 +18,27 @@ test("the phone's page rhythm: sides 16, cards 16 inside, a toolbar's controls 3
   expect(TOUCH).toBe(44);
   // A wrapping row's label starts where a one-line row's does: its 22-point line centred in 52.
   expect(GROUPED_ROW).toEqual({ minHeight: 52, padX: 16, padY: 10, tallPadY: 15 });
+});
+
+test("every sheet's body has one rhythm: a screen's sides, 12 between its blocks, the bar 50 tall 14 under the top", () => {
+  expect(SHEET_X).toBe(SCREEN_X);
+  expect(SHEET_GAP).toBe(12);
+  expect(SHEET_BAR).toEqual({ height: 50, top: 14 });
+  const sheet = source("Sheet.tsx");
+  const body = sheet.slice(sheet.indexOf("export function useSheetBody("));
+  expect(body).toContain("paddingHorizontal: SHEET_X,");
+  expect(body).toContain("gap: SHEET_GAP,");
+  // The sheets that are routes and a screen's sheet steps take that body rather than numbers of their own.
+  const screen = source("SheetScreen.tsx");
+  expect(screen).toContain("const body = useSheetBody();");
+  expect(screen).toContain("contentContainerStyle={body}");
+  expect(screen).not.toMatch(/padding(Horizontal|Top): \d|gap: \d/);
+  const steps = readFileSync(join(SRC, "features/shared/SheetHost.tsx"), "utf8");
+  expect(steps).toContain("contentContainerStyle={body}");
+  expect(steps).not.toMatch(/gap: \d/);
+  const picker = readFileSync(join(SRC, "features/shared/PickerSheet.tsx"), "utf8");
+  expect(picker).toContain("search: { paddingHorizontal: SHEET_X,");
+  expect(picker).not.toMatch(/paddingHorizontal: 1[68]\b/);
 });
 
 test("the kit's screens, grouped rows and toolbar controls read those numbers instead of their own", () => {
@@ -97,15 +118,12 @@ test("a row's ⓘ sits right after its label, and a short fact about its value g
 });
 
 test("no screen keeps a grouped row of its own at the old 50: its rows and fields read GROUPED_ROW", () => {
-  // Not a grouped list's rows: the chat's receipt cards (a 50 row around a 32 action), a new channel's bordered name
-  // field and the sheets' title bars (Novo, Compartilhar).
+  // Not a grouped list's rows: the chat's receipt cards (a 50 row around a 32 action) and a new channel's bordered name
+  // field. The sheets' bars are the kit's `SheetBar` now.
   const CARD_ROWS = new Set([
     "features/chat/TeamChecks.tsx",
     "features/chat/ReachLines.tsx",
     "features/new/NewChannelForm.tsx",
-    "features/new/parts.tsx",
-    "features/new/NewScreen.tsx",
-    "features/share/ShareScreen.tsx",
   ]);
   const offenders = files(join(SRC, "features"))
     .filter((path) => !CARD_ROWS.has(relative(SRC, path)))

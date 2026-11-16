@@ -10,3 +10,16 @@ export const CARD_PAD = 16;
 export const TOOL_H = 32;
 export const TOUCH = 44;
 export const GROUPED_ROW = { minHeight: 52, padX: 16, padY: 10, tallPadY: (52 - 22) / 2 } as const;
+
+/**
+ * A sheet's content sits as far from its sides as a screen's (every sheet: the ones a screen opens, their steps and the
+ * ones that are routes), with 12 between its blocks (a title, a field, a list).
+ */
+export const SHEET_X = SCREEN_X;
+export const SHEET_GAP = 12;
+
+/**
+ * The bar of a task sheet (`SheetBar`): 50 tall, so its 40-point close plate has room around it, and 14 under the
+ * sheet's top edge, clear of the system's grabber (5 tall, 5 from the top).
+ */
+export const SHEET_BAR = { height: 50, top: 14 } as const;

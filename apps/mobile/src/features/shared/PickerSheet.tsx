@@ -2,8 +2,19 @@ import { markTerms } from "@agenteschat/client/lib/search-filters";
 import { matchesWords } from "@agenteschat/ui/search";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, View } from "react-native";
-import { GroupedList, GroupedRow, haptics, Icon, type IconName, SearchField, Sheet, Text } from "@/ui";
+import { StyleSheet, View } from "react-native";
+import {
+  GroupedList,
+  GroupedRow,
+  haptics,
+  Icon,
+  type IconName,
+  SearchField,
+  SHEET_X,
+  Sheet,
+  SheetBar,
+  Text,
+} from "@/ui";
 import { AgentFace, Face } from "./Face";
 import { useColors } from "./hooks";
 import { SheetTitle } from "./PromptForm";
@@ -48,17 +59,23 @@ export interface PickAsk {
 const SEARCH_FROM = 9;
 /** Faces stay alive in a short list; a long one draws them still, as long lists do everywhere. */
 const LIVE_UP_TO = 12;
+/**
+ * A list with a search rests at 70% of the screen whatever matches, so it never jumps at a keystroke or collapses
+ * when nothing does; while the person types it takes the whole screen, the list's room above the keyboard.
+ */
+const SEARCH_DETENTS = [0.7, 1];
+const TYPING_DETENTS = [1];
 
 type Pending = PickAsk & { mode: "pick" | "actions"; done: (key: string | null) => void };
 
 let present: ((ask: Pending) => void) | null = null;
 
 /**
- * One choice in the app's own sheet (never the system's alert list): the title as the sheet's bar with Cancelar, an
- * optional line under it, then a grouped list where each option shows who or what it is (a face, a photo, a tile), a
- * quieter line, and the check on the one in use; a search field when the list is long. Resolves with the chosen key,
- * or null when the person cancels (Cancelar, the scrim, a flick down). The row's value changes at once: the promise
- * resolves on the pick while the sheet slides away.
+ * One choice in the app's own sheet (never the system's alert list): the title in the sheet's bar with its × (the
+ * task sheets' `SheetBar`), an optional line under it, then a grouped list where each option shows who or what it is
+ * (a face, a photo, a tile), a quieter line, and the check on the one in use; a search field when the list is long.
+ * Resolves with the chosen key, or null when the person cancels (×, the scrim, a flick down). The row's value changes
+ * at once: the promise resolves on the pick while the sheet slides away.
  */
 export function pickOne(ask: PickAsk): Promise<string | null> {
   return new Promise((resolve) => {
@@ -113,6 +130,7 @@ export function PickerHost() {
   const [ask, setAsk] = useState<Pending | null>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [typing, setTyping] = useState(false);
   const [toggled, setToggled] = useState(false);
   // What happens once the sheet is gone: an action menu's action, or a cancelled pick's null.
   const after = useRef<(() => void) | null>(null);
@@ -128,6 +146,7 @@ export function PickerHost() {
       waiting?.();
       current.current = next;
       setQuery("");
+      setTyping(false);
       setToggled(false);
       setAsk(next);
       setOpen(true);
@@ -161,22 +180,7 @@ export function PickerHost() {
   const bar =
     ask?.mode === "pick" ? (
       <View>
-        <View style={styles.bar}>
-          <Pressable
-            onPress={() => finish(null)}
-            accessibilityRole="button"
-            hitSlop={10}
-            style={({ pressed }) => [styles.cancel, pressed && styles.pressed]}
-          >
-            <Text variant="body" tone="ink2" numberOfLines={1}>
-              {t("mobile.common.cancel")}
-            </Text>
-          </Pressable>
-          <Text variant="title" style={styles.title} accessibilityRole="header" numberOfLines={1}>
-            {ask.title}
-          </Text>
-          <View style={styles.side} />
-        </View>
+        <SheetBar title={ask.title} onClose={() => finish(null)} />
         {ask.note ? (
           <Text variant="footnote" tone="muted" style={styles.note} numberOfLines={2}>
             {ask.note}
@@ -187,6 +191,8 @@ export function PickerHost() {
             <SearchField
               value={query}
               onChangeText={setQuery}
+              onFocus={() => setTyping(true)}
+              onBlur={() => setTyping(false)}
               placeholder={t("mobile.search.placeholder")}
               accessibilityLabel={t("mobile.search.placeholder")}
               returnKeyType="search"
@@ -201,6 +207,7 @@ export function PickerHost() {
       open={open}
       onClose={() => finish(null)}
       header={bar}
+      {...(searchable ? { detents: typing ? TYPING_DETENTS : SEARCH_DETENTS } : {})}
       onGone={() => {
         const run = after.current;
         after.current = null;
@@ -286,16 +293,11 @@ export function PickerHost() {
 }
 
 const styles = StyleSheet.create({
-  // The sheet's bar, as Novo's: Cancelar at the left, the title centered, 44 tall under the grabber.
-  bar: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, paddingHorizontal: 16 },
-  cancel: { minWidth: 72, minHeight: 44, justifyContent: "center" },
-  title: { flex: 1, textAlign: "center" },
-  side: { minWidth: 72 },
-  pressed: { opacity: 0.6 },
   note: { textAlign: "center", paddingHorizontal: 24, paddingBottom: 8 },
-  search: { paddingHorizontal: 18, paddingBottom: 12 },
+  search: { paddingHorizontal: SHEET_X, paddingBottom: 12 },
   empty: { textAlign: "center", paddingVertical: 24 },
-  toggle: { marginTop: 24 },
-  // As the screen's own sheets space a title and its list (`SheetHostProvider`).
+  // 24 under the list: the body's own 12 between them and 12 more.
+  toggle: { marginTop: 12 },
+  // As every sheet spaces a title and its list (`useSheetBody`).
   actions: { gap: 12 },
 });

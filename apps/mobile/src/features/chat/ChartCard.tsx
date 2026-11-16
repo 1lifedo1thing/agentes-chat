@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import { type LayoutChangeEvent, Pressable, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Icon, IconButton, PressScale, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
+import { Icon, PressScale, SheetBar, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors } from "../shared/hooks";
 import type { Inline } from "./logic";
@@ -111,7 +111,6 @@ export const ChartCard = memo(function ChartCard({
 export function ChartSheet() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
   // The sheet's scroll view (dragging at its top moves the sheet).
   const scroll = useRef<ScrollViewInstance>(null);
   useRouteSheetScrollable(scroll);
@@ -129,13 +128,11 @@ export function ChartSheet() {
     <ScrollView
       ref={scroll}
       style={styles.flex}
-      // × rides pinned at the top, on the sheet's color as the chart passes under it.
+      // The bar (× alone) rides pinned at the top, on the sheet's color as the chart passes under it.
       stickyHeaderIndices={[0]}
       contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
     >
-      <View style={[styles.sheetTop, { backgroundColor: colors.grouped }]}>
-        <IconButton icon="x" plate label={t("mobile.common.close")} onPress={() => router.back()} />
-      </View>
+      <SheetBar onClose={() => router.back()} />
       {/* The title on a row of its own under the bar, the sheet's whole width: never cut beside its buttons. */}
       <Text variant="title" style={styles.sheetTitle}>
         {chart.spec.title}
@@ -582,15 +579,6 @@ const styles = StyleSheet.create({
   numValue: { fontWeight: "700", letterSpacing: -0.5, fontVariant: ["tabular-nums"] },
   sheet: { flex: 1 },
   gone: { alignItems: "center", justifyContent: "center", padding: 24 },
-  // Clear of the grabber, and tall enough under × that the title never touches it once pinned.
-  sheetTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 8,
-  },
   sheetTitle: { paddingHorizontal: 16 },
   sheetBody: { paddingHorizontal: 16, paddingTop: 14, gap: 20 },
 });
