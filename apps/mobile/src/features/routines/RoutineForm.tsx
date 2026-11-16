@@ -48,7 +48,6 @@ import {
   Locked,
   OPTION_ROW,
   SCREEN_X,
-  Segmented,
   Text,
   useToast,
 } from "@/ui";
@@ -113,6 +112,16 @@ import { setRoutineZone, useRoutineZone } from "./zone";
 const PROMPT_LIMIT = { max: FIELD_LIMITS.routinePrompt };
 
 const close = () => goBack("/routines");
+
+/** What starts a routine, as its tile: the clock, an event, an email, a webhook call (as the list's rows). */
+const kindIcon = (kind: TriggerKind): IconName =>
+  kind === "event"
+    ? "bolt"
+    : kind === "email" || kind === "connector"
+      ? "mail"
+      : kind === "webhook"
+        ? "globe"
+        : "clock";
 
 /** A zone as the form says it: "Horário de Brasília" (a friendly name) or the city. */
 const zoneLabel = (zone: string, locale: string) =>
@@ -414,6 +423,28 @@ function Form({ routine }: { routine: Routine | undefined }) {
     setD((x) => ({ ...x, connector: { ...x.connector, filter: { ...x.connector.filter, ...patch } } }));
   const msFromBad = d.kind === "connector" && msFrom.invalid.length > 0;
 
+  // What starts it: the clock, an event, an email (a mailbox's, MillionSend's) or a webhook call.
+  const kinds: TriggerKind[] = [
+    "schedule",
+    "event",
+    ...(hasMail ? (["email"] as const) : []),
+    ...(hasMillionSend ? (["connector"] as const) : []),
+    "webhook",
+  ];
+  const pickKind = () =>
+    void pickOne({
+      title: t("routines.form.when"),
+      value: d.kind,
+      options: kinds.map((k) => ({
+        key: k,
+        label: t(`routines.form.kind.${k}`),
+        leading: { kind: "icon" as const, name: kindIcon(k) },
+      })),
+    }).then((key) => {
+      const kind = kinds.find((k) => k === key);
+      if (kind) set({ kind });
+    });
+
   // A routine on someone's computer that runs hourly or more often: how often it wakes that computer.
   const brain = dir.agentById.get(d.agentId)?.brain;
   const selfHost = useEdition() === "selfhost";
@@ -629,18 +660,10 @@ function Form({ routine }: { routine: Routine | undefined }) {
           />
 
           <GroupedHeader>{t("routines.form.when")}</GroupedHeader>
-          <Segmented
-            items={[
-              { key: "schedule", label: t("routines.form.kind.schedule") },
-              { key: "event", label: t("routines.form.kind.event") },
-              ...(hasMail ? [{ key: "email", label: t("routines.form.kind.email") }] : []),
-              ...(hasMillionSend ? [{ key: "connector", label: t("routines.form.kind.connector") }] : []),
-              { key: "webhook", label: t("routines.form.kind.webhook") },
-            ]}
-            value={d.kind}
-            onChange={(k) => set({ kind: k as TriggerKind })}
-            wide="fit"
-          />
+          {/* What starts it, picked in the app's picker (up to five kinds: a row of segments ran off a phone). */}
+          <GroupedList>
+            <GroupedRow icon={kindIcon(d.kind)} label={t(`routines.form.kind.${d.kind}`)} menu onPress={pickKind} />
+          </GroupedList>
           {schedule ? (
             <>
               <View style={styles.gap} />

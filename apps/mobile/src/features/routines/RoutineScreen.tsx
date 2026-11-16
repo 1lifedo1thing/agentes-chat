@@ -202,7 +202,7 @@ function Details({ routine: r, refetch }: { routine: Routine; refetch: () => Pro
       : null;
   const list = runs.data ?? r.recentRuns;
   const next = done ? "" : nextText(r, at);
-  // A run that starts, or a prepared action withdrawn, while the person watches fades; the rest slide into place.
+  // A run that starts while the person watches fades in; the runs under it slide into place.
   const reduced = useReducedMotion();
   const fade = reduced ? {} : { entering: FadeIn.duration(160), exiting: FadeOut.duration(120) };
   const layout = reduced ? undefined : LinearTransition.duration(220);

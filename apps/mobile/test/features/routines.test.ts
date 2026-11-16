@@ -654,6 +654,9 @@ describe("Rotinas on the phone, as the web reads them", () => {
     expect(form).toContain("closeOptionPick();");
     for (const inPlace of ['open === "agent"', 'open === "target"', 'open === "mailbox"', 'open === "folder"'])
       expect({ inPlace, found: form.includes(inPlace) }).toEqual({ inPlace, found: false });
+    // What starts it is a row of the "when" card picked in the app's picker: five segments ran off a phone.
+    expect(form).toContain("onPress={pickKind}");
+    expect(form).not.toContain("<Segmented");
     // Labels over their fields are the kit's stacked field.
     expect(form).toContain("<GroupedField stacked");
     expect(form).not.toContain("function StackedField");
