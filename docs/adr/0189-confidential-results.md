@@ -3,12 +3,13 @@
 - Status: Accepted
 - Date: 2026-11-16
 - Code: engine `packages/engine/src/confidential.ts` (`markThreadConfidential`, `sealStragglers`, `unsealed`,
-  `runConfidentiality`, `isConfidentialRun`), `confidential-prune.ts` (`pruneConfidential`),
-  `tools/confidential-lock.ts` (`confidentialLockAllows`), `tools/gateway.ts` (`markedStep`, the lock in `invoke`
-  and `runApproved`), `connectors/mcp.ts` (a result's `_meta`, `ToolDefinition.server`), `messages.ts` (the `sealed`
-  part of `insertMessageWithRuns`, `messageView`), `context.ts` (`buildRunContext`'s `unseal`), `executor.ts`
-  (`followThread`, `CONFIDENTIAL_AI_CHANGED`), `judge.ts` (`refuseConfidential`), `format.ts` (`inertLinks`); schema
-  `packages/db/src/schema/chat.ts` (`confidential_threads`, migration 0282); server
+  `runConfidentiality`, `thinksAsThread`, `isConfidentialRun`), `confidential-prune.ts` (`pruneConfidential`),
+  `tools/confidential-lock.ts` (`confidentialLockAllows`, `asksOutside`), `tools/gateway.ts` (`markedStep`, the lock
+  in `invoke` and `runApproved`), `connectors/mcp.ts` (a result's `_meta`, `ToolDefinition.server`), `messages.ts`
+  (the `sealed` part of `insertMessageWithRuns`, `forRunId`, `messageView`), `run-resume.ts` (`deliverNoticeToRun`),
+  `context.ts` (`buildRunContext`'s `unseal`), `live-steer.ts` (`renderSteered`), `executor.ts` (`followThread`,
+  `CONFIDENTIAL_AI_CHANGED`), `routine-ledger.ts` (`closeRoutineRun`), `judge.ts` (`refuseConfidential`), `format.ts`
+  (`inertLinks`); schema `packages/db/src/schema/chat.ts` (`confidential_threads`, migrations 0282 and 0283); server
   `apps/server/src/workers.ts` (`confidentialPrune`); tests `packages/engine/test/confidential-results.test.ts`,
   `confidential-lock.test.ts`, `confidential-copies.test.ts`, `confidential-prune.test.ts`
 
@@ -44,19 +45,31 @@ server must not be able to lock a run.
 ### 2. The thread, and the seal
 
 The step and its thread's mark are written in one transaction (`markedStep`): a row in `confidential_threads`, keyed
-by the root message of the run's thread, with the connections whose results marked it. The mark follows the thread
-alone. It never looks at the channel's newest messages, as `runReadOutside` does: one finding would then lock every
+by the root message of the run's thread, with the connections whose results marked it and what thought for the run
+that read the first one (`thinks_with`, as `model:<provider>`). The mark follows the thread alone. It never looks at the channel's newest messages, as `runReadOutside` does: one finding would then lock every
 later run of the channel. A run is confidential when its thread is, and a run never leaves such a thread (it is not
 moved to the background, and the tool that moves a run elsewhere is refused).
 
 Every message of a confidential thread is **sealed**, the root included, since the root may hold what a person pasted
 before any mark existed: `messages.body` holds a stub (`[confidential: readable only in its own thread]`), the words
 live in `meta.sealedBody`, and `meta.confidential` is true. The statement that writes a message seals it when its
-thread is confidential or when a run of such a thread writes it; that is the same single statement as before, with
-no query added. So whatever reads a message's body gets the stub without knowing any of this: another run's
-context, the router, a search, a summary, a notification, a quote. Two readers get the words back (`unsealed`): the
-people who read the conversation (`messageView`), and a run of that same thread that thinks through the Model
-Gateway (`buildRunContext` with `unseal`, and the messages it is handed mid-run).
+thread is confidential, when a run of such a thread writes it, or when the server writes it for such a run
+(`forRunId`: a notice the run will read, the line of a follow-up it set); that is the same single statement as
+before, with no query added. So whatever reads a message's body gets the stub without knowing any of this: another
+run's context, the router, a search, a summary, a notification, a quote, the answer handed back to an agent that
+asked. Two readers get the words back (`unsealed`): the people who read the conversation (`messageView`), and a run
+of that same thread that thinks through the Model Gateway (`buildRunContext` with `unseal`, and the messages it is
+handed mid-run, `renderSteered`).
+
+Who reads is decided by the thread's row, never by a message's mark alone. A run of a confidential thread can leave a
+marked message outside it (a long work's report sent home): a run asked under that message is not locked, so it is
+handed the stub like any other.
+
+**One provider reads a thread.** The words stay with what first read them. A run that thinks through another
+provider than the row's `thinks_with` (another agent named in the thread, the same agent after its model changed)
+ends before its first model call with a line that says so (`CONFIDENTIAL_AI_CHANGED`), is handed the stub for the
+thread's messages mid-run, and the stub for a confidential result. A server that looked at the `provider` claim
+before answering (section 9) is therefore not undone by a mention.
 
 A message written while the mark was being committed, and a note the server rewords in place, are sealed by the
 daily job (`sealStragglers`).
@@ -65,8 +78,11 @@ daily job (`sealStragglers`).
 
 Under the message that asked it. A run asked in the main timeline answers there (`replyThreadOf`), so its finding
 would sit among the channel's messages with no thread around it. It is decided in the statement that writes the
-message: a message that names no thread, written by a run of a confidential thread, goes under that thread's root.
-One place covers the reply, a card, a question, a block and a note. What the run posted before its first
+message: a message that names no thread, written by a run of a confidential thread or for one, goes under that
+thread's root. One place covers the reply, a card, a question, a block, a note, and what the server writes for the
+run: a follow-up's line and its wake, a poll's result, a wait's late answer. A notice that would be delivered where
+a routine reports, or where a long work reported, stays in the run's own thread instead (`deliverNoticeToRun`), and
+the run it wakes is a run of that thread, locked like the first. What the run posted before its first
 confidential result stays where it is: it holds none of the words. Web addresses in a message such a run writes are
 stored inert (`inertLinks`: a link keeps its words, a bare address becomes code), so no app renders a link whose
 address could carry words out on a click.
@@ -98,21 +114,25 @@ runs only when it is on this list:
   address, a tool reached through a connections broker, a mailbox and a workspace's database are refused: a read's
   arguments go to whoever runs the server. A read an admin marked to ask is no read;
 - in the run's own conversation: `react`, `send_sticker`, `ask_user`, `ask_choices`, `show_block`, `start_poll`,
-  `follow_up`, `cancel_follow_up`, `release_waiting_agent`. A routine's own run posts what it asks a person where the
-  routine reports: when that is another conversation, its question and any tool that would ask for an approval are
-  refused;
-- on the run or its agent alone: `withdraw_request`, `set_reply_style`, `wait_for_device`, `commit_co_author`;
-- `pass`; `hand_off` only for a routine's run whose routine delivers into the conversation the run is already in;
-  `find_tools`, `use_tool` and `run_approved_action`, with the lock judging the tool they reach.
+  `follow_up`, `cancel_follow_up`, `release_waiting_agent`. `show_block` replaces only a block shown in that thread:
+  one shown anywhere else is read and indexed outside it. What a run asks a person is not always posted where it
+  answers (`asksOutside`): a routine's own run asks where the routine reports, and a run another agent asked asks
+  where the person behind that agent is. When that is outside the thread, its question and any tool that would ask
+  for an approval are refused: other people read the card, and a reply under it starts a run the lock does not hold;
+- on the run or its agent alone: `withdraw_request`, `set_reply_style`, `wait_for_device`, `commit_co_author`.
+  `withdraw_request` takes back only a request of that same thread, and carries no reason: the reason is read by the
+  run that waits and by the people at the card;
+- `pass`; `find_tools`, `use_tool` and `run_approved_action`, with the lock judging the tool they reach.
 
 Everything else is refused, a tool added later included, with the code `confidential.outbound`. It is among the
 codes the turn's judge reads as final (`SAFETY_CODES`), so nothing nudges the agent to find another way. It is a
 refusal and never an approval card: an agent set to never ask would have the card lifted.
 
-Five tools were weighed for the list and left off it, since none is needed to read, ask or answer: `update_thread`
+Six tools were weighed for the list and left off it, since none is needed to read, ask or answer: `update_thread`
 (a thread's title is read outside the thread), `share_artifact` (it gives a file to people outside the
-conversation), `offer_answers` (a card that makes something that outlives the run), and `browser_ask_person` and
-`desktop_ask_person` (the browser and the desktop are refused, so there is nothing to hand over).
+conversation), `offer_answers` (a card that makes something that outlives the run), `browser_ask_person` and
+`desktop_ask_person` (the browser and the desktop are refused, so there is nothing to hand over), and `hand_off` (a
+routine's report is kept as the routine's record, which its next run is handed outside the thread).
 
 The audit log keeps which tool a run of a confidential thread called and how it ended, never its arguments, title
 or reason: that log is kept for good.
@@ -121,8 +141,8 @@ or reason: that log is kept for good.
 
 Its own shell and web fetch never pass the gateway. So a run that does not think through the Model Gateway never
 gets confidential text, in its own thread either: the stub stands in for the tool's result (and nothing is marked),
-for a search hit, and for the thread's messages in its context. A run that read the thread and comes back to
-another provider's model, or to a program on a computer, ends there with a line that says so
+for a search hit, and for the thread's messages in its context and mid-run. A run that read the thread and comes
+back to another provider's model, or to a program on a computer, ends there with a line that says so
 (`CONFIDENTIAL_AI_CHANGED`): its transcript holds the words.
 
 ### 7. No other model reads it, and nothing copies it
@@ -147,6 +167,12 @@ another provider's model, or to a program on a computer, ends there with a line 
   push and a mail that quotes it say only that there is something to open; snippets kept before the mark are
   blanked with it. A question's and an approval's notification keep no text.
 - **A task.** A reply in a confidential thread is not copied onto the task it works on.
+- **Team actions.** A call of a confidential thread is neither checked against what the team did nor recorded as a
+  team action: both keep the call's targets and words for good, and the record is searched by every agent.
+- **A routine.** A routine's own run that read a confidential result ends silent: its final text is neither kept as
+  the routine's record (its next run is handed that) nor delivered as its report.
+- **Long work.** What a work's run said between its calls is left out of what the agent's other runs in the
+  conversation are told about that work, once its thread is confidential.
 - **A mail about requests left waiting** counts one made in a confidential thread and quotes nothing of it.
 - **The lines other readers get of a run's calls** show a confidential result as `(confidential, not shown)`
   (`runCalls`, so the judge's and the hand-off's lines), and the agent's recent work lists nothing a run of a
@@ -192,15 +218,24 @@ accept, or what is asked from another conversation than the one it serves.
   speech engine before it is posted.
 - What left before the mark stays where it went: a push already sent for the root, and a judgment made on it.
 - A stop said in words is not recognized in a confidential thread (the judge reads the stub): the stop button is.
-- An agent's message keeps `meta` that is not its body (a card's fields); it reaches no model outside the thread
-  (the stub carries none of it) and is blanked by the prune.
+- An agent's message keeps `meta` that is not its body (a card's fields, a notice's text); it reaches no model outside
+  the thread (the stub carries none of it) and is blanked by the prune.
+- A long work that was already going when it read a confidential result still sends its report home, marked: the
+  people of that conversation read it, and no model outside the work's thread does.
+- A routine's own run that read a confidential result reports nothing: what it found stays in its run.
 
 ## Consequences
 
-- One new table, `confidential_threads` (migration 0282). No setting: `MCP_CALLER_IDENTITY` is the switch, and the
-  key in a result's `_meta` is the server's to send.
+- One new table, `confidential_threads` (migration 0282, and 0283 for `thinks_with`). No setting:
+  `MCP_CALLER_IDENTITY` is the switch, and the key in a result's `_meta` is the server's to send.
 - Every tool call reads the run's row joined to that table (one query more, sent with the ones the call already
-  made), and the message insert reads the table inside its one statement.
+  made), and the message insert reads the table inside its one statement. An install with no confidential thread
+  also pays one single-key read of that table in a few places off the hot path: before a judge is asked who a reply
+  in a thread is for, before the conversation layer answers for a working run, for a question's or an approval's
+  notification, in the learning job, in the index job of a file shown in a thread, when a run is moved to the
+  background, and when a notice for an ended run would be delivered elsewhere.
+- Every run's transcript keeps what it thinks with (`thinksWith`), confidential or not: a run that reads a
+  confidential result mid-turn must already know it.
 - A new tool is refused in a confidential thread until someone reads its handler and adds its name to the list.
 - After a confidential result an agent can no longer mail, post elsewhere, message a person or another agent, write
   an issue, a page, a file, a task or a memory, run a command, use a browser or the web, write to a connected app,

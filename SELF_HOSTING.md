@@ -947,8 +947,10 @@ answers in a thread under the message that asked it, and sends nothing elsewhere
 post in another place, no file, task or memory, no command, browser or web. Outside that thread no agent
 is given the thread's text, it is in no search, summary or notification, and it is removed 60 days later.
 A program on a computer (Claude Code, Codex) can't be held to that, so it gets a placeholder in place of
-the answer: check `brain` in the statement above before you hand such text out. The same key from a
-server you did not list changes nothing. [ADR 0189](docs/adr/0189-confidential-results.md) has the rest.
+the answer: check `brain` in the statement above before you hand such text out. The thread's text also
+stays with the `provider` that first read it: an agent named there that thinks with another one stops
+before it reads anything, and says so. A routine's own run that read such an answer delivers no report.
+The same key from a server you did not list changes nothing. [ADR 0189](docs/adr/0189-confidential-results.md) has the rest.
 
 **Deleting workspaces and accounts.** An owner deletes a workspace in **Settings → General**, with a
 code emailed to them (with no email set up, their password instead): it turns read-only for everyone at
