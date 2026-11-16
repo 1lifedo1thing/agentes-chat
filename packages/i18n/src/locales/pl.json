@@ -2830,6 +2830,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Potrzebny komputer",
+        "computerOnly": "Należy do {{owner}}, zalogowany tylko na {{computer}}. Lodi myśli z planem zalogowanym jako konto.",
+        "noComputer": "Należy do {{owner}}. Potrzebny jest komputer, a workspace nie ma żadnego podłączonego.",
+        "away": "Należy do {{owner}}, na {{computer}}, który jest niedostępny.",
+        "connect": "Podłącz komputer",
+        "plans": "Zobacz plany"
+      }
+    },
     "label": "twoja prawa ręka",
     "labelCapitalized": "Twoja prawa ręka",
     "newDot": "Nowe",
@@ -8222,6 +8232,9 @@
     }
   },
   "issues": {
+    "handedBy": "przekazane przez <0/>{{name}}",
+    "fromDm": "z <0>twojej rozmowy z {{name}}</0>",
+    "fromDmText": "z twojej rozmowy z {{name}}",
     "delete": {
       "action": "Usuń zadanie",
       "title": "Usunąć zadanie #{{number}}?",
@@ -8446,6 +8459,9 @@
       "label": "Praca: {{name}}",
       "runningTitle": "{{name}} nad tym pracuje",
       "waitingTitle": "{{name}} czeka na ciebie",
+      "finishedTitle": "{{name}}: zrobione",
+      "finishedMeta": "{{when}} · przekazane przez {{name}}",
+      "answer": "Odpowiedz",
       "stalledTitle": "{{name}} zatrzymuje się {{when}}",
       "stalledText": "Zadanie nadal należy do: {{name}}, ale nic nie jest uruchomione.",
       "started": "start {{when}}",
@@ -11102,10 +11118,10 @@
       "copiesRemoved_few": "Usunięto {{count}} nieużywane logowania.",
       "copiesRemoved_many": "Usunięto {{count}} nieużywanych logowań.",
       "copiesRemoved_other": "Usunięto {{count}} nieużywanego logowania.",
-      "removeAllDone": "Usunięto {{n}} logowań Grok.",
-      "removeAllText": "Przestaną myśleć za swoje agenty na {{computers}}. Logowania innych osób zostają.",
-      "removeAllTitle": "Usunąć wszystkie {{n}} logowań Grok?",
       "removeAllGrok": "Usuń wszystkie logowania Grok",
+      "removeAllTitle": "Usunąć wszystkie {{n}} logowań Grok?",
+      "removeAllText": "Przestaną myśleć za swoje agenty na {{computers}}. Logowania innych osób zostają.",
+      "removeAllDone": "Usunięto {{n}} logowań Grok.",
       "disconnect": "Rozłącz",
       "renameTitle": "Zmień nazwę: {{label}}",
       "nameLabel": "Nazwa",
@@ -18022,6 +18038,16 @@
     }
   },
   "usageViews": {
+    "kinds": {
+      "label": "Według rodzaju",
+      "handoffs": "Przekazania między agentami",
+      "people": "Rozmowy z ludźmi",
+      "routines": "Rutyny"
+    },
+    "hint": {
+      "handoffs": "Większość użycia w tym tygodniu pochodziła z agentów przekazujących sobie pracę. Przy długiej pracy poproś agenta bezpośrednio.",
+      "message": "Napisz do {{name}}"
+    },
     "signedOut": "Wylogowane",
     "whose": "Należy do: {{name}}",
     "serves": {
@@ -18130,6 +18156,21 @@
     "tomorrowAt": "jutro {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Przekazane: <0/>{{name}}",
+      "working": "w toku",
+      "done": "gotowe w {{duration}}",
+      "waitingYou": "czeka na twoją odpowiedź",
+      "waiting": "czeka na odpowiedź",
+      "waitingApprovalYou": "czeka na twoją zgodę",
+      "waitingApproval": "czeka na zgodę",
+      "waitingComputer": "czeka na komputer",
+      "paused": "wstrzymane na limicie planu",
+      "queued": "w kolejce",
+      "failed": "nie skończone",
+      "stopped": "zatrzymane",
+      "step": "krok {{current}} z {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_few": "{{count}} min",
@@ -18212,6 +18253,16 @@
     "working": "W tle"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} pyta cię"
+    },
+    "standIn": {
+      "needsComputer": "Odpowiedziano przez {{via}}: {{plan}} potrzebuje komputera.",
+      "away": "Odpowiedziano przez {{via}}: komputer z {{plan}} jest niedostępny.",
+      "notShared": "Odpowiedziano przez {{via}}: {{plan}} służy tylko właścicielowi.",
+      "limit": "Odpowiedziano przez {{via}}: {{plan}} osiągnął limit.",
+      "change": "Zmień"
+    },
     "speedFallback": {
       "text": "ChatGPT odrzucił szybkość Szybka dla tego konta lub modelu, więc ta odpowiedź przyszła ze standardową szybkością.",
       "action": "Otwórz agenta"

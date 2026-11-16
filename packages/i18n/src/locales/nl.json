@@ -2637,6 +2637,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Heeft een computer nodig",
+        "computerOnly": "Van {{owner}}, alleen aangemeld op {{computer}}. Lodi denkt met een plan dat als account is aangemeld.",
+        "noComputer": "Van {{owner}}. Er is een computer nodig, en de workspace heeft er geen verbonden.",
+        "away": "Van {{owner}}, op {{computer}}, die weg is.",
+        "connect": "Een computer verbinden",
+        "plans": "Plannen bekijken"
+      }
+    },
     "label": "je rechterhand",
     "labelCapitalized": "Je rechterhand",
     "newDot": "Nieuw",
@@ -7738,6 +7748,9 @@
     }
   },
   "issues": {
+    "handedBy": "overgedragen door <0/>{{name}}",
+    "fromDm": "uit <0>je DM met {{name}}</0>",
+    "fromDmText": "uit je DM met {{name}}",
     "delete": {
       "action": "Taak verwijderen",
       "title": "Taak #{{number}} verwijderen?",
@@ -7947,6 +7960,9 @@
       "runningTitle_female": "{{name}} werkt eraan",
       "waitingTitle": "{{name}} wacht op jou",
       "waitingTitle_female": "{{name}} wacht op jou",
+      "finishedTitle": "{{name}} heeft het afgerond",
+      "finishedMeta": "{{when}} · overgedragen door {{name}}",
+      "answer": "Antwoorden",
       "stalledTitle": "{{name}} is gestopt {{when}}",
       "stalledTitle_female": "{{name}} is gestopt {{when}}",
       "stalledText": "De taak ligt nog bij {{name}}, maar er loopt geen run.",
@@ -10401,10 +10417,10 @@
       "removeCopies": "Verwijderen",
       "copiesRemoved_one": "{{count}} ongebruikte login verwijderd.",
       "copiesRemoved_other": "{{count}} ongebruikte logins verwijderd.",
-      "removeAllDone": "{{n}} Grok-aanmeldingen verwijderd.",
-      "removeAllText": "Ze denken niet meer voor hun agenten op {{computers}}. Aanmeldingen van anderen blijven staan.",
-      "removeAllTitle": "Alle {{n}} Grok-aanmeldingen verwijderen?",
       "removeAllGrok": "Alle Grok-aanmeldingen verwijderen",
+      "removeAllTitle": "Alle {{n}} Grok-aanmeldingen verwijderen?",
+      "removeAllText": "Ze denken niet meer voor hun agenten op {{computers}}. Aanmeldingen van anderen blijven staan.",
+      "removeAllDone": "{{n}} Grok-aanmeldingen verwijderd.",
       "disconnect": "Ontkoppelen",
       "renameTitle": "{{label}} hernoemen",
       "nameLabel": "Naam",
@@ -17012,6 +17028,16 @@
     }
   },
   "usageViews": {
+    "kinds": {
+      "label": "Per soort",
+      "handoffs": "Overdrachten tussen agents",
+      "people": "Gesprekken met mensen",
+      "routines": "Routines"
+    },
+    "hint": {
+      "handoffs": "Het meeste gebruik van deze week kwam van agents die elkaar werk overdragen. Vraag het de agent direct voor lang werk.",
+      "message": "{{name}} een bericht sturen"
+    },
     "signedOut": "Uitgelogd",
     "whose": "Van {{name}}",
     "serves": {
@@ -17112,6 +17138,21 @@
     "tomorrowAt": "morgen {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Overgedragen aan <0/>{{name}}",
+      "working": "bezig",
+      "done": "klaar in {{duration}}",
+      "waitingYou": "wacht op jouw antwoord",
+      "waiting": "wacht op een antwoord",
+      "waitingApprovalYou": "wacht op jouw goedkeuring",
+      "waitingApproval": "wacht op goedkeuring",
+      "waitingComputer": "wacht op de computer",
+      "paused": "gepauzeerd op de limiet van het plan",
+      "queued": "in de wachtrij",
+      "failed": "niet afgemaakt",
+      "stopped": "gestopt",
+      "step": "stap {{current}} van {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",
@@ -17190,6 +17231,16 @@
     "working": "Op de achtergrond"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} vraagt je"
+    },
+    "standIn": {
+      "needsComputer": "Beantwoord met {{via}}: {{plan}} heeft een computer nodig.",
+      "away": "Beantwoord met {{via}}: de computer van {{plan}} is weg.",
+      "notShared": "Beantwoord met {{via}}: {{plan}} is alleen voor de eigenaar.",
+      "limit": "Beantwoord met {{via}}: {{plan}} heeft zijn limiet bereikt.",
+      "change": "Wijzigen"
+    },
     "speedFallback": {
       "text": "ChatGPT weigerde de snelheid Snel voor dit account of model, dus dit antwoord kwam op standaardsnelheid.",
       "action": "Agent openen"

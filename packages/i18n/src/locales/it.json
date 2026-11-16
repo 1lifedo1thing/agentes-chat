@@ -2731,6 +2731,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Serve un computer",
+        "computerOnly": "Di {{owner}}, collegato solo su {{computer}}. Lodi pensa con un piano collegato come account.",
+        "noComputer": "Di {{owner}}. Serve un computer, e il workspace non ne ha nessuno collegato.",
+        "away": "Di {{owner}}, su {{computer}}, che non è raggiungibile.",
+        "connect": "Collega un computer",
+        "plans": "Vedi i piani"
+      }
+    },
     "label": "il tuo braccio destro",
     "labelCapitalized": "Il tuo braccio destro",
     "newDot": "Nuovo",
@@ -7975,6 +7985,9 @@
     }
   },
   "issues": {
+    "handedBy": "passata da <0/>{{name}}",
+    "fromDm": "dalla <0>tua DM con {{name}}</0>",
+    "fromDmText": "dalla tua DM con {{name}}",
     "delete": {
       "action": "Elimina attività",
       "title": "Eliminare l'attività #{{number}}?",
@@ -8193,6 +8206,9 @@
       "runningTitle_female": "{{name}} ci sta lavorando",
       "waitingTitle": "{{name}} ti sta aspettando",
       "waitingTitle_female": "{{name}} ti sta aspettando",
+      "finishedTitle": "{{name}} l'ha finita",
+      "finishedMeta": "{{when}} · passata da {{name}}",
+      "answer": "Rispondi",
       "stalledTitle": "{{name}} si è fermato {{when}}",
       "stalledTitle_female": "{{name}} si è fermata {{when}}",
       "stalledText": "L'attività è ancora di {{name}}, ma non c'è nessuna esecuzione in corso.",
@@ -10755,10 +10771,10 @@
       "copiesRemoved_one": "{{count}} accesso inutilizzato rimosso.",
       "copiesRemoved_many": "{{count}} accessi inutilizzati rimossi.",
       "copiesRemoved_other": "{{count}} accessi inutilizzati rimossi.",
-      "removeAllDone": "{{n}} accessi a Grok rimossi.",
-      "removeAllText": "Smettono di pensare per i loro agenti su {{computers}}. Gli accessi di altre persone non vengono toccati.",
-      "removeAllTitle": "Rimuovere tutti i {{n}} accessi a Grok?",
       "removeAllGrok": "Rimuovi tutti gli accessi a Grok",
+      "removeAllTitle": "Rimuovere tutti i {{n}} accessi a Grok?",
+      "removeAllText": "Smettono di pensare per i loro agenti su {{computers}}. Gli accessi di altre persone non vengono toccati.",
+      "removeAllDone": "{{n}} accessi a Grok rimossi.",
       "disconnect": "Scollega",
       "renameTitle": "Rinomina {{label}}",
       "nameLabel": "Nome",
@@ -17491,6 +17507,16 @@
     }
   },
   "usageViews": {
+    "kinds": {
+      "label": "Per tipo",
+      "handoffs": "Passaggi tra agenti",
+      "people": "Conversazioni con persone",
+      "routines": "Routine"
+    },
+    "hint": {
+      "handoffs": "Gran parte dell'uso di questa settimana è venuto da agenti che si passano lavoro. Per i lavori lunghi, chiedi direttamente all'agente.",
+      "message": "Scrivi a {{name}}"
+    },
     "signedOut": "Disconnesso",
     "whose": "di {{name}}",
     "serves": {
@@ -17595,6 +17621,21 @@
     "tomorrowAt": "domani {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Passato a <0/>{{name}}",
+      "working": "ci sta lavorando",
+      "done": "fatto in {{duration}}",
+      "waitingYou": "aspetta la tua risposta",
+      "waiting": "aspetta una risposta",
+      "waitingApprovalYou": "aspetta la tua approvazione",
+      "waitingApproval": "aspetta un'approvazione",
+      "waitingComputer": "aspetta il computer",
+      "paused": "in pausa al limite del piano",
+      "queued": "in coda",
+      "failed": "non ha finito",
+      "stopped": "fermato",
+      "step": "passo {{current}} di {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_many": "{{count}} min",
@@ -17675,6 +17716,16 @@
     "working": "In background"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} ti chiede"
+    },
+    "standIn": {
+      "needsComputer": "Ho risposto con {{via}}: {{plan}} ha bisogno di un computer.",
+      "away": "Ho risposto con {{via}}: il computer di {{plan}} non è raggiungibile.",
+      "notShared": "Ho risposto con {{via}}: {{plan}} serve solo chi lo ha collegato.",
+      "limit": "Ho risposto con {{via}}: {{plan}} ha raggiunto il limite.",
+      "change": "Cambia"
+    },
     "speedFallback": {
       "text": "ChatGPT ha rifiutato la velocità Rapida per questo account o modello, quindi questa risposta è arrivata a velocità standard.",
       "action": "Apri agente"

@@ -2544,6 +2544,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Butuh komputer",
+        "computerOnly": "Milik {{owner}}, masuk hanya di {{computer}}. Lodi berpikir dengan paket yang masuk sebagai akun.",
+        "noComputer": "Milik {{owner}}. Butuh komputer, dan workspace belum menghubungkan satu pun.",
+        "away": "Milik {{owner}}, di {{computer}}, yang sedang tidak aktif.",
+        "connect": "Hubungkan komputer",
+        "plans": "Lihat paket"
+      }
+    },
     "label": "tangan kanan Anda",
     "labelCapitalized": "Tangan kanan Anda",
     "newDot": "Baru",
@@ -7446,6 +7456,9 @@
     }
   },
   "issues": {
+    "handedBy": "diserahkan oleh <0/>{{name}}",
+    "fromDm": "dari <0>DM kamu dengan {{name}}</0>",
+    "fromDmText": "dari DM kamu dengan {{name}}",
     "delete": {
       "action": "Hapus tugas",
       "title": "Hapus tugas #{{number}}?",
@@ -7646,6 +7659,9 @@
       "runningTitle_female": "{{name}} sedang mengerjakannya",
       "waitingTitle": "{{name}} sedang menunggumu",
       "waitingTitle_female": "{{name}} sedang menunggumu",
+      "finishedTitle": "{{name}} menyelesaikannya",
+      "finishedMeta": "{{when}} · diserahkan oleh {{name}}",
+      "answer": "Jawab",
       "stalledTitle": "{{name}} berhenti {{when}}",
       "stalledTitle_female": "{{name}} berhenti {{when}}",
       "stalledText": "Tugas ini masih dipegang {{name}}, tapi tidak ada proses yang berjalan.",
@@ -9986,10 +10002,10 @@
       "copies_other": "{{count}} login lain dari akun ini, tanpa agen.",
       "removeCopies": "Hapus",
       "copiesRemoved_other": "{{count}} login yang tidak dipakai dihapus.",
-      "removeAllDone": "{{n}} login Grok dihapus.",
-      "removeAllText": "Mereka berhenti berpikir untuk agennya di {{computers}}. Login orang lain tidak disentuh.",
-      "removeAllTitle": "Hapus semua {{n}} login Grok?",
       "removeAllGrok": "Hapus semua login Grok",
+      "removeAllTitle": "Hapus semua {{n}} login Grok?",
+      "removeAllText": "Mereka berhenti berpikir untuk agennya di {{computers}}. Login orang lain tidak disentuh.",
+      "removeAllDone": "{{n}} login Grok dihapus.",
       "disconnect": "Putuskan",
       "renameTitle": "Ganti nama {{label}}",
       "nameLabel": "Nama",
@@ -16434,6 +16450,16 @@
     }
   },
   "usageViews": {
+    "kinds": {
+      "label": "Menurut jenis",
+      "handoffs": "Serah terima antar-agen",
+      "people": "Percakapan dengan orang",
+      "routines": "Rutinitas"
+    },
+    "hint": {
+      "handoffs": "Sebagian besar pemakaian minggu ini berasal dari agen yang saling menyerahkan pekerjaan. Untuk pekerjaan panjang, minta langsung ke agennya.",
+      "message": "Kirim pesan ke {{name}}"
+    },
     "signedOut": "Sudah keluar",
     "whose": "Milik {{name}}",
     "serves": {
@@ -16536,6 +16562,21 @@
     "tomorrowAt": "besok {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Diserahkan ke <0/>{{name}}",
+      "working": "sedang dikerjakan",
+      "done": "selesai dalam {{duration}}",
+      "waitingYou": "menunggu jawabanmu",
+      "waiting": "menunggu jawaban",
+      "waitingApprovalYou": "menunggu persetujuanmu",
+      "waitingApproval": "menunggu persetujuan",
+      "waitingComputer": "menunggu komputer",
+      "paused": "dijeda di batas paket",
+      "queued": "dalam antrean",
+      "failed": "tidak selesai",
+      "stopped": "dihentikan",
+      "step": "langkah {{current}} dari {{total}}"
+    },
     "duration": {
       "minutes_other": "{{count}} mnt",
       "hours_other": "{{count}} j",
@@ -16612,6 +16653,16 @@
     "working": "Di latar belakang"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} bertanya padamu"
+    },
+    "standIn": {
+      "needsComputer": "Dijawab dengan {{via}}: {{plan}} butuh komputer.",
+      "away": "Dijawab dengan {{via}}: komputer tempat {{plan}} sedang tidak aktif.",
+      "notShared": "Dijawab dengan {{via}}: {{plan}} hanya melayani pemiliknya.",
+      "limit": "Dijawab dengan {{via}}: {{plan}} sudah mencapai batasnya.",
+      "change": "Ubah"
+    },
     "speedFallback": {
       "text": "ChatGPT menolak kecepatan Cepat untuk akun atau model ini, jadi jawaban ini memakai kecepatan standar.",
       "action": "Buka agen"

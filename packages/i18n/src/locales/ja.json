@@ -2544,6 +2544,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "コンピューターが必要です",
+        "computerOnly": "{{owner}}のもの。{{computer}}でのみサインインしています。Lodiはアカウントとしてサインインしたプランで考えます。",
+        "noComputer": "{{owner}}のもの。コンピューターが必要ですが、ワークスペースには接続されたものがありません。",
+        "away": "{{owner}}のもの。{{computer}}上にありますが、離席中です。",
+        "connect": "コンピューターを接続",
+        "plans": "プランを見る"
+      }
+    },
     "label": "あなたの右腕",
     "labelCapitalized": "あなたの右腕",
     "newDot": "新規",
@@ -7418,6 +7428,9 @@
     }
   },
   "issues": {
+    "handedBy": "<0/>{{name}}から引き継ぎ",
+    "fromDm": "<0>{{name}}とのDM</0>から",
+    "fromDmText": "{{name}}とのDMから",
     "delete": {
       "action": "タスクを削除",
       "title": "タスク #{{number}} を削除しますか？",
@@ -7615,6 +7628,9 @@
       "label": "{{name}}の作業",
       "runningTitle": "{{name}}が作業中です",
       "waitingTitle": "{{name}}があなたを待っています",
+      "finishedTitle": "{{name}}が完了しました",
+      "finishedMeta": "{{when}} · {{name}}から引き継ぎ",
+      "answer": "回答する",
       "stalledTitle": "{{name}}は{{when}}に停止しました",
       "stalledText": "タスクはまだ{{name}}が担当していますが、実行中の処理はありません。",
       "started": "{{when}}に開始",
@@ -9937,10 +9953,10 @@
       "copies_other": "エージェントのいない、このアカウントのログインがあと{{count}}件あります。",
       "removeCopies": "削除",
       "copiesRemoved_other": "使われていないログインを{{count}}件削除しました。",
-      "removeAllDone": "Grok のログインを {{n}} 件削除しました。",
-      "removeAllText": "{{computers}} でそれぞれのエージェントのために考えなくなります。他の人のログインはそのまま残ります。",
-      "removeAllTitle": "Grok のログイン {{n}} 件をすべて削除しますか？",
       "removeAllGrok": "Grok のログインをすべて削除",
+      "removeAllTitle": "Grok のログイン {{n}} 件をすべて削除しますか？",
+      "removeAllText": "{{computers}} でそれぞれのエージェントのために考えなくなります。他の人のログインはそのまま残ります。",
+      "removeAllDone": "Grok のログインを {{n}} 件削除しました。",
       "disconnect": "接続を解除",
       "renameTitle": "{{label}}の名前を変更",
       "nameLabel": "名前",
@@ -16380,6 +16396,16 @@
     }
   },
   "usageViews": {
+    "kinds": {
+      "label": "種類別",
+      "handoffs": "エージェント間の引き継ぎ",
+      "people": "人との会話",
+      "routines": "ルーティン"
+    },
+    "hint": {
+      "handoffs": "今週の使用量の大半は、エージェント同士の作業の引き継ぎによるものでした。長い作業はエージェントに直接頼んでください。",
+      "message": "{{name}}にメッセージ"
+    },
     "signedOut": "ログアウト済み",
     "whose": "{{name}}の",
     "serves": {
@@ -16482,6 +16508,21 @@
     "tomorrowAt": "明日 {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "<0/>{{name}}に引き継ぎ",
+      "working": "作業中",
+      "done": "{{duration}}で完了",
+      "waitingYou": "あなたの回答待ち",
+      "waiting": "回答待ち",
+      "waitingApprovalYou": "あなたの承認待ち",
+      "waitingApproval": "承認待ち",
+      "waitingComputer": "コンピューター待ち",
+      "paused": "プランの上限で一時停止中",
+      "queued": "順番待ち",
+      "failed": "完了しませんでした",
+      "stopped": "停止しました",
+      "step": "ステップ {{current}}/{{total}}"
+    },
     "duration": {
       "minutes_other": "{{count}}分",
       "hours_other": "{{count}}時間",
@@ -16558,6 +16599,16 @@
     "working": "バックグラウンドで作業中"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}}からの質問"
+    },
+    "standIn": {
+      "needsComputer": "{{via}}で回答しました: {{plan}}にはコンピューターが必要です。",
+      "away": "{{via}}で回答しました: {{plan}}のコンピューターが離席中です。",
+      "notShared": "{{via}}で回答しました: {{plan}}は所有者専用です。",
+      "limit": "{{via}}で回答しました: {{plan}}は上限に達しました。",
+      "change": "変更"
+    },
     "speedFallback": {
       "text": "ChatGPTがこのアカウントまたはモデルでの高速を拒否したため、この返信は標準の速度で届きました。",
       "action": "エージェントを開く"

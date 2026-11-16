@@ -7,6 +7,7 @@ import {
   eq,
   gte,
   inArray,
+  isNotNull,
   isNull,
   lt,
   ne,
@@ -46,9 +47,10 @@ import { noAgentText } from "./team";
 import type { ToolContext, ToolDefinition, ToolOutput, ToolSource } from "./tools/types";
 import { untrustedBlock } from "./untrusted";
 import { USAGE_WAIT_CODES } from "./usage-pause";
+import { handOverWork } from "./works";
 import { inWorkspaceWords } from "./workspace-mode";
 
-const { agentConsultations, agentRuns, agents, channels, machines, messages, outbox, users } = schema;
+const { agentConsultations, agentRuns, agentWorks, agents, channels, machines, messages, outbox, users } = schema;
 
 export const ASK_AGENT_TOOL = "ask_agent";
 export const TELL_AGENT_TOOL = "tell_agent";
@@ -407,6 +409,9 @@ function createTellAgentTool(deps: { pubsub?: PubSub; ai?: AiCheck; judge?: Judg
           };
         }
       }
+      // The person sees it worked on where they asked: its updates, questions and report (F1, ADR 0121 addendum).
+      if (!headsUp && !waitsForRoom)
+        await handOverWork({ db, pubsub: deps.pubsub }, sent.consultationId).catch(() => null);
       await publishChannelEvent(deps.pubsub, {
         type: "agent.consulting",
         channelId: ctx.channelId,
@@ -1269,9 +1274,17 @@ export async function reportHandOffs(deps: Pick<Deps, "db" | "pubsub">, asker: A
       );
     const pending = waiting.map((w) => `@${w.handle}`).join(", ");
     claimed.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : 1));
+    // A hand-off whose work already reported to the person (`handOverWork`) is only written down: relaying it would
+    // repeat it. The asker wakes once, at most, and only for one that ended with nothing posted home.
+    const home = await reportedHome(
+      tx,
+      asker.orgId,
+      claimed.map((c) => c.id),
+    );
+    const wakes = claimed.some((c) => !home.has(c.id));
     const out: Awaited<ReturnType<typeof deliverNoticeToRun>>[] = [];
     for (const [i, row] of claimed.entries()) {
-      const wake = i === claimed.length - 1;
+      const wake = wakes && i === claimed.length - 1;
       const handle = await handleOf(tx, row.orgId, row.targetAgentId);
       const notice = consultationNotice(row, handle, {
         wake,
@@ -1304,6 +1317,18 @@ export async function reportHandOffs(deps: Pick<Deps, "db" | "pubsub">, asker: A
   });
   for (const d of delivered) await publishDelivery(deps.pubsub, d).catch(() => {});
   return delivered;
+}
+
+/** Of these hand-offs, the ones whose handed work posted its report where the person asked. */
+async function reportedHome(db: Executor, orgId: string, ids: string[]) {
+  if (ids.length === 0) return new Set<string>();
+  const rows = await db
+    .select({ id: agentWorks.consultationId })
+    .from(agentWorks)
+    .where(
+      and(eq(agentWorks.orgId, orgId), inArray(agentWorks.consultationId, ids), isNotNull(agentWorks.resultMessageId)),
+    );
+  return new Set(rows.flatMap((r) => (r.id ? [r.id] : [])));
 }
 
 /**

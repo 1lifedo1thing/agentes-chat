@@ -140,7 +140,42 @@ export function workLine(t: TFunction, w: WorkView, c: WorkLineContext): WorkLin
   return { ...base, tone: "working", text: parts.join(" · "), result: null };
 }
 
-/** Held on a person's answer or approval, whose card is in its thread: its line opens the thread, whatever else does. */
+/**
+ * A handed work's line, under the reply of the agent that handed it ("Handed to Atlas · working on it · step 3 of 5 ·
+ * 2 min"): `state` is the coloured word, `facts` what follows it. No task label (the chip above links it) and no last
+ * update (the delegate's updates are the messages right below).
+ */
+export interface HandedLineView extends Pick<WorkLineView, "tone" | "stop" | "result" | "question"> {
+  state: string;
+  facts: string[];
+}
+
+export function handedLine(t: TFunction, w: WorkView, c: WorkLineContext): HandedLineView {
+  const say = loose(t);
+  const base = workLine(t, w, c);
+  const now = c.now ?? new Date();
+  const took = workDuration(t, (w.finishedAt ? Date.parse(w.finishedAt) : now.getTime()) - Date.parse(w.startedAt));
+  const out = { tone: base.tone, stop: base.stop, result: base.result, question: base.question };
+  if (w.status === "done") return { ...out, state: say("work.handed.done", { duration: took }), facts: [] };
+  if (w.status === "failed") return { ...out, state: say("work.handed.failed"), facts: [] };
+  if (w.status === "canceled") return { ...out, state: say("work.handed.stopped"), facts: [took] };
+  if (base.tone === "queued") return { ...out, state: say("work.handed.queued"), facts: [] };
+  const mine = Boolean(c.meId && w.requestedByUserId === c.meId);
+  const asked = w.state === "waiting_input" ? w.question : null;
+  const forMe = asked?.requestedForUserId ? asked.requestedForUserId === c.meId : mine;
+  const waits: Partial<Record<NonNullable<WorkView["state"]>, string>> = {
+    waiting_input: forMe ? "work.handed.waitingYou" : "work.handed.waiting",
+    waiting_approval: mine ? "work.handed.waitingApprovalYou" : "work.handed.waitingApproval",
+    waiting_computer: "work.handed.waitingComputer",
+    paused: "work.handed.paused",
+  };
+  const wait = w.state ? waits[w.state] : undefined;
+  if (wait) return { ...out, state: say(wait), facts: [took] };
+  const step = w.planStep ? [say("work.handed.step", w.planStep)] : [];
+  return { ...out, state: say("work.handed.working"), facts: [...step, took] };
+}
+
+/** Held on a person's answer or approval, whose card is in its thread/** Held on a person's answer or approval, whose card is in its thread: its line opens the thread, whatever else does. */
 export const workWaitsOnPerson = (w: Pick<WorkView, "state">) =>
   w.state === "waiting_input" || w.state === "waiting_approval";
 

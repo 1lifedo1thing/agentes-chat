@@ -2634,6 +2634,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Bir bilgisayar gerekiyor",
+        "computerOnly": "{{owner}} kişisine ait, yalnızca {{computer}} üzerinde oturum açık. Lodi, hesap olarak oturum açılmış bir planla düşünür.",
+        "noComputer": "{{owner}} kişisine ait. Bir bilgisayar gerekiyor ve çalışma alanında bağlı hiç yok.",
+        "away": "{{owner}} kişisine ait, {{computer}} üzerinde, şu an ulaşılamıyor.",
+        "connect": "Bilgisayar bağla",
+        "plans": "Planları gör"
+      }
+    },
     "label": "sağ kolun",
     "labelCapitalized": "Sağ kolun",
     "newDot": "Yeni",
@@ -7658,6 +7668,9 @@
     }
   },
   "issues": {
+    "handedBy": "devreden: <0/>{{name}}",
+    "fromDm": "<0>{{name}} ile DM'inden</0>",
+    "fromDmText": "{{name}} ile DM'inden",
     "delete": {
       "action": "Görevi sil",
       "title": "#{{number}} görevi silinsin mi?",
@@ -7864,6 +7877,9 @@
       "label": "{{name}} çalışması",
       "runningTitle": "{{name}} bunun üzerinde çalışıyor",
       "waitingTitle": "{{name}} sizi bekliyor",
+      "finishedTitle": "{{name}} bitirdi",
+      "finishedMeta": "{{when}} · devreden: {{name}}",
+      "answer": "Yanıtla",
       "stalledTitle": "{{name}} durdu: {{when}}",
       "stalledText": "Görev hâlâ {{name}} üzerinde ama süren bir çalıştırma yok.",
       "started": "başladı: {{when}}",
@@ -10292,10 +10308,10 @@
       "removeCopies": "Kaldır",
       "copiesRemoved_one": "Kullanılmayan {{count}} giriş kaldırıldı.",
       "copiesRemoved_other": "Kullanılmayan {{count}} giriş kaldırıldı.",
-      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
-      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
-      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
       "removeAllGrok": "Tüm Grok oturumlarını kaldır",
+      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
+      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
+      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
       "disconnect": "Bağlantıyı kes",
       "renameTitle": "{{label}} adını değiştir",
       "nameLabel": "Ad",
@@ -16885,6 +16901,16 @@
     }
   },
   "usageViews": {
+    "kinds": {
+      "label": "Türe göre",
+      "handoffs": "Ajanlar arası devirler",
+      "people": "İnsanlarla konuşmalar",
+      "routines": "Rutinler"
+    },
+    "hint": {
+      "handoffs": "Bu haftaki kullanımın çoğu, ajanların birbirine iş devretmesinden geldi. Uzun işler için doğrudan ajana sor.",
+      "message": "{{name}} kişisine mesaj gönder"
+    },
     "signedOut": "Oturum kapatıldı",
     "whose": "{{name}} hesabı",
     "serves": {
@@ -16985,6 +17011,21 @@
     "tomorrowAt": "yarın {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Devredildi: <0/>{{name}}",
+      "working": "üzerinde çalışıyor",
+      "done": "{{duration}} içinde bitti",
+      "waitingYou": "yanıtını bekliyor",
+      "waiting": "bir yanıt bekliyor",
+      "waitingApprovalYou": "onayını bekliyor",
+      "waitingApproval": "onay bekliyor",
+      "waitingComputer": "bilgisayarı bekliyor",
+      "paused": "plan sınırında duraklatıldı",
+      "queued": "sırada",
+      "failed": "bitmedi",
+      "stopped": "durduruldu",
+      "step": "adım {{current}}/{{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} dk",
       "minutes_other": "{{count}} dk",
@@ -17063,6 +17104,16 @@
     "working": "Arka planda"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} soruyor"
+    },
+    "standIn": {
+      "needsComputer": "{{via}} ile yanıtladım: {{plan}} bir bilgisayar gerektiriyor.",
+      "away": "{{via}} ile yanıtladım: {{plan}} bilgisayarı şu an ulaşılamıyor.",
+      "notShared": "{{via}} ile yanıtladım: {{plan}} yalnızca sahibine hizmet ediyor.",
+      "limit": "{{via}} ile yanıtladım: {{plan}} sınırına ulaştı.",
+      "change": "Değiştir"
+    },
     "speedFallback": {
       "text": "ChatGPT bu hesap veya model için Hızlı hızı reddetti, bu yüzden bu yanıt standart hızda geldi.",
       "action": "Ajanı aç"
