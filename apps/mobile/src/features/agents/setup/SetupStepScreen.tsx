@@ -159,10 +159,11 @@ function AboutYouStep({ typed }: { typed: string | null }) {
   return (
     <SettingsPage
       title={t("agentSetup.firstRun.about.titlePersonal")}
-      locked={save.isPending}
+      // Saving: the bar's spinner where Save was, the page locked under it.
+      busy={save.isPending}
       action={{
         label: t("common.save"),
-        disabled: !text || save.isPending || !settings.isSuccess,
+        disabled: !text || !settings.isSuccess,
         onPress: () =>
           save.mutate(
             { context: text },
@@ -184,7 +185,6 @@ function AboutYouStep({ typed }: { typed: string | null }) {
             key={area}
             label={t(`teamPlan.lifeArea.${area}`)}
             checked={picked.has(area)}
-            disabled={save.isPending}
             onPress={() => toggle(area)}
           />
         ))}
@@ -324,10 +324,11 @@ function AppsStep({ agent }: { agent: Agent }) {
   return (
     <SettingsPage
       title={t("agentSetup.apps.title", g)}
+      busy={busy}
       action={{
         label: count ? t("agentSetup.apps.ok", { count }) : t("agentSetup.apps.okNone"),
         onPress: () => void save(),
-        disabled: busy || !access.isSuccess,
+        disabled: !access.isSuccess,
       }}
     >
       <GroupedFooter>{t("agentSetup.apps.desc")}</GroupedFooter>
@@ -352,7 +353,6 @@ function AppsStep({ agent }: { agent: Agent }) {
                 label={name}
                 {...(sub ? { sub } : {})}
                 value={t(`access.level.${l}`)}
-                disabled={busy}
                 onPress={() => {
                   tapHaptic();
                   setDraft((d) => ({ ...d, [r.id]: nextLevel(r, l) }));
@@ -421,7 +421,8 @@ function WhereStep({ agent }: { agent: Agent }) {
   return (
     <SettingsPage
       title={t("agentSetup.where.title", g)}
-      action={{ label: ok, onPress: () => void save(), disabled: busy || !ready }}
+      busy={busy}
+      action={{ label: ok, onPress: () => void save(), disabled: !ready }}
     >
       <GroupedFooter>{t("agentSetup.where.desc")}</GroupedFooter>
       {!ready ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
@@ -437,7 +438,6 @@ function WhereStep({ agent }: { agent: Agent }) {
                 label={ch.name}
                 {...(sub ? { sub } : {})}
                 checked={picked.has(ch.id)}
-                disabled={busy}
                 onPress={() => toggle(ch.id)}
               />
             );
@@ -518,7 +518,8 @@ function WhoStep({ agent }: { agent: Agent }) {
   return (
     <SettingsPage
       title={t("agentSetup.who.title", g)}
-      action={{ label: t("common.save"), onPress: () => void save(), disabled: busy || !valid }}
+      busy={busy}
+      action={{ label: t("common.save"), onPress: () => void save(), disabled: !valid }}
     >
       <GroupedHeader>{t("audience.section")}</GroupedHeader>
       <GroupedList>
@@ -529,7 +530,6 @@ function WhoStep({ agent }: { agent: Agent }) {
             sub={modeText(mode)}
             subLines={2}
             checked={audience.mode === mode}
-            disabled={busy}
             onPress={() => {
               tapHaptic();
               setAudience((a) => ({ ...a, mode }));
@@ -552,7 +552,6 @@ function WhoStep({ agent }: { agent: Agent }) {
                 leading={<RoleMark color={r.color} icon={r.icon} size={30} />}
                 label={r.name}
                 checked={pickedRoles.has(r.id)}
-                disabled={busy}
                 onPress={() => flip("roleIds", r.id)}
               />
             ))}
@@ -562,7 +561,6 @@ function WhoStep({ agent }: { agent: Agent }) {
                 icon="person"
                 label={m.name}
                 checked={pickedPeople.has(m.userId)}
-                disabled={busy}
                 onPress={() => flip("userIds", m.userId)}
               />
             ))}
@@ -577,7 +575,7 @@ function WhoStep({ agent }: { agent: Agent }) {
             {...(brain.canUsePlans || !planOwner ? {} : { owner: planOwner })}
             on={shareOn}
             onChange={setShare}
-            disabled={!brain.canEdit || busy}
+            disabled={!brain.canEdit}
             brain={planKind}
             {...(planOf(agent.brain?.provider) ? { coding: planOf(agent.brain?.provider) } : {})}
           />
@@ -614,7 +612,8 @@ function HowStep({ agent }: { agent: Agent }) {
   return (
     <SettingsPage
       title={t("agentSetup.how.title", g)}
-      action={{ label: t("common.save"), onPress: () => void save(), disabled: busy || !budgetOk }}
+      busy={busy}
+      action={{ label: t("common.save"), onPress: () => void save(), disabled: !budgetOk }}
     >
       <GroupedHeader>{t("agentSetup.how.instructions")}</GroupedHeader>
       <TextArea

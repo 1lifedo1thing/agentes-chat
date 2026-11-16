@@ -1,4 +1,5 @@
 import { type Agent, type AgentBrakes, BRAKES_DEFAULTS, useUpdateAgent } from "@agenteschat/client";
+import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { can } from "@agenteschat/client/lib/permissions";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,17 +7,17 @@ import { StyleSheet, TextInput } from "react-native";
 import { useOrg } from "@/providers/org";
 import { fieldText, GROUPED_ROW, GroupedFooter, GroupedHeader, GroupedList, GroupedRow } from "@/ui";
 import { useFailed } from "../routines/hooks";
+import { confirmAction } from "../settings/parts";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
+import { pickOne } from "../shared/PickerSheet";
 
 const AT_ONCE = [1, 2, 3, 5, 10];
 const PRS = [0, 1, 2, 3, 5, 10];
 
-/** The next value of a short list, round: a row's tap steps through it. */
-const nextOf = (list: number[], now: number) => list[(list.indexOf(now) + 1) % list.length] ?? list[0] ?? now;
-
 /**
  * The web's Autonomia sem pedido (ADR 0131) on the phone: costly work nobody asked for asks first, how many such jobs
- * at once, PRs an hour, which agents it may call and its project. Saved at once by who manages agents. Settings' own
+ * at once, PRs an hour, which agents it may call and its project. Saved at once by who manages agents; a number is
+ * picked from its list in the app's picker (one save), and forgetting the remembered answers asks first. Settings' own
  * groups: each header over its group, each note under it.
  */
 export function BrakesSection({ agent }: { agent: Agent }) {
@@ -34,6 +35,24 @@ export function BrakesSection({ agent }: { agent: Agent }) {
   const save = (patch: Partial<AgentBrakes>) => {
     if (editable) update.mutate({ brakes: patch }, { onError: failed });
   };
+  // A number from its row's list, the one in use checked: saved once, when picked.
+  const pickNumber = (title: string, list: readonly number[], now: number, set: (n: number) => Partial<AgentBrakes>) =>
+    void pickOne({
+      title,
+      value: String(now),
+      options: list.map((n) => ({ key: String(n), label: String(n) })),
+    }).then((key) => {
+      if (key !== null && Number(key) !== now) save(set(Number(key)));
+    });
+  // The remembered answers go for good: asked first, in the system's confirmation.
+  const forget = () =>
+    confirmAction({
+      title: t("mobile.agent.brakes.forgetTitle"),
+      text: t("mobile.agent.brakes.forgetText", agentGrammar(agent.name)),
+      action: t("mobile.intentAgents.knows.forget"),
+      cancel: t("common.cancel"),
+      onConfirm: () => save({ go: [], never: [] }),
+    });
   const others = [...dir.agentById.values()].filter((a) => !a.former && a.id !== agent.id);
   return (
     <>
@@ -53,16 +72,18 @@ export function BrakesSection({ agent }: { agent: Agent }) {
           labelLines={2}
           hint={{ name: t("common.about", { label: t("brakes.atOnce") }), text: t("brakes.atOnceHelp") }}
           value={String(b.maxUnrequested)}
+          menu={editable}
           disabled={!editable}
-          onPress={() => save({ maxUnrequested: nextOf(AT_ONCE, b.maxUnrequested) })}
+          onPress={() => pickNumber(t("brakes.atOnce"), AT_ONCE, b.maxUnrequested, (n) => ({ maxUnrequested: n }))}
         />
         <GroupedRow
           label={t("brakes.prs")}
           labelLines={2}
           hint={{ name: t("common.about", { label: t("brakes.prs") }), text: t("brakes.prsHelp") }}
           value={String(b.maxPrsPerHour)}
+          menu={editable}
           disabled={!editable}
-          onPress={() => save({ maxPrsPerHour: nextOf(PRS, b.maxPrsPerHour) })}
+          onPress={() => pickNumber(t("brakes.prs"), PRS, b.maxPrsPerHour, (n) => ({ maxPrsPerHour: n }))}
         />
         {b.go.length + b.never.length > 0 ? (
           <GroupedRow
@@ -73,7 +94,7 @@ export function BrakesSection({ agent }: { agent: Agent }) {
             ].join(" · ")}
             subLines={3}
             disabled={!editable}
-            onPress={() => save({ go: [], never: [] })}
+            onPress={forget}
           />
         ) : null}
       </GroupedList>

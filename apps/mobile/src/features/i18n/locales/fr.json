@@ -895,7 +895,11 @@
     "taskForM": "Tâche pour {{name}}",
     "taskPlaceholder": "Que faut-il faire ?",
     "sendTask": "Envoyer la tâche",
-    "taskSent": "Tâche envoyée"
+    "taskSent": "Tâche envoyée",
+    "brakes": {
+      "forgetTitle": "Oublier ces réponses ?",
+      "forgetText": "{{name}} redemande avant ce type de travail."
+    }
   },
   "activity": {
     "title": "Activité",

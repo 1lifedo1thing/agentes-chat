@@ -17,7 +17,7 @@ import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { usePreventRemove } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useOrg } from "@/providers/org";
 import {
@@ -162,11 +162,16 @@ export function AgentEditScreen({ id }: { id: string }) {
         title={t("agent.edit")}
         solid={false}
         grouped
-        action={{
-          label: t("common.save"),
-          onPress: () => void save(),
-          disabled: !changes || nameMissing || tooLong || Boolean(handleIssue) || update.isPending,
-        }}
+        // Saving: the bar's spinner where Save was, as on the settings pages (`SettingsPage`'s `busy`).
+        {...(update.isPending
+          ? { right: <ActivityIndicator color={c.muted} /> }
+          : {
+              action: {
+                label: t("common.save"),
+                onPress: () => void save(),
+                disabled: !changes || nameMissing || tooLong || Boolean(handleIssue),
+              },
+            })}
       />
       <KeyboardAwareScrollView
         contentInsetAdjustmentBehavior="automatic"

@@ -919,7 +919,11 @@
     "taskForM": "Zadanie dla: {{name}}",
     "taskPlaceholder": "Co trzeba zrobić?",
     "sendTask": "Wyślij zadanie",
-    "taskSent": "Zadanie wysłane"
+    "taskSent": "Zadanie wysłane",
+    "brakes": {
+      "forgetTitle": "Zapomnieć o tych odpowiedziach?",
+      "forgetText": "{{name}} znów zapyta przed taką pracą."
+    }
   },
   "activity": {
     "title": "Aktywność",

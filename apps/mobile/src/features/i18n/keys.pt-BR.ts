@@ -907,6 +907,11 @@ export const featureKeysPtBR = {
     taskPlaceholder: "O que precisa ficar pronto?",
     sendTask: "Enviar tarefa",
     taskSent: "Tarefa enviada",
+    brakes: {
+      forgetTitle: "Esquecer essas respostas?",
+      forgetText: "O {{name}} volta a perguntar antes desse tipo de trabalho.",
+      forgetText_female: "A {{name}} volta a perguntar antes desse tipo de trabalho.",
+    },
   },
   activity: {
     title: "Atividade",

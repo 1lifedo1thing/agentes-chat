@@ -895,7 +895,11 @@
     "taskForM": "Attività per {{name}}",
     "taskPlaceholder": "Cosa bisogna fare?",
     "sendTask": "Invia attività",
-    "taskSent": "Attività inviata"
+    "taskSent": "Attività inviata",
+    "brakes": {
+      "forgetTitle": "Dimenticare queste risposte?",
+      "forgetText": "{{name}} chiede di nuovo prima di questo tipo di lavoro."
+    }
   },
   "activity": {
     "title": "Attività recenti",

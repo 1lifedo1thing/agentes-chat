@@ -871,7 +871,11 @@
     "taskForM": "Taak voor {{name}}",
     "taskPlaceholder": "Wat moet er gebeuren?",
     "sendTask": "Taak versturen",
-    "taskSent": "Taak verstuurd"
+    "taskSent": "Taak verstuurd",
+    "brakes": {
+      "forgetTitle": "Deze antwoorden vergeten?",
+      "forgetText": "{{name}} vraagt het opnieuw vóór dit soort werk."
+    }
   },
   "activity": {
     "title": "Activiteit",

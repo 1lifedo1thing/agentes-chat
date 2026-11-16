@@ -2076,6 +2076,13 @@
   "agent.taskSent": {
     "value": "Task sent"
   },
+  "agent.brakes.forgetTitle": {
+    "value": "Forget these answers?"
+  },
+  "agent.brakes.forgetText": {
+    "value": "{{name}} asks again before this kind of work.",
+    "female": "{{name}} asks again before this kind of work."
+  },
   "activity.title": {
     "value": "Activity"
   },

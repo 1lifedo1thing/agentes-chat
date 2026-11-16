@@ -847,7 +847,11 @@
     "taskForM": "给 {{name}} 的任务",
     "taskPlaceholder": "需要完成什么？",
     "sendTask": "发送任务",
-    "taskSent": "任务已发送"
+    "taskSent": "任务已发送",
+    "brakes": {
+      "forgetTitle": "忘记这些回答？",
+      "forgetText": "{{name}} 会在这类工作前再次询问。"
+    }
   },
   "activity": {
     "title": "动态",

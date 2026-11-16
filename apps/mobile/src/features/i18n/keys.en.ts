@@ -929,6 +929,12 @@ export const featureKeysEn = {
     taskPlaceholder: "What needs to get done?",
     sendTask: "Send task",
     taskSent: "Task sent",
+    /** Work nobody asked for: the confirmation before "Forget these answers" drops the remembered ones. */
+    brakes: {
+      forgetTitle: "Forget these answers?",
+      forgetText: "{{name}} asks again before this kind of work.",
+      forgetText_female: "{{name}} asks again before this kind of work.",
+    },
   },
   activity: {
     title: "Activity",
