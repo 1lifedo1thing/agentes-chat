@@ -230,9 +230,9 @@ import {
   mayStopRun,
   mergeTimeline,
   parseSlash,
+  pinnedAsListed,
   pinTarget,
   quietInset,
-  pinnedAsListed,
   readMark,
   runInConversation,
   sameItems,
@@ -1063,7 +1063,10 @@ function Chat({
       if (isMediaAlone(local)) return;
       const atWork = live.runs.some(
         (r) =>
-          !r.provisional && r.agentId === dmAgentId && AT_WORK.has(r.status) && runInConversation(r, local.threadId ?? null),
+          !r.provisional &&
+          r.agentId === dmAgentId &&
+          AT_WORK.has(r.status) &&
+          runInConversation(r, local.threadId ?? null),
       );
       if (dmAgentId && !atWork) live.expect(local.threadId ?? local.id, [dmAgentId], local.id);
       // A channel with agents: the router (or a mention) decides who answers, and `message.routed` always follows.

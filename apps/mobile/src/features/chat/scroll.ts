@@ -114,8 +114,7 @@ export function bandAim(aim: {
   tall: "start" | "end";
 }): { viewPosition: number; viewOffset: number; viewPositionFallback?: "start" | "end" } {
   const { viewPosition, size, band, top, tall } = aim;
-  if (size === undefined)
-    return { viewPosition, viewOffset: tall === "start" ? top : 0, viewPositionFallback: tall };
+  if (size === undefined) return { viewPosition, viewOffset: tall === "start" ? top : 0, viewPositionFallback: tall };
   if (size > band) return tall === "start" ? { viewPosition: 0, viewOffset: top } : { viewPosition: 1, viewOffset: 0 };
   return { viewPosition, viewOffset: Math.round(top * (1 - viewPosition)) };
 }

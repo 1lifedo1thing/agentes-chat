@@ -816,7 +816,10 @@ export function tableResolvesLate(header: Inline[][], rows: Inline[][][]): boole
  * in the timeline, whose own thread is its root), a message in the timeline into the timeline's. A run in another
  * thread of the same DM (a mission's) never takes it, so it doesn't stand for the reply that will come.
  */
-export function runInConversation(run: Pick<LiveRun, "threadId" | "triggerMessageId">, threadId: string | null): boolean {
+export function runInConversation(
+  run: Pick<LiveRun, "threadId" | "triggerMessageId">,
+  threadId: string | null,
+): boolean {
   // Typed as always a thread, but null for a run in the timeline.
   const own = (run.threadId as string | null) ?? null;
   return threadId ? own === threadId || (own === null && run.triggerMessageId === threadId) : own === null;

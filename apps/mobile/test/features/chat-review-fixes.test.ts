@@ -23,7 +23,9 @@ describe("a sheet that never shows can't leave the conversation's sheet host ope
     const start = host.slice(host.indexOf("const start = "), host.indexOf("return {\n      open: start,"));
     const fresh = start.slice(start.indexOf("} else {"));
     expect(fresh).toContain("Keyboard.dismiss();");
-    expect(start.indexOf("for (const l of listeners.current) l(true);")).toBeLessThan(start.indexOf("Keyboard.dismiss();"));
+    expect(start.indexOf("for (const l of listeners.current) l(true);")).toBeLessThan(
+      start.indexOf("Keyboard.dismiss();"),
+    );
   });
 
   test("open turning false still dismisses a sheet presented on mount; a failed present ends as a dismissal", () => {
@@ -82,9 +84,13 @@ describe("a table's columns never go back to the letters' guess, and follow cell
     expect(tableColumnWidths(header, rows, {})[0]).not.toBe(121);
     expect(tableColumnWidths(header, rows, { 0: 120 })[0]).toBe(121);
     const spans = src("features/chat/MessageSpans.tsx");
-    expect(spans).toContain("const widths = tableColumnWidths(header, rows, { ...measured.before, ...drawn }, fontScale);");
+    expect(spans).toContain(
+      "const widths = tableColumnWidths(header, rows, { ...measured.before, ...drawn }, fontScale);",
+    );
     // The copy's own measures keep what was measured before (`...m`), and a copy per content says every column.
-    expect(spans).toContain("m.key !== columnsKey || m.columns[col] === w ? m : { ...m, columns: { ...m.columns, [col]: w } },");
+    expect(spans).toContain(
+      "m.key !== columnsKey || m.columns[col] === w ? m : { ...m, columns: { ...m.columns, [col]: w } },",
+    );
     expect(spans).toMatch(/\{unmeasured \|\| late \? \(\s*<View\s*key=\{columnsKey\}/);
   });
 });
@@ -151,7 +157,7 @@ describe("the instant 'pensando…' is skipped only for a run that will take the
   test("a run waiting for an approval never takes a new message", () => {
     const chat = src("features/chat/ChatScreen.tsx");
     expect(chat).toContain('const AT_WORK: ReadonlySet<string> = new Set(["thinking", "queued", "running"]);');
-    expect(chat).toContain("AT_WORK.has(r.status) && runInConversation(r, local.threadId ?? null)");
+    expect(chat).toMatch(/AT_WORK\.has\(r\.status\) &&\s*runInConversation\(r, local\.threadId \?\? null\)/);
   });
 });
 

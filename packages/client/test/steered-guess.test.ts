@@ -9,7 +9,11 @@ import { applyChannelEvent, emptyStreams, expectReply, retargetProvisional, runs
  */
 const ev = (e: Record<string, unknown>) => e as unknown as ChannelEvent;
 const guessed = () =>
-  retargetProvisional(expectReply(emptyStreams, { channelId: "dm", threadId: "local-1", agentId: "ada" }), "local-1", "m2");
+  retargetProvisional(
+    expectReply(emptyStreams, { channelId: "dm", threadId: "local-1", agentId: "ada" }),
+    "local-1",
+    "m2",
+  );
 const steered = (extra: Record<string, unknown> = {}) =>
   ev({ type: "agent.run.steered", channelId: "dm", runId: "r1", agentId: "ada", messageId: "m2", ...extra });
 const ids = (s: ReturnType<typeof guessed>) => runsInChannel(s, "dm").map((r) => r.runId);
