@@ -100,7 +100,7 @@ import { useFailed } from "../routines/hooks";
 import { proposedRoutineWhen } from "../routines/rule";
 import { chooseAction, SettingsPage } from "../settings/parts";
 import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
-import { goBack, PushedHeader, successHaptic, Tile, tapHaptic, useSurface } from "../shared/parts";
+import { BottomBar, goBack, PushedHeader, successHaptic, Tile, tapHaptic, useSurface } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { markArrived } from "./arrival";
 import { closeBrainPick, openBrainPick } from "./brain-pick";
@@ -666,7 +666,7 @@ function NewAgentForm({
           />
         </GroupedList>
         {role === "custom" && !starter ? (
-          <RoleInput value={roleText} onChangeText={setRoleText} placeholder={t("agent.roleHelp")} grouped />
+          <RoleInput value={roleText} onChangeText={setRoleText} placeholder={t("agent.roleHelp")} />
         ) : null}
         {/* Right under "Do zero", a card of its own: the other way to start, before the presets. */}
         {mayImport && !proposed ? (
@@ -805,7 +805,6 @@ function NewAgentForm({
                 }}
                 label={t("newAgent.handle")}
                 placeholder={t("newAgent.handlePlaceholder")}
-                grouped
                 ok={Boolean(handle) && !handleIssue}
               />
             </GroupedList>
@@ -1088,44 +1087,47 @@ function NewAgentForm({
           )}
         </ScrollView>
         {footer ? (
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-            {importing ? (
-              <>
-                <Button variant="text" label={t("common.back")} disabled={busy} onPress={closeImport} />
-                {imp.planned && imp.picks.length > 0 ? (
-                  <View style={styles.fill}>
-                    <Button
-                      variant="primary"
-                      wide
-                      label={t("onboarding.import.go", { count: imp.picks.length })}
-                      loading={busy}
-                      disabled={busy}
-                      onPress={() => void runImport()}
-                    />
-                  </View>
-                ) : null}
-              </>
-            ) : null}
-            {backs ? (
-              // Back is a word; Continue is the step's one primary.
-              <Button variant="text" label={t("common.back")} disabled={busy} onPress={() => goTo(index - 1)} />
-            ) : null}
-            {goes ? (
-              <View style={styles.fill}>
-                <Button
-                  variant="primary"
-                  wide
-                  label={
-                    index === total - 1
-                      ? t("newAgent.create", { name: name.trim() || shownName })
-                      : t("common.continue")
-                  }
-                  loading={busy}
-                  onPress={next}
-                />
-              </View>
-            ) : null}
-          </View>
+          // The step's actions pinned under its scroll, as a settings page's one action: always at hand.
+          <BottomBar bottom={insets.bottom}>
+            <View style={styles.footer}>
+              {importing ? (
+                <>
+                  <Button variant="text" label={t("common.back")} disabled={busy} onPress={closeImport} />
+                  {imp.planned && imp.picks.length > 0 ? (
+                    <View style={styles.fill}>
+                      <Button
+                        variant="primary"
+                        wide
+                        label={t("onboarding.import.go", { count: imp.picks.length })}
+                        loading={busy}
+                        disabled={busy}
+                        onPress={() => void runImport()}
+                      />
+                    </View>
+                  ) : null}
+                </>
+              ) : null}
+              {backs ? (
+                // Back is a word; Continue is the step's one primary.
+                <Button variant="text" label={t("common.back")} disabled={busy} onPress={() => goTo(index - 1)} />
+              ) : null}
+              {goes ? (
+                <View style={styles.fill}>
+                  <Button
+                    variant="primary"
+                    wide
+                    label={
+                      index === total - 1
+                        ? t("newAgent.create", { name: name.trim() || shownName })
+                        : t("common.continue")
+                    }
+                    loading={busy}
+                    onPress={next}
+                  />
+                </View>
+              ) : null}
+            </View>
+          </BottomBar>
         ) : null}
       </KeyboardAvoidingView>
     </View>
@@ -1233,5 +1235,5 @@ const styles = StyleSheet.create({
   bare: { borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
   restore: { alignItems: "center", columnGap: 16, rowGap: 8, paddingTop: 7, paddingLeft: 16 },
   // Back as a word at the left, 16 from the primary that takes the rest.
-  footer: { flexDirection: "row", alignItems: "center", gap: 16, paddingHorizontal: 16, paddingTop: 12 },
+  footer: { flexDirection: "row", alignItems: "center", gap: 16 },
 });

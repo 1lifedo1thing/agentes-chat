@@ -235,6 +235,8 @@ describe("the agents' pages on the phone's standards", () => {
     expect(profile).not.toContain("entering=");
     const budget = src("agents/BudgetSection.tsx");
     expect(budget).toContain('<GroupedHeader>{t("rightHand.settings.budget")}</GroupedHeader>');
+    // Saved apart from the form's Salvar, so it says it went.
+    expect(budget).toContain('onSuccess: () => toast({ title: t("mobile.agentEdit.saved"), agentId: agent.id })');
     expect(budget).not.toContain('<Text variant="title"');
     expect(src("agents/setup/SetupStepScreen.tsx")).toContain("<BudgetField");
     const roles = src("roles/RolesScreen.tsx");
@@ -246,7 +248,15 @@ describe("the agents' pages on the phone's standards", () => {
     expect(imp).not.toContain("<Toggle");
     const create = src("agents/NewAgentScreen.tsx");
     expect(create).toMatch(/label=\{t\("approval\.refuse"\)\}\s+danger/);
+    // Back and Continue pinned under the step's scroll in the app's bottom bar, as a settings page's one action.
+    expect(create).toContain("<BottomBar bottom={insets.bottom}>");
     expect(src("agents/LookPicker.tsx")).not.toContain("export function LookPicker(");
+    // The fields are only ever rows of a grouped list: no loose bordered look-alike left behind.
+    for (const field of ["agents/RoleInput.tsx", "agents/HandleInput.tsx"])
+      expect({ field, loose: src(field).includes("grouped") && src(field).includes("borderWidth") }).toEqual({
+        field,
+        loose: false,
+      });
   });
 
   test("a value changed through the app's picker shows the up-down mark; a row that opens a screen, the chevron", () => {

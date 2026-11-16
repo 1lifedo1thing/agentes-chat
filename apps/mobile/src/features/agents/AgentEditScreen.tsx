@@ -195,7 +195,6 @@ export function AgentEditScreen({ id }: { id: string }) {
               value={draft.handle}
               onChangeText={(v) => set("handle", cleanHandle(v))}
               label={t("agent.handleLabel")}
-              grouped
             />
           </GroupedList>
           {handleIssue ? (
@@ -209,7 +208,7 @@ export function AgentEditScreen({ id }: { id: string }) {
       )}
 
       {rightHand ? null : fields.has("role") ? (
-        <RoleInput value={draft.role} onChangeText={(v) => set("role", v)} placeholder={t("agent.roleHelp")} grouped />
+        <RoleInput value={draft.role} onChangeText={(v) => set("role", v)} placeholder={t("agent.roleHelp")} />
       ) : (
         readOnly(t("agent.roleLabel"), agent.role)
       )}

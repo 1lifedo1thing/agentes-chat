@@ -66,7 +66,6 @@ import { useColors, useDirectory, useNow, useOrgId, usePullRefresh } from "../sh
 import { agentLook } from "../shared/logic";
 import { successHaptic, Tile } from "../shared/parts";
 import { useWaitingApprovals, useWorkingNow } from "../shared/queries";
-import { SheetHostProvider } from "../shared/SheetHost";
 import { useTabHeader } from "../shared/tabHeader";
 import { useAgentWorkLine, usePresenceOf } from "../status/hooks";
 import { useTasksToday } from "../task-manager/hooks";
@@ -96,14 +95,6 @@ const FACE_IN = FadeIn.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1));
  * bar's "+" creates one; an archived agent restores with a swipe.
  */
 export function AgentsScreen() {
-  return (
-    <SheetHostProvider>
-      <Agents />
-    </SheetHostProvider>
-  );
-}
-
-function Agents() {
   const { t } = useTranslation();
   const dir = useDirectory();
   const header = useTabHeader();

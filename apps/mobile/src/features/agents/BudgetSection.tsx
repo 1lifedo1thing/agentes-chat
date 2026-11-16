@@ -55,8 +55,8 @@ export function BudgetField({
 }
 
 /**
- * The web's Orçamento mensal, where a spent budget's "Aumentar orçamento" lands: saved at once by who manages agents,
- * a group of the form as every other (its header, the field, the note under it).
+ * The web's Orçamento mensal, where a spent budget's "Aumentar orçamento" lands: saved by who manages agents as the
+ * field is left, with a toast, a group of the form as every other (its header, the field, the note under it).
  */
 export function BudgetSection({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
@@ -67,7 +67,12 @@ export function BudgetSection({ agent }: { agent: Agent }) {
   const save = () => {
     const { amount, invalid } = readBudget(typed);
     if (invalid) return toast({ title: t("agent.budgetInvalid"), icon: "x" });
-    if (amount !== (agent.monthlyBudgetUsd ?? null)) update.mutate({ monthlyBudgetUsd: amount }, { onError: failed });
+    // Saved as the field is left, apart from the form's Salvar: the toast says it went.
+    if (amount !== (agent.monthlyBudgetUsd ?? null))
+      update.mutate(
+        { monthlyBudgetUsd: amount },
+        { onSuccess: () => toast({ title: t("mobile.agentEdit.saved"), agentId: agent.id }), onError: failed },
+      );
   };
   return (
     <>
