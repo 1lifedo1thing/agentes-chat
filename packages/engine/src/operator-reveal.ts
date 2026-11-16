@@ -173,17 +173,27 @@ type Find = (db: Database, orgId: string, input: RevealInput) => Promise<Found |
 /**
  * Whether a conversation is a direct one. A routine's own room is stored as one, of its agent alone, and no person
  * reads it: it counts as direct only when its routine reports to a direct conversation, whose words its run is given
- * and writes its report for (the routine's id is read from the room's key, as `routineRoomKey` writes it).
- * `channelId` names its table: in a subquery a bare column would be the subquery's own.
+ * and writes its report for (the routine's id is read from the room's key, as `routineRoomKey` writes it). A routine
+ * that writes a document reports in its creator's own conversation with the agent. What a firing of the routine left
+ * there (`firing`: the ids of the messages that may hold the record's own firing) stays direct when that firing
+ * reported to one, wherever the routine reports now; a widget's firing reads no conversation.
+ * `channelId` and `firing` name their tables: in a subquery a bare column would be the subquery's own.
  */
-const directOf = (channelId: string) =>
+const directOf = (channelId: string, firing = "null") =>
   sql<boolean>`coalesce((select c.kind = 'dm' and (
       not starts_with(coalesce(c.dm_key, ''), ${ROUTINE_ROOM_PREFIX})
-      or coalesce((select rt.target->>'type' = 'dm' or exists (
+      or coalesce((select rt.target->>'type' in ('dm', 'artifact') or exists (
           select 1 from ${channels} t
           where t.org_id = c.org_id and t.id::text = rt.target->>'channelId' and t.kind = 'dm')
-        from ${routines} rt where rt.org_id = c.org_id and rt.id::text = split_part(c.dm_key, '|r:', 2)), true))
+        from ${routines} rt where rt.org_id = c.org_id and rt.id::text = split_part(c.dm_key, '|r:', 2)), true)
+      or exists (
+        select 1 from ${messages} f
+        join ${channels} t on t.org_id = f.org_id and t.kind = 'dm'
+          and t.id::text = f.meta->'routineBrief'->'deliverTo'->>'channelId'
+        where f.org_id = c.org_id and f.id in (${sql.raw(firing)}) and f.meta->'routineBrief'->'widget' is null))
     from ${channels} c where c.id = ${sql.raw(channelId)}), false)`;
+/** The message that fired a run, where a routine's firing keeps what it was told (`meta.routineBrief`). */
+const firingOf = (runId: string) => `(select fr.trigger_message_id from agent_runs fr where fr.id = ${runId})`;
 /** Whether a record's conversation still stands: one deleted for good keeps its row, and its runs keep their steps. */
 const conversationStands = (channelId: string) =>
   sql<boolean>`not exists (
@@ -206,7 +216,7 @@ const findMessage: Find = async (db, orgId, { id }) => {
     .select({
       channelId: messages.channelId,
       agentRunId: messages.agentRunId,
-      direct: directOf('"messages"."channel_id"'),
+      direct: directOf('"messages"."channel_id"', `"messages"."id", ${firingOf('"messages"."agent_run_id"')}`),
       has: filled(messages.body),
     })
     .from(messages)
@@ -241,7 +251,7 @@ const findStep: Find = async (db, orgId, { id, seq, field }) => {
     result_failed: boolean;
     narrated: boolean;
   }>(
-    await db.execute(sql`select r.agent_id, r.channel_id, ${directOf("r.channel_id")} as direct, s.kind,
+    await db.execute(sql`select r.agent_id, r.channel_id, ${directOf("r.channel_id", "r.trigger_message_id")} as direct, s.kind,
         (s.kind = 'error' or (s.kind = 'tool_result' and s.data->'isError' = 'true'::jsonb)) as failed,
         (s.kind = 'tool_call' and exists (select 1 from ${agentRunSteps} o where o.run_id = s.run_id
           and o.kind = 'tool_result' and o.data->>'toolUseId' = s.data->>'toolUseId'
@@ -329,7 +339,7 @@ const findTask: Find = async (db, orgId, { id, field }) => {
       agentId: machineTasks.agentId,
       channelId: machineTasks.channelId,
       runId: machineTasks.runId,
-      direct: directOf('"machine_tasks"."channel_id"'),
+      direct: directOf('"machine_tasks"."channel_id"', firingOf('"machine_tasks"."run_id"')),
       has: filled(column),
     })
     .from(machineTasks)

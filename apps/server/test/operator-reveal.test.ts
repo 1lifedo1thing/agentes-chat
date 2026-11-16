@@ -855,9 +855,52 @@ test("fault: a routine's own room is nobody's conversation, so its run opens, un
     }
     expect(await outcome(ask("routine", w.dmRoutineId, "instructions", closed))).toBe(200);
   }
-  // Once it reports to a channel, its room is as any other routine's.
+  // Once it reports to a channel, its room is as any other routine's, for a run that kept no word of where it reported.
   await reportsTo({ type: "channel", channelId: w.generalId });
   expect(await outcome(step(runs.dmRoom, 1, "input", closed))).toBe(200);
+
+  // A firing keeps where it reported on the message that started it. What it left in the room stays closed when
+  // that was a direct conversation, wherever the routine reports now.
+  const firing = asking.get(runs.dmRoom) ?? "";
+  const fired = (deliverTo: Record<string, unknown>, more: Record<string, unknown> = {}) =>
+    db
+      .update(schema.messages)
+      .set({ meta: { routineBrief: { routineId: w.dmRoutineId, routineRunId: UNKNOWN, deliverTo, ...more } } })
+      .where(eq(schema.messages.id, firing));
+  const [room] = await db
+    .select({ id: schema.agentRuns.channelId })
+    .from(schema.agentRuns)
+    .where(eq(schema.agentRuns.id, runs.dmRoom));
+  const [wrote] = await db
+    .insert(schema.messages)
+    .values({
+      orgId: w.orgId,
+      channelId: room?.id ?? "",
+      authorType: "agent",
+      authorAgentId: w.devId,
+      agentRunId: runs.dmRoom,
+      body: "canary-left in the room",
+    })
+    .returning({ id: schema.messages.id });
+  const left = [
+    step(runs.dmRoom, 1, "input", closed),
+    ask("message", firing, "text", closed),
+    ask("message", wrote?.id ?? "", "text", closed),
+  ];
+  await fired({ channelId: w.dmId, threadId: null });
+  for (const json of left) {
+    expect({ json, answer: await outcome(json) }).toEqual({ json, answer: [403, "reveal.direct_conversation"] });
+  }
+  expect(await outcome(ask("routine", w.dmRoutineId, "instructions", closed))).toBe(200);
+  // A firing that reported to a channel opens, and so does one that redid a widget: it reads no conversation.
+  await fired({ channelId: w.generalId, threadId: null });
+  for (const json of left) expect({ json, answer: await outcome(json) }).toEqual({ json, answer: 200 });
+  await fired({ channelId: w.dmId, threadId: null }, { widget: { widgetId: UNKNOWN, dashboardId: UNKNOWN } });
+  expect(await outcome(step(runs.dmRoom, 1, "input", closed))).toBe(200);
+  // A routine that writes a document reports in its creator's own conversation with the agent.
+  await fired({ channelId: w.generalId, threadId: null });
+  await reportsTo({ type: "artifact" });
+  expect(await outcome(step(runs.dmRoom, 1, "input", closed))).toEqual([403, "reveal.direct_conversation"]);
 });
 
 test("a conversation deleted for good: what its runs kept is the same 404 as nobody's, whatever the purpose", async () => {
