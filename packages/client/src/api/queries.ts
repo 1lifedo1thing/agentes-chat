@@ -14,7 +14,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from "react";
 import { moveInGroups } from "../lib/agent-groups";
 import { type LevelsBefore, levelsBefore } from "../lib/approvals-level";
 import { artifactRefs } from "../lib/artifacts";
@@ -1799,9 +1799,24 @@ function cacheSent(qc: QueryClient, orgId: string, message: Message, { clientId,
  * is replaced by the server's copy (matched by `clientId`, from the response
  * or the WebSocket, whichever comes first), or turns `failed` with a retry.
  * One with no answer from the server waits in the `outbox` instead.
+ *
+ * The component that sends draws the copy in the same render as the send: the cache tells the lists that read it on
+ * its next tick (on the phone, the next frame), so the field emptied first and the message showed a frame or more
+ * later. Drawn again with the send itself, the sender reads the list as the copy left it, and the words leave the field
+ * and land in the conversation together.
  */
 export function usePostMessage(orgId: string, channelId: string, options: PostMessageOptions) {
-  return useMutation(postMessageMutation(useApi(), useQueryClient(), orgId, channelId, options));
+  const [, drawn] = useReducer((n: number) => n + 1, 0);
+  const { onOptimistic } = options;
+  return useMutation(
+    postMessageMutation(useApi(), useQueryClient(), orgId, channelId, {
+      ...options,
+      onOptimistic: (local) => {
+        drawn();
+        onOptimistic?.(local);
+      },
+    }),
+  );
 }
 
 export interface PostMessageOptions {

@@ -51,8 +51,8 @@ import { haptics } from "./haptics";
 import { Icon } from "./Icon";
 import { PRESS_IN, PRESS_OUT, PressScale } from "./PressScale";
 import { systemText } from "./Text";
-import { useTheme } from "./theme";
 import { useToast } from "./Toast";
+import { useTheme } from "./theme";
 import { CHROME_MAX_SCALE, weights } from "./type-scale";
 
 /** The "@" (or, with `sigil: "#"`, the channel) being typed right before the caret. */

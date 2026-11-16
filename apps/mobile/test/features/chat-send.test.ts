@@ -104,3 +104,14 @@ test("the microphone takes a finger's 44 on iOS too: the view carries the gestur
   const mic = between(voice, "const mic =", "const wave =");
   expect(mic).toContain("hitSlop={MIC_SLOP}");
 });
+
+test("the words leave the field and land in the conversation in the same draw", () => {
+  // The cache tells its readers a frame later; the screen that sends draws again with the send itself.
+  const queries = readFileSync(new URL("../../../../packages/client/src/api/queries.ts", import.meta.url), "utf8");
+  const hook = between(queries, "export function usePostMessage(", "export interface PostMessageOptions");
+  expect(hook).toContain("const [, drawn] = useReducer((n: number) => n + 1, 0);");
+  expect(hook).toMatch(/onOptimistic: \(local\) => \{\s*drawn\(\);\s*onOptimistic\?\.\(local\);/);
+  // The optimistic copy is in the cache before the sender draws again: `onOptimistic` runs after it is written.
+  const mutate = between(queries, "onMutate: ({ body, clientId, threadId, meta }) => {", "onSuccess:");
+  expect(mutate.indexOf("qc.setQueryData<Message[]>(key,")).toBeLessThan(mutate.indexOf("options.onOptimistic?.(local);"));
+});
