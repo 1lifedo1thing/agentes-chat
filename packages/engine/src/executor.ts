@@ -2334,6 +2334,7 @@ async function executeRunInner(
             {
               orgId: run.orgId,
               text: trigger?.body ?? "",
+              channelText: channelRow?.topic ?? "",
               reader: async () => ({
                 type: "agent",
                 agentId: agent.id,
