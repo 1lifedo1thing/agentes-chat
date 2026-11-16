@@ -571,9 +571,7 @@ describe("agents learn on their own (ADR 0120)", () => {
     expect(prompt).toContain("the path of a key file on the agent's own computer as an access");
     expect(out.rejected.map((r) => r.reason)).toEqual(["secret"]);
     const saved = await items();
-    expect(saved.map((i) => [i.subjectKey, i.content])).toEqual([
-      [expect.stringContaining("ssh vps.example.com"), ssh],
-    ]);
+    expect(saved.map((i) => [i.kind, i.content])).toEqual([["fact", ssh]]);
     for (const part of ["port 2222", "as deploy", "~/.ssh/vps_example"]) expect(saved[0]?.content).toContain(part);
   });
 
