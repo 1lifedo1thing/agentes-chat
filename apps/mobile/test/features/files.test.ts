@@ -251,7 +251,7 @@ describe("viewer", () => {
     expect(tileWidth({ type: "application/pdf" })).toBe(176);
     const strip = src("features/chat/AttachmentStrip.tsx");
     // A video at its first frame with its length; nothing drawn red, no dashed tile.
-    expect(strip).toContain("<VideoFrame uri={f.uri} />");
+    expect(strip).toContain("<VideoFirstFrame uri={f.uri} />");
     expect(strip).toContain("videoClock(f.duration)");
     expect(strip).not.toContain("dashed");
     expect(strip).not.toMatch(/rgba\(2\d\d, ?\d{1,2}, ?\d{1,2}/);
@@ -259,6 +259,23 @@ describe("viewer", () => {
     expect(src("ui/Composer.tsx")).toContain(
       "{attachments ? <View style={styles.attachRow}>{attachments}</View> : null}",
     );
+  });
+
+  test("sending with files is optimistic: the message shows at once with its files, the field is free", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    // In the conversation at once, under the clientId the real message comes back with.
+    expect(chat).toContain(
+      "qc.setQueryData<Message[]>(keys.messages(orgId, channelId), (list) => upsertMessage(list, local));",
+    );
+    expect(chat).toContain("[LOCAL_FILES]: files.map(");
+    // Then up, then sent with the same clientId; a failure turns it "Não foi enviada" and retry starts over.
+    expect(chat).toContain("clientId: local.clientId ?? newClientId(),");
+    expect(chat).toContain('? { ...m, local: "failed" as const, sendFailure: sendFailureOf(failed.reason) }');
+    expect(chat).toContain("void deliverFilesRef.current(m);");
+    // No more waiting in the field while they upload.
+    expect(chat).not.toContain("sendingFiles.current");
+    const row = src("features/chat/MessageRow.tsx");
+    expect(row).toContain('<LocalFiles files={localFiles} align="end" sending={m.local === "pending"} />');
   });
 
   test("a video opens where the pictures do, from a message, the Drive or a file's link, and plays there", () => {

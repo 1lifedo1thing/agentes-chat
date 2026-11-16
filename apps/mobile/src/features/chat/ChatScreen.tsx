@@ -12,6 +12,7 @@ import {
   type Message,
   type MessageMedia,
   type MessagePin,
+  newClientId,
   type ReceiptsState,
   type ReplyRef,
   type RunConsultation,
@@ -56,7 +57,7 @@ import {
   consultNoticeFolds,
   consultsForLine,
 } from "@agenteschat/client/lib/consult-group";
-import { errorText, sendNeedsEdit } from "@agenteschat/client/lib/errors";
+import { errorText, sendFailureOf, sendNeedsEdit } from "@agenteschat/client/lib/errors";
 import { mentionsReader, offersEveryone } from "@agenteschat/client/lib/everyone";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@agenteschat/client/lib/files";
 import { capitalize } from "@agenteschat/client/lib/format";
@@ -78,7 +79,7 @@ import { retryAnswer } from "@agenteschat/client/lib/retry-answer";
 import { isRightHand, rightHandSeenKey } from "@agenteschat/client/lib/right-hand";
 import { ConversationSeat } from "@agenteschat/client/lib/seat-context";
 import { seenMessageId } from "@agenteschat/client/lib/seen";
-import { lastPostedId } from "@agenteschat/client/lib/timeline";
+import { lastPostedId, upsertMessage } from "@agenteschat/client/lib/timeline";
 import { voiceOf } from "@agenteschat/client/lib/voice";
 import { waitingAway, waitingNotification } from "@agenteschat/client/lib/waiting";
 import { makingImage, stopsMovedOn } from "@agenteschat/client/lib/work";
@@ -144,6 +145,8 @@ import { BrowserCard, BrowserRunCard } from "../browser/BrowserCard";
 import { OpenHandoffProvider } from "../browser/open";
 import { threadTitle } from "../chats/logic";
 import { ImageMaking } from "../files/ImageMaking";
+import { isLocalMedia, LOCAL_FILES, type LocalFile, localFilesOf } from "../files/local-files";
+import { rememberLocalCopy } from "../files/source";
 import { uploadPart } from "../files/upload-part";
 import { chatHref, consultationHref, notificationHref } from "../links/logic";
 import { MissionCardView } from "../missions/cards";
@@ -981,8 +984,15 @@ function Chat({
   retryRef.current = retry;
   const onRetry = useCallback(
     (m: Message) => {
+      // Files that didn't go up go again, from the phone, then the message with them.
+      if (m.local && localFilesOf(m.meta).length > 0) {
+        qc.setQueryData<Message[]>(keys.messages(orgId, channelId), (list) =>
+          list?.map((x) => (x.id === m.id ? { ...x, local: "pending" as const, sendFailure: undefined } : x)),
+        );
+        void deliverFilesRef.current(m);
+      }
       // A voice note waits in its own outbox: tried again there, now.
-      if (voiceOf(m.meta) && m.local) retryVoice(qc, m.clientId, voiceRefused);
+      else if (voiceOf(m.meta) && m.local) retryVoice(qc, m.clientId, voiceRefused);
       // Only a change to its text can make it go: it leaves the list and the text returns to the field.
       else if (sendNeedsEdit(m.sendFailure)) {
         qc.setQueryData<Message[]>(keys.messages(orgId, channelId), (list) => list?.filter((x) => x.id !== m.id));
@@ -1042,7 +1052,7 @@ function Chat({
     const text = raw.trim();
     // Photos or files waiting above the field: they go with the words, which are their caption (or with none).
     if (pending.length > 0) {
-      void sendWithFiles(text, how);
+      sendWithFiles(text, how);
       return;
     }
     if (!text) return;
@@ -1195,7 +1205,7 @@ function Chat({
     file.write(text);
     addPending([{ uri: file.uri, name: file.name, type: "text/plain" }]);
   };
-  const uploadOne = async (file: PendingFile): Promise<ArtifactRef> => {
+  const uploadOne = async (file: LocalFile): Promise<ArtifactRef> => {
     const saved: ArtifactDetail = await api.artifacts.upload(orgId, uploadPart(file), {
       channelId,
       ...(threadId ? { threadId } : {}),
@@ -1219,31 +1229,80 @@ function Chat({
     }
     return results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
   };
-  const sendingFiles = useRef(false);
-  const sendWithFiles = async (text: string, how: SendHow, files: PendingFile[] = pending) => {
-    // One send at a time: a second tap while these upload would send them again. Its words come back to the field.
-    if (sendingFiles.current) {
-      if (text) setCaptionBack({ text, at: Date.now() });
+  // Sent with files, the message is in the conversation at once, its files drawn from the phone (`LocalFiles`), and
+  // the field is free for the next one: they upload behind it, then it goes with them under the same `clientId`, so
+  // the server's copy takes its place. One that can't go up turns "Não foi enviada" with "Tentar de novo".
+  const sendWithFiles = (text: string, how: SendHow, files: PendingFile[] = pending) => {
+    if (files.length === 0) return;
+    const replyTo = quote;
+    if (replyTo) setQuote(null);
+    const clientId = newClientId();
+    const local: Message = {
+      id: `local-${clientId}`,
+      channelId,
+      threadId: threadId ?? null,
+      author: { type: "person", id: meId ?? "" },
+      body: text,
+      mentionedAgentIds: [],
+      agentRunId: null,
+      meta: {
+        ...localMeta(replyTo, replyTo ? dir.nameOf(replyTo.author) : "", []),
+        [LOCAL_FILES]: files.map(
+          (f): LocalFile => ({
+            uri: f.uri,
+            name: f.name,
+            type: f.type,
+            ...(f.size !== undefined ? { size: f.size } : {}),
+            ...(f.width && f.height ? { width: f.width, height: f.height } : {}),
+            ...(f.duration ? { duration: f.duration } : {}),
+          }),
+        ),
+      },
+      clientId,
+      local: "pending",
+      createdAt: new Date().toISOString(),
+    };
+    qc.setQueryData<Message[]>(keys.messages(orgId, channelId), (list) => upsertMessage(list, local));
+    const sent = new Set(files.map((f) => f.id));
+    setPending((now) => now.filter((f) => !sent.has(f.id)));
+    toEnd();
+    void deliverFiles(local, how);
+  };
+  /** A just-sent message's files go up, then the message goes with them; one that can't turns it "Não foi enviada". */
+  const deliverFiles = async (local: Message, how?: SendHow) => {
+    const files = localFilesOf(local.meta);
+    const results = await Promise.allSettled(files.map(uploadOne));
+    const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+    if (failed) {
+      qc.setQueryData<Message[]>(keys.messages(orgId, channelId), (list) =>
+        list?.map((m) =>
+          m.local && m.clientId === local.clientId
+            ? { ...m, local: "failed" as const, sendFailure: sendFailureOf(failed.reason) }
+            : m,
+        ),
+      );
+      // Why, when it is known (too large, the workspace's storage full, no connection…); else the plain line.
+      const said = errorText(t, failed.reason, i18n.language, { maxMb: MAX_UPLOAD_MB });
+      toast({ title: said !== t("common.unknownError") ? said : t("mobile.chat.uploadFailed"), icon: "x" });
       return;
     }
-    sendingFiles.current = true;
-    try {
-      const refs = await uploadPending(files);
-      if (!refs) {
-        // The caption comes back to try again.
-        if (text) setCaptionBack({ text, at: Date.now() });
-        return;
-      }
-      const meta = takeQuote(refs);
-      send(text, threadId, how === "now" ? { ...meta, steer: "now" } : meta);
-      // Only what went: one picked while these uploaded waits for the next send.
-      const sent = new Set(files.map((f) => f.id));
-      setPending((now) => now.filter((f) => !sent.has(f.id)));
-      toEnd();
-    } finally {
-      sendingFiles.current = false;
-    }
+    const refs = results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+    // The phone's own copies stand in for the server's: the sent pictures never fade out and back in.
+    results.forEach((r, i) => {
+      const f = files[i];
+      if (r.status === "fulfilled" && f && isLocalMedia(f)) rememberLocalCopy(r.value.id, f.uri);
+    });
+    const meta = Object.fromEntries(Object.entries(local.meta ?? {}).filter(([k]) => k !== LOCAL_FILES));
+    post.mutate({
+      body: local.body,
+      clientId: local.clientId ?? newClientId(),
+      threadId: local.threadId,
+      meta: { ...meta, artifacts: refs },
+      ...(how === "now" ? { steer: "now" as const } : {}),
+    });
   };
+  const deliverFilesRef = useRef(deliverFiles);
+  deliverFilesRef.current = deliverFiles;
   // What another app shared ("Compartilhar com…" picked this agent): it goes at once, through this conversation's own
   // sending, so the photos show in the strip while they upload and the agent starts reading as soon as it lands.
   const shareIn = useShareHandoff(channelId);
@@ -1256,8 +1315,7 @@ function Chat({
       const files = shareIn.files.map(
         (f, i): PendingFile => ({ ...f, id: `${shareIn.at}-${i}-${f.uri}`, state: "sending" }),
       );
-      setPending(files);
-      void sendWithFiles(shareIn.text, "join", files);
+      sendWithFiles(shareIn.text, "join", files);
     } else if (shareIn.text) {
       send(shareIn.text, threadId);
       toEnd();

@@ -28,16 +28,26 @@ async function remote(api: ApiClient, orgId: string, id: string, version?: numbe
   return { uri: r.uri, headers: r.needsSession ? appHeaders(await readCookie()) : {} };
 }
 
-/** The link to show a picture or a PDF (refreshed before it expires). */
+/**
+ * Files this phone just sent, by id: the photo or video it sent is drawn from the phone's own copy, so a message never
+ * fades its picture out and back in when the server's copy takes the place of the one on its way (`LocalFiles`). Kept
+ * while the app stays open.
+ */
+const localCopies = new Map<string, string>();
+export const rememberLocalCopy = (id: string, uri: string) => localCopies.set(id, uri);
+
+/** The link to show a picture or a PDF (refreshed before it expires); a file this phone just sent, from its own copy. */
 export function useRemoteFile(orgId: string, id: string | null, version?: number) {
   const api = useApi();
-  return useQuery({
+  const local = id ? localCopies.get(id) : undefined;
+  const query = useQuery({
     queryKey: ["org", orgId, "artifacts", "link", id ?? "", version ?? "latest"] as const,
     queryFn: () => remote(api, orgId, id ?? "", version),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && !local,
     staleTime: LINK_STALE_MS,
     gcTime: LINK_STALE_MS,
   });
+  return local ? ({ ...query, data: { uri: local, headers: {} }, isError: false } as typeof query) : query;
 }
 
 /** Several artifacts at once (a message's files), sharing the cache of `useArtifact`. */

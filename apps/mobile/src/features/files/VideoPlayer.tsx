@@ -162,6 +162,23 @@ export function ViewerVideo({
   );
 }
 
+/** A video on the phone at its first frame (picked, or on its way up): a silent player that never plays, covering. */
+export function VideoFirstFrame({ uri }: { uri: string }) {
+  const player = useVideoPlayer({ uri }, (p) => {
+    p.muted = true;
+  });
+  return (
+    <VideoView
+      player={player}
+      nativeControls={false}
+      contentFit="cover"
+      allowsPictureInPicture={false}
+      pointerEvents="none"
+      style={StyleSheet.absoluteFill}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   // A picture's shape in a message (`MessageFiles`' `shot`): rounded, a hairline, its frame whole on the gray.
   inline: { borderRadius: 14, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth },

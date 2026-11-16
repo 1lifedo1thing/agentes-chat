@@ -4,7 +4,7 @@ import { keepWhole } from "@agenteschat/client/lib/format";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, Text as RNText, StyleSheet, View } from "react-native";
 import { Icon, Text } from "@/ui";
 import { router } from "@/ui/navigation";
 import { ChoicesCard } from "../blocks/ChoicesCard";
@@ -13,19 +13,22 @@ import { PollCard } from "../blocks/PollCard";
 import { useColors, useOrgId } from "../shared/hooks";
 import { useSurface } from "../shared/parts";
 import { AttachmentTile } from "./AttachmentTile";
-import { ImageStack } from "./ImageStack";
+import { ImageStack, type StackImage } from "./ImageStack";
+import { isLocalMedia, type LocalFile, localRatio } from "./local-files";
 import {
   encodeFileList,
   extensionOf,
+  extLabel,
   type FileInfo,
   fileInfo,
   IMAGE_EXT,
   singleImageBox,
   VIDEO_EXT,
+  videoClock,
   videoHeight,
 } from "./logic";
-import { useArtifacts, useRemoteFile } from "./source";
-import { VideoPlayer } from "./VideoPlayer";
+import { rememberLocalCopy, useArtifacts, useRemoteFile } from "./source";
+import { VideoFirstFrame, VideoPlayer } from "./VideoPlayer";
 
 /**
  * A message's files. Pictures alone: one inline, whole in a box of one shape, or several as a deck to swipe through
@@ -261,6 +264,151 @@ function InlineVideo({
   );
 }
 
+/**
+ * My files on a message I just sent, drawn from the phone while they upload (`meta.localFiles`), in the shapes the sent
+ * ones take (a lone picture or video in its own shape, several two to a row, a file as a card): the message is in the
+ * conversation the moment I send and the field is free. Sending, each dims under a spinner; when they're up, the
+ * message goes with them and the server's copy takes its place.
+ */
+export function LocalFiles({
+  files,
+  align = "start",
+  sending,
+}: {
+  files: LocalFile[];
+  align?: "start" | "end";
+  sending: boolean;
+}) {
+  const c = useColors();
+  const [width, setWidth] = useState(0);
+  const blockWidth = Math.min(width || MAX_WIDTH, MAX_WIDTH);
+  // Laid out as `MessageFiles` lays out the sent ones, so nothing moves when the server's copy takes the place.
+  const pictures = useMemo(() => files.filter((f) => f.type.startsWith("image/")), [files]);
+  const videos = files.filter((f) => f.type.startsWith("video/"));
+  const others = files.filter((f) => !isLocalMedia(f));
+  const halfWidth = Math.floor((blockWidth - GAP) / 2);
+  const [lone] = pictures;
+  // Several pictures alone are the same deck, drawn from the phone's copies.
+  const deck = useMemo(
+    () =>
+      pictures.map((f): StackImage => {
+        const id = `local-${hashUri(f.uri)}`;
+        rememberLocalCopy(id, f.uri);
+        return {
+          file: {
+            id,
+            title: f.name,
+            deleted: false,
+            ...(f.width && f.height ? { width: f.width, height: f.height } : {}),
+          },
+          detail: undefined,
+        };
+      }),
+    [pictures],
+  );
+  return (
+    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={[styles.wrap, align === "end" && styles.end]}>
+      {others.length === 0 && pictures.length > 1 ? (
+        <View>
+          <ImageStack images={deck} width={blockWidth} openable={false} />
+          {sending ? (
+            <View style={[StyleSheet.absoluteFill, styles.center]} pointerEvents="none">
+              <ActivityIndicator color={c.faint} />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+      {others.length === 0 && lone && pictures.length === 1 ? (
+        <LocalMedia file={lone} box={singleImageBox(blockWidth, localRatio(lone))} sending={sending} />
+      ) : null}
+      {videos.map((f) => (
+        <LocalMedia
+          key={f.uri}
+          file={f}
+          box={{ width: blockWidth, height: videoHeight(blockWidth) }}
+          sending={sending}
+        />
+      ))}
+      {others.length > 0 ? (
+        <View style={[styles.grid, { width: blockWidth }, align === "end" && styles.gridEnd]}>
+          {pictures.map((f) => (
+            <LocalMedia key={f.uri} file={f} box={{ width: halfWidth, height: halfWidth }} sending={sending} />
+          ))}
+          {others.map((f) => (
+            <LocalFileCard key={f.uri} file={f} sending={sending} />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** A short, stable id for a file on the phone (an id in the link cache, never sent anywhere). */
+function hashUri(uri: string): string {
+  let h = 0;
+  for (let i = 0; i < uri.length; i++) h = (Math.imul(31, h) + uri.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
+function LocalMedia({
+  file,
+  box,
+  sending,
+}: {
+  file: LocalFile;
+  box: { width: number; height: number };
+  sending: boolean;
+}) {
+  const c = useColors();
+  const video = file.type.startsWith("video/");
+  return (
+    <View
+      style={[styles.shot, { width: box.width, height: box.height, backgroundColor: c.sunken, borderColor: c.line2 }]}
+      accessible
+      accessibilityLabel={file.name}
+    >
+      {video ? (
+        <VideoFirstFrame uri={file.uri} />
+      ) : (
+        <Image source={{ uri: file.uri }} contentFit="cover" transition={0} style={StyleSheet.absoluteFill} />
+      )}
+      {video && !sending ? (
+        <View style={styles.length} pointerEvents="none">
+          <Icon name="play" size={9} color="#fff" />
+          {file.duration ? <RNText style={styles.lengthText}>{videoClock(file.duration)}</RNText> : null}
+        </View>
+      ) : null}
+      {sending ? (
+        <View style={[StyleSheet.absoluteFill, styles.veil]} pointerEvents="none">
+          <ActivityIndicator color="#fff" />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function LocalFileCard({ file, sending }: { file: LocalFile; sending: boolean }) {
+  const { i18n } = useTranslation();
+  const c = useColors();
+  const surface = useSurface();
+  return (
+    <View style={[styles.card, surface]} accessible accessibilityLabel={file.name}>
+      <FileTile ext={extLabel(extensionOf(file.name))} />
+      <View style={styles.grow}>
+        <Text variant="body" style={styles.bold} numberOfLines={2}>
+          {file.name}
+        </Text>
+        {file.size !== undefined ? (
+          <Text variant="footnote" tone="faint">
+            {formatBytes(i18n.language || "en", file.size)}
+          </Text>
+        ) : null}
+      </View>
+      {sending ? <ActivityIndicator color={c.faint} /> : null}
+    </View>
+  );
+}
+
 /** The type and size line: "Documento · 4 KB". */
 export function useFileLine() {
   const { t, i18n } = useTranslation();
@@ -329,6 +477,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pressed: { opacity: 0.85 },
+  // A file on its way up dims under a spinner; a video's length sits in its corner, as on a sent one.
+  veil: { backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
+  length: {
+    position: "absolute",
+    left: 8,
+    bottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  lengthText: { color: "#fff", fontSize: 12, fontWeight: "600", fontVariant: ["tabular-nums"] },
   card: {
     maxWidth: MAX_WIDTH,
     flexDirection: "row",

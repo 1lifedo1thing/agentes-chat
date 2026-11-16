@@ -1,12 +1,12 @@
 import { formatBytes } from "@agenteschat/client/lib/files";
 import { Image } from "expo-image";
-import { useVideoPlayer, VideoView } from "expo-video";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { Icon, Text, useTheme } from "@/ui";
 import { extensionOf, extLabel, videoClock } from "../files/logic";
 import { FileTile } from "../files/MessageFiles";
+import { VideoFirstFrame } from "../files/VideoPlayer";
 import { TILE_H, tileWidth } from "./attachment-size";
 
 /** A photo, video or file picked for the next message, waiting in the field until it is sent with the words. */
@@ -112,7 +112,7 @@ function Tile({ file: f, onRemove }: { file: PendingFile; onRemove: () => void }
       {isImage(f) ? (
         <Image source={{ uri: f.uri }} contentFit="cover" transition={120} style={StyleSheet.absoluteFill} />
       ) : isVideo(f) ? (
-        <VideoFrame uri={f.uri} />
+        <VideoFirstFrame uri={f.uri} />
       ) : (
         <>
           <FileTile ext={extLabel(extensionOf(f.name))} />
@@ -160,23 +160,6 @@ function Tile({ file: f, onRemove }: { file: PendingFile; onRemove: () => void }
         </Pressable>
       )}
     </View>
-  );
-}
-
-/** A picked video's first frame: a silent player that never plays, drawn to the thumbnail's shape. */
-function VideoFrame({ uri }: { uri: string }) {
-  const player = useVideoPlayer({ uri }, (p) => {
-    p.muted = true;
-  });
-  return (
-    <VideoView
-      player={player}
-      nativeControls={false}
-      contentFit="cover"
-      allowsPictureInPicture={false}
-      pointerEvents="none"
-      style={StyleSheet.absoluteFill}
-    />
   );
 }
 

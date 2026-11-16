@@ -37,7 +37,16 @@ const SETTLE = { stiffness: 190, damping: 25, mass: 1 };
  * Two or more pictures in a message: a deck to swipe through, its dots under it. A tap opens the viewer at the
  * picture on top, and closing it brings the deck back on the one the person stopped at.
  */
-export function ImageStack({ images, width }: { images: StackImage[]; width: number }) {
+export function ImageStack({
+  images,
+  width,
+  openable = true,
+}: {
+  images: StackImage[];
+  width: number;
+  /** False while the pictures are still on their way up: the deck swipes, a tap opens nothing yet. */
+  openable?: boolean;
+}) {
   const { t } = useTranslation();
   const c = useColors();
   const reduced = useReducedMotion();
@@ -67,6 +76,7 @@ export function ImageStack({ images, width }: { images: StackImage[]; width: num
 
   // Opening the pictures is plain navigation: no haptic (a swipe through the stack has its own).
   const open = (at: number) => {
+    if (!openable) return;
     router.push({
       pathname: "/images",
       params: {

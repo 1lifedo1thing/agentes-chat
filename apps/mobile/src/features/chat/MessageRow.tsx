@@ -93,7 +93,8 @@ import { TrailCard } from "../browser/TrailCard";
 import { DeviceWait } from "../devices/DeviceWait";
 import { deviceWaitOf } from "../devices/logic";
 import { WaitToolOffAction } from "../devices/ToolOneClick";
-import { MessageFiles } from "../files/MessageFiles";
+import { localFilesOf } from "../files/local-files";
+import { LocalFiles, MessageFiles } from "../files/MessageFiles";
 import { consultationHref, routineHref } from "../links/logic";
 import { DecisionCard, MissionCard, PlanCard, ReviewCard, SetupFailedCard } from "../missions/cards";
 import { AwayPill, BrainWait } from "../outages/WaitCard";
@@ -375,6 +376,8 @@ export const MessageRow = memo(function MessageRow({
   const setup = missionSetupOf(meta);
   const link = missionLinkOf(meta);
   const files = artifactsOf(meta);
+  // Mine, just sent: drawn from the phone while they upload.
+  const localFiles = localFilesOf(meta);
   const aboveReactions = useReactions(orgId, above?.id ?? "", false).data;
   const ownReactions = useReactions(orgId, m.id, false).data;
   const run = runAround(
@@ -552,6 +555,10 @@ export const MessageRow = memo(function MessageRow({
       <View style={styles.meFiles}>
         <MessageFiles files={files} align="end" />
       </View>
+    ) : localFiles.length > 0 ? (
+      <View style={styles.meFiles}>
+        <LocalFiles files={localFiles} align="end" sending={m.local === "pending"} />
+      </View>
     ) : null;
     return (
       <Pressable
@@ -587,6 +594,11 @@ export const MessageRow = memo(function MessageRow({
             {(body || media) && files.length > 0 ? (
               <View style={styles.meFiles}>
                 <MessageFiles files={files} align="end" />
+              </View>
+            ) : null}
+            {(body || media) && localFiles.length > 0 ? (
+              <View style={styles.meFiles}>
+                <LocalFiles files={localFiles} align="end" sending={m.local === "pending"} />
               </View>
             ) : null}
             {cards}
@@ -881,6 +893,7 @@ export const MessageRow = memo(function MessageRow({
             {isAgent ? <FeedbackOfferRow message={m} /> : null}
             {isAgent && m.longWork ? <MessageWorkLine message={m} threaded={Boolean(thread)} /> : null}
             {files.length > 0 ? <MessageFiles files={files} /> : null}
+            {localFiles.length > 0 ? <LocalFiles files={localFiles} sending={m.local === "pending"} /> : null}
             {trails && m.author.id && trails.browser.length > 0 ? (
               <TrailCard
                 agentId={m.author.id}
