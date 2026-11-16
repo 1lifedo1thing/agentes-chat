@@ -1291,6 +1291,7 @@ export const featureKeysPtBR = {
     place: "{{index}} de {{count}}",
     previous: "Imagem anterior",
     next: "Próxima imagem",
+    noPreviewTitle: "Sem prévia",
     noPreview: "Este arquivo não abre no app. Envie para outro app para abrir.",
     video: {
       play: "Tocar",

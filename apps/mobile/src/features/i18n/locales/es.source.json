@@ -3066,6 +3066,9 @@
   "files.next": {
     "value": "Next picture"
   },
+  "files.noPreviewTitle": {
+    "value": "No preview"
+  },
   "files.noPreview": {
     "value": "This file doesn't open in the app. Send it to another app to open it."
   },

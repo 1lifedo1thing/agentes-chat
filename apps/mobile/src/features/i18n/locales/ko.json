@@ -1162,6 +1162,7 @@
     "place": "{{count}}개 중 {{index}}번째",
     "previous": "이전 사진",
     "next": "다음 사진",
+    "noPreviewTitle": "미리보기 없음",
     "noPreview": "이 파일은 앱에서 열리지 않아요. 다른 앱으로 보내서 여세요.",
     "video": {
       "play": "재생",

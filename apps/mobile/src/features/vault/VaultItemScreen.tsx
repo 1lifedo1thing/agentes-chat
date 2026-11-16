@@ -13,14 +13,14 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { canMoveVaultItem } from "@agenteschat/client/lib/vault";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, useToast } from "@/ui";
+import { StyleSheet, View } from "react-native";
+import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, SkeletonList, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { Note } from "../ai/parts";
 import { confirmAction, Gap, NEXT_FIELD, SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { Face } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useNow, useOrgId } from "../shared/hooks";
+import { useNow, useOrgId } from "../shared/hooks";
 import { goBack, successHaptic } from "../shared/parts";
 import {
   accessSentence,
@@ -51,7 +51,6 @@ import { InputField, SavedValue, useVaultNames } from "./parts";
  */
 export function VaultItemScreen({ id }: { id: string }) {
   const { t } = useTranslation();
-  const c = useColors();
   const orgId = useOrgId();
   const item = useVaultItem(orgId, id);
   if (!item.data) {
@@ -65,7 +64,7 @@ export function VaultItemScreen({ id }: { id: string }) {
         ) : item.isError ? (
           <LoadFailed onRetry={() => void item.refetch()} />
         ) : (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
+          <SkeletonList rows={4} />
         )}
       </SettingsPage>
     );
@@ -455,5 +454,4 @@ export function contactKeyboard(field: (typeof CONTACT_FIELDS)[number]) {
 
 const styles = StyleSheet.create({
   note: { paddingHorizontal: 4, paddingTop: 10 },
-  loading: { marginVertical: 16 },
 });

@@ -1241,6 +1241,7 @@
     "place": "{{index}} von {{count}}",
     "previous": "Vorheriges Bild",
     "next": "Nächstes Bild",
+    "noPreviewTitle": "Keine Vorschau",
     "noPreview": "Diese Datei öffnet sich nicht in der App. Sende sie an eine andere App, um sie zu öffnen.",
     "video": {
       "play": "Abspielen",

@@ -11,13 +11,13 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { isEveryone, sortRoles } from "@agenteschat/client/lib/roles";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { GroupedFooter, RoleMark, useToast } from "@/ui";
+import { StyleSheet, View } from "react-native";
+import { GroupedFooter, RoleMark, SkeletonList, useToast } from "@/ui";
 import { Note } from "../ai/parts";
 import { SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { AccessList, type AccessListRow } from "../shared/AccessList";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useOrgId } from "../shared/hooks";
+import { useDirectory, useOrgId } from "../shared/hooks";
 import { goBack, successHaptic } from "../shared/parts";
 import { accessProblem, accessSentence, forScope, sameAccess } from "./logic";
 import { AgentRows, useVaultNames } from "./parts";
@@ -31,7 +31,6 @@ type Level = "in" | "out";
  */
 export function VaultAccessScreen({ itemId, connectionId }: { itemId?: string; connectionId?: string }) {
   const { t } = useTranslation();
-  const c = useColors();
   const orgId = useOrgId();
   const item = useVaultItem(orgId, itemId ?? null);
   const vault = useVault(orgId, Boolean(connectionId));
@@ -50,7 +49,7 @@ export function VaultAccessScreen({ itemId, connectionId }: { itemId?: string; c
         ) : failed ? (
           <LoadFailed onRetry={() => void (itemId ? item.refetch() : vault.refetch())} />
         ) : (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
+          <SkeletonList rows={4} />
         )}
       </SettingsPage>
     );
@@ -193,7 +192,6 @@ function AccessForm({
 
 const styles = StyleSheet.create({
   note: { paddingHorizontal: 4, paddingTop: 10 },
-  loading: { marginVertical: 16 },
   // The shared access list brings its own side margins; the settings page has them already.
   bleed: { marginHorizontal: -16 },
   inset: { paddingHorizontal: 16 },

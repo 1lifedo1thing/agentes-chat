@@ -1241,6 +1241,7 @@
     "place": "{{index}} van {{count}}",
     "previous": "Vorige afbeelding",
     "next": "Volgende afbeelding",
+    "noPreviewTitle": "Geen voorbeeld",
     "noPreview": "Dit bestand opent niet in de app. Stuur het naar een andere app om het te openen.",
     "video": {
       "play": "Afspelen",

@@ -5,11 +5,10 @@ import { isolatedPage } from "@agenteschat/client/lib/isolated-page";
 import { useQuery } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Platform, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
+import { Platform, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
-import { Button, EmptyState, type HeaderAction, type HeaderMenuItem, SCREEN_X, usePulse, useToast } from "@/ui";
+import { Button, EmptyState, type HeaderAction, type HeaderMenuItem, SCREEN_X, useToast } from "@/ui";
 import { ISOLATED_WEB_VIEW, STORAGE_STANDINS } from "../blocks/logic";
 import { CodeText, RawToggle } from "../chat/CodeCard";
 import { MessageText } from "../chat/MessageText";
@@ -21,6 +20,7 @@ import { useFileActions } from "./actions";
 import { fileInfo, textChunks } from "./logic";
 import { useFileLine } from "./MessageFiles";
 import { openFile } from "./open";
+import { PageBones } from "./PageBones";
 import { fileText, useRemoteFile } from "./source";
 
 /**
@@ -126,11 +126,12 @@ export function DocumentViewer({ id, version }: { id: string; version?: number }
       ) : pdf ? (
         <PdfPage detail={detail} />
       ) : (
-        // A type the app doesn't draw: what it is, and the way to open it in another app.
+        // A type the app doesn't draw: that it has no preview (its name is the bar's title already), and the way to
+        // open it in another app.
         <EmptyState
           size="page"
           icon="file"
-          title={info.name}
+          title={t("mobile.files.noPreviewTitle")}
           subtitle={t("mobile.files.noPreview")}
           action={
             <Button
@@ -147,29 +148,9 @@ export function DocumentViewer({ id, version }: { id: string; version?: number }
   );
 }
 
-/** What fills the screen under the bar, centred (a failure, a page's spinner). */
+/** What fills the screen under the bar, centred (a failure and its retry). */
 function Middle({ children }: { children: ReactNode }) {
   return <View style={styles.middle}>{children}</View>;
-}
-
-/** Widths of the text's lines while it loads, so it reads as a page of text, not a pattern. */
-const BONES = [92, 84, 96, 71, 88, 64, 90, 78];
-
-/** A page of text while it loads: lines where the text goes, pulsing as the app's lists do while they load. */
-function PageBones() {
-  const c = useColors();
-  const pulse = usePulse();
-  return (
-    <Animated.View
-      style={[styles.bones, pulse]}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
-      {BONES.map((w) => (
-        <View key={w} style={[styles.bone, { width: `${w}%`, backgroundColor: c.sunken }]} />
-      ))}
-    </Animated.View>
-  );
 }
 
 /** A Markdown or text file's text, loaded once per version. */
@@ -237,7 +218,7 @@ function PdfPage({ detail }: { detail: ArtifactDetail }) {
         <LoadFailed onRetry={() => void link.refetch()} />
       </Middle>
     );
-  if (!link.data) return <Spinner />;
+  if (!link.data) return <PageBones />;
   return (
     <WebView
       key={`${detail.id}@${detail.shownVersion}`}
@@ -245,19 +226,9 @@ function PdfPage({ detail }: { detail: ArtifactDetail }) {
       originWhitelist={["https://*", "http://*"]}
       javaScriptEnabled={false}
       startInLoadingState
-      renderLoading={() => <Spinner />}
+      renderLoading={() => <PageBones cover />}
       style={[styles.fill, { backgroundColor: c.bg }]}
     />
-  );
-}
-
-/** A web view still drawing its page: a spinner where the page will be. */
-function Spinner() {
-  const c = useColors();
-  return (
-    <View style={[StyleSheet.absoluteFill, styles.middle]}>
-      <ActivityIndicator color={c.faint} />
-    </View>
   );
 }
 
@@ -282,7 +253,7 @@ function HtmlPage({ detail }: { detail: ArtifactDetail }) {
         <LoadFailed onRetry={() => void text.refetch()} />
       </Middle>
     ) : (
-      <Spinner />
+      <PageBones />
     );
   return (
     <WebView
@@ -290,7 +261,7 @@ function HtmlPage({ detail }: { detail: ArtifactDetail }) {
       source={{ html: page }}
       {...ISOLATED_WEB_VIEW}
       startInLoadingState
-      renderLoading={() => <Spinner />}
+      renderLoading={() => <PageBones cover />}
       onContentProcessDidTerminate={() => setLife((n) => n + 1)}
       onRenderProcessGone={() => setLife((n) => n + 1)}
       style={[styles.fill, styles.white]}
@@ -302,8 +273,6 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   middle: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: SCREEN_X },
   page: { paddingHorizontal: SCREEN_X, paddingTop: 12 },
-  bones: { gap: 12, paddingHorizontal: SCREEN_X, paddingTop: 20 },
-  bone: { height: 12, borderRadius: 6 },
   white: { backgroundColor: "#fff" },
   mono: { fontFamily: MONO, fontSize: 13, lineHeight: 19 },
   json: { gap: 10, alignItems: "flex-start" },

@@ -1241,6 +1241,7 @@
     "place": "{{index}} / {{count}}",
     "previous": "Önceki görsel",
     "next": "Sonraki görsel",
+    "noPreviewTitle": "Önizleme yok",
     "noPreview": "Bu dosya uygulamada açılmıyor. Açmak için başka bir uygulamaya gönderin.",
     "video": {
       "play": "Oynat",

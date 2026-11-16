@@ -4,7 +4,7 @@ import { webSettingsUrl } from "@agenteschat/client/lib/server";
 import { vaultNoAgents } from "@agenteschat/client/lib/vault";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { serverUrl } from "@/lib/server";
 import {
   Button,
@@ -18,6 +18,7 @@ import {
   type IconName,
   SearchField,
   Segmented,
+  SkeletonList,
   Text,
 } from "@/ui";
 import { router } from "@/ui/navigation";
@@ -52,7 +53,6 @@ const SEARCH_FROM = 6;
  */
 export function VaultScreen() {
   const { t } = useTranslation();
-  const c = useColors();
   const orgId = useOrgId();
   const vault = useVault(orgId);
   const [tab, setTab] = useState<VaultTab | null>(null);
@@ -61,11 +61,7 @@ export function VaultScreen() {
   if (!data) {
     return (
       <SettingsPage title={title}>
-        {vault.isError ? (
-          <LoadFailed onRetry={() => void vault.refetch()} />
-        ) : (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
-        )}
+        {vault.isError ? <LoadFailed onRetry={() => void vault.refetch()} /> : <SkeletonList rows={4} />}
       </SettingsPage>
     );
   }
@@ -332,7 +328,6 @@ function ConnectionRow({ icon, conn, now }: { icon: IconName; conn: VaultConnect
 }
 
 const styles = StyleSheet.create({
-  loading: { marginVertical: 16 },
   tabs: { paddingTop: 20, paddingBottom: 4, paddingHorizontal: 4 },
   search: { paddingTop: 12, paddingBottom: 4 },
   // The pills scroll to the screen's edges; their row has its own inset.

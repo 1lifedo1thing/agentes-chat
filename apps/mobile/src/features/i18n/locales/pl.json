@@ -1399,6 +1399,7 @@
     "place": "{{index}} z {{count}}",
     "previous": "Poprzednie zdjęcie",
     "next": "Następne zdjęcie",
+    "noPreviewTitle": "Brak podglądu",
     "noPreview": "Ten plik nie otwiera się w aplikacji. Wyślij go do innej aplikacji, żeby go otworzyć.",
     "video": {
       "play": "Odtwórz",

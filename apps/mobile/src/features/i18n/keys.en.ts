@@ -1328,6 +1328,8 @@ export const featureKeysEn = {
     /** The picture viewer's buttons on the picture's sides. */
     previous: "Previous picture",
     next: "Next picture",
+    /** The file screen's heading for a type the app doesn't draw (the file's name is already the bar's title). */
+    noPreviewTitle: "No preview",
     noPreview: "This file doesn't open in the app. Send it to another app to open it.",
     /** The video player's controls (a message's video and the file screen). */
     video: {

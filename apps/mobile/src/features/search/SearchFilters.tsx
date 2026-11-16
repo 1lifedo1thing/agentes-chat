@@ -19,13 +19,12 @@ import {
   typingOperator,
 } from "@agenteschat/client/lib/search-filters";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeOut, LayoutAnimationConfig, LinearTransition } from "react-native-reanimated";
 import {
   Button,
   EmptyState,
   Filters,
-  Icon,
   SCREEN_X,
   SectionHeader,
   SkeletonList,
@@ -37,7 +36,7 @@ import {
 import { router } from "@/ui/navigation";
 import { Face } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useOrgId, useWhen } from "../shared/hooks";
+import { useOrgId, useWhen } from "../shared/hooks";
 import { previewOf } from "../shared/logic";
 import { ActionList, Tile } from "../shared/parts";
 import { hitHref } from "./logic";
@@ -278,7 +277,6 @@ export function FilteredResults({
   onPick?: (hit: SearchHit) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const c = useColors();
   const when = useWhen();
   const hits = useSearch(useOrgId(), text, ["message"], searchFilterInput(chips, sort));
   const list = hits.data ?? [];
@@ -310,15 +308,14 @@ export function FilteredResults({
                 : ""}
           </Text>
           {onClear && chips.length > 0 ? (
-            <Pressable
+            // The kit's quiet button (its press, its tap, its 44-point target): × takes every filter off.
+            <Button
+              variant="ghost"
+              size="sm"
+              icon="x"
+              label={t("searchPage.filtersApplied", { count: chips.length })}
               onPress={onClear}
-              accessibilityRole="button"
-              hitSlop={11}
-              style={({ pressed }) => [styles.clear, pressed && styles.pressed]}
-            >
-              <Text tone="faint">{t("searchPage.filtersApplied", { count: chips.length })}</Text>
-              <Icon name="x" size={17} color={c.muted} />
-            </Pressable>
+            />
           ) : null}
         </View>
         {/* The results' own shape while they come, never a spinner. */}
@@ -370,7 +367,7 @@ const styles = StyleSheet.create({
   // The operator's empty state, at the headers' text column.
   hint: { paddingHorizontal: SCREEN_X, paddingTop: 8, paddingBottom: 6 },
   res: { paddingTop: 2 },
-  list: { paddingHorizontal: 16 },
+  list: { paddingHorizontal: SCREEN_X },
   bar: {
     flexDirection: "row",
     alignItems: "center",
@@ -379,6 +376,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: SCREEN_X,
     paddingTop: 8,
   },
-  clear: { flexDirection: "row", alignItems: "center", gap: 4 },
-  pressed: { opacity: 0.6 },
 });

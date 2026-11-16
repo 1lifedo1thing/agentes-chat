@@ -93,12 +93,151 @@ describe("the Vault's screens", () => {
   });
 });
 
+describe("the Vault's flows are real navigation", () => {
+  test("Import .env is two pushed screens: the review is its own route, the keys handed over in a draft", () => {
+    const env = src("features/vault/VaultEnvScreen.tsx");
+    // No step swapped in place: the paste step pushes the review, the system's back comes back to the paste.
+    expect(env).not.toContain("if (!file)");
+    expect(env).toContain("openEnvDraft({ file: parsed, scope: asked, leave });");
+    expect(env).toContain("router.push(vaultHref.envReview as never);");
+    // No drawn way back ("Import another"): the system's back is it.
+    expect(env).not.toContain('t("vault.import.another")');
+    // Saved, the whole flow closes back to the Vault without asking about the paste.
+    expect(env).toContain("draft.leave();");
+    expect(env).toContain("router.dismissTo(vaultHref.list as never);");
+    // The review takes the draft as it opens and drops it as it closes; without one it starts over.
+    expect(env).toContain("const [draft] = useState(envDraftNow);");
+    expect(env).toContain("useEffect(() => () => closeEnvDraft(draft), [draft]);");
+    const route = readFileSync(join(import.meta.dir, "../../app/(app)/(main)/settings/vault-env-review.tsx"), "utf8");
+    expect(route).toContain("<VaultEnvReviewScreen />");
+  });
+
+  test("connecting a password manager ends on the connection's page, never a done step drawn in place", () => {
+    const connect = src("features/vault/VaultConnectScreen.tsx");
+    expect(connect).not.toContain("setMade");
+    expect(connect).not.toContain("ConnectedNote");
+    expect(connect).toContain("router.replace(vaultHref.connection(connected.id) as never);");
+    expect(connect).toContain('title: t("mobile.vault.connect.connected", { name: source.name }),');
+    // Its page waits for the Vault read again before it says a connection is gone.
+    expect(src("features/vault/VaultConnectionScreen.tsx")).toContain("vault.isSuccess && !vault.isFetching ? (");
+  });
+
+  test("a connection's fields walk with the return key, under the keyboard's bar", () => {
+    const connect = src("features/vault/VaultConnectScreen.tsx");
+    expect(connect).toContain('{...(f.id === lastTyped ? { returnKeyType: "done" as const } : NEXT_FIELD)}');
+    expect(connect).toMatch(/locked=\{busy\}\s+toolbar\s+>/);
+  });
+
+  test("the Vault's pages load in their rows' shape, never a spinner", () => {
+    for (const file of [
+      "features/vault/VaultScreen.tsx",
+      "features/vault/VaultItemScreen.tsx",
+      "features/vault/VaultAccessScreen.tsx",
+      "features/vault/VaultConnectScreen.tsx",
+      "features/vault/VaultConnectionScreen.tsx",
+    ]) {
+      const s = src(file);
+      expect({ file, spinner: s.includes("ActivityIndicator") }).toEqual({ file, spinner: false });
+      expect({ file, skeleton: s.includes("<SkeletonList rows={4} />") }).toEqual({ file, skeleton: true });
+    }
+  });
+});
+
 describe("Compartilhar com…", () => {
   test("the line to send is the app's text field, the sheet keeps a sheet's margins", () => {
     const share = src("features/share/ShareScreen.tsx");
     expect(share).toContain("<TextArea");
     expect(share).not.toContain("<TextInput");
     expect(share).toContain("content: { paddingHorizontal: SHEET_X, paddingTop: 8 },");
-    expect(share).toContain("bar: { paddingHorizontal: SHEET_X, paddingTop: 12 },");
+    expect(share).toContain("bar: { paddingHorizontal: SHEET_X, paddingVertical: 12 },");
+  });
+
+  test("the send button is the sheet's own footer: it rides over the keyboard while the line is typed", () => {
+    const share = src("features/share/ShareScreen.tsx");
+    expect(share).toContain('footerOptions: { position: "absolute" },');
+    expect(share).toContain("footerStyle: { backgroundColor: colors.grouped },");
+    // In the sheet's colors, pressing the latest send; the list leaves the keyboard's and the footer's inset to the sheet.
+    expect(share).toMatch(/footer: hasShare \? \(\s*<SheetContent>/);
+    expect(share).toContain("onPress={() => void sendNow.current()}");
+    expect(share).not.toContain("automaticallyAdjustKeyboardInsets");
+    expect(share).not.toContain("insets.bottom");
+  });
+});
+
+describe("a file's screen and its share sheet", () => {
+  test("a type the app doesn't draw says it has no preview, never the name the bar already shows", () => {
+    const viewer = src("features/files/DocumentViewer.tsx");
+    expect(viewer).toContain('title={t("mobile.files.noPreviewTitle")}');
+    expect(viewer).not.toContain("title={info.name}");
+  });
+
+  test("a page, a PDF or a text loads in a page's shape, never a spinner", () => {
+    const viewer = src("features/files/DocumentViewer.tsx");
+    expect(viewer).not.toContain("ActivityIndicator");
+    expect(viewer.match(/renderLoading=\{\(\) => <PageBones cover \/>\}/g)?.length).toBe(2);
+    expect(src("features/files/PageBones.tsx")).toContain("const pulse = usePulse();");
+  });
+
+  test("the share sheet loads in its rows' shape; a file that's gone says so as an empty state", () => {
+    const sheet = src("features/files/ShareSheet.tsx");
+    expect(sheet).not.toContain("ActivityIndicator");
+    expect(sheet).toContain("<SkeletonList rows={4} />");
+    expect(sheet).toContain('<EmptyState size="inline" icon="file" title={t("errors.artifact.notFound")} />');
+  });
+});
+
+describe("a block opened whole", () => {
+  test("loads in a page's shape under its bar, never a lone spinner", () => {
+    const block = src("features/blocks/LiveBlock.tsx");
+    const screen = block.slice(block.indexOf("export function BlockScreen("));
+    expect(screen).not.toContain("ActivityIndicator");
+    expect(screen).toContain("<PageBones />");
+  });
+
+  test("its fields stay above the keyboard and a drag takes the keyboard down", () => {
+    const block = src("features/blocks/LiveBlock.tsx");
+    const screen = block.slice(block.indexOf("export function BlockScreen("));
+    expect(screen).toContain('keyboardShouldPersistTaps="handled"');
+    expect(screen).toContain('keyboardDismissMode="interactive"');
+    expect(screen).toContain("automaticallyAdjustKeyboardInsets");
+  });
+
+  test("Keep in Drive that failed says why, not a generic line", () => {
+    const block = src("features/blocks/LiveBlock.tsx");
+    const screen = block.slice(block.indexOf("export function BlockScreen("));
+    expect(screen).toContain("onError: failed,");
+    expect(screen).not.toContain('t("mobile.blocks.sendFailed")');
+  });
+});
+
+describe("the search tab", () => {
+  test("opens with the keyboard down: the field takes the focus only when the person taps it", () => {
+    const search = src("features/search/SearchScreen.tsx");
+    expect(search).not.toContain("FOCUS_DELAY_MS");
+    // The only focus left is the one a filter word asks for (a tap on the screen already open).
+    expect(search.match(/field\.current\?\.focus\(\)/g)?.length).toBe(1);
+    expect(search.slice(search.indexOf("const startOp"))).toContain("field.current?.focus();");
+  });
+
+  test("a pull asks for the conversations and every search again", () => {
+    const search = src("features/search/SearchScreen.tsx");
+    expect(search).toContain('qc.refetchQueries({ queryKey: searchQueryRoot(orgId), type: "active" })');
+    expect(search).toContain("pull={pull}");
+  });
+
+  test("a search that failed says so with a retry, never as nothing found", () => {
+    const results = src("features/search/SearchResults.tsx");
+    expect(results).toContain("const failed = words && hits.isError && !hits.data;");
+    expect(results).toContain("{failed ? <LoadFailed onRetry={() => void hits.refetch()} /> : null}");
+    expect(results).toContain("{words && !failed && isEmpty(r) && !hits.isFetching ? (");
+  });
+
+  test("taking the filters off is the kit's button, not a press drawn by hand", () => {
+    const filters = src("features/search/SearchFilters.tsx");
+    expect(filters).not.toContain("<Pressable");
+    expect(filters).not.toContain("styles.pressed");
+    expect(filters).toMatch(
+      /<Button\s+variant="ghost"\s+size="sm"\s+icon="x"\s+label=\{t\("searchPage\.filtersApplied"/,
+    );
   });
 });
