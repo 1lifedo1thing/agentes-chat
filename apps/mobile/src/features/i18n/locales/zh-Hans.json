@@ -803,9 +803,6 @@
     "keepEditing": "继续编辑"
   },
   "newAgent": {
-    "leaveTitle": "不创建就离开？",
-    "leaveText": "你开始创建的智能体将不会被创建。",
-    "keepGoing": "继续创建",
     "identityQuestion": "这个智能体是谁？",
     "identityLead": "名字、聊天中的称呼和头像。",
     "handleMention": "提及 @{{handle}} 即可呼叫。",
@@ -831,7 +828,6 @@
       "archive": "手机无法打开 .zip 或 .tar.gz 文件。请在“文件”应用中点按 .zip 解压，再选择里面的文件，或在电脑上导入。",
       "privacy": "在这台手机上读取。密钥和登录文件永远不会被打开。",
       "also": "一并导入",
-      "change": "更改",
       "arrived_other": "已导入 {{count}} 个智能体",
       "partial": "已导入 {{done}}/{{total}} 个。再次导入可导入其余的。"
     }

@@ -827,9 +827,6 @@
     "keepEditing": "Verder bewerken"
   },
   "newAgent": {
-    "leaveTitle": "Weggaan zonder aan te maken?",
-    "leaveText": "De agent waarmee je begon, wordt niet aangemaakt.",
-    "keepGoing": "Verder met aanmaken",
     "identityQuestion": "Wie is de agent?",
     "identityLead": "Zijn naam, hoe je hem in het gesprek roept en zijn gezicht.",
     "handleMention": "Vermeld @{{handle}} om hem te roepen.",
@@ -855,7 +852,6 @@
       "archive": "De telefoon opent geen .zip- of .tar.gz-bestanden. Tik in de app Bestanden op de .zip om hem uit te pakken en kies de bestanden erin, of importeer op de computer.",
       "privacy": "Gelezen op deze telefoon. Bestanden met sleutels en inloggegevens worden nooit geopend.",
       "also": "Komt ook mee",
-      "change": "Wijzigen",
       "arrived_one": "{{name}} is aangekomen",
       "arrived_other": "{{count}} agents zijn aangekomen",
       "partial": "{{done}} van {{total}} aangekomen. Opnieuw importeren haalt de rest."

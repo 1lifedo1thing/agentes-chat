@@ -851,9 +851,6 @@
     "keepEditing": "Seguir editando"
   },
   "newAgent": {
-    "leaveTitle": "¿Salir sin crear?",
-    "leaveText": "El agente que empezaste no se va a crear.",
-    "keepGoing": "Seguir creando",
     "identityQuestion": "¿Quién es el agente?",
     "identityLead": "Su nombre, cómo llamarlo en el chat y su cara.",
     "handleMention": "Menciona a @{{handle}} para llamarlo.",
@@ -879,7 +876,6 @@
       "archive": "El teléfono no abre archivos .zip ni .tar.gz. En la app Archivos, toca el .zip para descomprimirlo y elige los archivos de adentro, o importa en la computadora.",
       "privacy": "Se lee en este teléfono. Los archivos de claves e inicio de sesión nunca se abren.",
       "also": "También viene",
-      "change": "Cambiar",
       "arrived_one": "Llegó {{name}}",
       "arrived_many": "Llegaron {{count}} agentes",
       "arrived_other": "Llegaron {{count}} agentes",

@@ -875,9 +875,6 @@
     "keepEditing": "Edytuj dalej"
   },
   "newAgent": {
-    "leaveTitle": "Wyjść bez tworzenia?",
-    "leaveText": "Agent, którego zaczynasz tworzyć, nie powstanie.",
-    "keepGoing": "Twórz dalej",
     "identityQuestion": "Kim jest agent?",
     "identityLead": "Nazwa, jak wołać go na czacie, i twarz.",
     "handleMention": "Napisz @{{handle}}, aby go zawołać.",
@@ -903,7 +900,6 @@
       "archive": "Telefon nie otwiera plików .zip ani .tar.gz. W aplikacji Pliki stuknij plik .zip, żeby go rozpakować, i wybierz pliki ze środka albo zaimportuj na komputerze.",
       "privacy": "Odczytywane na tym telefonie. Pliki z kluczami i danymi logowania nigdy nie są otwierane.",
       "also": "Przenosi się też",
-      "change": "Zmień",
       "arrived_one": "Zaimportowano: {{name}}",
       "arrived_few": "Zaimportowano {{count}} agentów",
       "arrived_many": "Zaimportowano {{count}} agentów",

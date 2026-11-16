@@ -827,9 +827,6 @@
     "keepEditing": "Weiter bearbeiten"
   },
   "newAgent": {
-    "leaveTitle": "Ohne Erstellen verlassen?",
-    "leaveText": "Der angefangene Agent wird nicht erstellt.",
-    "keepGoing": "Weiter erstellen",
     "identityQuestion": "Wer ist der Agent?",
     "identityLead": "Sein Name, wie du ihn im Chat rufst, und sein Gesicht.",
     "handleMention": "Erwähne @{{handle}}, um ihn zu rufen.",
@@ -855,7 +852,6 @@
       "archive": "Das Handy öffnet keine .zip- oder .tar.gz-Dateien. Tippe in der Dateien-App auf die .zip, um sie zu entpacken, und wähle die Dateien darin, oder importiere am Computer.",
       "privacy": "Wird auf diesem Handy gelesen. Schlüssel- und Login-Dateien werden nie geöffnet.",
       "also": "Kommt auch mit",
-      "change": "Ändern",
       "arrived_one": "{{name}} ist da",
       "arrived_other": "{{count}} Agenten sind da",
       "partial": "{{done}} von {{total}} sind da. Ein erneuter Import holt den Rest."

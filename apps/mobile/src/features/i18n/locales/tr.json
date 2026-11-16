@@ -827,9 +827,6 @@
     "keepEditing": "Düzenlemeye devam et"
   },
   "newAgent": {
-    "leaveTitle": "Oluşturmadan çıkılsın mı?",
-    "leaveText": "Başladığınız ajan oluşturulmayacak.",
-    "keepGoing": "Oluşturmaya devam et",
     "identityQuestion": "Ajan kim?",
     "identityLead": "Adı, sohbette ona nasıl seslenileceği ve yüzü.",
     "handleMention": "Çağırmak için @{{handle}} yazın.",
@@ -855,7 +852,6 @@
       "archive": "Telefon .zip veya .tar.gz dosyalarını açmaz. Dosyalar uygulamasında arşivi açmak için .zip dosyasına dokunun ve içindeki dosyaları seçin ya da bilgisayardan içe aktarın.",
       "privacy": "Bu telefonda okunur. Anahtar ve giriş dosyaları asla açılmaz.",
       "also": "Bunlar da gelir",
-      "change": "Değiştir",
       "arrived_one": "{{name}} geldi",
       "arrived_other": "{{count}} ajan geldi",
       "partial": "{{done}} / {{total}} geldi. Yeniden içe aktarırsanız kalanı da gelir."

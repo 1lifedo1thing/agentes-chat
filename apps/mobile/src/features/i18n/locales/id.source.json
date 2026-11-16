@@ -1958,15 +1958,6 @@
   "agentEdit.keepEditing": {
     "value": "Keep editing"
   },
-  "newAgent.leaveTitle": {
-    "value": "Leave without creating?"
-  },
-  "newAgent.leaveText": {
-    "value": "The agent you started won't be created."
-  },
-  "newAgent.keepGoing": {
-    "value": "Keep creating"
-  },
   "newAgent.identityQuestion": {
     "value": "Who is the agent?"
   },
@@ -2033,9 +2024,6 @@
   },
   "newAgent.import.also": {
     "value": "Also comes along"
-  },
-  "newAgent.import.change": {
-    "value": "Change"
   },
   "newAgent.import.arrived": {
     "value": {
