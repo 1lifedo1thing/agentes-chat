@@ -22,6 +22,17 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
  * never ships without a bar and a way back. A screen opened in place (`stillHref`: the start screen at launch) comes
  * in without its slide.
  */
+/** Create an agent's steps (`new-agent/*`), one pushed screen each. */
+const NEW_AGENT_ROUTES = [
+  "new-agent/index",
+  "new-agent/role",
+  "new-agent/identity",
+  "new-agent/instructions",
+  "new-agent/review",
+  "new-agent/import",
+  "new-agent/import-preview",
+];
+
 export default function MainStack() {
   const { colors } = useTheme();
   const pushed = usePushedOptions();
@@ -63,6 +74,10 @@ export default function MainStack() {
       link: { ...solid, animation: "none" },
       // Connect an AI: pushed screens, one question each, on the grouped gray (its bar counts the steps).
       "connect-ai": { ...page, contentStyle: { backgroundColor: colors.grouped } },
+      // Create an agent: one pushed screen per step, on the grouped gray its steps draw on (no white flash in a push).
+      ...Object.fromEntries(
+        NEW_AGENT_ROUTES.map((name) => [name, { ...page, contentStyle: { backgroundColor: colors.grouped } }]),
+      ),
       images: {
         ...base,
         presentation: "transparentModal",
