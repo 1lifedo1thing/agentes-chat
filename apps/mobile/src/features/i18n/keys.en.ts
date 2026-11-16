@@ -2146,6 +2146,9 @@ export const featureKeysEn = {
       stop: "Stop waiting",
       useInstead: "Use {{name}} instead",
       none: "No other device you can use is ready.",
+      /** After "Try now" and "Stop waiting": what the button did, said at once. */
+      tried: "Trying {{device}} again.",
+      stopped: "No longer waiting for {{device}}.",
     },
   },
   connectors: {

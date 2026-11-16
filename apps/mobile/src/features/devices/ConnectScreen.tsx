@@ -8,6 +8,7 @@ import { useOrg } from "@/providers/org";
 import { Button, GroupedFooter, GroupedHeader, GroupedList, GroupedRow, InkOrbit, Segmented } from "@/ui";
 import { router } from "@/ui/navigation";
 import { Note, Step, StepsCard } from "../ai/parts";
+import { RowBones } from "../roles/parts";
 import { CommandBlock, Gap, SettingsPage } from "../settings/parts";
 import { useMeId } from "../shared/hooks";
 import { openComputer, openThisPhone } from "./DevicesScreen";
@@ -180,6 +181,11 @@ function LinkFlow({ kind }: { kind: "server" | "computer" }) {
               <Gap />
               {link ? (
                 <CommandBlock command={link.commands[shell]} copiedTitle={t("mobile.devices.connect.copied")} />
+              ) : make.isPending ? (
+                // The line's place while it is made: nothing jumps when it comes.
+                <GroupedList>
+                  <RowBones name={80} />
+                </GroupedList>
               ) : null}
               <GroupedFooter>{t("mobile.devices.connect.once")}</GroupedFooter>
             </>

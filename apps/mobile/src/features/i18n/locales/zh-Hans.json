@@ -1935,7 +1935,9 @@
       "other": "使用其他设备",
       "stop": "停止等待",
       "useInstead": "改用 {{name}}",
-      "none": "没有其他你可以使用的设备处于就绪状态。"
+      "none": "没有其他你可以使用的设备处于就绪状态。",
+      "tried": "正在重试 {{device}}。",
+      "stopped": "已停止等待 {{device}}。"
     }
   },
   "connectors": {

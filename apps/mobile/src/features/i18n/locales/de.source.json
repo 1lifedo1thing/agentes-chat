@@ -5016,6 +5016,12 @@
   "devices.wait.none": {
     "value": "No other device you can use is ready."
   },
+  "devices.wait.tried": {
+    "value": "Trying {{device}} again."
+  },
+  "devices.wait.stopped": {
+    "value": "No longer waiting for {{device}}."
+  },
   "connectors.title": {
     "value": "Connectors"
   },

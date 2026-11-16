@@ -2128,7 +2128,9 @@
       "other": "Usa un altro dispositivo",
       "stop": "Smetti di aspettare",
       "useInstead": "Usa invece {{name}}",
-      "none": "Nessun altro dispositivo che puoi usare è pronto."
+      "none": "Nessun altro dispositivo che puoi usare è pronto.",
+      "tried": "Nuovo tentativo con {{device}}.",
+      "stopped": "Non si aspetta più {{device}}."
     }
   },
   "connectors": {

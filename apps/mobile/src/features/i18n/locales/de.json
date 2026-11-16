@@ -2034,7 +2034,9 @@
       "other": "Anderes Gerät nutzen",
       "stop": "Nicht mehr warten",
       "useInstead": "Stattdessen {{name}} nutzen",
-      "none": "Kein anderes Gerät, das du nutzen kannst, ist bereit."
+      "none": "Kein anderes Gerät, das du nutzen kannst, ist bereit.",
+      "tried": "{{device}} wird erneut versucht.",
+      "stopped": "Es wird nicht mehr auf {{device}} gewartet."
     }
   },
   "connectors": {

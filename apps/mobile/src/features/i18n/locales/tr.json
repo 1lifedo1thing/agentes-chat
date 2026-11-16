@@ -2034,7 +2034,9 @@
       "other": "Başka bir cihaz kullan",
       "stop": "Beklemeyi bırak",
       "useInstead": "Bunun yerine {{name}} kullan",
-      "none": "Kullanabileceğiniz başka hazır cihaz yok."
+      "none": "Kullanabileceğiniz başka hazır cihaz yok.",
+      "tried": "{{device}} yeniden deneniyor.",
+      "stopped": "Artık {{device}} beklenmiyor."
     }
   },
   "connectors": {
