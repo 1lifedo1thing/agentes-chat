@@ -3,7 +3,7 @@ import { and, asc, type Database, desc, type Executor, eq, gte, inArray, isNull,
 import { serverText } from "@agenteschat/i18n";
 import type { AppLocale } from "@agenteschat/i18n/locale";
 import { runAuthority } from "./authority";
-import { threadIsConfidential } from "./confidential";
+import { confidentialThreadSql, threadIsConfidential } from "./confidential";
 import { getChannelCached } from "./context";
 import type { ContextDeps } from "./context/summaries";
 import { deliverNotice, publishDelivery } from "./delivery";
@@ -1324,7 +1324,15 @@ export async function workBrief(db: Executor, run: Pick<AgentRun, "orgId" | "age
           .select({ kind: agentRunSteps.kind, data: agentRunSteps.data, createdAt: agentRunSteps.createdAt })
           .from(agentRunSteps)
           .innerJoin(agentRuns, eq(agentRuns.id, agentRunSteps.runId))
-          .where(and(eq(agentRuns.workId, w.id), eq(agentRuns.orgId, w.orgId)))
+          .where(
+            and(
+              eq(agentRuns.workId, w.id),
+              eq(agentRuns.orgId, w.orgId),
+              // What a run of a confidential thread said between its calls may repeat what it read (ADR 0189), and
+              // this is handed to the agent's other runs in the conversation.
+              sql`not ${confidentialThreadSql(sql`${agentRuns.orgId}`, sql`${agentRuns.threadRootId}`)}`,
+            ),
+          )
           .orderBy(desc(agentRunSteps.createdAt))
           .limit(BRIEF_STEPS),
       ]);
