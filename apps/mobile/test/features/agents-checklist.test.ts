@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { pushedByDefault } from "../main-stack";
 
 /**
  * The agents, team, cargos, AI, right hand and usage screens against the phone's checklist: no keyboard that opens by
@@ -62,5 +63,17 @@ describe("one bar, said once", () => {
       "roles/parts.tsx",
     ])
       expect({ file, ids: src(file).match(/\b[PW]\d{1,2}b?\b/g) ?? [] }).toEqual({ file, ids: [] });
+  });
+});
+
+describe("real navigation", () => {
+  test("the team templates and one template's team are routes of their own, pushed with their bar and back", () => {
+    for (const route of ["team-templates", "team-template"])
+      expect({ route, pushed: pushedByDefault(route) }).toEqual({ route, pushed: true });
+    // A template the first run points to opens over the list, so the system's back goes to the others.
+    const templates = src("right-hand/TeamTemplates.tsx");
+    expect(templates).toMatch(
+      /router\.push\("\/team-templates"\);\s+if \(template\) router\.push\(\{ pathname: "\/team-template", params: \{ id: template \} \}\);/,
+    );
   });
 });

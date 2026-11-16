@@ -21,7 +21,8 @@ test("a conversation draws the team card and the answers to tap under a right ha
   const row = src("chat/MessageRow.tsx");
   expect(row).toContain("{isAgent ? <TeamCard message={m} /> : null}");
   expect(row).toContain("{isAgent ? <ReplyChips message={m} /> : null}");
-  const card = src("right-hand/TeamCard.tsx");
+  // The card, and the templates' pushed screens it shares its rows with.
+  const card = src("right-hand/TeamCard.tsx") + src("right-hand/TeamTemplates.tsx");
   for (const key of [
     "teamPlan.card.create",
     "teamPlan.card.map",
@@ -100,8 +101,10 @@ test("an agent with no channel lives in its DM: no bare #, a block of its own, n
   expect(card).toContain("{col.channel ? (");
   expect(card).toContain("const mapButton = teamInDms(plan) ? null : (");
   // The templates and the card in the workspace's words.
-  const personalKeys = ["teamPlan.templates.title", "teamPlan.templates.lead", "teamPlan.map.title"];
-  for (const key of personalKeys) expect(card).toContain(`modeKey(org, "${key}")`);
+  const templates = src("right-hand/TeamTemplates.tsx");
+  for (const key of ["teamPlan.templates.title", "teamPlan.templates.lead"])
+    expect(templates).toContain(`modeKey(org, "${key}")`);
+  expect(card).toContain('modeKey(org, "teamPlan.map.title")');
   // The rows take the mode as a prop: the onboarding draws them with no workspace open.
   expect(card).toContain('t(personal ? "teamPlan.card.weeklyPersonal" : "teamPlan.card.weekly")');
   // No invitation on a personal workspace's first tasks.
