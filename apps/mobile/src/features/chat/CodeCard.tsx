@@ -12,6 +12,7 @@ import { Text as RNText, ScrollView, type ScrollViewInstance, StyleSheet, View }
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  EmptyState,
   Icon,
   PressScale,
   SheetBar,
@@ -244,10 +245,13 @@ export function CodeSheet() {
   const lines = code ? highlightCode(code.text, code.lang) : [];
   if (!code) {
     return (
-      <View style={[styles.sheet, styles.gone]}>
-        <Text variant="body" tone="muted">
-          {t("mobile.code.gone")}
-        </Text>
+      // Opened again with nothing to show (the app started over on it): said as every empty place says it, with the
+      // sheet's bar to close it.
+      <View style={styles.sheet}>
+        <SheetBar onClose={() => router.back()} />
+        <View style={styles.gone}>
+          <EmptyState size="panel" icon="code" title={t("mobile.code.gone")} />
+        </View>
       </View>
     );
   }
@@ -320,7 +324,7 @@ const styles = StyleSheet.create({
   wrap: { flexShrink: 1 },
   italic: { fontStyle: "italic" },
   sheet: { flex: 1 },
-  gone: { alignItems: "center", justifyContent: "center", padding: 24 },
+  gone: { flex: 1, justifyContent: "center", padding: 24 },
   sheetTools: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   pill: { minHeight: TOOL_H, paddingHorizontal: 14, borderRadius: TOOL_H / 2 },
   raw: { height: 28, paddingHorizontal: 12, marginRight: 4, borderRadius: 14 },

@@ -68,3 +68,32 @@ describe("a channel's members", () => {
     expect(add).toMatch(/roster\.isError \? \([\s\S]{0,140}<LoadFailed onRetry=\{\(\) => void roster\.refetch\(\)\} \/>/);
   });
 });
+
+describe("the conversation's sheets read as one family", () => {
+  test("Retornos and a message's agents are the sheets' grouped rows, as Fixadas", () => {
+    const returns = src("features/chat/Returns.tsx");
+    const sheet = returns.slice(returns.indexOf("export function ReturnsSheet("));
+    expect(sheet).not.toMatch(/<Card>|<Row\b/);
+    expect(sheet).toContain("<GroupedList>");
+    // Canceling is the row's own ×, a spinner in its place while it goes.
+    expect(sheet).toMatch(/r\.canCancel && !leaving\s*\?\s*\{\s*remove: \{/);
+    const receipts = src("features/chat/AgentReceipts.tsx");
+    const agents = receipts.slice(receipts.indexOf("function ReceiptsSheet("));
+    expect(agents).not.toMatch(/<Card>|<Row\b|<SectionHeader/);
+    expect(agents.match(/<GroupedList>/g)).toHaveLength(2);
+  });
+
+  test("a chart or code opened whole with nothing left to show says so as an empty state, with the sheet's bar", () => {
+    for (const [file, key] of [
+      ["features/chat/ChartCard.tsx", "mobile.chart.gone"],
+      ["features/chat/CodeCard.tsx", "mobile.code.gone"],
+    ] as const) {
+      const card = src(file);
+      expect(card).toMatch(
+        new RegExp(
+          `<SheetBar onClose=\\{\\(\\) => router\\.back\\(\\)\\} />\\s*<View style=\\{styles\\.gone\\}>\\s*<EmptyState size="panel" icon="\\w+" title=\\{t\\("${key.replace(/\./g, "\\.")}"\\)\\} />`,
+        ),
+      );
+    }
+  });
+});
