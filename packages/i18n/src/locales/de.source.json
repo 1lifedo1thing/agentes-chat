@@ -5453,6 +5453,111 @@
   "surface.link.consent": {
     "value": "{{assistant}} by agentes.chat may message you on {{surface}} about your workspaces, and call you only when something is urgent and you allow it. Write stop to turn this off."
   },
+  "surface.link.title": {
+    "value": "Talk to {{assistant}} on {{surface}}"
+  },
+  "surface.link.qr": {
+    "value": "QR code that opens {{surface}} with your code typed in"
+  },
+  "surface.link.making": {
+    "value": "Making your code"
+  },
+  "surface.link.code": {
+    "value": "Your code {{code}}"
+  },
+  "surface.link.open": {
+    "value": "Open {{surface}}"
+  },
+  "surface.link.stepScan": {
+    "value": "Scan the code with your phone, or open {{surface}} here"
+  },
+  "surface.link.stepSend": {
+    "value": "Send the message as it is"
+  },
+  "surface.link.stepSendText": {
+    "value": "This moves on by itself once your message arrives."
+  },
+  "surface.link.stepConfirm": {
+    "value": "Check the sender and confirm here"
+  },
+  "surface.link.showCode": {
+    "value": "Show the code again"
+  },
+  "surface.link.confirmTitle": {
+    "value": "Is this your {{surface}}?"
+  },
+  "surface.link.sentBy": {
+    "value": "This sender sent your code"
+  },
+  "surface.link.workspace": {
+    "value": "Answers in {{workspace}}"
+  },
+  "surface.link.confirm": {
+    "value": "Yes, link it"
+  },
+  "surface.link.notMe": {
+    "value": "Not me"
+  },
+  "surface.link.doneTitle": {
+    "value": "{{surface}} is linked"
+  },
+  "surface.link.doneText": {
+    "value": "{{assistant}} answers you there from now on."
+  },
+  "surface.link.newCode": {
+    "value": "Make a new code"
+  },
+  "surface.link.done": {
+    "value": "Done"
+  },
+  "surface.row.hint": {
+    "value": "Talk with {{assistant}} and get its replies on {{surface}}."
+  },
+  "surface.row.link": {
+    "value": "Link"
+  },
+  "surface.row.pending": {
+    "value": "A sender is waiting for your confirm"
+  },
+  "surface.row.unlink": {
+    "value": "Unlink"
+  },
+  "surface.row.unlinkTitle": {
+    "value": "Unlink {{surface}}?"
+  },
+  "surface.row.unlinkText": {
+    "value": "{{assistant}} stops answering you there. You can link it again any time."
+  },
+  "surface.row.unlinked": {
+    "value": "{{surface}} unlinked"
+  },
+  "surface.undo.title": {
+    "value": "Unlink the chat app?"
+  },
+  "surface.undo.lead": {
+    "value": "Your account was just linked to a chat app. If that wasn't you, unlink it here."
+  },
+  "surface.undo.button": {
+    "value": "Unlink"
+  },
+  "surface.undo.done": {
+    "value": "{{surface}} unlinked"
+  },
+  "surface.undo.doneLead": {
+    "value": "{{display}} can't reach your account anymore."
+  },
+  "surface.undo.ended": {
+    "value": "Already unlinked"
+  },
+  "surface.undo.endedLead": {
+    "value": "{{display}} on {{surface}} was unlinked before. Nothing else to do."
+  },
+  "surface.undo.gone": {
+    "value": "This undo link no longer works"
+  },
+  "surface.undo.sender": {
+    "value": "That sender"
+  },
   "surface.via": {
     "value": "via {{surface}}"
   },

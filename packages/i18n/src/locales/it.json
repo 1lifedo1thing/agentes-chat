@@ -2260,7 +2260,46 @@
   },
   "surface": {
     "link": {
-      "consent": "{{assistant}} di agentes.chat può scriverti su {{surface}} riguardo ai tuoi spazi di lavoro, e chiamarti solo quando qualcosa è urgente e tu lo permetti. Scrivi stop per disattivarlo."
+      "consent": "{{assistant}} di agentes.chat può scriverti su {{surface}} riguardo ai tuoi spazi di lavoro, e chiamarti solo quando qualcosa è urgente e tu lo permetti. Scrivi stop per disattivarlo.",
+      "title": "Parla con {{assistant}} su {{surface}}",
+      "qr": "Codice QR che apre {{surface}} con il tuo codice già scritto",
+      "making": "Creazione del tuo codice",
+      "code": "Il tuo codice {{code}}",
+      "open": "Apri {{surface}}",
+      "stepScan": "Scansiona il codice con il telefono, oppure apri {{surface}} qui",
+      "stepSend": "Invia il messaggio così com'è",
+      "stepSendText": "Si va avanti da solo appena arriva il tuo messaggio.",
+      "stepConfirm": "Controlla il mittente e conferma qui",
+      "showCode": "Mostra di nuovo il codice",
+      "confirmTitle": "È il tuo {{surface}}?",
+      "sentBy": "Questo mittente ha inviato il tuo codice",
+      "workspace": "Risponde in {{workspace}}",
+      "confirm": "Sì, collega",
+      "notMe": "Non sono io",
+      "doneTitle": "{{surface}} collegato",
+      "doneText": "{{assistant}} ti risponde lì da adesso.",
+      "newCode": "Crea un nuovo codice",
+      "done": "Fatto"
+    },
+    "row": {
+      "hint": "Parla con {{assistant}} e ricevi le sue risposte su {{surface}}.",
+      "link": "Collega",
+      "pending": "Un mittente aspetta la tua conferma",
+      "unlink": "Scollega",
+      "unlinkTitle": "Scollegare {{surface}}?",
+      "unlinkText": "{{assistant}} smette di risponderti lì. Puoi collegarlo di nuovo quando vuoi.",
+      "unlinked": "{{surface}} scollegato"
+    },
+    "undo": {
+      "title": "Scollegare l'app di chat?",
+      "lead": "Il tuo account è appena stato collegato a un'app di chat. Se non sei stato tu, scollegala qui.",
+      "button": "Scollega",
+      "done": "{{surface}} scollegato",
+      "doneLead": "{{display}} non può più raggiungere il tuo account.",
+      "ended": "Già scollegato",
+      "endedLead": "{{display}} su {{surface}} era già stato scollegato. Non c'è altro da fare.",
+      "gone": "Questo link per annullare non funziona più",
+      "sender": "Quel mittente"
     },
     "via": "tramite {{surface}}",
     "viaTip": "Inviato da {{person}} su {{surface}}",

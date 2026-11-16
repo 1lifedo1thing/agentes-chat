@@ -1,0 +1,235 @@
+import { afterEach, describe, expect, test } from "bun:test";
+import { setupDom } from "@agenteschat/ui/testing/dom";
+
+setupDom();
+
+import { ApiError, keys, type SurfaceLink } from "@agenteschat/client";
+import { act, cleanup, fireEvent, within } from "@testing-library/react";
+import { createFakeApi, ORG_ID, seedState } from "./fake-api";
+import { renderApp, screen, settle, showIn } from "./render";
+
+afterEach(() => cleanup());
+
+const click = async (el: Element) => {
+  await act(async () => fireEvent.click(el));
+  await settle(4);
+};
+
+const LONG_SURFACE = "Example Chat Messenger for Teams Everywhere International";
+const LONG_DISPLAY = "+1 555 0100 0100 0100 0100 0100 0100 0100 0100 0100 0100 0100 01";
+const LONG_HANDLE = "@ana.theo.example.chat.handle.without.any.space.to.break.at.all.x";
+const LONG_PROFILE = "Ana 🌟 مرحبا بالعالم من مساحة العمل Theo 🚀 שלום עולם ומה שלומכם";
+const LONG_WORKSPACE = "Northwind Industries Holdings and Partners Worldwide Operations";
+
+const link = (over: Partial<SurfaceLink> = {}): SurfaceLink => ({
+  id: "link-1",
+  status: "pending",
+  display: "+1 555 0100",
+  profileName: "Ana",
+  orgId: ORG_ID,
+  orgName: "Acme",
+  createdAt: new Date().toISOString(),
+  confirmedAt: null,
+  expiresAt: new Date(Date.now() + 9 * 60_000).toISOString(),
+  ...over,
+});
+
+/** Configurações › Notificações, with the server bridging `name`. */
+async function notifications(surface: NonNullable<ReturnType<typeof seedState>["surface"]> | undefined) {
+  const state = seedState();
+  state.surface = surface;
+  const app = await renderApp(`/org/${ORG_ID}/settings/notifications`, { api: createFakeApi(state) });
+  await settle(6);
+  const row = () => document.querySelector("#notice-surface-help, #notice-surface-status")?.closest(".settings-row");
+  return { state, app, row: () => (row() as HTMLElement | undefined) ?? null };
+}
+
+const reload = async (app: Awaited<ReturnType<typeof renderApp>>) => {
+  await act(async () => app.services.queryClient.invalidateQueries({ queryKey: keys.surfaceLinks }));
+  await settle(6);
+};
+const dialogOf = (name: string | RegExp) => screen().getByRole("dialog", { name });
+const calls = (state: ReturnType<typeof seedState>, method: string) =>
+  state.calls.filter((c) => c.method === method).map((c) => c.args);
+
+describe("the outside chat app's row in Notificações", () => {
+  test("hidden where the server bridges none, and for an account it may not link", async () => {
+    const none = await notifications(undefined);
+    expect(none.row()).toBeNull();
+    expect(document.body.textContent).not.toContain("Example Chat");
+    cleanup();
+    const closed = await notifications({ name: "Example Chat", allowed: false, links: [] });
+    expect(closed.row()).toBeNull();
+    expect(calls(closed.state, "surfaces.list")).toHaveLength(1);
+  });
+
+  test("none: Vincular opens the code, its QR, its time and the three steps, then waits and confirms", async () => {
+    const { state, app, row } = await notifications({ name: "Example Chat", links: [] });
+    const r = row() as HTMLElement;
+    expect(r.querySelector(".settings-row__label")?.textContent).toBe("Example Chat");
+    await click(within(r).getByRole("button", { name: "Vincular" }));
+    expect(app.router.state.location.search).toMatchObject({ link: 1 });
+    expect(calls(state, "surfaces.mintCode")).toEqual([[ORG_ID]]);
+
+    const dialog = dialogOf("Fale com Seu braço direito no Example Chat");
+    expect(
+      within(dialog).getByRole("img", { name: "QR code que abre o Example Chat com o seu código digitado" }),
+    ).toBeTruthy();
+    expect(dialog.textContent).toContain("Seu código KQ7M-3XP1");
+    expect(dialog.textContent).toMatch(/Vale por (10:00|9:5\d)/);
+    expect(
+      within(dialog)
+        .getAllByRole("listitem")
+        .map((li) => li.getAttribute("data-state")),
+    ).toEqual(["current", "waiting", "waiting"]);
+    const open = within(dialog).getByRole("link", { name: "Abrir o Example Chat" });
+    expect(open.getAttribute("href")).toBe("https://chat.example.com/send?text=KQ7M-3XP1");
+    expect(open.getAttribute("target")).toBe("_blank");
+
+    // Opened: the wait, which moves on by itself.
+    open.addEventListener("click", (e) => e.preventDefault());
+    await click(open);
+    expect(
+      within(dialog)
+        .getAllByRole("listitem")
+        .map((li) => li.getAttribute("data-state")),
+    ).toEqual(["done", "current", "waiting"]);
+    expect(dialog.textContent).toContain("Isto avança sozinho quando sua mensagem chegar.");
+    expect(dialog.querySelector(".phone-code__qr")).toBeNull();
+
+    // The sender's message arrives: the confirm step, with who sent it and the consent above Confirm.
+    state.surface?.links.push(link());
+    await reload(app);
+    const confirm = dialogOf("Este é o seu Example Chat?");
+    expect(confirm.querySelector(".surface-sender")?.textContent).toBe(
+      "Este remetente enviou seu código+1 555 0100AnaResponde em Acme",
+    );
+    const consent = confirm.querySelector(".surface-link > p:last-child")?.textContent;
+    expect(consent).toBe(
+      "Seu braço direito do agentes.chat pode mandar mensagens no Example Chat sobre seus workspaces, e ligar só quando for urgente e você permitir. Escreva parar para desativar.",
+    );
+    await click(within(confirm).getByRole("button", { name: "Sim, vincular" }));
+    expect(calls(state, "surfaces.confirm")).toEqual([["link-1"]]);
+    const done = dialogOf("Example Chat vinculado");
+    expect(done.textContent).toContain("Seu braço direito responde você por lá a partir de agora.");
+    await click(within(done).getByRole("button", { name: "Pronto" }));
+    expect(screen().queryByRole("dialog")).toBeNull();
+    expect(app.router.state.location.search).not.toHaveProperty("link");
+
+    // Linked: the sender, with Desvincular.
+    expect(document.getElementById("notice-surface-status")?.textContent).toBe("+1 555 0100 · Ana");
+    expect(within(row() as HTMLElement).getByRole("button", { name: "Desvincular" })).toBeTruthy();
+  });
+
+  test("a sender waiting: the row opens the dialog at its confirm step, and Não sou eu cancels it", async () => {
+    const { state, row } = await notifications({ name: "Example Chat", links: [link()] });
+    const r = row() as HTMLElement;
+    expect(r.tagName).toBe("BUTTON");
+    expect(r.textContent).toContain("Um remetente espera a sua confirmação");
+    await click(r);
+    const dialog = dialogOf("Este é o seu Example Chat?");
+    expect(calls(state, "surfaces.mintCode")).toEqual([]);
+    expect(
+      within(dialog)
+        .getAllByRole("listitem")
+        .map((li) => li.getAttribute("data-state")),
+    ).toEqual(["done", "done", "current"]);
+    await click(within(dialog).getByRole("button", { name: "Não sou eu" }));
+    expect(calls(state, "surfaces.remove")).toEqual([["link-1"]]);
+    expect(screen().queryByRole("dialog")).toBeNull();
+    expect(within(row() as HTMLElement).getByRole("button", { name: "Vincular" })).toBeTruthy();
+  });
+
+  test("linked: Desvincular asks first, then the row goes back to Vincular", async () => {
+    const { state, row } = await notifications({
+      name: "Example Chat",
+      links: [link({ status: "active", expiresAt: null, confirmedAt: new Date().toISOString() })],
+    });
+    await click(within(row() as HTMLElement).getByRole("button", { name: "Desvincular" }));
+    const dialog = dialogOf("Desvincular o Example Chat?");
+    await click(within(dialog).getByRole("button", { name: "Desvincular" }));
+    expect(calls(state, "surfaces.remove")).toEqual([["link-1"]]);
+    expect(document.body.textContent).toContain("Example Chat desvinculado");
+    expect(within(row() as HTMLElement).getByRole("button", { name: "Vincular" })).toBeTruthy();
+  });
+
+  test("each failure says what happened with one way out", async () => {
+    // A code the server won't make: its cause, and Tentar de novo.
+    const mint = await notifications({
+      name: "Example Chat",
+      links: [],
+      mintError: new ApiError(409, "surface.no_assistant", "no assistant"),
+    });
+    await click(within(mint.row() as HTMLElement).getByRole("button", { name: "Vincular" }));
+    let dialog = dialogOf(/Fale com/);
+    expect(within(dialog).getByRole("alert").textContent).toContain("Escolha outro workspace para vincular.");
+    if (mint.state.surface) mint.state.surface.mintError = undefined;
+    await click(within(dialog).getByRole("button", { name: "Tentar de novo" }));
+    expect(dialog.textContent).toContain("Seu código KQ7M-3XP2");
+    cleanup();
+
+    // The sender belongs to someone else: a new code is the way on.
+    const taken = await notifications({
+      name: "Example Chat",
+      links: [link()],
+      confirmError: new ApiError(409, "surface.taken", "taken"),
+    });
+    await click(taken.row() as HTMLElement);
+    await click(within(dialogOf(/Example Chat\?/)).getByRole("button", { name: "Sim, vincular" }));
+    dialog = screen().getByRole("dialog");
+    expect(within(dialog).getByRole("alert").textContent).toContain("vinculado a outra conta do agentes.chat");
+    if (taken.state.surface) {
+      taken.state.surface.confirmError = undefined;
+    }
+    await click(within(dialog).getByRole("button", { name: "Gerar um novo código" }));
+    expect(calls(taken.state, "surfaces.remove")).toEqual([["link-1"]]);
+    expect(dialogOf(/Fale com/).textContent).toContain("Seu código KQ7M-3XP1");
+    cleanup();
+
+    // No longer in that workspace: only Fechar, the words say where to go.
+    const gone = await notifications({
+      name: "Example Chat",
+      links: [link()],
+      confirmError: new ApiError(409, "surface.no_workspace", "gone"),
+    });
+    await click(gone.row() as HTMLElement);
+    await click(within(dialogOf(/Example Chat\?/)).getByRole("button", { name: "Sim, vincular" }));
+    dialog = screen().getByRole("dialog");
+    expect(within(dialog).getByRole("alert").textContent).toContain("Você não está mais neste workspace.");
+    expect(within(dialog).queryByRole("button", { name: "Gerar um novo código" })).toBeNull();
+    await click(within(dialog).getAllByRole("button", { name: "Fechar" }).at(-1) as HTMLElement);
+    expect(screen().queryByRole("dialog")).toBeNull();
+  });
+
+  test("worst case: long names, a display with nothing to break at, right-to-left words, in German", async () => {
+    const worst = await notifications({
+      name: LONG_SURFACE,
+      links: [link({ display: LONG_HANDLE, profileName: LONG_PROFILE, orgName: LONG_WORKSPACE })],
+    });
+    await showIn(worst.app.services, "de");
+    await click(worst.row() as HTMLElement);
+    const dialog = screen().getByRole("dialog");
+    expect(dialog.textContent).toContain(LONG_HANDLE);
+    expect(dialog.textContent).toContain(LONG_PROFILE);
+    // Untrusted words are text, isolated for their own direction.
+    expect(dialog.querySelectorAll(".surface-sender bdi")).toHaveLength(2);
+    cleanup();
+
+    const code = await notifications({ name: LONG_SURFACE, links: [] });
+    await showIn(code.app.services, "de");
+    await click(
+      within(code.row() as HTMLElement)
+        .getAllByRole("button")
+        .at(-1) as HTMLElement,
+    );
+    expect(screen().getByRole("dialog").textContent).toContain(LONG_SURFACE);
+    cleanup();
+
+    const active = await notifications({
+      name: LONG_SURFACE,
+      links: [link({ status: "active", display: LONG_DISPLAY, profileName: LONG_PROFILE, expiresAt: null })],
+    });
+    await showIn(active.app.services, "de");
+    expect(document.getElementById("notice-surface-status")?.textContent).toBe(`${LONG_DISPLAY} · ${LONG_PROFILE}`);
+  });
+});

@@ -2134,7 +2134,46 @@
   },
   "surface": {
     "link": {
-      "consent": "agentes.chat의 {{assistant}}이(가) {{surface}}에서 워크스페이스에 관한 메시지를 보낼 수 있고, 급한 일이 있고 허락했을 때만 전화해요. 끄려면 stop이라고 보내세요."
+      "consent": "agentes.chat의 {{assistant}}이(가) {{surface}}에서 워크스페이스에 관한 메시지를 보낼 수 있고, 급한 일이 있고 허락했을 때만 전화해요. 끄려면 stop이라고 보내세요.",
+      "title": "{{surface}}에서 {{assistant}}와 대화하기",
+      "qr": "코드가 입력된 채로 {{surface}}를 여는 QR 코드",
+      "making": "코드를 만드는 중",
+      "code": "내 코드 {{code}}",
+      "open": "{{surface}} 열기",
+      "stepScan": "휴대폰으로 코드를 스캔하거나 여기서 {{surface}}를 여세요",
+      "stepSend": "메시지를 그대로 보내세요",
+      "stepSendText": "메시지가 도착하면 자동으로 다음 단계로 넘어가요.",
+      "stepConfirm": "보낸 사람을 확인하고 여기서 확인하세요",
+      "showCode": "코드 다시 보기",
+      "confirmTitle": "이 {{surface}}가 맞나요?",
+      "sentBy": "이 보낸 사람이 코드를 보냈어요",
+      "workspace": "{{workspace}}에서 응답해요",
+      "confirm": "네, 연결할게요",
+      "notMe": "제가 아니에요",
+      "doneTitle": "{{surface}}가 연결됐어요",
+      "doneText": "이제 {{assistant}}가 그곳에서 답해요.",
+      "newCode": "새 코드 만들기",
+      "done": "완료"
+    },
+    "row": {
+      "hint": "{{assistant}}와 대화하고 답장을 {{surface}}에서 받아요.",
+      "link": "연결",
+      "pending": "보낸 사람이 확인을 기다리고 있어요",
+      "unlink": "연결 해제",
+      "unlinkTitle": "{{surface}} 연결을 해제할까요?",
+      "unlinkText": "{{assistant}}가 그곳에서 더 이상 답하지 않아요. 언제든 다시 연결할 수 있어요.",
+      "unlinked": "{{surface}} 연결을 해제했어요"
+    },
+    "undo": {
+      "title": "채팅 앱 연결을 해제할까요?",
+      "lead": "방금 계정이 채팅 앱에 연결됐어요. 본인이 아니라면 여기서 해제하세요.",
+      "button": "연결 해제",
+      "done": "{{surface}} 연결을 해제했어요",
+      "doneLead": "{{display}}는 이제 계정에 닿을 수 없어요.",
+      "ended": "이미 해제됐어요",
+      "endedLead": "{{surface}}의 {{display}}는 이미 해제됐어요. 더 할 일은 없어요.",
+      "gone": "이 취소 링크는 더 이상 작동하지 않아요",
+      "sender": "그 보낸 사람"
     },
     "via": "{{surface}} 경유",
     "viaTip": "{{person}}님이 {{surface}}에서 보냄",

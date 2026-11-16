@@ -97,6 +97,7 @@ import type {
   SpeechKey,
   StoragePlatform,
   StorageUsage,
+  SurfaceLink,
   TaskManagerView,
   TaskSteps,
   TeamProposalCard,
@@ -207,6 +208,19 @@ export interface FakeState {
   roleMailLoss?: Record<string, RoleMailLoss[]>;
   /** Overrides `account.authConfig` (default: GitHub only, sign-up open). */
   authConfig?: Partial<AuthConfig>;
+  /**
+   * The outside chat surface (`surfaces.*`, ADR 0187); unset: the server bridges none. Set, `authConfig.surface` is
+   * true. `undo` is what `surfaces.undo` answers, or the error it throws.
+   */
+  surface?: {
+    name: string;
+    allowed?: boolean;
+    links: SurfaceLink[];
+    mintError?: ApiError;
+    confirmError?: ApiError;
+    removeError?: ApiError;
+    undo?: { unlinked: boolean; display: string | null } | ApiError;
+  };
   /** Overrides `account.signInOptions` (default: no account, sign-up allowed). */
   signInOptions?: SignInOptions;
   /** The server `account.phoneSignIn` names (default: https://app.agentes.chat). */
@@ -1545,6 +1559,7 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         socialProviders: { google: false, github: true },
         signupOpen: true,
         firstRun: false,
+        ...(state.surface ? { surface: true } : {}),
         ...state.authConfig,
       }),
       signInOptions: async (input, humanCheck) => {
@@ -1623,23 +1638,47 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
     surfaces: {
       list: async () => {
         log("surfaces.list");
-        return { surface: null, allowed: false, links: [] };
+        const sf = state.surface;
+        return sf
+          ? { surface: { name: sf.name }, allowed: sf.allowed ?? true, links: sf.links }
+          : { surface: null, allowed: false, links: [] };
       },
       mintCode: async (orgId) => {
         log("surfaces.mintCode", orgId);
-        throw new ApiError(404, "surface.off", "Outside chat surfaces are off on this server");
+        const sf = state.surface;
+        if (!sf) throw new ApiError(404, "surface.off", "Outside chat surfaces are off on this server");
+        if (sf.mintError) throw sf.mintError;
+        const n = state.calls.filter((c) => c.method === "surfaces.mintCode").length;
+        const code = `KQ7M-3XP${n}`;
+        return {
+          code,
+          openUrl: `https://chat.example.com/send?text=${code}`,
+          expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+        };
       },
       confirm: async (linkId) => {
         log("surfaces.confirm", linkId);
-        throw new ApiError(404, "surface.link_gone", "This link is no longer waiting");
+        const sf = state.surface;
+        const link = sf?.links.find((l) => l.id === linkId && l.status === "pending");
+        if (sf?.confirmError) throw sf.confirmError;
+        if (!sf || !link) throw new ApiError(404, "surface.link_gone", "This link is no longer waiting");
+        const active = { ...link, status: "active" as const, confirmedAt: new Date().toISOString(), expiresAt: null };
+        sf.links = [active];
+        return active;
       },
       remove: async (linkId) => {
         log("surfaces.remove", linkId);
-        throw new ApiError(404, "surface.link_gone", "This link is gone");
+        const sf = state.surface;
+        if (sf?.removeError) throw sf.removeError;
+        if (!sf?.links.some((l) => l.id === linkId)) throw new ApiError(404, "surface.link_gone", "This link is gone");
+        sf.links = sf.links.filter((l) => l.id !== linkId);
       },
       undo: async () => {
         log("surfaces.undo");
-        throw new ApiError(404, "surface.undo_gone", "This link expired or was already used");
+        const undo = state.surface?.undo;
+        if (!undo) throw new ApiError(404, "surface.undo_gone", "This link expired or was already used");
+        if (undo instanceof ApiError) throw undo;
+        return { ...undo, surface: state.surface?.name ?? "" };
       },
     },
     push: {

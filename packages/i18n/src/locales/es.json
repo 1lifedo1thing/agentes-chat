@@ -2259,7 +2259,46 @@
   },
   "surface": {
     "link": {
-      "consent": "{{assistant}} de agentes.chat puede escribirte en {{surface}} sobre tus espacios de trabajo, y llamarte solo cuando algo sea urgente y lo permitas. Escribe stop para desactivarlo."
+      "consent": "{{assistant}} de agentes.chat puede escribirte en {{surface}} sobre tus espacios de trabajo, y llamarte solo cuando algo sea urgente y lo permitas. Escribe stop para desactivarlo.",
+      "title": "Habla con {{assistant}} en {{surface}}",
+      "qr": "Código QR que abre {{surface}} con tu código ya escrito",
+      "making": "Creando tu código",
+      "code": "Tu código {{code}}",
+      "open": "Abrir {{surface}}",
+      "stepScan": "Escanea el código con tu celular, o abre {{surface}} aquí",
+      "stepSend": "Envía el mensaje tal como está",
+      "stepSendText": "Esto avanza solo cuando llegue tu mensaje.",
+      "stepConfirm": "Revisa el remitente y confirma aquí",
+      "showCode": "Mostrar el código otra vez",
+      "confirmTitle": "¿Es este tu {{surface}}?",
+      "sentBy": "Este remitente envió tu código",
+      "workspace": "Responde en {{workspace}}",
+      "confirm": "Sí, vincularlo",
+      "notMe": "No soy yo",
+      "doneTitle": "{{surface}} vinculado",
+      "doneText": "{{assistant}} te responde allí desde ahora.",
+      "newCode": "Crear un código nuevo",
+      "done": "Listo"
+    },
+    "row": {
+      "hint": "Habla con {{assistant}} y recibe sus respuestas en {{surface}}.",
+      "link": "Vincular",
+      "pending": "Un remitente espera tu confirmación",
+      "unlink": "Desvincular",
+      "unlinkTitle": "¿Desvincular {{surface}}?",
+      "unlinkText": "{{assistant}} deja de responderte allí. Puedes vincularlo de nuevo cuando quieras.",
+      "unlinked": "{{surface}} desvinculado"
+    },
+    "undo": {
+      "title": "¿Desvincular la app de chat?",
+      "lead": "Tu cuenta se acaba de vincular a una app de chat. Si no fuiste tú, desvincúlala aquí.",
+      "button": "Desvincular",
+      "done": "{{surface}} desvinculado",
+      "doneLead": "{{display}} ya no puede llegar a tu cuenta.",
+      "ended": "Ya estaba desvinculado",
+      "endedLead": "{{display}} en {{surface}} ya estaba desvinculado. No hay nada más que hacer.",
+      "gone": "Este enlace para deshacer ya no funciona",
+      "sender": "Ese remitente"
     },
     "via": "via {{surface}}",
     "viaTip": "Enviado por {{person}} en {{surface}}",

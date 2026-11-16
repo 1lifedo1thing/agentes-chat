@@ -2196,7 +2196,46 @@
   },
   "surface": {
     "link": {
-      "consent": "{{assistant}} van agentes.chat mag je via {{surface}} berichten sturen over je werkruimtes, en je alleen bellen als iets dringend is en jij dat toestaat. Schrijf stop om dit uit te zetten."
+      "consent": "{{assistant}} van agentes.chat mag je via {{surface}} berichten sturen over je werkruimtes, en je alleen bellen als iets dringend is en jij dat toestaat. Schrijf stop om dit uit te zetten.",
+      "title": "Praat met {{assistant}} op {{surface}}",
+      "qr": "QR-code die {{surface}} opent met je code al ingevuld",
+      "making": "Je code wordt gemaakt",
+      "code": "Je code {{code}}",
+      "open": "{{surface}} openen",
+      "stepScan": "Scan de code met je telefoon, of open {{surface}} hier",
+      "stepSend": "Stuur het bericht zoals het is",
+      "stepSendText": "Dit gaat vanzelf verder zodra je bericht binnenkomt.",
+      "stepConfirm": "Controleer de afzender en bevestig hier",
+      "showCode": "Code opnieuw tonen",
+      "confirmTitle": "Is dit jouw {{surface}}?",
+      "sentBy": "Deze afzender stuurde je code",
+      "workspace": "Antwoordt in {{workspace}}",
+      "confirm": "Ja, koppelen",
+      "notMe": "Niet ik",
+      "doneTitle": "{{surface}} is gekoppeld",
+      "doneText": "{{assistant}} antwoordt je vanaf nu daar.",
+      "newCode": "Nieuwe code maken",
+      "done": "Klaar"
+    },
+    "row": {
+      "hint": "Praat met {{assistant}} en krijg de antwoorden op {{surface}}.",
+      "link": "Koppelen",
+      "pending": "Een afzender wacht op je bevestiging",
+      "unlink": "Ontkoppelen",
+      "unlinkTitle": "{{surface}} ontkoppelen?",
+      "unlinkText": "{{assistant}} antwoordt je daar niet meer. Je kunt het altijd opnieuw koppelen.",
+      "unlinked": "{{surface}} ontkoppeld"
+    },
+    "undo": {
+      "title": "De chatapp ontkoppelen?",
+      "lead": "Je account is net gekoppeld aan een chatapp. Was jij dat niet, ontkoppel hem dan hier.",
+      "button": "Ontkoppelen",
+      "done": "{{surface}} ontkoppeld",
+      "doneLead": "{{display}} kan je account niet meer bereiken.",
+      "ended": "Al ontkoppeld",
+      "endedLead": "{{display}} op {{surface}} was al ontkoppeld. Je hoeft niets meer te doen.",
+      "gone": "Deze link om ongedaan te maken werkt niet meer",
+      "sender": "Die afzender"
     },
     "via": "via {{surface}}",
     "viaTip": "Verstuurd door {{person}} via {{surface}}",

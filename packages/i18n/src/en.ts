@@ -2358,6 +2358,51 @@ export const en = {
        */
       consent:
         "{{assistant}} by agentes.chat may message you on {{surface}} about your workspaces, and call you only when something is urgent and you allow it. Write stop to turn this off.",
+      /** The link dialog's title. {{assistant}} is the workspace's built-in assistant by name. */
+      title: "Talk to {{assistant}} on {{surface}}",
+      qr: "QR code that opens {{surface}} with your code typed in",
+      making: "Making your code",
+      /** Under the QR code: the code itself, for typing it by hand. */
+      code: "Your code {{code}}",
+      open: "Open {{surface}}",
+      stepScan: "Scan the code with your phone, or open {{surface}} here",
+      stepSend: "Send the message as it is",
+      stepSendText: "This moves on by itself once your message arrives.",
+      stepConfirm: "Check the sender and confirm here",
+      showCode: "Show the code again",
+      confirmTitle: "Is this your {{surface}}?",
+      sentBy: "This sender sent your code",
+      /** The workspace whose assistant answers on the chat app. */
+      workspace: "Answers in {{workspace}}",
+      confirm: "Yes, link it",
+      notMe: "Not me",
+      doneTitle: "{{surface}} is linked",
+      doneText: "{{assistant}} answers you there from now on.",
+      newCode: "Make a new code",
+      done: "Done",
+    },
+    /** Settings › Notifications › Where they arrive: the chat app's row. */
+    row: {
+      hint: "Talk with {{assistant}} and get its replies on {{surface}}.",
+      link: "Link",
+      pending: "A sender is waiting for your confirm",
+      unlink: "Unlink",
+      unlinkTitle: "Unlink {{surface}}?",
+      unlinkText: "{{assistant}} stops answering you there. You can link it again any time.",
+      unlinked: "{{surface}} unlinked",
+    },
+    /** The page the "linked" email's undo opens. Signed out, so it learns the app's name only from the answer. */
+    undo: {
+      title: "Unlink the chat app?",
+      lead: "Your account was just linked to a chat app. If that wasn't you, unlink it here.",
+      button: "Unlink",
+      done: "{{surface}} unlinked",
+      doneLead: "{{display}} can't reach your account anymore.",
+      ended: "Already unlinked",
+      endedLead: "{{display}} on {{surface}} was unlinked before. Nothing else to do.",
+      gone: "This undo link no longer works",
+      /** In place of the sender's name when the server has none. */
+      sender: "That sender",
     },
     /** The tag on a person's message written in the chat app. */
     via: "via {{surface}}",

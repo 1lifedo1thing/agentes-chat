@@ -2260,7 +2260,46 @@
   },
   "surface": {
     "link": {
-      "consent": "{{assistant}} d'agentes.chat peut vous écrire sur {{surface}} à propos de vos espaces de travail, et vous appeler seulement en cas d'urgence si vous l'autorisez. Écrivez stop pour désactiver."
+      "consent": "{{assistant}} d'agentes.chat peut vous écrire sur {{surface}} à propos de vos espaces de travail, et vous appeler seulement en cas d'urgence si vous l'autorisez. Écrivez stop pour désactiver.",
+      "title": "Parlez à {{assistant}} sur {{surface}}",
+      "qr": "QR code qui ouvre {{surface}} avec votre code déjà saisi",
+      "making": "Création de votre code",
+      "code": "Votre code {{code}}",
+      "open": "Ouvrir {{surface}}",
+      "stepScan": "Scannez le code avec votre téléphone, ou ouvrez {{surface}} ici",
+      "stepSend": "Envoyez le message tel quel",
+      "stepSendText": "Cela avance tout seul dès que votre message arrive.",
+      "stepConfirm": "Vérifiez l'expéditeur et confirmez ici",
+      "showCode": "Afficher le code à nouveau",
+      "confirmTitle": "Est-ce bien votre {{surface}} ?",
+      "sentBy": "Cet expéditeur a envoyé votre code",
+      "workspace": "Répond dans {{workspace}}",
+      "confirm": "Oui, lier",
+      "notMe": "Ce n'est pas moi",
+      "doneTitle": "{{surface}} est lié",
+      "doneText": "{{assistant}} vous répond là-bas à partir de maintenant.",
+      "newCode": "Créer un nouveau code",
+      "done": "Terminé"
+    },
+    "row": {
+      "hint": "Parlez à {{assistant}} et recevez ses réponses sur {{surface}}.",
+      "link": "Lier",
+      "pending": "Un expéditeur attend votre confirmation",
+      "unlink": "Délier",
+      "unlinkTitle": "Délier {{surface}} ?",
+      "unlinkText": "{{assistant}} ne vous répondra plus là-bas. Vous pouvez le lier à nouveau quand vous voulez.",
+      "unlinked": "{{surface}} délié"
+    },
+    "undo": {
+      "title": "Délier l'app de chat ?",
+      "lead": "Votre compte vient d'être lié à une app de chat. Si ce n'était pas vous, déliez-la ici.",
+      "button": "Délier",
+      "done": "{{surface}} délié",
+      "doneLead": "{{display}} ne peut plus atteindre votre compte.",
+      "ended": "Déjà délié",
+      "endedLead": "{{display}} sur {{surface}} avait déjà été délié. Rien d'autre à faire.",
+      "gone": "Ce lien d'annulation ne fonctionne plus",
+      "sender": "Cet expéditeur"
     },
     "via": "via {{surface}}",
     "viaTip": "Envoyé par {{person}} sur {{surface}}",

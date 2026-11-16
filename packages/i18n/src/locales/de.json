@@ -2196,7 +2196,46 @@
   },
   "surface": {
     "link": {
-      "consent": "{{assistant}} von agentes.chat darf dir auf {{surface}} zu deinen Workspaces schreiben und dich nur anrufen, wenn etwas dringend ist und du es erlaubst. Schreib stop, um das auszuschalten."
+      "consent": "{{assistant}} von agentes.chat darf dir auf {{surface}} zu deinen Workspaces schreiben und dich nur anrufen, wenn etwas dringend ist und du es erlaubst. Schreib stop, um das auszuschalten.",
+      "title": "Sprich mit {{assistant}} auf {{surface}}",
+      "qr": "QR-Code, der {{surface}} mit deinem Code öffnet",
+      "making": "Dein Code wird erstellt",
+      "code": "Dein Code {{code}}",
+      "open": "{{surface}} öffnen",
+      "stepScan": "Scanne den Code mit deinem Handy oder öffne {{surface}} hier",
+      "stepSend": "Sende die Nachricht so, wie sie ist",
+      "stepSendText": "Das geht von selbst weiter, sobald deine Nachricht ankommt.",
+      "stepConfirm": "Prüfe den Absender und bestätige hier",
+      "showCode": "Code noch einmal zeigen",
+      "confirmTitle": "Ist das dein {{surface}}?",
+      "sentBy": "Dieser Absender hat deinen Code gesendet",
+      "workspace": "Antwortet in {{workspace}}",
+      "confirm": "Ja, verknüpfen",
+      "notMe": "Nicht ich",
+      "doneTitle": "{{surface}} ist verknüpft",
+      "doneText": "{{assistant}} antwortet dir ab jetzt dort.",
+      "newCode": "Neuen Code erstellen",
+      "done": "Fertig"
+    },
+    "row": {
+      "hint": "Sprich mit {{assistant}} und bekomm die Antworten auf {{surface}}.",
+      "link": "Verknüpfen",
+      "pending": "Ein Absender wartet auf deine Bestätigung",
+      "unlink": "Trennen",
+      "unlinkTitle": "{{surface}} trennen?",
+      "unlinkText": "{{assistant}} antwortet dir dort nicht mehr. Du kannst es jederzeit wieder verknüpfen.",
+      "unlinked": "{{surface}} getrennt"
+    },
+    "undo": {
+      "title": "Die Chat-App trennen?",
+      "lead": "Dein Konto wurde gerade mit einer Chat-App verknüpft. Wenn du das nicht warst, trenne sie hier.",
+      "button": "Trennen",
+      "done": "{{surface}} getrennt",
+      "doneLead": "{{display}} erreicht dein Konto nicht mehr.",
+      "ended": "Schon getrennt",
+      "endedLead": "{{display}} auf {{surface}} war schon getrennt. Sonst ist nichts zu tun.",
+      "gone": "Dieser Link zum Rückgängigmachen funktioniert nicht mehr",
+      "sender": "Dieser Absender"
     },
     "via": "via {{surface}}",
     "viaTip": "Gesendet von {{person}} über {{surface}}",

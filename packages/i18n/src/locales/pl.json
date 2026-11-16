@@ -2323,7 +2323,46 @@
   },
   "surface": {
     "link": {
-      "consent": "{{assistant}} od agentes.chat może pisać do ciebie na {{surface}} w sprawie twoich przestrzeni roboczych i dzwonić tylko wtedy, gdy coś jest pilne i na to pozwolisz. Napisz stop, aby to wyłączyć."
+      "consent": "{{assistant}} od agentes.chat może pisać do ciebie na {{surface}} w sprawie twoich przestrzeni roboczych i dzwonić tylko wtedy, gdy coś jest pilne i na to pozwolisz. Napisz stop, aby to wyłączyć.",
+      "title": "Rozmawiaj z {{assistant}} w {{surface}}",
+      "qr": "Kod QR, który otwiera {{surface}} z wpisanym kodem",
+      "making": "Tworzenie kodu",
+      "code": "Twój kod {{code}}",
+      "open": "Otwórz {{surface}}",
+      "stepScan": "Zeskanuj kod telefonem albo otwórz {{surface}} tutaj",
+      "stepSend": "Wyślij wiadomość bez zmian",
+      "stepSendText": "To przejdzie dalej samo, gdy dotrze twoja wiadomość.",
+      "stepConfirm": "Sprawdź nadawcę i potwierdź tutaj",
+      "showCode": "Pokaż kod jeszcze raz",
+      "confirmTitle": "Czy to twój {{surface}}?",
+      "sentBy": "Ten nadawca wysłał twój kod",
+      "workspace": "Odpowiada w {{workspace}}",
+      "confirm": "Tak, połącz",
+      "notMe": "To nie ja",
+      "doneTitle": "{{surface}} połączony",
+      "doneText": "Od teraz {{assistant}} odpowiada ci tam.",
+      "newCode": "Utwórz nowy kod",
+      "done": "Gotowe"
+    },
+    "row": {
+      "hint": "Rozmawiaj z {{assistant}} i dostawaj odpowiedzi w {{surface}}.",
+      "link": "Połącz",
+      "pending": "Nadawca czeka na twoje potwierdzenie",
+      "unlink": "Rozłącz",
+      "unlinkTitle": "Rozłączyć {{surface}}?",
+      "unlinkText": "{{assistant}} przestanie ci tam odpowiadać. Możesz połączyć ponownie w każdej chwili.",
+      "unlinked": "{{surface}} rozłączony"
+    },
+    "undo": {
+      "title": "Rozłączyć aplikację czatu?",
+      "lead": "Twoje konto zostało właśnie połączone z aplikacją czatu. Jeśli to nie ty, rozłącz ją tutaj.",
+      "button": "Rozłącz",
+      "done": "{{surface}} rozłączony",
+      "doneLead": "{{display}} nie może już dotrzeć do twojego konta.",
+      "ended": "Już rozłączono",
+      "endedLead": "{{display}} w {{surface}} był już rozłączony. Nie trzeba nic więcej robić.",
+      "gone": "Ten link do cofnięcia już nie działa",
+      "sender": "Ten nadawca"
     },
     "via": "przez {{surface}}",
     "viaTip": "Wysłane przez {{person}} na {{surface}}",
