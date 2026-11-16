@@ -486,9 +486,14 @@ export function shareFacts(
 
 const KIND_ORDER: readonly PlanUseKind[] = ["handoffs", "people", "routines"];
 
-/** An account's use by kind, in a fixed order (handoffs, people, routines), the kinds with no tokens left out. */
+/**
+ * An account's use by kind, in a fixed order (handoffs, people, routines), the kinds with neither tokens this month
+ * nor a part of the window left out: early in a month the week still holds last month's use, as the agents' list does.
+ */
 export const accountKinds = (account: Pick<PlanAccountUsage, "kinds">) =>
-  KIND_ORDER.flatMap((kind) => account.kinds?.find((k) => k.kind === kind && k.tokens > 0) ?? []);
+  KIND_ORDER.flatMap(
+    (kind) => account.kinds?.find((k) => k.kind === kind && (k.tokens > 0 || (k.percent ?? 0) > 0)) ?? [],
+  );
 
 /** `shareFacts` for a kind's line, each fact whole ("week\u00a037%"), so a narrow row never parts a number from its unit. */
 export const kindFacts = (
