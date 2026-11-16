@@ -21,12 +21,12 @@ import { useOrg } from "@/providers/org";
 import { AgentAvatar, Button, GroupedList, GroupedRow, Text, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { confirmQuestion } from "../chat/ReachLines";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { PushedHeader } from "../shared/parts";
 import { advancedOf } from "./AgentAdvancedScreen";
 import { setupWords } from "./logic";
-import { Note } from "./parts";
 
 /*
  * "Usar em outros agentes" on the phone (ADR 0094), the web's dialog over "Quem pensa" as a screen of its own, from
@@ -87,11 +87,18 @@ export function AgentSetupScreen({ agentId }: { agentId: string }) {
     try {
       const results = await api.agents.applySetup(orgId, { setup, agentIds: chosen });
       const { done, autonomyOnly, missed } = setupOutcome(results, chosen.length);
-      if (done > 0)
-        toast({ title: t("agentPage.work.brain.copy.done", { count: done, setup: setupText }), icon: "check" });
-      if (autonomyOnly > 0)
-        toast({ title: t("agentPage.work.brain.copy.autonomyOnly", { count: autonomyOnly }), icon: "check" });
-      if (missed > 0) toast({ title: t("agentPage.work.brain.copy.missed", { count: missed }), icon: "x" });
+      // One toast for the whole save, never three in a row: what changed first, the rest under it.
+      const [title, ...rest] = [
+        done > 0 ? t("agentPage.work.brain.copy.done", { count: done, setup: setupText }) : null,
+        autonomyOnly > 0 ? t("agentPage.work.brain.copy.autonomyOnly", { count: autonomyOnly }) : null,
+        missed > 0 ? t("agentPage.work.brain.copy.missed", { count: missed }) : null,
+      ].filter((line) => line !== null);
+      if (title)
+        toast({
+          title,
+          ...(rest.length > 0 ? { subtitle: rest.join(" ") } : {}),
+          icon: done + autonomyOnly > 0 ? "check" : "x",
+        });
       router.back();
     } catch {
       toast({ title: t("agentPage.work.failed"), icon: "x" });
@@ -116,7 +123,13 @@ export function AgentSetupScreen({ agentId }: { agentId: string }) {
         {brain.isPending ? (
           <ActivityIndicator color={c.muted} style={styles.loading} />
         ) : !setup || preview.isError ? (
-          <Note icon="x">{t("common.loadFailed")}</Note>
+          <LoadFailed
+            onRetry={() => {
+              // The preview is asked again only once there is a setup to preview (a refetch ignores `enabled`).
+              if (setup) void preview.refetch();
+              else void brain.refetch();
+            }}
+          />
         ) : (
           <>
             <Text variant="body" tone="muted" style={styles.lead}>
@@ -196,7 +209,8 @@ export function AgentSetupScreen({ agentId }: { agentId: string }) {
               ? t("agentPage.work.brain.copy.pick")
               : t("agentPage.work.brain.copy.use", { count: chosen.length })
           }
-          disabled={busy || chosen.length === 0}
+          loading={busy}
+          disabled={chosen.length === 0}
           onPress={() => void use()}
         />
       </View>

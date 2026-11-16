@@ -54,7 +54,15 @@ import { Image } from "expo-image";
 import { usePreventRemove } from "expo-router";
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, type ScrollViewInstance, StyleSheet, TextInput, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  type ScrollViewInstance,
+  StyleSheet,
+  TextInput,
+  type TextInputInstance,
+  View,
+} from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -300,7 +308,18 @@ function NewAgentForm({
   const reduced = useReducedMotion();
   const hop = useSharedValue(0);
   const hopStyle = useAnimatedStyle(() => ({ transform: [{ translateY: hop.get() }] }));
+  // The keyboard's Next on the name goes on to the @, which shows once the name is left: it takes the focus then, and
+  // the keyboard stays up between them.
+  const handleField = useRef<TextInputInstance | null>(null);
+  const toHandle = useRef(false);
+  useEffect(() => {
+    if (naming || !toHandle.current) return;
+    toHandle.current = false;
+    handleField.current?.focus();
+  }, [naming]);
   const nameDone = () => {
+    // Left once: the Next that moves on and the blur that follows it are one leaving.
+    if (!naming) return;
     setNaming(false);
     if (!name.trim()) return;
     setCheer(true);
@@ -736,6 +755,11 @@ function NewAgentForm({
             onFocus={() => setNaming(true)}
             onBlur={nameDone}
             returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => {
+              toHandle.current = true;
+              nameDone();
+            }}
           />
         </GroupedList>
         {tried && !name.trim() ? (
@@ -753,6 +777,7 @@ function NewAgentForm({
             <GroupedHeader>{t("newAgent.handle")}</GroupedHeader>
             <GroupedList>
               <HandleInput
+                ref={handleField}
                 value={handle}
                 onChangeText={(v) => {
                   setHandleTouched(true);

@@ -72,6 +72,8 @@ export function ChoiceChip({
 }) {
   const c = useColors();
   return (
+    // A finger's 44 points to press, around the 36-point chip: the room beyond it reaches into the gaps between chips
+    // (`chipHit`), so the chips keep their look and their place.
     <Pressable
       disabled={disabled}
       accessibilityRole="button"
@@ -80,15 +82,18 @@ export function ChoiceChip({
         tapHaptic();
         onPress();
       }}
-      style={({ pressed }) => [
-        styles.chip,
-        { backgroundColor: on ? c.ink : pressed ? c.sunken : c.raised, borderColor: c.line2 },
-      ]}
+      style={styles.chipHit}
     >
-      {on ? <Icon name="check" size={15} color={c.bg} /> : null}
-      <Text variant="small" style={[styles.chipText, on ? { color: c.bg } : undefined]}>
-        {label}
-      </Text>
+      {({ pressed }) => (
+        <View
+          style={[styles.chip, { backgroundColor: on ? c.ink : pressed ? c.sunken : c.raised, borderColor: c.line2 }]}
+        >
+          {on ? <Icon name="check" size={15} color={c.bg} /> : null}
+          <Text variant="small" style={[styles.chipText, on ? { color: c.bg } : undefined]}>
+            {label}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -911,6 +916,8 @@ const styles = StyleSheet.create({
   chips: { gap: 8, marginTop: 6 },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chipFoot: { flexDirection: "row", alignItems: "center", gap: 12 },
+  // 44 tall to the finger, laid out as the chip's 36: 4 above and below reach into the 8 between rows of chips.
+  chipHit: { minHeight: 44, marginVertical: -4, justifyContent: "center" },
   chip: {
     flexDirection: "row",
     alignItems: "center",

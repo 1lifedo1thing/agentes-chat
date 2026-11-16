@@ -1,10 +1,12 @@
-import { StyleSheet, TextInput, View } from "react-native";
+import type { Ref } from "react";
+import { StyleSheet, TextInput, type TextInputInstance, View } from "react-native";
 import { fieldText, GROUPED_ROW, Icon, Text } from "@/ui";
 import { useColors } from "../shared/hooks";
 
 /**
  * An agent's @ field (a new agent's, Editar's Menções): the @ drawn before what is typed. `grouped`: a row of a
- * grouped list, which draws the surface; `ok` checks a free @ at its end.
+ * grouped list, which draws the surface; `ok` checks a free @ at its end. `ref`: the field, for a form whose Next
+ * comes to it.
  */
 export function HandleInput({
   value,
@@ -13,6 +15,7 @@ export function HandleInput({
   placeholder,
   grouped = false,
   ok = false,
+  ref,
 }: {
   value: string;
   onChangeText: (value: string) => void;
@@ -20,6 +23,7 @@ export function HandleInput({
   placeholder?: string;
   grouped?: boolean;
   ok?: boolean;
+  ref?: Ref<TextInputInstance | null>;
 }) {
   const c = useColors();
   return (
@@ -34,8 +38,10 @@ export function HandleInput({
         @
       </Text>
       <TextInput
+        ref={ref}
         value={value}
         onChangeText={onChangeText}
+        returnKeyType="done"
         maxLength={32}
         autoCapitalize="none"
         autoCorrect={false}

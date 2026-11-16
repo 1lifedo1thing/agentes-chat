@@ -3314,17 +3314,39 @@ export const useTeamWeekPrefs = (orgId: string, enabled = true) => {
   return useQuery({ queryKey: keys.teamWeek(orgId), queryFn: () => api.orgs.teamWeek(orgId), enabled });
 };
 
+/**
+ * Saves some of those choices: a switch, an hour or a day shows at once and goes back if the server refuses it. The
+ * saves go one at a time, so the last answer is the last choice, and an earlier answer never undoes a later choice
+ * still on its way (`onMutate` still runs at once for one that waits its turn).
+ */
 export const useSetTeamWeekPrefs = (orgId: string) => {
   const api = useApi();
   const qc = useQueryClient();
+  const mutationKey = ["team-week-prefs", orgId];
   return useMutation({
+    mutationKey,
+    scope: { id: `team-week-prefs:${orgId}` },
     // A server from before the two cards is saved in the words it knows: it would drop these and answer 200.
     mutationFn: (patch: LodiPrefsPatch) =>
       api.orgs.setTeamWeek(
         orgId,
         qc.getQueryData<LodiPrefs>(keys.teamWeek(orgId))?.legacy ? legacyPatch(patch) : patch,
       ),
-    onSuccess: (prefs) => qc.setQueryData(keys.teamWeek(orgId), prefs),
+    onMutate: async (patch) => {
+      await qc.cancelQueries({ queryKey: keys.teamWeek(orgId) });
+      const before = qc.getQueryData<LodiPrefs>(keys.teamWeek(orgId));
+      if (before) qc.setQueryData<LodiPrefs>(keys.teamWeek(orgId), { ...before, ...patch });
+      return { before };
+    },
+    onError: (_error, _patch, context) => {
+      // A later choice still on its way answers with every choice the server keeps: its answer decides.
+      if (qc.isMutating({ mutationKey }) > 1) return;
+      if (context?.before) qc.setQueryData(keys.teamWeek(orgId), context.before);
+      void qc.invalidateQueries({ queryKey: keys.teamWeek(orgId) });
+    },
+    onSuccess: (prefs) => {
+      if (qc.isMutating({ mutationKey }) <= 1) qc.setQueryData(keys.teamWeek(orgId), prefs);
+    },
   });
 };
 

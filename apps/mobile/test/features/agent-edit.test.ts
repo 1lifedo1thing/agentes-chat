@@ -12,6 +12,8 @@ import {
   ROLE_IDS,
   takenHandles,
 } from "@agenteschat/client/lib/new-agent";
+import { gradientOf, hsvToHex } from "@agenteschat/ui/agent/engine";
+import { hsvRgb, rgbHex, tileOf } from "../../src/features/agents/color-pick";
 import {
   type AgentDraft,
   agentChanges,
@@ -289,9 +291,37 @@ describe("creating an agent on the phone", () => {
     // The sheet is a component the tests can't render: what it wires in, as text.
     const sheet = await Bun.file(new URL("../../src/features/agents/ColorSheet.tsx", import.meta.url).pathname).text();
     expect(sheet).toContain("hexToHsv(pickerStart(value))");
-    expect(sheet).toContain("onResponderTerminationRequest: () => false");
     expect(sheet).toMatch(/const done = \(\) => \{\s*onChange\(hex as `#\$\{string\}`\);\s*onClose\(\);/);
     expect(sheet).toContain('label={t("look.useColor")} onPress={done}');
     expect(sheet).toContain("onSubmitEditing={done}");
+  });
+
+  test("a drag on the color sheet runs on the UI thread and tells the form once, when the finger lets go", async () => {
+    const sheet = await Bun.file(new URL("../../src/features/agents/ColorSheet.tsx", import.meta.url).pathname).text();
+    // A pan from the first touch, never the JS responder: the sheet's scroll can't take the drag over mid-way.
+    expect(sheet).not.toMatch(/onResponder(Grant|Move)/);
+    expect(sheet.match(/usePanGesture\(\{\s*minDistance: 0,/g)).toHaveLength(2);
+    // Each move writes shared values only; the form hears the color on release, never per move.
+    expect(
+      sheet.match(
+        /onFinalize: \(\) => \{\s*"worklet";\s*scheduleOnRN\(commit, hue\.get\(\), sat\.get\(\), val\.get\(\)\);/g,
+      ),
+    ).toHaveLength(2);
+    expect(sheet).not.toMatch(/onUpdate: \(e\) => \{[^}]*(setHsv|onChange|scheduleOnRN)/);
+    // The thumbs move by transform, the tile is drawn from the color on the UI thread.
+    expect(sheet).toContain("{ translateX: sat.get() * areaW.get() - THUMB / 2 }");
+    expect(sheet).toContain("const tile = useDerivedValue(() => tileOf(hue.get(), sat.get(), val.get()));");
+  });
+
+  test("the color sheet's UI-thread tile is the engine's own, over the whole picker", () => {
+    const steps = Array.from({ length: 21 }, (_, i) => i / 20);
+    const hues = [...Array.from({ length: 52 }, (_, i) => i * 7), 359, 359.5];
+    for (const h of hues)
+      for (const s of steps)
+        for (const v of steps) {
+          const hex = hsvToHex(h, s, v);
+          expect(rgbHex(hsvRgb(h, s, v))).toBe(hex);
+          expect(tileOf(h, s, v)).toEqual(gradientOf(hex));
+        }
   });
 });

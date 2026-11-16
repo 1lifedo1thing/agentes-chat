@@ -75,6 +75,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from "react-native";
+import Animated, { FadeIn, LayoutAnimationConfig } from "react-native-reanimated";
 import { paysHere } from "@/lib/store";
 import {
   Button,
@@ -88,6 +89,7 @@ import {
   Locked,
   ProviderLogo,
   Text,
+  useReducedMotion,
   useTheme,
   useToast,
 } from "@/ui";
@@ -237,6 +239,11 @@ export interface ConnectAiFlowProps {
    * hint, checked when it comes back, never the agent's own signed-out login again.
    */
   email?: string;
+  /**
+   * One of the person's logins to sign in again on its plan's page (Settings' Sign in again, a coding plan's new key):
+   * that exact login, its email Claude's hint, for the agent that thinks with it or, with no agent, by itself.
+   */
+  again?: { id: string; choice: PlanChoice; email: string | null };
   /** Why this person connects no plan here (someone else's agent, or none of their own among those named). */
   locked?: ReactNode;
   /**
@@ -288,6 +295,8 @@ export function ConnectAiFlow(props: ConnectAiFlowProps) {
   const qc = useQueryClient();
   const toast = useToast();
   const { view, onView, sheetTitle, agents, hasAi, startAgentId, locked, theirs, mayAddKey } = props;
+  const reduced = useReducedMotion();
+  const pageKey = view.page === "plan" ? `plan:${view.choice}` : view.page;
   // Only a pick is kept; else the first agent is worked out on each render (the agents may load after this opens).
   const [pickedAgent, setPickedAgent] = useState<string>();
   const agentId = locked ? undefined : (pickedAgent ?? firstAgent(agents, hasAi, startAgentId)?.id);
@@ -463,60 +472,68 @@ export function ConnectAiFlow(props: ConnectAiFlowProps) {
           </Text>
         </Pressable>
       ) : null}
-      {view.page === "home" ? (
-        <Home
-          onView={(next) => {
-            setLogin(null);
-            go(next);
-          }}
-          dims={dims}
-          dimmedWhy={(choice) =>
-            dimmedLine(t, gateAt(choice), {
-              edition: gates.edition ?? bareGates.edition,
-              kind: kindOf(choice),
-              computer: computerName(
-                t,
-                org?.name ?? "",
-                managedNamed(gates.view?.computer ?? bareGates.at(choice).computer),
-                isPersonal(org),
-              ),
-              machine: machineAt(choice),
-            })
-          }
-          dimmedOut={(choice) => {
-            const gate = gateAt(choice);
-            const m = machineAt(choice);
-            return gate.state === "unsupported" && gate.reason === "tool_off" && m && m.kind !== "managed" ? (
-              <ToolOffWayOut machine={m} tool={brainTool(kindOf(choice))} style={styles.footerOut} />
-            ) : null;
-          }}
-          have={have}
-          haveFor={startAgentId || theirs ? undefined : forAgent?.name}
-          busy={busy}
-          onHave={pickHave}
-        />
-      ) : view.page === "plans" ? (
-        <Plans onView={go} dims={dims} />
-      ) : view.page === "makers" ? (
-        <Makers form={props.keyForm} withEndpoint={props.keyButton !== false} onDone={() => go({ page: "key" })} />
-      ) : view.page === "plan" ? (
-        <PlanPage
-          key={view.choice}
-          {...props}
-          onView={go}
-          choice={view.choice}
-          gates={gates}
-          bareGates={bareGates}
-          agentId={agentId}
-          onAgent={setPickedAgent}
-          {...(login?.choice === view.choice ? { login } : {})}
-        />
-      ) : (
-        <KeyPage {...props} onMakers={() => go({ page: "makers" })} />
-      )}
+      {/* A page that replaces the one before fades in; the one the flow opens on just shows. */}
+      <LayoutAnimationConfig skipEntering>
+        <Animated.View key={pageKey} entering={reduced ? undefined : PAGE_IN}>
+          {view.page === "home" ? (
+            <Home
+              onView={(next) => {
+                setLogin(null);
+                go(next);
+              }}
+              dims={dims}
+              dimmedWhy={(choice) =>
+                dimmedLine(t, gateAt(choice), {
+                  edition: gates.edition ?? bareGates.edition,
+                  kind: kindOf(choice),
+                  computer: computerName(
+                    t,
+                    org?.name ?? "",
+                    managedNamed(gates.view?.computer ?? bareGates.at(choice).computer),
+                    isPersonal(org),
+                  ),
+                  machine: machineAt(choice),
+                })
+              }
+              dimmedOut={(choice) => {
+                const gate = gateAt(choice);
+                const m = machineAt(choice);
+                return gate.state === "unsupported" && gate.reason === "tool_off" && m && m.kind !== "managed" ? (
+                  <ToolOffWayOut machine={m} tool={brainTool(kindOf(choice))} style={styles.footerOut} />
+                ) : null;
+              }}
+              have={have}
+              haveFor={startAgentId || theirs ? undefined : forAgent?.name}
+              busy={busy}
+              onHave={pickHave}
+            />
+          ) : view.page === "plans" ? (
+            <Plans onView={go} dims={dims} />
+          ) : view.page === "makers" ? (
+            <Makers form={props.keyForm} withEndpoint={props.keyButton !== false} onDone={() => go({ page: "key" })} />
+          ) : view.page === "plan" ? (
+            <PlanPage
+              key={view.choice}
+              {...props}
+              onView={go}
+              choice={view.choice}
+              gates={gates}
+              bareGates={bareGates}
+              agentId={agentId}
+              onAgent={setPickedAgent}
+              {...(login?.choice === view.choice ? { login } : {})}
+            />
+          ) : (
+            <KeyPage {...props} onMakers={() => go({ page: "makers" })} />
+          )}
+        </Animated.View>
+      </LayoutAnimationConfig>
     </>
   );
 }
+
+/** A page of the flow taking the place of the one before, in the 160 ms the app's other in-place swaps take. */
+const PAGE_IN = FadeIn.duration(160);
 
 /**
  * The first page: the two ways, one list ("Meu plano de IA", "Uma chave"), then what the workspace already has
@@ -880,6 +897,10 @@ function PlanPage(
   const { colors: c } = useTheme();
   const { choice, agents, locked, onView, gates, agentId, onAgent } = props;
   const agent = agents.find((a) => a.id === agentId);
+  // Settings' Sign in again, on its own plan's page: that exact login (a row's own sign-in asked here comes first).
+  const again = props.again?.choice === choice ? props.again : undefined;
+  const login: ExistingSignIn | undefined =
+    props.login ?? (again ? { choice, from: again.id, again: again.id, email: again.email } : undefined);
   const [done, setDone] = useState<{ agentId: string; agent: string; label: string } | null>(null);
   const kind = kindOf(choice);
   const replies = useReplies(gates, agentId, kind);
@@ -934,6 +955,7 @@ function PlanPage(
           onKey={() => onView({ page: "key" })}
           onComputer={props.onComputer}
           onDone={() => props.onAccount?.()}
+          {...(again ? { again } : {})}
         />
       ) : agent ? (
         <>
@@ -958,7 +980,7 @@ function PlanPage(
             move={replies.move}
             repliesRow={repliesRow}
             {...(choice === "claude" && props.email ? { email: props.email } : {})}
-            {...(props.login ? { login: props.login } : {})}
+            {...(login ? { login } : {})}
             onDone={(account) => {
               // The flow stays on that agent; another plan moves on to the next one with no AI.
               onAgent(agent.id);
@@ -985,6 +1007,7 @@ function PlanWithoutAgent({
   onKey,
   onComputer,
   onDone,
+  again,
 }: {
   choice: PlanChoice;
   gates: GatesWithoutAgent;
@@ -993,6 +1016,8 @@ function PlanWithoutAgent({
   onKey: () => void;
   onComputer: () => void;
   onDone: () => void;
+  /** Settings' Sign in again (`ConnectAiFlowProps.again`): that login, on the computer it lives on. */
+  again?: { id: string; email: string | null };
 }) {
   const { t } = useTranslation();
   const { orgId, org } = useAiOrg();
@@ -1000,8 +1025,10 @@ function PlanWithoutAgent({
   const [signingIn, setSigningIn] = useState(false);
   const [added, setAdded] = useState<MachineAccount | null>(null);
   const { gate, computer } = gates.at(choice);
+  const againAccount = again ? gates.accounts?.find((a) => a.id === again.id) : undefined;
   // An account of this plan they already have (their agents deleted) thinks for the next one: no second sign-in.
-  const has = added ?? freePlanAccount(gates.accounts, choice);
+  // Signing one in again is never that.
+  const has = added ?? (again ? undefined : freePlanAccount(gates.accounts, choice));
   const cloud = gates.edition === "cloud";
   const managed = machines.data?.find((m) => m.kind === "managed");
   const name = cloud ? computerName(t, org?.name ?? "", managed, isPersonal(org)) : (computer?.name ?? "");
@@ -1040,10 +1067,15 @@ function PlanWithoutAgent({
       ) : null}
       {steps ? (
         <AddAccount
-          machineId={computer?.machineId ?? ""}
+          machineId={againAccount?.machineId ?? computer?.machineId ?? ""}
           kind={kindOf(choice)}
-          computer={cloud ? t("connectAi.theComputer") : name}
-          {...(isPlanId(choice) ? { provider: choice } : {})}
+          computer={cloud ? t("connectAi.theComputer") : (againAccount?.computer ?? name)}
+          {...(isPlanId(choice)
+            ? { provider: choice }
+            : signInProviderOf(againAccount?.provider)
+              ? { provider: signInProviderOf(againAccount?.provider) }
+              : {})}
+          {...(again ? { again: again.id, email: again.email } : {})}
           local={computer?.mine}
           ready={gate.state === "ready"}
           onAdded={(a) => {
@@ -1202,6 +1234,8 @@ function PlanSteps({
   );
   // Signed in again: the agent's own login, unless this sign-in is another account's (`hint`).
   const signedOut = !hint && current?.status === "signed_out" ? current : undefined;
+  // The login signed in again, the agent's own or the one asked for: a Gemini Enterprise one signs in as such.
+  const againLogin = signedOut ?? (hint?.again ? view?.accounts.find((a) => a.id === hint.again) : undefined);
   // The accounts of this plan the person already has there for all of their agents (ADR 0059 §2): one tap each,
   // before another account.
   const existing =
@@ -1266,8 +1300,8 @@ function PlanSteps({
           computer={edition === "cloud" ? t("connectAi.theComputer") : computer}
           {...(isPlanId(choice)
             ? { provider: choice }
-            : signInProviderOf(signedOut?.provider)
-              ? { provider: signInProviderOf(signedOut?.provider) }
+            : signInProviderOf(againLogin?.provider)
+              ? { provider: signInProviderOf(againLogin?.provider) }
               : {})}
           fresh={existing.length > 0 && other}
           again={hint ? hint.again : signedOut?.id}

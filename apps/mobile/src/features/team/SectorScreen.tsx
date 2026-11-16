@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, StyleSheet, TextInput, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
-  EmptyState,
   GroupedField,
   GroupedFooter,
   GroupedHeader,
@@ -20,6 +19,7 @@ import { router } from "@/ui/navigation";
 import { plainRole } from "../agents/logic";
 import { SettingsPage } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
 import { SheetTitle } from "../shared/PromptForm";
@@ -121,7 +121,7 @@ export function SectorScreen({ id }: { id: string }) {
         {groups.isLoading ? (
           <ActivityIndicator color={c.muted} style={styles.loading} />
         ) : (
-          <EmptyState size="panel" icon="members" title={t("common.loadFailed")} />
+          <LoadFailed onRetry={() => void groups.refetch()} />
         )}
       </SettingsPage>
     );
@@ -173,9 +173,11 @@ export function SectorScreen({ id }: { id: string }) {
     <SettingsPage
       title={group.name}
       subtitle={t("team.agents", { count: agents.length })}
-      locked={action.isPending || remove.pending}
+      // A change on its way: the bar's spinner where Save was, the page locked under it.
+      busy={action.isPending}
+      locked={remove.pending}
       {...(manages && renamed && renamed !== group.name
-        ? { action: { label: t("common.save"), onPress: rename, disabled: action.isPending } }
+        ? { action: { label: t("common.save"), onPress: rename } }
         : {})}
     >
       <GroupedHeader>{t("agentGroups.group")}</GroupedHeader>

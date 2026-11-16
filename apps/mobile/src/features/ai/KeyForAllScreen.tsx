@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import { Button, GroupedHeader, GroupedList, GroupedRow, ProviderLogo, Text, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory } from "../shared/hooks";
 import { PushedHeader } from "../shared/parts";
 import { Note } from "./parts";
@@ -101,7 +102,7 @@ export function KeyForAllScreen({
         {ai.isPending ? (
           <ActivityIndicator color={c.muted} style={styles.loading} />
         ) : !account || !plan || !groups ? (
-          <Note icon="x">{t("common.loadFailed")}</Note>
+          <LoadFailed onRetry={() => void ai.refetch()} />
         ) : (
           <>
             <View style={styles.lead}>
@@ -181,7 +182,8 @@ export function KeyForAllScreen({
           variant="primary"
           wide
           label={chosen ? t("aiAccounts.page.useAllGo", { count: can.length }) : t("aiAccounts.page.useAllPick")}
-          disabled={busy || !chosen || can.length === 0}
+          loading={busy}
+          disabled={!chosen || can.length === 0}
           onPress={() => void use()}
         />
       </View>

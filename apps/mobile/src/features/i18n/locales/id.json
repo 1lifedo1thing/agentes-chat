@@ -847,7 +847,11 @@
     "taskForM": "Tugas untuk {{name}}",
     "taskPlaceholder": "Apa yang perlu diselesaikan?",
     "sendTask": "Kirim tugas",
-    "taskSent": "Tugas terkirim"
+    "taskSent": "Tugas terkirim",
+    "brakes": {
+      "forgetTitle": "Lupakan jawaban ini?",
+      "forgetText": "{{name}} akan bertanya lagi sebelum pekerjaan seperti ini."
+    }
   },
   "activity": {
     "title": "Aktivitas",

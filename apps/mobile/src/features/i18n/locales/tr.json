@@ -871,7 +871,11 @@
     "taskForM": "{{name}} için görev",
     "taskPlaceholder": "Ne yapılması gerekiyor?",
     "sendTask": "Görevi gönder",
-    "taskSent": "Görev gönderildi"
+    "taskSent": "Görev gönderildi",
+    "brakes": {
+      "forgetTitle": "Bu yanıtlar unutulsun mu?",
+      "forgetText": "{{name}} bu tür işlerden önce yeniden sorar."
+    }
   },
   "activity": {
     "title": "Etkinlik",

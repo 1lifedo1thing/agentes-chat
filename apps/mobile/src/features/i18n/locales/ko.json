@@ -847,7 +847,11 @@
     "taskForM": "{{name}}에게 맡길 작업",
     "taskPlaceholder": "무엇을 해야 하나요?",
     "sendTask": "작업 보내기",
-    "taskSent": "작업을 보냈어요"
+    "taskSent": "작업을 보냈어요",
+    "brakes": {
+      "forgetTitle": "이 답변들을 잊을까요?",
+      "forgetText": "{{name}}이(가) 이런 작업 전에 다시 물어봐요."
+    }
   },
   "activity": {
     "title": "활동",

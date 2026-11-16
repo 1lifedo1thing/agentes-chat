@@ -37,6 +37,7 @@ import {
   useToast,
 } from "@/ui";
 import { Note } from "../ai/parts";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors } from "../shared/hooks";
 import { SheetTitle } from "../shared/PromptForm";
 import { errorHaptic, successHaptic, useSurface } from "../shared/parts";
@@ -56,7 +57,7 @@ const REASON_LIMIT = { max: JOIN_REASON_MAX };
  * can be approved, as on the web.
  */
 export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefined; onClose: () => void }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { orgId, org } = useOrg();
   const c = useColors();
   const allowed = can(org, "invite_people");
@@ -75,7 +76,12 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
   else if (!list.data || !roles.data)
     body =
       list.isError || roles.isError ? (
-        <Text tone="muted">{errorText(t, list.error ?? roles.error, i18n.language)}</Text>
+        <LoadFailed
+          onRetry={() => {
+            if (list.isError) void list.refetch();
+            if (roles.isError) void roles.refetch();
+          }}
+        />
       ) : (
         <ActivityIndicator color={c.muted} />
       );

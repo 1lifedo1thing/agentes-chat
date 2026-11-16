@@ -871,7 +871,11 @@
     "taskForM": "Aufgabe für {{name}}",
     "taskPlaceholder": "Was soll erledigt werden?",
     "sendTask": "Aufgabe senden",
-    "taskSent": "Aufgabe gesendet"
+    "taskSent": "Aufgabe gesendet",
+    "brakes": {
+      "forgetTitle": "Diese Antworten vergessen?",
+      "forgetText": "{{name}} fragt vor dieser Art von Arbeit wieder nach."
+    }
   },
   "activity": {
     "title": "Aktivität",

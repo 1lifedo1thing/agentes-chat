@@ -34,9 +34,10 @@ import {
 } from "@agenteschat/client/lib/right-hand";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, usePreventRemove } from "expo-router";
-import { useCallback, useState } from "react";
+import { useHeaderHeight } from "expo-router/react-navigation";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Platform, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import { Button, Text, useToast } from "@/ui";
@@ -152,7 +153,8 @@ const STEPS = 3;
  * sign-in on the agent's computer or the workspace's API key (ConnectAiFlow), then done. The native back goes one
  * page back inside the flow before it leaves it. A message that asked for one of them opens on its page, and `plan`
  * on that plan's (Sign in again). Once connected from a message, the agent answers it by itself. `email`: one more
- * login of the account other agents use. `ready`: opened because the workspace's computer just got ready (its
+ * login of the account other agents use. `again`: with `plan`, Settings' Sign in again (a new key for a coding plan's):
+ * that exact login, `email` its own. `ready`: opened because the workspace's computer just got ready (its
  * notification): a plan's page says so.
  */
 export function ConnectAiSheet() {
@@ -173,6 +175,7 @@ export function ConnectAiSheet() {
     email?: string;
     ready?: string;
     forNew?: string;
+    again?: string;
   }>();
   // An API key is the organization's (admins); a plan thinks only for its owner's agents (ADR 0059 §3).
   const mayAddKey = can(org, "manage_credentials");
@@ -188,6 +191,20 @@ export function ConnectAiSheet() {
   const [view, setView] = useState<FlowView>(() =>
     viewOf(PLAN_CHOICES.find((c) => c === params.plan) ?? choiceOfIntent(params.intent as ConnectIntent | undefined)),
   );
+  // The flow's pages share one scroll view: a new page starts at its top, as a pushed screen would. iOS insets the
+  // scroll view by the bar (automatic adjustment), so its top is minus the bar's height there.
+  const scroll = useRef<ScrollViewInstance>(null);
+  const barHeight = useHeaderHeight();
+  const pageOf = (v: FlowView) => (v.page === "plan" ? `plan:${v.choice}` : v.page);
+  const onView = (next: FlowView) => {
+    if (pageOf(next) !== pageOf(view))
+      scroll.current?.scrollTo({ y: Platform.OS === "ios" ? -barHeight : 0, animated: false });
+    setView(next);
+  };
+  // Settings' Sign in again: that login, on the plan's page it opened on.
+  const againChoice = PLAN_CHOICES.find((c) => c === params.plan);
+  const again =
+    params.again && againChoice ? { id: params.again, choice: againChoice, email: params.email ?? null } : undefined;
   const form = useConnectKey(orgId, params.provider);
   const models = useModels();
   const toast = useToast();
@@ -217,7 +234,9 @@ export function ConnectAiSheet() {
   const [accountAdded, setAccountAdded] = useState(false);
   // Or one of that plan they already have, which the plan's page says is connected.
   const ai = useAiAccounts(orgId, bare);
-  const planAccount = bare && view.page === "plan" ? freePlanAccount(ai.data?.accounts, view.choice) : undefined;
+  // Signing a login in again is never done before it starts, even when that login reads as free.
+  const planAccount =
+    bare && !again && view.page === "plan" ? freePlanAccount(ai.data?.accounts, view.choice) : undefined;
   const hasPlan = planAccount !== undefined;
   // That plan's next step is an agent that thinks with it, for whoever may make one (never over one being made).
   const makeWith = planAccount && params.forNew !== "1" && makesAgents(org) ? planAccount : undefined;
@@ -248,6 +267,7 @@ export function ConnectAiSheet() {
         grouped
       />
       <ScrollView
+        ref={scroll}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
@@ -272,13 +292,14 @@ export function ConnectAiSheet() {
         ) : (
           <ConnectAiFlow
             view={view}
-            onView={setView}
+            onView={onView}
             sheetTitle={t("connectAi.title.any")}
             onChrome={onChrome}
             agents={agents}
             hasAi={hasAi}
             {...(params.agentId ? { startAgentId: params.agentId } : {})}
             {...(params.email ? { email: params.email } : {})}
+            {...(again ? { again } : {})}
             locked={locked}
             bare={bare}
             onAccount={() => {

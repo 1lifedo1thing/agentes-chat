@@ -23,13 +23,27 @@ export function MergeReposSection({ agentId, name, mayEdit }: { agentId: string;
   const listing = useGitHubRepos(orgId, mayEdit);
   const [picking, setPicking] = useState(false);
   const [q, setQ] = useState("");
-  const list = merge.data ?? [];
+  // The repositories whose switch was flipped and whose save is on its way: each waits for its own.
+  const [flipping, setFlipping] = useState<ReadonlySet<string>>(() => new Set());
+  // The list as the last save sends it, while it is on its way (each save sends the whole list): a switch flips on
+  // the tap, and a refused save goes back to what is saved.
+  const list = (save.isPending ? save.variables : undefined) ?? merge.data ?? [];
   const choices = mergeChoices(listing.data, reach.data ?? []);
   if (!merge.data || (list.length === 0 && !(mayEdit && choices.length > 0))) return null;
-  const toggle = (repo: string) =>
-    save.mutate(list.includes(repo) ? list.filter((r) => r !== repo) : [...list, repo], {
-      onError: () => toast({ title: t("mobile.app.failed"), icon: "x" }),
-    });
+  const toggle = (repo: string) => {
+    if (flipping.has(repo)) return;
+    setFlipping((now) => new Set(now).add(repo));
+    void save
+      .mutateAsync(list.includes(repo) ? list.filter((r) => r !== repo) : [...list, repo])
+      .catch(() => toast({ title: t("mobile.app.failed"), icon: "x" }))
+      .finally(() =>
+        setFlipping((now) => {
+          const left = new Set(now);
+          left.delete(repo);
+          return left;
+        }),
+      );
+  };
   return (
     <>
       <GroupedHeader>{t("repos.merge.label")}</GroupedHeader>
@@ -61,13 +75,7 @@ export function MergeReposSection({ agentId, name, mayEdit }: { agentId: string;
           {choices
             .filter((repo) => !q.trim() || matchesWords(repo, q))
             .map((repo) => (
-              <GroupedRow
-                key={repo}
-                label={repo}
-                toggle={list.includes(repo)}
-                disabled={save.isPending}
-                onPress={() => toggle(repo)}
-              />
+              <GroupedRow key={repo} label={repo} toggle={list.includes(repo)} onPress={() => toggle(repo)} />
             ))}
         </GroupedList>
       </Sheet>

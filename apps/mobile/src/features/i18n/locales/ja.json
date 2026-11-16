@@ -847,7 +847,11 @@
     "taskForM": "{{name}}へのタスク",
     "taskPlaceholder": "何をやり遂げる必要がありますか？",
     "sendTask": "タスクを送信",
-    "taskSent": "タスクを送信しました"
+    "taskSent": "タスクを送信しました",
+    "brakes": {
+      "forgetTitle": "これらの回答を忘れますか？",
+      "forgetText": "{{name}}はこの種の作業の前に、もう一度確認します。"
+    }
   },
   "activity": {
     "title": "アクティビティ",

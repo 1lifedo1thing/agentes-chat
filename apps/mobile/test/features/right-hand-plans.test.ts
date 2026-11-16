@@ -94,8 +94,10 @@ test("Lodi's settings: the workspace's plan has no lending switch, since a plan 
   // On a plan, its model is the row under it (as the key's model is), saved as the workspace's.
   expect(screen).toContain('onPress={() => openAgentModel(agent.id, "workspace")}');
   const model = readFileSync(join(import.meta.dir, "../../src/features/ai/AgentAiScreen.tsx"), "utf8");
+  const saves = readFileSync(join(import.meta.dir, "../../src/features/ai/useSaveBrain.ts"), "utf8");
   expect(model).toContain("const brain = useAgentBrain(orgId, agentId, true, false, scope);");
-  expect(model).toContain("api.agents.setBrain(orgId, agentId, { ...(scope ? { scope } : {}), ...input })");
+  expect(model).toContain("const { pending, save } = useSaveBrain(agentId, scope);");
+  expect(saves).toContain("api.agents.setBrain(orgId, agentId, { ...(scope ? { scope } : {}), ...input })");
   expect(screen).not.toContain("noAi.rightHand.useKey");
   expect(screen).not.toContain("workspacePlan");
   // Any plan's CLI: Claude Code's, Codex's, Cursor's, OpenCode's, Grok Build's or the Antigravity CLI's.

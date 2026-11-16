@@ -8,6 +8,7 @@ import {
   useAiStatus,
   useApi,
   useApprovalRules,
+  useDms,
   useMemory,
   useMemoryAboutMe,
   useMemoryAction,
@@ -33,7 +34,7 @@ import { isRightHand, tellsNameStory } from "@agenteschat/client/lib/right-hand"
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { planLine } from "@agenteschat/ui/plan-state";
 import { useQueryClient } from "@tanstack/react-query";
-import { Fragment, type ReactNode, useEffect, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, LayoutAnimationConfig } from "react-native-reanimated";
@@ -78,6 +79,7 @@ import { UsageQueueSheet } from "../queue/UsageQueueSheet";
 import { openRightHandSettings, RightHandMine } from "../right-hand/SettingsScreen";
 import { useConnectedById } from "../settings/hooks";
 import { agentBadgeInset } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useErrorToast, useMeId, useNow, useOrgId, useWhen } from "../shared/hooks";
 import { agentLook, genderOf } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
@@ -267,8 +269,14 @@ function Profile({ id }: { id: string }) {
     : null;
   // On a plan, its limits first and the budget only once it spent through the API (ADR 0063 §5).
   const shown = usageShown(agent?.brain, detail.data?.budgetUsedPercent ?? 0);
-  const money = (v: number) =>
-    new Intl.NumberFormat(i18n.language || "en", { style: "currency", currency: "USD" }).format(v);
+  // Formatters are costly to build: one per language, not one per render.
+  const locale = i18n.language || "en";
+  const moneyFormat = useMemo(() => new Intl.NumberFormat(locale, { style: "currency", currency: "USD" }), [locale]);
+  const money = (v: number) => moneyFormat.format(v);
+  const monthFormat = useMemo(
+    () => new Intl.DateTimeFormat(when.locale, { month: "long", timeZone: "UTC" }),
+    [when.locale],
+  );
   const originText = useMemoryOriginText();
   // Forgetting is the list's swipe (as the system's lists delete), confirmed by a system alert that says what stays.
   const memoryAct = useMemoryAction(orgId, id);
@@ -293,14 +301,32 @@ function Profile({ id }: { id: string }) {
       ],
     );
 
-  const openDm = (to: { agentId: string } | { userId: string } = { agentId: id }) =>
+  // "Chat" and "Ask for access": a conversation already known here opens on the tap; else the server opens it while
+  // the button spins, and a second tap meanwhile does nothing. Pushed over the profile, which back returns to (the
+  // shared `useOpenDm` empties the stack first, for the New sheet).
+  const dms = useDms(orgId);
+  const [opening, setOpening] = useState(false);
+  const openDm = (to: { agentId: string } | { userId: string } = { agentId: id }) => {
+    if (opening) return;
+    const known = dms.data?.find((d) =>
+      "agentId" in to
+        ? d.with.type === "agent" && d.with.id === to.agentId
+        : d.with.type === "person" && d.with.id === to.userId,
+    );
+    if (known) {
+      router.push(chatHref(known.channelId));
+      return;
+    }
+    setOpening(true);
     api.dms
       .open(orgId, to)
       .then(({ channelId }) => {
         void qc.invalidateQueries({ queryKey: keys.dms(orgId) });
         router.push(chatHref(channelId));
       })
-      .catch(failed);
+      .catch(failed)
+      .finally(() => setOpening(false));
+  };
 
   const open = (href: DidLine["href"]) => {
     if (!href) return;
@@ -509,33 +535,42 @@ function Profile({ id }: { id: string }) {
                 color={look.color}
                 label={t("agentPage.activity.chartLabel", {
                   count: detail.data.runsThisMonth,
-                  month: new Intl.DateTimeFormat(when.locale, { month: "long", timeZone: "UTC" }).format(new Date()),
+                  month: monthFormat.format(new Date()),
                 })}
               />
             </View>
           ) : null}
-          <GroupedList>
-            {shownDid.map((l) => (
-              <GroupedRow
-                key={l.key}
-                icon={l.icon}
-                label={t(`mobile.intentAgents.did.${l.title.key}`, l.title.values)}
-                sub={didSub(l)}
-                {...(l.href ? { chevron: true, onPress: () => open(l.href) } : {})}
-              />
-            ))}
-            {did.length > DID_SHOWN ? (
-              // The rest of the month folds under one row that says how many there are.
-              <GroupedRow
-                key="all"
-                label={allDid ? t("mobile.intentAgents.did.seeLess") : t("mobile.intentAgents.did.seeAll")}
-                {...(allDid ? {} : { value: String(did.length) })}
-                chevron={!allDid}
-                onPress={() => setAllDid((v) => !v)}
-              />
-            ) : null}
-          </GroupedList>
-          {did.length === 0 ? <GroupedFooter>{t(`mobile.intentAgents.did.empty${g}`, { name })}</GroupedFooter> : null}
+          {forYou.data ? (
+            <>
+              <GroupedList>
+                {shownDid.map((l) => (
+                  <GroupedRow
+                    key={l.key}
+                    icon={l.icon}
+                    label={t(`mobile.intentAgents.did.${l.title.key}`, l.title.values)}
+                    sub={didSub(l)}
+                    {...(l.href ? { chevron: true, onPress: () => open(l.href) } : {})}
+                  />
+                ))}
+                {did.length > DID_SHOWN ? (
+                  // The rest of the month folds under one row that says how many there are.
+                  <GroupedRow
+                    key="all"
+                    label={allDid ? t("mobile.intentAgents.did.seeLess") : t("mobile.intentAgents.did.seeAll")}
+                    {...(allDid ? {} : { value: String(did.length) })}
+                    chevron={!allDid}
+                    onPress={() => setAllDid((v) => !v)}
+                  />
+                ) : null}
+              </GroupedList>
+              {did.length === 0 ? (
+                <GroupedFooter>{t(`mobile.intentAgents.did.empty${g}`, { name })}</GroupedFooter>
+              ) : null}
+            </>
+          ) : (
+            // What didn't load is never "Nothing yet": what happened, and the way to ask again.
+            <LoadFailed onRetry={() => void forYou.refetch()} />
+          )}
         </>
       ) : null}
     </>
@@ -705,9 +740,16 @@ function Profile({ id }: { id: string }) {
       ) : null}
     </>
   );
+  // What it knows that didn't load keeps its header and says so, with the way to ask again (it never just vanishes).
+  const memoryFailed = (
+    <>
+      <GroupedHeader>{t("mobile.intentAgents.knows.title", agentGrammar(name))}</GroupedHeader>
+      <LoadFailed onRetry={() => void knows.refetch()} />
+    </>
+  );
   const memoryView = (
     <>
-      {knows.data ? memoryKnows : null}
+      {knows.data ? memoryKnows : knows.isError ? memoryFailed : null}
       {/* What people told it to always do, under what it learned, as the web's Memória. */}
       <GivenRules agentId={id} name={name} rightHand={rightHand} />
     </>
@@ -759,14 +801,16 @@ function Profile({ id }: { id: string }) {
               <Button
                 variant="primary"
                 label={t("mobile.agent.talk")}
+                loading={opening}
                 disabled={!listsAgent(org, agent)}
-                onPress={() => void openDm()}
+                onPress={() => openDm()}
               />
             ) : (
               <Button
                 variant="primary"
                 label={t("profile.askAccess")}
-                onPress={() => void openDm({ userId: ownerId })}
+                loading={opening}
+                onPress={() => openDm({ userId: ownerId })}
               />
             )}
           </View>
