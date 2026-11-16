@@ -186,3 +186,15 @@ describe("a message from an older page follows its pin", () => {
     );
   });
 });
+
+describe("back on the conversation, the list follows the keyboard at once", () => {
+  test("a popped screen releases the freeze at once when no keyboard is about; sheets keep the delay", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat).toMatch(
+      /if \(now && !KeyboardController\.isVisible\(\)\) \{\s*freeze\.value = false;\s*return;\s*\}\s*setTimeout\(/,
+    );
+    expect(chat).toMatch(/left\.current = false;\s*holdPlace\(away\.current\);\s*uncover\(true\);/);
+    // A sheet closing (announced before it has slid away) still waits.
+    expect(chat).toMatch(/return;\s*\}\s*uncover\(\);\s*\/\/ Unless the app moved the list/);
+  });
+});

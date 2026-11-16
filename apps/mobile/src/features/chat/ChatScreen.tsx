@@ -1917,13 +1917,23 @@ function Chat({
     if (KeyboardController.isVisible()) freezeOnHide.current = true;
     else freeze.value = true;
   }, [freeze]);
-  const uncover = useCallback(() => {
-    covered.current = false;
-    freezeOnHide.current = false;
-    setTimeout(() => {
-      if (!covered.current) freeze.value = false;
-    }, FREEZE_AFTER_MS);
-  }, [freeze]);
+  // `now`: back on screen (a pushed screen popped), released at once when no keyboard is up or leaving: kept frozen
+  // a moment more, a quick tap on the field raised the keyboard and the dock over the last messages, and the list
+  // snapped up after. A keyboard still about (a form sent from JS, closing as it pops) keeps the delay.
+  const uncover = useCallback(
+    (now = false) => {
+      covered.current = false;
+      freezeOnHide.current = false;
+      if (now && !KeyboardController.isVisible()) {
+        freeze.value = false;
+        return;
+      }
+      setTimeout(() => {
+        if (!covered.current) freeze.value = false;
+      }, FREEZE_AFTER_MS);
+    },
+    [freeze],
+  );
   useEffect(() => {
     const gone = KeyboardEvents.addListener("keyboardDidHide", () => {
       if (!freezeOnHide.current) return;
@@ -1968,7 +1978,7 @@ function Chat({
       if (!left.current) return;
       left.current = false;
       holdPlace(away.current);
-      uncover();
+      uncover(true);
     }, [holdPlace, uncover]),
   );
   const openOptions = () =>
