@@ -1,4 +1,4 @@
-/* Bringing a team from an app on the person's computer (ImportFromComputer.tsx): the sheet under the crossing. */
+/* Bringing a team in, whatever the source (ImportSheet.tsx): the sheet under the crossing. */
 .imp-sheet__body {
   display: flex;
   flex-direction: column;
@@ -21,6 +21,13 @@
   margin: 0;
   text-align: center;
   font-size: 13.5px;
+}
+/* While the server's way in is still read: the steps that depend on it come once it's known. */
+.imp-sheet__wait {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: var(--space-4) 0;
 }
 
 /* The two steps: a number, then what to do under its title. */
@@ -61,6 +68,14 @@
   font-size: 15px;
   font-weight: 650;
   line-height: 24px;
+}
+/* An app's command to copy wraps inside the step instead of running off the sheet. */
+.imp-do__body .machine-command {
+  margin: 0;
+}
+.imp-do__body .machine-command__code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 /* The command is one line or two: no taller than it. */
 .imp-do__text.ac-input[data-command] {
@@ -108,8 +123,17 @@
   font-size: 14.5px;
   line-height: 20px;
 }
-.imp-team__text b {
+.imp-team__text b,
+.imp-team__link {
   font-weight: 500;
+}
+.imp-team__link {
+  align-self: flex-start;
+  color: inherit;
+  text-decoration: none;
+}
+.imp-team__link:hover {
+  text-decoration: underline;
 }
 .imp-team__text span {
   color: var(--muted);

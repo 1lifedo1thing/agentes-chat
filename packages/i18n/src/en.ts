@@ -1322,9 +1322,43 @@ export const en = {
         /** A workspace paused for any other reason. */
         paused: "Connect with MCP is off while this workspace is paused. Bring the agents this way for now.",
       },
-      haveFile: "Already have a file from another app? Drop it here: it is recognized on its own.",
-      computer: {
+      haveFileButton: "I have a file or link",
+      sheet: {
         title: "Bring the team from {{app}}",
+        otherTitle: "Bring them from another app",
+        workspaceTitle: "Bring them from another workspace",
+        fileTitle: "Bring them from a file or link",
+        fileLead: "The file from any app we know. It is recognized on its own.",
+        useRequest: "I'd rather paste the request and bring back the answer",
+        backToMcp: "Back to MCP",
+        waitingMore: "Waiting for the next ones…",
+        arrivedMore: "{{app}} may still be creating them. Whoever comes later shows up here.",
+        arrivedMoreAny: "Your AI app may still be creating them. Whoever comes later shows up here.",
+        readHere: "Read in your browser. Nothing changes here until you confirm.",
+        request: {
+          "grok-bot": {
+            lead: "The bot writes everything it has as JSON. You paste it here and check it before anything is made.",
+            copyStep: "Paste it in your chat with the bot",
+            answerStep: "Paste its whole answer here",
+            answerPlaceholder: "The JSON the bot answered",
+          },
+          "chatgpt-dots": {
+            lead: "Your dot writes everything it has to a file. You drop it here and check it before anything is made.",
+            copyStep: "Paste it in a new chat",
+            answerStep: "Drop the file it makes here",
+          },
+          other: {
+            copyStep: "Paste it in a new conversation in the other app",
+            answerStep: "Drop the file it gives back, or paste its answer",
+            answerPlaceholder: "The answer, or a GitHub link",
+          },
+        },
+        workspace: {
+          download: "Download the other workspace's file",
+          where: "There, in Settings › Import and export › Download the file.",
+          open: "Open {{org}} in a new tab",
+          drop: "Drop the .json here",
+        },
         lead: "Your assistant reads {{app}} on this computer and writes a file where you choose. You check everything before anything is made.",
         leadCommand:
           "The command reads {{app}} on this computer and writes a file where you choose. You check everything before anything is made.",

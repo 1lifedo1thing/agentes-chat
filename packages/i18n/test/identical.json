@@ -150,6 +150,8 @@
       "notifications.source.threadOnly",
       "onboarding.import.groups.skill",
       "onboarding.import.report.kinds.skill",
+      "onboarding.import.sheet.os.windows",
+      "onboarding.import.sheet.skills",
       "onboarding.presets.ada.name",
       "onboarding.presets.ada.role",
       "onboarding.presets.atlas.name",

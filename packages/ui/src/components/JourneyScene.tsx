@@ -19,10 +19,13 @@ const CELL = 4;
 const LOOP = 9;
 const WALK_FROM = 1;
 const WALK_FOR = 4.6;
-/** Where the first agent starts and how far the team walks, in cells; the agents stand `GAP` apart. */
-const START = 2.5;
+/**
+ * Where the first agent starts and how far the team walks, in cells; the agents stand `GAP` apart. The team starts
+ * past the laptop left in the sand, so no agent stands on it.
+ */
+const START = 10;
 const GAP = 11;
-const REACH = 53.5;
+const REACH = 46;
 
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
 const bay = (x: number, y: number) => BAYER[((y & 3) << 2) | (x & 3)] as number;
@@ -167,8 +170,9 @@ function drawLand(buf: Buf, t: number) {
       dot(buf, x, y, c);
     }
   }
-  laptop(buf, 5, Math.round(groundAt(8)) + 1);
-  cactus(buf, 30, Math.round(groundAt(30)));
+  // At the edge, out from under the team; the cactus past the last agent, where it isn't hidden.
+  laptop(buf, 1, Math.round(groundAt(4)) + 1);
+  cactus(buf, 44, Math.round(groundAt(44)));
   tree(buf, 95, Math.round(groundAt(95)));
   for (let i = 0; i < 5; i++) {
     if (Math.sin(t * 4 + i) > 0.7) dot(buf, 18 + i * 4, groundAt(18 + i * 4) - 3 - (i % 2), HEAT);

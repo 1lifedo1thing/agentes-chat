@@ -1243,9 +1243,43 @@ export const ptBR = {
         paused:
           "Conectar com MCP fica desligado enquanto este workspace está pausado. Por enquanto, traga os agentes por aqui.",
       },
-      haveFile: "Já tem um arquivo de outro app? Solte aqui: ele é reconhecido sozinho.",
-      computer: {
+      haveFileButton: "Tenho um arquivo ou link",
+      sheet: {
         title: "Trazer o time do {{app}}",
+        otherTitle: "Trazer de outro app",
+        workspaceTitle: "Trazer de outro workspace",
+        fileTitle: "Trazer de um arquivo ou link",
+        fileLead: "O arquivo de qualquer app que a gente conhece. Ele é reconhecido sozinho.",
+        useRequest: "Prefiro colar o pedido e trazer a resposta",
+        backToMcp: "Voltar para o MCP",
+        waitingMore: "Esperando os próximos…",
+        arrivedMore: "O {{app}} ainda pode estar criando. Quem chegar depois aparece aqui.",
+        arrivedMoreAny: "O seu app de IA ainda pode estar criando. Quem chegar depois aparece aqui.",
+        readHere: "Lido no seu navegador. Nada muda aqui até você confirmar.",
+        request: {
+          "grok-bot": {
+            lead: "O bot escreve tudo o que tem num JSON. Você cola aqui e confere antes de criar.",
+            copyStep: "Cole na conversa com o seu bot",
+            answerStep: "Cole aqui a resposta inteira",
+            answerPlaceholder: "O JSON que o bot respondeu",
+          },
+          "chatgpt-dots": {
+            lead: "O seu dot escreve tudo o que tem num arquivo. Você solta aqui e confere antes de criar.",
+            copyStep: "Cole num chat novo",
+            answerStep: "Solte aqui o arquivo que ele criar",
+          },
+          other: {
+            copyStep: "Cole numa conversa nova no outro app",
+            answerStep: "Solte o arquivo que ele devolver, ou cole a resposta",
+            answerPlaceholder: "A resposta, ou um link do GitHub",
+          },
+        },
+        workspace: {
+          download: "Baixe o arquivo do outro workspace",
+          where: "Lá, em Configurações › Importar e exportar › Baixar o arquivo.",
+          open: "Abrir {{org}} numa aba nova",
+          drop: "Solte aqui o .json",
+        },
         lead: "O seu assistente lê o {{app}} neste computador e grava um arquivo onde você escolher. Você confere tudo antes de criar.",
         leadCommand:
           "O comando lê o {{app}} neste computador e grava um arquivo onde você escolher. Você confere tudo antes de criar.",
