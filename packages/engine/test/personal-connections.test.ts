@@ -29,6 +29,7 @@ import {
   getAgentMail,
   insertMessage,
   listAgentScopes,
+  listApprovalRules,
   listConnections,
   type McpConnect,
   mcpSessionOver,
@@ -377,6 +378,21 @@ describe("what others may know of it", () => {
     expect(await linear(walter.id)).toBeUndefined();
     expect((await linear(bia.id))?.state).not.toBeUndefined();
     expect((await linear(null))?.state).not.toBeUndefined();
+  });
+
+  test("an agent's 'Aprovar sempre' rules on a person's own connection are listed to that person only", async () => {
+    const { walter, bia, mine } = await walterWithLinear();
+    await f.db.insert(schema.approvalRules).values({
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      connectionId: mine.id,
+      tool: "create_issue",
+      createdByUserId: walter.id,
+    });
+    const tools = async (who: string) => (await listApprovalRules(f.db, who, f.org.id, f.agent.id)).map((r) => r.tool);
+    expect(await tools(walter.id)).toEqual(["create_issue"]);
+    expect(await tools(bia.id)).toEqual([]);
+    expect(await tools(f.owner.id)).toEqual([]);
   });
 
   test("widget suggestions never name a person's own connection", async () => {

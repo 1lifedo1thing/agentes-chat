@@ -233,6 +233,7 @@ export async function listApprovalRules(
       action: approvalRules.action,
       createdByUserId: approvalRules.createdByUserId,
       createdAt: approvalRules.createdAt,
+      ownerUserId: connectorConnections.ownerUserId,
     })
     .from(approvalRules)
     .leftJoin(connectorConnections, eq(connectorConnections.id, approvalRules.connectionId))
@@ -242,7 +243,14 @@ export async function listApprovalRules(
     )
     .where(and(eq(approvalRules.orgId, orgId), eq(approvalRules.agentId, agentId)))
     .orderBy(asc(approvalRules.createdAt), asc(approvalRules.id));
-  return rows.map((r) => ({ ...r, toolLabel: r.toolLabel || r.tool, createdAt: r.createdAt.toISOString() }));
+  // Someone else's personal connection: its tools are theirs to know of (ADR 0099 addendum).
+  return rows
+    .filter((r) => !r.ownerUserId || r.ownerUserId === actorId)
+    .map(({ ownerUserId: _, ...r }) => ({
+      ...r,
+      toolLabel: r.toolLabel || r.tool,
+      createdAt: r.createdAt.toISOString(),
+    }));
 }
 
 /** The audit row of a removed rule, `details` `{ connectionId, tool, action }`: the git proxy reads it too (`pushGrants`). */
