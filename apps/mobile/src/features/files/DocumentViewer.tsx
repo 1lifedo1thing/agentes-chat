@@ -2,26 +2,26 @@ import { type ArtifactDetail, useApi, useArtifact } from "@agenteschat/client";
 import { formatJson, highlightCode } from "@agenteschat/client/lib/code";
 import { isJsonFile } from "@agenteschat/client/lib/files";
 import { useQuery } from "@tanstack/react-query";
-import { Image } from "expo-image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Platform, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { Button, CARD_PAD, IconButton, SCREEN_X, Text, ToastHost, useToast } from "@/ui";
+import { router } from "@/ui/navigation";
 import { CodeText, RawToggle } from "../chat/CodeCard";
 import { MessageText } from "../chat/MessageText";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { copyText, goBack, MONO } from "../shared/parts";
 import { useFileActions } from "./actions";
-import { type FileInfo, fileInfo } from "./logic";
+import { encodeFileList, type FileInfo, fileInfo } from "./logic";
 import { FileTile, useFileLine } from "./MessageFiles";
 import { fileText, useRemoteFile } from "./source";
-import { VideoPlayer } from "./VideoPlayer";
 
 /**
  * A file opened from a message: Markdown and text drawn by the
- * app, PDF in a web view (iOS draws PDFs natively there), a video in our player, anything else as its card. Top: close,
+ * app, PDF in a web view (iOS draws PDFs natively there), anything else as its card; a picture or a video goes on to
+ * the picture viewer, where every picture and video opens. Top: close,
  * Copiar texto and the "…", then the name and "Documento · 4 KB · Theo" on a row of their own. Bottom: Enviar and
  * Compartilhar; Ver no Drive in the "…".
  */
@@ -57,6 +57,15 @@ function Viewer({ id, version }: { id: string; version?: number }) {
   };
   // A PDF is drawn in the web view on iOS only (Android's WebView has no PDF viewer).
   const pdf = info?.view === "pdf" && Platform.OS === "ios";
+  // A picture or a video reached by a file's link opens where every picture and video does, the picture viewer.
+  const media = info?.view === "image" || info?.view === "video";
+  useEffect(() => {
+    if (!media || !detail) return;
+    router.replace({
+      pathname: "/images",
+      params: { files: encodeFileList([{ id: detail.id, version: detail.shownVersion }]), at: "0" },
+    });
+  }, [media, detail]);
 
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
@@ -97,7 +106,8 @@ function Viewer({ id, version }: { id: string; version?: number }) {
               {t("mobile.files.loadFailed")}
             </Text>
           </Center>
-        ) : !detail || !info ? (
+        ) : !detail || !info || media ? (
+          // A picture or a video waits here only while the viewer takes its place.
           <Center>
             <ActivityIndicator color={c.faint} />
           </Center>
@@ -105,10 +115,6 @@ function Viewer({ id, version }: { id: string; version?: number }) {
           <TextPage detail={detail} markdown={info.view === "markdown"} json={isJsonFile(info.name, info.mime)} />
         ) : pdf ? (
           <PdfPage detail={detail} />
-        ) : info.view === "video" ? (
-          <VideoPage detail={detail} info={info} />
-        ) : info.view === "image" ? (
-          <ImagePage detail={detail} info={info} />
         ) : (
           <BigCard info={info} />
         )}
@@ -229,63 +235,6 @@ function PdfPage({ detail }: { detail: ArtifactDetail }) {
   );
 }
 
-/** A video, filling the screen between the top and the bar; one this phone can't play shows its card. */
-/** A picture, whole on the page (the picture viewer, with its zoom, opens from the chat and the Drive's cards). */
-function ImagePage({ detail, info }: { detail: ArtifactDetail; info: FileInfo }) {
-  const orgId = useOrgId();
-  const c = useColors();
-  const link = useRemoteFile(orgId, detail.id, detail.shownVersion);
-  const [failed, setFailed] = useState(false);
-  if (failed || link.isError) return <BigCard info={info} />;
-  return (
-    <View style={[styles.page, styles.clip, styles.picture, { backgroundColor: c.sunken }]}>
-      {link.data ? (
-        <Image
-          source={{ uri: link.data.uri, headers: link.data.headers, cacheKey: `${detail.id}@${detail.shownVersion}` }}
-          contentFit="contain"
-          transition={160}
-          style={StyleSheet.absoluteFill}
-          onError={() => setFailed(true)}
-          accessibilityLabel={info.name}
-        />
-      ) : (
-        <Center>
-          <ActivityIndicator color={c.faint} />
-        </Center>
-      )}
-    </View>
-  );
-}
-
-function VideoPage({ detail, info }: { detail: ArtifactDetail; info: FileInfo }) {
-  const orgId = useOrgId();
-  const c = useColors();
-  const link = useRemoteFile(orgId, detail.id, detail.shownVersion);
-  const [failed, setFailed] = useState(false);
-  const source = useMemo(
-    () => (link.data ? { uri: link.data.uri, ...(link.data.headers ? { headers: link.data.headers } : {}) } : null),
-    [link.data],
-  );
-  if (failed || link.isError) return <BigCard info={info} />;
-  return (
-    <View style={[styles.page, styles.clip, styles.video]}>
-      {source ? (
-        <VideoPlayer
-          key={source.uri}
-          variant="screen"
-          source={source}
-          name={info.name}
-          onFailed={() => setFailed(true)}
-        />
-      ) : (
-        <Center>
-          <ActivityIndicator color={c.faint} />
-        </Center>
-      )}
-    </View>
-  );
-}
-
 /** A type the app doesn't draw: its card, big, and Compartilhar opens it elsewhere. */
 function BigCard({ info }: { info: FileInfo }) {
   const { t } = useTranslation();
@@ -320,8 +269,6 @@ const styles = StyleSheet.create({
   mono: { fontFamily: MONO, fontSize: 13, lineHeight: 19 },
   json: { gap: 10, alignItems: "flex-start" },
   web: { flex: 1, backgroundColor: "transparent" },
-  video: { backgroundColor: "#000", borderBottomLeftRadius: 14, borderBottomRightRadius: 14, marginBottom: 12 },
-  picture: { borderBottomLeftRadius: 14, borderBottomRightRadius: 14, marginBottom: 12 },
   bigName: { marginTop: 14, textAlign: "center" },
   note: { marginTop: 10, textAlign: "center" },
   bar: {

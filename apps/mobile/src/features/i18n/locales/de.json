@@ -443,10 +443,10 @@
     "doubleTapHint": "Doppeltippen = 👍",
     "react": "Reagieren",
     "attach": {
-      "more": "Noch ein Foto oder eine Datei",
       "remove": "{{name}} entfernen",
       "waiting": "{{name}}, wartet auf das Senden",
       "sending": "{{name}}, wird gesendet",
+      "failed": "{{name}}, nicht gesendet: zum erneuten Versuch senden",
       "tooMany": "Bis zu {{count}} Dateien pro Nachricht."
     },
     "swipeReply": "Zum Antworten nach rechts wischen",
@@ -1238,7 +1238,8 @@
       "mute": "Ton aus",
       "unmute": "Ton an",
       "fullscreen": "Vollbild",
-      "open": "Öffnen"
+      "open": "Öffnen",
+      "cantPlay": "Dieses Video kann auf diesem Handy nicht abgespielt werden."
     }
   },
   "issues": {

@@ -31,8 +31,9 @@ import { VideoPlayer } from "./VideoPlayer";
  * A message's files. Pictures alone: one inline, whole in a box of one shape, or several as a deck to swipe through
  * (`ImageStack`), tapping opens the viewer at that picture. Any other attachment: a tile across the row
  * (`AttachmentTile`: what it holds drawn small, its name, whole, with its kind and size under it), with the pictures
- * beside them as tiles of only the picture, two to a row (as on the web's phone width). A video plays right there (its
- * corner button opens the file screen). `align="end"`: the viewer's own message, its files sit on the right.
+ * beside them as tiles of only the picture, two to a row (as on the web's phone width). A video shows its first frame in
+ * the pictures' shape and opens in the same viewer as they do. `align="end"`: the viewer's own message, its files sit on
+ * the right.
  */
 
 export interface MessageFile {
@@ -232,11 +233,12 @@ function InlineVideo({
   );
   if (failed || link.isError) return <AttachmentTile file={file} detail={detail} width={width} single />;
   const info = detail ? fileInfo(detail) : null;
+  // In the same viewer as the pictures: one place where media opens.
   const open = () => {
     if (!detail) return;
     router.push({
-      pathname: "/file/[id]",
-      params: { id: file.id, ...(detail.shownVersion < detail.version ? { v: String(detail.shownVersion) } : {}) },
+      pathname: "/images",
+      params: { files: encodeFileList([{ id: file.id, version: detail.shownVersion }]), at: "0" },
     });
   };
   return (

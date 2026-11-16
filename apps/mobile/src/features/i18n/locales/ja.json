@@ -428,10 +428,10 @@
     "doubleTapHint": "ダブルタップ = 👍",
     "react": "リアクション",
     "attach": {
-      "more": "写真やファイルを追加",
       "remove": "{{name}}を外す",
       "waiting": "{{name}}、送信待ち",
       "sending": "{{name}}、送信中",
+      "failed": "{{name}}、送信できませんでした。送信してやり直せます",
       "tooMany": "1つのメッセージに添付できるファイルは{{count}}個までです。"
     },
     "swipeReply": "右にスワイプして返信",
@@ -1160,7 +1160,8 @@
       "mute": "ミュート",
       "unmute": "ミュート解除",
       "fullscreen": "全画面表示",
-      "open": "開く"
+      "open": "開く",
+      "cantPlay": "この動画はこの端末では再生できません。"
     }
   },
   "issues": {

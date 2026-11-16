@@ -3,8 +3,8 @@ import { keepWhole } from "@agenteschat/client/lib/format";
 import { StatusBar } from "expo-status-bar";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
-import { GestureHandlerRootView, usePanGesture } from "react-native-gesture-handler";
+import { ActivityIndicator, type LayoutChangeEvent, StyleSheet, useWindowDimensions, View } from "react-native";
+import { GestureDetector, GestureHandlerRootView, usePanGesture } from "react-native-gesture-handler";
 import PagerView from "react-native-pager-view";
 import Animated, {
   cancelAnimation,
@@ -23,17 +23,20 @@ import { goBack } from "../shared/parts";
 import { savedAt, useFileActions, useSavedWhen } from "./actions";
 import { decodeFileList, fileInfo, pageStep } from "./logic";
 import { useRemoteFile } from "./source";
+import { ViewerVideo } from "./VideoPlayer";
 import { tellViewerPlace } from "./viewer-place";
 import { ZoomPicture } from "./ZoomPicture";
 import { pullCloses, pullDirection, pulledPlacement, pullProgress, type Size } from "./zoom";
 
 /**
- * A message's pictures, full screen, as the phone's own photos: black, the name, "2 de 4" and who sent it on top;
- * pinch to zoom, double tap to zoom in at that spot or back out (`ZoomPicture`: the system's own zoom on iOS); swipe
- * between the pictures on the system's pager, a little black between them as they slide, or ‹ › on the sides; pull
- * down (or up) to close, the picture following the finger, smaller as it goes, as the black fades, and let go far or
- * fast enough it carries on away as the viewer closes, else it springs back; and Compartilhar, Salvar em Fotos, Ver
- * no Drive at the bottom. A tap hides and shows the bars; zooming in hides them.
+ * Pictures and videos, full screen, as the phone's own photos: one viewer for both, wherever they open from (a
+ * message, the Drive, a file's link). Black, the name, "2 de 4" and who sent it on top; pinch to zoom, double tap to
+ * zoom in at that spot or back out (`ZoomPicture`: the system's own zoom on iOS); a video plays in the system's player
+ * between the bars, while it is the one in sight; swipe between them on the system's pager, a little black between
+ * them as they slide, or ‹ › on the sides; pull down (or up) to close, the picture or video following the finger,
+ * smaller as it goes, as the black fades, and let go far or fast enough it carries on away as the viewer closes, else
+ * it springs back; and Compartilhar, Enviar, Salvar em Fotos, Ver no Drive at the bottom. A tap on a picture hides and
+ * shows the bars; zooming in hides them.
  */
 export function ImageViewer({
   files: rawFiles,
@@ -93,6 +96,8 @@ function Viewer({
   const [zoomed, setZoomed] = useState(false);
   const [paging, setPaging] = useState(false);
   const [chrome, setChrome] = useState(true);
+  // How tall the bars are: a video sits between them, its own controls clear of ours.
+  const [bars, setBars] = useState({ top: 0, bottom: 0 });
   // The pull to close, in finger travel (the picture follows it loosely), and how far a closing picture carried on.
   const pullX = useSharedValue(0);
   const pullY = useSharedValue(0);
@@ -119,6 +124,8 @@ function Viewer({
     if (now) setChrome(false);
   }, []);
   const onTap = useCallback(() => setChrome((v) => !v), []);
+  // A video's page keeps the bars: its taps are its own controls'.
+  const showChrome = useCallback(() => setChrome(true), []);
 
   const prev = pageStep(index, -1, files.length);
   const next = pageStep(index, 1, files.length);
@@ -165,6 +172,7 @@ function Viewer({
                 id={f.id}
                 {...(f.version !== undefined ? { version: f.version } : {})}
                 screen={screen}
+                bars={bars}
                 active={i === index}
                 paging={paging}
                 pullX={pullX}
@@ -173,6 +181,7 @@ function Viewer({
                 leaving={leaving}
                 onTap={onTap}
                 onZoom={onZoom}
+                onVideo={showChrome}
                 onClose={close}
               />
             ) : null}
@@ -180,7 +189,12 @@ function Viewer({
         ))}
       </PagerView>
 
-      <Chrome visible={chrome} drag={drag} style={[styles.top, { paddingTop: insets.top + 8 }]}>
+      <Chrome
+        visible={chrome}
+        drag={drag}
+        style={[styles.top, { paddingTop: insets.top + 8 }]}
+        onHeight={(top) => setBars((b) => (b.top === top ? b : { ...b, top }))}
+      >
         <Round icon="x" label={t("mobile.common.close")} onPress={close} />
         <View style={styles.spacer} />
         <Round icon="more" label={t("mobile.files.more")} onPress={() => actions.more(true)} disabled={!detail} />
@@ -211,7 +225,12 @@ function Viewer({
         </Chrome>
       ) : null}
 
-      <Chrome visible={chrome} drag={drag} style={[styles.bottom, { paddingBottom: insets.bottom + 14 }]}>
+      <Chrome
+        visible={chrome}
+        drag={drag}
+        style={[styles.bottom, { paddingBottom: insets.bottom + 14 }]}
+        onHeight={(bottom) => setBars((b) => (b.bottom === bottom ? b : { ...b, bottom }))}
+      >
         <View style={styles.actions}>
           {detail?.inDrive !== false ? (
             <Action icon="person" label={t("share.button")} disabled={!detail} onPress={actions.shareSheet} />
@@ -238,14 +257,16 @@ function Viewer({
 }
 
 /**
- * One page: its picture (`ZoomPicture`) and, on the one in sight at 1×, the pull to close. The pull tracks the finger
- * 1:1 (the picture follows it loosely, `pulledPlacement`) and can be caught again while it springs back; let go, a
- * fast release is decided by its direction and a slow one by its distance (`pullCloses`).
+ * One page: a picture (`ZoomPicture`) or a video (`ViewerVideo`, between the bars, playing while in sight) and, on the
+ * one in sight at 1×, the pull to close. The pull tracks the finger 1:1 (the picture follows it loosely,
+ * `pulledPlacement`) and can be caught again while it springs back; let go, a fast release is decided by its direction
+ * and a slow one by its distance (`pullCloses`).
  */
 function Page({
   id,
   version,
   screen,
+  bars,
   active,
   paging,
   pullX,
@@ -254,11 +275,13 @@ function Page({
   leaving,
   onTap,
   onZoom,
+  onVideo,
   onClose,
 }: {
   id: string;
   version?: number;
   screen: Size;
+  bars: { top: number; bottom: number };
   active: boolean;
   paging: boolean;
   pullX: SharedValue<number>;
@@ -267,11 +290,21 @@ function Page({
   leaving: SharedValue<boolean>;
   onTap: () => void;
   onZoom: (zoomed: boolean) => void;
+  onVideo: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const orgId = useOrgId();
   const link = useRemoteFile(orgId, id, version);
+  const artifact = useArtifact(orgId, id, version);
+  const info = artifact.data ? fileInfo(artifact.data) : null;
+  // Known once its details load (a picture when they can't).
+  const video = info ? info.view === "video" : artifact.isError ? false : null;
+  const [unplayable, setUnplayable] = useState(false);
   const [zoomed, setZoomed] = useState(false);
+  useEffect(() => {
+    if (active && video) onVideo();
+  }, [active, video, onVideo]);
   const zoomChanged = useCallback(
     (now: boolean) => {
       setZoomed(now);
@@ -321,9 +354,36 @@ function Page({
     return { transform: [{ translateX: at.x }, { translateY: at.y + away.value }, { scale: at.scale }] };
   });
   const key = `${id}@${version ?? "latest"}`;
+  const videoSource = useMemo(
+    () => (link.data ? { uri: link.data.uri, ...(link.data.headers ? { headers: link.data.headers } : {}) } : null),
+    [link.data],
+  );
   return (
     <Animated.View style={[screen, placed]}>
-      {link.data ? (
+      {video && videoSource ? (
+        <GestureDetector gesture={pull}>
+          <View style={screen} collapsable={false}>
+            <View style={[styles.videoFrame, { top: bars.top, bottom: bars.bottom }]}>
+              {unplayable ? (
+                <View style={[StyleSheet.absoluteFill, styles.center, styles.cantPlay]}>
+                  <Icon name="play" size={30} color={DIM} />
+                  <Text variant="footnote" style={[styles.cantPlayText, { color: DIM }]}>
+                    {t("mobile.files.video.cantPlay")}
+                  </Text>
+                </View>
+              ) : (
+                <ViewerVideo
+                  key={videoSource.uri}
+                  source={videoSource}
+                  name={info?.name ?? ""}
+                  active={active}
+                  onFailed={() => setUnplayable(true)}
+                />
+              )}
+            </View>
+          </View>
+        </GestureDetector>
+      ) : video === false && link.data ? (
         <ZoomPicture
           source={link.data}
           cacheKey={key}
@@ -342,16 +402,18 @@ function Page({
   );
 }
 
-/** The bars: fade with a tap, and while the picture is dragged away. */
+/** The bars: fade with a tap, and while the picture is dragged away. `onHeight`: how tall the bar is. */
 function Chrome({
   visible,
   drag,
   style,
+  onHeight,
   children,
 }: {
   visible: boolean;
   drag: Readonly<SharedValue<number>>;
   style: object[];
+  onHeight?: (height: number) => void;
   children: ReactNode;
 }) {
   const shown = useSharedValue(1);
@@ -362,7 +424,11 @@ function Chrome({
     opacity: shown.value * (1 - Math.min(Math.abs(drag.value) / 80, 1)),
   }));
   return (
-    <Animated.View pointerEvents={visible ? "box-none" : "none"} style={[...style, anim]}>
+    <Animated.View
+      pointerEvents={visible ? "box-none" : "none"}
+      style={[...style, anim]}
+      {...(onHeight ? { onLayout: (e: LayoutChangeEvent) => onHeight(Math.round(e.nativeEvent.layout.height)) } : {})}
+    >
       {children}
     </Animated.View>
   );
@@ -436,6 +502,10 @@ const styles = StyleSheet.create({
   black: { backgroundColor: "#000" },
   pager: { flex: 1 },
   page: { alignItems: "center", justifyContent: "center" },
+  // A video between the bars, the screen's width.
+  videoFrame: { position: "absolute", left: 0, right: 0 },
+  cantPlay: { gap: 10, paddingHorizontal: 32 },
+  cantPlayText: { textAlign: "center" },
   top: {
     position: "absolute",
     top: 0,

@@ -1073,9 +1073,6 @@
   "chat.react": {
     "value": "React"
   },
-  "chat.attach.more": {
-    "value": "Add another photo or file"
-  },
   "chat.attach.remove": {
     "value": "Remove {{name}}"
   },
@@ -1084,6 +1081,9 @@
   },
   "chat.attach.sending": {
     "value": "{{name}}, sending"
+  },
+  "chat.attach.failed": {
+    "value": "{{name}}, didn't go: send to try again"
   },
   "chat.attach.tooMany": {
     "value": "Up to {{count}} files per message."
@@ -3061,6 +3061,9 @@
   },
   "files.video.open": {
     "value": "Open"
+  },
+  "files.video.cantPlay": {
+    "value": "This video can't play on this phone."
   },
   "issues.title": {
     "value": "Tasks"

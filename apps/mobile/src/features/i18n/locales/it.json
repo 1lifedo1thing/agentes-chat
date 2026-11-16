@@ -458,10 +458,10 @@
     "doubleTapHint": "Doppio tocco = 👍",
     "react": "Reagisci",
     "attach": {
-      "more": "Aggiungi un'altra foto o un file",
       "remove": "Rimuovi {{name}}",
       "waiting": "{{name}}, in attesa di invio",
       "sending": "{{name}}, invio in corso",
+      "failed": "{{name}}, non inviato: invia per riprovare",
       "tooMany": "Fino a {{count}} file per messaggio."
     },
     "swipeReply": "Scorri a destra per rispondere",
@@ -1313,7 +1313,8 @@
       "mute": "Disattiva audio",
       "unmute": "Attiva audio",
       "fullscreen": "Schermo intero",
-      "open": "Apri"
+      "open": "Apri",
+      "cantPlay": "Questo video non può essere riprodotto su questo telefono."
     }
   },
   "issues": {

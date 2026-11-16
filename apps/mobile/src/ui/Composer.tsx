@@ -109,8 +109,8 @@ export interface ComposerProps {
   /** Right above the field ("Respondendo a Ana"). */
   banner?: ReactNode;
   /**
-   * What waits to go with the message (photos, files): inside the field, over the words, as the system's messages
-   * hold them; the send button stays at the field's foot, beside the words.
+   * What waits to go with the message (photos, videos, files): inside the field on a row of its own across it, over the
+   * words and the send button, as the phone's own messages hold them; the send button stays beside the words.
    */
   attachments?: ReactNode;
   /** Something waits above the field to go with the message (photos, files): send shows and sends with no words. */
@@ -434,9 +434,10 @@ export function Composer({
             },
           ]}
         >
+          {/* What goes with the message: a row of its own across the field, over the words and the send button. */}
+          {attachments ? <View style={styles.attachRow}>{attachments}</View> : null}
           {/* The placeholder is ours, on one line (cut with "…"): a long one wrapped and grew the empty field. */}
           <View style={styles.inputBox}>
-            {attachments ?? null}
             {!text ? (
               <View style={styles.placeholder} pointerEvents="none">
                 <RNText numberOfLines={1} style={[placeholderText, { color: colors.faint }]}>
@@ -705,6 +706,8 @@ const styles = StyleSheet.create({
   },
   tooLongAct: { textDecorationLine: "underline" },
   inputBox: { flex: 1, minWidth: 0 },
+  // The field's whole width; its thumbnails sit as far from the field's rounded corner as their own corner is round.
+  attachRow: { width: "100%", paddingTop: 6 },
   inputFill: { flex: 0, width: "100%" },
   // Over the empty field's one line, centered on it.
   placeholder: { position: "absolute", left: 0, right: 0, bottom: 0, height: SEND, justifyContent: "center" },
@@ -729,6 +732,8 @@ const styles = StyleSheet.create({
     minHeight: FIELD,
     borderRadius: FIELD / 2,
     flexDirection: "row",
+    // Attachments take a line of their own over the words (`attachRow`).
+    flexWrap: "wrap",
     alignItems: "flex-end",
     gap: 8,
     paddingVertical: INSET,

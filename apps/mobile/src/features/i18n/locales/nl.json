@@ -443,10 +443,10 @@
     "doubleTapHint": "Dubbeltik = 👍",
     "react": "Reageren",
     "attach": {
-      "more": "Nog een foto of bestand toevoegen",
       "remove": "{{name}} weghalen",
       "waiting": "{{name}}, wacht op versturen",
       "sending": "{{name}}, wordt verstuurd",
+      "failed": "{{name}}, niet verstuurd: verstuur om het opnieuw te proberen",
       "tooMany": "Maximaal {{count}} bestanden per bericht."
     },
     "swipeReply": "Veeg naar rechts om te antwoorden",
@@ -1238,7 +1238,8 @@
       "mute": "Geluid uit",
       "unmute": "Geluid aan",
       "fullscreen": "Volledig scherm",
-      "open": "Openen"
+      "open": "Openen",
+      "cantPlay": "Deze video kan niet op deze telefoon worden afgespeeld."
     }
   },
   "issues": {

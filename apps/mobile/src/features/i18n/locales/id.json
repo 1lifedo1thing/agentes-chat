@@ -428,10 +428,10 @@
     "doubleTapHint": "Ketuk dua kali = 👍",
     "react": "Beri reaksi",
     "attach": {
-      "more": "Tambah foto atau file lain",
       "remove": "Hapus {{name}}",
       "waiting": "{{name}}, menunggu dikirim",
       "sending": "{{name}}, sedang dikirim",
+      "failed": "{{name}}, belum terkirim: kirim untuk mencoba lagi",
       "tooMany": "Maksimal {{count}} file per pesan."
     },
     "swipeReply": "Geser ke kanan untuk membalas",
@@ -1160,7 +1160,8 @@
       "mute": "Bisukan",
       "unmute": "Nyalakan suara",
       "fullscreen": "Layar penuh",
-      "open": "Buka"
+      "open": "Buka",
+      "cantPlay": "Video ini tidak bisa diputar di ponsel ini."
     }
   },
   "issues": {

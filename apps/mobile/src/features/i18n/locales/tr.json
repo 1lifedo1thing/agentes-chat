@@ -443,10 +443,10 @@
     "doubleTapHint": "Çift dokunuş = 👍",
     "react": "Tepki ver",
     "attach": {
-      "more": "Başka bir fotoğraf veya dosya ekle",
       "remove": "{{name}} öğesini kaldır",
       "waiting": "{{name}}, gönderilmeyi bekliyor",
       "sending": "{{name}}, gönderiliyor",
+      "failed": "{{name}}, gönderilemedi: yeniden denemek için gönderin",
       "tooMany": "Mesaj başına en fazla {{count}} dosya."
     },
     "swipeReply": "Yanıtlamak için sağa kaydırın",
@@ -1238,7 +1238,8 @@
       "mute": "Sesi kapat",
       "unmute": "Sesi aç",
       "fullscreen": "Tam ekran",
-      "open": "Aç"
+      "open": "Aç",
+      "cantPlay": "Bu video bu telefonda oynatılamıyor."
     }
   },
   "issues": {

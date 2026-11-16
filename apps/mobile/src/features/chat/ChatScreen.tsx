@@ -144,6 +144,7 @@ import { BrowserCard, BrowserRunCard } from "../browser/BrowserCard";
 import { OpenHandoffProvider } from "../browser/open";
 import { threadTitle } from "../chats/logic";
 import { ImageMaking } from "../files/ImageMaking";
+import { uploadPart } from "../files/upload-part";
 import { chatHref, consultationHref, notificationHref } from "../links/logic";
 import { MissionCardView } from "../missions/cards";
 import { isOpenMission } from "../missions/logic";
@@ -1171,7 +1172,7 @@ function Chat({
     });
     if (files.length > 0) setPending((now) => [...files, ...now].slice(0, MAX_PENDING));
   }, []);
-  const addPending = (all: { uri: string; name: string; type: string; size?: number }[]) => {
+  const addPending = (all: Omit<PendingFile, "id" | "state">[]) => {
     // Past the upload limit a file never goes: said as it is picked, not after a wait at send.
     const files = all.filter((f) => f.size === undefined || f.size <= MAX_UPLOAD_BYTES);
     if (files.length < all.length)
@@ -1193,10 +1194,7 @@ function Chat({
     addPending([{ uri: file.uri, name: file.name, type: "text/plain" }]);
   };
   const uploadOne = async (file: PendingFile): Promise<ArtifactRef> => {
-    // React Native's FormData sends `{ uri, name, type }` as a file part.
-    const part = { uri: file.uri, name: file.name, type: file.type };
-    const asFile = part as unknown as Parameters<typeof api.artifacts.upload>[1];
-    const saved: ArtifactDetail = await api.artifacts.upload(orgId, asFile, {
+    const saved: ArtifactDetail = await api.artifacts.upload(orgId, uploadPart(file), {
       channelId,
       ...(threadId ? { threadId } : {}),
     });
@@ -1268,6 +1266,9 @@ function Chat({
     name: a.fileName ?? (a.type === "video" ? "video.mp4" : "photo.jpg"),
     type: a.mimeType ?? (a.type === "video" ? "video/mp4" : "image/jpeg"),
     ...(a.fileSize ? { size: a.fileSize } : {}),
+    // Its shape and length for its thumbnail in the field.
+    ...(a.width > 0 && a.height > 0 ? { width: a.width, height: a.height } : {}),
+    ...(a.type === "video" && a.duration ? { duration: a.duration / 1000 } : {}),
   });
   const openPlus = () => sheet.open(<PlusActions media={mediaTabs.length > 0} onPick={(p) => void onPlus(p)} />);
   const onPlus = async (pick: PlusPick) => {

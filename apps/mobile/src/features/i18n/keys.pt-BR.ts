@@ -460,10 +460,10 @@ export const featureKeysPtBR = {
     doubleTapHint: "Toque duplo = 👍",
     react: "Reagir",
     attach: {
-      more: "Mais uma foto ou arquivo",
       remove: "Tirar {{name}}",
       waiting: "{{name}}, esperando para enviar",
       sending: "{{name}}, enviando",
+      failed: "{{name}}, não foi: envie para tentar de novo",
       tooMany: "Até {{count}} arquivos por mensagem.",
     },
     swipeReply: "Deslize para a direita para responder",
@@ -1288,6 +1288,7 @@ export const featureKeysPtBR = {
       unmute: "Ligar o som",
       fullscreen: "Tela cheia",
       open: "Abrir",
+      cantPlay: "Este vídeo não toca neste celular.",
     },
   },
   issues: {

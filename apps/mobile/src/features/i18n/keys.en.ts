@@ -470,13 +470,13 @@ export const featureKeysEn = {
     /** The emoji palette in a message's menu. */
     react: "React",
     attach: {
-      /** The dashed tile after the pictures waiting above the field. */
-      more: "Add another photo or file",
       remove: "Remove {{name}}",
       /** What a screen reader says of a picture waiting to be sent. */
       waiting: "{{name}}, waiting to be sent",
       /** While its upload runs. */
       sending: "{{name}}, sending",
+      /** One that didn't go: it stays, and send tries it again. */
+      failed: "{{name}}, didn't go: send to try again",
       tooMany: "Up to {{count}} files per message.",
     },
     /** Swiping a message to the right. */
@@ -1323,6 +1323,8 @@ export const featureKeysEn = {
       unmute: "Unmute",
       fullscreen: "Full screen",
       open: "Open",
+      /** A video this phone can't play, in the viewer: it can still be sent, shared or opened in the Drive. */
+      cantPlay: "This video can't play on this phone.",
     },
   },
   issues: {

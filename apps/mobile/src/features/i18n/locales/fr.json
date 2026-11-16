@@ -458,10 +458,10 @@
     "doubleTapHint": "Toucher deux fois = 👍",
     "react": "Réagir",
     "attach": {
-      "more": "Ajouter une autre photo ou un fichier",
       "remove": "Retirer {{name}}",
       "waiting": "{{name}}, en attente d'envoi",
       "sending": "{{name}}, envoi en cours",
+      "failed": "{{name}}, non envoyé : envoyez pour réessayer",
       "tooMany": "Jusqu'à {{count}} fichiers par message."
     },
     "swipeReply": "Balayez vers la droite pour répondre",
@@ -1313,7 +1313,8 @@
       "mute": "Couper le son",
       "unmute": "Activer le son",
       "fullscreen": "Plein écran",
-      "open": "Ouvrir"
+      "open": "Ouvrir",
+      "cantPlay": "Cette vidéo ne peut pas être lue sur ce téléphone."
     }
   },
   "issues": {

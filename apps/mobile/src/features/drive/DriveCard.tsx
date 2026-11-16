@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Text as RNText, StyleSheet, View } from "react-native";
 import { CHROME_MAX_SCALE, Icon, type IconName, PressScale, systemText, Text, useTheme, weights } from "@/ui";
 import { router } from "@/ui/navigation";
-import { encodeFileList } from "../files/logic";
+import { encodeFileList, extensionOf, VIDEO_EXT } from "../files/logic";
 import { useRemoteFile } from "../files/source";
 import { Face } from "../shared/Face";
 import { useDirectory, useOrgId, useWhen } from "../shared/hooks";
@@ -20,10 +20,10 @@ const KIND_ICON: Record<ReturnType<typeof kindKey>, IconName> = {
   file: "file",
 };
 
-/** Opens an item: pictures in the picture viewer, the rest in the document viewer. */
+/** Opens an item: pictures and videos in the picture viewer, the rest in the document viewer. */
 export function openDriveItem(a: Pick<Artifact, "id" | "kind" | "title" | "version">) {
   tapHaptic();
-  if (cardShape(a) === "image")
+  if (cardShape(a) === "image" || (a.kind === "file" && VIDEO_EXT.has(extensionOf(a.title))))
     router.push({
       pathname: "/images",
       params: { files: encodeFileList([{ id: a.id, version: a.version }]), at: "0" },

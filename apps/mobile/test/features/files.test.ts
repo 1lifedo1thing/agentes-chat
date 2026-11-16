@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ArtifactDetail } from "@agenteschat/client";
 import { pictureRatio } from "@agenteschat/client/lib/files";
+import { tileWidth } from "../../src/features/chat/attachment-size";
 import {
   decodeFileList,
   driveWebUrl,
@@ -231,6 +232,44 @@ describe("viewer", () => {
     expect(ICONS.right).toEqual([{ t: "path", d: "m9 6 6 6-6 6" }]);
     // The close and ⋯ plates are light (they sit on the black above the picture); ‹ › sit on the picture.
     expect(src("features/files/ImageViewer.tsx")).toContain('const SCRIM = "rgba(0,0,0,0.45)";');
+  });
+
+  test("photos, videos and files go up as parts Expo's fetch sends, never React Native's { uri } part", () => {
+    // Expo's fetch refuses `{ uri, name, type }` ("Unsupported FormDataPart implementation"): no upload ever left.
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat).toContain("api.artifacts.upload(orgId, uploadPart(file), {");
+    expect(chat).not.toContain("as unknown as Parameters<typeof api.artifacts.upload>[1]");
+    expect(src("features/drive/useDriveUpload.ts")).toContain("api.artifacts.upload(orgId, uploadPart(file))");
+    expect(src("features/files/upload-part.ts")).toContain("bytes: () => source.bytes()");
+  });
+
+  test("what waits in the field: one height, a photo or video in its own shape, a file as a wider card", () => {
+    expect(tileWidth({ type: "image/jpeg", width: 4000, height: 3000 })).toBe(96);
+    expect(tileWidth({ type: "image/jpeg", width: 1000, height: 4000 })).toBe(54);
+    expect(tileWidth({ type: "video/mp4", width: 1920, height: 1080 })).toBe(128);
+    expect(tileWidth({ type: "image/png" })).toBe(72);
+    expect(tileWidth({ type: "application/pdf" })).toBe(176);
+    const strip = src("features/chat/AttachmentStrip.tsx");
+    // A video at its first frame with its length; nothing drawn red, no dashed tile.
+    expect(strip).toContain("<VideoFrame uri={f.uri} />");
+    expect(strip).toContain("videoClock(f.duration)");
+    expect(strip).not.toContain("dashed");
+    expect(strip).not.toMatch(/rgba\(2\d\d, ?\d{1,2}, ?\d{1,2}/);
+    // Inside the field, on a row of its own across it.
+    expect(src("ui/Composer.tsx")).toContain(
+      "{attachments ? <View style={styles.attachRow}>{attachments}</View> : null}",
+    );
+  });
+
+  test("a video opens where the pictures do, from a message, the Drive or a file's link, and plays there", () => {
+    expect(src("features/files/ImageViewer.tsx")).toContain("<ViewerVideo");
+    const message = src("features/files/MessageFiles.tsx");
+    expect(message).not.toContain('pathname: "/file/[id]"');
+    expect(src("features/drive/DriveCard.tsx")).toContain("VIDEO_EXT.has(extensionOf(a.title))");
+    expect(src("features/files/DocumentViewer.tsx")).toContain(
+      'const media = info?.view === "image" || info?.view === "video";',
+    );
+    expect(src("features/files/DocumentViewer.tsx")).not.toContain("<VideoPlayer");
   });
 
   test("the pictures page on the system's pager and zoom with the system's own zoom on iOS", () => {

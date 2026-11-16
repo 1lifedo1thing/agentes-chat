@@ -428,10 +428,10 @@
     "doubleTapHint": "두 번 탭 = 👍",
     "react": "반응",
     "attach": {
-      "more": "사진이나 파일 추가",
       "remove": "{{name}} 제거",
       "waiting": "{{name}}, 전송 대기 중",
       "sending": "{{name}}, 보내는 중",
+      "failed": "{{name}}, 보내지 못함: 보내기를 눌러 다시 시도",
       "tooMany": "메시지 하나에 파일은 최대 {{count}}개까지예요."
     },
     "swipeReply": "오른쪽으로 밀어서 답장",
@@ -1160,7 +1160,8 @@
       "mute": "음소거",
       "unmute": "음소거 해제",
       "fullscreen": "전체 화면",
-      "open": "열기"
+      "open": "열기",
+      "cantPlay": "이 동영상은 이 휴대폰에서 재생할 수 없습니다."
     }
   },
   "issues": {

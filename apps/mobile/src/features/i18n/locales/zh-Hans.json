@@ -428,10 +428,10 @@
     "doubleTapHint": "双击 = 👍",
     "react": "回应",
     "attach": {
-      "more": "再添加照片或文件",
       "remove": "移除 {{name}}",
       "waiting": "{{name}}，等待发送",
       "sending": "{{name}}，正在发送",
+      "failed": "{{name}}，未发送：再次发送即可重试",
       "tooMany": "每条消息最多 {{count}} 个文件。"
     },
     "swipeReply": "向右滑动以回复",
@@ -1160,7 +1160,8 @@
       "mute": "静音",
       "unmute": "取消静音",
       "fullscreen": "全屏",
-      "open": "打开"
+      "open": "打开",
+      "cantPlay": "此视频无法在这部手机上播放。"
     }
   },
   "issues": {

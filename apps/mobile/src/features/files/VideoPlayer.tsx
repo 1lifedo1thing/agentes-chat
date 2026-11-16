@@ -25,8 +25,7 @@ export interface VideoPlayerProps {
   /** Where it plays from, with the session when the link is ours. */
   source: { uri: string; headers?: Record<string, string> };
   name: string;
-  /** `inline` in a message (at `width`, one shape, the video whole in it); `screen` fills the file screen. */
-  variant?: "inline" | "screen";
+  /** Its width in the message (one shape, the video whole in it). */
   width?: number;
   /** An inline video's tap: opens it on the file screen, where it plays. */
   onOpen?: () => void;
@@ -35,17 +34,13 @@ export interface VideoPlayerProps {
 }
 
 /**
- * A video. In a message, its first frame with a play key and its length in a small badge (no name over the picture,
- * as a picture has none); a tap opens it on the file screen. There, the system's own player plays it at once: the
- * platform's controls (play, the timeline to drag, full screen and back out of it, AirPlay), so it feels like every
- * other video on the phone, with no controls of ours to get stuck behind.
+ * A video. In a message, its first frame in a picture's shape with a play key and its length in a small badge (no name
+ * over it, as a picture has none); a tap opens it in the picture viewer (`ViewerVideo`), where the system's own player
+ * plays it at once with the platform's controls (play, the timeline to drag, full screen and back out of it, AirPlay),
+ * so it feels like every other video on the phone, with no controls of ours to get stuck behind.
  */
-export function VideoPlayer({ source, name, variant = "inline", width = 300, onOpen, onFailed }: VideoPlayerProps) {
-  return variant === "inline" ? (
-    <InlineVideo source={source} name={name} width={width} onOpen={onOpen} onFailed={onFailed} />
-  ) : (
-    <ScreenVideo source={source} name={name} onFailed={onFailed} />
-  );
+export function VideoPlayer({ source, name, width = 300, onOpen, onFailed }: VideoPlayerProps) {
+  return <InlineVideo source={source} name={name} width={width} onOpen={onOpen} onFailed={onFailed} />;
 }
 
 /** In a message: the first frame, the play key and the length; nothing plays here. */
@@ -88,9 +83,8 @@ function InlineVideo({
       accessibilityRole="button"
       accessibilityLabel={`${t("mobile.files.video.play")}: ${name}${length ? `, ${length}` : ""}`}
       style={({ pressed }) => [
-        styles.box,
         styles.inline,
-        { width, height: videoHeight(width), borderColor: c.line2 },
+        { width, height: videoHeight(width), backgroundColor: c.sunken, borderColor: c.line2 },
         pressed && styles.pressed,
       ]}
     >
@@ -116,25 +110,38 @@ function InlineVideo({
   );
 }
 
-/** On the file screen: the system's player, playing as it opens, with the platform's controls. */
-function ScreenVideo({
+/**
+ * A video in the picture viewer (`ImageViewer`), among the pictures: the system's player with the platform's controls
+ * (the timeline, full screen and back out of it, AirPlay), playing while its page is the one in sight and paused when
+ * the person swipes on. `onFailed`: this phone can't play it.
+ */
+export function ViewerVideo({
   source,
   name,
+  active,
   onFailed,
 }: {
   source: VideoPlayerProps["source"];
   name: string;
-  onFailed?: (() => void) | undefined;
+  active: boolean;
+  onFailed: () => void;
 }) {
   const player = useVideoPlayer(source, (p) => {
     p.loop = false;
-    p.play();
   });
+  useEffect(() => {
+    try {
+      if (active) player.play();
+      else player.pause();
+    } catch {
+      // Released with its page.
+    }
+  }, [active, player]);
   useEventListener(player, "playingChange", ({ isPlaying }) => {
     if (isPlaying) claim(player);
   });
   useEventListener(player, "statusChange", ({ status }) => {
-    if (status === "error") onFailed?.();
+    if (status === "error") onFailed();
   });
   useEffect(
     () => () => {
@@ -143,26 +150,21 @@ function ScreenVideo({
     [player],
   );
   return (
-    <View style={[styles.box, styles.screen]}>
-      <VideoView
-        player={player}
-        // The platform's own controls, here and in full screen (where they are the only way back out).
-        nativeControls
-        contentFit="contain"
-        fullscreenOptions={{ enable: true }}
-        allowsPictureInPicture={false}
-        accessibilityLabel={name}
-        style={StyleSheet.absoluteFill}
-      />
-    </View>
+    <VideoView
+      player={player}
+      nativeControls
+      contentFit="contain"
+      fullscreenOptions={{ enable: true }}
+      allowsPictureInPicture={false}
+      accessibilityLabel={name}
+      style={StyleSheet.absoluteFill}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  box: { overflow: "hidden", backgroundColor: "#000" },
-  // An attachment's shape (as the tiles beside it): rounded, the bottom left corner cut, a hairline.
-  inline: { borderRadius: 16, borderBottomLeftRadius: 4, borderWidth: StyleSheet.hairlineWidth },
-  screen: { flex: 1 },
+  // A picture's shape in a message (`MessageFiles`' `shot`): rounded, a hairline, its frame whole on the gray.
+  inline: { borderRadius: 14, overflow: "hidden", borderWidth: StyleSheet.hairlineWidth },
   center: {
     position: "absolute",
     top: 0,

@@ -473,10 +473,10 @@
     "doubleTapHint": "Stuknij dwa razy = 👍",
     "react": "Zareaguj",
     "attach": {
-      "more": "Dodaj kolejne zdjęcie lub plik",
       "remove": "Usuń {{name}}",
       "waiting": "{{name}}, czeka na wysłanie",
       "sending": "{{name}}, wysyłanie",
+      "failed": "{{name}}, nie wysłano: wyślij, aby spróbować ponownie",
       "tooMany": "Maksymalna liczba plików w wiadomości: {{count}}."
     },
     "swipeReply": "Przesuń w prawo, aby odpowiedzieć",
@@ -1394,7 +1394,8 @@
       "mute": "Wycisz",
       "unmute": "Włącz dźwięk",
       "fullscreen": "Pełny ekran",
-      "open": "Otwórz"
+      "open": "Otwórz",
+      "cantPlay": "Tego filmu nie można odtworzyć na tym telefonie."
     }
   },
   "issues": {
