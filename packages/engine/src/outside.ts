@@ -105,38 +105,14 @@ async function readOutsideItself(db: Executor, run: OutsideRun): Promise<boolean
   const tried = run.transcript?.harnessTried;
   return (
     (Array.isArray(tried) && tried.some((l) => typeof l === "string" && HARNESS_OUTSIDE.test(l))) ||
-    (await stepReadOutside(db, run)) ||
-    steeredReadOutside(db, run)
+    stepReadOutside(db, run)
   );
 }
 
-/** A message with `meta.readOutside` (a forwarded one, say) was steered into the run while it worked. */
-async function steeredReadOutside(db: Executor, run: OutsideRun): Promise<boolean> {
-  const steps = await db
-    .select({ data: agentRunSteps.data })
-    .from(agentRunSteps)
-    .where(
-      and(
-        eq(agentRunSteps.runId, run.id),
-        eq(agentRunSteps.kind, "context"),
-        sql`${agentRunSteps.data} ? 'steeredMessageIds'`,
-      ),
-    );
-  const ids = steps.flatMap((s) => {
-    const listed = (s.data as { steeredMessageIds?: unknown } | null)?.steeredMessageIds;
-    return Array.isArray(listed) ? listed.filter((id): id is string => typeof id === "string") : [];
-  });
-  if (ids.length === 0) return false;
-  const [marked] = await db
-    .select({ id: messages.id })
-    .from(messages)
-    .where(
-      and(eq(messages.orgId, run.orgId), inArray(messages.id, ids), sql`${messages.meta}->>'readOutside' = 'true'`),
-    )
-    .limit(1);
-  return Boolean(marked);
-}
-
+/**
+ * One of the run's tool results came from outside, or a message with `meta.readOutside` (a forwarded one, say) was
+ * steered into it while it worked. One statement for both: every run asks this.
+ */
 async function stepReadOutside(db: Executor, run: OutsideRun): Promise<boolean> {
   const [step] = await db
     .select({ id: agentRunSteps.id })
@@ -144,8 +120,15 @@ async function stepReadOutside(db: Executor, run: OutsideRun): Promise<boolean> 
     .where(
       and(
         eq(agentRunSteps.runId, run.id),
-        eq(agentRunSteps.kind, "tool_result"),
-        sql`${agentRunSteps.data}->'data'->>'outside' = 'true'`,
+        or(
+          and(eq(agentRunSteps.kind, "tool_result"), sql`${agentRunSteps.data}->'data'->>'outside' = 'true'`),
+          and(
+            eq(agentRunSteps.kind, "context"),
+            sql`exists (select 1 from messages m
+              where m.org_id = ${run.orgId} and m.meta->>'readOutside' = 'true'
+                and m.id in (select jsonb_array_elements_text(${agentRunSteps.data}->'steeredMessageIds')::uuid))`,
+          ),
+        ),
       ),
     )
     .limit(1);
