@@ -210,12 +210,21 @@ describe("one line a row", () => {
     expect(read("parts.tsx")).not.toContain("taskClock");
   });
 
-  test("stopping several asks with the agent's face and the question on one line, what happens under them", () => {
-    const parts = read("parts.tsx");
-    expect(parts).toMatch(
-      /<MediaRow\s*size="row"\s*face=\{<AgentFace agentId=\{agentId\} size=\{MEDIA_ROW\.row\.face\}/,
-    );
-    expect(parts).not.toContain("confirmHead");
+  test("stopping several asks once, in the system's alert: how many and whose, never a card opened in place", () => {
+    const list = read("AgentTasksScreen.tsx");
+    expect(list).toContain("Alert.alert(");
+    expect(list).toContain('text: t("taskManager.confirm.stop", { count: stoppable.length }),');
+    // The in-place confirmation card it replaced is gone.
+    expect(read("parts.tsx")).not.toContain("StopConfirm");
+  });
+
+  test("a list that didn't load says so and offers to try again; a task's screen loads in its rows' shape", () => {
+    expect(read("TaskManagerScreen.tsx")).toContain("<LoadFailed onRetry={() => void tasks.refetch()} />");
+    expect(read("AgentTasksScreen.tsx")).toContain("<LoadFailed onRetry={() => void query.refetch()} />");
+    const page = read("TaskScreen.tsx");
+    expect(page).toContain("<SkeletonList rows={3} />");
+    expect(page).not.toContain("ActivityIndicator");
+    expect(page).toContain("{stopNote ? <GroupedFooter>{stopNote}</GroupedFooter> : null}");
   });
 });
 

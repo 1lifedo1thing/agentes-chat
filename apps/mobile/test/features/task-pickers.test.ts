@@ -71,3 +71,38 @@ describe("a task's fields picked on their own screen", () => {
       expect([gone, screen.includes(gone)]).toEqual([gone, false]);
   });
 });
+
+describe("the other screens of tasks, requests and missions", () => {
+  test("a mission draws no large title of its own: the kind in the bar, its name as the page's heading", () => {
+    const screen = src("missions/MissionScreen.tsx");
+    expect(screen).not.toContain('variant="display"');
+    expect(screen).toContain('<Text variant="display2" accessibilityRole="header"');
+    expect(screen).toContain('title={t("mobile.mission.kind")}');
+    // Its options are a bar button of the system's, not a drawn one; loading is the rows' shape.
+    expect(screen).toContain('sf: "ellipsis" as const,');
+    expect(screen).not.toContain("IconButton");
+    expect(screen).not.toContain("ActivityIndicator");
+  });
+
+  test("a request's sheet has the task sheets' bar, and loads in its rows' shape", () => {
+    const sheet = src("approvals/ApprovalSheet.tsx");
+    expect(sheet).toContain('<SheetBar title={t("mobile.approval.sheet.title")} onClose={onClose} inset />');
+    expect(sheet).not.toContain("ActivityIndicator");
+    expect(sheet).toContain("<LoadFailed onRetry={() => void approval.refetch()} />");
+  });
+
+  test("a computer's line and an agent's waiting line load in rows, and say when they didn't", () => {
+    for (const file of ["queue/QueueSheet.tsx", "queue/UsageQueueSheet.tsx"]) {
+      const sheet = src(file);
+      expect({ file, rows: sheet.includes("<SkeletonList rows={3} />") }).toEqual({ file, rows: true });
+      expect({ file, retry: sheet.includes("<LoadFailed onRetry={() => void q.refetch()} />") }).toEqual({
+        file,
+        retry: true,
+      });
+      expect({ file, spinner: sheet.includes("<ActivityIndicator color={c.muted} style={styles.loading}") }).toEqual({
+        file,
+        spinner: false,
+      });
+    }
+  });
+});

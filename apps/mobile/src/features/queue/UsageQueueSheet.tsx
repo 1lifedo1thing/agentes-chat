@@ -13,15 +13,16 @@ import {
 } from "@agenteschat/client/lib/usage-queue";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
-import { Button, EmptyState, PixelOrbit, Segmented, Text } from "@/ui";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Button, EmptyState, PixelOrbit, Segmented, SHEET_X, SkeletonList, Text } from "@/ui";
 import { router } from "@/ui/navigation";
 import { openAgentAi } from "../ai/AgentAiScreen";
 import { AnswerAnywayButton, DontRunButton } from "../ai/UsagePauseCard";
 import { chatHref } from "../links/logic";
 import { useFailed } from "../routines/hooks";
 import { AgentFace, OpensAgent } from "../shared/Face";
-import { useColors, useDirectory, useMeId, useNow, useOrgId } from "../shared/hooks";
+import { LoadFailed } from "../shared/FirstUse";
+import { useDirectory, useMeId, useNow, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
 import { useSheetIfAny } from "../shared/SheetHost";
@@ -40,21 +41,18 @@ export function UsageQueueSheet({ agentId, tab: initialTab = "queued" }: { agent
   const { t, i18n } = useTranslation();
   const orgId = useOrgId();
   const dir = useDirectory();
-  const c = useColors();
   const now = useNow(60_000);
   const q = useUsageQueue(orgId, agentId);
   const [chosen, setChosen] = useState<UsageQueueTab>(initialTab);
   const agent = dir.anyAgent(agentId)?.name ?? t("channel.unknownAgent");
   if (!q.data)
     return q.isError ? (
-      <View style={styles.failed}>
-        <Text variant="small" tone="muted">
-          {t("mobile.app.failed")}
-        </Text>
-        <Button variant="secondary" size="sm" label={t("common.retry")} onPress={() => void q.refetch()} />
-      </View>
+      <LoadFailed onRetry={() => void q.refetch()} />
     ) : (
-      <ActivityIndicator color={c.muted} style={styles.loading} />
+      // Loading: rows of the line's shape at the sheet's edges, as a list's rows, never a spinner.
+      <View style={styles.bleed}>
+        <SkeletonList rows={3} />
+      </View>
     );
   const queue = q.data;
   const waiting = queue.rows.length + queue.hidden;
@@ -286,8 +284,7 @@ const N_WIDTH = 16;
 const N_GAP = 10;
 
 const styles = StyleSheet.create({
-  loading: { marginVertical: 24 },
-  failed: { gap: 12, alignItems: "flex-start", marginVertical: 12 },
+  bleed: { marginHorizontal: -SHEET_X },
   // The row is the conversation's link, 44pt tall; "Não rodar" keeps its own target on the right.
   row: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   open: { flex: 1, minWidth: 0, flexDirection: "row", gap: N_GAP, paddingVertical: 12 },
