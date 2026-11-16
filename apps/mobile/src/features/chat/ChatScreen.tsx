@@ -191,7 +191,6 @@ import { markRowId, receiptMessageId } from "./agent-receipts";
 import { AskStore } from "./ask-store";
 import { AskBar, AskProbes, AskStoreProvider, useAskWatch, useAwayAsk, WaitingHereBar } from "./asks";
 import { ChannelHello } from "./ChannelHello";
-import { ChannelMembersSheet } from "./ChannelMembers";
 import { ChannelPicker } from "./ChannelPicker";
 import { ChannelWelcome } from "./ChannelWelcome";
 import { ChatSkeleton } from "./ChatSkeleton";
@@ -228,8 +227,10 @@ import { MentionPicker, useMentionMembers } from "./MentionPicker";
 import { MessageMenuFor } from "./MessageMenu";
 import { MessageRow } from "./MessageRow";
 import { stickerRowsOnScreen } from "./media";
+import { channelMembersHrefs } from "./members";
 import { insertRef, refQuery } from "./mentions";
 import { NoAiBanner } from "./NoAiBanner";
+import { newMissionHref } from "./new-mission";
 import { endsOnNoAiCard, noAiBanner } from "./no-ai-banner";
 import { PinnedLines, PinsSheet } from "./PinsSheet";
 import { QuoteBar } from "./QuoteLine";
@@ -251,7 +252,6 @@ import {
   MessageActions,
   type MessageActionsContext,
   MissionSummaryView,
-  NewMissionForm,
   PlusActions,
   type PlusPick,
   ThreadOptions,
@@ -1052,17 +1052,21 @@ function Chat({
   const talkable = channelAgents.map((id) => dir.agentById.get(id)).filter((a): a is Agent => Boolean(a) && canTalk(a));
   const helloAgent = talkable.find((a) => !isIdHandle(a.handle)) ?? talkable[0];
 
-  // From the thread's options or a message's actions, the next page of that sheet; from the screen, a sheet.
-  const openNewMission = (goal = "", homeThreadId: string | null = threadId) =>
-    sheet.push(
-      <NewMissionForm
-        goal={goal}
-        channelId={channelId}
-        threadId={homeThreadId}
-        preferredAgentId={mission?.agentId ?? soleAgent}
-        currentThreadId={threadId}
-      />,
+  // A form, so a screen pushed over the conversation (its place kept for the way back), from wherever it is asked: the
+  // "+", the thread's options or a message's actions (their sheet goes), the system's menu, `/mission`.
+  const openNewMission = (goal = "", homeThreadId: string | null = threadId) => {
+    sheet.close();
+    leavePlace();
+    router.push(
+      newMissionHref({
+        channelId,
+        threadId: homeThreadId,
+        goal,
+        agentId: mission?.agentId ?? soleAgent,
+        currentThreadId: threadId,
+      }),
     );
+  };
   const openRemind = (input: { text?: string; message?: Message } = {}) =>
     sheet.push(
       <RemindSheet
@@ -1582,8 +1586,12 @@ function Chat({
     void listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.4 });
     return true;
   }, []);
-  const openMembers = () =>
-    channel ? sheet.push(<ChannelMembersSheet channelId={channelId} channelName={channel.name} />) : undefined;
+  // Who is in the channel: managing it is a screen pushed over the conversation (its place kept for the way back).
+  const openMembers = () => {
+    if (!channel) return;
+    leavePlace();
+    router.push(channelMembersHrefs.list(channelId));
+  };
 
   // ── Header ──
   // The header is glass over the conversation: the system's
@@ -1802,7 +1810,14 @@ function Chat({
             agentId={dmAgentId}
             about={personDm ? <PersonStatusCard userId={personDm} /> : undefined}
             onPins={openPins}
-            onMembers={channel && !dm ? openMembers : undefined}
+            onMembers={
+              channel && !dm
+                ? () => {
+                    sheet.close();
+                    openMembers();
+                  }
+                : undefined
+            }
             onSearch={dm && searchPlace ? openSearch : undefined}
           />,
         );

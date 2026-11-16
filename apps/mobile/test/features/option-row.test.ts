@@ -27,7 +27,7 @@ describe("OptionRow (#46, A11)", () => {
       "features/issues/IssueScreen.tsx",
       "features/issues/NewIssueForm.tsx",
       "features/routines/RoutineForm.tsx",
-      "features/chat/sheets.tsx",
+      "features/chat/NewMissionScreen.tsx",
       "features/vault/parts.tsx",
       "features/outages/SwitchComputerSheet.tsx",
     ]) {
