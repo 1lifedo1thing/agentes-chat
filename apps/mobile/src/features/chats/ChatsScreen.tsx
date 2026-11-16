@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet } from "react-native";
 import { useOrg } from "@/providers/org";
-import { GroupedRow, LargeTitleScreen, SkeletonList } from "@/ui";
+import { LargeTitleScreen, LIST_AVATAR, ListRow, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
 import { workByAgent } from "../agents/logic";
 import { useCategoryMenus } from "../categories/menus";
@@ -22,6 +22,7 @@ import { OutageNotices } from "../outages/OutageNotice";
 import { useMachineOutages } from "../outages/queries";
 import { RightHandAsk } from "../right-hand/Pin";
 import { useDirectory, useMeId, useOrgId, usePullRefresh } from "../shared/hooks";
+import { Tile } from "../shared/parts";
 import { useActiveWork, useHiddenAgents, useWorkingNow } from "../shared/queries";
 import { SheetHostProvider } from "../shared/SheetHost";
 import { useTabHeader } from "../shared/tabHeader";
@@ -247,17 +248,22 @@ function Home() {
       ) : empty ? (
         <FirstAgentEmpty />
       ) : list.loading ? (
+        // The sections as they will stand (closed if the person closed them, no count until it is known): nothing
+        // moves when the rows land, and a header tapped meanwhile still opens or closes its section.
         <>
-          <CollapsibleSection title={t("mobile.chats.section.agents")} count={0} collapsed={false} onToggle={() => {}}>
+          <CollapsibleSection
+            title={t("mobile.chats.section.agents")}
+            collapsed={collapsed.includes("agents")}
+            onToggle={() => toggle("agents")}
+          >
             <SkeletonList rows={4} />
           </CollapsibleSection>
           {/* A personal workspace's person alone in it rarely has a group conversation: no rows stand in for one. */}
           {hideGeneral ? null : (
             <CollapsibleSection
               title={personal ? t("shell.channelsPersonal") : t("mobile.chats.section.channels")}
-              count={0}
-              collapsed={false}
-              onToggle={() => {}}
+              collapsed={collapsed.includes("channels")}
+              onToggle={() => toggle("channels")}
             >
               <SkeletonList rows={2} />
             </CollapsibleSection>
@@ -316,8 +322,18 @@ function Home() {
           collapsed={collapsed.includes(OTHER_CHANNELS)}
           onToggle={() => toggle(OTHER_CHANNELS)}
         >
-          {others.map((o) => (
-            <GroupedRow key={o.id} icon="lock" label={`#${o.name}`} onPress={() => router.push(chatHref(o.id))} />
+          {/* In the list's own rows, as every channel of the home: the tile, the name, the chevron to open it. */}
+          {others.map((o, i) => (
+            <ListRow
+              key={o.id}
+              divider={i > 0}
+              leading={<Tile icon="lock" size={LIST_AVATAR} />}
+              title={`#${o.name}`}
+              {...(o.topic ? { sub: o.topic, subLines: 1 } : {})}
+              chevron
+              accessibilityRole="button"
+              onPress={() => router.push(chatHref(o.id))}
+            />
           ))}
         </CollapsibleSection>
       ) : null}
