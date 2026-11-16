@@ -12,6 +12,7 @@ const {
   agentQuestions,
   agentRunSteps,
   agentRuns,
+  agentWorks,
   approvals,
   artifacts,
   artifactVersions,
@@ -39,7 +40,8 @@ const DAY_MS = 86_400_000;
 
 /**
  * The daily prune of confidential threads (ADR 0189). A thread marked more than `CONFIDENTIAL_KEEP_DAYS` ago loses the
- * words of every message it holds, its root and whatever was written since included, with what was attached to them;
+ * words of every message it holds, its root and whatever was written since included, and of what its runs reported
+ * outside it, with what was attached to them;
  * a run of it that ended and is older than that loses what it kept of them (its steps, its transcript, its error's
  * text, its questions, its approvals, the blocks and polls it showed). The rows stay. Each blanked message goes to the
  * apps as a message written again in place, so a copy an app kept goes too. Every pass looks at every old thread
@@ -54,12 +56,30 @@ export async function pruneConfidential(
   const cutoff = new Date(now.getTime() - CONFIDENTIAL_KEEP_DAYS * DAY_MS);
   const old = await db.select().from(confidentialThreads).where(lt(confidentialThreads.markedAt, cutoff));
   for (const thread of old) {
-    const inThread = and(
-      eq(messages.orgId, thread.orgId),
-      eq(messages.channelId, thread.channelId),
-      or(eq(messages.id, thread.rootMessageId), eq(messages.threadId, thread.rootMessageId)),
-    );
+    const ofThread = and(eq(agentRuns.orgId, thread.orgId), eq(agentRuns.threadRootId, thread.rootMessageId));
     const blanked = await db.transaction(async (tx) => {
+      // What a run of the thread wrote outside it is sealed like the thread's own messages and goes with them: its
+      // long work's report where the work was asked, or the copy of it where the work was handed from. Found by the
+      // run's and the work's own pointers: no index of `messages` leads from a run to what it wrote.
+      const reports = (
+        await tx
+          .select({ reply: agentRuns.replyMessageId, result: agentWorks.resultMessageId })
+          .from(agentRuns)
+          .leftJoin(agentWorks, and(eq(agentWorks.orgId, agentRuns.orgId), eq(agentWorks.id, agentRuns.workId)))
+          .where(ofThread)
+      ).flatMap((r) => [r.reply, r.result].filter((id): id is string => id !== null));
+      const inThread = and(
+        eq(messages.orgId, thread.orgId),
+        or(
+          and(
+            eq(messages.channelId, thread.channelId),
+            or(eq(messages.id, thread.rootMessageId), eq(messages.threadId, thread.rootMessageId)),
+          ),
+          reports.length > 0
+            ? and(inArray(messages.id, reports), sql`${messages.meta}->>'confidential' = 'true'`)
+            : undefined,
+        ),
+      );
       const kept = and(inThread, sql`coalesce(${messages.meta}->>'pruned', '') <> 'true'`);
       // Read before the words go: what its messages carried as files.
       const attached = (await tx.select({ meta: messages.meta }).from(messages).where(kept)).flatMap((m) =>
@@ -114,8 +134,7 @@ export async function pruneConfidential(
         .from(agentRuns)
         .where(
           and(
-            eq(agentRuns.orgId, thread.orgId),
-            eq(agentRuns.threadRootId, thread.rootMessageId),
+            ofThread,
             lt(agentRuns.createdAt, cutoff),
             // A run still at work reads its own transcript: it is blanked by the pass after it ends.
             notInArray(agentRuns.status, [...ACTIVE_RUN_STATUSES]),

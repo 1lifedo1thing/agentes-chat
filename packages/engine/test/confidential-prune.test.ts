@@ -263,3 +263,69 @@ test("a run still at work is left alone until it ends", async () => {
   expect((await pruneConfidential({ db: w.db })).runs).toBe(1);
   expect(await w.tablesHolding(CANARY)).toEqual([]);
 });
+
+test("what a run of the thread reported outside it goes with the thread: its long work's report, wherever that was posted", async () => {
+  const w = await vaultWorld({
+    agents: ["kai"],
+    setup: { workTools: true },
+    script: {
+      kai: ({ n }) =>
+        n === 1
+          ? { calls: [{ name: "work_in_background", input: { title: "Records", say: "On it." } }] }
+          : n === 2
+            ? { calls: [READ] }
+            : { text: typed("The report:") },
+    },
+  });
+  await w.say("@kai go through the records");
+  await w.settle();
+  const [work] = await w.db.select().from(schema.agentWorks);
+  const reportOf = async () =>
+    (await w.stored()).find((m) => m.id === work?.resultMessageId) ?? { threadId: null, meta: {} };
+  // The work was going when it read the record, so its own thread is the confidential one, and its report is sealed.
+  expect((await w.db.select().from(schema.confidentialThreads)).map((t) => t.rootMessageId)).toEqual([
+    work?.anchorMessageId ?? "",
+  ]);
+  expect((await reportOf()).meta).toMatchObject({ confidential: true, sealedBody: typed("The report:") });
+  // The statement that wrote it put it under the work's thread. A report that is outside it, as one posted where
+  // the work was asked is, is found by the work's own pointer.
+  expect((await reportOf()).threadId).toBe(work?.anchorMessageId ?? "");
+  await w.db
+    .update(schema.messages)
+    .set({ threadId: null })
+    .where(eq(schema.messages.id, work?.resultMessageId ?? ""));
+  await age(w, CONFIDENTIAL_KEEP_DAYS + 1);
+  await pruneConfidential({ db: w.db });
+  expect((await reportOf()).meta).toMatchObject({ pruned: true, bodyCode: CONFIDENTIAL_REMOVED_CODE });
+  expect(await w.tablesHolding(CANARY)).toEqual([]);
+});
+
+test("work another agent handed over: the copy of its report where the person asked holds none of the words, and goes with the thread too", async () => {
+  const w = await vaultWorld({
+    agents: ["mira", "kai"],
+    script: {
+      mira: ({ n }) =>
+        n === 1
+          ? { calls: [{ name: "tell_agent", input: { agent: "@kai", message: "Read record r1 and report it." } }] }
+          : { text: "Kai has it." },
+      kai: ({ n }) => (n === 1 ? { calls: [READ] } : { text: typed("The record says") }),
+    },
+  });
+  await w.say("@mira have kai read record r1");
+  await w.settle();
+  await w.advance(10);
+  const [work] = await w.db.select().from(schema.agentWorks);
+  expect([work?.how, work?.status, work?.channelId]).toEqual(["handed", "done", w.channelId]);
+  // The run read the record where it was handed the work, and that thread is the confidential one.
+  expect(w.turnsOf("kai").join("\n")).toContain(CANARY);
+  const [thread] = await w.db.select().from(schema.confidentialThreads);
+  expect(thread?.channelId).not.toBe(w.channelId);
+  // Where the person asked, the copy is there and says nothing: no message of that conversation holds the words.
+  const copyOf = async () => (await w.stored()).find((m) => m.id === work?.resultMessageId);
+  expect((await copyOf())?.meta).toMatchObject({ confidential: true, sealedBody: CONFIDENTIAL_STUB });
+  expect(JSON.stringify(await w.stored())).not.toContain(CANARY);
+  await age(w, CONFIDENTIAL_KEEP_DAYS + 1);
+  await pruneConfidential({ db: w.db });
+  expect((await copyOf())?.meta).toMatchObject({ pruned: true, bodyCode: CONFIDENTIAL_REMOVED_CODE });
+  expect(await w.tablesHolding(CANARY)).toEqual([]);
+});
