@@ -572,7 +572,18 @@ export const FLOOR_WINDOW_MS = 30 * 60_000;
 export type MessageAuthor =
   | { type: "person"; userId: string }
   | { type: "agent"; agentId: string; runId: string; hop: number }
-  | { type: "agent"; agentId: string; runId: null; hop: number; stretchId: string | null };
+  | {
+      type: "agent";
+      agentId: string;
+      runId: null;
+      hop: number;
+      stretchId: string | null;
+      /**
+       * The run the server writes this for (a notice it will read, a line it set): when that run's thread is
+       * confidential (ADR 0189) the message is one of that thread's, as if the run had written it.
+       */
+      forRunId?: string;
+    };
 
 export interface NewMessage {
   orgId: string;
@@ -769,9 +780,12 @@ export async function insertMessageWithRuns(
   // A confidential thread (ADR 0189). What a run writes there holds no address an app would turn into a link: a
   // click on one could carry the words out.
   const org = sql`${input.orgId}::uuid`;
-  const runThreadSealed = sql`(sr.id = ${runId}::uuid and sr.org_id = ${org}
+  // The run whose thread decides: the one that writes the message, or the one the server writes it for.
+  const forRunId = input.author.type === "agent" && input.author.runId === null ? input.author.forRunId : undefined;
+  const ofRunId = runId ?? forRunId ?? null;
+  const runThreadSealed = sql`(sr.id = ${ofRunId}::uuid and sr.org_id = ${org}
     and ${confidentialThreadSql(org, sql`sr.thread_root_id`)})`;
-  const sealedWords = runId ? inertLinks(body) : body;
+  const sealedWords = ofRunId ? inertLinks(body) : body;
   const rows = rowsOf<RawMessage>(
     await tx.execute(sql`with archived as (
         -- An archived thread is read only for people (ADR 0029); an agent's run already going still lands.

@@ -2,6 +2,7 @@ import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, type Executor, eq, schema, sql } from "@agenteschat/db";
 import { routineBriefOfRun } from "./background";
 import type { ToolResult } from "./brains/types";
+import { threadIsConfidential } from "./confidential";
 import { deliverNotice, publishDelivery } from "./delivery";
 import { pgSafeJson } from "./format";
 import type { Message } from "./messages";
@@ -202,11 +203,13 @@ export async function deliverNoticeToRun(
     // notice wakes the agent in a run of its own instead.
     active = Boolean(current && ACTIVE.includes(current.status) && !(await holdsMessages(tx, current)));
   }
-  const report = active
+  const elsewhere = active
     ? undefined
     : run.background
       ? (await routineBriefOfRun(tx, run))?.deliverTo
       : await workHome(tx, run);
+  // What a run of a confidential thread is told stays in that thread (ADR 0189), whoever reads the other place.
+  const report = elsewhere && (await threadIsConfidential(tx, run.orgId, run.threadRootId)) ? undefined : elsewhere;
   const into = {
     orgId: run.orgId,
     agentId: run.agentId,
@@ -217,6 +220,7 @@ export async function deliverNoticeToRun(
     notice,
     body: forPeople(notice),
     trigger: run.trigger === "dm" ? ("dm" as const) : ("mention" as const),
+    forRunId: run.id,
   };
   if (!wake) return deliverNotice(tx, { ...into, wake: false });
   const delivered = await deliverNotice(tx, { ...into, wake: !active });
