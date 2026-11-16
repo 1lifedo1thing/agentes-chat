@@ -18,6 +18,7 @@ import {
   type MachineCaller,
   type MachineHub,
   MachineRequestError,
+  markThreadConfidential,
   pickDevice,
   postPersonMessage,
   receiveMachineUpload,
@@ -694,5 +695,20 @@ describe("waiting for a device", () => {
     const [done] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.id, run.id));
     expect(done?.status).toBe("done");
     expect((await cardOf()).state).toBe("allowed");
+  });
+
+  test("from a confidential thread the owner is asked with none of the run's note: not in the request, not in their notification", async () => {
+    const w = await world();
+    const ctx = await runCtx();
+    await f.db.transaction((tx) =>
+      markThreadConfidential(tx, { orgId: f.org.id, channelId: f.general.id, rootId: ctx.threadRootId }),
+    );
+    await call(ctx, "wait_for_device", { device: "Pixel 8", note: "film what the record said" });
+    const [request] = await f.db.select().from(schema.deviceAccessRequests);
+    const [told] = await notificationsOf(w.sam.id);
+    expect([request?.reason, told?.kind]).toEqual(["", "device.access_request"]);
+    expect(JSON.stringify([request, told])).not.toContain("the record said");
+    // The card in the thread itself keeps it: the people there read what the run reads.
+    expect((await cardOf()).note).toBe("film what the record said");
   });
 });
