@@ -14,6 +14,7 @@ import { openBrowserAsync } from "expo-web-browser";
 import { type ComponentRef, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Linking, Platform, Pressable, type TextInput, View } from "react-native";
+import { useKeyboardState } from "react-native-keyboard-controller";
 import { PixelOrbit } from "@/agent/PixelOrbit";
 import { useLaunched } from "@/features/launch/launched";
 import { authClient } from "@/lib/auth";
@@ -124,6 +125,8 @@ export function AuthFlow({
   const launched = useLaunched();
   // Under an invitation's screen (a request still waiting, reopened) it stays out of the way.
   const focused = useIsFocused();
+  // Whether the keyboard (and so its return key, the e-mail's action) is on screen.
+  const keyboardUp = useKeyboardState((state) => state.isVisible);
   const emailField = useRef<ComponentRef<typeof TextInput>>(null);
   const newPasswordField = useRef<ComponentRef<typeof TextInput>>(null);
   const [offline, setOffline] = useState(false);
@@ -419,9 +422,11 @@ export function AuthFlow({
       <Terms termsUrl={termsUrl} privacyUrl={privacyUrl} />
     ) : null;
 
-  // The e-mail step has none: the keyboard's blue key ("continuar") is its action, and Apple, Google and GitHub take
-  // the place where the thumb is.
+  // On the e-mail step the keyboard's blue key ("continuar") is the action while the keyboard is up, and Apple, Google
+  // and GitHub take the place where the thumb is. With the keyboard put away there is no blue key: Continue stands in
+  // for it, so the step never leaves anyone without a way on.
   const submitLabel: Partial<Record<Step, string>> = {
+    ...(keyboardUp ? {} : { email: t("auth.flow.continue") }),
     password: t("auth.signIn"),
     name: t("auth.createAccount"),
     newPassword: t("auth.createAccount"),

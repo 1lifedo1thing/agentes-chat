@@ -136,11 +136,12 @@ export function ServerDownPanel({ down }: { down: ServerDown }) {
         ) : null}
       </View>
       <RetryWick nextRetryAt={down.nextRetryAt} checking={down.checking} />
+      {/* The wick above says it is checking; the button keeps its words and spins. */}
       <Button
         variant="primary"
         wide
-        label={down.checking ? t("mobile.auth.server.checking") : t("mobile.auth.server.down.tryNow")}
-        disabled={down.checking}
+        label={t("mobile.auth.server.down.tryNow")}
+        loading={down.checking}
         onPress={down.retry}
       />
       <View style={styles.links}>
