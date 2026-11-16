@@ -33,12 +33,12 @@ import {
 } from "../authority";
 import { type CostKind, costlyGate, costlyKind, LONG_STEPS, unrequested } from "../brakes";
 import {
-  CONFIDENTIAL_OUTBOUND,
   CONFIDENTIAL_STUB,
   markThreadConfidential,
   noteConfidentialRun,
   type RunConfidentiality,
   runConfidentiality,
+  thinksAsThread,
 } from "../confidential";
 import { countToolCall } from "../connector-usage";
 import { actionLevel, nameWords, openEnded } from "../connectors/classify";
@@ -71,7 +71,7 @@ import {
 import { carriesCredential, promptAnswer, toolCommand, toolDetail } from "../tool-detail";
 import { untrustedBlock } from "../untrusted";
 import { checkToolCall } from "./checks";
-import { asksElsewhere, CONFIDENTIAL_REFUSAL, confidentialLockAllows } from "./confidential-lock";
+import { asksOutside, CONFIDENTIAL_REFUSAL, confidentialLockAllows, confidentialRefusal } from "./confidential-lock";
 import { connectorFirst } from "./connector-first";
 import { type BlockedTool, compactSchema, presentTools, resolveCall } from "./directory";
 import { canonicalJson, validateJson } from "./json-schema";
@@ -568,17 +568,18 @@ const readsOutsideText = (tool: ToolDefinition, output: ToolOutput) =>
 /**
  * Whether a run may be handed a confidential answer (ADR 0189): only one that thinks through the Model Gateway, which
  * the lock below holds. A program on a computer keeps what it reads and has a shell and a web fetch of its own that
- * never pass here, and a call with no run has no thread to keep the words in: both get the stub.
+ * never pass here, and a call with no run has no thread to keep the words in: both get the stub. So does a run that
+ * thinks with another provider than the one its thread's words already stay with (`thinksAsThread`).
  */
 const readsConfidential = (ctx: ToolContext, sealed: RunConfidentiality | null) =>
-  !ctx.bridge && sealed?.brain === "model";
+  !ctx.bridge && sealed?.brain === "model" && thinksAsThread(sealed, ctx.thinksWith);
 
-const lockAllows = (
-  ctx: ToolContext,
-  tool: ToolDefinition,
-  marking: readonly string[],
-  authority: RunAuthority | null,
-) => confidentialLockAllows(tool, { own: ownTool(tool), marking, authority, channelId: ctx.channelId });
+const lockAllows = (tool: ToolDefinition, marking: readonly string[], asksOut: boolean) =>
+  confidentialLockAllows(tool, { own: ownTool(tool), marking, asksOutside: asksOut });
+
+/** Whether what this run asks a person would be posted outside its thread (`asksOutside`). */
+const asksOutsideThread = async (ctx: ToolContext, authority: RunAuthority | null) =>
+  asksOutside(ctx, authority, ctx.runId ? await consultationOrigin(ctx.db, ctx.orgId, ctx.runId) : null);
 
 /** A confidential answer for a caller that may not read it: the stub, with nothing of the mark left on it. */
 const stubbed = (output: ToolOutput): ToolOutput => ({
@@ -1110,6 +1111,7 @@ export function createToolGateway(deps: {
         channelId: ctx.channelId,
         rootId: ctx.threadRootId,
         connectionId,
+        thinksWith: ctx.thinksWith ?? null,
       });
       await addRunStep(tx, { id: ctx.runId, orgId: ctx.orgId }, "tool_result", data);
     });
@@ -1131,6 +1133,8 @@ export function createToolGateway(deps: {
       params: approval.params,
     });
     const tool = (await allTools(ctx)).get(approval.tool);
+    /** The run's thread was confidential before this action ran (ADR 0189). */
+    let locked = false;
     // Why the approved action can't run any more; null = it may.
     const refusal = async (): Promise<string | null> => {
       if (expected !== approval.actionHash) return "Approval does not match the action";
@@ -1141,9 +1145,11 @@ export function createToolGateway(deps: {
         return `Not allowed: this agent lost the scope ${access.of.scope} since the approval. An admin can give it back on the agent's page in Tools and access (in Portuguese, Ferramentas e acesso); then asking again runs it`;
       // Approved before its thread turned confidential (ADR 0189): the lock decides now, as for a call made now.
       const sealed = ctx.runId ? await runConfidentiality(ctx.db, ctx.orgId, ctx.runId) : null;
-      if (sealed?.connectionIds) ctx.confidential = true;
-      if (sealed?.connectionIds && !lockAllows(ctx, tool, sealed.connectionIds, await authorityOf(ctx))) {
-        return CONFIDENTIAL_REFUSAL;
+      if (sealed?.connectionIds) {
+        ctx.confidential = true;
+        locked = true;
+        // Nothing is asked now: a person already answered.
+        if (!lockAllows(tool, sealed.connectionIds, false)) return CONFIDENTIAL_REFUSAL;
       }
       // Rules about the arguments again: a repository or recipient may have been removed while waiting.
       const check = await checkToolCall(tool, approval.params, ctx);
@@ -1155,11 +1161,8 @@ export function createToolGateway(deps: {
     let marks: string | null | undefined;
     const refused = await refusal();
     if (refused || !tool) {
-      output = {
-        content: refused ?? "Not allowed",
-        isError: true,
-        ...(refused === CONFIDENTIAL_REFUSAL ? { data: { code: CONFIDENTIAL_OUTBOUND } } : {}),
-      };
+      output =
+        refused === CONFIDENTIAL_REFUSAL ? confidentialRefusal() : { content: refused ?? "Not allowed", isError: true };
     } else {
       // Claim the execution first: a retried job never runs the action twice. One approved ahead may have been
       // withdrawn or lapsed since it was read: only a row still approved runs.
@@ -1188,8 +1191,9 @@ export function createToolGateway(deps: {
         else output = stubbed(output);
       }
       outside = readsOutsideText(tool, output);
-      // Team actions (ADR 0064): what a person approved and went out is the team's too.
-      if (isOutsideTool(tool) && !output.isError) {
+      // Team actions (ADR 0064): what a person approved and went out is the team's too. Not a call of a confidential
+      // thread (ADR 0189): its arguments would be kept for good and searched by every agent.
+      if (isOutsideTool(tool) && !output.isError && !locked) {
         await recordTeamAction(ctx.db, {
           orgId: ctx.orgId,
           agentId: ctx.agentId,
@@ -1263,6 +1267,7 @@ export function createToolGateway(deps: {
       ]);
       // The caller's own context hears it too: where the run posts next follows its thread (`replyThreadOf`).
       if (sealed?.connectionIds) ctx.confidential = true;
+      const asksOut = sealed?.connectionIds ? await asksOutsideThread(ctx, authority) : false;
       // A directory (tools/directory.ts): `use_tool` runs the tool it names by that tool's own name, so everything
       // below (steps, policy, scope, schema, checks, approval) is that tool's; `find_tools` runs as is. Any tool goes
       // through any `use_tool`, a directory's own and one already listed too: a computer brain's harness may still
@@ -1438,11 +1443,8 @@ export function createToolGateway(deps: {
       }
       // A confidential thread's lock (ADR 0189), before anything asks a person: a card is what an agent that never
       // asks would have lifted.
-      if (sealed?.connectionIds && !lockAllows(ctx, tool, sealed.connectionIds, authority)) {
-        return finish(
-          { content: CONFIDENTIAL_REFUSAL, isError: true, data: { code: CONFIDENTIAL_OUTBOUND } },
-          "refused",
-        );
+      if (sealed?.connectionIds && !lockAllows(tool, sealed.connectionIds, asksOut)) {
+        return finish(confidentialRefusal(), "refused");
       }
       // A directory's search lists only tools the agent already holds; each real tool is checked on its own.
       if (tool !== directoryTool) {
@@ -1638,7 +1640,10 @@ export function createToolGateway(deps: {
       const prompt = tool.name === PERMISSION_TOOL && builtIn ? promptQuestion(call.input) : null;
       const targets = outside ? callTargets(call.input) : (prompt?.action?.targets ?? []);
       let teamReason: string | null = null;
-      if (outside || prompt?.action) {
+      // Neither asked nor kept for a call of a confidential thread (ADR 0189): the check and the record hold the
+      // call's targets and words for good, outside the thread, and the record is searched by every agent.
+      const teamKnows = !sealed?.connectionIds;
+      if (teamKnows && (outside || prompt?.action)) {
         const seen = await checkTeamAction(ctx.db, ctx, {
           tool: prompt?.action?.tool ?? tool.name,
           targets,
@@ -1684,13 +1689,9 @@ export function createToolGateway(deps: {
           authority?.kind === "routine" && !(ctx.runId && (await answersAgentsOnly(ctx.db, ctx.orgId, ctx.runId)))
             ? authority.brief?.deliverTo
             : undefined;
-        // Out of a confidential thread (ADR 0189): a refusal, as for any tool that sends its words elsewhere.
-        if (sealed?.connectionIds && deliverTo && asksElsewhere({ authority, channelId: ctx.channelId })) {
-          return finish(
-            { content: CONFIDENTIAL_REFUSAL, isError: true, data: { code: CONFIDENTIAL_OUTBOUND } },
-            "refused",
-          );
-        }
+        // Out of a confidential thread (ADR 0189): a refusal, as for any tool that sends its words elsewhere. Its
+        // card would be read by other people, and a reply under it starts a run the lock does not hold.
+        if (asksOut) return finish(confidentialRefusal(), "refused");
         const origin = deliverTo
           ? { channelId: deliverTo.channelId, threadRootId: deliverTo.threadId ?? ctx.threadRootId }
           : ctx.runId
@@ -1787,7 +1788,7 @@ export function createToolGateway(deps: {
       }
       const merged = mergeAlone ?? (tool.whyAsks ? (output.data?.merge as MergeDone | undefined) : null);
       if (merged && !output.isError) await recordMergeDone(ctx, merged, tool.name).catch(() => {});
-      if (outside && !output.isError) {
+      if (teamKnows && outside && !output.isError) {
         await recordAction({
           source: "tool",
           tool: tool.name,
@@ -1797,7 +1798,7 @@ export function createToolGateway(deps: {
       }
       if (prompt) {
         const answer = promptAnswer(output.content);
-        if (prompt.action && (answer.behavior === "allow" || answer.status === "pending")) {
+        if (teamKnows && prompt.action && (answer.behavior === "allow" || answer.status === "pending")) {
           // A command waiting for a person counts already; it goes away if they say no.
           await recordAction({
             source: "command",

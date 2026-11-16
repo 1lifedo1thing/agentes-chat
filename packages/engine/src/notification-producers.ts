@@ -5,7 +5,7 @@ import { approvalCardThreads, approvalOriginOf, notifiedIds } from "./approvals"
 import { accountablePerson, runAuthorityById } from "./authority";
 import { autonomyNoteFor, proposalCardOf } from "./brakes";
 import { readableChannelIds } from "./channels";
-import { isConfidential, threadIsConfidential } from "./confidential";
+import { confidentialThreadSql, isConfidential } from "./confidential";
 import { threadFollowChoices } from "./follows";
 import { type Assignee, assigneesOfIssue } from "./issue-assignees";
 import { type TaskEnd, taskEndLine } from "./machine-task-text";
@@ -423,15 +423,30 @@ export async function notifyQuestion(deps: NotificationDeps, q: QuestionRow) {
       questionId: q.id,
     },
     // Asked in a confidential thread (ADR 0189): what the agent typed stays on its card there.
-    latest: (await sealedPlace(deps, q.orgId, q.threadId ?? q.messageId))
+    latest: (await sealedPlace(deps, q.orgId, q.threadId ?? q.messageId, q.runId))
       ? { text: "" }
       : { text: notificationSnippet(q.text), suggestions: q.choices ?? undefined },
   });
 }
 
-/** Whether a card's place (its thread's root, or itself in the main timeline) is a confidential thread. */
-const sealedPlace = async (deps: Pick<NotificationDeps, "db">, orgId: string, rootId: string | null) =>
-  rootId !== null && (await threadIsConfidential(deps.db, orgId, rootId));
+/**
+ * Whether a card was asked from a confidential thread: its place (its thread's root, or itself in the main timeline)
+ * is one, or the run that asked answers in one, wherever its card was posted.
+ */
+async function sealedPlace(
+  deps: Pick<NotificationDeps, "db">,
+  orgId: string,
+  rootId: string | null,
+  runId: string | null,
+) {
+  const org = sql`${orgId}::uuid`;
+  const [row] = rowsOf<{ sealed: boolean }>(
+    await deps.db.execute(sql`select (${confidentialThreadSql(org, sql`${rootId}::uuid`)}
+      or exists (select 1 from ${schema.agentRuns} r where r.id = ${runId}::uuid and r.org_id = ${org}
+        and ${confidentialThreadSql(org, sql`r.thread_root_id`)})) as sealed`),
+  );
+  return row?.sealed === true;
+}
 
 /** Answered (by anyone) or expired: out of everyone's inbox. */
 export async function resolveQuestionNotifications(deps: NotificationDeps, orgId: string, questionId: string) {
@@ -526,7 +541,7 @@ export async function notifyApproval(deps: NotificationDeps, approval: ApprovalR
       ...(approval.missionId ? { missionId: approval.missionId } : {}),
       ...(channel?.kind === "channel" ? { label: channel.name } : {}),
     },
-    latest: approvalLatest(approval, await sealedPlace(deps, approval.orgId, approval.threadRootId)),
+    latest: approvalLatest(approval, await sealedPlace(deps, approval.orgId, approval.threadRootId, approval.runId)),
   });
 }
 
@@ -563,7 +578,7 @@ export async function resolveApprovalNotifications(
   if (waiting.length === 0) return resolveNotifications(deps, approval.orgId, { groupKey });
   const told = await Promise.all(waiting.map(async (a) => new Set(await notifiedIds(deps.db, a))));
   // The requests of one card share its thread.
-  const sealed = await sealedPlace(deps, approval.orgId, waiting[0]?.threadRootId ?? null);
+  const sealed = await sealedPlace(deps, approval.orgId, waiting[0]?.threadRootId ?? null, waiting[0]?.runId ?? null);
   await retargetNotifications(deps, approval.orgId, groupKey, (userId) => {
     const next = waiting.find((_, i) => told[i]?.has(userId));
     return next ? { source: { approvalId: next.id }, latest: approvalLatest(next, sealed) } : null;

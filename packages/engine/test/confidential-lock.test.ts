@@ -16,6 +16,7 @@ import {
   createWebToolSource,
   createWithdrawRequestToolSource,
   createWorkspaceToolSource,
+  decideApproval,
   grantScopes,
   postPersonMessage,
   type ToolContext,
@@ -24,7 +25,7 @@ import {
 } from "../src";
 import type { RunAuthority } from "../src/authority";
 import { onlySafetyRefusals, SAFETY_TAG, triedCalls } from "../src/continuation";
-import { confidentialLockAllows } from "../src/tools/confidential-lock";
+import { asksOutside, confidentialLockAllows } from "../src/tools/confidential-lock";
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, type VaultWorld, vaultWorld } from "./confidential-fixtures";
 
@@ -165,14 +166,7 @@ describe("the list", () => {
       expect(names).toContain(name);
     expect(listed.length).toBeGreaterThan(80);
     const kept = listed
-      .filter((t) =>
-        confidentialLockAllows(t, {
-          own: !t.connectionId,
-          marking: [w.connectionId],
-          authority: null,
-          channelId: w.channelId,
-        }),
-      )
+      .filter((t) => confidentialLockAllows(t, { own: !t.connectionId, marking: [w.connectionId], asksOutside: false }))
       .map((t) => t.name)
       .sort();
     expect(kept).toEqual([...KEPT].sort());
@@ -188,14 +182,9 @@ describe("the list", () => {
   });
   const other = { connectionId: "5f0e0f9e-0000-4000-8000-000000000001" };
   const marking = "5f0e0f9e-0000-4000-8000-000000000002";
-  const at = (authority: RunAuthority | null = null) => ({
-    own: false,
-    marking: [marking],
-    authority,
-    channelId: "c1",
-  });
-  const routine = (channelId: string) =>
-    ({ kind: "routine", brief: { deliverTo: { channelId, threadId: null } } }) as unknown as RunAuthority;
+  const at = (asksOut = false) => ({ own: false, marking: [marking], asksOutside: asksOut });
+  const routine = (channelId: string, threadId: string | null = null) =>
+    ({ kind: "routine", brief: { deliverTo: { channelId, threadId } } }) as unknown as RunAuthority;
 
   test("tools whose sources a test can't build, by the names and scopes they are listed with", () => {
     const refused: ToolDefinition[] = [
@@ -239,19 +228,26 @@ describe("the list", () => {
     for (const t of kept) expect([t.name, confidentialLockAllows(t, at())]).toEqual([t.name, true]);
   });
 
-  test("hand_off: only a routine's report into the conversation its run is already in", () => {
-    const handOff = tool("hand_off");
-    expect(confidentialLockAllows(handOff, at(routine("c1")))).toBe(true);
-    expect(confidentialLockAllows(handOff, at(routine("c2")))).toBe(false);
-    expect(confidentialLockAllows(handOff, at(null))).toBe(false);
+  test("hand_off is refused: a routine's report is kept as its record, which its next run is handed elsewhere", () => {
+    expect(confidentialLockAllows(tool("hand_off"), at())).toBe(false);
   });
 
-  test("a question: not from a routine's own run, whose cards go where the routine reports", () => {
+  test("a question is kept only where its card lands in the run's own thread", () => {
     for (const name of ["ask_user", "ask_choices"]) {
-      expect([name, confidentialLockAllows(tool(name), at(null))]).toEqual([name, true]);
-      expect([name, confidentialLockAllows(tool(name), at(routine("c1")))]).toEqual([name, true]);
-      expect([name, confidentialLockAllows(tool(name), at(routine("c2")))]).toEqual([name, false]);
+      expect([name, confidentialLockAllows(tool(name), at())]).toEqual([name, true]);
+      expect([name, confidentialLockAllows(tool(name), at(true))]).toEqual([name, false]);
     }
+    const run = { channelId: "c1", threadRootId: "t1" };
+    // A run asks where it answers.
+    expect(asksOutside(run, null, null)).toBe(false);
+    // A routine's own run asks where the routine reports: another conversation, or another thread of this one.
+    expect(asksOutside(run, routine("c1"), null)).toBe(false);
+    expect(asksOutside(run, routine("c1", "t1"), null)).toBe(false);
+    expect(asksOutside(run, routine("c1", "t2"), null)).toBe(true);
+    expect(asksOutside(run, routine("c2"), null)).toBe(true);
+    // A run another agent asked puts its cards where the person behind that agent is.
+    expect(asksOutside(run, null, { channelId: "c2", threadRootId: "t9" })).toBe(true);
+    expect(asksOutside(run, null, { channelId: "c1", threadRootId: "t1" })).toBe(false);
   });
 });
 
@@ -425,5 +421,135 @@ describe("in a run", () => {
       runs.slice(1).map(async (r) => (await codes(w, r.id)).find(([name]) => name === "post_message")?.[1]),
     );
     expect(posts).toEqual([CONFIDENTIAL_OUTBOUND, null, null]);
+  });
+
+  test("show_block replaces a block of the thread and no other: one shown elsewhere keeps its words and its place in the index", async () => {
+    let elsewhere = "";
+    const w = await vaultWorld({
+      agents: ["kai"],
+      setup: { blockTools: true },
+      script: {
+        kai: ({ n }) => {
+          const block = (title: string, label: string, id?: string) => ({
+            name: "show_block",
+            input: { title, spec: { parts: [{ type: "stat", label, value: "1" }] }, ...(id ? { block_id: id } : {}) },
+          });
+          if (n === 1) return { calls: [block("Plan", "steps")] };
+          if (n === 3) return { calls: [READ] };
+          if (n === 4) return { calls: [block(`Plan ${CANARY}`, `label ${CANARY}`, elsewhere)] };
+          return { text: "Done." };
+        },
+      },
+    });
+    await w.say("@kai show the plan");
+    await w.settle();
+    elsewhere = (await w.db.select().from(schema.artifacts))[0]?.id ?? "";
+    expect(elsewhere).not.toBe("");
+    await w.say("@kai read record r1 and update the plan");
+    await w.settle();
+    await w.advance(10);
+    const [, run] = await w.runs("kai");
+    expect((await codes(w, run?.id ?? "")).at(-1)).toEqual(["show_block", CONFIDENTIAL_OUTBOUND]);
+    const [block] = await w.db.select().from(schema.artifacts);
+    expect([block?.title, block?.threadId, block?.currentVersion]).toEqual(["Plan", null, 1]);
+    expect(await w.tablesHolding(CANARY)).not.toEqual(expect.arrayContaining(["artifacts"]));
+    expect(JSON.stringify(await w.db.select().from(schema.searchDocuments))).not.toContain(CANARY);
+  });
+
+  test("withdraw_request takes back nothing outside the thread: the run that waits elsewhere is told nothing", async () => {
+    let question = "";
+    const w = await vaultWorld({
+      agents: ["kai"],
+      people: ["bia"],
+      setup: { toolSources: [createWithdrawRequestToolSource()] },
+      script: {
+        kai: ({ n }) => {
+          if (n === 1)
+            return {
+              calls: [
+                {
+                  name: "ask_user",
+                  input: { question: "Which plan?", why: "Only the person knows which plan they mean." },
+                },
+              ],
+            };
+          if (n === 2) return { calls: [READ] };
+          if (n === 3)
+            return { calls: [{ name: "withdraw_request", input: { id: question, reason: `it said ${CANARY}` } }] };
+          return { text: "Done." };
+        },
+      },
+    });
+    // Asked inside a thread, so the next top-level message is a conversation of its own.
+    const topic = await w.say("About the plans.");
+    await w.say("@kai which plan do we use?", { threadId: topic.id });
+    await w.settle();
+    const [waiting] = await w.runs("kai");
+    expect(waiting?.status).toBe("waiting_input");
+    question = (await w.db.select().from(schema.agentQuestions))[0]?.id ?? "";
+    await w.say("@kai read record r1", { as: "bia" });
+    await w.settle();
+    const [, locked] = await w.runs("kai");
+    expect((await codes(w, locked?.id ?? "")).at(-1)).toEqual(["withdraw_request", CONFIDENTIAL_OUTBOUND]);
+    // The first run still waits on its question, and holds no word of the record.
+    const [still] = await w.runs("kai");
+    expect(still?.status).toBe("waiting_input");
+    expect((await w.db.select().from(schema.agentQuestions))[0]?.status).toBe("open");
+    expect(JSON.stringify([still, await w.steps([still?.id ?? ""])])).not.toContain(CANARY);
+  });
+
+  test("an action of another tool approved before the mark does not run after it", async () => {
+    const recorded: string[] = [];
+    const goals: ToolSource = {
+      name: "goals",
+      tools: async () => [
+        {
+          name: "goal_upsert",
+          description: "Record a monthly goal",
+          scope: "",
+          sensitive: true,
+          inputSchema: { type: "object", properties: { month: { type: "string" } } },
+          describe: (input) => ({ title: `Goal of ${(input as { month: string }).month}` }),
+          execute: async (input) => {
+            recorded.push((input as { month: string }).month);
+            return { content: "recorded" };
+          },
+        },
+      ],
+    };
+    const w = await vaultWorld({
+      agents: ["kai"],
+      setup: { toolSources: [goals] },
+      script: {
+        kai: ({ n }) =>
+          n === 1
+            ? {
+                calls: [
+                  {
+                    name: "goal_upsert",
+                    input: { month: "2026-11", why: "The person asked to record the goal for November just now." },
+                  },
+                ],
+              }
+            : n === 2
+              ? { calls: [READ] }
+              : { text: "Done." },
+      },
+    });
+    const asked = await w.say("@kai record the goal for November");
+    await w.settle();
+    const [approval] = await w.db.select().from(schema.approvals);
+    expect(approval?.status).toBe("pending");
+    // While it waits, another run of the same thread reads the record.
+    await w.say("@kai read record r1", { threadId: asked.id });
+    await w.settle();
+    expect(await w.db.select().from(schema.confidentialThreads)).toHaveLength(1);
+    await decideApproval({ db: w.db, pubsub: w.f.pubsub }, w.owner.id, w.org.id, approval?.id ?? "", {
+      decision: "approve",
+    });
+    await w.settle();
+    expect(recorded).toEqual([]);
+    const [first] = await w.runs("kai");
+    expect(await codes(w, first?.id ?? "")).toEqual([["goal_upsert", CONFIDENTIAL_OUTBOUND]]);
   });
 });
