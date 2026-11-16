@@ -11,6 +11,15 @@ describe("no screen or sheet of the conversation opens with the keyboard up", ()
     expect(screen).not.toMatch(/\.focus\(\)/);
   });
 
+  test("opening a conversation from a channel's welcome asks its composer for nothing: it comes with the keyboard down", () => {
+    const welcome = src("features/chat/ChannelWelcome.tsx");
+    expect(welcome).toContain("onPress={() => void openDm({ agentId: host })}");
+    expect(welcome).not.toContain("compose: true");
+    // "Say hi" is a tap on the conversation already on screen: its own field takes the focus.
+    expect(welcome).toContain('requestComposerText(channelId, "");');
+    expect(src("features/chat/composer-request.ts")).not.toContain("ready to type");
+  });
+
   test("the conversation's search opens on its recent searches and filters, the field waiting for a tap", () => {
     const search = src("features/search/ConversationSearch.tsx");
     expect(search).not.toContain("autoFocus");
