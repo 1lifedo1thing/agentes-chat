@@ -102,3 +102,33 @@ describe("Compartilhar com…", () => {
     expect(share).toContain("bar: { paddingHorizontal: SHEET_X, paddingTop: 12 },");
   });
 });
+
+describe("the search tab", () => {
+  test("opens with the keyboard down: the field takes the focus only when the person taps it", () => {
+    const search = src("features/search/SearchScreen.tsx");
+    expect(search).not.toContain("FOCUS_DELAY_MS");
+    // The only focus left is the one a filter word asks for (a tap on the screen already open).
+    expect(search.match(/field\.current\?\.focus\(\)/g)?.length).toBe(1);
+    expect(search.slice(search.indexOf("const startOp"))).toContain("field.current?.focus();");
+  });
+
+  test("a pull asks for the conversations and every search again", () => {
+    const search = src("features/search/SearchScreen.tsx");
+    expect(search).toContain("qc.refetchQueries({ queryKey: searchQueryRoot(orgId), type: \"active\" })");
+    expect(search).toContain("pull={pull}");
+  });
+
+  test("a search that failed says so with a retry, never as nothing found", () => {
+    const results = src("features/search/SearchResults.tsx");
+    expect(results).toContain("const failed = words && hits.isError && !hits.data;");
+    expect(results).toContain("{failed ? <LoadFailed onRetry={() => void hits.refetch()} /> : null}");
+    expect(results).toContain("{words && !failed && isEmpty(r) && !hits.isFetching ? (");
+  });
+
+  test("taking the filters off is the kit's button, not a press drawn by hand", () => {
+    const filters = src("features/search/SearchFilters.tsx");
+    expect(filters).not.toContain("<Pressable");
+    expect(filters).not.toContain("styles.pressed");
+    expect(filters).toMatch(/<Button\s+variant="ghost"\s+size="sm"\s+icon="x"\s+label=\{t\("searchPage\.filtersApplied"/);
+  });
+});
