@@ -99,6 +99,8 @@ export function UsageScreen() {
       <KeyboardAwareScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
+        // A drag down the page takes the number pad with it, as every page with a field.
+        keyboardDismissMode="interactive"
         bottomOffset={TOOLBAR_HEIGHT + 24}
         extraKeyboardSpace={TOOLBAR_HEIGHT}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}

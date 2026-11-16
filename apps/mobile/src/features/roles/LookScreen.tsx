@@ -224,7 +224,6 @@ export function RenameRoleScreen({ roleId }: { roleId: string }) {
           multiline={false}
           minHeight={50}
           maxLength={NAME_MAX}
-          autoFocus
           returnKeyType="done"
           onSubmitEditing={save}
           accessibilityLabel={t("rolesPage.name")}
@@ -296,7 +295,6 @@ export function NewRoleScreen() {
           multiline={false}
           minHeight={50}
           maxLength={NAME_MAX}
-          autoFocus
           returnKeyType="done"
           onSubmitEditing={submit}
           placeholder={t("rolesPage.namePlaceholder")}
