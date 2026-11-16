@@ -7,7 +7,6 @@ import {
 } from "@agenteschat/client";
 import {
   accountUnchecked,
-  type ConnectedItem,
   connectedItems,
   itemName,
   reconnectAddsText,
@@ -131,12 +130,7 @@ function Connection({ id }: { id: string }) {
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
       <PushedHeader
         title={
-          <FadingHeaderTitle
-            y={y}
-            from={nameBox.top - headerHeight}
-            to={nameBox.bottom - headerHeight}
-            text={name}
-          />
+          <FadingHeaderTitle y={y} from={nameBox.top - headerHeight} to={nameBox.bottom - headerHeight} text={name} />
         }
         plate
         solid={false}

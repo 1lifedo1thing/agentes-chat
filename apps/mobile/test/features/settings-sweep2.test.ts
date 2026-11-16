@@ -104,7 +104,7 @@ describe("a connection's screen", () => {
       join(import.meta.dir, "..", "..", "app", "(app)", "(main)", "connectors", "rename.tsx"),
       "utf8",
     );
-    expect(route).toContain("<RenameConnectionScreen id={id ?? \"\"} />");
+    expect(route).toContain('<RenameConnectionScreen id={id ?? ""} />');
   });
 });
 
@@ -144,7 +144,10 @@ describe("lists read again on a pull, and searches make room for the keyboard", 
   test("a profile's live view and a channel's category show their shape while they load", () => {
     expect(src("features/browser/ProfileLoginScreen.tsx")).toContain("<SkeletonList rows={2} />");
     const pick = src("features/categories/CategoryScreens.tsx");
-    const screen = pick.slice(pick.indexOf("export function PickCategoryScreen"), pick.indexOf("export function NewCategoryScreen"));
+    const screen = pick.slice(
+      pick.indexOf("export function PickCategoryScreen"),
+      pick.indexOf("export function NewCategoryScreen"),
+    );
     expect(screen).toContain("<SkeletonList rows={3} />");
     expect(screen).toContain("<LoadFailed");
   });
@@ -175,6 +178,7 @@ describe("connecting a device", () => {
     const connect = src("features/devices/ConnectScreen.tsx");
     expect(connect).toContain('router.dismissTo("/settings/devices");');
     expect(connect).not.toContain("onPress={() => openComputer(");
-    expect(connect.match(/finishOn\(/g)?.length).toBe(3);
+    // Both of the flow's Done buttons (a computer by the app, a server by its line).
+    expect(connect.match(/onPress=\{\(\) => [^\n]*finishOn\(/g)?.length).toBe(2);
   });
 });

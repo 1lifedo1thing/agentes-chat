@@ -339,44 +339,44 @@ export function TeamServerPage() {
         subtitle={t("mobile.me.teamServerLeadShort")}
         agentMode={busy ? "run" : "idle"}
       >
-      <Locked when={busy} keepKeyboard>
-        <AuthField
-          value={address}
-          onChangeText={(value) => {
-            setAddress(value);
-            setError(null);
-          }}
-          placeholder={t("mobile.auth.server.placeholder")}
-          keyboardType="url"
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="URL"
-          // The keyboard's blue key ("ir") is the action, as on the sign-in; gray until an address is typed.
-          returnKeyType="go"
-          enablesReturnKeyAutomatically
-          onSubmitEditing={() => void submit()}
-          accessibilityLabel={t("mobile.auth.server.label")}
+        <Locked when={busy} keepKeyboard>
+          <AuthField
+            value={address}
+            onChangeText={(value) => {
+              setAddress(value);
+              setError(null);
+            }}
+            placeholder={t("mobile.auth.server.placeholder")}
+            keyboardType="url"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="URL"
+            // The keyboard's blue key ("ir") is the action, as on the sign-in; gray until an address is typed.
+            returnKeyType="go"
+            enablesReturnKeyAutomatically
+            onSubmitEditing={() => void submit()}
+            accessibilityLabel={t("mobile.auth.server.label")}
+          />
+        </Locked>
+        {error ? (
+          <Text tone="danger" variant="small" style={styles.center} accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        ) : busy ? (
+          <Text variant="footnote" tone="muted" style={styles.center} accessibilityLiveRegion="polite">
+            {t("mobile.auth.server.checking")}
+          </Text>
+        ) : null}
+        <Button
+          variant="secondary"
+          wide
+          label={t("mobile.auth.server.scan")}
+          disabled={busy}
+          onPress={() => router.push("/me/scan")}
         />
-      </Locked>
-      {error ? (
-        <Text tone="danger" variant="small" style={styles.center} accessibilityLiveRegion="polite">
-          {error}
+        <Text variant="footnote" tone="muted" style={[styles.center, styles.quiet]}>
+          {t("mobile.me.addWorkspaceFoot")}
         </Text>
-      ) : busy ? (
-        <Text variant="footnote" tone="muted" style={styles.center} accessibilityLiveRegion="polite">
-          {t("mobile.auth.server.checking")}
-        </Text>
-      ) : null}
-      <Button
-        variant="secondary"
-        wide
-        label={t("mobile.auth.server.scan")}
-        disabled={busy}
-        onPress={() => router.push("/me/scan")}
-      />
-      <Text variant="footnote" tone="muted" style={[styles.center, styles.quiet]}>
-        {t("mobile.me.addWorkspaceFoot")}
-      </Text>
       </AuthScaffold>
     </>
   );

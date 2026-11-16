@@ -503,8 +503,11 @@ describe("Convidar pessoas on the phone", () => {
   test("it sends every good address with the cargos, channels and agents; while it sends nothing goes back", () => {
     expect(invite).toContain("emails: ready.map((a) => a.email),");
     expect(invite).toMatch(/usePreventRemove\(sending, \(\{ repeat \}\) => \{\s*if \(leaving\.current\) repeat\(\);/);
-    // A finished send goes back itself, past the hold the screen hasn't let go of yet.
-    expect(invite).toMatch(/leaving\.current = true;\s*goBack\(\);/);
+    // A finished send goes back itself, past the hold the screen hasn't let go of yet (the question under the form
+    // too, in a personal workspace).
+    expect(invite).toMatch(
+      /leaving\.current = true;[\s\S]*?if \(family && router\.canDismiss\(\)\) router\.dismiss\(2\);\s*else goBack\(\);/,
+    );
     // A refused pick marks its token and says why, the form kept as it was.
     expect(invite).toContain('if (!refusedBy(e)) toast({ title: errorText(t, e, i18n.language), icon: "x" });');
     expect(invite).toContain('playSound("approved");');

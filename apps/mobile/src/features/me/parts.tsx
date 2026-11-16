@@ -52,7 +52,9 @@ export function Page({
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
-      {...(onRefresh ? { refreshControl: <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} /> } : {})}
+      {...(onRefresh
+        ? { refreshControl: <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} /> }
+        : {})}
       contentContainerStyle={[styles.body, { paddingBottom: footer ? 24 : 24 + insets.bottom }]}
     >
       {/* What is there as the screen opens doesn't fade in; what loads while it is watched does (`Loaded`). */}
