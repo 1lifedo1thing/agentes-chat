@@ -1,14 +1,29 @@
 import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
-import { eq, schema } from "@agenteschat/db";
+import { asc, eq, schema } from "@agenteschat/db";
 import type { ModelRequest } from "@agenteschat/providers";
 import { systemText } from "@agenteschat/providers";
-import { addChannelMember, createAgent, drainOutbox, handedConversation, openDm, postPersonMessage } from "../src";
+import {
+  type AgentRun,
+  addChannelMember,
+  continueRun,
+  createAgent,
+  drainOutbox,
+  endWork,
+  expireConsultations,
+  handedConversation,
+  insertMessage,
+  onConsultedRunFinished,
+  openDm,
+  postPersonMessage,
+  type ToolContext,
+} from "../src";
 import { isQuietNotice } from "../src/notices";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /**
  * Work one agent hands another for a person happens in the two agents' DM, which no person reads. The agent that got
- * it remembers it in its own DM with that person, and for handed work it tells them itself.
+ * it remembers it in its own DM with that person, where a quiet row also says who asked it what. What came of handed
+ * work reaches the person only where they asked (`handOverWork`): never a second time in that DM.
  */
 
 setDefaultTimeout(60_000);
@@ -89,13 +104,13 @@ async function searchInDm(f: Fixture, userId: string, adaId: string, prompts: { 
 }
 
 describe("work handed between agents, for a person", () => {
-  test("handed work: the agent tells the person itself, and remembers it in their DM", async () => {
+  test("handed work: never told to tell the person again elsewhere, and remembered in their DM", async () => {
     const { prompts, ada } = await handOff("tell_agent");
     const inAgentsDm = prompts.find((p) => p.system.includes(AGENTS_DM))?.system ?? "";
     expect(inAgentsDm).toContain(
-      "This is work handed to you: once it is done, tell ana what came of it yourself with `send_dm`, then answer here in one line.",
+      "When ana should hear something from you directly, `send_dm` reaches them, even unasked.",
     );
-    expect(inAgentsDm).not.toContain("even unasked");
+    expect(inAgentsDm).not.toContain("what came of it yourself");
 
     const later = await askInDm(f, f.owner.id, ada.id, prompts);
     expect(later).toContain("# What other agents asked of you for ana");
@@ -107,7 +122,6 @@ describe("work handed between agents, for a person", () => {
   test("a question: the answer still goes up, and the agent remembers it too", async () => {
     const { prompts, ada } = await handOff("ask_agent");
     const inAgentsDm = prompts.find((p) => p.system.includes(AGENTS_DM))?.system ?? "";
-    expect(inAgentsDm).not.toContain("This is work handed to you");
     expect(inAgentsDm).toContain(
       "When ana should hear something from you directly, `send_dm` reaches them, even unasked.",
     );
@@ -203,6 +217,173 @@ describe("its trace in the DM of the agent that got it", () => {
     });
     await drainOutbox(f.db, f.handlers);
     expect((await f.db.select().from(schema.agentConsultations)).length).toBe(2);
+    expect(await traces()).toEqual([]);
+  });
+});
+
+/** Dev's run on the owner's message in `channelId`, which hands work over with `tell_agent` (as the tool runs). */
+async function devRun(channelId: string, body: string) {
+  const trigger = await insertMessage(f.db, {
+    orgId: f.org.id,
+    channelId,
+    author: { type: "person", userId: f.owner.id },
+    body,
+  });
+  const [run] = await f.db
+    .insert(schema.agentRuns)
+    .values({
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      channelId,
+      threadRootId: trigger.id,
+      triggerMessageId: trigger.id,
+      trigger: "mention",
+      hop: 1,
+      stretchId: trigger.id,
+    })
+    .returning();
+  if (!run) throw new Error("no run");
+  return run;
+}
+
+const tell = (run: AgentRun, agent: string, message: string) => {
+  if (!f.tools) throw new Error("no tools");
+  const ctx: ToolContext = {
+    db: f.db,
+    orgId: run.orgId,
+    agentId: run.agentId,
+    runId: run.id,
+    channelId: run.channelId,
+    threadRootId: run.threadRootId,
+    triggerMessageId: run.triggerMessageId,
+  };
+  return f.tools.invoke(ctx, { toolUseId: `tu_${crypto.randomUUID()}`, name: "tell_agent", input: { agent, message } });
+};
+
+const runOf = async (id: string | null | undefined) => {
+  const [run] = await f.db
+    .select()
+    .from(schema.agentRuns)
+    .where(eq(schema.agentRuns.id, id ?? ""));
+  if (!run) throw new Error("no run");
+  return run;
+};
+
+/** Ada's run ends with its report (`meta.workEnd`, as the executor posts it) at `at`, then its hooks run. */
+async function reports(run: AgentRun, at: Date) {
+  const said = await insertMessage(f.db, {
+    orgId: f.org.id,
+    channelId: run.channelId,
+    author: { type: "agent", agentId: run.agentId, runId: run.id, hop: run.hop },
+    body: "Pronto: está no Drive em Vendas/Outubro.",
+    meta: { workEnd: { id: run.workId, status: "done" } },
+  });
+  await f.db
+    .update(schema.agentRuns)
+    .set({ status: "done", replyMessageId: said.id })
+    .where(eq(schema.agentRuns.id, run.id));
+  const ended = await runOf(run.id);
+  await endWork({ db: f.db, pubsub: f.pubsub }, ended, "done", at);
+  await onConsultedRunFinished({ db: f.db, pubsub: f.pubsub }, ended, "done");
+}
+
+/** Dev hands Ada the October report from #general: her run becomes handed work, reporting there. */
+async function handedToAda() {
+  f = await setup({ askAgent: true });
+  const ada = await createAgent(
+    f.db,
+    f.owner.id,
+    f.org.id,
+    { name: "Ada", handle: "ada", role: "Vendas", credentialId: f.credential.id },
+    { model: "claude-sonnet-5-5" },
+  );
+  const dev = await devRun(f.general.id, "@dev pede pra Ada o relatório de vendas de outubro");
+  await tell(dev, "@ada", "Faz o relatório de vendas de outubro.");
+  const [c] = await f.db.select().from(schema.agentConsultations).orderBy(asc(schema.agentConsultations.createdAt));
+  const run = await runOf(c?.targetRunId);
+  const [work] = await f.db.select().from(schema.agentWorks);
+  expect(work).toMatchObject({ how: "handed", channelId: f.general.id, consultationId: c?.id });
+  return { ada, run };
+}
+
+const trace = async () => {
+  const [row] = await traces();
+  if (!row) throw new Error("no trace");
+  return row.refs;
+};
+
+describe("its trace follows the handed work it started", () => {
+  test("work that waits on the person stays open past its first turn; it ends with the work, at the work's time", async () => {
+    const { run } = await handedToAda();
+    const deps = { db: f.db, pubsub: f.pubsub };
+    expect(await trace()).toMatchObject({ status: "open" });
+    // Ada asks the person and waits: her turn ends, the work and its note stay open, past the note's deadline too.
+    await f.db.update(schema.agentRuns).set({ status: "waiting_input" }).where(eq(schema.agentRuns.id, run.id));
+    await onConsultedRunFinished(deps, await runOf(run.id), "waiting_input");
+    await expireConsultations(deps, new Date(Date.now() + 60 * 60_000));
+    const [c] = await f.db.select().from(schema.agentConsultations);
+    expect(c?.status).toBe("open");
+    const waiting = await trace();
+    expect(waiting.status).toBe("open");
+    expect(waiting.answeredAt).toBeUndefined();
+    // It ends 40 minutes after it was handed: the row says done, and took those 40 minutes.
+    const at = new Date(Date.parse(waiting.createdAt ?? "") + 40 * 60_000);
+    await f.db.update(schema.agentRuns).set({ status: "running" }).where(eq(schema.agentRuns.id, run.id));
+    await reports(await runOf(run.id), at);
+    expect(await trace()).toMatchObject({ status: "answered", answeredAt: at.toISOString() });
+  });
+
+  test("Continuar reopens a stopped work whose note already closed: the row goes back to open, then says done", async () => {
+    const { run } = await handedToAda();
+    const deps = { db: f.db, pubsub: f.pubsub };
+    const said = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: run.channelId,
+      author: { type: "agent", agentId: run.agentId, runId: run.id, hop: run.hop },
+      body: "Lendo as vendas.",
+      meta: { canceled: { byUserId: f.owner.id, text: "Lendo as vendas." } },
+    });
+    await f.db
+      .update(schema.agentRuns)
+      .set({
+        status: "canceled",
+        error: `canceled_by:${f.owner.id}`,
+        replyMessageId: said.id,
+        transcript: { system: "", messages: [] },
+      })
+      .where(eq(schema.agentRuns.id, run.id));
+    const stopped = await runOf(run.id);
+    await endWork(deps, stopped, "canceled");
+    await onConsultedRunFinished(deps, stopped, "canceled");
+    const [c] = await f.db.select().from(schema.agentConsultations);
+    expect(c?.status).not.toBe("open");
+    expect(await trace()).toMatchObject({ status: "failed" });
+
+    const { runId } = await continueRun(deps, f.owner.id, f.org.id, run.id);
+    const reopened = await trace();
+    expect(reopened.status).toBe("open");
+    expect(reopened.answeredAt).toBeUndefined();
+
+    const at = new Date(Date.now() + 5 * 60_000);
+    await reports(await runOf(runId), at);
+    expect(await trace()).toMatchObject({ status: "answered", answeredAt: at.toISOString() });
+  });
+
+  test("none where the person asked: there the hand-off already shows, as the handed work's line", async () => {
+    f = await setup({ askAgent: true });
+    const ada = await createAgent(
+      f.db,
+      f.owner.id,
+      f.org.id,
+      { name: "Ada", handle: "ada", role: "Vendas", credentialId: f.credential.id },
+      { model: "claude-sonnet-5-5" },
+    );
+    // The person asked in their DM with Ada, and Dev handed Ada the work from there.
+    const dm = await openDm(f.db, f.owner.id, f.org.id, { agentId: ada.id });
+    const dev = await devRun(dm.id, "@dev pede pra Ada o relatório de vendas de outubro");
+    await tell(dev, "@ada", "Faz o relatório de vendas de outubro.");
+    const [work] = await f.db.select().from(schema.agentWorks);
+    expect(work).toMatchObject({ how: "handed", channelId: dm.id });
     expect(await traces()).toEqual([]);
   });
 });

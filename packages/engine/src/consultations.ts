@@ -2467,10 +2467,24 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
 /** How much of the question the trace keeps (`NOTICE_QUESTION_MAX`, as the asker's notice). */
 const TRACE_QUESTION_MAX = NOTICE_QUESTION_MAX;
 
+/** Where the person behind a hand-off asked: the asking run's conversation, or up its chain from an agents' DM. */
+async function handOffAskedIn(db: Executor, orgId: string, askerRunId: string) {
+  const [asker] = await db
+    .select({ channelId: agentRuns.channelId, kind: channels.kind, dmKey: channels.dmKey })
+    .from(agentRuns)
+    .innerJoin(channels, eq(channels.id, agentRuns.channelId))
+    .where(and(eq(agentRuns.orgId, orgId), eq(agentRuns.id, askerRunId)));
+  if (!asker) return null;
+  return isAgentOnlyDm(asker)
+    ? ((await consultationOrigin(db, orgId, askerRunId))?.channelId ?? null)
+    : asker.channelId;
+}
+
 /**
  * Where a hand-off leaves its trace: the DM between the agent that got it and the person behind the run that asked,
  * when that person may talk to that agent (one it answers agents only for never hears of it). Null for nobody's work,
- * a routine's (no person is behind it), or that DM not being theirs to read.
+ * a routine's (no person is behind it), that DM not being theirs to read, or that DM being where they asked: there
+ * the hand-off already shows (its pair row, or the handed work's line and messages).
  */
 async function traceDm(tx: Executor, c: Pick<AgentConsultationRow, "orgId" | "askerRunId" | "targetAgentId">) {
   const person = (await runAuthorityById(tx, c.orgId, c.askerRunId)).personId;
@@ -2480,6 +2494,14 @@ async function traceDm(tx: Executor, c: Pick<AgentConsultationRow, "orgId" | "as
     .from(agents)
     .where(and(eq(agents.orgId, c.orgId), eq(agents.id, c.targetAgentId)));
   if (!target || !canTalkTo(target, person, await speakerFor(tx, c.orgId, person))) return null;
+  const asked = await handOffAskedIn(tx, c.orgId, c.askerRunId);
+  const [there] = asked
+    ? await tx
+        .select({ dmKey: channels.dmKey })
+        .from(channels)
+        .where(and(eq(channels.orgId, c.orgId), eq(channels.id, asked)))
+    : [];
+  if (there?.dmKey === personAgentDmKey(person, target.id)) return null;
   return { person, target };
 }
 
@@ -2527,23 +2549,35 @@ export async function traceHandOff(
 }
 
 /**
- * A closed hand-off's trace (`traceHandOff`) says how it ended and when, in place: found in that one DM from the
- * hand-off's time on, never by scanning messages. Published so the row changes live.
+ * A hand-off's trace (`traceHandOff`) says how it ended and when, in place: found in that one DM from the hand-off's
+ * time on, never by scanning messages. Published so the row changes live. When its run became handed work
+ * (`handOverWork`) the row follows that work, not the note: Continuar reopens a work whose note already closed.
  */
 export async function settleHandOffTrace(
   deps: { db: Executor; pubsub?: PubSub },
   c: Pick<
     AgentConsultationRow,
-    "id" | "orgId" | "askerRunId" | "targetAgentId" | "status" | "answeredAt" | "createdAt"
+    "id" | "orgId" | "askerRunId" | "targetAgentId" | "targetRunId" | "status" | "answeredAt" | "createdAt"
   >,
 ) {
   const to = await traceDm(deps.db, c);
   if (!to) return;
-  const refs = { status: c.status, answeredAt: (c.answeredAt ?? new Date()).toISOString() };
+  const [work] = c.targetRunId
+    ? await deps.db
+        .select({ status: agentWorks.status, finishedAt: agentWorks.finishedAt })
+        .from(agentRuns)
+        .innerJoin(agentWorks, and(eq(agentWorks.id, agentRuns.workId), eq(agentWorks.how, "handed")))
+        .where(and(eq(agentRuns.orgId, c.orgId), eq(agentRuns.id, c.targetRunId)))
+    : [];
+  const refs = !work
+    ? { status: c.status, answeredAt: (c.answeredAt ?? new Date()).toISOString() }
+    : work.finishedAt
+      ? { status: work.status === "done" ? "answered" : "failed", answeredAt: work.finishedAt.toISOString() }
+      : { status: "open" };
   const [updated] = await deps.db
     .update(messages)
     .set({
-      meta: sql`jsonb_set(${messages.meta}, '{notice,refs}', (${messages.meta}->'notice'->'refs') || ${JSON.stringify(refs)}::jsonb)`,
+      meta: sql`jsonb_set(${messages.meta}, '{notice,refs}', ((${messages.meta}->'notice'->'refs') - 'answeredAt') || ${JSON.stringify(refs)}::jsonb)`,
     })
     .where(
       and(
@@ -2557,6 +2591,19 @@ export async function settleHandOffTrace(
     )
     .returning();
   if (updated && deps.pubsub) await publishMessageCreated(deps.pubsub, messageView(updated)).catch(() => {});
+}
+
+/** A handed work ended, or Continuar reopened it: the trace of the hand-off that started it follows. */
+export async function settleHandedWorkTrace(
+  deps: { db: Executor; pubsub?: PubSub },
+  work: { orgId: string; how: string; consultationId: string | null },
+) {
+  if (work.how !== "handed" || !work.consultationId) return;
+  const [c] = await deps.db
+    .select()
+    .from(agentConsultations)
+    .where(and(eq(agentConsultations.orgId, work.orgId), eq(agentConsultations.id, work.consultationId)));
+  if (c) await settleHandOffTrace(deps, c);
 }
 
 /**
@@ -2577,12 +2624,9 @@ export async function handedConversation(
       createdAt: agentConsultations.createdAt,
       askerRunId: agentConsultations.askerRunId,
       askerChannelId: agentRuns.channelId,
-      kind: channels.kind,
-      dmKey: channels.dmKey,
     })
     .from(agentConsultations)
     .innerJoin(agentRuns, eq(agentRuns.id, agentConsultations.askerRunId))
-    .innerJoin(channels, eq(channels.id, agentRuns.channelId))
     .where(and(eq(agentConsultations.orgId, orgId), eq(agentConsultations.id, consultationId)));
   if (!c) return null;
   const [trace] = await db
@@ -2600,7 +2644,7 @@ export async function handedConversation(
     )
     .limit(1);
   if (!trace) return null;
-  const anchor = isAgentOnlyDm(c) ? (await consultationOrigin(db, orgId, c.askerRunId))?.channelId : c.askerChannelId;
+  const anchor = await handOffAskedIn(db, orgId, c.askerRunId);
   if (!anchor) return null;
   const [reads] = rowsOf<{ ok: boolean | string }>(
     await db.execute(sql`select (c.archived_at is null and not ${agentsOnlyIn("c")}
