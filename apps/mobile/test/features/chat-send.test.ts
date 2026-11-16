@@ -119,3 +119,8 @@ test("the words leave the field and land in the conversation in the same draw", 
     mutate.indexOf("options.onOptimistic?.(local);"),
   );
 });
+
+test("send past the length limit answers the tap: the line above says why", () => {
+  const composer = src("ui/Composer.tsx");
+  expect(composer).toMatch(/if \(tooLong\) \{\s*haptics\.warning\(\);\s*return;\s*\}/);
+});
