@@ -103,6 +103,12 @@ export const issues = pgTable(
     priority: issuePriorityEnum().notNull().default("normal"),
     /** Its project; deleting the project clears it, the task stays. */
     projectId: uuid().references(() => issueProjects.id, { onDelete: "set null" }),
+    /**
+     * Read by nothing since `issue_assignees` (ADR 0188). They stay one release, as a deploy migrates while the version
+     * before it still serves and reads them; a later migration drops them and their index.
+     */
+    assigneeType: text(),
+    assigneeId: text(),
     labels: text().array().notNull().default(sql`'{}'::text[]`),
     dueDate: date({ mode: "string" }),
     /** `[{ id, text, done }]`. */
@@ -147,6 +153,8 @@ export const issues = pgTable(
     index().on(t.orgId, t.projectId),
     index().on(t.parentIssueId),
     uniqueIndex().on(t.conversationChannelId),
+    // Of the two columns nothing reads any more; dropped with them.
+    index().on(t.orgId, t.assigneeType, t.assigneeId, t.updatedAt),
   ],
 );
 

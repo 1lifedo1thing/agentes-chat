@@ -21,7 +21,4 @@ WHERE i."assignee_id" IS NOT NULL
 	AND ((i."assignee_type" = 'agent' AND EXISTS (SELECT 1 FROM "agents" a
 			WHERE a."id"::text = i."assignee_id" AND a."org_id" = i."org_id" AND a."archived_at" IS NULL))
 		OR (i."assignee_type" = 'person' AND EXISTS (SELECT 1 FROM "organization_members" m
-			WHERE m."user_id" = i."assignee_id" AND m."org_id" = i."org_id")));--> statement-breakpoint
-DROP INDEX "issues_org_id_assignee_type_assignee_id_updated_at_index";--> statement-breakpoint
-ALTER TABLE "issues" DROP COLUMN "assignee_type";--> statement-breakpoint
-ALTER TABLE "issues" DROP COLUMN "assignee_id";
+			WHERE m."user_id" = i."assignee_id" AND m."org_id" = i."org_id")));

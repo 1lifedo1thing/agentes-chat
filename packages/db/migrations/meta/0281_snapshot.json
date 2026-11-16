@@ -1,5 +1,5 @@
 {
-  "id": "af15b7f2-e80e-44c2-831f-a0d81f586648",
+  "id": "a39c9ef5-7575-4e38-92e0-cc3f1f6464a5",
   "prevId": "0034e02b-3657-470a-975e-547337bb184f",
   "version": "7",
   "dialect": "postgresql",
@@ -11865,6 +11865,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "assignee_type": {
+          "name": "assignee_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assignee_id": {
+          "name": "assignee_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "labels": {
           "name": "labels",
           "type": "text[]",
@@ -12073,6 +12085,39 @@
             }
           ],
           "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "issues_org_id_assignee_type_assignee_id_updated_at_index": {
+          "name": "issues_org_id_assignee_type_assignee_id_updated_at_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "assignee_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "assignee_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}

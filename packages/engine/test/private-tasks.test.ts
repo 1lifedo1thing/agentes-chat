@@ -485,8 +485,7 @@ describe("the data migrations", () => {
       .update(schema.searchDocuments)
       .set({ channelIds: [] })
       .where(inArray(schema.searchDocuments.sourceId, ids));
-    // The columns that migration read, which a later one dropped (ADR 0188).
-    await f.db.execute(sql`alter table issues add column assignee_type text, add column assignee_id text`);
+    // The columns that migration read, which nothing reads since (ADR 0188).
     await f.db.execute(
       sql`update issues set assignee_type = 'person', assignee_id = ${other.id} where id = ${assigned.id}`,
     );

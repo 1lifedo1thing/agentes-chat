@@ -227,8 +227,7 @@ describe("several assignees on a task (ADR 0188)", () => {
     const ofGone = await make("Of someone who left");
     await make("Nobody's");
     await archiveAgent(f.db, f.owner.id, f.org.id, qa.id, f.pubsub);
-    // As the table was before: the two columns the migration reads, then drops.
-    await f.db.execute(sql`alter table issues add column assignee_type text, add column assignee_id text`);
+    // As the table was before: the two columns the migration reads.
     const had = (id: string, type: string, who: string) =>
       f.db.execute(sql`update issues set assignee_type = ${type}, assignee_id = ${who} where id = ${id}`);
     await had(ofPerson, "person", bia.id);
