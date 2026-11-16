@@ -13683,31 +13683,30 @@ html:not([data-pointer]) .channel__latest-btn.ac-btn:focus-visible {
 }
 
 /* The line above the composer for a block out of view: "· 12 s · Ver · Esc para parar". */
+/* Quiet as the words before it: the counts' weight (`.ac-num`) would make the seconds the loudest thing on the line. */
 .ac-typing__elapsed {
   flex: none;
   color: var(--faint);
+  font-weight: 400;
 }
-/* "Theo pensando…      2 s ■": the time at the bar's end, beside the stop. With someone typing after it
-   ("Ada · 2 s · Marina digitando…") it stays with the phrase, what follows kept at the end. One agent's step grows
-   nothing (its pieces are the bar's own): what ends the bar (the globe, Ver, the stop) is at its end before the time
-   comes too, which then comes in on their left and moves none of them. */
+/* "Theo pensando… · 2 s": the time right after the words (a bare line has no end of its own to hold it), and so with
+   someone typing after it ("Ada · 2 s · Marina digitando…"). One agent's step grows nothing (its pieces are the bar's
+   own): what ends the bar (the globe, Ver) is at its end before the time comes too, and the time comes in on their left
+   and moves none of them. */
 .ac-typing[data-active="true"] .ac-typing__text:has(+ .ac-typing__elapsed) {
   flex: 0 1 auto;
 }
-.ac-typing__text + .ac-typing__elapsed {
-  margin-left: auto;
+.ac-typing__text + .ac-typing__elapsed::before {
+  content: "· ";
 }
-/* A rule of its own: in one list with the time's, the build wraps both in `:is()` and the time's would take this one's
-   weight, winning over the time's 0 below. */
+/* A rule of its own: in one list with the time's, the build wraps both in `:is()` and one would take the other's
+   weight. */
 .ac-typing__text:has(> .ac-typing__agents > .ac-typing__step)
 + :is(.ac-typing__browser, .ac-typing__sep, .stop-run-wrap) {
   margin-left: auto;
 }
-.ac-typing__text + .ac-typing__elapsed:has(+ .ac-typing__also) {
-  margin-left: 0;
-}
-.ac-typing__text + .ac-typing__elapsed:has(+ .ac-typing__also)::before {
-  content: "· ";
+.ac-typing__text + .ac-typing__elapsed + :is(.ac-typing__browser, .ac-typing__sep) {
+  margin-left: auto;
 }
 /* One agent: its name, its step, its time and who types beside it are the bar's own pieces. The name is never cut: it
    wraps onto a second line when the bar is that narrow. Its step gives way first, down to nothing (the whole step is
