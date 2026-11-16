@@ -14,9 +14,12 @@ test("IA e uso: each row says who uses the plan, and its owner chooses in the ro
   const screen = source("usage/UsageScreen.tsx");
   expect(screen).toContain("servesText(t, account)");
   expect(screen).toContain("loginsText(t, account)");
-  expect(screen).toContain("{account.mine && account.accountId && account.serves ? (");
-  expect(screen).toContain("api.machines.setAccountServes(orgId, accountId, next)");
-  expect(screen).toContain('t("usageViews.serves.me")');
+  // The choice is on the account's own screen, two rows with the one in force checked.
+  const detail = source("usage/UsageAccountScreen.tsx");
+  expect(detail).toContain("{account.mine && account.accountId && account.serves ? (");
+  expect(detail).toContain("api.machines.setAccountServes(orgId, accountId, next)");
+  expect(detail).toContain('t("usageViews.serves.me")');
+  expect(detail).toContain('checked={serves === "owner"}');
   // Its note opens the usage screen, where the choice is.
   expect(notificationHref({ kind: "plan_serves", source: { accountId: "a1" } })).toBe("/usage");
 });
