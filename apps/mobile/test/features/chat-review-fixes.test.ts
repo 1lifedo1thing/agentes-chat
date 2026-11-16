@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { INLINE_HEIGHT } from "../../src/features/blocks/logic";
+import { keptHeightAfter } from "../../src/features/chat/kept-sizes";
 import { type Inline, tableColumnWidths, tableResolvesLate } from "../../src/features/chat/logic";
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
@@ -96,5 +98,32 @@ describe("words set from the composer leave nothing selected", () => {
     expect(prefill).toContain("put(next);");
     expect(prefill).not.toContain("setText(next);");
     expect(composer).toContain("if (!sent && value) put(joinDrafts(value, textRef.current));");
+  });
+});
+
+describe("a live block that gets shorter while cut takes its real height", () => {
+  test("a reading under the cut can't be a clamped one: it lowers the height, and the cut goes", () => {
+    // Details opened: 520 whole, cut at the card's height. Closed again, the parts read 300 under the cut.
+    expect(keptHeightAfter(520, 300, true, INLINE_HEIGHT)).toBe(300);
+    // A long text clamped by the cut reads the whole room: still the rule that only raises.
+    expect(keptHeightAfter(520, INLINE_HEIGHT, true, INLINE_HEIGHT)).toBeNull();
+    expect(keptHeightAfter(520, 600, true, INLINE_HEIGHT)).toBe(600);
+    // Without a cap (a message's words) nothing changes.
+    expect(keptHeightAfter(520, 300, true)).toBeNull();
+  });
+
+  test("no loop: once under the cut, the uncut reading is the same height", () => {
+    let kept = 520;
+    for (let i = 0; i < 4; i++) {
+      const cut = kept > INLINE_HEIGHT;
+      kept = keptHeightAfter(kept, 300, cut, INLINE_HEIGHT) ?? kept;
+    }
+    expect(kept).toBe(300);
+  });
+
+  test("its kept height is its own version's (and width's and text size's)", () => {
+    const spec = src("features/blocks/SpecBlock.tsx");
+    expect(spec).toContain("if (sized.key !== sizeKey) setSized({ key: sizeKey, height: keptSize(sizeKey) ?? 0 });");
+    expect(spec).toContain("setSized((now) => (now.key === sizeKey ? { key: sizeKey, height: next } : now));");
   });
 });
