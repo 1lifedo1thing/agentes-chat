@@ -18,15 +18,7 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-  type RefreshControlProps,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Alert, RefreshControl, type RefreshControlProps, ScrollView, StyleSheet, View } from "react-native";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
@@ -34,8 +26,8 @@ import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Locked, PersonAv
 import { router } from "@/ui/navigation";
 import { openAgentAi } from "../ai/AgentAiScreen";
 import { useOpenDm } from "../new/useOpenDm";
-import { rolesHref } from "../roles/parts";
-import { chooseAction } from "../settings/parts";
+import { RowBones, rolesHref } from "../roles/parts";
+import { chooseAction, Gap } from "../settings/parts";
 import { Face } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useMeId, usePullRefresh } from "../shared/hooks";
@@ -98,7 +90,7 @@ export function MembersPage() {
       }
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
     >
-      <View style={styles.gap} />
+      <Gap />
       <Locked when={frozen} readable>
         {invites ? (
           <GroupedList>
@@ -165,7 +157,12 @@ export function MembersPage() {
         // A list that didn't load is not a spinner forever: what happened, and the way to ask again (or the pull).
         <LoadFailed onRetry={() => void people.refetch()} />
       ) : (
-        <ActivityIndicator color={c.muted} style={styles.loading} />
+        // The rows' shape while they load: nothing jumps when they come.
+        <GroupedList>
+          <RowBones />
+          <RowBones name={56} />
+          <RowBones name={34} />
+        </GroupedList>
       )}
     </MembersFrame>
   );
@@ -335,6 +332,4 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   // As `Page`'s: the groups on the 16 pt edge.
   body: { paddingHorizontal: 16, paddingTop: 4 },
-  gap: { height: 14 },
-  loading: { marginVertical: 16 },
 });

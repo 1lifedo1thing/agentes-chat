@@ -505,7 +505,8 @@ function LinkMode({
                 onPress={() =>
                   shown
                     ? void copyText(shown.url).then((ok) => {
-                        if (!ok) return;
+                        // A copy the system refused says so, never a row that did nothing.
+                        if (!ok) return toast({ title: t("mobile.app.failed"), icon: "x" });
                         successHaptic();
                         setCopied(true);
                       })

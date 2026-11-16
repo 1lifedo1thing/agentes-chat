@@ -21,8 +21,8 @@ import { membersFull } from "@agenteschat/client/lib/limits";
 import { can } from "@agenteschat/client/lib/permissions";
 import { Fragment, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Share, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
-import Animated, { FadeIn, FadeOut, LayoutAnimationConfig, LinearTransition } from "react-native-reanimated";
+import { Share, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
+import Animated, { FadeIn, FadeOut, LayoutAnimationConfig } from "react-native-reanimated";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -32,6 +32,7 @@ import {
   Locked,
   PersonAvatar,
   SheetScreen,
+  SkeletonList,
   Text,
   useReducedMotion,
   useToast,
@@ -59,7 +60,6 @@ const REASON_LIMIT = { max: JOIN_REASON_MAX };
 export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefined; onClose: () => void }) {
   const { t } = useTranslation();
   const { orgId, org } = useOrg();
-  const c = useColors();
   const allowed = can(org, "invite_people");
   const list = useJoinRequests(orgId, allowed);
   const roles = useRoles(orgId);
@@ -71,7 +71,7 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
     void Share.share({ message: t("mobile.onb.shareMessage", { org: orgName, url }) }).catch(() => undefined);
 
   let body: ReactNode;
-  if (!allowed) body = <Text tone="muted">{t("common.notAllowed")}</Text>;
+  if (!allowed) body = <EmptyState size="inline" title={t("common.notAllowed")} />;
   // The cargos too before any card: each card starts on its link's choices from its first frame.
   else if (!list.data || !roles.data)
     body =
@@ -83,7 +83,8 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
           }}
         />
       ) : (
-        <ActivityIndicator color={c.muted} />
+        // The shape of what is coming, never a bare spinner.
+        <SkeletonList rows={2} />
       );
   else if (list.data.length === 0)
     body = (
@@ -109,8 +110,8 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
   return (
     <SheetScreen>
       <SheetTitle title={t("members.requests.title")} subtitle={orgName || undefined} />
-      {/* Cards answered here leave, and the links handed over arrive, while the sheet is open: they fade and the rest
-          slides into place. Those there as it opens simply are. */}
+      {/* Cards answered here leave, and the links handed over arrive, while the sheet is open: they fade. Those there as
+          it opens simply are. */}
       <LayoutAnimationConfig skipEntering>
         {handOffs.map((h) => (
           <HandOff key={h.url} name={h.name} onShare={() => share(h.url)} />
@@ -124,18 +125,16 @@ export function JoinRequestsSheet({ focus, onClose }: { focus?: string | undefin
 
 const CARD_IN = FadeIn.duration(160);
 const CARD_OUT = FadeOut.duration(120);
-const CARD_SLIDE = LinearTransition.duration(220);
 
-/** A card of the sheet that comes, goes and moves while it is watched (none of it with reduced motion). */
+/**
+ * A card of the sheet that comes or goes while it is watched: it fades (none of it with reduced motion). No layout
+ * transition: one would also stretch a card's own frame when denying swaps its answer for the reason field, the
+ * words spilling past its edge while it grew.
+ */
 function Moving({ style, children }: { style: StyleProp<ViewStyle>; children: ReactNode }) {
   const reduced = useReducedMotion();
   return (
-    <Animated.View
-      entering={reduced ? undefined : CARD_IN}
-      exiting={reduced ? undefined : CARD_OUT}
-      layout={reduced ? undefined : CARD_SLIDE}
-      style={style}
-    >
+    <Animated.View entering={reduced ? undefined : CARD_IN} exiting={reduced ? undefined : CARD_OUT} style={style}>
       {children}
     </Animated.View>
   );
