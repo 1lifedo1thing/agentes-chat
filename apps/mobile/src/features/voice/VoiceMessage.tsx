@@ -9,7 +9,7 @@ import { useSharedValue } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import { appHeaders, authedFetch, lastCookie } from "@/lib/auth";
 import { serverUrl } from "@/lib/server";
-import { Icon, PressScale, Text } from "@/ui";
+import { Icon, PressScale, Text, TOUCH } from "@/ui";
 import { useColors, useOrgId } from "../shared/hooks";
 import { nextSpeed, spokenWords, waveAt } from "./logic";
 import {
@@ -28,6 +28,8 @@ import { PixelWave, wavePaths } from "./VoiceBars";
 
 /** Six rows of the sky's cells. */
 const WAVE = 24;
+/** The speed chip's height. */
+const SPEED_H = 22;
 /** Past this many characters the first line is cut, so "Ver tudo" is offered without measuring the text. */
 const ONE_LINE = 40;
 /** The list recycles rows: what a message had open lives outside them (where a clip stands: `placeOf`). */
@@ -234,7 +236,9 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
               onPress={cycle}
               accessibilityRole="button"
               accessibilityLabel={t("voice.speed")}
-              hitSlop={10}
+              accessibilityValue={{ text: `${speedFormat.format(rate)}×` }}
+              // 22 drawn, the 44 a finger needs.
+              hitSlop={(TOUCH - SPEED_H) / 2}
               style={({ pressed }) => [styles.speed, { backgroundColor: c.sunken }, pressed && styles.pressed]}
             >
               <Text variant="caption" tone="muted" style={styles.speedText}>
@@ -303,7 +307,7 @@ const styles = StyleSheet.create({
   time: { minWidth: 30, textAlign: "right", fontVariant: ["tabular-nums"] },
   // A count chip: the number on a sunken pill.
   speed: {
-    height: 22,
+    height: SPEED_H,
     minWidth: 32,
     paddingHorizontal: 7,
     borderRadius: 11,

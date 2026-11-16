@@ -66,6 +66,7 @@ import Animated, {
 import { readValueSync, STORED, writeValueSync } from "@/lib/storage";
 import { useOrg } from "@/providers/org";
 import {
+  Button,
   CHROME_MAX_SCALE,
   Count,
   EventPillAction,
@@ -1051,7 +1052,6 @@ function StoppedLine({
   const meId = useMeId();
   const dir = useDirectory();
   const org = useOrg().org;
-  const { colors: c, shadows } = useTheme();
   const [busy, setBusy] = useState(false);
   // The stop's notice, when it is in this conversation: who stopped it, the reason, its time.
   const stop = useStoppedRun(limit ? null : runId);
@@ -1101,24 +1101,19 @@ function StoppedLine({
       });
   };
   if (fallback === null) {
-    // Its text already says why (its long work's provider failed): Continue alone, nothing to say.
-    if (!open) return null;
+    // Its text already says why (its long work's provider failed): Continue alone, nothing to say. The kit's small
+    // button, which keeps its place with a spinner while it asks (it used to vanish on the tap and come back on a
+    // refusal) and goes once the work picked up.
+    if (continued || !(open || busy)) return null;
     return (
       <View style={styles.stopped}>
-        <PressScale
+        <Button
+          variant="secondary"
+          size="sm"
+          label={t("mobile.chat.stopped.continue")}
+          loading={busy}
           onPress={onContinue}
-          accessibilityRole="button"
-          // 26 points tall in the line: the slop gives it the 44 a finger needs.
-          hitSlop={{ top: 9, bottom: 9, left: 4, right: 4 }}
-          style={[styles.continue, { backgroundColor: c.raised, boxShadow: `${shadows.e1}, ${shadows.top}` }]}
-        >
-          <View style={styles.continueIn}>
-            <Icon name="play" size={12} color={c.ink} />
-            <Text variant="caption" tone="ink" style={styles.medium} maxFontSizeMultiplier={CHROME_MAX_SCALE}>
-              {t("mobile.chat.stopped.continue")}
-            </Text>
-          </View>
-        </PressScale>
+        />
       </View>
     );
   }
@@ -1411,14 +1406,6 @@ const styles = StyleSheet.create({
   statusEnd: { alignSelf: "flex-end" },
   // The stop's pill (or Continue alone) under the reply's words; the body sets its top.
   stopped: { alignItems: "flex-start" },
-  continue: {
-    minHeight: 26,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
-    borderBottomLeftRadius: 3,
-  },
-  continueIn: { flexGrow: 1, flexDirection: "row", alignItems: "center", gap: 4, paddingLeft: 8, paddingRight: 10 },
   medium: { fontWeight: "600" },
   pressedDim: { opacity: 0.6 },
   shrink: { flexShrink: 1 },

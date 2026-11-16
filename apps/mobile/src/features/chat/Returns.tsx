@@ -6,8 +6,20 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, Text as RNText, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeOut } from "react-native-reanimated";
-import { Card, CHROME_MAX_SCALE, Icon, IconButton, Row, Text, useReducedMotion, useTheme, useToast } from "@/ui";
+import {
+  Card,
+  CHROME_MAX_SCALE,
+  Icon,
+  IconButton,
+  Row,
+  SkeletonList,
+  Text,
+  useReducedMotion,
+  useTheme,
+  useToast,
+} from "@/ui";
 import { AgentFace, Face } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useDirectory, useNow, useOrgId } from "../shared/hooks";
 import { SheetTitle } from "../shared/PromptForm";
 import { Tile } from "../shared/parts";
@@ -174,10 +186,11 @@ export function ReturnsSheet({
   return (
     <>
       <SheetTitle leading={<Tile icon="clock" />} title={t("followUps.title")} />
+      {/* Loading: the rows' shape; didn't load: what happened and the way to ask again, from the sheet itself. */}
       {query.isLoading ? (
-        <ActivityIndicator color={c.muted} />
-      ) : query.isError ? (
-        <Text tone="muted">{t("mobile.app.failed")}</Text>
+        <SkeletonList rows={2} />
+      ) : query.isError && !query.data ? (
+        <LoadFailed onRetry={() => void query.refetch()} />
       ) : (
         <Card>
           {list.map((r) => {
