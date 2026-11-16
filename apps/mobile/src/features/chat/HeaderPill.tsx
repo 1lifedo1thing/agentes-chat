@@ -10,13 +10,12 @@ import Animated, {
   useSharedValue,
   withDelay,
   withSequence,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import { Dither } from "@/sky/Dither";
 import { softTones } from "@/sky/math";
-import { Glass, haptics, PressScale, Text, useReducedMotion, useTheme } from "@/ui";
+import { Glass, haptics, motion, PressScale, Text, useReducedMotion, useTheme } from "@/ui";
 
 /** The pill's own padding, the face's box and the gaps: the face sits in the capsule's curve. */
 const PAD_LEFT = 6;
@@ -27,20 +26,24 @@ const TRAILING_GAP = 2;
 const HEIGHT = 44;
 const BORDER = StyleSheet.hairlineWidth;
 const MIN_WIDTH = 120;
-const WIDTH_SPRING = { stiffness: 300, damping: 30, mass: 1 };
-const LINE_SPRING = { stiffness: 260, damping: 26, mass: 1 };
-const SKY_SPRING = { stiffness: 90, damping: 18, mass: 1 };
+/*
+ * No finger drives any of these, so they are timed, not sprung (springs carry a finger's velocity; there is none):
+ * the width morphs on screen (ease-in-out), a line enters and leaves (ease-out), the sky turns on and off (ease-in-out).
+ */
+const WIDTH = { duration: 260, easing: motion.easeInOut };
+const LINE_IN = { duration: 220, easing: motion.easeOut };
+const LINE_OUT = { duration: 140, easing: motion.easeOut };
+const SKY = { duration: 400, easing: motion.easeInOut };
 /** How far a line rolls in and out. */
 const ROLL = 15;
-const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 
 const rollIn: EntryExitAnimationFunction = () => {
   "worklet";
   return {
     initialValues: { opacity: 0, transform: [{ translateY: ROLL }] },
     animations: {
-      opacity: withTiming(1, { duration: 200 }),
-      transform: [{ translateY: withSpring(0, LINE_SPRING) }],
+      opacity: withTiming(1, LINE_IN),
+      transform: [{ translateY: withTiming(0, LINE_IN) }],
     },
   };
 };
@@ -50,22 +53,22 @@ const rollOut: EntryExitAnimationFunction = () => {
   return {
     initialValues: { opacity: 1, transform: [{ translateY: 0 }] },
     animations: {
-      opacity: withTiming(0, { duration: 140 }),
-      transform: [{ translateY: withSpring(-ROLL, LINE_SPRING) }],
+      opacity: withTiming(0, LINE_OUT),
+      transform: [{ translateY: withTiming(-ROLL, LINE_OUT) }],
     },
   };
 };
 
 /**
  * The conversation's title as a glass pill in the header: who or where on the left, the name and a quiet line
- * under it. It moves instead of jumping: a new line rolls in over the old one, the width follows the words on a
- * spring and an agent's sky turns into the pixel sweep that crosses the pill while it works (the sidebar's trail).
+ * under it. It moves instead of jumping: a new line rolls in over the old one, the width follows the words and an
+ * agent's sky turns into the pixel sweep that crosses the pill while it works (the sidebar's trail).
  * In a DM the face wears its presence badge and the quiet line says how the other side is: an agent's presence
  * and line, a person's status (ADR 0084). A channel shows who is in on the right. Held (`onHold`), it opens the
  * conversation switcher.
  *
  * The bar lays its title out once: the slot keeps the width of the room beside the buttons, and only the pill
- * inside it changes, on the UI thread, so the native bar never lays out again during a spring.
+ * inside it changes, on the UI thread, so the native bar never lays out again while it moves.
  *
  * Reading up the conversation (`collapsed`), the pill closes to its lead alone, a glass circle: the screen is only
  * messages. While an agent works its quiet line says each step, many a minute: the pill then holds the room's width
@@ -131,13 +134,13 @@ export function HeaderPill({
   const open = useSharedValue(closed ? 0 : 1);
   useEffect(() => {
     if (target === null) return;
-    pillWidth.value = reduced || pillWidth.value < 0 ? target : withSpring(target, WIDTH_SPRING);
+    pillWidth.value = reduced || pillWidth.value < 0 ? target : withTiming(target, WIDTH);
   }, [target, reduced, pillWidth]);
   useEffect(() => {
-    work.value = reduced ? (working ? 1 : 0) : withSpring(working ? 1 : 0, SKY_SPRING);
+    work.value = reduced ? (working ? 1 : 0) : withTiming(working ? 1 : 0, SKY);
   }, [working, reduced, work]);
   useEffect(() => {
-    open.value = withTiming(closed ? 0 : 1, { duration: closed ? 120 : 200, easing: EASE_OUT });
+    open.value = withTiming(closed ? 0 : 1, { duration: closed ? 120 : 200, easing: motion.easeOut });
   }, [closed, open]);
 
   const sized = useAnimatedStyle(() => ({
@@ -272,7 +275,8 @@ function SlidingText({ text, natural, box, still }: { text: string; natural: num
   const long = over > 1;
   useEffect(() => {
     if (!long || still) return;
-    const ease = Easing.inOut(Easing.quad);
+    // A marquee is constant motion: linear, so the words read at one pace.
+    const ease = Easing.linear;
     const timer = setTimeout(() => {
       setFree(true);
       const out = Math.max(1400, over * 32);
