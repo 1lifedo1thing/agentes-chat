@@ -767,7 +767,83 @@ test("long work on a teammate's account it moved to pauses at the line instead o
   expect((run?.transcript as { waitingForBrain?: { code: string } } | undefined)?.waitingForBrain?.code).toBe(
     "usage_pause",
   );
-  expect(moveOf(run)).toMatchObject({ to: WALTER_ALL, lentBy: walter.id });
+  // Its own account takes the next claim.
+  expect(moveOf(run)).toBeUndefined();
+});
+
+/** A follow-through judge that sends a turn ending in "vou seguir" on to the next turn. */
+const goesOn = {
+  judge: (kind: string, _id: string, state: Record<string, unknown>) =>
+    kind === "follow_through" ? (String(state.reply).includes("vou seguir") ? "continue" : "done") : undefined,
+};
+
+/** Its first turn (on the account it moved to) puts that account at 96% of its week, then says it goes on. */
+function fillsTheWeek(fx: Fixture, id: string) {
+  const seen: BrainTurn[] = [];
+  const brain: Brain = {
+    kind: "claude_code",
+    async *run(turn) {
+      seen.push({ ...turn, system: "", messages: [] });
+      if (seen.length > 1) {
+        yield* answers;
+        return;
+      }
+      await fx.db
+        .update(schema.machineAccounts)
+        .set({
+          usage: {
+            windows: [{ kind: "seven_day", usedPercent: 96, resetsAt: iso(5 * 24 * 3600_000) }],
+            source: "turn",
+            at: new Date().toISOString(),
+          } as never,
+        })
+        .where(eq(schema.machineAccounts.id, id));
+      yield { type: "usage", input: 100, output: 10, source: "plan", model: "sonnet" };
+      yield { type: "tool_call", id: "c1", name: "Bash", input: { command: "git push" }, executed: { content: "ok" } };
+      yield { type: "done", text: "Fiz a primeira parte, vou seguir." };
+    },
+  };
+  return { brain, seen };
+}
+
+test("long work moved onto a teammate's account that reaches the line there goes back into its own plan's extra usage", async () => {
+  const { fx, walter, account, usage } = await world({}, goesOn);
+  await account(WALTER_ALL, walter.id);
+  await usage(WALTER_ALL, 40);
+  const extraOpen = {
+    ...reading(97, iso(3 * 3600_000)),
+    windows: [...reading(97, iso(3 * 3600_000)).windows, { kind: "other", label: "Extra usage", usedPercent: 10 }],
+  };
+  await fx.db
+    .update(schema.machineAccounts)
+    .set({ usage: extraOpen as never })
+    .where(eq(schema.machineAccounts.id, OWN1));
+  const { brain, seen } = fillsTheWeek(fx, WALTER_ALL);
+  await scheduledSlot(fx);
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+  // A free account first, then its owner's paid extra usage, never a wait on the teammate's week.
+  expect(seen.map((t) => t.account?.id)).toEqual([WALTER_ALL, OWN1]);
+  const [run] = await runs(fx);
+  expect(run?.status).toBe("done");
+  expect(moveOf(run)).toBeUndefined();
+});
+
+test("long work moved onto a teammate's account that reaches the line there waits for its own account's earlier reset", async () => {
+  const { fx, walter, account, usage } = await world({}, goesOn);
+  await account(WALTER_ALL, walter.id);
+  await usage(WALTER_ALL, 40);
+  await usage(OWN1, 97, iso(3 * 3600_000));
+  const { brain, seen } = fillsTheWeek(fx, WALTER_ALL);
+  await scheduledSlot(fx);
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+  expect(seen.map((t) => t.account?.id)).toEqual([WALTER_ALL]);
+  const [run] = await runs(fx);
+  const waiting = (run?.transcript as { waitingForBrain?: { code: string; until?: string } } | undefined)
+    ?.waitingForBrain;
+  expect(waiting?.code).toBe("usage_pause");
+  // Its next claim starts on its own account, at its own reset, not at the end of the teammate's week.
+  expect(moveOf(run)).toBeUndefined();
+  expect(Date.parse(waiting?.until ?? "")).toBeLessThan(Date.now() + 4 * 3600_000);
 });
 
 test("a budget wait never moves an account", async () => {

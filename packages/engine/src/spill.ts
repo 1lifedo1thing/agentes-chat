@@ -145,7 +145,7 @@ const ownerIsMember = and(
  * (`chainWhere`): its owner's own first and then the others that serve everyone, each by `use_order`. Never an account
  * `tried` or one of their seats, nor one limited by what is stored: unknown usage is worth a try (a setup token can't
  * read its usage without a turn). `own`: the agent's own account, which takes the run back when it has room. `room`:
- * what long work also needs of the stored usage. Null plan: no such account, with how many accounts are limited (the
+ * what long work also needs of an account's stored usage. Null plan: no such account, with how many accounts are limited (the
  * tried ones counted) and the earliest reset.
  */
 export async function nextAccountPlan(
@@ -153,7 +153,11 @@ export async function nextAccountPlan(
   agent: ChainAgent,
   plan: BrainPlan,
   tried: readonly string[],
-  options: { room?: (usage: PlanUsage | null) => boolean; forPerson?: string | null; own?: string } = {},
+  options: {
+    room?: (usage: PlanUsage | null, accountId: string) => boolean;
+    forPerson?: string | null;
+    own?: string;
+  } = {},
 ): Promise<NextAccount> {
   const machineId = plan.session?.machineId;
   const owner = agent.ownerUserId;
@@ -205,7 +209,7 @@ export async function nextAccountPlan(
       if (limited && at > now && (earliest === null || at < earliest)) earliest = at;
     }
     if (why || tried.includes(r.id) || triedRows.some((t) => sameSeat(t, r))) continue;
-    if (options.room && !options.room(usage)) continue;
+    if (options.room && !options.room(usage, r.id)) continue;
     const { unavailable: _, usage: _usage, ...rest } = plan;
     return {
       plan: {

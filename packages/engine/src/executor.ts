@@ -3339,7 +3339,9 @@ async function executeRunInner(
    * (`turnStaysOnItsComputer`: a fresh session can't see what it did there), nor a spilled run. `room`: long work also
    * needs the next account under the pause line. What `nextAccountPlan` found; null where no move is looked for.
    */
-  const moveToNextAccount = async (room?: (usage: PlanUsage | null) => boolean): Promise<NextAccount | null> => {
+  const moveToNextAccount = async (
+    room?: (usage: PlanUsage | null, accountId: string) => boolean,
+  ): Promise<NextAccount | null> => {
     const t = transcript as Transcript;
     const home = plan.account;
     if (plan.kind === "model" || !home || t.spill) return null;
@@ -3394,6 +3396,13 @@ async function executeRunInner(
       if (view) await publishMessageCreated(deps.pubsub, view);
     }
     return next;
+  };
+  /** The run is no longer moved: its next claim starts on its agent's own account, in a fresh session. */
+  const leaveMovedAccount = async () => {
+    const t = transcript as Transcript;
+    delete t.accountMove;
+    t.freshSession = Bun.randomUUIDv7();
+    await db.update(agentRuns).set({ brainSessionId: t.freshSession }).where(eq(agentRuns.id, run.id));
   };
 
   /**
@@ -3451,11 +3460,7 @@ async function executeRunInner(
     // the order limited too: until the first of them resets, and its next claim starts on its agent's own account.
     if (u.code === "plan_limit") {
       const all = next && !next.plan && next.chain > 1 ? next : null;
-      if (all && t.accountMove && !onlyThisComputer) {
-        delete t.accountMove;
-        t.freshSession = Bun.randomUUIDv7();
-        await db.update(agentRuns).set({ brainSessionId: t.freshSession }).where(eq(agentRuns.id, run.id));
-      }
+      if (all && t.accountMove && !onlyThisComputer) await leaveMovedAccount();
       const resetsAt = [u.resetsAt, all?.resetsAt]
         .filter((at): at is string => Boolean(at))
         .sort((a, b) => Date.parse(a) - Date.parse(b))[0];
@@ -4421,11 +4426,36 @@ async function executeRunInner(
           ? await moveToNextAccount((usage) => longWorkHasRoom(planReading(usage, plan.model ?? null, false)))
           : null;
       if (nextAccount?.plan) continue;
+      // On another account at the line there: its own (tried already) takes it back into its owner's paid extra
+      // usage. Otherwise the run is no longer moved and waits for the first reset of the two.
+      let ownReset: number | null = null;
+      const moved = transcript.accountMove;
+      if (pause?.source === "plan" && moved) {
+        triedThisClaim.delete(moved.from);
+        const back = await moveToNextAccount(
+          (usage, id) =>
+            id === moved.from && longWorkHasRoom(planReading(usage, plan.model ?? null, paysExtraUsage(agent))),
+        );
+        if (back?.plan) continue;
+        const machineId = plan.session?.machineId ?? agent.machineId;
+        const own = machineId
+          ? await storedPlanUsage(db, run.orgId, machineId, plan.kind, moved.from).catch(() => null)
+          : null;
+        ownReset = bindingReset(own, Date.now());
+        await leaveMovedAccount();
+      }
       if (pause) {
+        const pauseReset = "resetsAt" in pause && pause.resetsAt ? Date.parse(pause.resetsAt) : null;
+        const resetsAt =
+          ownReset !== null && (pauseReset === null || ownReset < pauseReset)
+            ? new Date(ownReset).toISOString()
+            : "resetsAt" in pause
+              ? pause.resetsAt
+              : undefined;
         return waitForUsage({
           code: "usage_pause",
           message: `Long work paused at ${pause.used}% of the ${pause.source}.`,
-          ...("resetsAt" in pause && pause.resetsAt ? { resetsAt: pause.resetsAt } : {}),
+          ...(resetsAt ? { resetsAt } : {}),
           ...("soon" in pause ? { soon: true } : {}),
           pause: { source: pause.source, used: pause.used, ...("window" in pause ? { window: pause.window } : {}) },
         });
