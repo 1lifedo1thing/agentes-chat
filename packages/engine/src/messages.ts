@@ -24,7 +24,7 @@ import { currentHandles } from "./agents";
 import { withDeletedArtifacts } from "./artifacts";
 import { audienceSql, notifyBlocked } from "./audience";
 import { postRefusal, requireChannelAccess } from "./channels";
-import { CONFIDENTIAL_STUB, confidentialThreadSql, unsealed } from "./confidential";
+import { CONFIDENTIAL_STUB, confidentialThreadSql, threadIsConfidential, unsealed } from "./confidential";
 import { ConflictError, NotFoundError, ValidationError } from "./errors";
 import {
   type DecidedBy,
@@ -174,7 +174,7 @@ export interface MessageUsage {
   outputTokens: number;
 }
 
-/** A message as the people who read its conversation see it: a sealed one with its words (`unsealed`, ADR 0187). */
+/** A message as the people who read its conversation see it: a sealed one with its words (`unsealed`, ADR 0189). */
 export const messageView = (stored: Message): MessageView => {
   const m = unsealed(stored);
   return {
@@ -766,7 +766,7 @@ export async function insertMessageWithRuns(
   const threadOk = sql`(${threadId}::uuid is null or exists (
           select 1 from ${messages} r where r.id = ${threadId}::uuid and r.org_id = ${input.orgId}::uuid
             and r.channel_id = ${input.channelId}::uuid and r.thread_id is null))`;
-  // A confidential thread (ADR 0187). What a run writes there holds no address an app would turn into a link: a
+  // A confidential thread (ADR 0189). What a run writes there holds no address an app would turn into a link: a
   // click on one could carry the words out.
   const org = sql`${input.orgId}::uuid`;
   const runThreadSealed = sql`(sr.id = ${runId}::uuid and sr.org_id = ${org}
@@ -999,7 +999,7 @@ export async function insertMessageWithRuns(
           and ${threadOk} and not exists (select 1 from archived) and exists (select 1 from fresh)
         returning r.id, r.agent_id
       ), sealed as (
-        -- A message of a confidential thread, or one a run of such a thread writes anywhere (ADR 0187): its words
+        -- A message of a confidential thread, or one a run of such a thread writes anywhere (ADR 0189): its words
         -- are kept apart from its body. Its thread: where that run's message goes when it names none, under the
         -- message that asked it, so nothing it found sits in the main timeline.
         select (${confidentialThreadSql(org, sql`${threadId}::uuid`)}
@@ -1295,12 +1295,24 @@ export async function postPersonMessage(
   ]);
   // Several agents mentioned: who is asked to act now, who is only referenced (no run for those).
   const addressees = deps.judge
-    ? await classifyAddressees(deps.db, deps.judge, { orgId, channelId, userId, body: input.body })
+    ? await classifyAddressees(deps.db, deps.judge, {
+        orgId,
+        channelId,
+        userId,
+        body: input.body,
+        threadId: input.threadId,
+      })
     : null;
   // A mention of everyone: one answer for the room, one each, or none (`classifyEveryone`).
   const everyone =
     deps.judge && channel.kind !== "dm"
-      ? await classifyEveryone(deps.db, deps.judge, { orgId, channelId, userId, body: input.body })
+      ? await classifyEveryone(deps.db, deps.judge, {
+          orgId,
+          channelId,
+          userId,
+          body: input.body,
+          threadId: input.threadId,
+        })
       : null;
   const referencedIds = [...new Set([...(addressees?.referenced ?? []), ...(everyone?.referenced ?? [])])];
   const meta =
@@ -1471,6 +1483,20 @@ export interface AddresseeDecision {
 }
 
 /**
+ * A message typed into a confidential thread (ADR 0189) is judged by nobody: its words go to no model outside the
+ * thread. Thrown inside the caller's own fail-open path, and read only when a judge is about to be asked.
+ */
+async function refuseSealedThread(
+  db: Executor,
+  input: { orgId: string; threadId?: string | null },
+  what: "addressees" | "everyone",
+) {
+  if (input.threadId && (await threadIsConfidential(db, input.orgId, input.threadId))) {
+    throw new Error(`${what}: not judged in a confidential thread`);
+  }
+}
+
+/**
  * A person's message that mentions two or more agents of the channel: which
  * of them is the person asking to act now, and which are only part of the
  * request ("@atlas, when an error comes in ask @ada to analyze it": Atlas
@@ -1483,7 +1509,7 @@ export interface AddresseeDecision {
 export async function classifyAddressees(
   db: Executor,
   judge: Judge,
-  input: { orgId: string; channelId: string; userId: string; body: string },
+  input: { orgId: string; channelId: string; userId: string; body: string; threadId?: string | null },
   options: { timeoutMs?: number } = {},
 ): Promise<AddresseeDecision | null> {
   const handles = await currentHandles(db, input.orgId, parseMentionHandles(input.body));
@@ -1500,6 +1526,7 @@ export async function classifyAddressees(
   const everyone = targets.map((t) => t.id);
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
+    await refuseSealedThread(db, input, "addressees");
     const [author] = await db
       .select({ name: schema.users.name })
       .from(schema.users)
@@ -1579,7 +1606,7 @@ export const everyoneShapeOf = (meta: Record<string, unknown> | null | undefined
 export async function classifyEveryone(
   db: Executor,
   judge: Judge,
-  input: { orgId: string; channelId: string; userId: string; body: string },
+  input: { orgId: string; channelId: string; userId: string; body: string; threadId?: string | null },
   options: { timeoutMs?: number } = {},
 ): Promise<(AddresseeDecision & { shape: EveryoneShapeMeta }) | null> {
   if (!mentionsEveryone(input.body)) return null;
@@ -1622,6 +1649,7 @@ export async function classifyEveryone(
   };
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
+    await refuseSealedThread(db, input, "everyone");
     const [author] = await db
       .select({ name: schema.users.name })
       .from(schema.users)

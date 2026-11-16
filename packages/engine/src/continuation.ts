@@ -517,7 +517,7 @@ export async function runCalls(db: Database, run: { id: string; orgId: string })
       const call = calls.get(id) ?? { name, input: undefined };
       const read = data.data as { outside?: unknown; confidential?: unknown; code?: unknown } | undefined;
       call.result = {
-        // A confidential result's words (ADR 0187) go to the run's own model and to no other reader of its calls.
+        // A confidential result's words (ADR 0189) go to the run's own model and to no other reader of its calls.
         content: read?.confidential === true ? CONFIDENTIAL_NOT_SHOWN : String(data.content ?? ""),
         isError: data.isError === true,
         // `data.data.outside`: the gateway's mark for any outside read, which survives `shown` dropping the envelope.

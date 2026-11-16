@@ -3,7 +3,7 @@ import { toolKind } from "./run-policy";
 import type { ToolDefinition } from "./types";
 
 /**
- * The lock of a confidential thread (ADR 0187): after a run read a confidential result, it and every later run of
+ * The lock of a confidential thread (ADR 0189): after a run read a confidential result, it and every later run of
  * its thread keep reading, answer in the thread, and send nothing elsewhere. By name, never by kind alone: a kind is
  * wider than its name (`here` holds a GIF search and cards that make things; `self` holds the status line every
  * member sees), and a tool added later is refused until someone reads its handler and adds its name.
@@ -42,6 +42,18 @@ export interface LockedCall {
   channelId: string;
 }
 
+/** What puts a card for a person to answer: a routine's own run posts it where the routine reports. */
+const ASKS = new Set(["ask_user", "ask_choices"]);
+
+/**
+ * A routine's own run whose routine reports to another conversation than the one the run is in: what it asks a
+ * person (a question, an approval) is posted there, outside its thread.
+ */
+export const asksElsewhere = (call: Pick<LockedCall, "authority" | "channelId">) =>
+  call.authority?.kind === "routine" &&
+  call.authority.brief != null &&
+  call.authority.brief.deliverTo.channelId !== call.channelId;
+
 /** Whether a run of a confidential thread may call `tool` (the tool a directory's `use_tool` reached, not the way in). */
 export function confidentialLockAllows(tool: ToolDefinition, call: LockedCall): boolean {
   const what = toolKind(tool);
@@ -58,7 +70,7 @@ export function confidentialLockAllows(tool: ToolDefinition, call: LockedCall): 
       // A routine's report, only into the conversation its run already is in.
       return call.authority?.kind === "routine" && call.authority.brief?.deliverTo.channelId === call.channelId;
     case "here":
-      return HERE.has(tool.name);
+      return HERE.has(tool.name) && !(ASKS.has(tool.name) && asksElsewhere(call));
     case "self":
       return SELF.has(tool.name);
     case "read":

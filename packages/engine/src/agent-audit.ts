@@ -130,7 +130,7 @@ export async function recordToolCall(
     unasked?: boolean;
     about?: ToolCallSubject | null;
     /**
-     * A call of a run in a confidential thread (ADR 0187): the row says the tool and how it ended, never its
+     * A call of a run in a confidential thread (ADR 0189): the row says the tool and how it ended, never its
      * arguments, title or reason. Those may repeat what the run read, and this log is kept for good.
      */
     confidential?: boolean;

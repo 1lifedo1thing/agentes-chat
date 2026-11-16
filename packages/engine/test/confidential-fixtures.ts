@@ -1,4 +1,4 @@
-import { asc, eq, schema } from "@agenteschat/db";
+import { asc, eq, rowsOf, schema, sql } from "@agenteschat/db";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
@@ -65,9 +65,9 @@ export function fakeVault() {
 /**
  * A world (`autonomy/harness`) whose agents hold the vault's tools (`vault_read_record`, `vault_list_records`,
  * `vault_change_record`), connected by address. `listed: false`: the operator did not list its host, so its mark
- * counts for nothing.
+ * counts for nothing. `changeAsks`: `vault_change_record` asks a person before it runs.
  */
-export async function vaultWorld(options: WorldOptions & { listed?: boolean }) {
+export async function vaultWorld(options: WorldOptions & { listed?: boolean; changeAsks?: boolean }) {
   let real: ToolSource | null = null;
   const lazy: ToolSource = { name: "connectors", tools: (ctx) => (real ? real.tools(ctx) : Promise.resolve([])) };
   const w = await world({
@@ -93,7 +93,7 @@ export async function vaultWorld(options: WorldOptions & { listed?: boolean }) {
     tools: [
       { name: "read_record", access: "read", label: "Read a record" },
       { name: "list_records", access: "read", label: "List records" },
-      { name: "change_record", access: "write", label: "Change a record" },
+      { name: "change_record", access: options.changeAsks ? "approval" : "write", label: "Change a record" },
     ],
   });
   real = createConnectorToolSource({
@@ -116,7 +116,24 @@ export async function vaultWorld(options: WorldOptions & { listed?: boolean }) {
   /** The requests of one agent's own turns, as text. */
   const turnsOf = (handle: string) =>
     modelInputs().filter((text) => new RegExp(`You are [^\\\\n]*? \\(@${handle}\\)`).test(text));
-  return { ...w, vault, connectionId: started.server.id, stored, modelInputs, turnsOf };
+  /** The tables with a row that holds `word` anywhere, a jsonb column included. */
+  const tablesHolding = async (word: string) => {
+    const tables = rowsOf<{ name: string }>(
+      await w.db.execute(sql`select c.relname as name from pg_class c join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'public' and c.relkind = 'r' order by 1`),
+    );
+    const found: string[] = [];
+    for (const { name } of tables) {
+      const [hit] = rowsOf<{ n: number }>(
+        await w.db.execute(
+          sql`select count(*)::int as n from ${sql.identifier(name)} t where row_to_json(t)::text ilike ${`%${word}%`}`,
+        ),
+      );
+      if ((hit?.n ?? 0) > 0) found.push(name);
+    }
+    return found;
+  };
+  return { ...w, vault, connectionId: started.server.id, stored, modelInputs, turnsOf, tablesHolding };
 }
 
 export type VaultWorld = Awaited<ReturnType<typeof vaultWorld>>;

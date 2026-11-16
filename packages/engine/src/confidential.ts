@@ -1,10 +1,11 @@
-import { and, type Executor, eq, rowsOf, type SQL, schema, sql } from "@agenteschat/db";
+import { and, type Executor, eq, inArray, rowsOf, type SQL, schema, sql } from "@agenteschat/db";
+import { TtlCache } from "./cache";
 import { enqueue } from "./outbox";
 
-const { agentRuns, confidentialThreads, messages } = schema;
+const { agentRuns, confidentialThreads, contextItems, messages, notifications, searchDocuments } = schema;
 
 /**
- * Confidential results (ADR 0187). A server the operator vouches for (`MCP_CALLER_IDENTITY`) marks a tool result as
+ * Confidential results (ADR 0189). A server the operator vouches for (`MCP_CALLER_IDENTITY`) marks a tool result as
  * confidential; the thread of the run that read it becomes a confidential thread (`confidential_threads`), from its
  * root. In such a thread:
  *
@@ -28,6 +29,13 @@ export const CONFIDENTIAL_NOT_SHOWN = "(confidential, not shown)";
 export const CONFIDENTIAL_OUTBOUND = "confidential.outbound";
 
 /**
+ * A run's error when what thinks for it changed after it read a confidential thread: its transcript holds the words,
+ * and another brain or provider would be handed them.
+ */
+export const CONFIDENTIAL_AI_CHANGED =
+  "This conversation holds confidential text, and the AI this agent thinks with changed since it read it, so it stopped here. Ask again in a new message.";
+
+/**
  * How long a confidential thread's words are kept.
  * ponytail: a constant; a setting when an operator needs another number.
  */
@@ -36,6 +44,36 @@ export const CONFIDENTIAL_KEEP_DAYS = 60;
 /** SQL: the thread rooted at `root` is confidential. */
 export const confidentialThreadSql = (orgId: SQL, root: SQL): SQL =>
   sql`exists (select 1 from ${confidentialThreads} ct where ct.org_id = ${orgId} and ct.root_message_id = ${root})`;
+
+export async function threadIsConfidential(db: Executor, orgId: string, rootId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: confidentialThreads.rootMessageId })
+    .from(confidentialThreads)
+    .where(and(eq(confidentialThreads.orgId, orgId), eq(confidentialThreads.rootMessageId, rootId)));
+  return Boolean(row);
+}
+
+/** Which of these threads (by root message) are confidential. */
+export async function confidentialRoots(db: Executor, rootIds: string[]): Promise<Set<string>> {
+  if (rootIds.length === 0) return new Set();
+  const rows = await db
+    .select({ id: confidentialThreads.rootMessageId })
+    .from(confidentialThreads)
+    .where(inArray(confidentialThreads.rootMessageId, rootIds));
+  return new Set(rows.map((r) => r.id));
+}
+
+/**
+ * The runs this process knows to answer in a confidential thread: told by the executor when it claims one and by the
+ * Tool Gateway on every call. What reads a run's words from memory, not from a message (the small judge's asks, a
+ * turn's learning), asks here, at no query: such a reader runs in the process that runs the run. Once true it stays
+ * true for the run.
+ */
+const sealedRuns = new TtlCache<true>(24 * 3600_000, 20_000);
+
+export const noteConfidentialRun = (runId: string) => sealedRuns.set(runId, true);
+
+export const isConfidentialRun = (runId: string | null | undefined) => Boolean(runId && sealedRuns.get(runId));
 
 export interface RunConfidentiality {
   /** What the run thinks with (`agent_runs.brain`); null before its first turn. */
@@ -61,14 +99,48 @@ export async function runConfidentiality(
       ),
     )
     .where(and(eq(agentRuns.orgId, orgId), eq(agentRuns.id, runId)));
+  if (row?.connectionIds) noteConfidentialRun(runId);
   return row ?? null;
+}
+
+/**
+ * Seals the messages of confidential threads that `which` picks (on `messages m`, `confidential_threads ct`): the body
+ * becomes the stub and its words move to `meta.sealedBody`. Also a message already marked whose body was written again
+ * since (a note the server rewords in place). Returns the ids it sealed.
+ */
+async function sealMessages(tx: Executor, which: SQL): Promise<string[]> {
+  const sealed = rowsOf<{ id: string; org_id: string }>(
+    await tx.execute(sql`update ${messages} m
+      set body = case when m.body = '' then '' else ${CONFIDENTIAL_STUB} end,
+        meta = m.meta || jsonb_build_object('confidential', true)
+          || case when m.body in ('', ${CONFIDENTIAL_STUB}) then '{}'::jsonb
+            else jsonb_build_object('sealedBody', m.body) end
+      from ${confidentialThreads} ct
+      where m.org_id = ct.org_id and m.channel_id = ct.channel_id
+        and (m.id = ct.root_message_id or m.thread_id = ct.root_message_id)
+        and (coalesce(m.meta->>'confidential', '') <> 'true' or m.body not in ('', ${CONFIDENTIAL_STUB}))
+        and ${which}
+      returning m.id, m.org_id`),
+  );
+  const ids = sealed.map((m) => m.id);
+  if (ids.length === 0) return ids;
+  // Out of the index with the seal, not after it: a search must not match words the thread no longer shows. The job
+  // does the same for an index kept elsewhere (its builder answers nothing for a sealed message).
+  await tx
+    .delete(searchDocuments)
+    .where(
+      and(eq(searchDocuments.kind, "message"), sql`${searchDocuments.sourceId} = any(${`{${ids.join(",")}}`}::uuid[])`),
+    );
+  for (const m of sealed) {
+    await enqueue(tx, { orgId: m.org_id, kind: "search.index", payload: { kind: "message", sourceId: m.id } });
+  }
+  return ids;
 }
 
 /**
  * Makes a thread confidential, in the caller's transaction (with the step that carries the mark): its row, with the
  * connection that marked it, and on the first mark every message already there is sealed, the root included (it may
- * hold what a person pasted before any mark), and leaves the search index (its builder answers nothing for a sealed
- * message, so the queued job deletes the document).
+ * hold what a person pasted before any mark), and leaves the search index.
  */
 export async function markThreadConfidential(
   tx: Executor,
@@ -86,31 +158,53 @@ export async function markThreadConfidential(
       returning (xmax = 0) as created`),
   );
   if (!row?.created) return;
-  const sealed = await tx
-    .update(messages)
-    .set({
-      body: sql`case when ${messages.body} = '' then '' else ${CONFIDENTIAL_STUB} end`,
-      meta: sql`${messages.meta} || jsonb_build_object('confidential', true)
-        || case when ${messages.body} = '' then '{}'::jsonb else jsonb_build_object('sealedBody', ${messages.body}) end`,
-    })
+  await sealMessages(tx, sql`ct.org_id = ${thread.orgId}::uuid and ct.root_message_id = ${thread.rootId}::uuid`);
+  // What was copied out of the thread before its mark goes with it: a notification's snippet of one of its messages,
+  // and a summary of the thread (archived, which takes it out of the index and of what agents are handed).
+  await tx
+    .update(notifications)
+    .set({ latest: sql`${notifications.latest} - 'text' - 'title' - 'quote' - 'suggestions' - 'meta'` })
     .where(
       and(
-        eq(messages.orgId, thread.orgId),
-        eq(messages.channelId, thread.channelId),
-        sql`(${messages.id} = ${thread.rootId}::uuid or ${messages.threadId} = ${thread.rootId}::uuid)`,
-        sql`coalesce(${messages.meta}->>'confidential', '') <> 'true'`,
+        eq(notifications.orgId, thread.orgId),
+        sql`(${notifications.source}->>'threadId' = ${thread.rootId} or ${notifications.source}->>'messageId' = ${thread.rootId})`,
+      ),
+    );
+  const summaries = await tx
+    .update(contextItems)
+    .set({ status: "archived" })
+    .where(
+      and(
+        eq(contextItems.orgId, thread.orgId),
+        eq(contextItems.kind, "thread_summary"),
+        eq(contextItems.scopeType, "thread"),
+        eq(contextItems.scopeId, thread.rootId),
+        eq(contextItems.status, "active"),
       ),
     )
-    .returning({ id: messages.id });
-  for (const m of sealed) {
-    await enqueue(tx, { orgId: thread.orgId, kind: "search.index", payload: { kind: "message", sourceId: m.id } });
+    .returning({ id: contextItems.id });
+  for (const item of summaries) {
+    await enqueue(tx, {
+      orgId: thread.orgId,
+      kind: "search.index",
+      payload: { kind: "context_item", sourceId: item.id },
+    });
   }
 }
+
+/**
+ * Seals what the statement that writes a message could not see: a message written while its thread's mark was being
+ * committed, and a note the server reworded in place since. Run with the daily prune; returns how many it sealed.
+ */
+export const sealStragglers = async (db: Executor): Promise<number> => (await sealMessages(db, sql`true`)).length;
 
 type Meta = Record<string, unknown> | null | undefined;
 
 /** A message of a confidential thread, or one a run of such a thread wrote (`meta.confidential`). */
 export const isConfidential = (meta: Meta): boolean => meta?.confidential === true;
+
+/** A stored message's own words, for the people who may read it: a sealed one's from its seal (`unsealed`). */
+export const wordsOf = (body: string, meta: Meta): string => unsealed({ body, meta: meta ?? {} }).body;
 
 /**
  * A sealed message with its words back and nothing of the seal's copy left in its meta: what the people who read the
@@ -120,5 +214,6 @@ export function unsealed<M extends { body: string; meta: Record<string, unknown>
   const words = m.meta.sealedBody;
   if (typeof words !== "string") return m;
   const { sealedBody: _, ...meta } = m.meta;
-  return { ...m, body: words, meta };
+  // A body written again since the seal (a note the server rewords in place) is the newer text.
+  return { ...m, body: m.body === CONFIDENTIAL_STUB ? words : m.body, meta };
 }

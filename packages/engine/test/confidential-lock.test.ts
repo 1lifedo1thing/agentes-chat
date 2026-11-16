@@ -28,7 +28,7 @@ import { confidentialLockAllows } from "../src/tools/confidential-lock";
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, type VaultWorld, vaultWorld } from "./confidential-fixtures";
 
-// ADR 0187: after a run read a confidential result, it and every later run of its thread keep a short list of tools
+// ADR 0189: after a run read a confidential result, it and every later run of its thread keep a short list of tools
 // by name and are refused every other, with a code the turn's judge reads as final.
 
 afterEach(closeWorlds);
@@ -244,6 +244,14 @@ describe("the list", () => {
     expect(confidentialLockAllows(handOff, at(routine("c1")))).toBe(true);
     expect(confidentialLockAllows(handOff, at(routine("c2")))).toBe(false);
     expect(confidentialLockAllows(handOff, at(null))).toBe(false);
+  });
+
+  test("a question: not from a routine's own run, whose cards go where the routine reports", () => {
+    for (const name of ["ask_user", "ask_choices"]) {
+      expect([name, confidentialLockAllows(tool(name), at(null))]).toEqual([name, true]);
+      expect([name, confidentialLockAllows(tool(name), at(routine("c1")))]).toEqual([name, true]);
+      expect([name, confidentialLockAllows(tool(name), at(routine("c2")))]).toEqual([name, false]);
+    }
   });
 });
 

@@ -5,15 +5,18 @@ import {
   CONFIDENTIAL_STUB,
   createConnectorToolSource,
   createToolGateway,
+  markThreadConfidential,
   messageLink,
   messageView,
+  moveToBackground,
+  sealStragglers,
   type ToolContext,
 } from "../src";
 import { inertLinks } from "../src/format";
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, VAULT_HOST, type VaultWorld, vaultWorld } from "./confidential-fixtures";
 
-// ADR 0187: a server the operator vouches for marks a tool result as confidential. The run that read it goes on
+// ADR 0189: a server the operator vouches for marks a tool result as confidential. The run that read it goes on
 // reading and answers under the message that asked it, and outside that thread no reader of a message is given the
 // thread's words. Fixtures only (no real model): what is checked is what the engine stores and hands on.
 
@@ -297,6 +300,88 @@ describe("a run that does not think through the Model Gateway", () => {
     const whole = await read(true);
     expect(whole).toContain(`The record holds ${CANARY}.`);
     expect(whole).toContain("and then?");
+  });
+});
+
+describe("the seal", () => {
+  test("a thread's messages leave the search index in the transaction that marks it, before any job runs", async () => {
+    const w = await vaultWorld({ agents: ["kai"], script: { kai: [{ text: "Noted." }] } });
+    const asked = await w.say(`@kai note this: ${CANARY}`);
+    await w.settle();
+    const indexed = async () => JSON.stringify(await w.db.select().from(schema.searchDocuments));
+    expect(await indexed()).toContain(CANARY);
+    await w.db.transaction((tx) =>
+      markThreadConfidential(tx, { orgId: w.org.id, channelId: w.channelId, rootId: asked.id }),
+    );
+    expect(await indexed()).not.toContain(CANARY);
+  });
+
+  test("a note the server rewords in place shows its new text, and a message the mark missed is sealed by the sweep", async () => {
+    const w = await vaultWorld({
+      agents: ["kai"],
+      script: { kai: [{ calls: [READ] }, { text: `The record holds ${CANARY}.` }] },
+    });
+    const asked = await w.say("@kai read record r1");
+    await w.settle();
+    const [reply] = await w.posts("kai");
+    const row = async (id: string) => {
+      const found = (await w.stored()).find((m) => m.id === id);
+      if (!found) throw new Error(`no message ${id}`);
+      return found;
+    };
+    // The server writes a note's body again (a wait that ended).
+    await w.db
+      .update(schema.messages)
+      .set({ body: "The provider answers again." })
+      .where(eq(schema.messages.id, reply?.id ?? ""));
+    expect(messageView(await row(reply?.id ?? "")).body).toBe("The provider answers again.");
+    // Written while the mark was being committed: stored as typed.
+    const [late] = await w.db
+      .insert(schema.messages)
+      .values({
+        orgId: w.org.id,
+        channelId: w.channelId,
+        threadId: asked.id,
+        authorType: "person",
+        authorUserId: w.owner.id,
+        body: "typed during the mark",
+      })
+      .returning();
+    expect(await sealStragglers(w.db)).toBe(2);
+    for (const [id, words] of [
+      [reply?.id ?? "", "The provider answers again."],
+      [late?.id ?? "", "typed during the mark"],
+    ] as const) {
+      const sealed = await row(id);
+      expect([sealed.body, sealed.meta.confidential, messageView(sealed).body]).toEqual([
+        CONFIDENTIAL_STUB,
+        true,
+        words,
+      ]);
+    }
+    expect(await sealStragglers(w.db)).toBe(0);
+  });
+
+  test("a run of a confidential thread is not moved to the background: it answers in its thread", async () => {
+    const w = await vaultWorld({
+      agents: ["kai"],
+      script: {
+        kai: [
+          { calls: [READ] },
+          {
+            calls: [
+              { name: "ask_user", input: { question: "Go on?", why: "Only the person can say whether to go on." } },
+            ],
+          },
+        ],
+      },
+    });
+    await w.say("@kai read record r1 and ask me");
+    await w.settle();
+    const [run] = await w.runs("kai");
+    expect(run?.status).toBe("waiting_input");
+    expect(await moveToBackground({ db: w.db }, run?.id ?? "", { how: "auto", title: "Reading" })).toBeNull();
+    expect((await w.runs("kai"))[0]?.workId).toBeNull();
   });
 });
 

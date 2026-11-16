@@ -3,6 +3,7 @@ import { and, asc, type Database, desc, type Executor, eq, gte, inArray, isNull,
 import { serverText } from "@agenteschat/i18n";
 import type { AppLocale } from "@agenteschat/i18n/locale";
 import { runAuthority } from "./authority";
+import { threadIsConfidential } from "./confidential";
 import { getChannelCached } from "./context";
 import type { ContextDeps } from "./context/summaries";
 import { deliverNotice, publishDelivery } from "./delivery";
@@ -393,6 +394,9 @@ export async function moveToBackground(
   const moved = await db.transaction(async (tx) => {
     const [run] = await tx.select().from(agentRuns).where(eq(agentRuns.id, runId)).for("update");
     if (!run || run.workId || isTerminal(run.status)) return null;
+    // A run of a confidential thread (ADR 0189) answers there and nowhere else: an anchor of its own would be a
+    // second place for what it read.
+    if (await threadIsConfidential(tx, run.orgId, run.threadRootId)) return null;
     await lockWorkCaps(tx, run.orgId);
     const home = replyThreadOf(run);
     const ownThread = home === null;

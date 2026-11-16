@@ -319,7 +319,7 @@ export const threads = pgTable(
 );
 
 /**
- * Threads that hold a confidential tool result (ADR 0187): a run there reads on and sends nothing elsewhere, the
+ * Threads that hold a confidential tool result (ADR 0189): a run there reads on and sends nothing elsewhere, the
  * thread's text reaches no model outside it, and what was kept of it is blanked after a while. A row from the first
  * such result on; `connection_ids` are the connections whose results set the mark. Keyed by the root message (no
  * foreign key to the partitioned `messages`).

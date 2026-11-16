@@ -72,7 +72,7 @@ function openRequestQueries(db: Executor, orgId: string, agentId: string, channe
       .select({
         id: agentQuestions.id,
         kind: sql<OpenRequest["kind"]>`'question'`.as("kind"),
-        // Asked in a confidential thread (ADR 0187): its words stay there, and this block is read in every thread.
+        // Asked in a confidential thread (ADR 0189): its words stay there, and this block is read in every thread.
         what: sql<string>`case when ${confidentialThreadSql(sql`${agentQuestions.orgId}`, sql`${agentQuestions.threadId}`)}
           then ${CONFIDENTIAL_STUB} else ${agentQuestions.text} end`.as("what"),
         runId: sql<string | null>`${agentQuestions.runId}`.as("run_id"),

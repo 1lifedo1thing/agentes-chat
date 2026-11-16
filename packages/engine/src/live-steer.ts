@@ -137,7 +137,7 @@ export async function renderSteered(
     .leftJoin(users, eq(users.id, messages.authorUserId))
     .leftJoin(agents, eq(agents.id, messages.authorAgentId))
     .where(and(eq(messages.orgId, orgId), inArray(messages.id, ids), isNull(messages.deletedAt)));
-  // A reply in a confidential thread (ADR 0187): its words only for the run of that thread the lock holds.
+  // A reply in a confidential thread (ADR 0189): its words only for the run of that thread the lock holds.
   const own = options.unsealThread;
   const rows = stored.map((m) => (own && (m.threadId === own || m.id === own) ? unsealed(m) : m));
   // Messages written in one transaction share its time (a report's notices): their ids keep the order.

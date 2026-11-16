@@ -89,7 +89,7 @@ export function usageWaitOf(run: Pick<AgentRun, "status" | "waitingMachineId" | 
  * that thread. The run keeps `threadRootId` (its trigger, when top-level) as
  * the conversation it belongs to. The one rule for the engine, its tools and
  * the bridge: cards and events of a run always land where its replies do.
- * `confidential`: its thread holds a confidential result (ADR 0187), so it answers under the message that asked it
+ * `confidential`: its thread holds a confidential result (ADR 0189), so it answers under the message that asked it
  * even when that message is in the main timeline.
  */
 export function replyThreadOf(
