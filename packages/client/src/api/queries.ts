@@ -320,6 +320,50 @@ function onQueryEvent(cache: QueryCache, hash: string, types: readonly QueryEven
   };
 }
 export const useAuthConfig = () => useQuery(authConfigQuery(useApi()));
+
+/**
+ * My outside chat surface and links (ADR 0187), asked only where the server bridges one. Live through
+ * `surface_link.changed` (`applyUnreadEvent`). `surfaceRowOf` (lib/surface-links) turns it into what the row shows.
+ */
+export function useSurfaceLinks() {
+  const api = useApi();
+  const bridged = useAuthConfig().data?.surface === true;
+  return useQuery({ queryKey: keys.surfaceLinks, queryFn: () => api.surfaces.list(), enabled: bridged });
+}
+
+/** A code to type on the surface, answering in `orgId` once confirmed. Changes no link, so nothing reads again. */
+export function useMintSurfaceCode() {
+  const api = useApi();
+  return useMutation({ mutationFn: (orgId: string) => api.surfaces.mintCode(orgId), meta: { silent: true } });
+}
+
+/** A refusal often means the link changed elsewhere, so the list reads again whatever the answer. */
+function useSurfaceLinkMutation<T, R>(run: (input: T) => Promise<R>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: run,
+    meta: { silent: true },
+    onSettled: () => void qc.invalidateQueries({ queryKey: keys.surfaceLinks }),
+  });
+}
+
+/** "This is me": the pending link becomes active. */
+export function useConfirmSurfaceLink() {
+  const api = useApi();
+  return useSurfaceLinkMutation((linkId: string) => api.surfaces.confirm(linkId));
+}
+
+/** Cancels a pending link or unlinks an active one. */
+export function useRemoveSurfaceLink() {
+  const api = useApi();
+  return useSurfaceLinkMutation((linkId: string) => api.surfaces.remove(linkId));
+}
+
+/** The "linked" email's undo, by its token; works signed out. */
+export function useUndoSurfaceLink() {
+  const api = useApi();
+  return useSurfaceLinkMutation((token: string) => api.surfaces.undo(token));
+}
 export const useHealth = () => {
   const api = useApi();
   return useQuery({ queryKey: keys.health, queryFn: () => api.system.health(), staleTime: 5 * 60_000 });

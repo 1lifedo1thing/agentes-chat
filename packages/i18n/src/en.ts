@@ -2348,6 +2348,24 @@ export const en = {
       "In the agentes.chat app on that computer, turn on Reach it from your phone and teammates in Preferences › Servers. Then come back here.",
     localOnlyHere: "Turn on Reach it from your phone and teammates. Then come back here.",
   },
+  /** An outside chat app linked to a person's account (ADR 0187). {{surface}} is that app's name, as the server sets it. */
+  surface: {
+    link: {
+      /**
+       * The words are a recorded consent: a change of meaning needs a new key, never an edit. {{assistant}} is the
+       * workspace's built-in assistant by name. "stop" stays in English in every language: the chat app's service
+       * recognises it (and "parar" in Portuguese).
+       */
+      consent:
+        "{{assistant}} by agentes.chat may message you on {{surface}} about your workspaces, and call you only when something is urgent and you allow it. Write stop to turn this off.",
+    },
+    /** The tag on a person's message written in the chat app. */
+    via: "via {{surface}}",
+    viaTip: "Sent by {{person}} on {{surface}}",
+    /** The same, for a message the person forwarded there: someone else's words. */
+    forwarded: "forwarded via {{surface}}",
+    forwardedTip: "{{person}} forwarded this from {{surface}}. The words are someone else's.",
+  },
   team: {
     title: "Team",
     people_one: "{{count}} person",
@@ -14828,6 +14846,18 @@ export const en = {
     },
   },
   errors: {
+    /** Linking an outside chat app (ADR 0187). The server's refusals carry no app name, so none is said. */
+    surface: {
+      off: "This server doesn't link chat apps anymore. Reload to see your settings as they are now.",
+      notAllowed: "Linking a chat app isn't open to your account yet. Keep using the app here until it opens.",
+      noAssistant: "The assistant in this workspace isn't set to talk with you. Pick another workspace to link.",
+      noWorkspace: "You're no longer in this workspace. Pick another workspace to link.",
+      linkGone:
+        "This link isn't waiting anymore: it ran out after 10 minutes or was canceled. Make a new code to start again.",
+      taken: "That sender is linked to another agentes.chat account. Unlink it there, then send a new code.",
+      undoGone: "This undo link was already used or ran out. Unlink in your notification settings instead.",
+      codeGone: "This code is wrong, used or ran out after 10 minutes. Make a new code and send it again.",
+    },
     /** A request the server, or a proxy in front of it, refused for its size. */
     tooLarge: "This is bigger than the server takes.",
     /** The same, from a screen that knows the most it may send. */

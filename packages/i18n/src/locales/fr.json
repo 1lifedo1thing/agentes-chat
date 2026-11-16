@@ -2258,6 +2258,15 @@
     "localOnlyHow": "Dans l'app agentes.chat de cet ordinateur, activez Y accéder depuis votre téléphone et vos collègues dans Préférences › Serveurs. Puis revenez ici.",
     "localOnlyHere": "Activez Y accéder depuis votre téléphone et vos collègues. Puis revenez ici."
   },
+  "surface": {
+    "link": {
+      "consent": "{{assistant}} d'agentes.chat peut vous écrire sur {{surface}} à propos de vos espaces de travail, et vous appeler seulement en cas d'urgence si vous l'autorisez. Écrivez stop pour désactiver."
+    },
+    "via": "via {{surface}}",
+    "viaTip": "Envoyé par {{person}} sur {{surface}}",
+    "forwarded": "transféré via {{surface}}",
+    "forwardedTip": "{{person}} a transféré ceci depuis {{surface}}. Ce sont les mots de quelqu'un d'autre."
+  },
   "team": {
     "title": "Équipe",
     "people_one": "{{count}} personne",
@@ -15150,6 +15159,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "Ce serveur ne relie plus d'apps de chat. Rechargez pour voir vos paramètres tels qu'ils sont maintenant.",
+      "notAllowed": "Relier une app de chat n'est pas encore ouvert à votre compte. Continuez à utiliser l'app ici en attendant.",
+      "noAssistant": "L'assistant de cet espace de travail n'est pas autorisé à vous parler. Choisissez un autre espace de travail à relier.",
+      "noWorkspace": "Vous n'êtes plus dans cet espace de travail. Choisissez un autre espace de travail à relier.",
+      "linkGone": "Cette liaison n'attend plus : elle a expiré après 10 minutes ou a été annulée. Créez un nouveau code pour recommencer.",
+      "taken": "Cet expéditeur est relié à un autre compte agentes.chat. Supprimez la liaison là-bas, puis envoyez un nouveau code.",
+      "undoGone": "Ce lien d'annulation a déjà servi ou a expiré. Supprimez plutôt la liaison dans vos paramètres de notifications.",
+      "codeGone": "Ce code est erroné, déjà utilisé ou expiré après 10 minutes. Créez un nouveau code et renvoyez-le."
+    },
     "tooLarge": "C'est plus que ce que le serveur accepte.",
     "tooLargeMax": "C'est plus que ce que le serveur accepte : jusqu'à {{max}} Mo.",
     "passwordLink": {

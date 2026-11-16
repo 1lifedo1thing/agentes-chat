@@ -2194,6 +2194,15 @@
     "localOnlyHow": "Zet in de agentes.chat-app op die computer Bereik het vanaf je telefoon en je teamgenoten aan bij Voorkeuren › Servers. Kom daarna hier terug.",
     "localOnlyHere": "Zet Bereik het vanaf je telefoon en je teamgenoten aan. Kom daarna hier terug."
   },
+  "surface": {
+    "link": {
+      "consent": "{{assistant}} van agentes.chat mag je via {{surface}} berichten sturen over je werkruimtes, en je alleen bellen als iets dringend is en jij dat toestaat. Schrijf stop om dit uit te zetten."
+    },
+    "via": "via {{surface}}",
+    "viaTip": "Verstuurd door {{person}} via {{surface}}",
+    "forwarded": "doorgestuurd via {{surface}}",
+    "forwardedTip": "{{person}} heeft dit doorgestuurd vanuit {{surface}}. Het zijn de woorden van iemand anders."
+  },
   "team": {
     "title": "Team",
     "people_one": "{{count}} persoon",
@@ -14712,6 +14721,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "Deze server koppelt geen chat-apps meer. Laad opnieuw om je instellingen te zien zoals ze nu zijn.",
+      "notAllowed": "Een chat-app koppelen is nog niet open voor je account. Gebruik de app hier tot het opengaat.",
+      "noAssistant": "De assistent in deze werkruimte mag niet met je praten. Kies een andere werkruimte om te koppelen.",
+      "noWorkspace": "Je zit niet meer in deze werkruimte. Kies een andere werkruimte om te koppelen.",
+      "linkGone": "Deze koppeling wacht niet meer: hij is na 10 minuten verlopen of geannuleerd. Maak een nieuwe code om opnieuw te beginnen.",
+      "taken": "Die afzender is gekoppeld aan een ander agentes.chat-account. Ontkoppel hem daar en stuur dan een nieuwe code.",
+      "undoGone": "Deze ongedaan-maken-link is al gebruikt of verlopen. Ontkoppel in plaats daarvan in je meldingsinstellingen.",
+      "codeGone": "Deze code is fout, al gebruikt of na 10 minuten verlopen. Maak een nieuwe code en stuur hem opnieuw."
+    },
     "tooLarge": "Dit is groter dan de server aanneemt.",
     "tooLargeMax": "Dit is groter dan de server aanneemt: tot {{max}} MB.",
     "passwordLink": {

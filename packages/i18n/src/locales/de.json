@@ -2194,6 +2194,15 @@
     "localOnlyHow": "Schalte in der agentes.chat-App auf diesem Computer unter Einstellungen › Server die Option Von deinem Handy und deinem Team erreichbar ein. Komm dann hierher zurück.",
     "localOnlyHere": "Schalte Von deinem Handy und deinem Team erreichbar ein. Komm dann hierher zurück."
   },
+  "surface": {
+    "link": {
+      "consent": "{{assistant}} von agentes.chat darf dir auf {{surface}} zu deinen Workspaces schreiben und dich nur anrufen, wenn etwas dringend ist und du es erlaubst. Schreib stop, um das auszuschalten."
+    },
+    "via": "via {{surface}}",
+    "viaTip": "Gesendet von {{person}} über {{surface}}",
+    "forwarded": "weitergeleitet über {{surface}}",
+    "forwardedTip": "{{person}} hat das aus {{surface}} weitergeleitet. Die Worte stammen von jemand anderem."
+  },
   "team": {
     "title": "Team",
     "people_one": "{{count}} Person",
@@ -14648,6 +14657,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "Dieser Server verknüpft keine Chat-Apps mehr. Lade neu, um deine Einstellungen im aktuellen Stand zu sehen.",
+      "notAllowed": "Das Verknüpfen einer Chat-App ist für dein Konto noch nicht freigegeben. Nutze bis dahin die App hier.",
+      "noAssistant": "Der Assistent in diesem Workspace darf nicht mit dir sprechen. Wähl einen anderen Workspace zum Verknüpfen.",
+      "noWorkspace": "Du bist nicht mehr in diesem Workspace. Wähl einen anderen Workspace zum Verknüpfen.",
+      "linkGone": "Diese Verknüpfung wartet nicht mehr: Sie ist nach 10 Minuten abgelaufen oder wurde abgebrochen. Erstelle einen neuen Code, um neu anzufangen.",
+      "taken": "Dieser Absender ist mit einem anderen agentes.chat-Konto verknüpft. Heb die Verknüpfung dort auf und sende dann einen neuen Code.",
+      "undoGone": "Dieser Rückgängig-Link wurde schon benutzt oder ist abgelaufen. Heb die Verknüpfung stattdessen in deinen Benachrichtigungseinstellungen auf.",
+      "codeGone": "Dieser Code ist falsch, schon benutzt oder nach 10 Minuten abgelaufen. Erstelle einen neuen Code und sende ihn noch einmal."
+    },
     "tooLarge": "Das ist größer, als der Server annimmt.",
     "tooLargeMax": "Das ist größer, als der Server annimmt: bis zu {{max}} MB.",
     "passwordLink": {

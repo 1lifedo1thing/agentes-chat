@@ -2247,6 +2247,17 @@ export const ptBR = {
       "No app do agentes.chat desse computador, ligue Acessar pelo celular e pela equipe em Preferências › Servidores. Depois volte aqui.",
     localOnlyHere: "Ligue Acessar pelo celular e pela equipe. Depois volte aqui.",
   },
+  surface: {
+    link: {
+      /** A recorded consent: keep the meaning, and "parar" as the word the service recognises. */
+      consent:
+        "{{assistant}} do agentes.chat pode mandar mensagens no {{surface}} sobre seus workspaces, e ligar só quando for urgente e você permitir. Escreva parar para desativar.",
+    },
+    via: "via {{surface}}",
+    viaTip: "Enviada por {{person}} pelo {{surface}}",
+    forwarded: "encaminhada via {{surface}}",
+    forwardedTip: "{{person}} encaminhou isto do {{surface}}. As palavras são de outra pessoa.",
+  },
   team: {
     title: "Equipe",
     people_one: "{{count}} pessoa",
@@ -14808,6 +14819,20 @@ export const ptBR = {
     },
   },
   errors: {
+    surface: {
+      off: "Este servidor não vincula mais apps de chat. Recarregue para ver suas configurações como estão agora.",
+      notAllowed: "Vincular um app de chat ainda não está aberto para sua conta. Continue usando o app aqui até abrir.",
+      noAssistant:
+        "O assistente deste workspace não está configurado para falar com você. Escolha outro workspace para vincular.",
+      noWorkspace: "Você não está mais neste workspace. Escolha outro workspace para vincular.",
+      linkGone:
+        "Este vínculo não está mais esperando: expirou depois de 10 minutos ou foi cancelado. Gere um novo código para começar de novo.",
+      taken:
+        "Esse remetente está vinculado a outra conta do agentes.chat. Desvincule lá e depois envie um novo código.",
+      undoGone: "Este link de desfazer já foi usado ou expirou. Desvincule nas suas configurações de notificações.",
+      codeGone:
+        "Este código está errado, já foi usado ou expirou depois de 10 minutos. Gere um novo código e envie de novo.",
+    },
     /** A request the server, or a proxy in front of it, refused for its size. */
     tooLarge: "Isto é maior do que o servidor aceita.",
     /** The same, from a screen that knows the most it may send. */

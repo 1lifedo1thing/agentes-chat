@@ -2321,6 +2321,15 @@
     "localOnlyHow": "W aplikacji agentes.chat na tamtym komputerze włącz Dostęp z telefonu i dla zespołu w Preferencje › Serwery. Potem wróć tutaj.",
     "localOnlyHere": "Włącz Dostęp z telefonu i dla zespołu. Potem wróć tutaj."
   },
+  "surface": {
+    "link": {
+      "consent": "{{assistant}} od agentes.chat może pisać do ciebie na {{surface}} w sprawie twoich przestrzeni roboczych i dzwonić tylko wtedy, gdy coś jest pilne i na to pozwolisz. Napisz stop, aby to wyłączyć."
+    },
+    "via": "przez {{surface}}",
+    "viaTip": "Wysłane przez {{person}} na {{surface}}",
+    "forwarded": "przekazane przez {{surface}}",
+    "forwardedTip": "{{person}} przekazał(a) to z {{surface}}. To słowa kogoś innego."
+  },
   "team": {
     "title": "Zespół",
     "people_one": "{{count}} osoba",
@@ -15663,6 +15672,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "Ten serwer nie łączy już aplikacji czatu. Odśwież stronę, aby zobaczyć aktualne ustawienia.",
+      "notAllowed": "Łączenie aplikacji czatu nie jest jeszcze dostępne dla twojego konta. Do tego czasu korzystaj z aplikacji tutaj.",
+      "noAssistant": "Asystent w tej przestrzeni roboczej nie ma ustawionej rozmowy z tobą. Wybierz inną przestrzeń roboczą do połączenia.",
+      "noWorkspace": "Nie należysz już do tej przestrzeni roboczej. Wybierz inną przestrzeń roboczą do połączenia.",
+      "linkGone": "To połączenie już nie czeka: wygasło po 10 minutach albo zostało anulowane. Utwórz nowy kod, aby zacząć od nowa.",
+      "taken": "Ten nadawca jest połączony z innym kontem agentes.chat. Odłącz go tam, a potem wyślij nowy kod.",
+      "undoGone": "Ten link do cofnięcia został już użyty albo wygasł. Odłącz zamiast tego w ustawieniach powiadomień.",
+      "codeGone": "Ten kod jest błędny, już użyty albo wygasł po 10 minutach. Utwórz nowy kod i wyślij go ponownie."
+    },
     "tooLarge": "To więcej, niż przyjmuje serwer.",
     "tooLargeMax": "To więcej, niż przyjmuje serwer: do {{max}} MB.",
     "passwordLink": {

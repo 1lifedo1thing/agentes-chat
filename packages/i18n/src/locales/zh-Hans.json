@@ -2132,6 +2132,15 @@
     "localOnlyHow": "在那台电脑的 agentes.chat 应用中，打开偏好设置 › 服务器里的“从你的手机和队友那里访问”，然后回到这里。",
     "localOnlyHere": "打开“从你的手机和队友那里访问”，然后回到这里。"
   },
+  "surface": {
+    "link": {
+      "consent": "agentes.chat 的 {{assistant}} 可能会在 {{surface}} 上给你发关于你的工作区的消息，只有在事情紧急且你允许时才会给你打电话。发送 stop 即可关闭。"
+    },
+    "via": "通过 {{surface}}",
+    "viaTip": "由 {{person}} 通过 {{surface}} 发送",
+    "forwarded": "通过 {{surface}} 转发",
+    "forwardedTip": "{{person}} 从 {{surface}} 转发了这条消息。这是别人的话。"
+  },
   "team": {
     "title": "团队",
     "people_other": "{{count}} 人",
@@ -14173,6 +14182,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "此服务器已不再关联聊天应用。刷新页面即可查看当前设置。",
+      "notAllowed": "你的账号暂时还不能关联聊天应用。在开放之前，请继续在这里使用应用。",
+      "noAssistant": "此工作区的助手未设置为与你交谈。请选择另一个工作区进行关联。",
+      "noWorkspace": "你已不在此工作区。请选择另一个工作区进行关联。",
+      "linkGone": "此关联已不再等待：它在 10 分钟后过期或已被取消。请生成新代码重新开始。",
+      "taken": "该发送者已关联到另一个 agentes.chat 账号。请先在那里取消关联，再发送新代码。",
+      "undoGone": "此撤销链接已被使用或已过期。请改在通知设置中取消关联。",
+      "codeGone": "此代码错误、已被使用或已在 10 分钟后过期。请生成新代码并重新发送。"
+    },
     "tooLarge": "超出了服务器接受的大小。",
     "tooLargeMax": "超出了服务器接受的大小：最大 {{max}} MB。",
     "passwordLink": {

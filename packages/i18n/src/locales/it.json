@@ -2258,6 +2258,15 @@
     "localOnlyHow": "Nell'app agentes.chat di quel computer, attiva Raggiungilo dal telefono e dai colleghi in Preferenze › Server. Poi torna qui.",
     "localOnlyHere": "Attiva Raggiungilo dal telefono e dai colleghi. Poi torna qui."
   },
+  "surface": {
+    "link": {
+      "consent": "{{assistant}} di agentes.chat può scriverti su {{surface}} riguardo ai tuoi spazi di lavoro, e chiamarti solo quando qualcosa è urgente e tu lo permetti. Scrivi stop per disattivarlo."
+    },
+    "via": "tramite {{surface}}",
+    "viaTip": "Inviato da {{person}} su {{surface}}",
+    "forwarded": "inoltrato tramite {{surface}}",
+    "forwardedTip": "{{person}} ha inoltrato questo da {{surface}}. Le parole sono di qualcun altro."
+  },
   "team": {
     "title": "Team",
     "people_one": "{{count}} persona",
@@ -15162,6 +15171,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "Questo server non collega più app di chat. Ricarica per vedere le impostazioni come sono ora.",
+      "notAllowed": "Collegare un'app di chat non è ancora disponibile per il tuo account. Continua a usare l'app qui finché non si apre.",
+      "noAssistant": "L'assistente di questo spazio di lavoro non è impostato per parlare con te. Scegli un altro spazio di lavoro da collegare.",
+      "noWorkspace": "Non sei più in questo spazio di lavoro. Scegli un altro spazio di lavoro da collegare.",
+      "linkGone": "Questo collegamento non è più in attesa: è scaduto dopo 10 minuti o è stato annullato. Crea un nuovo codice per ricominciare.",
+      "taken": "Questo mittente è collegato a un altro account agentes.chat. Scollegalo lì, poi invia un nuovo codice.",
+      "undoGone": "Questo link per annullare è già stato usato o è scaduto. Scollega invece dalle impostazioni delle notifiche.",
+      "codeGone": "Questo codice è sbagliato, già usato o scaduto dopo 10 minuti. Crea un nuovo codice e invialo di nuovo."
+    },
     "tooLarge": "È più grande di quanto il server accetti.",
     "tooLargeMax": "È più grande di quanto il server accetti: fino a {{max}} MB.",
     "passwordLink": {

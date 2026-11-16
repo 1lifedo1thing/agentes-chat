@@ -2257,6 +2257,15 @@
     "localOnlyHow": "En la app de agentes.chat de esa computadora, activa Accede desde tu teléfono y tu equipo en Preferencias › Servidores. Luego vuelve aquí.",
     "localOnlyHere": "Activa Accede desde tu teléfono y tu equipo. Luego vuelve aquí."
   },
+  "surface": {
+    "link": {
+      "consent": "{{assistant}} de agentes.chat puede escribirte en {{surface}} sobre tus espacios de trabajo, y llamarte solo cuando algo sea urgente y lo permitas. Escribe stop para desactivarlo."
+    },
+    "via": "via {{surface}}",
+    "viaTip": "Enviado por {{person}} en {{surface}}",
+    "forwarded": "reenviado vía {{surface}}",
+    "forwardedTip": "{{person}} reenvió esto desde {{surface}}. Las palabras son de otra persona."
+  },
   "team": {
     "title": "Equipo",
     "people_one": "{{count}} persona",
@@ -15079,6 +15088,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "Este servidor ya no vincula apps de chat. Recarga para ver tu configuración como está ahora.",
+      "notAllowed": "Vincular una app de chat todavía no está abierto para tu cuenta. Sigue usando la app aquí hasta que se abra.",
+      "noAssistant": "El asistente de este espacio de trabajo no está configurado para hablar contigo. Elige otro espacio de trabajo para vincular.",
+      "noWorkspace": "Ya no estás en este espacio de trabajo. Elige otro espacio de trabajo para vincular.",
+      "linkGone": "Este vínculo ya no está esperando: venció después de 10 minutos o se canceló. Crea un código nuevo para empezar de nuevo.",
+      "taken": "Ese remitente está vinculado a otra cuenta de agentes.chat. Desvincúlalo allí y luego envía un código nuevo.",
+      "undoGone": "Este enlace para deshacer ya se usó o venció. Desvincula desde tu configuración de notificaciones.",
+      "codeGone": "Este código es incorrecto, ya se usó o venció después de 10 minutos. Crea un código nuevo y envíalo otra vez."
+    },
     "tooLarge": "Esto es más grande de lo que acepta el servidor.",
     "tooLargeMax": "Esto es más grande de lo que acepta el servidor: hasta {{max}} MB.",
     "passwordLink": {
