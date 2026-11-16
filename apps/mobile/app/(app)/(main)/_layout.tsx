@@ -67,8 +67,11 @@ export default function MainStack() {
         contentStyle: { backgroundColor: "transparent" },
       },
       "file/[id]": modal,
-      "computer/[agentId]": modal,
-      "browser-profile/[profileId]": modal,
+      // An agent's computer and a shared browser profile's live view: pushed with the opaque bar, their picture laid
+      // out below it. Never a modal: the app's sheets, pickers and toasts they open present over them, where under a
+      // modal they opened hidden and the screen stopped answering.
+      "computer/[agentId]": solid,
+      "browser-profile/[profileId]": solid,
     };
     return ({ route }: { route: { name: string; params?: object } }): NativeStackNavigationOptions => {
       const options = own[route.name] ?? page;

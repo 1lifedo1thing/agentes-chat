@@ -692,9 +692,14 @@ describe("a document's head", () => {
     expect(sheet).toContain("stickyHeaderIndices={[0]}");
   });
 
-  test("a browser profile's sign-in screen keeps its name and line whole beside ×", () => {
+  test("a browser profile's sign-in screen keeps its line whole: the bar says the title, the line wraps under it", () => {
     const screen = readFileSync(join(import.meta.dir, "../../src/features/browser/ProfileLoginScreen.tsx"), "utf8");
-    const top = screen.slice(screen.indexOf("<View style={[styles.top,"), screen.indexOf("<ScrollView"));
-    expect(top).not.toContain("numberOfLines");
+    // The native bar's title, and no drawn bar of its own.
+    expect(screen).toContain("<PushedHeader");
+    expect(screen).not.toContain("styles.top");
+    // Where it runs and who waits: a line in the page, never the bar's one cut line.
+    const line = screen.slice(screen.indexOf('<Text variant="footnote"'), screen.indexOf("<BrowserCard"));
+    expect(line).toContain("browser.profiles.controlSubOn");
+    expect(line).not.toContain("numberOfLines");
   });
 });
