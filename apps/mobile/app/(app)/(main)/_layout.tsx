@@ -40,7 +40,6 @@ export default function MainStack() {
     const cover = { ...solid, ...coverBarOptions };
     // Screens that only find where to go and replace themselves: no bar, no slide.
     const bare = { ...base, animation: "none" as const };
-    const modal = { ...base, presentation: "fullScreenModal" as const };
     const own: Record<string, NativeStackNavigationOptions> = {
       "(tabs)": base,
       "chat/[channelId]": solid,
@@ -66,7 +65,8 @@ export default function MainStack() {
         animation: "fade",
         contentStyle: { backgroundColor: "transparent" },
       },
-      "file/[id]": modal,
+      // A file: pushed with its bar opaque over the file itself (a web view lays out below it, as a block does).
+      "file/[id]": solid,
       // An agent's computer and a shared browser profile's live view: pushed with the opaque bar, their picture laid
       // out below it. Never a modal: the app's sheets, pickers and toasts they open present over them, where under a
       // modal they opened hidden and the screen stopped answering.

@@ -18,7 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { scheduleOnRN } from "react-native-worklets";
-import { Icon, type IconName, PressScale, SCREEN_X, Text, ToastHost, useTheme } from "@/ui";
+import { Icon, type IconName, PressScale, SCREEN_X, Text, useTheme } from "@/ui";
 import { useDirectory, useOrgId } from "../shared/hooks";
 import { goBack } from "../shared/parts";
 import { savedAt, useFileActions, useSavedWhen } from "./actions";
@@ -36,8 +36,9 @@ import { awaySpeed, pullCloses, pullDirection, pulledPlacement, pullProgress, ty
  * between the bars, while it is the one in sight; swipe between them on the system's pager, a little black between
  * them as they slide, or ‹ › on the sides; pull down (or up) to close, the picture or video under the finger, smaller
  * as it goes, as the black fades, and let go where it would carry on far enough (a flick or a long pull) it leaves at
- * its own speed as the viewer closes, else it springs back from that speed; and Share, Send, Save to Photos, View in
- * Drive at the bottom, the file's only actions (no "…" repeating them). A tap on a picture hides and shows the bars;
+ * its own speed as the viewer closes, else it springs back from that speed; and Compartilhar, Enviar cópia, Salvar em
+ * Fotos, Ver no Drive at the bottom (the file screen's words and icons for the same actions), the file's only actions
+ * (no "…" repeating them). A tap on a picture hides and shows the bars;
  * zooming in hides them. With reduced motion a closing picture fades instead of flying off.
  */
 export function ImageViewer({
@@ -51,11 +52,10 @@ export function ImageViewer({
   from?: string | undefined;
 }) {
   return (
-    // Gestures and toasts get their own root in the modal (the app's sit under it).
+    // Gestures get their own root in the modal (the app's sits under it). Toasts need none: the app's draw above any
+    // screen, a modal included.
     <GestureHandlerRootView style={styles.screen}>
-      <ToastHost>
-        <Viewer rawFiles={rawFiles} at={at} from={from} />
-      </ToastHost>
+      <Viewer rawFiles={rawFiles} at={at} from={from} />
     </GestureHandlerRootView>
   );
 }
@@ -245,7 +245,7 @@ function Viewer({
           ) : null}
           <Action
             icon="share"
-            label={t("mobile.files.send")}
+            label={t("mobile.files.sendCopy")}
             busy={actions.busy === "share"}
             disabled={!detail}
             onPress={actions.share}
@@ -561,7 +561,7 @@ function Action({
       <View style={[styles.circle, { backgroundColor: PLATE }]}>
         {busy ? <ActivityIndicator color={WHITE} /> : <Icon name={icon} size={20} color={WHITE} />}
       </View>
-      <Text variant="caption" style={[styles.bold, { color: WHITE }]} numberOfLines={1}>
+      <Text variant="caption" style={[styles.bold, styles.actionLabel, { color: WHITE }]} numberOfLines={2}>
         {label}
       </Text>
     </PressScale>
@@ -596,8 +596,10 @@ const styles = StyleSheet.create({
   sides: { position: "absolute", left: 0, right: 0, height: ROUND },
   side: { position: "absolute", top: 0 },
   bottom: { position: "absolute", left: 0, right: 0, bottom: 0, paddingTop: 6 },
-  actions: { flexDirection: "row", justifyContent: "space-around", paddingHorizontal: SCREEN_X, paddingTop: 10 },
-  action: { minWidth: 88 },
+  actions: { flexDirection: "row", gap: 8, paddingHorizontal: SCREEN_X, paddingTop: 10 },
+  // Four actions share the row evenly, a long label on two lines under its circle (a 320-point screen included).
+  action: { flex: 1 },
   actionIn: { alignItems: "center", gap: 6 },
+  actionLabel: { textAlign: "center" },
   circle: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
 });

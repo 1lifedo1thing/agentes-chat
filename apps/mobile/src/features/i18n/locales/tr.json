@@ -1220,7 +1220,7 @@
       "file": "Dosya"
     },
     "more": "Diğer seçenekler",
-    "send": "Gönder",
+    "sendCopy": "Kopya gönder",
     "savePhotos": "Fotoğraflar'a kaydet",
     "drive": "Drive'da görüntüle",
     "saved": "Fotoğraflar'a kaydedildi",
@@ -1337,7 +1337,6 @@
   "drive": {
     "title": "Drive",
     "search": "Drive'da ara",
-    "types": "Dosya türleri",
     "type": {
       "all": "Tümü",
       "documents": "Belgeler",
@@ -1358,7 +1357,6 @@
     },
     "by": "{{name}} · {{when}}",
     "noResults": "Bu filtrelerle bir şey yok.",
-    "loadFailed": "Drive yüklenemedi.",
     "more": "Daha fazla göster"
   },
   "constellation": {

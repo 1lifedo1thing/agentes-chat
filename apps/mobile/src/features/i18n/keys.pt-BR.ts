@@ -1270,7 +1270,7 @@ export const featureKeysPtBR = {
       file: "Arquivo",
     },
     more: "Mais opções",
-    send: "Enviar",
+    sendCopy: "Enviar cópia",
     savePhotos: "Salvar em Fotos",
     drive: "Ver no Drive",
     saved: "Salvo em Fotos",
@@ -1381,13 +1381,11 @@ export const featureKeysPtBR = {
   drive: {
     title: "Drive",
     search: "Buscar no Drive",
-    types: "Tipos de arquivo",
     type: { all: "Tudo", documents: "Documentos", images: "Imagens", tables: "Tabelas", diffs: "Diffs" },
     section: { today: "Hoje", week: "Esta semana" },
     kind: { document: "Documento", table: "Tabela", diff: "Diff", image: "Imagem", file: "Arquivo" },
     by: "{{name}} · {{when}}",
     noResults: "Nada com esses filtros.",
-    loadFailed: "Não deu para carregar o Drive.",
     more: "Mostrar mais",
   },
   // Wiki (the rest of its words are the web's, `wiki.*`).

@@ -4,8 +4,8 @@ import { keepWhole } from "@agenteschat/client/lib/format";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, Text as RNText, StyleSheet, View } from "react-native";
-import { Icon, Text } from "@/ui";
+import { ActivityIndicator, Text as RNText, StyleSheet, View } from "react-native";
+import { Icon, PressScale, Text } from "@/ui";
 import { ChoicesCard } from "../blocks/ChoicesCard";
 import { LiveBlockCard } from "../blocks/LiveBlock";
 import { PollCard } from "../blocks/PollCard";
@@ -187,16 +187,13 @@ function InlineImage({
   const link = useRemoteFile(orgId, file.id, version);
   const [failed, setFailed] = useState(false);
   return (
-    <Pressable
+    <PressScale
+      haptic={false}
       onPress={onPress}
       accessibilityRole="imagebutton"
       accessibilityLabel={label || t("mobile.files.openImage")}
       accessibilityHint={t("mobile.files.openImage")}
-      style={({ pressed }) => [
-        styles.shot,
-        { width, height, backgroundColor: c.sunken, borderColor: c.line2 },
-        pressed && styles.pressed,
-      ]}
+      style={[styles.shot, { width, height, backgroundColor: c.sunken, borderColor: c.line2 }]}
     >
       {link.data && !failed ? (
         <Image
@@ -214,7 +211,7 @@ function InlineImage({
           <Icon name="image" size={22} color={c.faint} />
         </View>
       ) : null}
-    </Pressable>
+    </PressScale>
   );
 }
 
@@ -427,22 +424,21 @@ export function useFileLine() {
 }
 
 /** The file type's tile: the extension in capitals on a folded page (or the file icon without one). */
-export function FileTile({ ext, size = "md" }: { ext: string; size?: "md" | "lg" }) {
+export function FileTile({ ext }: { ext: string }) {
   const c = useColors();
-  const lg = size === "lg";
   return (
     <View
-      style={[styles.tile, lg && styles.tileLg, { backgroundColor: c.sunken }]}
+      style={[styles.tile, { backgroundColor: c.sunken }]}
       accessible={false}
       importantForAccessibility="no-hide-descendants"
     >
-      <View style={[styles.fold, lg && styles.foldLg, { backgroundColor: c.line2, borderColor: c.bg }]} />
+      <View style={[styles.fold, { backgroundColor: c.line2, borderColor: c.bg }]} />
       {ext ? (
-        <Text variant="caption" tone="muted" style={[styles.ext, lg && styles.extLg]} numberOfLines={1}>
+        <Text variant="caption" tone="muted" style={styles.ext} numberOfLines={1}>
           {ext}
         </Text>
       ) : (
-        <Icon name="file" size={lg ? 30 : 19} color={c.muted} />
+        <Icon name="file" size={19} color={c.muted} />
       )}
     </View>
   );
@@ -479,7 +475,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  pressed: { opacity: 0.85 },
   // A file on its way up dims under a spinner; a video's length sits in its corner, as on a sent one.
   veil: { backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" },
   length: {
@@ -506,7 +501,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   tile: { width: 40, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  tileLg: { width: 84, height: 100, borderRadius: 14 },
   fold: {
     position: "absolute",
     top: -1,
@@ -517,9 +511,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderBottomWidth: 1,
   },
-  foldLg: { width: 24, height: 24, borderBottomLeftRadius: 5 },
   ext: { fontSize: 10, fontWeight: "700", letterSpacing: 0.4 },
-  extLg: { fontSize: 17, letterSpacing: 0.6 },
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
 });

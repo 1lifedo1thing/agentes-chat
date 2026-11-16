@@ -5,15 +5,15 @@ import { useTranslation } from "react-i18next";
 import { Linking } from "react-native";
 import { useToast } from "@/ui";
 import { router } from "@/ui/navigation";
-import { chooseAction } from "../settings/parts";
 import { useOrgId, useWhen } from "../shared/hooks";
 import { whenKind } from "../shared/logic";
 import { successHaptic } from "../shared/parts";
 import { openInDrive, saveToPhotos, shareFile } from "./source";
 
 /**
- * Compartilhar (who sees it and its link, ADR 0157), Enviar (the system's share sheet with the file), Salvar
- * em Fotos and Ver no Drive for one file, with their toasts; one at a time.
+ * Compartilhar (who sees it and its link, ADR 0157), Enviar cópia (the system's share sheet with the file), Salvar
+ * em Fotos and Ver no Drive for one file, with their toasts; one at a time. The file screen and the picture viewer
+ * both use these, under the same words and icons.
  */
 export function useFileActions(detail: ArtifactDetail | undefined) {
   const { t } = useTranslation();
@@ -64,24 +64,7 @@ export function useFileActions(detail: ArtifactDetail | undefined) {
     if (detail) router.push({ pathname: "/file-share", params: { id: detail.id } });
   };
 
-  /**
-   * A document's "…" (the picture viewer has its actions in a row of its own and no "…"): the actions in the app's
-   * sheet, under the file's name, each with the icon it has wherever it shows.
-   */
-  const more = () =>
-    chooseAction(
-      detail?.title ?? "",
-      [
-        ...(detail?.inDrive !== false
-          ? [{ icon: "person" as const, label: t("share.button"), onPress: shareSheet }]
-          : []),
-        { icon: "share", label: t("mobile.files.send"), onPress: () => void share() },
-        { icon: "drive", label: t("mobile.files.drive"), onPress: drive },
-      ],
-      t("mobile.common.cancel"),
-    );
-
-  return { share, shareSheet, savePhotos, drive, more, busy };
+  return { share, shareSheet, savePhotos, drive, busy };
 }
 
 /** "hoje 10:03", "ontem 18:20", "12 de out. 09:15": when the file was saved. */

@@ -9,7 +9,7 @@ import { useOpenFile } from "../files/open";
 import { useRemoteFile } from "../files/source";
 import { Face } from "../shared/Face";
 import { useDirectory, useOrgId, useWhen } from "../shared/hooks";
-import { MONO, tapHaptic, useSurface } from "../shared/parts";
+import { MONO, useSurface } from "../shared/parts";
 import { type CardPreview, cardPreview, cardShape, kindKey } from "./logic";
 
 const KIND_ICON: Record<ReturnType<typeof kindKey>, IconName> = {
@@ -52,15 +52,12 @@ export const DriveCard = memo(function DriveCard({
   const author = dir.nameOf(a.createdBy);
   const open = useOpenFile();
   return (
-    // The card gives under the finger (the open's own tap is its haptic).
+    // Opening it is navigation, as every file's: the card gives under the finger, no tap.
     <PressScale
       to={0.97}
       haptic={false}
       fill={false}
-      onPress={() => {
-        tapHaptic();
-        void open(driveRef(a), siblings);
-      }}
+      onPress={() => void open(driveRef(a), siblings)}
       accessibilityRole="button"
       accessibilityLabel={[a.title, t(`mobile.drive.kind.${kind}`), author, when.short(a.updatedAt)]
         .filter(Boolean)

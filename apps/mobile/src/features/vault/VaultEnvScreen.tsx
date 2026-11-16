@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, useToast } from "@/ui";
 import { Note } from "../ai/parts";
-import { Gap, SettingsPage } from "../settings/parts";
+import { Gap, SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { useOrgId } from "../shared/hooks";
 import { goBack, MONO, successHaptic } from "../shared/parts";
 import { TextArea } from "../shared/TextArea";
@@ -80,6 +80,8 @@ export function VaultEnvScreen({ scope: asked }: { scope: VaultScope }) {
     setReplace(new Set());
   };
 
+  // Back with keys pasted or read and not saved asks first: they may exist nowhere else on the phone.
+  const leave = useUnsavedGuard(file !== null || pasted.trim() !== "");
   const rows = file ? envReview(file, savedKeyNames(vault.data?.items ?? [], scope)) : [];
   const input = envImportInput(rows, replace, scope, access);
   const total = input.keys.length;
@@ -89,6 +91,7 @@ export function VaultEnvScreen({ scope: asked }: { scope: VaultScope }) {
       onSuccess: () => {
         successHaptic();
         toast({ title: t("mobile.vault.savedToVault"), icon: "lock" });
+        leave();
         goBack();
       },
       onError: (err) => toast({ title: errorText(t, err, i18n.language), icon: "x" }),

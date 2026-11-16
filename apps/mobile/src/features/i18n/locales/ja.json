@@ -1142,7 +1142,7 @@
       "file": "ファイル"
     },
     "more": "その他のオプション",
-    "send": "送る",
+    "sendCopy": "コピーを送信",
     "savePhotos": "写真に保存",
     "drive": "Driveで表示",
     "saved": "写真に保存しました",
@@ -1258,7 +1258,6 @@
   "drive": {
     "title": "Drive",
     "search": "Driveを検索",
-    "types": "ファイルの種類",
     "type": {
       "all": "すべて",
       "documents": "ドキュメント",
@@ -1279,7 +1278,6 @@
     },
     "by": "{{name}} · {{when}}",
     "noResults": "この条件に一致するものはありません。",
-    "loadFailed": "Driveを読み込めませんでした。",
     "more": "もっと見る"
   },
   "constellation": {

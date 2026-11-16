@@ -1142,7 +1142,7 @@
       "file": "파일"
     },
     "more": "더 많은 옵션",
-    "send": "보내기",
+    "sendCopy": "사본 보내기",
     "savePhotos": "사진에 저장",
     "drive": "Drive에서 보기",
     "saved": "사진에 저장했어요",
@@ -1258,7 +1258,6 @@
   "drive": {
     "title": "Drive",
     "search": "Drive 검색",
-    "types": "파일 형식",
     "type": {
       "all": "전체",
       "documents": "문서",
@@ -1279,7 +1278,6 @@
     },
     "by": "{{name}} · {{when}}",
     "noResults": "이 필터에 맞는 항목이 없어요.",
-    "loadFailed": "Drive를 불러오지 못했어요.",
     "more": "더 보기"
   },
   "constellation": {

@@ -1295,7 +1295,7 @@
       "file": "File"
     },
     "more": "Altre opzioni",
-    "send": "Invia",
+    "sendCopy": "Invia una copia",
     "savePhotos": "Salva in Foto",
     "drive": "Vedi in Drive",
     "saved": "Salvata in Foto",
@@ -1413,7 +1413,6 @@
   "drive": {
     "title": "Drive",
     "search": "Cerca nel Drive",
-    "types": "Tipi di file",
     "type": {
       "all": "Tutti",
       "documents": "Documenti",
@@ -1434,7 +1433,6 @@
     },
     "by": "{{name}} · {{when}}",
     "noResults": "Niente con questi filtri.",
-    "loadFailed": "Non è stato possibile caricare il Drive.",
     "more": "Mostra altro"
   },
   "constellation": {

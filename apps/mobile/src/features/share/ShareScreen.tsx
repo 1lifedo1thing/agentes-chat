@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Keyboard, ScrollView, type ScrollViewInstance, StyleSheet, TextInput, View } from "react-native";
+import { Keyboard, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -19,13 +19,13 @@ import { useOrg } from "@/providers/org";
 import {
   Button,
   EmptyState,
-  fieldText,
   GroupedHeader,
   GroupedList,
   GroupedRow,
   haptics,
   Icon,
   PixelOrbit,
+  SHEET_X,
   SheetBar,
   SheetSurface,
   Text,
@@ -40,6 +40,7 @@ import { AgentFace } from "../shared/Face";
 import { useDirectory, useErrorToast, useOrgId } from "../shared/hooks";
 import { goBack } from "../shared/parts";
 import { useConversations } from "../shared/queries";
+import { TextArea } from "../shared/TextArea";
 import { handShare } from "./handoff";
 import { clearShare, SHARE_MAX_FILES, type Shared, type SharedFile, shareMessage, useShared } from "./inbox";
 
@@ -182,26 +183,20 @@ export function ShareScreen() {
                 <Animated.View style={previewStyle}>
                   <Preview shared={shared} />
                 </Animated.View>
-                <View
-                  style={[
-                    styles.field,
-                    { backgroundColor: colors.raised, boxShadow: `0px 0px 0px 0.5px ${colors.line2}` },
-                  ]}
-                >
-                  <TextInput
-                    value={line}
-                    onChangeText={setLine}
-                    placeholder={t("mobile.share.line")}
-                    placeholderTextColor={colors.faint}
-                    onFocus={() => setTyping(true)}
-                    onBlur={() => setTyping(false)}
-                    returnKeyType="done"
-                    submitBehavior="blurAndSubmit"
-                    multiline={false}
-                    editable={!sending}
-                    style={[styles.input, fieldText("body"), { color: colors.ink }]}
-                  />
-                </View>
+                {/* The app's text field, one line here: a word to go with what came. */}
+                <TextArea
+                  value={line}
+                  onChangeText={setLine}
+                  placeholder={t("mobile.share.line")}
+                  accessibilityLabel={t("mobile.share.line")}
+                  onFocus={() => setTyping(true)}
+                  onBlur={() => setTyping(false)}
+                  returnKeyType="done"
+                  submitBehavior="blurAndSubmit"
+                  multiline={false}
+                  minHeight={44}
+                  editable={!sending}
+                />
                 {agents.length > 0 ? (
                   <>
                     <GroupedHeader>{t("mobile.share.to")}</GroupedHeader>
@@ -350,9 +345,9 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   grow: { flex: 1, minWidth: 0 },
   waiting: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 32 },
-  // 16 from the edges; the preview and the line 12 apart, the list's own header bringing its room above it.
+  // A sheet's margins; the preview and the line 12 apart, the list's own header bringing its room above it.
   scroll: { paddingBottom: 24 },
-  content: { paddingHorizontal: 16, paddingTop: 8 },
+  content: { paddingHorizontal: SHEET_X, paddingTop: 8 },
   // What came, on a white card on the sheet's gray: thumbnails, names and text 8 apart.
   preview: { borderRadius: 20, borderBottomLeftRadius: 6, padding: 12, gap: 8, marginBottom: 12 },
   thumbs: { flexDirection: "row", gap: 8 },
@@ -377,7 +372,5 @@ const styles = StyleSheet.create({
   },
   moreText: { color: "#fff", fontVariant: ["tabular-nums"] },
   fileLine: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 24 },
-  field: { flexDirection: "row", alignItems: "center", minHeight: 44, paddingHorizontal: 14, borderRadius: 14 },
-  input: { flex: 1, minWidth: 0, paddingVertical: 0 },
-  bar: { paddingHorizontal: 16, paddingTop: 12 },
+  bar: { paddingHorizontal: SHEET_X, paddingTop: 12 },
 });

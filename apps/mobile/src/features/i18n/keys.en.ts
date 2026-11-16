@@ -1305,7 +1305,8 @@ export const featureKeysEn = {
       file: "File",
     },
     more: "More options",
-    send: "Send",
+    /** The system's share sheet with the file itself (the file screen's bar, the picture viewer's row). */
+    sendCopy: "Send a copy",
     savePhotos: "Save to Photos",
     drive: "View in Drive",
     saved: "Saved to Photos",
@@ -1421,13 +1422,11 @@ export const featureKeysEn = {
   drive: {
     title: "Drive",
     search: "Search the Drive",
-    types: "File types",
     type: { all: "All", documents: "Documents", images: "Images", tables: "Tables", diffs: "Diffs" },
     section: { today: "Today", week: "This week" },
     kind: { document: "Document", table: "Table", diff: "Diff", image: "Image", file: "File" },
     by: "{{name}} · {{when}}",
     noResults: "Nothing with these filters.",
-    loadFailed: "Couldn't load the Drive.",
     more: "Show more",
   },
   // Wiki (the rest of its words are the web's, `wiki.*`).
