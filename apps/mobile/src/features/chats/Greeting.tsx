@@ -3,7 +3,19 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { AgentAvatar, Button, CARD_PAD, Card, Icon, PixelOrbit, SCREEN_X, Sky, Text, WorkspaceSky } from "@/ui";
+import {
+  AgentAvatar,
+  Button,
+  CARD_PAD,
+  Card,
+  Icon,
+  PixelOrbit,
+  ROW_PRESS_DELAY,
+  SCREEN_X,
+  Sky,
+  Text,
+  WorkspaceSky,
+} from "@/ui";
 import { router } from "@/ui/navigation";
 import { mayCreate } from "../new/logic";
 import { AgentFace } from "../shared/Face";
@@ -187,6 +199,8 @@ export function FirstAgentEmpty() {
           {FIRST_AGENT_EXAMPLES.map((ex, i) => (
             <Pressable
               key={ex.key}
+              // A full-width row: it lights a beat after the finger lands, as the list's rows do.
+              unstable_pressDelay={ROW_PRESS_DELAY}
               onPress={() => newAgent(t(`mobile.chats.first.example.${ex.key}.what`))}
               accessibilityRole="button"
               style={({ pressed }) => [styles.idea, pressed && { backgroundColor: c.sunken }]}

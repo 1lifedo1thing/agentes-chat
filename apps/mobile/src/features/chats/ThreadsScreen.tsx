@@ -5,12 +5,12 @@ import { Button, LargeTitleScreen, PULL_TINT, PullOrbit, SkeletonList } from "@/
 import { router } from "@/ui/navigation";
 import { usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
-import { useConversations } from "../shared/queries";
 import { RetryLine, TeamSkyEmpty } from "../shared/TeamSkyEmpty";
 import { useTabHeader } from "../shared/tabHeader";
-import { ConversationRowView } from "./ConversationRowView";
+import { ConversationItem } from "./ConversationRowView";
 import { CollapsibleSection, useCollapsedSections } from "./HomeSection";
 import { THREAD_SECTIONS, threadRows, threadSections } from "./logic";
+import { useConversationRows, useRowFacts } from "./useRows";
 
 /** Rows whose agent moves (a long list stays light). */
 const LIVE_ROWS = 8;
@@ -27,7 +27,9 @@ const LIVE_ROWS = 8;
 export function ThreadsScreen({ pushed = false }: { pushed?: boolean }) {
   const { t } = useTranslation();
   const header = useTabHeader();
-  const list = useConversations();
+  // Rows kept while nothing in them changes, their words worked out once here: a row redraws only when its own did.
+  const list = useConversationRows();
+  const factsOf = useRowFacts();
   const { collapsed, toggle } = useCollapsedSections(STORED.threadsCollapsed, THREAD_SECTIONS);
   const rows = threadRows(list.rows);
   const sections = threadSections(rows);
@@ -81,7 +83,13 @@ export function ThreadsScreen({ pushed = false }: { pushed?: boolean }) {
               onToggle={() => toggle(s.key)}
             >
               {s.rows.map((r, i) => (
-                <ConversationRowView key={r.key} row={r} divider={i > 0} live={!off && live++ < LIVE_ROWS} />
+                <ConversationItem
+                  key={r.key}
+                  row={r}
+                  facts={factsOf(r)}
+                  divider={i > 0}
+                  live={!off && live++ < LIVE_ROWS}
+                />
               ))}
             </CollapsibleSection>
           );

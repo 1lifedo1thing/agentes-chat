@@ -8,9 +8,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useIsFocused } from "expo-router";
 import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshControl, StyleSheet, View } from "react-native";
+import { RefreshControl, StyleSheet } from "react-native";
 import { useOrg } from "@/providers/org";
-import { GroupedRow, LargeTitleScreen, PULL_TINT, PullOrbit, SkeletonList, SwipeRow } from "@/ui";
+import { GroupedRow, LargeTitleScreen, PULL_TINT, PullOrbit, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
 import { workByAgent } from "../agents/logic";
 import { useCategoryMenus } from "../categories/menus";
@@ -21,15 +21,15 @@ import { useOpenDm } from "../new/useOpenDm";
 import { OutageNotices } from "../outages/OutageNotice";
 import { useMachineOutages } from "../outages/queries";
 import { RightHandAsk } from "../right-hand/Pin";
-import { useColors, useDirectory, useMeId, useOrgId, usePullRefresh } from "../shared/hooks";
-import { useActiveWork, useConversations, useHiddenAgents, useWorkingNow } from "../shared/queries";
+import { useDirectory, useMeId, useOrgId, usePullRefresh } from "../shared/hooks";
+import { useActiveWork, useHiddenAgents, useWorkingNow } from "../shared/queries";
 import { SheetHostProvider } from "../shared/SheetHost";
 import { useTabHeader } from "../shared/tabHeader";
-import { ConversationRowView } from "./ConversationRowView";
 import { DeletingNotice } from "./DeletingNotice";
 import { FirstRunLine } from "./FirstRunLine";
 import { FirstAgentEmpty, Greeting, GreetingSky } from "./Greeting";
 import { Arrive, useHomeEntrance, useWake } from "./HomeEntrance";
+import { HomeRow } from "./HomeRow";
 import { CollapsibleSection, SeeAllRow, useHomeCollapsed } from "./HomeSection";
 import { HomeServerError, HomeServerNotice } from "./HomeServerError";
 import { HomeWidgets } from "./HomeWidgets";
@@ -45,10 +45,13 @@ import {
 } from "./logic";
 import { usePins } from "./pins";
 import { useAgentRowStates, useFinished } from "./useHomeNow";
+import { useConversationRows, useRowFacts } from "./useRows";
 import { useWaitingItems } from "./useWaitingItems";
 
 /** Rows of the home whose agent moves (a long list stays light). */
 const LIVE_ROWS = 6;
+/** The home's sky fading in after the launch splash. */
+const SKY_ARRIVE_MS = 300;
 
 /** A section's "Ver todos", pushed: a kind, or one channel category (ADR 0080). */
 export const openKindList = (kind: ListKind | `category-${string}`) => router.push(`/conversations/${kind}`);
@@ -90,7 +93,6 @@ export function ChatsScreen() {
 
 function Home() {
   const { t } = useTranslation();
-  const c = useColors();
   const orgId = useOrgId();
   const { org } = useOrg();
   const personal = isPersonal(org);
@@ -101,7 +103,10 @@ function Home() {
   useOpenStart(focused);
   const header = useTabHeader();
   const dir = useDirectory();
-  const list = useConversations();
+  // Each row kept while nothing in it changes, and what it says worked out here once for all of them: a row redraws
+  // only when its own changed.
+  const list = useConversationRows();
+  const factsOf = useRowFacts();
   const work = useWorkingNow();
   // A run that stops on your ok hasn't finished: "terminou" is told from all the work, waiting included.
   const active = useActiveWork();
@@ -112,7 +117,13 @@ function Home() {
   const others = (useChannels(orgId).data ?? []).filter((c) => c.seenAsAdmin);
   const archived = useArchivedChannels(orgId).data?.length ?? 0;
   const menus = useCategoryMenus();
-  const mute = useMuteChannel(orgId);
+  const { mutate: muteChannel } = useMuteChannel(orgId);
+  const muteRow = useCallback(
+    (r: ConversationRow) => {
+      if (r.kind === "channel") muteChannel({ channelId: r.channelId, muted: !r.muted });
+    },
+    [muteChannel],
+  );
 
   useEffect(() => {
     if (!focused) return;
@@ -185,6 +196,7 @@ function Home() {
       </Arrive>
     ) : null;
 
+  const holdLabel = t("sidebarPins.pin");
   let live = 0;
   return (
     <LargeTitleScreen
@@ -192,7 +204,8 @@ function Home() {
       {...header}
       backdrop={
         empty || failed ? undefined : (
-          <Arrive {...arrive} rise={0} duration={700} style={StyleSheet.absoluteFill}>
+          // The sky comes up quickly after the splash's own (300 ms): the home is there, not still arriving.
+          <Arrive {...arrive} rise={0} duration={SKY_ARRIVE_MS} style={StyleSheet.absoluteFill}>
             <GreetingSky />
           </Arrive>
         )
@@ -252,49 +265,24 @@ function Home() {
       ) : (
         sections.map((s) => {
           const off = collapsed.includes(s.key);
-          const row = (r: ConversationRow, i: number, shown: boolean) => {
-            const view = (
-              <ConversationRowView
-                key={r.key}
-                row={r}
-                divider={i > 0}
-                live={shown && live++ < LIVE_ROWS}
-                agent={agentStates.get(r.key)}
-                // The pin mark only for what the person pinned, not day one's default (every agent they made).
-                pinned={pins.chosen && i < (s.pinned ?? 0)}
-                onHold={menus.openRowMenu}
-                holdLabel={t("sidebarPins.pin")}
-                holdActions={menus.rowActionsOf}
-                {...(r.kind === "dm" && !r.channelId ? { onStart: startDm } : {})}
-              />
-            );
-            // Swiped left: Fixar no topo (or Desafixar), the menu's first action, and on a channel Silenciar (or
-            // Reativar) beside it, on panes; the row stays opaque over them (the hairline and the sky never show).
-            const pin = menus.rowActionsOf(r).find((a) => a.key === "pin");
-            if (!pin) return view;
-            const pinPane = {
-              label: pin.label,
-              icon: "pin" as const,
-              color: c.agent,
-              ink: c.onAgent,
-              onAction: pin.run,
-            };
-            const mutePane =
-              r.kind === "channel"
-                ? {
-                    label: t(r.muted ? "mobile.chats.swipe.unmute" : "mobile.chats.swipe.mute"),
-                    icon: "mute" as const,
-                    color: c.muted,
-                    ink: c.bg,
-                    onAction: () => mute.mutate({ channelId: r.channelId, muted: !r.muted }),
-                  }
-                : null;
-            return (
-              <SwipeRow key={r.key} right={mutePane ? [pinPane, mutePane] : pinPane}>
-                <View style={{ backgroundColor: c.bg }}>{view}</View>
-              </SwipeRow>
-            );
-          };
+          // Swiped left: Fixar no topo (or Desafixar) and a channel's Silenciar; held: the menu (`HomeRow`).
+          const row = (r: ConversationRow, i: number, shown: boolean) => (
+            <HomeRow
+              key={r.key}
+              row={r}
+              facts={factsOf(r, agentStates.get(r.key))}
+              divider={i > 0}
+              live={shown && live++ < LIVE_ROWS}
+              // The pin mark only for what the person pinned, not day one's default (every agent they made).
+              pinned={pins.chosen && i < (s.pinned ?? 0)}
+              pinLabel={menus.rowActionsOf(r).find((a) => a.key === "pin")?.label ?? null}
+              onHold={menus.openRowMenu}
+              holdLabel={holdLabel}
+              holdActions={menus.rowActionsOf}
+              {...(r.kind === "dm" && !r.channelId ? { onStart: startDm } : {})}
+              onMute={muteRow}
+            />
+          );
           const hold = s.categoryId ? menus.categoryMenu(s.categoryId, s.name ?? "") : undefined;
           return (
             <CollapsibleSection
