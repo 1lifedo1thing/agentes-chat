@@ -235,7 +235,7 @@ describe("several assignees on a task (ADR 0188)", () => {
     await had(ofAgent, "agent", f.agent.id);
     await had(ofArchived, "agent", qa.id);
     await had(ofGone, "person", "someone-who-left");
-    const file = await Bun.file(new URL("../../db/migrations/0280_issue_assignees.sql", import.meta.url)).text();
+    const file = await Bun.file(new URL("../../db/migrations/0281_issue_assignees.sql", import.meta.url)).text();
     const backfill = file.split("--> statement-breakpoint").find((s) => s.includes('INSERT INTO "issue_assignees"'));
     await f.db.execute(sql.raw(backfill ?? ""));
     const rows = await f.db.select().from(schema.issueAssignees);

@@ -2546,6 +2546,13 @@
   "rightHand": {
     "label": "あなたの右腕",
     "labelCapitalized": "あなたの右腕",
+    "unusable": {
+      "title": "今は{{name}}のために考えられません",
+      "computerOnly": "{{computer}}でのみサインイン中。{{name}}はアカウントとしてサインインしたプランで考えます。",
+      "away": "{{owner}}さんのもの。{{computer}}は離席中です。",
+      "awayYours": "あなたのもの。{{computer}}は離席中です。",
+      "connect": "コンピューターを接続"
+    },
     "newDot": "新規",
     "actsAsYou": "あなたの権限で動きます",
     "composerHint": "あなたなしでは何も変わりません",
@@ -15955,11 +15962,11 @@
       "rolesPersonal": "ここで各メンバーができること。オーナーはすべてできます。"
     },
     "about": {
-      "basedOn": "Codari Global, LLC の <site>agentes.chat</site> をもとにしています",
+      "basedOn": "AGENTESCHAT, LLC の <site>agentes.chat</site> をもとにしています",
       "version": "バージョン",
       "license": "<license>GNU Affero General Public License v3</license> のもとで提供される自由ソフトウェアです。保証はありません。",
       "source": "ソースコード",
-      "copyright": "Copyright © 2026 Codari Global, LLC およびコントリビューター"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC およびコントリビューター"
     },
     "title": "設定",
     "account": {
@@ -16387,6 +16394,18 @@
       "see": "利用を見る"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "種類別",
+      "handoffs": "エージェント間の引き継ぎ",
+      "people": "人との会話",
+      "routines": "ルーティン"
+    },
+    "hint": {
+      "handoffs": "今週の利用の大半は、エージェント同士の作業の引き継ぎによるものです。長い作業はエージェントに直接頼みましょう。",
+      "message": "{{name}}にメッセージ"
+    }
+  },
   "usageViews": {
     "signedOut": "ログアウト済み",
     "whose": "{{name}}の",
@@ -16569,6 +16588,14 @@
     "speedFallback": {
       "text": "ChatGPTがこのアカウントまたはモデルでの高速を拒否したため、この返信は標準の速度で届きました。",
       "action": "エージェントを開く"
+    },
+    "standIn": {
+      "needsComputer": "{{via}}で回答しました: {{plan}}にはコンピューターが必要です。",
+      "away": "{{via}}で回答しました: {{plan}}のコンピューターは離席中です。",
+      "notShared": "{{via}}で回答しました: {{plan}}は接続した本人だけが使えます。",
+      "limit": "{{via}}で回答しました: {{plan}}は上限に達しました。",
+      "cant": "{{via}}で回答しました: {{plan}}は今考えられません。",
+      "change": "変更"
     },
     "modelStandIn": {
       "text": "{{plan}}がこのキーで{{from}}を拒否しました。このキーで使える{{to}}で返信しました。",

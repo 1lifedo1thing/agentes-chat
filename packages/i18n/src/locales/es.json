@@ -2733,6 +2733,13 @@
   "rightHand": {
     "label": "tu mano derecha",
     "labelCapitalized": "Tu mano derecha",
+    "unusable": {
+      "title": "No puede pensar por {{name}} ahora",
+      "computerOnly": "Conectado solo en {{computer}}. {{name}} piensa con un plan conectado como cuenta.",
+      "away": "De {{owner}}, en {{computer}}, que está ausente.",
+      "awayYours": "Tuyo, en {{computer}}, que está ausente.",
+      "connect": "Conectar un ordenador"
+    },
     "newDot": "Nuevo",
     "actsAsYou": "actúa con tus permisos",
     "composerHint": "nada cambia sin ti",
@@ -16963,11 +16970,11 @@
       "rolesPersonal": "Lo que cada persona de aquí puede hacer. Quien es propietario puede hacerlo todo."
     },
     "about": {
-      "basedOn": "Basado en <site>agentes.chat</site> de Codari Global, LLC",
+      "basedOn": "Basado en <site>agentes.chat</site> de AGENTESCHAT, LLC",
       "version": "Versión",
       "license": "Software libre bajo la <license>GNU Affero General Public License v3</license>, sin garantía.",
       "source": "Código fuente",
-      "copyright": "Copyright © 2026 Codari Global, LLC y colaboradores"
+      "copyright": "Copyright © 2026 AGENTESCHAT, LLC y colaboradores"
     },
     "title": "Configuración",
     "account": {
@@ -17415,6 +17422,18 @@
       "see": "Ver el uso"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "Por tipo",
+      "handoffs": "Traspasos entre agentes",
+      "people": "Conversaciones con personas",
+      "routines": "Rutinas"
+    },
+    "hint": {
+      "handoffs": "La mayor parte del uso de esta semana vino de agentes que se pasan trabajo entre sí. Para trabajos largos, pídeselo directamente al agente.",
+      "message": "Escribir a {{name}}"
+    }
+  },
   "usageViews": {
     "signedOut": "Sesión cerrada",
     "whose": "De {{name}}",
@@ -17609,6 +17628,14 @@
     "speedFallback": {
       "text": "ChatGPT rechazó la velocidad Rápida en esta cuenta o modelo, así que esta respuesta salió en estándar.",
       "action": "Abrir agente"
+    },
+    "standIn": {
+      "needsComputer": "Respondí con {{via}}: {{plan}} necesita un ordenador.",
+      "away": "Respondí con {{via}}: el ordenador de {{plan}} está ausente.",
+      "notShared": "Respondí con {{via}}: {{plan}} solo atiende a quien lo conectó.",
+      "limit": "Respondí con {{via}}: {{plan}} llegó a su límite.",
+      "cant": "Respondí con {{via}}: {{plan}} no puede pensar ahora.",
+      "change": "Cambiar"
     },
     "modelStandIn": {
       "text": "{{plan}} rechazó {{from}} con esta clave. Respondí con {{to}}, que funciona con ella.",

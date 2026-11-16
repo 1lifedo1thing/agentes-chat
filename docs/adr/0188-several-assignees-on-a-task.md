@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-15
-- Code: schema `packages/db/src/schema/work.ts` (`issue_assignees`, migration 0280); engine
+- Code: schema `packages/db/src/schema/work.ts` (`issue_assignees`, migration 0281); engine
   `packages/engine/src/issue-assignees.ts` (`assigneesOf`, `setAssignees`, `assignedSql`, `dropAssignee`),
   `issues.ts` (`IssueView.assignees`, `createIssue`, `updateIssue`, `askAgentToImplement`, `workOf`, `unassignGone`),
   `task-access.ts` (`taskAgentSql`, `admitTaskAgents`), `notification-producers.ts` (`notifyIssueChanged`,
@@ -25,7 +25,7 @@ A task has any number of assignees, people and agents, in an order.
 
 1. **Where they are kept.** `issue_assignees` holds one row per task and assignee (`assignee_type`, `assignee_id`,
    `position`, lowest first), unique per task and assignee, deleted with the task. The columns `issues.assignee_type`
-   and `issues.assignee_id` are gone. Migration 0280 carries each task's assignee over as the first of its list,
+   and `issues.assignee_id` are gone. Migration 0281 carries each task's assignee over as the first of its list,
    leaving out an archived agent and a person who is no longer a member.
 2. **The API.** `Issue.assignees` is the ordered list, `[]` when nobody has the task; so are a step's
    (`subIssues[].assignees`) and a calendar deadline's. Creating takes `assignees`; changing takes `assignees` as the
