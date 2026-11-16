@@ -1,5 +1,6 @@
 import { useArtifact } from "@agenteschat/client";
 import { keepWhole } from "@agenteschat/client/lib/format";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -204,6 +205,9 @@ function Viewer({
         style={[styles.top, { paddingTop: insets.top + 8 }]}
         onHeight={(top) => setBars((b) => (b.top === top ? b : { ...b, top }))}
       >
+        {/* A shade behind the bar, fading into the picture past it: the name and × read over any picture, and the
+            picture's edge melts into the black above it instead of meeting it in a line. */}
+        <LinearGradient pointerEvents="none" colors={SHADE_DOWN} locations={SHADE_STOPS} style={styles.shadeTop} />
         {/* × alone: the file's actions are the row at the bottom, never repeated in a "…" here. */}
         <Round icon="x" label={t("mobile.common.close")} onPress={close} />
         {/* The name and its line on a row of their own under the button, the screen's width: never cut beside it. */}
@@ -239,6 +243,7 @@ function Viewer({
         style={[styles.bottom, { paddingBottom: insets.bottom + 14 }]}
         onHeight={(bottom) => setBars((b) => (b.bottom === bottom ? b : { ...b, bottom }))}
       >
+        <LinearGradient pointerEvents="none" colors={SHADE_UP} locations={SHADE_STOPS} style={styles.shadeBottom} />
         <View style={styles.actions}>
           {detail?.inDrive !== false ? (
             <Action icon="person" label={t("share.button")} disabled={!detail} onPress={actions.shareSheet} />
@@ -568,6 +573,13 @@ function Action({
   );
 }
 
+/** The bars' shade: dark under their words, gone past them (it fades with the bars). */
+const SHADE_DOWN = ["rgba(0,0,0,0.72)", "rgba(0,0,0,0.4)", "rgba(0,0,0,0)"] as const;
+const SHADE_UP = ["rgba(0,0,0,0)", "rgba(0,0,0,0.4)", "rgba(0,0,0,0.78)"] as const;
+const SHADE_STOPS = [0, 0.55, 1] as const;
+/** How far the shade runs past a bar into the picture. */
+const SHADE_PAST = 56;
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "transparent" },
   black: { backgroundColor: "#000" },
@@ -590,6 +602,8 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   title: { flexBasis: "100%", gap: 2 },
+  shadeTop: { position: "absolute", top: 0, left: 0, right: 0, bottom: -SHADE_PAST },
+  shadeBottom: { position: "absolute", top: -SHADE_PAST, left: 0, right: 0, bottom: 0 },
   bold: { fontWeight: "600" },
   round: { width: ROUND, height: ROUND, borderRadius: ROUND / 2 },
   center: { alignItems: "center", justifyContent: "center" },
