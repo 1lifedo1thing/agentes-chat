@@ -334,7 +334,7 @@ export const BoardCard = memo(function BoardCard({
       <TaskTitle title={i.title} variant="callout" style={styles.title} />
       <CardFacts issue={i} mentions={mentions} unread={unread > 0} project={project} />
       {i.status === "done" && i.backgroundWork?.result ? (
-        <Text variant="caption" tone="ink2" numberOfLines={2}>
+        <Text variant="caption" tone="ink2">
           {i.backgroundWork.result.text}
         </Text>
       ) : null}
