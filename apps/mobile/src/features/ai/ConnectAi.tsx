@@ -117,8 +117,6 @@ export function useConnectKey(orgId: string, draft: KeyDraft, setDraft: (patch: 
       setResaved(saved.reused === true);
       if (saved.check === "unchecked")
         setSavedNote(t("connectAi.key.savedUnchecked", { provider: providerLabel(provider) }));
-      // Saved: the flow keeps no copy of the key for the next time its page opens.
-      setDraft({ text: "" });
       // `aiStatus` lives under `credentials`: both refresh.
       await qc.invalidateQueries({ queryKey: keys.credentials(orgId) });
       return saved;
@@ -371,6 +369,8 @@ function FlowScreen({
                   void qc.invalidateQueries({ queryKey: keys.agentBrain(orgId, one.id) });
                 } else await settleKey(key);
                 setKeySaved(true);
+                // Saved, and its field gone: the flow keeps no copy of the key for the next time its page opens.
+                form.setKey("");
                 answer();
               })
             }
