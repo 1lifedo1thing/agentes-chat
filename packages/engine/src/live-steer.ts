@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, type Executor, eq, inArray, isNull, schema, sql } from "@agenteschat/db";
 import type { SteerMessage, SteerReply } from "./brains/types";
-import { CONFIDENTIAL_STUB, confidentialThread, isConfidential, thinksAsThread, unsealed } from "./confidential";
+import { confidentialThread, isConfidential, stubOf, thinksAsThread, unsealed } from "./confidential";
 import { attachedLine, taskNotice } from "./context";
 import { publishChannelEvent } from "./events";
 import { ACTIVE_RUN_STATUSES, releaseInbox, stoppedToSend } from "./run-inbox";
@@ -153,13 +153,7 @@ export async function renderSteered(
       ? await confidentialThread(db, orgId, own.threadRootId)
       : null;
   const reads = thread !== null && thinksAsThread(thread, own?.thinksWith);
-  const rows = stored.map((m) =>
-    !isConfidential(m.meta)
-      ? m
-      : reads && mine(m)
-        ? unsealed(m)
-        : { ...m, body: CONFIDENTIAL_STUB, meta: { confidential: true } as Record<string, unknown> },
-  );
+  const rows = stored.map((m) => (!isConfidential(m.meta) ? m : reads && mine(m) ? unsealed(m) : stubOf(m)));
   // Messages written in one transaction share its time (a report's notices): their ids keep the order.
   rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : 1));
   return rows.map((m) => {

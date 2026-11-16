@@ -29,9 +29,9 @@ import { summarizeScopes } from "./capabilities";
 import { peopleAllIn } from "./channels";
 import {
   CONFIDENTIAL_NOT_SHOWN,
-  CONFIDENTIAL_STUB,
   confidentialThreadSql,
   isConfidential,
+  stubOf,
   threadIsConfidential,
   unsealed,
 } from "./confidential";
@@ -791,11 +791,7 @@ export async function buildRunContext(
     everything.some((m) => isConfidential(m.meta) && ownThread(m)) &&
     (await threadIsConfidential(db, run.orgId, run.threadRootId));
   const fullHistory = everything.map((m) =>
-    !isConfidential(m.meta)
-      ? m
-      : sealedHere && options.unseal && ownThread(m)
-        ? unsealed(m)
-        : { ...m, body: CONFIDENTIAL_STUB, meta: { confidential: true } },
+    !isConfidential(m.meta) ? m : sealedHere && options.unseal && ownThread(m) ? unsealed(m) : stubOf(m),
   );
   // The agents' DM (ADR 0053 §9): a run reads only the exchanges made for the same person.
   const agentsDm = !background && isAgentOnlyDm(channel) && !isRoutineRoomKey(channel.dmKey);

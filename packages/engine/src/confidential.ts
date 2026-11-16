@@ -231,6 +231,13 @@ type Meta = Record<string, unknown> | null | undefined;
 /** A message of a confidential thread, or one a run of such a thread wrote (`meta.confidential`). */
 export const isConfidential = (meta: Meta): boolean => meta?.confidential === true;
 
+/**
+ * A confidential message as whoever may not read it is handed it: the stub, with nothing of its meta (a card's
+ * fields, a file's name and the seal's copy are there). Any other message as it is.
+ */
+export const stubOf = <M extends { body: string; meta: Record<string, unknown> }>(m: M): M =>
+  isConfidential(m.meta) ? { ...m, body: CONFIDENTIAL_STUB, meta: { confidential: true } } : m;
+
 /** A stored message's own words, for the people who may read it: a sealed one's from its seal (`unsealed`). */
 export const wordsOf = (body: string, meta: Meta): string => unsealed({ body, meta: meta ?? {} }).body;
 
