@@ -970,6 +970,104 @@ test("long work at the pause line of a teammate's account says so, naming whose 
   expect(await notes(fx, "plan_account_moved")).toHaveLength(0);
 });
 
+test("long work on a plan lent to its agent never goes back into that plan's paid extra usage from the account it moved to", async () => {
+  const { fx, walter, account, usage } = await world({}, goesOn);
+  await account(WALTER_ALL, walter.id);
+  await fx.db
+    .update(schema.agents)
+    .set({ brainAccountId: WALTER_ALL, brainAccountLentBy: walter.id })
+    .where(eq(schema.agents.id, fx.agent.id));
+  const extraOpen = {
+    ...reading(97, iso(3 * 3600_000)),
+    windows: [...reading(97, iso(3 * 3600_000)).windows, { kind: "other", label: "Extra usage", usedPercent: 10 }],
+  };
+  await fx.db
+    .update(schema.machineAccounts)
+    .set({ usage: extraOpen as never })
+    .where(eq(schema.machineAccounts.id, WALTER_ALL));
+  await usage(OWN1, 40);
+  const { brain, seen } = fillsTheWeek(fx);
+  await scheduledSlot(fx);
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN1]);
+  const [run] = await runs(fx);
+  const waiting = (
+    run?.transcript as { waitingForBrain?: { code: string; until?: string; waitKey?: string } } | undefined
+  )?.waitingForBrain;
+  expect(waiting?.code).toBe("usage_pause");
+  // Never taken back to the lent plan for its extra usage: it pauses where it ran, until that plan's earlier reset.
+  expect(waiting?.waitKey).toContain(OWN1);
+  expect(moveOf(run)).toBeUndefined();
+  expect(Date.parse(waiting?.until ?? "")).toBeLessThan(Date.now() + 4 * 3600_000);
+});
+
+test("a run refused by the account it just moved to moves again with one note, never two stacked", async () => {
+  const { fx, account } = await world({}, goesOn);
+  await account(OWN2, fx.owner.id);
+  await account(OWN3, fx.owner.id);
+  const refused: BrainEvent[] = [
+    { type: "error", code: "plan_limit", message: "You've hit your limit", worked: false },
+  ];
+  const turns: BrainEvent[][] = [
+    [
+      { type: "usage", input: 100, output: 10, source: "plan", model: "sonnet" },
+      { type: "tool_call", id: "c1", name: "Bash", input: { command: "git push" }, executed: { content: "ok" } },
+      { type: "done", text: "Rodei git push, vou seguir." },
+    ],
+    refused,
+    refused,
+  ];
+  const { brain, seen } = scripted((n) => turns[n] ?? answers);
+  await ask(fx);
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN1, OWN1, OWN2, OWN3]);
+  const last = await turnPrompt(fx);
+  expect(last).toContain("Already done in this run, do not repeat: Bash(git push)");
+  expect(last.split("Already done in this run").length).toBe(2);
+});
+
+test("long work that would go into its owner's paid extra usage says so when it goes on with a free account", async () => {
+  const { fx, account, usage } = await world({}, goesOn);
+  await account(OWN2, fx.owner.id);
+  await usage(OWN2, 40);
+  const extraOpen = {
+    ...reading(97),
+    windows: [...reading(97).windows, { kind: "other", label: "Extra usage", usedPercent: 10 }],
+  };
+  await fx.db
+    .update(schema.machineAccounts)
+    .set({ usage: extraOpen as never })
+    .where(eq(schema.machineAccounts.id, OWN1));
+  const { brain, seen } = scripted((n) =>
+    n === 0
+      ? [
+          { type: "usage", input: 100, output: 10, source: "plan", model: "sonnet" },
+          { type: "tool_call", id: "c1", name: "Bash", input: { command: "make" }, executed: { content: "ok" } },
+          { type: "done", text: "Rodei make, vou seguir." },
+        ]
+      : answers,
+  );
+  // Ten minutes and more of work by its first turn's end: a conversation's run is long work from there.
+  const long: Brain = {
+    kind: "claude_code",
+    async *run(turn, io) {
+      yield* brain.run(turn, io);
+      if (seen.length === 1) setSystemTime(later(11 * 60_000));
+    },
+  };
+  try {
+    await ask(fx);
+    await drainOutbox(fx.db, handlersWith(fx, long));
+  } finally {
+    setSystemTime();
+  }
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN1, OWN2]);
+  const [line, ...more] = await notes(fx, "plan_account_moved_extra");
+  expect(more).toHaveLength(0);
+  expect(line?.meta.bodyParams).toEqual({ from: "Conta a001", to: "Conta a002" });
+  expect(await notes(fx, "plan_account_moved_line")).toHaveLength(0);
+});
+
 test("a budget wait never moves an account", async () => {
   f = await setup({ budgetNanoUsd: 0, reply: () => ({ chunks: ["pela API"] }) });
   await ask(f);
