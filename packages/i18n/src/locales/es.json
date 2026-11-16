@@ -2265,7 +2265,7 @@
       "making": "Creando tu código",
       "code": "Tu código {{code}}",
       "open": "Abrir {{surface}}",
-      "stepScan": "Escanea el código con tu celular, o abre {{surface}} aquí",
+      "stepScan": "Escanea el código con tu celular, o abre la app abajo",
       "stepSend": "Envía el mensaje tal como está",
       "stepSendText": "Esto avanza solo cuando llegue tu mensaje.",
       "stepConfirm": "Revisa el remitente y confirma aquí",
@@ -15162,7 +15162,7 @@
   },
   "errors": {
     "surface": {
-      "off": "Este servidor ya no vincula apps de chat. Recarga para ver tu configuración como está ahora.",
+      "off": "Se desactivó la vinculación de apps de chat. Recarga para ver tu configuración como está ahora.",
       "notAllowed": "Vincular una app de chat todavía no está abierto para tu cuenta. Sigue usando la app aquí hasta que se abra.",
       "noAssistant": "El asistente de este espacio de trabajo no está configurado para hablar contigo. Elige otro espacio de trabajo para vincular.",
       "noWorkspace": "Ya no estás en este espacio de trabajo. Elige otro espacio de trabajo para vincular.",

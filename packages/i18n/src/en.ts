@@ -2365,7 +2365,7 @@ export const en = {
       /** Under the QR code: the code itself, for typing it by hand. */
       code: "Your code {{code}}",
       open: "Open {{surface}}",
-      stepScan: "Scan the code with your phone, or open {{surface}} here",
+      stepScan: "Scan the code with your phone, or open the app below",
       stepSend: "Send the message as it is",
       stepSendText: "This moves on by itself once your message arrives.",
       stepConfirm: "Check the sender and confirm here",
@@ -14945,7 +14945,7 @@ export const en = {
   errors: {
     /** Linking an outside chat app (ADR 0187). The server's refusals carry no app name, so none is said. */
     surface: {
-      off: "This server doesn't link chat apps anymore. Reload to see your settings as they are now.",
+      off: "Linking chat apps was turned off. Reload to see your settings as they are now.",
       notAllowed: "Linking a chat app isn't open to your account yet. Keep using the app here until it opens.",
       noAssistant: "The assistant in this workspace isn't set to talk with you. Pick another workspace to link.",
       noWorkspace: "You're no longer in this workspace. Pick another workspace to link.",

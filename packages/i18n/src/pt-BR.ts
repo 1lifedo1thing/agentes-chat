@@ -2257,7 +2257,7 @@ export const ptBR = {
       making: "Gerando seu código",
       code: "Seu código {{code}}",
       open: "Abrir o {{surface}}",
-      stepScan: "Escaneie o código com o celular, ou abra o {{surface}} aqui",
+      stepScan: "Escaneie o código com o celular, ou abra o app abaixo",
       stepSend: "Envie a mensagem como está",
       stepSendText: "Isto avança sozinho quando sua mensagem chegar.",
       stepConfirm: "Confira o remetente e confirme aqui",
@@ -14901,7 +14901,7 @@ export const ptBR = {
   },
   errors: {
     surface: {
-      off: "Este servidor não vincula mais apps de chat. Recarregue para ver suas configurações como estão agora.",
+      off: "A vinculação de apps de chat foi desligada. Recarregue para ver suas configurações como estão agora.",
       notAllowed: "Vincular um app de chat ainda não está aberto para sua conta. Continue usando o app aqui até abrir.",
       noAssistant:
         "O assistente deste workspace não está configurado para falar com você. Escolha outro workspace para vincular.",

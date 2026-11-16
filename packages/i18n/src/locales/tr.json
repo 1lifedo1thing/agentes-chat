@@ -2202,7 +2202,7 @@
       "making": "Kodunuz oluşturuluyor",
       "code": "Kodunuz {{code}}",
       "open": "{{surface}} uygulamasını açın",
-      "stepScan": "Kodu telefonunuzla tarayın veya {{surface}} uygulamasını burada açın",
+      "stepScan": "Kodu telefonunuzla tarayın veya aşağıdan uygulamayı açın",
       "stepSend": "Mesajı olduğu gibi gönderin",
       "stepSendText": "Mesajınız ulaşınca bu adım kendiliğinden ilerler.",
       "stepConfirm": "Göndereni kontrol edin ve burada onaylayın",
@@ -14668,7 +14668,7 @@
   },
   "errors": {
     "surface": {
-      "off": "Bu sunucu artık sohbet uygulamalarını bağlamıyor. Ayarlarınızın şu anki halini görmek için sayfayı yenileyin.",
+      "off": "Sohbet uygulamalarını bağlama kapatıldı. Ayarlarınızın şu anki halini görmek için sayfayı yenileyin.",
       "notAllowed": "Sohbet uygulaması bağlama hesabınıza henüz açık değil. Açılana kadar buradaki uygulamayı kullanmaya devam edin.",
       "noAssistant": "Bu çalışma alanındaki asistan sizinle konuşacak şekilde ayarlı değil. Bağlamak için başka bir çalışma alanı seçin.",
       "noWorkspace": "Artık bu çalışma alanında değilsiniz. Bağlamak için başka bir çalışma alanı seçin.",

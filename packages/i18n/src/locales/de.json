@@ -2202,7 +2202,7 @@
       "making": "Dein Code wird erstellt",
       "code": "Dein Code {{code}}",
       "open": "{{surface}} öffnen",
-      "stepScan": "Scanne den Code mit deinem Handy oder öffne {{surface}} hier",
+      "stepScan": "Scanne den Code mit deinem Handy oder öffne die App unten",
       "stepSend": "Sende die Nachricht so, wie sie ist",
       "stepSendText": "Das geht von selbst weiter, sobald deine Nachricht ankommt.",
       "stepConfirm": "Prüfe den Absender und bestätige hier",
@@ -14731,7 +14731,7 @@
   },
   "errors": {
     "surface": {
-      "off": "Dieser Server verknüpft keine Chat-Apps mehr. Lade neu, um deine Einstellungen im aktuellen Stand zu sehen.",
+      "off": "Das Verknüpfen von Chat-Apps wurde ausgeschaltet. Lade neu, um deine Einstellungen im aktuellen Stand zu sehen.",
       "notAllowed": "Das Verknüpfen einer Chat-App ist für dein Konto noch nicht freigegeben. Nutze bis dahin die App hier.",
       "noAssistant": "Der Assistent in diesem Workspace darf nicht mit dir sprechen. Wähl einen anderen Workspace zum Verknüpfen.",
       "noWorkspace": "Du bist nicht mehr in diesem Workspace. Wähl einen anderen Workspace zum Verknüpfen.",

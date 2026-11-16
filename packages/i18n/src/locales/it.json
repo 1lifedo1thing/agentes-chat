@@ -2266,7 +2266,7 @@
       "making": "Creazione del tuo codice",
       "code": "Il tuo codice {{code}}",
       "open": "Apri {{surface}}",
-      "stepScan": "Scansiona il codice con il telefono, oppure apri {{surface}} qui",
+      "stepScan": "Scansiona il codice con il telefono, oppure apri l'app qui sotto",
       "stepSend": "Invia il messaggio così com'è",
       "stepSendText": "Si va avanti da solo appena arriva il tuo messaggio.",
       "stepConfirm": "Controlla il mittente e conferma qui",
@@ -15245,7 +15245,7 @@
   },
   "errors": {
     "surface": {
-      "off": "Questo server non collega più app di chat. Ricarica per vedere le impostazioni come sono ora.",
+      "off": "Il collegamento delle app di chat è stato disattivato. Ricarica per vedere le impostazioni come sono ora.",
       "notAllowed": "Collegare un'app di chat non è ancora disponibile per il tuo account. Continua a usare l'app qui finché non si apre.",
       "noAssistant": "L'assistente di questo spazio di lavoro non è impostato per parlare con te. Scegli un altro spazio di lavoro da collegare.",
       "noWorkspace": "Non sei più in questo spazio di lavoro. Scegli un altro spazio di lavoro da collegare.",
