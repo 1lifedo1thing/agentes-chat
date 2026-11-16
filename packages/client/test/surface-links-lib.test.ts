@@ -7,7 +7,8 @@ import { applyUnreadEvent } from "../src/api/queries";
 import type { SurfaceLink, SurfaceLinks } from "../src/api/types";
 import { ApiError } from "../src/index";
 import { errorText } from "../src/lib/errors";
-import { surfaceRowOf } from "../src/lib/surface-links";
+import { rightHandName } from "../src/lib/right-hand";
+import { CODE_TTL_MS, codeDeadline, newlyLinked, surfaceRowOf, surfaceViaName } from "../src/lib/surface-links";
 import { appVia, surfaceVia } from "../src/lib/via";
 
 const NOW = Date.parse("2026-01-10T12:00:00Z");
@@ -96,4 +97,37 @@ test("every refusal of linking says its cause in the person's words", () => {
     "surface.code_gone": en.errors.surface.codeGone,
   };
   for (const [code, line] of Object.entries(lines)) expect(errorText(t.t, new ApiError(409, code, "x"))).toBe(line);
+});
+
+describe("the code's deadline on this device's clock", () => {
+  test("the server's time while the clocks agree, else 10 minutes from the answer", () => {
+    expect(codeDeadline({ expiresAt: "2026-01-10T12:09:30Z" }, NOW)).toBe(Date.parse("2026-01-10T12:09:30Z"));
+    expect(codeDeadline({ expiresAt: "2026-01-10T12:30:00Z" }, NOW)).toBe(NOW + CODE_TTL_MS);
+    expect(codeDeadline({ expiresAt: "2026-01-10T11:50:00Z" }, NOW)).toBe(NOW + CODE_TTL_MS);
+    expect(codeDeadline({ expiresAt: "not a time" }, NOW)).toBe(NOW + CODE_TTL_MS);
+  });
+});
+
+test("a link confirmed on another device is one active link more than when the code showed", () => {
+  expect(newlyLinked(answer([link()]), ["l1"])).toBeNull();
+  expect(newlyLinked(answer([pending("2026-01-10T12:05:00Z")]), [])).toBeNull();
+  expect(newlyLinked(answer([link(), link({ id: "l2" })]), ["l1"])?.id).toBe("l2");
+  expect(newlyLinked(undefined, [])).toBeNull();
+});
+
+test("a via mark's surface name: the server's when it matches the id, else the id capitalized", () => {
+  expect(surfaceViaName("example chat", "Example Chat")).toBe("Example Chat");
+  expect(surfaceViaName("otherchat", "Example Chat")).toBe("Otherchat");
+  expect(surfaceViaName("otherchat", undefined)).toBe("Otherchat");
+});
+
+test("the right hand's name, null while the agents load or when there is none", () => {
+  expect(rightHandName(undefined)).toBeNull();
+  expect(rightHandName([{ builtin: null, name: "Ada" }])).toBeNull();
+  expect(
+    rightHandName([
+      { builtin: null, name: "Ada" },
+      { builtin: "right_hand", name: "Iris" },
+    ]),
+  ).toBe("Iris");
 });

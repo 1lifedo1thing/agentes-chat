@@ -2147,6 +2147,7 @@
       "showCode": "코드 다시 보기",
       "confirmTitle": "이 {{surface}}가 맞나요?",
       "sentBy": "이 보낸 사람이 코드를 보냈어요",
+      "onlyYou": "본인일 때만 연결하세요.",
       "workspace": "{{workspace}}에서 응답해요",
       "confirm": "네, 연결할게요",
       "notMe": "제가 아니에요",
@@ -2158,6 +2159,7 @@
     "row": {
       "hint": "{{assistant}}와 대화하고 답장을 {{surface}}에서 받아요.",
       "link": "연결",
+      "none": "{{assistant}}가 그곳에서 메시지를 보낼 수 있어요",
       "pending": "보낸 사람이 확인을 기다리고 있어요",
       "unlink": "연결 해제",
       "unlinkTitle": "{{surface}} 연결을 해제할까요?",

@@ -2147,6 +2147,7 @@
       "showCode": "コードをもう一度表示",
       "confirmTitle": "これはあなたの{{surface}}ですか？",
       "sentBy": "この送信者があなたのコードを送りました",
+      "onlyYou": "あなた本人の場合だけリンクしてください。",
       "workspace": "{{workspace}}で応答します",
       "confirm": "はい、連携します",
       "notMe": "自分ではありません",
@@ -2158,6 +2159,7 @@
     "row": {
       "hint": "{{assistant}}と話して、返信を{{surface}}で受け取れます。",
       "link": "連携",
+      "none": "{{assistant}}がそこであなたにメッセージを送れます",
       "pending": "送信者があなたの確認を待っています",
       "unlink": "連携を解除",
       "unlinkTitle": "{{surface}}の連携を解除しますか？",

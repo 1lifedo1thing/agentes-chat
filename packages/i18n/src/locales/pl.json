@@ -2336,6 +2336,7 @@
       "showCode": "Pokaż kod jeszcze raz",
       "confirmTitle": "Czy to twój {{surface}}?",
       "sentBy": "Ten nadawca wysłał twój kod",
+      "onlyYou": "Połącz tylko, jeśli to ty.",
       "workspace": "Odpowiada w {{workspace}}",
       "confirm": "Tak, połącz",
       "notMe": "To nie ja",
@@ -2347,7 +2348,8 @@
     "row": {
       "hint": "Rozmawiaj z {{assistant}} i dostawaj odpowiedzi w {{surface}}.",
       "link": "Połącz",
-      "pending": "Nadawca czeka na twoje potwierdzenie",
+      "none": "{{assistant}} może tam do ciebie pisać",
+      "pending": "Nadawca czeka, aż potwierdzisz",
       "unlink": "Rozłącz",
       "unlinkTitle": "Rozłączyć {{surface}}?",
       "unlinkText": "{{assistant}} przestanie ci tam odpowiadać. Możesz połączyć ponownie w każdej chwili.",

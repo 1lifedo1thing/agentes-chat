@@ -2147,6 +2147,7 @@
       "showCode": "再次显示代码",
       "confirmTitle": "这是你的{{surface}}吗？",
       "sentBy": "这个发送者发来了你的代码",
+      "onlyYou": "只有这是你本人时才关联。",
       "workspace": "在{{workspace}}中回复",
       "confirm": "是，关联",
       "notMe": "不是我",
@@ -2158,6 +2159,7 @@
     "row": {
       "hint": "和{{assistant}}聊天，并在{{surface}}上收到回复。",
       "link": "关联",
+      "none": "{{assistant}}可以在那里给你发消息",
       "pending": "有发送者在等你确认",
       "unlink": "取消关联",
       "unlinkTitle": "要取消关联{{surface}}吗？",

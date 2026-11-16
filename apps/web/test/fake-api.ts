@@ -221,6 +221,8 @@ export interface FakeState {
     removeError?: ApiError;
     undo?: { unlinked: boolean; display: string | null } | ApiError;
   };
+  /** Another workspace's agents, by its id (default: `agents`, whatever the workspace). */
+  agentsOf?: Record<string, Agent[]>;
   /** Overrides `account.signInOptions` (default: no account, sign-up allowed). */
   signInOptions?: SignInOptions;
   /** The server `account.phoneSignIn` names (default: https://app.agentes.chat). */
@@ -2407,8 +2409,8 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
           .map((m) => ({ id: m.userId, name: m.name, image: m.image ?? null })),
         consultations: [],
       }),
-      list: async () =>
-        state.agents.map((a) => {
+      list: async (orgId) =>
+        (state.agentsOf?.[orgId] ?? state.agents).map((a) => {
           const mode = a.audience?.mode ?? "everyone";
           const canTalk = talksToMe(a);
           const { monthlyBudgetUsd, ...rest } = a;

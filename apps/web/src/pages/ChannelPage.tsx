@@ -291,7 +291,7 @@ import {
   SpeedFallbackLine,
   StopPill,
   StopsProvider,
-  SurfaceViaTag,
+  SurfaceViaMark,
   stopsOf,
   UnshownLine,
   useStopMovedOn,
@@ -4637,7 +4637,6 @@ export const TimelineMessage = memo(function TimelineMessage({
                 />
               )}
               {via && <AppViaTag via={via} person={name} />}
-              {viaSurface && <SurfaceViaTag via={viaSurface} person={name} />}
               {talker && (
                 <span
                   className="msg-reminder msg-talker"
@@ -4658,6 +4657,7 @@ export const TimelineMessage = memo(function TimelineMessage({
         gutterTime={live ? undefined : <time dateTime={m.createdAt}>{formatClock(i18n.language, m.createdAt)}</time>}
         meta={m.local || live ? undefined : details}
         note={joinedTip ? { label: t("chat.joined.label"), tip: joinedTip } : undefined}
+        mark={viaSurface ? <SurfaceViaMark via={viaSurface} person={name} /> : undefined}
         // Its words arriving: its time and its stop after the time it started (the bar no longer says them).
         status={
           liveWaiting

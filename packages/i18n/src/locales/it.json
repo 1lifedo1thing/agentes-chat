@@ -2273,6 +2273,7 @@
       "showCode": "Mostra di nuovo il codice",
       "confirmTitle": "È il tuo {{surface}}?",
       "sentBy": "Questo mittente ha inviato il tuo codice",
+      "onlyYou": "Collegalo solo se sei tu.",
       "workspace": "Risponde in {{workspace}}",
       "confirm": "Sì, collega",
       "notMe": "Non sono io",
@@ -2284,7 +2285,8 @@
     "row": {
       "hint": "Parla con {{assistant}} e ricevi le sue risposte su {{surface}}.",
       "link": "Collega",
-      "pending": "Un mittente aspetta la tua conferma",
+      "none": "{{assistant}} può scriverti lì",
+      "pending": "Un mittente aspetta che tu confermi",
       "unlink": "Scollega",
       "unlinkTitle": "Scollegare {{surface}}?",
       "unlinkText": "{{assistant}} smette di risponderti lì. Puoi collegarlo di nuovo quando vuoi.",

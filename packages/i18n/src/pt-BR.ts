@@ -2264,6 +2264,7 @@ export const ptBR = {
       showCode: "Mostrar o código de novo",
       confirmTitle: "Este é o seu {{surface}}?",
       sentBy: "Este remetente enviou seu código",
+      onlyYou: "Vincule só se for você.",
       workspace: "Responde em {{workspace}}",
       confirm: "Sim, vincular",
       notMe: "Não sou eu",
@@ -2275,6 +2276,7 @@ export const ptBR = {
     row: {
       hint: "Fale com {{assistant}} e receba as respostas no {{surface}}.",
       link: "Vincular",
+      none: "{{assistant}} pode mandar mensagens para você lá",
       pending: "Um remetente espera a sua confirmação",
       unlink: "Desvincular",
       unlinkTitle: "Desvincular o {{surface}}?",

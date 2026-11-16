@@ -2209,6 +2209,7 @@
       "showCode": "Code opnieuw tonen",
       "confirmTitle": "Is dit jouw {{surface}}?",
       "sentBy": "Deze afzender stuurde je code",
+      "onlyYou": "Koppel het alleen als jij dit bent.",
       "workspace": "Antwoordt in {{workspace}}",
       "confirm": "Ja, koppelen",
       "notMe": "Niet ik",
@@ -2220,7 +2221,8 @@
     "row": {
       "hint": "Praat met {{assistant}} en krijg de antwoorden op {{surface}}.",
       "link": "Koppelen",
-      "pending": "Een afzender wacht op je bevestiging",
+      "none": "{{assistant}} kan je daar berichten sturen",
+      "pending": "Een afzender wacht tot je bevestigt",
       "unlink": "Ontkoppelen",
       "unlinkTitle": "{{surface}} ontkoppelen?",
       "unlinkText": "{{assistant}} antwoordt je daar niet meer. Je kunt het altijd opnieuw koppelen.",

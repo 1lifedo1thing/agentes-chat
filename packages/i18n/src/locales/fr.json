@@ -2273,6 +2273,7 @@
       "showCode": "Afficher le code à nouveau",
       "confirmTitle": "Est-ce bien votre {{surface}} ?",
       "sentBy": "Cet expéditeur a envoyé votre code",
+      "onlyYou": "Liez-le uniquement si c'est vous.",
       "workspace": "Répond dans {{workspace}}",
       "confirm": "Oui, lier",
       "notMe": "Ce n'est pas moi",
@@ -2284,7 +2285,8 @@
     "row": {
       "hint": "Parlez à {{assistant}} et recevez ses réponses sur {{surface}}.",
       "link": "Lier",
-      "pending": "Un expéditeur attend votre confirmation",
+      "none": "{{assistant}} peut vous écrire là-bas",
+      "pending": "Un expéditeur attend que vous confirmiez",
       "unlink": "Délier",
       "unlinkTitle": "Délier {{surface}} ?",
       "unlinkText": "{{assistant}} ne vous répondra plus là-bas. Vous pouvez le lier à nouveau quand vous voulez.",

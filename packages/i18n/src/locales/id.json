@@ -2147,6 +2147,7 @@
       "showCode": "Tampilkan kode lagi",
       "confirmTitle": "Apakah ini {{surface}} milikmu?",
       "sentBy": "Pengirim ini mengirim kodemu",
+      "onlyYou": "Tautkan hanya jika ini kamu.",
       "workspace": "Menjawab di {{workspace}}",
       "confirm": "Ya, tautkan",
       "notMe": "Bukan aku",
@@ -2158,7 +2159,8 @@
     "row": {
       "hint": "Ngobrol dengan {{assistant}} dan terima balasannya di {{surface}}.",
       "link": "Tautkan",
-      "pending": "Ada pengirim yang menunggu konfirmasimu",
+      "none": "{{assistant}} bisa mengirimimu pesan di sana",
+      "pending": "Ada pengirim yang menunggumu mengonfirmasi",
       "unlink": "Lepas tautan",
       "unlinkTitle": "Lepas tautan {{surface}}?",
       "unlinkText": "{{assistant}} berhenti menjawabmu di sana. Kamu bisa menautkannya lagi kapan saja.",

@@ -2272,6 +2272,7 @@
       "showCode": "Mostrar el código otra vez",
       "confirmTitle": "¿Es este tu {{surface}}?",
       "sentBy": "Este remitente envió tu código",
+      "onlyYou": "Vincúlalo solo si eres tú.",
       "workspace": "Responde en {{workspace}}",
       "confirm": "Sí, vincularlo",
       "notMe": "No soy yo",
@@ -2283,7 +2284,8 @@
     "row": {
       "hint": "Habla con {{assistant}} y recibe sus respuestas en {{surface}}.",
       "link": "Vincular",
-      "pending": "Un remitente espera tu confirmación",
+      "none": "{{assistant}} puede escribirte ahí",
+      "pending": "Un remitente espera que confirmes",
       "unlink": "Desvincular",
       "unlinkTitle": "¿Desvincular {{surface}}?",
       "unlinkText": "{{assistant}} deja de responderte allí. Puedes vincularlo de nuevo cuando quieras.",

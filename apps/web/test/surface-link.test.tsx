@@ -5,7 +5,7 @@ setupDom();
 
 import { ApiError, keys, type Message, type SurfaceLink } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
+import { createFakeApi, ENG_ID, ORG_ID, seedState, withChatPrefs, withRightHand } from "./fake-api";
 import { renderApp, screen, settle, showIn } from "./render";
 
 afterEach(() => cleanup());
@@ -56,6 +56,7 @@ describe("the outside chat app's row in Notificações", () => {
   test("hidden where the server bridges none, and for an account it may not link", async () => {
     const none = await notifications(undefined);
     expect(none.row()).toBeNull();
+    expect(calls(none.state, "surfaces.list")).toHaveLength(0);
     expect(document.body.textContent).not.toContain("Example Chat");
     cleanup();
     const closed = await notifications({ name: "Example Chat", allowed: false, links: [] });
@@ -67,6 +68,9 @@ describe("the outside chat app's row in Notificações", () => {
     const { state, app, row } = await notifications({ name: "Example Chat", links: [] });
     const r = row() as HTMLElement;
     expect(r.querySelector(".settings-row__label")?.textContent).toBe("Example Chat");
+    expect(document.getElementById("notice-surface-status")?.textContent).toBe(
+      "Seu braço direito pode mandar mensagens para você lá",
+    );
     await click(within(r).getByRole("button", { name: "Vincular" }));
     expect(app.router.state.location.search).toMatchObject({ link: 1 });
     expect(calls(state, "surfaces.mintCode")).toEqual([[ORG_ID]]);
@@ -104,6 +108,7 @@ describe("the outside chat app's row in Notificações", () => {
     expect(confirm.querySelector(".surface-sender")?.textContent).toBe(
       "Este remetente enviou seu código+1 555 0100AnaResponde em Acme",
     );
+    expect(confirm.querySelector(".surface-sender + p")?.textContent).toBe("Vincule só se for você.");
     const consent = confirm.querySelector(".surface-link > p:last-child")?.textContent;
     expect(consent).toBe(
       "Seu braço direito do agentes.chat pode mandar mensagens no Example Chat sobre seus workspaces, e ligar só quando for urgente e você permitir. Escreva parar para desativar.",
@@ -121,7 +126,7 @@ describe("the outside chat app's row in Notificações", () => {
     expect(within(row() as HTMLElement).getByRole("button", { name: "Desvincular" })).toBeTruthy();
   });
 
-  test("a sender waiting: the row opens the dialog at its confirm step, and Não sou eu cancels it", async () => {
+  test("a sender waiting: the row opens the dialog at its confirm step, and Não sou eu cancels it for a new code", async () => {
     const { state, row } = await notifications({ name: "Example Chat", links: [link()] });
     const r = row() as HTMLElement;
     expect(r.tagName).toBe("BUTTON");
@@ -136,8 +141,30 @@ describe("the outside chat app's row in Notificações", () => {
     ).toEqual(["done", "done", "current"]);
     await click(within(dialog).getByRole("button", { name: "Não sou eu" }));
     expect(calls(state, "surfaces.remove")).toEqual([["link-1"]]);
-    expect(screen().queryByRole("dialog")).toBeNull();
-    expect(within(row() as HTMLElement).getByRole("button", { name: "Vincular" })).toBeTruthy();
+    expect(dialogOf(/Fale com/).textContent).toContain("Seu código KQ7M-3XP1");
+    expect(within(row() as HTMLElement).getByRole("button", { name: "Vincular", hidden: true })).toBeTruthy();
+  });
+
+  test("a code made in another workspace: the consent names that workspace's right hand", async () => {
+    const state = withRightHand(seedState());
+    state.surface = { name: "Example Chat", links: [link({ orgId: "org-other", orgName: "Northwind" })] };
+    const hand = state.agents.find((a) => a.builtin === "right_hand");
+    if (hand) state.agentsOf = { "org-other": [{ ...hand, id: "agent-iris", name: "Iris" }] };
+    await renderApp(`/org/${ORG_ID}/settings/notifications`, { api: createFakeApi(state) });
+    await settle(6);
+    await click(document.querySelector("#notice-surface-status")?.closest(".settings-row") as HTMLElement);
+    const consent = dialogOf("Este é o seu Example Chat?").querySelector(".surface-link > p:last-child");
+    expect(consent?.textContent).toStartWith("Iris do agentes.chat pode mandar mensagens no Example Chat");
+  });
+
+  test("confirmed on another device while the code shows: the dialog says linked, and makes no other code", async () => {
+    const { state, app } = await notifications({ name: "Example Chat", links: [] });
+    await click(screen().getByRole("button", { name: "Vincular" }));
+    expect(dialogOf(/Fale com/).textContent).toContain("Seu código KQ7M-3XP1");
+    state.surface?.links.push(link({ status: "active", expiresAt: null, confirmedAt: new Date().toISOString() }));
+    await reload(app);
+    expect(dialogOf("Example Chat vinculado").textContent).toContain("Seu braço direito responde você por lá");
+    expect(calls(state, "surfaces.mintCode")).toHaveLength(1);
   });
 
   test("linked: Desvincular asks first, then the row goes back to Vincular", async () => {
@@ -154,15 +181,29 @@ describe("the outside chat app's row in Notificações", () => {
   });
 
   test("each failure says what happened with one way out", async () => {
-    // A code the server won't make: its cause, and Tentar de novo.
-    const mint = await notifications({
+    // A code the server won't make here: its cause, and only Fechar, since a retry can't pass.
+    const final = await notifications({
       name: "Example Chat",
       links: [],
       mintError: new ApiError(409, "surface.no_assistant", "no assistant"),
     });
-    await click(within(mint.row() as HTMLElement).getByRole("button", { name: "Vincular" }));
+    await click(within(final.row() as HTMLElement).getByRole("button", { name: "Vincular" }));
     let dialog = dialogOf(/Fale com/);
     expect(within(dialog).getByRole("alert").textContent).toContain("Escolha outro workspace para vincular.");
+    expect(within(dialog).queryByRole("button", { name: "Tentar de novo" })).toBeNull();
+    await click(within(dialog).getAllByRole("button", { name: "Fechar" }).at(-1) as HTMLElement);
+    expect(screen().queryByRole("dialog")).toBeNull();
+    cleanup();
+
+    // One that may pass later: Tentar de novo.
+    const mint = await notifications({
+      name: "Example Chat",
+      links: [],
+      mintError: new ApiError(429, "rate_limited", "slow down"),
+    });
+    await click(within(mint.row() as HTMLElement).getByRole("button", { name: "Vincular" }));
+    dialog = dialogOf(/Fale com/);
+    expect(within(dialog).getByRole("alert")).toBeTruthy();
     if (mint.state.surface) mint.state.surface.mintError = undefined;
     await click(within(dialog).getByRole("button", { name: "Tentar de novo" }));
     expect(dialog.textContent).toContain("Seu código KQ7M-3XP2");
@@ -227,16 +268,24 @@ describe("the outside chat app's row in Notificações", () => {
 
     const active = await notifications({
       name: LONG_SURFACE,
-      links: [link({ status: "active", display: LONG_DISPLAY, profileName: LONG_PROFILE, expiresAt: null })],
+      links: [link({ status: "active", display: LONG_HANDLE, profileName: LONG_PROFILE, expiresAt: null })],
     });
     await showIn(active.app.services, "de");
+    expect(document.getElementById("notice-surface-status")?.textContent).toBe(`${LONG_HANDLE} · ${LONG_PROFILE}`);
+    cleanup();
+
+    const spaced = await notifications({
+      name: LONG_SURFACE,
+      links: [link({ status: "active", display: LONG_DISPLAY, profileName: LONG_PROFILE, expiresAt: null })],
+    });
+    await showIn(spaced.app.services, "de");
     expect(document.getElementById("notice-surface-status")?.textContent).toBe(`${LONG_DISPLAY} · ${LONG_PROFILE}`);
   });
 });
 
 describe("a message written on the outside chat app", () => {
-  test("says via the app beside the person's name, forwarded ones say so, the name falling back to the id", async () => {
-    const state = seedState();
+  const seeded = (style: "bubbles" | "comfortable" | "left") => {
+    const state = withChatPrefs(seedState(), { channelStyle: style, dmStyle: style });
     const me = state.me?.user.id ?? "";
     state.surface = { name: "Example Chat", links: [] };
     const message = (id: string, via: Record<string, unknown>) =>
@@ -256,10 +305,15 @@ describe("a message written on the outside chat app", () => {
       message("m2", { kind: "surface", surface: "example chat", linkId: "link-1", forwarded: true }),
       message("m3", { kind: "surface", surface: "otherchat", linkId: "link-2" }),
     ];
-    await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(state) });
+    return state;
+  };
+  const marks = () => [...document.querySelectorAll<HTMLElement>(".msg-via")];
+
+  test("a glyph before the time says via the app, forwarded ones say so, the name falling back to the id", async () => {
+    await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(seeded("bubbles")) });
     await settle(8);
-    const tags = [...document.querySelectorAll(".msg-via")] as HTMLElement[];
-    expect(tags.map((tag) => tag.textContent)).toEqual([
+    const tags = marks();
+    expect(tags.map((tag) => tag.getAttribute("aria-label"))).toEqual([
       "via Example Chat",
       "encaminhada via Example Chat",
       "via Otherchat",
@@ -268,6 +322,18 @@ describe("a message written on the outside chat app", () => {
     expect(tags[1]?.getAttribute("title")).toBe(
       "Walter encaminhou isto do Example Chat. As palavras são de outra pessoa.",
     );
+  });
+
+  test("my own rows show it in every look, grouped ones too, never only to screen readers", async () => {
+    for (const style of ["bubbles", "comfortable", "left"] as const) {
+      await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(seeded(style)) });
+      await settle(8);
+      const tags = marks();
+      expect(tags).toHaveLength(3);
+      for (const tag of tags) expect(tag.closest(".ac-visually-hidden")).toBeNull();
+      if (style === "bubbles") for (const tag of tags) expect(tag.closest(".ac-msg__stamp")).toBeTruthy();
+      cleanup();
+    }
   });
 });
 

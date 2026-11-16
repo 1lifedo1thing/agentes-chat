@@ -1,16 +1,25 @@
 import {
   keys,
   type SurfaceLink,
+  type SurfaceLinks,
+  useAgents,
   useConfirmSurfaceLink,
   useRemoveSurfaceLink,
   useSurfaceLinks,
 } from "@agenteschat/client";
 import { formatTimeLeft } from "@agenteschat/client/lib/actions";
+import { isHttpsUrl } from "@agenteschat/client/lib/custom-tools";
 import { errorCode, errorText } from "@agenteschat/client/lib/errors";
-import { rightHandOf } from "@agenteschat/client/lib/right-hand";
-import { surfaceRowOf } from "@agenteschat/client/lib/surface-links";
+import { rightHandName } from "@agenteschat/client/lib/right-hand";
+import {
+  codeDeadline,
+  LINK_POLL_MS,
+  newlyLinked,
+  RENEW_BEFORE_MS,
+  surfaceRowOf,
+} from "@agenteschat/client/lib/surface-links";
 import { Alert, Button, Dialog, DialogBody, DialogFooter, Icon, PixelSpinner, QrCode, useNow } from "@agenteschat/ui";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
@@ -18,18 +27,15 @@ import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { Step } from "@/components/devices/Step";
 import { PrefRow } from "@/components/NoticePrefs";
 import { useOrg } from "@/components/org-context";
-import { useDirectory } from "@/hooks/useDirectory";
 import { useImageLoads } from "@/hooks/useImageLoads";
 import { useOpenParam } from "@/lib/open-param";
-import { codeEndsAt, surfaceMarkUrl } from "@/lib/surface";
+import { surfaceMarkUrl } from "@/lib/surface";
 import { useToast } from "@/lib/toast";
 
-/** A new code this long before the one on screen runs out, so a scan never meets an expired one. */
-const RENEW_BEFORE_MS = 20_000;
-/** While the dialog is open the links are asked this often too, in case the live event is missed. */
-const WAIT_POLL_MS = 3000;
 /** Refusals a fresh code gets past: the link ran out, was canceled, or its sender belongs to someone else. */
 const NEW_CODE_FIXES = new Set(["surface.link_gone", "surface.code_gone", "surface.taken"]);
+/** Refusals to make a code that a retry can't get past: the way out is elsewhere, so the dialog offers Close. */
+const MINT_FINAL = new Set(["surface.off", "surface.not_allowed", "surface.no_assistant", "surface.no_workspace"]);
 
 /** The surface's mark: the web's connector mark of that name when there is one, else a plain chat icon. */
 export function SurfaceMark({ name }: { name: string }) {
@@ -42,11 +48,14 @@ export function SurfaceMark({ name }: { name: string }) {
   );
 }
 
-/** The workspace's built-in assistant by name, as it is called in this workspace. */
-function useAssistantName() {
+/**
+ * The built-in assistant of workspace `orgId` by name, the generic words only once its agents loaded without one, null
+ * while they load: the consent line records this name, so it never shows a stand-in that may change.
+ */
+function useAssistantName(orgId: string): string | null {
   const { t } = useTranslation();
-  const { org } = useOrg();
-  return rightHandOf(useDirectory(org.id).agents)?.name ?? t("rightHand.labelCapitalized");
+  const agents = useAgents(orgId).data;
+  return agents ? (rightHandName(agents) ?? t("rightHand.labelCapitalized")) : null;
 }
 
 /**
@@ -59,7 +68,8 @@ export function SurfacePrefRow() {
   const toast = useToast();
   const links = useSurfaceLinks();
   const remove = useRemoveSurfaceLink();
-  const assistant = useAssistantName();
+  const { org } = useOrg();
+  const assistant = useAssistantName(org.id) ?? t("rightHand.labelCapitalized");
   const [open, setOpen] = useOpenParam("link");
   const [unlinking, setUnlinking] = useState<SurfaceLink | null>(null);
   const row = surfaceRowOf(links.data);
@@ -73,10 +83,12 @@ export function SurfacePrefRow() {
         id="notice-surface"
         lead={<SurfaceMark name={surface} />}
         label={surface}
-        hint={row.kind === "pending" ? undefined : t("surface.row.hint", { assistant, surface })}
+        hint={row.kind === "active" ? t("surface.row.hint", { assistant, surface }) : undefined}
         status={
           row.kind === "pending" ? (
             t("surface.row.pending")
+          ) : row.kind === "none" ? (
+            t("surface.row.none", { assistant })
           ) : sender.length > 0 ? (
             <span className="surface-sender__line">
               {sender.map((s, i) => (
@@ -144,37 +156,46 @@ export function SurfacePrefRow() {
 export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   const api = useApi();
+  const qc = useQueryClient();
   const { org } = useOrg();
-  const assistant = useAssistantName();
   const links = useSurfaceLinks();
   const confirm = useConfirmSurfaceLink();
   const remove = useRemoveSurfaceLink();
   const [sent, setSent] = useState(false);
   const [linked, setLinked] = useState<SurfaceLink | null>(null);
   const [failure, setFailure] = useState<unknown>(null);
+  // The active links when the dialog opened: one more, confirmed on another device, ends it as linked.
+  const [before, setBefore] = useState<string[] | null>(null);
+  const data = links.data;
   useEffect(() => {
-    if (open) return;
-    setSent(false);
-    setLinked(null);
-    setFailure(null);
-  }, [open]);
+    if (!open) {
+      setSent(false);
+      setLinked(null);
+      setFailure(null);
+      setBefore(null);
+    } else if (data) setBefore((b) => b ?? data.links.filter((l) => l.status === "active").map((l) => l.id));
+  }, [open, data]);
 
   useQuery({
     queryKey: keys.surfaceLinks,
     queryFn: () => api.surfaces.list(),
     enabled: open,
-    refetchInterval: WAIT_POLL_MS,
+    refetchInterval: LINK_POLL_MS,
   });
   const row = surfaceRowOf(links.data);
   const surface = row.kind === "hidden" ? "" : row.surface;
   const pending = row.kind === "pending" ? row.link : null;
-  const step = linked ? "done" : failure ? "failed" : pending ? "confirm" : sent ? "wait" : "code";
+  const done = linked ?? (before && newlyLinked(links.data, before));
+  const step = done ? "done" : failure ? "failed" : pending ? "confirm" : sent ? "wait" : "code";
+  // The link answers in its own workspace, which may not be the one these settings are in (a code made elsewhere).
+  const assistant = useAssistantName((done ?? pending)?.orgId ?? org.id);
+  const named = assistant ?? t("rightHand.labelCapitalized");
 
   const code = useQuery({
     queryKey: ["surfaceLinkCode", org.id],
     queryFn: async () => {
       const minted = await api.surfaces.mintCode(org.id);
-      return { ...minted, endsAt: codeEndsAt(minted.expiresAt) };
+      return { ...minted, endsAt: codeDeadline(minted, Date.now()) };
     },
     enabled: open && (step === "code" || step === "wait"),
     gcTime: 0,
@@ -187,12 +208,24 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
   });
   const now = useNow(open && code.isSuccess && 1000);
   const busy = confirm.isPending || remove.isPending;
-  // A sender still waiting (one linked to someone else) would bring the confirm back: it is canceled first.
+  // A sender still waiting (one linked to someone else, or not the person's) would bring the confirm back: it is
+  // canceled first, and the step stays until it is gone, out of the cache too, so its card never comes back meanwhile.
   const startAgain = () => {
-    if (pending) remove.mutate(pending.id);
-    setFailure(null);
-    setSent(false);
-    void code.refetch();
+    const fresh = () => {
+      if (pending)
+        qc.setQueryData<SurfaceLinks>(
+          keys.surfaceLinks,
+          (d) => d && { ...d, links: d.links.filter((l) => l.id !== pending.id) },
+        );
+      setFailure(null);
+      setSent(false);
+      void code.refetch();
+    };
+    if (!pending) return fresh();
+    remove.mutate(pending.id, {
+      onSuccess: fresh,
+      onError: (e) => (errorCode(e) === "surface.link_gone" ? fresh() : setFailure(e)),
+    });
   };
 
   const title =
@@ -200,7 +233,7 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
       ? t("surface.link.doneTitle", { surface })
       : step === "confirm"
         ? t("surface.link.confirmTitle", { surface })
-        : t("surface.link.title", { assistant, surface });
+        : t("surface.link.title", { assistant: named, surface });
   const steps = (
     <ol className="dv-steps">
       <Step state={step === "code" ? "current" : "done"} live={false} title={t("surface.link.stepScan", { surface })} />
@@ -212,7 +245,7 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
       <Step state={step === "confirm" ? "current" : "waiting"} live={false} title={t("surface.link.stepConfirm")} />
     </ol>
   );
-  const openUrl = code.data && /^https:\/\//.test(code.data.openUrl) ? code.data.openUrl : null;
+  const openUrl = code.data && isHttpsUrl(code.data.openUrl) ? code.data.openUrl : null;
 
   return (
     <Dialog
@@ -222,10 +255,10 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
       closeLabel={t("common.close")}
       width={440}
     >
-      {step === "done" && linked ? (
+      {step === "done" ? (
         <>
           <DialogBody>
-            <p className="surface-link__text">{t("surface.link.doneText", { assistant })}</p>
+            <p className="surface-link__text">{t("surface.link.doneText", { assistant: named })}</p>
           </DialogBody>
           <DialogFooter>
             <Button variant="primary" onClick={onClose}>
@@ -240,7 +273,7 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
           </DialogBody>
           <DialogFooter>
             {NEW_CODE_FIXES.has(errorCode(failure) ?? "") ? (
-              <Button variant="primary" onClick={startAgain}>
+              <Button variant="primary" loading={remove.isPending} disabled={remove.isPending} onClick={startAgain}>
                 {t("surface.link.newCode")}
               </Button>
             ) : (
@@ -269,22 +302,20 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
                 </span>
               )}
             </div>
+            <p className="small surface-link__text">{t("surface.link.onlyYou")}</p>
             {steps}
-            <p className="small muted surface-link__text">{t("surface.link.consent", { assistant, surface })}</p>
+            {assistant && (
+              <p className="small muted surface-link__text">{t("surface.link.consent", { assistant, surface })}</p>
+            )}
           </DialogBody>
           <DialogFooter>
-            <Button
-              variant="ghost"
-              loading={remove.isPending}
-              disabled={busy}
-              onClick={() => remove.mutate(pending.id, { onSuccess: onClose, onError: setFailure })}
-            >
+            <Button variant="ghost" loading={remove.isPending} disabled={busy} onClick={startAgain}>
               {t("surface.link.notMe")}
             </Button>
             <Button
               variant="primary"
               loading={confirm.isPending}
-              disabled={busy}
+              disabled={busy || !assistant}
               onClick={() => confirm.mutate(pending.id, { onSuccess: setLinked, onError: setFailure })}
             >
               {t("surface.link.confirm")}
@@ -294,7 +325,13 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
       ) : code.isError ? (
         <DialogBody className="surface-link">
           <Alert>{errorText(t, code.error)}</Alert>
-          <Button onClick={() => void code.refetch()}>{t("common.retry")}</Button>
+          {MINT_FINAL.has(errorCode(code.error) ?? "") ? (
+            <Button onClick={onClose}>{t("common.close")}</Button>
+          ) : (
+            <Button loading={code.isFetching} disabled={code.isFetching} onClick={() => void code.refetch()}>
+              {t("common.retry")}
+            </Button>
+          )}
         </DialogBody>
       ) : (
         <DialogBody className="surface-link">

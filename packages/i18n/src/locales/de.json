@@ -2209,6 +2209,7 @@
       "showCode": "Code noch einmal zeigen",
       "confirmTitle": "Ist das dein {{surface}}?",
       "sentBy": "Dieser Absender hat deinen Code gesendet",
+      "onlyYou": "Verknüpfe ihn nur, wenn du das bist.",
       "workspace": "Antwortet in {{workspace}}",
       "confirm": "Ja, verknüpfen",
       "notMe": "Nicht ich",
@@ -2220,7 +2221,8 @@
     "row": {
       "hint": "Sprich mit {{assistant}} und bekomm die Antworten auf {{surface}}.",
       "link": "Verknüpfen",
-      "pending": "Ein Absender wartet auf deine Bestätigung",
+      "none": "{{assistant}} kann dir dort schreiben",
+      "pending": "Ein Absender wartet darauf, dass du bestätigst",
       "unlink": "Trennen",
       "unlinkTitle": "{{surface}} trennen?",
       "unlinkText": "{{assistant}} antwortet dir dort nicht mehr. Du kannst es jederzeit wieder verknüpfen.",

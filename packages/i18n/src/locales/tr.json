@@ -2209,6 +2209,7 @@
       "showCode": "Kodu yeniden göster",
       "confirmTitle": "Bu sizin {{surface}} hesabınız mı?",
       "sentBy": "Kodunuzu bu gönderen gönderdi",
+      "onlyYou": "Yalnızca bu sizseniz bağlayın.",
       "workspace": "{{workspace}} içinde yanıtlar",
       "confirm": "Evet, bağla",
       "notMe": "Ben değilim",
@@ -2220,7 +2221,8 @@
     "row": {
       "hint": "{{assistant}} ile konuşun ve yanıtları {{surface}} üzerinden alın.",
       "link": "Bağla",
-      "pending": "Bir gönderen onayınızı bekliyor",
+      "none": "{{assistant}} size oradan mesaj gönderebilir",
+      "pending": "Bir gönderen onaylamanızı bekliyor",
       "unlink": "Bağlantıyı kaldır",
       "unlinkTitle": "{{surface}} bağlantısı kaldırılsın mı?",
       "unlinkText": "{{assistant}} size orada artık yanıt vermez. İstediğiniz zaman yeniden bağlayabilirsiniz.",

@@ -5489,6 +5489,9 @@
   "surface.link.sentBy": {
     "value": "This sender sent your code"
   },
+  "surface.link.onlyYou": {
+    "value": "Link it only if this is you."
+  },
   "surface.link.workspace": {
     "value": "Answers in {{workspace}}"
   },
@@ -5516,8 +5519,11 @@
   "surface.row.link": {
     "value": "Link"
   },
+  "surface.row.none": {
+    "value": "{{assistant}} can message you there"
+  },
   "surface.row.pending": {
-    "value": "A sender is waiting for your confirm"
+    "value": "A sender is waiting for you to confirm"
   },
   "surface.row.unlink": {
     "value": "Unlink"

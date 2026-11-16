@@ -2372,6 +2372,8 @@ export const en = {
       showCode: "Show the code again",
       confirmTitle: "Is this your {{surface}}?",
       sentBy: "This sender sent your code",
+      /** Under the sender: the one line that says to stop before linking someone else's sender. */
+      onlyYou: "Link it only if this is you.",
       /** The workspace whose assistant answers on the chat app. */
       workspace: "Answers in {{workspace}}",
       confirm: "Yes, link it",
@@ -2385,7 +2387,9 @@ export const en = {
     row: {
       hint: "Talk with {{assistant}} and get its replies on {{surface}}.",
       link: "Link",
-      pending: "A sender is waiting for your confirm",
+      /** Under the app's name while nothing is linked. {{assistant}} is the workspace's built-in assistant by name. */
+      none: "{{assistant}} can message you there",
+      pending: "A sender is waiting for you to confirm",
       unlink: "Unlink",
       unlinkTitle: "Unlink {{surface}}?",
       unlinkText: "{{assistant}} stops answering you there. You can link it again any time.",
