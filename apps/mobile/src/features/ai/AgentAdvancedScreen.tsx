@@ -23,12 +23,13 @@ import { planOf } from "@agenteschat/client/lib/plans";
 import { isAuto } from "@agenteschat/client/lib/providers";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
-import { GroupedHeader, GroupedList, GroupedRow } from "@/ui";
+import { GROUPED_ROW, GroupedHeader, GroupedList, GroupedRow, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useWidenAsk } from "../chat/ReachLines";
+import { Gap } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
@@ -143,13 +144,14 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
         {brain.isPending ? (
-          <ActivityIndicator color={c.muted} style={styles.loading} />
+          <SkeletonList rows={4} />
         ) : !view || !now || !shown ? (
           <LoadFailed onRetry={() => void brain.refetch()} />
         ) : (
           <>
             {kind || view.brain === "model" ? (
-              <View style={styles.gap}>
+              <>
+                <Gap />
                 <GroupedList>
                   {autoModel ? (
                     // "Automático" picks the effort too: the row says so and, on a plan, leads to a model, which
@@ -172,7 +174,7 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
                     </View>
                   )}
                 </GroupedList>
-              </View>
+              </>
             ) : null}
             {viewSpeedFits(view) ? (
               <>
@@ -248,7 +250,8 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
                   />
                 ) : null}
                 {apiKey ? (
-                  <View style={styles.gap}>
+                  <>
+                    <Gap />
                     <GroupedList>
                       <GroupedRow
                         label={fallbackLabel}
@@ -262,19 +265,19 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
                         onPress={() => pending.fallback === undefined && void save({ fallback: !shown.fallback })}
                       />
                     </GroupedList>
-                  </View>
+                  </>
                 ) : null}
               </>
             ) : null}
-            <View style={styles.gap}>
-              <GroupedList>
-                <GroupedRow
-                  label={t("agentPage.work.brain.advanced.defaults")}
-                  disabled={!may || isAdvancedDefault(view.brain, shown)}
-                  onPress={putBack}
-                />
-              </GroupedList>
-            </View>
+            <Gap />
+            <GroupedList>
+              <GroupedRow
+                icon="undo"
+                label={t("agentPage.work.brain.advanced.defaults")}
+                disabled={!may || isAdvancedDefault(view.brain, shown)}
+                onPress={putBack}
+              />
+            </GroupedList>
           </>
         )}
       </ScrollView>
@@ -285,9 +288,6 @@ export function AgentAdvancedScreen({ agentId }: { agentId: string }) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   in: { paddingHorizontal: 16, paddingTop: 8 },
-  loading: { marginTop: 16 },
-  // A list without a header keeps a header's room above it.
-  gap: { marginTop: 20 },
-  // On the rows' 14 pt edge.
-  ramp: { paddingHorizontal: 14, paddingVertical: 12 },
+  // On a grouped row's edges, as the rows around it.
+  ramp: { paddingHorizontal: GROUPED_ROW.padX, paddingVertical: 12 },
 });

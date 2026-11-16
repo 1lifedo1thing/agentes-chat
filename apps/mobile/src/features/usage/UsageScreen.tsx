@@ -1,6 +1,5 @@
-import type { OrgPlanUsage, PlanAccountUsage, PlanServes } from "@agenteschat/client";
+import type { OrgPlanUsage, PlanAccountUsage } from "@agenteschat/client";
 import {
-  keys,
   useAiAccounts,
   useApi,
   useComposioUsage,
@@ -11,32 +10,22 @@ import {
   useWorkspaceUsesApi,
 } from "@agenteschat/client";
 import { composioUsageText, showsComposioUsage } from "@agenteschat/client/lib/composio";
-import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { formatPercent, formatShortDate, formatTokensShort, formatUsd } from "@agenteschat/client/lib/format";
 import { can } from "@agenteschat/client/lib/permissions";
 import {
   accountName,
   accountOwner,
-  accountShares,
-  brandOf,
   groupUsageAccounts,
   loginsText,
-  noWindowsText,
   planMeterText,
-  servesTerms,
   servesText,
-  shareFacts,
-  splitUsage,
 } from "@agenteschat/client/lib/plan-usage";
 import { planName } from "@agenteschat/client/lib/plans";
 import { parseAmount } from "@agenteschat/client/lib/text";
-import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
-import { gradientOf } from "@agenteschat/ui/agent/engine";
 import { PLAN_ALMOST, PLAN_TONE, planLevel, planLine } from "@agenteschat/ui/plan-state";
-import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Keyboard, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Keyboard, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -45,11 +34,11 @@ import {
   Button,
   fieldText,
   Icon,
-  InfoHint,
   MEDIA_ROW,
   MediaRow,
   ProviderLogo,
   Segmented,
+  SkeletonList,
   Text,
   useTheme,
   useToast,
@@ -61,14 +50,14 @@ import { PlanHoldNote, usePlanHold } from "../ai/parts";
 import { AgentFace } from "../shared/Face";
 import { FirstUse, LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useErrorToast } from "../shared/hooks";
-import { agentLook } from "../shared/logic";
 import { Loaded, PushedHeader } from "../shared/parts";
-import { Meter, PlanMeter, PlanModels, Tag, UsageCard } from "./parts";
+import { Meter, Tag, UsageCard } from "./parts";
 import { MyUsageCard, PeopleList } from "./people";
+import { openUsageAccount } from "./UsageAccountScreen";
 
 /*
- * IA e uso, as the web's Configurações › IA e uso (ADR 0063): the workspace's plan accounts, each a row that opens to
- * its windows with every agent's estimated part. What bills per use (the API per agent, its spend by kind, the default
+ * IA e uso, as the web's Configurações › IA e uso (ADR 0063): the workspace's plan accounts, each a row that pushes
+ * its own screen (its windows with every agent's estimated part, `UsageAccountScreen`). What bills per use (the API per agent, its spend by kind, the default
  * budget) shows only once the workspace uses the API (`workspaceUsesApi`). Money only where the server sent it.
  * Connecting an account, what its owner does with it and the workspace's keys are on the AI accounts screen.
  */
@@ -102,7 +91,6 @@ export function UsageScreen() {
   // The viewer's own logins of one account are one row, as their plans group them.
   const mine = useAiAccounts(orgId);
   const data = usage.data ? { ...usage.data, accounts: groupUsageAccounts(usage.data.accounts, mine.data) } : undefined;
-  const several = new Set(data?.accounts.map((a) => a.machineId)).size > 1;
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
       <PushedHeader title={t("settings.section.usage")} solid={false} grouped />
@@ -126,7 +114,7 @@ export function UsageScreen() {
         {/* A view switched to, or numbers that came in, fade in; what is here when the screen opens just shows. */}
         <LayoutAnimationConfig skipEntering>
           {view === "people" ? <Loaded>{allowed ? <PeopleList /> : <MyUsageCard />}</Loaded> : null}
-          {view === "people" ? null : usage.isLoading ? <ActivityIndicator color={c.muted} /> : null}
+          {view === "people" ? null : usage.isLoading ? <SkeletonList rows={3} /> : null}
           {view === "people" ? null : !usage.isLoading && !data ? (
             <LoadFailed onRetry={() => void usage.refetch()} />
           ) : null}
@@ -159,13 +147,7 @@ export function UsageScreen() {
                     <View>
                       {data.accounts.map((a, i) => (
                         <View key={a.key} style={i > 0 ? [styles.divided, { borderTopColor: c.line }] : undefined}>
-                          <AccountRow
-                            account={a}
-                            money={data.money}
-                            computer={
-                              several ? computerNameOf(t, org?.name ?? "", a.machineName, isPersonal(org)) : null
-                            }
-                          />
+                          <AccountRow account={a} />
                         </View>
                       ))}
                     </View>
@@ -230,227 +212,55 @@ export function UsageScreen() {
 }
 
 /**
- * A plan account as a row that opens (the web's `AccountRow`). Closed: its maker's mark, its name and plan, whose it
- * is and one meter, the window closest to its limit, with what matters near the limit under it. Open: its maker and
- * address, every window with its bar split by agent in their colours, its agents, when it renews, the month's total
- * and, for its owner, the way to the screen where they rename it, sign in again or disconnect it. Near its limit it
- * starts open.
+ * A plan account as a row of the card (the web's `AccountRow` closed): its maker's mark, its name and plan, whose it
+ * is and one meter, the window closest to its limit, with what matters near the limit under it. Its chevron says it
+ * opens: its windows split by agent, its agents and who uses it are on a screen of their own (`UsageAccountScreen`).
  */
-function AccountRow({
-  account,
-  money,
-  computer,
-}: {
-  account: PlanAccountUsage;
-  money: boolean;
-  computer: string | null;
-}) {
+function AccountRow({ account }: { account: PlanAccountUsage }) {
   const { t, i18n } = useTranslation();
-  const dir = useDirectory();
   const c = useColors();
   const text = planMeterText(t, i18n.language);
   const line = account.usage ? planLine(account.usage, text) : null;
-  const [open, setOpen] = useState(line != null && line.state !== "ok");
   const tone = c[PLAN_TONE[planLevel(line?.top?.used ?? 0, line?.state === "limited")]];
-  const shares = accountShares(account);
-  const list =
-    shares.shown.length > 0 ? (
-      <AgentShares shares={shares} window={shares.window ? text.short(shares.window) : null} />
-    ) : null;
   const owner = [accountOwner(t, account), servesText(t, account), loginsText(t, account)].filter(Boolean).join(" · ");
   return (
-    <View>
-      <Pressable
-        onPress={() => setOpen(!open)}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-      >
-        <View style={styles.rowHead}>
-          <ProviderLogo id={account.provider ?? account.kind} size="sm" off={account.signedOut} />
-          <View style={styles.rowName}>
-            <Text variant="callout" tone="ink" style={styles.bold}>
-              {accountName(t, account)}
-            </Text>
-            {account.plan ? <Tag text={planName(account.plan)} color={c.muted} /> : null}
-            {account.signedOut ? <Tag text={t("usageViews.signedOut")} color={c.warn} /> : null}
-            {owner ? (
-              <Text variant="small" tone="muted">
-                {owner}
-              </Text>
-            ) : null}
-          </View>
-          <View style={[styles.chevron, open && styles.turned]}>
-            <Icon name="right" size={14} color={c.faint} />
-          </View>
-        </View>
-        {line?.top ? (
-          <View style={styles.rowMeter}>
-            <Text variant="caption" tone="muted" style={styles.tabular}>
-              {`${text.short(line.top)} ${line.top.used}%`}
-            </Text>
-            <Meter value={line.top.used} label={text.window(line.top)} mark={PLAN_ALMOST} color={tone} />
-          </View>
-        ) : null}
-        {line?.alert ? (
-          <Text variant="caption" style={[styles.bold, { color: tone }]}>
-            {line.alert}
+    <Pressable
+      onPress={() => openUsageAccount(account.key)}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+    >
+      <View style={styles.rowHead}>
+        <ProviderLogo id={account.provider ?? account.kind} size="sm" off={account.signedOut} />
+        <View style={styles.rowName}>
+          <Text variant="callout" tone="ink" style={styles.bold}>
+            {accountName(t, account)}
           </Text>
-        ) : null}
-      </Pressable>
-      {open ? (
-        <Loaded>
-          <View style={styles.rowBody}>
+          {account.plan ? <Tag text={planName(account.plan)} color={c.muted} /> : null}
+          {account.signedOut ? <Tag text={t("usageViews.signedOut")} color={c.warn} /> : null}
+          {owner ? (
             <Text variant="small" tone="muted">
-              {[brandOf(account), account.email, computer].filter(Boolean).join(" · ")}
+              {owner}
             </Text>
-            {account.usage ? (
-              <>
-                <PlanMeter
-                  plain
-                  usage={splitUsage(account.usage, (id) => gradientOf(agentLook(dir.agentById.get(id)).color))}
-                >
-                  {list}
-                </PlanMeter>
-                <PlanModels usage={account.usage} provider={account.provider} />
-              </>
-            ) : (
-              <>
-                <Text variant="small" tone="muted">
-                  {noWindowsText(t, account)}
-                </Text>
-                {list}
-              </>
-            )}
-            {account.monthTokens > 0 ? (
-              money && typeof account.equivalentUsd === "number" ? (
-                <InfoHint
-                  name={t("common.about", { label: t("usageViews.apiPrice") })}
-                  text={t("usageViews.apiPriceHint")}
-                  variant="small"
-                >
-                  <Text variant="small" tone="muted">
-                    {t("usageViews.monthTokens", { tokens: formatTokensShort(t, i18n.language, account.monthTokens) })}
-                    {` · ${t("usageViews.equivalent", { amount: formatUsd(i18n.language, account.equivalentUsd) })}`}
-                  </Text>
-                </InfoHint>
-              ) : (
-                <Text variant="small" tone="muted">
-                  {t("usageViews.monthTokens", { tokens: formatTokensShort(t, i18n.language, account.monthTokens) })}
-                </Text>
-              )
-            ) : null}
-            {account.mine && account.accountId && account.serves ? (
-              <WhoUses accountId={account.accountId} account={account} />
-            ) : null}
-            {account.mine && account.accountId ? (
-              <View style={styles.start}>
-                <Button variant="secondary" size="sm" label={t("mobile.ai.row")} onPress={openAiAccounts} />
-              </View>
-            ) : null}
-          </View>
-        </Loaded>
+          ) : null}
+        </View>
+        <View style={styles.chevron}>
+          <Icon name="right" size={14} color={c.faint} />
+        </View>
+      </View>
+      {line?.top ? (
+        <View style={styles.rowMeter}>
+          <Text variant="caption" tone="muted" style={styles.tabular}>
+            {`${text.short(line.top)} ${line.top.used}%`}
+          </Text>
+          <Meter value={line.top.used} label={text.window(line.top)} mark={PLAN_ALMOST} color={tone} />
+        </View>
       ) : null}
-    </View>
-  );
-}
-
-/** "Quem usa" (ADR 0059 §3), for whoever connected the plan, as on the web: saved at once, its terms behind the ⓘ. */
-function WhoUses({ accountId, account }: { accountId: string; account: PlanAccountUsage }) {
-  const { t } = useTranslation();
-  const { orgId } = useOrg();
-  const api = useApi();
-  const qc = useQueryClient();
-  const toast = useToast();
-  const failed = useErrorToast();
-  const [busy, setBusy] = useState(false);
-  const serves = account.serves ?? "everyone";
-  const terms = servesTerms(t, account);
-  const choose = async (next: PlanServes) => {
-    if (next === serves || busy) return;
-    setBusy(true);
-    try {
-      await api.machines.setAccountServes(orgId, accountId, next);
-      toast({
-        title: t(next === "owner" ? "usageViews.serves.savedOwner" : "usageViews.serves.savedEveryone"),
-        icon: "check",
-      });
-      for (const key of [keys.planUsage(orgId), keys.aiAccounts(orgId), keys.agents(orgId), keys.aiStatus(orgId)])
-        void qc.invalidateQueries({ queryKey: key });
-    } catch (error) {
-      failed(error);
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <View style={styles.serves}>
-      <InfoHint
-        name={t("common.about", { label: t("aiAccounts.share.terms.about") })}
-        text={terms.text}
-        variant="small"
-      >
-        <Text variant="small" tone="ink2" style={styles.bold}>
-          {t("usageViews.serves.label")}
+      {line?.alert ? (
+        <Text variant="caption" style={[styles.bold, { color: tone }]}>
+          {line.alert}
         </Text>
-      </InfoHint>
-      <Segmented
-        value={serves}
-        onChange={(v) => void choose(v === "owner" ? "owner" : "everyone")}
-        items={[
-          { key: "everyone", label: t("usageViews.serves.all") },
-          { key: "owner", label: t("usageViews.serves.me") },
-        ]}
-      />
-    </View>
-  );
-}
-
-/**
- * The account's agents, biggest share first, each on one line of words ("Lia · semana 48% · 4,8 mi tokens"); past the
- * first few, one row that opens the rest in place.
- */
-function AgentShares({ shares, window }: { shares: ReturnType<typeof accountShares>; window: string | null }) {
-  const { t, i18n } = useTranslation();
-  const dir = useDirectory();
-  const c = useColors();
-  const [open, setOpen] = useState(false);
-  const divided = { borderTopColor: c.line, borderTopWidth: StyleSheet.hairlineWidth };
-  return (
-    <View>
-      {(open ? [...shares.shown, ...shares.rest] : shares.shown).map((a, i) => (
-        <Pressable
-          key={a.agentId}
-          onPress={() => openAgentUsage(a.agentId)}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.share, i > 0 && divided, pressed && styles.pressed]}
-        >
-          <AgentFace agentId={a.agentId} size={18} live={false} />
-          <Text variant="small" tone="muted" style={[styles.grow, styles.tabular]}>
-            <Text variant="small" tone="ink" style={styles.bold}>
-              {dir.agentById.get(a.agentId)?.name ?? a.name}
-            </Text>
-            {shareFacts(t, i18n.language, window, a)}
-          </Text>
-        </Pressable>
-      ))}
-      {!open && shares.rest.length > 0 ? (
-        <Pressable
-          onPress={() => setOpen(true)}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: false }}
-          style={({ pressed }) => [styles.share, divided, pressed && styles.pressed]}
-        >
-          <View style={styles.face} />
-          <Text variant="small" tone="muted" style={[styles.grow, styles.tabular]}>
-            <Text variant="small" tone="ink" style={styles.bold}>
-              {t("usageViews.moreAgents", { count: shares.rest.length })}
-            </Text>
-            {shareFacts(t, i18n.language, window, { share: shares.restShare, tokens: shares.restTokens })}
-          </Text>
-        </Pressable>
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 
@@ -603,11 +413,6 @@ const styles = StyleSheet.create({
   },
   chevron: { height: ROW_MARK, justifyContent: "center" },
   rowMeter: { gap: 4 },
-  turned: { transform: [{ rotate: "90deg" }] },
-  rowBody: { gap: 12, paddingBottom: 12 },
-  // An account's agents: a face, then one line of words. The rows open an agent: a finger's 44 points.
-  share: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44 },
-  face: { width: 18 },
   // Narrower than the web's row: the tokens and the budget's share on one line under the name, the spend under it.
   api: { paddingVertical: 10 },
   kind: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 },
@@ -615,5 +420,4 @@ const styles = StyleSheet.create({
   budget: { gap: 6 },
   input: { minHeight: 46, borderRadius: 13, paddingHorizontal: 14, paddingVertical: 10, ...fieldText("body") },
   start: { alignSelf: "flex-start", marginTop: 4 },
-  serves: { gap: 8 },
 });

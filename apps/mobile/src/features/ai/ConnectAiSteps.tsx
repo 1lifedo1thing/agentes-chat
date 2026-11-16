@@ -74,7 +74,7 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, LayoutAnimationConfig } from "react-native-reanimated";
 import { paysHere } from "@/lib/store";
 import {
@@ -88,6 +88,7 @@ import {
   InfoHint,
   Locked,
   ProviderLogo,
+  SkeletonList,
   Text,
   useReducedMotion,
   useTheme,
@@ -96,7 +97,6 @@ import {
 import { router } from "@/ui/navigation";
 import { SetupWait } from "../computer/SetupWait";
 import { ToolOffWayOut } from "../devices/ToolOneClick";
-import { SheetHeader } from "../new/parts";
 import { AgentFace } from "../shared/Face";
 import { useMeId } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
@@ -122,8 +122,8 @@ import {
 /*
  * "Conectar uma IA" on the phone: the web's content and rules
  * (ADR 0059, ADR 0061) in the app's own line. The first page is grouped lists like iOS Settings: what the person
- * already has (for an agent with no AI), your AI plan and pay as you go (the API key), one row each. Each pushes its
- * page inside the sheet: the plans with a search, then a plan's mark, for which agent, and its numbered steps on the
+ * already has (for an agent with no AI), your AI plan and pay as you go (the API key), one row each. Each opens its
+ * page on the flow's screen, the native back going back a page: the plans with a search, then a plan's mark, for which agent, and its numbered steps on the
  * agent's computer (or why they wait); the key's maker, chosen the same way, where its keys are made, and the key. A
  * plan signs in on the agent's computer: with
  * none, "Conectar um computador", and the key stays one tap away.
@@ -258,8 +258,6 @@ export interface ConnectAiFlowProps {
   mayAddKey: boolean;
   /** The key being typed and its save (`useConnectKey`). */
   keyForm: ConnectKey;
-  /** The key page saves with its own button; without it the caller does (the first run's button). */
-  keyButton?: boolean;
   keySaved?: boolean;
   onSaveKey?: () => void;
   /** An endpoint ("Outro provedor") was saved on the key page, with its models' tests. */
@@ -272,13 +270,11 @@ export interface ConnectAiFlowProps {
   onComputer: () => void;
   /** The agent thinks with what was connected here now: a plan, or a row of what the person already had. */
   onPlanDone: (agentId: string) => void;
-  /** A sheet: its own head (close on the first page, back on the others). Inline (the first run): a back row. */
-  sheetTitle?: string;
   /**
-   * A pushed screen (Connect an AI on its own route): the flow draws no head of its own and hands the screen its
-   * title and, past the first page, the way back inside the flow, which the screen puts on the native bar.
+   * The flow lives on its own pushed screen (Connect an AI's route) and draws no head of its own: it hands the screen
+   * its title and, past the first page, the way back inside the flow, which the screen puts on the native bar.
    */
-  onChrome?: (chrome: { title: string; back: (() => void) | null }) => void;
+  onChrome: (chrome: { title: string; back: (() => void) | null }) => void;
 }
 
 /**
@@ -289,12 +285,11 @@ export interface ConnectAiFlowProps {
  */
 export function ConnectAiFlow(props: ConnectAiFlowProps) {
   const { t, i18n } = useTranslation();
-  const { colors: c } = useTheme();
   const { orgId, org } = useAiOrg();
   const api = useApi();
   const qc = useQueryClient();
   const toast = useToast();
-  const { view, onView, sheetTitle, agents, hasAi, startAgentId, locked, theirs, mayAddKey } = props;
+  const { view, onView, agents, hasAi, startAgentId, locked, theirs, mayAddKey } = props;
   const reduced = useReducedMotion();
   const pageKey = view.page === "plan" ? `plan:${view.choice}` : view.page;
   // Only a pick is kept; else the first agent is worked out on each render (the agents may load after this opens).
@@ -310,9 +305,8 @@ export function ConnectAiFlow(props: ConnectAiFlowProps) {
     const id = (gates.view?.computer ?? bareGates.at(choice).computer)?.machineId;
     return machines.data?.find((m) => m.id === id);
   };
-  // The workspace's keys are offered in Connect an AI (a sheet) only, as on the web: in the first run (inline) the key
-  // saved there already serves every agent with no plan.
-  const credentials = useCredentials(orgId, mayAddKey && forAgent !== undefined && sheetTitle !== undefined);
+  // The workspace's keys, offered for an agent to think with, to who may add them, as on the web.
+  const credentials = useCredentials(orgId, mayAddKey && forAgent !== undefined);
   const agentRows = useAgents(orgId);
   const models = useModels();
   const [login, setLogin] = useState<ExistingSignIn | null>(null);
@@ -436,14 +430,14 @@ export function ConnectAiFlow(props: ConnectAiFlowProps) {
   const to = flowBack(view, login !== null);
   const title =
     view.page === "home"
-      ? (sheetTitle ?? t("connectAi.title.any"))
+      ? t("connectAi.title.any")
       : view.page === "plans"
         ? t("connectAi.pick.placeholder")
         : view.page === "key"
           ? t("connectAi.key.title")
           : view.page === "makers"
             ? t("mobile.ai.whose")
-            : planLabel(t, view.choice);
+            : planTitle(t, view.choice);
   // On its own screen the bar is the screen's: it gets the title and the way back whenever the page changes.
   const { onChrome } = props;
   const goRef = useRef(go);
@@ -452,26 +446,10 @@ export function ConnectAiFlow(props: ConnectAiFlowProps) {
   const toKey = to ? (to.page === "plan" ? `plan:${to.choice}` : to.page) : "";
   // biome-ignore lint/correctness/useExhaustiveDependencies: `to` is read through `toKey`, its identity changes each render
   useEffect(() => {
-    if (!onChrome) return;
     onChrome({ title, back: to ? () => goRef.current(to) : null });
   }, [onChrome, title, toKey]);
   return (
     <>
-      {onChrome ? null : sheetTitle !== undefined ? (
-        <SheetHeader title={title} icon={to ? "back" : "x"} {...(to ? { onPress: () => go(to) } : {})} />
-      ) : to ? (
-        <Pressable
-          onPress={() => go(to)}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.backRow, pressed ? styles.pressed : null]}
-          hitSlop={12}
-        >
-          <Icon name="back" size={15} color={c.muted} />
-          <Text variant="subhead" tone="muted" style={styles.bold}>
-            {t("mobile.common.back")}
-          </Text>
-        </Pressable>
-      ) : null}
       {/* A page that replaces the one before fades in; the one the flow opens on just shows. */}
       <LayoutAnimationConfig skipEntering>
         <Animated.View key={pageKey} entering={reduced ? undefined : PAGE_IN}>
@@ -510,7 +488,7 @@ export function ConnectAiFlow(props: ConnectAiFlowProps) {
           ) : view.page === "plans" ? (
             <Plans onView={go} dims={dims} />
           ) : view.page === "makers" ? (
-            <Makers form={props.keyForm} withEndpoint={props.keyButton !== false} onDone={() => go({ page: "key" })} />
+            <Makers form={props.keyForm} onDone={() => go({ page: "key" })} />
           ) : view.page === "plan" ? (
             <PlanPage
               key={view.choice}
@@ -650,24 +628,20 @@ function Plans({ onView, dims }: { onView: (v: FlowView) => void; dims: (choice:
   );
 }
 
-/** Whose API key: the makers, the most used first, with a search, then "Outro provedor" (a sheet only: `withEndpoint`). */
-function Makers({ form, withEndpoint, onDone }: { form: ConnectKey; withEndpoint: boolean; onDone: () => void }) {
+/** Whose API key: the makers, the most used first, with a search, then "Outro provedor" (a workspace's own endpoint). */
+function Makers({ form, onDone }: { form: ConnectKey; onDone: () => void }) {
   const { t } = useTranslation();
   return (
     <PickList
       options={[
         ...PROVIDERS.map((p) => ({ value: p.id as string, label: p.label, mark: p.id as string, keywords: "" })),
-        ...(withEndpoint
-          ? [
-              {
-                value: CUSTOM_PROVIDER as string,
-                label: t("endpoint.option"),
-                description: t("endpoint.optionSub"),
-                mark: CUSTOM_PROVIDER as string,
-                keywords: "",
-              },
-            ]
-          : []),
+        {
+          value: CUSTOM_PROVIDER as string,
+          label: t("endpoint.option"),
+          description: t("endpoint.optionSub"),
+          mark: CUSTOM_PROVIDER as string,
+          keywords: "",
+        },
       ]}
       value={form.custom ? CUSTOM_PROVIDER : form.provider}
       onPick={(o) => {
@@ -683,14 +657,14 @@ function Makers({ form, withEndpoint, onDone }: { form: ConnectKey; withEndpoint
   );
 }
 
-/** A page's head: the option's mark, big, its name and what it covers. */
-function Hero({ mark, title, sub }: { mark: ReactNode; title: string; sub: string }) {
+/**
+ * A page's head under the bar that names it: the option's mark, big, and what it covers ("Pro, Max, Ultra…"). The
+ * name itself is the bar's title, never drawn twice.
+ */
+function Hero({ mark, sub }: { mark: ReactNode; sub: string }) {
   return (
     <View style={styles.hero}>
       {mark}
-      <Text variant="title2" tone="ink" style={styles.center} accessibilityRole="header">
-        {title}
-      </Text>
       <Text variant="subhead" tone="muted" style={styles.center}>
         {sub}
       </Text>
@@ -894,7 +868,6 @@ function PlanPage(
   },
 ) {
   const { t } = useTranslation();
-  const { colors: c } = useTheme();
   const { choice, agents, locked, onView, gates, agentId, onAgent } = props;
   const agent = agents.find((a) => a.id === agentId);
   // Settings' Sign in again, on its own plan's page: that exact login (a row's own sign-in asked here comes first).
@@ -940,13 +913,11 @@ function PlanPage(
   }
   return (
     <View>
-      <Hero
-        mark={<ProviderLogo id={planMark(choice)} size="hero" />}
-        title={planTitle(t, choice)}
-        sub={t(`connectAi.plan.${choice}.tiers`)}
-      />
+      <Hero mark={<ProviderLogo id={planMark(choice)} size="hero" />} sub={t(`connectAi.plan.${choice}.tiers`)} />
       {locked ? (
-        <Note icon="lock">{locked}</Note>
+        <Note icon="lock" inset>
+          {locked}
+        </Note>
       ) : props.bare ? (
         <PlanWithoutAgent
           choice={choice}
@@ -964,7 +935,8 @@ function PlanPage(
             <GroupedRow
               leading={<AgentFace agentId={agent.id} size={30} live={false} />}
               label={agent.name}
-              {...(agents.length > 1 ? { value: t("mobile.ai.change"), chevron: true, onPress: pick } : {})}
+              // Another of the person's agents is a choice in the app's picker: the row's up-down mark.
+              {...(agents.length > 1 ? { menu: true, onPress: pick } : {})}
             />
           </GroupedList>
           <GroupedHeader>{t("mobile.ai.how")}</GroupedHeader>
@@ -990,7 +962,7 @@ function PlanPage(
           />
         </>
       ) : (
-        <ActivityIndicator color={c.muted} style={styles.loading} />
+        <SkeletonList rows={2} />
       )}
     </View>
   );
@@ -1042,7 +1014,9 @@ function PlanWithoutAgent({
           {t("connectAi.forNewAgents", { label: has.label })}
         </InfoCard>
         {choice === "gemini" && geminiPersonal(has) ? (
-          <Note icon="info">{t("connectAi.plan.gemini.warning")}</Note>
+          <Note icon="info" inset>
+            {t("connectAi.plan.gemini.warning")}
+          </Note>
         ) : null}
       </View>
     );
@@ -1085,7 +1059,11 @@ function PlanWithoutAgent({
           onSigningIn={setSigningIn}
         />
       ) : null}
-      {steps ? <Note icon="info">{t("connectAi.forNewAgentsHint")}</Note> : null}
+      {steps ? (
+        <Note icon="info" inset>
+          {t("connectAi.forNewAgentsHint")}
+        </Note>
+      ) : null}
     </View>
   );
 }
@@ -1264,7 +1242,9 @@ function PlanSteps({
         </InfoCard>
       ) : null}
       {choice === "gemini" && choosing && !other && existing.some(geminiPersonal) ? (
-        <Note icon="info">{t("connectAi.plan.gemini.warning")}</Note>
+        <Note icon="info" inset>
+          {t("connectAi.plan.gemini.warning")}
+        </Note>
       ) : null}
       {choosing ? (
         <GroupedList>
@@ -1346,14 +1326,13 @@ function GateWait({
 }) {
   const { t } = useTranslation();
   const { orgId, org } = useAiOrg();
-  const { colors: c } = useTheme();
   const machines = useMachines(orgId, edition !== null);
   const hold = holdText(t, org?.standing);
   const row = machines.data?.find((m) => m.id === machineId);
   // Offline or unsupported: what's going on there and what comes next (on the Cloud, by itself: the page asks again).
   const why = gateLine(t, { gate, edition, kind, computer, hold, machine: row });
   let wait: ReactNode = null;
-  if (gate.state === "loading") wait = <ActivityIndicator color={c.muted} style={styles.loading} />;
+  if (gate.state === "loading") wait = <SkeletonList rows={2} />;
   else if (gate.state === "billing") {
     // A hold stops the Model Gateway for keys too, and paying happens on the web.
     wait = <InfoCard icon="pause">{planHoldPhoneLine(t, org ? paysHere(can(org, "manage_billing")) : false)}</InfoCard>;
@@ -1405,7 +1384,9 @@ function GateWait({
         >
           {t("aiAccounts.connect.noComputer")}
         </InfoCard>
-        <Note icon="lock">{t("mobile.ai.meanwhile")}</Note>
+        <Note icon="lock" inset>
+          {t("mobile.ai.meanwhile")}
+        </Note>
       </>
     );
   } else if (gate.state === "locked") {
@@ -1429,7 +1410,6 @@ function GateWait({
 function KeyPage({
   mayAddKey,
   keyForm: form,
-  keyButton = true,
   keySaved,
   onSaveKey,
   onEndpointSaved,
@@ -1533,7 +1513,7 @@ function KeyPage({
                   secret
                   onSubmit={() => {
                     setTouched(true);
-                    if (valid && keyButton) onSaveKey?.();
+                    if (valid) onSaveKey?.();
                   }}
                 />
               </Locked>
@@ -1566,30 +1546,30 @@ function KeyPage({
           </StepsCard>
           {form.refused ? (
             <>
-              <Note icon="x" live>
+              <Note icon="x" live inset>
                 {form.refused.text}
               </Note>
               {form.refused.href ? <OpenPage href={form.refused.href} label={form.refused.site} /> : null}
             </>
           ) : form.failed ? (
-            <Note icon="x" live>
+            <Note icon="x" live inset>
               {t("mobile.ai.failed")}
             </Note>
           ) : (
-            <Note icon="info">{keyForLine ?? t("connectAi.key.forAll")}</Note>
+            <Note icon="info" inset>
+              {keyForLine ?? t("connectAi.key.forAll")}
+            </Note>
           )}
-          {keyButton ? (
-            <View style={styles.save}>
-              <Button
-                variant="primary"
-                wide
-                label={form.saving ? t("mobile.ai.saving") : t("mobile.ai.save")}
-                loading={form.saving}
-                disabled={!valid}
-                onPress={() => onSaveKey?.()}
-              />
-            </View>
-          ) : null}
+          <View style={styles.save}>
+            <Button
+              variant="primary"
+              wide
+              label={form.saving ? t("mobile.ai.saving") : t("mobile.ai.save")}
+              loading={form.saving}
+              disabled={!valid}
+              onPress={() => onSaveKey?.()}
+            />
+          </View>
         </View>
       ) : null}
     </View>
@@ -1597,15 +1577,12 @@ function KeyPage({
 }
 
 const styles = StyleSheet.create({
-  bold: { fontWeight: "600" },
   center: { textAlign: "center" },
   start: { alignSelf: "flex-start" },
   // Under a grouped list's footer, on its edge.
   footerOut: { paddingTop: 8, paddingHorizontal: 16 },
   gap: { gap: 10 },
   loading: { marginTop: 16 },
-  backRow: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginBottom: 4 },
-  pressed: { opacity: 0.6 },
   hero: { alignItems: "center", gap: 8, paddingTop: 6, paddingBottom: 4 },
   done: { alignItems: "center", gap: 12, paddingVertical: 24, paddingHorizontal: 10 },
   // The page's lists' width, under the centered words.

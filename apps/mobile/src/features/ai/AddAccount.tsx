@@ -18,9 +18,9 @@ import { accountCodeAad } from "@agenteschat/client/lib/secret-box";
 import { useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AccessibilityInfo, ActivityIndicator, Platform, StyleSheet, View } from "react-native";
+import { AccessibilityInfo, Platform, StyleSheet, View } from "react-native";
 import { sealSecret } from "@/lib/secret-box";
-import { Button, fonts, InkOrbit, Text, useTheme } from "@/ui";
+import { Button, fonts, InkOrbit, SkeletonList, Text, useTheme } from "@/ui";
 import { copyText, successHaptic } from "../shared/parts";
 import { useAiOrg } from "./org";
 import { Note, OpenPage, openPage, PasteField, Step, StepsCard, StepText, Waiting } from "./parts";
@@ -83,7 +83,6 @@ export interface AddAccountProps {
 export function AddAccount(props: AddAccountProps) {
   const { t } = useTranslation();
   const { orgId } = useAiOrg();
-  const { colors: c } = useTheme();
   // "Tentar de novo" starts over with a new sign-in.
   const [attempt, setAttempt] = useState(0);
   // A new sign-in where the person already has that plan's account on that computer, as on the web: Entrar de novo
@@ -100,7 +99,8 @@ export function AddAccount(props: AddAccountProps) {
       : undefined;
     setReuse(found ?? null);
   }, [reuse, offers, ai.isPending, ai.data, props.machineId, props.kind, props.provider]);
-  if (reuse === undefined) return <ActivityIndicator color={c.muted} />;
+  // Whether there is an account to sign in again first: the steps' shape until it's known.
+  if (reuse === undefined) return <SkeletonList rows={2} />;
   const chosen = reuse ? (pick ?? (signInOf(reuse) === "signed_out" ? "again" : undefined)) : "new";
   const label = reuse ? accountTitle(reuse) : "";
   const another = (

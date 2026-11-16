@@ -34,10 +34,27 @@ import { WAVE_SECONDS } from "@agenteschat/ui/agent/stickers";
 import type { TFunction } from "i18next";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { StickerCanvas } from "@/agent/StickerCanvas";
 import { useOrg } from "@/providers/org";
-import { AgentAvatar, Button, fieldText, Icon, LineIcon, Locked, MEDIA_ROW, MediaRow, Sheet, Text } from "@/ui";
+import {
+  AgentAvatar,
+  Button,
+  fieldText,
+  GroupedField,
+  GroupedHeader,
+  GroupedList,
+  GroupedRow,
+  Icon,
+  LineIcon,
+  Locked,
+  MEDIA_ROW,
+  MediaRow,
+  Sheet,
+  SheetBar,
+  SkeletonList,
+  Text,
+} from "@/ui";
 import { router } from "@/ui/navigation";
 import { fullLook } from "../agents/edit";
 import { openConnectAi } from "../ai/NoAiCard";
@@ -47,9 +64,10 @@ import { MESSAGE_STICKER } from "../chat/media";
 import { useOpenDm } from "../new/useOpenDm";
 import { useFailed } from "../routines/hooks";
 import { proposedRoutineWhen } from "../routines/rule";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useMeId, useWhen } from "../shared/hooks";
 import { tapHaptic } from "../shared/parts";
-import { TextArea } from "../shared/TextArea";
+import { overLimit, TextArea } from "../shared/TextArea";
 
 /**
  * The right hand's team setup on the phone (ADR 0137 §10), as on the web: answers to tap as chips (each the person's
@@ -589,7 +607,11 @@ type AdjustPatch = {
   firstTask: string;
 };
 
-/** "Ajustar": the agent's draft on the card, edited in a sheet before the team exists. */
+/**
+ * "Ajustar": the agent's draft on the card, edited in a sheet before the team exists: the sheet's bar with the agent's
+ * name and its ×, then the draft as a settings form (the short fields in one group, the long ones each under its
+ * header) and Save.
+ */
 function AdjustSheet({
   agent,
   saving,
@@ -601,23 +623,29 @@ function AdjustSheet({
   onSave: (patch: AdjustPatch) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <Sheet open={agent !== null} onClose={onClose}>
-      {agent ? <AdjustForm key={agent.handle} agent={agent} saving={saving} onSave={onSave} onClose={onClose} /> : null}
+    <Sheet
+      open={agent !== null}
+      onClose={onClose}
+      header={agent ? <SheetBar title={t("teamPlan.adjust.title", { name: agent.name })} onClose={onClose} /> : null}
+    >
+      {agent ? <AdjustForm key={agent.handle} agent={agent} saving={saving} onSave={onSave} /> : null}
     </Sheet>
   );
 }
+
+/** The first task's length, as the card's own field kept it. */
+const FIRST_TASK = { max: 500 };
 
 function AdjustForm({
   agent,
   saving,
   onSave,
-  onClose,
 }: {
   agent: TeamAgentDraft;
   saving: boolean;
   onSave: (patch: AdjustPatch) => void;
-  onClose: () => void;
 }) {
   const { t } = useTranslation();
   const c = useColors();
@@ -629,51 +657,60 @@ function AdjustForm({
     instructions: agent.instructions,
     firstTask: agent.firstTask ?? "",
   });
-  const field = [styles.field, fieldText("body"), { backgroundColor: c.raised, color: c.ink, borderColor: c.line }];
   const input = (key: keyof AdjustPatch, label: string, max: number) => (
-    <View style={styles.formRow}>
-      <Text variant="footnote" tone="muted">
-        {label}
-      </Text>
+    <GroupedField key={key} label={label}>
       <TextInput
         value={v[key]}
         maxLength={max}
         accessibilityLabel={label}
         onChangeText={(text) => setV((p) => ({ ...p, [key]: text }))}
-        style={field}
+        style={[styles.input, fieldText("callout"), { color: c.ink }]}
       />
-    </View>
+    </GroupedField>
   );
   return (
-    <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-      <Text variant="title2">{t("teamPlan.adjust.title", { name: agent.name })}</Text>
-      <Locked when={saving} style={styles.fields}>
+    <Locked when={saving} style={styles.form}>
+      <GroupedList>
         {input("name", t("teamPlan.adjust.name"), 80)}
         {input("role", t("teamPlan.adjust.role"), 200)}
         {input("line", t("teamPlan.adjust.line"), 300)}
         {/* An agent with no channel lives in its DM with the person (ADR 0159): nothing to name. */}
         {agent.channel ? input("channel", t("teamPlan.adjust.channel"), 80) : null}
-        <View style={styles.formRow}>
-          <Text variant="footnote" tone="muted">
-            {t("teamPlan.adjust.instructions")}
-          </Text>
-          <TextArea
-            value={v.instructions}
-            accessibilityLabel={t("teamPlan.adjust.instructions")}
-            onChangeText={(text) => setV((p) => ({ ...p, instructions: text }))}
-          />
-        </View>
-        {input("firstTask", t("teamPlan.adjust.firstTask"), 500)}
-      </Locked>
-      <Button variant="primary" wide label={t("common.save")} loading={saving} onPress={() => onSave(v)} />
-      <Button variant="ghost" wide label={t("common.cancel")} onPress={onClose} />
-    </ScrollView>
+      </GroupedList>
+      <View>
+        <GroupedHeader>{t("teamPlan.adjust.instructions")}</GroupedHeader>
+        <TextArea
+          value={v.instructions}
+          accessibilityLabel={t("teamPlan.adjust.instructions")}
+          onChangeText={(text) => setV((p) => ({ ...p, instructions: text }))}
+        />
+      </View>
+      <View>
+        <GroupedHeader>{t("teamPlan.adjust.firstTask")}</GroupedHeader>
+        <TextArea
+          value={v.firstTask}
+          limit={FIRST_TASK}
+          accessibilityLabel={t("teamPlan.adjust.firstTask")}
+          onChangeText={(text) => setV((p) => ({ ...p, firstTask: text }))}
+        />
+      </View>
+      <Button
+        variant="primary"
+        wide
+        label={t("common.save")}
+        loading={saving}
+        // Past its limit the task stays as typed, its line saying so: nothing is saved cut.
+        disabled={overLimit(v.firstTask, FIRST_TASK)}
+        onPress={() => onSave(v)}
+      />
+    </Locked>
   );
 }
 
 /**
- * "See as a map" as a sheet: the people, a block per channel with its agents and routines, the weekly reviewer. An
- * agent with no channel (it lives in its DM with the person, ADR 0159) has a block of its own, with no channel on top.
+ * "See as a map" as a sheet under its bar: the people, a block per channel with its agents and routines, the weekly
+ * reviewer. An agent with no channel (it lives in its DM with the person, ADR 0159) has a block of its own, with no
+ * channel on top.
  */
 export function TeamMapSheet({ plan, open, onClose }: { plan: TeamPlan; open: boolean; onClose: () => void }) {
   const { t, i18n } = useTranslation();
@@ -682,9 +719,12 @@ export function TeamMapSheet({ plan, open, onClose }: { plan: TeamPlan; open: bo
   const dir = useDirectory();
   const lodi = dir.agents.find(isRightHand);
   return (
-    <Sheet open={open} onClose={onClose}>
-      <ScrollView contentContainerStyle={styles.form}>
-        <Text variant="title2">{t(modeKey(org, "teamPlan.map.title"))}</Text>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      header={<SheetBar title={t(modeKey(org, "teamPlan.map.title"))} onClose={onClose} />}
+    >
+      <View style={styles.form}>
         <Text variant="footnote" tone="muted" style={styles.bold}>
           {t("teamPlan.map.people")}
         </Text>
@@ -740,14 +780,19 @@ export function TeamMapSheet({ plan, open, onClose }: { plan: TeamPlan; open: bo
             · {plan.approvals}
           </Text>
         ) : null}
-      </ScrollView>
+      </View>
     </Sheet>
   );
 }
 
+/** A template's team, its faces side by side under its name. */
+const TEMPLATE_FACE = 22;
+
 /**
- * "Team templates" as a sheet: the templates, each opening its team; "Create the team" makes it. In a personal
- * workspace (ADR 0159) the server lists them by area of life, and the words are about the person's agents.
+ * "Team templates" as a sheet: its bar (× to close; on a template, ‹ back to the list and the template's name), the
+ * templates as a grouped list, each with its team's faces and opening its team, "None of these" and the other ways to
+ * start under them; on a template, "Create the team" makes it. In a personal workspace (ADR 0159) the server lists
+ * them by area of life, and the words are about the person's agents.
  */
 export function TeamTemplatesSheet({
   open,
@@ -764,7 +809,6 @@ export function TeamTemplatesSheet({
 }) {
   const { t, i18n } = useTranslation();
   const { orgId, org } = useOrg();
-  const c = useColors();
   const failed = useFailed();
   const dir = useDirectory();
   const held = usePlanHold(orgId, org) !== null;
@@ -779,11 +823,16 @@ export function TeamTemplatesSheet({
     setRefused(null);
   }, [open, initial]);
   const chosen = list.data?.find((x) => x.id === picked) ?? null;
+  const bar = chosen ? (
+    // Back to the list while nothing is being made.
+    <SheetBar title={chosen.name} icon="back" onClose={() => !use.isPending && setPicked(null)} />
+  ) : (
+    <SheetBar title={t(modeKey(org, "teamPlan.templates.title"))} onClose={onClose} />
+  );
   return (
-    <Sheet open={open} onClose={onClose}>
-      <ScrollView contentContainerStyle={styles.form}>
-        <Text variant="title2">{chosen ? chosen.name : t(modeKey(org, "teamPlan.templates.title"))}</Text>
-        <Text variant="small" tone="muted">
+    <Sheet open={open} onClose={onClose} header={bar}>
+      <View style={styles.form}>
+        <Text variant="small" tone="muted" style={styles.lead}>
           {chosen
             ? chosen.description
             : held
@@ -825,88 +874,72 @@ export function TeamTemplatesSheet({
               }
             />
             {refused ? (
-              <Text variant="small" tone="danger">
+              <Text variant="small" tone="danger" accessibilityLiveRegion="polite">
                 {refused}
               </Text>
             ) : null}
-            <Button
-              variant="ghost"
-              wide
-              label={t("common.back")}
-              disabled={use.isPending}
-              onPress={() => setPicked(null)}
-            />
           </>
         ) : (
           <>
-            {(list.data ?? []).map((x) => (
-              <Pressable
-                key={x.id}
-                accessibilityRole="button"
-                onPress={() => setPicked(x.id)}
-                style={({ pressed }) => [
-                  styles.template,
-                  { borderColor: c.line2, backgroundColor: pressed ? c.sunken : c.raised },
-                ]}
-              >
-                <View style={styles.faces}>
-                  {x.team.agents.map((a) => (
-                    <AgentAvatar key={a.handle} agent={fullLook(a.appearance)} size={22} name={a.name} live={false} />
-                  ))}
-                </View>
-                <View style={styles.fill}>
-                  <Text variant="body" style={styles.bold}>
-                    {x.name}
-                  </Text>
-                  <Text variant="small" tone="muted">
-                    {x.sub}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-            {held ? null : (
-              <Pressable
-                accessibilityRole="button"
-                onPress={onNone}
-                style={({ pressed }) => [
-                  styles.template,
-                  { borderColor: c.line2, backgroundColor: pressed ? c.sunken : c.raised },
-                ]}
-              >
-                <View style={[styles.faces, styles.pen]}>
-                  <Icon name="pen" size={16} color={c.muted} />
-                </View>
-                <View style={styles.fill}>
-                  <Text variant="body" style={styles.bold}>
-                    {t("teamPlan.templates.none")}
-                  </Text>
-                  <Text variant="small" tone="muted">
-                    {t(modeKey(org, "teamPlan.templates.noneSub"), { name })}
-                  </Text>
-                </View>
-              </Pressable>
-            )}
-            <Button
-              variant="text"
-              size="sm"
-              label={t("teamPlan.templates.import")}
-              onPress={() => {
-                onClose();
-                router.push("/settings/import");
-              }}
-            />
-            <Button
-              variant="text"
-              size="sm"
-              label={t("teamPlan.templates.scratch")}
-              onPress={() => {
-                onClose();
-                router.push("/new-agent");
-              }}
-            />
+            {list.isPending ? <SkeletonList rows={3} /> : null}
+            {list.isError && !list.data ? <LoadFailed onRetry={() => void list.refetch()} /> : null}
+            <GroupedList>
+              {(list.data ?? []).map((x) => (
+                <GroupedRow
+                  key={x.id}
+                  label={x.name}
+                  sub={x.sub}
+                  subLines={2}
+                  below={
+                    <View style={styles.faces}>
+                      {x.team.agents.map((a) => (
+                        <AgentAvatar
+                          key={a.handle}
+                          agent={fullLook(a.appearance)}
+                          size={TEMPLATE_FACE}
+                          name={a.name}
+                          live={false}
+                        />
+                      ))}
+                    </View>
+                  }
+                  chevron
+                  onPress={() => setPicked(x.id)}
+                />
+              ))}
+              {held || !list.data ? null : (
+                <GroupedRow
+                  icon="pen"
+                  label={t("teamPlan.templates.none")}
+                  sub={t(modeKey(org, "teamPlan.templates.noneSub"), { name })}
+                  subLines={2}
+                  onPress={onNone}
+                />
+              )}
+            </GroupedList>
+            <GroupedList>
+              <GroupedRow
+                icon="out"
+                label={t("teamPlan.templates.import")}
+                chevron
+                onPress={() => {
+                  onClose();
+                  router.push("/settings/import");
+                }}
+              />
+              <GroupedRow
+                icon="plus"
+                label={t("teamPlan.templates.scratch")}
+                chevron
+                onPress={() => {
+                  onClose();
+                  router.push("/new-agent");
+                }}
+              />
+            </GroupedList>
           </>
         )}
-      </ScrollView>
+      </View>
     </Sheet>
   );
 }
@@ -941,21 +974,13 @@ const styles = StyleSheet.create({
   note: { marginTop: 4 },
   fill: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
-  form: { gap: 12, padding: 16, paddingBottom: 32 },
-  fields: { gap: 12 },
-  formRow: { gap: 4 },
-  field: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10 },
+  // A sheet's content under its bar: the sheet's sides come from the sheet, its blocks 12 apart.
+  form: { gap: 12, paddingBottom: 16 },
+  // The sheet's lead words on its groups' edge.
+  lead: { paddingHorizontal: 16 },
+  // A one-line field's input in a grouped field row.
+  input: { flex: 1, paddingVertical: 12, paddingHorizontal: 0 },
   mapCol: { gap: 8, padding: 12, borderRadius: 14, borderWidth: 1, borderStyle: "dashed" },
-  template: {
-    flexDirection: "row",
-    // From the top: the faces stay on the name's line when the line under it wraps.
-    alignItems: "flex-start",
-    gap: 12,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  faces: { flexDirection: "row", gap: 2, width: 72, justifyContent: "center" },
-  // The 16-point pen at the middle of the name's 22-point line.
-  pen: { paddingTop: 3 },
+  // A template's team under its name and line.
+  faces: { flexDirection: "row", flexWrap: "wrap", gap: 2, paddingTop: 6 },
 });

@@ -25,6 +25,7 @@ import { Button, EventPillAction, EventPillText, Text } from "@/ui";
 import { router } from "@/ui/navigation";
 import { AskButtons, AskDone, AskFoot, AskNote, AskWaiting } from "../chat/asks";
 import { TeamTemplatesSheet } from "../right-hand/TeamCard";
+import { useFailed } from "../routines/hooks";
 import { useDirectory, useMeId } from "../shared/hooks";
 import { usePlanHold } from "./parts";
 
@@ -71,6 +72,7 @@ export function NoAiCard({ message: m }: { message: Message }) {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const meId = useMeId();
   const hold = usePlanHold(orgId, org);
+  const failed = useFailed();
   const card = noAiCardOf(m.meta);
   if (!card || m.author.type !== "agent") return null;
   // Any card on a billing hold is the wall: a Connect or a key from before it leads nowhere until the plan.
@@ -119,6 +121,8 @@ export function NoAiCard({ message: m }: { message: Message }) {
       setAnswer("answering");
     } catch (error) {
       const code = (error as { code?: string }).code;
+      // Still no AI: the pill says so. Anything else failed: the toast says why, and "Answer now" is back.
+      if (code !== "ai.still_missing") failed(error);
       setAnswer(code === "ai.still_missing" ? "still_missing" : null);
     }
   };
@@ -193,6 +197,7 @@ function KeptCard({ message: m, card, hold }: { message: Message; card: NoAiCard
   const thread = useThreadMessages(orgId, m.threadId ? m.channelId : undefined, m.threadId ?? "");
   const messages = m.threadId ? thread.data : channel;
   const started = useRef(false);
+  const failed = useFailed();
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [templates, setTemplates] = useState(false);
   const agent = dir.agentById.get(card.agentId);
@@ -204,18 +209,22 @@ function KeptCard({ message: m, card, hold }: { message: Message; card: NoAiCard
   const replied = messages?.some(
     (x) => x.author.id === card.agentId && x.createdAt > m.createdAt && !noAiCardOf(x.meta),
   );
-  const start = () => {
+  /** `tapped`: the person pressed "Answer now", so a refusal says why; the start on opening fails quietly. */
+  const start = (tapped: boolean) => {
     setAnswer("pending");
     api.chat.answerNow(orgId, m.id).then(
       () => setAnswer("answering"),
-      () => setAnswer(null),
+      (error: unknown) => {
+        if (tapped) failed(error);
+        setAnswer(null);
+      },
     );
   };
   // biome-ignore lint/correctness/useExhaustiveDependencies: once per card here
   useEffect(() => {
     if (state !== "answer" || !mayAnswer || replied !== false || started.current) return;
     started.current = true;
-    start();
+    start(false);
   }, [state, mayAnswer, replied]);
   const answering = !replied && answer !== null;
   // Not known yet: no moment of "Plano ativo" on a card an AI has long answered.
@@ -232,7 +241,7 @@ function KeptCard({ message: m, card, hold }: { message: Message; card: NoAiCard
         actions={
           // The start refused: never a promise with nothing behind it.
           !answering && !replied && mayAnswer ? (
-            <EventPillAction key="answer" label={t("noAi.card.answerNow")} onPress={start} />
+            <EventPillAction key="answer" label={t("noAi.card.answerNow")} onPress={() => start(true)} />
           ) : null
         }
       />

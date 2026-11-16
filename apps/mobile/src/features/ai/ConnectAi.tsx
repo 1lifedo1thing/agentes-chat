@@ -37,13 +37,13 @@ import { useLocalSearchParams, usePreventRemove } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Platform, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
+import { Platform, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
-import { Button, Text, useToast } from "@/ui";
+import { Button, GroupedFooter, SkeletonList, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors, useDirectory, useMeId } from "../shared/hooks";
-import { PushedHeader } from "../shared/parts";
+import { BottomBar, PushedHeader } from "../shared/parts";
 import { ConnectAiFlow, viewOf } from "./ConnectAiSteps";
 import { ConnectScene } from "./ConnectScene";
 import type { FlowView } from "./logic";
@@ -148,8 +148,8 @@ const STEPS = 3;
 
 /**
  * "Conectar uma IA" as pushed screens (`/connect-ai?from=<messageId>&intent=<step>&provider=<id>&agentId=<id>
- * &plan=<plan>&email=<address>&ready=1&forNew=1`), one question per screen under a bar that counts the steps
- * ("1 de 3 · Dora"): how the agent will think (a plan or a key, and what the workspace already has), then the plan's
+ * &plan=<plan>&email=<address>&ready=1&forNew=1`), one question per screen, asked in the bar ("Como a Dora vai
+ * pensar?") over a line that counts the steps ("1 de 3"): how the agent will think (a plan or a key, and what the workspace already has), then the plan's
  * sign-in on the agent's computer or the workspace's API key (ConnectAiFlow), then done. The native back goes one
  * page back inside the flow before it leaves it. A message that asked for one of them opens on its page, and `plan`
  * on that plan's (Sign in again). Once connected from a message, the agent answers it by itself. `email`: one more
@@ -256,16 +256,22 @@ export function ConnectAiSheet() {
   // back and "Pronto" leave it.
   usePreventRemove(chrome.back !== null && !done, () => chrome.back?.());
   const step = done ? STEPS : view.page === "home" ? 1 : 2;
-  const subtitle = [t("mobile.ai.stepOf", { step, total: STEPS }), one?.name ?? null].filter(Boolean).join(" · ");
-  const ready = !hold && !dir.loading && !status.isPending;
+  const home = view.page === "home" && !done;
+  // The first page asks its question in the bar ("Como a Dora vai pensar?"), which names the agent: the line under it
+  // counts the steps alone. Past it, the bar names the page and the line the agent it is for.
+  const subtitle = [t("mobile.ai.stepOf", { step, total: STEPS }), home ? null : (one?.name ?? null)]
+    .filter(Boolean)
+    .join(" · ");
+  const title = done
+    ? t("connectAi.done")
+    : home
+      ? one
+        ? t("mobile.ai.question", agentGrammar(one.name))
+        : t("mobile.ai.questionAny")
+      : chrome.title || t("connectAi.title.any");
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
-      <PushedHeader
-        title={done ? t("connectAi.done") : chrome.title || t("connectAi.title.any")}
-        subtitle={subtitle}
-        solid={false}
-        grouped
-      />
+      <PushedHeader title={title} subtitle={subtitle} solid={false} grouped />
       <ScrollView
         ref={scroll}
         contentInsetAdjustmentBehavior="automatic"
@@ -274,26 +280,16 @@ export function ConnectAiSheet() {
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 32 }]}
       >
         {view.page === "home" && !done ? <ConnectScene /> : null}
-        {ready && view.page === "home" && !done ? (
-          // The question the first page answers, then the ways under it.
-          <View style={styles.head}>
-            <Text variant="title2" accessibilityRole="header">
-              {one ? t("mobile.ai.question", agentGrammar(one.name)) : t("mobile.ai.questionAny")}
-            </Text>
-            <Text variant="small" tone="muted">
-              {t("mobile.ai.questionLead")}
-            </Text>
-          </View>
-        ) : null}
+        {/* Under the band, what the question in the bar leaves open; the ways come under it. */}
+        {home && !hold ? <GroupedFooter>{t("mobile.ai.questionLead")}</GroupedFooter> : null}
         {hold ? (
-          <PlanHoldNote org={org} />
+          <PlanHoldNote org={org} inset />
         ) : dir.loading || status.isPending ? (
-          <ActivityIndicator color={c.faint} style={styles.loading} />
+          <SkeletonList rows={3} />
         ) : (
           <ConnectAiFlow
             view={view}
             onView={onView}
-            sheetTitle={t("connectAi.title.any")}
             onChrome={onChrome}
             agents={agents}
             hasAi={hasAi}
@@ -353,18 +349,20 @@ export function ConnectAiSheet() {
         )}
       </ScrollView>
       {done ? (
-        // The last step's one button, at the screen's foot.
-        <View style={[styles.foot, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: c.grouped }]}>
-          {makeWith ? (
-            <Button
-              variant="primary"
-              wide
-              label={t("connectAi.makeAgent")}
-              onPress={() => router.replace(`/new-agent?account=${encodeURIComponent(makeWith.id)}` as never)}
-            />
-          ) : null}
-          <Button variant={makeWith ? "secondary" : "primary"} wide label={t("connectAi.done")} onPress={close} />
-        </View>
+        // The last step's one button, pinned at the screen's foot.
+        <BottomBar bottom={insets.bottom}>
+          <View style={styles.foot}>
+            {makeWith ? (
+              <Button
+                variant="primary"
+                wide
+                label={t("connectAi.makeAgent")}
+                onPress={() => router.replace(`/new-agent?account=${encodeURIComponent(makeWith.id)}` as never)}
+              />
+            ) : null}
+            <Button variant={makeWith ? "secondary" : "primary"} wide label={t("connectAi.done")} onPress={close} />
+          </View>
+        </BottomBar>
       ) : null}
     </View>
   );
@@ -373,7 +371,5 @@ export function ConnectAiSheet() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   body: { paddingHorizontal: 16, paddingTop: 4 },
-  head: { gap: 2, paddingHorizontal: 4, paddingTop: 10, paddingBottom: 16 },
-  loading: { marginTop: 24 },
-  foot: { gap: 8, paddingHorizontal: 16, paddingTop: 12 },
+  foot: { gap: 8 },
 });

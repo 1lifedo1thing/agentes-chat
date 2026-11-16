@@ -3,9 +3,9 @@ import { useRightHandApprovals, useSetRightHandApprovals } from "@agenteschat/cl
 import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import { GroupedHeader, GroupedList, GroupedRow, useToast } from "@/ui";
+import { Gap } from "../settings/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
 
 const USD = 1_000_000_000;
@@ -37,7 +37,7 @@ function RightHandGroup({ view, name }: { view: RightHandApprovals; name: string
   const budget = Math.round(view.budgetCapNanoUsd / USD);
   return (
     <>
-      <View style={styles.gap} />
+      <Gap />
       <GroupedList>
         <GroupedRow
           label={t("rightHandApprovals.title", { name })}
@@ -117,13 +117,9 @@ function RightHandGroup({ view, name }: { view: RightHandApprovals; name: string
             placeholder={t("rightHandApprovals.guidancePlaceholder")}
             accessibilityLabel={t("rightHandApprovals.guidanceLabel", { name })}
           />
-          <View style={styles.gap} />
+          <Gap />
         </>
       ) : null}
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  gap: { height: 16 },
-});
