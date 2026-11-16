@@ -110,6 +110,8 @@ export const SHOWN_ONLY: Record<Condition, readonly string[]> = {
     "agentPage.work.browserDialog.noComputer",
     "agentPage.work.computer.connect",
     "aiAccounts.connect.addComputer",
+    // The way out for the right hand's plan on a computer that is away: Cloud's own computer is always on.
+    "rightHand.unusable.connect",
     "aiAccounts.connect.noComputer",
     "brain.reasons.no_computer",
     "browser.inCard.noComputer",
@@ -291,6 +293,8 @@ export const ANYWHERE: readonly string[] = [
   // People connect their own computers and phones in every setup, the Cloud included.
   "devices.",
   "mobile.devices.",
+  // The right hand's plan that needs a computer: the workspace's way out is connecting one, in every setup.
+  "rightHand.brain.unusable.connect",
 ];
 
 /** A key's agent-gender variant (`_female`, ADR 0122) goes where its base key goes. */
