@@ -253,6 +253,17 @@ function Action({
  * root whose thread link shows (`threaded`), unless it waits on someone, nor inside that thread, where its updates
  * are the messages under it and the line doesn't repeat the last one.
  */
+export function MessageWorkLine({ message, threaded }: { message: Message; threaded?: boolean }) {
+  const { thread } = useLocalSearchParams<{ thread?: string }>();
+  const work = message.longWork;
+  if (!work) return null;
+  const inside = thread === (work.threadId ?? work.anchorMessageId);
+  const hidden = inside || (threaded && !workWaitsOnPerson(work));
+  return (
+    <Line work={work} inUpdatesThread={inside} onThread={hidden ? undefined : () => router.push(threadHref(work))} />
+  );
+}
+
 /** Under the reply of the agent that handed work over: one line per handed work. */
 export function HandedWorkLines({ message }: { message: Message }) {
   const works = message.handedWorks ?? [];
@@ -263,17 +274,6 @@ export function HandedWorkLines({ message }: { message: Message }) {
         <Line key={w.id} work={w} handed />
       ))}
     </>
-  );
-}
-
-export function MessageWorkLine({ message, threaded }: { message: Message; threaded?: boolean }) {
-  const { thread } = useLocalSearchParams<{ thread?: string }>();
-  const work = message.longWork;
-  if (!work) return null;
-  const inside = thread === (work.threadId ?? work.anchorMessageId);
-  const hidden = inside || (threaded && !workWaitsOnPerson(work));
-  return (
-    <Line work={work} inUpdatesThread={inside} onThread={hidden ? undefined : () => router.push(threadHref(work))} />
   );
 }
 

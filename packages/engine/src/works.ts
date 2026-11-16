@@ -424,10 +424,23 @@ export async function handedHome(db: Executor, run: RunLike) {
   if (run.background) return null;
   const channel = await getChannelCached(db as Database, run.orgId, run.channelId);
   if (!channel || !answersHandOffs(channel)) return null;
+  // Only a run a hand-off started: one a note joined keeps its own course (`handOverWork`).
+  const [started] = await db
+    .select({ id: agentConsultations.id })
+    .from(agentConsultations)
+    .where(
+      and(
+        eq(agentConsultations.orgId, run.orgId),
+        eq(agentConsultations.targetRunId, run.id),
+        eq(agentConsultations.messageId, run.triggerMessageId),
+      ),
+    )
+    .limit(1);
+  if (!started) return null;
   const origin = await consultationOrigin(db, run.orgId, run.id);
   if (!origin) return null;
   const authority = await runAuthority(db, run);
-  return authority.kind === "person" ? { ...origin, personId: authority.personId } : null;
+  return authority.kind === "person" ? { ...origin, personId: authority.personId, consultationId: started.id } : null;
 }
 
 /** Whether a run's work may leave where it answers now (`moveRun`, `moveToBackground`). */
@@ -465,15 +478,15 @@ export async function moveToBackground(
 ): Promise<{ work: WorkRow; anchor: Message; queued: boolean } | null> {
   const { db } = deps;
   const [current] = await db.select().from(agentRuns).where(eq(agentRuns.id, runId));
-  if (current && !current.workId && (await handedHome(db, current))) {
+  const handedFrom = current && !current.workId ? await handedHome(db, current) : null;
+  if (handedFrom) {
     // A run answering another agent: its work reports where the person asked, anchored on the hand-off.
-    const [c] = await db
-      .select({ id: agentConsultations.id })
-      .from(agentConsultations)
-      .where(and(eq(agentConsultations.orgId, current.orgId), eq(agentConsultations.targetRunId, current.id)))
-      .orderBy(desc(agentConsultations.createdAt))
-      .limit(1);
-    const handed = c ? await handOverWork(deps, c.id, { title: input.title, plan: input.plan ?? null }, now) : null;
+    const handed = await handOverWork(
+      deps,
+      handedFrom.consultationId,
+      { title: input.title, plan: input.plan ?? null },
+      now,
+    );
     if (!handed) return null;
     const [anchor] = await db.select().from(messages).where(eq(messages.id, handed.anchorMessageId));
     return anchor ? { work: handed, anchor: anchor as Message, queued: handed.status === "queued" } : null;

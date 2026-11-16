@@ -178,7 +178,7 @@ export function handedLine(t: TFunction, w: WorkView, c: WorkLineContext): Hande
   return { ...out, state: say("work.handed.working"), facts: [...step, took] };
 }
 
-/** Held on a person's answer or approval, whose card is in its thread/** Held on a person's answer or approval, whose card is in its thread: its line opens the thread, whatever else does. */
+/** Held on a person's answer or approval, whose card is in its thread: its line opens the thread, whatever else does. */
 export const workWaitsOnPerson = (w: Pick<WorkView, "state">) =>
   w.state === "waiting_input" || w.state === "waiting_approval";
 

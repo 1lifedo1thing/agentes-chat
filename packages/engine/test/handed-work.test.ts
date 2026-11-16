@@ -149,6 +149,27 @@ describe("work handed to another agent reports where the person asked (F1)", () 
     expect(issue.backgroundWork?.handedBy?.agentId).toBe(f.agent.id);
   });
 
+  test("the agent that handed it is told the person follows the work there, and that it isn't woken to relay it", async () => {
+    f = await setup({ askAgent: true });
+    await addAgent("Atlas");
+    const dev = await devRun("@dev get the report ready");
+    const out = await tell(dev, "@atlas", "Build the October sales report.");
+    expect(out).toMatchObject({
+      output: { content: expect.stringContaining("you are not woken to relay what comes of it") },
+    });
+  });
+
+  test("a run a note only joined never becomes a handed work, even through work_in_background", async () => {
+    f = await setup({ askAgent: true });
+    await addAgent("Atlas");
+    const dev = await devRun("@dev get the report ready");
+    await tell(dev, "@atlas", "Build the October sales report.");
+    const [c] = await consultations();
+    const run = await runOf(c?.targetRunId);
+    // As if the run had started on something else and this note joined it.
+    expect(await workEligible(f.db, { ...run, workId: null, triggerMessageId: dev.triggerMessageId })).toBe(false);
+  });
+
   test("a note that joins a run already at work makes no second work", async () => {
     f = await setup({ askAgent: true });
     await addAgent("Atlas");

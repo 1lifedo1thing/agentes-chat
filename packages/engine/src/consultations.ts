@@ -410,8 +410,10 @@ function createTellAgentTool(deps: { pubsub?: PubSub; ai?: AiCheck; judge?: Judg
         }
       }
       // The person sees it worked on where they asked: its updates, questions and report (F1, ADR 0121 addendum).
-      if (!headsUp && !waitsForRoom)
-        await handOverWork({ db, pubsub: deps.pubsub }, sent.consultationId).catch(() => null);
+      const handedWork =
+        !headsUp && !waitsForRoom
+          ? await handOverWork({ db, pubsub: deps.pubsub }, sent.consultationId).catch(() => null)
+          : null;
       await publishChannelEvent(deps.pubsub, {
         type: "agent.consulting",
         channelId: ctx.channelId,
@@ -427,7 +429,9 @@ function createTellAgentTool(deps: { pubsub?: PubSub; ai?: AiCheck; judge?: Judg
           ? `Told @${handle}. Your answer goes back without waiting for it: do your own part now, then end your turn.`
           : here && isAgentOnlyDm(here)
             ? `Handed to @${handle}. Your answer goes back once @${handle} is done, together with what came of it: do your own part now, then end your turn saying what you handed on.`
-            : `Handed to @${handle}; it's on it, and the people here can see that. What comes of it reaches you here by itself once everything you handed off this turn is back. Tell the people in a line who has it, without promising a time, then do your own part or end your turn.`;
+            : handedWork
+              ? `Handed to @${handle}; it's on it. The people here follow its progress, its questions and its result from @${handle} itself, under your reply: you are not woken to relay what comes of it. Tell the people in a line who has it, without promising a time or to report back, then do your own part or end your turn.`
+              : `Handed to @${handle}; it's on it, and the people here can see that. What comes of it reaches you here by itself once everything you handed off this turn is back. Tell the people in a line who has it, without promising a time, then do your own part or end your turn.`;
       return {
         content: waitsForRoom
           ? `${handed} @${handle} hasn't started yet: its computer is full, so your note waits and starts once there's room. It isn't lost: don't send it again.`

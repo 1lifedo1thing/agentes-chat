@@ -1585,6 +1585,10 @@ describe("tell_agent: what comes of work handed off comes back by itself (ADR 00
     expect(report?.meta.handedReport).toBeDefined();
     // Nothing woke Infra again to read anything.
     expect(await runsOf(infra.id)).toHaveLength(1);
+    // The model calls: Dev's turn (the hand-off, then its line) and Infra's answer. No relay turn reads the result.
+    const asked = f.provider.calls.map((c) => JSON.stringify(c.request.messages));
+    expect(asked.filter((m) => m.includes("did with the work you handed it"))).toEqual([]);
+    expect(asked).toHaveLength(3);
   });
 
   test("a bare acknowledgement closes as told: no notice and no run", async () => {
