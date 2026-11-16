@@ -410,10 +410,12 @@ function createTellAgentTool(deps: { pubsub?: PubSub; ai?: AiCheck; judge?: Judg
         }
       }
       // The person sees it worked on where they asked: its updates, questions and report (F1, ADR 0121 addendum).
+      // A note that joined the work this run already handed that agent rides on it: the same work reports it.
       const handedWork =
         !headsUp && !waitsForRoom
-          ? await handOverWork({ db, pubsub: deps.pubsub }, sent.consultationId).catch(() => null)
-          : null;
+          ? Boolean(await handOverWork({ db, pubsub: deps.pubsub }, sent.consultationId).catch(() => null)) ||
+            (await handedHomeOf(db, ctx.orgId, [sent.consultationId], false)).size > 0
+          : false;
       await publishChannelEvent(deps.pubsub, {
         type: "agent.consulting",
         channelId: ctx.channelId,
@@ -1280,7 +1282,7 @@ export async function reportHandOffs(deps: Pick<Deps, "db" | "pubsub">, asker: A
     claimed.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : 1));
     // A hand-off whose work already reported to the person (`handOverWork`) is only written down: relaying it would
     // repeat it. The asker wakes once, at most, and only for one that ended with nothing posted home.
-    const home = await reportedHome(
+    const home = await handedHomeOf(
       tx,
       asker.orgId,
       claimed.map((c) => c.id),
@@ -1323,16 +1325,27 @@ export async function reportHandOffs(deps: Pick<Deps, "db" | "pubsub">, asker: A
   return delivered;
 }
 
-/** Of these hand-offs, the ones whose handed work posted its report where the person asked. */
-async function reportedHome(db: Executor, orgId: string, ids: string[]) {
+/**
+ * Of these hand-offs, the ones a handed work carries to the person: the work it started, or the one at work on the
+ * run it joined, handed by the same run (`handOverWork`). `reported`: only once that work posted its report home.
+ */
+async function handedHomeOf(db: Executor, orgId: string, ids: string[], reported = true) {
   if (ids.length === 0) return new Set<string>();
   const rows = await db
-    .select({ id: agentWorks.consultationId })
-    .from(agentWorks)
+    .select({ id: agentConsultations.id })
+    .from(agentConsultations)
+    .innerJoin(agentRuns, eq(agentRuns.id, agentConsultations.targetRunId))
+    .innerJoin(agentWorks, and(eq(agentWorks.id, agentRuns.workId), eq(agentWorks.how, "handed")))
     .where(
-      and(eq(agentWorks.orgId, orgId), inArray(agentWorks.consultationId, ids), isNotNull(agentWorks.resultMessageId)),
+      and(
+        eq(agentConsultations.orgId, orgId),
+        inArray(agentConsultations.id, ids),
+        reported ? isNotNull(agentWorks.resultMessageId) : undefined,
+        sql`exists (select 1 from ${agentConsultations} h where h.id = ${agentWorks.consultationId}
+          and h.asker_run_id = ${agentConsultations.askerRunId})`,
+      ),
     );
-  return new Set(rows.flatMap((r) => (r.id ? [r.id] : [])));
+  return new Set(rows.map((r) => r.id));
 }
 
 /**

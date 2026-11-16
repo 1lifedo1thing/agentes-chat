@@ -10,6 +10,7 @@ import {
   onConsultedRunFinished,
   planStepOf,
   postWorkUpdate,
+  recoverStaleRuns,
   type ToolContext,
   workEligible,
   workView,
@@ -179,6 +180,58 @@ describe("work handed to another agent reports where the person asked (F1)", () 
     const [first, second] = await consultations();
     expect(second?.targetRunId).toBe(first?.targetRunId ?? "");
     expect(await works()).toHaveLength(1);
+  });
+
+  test("a second note that joins the work rides on it: the sender is told so, and neither note wakes it", async () => {
+    f = await setup({ askAgent: true });
+    await addAgent("Atlas");
+    const dev = await devRun("@dev tell atlas");
+    await tell(dev, "@atlas", "Build the October sales report.");
+    const out = await tell(dev, "@atlas", "Add the refunds too.");
+    expect(out).toMatchObject({
+      output: { content: expect.stringContaining("you are not woken to relay what comes of it") },
+    });
+    const [c] = await consultations();
+    // Its run read the second note at its next step.
+    await f.db
+      .update(schema.agentRuns)
+      .set({ pendingMessageIds: [] })
+      .where(eq(schema.agentRuns.id, c?.targetRunId ?? ""));
+    await reports(await runOf(c?.targetRunId), "Report saved in Drive, refunds included.");
+    expect((await consultations()).map((r) => r.status)).toEqual(["answered", "answered"]);
+    const runs = await f.db.select().from(schema.agentRuns);
+    expect(runs.filter((r) => r.agentId === f.agent.id)).toHaveLength(1);
+  });
+
+  test("a delegate lost in a restart posts its end home before the sender hears it, so the sender isn't woken", async () => {
+    f = await setup({ askAgent: true });
+    const atlas = await addAgent("Atlas");
+    const dev = await devRun("@dev get the report ready");
+    await tell(dev, "@atlas", "Build the October sales report.");
+    await f.db.update(schema.agentRuns).set({ status: "done" }).where(eq(schema.agentRuns.id, dev.id));
+    const [c] = await consultations();
+    const long = new Date(Date.now() - 10 * 60_000);
+    await f.db
+      .update(schema.agentRuns)
+      .set({ status: "running", startedAt: long, heartbeatAt: long })
+      .where(eq(schema.agentRuns.id, c?.targetRunId ?? ""));
+    // Its job went with its worker.
+    await f.db.update(schema.outbox).set({ status: "done" }).where(eq(schema.outbox.kind, "agent_run.execute"));
+    expect((await recoverStaleRuns({ db: f.db, pubsub: f.pubsub })).failed).toEqual([c?.targetRunId ?? ""]);
+    const [w] = await works();
+    const [end] = await f.db
+      .select()
+      .from(schema.messages)
+      .where(eq(schema.messages.id, w?.resultMessageId ?? ""));
+    expect(end).toMatchObject({ channelId: f.general.id, authorAgentId: atlas.id });
+    expect((await consultations())[0]?.status).toBe("failed");
+    const notice = (await f.db.select().from(schema.messages)).find(
+      (m) => (m.meta.notice as { kind?: string } | undefined)?.kind === "consult_reply",
+    );
+    expect((notice?.meta.notice as { refs?: { wake?: string } } | undefined)?.refs).toMatchObject({ status: "failed" });
+    expect((notice?.meta.notice as { refs?: { wake?: string } } | undefined)?.refs?.wake).toBeUndefined();
+    const runs = await f.db.select().from(schema.agentRuns);
+    expect(runs.filter((r) => r.agentId === f.agent.id)).toHaveLength(1);
   });
 
   test("the delegate may post updates: they land in the person's conversation as its own", async () => {
