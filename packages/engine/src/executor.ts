@@ -245,7 +245,7 @@ import {
   unreachedPeople,
 } from "./messages";
 import { missionAsksPerson, missionReportSince, scheduleKeepGoing } from "./missions-engine";
-import { type NoAiCardReason, postNoAiCard } from "./no-ai";
+import { type NoAiCardReason, postNoAiCard, postStandInLine } from "./no-ai";
 import {
   notifyCatchUpClosed,
   notifyCatchUpClosedAsker,
@@ -273,8 +273,10 @@ import { routineCreatorOf, wikiPersonOf } from "./requester";
 import {
   isRightHand,
   RIGHT_HAND_AUTO,
+  type RightHandStandIn,
   rightHandNoAiReason,
   rightHandPerson,
+  rightHandStandIn,
   scrubRightHandReply,
   thinkingAgent,
   withPersonalBrain,
@@ -316,6 +318,7 @@ import {
   cliRefusedStart,
   cliWords,
   isTerminal,
+  keyRefused,
   NO_AI,
   OUR_ERROR,
   PERSON_LIMIT,
@@ -657,6 +660,16 @@ export interface Transcript {
    * the judges read this as the request instead.
    */
   request?: string;
+  /**
+   * The right hand's own plan couldn't answer and the workspace's key did (`rightHandStandIn`, ADR 0137 §7 amended
+   * 2026-11-15): its own line says so (`postStandInLine`), never a note on the reply. No other agent stands in on the API.
+   */
+  fallback?: { from: BrainKind; code: string; message: string; resetsAt?: string; quiet?: true };
+  /**
+   * The key that stood in for the right hand's plan was refused (no credit, a wrong key) before it answered a turn: the
+   * run went back to its own brain, and no key stands in for it again.
+   */
+  standInRefused?: true;
   /** Fast was refused on a turn of this run, which went on at standard speed (`meta.speedFallback`). */
   speedFallback?: boolean;
   /**
@@ -1396,6 +1409,8 @@ async function executeRunInner(
   let transcript = run.transcript as unknown as Transcript | null;
   /** Who thinks for this run (set before the first turn). */
   let brainPlan: BrainPlan | null = null;
+  /** What thought for the right hand in place of its own plan (`rightHandStandIn`): its reply gets one line saying so. */
+  let standInUsed: RightHandStandIn | null = null;
   /** How its last turn ended (`decideTurnEnd`); every other way to `done` is recorded as `ended` (I2). */
   let turnEnd: TurnEndDecision | null = null;
   /** A failure's own code when the run error's prefix is too broad (`brain_unavailable: …`), and the plan it names. */
@@ -1438,6 +1453,13 @@ async function executeRunInner(
     if (brainPlan && brainPlan.kind !== "model") await revokeRunToolTokens(db, { runId: run.id }).catch(() => {});
     if (status === "done" || status === "failed" || status === "canceled")
       await deps.releaseRunPhones?.(run).catch(() => {});
+    if (status === "done" && standInUsed && !run.background) {
+      const line = standInUsed;
+      standInUsed = null;
+      await postStandInLine({ db, pubsub: deps.pubsub }, run, line).catch((error) =>
+        addRunStep(db, run, "error", { reason: "stand_in_line", message: String(error) }),
+      );
+    }
     await publishChannelEvent(deps.pubsub, { type: "agent.idle", ...where, ...bg });
     await publishChannelEvent(deps.pubsub, {
       type: "run.finished",
@@ -1621,7 +1643,11 @@ async function executeRunInner(
     await deferred;
     const plan = brainPlan && isComputerBrain(brainPlan.kind) ? BRAIN_PLAN_NAMES[brainPlan.kind] : undefined;
     failCause = { ...(ledger ? { code: ledger.code } : {}), ...(plan ? { plan } : {}) };
-    await addRunStep(db, run, "error", { reason });
+    // With `no_ai`, why (`failNoAi`): the run's own error says only that, and the card that says more may not be posted.
+    await addRunStep(db, run, "error", {
+      reason,
+      ...(reason === NO_AI && ledger?.detail ? { code: ledger.detail } : {}),
+    });
     const failed = await transitionRun(db, run.id, "running", "failed", {
       error: reason,
       ...(brainFailure ? { failure: brainFailure } : {}),
@@ -1769,11 +1795,10 @@ async function executeRunInner(
   /** What the run's policy refused of the tools the agent's scopes grant: who is behind it held them back. */
   const heldBack: string[] = [];
   const stored = await getAgentCached(db, run.orgId, run.agentId);
+  /** Whose AI the right hand's run thinks with (ADR 0137 §11); null for any other agent. */
+  const thinksFor = stored ? await rightHandPerson(db, stored, run) : null;
   // The right hand thinks with the AI of the person whose DM this is, when they chose their own (ADR 0137 §11).
-  const agent =
-    stored && isRightHand(stored)
-      ? (await withPersonalBrain(db, stored, await rightHandPerson(db, stored, run))).agent
-      : stored;
+  const agent = stored && isRightHand(stored) ? (await withPersonalBrain(db, stored, thinksFor)).agent : stored;
   // Claude Code defers our tools itself (its ToolSearch): a new run lists every tool the agent has, the same in every
   // run, instead of the groups a judge picks, so its cached prefix holds across runs and sessions (ADR 0043).
   if (needsContext && deps.toolsOnDemand && agent && brainOf(agent.brain) === "claude_code") {
@@ -2928,6 +2953,18 @@ async function executeRunInner(
     fresh: Boolean(viaRoutine) || run.background,
     promptKey: transcript.promptKey,
   });
+  if (brainPlan.standIn) {
+    standInUsed = brainPlan.standIn;
+    const fallback = {
+      from: brainOf(agent.brain),
+      code: brainPlan.standIn.code,
+      message: `${brainPlan.standIn.via} stood in`,
+      quiet: true as const,
+    };
+    // On the key it keeps the key when it resumes, as a fallback does: its transcript is the model's.
+    if (brainPlan.kind === "model") transcript.fallback = fallback;
+    await addRunStep(db, run, "context", { brainFallback: fallback });
+  }
   // The agent's model left its plan's live list, so this turn runs another: its owner hears it, never silently.
   const dropped =
     brainPlan.kind === "claude_code" && !brainPlan.missionId && agent.brain === "claude_code"
@@ -3003,6 +3040,11 @@ async function executeRunInner(
         text: settingsChangedNote(transcript.system, await isPersonalWorkspace(db, run.orgId)),
       } as ContextBlock,
     ];
+  }
+  // The right hand's run the key stood in for keeps it when it resumes (an approval, an answer): its transcript is the
+  // model's, and its plan would start the task again from the trigger.
+  if (isRightHand(agent) && brainPlan.kind !== "model" && run.brain === "model" && transcript.fallback) {
+    brainPlan = { kind: "model", ...(brainPlan.missionId ? { missionId: brainPlan.missionId } : {}) };
   }
   if (brainPlan.kind !== "claude_code") onDemandForOtherBrain(transcript);
   // The run's effective brain (ADR 0053 §10): shared code reads it, never the agent's stored brain.
@@ -3098,7 +3140,17 @@ async function executeRunInner(
     };
     return { evidence, gather };
   };
-  const brain = createBrain(deps, thinker, run, plan.kind, turnToken, () => transcript as Transcript);
+  let brain = createBrain(deps, thinker, run, plan.kind, turnToken, () => transcript as Transcript);
+  /**
+   * What the key stands in for since this claim's stand-in for the right hand, until it answers a turn: the plan and
+   * the tools it listed, taken back if the key is refused first (`backToOwnBrain`).
+   */
+  let standIn: {
+    plan: BrainPlan;
+    brain: typeof brain;
+    toolGroups: Transcript["toolGroups"];
+    loadedGroups: ToolContext["loadedGroups"];
+  } | null = null;
   let triggerText = trigger?.body ?? topTrigger?.body ?? "";
   if (plan.kind !== "model" && !triggerText) {
     triggerText = (await getMessage(db, run.orgId, run.triggerMessageId))?.body ?? "";
@@ -3466,13 +3518,14 @@ async function executeRunInner(
   /**
    * The computer brain can't answer. At the run's start (`look`), a computer in standby is woken and waited for, and on
    * its first look one just gone too (`computerBackSoon`). Still away: the run waits for the computer (the API never
-   * stands in, ADR 0032's 2026-11-15 addendum), or (nothing to think with) it fails with `no_ai`. A computer with no
+   * stands in, ADR 0032's 2026-11-15 addendum, but for the right hand's key, ADR 0137 §7 amended 2026-11-15), or
+   * (nothing to think with) it fails with `no_ai`. A computer with no
    * room for the turn (`busy`) is asked again every `COMPUTER_BUSY_RETRY_MS` until it runs.
    */
   const brainUnavailable = async (
     u: BrainUnavailability & { queued?: boolean; retryAt?: number },
     look?: "first" | "again",
-  ): Promise<"waited" | "failed" | "no" | "back" | "canceled" | "moved"> => {
+  ): Promise<"fallback" | "waited" | "failed" | "no" | "back" | "canceled" | "moved"> => {
     const from = plan.kind;
     if (from === "model") return "no";
     const t = transcript as Transcript;
@@ -3494,9 +3547,24 @@ async function executeRunInner(
       if (back === null) return "canceled";
       if (back) return "back";
     }
-    // The team's right hand on a plan (ADR 0137 §7): one line says why, with the way to an API key; it never waits
-    // for the computer. Only waiting its turn for room stays a wait.
-    if (isRightHand(agent) && u.code !== "busy" && !u.queued) {
+    // Only the computer that cut the turn may finish it, so the run waits for it.
+    const onlyThisComputer = turnStaysOnItsComputer(t.interruptedTurn?.executed.length ?? 0, t.interruptedTurn?.cause);
+    // The team's right hand on a plan (ADR 0137 §7, amended 2026-11-15): with no next account of the person it answers
+    // (above), the workspace's key takes the turn over when it can (its reply gets one line saying so); else one line
+    // says why. Only waiting its turn for room stays a wait.
+    const rightHandKey =
+      isRightHand(agent) &&
+      u.code !== "busy" &&
+      // Its CLI killed for tools of its own: the turn stops there, nothing takes it over.
+      u.code !== "tools_not_locked" &&
+      !u.queued &&
+      !onlyThisComputer &&
+      !t.standInRefused
+        ? await rightHandStandIn({ db, gateway: deps.gateway }, agent, thinksFor, u.code, { keyOnly: true }).catch(
+            () => null,
+          )
+        : null;
+    if (isRightHand(agent) && u.code !== "busy" && !u.queued && !rightHandKey) {
       const ownModel = u.scope ? ownLimitsModel(plan.account?.provider, plan.model) : null;
       const line = rightHandNoAiReason(u.code, ownModel ? u.scope : undefined);
       // What the plan's CLI or its computer said is kept in the run and reported, as any agent's CLI failure is, and the
@@ -3509,8 +3577,33 @@ async function executeRunInner(
       await failNoAi(line, undefined, ownModel?.label, said || undefined);
       return "failed";
     }
-    // Only the computer that cut the turn may finish it, so the run waits for it.
-    const onlyThisComputer = turnStaysOnItsComputer(t.interruptedTurn?.executed.length ?? 0, t.interruptedTurn?.cause);
+    // Only the right hand stands in on the key (the API never stands in for any other agent's computer brain).
+    if (rightHandKey && (await deps.gateway.hasModelCredential(thinker).catch(() => false))) {
+      await leaveLine();
+      standIn = { plan, brain, toolGroups: t.toolGroups, loadedGroups: ctx.loadedGroups };
+      t.fallback = {
+        from,
+        code: u.code,
+        message: u.message,
+        ...(u.resetsAt ? { resetsAt: u.resetsAt } : {}),
+        quiet: true,
+      };
+      // On "Automático" the API answers with the model and effort chosen for this run.
+      const autoEffort = isAutoModel(agent.model) ? t.autoModel?.effort : undefined;
+      plan = {
+        kind: "model",
+        ...(plan.missionId ? { missionId: plan.missionId } : {}),
+        ...(autoEffort ? { effort: autoEffort } : {}),
+      };
+      brain = createBrain(deps, thinker, run, "model", turnToken, () => transcript as Transcript);
+      onDemandForOtherBrain(t);
+      await saveTranscript(db, t);
+      await recordRunBrain(db, run.id, "model");
+      run = { ...run, brain: "model" };
+      await addRunStep(db, run, "context", { brainFallback: { from, code: u.code, message: u.message } });
+      standInUsed = rightHandKey;
+      return "fallback";
+    }
     // Signed out, the command-line tool missing, no computer: nothing signals that it's fixed (only the
     // computer coming back online would), so a wait would never end.
     if (!onlyThisComputer && NO_AI_CODES.has(u.code)) {
@@ -3671,6 +3764,36 @@ async function executeRunInner(
     await publishChannelEvent(deps.pubsub, event("waiting_input", undefined, undefined, computer));
     await finished("waiting_input", undefined, undefined, computer);
     return "waited";
+  };
+
+  /**
+   * The key standing in for the right hand's plan was refused (no credit, a wrong key) before it answered a turn: the
+   * run is its own brain's again, as when no key can stand in. The person never reads the error of a key it doesn't
+   * think with. Null when the key isn't standing in since this claim, or answered a turn already (its transcript is the
+   * model's).
+   */
+  const backToOwnBrain = async (error: ProviderError) => {
+    const t = transcript as Transcript;
+    const was = t.fallback;
+    if (!standIn || !was) return null;
+    ({ plan, brain } = standIn);
+    ctx.loadedGroups = standIn.loadedGroups;
+    if (standIn.toolGroups) t.toolGroups = standIn.toolGroups;
+    else delete t.toolGroups;
+    tools = presentTools(granted, isSensitive, ctx.loadedGroups);
+    standIn = null;
+    delete t.fallback;
+    t.standInRefused = true;
+    await recordRunBrain(db, run.id, plan.kind);
+    run = { ...run, brain: plan.kind };
+    const { cause, provider } = providerFailureOf(error);
+    await addRunStep(db, run, "context", { standInRefused: { cause, provider } });
+    const handled = await brainUnavailable({
+      code: was.code,
+      message: was.message,
+      ...(was.resetsAt ? { resetsAt: was.resetsAt } : {}),
+    });
+    return { handled, was };
   };
 
   /** The first question a computer brain asked through the bridge in this pause: when, and when its card was posted. */
@@ -4000,6 +4123,12 @@ async function executeRunInner(
       wait.step++;
     } else if (!known) at = now + LINE_SAFETY_MS;
     const resetsAt = known ? new Date(at).toISOString() : undefined;
+    // The right hand thinking on the key only because its plan couldn't: that plan may be back (its limit reset) long
+    // before the budget renews, and a resume picks it again. The note still says when the budget renews.
+    if (budget && t.fallback && !u.soon) {
+      const brainBack = Date.parse(t.fallback.resetsAt ?? "");
+      at = Math.min(at, brainBack > now ? brainBack : now + ladderDelay(wait.step++));
+    }
     const runAt = new Date(at + RESUME_AFTER_MS + RESUME_GAP_MS * line.place);
     // The region a model needs, a model switched off or no subscription has no reset: its note says what to do.
     const tellOwner =
@@ -5019,8 +5148,8 @@ async function executeRunInner(
             }
           }
           const handled = await brainUnavailable({ code: error.code, message: error.message, ...refusal });
+          if (handled === "fallback" || handled === "moved") continue;
           if (handled === "waited" || handled === "failed") return;
-          if (handled === "moved") continue;
         }
         // The person behind it is at their monthly limit (ADR 0141): the agent says so with "Pedir mais" and stops.
         if (error instanceof PersonLimitError) return failPersonLimit(error.personId);
@@ -5031,6 +5160,16 @@ async function executeRunInner(
         // Held or suspended meanwhile: that is why, whatever the brain made of the refusal.
         const paused = await standingRefusal(db, run.orgId, run.agentId);
         if (paused) return fail(paused.message);
+        // The key standing in for the right hand's plan was refused before it answered: back to that plan.
+        if (turnPlan.kind === "model" && error instanceof ProviderError && keyRefused(error)) {
+          const back = await backToOwnBrain(error);
+          if (back?.handled === "waited" || back?.handled === "failed") return;
+          // Nothing to wait for either: the run ends on why its own plan couldn't answer, never on the key's error.
+          if (back) {
+            const { code, message } = back.was;
+            return fail(`brain_unavailable: ${message}`, { code, detail: message });
+          }
+        }
         // A CLI's failure says who failed it and what it said; the computer only ran it. One that refused to start
         // would fail every retry the same way: it ends here too.
         // A code the apps don't word (a runner's `unsupported`) reads as that brain's program's error, never bare.
@@ -5075,6 +5214,8 @@ async function executeRunInner(
         }
       }
       await deltas.flush();
+      // The key answered a turn: from here the transcript is its own, and the run stays with it.
+      if (turnPlan.kind === "model") standIn = null;
       if (transcript.outage?.noteId) await outageOver(transcript.outage.noteId).catch(() => {});
       const passedLine = transcript.outage?.line;
       delete transcript.outage;

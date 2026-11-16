@@ -274,6 +274,15 @@ const PROVIDER_ACCOUNT = "account: ";
 
 const OUR_KEY_CAUSES: ReadonlySet<ProviderCause> = new Set(["no_credit", "invalid_key", "no_access", "rate_limit"]);
 
+/** A key refused for what the key is, on every call until someone fixes it: no retry and no wait gets past it. */
+const KEY_REFUSALS: ReadonlySet<ProviderCause> = new Set(["no_credit", "invalid_key", "no_access"]);
+
+/** Whether a provider refused the call for its key (no credit, a wrong key, no access), whoever's key it is. */
+export function keyRefused(error: ProviderError) {
+  const cause = providerCause(error);
+  return cause !== null && KEY_REFUSALS.has(cause);
+}
+
 /**
  * A provider failure in the terms the apps word it: a known cause, `ours` (it came on the server's own key, so nothing
  * of the person's is wrong), or `said` (only the provider's own words, masked and cut, tell).
@@ -429,6 +438,73 @@ export function personStopOf(error: string | null | undefined) {
   if (!error?.startsWith(CANCELED_BY)) return null;
   const [userId = "", tail = ""] = error.slice(CANCELED_BY.length).split("|");
   return { userId, agentId: tail.startsWith("agent:") ? tail.slice("agent:".length) : null };
+}
+
+/**
+ * Every reason the system stops a run with (`StopActor`), as its error holds it, then the three a closed workspace's
+ * stop is read as (its error holds the refusal's text, never returned), then `other`.
+ * ponytail: `routine_<code>` and `mission_<reason>` are put together where the stop is made (`routine-firing.ts`,
+ * `routines.ts`, `dashboards/refresh.ts`, `executor.ts`, `missions.ts`): a word added there reads `other` until it is
+ * listed here.
+ */
+export const SYSTEM_STOP_REASONS = [
+  "agent_archived",
+  "channel_deleted",
+  "consultation_expired",
+  "mission_stopped",
+  "mission_closed",
+  "mission_executor_changed",
+  "routine_superseded",
+  "routine_waiting_plan",
+  "routine_waiting_budget",
+  "routine_waiting_computer",
+  "routine_stalled",
+  "routine_stale",
+  "routine_waiting_plan_late",
+  "routine_waiting_budget_late",
+  "routine_stopped",
+  "routine_paused",
+  "routine_deleted",
+  "routine_creator_left",
+  "workspace_paused",
+  "workspace_suspended",
+  "workspace_deleting",
+  "other",
+] as const;
+export type SystemStopReason = (typeof SYSTEM_STOP_REASONS)[number];
+
+const WORKSPACE_STOPS: Record<string, SystemStopReason> = {
+  "run.org_paused": "workspace_paused",
+  "run.org_suspended": "workspace_suspended",
+  "run.org_deleting": "workspace_deleting",
+};
+
+/** The system's reason for a stop as one of `SYSTEM_STOP_REASONS`, from what the run's error or the audit kept of it. */
+export function systemStopReason(reason: string): SystemStopReason {
+  const listed = SYSTEM_STOP_REASONS.find((word) => word === reason);
+  return listed ?? WORKSPACE_STOPS[standingErrorDetail(reason)?.errorCode ?? ""] ?? "other";
+}
+
+export const STOPPED_BY = ["person", "agent", "system"] as const;
+
+/**
+ * Who or what stopped a canceled run, from its error (`stopError`): the person, the agent that stopped it at that
+ * person's word, or the system with its reason as a listed word. Never the error's text. Null: the run kept no error,
+ * so nothing says who stopped it.
+ */
+export function stopOf(error: string | null | undefined): {
+  by: (typeof STOPPED_BY)[number];
+  userId: string | null;
+  agentId: string | null;
+  reason: SystemStopReason | null;
+} | null {
+  if (!error) return null;
+  const person = personStopOf(error);
+  // Older rows hold `canceled_by:mission` for a mission's stop with nobody behind it: no person's id, and which of
+  // the mission's reasons it was is not kept.
+  if (person && person.userId !== "mission")
+    return { by: person.agentId ? "agent" : "person", ...person, reason: null };
+  return { by: "system", userId: null, agentId: null, reason: systemStopReason(error) };
 }
 
 /** Who canceled: the person behind the stop, also when the right hand did it at their word. */
