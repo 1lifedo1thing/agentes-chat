@@ -177,7 +177,10 @@ describe("sheets that open the next thing", () => {
     const chat = src("features/chat/ChatScreen.tsx");
     expect(chat).not.toContain("SHEET_LEAVE_MS");
     expect(chat).not.toMatch(/setTimeout\(\(\) => open(NewMission|Remind)\(\), \d+\)/);
-    expect(chat).toContain('else sheet.close(() => router.setParams({ channelId: id, thread: "", handoff: "" }));');
+    // The message the last conversation opened at goes with it (`m`): the params merge.
+    expect(chat).toContain(
+      'else sheet.close(() => router.setParams({ channelId: id, thread: "", handoff: "", m: "" }));',
+    );
     expect(chat).toContain('const after = pick !== "summary" || Boolean(mission);');
     expect(chat).toContain("if (after) await new Promise<void>((done) => sheet.close(done));");
   });

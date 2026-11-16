@@ -1987,6 +1987,8 @@ function Chat({
   // Holding the pill: "Trocar de conversa". The pick swaps the conversation in place (the route's params; the
   // screen is keyed by them), not a new screen sliding in: the slide made the header's pill jump at its end.
   // The swap waits for the sheet to be gone (it lives in this screen, which the swap remounts): `sheet.close` says when.
+  // The params merge, so the message this one opened at (`m`, from a notification) goes too: kept, the next
+  // conversation paged back through its history looking for it, then said it couldn't reach it.
   const hold = {
     onHold: () => {
       sheet.open(
@@ -1994,7 +1996,7 @@ function Chat({
           channelId={channelId}
           onPick={(id) => {
             if (id === channelId) sheet.close();
-            else sheet.close(() => router.setParams({ channelId: id, thread: "", handoff: "" }));
+            else sheet.close(() => router.setParams({ channelId: id, thread: "", handoff: "", m: "" }));
           }}
         />,
       );
