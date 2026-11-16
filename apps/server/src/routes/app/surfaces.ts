@@ -6,14 +6,28 @@ import {
   requireSurface,
   surfaceAllowed,
   surfaceOn,
+  undoSurfaceLink,
 } from "@agenteschat/engine";
 import { createRoute, z } from "@hono/zod-openapi";
+import { requestLimitIp } from "../../http/client-ip";
 import { apiError, errorResponse } from "../../http/errors";
-import { type AppDeps, createAppRouter, errors, json, noContent, OrgParams, requireSession, security } from "./context";
+import {
+  type AppDeps,
+  body,
+  createAppRouter,
+  errors,
+  json,
+  noContent,
+  OrgParams,
+  requireSession,
+  security,
+} from "./context";
 
 const tags = ["Account"];
 
 const CODES_PER_HOUR = { limit: 10, windowMs: 3_600_000 };
+/** As "This wasn't me": room for a few retries, never for guessing a token. */
+const UNDO_PER_IP = { limit: 10, windowMs: 10 * 60_000 };
 
 const SurfaceLink = z
   .object({
@@ -45,7 +59,11 @@ export function surfaceRoutes(deps: AppDeps) {
   app.use("/me/surface-links", requireSession(deps.auth));
   app.use("/me/surface-links/*", requireSession(deps.auth));
   app.use("/organizations/*", requireSession(deps.auth));
-  const linkDeps = { db, pubsub: adapters.pubsub };
+  const linkDeps = {
+    db,
+    pubsub: adapters.pubsub,
+    publicUrl: adapters.email.delivers === true ? deps.config.PUBLIC_URL : null,
+  };
 
   app.openapi(
     createRoute({
@@ -156,6 +174,30 @@ export function surfaceRoutes(deps: AppDeps) {
       requireSurface();
       await removeLink(linkDeps, c.get("user").id, id);
       return c.body(null, 204);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/surface-undo",
+      tags,
+      summary: "“Not you? Unlink it”: end the outside chat surface link the email told about",
+      description:
+        'Public, from the undo page the "linked" email links to (`/email-undo?kind=surface&token=`), never from the link itself: mail scanners open links. Once, within 7 days: ends that link if it is still active (`unlinked` false when it already ended). 404 `surface.undo_gone` once used or run out. 10 tries per 10 minutes per IP address (429 `rate_limited`).',
+      request: { body: body(z.object({ token: z.string().min(16).max(200) })) },
+      responses: {
+        ...errors,
+        200: json(z.object({ unlinked: z.boolean() })),
+        404: errorResponse("Used or run out (`surface.undo_gone`)"),
+        429: errorResponse("Too many tries (`rate_limited`)"),
+      },
+    }),
+    async (c) => {
+      const ip = requestLimitIp(c.req.raw.headers, deps.config.TRUSTED_PROXIES);
+      const limit = await adapters.rateLimiter.consume(`surface-undo:${ip}`, UNDO_PER_IP);
+      if (!limit.allowed) return apiError(c, 429, "rate_limited", "Too many requests. Try again later.");
+      return c.json(await undoSurfaceLink(linkDeps, c.req.valid("json").token), 200);
     },
   );
 

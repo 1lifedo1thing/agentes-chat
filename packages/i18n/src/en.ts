@@ -18110,6 +18110,9 @@ export const en = {
       file_saved: "File saved.",
       issue_work_start: "Please do task #{{number}}.",
       issue_taken: "Took task #{{number}}.",
+      /** An outside chat surface (ADR 0187) unlinked the account on its own; the surface no longer reaches them. */
+      surfaceUnlinked:
+        "{{surface}} was unlinked because its identity changed. Link it again in Settings if it was you.",
       done: "Done.",
       stretch_paused_runs_one: "{{agents}} paused to check with you before going on",
       stretch_paused_runs_other: "{{agents}} paused to check with you before going on",

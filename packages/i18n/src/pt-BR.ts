@@ -18025,6 +18025,8 @@ export const ptBR = {
       file_saved: "Arquivo salvo.",
       issue_work_start: "Pode fazer a tarefa #{{number}}.",
       issue_taken: "Peguei a tarefa #{{number}}.",
+      surfaceUnlinked:
+        "{{surface}} foi desvinculado porque a identidade mudou. Vincule de novo em Configurações se foi você.",
       done: "Pronto.",
       /**
        * A stretch's pause card (ADR 0089): `agents` their names, `count` how many; `percent` the share of each one's

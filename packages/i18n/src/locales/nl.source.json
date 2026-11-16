@@ -43767,6 +43767,9 @@
   "chat.body.issue_taken": {
     "value": "Took task #{{number}}."
   },
+  "chat.body.surfaceUnlinked": {
+    "value": "{{surface}} was unlinked because its identity changed. Link it again in Settings if it was you."
+  },
   "chat.body.done": {
     "value": "Done."
   },

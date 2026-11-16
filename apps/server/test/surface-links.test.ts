@@ -218,6 +218,34 @@ test("a sender gets 5 claims an hour, wrong codes included", async () => {
   expect((over.body.error?.params as { retryIn?: number } | undefined)?.retryIn).toBeGreaterThan(0);
 });
 
+test("the linked email's undo: public, once, then surface.undo_gone; 429 past 10 tries in 10 minutes", async () => {
+  const eve = browser(t);
+  await signUp(eve, "eve@example.com");
+  const org = await workspace(eve, "Eve Co");
+  const claimed = await claim((await mint(eve, org)).body.code, "sender-eve");
+  expect((await eve(`/api/app/me/surface-links/${claimed.body.linkId}/confirm`, { json: {} })).status).toBe(200);
+  const jobs = await t.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "email.send"));
+  const sent = jobs
+    .map((j) => j.payload as { to: string[]; template: { kind: string; url?: string } })
+    .filter((p) => p.template.kind === "surface_linked" && p.to.includes("eve@example.com"));
+  expect(sent).toHaveLength(1);
+  const url = new URL(sent[0]?.template.url ?? "");
+  expect(url.pathname).toBe("/email-undo");
+  expect(url.searchParams.get("kind")).toBe("surface");
+  const token = url.searchParams.get("token") ?? "";
+
+  const stranger = browser(t);
+  const undo = (value: string) => stranger("/api/app/surface-undo", { json: { token: value } });
+  const first = await undo(token);
+  expect([first.status, await first.json()]).toEqual([200, { unlinked: true }]);
+  expect((await list(eve)).links).toEqual([]);
+  const again = await undo(token);
+  expect([again.status, await errorCode(again)]).toEqual([404, "surface.undo_gone"]);
+  for (let i = 0; i < 8; i++) expect((await undo(`wrong-token-${i}`.padEnd(32, "0"))).status).toBe(404);
+  const over = await undo(token);
+  expect([over.status, await errorCode(over)]).toEqual([429, "rate_limited"]);
+});
+
 // Last: it spends the claims cap across all senders for the rest of the file.
 test("past 120 claims an hour across senders: surface.busy, and one operator event", async () => {
   enableOperatorEvents();

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { type RealtimeEvent, userTopic } from "@agenteschat/adapters";
-import { and, eq, schema } from "@agenteschat/db";
+import { and, eq, like, schema } from "@agenteschat/db";
 import {
   activeLink,
   activeLinkOf,
@@ -15,6 +15,7 @@ import {
   revokeUserApps,
   setSurface,
   setUserBlocked,
+  undoSurfaceLink,
   unlinkExternal,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
@@ -229,4 +230,90 @@ test("a new password and a block leave no link; unblocking brings none back", as
   expect(await links()).toEqual([]);
   await setUserBlocked(deps(), f.owner.id, { blocked: false, reason: null });
   expect(await links()).toEqual([]);
+});
+
+const emails = async (kind: string) =>
+  (await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "email.send")))
+    .map((j) => j.payload as { key: string; to: string[]; template: Record<string, unknown> & { kind: string } })
+    .filter((p) => p.template.kind === kind);
+const mailing = () => ({ ...deps(), publicUrl: "https://chat.example.com/" });
+
+test("confirm emails the account once that the surface was linked, with a single-use undo", async () => {
+  const { link } = await claim(await codeOf());
+  await confirmLink(mailing(), f.owner.id, link.id);
+  const [sent, ...more] = await emails("surface_linked");
+  expect(more).toEqual([]);
+  expect(sent?.to).toEqual([f.owner.email]);
+  expect(sent?.template).toMatchObject({
+    surface: "Telegram",
+    display: "+1 555 0100",
+    orgName: "Acme",
+    locale: "pt-BR",
+  });
+  const url = new URL(String(sent?.template.url));
+  expect(`${url.origin}${url.pathname}`).toBe("https://chat.example.com/email-undo");
+  expect(url.searchParams.get("kind")).toBe("surface");
+  const token = url.searchParams.get("token") ?? "";
+  expect(token.length).toBeGreaterThanOrEqual(40);
+
+  const events: RealtimeEvent[] = [];
+  f.pubsub.subscribe(userTopic(f.org.id, f.owner.id), (e) => events.push(e));
+  expect(await undoSurfaceLink(deps(), token)).toEqual({ unlinked: true });
+  expect(await links()).toEqual([]);
+  expect(events).toContainEqual({ type: "surface_link.changed", linkId: link.id, status: "gone" });
+  expect(await errorOf(undoSurfaceLink(deps(), token))).toBe("surface.undo_gone");
+  expect(await errorOf(undoSurfaceLink(deps(), "not-a-token-at-all-0000"))).toBe("surface.undo_gone");
+});
+
+test("the undo only ends the link it was sent for, and runs out after 7 days", async () => {
+  const first = await claim(await codeOf());
+  await confirmLink(mailing(), f.owner.id, first.link.id);
+  const firstToken = new URL(String((await emails("surface_linked"))[0]?.template.url)).searchParams.get("token") ?? "";
+  // A newer link replaced it: the old email's undo leaves the new one alone.
+  const second = await claim(await codeOf(), "sender-new-phone");
+  await confirmLink(mailing(), f.owner.id, second.link.id);
+  expect(await undoSurfaceLink(deps(), firstToken)).toEqual({ unlinked: false });
+  expect((await activeLinkOf(f.db, f.owner.id))?.id).toBe(second.link.id);
+
+  const secondToken =
+    new URL(String((await emails("surface_linked")).at(-1)?.template.url)).searchParams.get("token") ?? "";
+  await f.db
+    .update(schema.verifications)
+    .set({ expiresAt: new Date(Date.now() - 1000) })
+    .where(like(schema.verifications.identifier, "surface-undo:%"));
+  expect(await errorOf(undoSurfaceLink(deps(), secondToken))).toBe("surface.undo_gone");
+  expect((await activeLinkOf(f.db, f.owner.id))?.id).toBe(second.link.id);
+});
+
+test("a server that sends no email queues none, and confirm still works", async () => {
+  const { link } = await claim(await codeOf());
+  await confirmLink(deps(), f.owner.id, link.id);
+  expect(await emails("surface_linked")).toEqual([]);
+  expect(
+    await f.db.select().from(schema.verifications).where(like(schema.verifications.identifier, "surface-undo:%")),
+  ).toEqual([]);
+});
+
+test("an identity change emails the account and posts one line in its DM with the right hand; asked does neither", async () => {
+  const asked = await claim(await codeOf());
+  await confirmLink(mailing(), f.owner.id, asked.link.id);
+  await unlinkExternal(mailing(), SENDER, "asked");
+  expect(await emails("surface_unlinked")).toEqual([]);
+
+  const changed = await claim(await codeOf());
+  await confirmLink(mailing(), f.owner.id, changed.link.id);
+  expect(await unlinkExternal(mailing(), SENDER, "identity_changed")).toBe("unlinked");
+  expect(await unlinkExternal(mailing(), SENDER, "identity_changed")).toBe("none");
+  const [sent, ...more] = await emails("surface_unlinked");
+  expect(more).toEqual([]);
+  expect(sent).toMatchObject({
+    to: [f.owner.email],
+    template: { surface: "Telegram", display: "+1 555 0100", url: "https://chat.example.com/" },
+  });
+  const lines = (await f.db.select().from(schema.messages)).filter((m) => m.meta.bodyCode === "surfaceUnlinked");
+  expect(lines).toHaveLength(1);
+  expect(lines[0]?.meta.bodyParams).toEqual({ surface: "Telegram" });
+  expect(lines[0]?.body).toBe(
+    "Telegram foi desvinculado porque a identidade mudou. Vincule de novo em Configurações se foi você.",
+  );
 });

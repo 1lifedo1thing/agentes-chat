@@ -117,14 +117,17 @@ const notificationsOf = (userId = f.owner.id) =>
     .where(and(eq(notifications.orgId, f.org.id), eq(notifications.userId, userId)));
 const deliveries = () => f.db.select().from(surfaceDeliveries);
 const runHook = (messageId: string) =>
-  f.handlers["notifications.message"]?.({
-    id: crypto.randomUUID(),
-    orgId: f.org.id,
-    kind: "notifications.message",
-    payload: { messageId },
-    attempts: 1,
-    maxAttempts: 8,
-  } as never);
+  f.handlers["notifications.message"]?.(
+    {
+      id: crypto.randomUUID(),
+      orgId: f.org.id,
+      kind: "notifications.message",
+      payload: { messageId },
+      attempts: 1,
+      maxAttempts: 8,
+    } as never,
+    { finalAttempt: false },
+  );
 
 const errorOf = async (p: Promise<unknown>) => {
   try {

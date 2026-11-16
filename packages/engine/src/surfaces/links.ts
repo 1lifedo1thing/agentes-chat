@@ -1,14 +1,15 @@
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import type { PubSub, RateLimiter } from "@agenteschat/adapters";
 import { and, asc, type Database, desc, type Executor, eq, gt, lte, or, type SQL, schema, sql } from "@agenteschat/db";
 import { CODE_ALPHABET, newConfirmationCode } from "../codes";
 import { sha256 } from "../crypto";
+import { emailLocale, queueEmail } from "../email";
 import { ConflictError, ForbiddenError, NotFoundError, TooManyError } from "../errors";
 import { publishUserEvent } from "../events";
 import { recordOperatorEvent } from "../operator-events";
 import { getMembership } from "../organizations";
 import { personLocale } from "../requester";
-import { lodiFor } from "../right-hand-proactive";
+import { lodiFor, postFromLodi } from "../right-hand-proactive";
 import { surfaceOn } from "./config";
 
 /**
@@ -17,10 +18,12 @@ import { surfaceOn } from "./config";
  * deleted. A pending link older than `PENDING_LINK_MS` counts as gone wherever it is read; no job sweeps it.
  */
 
-const { surfaceLinks, surfaceDeliveries, verifications, organizations } = schema;
+const { surfaceLinks, surfaceDeliveries, verifications, organizations, users } = schema;
 
 export const LINK_CODE_TTL_MS = 10 * 60_000;
 export const PENDING_LINK_MS = 10 * 60_000;
+/** How long the "linked" email's "Not you? Unlink it" works. */
+export const SURFACE_UNDO_MS = 7 * 24 * 3_600_000;
 
 export type SurfaceLinkRow = typeof surfaceLinks.$inferSelect;
 export type SurfaceLinkStatus = "pending" | "active" | "gone";
@@ -38,11 +41,13 @@ export interface SurfaceLinkView {
   expiresAt: string | null;
 }
 
-type LinkDeps = { db: Database; pubsub?: PubSub };
+/** `publicUrl`: where the emails link to; absent or null on a server that sends no email, which sends none. */
+type LinkDeps = { db: Database; pubsub?: PubSub; publicUrl?: string | null };
 
 const CODE_LENGTH = 8;
 const CODE_SHAPE = new RegExp(`^[${CODE_ALPHABET}]{${CODE_LENGTH}}$`);
 const codeId = (normalised: string) => `surface-link:${sha256(normalised)}`;
+const undoId = (token: string) => `surface-undo:${sha256(token)}`;
 const pendingSince = () => new Date(Date.now() - PENDING_LINK_MS);
 const pendingExpiry = (createdAt: Date) => new Date(createdAt.getTime() + PENDING_LINK_MS);
 
@@ -200,6 +205,7 @@ export async function confirmLink(deps: LinkDeps, userId: string, linkId: string
       .returning();
     if (!active?.orgId) throw new Error("surface link not confirmed");
     await tx.insert(surfaceDeliveries).values({ orgId: active.orgId, linkId: active.id, kind: "linked" });
+    if (deps.publicUrl) await queueLinkedEmail(tx, deps.publicUrl, active);
     return { link: active, replaced };
   });
   for (const old of replaced) await changed(deps, old, "gone");
@@ -228,7 +234,7 @@ export async function removeLink(deps: LinkDeps, userId: string, linkId: string)
 export async function unlinkExternal(
   deps: LinkDeps,
   externalId: string,
-  _reason: "asked" | "identity_changed",
+  reason: "asked" | "identity_changed",
 ): Promise<"unlinked" | "none"> {
   const surface = requireSurface();
   const gone = await deps.db
@@ -236,7 +242,104 @@ export async function unlinkExternal(
     .where(and(eq(surfaceLinks.surface, surface.id), eq(surfaceLinks.externalId, externalId)))
     .returning();
   for (const link of gone) await changed(deps, link, "gone");
-  return gone.some((l) => l.status === "active") ? "unlinked" : "none";
+  const active = gone.find((l) => l.status === "active");
+  // The person didn't ask: they hear it in the app and by email, since the surface no longer reaches them.
+  if (active && reason === "identity_changed") {
+    const [user] = await deps.db
+      .select({ email: users.email, locale: users.locale })
+      .from(users)
+      .where(eq(users.id, active.userId));
+    if (deps.publicUrl && user) {
+      await queueEmail(deps.db, {
+        orgId: null,
+        key: `surface-unlinked:${active.id}`,
+        to: [user.email],
+        template: {
+          kind: "surface_unlinked",
+          locale: emailLocale(user.locale),
+          surface: surface.name,
+          display: shownAs(active),
+          url: deps.publicUrl,
+        },
+      });
+    }
+    if (active.orgId) {
+      await postFromLodi(deps, active.orgId, active.userId, {
+        bodyCode: "surfaceUnlinked",
+        bodyParams: { surface: surface.name },
+        push: true,
+      });
+    }
+  }
+  return active ? "unlinked" : "none";
+}
+
+/**
+ * "Not you? Unlink it" from the "linked" email, through the undo page: once, within `SURFACE_UNDO_MS`, it ends that
+ * link if it is still active. `surface.undo_gone` when used or run out.
+ */
+export async function undoSurfaceLink(deps: LinkDeps, token: string): Promise<{ unlinked: boolean }> {
+  // The delete is the single use: a second one at the same moment waits for this one and finds nothing.
+  const [row] = await deps.db
+    .delete(verifications)
+    .where(eq(verifications.identifier, undoId(token)))
+    .returning();
+  const undo = row && row.expiresAt > new Date() ? undoValue(row.value) : null;
+  if (!undo) throw new NotFoundError("This link expired or was already used", "surface.undo_gone");
+  const gone = await deps.db
+    .delete(surfaceLinks)
+    .where(
+      and(eq(surfaceLinks.id, undo.linkId), eq(surfaceLinks.userId, undo.userId), eq(surfaceLinks.status, "active")),
+    )
+    .returning();
+  for (const link of gone) await changed(deps, link, "gone");
+  return { unlinked: gone.length > 0 };
+}
+
+function undoValue(value: string): { userId: string; linkId: string } | null {
+  try {
+    const v = JSON.parse(value) as Record<string, unknown>;
+    return typeof v.userId === "string" && typeof v.linkId === "string" ? { userId: v.userId, linkId: v.linkId } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** How the emails name the sender: what the surface shows of them. */
+const shownAs = (link: SurfaceLinkRow) => link.display ?? link.profileName ?? link.externalId;
+
+/** The "linked" email with its single-use undo token, in the confirming transaction. */
+async function queueLinkedEmail(tx: Executor, publicUrl: string, link: SurfaceLinkRow) {
+  const surface = requireSurface();
+  const [row] = await tx
+    .select({ email: users.email, locale: users.locale, orgName: organizations.name })
+    .from(users)
+    .innerJoin(organizations, eq(organizations.id, link.orgId ?? ""))
+    .where(eq(users.id, link.userId));
+  if (!row) return;
+  const token = randomBytes(32).toString("base64url");
+  const now = new Date();
+  await tx.insert(verifications).values({
+    id: randomUUID(),
+    identifier: undoId(token),
+    value: JSON.stringify({ userId: link.userId, linkId: link.id }),
+    expiresAt: new Date(now.getTime() + SURFACE_UNDO_MS),
+    createdAt: now,
+    updatedAt: now,
+  });
+  await queueEmail(tx, {
+    orgId: null,
+    key: `surface-linked:${sha256(token)}`,
+    to: [row.email],
+    template: {
+      kind: "surface_linked",
+      locale: emailLocale(row.locale),
+      surface: surface.name,
+      display: shownAs(link),
+      orgName: row.orgName,
+      url: `${publicUrl.replace(/\/$/, "")}/email-undo?kind=surface&token=${token}`,
+    },
+  });
 }
 
 /**

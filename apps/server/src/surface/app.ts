@@ -298,7 +298,16 @@ export function createSurfaceApp(deps: AppDeps, token: string, version: string) 
       audit.externalId = externalId;
       const link = await activeLink(deps.db, externalId);
       if (link) Object.assign(audit, { linkId: link.id, userId: link.userId, orgId: link.orgId ?? undefined });
-      const status = await unlinkExternal({ db: deps.db, pubsub: deps.adapters.pubsub }, externalId, reason);
+      const status = await unlinkExternal(
+        {
+          db: deps.db,
+          pubsub: deps.adapters.pubsub,
+          publicUrl: deps.adapters.email.delivers === true ? deps.config.PUBLIC_URL : null,
+        },
+        externalId,
+        reason,
+      );
+      deps.wakeWorkers?.();
       return c.json({ status }, 200);
     },
   );

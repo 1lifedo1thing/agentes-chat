@@ -10,7 +10,9 @@
   claim, confirm, unlink; revoked with `revokeUserApps` and `setUserBlocked`) and `inbound.ts` (`postFromSurface`,
   with `voice_clips.via` carried by the voice job) and `deliveries.ts` (`queueSurfaceDelivery` from the
   `notifications.message` job, which shares `quietForPeople` with `notifyMessage`; the `surface.fallback` job;
-  `pruneSurfaceRows` beside the message partitions upkeep); server
+  `pruneSurfaceRows` beside the message partitions upkeep) and `turn.ts` (`surfaceRefusal`, called by the tool gateway;
+  the turn's line is in `context.ts`); the `surface_linked` and `surface_unlinked` emails in `email.ts`, undone by
+  `undoSurfaceLink` (`POST /api/app/surface-undo`); server
   `apps/server/src/surface/app.ts` (`createSurfaceApp`), served by `operatorFetch` in
   `apps/server/src/operator/app.ts`; app routes `apps/server/src/routes/app/surfaces.ts`; contract `apps/server/test/surface-openapi.json`
 
