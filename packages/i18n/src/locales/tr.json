@@ -7674,7 +7674,8 @@
     "table": {
       "task": "Görev",
       "github": "GitHub",
-      "sortBy": "{{column}} ölçütüne göre sırala"
+      "sortBy": "{{column}} ölçütüne göre sırala",
+      "resize": "{{column}} sütununu yeniden boyutlandır"
     },
     "fold": {
       "open": "{{name}} öğesini aç",
@@ -7758,6 +7759,7 @@
       "canceled": "#{{number}} yerine döndü.",
       "assigned": "#{{number}} artık {{name}} üzerinde.",
       "unassigned": "#{{number}} artık kimseye atanmamış.",
+      "removed": "#{{number}} artık {{name}} üzerinde değil.",
       "prioritized": "#{{number}} artık {{priority}} öncelikli."
     },
     "canceledColumn": "İptal edildi",
@@ -7907,6 +7909,10 @@
       "high": "yüksek"
     },
     "noAssignee": "Atanan yok",
+    "assignees": {
+      "people": "Kişiler ve ajanlar",
+      "done": "Tamam"
+    },
     "agentRole": "Ajan · {{role}}",
     "pr": "PR #{{number}}",
     "open": "#{{number}} {{title}}",
@@ -8046,7 +8052,9 @@
       "status_changed": "durumu {{status}} olarak değiştirdi",
       "priority_changed": "önceliği {{priority}} olarak değiştirdi",
       "assigned": "görevi atadı",
-      "unassigned": "atananı kaldırdı",
+      "unassigned": "atananlardan birini kaldırdı",
+      "assigned_named": "görevi {{name}} adlı kişiye atadı",
+      "unassigned_named": "{{name}} adlı kişiyi görevden çıkardı",
       "due_date_set": "son tarihi {{date}} olarak ayarladı",
       "due_date_removed": "son tarihi kaldırdı",
       "pr_linked": "PR #{{number}} bağladı",
@@ -10292,10 +10300,10 @@
       "removeCopies": "Kaldır",
       "copiesRemoved_one": "Kullanılmayan {{count}} giriş kaldırıldı.",
       "copiesRemoved_other": "Kullanılmayan {{count}} giriş kaldırıldı.",
-      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
-      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
-      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
       "removeAllGrok": "Tüm Grok oturumlarını kaldır",
+      "removeAllTitle": "{{n}} Grok oturumunun tümü kaldırılsın mı?",
+      "removeAllText": "{{computers}} üzerinde artık kendi ajanları için düşünmezler. Başkalarının oturumlarına dokunulmaz.",
+      "removeAllDone": "{{n}} Grok oturumu kaldırıldı.",
       "disconnect": "Bağlantıyı kes",
       "renameTitle": "{{label}} adını değiştir",
       "nameLabel": "Ad",

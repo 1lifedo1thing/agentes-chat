@@ -7714,7 +7714,8 @@
     "table": {
       "task": "Aufgabe",
       "github": "GitHub",
-      "sortBy": "Nach {{column}} sortieren"
+      "sortBy": "Nach {{column}} sortieren",
+      "resize": "Spalte {{column}} in der Breite ändern"
     },
     "fold": {
       "open": "{{name}} öffnen",
@@ -7798,6 +7799,7 @@
       "canceled": "#{{number}} ist wieder an ihrem Platz.",
       "assigned": "#{{number}} liegt jetzt bei {{name}}.",
       "unassigned": "#{{number}} ist jetzt niemandem zugewiesen.",
+      "removed": "#{{number}} liegt nicht mehr bei {{name}}.",
       "prioritized": "#{{number}} hat jetzt Priorität {{priority}}."
     },
     "canceledColumn": "Abgebrochen",
@@ -7947,6 +7949,10 @@
       "high": "hoch"
     },
     "noAssignee": "Nicht zugewiesen",
+    "assignees": {
+      "people": "Personen und Agenten",
+      "done": "Fertig"
+    },
     "agentRole": "Agent · {{role}}",
     "pr": "PR #{{number}}",
     "open": "#{{number}} {{title}}",
@@ -8086,7 +8092,9 @@
       "status_changed": "hat den Status auf {{status}} geändert",
       "priority_changed": "hat die Priorität auf {{priority}} geändert",
       "assigned": "hat die Aufgabe zugewiesen",
-      "unassigned": "hat die Zuständigkeit entfernt",
+      "unassigned": "hat eine zuständige Person entfernt",
+      "assigned_named": "hat die Aufgabe {{name}} zugewiesen",
+      "unassigned_named": "hat {{name}} von der Aufgabe entfernt",
       "due_date_set": "hat das Fälligkeitsdatum auf {{date}} gesetzt",
       "due_date_removed": "hat das Fälligkeitsdatum entfernt",
       "pr_linked": "hat PR #{{number}} verknüpft",
@@ -10348,10 +10356,10 @@
       "removeCopies": "Entfernen",
       "copiesRemoved_one": "{{count}} ungenutzte Anmeldung entfernt.",
       "copiesRemoved_other": "{{count}} ungenutzte Anmeldungen entfernt.",
-      "removeAllDone": "{{n}} Grok-Anmeldungen entfernt.",
-      "removeAllText": "Sie denken dann für ihre Agenten auf {{computers}} nicht mehr mit. Anmeldungen anderer Personen bleiben unangetastet.",
-      "removeAllTitle": "Alle {{n}} Grok-Anmeldungen entfernen?",
       "removeAllGrok": "Alle Grok-Anmeldungen entfernen",
+      "removeAllTitle": "Alle {{n}} Grok-Anmeldungen entfernen?",
+      "removeAllText": "Sie denken dann für ihre Agenten auf {{computers}} nicht mehr mit. Anmeldungen anderer Personen bleiben unangetastet.",
+      "removeAllDone": "{{n}} Grok-Anmeldungen entfernt.",
       "disconnect": "Trennen",
       "renameTitle": "{{label}} umbenennen",
       "nameLabel": "Name",

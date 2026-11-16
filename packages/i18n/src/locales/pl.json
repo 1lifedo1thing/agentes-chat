@@ -8240,7 +8240,8 @@
     "table": {
       "task": "Zadanie",
       "github": "GitHub",
-      "sortBy": "Sortuj według: {{column}}"
+      "sortBy": "Sortuj według: {{column}}",
+      "resize": "Zmień szerokość kolumny {{column}}"
     },
     "fold": {
       "open": "Otwórz: {{name}}",
@@ -8326,6 +8327,7 @@
       "canceled": "#{{number}} wróciło na miejsce.",
       "assigned": "#{{number}} jest teraz u: {{name}}.",
       "unassigned": "#{{number}} nie ma teraz przypisanej osoby.",
+      "removed": "#{{number}} nie jest już u: {{name}}.",
       "prioritized": "#{{number}} ma teraz priorytet {{priority}}."
     },
     "canceledColumn": "Anulowane",
@@ -8489,6 +8491,10 @@
       "high": "wysoki"
     },
     "noAssignee": "Brak przypisanej osoby",
+    "assignees": {
+      "people": "Osoby i agenci",
+      "done": "Gotowe"
+    },
     "agentRole": "Agent · {{role}}",
     "pr": "PR #{{number}}",
     "open": "#{{number}} {{title}}",
@@ -8638,7 +8644,9 @@
       "status_changed": "zmienił(a) status na {{status}}",
       "priority_changed": "zmienił(a) priorytet na {{priority}}",
       "assigned": "przypisał(a) zadanie",
-      "unassigned": "usunął(ęła) przypisaną osobę",
+      "unassigned": "usunął(ęła) jedną z przypisanych osób",
+      "assigned_named": "przypisał(a) zadanie do: {{name}}",
+      "unassigned_named": "usunął(ęła) z zadania: {{name}}",
       "due_date_set": "ustawił(a) termin na {{date}}",
       "due_date_removed": "usunął(ęła) termin",
       "pr_linked": "powiązał(a) PR #{{number}}",
@@ -11102,10 +11110,10 @@
       "copiesRemoved_few": "Usunięto {{count}} nieużywane logowania.",
       "copiesRemoved_many": "Usunięto {{count}} nieużywanych logowań.",
       "copiesRemoved_other": "Usunięto {{count}} nieużywanego logowania.",
-      "removeAllDone": "Usunięto {{n}} logowań Grok.",
-      "removeAllText": "Przestaną myśleć za swoje agenty na {{computers}}. Logowania innych osób zostają.",
-      "removeAllTitle": "Usunąć wszystkie {{n}} logowań Grok?",
       "removeAllGrok": "Usuń wszystkie logowania Grok",
+      "removeAllTitle": "Usunąć wszystkie {{n}} logowań Grok?",
+      "removeAllText": "Przestaną myśleć za swoje agenty na {{computers}}. Logowania innych osób zostają.",
+      "removeAllDone": "Usunięto {{n}} logowań Grok.",
       "disconnect": "Rozłącz",
       "renameTitle": "Zmień nazwę: {{label}}",
       "nameLabel": "Nazwa",

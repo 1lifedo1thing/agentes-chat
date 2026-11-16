@@ -18727,6 +18727,9 @@
   "issues.table.sortBy": {
     "value": "Sort by {{column}}"
   },
+  "issues.table.resize": {
+    "value": "Resize column {{column}}"
+  },
   "issues.fold.open": {
     "value": "Open {{name}}"
   },
@@ -18927,6 +18930,9 @@
   },
   "issues.drag.unassigned": {
     "value": "#{{number}} has no assignee now."
+  },
+  "issues.drag.removed": {
+    "value": "#{{number}} is no longer with {{name}}."
   },
   "issues.drag.prioritized": {
     "value": "#{{number}} now has {{priority}} priority."
@@ -19297,6 +19303,12 @@
   },
   "issues.noAssignee": {
     "value": "No assignee"
+  },
+  "issues.assignees.people": {
+    "value": "People and agents"
+  },
+  "issues.assignees.done": {
+    "value": "Done"
   },
   "issues.agentRole": {
     "value": "Agent · {{role}}"
@@ -19669,7 +19681,13 @@
     "value": "assigned the task"
   },
   "issues.event.unassigned": {
-    "value": "removed the assignee"
+    "value": "removed an assignee"
+  },
+  "issues.event.assigned_named": {
+    "value": "assigned the task to {{name}}"
+  },
+  "issues.event.unassigned_named": {
+    "value": "took {{name}} off the task"
   },
   "issues.event.due_date_set": {
     "value": "set the due date to {{date}}"

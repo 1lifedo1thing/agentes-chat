@@ -7992,7 +7992,8 @@
     "table": {
       "task": "Attività",
       "github": "GitHub",
-      "sortBy": "Ordina per {{column}}"
+      "sortBy": "Ordina per {{column}}",
+      "resize": "Ridimensiona la colonna {{column}}"
     },
     "fold": {
       "open": "Apri {{name}}",
@@ -8077,6 +8078,7 @@
       "canceled": "La #{{number}} è tornata al suo posto.",
       "assigned": "La #{{number}} ora è di {{name}}.",
       "unassigned": "La #{{number}} ora non ha un assegnatario.",
+      "removed": "La #{{number}} non è più di {{name}}.",
       "prioritized": "La #{{number}} ora ha priorità {{priority}}."
     },
     "canceledColumn": "Annullate",
@@ -8238,6 +8240,10 @@
       "high": "alta"
     },
     "noAssignee": "Nessun assegnatario",
+    "assignees": {
+      "people": "Persone e agenti",
+      "done": "Fatto"
+    },
     "agentRole": "Agente · {{role}}",
     "pr": "PR #{{number}}",
     "open": "#{{number}} {{title}}",
@@ -8385,7 +8391,9 @@
       "status_changed": "ha cambiato lo stato in {{status}}",
       "priority_changed": "ha cambiato la priorità in {{priority}}",
       "assigned": "ha assegnato l'attività",
-      "unassigned": "ha rimosso l'assegnatario",
+      "unassigned": "ha rimosso un assegnatario",
+      "assigned_named": "ha assegnato l'attività a {{name}}",
+      "unassigned_named": "ha tolto {{name}} dall'attività",
       "due_date_set": "ha impostato la scadenza al {{date}}",
       "due_date_removed": "ha rimosso la scadenza",
       "pr_linked": "ha collegato la PR #{{number}}",
@@ -10755,10 +10763,10 @@
       "copiesRemoved_one": "{{count}} accesso inutilizzato rimosso.",
       "copiesRemoved_many": "{{count}} accessi inutilizzati rimossi.",
       "copiesRemoved_other": "{{count}} accessi inutilizzati rimossi.",
-      "removeAllDone": "{{n}} accessi a Grok rimossi.",
-      "removeAllText": "Smettono di pensare per i loro agenti su {{computers}}. Gli accessi di altre persone non vengono toccati.",
-      "removeAllTitle": "Rimuovere tutti i {{n}} accessi a Grok?",
       "removeAllGrok": "Rimuovi tutti gli accessi a Grok",
+      "removeAllTitle": "Rimuovere tutti i {{n}} accessi a Grok?",
+      "removeAllText": "Smettono di pensare per i loro agenti su {{computers}}. Gli accessi di altre persone non vengono toccati.",
+      "removeAllDone": "{{n}} accessi a Grok rimossi.",
       "disconnect": "Scollega",
       "renameTitle": "Rinomina {{label}}",
       "nameLabel": "Nome",
