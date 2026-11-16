@@ -20,6 +20,11 @@ test("a page opens as a page: an HTML file or an agent's page, never its source"
   expect(viewer).toContain("isolatedPage(html, PAGE_HEAD)");
   expect(viewer).toContain("{...ISOLATED_WEB_VIEW}");
   expect(src("features/blocks/LiveBlock.tsx")).toContain("{...ISOLATED_WEB_VIEW}");
+  // A page that touches the storage it has none of here keeps drawing: stand-ins run before its own head.
+  expect(viewer).toMatch(/const PAGE_HEAD = `<meta name="viewport"[^`]*\$\{STORAGE_STANDINS\}`;/);
+  const blocks = src("features/blocks/logic.ts");
+  for (const what of ['["localStorage","sessionStorage"]', 'Object.defineProperty(document,"cookie"'])
+    expect(blocks).toContain(what);
 });
 
 test("a long text shows in pieces the phone can draw, nothing lost", () => {
@@ -29,6 +34,16 @@ test("a long text shows in pieces the phone can draw, nothing lost", () => {
   expect(pieces.join("\n")).toBe(text);
   expect(textChunks("")).toEqual([""]);
   expect(textChunks("a\nb")).toEqual(["a\nb"]);
+});
+
+test("a line longer than a piece (minified, data on one line) is cut into pieces too, never inside one character", () => {
   const long = "x".repeat(20_000);
-  expect(textChunks(`${long}\n${long}`)).toEqual([long, long]);
+  const pieces = textChunks(`${long}\nend`);
+  expect(pieces.every((p) => p.length <= 6000)).toBe(true);
+  expect(pieces).toEqual(["x".repeat(6000), "x".repeat(6000), "x".repeat(6000), `${"x".repeat(2000)}\nend`]);
+  // Cut inside a line only between pieces: what is drawn is the text, nothing lost.
+  expect(pieces.join("").replace("\nend", "end")).toBe(`${long}end`);
+  // An emoji where the cut falls stays whole, in the next piece.
+  const emoji = textChunks(`${"a".repeat(5999)}😀bc`);
+  expect(emoji).toEqual(["a".repeat(5999), "😀bc"]);
 });

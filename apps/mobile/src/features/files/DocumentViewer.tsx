@@ -1,7 +1,7 @@
 import { type ArtifactDetail, useApi, useArtifact } from "@agenteschat/client";
 import { formatJson, highlightCode } from "@agenteschat/client/lib/code";
 import { isJsonFile } from "@agenteschat/client/lib/files";
-import { isolatedPage, STORAGE_STANDINS } from "@agenteschat/client/lib/isolated-page";
+import { isolatedPage } from "@agenteschat/client/lib/isolated-page";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,7 +9,7 @@ import { ActivityIndicator, Platform, Text as RNText, ScrollView, StyleSheet, Vi
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { Button, CARD_PAD, IconButton, SCREEN_X, Text, ToastHost, useToast } from "@/ui";
-import { ISOLATED_WEB_VIEW } from "../blocks/logic";
+import { ISOLATED_WEB_VIEW, STORAGE_STANDINS } from "../blocks/logic";
 import { CodeText, RawToggle } from "../chat/CodeCard";
 import { MessageText } from "../chat/MessageText";
 import { LoadFailed } from "../shared/FirstUse";
@@ -243,7 +243,7 @@ function PdfPage({ detail }: { detail: ArtifactDetail }) {
 }
 
 /** Before a page's own head: the phone's width, and stand-ins for the storage a page here has none of. */
-const PAGE_HEAD = `<meta name="viewport" content="width=device-width, initial-scale=1"><script>(function(){${STORAGE_STANDINS}})();</script>`;
+const PAGE_HEAD = `<meta name="viewport" content="width=device-width, initial-scale=1">${STORAGE_STANDINS}`;
 
 /**
  * A page (an HTML file, a page an agent made) drawn as a page, apart from the app as everything an agent writes runs

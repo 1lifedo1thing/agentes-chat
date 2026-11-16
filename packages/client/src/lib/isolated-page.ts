@@ -33,12 +33,3 @@ export function isolatedPage(html: string, head = ""): string {
   // No DNS prefetch either: a lookup of a name the page made up is a way out the policy doesn't cover everywhere.
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="x-dns-prefetch-control" content="off"><meta http-equiv="Content-Security-Policy" content="${PAGE_CSP}">${head}${page}`;
 }
-
-/**
- * In-memory stand-ins for `localStorage`, `sessionStorage` and `document.cookie`, for a page run where they throw or
- * are missing (an opaque origin, a web view with no storage): a page that touches them died before drawing anything.
- * A script's source, for a page's `<head>`; whatever the page does after it stays as it wrote it.
- */
-export const STORAGE_STANDINS = `function mem(){var d={};return{getItem:function(k){k=String(k);return Object.prototype.hasOwnProperty.call(d,k)?d[k]:null},setItem:function(k,v){d[String(k)]=String(v)},removeItem:function(k){delete d[String(k)]},clear:function(){d={}},key:function(i){var k=Object.keys(d)[i];return k===undefined?null:k},get length(){return Object.keys(d).length}}}
-["localStorage","sessionStorage"].forEach(function(n){try{void window[n].length}catch(e){try{Object.defineProperty(window,n,{value:mem(),configurable:true})}catch(_){}}});
-try{void document.cookie}catch(e){try{Object.defineProperty(document,"cookie",{get:function(){return""},set:function(){},configurable:true})}catch(_){}}`;

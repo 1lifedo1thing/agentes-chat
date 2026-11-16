@@ -359,23 +359,41 @@ export function whereKnown(ref: FileRef): boolean {
 }
 
 /**
- * A long text in pieces of at most `lines` lines and about `chars` characters each: one text view as tall as a long
- * file goes past what the phone can draw in one piece, and showed blank.
+ * A long text in pieces of at most `lines` lines and `chars` characters each, drawn one under the other: one text view
+ * as tall as a long file goes past what the phone can draw in one piece, and showed blank. A line longer than a piece
+ * (minified code, data on one line) is cut into pieces of its own, so a cut inside a line falls between two pieces and
+ * every newline left inside a piece is the text's own.
  */
 export function textChunks(text: string, lines = 120, chars = 6000): string[] {
-  const all = text.split("\n");
   const out: string[] = [];
   let piece: string[] = [];
   let size = 0;
-  for (const line of all) {
-    if (piece.length > 0 && (piece.length >= lines || size + line.length > chars)) {
-      out.push(piece.join("\n"));
-      piece = [];
-      size = 0;
+  for (const whole of text.split("\n")) {
+    for (const line of lineParts(whole, chars)) {
+      if (piece.length > 0 && (piece.length >= lines || size + line.length > chars)) {
+        out.push(piece.join("\n"));
+        piece = [];
+        size = 0;
+      }
+      piece.push(line);
+      size += line.length + 1;
     }
-    piece.push(line);
-    size += line.length + 1;
   }
   if (piece.length > 0 || out.length === 0) out.push(piece.join("\n"));
   return out;
+}
+
+/** `line` in parts of at most `size` characters, never between the two halves of one character (an emoji). */
+function lineParts(line: string, size: number): string[] {
+  const parts: string[] = [];
+  let at = 0;
+  while (line.length - at > size) {
+    let end = at + size;
+    const code = line.charCodeAt(end);
+    if (code >= 0xdc00 && code <= 0xdfff) end -= 1;
+    parts.push(line.slice(at, end));
+    at = end;
+  }
+  parts.push(line.slice(at));
+  return parts;
 }
