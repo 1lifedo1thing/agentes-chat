@@ -16,8 +16,9 @@ test("the phone's page rhythm: sides 16, cards 16 inside, a toolbar's controls 3
   expect(CARD_PAD).toBe(16);
   expect(TOOL_H).toBe(32);
   expect(TOUCH).toBe(44);
-  // A wrapping row's label starts where a one-line row's does: its 22-point line centred in 52.
-  expect(GROUPED_ROW).toEqual({ minHeight: 52, padX: 16, padY: 10, tallPadY: 15 });
+  // A wrapping row's label starts where a one-line row's does: its 22-point line centred in 52. Whatever leads a row
+  // sits in one 36-point column.
+  expect(GROUPED_ROW).toEqual({ minHeight: 52, padX: 16, padY: 10, tallPadY: 15, lead: 36 });
 });
 
 test("every sheet's body has one rhythm: a screen's sides, 12 between its blocks, the bar 50 tall 14 under the top", () => {
@@ -39,6 +40,18 @@ test("every sheet's body has one rhythm: a screen's sides, 12 between its blocks
   const picker = readFileSync(join(SRC, "features/shared/PickerSheet.tsx"), "utf8");
   expect(picker).toContain("search: { paddingHorizontal: SHEET_X,");
   expect(picker).not.toMatch(/paddingHorizontal: 1[68]\b/);
+});
+
+test("a sheet's action row leads with a grouped row's column: its text starts where the list's hairline does", () => {
+  const parts = readFileSync(join(SRC, "features/shared/parts.tsx"), "utf8");
+  expect(parts).toContain("actionLead: { width: GROUPED_ROW.lead,");
+  expect(parts).toContain('actionTall: { alignItems: "flex-start", paddingVertical: GROUPED_ROW.tallPadY }');
+  expect(parts).toMatch(/action: \{[^}]*gap: 12,[^}]*paddingHorizontal: GROUPED_ROW\.padX,/);
+  // GroupedList starts the hairline after the same column and the same 12.
+  const grouped = source("Grouped.tsx");
+  expect(grouped).toContain("const LEAD = GROUPED_ROW.lead;");
+  expect(grouped).toContain("GROUPED_ROW.padX + LEAD + 12");
+  expect(GROUPED_ROW.padX + GROUPED_ROW.lead + 12).toBe(64);
 });
 
 test("the kit's screens, grouped rows and toolbar controls read those numbers instead of their own", () => {

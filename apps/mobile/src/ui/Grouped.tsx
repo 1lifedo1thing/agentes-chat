@@ -5,8 +5,8 @@ import { haptics } from "./haptics";
 import { Icon, type IconName } from "./Icon";
 import { InfoHint, useInfoHint } from "./InfoHint";
 import { MEDIA_ROW } from "./media-row";
-import { ROW_PRESS_DELAY } from "./PressScale";
-import { GROUPED_ROW } from "./rhythm";
+import { PRESS_DELAY, ROW_PRESS_DELAY } from "./PressScale";
+import { GROUPED_ROW, TOUCH } from "./rhythm";
 import { Text, textLineOf } from "./Text";
 import { ToggleSwitch } from "./Toggle";
 import { useFontScale } from "./text-scale";
@@ -17,7 +17,9 @@ import { leadBox } from "./type-scale";
  * The leading column of a row with a face or a mark: whatever leads is centered in it. As wide as a framed face (36,
  * the smaller of the two framed sizes), so a face never spills into the gap before the text.
  */
-const LEAD = 36;
+const LEAD = GROUPED_ROW.lead;
+/** The remove ×'s glyph, inside its 44-point button. */
+const REMOVE_GLYPH = 16;
 /** A row's icon tile; its corner is 30% of it, as every tile's. */
 // 32 in the 36 column: 18 from the card's side and 10 from the row's top and bottom, so the tile sits square in its
 // corner of the card instead of hugging the top.
@@ -448,8 +450,16 @@ function Row({
         </View>
       ) : null}
       {remove ? (
-        <Pressable onPress={remove.onPress} accessibilityRole="button" accessibilityLabel={remove.label} hitSlop={12}>
-          <Icon name="x" size={16} color={c.faint} />
+        // A finger's 44 around the glyph, lit under the finger as the row's other buttons are; it takes the glyph's
+        // place in the row (the circle reaches into the row's padding), so the row keeps its height.
+        <Pressable
+          onPress={remove.onPress}
+          unstable_pressDelay={PRESS_DELAY}
+          accessibilityRole="button"
+          accessibilityLabel={remove.label}
+          style={({ pressed }) => [styles.button, styles.remove, pressed ? { backgroundColor: c.sunken } : null]}
+        >
+          <Icon name="x" size={REMOVE_GLYPH} color={c.faint} />
         </Pressable>
       ) : null}
       {buttons?.length ? (
@@ -459,6 +469,7 @@ function Row({
               key={b.label}
               onPress={b.onPress}
               disabled={b.disabled}
+              unstable_pressDelay={PRESS_DELAY}
               accessibilityRole="button"
               accessibilityLabel={b.label}
               accessibilityState={{ disabled: Boolean(b.disabled) }}
@@ -769,7 +780,11 @@ const styles = StyleSheet.create({
   // The row's own 16 at the end stays: a button's 44 overhangs its glyph by 13 on each side, 2 apart. Into the row's
   // padding it takes 7 above and below, so on the line it is a 30-point mark's height and showing it moves no row.
   buttons: { flexDirection: "row", gap: 2, marginVertical: -GROUPED_ROW.padY + 3, marginRight: -13 },
-  button: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  button: { width: TOUCH, height: TOUCH, borderRadius: TOUCH / 2, alignItems: "center", justifyContent: "center" },
+  // The circle around the ×'s glyph overhangs it by 14 on each side: pulled back by as much above, below and at the
+  // end (into the row's padding) and by the row's 12 gap before it, the glyph stays where it was (16 from the row's
+  // end) and the row stays as tall as a 16-point glyph makes it.
+  remove: { margin: -(TOUCH - REMOVE_GLYPH) / 2, marginLeft: -12 },
   buttonOff: { opacity: 0.3 },
   hint: { paddingHorizontal: GROUPED_ROW.padX },
   hintOpen: { paddingBottom: 12 },
