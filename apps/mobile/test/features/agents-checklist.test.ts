@@ -142,3 +142,11 @@ test("a person's See my usage opens Uso on their own month, where the label says
   const route = readFileSync(new URL("../../app/(app)/(main)/usage.tsx", import.meta.url), "utf8");
   expect(route).toContain('<UsageScreen initialView={view === "people" ? "people" : "summary"} />');
 });
+
+test("adding people to a cargo: Adicionar is the bar's word, never a docked button the search's keyboard hides", () => {
+  const people = src("roles/PeopleScreen.tsx");
+  const add = people.slice(people.indexOf("export function AddToRoleScreen("), people.indexOf("export function PersonRolesScreen("));
+  expect(add).not.toContain("bottom={");
+  expect(add).toContain("onPress: () => void add(),");
+  expect(add).toContain("busy={busy}");
+});

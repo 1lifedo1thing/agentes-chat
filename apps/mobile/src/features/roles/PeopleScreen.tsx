@@ -7,7 +7,7 @@ import { matchesWords } from "@agenteschat/ui/search";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
-import { Button, GroupedFooter, GroupedList, GroupedRow, SearchField, useToast } from "@/ui";
+import { GroupedFooter, GroupedList, GroupedRow, SearchField, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { Gap, SettingsPage } from "../settings/parts";
 import { Face } from "../shared/Face";
@@ -124,7 +124,7 @@ export function RolePeopleScreen({ roleId }: { roleId: string }) {
 }
 
 /**
- * Adicionar a {{name}} (`owner`: make owners): who may get it, checked, then the docked Adicionar; the mailbox question
+ * Adicionar a {{name}} (`owner`: make owners): who may get it, checked, then Adicionar in the bar; the mailbox question
  * first when agents would lose one. Owners are made one by one, stopping at a refusal, as on the web.
  */
 export function AddToRoleScreen({ roleId }: { roleId: string }) {
@@ -194,17 +194,13 @@ export function AddToRoleScreen({ roleId }: { roleId: string }) {
   return (
     <SettingsPage
       title={title}
-      locked={busy}
-      bottom={
-        <Button
-          variant="primary"
-          size="md"
-          label={picked.size ? t("rolesPage.addCount", { count: picked.size }) : t("rolesPage.add")}
-          disabled={picked.size === 0}
-          loading={busy}
-          onPress={() => void add()}
-        />
-      }
+      // Adicionar in the bar, as every form's word that saves: a search's keyboard never hides it.
+      action={{
+        label: picked.size ? t("rolesPage.addCount", { count: picked.size }) : t("rolesPage.add"),
+        disabled: picked.size === 0,
+        onPress: () => void add(),
+      }}
+      busy={busy}
     >
       <GroupedFooter>{t("rolesPage.addSub")}</GroupedFooter>
       {candidates.length > PEOPLE_SEARCH_FROM ? (
