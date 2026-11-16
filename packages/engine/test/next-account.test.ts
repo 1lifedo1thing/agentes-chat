@@ -606,6 +606,28 @@ test("the teammate's account a run waits on stops serving it: the run wakes on i
   expect(await turnPrompt(fx)).toContain("do not repeat: Bash (git push)");
 });
 
+test("its own account signed out while a moved run waits on a person: the account it moved to goes on with it", async () => {
+  const { fx, machineId, account, usage } = await world({}, { askUser: true });
+  await account(OWN2, fx.owner.id);
+  await usage(OWN1, 100);
+  const { brain, seen } = pushesThenAsks(fx, machineId);
+  await ask(fx);
+  const handlers = handlersWith(fx, brain);
+  await drainOutbox(fx.db, handlers);
+  expect(moveOf((await runs(fx))[0])?.to).toBe(OWN2);
+  await usage(OWN1, 10);
+  clearPlanLimits();
+  await fx.db
+    .update(schema.machineAccounts)
+    .set({ status: "signed_out" })
+    .where(eq(schema.machineAccounts.id, OWN1));
+  await answerTheQuestion(fx);
+  await drainOutbox(fx.db, handlers);
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN2, OWN2]);
+  const [done] = await runs(fx);
+  expect(done?.status).toBe("done");
+});
+
 test("the account a run moved to stops serving it while it waits on a person: its own account goes on, told what it ran", async () => {
   const { fx, machineId, walter, account, usage } = await world({}, { askUser: true });
   await account(WALTER_ALL, walter.id);
