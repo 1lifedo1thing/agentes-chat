@@ -52,9 +52,8 @@ export const surfaceDeliveries = pgTable(
     orgId: uuid()
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
-    linkId: uuid()
-      .notNull()
-      .references(() => surfaceLinks.id, { onDelete: "cascade" }),
+    /** Null once the link ended: the row stays so the reply still reaches the person in the app. */
+    linkId: uuid().references(() => surfaceLinks.id, { onDelete: "set null" }),
     kind: text().$type<"reply" | "linked">().notNull(),
     messageId: uuid(),
     messageCreatedAt: timestamp({ withTimezone: true }),

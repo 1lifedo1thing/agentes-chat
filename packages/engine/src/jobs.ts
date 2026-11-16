@@ -125,6 +125,7 @@ import type { SkillDeps } from "./skills";
 import { TEAM_HELLO_JOB } from "./standing";
 import { purgeOrgFiles, purgeUserFiles, runMigration, type StorageDeps } from "./storage";
 import { postStretchCard, STRETCH_JOB, type StretchHold } from "./stretch";
+import { fallBack, queueSurfaceDelivery, SURFACE_FALLBACK_JOB } from "./surfaces/deliveries";
 import { sayTeamHello } from "./team-templates";
 import { postTeamWeek, TEAM_DAY_JOB, TEAM_WEEK_JOB } from "./team-week";
 import { isAgentesCloud } from "./telemetry";
@@ -1133,10 +1134,15 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     },
     // In-app notifications of a message: mentions, thread replies, DMs.
     "notifications.message": async (job) => {
-      await notifyMessage({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), String(job.payload.messageId));
+      const messageId = String(job.payload.messageId);
+      // A reply read on an outside chat surface goes there instead (ADR 0187); it falls back to this if not sent.
+      if (!(await queueSurfaceDelivery(deps.db, orgOf(job), messageId))) {
+        await notifyMessage({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), messageId);
+      }
       // A reply in a task's conversation (ADR 0145): the board's card counts it.
-      await announceTaskConversation({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), String(job.payload.messageId));
+      await announceTaskConversation({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), messageId);
     },
+    [SURFACE_FALLBACK_JOB]: (job) => fallBack({ db: deps.db, pubsub: deps.pubsub }, String(job.payload.deliveryId)),
     // A request for help in an agent's browser nobody answered within the hour: the people asked hear it again, once.
     [HANDOFF_REMIND_JOB]: async (job) => {
       await remindBrowserHandoff({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), String(job.payload.handoffId));

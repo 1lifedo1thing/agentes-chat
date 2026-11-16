@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "bun:test";
 import { testConfig } from "@agenteschat/config";
 import { and, asc, eq, schema } from "@agenteschat/db";
-import { SURFACE_PREFIX, setSurface, sha256, surfaceFromConfig } from "@agenteschat/engine";
+import { createFileArtifact, SURFACE_PREFIX, setSurface, sha256, surfaceFromConfig } from "@agenteschat/engine";
 import { createLogger } from "../src/logger";
 import { type OperatorDeps, operatorFetch, serveOperatorApi } from "../src/operator/app";
 import { type Browser, browser, createTestServer, signUp, type TestServer } from "./harness";
@@ -259,4 +259,105 @@ test("a person posting in the app can't set the surface mark", async () => {
   } else {
     expect(res.status).toBe(400);
   }
+});
+
+// Deliveries: the right hand's replies, pulled by the service.
+
+async function bridge(path: string, init: { method?: string; json?: unknown; token?: string } = {}) {
+  const fetch = listener();
+  if (!fetch) throw new Error("no listener");
+  return fetch(
+    new Request(`http://127.0.0.1${SURFACE_PREFIX}${path}`, {
+      method: init.method ?? (init.json ? "POST" : "GET"),
+      headers: {
+        authorization: `Bearer ${init.token ?? BRIDGE}`,
+        ...(init.json ? { "content-type": "application/json" } : {}),
+      },
+      body: init.json ? JSON.stringify(init.json) : undefined,
+    }),
+  );
+}
+
+type Listed = { id: string; kind: string; messageId: string | null; inReplyTo: string | null; files: { id: string }[] };
+const listed = async () => ((await (await bridge("/deliveries")).json()) as { deliveries: Listed[] }).deliveries;
+
+test("the whole loop: a message in, the right hand's reply listed with its file, the bytes read, then taken", async () => {
+  const b = await linked();
+  // An AI for the workspace, so the right hand answers (the fake model).
+  const credential = await b(`/api/app/organizations/${anaOrg}/credentials`, {
+    json: { provider: "anthropic", label: "main", apiKey: "sk-ant-api-example-0000" },
+  });
+  expect(credential.status).toBe(201);
+  // Earlier tests' messages answered and their deliveries closed: the DM is quiet before this one.
+  await t.drain();
+  const earlier = (await listed()).map((d) => d.id);
+  if (earlier.length > 0) await bridge("/deliveries/taken", { json: { sent: earlier, unsent: [] } });
+  const posted = await send({ externalId: SENDER, inboundId: "in-loop-1", text: "Manda o resumo" });
+  await t.drain();
+  const reply = (await listed()).find((d) => d.inReplyTo === posted.body.messageId);
+  if (!reply?.messageId) throw new Error("the reply was not listed");
+  const answer = await stored(reply.messageId);
+  expect(answer.authorType).toBe("agent");
+
+  // The reply carries a file, as one the right hand attached.
+  const artifacts = t.services.extras?.artifacts;
+  if (!artifacts) throw new Error("no file storage");
+  const file = await createFileArtifact(
+    artifacts,
+    { type: "person", userId: (await stored(posted.body.messageId)).authorUserId ?? "" },
+    anaOrg,
+    {
+      title: "resumo.txt",
+      name: "resumo.txt",
+      bytes: new TextEncoder().encode("o resumo"),
+      contentType: "text/plain",
+      channelId: answer.channelId,
+    },
+  );
+  await t.db
+    .update(schema.messages)
+    .set({ meta: { ...answer.meta, artifacts: [{ id: file.id, version: 1, title: "resumo.txt" }] } })
+    .where(and(eq(schema.messages.orgId, anaOrg), eq(schema.messages.id, answer.id)));
+  const withFile = (await listed()).find((d) => d.id === reply.id);
+  expect(withFile?.files.map((x) => x.id)).toEqual([file.id]);
+
+  const bytes = await bridge(`/files/${file.id}?delivery=${reply.id}`);
+  expect(bytes.status).toBe(200);
+  expect(await bytes.text()).toBe("o resumo");
+  expect(bytes.headers.get("content-disposition")).toContain("filename*=UTF-8''resumo.txt");
+  expect(bytes.headers.get("content-length")).toBe("8");
+  const gone = await bridge(`/files/${crypto.randomUUID()}?delivery=${reply.id}`);
+  expect([gone.status, ((await gone.json()) as { error: { code: string } }).error.code]).toEqual([
+    404,
+    "surface.file_gone",
+  ]);
+
+  const ids = (await listed()).map((d) => d.id);
+  const taken = await bridge("/deliveries/taken", { json: { sent: ids, unsent: [] } });
+  expect(await taken.json()).toEqual({ sent: ids.length, unsent: 0, late: [] });
+  expect(await listed()).toEqual([]);
+  const again = await bridge("/deliveries/taken", { json: { sent: [reply.id], unsent: [] } });
+  expect(await again.json()).toEqual({ sent: 0, unsent: 0, late: [reply.id] });
+});
+
+test("deliveries refuse a wrong or operator token and bad bodies", async () => {
+  for (const token of [OPERATOR, "w".repeat(48)]) {
+    expect((await bridge("/deliveries", { token })).status).toBe(401);
+    expect(
+      (await bridge("/deliveries/taken", { token, json: { sent: [crypto.randomUUID()], unsent: [] } })).status,
+    ).toBe(401);
+  }
+  const id = crypto.randomUUID();
+  for (const body of [
+    { sent: [], unsent: [] },
+    { sent: [id], unsent: [id] },
+    { sent: ["not-a-uuid"], unsent: [] },
+    { sent: [id], unsent: [], extra: true },
+    { sent: Array.from({ length: 101 }, () => crypto.randomUUID()), unsent: [] },
+  ]) {
+    expect((await bridge("/deliveries/taken", { json: body })).status).toBe(400);
+  }
+  expect((await bridge("/deliveries?limit=0")).status).toBe(400);
+  expect((await bridge("/deliveries?limit=101")).status).toBe(400);
+  expect((await bridge(`/files/${id}?delivery=${id}`)).status).toBe(404);
 });

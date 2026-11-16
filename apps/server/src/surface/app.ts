@@ -2,7 +2,10 @@ import { schema } from "@agenteschat/db";
 import {
   ARTIFACT_LIMITS,
   activeLink,
+  attachmentDisposition,
   claimLink,
+  deliveryFile,
+  listSurfaceDeliveries,
   MAX_MESSAGE_ATTACHMENTS,
   MAX_MESSAGE_LENGTH,
   postFromSurface,
@@ -11,6 +14,7 @@ import {
   safeEqual,
   sha256,
   TooManyError,
+  takeDeliveries,
   takeSurfaceCap,
   unlinkExternal,
 } from "@agenteschat/engine";
@@ -115,6 +119,53 @@ const Posted = z
     locale: z.string(),
   })
   .openapi("SurfacePosted");
+
+const Ids = z.array(z.uuid()).max(100);
+const Taken = z
+  .object({
+    sent: Ids.openapi({ description: "Sent on the surface: the person's DM reads as read up to each reply." }),
+    unsent: Ids.openapi({ description: "Couldn't be sent: the person is notified in the app instead." }),
+  })
+  .strict()
+  .refine((t) => t.sent.length + t.unsent.length > 0, "Send at least one id")
+  .refine((t) => !t.sent.some((id) => t.unsent.includes(id)), "An id is either sent or unsent")
+  .openapi("SurfaceTaken");
+
+const Delivery = z
+  .object({
+    id: z.uuid(),
+    kind: z
+      .enum(["reply", "linked"])
+      .openapi({ description: "`linked`: say in your own words that the link is active." }),
+    linkId: z.uuid(),
+    externalId: z.string(),
+    orgId: z.uuid(),
+    orgName: z.string(),
+    locale: z.string().openapi({ description: "The account's app language, for the service's own words." }),
+    createdAt: z.string(),
+    messageId: z.uuid().nullable().openapi({ description: "The right hand's message; null for `linked`." }),
+    inReplyTo: z.uuid().nullable().openapi({ description: "The person's surface message the run read last." }),
+    text: z.string().openapi({ description: "The message's Markdown as stored." }),
+    files: z.array(
+      z.object({ id: z.uuid(), name: z.string(), contentType: z.string(), size: z.number().int() }).openapi({
+        description: "Read the bytes from `GET /files/{artifactId}?delivery={id}`.",
+      }),
+    ),
+    media: z
+      .union([
+        z.object({ kind: z.literal("gif"), id: z.string(), title: z.string() }),
+        z.object({ kind: z.literal("sticker"), mood: z.string() }),
+      ])
+      .nullable(),
+    card: z
+      .object({
+        kind: z.enum(["question", "approval", "secret", "block", "poll", "choices"]),
+        url: z.string().openapi({ description: "Where the card opens in the app." }),
+      })
+      .nullable(),
+    choices: z.array(z.string()).nullable().openapi({ description: "A question's choices, to list in words." }),
+  })
+  .openapi("SurfaceDelivery");
 
 const Health = z
   .object({
@@ -331,6 +382,84 @@ export function createSurfaceApp(deps: AppDeps, token: string, version: string) 
       );
       deps.wakeWorkers?.();
       return c.json(posted, 201);
+    },
+  );
+
+  const deliveryDeps = () => ({ db: deps.db, pubsub: deps.adapters.pubsub, artifacts: deps.extras?.artifacts });
+
+  api.openapi(
+    createRoute({
+      method: "get",
+      path: "/deliveries",
+      tags,
+      summary: "What to send now: replies of the right hand to linked people, and links just made",
+      description:
+        "Oldest first, only rows not yet taken and younger than 5 minutes: anything older already reached the person in the app. Close each with `POST /deliveries/taken`.",
+      request: { query: z.object({ limit: z.coerce.number().int().min(1).max(100).default(50) }) },
+      responses: { 200: json(z.object({ deliveries: z.array(Delivery) }).openapi("SurfaceDeliveries")), ...errors },
+    }),
+    async (c) => {
+      const { limit } = c.req.valid("query");
+      return c.json({ deliveries: await listSurfaceDeliveries(deliveryDeps(), limit) }, 200);
+    },
+  );
+
+  api.openapi(
+    createRoute({
+      method: "post",
+      path: "/deliveries/taken",
+      tags,
+      summary: "Close listed deliveries: sent on the surface, or not",
+      description:
+        "Idempotent: ids closed before (by an earlier call, or by the fall back to the app after 5 minutes) come back in `late` and change nothing.",
+      request: { body: { required: true, content: { "application/json": { schema: Taken } } } },
+      responses: {
+        200: json(
+          z
+            .object({ sent: z.number().int(), unsent: z.number().int(), late: z.array(z.uuid()) })
+            .openapi("SurfaceTakenAnswer"),
+        ),
+        ...errors,
+      },
+    }),
+    async (c) => c.json(await takeDeliveries(deliveryDeps(), c.req.valid("json")), 200),
+  );
+
+  api.openapi(
+    createRoute({
+      method: "get",
+      path: "/files/{artifactId}",
+      tags,
+      summary: "The bytes of one file of a delivery's reply",
+      request: { params: z.object({ artifactId: z.uuid() }), query: z.object({ delivery: z.uuid() }) },
+      responses: {
+        200: {
+          description: "The file, as an attachment",
+          content: { "application/octet-stream": { schema: Binary } },
+        },
+        ...errors,
+        404: errorResponse("Unknown delivery, a file not on its message, or bytes gone (`surface.file_gone`)"),
+      },
+    }),
+    async (c) => {
+      const { artifactId } = c.req.valid("param");
+      const { delivery } = c.req.valid("query");
+      const file = await deliveryFile(deliveryDeps(), delivery, artifactId);
+      Object.assign(c.get("audit"), {
+        linkId: file.audit.linkId ?? undefined,
+        userId: file.audit.userId,
+        orgId: file.audit.orgId,
+      });
+      return new Response(file.body, {
+        status: 200,
+        headers: {
+          "content-type": file.contentType,
+          "content-length": String(file.size),
+          "content-disposition": attachmentDisposition(file.name),
+          "x-content-type-options": "nosniff",
+          "cache-control": "private, no-store, no-transform",
+        },
+      });
     },
   );
 

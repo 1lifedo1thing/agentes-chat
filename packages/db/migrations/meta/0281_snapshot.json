@@ -1,5 +1,5 @@
 {
-  "id": "4f5c5f0b-ac42-4ca5-8457-95234cb95da1",
+  "id": "c1f6b3d0-5faa-4d77-aabd-ef34abbc241b",
   "prevId": "0034e02b-3657-470a-975e-547337bb184f",
   "version": "7",
   "dialect": "postgresql",
@@ -21666,7 +21666,7 @@
           "name": "link_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "kind": {
           "name": "kind",
@@ -21754,7 +21754,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },

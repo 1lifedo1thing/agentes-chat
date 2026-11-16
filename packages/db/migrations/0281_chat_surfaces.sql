@@ -14,7 +14,7 @@ CREATE TABLE "surface_calls" (
 CREATE TABLE "surface_deliveries" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"org_id" uuid NOT NULL,
-	"link_id" uuid NOT NULL,
+	"link_id" uuid,
 	"kind" text NOT NULL,
 	"message_id" uuid,
 	"message_created_at" timestamp with time zone,
@@ -43,7 +43,7 @@ CREATE TABLE "surface_links" (
 --> statement-breakpoint
 ALTER TABLE "voice_clips" ADD COLUMN "via" jsonb;--> statement-breakpoint
 ALTER TABLE "surface_deliveries" ADD CONSTRAINT "surface_deliveries_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "surface_deliveries" ADD CONSTRAINT "surface_deliveries_link_id_surface_links_id_fk" FOREIGN KEY ("link_id") REFERENCES "public"."surface_links"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "surface_deliveries" ADD CONSTRAINT "surface_deliveries_link_id_surface_links_id_fk" FOREIGN KEY ("link_id") REFERENCES "public"."surface_links"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "surface_links" ADD CONSTRAINT "surface_links_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "surface_links" ADD CONSTRAINT "surface_links_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "surface_calls_at_index" ON "surface_calls" USING btree ("at");--> statement-breakpoint

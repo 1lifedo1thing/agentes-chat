@@ -8,7 +8,9 @@
   `surface_deliveries`, `surface_calls`) and `voice_clips.via`, migration 0280; engine
   `packages/engine/src/surfaces/config.ts` (`setSurface`, `surfaceOn`, `surfaceAllowed`) and `links.ts` (codes,
   claim, confirm, unlink; revoked with `revokeUserApps` and `setUserBlocked`) and `inbound.ts` (`postFromSurface`,
-  with `voice_clips.via` carried by the voice job); server
+  with `voice_clips.via` carried by the voice job) and `deliveries.ts` (`queueSurfaceDelivery` from the
+  `notifications.message` job, which shares `quietForPeople` with `notifyMessage`; the `surface.fallback` job;
+  `pruneSurfaceRows` beside the message partitions upkeep); server
   `apps/server/src/surface/app.ts` (`createSurfaceApp`), served by `operatorFetch` in
   `apps/server/src/operator/app.ts`; app routes `apps/server/src/routes/app/surfaces.ts`; contract `apps/server/test/surface-openapi.json`
 
@@ -95,7 +97,8 @@ A reply goes where the person last wrote; a notice goes to one place, and never 
 
 ### 5. Deliveries are pulled
 `surface_deliveries` (`link_id`, `kind` `reply` | `linked`, `message_id`, `in_reply_to`, `taken_at`, `outcome`), kept
-7 days.
+7 days. A row outlives its link (`link_id` is set null when the link ends), so a reply still waiting falls back to
+the app.
 - `GET /deliveries` lists what is not taken and younger than 5 minutes, each read whole at that moment: text, files,
   GIF or sticker, a card's kind and its link into the app, a question's choices, the account's language. Membership and
   the right hand are checked again when listed.
