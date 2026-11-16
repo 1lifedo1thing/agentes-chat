@@ -1455,7 +1455,13 @@ function Chat({
     const sent = new Set(files.map((f) => f.id));
     setPending((now) => now.filter((f) => !sent.has(f.id)));
     toEnd();
-    behindFiles(() => deliverFiles(local, how));
+    // Behind files still going up, it waits as words do (`sendText`): kept under them as they go (`keepBehind`), where
+    // dated when sent it jumped above them (and what was sent between) when they went.
+    if (filesAhead.current) waitingBehind.current.push(clientId);
+    behindFiles(() => {
+      waitingBehind.current = waitingBehind.current.filter((id) => id !== clientId);
+      return deliverFiles(local, how);
+    });
   };
   /** A just-sent message's files go up, then the message goes with them; one that can't turns it "Não foi enviada". */
   const deliverFiles = async (local: Message, how?: SendHow) => {

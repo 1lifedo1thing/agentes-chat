@@ -147,3 +147,13 @@ describe("the instant 'pensando…' is skipped only for a run that will take the
     expect(chat).toContain("AT_WORK.has(r.status) && runInConversation(r, local.threadId ?? null)");
   });
 });
+
+describe("files sent while others go up stay under them", () => {
+  test("a second batch waits behind the first as words do, and leaves the queue when its turn comes", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    const files = chat.slice(chat.indexOf("const sendWithFiles = ("), chat.indexOf("const deliverFiles = async ("));
+    expect(files).toMatch(
+      /if \(filesAhead\.current\) waitingBehind\.current\.push\(clientId\);\s*behindFiles\(\(\) => \{\s*waitingBehind\.current = waitingBehind\.current\.filter\(\(id\) => id !== clientId\);\s*return deliverFiles\(local, how\);/,
+    );
+  });
+});
