@@ -2,9 +2,11 @@ import { usePrefetchRecent, useSendWaiting } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { Sheet } from "@lodev09/react-native-true-sheet/navigation/expo-router";
 import type { ErrorBoundaryProps } from "expo-router";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { NoticeIsland } from "@/features/island/NoticeIsland";
+import { noteWorkspaceOnScreen } from "@/features/links/on-screen";
 import { ShareInbox } from "@/features/share/ShareInbox";
 import { useConnection, useRememberAgentLooks } from "@/features/shared/hooks";
 import { useAppIconBadge } from "@/features/shared/queries";
@@ -57,6 +59,11 @@ function AppSheets() {
   useSounds();
   useRememberAgentLooks();
   const { orgId } = useOrg();
+  // A web link to this workspace opens its screen straight away (`app/+native-intent.tsx`).
+  useEffect(() => {
+    noteWorkspaceOnScreen(orgId);
+    return () => noteWorkspaceOnScreen(null);
+  }, [orgId]);
   // The unread and latest conversations load while the app is idle: opening them is instant.
   usePrefetchRecent(orgId);
   // What I sent while the connection was down goes out once it's back, whatever screen is open.

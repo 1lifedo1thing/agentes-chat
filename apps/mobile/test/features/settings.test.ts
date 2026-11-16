@@ -41,6 +41,7 @@ import {
   visibleSections,
   withIdea,
 } from "../../src/features/settings/logic";
+import { pushedByDefault } from "../main-stack";
 import { translator } from "./fixtures";
 
 const APP = join(import.meta.dir, "..", "..", "app", "(app)", "(main)");
@@ -155,13 +156,13 @@ describe("the workspace's settings on the phone: who opens what (the web's sub-n
   });
 
   test("every settings screen is in the stack, pushed", () => {
-    const layout = readFileSync(join(APP, "_layout.tsx"), "utf8");
     const routes = readdirSync(join(APP, "settings"), { recursive: true, encoding: "utf8" })
       .filter((f) => f.endsWith(".tsx"))
       .map((f) => `settings/${f.replace(/\\/g, "/").replace(/\.tsx$/, "")}`);
     expect(routes.length).toBeGreaterThan(10);
-    // The workspace's settings page sits on the grouped gray like the screens it opens: all scroll under the bar.
-    for (const route of routes) expect(layout).toContain(`name="${route}" options={{ ...pushed, ...scrollUnder }}`);
+    // The workspace's settings page sits on the grouped gray like the screens it opens: all scroll under the bar (the
+    // stack's default for every screen it doesn't list).
+    for (const route of routes) expect({ route, pushed: pushedByDefault(route) }).toEqual({ route, pushed: true });
   });
 });
 

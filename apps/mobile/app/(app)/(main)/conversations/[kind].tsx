@@ -1,14 +1,15 @@
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
-import { Redirect, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { ConversationListScreen } from "@/features/chats/ConversationListScreen";
 import { categoryOfListKind, isListKind } from "@/features/chats/logic";
 import { ThreadsScreen } from "@/features/chats/ThreadsScreen";
 import { useOrg } from "@/providers/org";
+import { LandOn } from "@/ui/navigation";
 
 /**
  * A section's "Ver todos" from Conversas: all agents, channels or people, or one channel category's channels
  * (`category-<id>`, ADR 0080). Threads and missions are a tab; a personal workspace has no Threads tab (ADR 0159), so
- * its row in You › Work pushes them here.
+ * its row in You › Work pushes them here. Any other kind lands back on its tab (never a second copy of the tabs).
  */
 export default function ConversationListRoute() {
   const { kind } = useLocalSearchParams<{ kind: string }>();
@@ -17,5 +18,5 @@ export default function ConversationListRoute() {
   const categoryId = categoryOfListKind(kind ?? "");
   if (categoryId) return <ConversationListScreen kind="channels" categoryId={categoryId} />;
   if (kind === "threads" && personal) return <ThreadsScreen pushed />;
-  return <Redirect href={kind === "threads" ? "/threads" : "/"} />;
+  return <LandOn href={kind === "threads" ? "/threads" : "/"} />;
 }

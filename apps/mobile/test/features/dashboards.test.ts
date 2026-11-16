@@ -71,6 +71,7 @@ import {
 } from "../../src/features/links/logic";
 import { routineTitle, targetIcon } from "../../src/features/routines/logic";
 import { TAB_GLYPHS } from "../../src/ui/tabGlyphs";
+import { pushedByDefault } from "../main-stack";
 import { notification } from "./fixtures";
 
 const board = (over: Partial<DashboardSummary> & { id: string }): DashboardSummary => ({
@@ -535,7 +536,7 @@ describe("dashboards in links, notifications and routines", () => {
     const app = join(import.meta.dir, "..", "..", "app", "(app)", "(main)");
     expect(existsSync(join(app, "dashboards.tsx"))).toBe(true);
     expect(existsSync(join(app, "(tabs)", "dashboards"))).toBe(false);
-    expect(readFileSync(join(app, "_layout.tsx"), "utf8")).toContain('name="dashboards"');
+    expect(pushedByDefault("dashboards")).toBe(true);
     expect(readFileSync(join(app, "(tabs)", "_layout.tsx"), "utf8")).not.toContain("dashboards");
     expect([...TAB_GLYPHS]).toEqual(["chats", "threads", "agents", "activity", "search"]);
   });

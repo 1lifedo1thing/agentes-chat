@@ -27,6 +27,7 @@ import {
   ttlWord,
 } from "../../src/features/members/logic";
 import { areaValues, SETTINGS_SECTIONS } from "../../src/features/settings/logic";
+import { pushedByDefault } from "../main-stack";
 import { translator } from "./fixtures";
 
 const NOW = new Date("2026-11-14T12:00:00Z");
@@ -475,9 +476,8 @@ describe("the choices pushed over a form", () => {
     // Validade and Máximo go back on their pick; Máximo never offers fewer than the link took.
     expect(picks).toContain("INVITE_LINK_MAX_USES.filter((max) => max === null || max >= uses)");
     expect(route("invite-pick.tsx")).toContain("<InvitePickScreen />");
-    const layout = route("_layout.tsx");
     for (const name of ["invite-pick", "invite-link", "invite-edit", "settings/invites"])
-      expect(layout).toContain(`name="${name}" options={{ ...pushed, ...scrollUnder }}`);
+      expect({ name, pushed: pushedByDefault(name) }).toEqual({ name, pushed: true });
   });
 });
 
