@@ -3,29 +3,33 @@ import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { type ReactNode, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, View } from "react-native";
+import { RefreshControl, StyleSheet, View } from "react-native";
 import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import { Locked, useToast } from "@/ui";
 import { chooseAction } from "../settings/parts";
-import { useColors, useDirectory, useMeId } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, usePullRefresh } from "../shared/hooks";
 import { type HeaderWordAction, PushedHeader } from "../shared/parts";
 import { type AccountDraft, PHOTO_MAX_BASE64, photoContentType } from "./logic";
+
+const NOTHING_TO_READ = () => Promise.resolve();
 
 /**
  * One screen of Você's (Conta, Membros, Notificações…), pushed with the platform's push: the native bar (its back
  * button and edge swipe, the title, a word that saves on the right) over the grouped gray, which scrolls under it.
  * A focused field scrolls clear of the keyboard on both systems (with the keyboard library's provider on, Android no
- * longer resizes the window by itself). `footer`: a button that stays at the bottom, over the keyboard, with the page
- * scrolling above it (the page gives way to the keyboard there, so the scroll view adds nothing of its own).
+ * longer resizes the window by itself), and a drag down the page takes the keyboard with it. `footer`: a button that
+ * stays at the bottom, over the keyboard, with the page scrolling above it (the page gives way to the keyboard there,
+ * so the scroll view adds nothing of its own). `onRefresh`: a list read from the server is read again on a pull.
  */
 export function Page({
   title,
   action,
   footer,
   locked = false,
+  onRefresh,
   children,
 }: {
   title: string;
@@ -33,10 +37,13 @@ export function Page({
   footer?: ReactNode;
   /** The page's form is sending: its controls are off, the page still scrolls. */
   locked?: boolean;
+  /** A pull reads the page's lists again; the spinner shows only for the person's own pull (`usePullRefresh`). */
+  onRefresh?: () => Promise<unknown>;
   children?: ReactNode;
 }) {
   const c = useColors();
   const insets = useSafeAreaInsets();
+  const pull = usePullRefresh(onRefresh ?? NOTHING_TO_READ);
   const scroll = (
     <KeyboardAwareScrollView
       enabled={!footer}
@@ -44,6 +51,8 @@ export function Page({
       style={styles.fill}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      {...(onRefresh ? { refreshControl: <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} /> } : {})}
       contentContainerStyle={[styles.body, { paddingBottom: footer ? 24 : 24 + insets.bottom }]}
     >
       {/* What is there as the screen opens doesn't fade in; what loads while it is watched does (`Loaded`). */}

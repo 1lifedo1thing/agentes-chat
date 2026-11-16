@@ -16,22 +16,20 @@ import { removalLines } from "@agenteschat/client/lib/removal";
 import { isBelow, leaves, removes } from "@agenteschat/client/lib/roles";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
-import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, RefreshControl, type RefreshControlProps, ScrollView, StyleSheet, View } from "react-native";
-import { LayoutAnimationConfig } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Alert } from "react-native";
 import { useOrg } from "@/providers/org";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Locked, PersonAvatar, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { openAgentAi } from "../ai/AgentAiScreen";
+import { Page } from "../me/parts";
 import { useOpenDm } from "../new/useOpenDm";
 import { RowBones, rolesHref } from "../roles/parts";
 import { chooseAction, Gap } from "../settings/parts";
 import { Face } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useMeId, usePullRefresh } from "../shared/hooks";
-import { errorHaptic, Loaded, PushedHeader, successHaptic } from "../shared/parts";
+import { useColors, useMeId } from "../shared/hooks";
+import { errorHaptic, Loaded, successHaptic } from "../shared/parts";
 import { invitersOf, memberActions, memberLine, membersByName, whenWords } from "./logic";
 
 /** What leads each of a person's actions in their row's menu. */
@@ -68,7 +66,6 @@ export function MembersPage() {
   const list = people.data;
   const remove = useRemoveFlow();
   const openDm = useOpenDm();
-  const pull = usePullRefresh(() => Promise.allSettled([people.refetch(), rolesQ.refetch()]));
   const viewer = { role: org?.role ?? "member", rank: org?.rank, userId: meId ?? "", permissions: org?.permissions };
   // Being deleted, inviting and removing are greyed out, as on the web; leaving stays (the server takes it then too).
   const frozen = settingsFrozen(org, "members");
@@ -80,7 +77,7 @@ export function MembersPage() {
     !frozen && can(org, "manage_members") && isBelow(viewer, m, roles) && roles.some((r) => r.givable);
 
   return (
-    <MembersFrame
+    <Page
       title={
         isPersonal(org)
           ? t("settings.section.membersPersonal")
@@ -88,7 +85,8 @@ export function MembersPage() {
             ? t("settings.section.members")
             : t("members.title")
       }
-      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
+      // A pull reads the people and their roles again.
+      onRefresh={() => Promise.allSettled([people.refetch(), rolesQ.refetch()])}
     >
       <Gap />
       <Locked when={frozen} readable>
@@ -164,39 +162,7 @@ export function MembersPage() {
           <RowBones name={34} />
         </GroupedList>
       )}
-    </MembersFrame>
-  );
-}
-
-/**
- * Members' page, as Você's other pages (`Page`): the native bar over the grouped gray, which scrolls under it, here
- * with a pull that reads the people and their roles again.
- */
-function MembersFrame({
-  title,
-  refreshControl,
-  children,
-}: {
-  title: string;
-  refreshControl: ReactElement<RefreshControlProps>;
-  children: ReactNode;
-}) {
-  const c = useColors();
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={[styles.fill, { backgroundColor: c.grouped }]}>
-      <PushedHeader title={title} solid={false} grouped />
-      <ScrollView
-        style={styles.fill}
-        contentInsetAdjustmentBehavior="automatic"
-        keyboardShouldPersistTaps="handled"
-        refreshControl={refreshControl}
-        contentContainerStyle={[styles.body, { paddingBottom: 24 + insets.bottom }]}
-      >
-        {/* What is there as the screen opens doesn't fade in; what loads while it is watched does (`Loaded`). */}
-        <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
-      </ScrollView>
-    </View>
+    </Page>
   );
 }
 
@@ -327,9 +293,3 @@ function Suggestions() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  // As `Page`'s: the groups on the 16 pt edge.
-  body: { paddingHorizontal: 16, paddingTop: 4 },
-});
