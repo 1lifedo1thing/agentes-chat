@@ -611,7 +611,6 @@
     "minuteLess": "{{n}} dakika önce",
     "minuteMore": "{{n}} dakika sonra",
     "submit": "Bu saatte hatırlat",
-    "quick": "Hızlı saatleri gör",
     "done": "Hatırlatıcı kuruldu",
     "error": {
       "noAgent": "Buradaki hiçbir ajan size hatırlatamıyor",

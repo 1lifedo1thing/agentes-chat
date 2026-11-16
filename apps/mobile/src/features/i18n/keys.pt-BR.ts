@@ -633,7 +633,6 @@ export const featureKeysPtBR = {
     minuteLess: "{{n}} minutos antes",
     minuteMore: "{{n}} minutos depois",
     submit: "Lembrar neste horário",
-    quick: "Ver horários rápidos",
     done: "Lembrete marcado",
     error: {
       noAgent: "Nenhum agente aqui pode te lembrar",

@@ -595,7 +595,6 @@
     "minuteLess": "{{n}} menit lebih awal",
     "minuteMore": "{{n}} menit lebih lambat",
     "submit": "Ingatkan aku pada waktu ini",
-    "quick": "Lihat waktu cepat",
     "done": "Pengingat dipasang",
     "error": {
       "noAgent": "Tidak ada agen di sini yang bisa mengingatkanmu",

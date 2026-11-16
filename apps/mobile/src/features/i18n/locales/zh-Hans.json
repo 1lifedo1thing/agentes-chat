@@ -595,7 +595,6 @@
     "minuteLess": "提前 {{n}} 分钟",
     "minuteMore": "推后 {{n}} 分钟",
     "submit": "在这个时间提醒我",
-    "quick": "查看快捷时间",
     "done": "提醒已设置",
     "error": {
       "noAgent": "这里没有能提醒你的智能体",

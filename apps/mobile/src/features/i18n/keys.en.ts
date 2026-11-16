@@ -649,7 +649,6 @@ export const featureKeysEn = {
     minuteLess: "{{n}} minutes earlier",
     minuteMore: "{{n}} minutes later",
     submit: "Remind me at this time",
-    quick: "See quick times",
     done: "Reminder set",
     error: {
       noAgent: "No agent here can remind you",

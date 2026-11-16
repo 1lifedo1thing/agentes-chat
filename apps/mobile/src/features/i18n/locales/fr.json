@@ -627,7 +627,6 @@
     "minuteLess": "{{n}} minutes plus tôt",
     "minuteMore": "{{n}} minutes plus tard",
     "submit": "Me le rappeler à cette heure",
-    "quick": "Voir les horaires rapides",
     "done": "Rappel programmé",
     "error": {
       "noAgent": "Aucun agent ici ne peut vous le rappeler",
