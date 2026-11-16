@@ -36,6 +36,12 @@ describe("the agent's computer and a browser profile's live view are pushed scre
     expect(computer).toContain("const BAR_SHOWN = { headerShown: true, gestureEnabled: true };");
     expect(computer).toContain("<Stack.Screen options={BAR_SHOWN} />");
   });
+
+  test("under the bar, the keys and the trackpad still clear the keyboard", () => {
+    expect(read("computer/AgentScreen.tsx")).toContain(
+      '<KeyboardAvoidingView behavior="padding" style={styles.fill} automaticOffset>',
+    );
+  });
 });
 
 describe("lists load, fail and empty in the app's own states", () => {
@@ -100,6 +106,11 @@ describe("every button does something the person sees", () => {
     }
   });
 
+  test("Try now and Stop waiting say what they did: a device still away changes nothing on the card", () => {
+    const wait = read("devices/DeviceWait.tsx");
+    expect(wait).toContain('t(action === "retry" ? "mobile.devices.wait.tried" : "mobile.devices.wait.stopped", {');
+  });
+
   test("presses are the kit's: no pressable dimmed by hand where a standard control exists", () => {
     for (const file of ["computer/SetupWait.tsx", "browser/HandoffCard.tsx", "browser/parts.tsx"])
       expect(read(file)).not.toContain("<Pressable");
@@ -113,6 +124,22 @@ describe("every button does something the person sees", () => {
     const sheet = read("connectors/ConnectSheet.tsx");
     expect(sheet).toMatch(/<Button\s+variant="secondary"\s+size="sm"\s+label=\{t\("mobile\.connectors\.paste"\)\}/);
     expect(sheet).not.toContain("styles.paste");
+  });
+});
+
+describe("rows and fields are the kit's", () => {
+  test("a phone's name is a field row as the account's name is, never a row drawn for it", () => {
+    const parts = read("devices/parts.tsx");
+    const field = parts.slice(parts.indexOf("export function PhoneNameField"));
+    expect(field).toContain("<GroupedField label={label}>");
+    expect(field).not.toContain("<Pressable");
+    expect(parts).not.toContain("nameRow");
+  });
+
+  test("the connect line holds its place while it is made", () => {
+    expect(read("devices/ConnectScreen.tsx")).toMatch(
+      /\) : make\.isPending \? \(\s*\/\/[^\n]*\n\s*<GroupedList>\s*<RowBones/,
+    );
   });
 });
 

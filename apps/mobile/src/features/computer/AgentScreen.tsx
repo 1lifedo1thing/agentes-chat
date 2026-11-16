@@ -764,7 +764,9 @@ export function AgentScreen({
   const barOptions = useMemo(() => ({ headerShown: !wide, gestureEnabled: !inControl }), [wide, inControl]);
 
   return (
-    <KeyboardAvoidingView behavior="padding" style={styles.fill}>
+    // Under the screen's bar: its true place on the screen, so the keys and the trackpad clear the keyboard by the
+    // bar's height too.
+    <KeyboardAvoidingView behavior="padding" style={styles.fill} automaticOffset>
       {/* Sideways the picture takes the whole phone: no bar. In control the edge swipe is the trackpad's, never a way
           back that would hand the screen back mid-gesture (the bar's back still leaves). */}
       <Stack.Screen options={barOptions} />
