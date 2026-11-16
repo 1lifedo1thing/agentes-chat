@@ -105,8 +105,36 @@ async function readOutsideItself(db: Executor, run: OutsideRun): Promise<boolean
   const tried = run.transcript?.harnessTried;
   return (
     (Array.isArray(tried) && tried.some((l) => typeof l === "string" && HARNESS_OUTSIDE.test(l))) ||
-    stepReadOutside(db, run)
+    (await stepReadOutside(db, run)) ||
+    steeredReadOutside(db, run)
   );
+}
+
+/** A message with `meta.readOutside` (a forwarded one, say) was steered into the run while it worked. */
+async function steeredReadOutside(db: Executor, run: OutsideRun): Promise<boolean> {
+  const steps = await db
+    .select({ data: agentRunSteps.data })
+    .from(agentRunSteps)
+    .where(
+      and(
+        eq(agentRunSteps.runId, run.id),
+        eq(agentRunSteps.kind, "context"),
+        sql`${agentRunSteps.data} ? 'steeredMessageIds'`,
+      ),
+    );
+  const ids = steps.flatMap((s) => {
+    const listed = (s.data as { steeredMessageIds?: unknown } | null)?.steeredMessageIds;
+    return Array.isArray(listed) ? listed.filter((id): id is string => typeof id === "string") : [];
+  });
+  if (ids.length === 0) return false;
+  const [marked] = await db
+    .select({ id: messages.id })
+    .from(messages)
+    .where(
+      and(eq(messages.orgId, run.orgId), inArray(messages.id, ids), sql`${messages.meta}->>'readOutside' = 'true'`),
+    )
+    .limit(1);
+  return Boolean(marked);
 }
 
 async function stepReadOutside(db: Executor, run: OutsideRun): Promise<boolean> {
