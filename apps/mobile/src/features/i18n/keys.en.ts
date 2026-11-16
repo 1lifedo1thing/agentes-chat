@@ -24,7 +24,6 @@ export const featureKeysEn = {
     position: "{{at}} of {{count}}.",
     channelPosition: "{{at}} of {{count}}.",
     itsChannels: "Channels",
-    seeAll: "See all",
   },
   blocks: {
     send: "Send",
@@ -198,16 +197,12 @@ export const featureKeysEn = {
       text: "It may be down or outside your network. Your chats show up on their own when it's back.",
       kept: "Showing what was already in the app.",
     },
-    section: {
-      agents: "Agents",
-      channels: "Channels",
-      people: "People",
-    },
-    seeAll: {
-      agents: "See all agents",
-      channels: "See all channels",
-      people: "See all people",
-    },
+    /** Conversas' strip of what the person pinned (the web sidebar's pins), under Início's widgets. */
+    pinned: "Pinned",
+    /** Conversas' one list: every chat by its latest activity, with no grouping. */
+    recent: "Recent",
+    /** Under Recentes' first rows: the whole list. */
+    seeAll: "See all chats",
     wait: {
       verb: {
         approval: "needs your ok",

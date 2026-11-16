@@ -46,8 +46,9 @@ function channelLine(channels: Channel[], categoryId: string | null, except?: st
 /**
  * "Categoria" of a channel (ADR 0080), from its ⋯ sheet or a long press on the home: "Sem categoria" and the
  * categories, each with its channels, the current one checked; a tap moves it and goes back. Admins get
- * "Nova categoria", which takes the channel along. Below, its place among the channels next to it, one step
- * up or down (the home lists channels by latest activity, the web's sidebar in this order).
+ * "Nova categoria", which takes the channel along, and "Categorias" (the order, names and delete): the home lists
+ * conversations with no grouping, so this is where the phone reaches them. Below, its place among the channels next
+ * to it, one step up or down (the home lists channels by latest activity, the web's sidebar in this order).
  */
 export function PickCategoryScreen({ channelId }: { channelId: string }) {
   const { t } = useTranslation();
@@ -128,6 +129,13 @@ export function PickCategoryScreen({ channelId }: { channelId: string }) {
               label={t("channelCategories.newCategory")}
               chevron
               onPress={() => router.push(categoryHrefs.create(channelId))}
+            />
+            <GroupedRow
+              icon="list"
+              label={t("mobile.categories.title")}
+              sub={t("mobile.categories.manageHint")}
+              chevron
+              onPress={() => router.push(categoryHrefs.manage)}
             />
           </GroupedList>
         </>
@@ -245,8 +253,8 @@ export function NewCategoryScreen({ channelId }: { channelId?: string }) {
 }
 
 /**
- * "Categorias" (admins), from a category's long press: the order (each one opens to rename, move up or down,
- * or delete) and "Nova categoria".
+ * "Categorias" (admins), from a channel's "Categoria": the order (each one opens to rename, move up or down, or
+ * delete) and "Nova categoria".
  */
 export function CategoriesScreen() {
   const { t } = useTranslation();

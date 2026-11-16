@@ -19,8 +19,7 @@
     "down": "Turunkan",
     "position": "{{at}} dari {{count}}.",
     "channelPosition": "{{at}} dari {{count}}.",
-    "itsChannels": "Kanal",
-    "seeAll": "Lihat semua"
+    "itsChannels": "Kanal"
   },
   "blocks": {
     "send": "Kirim",
@@ -182,16 +181,9 @@
       "text": "Mungkin sedang mati atau di luar jaringanmu. Obrolanmu akan muncul sendiri begitu server kembali.",
       "kept": "Menampilkan yang sudah ada di aplikasi."
     },
-    "section": {
-      "agents": "Agen",
-      "channels": "Kanal",
-      "people": "Orang"
-    },
-    "seeAll": {
-      "agents": "Lihat semua agen",
-      "channels": "Lihat semua kanal",
-      "people": "Lihat semua orang"
-    },
+    "pinned": "Disematkan",
+    "recent": "Terbaru",
+    "seeAll": "Lihat semua obrolan",
     "wait": {
       "verb": {
         "approval": "butuh persetujuanmu",

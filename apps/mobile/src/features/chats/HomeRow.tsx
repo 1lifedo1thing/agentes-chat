@@ -13,9 +13,7 @@ export interface HomeRowProps {
   facts: RowFacts;
   divider: boolean;
   live: boolean;
-  /** On top of its section because the person pinned it. */
-  pinned: boolean;
-  /** The swipe's first action ("Fixar no topo", or "Desafixar" once pinned); null: the row has none and doesn't swipe. */
+  /** The swipe's first action ("Fixar no topo", "Tirar do topo" once pinned); null: none, and the row doesn't swipe. */
   pinLabel: string | null;
   /** The long press's sheet, its actions (iOS's own menu) and what it does, for screen readers. */
   onHold: (row: ConversationRow) => void;
@@ -28,18 +26,17 @@ export interface HomeRowProps {
 }
 
 /**
- * A row of Conversas, and of a section's "Ver todos": the conversation's row, which a swipe to the left slides off its
- * actions on panes (Fixar no topo or Desafixar, the menu's first action, and on a channel Silenciar or Reativar beside
- * it; the row stays opaque over them, so the hairline and the sky never show), and whose long press has the rest (iOS's
- * own menu under the preview, a sheet elsewhere). Memoized on plain values and stable handlers: it draws again only when
- * its own row, its words or its place change.
+ * A row of Conversas' Recentes, and of its "See all": the conversation's row, which a swipe to the left slides off its
+ * actions on panes (Fixar no topo or Tirar do topo, the menu's first action, and on a channel Silenciar or Reativar
+ * beside it; the row stays opaque over them, so the hairline and the sky never show), and whose long press has the
+ * rest (iOS's own menu under the preview, a sheet elsewhere). Memoized on plain values and stable handlers: it draws
+ * again only when its own row, its words or its place change.
  */
 export const HomeRow = memo(function HomeRow({
   row,
   facts,
   divider,
   live,
-  pinned,
   pinLabel,
   onHold,
   holdActions,
@@ -81,7 +78,6 @@ export const HomeRow = memo(function HomeRow({
       facts={facts}
       divider={divider}
       live={live}
-      pinned={pinned}
       onHold={onHold}
       holdLabel={holdLabel}
       holdActions={holdActions}

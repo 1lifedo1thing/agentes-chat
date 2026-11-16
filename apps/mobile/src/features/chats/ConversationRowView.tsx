@@ -30,10 +30,8 @@ export interface ConversationItemProps {
   divider?: boolean;
   /** Its agent moves (the first rows only); further down, its face and its orbit hold still. */
   live?: boolean;
-  /** A row on the home: its menu (Fixar no topo, a channel's Mover para…), given the row. */
+  /** A row on the home: its menu (Fixar no topo, or Tirar do topo, a channel's Mover para…), given the row. */
   onHold?: (row: ConversationRow) => void;
-  /** On top of its section ("Fixar no topo"): said to screen readers; the order shows it, no mark. */
-  pinned?: boolean;
   /** What the long press does, for screen readers. */
   holdLabel?: string;
   /** An agent with no conversation yet (`channelId: ""`): opens one with it, given the agent (stable, memoized row). */
@@ -72,12 +70,10 @@ export const ConversationItem = memo(function ConversationItem({
   meta,
   fresh = false,
   onOpen,
-  pinned = false,
   holdActions,
 }: ConversationItemProps) {
   const { t } = useTranslation();
   const c = useColors();
-  const orgId = useOrgId();
   const agentDm = r.kind === "dm" && r.with.type === "agent";
   const leading =
     r.kind === "dm" ? (
@@ -144,29 +140,6 @@ export const ConversationItem = memo(function ConversationItem({
       </Text>
     );
   const { badge, mention } = facts;
-
-  const starts = Boolean(onStart && r.kind === "dm");
-  const href = r.channelId
-    ? chatHref(r.channelId, r.kind === "thread" || r.kind === "mission" ? r.threadId : null)
-    : null;
-  const open = () => {
-    onOpen?.();
-    if (onStart && r.kind === "dm") onStart(r.with.id);
-    else if (href) router.push(href);
-  };
-  // A finger that stays on a conversation already asks for its messages: they are on their way (or here) by the time
-  // its screen slides in. `ListRow` calls `onPressIn` only after its press delay, so a finger that starts a scroll
-  // asks for nothing. A thread loads its own replies; a page asked for a moment ago isn't asked for again.
-  const prefetch = usePrefetchMessages(orgId);
-  const warm = () => {
-    if (r.channelId && r.kind !== "thread" && r.kind !== "mission") prefetch(r.channelId);
-  };
-  // iOS's own long press: the conversation itself in the system preview (tapping it opens it), with the row's
-  // actions (Pin to the top, a channel's Move to…) in the system menu under it. An agent with no conversation yet
-  // peeks at its profile instead, with Talk first; a tap on its row still starts the conversation. Android keeps the
-  // plain press and the long press's sheet.
-  const peekHref = starts && r.kind === "dm" ? (`/agent/${r.with.id}` as const) : href;
-  const peeks = Platform.OS === "ios" && peekHref !== null;
   const a11y = [
     name,
     meta ?? null,
@@ -177,7 +150,6 @@ export const ConversationItem = memo(function ConversationItem({
     facts.time,
     r.unread > 0 ? t("mobile.chats.unreadLabel", { count: r.unread }) : null,
     mention ? t("shell.unreadMentions", { count: badge }) : null,
-    pinned ? t("sidebarPins.pinned") : null,
     r.kind === "mission" && badge > 0
       ? t("mobile.tabs.withCount", { label: t("mobile.home.waiting"), count: badge })
       : null,
@@ -185,56 +157,138 @@ export const ConversationItem = memo(function ConversationItem({
     .filter(Boolean)
     .join(", ");
 
-  const item = (press: () => void) => (
-    <ListRow
-      onPress={press}
-      onPressIn={warm}
-      {...(onHold && !peeks
-        ? {
-            onLongPress: () => onHold(r),
-            delayLongPress: 380,
-            accessibilityActions: [{ name: "menu", label: holdLabel ?? name }],
-            onAccessibilityAction: (e: { nativeEvent: { actionName: string } }) => {
-              if (e.nativeEvent.actionName === "menu") onHold(r);
-            },
+  return (
+    <OpensConversation
+      row={r}
+      onStart={onStart}
+      onOpen={onOpen}
+      onHold={onHold}
+      holdLabel={holdLabel ?? name}
+      holdActions={holdActions}
+    >
+      {({ press, warm, hold }) => (
+        <ListRow
+          onPress={press}
+          onPressIn={warm}
+          {...hold}
+          accessibilityRole="button"
+          accessibilityLabel={a11y}
+          divider={divider}
+          unread={r.unread > 0}
+          leading={leading}
+          title={name}
+          time={meta ?? facts.time}
+          dot={fresh && badge === 0}
+          over={
+            // A closed thread isn't marked here: it goes to the end of its list, and screen readers hear it.
+            facts.place ? (
+              <Text variant="footnote" tone="faint" numberOfLines={1}>
+                {facts.place}
+              </Text>
+            ) : null
           }
-        : {})}
-      accessibilityRole="button"
-      accessibilityLabel={a11y}
-      divider={divider}
-      unread={r.unread > 0}
-      leading={leading}
-      title={name}
-      time={meta ?? facts.time}
-      pinned={pinned}
-      dot={fresh && badge === 0}
-      over={
-        // A closed thread isn't marked here: it goes to the end of its list, and screen readers hear it.
-        facts.place ? (
-          <Text variant="footnote" tone="faint" numberOfLines={1}>
-            {facts.place}
-          </Text>
-        ) : null
-      }
-      sub={line}
-      trailing={
-        badge > 0 ? (
-          <Count
-            value={badge}
-            max={99}
-            inverted
-            {...(mention ? { fill: TAB_BADGE.background, color: TAB_BADGE.text } : {})}
-          />
-        ) : null
-      }
-    />
+          sub={line}
+          trailing={
+            badge > 0 ? (
+              <Count
+                value={badge}
+                max={99}
+                inverted
+                {...(mention ? { fill: TAB_BADGE.background, color: TAB_BADGE.text } : {})}
+              />
+            ) : null
+          }
+        />
+      )}
+    </OpensConversation>
   );
+});
+
+/**
+ * One conversation's row that works out what it says by itself, for a list that isn't one of Conversas' screens
+ * (Search's results). The lists of conversations work it out once for all their rows and draw `ConversationItem`.
+ */
+export const ConversationRowView = memo(function ConversationRowView({
+  agent,
+  ...props
+}: Omit<ConversationItemProps, "facts"> & {
+  /** An agent DM: it waits on you, or what it is doing (from `agentRowState`). */
+  agent?: AgentRowState;
+}) {
+  const factsOf = useRowFacts();
+  return <ConversationItem {...props} facts={factsOf(props.row, agent)} />;
+});
+
+/** A long press for screen readers and away from iOS: the row's menu (`onHold`'s sheet). */
+export interface HoldProps {
+  onLongPress?: () => void;
+  delayLongPress?: number;
+  accessibilityActions?: { name: string; label: string }[];
+  onAccessibilityAction?: (e: { nativeEvent: { actionName: string } }) => void;
+}
+
+/**
+ * How a conversation opens from a list, for its row and for its face on Conversas' pinned strip: a tap opens it (an
+ * agent with no conversation yet starts one, `onStart`), and a finger that stays already asks for its messages (`warm`:
+ * they are on their way, or here, by the time its screen slides in; the press calls it only after its press delay, so a
+ * finger that starts a scroll asks for nothing, and a thread loads its own replies). iOS's own long press shows the
+ * conversation itself in the system preview (tapping it opens it), with the row's actions (Pin to the top, a channel's
+ * Move to…) in the system menu under it; an agent with no conversation yet peeks at its profile instead, with Talk
+ * first, while a tap still starts the conversation. Elsewhere the long press is `onHold`'s sheet (`hold`).
+ */
+export function OpensConversation({
+  row: r,
+  onStart,
+  onOpen,
+  onHold,
+  holdLabel,
+  holdActions,
+  children,
+}: {
+  row: ConversationRow;
+  onStart?: ((agentId: string) => void) | undefined;
+  onOpen?: (() => void) | undefined;
+  onHold?: ((row: ConversationRow) => void) | undefined;
+  /** What the long press does, for screen readers. */
+  holdLabel: string;
+  holdActions?: ((row: ConversationRow) => RowAction[]) | undefined;
+  children: (how: { press: () => void; warm: () => void; hold: HoldProps }) => ReactNode;
+}) {
+  const { t } = useTranslation();
+  const orgId = useOrgId();
+  const starts = Boolean(onStart && r.kind === "dm");
+  const href = r.channelId
+    ? chatHref(r.channelId, r.kind === "thread" || r.kind === "mission" ? r.threadId : null)
+    : null;
+  const open = () => {
+    onOpen?.();
+    if (onStart && r.kind === "dm") onStart(r.with.id);
+    else if (href) router.push(href);
+  };
+  const prefetch = usePrefetchMessages(orgId);
+  const warm = () => {
+    if (r.channelId && r.kind !== "thread" && r.kind !== "mission") prefetch(r.channelId);
+  };
+  const peekHref = starts && r.kind === "dm" ? (`/agent/${r.with.id}` as const) : href;
+  const peeks = Platform.OS === "ios" && peekHref !== null;
+  const hold: HoldProps =
+    onHold && !peeks
+      ? {
+          onLongPress: () => onHold(r),
+          delayLongPress: 380,
+          accessibilityActions: [{ name: "menu", label: holdLabel }],
+          onAccessibilityAction: (e) => {
+            if (e.nativeEvent.actionName === "menu") onHold(r);
+          },
+        }
+      : {};
+  const item = (press: () => void) => children({ press, warm, hold });
   if (!peeks || !peekHref) return item(open);
   const actions = holdActions?.(r) ?? [];
   return (
     <Link href={peekHref} asChild>
       <Link.Trigger>
-        {/* A row that starts a conversation keeps its own press; the link only serves its preview. */}
+        {/* A conversation that starts keeps its own press; the link only serves its preview. */}
         <RowTrigger row={item} onOpen={onOpen} own={starts ? open : undefined} />
       </Link.Trigger>
       <Link.Preview />
@@ -254,26 +308,11 @@ export const ConversationItem = memo(function ConversationItem({
       ) : null}
     </Link>
   );
-});
+}
 
 /**
- * One conversation's row that works out what it says by itself, for a list that isn't one of Conversas' screens
- * (Search's results). The lists of conversations work it out once for all their rows and draw `ConversationItem`.
- */
-export const ConversationRowView = memo(function ConversationRowView({
-  agent,
-  ...props
-}: Omit<ConversationItemProps, "facts"> & {
-  /** An agent DM: it waits on you, or what it is doing (from `agentRowState`). */
-  agent?: AgentRowState;
-}) {
-  const factsOf = useRowFacts();
-  return <ConversationItem {...props} facts={factsOf(props.row, agent)} />;
-});
-
-/**
- * The row under the link's trigger: the link's press opens the conversation, after the row's own `onOpen`; `own`
- * replaces it (a row that starts a conversation, whose link is only its preview).
+ * What sits under the link's trigger: the link's press opens the conversation, after the row's own `onOpen`; `own`
+ * replaces it (a conversation that starts, whose link is only its preview).
  */
 function RowTrigger({
   row,

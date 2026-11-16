@@ -30,14 +30,13 @@ describe("the tabs of a personal workspace", () => {
 });
 
 describe("Conversas in a personal workspace", () => {
-  test("channels are group conversations, and a quiet #general stays out while the person is alone", () => {
+  test("a quiet #general stays out of Recentes and its See all while the person is alone", () => {
     const chats = read("src/features/chats/ChatsScreen.tsx");
-    expect(chats).toContain("withoutQuietGeneral(pinned.rows, hideGeneral)");
-    expect(chats).toContain('t("shell.channelsPersonal")');
+    expect(chats).toContain("recentRows(withoutQuietGeneral(pinned.rows, hideGeneral))");
     expect(chats).toContain("isPersonal(org) && ![...memberById.keys()].some((id) => id !== meId)");
     const list = read("src/features/chats/ConversationListScreen.tsx");
     expect(list).toContain("withoutQuietGeneral(rightHandPin(list.rows, rightHandOf(dir.agents)).rows, hideGeneral)");
-    expect(list).toContain('kind === "channels" && personal');
+    expect(list).toContain("recentRows(all)");
   });
 });
 

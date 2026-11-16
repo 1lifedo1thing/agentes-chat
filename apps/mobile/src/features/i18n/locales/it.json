@@ -21,8 +21,7 @@
     "down": "Sposta giù",
     "position": "{{at}} di {{count}}.",
     "channelPosition": "{{at}} di {{count}}.",
-    "itsChannels": "Canali",
-    "seeAll": "Vedi tutti"
+    "itsChannels": "Canali"
   },
   "blocks": {
     "send": "Invia",
@@ -194,16 +193,9 @@
       "text": "Potrebbe essere offline o fuori dalla tua rete. Le chat compaiono da sole appena torna disponibile.",
       "kept": "Mostra quello che era già nell'app."
     },
-    "section": {
-      "agents": "Agenti",
-      "channels": "Canali",
-      "people": "Persone"
-    },
-    "seeAll": {
-      "agents": "Vedi tutti gli agenti",
-      "channels": "Vedi tutti i canali",
-      "people": "Vedi tutte le persone"
-    },
+    "pinned": "Fissati",
+    "recent": "Recenti",
+    "seeAll": "Vedi tutte le chat",
     "wait": {
       "verb": {
         "approval": "ha bisogno del tuo ok",

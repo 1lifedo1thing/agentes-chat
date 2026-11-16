@@ -30,7 +30,6 @@ export const featureKeysPtBR = {
     position: "{{at}}ª de {{count}}.",
     channelPosition: "{{at}}º de {{count}}.",
     itsChannels: "Canais",
-    seeAll: "Ver todos",
   },
   blocks: {
     send: "Mandar",
@@ -200,16 +199,12 @@ export const featureKeysPtBR = {
       text: "Ele pode estar fora do ar ou fora da sua rede. Suas conversas aparecem sozinhas quando ele voltar.",
       kept: "Mostrando o que já estava no app.",
     },
-    section: {
-      agents: "Agentes",
-      channels: "Canais",
-      people: "Pessoas",
-    },
-    seeAll: {
-      agents: "Ver todos os agentes",
-      channels: "Ver todos os canais",
-      people: "Ver todas as pessoas",
-    },
+    /** Conversas' strip of what the person pinned (the web sidebar's pins), under Início's widgets. */
+    pinned: "Fixados",
+    /** Conversas' one list: every chat by its latest activity, with no grouping. */
+    recent: "Recentes",
+    /** Under Recentes' first rows: the whole list. */
+    seeAll: "Ver todas as conversas",
     wait: {
       verb: {
         approval: "precisa do seu ok",

@@ -20,8 +20,7 @@
     "down": "Nach unten",
     "position": "{{at}} von {{count}}.",
     "channelPosition": "{{at}} von {{count}}.",
-    "itsChannels": "Kanäle",
-    "seeAll": "Alle ansehen"
+    "itsChannels": "Kanäle"
   },
   "blocks": {
     "send": "Senden",
@@ -188,16 +187,9 @@
       "text": "Er ist vielleicht offline oder außerhalb deines Netzwerks. Deine Chats erscheinen von selbst, sobald er wieder da ist.",
       "kept": "Du siehst, was schon in der App war."
     },
-    "section": {
-      "agents": "Agenten",
-      "channels": "Kanäle",
-      "people": "Personen"
-    },
-    "seeAll": {
-      "agents": "Alle Agenten ansehen",
-      "channels": "Alle Kanäle ansehen",
-      "people": "Alle Personen ansehen"
-    },
+    "pinned": "Angepinnt",
+    "recent": "Zuletzt",
+    "seeAll": "Alle Chats ansehen",
     "wait": {
       "verb": {
         "approval": "braucht dein Okay",

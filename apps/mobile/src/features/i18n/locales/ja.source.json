@@ -56,9 +56,6 @@
   "categories.itsChannels": {
     "value": "Channels"
   },
-  "categories.seeAll": {
-    "value": "See all"
-  },
   "blocks.send": {
     "value": "Send"
   },
@@ -455,23 +452,14 @@
   "chats.serverError.kept": {
     "value": "Showing what was already in the app."
   },
-  "chats.section.agents": {
-    "value": "Agents"
+  "chats.pinned": {
+    "value": "Pinned"
   },
-  "chats.section.channels": {
-    "value": "Channels"
+  "chats.recent": {
+    "value": "Recent"
   },
-  "chats.section.people": {
-    "value": "People"
-  },
-  "chats.seeAll.agents": {
-    "value": "See all agents"
-  },
-  "chats.seeAll.channels": {
-    "value": "See all channels"
-  },
-  "chats.seeAll.people": {
-    "value": "See all people"
+  "chats.seeAll": {
+    "value": "See all chats"
   },
   "chats.wait.verb.approval": {
     "value": "needs your ok"
