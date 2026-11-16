@@ -5,11 +5,11 @@ import { join } from "node:path";
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src", file), "utf8").replace(/\s+/g, " ");
 
 test("Nova tarefa half written: a back swipe asks first, and a task just made leaves without asking", () => {
+  // The settings' forms' one guard (below), not one of its own.
   const form = src("features/issues/NewIssueForm.tsx");
-  expect(form).toContain('usePreventRemove(title.trim() !== "" || text.trim() !== "",');
-  expect(form).toContain("if (done.current) return repeat();");
-  expect(form).toContain('{ text: t("edit.discard"), style: "destructive", onPress: repeat }');
-  expect(form.indexOf("done.current = true;")).toBeLessThan(form.lastIndexOf("close();"));
+  expect(form).toContain('const leave = useUnsavedGuard(title.trim() !== "" || text.trim() !== "");');
+  expect(form).not.toContain("usePreventRemove");
+  expect(form.indexOf("leave();")).toBeLessThan(form.lastIndexOf("close();"));
 });
 
 test("the settings' forms ask before a back swipe drops what was typed, and a finished save leaves without asking", () => {
