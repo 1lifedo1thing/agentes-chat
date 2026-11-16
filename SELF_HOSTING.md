@@ -1025,7 +1025,8 @@ your workspaces' content: tell them before the first read, and say whether an AI
 with you (`assistedByAi`). It also makes the server keep what members write in the feedback form,
 and what the thing they reported says, for 90 days beside their request. Unset, every path under
 `/reveal` answers 403 and the server keeps neither: of a member's feedback it keeps only that they
-asked (who, when, and which message), for a year.
+asked (who, when, and which message), for a year. If you set the token and later take it away, the
+door closes at once and no new words are kept; the ones already kept stay until their 90 days are up.
 
 **Stall-and-noise report (optional).** With `OPS_REPORT_EMAIL` set (one address, or several separated by
 commas) and email set up, the server emails the previous UTC day's report every day at about 01:00 UTC: for
