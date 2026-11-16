@@ -298,7 +298,7 @@ describe("Configurações → Importar e exportar", () => {
       "O MCP deixa o Grok Bot acessar este workspace, e ele cria os agentes aqui sozinho.",
     );
     // In order: the access is picked where the sign-in asks, and the server is attached before the request.
-    const steps = () => [...sheet.querySelectorAll(".imp-do > li > .imp-do__body > b")].map((b) => b.textContent);
+    const steps = () => [...sheet.querySelectorAll(".imp-do .ac-mediarow__head")].map((b) => b.textContent);
     expect(steps()).toEqual([
       "Na conversa com o seu bot, mande:",
       "Clique em Add it e depois em Authorize.",
@@ -344,7 +344,7 @@ describe("Configurações → Importar e exportar", () => {
     await go();
     await click(button("ChatGPT dots"), 4);
     const sheet = sheetOf("Trazer o time do ChatGPT dots");
-    expect([...sheet.querySelectorAll(".imp-do > li > .imp-do__body > b")].map((b) => b.textContent)).toEqual([
+    expect([...sheet.querySelectorAll(".imp-do .ac-mediarow__head")].map((b) => b.textContent)).toEqual([
       "Cole num chat novo",
       "Solte aqui o arquivo que ele criar",
     ]);
@@ -531,7 +531,7 @@ describe("Configurações → Importar e exportar", () => {
     await go(state);
     await click(button(/^agentes\.chat$/), 4);
     const sheet = sheetOf("Trazer de outro workspace");
-    expect([...sheet.querySelectorAll(".imp-do > li > .imp-do__body > b")].map((b) => b.textContent)).toEqual([
+    expect([...sheet.querySelectorAll(".imp-do .ac-mediarow__head")].map((b) => b.textContent)).toEqual([
       "Baixe o arquivo do outro workspace",
       "Solte aqui o .json",
     ]);

@@ -10,8 +10,14 @@
   font-size: 14px;
   line-height: 20px;
 }
+/* A subheading and its list, closer to each other than to the rest. */
+.imp-sheet__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
 .imp-sheet__sub {
-  margin: 0 0 calc(var(--space-2) * -1);
+  margin: 0;
   color: var(--muted);
   font-size: 13px;
   font-weight: 650;
@@ -30,7 +36,7 @@
   padding: var(--space-4) 0;
 }
 
-/* The two steps: a number, then what to do under its title. */
+/* The steps: each a MediaRow, its number and title on one line and what to do under them. */
 .imp-do {
   display: flex;
   flex-direction: column;
@@ -38,12 +44,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-}
-.imp-do > li {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
 }
 .imp-do__n {
   display: grid;
@@ -58,22 +58,11 @@
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-.imp-do__body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-.imp-do__body > b {
-  font-size: 15px;
-  font-weight: 650;
-  line-height: 24px;
-}
 /* An app's command to copy wraps inside the step instead of running off the sheet. */
-.imp-do__body .machine-command {
+.imp-do .machine-command {
   margin: 0;
 }
-.imp-do__body .machine-command__code {
+.imp-do .machine-command__code {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -81,7 +70,7 @@
 .imp-do__text.ac-input[data-command] {
   min-height: 0;
 }
-.imp-do__body .imp-other__copy {
+.imp-do .imp-other__copy {
   justify-content: space-between;
 }
 .imp-do__hint {
@@ -108,12 +97,15 @@
   border-top: 1px solid var(--line);
 }
 .imp-team li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   padding: 11px 0;
   border-bottom: 1px solid var(--line);
   min-width: 0;
+}
+/* "And N more": their faces together, then their names. */
+.imp-team li:not(.ac-mediarow) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 .imp-team__text {
   display: flex;
@@ -123,12 +115,10 @@
   font-size: 14.5px;
   line-height: 20px;
 }
-.imp-team__text b,
-.imp-team__link {
+.imp-team__text b {
   font-weight: 500;
 }
 .imp-team__link {
-  align-self: flex-start;
   color: inherit;
   text-decoration: none;
 }

@@ -214,21 +214,25 @@ export function ImportSheet({
               </p>
               <ul className="imp-team">
                 {arrived.map((a) => (
-                  <li key={a.id}>
-                    <AgentAvatar name={a.name} appearance={normalizeAppearance(a.appearance)} size="sm" />
-                    <span className="imp-team__text">
-                      {standalone ? (
-                        <Link
-                          to="/org/$orgId/agents/$agentId"
-                          params={{ orgId, agentId: a.id }}
-                          className="imp-team__link"
-                        >
-                          {a.name}
-                        </Link>
-                      ) : (
-                        <b>{a.name}</b>
-                      )}
-                      {a.role && <span>{a.role}</span>}
+                  <li key={a.id} className="ac-mediarow ac-mediarow--row">
+                    <span className="ac-mediarow__face">
+                      <AgentAvatar name={a.name} appearance={normalizeAppearance(a.appearance)} size="sm" />
+                    </span>
+                    <span className="ac-mediarow__head">
+                      <b>
+                        {standalone ? (
+                          <Link
+                            to="/org/$orgId/agents/$agentId"
+                            params={{ orgId, agentId: a.id }}
+                            className="imp-team__link"
+                          >
+                            {a.name}
+                          </Link>
+                        ) : (
+                          a.name
+                        )}
+                      </b>
+                      {a.role && <span className="ac-mediarow__meta">{a.role}</span>}
                     </span>
                   </li>
                 ))}
@@ -291,11 +295,13 @@ export function ImportSheet({
           {agents.length > 0 && (
             <ul className="imp-team">
               {agents.slice(0, FACES).map((a) => (
-                <li key={a.key}>
-                  <AgentAvatar name={a.name} appearance={normalizeAppearance(a.appearance)} size="sm" />
-                  <span className="imp-team__text">
+                <li key={a.key} className="ac-mediarow ac-mediarow--row">
+                  <span className="ac-mediarow__face">
+                    <AgentAvatar name={a.name} appearance={normalizeAppearance(a.appearance)} size="sm" />
+                  </span>
+                  <span className="ac-mediarow__head">
                     <b>{a.name}</b>
-                    {a.role && <span>{a.role}</span>}
+                    {a.role && <span className="ac-mediarow__meta">{a.role}</span>}
                   </span>
                 </li>
               ))}
@@ -368,10 +374,10 @@ export function ImportSheet({
             )}
           </ul>
           {bundle.todo.length > 0 && (
-            <>
+            <div className="imp-sheet__group">
               <p className="imp-sheet__sub">{t("onboarding.import.sheet.after")}</p>
               {todos}
-            </>
+            </div>
           )}
           {apply.isError && <Alert>{importApplyErrorText(t, apply.error, failedOffline)}</Alert>}
           {flow.progress && (
@@ -453,10 +459,10 @@ export function ImportSheet({
             </p>
           )}
           {bundle.todo.length > 0 && (
-            <>
+            <div className="imp-sheet__group">
               <p className="imp-sheet__sub">{t("onboarding.import.sheet.after")}</p>
               {todos}
-            </>
+            </div>
           )}
         </>
       );
@@ -503,17 +509,19 @@ export function ImportSheet({
   );
 }
 
-/** A numbered step: its number, then what to do under its title. */
+/** A numbered step (a MediaRow): its number and title on one line, what to do under them at the row's full width. */
 function Step({ n, title, children }: { n: number; title: ReactNode; children?: ReactNode }) {
   return (
-    <li>
-      <span className="imp-do__n" aria-hidden="true">
-        {n}
+    <li className="ac-mediarow ac-mediarow--row">
+      <span className="ac-mediarow__face">
+        <span className="imp-do__n" aria-hidden="true">
+          {n}
+        </span>
       </span>
-      <div className="imp-do__body">
+      <span className="ac-mediarow__head">
         <b>{title}</b>
-        {children}
-      </div>
+      </span>
+      {children && <div className="ac-mediarow__body">{children}</div>}
     </li>
   );
 }
@@ -1012,7 +1020,6 @@ function ComputerAsk({ flow, card, app }: { flow: ImportFlowState; card: Compute
               />
             </Button>
             <Segmented
-              size="sm"
               label={t("onboarding.import.sheet.os.label")}
               value={os}
               onValueChange={setOs}
