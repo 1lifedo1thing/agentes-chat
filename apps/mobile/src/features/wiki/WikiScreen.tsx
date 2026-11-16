@@ -19,7 +19,7 @@ import { useFocusEffect } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Alert, Platform, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Platform, RefreshControl, StyleSheet, TextInput, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { readValueSync, STORED, writeValueSync } from "@/lib/storage";
@@ -62,7 +62,7 @@ import { useFailed } from "../routines/hooks";
 import { chooseAction, NEXT_FIELD, SettingsPage } from "../settings/parts";
 import { Face } from "../shared/Face";
 import { FirstUse, LoadFailed, useEmptyLook } from "../shared/FirstUse";
-import { useColors, useDirectory, useOrgId } from "../shared/hooks";
+import { useColors, useDirectory, useOrgId, usePullRefresh } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { copyText, goBack, PushedHeader, successHaptic, Tile } from "../shared/parts";
@@ -117,6 +117,8 @@ export function WikiScreen({ folder = "" }: { folder?: string }) {
   const insets = useSafeAreaInsets();
   const tree = useWikiTree(orgId);
   const graph = useWikiGraph(orgId, folder === "");
+  // A pull asks for the pages again (and the home's graph, which a folder doesn't draw).
+  const pull = usePullRefresh(() => Promise.allSettled([tree.refetch(), ...(folder ? [] : [graph.refetch()])]));
   const [picked, setPicked] = useState<string | null>(null);
   // Read again each time the home shows: a page opened from here is first when coming back.
   const [recents, setRecents] = useState(readRecents);
@@ -272,6 +274,7 @@ export function WikiScreen({ folder = "" }: { folder?: string }) {
       title={title}
       bottomInset={selecting ? 96 : 24}
       dock={pickBar}
+      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
       // Choosing pages, the bar's word ends the choice; otherwise the system's own "+" and "…" (its menu on iOS).
       {...(selecting
         ? { action: { label: t("common.cancel"), onPress: stopSelecting } }
@@ -478,6 +481,8 @@ export function WikiPageScreen({ slug }: { slug: string }) {
   const action = useWikiAction(orgId);
   const bulkDelete = useWikiBulkDelete();
   const graph = useWikiGraph(orgId, true);
+  // A pull reads the page again, with the links around it.
+  const pull = usePullRefresh(() => Promise.allSettled([page.refetch(), graph.refetch()]));
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const p = page.data;
@@ -730,6 +735,7 @@ export function WikiPageScreen({ slug }: { slug: string }) {
         onScroll={scroll.onScroll}
         scrollEventThrottle={16}
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
       >
         {/* Loading: the page's own shape (its band, its title, its lines), never a spinner. */}
@@ -970,6 +976,7 @@ export function WikiHistoryScreen({ slug }: { slug: string }) {
   const failed = useFailed();
   const page = useWikiPage(orgId, slug);
   const history = useWikiHistory(orgId, slug, true);
+  const pull = usePullRefresh(() => Promise.allSettled([history.refetch(), page.refetch()]));
   const [open, setOpen] = useState<{ version: number; lines: DiffLine[] } | null>(null);
   // The version whose change is on its way: its row says so (its wheel in the time's place) until it opens.
   const [reading, setReading] = useState<number | null>(null);
@@ -994,10 +1001,16 @@ export function WikiHistoryScreen({ slug }: { slug: string }) {
   const noteOf = (v: WikiVersion) =>
     v.noteCode ? t(`wiki.note.${v.noteCode}`, v.noteParams ?? {}) : (v.note ?? undefined);
   return (
-    <PushedLargeTitle title={t("wiki.history")}>
-      <Text variant="subhead" tone="muted" style={styles.lead}>
-        {page.data ? t("wiki.historyTitle", { title: page.data.title }) : t("wiki.historyText")}
-      </Text>
+    <PushedLargeTitle
+      title={t("wiki.history")}
+      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
+    >
+      {/* Under "Histórico", whose page it is (never "Histórico de …" again under the same word). */}
+      {page.data ? (
+        <Text variant="subhead" tone="muted" numberOfLines={2} style={styles.lead}>
+          {page.data.title}
+        </Text>
+      ) : null}
       {/* Loading: the rows' own shape; failed: what happened and the way to ask again. */}
       {history.isLoading ? <SkeletonList rows={4} /> : null}
       {history.isError && !history.data ? <LoadFailed onRetry={() => void history.refetch()} /> : null}
@@ -1159,7 +1172,8 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   grow: { flex: 1, minWidth: 0 },
   lead: { paddingHorizontal: SCREEN_X, marginTop: -4 },
-  search: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
+  // Right under the large title, as Drive's.
+  search: { paddingHorizontal: SCREEN_X, paddingBottom: 10 },
   // Folder 4 over the title, the title 8 over who wrote it (the 8 rhythm, tighter inside one heading group).
   title: { marginTop: 4 },
   byline: { marginTop: 8 },

@@ -2,13 +2,13 @@ import { type ArchivedChannel, useArchivedChannels, useUnarchiveChannel } from "
 import { errorText } from "@agenteschat/client/lib/errors";
 import { formatShortDate } from "@agenteschat/client/lib/format";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, View } from "react-native";
+import { RefreshControl, StyleSheet, View } from "react-native";
 import { EmptyState, GroupedList, GroupedRow, SkeletonList, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { chatHref } from "../links/logic";
 import { chooseAction } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
-import { useOrgId } from "../shared/hooks";
+import { useOrgId, usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { successHaptic } from "../shared/parts";
 
@@ -21,6 +21,7 @@ export function ArchivedChannelsScreen() {
   const orgId = useOrgId();
   const toast = useToast();
   const list = useArchivedChannels(orgId);
+  const pull = usePullRefresh(list.refetch);
   const restore = useUnarchiveChannel(orgId);
   const channels = list.data ?? [];
   const ask = (ch: ArchivedChannel) =>
@@ -43,7 +44,11 @@ export function ArchivedChannelsScreen() {
       t("common.cancel"),
     );
   return (
-    <PushedLargeTitle title={t("channel.archivedTitle")} grouped>
+    <PushedLargeTitle
+      title={t("channel.archivedTitle")}
+      grouped
+      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
+    >
       {/* Loading: the rows' own shape; failed: what happened and the way to ask again; empty: says so. */}
       {list.isLoading ? <SkeletonList rows={3} /> : null}
       {list.isError && !list.data ? <LoadFailed onRetry={() => void list.refetch()} /> : null}

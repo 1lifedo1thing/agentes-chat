@@ -15,10 +15,10 @@ import {
   type TextInputInstance,
   View,
 } from "react-native";
-import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
+  Button,
   EmptyState,
   fieldText,
   GroupedHeader,
@@ -30,7 +30,6 @@ import {
   SheetBar,
   SheetSurface,
   Text,
-  useReducedMotion,
   useRouteSheetScrollable,
   useTheme,
 } from "@/ui";
@@ -54,14 +53,14 @@ const DETENTS_TYPING = [1];
  * the finger, a drag or a flick puts it away, the screen behind steps back), on the grouped gray, the task sheets'
  * bar (`SheetBar`, × in its corner) and the "Para:" field on top (nothing focused until the person taps). Under it,
  * everything as rows: what to start, each with its icon on a soft tile of its color (found at a glance); the agents,
- * the one you talked to last first, a tap opening your conversation ready to type; then the people, and "Invite
- * people" at their end. Typing raises the sheet to the full detent with the keyboard and filters the same agents and
- * people (what to start steps aside); × puts the sheet away.
+ * the one you talked to last first, a tap opening your conversation in this sheet's place (its keyboard down, as
+ * every screen opens: the person taps the field); then the people, and "Invite people" at their end. Typing raises
+ * the sheet to the full detent with the keyboard and filters the same agents and people (what to start steps aside,
+ * at once, as the system's own search lists do); × puts the sheet away.
  */
 export function NewScreen() {
   const { t } = useTranslation();
   const focused = useIsFocused();
-  const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
   const navigation = useTrueSheetNavigation();
   const { colors } = useTheme();
@@ -87,7 +86,7 @@ export function NewScreen() {
   const items = createItems(org, { ownsAgent });
   const invite = !typed && items.includes("invite");
 
-  const talkTo = (agentId: string) => void openDm({ agentId }, { compose: true, replace: true });
+  const talkTo = (agentId: string) => void openDm({ agentId }, { replace: true });
   const cancel = () => {
     Keyboard.dismiss();
     goBack();
@@ -113,10 +112,6 @@ export function NewScreen() {
   // The list is the sheet's scroll view (dragging at its top moves the sheet, the keyboard insets it).
   const scroll = useRef<ScrollViewInstance>(null);
   useRouteSheetScrollable(scroll);
-  // Groups that come and go as the person types fade, and the groups that stay slide into their place; the field and
-  // the page around them never animate their layout (every keystroke would).
-  const fade = reduced ? {} : { entering: FadeIn.duration(160), exiting: FadeOut.duration(120) };
-  const layout = reduced ? undefined : LinearTransition.duration(220);
 
   return (
     <SheetSurface>
@@ -159,13 +154,9 @@ export function NewScreen() {
             </View>
           </View>
           <View style={styles.lists}>
-            {!typed ? (
-              <Animated.View {...fade} layout={layout}>
-                <CreateList items={items.filter((i) => i !== "invite")} />
-              </Animated.View>
-            ) : null}
+            {!typed ? <CreateList items={items.filter((i) => i !== "invite")} /> : null}
             {agents.length > 0 ? (
-              <Animated.View {...fade} layout={layout}>
+              <View>
                 <GroupedHeader>{t("mobile.find.agents")}</GroupedHeader>
                 <GroupedList>
                   {agents.map((a) => {
@@ -190,10 +181,10 @@ export function NewScreen() {
                     );
                   })}
                 </GroupedList>
-              </Animated.View>
+              </View>
             ) : null}
             {people.length > 0 || invite ? (
-              <Animated.View {...fade} layout={layout}>
+              <View>
                 <GroupedHeader>{t("mobile.new.people")}</GroupedHeader>
                 <GroupedList>
                   {people.map((p) => (
@@ -203,8 +194,8 @@ export function NewScreen() {
                       label={p.name}
                       {...(typed ? { labelParts: markTerms(p.name, [typed]) } : {})}
                       chevron
-                      // As an agent's: the conversation opens ready to type.
-                      onPress={() => void openDm({ userId: p.userId }, { compose: true, replace: true })}
+                      // As an agent's: the conversation opens in the sheet's place.
+                      onPress={() => void openDm({ userId: p.userId }, { replace: true })}
                     />
                   ))}
                   {invite ? (
@@ -217,10 +208,16 @@ export function NewScreen() {
                     />
                   ) : null}
                 </GroupedList>
-              </Animated.View>
+              </View>
             ) : null}
             {typed && agents.length + people.length === 0 && !dir.loading ? (
-              <EmptyState size="inline" title={t("mobile.find.nothing", { q: typed })} />
+              <EmptyState
+                size="inline"
+                title={t("mobile.find.nothing", { q: typed })}
+                action={
+                  <Button variant="secondary" size="sm" label={t("filters.clearSearch")} onPress={() => setQ("")} />
+                }
+              />
             ) : null}
           </View>
         </View>

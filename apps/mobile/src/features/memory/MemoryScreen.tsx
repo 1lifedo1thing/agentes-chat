@@ -6,7 +6,7 @@ import { memoryLine } from "@agenteschat/client/lib/proposals";
 import { rightHandOf } from "@agenteschat/client/lib/right-hand";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
@@ -15,7 +15,8 @@ import {
   Chip,
   EmptyState,
   Filters,
-  Row,
+  LIST_AVATAR,
+  ListRow,
   SCREEN_X,
   SearchField,
   SectionHeader,
@@ -34,7 +35,7 @@ import { useOpenDm } from "../new/useOpenDm";
 import { useFailed } from "../routines/hooks";
 import { Face } from "../shared/Face";
 import { FirstUse, LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, useOrgId, usePullRefresh } from "../shared/hooks";
 import { genderOf } from "../shared/logic";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { goBack, PushedHeader, successHaptic } from "../shared/parts";
@@ -52,6 +53,7 @@ export function MemoryScreen({ agent: initialAgent }: { agent?: string } = {}) {
   const orgId = useOrgId();
   const dir = useDirectory();
   const memories = useOrgMemories(orgId);
+  const pull = usePullRefresh(memories.refetch);
   const openDm = useOpenDm();
   // Whoever answers this person: the right hand first (the server's `canTalk` holds the talk permission).
   const listener = [rightHandOf(dir.agents), ...dir.agents].find((a) => a && canTalk(a));
@@ -66,13 +68,17 @@ export function MemoryScreen({ agent: initialAgent }: { agent?: string } = {}) {
   const reduced = useReducedMotion();
   const fade = reduced ? {} : { entering: FadeIn.duration(160), exiting: FadeOut.duration(120) };
   const when = (iso: string) => relativeTime(t, i18n.language, iso);
+  // The list's own rows, as the wiki's beside it: the agent's face in the 52 column, what it learned (two lines at
+  // most), whose memory it is and when.
   const row = (m: Memory, i: number) => (
-    <Row
+    <ListRow
       key={m.id}
       divider={i > 0}
-      leading={<Face who={{ type: "agent", id: m.agentId }} size={36} live={false} />}
+      leading={<Face who={{ type: "agent", id: m.agentId }} size={LIST_AVATAR - 2} live={false} />}
       title={m.summary ?? memoryLine(t, m)}
-      subtitle={`${dir.nameOf({ type: "agent", id: m.agentId })} · ${when(m.updatedAt)}`}
+      titleLines={2}
+      sub={`${dir.nameOf({ type: "agent", id: m.agentId })} · ${when(m.updatedAt)}`}
+      subLines={1}
       chevron
       onPress={() => openMemory(m.id)}
     />
@@ -87,7 +93,10 @@ export function MemoryScreen({ agent: initialAgent }: { agent?: string } = {}) {
           count: selected.weight,
         });
   return (
-    <PushedLargeTitle title={t("mobile.memory.title")}>
+    <PushedLargeTitle
+      title={t("mobile.memory.title")}
+      refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
+    >
       <Text variant="subhead" tone="muted" style={styles.lead}>
         {t("mobile.memory.subtitle")}
       </Text>

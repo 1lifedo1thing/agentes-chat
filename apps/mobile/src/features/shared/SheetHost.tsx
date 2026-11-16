@@ -182,6 +182,8 @@ function StepSheet({
         <ScrollView
           ref={scroll}
           keyboardShouldPersistTaps="handled"
+          // A sheet with a field (an answer, a fix): a drag down its content puts the keyboard away.
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={body}
         >

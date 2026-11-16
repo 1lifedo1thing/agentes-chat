@@ -21,12 +21,14 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  type ScrollViewInstance,
   StyleSheet,
   TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { useKeyboardState } from "react-native-keyboard-controller";
 import Animated, {
   type SharedValue,
   useAnimatedStyle,
@@ -105,6 +107,11 @@ export function NoticeIsland() {
   const snap = useSyncExternalStore(island.subscribe, island.get, island.get);
   const [open, setOpen] = useState(false);
   const [openHeight, setOpenHeight] = useState(OPEN_GUESS);
+  // The system's keyboard draws over the app: with it up (a reply being typed), the open island ends above it.
+  const keyboardHeight = useKeyboardState((state) => (state.isVisible ? state.height : 0));
+  // Where the row whose reply is being typed ends, in the open island's list: it is kept in sight over the keyboard.
+  const [replyEnd, setReplyEnd] = useState<number | null>(null);
+  const list = useRef<ScrollViewInstance>(null);
 
   // Up with the socket live: the system's banner stays away (nothing shows twice).
   useEffect(() => {
@@ -144,8 +151,9 @@ export function NoticeIsland() {
   // the camera (never behind it) and the status bar steps aside meanwhile, as with the system's own island.
   const clear = camera ? CAMERA.height : 0;
   const coversBar = camera && (shape === "pill" || shape === "open");
-  // Open, it stops above the bottom edge and scrolls inside: long choices never run off the screen.
-  const openMax = screenHeight - top - insets.bottom - 16;
+  // Open, it stops above the bottom edge, or above the keyboard while one is up, and scrolls inside: long choices and
+  // a reply's field never run off the screen or under the keys.
+  const openMax = screenHeight - top - (keyboardHeight > 0 ? keyboardHeight + 12 : insets.bottom + 16);
   // Only while open: the last open height outlives it, and a closed pill must keep its swipe away.
   const scrolls = shape === "open" && openHeight > openMax;
   const size = {
@@ -155,6 +163,11 @@ export function NoticeIsland() {
     open: { w: Math.min(width - 16, 440), h: Math.min(openHeight, openMax) },
   }[shape];
   const corner = shape === "open" ? (camera ? 44 : 28) : shape === "pill" ? 36 : size.h / 2;
+  // The island made shorter for the keyboard: the reply being typed scrolls into what is left of it.
+  useEffect(() => {
+    if (!scrolls || replyEnd === null || keyboardHeight === 0) return;
+    list.current?.scrollTo({ y: Math.max(0, replyEnd - size.h), animated: !reducedMotion });
+  }, [scrolls, replyEnd, keyboardHeight, size.h, reducedMotion]);
   // What the content is laid out for: this shape, or folding away, the last one shown (it stays drawn while it goes).
   const lastShown = useRef<Shown | null>(null);
   if (shape !== "none") lastShown.current = { shape, w: size.w, h: size.h, corner };
@@ -243,6 +256,7 @@ export function NoticeIsland() {
                 {drawn.shape === "open" ? (
                   <ScrollView
                     scrollEnabled={scrolls}
+                    ref={list}
                     bounces={false}
                     showsVerticalScrollIndicator={scrolls}
                     // A reply's send takes the first tap, with the keyboard up.
@@ -258,7 +272,7 @@ export function NoticeIsland() {
                       {snap.items.slice(0, OPEN_MAX).map((i, k) => (
                         <Fragment key={i.n.id}>
                           {k > 0 ? <View style={styles.rule} /> : null}
-                          <IslandRow n={i.n} onOpened={() => setOpen(false)} />
+                          <IslandRow n={i.n} onOpened={() => setOpen(false)} onReplying={setReplyEnd} />
                         </Fragment>
                       ))}
                       {snap.items.length > OPEN_MAX ? (
@@ -474,7 +488,16 @@ function SmallIsland({
 }
 
 /** One notice on the open island: who and what, the whole line, and the answer right there. */
-function IslandRow({ n, onOpened }: { n: AppNotification; onOpened: () => void }) {
+function IslandRow({
+  n,
+  onOpened,
+  onReplying,
+}: {
+  n: AppNotification;
+  onOpened: () => void;
+  /** Its reply is being typed: where the row ends in the open island's list (null once it isn't). */
+  onReplying: (end: number | null) => void;
+}) {
   const { t } = useTranslation();
   const orgId = useOrgId();
   const act = useNotificationAction(orgId);
@@ -489,6 +512,14 @@ function IslandRow({ n, onOpened }: { n: AppNotification; onOpened: () => void }
     island.pause(`typing:${n.id}`, typing);
     return () => island.pause(`typing:${n.id}`, false);
   }, [typing, n.id]);
+
+  // Where this row ends in the island's list, told while its reply is being typed (the island keeps it in sight).
+  const [end, setEnd] = useState<number | null>(null);
+  useEffect(() => {
+    if (!typing) return;
+    onReplying(end);
+    return () => onReplying(null);
+  }, [typing, end, onReplying]);
 
   const { target, suggestions, readOnly } = quickReply(n, Boolean(useOrg().org?.deletion));
   const waiting = n.waiting ? waitingCardOf(n) : null;
@@ -520,7 +551,10 @@ function IslandRow({ n, onOpened }: { n: AppNotification; onOpened: () => void }
   const primary = waiting && (waiting.action !== "answer" || isDashboardNotice(n.kind)) && canOpen;
 
   return (
-    <View style={styles.row}>
+    <View
+      style={styles.row}
+      onLayout={(e: LayoutChangeEvent) => setEnd(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}
+    >
       <IslandFace n={n} size={34} />
       <View style={styles.grow}>
         <Title n={n} lines={2} />
