@@ -7,18 +7,22 @@ import { useToast } from "@/ui";
 import { uploadPart } from "../files/upload-part";
 import { useOrgId } from "../shared/hooks";
 
-/** "Enviar arquivo" on the Drive: the system's file picker, then the file into the Drive, with no conversation. */
+/**
+ * "Upload file" on the Drive: the system's file picker, then the file into the Drive, with no conversation.
+ * `uploading`: the name of the file on its way, which the Drive shows in a card's place until it's there (a large file
+ * takes a while, and a greyed "+" alone says nothing).
+ */
 export function useDriveUpload(onSaved: () => unknown) {
   const { t } = useTranslation();
   const api = useApi();
   const orgId = useOrgId();
   const toast = useToast();
-  const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState<string | null>(null);
   const pick = async () => {
     const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, multiple: false });
     const a = res.canceled ? null : res.assets[0];
     if (!a) return;
-    setBusy(true);
+    setUploading(a.name);
     try {
       const file = { uri: a.uri, name: a.name, type: a.mimeType ?? "application/octet-stream" };
       const saved = await api.artifacts.upload(orgId, uploadPart(file));
@@ -27,8 +31,8 @@ export function useDriveUpload(onSaved: () => unknown) {
     } catch (e) {
       toast({ title: errorText(t, e), icon: "x" });
     } finally {
-      setBusy(false);
+      setUploading(null);
     }
   };
-  return { busy, pick: () => void pick() };
+  return { busy: uploading !== null, uploading, pick: () => void pick() };
 }

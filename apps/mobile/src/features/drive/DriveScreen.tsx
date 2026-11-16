@@ -19,7 +19,7 @@ import {
 import { FirstUse } from "../shared/FirstUse";
 import { useOrgId, usePullRefresh, useWhen } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
-import { DriveCard } from "./DriveCard";
+import { DriveCard, driveRef, UploadingCard } from "./DriveCard";
 import { DRIVE_TYPES, type DriveDaySection, type DriveType, driveSections, gridRows, matchesType } from "./logic";
 import { useDriveUpload } from "./useDriveUpload";
 
@@ -50,6 +50,8 @@ export function DriveScreen({ highlightId = null }: { highlightId?: string | nul
     const at = highlightId ? sorted.findIndex((a) => a.id === highlightId) : -1;
     return driveSections(sorted.slice(0, Math.max(shown, at + 1)));
   }, [all, shown, highlightId]);
+  // What the grid shows, in its order: a picture or a video opens among the grid's others, to swipe through.
+  const shownRefs = useMemo(() => sections.flatMap((s) => s.items.map(driveRef)), [sections]);
   const label = (s: DriveDaySection) =>
     s.label.kind === "month"
       ? new Intl.DateTimeFormat(when.locale, {
@@ -135,6 +137,13 @@ export function DriveScreen({ highlightId = null }: { highlightId?: string | nul
       ) : (
         <Animated.View {...fade}>
           <LayoutAnimationConfig skipEntering>
+            {/* A file on its way in holds a card's place above the days, so a large one shows it's going. */}
+            {uploader.uploading !== null ? (
+              <Animated.View {...fade} layout={layout} style={[styles.row, styles.uploading]}>
+                <UploadingCard name={uploader.uploading} />
+                <View style={styles.spacer} />
+              </Animated.View>
+            ) : null}
             {sections.map((s) => (
               <Animated.View key={s.key} {...fade} layout={layout}>
                 <SectionHeader title={label(s)} count={s.items.length} />
@@ -142,7 +151,7 @@ export function DriveScreen({ highlightId = null }: { highlightId?: string | nul
                   {gridRows(s.items).map((row) => (
                     <View key={row.map((a) => a.id).join(":")} style={styles.row}>
                       {row.map((a) => (
-                        <DriveCard key={a.id} artifact={a} highlighted={a.id === highlightId} />
+                        <DriveCard key={a.id} artifact={a} highlighted={a.id === highlightId} siblings={shownRefs} />
                       ))}
                       {row.length === 1 ? <View style={styles.spacer} /> : null}
                     </View>
@@ -172,6 +181,7 @@ const styles = StyleSheet.create({
   search: { paddingHorizontal: 16, paddingBottom: 10 },
   grid: { paddingHorizontal: 16, gap: 16 },
   row: { flexDirection: "row", gap: 12 },
+  uploading: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
   spacer: { flex: 1 },
   center: { alignItems: "center", gap: 12, paddingVertical: 48, paddingHorizontal: 24 },
   centerText: { textAlign: "center" },

@@ -2,10 +2,10 @@ import { type Artifact, useArtifact } from "@agenteschat/client";
 import { Image } from "expo-image";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { Text as RNText, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Text as RNText, StyleSheet, View } from "react-native";
 import { CHROME_MAX_SCALE, Icon, type IconName, PressScale, systemText, Text, useTheme, weights } from "@/ui";
-import { router } from "@/ui/navigation";
-import { encodeFileList, extensionOf, VIDEO_EXT } from "../files/logic";
+import type { FileRef } from "../files/logic";
+import { openFile } from "../files/open";
 import { useRemoteFile } from "../files/source";
 import { Face } from "../shared/Face";
 import { useDirectory, useOrgId, useWhen } from "../shared/hooks";
@@ -20,28 +20,28 @@ const KIND_ICON: Record<ReturnType<typeof kindKey>, IconName> = {
   file: "file",
 };
 
-/** Opens an item: pictures and videos in the picture viewer, the rest in the document viewer. */
-export function openDriveItem(a: Pick<Artifact, "id" | "kind" | "title" | "version">) {
-  tapHaptic();
-  if (cardShape(a) === "image" || (a.kind === "file" && VIDEO_EXT.has(extensionOf(a.title))))
-    router.push({
-      pathname: "/images",
-      params: { files: encodeFileList([{ id: a.id, version: a.version }]), at: "0" },
-    });
-  else router.push({ pathname: "/file/[id]", params: { id: a.id } });
-}
+/** A Drive item as it's opened: at its version, its kind and name saying what it is before its details load. */
+export const driveRef = (a: Pick<Artifact, "id" | "kind" | "title" | "version">): FileRef => ({
+  id: a.id,
+  version: a.version,
+  title: a.title,
+  kind: a.kind,
+});
 
 /**
  * A Drive card: the real preview at the item's version (a document's
  * first lines under its title, a table's first rows, a diff's first changed lines, the picture itself, a
- * file's type tile) with the kind on a small chip, then the name and who made it, when.
+ * file's type tile) with the kind on a small chip, then the name and who made it, when. A tap opens it as every file
+ * opens (`openFile`): a picture or a video in the picture viewer, among the grid's (`siblings`, in the grid's order).
  */
 export const DriveCard = memo(function DriveCard({
   artifact: a,
   highlighted = false,
+  siblings,
 }: {
   artifact: Artifact;
   highlighted?: boolean;
+  siblings?: readonly FileRef[];
 }) {
   const { t } = useTranslation();
   const { colors: c } = useTheme();
@@ -56,7 +56,10 @@ export const DriveCard = memo(function DriveCard({
       to={0.97}
       haptic={false}
       fill={false}
-      onPress={() => openDriveItem(a)}
+      onPress={() => {
+        tapHaptic();
+        openFile(driveRef(a), siblings);
+      }}
       accessibilityRole="button"
       accessibilityLabel={[a.title, t(`mobile.drive.kind.${kind}`), author, when.short(a.updatedAt)]
         .filter(Boolean)
@@ -111,6 +114,34 @@ function ImagePreview({ artifact: a }: { artifact: Artifact }) {
       style={StyleSheet.absoluteFill}
       accessible={false}
     />
+  );
+}
+
+/**
+ * A file on its way into the Drive, in a card's shape until it's there: a spinner where its preview goes, its name and
+ * "Sending the file…".
+ */
+export function UploadingCard({ name }: { name: string }) {
+  const { t } = useTranslation();
+  const { colors: c } = useTheme();
+  const surface = useSurface();
+  return (
+    <View
+      style={styles.card}
+      accessible
+      accessibilityLabel={t("mobile.chat.attach.sending", { name })}
+      accessibilityState={{ busy: true }}
+    >
+      <View style={[styles.preview, styles.waiting, surface]}>
+        <ActivityIndicator color={c.faint} />
+      </View>
+      <Text variant="subhead" numberOfLines={1} style={styles.name}>
+        {name}
+      </Text>
+      <Text variant="footnote" tone="faint" numberOfLines={1} style={styles.sending}>
+        {t("mobile.chat.uploading")}
+      </Text>
+    </View>
   );
 }
 
@@ -248,4 +279,6 @@ const styles = StyleSheet.create({
   name: { fontWeight: "600", marginTop: 8 },
   by: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
   grow: { flex: 1, minWidth: 0 },
+  waiting: { alignItems: "center", justifyContent: "center" },
+  sending: { marginTop: 4 },
 });

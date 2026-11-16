@@ -337,6 +337,7 @@ describe("viewer", () => {
     expect(fileRoute({ id: "d", version: 4, title: "log.txt" }).params).toEqual({ id: "d", v: "4" });
     // Every place that opens a file goes through it: no screen pushes the viewer or the file screen by itself.
     for (const file of [
+      "features/drive/DriveCard.tsx",
       "features/files/AttachmentTile.tsx",
       "features/files/MessageFiles.tsx",
       "features/files/ImageStack.tsx",
@@ -349,7 +350,8 @@ describe("viewer", () => {
       expect({ file, opens: source.includes("openFile(") }).toEqual({ file, opens: true });
       expect({ file, own: /pathname: "\/(images|file\/\[id\])"/.test(source) }).toEqual({ file, own: false });
     }
-    // A message's pictures and videos are the viewer's pages, in the order they show.
+    // The Drive's grid and a message's pictures and videos are the viewer's pages, in the order they show.
+    expect(src("features/drive/DriveScreen.tsx")).toContain("siblings={shownRefs}");
     expect(src("features/files/MessageFiles.tsx")).toContain(
       "(tiles.length > 0 ? [...videos, ...images] : [...pictures, ...videos])",
     );
@@ -622,6 +624,17 @@ describe("a document's head", () => {
     const actions = src("features/files/actions.ts");
     expect(actions).toContain('{ icon: "person" as const, label: t("share.button"), onPress: shareSheet }');
     expect(actions).not.toContain('"members"');
+  });
+
+  test("a file on its way into the Drive holds a card's place, its name and a spinner, until it's there", () => {
+    const upload = src("features/drive/useDriveUpload.ts");
+    expect(upload).toContain("setUploading(a.name);");
+    expect(upload).toContain("return { busy: uploading !== null, uploading, pick: () => void pick() };");
+    const screen = src("features/drive/DriveScreen.tsx");
+    expect(screen).toContain("<UploadingCard name={uploader.uploading} />");
+    const card = src("features/drive/DriveCard.tsx");
+    expect(card).toContain('{t("mobile.chat.uploading")}');
+    expect(card).toContain("<ActivityIndicator color={c.faint} />");
   });
 
   test("among files a picture is only the picture, two to a row; a file takes the row, its name whole", () => {
