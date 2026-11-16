@@ -172,8 +172,14 @@ const AUDIO_EXTENSIONS: Readonly<Record<string, string>> = {
 export const audioExtensionOf = (contentType: string): string | null =>
   AUDIO_EXTENSIONS[contentType.split(";")[0]?.trim().toLowerCase() ?? ""] ?? null;
 
-// Providers read the type from the name: an unknown recording is sent as m4a, the apps' usual one.
-const extensionOf = (contentType: string) => audioExtensionOf(contentType) ?? "m4a";
+/** The names speech providers take a recording under: they refuse a file by its name before reading it. */
+const PROVIDER_EXTENSIONS = new Set(["ogg", "mp3", "m4a", "wav", "webm"]);
+
+// Providers read the type from the name: any other recording is sent as m4a, the apps' usual one.
+const extensionOf = (contentType: string) => {
+  const extension = audioExtensionOf(contentType);
+  return extension && PROVIDER_EXTENSIONS.has(extension) ? extension : "m4a";
+};
 
 const fileOf = (input: SpeechFileInput) =>
   new File([input.audio as Uint8Array<ArrayBuffer>], `voice.${extensionOf(input.contentType)}`, {
