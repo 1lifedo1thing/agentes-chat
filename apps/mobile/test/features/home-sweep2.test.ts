@@ -45,7 +45,9 @@ describe("the keyboard comes up only for a tap", () => {
   });
 
   test("a sheet's content puts the keyboard away on a drag", () => {
-    expect(src("ui/SheetScreen.tsx")).toContain('keyboardDismissMode="on-drag"');
+    for (const file of ["ui/SheetScreen.tsx", "ui/Sheet.tsx", "features/shared/SheetHost.tsx"]) {
+      expect({ file, drag: src(file).includes('keyboardDismissMode="on-drag"') }).toEqual({ file, drag: true });
+    }
   });
 });
 
