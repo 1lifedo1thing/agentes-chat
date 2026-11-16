@@ -902,10 +902,7 @@ export function AskBar({
   const see = onSee;
   return (
     <View style={styles.dock}>
-      <Animated.View
-        entering={reduced ? undefined : FadeIn.duration(160)}
-        style={styles.pill}
-      >
+      <Animated.View entering={reduced ? undefined : FadeIn.duration(160)} style={styles.pill}>
         <View style={[styles.tok, { backgroundColor: c.bg }]}>
           <AgentFace agentId={ask.agentId} size={18} mode="idle" />
         </View>
@@ -980,10 +977,7 @@ export function WaitingHereBar({
   const words = t("ask.bar.here", { count });
   return (
     <View style={styles.dock}>
-      <Animated.View
-        entering={reduced ? undefined : FadeIn.duration(160)}
-        style={styles.pill}
-      >
+      <Animated.View entering={reduced ? undefined : FadeIn.duration(160)} style={styles.pill}>
         {agent ? (
           <View style={[styles.tok, { backgroundColor: c.bg }]}>
             <AgentFace agentId={agent.id} size={18} mode="idle" />
