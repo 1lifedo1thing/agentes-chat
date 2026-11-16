@@ -29,7 +29,7 @@ import {
   useTheme,
   WithPresence,
 } from "@/ui";
-import { CoverBarBackdrop, useCoverScroll } from "@/ui/cover";
+import { CoverBarBackdrop, CoverParallax, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
 import { confirmAction, Uploading } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
@@ -130,6 +130,9 @@ export function MeScreen() {
   const headerHeight = useHeaderHeight();
   // The bar is clear over the sky and becomes its own once the page scrolls under it (as an agent's page).
   const { y, onScroll } = useCoverScroll();
+  // The sky's band: from the screen's top (behind the status bar and the clear bar) to the photo's middle. It reaches
+  // `PULL_ROOM` higher, out of sight, so a pull down shows more sky (it clips its foot, where the photo hangs).
+  const band = insets.top + 62 + PHOTO_OVERLAP;
   const issues = useIssues(org.orgId);
   const proposals = useOverview(org.orgId).data?.proposalsWaitingForMe ?? 0;
   const push = usePushSwitch().on;
@@ -273,9 +276,12 @@ export function MeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
       >
-        {/* The workspace's sky as a band under the clear bar; your photo hangs from its bottom edge. */}
-        <View style={[styles.band, { height: insets.top + 62 + PHOTO_OVERLAP }]}>
-          <WorkspaceSky fade={0.4} style={StyleSheet.absoluteFill} />
+        {/* The workspace's sky as a band under the clear bar, your photo hanging from its bottom edge. It lags behind
+            the list and stretches into a pull, as an agent's cover does. */}
+        <View style={[styles.band, { height: band + PULL_ROOM, marginTop: -PULL_ROOM }]}>
+          <CoverParallax y={y} style={StyleSheet.absoluteFill}>
+            <WorkspaceSky fade={0.4} style={StyleSheet.absoluteFill} />
+          </CoverParallax>
           <HorizonTeam ids={myAgents.slice(0, HORIZON).map((a) => a.id)} />
         </View>
         <View style={styles.cover}>
@@ -486,7 +492,8 @@ export function MeScreen() {
           {!about && version ? <GroupedFooter>{t("mobile.me.version", { version })}</GroupedFooter> : null}
         </View>
       </Animated.ScrollView>
-      <CoverBarBackdrop y={y} from={0} to={12} height={headerHeight} />
+      {/* The bar takes the page's gray only once the sky has gone from under it: over the sky it stays clear. */}
+      <CoverBarBackdrop y={y} from={band - headerHeight - 24} to={band - headerHeight} height={headerHeight} />
     </View>
   );
 }
@@ -574,6 +581,9 @@ function WorkingLine({ color, text }: { color: Parameters<typeof PixelOrbit>[0][
     </View>
   );
 }
+
+/** Sky above the band's top, seen only while the list is pulled down. */
+const PULL_ROOM = 320;
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
