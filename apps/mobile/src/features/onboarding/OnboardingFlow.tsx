@@ -10,7 +10,7 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useIsMutating, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { signOut } from "@/features/account";
 import { agentLook } from "@/features/shared/logic";
 import { authClient } from "@/lib/auth";
@@ -25,7 +25,7 @@ import { confirmationSentTo, forgetConfirmationSent } from "../auth/confirmation
 import { InviteCrew } from "../auth/invite-parts";
 import { chatHref } from "../links/logic";
 import { openWebPath } from "../links/open-web";
-import { ZoneList } from "../me/AccountPage";
+import { ZoneSheet } from "../me/AccountPage";
 import { chooseAction } from "../settings/parts";
 import { usePersonPhoto } from "../shared/photo";
 import { orgNameFromEmail, PURPOSES, phoneTimezone, stepFailedText, workspaceAnswer, zoneLabel } from "./logic";
@@ -54,7 +54,6 @@ export function OnboardingFlow({ onLeave, another }: { onLeave?: () => void; ano
   // Asked again whenever the app comes back: a plan paid on the website meanwhile opens the workspace.
   const me = useQuery({ ...meQuery(api), refetchOnWindowFocus: "always" });
   const authConfig = useAuthConfig().data;
-  const { colors: c } = useTheme();
   // Made here; else the one this person is setting up (a visit cut short, here or on the web), which resumes.
   const [created, setCreated] = useState<{ orgId: string; generalChannelId: string } | null>(null);
   // What it is for (ADR 0159), asked before the workspace exists; a company or team then goes on to its name.
@@ -222,30 +221,60 @@ export function OnboardingFlow({ onLeave, another }: { onLeave?: () => void; ano
   });
 
   const loadFailed = settings.error ?? agents.error;
-  // While it opens, the step stays on screen with its button working; a failure to open says so here.
-  if (!me.data || !known || (at === "open" && error))
+  const lodiName = lodi?.name ?? RIGHT_HAND_DEFAULT.name;
+  const lodiLook = { ...agentLook(lodi ?? RIGHT_HAND_DEFAULT), id: lodi?.id ?? "right-hand" };
+  // Nothing destroys on screen: until a workspace is set up this is the only screen, so the way out of the account
+  // is one quiet "Sair", which offers Sair and, in red, Apagar conta in the system's list (a person must always
+  // reach deleting their account, App Store 5.1.1(v); the web's first run takes it from there).
+  const leaveAccount = (
+    <AuthLink
+      label={t("mobile.org.signOut")}
+      onPress={() =>
+        chooseAction(
+          email,
+          [
+            { icon: "out", label: t("mobile.org.signOut"), onPress: () => void signOut() },
+            {
+              icon: "trash",
+              label: t("deleteAccount.menu"),
+              destructive: true,
+              onPress: () => openWebPath("/onboarding?account=delete"),
+            },
+          ],
+          t("mobile.common.cancel"),
+        )
+      }
+    />
+  );
+  // Reading where a visit left off: the steps' own sky with the right hand at work on it and the question still
+  // being read, never a bare screen between the launch splash and the sky. While it opens, the step stays on screen
+  // with its button working; a failure to open says so here, with the way to try again and the way out.
+  if (!me.data || !known || (at === "open" && error)) {
+    const failed = error ?? (loadFailed ? stepFailedText(t, loadFailed, i18n.language) : null);
     return (
-      <View style={[styles.screen, styles.wait, { backgroundColor: c.bg }]}>
-        {error || loadFailed ? (
-          <>
-            <Text tone="muted" style={CENTER}>
-              {error ?? stepFailedText(t, loadFailed, i18n.language)}
-            </Text>
-            <Button
-              variant="secondary"
-              size="sm"
-              label={t("mobile.common.retry")}
-              onPress={() => {
-                opening.current = false;
-                setError(null);
-                if (settings.isError) void settings.refetch();
-                if (agents.isError) void agents.refetch();
-              }}
-            />
-          </>
+      <AuthScaffold
+        sky="low"
+        {...(failed ? { title: failed } : {})}
+        agent={lodiLook}
+        agentMode={failed ? "idle" : "run"}
+        {...(failed && me.data ? { footer: leaveAccount } : {})}
+      >
+        {failed ? (
+          <Button
+            variant="secondary"
+            wide
+            label={t("mobile.common.retry")}
+            onPress={() => {
+              opening.current = false;
+              setError(null);
+              if (settings.isError) void settings.refetch();
+              if (agents.isError) void agents.refetch();
+            }}
+          />
         ) : null}
-      </View>
+      </AuthScaffold>
     );
+  }
 
   const submit = () => {
     if (orgName && !pending) void save();
@@ -257,8 +286,6 @@ export function OnboardingFlow({ onLeave, another }: { onLeave?: () => void; ano
     else void save();
   };
 
-  const lodiName = lodi?.name ?? RIGHT_HAND_DEFAULT.name;
-  const lodiLook = { ...agentLook(lodi ?? RIGHT_HAND_DEFAULT), id: lodi?.id ?? "right-hand" };
   const say = t(`onboarding.flow.lodi.${step}`, { first: firstName(me.data.user.name), ...agentGrammar(lodiName) });
   const workspace = (mine?.name ?? orgName).trim();
   // The team joins the right hand on the sky once it is picked, and sleeps there until its plan.
@@ -332,37 +359,11 @@ export function OnboardingFlow({ onLeave, another }: { onLeave?: () => void; ano
                 : say
       }
       stepKey={asking ? "purpose" : step}
-      // The sentence of step 2 sits under the business list.
-      scrollToFocus={step === "business"}
       onBack={onBack}
       agent={lodiLook}
       agentMode={working ? "run" : "idle"}
       {...(crew ? { hero: <InviteCrew agents={crew} /> } : {})}
-      // Nothing destroys on screen: until a workspace is set up this is the only screen, so the way out of the account
-      // is one quiet "Sair", which offers Sair and, in red, Apagar conta in the system's list (a person must always
-      // reach deleting their account, App Store 5.1.1(v); the web's first run takes it from there).
-      footer={
-        pending ? null : (
-          <AuthLink
-            label={t("mobile.org.signOut")}
-            onPress={() =>
-              chooseAction(
-                email,
-                [
-                  { icon: "out", label: t("mobile.org.signOut"), onPress: () => void signOut() },
-                  {
-                    icon: "trash",
-                    label: t("deleteAccount.menu"),
-                    destructive: true,
-                    onPress: () => openWebPath("/onboarding?account=delete"),
-                  },
-                ],
-                t("mobile.common.cancel"),
-              )
-            }
-          />
-        )
-      }
+      footer={pending ? null : leaveAccount}
     >
       {asking ? (
         // The first question (ADR 0159): two cards side by side, as the web's, the picked one sunk with its check: on
@@ -458,24 +459,17 @@ export function OnboardingFlow({ onLeave, another }: { onLeave?: () => void; ano
               </Text>
             </Pressable>
           ) : null}
-          {/* Outside the navigator (this screen covers it), so the list comes in a sheet of its own. */}
-          <Modal
-            visible={pickingZone}
-            animationType="slide"
-            presentationStyle="pageSheet"
-            supportedOrientations={["portrait", "landscape"]}
-            onRequestClose={() => setPickingZone(false)}
-          >
-            <ZoneList
-              title={t("mobile.onb.zoneTitle")}
-              value={zone}
-              onClose={() => setPickingZone(false)}
-              onPick={(picked) => {
-                if (picked) setZone(picked);
-                setPickingZone(false);
-              }}
-            />
-          </Modal>
+          {/* Outside the navigator (this screen covers it), so the list comes in the app's sheet, over the step. */}
+          <ZoneSheet
+            open={pickingZone}
+            onClose={() => setPickingZone(false)}
+            title={t("mobile.onb.zoneTitle")}
+            value={zone}
+            onPick={(picked) => {
+              setZone(picked);
+              setPickingZone(false);
+            }}
+          />
           {unconfirmed ? <ConfirmationNote email={email} /> : null}
         </>
       ) : step === "business" && orgId ? (
@@ -574,8 +568,6 @@ function ConfirmationNote({ email }: { email: string }) {
 const CARD_GAP = 10;
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  wait: { alignItems: "center", justifyContent: "center", gap: 12, padding: 24 },
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
   // The first question's cards, then Continue under them on the same rhythm.

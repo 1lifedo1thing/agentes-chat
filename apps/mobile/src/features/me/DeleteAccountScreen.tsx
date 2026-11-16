@@ -1,5 +1,4 @@
 import { ApiError, useAccountDeletionPlan, useApi, useAuthConfig, useMe } from "@agenteschat/client";
-import { formatTimeLeft } from "@agenteschat/client/lib/actions";
 import {
   type AccountDeletionLine,
   accountDeletionLines,
@@ -18,14 +17,16 @@ import { settingUp } from "@agenteschat/client/lib/guards";
 import { typedCode } from "@agenteschat/client/lib/join-requests";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { deleteAccount } from "@/features/account";
 import { Button, CARD_PAD, Card, HoldButton, type IconName, LineIcon, Locked, SCREEN_X, Text, useToast } from "@/ui";
 import { AuthField } from "@/ui/auth/AuthField";
 import { PasswordField } from "@/ui/auth/PasswordField";
 import { openWebPath } from "../links/open-web";
-import { useColors, useNow } from "../shared/hooks";
+import { ResendCode } from "../settings/parts";
+import { useColors } from "../shared/hooks";
 import { PushedHeader } from "../shared/parts";
 import { preflightMissing } from "./logic";
 
@@ -75,9 +76,6 @@ export function DeleteAccountScreen() {
   const legacy = plan.isError && preflightMissing(plan.error);
   const proof = legacy ? null : deletionProof(config, me?.user.hasPassword);
   const blockers = plan.data?.soleOwner ?? [];
-  const left = sent ? Math.max(0, sent.resendAt - Date.now()) : 0;
-  // A repaint every second while the countdown runs; the time itself is read just above.
-  useNow(left > 0 ? 1000 : 60_000);
   const toSend = proof ? proofToSend(proof, { sent: sent !== null, code, password }) : null;
   const ready = toSend === null || toSend.ready;
   const web = openWebPath;
@@ -172,9 +170,11 @@ export function DeleteAccountScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
       <PushedHeader title={t("mobile.me.deleteAccount")} solid={false} />
-      <ScrollView
+      {/* The code or the password sits under the list of what goes: it scrolls clear of the keyboard on both systems. */}
+      <KeyboardAwareScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
+        bottomOffset={24}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
         <Text variant="display">{t("deleteAccount.title")}</Text>
@@ -283,19 +283,23 @@ export function DeleteAccountScreen() {
                 <Text variant="small" tone="muted">
                   {t("proof.sent", { email: sent.email })}
                 </Text>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  label={left > 0 ? t("proof.resendIn", { time: formatTimeLeft(left) }) : t("proof.resend")}
-                  disabled={left > 0 || busy}
-                  loading={sending}
+                <ResendCode
+                  resendAt={sent.resendAt}
+                  disabled={busy}
+                  sending={sending}
                   onPress={() => void sendCode()}
                 />
               </View>
             ) : null}
             {proof === "password" ? (
               <Locked when={busy} style={styles.proof}>
-                <PasswordField label={t("proof.password")} value={password} onChangeText={setPassword} />
+                {/* Not focused as it appears: the keyboard would cover what deleting takes before it is read. */}
+                <PasswordField
+                  label={t("proof.password")}
+                  value={password}
+                  onChangeText={setPassword}
+                  autoFocus={false}
+                />
               </Locked>
             ) : null}
             {refused ? (
@@ -328,7 +332,7 @@ export function DeleteAccountScreen() {
             <HoldButton label={t("mobile.delete.hold")} disabled={!ready || busy} onConfirm={() => void confirm()} />
           </>
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }

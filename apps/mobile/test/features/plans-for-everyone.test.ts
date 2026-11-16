@@ -28,7 +28,9 @@ test("Conta › E-mail: the code sent to the current address, then a link to the
   expect(page).toContain("api.account.changeEmail(withCode ? { newEmail, code } : { newEmail })");
   expect(page).not.toContain("authClient().changeEmail");
   expect(page).toContain('textContentType="oneTimeCode"');
-  expect(page).toContain('t("proof.resendIn", { time: formatTimeLeft(left) })');
+  // Resend, with its countdown on a clock of its own (only the button repaints each second).
+  expect(page).toContain("<ResendCode resendAt={sent.resendAt} disabled={sending} onPress={() => void ask(false)} />");
+  expect(source("settings/parts.tsx")).toContain('t("proof.resendIn", { time: formatTimeLeft(left) })');
   // Can't open that inbox: the same dialog on the website, where a sign-in again stands in for the code.
   expect(page).toContain('label={t("shell.email.cantOpen")}');
   expect(page).toContain("/settings/account?account=email`)");
