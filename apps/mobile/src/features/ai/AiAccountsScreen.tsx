@@ -36,7 +36,7 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
@@ -53,12 +53,13 @@ import {
 } from "@/ui";
 import { router } from "@/ui/navigation";
 import { personalAiParts } from "../settings/logic";
-import { chooseAction, Gap } from "../settings/parts";
+import { chooseAction, Gap, SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { FirstUse, LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useMeId } from "../shared/hooks";
-import { PromptForm, SheetTitle } from "../shared/PromptForm";
-import { errorHaptic, PushedHeader, successHaptic } from "../shared/parts";
+import { useColors, useDirectory, useMeId, usePullRefresh } from "../shared/hooks";
+import { SheetTitle } from "../shared/PromptForm";
+import { errorHaptic, goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
+import { overLimit, TextArea } from "../shared/TextArea";
 import { PlanMeter } from "../usage/parts";
 import { openKeyForAll } from "./KeyForAllScreen";
 import { openConnectAi } from "./NoAiCard";
@@ -68,9 +69,9 @@ import { alertKeyRefused, Note, PasteField, PlanHoldNote, usePlanHold } from "./
  * Contas de IA, as the web's Settings › Contas de IA (ADR 0059, ADR 0061), as the settings screens are: grouped lists
  * under their headers. "Seus planos" (its ⓘ says where a plan lives): first the sign-ins of the computers the person
  * connected ("Conta deste computador", the agents there think with them), then their own accounts on every computer,
- * each with its plan's meter and the agents it thinks for, renamed (in a sheet), signed in again (a new key for a coding
- * plan) on its plan's page of Connect an AI, given to one more agent where it thinks for all of them, or disconnected
- * here; "Conectar uma IA" ends the list (the same picker as everywhere). Then the workspace's API keys (admins), the
+ * each with its plan's meter and the agents it thinks for, renamed (on a screen of its own), signed in again (a new key
+ * for a coding plan) on its plan's page of Connect an AI, given to one more agent where it thinks for all of them, or
+ * disconnected here; "Conectar uma IA" ends the list (the same picker as everywhere). Then the workspace's API keys (admins), the
  * default one, a key swapped (in a sheet) or deleted, and "Adicionar chave" ending theirs.
  */
 
@@ -110,12 +111,21 @@ function AiAccounts() {
   const dir = useDirectory();
   const meId = useMeId();
   const status = useAiStatus(orgId);
-  const sheet = useSheet();
   const hold = usePlanHold(orgId, org);
   // Looking at the plans: their usage is looked up again (it comes back as `machine.updated`).
   useEffect(() => {
     void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
   }, [api, orgId]);
+  // A pull asks the plans for their usage again and reads the accounts and the keys again.
+  const pull = usePullRefresh(() => {
+    void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
+    return Promise.allSettled([
+      ai.refetch(),
+      machines.refetch(),
+      status.refetch(),
+      qc.invalidateQueries({ queryKey: keys.credentials(orgId) }),
+    ]);
+  });
   const rows = ai.data?.accounts ?? [];
   const own = ownSignIns(ai.data);
   const several = onSeveralComputers(rows);
@@ -125,32 +135,8 @@ function AiAccounts() {
     toast({ title: t("agentPage.work.failed"), icon: "x" });
   };
 
-  // Renaming in the app's own sheet, on every system (the system's text prompt is iOS's alone).
-  const rename = (a: Account) =>
-    sheet.open(
-      <PromptForm
-        title={t("aiAccounts.page.renameTitle", { label: a.label })}
-        intro={t("aiAccounts.done.name")}
-        placeholder={t("aiAccounts.page.nameLabel")}
-        submitLabel={t("common.save")}
-        initial={a.label}
-        limit={NAME_LIMIT}
-        onSubmit={async (text) => {
-          // A name is one line, however it was typed or pasted.
-          const name = text.replace(/\s+/g, " ").trim();
-          if (!name || name === a.label) return sheet.close();
-          try {
-            await api.machines.renameAccount(orgId, a.machineId, a.id, name);
-            successHaptic();
-            toast({ title: t("aiAccounts.page.renamed", { label: name }), icon: "check" });
-            refetch();
-            sheet.close();
-          } catch {
-            failed();
-          }
-        }}
-      />,
-    );
+  // Renaming on a screen of its own, on every system (screens, not sheets): its field waits for the person's tap.
+  const rename = (a: Account) => openRenameAiAccount(a.machineId, a.id);
   // Signing in again (a coding plan's new key) on its plan's page of Connect an AI, a screen with room for the keyboard:
   // that exact login, for one of the person's agents that thinks with it, else on its own.
   const signInAgain = (a: Account) => {
@@ -253,6 +239,7 @@ function AiAccounts() {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
         <GroupedHeader
@@ -562,7 +549,82 @@ function KeyPrompt({
   );
 }
 
+/** Opens the rename of one of the person's AI accounts (its computer's and its own id). */
+const openRenameAiAccount = (machineId: string, accountId: string) =>
+  router.push({ pathname: "/ai-account-rename", params: { machineId, accountId } });
+
+/**
+ * Renaming an AI account, pushed from its row's actions: what the name is for, the name (one line, however it is typed
+ * or pasted), Save in the bar. The field waits for a tap: a screen that opens never raises the keyboard by itself.
+ */
+export function RenameAiAccountScreen({ machineId, accountId }: { machineId: string; accountId: string }) {
+  const { t } = useTranslation();
+  const { orgId } = useOrg();
+  const api = useApi();
+  const qc = useQueryClient();
+  const toast = useToast();
+  const ai = useAiAccounts(orgId);
+  const account = ai.data?.accounts.find((a) => a.id === accountId && a.machineId === machineId);
+  const [draft, setDraft] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const name = (draft ?? account?.label ?? "").replace(/\s+/g, " ").trim();
+  const ready = Boolean(account) && name !== "" && name !== account?.label && !overLimit(name, NAME_LIMIT);
+  const leave = useUnsavedGuard(draft !== null && name !== account?.label && !busy);
+  const save = async () => {
+    if (!ready || busy) return;
+    setBusy(true);
+    try {
+      await api.machines.renameAccount(orgId, machineId, accountId, name);
+      leave();
+      successHaptic();
+      toast({ title: t("aiAccounts.page.renamed", { label: name }), icon: "check" });
+      void qc.invalidateQueries({ queryKey: keys.aiAccounts(orgId) });
+      goBack();
+    } catch {
+      errorHaptic();
+      toast({ title: t("agentPage.work.failed"), icon: "x" });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <SettingsPage
+      title={account ? t("aiAccounts.page.renameTitle", { label: account.label }) : t("aiAccounts.page.rename")}
+      action={{ label: t("common.save"), disabled: !ready, onPress: () => void save() }}
+      busy={busy}
+    >
+      {ai.isPending ? (
+        <SkeletonList rows={1} />
+      ) : !account ? (
+        <LoadFailed onRetry={() => void ai.refetch()} />
+      ) : (
+        <>
+          <GroupedHeader>{t("aiAccounts.page.nameLabel")}</GroupedHeader>
+          {/* A field row of the page, the list its surface, as every field of the settings pages. */}
+          <GroupedList>
+            <TextArea
+              value={draft ?? account.label}
+              onChangeText={setDraft}
+              multiline={false}
+              minHeight={50}
+              limit={NAME_LIMIT}
+              returnKeyType="done"
+              onSubmitEditing={() => void save()}
+              placeholder={t("aiAccounts.page.nameLabel")}
+              accessibilityLabel={t("aiAccounts.page.nameLabel")}
+              style={styles.bare}
+            />
+          </GroupedList>
+          <GroupedFooter>{t("aiAccounts.done.name")}</GroupedFooter>
+        </>
+      )}
+    </SettingsPage>
+  );
+}
+
 const styles = StyleSheet.create({
+  // Inside a grouped list: the list is its surface.
+  bare: { borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
   screen: { flex: 1 },
   // The settings screens' side margin: the groups on the same 16 pt edge as everywhere else.
   in: { paddingHorizontal: 16, paddingTop: 8 },

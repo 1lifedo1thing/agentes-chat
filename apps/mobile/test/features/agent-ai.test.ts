@@ -365,12 +365,16 @@ describe("the agent's AI", () => {
     expect(connect).toContain('machineId={againAccount?.machineId ?? computer?.machineId ?? ""}');
   });
 
-  test("Rename and Replace the key ask in the app's own sheet, on Android as on iOS", async () => {
+  test("Rename is a screen of its own and Replace the key asks in the app's own sheet, on Android as on iOS", async () => {
     const settings = await Bun.file(
       new URL("../../src/features/ai/AiAccountsScreen.tsx", import.meta.url).pathname,
     ).text();
     expect(settings).not.toMatch(/Alert\.prompt|Platform\.OS/);
-    expect(settings).toMatch(/sheet\.open\(\s*<PromptForm\s+title=\{t\("aiAccounts\.page\.renameTitle"/);
+    // Renaming is pushed (screens, not sheets), its field waiting for a tap and Save in the bar.
+    expect(settings).not.toContain("<PromptForm");
+    expect(settings).toContain('router.push({ pathname: "/ai-account-rename", params: { machineId, accountId } });');
+    expect(settings).toContain('action={{ label: t("common.save"), disabled: !ready, onPress: () => void save() }}');
+    expect(settings).not.toContain("autoFocus");
     expect(settings).toMatch(/sheet\.open\(\s*<KeyPrompt\s+title=\{t\("settings\.rotateTitle"/);
     // The key never shows as it is typed or pasted, and the button waits for the save.
     expect(settings).toMatch(/<PasteField[^>]*\bsecret\b/);

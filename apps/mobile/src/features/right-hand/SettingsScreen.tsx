@@ -18,6 +18,7 @@ import {
 import { agentsReach, audienceOf, audiencePatch } from "@agenteschat/client/lib/audience";
 import { modelRows } from "@agenteschat/client/lib/brain-picker";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
+import { readBudget } from "@agenteschat/client/lib/new-agent";
 import { can } from "@agenteschat/client/lib/permissions";
 import { brainPlan } from "@agenteschat/client/lib/plans";
 import { AUTO } from "@agenteschat/client/lib/providers";
@@ -28,23 +29,20 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, TextInput, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
   EmptyState,
-  fieldText,
-  GROUPED_ROW,
   GroupedFooter,
   GroupedHeader,
   GroupedList,
   GroupedRow,
   ProviderLogo,
   SectionHeader,
-  Text,
   useToast,
 } from "@/ui";
 import { router } from "@/ui/navigation";
 import { openAgentEdit } from "../agents/AgentEditScreen";
+import { BudgetField } from "../agents/BudgetSection";
 import { openAgentAi, openAgentModel } from "../ai/AgentAiScreen";
 import { openConnectAi } from "../ai/NoAiCard";
 import { PlanHoldNote, usePlanHold } from "../ai/parts";
@@ -54,7 +52,7 @@ import { useFailed } from "../routines/hooks";
 import { usePersonalView } from "../settings/hooks";
 import { Gap, SettingsPage } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
-import { type Directory, useColors, useDirectory, useMeId } from "../shared/hooks";
+import { type Directory, useDirectory, useMeId } from "../shared/hooks";
 import { type PickLeading, pickOne } from "../shared/PickerSheet";
 import { RightHandApprovalsGroup } from "./Approvals";
 
@@ -79,7 +77,8 @@ export function RightHandSettingsScreen() {
       </SettingsPage>
     );
   return (
-    <SettingsPage title={agent.name} subtitle={t("rightHand.label")}>
+    // The budget's number pad and the guidance have no key that closes them: the system's bar over the keyboard does.
+    <SettingsPage title={agent.name} subtitle={t("rightHand.label")} toolbar>
       <Computer agentId={agent.id} />
       <SectionHeader title={t("rightHand.settings.groupMine")} />
       <GroupedHeader>{t("rightHand.settings.mine")}</GroupedHeader>
@@ -401,7 +400,6 @@ function WorkspaceAi({ agent, dir }: { agent: Agent; dir: Directory }) {
 function Form({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
   const { orgId } = useOrg();
-  const c = useColors();
   const toast = useToast();
   const failed = useFailed();
   const usesApi = useWorkspaceUsesApi(orgId);
@@ -420,9 +418,9 @@ function Form({ agent }: { agent: Agent }) {
       ...(saved ? { onSuccess: () => toast({ title: saved, icon: "check" }) } : {}),
     });
   const saveBudget = () => {
-    const typed = budget.trim().replace(",", ".");
-    const amount = typed === "" ? null : Number(typed);
-    if (amount !== null && (!Number.isFinite(amount) || amount <= 0)) {
+    // Read as every agent's budget field reads it (Edit agent's): empty for none, a comma or a point for cents.
+    const { amount, invalid } = readBudget(budget);
+    if (invalid) {
       toast({ title: t("agent.budgetInvalid"), icon: "x" });
       return;
     }
@@ -480,26 +478,14 @@ function Form({ agent }: { agent: Agent }) {
           >
             {t("rightHand.settings.budget")}
           </GroupedHeader>
-          <GroupedList>
-            <View style={styles.budget}>
-              <Text variant="body" tone="muted">
-                US$
-              </Text>
-              <TextInput
-                value={budget}
-                onChangeText={setBudget}
-                onEndEditing={saveBudget}
-                keyboardType="decimal-pad"
-                placeholder={t("rightHand.value.budgetDefault")}
-                placeholderTextColor={c.faint}
-                accessibilityLabel={t("rightHand.settings.budget")}
-                style={[styles.amount, fieldText("body"), { color: c.ink }]}
-              />
-              <Text variant="body" tone="muted">
-                {t("rightHand.settings.perMonth")}
-              </Text>
-            </View>
-          </GroupedList>
+          {/* The same field as every agent's monthly budget, saved as it is left. */}
+          <BudgetField
+            value={budget}
+            onChangeText={setBudget}
+            onEndEditing={saveBudget}
+            label={t("rightHand.settings.budget")}
+            placeholder={t("rightHand.value.budgetDefault")}
+          />
         </>
       ) : null}
 
@@ -692,15 +678,3 @@ function OwnRows({ name }: { name: string }) {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  // One row of a group, as GroupedRow's.
-  budget: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: GROUPED_ROW.padX,
-    minHeight: GROUPED_ROW.minHeight,
-  },
-  amount: { flex: 1, paddingVertical: GROUPED_ROW.tallPadY },
-});

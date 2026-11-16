@@ -18,7 +18,7 @@ import {
 import { router } from "@/ui/navigation";
 import { plainRole } from "../agents/logic";
 import { RowBones } from "../roles/parts";
-import { chooseAction, Gap, SettingsPage } from "../settings/parts";
+import { chooseAction, Gap, SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
@@ -104,6 +104,9 @@ export function SectorScreen({ id }: { id: string }) {
     latest.current = setPerson;
   });
   useEffect(() => () => closePersonChoose(), []);
+  // A new name typed and not saved: leaving asks first, as every form with a Save in its bar.
+  const typed = name?.trim() ?? "";
+  const leave = useUnsavedGuard(Boolean(group && name !== null && typed && typed !== group.name && !action.isPending));
   if (!group) {
     return (
       <SettingsPage title={t("agentGroups.group")}>
@@ -220,7 +223,17 @@ export function SectorScreen({ id }: { id: string }) {
         <>
           <Gap />
           <GroupedList>
-            <GroupedRow icon="trash" label={t("agentGroups.delete")} danger onPress={() => remove.ask(group, goBack)} />
+            <GroupedRow
+              icon="trash"
+              label={t("agentGroups.delete")}
+              danger
+              onPress={() =>
+                remove.ask(group, () => {
+                  leave();
+                  goBack();
+                })
+              }
+            />
           </GroupedList>
         </>
       ) : null}

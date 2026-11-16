@@ -18,7 +18,7 @@ import { CargoMark, rolesHref, useFail, useRolesData, Waiting } from "./parts";
 const SAVED_MS = 1800;
 
 /**
- * Configurações › Cargos (P2), the web's list: Criar cargo, Todos pinned under Base with what it gives, then the owners
+ * Configurações › Cargos, the web's list: Criar cargo, Todos pinned under Base with what it gives, then the owners
  * and the cargos top first, each with what it adds, its people as the value. Ordenar, in the header, gives each cargo
  * the viewer may move ▲ and ▼, and OK saves the order once.
  */

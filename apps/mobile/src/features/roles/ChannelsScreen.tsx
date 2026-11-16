@@ -45,9 +45,10 @@ function useSaveChannel() {
 }
 
 /**
- * A cargo's Canais (P6): which channels its people see, grouped as the sidebar, each saying who sees it now. A tap
- * follows W5: a public one asks who sees it (P6b), a limited one saves at once (asking first when people leave), an
- * invite-only one asks before it opens. #general and channels the viewer doesn't manage say why on a tap.
+ * A cargo's Canais: which channels its people see, grouped as the sidebar, each saying who sees it now. A tap
+ * (`channelIntent`): a public one asks who sees it (`ChannelWhoScreen`), a limited one saves at once (asking first when
+ * people leave), an invite-only one asks before it opens. #general and channels the viewer doesn't manage say why on a
+ * tap.
  */
 export function RoleChannelsScreen({ roleId }: { roleId: string }) {
   const { t } = useTranslation();
@@ -215,7 +216,7 @@ export function RoleChannelsScreen({ roleId }: { roleId: string }) {
 }
 
 /**
- * Quem vê #canal (P6b), pushed with Salvar: Todos, only some cargos (which), or only who is added, as the channel's own
+ * Quem vê #canal, pushed with Salvar: Todos, only some cargos (which), or only who is added, as the channel's own
  * details say it. The line under it says who leaves, who stops seeing it, or that its history opens.
  */
 export function ChannelWhoScreen({ roleId, channelId }: { roleId: string; channelId: string }) {

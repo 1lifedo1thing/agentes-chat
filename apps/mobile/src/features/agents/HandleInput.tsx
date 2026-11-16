@@ -1,11 +1,13 @@
 import type { Ref } from "react";
 import { StyleSheet, TextInput, type TextInputInstance, View } from "react-native";
 import { fieldText, GROUPED_ROW, Icon, Text } from "@/ui";
+import { NEXT_FIELD } from "../settings/parts";
 import { useColors } from "../shared/hooks";
 
 /**
  * An agent's @ field (a new agent's, Editar's Menções), a row of a grouped list, which draws the surface: the @ drawn
- * before what is typed; `ok` checks a free @ at its end. `ref`: the field, for a form whose Next comes to it.
+ * before what is typed; `ok` checks a free @ at its end. `ref`: the field, for a form whose Next comes to it. `next`: its
+ * return key goes on to the form's next field (Edit agent's role) instead of closing the keyboard.
  */
 export function HandleInput({
   value,
@@ -13,6 +15,7 @@ export function HandleInput({
   label,
   placeholder,
   ok = false,
+  next = false,
   ref,
 }: {
   value: string;
@@ -20,6 +23,7 @@ export function HandleInput({
   label: string;
   placeholder?: string;
   ok?: boolean;
+  next?: boolean;
   ref?: Ref<TextInputInstance | null>;
 }) {
   const c = useColors();
@@ -32,7 +36,7 @@ export function HandleInput({
         ref={ref}
         value={value}
         onChangeText={onChangeText}
-        returnKeyType="done"
+        {...(next ? NEXT_FIELD : { returnKeyType: "done" as const })}
         maxLength={32}
         autoCapitalize="none"
         autoCorrect={false}

@@ -16,12 +16,12 @@ import { CargoMark, Gone, rolesHref, useFail, useRolesData, Waiting } from "./pa
 
 /** A cargo's name: at most this many letters (`ROLE_NAME_MAX` on the server). */
 const NAME_MAX = 40;
-/** The icon grid's cells (P9): four a row. */
+/** The icon grid's cells: four a row. */
 const CELL = 52;
 const PER_ROW = 4;
 
 /**
- * Nome, cor e ícone (P9): the name (its own screen), the color's swatches, the icons in a 4 × 4 grid, and whether its
+ * Nome, cor e ícone: the name (its own screen), the color's swatches, the icons in a 4 × 4 grid, and whether its
  * people show apart in the members list. Each change saves at once. Todos keeps its name and icon: only its color.
  */
 export function RoleLookScreen({ roleId }: { roleId: string }) {
@@ -224,7 +224,6 @@ export function RenameRoleScreen({ roleId }: { roleId: string }) {
           multiline={false}
           minHeight={50}
           maxLength={NAME_MAX}
-          autoFocus
           returnKeyType="done"
           onSubmitEditing={save}
           accessibilityLabel={t("rolesPage.name")}
@@ -237,7 +236,7 @@ export function RenameRoleScreen({ roleId }: { roleId: string }) {
 }
 
 /**
- * Criar cargo (P10): its name and what it starts from, a value row with a menu (Do zero, the three templates, or
+ * Criar cargo: its name and what it starts from, a value row with a menu (Do zero, the three templates, or
  * "Igual a" a cargo: one below the viewer is copied whole, its channels and agents too). Criar opens the new cargo.
  */
 export function NewRoleScreen() {
@@ -296,7 +295,6 @@ export function NewRoleScreen() {
           multiline={false}
           minHeight={50}
           maxLength={NAME_MAX}
-          autoFocus
           returnKeyType="done"
           onSubmitEditing={submit}
           placeholder={t("rolesPage.namePlaceholder")}

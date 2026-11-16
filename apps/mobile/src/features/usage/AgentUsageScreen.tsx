@@ -21,14 +21,14 @@ import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { gradientOf } from "@agenteschat/ui/agent/engine";
 import { type ReactNode, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import { Button, Icon, InfoHint, ProviderLogo, SkeletonList, Text } from "@/ui";
 import { openAgentAi } from "../ai/AgentAiScreen";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useMeId } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, usePullRefresh } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { Loaded, PushedHeader } from "../shared/parts";
 import { AccountHead, PlanMeter, PlanModels, Swatch, UsageCard, UsageDays } from "./parts";
@@ -68,6 +68,11 @@ export function AgentUsageScreen({ agentId }: { agentId: string }) {
   useEffect(() => {
     void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
   }, [api, orgId]);
+  // A pull asks the plans for their usage again and reads the agent's month again.
+  const pull = usePullRefresh(() => {
+    void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
+    return usage.refetch();
+  });
   const data = usage.data;
   // Plan accounts in inks, in the order they come (now first); the API in the agent's own color.
   const planTones = [c.ink, c.faint, c.lineStrong];
@@ -82,6 +87,7 @@ export function AgentUsageScreen({ agentId }: { agentId: string }) {
       <PushedHeader title={t("usageViews.agent.title", agentGrammar(name))} solid={false} grouped />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
         {/* The numbers fade in over the spinner; numbers already here when the screen opens just show. */}

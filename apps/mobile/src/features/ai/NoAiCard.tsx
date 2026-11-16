@@ -24,7 +24,7 @@ import { useOrg } from "@/providers/org";
 import { Button, EventPillAction, EventPillText, Text } from "@/ui";
 import { router } from "@/ui/navigation";
 import { AskButtons, AskDone, AskFoot, AskNote, AskWaiting } from "../chat/asks";
-import { TeamTemplatesSheet } from "../right-hand/TeamCard";
+import { openTeamTemplates } from "../right-hand/TeamTemplates";
 import { useFailed } from "../routines/hooks";
 import { useDirectory, useMeId } from "../shared/hooks";
 import { usePlanHold } from "./parts";
@@ -199,7 +199,6 @@ function KeptCard({ message: m, card, hold }: { message: Message; card: NoAiCard
   const started = useRef(false);
   const failed = useFailed();
   const [answer, setAnswer] = useState<Answer | null>(null);
-  const [templates, setTemplates] = useState(false);
   const agent = dir.agentById.get(card.agentId);
   const name = agent?.name ?? t("channel.unknownAgent");
   const ai = aiStateOf(status.data, card.agentId);
@@ -276,37 +275,32 @@ function KeptCard({ message: m, card, hold }: { message: Message; card: NoAiCard
   }
   // Paying has no button here: the sentence says where, or who can.
   return (
-    <>
-      <AskNote
-        agentId={card.agentId}
-        title={t("noAi.kept.title")}
-        hint={t(code === "payment" ? "noAi.kept.plan" : "standing.billing.sub")}
-        text={
-          paysHere(can(org, "manage_billing"))
-            ? t("common.joinSentences", { a: t(`noAi.kept.wait.${code}`), b: t("connectAi.billingWeb") })
-            : t("noAi.kept.askAdmin")
-        }
-        foot={
-          state === "held" && noTeam ? (
-            <AskFoot>
-              <AskButtons
-                primary={
-                  <Button
-                    variant="primary"
-                    size="card"
-                    wide
-                    label={t(modeKey(org, "teamPlan.start.templates"))}
-                    onPress={() => setTemplates(true)}
-                  />
-                }
-              />
-            </AskFoot>
-          ) : null
-        }
-      />
-      {state === "held" && noTeam ? (
-        <TeamTemplatesSheet open={templates} onClose={() => setTemplates(false)} onNone={() => setTemplates(false)} />
-      ) : null}
-    </>
+    <AskNote
+      agentId={card.agentId}
+      title={t("noAi.kept.title")}
+      hint={t(code === "payment" ? "noAi.kept.plan" : "standing.billing.sub")}
+      text={
+        paysHere(can(org, "manage_billing"))
+          ? t("common.joinSentences", { a: t(`noAi.kept.wait.${code}`), b: t("connectAi.billingWeb") })
+          : t("noAi.kept.askAdmin")
+      }
+      foot={
+        state === "held" && noTeam ? (
+          <AskFoot>
+            <AskButtons
+              primary={
+                <Button
+                  variant="primary"
+                  size="card"
+                  wide
+                  label={t(modeKey(org, "teamPlan.start.templates"))}
+                  onPress={() => openTeamTemplates()}
+                />
+              }
+            />
+          </AskFoot>
+        ) : null
+      }
+    />
   );
 }

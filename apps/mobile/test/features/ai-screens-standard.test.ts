@@ -137,18 +137,25 @@ describe("rows and notes on the groups' edges", () => {
   });
 });
 
-describe("the team's sheets", () => {
-  test("the sheet's own bar, grouped lists inside, no scroll view inside the sheet's", () => {
+describe("the team's sheets and screens", () => {
+  test("the map's sheet has its own bar and no scroll view inside the sheet's", () => {
     const card = source("right-hand/TeamCard.tsx");
     expect(card).not.toContain('variant="title2"');
     expect(card).not.toContain("<ScrollView");
-    expect(card.match(/<SheetBar/g)?.length).toBeGreaterThanOrEqual(4);
-    const templates = card.slice(card.indexOf("export function TeamTemplatesSheet("));
-    // A template opens its team behind the bar's back, never a Back button at the foot.
-    expect(templates).toContain('icon="back"');
-    expect(templates).not.toContain('label={t("common.back")}');
-    expect(templates).toContain("<GroupedRow");
+    expect(card).toContain('header={<SheetBar title={t(modeKey(org, "teamPlan.map.title"))} onClose={onClose} />}');
+  });
+
+  test("the templates are two pushed screens with the system's back, never steps swapped inside a sheet", () => {
+    expect(source("right-hand/TeamCard.tsx")).not.toContain("TeamTemplatesSheet");
+    const templates = source("right-hand/TeamTemplates.tsx");
+    expect(templates).not.toContain("<Sheet");
+    expect(templates).not.toContain('icon="back"');
     expect(templates).not.toContain("<Pressable");
+    expect(templates).toContain('onPress={() => router.push({ pathname: "/team-template", params: { id: x.id } })}');
+    // Made, both screens go: back where the list was opened.
+    expect(templates).toContain("router.dismiss(2);");
+    for (const caller of ["right-hand/FirstRun.tsx", "ai/NoAiCard.tsx"])
+      expect({ caller, opens: source(caller).includes("openTeamTemplates(") }).toEqual({ caller, opens: true });
   });
 });
 

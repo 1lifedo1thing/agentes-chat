@@ -20,7 +20,7 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { extraUsageOn, limitOffers, planState } from "@agenteschat/ui/plan-state";
 import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
@@ -42,7 +42,7 @@ import {
 import { router } from "@/ui/navigation";
 import { Gap } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useMeId } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, usePullRefresh } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { PushedHeader } from "../shared/parts";
 import { PlanMeter, PlanModels } from "../usage/parts";
@@ -106,6 +106,11 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
     void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
   }, [api, orgId]);
 
+  // A pull asks the plans for their usage again and reads the agent's AI again.
+  const pull = usePullRefresh(() => {
+    void api.machines.refreshAccountUsage(orgId).catch(() => undefined);
+    return brain.refetch();
+  });
   const view = brain.data;
   const kind = accountKindOf(view?.brain);
   // Its computer's row, where that computer's own sign-in shows once its CLI is signed in.
@@ -183,6 +188,9 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
       <PushedHeader title={t("mobile.intentAgents.thinks")} solid={false} grouped />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        {...(allowed
+          ? { refreshControl: <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} /> }
+          : {})}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
         <View style={styles.hero}>
@@ -415,6 +423,7 @@ export function AgentModelScreen({ agentId, scope }: { agentId: string; scope?: 
   const dir = useDirectory();
   const g = agentGrammar(dir.agentById.get(agentId)?.name ?? "");
   const brain = useAgentBrain(orgId, agentId, true, false, scope);
+  const pull = usePullRefresh(brain.refetch);
   const { pending, save } = useSaveBrain(agentId, scope);
   // The model tapped while its save is on its way: its row is checked on the tap, and the effort follows it.
   const [tapped, setTapped] = useState<string | null>(null);
@@ -435,6 +444,7 @@ export function AgentModelScreen({ agentId, scope }: { agentId: string; scope?: 
       <PushedHeader title={t("agentPage.work.brain.planModel")} solid={false} grouped />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 + (fixed ? dock : 0) }]}
       >
         {brain.isPending ? (

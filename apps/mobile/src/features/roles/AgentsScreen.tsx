@@ -31,9 +31,10 @@ import {
 import { CargoMark, Gone, rolesHref, useFail, useRolesData, Waiting } from "./parts";
 
 /**
- * A cargo's Agentes (P7): who its people talk to, each agent saying who talks to it now. A tap follows W7: one that
- * answers everyone asks who talks to it (P7b), one listing the cargo drops it, one listing others adds it after
- * today's questions (someone's plan, a mailbox). When neither Todos nor the cargo talks to agents, that comes first.
+ * A cargo's Agentes: who its people talk to, each agent saying who talks to it now. A tap (`agentIntent`): one that
+ * answers everyone asks who talks to it (`AgentWhoScreen`), one listing the cargo drops it, one listing others adds it
+ * after today's questions (someone's plan, a mailbox). When neither Todos nor the cargo talks to agents, that comes
+ * first.
  */
 export function RoleAgentsScreen({ roleId }: { roleId: string }) {
   const { t } = useTranslation();
@@ -151,7 +152,7 @@ function AgentRow({ role, agent, roles, locked }: { role: OrgRole; agent: Agent;
 }
 
 /**
- * Quem fala com {{agent}} (P7b), pushed with Salvar: the agent page's "Quem pode falar". Todos, only some cargos and
+ * Quem fala com {{agent}}, pushed with Salvar: the agent page's "Quem pode falar". Todos, only some cargos and
  * people (the cargos, then the people with Adicionar pessoa, which opens the people on a screen of their own), or only
  * the person responsible. The line under it says who stops talking to it.
  */

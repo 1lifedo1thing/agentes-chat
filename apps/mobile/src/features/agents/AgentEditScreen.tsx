@@ -35,7 +35,7 @@ import { MessageText } from "../chat/MessageText";
 import { useWidenAsk } from "../chat/ReachLines";
 import { useFailed } from "../routines/hooks";
 import { usePersonalView } from "../settings/hooks";
-import { Gap, SettingsPage, useUnsavedGuard } from "../settings/parts";
+import { Gap, NEXT_FIELD, SettingsPage, useUnsavedGuard } from "../settings/parts";
 import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { successHaptic } from "../shared/parts";
 import { overLimit, TextArea } from "../shared/TextArea";
@@ -150,6 +150,9 @@ export function AgentEditScreen({ id }: { id: string }) {
       title={t("agent.edit")}
       // Saving: the bar's spinner where Save was, the page locked under it.
       busy={update.isPending}
+      // Several fields, a number pad among them (the budget has no return key): the system's bar over the keyboard
+      // walks them and closes it.
+      toolbar
       action={{
         label: t("common.save"),
         onPress: () => void save(),
@@ -176,6 +179,7 @@ export function AgentEditScreen({ id }: { id: string }) {
               onChangeText={(v) => set("name", v)}
               maxLength={32}
               autoCorrect={false}
+              {...NEXT_FIELD}
               placeholder={t("newAgent.namePlaceholder")}
               placeholderTextColor={c.faint}
               accessibilityLabel={t("agent.nameLabel")}
@@ -195,6 +199,8 @@ export function AgentEditScreen({ id }: { id: string }) {
               value={draft.handle}
               onChangeText={(v) => set("handle", cleanHandle(v))}
               label={t("agent.handleLabel")}
+              // The right hand has no field after its @.
+              next={!rightHand}
             />
           </GroupedList>
           {handleIssue ? (
@@ -208,7 +214,7 @@ export function AgentEditScreen({ id }: { id: string }) {
       )}
 
       {rightHand ? null : fields.has("role") ? (
-        <RoleInput value={draft.role} onChangeText={(v) => set("role", v)} placeholder={t("agent.roleHelp")} />
+        <RoleInput value={draft.role} onChangeText={(v) => set("role", v)} placeholder={t("agent.roleHelp")} next />
       ) : (
         readOnly(t("agent.roleLabel"), agent.role)
       )}
