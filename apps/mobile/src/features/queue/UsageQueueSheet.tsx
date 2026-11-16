@@ -20,6 +20,7 @@ import { openAgentAi } from "../ai/AgentAiScreen";
 import { AnswerAnywayButton, DontRunButton } from "../ai/UsagePauseCard";
 import { chatHref } from "../links/logic";
 import { useFailed } from "../routines/hooks";
+import { confirmAction } from "../settings/parts";
 import { AgentFace, OpensAgent } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useDirectory, useMeId, useNow, useOrgId } from "../shared/hooks";
@@ -251,31 +252,30 @@ function SkippedRow({ row, agentId, now }: { row: UsageQueueClosedRow; agentId: 
   );
 }
 
-/** "Don't run any", asked once in place. */
+/**
+ * "Don't run any", asked once in the system's alert (as stopping all of an agent's tasks is), never a confirmation
+ * opened inside the sheet; the button waits while it goes.
+ */
 function StopAll({ agentId, count }: { agentId: string; count: number }) {
   const { t } = useTranslation();
   const orgId = useOrgId();
   const failed = useFailed();
   const stop = useCancelUsageQueue(orgId, agentId);
-  const [asking, setAsking] = useState(false);
-  if (!asking)
-    return <Button variant="secondary" size="sm" label={t("usageQueue.dontRunAll")} onPress={() => setAsking(true)} />;
   return (
-    <View style={styles.confirm}>
-      <Text variant="small" tone="ink" style={styles.name}>
-        {t("usageQueue.confirmAll", { count })}
-      </Text>
-      <View style={styles.confirmActs}>
-        <Button variant="secondary" size="sm" label={t("usageQueue.keep")} onPress={() => setAsking(false)} />
-        <Button
-          variant="primary"
-          size="sm"
-          label={t("usageQueue.yesDontRun")}
-          loading={stop.isPending}
-          onPress={() => stop.mutate(undefined, { onSuccess: () => setAsking(false), onError: failed })}
-        />
-      </View>
-    </View>
+    <Button
+      variant="secondary"
+      size="sm"
+      label={t("usageQueue.dontRunAll")}
+      loading={stop.isPending}
+      onPress={() =>
+        confirmAction({
+          title: t("usageQueue.confirmAll", { count }),
+          action: t("usageQueue.yesDontRun"),
+          cancel: t("usageQueue.keep"),
+          onConfirm: () => stop.mutate(undefined, { onError: failed }),
+        })
+      }
+    />
   );
 }
 
@@ -302,8 +302,6 @@ const styles = StyleSheet.create({
   // Words-only actions: the ghost button's own side padding hangs outside, so its words line up with the text.
   ghostActs: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", marginLeft: -14 },
   owner: { gap: 4, marginTop: 4, alignItems: "flex-start" },
-  confirm: { gap: 8 },
-  confirmActs: { flexDirection: "row", gap: 8 },
   // The sheet's own gap between its rows (SheetHost).
   lists: { gap: 12 },
   unseen: { position: "absolute", top: 0, left: 0, right: 0, opacity: 0 },

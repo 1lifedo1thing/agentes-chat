@@ -610,6 +610,8 @@ describe("a task's number and title on one row; its conversation on the card", (
     expect(list).toContain('label={t("filters.clearSearch")} onPress={() => setQ("")}');
     expect(list).toContain('label={t("filters.clearAll")} onPress={onAllProjects}');
     expect(screen).toContain("<LoadFailed onRetry={() => void issues.refetch()} />");
+    // A project just picked loads under the views: the control stays where it is.
+    expect(screen.indexOf("{issues.isLoading ? (")).toBeGreaterThan(screen.indexOf("<Segmented"));
   });
 
   test('A fazer\'s columns on the board take "+" for a task in them, for who may create tasks', async () => {

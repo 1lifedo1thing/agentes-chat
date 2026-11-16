@@ -109,11 +109,11 @@ export function IssuesScreen() {
       {...(mayNew ? { right: <IconButton icon="plus" label={t("mobile.issues.new")} onPress={openNew} /> } : {})}
       refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
     >
-      {issues.isLoading || all.isLoading ? (
+      {all.isLoading ? (
         // Loading: the rows' own shape, never a spinner.
         <SkeletonList rows={4} />
-      ) : issues.isError && !issues.data ? (
-        <LoadFailed onRetry={() => void issues.refetch()} />
+      ) : all.isError && !all.data ? (
+        <LoadFailed onRetry={() => void all.refetch()} />
       ) : empty ? (
         <FirstUse place="tasks" acts={mayNew} label={t("mobile.issues.new")} onPress={openNew} />
       ) : (
@@ -139,7 +139,12 @@ export function IssuesScreen() {
               </View>
             ) : null}
           </View>
-          {view === "board" ? (
+          {/* A project just picked loads under the views, which stay where they are. */}
+          {issues.isLoading ? (
+            <SkeletonList rows={4} />
+          ) : issues.isError && !issues.data ? (
+            <LoadFailed onRetry={() => void issues.refetch()} />
+          ) : view === "board" ? (
             <Board issues={list} columns={columns.data ?? []} mayNew={mayNew} project={shown} />
           ) : (
             <TaskList issues={list} project={shown} onAllProjects={() => setFilter("")} />

@@ -105,4 +105,12 @@ describe("the other screens of tasks, requests and missions", () => {
       });
     }
   });
+
+  test("an agent's whole waiting line is dropped after the system's alert, never a confirmation opened in the sheet", () => {
+    const sheet = src("queue/UsageQueueSheet.tsx");
+    const stopAll = sheet.slice(sheet.indexOf("function StopAll("), sheet.indexOf("const N_WIDTH"));
+    expect(stopAll).toContain("confirmAction({");
+    expect(stopAll).toContain('action: t("usageQueue.yesDontRun"),');
+    expect(stopAll).not.toContain("useState");
+  });
 });
