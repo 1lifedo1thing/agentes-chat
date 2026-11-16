@@ -25,6 +25,8 @@ export interface Counts {
   memories: number;
   skills: number;
   channels: number;
+  /** Workflows, which come as routines (or skills, when they start by hand). */
+  workflows: number;
   /** The agents' own files (for their folders in the Drive), and their bytes. */
   files: number;
   bytes: number;
@@ -36,6 +38,7 @@ export const noCounts = (): Counts => ({
   memories: 0,
   skills: 0,
   channels: 0,
+  workflows: 0,
   files: 0,
   bytes: 0,
 });

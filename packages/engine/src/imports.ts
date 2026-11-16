@@ -13,6 +13,7 @@ import { nextCronTime, zonedParts } from "./cron";
 import { sha256 } from "./crypto";
 import { ConflictError, NotFoundError, ValidationError } from "./errors";
 import { can, requirePermission } from "./organizations";
+import type { RoutineHookConfig } from "./routine-hooks";
 import { createRoutine, type RoutineDeps, type RoutineTriggerInput, routineTimezone, updateRoutine } from "./routines";
 import { localDate, nextOccurrence, normalizeRule, type ScheduleRule } from "./rrule";
 import { type ParsedSkill, parseSkillMarkdown, saveSkill, setAgentSkills } from "./skills";
@@ -31,7 +32,12 @@ export interface MigrationBundle {
   channels: BundleChannel[];
   routines: BundleRoutine[];
   notes: BundleNote[];
-  todo: { kind: "connection" | "app" | "secret" | "model" | "file"; label: string; url?: string; agents: string[] }[];
+  todo: {
+    kind: "connection" | "app" | "secret" | "model" | "file" | "webhook";
+    label: string;
+    url?: string;
+    agents: string[];
+  }[];
   leftOut: { kind: string; label: string }[];
 }
 
@@ -66,7 +72,16 @@ export type BundleRule = Omit<ScheduleRule, "freq" | "timezone" | "start" | "byS
   bySetPos?: number | number[] | null;
 };
 
-export type BundleTrigger = { cron: string; timezone: string | null } | { rule: BundleRule } | { at: string };
+/**
+ * When an imported routine runs: a schedule (`cron`, `rule`, `at`), a call to an address of its own (`webhook`, made
+ * new here: the other app's address belongs to it), or an event this server has (`event`).
+ */
+export type BundleTrigger =
+  | { cron: string; timezone: string | null }
+  | { rule: BundleRule }
+  | { at: string }
+  | { webhook: true }
+  | { event: "github.pr_opened" };
 
 export interface BundleRoutine {
   key: string;
@@ -268,6 +283,7 @@ function onceRule(at: Date, zone: string): ScheduleRule {
 
 /** Why a trigger can't land, or null. Zones the bundle leaves out are checked in UTC. */
 function triggerProblem(trigger: BundleTrigger, now: Date): ImportSkipReason | null {
+  if ("webhook" in trigger || "event" in trigger) return null;
   try {
     if ("cron" in trigger)
       return nextCronTime(trigger.cron, trigger.timezone || "UTC", now) ? null : "schedule_in_past";
@@ -671,6 +687,8 @@ export interface ImportDeps {
   pubsub: PubSub;
   /** An update that moves a connector routine (ADR 0130) to a schedule takes its webhook back at the provider. */
   connectors?: ConnectorTriggerDeps;
+  /** A routine another app started by a webhook gets an address of its own here (ADR 0106). */
+  hooks?: RoutineHookConfig;
 }
 
 const publicItem = ({ hash: _hash, work: _work, ...item }: PlannedItem): ImportItemResult => item;
@@ -714,7 +732,7 @@ export async function applyImport(
     );
   }
 
-  const routineDeps: RoutineDeps = { db, pubsub, connectors: deps.connectors };
+  const routineDeps: RoutineDeps = { db, pubsub, connectors: deps.connectors, hooks: deps.hooks };
   const ids: Record<ImportItemKind, Map<string, string>> = {
     agent: new Map(),
     skill: new Map(),
@@ -765,6 +783,8 @@ export async function applyImport(
       return { type: "schedule", phrase: trigger.cron, ...(trigger.timezone ? { timezone: trigger.timezone } : {}) };
     }
     if ("rule" in trigger) return { type: "schedule", rule: asRule(trigger.rule) };
+    if ("webhook" in trigger) return { type: "webhook" };
+    if ("event" in trigger) return { type: "event", event: trigger.event };
     return { type: "schedule", rule: onceRule(new Date(trigger.at), await routineTimezone(db, actorId, orgId)) };
   };
 

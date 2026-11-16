@@ -1,8 +1,30 @@
 import { execFileSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdtempSync, readdirSync, realpathSync, rmSync, statSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  statSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { Budget, type Collected, type Entry, MigrateError, noCounts, noLeft, tilde, walk } from "./collect";
+import { isSecretFile } from "@agenteschat/tokens/names";
+import {
+  Budget,
+  type Collected,
+  type Entry,
+  FILE_MAX_BYTES,
+  MigrateError,
+  noCounts,
+  noLeft,
+  tilde,
+  walk,
+} from "./collect";
+import { scrubSettings } from "./folders";
+import { readZip } from "./zip";
 
 /**
  * OpenBot.run (github.com/nightly-labs/openbot) on this computer, written as the file its own Server settings ›
@@ -11,8 +33,16 @@ import { Budget, type Collected, type Entry, MigrateError, noCounts, noLeft, til
  * `openbot.db` in its data folder (SQLite; `src/backend/openbot-database-schema.ts`, `channel-schema.ts`,
  * `mcp-schema.ts`) and each agent's workspace folder. The app's own files are only read (see `openDatabase`).
  *
+ * Also its workflows (`workflows`, `workflow_nodes`, `workflow_edges`: `src/backend/workflows/workflow-schema.ts`),
+ * written as its transfer writes them (`settings.workflows`, agents and channels by their keys in the file, a
+ * messaging connection emptied), what hands a routine's answer to another agent (`settings.routineFlows`, from
+ * `routine_flow_links`), and the skills of its library that no agent has (`<data>/local-skills/<id>/<revision>/
+ * bundle.zip`, the latest revision, as `sharedSkills` in `library/<slug>/`). Its messaging connections are named only
+ * (`settings.messagingConnections`, this command's own): they have nothing to connect to on agentes.chat.
+ *
  * Never read: the values of MCP variables and headers, a webhook's address and secret, provider sign-ins, browser
- * data, chats. An MCP address keeps only its origin, as the app's own export does (a path can hold a key).
+ * data, chats. An MCP address keeps only its origin, as the app's own export does (a path can hold a key). A value a
+ * workflow step keeps under a name that says it is a key is emptied.
  */
 
 type Row = Record<string, unknown>;
@@ -150,7 +180,7 @@ interface Routine {
   eventType?: string | null;
 }
 
-/** An owner's routines, by how they start: on a schedule, once, or by a webhook (listed, never its address). */
+/** An owner's routines, by how they start: on a schedule, once, or by a webhook (never its address: it gets a new one). */
 function routinesOf(rows: Row[], triggers: Map<string, unknown>, webhooks: Map<string, Row>) {
   const scheduled: Routine[] = [];
   const once: Routine[] = [];
@@ -267,7 +297,7 @@ function read(query: Query, options: OpenBotOptions): Collected {
     }
 
     const mine = routinesOf(routines.get(id) ?? [], triggers, webhooks);
-    counts.routines += mine.scheduled.length + mine.once.length;
+    counts.routines += mine.scheduled.length + mine.once.length + mine.hooks.length;
     hookCount += mine.hooks.length;
     const notesOf = (memories.get(id) ?? []).map((m) => ({ text: str(m.text) })).filter((m) => m.text.trim());
     counts.memories += notesOf.length;
@@ -301,6 +331,7 @@ function read(query: Query, options: OpenBotOptions): Collected {
   const channelTriggers = schedules("projection_channel_routine_triggers");
   const channelHooks = hooksOf("projection_channel_routine_webhooks");
   const channelKeys = new Set<string>();
+  const channelKeyOf = new Map<string, string>();
   const channels: Row[] = [];
   for (const row of all("projection_channels", "channel_id")) {
     const c = obj(json(row.channel_json));
@@ -312,12 +343,14 @@ function read(query: Query, options: OpenBotOptions): Collected {
     const archived = c.archived === true;
     if (!archived) {
       counts.channels++;
-      counts.routines += mine.scheduled.length + mine.once.length;
+      counts.routines += mine.scheduled.length + mine.once.length + mine.hooks.length;
       counts.memories += texts.length;
       hookCount += mine.hooks.length;
     }
+    const key = keyOf(str(c.name) || id, channelKeys, "channel");
+    channelKeyOf.set(id, key);
     channels.push({
-      key: keyOf(str(c.name) || id, channelKeys, "channel"),
+      key,
       name: str(c.name) || id,
       title: str(c.title),
       instructions: str(c.instructions),
@@ -353,8 +386,44 @@ function read(query: Query, options: OpenBotOptions): Collected {
   } else if (mcpServers.length > 1) {
     notes.push(`${mcpServers.length} MCP servers come by name only: connect them again on agentes.chat.`);
   }
-  if (hookCount === 1) notes.push("1 routine starts from a webhook: it is listed, to set up again.");
-  else if (hookCount > 1) notes.push(`${hookCount} routines start from a webhook: they are listed, to set up again.`);
+
+  const workflows = workflowsOf(all, keys, channelKeyOf);
+  counts.workflows = workflows.length;
+  const hookFlows = workflows.filter((w) =>
+    list(obj(w.graph).nodes).some(
+      (n) => str(obj(n).kind) === "trigger" && str(obj(obj(n).fields).trigger) === "webhook",
+    ),
+  ).length;
+  hookCount += hookFlows;
+  if (hookCount === 1) notes.push("1 routine starts from a webhook: it gets a new address on agentes.chat.");
+  else if (hookCount > 1)
+    notes.push(`${hookCount} routines start from a webhook: each gets a new address on agentes.chat.`);
+
+  // What hands a routine's answer on: only between agents that came.
+  const routineFlows = all("routine_flow_links", "created_at, link_id").flatMap((l) => {
+    const from = keys.get(str(l.from_agent_id));
+    const to = keys.get(str(l.to_agent_id));
+    return from && to
+      ? [{ routineKey: str(l.routine_id), fromAgentKey: from, toAgentKey: to, instruction: str(l.instruction) }]
+      : [];
+  });
+
+  const library = librarySkills(path.join(options.dataDir, "local-skills"), left, budget);
+  counts.skills += library.skills.length;
+  entries.push(...library.entries);
+
+  // Messaging connections, by platform and name: there is nothing to connect them to on agentes.chat.
+  const messagingConnections = all("projection_messaging_connections", "created_at, connection_id").map((m) => ({
+    platform: str(m.platform),
+    name: str(m.workspace_name),
+  }));
+  if (messagingConnections.length === 1)
+    notes.push("1 messaging connection is named only: it has no match on agentes.chat.");
+  else if (messagingConnections.length > 1) {
+    notes.push(
+      `${messagingConnections.length} messaging connections are named only: they have no match on agentes.chat.`,
+    );
+  }
 
   const manifest = {
     format: "openbot-instance-transfer",
@@ -366,17 +435,127 @@ function read(query: Query, options: OpenBotOptions): Collected {
       customProviders: [],
       customAgents: [],
       sidebarSections: [],
-      routineFlows: [],
+      routineFlows,
+      workflows,
+      ...(messagingConnections.length ? { messagingConnections } : {}),
     },
     shared: null,
     signedIn: [],
     channels,
+    ...(library.skills.length ? { sharedSkills: library.skills } : {}),
   };
   entries.unshift({
     name: "openbot-transfer.json",
     source: { bytes: new TextEncoder().encode(`${JSON.stringify(manifest, null, 2)}\n`) },
   });
   return { source: "openbot", where: tilde(options.dataDir, options.home), entries, counts, left, notes };
+}
+
+/** The workflows, as the app's transfer writes them (`src/main/instance-transfer-workflows.ts`). */
+function workflowsOf(
+  all: (table: string, order: string) => Row[],
+  agentKeys: ReadonlyMap<string, string>,
+  channelKeys: ReadonlyMap<string, string>,
+): Row[] {
+  const byWorkflow = (rows: Row[]) => {
+    const map = new Map<string, Row[]>();
+    for (const r of rows) map.set(str(r.workflow_id), [...(map.get(str(r.workflow_id)) ?? []), r]);
+    return map;
+  };
+  const nodes = byWorkflow(all("workflow_nodes", "workflow_id, position"));
+  const edges = byWorkflow(all("workflow_edges", "workflow_id, position"));
+  return all("workflows", "created_at, workflow_id").flatMap((w) => {
+    const id = str(w.workflow_id);
+    const title = str(w.title).trim();
+    if (!id || !title) return [];
+    let relink = false;
+    const graphNodes = (nodes.get(id) ?? []).map((n) => {
+      const fields = obj(json(scrubSettings(str(n.fields_json) || "{}")));
+      const kind = str(n.kind);
+      if (kind === "agent") fields.agentId = agentKeys.get(str(fields.agentId)) ?? "";
+      if (kind === "output" && fields.target === "chat-channel")
+        fields.channelId = channelKeys.get(str(fields.channelId)) ?? "";
+      // A messaging connection belongs to that computer; "trigger" names the trigger's own and stays.
+      if (str(fields.connectionId) && fields.connectionId !== "trigger") {
+        fields.connectionId = "";
+        relink = true;
+      }
+      const schedule = json(n.schedule_json);
+      return {
+        id: str(n.node_id),
+        kind,
+        at: { x: Number(n.x) || 0, y: Number(n.y) || 0 },
+        fields,
+        ...(schedule ? { schedule } : {}),
+      };
+    });
+    const graphEdges = (edges.get(id) ?? []).map((e) => ({
+      id: str(e.edge_id),
+      from: str(e.from_node_id),
+      to: str(e.to_node_id),
+      type: str(e.port_type) || "text",
+      ...(str(e.branch) ? { branch: str(e.branch) } : {}),
+    }));
+    return [
+      { title, graph: { nodes: graphNodes, edges: graphEdges, strokes: [] }, ...(relink ? { relink: true } : {}) },
+    ];
+  });
+}
+
+/** The app's own skills (`src/main/managed-skill-service.ts`): it installs them again, so they are not the person's. */
+const MANAGED_LIBRARY = new Set(["openbot-site-hosting", "openbot-skill-creator", "openbot-data"]);
+
+/**
+ * The library's skills, each its latest revision's files under `library/<slug>/` (`src/main/local-skill-library.ts`).
+ * A file that holds a key stays, as in a folder walked.
+ */
+function librarySkills(root: string, left: Collected["left"], budget: Budget) {
+  const skills: { slug: string; name: string; path: string; files: string[] }[] = [];
+  const entries: Entry[] = [];
+  let ids: string[];
+  try {
+    ids = readdirSync(root).sort();
+  } catch {
+    return { skills, entries };
+  }
+  const slugs = new Set<string>();
+  for (const id of ids) {
+    let revisions: number[];
+    try {
+      revisions = readdirSync(path.join(root, id))
+        .filter((n) => /^[1-9]\d*$/.test(n))
+        .map(Number);
+    } catch {
+      continue;
+    }
+    if (!revisions.length) continue;
+    let files: Map<string, Uint8Array> | null = null;
+    try {
+      files = readZip(readFileSync(path.join(root, id, String(Math.max(...revisions)), "bundle.zip")), FILE_MAX_BYTES);
+    } catch {
+      files = null;
+    }
+    const md = files?.get("SKILL.md");
+    if (!files || !md) continue;
+    const name = /^name:\s*["']?(.+?)["']?\s*$/m.exec(new TextDecoder().decode(md))?.[1]?.trim() || id;
+    const slug = keyOf(name, slugs, "skill");
+    if (MANAGED_LIBRARY.has(slug)) continue;
+    const kept: string[] = [];
+    for (const [file, bytes] of [...files].sort(([a], [b]) => a.localeCompare(b))) {
+      if (isSecretFile(file)) {
+        left.secrets++;
+        continue;
+      }
+      if (!budget.take(bytes.byteLength)) {
+        left.over++;
+        continue;
+      }
+      kept.push(file);
+      entries.push({ name: `library/${slug}/${file}`, source: { bytes } });
+    }
+    if (kept.includes("SKILL.md")) skills.push({ slug, name, path: `library/${slug}`, files: kept });
+  }
+  return { skills, entries };
 }
 
 /** The folders of a skills folder; a link to a folder counts (`npx skills` links each skill to one copy). */

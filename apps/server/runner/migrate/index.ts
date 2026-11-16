@@ -117,6 +117,7 @@ export function summary(c: Collected["counts"]): string {
     c.memories ? plural(c.memories, "memory", "memories") : "",
     c.skills ? plural(c.skills, "skill") : "",
     c.channels ? plural(c.channels, "channel") : "",
+    c.workflows ? plural(c.workflows, "workflow") : "",
   ]
     .filter(Boolean)
     .join(" · ");

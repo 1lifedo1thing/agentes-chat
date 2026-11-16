@@ -177,3 +177,110 @@
   background: var(--ink);
   transition: width 0.2s ease-out;
 }
+
+/* ── Choosing what comes, a step at a time ───────────────────────────────── */
+/* Out of an ActionRow, the text takes what the box and the face leave. */
+.imp-choice .imp-row > .imp-row__text {
+  flex: 1;
+  min-width: 0;
+}
+/* Every row's first line is 20px tall: the box, the icon or face and the title share its middle. */
+.imp-choice .imp-row__title {
+  line-height: 20px;
+}
+.imp-choice .imp-row__lead {
+  min-height: 20px;
+}
+.imp-choice .imp-row > .ac-check {
+  margin-top: 1px;
+}
+/* A row with a face: its first line is the face's height (24px), the box and the name on its middle. */
+.imp-choice .imp-row:has(> .imp-row__lead > .ac-avatar) .imp-row__title {
+  line-height: 24px;
+}
+.imp-choice .imp-row:has(> .imp-row__lead > .ac-avatar) > .ac-check {
+  margin-top: 3px;
+}
+/* A row for several things: the box, then the rest one button that opens their list, its arrow on the title's line. */
+.imp-choice .imp-row.imp-row--opens {
+  padding-block: 0;
+}
+.imp-choice .imp-row.imp-row--opens > .ac-check {
+  margin-top: calc(var(--row-py) + 1px);
+}
+.imp-row__open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: var(--row-py) 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.imp-row__open > .imp-row__text {
+  flex: 1;
+  min-width: 0;
+}
+.imp-row__go {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 20px;
+  color: var(--muted);
+}
+.imp-row__open:hover .imp-row__go {
+  color: var(--ink);
+}
+html:not([data-pointer]) .imp-row__open:focus-visible {
+  outline: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--focus-ring);
+}
+/* A workflow's steps, as they arrive. */
+.imp-flow {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 8px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.imp-flow > li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 20px;
+  color: var(--ink2);
+  overflow-wrap: anywhere;
+}
+/* An icon as wide as a face (18px), so every step's words start in one column, both centred on the first line. */
+.imp-flow > li > .ac-icon {
+  flex: none;
+  margin: 2px 1px 0;
+  color: var(--muted);
+}
+.imp-flow > li > .ac-avatar {
+  margin-top: 1px;
+}
+.imp-flow b {
+  color: var(--ink);
+  font-weight: 600;
+}
+/* What a "no" leads to, under its condition. */
+.imp-flow--sub {
+  padding: 8px 0 0;
+}
+.imp-flow__by {
+  color: var(--muted);
+}
+.imp-flow > li > span {
+  min-width: 0;
+}

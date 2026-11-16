@@ -379,8 +379,8 @@ describe("Criar agente: steps", () => {
     const pasted = `\`\`\`json\n${JSON.stringify(reply)}\n\`\`\``;
     await act(async () => fireEvent.paste(field, { clipboardData: { getData: () => pasted } }));
     await settle(10);
-    // Who comes, in the sheet; "Escolher o que vem" leaves the full preview on the page.
-    await click(screen().getByRole("button", { name: "Escolher o que vem" }));
+    // Who comes, in the sheet; closing it leaves the full preview on the page.
+    await click(document.querySelector(".imp-sheet .hosting-sheet__close") as HTMLElement);
     expect(title()).toBe("Trazer agentes de outro app");
     expect(screen().getByRole("heading", { name: "Minhas automações" })).toBeTruthy();
     await click(screen().getByRole("button", { name: /^Importar 1 / }));

@@ -39,7 +39,16 @@ import { AgentAvatar } from "@/components/AgentAvatar";
 import { HelpLink } from "@/components/HelpLink";
 import { type ImportFocus, ImportSheet, type ImportSheetKind, useFocusOn } from "@/components/ImportSheet";
 import { useOrg } from "@/components/org-context";
-import { type AgentFile, type ImportFile, type PickedFile, parsePackage, readImportFiles } from "@/lib/import";
+import {
+  type AgentFile,
+  type ImportFile,
+  type ImportWorkflow,
+  type PickedFile,
+  parsePackage,
+  readImportFiles,
+  type SayKey,
+  type SayValues,
+} from "@/lib/import";
 import {
   agentsArrived,
   agentsSince,
@@ -88,6 +97,7 @@ const TODO_ICON: Record<BundleTodo["kind"], IconName> = {
   secret: "key",
   model: "settings",
   file: "file",
+  webhook: "link",
 };
 /** Why the agents' files stay behind, in the order they're listed. */
 const FILE_LEFT: Record<FileLeft, IconName> = {
@@ -134,6 +144,10 @@ export function useImportFlow(orgId: string | null) {
     files: AgentFile[];
     /** System files the reader dropped (dependencies, caches, `.git`). */
     junk: number;
+    /** What each workflow became, with its steps. */
+    workflows: ImportWorkflow[];
+    /** The agents a routine hands its answer to, by the routine's key. */
+    passes: Record<string, string[]>;
   } | null>(null);
   const [pick, setPick] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -238,7 +252,10 @@ export function useImportFlow(orgId: string | null) {
       step = "plan";
       const list = await qc.fetchQuery({ queryKey: keys.models, queryFn: () => api.agents.models() });
       step = "parse";
-      const parsed = parsePackage(files, { models: list.models.map((m) => m.id), root, junk });
+      // What the import writes for the person to read (a workflow's request) is in their language. Each key takes some
+      // of these values, which i18next's types can't check for a key picked at run time.
+      const say = (key: SayKey, values: SayValues) => String(t(`onboarding.import.say.${key}`, values as never));
+      const parsed = parsePackage(files, { models: list.models.map((m) => m.id), root, junk, say });
       const { bundle } = parsed;
       if (!current()) return;
       step = "plan";
@@ -249,7 +266,15 @@ export function useImportFlow(orgId: string | null) {
       agentIds.current = new Map();
       sent.current = new Set();
       focus.current = "preview";
-      setPlanned({ bundle, items: plan.items, skipped, files: parsed.files, junk: junk.length });
+      setPlanned({
+        bundle,
+        items: plan.items,
+        skipped,
+        files: parsed.files,
+        junk: junk.length,
+        workflows: parsed.workflows,
+        passes: parsed.passes,
+      });
       setPick(new Set(plan.items.filter(choosable).map(itemId)));
       setReport(null);
       setCopyFiles(parsed.files.filter((f) => !f.skip).length <= MANY_FILES);
@@ -1057,6 +1082,13 @@ function TodoLink({ kind, orgId }: { kind: BundleTodo["kind"]; orgId: string }) 
   if (kind === "file") {
     return (
       <Link to="/org/$orgId/drive" params={{ orgId }} className="ac-link imp-todo__link">
+        {label}
+      </Link>
+    );
+  }
+  if (kind === "webhook") {
+    return (
+      <Link to="/org/$orgId/routines" params={{ orgId }} className="ac-link imp-todo__link">
         {label}
       </Link>
     );

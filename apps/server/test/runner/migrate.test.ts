@@ -14,10 +14,11 @@ import {
 } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { deflateRawSync } from "node:zlib";
 import { migrate } from "../../runner/migrate";
 import { scrubSettings } from "../../runner/migrate/folders";
 import { keyOf } from "../../runner/migrate/openbot";
-import { crc32 } from "../../runner/migrate/zip";
+import { crc32, readZip } from "../../runner/migrate/zip";
 import { migrateScript, migrateScriptPowerShell } from "../../runner/migrate-script";
 
 const made: string[] = [];
@@ -202,7 +203,7 @@ test("OpenBot on this computer becomes its own transfer file, with nothing that 
   expect(result.ok).toBe(true);
   expect(result.file).toBe(path.join(out, "agentes-chat-import-openbot.zip"));
   expect(existsSync(`${result.file}.part`)).toBe(false);
-  expect(result.counts).toMatchObject({ agents: 2, routines: 2, memories: 2, skills: 1, channels: 1, files: 1 });
+  expect(result.counts).toMatchObject({ agents: 2, routines: 3, memories: 2, skills: 1, channels: 1, files: 1 });
   expect(result.left).toMatchObject({ secrets: 1, links: 1 });
 
   const zip = unzip(result.file);
@@ -288,6 +289,179 @@ test("OpenBot on this computer becomes its own transfer file, with nothing that 
   ]);
 });
 
+/** A zip with deflated entries, as an app writes one (the runner itself only stores). */
+function deflatedZip(entries: Record<string, string>): Uint8Array {
+  const parts: Uint8Array[] = [];
+  const dir: Uint8Array[] = [];
+  let offset = 0;
+  for (const [name, text] of Object.entries(entries)) {
+    const raw = new TextEncoder().encode(text);
+    const packed = new Uint8Array(deflateRawSync(raw));
+    const encoded = new TextEncoder().encode(name);
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true);
+    local.setUint16(8, 8, true);
+    local.setUint32(14, crc32(raw), true);
+    local.setUint32(18, packed.length, true);
+    local.setUint32(22, raw.length, true);
+    local.setUint16(26, encoded.length, true);
+    const central = new DataView(new ArrayBuffer(46));
+    central.setUint32(0, 0x02014b50, true);
+    central.setUint16(10, 8, true);
+    central.setUint32(16, crc32(raw), true);
+    central.setUint32(20, packed.length, true);
+    central.setUint32(24, raw.length, true);
+    central.setUint16(28, encoded.length, true);
+    central.setUint32(42, offset, true);
+    parts.push(new Uint8Array(local.buffer), encoded, packed);
+    dir.push(new Uint8Array(central.buffer), encoded);
+    offset += 30 + encoded.length + packed.length;
+  }
+  const count = Object.keys(entries).length;
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, count, true);
+  end.setUint16(10, count, true);
+  end.setUint32(
+    12,
+    dir.reduce((sum, d) => sum + d.length, 0),
+    true,
+  );
+  end.setUint32(16, offset, true);
+  return new Uint8Array(Buffer.concat([...parts, ...dir, new Uint8Array(end.buffer)]));
+}
+
+test("a zip in hand: deflated or stored, a name that climbs out left out, a file past the limit too", () => {
+  const zip = deflatedZip({ "SKILL.md": "---\nname: x\n---\nHi", "../out.md": "no", "big.md": "x".repeat(50) });
+  const files = readZip(zip, 40);
+  expect([...(files?.keys() ?? [])]).toEqual(["SKILL.md"]);
+  expect(new TextDecoder().decode(files?.get("SKILL.md"))).toBe("---\nname: x\n---\nHi");
+  expect(readZip(new TextEncoder().encode("not a zip"), 40)).toBeNull();
+});
+
+test("workflows, answers handed on, the library's skills and messaging connections come too", async () => {
+  const home = temp();
+  const data = openbot(home);
+  const db = new Database(path.join(data, "openbot.db"));
+  db.exec(`
+    CREATE TABLE workflows (workflow_id TEXT PRIMARY KEY, title TEXT NOT NULL, created_at TEXT NOT NULL);
+    CREATE TABLE workflow_nodes (workflow_id TEXT NOT NULL, node_id TEXT NOT NULL, kind TEXT NOT NULL, x REAL NOT NULL,
+      y REAL NOT NULL, fields_json TEXT NOT NULL, schedule_json TEXT, position INTEGER NOT NULL);
+    CREATE TABLE workflow_edges (workflow_id TEXT NOT NULL, edge_id TEXT NOT NULL, from_node_id TEXT NOT NULL,
+      to_node_id TEXT NOT NULL, port_type TEXT NOT NULL, branch TEXT, position INTEGER NOT NULL);
+    CREATE TABLE routine_flow_links (link_id TEXT PRIMARY KEY, routine_id TEXT NOT NULL, from_agent_id TEXT NOT NULL,
+      to_agent_id TEXT NOT NULL, instruction TEXT NOT NULL, created_at TEXT NOT NULL);
+    CREATE TABLE projection_messaging_connections (connection_id TEXT PRIMARY KEY, platform TEXT NOT NULL,
+      workspace_name TEXT NOT NULL, created_at TEXT NOT NULL);
+  `);
+  db.run("INSERT INTO workflows VALUES ('w1', 'Weekly prices', '1'), ('w2', '  ', '2')");
+  const node = (id: string, kind: string, fields: object, at: number, schedule?: object) =>
+    db.run("INSERT INTO workflow_nodes VALUES ('w1', ?, ?, ?, 0, ?, ?, ?)", [
+      id,
+      kind,
+      at * 100,
+      JSON.stringify(fields),
+      schedule ? JSON.stringify(schedule) : null,
+      at,
+    ]);
+  node("t", "trigger", { trigger: "schedule", timezone: "UTC" }, 0, { kind: "weekly", weekday: 1, time: "09:00" });
+  node("a", "agent", { agentId: "a2", task: "Write the offer" }, 1);
+  node("l", "llm", { prompt: "Sum it up", apiKey: "sk-live-abcdefghijklmnop" }, 2);
+  node("o", "output", { target: "chat-channel", channelId: "c1" }, 3);
+  node("s", "output", { target: "slack", connectionId: "conn-7", action: "post" }, 4);
+  const edge = (id: string, from: string, to: string, at: number) =>
+    db.run("INSERT INTO workflow_edges VALUES ('w1', ?, ?, ?, 'text', NULL, ?)", [id, from, to, at]);
+  edge("e1", "t", "a", 0);
+  edge("e2", "a", "l", 1);
+  edge("e3", "l", "o", 2);
+  edge("e4", "l", "s", 3);
+  db.run("INSERT INTO routine_flow_links VALUES ('k1', 'r1', 'a1', 'a2', 'Turn it into an offer', '1')");
+  db.run("INSERT INTO routine_flow_links VALUES ('k2', 'r1', 'a1', 'gone', 'Nobody', '2')");
+  db.run("INSERT INTO projection_messaging_connections VALUES ('mc1', 'whatsapp', 'Support line', '1')");
+  db.close();
+  // The library keeps each skill zipped, a folder per revision: only the latest comes, and the app's own never.
+  const library = path.join(data, "local-skills");
+  mkdirSync(path.join(library, "lib-1", "1"), { recursive: true });
+  mkdirSync(path.join(library, "lib-1", "2"), { recursive: true });
+  mkdirSync(path.join(library, "lib-2", "1"), { recursive: true });
+  writeFileSync(path.join(library, "lib-1", "1", "bundle.zip"), deflatedZip({ "SKILL.md": "---\nname: Old\n---\n" }));
+  writeFileSync(
+    path.join(library, "lib-1", "2", "bundle.zip"),
+    deflatedZip({
+      "SKILL.md": "---\nname: Price check\n---\nCompare the prices.",
+      "notes.md": "Use EUR.",
+      ".env": "TOKEN=sk-live-zzzzzzzzzzzzzzzz",
+      "../escape.md": "no",
+    }),
+  );
+  writeFileSync(
+    path.join(library, "lib-2", "1", "bundle.zip"),
+    deflatedZip({ "SKILL.md": "---\nname: openbot-data\n---\n" }),
+  );
+
+  const run = io(home);
+  expect(await migrate({ from: "openbot", out: home, json: true, noFiles: true }, run.io)).toBe(0);
+  const result = JSON.parse(run.out.join("")) as { counts: Record<string, number> };
+  expect(result.counts).toMatchObject({ workflows: 1, skills: 2 });
+  const zip = unzip(path.join(home, "agentes-chat-import-openbot.zip"));
+  expect([...zip.keys()].sort()).toEqual([
+    "agents/scout/skills/research/SKILL.md",
+    "library/price-check/SKILL.md",
+    "library/price-check/notes.md",
+    "openbot-transfer.json",
+  ]);
+  const text = new TextDecoder().decode(zip.get("openbot-transfer.json"));
+  expect(text).not.toContain("sk-live");
+  expect(text).not.toContain("conn-7");
+  const manifest = JSON.parse(text);
+  // Agents and channels by their keys in the file; a messaging connection emptied, so it is chosen again.
+  expect(manifest.settings.workflows).toEqual([
+    {
+      title: "Weekly prices",
+      graph: {
+        nodes: [
+          {
+            id: "t",
+            kind: "trigger",
+            at: { x: 0, y: 0 },
+            fields: { trigger: "schedule", timezone: "UTC" },
+            schedule: { kind: "weekly", weekday: 1, time: "09:00" },
+          },
+          {
+            id: "a",
+            kind: "agent",
+            at: { x: 100, y: 0 },
+            fields: { agentId: "otto-ofertas", task: "Write the offer" },
+          },
+          { id: "l", kind: "llm", at: { x: 200, y: 0 }, fields: { prompt: "Sum it up", apiKey: "" } },
+          { id: "o", kind: "output", at: { x: 300, y: 0 }, fields: { target: "chat-channel", channelId: "launch" } },
+          {
+            id: "s",
+            kind: "output",
+            at: { x: 400, y: 0 },
+            fields: { target: "slack", connectionId: "", action: "post" },
+          },
+        ],
+        edges: [
+          { id: "e1", from: "t", to: "a", type: "text" },
+          { id: "e2", from: "a", to: "l", type: "text" },
+          { id: "e3", from: "l", to: "o", type: "text" },
+          { id: "e4", from: "l", to: "s", type: "text" },
+        ],
+        strokes: [],
+      },
+      relink: true,
+    },
+  ]);
+  expect(manifest.settings.routineFlows).toEqual([
+    { routineKey: "r1", fromAgentKey: "scout", toAgentKey: "otto-ofertas", instruction: "Turn it into an offer" },
+  ]);
+  expect(manifest.settings.messagingConnections).toEqual([{ platform: "whatsapp", name: "Support line" }]);
+  expect(manifest.sharedSkills).toEqual([
+    { slug: "price-check", name: "Price check", path: "library/price-check", files: ["notes.md", "SKILL.md"] },
+  ]);
+});
+
 test("--no-files leaves the workspaces, and the skills still come", async () => {
   const home = temp();
   openbot(home);
@@ -304,7 +478,7 @@ test("with no terminal it asks nothing: the only app found, into Downloads", asy
   const run = io(home);
   expect(await migrate({ json: false, noFiles: false }, run.io)).toBe(0);
   expect(existsSync(path.join(home, "Downloads", "agentes-chat-import-openbot.zip"))).toBe(true);
-  expect(run.out.join("\n")).toContain("2 agents · 2 routines · 2 memories · 1 skill · 1 channel");
+  expect(run.out.join("\n")).toContain("2 agents · 3 routines · 2 memories · 1 skill · 1 channel");
   expect(run.out.join("\n")).toContain("Nothing was sent.");
 });
 

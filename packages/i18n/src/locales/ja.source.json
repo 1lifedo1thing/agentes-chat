@@ -3479,6 +3479,273 @@
       "other": "{{who}} use {{label}}."
     }
   },
+  "onboarding.import.need.webhook": {
+    "value": {
+      "one": "The routine {{label}}, of {{who}}, gets a new address here: change it in the site or app that called the old one.",
+      "other": "The routine {{label}}, of {{who}}, gets a new address here: change it in the site or app that called the old one."
+    }
+  },
+  "onboarding.import.say.intro": {
+    "value": "This is the workflow “{{title}}”, brought from {{app}}."
+  },
+  "onboarding.import.say.skillAbout": {
+    "value": "Runs the workflow “{{title}}”, brought from {{app}}, when someone asks."
+  },
+  "onboarding.import.say.asked": {
+    "value": "In {{app}} it started on its own. Here, it runs when someone asks."
+  },
+  "onboarding.import.say.webhook": {
+    "value": "It starts when this routine's address is called: what arrives is your input."
+  },
+  "onboarding.import.say.pr": {
+    "value": "It starts when a pull request is opened on GitHub: that pull request is your input."
+  },
+  "onboarding.import.say.prIn": {
+    "value": "It starts when a pull request is opened on GitHub in {{repos}}: that pull request is your input. If it is in another repository, stop without posting anything."
+  },
+  "onboarding.import.say.text": {
+    "value": "Start from this text: “{{text}}”"
+  },
+  "onboarding.import.say.keep": {
+    "value": "(Keep in mind: {{text}})"
+  },
+  "onboarding.import.say.ask": {
+    "value": "Ask @{{handle}}: “{{task}}”, with what you have so far, and use the answer."
+  },
+  "onboarding.import.say.image": {
+    "value": "Make an image: {{prompt}}"
+  },
+  "onboarding.import.say.video": {
+    "value": "Make a video: {{prompt}}"
+  },
+  "onboarding.import.say.if": {
+    "value": "If the answer to “{{rule}}” is yes, go on."
+  },
+  "onboarding.import.say.otherwise": {
+    "value": "Otherwise:"
+  },
+  "onboarding.import.say.stop": {
+    "value": "Otherwise, stop here without posting anything."
+  },
+  "onboarding.import.say.approval": {
+    "value": "Before going on, ask the person in charge of you for approval, in the chat: “{{question}}”"
+  },
+  "onboarding.import.say.approvalPlain": {
+    "value": "Before going on, ask the person in charge of you for approval, in the chat."
+  },
+  "onboarding.import.say.channel": {
+    "value": "Post the result in #{{channel}}."
+  },
+  "onboarding.import.say.notify": {
+    "value": "Send the result to the person in charge of you."
+  },
+  "onboarding.import.say.file": {
+    "value": "Save the result as a file in the Drive."
+  },
+  "onboarding.import.say.githubComment": {
+    "value": "Comment the result on GitHub."
+  },
+  "onboarding.import.say.githubDo": {
+    "value": "On GitHub, do this with the result: {{action}}."
+  },
+  "onboarding.import.say.pass": {
+    "value": "When you finish, pass your answer to @{{handle}}: {{instruction}}"
+  },
+  "onboarding.import.say.passPlain": {
+    "value": "When you finish, pass your answer to @{{handle}}."
+  },
+  "onboarding.import.choose.who": {
+    "value": "Who comes"
+  },
+  "onboarding.import.choose.with": {
+    "value": "What comes with them"
+  },
+  "onboarding.import.choose.flows": {
+    "value": "The workflows"
+  },
+  "onboarding.import.choose.agentOnly": {
+    "value": "With its instructions from there"
+  },
+  "onboarding.import.choose.same": {
+    "value": "Already here, the same"
+  },
+  "onboarding.import.choose.of.routine": {
+    "value": {
+      "one": "{{picked}} of {{count}} routine",
+      "other": "{{picked}} of {{count}} routines"
+    }
+  },
+  "onboarding.import.choose.of.skill": {
+    "value": {
+      "one": "{{picked}} of {{count}} skill",
+      "other": "{{picked}} of {{count}} skills"
+    }
+  },
+  "onboarding.import.choose.of.note": {
+    "value": {
+      "one": "{{picked}} of {{count}} memory",
+      "other": "{{picked}} of {{count}} memories"
+    }
+  },
+  "onboarding.import.choose.of.channel": {
+    "value": {
+      "one": "{{picked}} of {{count}} channel",
+      "other": "{{picked}} of {{count}} channels"
+    }
+  },
+  "onboarding.import.choose.files": {
+    "value": {
+      "one": "{{count}} file for the Drive",
+      "other": "{{count}} files for the Drive"
+    }
+  },
+  "onboarding.import.choose.paused": {
+    "value": {
+      "one": "One arrives paused, as it was there",
+      "other": "{{count}} arrive paused, as they were there"
+    }
+  },
+  "onboarding.import.choose.pausedOne": {
+    "value": "arrives paused"
+  },
+  "onboarding.import.choose.here": {
+    "value": {
+      "one": "One is already here",
+      "other": "{{count}} are already here"
+    }
+  },
+  "onboarding.import.choose.library": {
+    "value": "From the library, for whoever you turn it on for"
+  },
+  "onboarding.import.choose.passes": {
+    "value": "passes its answer to {{names}}"
+  },
+  "onboarding.import.choose.webhook": {
+    "value": "new address"
+  },
+  "onboarding.import.choose.pr": {
+    "value": "when a pull request is opened"
+  },
+  "onboarding.import.choose.routine": {
+    "value": "Routine"
+  },
+  "onboarding.import.choose.skill": {
+    "value": "Skill"
+  },
+  "onboarding.import.choose.asked": {
+    "value": "runs when someone asks"
+  },
+  "onboarding.import.choose.was.schedule": {
+    "value": "there it had a schedule we can't read, here it runs when someone asks"
+  },
+  "onboarding.import.choose.was.webhook": {
+    "value": "there it started from an address, here it runs when someone asks"
+  },
+  "onboarding.import.choose.was.message": {
+    "value": "there it started from a message, here it runs when someone asks"
+  },
+  "onboarding.import.choose.was.github": {
+    "value": "there it started on GitHub, here it runs when someone asks"
+  },
+  "onboarding.import.choose.was.discord": {
+    "value": "there it started on Discord, here it runs when someone asks"
+  },
+  "onboarding.import.choose.was.telegram": {
+    "value": "there it started on Telegram, here it runs when someone asks"
+  },
+  "onboarding.import.choose.was.slack": {
+    "value": "there it started on Slack, here it runs when someone asks"
+  },
+  "onboarding.import.choose.was.other": {
+    "value": "there it started on its own, here it runs when someone asks"
+  },
+  "onboarding.import.choose.flowsLead": {
+    "value": "Here a workflow becomes a routine: its trigger is when it runs, and its steps go in the request."
+  },
+  "onboarding.import.choose.becomesRoutine": {
+    "value": "Becomes a routine {{agent}} runs, with the steps in its request."
+  },
+  "onboarding.import.choose.becomesSkill": {
+    "value": "Becomes a skill {{agent}} uses when someone asks, with the steps in it."
+  },
+  "onboarding.import.choose.postsIn": {
+    "value": "Posts in #{{channel}}."
+  },
+  "onboarding.import.choose.step.when": {
+    "value": "when the routine runs"
+  },
+  "onboarding.import.choose.step.asked": {
+    "value": "When someone asks"
+  },
+  "onboarding.import.choose.step.text": {
+    "value": "Starts from the text"
+  },
+  "onboarding.import.choose.step.by": {
+    "value": "asked by {{name}}"
+  },
+  "onboarding.import.choose.step.image": {
+    "value": "Image"
+  },
+  "onboarding.import.choose.step.video": {
+    "value": "Video"
+  },
+  "onboarding.import.choose.step.if": {
+    "value": "If"
+  },
+  "onboarding.import.choose.step.stop": {
+    "value": "goes on, otherwise stops"
+  },
+  "onboarding.import.choose.step.else": {
+    "value": "goes on, otherwise:"
+  },
+  "onboarding.import.choose.step.approval": {
+    "value": "Asks for approval in the chat"
+  },
+  "onboarding.import.choose.step.channel": {
+    "value": "Posts in #{{channel}}"
+  },
+  "onboarding.import.choose.step.notify": {
+    "value": "Sends you the result"
+  },
+  "onboarding.import.choose.step.file": {
+    "value": "Saves to the Drive"
+  },
+  "onboarding.import.choose.step.github": {
+    "value": "On GitHub"
+  },
+  "onboarding.import.choose.step.lost.file": {
+    "value": "A file from there"
+  },
+  "onboarding.import.choose.step.lost.slack": {
+    "value": "Posts on Slack"
+  },
+  "onboarding.import.choose.step.lost.discord": {
+    "value": "Posts on Discord"
+  },
+  "onboarding.import.choose.step.lost.telegram": {
+    "value": "Posts on Telegram"
+  },
+  "onboarding.import.choose.step.lost.messaging": {
+    "value": "Posts in a messaging chat"
+  },
+  "onboarding.import.choose.step.notHere": {
+    "value": "doesn't come"
+  },
+  "onboarding.import.choose.bringWith": {
+    "value": {
+      "one": "Bring {{count}} agent and {{more}}",
+      "other": "Bring {{count}} agents and {{more}}"
+    }
+  },
+  "onboarding.import.choose.more": {
+    "value": {
+      "one": "{{count}} more item",
+      "other": "{{count}} more items"
+    }
+  },
+  "onboarding.import.choose.notComing": {
+    "value": "Messaging connections don't come ({{list}}): there's nothing to connect them to here."
+  },
   "onboarding.import.needDo.connection": {
     "value": "Connect"
   },
@@ -3490,6 +3757,9 @@
   },
   "onboarding.import.needDo.file": {
     "value": "Open the Drive"
+  },
+  "onboarding.import.needDo.webhook": {
+    "value": "Open routines"
   },
   "onboarding.import.linkSkipped": {
     "value": {

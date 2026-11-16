@@ -51,15 +51,13 @@ const openFile = async () => {
   if (!screen().queryByRole("dialog")) await click(button("Tenho um arquivo ou link"), 4);
 };
 /**
- * From the sheet's "who comes" to the page's full preview: "Escolher o que vem" closes the sheet, and so does its ×
- * when nothing can come. A sheet still reading, or saying what went wrong, stays.
+ * From the sheet's steps to the page's full preview: its × closes it, leaving the plan on the page. A sheet still
+ * reading, or saying what went wrong, stays.
  */
 const toPreview = async () => {
   const sheet = screen().queryByRole("dialog");
   if (!sheet) return;
-  const choose = within(sheet).queryByRole("button", { name: "Escolher o que vem" });
-  if (choose) return click(choose, 6);
-  if (!sheet.querySelector("input, .imp-reading")) await closeSheet();
+  if (sheet.querySelector(".imp-choice") || !sheet.querySelector("input, .imp-reading")) await closeSheet();
 };
 /** Files into one of the file sheet's pickers ("Arquivos para importar", "Pasta para importar"), on to the preview. */
 const pick = async (label: string, files: File[]) => {
@@ -1029,6 +1027,39 @@ describe("Configurações → Importar e exportar", () => {
                 customAgents: [],
                 sidebarSections: [],
                 routineFlows: [],
+                workflows: [
+                  {
+                    title: "Weekly prices",
+                    graph: {
+                      nodes: [
+                        {
+                          id: "t",
+                          kind: "trigger",
+                          at: { x: 0, y: 0 },
+                          fields: { trigger: "schedule", timezone: "UTC" },
+                          schedule: { kind: "weekly", weekday: 1, time: "09:00" },
+                        },
+                        {
+                          id: "a",
+                          kind: "agent",
+                          at: { x: 1, y: 0 },
+                          fields: { agentId: "scout", task: "Research prices" },
+                        },
+                        {
+                          id: "o",
+                          kind: "output",
+                          at: { x: 2, y: 0 },
+                          fields: { target: "chat-channel", channelId: "launch" },
+                        },
+                      ],
+                      edges: [
+                        { id: "e1", from: "t", to: "a", type: "text" },
+                        { id: "e2", from: "a", to: "o", type: "text" },
+                      ],
+                      strokes: [],
+                    },
+                  },
+                ],
               },
               shared: null,
               signedIn: [],
@@ -1103,7 +1134,7 @@ describe("Configurações → Importar e exportar", () => {
       );
     });
 
-    test("the file dropped there: who comes, then they are made and the sheet says they arrived", async () => {
+    test("the file dropped there: who comes, what comes with them, the workflows; then they arrive", async () => {
       const { state } = await go();
       await click(button("OpenBot.run"), 6);
       const input = within(sheetOf("Trazer o time do OpenBot")).getByLabelText("Arquivos para importar");
@@ -1111,26 +1142,55 @@ describe("Configurações → Importar e exportar", () => {
       await act(async () => fireEvent.change(input));
       await settle(12);
 
-      const ready = sheetOf("1 agente pronto para vir");
-      expect(ready.textContent).toContain("Scout");
-      expect(ready.textContent).toContain("Pesquisa de mercado");
-      expect(ready.textContent).toContain("1 rotina");
-      expect(ready.textContent).toContain("1 memória");
-      expect(ready.textContent).toContain("1 skill");
-      expect(ready.textContent).toContain("1 arquivo dos agentes, copiado para o Drive");
-      // The archived channel stays behind; nothing is made before the button.
-      expect(ready.textContent).toContain("1 canal");
-      expect(applies(state).every((a) => a.dryRun)).toBe(true);
-      // The routine was off there, so it comes off; the webhook one is only listed.
-      const [plan] = applies(state);
-      expect(plan?.bundle.routines).toMatchObject([{ name: "Daily", paused: true }]);
-      expect(plan?.bundle.channels.map((c) => c.name)).toEqual(["launch"]);
-      expect(plan?.bundle.leftOut).toContainEqual({ kind: "routine", label: "On push (Scout)" });
+      // Who comes: a title and a line each.
+      const who = sheetOf("Quem vem");
+      expect(who.textContent).toContain("Scout");
+      expect(who.textContent).toContain("Pesquisa de mercado");
+      await click(within(who).getByRole("button", { name: "Continuar" }), 6);
 
-      await click(within(ready).getByRole("button", { name: "Trazer o agente" }), 30);
+      // What comes with them, a row a kind; the archived channel stays behind.
+      const kinds = sheetOf("O que vem com eles");
+      for (const text of ["2 rotinas", "Uma chega pausada, como estava lá", "1 memória", "1 skill", "1 canal"])
+        expect(kinds.textContent).toContain(text);
+      expect(kinds.textContent).toContain("1 arquivo para o Drive");
+      // A kind's arrow opens its list; one unchecked there, the kind says how many of how many.
+      await click(within(kinds).getByRole("button", { name: /^2 rotinas/ }), 6);
+      const list = sheetOf("2 rotinas");
+      expect(list.textContent).toContain("Daily");
+      expect(list.textContent).toContain("Scout · endereço novo");
+      await click(within(list).getByRole("checkbox", { name: "Trazer On push" }), 4);
+      await click(within(list).getByRole("button", { name: "Voltar" }), 6);
+      expect(sheetOf("O que vem com eles").textContent).toContain("1 de 2 rotinas");
+      await click(within(sheetOf("O que vem com eles")).getByRole("button", { name: "Continuar" }), 6);
+
+      // The workflows: what each becomes, its steps behind its arrow.
+      const flows = sheetOf("Os workflows");
+      expect(flows.textContent).toContain("Rotina · Scout");
+      await click(within(flows).getByRole("button", { name: /^Weekly prices/ }), 6);
+      const steps = sheetOf("Weekly prices");
+      expect(steps.textContent).toContain("Research prices");
+      expect(steps.textContent).toContain("Posta em #launch");
+      await click(within(steps).getByRole("button", { name: "Voltar" }), 6);
+
+      // Nothing is made before the last step's button. The routine that was off comes off; the webhook one gets a
+      // new address; the workflow is a routine posting in its channel.
+      expect(applies(state).every((a) => a.dryRun)).toBe(true);
+      const [plan] = applies(state);
+      expect(plan?.bundle.routines).toMatchObject([
+        { name: "Daily", paused: true },
+        { name: "On push", trigger: { webhook: true } },
+        { name: "Weekly prices", channel: "launch", trigger: { cron: "0 9 * * 1", timezone: "UTC" } },
+      ]);
+      expect(plan?.bundle.channels.map((c) => c.name)).toEqual(["launch"]);
+      expect(plan?.bundle.todo).toContainEqual({ kind: "webhook", label: "On push", agents: ["scout"] });
+      expect(sheetOf("Os workflows").textContent).toContain("ganha um endereço novo aqui");
+
+      await click(within(sheetOf("Os workflows")).getByRole("button", { name: /^Trazer 1 agente e mais / }), 30);
       const here = sheetOf("O time chegou");
       expect(here.textContent).toContain("Scout já está aqui.");
       expect(state.agents.some((a) => a.name === "Scout")).toBe(true);
+      const made = applies(state).filter((a) => !a.dryRun);
+      expect(made.flatMap((a) => a.pick ?? [])).not.toContain("routine:scout/r2");
       expect(calls(state, "imports.copyFile")).toHaveLength(1);
 
       // Closing it leaves the import's own report on the page.
@@ -1139,14 +1199,15 @@ describe("Configurações → Importar e exportar", () => {
       expect(screen().getByRole("region", { name: "Chegou tudo" })).toBeTruthy();
     });
 
-    test("Escolher o que vem closes the sheet on the full preview, with nothing made", async () => {
+    test("closing the sheet at a step leaves the full preview, with nothing made", async () => {
       const { state } = await go();
       await click(button("OpenBot.run"), 6);
       const input = within(sheetOf("Trazer o time do OpenBot")).getByLabelText("Arquivos para importar");
       Object.defineProperty(input, "files", { configurable: true, value: [migrated()] });
       await act(async () => fireEvent.change(input));
       await settle(12);
-      await click(within(sheetOf("1 agente pronto para vir")).getByRole("button", { name: "Escolher o que vem" }), 6);
+      await click(within(sheetOf("Quem vem")).getByRole("button", { name: "Continuar" }), 6);
+      await closeSheet();
       expect(screen().queryByRole("dialog")).toBeNull();
       expect(screen().getByRole("checkbox", { name: "Trazer Scout" })).toBeTruthy();
       expect(applies(state).every((a) => a.dryRun)).toBe(true);

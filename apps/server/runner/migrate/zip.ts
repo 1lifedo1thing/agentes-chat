@@ -1,4 +1,5 @@
 import { closeSync, openSync, readSync, renameSync, rmSync, writeSync } from "node:fs";
+import { inflateRawSync } from "node:zlib";
 
 /**
  * A .zip written one file at a time, stored and not compressed, so a workspace's files cost no memory (ADR 0055,
@@ -21,6 +22,49 @@ export function crc32(bytes: Uint8Array, seed = 0): number {
   let c = ~seed >>> 0;
   for (let i = 0; i < bytes.length; i++) c = (TABLE[(c ^ (bytes[i] as number)) & 0xff] as number) ^ (c >>> 8);
   return ~c >>> 0;
+}
+
+/**
+ * The files of a small .zip in hand (a skill an app keeps zipped): stored or deflated entries, no ZIP64, each at most
+ * `max` bytes once unpacked. A name that climbs out (`..`) or starts at the root is left out. Null when it isn't a zip
+ * this reads.
+ */
+export function readZip(bytes: Uint8Array, max: number): Map<string, Uint8Array> | null {
+  try {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let end = -1;
+    for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 22 - 0xffff); i--) {
+      if (view.getUint32(i, true) === 0x06054b50) {
+        end = i;
+        break;
+      }
+    }
+    if (end < 0) return null;
+    const count = view.getUint16(end + 10, true);
+    let at = view.getUint32(end + 16, true);
+    const decoder = new TextDecoder();
+    const out = new Map<string, Uint8Array>();
+    for (let n = 0; n < count; n++) {
+      if (view.getUint32(at, true) !== 0x02014b50) return null;
+      const method = view.getUint16(at + 10, true);
+      const packed = view.getUint32(at + 20, true);
+      const size = view.getUint32(at + 24, true);
+      const nameLength = view.getUint16(at + 28, true);
+      const local = view.getUint32(at + 42, true);
+      const name = decoder.decode(bytes.subarray(at + 46, at + 46 + nameLength));
+      at += 46 + nameLength + view.getUint16(at + 30, true) + view.getUint16(at + 32, true);
+      if (name.endsWith("/") || name.startsWith("/") || name.split(/[\\/]/).includes("..") || size > max) continue;
+      if (view.getUint32(local, true) !== 0x04034b50) return null;
+      const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
+      const data = bytes.subarray(start, start + packed);
+      if (method === 0) out.set(name, data);
+      else if (method === 8) out.set(name, new Uint8Array(inflateRawSync(data, { maxOutputLength: max })));
+      else return null;
+    }
+    return out;
+  } catch {
+    return null;
+  }
 }
 
 /** What goes in: bytes in hand, or a file on disk read in pieces. */

@@ -7,7 +7,8 @@ import { Avatar } from "./Avatar";
  * land (here). `wait`: at the start, in the sand. `go`: walking across, over and over while the scene shows.
  * `here`: arrived, happy. Pixels on a small canvas, dithered between the two skies; the agents are the engine's
  * own, standing on the ground line. With reduced motion `go` rests on the far side. Decorative: the words under it
- * say the same.
+ * say the same. `at` (0 to 1, with `go`): how far along steps the person takes one at a time; the team walks there
+ * from where it stood and waits (with reduced motion it is just there).
  */
 export type Journey = "wait" | "go" | "here";
 
@@ -17,6 +18,8 @@ const H = 37;
 const CELL = 4;
 /** The crossing, in seconds: a beat, the walk, a beat on the far side, then again. */
 const LOOP = 9;
+/** A step's walk with `at`, in seconds. */
+const STEP_FOR = 1.4;
 const WALK_FROM = 1;
 const WALK_FOR = 4.6;
 /**
@@ -181,8 +184,11 @@ function drawLand(buf: Buf, t: number) {
 
 type Phase = "start" | "walking" | "arrived";
 
-export function JourneyScene({ journey }: { journey: Journey }) {
+export function JourneyScene({ journey, at }: { journey: Journey; at?: number }) {
   const host = useRef<HTMLDivElement>(null);
+  // Where the team stands now, so the next step's walk starts there.
+  const stood = useRef(journey === "wait" ? 0 : 1);
+  const target = journey === "go" && at !== undefined ? Math.max(0, Math.min(1, at)) : null;
   const canvas = useRef<HTMLCanvasElement>(null);
   const walkers = useRef<(HTMLSpanElement | null)[]>([]);
   // The agents' faces follow the walk: eyes closed in the sand, open on the way, happy on arrival.
@@ -201,6 +207,8 @@ export function JourneyScene({ journey }: { journey: Journey }) {
     let t0 = performance.now();
     let last: Phase | null = null;
     let hopping = false;
+    const begun = t0;
+    const from = stood.current;
     const frame = (now: number) => {
       let t = (now - t0) / 1000;
       if (t > LOOP) {
@@ -211,7 +219,12 @@ export function JourneyScene({ journey }: { journey: Journey }) {
       ctx.putImageData(image, 0, 0);
       let k = journey === "wait" ? 0 : 1;
       let walking = false;
-      if (journey === "go" && !reduced) {
+      if (target !== null) {
+        const w = reduced ? 1 : Math.min(1, (now - begun) / 1000 / STEP_FOR);
+        k = from + (target - from) * w * w * (3 - 2 * w);
+        walking = w < 1 && from !== target;
+        stood.current = k;
+      } else if (journey === "go" && !reduced) {
         const w = Math.max(0, Math.min(1, (t - WALK_FROM) / WALK_FOR));
         k = w * w * (3 - 2 * w);
         walking = k > 0 && k < 1;
@@ -224,12 +237,13 @@ export function JourneyScene({ journey }: { journey: Journey }) {
         const feet = groundAt(Math.round(x + w.offsetWidth / cell / 2)) * CELL;
         w.style.transform = `translate(${x * cell}px, ${feet - w.offsetHeight + 2 + bob}px)`;
       });
-      const next: Phase = k < 0.45 ? "start" : k < 1 ? "walking" : "arrived";
+      // On the way through steps, the team is awake from the first one.
+      const next: Phase = target !== null ? "walking" : k < 0.45 ? "start" : k < 1 ? "walking" : "arrived";
       if (next !== last) {
         last = next;
         setPhase(next);
       }
-      const hops = journey === "go" && !reduced && k >= 1 && t < WALK_FROM + WALK_FOR + 2;
+      const hops = target === null && journey === "go" && !reduced && k >= 1 && t < WALK_FROM + WALK_FOR + 2;
       if (hops !== hopping) {
         hopping = hops;
         setHop(hops);
@@ -254,7 +268,7 @@ export function JourneyScene({ journey }: { journey: Journey }) {
       watch.disconnect();
       sized.disconnect();
     };
-  }, [journey]);
+  }, [journey, target]);
 
   return (
     <div ref={host} className="ac-journey" data-journey={journey} aria-hidden="true">

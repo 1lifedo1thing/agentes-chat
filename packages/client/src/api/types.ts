@@ -5351,7 +5351,13 @@ export interface BundleRoutine {
   prompt: string;
   /** Key of a channel in the bundle; null posts in the importer's DM with the agent. */
   channel: string | null;
-  trigger: { cron: string; timezone: string | null } | { rule: ApiRule } | { at: string };
+  /** A schedule, a call to an address of its own (made new here), or an event this server has. */
+  trigger:
+    | { cron: string; timezone: string | null }
+    | { rule: ApiRule }
+    | { at: string }
+    | { webhook: true }
+    | { event: "github.pr_opened" };
   /** It was off where it comes from, so it arrives off. Only when it is made: an update keeps it as the person left it. */
   paused?: boolean;
 }
@@ -5366,7 +5372,8 @@ export interface BundleNote {
 }
 
 export interface BundleTodo {
-  kind: "connection" | "app" | "secret" | "model" | "file";
+  /** `webhook`: a routine that now has an address of its own here, to give the app that called the old one. */
+  kind: "connection" | "app" | "secret" | "model" | "file" | "webhook";
   label: string;
   url?: string;
   /** Keys of the agents it matters to. */

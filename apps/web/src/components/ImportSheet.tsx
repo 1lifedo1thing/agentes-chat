@@ -1,7 +1,6 @@
 import { useApps, useMe } from "@agenteschat/client";
 import { aiAppImport } from "@agenteschat/client/lib/apps";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { formatBytes } from "@agenteschat/client/lib/files";
 import {
   type ComputerCard,
   type ComputerOs,
@@ -34,26 +33,21 @@ import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { failedOffline } from "@/chat/offline";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { GuideExtras, GuideInstalls, GuideNotes, GuideWords } from "@/components/AiApps";
 import { HelpLink } from "@/components/HelpLink";
+import { useChoiceSheet } from "@/components/ImportChoice";
 import { ImportFailureNote } from "@/components/ImportFailure";
 import type { ImportFlowState } from "@/components/ImportFlow";
 import { EXPORT_PROMPT, IMPORT_ACCEPT } from "@/lib/import";
 import {
-  blockedItems,
   cardName,
-  choosable,
   defaultMethod,
   droppedFiles,
   type ImportCard,
   type ImportMethod,
-  importApplyErrorText,
   isRequestCard,
-  itemId,
   mcpClient,
-  picksOf,
   type RequestCard,
 } from "@/lib/import-flow";
 import { hasFiles } from "@/lib/obsidian";
@@ -84,9 +78,6 @@ export function useFocusOn<T extends HTMLElement>(
   });
   return el;
 }
-
-/** The agents the sheet names one by one before "and N more". */
-const FACES = 3;
 
 /** How long the MCP steps wait before they say what to check when nothing came. */
 const STUCK_MS = 2 * 60_000;
@@ -147,6 +138,8 @@ export function ImportSheet({
   if (sheet) last.current = sheet;
   const shown = sheet ?? last.current;
   const apply = useMutation({ mutationFn: () => flow.apply(), meta: { silent: true } });
+  // Choosing what comes, a step at a time, once there is a plan.
+  const choice = useChoiceSheet({ flow, standalone, todos, apply, onClose });
   const card = shown === "file" ? null : shown;
   const { mcp, method } = useImportMethod(flow, orgId, card);
 
@@ -274,149 +267,11 @@ export function ImportSheet({
       }
     }
   } else {
-    const { bundle, items } = planned;
-    const picks = picksOf(items, flow.pick, blockedItems(bundle, items, flow.pick));
-    const picked = new Set(picks);
-    const coming = (kind: string) => items.filter((i) => i.kind === kind && picked.has(itemId(i)));
-    const agents = coming("agent").flatMap((i) => bundle.agents.find((a) => a.key === i.key) ?? []);
-    const files = flow.copyFiles ? planned.files.filter((f) => !f.skip) : [];
+    const { bundle } = planned;
 
-    if (!flow.report) {
-      const nothing = !items.some(choosable);
-      title =
-        agents.length > 0
-          ? t("onboarding.import.sheet.ready", { count: agents.length })
-          : nothing
-            ? t("onboarding.import.nothingNew")
-            : t("onboarding.import.sheet.readyOther");
-      const rest = agents.slice(FACES);
-      body = (
-        <>
-          {agents.length > 0 && (
-            <ul className="imp-team">
-              {agents.slice(0, FACES).map((a) => (
-                <li key={a.key} className="ac-mediarow ac-mediarow--row">
-                  <span className="ac-mediarow__face">
-                    <AgentAvatar name={a.name} appearance={normalizeAppearance(a.appearance)} size="sm" />
-                  </span>
-                  <span className="ac-mediarow__head">
-                    <b>{a.name}</b>
-                    {a.role && <span className="ac-mediarow__meta">{a.role}</span>}
-                  </span>
-                </li>
-              ))}
-              {rest.length > 0 && (
-                <li>
-                  <span className="imp-team__faces">
-                    {rest.slice(0, FACES).map((a) => (
-                      <AgentAvatar key={a.key} name={a.name} appearance={normalizeAppearance(a.appearance)} size="sm" />
-                    ))}
-                  </span>
-                  <span className="imp-team__text">
-                    <b>
-                      {rest.length <= FACES
-                        ? names.format(rest.map((a) => a.name))
-                        : t("onboarding.import.sheet.others", { count: rest.length })}
-                    </b>
-                  </span>
-                </li>
-              )}
-            </ul>
-          )}
-          <ul className="imp-todo">
-            {coming("routine").length > 0 && (
-              <li className="ac-iconline">
-                <Icon name="routines" size={16} />
-                <span className="imp-todo__text">
-                  {t("onboarding.import.sheet.routines", { count: coming("routine").length })}
-                </span>
-              </li>
-            )}
-            {coming("note").length > 0 && (
-              <li className="ac-iconline">
-                <Icon name="book" size={16} />
-                <span className="imp-todo__text">
-                  {t("onboarding.import.sheet.notes", { count: coming("note").length })}
-                </span>
-              </li>
-            )}
-            {coming("skill").length > 0 && (
-              <li className="ac-iconline">
-                <Icon name="bulb" size={16} />
-                <span className="imp-todo__text">
-                  {t("onboarding.import.sheet.skills", { count: coming("skill").length })}
-                </span>
-              </li>
-            )}
-            {coming("channel").length > 0 && (
-              <li className="ac-iconline">
-                <Icon name="channel" size={16} />
-                <span className="imp-todo__text">
-                  {t("onboarding.import.sheet.channels", { count: coming("channel").length })}
-                </span>
-              </li>
-            )}
-            {files.length > 0 && (
-              <li className="ac-iconline">
-                <Icon name="drive" size={16} />
-                <span className="imp-todo__text">
-                  <span>{t("onboarding.import.sheet.files", { count: files.length })}</span>
-                  <span className="small muted">
-                    {t("onboarding.import.sheet.filesSize", {
-                      size: formatBytes(
-                        i18n.language,
-                        files.reduce((sum, f) => sum + f.size, 0),
-                      ),
-                    })}
-                  </span>
-                </span>
-              </li>
-            )}
-          </ul>
-          {bundle.todo.length > 0 && (
-            <div className="imp-sheet__group">
-              <p className="imp-sheet__sub">{t("onboarding.import.sheet.after")}</p>
-              {todos}
-            </div>
-          )}
-          {apply.isError && <Alert>{importApplyErrorText(t, apply.error, failedOffline)}</Alert>}
-          {flow.progress && (
-            <p className="imp-apply__progress" role="status">
-              {t("onboarding.import.applying", flow.progress)}
-            </p>
-          )}
-        </>
-      );
-      foot = (
-        <DialogFooter>
-          {nothing || !standalone ? (
-            <Button variant="primary" size="lg" block onClick={onClose}>
-              {nothing ? t("common.close") : t("common.continue")}
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              size="lg"
-              block
-              disabled={picks.length === 0 || apply.isPending}
-              loading={apply.isPending}
-              onClick={() => apply.mutate()}
-            >
-              {agents.length > 0
-                ? t("onboarding.import.sheet.bring", { count: agents.length })
-                : t("onboarding.import.go", { count: picks.length })}
-            </Button>
-          )}
-          {!nothing && (
-            <p className="imp-sheet__alt">
-              <button type="button" className="ac-link" onClick={onClose} disabled={apply.isPending}>
-                {t("onboarding.import.sheet.choose")}
-              </button>
-            </p>
-          )}
-        </DialogFooter>
-      );
-    } else {
+    if (choice) {
+      ({ title, body, foot } = choice);
+    } else if (flow.report) {
       const made = flow.report.filter((i) => i.action === "create" || i.action === "update");
       const here = made.filter((i) => i.kind === "agent").map((i) => i.label);
       const missed = flow.report.filter((i) => i.action === "skip").length;
@@ -489,7 +344,7 @@ export function ImportSheet({
       className="hosting-sheet imp-sheet"
     >
       <div className="hosting-sheet__hero">
-        <JourneyScene journey={stage} />
+        <JourneyScene journey={stage} at={choice?.at} />
         <Button
           variant="ghost"
           size="sm"
