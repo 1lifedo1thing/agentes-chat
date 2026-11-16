@@ -41740,6 +41740,24 @@
   "peopleUsage.actions.see": {
     "value": "See their usage"
   },
+  "usage.kinds.label": {
+    "value": "By kind"
+  },
+  "usage.kinds.handoffs": {
+    "value": "Handoffs between agents"
+  },
+  "usage.kinds.people": {
+    "value": "Conversations with people"
+  },
+  "usage.kinds.routines": {
+    "value": "Routines"
+  },
+  "usage.hint.handoffs": {
+    "value": "Most of this week's use came from agents handing work to each other. Ask the agent directly for long work."
+  },
+  "usage.hint.message": {
+    "value": "Message {{name}}"
+  },
   "usageViews.signedOut": {
     "value": "Signed out"
   },

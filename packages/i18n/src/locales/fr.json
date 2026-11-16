@@ -17478,6 +17478,18 @@
       "see": "Voir son utilisation"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "Par type",
+      "handoffs": "Transmissions entre agents",
+      "people": "Conversations avec des personnes",
+      "routines": "Routines"
+    },
+    "hint": {
+      "handoffs": "Cette semaine, l’essentiel de l’utilisation vient d’agents qui se transmettent du travail. Pour un travail long, demandez directement à l’agent.",
+      "message": "Écrire à {{name}}"
+    }
+  },
   "usageViews": {
     "signedOut": "Déconnecté",
     "whose": "De {{name}}",

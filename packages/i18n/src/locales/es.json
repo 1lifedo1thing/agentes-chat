@@ -17407,6 +17407,18 @@
       "see": "Ver el uso"
     }
   },
+  "usage": {
+    "kinds": {
+      "label": "Por tipo",
+      "handoffs": "Traspasos entre agentes",
+      "people": "Conversaciones con personas",
+      "routines": "Rutinas"
+    },
+    "hint": {
+      "handoffs": "La mayor parte del uso de esta semana vino de agentes que se pasan trabajo entre sí. Para trabajos largos, pídeselo directamente al agente.",
+      "message": "Escribir a {{name}}"
+    }
+  },
   "usageViews": {
     "signedOut": "Sesión cerrada",
     "whose": "De {{name}}",
