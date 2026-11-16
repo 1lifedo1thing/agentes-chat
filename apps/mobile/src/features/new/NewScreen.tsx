@@ -113,7 +113,8 @@ export function NewScreen() {
   // The list is the sheet's scroll view (dragging at its top moves the sheet, the keyboard insets it).
   const scroll = useRef<ScrollViewInstance>(null);
   useRouteSheetScrollable(scroll);
-  // Groups that come and go as the person types fade, and what stays slides into place.
+  // Groups that come and go as the person types fade, and the groups that stay slide into their place; the field and
+  // the page around them never animate their layout (every keystroke would).
   const fade = reduced ? {} : { entering: FadeIn.duration(160), exiting: FadeOut.duration(120) };
   const layout = reduced ? undefined : LinearTransition.duration(220);
 
@@ -131,7 +132,7 @@ export function NewScreen() {
         contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
       >
         <SheetBar title={t("mobile.new.title")} onClose={cancel} />
-        <Animated.View layout={layout}>
+        <View>
           {/* "Para:" and the words, white with a hairline on the gray, as the system's new message. */}
           <View style={styles.search}>
             <View
@@ -222,7 +223,7 @@ export function NewScreen() {
               <EmptyState size="inline" title={t("mobile.find.nothing", { q: typed })} />
             ) : null}
           </View>
-        </Animated.View>
+        </View>
       </ScrollView>
     </SheetSurface>
   );

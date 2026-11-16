@@ -14,7 +14,7 @@ import {
 import { useIsFocused } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BackHandler, Keyboard, StyleSheet, type TextInputInstance, View } from "react-native";
+import { BackHandler, Keyboard, Platform, StyleSheet, type TextInputInstance, View } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { STORED } from "@/lib/storage";
 import { LargeTitleScreen, SearchField, SectionHeader, useReducedMotion } from "@/ui";
@@ -108,8 +108,9 @@ export function SearchScreen() {
     return () => sub.remove();
   });
 
-  // The field and what follows slide up as the title folds away (and back down when it returns).
-  const layout = reduced ? undefined : LinearTransition.duration(220);
+  // Android draws its large title in the content: the field and what follows slide up as it folds away (and back
+  // down when it returns). iOS's is the system's, which moves the content itself; there nothing animates here.
+  const layout = reduced || Platform.OS === "ios" ? undefined : LinearTransition.duration(220);
   const collapsed = searching || words;
   return (
     <LargeTitleScreen title={t("mobile.find.title")} collapsed={collapsed}>

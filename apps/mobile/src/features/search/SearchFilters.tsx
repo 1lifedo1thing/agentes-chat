@@ -20,23 +20,23 @@ import {
 } from "@agenteschat/client/lib/search-filters";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import Animated, { FadeIn, FadeOut, LayoutAnimationConfig, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeOut, LayoutAnimationConfig, LinearTransition } from "react-native-reanimated";
 import {
   Button,
   EmptyState,
   Filters,
   Icon,
-  PressScale,
   SCREEN_X,
   SectionHeader,
   SkeletonList,
   Text,
-  TOOL_H,
+  TOKEN_GAP,
+  Token,
   useReducedMotion,
 } from "@/ui";
 import { router } from "@/ui/navigation";
-import { Note } from "../ai/parts";
 import { Face } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useOrgId, useWhen } from "../shared/hooks";
 import { previewOf } from "../shared/logic";
 import { ActionList, Tile } from "../shared/parts";
@@ -45,16 +45,17 @@ import { hitHref } from "./logic";
 /** One size for every result's face or tile, in the search tab and in a conversation's search. */
 export const RESULT_LEAD = 32;
 
-const CHIP_IN = FadeIn.duration(160);
 const CHIP_OUT = FadeOut.duration(120);
 
-/** The filters on the box (ADR 0123): each a pill with its ×. */
+/**
+ * The filters on the box (ADR 0123): each the kit's `Token` (a picked thing in a field) with its ×, on one line that
+ * scrolls sideways. A filter added or taken off while the box shows fades and the others slide; those there when it
+ * mounts just show.
+ */
 export function FilterChips({ chips, onRemove }: { chips: SearchChip[]; onRemove: (chip: SearchChip) => void }) {
   const { t, i18n } = useTranslation();
-  const c = useColors();
   const reduced = useReducedMotion();
-  // A filter added or taken off while the box shows fades and the others slide; those there when it mounts just show.
-  const motion = reduced ? {} : { entering: CHIP_IN, exiting: CHIP_OUT, layout: LinearTransition };
+  const motion = reduced ? {} : { exiting: CHIP_OUT, layout: LinearTransition.duration(200) };
   return (
     <LayoutAnimationConfig skipEntering skipExiting>
       <ScrollView
@@ -65,20 +66,16 @@ export function FilterChips({ chips, onRemove }: { chips: SearchChip[]; onRemove
       >
         {chips.map((chip) => {
           const label = searchChipLabel(t, i18n.language, chip);
+          const remove = () => onRemove(chip);
           return (
             <Animated.View key={searchChipKey(chip)} {...motion}>
-              <PressScale
-                onPress={() => onRemove(chip)}
-                accessibilityRole="button"
-                accessibilityLabel={t("searchPage.removeFilter", { filter: label })}
-                // A 32-point pill: the slop makes its target 44 without spacing the row out.
-                hitSlop={{ top: 6, bottom: 6 }}
-                fill={false}
-                contentStyle={[styles.chip, { backgroundColor: c.sunken }]}
-              >
-                <Text variant="subhead">{label}</Text>
-                <Icon name="x" size={15} color={c.muted} />
-              </PressScale>
+              <Token
+                label={label}
+                fresh
+                onPress={remove}
+                onRemove={remove}
+                removeLabel={t("searchPage.removeFilter", { filter: label })}
+              />
             </Animated.View>
           );
         })}
@@ -326,12 +323,7 @@ export function FilteredResults({
         </View>
         {/* The results' own shape while they come, never a spinner. */}
         {hits.isLoading ? <SkeletonList rows={3} /> : null}
-        {hits.isError && !hits.data ? (
-          <View style={[styles.list, styles.failed]}>
-            <Note icon="x">{t("common.loadFailed")}</Note>
-            <Button size="sm" variant="secondary" label={t("common.retry")} onPress={() => void hits.refetch()} />
-          </View>
-        ) : null}
+        {hits.isError && !hits.data ? <LoadFailed onRetry={() => void hits.refetch()} /> : null}
         {groupHitsByPlace(list).map((g) => (
           <View key={g.key}>
             <SectionHeader title={g.thread ? threadName(g.thread.title, g.channelId) : placeName(g.channelId)} />
@@ -374,20 +366,11 @@ export function FilteredResults({
 }
 
 const styles = StyleSheet.create({
-  chips: { gap: 8, paddingHorizontal: SCREEN_X, paddingBottom: 8 },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    minHeight: TOOL_H,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-  },
+  chips: { gap: TOKEN_GAP, paddingHorizontal: SCREEN_X, paddingBottom: 8 },
   // The operator's empty state, at the headers' text column.
   hint: { paddingHorizontal: SCREEN_X, paddingTop: 8, paddingBottom: 6 },
   res: { paddingTop: 2 },
   list: { paddingHorizontal: 16 },
-  failed: { marginTop: 14, gap: 8 },
   bar: {
     flexDirection: "row",
     alignItems: "center",
