@@ -43,8 +43,13 @@ export function useAgentMailboxes(agentId: string, enabled = true): MailboxLine[
   const dir = useDirectory();
   const toast = useToast();
   const agent = dir.agentById.get(agentId);
-  const accounts = useMailAccounts(orgId, enabled);
-  const list = (accounts.data ?? []).filter((a) => a.status !== "pending");
+  // Someone else's mailbox shows only while this agent holds it (who manages connectors gets those, named by label).
+  const accounts = useMailAccounts(orgId, enabled, { others: true });
+  const list = (accounts.data ?? []).filter(
+    (a) =>
+      a.status !== "pending" &&
+      (!a.ownerUserId || a.ownerUserId === meId || a.agents.some((x) => x.agentId === agentId)),
+  );
   const mail = useAgentMail(orgId, agentId, enabled && list.length > 0);
   const set = useSetAgentMail(orgId);
   if (!enabled || list.length === 0 || !mail.data) return [];
@@ -70,7 +75,7 @@ export function useAgentMailboxes(agentId: string, enabled = true): MailboxLine[
     const theirs = account.ownerUserId !== meId;
     return {
       id: account.id,
-      address: account.address,
+      address: account.address || account.label,
       level: t(`access.level.${level}`),
       sub: theirs ? (owner ? t("mail.agent.ownerOnly", { name: owner }) : t("mail.agent.ownerOnlyUnknown")) : null,
       hint:

@@ -8,12 +8,14 @@ import {
   useAiStatus,
   useApi,
   useApprovalRules,
+  useCatalog,
   useMemory,
   useMemoryAboutMe,
   useMemoryAction,
   useModelLabel,
   useModels,
   useRemoveApprovalRule,
+  useTakeConnectionOffAgent,
   useUsage,
 } from "@agenteschat/client";
 import { approvalRuleServer, approvalRuleWords, approvalTitle } from "@agenteschat/client/lib/approval-words";
@@ -99,6 +101,7 @@ import {
   didLines,
   knownAboutMe,
   modelRow,
+  othersPersonalOf,
   plainRole,
   spendOf,
   statusCardShown,
@@ -235,6 +238,11 @@ function Profile({ id }: { id: string }) {
   const learned = byPlaybook(memories);
   const uses = usesOf(access.data);
   const connected = useConnectedById();
+  // Other people's personal connections it holds: who manages connectors or agents and its owner may only turn them off.
+  const takesOff = details && (decides || can(org, "manage_connectors"));
+  const theirs = othersPersonalOf(useAgentAccess(orgId, id, takesOff, { others: true }).data, meId);
+  const catalog = useCatalog();
+  const takeOff = useTakeConnectionOffAgent(orgId);
   // A computer brain: its maker's mark and the model by the plan that pays for it ("Sonnet pelo plano do Claude"; its
   // computer only where it tells two apart).
   const thinks =
@@ -593,10 +601,62 @@ function Profile({ id }: { id: string }) {
                     />
                   }
                   label={u.label.text}
+                  {...(u.personal
+                    ? {
+                        sub: t("vault.tab.personal"),
+                        hint: {
+                          name: t("common.about", { label: u.label.text }),
+                          text: t("connectors.personal.worksWhenAsked"),
+                        },
+                      }
+                    : {})}
                   value={t(`mobile.intentAgents.uses.level.${u.level}`)}
                 />
               ),
             )}
+            {/* Someone else's personal connection: whose it is and Desligar, never its tools or level. */}
+            {takesOff
+              ? theirs.map((c) => (
+                  <ButtonRow
+                    key={`theirs:${c.connectionId}`}
+                    leading={
+                      <ConnectorIcon
+                        def={catalog.data?.connectors.find((d) => d.id === c.connector) ?? null}
+                        label={c.label}
+                        size={30}
+                      />
+                    }
+                    label={c.label}
+                    sub={t("connectors.personal.of", {
+                      name: dir.memberById.get(c.ownerUserId ?? "")?.name ?? t("channel.unknownPerson"),
+                    })}
+                    subLines={1}
+                    below={
+                      <View style={styles.remove}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          label={t("connectors.personal.turnOff")}
+                          disabled={takeOff.isPending}
+                          onPress={() =>
+                            takeOff.mutate(
+                              { connectionId: c.connectionId, agentId: id },
+                              {
+                                onSuccess: () =>
+                                  toast({
+                                    title: t("connectors.personal.takenOff", { name: c.label, agent: name }),
+                                    agentId: id,
+                                  }),
+                                onError: failed,
+                              },
+                            )
+                          }
+                        />
+                      </View>
+                    }
+                  />
+                ))
+              : null}
             {/* Its mailboxes beside its apps (ADR 0038): a tap on one's own picks the level. */}
             {mailboxes.map((m) =>
               m.remove ? (
@@ -931,6 +991,7 @@ function ButtonRow({
   label,
   labelLines = 1,
   sub,
+  subLines = 2,
   value,
   trailing,
   below,
@@ -940,6 +1001,7 @@ function ButtonRow({
   label: string;
   labelLines?: number;
   sub?: string | null;
+  subLines?: number;
   value?: string;
   trailing?: ReactNode;
   below?: ReactNode;
@@ -961,7 +1023,7 @@ function ButtonRow({
             {label}
           </Text>
           {sub ? (
-            <Text variant="footnote" tone="faint" numberOfLines={2}>
+            <Text variant="footnote" tone="faint" numberOfLines={subLines}>
               {sub}
             </Text>
           ) : null}
