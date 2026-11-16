@@ -1048,11 +1048,13 @@ function Chat({
       if (channel && channelAgents.length > 0) live.picking(local.id);
     },
     // Its server id: what was guessed on its copy moves there (in the same update when the socket's copy comes first).
-    // Taken into work already going after all (the server steered it), its "pensando…" goes: no second run comes.
+    // Taken into work already going here after all (the server steered it into a run with its own row), its
+    // "pensando…" goes: no second run comes. Steered into a run waiting with no row (a wait this message ends), the
+    // guess stays until the run resumes and takes its place: dropped now, the line went and came back a moment later.
     onSent: (message, local) => {
       live.retarget(local.id, message.id);
-      if (Array.isArray(message.meta?.steeredRunIds) && message.meta.steeredRunIds.length > 0)
-        live.forget(message.id, false);
+      const steered = Array.isArray(message.meta?.steeredRunIds) ? (message.meta.steeredRunIds as string[]) : [];
+      if (live.runs.some((r) => !r.provisional && steered.includes(r.runId))) live.forget(message.id, false);
     },
     // Why, in words: the failed row under it says the same and keeps the text. Not sent, nothing answers it yet.
     onFailed: (error, { clientId, waits }) => {

@@ -28,3 +28,14 @@ describe("a sheet that never shows can't leave the conversation's sheet host ope
     expect(props).toMatch(/onDidPresent: \(\) => \{\s*if \(!openRef\.current\) void ref\.current\?\.dismiss\(\);/);
   });
 });
+
+describe("answering an agent that waits: 'pensando…' comes once, not twice", () => {
+  test("the server's answer drops the guess only when a steered run has its own row here", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    const sent = chat.slice(chat.indexOf("onSent: (message, local) => {"), chat.indexOf("onFailed: (error,"));
+    expect(sent).toContain(
+      "if (live.runs.some((r) => !r.provisional && steered.includes(r.runId))) live.forget(message.id, false);",
+    );
+    expect(sent).not.toContain("steeredRunIds.length > 0");
+  });
+});
