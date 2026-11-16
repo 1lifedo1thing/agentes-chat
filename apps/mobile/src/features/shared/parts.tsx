@@ -88,7 +88,7 @@ export interface ActionItem {
 
 /**
  * The list of actions in a sheet, a GroupedList (sheets sit on the grouped gray): an icon or a face in GroupedRow's
- * 32 pt column, the label, a hint under it; the text and the hairline above start together at 58.
+ * 36 pt column, the label, a hint under it; the text and the hairline above start together at 64.
  */
 export function ActionList({ items }: { items: ActionItem[] }) {
   const c = useColors();
@@ -108,7 +108,7 @@ export function ActionList({ items }: { items: ActionItem[] }) {
   );
 }
 
-/** One action, on a GroupedRow's numbers: 14 pt sides, the 32 pt leading column, 12 apart, 50 tall at least. */
+/** One action, on a GroupedRow's numbers: 16 pt sides, the 36 pt leading column, 12 apart, 52 tall at least. */
 function ActionRow({ item: it, leading }: { item: ActionItem; leading: ReactNode }) {
   const c = useColors();
   const fontScale = useFontScale();
@@ -379,10 +379,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: GROUPED_ROW.padX,
     paddingVertical: GROUPED_ROW.padY,
   },
-  // A wrapping hint: the label starts where a one-line row's does (its 22 points centred in 50), as GroupedRow's.
-  actionTall: { alignItems: "flex-start", paddingVertical: 14 },
+  // A wrapping hint: the label starts where a one-line row's does (its 22 points centred in 52), as GroupedRow's.
+  actionTall: { alignItems: "flex-start", paddingVertical: GROUPED_ROW.tallPadY },
   onLine: { justifyContent: "center" },
-  actionLead: { width: 32, alignItems: "center", justifyContent: "center" },
+  // GroupedRow's leading column: the text starts where GroupedList's hairline does.
+  actionLead: { width: GROUPED_ROW.lead, alignItems: "center", justifyContent: "center" },
   actionText: { flex: 1, minWidth: 0 },
   mono: { fontFamily: MONO, fontSize: 13 },
   headerTitle: { alignItems: Platform.OS === "ios" ? "center" : "flex-start", minWidth: 0 },

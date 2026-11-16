@@ -1,11 +1,11 @@
 import { keys, useApi } from "@agenteschat/client";
 import { makesAgents } from "@agenteschat/client/lib/permissions";
+import { useTrueSheetNavigation } from "@lodev09/react-native-true-sheet/navigation/expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
-import { type NativeStackNavigationOptions, useNavigation } from "expo-router";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Keyboard, Pressable, ScrollView, type ScrollViewInstance, StyleSheet, TextInput, View } from "react-native";
+import { Keyboard, ScrollView, type ScrollViewInstance, StyleSheet, TextInput, View } from "react-native";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -26,6 +26,7 @@ import {
   haptics,
   Icon,
   PixelOrbit,
+  SheetBar,
   SheetSurface,
   Text,
   useReducedMotion,
@@ -65,7 +66,7 @@ const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 export function ShareScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useTrueSheetNavigation();
   const reduced = useReducedMotion();
   const { colors } = useTheme();
   const api = useApi();
@@ -89,9 +90,10 @@ export function ShareScreen() {
     return () => clearTimeout(timer);
   }, [shared]);
 
+  // Typing the line, the sheet takes the whole screen; done, it may rest lower again. The route is a TrueSheet screen
+  // (`app/(app)/_layout.tsx`): its heights are its `detents`.
   useEffect(() => {
-    const options: NativeStackNavigationOptions = { sheetAllowedDetents: typing ? DETENTS_TYPING : DETENTS_REST };
-    navigation.setOptions(options);
+    navigation.setOptions({ detents: typing ? DETENTS_TYPING : DETENTS_REST });
   }, [navigation, typing]);
 
   // What came moves toward the agent as the face catches it: one gesture, the preview leading into the face.
@@ -156,22 +158,7 @@ export function ShareScreen() {
           automaticallyAdjustKeyboardInsets
           contentContainerStyle={styles.scroll}
         >
-          <SheetBar>
-            <Pressable
-              onPress={cancel}
-              accessibilityRole="button"
-              hitSlop={10}
-              style={({ pressed }) => [styles.cancel, pressed && styles.pressed]}
-            >
-              <Text variant="body" tone="ink2">
-                {t("mobile.common.cancel")}
-              </Text>
-            </Pressable>
-            <Text variant="title" style={styles.title} accessibilityRole="header" numberOfLines={1}>
-              {t("mobile.share.title")}
-            </Text>
-            <View style={styles.side} />
-          </SheetBar>
+          <SheetBar title={t("mobile.share.title")} onClose={cancel} />
           <View style={styles.content}>
             {!shared ? (
               gaveUp ? (
@@ -273,12 +260,6 @@ export function ShareScreen() {
   );
 }
 
-/** The sheet's bar, on the sheet's own color so the list passes under it when pinned. */
-function SheetBar({ children }: { children: ReactNode }) {
-  const { colors } = useTheme();
-  return <View style={[styles.head, { backgroundColor: colors.grouped }]}>{children}</View>;
-}
-
 /**
  * The agent's face in its row. Catching what was sent: it pops a little (in fast, settling on a soft spring) and takes
  * its "thinking" look, already reading. Under reduced motion only the look changes.
@@ -368,13 +349,6 @@ function Thumb({ file, more }: { file: SharedFile; more: number }) {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   grow: { flex: 1, minWidth: 0 },
-  // The sheet's bar as "Novo"'s: Cancelar at the left, the title centered, clear of the grabber, its room over it its
-  // own (padding, on its color) so the list passing under it never shows above it.
-  head: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 64, paddingTop: 14, paddingHorizontal: 16 },
-  cancel: { minWidth: 72, minHeight: 44, justifyContent: "center" },
-  title: { flex: 1, textAlign: "center" },
-  side: { minWidth: 72 },
-  pressed: { opacity: 0.6 },
   waiting: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 32 },
   // 16 from the edges; the preview and the line 12 apart, the list's own header bringing its room above it.
   scroll: { paddingBottom: 24 },

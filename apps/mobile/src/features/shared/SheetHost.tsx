@@ -1,6 +1,6 @@
 import { TrueSheet } from "@lodev09/react-native-true-sheet";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, type ScrollViewInstance, StyleSheet } from "react-native";
+import { ScrollView, type ScrollViewInstance } from "react-native";
 import { SheetContent, useSheetBody, useSheetProps } from "@/ui";
 
 /**
@@ -183,7 +183,7 @@ function StepSheet({
           ref={scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[body, styles.in]}
+          contentContainerStyle={body}
         >
           {step.content}
         </ScrollView>
@@ -202,7 +202,3 @@ export function useSheet(): SheetHost {
 export function useSheetIfAny(): SheetHost | null {
   return useContext(SheetContext);
 }
-
-const styles = StyleSheet.create({
-  in: { gap: 12 },
-});

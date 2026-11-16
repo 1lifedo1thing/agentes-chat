@@ -61,6 +61,7 @@ export { Icon, type IconName, type IconProps } from "./Icon";
 export { ICON_BUTTON_SIZE, IconButton, type IconButtonProps, usePlateEdge } from "./IconButton";
 export { InfoHint, type InfoHintOptions } from "./InfoHint";
 export { ICON_NAMES } from "./icons.data";
+export { LargeTitleHead, useLargeTitleScroll } from "./LargeTitleHead";
 export { LargeTitleScreen, type LargeTitleScreenProps, TabFoot } from "./LargeTitleScreen";
 export { LineIcon, type LineIconProps } from "./LineIcon";
 export { LIST_AVATAR, LIST_INSET, LIST_PREVIEW, LIST_TIME, ListRow, type ListRowProps } from "./ListRow";
@@ -91,7 +92,7 @@ export { type BadgePresence, badgeCell } from "./presence-badge";
 export { RoleMark } from "./RoleMark";
 export { Row, type RowProps } from "./Row";
 export { ROW_CARD_INSET, RowAction } from "./RowAction";
-export { CARD_PAD, GROUPED_ROW, SCREEN_X, TOOL_H, TOUCH } from "./rhythm";
+export { CARD_PAD, GROUPED_ROW, SCREEN_X, SHEET_BAR, SHEET_GAP, SHEET_X, TOOL_H, TOUCH } from "./rhythm";
 export { roleMarkFit, roleMarkIcon } from "./role-mark";
 export { SearchField, type SearchFieldProps } from "./SearchField";
 export { Section, type SectionProps } from "./Section";
@@ -106,6 +107,7 @@ export {
   useSheetBody,
   useSheetProps,
 } from "./Sheet";
+export { SheetBar, type SheetBarProps } from "./SheetBar";
 export { SheetScreen, type SheetScreenProps } from "./SheetScreen";
 export { SheetSurface } from "./SheetSurface";
 export { SkeletonList, SkeletonRow, usePulse } from "./Skeleton";
@@ -139,4 +141,5 @@ export {
   useTheme,
   weights,
 } from "./theme";
+export { BAR_TITLE_FROM, BAR_TITLE_TO, TITLE_GONE, titleSnap } from "./title-snap";
 export { CHROME_MAX_SCALE, countStyle, type TypeStyle, typeScale } from "./type-scale";

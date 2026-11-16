@@ -663,8 +663,10 @@ describe("a document's head", () => {
 
   test("a chart opened whole: × alone on the bar, its title on a row of its own under it, never cut", () => {
     const chart = readFileSync(join(import.meta.dir, "../../src/features/chat/ChartCard.tsx"), "utf8");
-    const bar = chart.slice(chart.indexOf("<View style={[styles.sheetTop,"), chart.indexOf("{chart.spec.title}"));
-    expect(bar.indexOf("</View>")).toBeLessThan(bar.indexOf("<Text"));
+    // The task sheets' bar with no title: × alone.
+    const bar = chart.slice(chart.indexOf("<SheetBar"), chart.indexOf("{chart.spec.title}"));
+    expect(bar).toStartWith("<SheetBar onClose={() => router.back()} />");
+    expect(bar).not.toContain("title=");
     expect(bar).not.toContain("numberOfLines");
     expect(chart).not.toContain("sheetSpacer");
     // The scroll view is the sheet's first child, the bar pinned in it: a form sheet sizes its first scroll view to

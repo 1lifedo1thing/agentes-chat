@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { Text as RNText, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Icon, IconButton, PressScale, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
+import { Icon, PressScale, SheetBar, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors } from "../shared/hooks";
 import { copyText, MONO } from "../shared/parts";
@@ -240,14 +240,12 @@ export function CodeSheet() {
       stickyHeaderIndices={[0]}
       contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
     >
-      <View style={[styles.sheetHead, { backgroundColor: c.grouped }]}>
-        <View style={styles.sheetTop}>
-          <IconButton icon="x" plate label={t("mobile.common.close")} onPress={() => router.back()} />
-          <Text variant="title" style={styles.sheetTitle} numberOfLines={1}>
-            {codeLabel(code.lang) || t("mobile.code.label")}
-          </Text>
-          <CopyButton text={code.text} plate />
-        </View>
+      <View style={{ backgroundColor: c.grouped }}>
+        <SheetBar
+          title={codeLabel(code.lang) || t("mobile.code.label")}
+          onClose={() => router.back()}
+          trailing={<CopyButton text={code.text} plate />}
+        />
         <View style={styles.sheetTools}>
           <PressScale
             onPress={() => setWrap((w) => !w)}
@@ -296,11 +294,7 @@ const styles = StyleSheet.create({
   wrap: { flexShrink: 1 },
   italic: { fontStyle: "italic" },
   sheet: { flex: 1 },
-  // Clear of the grabber.
-  sheetHead: { paddingTop: 14 },
   gone: { alignItems: "center", justifyContent: "center", padding: 24 },
-  sheetTop: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 },
-  sheetTitle: { flex: 1, textAlign: "center" },
   sheetTools: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   pill: { minHeight: 32, paddingHorizontal: 14, borderRadius: 16 },
   raw: { height: 28, paddingHorizontal: 12, marginRight: 4, borderRadius: 14 },

@@ -2,14 +2,14 @@ import { type NativeStackNavigationOptions, Stack, useIsFocused } from "expo-rou
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from "react";
 import { Platform, type RefreshControlProps, StyleSheet, View } from "react-native";
-import Animated, { FadeIn, FadeOutUp, LayoutAnimationConfig } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LivePause } from "@/agent/live";
-import { CoverBarBackdrop, CoverParallax, FadingHeaderTitle, useCoverScroll, useScrollFade } from "./cover";
+import { CoverBarBackdrop, CoverParallax, FadingHeaderTitle } from "./cover";
 import { type HeaderAction, useHeaderActionOptions } from "./headerActions";
-import { SCREEN_X } from "./rhythm";
-import { Text } from "./Text";
+import { LargeTitleHead, useLargeTitleScroll } from "./LargeTitleHead";
 import { useTheme } from "./theme";
+import { BAR_TITLE_FROM, BAR_TITLE_TO } from "./title-snap";
 
 /**
  * What the tab roots keep at their foot, over the tab bar (the work-along strip where the bar has no accessory): what
@@ -57,7 +57,8 @@ export interface LargeTitleScreenProps {
 
 /**
  * A tab's root screen (Conversas, Agentes, Atividade): the large title in Funnel Display is part of the
- * content and scrolls away with it; the bar's own title fades in as it goes (like Mail's). We draw it
+ * content and scrolls away with it; the bar's own title fades in as it goes (like Mail's), and a scroll never rests
+ * with the title half gone (`useLargeTitleScroll`). We draw it
  * rather than using the native large title: on iOS 26 inside the system tabs the native one stayed
  * expanded while the list scrolled under it. The bar is clear over the large title and
  * turns into the system glass (iOS 26 scroll edge; a blur before; on Android a fade into the screen's color
@@ -89,8 +90,9 @@ export function LargeTitleScreen({
   // On iOS the scroll view is inset by the clear bar ourselves (contentInset, resting at minus the header
   // height): the automatic adjustment didn't apply inside the system tabs, so the list rested under the bar
   // with the large title hidden, shown only while pulled. Android lays it out from the top, under the bar.
-  const { y, onScroll } = useCoverScroll(IOS ? headerHeight : 0);
-  const titleFade = useScrollFade(y, 0, TITLE_GONE);
+  // Folded away for a search, there is no title to settle.
+  const scroll = useLargeTitleScroll(IOS ? headerHeight : 0, { snap: !collapsed });
+  const { y } = scroll;
   const actionOptions = useHeaderActionOptions({ right: actions, left, leftActions });
   // Stable options: `setOptions` runs when the title or the actions change, not on every render.
   const options = useMemo<NativeStackNavigationOptions>(
@@ -110,8 +112,11 @@ export function LargeTitleScreen({
       <Stack.Screen options={options} />
       <LivePause paused={!focused}>
         <Animated.ScrollView
-          onScroll={onScroll}
+          ref={scroll.ref}
+          onScroll={scroll.onScroll}
           onScrollBeginDrag={onScrollBeginDrag}
+          onScrollEndDrag={scroll.onScrollEndDrag}
+          onMomentumScrollEnd={scroll.onMomentumScrollEnd}
           scrollEventThrottle={16}
           refreshControl={refreshControl}
           contentInsetAdjustmentBehavior="never"
@@ -137,23 +142,7 @@ export function LargeTitleScreen({
                 {backdrop}
               </CoverParallax>
             ) : null}
-            {/* The title shows at once when the screen opens; it fades only when it comes back after a search. */}
-            <LayoutAnimationConfig skipEntering>
-              {collapsed ? null : (
-                <Animated.View entering={FadeIn.duration(200)} exiting={FadeOutUp.duration(180)}>
-                  <Animated.View style={[styles.head, below ? styles.headTight : null, titleFade]}>
-                    <Text variant="display" accessibilityRole="header" numberOfLines={1}>
-                      {title}
-                    </Text>
-                    {subtitle ? (
-                      <Text variant="small" tone="muted" style={styles.subtitle}>
-                        {subtitle}
-                      </Text>
-                    ) : null}
-                  </Animated.View>
-                </Animated.View>
-              )}
-            </LayoutAnimationConfig>
+            <LargeTitleHead y={y} title={title} subtitle={subtitle} collapsed={collapsed} tight={Boolean(below)} />
             {below}
           </View>
           {children}
@@ -175,19 +164,11 @@ const IOS = Platform.OS === "ios";
 /** Room for the system tab bar over the list's end (iOS; the floating bar and its margin), so the last row clears it. */
 const TAB_BAR = 76;
 
-/** Scroll (from rest) by which the large title has faded out under the bar. */
-const TITLE_GONE = 40;
-/** The bar's title fades in over this stretch, as the large title leaves. */
-const BAR_TITLE_FROM = 28;
-const BAR_TITLE_TO = 48;
-
 /** The pull-down's gap, where the orbit sits (the system's wheel takes about as much). */
 const PULL_MARK = 56;
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  // At the screen's sides (SCREEN_X), as the lists and cards under it.
-  head: { paddingHorizontal: SCREEN_X, paddingTop: 2, paddingBottom: 10 },
   // Above the content's top edge: only a pull-down brings it into view (the system's wheel sits there too).
   pullMark: {
     position: "absolute",
@@ -197,6 +178,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  headTight: { paddingBottom: 4 },
-  subtitle: { marginTop: 2 },
 });
