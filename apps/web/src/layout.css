@@ -8509,6 +8509,45 @@ html:not([data-pointer]) .izoom__stage:focus-visible {
 .phone-code .machine-pair__steps {
   align-self: stretch;
 }
+/* Linking an outside chat app (ADR 0187): the QR code, the code and its time, the steps, the way to open the app.
+   The sender's name and display are the surface's untrusted words: they wrap anywhere, never cut. */
+.surface-link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.surface-link .dv-steps {
+  align-self: stretch;
+}
+.surface-link__code {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.surface-link__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.surface-sender {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--line);
+  min-width: 0;
+}
+.surface-sender__display {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.surface-sender__line {
+  overflow-wrap: anywhere;
+}
 /* A step's words, then the stores under them, on the same left edge. */
 .phone-code__step {
   display: flex;
@@ -14680,31 +14719,25 @@ html:not([data-pointer]) .app-icons__agent:focus-visible {
       padding-block: calc((28px - 1lh) / 2);
     }
   }
-  /* A line with a status under its name and a switch or nothing at its end: the icon, the name and the switch on one
-     line as above (the name keeps the 24 characters), the status under them at the row's full width, so the icon never
-     owns a column beside three lines. A step (`--space-2`, a MediaRow's) parts it from the icon: closer, it reads as
-     the icon's caption. */
-  .settings-row--lead:has(> .settings-row__end > .ac-switch) > .settings-row__text:has(> .settings-row__status),
-  .settings-row--lead:not(.settings-row--open, :has(> .settings-row__end))
-    > .settings-row__text:has(> .settings-row__status) {
+  /* A line with a status under its name and a switch, nothing or any other control at its end: the icon, the name and
+     a switch on one line as above (the name keeps the 24 characters), the status under them at the row's full width,
+     so the icon never owns a column beside three lines; any other control goes under the status, from the words' edge.
+     A step (`--space-2`, a MediaRow's) parts it from the icon: closer, it reads as the icon's caption. */
+  .settings-row--lead:not(.settings-row--open) > .settings-row__text:has(> .settings-row__status) {
     display: contents;
   }
-  .settings-row--lead:has(> .settings-row__end > .ac-switch)
-    > .settings-row__text:has(> .settings-row__status)
-    > :first-child,
-  .settings-row--lead:not(.settings-row--open, :has(> .settings-row__end))
-    > .settings-row__text:has(> .settings-row__status)
-    > :first-child {
+  .settings-row--lead:not(.settings-row--open) > .settings-row__text:has(> .settings-row__status) > :first-child {
     flex: 1 1 24ch;
     max-width: max-content;
     min-width: 0;
   }
-  .settings-row--lead:has(> .settings-row__end > .ac-switch) > .settings-row__text > .settings-row__status,
-  .settings-row--lead:not(.settings-row--open, :has(> .settings-row__end))
-    > .settings-row__text
-    > .settings-row__status {
+  .settings-row--lead:not(.settings-row--open) > .settings-row__text > .settings-row__status {
     flex-basis: 100%;
     order: 1;
+  }
+  .settings-row--lead:not(.settings-row--open):has(> .settings-row__text > .settings-row__status)
+    > .settings-row__end:not(:has(> .ac-switch)) {
+    order: 2;
   }
   /* A line that opens something, with a status: the icon, the name and the chevron (a value before it) on one line,
      the status under them at the row's width, so the icon never owns a column beside three lines. */

@@ -2132,6 +2132,56 @@
     "localOnlyHow": "Di aplikasi agentes.chat pada komputer itu, nyalakan Akses dari ponselmu dan rekan tim di Preferensi › Server. Lalu kembali ke sini.",
     "localOnlyHere": "Nyalakan Akses dari ponselmu dan rekan tim. Lalu kembali ke sini."
   },
+  "surface": {
+    "link": {
+      "consent": "{{assistant}} dari agentes.chat boleh mengirimimu pesan di {{surface}} tentang ruang kerjamu, dan meneleponmu hanya saat ada yang mendesak dan kamu mengizinkannya. Tulis stop untuk mematikannya.",
+      "title": "Ngobrol dengan {{assistant}} di {{surface}}",
+      "qr": "Kode QR yang membuka {{surface}} dengan kodemu sudah terisi",
+      "making": "Membuat kodemu",
+      "code": "Kodemu {{code}}",
+      "open": "Buka {{surface}}",
+      "stepScan": "Pindai kode dengan ponselmu, atau buka {{surface}} di sini",
+      "stepSend": "Kirim pesannya apa adanya",
+      "stepSendText": "Ini lanjut sendiri begitu pesanmu sampai.",
+      "stepConfirm": "Periksa pengirimnya dan konfirmasi di sini",
+      "showCode": "Tampilkan kode lagi",
+      "confirmTitle": "Apakah ini {{surface}} milikmu?",
+      "sentBy": "Pengirim ini mengirim kodemu",
+      "onlyYou": "Tautkan hanya jika ini kamu.",
+      "workspace": "Menjawab di {{workspace}}",
+      "confirm": "Ya, tautkan",
+      "notMe": "Bukan aku",
+      "doneTitle": "{{surface}} sudah tertaut",
+      "doneText": "{{assistant}} menjawabmu di sana mulai sekarang.",
+      "newCode": "Buat kode baru",
+      "done": "Selesai"
+    },
+    "row": {
+      "hint": "Ngobrol dengan {{assistant}} dan terima balasannya di {{surface}}.",
+      "link": "Tautkan",
+      "none": "{{assistant}} bisa mengirimimu pesan di sana",
+      "pending": "Ada pengirim yang menunggumu mengonfirmasi",
+      "unlink": "Lepas tautan",
+      "unlinkTitle": "Lepas tautan {{surface}}?",
+      "unlinkText": "{{assistant}} berhenti menjawabmu di sana. Kamu bisa menautkannya lagi kapan saja.",
+      "unlinked": "Tautan {{surface}} dilepas"
+    },
+    "undo": {
+      "title": "Lepas tautan aplikasi chat?",
+      "lead": "Akunmu baru saja ditautkan ke aplikasi chat. Kalau itu bukan kamu, lepas tautannya di sini.",
+      "button": "Lepas tautan",
+      "done": "Tautan {{surface}} dilepas",
+      "doneLead": "{{display}} tidak bisa lagi menjangkau akunmu.",
+      "ended": "Tautan sudah dilepas",
+      "endedLead": "{{display}} di {{surface}} sudah dilepas sebelumnya. Tidak ada lagi yang perlu dilakukan.",
+      "gone": "Tautan pembatalan ini sudah tidak berfungsi",
+      "sender": "Pengirim itu"
+    },
+    "via": "via {{surface}}",
+    "viaTip": "Dikirim oleh {{person}} di {{surface}}",
+    "forwarded": "diteruskan via {{surface}}",
+    "forwardedTip": "{{person}} meneruskan ini dari {{surface}}. Kata-kata ini milik orang lain."
+  },
   "team": {
     "title": "Tim",
     "people_other": "{{count}} orang",
@@ -14178,6 +14228,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "Server ini tidak lagi menautkan aplikasi chat. Muat ulang untuk melihat pengaturanmu yang sekarang.",
+      "notAllowed": "Menautkan aplikasi chat belum dibuka untuk akunmu. Tetap pakai aplikasi di sini sampai dibuka.",
+      "noAssistant": "Asisten di ruang kerja ini tidak diatur untuk bicara denganmu. Pilih ruang kerja lain untuk ditautkan.",
+      "noWorkspace": "Kamu tidak lagi ada di ruang kerja ini. Pilih ruang kerja lain untuk ditautkan.",
+      "linkGone": "Tautan ini tidak lagi menunggu: kedaluwarsa setelah 10 menit atau dibatalkan. Buat kode baru untuk mulai lagi.",
+      "taken": "Pengirim itu tertaut ke akun agentes.chat lain. Lepaskan tautannya di sana, lalu kirim kode baru.",
+      "undoGone": "Tautan pembatalan ini sudah dipakai atau kedaluwarsa. Lepaskan tautan lewat pengaturan notifikasimu saja.",
+      "codeGone": "Kode ini salah, sudah dipakai, atau kedaluwarsa setelah 10 menit. Buat kode baru dan kirim lagi."
+    },
     "tooLarge": "Ini lebih besar dari yang diterima server.",
     "tooLargeMax": "Ini lebih besar dari yang diterima server: maksimal {{max}} MB.",
     "passwordLink": {

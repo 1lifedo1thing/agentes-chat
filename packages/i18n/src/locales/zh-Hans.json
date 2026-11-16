@@ -2132,6 +2132,56 @@
     "localOnlyHow": "在那台电脑的 agentes.chat 应用中，打开偏好设置 › 服务器里的“从你的手机和队友那里访问”，然后回到这里。",
     "localOnlyHere": "打开“从你的手机和队友那里访问”，然后回到这里。"
   },
+  "surface": {
+    "link": {
+      "consent": "agentes.chat 的 {{assistant}} 可能会在 {{surface}} 上给你发关于你的工作区的消息，只有在事情紧急且你允许时才会给你打电话。发送 stop 即可关闭。",
+      "title": "在{{surface}}上和{{assistant}}聊天",
+      "qr": "打开{{surface}}并填好你的代码的二维码",
+      "making": "正在生成你的代码",
+      "code": "你的代码 {{code}}",
+      "open": "打开{{surface}}",
+      "stepScan": "用手机扫描代码，或在这里打开{{surface}}",
+      "stepSend": "按原样发送这条消息",
+      "stepSendText": "你的消息一到，就会自动进入下一步。",
+      "stepConfirm": "核对发送者并在这里确认",
+      "showCode": "再次显示代码",
+      "confirmTitle": "这是你的{{surface}}吗？",
+      "sentBy": "这个发送者发来了你的代码",
+      "onlyYou": "只有这是你本人时才关联。",
+      "workspace": "在{{workspace}}中回复",
+      "confirm": "是，关联",
+      "notMe": "不是我",
+      "doneTitle": "{{surface}}已关联",
+      "doneText": "从现在起，{{assistant}}会在那里回复你。",
+      "newCode": "生成新代码",
+      "done": "完成"
+    },
+    "row": {
+      "hint": "和{{assistant}}聊天，并在{{surface}}上收到回复。",
+      "link": "关联",
+      "none": "{{assistant}}可以在那里给你发消息",
+      "pending": "有发送者在等你确认",
+      "unlink": "取消关联",
+      "unlinkTitle": "要取消关联{{surface}}吗？",
+      "unlinkText": "{{assistant}}将不再在那里回复你。你随时可以重新关联。",
+      "unlinked": "已取消关联{{surface}}"
+    },
+    "undo": {
+      "title": "要取消关联聊天应用吗？",
+      "lead": "你的账号刚刚关联了一个聊天应用。如果不是你，请在这里取消关联。",
+      "button": "取消关联",
+      "done": "已取消关联{{surface}}",
+      "doneLead": "{{display}}再也无法联系到你的账号。",
+      "ended": "已经取消关联",
+      "endedLead": "{{surface}}上的{{display}}之前已取消关联。无需再做什么。",
+      "gone": "这个撤销链接已失效",
+      "sender": "该发送者"
+    },
+    "via": "通过 {{surface}}",
+    "viaTip": "由 {{person}} 通过 {{surface}} 发送",
+    "forwarded": "通过 {{surface}} 转发",
+    "forwardedTip": "{{person}} 从 {{surface}} 转发了这条消息。这是别人的话。"
+  },
   "team": {
     "title": "团队",
     "people_other": "{{count}} 人",
@@ -14188,6 +14238,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "此服务器已不再关联聊天应用。刷新页面即可查看当前设置。",
+      "notAllowed": "你的账号暂时还不能关联聊天应用。在开放之前，请继续在这里使用应用。",
+      "noAssistant": "此工作区的助手未设置为与你交谈。请选择另一个工作区进行关联。",
+      "noWorkspace": "你已不在此工作区。请选择另一个工作区进行关联。",
+      "linkGone": "此关联已不再等待：它在 10 分钟后过期或已被取消。请生成新代码重新开始。",
+      "taken": "该发送者已关联到另一个 agentes.chat 账号。请先在那里取消关联，再发送新代码。",
+      "undoGone": "此撤销链接已被使用或已过期。请改在通知设置中取消关联。",
+      "codeGone": "此代码错误、已被使用或已在 10 分钟后过期。请生成新代码并重新发送。"
+    },
     "tooLarge": "超出了服务器接受的大小。",
     "tooLargeMax": "超出了服务器接受的大小：最大 {{max}} MB。",
     "passwordLink": {

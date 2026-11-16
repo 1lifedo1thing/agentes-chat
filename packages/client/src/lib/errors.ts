@@ -20,6 +20,15 @@ export const REAUTH_PASSWORD = "reauth.password";
  * takes `untranslatedText`; a guard test (`error-words.test.ts`) fails on a new code that isn't here or on its list.
  */
 const KNOWN = {
+  // Linking an outside chat surface (ADR 0187). The lines name no surface: the server's errors carry no name.
+  "surface.off": "errors.surface.off",
+  "surface.not_allowed": "errors.surface.notAllowed",
+  "surface.no_assistant": "errors.surface.noAssistant",
+  "surface.no_workspace": "errors.surface.noWorkspace",
+  "surface.link_gone": "errors.surface.linkGone",
+  "surface.taken": "errors.surface.taken",
+  "surface.undo_gone": "errors.surface.undoGone",
+  "surface.code_gone": "errors.surface.codeGone",
   // A new-password link an owner can't make (ADR 0158).
   "password_link.email": "errors.passwordLink.email",
   "password_link.server_owner": "errors.passwordLink.serverOwner",

@@ -6921,6 +6921,17 @@ html:not([data-pointer]) .ac-msg:focus-within .ac-msg__actions,
   align-items: flex-end;
   justify-content: flex-end;
 }
+.ac-msg__mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  align-self: center;
+  color: var(--faint);
+}
+.ac-msg__own-foot > .ac-msg__mark {
+  height: 16px;
+  margin-right: var(--space-1);
+}
 .ac-msg__own-foot > .ac-msg__aside {
   gap: 0;
   height: 16px;

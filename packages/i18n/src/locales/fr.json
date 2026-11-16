@@ -2258,6 +2258,56 @@
     "localOnlyHow": "Dans l'app agentes.chat de cet ordinateur, activez Y accéder depuis votre téléphone et vos collègues dans Préférences › Serveurs. Puis revenez ici.",
     "localOnlyHere": "Activez Y accéder depuis votre téléphone et vos collègues. Puis revenez ici."
   },
+  "surface": {
+    "link": {
+      "consent": "{{assistant}} d'agentes.chat peut vous écrire sur {{surface}} à propos de vos espaces de travail, et vous appeler seulement en cas d'urgence si vous l'autorisez. Écrivez stop pour désactiver.",
+      "title": "Parlez à {{assistant}} sur {{surface}}",
+      "qr": "QR code qui ouvre {{surface}} avec votre code déjà saisi",
+      "making": "Création de votre code",
+      "code": "Votre code {{code}}",
+      "open": "Ouvrir {{surface}}",
+      "stepScan": "Scannez le code avec votre téléphone, ou ouvrez {{surface}} ici",
+      "stepSend": "Envoyez le message tel quel",
+      "stepSendText": "Cela avance tout seul dès que votre message arrive.",
+      "stepConfirm": "Vérifiez l'expéditeur et confirmez ici",
+      "showCode": "Afficher le code à nouveau",
+      "confirmTitle": "Est-ce bien votre {{surface}} ?",
+      "sentBy": "Cet expéditeur a envoyé votre code",
+      "onlyYou": "Liez-le uniquement si c'est vous.",
+      "workspace": "Répond dans {{workspace}}",
+      "confirm": "Oui, lier",
+      "notMe": "Ce n'est pas moi",
+      "doneTitle": "{{surface}} est lié",
+      "doneText": "{{assistant}} vous répond là-bas à partir de maintenant.",
+      "newCode": "Créer un nouveau code",
+      "done": "Terminé"
+    },
+    "row": {
+      "hint": "Parlez à {{assistant}} et recevez ses réponses sur {{surface}}.",
+      "link": "Lier",
+      "none": "{{assistant}} peut vous écrire là-bas",
+      "pending": "Un expéditeur attend que vous confirmiez",
+      "unlink": "Délier",
+      "unlinkTitle": "Délier {{surface}} ?",
+      "unlinkText": "{{assistant}} ne vous répondra plus là-bas. Vous pouvez le lier à nouveau quand vous voulez.",
+      "unlinked": "{{surface}} délié"
+    },
+    "undo": {
+      "title": "Délier l'app de chat ?",
+      "lead": "Votre compte vient d'être lié à une app de chat. Si ce n'était pas vous, déliez-la ici.",
+      "button": "Délier",
+      "done": "{{surface}} délié",
+      "doneLead": "{{display}} ne peut plus atteindre votre compte.",
+      "ended": "Déjà délié",
+      "endedLead": "{{display}} sur {{surface}} avait déjà été délié. Rien d'autre à faire.",
+      "gone": "Ce lien d'annulation ne fonctionne plus",
+      "sender": "Cet expéditeur"
+    },
+    "via": "via {{surface}}",
+    "viaTip": "Envoyé par {{person}} sur {{surface}}",
+    "forwarded": "transféré via {{surface}}",
+    "forwardedTip": "{{person}} a transféré ceci depuis {{surface}}. Ce sont les mots de quelqu'un d'autre."
+  },
   "team": {
     "title": "Équipe",
     "people_one": "{{count}} personne",
@@ -15165,6 +15215,16 @@
     }
   },
   "errors": {
+    "surface": {
+      "off": "Ce serveur ne relie plus d'apps de chat. Rechargez pour voir vos paramètres tels qu'ils sont maintenant.",
+      "notAllowed": "Relier une app de chat n'est pas encore ouvert à votre compte. Continuez à utiliser l'app ici en attendant.",
+      "noAssistant": "L'assistant de cet espace de travail n'est pas autorisé à vous parler. Choisissez un autre espace de travail à relier.",
+      "noWorkspace": "Vous n'êtes plus dans cet espace de travail. Choisissez un autre espace de travail à relier.",
+      "linkGone": "Cette liaison n'attend plus : elle a expiré après 10 minutes ou a été annulée. Créez un nouveau code pour recommencer.",
+      "taken": "Cet expéditeur est relié à un autre compte agentes.chat. Supprimez la liaison là-bas, puis envoyez un nouveau code.",
+      "undoGone": "Ce lien d'annulation a déjà servi ou a expiré. Supprimez plutôt la liaison dans vos paramètres de notifications.",
+      "codeGone": "Ce code est erroné, déjà utilisé ou expiré après 10 minutes. Créez un nouveau code et renvoyez-le."
+    },
     "tooLarge": "C'est plus que ce que le serveur accepte.",
     "tooLargeMax": "C'est plus que ce que le serveur accepte : jusqu'à {{max}} Mo.",
     "passwordLink": {

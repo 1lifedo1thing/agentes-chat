@@ -389,6 +389,12 @@ test("a provider refused this server's own OAuth app: what's wrong and who fixes
  * hit goes in `KNOWN` instead.
  */
 const PLAIN_LINE = new Set([
+  // Only the outside chat surface's service meets these, on its own bridge routes (ADR 0187).
+  "surface.busy",
+  "surface.claim_limit",
+  "surface.file_gone",
+  "surface.rate_limited",
+  "surface.unlinked",
   // Only an agent names a project by a name that isn't one, and the pickers offer only projects that exist.
   "issue_project.unknown",
   "issue_project.not_found",
