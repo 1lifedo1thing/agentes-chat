@@ -2881,5 +2881,27 @@
       "title": "Niets te controleren",
       "text": "Als een agent iets buiten het gesprek doet, verschijnt het hier."
     }
+  },
+  "surface": {
+    "link": "Koppelen",
+    "on": "Aan",
+    "rowNone": "{{assistant}} kan je daar berichten sturen",
+    "rowPending": "Wacht op je bevestiging",
+    "unlink": "Ontkoppelen",
+    "unlinkTitle": "{{surface}} ontkoppelen?",
+    "unlinkText": "Berichten van {{sender}} komen niet meer in je werkruimtes aan.",
+    "title": "{{surface}} koppelen",
+    "talkTitle": "Praat met {{assistant}} op {{surface}}",
+    "codeText": "Stuur het bericht dat daar opent en kom dan hier terug.",
+    "open": "{{surface}} openen",
+    "openFailed": "{{surface}} kon niet openen op deze telefoon. Stuur de code hieronder er zelf heen.",
+    "orType": "Of stuur deze code daar",
+    "confirmTitle": "Ben jij dit op {{surface}}?",
+    "sentBy": "Deze afzender stuurde je code",
+    "onlyYou": "Koppel alleen als jij dit bent.",
+    "confirm": "Ja, koppelen",
+    "notMe": "Dit ben ik niet",
+    "linkedTitle": "{{surface}} is gekoppeld",
+    "linkedText": "{{assistant}} kan je nu bereiken op {{sender}}."
   }
 }

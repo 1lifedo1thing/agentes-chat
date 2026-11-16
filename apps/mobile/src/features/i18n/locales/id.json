@@ -2761,5 +2761,27 @@
       "title": "Tidak ada yang perlu ditinjau",
       "text": "Saat agen melakukan sesuatu di luar percakapan, itu muncul di sini."
     }
+  },
+  "surface": {
+    "link": "Tautkan",
+    "on": "Aktif",
+    "rowNone": "{{assistant}} bisa mengirimi Anda pesan di sana",
+    "rowPending": "Menunggu konfirmasi Anda",
+    "unlink": "Lepas tautan",
+    "unlinkTitle": "Lepas tautan {{surface}}?",
+    "unlinkText": "Pesan dari {{sender}} tidak lagi sampai ke ruang kerja Anda.",
+    "title": "Tautkan {{surface}}",
+    "talkTitle": "Bicara dengan {{assistant}} di {{surface}}",
+    "codeText": "Kirim pesan yang terbuka di sana, lalu kembali ke sini.",
+    "open": "Buka {{surface}}",
+    "openFailed": "Tidak bisa membuka {{surface}} di ponsel ini. Kirim kode di bawah ke sana.",
+    "orType": "Atau kirim kode ini di sana",
+    "confirmTitle": "Apakah ini Anda di {{surface}}?",
+    "sentBy": "Pengirim ini mengirim kode Anda",
+    "onlyYou": "Tautkan hanya jika ini Anda.",
+    "confirm": "Ya, tautkan",
+    "notMe": "Bukan saya",
+    "linkedTitle": "{{surface}} tertaut",
+    "linkedText": "{{assistant}} kini bisa menghubungi Anda di {{sender}}."
   }
 }

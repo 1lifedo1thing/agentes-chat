@@ -2988,5 +2988,27 @@
       "title": "Rien à vérifier",
       "text": "Quand un agent fait quelque chose hors de la discussion, cela apparaît ici."
     }
+  },
+  "surface": {
+    "link": "Associer",
+    "on": "Activé",
+    "rowNone": "{{assistant}} peut vous écrire là-bas",
+    "rowPending": "En attente de votre confirmation",
+    "unlink": "Dissocier",
+    "unlinkTitle": "Dissocier {{surface}} ?",
+    "unlinkText": "Les messages de {{sender}} n'arrivent plus dans vos espaces de travail.",
+    "title": "Associer {{surface}}",
+    "talkTitle": "Parlez à {{assistant}} sur {{surface}}",
+    "codeText": "Envoyez le message qui s'ouvre là-bas, puis revenez ici.",
+    "open": "Ouvrir {{surface}}",
+    "openFailed": "Impossible d'ouvrir {{surface}} sur ce téléphone. Envoyez-lui plutôt le code ci-dessous.",
+    "orType": "Ou envoyez ce code là-bas",
+    "confirmTitle": "Est-ce vous sur {{surface}} ?",
+    "sentBy": "Cet expéditeur a envoyé votre code",
+    "onlyYou": "Associez-le seulement si c'est vous.",
+    "confirm": "Oui, associer",
+    "notMe": "Ce n'est pas moi",
+    "linkedTitle": "{{surface}} est associé",
+    "linkedText": "{{assistant}} peut maintenant vous joindre à {{sender}}."
   }
 }

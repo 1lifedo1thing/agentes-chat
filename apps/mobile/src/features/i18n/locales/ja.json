@@ -2761,5 +2761,27 @@
       "title": "確認するものはありません",
       "text": "エージェントが会話の外で何かを行うと、ここに表示されます。"
     }
+  },
+  "surface": {
+    "link": "連携",
+    "on": "オン",
+    "rowNone": "{{assistant}}がそこでメッセージを送れます",
+    "rowPending": "確認を待っています",
+    "unlink": "連携を解除",
+    "unlinkTitle": "{{surface}}の連携を解除しますか?",
+    "unlinkText": "{{sender}}からのメッセージはワークスペースに届かなくなります。",
+    "title": "{{surface}}を連携",
+    "talkTitle": "{{surface}}で{{assistant}}と話す",
+    "codeText": "そこで開くメッセージを送信して、ここに戻ってください。",
+    "open": "{{surface}}を開く",
+    "openFailed": "この端末で{{surface}}を開けませんでした。下のコードを送信してください。",
+    "orType": "またはこのコードを送信",
+    "confirmTitle": "{{surface}}のこの相手はあなたですか?",
+    "sentBy": "この送信者があなたのコードを送りました",
+    "onlyYou": "あなた自身の場合のみ連携してください。",
+    "confirm": "はい、連携します",
+    "notMe": "自分ではない",
+    "linkedTitle": "{{surface}}を連携しました",
+    "linkedText": "{{assistant}}が{{sender}}であなたに連絡できるようになりました。"
   }
 }

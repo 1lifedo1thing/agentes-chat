@@ -33,6 +33,7 @@ import {
   useToast,
 } from "@/ui";
 import { Page } from "./parts";
+import { SurfaceLinkRow } from "./SurfaceLink";
 
 /**
  * Você's smaller screens, each pushed from its row: Workspaces, Notificações, Ao abrir o app, Respostas dos agentes,
@@ -127,6 +128,7 @@ export function NotificationsPage() {
           onPress={() => void push.set(!on)}
         />
       </GroupedList>
+      <SurfaceLinkRow />
       {prefs.data ? (
         <>
           <GroupedHeader

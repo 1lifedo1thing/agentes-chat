@@ -2761,5 +2761,27 @@
       "title": "没有需要查看的内容",
       "text": "智能体在对话之外做事时，会显示在这里。"
     }
+  },
+  "surface": {
+    "link": "关联",
+    "on": "已开启",
+    "rowNone": "{{assistant}} 可以在那里给你发消息",
+    "rowPending": "正在等你确认",
+    "unlink": "取消关联",
+    "unlinkTitle": "取消关联 {{surface}}?",
+    "unlinkText": "来自 {{sender}} 的消息将不再进入你的工作区。",
+    "title": "关联 {{surface}}",
+    "talkTitle": "在 {{surface}} 上与 {{assistant}} 对话",
+    "codeText": "发送在那里打开的消息,然后回到这里。",
+    "open": "打开 {{surface}}",
+    "openFailed": "无法在这台手机上打开 {{surface}}。请改为把下面的代码发过去。",
+    "orType": "或在那里发送此代码",
+    "confirmTitle": "{{surface}} 上的这位是你吗?",
+    "sentBy": "此发送者发来了你的代码",
+    "onlyYou": "仅在确实是你时才关联。",
+    "confirm": "是,关联",
+    "notMe": "不是我",
+    "linkedTitle": "{{surface}} 已关联",
+    "linkedText": "{{assistant}} 现在可以通过 {{sender}} 联系你。"
   }
 }

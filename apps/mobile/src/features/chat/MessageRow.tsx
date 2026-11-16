@@ -8,6 +8,7 @@ import {
   type ReplyRef,
   type RunConsultation,
   type ScreenKind,
+  type SurfaceLinks,
   type ThreadInfo,
   useApi,
   useConsultations,
@@ -96,6 +97,7 @@ import { deviceWaitOf } from "../devices/logic";
 import { WaitToolOffAction } from "../devices/ToolOneClick";
 import { MessageFiles } from "../files/MessageFiles";
 import { consultationHref, routineHref } from "../links/logic";
+import { surfaceTagText } from "../me/surface";
 import { DecisionCard, MissionCard, PlanCard, ReviewCard, SetupFailedCard } from "../missions/cards";
 import { AwayPill, BrainWait } from "../outages/WaitCard";
 import { SettingsProposals } from "../right-hand/SettingsCard";
@@ -243,6 +245,11 @@ export const MessageRow = memo(function MessageRow({
   // A person's message sent through a connected AI app (ADR 0119): "via Claude".
   const via = m.author.type === "person" ? appVia(meta) : null;
   const viaMark = via?.brand ? APP_BRANDS[via.brand] : undefined;
+  // Written on the outside chat surface (ADR 0187): "via <surface>", or that it was forwarded there.
+  const surfaceTag =
+    m.author.type === "person"
+      ? surfaceTagText(t, meta, name, qc.getQueryData<SurfaceLinks>(keys.surfaceLinks), i18n.language)
+      : null;
   // What the server wrote itself is said in the person's language; a stopped reply drops the server's note. Where a
   // task ran is said only where the workspace has more than one computer.
   const names = useNamesComputers();
@@ -502,6 +509,7 @@ export const MessageRow = memo(function MessageRow({
   if (onRight) {
     const stamp = (
       <View style={styles.stamp}>
+        {surfaceTag ? <SurfaceMark tag={surfaceTag} color={solidInk ?? c.muted} /> : null}
         <Text variant="caption" tone="muted" style={solidInk ? { color: solidInk } : undefined}>
           {when.time(m.createdAt)}
         </Text>
@@ -600,6 +608,7 @@ export const MessageRow = memo(function MessageRow({
             its line; a send in flight says so. */}
         {!m.local && (run === "end" || run === "solo") && !myBubble ? (
           <View style={[styles.meTime, { marginTop: rhythm.part / 2 }]}>
+            {surfaceTag ? <SurfaceMark tag={surfaceTag} color={c.faint} /> : null}
             <Text variant="caption" tone="faint">
               {when.time(m.createdAt)}
             </Text>
@@ -642,6 +651,7 @@ export const MessageRow = memo(function MessageRow({
           hint={t("apps.viaTip", { person: name, name: via.name })}
         />
       ) : null}
+      {surfaceTag ? <Tag icon="chat" label={surfaceTag.label} hint={surfaceTag.hint} wrap /> : null}
       {routine ? (
         // The tag opens the routine (Rotinas, as on the web); "Ver relatório" beside it unfolds the report.
         <Tag
@@ -745,7 +755,7 @@ export const MessageRow = memo(function MessageRow({
   ) : null;
   // The bubble holds its words, the tags of its name line and, at its end, the time; a row with none keeps its line.
   const inBubble = bubbled && Boolean(body) && !brainWait && !deviceWait && !choiceReply;
-  const tagged = Boolean(reminder || via || routine || talker || helping || m.pinned);
+  const tagged = Boolean(reminder || via || surfaceTag || routine || talker || helping || m.pinned);
   const opener = opened?.said ? <MessageText body={opened.said} selectable={false} accent={accent} /> : null;
   // Outside a bubble the line it opened with is a part of its own, as the web's second text.
   const openerPart = opener && words ? <View style={{ marginBottom: rhythm.part }}>{opener}</View> : opener;
@@ -1160,19 +1170,22 @@ function Tag({
   label,
   onPress,
   hint,
+  wrap,
 }: {
-  icon: "bell" | "clock" | "sparkle";
+  icon: "bell" | "chat" | "clock" | "sparkle";
   /** In place of the icon (an app's mark). */
   lead?: ReactNode;
   label: string;
   onPress?: () => void;
   hint?: string;
+  /** The whole label on as many lines as it needs, for a name nobody here chose (an operator's surface). */
+  wrap?: boolean;
 }) {
   const c = useColors();
   const chip = (
     <View style={[styles.tag, { backgroundColor: c.sunken }]} accessibilityHint={onPress ? undefined : hint}>
       {lead ?? <Icon name={icon} size={12} color={c.muted} />}
-      <Text variant="caption" tone="muted" numberOfLines={1} style={styles.shrink}>
+      <Text variant="caption" tone="muted" numberOfLines={wrap ? 0 : 1} style={styles.shrink}>
         {label}
       </Text>
     </View>
@@ -1188,6 +1201,15 @@ function Tag({
     >
       {chip}
     </Pressable>
+  );
+}
+
+/** Beside the time of my own message written on the outside chat surface: its glyph, the words read aloud. */
+function SurfaceMark({ tag, color }: { tag: { label: string; hint: string }; color: string }) {
+  return (
+    <View accessible accessibilityLabel={tag.label} accessibilityHint={tag.hint}>
+      <Icon name="chat" size={12} color={color} />
+    </View>
   );
 }
 
