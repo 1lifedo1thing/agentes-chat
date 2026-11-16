@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Icon, RoleMark, roleMarkIcon, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
-import { SettingsPage } from "../settings/parts";
+import { Gap, SettingsPage } from "../settings/parts";
 import { useColors } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
 import { goBack, successHaptic, tapHaptic } from "../shared/parts";
@@ -71,7 +71,7 @@ export function RoleLookScreen({ roleId }: { roleId: string }) {
           <GroupedList>
             <IconPick icons={data.icons} value={role.icon} disabled={off} onPick={(icon) => patch({ icon })} />
           </GroupedList>
-          <View style={styles.gap} />
+          <Gap />
           <GroupedList>
             <GroupedRow
               label={t("rolesPage.hoist")}
@@ -297,7 +297,7 @@ export function NewRoleScreen() {
         placeholder={t("rolesPage.namePlaceholder")}
         accessibilityLabel={t("rolesPage.name")}
       />
-      <View style={styles.gap} />
+      <Gap />
       <GroupedList>
         <GroupedRow
           label={t("rolesPage.startFrom")}
@@ -317,7 +317,6 @@ export function NewRoleScreen() {
 }
 
 const styles = StyleSheet.create({
-  gap: { height: 14 },
   swatches: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 12 },
   // The ring's circle sits 2 out from the mark's, 2 wide: concentric.
   swatch: { padding: 2, borderRadius: 19, borderWidth: 2 },

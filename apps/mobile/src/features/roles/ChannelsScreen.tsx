@@ -143,6 +143,18 @@ export function RoleChannelsScreen({ roleId }: { roleId: string }) {
   };
   return (
     <SettingsPage title={title} subtitle={name}>
+      {/* The search first under the title, as every list's. */}
+      {admin ? null : (
+        <View style={styles.search}>
+          <SearchField
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t("mobile.roles.channels.search")}
+            accessibilityLabel={t("mobile.roles.channels.search")}
+            returnKeyType="search"
+          />
+        </View>
+      )}
       <GroupedHeader hint={{ name: t("common.about", { label: header }), text: t("mobile.roles.channels.hint") }}>
         {header}
       </GroupedHeader>
@@ -152,13 +164,6 @@ export function RoleChannelsScreen({ roleId }: { roleId: string }) {
         </View>
       ) : (
         <>
-          <SearchField
-            value={query}
-            onChangeText={setQuery}
-            placeholder={t("mobile.roles.channels.search")}
-            accessibilityLabel={t("mobile.roles.channels.search")}
-            returnKeyType="search"
-          />
           {groups.map((g) => (
             <View key={g.id ?? "none"}>
               <GroupedHeader>{g.name ?? t("mobile.roles.channels.ungrouped")}</GroupedHeader>
@@ -322,4 +327,5 @@ export function ChannelWhoScreen({ roleId, channelId }: { roleId: string; channe
 
 const styles = StyleSheet.create({
   note: { paddingHorizontal: 4, paddingTop: 10 },
+  search: { paddingTop: 10 },
 });
