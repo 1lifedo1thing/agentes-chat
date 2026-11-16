@@ -1,16 +1,20 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { eq, schema } from "@agenteschat/db";
+import { INLINE, SAFE_URL } from "@agenteschat/ui/markdown";
 import {
   addRunStep,
   buildRunContext,
   CONFIDENTIAL_STUB,
   createConnectorToolSource,
+  createRoutine,
   createToolGateway,
   createWebToolSource,
+  deliverNoticeToRun,
   markThreadConfidential,
   messageLink,
   messageView,
   moveToBackground,
+  runRoutineNow,
   sealStragglers,
   type ToolContext,
   workBrief,
@@ -76,7 +80,7 @@ describe("the mark", () => {
     expect(seen.find((m) => m.id === reply?.id)?.body).toContain(`It says ${CANARY}`);
     expect(JSON.stringify(seen.map((m) => m.meta))).not.toContain("sealedBody");
     // An address the run wrote is no link in any app.
-    expect(seen.find((m) => m.id === reply?.id)?.body).toContain(`\`https://example.com/?q=${CANARY}\``);
+    expect(seen.find((m) => m.id === reply?.id)?.body).toBe(`It says ${CANARY}: see example.com/?q=${CANARY}`);
   });
 
   test("the same key from a server the operator did not list changes nothing", async () => {
@@ -530,17 +534,62 @@ describe("the seal", () => {
   });
 });
 
-test("inertLinks: a link keeps its words, a bare address becomes code, code stays as written", () => {
+/** The addresses the web app would make a link of, by its own inline grammar (`renderInline`). */
+function webLinks(text: string): string[] {
+  const out: string[] = [];
+  let rest = text;
+  for (let m = rest.match(INLINE); m && m.index !== undefined; m = rest.match(INLINE)) {
+    const href = m[4] ? (m[0].match(/\]\(([^)\s]+)\)$/)?.[1] ?? "") : m[5] ? m[0] : "";
+    if (SAFE_URL.test(href)) out.push(href);
+    rest = rest.slice(m.index + m[0].length);
+  }
+  return out;
+}
+
+test("inertLinks: a link keeps its words and an address loses its scheme, in code too", () => {
   expect(inertLinks("see [the report](https://example.com/r?x=1) and https://example.com/a?b=c.")).toBe(
-    "see the report and `https://example.com/a?b=c.`",
+    "see the report and example.com/a?b=c.",
   );
-  expect(inertLinks("![](https://example.com/p.png) [](https://example.com/q)")).toBe(
-    "`https://example.com/p.png` `https://example.com/q`",
-  );
+  expect(inertLinks("![](https://example.com/p.png) [](HTTP://example.com/q)")).toBe("example.com/p.png example.com/q");
   expect(inertLinks("run `curl https://example.com` then\n```\nhttps://example.com/x\n```")).toBe(
-    "run `curl https://example.com` then\n```\nhttps://example.com/x\n```",
+    "run `curl example.com` then\n```\nexample.com/x\n```",
   );
-  expect(inertLinks("no address here")).toBe("no address here");
+  expect(inertLinks("no address here, and `handlers[name]` is code")).toBe(
+    "no address here, and `handlers[name]` is code",
+  );
+});
+
+test("inertLinks: what one app reads as code and another as words holds no link for either", () => {
+  // A fence in the middle of a line and a lone backtick: code to one grammar, and to the web a code span ("` a `")
+  // followed by words.
+  const crafted = [
+    "Summary ``` a ` b [open the report](https://example.com/?q=WORDS) ```",
+    "Summary ``` a ` b https://example.com/?q=WORDS ```",
+    "a ` b https://example.com/?q=WORDS",
+    "<https://example.com/?q=WORDS>",
+    "[the report][r]\n\n[r]: https://example.com/?q=WORDS",
+    // What a dropped scheme, or a dropped empty link, would put together.
+    "hthttps://tps://example.com/?q=WORDS",
+    "[open]https://(mailto:ana@example.com?subject=WORDS)",
+    "[open][]()(http:example.com/?q=WORDS)",
+    "ftp://example.com/WORDS",
+  ];
+  // Each is a link on the web as written, or would be one once a scheme is dropped from it.
+  expect(crafted.slice(0, 5).map((text) => webLinks(text).length)).toEqual([1, 1, 1, 1, 1]);
+  for (const text of crafted) {
+    const stored = inertLinks(text);
+    expect(stored).not.toContain("](");
+    expect(stored).not.toMatch(/:\/\/\S/);
+    expect(webLinks(stored)).toEqual([]);
+    expect(stored).toContain("WORDS");
+  }
+  expect(crafted.slice(0, 5).map(inertLinks)).toEqual([
+    "Summary ``` a ` b [open the report] (example.com/?q=WORDS) ```",
+    "Summary ``` a ` b example.com/?q=WORDS ```",
+    "a ` b example.com/?q=WORDS",
+    "<example.com/?q=WORDS>",
+    "[the report][r]\n\n[r]: example.com/?q=WORDS",
+  ]);
 });
 
 test("inertLinks reads a text of nothing but brackets once, and lets no long link by", () => {
