@@ -103,7 +103,7 @@ runs only when it is on this list:
   refused;
 - on the run or its agent alone: `withdraw_request`, `set_reply_style`, `wait_for_device`, `commit_co_author`;
 - `pass`; `hand_off` only for a routine's run whose routine delivers into the conversation the run is already in;
-  `find_tools` and `use_tool`, with the lock judging the tool they reach.
+  `find_tools`, `use_tool` and `run_approved_action`, with the lock judging the tool they reach.
 
 Everything else is refused, a tool added later included, with the code `confidential.outbound`. It is among the
 codes the turn's judge reads as final (`SAFETY_CODES`), so nothing nudges the agent to find another way. It is a
