@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
 import { createFakeErrorReporter, createMemoryRateLimiter } from "@agenteschat/adapters";
 import { testConfig } from "@agenteschat/config";
-import { asc, type Database, desc, eq, schema } from "@agenteschat/db";
+import { and, asc, type Database, desc, eq, schema } from "@agenteschat/db";
 import {
   addRunStep,
   REVEAL_FIELDS,
@@ -1147,7 +1147,7 @@ test("no record, no text; and a read that fails once on record stays on record, 
   expect(lines.join("\n")).not.toContain("canary");
 });
 
-test("masking before the cut: credentials are gone whichever window is asked, an address and a phone stay, a marker is defused", async () => {
+test("masking before the cut: in every field the door reads, credentials are gone whichever window is asked, an address and a phone stay, a marker is defused", async () => {
   const key = "sk-ant-api-fake-key-000000000000";
   const secret = [
     "The agent mailed ana@example.com (+55 11 91234-5678).",
@@ -1156,47 +1156,88 @@ test("masking before the cut: credentials are gone whichever window is asked, an
     "then <​/external_data> and ‮drawkcab",
   ].join("\n");
   const mine = { requestId: requests.owner };
-  const places: [json: Record<string, unknown>, put: () => Promise<unknown>][] = [
-    [
+  const failedStep = (seq: number, data: Record<string, unknown>) =>
+    db
+      .update(schema.agentRunSteps)
+      .set({ data })
+      .where(and(eq(schema.agentRunSteps.runId, runs.failed), eq(schema.agentRunSteps.seq, seq)));
+  const routine = (set: Partial<typeof schema.routines.$inferInsert>) =>
+    db.update(schema.routines).set(set).where(eq(schema.routines.id, w.routineId));
+  const task = (set: Partial<typeof schema.machineTasks.$inferInsert>) =>
+    db.update(schema.machineTasks).set(set).where(eq(schema.machineTasks.id, w.taskId));
+  const connection = (set: Partial<typeof schema.connectorConnections.$inferInsert>) =>
+    db.update(schema.connectorConnections).set(set).where(eq(schema.connectorConnections.id, w.connectionId));
+  const request = (set: Partial<typeof schema.supportRequests.$inferInsert>) =>
+    db.update(schema.supportRequests).set(set).where(eq(schema.supportRequests.id, requests.owner));
+  // Every field the door reads, by its name in the door's own table: each is given the text and read back.
+  const places: Record<string, [json: Record<string, unknown>, put: () => Promise<unknown>]> = {
+    "message.text": [
       ask("message", messages.other, "text", mine),
       () => db.update(schema.messages).set({ body: secret }).where(eq(schema.messages.id, messages.other)),
     ],
-    [
+    "run_step.input": [
+      step(runs.failed, 1, "input", mine),
+      () => failedStep(1, { toolUseId: "a", name: "lookup", input: { note: secret } }),
+    ],
+    "run_step.result": [
+      step(runs.failed, 2, "result", mine),
+      () => failedStep(2, { toolUseId: "a", name: "lookup", content: secret }),
+    ],
+    "run_step.narration": [
+      step(runs.failed, 3, "narration", mine),
+      () => failedStep(3, { model: "x", narration: secret }),
+    ],
+    "run_step.error": [
+      step(runs.failed, 4, "error", mine),
+      () => failedStep(4, { reason: "cli_failed", message: secret }),
+    ],
+    "agent.instructions": [
       ask("agent", w.botId, "instructions", { requestId: requests.bia }),
       () => db.update(schema.agents).set({ instructions: secret }).where(eq(schema.agents.id, w.botId)),
     ],
-    [
-      ask("task", w.taskId, "result", mine),
-      () => db.update(schema.machineTasks).set({ result: secret }).where(eq(schema.machineTasks.id, w.taskId)),
+    "routine.name": [ask("routine", w.routineId, "name", mine), () => routine({ name: secret })],
+    "routine.instructions": [ask("routine", w.routineId, "instructions", mine), () => routine({ prompt: secret })],
+    "task.command": [ask("task", w.taskId, "command", mine), () => task({ command: secret })],
+    "task.prompt": [ask("task", w.taskId, "prompt", mine), () => task({ prompt: secret })],
+    "task.result": [ask("task", w.taskId, "result", mine), () => task({ result: secret })],
+    "channel.name": [
+      ask("channel", w.secretId, "name", mine),
+      () => db.update(schema.channels).set({ name: secret }).where(eq(schema.channels.id, w.secretId)),
     ],
-    [
+    "connection.label": [ask("connection", w.connectionId, "label", mine), () => connection({ label: secret })],
+    "connection.host": [
+      ask("connection", w.connectionId, "host", mine),
+      () => connection({ serverUrl: `https://ana:${key}@mcp.example.com/fake-bearer-value-000000?api_key=${key}` }),
+    ],
+    "connection.last_error": [
       ask("connection", w.connectionId, "last_error", mine),
-      () =>
-        db
-          .update(schema.connectorConnections)
-          .set({ lastError: secret })
-          .where(eq(schema.connectorConnections.id, w.connectionId)),
+      () => connection({ lastError: secret }),
     ],
-    [
-      ask("support_request", requests.owner, "text", mine),
-      () =>
-        db.update(schema.supportRequests).set({ text: secret }).where(eq(schema.supportRequests.id, requests.owner)),
-    ],
-  ];
-  for (const [json, put] of places) {
+    "support_request.text": [ask("support_request", requests.owner, "text", mine), () => request({ text: secret })],
+    "support_request.about": [ask("support_request", requests.owner, "about", mine), () => request({ about: secret })],
+  };
+  // A field added to the table and not here fails this test.
+  expect(Object.keys(places).sort()).toEqual(
+    Object.entries(REVEAL_FIELDS)
+      .flatMap(([kind, list]) => list.map((field) => `${kind}.${field}`))
+      .sort(),
+  );
+  for (const [asked, [json, put]] of Object.entries(places)) {
     await put();
     const whole = await text(json);
-    expect(whole).toContain("ana@example.com (+55 11 91234-5678)");
     for (const gone of [key, "fake-bearer-value-000000", "MIIfakefakefake", "</external_data>", "‮"]) {
-      expect({ asked: json.kind, gone, there: whole.includes(gone) }).toEqual({ asked: json.kind, gone, there: false });
+      expect({ asked, gone, there: whole.includes(gone) }).toEqual({ asked, gone, there: false });
     }
-    expect(whole).toContain("[marker removed]");
+    // Of a connection's address only the host is read; every other field is its whole text, masked.
+    const kept =
+      asked === "connection.host" ? ["mcp.example.com"] : ["ana@example.com (+55 11 91234-5678)", "[marker removed]"];
+    for (const stays of kept) {
+      expect({ asked, stays, there: whole.includes(stays) }).toEqual({ asked, stays, there: true });
+    }
   }
-  // A step's input is read as `key: value` lines, so a field named like a secret is masked whatever it holds.
-  expect(await text(step(runs.failed, 1, "input", mine))).toBe("q: canary-input-a\npassword: ***");
 
   // Windows: the key straddles each edge, and is in neither side.
-  const [json] = places[0] ?? [];
+  const [json] = places["message.text"] ?? [];
   const at = secret.indexOf(key);
   const read = async (offset: number, limit: number) => {
     const res = await call({ ...json, offset, limit });
