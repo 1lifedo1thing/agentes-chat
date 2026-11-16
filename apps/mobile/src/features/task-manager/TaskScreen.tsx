@@ -3,7 +3,7 @@ import { endedState, endedText, linePlace, taskState, taskTitle } from "@agentes
 import { formatDuration } from "@agenteschat/client/lib/work";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   EmptyState,
@@ -25,7 +25,7 @@ import { RunSteps } from "../chat/ToolCalls";
 import { useOpenQueue } from "../queue/QueueSheet";
 import { AgentFace, Face, OpensAgent } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useMeId, useNow } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, useNow, usePullRefresh } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { PushedHeader } from "../shared/parts";
 import { SheetHostProvider } from "../shared/SheetHost";
@@ -39,6 +39,7 @@ import { StateLine } from "./parts";
  * where, a row that opens the conversation; its steps so far; its place in its computer's line, when it waits for
  * room; and "Parar tarefa" as the list's red row, confirmed by a system alert that says what happens. Once it ends,
  * how it ended and how long it took. While the list loads, the rows' shape; one not listed today says it's gone.
+ * Pulling down asks for it again (it is also asked while the screen is on top).
  */
 export function TaskScreen({ runId }: { runId: string }) {
   return (
@@ -179,6 +180,7 @@ function Page({
   const dir = useDirectory();
   const insets = useSafeAreaInsets();
   const openQueue = useOpenQueue();
+  const pull = usePullRefresh(useTasksToday().refetch);
   const agent = dir.anyAgent(task.agentId);
   const requester = task.requester ?? null;
   const opens = taskHref(task);
@@ -187,6 +189,7 @@ function Page({
       <PushedHeader title={title} solid={false} grouped />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]}
       >
         {/* Whose it is and how it stands, on one head: the title is already in the bar. */}
