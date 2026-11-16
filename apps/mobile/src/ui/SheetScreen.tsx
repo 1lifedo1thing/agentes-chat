@@ -25,6 +25,9 @@ export function SheetScreen({ children, fit }: SheetScreenProps) {
         ref={scroll}
         style={fit ? undefined : styles.fill}
         keyboardShouldPersistTaps="handled"
+        // A sheet with a field (Novo canal, Nova página): a drag down the content puts the keyboard away, as every
+        // screen's scroll does.
+        keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={body}
       >

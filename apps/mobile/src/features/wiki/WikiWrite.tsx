@@ -26,8 +26,8 @@ import {
   type TextInputSelectionChangeEvent,
   View,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
+import { KeyboardAvoidingView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
+import Animated, { FadeInDown, FadeOut, useAnimatedStyle } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Button,
@@ -67,7 +67,8 @@ type Sel = { start: number; end: number };
  * Markdown with a bar over the keyboard (negrito, itálico, título, lista, tarefa, [[link]], código, hide the
  * keyboard); typing `[[` suggests pages (or "Criar"). Ver is the page as it will read, not saved yet. A page that
  * changed meanwhile shows the conflict (the web's): the difference, and which one stays. Leaving with changes
- * asks first. `slug` edits a page; `title` and `folder` write a new one (created on Salvar).
+ * asks first. `slug` edits a page; `title` and `folder` write a new one (created on Salvar). The keyboard comes up
+ * only when the person taps the text, a new page too: a screen never opens with it up.
  */
 export function WikiWriteScreen(props: { slug: string } | { title: string; folder: string; who?: string }) {
   const orgId = useOrgId();
@@ -119,6 +120,10 @@ function Writer({
   const qc = useQueryClient();
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
+  // The room kept under the tools for the home indicator gives way as the keyboard rises: open, the tools sit right
+  // on the keys (the keyboard already clears the indicator); closed, they sit above it.
+  const keyboard = useReanimatedKeyboardAnimation();
+  const homeRoom = useAnimatedStyle(() => ({ height: insets.bottom * (1 - keyboard.progress.get()) }));
   const tree = useWikiTree(orgId);
   const action = useWikiAction(orgId);
   const [mode, setMode] = useState<Mode>("write");
@@ -345,7 +350,9 @@ function Writer({
           </View>
         </ScrollView>
       ) : (
-        <KeyboardAvoidingView behavior="padding" style={styles.fill}>
+        // Measured where it really is on the screen (under the bar), so the keyboard's room is the keys' whole height and
+        // the tools ride on top of them instead of a bar's height behind them.
+        <KeyboardAvoidingView behavior="padding" automaticOffset style={styles.fill}>
           <View style={styles.head}>
             <Text variant="title" numberOfLines={1}>
               {title}
@@ -370,7 +377,6 @@ function Writer({
               }}
               {...(pending ? { selection: pending } : {})}
               multiline
-              autoFocus={!page}
               textAlignVertical="top"
               autoCapitalize="sentences"
               placeholder={t("mobile.wiki.placeholder")}
@@ -453,7 +459,7 @@ function Writer({
               </Pressable>
             </View>
           </Locked>
-          <View style={{ height: insets.bottom }} />
+          <Animated.View style={homeRoom} />
         </KeyboardAvoidingView>
       )}
     </View>
@@ -463,7 +469,8 @@ function Writer({
 /**
  * "Nova página" (a sheet over the wiki): the sheet's bar, then the title and the folder as a form's fields, the folders
  * in use as one-tap choices, who sees it (the web's three choices, the people under them when it's some of them), and
- * "Criar e escrever", which closes the sheet and opens the writing. Nothing is created until Salvar there.
+ * "Criar e escrever", which closes the sheet and opens the writing. Nothing is created until Salvar there. The sheet
+ * comes up with the keyboard down: the person taps the field.
  */
 export function WikiNewSheet({
   title: initialTitle = "",
@@ -506,7 +513,6 @@ export function WikiNewSheet({
             <TextInput
               value={title}
               onChangeText={setTitle}
-              autoFocus={!initialTitle}
               placeholder={t("wiki.form.titlePlaceholder")}
               placeholderTextColor={c.faint}
               {...NEXT_FIELD}

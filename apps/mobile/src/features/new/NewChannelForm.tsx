@@ -5,14 +5,15 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, TextInput, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { Button, fieldText, GROUPED_ROW, GroupedFooter, GroupedList, Icon, Locked, SheetScreen, useToast } from "@/ui";
+import { Button, fieldText, GROUPED_ROW, GroupedFooter, GroupedList, Icon, Locked, SheetScreen } from "@/ui";
 import { chatHref } from "../links/logic";
-import { useColors, useOrgId } from "../shared/hooks";
+import { useColors, useErrorToast, useOrgId } from "../shared/hooks";
 import { closeSheetsAndOpen, SheetHeader } from "./parts";
 
 /**
  * "New channel": only the name; people and agents are called in later, by name. A personal workspace's channels are
- * its group conversations (ADR 0159).
+ * its group conversations (ADR 0159). The sheet comes up with the keyboard down (the person taps the name), and a
+ * channel that couldn't be made says why.
  */
 export function NewChannelForm() {
   const { t } = useTranslation();
@@ -21,7 +22,7 @@ export function NewChannelForm() {
   const { org } = useOrg();
   const title = isPersonal(org) ? t("shell.sidebarMenu.newChannelPersonal") : t("mobile.chats.newChannel");
   const qc = useQueryClient();
-  const toast = useToast();
+  const failed = useErrorToast();
   const c = useColors();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -35,7 +36,7 @@ export function NewChannelForm() {
         void qc.invalidateQueries({ queryKey: keys.channels(orgId) });
         closeSheetsAndOpen(chatHref(ch.id));
       })
-      .catch(() => toast({ title: t("mobile.app.failed"), icon: "x" }))
+      .catch(failed)
       .finally(() => setBusy(false));
   };
   return (
@@ -54,7 +55,6 @@ export function NewChannelForm() {
               accessibilityLabel={title}
               autoCapitalize="none"
               autoCorrect={false}
-              autoFocus
               returnKeyType="done"
               onSubmitEditing={submit}
               style={[styles.input, { color: c.ink }]}
