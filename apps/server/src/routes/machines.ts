@@ -447,6 +447,10 @@ const MoveAgentsResult = z
     stillWaiting: z.number().int().openapi({
       description: "Waiting runs that stay with the old computer (their cut-off turn already ran tools there).",
     }),
+    planDropped: z.array(z.object({ agentId: z.uuid(), kind: z.string(), provider: z.string().nullable() })).openapi({
+      description:
+        "Moved agents whose plan is signed in only on the old computer (`kind`, a coding plan's `provider`): sign in on the new one too.",
+    }),
   })
   .openapi("MoveAgentsResult");
 
