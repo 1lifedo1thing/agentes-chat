@@ -7396,10 +7396,9 @@ html:not([data-pointer]) .run-continue:focus-visible {
 .ac-typing[data-browser="true"] {
   cursor: pointer;
 }
-/* The pill's buttons are round and fit it; the last one sits in its round end, 2px from the edge all around. */
+/* The line's buttons are round and fit it; the last one sits 2px from its end. */
 .ac-typing__browser.ac-btn,
-.ac-typing__menu.ac-btn,
-.ac-typing .stop-run {
+.ac-typing__menu.ac-btn {
   flex: none;
   width: 24px;
   height: 24px;
@@ -7413,7 +7412,7 @@ html:not([data-pointer]) .run-continue:focus-visible {
   margin-left: auto;
   color: var(--muted);
 }
-.ac-typing[data-active="true"] > :is(.stop-run-wrap, .ac-typing__browser):last-child,
+.ac-typing[data-active="true"] > .ac-typing__browser:last-child,
 .ac-typing[data-rest="true"] > .ac-typing__menu:last-child {
   margin-right: -6px;
 }
@@ -13702,7 +13701,7 @@ html:not([data-pointer]) .channel__latest-btn.ac-btn:focus-visible {
 /* A rule of its own: in one list with the time's, the build wraps both in `:is()` and one would take the other's
    weight. */
 .ac-typing__text:has(> .ac-typing__agents > .ac-typing__step)
-+ :is(.ac-typing__browser, .ac-typing__sep, .stop-run-wrap) {
++ :is(.ac-typing__browser, .ac-typing__sep) {
   margin-left: auto;
 }
 .ac-typing__text + .ac-typing__elapsed + :is(.ac-typing__browser, .ac-typing__sep) {
@@ -13710,15 +13709,10 @@ html:not([data-pointer]) .channel__latest-btn.ac-btn:focus-visible {
 }
 /* One agent: its name, its step, its time and who types beside it are the bar's own pieces. The name is never cut: it
    wraps onto a second line when the bar is that narrow. Its step gives way first, down to nothing (the whole step is
-   its tip); then what is typed beside it wraps too, ahead of the stop, never under it. */
+   its tip); then what is typed beside it wraps too, ahead of Ver, never under it. */
 .ac-typing[data-active="true"] .ac-typing__text:has(> .ac-typing__agents > .ac-typing__step),
 .ac-typing__agents:has(> .ac-typing__step) {
   display: contents;
-}
-/* With their boxes gone, the name and the step stand over the bar's sky themselves, as its other pieces do (the
-   bar's children); unpositioned, the sky would paint over them. */
-.ac-typing__agents:has(> .ac-typing__step) > * {
-  position: relative;
 }
 .ac-typing__agents:has(> .ac-typing__step) > b {
   white-space: normal;
