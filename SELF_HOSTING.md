@@ -945,7 +945,8 @@ with somebody's private text (a secret, a person's record), it can add
 `"_meta": { "chat.agentes/confidential": true }` to that result. The run that read it goes on reading and
 answers in a thread under the message that asked it, and sends nothing elsewhere: no message, mail or
 post in another place, no file, task or memory, no command, browser or web. Outside that thread no agent
-is given the thread's text, it is in no search, summary or notification, and it is removed 60 days later.
+is given the thread's text, and neither is a person's connected AI app or a review through the operator
+API. It is in no search, summary or notification, and it is removed 60 days later.
 A program on a computer (Claude Code, Codex) can't be held to that, so it gets a placeholder in place of
 the answer: check `brain` in the statement above before you hand such text out. The thread's text also
 stays with the `provider` that first read it: an agent named there that thinks with another one stops

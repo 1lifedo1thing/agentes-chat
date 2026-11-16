@@ -9,7 +9,8 @@
   (the `sealed` part of `insertMessageWithRuns`, `forRunId`, `messageView`), `run-resume.ts` (`deliverNoticeToRun`),
   `context.ts` (`buildRunContext`'s `unseal`), `live-steer.ts` (`renderSteered`), `executor.ts` (`followThread`,
   `CONFIDENTIAL_AI_CHANGED`), `routine-ledger.ts` (`closeRoutineRun`), `judge.ts` (`refuseConfidential`), `format.ts`
-  (`inertLinks`); schema `packages/db/src/schema/chat.ts` (`confidential_threads`, migrations 0284 and 0285); server
+  (`inertLinks`, `inertJson`), `apps/tools.ts` (`stubOf` for a person's connected AI app), `operator-review.ts`
+  (`runReview`); schema `packages/db/src/schema/chat.ts` (`confidential_threads`, migrations 0284 and 0285); server
   `apps/server/src/workers.ts` (`confidentialPrune`); tests `packages/engine/test/confidential-results.test.ts`,
   `confidential-lock.test.ts`, `confidential-copies.test.ts`, `confidential-prune.test.ts`
 
@@ -62,8 +63,13 @@ of that same thread that thinks through the Model Gateway (`buildRunContext` wit
 handed mid-run, `renderSteered`).
 
 Who reads is decided by the thread's row, never by a message's mark alone. A run of a confidential thread can leave a
-marked message outside it (a long work's report sent home): a run asked under that message is not locked, so it is
-handed the stub like any other.
+marked message outside it (the copy of a handed work's report where the person asked): a run asked under that message
+is not locked, so it is handed the stub like any other.
+
+A person's connected AI app (ADR 0119) is no such reader. Its tools act as the person, but what they answer is read
+by the app's model, which is outside every thread: `read_conversation` and the reply that `send_to_agent` and
+`wait_for_reply` carry hand a confidential message out as the stub, with no file's name, and leave out the error of
+a failed run of such a thread (`stubOf`).
 
 **One provider reads a thread.** The words stay with what first read them. A run that thinks through another
 provider than the row's `thinks_with` (another agent named in the thread, the same agent after its model changed)
@@ -84,15 +90,20 @@ run: a follow-up's line and its wake, a poll's result, a wait's late answer. A n
 a routine reports, or where a long work reported, stays in the run's own thread instead (`deliverNoticeToRun`), and
 the run it wakes is a run of that thread, locked like the first. What the run posted before its first
 confidential result stays where it is: it holds none of the words. Web addresses in a message such a run writes are
-stored inert (`inertLinks`: a link keeps its words, a bare address becomes code), so no app renders a link whose
-address could carry words out on a click.
+stored inert (`inertLinks`: a link keeps its words and an address loses its scheme), so no app renders a link whose
+address could carry words out on a click. That holds whatever an app takes for code: the web and the phone pair
+backticks and fences differently, so the stored text has no `](` and nothing right after a `://` anywhere, code
+included. The same is done to what such a run types on a card, which the apps show as formatted text too: a
+question, a choice card, a poll, and an approval's title, detail and reason (the Tool Gateway, `inertJson`).
 
 ### 4. The stub, outside the thread
 
 Outside its own thread a confidential message reaches no model, whatever thinks for the run. The stub stands in its
 place and does not mark the run that reads it: in the rest of the channel that every run's context is built from, in
 a `search_context` hit, in a message read by its link, in an open question listed for the agent in another thread,
-and in the lines about what other runs did (`(confidential, not shown)`). So a run asked by another message of the
+in what a person's connected AI app is answered, and in the lines about what other runs did
+(`(confidential, not shown)`). The operator API's review of a run (ADR 0056) says the same of each call of a run of
+a confidential thread: which tool, how it ended, and nothing that went in or came back. So a run asked by another message of the
 same channel is neither given the words nor locked by them.
 
 ### 5. The lock
@@ -193,7 +204,8 @@ A daily job (`confidentialPrune`), with `CONFIDENTIAL_KEEP_DAYS = 60` in code.
 
 - **A thread** marked more than 60 days ago: every message of it, the root and a person's replies included, loses
   its text in every column that holds it and reads as removed (`meta.bodyCode` `confidential_removed`, worded by the
-  apps). Files its messages carried, and the blocks and polls shown in it, become tombstones whose contents the
+  apps). So does what a run of the thread reported outside it, found by the run's reply and its long work's result:
+  a report that was posted where the work was asked, and the copy of a handed work's report. Files its messages carried, and the blocks and polls shown in it, become tombstones whose contents the
   purge of deleted files takes; a voice message loses its words and its recording; the thread's title goes. A
   message added later is blanked by the next pass.
 - **A run** of such a thread that ended and is older than that loses the kept text of its steps (a step keeps its
@@ -220,8 +232,16 @@ accept, or what is asked from another conversation than the one it serves.
 - A stop said in words is not recognized in a confidential thread (the judge reads the stub): the stop button is.
 - An agent's message keeps `meta` that is not its body (a card's fields, a notice's text); it reaches no model outside
   the thread (the stub carries none of it) and is blanked by the prune.
-- A long work that was already going when it read a confidential result still sends its report home, marked: the
-  people of that conversation read it, and no model outside the work's thread does.
+- A long work that was already going when it read a confidential result reports in its own thread, which is the
+  confidential one: the statement that writes a message puts one that names no thread under the run's thread. Work
+  another agent handed over reports where it runs, and the copy of that report where the person asked is the stub:
+  the finding is read in the thread it was made in.
+- A person who stops a run may say why, and its agent is told so where the run was (`run_stopped`): the reason is
+  the person's own words, and the notice quotes nothing the run read.
+- A thread's title given before the mark stays until the prune, and shows wherever a title does (the list of work
+  in progress, which a connected AI app can read too).
+- An approval's page shows the action's arguments as the agent typed them, a link in them included: what a person
+  approves is what runs, to the letter.
 - A routine's own run that read a confidential result reports nothing: what it found stays in its run.
 
 ## Consequences
