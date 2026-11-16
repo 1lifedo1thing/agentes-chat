@@ -39,6 +39,7 @@ import {
   GroupedList,
   GroupedRow,
   ProviderLogo,
+  SectionHeader,
   Text,
   useToast,
 } from "@/ui";
@@ -80,14 +81,15 @@ export function RightHandSettingsScreen() {
   return (
     <SettingsPage title={agent.name} subtitle={t("rightHand.label")}>
       <Computer agentId={agent.id} />
-      <GroupTitle>{t("rightHand.settings.groupMine")}</GroupTitle>
+      <SectionHeader title={t("rightHand.settings.groupMine")} />
       <GroupedHeader>{t("rightHand.settings.mine")}</GroupedHeader>
       <RightHandMine agent={agent} />
       <RightHandApprovalsGroup />
       <OwnRows name={agent.name} />
       {can(org, "manage_agents") ? (
         <>
-          <GroupTitle note={t("rightHand.settings.groupAdmins")}>{t("rightHand.settings.groupWorkspace")}</GroupTitle>
+          {/* Who sees the group, after its name: only who manages agents. */}
+          <SectionHeader title={`${t("rightHand.settings.groupWorkspace")} · ${t("rightHand.settings.groupAdmins")}`} />
           <Form agent={agent} />
         </>
       ) : null}
@@ -102,20 +104,6 @@ export function RightHandSettingsScreen() {
         ))}
       </GroupedList>
     </SettingsPage>
-  );
-}
-
-/** A group of the screen by its name, over its lists' own headers; `note`: quiet words after it (who sees it). */
-function GroupTitle({ children, note }: { children: string; note?: string }) {
-  return (
-    <Text variant="title" accessibilityRole="header" style={styles.groupTitle}>
-      {children}
-      {note ? (
-        <Text variant="subhead" tone="muted">
-          {` · ${note}`}
-        </Text>
-      ) : null}
-    </Text>
   );
 }
 
@@ -425,7 +413,11 @@ function Form({ agent }: { agent: Agent }) {
   const g = agentGrammar(agent.name);
   const audience = audienceOf(agent);
   const picked = audience.mode === "people" ? audience.roleIds : [];
-  const save = (patch: Parameters<typeof update.mutate>[0]) => update.mutate(patch, { onError: failed });
+  const save = (patch: Parameters<typeof update.mutate>[0], saved?: string) =>
+    update.mutate(patch, {
+      onError: failed,
+      ...(saved ? { onSuccess: () => toast({ title: saved, icon: "check" }) } : {}),
+    });
   const saveBudget = () => {
     const typed = budget.trim().replace(",", ".");
     const amount = typed === "" ? null : Number(typed);
@@ -433,7 +425,8 @@ function Form({ agent }: { agent: Agent }) {
       toast({ title: t("agent.budgetInvalid"), icon: "x" });
       return;
     }
-    if (amount !== (agent.monthlyBudgetUsd ?? null)) save({ monthlyBudgetUsd: amount });
+    // A field saved as it is left: the toast says it took.
+    if (amount !== (agent.monthlyBudgetUsd ?? null)) save({ monthlyBudgetUsd: amount }, t("common.saved"));
   };
   // The people picked on the web stay; nobody and no role left picked: everyone again.
   const toggleRole = (id: string) => {
@@ -624,8 +617,7 @@ function OwnRows({ name }: { name: string }) {
       : [];
   return (
     <>
-      <GroupTitle>{t("rightHand.settings.own.title", g)}</GroupTitle>
-      <Gap />
+      <SectionHeader title={t("rightHand.settings.own.title", g)} />
       <GroupedList>
         <GroupedRow
           icon="clock"
@@ -701,8 +693,6 @@ function OwnRows({ name }: { name: string }) {
 }
 
 const styles = StyleSheet.create({
-  // Over a list's own header: the lists' 16 sides, a section's room above.
-  groupTitle: { paddingTop: 24, paddingHorizontal: 16 },
   // One row of a group, as GroupedRow's.
   budget: {
     flexDirection: "row",

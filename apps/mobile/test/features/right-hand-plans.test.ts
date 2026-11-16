@@ -55,8 +55,13 @@ test("Sua IA is one row that opens its choice: what answers me, by its logo and 
   expect(screen).toContain("openConnectAi({ agentId: agent.id })");
   // On the right hand's profile, and first in its settings, under "Só para você".
   expect(profile).toContain("<RightHandMine agent={agent} />");
-  const mine = screen.indexOf('<GroupTitle>{t("rightHand.settings.groupMine")}</GroupTitle>');
-  const workspace = screen.indexOf('{t("rightHand.settings.groupWorkspace")}</GroupTitle>');
+  // The screen's groups by their names, each the standard section header over its lists (never a title drawn by hand).
+  const mine = screen.indexOf('<SectionHeader title={t("rightHand.settings.groupMine")} />');
+  const workspace = screen.indexOf(
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: the screen's source
+    'title={`${t("rightHand.settings.groupWorkspace")} · ${t("rightHand.settings.groupAdmins")}`}',
+  );
+  expect(screen).not.toContain("function GroupTitle(");
   expect(mine).toBeGreaterThan(-1);
   expect(screen.indexOf("<RightHandMine agent={agent} />")).toBeGreaterThan(mine);
   expect(screen.indexOf("<RightHandApprovalsGroup />")).toBeGreaterThan(mine);
