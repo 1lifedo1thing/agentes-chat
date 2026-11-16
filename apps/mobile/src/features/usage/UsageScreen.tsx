@@ -34,9 +34,10 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { gradientOf } from "@agenteschat/ui/agent/engine";
 import { PLAN_ALMOST, PLAN_TONE, planLevel, planLine } from "@agenteschat/ui/plan-state";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { ActivityIndicator, Keyboard, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
@@ -53,11 +54,12 @@ import {
   useTheme,
   useToast,
 } from "@/ui";
+import { KeyboardBar, TOOLBAR_HEIGHT } from "@/ui/auth/AuthScaffold";
 import { router } from "@/ui/navigation";
 import { LOGO_SIZES } from "@/ui/provider-marks";
 import { PlanHoldNote, usePlanHold } from "../ai/parts";
 import { AgentFace } from "../shared/Face";
-import { FirstUse } from "../shared/FirstUse";
+import { FirstUse, LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useErrorToast } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { Loaded, PushedHeader } from "../shared/parts";
@@ -104,11 +106,13 @@ export function UsageScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
       <PushedHeader title={t("settings.section.usage")} solid={false} grouped />
-      {/* The default budget's field: Salvar takes the first tap, and the field stays above the keyboard. */}
-      <ScrollView
+      {/* The default budget's field: Salvar takes the first tap, and the field scrolls clear of the keyboard and its
+          bar on both systems (with the keyboard library's provider on, Android no longer resizes the window). */}
+      <KeyboardAwareScrollView
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
+        bottomOffset={TOOLBAR_HEIGHT + 24}
+        extraKeyboardSpace={TOOLBAR_HEIGHT}
         contentContainerStyle={[styles.in, { paddingBottom: insets.bottom + 24 }]}
       >
         <Segmented
@@ -124,9 +128,7 @@ export function UsageScreen() {
           {view === "people" ? <Loaded>{allowed ? <PeopleList /> : <MyUsageCard />}</Loaded> : null}
           {view === "people" ? null : usage.isLoading ? <ActivityIndicator color={c.muted} /> : null}
           {view === "people" ? null : !usage.isLoading && !data ? (
-            <Text variant="small" tone="muted">
-              {t("common.loadFailed")}
-            </Text>
+            <LoadFailed onRetry={() => void usage.refetch()} />
           ) : null}
           {data && view === "summary" ? (
             <Loaded>
@@ -220,7 +222,9 @@ export function UsageScreen() {
           ) : null}
           {view === "summary" && allowed && usesApi ? <DefaultBudgetCard /> : null}
         </LayoutAnimationConfig>
-      </ScrollView>
+      </KeyboardAwareScrollView>
+      {/* The budget's number pad has no return key: Done over it closes it. */}
+      <KeyboardBar arrows={false} />
     </View>
   );
 }
@@ -511,13 +515,28 @@ function DefaultBudgetCard() {
   const { colors: c, shadows } = useTheme();
   const editable = can(org, "configure");
   const saved = settings.data?.defaultAgentBudgetUsd;
-  const [value, setValue] = useState("");
-  useEffect(() => {
-    if (saved !== undefined) setValue(new Intl.NumberFormat(i18n.language).format(saved));
-  }, [saved, i18n.language]);
+  const number = useMemo(() => new Intl.NumberFormat(i18n.language), [i18n.language]);
+  // What the person typed, until it saves; the saved amount otherwise. A refusal keeps what they typed.
+  const [typed, setTyped] = useState<string | null>(null);
+  const value = typed ?? (saved === undefined ? "" : number.format(saved));
   const amount = parseAmount(value);
   const invalid = value.trim() !== "" && !(amount > 0);
   const dirty = saved !== undefined && amount > 0 && amount !== saved;
+  const save = () => {
+    if (!dirty || update.isPending) return;
+    // The number pad has no return key of its own: saving puts it away.
+    Keyboard.dismiss();
+    update.mutate(
+      { defaultAgentBudgetUsd: amount },
+      {
+        onSuccess: () => {
+          setTyped(null);
+          toast({ title: t("settings.defaultBudgetSaved"), icon: "check" });
+        },
+        onError: failed,
+      },
+    );
+  };
   return (
     <UsageCard icon="lock" title={t("settings.defaultBudgetTitle")}>
       <View style={styles.budget}>
@@ -526,8 +545,9 @@ function DefaultBudgetCard() {
         </Text>
         <TextInput
           value={value}
-          onChangeText={setValue}
+          onChangeText={setTyped}
           keyboardType="decimal-pad"
+          returnKeyType="done"
           editable={editable && saved !== undefined}
           accessibilityLabel={t("settings.defaultBudget")}
           style={[styles.input, { color: c.ink, backgroundColor: c.bg, boxShadow: `${shadows.e1}, ${shadows.top}` }]}
@@ -541,16 +561,9 @@ function DefaultBudgetCard() {
               size="sm"
               variant="primary"
               label={t("common.save")}
-              disabled={!dirty || update.isPending}
-              onPress={() =>
-                update.mutate(
-                  { defaultAgentBudgetUsd: amount },
-                  {
-                    onSuccess: () => toast({ title: t("settings.defaultBudgetSaved"), icon: "check" }),
-                    onError: failed,
-                  },
-                )
-              }
+              disabled={!dirty}
+              loading={update.isPending}
+              onPress={save}
             />
           </View>
         ) : null}

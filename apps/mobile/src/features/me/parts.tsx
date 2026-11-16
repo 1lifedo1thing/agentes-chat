@@ -3,8 +3,8 @@ import { type QueryClient, useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { type ReactNode, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
@@ -17,7 +17,9 @@ import { type AccountDraft, PHOTO_MAX_BASE64, photoContentType } from "./logic";
 /**
  * One screen of Você's (Conta, Membros, Notificações…), pushed with the platform's push: the native bar (its back
  * button and edge swipe, the title, a word that saves on the right) over the grouped gray, which scrolls under it.
- * `footer`: a button that stays at the bottom, over the keyboard, with the page scrolling above it.
+ * A focused field scrolls clear of the keyboard on both systems (with the keyboard library's provider on, Android no
+ * longer resizes the window by itself). `footer`: a button that stays at the bottom, over the keyboard, with the page
+ * scrolling above it (the page gives way to the keyboard there, so the scroll view adds nothing of its own).
  */
 export function Page({
   title,
@@ -36,18 +38,19 @@ export function Page({
   const c = useColors();
   const insets = useSafeAreaInsets();
   const scroll = (
-    <ScrollView
+    <KeyboardAwareScrollView
+      enabled={!footer}
+      bottomOffset={24}
       style={styles.fill}
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets={!footer}
       contentContainerStyle={[styles.body, { paddingBottom: footer ? 24 : 24 + insets.bottom }]}
     >
       {/* What is there as the screen opens doesn't fade in; what loads while it is watched does (`Loaded`). */}
       <Locked when={locked}>
         <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
       </Locked>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
   return (
     <View style={[styles.fill, { backgroundColor: c.grouped }]}>

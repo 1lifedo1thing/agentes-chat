@@ -1,25 +1,42 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { formatTimeLeft } from "@agenteschat/client/lib/actions";
+import { usePreventRemove } from "expo-router";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActionSheetIOS, ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActionSheetIOS,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  StyleSheet,
+  type TextInputProps,
+  View,
+  type ViewStyle,
+} from "react-native";
+import { KeyboardAwareScrollView, KeyboardController } from "react-native-keyboard-controller";
 import { LayoutAnimationConfig } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { GroupedList, GroupedRow, type IconName, Locked, Text, useToast } from "@/ui";
-import { useColors } from "../shared/hooks";
+import { Button, GroupedList, GroupedRow, type IconName, Locked, Text, useToast } from "@/ui";
+import { KeyboardBar, TOOLBAR_HEIGHT } from "@/ui/auth/AuthScaffold";
+import { useColors, useNow } from "../shared/hooks";
 import { showActionSheet } from "../shared/PickerSheet";
 import { BottomBar, copyText, type HeaderWordAction, MONO, PushedHeader, successHaptic } from "../shared/parts";
 
 /**
  * What the workspace's settings screens share (each one a screen pushed with the platform's push, as Você's): the
  * page on the grouped gray under the native bar, the system's action list and confirmation (the web's menus and
- * dialogs), a terminal command with Copiar, and a progress bar.
+ * dialogs), a form's guard against leaving with changes and its return key, a terminal command with Copiar, and a
+ * progress bar.
  */
 
 /** How long "Copiado" stays on a command's copy row. */
 const COPIED_MS = 1800;
+/** Between a focused field and the keyboard when the page scrolls it into view. */
+const FIELD_CLEARANCE = 24;
 
 /**
  * A settings screen: the native bar (back, the title, a line under it, a word that saves on the right) over the
- * grouped gray, which scrolls under it.
+ * grouped gray, which scrolls under it. A focused field scrolls clear of the keyboard on both systems (the keyboard
+ * library's scroll view: with its provider on, Android no longer resizes the window by itself).
  */
 export function SettingsPage({
   title,
@@ -29,6 +46,7 @@ export function SettingsPage({
   busy = false,
   locked = false,
   frozen = false,
+  toolbar = false,
   bottom,
   children,
 }: {
@@ -43,12 +61,15 @@ export function SettingsPage({
   locked?: boolean;
   /** The workspace is being deleted and this page would change it (`settingsFrozen`): greyed out, as on the web. */
   frozen?: boolean;
+  /** A form of several fields: the system's bar over the keyboard (‹ › between them, Done), the page clear of it. */
+  toolbar?: boolean;
   /** The page's one main action, docked under it ("Done" at the end of a guide). */
   bottom?: ReactNode;
   children?: ReactNode;
 }) {
   const c = useColors();
   const insets = useSafeAreaInsets();
+  const bar = toolbar ? TOOLBAR_HEIGHT : 0;
   return (
     <View style={[styles.fill, { backgroundColor: c.grouped }]}>
       <PushedHeader
@@ -58,20 +79,96 @@ export function SettingsPage({
         grouped
         {...(busy ? { right: <ActivityIndicator color={c.muted} /> } : action ? { action } : right ? { right } : {})}
       />
-      <ScrollView
+      <KeyboardAwareScrollView
         style={styles.fill}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
+        bottomOffset={bar + FIELD_CLEARANCE}
+        extraKeyboardSpace={bar}
         contentContainerStyle={[styles.body, { paddingBottom: 24 + insets.bottom }]}
       >
         {/* What is there as the screen opens doesn't fade in; what loads while it is watched does (`Loaded`). */}
         <Locked when={locked || busy || frozen} readable={frozen && !locked && !busy}>
           <LayoutAnimationConfig skipEntering>{children}</LayoutAnimationConfig>
         </Locked>
-      </ScrollView>
+      </KeyboardAwareScrollView>
       {bottom ? <BottomBar bottom={insets.bottom}>{bottom}</BottomBar> : null}
+      {toolbar ? <KeyboardBar /> : null}
     </View>
+  );
+}
+
+/**
+ * Leaving a form with changes not saved asks first (back, the edge swipe, a replace), as editing an agent does: the
+ * changes go only when the person says so. Returns `leave`, which a finished save calls before it goes on, so it isn't
+ * asked about what it just saved.
+ */
+export function useUnsavedGuard(dirty: boolean): () => void {
+  const { t } = useTranslation();
+  const leaving = useRef(false);
+  usePreventRemove(dirty, ({ repeat }) => {
+    if (leaving.current) return repeat();
+    Alert.alert(t("mobile.agentEdit.discardTitle"), t("mobile.agentEdit.discardText"), [
+      { text: t("mobile.agentEdit.keepEditing"), style: "cancel" },
+      { text: t("mobile.agentEdit.discard"), style: "destructive", onPress: repeat },
+    ]);
+  });
+  return () => {
+    leaving.current = true;
+  };
+}
+
+/**
+ * A form field's return key that moves to the next field and keeps the keyboard up. The next one on screen, so fields
+ * that come and go with a choice need no refs; the form's last field keeps its own key.
+ */
+export const NEXT_FIELD = {
+  returnKeyType: "next",
+  submitBehavior: "submit",
+  onSubmitEditing: () => KeyboardController.setFocusTo("next"),
+} as const satisfies Pick<TextInputProps, "returnKeyType" | "submitBehavior" | "onSubmitEditing">;
+
+/**
+ * Over a photo or a logo while it uploads: the picture dimmed under a spinner, where it changes (a link that only
+ * faded said too little). `style`: the picture's own size and corners.
+ */
+export function Uploading({ style }: { style: ViewStyle }) {
+  return (
+    <View pointerEvents="none" style={[styles.uploading, style]}>
+      <ActivityIndicator color="#ffffff" />
+    </View>
+  );
+}
+
+/**
+ * "Resend" under a code typed back, saying how long until another may go: its own clock, so only this button repaints
+ * each second while it counts down, never the form around it.
+ */
+export function ResendCode({
+  resendAt,
+  disabled = false,
+  sending = false,
+  onPress,
+}: {
+  /** When another code may go (ms since the epoch). */
+  resendAt: number;
+  disabled?: boolean;
+  sending?: boolean;
+  onPress: () => void;
+}) {
+  const { t } = useTranslation();
+  const left = Math.max(0, resendAt - Date.now());
+  // A repaint every second while it counts down; the time itself is read just above.
+  useNow(left > 0 ? 1000 : 60_000);
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      label={left > 0 ? t("proof.resendIn", { time: formatTimeLeft(left) }) : t("proof.resend")}
+      disabled={left > 0 || disabled}
+      loading={sending}
+      onPress={onPress}
+    />
   );
 }
 
@@ -231,4 +328,12 @@ const styles = StyleSheet.create({
   mono: { fontFamily: MONO, fontSize: 13, lineHeight: 19 },
   track: { height: 6, borderRadius: 999, overflow: "hidden" },
   done: { height: 6, borderRadius: 999 },
+  uploading: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.38)",
+  },
 });

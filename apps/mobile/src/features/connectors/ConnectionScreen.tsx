@@ -37,7 +37,6 @@ import {
 } from "@/ui";
 import { CoverBarBackdrop, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
-import { chooseAction } from "../settings/parts";
 import { useColors, useOrgId } from "../shared/hooks";
 import { errorHaptic, goBack, PushedHeader, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
@@ -54,7 +53,7 @@ export const openConnection = (id: string) => router.push(`/connectors/${id}`);
 
 /**
  * A connection, a screen pushed over Conectores, laid out as the phone's settings (groups on the grouped gray): the
- * bar reads its name, with "…" for renaming; its mark with the check, its name and its account under it; who uses
+ * bar reads its name, with a pen for renaming; its mark with the check, its name and its account under it; who uses
  * it (one row per agent, the level as its value, changed in place), what always asks as that group's footer; its
  * tools as one row (what waits on you under it, in amber; a screen of their own); the account (which, Reconectar,
  * another account of an MCP server, each in a sheet, and under them the request headers a server by address also
@@ -104,20 +103,11 @@ function Connection({ id }: { id: string }) {
   const waiting = admin && item ? item.pending : 0;
   const actions = item ? accountActions(item) : [];
   const sent = item?.server?.headerNames ?? [];
-  // "…": renaming, the one thing about the account that isn't a step of its own.
+  // Renaming, the one thing about the account that isn't a step of its own: the bar's pen opens it straight away (a
+  // menu of one item that opened another sheet was a step for nothing).
   const more =
     admin && item && actions.includes("rename") ? (
-      <IconButton
-        icon="more"
-        label={t("connectors.rename")}
-        onPress={() =>
-          chooseAction(
-            name,
-            [{ icon: "pen", label: t("connectors.rename"), onPress: () => sheet.open(<RenameSheet item={item} />) }],
-            t("common.cancel"),
-          )
-        }
-      />
+      <IconButton icon="pen" label={t("connectors.rename")} onPress={() => sheet.open(<RenameSheet item={item} />)} />
     ) : undefined;
 
   return (

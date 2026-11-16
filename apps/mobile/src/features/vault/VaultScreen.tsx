@@ -21,9 +21,9 @@ import {
   Text,
 } from "@/ui";
 import { router } from "@/ui/navigation";
-import { Note, openPage } from "../ai/parts";
+import { openPage } from "../ai/parts";
 import { Gap, SettingsPage } from "../settings/parts";
-import { FirstUse } from "../shared/FirstUse";
+import { FirstUse, LoadFailed } from "../shared/FirstUse";
 import { useColors, useNow, useOrgId } from "../shared/hooks";
 import { Loaded, MONO } from "../shared/parts";
 import {
@@ -62,9 +62,7 @@ export function VaultScreen() {
     return (
       <SettingsPage title={title}>
         {vault.isError ? (
-          <View style={styles.note}>
-            <Note icon="x">{t("common.loadFailed")}</Note>
-          </View>
+          <LoadFailed onRetry={() => void vault.refetch()} />
         ) : (
           <ActivityIndicator color={c.muted} style={styles.loading} />
         )}
@@ -348,7 +346,6 @@ function ConnectionRow({ icon, conn, now }: { icon: IconName; conn: VaultConnect
 }
 
 const styles = StyleSheet.create({
-  note: { paddingHorizontal: 4, paddingTop: 10 },
   loading: { marginVertical: 16 },
   tabs: { paddingTop: 20, paddingBottom: 4, paddingHorizontal: 4 },
   search: { paddingTop: 12, paddingBottom: 4 },

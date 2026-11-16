@@ -332,7 +332,42 @@ describe("Ferramentas: Salvar stays at hand", () => {
     expect(screen).not.toContain("ChangedTools");
     // Salvar sits in the bar under the scroll, never at the end of a long list.
     expect(screen.indexOf("<BottomBar")).toBeGreaterThan(screen.indexOf("</ScrollView>"));
-    expect(review).toContain("{onSaveBar ? null : <Button");
+    expect(review).toMatch(/\{onSaveBar \? null : \(?\s*<Button/);
+  });
+
+  test("a save on its way spins in its button and keeps its words; reading the tools again only holds it", async () => {
+    const [screen, review, sheet] = await Promise.all([
+      read("ToolsScreen.tsx"),
+      read("ToolReview.tsx"),
+      read("ConnectSheet.tsx"),
+    ]);
+    expect(screen).toContain("loading={save.saving}");
+    expect(review).toContain("onSaveBar?.({ label: saveLabel, saving, busy: refresh.isPending");
+    expect(review).toContain("loading={update.isPending}");
+    // No button trades its words for "Saving…" or "Connecting…" any more: the spinner says it.
+    for (const file of [review, sheet]) {
+      expect(file).not.toContain("mobile.connectors.review.saving");
+      expect(file).not.toContain("mobile.connectors.working");
+    }
+    expect(sheet).toMatch(/label=\{t\("mobile\.connectors\.connect"\)\}\s*loading=\{busy\}/);
+    expect(sheet).toMatch(/label=\{t\("githubApp\.install"\)\}\s*loading=\{busy\}/);
+  });
+});
+
+describe("a connection's screen and the gallery, at a finger's reach", () => {
+  const read = (path: string) => readFileSync(join(import.meta.dir, "../../src/features/connectors", path), "utf8");
+
+  test("renaming opens straight from the bar, with no menu of one item in between", () => {
+    const screen = read("ConnectionScreen.tsx");
+    expect(screen).toMatch(
+      /<IconButton\s+icon="pen"\s+label=\{t\("connectors\.rename"\)\}\s+onPress=\{\(\) => sheet\.open\(<RenameSheet item=\{item\} \/>\)\}/,
+    );
+    expect(screen).not.toContain("chooseAction(");
+  });
+
+  test("the amber line of what waits on you is a 44-point target", () => {
+    const gallery = read("ConnectorsScreen.tsx");
+    expect(gallery).toMatch(/wait: \{[^}]*minHeight: 44[^}]*\}/);
   });
 });
 

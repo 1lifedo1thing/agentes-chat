@@ -12,9 +12,9 @@ import {
 import { computerEdition } from "@agenteschat/client/lib/computer";
 import { can } from "@agenteschat/client/lib/permissions";
 import { settingsSectionNameKey } from "@agenteschat/client/lib/personal-view";
+import type { TFunction } from "i18next";
 import { Fragment, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert } from "react-native";
 import { useOrg } from "@/providers/org";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, haptics } from "@/ui";
 import { router } from "@/ui/navigation";
@@ -31,7 +31,7 @@ import {
   type SettingsSection,
   visibleSections,
 } from "./logic";
-import { Gap, SettingsPage } from "./parts";
+import { confirmAction, Gap, SettingsPage } from "./parts";
 
 /** The rows whose group already says the rest get a shorter name (`mobile.settings.section.*`). */
 const SHORT: Partial<Record<SettingsSection, string>> = {
@@ -176,7 +176,25 @@ export function SectionGroups({
 }
 
 /**
- * Owners: "Delete <name>" alone in red, behind the system's alert (one firm haptic as it confirms), then the proof and
+ * Deleting the workspace starts with the system's confirmation (one firm haptic as it confirms), then the proof and the
+ * hold on a screen of their own: the same way from every row that offers it (here and on the owner's Account).
+ */
+export function confirmDeleteWorkspace(t: TFunction, name: string) {
+  confirmAction({
+    title: t("deleteOrg.title", { name }),
+    text: t("mobile.settings.deleteAlert"),
+    action: t("mobile.settings.deleteAction"),
+    cancel: t("common.cancel"),
+    onConfirm: () => {
+      // One firm tap as the destructive step is taken, in the same moment the next screen comes.
+      haptics.medium();
+      router.push("/settings/delete");
+    },
+  });
+}
+
+/**
+ * Owners: "Delete <name>" alone in red, behind the system's alert (`confirmDeleteWorkspace`), then the proof and
  * the hold on a screen of its own. Nothing for anyone else, nor while it is being deleted.
  */
 export function DeleteWorkspaceRow() {
@@ -184,25 +202,16 @@ export function DeleteWorkspaceRow() {
   const { org } = useOrg();
   const name = org?.name ?? "";
   if (org?.role !== "owner" || org.deletion) return null;
-  const confirmDelete = () =>
-    Alert.alert(t("deleteOrg.title", { name }), t("mobile.settings.deleteAlert"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("mobile.settings.deleteAction"),
-        style: "destructive",
-        onPress: () => {
-          // One firm tap as the destructive step is taken, in the same moment the next screen comes.
-          haptics.medium();
-          router.push("/settings/delete");
-        },
-      },
-    ]);
   return (
     <>
       <Gap />
       <Gap />
       <GroupedList>
-        <GroupedRow label={t("mobile.settings.deleteName", { name })} danger onPress={confirmDelete} />
+        <GroupedRow
+          label={t("mobile.settings.deleteName", { name })}
+          danger
+          onPress={() => confirmDeleteWorkspace(t, name)}
+        />
       </GroupedList>
       <GroupedFooter>{t("mobile.settings.deleteFoot")}</GroupedFooter>
     </>

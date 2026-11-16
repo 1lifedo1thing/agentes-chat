@@ -84,7 +84,15 @@ import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { goBack, MONO, successHaptic } from "../shared/parts";
 import { TextArea } from "../shared/TextArea";
 import { DESKTOP_TURN_ON, grantCommand, osOf, pauseText, type Reduce, reduceTexts, seenText } from "./logic";
-import { CommandBlock, chooseAction, confirmAction, Gap, SettingsPage, TerminalFallback } from "./parts";
+import {
+  CommandBlock,
+  chooseAction,
+  confirmAction,
+  Gap,
+  SettingsPage,
+  TerminalFallback,
+  useUnsavedGuard,
+} from "./parts";
 
 /**
  * One computer, as the web's page: its portrait and state (online, paused, who connected it) and what it is; the
@@ -1037,6 +1045,8 @@ export function RenameMachineScreen({ machineId }: { machineId: string }) {
   const value = name ?? m?.name ?? "";
   const clean = value.trim();
   const ready = Boolean(m) && clean.length > 0 && clean !== m?.name && !action.isPending;
+  // Back with a new name not saved asks first.
+  const leave = useUnsavedGuard(Boolean(m) && name !== null && clean !== m?.name);
   const save = () => {
     if (!m || !ready) return;
     action.mutate(
@@ -1045,6 +1055,7 @@ export function RenameMachineScreen({ machineId }: { machineId: string }) {
         onSuccess: () => {
           successHaptic();
           toast({ title: t("machines.renamed", { name: clean }), icon: "check" });
+          leave();
           goBack();
         },
         onError: (err) => setError(errorText(t, err)),

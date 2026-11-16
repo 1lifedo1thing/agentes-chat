@@ -651,8 +651,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  // On the margin of 16, under the connected row: the icon on the line's first row of text.
-  wait: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginHorizontal: 16, marginTop: 6 },
+  // On the margin of 16, under the connected row: one line with its icon beside it, its row a finger's 44 points tall
+  // (the line alone was a 20-point target), so the space above and below it is part of the tap.
+  wait: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 16, minHeight: 44 },
   // A column: the team's faces on top, then the line, its text and "Pelo endereço" (in a row the faces
   // took a third of the width and the text wrapped into a narrow block).
   empty: {

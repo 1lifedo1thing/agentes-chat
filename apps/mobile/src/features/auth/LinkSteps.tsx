@@ -75,9 +75,6 @@ export function LinkSteps({
   const org = preview.orgName;
   const by = preview.invitedBy ? firstName(preview.invitedBy) : null;
   const resendAt = sent?.to === key ? sent.resendAt : 0;
-  // A repaint every second while the code's countdown runs; the time itself is read just below.
-  useNow(step === "code" && resendAt > Date.now() ? 1000 : 60_000);
-  const left = Math.max(0, resendAt - Date.now());
 
   const go = (next: AskStep) => {
     setError(null);
@@ -328,18 +325,7 @@ export function LinkSteps({
               onPress={() => void Linking.openURL(mail.url)}
             />
           ) : null}
-          {left > 0 ? (
-            <Text
-              variant="subhead"
-              tone="muted"
-              accessibilityLabel={t("invite.ask.resendIn", { count: Math.ceil(left / 1000) })}
-              style={[CENTER, { fontVariant: ["tabular-nums"] }]}
-            >
-              {formatTimeLeft(left)}
-            </Text>
-          ) : capped === key || sending ? null : (
-            <Quiet label={t("invite.ask.resendCode")} onPress={() => void resend()} />
-          )}
+          <ResendLine resendAt={resendAt} hidden={capped === key || sending} onResend={() => void resend()} />
         </>
       );
       break;
@@ -420,7 +406,9 @@ export function LinkSteps({
       progress={progress}
       stepKey={step}
       onBack={onBack}
-      sky={step === "you" ? "low" : "normal"}
+      // One sky for the three steps, the lower one the "you" step's fields need: a sky that changed height between
+      // them jumped as the step changed.
+      sky="low"
       toolbar={step === "you"}
       agentMode={sending || asking || checking ? "run" : "idle"}
       expression={expression}
@@ -434,4 +422,27 @@ export function LinkSteps({
       {body}
     </AuthScaffold>
   );
+}
+
+/**
+ * Under the code: how long until another may go, then "Resend code" (unless `hidden`). Its own clock, so only this
+ * line repaints each second while it counts down, never the step's field.
+ */
+function ResendLine({ resendAt, hidden, onResend }: { resendAt: number; hidden: boolean; onResend: () => void }) {
+  const { t } = useTranslation();
+  const left = Math.max(0, resendAt - Date.now());
+  // A repaint every second while it counts down; the time itself is read just above.
+  useNow(left > 0 ? 1000 : 60_000);
+  if (left > 0)
+    return (
+      <Text
+        variant="subhead"
+        tone="muted"
+        accessibilityLabel={t("invite.ask.resendIn", { count: Math.ceil(left / 1000) })}
+        style={[CENTER, { fontVariant: ["tabular-nums"] }]}
+      >
+        {formatTimeLeft(left)}
+      </Text>
+    );
+  return hidden ? null : <Quiet label={t("invite.ask.resendCode")} onPress={onResend} />;
 }

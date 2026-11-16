@@ -53,10 +53,12 @@ import { errorHaptic, goBack, MONO, successHaptic } from "../shared/parts";
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { missingIdeas, nameOnLeave, withIdea, zoneLabel } from "./logic";
-import { chooseAction, Gap, SettingsPage } from "./parts";
+import { chooseAction, Gap, SettingsPage, Uploading } from "./parts";
 
 /** How long "Salvo" stays under the title after a change saved by itself. */
 const SAVED_MS = 1800;
+/** The workspace's logo at the top of Geral (`OrgAvatar`'s corners: one cut, the other three round). */
+const LOGO = 84;
 /** The context saves this long after the last key (and when its field is left). */
 const CONTEXT_SAVE_MS = 800;
 const CONTEXT_LIMIT = { max: FIELD_LIMITS.workspaceContext };
@@ -289,12 +291,16 @@ export function GeneralScreen() {
 
   const logo = (
     <View style={styles.logo}>
-      <OrgAvatar logo={org?.logo} size={84} />
+      <View>
+        <OrgAvatar logo={org?.logo} size={LOGO} />
+        {uploading ? <Uploading style={styles.logoBusy} /> : null}
+      </View>
       {editable ? (
         <Pressable
           onPress={changeLogo}
           disabled={uploading}
           accessibilityRole="button"
+          accessibilityState={{ disabled: uploading, busy: uploading }}
           hitSlop={12}
           style={({ pressed }) => (pressed ? styles.pressed : null)}
         >
@@ -538,7 +544,8 @@ function UsageStatistics() {
   const set = useSetServerTelemetry();
   const data = telemetry.data;
   if (!data) return null;
-  const on = data.enabled && !data.envOff;
+  // What is being saved shows at once: the switch moves as it is tapped, not when the server answers.
+  const on = (set.isPending ? set.variables : undefined) ?? (data.enabled && !data.envOff);
   const envOff = data.envOff
     ? t(data.report.install === "desktop" ? "settings.telemetry.envOffDesktop" : "settings.telemetry.envOff")
     : null;
@@ -554,7 +561,7 @@ function UsageStatistics() {
             text: t("settings.telemetry.help"),
           }}
           toggle={on}
-          disabled={data.envOff || set.isPending}
+          disabled={data.envOff}
           onPress={() => set.mutate(!on, { onError: () => toast({ title: t("mobile.app.failed"), icon: "x" }) })}
         />
         <GroupedRow label={t("settings.telemetry.see")} chevron onPress={() => router.push("/settings/telemetry")} />
@@ -613,6 +620,14 @@ export function OrgZonePage() {
 const styles = StyleSheet.create({
   note: { paddingHorizontal: 4, paddingTop: 10 },
   logo: { alignItems: "center", gap: 8, paddingTop: 14, paddingBottom: 14 },
+  logoBusy: {
+    width: LOGO,
+    height: LOGO,
+    borderTopLeftRadius: LOGO * 0.3,
+    borderTopRightRadius: LOGO * 0.3,
+    borderBottomRightRadius: LOGO * 0.3,
+    borderBottomLeftRadius: LOGO * 0.09,
+  },
   semibold: { fontWeight: "600" },
   pressed: { opacity: 0.6 },
   input: { flex: 1, paddingVertical: 12, paddingHorizontal: 0 },

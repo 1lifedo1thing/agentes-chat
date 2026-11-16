@@ -51,7 +51,7 @@ import { router } from "@/ui/navigation";
 import { Note } from "../ai/parts";
 import { chatHref } from "../links/logic";
 import { Face } from "../shared/Face";
-import { useEmptyLook } from "../shared/FirstUse";
+import { LoadFailed, useEmptyLook } from "../shared/FirstUse";
 import { useColors, useDirectory, useWhen } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
 import { copyText, Tile } from "../shared/parts";
@@ -141,11 +141,7 @@ export function AuditScreen({ agentId: first = null }: { agentId?: string | null
             </>
           ) : null}
           {audit.isPending ? <ActivityIndicator color={c.muted} style={styles.loading} /> : null}
-          {audit.isError && !audit.data ? (
-            <View style={styles.note}>
-              <Note icon="x">{t("common.loadFailed")}</Note>
-            </View>
-          ) : null}
+          {audit.isError && !audit.data ? <LoadFailed onRetry={() => void audit.refetch()} /> : null}
           {audit.isSuccess && rows.length === 0 ? (
             show === "all" && !agentId ? (
               <EmptyState
