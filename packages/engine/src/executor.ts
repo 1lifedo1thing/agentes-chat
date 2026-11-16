@@ -4460,10 +4460,15 @@ async function executeRunInner(
         pause?.source === "plan" || intoExtra ? await moveToNextAccount(pause ? "line" : "extra", underTheLine) : null;
       if (nextAccount?.plan) continue;
       // On another account at the line there: its own (tried already) takes it back into its owner's paid extra
-      // usage. Otherwise the run is no longer moved and waits for the first reset of the two.
+      // usage. Otherwise the run is no longer moved and waits for the first reset of the two. A turn the plan cut there
+      // after it worked waits there: only its session may finish it.
       let ownReset: number | null = null;
       const moved = transcript.accountMove;
-      if (pause?.source === "plan" && moved) {
+      const cut = turnStaysOnItsComputer(
+        transcript.interruptedTurn?.executed.length ?? 0,
+        transcript.interruptedTurn?.cause,
+      );
+      if (pause?.source === "plan" && moved && !cut) {
         triedThisClaim.delete(moved.from);
         const back = await moveToNextAccount(
           "line",

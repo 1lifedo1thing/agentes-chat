@@ -1001,6 +1001,47 @@ test("long work on a plan lent to its agent never goes back into that plan's pai
   expect(Date.parse(waiting?.until ?? "")).toBeLessThan(Date.now() + 4 * 3600_000);
 });
 
+test("long work whose turn the plan cut on the account it moved to stays there at the pause line: only that session may finish it", async () => {
+  const { fx, account, usage } = await world();
+  await account(OWN2, fx.owner.id);
+  await usage(OWN1, 100, iso(5 * 3600_000));
+  const { brain, seen } = scripted((n) =>
+    n === 0
+      ? [
+          { type: "usage", input: 100, output: 10, source: "plan", model: "sonnet" },
+          { type: "tool_call", id: "c1", name: "Bash", input: { command: "ls" }, executed: { content: "ok" } },
+          { type: "limit", resetsAt: iso(3600_000) },
+          { type: "error", code: "plan_limit", message: "You've hit your limit", worked: true },
+        ]
+      : answers,
+  );
+  await scheduledSlot(fx);
+  const handlers = handlersWith(fx, brain);
+  await drainOutbox(fx.db, handlers);
+  expect(moveOf((await runs(fx))[0])?.to).toBe(OWN2);
+
+  // Its five hours reset, its week past the pause line: it waits there, in its session there.
+  await fx.db
+    .update(schema.machineAccounts)
+    .set({
+      usage: {
+        windows: [{ kind: "seven_day", usedPercent: 96, resetsAt: iso(5 * 24 * 3600_000) }],
+        source: "turn",
+        at: new Date().toISOString(),
+      } as never,
+    })
+    .where(eq(schema.machineAccounts.id, OWN2));
+  clearPlanLimits();
+  await drainOutbox(fx.db, handlers, { now: later(3600_000 + RESUME_AFTER_MS + 1000) });
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN2]);
+  const [run] = await runs(fx);
+  expect((run?.transcript as { waitingForBrain?: { code: string } } | undefined)?.waitingForBrain?.code).toBe(
+    "usage_pause",
+  );
+  expect(moveOf(run)?.to).toBe(OWN2);
+  expect(run?.brainSessionId).toBe(seen[0]?.session?.id ?? "");
+});
+
 test("a run refused by the account it just moved to moves again with one note, never two stacked", async () => {
   const { fx, account } = await world({}, goesOn);
   await account(OWN2, fx.owner.id);
