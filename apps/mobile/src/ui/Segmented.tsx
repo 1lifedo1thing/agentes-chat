@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text as RNText, View } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { Count } from "./Count";
 import type { FiltersProps } from "./Filters";
 import { haptics } from "./haptics";
@@ -45,10 +45,7 @@ export function Segmented({ items, value, onChange, wide = false, size }: Segmen
   const placed = useRef(false);
   useEffect(() => {
     if (!at) return;
-    const timing = {
-      duration: reducedMotion || !placed.current ? 0 : motion.base,
-      easing: Easing.bezier(...motion.out),
-    };
+    const timing = { duration: reducedMotion || !placed.current ? 0 : motion.base, easing: motion.easeOut };
     x.value = withTiming(at.x, timing);
     width.value = withTiming(at.width, timing);
     placed.current = true;

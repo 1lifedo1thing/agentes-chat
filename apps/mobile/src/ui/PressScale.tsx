@@ -1,14 +1,8 @@
 import type { ReactNode } from "react";
 import { Pressable, type PressableProps, type StyleProp, StyleSheet, type ViewStyle } from "react-native";
-import Animated, {
-  type AnimatedStyle,
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { type AnimatedStyle, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { haptics } from "./haptics";
-import { useTheme } from "./theme";
+import { motion, useTheme } from "./theme";
 
 export interface PressScaleProps extends Omit<PressableProps, "style" | "children"> {
   /** Scale while pressed (default 0.97). */
@@ -33,9 +27,8 @@ export interface PressScaleProps extends Omit<PressableProps, "style" | "childre
 }
 
 /** Press feedback: down fast as the finger lands, back a little slower, both ease-out, no overshoot. */
-const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
-export const PRESS_IN = { duration: 120, easing: EASE_OUT };
-export const PRESS_OUT = { duration: 180, easing: EASE_OUT };
+export const PRESS_IN = { duration: 120, easing: motion.easeOut };
+export const PRESS_OUT = { duration: 180, easing: motion.easeOut };
 /**
  * A press shows after this long (ms): a finger that only starts a scroll on a control never shrinks it or flashes a
  * row (React Native's scroll views don't hold touches back as the system's own do). Too short to feel as a delay.

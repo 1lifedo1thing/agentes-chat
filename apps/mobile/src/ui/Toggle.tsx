@@ -1,15 +1,9 @@
 import { useEffect } from "react";
 import { Pressable, StyleSheet } from "react-native";
-import Animated, {
-  Easing,
-  interpolateColor,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { haptics } from "./haptics";
 import { Text } from "./Text";
-import { useTheme } from "./theme";
+import { motion, useTheme } from "./theme";
 
 export interface ToggleProps {
   value: boolean;
@@ -41,7 +35,7 @@ export function Toggle({ value, onChange, label }: ToggleProps) {
 }
 
 /** A switch's flip: short, ease-out, no overshoot. */
-const SWITCH = { duration: 160, easing: Easing.bezier(0.23, 1, 0.32, 1) };
+const SWITCH = { duration: 160, easing: motion.easeOut };
 
 /**
  * Only the switch (track and knob), for rows that bring their own press and
