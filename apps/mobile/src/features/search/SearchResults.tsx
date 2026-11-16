@@ -9,7 +9,7 @@ import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import { EmptyState, SectionHeader, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
-import { openFile } from "../files/open";
+import { useOpenFile } from "../files/open";
 import { chatHref } from "../links/logic";
 import { AgentFace, Face } from "../shared/Face";
 import { useDirectory, useOrgId, useWhen } from "../shared/hooks";
@@ -56,7 +56,8 @@ export function SearchResults({ q }: { q: string }) {
   };
   const channelName = (id: string | undefined) => (id ? channels.data?.find((x) => x.id === id)?.name : undefined);
   // The app's own viewer (a document, an image), never the browser: a picture's name opens it straight in the pictures.
-  const openHit = (id: string, title: string) => openFile({ id, title });
+  const openFileNow = useOpenFile();
+  const openHit = (id: string, title: string) => void openFileNow({ id, title });
   const words = Boolean(q.trim());
   const terms = searchTerms(q);
 

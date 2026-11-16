@@ -207,6 +207,7 @@ export function PushedHeader({
   plate = false,
   solid = true,
   grouped = false,
+  largeTitle = false,
 }: {
   title?: ReactNode;
   subtitle?: string;
@@ -217,6 +218,11 @@ export function PushedHeader({
   solid?: boolean;
   /** The screen sits on the grouped gray (the bar matches it where it is opaque: Android). */
   grouped?: boolean;
+  /**
+   * iOS: the system's large title (a string `title`), over a scroll view that is the screen's first child: it folds
+   * into the bar as the list scrolls, and the bar takes the system's material over what passes under it.
+   */
+  largeTitle?: boolean;
 }) {
   const { colors } = useTheme();
   const scrollUnder = useScrollUnderPushedOptions();
@@ -239,6 +245,13 @@ export function PushedHeader({
     () => ({
       ...(plate ? coverBarOptions : solid ? {} : scrollUnder),
       ...(barTone && !plate ? { headerStyle: { backgroundColor: barTone } } : null),
+      ...(largeTitle && IOS
+        ? {
+            headerLargeTitleEnabled: true,
+            headerLargeTitleShadowVisible: false,
+            headerLargeTitleStyle: { color: colors.ink },
+          }
+        : null),
       title: text,
       headerTitle: custom
         ? () => <HeaderTitle text={text} node={titleNode} subtitle={subtitle} beside={word !== null} />
@@ -275,7 +288,22 @@ export function PushedHeader({
             )
           : undefined,
     }),
-    [plate, solid, scrollUnder, barTone, text, custom, subtitle, titleNode, hasRight, rightNode, word, wordOff],
+    [
+      plate,
+      solid,
+      scrollUnder,
+      barTone,
+      largeTitle,
+      colors.ink,
+      text,
+      custom,
+      subtitle,
+      titleNode,
+      hasRight,
+      rightNode,
+      word,
+      wordOff,
+    ],
   );
   return <Stack.Screen options={options} />;
 }

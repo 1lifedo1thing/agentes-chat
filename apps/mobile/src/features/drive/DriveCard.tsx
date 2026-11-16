@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Text as RNText, StyleSheet, View } from "react-native";
 import { CHROME_MAX_SCALE, Icon, type IconName, PressScale, systemText, Text, useTheme, weights } from "@/ui";
 import type { FileRef } from "../files/logic";
-import { openFile } from "../files/open";
+import { useOpenFile } from "../files/open";
 import { useRemoteFile } from "../files/source";
 import { Face } from "../shared/Face";
 import { useDirectory, useOrgId, useWhen } from "../shared/hooks";
@@ -50,6 +50,7 @@ export const DriveCard = memo(function DriveCard({
   const when = useWhen();
   const kind = kindKey(a);
   const author = dir.nameOf(a.createdBy);
+  const open = useOpenFile();
   return (
     // The card gives under the finger (the open's own tap is its haptic).
     <PressScale
@@ -58,7 +59,7 @@ export const DriveCard = memo(function DriveCard({
       fill={false}
       onPress={() => {
         tapHaptic();
-        openFile(driveRef(a), siblings);
+        void open(driveRef(a), siblings);
       }}
       accessibilityRole="button"
       accessibilityLabel={[a.title, t(`mobile.drive.kind.${kind}`), author, when.short(a.updatedAt)]

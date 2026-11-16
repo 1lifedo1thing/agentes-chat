@@ -338,3 +338,20 @@ export function decodeFileList(raw: string | string[] | undefined): { id: string
     return [Number.isInteger(n) && n > 0 ? { id, version: n } : { id }];
   });
 }
+
+/** Names that are never a picture or a video: they open the file screen without asking for the details first. */
+const DOCUMENT_EXT = new Set([
+  ...["md", "markdown", "mdx", "txt", "log", "csv", "tsv", "json", "yml", "yaml", "toml", "xml", "ini", "env"],
+  ...["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf", "html", "htm"],
+  ...["zip", "tar", "gz", "patch", "diff", "js", "ts", "tsx", "py", "rb", "go", "rs", "java", "swift", "sql", "sh"],
+]);
+
+/**
+ * Its details, or its kind and name, already say where a file opens: a picture's or a video's name, or a document's.
+ * A name with no extension, or one the app doesn't know (a video in a rarer format), says nothing.
+ */
+export function whereKnown(ref: FileRef): boolean {
+  if (ref.detail) return true;
+  if (ref.kind !== undefined && ref.kind !== "file") return true;
+  return isMediaFile(ref) || DOCUMENT_EXT.has(extensionOf(ref.title ?? ""));
+}

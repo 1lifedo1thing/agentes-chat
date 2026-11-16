@@ -22,6 +22,7 @@ import {
   utf8Bytes,
   videoClock,
   videoHeight,
+  whereKnown,
   withExtension,
 } from "../../src/features/files/logic";
 import {
@@ -290,6 +291,16 @@ describe("viewer", () => {
     expect(row).toContain('<LocalFiles files={localFiles} align="end" sending={m.local === "pending"} />');
   });
 
+  test("a file whose name doesn't say what it is gets its details before it opens: a video never flashes the file screen", () => {
+    expect(whereKnown({ id: "a", title: "clip.mp4" })).toBe(true);
+    expect(whereKnown({ id: "a", title: "notes.md" })).toBe(true);
+    expect(whereKnown({ id: "a", title: "Video do lancamento" })).toBe(false);
+    expect(whereKnown({ id: "a", title: "take.mkv" })).toBe(false);
+    expect(whereKnown({ id: "a", title: "Plan", kind: "document" })).toBe(true);
+    for (const f of ["drive/DriveCard.tsx", "search/SearchResults.tsx", "chat/FileRefText.tsx"])
+      expect(src(`features/${f}`)).toContain("useOpenFile");
+  });
+
   test("a video opens where the pictures do, from a message, the Drive or a file's link, and plays there", () => {
     expect(src("features/files/ImageViewer.tsx")).toContain("<ViewerVideo");
     const message = src("features/files/MessageFiles.tsx");
@@ -347,7 +358,9 @@ describe("viewer", () => {
       "features/agents/AgentProfileScreen.tsx",
     ]) {
       const source = src(file);
-      expect({ file, opens: source.includes("openFile(") }).toEqual({ file, opens: true });
+      // `openFile`, or `useOpenFile` where only a name is known (its details come first when the name says nothing).
+      const opens = source.includes("openFile(") || source.includes("useOpenFile(");
+      expect({ file, opens }).toEqual({ file, opens: true });
       expect({ file, own: /pathname: "\/(images|file\/\[id\])"/.test(source) }).toEqual({ file, own: false });
     }
     // The Drive's grid and a message's pictures and videos are the viewer's pages, in the order they show.

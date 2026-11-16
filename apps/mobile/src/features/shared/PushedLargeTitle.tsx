@@ -1,6 +1,6 @@
 import { useHeaderHeight } from "expo-router/react-navigation";
 import type { ReactElement, ReactNode } from "react";
-import { Platform, type RefreshControlProps, StyleSheet, View } from "react-native";
+import { Platform, type RefreshControlProps, ScrollView, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BAR_TITLE_FROM, BAR_TITLE_TO, LargeTitleHead, useLargeTitleScroll } from "@/ui";
@@ -8,25 +8,7 @@ import { FadingHeaderTitle } from "@/ui/cover";
 import { useColors } from "./hooks";
 import { FocusLive, PushedHeader } from "./parts";
 
-/**
- * A pushed screen with a large title (Issues, Drive): the title in Funnel Display is part of the content and
- * scrolls away; the bar's own title fades in as it goes, over a bar the content scrolls under (the system
- * glass on iOS 26). The same shape as the tabs' `LargeTitleScreen` (the same title, fade and settling), without the
- * tab bar's room. `collapsed` folds the large title away (a search field under it took the focus, as the system's
- * search bar does); content that should slide up with it carries a `LinearTransition` layout.
- */
-export function PushedLargeTitle({
-  title,
-  right,
-  refreshControl,
-  onScrollBeginDrag,
-  bottomInset = 24,
-  collapsed = false,
-  grouped = false,
-  keyboard = false,
-  dock,
-  children,
-}: {
+type PushedLargeTitleProps = {
   title: string;
   right?: ReactNode;
   refreshControl?: ReactElement<RefreshControlProps>;
@@ -42,7 +24,69 @@ export function PushedLargeTitle({
   /** What stays at the screen's bottom over the content (a widget's "Ask for a change"), absolutely placed. */
   dock?: ReactNode;
   children?: ReactNode;
-}) {
+};
+
+/**
+ * A pushed screen with a large title (Issues, Drive). On iOS it is the system's own: the large title in the bar
+ * folds into it as the list scrolls and the bar takes the system's material (iOS 26's glass and its scroll edge, a
+ * blur before) over what passes under it, so the title and the buttons always read; the scroll view is the
+ * screen's first child, as the system needs to follow it. Android has no large title in its bar: the title is drawn
+ * at the top of the content and the bar's own title fades in as it scrolls away (`DrawnLargeTitle`).
+ * `collapsed` folds the large title away (a search field under it took the focus, as the system's search bar does).
+ */
+export function PushedLargeTitle(props: PushedLargeTitleProps) {
+  return Platform.OS === "ios" ? <SystemLargeTitle {...props} /> : <DrawnLargeTitle {...props} />;
+}
+
+function SystemLargeTitle({
+  title,
+  right,
+  refreshControl,
+  onScrollBeginDrag,
+  bottomInset = 24,
+  collapsed = false,
+  grouped = false,
+  keyboard = false,
+  dock,
+  children,
+}: PushedLargeTitleProps) {
+  const c = useColors();
+  const insets = useSafeAreaInsets();
+  return (
+    <>
+      <PushedHeader title={title} right={right} solid={false} grouped={grouped} largeTitle={!collapsed} />
+      <FocusLive>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          style={[styles.screen, { backgroundColor: grouped ? c.grouped : c.bg }]}
+          onScrollBeginDrag={onScrollBeginDrag}
+          refreshControl={refreshControl}
+          keyboardDismissMode={keyboard ? "interactive" : "on-drag"}
+          automaticallyAdjustKeyboardInsets={keyboard}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: insets.bottom + bottomInset }}
+        >
+          {children}
+        </ScrollView>
+      </FocusLive>
+      {dock}
+    </>
+  );
+}
+
+/** Android's: the large title at the top of the content, the bar's title fading in as it scrolls away. */
+function DrawnLargeTitle({
+  title,
+  right,
+  refreshControl,
+  onScrollBeginDrag,
+  bottomInset = 24,
+  collapsed = false,
+  grouped = false,
+  keyboard = false,
+  dock,
+  children,
+}: PushedLargeTitleProps) {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
