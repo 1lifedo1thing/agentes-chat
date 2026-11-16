@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const UI = join(import.meta.dir, "../src/ui");
@@ -17,9 +17,10 @@ test("motion has one source: the theme's easings, and its springs in Apple's two
   expect(theme).toContain("pop: { damping: 13, stiffness: 260, mass: 0.7 },");
 });
 
-test("the kit's press, switch, spark and hold button keep no copy of the curve", () => {
-  for (const file of ["PressScale.tsx", "Toggle.tsx", "SparkCheck.tsx", "HoldButton.tsx"])
-    expect({ file, copy: ui(file).includes("Easing.bezier(0.23, 1, 0.32, 1)") }).toEqual({ file, copy: false });
+test("the kit keeps no copy of the curve (the composer is drawn elsewhere)", () => {
+  const kit = readdirSync(UI).filter((f) => /\.tsx?$/.test(f) && f !== "Composer.tsx" && f !== "theme.tsx");
+  const copies = kit.filter((f) => ui(f).includes("Easing.bezier(0.23, 1, 0.32, 1)"));
+  expect(copies).toEqual([]);
   expect(ui("PressScale.tsx")).toContain("export const PRESS_IN = { duration: 120, easing: motion.easeOut };");
   expect(ui("Toggle.tsx")).toContain("const SWITCH = { duration: 160, easing: motion.easeOut };");
 });
