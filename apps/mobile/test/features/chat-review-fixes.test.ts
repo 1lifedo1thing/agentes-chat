@@ -1,9 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Message } from "@agenteschat/client";
 import { INLINE_HEIGHT } from "../../src/features/blocks/logic";
 import { keptHeightAfter } from "../../src/features/chat/kept-sizes";
-import { type Inline, runInConversation, tableColumnWidths, tableResolvesLate } from "../../src/features/chat/logic";
+import {
+  type Inline,
+  pinnedAsListed,
+  runInConversation,
+  tableColumnWidths,
+  tableResolvesLate,
+} from "../../src/features/chat/logic";
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
 
@@ -154,6 +161,28 @@ describe("files sent while others go up stay under them", () => {
     const files = chat.slice(chat.indexOf("const sendWithFiles = ("), chat.indexOf("const deliverFiles = async ("));
     expect(files).toMatch(
       /if \(filesAhead\.current\) waitingBehind\.current\.push\(clientId\);\s*behindFiles\(\(\) => \{\s*waitingBehind\.current = waitingBehind\.current\.filter\(\(id\) => id !== clientId\);\s*return deliverFiles\(local, how\);/,
+    );
+  });
+});
+
+describe("a message from an older page follows its pin", () => {
+  const m = (id: string, pinned?: boolean) => ({ id, ...(pinned ? { pinned } : {}) }) as Message;
+  test("pinned or unpinned in the pins list, the older row says so; the rest stay the same objects", () => {
+    const older = [m("a"), m("b", true), m("c")];
+    const next = pinnedAsListed(older, [{ messageId: "a" }]);
+    expect(next.map((x) => Boolean(x.pinned))).toEqual([true, false, false]);
+    expect(next[2]).toBe(older[2]);
+    // Nothing to change, or the list not loaded: the very same list.
+    expect(pinnedAsListed(older, [{ messageId: "b" }])).toBe(older);
+    expect(pinnedAsListed(older, undefined)).toBe(older);
+  });
+
+  test("the screen builds its list from the older pages as pinned", () => {
+    const chat = src("features/chat/ChatScreen.tsx");
+    expect(chat).toContain("const olderPinned = useMemo(() => pinnedAsListed(older, pinsData), [older, pinsData]);");
+    expect(chat).toContain("return mergeTimeline([...olderPinned, ...(top.data ?? [])], []);");
+    expect(chat.indexOf("const pinsData = usePins(orgId, channelId, member).data;")).toBeLessThan(
+      chat.indexOf("const olderPinned = "),
     );
   });
 });

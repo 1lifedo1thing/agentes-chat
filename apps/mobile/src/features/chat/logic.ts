@@ -145,6 +145,23 @@ const byTime = (a: Pick<Message, "createdAt" | "id">, b: Pick<Message, "createdA
   a.createdAt === b.createdAt ? a.id.localeCompare(b.id) : a.createdAt < b.createdAt ? -1 : 1;
 
 /** Top-level messages plus loaded thread replies (agents answer inside the thread of the message that called them). */
+/**
+ * The messages of older pages with their pin as the pins list says (`pins`, once loaded). Those pages live in the
+ * screen's own state, which no cache update reaches: pinned from its menu, an older message kept "Fixar" there and no
+ * mark. Rows whose pin is right stay the same objects, and so does the list when none changes.
+ */
+export function pinnedAsListed(older: Message[], pins: readonly { messageId: string }[] | undefined): Message[] {
+  if (!pins) return older;
+  const ids = new Set(pins.map((p) => p.messageId));
+  let changed = false;
+  const next = older.map((m) => {
+    if (ids.has(m.id) === Boolean(m.pinned)) return m;
+    changed = true;
+    return { ...m, pinned: ids.has(m.id) };
+  });
+  return changed ? next : older;
+}
+
 export function mergeTimeline(topLevel: Message[], threads: (Message[] | undefined)[]): Message[] {
   const seen = new Map<string, Message>();
   for (const m of topLevel) seen.set(m.id, m);

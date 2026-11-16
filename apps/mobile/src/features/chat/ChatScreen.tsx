@@ -232,6 +232,7 @@ import {
   parseSlash,
   pinTarget,
   quietInset,
+  pinnedAsListed,
   readMark,
   runInConversation,
   sameItems,
@@ -503,14 +504,18 @@ function Chat({
   );
   const [older, setOlder] = useState<Message[]>([]);
   const [olderDone, setOlderDone] = useState(false);
+  // Something is pinned here: its lines wait above the first message (`PinnedLines`). Older pages take their pins from
+  // it (`pinnedAsListed`): no cache update reaches them.
+  const pinsData = usePins(orgId, channelId, member).data;
+  const olderPinned = useMemo(() => pinnedAsListed(older, pinsData), [older, pinsData]);
   const list = useMemo(() => {
     if (isThread) {
       // My replies still sending wait in the channel's list.
       const mine = (top.data ?? []).filter((m) => m.local && m.threadId === threadId);
       return mergeTimeline(threadMessages.data ?? [], [mine]);
     }
-    return mergeTimeline([...older, ...(top.data ?? [])], []);
-  }, [isThread, threadId, top.data, threadMessages.data, older]);
+    return mergeTimeline([...olderPinned, ...(top.data ?? [])], []);
+  }, [isThread, threadId, top.data, threadMessages.data, olderPinned]);
   // Messages said in the channel itself: a "thinking" row the app guessed hangs off one of them.
   const topIds = useMemo(() => new Set(list.flatMap((m) => (m.threadId ? [] : [m.id]))), [list]);
   // A DM with a person: their face beside my latest message once they read it (live: `channel.read`).
@@ -2149,8 +2154,6 @@ function Chat({
       : t("mobile.chat.messageIn", { channel: channel ? `#${channel.name}` : "" });
   rowsRef.current = rows;
   const pinned = mission && isOpenMission(mission) ? mission : null;
-  // Something is pinned here: its lines wait above the first message (`PinnedLines`).
-  const pinsData = usePins(orgId, channelId, member).data;
   const hasPins = useMemo(() => pinsIn(pinsData ?? [], threadId).length > 0, [pinsData, threadId]);
 
   // ── Agents' receipts and "no AI" ──
