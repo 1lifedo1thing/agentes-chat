@@ -59,7 +59,7 @@ const PlanAccountUsage = PlanAccountInfo.extend({
     .nullable()
     .openapi({
       description:
-        "Handoffs between agents led that window with at least 30 points: the agent that took most of the handed work, which the caller may message.",
+        "Handoffs between agents led the week with at least 30 points: the agent that took most of the handed work, which the caller may message.",
     }),
   equivalentUsd: z
     .number()

@@ -455,3 +455,15 @@ test("the hint is null for a person who may not talk to that agent", async () =>
   expect(asWalter?.kinds.map((k) => k.kind)).toEqual(["handoffs"]);
   expect(asWalter?.hint).toBeNull();
 });
+
+test("no hint when only a window other than the week has parts: its words speak of the week", async () => {
+  const { ada, spend, handed } = await kindsScene();
+  await f.db
+    .update(schema.machineAccounts)
+    .set({ usage: usage([{ kind: "five_hour", usedPercent: 80, resetsAt: hours(2) }]) })
+    .where(eq(schema.machineAccounts.id, PESSOAL));
+  await spend(ada.id, await handed(ada.id), 50_000);
+  const pessoal = (await orgPlanUsage(f.db, f.owner.id, f.org.id)).accounts.find((a) => a.accountId === PESSOAL);
+  expect(pessoal?.kinds).toEqual([{ kind: "handoffs", tokens: 50_000, percent: 80 }]);
+  expect(pessoal?.hint).toBeNull();
+});

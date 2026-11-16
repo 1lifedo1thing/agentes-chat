@@ -107,7 +107,7 @@ export interface PlanAccountUsage extends PlanAccountInfo {
    */
   kinds: { kind: UseKind; tokens: number; percent: number | null }[];
   /**
-   * Handoffs between agents led that window with at least 30 points: the agent that took most of that handed work,
+   * Handoffs between agents led the week with at least 30 points: the agent that took most of that handed work,
    * for the viewer to ask directly. Null otherwise, or when the viewer may not talk to it.
    */
   hint: { kind: "handoffs"; agentId: string } | null;
@@ -525,8 +525,9 @@ function kindsOf(
     percent: percentOf(kind),
   })).filter((k) => k.tokens > 0 || (k.percent ?? 0) > 0);
   const handoffs = percentOf("handoffs") ?? 0;
+  // The hint's words say "this week": another window's lead says nothing about the week.
   const leads =
-    shown !== null &&
+    shown?.w.kind === "seven_day" &&
     handoffs >= HANDOFF_HINT_PERCENT &&
     handoffs >= (percentOf("people") ?? 0) &&
     handoffs >= (percentOf("routines") ?? 0);
