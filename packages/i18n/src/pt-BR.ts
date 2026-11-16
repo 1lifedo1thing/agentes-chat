@@ -16020,7 +16020,7 @@ export const ptBR = {
       helperUntrustedText: "Toque no nome do desenvolvedor e em Confiar.",
       teamLimitText: "Remova do iPhone um app que você mesmo criou: a Conta Apple gratuita permite 3.",
       iosBehind:
-        "Este iPhone está no iOS {{ios}} e o Xcode deste Mac é para o iOS {{sdk}}. Atualize o iPhone: Ajustes › Geral › Atualização de Software.",
+        "Este iPhone está no iOS {{ios}} e o Xcode deste Mac é para o iOS {{sdk}}. Atualize o iPhone: Ajustes › Geral › Atualização de Software.",
       xcodeOld:
         "{{name}} usa o iOS {{version}} e o Xcode em {{mac}} conhece no máximo o iOS {{sdk}}. Instale o Xcode {{major}} e rode isto no Terminal.",
       xcodeOldAny:

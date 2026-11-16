@@ -15315,7 +15315,7 @@
       "helperText": "Dibuat dan diperbarui oleh Mac setiap 7 hari. Apple Account gratis di Xcode sudah cukup.",
       "helperUntrustedText": "Ketuk nama developernya, lalu Percayai.",
       "teamLimitText": "Hapus dari iPhone satu aplikasi buatan sendiri: Apple Account gratis hanya mengizinkan 3.",
-      "iosBehind": "iPhone ini menjalankan iOS {{ios}} dan Xcode di Mac ini untuk iOS {{sdk}}. Perbarui iPhone: Pengaturan › Umum › Pembaruan Perangkat Lunak.",
+      "iosBehind": "iPhone ini menjalankan iOS {{ios}} dan Xcode di Mac ini untuk iOS {{sdk}}. Perbarui iPhone: Pengaturan › Umum › Pembaruan Perangkat Lunak.",
       "xcodeOld": "{{name}} memakai iOS {{version}}, sedangkan Xcode di {{mac}} paling tinggi mengenal iOS {{sdk}}. Instal Xcode {{major}}, lalu jalankan ini di Terminal.",
       "xcodeOldAny": "{{name}} memakai iOS {{version}}, lebih baru dari yang dikenal Xcode di {{mac}}. Instal Xcode {{major}}, lalu jalankan ini di Terminal.",
       "uiRefusedText": "iPhone menolak ketukan helper pengujian. Buka kuncinya dan masukkan kode sandinya jika diminta. Jika terus terjadi, matikan lalu nyalakan lagi Pengaturan › Pengembang › Aktifkan Otomatisasi UI.",

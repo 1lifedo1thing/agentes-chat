@@ -15869,7 +15869,7 @@
       "helperText": "De Mac bouwt en vernieuwt hem elke 7 dagen. Een gratis Apple Account in Xcode is genoeg.",
       "helperUntrustedText": "Tik op de naam van de ontwikkelaar en dan op Vertrouw.",
       "teamLimitText": "Verwijder een zelfgemaakte app van de iPhone: een gratis Apple Account staat er 3 toe.",
-      "iosBehind": "Deze iPhone draait iOS {{ios}} en Xcode op deze Mac is voor iOS {{sdk}}. Werk de iPhone bij: Instellingen › Algemeen › Software-update.",
+      "iosBehind": "Deze iPhone draait iOS {{ios}} en Xcode op deze Mac is voor iOS {{sdk}}. Werk de iPhone bij: Instellingen › Algemeen › Software-update.",
       "xcodeOld": "{{name}} draait iOS {{version}} en Xcode op {{mac}} kent hooguit iOS {{sdk}}. Installeer Xcode {{major}} en voer dit daarna uit in Terminal.",
       "xcodeOldAny": "{{name}} draait iOS {{version}}, nieuwer dan Xcode op {{mac}} kent. Installeer Xcode {{major}} en voer dit daarna uit in Terminal.",
       "uiRefusedText": "De iPhone weigerde de tikken van de testhelper. Ontgrendel hem en voer de toegangscode in als hij erom vraagt. Blijft het gebeuren, zet dan Instellingen › Ontwikkelaar › Schakel UI-automatisering in uit en weer aan.",

@@ -38885,7 +38885,7 @@
     "value": "Remove an app you built yourself from the iPhone: a free Apple Account allows 3."
   },
   "devices.iphone.iosBehind": {
-    "value": "This iPhone runs iOS {{ios}} and Xcode on this Mac is for iOS {{sdk}}. Update the iPhone: Settings › General › Software Update."
+    "value": "This iPhone runs iOS {{ios}} and Xcode on this Mac is for iOS {{sdk}}. Update the iPhone: Settings › General › Software Update."
   },
   "devices.iphone.xcodeOld": {
     "value": "{{name}} runs iOS {{version}} and Xcode on {{mac}} knows iOS {{sdk}} at most. Install Xcode {{major}}, then run this in Terminal."

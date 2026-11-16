@@ -16091,9 +16091,9 @@ export const en = {
       helperText: "Built and renewed by the Mac every 7 days. A free Apple Account in Xcode is enough.",
       helperUntrustedText: "Tap the developer's name, then Trust.",
       teamLimitText: "Remove an app you built yourself from the iPhone: a free Apple Account allows 3.",
-      /** `sdk`: the iOS version the Mac's Xcode is for ("26.2"). Settings › General › Software Update are the iPhone's own menu names. */
+      /** `sdk`: the iOS version the Mac's Xcode is for ("26.2"). Settings › General › Software Update are the iPhone's own menu names. */
       iosBehind:
-        "This iPhone runs iOS {{ios}} and Xcode on this Mac is for iOS {{sdk}}. Update the iPhone: Settings › General › Software Update.",
+        "This iPhone runs iOS {{ios}} and Xcode on this Mac is for iOS {{sdk}}. Update the iPhone: Settings › General › Software Update.",
       /** The iPhone is on a newer iOS than the Mac's Xcode knows. A Terminal command shows under it. */
       xcodeOld:
         "{{name}} runs iOS {{version}} and Xcode on {{mac}} knows iOS {{sdk}} at most. Install Xcode {{major}}, then run this in Terminal.",

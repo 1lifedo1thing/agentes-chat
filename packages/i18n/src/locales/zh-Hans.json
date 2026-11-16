@@ -15325,7 +15325,7 @@
       "helperText": "由 Mac 构建，并每 7 天续期一次。在 Xcode 中登录免费的 Apple 账户即可。",
       "helperUntrustedText": "点按开发者的名称，然后点按“信任”。",
       "teamLimitText": "从 iPhone 上删除一个你自己构建的 App：免费 Apple 账户最多允许 3 个。",
-      "iosBehind": "此 iPhone 运行 iOS {{ios}},而这台 Mac 上的 Xcode 适用于 iOS {{sdk}}。请更新 iPhone:设置 › 通用 › 软件更新。",
+      "iosBehind": "此 iPhone 运行 iOS {{ios}},而这台 Mac 上的 Xcode 适用于 iOS {{sdk}}。请更新 iPhone:设置 › 通用 › 软件更新。",
       "xcodeOld": "{{name}} 运行 iOS {{version}}，而 {{mac}} 上的 Xcode 最高只支持 iOS {{sdk}}。安装 Xcode {{major}}，然后在终端中运行下面的命令。",
       "xcodeOldAny": "{{name}} 运行 iOS {{version}}，比 {{mac}} 上的 Xcode 支持的版本更新。安装 Xcode {{major}}，然后在终端中运行下面的命令。",
       "uiRefusedText": "iPhone 拒绝了测试助手的点按。请解锁它，如有要求就输入密码。如果反复出现，把 设置 › 开发者 › 启用 UI 自动化 关闭再打开。",

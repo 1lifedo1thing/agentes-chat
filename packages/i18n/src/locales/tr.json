@@ -15742,7 +15742,7 @@
       "helperText": "Mac onu her 7 günde bir oluşturur ve yeniler. Xcode'da ücretsiz bir Apple Account yeterlidir.",
       "helperUntrustedText": "Geliştiricinin adına, ardından Güven'e dokunun.",
       "teamLimitText": "iPhone'dan kendi oluşturduğunuz bir uygulamayı silin: Ücretsiz Apple Account 3 taneye izin verir.",
-      "iosBehind": "Bu iPhone iOS {{ios}} kullanıyor ve bu Mac'teki Xcode iOS {{sdk}} için. iPhone'u güncelleyin: Ayarlar › Genel › Yazılım Güncelleme.",
+      "iosBehind": "Bu iPhone iOS {{ios}} kullanıyor ve bu Mac'teki Xcode iOS {{sdk}} için. iPhone'u güncelleyin: Ayarlar › Genel › Yazılım Güncelleme.",
       "xcodeOld": "{{name}} iOS {{version}} kullanıyor ve {{mac}} üzerindeki Xcode en fazla iOS {{sdk}} sürümünü biliyor. Xcode {{major}} yükleyin, ardından bunu Terminal'de çalıştırın.",
       "xcodeOldAny": "{{name}} iOS {{version}} kullanıyor, bu {{mac}} üzerindeki Xcode'un bildiğinden yeni. Xcode {{major}} yükleyin, ardından bunu Terminal'de çalıştırın.",
       "uiRefusedText": "iPhone, test yardımcısının dokunuşlarını reddetti. Kilidini açın ve isterse parolasını girin. Tekrar olursa Ayarlar › Geliştirici › UI Otomasyonunu Etkinleştir seçeneğini kapatıp açın.",

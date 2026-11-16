@@ -231,7 +231,7 @@ export const REASON_WORDS: Partial<Record<PhoneReason, string>> = {
   xcode_too_old:
     "This iPhone's iOS is newer than Xcode on this Mac. Install the Xcode matching the iPhone's iOS (27 for iOS 27), then run `xcrun devicectl manage ddis update`.",
   ios_behind_xcode:
-    "This iPhone's iOS is older than the one Xcode on this Mac is for. Update the iPhone: Settings › General › Software Update.",
+    "This iPhone's iOS is older than the one Xcode on this Mac is for. Update the iPhone: Settings › General › Software Update.",
   device_support: "Xcode is still preparing the iPhone. Try again in a few minutes.",
   wifi_away: "The iPhone isn't on this Mac's Wi-Fi network. Join the same network on the iPhone, or plug it in.",
   wifi_asleep:
@@ -279,7 +279,7 @@ export function phoneNotReady(p: Phone): { title: string; fix: string } | null {
     p.platform === "ios" && p.reason === "os_too_old"
       ? `It runs iOS ${p.osVersion || "16 or older"}, and agents need iOS ${IOS_MIN} or newer.`
       : p.reason === "ios_behind_xcode" && p.osVersion
-        ? `This iPhone runs iOS ${p.osVersion}, older than the one Xcode on this Mac is for. Update the iPhone: Settings › General › Software Update.`
+        ? `This iPhone runs iOS ${p.osVersion}, older than the one Xcode on this Mac is for. Update the iPhone: Settings › General › Software Update.`
         : ((p.reason && REASON_WORDS[p.reason]) ?? "Try again in a moment.");
   return { title: `${labelOf(p)} ${p.state === "unsupported" ? "can't be used" : "isn't ready"}`, fix };
 }

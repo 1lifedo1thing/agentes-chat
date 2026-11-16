@@ -16324,7 +16324,7 @@
       "helperText": "Creata e rinnovata dal Mac ogni 7 giorni. Basta un Apple Account gratuito in Xcode.",
       "helperUntrustedText": "Tocca il nome dello sviluppatore, poi Autorizza.",
       "teamLimitText": "Rimuovi dall'iPhone un'app creata da te: un Apple Account gratuito ne consente 3.",
-      "iosBehind": "Questo iPhone ha iOS {{ios}} e Xcode su questo Mac è per iOS {{sdk}}. Aggiorna l'iPhone: Impostazioni › Generali › Aggiornamento software.",
+      "iosBehind": "Questo iPhone ha iOS {{ios}} e Xcode su questo Mac è per iOS {{sdk}}. Aggiorna l'iPhone: Impostazioni › Generali › Aggiornamento software.",
       "xcodeOld": "{{name}} usa iOS {{version}} e Xcode su {{mac}} conosce al massimo iOS {{sdk}}. Installa Xcode {{major}}, poi esegui questo nel Terminale.",
       "xcodeOldAny": "{{name}} usa iOS {{version}}, più recente di quanto conosca Xcode su {{mac}}. Installa Xcode {{major}}, poi esegui questo nel Terminale.",
       "uiRefusedText": "L'iPhone ha rifiutato i tocchi dell'app di test. Sbloccalo e inserisci il suo codice se lo chiede. Se succede ancora, disattiva e riattiva Impostazioni › Sviluppatore › Abilita automazione UI.",
