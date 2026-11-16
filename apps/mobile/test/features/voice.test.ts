@@ -237,7 +237,7 @@ describe("a voice note with typed text and files", () => {
     expect(composer).toContain("const mic = voice && !typed ? voice.mic : null;");
     // The field's send hands its words to the take; a take that didn't go gives them back.
     expect(composer).toMatch(
-      /if \(take\) \{[\s\S]{0,200}take\(value\)\.then\(\(sent\) => \{[\s\S]{0,80}joinDrafts\(value, now\)/,
+      /if \(take\) \{[\s\S]{0,200}take\(value\)\.then\(\(sent\) => \{[\s\S]{0,80}put\(joinDrafts\(value, textRef\.current\)\)/,
     );
     const bar = src("features/voice/useVoiceComposer.tsx");
     expect(bar).toContain('const trash = control("trash", t("voice.delete"), () => void take.cancel(true));');

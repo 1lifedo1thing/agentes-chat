@@ -347,8 +347,7 @@ export function Composer({
     const handed = prefill.text;
     const current = textRef.current;
     const next = prefill.join ? joinDrafts(handed, current) : current.trim() ? current : handed;
-    textRef.current = next;
-    setText(next);
+    put(next);
     input.current?.focus();
   }, [prefillAt]);
   useEffect(() => {
@@ -366,11 +365,22 @@ export function Composer({
   // Files waiting don't take it away: a take started then goes with them.
   const mic = voice && !typed ? voice.mic : null;
 
-  /** New words with the caret at `at` (the end by default), as a pick or a format leaves them. */
+  // Words set from here leave no words selected. iOS reports no selection change for text set from code, so what
+  // was selected before stayed "selected": the formatting bar floated over the field emptied by a send.
+  const unselect = () => {
+    if (!selectingRef.current) return;
+    selectingRef.current = false;
+    setSelecting(false);
+  };
+  /**
+   * New words with the caret at `at` (the end by default), as a pick leaves them, or words handed back (a draft, a take
+   * that didn't go): caret, token and selection all follow the new words, which no selection event will report.
+   */
   const put = (next: string, at = next.length) => {
     textRef.current = next;
     caret.current = at;
     range.current = { start: at, end: at };
+    unselect();
     setText(next);
     setSelection({ start: at, end: at });
     retoken(next, at);
@@ -380,6 +390,7 @@ export function Composer({
     textRef.current = "";
     caret.current = 0;
     range.current = { start: 0, end: 0 };
+    unselect();
     setText("");
     setSelection(undefined);
     retoken("", 0);
@@ -391,7 +402,7 @@ export function Composer({
       if (tooLong) return;
       clear();
       void take(value).then((sent) => {
-        if (!sent && value) setText((now) => joinDrafts(value, now));
+        if (!sent && value) put(joinDrafts(value, textRef.current));
       });
       return;
     }

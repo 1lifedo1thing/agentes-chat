@@ -79,3 +79,22 @@ describe("a table's columns never go back to the letters' guess, and follow cell
     expect(spans).toMatch(/\{unmeasured \|\| late \? \(\s*<View\s*key=\{columnsKey\}/);
   });
 });
+
+describe("words set from the composer leave nothing selected", () => {
+  const composer = src("ui/Composer.tsx");
+  const between = (from: string, to: string) => composer.slice(composer.indexOf(from), composer.indexOf(to));
+  test("sending (and a pick) forget the selection: no formatting bar over the emptied field", () => {
+    expect(composer).toMatch(
+      /const unselect = \(\) => \{\s*if \(!selectingRef\.current\) return;\s*selectingRef\.current = false;\s*setSelecting\(false\);/,
+    );
+    expect(between("const clear = () => {", "const send = ")).toContain("unselect();");
+    expect(between("const put = (next: string", "const clear = () => {")).toContain("unselect();");
+  });
+
+  test("words handed back (a draft to fix, a take that didn't go) move the caret and the '@' token with them", () => {
+    const prefill = between("const handed = prefill.text;", "useEffect(() => {\n    if (focusAt)");
+    expect(prefill).toContain("put(next);");
+    expect(prefill).not.toContain("setText(next);");
+    expect(composer).toContain("if (!sent && value) put(joinDrafts(value, textRef.current));");
+  });
+});
