@@ -1,3 +1,4 @@
+import { SECRET_FIELD } from "@agenteschat/adapters";
 import { and, type Database, desc, type Executor, eq, inArray, lt, ne, or, schema, sql } from "@agenteschat/db";
 import { recordAudit } from "./audit";
 import type { RunAuthority } from "./authority";
@@ -23,8 +24,7 @@ const { auditLog, agents, approvals, channels, issues, secretRequests, users } =
 export const TOOL_CALL = "tool.call";
 
 // `contact`: a Vault contact's fields are personal data, kept out of audit rows (ADR 0144).
-const SECRET_KEY =
-  /pass(word|wd|phrase)?$|secret|token|api[_-]?key|authorization|cookie|credential|private[_-]?key|^contact$/i;
+const SECRET_KEY = new RegExp(`${SECRET_FIELD.source}|^contact$`, "i");
 const MAX_STRING = 500;
 const MAX_ITEMS = 20;
 const MAX_DEPTH = 4;

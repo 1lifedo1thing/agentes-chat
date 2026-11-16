@@ -457,7 +457,8 @@ Once the checks pass, one transaction writes two rows, and only after it commits
 
 ### What leaves, and how
 
-- **Credentials are masked over the whole field before it is cut** (`redactCredentials`): API keys and tokens by their shapes, `Bearer` headers, `password=` and `token:` values, an address's user and password, private keys. A window's edge never splits a key in two. A tool call's input is written as `key: value` lines, so a field named like a secret is masked whatever it holds.
+- **Credentials are masked over the whole field before it is cut** (`redactCredentials`): API keys and tokens by their shapes, `Bearer` headers, `password=` and `token:` values, also as JSON writes them (`"password": "…"`), an address's user and password, private keys. A window's edge never splits a key in two.
+- **A field named like a secret is masked whatever it holds, at any depth** (`maskSecretFields`): in a tool call's input and in a result kept as a record, the value of every field whose name says a credential (`password`, `client_secret`, `x-api-key`, `accessToken`, `Authorization`, `Cookie`: the names the workspace's own audit log hides) is gone before the record is written as text. In text alone such a value would be masked only up to its first space.
 - **Characters that hide or reorder text are removed, and any copy of an envelope's markers is neutralised** (`neutralizeUntrusted`), since the reader may be a model: the text is data, never instructions.
 - **Addresses and phone numbers stay.** "The agent wrote to the wrong person" is a report whose cause is an address.
 - **Nothing of the text is logged or reported.** A test fails the read after the text is in the server's hands and finds no word of it in a log line or an error report.
@@ -495,7 +496,7 @@ Setting `OPERATOR_API_REVEAL_TOKEN` makes whoever runs the server a reader of it
 - **A `connection` is a connected app or server** (`connector_connections`). A mailbox's and a database's label and last error are not kinds yet, though `GET /orgs/{orgId}/connections` lists them.
 - **The audit entry holds the window asked for, not the characters given**: it is written before the text is read.
 - **The minute is counted per process** unless the server's rate limiter is a shared one. Two reads at the same instant can pass one over the day's count.
-- **Masking knows shapes.** A credential of a shape it doesn't know leaves with the text around it.
+- **Masking knows shapes and names.** A credential of a shape it doesn't know leaves with the text around it. So does one written in free text under a name that does not end as the rule's do: `AWS_SECRET_ACCESS_KEY=…`, a `Cookie:` header's session.
 - **The review blocks of §6 are as they were**: the full token reads them, and they write an event and no audit entry.
 
 The door is in `packages/engine/src/operator-reveal.ts` and `apps/server/src/operator/reveal.ts`, support requests in `packages/engine/src/support-requests.ts` and `apps/server/src/operator/support.ts`, the tests in `apps/server/test/operator-reveal.test.ts` and `operator-support-requests.test.ts`.

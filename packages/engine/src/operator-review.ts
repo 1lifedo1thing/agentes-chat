@@ -1,4 +1,4 @@
-import { redactCommon } from "@agenteschat/adapters";
+import { maskSecretFields, redactCommon } from "@agenteschat/adapters";
 import { and, asc, type Database, eq, inArray, schema, sql } from "@agenteschat/db";
 import { getMessage, type Message } from "./messages";
 import { recordContentViewed } from "./operator-events";
@@ -58,13 +58,15 @@ const LEGEND =
 const quoted = (source: string, text: string, max: number) =>
   untrustedBlock(source, maskCredentials(redactCommon(text)), max);
 
-/** A tool's input as `key: value` lines, so a `password: …` or `token: …` field is masked like free text. */
-export const inputLines = (input: unknown) =>
-  input && typeof input === "object" && !Array.isArray(input)
-    ? Object.entries(input)
+/** A tool's input as `key: value` lines, with every field named for a credential masked, nested ones too. */
+export function inputLines(input: unknown) {
+  const safe = maskSecretFields(input);
+  return safe && typeof safe === "object" && !Array.isArray(safe)
+    ? Object.entries(safe)
         .map(([key, value]) => `${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`)
         .join("\n")
-    : JSON.stringify(input ?? null);
+    : JSON.stringify(safe ?? null);
+}
 
 /** A labeled piece of workspace text; none when the text is empty. */
 const labeled = (rank: number, label: string, source: string, text: string | null | undefined, max: number): Part[] =>

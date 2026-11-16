@@ -62,6 +62,7 @@ const runs = {} as Record<
   | "old"
   | "older"
   | "direct"
+  | "keys"
   | "foreign",
   string
 >;
@@ -306,6 +307,37 @@ beforeAll(async () => {
   await steps(runs.older, [aCall("e")]);
   runs.direct = await run("failed", { channelId: w.dmId, triggerMessageId: messages.dm, threadRootId: messages.dm });
   await steps(runs.direct, [aCall("m")]);
+  // A call that signed in three ways, and an answer that came back as a record.
+  runs.keys = await run("failed");
+  await steps(runs.keys, [
+    [
+      "tool_call",
+      {
+        toolUseId: "k",
+        name: "fetch",
+        input: {
+          url: "https://api.example.com/v1",
+          password: "correct horse fake",
+          auth: { username: "ana", password: "hunter2-nested-fake" },
+          headers: { "x-api-key": "fake-nested-header-key", accept: "text/plain" },
+          body: { client_secret: "fake-nested-client-secret", items: [{ token: "fake nested token" }] },
+        },
+      },
+    ],
+    [
+      "tool_result",
+      {
+        toolUseId: "k",
+        name: "fetch",
+        content: {
+          ok: false,
+          session: { token: "fake-object-token-value", password: "hunter2 object fake" },
+          Authorization: "fake raw header value",
+        },
+        isError: true,
+      },
+    ],
+  ]);
 
   w.routineId = await one(
     db
@@ -962,6 +994,45 @@ test("masking before the cut: credentials are gone whichever window is asked, an
   const middle = await read(10, 5);
   expect([middle.text, middle.more]).toEqual([whole.text.slice(10, 15), true]);
   expect((await read(whole.chars + 50, 10)).text).toBe("");
+});
+
+test("masking: a field named like a secret is gone whatever it holds, at any depth of a call's input and of a result", async () => {
+  const of = { runId: runs.keys };
+  const answered = '{"ok":false,"session":{"token":***,"password":***},"Authorization":"***"}';
+  expect({
+    input: await text(step(runs.keys, 1, "input", of)),
+    result: await text(step(runs.keys, 2, "result", of)),
+    error: await text(step(runs.keys, 2, "error", of)),
+  }).toEqual({
+    // In the order the database keeps a record's fields.
+    input: [
+      "url: https://api.example.com/v1",
+      'auth: {"password":***,"username":"ana"}',
+      'body: {"items":[{"token":***}],"client_secret":***}',
+      'headers: {"accept":"text/plain","x-api-key":***}',
+      "password: ***",
+    ].join("\n"),
+    result: answered,
+    error: answered,
+  });
+});
+
+test("masking: a credential is gone as JSON writes it too, in any text", async () => {
+  const json = [
+    '{"password":"hunter2-json-fake"}',
+    '{"api_key": "fake-json-api-key", "client_secret":"fake \\" json-client-secret"}',
+    '{"access_token":"fake-json-access","refresh_token":"fake-json-refresh","max_tokens":4096}',
+    "password=hunter2-plain-fake and api_key: fake-plain-api-key",
+  ].join("\n");
+  await db.update(schema.messages).set({ body: json }).where(eq(schema.messages.id, messages.other));
+  expect(await text(ask("message", messages.other, "text", { requestId: requests.owner }))).toBe(
+    [
+      '{"password":***}',
+      '{"api_key": ***, "client_secret":***}',
+      '{"access_token":***,"refresh_token":***,"max_tokens":4096}',
+      "password=*** and api_key: ***",
+    ].join("\n"),
+  );
 });
 
 test("one at a time: one id, no list, range or search word; at most 2,000 characters; a reason that says a question", async () => {

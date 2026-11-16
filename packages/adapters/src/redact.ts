@@ -1,7 +1,17 @@
 /**
+ * A name that ends as a credential's does, and its value, as a shell, a header or JSON writes them: the name's
+ * closing quote, a quoted value whole.
+ */
+const SECRET_VALUE = /((?:password|passwd|secret|token|api[_-]?key)["']?\s*[=:]\s*)("(?:[^"\\]|\\.)*"|'[^']*'|\S+)/gi;
+/** A field's name that says its value is a credential, wherever the word stands (`x-api-key`, `Authorization`). */
+export const SECRET_FIELD =
+  /pass(word|wd|phrase)?$|secret|token|api[_-]?key|authorization|cookie|credential|private[_-]?key/i;
+
+/**
  * Masks what looks like a credential in free text that leaves its place (the runner's diagnostics and
  * activity log, the operator API's review block): machine tokens, bearer headers, common API key shapes,
- * `password=`/`token=` values. The agent's own secrets are masked by their values (ADR 0027) before this.
+ * `password=`/`token:` values, also as JSON writes them (`"password": "…"`). The agent's own secrets are masked by
+ * their values (ADR 0027) before this.
  */
 export function redactCommon(text: string): string {
   return text
@@ -11,7 +21,19 @@ export function redactCommon(text: string): string {
     .replace(/\b(gh[pousr]_[A-Za-z0-9._-]{20,}|github_pat_[A-Za-z0-9_]{20,})/g, "gh_***")
     .replace(/\b(xox[abposr]-[A-Za-z0-9-]{10,})/g, "xox-***")
     .replace(/\b(AKIA[0-9A-Z]{16})\b/g, "AKIA***")
-    .replace(/((?:password|passwd|secret|token|api[_-]?key)\s*[=:]\s*)("[^"]*"|'[^']*'|\S+)/gi, "$1***");
+    .replace(SECRET_VALUE, "$1***");
+}
+
+/**
+ * A value with every field named for a credential masked, at any depth and whatever it holds: in text, a value
+ * with spaces or a nested one would be masked only up to its first space.
+ */
+export function maskSecretFields(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(maskSecretFields);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, v]) => [key, SECRET_FIELD.test(key) ? "***" : maskSecretFields(v)]),
+  );
 }
 
 /** A field holding a service's own credential (`access_token`, a Page's `page_access_token`), never a page cursor. */

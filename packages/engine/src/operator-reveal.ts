@@ -1,3 +1,4 @@
+import { maskSecretFields } from "@agenteschat/adapters";
 import { and, type Database, eq, gt, isNull, rowsOf, schema, sql } from "@agenteschat/db";
 import { requireAgentDetails } from "./audience";
 import { recordAudit } from "./audit";
@@ -201,7 +202,7 @@ const findMessage: Find = async (db, orgId, { id }) => {
 
 /** What a step holds under each field; null where its kind has no such field. */
 function stepText(kind: string, data: Record<string, unknown>, field: string): string | null {
-  const said = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(v));
+  const said = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(maskSecretFields(v)));
   if (field === "input") return kind === "tool_call" ? inputLines(data.input) : null;
   if (field === "result") return kind === "tool_result" ? said(data.content) : null;
   if (field === "narration") return kind === "model_call" ? said(data.narration) : null;
