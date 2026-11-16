@@ -689,8 +689,9 @@ describe("a document's head", () => {
 
   test("a chart opened whole: × alone on the bar, its title on a row of its own under it, never cut", () => {
     const chart = readFileSync(join(import.meta.dir, "../../src/features/chat/ChartCard.tsx"), "utf8");
-    // The task sheets' bar with no title: × alone.
-    const bar = chart.slice(chart.indexOf("<SheetBar"), chart.indexOf("{chart.spec.title}"));
+    // The task sheets' bar with no title: × alone (the chart's own bar, not the one over "nothing to show").
+    const shown = chart.indexOf("stickyHeaderIndices={[0]}");
+    const bar = chart.slice(chart.indexOf("<SheetBar", shown), chart.indexOf("{chart.spec.title}", shown));
     expect(bar).toStartWith("<SheetBar onClose={() => router.back()} />");
     expect(bar).not.toContain("title=");
     expect(bar).not.toContain("numberOfLines");

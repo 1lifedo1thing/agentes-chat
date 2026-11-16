@@ -65,7 +65,9 @@ describe("a channel's members", () => {
 
   test("adding people says when who is in already didn't load, instead of offering everyone again", () => {
     const add = screen("AddChannelMembersScreen");
-    expect(add).toMatch(/roster\.isError \? \([\s\S]{0,140}<LoadFailed onRetry=\{\(\) => void roster\.refetch\(\)\} \/>/);
+    expect(add).toMatch(
+      /roster\.isError \? \([\s\S]{0,140}<LoadFailed onRetry=\{\(\) => void roster\.refetch\(\)\} \/>/,
+    );
   });
 });
 
@@ -108,5 +110,15 @@ describe("the kit's presses and rulers", () => {
   test("the GIF categories run to the sheet's edges by the sheet's own side, not a number of their own", () => {
     const media = src("features/chat/MediaPickerSheet.tsx");
     expect(media).toContain("chips: { marginHorizontal: -SHEET_X }");
+  });
+});
+
+describe("a field's return key goes on", () => {
+  test("a secret request's username, its last field, sends as the secret's field does", () => {
+    const card = src("features/chat/SecretCard.tsx");
+    const username = card.slice(card.indexOf("value={username}"));
+    expect(username).toMatch(
+      /returnKeyType="send"\s*onSubmitEditing=\{\(\) => void send\(\)\}\s*submitBehavior="submit"/,
+    );
   });
 });
