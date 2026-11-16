@@ -183,11 +183,14 @@ export function ReasonField({
   onChange,
   placeholder,
   autoFocus = false,
+  onSubmit,
 }: {
   value: string;
   onChange: (text: string) => void;
   placeholder: string;
   autoFocus?: boolean;
+  /** The return key sends the reason (labelled "send"); without it the key only closes the keyboard. */
+  onSubmit?: () => void;
 }) {
   const c = useColors();
   return (
@@ -201,7 +204,8 @@ export function ReasonField({
         style={[fieldText("subhead"), styles.input, { color: c.ink }]}
         maxLength={REASON_MAX}
         autoFocus={autoFocus}
-        returnKeyType="done"
+        returnKeyType={onSubmit ? "send" : "done"}
+        {...(onSubmit ? { onSubmitEditing: onSubmit, submitBehavior: "blurAndSubmit" as const } : {})}
       />
     </View>
   );
