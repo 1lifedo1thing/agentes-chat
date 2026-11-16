@@ -12,6 +12,7 @@ import { isHttpsUrl } from "@agenteschat/client/lib/custom-tools";
 import { errorCode, errorText } from "@agenteschat/client/lib/errors";
 import { rightHandName } from "@agenteschat/client/lib/right-hand";
 import {
+  CODE_TTL_MS,
   codeDeadline,
   LINK_POLL_MS,
   newlyLinked,
@@ -349,7 +350,11 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
           {code.data && (
             <p className="small muted surface-link__code">
               <span>{t("surface.link.code", { code: code.data.code })}</span>
-              <span>{t("openOnPhone.validFor", { time: formatTimeLeft(Math.max(0, code.data.endsAt - now)) })}</span>
+              <span>
+                {t("openOnPhone.validFor", {
+                  time: formatTimeLeft(Math.min(CODE_TTL_MS, Math.max(0, code.data.endsAt - now))),
+                })}
+              </span>
             </p>
           )}
           {steps}
