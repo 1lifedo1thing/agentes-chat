@@ -1,18 +1,22 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { eq, schema } from "@agenteschat/db";
 import {
+  addRunStep,
   buildRunContext,
   CONFIDENTIAL_STUB,
   createConnectorToolSource,
   createToolGateway,
+  createWebToolSource,
   markThreadConfidential,
   messageLink,
   messageView,
   moveToBackground,
   sealStragglers,
   type ToolContext,
+  workBrief,
 } from "../src";
 import { inertLinks } from "../src/format";
+import { renderSteered } from "../src/live-steer";
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, VAULT_HOST, type VaultWorld, vaultWorld } from "./confidential-fixtures";
 
@@ -205,6 +209,122 @@ describe("the thread", () => {
     expect([last?.threadId, last?.meta.confidential]).toEqual([null, undefined]);
     expect(await sealedThreads(w)).toHaveLength(1);
   });
+
+  test("what the server writes for a run of the thread is the thread's too: a follow-up's line and its wake, a poll's result; the runs they wake are locked", async () => {
+    const FETCH = { name: "web_fetch", input: { url: `https://example.com/?q=${CANARY}` } };
+    let read: number | null = null;
+    const w: VaultWorld = await vaultWorld({
+      agents: ["kai"],
+      setup: {
+        blockTools: true,
+        toolSources: [
+          createWebToolSource({ fetch: async () => new Response("page"), resolveHost: async () => ["93.184.216.34"] }),
+        ],
+      },
+      script: {
+        kai: ({ n }) => {
+          if (n === 1) return { calls: [READ] };
+          read ??= w.judgments.length;
+          if (n === 2)
+            return {
+              calls: [
+                { name: "follow_up", input: { minutes: 5, note: `fetch the page for ${CANARY}`, about: "check" } },
+                {
+                  name: "start_poll",
+                  input: { question: `poll ${CANARY}`, options: ["yes", "no"], closes_in_hours: 1 },
+                },
+              ],
+            };
+          // Its own last line, then each wake: it tries the web with the word, then says so.
+          return n % 2 ? { text: "Noted." } : { calls: [FETCH] };
+        },
+      },
+    });
+    const asked = await w.say("@kai read record r1");
+    await w.settle();
+    const own = w.turnsOf("kai").length;
+    await w.advance(10);
+    await w.advance(90);
+
+    const rows = await w.stored();
+    const kinds = rows.flatMap((m) => (m.meta.notice ? [(m.meta.notice as { kind: string }).kind] : []));
+    expect(kinds.sort()).toEqual(["follow_up", "follow_up", "poll_result"]);
+    // Every line is under the message that asked, sealed like the rest of the thread.
+    for (const m of rows.filter((m) => m.id !== asked.id)) {
+      expect([m.threadId, m.meta.confidential, m.body === "" || m.body === CONFIDENTIAL_STUB]).toEqual([
+        asked.id,
+        true,
+        true,
+      ]);
+    }
+    // Each wake is a run of that thread: it reads its note, and the web is closed to it.
+    const runs = await w.runs("kai");
+    expect(runs.map((r) => r.threadRootId)).toEqual([asked.id, asked.id, asked.id]);
+    expect(w.turnsOf("kai").slice(own).join("\n")).toContain(`fetch the page for ${CANARY}`);
+    const fetches = (await w.calls("kai")).filter((c) => c.name === "web_fetch");
+    expect(fetches.map((c) => c.isError)).toEqual([true, true]);
+    // No judge and no index got the note or the poll's question.
+    expect(JSON.stringify(w.judgments.slice(read ?? 0))).not.toContain(CANARY);
+    expect(JSON.stringify(await w.db.select().from(schema.searchDocuments))).not.toContain(CANARY);
+  });
+
+  test("a marked message outside any confidential thread is the stub for a run asked under it; a thread's words are read back only by what first read them", async () => {
+    const w = await vaultWorld({
+      agents: ["kai"],
+      script: { kai: [{ calls: [READ] }, { text: `The record holds ${CANARY}.` }] },
+    });
+    const asked = await w.say("@kai read record r1");
+    await w.settle();
+    const agent = w.agents.kai;
+    const [finding] = await w.posts("kai");
+    if (!agent || !finding) throw new Error("no finding");
+    // What a run of a confidential thread wrote in another place: marked, its words kept apart, no thread around it.
+    const [card] = await w.db
+      .insert(schema.messages)
+      .values({
+        orgId: w.org.id,
+        channelId: w.channelId,
+        authorType: "agent",
+        authorAgentId: agent.id,
+        body: CONFIDENTIAL_STUB,
+        meta: { confidential: true, sealedBody: `Is ${CANARY} right?` },
+      })
+      .returning();
+    if (!card) throw new Error("no card");
+    const reply = await w.say("what is the status?", { threadId: card.id });
+    const [run] = await w.db
+      .insert(schema.agentRuns)
+      .values({
+        orgId: w.org.id,
+        agentId: agent.id,
+        channelId: w.channelId,
+        threadRootId: card.id,
+        triggerMessageId: reply.id,
+        trigger: "mention",
+        hop: 1,
+      })
+      .returning();
+    if (!run) throw new Error("no run");
+    const context = await buildRunContext(w.db, run, agent, { maxMessages: 30, unseal: true });
+    expect(JSON.stringify(context.messages)).not.toContain(CANARY);
+    expect(context.confidential).toBe(false);
+
+    // Messages a run takes while it works: whole for a run of the thread that thinks with what first read it.
+    const taken = async (id: string, unseal?: { threadRootId: string; thinksWith: string | undefined }) =>
+      (await renderSteered(w.db, w.org.id, [id], unseal ? { unseal } : {})).map((m) => m.text).join("\n");
+    const [thread] = await sealedThreads(w);
+    expect(thread?.thinksWith).toBe("model:anthropic");
+    expect(await taken(finding.id, { threadRootId: asked.id, thinksWith: "model:anthropic" })).toContain(CANARY);
+    for (const other of [
+      await taken(finding.id, { threadRootId: asked.id, thinksWith: "model:openai" }),
+      await taken(finding.id, { threadRootId: asked.id, thinksWith: undefined }),
+      await taken(finding.id),
+      await taken(card.id, { threadRootId: card.id, thinksWith: "model:anthropic" }),
+    ]) {
+      expect(other).not.toContain(CANARY);
+      expect(other).toContain(CONFIDENTIAL_STUB);
+    }
+  });
 });
 
 describe("a run that does not think through the Model Gateway", () => {
@@ -383,6 +503,31 @@ describe("the seal", () => {
     expect(await moveToBackground({ db: w.db }, run?.id ?? "", { how: "auto", title: "Reading" })).toBeNull();
     expect((await w.runs("kai"))[0]?.workId).toBeNull();
   });
+
+  test("a long work already going when it read the result: what it said between its calls is not handed to the agent's other runs", async () => {
+    const w = await vaultWorld({ agents: ["kai"] });
+    await w.say("@kai run the migration");
+    const [started] = await w.runs("kai");
+    if (!started) throw new Error("no run");
+    await w.db.update(schema.agentRuns).set({ status: "running", startedAt: new Date(), heartbeatAt: new Date() });
+    const moved = await moveToBackground({ db: w.db, pubsub: w.f.pubsub }, started.id, {
+      how: "agent",
+      title: "Migration",
+      say: "On it.",
+    });
+    const [working] = await w.runs("kai");
+    if (!moved || !working) throw new Error("not moved");
+    await addRunStep(w.db, working, "model_call", { narration: `The record says ${CANARY}.` });
+    const other = { orgId: w.org.id, agentId: working.agentId, channelId: w.channelId, id: crypto.randomUUID() };
+    // Before any mark, as always.
+    expect(await workBrief(w.db, other)).toContain(CANARY);
+    await w.db.transaction((tx) =>
+      markThreadConfidential(tx, { orgId: w.org.id, channelId: w.channelId, rootId: working.threadRootId }),
+    );
+    const brief = await workBrief(w.db, other);
+    expect(brief).toContain(`work_id ${moved.work.id}`);
+    expect(brief).not.toContain(CANARY);
+  });
 });
 
 test("inertLinks: a link keeps its words, a bare address becomes code, code stays as written", () => {
@@ -396,6 +541,19 @@ test("inertLinks: a link keeps its words, a bare address becomes code, code stay
     "run `curl https://example.com` then\n```\nhttps://example.com/x\n```",
   );
   expect(inertLinks("no address here")).toBe("no address here");
+});
+
+test("inertLinks reads a text of nothing but brackets once, and lets no long link by", () => {
+  // Each of these made the old pattern start over at every bracket: seconds of the server's one thread.
+  const floods = ["[".repeat(100_000), "[a ".repeat(33_000), "[x](y".repeat(20_000), "](".repeat(50_000)];
+  const started = performance.now();
+  for (const flood of floods) expect(inertLinks(flood)).not.toContain("](");
+  expect(performance.now() - started).toBeLessThan(1500);
+  // A link whose address is longer than the pattern takes is pulled apart, so no app reads it as one.
+  const long = `[open](mailto:ana@example.com?body=${"x".repeat(3000)})`;
+  expect(inertLinks(long)).toBe(long.replace("](", "] ("));
+  // Words that hold a bracket: the link inside them goes, as an app would have linked it.
+  expect(inertLinks("[a [b](https://example.com/c)")).toBe("[a b");
 });
 
 test("a workspace's messages are untouched by the seal's statement when no thread is confidential", async () => {

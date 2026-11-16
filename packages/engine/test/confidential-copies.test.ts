@@ -3,12 +3,19 @@ import type { ErrorReporter } from "@agenteschat/adapters";
 import { eq, schema } from "@agenteschat/db";
 import { systemText } from "@agenteschat/providers";
 import {
+  afterTurnDone,
   CONFIDENTIAL_AI_CHANGED,
   CONFIDENTIAL_STUB,
+  createCredential,
+  createRoutine,
   createTalker,
   decideApproval,
   learnFromRefusal,
+  learnRun,
+  loadThread,
+  notifyQuestion,
   queueApprovalDigests,
+  runRoutineNow,
 } from "../src";
 import { renderPush } from "../src/push-messages";
 import { closeWorlds } from "./autonomy/harness";
@@ -194,13 +201,12 @@ test("the same conversation with a server the operator did not list: the words g
 
 test("the tools the lock keeps copy nothing out: a question, a choice card, a block and its second version, a poll, an approval's title and why", async () => {
   const typed = (what: string) => `${what} ${CANARY}`;
-  let blockId = "";
   const w: VaultWorld = await vaultWorld({
     agents: ["kai"],
     changeAsks: true,
     setup: { blockTools: true, embeddings: true },
     script: {
-      kai: ({ n, last }) => {
+      kai: ({ n, request }) => {
         if (n === 1) return { calls: [READ] };
         if (n === 2) {
           return {
@@ -224,15 +230,15 @@ test("the tools the lock keeps copy nothing out: a question, a choice card, a bl
           };
         }
         if (n === 3) {
-          blockId = /artifact ([0-9a-f-]{36})/.exec(last)?.[1] ?? blockId;
-          const [block] = /[0-9a-f-]{36}/.exec(JSON.stringify(last)) ?? [];
+          // The block's id, as its tool's answer gave it.
+          const block = /as block ([0-9a-f-]{36})/.exec(JSON.stringify(request.messages))?.[1];
           return {
             calls: [
               {
                 name: "show_block",
                 input: {
                   title: typed("block again"),
-                  block_id: block ?? blockId,
+                  block_id: block,
                   spec: { parts: [{ type: "stat", label: typed("second"), value: "2" }] },
                 },
               },
@@ -277,6 +283,8 @@ test("the tools the lock keeps copy nothing out: a question, a choice card, a bl
   expect(question?.text).toContain(CANARY);
   const kept = await w.db.select().from(schema.artifacts);
   expect(kept.map((a) => a.kind).sort()).toEqual(["block", "choices", "poll"]);
+  // The block was written a second time, which is what queues a file for the index.
+  expect(kept.find((a) => a.kind === "block")?.currentVersion).toBe(2);
   expect(kept.map((a) => a.threadId)).toEqual(kept.map(() => (kept[0]?.threadId ?? null) as string | null));
   expect(kept[0]?.threadId).not.toBeNull();
 
@@ -405,6 +413,192 @@ test("one provider: a run that read the thread and comes back to another provide
   expect([run?.status, run?.error]).toEqual(["failed", CONFIDENTIAL_AI_CHANGED]);
   // Nothing of the run was sent to the new provider.
   expect(moved.w.f.openaiProvider.calls.filter((c) => JSON.stringify(c.request).includes(CANARY))).toEqual([]);
+});
+
+test("one provider: another agent named in the thread that thinks with another provider is handed nothing of it", async () => {
+  const w = await vaultWorld({
+    agents: ["kai", "mira"],
+    script: {
+      kai: [{ calls: [READ] }, { text: `@mira the record says ${CANARY}, please look at it.` }],
+      mira: () => ({ text: "Looked." }),
+    },
+  });
+  await createCredential(w.db, w.f.keyWrapper, w.owner.id, w.org.id, {
+    provider: "openai",
+    label: "openai",
+    apiKey: "test-openai-key",
+    makeDefault: true,
+  });
+  await w.db
+    .update(schema.agents)
+    .set({ model: "gpt-6-sol", credentialId: null })
+    .where(eq(schema.agents.id, w.agents.mira?.id ?? ""));
+  const asked = await w.say("@kai read record r1");
+  await w.settle();
+  await w.advance(10);
+  // The thread's own model read it, and named the other agent there.
+  expect(w.turnsOf("kai").join("\n")).toContain(CANARY);
+  const [run] = await w.runs("mira");
+  expect([run?.threadRootId, run?.status, run?.error]).toEqual([asked.id, "failed", CONFIDENTIAL_AI_CHANGED]);
+  expect(w.f.openaiProvider.calls.filter((c) => JSON.stringify(c.request).includes(CANARY))).toEqual([]);
+});
+
+test("a routine's own run that read the record leaves no record and delivers no report", async () => {
+  const w = await vaultWorld({
+    agents: ["kai"],
+    script: { kai: [{ calls: [READ] }, { text: `The record says ${CANARY}.` }] },
+  });
+  const deps = { db: w.db, pubsub: w.f.pubsub, context: w.f.context };
+  const routine = await createRoutine(deps, w.owner.id, w.org.id, {
+    name: "Records",
+    agentId: w.agents.kai?.id ?? "",
+    prompt: "Read record r1 and report what it says.",
+    target: { type: "channel", channelId: w.channelId },
+    trigger: { type: "schedule", phrase: "todo dia às 8h" },
+  });
+  await w.db.update(schema.routines).set({ report: "always" }).where(eq(schema.routines.id, routine.id));
+  await runRoutineNow(deps, w.owner.id, w.org.id, routine.id);
+  await w.settle();
+  await w.advance(10);
+  // It read the record in its own room, whose thread is confidential now.
+  expect(await w.tablesHolding(CANARY)).toEqual(expect.arrayContaining(["agent_run_steps"]));
+  expect(await w.db.select().from(schema.confidentialThreads)).toHaveLength(1);
+  // Its final text is neither the routine's record, which its next run is handed, nor a report where it reports.
+  const [ended] = await w.db.select().from(schema.routineRuns);
+  expect([ended?.status, ended?.summary]).toEqual(["silent", ""]);
+  expect(await w.stored()).toEqual([]);
+  expect(within(await w.tablesHolding(CANARY), OWN)).toEqual([]);
+});
+
+test("a write of the marking connection is no team action: its arguments stay with the run", async () => {
+  const change = (id: string, note: string) => ({ name: "vault_change_record", input: { id, note } });
+  const w = await vaultWorld({
+    agents: ["kai"],
+    script: {
+      kai: [
+        { calls: [change("r0", "before")] },
+        { calls: [READ] },
+        { calls: [change(`${CANARY}@example.com`, `the customer wrote ${CANARY}`)] },
+        { text: "Done." },
+      ],
+    },
+  });
+  await w.say("@kai update the records");
+  await w.settle();
+  await w.advance(10);
+  expect((await w.calls("kai")).map((c) => c.isError)).toEqual([false, false, false]);
+  // The write before the mark is the team's to know, as always; the one after it is not.
+  const actions = await w.db.select().from(schema.teamActions);
+  expect(actions.map((a) => a.tool)).toEqual(["vault_change_record"]);
+  expect(within(await w.tablesHolding(CANARY), OWN)).toEqual([]);
+});
+
+test("a run another agent asked: what it would ask a person, or have them approve, is refused, and its answer goes back as the stub", async () => {
+  const w = await vaultWorld({
+    agents: ["mira", "kai"],
+    changeAsks: true,
+    script: {
+      mira: [
+        { calls: [{ name: "ask_agent", input: { agent: "@kai", question: "What does record r1 say?" } }] },
+        { text: "Asked Kai." },
+        { text: "Kai could not say." },
+      ],
+      kai: [
+        { calls: [READ] },
+        {
+          calls: [
+            {
+              name: "ask_user",
+              input: {
+                question: `Is ${CANARY} right?`,
+                why: `I need the person to confirm what the record says before going on, it said ${CANARY}`,
+              },
+            },
+            {
+              name: "vault_change_record",
+              input: {
+                id: `${CANARY}@example.com`,
+                note: CANARY,
+                why: `the customer asked for this change in their own words: ${CANARY}`,
+              },
+            },
+          ],
+        },
+        { text: `It says ${CANARY}.` },
+      ],
+    },
+  });
+  await w.say("@mira ask kai what record r1 says");
+  await w.settle();
+  await w.advance(10);
+  const calls = await w.calls("kai");
+  expect(calls.map((c) => [c.name, c.isError])).toEqual([
+    ["vault_read_record", false],
+    ["ask_user", true],
+    ["vault_change_record", true],
+  ]);
+  // No card where the person asked, for people who do not read the agents' conversation.
+  expect(await w.db.select().from(schema.agentQuestions)).toEqual([]);
+  expect(await w.db.select().from(schema.approvals)).toEqual([]);
+  expect(JSON.stringify(await w.stored())).not.toContain(CANARY);
+  expect(JSON.stringify(await w.db.select().from(schema.notifications))).not.toContain(CANARY);
+  // The agent that asked is handed the stub for the answer, and nothing else holds the word.
+  expect(w.turnsOf("mira").join("\n")).not.toContain(CANARY);
+  expect(w.turnsOf("mira").join("\n")).toContain(CONFIDENTIAL_STUB);
+  expect(within(await w.tablesHolding(CANARY), OWN)).toEqual([]);
+});
+
+test("a question asked from a confidential thread is told with no word of it, wherever its card is", async () => {
+  const w = await vaultWorld({ agents: ["kai"], script: { kai: [{ calls: [READ] }, { text: "Read." }] } });
+  await w.say("@kai read record r1");
+  await w.settle();
+  const [run] = await w.runs("kai");
+  const elsewhere = await w.say("something else entirely");
+  const [question] = await w.db
+    .insert(schema.agentQuestions)
+    .values({
+      orgId: w.org.id,
+      runId: run?.id ?? "",
+      agentId: run?.agentId ?? "",
+      channelId: w.channelId,
+      threadId: elsewhere.id,
+      toolUseId: "t9",
+      text: `Is ${CANARY} right?`,
+      choices: [`yes, ${CANARY}`],
+      requestedForUserId: w.owner.id,
+      expiresAt: new Date(Date.now() + 3600_000),
+    })
+    .returning();
+  if (!question) throw new Error("no question");
+  await notifyQuestion({ db: w.db, pubsub: w.f.pubsub }, question);
+  const told = (await w.db.select().from(schema.notifications)).filter((n) => n.kind === "agent_question");
+  expect(told).toHaveLength(1);
+  expect(JSON.stringify(told)).not.toContain(CANARY);
+});
+
+test("learning, summaries and reflection, one guard at a time: no job for a run of the thread, none run for one queued before the mark, no thread to read", async () => {
+  const w = await vaultWorld({
+    agents: ["kai", "mira"],
+    script: { kai: [{ calls: [READ] }, { text: `It says ${CANARY}.` }], mira: [{ text: "Plain." }] },
+  });
+  const plain = await w.say("@mira say something plain");
+  await w.settle();
+  const asked = await w.say("@kai read record r1");
+  await w.settle();
+  const [sealed] = await w.runs("kai");
+  const [open] = await w.runs("mira");
+  if (!sealed || !open) throw new Error("no runs");
+  const taught = { judged: true, signal: "method" as const };
+  // A turn that taught something queues its lesson; one of the confidential thread queues none.
+  expect(await afterTurnDone(w.f.context, open, taught)).toBe(true);
+  expect(await afterTurnDone(w.f.context, sealed, taught)).toBe(false);
+  const jobs = await w.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "context.learn"));
+  expect(jobs.map((j) => (j.payload as { runId?: string }).runId)).toEqual([open.id]);
+  // A job a turn queued before its thread was marked does nothing when it runs.
+  expect((await learnRun(w.f.context, { orgId: w.org.id, runId: sealed.id })).skipped).toBe("confidential");
+  // What summarizes a thread or reflects on it is handed none of a confidential one.
+  expect(await loadThread(w.db, w.org.id, asked.id)).toBeNull();
+  expect(await loadThread(w.db, w.org.id, plain.id)).not.toBeNull();
 });
 
 test("a push with nothing to quote says only that something waits", () => {

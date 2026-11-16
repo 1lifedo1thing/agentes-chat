@@ -1,16 +1,16 @@
 import { afterEach, expect, test } from "bun:test";
 import { channelTopic } from "@agenteschat/adapters";
-import { eq, schema } from "@agenteschat/db";
+import { eq, schema, sql } from "@agenteschat/db";
 import {
   CONFIDENTIAL_KEEP_DAYS,
   CONFIDENTIAL_REMOVED_CODE,
   CONFIDENTIAL_REMOVED_TEXT,
   CONFIDENTIAL_STUB,
-  ConflictError,
   continueRun,
   decideApproval,
   messageView,
   pruneConfidential,
+  stopError,
 } from "../src";
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, type VaultWorld, vaultWorld } from "./confidential-fixtures";
@@ -30,7 +30,9 @@ const typed = (what: string) => `${what} ${CANARY}`;
 
 /**
  * A thread whose run read the record, showed a block and a poll, asked for an approval that was given, asked a
- * question, and was stopped; a person's reply under it; and beside it a thread with no confidential result.
+ * question, and was stopped; a person's reply under it; and beside it a thread with no confidential result. Then a
+ * later run of the thread that a person stopped (`stopped`), and one stopped the same way in the plain thread
+ * (`twin`): "Continuar" takes either.
  */
 async function scenario() {
   const w: VaultWorld = await vaultWorld({
@@ -97,8 +99,27 @@ async function scenario() {
     .set({ status: "failed", error: `cli_failed: the program said ${CANARY}` })
     .where(eq(schema.agentRuns.threadRootId, asked.id));
   const [run] = (await w.runs("kai")).filter((r) => r.threadRootId === asked.id);
-  if (!run || !question) throw new Error("the scenario did not run");
-  return { w, asked, plain, run };
+  await w.say("@kai and then?", { threadId: asked.id });
+  await w.settle();
+  const stopped = (await w.runs("kai")).filter((r) => r.threadRootId === asked.id).at(-1);
+  const [twin] = await w.runs("mira");
+  if (!run || !question || !stopped || stopped.id === run.id || !twin) throw new Error("the scenario did not run");
+  for (const r of [stopped, twin]) await stopByHand(w, r);
+  return { w, asked, plain, run, stopped, twin };
+}
+
+/** A run as a person's stop leaves it: canceled by them, its reply marked as the one they stopped. */
+async function stopByHand(w: VaultWorld, run: { id: string; replyMessageId: string | null }) {
+  if (!run.replyMessageId) throw new Error("the run posted no reply");
+  await w.db
+    .update(schema.agentRuns)
+    .set({ status: "canceled", error: stopError({ type: "person", id: w.owner.id }) })
+    .where(eq(schema.agentRuns.id, run.id));
+  const canceled = JSON.stringify({ canceled: { byUserId: w.owner.id, text: "" } });
+  await w.db
+    .update(schema.messages)
+    .set({ meta: sql`${schema.messages.meta} || ${canceled}::jsonb` })
+    .where(eq(schema.messages.id, run.replyMessageId));
 }
 
 /** Moves a thread's mark, and its runs, `days` into the past. */
@@ -109,7 +130,7 @@ async function age(w: VaultWorld, days: number) {
 }
 
 test(`after ${CONFIDENTIAL_KEEP_DAYS} days the thread's messages, its run's steps, transcript, error, question, approval, block and poll lose their words; the rows stay and each message goes to the apps again`, async () => {
-  const { w, asked, plain, run } = await scenario();
+  const { w, asked, plain, run, stopped, twin } = await scenario();
   const words = [CANARY, ROOT, REPLY];
   const count = async () => ({
     messages: (await w.stored()).length,
@@ -188,10 +209,13 @@ test(`after ${CONFIDENTIAL_KEEP_DAYS} days the thread's messages, its run's step
     expect([a.title, a.excerpt, a.deletedAt !== null]).toEqual(["", "", true]);
   }
 
-  // "Continuar" on the emptied run is refused.
-  await expect(continueRun({ db: w.db, pubsub: w.f.pubsub }, w.owner.id, w.org.id, run.id)).rejects.toBeInstanceOf(
-    ConflictError,
-  );
+  // "Continuar" on the run a person stopped: nothing to go on from once it was emptied. Its twin, as old and stopped
+  // the same way in a thread with no confidential result, goes on.
+  const deps = { db: w.db, pubsub: w.f.pubsub };
+  await expect(continueRun(deps, w.owner.id, w.org.id, stopped.id)).rejects.toMatchObject({
+    code: "run.not_continuable",
+  });
+  expect((await continueRun(deps, w.owner.id, w.org.id, twin.id)).runId).toBeString();
 
   // The thread and the run that hold no confidential result are as they were.
   const untouched = (await w.stored()).filter(
