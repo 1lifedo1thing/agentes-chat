@@ -324,7 +324,10 @@ describe("withdraw_request", () => {
           toolUses: [
             {
               name: "ask_user",
-              input: { why: "It decides where the deploy goes.", question: "Qual ambiente?" },
+              input: {
+                why: "I need a person's answer before I go on: it decides the deploy.",
+                question: "Qual ambiente?",
+              },
             },
           ],
         };
@@ -352,7 +355,8 @@ describe("withdraw_request", () => {
       .select()
       .from(schema.agentRuns)
       .where(eq(schema.agentRuns.id, asking?.id ?? ""));
-    expect((marked?.transcript as { takenOver?: number } | undefined)?.takenOver).toBe(0);
+    // The calls it had made when taken over: its question.
+    expect((marked?.transcript as { takenOver?: number } | undefined)?.takenOver).toBe(1);
     await drainOutbox(f.db, f.handlers);
     expect((await f.db.select().from(schema.agentRuns))[0]?.status).toBe("done");
     // Only its question card: the words it wrote after waking stay unposted.
