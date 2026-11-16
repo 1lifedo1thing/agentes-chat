@@ -5,11 +5,11 @@ import { rightHandOf } from "@agenteschat/client/lib/right-hand";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { Button, EmptyState, GroupedHeader, GroupedList, IconButton, SkeletonList, Text } from "@/ui";
+import { Button, EmptyState, GroupedHeader, GroupedList, IconButton, SkeletonList } from "@/ui";
 import { router } from "@/ui/navigation";
 import { boardHref } from "../links/logic";
 import { useOpenDm } from "../new/useOpenDm";
-import { useEmptyLook } from "../shared/FirstUse";
+import { LoadFailed, useEmptyLook } from "../shared/FirstUse";
 import { useDirectory, useOrgId, usePullRefresh } from "../shared/hooks";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { HOME } from "./logic";
@@ -78,17 +78,7 @@ export function DashboardsScreen() {
           // Loading: the rows' own shape, never a spinner.
           <SkeletonList rows={4} />
         ) : list.isError && !list.data ? (
-          <View style={styles.center}>
-            <Text tone="muted" style={styles.centerText}>
-              {t("mobile.dashboards.loadFailed")}
-            </Text>
-            <Button
-              variant="secondary"
-              size="sm"
-              label={t("mobile.common.retry")}
-              onPress={() => void list.refetch()}
-            />
-          </View>
+          <LoadFailed onRetry={() => void list.refetch()} />
         ) : any ? (
           <>
             {group(t("dashboards.groups.workspace"), groups.workspace)}
@@ -123,8 +113,6 @@ export function DashboardsScreen() {
 
 const styles = StyleSheet.create({
   in: { paddingHorizontal: 16, paddingTop: 4 },
-  center: { alignItems: "center", gap: 12, paddingVertical: 48, paddingHorizontal: 24 },
-  centerText: { textAlign: "center" },
   // Two buttons that wrap to a second line before they leave the screen.
   firstActs: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8, flexShrink: 1 },
 });

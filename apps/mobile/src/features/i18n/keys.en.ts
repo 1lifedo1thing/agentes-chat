@@ -1499,8 +1499,6 @@ export const featureKeysEn = {
 
   // Rotinas (the rest of its words are the web's, `routines.*`).
   routines: {
-    loadFailed: "Couldn't load the routines.",
-    anyAgent: "All agents",
     create: "Create",
     /** The form's "when" as rows, each value picked from the system's list. */
     when: {
@@ -2842,7 +2840,6 @@ export const featureKeysEn = {
   // Dashboards on the phone (ADR 0135); the rest of their words are the web's, `dashboards.*` and `widgets.*`.
   dashboards: {
     homeRow: "Only you · your own widgets",
-    loadFailed: "Couldn't load the dashboards.",
     create: "Create",
     routineTarget: "its widget",
     pin: {

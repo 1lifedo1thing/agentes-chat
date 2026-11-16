@@ -1421,8 +1421,6 @@
     "openExisting": "Seite öffnen"
   },
   "routines": {
-    "loadFailed": "Die Routinen ließen sich nicht laden.",
-    "anyAgent": "Alle Agenten",
     "create": "Erstellen",
     "when": {
       "custom": "Auf deine Art",
@@ -2675,7 +2673,6 @@
   },
   "dashboards": {
     "homeRow": "Nur du · deine eigenen Widgets",
-    "loadFailed": "Die Dashboards konnten nicht geladen werden.",
     "create": "Erstellen",
     "routineTarget": "sein Widget",
     "pin": {

@@ -1336,8 +1336,6 @@
     "openExisting": "ページを開く"
   },
   "routines": {
-    "loadFailed": "ルーティンを読み込めませんでした。",
-    "anyAgent": "すべてのエージェント",
     "create": "作成",
     "when": {
       "custom": "カスタム",
@@ -2558,7 +2556,6 @@
   },
   "dashboards": {
     "homeRow": "あなただけ · 自分のウィジェット",
-    "loadFailed": "ダッシュボードを読み込めませんでした。",
     "create": "作成",
     "routineTarget": "そのウィジェット",
     "pin": {

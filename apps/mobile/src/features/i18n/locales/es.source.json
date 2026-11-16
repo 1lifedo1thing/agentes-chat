@@ -3510,12 +3510,6 @@
   "wiki.openExisting": {
     "value": "Open the page"
   },
-  "routines.loadFailed": {
-    "value": "Couldn't load the routines."
-  },
-  "routines.anyAgent": {
-    "value": "All agents"
-  },
   "routines.create": {
     "value": "Create"
   },
@@ -6564,9 +6558,6 @@
   },
   "dashboards.homeRow": {
     "value": "Only you · your own widgets"
-  },
-  "dashboards.loadFailed": {
-    "value": "Couldn't load the dashboards."
   },
   "dashboards.create": {
     "value": "Create"

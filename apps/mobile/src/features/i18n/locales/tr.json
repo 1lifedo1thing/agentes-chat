@@ -1421,8 +1421,6 @@
     "openExisting": "Sayfayı aç"
   },
   "routines": {
-    "loadFailed": "Rutinler yüklenemedi.",
-    "anyAgent": "Tüm ajanlar",
     "create": "Oluştur",
     "when": {
       "custom": "Size özel",
@@ -2675,7 +2673,6 @@
   },
   "dashboards": {
     "homeRow": "Yalnızca siz · kendi widget'larınız",
-    "loadFailed": "Panolar yüklenemedi.",
     "create": "Oluştur",
     "routineTarget": "widget'ı",
     "pin": {

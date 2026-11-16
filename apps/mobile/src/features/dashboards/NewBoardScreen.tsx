@@ -9,7 +9,6 @@ import { boardHref } from "../links/logic";
 import { useFailed } from "../routines/hooks";
 import { useOrgId } from "../shared/hooks";
 import { PushedHeader, successHaptic } from "../shared/parts";
-import { SheetHostProvider } from "../shared/SheetHost";
 import { TextArea } from "../shared/TextArea";
 import { type AudienceDraft, audienceDraftOf, audienceReady, shareInputOf } from "./logic";
 import { AudienceFields } from "./parts";
@@ -22,14 +21,6 @@ const TITLE_MAX = 80;
  * it and who edits it. "Create" in the bar opens the new, empty board.
  */
 export function NewBoardScreen() {
-  return (
-    <SheetHostProvider>
-      <NewBoard />
-    </SheetHostProvider>
-  );
-}
-
-function NewBoard() {
   const { t } = useTranslation();
   const { colors: c } = useTheme();
   const insets = useSafeAreaInsets();
