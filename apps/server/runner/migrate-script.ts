@@ -1,5 +1,12 @@
 import { psQuote, RUNNER_BUN_SHA256, RUNNER_BUN_VERSION, RUNNER_BUN_WINDOWS_SHA256, shQuote } from "./install-script";
 
+/** This server's address without the slashes it may end in (a loop: a pattern for it is slow on many slashes). */
+function serverOf(publicUrl: string): string {
+  let end = publicUrl.length;
+  while (end > 0 && publicUrl[end - 1] === "/") end--;
+  return publicUrl.slice(0, end);
+}
+
 /**
  * `curl -fsSL <publicUrl>/migrate.sh | sh -s -- [--from APP] [--out FOLDER] [--json]` (ADR 0055, addendum
  * 2026-11-16): runs `agentes-runner migrate` once, from a temporary folder, and removes it. Nothing is installed and
@@ -9,7 +16,7 @@ import { psQuote, RUNNER_BUN_SHA256, RUNNER_BUN_VERSION, RUNNER_BUN_WINDOWS_SHA2
  * terminal the command's questions read the keyboard, not the pipe the script came through.
  */
 export function migrateScript(publicUrl: string): string {
-  const server = publicUrl.replace(/\/+$/, "");
+  const server = serverOf(publicUrl);
   const shaCases = Object.entries(RUNNER_BUN_SHA256)
     .map(([target, sha]) => `      ${target}) BUN_SHA256=${shQuote(sha)} ;;`)
     .join("\n");
@@ -113,7 +120,7 @@ main "$@"
  * against `RUNNER_BUN_WINDOWS_SHA256`, in a temporary folder removed at the end.
  */
 export function migrateScriptPowerShell(publicUrl: string): string {
-  const server = publicUrl.replace(/\/+$/, "");
+  const server = serverOf(publicUrl);
   const sha = RUNNER_BUN_WINDOWS_SHA256;
   return `# agentes.chat: reads the agents another app keeps on this computer and writes one .zip for the import screen.
 # It only reads, and it sends nothing. Nothing is installed: what it downloads is removed when it ends.
