@@ -11,6 +11,7 @@ import { listedOf } from "./operator-paging";
 import { inputLines } from "./operator-review";
 import { runShownSql } from "./operator-runs";
 import { getMembership, requirePermission } from "./organizations";
+import { ROUTINE_ROOM_PREFIX } from "./routine-brief";
 import { getRoutineView } from "./routines";
 import { cloudNotice } from "./standing";
 import { SUPPORT_SOURCES } from "./support-requests";
@@ -169,9 +170,20 @@ interface Found {
 
 type Find = (db: Database, orgId: string, input: RevealInput) => Promise<Found | null>;
 
-/** Whether a conversation is a direct one. `channelId` names its table: in a subquery a bare column would be the subquery's own. */
+/**
+ * Whether a conversation is a direct one. A routine's own room is stored as one, of its agent alone, and no person
+ * reads it: it counts as direct only when its routine reports to a direct conversation, whose words its run is given
+ * and writes its report for (the routine's id is read from the room's key, as `routineRoomKey` writes it).
+ * `channelId` names its table: in a subquery a bare column would be the subquery's own.
+ */
 const directOf = (channelId: string) =>
-  sql<boolean>`coalesce((select c.kind = 'dm' from ${channels} c where c.id = ${sql.raw(channelId)}), false)`;
+  sql<boolean>`coalesce((select c.kind = 'dm' and (
+      not starts_with(coalesce(c.dm_key, ''), ${ROUTINE_ROOM_PREFIX})
+      or coalesce((select rt.target->>'type' = 'dm' or exists (
+          select 1 from ${channels} t
+          where t.org_id = c.org_id and t.id::text = rt.target->>'channelId' and t.kind = 'dm')
+        from ${routines} rt where rt.org_id = c.org_id and rt.id::text = split_part(c.dm_key, '|r:', 2)), true))
+    from ${channels} c where c.id = ${sql.raw(channelId)}), false)`;
 /** Whether a record's conversation still stands: one deleted for good keeps its row, and its runs keep their steps. */
 const conversationStands = (channelId: string) =>
   sql<boolean>`not exists (

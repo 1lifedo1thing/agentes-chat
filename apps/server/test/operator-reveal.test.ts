@@ -2,7 +2,13 @@ import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
 import { createFakeErrorReporter, createMemoryRateLimiter } from "@agenteschat/adapters";
 import { testConfig } from "@agenteschat/config";
 import { asc, type Database, desc, eq, schema } from "@agenteschat/db";
-import { addRunStep, REVEAL_FIELDS, REVEAL_PER_WORKSPACE_DAY, setRestrictionNotices } from "@agenteschat/engine";
+import {
+  addRunStep,
+  REVEAL_FIELDS,
+  REVEAL_PER_WORKSPACE_DAY,
+  routineRoomKey,
+  setRestrictionNotices,
+} from "@agenteschat/engine";
 import { createLogger } from "../src/logger";
 import { createOperatorApp, type OperatorDeps } from "../src/operator/app";
 import { poison } from "./canary";
@@ -44,8 +50,10 @@ const w = {} as Record<
   | "secretId"
   | "dmId"
   | "goneId"
+  | "roomId"
   | "connectionId"
   | "routineId"
+  | "dmRoutineId"
   | "taskId"
   | "goneTaskId",
   string
@@ -66,6 +74,9 @@ const runs = {} as Record<
   | "direct"
   | "keys"
   | "gone"
+  | "room"
+  | "parked"
+  | "dmRoom"
   | "foreign",
   string
 >;
@@ -366,10 +377,41 @@ beforeAll(async () => {
       })
       .returning({ id: schema.routines.id }),
   );
+  // The routine's own room, as the server opens it: a conversation of its agent alone, where its run works.
+  w.roomId = await channel(routineRoomKey(w.devId, w.routineId), "dm", [{ agentId: w.devId }]);
+  runs.room = await run("failed", { channelId: w.roomId });
+  await steps(runs.room, [aCall("n"), aResult("n", true)]);
+  runs.parked = await run("waiting_input", {
+    channelId: w.roomId,
+    updatedAt: ago(2 * HOUR),
+    transcript: { waitingForBrain: { code: "plan_limit" } },
+  });
+  await steps(runs.parked, [aCall("w")]);
+  // A routine that reports to a direct conversation: its run is given what is said there, and writes for it.
+  w.dmRoutineId = await one(
+    db
+      .insert(schema.routines)
+      .values({
+        orgId,
+        agentId: w.devId,
+        name: "canary-dm-routine-name",
+        prompt: "canary-dm-routine-instructions",
+        target: { type: "dm" },
+        triggerType: "schedule",
+        cron: "0 9 * * *",
+        timezone: "UTC",
+        createdByUserId: w.ownerId,
+      })
+      .returning({ id: schema.routines.id }),
+  );
+  runs.dmRoom = await run("failed", {
+    channelId: await channel(routineRoomKey(w.devId, w.dmRoutineId), "dm", [{ agentId: w.devId }]),
+  });
+  await steps(runs.dmRoom, [aCall("y")]);
   await db.insert(schema.routineRuns).values(
-    [runs.failed, runs.direct].map((agentRunId, n) => ({
+    [runs.failed, runs.direct, runs.parked, runs.dmRoom].map((agentRunId, n) => ({
       orgId,
-      routineId: w.routineId,
+      routineId: agentRunId === runs.dmRoom ? w.dmRoutineId : w.routineId,
       at: ago(DAY + n * HOUR),
       trigger: "schedule",
       status: "failed",
@@ -750,6 +792,45 @@ test("fault: a report made before the run moves nothing; the run keeps its own 1
   expect(await input(runs.older, requests.tenDays)).toBe(200);
   // A failure after the report opens for its own days, whatever report is named with it.
   expect(await input(runs.failed, requests.before)).toBe(200);
+});
+
+test("fault: a routine's own room is nobody's conversation, so its run opens, unless it reports to a direct one", async () => {
+  await forget();
+  const parked = { runId: runs.parked };
+  expect(await text(step(runs.parked, 1, "input", parked))).toContain("canary-input-w");
+  expect(await outcome(ask("message", asking.get(runs.parked) ?? "", "text", parked))).toBe(200);
+  expect(await outcome(ask("routine", w.routineId, "instructions", parked))).toBe(200);
+  expect(await text(step(runs.room, 2, "error", { runId: runs.room }))).toBe("canary-result-n");
+  // No two people's conversation is there to keep unnamed: the audit entry says which step.
+  const entry = (await auditLines()).find((l) => l.targetId === runs.parked);
+  expect([entry?.targetType, entry?.details.direct, entry?.details.seq]).toEqual(["run_step", undefined, 1]);
+  // The app shows that run to no person, so no member's request opens it.
+  for (const requestId of [requests.owner, requests.ada]) {
+    expect(await outcome(step(runs.parked, 1, "input", { requestId }))).toEqual([403, "reveal.not_visible"]);
+  }
+  // A person's conversation with an agent stays closed, and so does the room of a routine that reports to one:
+  // of that run, the routine and its agent's instructions.
+  const reportsTo = (target: Record<string, unknown>) =>
+    db.update(schema.routines).set({ target }).where(eq(schema.routines.id, w.dmRoutineId));
+  const closed = { runId: runs.dmRoom };
+  for (const target of [{ type: "dm" }, { type: "conversation", channelId: w.dmId, threadId: null }]) {
+    await reportsTo(target);
+    for (const json of [
+      step(runs.dmRoom, 1, "input", closed),
+      ask("message", asking.get(runs.dmRoom) ?? "", "text", closed),
+      step(runs.direct, 1, "input", { runId: runs.direct }),
+    ]) {
+      expect({ target, json, answer: await outcome(json) }).toEqual({
+        target,
+        json,
+        answer: [403, "reveal.direct_conversation"],
+      });
+    }
+    expect(await outcome(ask("routine", w.dmRoutineId, "instructions", closed))).toBe(200);
+  }
+  // Once it reports to a channel, its room is as any other routine's.
+  await reportsTo({ type: "channel", channelId: w.generalId });
+  expect(await outcome(step(runs.dmRoom, 1, "input", closed))).toBe(200);
 });
 
 test("a conversation deleted for good: what its runs kept is the same 404 as nobody's, whatever the purpose", async () => {
