@@ -40,6 +40,7 @@ export default function MainStack() {
     const cover = { ...solid, ...coverBarOptions };
     // Screens that only find where to go and replace themselves: no bar, no slide.
     const bare = { ...base, animation: "none" as const };
+    const connectAi = { ...page, contentStyle: { backgroundColor: colors.grouped } };
     const own: Record<string, NativeStackNavigationOptions> = {
       "(tabs)": base,
       "chat/[channelId]": solid,
@@ -57,8 +58,12 @@ export default function MainStack() {
       "handoff/[id]": bare,
       // A web link that needs a lookup or another workspace first: the bar's back is the way out of a slow one.
       link: { ...solid, animation: "none" },
-      // Connect an AI: pushed screens, one question each, on the grouped gray (its bar counts the steps).
-      "connect-ai": { ...page, contentStyle: { backgroundColor: colors.grouped } },
+      // Connect an AI: one pushed screen per question, on the grouped gray (its bar counts the steps).
+      "connect-ai/index": connectAi,
+      "connect-ai/plans": connectAi,
+      "connect-ai/plan": connectAi,
+      "connect-ai/key": connectAi,
+      "connect-ai/makers": connectAi,
       images: {
         ...base,
         presentation: "transparentModal",

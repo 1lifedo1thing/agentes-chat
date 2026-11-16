@@ -16,7 +16,7 @@ import {
   advancedResetInput,
   agentAccounts,
   existingRows,
-  flowBack,
+  flowStep,
   modelInput,
   modelRows,
   modelSections,
@@ -215,7 +215,7 @@ describe("the agent's AI", () => {
     expect(screen).toContain("newPlanAccountOption(brainOptions, optionsBefore)");
     expect(screen).toContain("connectedHere ?? picked");
     // For the agents I create: none of mine is offered, so a plan signs in for the new one.
-    expect(sheet).toMatch(/params\.forNew === "1"\s*\? \[\]/);
+    expect(sheet).toMatch(/ask\.forNew === "1"\s*\? \[\]/);
     expect(sheet).toContain("queryKey: keys.brainMachines(orgId)");
   });
 
@@ -356,7 +356,7 @@ describe("the agent's AI", () => {
     expect(settings).toContain("agent.ownerUserId === meId || isRightHand(agent)");
     expect(card).toMatch(/forNew\?: string;\s+again\?: string;/);
     // The page signs that login in again: for an agent, as a row's own sign-in; with none, by itself on its computer.
-    expect(sheet).toContain("params.again && againChoice ? { id: params.again, choice: againChoice");
+    expect(sheet).toContain("ask.again && againChoice ? { id: ask.again, choice: againChoice");
     expect(sheet).toContain('bare && !again && view.page === "plan"');
     expect(connect).toContain(
       "props.login ?? (again ? { choice, from: again.id, again: again.id, email: again.email } : undefined);",
@@ -468,7 +468,7 @@ describe("the agent's AI", () => {
     expect(screen).toContain("onPress={() => (c.also ? connect(c.login, true) : choose(c.login))}");
     // That account's email goes along as Claude's hint, on Claude's page only, whatever the agent's own login is.
     expect(screen).toContain("...(also && a?.email ? { email: a.email } : {}),");
-    expect(sheet).toContain("{...(params.email ? { email: params.email } : {})}");
+    expect(sheet).toContain("{...(ask.email ? { email: ask.email } : {})}");
     expect(connect).toContain('{...(choice === "claude" && props.email ? { email: props.email } : {})}');
     const t = await translator("pt-BR");
     const theo = account("t", { usedBy: ["Theo"] });
@@ -542,7 +542,7 @@ describe("the agent's AI", () => {
     const plans = connect.slice(connect.indexOf("function Plans("), connect.indexOf("function Makers("));
     expect(plans).toContain("<PickList");
     expect(plans).toContain("options={PLAN_CHOICES.map(");
-    expect(plans).toContain('onView({ page: "plan", choice: o.value })');
+    expect(plans).toContain("onPick={(o) => onPlan(o.value)}");
     const makers = connect.slice(connect.indexOf("function Makers("));
     expect(makers).toContain("<PickList");
     expect(makers).toContain("...PROVIDERS.map(");
@@ -1239,7 +1239,7 @@ describe("the agent's AI", () => {
       read("src/features/ai/ConnectAiSteps.tsx"),
     ]);
     // For whoever may make agents, never over one being made.
-    expect(sheet).toContain('params.forNew !== "1" && makesAgents(org) ? planAccount');
+    expect(sheet).toContain('ask.forNew !== "1" && makesAgents(org) ? planAccount');
     expect(sheet).toContain("/new-agent?account=");
     expect(sheet).toContain("encodeURIComponent(makeWith.id)");
     expect(route).toContain('accountId={typeof account === "string" && account ? account : null}');
@@ -1271,15 +1271,18 @@ describe("Seus planos' rows", () => {
   });
 });
 
-describe("Back in Connect an AI", () => {
-  test("a plan picked from the list goes back to the list, a sign-in from a row of what the person has to that row", () => {
-    const plan = { page: "plan", choice: "chatgpt" } as const;
-    expect(flowBack(plan, false)).toEqual({ page: "plans" });
-    expect(flowBack(plan, true)).toEqual({ page: "home" });
-    expect(flowBack({ page: "plans" }, false)).toEqual({ page: "home" });
-    expect(flowBack({ page: "makers" }, false)).toEqual({ page: "key" });
-    expect(flowBack({ page: "key" }, false)).toEqual({ page: "home" });
-    expect(flowBack({ page: "home" }, false)).toBeNull();
+describe("Connect an AI's steps line", () => {
+  test("the two ways are step 1, every page after them step 2, a page that connected something step 3", () => {
+    expect(flowStep({ page: "home" }, false)).toBe(1);
+    for (const view of [
+      { page: "plans" },
+      { page: "plan", choice: "chatgpt" },
+      { page: "key" },
+      { page: "makers" },
+    ] as const)
+      expect(flowStep(view, false)).toBe(2);
+    expect(flowStep({ page: "key" }, true)).toBe(3);
+    expect(flowStep({ page: "home" }, true)).toBe(3);
   });
 });
 

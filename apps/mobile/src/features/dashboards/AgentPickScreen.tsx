@@ -19,7 +19,8 @@ const LOGOS_SHOWN = 4;
 
 /**
  * An agent to pick, pushed from a form (ADR 0135; screens, never sheets): New widget's "Who looks after it", a
- * routine's agent. The agents the person can talk to (every agent with `everyone`), each with its face, name, role
+ * routine's agent, the agent a plan is for. The agents the person can talk to (every agent with `everyone`, only
+ * those given with `ids`), each with its face, name, role
  * and the connected apps it reads, the current one checked. A search field past a handful of agents. Choosing one
  * goes back to the form at once.
  */
@@ -31,7 +32,11 @@ export function AgentPickScreen() {
   const pick = useAgentPick();
   const [query, setQuery] = useState("");
   const everyone = pick?.everyone === true;
-  const agents = useMemo(() => (everyone ? dir.agents : dir.agents.filter((a) => canTalk(a))), [dir.agents, everyone]);
+  const ids = pick?.ids;
+  const agents = useMemo(() => {
+    if (ids) return ids.flatMap((id) => dir.agentById.get(id) ?? []);
+    return everyone ? dir.agents : dir.agents.filter((a) => canTalk(a));
+  }, [dir.agents, dir.agentById, everyone, ids]);
   const note = pick?.note ?? t("mobile.dashboards.agentPick.note");
   const shown = useMemo(() => agentsMatching(agents, query), [agents, query]);
   // Opened with no card under it (its address on its own): nothing to pick for.
