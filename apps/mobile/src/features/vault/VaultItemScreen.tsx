@@ -17,8 +17,9 @@ import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { Note } from "../ai/parts";
-import { confirmAction, Gap, SettingsPage } from "../settings/parts";
+import { confirmAction, Gap, NEXT_FIELD, SettingsPage } from "../settings/parts";
 import { Face } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useNow, useOrgId } from "../shared/hooks";
 import { goBack, successHaptic } from "../shared/parts";
 import {
@@ -57,10 +58,12 @@ export function VaultItemScreen({ id }: { id: string }) {
     const gone = item.error instanceof ApiError && item.error.status === 404;
     return (
       <SettingsPage title={t("settings.section.vault")}>
-        {item.isError ? (
+        {item.isError && gone ? (
           <View style={styles.note}>
-            <Note icon="x">{gone ? t("mobile.vault.item.gone") : t("common.loadFailed")}</Note>
+            <Note icon="x">{t("mobile.vault.item.gone")}</Note>
           </View>
+        ) : item.isError ? (
+          <LoadFailed onRetry={() => void item.refetch()} />
         ) : (
           <ActivityIndicator color={c.muted} style={styles.loading} />
         )}
@@ -168,6 +171,7 @@ function ItemPage({ item }: { item: VaultItemDetail }) {
       subtitle={`${kindName} · ${scopeName}`}
       {...(editable && dirty ? { action: { label: t("common.save"), onPress: save, disabled: update.isPending } } : {})}
       locked={update.isPending}
+      toolbar={editable}
     >
       {item.missing ? (
         <View style={styles.note}>
@@ -182,6 +186,7 @@ function ItemPage({ item }: { item: VaultItemDetail }) {
       ) : null}
       <Gap />
       <GroupedList>
+        {/* Return walks the group's fields (an item's title always has one after it); its last one closes the keyboard. */}
         <InputField
           label={t("mobile.vault.field.title")}
           value={form.title}
@@ -189,6 +194,7 @@ function ItemPage({ item }: { item: VaultItemDetail }) {
           editable={ownFields}
           maxLength={LIMITS.title}
           autoCapitalize="sentences"
+          {...NEXT_FIELD}
         />
         {item.kind === "login" ? (
           <InputField
@@ -200,6 +206,7 @@ function ItemPage({ item }: { item: VaultItemDetail }) {
             keyboardType="url"
             autoCapitalize="none"
             placeholder={t("mobile.vault.field.websitePlaceholder")}
+            {...NEXT_FIELD}
           />
         ) : null}
         {item.kind === "login" ? (
@@ -211,6 +218,7 @@ function ItemPage({ item }: { item: VaultItemDetail }) {
             maxLength={LIMITS.username}
             autoCapitalize="none"
             textContentType="username"
+            returnKeyType="done"
           />
         ) : null}
         {item.kind === "key" ? (
@@ -222,11 +230,12 @@ function ItemPage({ item }: { item: VaultItemDetail }) {
             mono
             maxLength={LIMITS.keyName}
             autoCapitalize="characters"
+            returnKeyType="done"
           />
         ) : null}
         {hasValue && item.hasSecret ? <SavedValue label={valueLabel} /> : null}
         {item.kind === "contact"
-          ? CONTACT_FIELDS.map((field) => (
+          ? CONTACT_FIELDS.map((field, i) => (
               <InputField
                 key={field}
                 label={t(`mobile.vault.contact.${field}`)}
@@ -235,6 +244,7 @@ function ItemPage({ item }: { item: VaultItemDetail }) {
                 editable={ownFields}
                 maxLength={LIMITS.contact}
                 {...contactKeyboard(field)}
+                {...(i < CONTACT_FIELDS.length - 1 ? NEXT_FIELD : { returnKeyType: "done" as const })}
               />
             ))
           : null}
