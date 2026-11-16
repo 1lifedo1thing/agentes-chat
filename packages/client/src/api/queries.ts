@@ -3539,6 +3539,9 @@ export const useConsultations = (orgId: string, channelId: string, enabled = tru
     queryFn: () => api.agents.consultations(orgId, channelId),
     enabled,
     staleTime: 10_000,
+    // Kept as long as the conversation's messages (`messagesQuery`): they change its rows, so a conversation shown
+    // again at once from memory has them too.
+    gcTime: 30 * 60_000,
     refetchInterval: (q) => (q.state.data?.some((c) => c.status === "open") ? CONSULT_GROUP_POLL_MS : false),
   });
 };
@@ -5810,6 +5813,8 @@ export const channelThreadsQuery = (api: ApiClient, orgId: string, channelId: st
     queryKey: keys.channelThreads(orgId, channelId, tab),
     queryFn: () => api.threads.inChannel(orgId, channelId, { tab, limit: 100 }),
     staleTime: 30_000,
+    // As long as the conversation's messages (`messagesQuery`): its links are rows of that conversation.
+    gcTime: 30 * 60_000,
   });
 
 export function useChannelThreads(orgId: string, channelId: string, tab: "all" | "archived", enabled = true) {

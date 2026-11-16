@@ -103,12 +103,13 @@ describe("the rows follow the same choice as the web", () => {
     expect(chat).toContain("band.current = { top: hasPin ? 0 : headerHeight, lift };");
     // The list shows once it is there, never its end first, and with the rows that load beside the messages (the
     // threads' links, the agents' questions) already in: none grows under the person. Its fallback still shows it.
+    // Messages already on the phone show at once, never held behind those two reads.
     expect(chat).toContain("onReady={onListReady}");
     expect(chat).toContain(
       "if (listReady.current && atReadDone.current && !goingToLine.current && rowsCompleteRef.current) revealList();",
     );
-    expect(chat).toContain(
-      "const rowsComplete = (isThread || !readable || channelThreads.isFetched) && consultations.isFetched;",
+    expect(chat).toMatch(
+      /const rowsComplete =\s*openedOnPhone \|\| \(\(isThread \|\| !readable \|\| channelThreads\.isFetched\) && consultations\.isFetched\);/,
     );
     expect(chat).toContain("const timer = setTimeout(revealList, SHOW_LIST_MS);");
     // Never over a message the screen was asked to open at.

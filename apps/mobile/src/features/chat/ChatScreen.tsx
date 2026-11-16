@@ -732,8 +732,14 @@ function Chat({
   const consultData = consultations.data;
   const consultList = useMemo(() => (consultData ? asExchanges(consultData) : NO_CONSULTATIONS), [consultData]);
   // The threads' links under their roots and these questions load beside the messages and change rows: the list waits
-  // for them before it shows (`revealOpened`), so no row grows under the person as the conversation appears.
-  const rowsComplete = (isThread || !readable || channelThreads.isFetched) && consultations.isFetched;
+  // for them before it shows (`revealOpened`), so no row grows under the person as the conversation appears. Only on
+  // a first read: messages already on the phone (in memory, or the snapshot, which keeps both lists with them) show at
+  // once, as they did, never held behind two reads from the network (the whole fallback offline).
+  const openedOnPhone = useRef(
+    isThread ? threadMessages.data !== undefined && !threadMessages.isPlaceholderData : top.data !== undefined,
+  ).current;
+  const rowsComplete =
+    openedOnPhone || ((isThread || !readable || channelThreads.isFetched) && consultations.isFetched);
   const rowsCompleteRef = useRef(rowsComplete);
   rowsCompleteRef.current = rowsComplete;
   const liveTurns = useMemo(
