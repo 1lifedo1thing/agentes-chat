@@ -935,7 +935,8 @@ function PlanPage(
             <GroupedRow
               leading={<AgentFace agentId={agent.id} size={30} live={false} />}
               label={agent.name}
-              {...(agents.length > 1 ? { value: t("mobile.ai.change"), chevron: true, onPress: pick } : {})}
+              // Another of the person's agents is a choice in the app's picker: the row's up-down mark.
+              {...(agents.length > 1 ? { menu: true, onPress: pick } : {})}
             />
           </GroupedList>
           <GroupedHeader>{t("mobile.ai.how")}</GroupedHeader>

@@ -21,6 +21,8 @@ describe("loading is the list's shape, a failure asks again", () => {
       "usage/UsageScreen.tsx",
       "usage/AgentUsageScreen.tsx",
       "usage/people.tsx",
+      "usage/UsageAccountScreen.tsx",
+      "ai/AddAccount.tsx",
     ]) {
       const screen = source(file);
       expect([file, screen.includes("<ActivityIndicator")]).toEqual([file, false]);
@@ -98,6 +100,15 @@ describe("pickers are the screen, never a list opening in place", () => {
   });
 });
 
+test("a row that opens a choice in place wears the up-down mark, never a chevron (that pushes a screen)", () => {
+  const settings = source("right-hand/SettingsScreen.tsx");
+  expect(settings).toContain("menu={!hold}");
+  expect(settings).not.toContain("chevron={!hold}");
+  const mine = settings.slice(settings.indexOf("export function RightHandMine("), settings.indexOf("const KEY = "));
+  expect(mine.slice(mine.lastIndexOf("<GroupedRow"))).toContain("menu\n");
+  expect(source("ai/ConnectAiSteps.tsx")).toContain("{...(agents.length > 1 ? { menu: true, onPress: pick } : {})}");
+});
+
 describe("rows and notes on the groups' edges", () => {
   test("a note under a group reads as its footer", () => {
     expect(source("ai/parts.tsx")).toContain("noteInset: { paddingHorizontal: 16, paddingTop: 8 },");
@@ -113,6 +124,8 @@ describe("rows and notes on the groups' edges", () => {
   test("what sits in a grouped row keeps the rows' 16-point sides; a list without a header gets the settings' gap", () => {
     expect(source("ai/AgentAiScreen.tsx")).toContain("meter: { paddingHorizontal: GROUPED_ROW.padX,");
     expect(source("ai/AgentAdvancedScreen.tsx")).toContain("ramp: { paddingHorizontal: GROUPED_ROW.padX,");
+    // The effort dock floats on the screen's own sides.
+    expect(source("ai/AgentAiScreen.tsx")).toContain('dock: { position: "absolute", left: SCREEN_X, right: SCREEN_X,');
     for (const file of ["ai/AgentAiScreen.tsx", "ai/AgentAdvancedScreen.tsx", "ai/AgentSetupScreen.tsx"])
       expect([file, source(file).includes("marginTop: 20")]).toEqual([file, false]);
   });

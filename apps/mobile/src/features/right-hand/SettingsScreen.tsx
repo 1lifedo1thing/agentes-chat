@@ -260,7 +260,8 @@ export function RightHandMine({ agent }: { agent: Agent }) {
         label={label}
         sub={model ? `${sub} · ${model}` : sub}
         hint={hint}
-        chevron
+        // The choice opens over the screen, in place: the row's up-down mark, never a chevron (that pushes a screen).
+        menu
         onPress={() => void choose()}
       />
     </GroupedList>
@@ -365,8 +366,8 @@ function WorkspaceAi({ agent, dir }: { agent: Agent; dir: Directory }) {
             : key
               ? { sub: key.label }
               : {})}
-          // On a billing hold nothing changes before the plan (ADR 0162).
-          chevron={!hold}
+          // On a billing hold nothing changes before the plan (ADR 0162). The choice opens in place: the up-down mark.
+          menu={!hold}
           disabled={busy || hold}
           onPress={() => void choose()}
         />

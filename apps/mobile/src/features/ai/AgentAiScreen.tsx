@@ -33,6 +33,7 @@ import {
   GroupedRow,
   motion,
   ProviderLogo,
+  SCREEN_X,
   SkeletonList,
   Text,
   useReducedMotion,
@@ -494,7 +495,8 @@ const styles = StyleSheet.create({
   center: { textAlign: "center" },
   // On a grouped row's edges, as the rows under it.
   meter: { paddingHorizontal: GROUPED_ROW.padX, paddingVertical: 12, gap: 10 },
-  dock: { position: "absolute", left: 10, right: 10, borderRadius: 28 },
+  // Floating over the list on the screen's own sides, as everything else on it.
+  dock: { position: "absolute", left: SCREEN_X, right: SCREEN_X, borderRadius: 28 },
   dockGlass: {
     paddingHorizontal: 16,
     paddingTop: 12,
