@@ -6921,8 +6921,8 @@ html:not([data-pointer]) .ac-msg:focus-within .ac-msg__actions,
   align-items: flex-end;
   justify-content: flex-end;
 }
-/* A source glyph before the time: on the line's middle, then up to the time's capitals' middle (--cap-mid above it,
-   in the time's type, which the mark takes so its `ex` is the time's). */
+/* A source glyph before the time: on the line's middle, then up by --cap-mid in its own type, which is the time's
+   type under my own rows and in the bubble's stamp. */
 .ac-msg__mark {
   display: inline-flex;
   flex: none;
