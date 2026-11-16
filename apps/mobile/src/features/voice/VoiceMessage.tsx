@@ -1,9 +1,9 @@
 import type { Message } from "@agenteschat/client";
 import { voiceAudioGone, voiceAudioUrl, voiceClock, voiceExpired, voiceOf } from "@agenteschat/client/lib/voice";
 import { Skia } from "@shopify/react-native-skia";
-import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { memo, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { GestureDetector, useExclusiveGestures, usePanGesture, useTapGesture } from "react-native-gesture-handler";
 import { useSharedValue } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
@@ -12,7 +12,17 @@ import { serverUrl } from "@/lib/server";
 import { Icon, PressScale, Text } from "@/ui";
 import { useColors, useOrgId } from "../shared/hooks";
 import { nextSpeed, spokenWords, waveAt } from "./logic";
-import { playingId, seekPlayback, setPlaybackSpeed, startPlayback, stopPlayback, subscribePlayback } from "./playback";
+import {
+  placeOf,
+  playingId,
+  seekPlayback,
+  setPlaybackSpeed,
+  startingId,
+  startPlayback,
+  stopPlayback,
+  subscribePlace,
+  subscribePlayback,
+} from "./playback";
 import { setVoiceSpeed, subscribeVoiceSpeed, voiceSpeed } from "./speed";
 import { PixelWave, wavePaths } from "./VoiceBars";
 
@@ -20,12 +30,9 @@ import { PixelWave, wavePaths } from "./VoiceBars";
 const WAVE = 24;
 /** Past this many characters the first line is cut, so "Ver tudo" is offered without measuring the text. */
 const ONE_LINE = 40;
-/** The list recycles rows: what a message had open or where it stopped lives outside them. */
+/** The list recycles rows: what a message had open lives outside them (where a clip stands: `placeOf`). */
 const opened = new Set<string>();
-const positions = new Map<string, number>();
 const expired = new Set<string>();
-/** The last tap on a play button, of any row. */
-let asked = 0;
 
 /**
  * A voice message: the audio is the message, with one line of its words under the wave, in the same card, and nowhere
@@ -40,26 +47,41 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
   const durationMs = voice?.durationMs ?? 0;
   const sending = Boolean(message.local);
   const playing = useSyncExternalStore(subscribePlayback, playingId) === clipId;
-  const progress = useSharedValue(positions.get(clipId) ?? 0);
+  // Asked to play and not moving yet: the button spins from the tap on.
+  const starting = useSyncExternalStore(subscribePlayback, startingId) === clipId;
+  const progress = useSharedValue(placeOf(clipId));
+  // A finger on the wave: what the player says meanwhile doesn't move it (the two fought over the handle).
+  const scrubbing = useSharedValue(false);
   const inner = useSharedValue(Skia.Path.Make());
   const edge = useSharedValue(Skia.Path.Make());
   const [width, setWidth] = useState(0);
-  const [time, setTime] = useState(durationMs);
+  // The clock, from the clip's place read whole once a second: its length while it has no place.
+  const second = useSyncExternalStore(subscribePlace, () => {
+    const at = placeOf(clipId);
+    return at > 0 ? Math.floor((at * durationMs) / 1000) : -1;
+  });
+  const time = second < 0 ? durationMs : second * 1000;
   const rate = useSyncExternalStore(subscribeVoiceSpeed, voiceSpeed);
   const [gone, setGone] = useState(() => expired.has(clipId) || Boolean(voice && voiceExpired(voice)));
   const [open, setOpen] = useState(() => opened.has(message.id));
   const [broken, setBroken] = useState(false);
-  const lastSecond = useRef(-1);
 
   // A recycled row takes on another message.
   // biome-ignore lint/correctness/useExhaustiveDependencies: only when the row shows another recording
   useEffect(() => {
-    progress.value = positions.get(clipId) ?? 0;
-    setTime(durationMs);
     setGone(expired.has(clipId) || Boolean(voice && voiceExpired(voice)));
     setOpen(opened.has(message.id));
     setBroken(false);
   }, [clipId, message.id]);
+  // The wave follows its clip's place on every tick without a render (the UI thread draws it), from wherever it stands
+  // as the row is drawn (a clip that kept playing while its row was away included); never under a scrubbing finger.
+  useEffect(() => {
+    progress.value = placeOf(clipId);
+    return subscribePlace((id) => {
+      if (id !== clipId || scrubbing.value) return;
+      progress.value = placeOf(clipId);
+    });
+  }, [clipId, progress, scrubbing]);
   // A speed picked on any row, or while this one was still starting, reaches it where it plays.
   useEffect(() => {
     if (playing) setPlaybackSpeed(clipId, rate);
@@ -71,53 +93,40 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
     edge.value = wave.edge;
   }, [width, voice, inner, edge]);
 
-  const report = (at: number) => {
-    progress.value = at;
-    positions.set(clipId, at);
-    const second = Math.floor((at * durationMs) / 1000);
-    if (second === lastSecond.current) return;
-    lastSecond.current = second;
-    setTime(at * durationMs);
-  };
-  const ended = () => {
-    positions.delete(clipId);
-    progress.value = 0;
-    setTime(durationMs);
-  };
   const lose = () => {
     expired.add(clipId);
     setGone(true);
-    ended();
+    seekPlayback(clipId, 0);
   };
-  const toggle = async () => {
-    if (playing) {
+  const toggle = () => {
+    // Playing, or still starting: a tap stops it.
+    if (playing || starting) {
       stopPlayback();
       return;
     }
     setBroken(false);
-    // A player says nothing of why a file failed: the server is asked first.
     const url = voiceAudioUrl(orgId, clipId, serverUrl());
-    const mine = ++asked;
-    if (await voiceAudioGone(url, authedFetch as typeof fetch)) {
-      lose();
-      return;
-    }
-    // Another recording was tapped while the server answered: the last tap plays, not the last answer.
-    if (mine !== asked) return;
-    await startPlayback({
+    // It plays at once; only a player that failed asks the server why (a player says nothing of it): a recording the
+    // server no longer keeps dims, anything else offers to try again.
+    const failed = () => {
+      void voiceAudioGone(url, authedFetch as typeof fetch).then((isGone) => (isGone ? lose() : setBroken(true)));
+    };
+    void startPlayback({
       id: clipId,
       source: { uri: url, headers: appHeaders(lastCookie()) },
       durationMs,
-      from: positions.get(clipId) ?? 0,
+      from: placeOf(clipId),
       speed: voiceSpeed(),
-      onProgress: report,
-      onEnd: ended,
-      onError: () => setBroken(true),
-    }).catch(() => setBroken(true));
+      onError: failed,
+    }).catch(failed);
   };
-  const seek = (at: number) => {
-    report(at);
-    seekPlayback(clipId, at);
+  const seek = (at: number) => seekPlayback(clipId, at);
+  // The finger let go (`at`: where, null when the scrub was taken away): the player goes there, then the wave follows
+  // the player again.
+  const endScrub = (at: number | null) => {
+    if (at !== null) seekPlayback(clipId, at);
+    scrubbing.value = false;
+    if (at === null) progress.value = placeOf(clipId);
   };
   const cycle = () => setVoiceSpeed(nextSpeed(rate));
   const flip = () => {
@@ -129,22 +138,38 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
   const canPlay = !sending && !gone;
   const pan = usePanGesture({
     enabled: canPlay,
-    activeOffsetX: [-4, 4],
-    failOffsetY: [-12, 12],
+    // Sideways, and only once the finger clearly means it: a move up or down first fails it and the list scrolls.
+    activeOffsetX: [-10, 10],
+    failOffsetY: [-6, 6],
+    onActivate: (e) => {
+      "worklet";
+      scrubbing.value = true;
+      if (width > 0) progress.value = waveAt(e.x, width);
+    },
     onUpdate: (e) => {
       "worklet";
       if (width > 0) progress.value = waveAt(e.x, width);
     },
-    onDeactivate: () => {
+    onDeactivate: (e) => {
       "worklet";
-      scheduleOnRN(seek, progress.value);
+      if (e.canceled) {
+        scheduleOnRN(endScrub, null);
+        return;
+      }
+      // Where the finger let go, not the last frame drawn before it.
+      const at = width > 0 ? waveAt(e.x, width) : progress.value;
+      progress.value = at;
+      scheduleOnRN(endScrub, at);
     },
   });
   const tap = useTapGesture({
     enabled: canPlay,
     onDeactivate: (e) => {
       "worklet";
-      if (width > 0) scheduleOnRN(seek, waveAt(e.x, width));
+      if (e.canceled || width <= 0) return;
+      const at = waveAt(e.x, width);
+      progress.value = at;
+      scheduleOnRN(seek, at);
     },
   });
   const scrub = useExclusiveGestures(pan, tap);
@@ -165,14 +190,19 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
             <PressScale
               to={0.92}
               disabled={!canPlay}
-              onPress={() => void toggle()}
+              onPress={toggle}
               accessibilityRole="button"
-              accessibilityLabel={playing ? t("voice.stop") : t("voice.play")}
+              accessibilityLabel={playing || starting ? t("voice.stop") : t("voice.play")}
+              accessibilityState={{ busy: starting }}
               hitSlop={8}
               style={[styles.play, { backgroundColor: canPlay ? c.ink : c.sunken }]}
             >
               <View style={styles.center}>
-                <Icon name={playing ? "pause" : "play"} size={14} color={canPlay ? c.bg : c.muted} />
+                {starting ? (
+                  <ActivityIndicator size="small" color={c.bg} />
+                ) : (
+                  <Icon name={playing ? "pause" : "play"} size={14} color={canPlay ? c.bg : c.muted} />
+                )}
               </View>
             </PressScale>
           )}
@@ -236,7 +266,7 @@ export const VoiceMessage = memo(function VoiceMessage({ message }: { message: M
       {broken ? (
         // Like a message that didn't go (MessageRow): why, then the way out.
         <Pressable
-          onPress={() => void toggle()}
+          onPress={toggle}
           accessibilityRole="button"
           hitSlop={14}
           style={({ pressed }) => pressed && styles.pressed}
