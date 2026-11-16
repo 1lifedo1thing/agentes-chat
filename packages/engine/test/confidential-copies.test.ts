@@ -367,6 +367,20 @@ test("what a run of the thread types on a card is kept inert: no link in a quest
   expect(approval?.params).toMatchObject({ note: `see ${LINK}` });
 });
 
+test("the operator's review of a run of a confidential thread names its calls and shows nothing of them", async () => {
+  const w = await vaultWorld({
+    agents: ["kai"],
+    script: { kai: [{ calls: [READ] }, { text: `The record says ${CANARY}.` }] },
+  });
+  await w.say(`@kai a customer pasted this: ${ROOT}. Read record r1.`);
+  await w.settle();
+  const [run] = await w.runs("kai");
+  const review = await operatorReview(w.db, "run", run?.id ?? "", { reason: "a sample", operator: "screening" });
+  expect(review?.text).toContain("Tool call 1: vault_read_record (answered)");
+  expect(review?.text).toContain(CONFIDENTIAL_NOT_SHOWN);
+  for (const word of [CANARY, ROOT, "r1"]) expect(review?.text).not.toContain(word);
+});
+
 test("a mail about requests left waiting counts one made in a confidential thread and quotes nothing of it", async () => {
   const w = await vaultWorld({
     agents: ["kai"],
