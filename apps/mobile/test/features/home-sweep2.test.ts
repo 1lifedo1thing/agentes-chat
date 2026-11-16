@@ -38,7 +38,7 @@ describe("the keyboard comes up only for a tap", () => {
     const island = src("features/island/NoticeIsland.tsx");
     // The field shows once Reply was tapped (`typing`): its focus answers that tap.
     expect(island).toContain("typing && target ? (");
-    expect(island).toContain('onPress={() => setTyping(true)}');
+    expect(island).toContain("onPress={() => setTyping(true)}");
     // Open with the keyboard up, the island ends above it and scrolls the reply's row into sight.
     expect(island).toContain("keyboardHeight > 0 ? keyboardHeight + 12 : insets.bottom + 16");
     expect(island).toContain("list.current?.scrollTo({ y: Math.max(0, replyEnd - size.h)");
@@ -107,7 +107,9 @@ describe("headers", () => {
   });
 
   test("the wiki's search sits under its large title as Drive's", () => {
-    expect(src("features/wiki/WikiScreen.tsx")).toContain("search: { paddingHorizontal: SCREEN_X, paddingBottom: 10 },");
+    expect(src("features/wiki/WikiScreen.tsx")).toContain(
+      "search: { paddingHorizontal: SCREEN_X, paddingBottom: 10 },",
+    );
   });
 });
 

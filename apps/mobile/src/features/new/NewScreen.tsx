@@ -154,9 +154,7 @@ export function NewScreen() {
             </View>
           </View>
           <View style={styles.lists}>
-            {!typed ? (
-              <CreateList items={items.filter((i) => i !== "invite")} />
-            ) : null}
+            {!typed ? <CreateList items={items.filter((i) => i !== "invite")} /> : null}
             {agents.length > 0 ? (
               <View>
                 <GroupedHeader>{t("mobile.find.agents")}</GroupedHeader>

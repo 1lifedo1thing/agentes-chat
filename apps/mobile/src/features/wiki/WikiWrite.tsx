@@ -94,9 +94,7 @@ function WriterWaiting({ failed, retry }: { failed: boolean; retry: () => void }
     <View style={[styles.fill, { backgroundColor: c.bg }]}>
       {/* The writing's opaque bar from the first frame (a clear one here stayed clear over the text once it came). */}
       <PushedHeader title={t("wiki.edit")} />
-      <ScrollView>
-        {failed ? <LoadFailed onRetry={retry} /> : null}
-      </ScrollView>
+      <ScrollView>{failed ? <LoadFailed onRetry={retry} /> : null}</ScrollView>
     </View>
   );
 }

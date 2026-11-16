@@ -21,6 +21,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  type ScrollViewInstance,
   StyleSheet,
   TextInput,
   useWindowDimensions,
@@ -110,7 +111,7 @@ export function NoticeIsland() {
   const keyboardHeight = useKeyboardState((state) => (state.isVisible ? state.height : 0));
   // Where the row whose reply is being typed ends, in the open island's list: it is kept in sight over the keyboard.
   const [replyEnd, setReplyEnd] = useState<number | null>(null);
-  const list = useRef<ScrollView>(null);
+  const list = useRef<ScrollViewInstance>(null);
 
   // Up with the socket live: the system's banner stays away (nothing shows twice).
   useEffect(() => {
@@ -254,8 +255,8 @@ export function NoticeIsland() {
               >
                 {drawn.shape === "open" ? (
                   <ScrollView
-                    ref={list}
                     scrollEnabled={scrolls}
+                    ref={list}
                     bounces={false}
                     showsVerticalScrollIndicator={scrolls}
                     // A reply's send takes the first tap, with the keyboard up.
