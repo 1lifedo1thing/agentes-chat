@@ -3,9 +3,9 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
-import { ApiError, keys, type SurfaceLink } from "@agenteschat/client";
+import { ApiError, keys, type Message, type SurfaceLink } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { createFakeApi, ORG_ID, seedState } from "./fake-api";
+import { createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
 import { renderApp, screen, settle, showIn } from "./render";
 
 afterEach(() => cleanup());
@@ -231,5 +231,95 @@ describe("the outside chat app's row in Notificações", () => {
     });
     await showIn(active.app.services, "de");
     expect(document.getElementById("notice-surface-status")?.textContent).toBe(`${LONG_DISPLAY} · ${LONG_PROFILE}`);
+  });
+});
+
+describe("a message written on the outside chat app", () => {
+  test("says via the app beside the person's name, forwarded ones say so, the name falling back to the id", async () => {
+    const state = seedState();
+    const me = state.me?.user.id ?? "";
+    state.surface = { name: "Example Chat", links: [] };
+    const message = (id: string, via: Record<string, unknown>) =>
+      ({
+        id,
+        channelId: ENG_ID,
+        threadId: null,
+        author: { type: "person", id: me },
+        body: `mensagem ${id}`,
+        mentionedAgentIds: [],
+        agentRunId: null,
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+        meta: { via },
+      }) as Message;
+    state.messages = [
+      message("m1", { kind: "surface", surface: "example chat", linkId: "link-1" }),
+      message("m2", { kind: "surface", surface: "example chat", linkId: "link-1", forwarded: true }),
+      message("m3", { kind: "surface", surface: "otherchat", linkId: "link-2" }),
+    ];
+    await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(state) });
+    await settle(8);
+    const tags = [...document.querySelectorAll(".msg-via")] as HTMLElement[];
+    expect(tags.map((tag) => tag.textContent)).toEqual([
+      "via Example Chat",
+      "encaminhada via Example Chat",
+      "via Otherchat",
+    ]);
+    expect(tags[0]?.getAttribute("title")).toBe("Enviada por Walter pelo Example Chat");
+    expect(tags[1]?.getAttribute("title")).toBe(
+      "Walter encaminhou isto do Example Chat. As palavras são de outra pessoa.",
+    );
+  });
+});
+
+describe("the linked email's undo", () => {
+  const undoPage = async (undo: NonNullable<ReturnType<typeof seedState>["surface"]>["undo"], token = "tok-1") => {
+    const state = seedState({ me: null });
+    state.surface = { name: "Example Chat", links: [], undo };
+    await renderApp(`/email-undo?kind=surface${token ? `&token=${token}` : ""}`, { api: createFakeApi(state) });
+    return state;
+  };
+
+  test("only its button unlinks; it names the app and the sender", async () => {
+    const state = await undoPage({ unlinked: true, display: "+1 555 0100" });
+    expect(screen().getByRole("heading", { name: "Desvincular o app de chat?" })).toBeTruthy();
+    expect(calls(state, "surfaces.undo")).toEqual([]);
+    await click(screen().getByRole("button", { name: /Desvincular/ }));
+    expect(calls(state, "surfaces.undo")).toHaveLength(1);
+    expect(screen().getByRole("heading", { name: "Example Chat desvinculado" })).toBeTruthy();
+    expect(document.body.textContent).toContain("+1 555 0100 não alcança mais a sua conta.");
+    expect(screen().getByRole("link", { name: "Entrar" })).toBeTruthy();
+  });
+
+  test("already ended, a link that no longer works, and too many tries", async () => {
+    await undoPage({ unlinked: false, display: null });
+    await click(screen().getByRole("button", { name: /Desvincular/ }));
+    expect(screen().getByRole("heading", { name: "Já desvinculado" })).toBeTruthy();
+    expect(document.body.textContent).toContain("Esse remetente no Example Chat já tinha sido desvinculado.");
+    cleanup();
+
+    await undoPage(undefined);
+    await click(screen().getByRole("button", { name: /Desvincular/ }));
+    expect(screen().getByRole("heading", { name: "Este link para desfazer não funciona mais" })).toBeTruthy();
+    expect(document.body.textContent).toContain("configurações de notificações");
+    cleanup();
+
+    await undoPage(undefined, "");
+    expect(screen().getByRole("heading", { name: "Este link para desfazer não funciona mais" })).toBeTruthy();
+    expect(screen().queryByRole("button", { name: /Desvincular/ })).toBeNull();
+    cleanup();
+
+    await undoPage(new ApiError(429, "rate_limited", "slow down"));
+    await click(screen().getByRole("button", { name: /Desvincular/ }));
+    expect(screen().getByRole("alert")).toBeTruthy();
+    expect(screen().getByRole("button", { name: /Desvincular/ })).toBeTruthy();
+  });
+
+  test("worst case: a long app name and a display with nothing to break at, in German", async () => {
+    const state = seedState({ me: null });
+    state.surface = { name: LONG_SURFACE, links: [], undo: { unlinked: false, display: LONG_HANDLE } };
+    const app = await renderApp("/email-undo?kind=surface&token=tok-w", { api: createFakeApi(state) });
+    await showIn(app.services, "de");
+    await click(screen().getByRole("button"));
+    expect(document.body.textContent).toContain(LONG_HANDLE);
   });
 });

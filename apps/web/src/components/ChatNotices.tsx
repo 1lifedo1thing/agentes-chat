@@ -1,5 +1,5 @@
 import type { Agent, Message } from "@agenteschat/client";
-import { keys } from "@agenteschat/client";
+import { keys, useSurfaceLinks } from "@agenteschat/client";
 import { APP_BRANDS } from "@agenteschat/client/lib/apps";
 import { seesDetails } from "@agenteschat/client/lib/audience";
 import { pairItemOf } from "@agenteschat/client/lib/consult-group";
@@ -16,7 +16,7 @@ import {
   stopperOf,
 } from "@agenteschat/client/lib/notices";
 import type { RoutineReply } from "@agenteschat/client/lib/routines";
-import type { AppVia } from "@agenteschat/client/lib/via";
+import type { AppVia, SurfaceVia } from "@agenteschat/client/lib/via";
 import { stopsMovedOn } from "@agenteschat/client/lib/work";
 import {
   cx,
@@ -39,6 +39,7 @@ import { DetailsLink } from "@/components/details-link";
 import { useOrg } from "@/components/org-context";
 import { SayWhy } from "@/components/tasks/TaskBits";
 import { useDirectory } from "@/hooks/useDirectory";
+import { surfaceViaName } from "@/lib/surface";
 import { useToast } from "@/lib/toast";
 import "./chat-notices.css";
 
@@ -420,6 +421,22 @@ export function AppViaTag({ via, person }: { via: AppVia; person: string }) {
     <span className="msg-reminder msg-via" title={t("apps.viaTip", { person, name: via.name })}>
       {mark ? <ProviderLogo id={mark} size="xs" /> : <Icon name="link" size={14} />}
       {t("apps.via", { name: via.name })}
+    </span>
+  );
+}
+
+/**
+ * A person's message written on the outside chat surface (ADR 0187): "via <surface>", or "forwarded via" for someone
+ * else's words they passed on.
+ */
+export function SurfaceViaTag({ via, person }: { via: SurfaceVia; person: string }) {
+  const { t, i18n } = useTranslation();
+  const surface = surfaceViaName(via.surface, useSurfaceLinks().data?.surface?.name, i18n.language);
+  const kind = via.forwarded ? "forwarded" : "via";
+  return (
+    <span className="msg-reminder msg-via" title={t(`surface.${kind}Tip`, { person, surface })}>
+      <Icon name={via.forwarded ? "quote" : "message"} size={14} />
+      {t(`surface.${kind}`, { surface })}
     </span>
   );
 }
