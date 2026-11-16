@@ -177,7 +177,10 @@ describe("the event pill", () => {
     const asks = src("features/chat/asks.tsx");
     expect(asks).toContain("{pillWords(answer.words, c.ink)}");
     expect(asks).toContain("if (!store || !card || ended) return;");
-    expect(asks).toContain("layout={reduced ? undefined : LinearTransition.duration(220)}");
+    // Answered on screen, how it ended fades in where the buttons were; the card's height never animates (the list
+    // sizes its row), and what it holds when it mounts again just shows.
+    expect(asks).not.toContain("LinearTransition");
+    expect(asks).toContain("<LayoutAnimationConfig skipEntering>");
   });
 });
 

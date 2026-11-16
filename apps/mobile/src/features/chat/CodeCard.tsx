@@ -11,7 +11,18 @@ import { useTranslation } from "react-i18next";
 import { Text as RNText, ScrollView, type ScrollViewInstance, StyleSheet, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Icon, PressScale, SheetBar, Text, useReducedMotion, useRouteSheetScrollable, useTheme } from "@/ui";
+import {
+  Icon,
+  PressScale,
+  SheetBar,
+  Text,
+  TOOL_H,
+  TOUCH,
+  useReducedMotion,
+  useRouteSheetScrollable,
+  useTheme,
+  useToast,
+} from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors } from "../shared/hooks";
 import { copyText, MONO } from "../shared/parts";
@@ -87,7 +98,7 @@ export const CodeCard = memo(function CodeCard({ lang, text }: { lang: string; t
           onPress={() => openFull(lang, code)}
           accessibilityRole="button"
           style={[styles.more, { borderTopColor: c.line }]}
-          contentStyle={styles.center}
+          contentStyle={[styles.center, styles.moreIn]}
         >
           <Text variant="footnote" tone="muted">
             {t("mobile.code.more", { count: lines.length })}
@@ -107,7 +118,8 @@ export function RawToggle({ on, onPress }: { on: boolean; onPress: () => void })
       onPress={onPress}
       accessibilityRole="switch"
       accessibilityState={{ checked: on }}
-      hitSlop={4}
+      // 28 drawn in the card's 38-point head: 8 above and below reach the 44 a finger needs.
+      hitSlop={RAW_SLOP}
       style={[styles.raw, { backgroundColor: on ? c.ink : c.plate }]}
       contentStyle={styles.center}
     >
@@ -174,17 +186,24 @@ export function CodeText({
   );
 }
 
-/** Copy; then the icon turns into a check and "Copiado" shows beside it for a moment. */
+/**
+ * Copy; then the icon turns into a check and "Copiado" shows beside it for a moment. When the system refuses, a toast
+ * says so (the button itself stays as it was).
+ */
 function CopyButton({ text, plate = false }: { text: string; plate?: boolean }) {
   const { t } = useTranslation();
   const c = useColors();
+  const toast = useToast();
   const reduced = useReducedMotion();
   const [done, setDone] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
   const copy = () => {
     void copyText(text).then((ok) => {
-      if (!ok) return;
+      if (!ok) {
+        toast({ title: t("mobile.app.failed"), icon: "x" });
+        return;
+      }
       setDone(true);
       clearTimeout(timer.current);
       timer.current = setTimeout(() => setDone(false), 1400);
@@ -251,6 +270,8 @@ export function CodeSheet() {
             onPress={() => setWrap((w) => !w)}
             accessibilityRole="switch"
             accessibilityState={{ checked: wrap }}
+            // A toolbar's 32-point pill: the slop gives it the 44 a finger needs.
+            hitSlop={(TOUCH - TOOL_H) / 2}
             style={[styles.pill, { backgroundColor: wrap ? c.ink : c.plate }]}
             contentStyle={styles.center}
           >
@@ -273,6 +294,9 @@ export function CodeSheet() {
   );
 }
 
+/** "Original"'s 28 points and the slop that makes them 44. */
+const RAW_SLOP = { top: 8, bottom: 8, left: 4, right: 4 };
+
 const styles = StyleSheet.create({
   card: { borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, overflow: "hidden" },
   // The language starts where the code does (the body's 14).
@@ -289,14 +313,16 @@ const styles = StyleSheet.create({
   center: { alignItems: "center", justifyContent: "center" },
   toolDone: { paddingHorizontal: 10 },
   body: { paddingHorizontal: 14, paddingBottom: 12 },
-  more: { borderTopWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
+  // "Ver as N linhas": the card's last row, as tall as a finger's target.
+  more: { borderTopWidth: StyleSheet.hairlineWidth },
+  moreIn: { minHeight: TOUCH },
   mono: { fontFamily: MONO, fontSize: 13, lineHeight: 20 },
   wrap: { flexShrink: 1 },
   italic: { fontStyle: "italic" },
   sheet: { flex: 1 },
   gone: { alignItems: "center", justifyContent: "center", padding: 24 },
   sheetTools: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
-  pill: { minHeight: 32, paddingHorizontal: 14, borderRadius: 16 },
+  pill: { minHeight: TOOL_H, paddingHorizontal: 14, borderRadius: TOOL_H / 2 },
   raw: { height: 28, paddingHorizontal: 12, marginRight: 4, borderRadius: 14 },
   fill: { flex: 1 },
   sheetBody: { paddingHorizontal: 16, paddingTop: 4 },

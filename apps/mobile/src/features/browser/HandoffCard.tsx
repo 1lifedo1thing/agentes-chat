@@ -12,10 +12,11 @@ import {
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { Button, LineIcon, Text, useToast } from "@/ui";
+import { Button, CARD_PAD, LineIcon, PressScale, Text, useToast } from "@/ui";
 import { AskButtons, AskCard, AskFoot, ExpiryLine, useAskStore } from "../chat/asks";
+import { useCardTop } from "../chat/look";
 import { openComputer } from "../computer/AgentComputerRow";
 import { IconTile } from "../connectors/ConnectorIcon";
 import { useColors, useDirectory, useMeId, useOrgId, useWhen } from "../shared/hooks";
@@ -44,6 +45,8 @@ export function HandoffCard({ handoff: fromMessage }: { handoff: BrowserHandoff 
   const meId = useMeId();
   const c = useColors();
   const surface = useSurface();
+  // A card under the message's words: the body's card gap above it, as every card in a message.
+  const cardTop = useCardTop();
   const openId = useOpenHandoffId();
   const dir = useDirectory();
   const when = useWhen();
@@ -99,19 +102,27 @@ export function HandoffCard({ handoff: fromMessage }: { handoff: BrowserHandoff 
   }
   if (opensScreen && (state === "mine" || state === "helping")) {
     const helper = h.controllerUserId ? dir.memberById.get(h.controllerUserId)?.name : undefined;
+    const words =
+      state === "mine"
+        ? t("mobile.browser.live.inControl")
+        : t("mobile.browser.live.helping", { name: helper ?? t("channel.unknownPerson") });
+    // One line that opens the agent's whole screen, where the help happens: the chevron says it goes somewhere.
     return (
-      <Pressable
+      <PressScale
         onPress={() => openComputer(h.agentId, h.seat)}
         accessibilityRole="button"
-        style={({ pressed }) => [styles.done, surface, pressed && styles.pressed]}
+        accessibilityLabel={words}
+        accessibilityHint={t("agentComputer.openOf", { name: dir.agentById.get(h.agentId)?.name ?? "" })}
+        fill={false}
+        style={[styles.doneBox, surface, cardTop]}
+        contentStyle={styles.done}
       >
         <LineIcon name="laptop" variant="small" size={15} color={c.muted} />
         <Text variant="small" tone="muted" style={styles.grow}>
-          {state === "mine"
-            ? t("mobile.browser.live.inControl")
-            : t("mobile.browser.live.helping", { name: helper ?? t("channel.unknownPerson") })}
+          {words}
         </Text>
-      </Pressable>
+        <LineIcon name="right" variant="small" size={15} color={c.faint} />
+      </PressScale>
     );
   }
   if (state === "waiting") {
@@ -255,18 +266,18 @@ function ScreenPeek({ agentId, name, color }: { agentId: string; name: string; c
 
 const styles = StyleSheet.create({
   grow: { flex: 1, minWidth: 0 },
-  // A line that wraps keeps its icon on the first.
+  // A line that wraps keeps its icon and its chevron on the first; the card's padding and a finger's height.
+  doneBox: { borderRadius: 20 },
   done: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
-    paddingHorizontal: 14,
+    minHeight: 44,
+    paddingHorizontal: CARD_PAD,
     paddingVertical: 12,
-    borderRadius: 20,
   },
   peek: { aspectRatio: 16 / 10, borderRadius: 12, overflow: "hidden" },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  pressed: { opacity: 0.85 },
 });
 
 /**
