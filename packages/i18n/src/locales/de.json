@@ -12497,11 +12497,12 @@
       "none": "Hier erscheinen die MCP-Server, die du über ihre Adresse verbindest."
     },
     "personal": {
-      "note": "Nur du siehst diese Verbindungen. Deine Agenten nutzen sie, wenn du fragst.",
+      "note": "Nur du öffnest diese. Aktionen, um die andere bitten, warten auf deine Freigabe.",
       "emptyTitle": "Verbinde deine eigenen Konten",
-      "emptyText": "Nur du siehst sie, und deine Agenten nutzen sie, wenn du fragst.",
+      "emptyText": "Nur du öffnest sie, und Aktionen, um die andere bitten, warten auf deine Freigabe.",
       "others": "Persönliche Verbindungen anderer",
       "of": "Persönlich von {{name}}",
+      "seeAll": "Alle {{count}} ansehen",
       "forWhom": "Für wen",
       "teamLocked": "Nur wer Konnektoren verwaltet, fügt die des Teams hinzu.",
       "mailLocked": "Ein Postfach gehört immer der Person, die es verbindet.",
@@ -16509,7 +16510,7 @@
       "roles": "Jede Rolle fügt Berechtigungen, Kanäle und Agenten hinzu.",
       "vault": "Passwörter, Schlüssel und Kontakte deiner Agenten. Passwörter sehen sie nie.",
       "access": "Was jeder Agent nutzen kann: eine Stufe pro Konnektor.",
-      "connectors": "Dienste und MCP-Server, die einmal für den ganzen Workspace verbunden werden.",
+      "connectors": "Dienste und MCP-Server, verbunden für das Team oder nur für dich.",
       "skills": "Markdown-Anweisungen, die Agenten öffnen, wenn sie sie brauchen.",
       "storage": "Wo die Dateien des Workspace liegen.",
       "usage": "Die KI-Konten des Workspace und wie viel jede Person und jeder Agent nutzt.",

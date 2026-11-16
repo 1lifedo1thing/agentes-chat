@@ -12561,11 +12561,12 @@
       "none": "MCP-servers die je via hun adres koppelt, verschijnen hier."
     },
     "personal": {
-      "note": "Alleen jij ziet deze verbindingen. Je agents gebruiken ze als jij erom vraagt.",
+      "note": "Alleen jij opent deze. Acties waar anderen om vragen wachten op jouw goedkeuring.",
       "emptyTitle": "Verbind je eigen accounts",
-      "emptyText": "Alleen jij ziet ze, en je agents gebruiken ze als jij erom vraagt.",
+      "emptyText": "Alleen jij opent ze, en acties waar anderen om vragen wachten op jouw goedkeuring.",
       "others": "Persoonlijke verbindingen van anderen",
       "of": "Persoonlijk van {{name}}",
+      "seeAll": "Alle {{count}} bekijken",
       "forWhom": "Voor wie",
       "teamLocked": "Alleen wie connectors beheert voegt die van het team toe.",
       "mailLocked": "Een mailbox is altijd van wie hem verbindt.",
@@ -16573,7 +16574,7 @@
       "roles": "Elke rol voegt rechten, kanalen en agents toe.",
       "vault": "Wachtwoorden, sleutels en contacten van je agents. Wachtwoorden zien ze nooit.",
       "access": "Wat elke agent kan gebruiken: één niveau per connector.",
-      "connectors": "Diensten en MCP-servers die één keer voor de hele werkruimte zijn gekoppeld.",
+      "connectors": "Diensten en MCP-servers, gekoppeld voor het team of alleen voor jou.",
       "skills": "Markdown-instructies die agents openen als ze ze nodig hebben.",
       "storage": "Waar de bestanden van de werkruimte staan.",
       "usage": "De AI-accounts van de werkruimte, en hoeveel elke persoon en elke agent gebruikt.",

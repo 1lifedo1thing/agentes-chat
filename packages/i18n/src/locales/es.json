@@ -12891,11 +12891,12 @@
       "none": "Aquí aparecen los servidores MCP que conectes por su dirección."
     },
     "personal": {
-      "note": "Solo tú ves estas conexiones. Tus agentes las usan cuando tú lo pides.",
+      "note": "Solo tú las abres. Las acciones que piden otras personas esperan tu aprobación.",
       "emptyTitle": "Conecta tus propias cuentas",
-      "emptyText": "Solo tú las ves, y tus agentes las usan cuando tú lo pides.",
+      "emptyText": "Solo tú las abres, y las acciones que piden otras personas esperan tu aprobación.",
       "others": "Conexiones personales de otras personas",
       "of": "Personal de {{name}}",
+      "seeAll": "Ver las {{count}}",
       "forWhom": "Para quién",
       "teamLocked": "Solo quien gestiona conectores añade los del equipo.",
       "mailLocked": "Un buzón siempre es de quien lo conecta.",
@@ -16959,7 +16960,7 @@
       "roles": "Cada rol suma permisos, canales y agentes.",
       "vault": "Contraseñas, claves y contactos de tus agentes. Nunca ven una contraseña.",
       "access": "Lo que puede usar cada agente: un nivel por conector.",
-      "connectors": "Servicios y servidores MCP conectados una sola vez para todo el espacio de trabajo.",
+      "connectors": "Servicios y servidores MCP, conectados para el equipo o solo para ti.",
       "skills": "Instrucciones en Markdown que los agentes abren cuando las necesitan.",
       "storage": "Dónde viven los archivos del espacio de trabajo.",
       "usage": "Las cuentas de IA del espacio de trabajo, y cuánto usa cada persona y cada agente.",

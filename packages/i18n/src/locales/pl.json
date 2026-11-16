@@ -13434,11 +13434,12 @@
       "none": "Tu pojawiają się serwery MCP połączone przez ich adres."
     },
     "personal": {
-      "note": "Tylko ty widzisz te połączenia. Twoi agenci używają ich, gdy poprosisz.",
+      "note": "Tylko ty je otwierasz. Działania, o które proszą inni, czekają na twoją zgodę.",
       "emptyTitle": "Połącz własne konta",
-      "emptyText": "Tylko ty je widzisz, a twoi agenci używają ich, gdy poprosisz.",
+      "emptyText": "Tylko ty je otwierasz, a działania, o które proszą inni, czekają na twoją zgodę.",
       "others": "Osobiste połączenia innych osób",
       "of": "Osobiste: {{name}}",
+      "seeAll": "Zobacz wszystkie ({{count}})",
       "forWhom": "Dla kogo",
       "teamLocked": "Połączenia zespołu dodają tylko osoby zarządzające konektorami.",
       "mailLocked": "Skrzynka pocztowa zawsze należy do osoby, która ją łączy.",
@@ -17563,7 +17564,7 @@
       "roles": "Każda rola dodaje uprawnienia, kanały i agentów.",
       "vault": "Hasła, klucze i kontakty twoich agentów. Haseł nigdy nie widzą.",
       "access": "Z czego może korzystać każdy agent: jeden poziom na konektor.",
-      "connectors": "Usługi i serwery MCP podłączone raz dla całej przestrzeni roboczej.",
+      "connectors": "Usługi i serwery MCP, podłączone dla zespołu albo tylko dla ciebie.",
       "skills": "Instrukcje w Markdown, które agenci otwierają, gdy ich potrzebują.",
       "storage": "Gdzie są przechowywane pliki przestrzeni roboczej.",
       "usage": "Konta AI przestrzeni roboczej oraz ile zużywa każda osoba i każdy agent.",

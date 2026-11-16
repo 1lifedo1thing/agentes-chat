@@ -12434,11 +12434,12 @@
       "none": "Adresiyle bağladığınız MCP sunucuları burada görünür."
     },
     "personal": {
-      "note": "Bu bağlantıları yalnızca sen görürsün. Ajanların onları sen istediğinde kullanır.",
+      "note": "Bunları yalnızca sen açarsın. Başkalarının istediği işlemler onayını bekler.",
       "emptyTitle": "Kendi hesaplarını bağla",
-      "emptyText": "Yalnızca sen görürsün ve ajanların onları sen istediğinde kullanır.",
+      "emptyText": "Yalnızca sen açarsın ve başkalarının istediği işlemler onayını bekler.",
       "others": "Başkalarının kişisel bağlantıları",
       "of": "{{name}} kişisel",
+      "seeAll": "{{count}} tanesini gör",
       "forWhom": "Kimin için",
       "teamLocked": "Ekibinkileri yalnızca bağlayıcıları yönetenler ekler.",
       "mailLocked": "Bir posta kutusu her zaman onu bağlayan kişinindir.",
@@ -16446,7 +16447,7 @@
       "roles": "Her rol izin, kanal ve ajan ekler.",
       "vault": "Ajanlarınızın parolaları, anahtarları ve kişileri. Parolaları asla görmezler.",
       "access": "Her ajanın neleri kullanabileceği: bağlayıcı başına bir düzey.",
-      "connectors": "Tüm çalışma alanı için bir kez bağlanan hizmetler ve MCP sunucuları.",
+      "connectors": "Ekip için ya da yalnızca senin için bağlanan hizmetler ve MCP sunucuları.",
       "skills": "Ajanların ihtiyaç duyduklarında açtıkları Markdown talimatları.",
       "storage": "Çalışma alanının dosyalarının durduğu yer.",
       "usage": "Çalışma alanının yapay zeka hesapları ve her kişinin ve her ajanın ne kadar kullandığı.",

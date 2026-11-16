@@ -12912,11 +12912,12 @@ export const ptBR = {
     },
     /** Connections split as the Vault splits its items: the team's and each person's (ADR 0099 addendum). */
     personal: {
-      note: "Só você vê estas conexões. Seus agentes usam quando você pede.",
+      note: "Só você abre estas conexões. Ações que outras pessoas pedem esperam sua aprovação.",
       emptyTitle: "Conecte suas próprias contas",
-      emptyText: "Só você vê, e seus agentes usam quando você pede.",
+      emptyText: "Só você abre, e ações que outras pessoas pedem esperam sua aprovação.",
       others: "Pessoais de outras pessoas",
       of: "Pessoal de {{name}}",
+      seeAll: "Ver todas as {{count}}",
       forWhom: "Para quem",
       teamLocked: "Só quem gerencia conectores adiciona os da equipe.",
       mailLocked: "Uma caixa de e-mail é sempre de quem a conecta.",
@@ -16738,7 +16739,7 @@ export const ptBR = {
       roles: "Cada cargo soma permissões, canais e agentes.",
       vault: "Senhas, chaves e contatos dos agentes. Senhas eles nunca veem.",
       access: "O que cada agente pode usar: um nível por conector.",
-      connectors: "Serviços e servidores MCP conectados uma vez para o workspace inteiro.",
+      connectors: "Serviços e servidores MCP, conectados para a equipe ou só para você.",
       skills: "Instruções em Markdown que os agentes abrem quando precisam.",
       storage: "Onde ficam os arquivos do workspace.",
       usage: "As contas de IA do workspace, e quanto cada pessoa e agente usa.",

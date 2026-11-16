@@ -12051,11 +12051,12 @@
       "none": "Server MCP yang kamu hubungkan lewat alamatnya muncul di sini."
     },
     "personal": {
-      "note": "Hanya kamu yang melihat koneksi ini. Agenmu memakainya saat kamu meminta.",
+      "note": "Hanya kamu yang membukanya. Tindakan yang diminta orang lain menunggu persetujuanmu.",
       "emptyTitle": "Hubungkan akunmu sendiri",
-      "emptyText": "Hanya kamu yang melihatnya, dan agenmu memakainya saat kamu meminta.",
+      "emptyText": "Hanya kamu yang membukanya, dan tindakan yang diminta orang lain menunggu persetujuanmu.",
       "others": "Koneksi pribadi orang lain",
       "of": "Pribadi milik {{name}}",
+      "seeAll": "Lihat semua {{count}}",
       "forWhom": "Untuk siapa",
       "teamLocked": "Hanya orang yang mengelola konektor yang menambahkan milik tim.",
       "mailLocked": "Kotak surat selalu milik orang yang menghubungkannya.",
@@ -16005,7 +16006,7 @@
       "roles": "Setiap peran menambah izin, kanal, dan agen.",
       "vault": "Kata sandi, kunci, dan kontak agenmu. Mereka tidak pernah melihat kata sandi.",
       "access": "Yang bisa dipakai tiap agen: satu tingkat per konektor.",
-      "connectors": "Layanan dan server MCP yang dihubungkan sekali untuk seluruh ruang kerja.",
+      "connectors": "Layanan dan server MCP, dihubungkan untuk tim atau hanya untukmu.",
       "skills": "Instruksi Markdown yang dibuka agen saat dibutuhkan.",
       "storage": "Tempat file ruang kerja disimpan.",
       "usage": "Akun AI ruang kerja, dan berapa banyak yang dipakai tiap orang dan tiap agen.",

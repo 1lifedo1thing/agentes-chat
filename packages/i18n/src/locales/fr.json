@@ -12962,11 +12962,12 @@
       "none": "Les serveurs MCP que vous connectez par leur adresse s'affichent ici."
     },
     "personal": {
-      "note": "Vous seul voyez ces connexions. Vos agents les utilisent quand vous le demandez.",
+      "note": "Vous seul les ouvrez. Les actions demandées par d'autres attendent votre accord.",
       "emptyTitle": "Connectez vos propres comptes",
-      "emptyText": "Vous seul les voyez, et vos agents les utilisent quand vous le demandez.",
+      "emptyText": "Vous seul les ouvrez, et les actions demandées par d'autres attendent votre accord.",
       "others": "Connexions personnelles des autres",
       "of": "Personnel de {{name}}",
+      "seeAll": "Voir les {{count}}",
       "forWhom": "Pour qui",
       "teamLocked": "Seules les personnes qui gèrent les connecteurs ajoutent ceux de l’équipe.",
       "mailLocked": "Une boîte mail appartient toujours à qui la connecte.",
@@ -17030,7 +17031,7 @@
       "roles": "Chaque rôle ajoute des autorisations, des canaux et des agents.",
       "vault": "Mots de passe, clés et contacts de vos agents. Ils ne voient jamais un mot de passe.",
       "access": "Ce que chaque agent peut utiliser : un niveau par connecteur.",
-      "connectors": "Services et serveurs MCP connectés une fois pour tout l'espace de travail.",
+      "connectors": "Services et serveurs MCP, connectés pour l'équipe ou rien que pour vous.",
       "skills": "Instructions en Markdown que les agents ouvrent quand ils en ont besoin.",
       "storage": "Où sont stockés les fichiers de l'espace de travail.",
       "usage": "Les comptes IA de l'espace de travail, et ce que chaque personne et chaque agent utilisent.",
