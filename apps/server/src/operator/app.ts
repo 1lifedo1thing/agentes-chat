@@ -3,6 +3,7 @@ import type { Config } from "@agenteschat/config";
 import type { Database } from "@agenteschat/db";
 import { type MachineHub, type SessionScreening, safeEqual } from "@agenteschat/engine";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import type { Context } from "hono";
 import { apiError, domainErrorResponse, routeOf, validationHook } from "../http/errors";
 import type { Logger } from "../logger";
 import { registerOperatorAccess } from "./access";
@@ -44,32 +45,44 @@ export interface OperatorDeps {
 
 /**
  * The operator API (ADR 0056): what the people who run this instance need from their own services,
- * behind a bearer token, `token` for everything or `readToken` for reads alone. Served only by its own
- * listener (`serveOperatorApi`), never by `createApp`.
+ * behind a bearer token: `token` for everything but the reveal door, `readToken` for reads alone, `revealToken`
+ * for the reveal door alone. Served only by its own listener (`serveOperatorApi`), never by `createApp`.
  */
-export function createOperatorApp(deps: OperatorDeps, token: string, readToken?: string) {
+export function createOperatorApp(deps: OperatorDeps, token: string, readToken?: string, revealToken?: string) {
   const api = new OpenAPIHono({ defaultHook: validationHook() });
   api.openAPIRegistry.registerComponent("securitySchemes", "operator", {
     type: "http",
     scheme: "bearer",
     description:
-      "This server's `OPERATOR_API_TOKEN`. Or its `OPERATOR_API_READ_TOKEN`, accepted only for `GET` and `HEAD` and never under `/review/`: anything else answers 403 `forbidden`.",
+      "This server's `OPERATOR_API_TOKEN`. Or its `OPERATOR_API_READ_TOKEN`, accepted only for `GET` and `HEAD` and never under `/review/`: anything else answers 403 `forbidden`. Under `/reveal/` neither is accepted: only `OPERATOR_API_REVEAL_TOKEN` is, for `POST` alone, and it is refused (403) everywhere else. On a server that didn't set it, every path under `/reveal/` answers 403.",
   });
+  const forbidden = (c: Context, message: string) => apiError(c, 403, "forbidden", message);
   // Every path under the prefix, unknown ones and the document included, so nothing answers without it.
   api.use("*", async (c, next) => {
     const header = c.req.header("authorization") ?? "";
     const given = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-    if (!safeEqual(given, token)) {
-      if (!readToken || !safeEqual(given, readToken)) {
-        return apiError(c, 401, "unauthorized", "Missing or wrong operator token");
+    const under = (door: string) => c.req.path.startsWith(`${OPERATOR_API_PREFIX}/${door}/`);
+    // The reveal door has one key and the other two never open it: the token that suspends workspaces and the one
+    // that fills dashboards must not also read what people wrote. Closed (no key set), it says so to anyone.
+    if (under("reveal")) {
+      if (!revealToken) return forbidden(c, "This server's reveal door is closed");
+      if (safeEqual(given, revealToken)) {
+        return c.req.method === "POST" ? next() : forbidden(c, "The reveal token only posts");
       }
-      // Decided here by method and path, never per route: a GET added later is readable with this token
-      // from the start, so no GET outside the review blocks may change anything or return content.
-      const reads = c.req.method === "GET" || c.req.method === "HEAD";
-      if (!reads || c.req.path.startsWith(`${OPERATOR_API_PREFIX}/review/`)) {
-        return apiError(c, 403, "forbidden", "The read-only operator token can't do this");
-      }
+      const known = safeEqual(given, token) || (!!readToken && safeEqual(given, readToken));
+      return known
+        ? forbidden(c, "Only the reveal token opens this")
+        : apiError(c, 401, "unauthorized", "Missing or wrong operator token");
     }
+    if (safeEqual(given, token)) return next();
+    if (revealToken && safeEqual(given, revealToken)) return forbidden(c, "The reveal token can't do this");
+    if (!readToken || !safeEqual(given, readToken)) {
+      return apiError(c, 401, "unauthorized", "Missing or wrong operator token");
+    }
+    // Decided here by method and path, never per route: a GET added later is readable with this token
+    // from the start, so no GET outside the review blocks may change anything or return content.
+    const reads = c.req.method === "GET" || c.req.method === "HEAD";
+    if (!reads || under("review")) return forbidden(c, "The read-only operator token can't do this");
     await next();
   });
   registerOperatorOrgs(api, deps);
@@ -121,6 +134,7 @@ export function createOperatorApp(deps: OperatorDeps, token: string, readToken?:
 export function serveOperatorApi(deps: OperatorDeps, port = deps.config.OPERATOR_API_PORT) {
   const token = deps.config.OPERATOR_API_TOKEN;
   if (!token) return null;
-  const app = createOperatorApp(deps, token, deps.config.OPERATOR_API_READ_TOKEN);
+  const { OPERATOR_API_READ_TOKEN, OPERATOR_API_REVEAL_TOKEN } = deps.config;
+  const app = createOperatorApp(deps, token, OPERATOR_API_READ_TOKEN, OPERATOR_API_REVEAL_TOKEN);
   return Bun.serve({ hostname: deps.config.HOST, port, fetch: (req) => app.fetch(req) });
 }

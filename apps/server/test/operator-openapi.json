@@ -20,7 +20,7 @@
       "operator": {
         "type": "http",
         "scheme": "bearer",
-        "description": "This server's `OPERATOR_API_TOKEN`. Or its `OPERATOR_API_READ_TOKEN`, accepted only for `GET` and `HEAD` and never under `/review/`: anything else answers 403 `forbidden`."
+        "description": "This server's `OPERATOR_API_TOKEN`. Or its `OPERATOR_API_READ_TOKEN`, accepted only for `GET` and `HEAD` and never under `/review/`: anything else answers 403 `forbidden`. Under `/reveal/` neither is accepted: only `OPERATOR_API_REVEAL_TOKEN` is, for `POST` alone, and it is refused (403) everywhere else. On a server that didn't set it, every path under `/reveal/` answers 403."
       }
     },
     "schemas": {
