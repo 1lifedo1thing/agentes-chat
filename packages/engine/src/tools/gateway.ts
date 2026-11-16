@@ -48,7 +48,7 @@ import { recordOutcome } from "../context/outcomes";
 import { sha256 } from "../crypto";
 import { provenReadOnly } from "../databases/guard";
 import { errorNumber, isUnexpectedError, ToolOffError } from "../errors";
-import { cutMarked, cutText, pgSafeJson, pgSafeText } from "../format";
+import { cutMarked, cutText, inertJson, inertLinks, pgSafeJson, pgSafeText } from "../format";
 import { mergeReposOfCall, recordMergeDone, reposOfGithubCall } from "../git/repos";
 import { recordRead } from "../outbound";
 import { routineCreatorOf } from "../requester";
@@ -71,7 +71,13 @@ import {
 import { carriesCredential, promptAnswer, toolCommand, toolDetail } from "../tool-detail";
 import { untrustedBlock } from "../untrusted";
 import { checkToolCall } from "./checks";
-import { asksOutside, CONFIDENTIAL_REFUSAL, confidentialLockAllows, confidentialRefusal } from "./confidential-lock";
+import {
+  asksOutside,
+  CARD_WORDS,
+  CONFIDENTIAL_REFUSAL,
+  confidentialLockAllows,
+  confidentialRefusal,
+} from "./confidential-lock";
 import { connectorFirst } from "./connector-first";
 import { type BlockedTool, compactSchema, presentTools, resolveCall } from "./directory";
 import { canonicalJson, validateJson } from "./json-schema";
@@ -1446,6 +1452,12 @@ export function createToolGateway(deps: {
       if (sealed?.connectionIds && !lockAllows(tool, sealed.connectionIds, asksOut)) {
         return finish(confidentialRefusal(), "refused");
       }
+      // What a run of such a thread types on a card (a question, a poll, an approval's reason and detail) is shown
+      // as formatted text: no address in it may be a link, since a click on one could carry the words out.
+      const onCard = (text: string) => (sealed?.connectionIds ? inertLinks(text) : text);
+      if (sealed?.connectionIds && ownTool(tool) && CARD_WORDS.has(tool.name)) {
+        call = { ...call, input: inertJson(call.input) };
+      }
       // A directory's search lists only tools the agent already holds; each real tool is checked on its own.
       if (tool !== directoryTool) {
         const granted = await freshGrantedKeys(ctx.db, ctx.orgId, ctx.agentId);
@@ -1471,7 +1483,7 @@ export function createToolGateway(deps: {
       let whyMissing = false;
       if (asksPerson(tool, decision) || asksWithWhy(tool, call.input)) {
         const taken = takeWhy(tool.inputSchema, call.input);
-        why = taken.why ?? "";
+        why = onCard(taken.why ?? "");
         whyMissing = !taken.why && !unasked;
         call = { ...call, input: taken.input };
       }
@@ -1722,8 +1734,8 @@ export function createToolGateway(deps: {
             connectionId,
             params: call.input,
             actionHash: actionHash({ tool: tool.name, scope: tool.scope, connectionId, params: call.input }),
-            title: cutMarked(described.title, 300),
-            detail: cutMarked(described.detail ?? "", APPROVAL_DETAIL_CHARS),
+            title: cutMarked(onCard(described.title), 300),
+            detail: cutMarked(onCard(described.detail ?? ""), APPROVAL_DETAIL_CHARS),
             why,
             origin: authority ? approvalOrigin(authority) : null,
             ownerUserId: owner,

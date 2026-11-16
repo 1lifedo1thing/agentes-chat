@@ -23,6 +23,13 @@ const HERE = new Set([
   "release_waiting_agent",
 ]);
 
+/**
+ * Of those, the ones whose words the apps show as formatted text on a card, where an address would be a link: what a
+ * run types into them is kept inert, as its reply is (`inertLinks`). A block runs in a frame with no network, and a
+ * follow-up's line is a message.
+ */
+export const CARD_WORDS: ReadonlySet<string> = new Set(["ask_user", "ask_choices", "start_poll"]);
+
 /** On the run or its agent alone, with nothing anyone else reads. */
 const SELF = new Set(["withdraw_request", "set_reply_style", "wait_for_device", "commit_co_author"]);
 

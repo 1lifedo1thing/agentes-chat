@@ -303,6 +303,70 @@ test("the tools the lock keeps copy nothing out: a question, a choice card, a bl
   ).toEqual([]);
 });
 
+test("what a run of the thread types on a card is kept inert: no link in a question, a choice card, a poll, or an approval's detail and why", async () => {
+  const LINK = "[open the report](https://example.com/?q=WORDS)";
+  const w = await vaultWorld({
+    agents: ["kai"],
+    changeAsks: true,
+    setup: { blockTools: true },
+    script: {
+      kai: ({ n }) => {
+        if (n === 1) return { calls: [READ] };
+        if (n === 2)
+          return {
+            calls: [
+              { name: "start_poll", input: { question: `Which one? ${LINK}`, options: ["yes", "no"] } },
+              {
+                name: "ask_choices",
+                input: {
+                  title: `Pick ${LINK}`,
+                  questions: [{ question: `Which? ${LINK}`, options: [{ label: "a" }, { label: "b" }] }],
+                },
+              },
+              {
+                name: "vault_change_record",
+                input: {
+                  id: "r1",
+                  note: `see ${LINK}`,
+                  why: `The person asked for this change just now, see ${LINK}`,
+                },
+              },
+            ],
+          };
+        if (n === 3)
+          return {
+            calls: [
+              {
+                name: "ask_user",
+                input: { question: `Is that right? ${LINK}`, why: `Only the person can confirm it, see ${LINK}` },
+              },
+            ],
+          };
+        return { text: "Waiting for your answer." };
+      },
+    },
+  });
+  await w.say("@kai read record r1 and ask me what to do");
+  await w.settle();
+  const [approval] = await w.db.select().from(schema.approvals);
+  await decideApproval({ db: w.db, pubsub: w.f.pubsub }, w.owner.id, w.org.id, approval?.id ?? "", {
+    decision: "approve",
+  });
+  await w.settle();
+  const [question] = await w.db.select().from(schema.agentQuestions);
+  const cards = await w.db
+    .select({ kind: schema.artifacts.kind, title: schema.artifacts.title, excerpt: schema.artifacts.excerpt })
+    .from(schema.artifacts);
+  expect(cards.map((c) => c.kind).sort()).toEqual(["choices", "poll"]);
+  // What the apps show as formatted text: the words stay, and nothing in them is an address a click would open.
+  const shown = JSON.stringify([approval?.title, approval?.detail, approval?.why, question?.text, cards]);
+  expect(shown).toContain("open the report");
+  expect(shown).not.toContain("](");
+  expect(shown).not.toMatch(/:\/\/\S/);
+  // The approved action itself is the one the agent asked for, to the letter.
+  expect(approval?.params).toMatchObject({ note: `see ${LINK}` });
+});
+
 test("a mail about requests left waiting counts one made in a confidential thread and quotes nothing of it", async () => {
   const w = await vaultWorld({
     agents: ["kai"],
