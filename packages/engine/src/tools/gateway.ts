@@ -29,6 +29,7 @@ import {
   type RunAuthority,
   runAuthorityById,
   steeredByOf,
+  transcriptKeys,
   UUID,
 } from "../authority";
 import { type CostKind, costlyGate, costlyKind, LONG_STEPS, unrequested } from "../brakes";
@@ -950,7 +951,7 @@ export function createToolGateway(deps: {
           agentId: agentRuns.agentId,
           background: agentRuns.background,
           triggerMessageId: agentRuns.triggerMessageId,
-          transcript: agentRuns.transcript,
+          transcript: transcriptKeys("steeredBy"),
         })
         .from(agentRuns)
         .where(and(eq(agentRuns.orgId, ctx.orgId), eq(agentRuns.id, runId)));

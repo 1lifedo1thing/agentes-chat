@@ -1,5 +1,5 @@
 {
-  "id": "3c784ea6-36ac-4b19-805c-be59e9b4890b",
+  "id": "126e2bab-f67f-44d6-998c-e7c1bba9243e",
   "prevId": "eefbf165-a463-4baf-9f94-b3c1e2cdfdc9",
   "version": "7",
   "dialect": "postgresql",
@@ -4054,6 +4054,22 @@
           ],
           "isUnique": false,
           "where": "\"messages\".\"author_agent_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "messages_agent_run_id_index": {
+          "name": "messages_agent_run_id_index",
+          "columns": [
+            {
+              "expression": "agent_run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"messages\".\"agent_run_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -14790,7 +14806,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "agent_budget_periods_org_id_period_start_index": {
+          "name": "agent_budget_periods_org_id_period_start_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "period_start",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "agent_budget_periods_org_id_agent_id_agents_org_id_id_fk": {
           "name": "agent_budget_periods_org_id_agent_id_agents_org_id_id_fk",
@@ -15472,6 +15510,28 @@
           "concurrently": true,
           "method": "btree",
           "with": {}
+        },
+        "agent_run_steps_tool_call_run_idx": {
+          "name": "agent_run_steps_tool_call_run_idx",
+          "columns": [
+            {
+              "expression": "run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "seq",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_run_steps\".\"kind\" = 'tool_call'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -15835,6 +15895,28 @@
           "method": "btree",
           "with": {}
         },
+        "agent_runs_org_id_brain_session_id_index": {
+          "name": "agent_runs_org_id_brain_session_id_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "brain_session_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_runs\".\"brain_session_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "agent_runs_waiting_machine_idx": {
           "name": "agent_runs_waiting_machine_idx",
           "columns": [
@@ -15967,7 +16049,24 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "agent_scopes_connection_id_index": {
+          "name": "agent_scopes_connection_id_index",
+          "columns": [
+            {
+              "expression": "connection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_scopes\".\"connection_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "agent_scopes_org_id_agent_id_agents_org_id_id_fk": {
           "name": "agent_scopes_org_id_agent_id_agents_org_id_id_fk",
@@ -24216,12 +24315,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "via": {
-          "name": "via",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "status": {
           "name": "status",
           "type": "text",
@@ -27578,411 +27671,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.surface_calls": {
-      "name": "surface_calls",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "at": {
-          "name": "at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "method": {
-          "name": "method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "route": {
-          "name": "route",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "code": {
-          "name": "code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "link_id": {
-          "name": "link_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "org_id": {
-          "name": "org_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "external_hash": {
-          "name": "external_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "surface_calls_at_index": {
-          "name": "surface_calls_at_index",
-          "columns": [
-            {
-              "expression": "at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.surface_deliveries": {
-      "name": "surface_deliveries",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "org_id": {
-          "name": "org_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "link_id": {
-          "name": "link_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "message_id": {
-          "name": "message_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "message_created_at": {
-          "name": "message_created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "in_reply_to": {
-          "name": "in_reply_to",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "taken_at": {
-          "name": "taken_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "outcome": {
-          "name": "outcome",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "surface_deliveries_open": {
-          "name": "surface_deliveries_open",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"surface_deliveries\".\"taken_at\" is null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "surface_deliveries_one_per_reply": {
-          "name": "surface_deliveries_one_per_reply",
-          "columns": [
-            {
-              "expression": "message_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"surface_deliveries\".\"kind\" = 'reply'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "surface_deliveries_org_id_organizations_id_fk": {
-          "name": "surface_deliveries_org_id_organizations_id_fk",
-          "tableFrom": "surface_deliveries",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "surface_deliveries_link_id_surface_links_id_fk": {
-          "name": "surface_deliveries_link_id_surface_links_id_fk",
-          "tableFrom": "surface_deliveries",
-          "tableTo": "surface_links",
-          "columnsFrom": [
-            "link_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "surface_deliveries_kind": {
-          "name": "surface_deliveries_kind",
-          "value": "\"surface_deliveries\".\"kind\" in ('reply', 'linked')"
-        },
-        "surface_deliveries_outcome": {
-          "name": "surface_deliveries_outcome",
-          "value": "\"surface_deliveries\".\"outcome\" in ('sent', 'unsent', 'fallback', 'dropped')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.surface_links": {
-      "name": "surface_links",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "surface": {
-          "name": "surface",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "external_id": {
-          "name": "external_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "display": {
-          "name": "display",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "profile_name": {
-          "name": "profile_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "org_id": {
-          "name": "org_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "confirmed_at": {
-          "name": "confirmed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_seen_at": {
-          "name": "last_seen_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "surface_links_one_per_sender": {
-          "name": "surface_links_one_per_sender",
-          "columns": [
-            {
-              "expression": "surface",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "external_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"surface_links\".\"status\" = 'active'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "surface_links_one_per_account": {
-          "name": "surface_links_one_per_account",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "surface",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"surface_links\".\"status\" = 'active'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "surface_links_user_id_index": {
-          "name": "surface_links_user_id_index",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "surface_links_user_id_users_id_fk": {
-          "name": "surface_links_user_id_users_id_fk",
-          "tableFrom": "surface_links",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "surface_links_org_id_organizations_id_fk": {
-          "name": "surface_links_org_id_organizations_id_fk",
-          "tableFrom": "surface_links",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "org_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "surface_links_status": {
-          "name": "surface_links_status",
-          "value": "\"surface_links\".\"status\" in ('pending', 'active')"
-        }
-      },
       "isRLSEnabled": false
     }
   },
