@@ -2816,7 +2816,6 @@ export const en = {
     label: "your right hand",
     /** The same where it starts a line: under its name on its page and side panel, and on its phone settings row. */
     labelCapitalized: "Your right hand",
-    /** The one-time dot on its row until it is first opened. */
     /**
      * In the dialog that picks its AI: plans it can't think with now, dimmed, each with why. `name` is the right
      * hand's; `owner` a first name.
@@ -2828,6 +2827,7 @@ export const en = {
       awayYours: "Yours, on {{computer}}, which is away.",
       connect: "Connect a computer",
     },
+    /** The one-time dot on its row until it is first opened. */
     newDot: "New",
     /** In its DM's header, after the label. */
     actsAsYou: "acts with your permissions",
