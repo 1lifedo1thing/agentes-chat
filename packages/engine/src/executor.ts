@@ -228,6 +228,7 @@ import {
 } from "./key-line";
 import { answerNoTurn, deliverLive, listenLiveSteering, renderSteered } from "./live-steer";
 import {
+  accountEverWorked,
   accountFailureCause,
   noteAccountFailure,
   publishAccountsChanged,
@@ -4803,7 +4804,8 @@ async function executeRunInner(
           // Later turns of this run continue the same session.
           if (plan.session) plan = { ...plan, session: { ...plan.session, resume: true } };
         }
-      } catch (error) {
+      } catch (caught) {
+        let error = caught;
         await deltas.flush();
         await deferred;
         // Canceled mid-stream: the gateway recorded the usage so far; keep the text so far.
@@ -4817,6 +4819,32 @@ async function executeRunInner(
             const { httpStatus } = error.provider;
             const failure = { orgId: run.orgId, accountId: account.id, code: error.code, cause };
             later(() => noteAccountFailure(db, httpStatus ? { ...failure, httpStatus } : failure));
+          }
+          // A sign-in that never answered a turn: its CLI's own failure is how it is set up, not an outage that
+          // passes, so the run ends now on what the CLI said instead of waiting it out for a day.
+          const signIn = turnPlan.kind !== "model" ? turnPlan.account : undefined;
+          const own = cliFailureOf(error, signIn);
+          if (
+            error.retryable &&
+            signIn &&
+            computerTurns === 0 &&
+            own &&
+            "brain" in own &&
+            !(await accountEverWorked(db, run.orgId, signIn.id).catch(() => true))
+          ) {
+            if (!account || !cause) {
+              const failure = { orgId: run.orgId, accountId: signIn.id, code: error.code, cause: cause ?? "unknown" };
+              later(() => noteAccountFailure(db, failure));
+            }
+            error = new BrainFailure(
+              error.code,
+              error.message,
+              false,
+              error.resetsAt,
+              false,
+              error.worked,
+              error.provider,
+            );
           }
         }
         // Anything but "no room" means the computer took the turn: that wait for room is over.
