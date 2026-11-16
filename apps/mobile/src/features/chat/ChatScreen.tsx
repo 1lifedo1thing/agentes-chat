@@ -250,6 +250,7 @@ import {
   type Unseen,
   unseenBelow,
 } from "./scroll";
+import { datedBehind } from "./send-order";
 import {
   ChannelOptions,
   MessageActions,
@@ -345,6 +346,8 @@ const SEEK_MAX_PAGES = 10;
 const FLASH_MS = 1600;
 /** No questions to other agents here (yet): the same list each time, so the memos over it keep. */
 const NO_CONSULTATIONS: RunConsultation[] = [];
+/** A run in these takes a new message into its work (the server steers it there): no second "pensando…" for it. */
+const AT_WORK: ReadonlySet<string> = new Set(["thinking", "queued", "running", "waiting_approval"]);
 
 /**
  * A conversation: a channel, a DM, a thread or a mission's thread (`threadId`). `handoffId`: a request
@@ -1018,24 +1021,49 @@ function Chat({
   // clock and goes by itself when the connection is back, from whatever screen is open (`useSendWaiting`).
   const post = usePostMessage(orgId, channelId, {
     me: { id: meId ?? "" },
-    // An agent DM: "pensando…" at once, on the message the agent answers. Not when it went into the work
-    // already going (the server steered it: no second run, its block says "lê na próxima pausa"), nor for a GIF or a
-    // sticker alone, which no agent answers (ADR 0091).
-    onSent: (message) => {
-      const steered = Array.isArray(message.meta?.steeredRunIds) && message.meta.steeredRunIds.length > 0;
-      if (dmAgentId && !steered && !isMediaAlone(message)) {
-        live.expect(message.threadId ?? message.id, [dmAgentId], message.id);
-      }
+    // The moment my message is in the conversation, as on the web: an agent DM's "pensando…" on it, so the dock grows in
+    // the frame the message appears (from the server's answer it grew while the list was still going down to it). Not
+    // when the agent is at work here already: the server takes the message into that work ("lê na próxima pausa"), no
+    // second run; nor for a GIF or a sticker alone, which no agent answers (ADR 0091).
+    onOptimistic: (local) => {
+      // What waits behind it stays under it (`keepBehind`).
+      if (waitingBehind.current.length > 0) keepBehind(local);
+      if (isMediaAlone(local)) return;
+      const atWork = live.runs.some((r) => !r.provisional && r.agentId === dmAgentId && AT_WORK.has(r.status));
+      if (dmAgentId && !atWork) live.expect(local.threadId ?? local.id, [dmAgentId], local.id);
       // A channel with agents: the router (or a mention) decides who answers, and `message.routed` always follows.
-      // A GIF or a sticker alone routes to nobody, so it gets no clock to keep.
-      if (channel && channelAgents.length > 0 && !isMediaAlone(message)) live.picking(message.id);
+      if (channel && channelAgents.length > 0) live.picking(local.id);
     },
-    // Why, in words: the failed row under it says the same and keeps the text.
-    onFailed: (error, { waits }) => {
+    // Its server id: what was guessed on its copy moves there (in the same update when the socket's copy comes first).
+    // Taken into work already going after all (the server steered it), its "pensando…" goes: no second run comes.
+    onSent: (message, local) => {
+      live.retarget(local.id, message.id);
+      if (Array.isArray(message.meta?.steeredRunIds) && message.meta.steeredRunIds.length > 0)
+        live.forget(message.id, false);
+    },
+    // Why, in words: the failed row under it says the same and keeps the text. Not sent, nothing answers it yet.
+    onFailed: (error, { clientId, waits }) => {
+      live.forget(`local-${clientId}`, true);
       if (!waits) toast({ title: errorText(t, error, i18n.language), icon: "x" });
     },
   });
   const { send, retry } = sendHelpers(post);
+  // A message with files goes once they are up (seconds for a video), and the server dates it then: one sent meanwhile
+  // went before it, its files landing under it, for everyone. While files of mine go up here, what I send next waits
+  // behind them (`sendText`): its copy in its place at once, under them, and its request after theirs.
+  const filesAhead = useRef<Promise<void> | null>(null);
+  // The copies waiting there, in the order they were sent (their `clientId`s).
+  const waitingBehind = useRef<string[]>([]);
+  const behindFiles = useCallback((task: () => Promise<unknown>) => {
+    const turn = (filesAhead.current ?? Promise.resolve()).then(task).then(
+      () => undefined,
+      () => undefined,
+    );
+    filesAhead.current = turn;
+    void turn.then(() => {
+      if (filesAhead.current === turn) filesAhead.current = null;
+    });
+  }, []);
   // "Responder" in a thread: the next message answers this one (`meta.replyTo`).
   const [quote, setQuote] = useState<Message | null>(null);
   const [replyAt, setReplyAt] = useState(0);
@@ -1063,7 +1091,7 @@ function Chat({
         qc.setQueryData<Message[]>(keys.messages(orgId, channelId), (list) =>
           list?.map((x) => (x.id === m.id ? { ...x, local: "pending" as const, sendFailure: undefined } : x)),
         );
-        void deliverFilesRef.current(m);
+        behindFiles(() => deliverFilesRef.current(m));
       }
       // A voice note waits in its own outbox: tried again there, now.
       else if (voiceOf(m.meta) && m.local) retryVoice(qc, m.clientId, voiceRefused);
@@ -1073,7 +1101,7 @@ function Chat({
         setCaptionBack({ text: m.body, at: Date.now(), join: true });
       } else retryRef.current(m);
     },
-    [qc, voiceRefused, orgId, channelId],
+    [qc, voiceRefused, orgId, channelId, behindFiles],
   );
   // "Tentar de novo" under a message no agent could answer: the agent answers that same message again; only when it
   // can't, the same words go again, here (the web's `resend`).
@@ -1120,9 +1148,49 @@ function Chat({
         {...(input.text ? { initialText: input.text } : {})}
       />,
     );
+  /** My words (or a GIF, a sticker) here: at once, or behind files of mine still going up (`filesAhead`). */
+  const sendText = (body: string, meta?: Record<string, unknown>) => {
+    if (!filesAhead.current) {
+      send(body, threadId, meta);
+      return;
+    }
+    // As `send` puts it: "Parar e mandar" rides as the request's `steer`, not in what the message carries.
+    const { steer, ...rest } = meta ?? {};
+    const clientId = newClientId();
+    const local: Message = {
+      id: `local-${clientId}`,
+      channelId,
+      threadId: threadId ?? null,
+      author: { type: "person", id: meId ?? "" },
+      body,
+      mentionedAgentIds: [],
+      agentRunId: null,
+      meta: rest,
+      clientId,
+      local: "pending",
+      createdAt: new Date().toISOString(),
+    };
+    qc.setQueryData<Message[]>(keys.messages(orgId, channelId), (list) => upsertMessage(list, local));
+    waitingBehind.current.push(clientId);
+    behindFiles(() => {
+      waitingBehind.current = waitingBehind.current.filter((id) => id !== clientId);
+      return post.mutateAsync({
+        body,
+        clientId,
+        threadId,
+        meta: meta ? rest : undefined,
+        ...(steer === "now" ? { steer: "now" as const } : {}),
+      });
+    });
+  };
+  /** The copies waiting behind files stay under `ahead`, the message going out before them (`datedBehind`). */
+  const keepBehind = (ahead: Message) =>
+    qc.setQueryData<Message[]>(keys.messages(orgId, channelId), (list) =>
+      datedBehind(list, ahead, waitingBehind.current),
+    );
   const summarize = () => {
     if (mission) sheet.push(<MissionSummaryView missionId={mission.id} />);
-    else send(t("mobile.chat.summaryMessage"), threadId);
+    else sendText(t("mobile.chat.summaryMessage"));
   };
 
   // Sending always goes to the end. While an agent works, "Parar e mandar" makes it read this one now.
@@ -1137,7 +1205,7 @@ function Chat({
     const cmd = parseSlash(text);
     if (!cmd) {
       const meta = takeQuote();
-      send(text, threadId, how === "now" ? { ...meta, steer: "now" } : meta);
+      sendText(text, how === "now" ? { ...meta, steer: "now" } : meta);
       toEnd();
       return;
     }
@@ -1229,7 +1297,7 @@ function Chat({
     return () => clearInterval(timer);
   }, [uploading, sendTyping, threadId]);
   const sendMedia = (media: MessageMedia) => {
-    send("", threadId, { ...takeQuote(), media });
+    sendText("", { ...takeQuote(), media });
     toEnd();
     sheet.close();
   };
@@ -1344,7 +1412,7 @@ function Chat({
     const sent = new Set(files.map((f) => f.id));
     setPending((now) => now.filter((f) => !sent.has(f.id)));
     toEnd();
-    void deliverFiles(local, how);
+    behindFiles(() => deliverFiles(local, how));
   };
   /** A just-sent message's files go up, then the message goes with them; one that can't turns it "Não foi enviada". */
   const deliverFiles = async (local: Message, how?: SendHow) => {
@@ -1371,13 +1439,16 @@ function Chat({
       if (r.status === "fulfilled" && f && isLocalMedia(f)) rememberLocalCopy(r.value.id, f.uri);
     });
     const meta = Object.fromEntries(Object.entries(local.meta ?? {}).filter(([k]) => k !== LOCAL_FILES));
-    post.mutate({
-      body: local.body,
-      clientId: local.clientId ?? newClientId(),
-      threadId: local.threadId,
-      meta: { ...meta, artifacts: refs },
-      ...(how === "now" ? { steer: "now" as const } : {}),
-    });
+    // Awaited (its answer or its failure, which marks the row): what waits behind it goes after it (`behindFiles`).
+    await post
+      .mutateAsync({
+        body: local.body,
+        clientId: local.clientId ?? newClientId(),
+        threadId: local.threadId,
+        meta: { ...meta, artifacts: refs },
+        ...(how === "now" ? { steer: "now" as const } : {}),
+      })
+      .catch(() => undefined);
   };
   const deliverFilesRef = useRef(deliverFiles);
   deliverFilesRef.current = deliverFiles;
@@ -1395,7 +1466,7 @@ function Chat({
       );
       sendWithFiles(shareIn.text, "join", files);
     } else if (shareIn.text) {
-      send(shareIn.text, threadId);
+      sendText(shareIn.text);
       toEnd();
     }
   }, [shareIn?.at, shareReady]);

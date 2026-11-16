@@ -89,3 +89,32 @@ test("no suggestion pills over the conversation", () => {
   expect(chat).not.toContain("composerSuggestions");
   expect(chat).not.toMatch(/\bsuggestions=/);
 });
+
+test('an agent\'s "pensando…" comes with my message, in the same frame: the dock grows once, with it', () => {
+  const chat = src("features/chat/ChatScreen.tsx");
+  const optimistic = chat.slice(
+    chat.indexOf("onOptimistic: (local) => {"),
+    chat.indexOf("onSent: (message, local) => {"),
+  );
+  // On the copy on its way, not from the server's answer (the dock grew while the list was still going down to it).
+  expect(optimistic).toContain(
+    "if (dmAgentId && !atWork) live.expect(local.threadId ?? local.id, [dmAgentId], local.id);",
+  );
+  // An agent at work already takes the message into that work: no second "pensando…".
+  expect(optimistic).toContain("AT_WORK.has(r.status)");
+  // Moved to its server id with it; dropped when it went into work going on, or was never sent.
+  expect(chat).toContain("live.retarget(local.id, message.id);");
+  expect(chat).toContain("live.forget(message.id, false);");
+  expect(chat).toMatch(/live\.forget\(`local-\$\{clientId\}`, true\);/);
+  // The socket's copy can come before the answer: the move happens in that same update, so nothing drops out between.
+  const live = src("features/chat/live.ts");
+  expect(live).toContain("const base = sent?.clientId ? retargeted(state, localIdOf(sent.clientId), sent.id) : state;");
+  expect(live).toContain('case "retarget":');
+});
+
+test("a read that tells the receipts nothing new doesn't draw the conversation again", () => {
+  const live = src("features/chat/live.ts");
+  expect(live).toContain(
+    "if (seedReceipts(stateRef.current.receipts, messages) === stateRef.current.receipts) return;",
+  );
+});

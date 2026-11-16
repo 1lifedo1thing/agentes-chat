@@ -285,7 +285,8 @@ describe("viewer", () => {
     // Then up, then sent with the same clientId; a failure turns it "Não foi enviada" and retry starts over.
     expect(chat).toContain("clientId: local.clientId ?? newClientId(),");
     expect(chat).toContain('? { ...m, local: "failed" as const, sendFailure: sendFailureOf(failed.reason) }');
-    expect(chat).toContain("void deliverFilesRef.current(m);");
+    // (In its turn behind other files of mine still going up: what is sent goes in the order it was sent.)
+    expect(chat).toContain("behindFiles(() => deliverFilesRef.current(m));");
     // No more waiting in the field while they upload.
     expect(chat).not.toContain("sendingFiles.current");
     const row = src("features/chat/MessageRow.tsx");

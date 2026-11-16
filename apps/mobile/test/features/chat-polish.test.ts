@@ -119,9 +119,15 @@ describe("a reply in a task's conversation", () => {
 describe("my message's clock from the moment it is sent", () => {
   test("sent into a channel with agents, it wears the clock before the server says anything, as the web's", () => {
     const screen = src("features/chat/ChatScreen.tsx");
-    expect(screen).toContain(
-      "if (channel && channelAgents.length > 0 && !isMediaAlone(message)) live.picking(message.id);",
+    // At the optimistic write, as the web's: the clock is on my message's copy from its first frame (a GIF or a
+    // sticker alone routes to nobody), and moves to its server id with it.
+    const optimistic = screen.slice(
+      screen.indexOf("onOptimistic: (local) => {"),
+      screen.indexOf("onSent: (message, local) => {"),
     );
+    expect(optimistic).toContain("if (isMediaAlone(local)) return;");
+    expect(optimistic).toContain("if (channel && channelAgents.length > 0) live.picking(local.id);");
+    expect(screen).toContain("live.retarget(local.id, message.id);");
     expect(src("features/chat/live.ts").replace(/\s+/g, " ")).toContain(
       'dispatch({ type: "event", event: { type: "message.routing", channelId, messageId, step: "plan" }, at: Date.now(), })',
     );
