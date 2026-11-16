@@ -3319,14 +3319,18 @@ async function executeRunInner(
     ...(await executedSince(db, run.id, 0, [])).map((c) => c.label),
     ...((transcript as Transcript).harnessTried ?? []),
   ];
-  /** The fresh session of a move in this claim was told what the run already did (`movedSessionNote`). */
-  let movedNoted = false;
-  /** The fresh session reads what the run already did first, when it did anything. */
+  /** The session last told what the run already did (`movedSessionNote`), the prompt it made and the one before it. */
+  let noted: { session: string; prompt: string; before: string | null } | null = null;
+  /** Each fresh session reads what the run already did first, when it did anything, once. */
   const noteMoved = async () => {
+    const session = plan.session?.id;
+    if (plan.kind === "model" || !session || noted?.session === session) return;
     const done = await doneInRun();
-    if (movedNoted || plan.kind === "model" || (run.turns === 0 && done.length === 0)) return;
-    movedNoted = true;
-    nextPrompt = [movedSessionNote(done), nextPrompt ?? triggerText].join("\n\n");
+    if (run.turns === 0 && done.length === 0) return;
+    // A move before the last note's prompt went through replaces that note: never two of them stacked.
+    const before = noted && nextPrompt === noted.prompt ? noted.before : nextPrompt;
+    nextPrompt = [movedSessionNote(done), before ?? triggerText].join("\n\n");
+    noted = { session, prompt: nextPrompt, before };
   };
   if (transcript.freshSession !== undefined && plan.kind !== "model" && transcript.freshSession === plan.session?.id)
     await noteMoved();

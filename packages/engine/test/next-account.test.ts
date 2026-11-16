@@ -799,14 +799,14 @@ const goesOn = {
     kind === "follow_through" ? (String(state.reply).includes("vou seguir") ? "continue" : "done") : undefined,
 };
 
-/** Its first turn (on the account it moved to) puts that account at 96% of its week, then says it goes on. */
-function fillsTheWeek(fx: Fixture, id: string) {
+/** Each of its first `turns` turns runs a step, puts the account it ran on at 96% of its week, then says it goes on. */
+function fillsTheWeek(fx: Fixture, turns = 1) {
   const seen: BrainTurn[] = [];
   const brain: Brain = {
     kind: "claude_code",
     async *run(turn) {
       seen.push({ ...turn, system: "", messages: [] });
-      if (seen.length > 1) {
+      if (seen.length > turns) {
         yield* answers;
         return;
       }
@@ -819,10 +819,11 @@ function fillsTheWeek(fx: Fixture, id: string) {
             at: new Date().toISOString(),
           } as never,
         })
-        .where(eq(schema.machineAccounts.id, id));
+        .where(eq(schema.machineAccounts.id, turn.account?.id ?? ""));
+      const step = `step ${seen.length}`;
       yield { type: "usage", input: 100, output: 10, source: "plan", model: "sonnet" };
-      yield { type: "tool_call", id: "c1", name: "Bash", input: { command: "git push" }, executed: { content: "ok" } };
-      yield { type: "done", text: "Fiz a primeira parte, vou seguir." };
+      yield { type: "tool_call", id: step, name: "Bash", input: { command: step }, executed: { content: "ok" } };
+      yield { type: "done", text: `Fiz o ${step}, vou seguir.` };
     },
   };
   return { brain, seen };
@@ -840,7 +841,7 @@ test("long work moved onto a teammate's account that reaches the line there goes
     .update(schema.machineAccounts)
     .set({ usage: extraOpen as never })
     .where(eq(schema.machineAccounts.id, OWN1));
-  const { brain, seen } = fillsTheWeek(fx, WALTER_ALL);
+  const { brain, seen } = fillsTheWeek(fx);
   await scheduledSlot(fx);
   await drainOutbox(fx.db, handlersWith(fx, brain));
   // A free account first, then its owner's paid extra usage, never a wait on the teammate's week.
@@ -855,7 +856,7 @@ test("long work moved onto a teammate's account that reaches the line there wait
   await account(WALTER_ALL, walter.id);
   await usage(WALTER_ALL, 40);
   await usage(OWN1, 97, iso(3 * 3600_000));
-  const { brain, seen } = fillsTheWeek(fx, WALTER_ALL);
+  const { brain, seen } = fillsTheWeek(fx);
   await scheduledSlot(fx);
   await drainOutbox(fx.db, handlersWith(fx, brain));
   expect(seen.map((t) => t.account?.id)).toEqual([WALTER_ALL]);
@@ -866,6 +867,29 @@ test("long work moved onto a teammate's account that reaches the line there wait
   // Its next claim starts on its own account, at its own reset, not at the end of the teammate's week.
   expect(moveOf(run)).toBeUndefined();
   expect(Date.parse(waiting?.until ?? "")).toBeLessThan(Date.now() + 4 * 3600_000);
+});
+
+test("a run that moves twice in one claim: each fresh session is told what the run already ran", async () => {
+  const { fx, account } = await world({}, goesOn);
+  await account(OWN2, fx.owner.id);
+  await account(OWN3, fx.owner.id);
+  const refused: BrainEvent[] = [{ type: "error", code: "plan_limit", message: "You've hit your limit", worked: false }];
+  const works = (command: string): BrainEvent[] => [
+    { type: "usage", input: 100, output: 10, source: "plan", model: "sonnet" },
+    { type: "tool_call", id: command, name: "Bash", input: { command }, executed: { content: "ok" } },
+    { type: "done", text: `Rodei ${command}, vou seguir.` },
+  ];
+  const turns = [works("git push"), refused, works("git tag"), refused];
+  const { brain, seen } = scripted((n) => turns[n] ?? answers);
+  await ask(fx);
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN1, OWN1, OWN2, OWN2, OWN3]);
+  expect((await runs(fx))[0]?.status).toBe("done");
+  const last = await turnPrompt(fx);
+  expect(last).toContain("Already done in this run, do not repeat: ");
+  expect(last).toContain("Bash(git tag)");
+  // Told once, not once per move.
+  expect(last.split("Already done in this run").length).toBe(2);
 });
 
 test("a budget wait never moves an account", async () => {
