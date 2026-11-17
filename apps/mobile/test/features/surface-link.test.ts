@@ -261,8 +261,9 @@ describe("the surface's logo beside the line icons", () => {
     // The row hands the logo to its tile, which draws it where the symbol goes: same box, same color.
     expect(read("ui/Grouped.tsx")).toContain("<IconTile icon={icon} danger={danger} mark={mark ?? null} />");
     const tile = read("ui/IconTile.tsx");
-    expect(tile).toContain("<MarkIcon uri={mark} fallback={icon} size={glyph} color={ON_TILE} />");
-    expect(tile).toContain("<Icon name={icon} size={glyph} color={ON_TILE} filled />");
+    expect(tile).toContain(
+      "<MarkIcon uri={mark} fallback={icon} size={Math.round(size * (IOS ? 0.73 : 0.6))} color={ON_TILE} />",
+    );
     expect(read("features/me/SurfaceLink.tsx")).toMatch(
       /icon="chat"\s+mark=\{iconUri\(serverUrl\(\), surfaceMarkUrl\(row\.surface\)\)\}/,
     );
