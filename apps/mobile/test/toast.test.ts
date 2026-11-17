@@ -12,9 +12,9 @@ describe("toasts", () => {
     expect(toast).toMatch(/\{toasts\.shown \? \(\s*<ToastLayer>/);
     // A root of its own for the gestures there, as tall as the toast: a touch elsewhere goes to what is under it.
     expect(toast).toContain(
-      "<GestureHandlerRootView style={[styles.layer, { top: insets.top + 6 }]}>{children}</GestureHandlerRootView>",
+      '<GestureHandlerRootView pointerEvents="box-none" style={[styles.layer, { top: insets.top + 6 }]}>',
     );
-    expect(toast).toContain('layer: { position: "absolute", left: 12, right: 12 },');
+    expect(toast).toContain('layer: { position: "absolute", left: 12, right: 12, alignItems: "center" },');
     // One host for the whole app: no sheet draws toasts of its own.
     expect(src("ui/Sheet.tsx")).not.toContain("ToastHost");
     expect(src("providers/AppProviders.tsx").match(/<ToastHost>/g)?.length).toBe(1);

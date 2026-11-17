@@ -1196,6 +1196,119 @@
         "held": "Verbinden met MCP werkt zodra het abonnement van de werkruimte actief is. Haal de agents voorlopig op deze manier op.",
         "paused": "Verbinden met MCP staat uit zolang deze werkruimte gepauzeerd is. Haal de agents voorlopig op deze manier op."
       },
+      "haveFileButton": "Ik heb een bestand of link",
+      "sheet": {
+        "title": "Haal het team op uit {{app}}",
+        "otherTitle": "Haal ze op uit een andere app",
+        "workspaceTitle": "Haal ze op uit een andere werkruimte",
+        "fileTitle": "Haal ze op uit een bestand of link",
+        "fileLead": "Het bestand uit elke app die we kennen. Het wordt vanzelf herkend.",
+        "paths": {
+          "lead": "Kies hoe je ze ophaalt. Je controleert alles voordat er iets wordt aangemaakt.",
+          "best": "het meest volledig",
+          "safe": "Sleutels, wachtwoorden en sessies uit {{app}} komen nooit mee, welke weg je ook kiest.",
+          "command": {
+            "title": "Met een opdracht",
+            "line": "Haalt alles op, ook bestanden en workflows. Via een codeerassistent of de terminal"
+          },
+          "mcp": {
+            "title": "Door {{app}} te verbinden",
+            "line": "Het maakt de agents hier aan via MCP. Zonder bestanden of workflows"
+          },
+          "prompt": {
+            "title": "Door het aan {{app}} te vragen",
+            "line": "Het schrijft op wat het weet en jij plakt het hier. Zonder bestanden of workflows"
+          }
+        },
+        "useRequest": "Ik plak liever het verzoek en breng het antwoord terug",
+        "backToMcp": "Terug naar MCP",
+        "waitingMore": "Wachten op de volgende…",
+        "arrivedMore": "{{app}} maakt ze misschien nog aan. Wie later komt, verschijnt hier.",
+        "arrivedMoreAny": "Je AI-app maakt ze misschien nog aan. Wie later komt, verschijnt hier.",
+        "readHere": "Gelezen in je browser. Hier verandert niets tot je bevestigt.",
+        "request": {
+          "grok-bot": {
+            "lead": "De bot schrijft alles wat hij heeft als JSON. Jij plakt het hier en controleert het voordat er iets wordt aangemaakt.",
+            "copyStep": "Plak het in de chat met de bot",
+            "answerStep": "Plak hier zijn hele antwoord",
+            "answerPlaceholder": "De JSON waarmee de bot antwoordde"
+          },
+          "chatgpt-dots": {
+            "lead": "Je dot schrijft alles wat hij heeft naar een bestand. Jij sleept het hierheen en controleert het voordat er iets wordt aangemaakt.",
+            "copyStep": "Plak het in een nieuwe chat",
+            "answerStep": "Sleep het bestand dat hij maakt hierheen"
+          },
+          "other": {
+            "copyStep": "Plak het in een nieuw gesprek in de andere app",
+            "answerStep": "Sleep het bestand dat hij teruggeeft hierheen, of plak zijn antwoord",
+            "answerPlaceholder": "Het antwoord, of een GitHub-link"
+          },
+          "computer": {
+            "lead": "Een agent van {{app}} schrijft op wat hij weet in een bestand, en jij controleert het voordat er iets wordt aangemaakt.",
+            "copyStep": "Plak dit verzoek in een gesprek met een agent van {{app}}",
+            "answerStep": "Sleep het bestand dat hij maakt hierheen, of plak zijn antwoord",
+            "answerPlaceholder": "Het antwoord van {{app}}"
+          }
+        },
+        "workspace": {
+          "download": "Download het bestand van de andere werkruimte",
+          "where": "Daar, in Instellingen › Importeren en exporteren › Het bestand downloaden.",
+          "open": "{{org}} openen in een nieuw tabblad",
+          "drop": "Sleep de .json hierheen"
+        },
+        "lead": "Je assistent leest {{app}} op deze computer en schrijft een bestand waar jij kiest. Jij controleert alles voordat er iets wordt aangemaakt.",
+        "leadCommand": "De opdracht leest {{app}} op deze computer en schrijft een bestand waar jij kiest. Jij controleert alles voordat er iets wordt aangemaakt.",
+        "pasteAssistant": "Plak dit in je codeerassistent",
+        "pasteTerminal": "Plak dit in een terminal",
+        "pastePowerShell": "Plak dit in PowerShell",
+        "promptLabel": "Verzoek voor de codeerassistent",
+        "commandLabel": "Opdracht",
+        "copy": "Het verzoek kopiëren",
+        "assistants": "Claude Code, Codex of een andere die opdrachten uitvoert op deze computer.",
+        "commandHelp": "Vraagt waar je wilt opslaan en schrijft een bestand. Er wordt niets verstuurd.",
+        "useCommand": "Ik voer de opdracht liever zelf uit",
+        "usePrompt": "Terug naar het verzoek voor de assistent",
+        "os": {
+          "label": "Systeem van deze computer",
+          "unix": "Mac of Linux",
+          "windows": "Windows"
+        },
+        "dropStep": "Sleep het bestand dat wordt geschreven hierheen",
+        "drop": "Sleep het bestand hierheen",
+        "dropHelp": "{{file}}, in de map die je koos",
+        "safe": "Alleen lezen. Sleutels, wachtwoorden en logins in {{app}} worden nooit gelezen.",
+        "ready_one": "{{count}} agent klaar om mee te komen",
+        "ready_other": "{{count}} agents klaar om mee te komen",
+        "readyOther": "Klaar om mee te komen",
+        "others_one": "En nog {{count}} agent",
+        "others_other": "En nog {{count}} agents",
+        "routines_one": "{{count}} routine",
+        "routines_other": "{{count}} routines",
+        "notes_one": "{{count}} herinnering",
+        "notes_other": "{{count}} herinneringen",
+        "skills_one": "{{count}} skill",
+        "skills_other": "{{count}} skills",
+        "channels_one": "{{count}} kanaal",
+        "channels_other": "{{count}} kanalen",
+        "files_one": "{{count}} bestand van de agents, gekopieerd naar de Drive",
+        "files_other": "{{count}} bestanden van de agents, gekopieerd naar de Drive",
+        "filesSize": "{{size}}. De hele werkruimte ziet de mappen.",
+        "after": "Daarna één klik per stuk",
+        "bring_one": "De agent meenemen",
+        "bring_other": "De {{count}} agents meenemen",
+        "choose": "Kies wat er meekomt",
+        "arrivedTitle": "Het team is er",
+        "arrived_one": "{{names}} is er al.",
+        "arrived_other": "{{names}} zijn er al.",
+        "arrivedOther_one": "{{count}} item is er al.",
+        "arrivedOther_other": "{{count}} items zijn er al.",
+        "copying": "De bestanden naar de Drive kopiëren",
+        "copyCount": "{{done}} van {{total}}",
+        "keepOpen": "Houd dit tabblad open tot het klaar is.",
+        "missed_one": "{{count}} item is niet meegekomen. In de lijst staat waarom.",
+        "missed_other": "{{count}} items zijn niet meegekomen. In de lijst staat bij elk waarom.",
+        "see": "Bekijken wat er is binnengekomen"
+      },
       "otherName": "Een andere app",
       "agenteschatName": "agentes.chat",
       "where": {
@@ -1319,13 +1432,115 @@
         "model_one": "{{who}} gebruikt {{label}}, dat hier niet beschikbaar is.",
         "model_other": "{{who}} gebruiken {{label}}, dat hier niet beschikbaar is.",
         "file_one": "{{who}} gebruikt {{label}}.",
-        "file_other": "{{who}} gebruiken {{label}}."
+        "file_other": "{{who}} gebruiken {{label}}.",
+        "webhook_one": "De routine {{label}} ({{who}}) krijgt hier een nieuw adres: wijzig het in de site of app die het oude aanriep.",
+        "webhook_other": "De routine {{label}} ({{who}}) krijgt hier een nieuw adres: wijzig het in de site of app die het oude aanriep."
+      },
+      "say": {
+        "intro": "Dit is de workflow “{{title}}”, meegenomen uit {{app}}.",
+        "skillAbout": "Voert de workflow “{{title}}” uit, meegenomen uit {{app}}, als iemand erom vraagt.",
+        "asked": "In {{app}} startte hij vanzelf. Hier draait hij als iemand erom vraagt.",
+        "webhook": "Hij start wanneer het adres van deze routine wordt aangeroepen: wat er binnenkomt, is je invoer.",
+        "pr": "Hij start wanneer er op GitHub een pull request wordt geopend: die pull request is je invoer.",
+        "prIn": "Hij start wanneer er op GitHub een pull request wordt geopend in {{repos}}: die pull request is je invoer. Staat hij in een andere repository, stop dan zonder iets te posten.",
+        "text": "Begin met deze tekst: “{{text}}”",
+        "keep": "(Houd hier rekening mee: {{text}})",
+        "ask": "Vraag @{{handle}}: “{{task}}”, met wat je tot nu toe hebt, en gebruik het antwoord.",
+        "image": "Maak een afbeelding: {{prompt}}",
+        "video": "Maak een video: {{prompt}}",
+        "if": "Als het antwoord op “{{rule}}” ja is, ga dan verder.",
+        "otherwise": "Anders:",
+        "stop": "Anders stop je hier zonder iets te posten.",
+        "approval": "Vraag, voordat je verdergaat, in de chat goedkeuring aan wie voor jou verantwoordelijk is: “{{question}}”",
+        "approvalPlain": "Vraag, voordat je verdergaat, in de chat goedkeuring aan wie voor jou verantwoordelijk is.",
+        "channel": "Post het resultaat in #{{channel}}.",
+        "notify": "Stuur het resultaat naar wie voor jou verantwoordelijk is.",
+        "file": "Sla het resultaat als bestand op in de Drive.",
+        "githubComment": "Plaats het resultaat als reactie op GitHub.",
+        "githubDo": "Doe op GitHub dit met het resultaat: {{action}}.",
+        "pass": "Als je klaar bent, geef dan je antwoord door aan @{{handle}}: {{instruction}}",
+        "passPlain": "Als je klaar bent, geef dan je antwoord door aan @{{handle}}."
+      },
+      "choose": {
+        "who": "Wie er meekomt",
+        "with": "Wat er met ze meekomt",
+        "flows": "De workflows",
+        "agentOnly": "Met de instructies van daar",
+        "same": "Staat hier al, identiek",
+        "of": {
+          "routine_one": "{{picked}} van {{count}} routine",
+          "routine_other": "{{picked}} van {{count}} routines",
+          "skill_one": "{{picked}} van {{count}} skill",
+          "skill_other": "{{picked}} van {{count}} skills",
+          "note_one": "{{picked}} van {{count}} herinnering",
+          "note_other": "{{picked}} van {{count}} herinneringen",
+          "channel_one": "{{picked}} van {{count}} kanaal",
+          "channel_other": "{{picked}} van {{count}} kanalen"
+        },
+        "files_one": "{{count}} bestand voor de Drive",
+        "files_other": "{{count}} bestanden voor de Drive",
+        "paused_one": "{{count}} komt gepauzeerd binnen, zoals hij daar was",
+        "paused_other": "{{count}} komen gepauzeerd binnen, zoals ze daar waren",
+        "pausedOne": "komt gepauzeerd binnen",
+        "here_one": "{{count}} staat hier al",
+        "here_other": "{{count}} staan hier al",
+        "library": "Uit de bibliotheek, voor wie je hem aanzet",
+        "passes": "geeft zijn antwoord door aan {{names}}",
+        "webhook": "nieuw adres",
+        "pr": "als er een pull request wordt geopend",
+        "routine": "Routine",
+        "skill": "Skill",
+        "asked": "draait als iemand erom vraagt",
+        "was": {
+          "schedule": "daar had hij een schema dat we niet kunnen lezen, hier als iemand erom vraagt",
+          "webhook": "daar startte hij via een adres, hier als iemand erom vraagt",
+          "message": "daar startte hij bij een bericht, hier als iemand erom vraagt",
+          "github": "daar startte hij op GitHub, hier als iemand erom vraagt",
+          "discord": "daar startte hij op Discord, hier als iemand erom vraagt",
+          "telegram": "daar startte hij op Telegram, hier als iemand erom vraagt",
+          "slack": "daar startte hij op Slack, hier als iemand erom vraagt",
+          "other": "daar startte hij vanzelf, hier als iemand erom vraagt"
+        },
+        "flowsLead": "Hier wordt een workflow een routine: de trigger bepaalt wanneer hij draait, en de stappen gaan in het verzoek.",
+        "becomesRoutine": "Wordt een routine die {{agent}} uitvoert, met de stappen in het verzoek.",
+        "becomesSkill": "Wordt een skill die {{agent}} gebruikt als iemand erom vraagt, met de stappen erin.",
+        "postsIn": "Post in #{{channel}}.",
+        "step": {
+          "when": "wanneer de routine draait",
+          "asked": "Als iemand erom vraagt",
+          "text": "Begint met de tekst",
+          "by": "op verzoek van {{name}}",
+          "image": "Afbeelding",
+          "video": "Video",
+          "if": "Als",
+          "stop": "gaat verder, anders stopt hij",
+          "else": "gaat verder, anders:",
+          "approval": "Vraagt in de chat om goedkeuring",
+          "channel": "Post in #{{channel}}",
+          "notify": "Stuurt je het resultaat",
+          "file": "Slaat op in de Drive",
+          "github": "Op GitHub",
+          "lost": {
+            "file": "Een bestand van daar",
+            "slack": "Post op Slack",
+            "discord": "Post op Discord",
+            "telegram": "Post op Telegram",
+            "messaging": "Post in een berichtenapp"
+          },
+          "notHere": "komt niet mee"
+        },
+        "bringWith_one": "{{count}} agent en {{more}} meenemen",
+        "bringWith_other": "{{count}} agents en {{more}} meenemen",
+        "more_one": "nog {{count}} item",
+        "more_other": "nog {{count}} items",
+        "notComing": "Koppelingen met berichtenapps komen niet mee ({{list}}): hier is er niets om ze aan te koppelen."
       },
       "needDo": {
         "connection": "Koppelen",
         "app": "Koppelen",
         "model": "Kies een model",
-        "file": "De Drive openen"
+        "file": "De Drive openen",
+        "webhook": "Routines openen"
       },
       "linkSkipped_one": "{{count}} bestand voorbij de limiet van de link",
       "linkSkipped_other": "{{count}} bestanden voorbij de limiet van de link",
@@ -2414,7 +2629,8 @@
     "header": {
       "pins": "Vastgezette berichten",
       "showMembers": "Leden tonen",
-      "hideMembers": "Leden verbergen"
+      "hideMembers": "Leden verbergen",
+      "more": "Meer opties"
     },
     "membersButton_one": "Kanaalleden ({{count}})",
     "membersButton_other": "Kanaalleden ({{count}})",
@@ -2637,6 +2853,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Heeft een computer nodig",
+        "computerOnly": "Van {{owner}}, alleen aangemeld op {{computer}}. Lodi denkt met een plan dat als account is aangemeld.",
+        "noComputer": "Van {{owner}}. Er is een computer nodig, en de workspace heeft er geen verbonden.",
+        "away": "Van {{owner}}, op {{computer}}, die weg is.",
+        "connect": "Een computer verbinden",
+        "plans": "Plannen bekijken"
+      }
+    },
     "label": "je rechterhand",
     "labelCapitalized": "Je rechterhand",
     "unusable": {
@@ -2919,16 +3145,6 @@
       "invite_people_sent_one": "Uitnodiging verstuurd naar <b>{{emails}}</b>.",
       "invite_people_sent_other": "Uitnodigingen verstuurd naar <b>{{emails}}</b>.",
       "remove_ai_key": "API-sleutel \"{{name}}\" verwijderen."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Heeft een computer nodig",
-        "computerOnly": "Van {{owner}}, alleen aangemeld op {{computer}}. Lodi denkt met een plan dat als account is aangemeld.",
-        "noComputer": "Van {{owner}}. Er is een computer nodig, en de workspace heeft er geen verbonden.",
-        "away": "Van {{owner}}, op {{computer}}, die weg is.",
-        "connect": "Een computer verbinden",
-        "plans": "Plannen bekijken"
-      }
     }
   },
   "teamWeek": {
@@ -7754,6 +7970,9 @@
     }
   },
   "issues": {
+    "handedBy": "overgedragen door <0/>{{name}}",
+    "fromDm": "uit <0>je DM met {{name}}</0>",
+    "fromDmText": "uit je DM met {{name}}",
     "delete": {
       "action": "Taak verwijderen",
       "title": "Taak #{{number}} verwijderen?",
@@ -7965,6 +8184,9 @@
       "runningTitle_female": "{{name}} werkt eraan",
       "waitingTitle": "{{name}} wacht op jou",
       "waitingTitle_female": "{{name}} wacht op jou",
+      "finishedTitle": "{{name}} heeft het afgerond",
+      "finishedMeta": "{{when}} · overgedragen door {{name}}",
+      "answer": "Antwoorden",
       "stalledTitle": "{{name}} is gestopt {{when}}",
       "stalledTitle_female": "{{name}} is gestopt {{when}}",
       "stalledText": "De taak ligt nog bij {{name}}, maar er loopt geen run.",
@@ -7983,10 +8205,7 @@
         "failed": "De laatste run is mislukt.",
         "canceled": "Iemand heeft de run gestopt.",
         "budget": "Het maandbudget van de agent is op."
-      },
-      "finishedTitle": "{{name}} heeft het afgerond",
-      "finishedMeta": "{{when}} · overgedragen door {{name}}",
-      "answer": "Antwoorden"
+      }
     },
     "status": {
       "todo": "Te doen",
@@ -8176,10 +8395,7 @@
       "criterion_checked": "heeft het criterium \"{{text}}\" aangevinkt",
       "criterion_unchecked": "heeft het criterium \"{{text}}\" uitgevinkt",
       "agent_asked": "heeft {{name}} gevraagd het te doen"
-    },
-    "handedBy": "overgedragen door <0/>{{name}}",
-    "fromDm": "uit <0>je DM met {{name}}</0>",
-    "fromDmText": "uit je DM met {{name}}"
+    }
   },
   "routines": {
     "filters": "Routines filteren",
@@ -14741,6 +14957,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Die foto is niet van jou.",
+      "invalid": "Die achtergrond bestaat niet.",
+      "tooLarge": "De foto mag maximaal 2 MB zijn.",
+      "type": "Gebruik een JPEG-, PNG- of WebP-foto."
+    },
     "tooLarge": "Dit is groter dan de server aanneemt.",
     "tooLargeMax": "Dit is groter dan de server aanneemt: tot {{max}} MB.",
     "passwordLink": {
@@ -16657,6 +16879,51 @@
           "new3": "Nog 2, ik bel morgen.",
           "new4": "Rapport bijgewerkt in de Drive.",
           "newCount": "4 nieuwe"
+        },
+        "wallpaper": {
+          "title": "Achtergrond",
+          "help": "Verandert alleen voor jou, op al je apparaten",
+          "rowHelp": "Achter elk gesprek, alleen voor jou. Een gesprek kan via zijn menu een eigen achtergrond hebben.",
+          "rowSub": "Alleen voor jou, in elk gesprek",
+          "onlyHere": "Alleen in {{name}}, alleen voor jou",
+          "none": "Geen achtergrond",
+          "sameAsOthers": "Zoals de andere gesprekken",
+          "sameShort": "Zoals de andere",
+          "sky": "Lucht",
+          "drawings": "Tekeningen",
+          "color": "Kleur",
+          "photos": "Je foto's",
+          "choosePhoto": "Kies een foto",
+          "skyAutoHelp": "De eerste volgt het gesprek: in een direct bericht een lucht in de kleur van de agent, in kanalen de lucht van de werkruimte.",
+          "skyAutoHelpDms": "De eerste is een lucht in de kleur van de agent.",
+          "skyAutoHelpChannels": "De eerste is de lucht van de werkruimte.",
+          "neutral": {
+            "paper": "Papier",
+            "mist": "Nevel",
+            "sand": "Zand"
+          },
+          "name": {
+            "skyAuto": "Lucht van het gesprek",
+            "skyAgent": "Lucht van de agent",
+            "skyWorkspace": "Lucht van de werkruimte",
+            "sky": "Lucht · {{color}}",
+            "drawingsAuto": "Tekeningen van het gesprek",
+            "drawingsAgent": "Tekeningen van de agent",
+            "drawingsWorkspace": "Tekeningen van de werkruimte",
+            "drawings": "Tekeningen · {{color}}",
+            "crowd": "Agents",
+            "color": "Kleur · {{color}}",
+            "photo": "Je foto"
+          },
+          "choose": "Kiezen…",
+          "menu": "Achtergrond van het gesprek…",
+          "preview": "Voorbeeld",
+          "usePhoto": "Deze foto gebruiken",
+          "dragHint": "Sleep de foto om te kiezen welk deel je ziet",
+          "dim": "Donkerder maken in donkere modus",
+          "sending": "Foto versturen…",
+          "failed": "Kon de achtergrond niet opslaan. Probeer het opnieuw.",
+          "done": "Klaar"
         }
       },
       "agentStyle": "Hoe agents met je praten",
@@ -17164,6 +17431,21 @@
     "tomorrowAt": "morgen {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Overgedragen aan <0/>{{name}}",
+      "working": "bezig",
+      "done": "klaar in {{duration}}",
+      "waitingYou": "wacht op jouw antwoord",
+      "waiting": "wacht op een antwoord",
+      "waitingApprovalYou": "wacht op jouw goedkeuring",
+      "waitingApproval": "wacht op goedkeuring",
+      "waitingComputer": "wacht op de computer",
+      "paused": "gepauzeerd op de limiet van het plan",
+      "queued": "in de wachtrij",
+      "failed": "niet afgemaakt",
+      "stopped": "gestopt",
+      "step": "stap {{current}} van {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",
@@ -17239,24 +17521,12 @@
       "failed": "Geblokkeerd · niet afgemaakt",
       "failedWhy": "Geblokkeerd · niet afgemaakt: {{why}}"
     },
-    "working": "Op de achtergrond",
-    "handed": {
-      "lead": "Overgedragen aan <0/>{{name}}",
-      "working": "bezig",
-      "done": "klaar in {{duration}}",
-      "waitingYou": "wacht op jouw antwoord",
-      "waiting": "wacht op een antwoord",
-      "waitingApprovalYou": "wacht op jouw goedkeuring",
-      "waitingApproval": "wacht op goedkeuring",
-      "waitingComputer": "wacht op de computer",
-      "paused": "gepauzeerd op de limiet van het plan",
-      "queued": "in de wachtrij",
-      "failed": "niet afgemaakt",
-      "stopped": "gestopt",
-      "step": "stap {{current}} van {{total}}"
-    }
+    "working": "Op de achtergrond"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} vraagt je"
+    },
     "speedFallback": {
       "text": "ChatGPT weigerde de snelheid Snel voor dit account of model, dus dit antwoord kwam op standaardsnelheid.",
       "action": "Agent openen"
@@ -17866,9 +18136,6 @@
       "interrupted": "Onderbroken door een herstart van de server. Vraag het opnieuw om verder te gaan.",
       "step_limit": "Mijn stappen waren op voordat ik klaar was.",
       "stuck": "Ik liep vast en stopte voordat ik klaar was."
-    },
-    "request": {
-      "asksYou": "{{name}} vraagt je"
     }
   },
   "builtinTools": {

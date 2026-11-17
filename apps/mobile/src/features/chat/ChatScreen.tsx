@@ -134,6 +134,7 @@ import Animated, {
   FadeOut,
   Keyframe,
   LayoutAnimationConfig,
+  useAnimatedRef,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -209,7 +210,9 @@ import { AskBar, AskProbes, AskStoreProvider, useAskWatch, useAwayAsk, WaitingHe
 import { ChannelHello } from "./ChannelHello";
 import { ChannelPicker } from "./ChannelPicker";
 import { ChannelWelcome } from "./ChannelWelcome";
+import { ChatPeek, usePullPastEnd } from "./ChatPeek";
 import { ChatSkeleton } from "./ChatSkeleton";
+import { ChatWallpaper, WallpaperBand, WallpaperUnder } from "./ChatWallpaper";
 import { type OpenedMessages, OpenedMessagesContext } from "./ClippedMessage";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { takeComposerRequest, useComposerRequest } from "./composer-request";
@@ -239,7 +242,7 @@ import {
   stoppableInLine,
   workingEntries,
 } from "./logic";
-import { RowLookContext, useConversationLook, useRhythm } from "./look";
+import { RowLookContext, useConversationLook, useConversationWallpaper, useRhythm } from "./look";
 import { MediaPickerSheet } from "./MediaPickerSheet";
 import { MentionPicker, useMentionMembers } from "./MentionPicker";
 import { MessageMenuFor } from "./MessageMenu";
@@ -251,6 +254,7 @@ import { NoAiBanner } from "./NoAiBanner";
 import { newMissionHref } from "./new-mission";
 import { endsOnNoAiCard, noAiBanner } from "./no-ai-banner";
 import { PinnedLines, PinsSheet } from "./PinsSheet";
+import { peekAgentOf } from "./peek";
 import { QuoteBar } from "./QuoteLine";
 import { AgentLocked, UnavailableLines } from "./ReachLines";
 import { ReturnLine, ReturnsSheet, useReturnsHere } from "./Returns";
@@ -350,6 +354,11 @@ const COMPOSER_INPUT_ID = "chat-composer";
 const HOLD_MS = 900;
 /** Holding a message opens the system's menu where there is one (iOS); elsewhere, the app's sheet. */
 const NATIVE_MENU = Platform.OS === "ios";
+/**
+ * The agent peeking past the conversation's end (`ChatPeek`) where the list reports a pull there: iOS bounces past its
+ * end; Android's list stops at it (its stretch is drawn, never in the offset).
+ */
+const PEEK = Platform.OS === "ios";
 /** The notifications line was shown and answered here: it doesn't come back on this screen. */
 const OFFER_DONE = "done";
 /** How long the list keeps ignoring the keyboard after what covered it closed (its closing animation, ms). */
@@ -452,10 +461,18 @@ function Chat({
   const dmAgentId = dm?.with.type === "agent" ? dm.with.id : null;
   const dmAgent = dmAgentId ? dir.agentById.get(dmAgentId) : undefined;
   const rightHandId = useMemo(() => dir.agents.find(isRightHand)?.id, [dir.agents]);
-  const rowLook = useConversationLook(
-    Boolean(dm) || thread.data?.channelKind === "dm",
-    dmAgent ? agentLook(dmAgent).color : undefined,
-  );
+  const convoDm = Boolean(dm) || thread.data?.channelKind === "dm";
+  const dmAgentColor = dmAgent ? agentLook(dmAgent).color : undefined;
+  const rowLook = useConversationLook(convoDm, dmAgentColor, channelId);
+  // Mine alone: this conversation's background, behind the list, the clear bar and the composer.
+  const backdrop = useConversationWallpaper(convoDm, channelId, dmAgentColor);
+  const walled = rowLook.wallpaper === true;
+  // The screen's size: the background and its band under the bar are one picture, cut to the same place.
+  const [wallSize, setWallSize] = useState<{ width: number; height: number } | null>(null);
+  const onScreenLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setWallSize((now) => (now && now.width === width && now.height === height ? now : { width, height }));
+  }, []);
   const rhythm = CHAT_RHYTHM[rowLook.style];
   const quiet = quietInset(rowLook);
   // The right hand (ADR 0137): its own line and composer hint, no computer, and its greeting on top.
@@ -2262,21 +2279,30 @@ function Chat({
     [onReply, onMission, onRemind, onLongPress, onRetry, onQuote, onResend, onOfferDone],
   );
 
+  // A day's line in the list: faint words, or over a background a glass plate they read on (as the floating date's).
+  const dayLine = useCallback(
+    (words: string) =>
+      walled ? (
+        <View style={[styles.dayPlate, { marginTop: rhythm.turn, backgroundColor: c.glass, borderColor: c.line2 }]}>
+          <Text variant="footnote" tone="muted" style={styles.dayOn}>
+            {words}
+          </Text>
+        </View>
+      ) : (
+        <Text variant="footnote" tone="faint" style={[styles.day, { marginTop: rhythm.turn }]}>
+          {words}
+        </Text>
+      ),
+    [walled, rhythm.turn, c.glass, c.line2],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: Row }) => {
       switch (item.kind) {
         case "day":
-          return (
-            <Text variant="footnote" tone="faint" style={[styles.day, { marginTop: rhythm.turn }]}>
-              {when.day(item.iso)}
-            </Text>
-          );
+          return dayLine(when.day(item.iso));
         case "marker":
-          return (
-            <Text variant="footnote" tone="faint" style={[styles.day, { marginTop: rhythm.turn }]}>
-              {item.text}
-            </Text>
-          );
+          return dayLine(item.text);
         case "wait":
           return <QueueWaitRow channelId={channelId} wait={item.wait} />;
         case "unseen":
@@ -2378,6 +2404,7 @@ function Chat({
       offerAt,
       hands,
       dir,
+      dayLine,
     ],
   );
 
@@ -2561,6 +2588,11 @@ function Chat({
     const state = listRef.current?.getState();
     if (state) setFar(screenAboveEnd(state.distanceFromEnd, state.scrollLength));
   }, [watchList]);
+  // The conversation's agent peeks up from behind the dock as the person pulls past the last message (`ChatPeek`), read
+  // from the list's scroll view on the UI thread: the keyboard's list lends it through `refScrollView`, next to its own.
+  const listScroll = useAnimatedRef<Animated.ScrollView>();
+  const peekAgentId = useMemo(() => (PEEK ? peekAgentOf(dmAgentId, shownMessages) : null), [dmAgentId, shownMessages]);
+  const pull = usePullPastEnd(listScroll, peekAgentId !== null);
 
   // The list shows once it sits where it opens, at the end or at the "Novas" line (no frame of it placing itself), as
   // Bluesky's and Expensify's do; from a little opacity, not none, so the glass inside rows keeps drawing.
@@ -2843,14 +2875,24 @@ function Chat({
       <View
         style={[styles.screen, { backgroundColor: c.bg }]}
         onTouchStart={touched ? undefined : () => setTouched(true)}
+        onLayout={onScreenLayout}
       >
+        {walled && wallSize ? (
+          <ChatWallpaper
+            wallpaper={backdrop.wallpaper}
+            strength={backdrop.strength}
+            width={wallSize.width}
+            height={wallSize.height}
+            style={styles.wallpaper}
+          />
+        ) : null}
         {/* A clear bar on every conversation (DM, channel, thread): the band behind it is ours, below, so the
             system's scroll edge never makes one look different from another. */}
         <PushedHeader title={pill ?? title} plate solid={false} right={right} />
         {hasPin ? (
           // The bar is see-through (the conversation runs under it): an open mission's card starts below it. Pinned
           // messages have no bar here: they wait above the first message, revealed by pulling down (`PinnedLines`).
-          <View style={{ backgroundColor: c.bg, paddingTop: headerHeight }}>
+          <View style={{ backgroundColor: walled ? "transparent" : c.bg, paddingTop: headerHeight }}>
             {pinned ? (
               <View style={styles.pin}>
                 <MissionCardView mission={pinned} pinned />
@@ -2881,6 +2923,7 @@ function Chat({
                               <OpenedMessagesContext.Provider value={openedMessages}>
                                 <ConversationList
                                   ref={listRef}
+                                  refScrollView={listScroll}
                                   style={styles.grow}
                                   data={shownRows}
                                   keyExtractor={rowKey}
@@ -2974,6 +3017,7 @@ function Chat({
                             bottomInset={dockHeight}
                             keyboardLift={lift}
                             onAsk={onSend}
+                            channelId={channelId}
                           />
                         ) : channel && helloAgent && !dm && !isThread ? (
                           <ChannelHello
@@ -3010,13 +3054,25 @@ function Chat({
             // The conversation fades under the floating header, as it does under the box. Not under a pinned bar
             // or card: the list already starts below them, and a header-tall fade there was a dark band over the
             // first messages (the pinned bar's own hairline is the edge). Solid behind the status bar: a message
-            // passing there showed through the clock and the indicators, its words cut by them.
-            <LinearGradient
-              pointerEvents="none"
-              colors={[c.bg, c.bg, withOpacity(c.bg, 0.86), withOpacity(c.bg, 0)]}
-              locations={[0, topFadeSolid, Math.max(0.62, topFadeSolid), 1]}
-              style={[styles.topFade, { height: headerHeight + 28 }]}
-            />
+            // passing there showed through the clock and the indicators, its words cut by them. Over a background
+            // it fades into the background itself, never into a band of the page's color.
+            walled && wallSize ? (
+              <WallpaperBand
+                wallpaper={backdrop.wallpaper}
+                strength={backdrop.strength}
+                width={wallSize.width}
+                height={wallSize.height}
+                band={headerHeight + 28}
+                solid={topFadeSolid}
+              />
+            ) : (
+              <LinearGradient
+                pointerEvents="none"
+                colors={[c.bg, c.bg, withOpacity(c.bg, 0.86), withOpacity(c.bg, 0)]}
+                locations={[0, topFadeSolid, Math.max(0.62, topFadeSolid), 1]}
+                style={[styles.topFade, { height: headerHeight + 28 }]}
+              />
+            )
           ) : null}
           {channel && !dm && !isThread && member && showList ? (
             // The channel greets you under the bar, as the web's: a newcomer's #general, or the first channel of a day.
@@ -3031,6 +3087,8 @@ function Chat({
           ) : null}
           {peeking ? null : (
             <KeyboardStickyView offset={{ opened: lift }} style={styles.composerDock} pointerEvents="box-none">
+              {/* First in the dock, so everything in it draws over the face. */}
+              {peekAgentId && showList ? <ChatPeek agentId={peekAgentId} pull={pull} dock={endInset} /> : null}
               {/* Right above the composer and its working line, in the same dock: it rides the keyboard with them and
                   moves with the box in the same frame when the field grows a line (placed from the box's measured
                   height it came a render later). */}
@@ -3049,13 +3107,26 @@ function Chat({
                 onLayout={onComposerBoxLayout}
                 style={[styles.composer, { paddingBottom: bottomPad }]}
               >
-                {/* The conversation fades under the box: no hard edge above it. */}
-                <LinearGradient
-                  pointerEvents="none"
-                  colors={[withOpacity(c.bg, 0), withOpacity(c.bg, 0.9), c.bg]}
-                  locations={[0, 0.3, 1]}
-                  style={StyleSheet.absoluteFill}
-                />
+                {/* The conversation fades under the box: no hard edge above it. Over a background, into the
+                    background itself. */}
+                {walled && wallSize ? (
+                  <WallpaperUnder
+                    wallpaper={backdrop.wallpaper}
+                    strength={backdrop.strength}
+                    width={wallSize.width}
+                    height={wallSize.height}
+                    box={endInset}
+                    keyboard={keyboardAt}
+                    lift={lift}
+                  />
+                ) : (
+                  <LinearGradient
+                    pointerEvents="none"
+                    colors={[withOpacity(c.bg, 0), withOpacity(c.bg, 0.9), c.bg]}
+                    locations={[0, 0.3, 1]}
+                    style={StyleSheet.absoluteFill}
+                  />
+                )}
                 <Connection status={realtime} />
                 {banner && !org?.deletion ? <NoAiBanner banner={banner} /> : null}
                 <UnavailableLines notices={notices} />
@@ -3560,6 +3631,16 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   pin: { paddingHorizontal: 12, paddingBottom: 10 },
   day: { alignSelf: "center", textAlign: "center", fontWeight: "600" },
+  // A day's line over a background: a small glass plate (as the design's).
+  dayPlate: {
+    alignSelf: "center",
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 11,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  dayOn: { textAlign: "center", fontWeight: "600" },
+  wallpaper: { position: "absolute", top: 0, left: 0 },
   listPad: { paddingTop: 8, paddingBottom: 8 },
   composer: { paddingHorizontal: 10, paddingTop: 6 },
   readOnly: { textAlign: "center", paddingHorizontal: 16, paddingVertical: 12 },

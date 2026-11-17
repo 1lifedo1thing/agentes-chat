@@ -251,9 +251,7 @@ function SkippedRow({ row, agentId, now }: { row: UsageQueueClosedRow; agentId: 
           {t("usageQueue.answeredAnyway")}
         </Text>
       ) : row.mayAnswer ? (
-        <View style={styles.ghostActs}>
-          <AnswerAnywayButton runId={row.runId} agentId={agentId} closed={row.closed} />
-        </View>
+        <AnswerAnywayButton runId={row.runId} agentId={agentId} closed={row.closed} />
       ) : null}
     </View>
   );

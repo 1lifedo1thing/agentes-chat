@@ -226,7 +226,9 @@ describe("Tamanho do texto on the phone", () => {
     const page = await read("me/ChatLookPage.tsx");
     // A stepped slider (small A, five steps, big A) the preview follows while it moves; saved when it lands.
     expect(page).toContain("save({ textSize: v })");
-    expect(page).toContain("<ChatPreview style={style} tone={tone} size={shownSize} dm={dm} />");
+    expect(page).toContain(
+      "<ChatPreview style={style} tone={tone} size={shownSize} dm={dm} wallpaper={shownWallpaper} />",
+    );
     expect(page).toContain('accessibilityRole="adjustable"');
     expect(page).toContain("accessibilityValue={{ text: labels[value] }}");
     expect(page).toContain("{labels[DEFAULT_TEXT_SIZE]}");
