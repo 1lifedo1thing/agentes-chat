@@ -18,7 +18,7 @@ import {
 import { type CanvasPreview, type CanvasPreviewShape, isShapeType, type ShapeView } from "./types";
 
 /**
- * A canvas as a whole (ADR 0191 §2, §7): its preview (what cards and the Drive draw), its text (what search finds it
+ * A canvas as a whole (ADR 0194 §2, §7): its preview (what cards and the Drive draw), its text (what search finds it
  * by), its rules of shape (what the server checks) and a version's content written over it.
  */
 

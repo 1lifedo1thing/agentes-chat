@@ -7,7 +7,7 @@ import { isCompoundFile, isZipFile, OfficePackage } from "./package";
 import { ptToPx, widthToPx } from "./xlsx-read";
 
 /**
- * The formats the server doesn't read itself (ADR 0193): the legacy binary Excel workbook (`.xls`) and the
+ * The formats the server doesn't read itself (ADR 0196): the legacy binary Excel workbook (`.xls`) and the
  * OpenDocument spreadsheet (`.ods`), read through SheetJS's community edition (Apache-2.0), loaded only when one is
  * opened. An `.ods` is a zip: its parts are first taken out by the server's own zip reader, within the same budget as
  * any Office file, and handed over repacked, so a zip bomb never reaches the library. Values, formulas, number

@@ -74,7 +74,7 @@ const shape = (s: Partial<ShapeView> & { id: string; type: ShapeView["type"] }):
   ...s,
 });
 
-describe("the canvas's camera (ADR 0191 §2)", () => {
+describe("the canvas's camera (ADR 0194 §2)", () => {
   test("world and screen points go back and forth", () => {
     const cam: Cam = { x: -120, y: 40, s: 0.75 };
     const p = { x: 333, y: -47 };

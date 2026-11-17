@@ -30,7 +30,7 @@ import type * as Y from "yjs";
 import { axisStarts, type GridBox, mergeAt } from "./grid-view";
 
 /**
- * What the phone's grid draws (ADR 0191, 0193), the same for a live spreadsheet and for a workbook the server read
+ * What the phone's grid draws (ADR 0194, 0196), the same for a live spreadsheet and for a workbook the server read
  * from an upload (or an old table): the sheet's shape (row and column edges, frozen panes, merges) and, for the cells
  * a view shows, their text as the reader sees it with its look. The grid never reads the document itself.
  */

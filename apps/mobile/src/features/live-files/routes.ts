@@ -3,7 +3,7 @@ import type { SFSymbolName } from "../../ui/headerActions";
 import type { IconName } from "../../ui/icons.data";
 
 /**
- * Where live files open on the phone (ADR 0191 §9), and their marks: kept apart from the screens' logic so the files'
+ * Where live files open on the phone (ADR 0194 §9), and their marks: kept apart from the screens' logic so the files'
  * routing (`fileRoute`) reads it without loading the documents' code.
  */
 
@@ -25,7 +25,7 @@ export const liveRoute = (kind: LiveKind, id: string): { pathname: LiveScreen; p
 /** Who is in a live file, and following one of them (`here/[id]`). */
 export const hereRoute = (id: string) => ({ pathname: "/here/[id]" as const, params: { id } });
 
-/** The kinds "Novo" makes, in its order (ADR 0191 §9). */
+/** The kinds "Novo" makes, in its order (ADR 0194 §9). */
 export const LIVE_KINDS_MADE: readonly LiveKind[] = ["spreadsheet", "slides", "canvas"];
 
 /** Each kind's line icon (the Drive, cards, New) and its SF Symbol (bar buttons and menus on iOS). */

@@ -2,7 +2,7 @@ import { readableOn } from "../colors";
 import { type ElementStyle, type ElementType, isThemeId, type SlideRole, type ThemeId } from "./types";
 
 /**
- * The six presentation themes (ADR 0191 §2). They use only the app's own fonts (Funnel Display for headings, Source
+ * The six presentation themes (ADR 0194 §2). They use only the app's own fonts (Funnel Display for headings, Source
  * Sans 3 for the rest), and every text color reads at 4.5:1 or more on the theme's background and on its surface
  * (tests check it), so a slide stays legible on a projector, in a thumbnail and in an export.
  *

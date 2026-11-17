@@ -15,7 +15,7 @@ import { redoWith, richUndo, undoWith } from "./undo";
 import "./rich.css";
 
 /**
- * A rich text box people and agents edit together (ADR 0191 §2, §5): ProseMirror bound to the box's `Y.XmlFragment`
+ * A rich text box people and agents edit together (ADR 0194 §2, §5): ProseMirror bound to the box's `Y.XmlFragment`
  * through y-prosemirror. Every change typed here is the person's own (their undo takes it back, as it takes back
  * moving the box, and never what someone else typed), other people's carets show in their color with their name, and
  * this person's caret goes to them in the presence field `cursorPm`. Slides and the canvas mount one while a box is
@@ -160,7 +160,7 @@ export function RichText({
     if (!el) return;
     // What the person types reaches the document as y-prosemirror's own transactions (origin `ySyncPluginKey`), each
     // inside its lock, so its observer never draws the person's own keys back (that would break an accent being
-    // composed). The file's undo takes them back with everything else the person did (ADR 0191 §6): it tracks that
+    // composed). The file's undo takes them back with everything else the person did (ADR 0194 §6): it tracks that
     // origin beside `LOCAL`. Only this person's typing has it; others' arrive with the connection's origin.
     if (undoManager && !undoManager.trackedOrigins.has(ySyncPluginKey)) undoManager.trackedOrigins.add(ySyncPluginKey);
     const undo = undoManager ? undoWith(undoManager) : undoCommand;

@@ -1,5 +1,5 @@
 /**
- * Live files in the apps (ADR 0191, 0192, 0193), the same on the web, the desktop app and the phone:
+ * Live files in the apps (ADR 0194, 0195, 0196), the same on the web, the desktop app and the phone:
  *
  * - `useLiveRoom(orgId, fileId, { socketFactory, baseUrl, me, textFrames? })` opens a file (its state over HTTP, then
  *   its socket) as a `LiveRoom`, shared by every screen that shows it (`acquireLiveRoom`). Editors read `room.doc`

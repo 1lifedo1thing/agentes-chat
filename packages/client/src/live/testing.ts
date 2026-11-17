@@ -28,7 +28,7 @@ import type { LiveFileState } from "./types";
 
 /**
  * A live files server in memory, for the apps' tests (`@agenteschat/client/live/testing`). It speaks the socket's
- * protocol as `apps/server/src/realtime/live.ts` does (ADR 0191 §3): `live.ready`, its sync step 1 and who else is in
+ * protocol as `apps/server/src/realtime/live.ts` does (ADR 0194 §3): `live.ready`, its sync step 1 and who else is in
  * when a socket opens; a step 2 for each step 1; changes applied, numbered, sent to everyone else in the file and
  * answered with `live.saved`; presence relayed, and taken back when a socket goes; `{"type":"ping"}` answered; base64
  * text frames for `text=1`. Nothing is stored: a file is a `Y.Doc` here. Frames reach the apps a microtask later (or

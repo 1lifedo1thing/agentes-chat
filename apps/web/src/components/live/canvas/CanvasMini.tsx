@@ -8,7 +8,7 @@ import "./canvas.css";
 
 /**
  * A canvas drawn small, for its cards (the Drive, a message, Ask an agent's context) from the preview the server
- * keeps (ADR 0191 §7: the bounds and up to 40 of the biggest shapes): frames, notes in their color, pictures (when
+ * keeps (ADR 0194 §7: the bounds and up to 40 of the biggest shapes): frames, notes in their color, pictures (when
  * the card says which file they belong to), text as lines, shapes, arrows. Decoration: the card's words name it.
  */
 export function CanvasMini({ preview, fileId }: { preview: CanvasPreview; fileId?: string }) {

@@ -155,7 +155,7 @@ export function FileView({
   const { t } = useTranslation();
   const { org } = useOrg();
   const api = useApi();
-  // An Office file is drawn from the server's reading of it (ADR 0193), never from its bytes here.
+  // An Office file is drawn from the server's reading of it (ADR 0196), never from its bytes here.
   const read = previewKind(content.contentType, content.name);
   const kind = isOfficePreview(read) ? null : read;
   // A video streams from the download: any size plays. The rest load whole, up to the preview limit.
@@ -164,7 +164,7 @@ export function FileView({
   const [videoFailed, setVideoFailed] = useState(false);
   const videoLabels = useVideoLabels();
 
-  // A spreadsheet, a presentation or a Word document the server reads for the apps to draw (ADR 0193).
+  // A spreadsheet, a presentation or a Word document the server reads for the apps to draw (ADR 0196).
   if (isOfficePreview(read) && content.size <= MAX_PREVIEW_BYTES) {
     return <OfficePreview artifactId={artifactId} version={version} content={content} title={title} kind={read} />;
   }

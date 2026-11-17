@@ -115,7 +115,7 @@ const DOCK_ROOM = 88;
 const GENERATE_BAR_ROOM = 200;
 
 /**
- * The canvas ("Quadro", ADR 0191 §2, ADR 0192): an endless plane people and agents fill together with pictures,
+ * The canvas ("Quadro", ADR 0194 §2, ADR 0195): an endless plane people and agents fill together with pictures,
  * notes, text, frames, shapes, arrows between them, Drive files and agents' pages, and pictures generated in place.
  *
  * Shapes are DOM in a world layer the camera moves (pan and zoom by trackpad, wheel, pinch, keys and the zoom island);
@@ -147,7 +147,7 @@ const CLICK_SLOP = 4;
 const SNAP_PX = 6;
 /** The arrows nudge this far (world units); with Shift, ten times as far. */
 const NUDGE = 1;
-/** Pictures over this don't upload (ADR 0191 §8). */
+/** Pictures over this don't upload (ADR 0194 §8). */
 const MAX_ASSET_BYTES = 25 * 1024 * 1024;
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 /** A picture lands no bigger than this on its longest side (as `addShape` places one). */

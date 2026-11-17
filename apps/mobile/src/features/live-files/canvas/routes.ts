@@ -1,5 +1,5 @@
 /**
- * "Gerar" on the phone (ADR 0192): its own pushed screen, with the canvas's chosen pictures to start from (`refs`) and
+ * "Gerar" on the phone (ADR 0195): its own pushed screen, with the canvas's chosen pictures to start from (`refs`) and
  * where on the canvas (world units) the person was looking (`x`, `y`), where the new pictures go.
  */
 export const generateRoute = (id: string, from: { refs?: readonly string[]; at?: { x: number; y: number } } = {}) => ({

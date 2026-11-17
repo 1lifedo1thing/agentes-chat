@@ -8,7 +8,7 @@ import { RichView } from "../rich";
 import "./slides.css";
 
 /**
- * A slide as it looks (ADR 0191 §2), drawn in slide units (the deck's 1920×1080) and scaled by whoever shows it: the
+ * A slide as it looks (ADR 0194 §2), drawn in slide units (the deck's 1920×1080) and scaled by whoever shows it: the
  * stage while editing, the rail's thumbnails, presenting, the Drive's covers and uploaded decks (`DeckView`). Every
  * size is the theme's or the element's own in those units, so a slide looks the same at any scale and in the export.
  */

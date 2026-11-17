@@ -1,5 +1,5 @@
 /**
- * What a formula works with while it runs (ADR 0191 §2): plain values, references (a rectangle of a sheet, read only
+ * What a formula works with while it runs (ADR 0194 §2): plain values, references (a rectangle of a sheet, read only
  * when needed) and arrays, with Excel's rules for turning one kind into another: text in arithmetic is `#VALUE!`
  * unless it reads as a number, `TRUE` is 1, an empty cell is 0 or "" depending on what wants it, and the first error
  * wins. Text made from numbers and numbers read from text (`=1,5&""`, VALUE, TEXT's codes) follow the engine's

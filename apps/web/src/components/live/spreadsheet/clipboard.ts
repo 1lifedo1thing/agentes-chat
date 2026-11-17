@@ -1,5 +1,5 @@
 /**
- * The spreadsheet's clipboard on the web and in the desktop app (ADR 0191): copy and cut write tab-separated text
+ * The spreadsheet's clipboard on the web and in the desktop app (ADR 0194): copy and cut write tab-separated text
  * and an HTML table (what Excel, Google Sheets and documents read) plus our own cells, so a paste here keeps formulas
  * moving as copies do. Everything goes through the `copy`, `cut` and `paste` events of the focused field, which is
  * also what the Mac app's Edit menu sends.

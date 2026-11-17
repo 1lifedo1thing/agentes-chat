@@ -6,7 +6,7 @@ setupDom();
 import type { WorkbookViewProps } from "@/components/live/spreadsheet";
 
 /**
- * Live files in the Drive (ADR 0191 §9, ADR 0193): "Novo" makes a spreadsheet, a presentation or a canvas and opens
+ * Live files in the Drive (ADR 0194 §9, ADR 0196): "Novo" makes a spreadsheet, a presentation or a canvas and opens
  * its page with the title ready to be named; cards draw a live file's preview and the faces of who is in it; a click or
  * a link opens its own page instead of the viewer; an uploaded Office file shows in the viewer, drawn from the server's
  * reading of it, with "Edit as spreadsheet". The editors and their small views are stand-ins here (each has its own

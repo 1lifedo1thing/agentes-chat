@@ -28,7 +28,7 @@ import { allowedOrigins } from "../routes/app/context";
 import { personUpgrade, UUID } from "./ws";
 
 /**
- * Live files' sockets (ADR 0191 §3): `GET /api/live?orgId=<uuid>&fileId=<uuid>[&text=1]` carries one spreadsheet,
+ * Live files' sockets (ADR 0194 §3): `GET /api/live?orgId=<uuid>&fileId=<uuid>[&text=1]` carries one spreadsheet,
  * presentation or canvas between a person's app and the document this process hosts for it (`LiveDocs.join`).
  *
  * - Refused before the upgrade like every person socket (`personUpgrade`: 403 for a foreign Origin or a non-member, 401
@@ -52,7 +52,7 @@ import { personUpgrade, UUID } from "./ws";
  */
 export const LIVE_PATH = "/api/live";
 
-/** The sockets' limits (ADR 0191 §3); tests make the waits shorter. */
+/** The sockets' limits (ADR 0194 §3); tests make the waits shorter. */
 export const LIVE_SOCKET_LIMITS = {
   opensPerMinute: 30,
   perPerson: 12,

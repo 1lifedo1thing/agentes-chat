@@ -2,7 +2,7 @@ import { type Box, type Guide, type Point, rectsIntersect, rotatedBounds, snapLi
 import type { ElementView } from "@agenteschat/live/slides";
 
 /**
- * The stage's geometry (ADR 0191 §2), in slide units with y down and rotation in degrees clockwise around a box's
+ * The stage's geometry (ADR 0194 §2), in slide units with y down and rotation in degrees clockwise around a box's
  * middle: fitting a slide in its room, where a selection's edges are, moving with snapping guides, resizing from any
  * handle of a turned box, turning, and picking with a marquee. Pure, so it is tested without a page.
  */

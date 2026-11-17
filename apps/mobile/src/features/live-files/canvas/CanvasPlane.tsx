@@ -70,7 +70,7 @@ import { arrowDraws, keepsRatio, movingIds, peerPicks, peerPointers, shapeAt, sh
 import { ArrowLabel, FrameName, type Motion, ShapeItem } from "./ShapeItems";
 
 /**
- * A canvas's plane on the phone (ADR 0191 §2, §9): an endless world under a camera (`camera.ts`), panned with a finger
+ * A canvas's plane on the phone (ADR 0194 §2, §9): an endless world under a camera (`camera.ts`), panned with a finger
  * (it glides on when let go), zoomed with two from 10% to 400% around them. The dots and the frames are drawn on the UI
  * thread (Skia) for every frame; the shapes are views laid out at the zoom they were last settled at and moved and
  * scaled with the camera, laid out again sharp when the fingers lift, and only those around what the screen shows.

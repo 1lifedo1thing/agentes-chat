@@ -44,7 +44,7 @@ function sheet(name = "Planilha 1") {
   return { doc, id, engine, source };
 }
 
-describe("typing into a cell on the phone, in the person's language (ADR 0191)", () => {
+describe("typing into a cell on the phone, in the person's language (ADR 0194)", () => {
   test("Portuguese: decimal comma, semicolons between arguments, Excel's Brazilian names", () => {
     const { doc, id, engine, source } = sheet();
     engine.setLocale(PT);
@@ -178,7 +178,7 @@ describe("what the grid draws", () => {
   });
 });
 
-describe("read-only workbooks: uploads and old tables (ADR 0193)", () => {
+describe("read-only workbooks: uploads and old tables (ADR 0196)", () => {
   const workbook: WorkbookData = {
     sheets: [
       {

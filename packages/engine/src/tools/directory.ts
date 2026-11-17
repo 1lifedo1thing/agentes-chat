@@ -420,7 +420,7 @@ export const DASHBOARD_TOOLS: ReadonlySet<string> = new Set([
 const DASHBOARD_GROUP = "dashboards";
 
 /**
- * Live files (ADR 0191 §6, ADR 0192): spreadsheets, presentations and canvases, and images onto a canvas. Under the
+ * Live files (ADR 0194 §6, ADR 0195): spreadsheets, presentations and canvases, and images onto a canvas. Under the
  * Drive's scopes, in a group of their own, so a run about a spreadsheet loads these and not every Drive tool (and the
  * other way round).
  */

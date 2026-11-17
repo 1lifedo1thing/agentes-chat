@@ -4069,7 +4069,7 @@ export const fakeAppsOf = new WeakMap<ApiClient, FakeApps>();
 export const fakeDashboardsOf = new WeakMap<ApiClient, FakeDashboards>();
 
 /**
- * The live files fake behind each `createFakeApi` client (ADR 0191): its in-memory live server, the files' pictures,
+ * The live files fake behind each `createFakeApi` client (ADR 0194): its in-memory live server, the files' pictures,
  * image requests (`finishImages`) and Office previews. `render.tsx` routes the app's live sockets to its server.
  */
 export const fakeLiveOf = new WeakMap<ApiClient, FakeLive>();

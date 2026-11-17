@@ -1,5 +1,5 @@
 /**
- * Logic (ADR 0191 §2). IF, IFS, IFERROR, IFNA and SWITCH run only the branch they take, so `=IF(A1=0,0,1/A1)` never
+ * Logic (ADR 0194 §2). IF, IFS, IFERROR, IFNA and SWITCH run only the branch they take, so `=IF(A1=0,0,1/A1)` never
  * divides by zero and an expensive branch not taken costs nothing; given an array as the condition they decide item
  * by item. AND, OR and XOR read booleans and numbers in ranges and skip text, as Excel does.
  */

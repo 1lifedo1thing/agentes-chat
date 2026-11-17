@@ -193,7 +193,7 @@ export function createCustomProvider(
       return { ...result, model: request.model };
     },
     /**
-     * Pictures from an endpoint that speaks OpenAI's Images API (`/images/generations`, `/images/edits`, ADR 0192):
+     * Pictures from an endpoint that speaks OpenAI's Images API (`/images/generations`, `/images/edits`, ADR 0195):
      * through the same bounded fetch, a picture it answers with as an address read through it too. The workspace
      * prices them (`imageCostNanoUsd`): a cost the server reports is ignored.
      */

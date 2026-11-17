@@ -62,7 +62,7 @@ import { revealed, toReveal } from "./reveal";
 import { generateRoute } from "./routes";
 
 /**
- * A canvas on the phone (ADR 0191 §9, 0192), pushed with the file's bar (`LiveBar`): the plane with everything on it
+ * A canvas on the phone (ADR 0194 §9, 0195), pushed with the file's bar (`LiveBar`): the plane with everything on it
  * (`CanvasPlane`), and under it the tools to add a note, a text, photos from the library, or to generate pictures
  * (the agent's look: an AI makes them) on a screen of their own, from the chosen pictures. A long press asks for a
  * shape's menu (its words, its color, variations, front and back, delete) or the plane's. Following someone (from the

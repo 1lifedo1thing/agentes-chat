@@ -32,7 +32,7 @@ import type { LiveDocs } from "./docs";
 import type { ImageFailure, LiveImages } from "./images";
 
 /**
- * Agents' tools for live files (ADR 0191 §6) and their pictures (ADR 0192): agents are participants. Each tool reads
+ * Agents' tools for live files (ADR 0194 §6) and their pictures (ADR 0195): agents are participants. Each tool reads
  * the file at its head or applies one batch as one `LiveDocs.edit` whose origin is the agent and its run, so people in
  * the file see the change land (in steps for a big one), the agent's face in the header and its cursor where it
  * works (`live.activity.*` says what it does), and the history gets a version with the run. Inputs are compact (A1
@@ -54,7 +54,7 @@ const MAX_OUT = 40_000;
 /** A cell's text in a read, at most. */
 const CELL_CHARS = 300;
 export const LIVE_TOOL_LIMITS = {
-  /** Ops in one spreadsheet batch, and cells it writes (ADR 0191 §6). */
+  /** Ops in one spreadsheet batch, and cells it writes (ADR 0194 §6). */
   sheetOps: 200,
   cells: 20_000,
   /** Ops in one presentation or canvas batch. */
@@ -142,7 +142,7 @@ async function openFile(
   return access;
 }
 
-/** The agent's presence in a file (ADR 0191 §5); a failure never fails the tool (presence is only shown). */
+/** The agent's presence in a file (ADR 0194 §5); a failure never fails the tool (presence is only shown). */
 async function present(deps: LiveFileToolDeps, ctx: ToolContext, fileId: string, state: Partial<PeerState>) {
   await deps.live
     .setAgentPresence(ctx.orgId, fileId, { agentId: ctx.agentId, runId: ctx.runId }, state)
@@ -395,7 +395,7 @@ function rangeIds(doc: Y.Doc, sheet: string, r: ss.A1Range): ss.RangeIds {
 
 const labelOf = (r: ss.RangeIds) => ss.formatA1Range(r.r1, r.c1, r.r2, r.c2);
 
-/** A range as presence names it (ids, ADR 0191 §5), clamped to the cells the sheet has. */
+/** A range as presence names it (ids, ADR 0194 §5), clamped to the cells the sheet has. */
 function sheetSel(doc: Y.Doc, r: ss.RangeIds): SheetSel | undefined {
   const rows = ss.rowIds(doc, r.sheet);
   const cols = ss.colIds(doc, r.sheet);
@@ -1878,7 +1878,7 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
             sl.deleteSlides(doc, blank, origin);
           },
         });
-        // Pictures are the file's own (ADR 0191 §8): copied in once it exists, each into its slide's picture slot.
+        // Pictures are the file's own (ADR 0194 §8): copied in once it exists, each into its slide's picture slot.
         const pictures = slides.flatMap((s, i) => (s.image ? [{ op: "add_image", slide: i + 1, image: s.image }] : []));
         let missing = "";
         if (pictures.length > 0) {
@@ -2282,7 +2282,7 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
     async tools(ctx) {
       const images = deps.images;
       if (!images) return always;
-      // Offered only where the workspace has an image model (ADR 0192): elsewhere it could only fail.
+      // Offered only where the workspace has an image model (ADR 0195): elsewhere it could only fail.
       const models = await imageModelsCache
         .getOrLoad(ctx.orgId, async () => (await images.models(ctx.orgId)).map((m) => m.id))
         .catch(() => [] as string[]);

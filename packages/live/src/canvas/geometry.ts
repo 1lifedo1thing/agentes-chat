@@ -1,5 +1,5 @@
 /**
- * Plane geometry for canvases and slides (ADR 0191 §2): boxes in world (or slide) units, y down, rotation in degrees
+ * Plane geometry for canvases and slides (ADR 0194 §2): boxes in world (or slide) units, y down, rotation in degrees
  * clockwise around a box's center.
  */
 

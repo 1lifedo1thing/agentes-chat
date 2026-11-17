@@ -8,7 +8,7 @@ import { MAX_MESSAGE_LENGTH, postPersonMessage } from "../messages";
 import type { Talker } from "../talker";
 
 /**
- * "Ask an agent" from inside a live file (ADR 0191 §6): the person's own message to the agent, carrying the file
+ * "Ask an agent" from inside a live file (ADR 0194 §6): the person's own message to the agent, carrying the file
  * (`meta.artifacts`, so its card shows and the agent's context names it) and what they had selected
  * (`meta.liveRef`), sent where the agent can work on the file while everyone in it watches.
  */

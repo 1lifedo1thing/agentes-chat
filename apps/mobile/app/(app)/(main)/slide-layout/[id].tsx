@@ -4,7 +4,7 @@ import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
 /**
- * The layouts of a live presentation (`/slide-layout/<id>`, ADR 0191 §9): for a new slide at a place (`at`) or for a
+ * The layouts of a live presentation (`/slide-layout/<id>`, ADR 0194 §9): for a new slide at a place (`at`) or for a
  * slide's new look (`slide`); none: the Drive.
  */
 export default function SlideLayoutRoute() {

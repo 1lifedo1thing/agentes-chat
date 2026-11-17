@@ -1,5 +1,5 @@
 /**
- * The spreadsheet document (ADR 0191 §2): sheets in order (`sheetOrder`, `sheets`), each with its rows and columns as
+ * The spreadsheet document (ADR 0194 §2): sheets in order (`sheetOrder`, `sheets`), each with its rows and columns as
  * arrays of ids and its cells in a map keyed `rowId:colId`. A cell is one plain object replaced whole, so the last
  * writer wins per cell; rows and columns are ids, so a row inserted by one person while another types below it moves
  * the second one's cell with its row. Column widths, row heights and merges are kept by id too; frozen panes are

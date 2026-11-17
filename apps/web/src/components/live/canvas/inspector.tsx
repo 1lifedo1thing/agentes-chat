@@ -8,7 +8,7 @@ import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 
 /**
- * A chosen picture's side column (ADR 0192): the picture, how it was made (its prompt, model, who asked and when, the
+ * A chosen picture's side column (ADR 0195): the picture, how it was made (its prompt, model, who asked and when, the
  * pictures it started from), and what to do with it: Variations and Edit with AI (another request, with this picture
  * as the reference), Download, Copy image, Open (full size, with zoom). Beside the plane, never over it, so the
  * picture stays in sight; on a narrow window it covers the plane's right side.

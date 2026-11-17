@@ -9,13 +9,13 @@ import type { Signal } from "./signals";
 import type { LiveFileStatus, LiveMode, LiveRoomError } from "./types";
 
 /**
- * One open live file in an app (ADR 0191): its document, everyone's presence in it, the person's own undo, and the
+ * One open live file in an app (ADR 0194): its document, everyone's presence in it, the person's own undo, and the
  * connection that keeps them in step with the server. The web, the desktop app and the phone open it the same way
  * (`useLiveRoom`, or `acquireLiveRoom` with `new LiveRoom`), and their editors read and write `doc` with
  * `@agenteschat/live`'s functions, always with the `LOCAL` origin, which is what `undo` takes back.
  */
 
-/** The top-level types each kind keeps its content in (ADR 0191 §2): what the person's undo covers. */
+/** The top-level types each kind keeps its content in (ADR 0194 §2): what the person's undo covers. */
 const ROOTS: Record<LiveKind, (doc: Y.Doc) => (Y.Map<unknown> | Y.Array<unknown>)[]> = {
   spreadsheet: (doc) => [doc.getArray("sheetOrder"), doc.getMap("sheets")],
   slides: (doc) => [doc.getMap("deck"), doc.getArray("slideOrder"), doc.getMap("slides")],

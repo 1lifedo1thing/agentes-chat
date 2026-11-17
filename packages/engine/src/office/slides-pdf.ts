@@ -17,7 +17,7 @@ import { type PdfImage, pdfImage } from "./pdf-images";
 import type { DeckMediaReader } from "./pptx-write";
 
 /**
- * A presentation as a PDF, one page per slide (hidden ones left out), in pure TypeScript (ADR 0193): backgrounds,
+ * A presentation as a PDF, one page per slide (hidden ones left out), in pure TypeScript (ADR 0196): backgrounds,
  * text boxes laid out and wrapped as the apps lay them out (the theme's look for each role, then the element's own
  * style; runs bold, italic, underlined, struck and colored; paragraphs aligned, leveled, bulleted and numbered),
  * shapes, lines with their arrows, pictures (cropped or fitted), tables and charts. Text is set in the engine's own

@@ -110,7 +110,7 @@ export function requestOriginAllowed(origins: Set<string>, headers: Headers): bo
  */
 export const MULTIPART_PATHS = [
   /\/organizations\/[^/]+\/artifacts(\/[^/]+)?\/files$/,
-  // A picture dropped on a live file (ADR 0191 §8).
+  // A picture dropped on a live file (ADR 0194 §8).
   /\/organizations\/[^/]+\/artifacts\/[^/]+\/assets$/,
   /\/organizations\/[^/]+\/imports\/files$/,
   /\/organizations\/[^/]+\/channels\/[^/]+\/voice$/,

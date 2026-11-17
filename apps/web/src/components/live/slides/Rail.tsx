@@ -8,7 +8,7 @@ import { PeerFace, type PeerLook, peerWorking } from "../peers";
 import { SlideThumb } from "./SlideThumb";
 
 /**
- * The slides of a presentation down the editor's left side (ADR 0191 §2), each drawn small and live (a slide an agent
+ * The slides of a presentation down the editor's left side (ADR 0194 §2), each drawn small and live (a slide an agent
  * writes changes here as it writes), numbered, the current one outlined in ink, hidden ones dimmed, with the faces of
  * who is on each. A drag moves a slide (Alt+↑/↓ too); ⋯ and a right click hold New slide, Duplicate, Hide, Present
  * from here, Move and Delete. Under 760 px it is a strip under the slide.

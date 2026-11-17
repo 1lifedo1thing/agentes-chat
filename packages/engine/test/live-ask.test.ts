@@ -13,7 +13,7 @@ import { addMember, type Fixture, setup } from "./fixtures";
 import { makeLiveFile, personActor } from "./live-fixtures";
 
 /**
- * Ask an agent from inside a live file (ADR 0191 §6): the person's own message, where the agent can work on the file
+ * Ask an agent from inside a live file (ADR 0194 §6): the person's own message, where the agent can work on the file
  * while everyone in it watches, carrying the file and what was selected.
  */
 

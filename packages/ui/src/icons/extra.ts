@@ -175,7 +175,7 @@ export const extraIcons = {
     ["rect", { x: "3", y: "4", width: "14", height: "12", rx: "2" }],
     ["path", { d: "M3 7.5h14" }],
   ],
-  /** Live files (ADR 0191): a spreadsheet, a grid of cells under its header row. */
+  /** Live files (ADR 0194): a spreadsheet, a grid of cells under its header row. */
   spreadsheet: [
     ["rect", { x: "3", y: "3.5", width: "14", height: "13", rx: "2" }],
     ["path", { d: "M3 7.5h14M3 12h14M7.5 3.5v13M12.25 7.5v9" }],
@@ -191,7 +191,7 @@ export const extraIcons = {
     ["circle", { cx: "7.75", cy: "8", r: "2" }],
     ["rect", { x: "10.75", y: "11", width: "3.75", height: "3.5", rx: "0.75" }],
   ],
-  /** Live files' editors (ADR 0191): a canvas's frame tool, the lines that cross at its corners. */
+  /** Live files' editors (ADR 0194): a canvas's frame tool, the lines that cross at its corners. */
   frame: [["path", { d: "M6.5 3v14M13.5 3v14M3 6.5h14M3 13.5h14" }]],
   /** A canvas's shape tool: a square and a circle. */
   shape: [
@@ -692,7 +692,7 @@ export const extraIcons = {
     ["path", { d: "M4 5v10c0 1.24 2.69 2.25 6 2.25s6-1.01 6-2.25V5" }],
     ["path", { d: "M4 10c0 1.24 2.69 2.25 6 2.25s6-1.01 6-2.25" }],
   ],
-  /** Live files' text (ADR 0191): indent, the lines moved in with an arrow pointing in. */
+  /** Live files' text (ADR 0194): indent, the lines moved in with an arrow pointing in. */
   indent: [
     ["path", { d: "M3.5 5h13M9.5 8.33h7M9.5 11.67h7M3.5 15h13" }],
     ["path", { d: "m3.5 7.75 2.5 2.25-2.5 2.25" }],
@@ -702,7 +702,7 @@ export const extraIcons = {
     ["path", { d: "M3.5 5h13M9.5 8.33h7M9.5 11.67h7M3.5 15h13" }],
     ["path", { d: "M6 7.75 3.5 10 6 12.25" }],
   ],
-  /** A slide's elements (ADR 0191): bring to front, the whole square over the one behind it. */
+  /** A slide's elements (ADR 0194): bring to front, the whole square over the one behind it. */
   bringFront: [
     ["rect", { x: "7", y: "7", width: "9.5", height: "9.5", rx: "1.75" }],
     ["path", { d: "M13 7V4.75c0-.69-.56-1.25-1.25-1.25h-7c-.69 0-1.25.56-1.25 1.25v7c0 .69.56 1.25 1.25 1.25H7" }],

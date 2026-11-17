@@ -19,7 +19,7 @@ import {
 } from "./types";
 
 /**
- * Where a canvas lives in its document and how its values are read and checked (ADR 0191 §2):
+ * Where a canvas lives in its document and how its values are read and checked (ADR 0194 §2):
  * `canvas` (a map: `bg`) and `shapes` (a map of shape id to a `Y.Map` per shape). Reading is lenient (a value an app
  * doesn't know is left out, never a crash); writing goes through `cleanProp`, so nothing off-shape gets in.
  */

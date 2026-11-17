@@ -11,7 +11,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { lookOf } from "@/lib/look";
 
 /**
- * Who is in a live file, as every editor draws them (ADR 0191 §5): a name, a color and a face for each person and
+ * Who is in a live file, as every editor draws them (ADR 0194 §5): a name, a color and a face for each person and
  * agent, the stack of faces in the page's header with where each one is, and the island that says whom you follow.
  *
  * Colors: people get `peerColor` (ten hues that read on the theme's surfaces, none the agents' blue); agents keep their
@@ -177,7 +177,7 @@ export function usePeerDoing(room: LiveRoom | null): (peer: Peer) => string {
 export const STACK_FACES = 4;
 
 /**
- * The faces of who else is in the file, in the page's header (ADR 0191 §5): up to four, each ringed in their color
+ * The faces of who else is in the file, in the page's header (ADR 0194 §5): up to four, each ringed in their color
  * (an agent's alive while it works), then "+N". Pressing it lists everyone, this person first ("You"), each with
  * where they are in their color and Follow / Stop following. Nobody else here: nothing.
  */

@@ -1,5 +1,5 @@
 /**
- * What a canvas shows when the person comes back to it (ADR 0192): the pictures just asked for on the "Gerar" screen,
+ * What a canvas shows when the person comes back to it (ADR 0195): the pictures just asked for on the "Gerar" screen,
  * whose placeholders the server puts on the canvas. A route can't carry them back, so they wait here by file until the
  * canvas finds them among its shapes.
  */

@@ -174,7 +174,7 @@ export const artifactKindEnum = pgEnum("artifact_kind", [
   "block",
   "poll",
   "choices",
-  // Live files, edited together through `live_docs` (ADR 0191).
+  // Live files, edited together through `live_docs` (ADR 0194).
   "spreadsheet",
   "slides",
   "canvas",

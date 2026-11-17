@@ -1,5 +1,5 @@
 /**
- * The fill handle (ADR 0191 §2): dragging a selection extends it the way Excel does. Two or more numbers continue
+ * The fill handle (ADR 0194 §2): dragging a selection extends it the way Excel does. Two or more numbers continue
  * their trend (1, 2 → 3, 4, 5), a date steps a day (a time of day an hour), dates a month apart keep stepping by
  * months, text ending or starting with a number counts on ("Item 1" → "Item 2", "1st" → "2nd"), month and weekday
  * names go round ("jan" → "fev", "Mon" → "Tue"), and anything else repeats, formulas moving as copies do

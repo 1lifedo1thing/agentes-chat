@@ -10,7 +10,7 @@ import { type LiveScreen, liveRoute } from "../live-files/routes";
 
 /**
  * How the app shows a file: inline picture or video, the document screen (Markdown, text, PDF), a live file's own
- * screen (ADR 0191), an Office file as the server read it (ADR 0193: a workbook's grid, a deck's slides, a Word
+ * screen (ADR 0194), an Office file as the server read it (ADR 0196: a workbook's grid, a deck's slides, a Word
  * document's page; an old table in the same grid), or only its card.
  */
 export type FileView =
@@ -78,7 +78,7 @@ const KIND_EXT: Record<Exclude<ArtifactKind, "file">, string> = {
   block: "html",
   poll: "json",
   choices: "json",
-  // A live file downloads as the Office file other apps open (ADR 0193); a canvas as its shapes.
+  // A live file downloads as the Office file other apps open (ADR 0196); a canvas as its shapes.
   spreadsheet: "xlsx",
   slides: "pptx",
   canvas: "json",
@@ -137,7 +137,7 @@ export function fileInfo(a: Pick<ArtifactDetail, "kind" | "title" | "content">):
     const mime = previewType(c.contentType);
     // The type says what it is; a file stored as plain bytes goes by its name.
     const untyped = !mime || mime === "application/octet-stream";
-    // Spreadsheets, decks and Word documents the server reads for the app to draw (ADR 0193), CSV included.
+    // Spreadsheets, decks and Word documents the server reads for the app to draw (ADR 0196), CSV included.
     const office = OFFICE_VIEW[previewKind(mime, name) ?? ""];
     let view: FileView = "other";
     if (IMAGE_TYPES.has(mime) || (untyped && IMAGE_EXT.has(ext))) view = "image";
@@ -306,7 +306,7 @@ export function shareSource(a: Pick<ArtifactDetail, "kind" | "title" | "content"
       return { from: "export", format: "csv", name, mime: "text/csv" };
     case "diff":
       return { from: "export", format: "patch", name, mime: "text/x-patch" };
-    // A live file as the Office file other apps open, made from it as it is now (ADR 0193).
+    // A live file as the Office file other apps open, made from it as it is now (ADR 0196).
     case "spreadsheet":
       return {
         from: "export",
@@ -370,7 +370,7 @@ export type FileRoute =
   | { pathname: "/file/[id]"; params: { id: string; v?: string } }
   | { pathname: LiveScreen; params: { id: string } };
 
-/** A live file's kind, from its details or from the kind the place names (ADR 0191). */
+/** A live file's kind, from its details or from the kind the place names (ADR 0194). */
 export function liveKindOfRef(ref: FileRef): LiveKind | null {
   const kind = ref.detail?.kind ?? ref.kind;
   return isLiveFileKind(kind) ? kind : null;
@@ -379,7 +379,7 @@ export function liveKindOfRef(ref: FileRef): LiveKind | null {
 /**
  * Where a file opens, the one way in from every place that shows one: a picture or a video straight in the picture
  * viewer, among the pictures and videos beside it (`siblings`, in the order they show, so the viewer pages through
- * them) at the one tapped; a live file on its own screen, as it is now (ADR 0191 §9); anything else in the file screen,
+ * them) at the one tapped; a live file on its own screen, as it is now (ADR 0194 §9); anything else in the file screen,
  * at an older version when that's the one shown. `from`: the deck it opened from, told where the person stops.
  */
 export function fileRoute(ref: FileRef, siblings?: readonly FileRef[], from?: string): FileRoute {

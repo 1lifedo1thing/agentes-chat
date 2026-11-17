@@ -194,7 +194,7 @@ export const BUILTIN_TOOL_INFO: Record<string, { label: string; description: str
   },
   create_artifact: { label: "Create file", description: "Creates a document, table, diff, diagram or page." },
   update_artifact: { label: "Update file", description: "Saves a new version of a file." },
-  // Live files (ADR 0191 §6) and images onto a canvas (ADR 0192).
+  // Live files (ADR 0194 §6) and images onto a canvas (ADR 0195).
   read_spreadsheet: { label: "Read spreadsheet", description: "Reads a spreadsheet's cells and formulas." },
   read_presentation: { label: "Read presentation", description: "Reads a presentation's slides and notes." },
   read_canvas: { label: "Read canvas", description: "Reads what is on a canvas: images, notes and text." },

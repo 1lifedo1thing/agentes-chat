@@ -1,6 +1,6 @@
 /**
  * Base64 without `Buffer` (not on the web or the phone) or `atob`/`btoa` (not everywhere on Hermes, and slow on large
- * input): document states and updates travel as base64 text in JSON and in Postgres (ADR 0191 §3, §4), up to the
+ * input): document states and updates travel as base64 text in JSON and in Postgres (ADR 0194 §3, §4), up to the
  * 32 MiB a document may hold, so both directions work in chunks.
  */
 

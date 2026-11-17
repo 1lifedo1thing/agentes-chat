@@ -37,7 +37,7 @@ export interface ItemProps {
 
 /**
  * A grid card: the real preview, the kind (and version, but for a live file, whose versions are checkpoints behind it:
- * ADR 0191 §7) on glass, the title,
+ * ADR 0194 §7) on glass, the title,
  * who made it, where and when. The title's button stretches over the card;
  * the checkbox sits above it.
  */

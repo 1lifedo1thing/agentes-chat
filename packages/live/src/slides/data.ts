@@ -31,7 +31,7 @@ import {
 } from "./types";
 
 /**
- * Presentations as plain data (ADR 0193): what the office readers produce from a `.pptx` and the writers consume.
+ * Presentations as plain data (ADR 0196): what the office readers produce from a `.pptx` and the writers consume.
  * `slidesFromData` replaces a document's slides with a deck read from a file, scaled into the 1920×1080 slide
  * (keeping its proportions, centered); pictures must already be assets of the live file (`media[name].asset`, the
  * engine stores them first), and one that isn't is left out.

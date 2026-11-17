@@ -11,7 +11,7 @@ import {
 import { elementSeed } from "./actions";
 
 /**
- * Copying and pasting slide elements (ADR 0191 §2): the clipboard carries them as data of our own type (what it takes
+ * Copying and pasting slide elements (ADR 0194 §2): the clipboard carries them as data of our own type (what it takes
  * to make each again, and the file its pictures belong to) beside their words as plain text, so a paste into another
  * presentation makes the same elements and a paste into a message or a document gets the text.
  */

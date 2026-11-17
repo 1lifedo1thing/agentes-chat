@@ -3,7 +3,7 @@ import { fnv1a } from "./colors";
 import { LIVE_LIMITS } from "./limits";
 
 /**
- * Presence in a live file (ADR 0191 §5): who is here, viewing or editing, and where. It is Yjs awareness, never
+ * Presence in a live file (ADR 0194 §5): who is here, viewing or editing, and where. It is Yjs awareness, never
  * stored. The server owns identity: `sanitizePeerState` writes the person over whatever a client claims, keeps only
  * the fields below with their sizes capped, and turns `editing` into `viewing` on a read-only socket.
  */
@@ -343,7 +343,7 @@ function rankOf(peer: Peer): number {
 }
 
 /**
- * The awareness client id an agent's presence takes in a file (ADR 0191 §5): stable for a run, so whichever process
+ * The awareness client id an agent's presence takes in a file (ADR 0194 §5): stable for a run, so whichever process
  * runs the agent's next tool call updates the same entry, a 32-bit number like Yjs' own, never 0.
  */
 export function agentClientId(runId: string, agentId: string): number {

@@ -1,7 +1,7 @@
 import * as Y from "yjs";
 
 /**
- * Writing one document's content over another's (ADR 0191 §7: restoring a version writes the old content into the
+ * Writing one document's content over another's (ADR 0194 §7: restoring a version writes the old content into the
  * live document as one change, so everyone in it sees the file go back). A Yjs type can't move between documents, so
  * these copy, and they change as little as they can: an equal value is left alone, a nested type is updated in place
  * when both sides hold the same kind of type, and a list only changes between its common head and tail. Whatever

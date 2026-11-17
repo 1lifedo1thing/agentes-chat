@@ -6,7 +6,7 @@ import { LiveFilePage, type LiveFileSearch } from "@/components/live/LiveFilePag
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /**
- * A spreadsheet, a presentation or a canvas on a page of its own (ADR 0191 §9), with no sidebar (the org layout's
+ * A spreadsheet, a presentation or a canvas on a page of its own (ADR 0194 §9), with no sidebar (the org layout's
  * `focused`): `?v=` shows a saved version read-only, `?sheet=` and `?slide=` where the editor is, `?present` presents.
  * Links to files stay `/drive?artifact=…` (`filePath`): the Drive sends live files here.
  */

@@ -1,5 +1,5 @@
 /**
- * Lookup, references and arrays (ADR 0191 §2). Exact matches ignore case and take Excel's wildcards where Excel does
+ * Lookup, references and arrays (ADR 0194 §2). Exact matches ignore case and take Excel's wildcards where Excel does
  * (MATCH 0, VLOOKUP FALSE, XLOOKUP 2); approximate ones are Excel's binary search over sorted data. INDEX, OFFSET,
  * INDIRECT and XLOOKUP return references, so `=SUM(INDEX(A:A,2):A9)` works; INDIRECT reads A1 (or R1C1) text in
  * this document only. UNIQUE, SORT, FILTER, SEQUENCE and TRANSPOSE make arrays, whose top-left value a cell shows.

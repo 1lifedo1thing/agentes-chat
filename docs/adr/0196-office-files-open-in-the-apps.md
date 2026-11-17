@@ -1,4 +1,4 @@
-# 0193. Office files open in the apps
+# 0196. Office files open in the apps
 
 - Status: Accepted
 - Date: 2026-11-17
@@ -10,7 +10,7 @@
 ## Context
 
 Spreadsheets, presentations and Word documents are most of what people upload, and the apps only offer to
-download them. Since ADR 0191 the apps draw spreadsheets and slides themselves, so they can draw uploaded ones too.
+download them. Since ADR 0194 the apps draw spreadsheets and slides themselves, so they can draw uploaded ones too.
 
 ## Decision
 

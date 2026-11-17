@@ -15,7 +15,7 @@ const FACE = 20;
 const RING = 2;
 
 /**
- * Who else is in a live file now, in its bar (ADR 0191 §5): up to three faces overlapping, then "+N", as a
+ * Who else is in a live file now, in its bar (ADR 0194 §5): up to three faces overlapping, then "+N", as a
  * conversation's pill shows who is in it. People are circles, agents their tile; whoever edits is ringed in their own
  * color, and an agent at work moves. Hidden people never come (the server leaves them out). A tap opens the list of who
  * is here, to follow one of them. Nothing while the person is alone in the file.

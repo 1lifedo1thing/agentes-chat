@@ -28,7 +28,7 @@ import { useLiveDoc } from "../shared/useLiveDoc";
 const FACE = 36;
 
 /**
- * Who is in a live file now (ADR 0191 §5), pushed from the faces in its bar: the people and agents editing, then the
+ * Who is in a live file now (ADR 0194 §5), pushed from the faces in its bar: the people and agents editing, then the
  * ones looking, this person first in their group ("Você"), each with where they are in their own color ("editando
  * B4:C10", "no slide 3", an agent's "escrevendo em B2:C40"). Seguir moves the file's view with theirs (back on the
  * file's screen, which says so and stops when the person moves it); Parar de seguir ends it. Hidden people never come

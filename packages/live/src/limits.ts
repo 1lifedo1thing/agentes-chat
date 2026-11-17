@@ -1,5 +1,5 @@
 /**
- * The kinds of live file and the limits every app and the server hold them to (ADR 0191 §2). This module imports
+ * The kinds of live file and the limits every app and the server hold them to (ADR 0194 §2). This module imports
  * nothing, so any part of the package can read the limits without an import cycle through `kinds.ts`.
  */
 
@@ -12,7 +12,7 @@ export function isLiveKind(kind: string): kind is LiveKind {
 }
 
 /**
- * What a live document may hold. The server refuses an update past these (ADR 0191 §2), so a buggy or hostile client
+ * What a live document may hold. The server refuses an update past these (ADR 0194 §2), so a buggy or hostile client
  * can't leave a document no app can open; the apps and the agents' tools check them before writing.
  */
 export const LIVE_LIMITS = {

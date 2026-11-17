@@ -2,7 +2,7 @@ import { ValidationError } from "../errors";
 import { OFFICE_PART_BYTES } from "../file-reader";
 
 /**
- * How much of an Office file the server reads (ADR 0193): files up to 25 MB, at most 40 MB inflated out of one (the
+ * How much of an Office file the server reads (ADR 0196): files up to 25 MB, at most 40 MB inflated out of one (the
  * same bound `file-reader.ts` keeps against zip bombs, now over all the parts read, checked before each is inflated),
  * 200,000 cells and 300 slides. Past any of them the apps offer the download instead.
  */
@@ -38,7 +38,7 @@ export function officeEncrypted() {
   return new ValidationError("This file is protected with a password", "office.encrypted");
 }
 
-/** A file that reads, but past what a live file holds (ADR 0191 `LIVE_LIMITS`): it can still be seen, not edited. */
+/** A file that reads, but past what a live file holds (ADR 0194 `LIVE_LIMITS`): it can still be seen, not edited. */
 export function officeTooLargeToEdit(what: string) {
   return new ValidationError(`This file is too large to edit here (${what})`, "office.too_large_to_edit");
 }

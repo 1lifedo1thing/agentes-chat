@@ -103,9 +103,9 @@ const fileField = z
   .openapi({ type: "string", format: "binary", description: `The picture (≤ ${LIVE_ASSET_MB} MB).` });
 
 /**
- * Live files (ADR 0191): spreadsheets, presentations and canvases people and agents edit together. Made here, opened
+ * Live files (ADR 0194): spreadsheets, presentations and canvases people and agents edit together. Made here, opened
  * here (their state, then the socket at `/api/live` keeps them in step), saved as versions, given pictures, and asked
- * about. Uploaded Office files open here too (ADR 0193): their preview, and a live file made from them.
+ * about. Uploaded Office files open here too (ADR 0196): their preview, and a live file made from them.
  */
 export function liveRoutes(deps: AppDeps) {
   const { db } = deps;
@@ -202,7 +202,7 @@ export function liveRoutes(deps: AppDeps) {
         params: ArtifactParams,
         query: z.object({
           version: z.coerce.number().int().min(1).optional().openapi({
-            description: "A saved version instead, to look at read-only (its history, ADR 0191 §7): `seq` 0, `view`.",
+            description: "A saved version instead, to look at read-only (its history, ADR 0194 §7): `seq` 0, `view`.",
           }),
         }),
       },
@@ -266,7 +266,7 @@ export function liveRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/artifacts/{artifactId}/live/versions",
       tags,
       security,
-      summary: "Save a version of a live file now, with a name (ADR 0191 §7)",
+      summary: "Save a version of a live file now, with a name (ADR 0194 §7)",
       request: {
         params: ArtifactParams,
         body: body(z.object({ note: z.string().trim().max(500).nullable().optional() })),
@@ -511,7 +511,7 @@ export function liveRoutes(deps: AppDeps) {
       summary: "Ask an agent about a live file, from inside it (Ask an agent)",
       description:
         "Sends the person's message to the agent where the file lives (a DM when it lives in the Drive), carrying the " +
-        "file and what is selected, so the agent's tools act on it while everyone in it watches (ADR 0191 §6).",
+        "file and what is selected, so the agent's tools act on it while everyone in it watches (ADR 0194 §6).",
       request: {
         params: ArtifactParams,
         body: body(
@@ -564,7 +564,7 @@ export function liveRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/artifacts/{artifactId}/preview",
       tags,
       security,
-      summary: "An uploaded Office file as the apps draw it (ADR 0193): a workbook, a deck or a document's HTML",
+      summary: "An uploaded Office file as the apps draw it (ADR 0196): a workbook, a deck or a document's HTML",
       description:
         "Read by the server, never run: the apps draw a workbook with their spreadsheet view, a deck with their " +
         "slides view, and a document's clean HTML only in an isolated frame. A deck's pictures come from …/preview/media.",
@@ -590,7 +590,7 @@ export function liveRoutes(deps: AppDeps) {
     },
   );
 
-  // A picture inside an uploaded deck (ADR 0193), as the preview names it: only ever served as a picture.
+  // A picture inside an uploaded deck (ADR 0196), as the preview names it: only ever served as a picture.
   app.get("/organizations/:orgId/artifacts/:artifactId/preview/media/:name", async (c) => {
     const orgId = c.req.param("orgId");
     const artifactId = c.req.param("artifactId");
@@ -621,7 +621,7 @@ export function liveRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/artifacts/{artifactId}/open-as",
       tags,
       security,
-      summary: "Edit an uploaded Office file as a live file (ADR 0193): a new spreadsheet, presentation or document",
+      summary: "Edit an uploaded Office file as a live file (ADR 0196): a new spreadsheet, presentation or document",
       description:
         "Made beside the upload (same conversation, same sharing) with a note saying where it came from; the upload " +
         "stays as it was.",

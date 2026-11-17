@@ -1,5 +1,5 @@
 /**
- * Information about values (ADR 0191 §2): the IS functions take errors as values and answer for each item of a range,
+ * Information about values (ADR 0194 §2): the IS functions take errors as values and answer for each item of a range,
  * ISBLANK is true only for a cell with nothing in it (not for "" a formula returned), and TYPE and ERROR.TYPE give
  * Excel's codes.
  */

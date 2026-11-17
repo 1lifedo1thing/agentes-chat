@@ -1,5 +1,5 @@
 /**
- * Rich text in slides and on the canvas (ADR 0191 §2), as plain data: paragraphs with alignment, a level and a list
+ * Rich text in slides and on the canvas (ADR 0194 §2), as plain data: paragraphs with alignment, a level and a list
  * kind, holding runs of text with their marks. A "\n" inside a run's text is a line break within the paragraph.
  */
 

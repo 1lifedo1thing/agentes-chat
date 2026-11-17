@@ -4,7 +4,7 @@ import { OFFICE_LIMITS, officeEncrypted, officeTooLarge, officeUnreadable } from
 import { attr, type Element, kids, parseXml } from "./xml";
 
 /**
- * An Office file as a package of parts (ADR 0193): the zip's entries by name, read on demand within one budget of
+ * An Office file as a package of parts (ADR 0196): the zip's entries by name, read on demand within one budget of
  * inflated bytes for the whole file (`OFFICE_LIMITS.unpackedBytes`, checked against each entry's declared size before
  * it is inflated, and `inflateZipEntry` never inflates past that size), and the relationships that tie the parts
  * together. Names are matched without regard to case or to a leading slash, as Office itself does.

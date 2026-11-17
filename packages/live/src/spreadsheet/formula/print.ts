@@ -1,5 +1,5 @@
 /**
- * Writes a formula's tree back out (ADR 0191 §2): canonically, as the document stores it (English names, `,` and
+ * Writes a formula's tree back out (ADR 0194 §2): canonically, as the document stores it (English names, `,` and
  * `.`, references by ids), or for a person, in A1 with the names and separators of their language
  * (`=SOMA(B2:B9;C1)`). Parentheses come from the tree's own `paren` nodes and, for trees built by code, wherever
  * precedence needs them.

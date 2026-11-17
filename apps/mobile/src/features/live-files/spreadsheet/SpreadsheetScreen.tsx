@@ -54,7 +54,7 @@ import { type GridSheetTab, liveGridLayout, liveGridSource, liveSheetTabs, selec
 import { GridBones, type GridPeer, type GridSelection, SheetGrid } from "./SheetGrid";
 
 /**
- * A live spreadsheet on the phone (ADR 0191), pushed with its bar (`LiveBar`): the grid with its letters and numbers,
+ * A live spreadsheet on the phone (ADR 0194), pushed with its bar (`LiveBar`): the grid with its letters and numbers,
  * the sheets as chips over the cell bar, and the cell bar riding the keyboard while a cell is typed into, in the
  * person's language. Everyone else's selection shows in their color with their face; following someone (from the
  * faces' list) moves the view to wherever they select, until the person moves it themselves.

@@ -4,7 +4,7 @@ import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
 /**
- * Presenting a live presentation (`/slides-show/<id>`, ADR 0191 §9): from a slide (`at`), or following whoever presents
+ * Presenting a live presentation (`/slides-show/<id>`, ADR 0194 §9): from a slide (`at`), or following whoever presents
  * (`follow`: their client id); none: the Drive.
  */
 export default function SlidesShowRoute() {

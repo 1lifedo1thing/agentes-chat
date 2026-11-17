@@ -2,7 +2,7 @@ import type { LiveRoom } from "@agenteschat/client";
 import { createContext, useContext } from "react";
 
 /**
- * What every shape of an open canvas reads (ADR 0191): the room, where its pictures are, whether it can change, and
+ * What every shape of an open canvas reads (ADR 0194): the room, where its pictures are, whether it can change, and
  * what a shape's own buttons do. Stable for the canvas's life, so a shape redraws only when it changes itself.
  */
 export interface CanvasEnv {
@@ -12,7 +12,7 @@ export interface CanvasEnv {
   readOnly: boolean;
   /** A picture of this canvas, by its asset id. */
   assetUrl(assetId: string): string;
-  /** "Try again" on a placeholder whose pictures failed (ADR 0192). */
+  /** "Try again" on a placeholder whose pictures failed (ADR 0195). */
   retry(requestId: string): void;
   /** "Interact" on a page: it takes the pointer and the keys until a press outside it. */
   interact(shapeId: string): void;

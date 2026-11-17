@@ -1,7 +1,7 @@
 import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 
 /**
- * Stacking keys (ADR 0191 §2): slide elements and canvas shapes keep their order as fractional-indexing strings in
+ * Stacking keys (ADR 0194 §2): slide elements and canvas shapes keep their order as fractional-indexing strings in
  * `z`, so two people bringing things forward at once never rewrite each other's keys. Items sort by `z`, then by id,
  * so two keys made equal by people working at once still give everyone the same order.
  */

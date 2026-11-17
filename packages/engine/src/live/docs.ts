@@ -53,7 +53,7 @@ import {
 } from "./store";
 
 /**
- * The live documents a process holds (ADR 0191 §3–§6): people's sockets join them, agents' tools and the server's
+ * The live documents a process holds (ADR 0194 §3–§6): people's sockets join them, agents' tools and the server's
  * jobs edit them, from any process.
  *
  * - **Every change is stored before anyone else sees it.** A socket's changes are applied to the document this

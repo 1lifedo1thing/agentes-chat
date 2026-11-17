@@ -12,7 +12,7 @@ import { type MenuEntry, openContextMenu } from "@/lib/context-menu";
 import { COLOR_KEYS, TEXT_COLORS } from "./Toolbar";
 
 /**
- * The sheets of a spreadsheet, as tabs along its bottom (ADR 0191): "+" adds one, a click opens one, a double click
+ * The sheets of a spreadsheet, as tabs along its bottom (ADR 0194): "+" adds one, a click opens one, a double click
  * renames it in place, dragging reorders, and its menu (right click, a long press, or the menu key) renames,
  * duplicates, colors or deletes it. The selection's sum, average and count sit at the right end.
  */

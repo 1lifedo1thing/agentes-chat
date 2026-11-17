@@ -57,7 +57,7 @@ export interface LiveFileSearch extends LiveEditorSearch {
   v?: number;
 }
 
-/** Under this width the header keeps its faces and its one primary action; the rest goes into ⋯ (ADR 0191 §9). */
+/** Under this width the header keeps its faces and its one primary action; the rest goes into ⋯ (ADR 0194 §9). */
 export const LIVE_COMPACT_QUERY = "(max-width: 760px)";
 /** "Salvando…" only once a change has waited this long: a burst of keys never blinks it. */
 const SAVING_AFTER_MS = 400;
@@ -69,7 +69,7 @@ const EDITORS: Record<LiveKind, ComponentType<LiveEditorProps>> = {
 };
 
 /**
- * A spreadsheet, a presentation or a canvas on a page of its own (ADR 0191 §9), full bleed with no sidebar: a header
+ * A spreadsheet, a presentation or a canvas on a page of its own (ADR 0194 §9), full bleed with no sidebar: a header
  * (back, the kind, the title to rename, whether it's saved, who is here, Ask an agent, Share, Present for slides,
  * Download, ⋯) over the kind's editor, which draws everything below it. The page opens the file's room, says when it
  * is offline or read-only, shows a saved version read-only in place (`?v=`), and keeps whom the person follows.

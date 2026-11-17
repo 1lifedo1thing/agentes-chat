@@ -2,7 +2,7 @@ import { isDateFormat, type SheetData, type WorkbookData } from "@agenteschat/li
 import { OFFICE_LIMITS, officeTooLarge } from "./limits";
 
 /**
- * Comma- and tab-separated files (ADR 0193): read into a one-sheet workbook (the separator found from the file, the
+ * Comma- and tab-separated files (ADR 0196): read into a one-sheet workbook (the separator found from the file, the
  * text in UTF-8 or, failing that, Windows-1252; numbers read as numbers when they are plainly numbers), and a sheet
  * written back as RFC 4180 CSV.
  */

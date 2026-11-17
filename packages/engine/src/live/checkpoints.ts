@@ -15,7 +15,7 @@ import { LIVE_SNAPSHOT_TYPE, liveExcerpt } from "./preview";
 import { docOf, type LiveDocRow, loadStored } from "./store";
 
 /**
- * Versions of a live file are checkpoints (ADR 0191 §7): the whole Yjs state as one blob
+ * Versions of a live file are checkpoints (ADR 0194 §7): the whole Yjs state as one blob
  * (`application/vnd.agentes.live`), written through `insertVersion` like any version, so the history, `?version=n`,
  * storage accounting, the trash and every rule that reads a version's run keep working. They are written when the
  * file is made; when an agent's batch of changes lands (the first of each run at once, then at most once a minute per
@@ -135,7 +135,7 @@ export async function writeCheckpoint(
 }
 
 /**
- * Whether an agent's batch writes a version now (ADR 0191 §7): the first of its run in this file always (so the
+ * Whether an agent's batch writes a version now (ADR 0194 §7): the first of its run in this file always (so the
  * hand-off cards and every rule that reads a version's run see the file), then at most once a `agentMs` per agent.
  */
 export async function agentCheckpointDue(

@@ -114,7 +114,7 @@ export const LONG_JOB_KINDS = [
   "team_week.post",
   "team_day.post",
   "team_watch.check",
-  // Pictures for a canvas (ADR 0192): up to four provider calls of a minute or so each.
+  // Pictures for a canvas (ADR 0195): up to four provider calls of a minute or so each.
   "live.image",
 ];
 

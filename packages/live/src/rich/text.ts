@@ -2,7 +2,7 @@ import { RICH_MAX_LEVEL } from "./schema";
 import type { RichDoc, RichParagraph, RichRun } from "./types";
 
 /**
- * Rich text as plain data (ADR 0191 §2): its canonical form, plain text, and the light Markdown agents and people
+ * Rich text as plain data (ADR 0194 §2): its canonical form, plain text, and the light Markdown agents and people
  * type ("- " bullets, "1. " lists, **bold**, *italic*, ~~strike~~, [links](https://…)).
  */
 

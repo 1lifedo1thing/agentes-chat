@@ -21,7 +21,7 @@ import {
 } from "./types";
 
 /**
- * Live files' routes (ADR 0191, 0192, 0193), `/api/app/organizations/{orgId}/…`: making one, its state to open it
+ * Live files' routes (ADR 0194, 0195, 0196), `/api/app/organizations/{orgId}/…`: making one, its state to open it
  * with (then the socket at `/api/live`), versions, who is in it, its pictures, asking an agent from inside it, uploaded
  * Office files' previews, and generated images.
  */
@@ -51,7 +51,7 @@ export interface LiveApi {
   assetUrl(orgId: string, fileId: string, assetId: string): string;
   /** "Perguntar a um agente": the message to the agent, carrying the file and what is selected. */
   ask(orgId: string, fileId: string, input: AskAgentInput): Promise<AskAgentResult>;
-  /** An uploaded Office file as the apps draw it (ADR 0193), at a version (default: the latest). */
+  /** An uploaded Office file as the apps draw it (ADR 0196), at a version (default: the latest). */
   officePreview(orgId: string, fileId: string, version?: number): Promise<OfficePreview>;
   /** The address of a picture inside an uploaded deck, by the name its preview gives it. */
   previewMediaUrl(orgId: string, fileId: string, name: string, version?: number): string;
@@ -59,7 +59,7 @@ export interface LiveApi {
   openAs(orgId: string, fileId: string): Promise<Artifact>;
   /** The image models the workspace can use now, the default first (empty: no key for any). */
   imageModels(orgId: string): Promise<ImageModelOption[]>;
-  /** Pictures onto a canvas: placeholders show at once, the pictures come in their place (ADR 0192). */
+  /** Pictures onto a canvas: placeholders show at once, the pictures come in their place (ADR 0195). */
   generateImages(orgId: string, fileId: string, input: GenerateImagesInput): Promise<ImageRequestResult>;
   /** "Tentar de novo" on pictures that failed. */
   retryImages(orgId: string, fileId: string, requestId: string): Promise<ImageRequestResult>;

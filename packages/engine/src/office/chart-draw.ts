@@ -1,7 +1,7 @@
 import { chartColors, type SlideChart, type SlideTheme } from "@agenteschat/live";
 
 /**
- * A slide's chart (ADR 0191 §2) as plain marks in slide units: rectangles, polygons and lines, and text boxes, the
+ * A slide's chart (ADR 0194 §2) as plain marks in slide units: rectangles, polygons and lines, and text boxes, the
  * same for the PowerPoint export (shapes) and the PDF (paths), so both draw the chart the apps show from the same
  * numbers: a title, the plot with its gridlines and value labels, the category labels and a legend when there is
  * more than one series (or a pie's slices).

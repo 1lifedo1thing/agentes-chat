@@ -123,7 +123,7 @@ export async function localCopy(
   const r =
     source.from === "export"
       ? {
-          // A live file is exported as it stands now (ADR 0193): its versions are snapshots, not what people see.
+          // A live file is exported as it stands now (ADR 0196): its versions are snapshots, not what people see.
           uri: api.artifacts.fileUrl(orgId, a.id, {
             ...(isLiveFileKind(a.kind) ? {} : { version: a.shownVersion }),
             ...(source.format ? { format: source.format } : {}),

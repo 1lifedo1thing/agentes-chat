@@ -172,7 +172,7 @@ export async function storageUsage(
           gt(skillFiles.createdAt, LAST_DAY),
         ),
       ),
-    // Pictures added to live files (ADR 0191 §8): uploads like any other.
+    // Pictures added to live files (ADR 0194 §8): uploads like any other.
     db
       .select({ day: sql<string>`coalesce(sum(${liveAssets.size}), 0)` })
       .from(liveAssets)

@@ -87,7 +87,7 @@ describe("file kind, tile and size", () => {
     expect(fileInfo(upload("logo.svg", "image/svg+xml")).type).toBe("image");
   });
 
-  test("PDF, Markdown and text open in the document screen; a CSV in the spreadsheet's grid (ADR 0193)", () => {
+  test("PDF, Markdown and text open in the document screen; a CSV in the spreadsheet's grid (ADR 0196)", () => {
     const pdf = fileInfo(upload("Relatório.pdf", "application/pdf", 2048));
     expect(pdf).toMatchObject({ view: "pdf", type: "pdf", ext: "PDF", size: 2048, name: "Relatório.pdf" });
     expect(fileInfo(upload("notes.md", "application/octet-stream")).view).toBe("markdown");
@@ -311,7 +311,7 @@ describe("viewer", () => {
     expect(fileRoute({ id: "v1", version: 2, title: "abertura.mp4", kind: "file" }).pathname).toBe("/images");
     // A file's link that turns out to be one still goes on to the viewer, in the file screen's place.
     const document = src("features/files/DocumentViewer.tsx");
-    // (A live file's too, on to its own screen, ADR 0191.)
+    // (A live file's too, on to its own screen, ADR 0194.)
     expect(document).toContain(
       'const media = info?.view === "image" || info?.view === "video" || info?.view === "live";',
     );

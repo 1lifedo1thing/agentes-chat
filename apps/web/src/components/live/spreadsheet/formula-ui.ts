@@ -1,5 +1,5 @@
 /**
- * What the formula bar and the cell's editor work out while a person types (ADR 0191 §2): which functions to offer
+ * What the formula bar and the cell's editor work out while a person types (ADR 0194 §2): which functions to offer
  * for the name being typed, the signature line with the current argument, where a reference can be pointed at with
  * the mouse or the arrows, and the colors references take (the same on the text and on the grid).
  */

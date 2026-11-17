@@ -50,7 +50,7 @@ const upload = (name: string, contentType: string): Detail => ({
   content: { kind: "file", name, contentType, size: 1000, sha256: "x" },
 });
 
-describe("live files open on their own screens (ADR 0191 §9)", () => {
+describe("live files open on their own screens (ADR 0194 §9)", () => {
   test("each kind has its screen, its icon (drawn on the phone's grid) and a route file", () => {
     expect(LIVE_SCREENS).toEqual({ spreadsheet: "/spreadsheet/[id]", slides: "/slides/[id]", canvas: "/canvas/[id]" });
     for (const icon of Object.values(LIVE_ICON)) expect(ICONS[icon]).toBeDefined();
@@ -92,7 +92,7 @@ describe("live files open on their own screens (ADR 0191 §9)", () => {
   });
 });
 
-describe("uploaded Office files draw in the app (ADR 0193)", () => {
+describe("uploaded Office files draw in the app (ADR 0196)", () => {
   test("spreadsheets (CSV too), decks and Word documents, by type or by name", () => {
     expect(fileInfo(upload("vendas.xlsx", "application/octet-stream")).view).toBe("sheet");
     expect(fileInfo(upload("vendas.csv", "text/csv"))).toMatchObject({ view: "sheet", type: "table" });
@@ -200,7 +200,7 @@ describe("a live file's bar", () => {
   });
 });
 
-describe("who is here (ADR 0191 §5)", () => {
+describe("who is here (ADR 0194 §5)", () => {
   const peer = (id: string, state: Partial<PeerState>, self = false, kind: "person" | "agent" = "person"): Peer => ({
     clientId: id.length + (self ? 100 : 0),
     user: { kind, id },
@@ -277,7 +277,7 @@ describe("who is here (ADR 0191 §5)", () => {
   });
 });
 
-describe("the phone's connection to a live file (ADR 0191 §3)", () => {
+describe("the phone's connection to a live file (ADR 0194 §3)", () => {
   const hook = src("features/live-files/shared/useLiveDoc.ts");
   const kept = src("features/live-files/shared/kept.ts");
 

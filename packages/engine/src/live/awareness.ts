@@ -9,7 +9,7 @@ import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate, removeAwareness
 import type * as Y from "yjs";
 
 /**
- * Who is in one live file, as the process that hosts it sees it (ADR 0191 §5): Yjs awareness, never stored. The
+ * Who is in one live file, as the process that hosts it sees it (ADR 0194 §5): Yjs awareness, never stored. The
  * server owns identity. Each awareness client id belongs to the socket that first spoke for it (or to another process,
  * or to an agent's presence); a socket that claims a client id someone else holds is ignored, unless it is the same
  * person's own tab arriving from another socket or process. Every state a socket sends is rewritten by

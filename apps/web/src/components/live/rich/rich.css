@@ -1,4 +1,4 @@
-/* Rich text in live files (ADR 0191 §2): the same look for the editor (ProseMirror) and the drawn text (RichView).
+/* Rich text in live files (ADR 0194 §2): the same look for the editor (ProseMirror) and the drawn text (RichView).
    Sizes are in em of the box's own font size, so a text box reads the same on a slide at any scale. */
 
 .rt-host {

@@ -3,9 +3,9 @@ import * as engine from "@agenteschat/engine";
 
 /**
  * Engine functions the live files' routes call that come with parts of their own: reading uploaded Office files and
- * exporting live ones (ADR 0193). Each is read from the engine when a request needs it, so the routes around it work
+ * exporting live ones (ADR 0196). Each is read from the engine when a request needs it, so the routes around it work
  * on a server built without it, and typed as the engine types it once the engine exports it (else as these routes
- * expect it), so a change on either side fails the typecheck. Asking an agent from inside a file (ADR 0191 §6) is
+ * expect it), so a change on either side fails the typecheck. Asking an agent from inside a file (ADR 0194 §6) is
  * the engine's own `askAgentAbout`, imported as is.
  */
 export { askAgentAbout } from "@agenteschat/engine";
@@ -19,7 +19,7 @@ function later<K extends string, Expected>(name: K): Later<K, Expected> {
   return fn as Later<K, Expected>;
 }
 
-/** What a live file downloads as (ADR 0193). */
+/** What a live file downloads as (ADR 0196). */
 export type LiveExportFormat = "xlsx" | "csv" | "pptx" | "pdf";
 
 type OfficePreview = (
@@ -40,17 +40,17 @@ type ExportLive = (
 
 const person = (userId: string) => ({ type: "person" as const, userId });
 
-/** An uploaded Office file as the apps draw it: a workbook, a deck or a document's HTML (ADR 0193). */
+/** An uploaded Office file as the apps draw it: a workbook, a deck or a document's HTML (ADR 0196). */
 export function officePreview(deps: LiveDeps, userId: string, orgId: string, fileId: string, version?: number) {
   return later<"officePreview", OfficePreview>("officePreview")(deps, person(userId), orgId, fileId, version);
 }
 
-/** A new live file (or document) made from an uploaded Office file, beside it (ADR 0193). */
+/** A new live file (or document) made from an uploaded Office file, beside it (ADR 0196). */
 export function openAsLive(deps: LiveDeps, userId: string, orgId: string, fileId: string) {
   return later<"openAsLive", OpenAsLive>("openAsLive")(deps, person(userId), orgId, fileId);
 }
 
-/** A live file as it stands now, as an Office file, a CSV or a PDF (ADR 0193). */
+/** A live file as it stands now, as an Office file, a CSV or a PDF (ADR 0196). */
 export function exportLive(deps: LiveDeps, userId: string, orgId: string, fileId: string, format: LiveExportFormat) {
   return later<"exportLive", ExportLive>("exportLive")(deps, person(userId), orgId, fileId, format);
 }

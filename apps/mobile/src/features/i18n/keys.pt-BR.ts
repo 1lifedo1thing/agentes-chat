@@ -2958,7 +2958,7 @@ export const featureKeysPtBR = {
       text: "Quando um agente fizer algo fora da conversa, aparece aqui.",
     },
   },
-  /** Live files on the phone (ADR 0191): their bar, who is here, the spreadsheet. */
+  /** Live files on the phone (ADR 0194): their bar, who is here, the spreadsheet. */
   live: {
     status: {
       opening: "Abrindo…",

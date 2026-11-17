@@ -5,7 +5,7 @@ import { readSyncMessage, writeSyncStep1, writeUpdate } from "y-protocols/sync";
 import * as Y from "yjs";
 
 /**
- * A person's app on a live file's socket (ADR 0191 §3), written on y-protocols alone, as any y-websocket peer would
+ * A person's app on a live file's socket (ADR 0194 §3), written on y-protocols alone, as any y-websocket peer would
  * be: so the server is held to the standard framing, not to our own client. It loads nothing over HTTP unless given
  * `state`, sends its sync step 1 and its presence on `live.ready`, answers the server's step 1, and sends every change
  * it makes. `text`: the phone's base64 text frames.
@@ -120,7 +120,7 @@ export function livePeer(
     ready: () => control((c) => c.type === "live.ready", "live.ready"),
     /** A frame as is (tests of what the server refuses). */
     raw: (data: string | Uint8Array) => ws.send(data),
-    /** The document's sheets as the plan shapes them (ADR 0191 §2): the first one, once synced. */
+    /** The document's sheets as the plan shapes them (ADR 0194 §2): the first one, once synced. */
     sheet: () => firstSheet(doc),
     close: () => ws.close(),
   };
@@ -140,7 +140,7 @@ export function firstSheet(doc: Y.Doc) {
   return { id, rows, cols, cells };
 }
 
-/** A cell's key by its place (`rowId:colId`, ADR 0191 §2). */
+/** A cell's key by its place (`rowId:colId`, ADR 0194 §2). */
 export function cellKey(doc: Y.Doc, row: number, col: number) {
   const sheet = firstSheet(doc);
   const rowId = sheet?.rows.get(row);

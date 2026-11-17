@@ -1,5 +1,5 @@
 /**
- * Text (ADR 0191 §2). Numbers become text the way Excel writes them (15 significant digits, the document's decimal
+ * Text (ADR 0194 §2). Numbers become text the way Excel writes them (15 significant digits, the document's decimal
  * separator); FIND and EXACT match case, SEARCH ignores it and takes wildcards; TEXT reads Excel's format codes (in a
  * Portuguese document as Brazilian Excel writes them: "0,00", "dd/mm/aaaa"); CHAR and CODE use Windows-1252, as Excel
  * on Windows does, so files agree.

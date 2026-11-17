@@ -228,7 +228,7 @@ export interface ModelProvider {
     options: { apiKey: string; workspaceId?: string; organization?: string; project?: string },
   ): Promise<number>;
   /**
-   * Pictures from a prompt (ADR 0192), where the provider has an image API: the request's `model` is the provider's
+   * Pictures from a prompt (ADR 0195), where the provider has an image API: the request's `model` is the provider's
    * own id. Optional: a provider without one makes none.
    */
   generateImage?(request: ImageRequest, options: ImageCallOptions): Promise<ImageResult>;

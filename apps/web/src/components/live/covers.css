@@ -1,5 +1,5 @@
 /*
- * Live files drawn outside their page (ADR 0191): the editors' loading shapes, the covers in the Drive and in
+ * Live files drawn outside their page (ADR 0194): the editors' loading shapes, the covers in the Drive and in
  * messages, and uploaded Office files in the viewer. Imported by each of those, so the Drive and the chat have them
  * without loading the file's page.
  */
@@ -195,7 +195,7 @@
   pointer-events: none;
 }
 
-/* ── Uploaded Office files in the viewer (ADR 0193) ─────────────────────────────────────────────────────────────── */
+/* ── Uploaded Office files in the viewer (ADR 0196) ─────────────────────────────────────────────────────────────── */
 
 /* A box of its own in the viewer, tall enough to read in, its edge a hairline. */
 .lf-office {

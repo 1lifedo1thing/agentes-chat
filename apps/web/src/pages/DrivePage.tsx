@@ -144,7 +144,7 @@ export function DrivePage({ open }: { open?: { id: string; version?: number } })
   };
   const drop = useFileDrop(upload, !trashOpen);
 
-  // A shared link (`/drive?artifact=…&v=…`) opens the viewer, or a live file's own page in its place (ADR 0191 §9):
+  // A shared link (`/drive?artifact=…&v=…`) opens the viewer, or a live file's own page in its place (ADR 0194 §9):
   // its kind first, from what this app already loaded or from the server, so the viewer never flashes on the way.
   const openId = open?.id;
   const openVersion = open?.version;
@@ -232,7 +232,7 @@ export function DrivePage({ open }: { open?: { id: string; version?: number } })
     // Straight to the file: the viewer has its preview, who made it, where it is, its versions and its actions.
     openViewer(a);
   };
-  // A spreadsheet, a presentation or a canvas opens on its own page (ADR 0191 §9).
+  // A spreadsheet, a presentation or a canvas opens on its own page (ADR 0194 §9).
   const openViewer = (a: Artifact) => {
     if (isLiveFileKind(a.kind)) openLivePage(navigate, org.id, a.id);
     else viewer.open(a.id);
@@ -266,7 +266,7 @@ export function DrivePage({ open }: { open?: { id: string; version?: number } })
   }, []);
 
   const downloadPicked = async () => {
-    // A live file as it is now: its versions are checkpoints behind it (ADR 0191 §7).
+    // A live file as it is now: its versions are checkpoints behind it (ADR 0194 §7).
     for (const a of picked) await downloads.save(a, undefined, isLiveFileKind(a.kind) ? undefined : a.version);
   };
   const copyLinks = async () => {
@@ -394,7 +394,7 @@ export function DrivePage({ open }: { open?: { id: string; version?: number } })
                 </Button>
                 {uploads && !(list.isSuccess && rows.length === 0 && !filtered) && (
                   <>
-                    {/* A spreadsheet, a presentation or a canvas (ADR 0191 §9); Upload stays the one primary. */}
+                    {/* A spreadsheet, a presentation or a canvas (ADR 0194 §9); Upload stays the one primary. */}
                     <NewFileMenu iconOnly={phone} />
                     <UploadButton
                       size="md"

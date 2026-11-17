@@ -1,5 +1,5 @@
 /**
- * The formula language's shapes (ADR 0191 §2). A formula is stored canonically, by row and column ids, and parsed
+ * The formula language's shapes (ADR 0194 §2). A formula is stored canonically, by row and column ids, and parsed
  * into this tree; A1 is only how people type and read it.
  */
 import type { ErrorCode } from "../values";

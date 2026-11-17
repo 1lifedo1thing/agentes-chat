@@ -3,7 +3,7 @@ import { artifacts } from "./storage";
 import { organizations } from "./tenancy";
 
 /**
- * Live files (ADR 0191 §4): one row per spreadsheet, presentation or canvas, holding its Yjs document as it stood at
+ * Live files (ADR 0194 §4): one row per spreadsheet, presentation or canvas, holding its Yjs document as it stood at
  * the last compaction (`state`, base64 of one Yjs update, like every byte column here) and the number of the newest
  * change (`head_seq`, taken under this row's lock). The changes after `compacted_seq` are rows of
  * `live_doc_updates`; a job folds them into `state` and deletes them. `preview` is the small projection cards and
@@ -44,7 +44,7 @@ export const liveDocs = pgTable(
 );
 
 /**
- * The changes to a live file since its last compaction, in order (ADR 0191 §4): each row is the Yjs updates one
+ * The changes to a live file since its last compaction, in order (ADR 0194 §4): each row is the Yjs updates one
  * person, agent or the server made within one short window, merged. Who made it is kept as text, like
  * `artifact_versions.author_id` (a person's id is not a uuid), with no key to them: the history outlives them.
  */
@@ -71,7 +71,7 @@ export const liveDocUpdates = pgTable(
 );
 
 /**
- * A picture that belongs to a live file (ADR 0191 §8): stored through the workspace's storage like a version's bytes,
+ * A picture that belongs to a live file (ADR 0194 §8): stored through the workspace's storage like a version's bytes,
  * counted in its storage, served only to whoever reads the file and purged with it. An asset's id is unique within
  * its file: a copy of the file (or of a shape pasted into another file) keeps the ids its document points at.
  */
@@ -108,7 +108,7 @@ export const liveAssets = pgTable(
 );
 
 /**
- * A request for pictures on a canvas (ADR 0192): placed as a frame of placeholders at once, then made by the
+ * A request for pictures on a canvas (ADR 0195): placed as a frame of placeholders at once, then made by the
  * `live.image` job through the Model Gateway. `references` are the asset ids it started from (variations and edits),
  * `shape_ids` the placeholders it fills, `asset_ids` what it made.
  */

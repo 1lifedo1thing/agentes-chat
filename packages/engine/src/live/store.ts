@@ -4,7 +4,7 @@ import { UUID } from "../authority";
 import { NotFoundError } from "../errors";
 
 /**
- * Where a live file's document is kept (ADR 0191 §4): `live_docs` holds the state as of its last compaction and the
+ * Where a live file's document is kept (ADR 0194 §4): `live_docs` holds the state as of its last compaction and the
  * number of its newest change; `live_doc_updates` the changes after that, one row per merged batch. Nothing here knows
  * a document's kind or who may read it: callers checked that (`liveFileAccess`).
  *

@@ -47,7 +47,7 @@ import {
 } from "./types";
 
 /**
- * Edits to a presentation (ADR 0191 §2), the same for the web, the phone and the agents' tools. Each runs in one
+ * Edits to a presentation (ADR 0194 §2), the same for the web, the phone and the agents' tools. Each runs in one
  * `doc.transact(fn, origin)`, and checks everything it was given before it changes anything (Yjs keeps what a
  * transaction did before a throw), so a refused edit leaves the document as it was: `LiveEditError` `not_found` for
  * a slide or element that isn't there, `too_many` / `too_large` past `LIVE_LIMITS`, `invalid` for a value the deck

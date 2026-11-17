@@ -838,7 +838,7 @@ const QUIET_READS: ReadonlySet<ActivityKind> = new Set([
 /** The computer brain's own image tool (Codex's), as the runner names its call. */
 export const IMAGE_TOOL = "image_generation";
 
-/** Ours (ADR 0192): images made onto a canvas, as `agent.tool` names its call (a computer brain's through the bridge). */
+/** Ours (ADR 0195): images made onto a canvas, as `agent.tool` names its call (a computer brain's through the bridge). */
 export const GENERATE_IMAGE_TOOL = "generate_image";
 const GENERATE_IMAGE_NAMES = new Set([GENERATE_IMAGE_TOOL, `mcp__agentes__${GENERATE_IMAGE_TOOL}`]);
 

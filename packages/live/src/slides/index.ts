@@ -1,4 +1,4 @@
-/** Presentations (ADR 0191 §2): the deck's shape, themes, layouts, edits, office data, preview and text. */
+/** Presentations (ADR 0194 §2): the deck's shape, themes, layouts, edits, office data, preview and text. */
 export { initSlides, replaceSlides, slideByNumber, slidesPreview, slidesText, validateSlides } from "./content";
 export { slidesFromData, slidesToData } from "./data";
 export { FALLBACK_SLOTS, LAYOUTS, type LayoutSlot, roleFamily, slotFor } from "./layouts";

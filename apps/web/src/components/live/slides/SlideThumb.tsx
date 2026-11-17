@@ -4,7 +4,7 @@ import { memo } from "react";
 import { Scaled, SlideBody, SlideImages, type SlideImageUrl, themeFrom } from "./render";
 
 /**
- * A slide drawn small (ADR 0191 §2): the rail's thumbnails, the Drive's and the chat's covers of a presentation, the
+ * A slide drawn small (ADR 0194 §2): the rail's thumbnails, the Drive's and the chat's covers of a presentation, the
  * layout picker. It is the slide itself scaled down, never a picture of it, so it is always current. Pictures need
  * their addresses: inside the editor they come from it; a cover passes `imageUrl` (else a picture shows as its frame).
  */

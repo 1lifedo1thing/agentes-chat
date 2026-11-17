@@ -51,7 +51,7 @@ import { SlideView } from "./SlideView";
 import { useDeck } from "./useDeck";
 
 /**
- * A presentation on the phone (ADR 0191 §9), pushed with the file's bar (`LiveBar`): its slides one under the other at
+ * A presentation on the phone (ADR 0194 §9), pushed with the file's bar (`LiveBar`): its slides one under the other at
  * the screen's width, each with its number and the faces of whoever is on it; a tap opens the slide large (the same
  * screen with `slide`, its own push), a long press its menu (present from it, a new one after, duplicate, move, hide,
  * delete); "Novo slide" picks a layout on a screen of its own, "Apresentar" plays it sideways. Someone presenting shows

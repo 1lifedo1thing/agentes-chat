@@ -44,7 +44,7 @@ import { aspectChoices, countChoices, pickModel } from "./generate";
 import { revealLater } from "./reveal";
 
 /**
- * "Gerar imagem" on the phone (ADR 0192), a pushed screen over the canvas: what the pictures should show, the model
+ * "Gerar imagem" on the phone (ADR 0195), a pushed screen over the canvas: what the pictures should show, the model
  * (the workspace's default first, each with its maker's mark), their shape, how many (one to four) and the canvas's
  * chosen pictures to start from (when the model takes them). "Gerar" puts the placeholders on the canvas and goes back
  * to it, which brings them into view; they turn into the pictures as they come. With no key for any image model, it

@@ -1,5 +1,5 @@
 /**
- * People's colors in a live file (ADR 0191 §5): each person gets a stable color for their face's ring, their cursor,
+ * People's colors in a live file (ADR 0194 §5): each person gets a stable color for their face's ring, their cursor,
  * their selection and the words "editing B4:C10". Ten hues, each with a `light` variant that reads on white (text
  * contrast at least 4.5:1) and a `dark` one that reads on the dark theme's surfaces, chosen to stand apart from each
  * other and from the agents' own colors (an agent is drawn in its own look, never in one of these).

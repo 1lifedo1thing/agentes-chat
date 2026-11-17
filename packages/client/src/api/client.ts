@@ -1501,7 +1501,7 @@ export interface ApiClient {
   };
   /** Boards and widgets (ADR 0135). */
   dashboards: DashboardsApi;
-  /** Spreadsheets, presentations and canvases edited together (ADR 0191), their pictures and Office previews. */
+  /** Spreadsheets, presentations and canvases edited together (ADR 0194), their pictures and Office previews. */
   live: LiveApi;
   /** Missions (ADR 0029): long work by the agent's executor on a connected computer, in one thread. */
   missions: {
@@ -1833,7 +1833,7 @@ export interface ApiClient {
     download(orgId: string, id: string, version?: number): Promise<{ url: string; expiresAt: string }>;
     /**
      * Same-origin URL of the file as an attachment, optionally converted (CSV, .patch, PDF, Word; a live file as Excel
-     * or PowerPoint, ADR 0193).
+     * or PowerPoint, ADR 0196).
      */
     fileUrl(
       orgId: string,

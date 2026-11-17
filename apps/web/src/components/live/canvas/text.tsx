@@ -7,7 +7,7 @@ import { RichText, RichView } from "../rich";
 import { useCanvasEnv } from "./context";
 
 /**
- * The words of a note, a text or a shape's label (ADR 0191 §2): drawn from the shape's rich text, and while someone
+ * The words of a note, a text or a shape's label (ADR 0194 §2): drawn from the shape's rich text, and while someone
  * types in it, the shared editor bound to the shape's own text in the document (others see each letter and each
  * other's carets, in their colors). Esc or a press elsewhere ends typing; a text box then takes the height its words
  * need. ⌘Z inside it takes back this person's own typing, through the file's undo.

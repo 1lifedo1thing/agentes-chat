@@ -1,5 +1,5 @@
 /**
- * What a person types into a cell (ADR 0191), read in their language: "1.234,5" and "R$ 10" in Brazil, "1,234.5" and
+ * What a person types into a cell (ADR 0194), read in their language: "1.234,5" and "R$ 10" in Brazil, "1,234.5" and
  * "$10" in the US, "12%", dates in the locale's order ("17/11/2026", "11/17/2026") or ISO ("2026-11-17"), times
  * ("10:30", "10:30 PM", "25:30"), TRUE/FALSE or VERDADEIRO/FALSO in either language, "=" for a formula and a leading
  * apostrophe to keep anything as text. Agents' literals go through the same reading with an English locale.

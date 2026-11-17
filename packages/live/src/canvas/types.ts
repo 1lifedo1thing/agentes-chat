@@ -3,10 +3,10 @@ import type { RichDoc } from "../rich/types";
 import type { Box, Point } from "./geometry";
 
 /**
- * Canvases (ADR 0191 §2): shapes in a map, each with a box in world units, a stacking key and the frame it sits in.
+ * Canvases (ADR 0194 §2): shapes in a map, each with a box in world units, a stacking key and the frame it sits in.
  * One shape type per kind of thing: images (generated or dropped), notes, text, frames that group, shapes, arrows
  * between shapes, an agent's page (an `html` file drawn isolated), any Drive file as a card, and a placeholder for an
- * image being generated (ADR 0192).
+ * image being generated (ADR 0195).
  */
 
 export type ShapeType = "image" | "note" | "text" | "frame" | "shape" | "arrow" | "html" | "file" | "pending";
@@ -49,7 +49,7 @@ export interface CanvasTextStyle {
   weight?: 400 | 600 | 700;
 }
 
-/** How a generated image came to be (ADR 0192). */
+/** How a generated image came to be (ADR 0195). */
 export interface ImageGen {
   prompt: string;
   model: string;

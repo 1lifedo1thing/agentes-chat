@@ -1,5 +1,5 @@
 /**
- * Rich text in live files (ADR 0191 §2): `RichText` edits a box's `Y.XmlFragment` with others (ProseMirror and
+ * Rich text in live files (ADR 0194 §2): `RichText` edits a box's `Y.XmlFragment` with others (ProseMirror and
  * y-prosemirror), `RichView` draws a `RichDoc`. The commands are what toolbars run on an open box; the `whole*`
  * helpers format a box that is only selected.
  */

@@ -34,7 +34,7 @@ import { addMember, type Fixture, setup } from "./fixtures";
 import { liveDocsFor, makeLiveFile, openApp, personActor, until } from "./live-fixtures";
 
 /**
- * The agents' tools for live files (ADR 0191 §6) and their images (ADR 0192), through the Tool Gateway as a run calls
+ * The agents' tools for live files (ADR 0194 §6) and their images (ADR 0195), through the Tool Gateway as a run calls
  * them: each write one edit whose origin is the agent and its run, its presence in the file while it works, versions
  * with the run, reads inside `untrustedBlock`, and the Drive's rules of who reads and who changes what.
  */

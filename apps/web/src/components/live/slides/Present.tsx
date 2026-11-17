@@ -8,7 +8,7 @@ import { Scaled, SlideBody } from "./render";
 import { useBoxSize } from "./useBoxSize";
 
 /**
- * Presenting a deck (ADR 0191 §2, §5): the slide alone on black, filling the screen, moved with the keys a clicker
+ * Presenting a deck (ADR 0194 §2, §5): the slide alone on black, filling the screen, moved with the keys a clicker
  * sends; a glass bar shows on mouse move (‹ 3 / 12 ›, Notes, Exit). With Notes on a wide window it is the presenter's
  * view: this slide, the next, the notes and the time. Hidden slides are skipped. Following someone who presents, it
  * shows their slide and moves with them.

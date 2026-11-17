@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { SelectionStats } from "./model";
 
 /**
- * The selection's numbers at the end of the sheet tabs (ADR 0191): "Soma 1.234,00 · Média 411,33 · Contagem 3", in
+ * The selection's numbers at the end of the sheet tabs (ADR 0194): "Soma 1.234,00 · Média 411,33 · Contagem 3", in
  * the first number's format and the reader's separators. Only the sum stays when the sheet is narrow (`sheet.css`);
  * a selection holding no number says only how many cells hold something.
  */

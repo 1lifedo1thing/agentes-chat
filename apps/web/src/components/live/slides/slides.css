@@ -1,5 +1,5 @@
 /*
- * Presentations (ADR 0191 §2): the slides themselves, drawn in slide units (the deck's 1920×1080, sizes inside a slide
+ * Presentations (ADR 0194 §2): the slides themselves, drawn in slide units (the deck's 1920×1080, sizes inside a slide
  * are those units and scale with it), and the editor around them in page units and the kit's tokens: the toolbar, the
  * rail of slides, the stage, the speaker notes, presenting, the pickers and the dialogs. The person's own choice and
  * focus are ink; other people's come in as `--peer`; the agents' blue is only an agent's own.

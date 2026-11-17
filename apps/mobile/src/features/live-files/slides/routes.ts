@@ -1,5 +1,5 @@
 /**
- * The presentation's own screens on the phone (ADR 0191 §9), each a push with the system's back: a slide opened large
+ * The presentation's own screens on the phone (ADR 0194 §9), each a push with the system's back: a slide opened large
  * (`/slides/<id>?slide=`), presenting (`/slides-show/<id>`, from a slide or following whoever presents), a text box's
  * words (`/slide-text/<id>`, also a canvas note's) and the layouts for a new slide or a slide's new look
  * (`/slide-layout/<id>`).

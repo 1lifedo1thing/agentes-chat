@@ -9,7 +9,7 @@ import { DEFAULT_THEME, SLIDE_H, SLIDE_W } from "./themes";
 import { type ElementView, isElementType, isSlideLayout, type SlidesPreview, type SlideView } from "./types";
 
 /**
- * A presentation as a whole (ADR 0191 §2, §7): a new one, its preview (what cards and the Drive draw), its text (what
+ * A presentation as a whole (ADR 0194 §2, §7): a new one, its preview (what cards and the Drive draw), its text (what
  * search finds it by), its rules of shape (what the server checks) and a version's content written over it.
  */
 

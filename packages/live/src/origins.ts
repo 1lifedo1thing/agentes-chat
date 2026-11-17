@@ -1,5 +1,5 @@
 /**
- * Who made a change to a live document (ADR 0191 §6). Every mutation runs in `doc.transact(fn, origin)`, so observers
+ * Who made a change to a live document (ADR 0194 §6). Every mutation runs in `doc.transact(fn, origin)`, so observers
  * and the server know where it came from, and undo in the apps only ever takes back the person's own changes: the
  * apps' `Y.UndoManager` tracks `LOCAL` alone, by identity, never a change from the network or an agent.
  */

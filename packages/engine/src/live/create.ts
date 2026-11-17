@@ -15,7 +15,7 @@ import { lineLocale, personLocale } from "../requester";
 import { liveProblems, newLiveDoc, overLimit } from "./preview";
 
 /**
- * Makes a spreadsheet, a presentation or a canvas (ADR 0191 §1): placed like any Drive file (a person in the Drive or
+ * Makes a spreadsheet, a presentation or a canvas (ADR 0194 §1): placed like any Drive file (a person in the Drive or
  * a conversation they read, with `upload_files`; an agent in its run's conversation), version 1 a snapshot of its
  * first document, its live document the same, its search text, audit and events. `init` fills the document before
  * version 1 (an agent's first rows, a deck's slides); what it leaves must keep the rules of shape. An agent's
@@ -36,7 +36,7 @@ export async function createLiveFile(
     note?: string;
     /** The language its first sheet is named in (`Sheet 1`, `Planilha 1`); else the person's own (or the run's). */
     locale?: string | null;
-    /** Pictures it starts with, under the ids `init` names them by (an imported deck's, ADR 0193). */
+    /** Pictures it starts with, under the ids `init` names them by (an imported deck's, ADR 0196). */
     pictures?: readonly LivePicture[];
   },
 ): Promise<ArtifactView> {

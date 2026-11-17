@@ -17,7 +17,7 @@ import { imageTypeOf } from "./package";
 import { XML_HEAD, xmlAttr, xmlText } from "./xml";
 
 /**
- * Presentations written as PowerPoint files (ADR 0193): one master and one layout, a theme with the deck's own colors
+ * Presentations written as PowerPoint files (ADR 0196): one master and one layout, a theme with the deck's own colors
  * and fonts, and each slide with its background, its text boxes (runs bold, italic, underlined, struck, colored and
  * linked; paragraphs aligned, leveled, bulleted or numbered; titles and bodies as the slide's placeholders), shapes,
  * lines, pictures (cropped or fitted as the apps show them), tables, charts drawn as shapes, and speaker notes. Every

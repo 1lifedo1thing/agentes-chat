@@ -2,7 +2,7 @@ import type { Artifact, LiveRoom } from "@agenteschat/client";
 import type { Peer } from "@agenteschat/live/awareness";
 
 /**
- * What the live file page hands every editor (ADR 0191): the spreadsheet, the presentation and the canvas each get
+ * What the live file page hands every editor (ADR 0194): the spreadsheet, the presentation and the canvas each get
  * these props from `LiveFilePage` and draw everything below the page's header.
  */
 export interface LiveEditorProps {

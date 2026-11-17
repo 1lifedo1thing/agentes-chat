@@ -9,7 +9,7 @@ import {
 import { type DOMOutputSpec, type Mark, type Node as PMNode, Schema } from "prosemirror-model";
 
 /**
- * The rich text schema as ProseMirror's (ADR 0191 §2): node and mark names and attributes come from
+ * The rich text schema as ProseMirror's (ADR 0194 §2): node and mark names and attributes come from
  * `RICH_SCHEMA_SPEC` of `@agenteschat/live` (what is stored, shared with the phone and the server); only how they look
  * in the page and how pasted HTML maps onto them is added here. What a document says is checked again on the way to
  * the page (a color that isn't a hex color, a link that isn't https, http or mailto never reach the DOM), since other

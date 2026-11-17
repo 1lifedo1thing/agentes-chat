@@ -2,7 +2,7 @@ import { deflateSync } from "node:zlib";
 import { crc32, readZip, zip } from "../src/zip";
 
 /**
- * Office files and pictures built in code for the Office tests (ADR 0193): a PNG encoder, a JPEG's markers, a deck
+ * Office files and pictures built in code for the Office tests (ADR 0196): a PNG encoder, a JPEG's markers, a deck
  * with a master, a layout, a theme and notes, a Word document with styles and numbering, and a package checker that
  * every writer's output must pass (content types and relationships pointing at parts that exist).
  */

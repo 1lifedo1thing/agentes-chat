@@ -3,7 +3,7 @@ import type { TFunction } from "i18next";
 import type { LiveSelection } from "../editor";
 
 /**
- * What a person has chosen on a canvas, in words for Ask an agent's context line and the agent (ADR 0191 §6):
+ * What a person has chosen on a canvas, in words for Ask an agent's context line and the agent (ADR 0194 §6):
  * "2 imagens", "1 nota", "3 itens" for a mix (a picture on its way counts as a picture), with the shapes' ids.
  */
 

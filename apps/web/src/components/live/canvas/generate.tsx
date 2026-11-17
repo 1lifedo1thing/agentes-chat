@@ -32,7 +32,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 /**
- * "Generate image" on a canvas (ADR 0192): the dock grows into a prompt bar with the model, the picture's shape, how
+ * "Generate image" on a canvas (ADR 0195): the dock grows into a prompt bar with the model, the picture's shape, how
  * many, and the pictures to start from (the chosen ones). Gerar asks the server, which puts a frame named with the
  * prompt and one placeholder per picture on the canvas at once, near the middle of what this person sees; each picture
  * takes its placeholder's place as it comes. With no key for any image model, the bar says how to connect one.

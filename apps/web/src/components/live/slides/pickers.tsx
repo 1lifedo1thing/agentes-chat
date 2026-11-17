@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 import { fontStack } from "./render";
 
 /**
- * The small pickers of the slides' toolbar (ADR 0191 §2): layouts drawn as little slides, the six themes as previews,
+ * The small pickers of the slides' toolbar (ADR 0194 §2): layouts drawn as little slides, the six themes as previews,
  * a table's size on a grid, and color swatches. All buttons, so the keys reach every choice.
  */
 

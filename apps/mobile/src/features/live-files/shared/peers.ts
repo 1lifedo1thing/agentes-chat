@@ -10,7 +10,7 @@ import { agentLook } from "../../shared/logic";
 import type { PeerWhere } from "../logic";
 
 /**
- * How someone in a live file looks on the phone (ADR 0191 §5): people in their own color from the palette of ten
+ * How someone in a live file looks on the phone (ADR 0194 §5): people in their own color from the palette of ten
  * (`peerColor`, never the agents' sky blue), agents in their face's deep tone, the color their face already uses. The
  * same tint rings their face in the bar, outlines their selection and colors the words saying where they are.
  */

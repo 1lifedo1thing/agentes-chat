@@ -1,5 +1,5 @@
 /**
- * Copy and paste (ADR 0191 §2). Copying a range gives three forms: the cells themselves (values, formulas by id,
+ * Copy and paste (ADR 0194 §2). Copying a range gives three forms: the cells themselves (values, formulas by id,
  * formats, merges) for pasting inside the app, tab-separated text, and an HTML table with the formats, which is what
  * Excel, Google Sheets and other apps read. Pasting takes any of them, preferring the cells, then a table (Excel's and
  * Google Sheets' clipboard HTML, with their values, number formats, styles and merges; Google Sheets' formulas too),

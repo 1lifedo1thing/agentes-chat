@@ -90,7 +90,7 @@ export interface FakeImageCall {
 export function createFakeProvider(
   reply?: (request: ModelRequest, call: number) => FakeReply | Error,
   options: {
-    /** Scripted image answers (ADR 0192); default: every picture asked for, drawn by `fakeImagePng`. */
+    /** Scripted image answers (ADR 0195); default: every picture asked for, drawn by `fakeImagePng`. */
     image?: (request: ImageRequest, call: number) => FakeImageReply | Error;
   } = {},
 ) {
@@ -251,7 +251,7 @@ function hsl(h: number, s: number, l: number): [number, number, number] {
 const mix = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + ((b[i] ?? 0) - v) * t));
 
 /**
- * The fake's picture (ADR 0192 tests): a small valid PNG in the aspect asked, the same for the same prompt and index,
+ * The fake's picture (ADR 0195 tests): a small valid PNG in the aspect asked, the same for the same prompt and index,
  * a landscape whose colors come from the prompt (a sky in a gradient, a sun, two hills), so a canvas in a test or a
  * local run without keys shows something pleasant and each prompt looks its own.
  */

@@ -161,7 +161,7 @@ export function toolDetail(name: string, input: Record<string, unknown> | undefi
   }
 }
 
-/** The input naming the file each Drive tool works on: `artifact_id`, a live file's `file` (ADR 0191), a canvas. */
+/** The input naming the file each Drive tool works on: `artifact_id`, a live file's `file` (ADR 0194), a canvas. */
 const FILE_FIELD: Readonly<Record<string, string>> = {
   read_artifact: "artifact_id",
   update_artifact: "artifact_id",

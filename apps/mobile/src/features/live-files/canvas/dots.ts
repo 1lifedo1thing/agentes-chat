@@ -1,5 +1,5 @@
 /**
- * The canvas's dotted plane on the phone (ADR 0191 §2): one runtime shader, so a pan or a pinch redraws it on the UI
+ * The canvas's dotted plane on the phone (ADR 0194 §2): one runtime shader, so a pan or a pinch redraws it on the UI
  * thread for every frame at no cost however many dots there are. A dot sits on every whole multiple of the spacing
  * from `off` (points), `r` points across half, in `color` (straight RGBA, 0..1).
  */

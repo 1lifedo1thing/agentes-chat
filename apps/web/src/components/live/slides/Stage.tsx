@@ -54,7 +54,7 @@ import { Scaled, SlideBody, tableFontSize } from "./render";
 import { useBoxSize } from "./useBoxSize";
 
 /**
- * The slide being edited (ADR 0191 §2, §5), fitted in its room with a margin, its elements drawn as they are and
+ * The slide being edited (ADR 0194 §2, §5), fitted in its room with a margin, its elements drawn as they are and
  * worked on in place: a press picks one (Shift or ⌘ adds), a drag moves the chosen ones with guides that snap them to
  * the slide's edges and middle and to the other elements' edges and middles (⌘ or Ctrl held: no snapping; Shift: along
  * one axis), the handles resize (Shift keeps the shape, as pictures always do) and the round one turns, a line's ends

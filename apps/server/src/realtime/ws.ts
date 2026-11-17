@@ -99,7 +99,7 @@ export interface RealtimeDeps {
   browserLive?: BrowserLive;
   /** Agents' desktops and terminals (ADR 0058): people's stream sockets and the runners' data sockets. */
   streams?: StreamSockets;
-  /** Live files (ADR 0191): one socket per open spreadsheet, presentation or canvas (`/api/live`). */
+  /** Live files (ADR 0194): one socket per open spreadsheet, presentation or canvas (`/api/live`). */
   live?: LiveSockets;
   /** How often an open socket checks its session and channels again (`SESSION_RECHECK_MS`; tests go faster). */
   sessionRecheckMs?: number;
@@ -151,7 +151,7 @@ export interface FrameSocketData {
 
 /**
  * Every socket of the server: browsers (`/api/ws`), runners (`/api/machines/connect`), streams (ADR 0058) and live
- * files (ADR 0191).
+ * files (ADR 0194).
  */
 export type SocketData = BrowserSocketData | MachineSocketData | StreamSocketData | FrameSocketData | LiveSocketData;
 

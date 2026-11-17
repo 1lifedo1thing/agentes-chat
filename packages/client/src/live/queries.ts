@@ -11,7 +11,7 @@ import type {
 } from "./types";
 
 /**
- * React Query hooks around live files (ADR 0191, 0192, 0193): making one, who is in which file (the Drive's and
+ * React Query hooks around live files (ADR 0194, 0195, 0196): making one, who is in which file (the Drive's and
  * messages' cards), versions, pictures, asking an agent, image models and requests, uploaded Office files' previews.
  * The document itself never goes through here: it is the room's (`useLiveRoom`). Writes toast their errors unless the
  * caller handles them (`meta.silent` is left to the caller's `mutate` options).
@@ -91,7 +91,7 @@ export function useRetryImages(orgId: string, fileId: string) {
   });
 }
 
-/** An uploaded Office file as the apps draw it (ADR 0193); a version never changes, the latest may. */
+/** An uploaded Office file as the apps draw it (ADR 0196); a version never changes, the latest may. */
 export function useOfficePreview(
   orgId: string,
   fileId: string | null,

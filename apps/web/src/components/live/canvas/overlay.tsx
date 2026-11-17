@@ -8,7 +8,7 @@ import { boxToScreen, type Camera, type Size, toScreen } from "./camera";
 import { arrowLine, boundsOf, CORNERS, HANDLES, type Handle } from "./edit-math";
 
 /**
- * What the canvas draws over its shapes in screen pixels (ADR 0191 §5), so it keeps one size at any zoom: frames'
+ * What the canvas draws over its shapes in screen pixels (ADR 0194 §5), so it keeps one size at any zoom: frames'
  * names, the hovered shape's outline, this person's selection with its handles (ink), what a drag is drawing (a
  * marquee, a new box, an arrow), the snapping guides, everyone else's selections in their color with their name, and
  * their pointers. Presses on handles and names reach the plane, which reads `data-handle` and `data-frame-label`.

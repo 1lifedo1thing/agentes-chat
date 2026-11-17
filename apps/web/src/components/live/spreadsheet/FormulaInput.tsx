@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import type { FnOption, SignaturePart } from "./formula-ui";
 
 /**
- * A cell's text as typed (ADR 0191 §2), in the cell itself or in the formula bar: a plain textarea whose words are
+ * A cell's text as typed (ADR 0194 §2), in the cell itself or in the formula bar: a plain textarea whose words are
  * drawn by a layer behind it while it holds a formula, so each reference takes the color of its outline on the grid.
  * The textarea keeps everything a field does (the caret, selection, IME, undo of what is typed, the clipboard).
  */

@@ -1,4 +1,4 @@
-# 0192. Image generation through the Model Gateway
+# 0195. Image generation through the Model Gateway
 
 - Status: Accepted
 - Date: 2026-11-17
@@ -12,7 +12,7 @@
 
 People ask agents for images all the time, and the only images made today come from Codex's own tool on a
 computer, billed to a ChatGPT plan and invisible to the workspace's budget. A canvas that groups generated images
-(ADR 0191) needs images made on request, by people from the canvas and by any agent from a conversation, priced
+(ADR 0194) needs images made on request, by people from the canvas and by any agent from a conversation, priced
 and limited like every other model call.
 
 ## Decision
@@ -43,7 +43,7 @@ A failed call is settled at what the provider billed, usually nothing.
 conversation's own canvas is used, made on first use ("Imagens", in that conversation, so it has the
 conversation's audience). The request first places a frame titled with the prompt and one placeholder per image
 in the canvas, so everyone in it sees what is coming and who asked; a job (`live.image`, ADR 0005) calls the
-gateway, stores each image as an asset of the canvas (ADR 0191 §8) and turns each placeholder into the image, with
+gateway, stores each image as an asset of the canvas (ADR 0194 §8) and turns each placeholder into the image, with
 its prompt, model, who asked and the images it started from. A failure leaves the placeholder saying why, with
 Try again. Variations and edits send the selected images as references.
 

@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { liveKeys } from "./queries";
 
-/** Channel event: who is in one of the conversation's live files changed (ADR 0191 §5; ids only). */
+/** Channel event: who is in one of the conversation's live files changed (ADR 0194 §5; ids only). */
 export const LIVE_PRESENCE = "live.presence";
 
 /**

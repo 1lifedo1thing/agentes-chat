@@ -14,7 +14,7 @@ import { openLivePage } from "./open";
 export const NEW_KINDS: readonly LiveKind[] = ["spreadsheet", "slides", "canvas"];
 
 /**
- * Makes a live file and opens it (ADR 0191 §9): an untitled spreadsheet, presentation or canvas, in the Drive or in a
+ * Makes a live file and opens it (ADR 0194 §9): an untitled spreadsheet, presentation or canvas, in the Drive or in a
  * conversation, whose page opens with its title selected to be named.
  */
 export function useNewLiveFile(where: { channelId?: string | null; threadId?: string | null } = {}) {

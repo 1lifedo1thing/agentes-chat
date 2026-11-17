@@ -45,7 +45,7 @@ function useAskable(artifact: Artifact) {
 }
 
 /**
- * Ask an agent, from inside the file (ADR 0191 §6): whom (the file's conversation's agents first), what, and about
+ * Ask an agent, from inside the file (ADR 0194 §6): whom (the file's conversation's agents first), what, and about
  * what (the selection the editor reports, else the whole file). The message goes where the file lives, carrying it;
  * the agent then opens it and everyone in it watches. After sending: "Request sent" with "See the conversation", then
  * it closes.

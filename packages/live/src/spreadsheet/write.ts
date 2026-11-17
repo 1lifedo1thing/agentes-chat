@@ -1,5 +1,5 @@
 /**
- * What every spreadsheet edit shares (ADR 0191 §2): ranges in index space, growing a sheet within `LIVE_LIMITS`,
+ * What every spreadsheet edit shares (ADR 0194 §2): ranges in index space, growing a sheet within `LIVE_LIMITS`,
  * writing a cell only when it changes, and reading what a person typed into the cell it makes (formulas turned into
  * their canonical form by ids). Edits check everything before they write: a Yjs transaction can't be rolled back, so
  * a refused edit must leave the document as it was.
@@ -258,7 +258,7 @@ export interface InputOptions {
 }
 
 /**
- * The cell that typing `text` into a cell holding `current` makes (ADR 0191 §2): a formula in the person's language,
+ * The cell that typing `text` into a cell holding `current` makes (ADR 0194 §2): a formula in the person's language,
  * a number, percent, currency or date read in their locale (with the format it implies), TRUE/FALSE in either
  * language, text (a leading apostrophe keeps anything as text), or nothing for "". A cell formatted as text (`@`)
  * keeps what was typed as text, as in Excel. The cell's style is kept. Throws `text_too_long` past the limit.

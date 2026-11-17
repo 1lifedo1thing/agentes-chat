@@ -1,5 +1,5 @@
 /**
- * Reads a formula into its tree (ADR 0191 §2) with Excel's precedence, loosest first: comparisons, `&`, `+ -`,
+ * Reads a formula into its tree (ADR 0194 §2) with Excel's precedence, loosest first: comparisons, `&`, `+ -`,
  * `* /`, `^` (left to right, so `2^3^2` is 64), `%`, negation (tighter than `^`, so `-2^2` is 4) and `:` between
  * references. A formula typed in A1 has its references turned into ids by a resolver, so what is stored never
  * depends on where rows and columns happen to be.

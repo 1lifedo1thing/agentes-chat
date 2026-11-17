@@ -21143,7 +21143,7 @@ export const ptBR = {
     },
   },
   live: {
-    /** The presentation editor (ADR 0191 §2): its rail, stage, toolbar, notes and presenting. */
+    /** The presentation editor (ADR 0194 §2): its rail, stage, toolbar, notes and presenting. */
     slides: {
       rail: {
         label: "Slides",

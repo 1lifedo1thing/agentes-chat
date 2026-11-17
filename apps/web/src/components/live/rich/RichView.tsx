@@ -5,7 +5,7 @@ import { listNumbers, paragraphDomAttrs } from "./schema";
 import "./rich.css";
 
 /**
- * Rich text drawn as it is, with nothing to edit (ADR 0191 §2): slide thumbnails, presenting, read-only files, the
+ * Rich text drawn as it is, with nothing to edit (ADR 0194 §2): slide thumbnails, presenting, read-only files, the
  * canvas at rest. It writes the same elements and classes the editor's schema does (rich.css styles both), so a text
  * box doesn't move by a pixel when it starts or stops being edited.
  */

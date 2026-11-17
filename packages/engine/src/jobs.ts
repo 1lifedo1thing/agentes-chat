@@ -210,7 +210,7 @@ export interface JobDeps extends RunExecutorDeps {
   };
   /** Drive (routines' reports, polls). */
   artifacts?: ArtifactDeps;
-  /** Live files this process hosts (ADR 0191): the image job places pictures on canvases through them (ADR 0192). */
+  /** Live files this process hosts (ADR 0194): the image job places pictures on canvases through them (ADR 0195). */
   live?: LiveDocs;
   /** Agents' computers: the hub and public URL missions use. */
   sandbox?: SandboxDeps | null;
@@ -1127,9 +1127,9 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     },
     // What else the right hand does by itself: each lane's own jobs (`right-hand-lane.ts`).
     ...lodiLaneHandlers(deps),
-    // Live files (ADR 0191): their changes folded into the state, and a version after a quiet spell.
+    // Live files (ADR 0194): their changes folded into the state, and a version after a quiet spell.
     ...liveJobHandlers({ artifacts: deps.artifacts, pubsub: deps.pubsub, log: deps.log }),
-    // Pictures asked for on a canvas (ADR 0192): made through the gateway, placed where their placeholders wait.
+    // Pictures asked for on a canvas (ADR 0195): made through the gateway, placed where their placeholders wait.
     ...liveImageJobHandlers({ artifacts: deps.artifacts, live: deps.live, gateway: deps.gateway, log: deps.log }),
     // A person's monthly AI limit neared or reached (ADR 0141): the person hears 80%, who decides hears 100%.
     [PERSON_LIMIT_JOB]: async (job) => {

@@ -22,7 +22,7 @@ import { createFakeApi, fakeLiveOf, ORG_ID, seedState } from "./fake-api";
 import { renderPage, screen, settle } from "./render";
 
 /**
- * The canvas editor ("Quadro", ADR 0191 §2, ADR 0192) on a live file of the fake server: the tools add notes and
+ * The canvas editor ("Quadro", ADR 0194 §2, ADR 0195) on a live file of the fake server: the tools add notes and
  * frames, a drag moves and its handles resize, Delete and ⌘Z, a frame carries what was drawn around it, Generate
  * places a frame of placeholders that turn into pictures (or say why they failed, with Try again), the bar explains
  * itself with no image key, others' selections and pointers show, Follow moves the view, and a read-only canvas

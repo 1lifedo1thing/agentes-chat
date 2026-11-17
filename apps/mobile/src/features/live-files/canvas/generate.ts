@@ -1,7 +1,7 @@
 import type { ImageAspect, ImageModelOption } from "@agenteschat/client";
 
 /**
- * The choices of "Gerar imagem" on the phone (ADR 0192): the model (the workspace's default first), the shapes it
+ * The choices of "Gerar imagem" on the phone (ADR 0195): the model (the workspace's default first), the shapes it
  * offers (the five the canvas offers, as far as the model makes them) and how many pictures (up to what it allows).
  */
 

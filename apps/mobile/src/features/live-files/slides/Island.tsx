@@ -10,7 +10,7 @@ const ISLAND_IN = FadeIn.duration(motion.fast).easing(motion.easeOut);
 const ISLAND_OUT = FadeOut.duration(motion.fast).easing(motion.easeOut);
 
 /**
- * A small island at the top of a live file's screen about someone else in it (ADR 0191 §5), the spreadsheet's look:
+ * A small island at the top of a live file's screen about someone else in it (ADR 0194 §5), the spreadsheet's look:
  * their face, what they do ("Seguindo Ada", "Ada está apresentando") and one action ("Parar", "Seguir"). It comes and
  * goes with a fade (still with reduced motion: it only appears).
  */

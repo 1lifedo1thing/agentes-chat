@@ -4,7 +4,7 @@ import { colIds, formatA1Range, indexOf, rowIds, sheetIds, sheetName } from "@ag
 import type * as Y from "yjs";
 
 /**
- * Live files on the phone (ADR 0191): where each kind opens, what the bar says about the connection, and how the
+ * Live files on the phone (ADR 0194): where each kind opens, what the bar says about the connection, and how the
  * people and agents in a file are said ("editando B4:C10", "no slide 3"). Pure: the screens draw it.
  */
 
@@ -119,7 +119,7 @@ export function hereGroups<P extends Pick<Peer, "self" | "state">>(
   ].filter((g) => g.peers.length > 0);
 }
 
-/** How an Office file shows in the file screen (ADR 0193): a workbook's grid, a deck's slides, a Word page. */
+/** How an Office file shows in the file screen (ADR 0196): a workbook's grid, a deck's slides, a Word page. */
 export type OfficeView = "sheet" | "deck" | "word";
 
 /** What an upload is, in the words over its preview (`live.office.kind.*`): by its name, else by how it shows. */

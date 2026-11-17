@@ -77,7 +77,7 @@ const KNOWN = {
   "artifact.sharing_empty": "errors.artifact.sharingEmpty",
   "artifact.sharing_too_many": "errors.artifact.sharingTooMany",
   "artifact.not_in_drive": "errors.artifact.notInDrive",
-  // Live files (ADR 0191): a change to a file that is read-only now (in the trash, its workspace closing), a picture
+  // Live files (ADR 0194): a change to a file that is read-only now (in the trash, its workspace closing), a picture
   // over the size a file takes or that is no picture, a file past what it may hold, a whole new content sent for one
   // (it changes only in place).
   "live.read_only": "errors.live.readOnly",
@@ -85,14 +85,14 @@ const KNOWN = {
   "live.asset_too_large": "errors.live.assetTooLarge",
   "live.asset_type": "errors.live.assetType",
   "artifact.live_only": "errors.live.liveOnly",
-  // Uploaded Office files (ADR 0193): damaged, past what the server reads, of a kind only downloaded, locked with a
+  // Uploaded Office files (ADR 0196): damaged, past what the server reads, of a kind only downloaded, locked with a
   // password, or past what a live file holds.
   "office.unreadable": "errors.office.unreadable",
   "office.too_large": "errors.office.tooLarge",
   "office.unsupported": "errors.office.unsupported",
   "office.encrypted": "errors.office.encrypted",
   "office.too_large_to_edit": "errors.office.tooLargeToEdit",
-  // Images made on a canvas (ADR 0192).
+  // Images made on a canvas (ADR 0195).
   "images.no_model": "errors.images.noModel",
   "images.model_unavailable": "errors.images.modelUnavailable",
   "images.reference": "errors.images.reference",

@@ -1,5 +1,5 @@
 /**
- * What a spreadsheet cell holds or computes (ADR 0191): numbers, text, booleans, Excel's errors and empty. Values are
+ * What a spreadsheet cell holds or computes (ADR 0194): numbers, text, booleans, Excel's errors and empty. Values are
  * never stored for formulas: every app computes them, and shows errors and booleans in the reader's language.
  */
 import type { SheetLocale } from "./locale";

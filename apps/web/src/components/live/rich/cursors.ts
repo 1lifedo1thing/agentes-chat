@@ -6,7 +6,7 @@ import type { Awareness } from "y-protocols/awareness";
 import * as Y from "yjs";
 
 /**
- * Other people's carets and selections inside a text box (ADR 0191 §5), drawn in their color with their name, and
+ * Other people's carets and selections inside a text box (ADR 0194 §5), drawn in their color with their name, and
  * this person's own caret sent to them. It is y-prosemirror's cursor plugin with three differences that matter here:
  * the caret travels in the presence field `cursorPm` (the field `cursor` is the pointer over a slide or a canvas),
  * names and colors come from the people and agents of the workspace rather than from what a client claims, and the

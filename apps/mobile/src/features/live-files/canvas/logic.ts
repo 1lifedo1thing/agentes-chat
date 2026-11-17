@@ -16,7 +16,7 @@ import type * as Y from "yjs";
 import type { ArrowEndW, WBox } from "./camera";
 
 /**
- * A canvas on the phone (ADR 0191 §2, 0192): which shapes are laid out, what a finger lands on, what moves with what,
+ * A canvas on the phone (ADR 0194 §2, 0195): which shapes are laid out, what a finger lands on, what moves with what,
  * where something new goes, how arrows are drawn and what a picture being made says. Pure: the screen draws it and
  * the tests read it.
  */
@@ -206,7 +206,7 @@ export function placeNear(
   });
 }
 
-// ── Pictures being made (ADR 0192) ───────────────────────────────────────────────────────────────────────────────
+// ── Pictures being made (ADR 0195) ───────────────────────────────────────────────────────────────────────────────
 
 /** What a placeholder says, as a key: waiting, being made, or why it failed (`live.images.*`). */
 export function pendingWords(s: Pick<ShapeView, "status" | "error">): string {

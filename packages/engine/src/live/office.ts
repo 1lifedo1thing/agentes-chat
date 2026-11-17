@@ -60,7 +60,7 @@ import type { LiveDocs } from "./docs";
 import { loadHeadDoc } from "./store";
 
 /**
- * Office files and live files meeting (ADR 0193): an uploaded workbook, deck or Word document as the apps draw it
+ * Office files and live files meeting (ADR 0196): an uploaded workbook, deck or Word document as the apps draw it
  * (`officePreview`, read once per version and kept a while: versions never change), made into a live file or a
  * document beside it (`openAsLive`), and a live file written out as Excel, CSV, PowerPoint or PDF (`exportLive`, also
  * what the Drive's downloads of live files use, `officeLiveExporter`).
@@ -72,7 +72,7 @@ export type OfficePreview =
   | { kind: "deck"; deck: DeckData }
   | { kind: "document"; html: string };
 
-/** What a live file downloads as (ADR 0193). */
+/** What a live file downloads as (ADR 0196). */
 export type LiveExportFormat = "xlsx" | "csv" | "pptx" | "pdf";
 
 /**
@@ -216,7 +216,7 @@ function deckPictures(deck: DeckData): LivePicture[] {
 }
 
 /**
- * Makes an uploaded Office file editable beside it (ADR 0193): a workbook becomes a spreadsheet, a deck a
+ * Makes an uploaded Office file editable beside it (ADR 0196): a workbook becomes a spreadsheet, a deck a
  * presentation (its pictures stored with it), a Word document a Markdown document; in the same conversation and
  * thread, shared as the upload is, with a note saying which file it came from. The upload stays as it was.
  */
@@ -365,7 +365,7 @@ function exportName(title: string, ext: string) {
 }
 
 /**
- * A live file as it stands now, as an Office file, a CSV or a PDF (ADR 0193), for whoever reads it: what the
+ * A live file as it stands now, as an Office file, a CSV or a PDF (ADR 0196), for whoever reads it: what the
  * process holding it has (`deps.live`) or, without one, what is stored.
  */
 export async function exportLive(

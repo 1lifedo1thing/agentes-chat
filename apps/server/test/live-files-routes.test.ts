@@ -314,7 +314,7 @@ describe("presence", () => {
   });
 });
 
-describe("Office files (ADR 0193)", () => {
+describe("Office files (ADR 0196)", () => {
   // Reading and writing them comes with the engine's Office files (`officePreview`, `openAsLive`, `exportLive`).
   const withOffice = test.skipIf(!readsOffice());
 
@@ -401,7 +401,7 @@ describe("asking an agent from inside a file", () => {
     expect(blank.status).toBe(400);
   });
 
-  // The agents' side of it (`askAgentAbout`) comes with their tools for live files (ADR 0191 §6).
+  // The agents' side of it (`askAgentAbout`) comes with their tools for live files (ADR 0194 §6).
   test("the message goes to the agent with the file and what was selected", async () => {
     const { api, org } = await seeded();
     const sheet = await make(api, { kind: "spreadsheet", title: "Budget", channelId: org.channelId });

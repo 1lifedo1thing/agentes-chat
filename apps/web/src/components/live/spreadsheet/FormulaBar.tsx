@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { type ColoredSpan, FormulaInput } from "./FormulaInput";
 
 /**
- * The formula bar (ADR 0191): the name box with the selection's address (type one and Enter to go there), the fx mark,
+ * The formula bar (ADR 0194): the name box with the selection's address (type one and Enter to go there), the fx mark,
  * and the active cell's content as typed, in the person's language, editable here as in the cell.
  */
 export interface FormulaBarProps {

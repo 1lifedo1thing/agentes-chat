@@ -90,9 +90,9 @@ export default function MainStack() {
       },
       // A file: pushed with its bar opaque over the file itself (a web view lays out below it, as a block does).
       "file/[id]": solid,
-      // A live spreadsheet (ADR 0191): the grid, its bars and the keyboard's cell bar lay out below an opaque bar.
+      // A live spreadsheet (ADR 0194): the grid, its bars and the keyboard's cell bar lay out below an opaque bar.
       "spreadsheet/[id]": solid,
-      // A live presentation and a live canvas (ADR 0191): their slides, their plane and their tools lay out below an
+      // A live presentation and a live canvas (ADR 0194): their slides, their plane and their tools lay out below an
       // opaque bar, as the words of a text box do over the keyboard.
       "slides/[id]": solid,
       "canvas/[id]": solid,

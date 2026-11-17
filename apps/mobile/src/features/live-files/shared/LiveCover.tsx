@@ -20,7 +20,7 @@ import Svg, { Line, Rect } from "react-native-svg";
 import { Icon, useTheme } from "@/ui";
 
 /**
- * A live file drawn small (ADR 0191 §7), from the preview its card carries (never the whole document): a
+ * A live file drawn small (ADR 0194 §7), from the preview its card carries (never the whole document): a
  * spreadsheet's top-left cells, a presentation's first slide, a canvas's shapes as a map. The Drive's cards, a
  * message's card and the uploaded decks' list draw with these; nothing here opens the file.
  */
@@ -145,7 +145,7 @@ export interface SketchSlide {
   elements: readonly SketchElement[];
 }
 
-/** A picture's address and the session's headers (a live file's pictures are the file's, ADR 0191 §8). */
+/** A picture's address and the session's headers (a live file's pictures are the file's, ADR 0194 §8). */
 export type SketchPicture = (ref: string) => { uri: string; headers?: Record<string, string> } | null;
 
 /**

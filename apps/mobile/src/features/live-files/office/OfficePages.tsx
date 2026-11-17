@@ -19,7 +19,7 @@ import { GridBones } from "../spreadsheet/SheetGrid";
 import { WorkbookView } from "../spreadsheet/WorkbookView";
 
 /**
- * Office files and old tables in the file screen (ADR 0193): the server reads an upload (`…/preview`) and the phone
+ * Office files and old tables in the file screen (ADR 0196): the server reads an upload (`…/preview`) and the phone
  * draws what it read, never the file's bytes: a workbook in the spreadsheet's own grid, read-only, a deck as its
  * slides, one under the other, a Word document's page in the file screen's isolated web view (`useOfficeHtml`). Under
  * the upload, what it is and "Editar como planilha / apresentação / documento", which makes an editable copy beside it.
@@ -88,7 +88,7 @@ export function DeckPage({ detail }: { detail: ArtifactDetail }) {
   );
 }
 
-/** A Word document's clean HTML (ADR 0193), for the file screen's isolated page. */
+/** A Word document's clean HTML (ADR 0196), for the file screen's isolated page. */
 export function useOfficeHtml(detail: ArtifactDetail | undefined, enabled: boolean) {
   const orgId = useOrgId();
   const preview = useOfficePreview(orgId, enabled && detail ? detail.id : null, detail?.shownVersion);

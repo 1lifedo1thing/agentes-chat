@@ -3647,7 +3647,7 @@ export type ArtifactKind =
   | "block"
   | "poll"
   | "choices"
-  /** Live files people and agents edit together (ADR 0191): their content here is a small preview. */
+  /** Live files people and agents edit together (ADR 0194): their content here is a small preview. */
   | "spreadsheet"
   | "slides"
   | "canvas";
@@ -3697,7 +3697,7 @@ export type ArtifactContent =
   | ArtifactLiveContent;
 
 /**
- * A live file's content (ADR 0191 §7): the small preview cards and the Drive draw (the top-left cells, the first slide,
+ * A live file's content (ADR 0194 §7): the small preview cards and the Drive draw (the top-left cells, the first slide,
  * the canvas's first shapes), never the whole document, which only the room (`useLiveRoom`) holds.
  */
 export type ArtifactLiveContent =

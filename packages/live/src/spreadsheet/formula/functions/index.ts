@@ -1,5 +1,5 @@
 /**
- * Every spreadsheet function the engine knows (ADR 0191 §2), by canonical (English) name. A name not here evaluates to
+ * Every spreadsheet function the engine knows (ADR 0194 §2), by canonical (English) name. A name not here evaluates to
  * `#NAME?`, keeping the formula as written, so a file from Excel with a function we lack round-trips unchanged.
  */
 import { DATETIME } from "./datetime";

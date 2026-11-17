@@ -7,7 +7,7 @@ import type { Command, EditorState, Plugin, Transaction } from "prosemirror-stat
 import { richSchema } from "./schema";
 
 /**
- * What the rich text editor does to its text (ADR 0191 §2): marks, colors, links, alignment, lists and levels, the
+ * What the rich text editor does to its text (ADR 0194 §2): marks, colors, links, alignment, lists and levels, the
  * keys (⌘B ⌘I ⌘U, ⌘⇧X strike, ⌘K link, Tab and ⇧Tab for levels, Enter that keeps a list going, Backspace that leaves
  * one) and the typed shortcuts ("- " starts a bullet list, "1. " a numbered one). The toolbars of slides and the
  * canvas call the same commands, and read `richFormat` to show what is on.

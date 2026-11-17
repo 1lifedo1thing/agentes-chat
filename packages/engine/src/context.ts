@@ -556,7 +556,7 @@ export interface RunContext {
 }
 
 /**
- * When a live file fits better than a reply (ADR 0191 §6), and where pictures go (ADR 0192): ours puts them on a canvas
+ * When a live file fits better than a reply (ADR 0194 §6), and where pictures go (ADR 0195): ours puts them on a canvas
  * and counts them in the budget, which a computer brain's own image tool doesn't.
  */
 export const liveFilesLine = (images: boolean) =>
@@ -592,8 +592,8 @@ export async function buildRunContext(
     /** `show_block` and `start_poll` are available: when to use them (a routine's run is refused them). */
     blocks?: boolean;
     /**
-     * Live files' tools are granted (ADR 0191 §6): when a spreadsheet, a presentation or a canvas fits; `images`:
-     * `generate_image` too (ADR 0192), which a workspace has only with an image model.
+     * Live files' tools are granted (ADR 0194 §6): when a spreadsheet, a presentation or a canvas fits; `images`:
+     * `generate_image` too (ADR 0195), which a workspace has only with an image model.
      */
     liveFiles?: { images: boolean };
     /** Reads a block's parts, so the agent reads what its blocks show and not only what people set in them. */

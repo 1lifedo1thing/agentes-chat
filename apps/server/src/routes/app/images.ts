@@ -18,7 +18,7 @@ import { type AppDeps, body, createAppRouter, errors, json, OrgParams, requireSe
 
 const tags = ["Live files"];
 
-/** Requests for pictures one person may make (ADR 0192): asking and trying again both count. */
+/** Requests for pictures one person may make (ADR 0195): asking and trying again both count. */
 export const IMAGE_REQUESTS_PER_PERSON = { limit: 30, windowMs: 3600_000 };
 
 const ArtifactParams = OrgParams.extend({ artifactId: z.uuid() });
@@ -69,7 +69,7 @@ const answerOf = (view: ImageRequestView) => {
 };
 
 /**
- * Images on canvases (ADR 0192): which image models the workspace can use, pictures asked for on a canvas (placed at
+ * Images on canvases (ADR 0195): which image models the workspace can use, pictures asked for on a canvas (placed at
  * once as placeholders, made by a job through the Model Gateway), and Try again on a request that failed.
  */
 export function imageRoutes(deps: AppDeps) {

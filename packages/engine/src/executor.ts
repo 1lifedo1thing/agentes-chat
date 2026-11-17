@@ -1925,7 +1925,7 @@ async function executeRunInner(
           const [recent, kept, live] = await Promise.all([
             recentMessages(),
             keptToolGroups(db, run, granted).catch(() => [] as string[]),
-            // Asked from inside a live file, or one attached: its own tools come with it (ADR 0191 §6).
+            // Asked from inside a live file, or one attached: its own tools come with it (ADR 0194 §6).
             carriesLiveFile(db, run.orgId, trigger?.meta).catch(() => false),
           ]);
           const keep = live ? [...kept, LIVE_FILES_GROUP] : kept;
@@ -2366,7 +2366,7 @@ async function executeRunInner(
         followUp: tools.some((t) => t.name === FOLLOW_UP_TOOL),
         work: workApplies && tools.some((t) => t.name === WORK_IN_BACKGROUND_TOOL),
         blocks: tools.some((t) => t.name === SHOW_BLOCK_TOOL),
-        // Granted is enough: on demand their group is one `use_tool` away (ADR 0191 §6).
+        // Granted is enough: on demand their group is one `use_tool` away (ADR 0194 §6).
         ...(granted.some((t) => LIVE_FILE_TOOLS.has(t.name) && !t.connectionId)
           ? { liveFiles: { images: granted.some((t) => t.name === "generate_image" && !t.connectionId) } }
           : {}),

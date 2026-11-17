@@ -1,7 +1,7 @@
 import { type Endpoint, ProviderError } from "./types";
 
 /**
- * Image generation (ADR 0192): one catalog of image models, apart from the chat models' `MODEL_CATALOG`, so image
+ * Image generation (ADR 0195): one catalog of image models, apart from the chat models' `MODEL_CATALOG`, so image
  * models never show up in model pickers, the router or Automático. Pure data and arithmetic: the apps import it
  * (`@agenteschat/providers/images`) to list and price models without the SDKs. Only the Model Gateway calls a
  * provider's `generateImage`.
@@ -16,7 +16,7 @@ export const isImageAspect = (value: unknown): value is ImageAspect => IMAGE_ASP
 export type ImageSize = "1K" | "2K";
 export const IMAGE_SIZES: readonly ImageSize[] = ["1K", "2K"];
 
-/** At most this many pictures one request makes (ADR 0192). */
+/** At most this many pictures one request makes (ADR 0195). */
 export const MAX_IMAGES_PER_REQUEST = 4;
 /** At most this many pictures one request starts from (variations, edits). */
 export const MAX_IMAGE_REFERENCES = 4;
@@ -68,7 +68,7 @@ const usd = (value: number) => Math.round(value * 1e9);
 const perMillion = (value: number) => Math.round(value * 1000);
 
 /**
- * Image models by id, the default first: a workspace's default is the first one it has a key for (ADR 0192). Prices
+ * Image models by id, the default first: a workspace's default is the first one it has a key for (ADR 0195). Prices
  * from each maker's page on 2026-11-17: Gemini per picture by size, OpenAI per token (GPT Image), OpenRouter as it
  * reports each call. Update the table when prices change: usage rows keep the cost of their time.
  */

@@ -161,7 +161,7 @@ const BUILTIN: Record<string, ActivityKind> = {
   list_artifacts: "readingDrive",
   create_artifact: "writingDrive",
   update_artifact: "writingDrive",
-  // Live files (ADR 0191 §6): the file's own page shows where the agent works; the bar says it is in the Drive.
+  // Live files (ADR 0194 §6): the file's own page shows where the agent works; the bar says it is in the Drive.
   read_spreadsheet: "readingDrive",
   read_presentation: "readingDrive",
   read_canvas: "readingDrive",
@@ -171,7 +171,7 @@ const BUILTIN: Record<string, ActivityKind> = {
   edit_presentation: "writingDrive",
   create_canvas: "writingDrive",
   edit_canvas: "writingDrive",
-  // Images onto a canvas through the workspace's image AI (ADR 0192).
+  // Images onto a canvas through the workspace's image AI (ADR 0195).
   generate_image: "creatingImage",
   search_context: "searchingMemory",
   expand: "searchingMemory",

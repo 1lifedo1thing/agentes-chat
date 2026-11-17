@@ -20,7 +20,7 @@ import {
 } from "./spreadsheet";
 
 /**
- * Live documents as a whole (ADR 0191 §2), whatever their kind: a new one, which kind one is, and the dispatchers the
+ * Live documents as a whole (ADR 0194 §2), whatever their kind: a new one, which kind one is, and the dispatchers the
  * server uses for previews, search text, rules of shape and restoring a version.
  *
  * The kinds and `LIVE_LIMITS` are defined in `limits.ts`, which imports nothing, and re-exported here: the spreadsheet
@@ -90,7 +90,7 @@ function kindOrThrow(doc: Y.Doc, kind: LiveKind | undefined): LiveKind {
 }
 
 /**
- * Writes `from`'s content over `doc`'s in one transaction with `origin` (restoring a version, ADR 0191 §7), changing
+ * Writes `from`'s content over `doc`'s in one transaction with `origin` (restoring a version, ADR 0194 §7), changing
  * only what differs so whoever is editing at that moment keeps their place. Both must be the same kind.
  */
 export function replaceLiveContent(doc: Y.Doc, from: Y.Doc, origin: unknown): void {

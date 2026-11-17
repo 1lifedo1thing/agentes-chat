@@ -3,7 +3,7 @@ import { decodeXmlEntities } from "../format";
 import { officeUnreadable } from "./limits";
 
 /**
- * XML for the Office readers and writers (ADR 0193). Parts are parsed with @xmldom/xmldom and read by local names, so
+ * XML for the Office readers and writers (ADR 0196). Parts are parsed with @xmldom/xmldom and read by local names, so
  * whatever prefixes a writer chose read the same; a document type declaration is refused before parsing (Office never
  * writes one, and none of its entities is ever expanded). The parts that can be large (a worksheet's cells, a
  * workbook's strings) go through `sax`, a linear scanner that builds no tree. The writers escape through `xmlText` and

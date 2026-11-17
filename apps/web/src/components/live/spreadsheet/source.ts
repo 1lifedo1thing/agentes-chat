@@ -1,5 +1,5 @@
 /**
- * What the grid draws, from either place a spreadsheet comes from (ADR 0191, ADR 0193): a live document with its
+ * What the grid draws, from either place a spreadsheet comes from (ADR 0194, ADR 0196): a live document with its
  * engine (values computed on this device), or an uploaded workbook read by the server (values as the file saved
  * them). Both answer the same questions, so one grid draws both.
  */
@@ -228,7 +228,7 @@ export class DocSource implements GridSource {
 }
 
 /**
- * An uploaded workbook's sheet (ADR 0193), read-only: each cell shows the text the file saved for it (`t`), else its
+ * An uploaded workbook's sheet (ADR 0196), read-only: each cell shows the text the file saved for it (`t`), else its
  * value in its number format; formulas are shown as the file wrote them, in English.
  */
 export class WorkbookSource implements GridSource {

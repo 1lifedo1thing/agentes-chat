@@ -8,7 +8,7 @@ import { liveContentOf, liveExcerpt, liveProblems } from "./preview";
 import { docOf, liveDocRow, loadStored, writeCompacted } from "./store";
 
 /**
- * The outbox jobs that keep live documents small and versioned (ADR 0191 §4, §7, ADR 0005):
+ * The outbox jobs that keep live documents small and versioned (ADR 0194 §4, §7, ADR 0005):
  *
  * - `live.compact` folds a document's stored changes into its state (deleted content dropped), refreshes the preview
  *   cards draw, the search text and, at most once a minute, the file's "last edited" in the Drive. Asked once 200

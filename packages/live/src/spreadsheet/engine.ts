@@ -1,5 +1,5 @@
 /**
- * The spreadsheet engine (ADR 0191 §2): every app, the server and the agents' tools compute a live spreadsheet's
+ * The spreadsheet engine (ADR 0194 §2): every app, the server and the agents' tools compute a live spreadsheet's
  * values with it, since values are never stored. It evaluates lazily and remembers what it computed, with what each
  * formula read (cells, ranges, other sheets), so a change recomputes only what depends on it: an edited cell drops
  * its dependents, a row or column inserted, deleted or moved drops its sheet and the sheets that read it, and a

@@ -7,7 +7,7 @@ import { CAMERA_MAX, CAMERA_MIN } from "./camera";
 import { SOFT, softName } from "./palette";
 
 /**
- * The canvas's floating controls (ADR 0191 §2): the tools dock at the bottom, the zoom island at the bottom right, and
+ * The canvas's floating controls (ADR 0194 §2): the tools dock at the bottom, the zoom island at the bottom right, and
  * the small bar over a chosen note, text, shape, frame or arrow. Glass, over the plane, out of the way of the shapes.
  */
 

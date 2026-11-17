@@ -4,7 +4,7 @@ import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
 /**
- * A live presentation (`/slides/<id>`, ADR 0191): its slides; with `slide`, that slide opened large (its own push, so
+ * A live presentation (`/slides/<id>`, ADR 0194): its slides; with `slide`, that slide opened large (its own push, so
  * the system's back returns to the list). From the Drive, a message's card, a link or New; none: the Drive.
  */
 export default function SlidesRoute() {

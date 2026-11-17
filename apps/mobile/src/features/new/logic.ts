@@ -81,7 +81,7 @@ const CREATE_ORDER: readonly CreateItem[] = [
  * Whether this person may start `item`, as the server checks it (ADR 0085): an agent (`create_agents`, and none while
  * the workspace is being deleted, as on the web), a channel (`create_channels`), a task (`post`), a routine
  * (`manage_routines`, or the owner of an agent), a wiki page (`edit_wiki`), a spreadsheet, a presentation or a canvas
- * in the Drive (`upload_files`, as any file there, ADR 0191) and invitations (`invite_people`).
+ * in the Drive (`upload_files`, as any file there, ADR 0194) and invitations (`invite_people`).
  */
 export function mayCreate(
   org: { permissions?: readonly string[]; deletion?: unknown } | null | undefined,

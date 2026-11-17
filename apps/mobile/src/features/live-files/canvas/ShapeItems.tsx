@@ -21,7 +21,7 @@ import type { Pt, WBox } from "./camera";
 import { NOTE_PAD, NOTE_TEXT, pendingWords, retryable } from "./logic";
 
 /**
- * What a canvas's shapes look like on the phone (ADR 0191 §2, 0192), the web's look in world units laid out at `k`
+ * What a canvas's shapes look like on the phone (ADR 0194 §2, 0195), the web's look in world units laid out at `k`
  * points per unit: pictures (corners 8), notes in their soft colors, bare text, shapes with their label, pictures being
  * made (the sky forming, who asked, the prompt; failed, why and "Tentar de novo"), an agent's page and any file as a
  * card. Frames and arrows are drawn on the plane itself (Skia). A shape being moved or stretched follows the finger
@@ -243,7 +243,7 @@ function Geo({ shape, k }: { shape: ShapeView; k: number }) {
   );
 }
 
-/** A picture on its way (ADR 0192): the sky forming in the asker's tone, who asked and the prompt; failed, why. */
+/** A picture on its way (ADR 0195): the sky forming in the asker's tone, who asked and the prompt; failed, why. */
 function Pending({ shape, k, readOnly }: { shape: ShapeView; k: number; readOnly: boolean }) {
   const { t } = useTranslation();
   const { colors: c } = useTheme();

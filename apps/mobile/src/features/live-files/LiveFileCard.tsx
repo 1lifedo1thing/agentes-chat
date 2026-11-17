@@ -14,7 +14,7 @@ import { LiveCover } from "./shared/LiveCover";
 const COVER = 132;
 
 /**
- * A live file on its message (ADR 0191 §9), as a block's card is (a hairline, the bottom-left corner cut, the agent's
+ * A live file on its message (ADR 0194 §9), as a block's card is (a hairline, the bottom-left corner cut, the agent's
  * sky along its top when an agent made it): what it holds drawn small from its preview (never the document itself, so
  * a conversation opens no file), its name, its kind and size, and the faces of who is in it now. A tap opens it on its
  * own screen, as it is now.

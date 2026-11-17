@@ -22,7 +22,7 @@ import { SlideThumb } from "./slides";
 import "./covers.css";
 
 /**
- * Live files drawn small (ADR 0191 §7, §9), from the preview the server keeps with each file: a spreadsheet's first
+ * Live files drawn small (ADR 0194 §7, §9), from the preview the server keeps with each file: a spreadsheet's first
  * cells on its grid, a presentation's first slide, a canvas's map; and the faces of who is in the file now. The Drive's
  * cards and rows (`DrivePreview`) and the cards in messages (`ArtifactCard`) draw these.
  */

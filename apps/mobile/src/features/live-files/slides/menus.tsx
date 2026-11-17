@@ -5,7 +5,7 @@ import { type IconName, useTheme } from "@/ui";
 import { pickOne, showActionSheet } from "../../shared/PickerSheet";
 
 /**
- * A presentation's menus on the phone (ADR 0191 §9), in the app's own sheets: a slide's or an element's actions, the
+ * A presentation's menus on the phone (ADR 0194 §9), in the app's own sheets: a slide's or an element's actions, the
  * question before a slide goes, and the six themes.
  */
 

@@ -81,7 +81,7 @@ export function ArtifactViewerProvider({ children }: { children: ReactNode }) {
   const orgId = org.id;
   const open = useCallback(
     (id: string, version?: number, set?: ViewerItem[]) => {
-      // A spreadsheet, a presentation or a canvas opens on its own page (ADR 0191 §9), not in the viewer.
+      // A spreadsheet, a presentation or a canvas opens on its own page (ADR 0194 §9), not in the viewer.
       if (knownLive(qc, orgId, id)) openLivePage(navigate, orgId, id, { version });
       else setTarget({ id, version, set, key: id });
     },
@@ -174,7 +174,7 @@ export function ArtifactViewer({
   const navigate = useNavigate();
   const search = useRouterState({ select: (s) => s.location.search }) as Record<string, unknown>;
   const searchArtifact = search.artifact;
-  // Opened before its kind was known (a link, a notification): a live file goes to its own page (ADR 0191 §9), in
+  // Opened before its kind was known (a link, a notification): a live file goes to its own page (ADR 0194 §9), in
   // place of the Drive's link to it when that is what opened it.
   const liveId = a && isLiveFileKind(a.kind) ? a.id : null;
   useEffect(() => {

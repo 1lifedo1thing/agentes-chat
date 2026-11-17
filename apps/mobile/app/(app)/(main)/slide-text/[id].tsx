@@ -4,7 +4,7 @@ import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
 /**
- * A text box's words in a live file (`/slide-text/<id>`, ADR 0191 §9): a slide's (`slide` and `el`) or a canvas's note,
+ * A text box's words in a live file (`/slide-text/<id>`, ADR 0194 §9): a slide's (`slide` and `el`) or a canvas's note,
  * text or shape (`shape`); none: the Drive.
  */
 export default function SlideTextRoute() {

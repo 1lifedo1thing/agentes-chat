@@ -1,5 +1,5 @@
 /**
- * Runs a formula's tree (ADR 0191 §2) with Excel's rules: references resolve by id to where their rows and columns
+ * Runs a formula's tree (ADR 0194 §2) with Excel's rules: references resolve by id to where their rows and columns
  * are now (a deleted one is `#REF!`), operators work item by item over arrays and ranges, functions take their
  * arguments evaluated (or unevaluated, for IF and the others that run one branch), and the first error wins.
  */

@@ -6,7 +6,7 @@ import { useErrorToast, useOrgId } from "../../shared/hooks";
 import { liveRoute } from "../routes";
 
 /**
- * "Novo" › Planilha, Apresentação, Quadro on the phone (ADR 0191 §9): an empty file named "Planilha sem título" in the
+ * "Novo" › Planilha, Apresentação, Quadro on the phone (ADR 0194 §9): an empty file named "Planilha sem título" in the
  * Drive (or in a conversation, with `where`), opened on its own screen once the server made it. One at a time: a
  * second tap while one is being made does nothing. A failure says why in a toast.
  */

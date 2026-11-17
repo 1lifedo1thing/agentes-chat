@@ -15463,7 +15463,7 @@ export const en = {
       sharingTooMany: "Choose at most {{max}} people and {{max}} roles.",
       notInDrive: "This lives only in its conversation, so it can't be shared.",
     },
-    /** Spreadsheets, presentations and canvases people and agents edit together (ADR 0191). */
+    /** Spreadsheets, presentations and canvases people and agents edit together (ADR 0194). */
     live: {
       readOnly: "This file is read-only now, so it can't be changed.",
       tooLarge: "This file is at its size limit. Remove something from it first.",
@@ -15471,7 +15471,7 @@ export const en = {
       assetType: "Only pictures go in this file: PNG, JPEG, WebP or GIF.",
       liveOnly: "This file is changed right where it is, so it can't be replaced as a whole.",
     },
-    /** Uploaded Office files the server reads to show or to make editable (ADR 0193). */
+    /** Uploaded Office files the server reads to show or to make editable (ADR 0196). */
     office: {
       unreadable: "This file couldn't be opened here. It may be damaged. Download it to open it in its own app.",
       tooLarge: "This file is too large to open here. Download it to see it in its own app.",
@@ -15479,7 +15479,7 @@ export const en = {
       encrypted: "This file is protected with a password, so only its own app opens it.",
       tooLargeToEdit: "This file is too large to edit here. You can still see it and download it.",
     },
-    /** Images made on a canvas (ADR 0192). */
+    /** Images made on a canvas (ADR 0195). */
     images: {
       noModel: "To make images, add an OpenAI, Gemini or OpenRouter key in the workspace settings.",
       modelUnavailable: "This image AI isn't available in the workspace anymore. Choose another one.",
@@ -21217,9 +21217,9 @@ export const en = {
       askFirst: "Ask before sending",
     },
   },
-  /** Live files: spreadsheets, presentations and canvases people and agents edit together (ADR 0191). */
+  /** Live files: spreadsheets, presentations and canvases people and agents edit together (ADR 0194). */
   live: {
-    /** The presentation editor (ADR 0191 §2): its rail, stage, toolbar, notes and presenting. */
+    /** The presentation editor (ADR 0194 §2): its rail, stage, toolbar, notes and presenting. */
     slides: {
       rail: {
         label: "Slides",
@@ -21484,7 +21484,7 @@ export const en = {
         hiddenNumber: "Slide {{n}} · hidden",
       },
     },
-    /** The three kinds, as the Drive's New menu offers them (ADR 0191 §9). */
+    /** The three kinds, as the Drive's New menu offers them (ADR 0194 §9). */
     kinds: {
       spreadsheet: "Spreadsheet",
       slides: "Presentation",
@@ -21526,7 +21526,7 @@ export const en = {
       ask: "Ask an agent",
       present: "Present",
       download: "Download",
-      /** What a live file downloads as (ADR 0193). */
+      /** What a live file downloads as (ADR 0196). */
       formats: {
         xlsx: "Excel (.xlsx)",
         csv: "CSV (.csv, first sheet)",
@@ -21587,7 +21587,7 @@ export const en = {
         /** Faces on a Drive card: who is in the file now. */
         inNow: "In it now: {{names}}",
       },
-      /** The history beside the file (ADR 0191 §7). */
+      /** The history beside the file (ADR 0194 §7). */
       versions: {
         title: "Versions",
         close: "Close versions",
@@ -21611,7 +21611,7 @@ export const en = {
         opening: "Opening this version…",
         openFailed: "Couldn't open this version.",
       },
-      /** Ask an agent, from inside the file (ADR 0191 §6). */
+      /** Ask an agent, from inside the file (ADR 0194 §6). */
       askAgent: {
         title: "Ask an agent",
         agent: "Agent",
@@ -21666,7 +21666,7 @@ export const en = {
         fit: "Fit everything",
       },
     },
-    /** Uploaded Office files, drawn from the server's reading of them (ADR 0193). */
+    /** Uploaded Office files, drawn from the server's reading of them (ADR 0196). */
     office: {
       loading: "Opening the file…",
       failed: "This file can't be shown here. Download it to open it.",
@@ -21692,7 +21692,7 @@ export const en = {
       /** The isolated frame a Word document is drawn in. */
       frame: "{{title}}, as a page",
     },
-    /** What an agent is doing in a file, beside its face (its tools say which, ADR 0191 §6). */
+    /** What an agent is doing in a file, beside its face (its tools say which, ADR 0194 §6). */
     activity: {
       working: "working on the file",
       readingFile: "reading the file",
@@ -21719,12 +21719,12 @@ export const en = {
       sheetName: "Sheet {{n}}",
       /** The note of the version written when an earlier one is brought back. */
       restored: "Restored version {{version}}",
-      /** The canvas a conversation's generated images go to when none is named (ADR 0192). */
+      /** The canvas a conversation's generated images go to when none is named (ADR 0195). */
       imagesCanvas: "Images",
-      /** The note of the first version of a file made editable from an uploaded Office file (ADR 0193). */
+      /** The note of the first version of a file made editable from an uploaded Office file (ADR 0196). */
       fromFile: "Made from {{name}}",
     },
-    /** Canvases: the plane, its tools, its shapes and what to do with them (ADR 0191 §2). */
+    /** Canvases: the plane, its tools, its shapes and what to do with them (ADR 0194 §2). */
     canvas: {
       /** The plane's name for screen readers, and what kind of place it is. */
       label: "Canvas",
@@ -21895,7 +21895,7 @@ export const en = {
         uploaded: "Uploaded to this canvas",
       },
     },
-    /** Generating images onto a canvas (ADR 0192). */
+    /** Generating images onto a canvas (ADR 0195). */
     images: {
       title: "Generate image",
       close: "Close",

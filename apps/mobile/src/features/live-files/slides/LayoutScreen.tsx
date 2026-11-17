@@ -26,7 +26,7 @@ import { slideRoute } from "./routes";
 import { useDeck } from "./useDeck";
 
 /**
- * The layouts of a slide on the phone (ADR 0191 §2, §9), on a screen of their own: each drawn small in the
+ * The layouts of a slide on the phone (ADR 0194 §2, §9), on a screen of their own: each drawn small in the
  * presentation's theme with its name under it, two across. For a new slide (`at`), the pick adds it there and opens it
  * in this screen's place; for a slide's new look (`slide`), the pick changes it (its texts move to the new places) and
  * goes back, its current layout checked.

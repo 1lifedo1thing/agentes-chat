@@ -66,7 +66,7 @@ function OrgLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const href = useRouterState({ select: (s) => s.location.href });
   // "Criar agente" is a focused flow with its own rail: no sidebar while it's open (admins only; others see why not).
-  // A live file's page is full bleed too (ADR 0191 §9): its editor takes the whole window.
+  // A live file's page is full bleed too (ADR 0194 §9): its editor takes the whole window.
   const focused = (/\/agents\/new\/?$/.test(path) && can(membership, "create_agents")) || LIVE_FILE_PATH.test(path);
   // Notifications in this browser (ADR 0071), when already on: the server hears of them again, quietly.
   useWebPushRefresh(me.user.id);

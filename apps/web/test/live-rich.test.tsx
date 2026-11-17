@@ -33,7 +33,7 @@ import {
 import { liftParagraph, splitParagraph } from "@/components/live/rich/commands";
 
 /**
- * Rich text in live files (ADR 0191 §2, §5): the ProseMirror editor bound to a box's `Y.XmlFragment` (what is typed
+ * Rich text in live files (ADR 0194 §2, §5): the ProseMirror editor bound to a box's `Y.XmlFragment` (what is typed
  * lands in the document as the person's own change, others' changes come in, the toolbar's commands, the keys and
  * typed shortcuts, other people's carets), the drawn text, and formatting a whole box at once.
  */

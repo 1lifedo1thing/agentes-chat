@@ -20,7 +20,7 @@ import { createFakeApi, fakeLiveOf, ORG_ID, seedState } from "./fake-api";
 import { renderPage, screen } from "./render";
 
 /**
- * The presentation editor (ADR 0191 §2, §5): slides added, reordered and deleted from the toolbar and the rail, text
+ * The presentation editor (ADR 0194 §2, §5): slides added, reordered and deleted from the toolbar and the rail, text
  * typed through ProseMirror into the shared document, the theme, presenting with the keys (and the presenter's
  * presence), following someone who presents, a read-only file, and the read-only drawings (thumbnail, uploaded deck).
  */
@@ -107,7 +107,7 @@ async function setup(options: { readOnly?: boolean; initial?: LiveEditorSearch }
 }
 
 /**
- * Lets presence travel: it is sent at most every 60 ms and redrawn at most every 100 ms (ADR 0191 §5), so the timers
+ * Lets presence travel: it is sent at most every 60 ms and redrawn at most every 100 ms (ADR 0194 §5), so the timers
  * run inside `act` and React draws what arrived.
  */
 async function presenceGoes(server: { settle(): Promise<void> }) {

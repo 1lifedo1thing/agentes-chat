@@ -175,7 +175,7 @@ function metaOf(t: TFunction, detail: ArtifactDetail, locale: string) {
   }
   const kind = t(`artifacts.kind.${content.kind}`);
   if (content.kind === "table") return `${kind} · ${t("artifacts.rows", { count: content.rows.length })}`;
-  // A live file says how big it is, not its version: it is always as it is now (ADR 0191).
+  // A live file says how big it is, not its version: it is always as it is now (ADR 0194).
   if (content.kind === "spreadsheet")
     return `${kind} · ${t("mobile.live.card.sheets", { count: content.preview.sheets })}`;
   if (content.kind === "slides") return `${kind} · ${t("mobile.live.card.slides", { count: content.preview.count })}`;

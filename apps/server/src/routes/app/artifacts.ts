@@ -157,7 +157,7 @@ const Content = z
         }),
       ),
     }),
-    // Live files (ADR 0191 §7): a small preview for cards and the Drive, never the whole document (`…/live`).
+    // Live files (ADR 0194 §7): a small preview for cards and the Drive, never the whole document (`…/live`).
     z.object({ kind: z.literal("spreadsheet"), preview: livePreview("the top-left cells of its first sheet") }),
     z.object({ kind: z.literal("slides"), preview: livePreview("its theme, how many slides and the first one") }),
     z.object({ kind: z.literal("canvas"), preview: livePreview("its bounds and its first shapes") }),
@@ -295,12 +295,12 @@ const VersionQuery = z.object({ version: z.coerce.number().int().min(1).optional
 
 /**
  * What a download may be turned into: a table's CSV, a diff's patch, a document's PDF or Word file, and a live file's
- * Office file, CSV, PDF or (a canvas) JSON (ADR 0193).
+ * Office file, CSV, PDF or (a canvas) JSON (ADR 0196).
  */
 const FILE_FORMATS = ["csv", "patch", "pdf", "docx", "xlsx", "pptx", "json"] as const;
-/** What a live file downloads as when no format is asked: what other apps open (ADR 0193); a canvas, its JSON. */
+/** What a live file downloads as when no format is asked: what other apps open (ADR 0196); a canvas, its JSON. */
 const LIVE_DOWNLOAD: Partial<Record<string, "xlsx" | "pptx">> = { spreadsheet: "xlsx", slides: "pptx" };
-/** What `exportLive` writes of a live file as it stands now (ADR 0193). */
+/** What `exportLive` writes of a live file as it stands now (ADR 0196). */
 const LIVE_EXPORTS = ["xlsx", "csv", "pptx", "pdf"] as const;
 
 /**
@@ -614,7 +614,7 @@ export function artifactRoutes(deps: AppDeps) {
   );
 
   /**
-   * A live file (ADR 0191) as it stands now, as an Office file, a CSV or a PDF (`exportLive`, ADR 0193): the format
+   * A live file (ADR 0194) as it stands now, as an Office file, a CSV or a PDF (`exportLive`, ADR 0196): the format
    * asked, else its kind's own. Null for any other file, a canvas's own JSON and a version, which `artifactFile`
    * writes (as it does every export where the engine writes none itself). Who doesn't read the file gets "not found"
    * here too.
@@ -635,7 +635,7 @@ export function artifactRoutes(deps: AppDeps) {
   };
 
   // The bytes, always as an attachment (HTML and uploaded files are never rendered on our origin). A live file
-  // downloads as an Office file, a CSV or a PDF of how it stands now (ADR 0193).
+  // downloads as an Office file, a CSV or a PDF of how it stands now (ADR 0196).
   app.get("/organizations/:orgId/artifacts/:artifactId/file", async (c) => {
     const version = c.req.query("version");
     const asked = FILE_FORMATS.find((f) => f === c.req.query("format"));

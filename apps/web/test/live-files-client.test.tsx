@@ -27,7 +27,7 @@ import { fakeSockets } from "./fake-socket";
 import { makeServices } from "./render";
 
 /**
- * The live files' client layer in React (ADR 0191): rooms opened by `useLiveRoom` sync through the fake API's live
+ * The live files' client layer in React (ADR 0194): rooms opened by `useLiveRoom` sync through the fake API's live
  * server like the real one, and the hooks around them (presence, the document, selectors) and the queries (making a
  * file, versions, who is in it, generated pictures) work as the screens use them.
  */

@@ -109,7 +109,7 @@ import { type QuickFunction, SheetToolbar } from "./Toolbar";
 import "./sheet.css";
 
 /**
- * The spreadsheet editor (ADR 0191): the toolbar, the formula bar, the grid and the sheet tabs, over a live document
+ * The spreadsheet editor (ADR 0194): the toolbar, the formula bar, the grid and the sheet tabs, over a live document
  * everyone in the file edits at once. Every change goes through `@agenteschat/live`'s edits with the `LOCAL` origin
  * (what the person's undo takes back), values come from the room's engine computing in the person's language, and
  * the person's selection and typing go out as their presence while everyone else's comes in and is drawn.

@@ -1,5 +1,5 @@
 /**
- * Dates and times (ADR 0191 §2) as Excel's serials: days since 1899-12-30, with Excel's fake 1900-02-29 (serial 60)
+ * Dates and times (ADR 0194 §2) as Excel's serials: days since 1899-12-30, with Excel's fake 1900-02-29 (serial 60)
  * kept so every imported file and every formula agrees with Excel. TODAY and NOW read the engine's clock, which the
  * apps refresh every minute (`tick`); the date is the device's own, as in any spreadsheet app.
  */

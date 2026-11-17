@@ -1,4 +1,4 @@
-/** Canvases (ADR 0191 §2, ADR 0192): shapes, frames, arrows, placement, edits, preview and text. */
+/** Canvases (ADR 0194 §2, ADR 0195): shapes, frames, arrows, placement, edits, preview and text. */
 export { canvasPreview, canvasText, replaceCanvas, validateCanvas } from "./content";
 export {
   arrowPath,

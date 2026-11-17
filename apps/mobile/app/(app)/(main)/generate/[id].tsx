@@ -6,7 +6,7 @@ import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
 /**
- * "Gerar imagem" onto a live canvas (`/generate/<id>`, ADR 0192): from the chosen pictures (`refs`), placed around
+ * "Gerar imagem" onto a live canvas (`/generate/<id>`, ADR 0195): from the chosen pictures (`refs`), placed around
  * where the person was looking (`x`, `y`); none: the Drive.
  */
 export default function GenerateRoute() {

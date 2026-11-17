@@ -260,7 +260,7 @@ async function boot(
     email: emailSender(config, log),
     platformCredentials: envPlatformCredentials({
       anthropic: { apiKey: config.PLATFORM_ANTHROPIC_API_KEY, workspaceId: config.PLATFORM_ANTHROPIC_WORKSPACE_ID },
-      // Image generation's providers (ADR 0192), which serve their chat models to workspaces without a key too.
+      // Image generation's providers (ADR 0195), which serve their chat models to workspaces without a key too.
       openai: { apiKey: config.PLATFORM_OPENAI_API_KEY },
       gemini: { apiKey: config.PLATFORM_GEMINI_API_KEY },
       openrouter: { apiKey: config.PLATFORM_OPENROUTER_API_KEY },
@@ -568,7 +568,7 @@ async function boot(
   });
   if (!worker && !existsSync(webDir)) log.warn("web app not found; serving API only", { webDir });
 
-  // Live files' sockets (ADR 0191 §3): one per open spreadsheet, presentation or canvas.
+  // Live files' sockets (ADR 0194 §3): one per open spreadsheet, presentation or canvas.
   const liveSockets = createLiveSockets({
     db: database.db,
     auth,
@@ -696,7 +696,7 @@ async function boot(
     ]);
     if (interrupted.length > 0) log.info("runs handed back for the next instance", { runs: interrupted });
     if (handed > 0) log.info("jobs handed back for the next instance", { jobs: handed });
-    // What live files hold that isn't stored yet is stored, now that no run here changes them (ADR 0191 §4).
+    // What live files hold that isn't stored yet is stored, now that no run here changes them (ADR 0194 §4).
     await engine.live.stop().catch((error: unknown) => log.warn("live files' last changes failed", { error }));
     // Browser tabs, left open so they saw those runs finish, reconnect to the next instance.
     await server?.stop(true);

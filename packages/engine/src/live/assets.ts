@@ -15,7 +15,7 @@ import { NotFoundError, ValidationError } from "../errors";
 import { imageSize } from "../image-size";
 
 /**
- * Pictures that belong to a live file (ADR 0191 §8): on a canvas or a slide, dropped by a person, made by the image
+ * Pictures that belong to a live file (ADR 0194 §8): on a canvas or a slide, dropped by a person, made by the image
  * job, copied from the Drive or from another live file. Each is stored through the workspace's storage like a
  * version's bytes (`writeLiveAssetBlob`: counted in its storage, refused past its limits), served only to whoever
  * reads the file and purged with it. Only pictures, told by their bytes, never by the type a client declared.

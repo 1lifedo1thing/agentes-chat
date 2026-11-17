@@ -1,5 +1,5 @@
 /**
- * Live files on the server (ADR 0191): spreadsheets, presentations and canvases people and agents edit together.
+ * Live files on the server (ADR 0194): spreadsheets, presentations and canvases people and agents edit together.
  * Who may open one is `liveFileAccess` (`artifacts.ts`); the documents a process holds are `createLiveDocs`.
  */
 export { changeActorOf, originFor, originOfActor, personHides } from "./access";

@@ -232,7 +232,7 @@ export const ICONS = {
     r(14.7, 15.3, 6.6, 5.1, 1.2),
     p("M16.2 15.3v-1.32a1.8 1.8 0 0 1 3.6 0v1.32"),
   ],
-  // Live files (ADR 0191), the web's drawings on this grid: a spreadsheet (cells under a header row), a presentation
+  // Live files (ADR 0194), the web's drawings on this grid: a spreadsheet (cells under a header row), a presentation
   // (a slide on its stand), a canvas (a board with a round and a square shape on it).
   spreadsheet: [r(3.6, 4.2, 16.8, 15.6, 2.4), p("M3.6 9h16.8M3.6 14.4h16.8M9 4.2v15.6M14.7 9v10.8")],
   slides: [r(3, 4.2, 18, 12, 2.1), p("M12 16.2v3.6M8.4 19.8h7.2M7.2 8.7h6M7.2 12h9.6")],

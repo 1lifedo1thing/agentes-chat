@@ -1,5 +1,5 @@
 /**
- * The rules of shape of a spreadsheet document (ADR 0191 §2): what the server checks when it compacts a document,
+ * The rules of shape of a spreadsheet document (ADR 0194 §2): what the server checks when it compacts a document,
  * so a buggy or hostile client can't leave one no app can open. Readers already skip what is out of shape; this says
  * what it is, as sentences, and what passes `LIVE_LIMITS`. States people reach by working at once (an id repeated by
  * two moves of one sheet, a cell left behind in a row someone deleted) are not problems.

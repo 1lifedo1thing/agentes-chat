@@ -6,7 +6,7 @@ setupDom();
 import type { LiveEditorProps } from "@/components/live/editor";
 
 /**
- * The live file's page (ADR 0191 §9): its header (back, the title to rename, how it's saved, who is here, Ask an agent,
+ * The live file's page (ADR 0194 §9): its header (back, the title to rename, how it's saved, who is here, Ask an agent,
  * Share, Present, Download, ⋯), the editor it draws for the file's kind, versions beside it and shown in place,
  * following someone, and its states (loading, offline, read-only, not found). The editors are stand-ins here (each has
  * its own tests): one that shows what the page hands it.

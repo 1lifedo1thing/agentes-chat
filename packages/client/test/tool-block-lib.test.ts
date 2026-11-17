@@ -801,7 +801,7 @@ describe("a lone quick read that only fed the answer shows no card", () => {
     expect(makingImage({ step: { tool: "shell" } })).toBe(false);
     expect(makingImage({ step: { said: "Vou desenhar" } })).toBe(false);
     expect(makingImage({})).toBe(false);
-    // Ours onto a canvas (ADR 0192): while its call runs, on any brain; its end (`tool` null) ends it.
+    // Ours onto a canvas (ADR 0195): while its call runs, on any brain; its end (`tool` null) ends it.
     expect(makingImage({ tool: "generate_image" })).toBe(true);
     expect(makingImage({ tool: "mcp__agentes__generate_image" })).toBe(true);
     expect(makingImage({ tool: "mcp__higgsfield__generate_image" })).toBe(false);

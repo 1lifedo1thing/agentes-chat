@@ -39,7 +39,7 @@ import { createLiveFile } from "./create";
 import type { LiveDocs } from "./docs";
 
 /**
- * Pictures made onto a canvas (ADR 0192). A request names the canvas it was made from, or none: then the
+ * Pictures made onto a canvas (ADR 0195). A request names the canvas it was made from, or none: then the
  * conversation's own canvas is used, made on first use ("Images", in that conversation, with its audience). The
  * request first places a frame titled with the prompt and one placeholder per picture, so everyone in the canvas sees
  * what is coming and who asked; the `live.image` job calls the Model Gateway, stores each picture as an asset of the
@@ -55,7 +55,7 @@ export const LIVE_IMAGE_JOB = "live.image";
 const JOB_ATTEMPTS = 3;
 /** The most one provider call may take before the request fails (`provider`). */
 export const IMAGE_CALL_TIMEOUT_MS = 180_000;
-/** The most an agent waits for its pictures (ADR 0192): two minutes. */
+/** The most an agent waits for its pictures (ADR 0195): two minutes. */
 export const AGENT_IMAGE_WAIT_MS = 120_000;
 /** A placeholder's longest side on the canvas, in world units. */
 const PLACEHOLDER_SIDE = 384;
@@ -234,7 +234,7 @@ async function writableCanvas(deps: LiveImageDeps, actor: ArtifactActor, orgId: 
 }
 
 /**
- * The conversation's own canvas for pictures (ADR 0192): the newest canvas in it that pictures were made on, which
+ * The conversation's own canvas for pictures (ADR 0195): the newest canvas in it that pictures were made on, which
  * the actor may change, else a new one ("Images", in the conversation, so it has the conversation's audience).
  */
 async function conversationCanvas(
@@ -453,7 +453,7 @@ export async function requestImages(
 }
 
 /**
- * Try again (ADR 0192): the request's failed placeholders wait again (or new ones are placed when they were all
+ * Try again (ADR 0195): the request's failed placeholders wait again (or new ones are placed when they were all
  * deleted), its job is queued anew, and the request is now the actor's (their budget or limit, their name on the
  * pictures). A request still waiting or running, or one that made every picture, comes back as it is.
  */
@@ -603,7 +603,7 @@ async function actorOfRequest(db: Executor, row: RequestRow, channelOfFile: stri
 }
 
 /**
- * The `live.image` job's work (ADR 0192), idempotent: the request's placeholders still waiting are made through the
+ * The `live.image` job's work (ADR 0195), idempotent: the request's placeholders still waiting are made through the
  * gateway, stored as the canvas's assets and turned into their pictures; what wasn't made says why. A provider that
  * is down or limiting is tried again by the outbox (the placeholders keep "running") until the last attempt.
  */
@@ -829,7 +829,7 @@ export interface AgentImageInput {
 }
 
 /**
- * An agent's pictures (the `generate_image` tool, ADR 0192): asked like a person's (`requestImages`, on the canvas
+ * An agent's pictures (the `generate_image` tool, ADR 0195): asked like a person's (`requestImages`, on the canvas
  * named or the conversation's own), then waited for, at most two minutes. Returns the canvas as the reply's card
  * (`artifact`), the pictures made, base64, as long as they fit what a model is shown (`MODEL_IMAGE_BYTES`), the
  * request as it stood, and whether the wait ran out (the pictures still come to the canvas then).

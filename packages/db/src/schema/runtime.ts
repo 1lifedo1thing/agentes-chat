@@ -346,7 +346,7 @@ export const agentRunSteps = pgTable(
   ],
 );
 
-/** `image`: pictures made through the gateway (ADR 0192), billed like an agent's own calls when an agent asked. */
+/** `image`: pictures made through the gateway (ADR 0195), billed like an agent's own calls when an agent asked. */
 export const usageKindEnum = pgEnum("usage_kind", ["agent", "router", "embedding", "summary", "image"]);
 
 /**

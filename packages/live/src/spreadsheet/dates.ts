@@ -1,5 +1,5 @@
 /**
- * Excel's date serials (ADR 0191): a date is the number of days since 1899-12-30 in the 1900 system and a time is the
+ * Excel's date serials (ADR 0194): a date is the number of days since 1899-12-30 in the 1900 system and a time is the
  * fraction of a day. Excel's fake 1900-02-29 (serial 60) is kept, so serials agree with every imported file and with
  * Excel's own formulas: serial 1 is 1900-01-01, 61 is 1900-03-01.
  */

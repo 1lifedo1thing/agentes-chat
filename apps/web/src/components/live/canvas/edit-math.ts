@@ -12,7 +12,7 @@ import {
 } from "@agenteschat/live/canvas";
 
 /**
- * The canvas editor's geometry (ADR 0191 §2), apart from React so it is tested on its own: what a press lands on,
+ * The canvas editor's geometry (ADR 0194 §2), apart from React so it is tested on its own: what a press lands on,
  * what a marquee takes, how a box follows a resize handle (turned shapes too), the angle a rotation handle gives, and
  * where an arrow's line runs.
  */

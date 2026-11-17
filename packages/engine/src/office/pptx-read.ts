@@ -25,7 +25,7 @@ import { imageTypeOf, OfficePackage, REL } from "./package";
 import { attr, boolAttr, dig, type Element, intAttr, kid, kids, nameOf, numAttr, relAttr, textOf } from "./xml";
 
 /**
- * PowerPoint decks (`.pptx`) read into `DeckData` (ADR 0193): the slides in their order (hidden ones marked), each
+ * PowerPoint decks (`.pptx`) read into `DeckData` (ADR 0196): the slides in their order (hidden ones marked), each
  * with its background, its speaker notes and its elements bottom to top: text boxes and placeholders with their
  * formatting (runs bold, italic, underlined, struck, colored, linked; paragraphs aligned, leveled, bulleted or
  * numbered), shapes, lines, pictures (the media taken out of the file), tables, and what the slide's layout and master

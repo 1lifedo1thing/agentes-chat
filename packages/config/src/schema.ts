@@ -454,21 +454,21 @@ export const envVars = {
   PLATFORM_OPENAI_API_KEY: {
     schema: z.string().optional(),
     description:
-      "The server's own OpenAI API key. Workspaces without an OpenAI key of their own use it to generate images on canvases (GPT Image, ADR 0192) and for agents on OpenAI models. Usage is still recorded per organization.",
+      "The server's own OpenAI API key. Workspaces without an OpenAI key of their own use it to generate images on canvases (GPT Image, ADR 0195) and for agents on OpenAI models. Usage is still recorded per organization.",
     section: "Agents",
     secret: true,
   },
   PLATFORM_GEMINI_API_KEY: {
     schema: z.string().optional(),
     description:
-      "The server's own Gemini API key. Workspaces without a Gemini key of their own use it to generate images on canvases (Nano Banana, ADR 0192) and for agents on Gemini models. Usage is still recorded per organization.",
+      "The server's own Gemini API key. Workspaces without a Gemini key of their own use it to generate images on canvases (Nano Banana, ADR 0195) and for agents on Gemini models. Usage is still recorded per organization.",
     section: "Agents",
     secret: true,
   },
   PLATFORM_OPENROUTER_API_KEY: {
     schema: z.string().optional(),
     description:
-      "The server's own OpenRouter API key. Workspaces without an OpenRouter key of their own use it to generate images on canvases (ADR 0192) and for agents on OpenRouter models. Usage is still recorded per organization.",
+      "The server's own OpenRouter API key. Workspaces without an OpenRouter key of their own use it to generate images on canvases (ADR 0195) and for agents on OpenRouter models. Usage is still recorded per organization.",
     section: "Agents",
     secret: true,
   },

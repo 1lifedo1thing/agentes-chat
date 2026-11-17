@@ -70,7 +70,7 @@ export function MessageFiles({ files, align = "start" }: { files: MessageFile[];
   const images: { file: MessageFile; detail: ArtifactDetail | undefined }[] = [];
   // What lives in the conversation isn't a file: the thing itself (ADR 0113).
   const blocks: ArtifactDetail[] = [];
-  // A live file is its own card: a preview of it as it is now, opening its screen (ADR 0191 §9).
+  // A live file is its own card: a preview of it as it is now, opening its screen (ADR 0194 §9).
   const liveFiles: ArtifactDetail[] = [];
   const videos: { file: MessageFile; detail: ArtifactDetail | undefined }[] = [];
   const others: { file: MessageFile; detail: ArtifactDetail | undefined; failed: boolean }[] = [];
