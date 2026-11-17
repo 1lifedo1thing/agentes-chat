@@ -2,7 +2,7 @@ import type { AgentBrain, AgentBrainInput, AgentSetup, BrainKind, MachineAccount
 import { keys, useAgents, useApi, useSetComputerTarget, useUpdateAgent } from "@agenteschat/client";
 import type { BrainScreen } from "@agenteschat/client/lib/agent-edit";
 import { autonomyWords, setupOutcome } from "@agenteschat/client/lib/agent-setup";
-import { signInPlan } from "@agenteschat/client/lib/ai-accounts";
+import { accountInLine, signInPlan } from "@agenteschat/client/lib/ai-accounts";
 import { EVERYONE_AUDIENCE, setupPlanQuestion } from "@agenteschat/client/lib/audience";
 import { thinksWith } from "@agenteschat/client/lib/brain";
 import {
@@ -307,9 +307,11 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
           : null;
       const movedTo = row.moves ? s.nameOf(row.moves.name) : null;
       const names = [agent.name, ...others.map((o) => o.name)];
+      // In the sentence an unnamed account goes by its maker ("Claude"), never "Unnamed account".
+      const said = row.account ? accountInLine(t, row.account) : row.title;
       const line =
         names.length > 1
-          ? t("connectAi.doneAll", { names: namesText(t, names, 2), label: row.title })
+          ? t("connectAi.doneAll", { names: namesText(t, names, 2), label: said })
           : t(
               owner
                 ? movedTo
@@ -318,7 +320,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
                 : movedTo
                   ? "agentPage.work.saved.brainMoved"
                   : "agentPage.work.saved.brain",
-              { ...g, brain: row.title, computer: movedTo ?? "", owner: owner ?? "" },
+              { ...g, brain: said, computer: movedTo ?? "", owner: owner ?? "" },
             );
       setSwitched({ row, before, others, line, missed, onlyOwnerAfter: result?.onlyOwner ?? view.onlyOwner });
       setPicked(undefined);
@@ -724,7 +726,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
           </div>
           {arrived && (
             <SettingNote icon="check" live>
-              {t("agentPage.work.brain.add.done", { account: arrived.label, computer: s.computerName })}
+              {t("agentPage.work.brain.add.done", { account: accountInLine(t, arrived), computer: s.computerName })}
             </SettingNote>
           )}
           {s.kind !== "model" && !view.canUsePlans && ownerFirst && (
@@ -853,7 +855,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
     }
     if (screen === "limit") {
       const until = s.usage ? planState(s.usage).until : null;
-      const account = s.currentRow?.title ?? "";
+      const account = s.currentAccount ? accountInLine(t, s.currentAccount) : (s.currentRow?.title ?? "");
       return (
         <>
           <div className="bd-step">
@@ -1084,6 +1086,8 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
     return null;
   };
 
+  /** A row in a button or a sentence: an unnamed account by its maker ("Trocar para Claude"), else its title. */
+  const rowSaid = (r: BrainRow) => (r.account ? accountInLine(t, r.account) : r.title);
   /** The footer, always the same: a quiet note at its start, the second action, the main one at its end. */
   const footer = (o: { note?: ReactNode; second?: ReactNode; main?: ReactNode }) => (
     <DialogFooter
@@ -1164,7 +1168,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
                 ? t(isPlanId(row.choice) ? "aiAccounts.page.newKey" : "agentPage.work.brain.signInAgain")
                 : row.act === "also"
                   ? t("connectAi.signInFor", g)
-                  : t("agentPage.work.brain.v2.switchTo", { label: row.title })}
+                  : t("agentPage.work.brain.v2.switchTo", { label: rowSaid(row) })}
           </Button>
         ),
       });
@@ -1182,7 +1186,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
           >
             {teamToo
               ? t("agentPage.work.brain.v2.switchMany", { count: team.length })
-              : t("agentPage.work.brain.v2.switchTo", { label: aim?.title ?? "" })}
+              : t("agentPage.work.brain.v2.switchTo", { label: aim ? rowSaid(aim) : "" })}
           </Button>
         ),
       });
@@ -1192,7 +1196,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
         second: <Button onClick={onClose}>{t("agentPage.work.brain.v2.wait")}</Button>,
         main: limitSel && can("brain") && (
           <Button variant="primary" disabled={busy} loading={busy} onClick={() => confirm(limitSel)}>
-            {t("connectAi.use", { label: limitSel.title })}
+            {t("connectAi.use", { label: rowSaid(limitSel) })}
           </Button>
         ),
       });

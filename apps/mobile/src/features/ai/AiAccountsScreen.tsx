@@ -13,6 +13,7 @@ import {
   useUpdateSettings,
 } from "@agenteschat/client";
 import {
+  accountSub,
   accountTitle,
   agentsToGive,
   endsOnClaude,
@@ -24,6 +25,7 @@ import {
   ownSignIns,
   ownSignInTitle,
   signInOf,
+  unnamedAccount,
 } from "@agenteschat/client/lib/ai-accounts";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { errorText, keyRefusal } from "@agenteschat/client/lib/errors";
@@ -68,7 +70,7 @@ import { PlanMeter } from "../usage/parts";
 import { openKeyForAll } from "./KeyForAllScreen";
 import { orderMoves } from "./logic";
 import { openConnectAi } from "./NoAiCard";
-import { alertKeyRefused, Note, PasteField, PlanHoldNote, usePlanHold } from "./parts";
+import { alertKeyRefused, Note, openRenameAiAccount, PasteField, PlanHoldNote, usePlanHold } from "./parts";
 
 /*
  * Contas de IA, as the web's Settings › Contas de IA (ADR 0059, ADR 0061), as the settings screens are: grouped lists
@@ -236,7 +238,7 @@ function AiAccounts() {
         })
       : [];
     choose(
-      accountTitle(a),
+      accountTitle(t, a),
       [
         ...(g && placedAs ? moves(g, placedAs) : []),
         ...toGive.map((g) => ({
@@ -270,7 +272,7 @@ function AiAccounts() {
     const out = signInOf(a) === "signed_out";
     const unknown = signInOf(a) === "unknown";
     const facts = [
-      a.email ??
+      accountSub(a) ??
         (a.keyHint
           ? t("aiAccounts.page.keyEnds", { hint: a.keyHint })
           : identityUnknown(a, machineOf(a))
@@ -294,7 +296,8 @@ function AiAccounts() {
           )
         }
         leadingSaid={n?.toString()}
-        label={accountTitle(a)}
+        label={accountTitle(t, a)}
+        faint={unnamedAccount(a)}
         sub={facts.join(" · ")}
         subLines={2}
         more
@@ -393,11 +396,11 @@ function AiAccounts() {
                     </Text>
                   }
                   leadingSaid={n?.toString()}
-                  label={accountTitle(a)}
+                  label={accountTitle(t, a)}
                   sub={a.ownerName ?? undefined}
                   more={them.length > 0}
                   disabled={move.isPending}
-                  {...(them.length > 0 ? { onPress: () => choose(accountTitle(a), them, t("common.cancel")) } : {})}
+                  {...(them.length > 0 ? { onPress: () => choose(accountTitle(t, a), them, t("common.cancel")) } : {})}
                   below={
                     a.usage ? (
                       <View style={styles.below}>
@@ -686,10 +689,6 @@ function KeyPrompt({
   );
 }
 
-/** Opens the rename of one of the person's AI accounts (its computer's and its own id). */
-const openRenameAiAccount = (machineId: string, accountId: string) =>
-  router.push({ pathname: "/ai-account-rename", params: { machineId, accountId } });
-
 /**
  * Renaming an AI account, pushed from its row's actions: what the name is for, the name (one line, however it is typed
  * or pasted), Save in the bar. The field waits for a tap: a screen that opens never raises the keyboard by itself.
@@ -704,9 +703,11 @@ export function RenameAiAccountScreen({ machineId, accountId }: { machineId: str
   const account = ai.data?.accounts.find((a) => a.id === accountId && a.machineId === machineId);
   const [draft, setDraft] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const name = (draft ?? account?.label ?? "").replace(/\s+/g, " ").trim();
-  const ready = Boolean(account) && name !== "" && name !== account?.label && !overLimit(name, NAME_LIMIT);
-  const leave = useUnsavedGuard(draft !== null && name !== account?.label && !busy);
+  // The automatic name ("Claude 2") is no name of theirs: the field starts empty, showing the email.
+  const given = account?.named === true ? account.label : "";
+  const name = (draft ?? given).replace(/\s+/g, " ").trim();
+  const ready = Boolean(account) && name !== "" && name !== given && !overLimit(name, NAME_LIMIT);
+  const leave = useUnsavedGuard(draft !== null && name !== given && !busy);
   const save = async () => {
     if (!ready || busy) return;
     setBusy(true);
@@ -715,7 +716,9 @@ export function RenameAiAccountScreen({ machineId, accountId }: { machineId: str
       leave();
       successHaptic();
       toast({ title: t("aiAccounts.page.renamed", { label: name }), icon: "check" });
-      void qc.invalidateQueries({ queryKey: keys.aiAccounts(orgId) });
+      // Every list that shows it reads it again: the accounts, each agent's AI (`keys.agentBrain`'s prefix), usage.
+      for (const key of [keys.aiAccounts(orgId), keys.planUsage(orgId), ["org", orgId, "agent"]])
+        void qc.invalidateQueries({ queryKey: key });
       goBack();
     } catch {
       errorHaptic();
@@ -726,7 +729,9 @@ export function RenameAiAccountScreen({ machineId, accountId }: { machineId: str
   };
   return (
     <SettingsPage
-      title={account ? t("aiAccounts.page.renameTitle", { label: account.label }) : t("aiAccounts.page.rename")}
+      title={
+        account ? t("aiAccounts.page.renameTitle", { label: accountTitle(t, account) }) : t("aiAccounts.page.rename")
+      }
       action={{ label: t("common.save"), disabled: !ready, onPress: () => void save() }}
       busy={busy}
     >
@@ -740,14 +745,14 @@ export function RenameAiAccountScreen({ machineId, accountId }: { machineId: str
           {/* A field row of the page, the list its surface, as every field of the settings pages. */}
           <GroupedList>
             <TextArea
-              value={draft ?? account.label}
+              value={draft ?? given}
               onChangeText={setDraft}
               multiline={false}
               minHeight={50}
               limit={NAME_LIMIT}
               returnKeyType="done"
               onSubmitEditing={() => void save()}
-              placeholder={t("aiAccounts.page.nameLabel")}
+              placeholder={account.email ?? t("aiAccounts.rename.placeholder")}
               accessibilityLabel={t("aiAccounts.page.nameLabel")}
               style={styles.bare}
             />
