@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, setDefaultTimeout, test } from "bun:test";
-import { asc, eq, schema } from "@agenteschat/db";
+import { asc, countQueries, eq, schema } from "@agenteschat/db";
 import type { ModelRequest } from "@agenteschat/providers";
 import { systemText } from "@agenteschat/providers";
 import {
@@ -20,8 +20,10 @@ import {
   openDm,
   postPersonMessage,
   routineRoomKey,
+  sendNote,
   type ToolContext,
 } from "../src";
+import { personRunsReadOutside, runReadOutsideById } from "../src/outside";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /**
@@ -646,3 +648,154 @@ describe("where it is read, and what it holds", () => {
   });
 });
 
+describe("whose it is, and what it costs", () => {
+  test("a fixed number of statements: one hand-off, six, or six behind sixty of someone else's", async () => {
+    const { ada } = await handedToAda();
+    const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
+    const dev = await devRun(f.general.id, "@dev pergunta pra Ada");
+    const answering = await agentRun(ada.id, room.id, "responde");
+    const cost = async () => (await countQueries(() => handedFor(f.db, f.org.id, ada.id, f.owner.id))).queries;
+    const one = await cost();
+    const at = Date.now() - 3600_000;
+    for (let i = 0; i < 6; i++)
+      await asked(room.id, dev, ada.id, `Coisa ${i}.`, new Date(at + i * 1000), {
+        status: "answered",
+        answer: "Feito.",
+        targetRunId: answering.id,
+      });
+    const six = await cost();
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    const forBia = await devRun(f.general.id, "@dev pede pra Ada umas coisas", bia.id);
+    for (let i = 0; i < 60; i++)
+      await asked(room.id, forBia, ada.id, `Coisa ${i} da Bia.`, new Date(at + 10_000 + i * 1000), {
+        forUserId: bia.id,
+      });
+    const behind = await cost();
+    expect((await handedFor(f.db, f.org.id, ada.id, f.owner.id)).map((h) => h.question)).toEqual([
+      "Faz o relatório de vendas de outubro.",
+      ...[5, 4, 3, 2, 1].map((i) => `Coisa ${i}.`),
+    ]);
+    expect([six, behind]).toEqual([one, one]);
+    expect(one).toBeLessThanOrEqual(3);
+  });
+
+  test("a hand-off with nobody behind it is never anyone's", async () => {
+    const { ada } = await handedToAda();
+    const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
+    // Made before the column, or for a routine's work.
+    await asked(room.id, await devRun(f.general.id, "@dev pergunta"), ada.id, "De ninguém.", new Date(), {
+      forUserId: null,
+    });
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    expect((await handedFor(f.db, f.org.id, ada.id, f.owner.id)).map((h) => h.question)).toEqual([
+      "Faz o relatório de vendas de outubro.",
+    ]);
+    expect(await handedFor(f.db, f.org.id, ada.id, bia.id)).toEqual([]);
+    const routine = await agentRun(f.agent.id, f.general.id, "rotina", f.owner.id, { background: true });
+    await sendNote(f.db, {
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: routine.id,
+      hop: 1,
+      targetAgentId: ada.id,
+      body: "Da rotina.",
+      chain: [],
+      deferStart: true,
+    });
+    expect((await notes()).find((c) => c.question === "Da rotina.")?.forUserId).toBeNull();
+  });
+
+  test("every hand-off records the person behind the run that made it", async () => {
+    const { ada } = await handedToAda();
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    const forBia = await devRun(f.general.id, "@dev pergunta pra Ada", bia.id);
+    await invoke(forBia, "ask_agent", { agent: "@ada", question: "Quanto vendemos?" });
+    await sendNote(f.db, {
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: forBia.id,
+      hop: 1,
+      targetAgentId: ada.id,
+      body: "Uma menção.",
+      chain: [],
+      fromMention: true,
+      deferStart: true,
+    });
+    const made = await createIssue({ db: f.db, pubsub: f.pubsub }, { type: "person", userId: bia.id }, f.org.id, {
+      title: "Relatório de vendas",
+    });
+    await askAgentToImplement({ db: f.db, pubsub: f.pubsub }, bia.id, f.org.id, made.id, ada.id, {
+      agentId: f.agent.id,
+      runId: forBia.id,
+      hop: 1,
+    });
+    const people = Object.fromEntries((await notes()).map((c) => [c.question, c.forUserId]));
+    expect(people).toEqual({
+      "Faz o relatório de vendas de outubro.": f.owner.id,
+      "Quanto vendemos?": bia.id,
+      "Uma menção.": bia.id,
+      [`Work on task #${made.number}: Relatório de vendas`]: bia.id,
+    });
+  });
+
+  test("the outside check of many runs at once agrees with the one-run check", async () => {
+    f = await setup();
+    const room = async (name: string) => {
+      const [c] = await f.db
+        .insert(schema.channels)
+        .values({ orgId: f.org.id, name, visibility: "public", kind: "channel" })
+        .returning();
+      if (!c) throw new Error("no channel");
+      return c.id;
+    };
+    const marked = (channelId: string, threadId?: string) =>
+      insertMessage(f.db, {
+        orgId: f.org.id,
+        channelId,
+        threadId,
+        author: { type: "person", userId: f.owner.id },
+        body: "Colado de uma página.",
+        meta: { readOutside: true },
+      });
+    const plain = await agentRun(f.agent.id, await room("a"), "nada");
+    const step = await agentRun(f.agent.id, await room("b"), "passo");
+    await f.db
+      .insert(schema.agentRunSteps)
+      .values({ orgId: f.org.id, runId: step.id, seq: 1, kind: "tool_result", data: { data: { outside: true } } });
+    const harness = await agentRun(f.agent.id, await room("c"), "busca");
+    await f.db
+      .update(schema.agentRuns)
+      .set({ transcript: { system: "", messages: [], harnessTried: ["WebFetch(https://example.com)"] } as never })
+      .where(eq(schema.agentRuns.id, harness.id));
+    const trigger = await agentRun(f.agent.id, await room("d"), "gatilho");
+    await f.db
+      .update(schema.messages)
+      .set({ meta: { readOutside: true } })
+      .where(eq(schema.messages.id, trigger.triggerMessageId));
+    const threadRoom = await room("e");
+    const root = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: threadRoom,
+      author: { type: "person", userId: f.owner.id },
+      body: "Raiz.",
+    });
+    await marked(threadRoom, root.id);
+    const inThread = await agentRun(f.agent.id, threadRoom, "no fio", f.owner.id, { threadId: root.id });
+    const topRoom = await room("f");
+    await marked(topRoom);
+    const topLevel = await agentRun(f.agent.id, topRoom, "embaixo");
+    const goneRoom = await room("g");
+    const gone = await marked(goneRoom);
+    await f.db.update(schema.messages).set({ deletedAt: new Date() }).where(eq(schema.messages.id, gone.id));
+    const deleted = await agentRun(f.agent.id, goneRoom, "apagado");
+    const runs = [plain, step, harness, trigger, inThread, topLevel, deleted];
+    const one = await Promise.all(runs.map((r) => runReadOutsideById(f.db, f.org.id, r.id)));
+    expect(one).toEqual([false, true, true, true, true, true, false]);
+    const many = await personRunsReadOutside(
+      f.db,
+      f.org.id,
+      runs.map((r) => r.id),
+    );
+    expect(runs.map((r) => many.has(r.id))).toEqual(one);
+  });
+});
