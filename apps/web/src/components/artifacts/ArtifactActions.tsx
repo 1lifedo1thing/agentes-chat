@@ -1,5 +1,5 @@
 import type { Artifact, ArtifactContent, ArtifactKind } from "@agenteschat/client";
-import { ApiError, keys } from "@agenteschat/client";
+import { ApiError, isLiveFileKind, keys } from "@agenteschat/client";
 import { fileName } from "@agenteschat/client/lib/artifacts";
 import { artifactPlace } from "@agenteschat/client/lib/drive";
 import { errorText } from "@agenteschat/client/lib/errors";
@@ -113,7 +113,7 @@ export function useDeleteArtifact(onDeleted?: (ids: string[]) => void) {
   return { ask, dialog, restore };
 }
 
-export type DownloadFormat = "pdf" | "docx" | "csv";
+export type DownloadFormat = "pdf" | "docx" | "csv" | "xlsx" | "pptx";
 type Downloadable = Pick<Artifact, "id" | "kind" | "title">;
 
 /**
@@ -127,6 +127,12 @@ export function useArtifactDownload() {
   const { org } = useOrg();
   const api = useApi();
   const original = async (a: Downloadable, version?: number, content?: ArtifactContent) => {
+    // A live file's version holds its document: what it downloads as is written by the server (ADR 0193).
+    if (isLiveFileKind(a.kind)) {
+      const url = api.artifacts.fileUrl(org.id, a.id, version ? { version } : {});
+      fileSaver.save(url, fileName(a.title, { kind: a.kind }));
+      return;
+    }
     if (a.kind === "file") {
       const name = content?.kind === "file" ? content.name : a.title;
       fileSaver.save(api.artifacts.fileUrl(org.id, a.id, version ? { version } : {}), name);
@@ -153,7 +159,23 @@ export function useArtifactDownload() {
     ...(kind === "table"
       ? [{ key: "csv", format: "csv" as const, icon: "table" as const, label: t("artifacts.formatCsv") }]
       : []),
-    ...(kind !== "table" ? [{ key: "original", icon: "download" as const, label: t("artifacts.formatOriginal") }] : []),
+    // Live files (ADR 0193): a spreadsheet as Excel or CSV, a presentation as PowerPoint or PDF, a canvas as JSON.
+    ...(kind === "spreadsheet"
+      ? [
+          { key: "xlsx", format: "xlsx" as const, icon: "spreadsheet" as const, label: t("live.shell.formats.xlsx") },
+          { key: "csv", format: "csv" as const, icon: "table" as const, label: t("live.shell.formats.csv") },
+        ]
+      : []),
+    ...(kind === "slides"
+      ? [
+          { key: "pptx", format: "pptx" as const, icon: "slides" as const, label: t("live.shell.formats.pptx") },
+          { key: "pdf", format: "pdf" as const, icon: "document" as const, label: t("live.shell.formats.pdf") },
+        ]
+      : []),
+    ...(kind === "canvas" ? [{ key: "json", icon: "code" as const, label: t("live.shell.formats.json") }] : []),
+    ...(kind !== "table" && !isLiveFileKind(kind)
+      ? [{ key: "original", icon: "download" as const, label: t("artifacts.formatOriginal") }]
+      : []),
   ];
   return { save, formats };
 }

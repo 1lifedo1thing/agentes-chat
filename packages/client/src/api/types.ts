@@ -1,5 +1,6 @@
 /** Types of the private web-app API (`/api/app/*`, apps/server/src/routes/app). */
 
+import type { CanvasPreview, SheetPreview, SlidesPreview } from "@agenteschat/live";
 import type { ChatPrefs } from "../lib/chat-look";
 import type { RoleId } from "../lib/new-agent";
 import type { OnboardingStepId } from "../lib/onboarding";
@@ -2873,7 +2874,7 @@ export interface UsageReport {
   defaultAgentBudgetUsd: number;
   totalUsd: number;
   byKind: {
-    kind: "agent" | "router" | "embedding" | "summary";
+    kind: "agent" | "router" | "embedding" | "summary" | "image";
     calls: number;
     partialCalls: number;
     inputTokens: number;
@@ -3622,7 +3623,20 @@ export interface StorageMigration {
 
 // ── Artifacts (expected: `…/artifacts`, events `artifact.created` / `artifact.updated`, `meta.artifacts`) ──
 
-export type ArtifactKind = "document" | "table" | "diff" | "diagram" | "html" | "file" | "block" | "poll" | "choices";
+export type ArtifactKind =
+  | "document"
+  | "table"
+  | "diff"
+  | "diagram"
+  | "html"
+  | "file"
+  | "block"
+  | "poll"
+  | "choices"
+  /** Live files people and agents edit together (ADR 0191): their content here is a small preview. */
+  | "spreadsheet"
+  | "slides"
+  | "canvas";
 
 /**
  * An uploaded file as is (ADR 0025): metadata only; the bytes come from the
@@ -3665,7 +3679,17 @@ export type ArtifactContent =
   | { kind: "block"; spec?: Record<string, unknown>; html?: string; subtitle?: string }
   | { kind: "poll"; question: string; options: string[]; multiple: boolean }
   | { kind: "choices"; questions: ChoiceQuestion[] }
-  | ArtifactFileContent;
+  | ArtifactFileContent
+  | ArtifactLiveContent;
+
+/**
+ * A live file's content (ADR 0191 §7): the small preview cards and the Drive draw (the top-left cells, the first slide,
+ * the canvas's first shapes), never the whole document, which only the room (`useLiveRoom`) holds.
+ */
+export type ArtifactLiveContent =
+  | { kind: "spreadsheet"; preview: SheetPreview }
+  | { kind: "slides"; preview: SlidesPreview }
+  | { kind: "canvas"; preview: CanvasPreview };
 
 /** One question of a choice card (ADR 0124): its options show as A, B, C…, then "Outra resposta". */
 export interface ChoiceQuestion {

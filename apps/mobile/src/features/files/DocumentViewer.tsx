@@ -12,6 +12,7 @@ import { Button, EmptyState, type HeaderAction, type HeaderMenuItem, SCREEN_X, u
 import { ISOLATED_WEB_VIEW, STORAGE_STANDINS } from "../blocks/logic";
 import { CodeText, RawToggle } from "../chat/CodeCard";
 import { MessageText } from "../chat/MessageText";
+import { DeckPage, EditAs, SheetPage, useOfficeHtml } from "../live-files/office/OfficePages";
 import { chooseAction } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
@@ -29,8 +30,10 @@ import { fileText, useRemoteFile } from "./source";
  * system's share sheet with the file) and the "…" with Compartilhar (who sees it and its link, ADR 0157), Copiar texto
  * and Ver no Drive (the system's own menu on iOS, the app's list of the same choices on Android). Under it the file
  * itself, the screen's whole width: Markdown and text drawn by the app, a page or a PDF in a web view (iOS draws PDFs
- * natively there), anything else says it opens in another app. Pictures and videos open straight in the picture
- * viewer (`openFile`); one reached here anyway (a file's link that didn't say what it was) goes on there.
+ * natively there), an Office file as the server read it (ADR 0193: a workbook in the spreadsheet's grid, a deck's
+ * slides, a Word document's page) and an old table in the same grid, anything else says it opens in another app.
+ * Pictures and videos open straight in the picture viewer (`openFile`), live files on their own screens (ADR 0191);
+ * one reached here anyway (a file's link that didn't say what it was) goes on there.
  */
 export function DocumentViewer({ id, version }: { id: string; version?: number }) {
   const { t } = useTranslation();
@@ -47,9 +50,10 @@ export function DocumentViewer({ id, version }: { id: string; version?: number }
   const text = useFileText(detail, textual);
   // A PDF is drawn in the web view on iOS only (Android's WebView has no PDF viewer).
   const pdf = info?.view === "pdf" && Platform.OS === "ios";
-  // Only a fallback: every way into a file opens a picture or a video in the picture viewer at once. A link that didn't
-  // say what it was (a deep link, a name with no extension) lands here, and this screen gives way to the viewer.
-  const media = info?.view === "image" || info?.view === "video";
+  // Only a fallback: every way into a file opens a picture or a video in the picture viewer at once, and a live file on
+  // its own screen. A link that didn't say what it was (a deep link, a name with no extension) lands here, and this
+  // screen gives way to the right one.
+  const media = info?.view === "image" || info?.view === "video" || info?.view === "live";
   useEffect(() => {
     if (media && detail) openFile({ id: detail.id, detail }, undefined, { replace: true });
   }, [media, detail]);
@@ -121,6 +125,12 @@ export function DocumentViewer({ id, version }: { id: string; version?: number }
         <PageBones />
       ) : info.view === "html" ? (
         <HtmlPage detail={detail} />
+      ) : info.view === "sheet" ? (
+        <SheetPage detail={detail} />
+      ) : info.view === "deck" ? (
+        <DeckPage detail={detail} />
+      ) : info.view === "word" ? (
+        <WordPage detail={detail} />
       ) : textual ? (
         <TextPage detail={detail} markdown={info.view === "markdown"} json={isJsonFile(info.name, info.mime)} />
       ) : pdf ? (
@@ -243,14 +253,40 @@ const PAGE_HEAD = `<meta name="viewport" content="width=device-width, initial-sc
 function HtmlPage({ detail }: { detail: ArtifactDetail }) {
   const inline = detail.content.kind === "html" ? detail.content.html : undefined;
   const text = useFileText(detail, inline === undefined);
-  const html = inline ?? text.data;
+  return <IsolatedHtml html={inline ?? text.data} failed={text.isError} onRetry={() => void text.refetch()} />;
+}
+
+/**
+ * A Word document as the server read it (ADR 0193): clean HTML, drawn in the same isolated page as an agent's, with
+ * what it is and "Editar como documento" under it.
+ */
+function WordPage({ detail }: { detail: ArtifactDetail }) {
+  const doc = useOfficeHtml(detail, true);
+  return (
+    <View style={styles.fill}>
+      <IsolatedHtml html={doc.html} failed={doc.failed} onRetry={doc.retry} />
+      <EditAs detail={detail} view="word" />
+      <BottomRoom />
+    </View>
+  );
+}
+
+/** The home indicator's room under a bar at the screen's foot. */
+function BottomRoom() {
+  const c = useColors();
+  const insets = useSafeAreaInsets();
+  return <View style={{ height: insets.bottom, backgroundColor: c.bg }} />;
+}
+
+/** HTML in the isolated web view (see `HtmlPage`), its shape while it comes, why it didn't. */
+function IsolatedHtml({ html, failed, onRetry }: { html: string | undefined; failed: boolean; onRetry: () => void }) {
   const page = useMemo(() => (html !== undefined ? isolatedPage(html, PAGE_HEAD) : null), [html]);
   // A page the system ended (long in the background) comes back.
   const [life, setLife] = useState(0);
   if (page === null)
-    return text.isError ? (
+    return failed ? (
       <Middle>
-        <LoadFailed onRetry={() => void text.refetch()} />
+        <LoadFailed onRetry={onRetry} />
       </Middle>
     ) : (
       <PageBones />

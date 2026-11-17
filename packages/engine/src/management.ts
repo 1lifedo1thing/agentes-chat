@@ -350,8 +350,8 @@ export async function agentDetail(db: Database, actorId: string, orgId: string, 
   const since = monthStartUtc(now);
   const [usage] = await db
     .select({
-      // What its budget paid: its own calls, as `agentBudgetsThisMonth` counts them.
-      cost: sql<string>`coalesce(sum(${usageRecords.costNanoUsd}) filter (where ${usageRecords.kind} = 'agent'), 0)`,
+      // What its budget paid: its own calls and pictures, as `agentBudgetsThisMonth` counts them.
+      cost: sql<string>`coalesce(sum(${usageRecords.costNanoUsd}) filter (where ${usageRecords.kind} in ('agent', 'image')), 0)`,
       tokens: sql<string>`coalesce(sum(${usageRecords.inputTokens} + ${usageRecords.outputTokens} + ${usageRecords.cacheReadTokens} + ${usageRecords.cacheWriteTokens}), 0)`,
     })
     .from(usageRecords)
@@ -813,7 +813,7 @@ export async function getRun(db: Database, actorId: string, orgId: string, runId
 
 /**
  * Usage of the organization since `since` (default: this month): totals by
- * kind (agent, router, embedding, summary) and per agent with budgets.
+ * kind (agent, router, embedding, summary, image) and per agent with budgets.
  */
 export async function usageReport(db: Database, actorId: string, orgId: string, options: { since?: Date } = {}) {
   await requirePermission(db, actorId, orgId, "view_usage");

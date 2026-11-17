@@ -1,0 +1,926 @@
+/*
+ * Live files' page (ADR 0191 §9): the header over the kind's editor, the faces of who is here, their cursors, the
+ * history beside the file, Ask an agent, and the Drive's covers of live files. The editors' own sheets sit in their
+ * folders. People's colors come in as `--peer` (and `--peer-on` for words on it); the person's own selection and
+ * focus stay ink (the agents' blue is only an agent's own).
+ */
+
+/* The page: full bleed (the org layout's `focused`), a column that never scrolls; the editor scrolls inside. */
+.shell__pages > .shell__main.lf-main {
+  height: 100%;
+}
+.lf-main {
+  min-height: 0;
+}
+.lf-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  background: var(--pane);
+}
+.lf-page--empty {
+  justify-content: center;
+}
+/*
+ * Presenting fills the screen: the page itself is the full screen element (asked for inside the press). When the
+ * browser refuses, the page already fills the window under the header it no longer draws (the org layout's `focused`;
+ * under the desktop app's title bar), and it holds the presentation's own fixed layer (`contain: layout`), so the
+ * slide covers exactly the page, never the app's title bar and its window buttons.
+ */
+.lf-page--presenting {
+  contain: layout;
+  background: #000;
+}
+.lf-page:fullscreen {
+  background: #000;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+.lf-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-height: var(--control-h-lg);
+  padding: var(--space-2) var(--page-x);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--line);
+  background: var(--pane);
+}
+.lf-head__lead {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.lf-head__back {
+  flex: none;
+}
+.lf-head__kind {
+  flex: none;
+  color: var(--ink-muted);
+}
+.lf-head__titles {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-3);
+  row-gap: 0;
+}
+.lf-head__status {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  white-space: normal;
+}
+/* No connection: the same quiet words, a step stronger, so they're read. */
+.lf-head__status.is-offline {
+  color: var(--ink);
+}
+.lf-head__acts {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The title: reads as the page's title, turns into its field under the pointer and the keys. */
+.lf-title {
+  position: relative;
+  display: inline-grid;
+  min-width: 0;
+  max-width: min(520px, 100%);
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink);
+}
+.lf-title--still {
+  display: block;
+  overflow-wrap: anywhere;
+}
+/* The field grows with its words: an invisible copy of them sizes the cell the field fills. */
+.lf-title__mirror,
+.lf-title__field {
+  grid-area: 1 / 1;
+  font: inherit;
+  letter-spacing: inherit;
+  padding: var(--space-1) var(--space-2);
+  margin: 0 calc(-1 * var(--space-2));
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+}
+.lf-title__mirror {
+  visibility: hidden;
+  white-space: pre;
+  overflow: hidden;
+}
+.lf-title__field {
+  width: 100%;
+  min-width: 2ch;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  outline: none;
+  text-overflow: ellipsis;
+}
+.lf-title__field:hover {
+  border-color: var(--line);
+}
+.lf-title__field:focus {
+  border-color: var(--line-strong);
+  background: var(--surface);
+  text-overflow: clip;
+}
+
+/* ── Body: the editor, and the history beside it ─────────────────────────────────────────────────────────────────── */
+
+.lf-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+.lf-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.lf-editor {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* A saved version shown read-only: a quiet bar over it, its actions at the end (under its words when narrow). */
+.lf-banner {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--page-x);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-sunken);
+}
+.lf-banner__words {
+  font-weight: 600;
+  color: var(--ink);
+}
+.lf-banner__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* "Seguindo Ada · Parar": a small island at the top of the editor, over it. */
+.lf-island {
+  position: absolute;
+  top: var(--space-3);
+  left: 50%;
+  z-index: var(--z-lifted);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: calc(100% - 2 * var(--space-4));
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  box-shadow:
+    0 0 0 2px var(--peer, var(--line)),
+    var(--e2);
+}
+.lf-island__words {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.lf-island__stop {
+  padding: 0 var(--space-2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lf-island {
+    animation: lf-island-in var(--dur-base) var(--out) both;
+  }
+}
+@keyframes lf-island-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+/* ── Loading: the editor's own shape ────────────────────────────────────────────────────────────────────────────── */
+
+.lf-skel {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.lf-skel__bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: var(--control-h-md);
+  padding: 0 var(--page-x);
+  border-bottom: 1px solid var(--line);
+}
+/* The grid's lines: 100 wide, 24 tall, as a sheet's cells. */
+.lf-skel__grid {
+  flex: 1 1 auto;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:
+    100px 24px,
+    100px 24px;
+  background-position: 48px 24px;
+  opacity: 0.7;
+}
+.lf-skel--slides {
+  flex-direction: row;
+}
+.lf-skel__rail {
+  flex: none;
+  width: 216px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
+  border-right: 1px solid var(--line);
+  box-sizing: border-box;
+}
+.lf-skel__thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+}
+.lf-skel__stage {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  padding: var(--space-8);
+  background: var(--surface-sunken);
+}
+.lf-skel__slide {
+  width: min(100%, 960px);
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-item);
+}
+.lf-skel__plane {
+  position: relative;
+  flex: 1 1 auto;
+  background-image: radial-gradient(var(--line) 1.5px, transparent 1.6px);
+  background-size: 24px 24px;
+}
+.lf-skel__dock {
+  position: absolute;
+  bottom: var(--space-4);
+  left: 50%;
+  width: 360px;
+  max-width: calc(100% - 2 * var(--space-4));
+  height: var(--control-h-lg);
+  border-radius: var(--radius-lg);
+  transform: translateX(-50%);
+}
+@media (max-width: 760px) {
+  .lf-skel__rail {
+    display: none;
+  }
+}
+
+/* ── Shortcuts ──────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+.lf-keys {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.lf-keys__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+.lf-keys__list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.lf-keys__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.lf-keys__row dt {
+  color: var(--ink);
+}
+.lf-keys__row dd {
+  margin: 0;
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* ── Who is here ────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+/* A face ringed in its person's color, around the surface's own ring: the header's stack. */
+.ac-avatar.lf-face--ring {
+  box-shadow:
+    0 0 0 2px var(--pane),
+    0 0 0 4px var(--peer, var(--line-strong));
+}
+.lf-stack {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control-h-sm);
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--control-r-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.lf-stack:hover {
+  color: var(--ink);
+}
+.lf-stack__more {
+  min-width: 24px;
+  font-family: system-ui, var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+html:not([data-pointer]) .lf-stack:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.lf-people {
+  width: 320px;
+  max-width: calc(100vw - 2 * var(--space-4));
+}
+.lf-people__list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* A row with a 24 face: 40 high. */
+.lf-people__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h-md);
+  padding: var(--space-1) var(--space-2);
+  box-sizing: border-box;
+}
+.lf-people__who {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.lf-people__name {
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.lf-people__kind {
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+.lf-people__doing {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+.lf-people__follow {
+  flex: none;
+}
+
+/* A peer's name tag in their color. */
+.lf-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--peer);
+  color: var(--peer-on);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+/* ── Cursors ────────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+/* The layer an editor sizes over its content: the cursors go where the peers point, never taking a click. */
+.lf-cursors {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-lifted);
+  pointer-events: none;
+  overflow: hidden;
+}
+.lf-cur {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+  transition: opacity 0.6s;
+}
+/* At rest after a quiet while: seen, dimmed (`CURSOR_REST_OPACITY`). */
+.lf-cur.is-idle {
+  opacity: 0.45;
+}
+.lf-cur__arrow,
+.lf-cur__pixels {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  overflow: visible;
+}
+.lf-cur__arrow path {
+  fill: var(--peer);
+  stroke: var(--pane);
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+}
+.lf-cur__pixels {
+  filter: drop-shadow(1px 1px 0 rgba(10, 20, 40, 0.3));
+}
+.lf-cur__edge {
+  fill: var(--pane);
+}
+.lf-cur__body {
+  fill: var(--peer);
+}
+/* A person's name: their color, to the arrow's bottom right; it fades when they rest and comes back with a move. */
+.lf-cur__tag {
+  position: absolute;
+  left: 12px;
+  top: 16px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--peer);
+  color: var(--peer-on);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+/* An agent: its face and name on a tag of the surface, as its cursor over its browser. */
+.lf-cur__who {
+  position: absolute;
+  left: 11px;
+  top: 21px;
+  display: flex;
+  align-items: center;
+  height: 24px;
+  padding: 3px;
+  box-sizing: border-box;
+  border-radius: 3px 9px 9px 9px;
+  background: var(--surface-raised);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1px var(--line),
+    1.5px 1.5px 0 1px color-mix(in srgb, var(--peer) 40%, transparent);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.lf-cur__who b {
+  max-width: 120px;
+  padding: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  transition:
+    max-width 0.22s,
+    padding 0.22s,
+    opacity 0.18s;
+}
+.lf-cur.is-quiet .lf-cur__tag {
+  opacity: 0;
+}
+.lf-cur.is-quiet .lf-cur__who b {
+  max-width: 0;
+  padding: 0;
+  opacity: 0;
+}
+/* Near the layer's right edge the tag opens to the arrow's left; near its bottom, above it. */
+.lf-cur.is-flip .lf-cur__tag {
+  left: auto;
+  right: 4px;
+}
+.lf-cur.is-flip .lf-cur__who {
+  left: auto;
+  right: 4px;
+  border-radius: 9px 3px 9px 9px;
+}
+.lf-cur.is-lift .lf-cur__tag,
+.lf-cur.is-lift .lf-cur__who {
+  top: auto;
+  bottom: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lf-cur,
+  .lf-cur__tag,
+  .lf-cur__who b {
+    transition: none;
+  }
+}
+
+/* ── Versions ───────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+/* A column beside the file that never covers it (wide), over its right side when narrow. */
+.lf-versions {
+  flex: none;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--line);
+  background: var(--pane);
+}
+.lf-versions__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: var(--control-h-lg);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  box-sizing: border-box;
+}
+.lf-versions__title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+.lf-versions__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--space-2) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.lf-versions__note {
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.lf-versions__dayname {
+  margin: var(--space-2) var(--space-2) var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+.lf-versions__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lf-versions__foot {
+  flex: none;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.lf-version {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-h-md);
+  padding: var(--space-2);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--radius-item);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.lf-version:hover {
+  background: var(--plate-soft);
+}
+.lf-version.is-current {
+  background: var(--plate);
+}
+html:not([data-pointer]) .lf-version:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-inset);
+}
+.lf-version__words {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.lf-version__name {
+  overflow-wrap: anywhere;
+}
+.lf-version__time {
+  flex: none;
+  align-self: flex-start;
+  padding-top: 1px;
+}
+@media (max-width: 760px) {
+  .lf-versions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-lifted);
+    width: min(320px, 100%);
+    box-shadow: var(--e3);
+  }
+  .lf-body {
+    position: relative;
+  }
+}
+
+/* ── Ask an agent ───────────────────────────────────────────────────────────────────────────────────────────────── */
+
+.lf-ask-pop {
+  width: 360px;
+  max-width: calc(100vw - 2 * var(--space-4));
+}
+.lf-ask {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+.lf-ask__about {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.lf-ask__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.lf-ask--sent {
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+.lf-ask__sent {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ac-dialog .lf-ask {
+  padding: 0;
+}
+
+/* ── Covers: a live file drawn small (the Drive's cards and rows, the cards in messages) ─────────────────────────── */
+
+/* The cover fills its box (`.drive-pv`, `.artifact-tile__cover`) and sizes what it draws by its own width. */
+.lf-cover {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: inline-size;
+  background: var(--surface-raised);
+}
+/*
+ * A spreadsheet: its grid at about a quarter of its size, the column letters and row numbers on the sunken headers,
+ * the cells' words in ink (bold, aligned as they are). A column's width comes from the file (`--w`, px at 100%).
+ */
+.lf-mini-grid {
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 4.2cqw;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.lf-mini-grid col {
+  width: calc(var(--w, 100) * 0.3cqw);
+}
+.lf-mini-grid col.lf-mini-grid__num {
+  width: 11cqw;
+}
+.lf-mini-grid :is(th, td) {
+  height: 7.4cqw;
+  padding: 0 1.4cqw;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: left;
+}
+.lf-mini-grid th {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  font-size: 3.4cqw;
+  font-weight: 400;
+  text-align: center;
+}
+.lf-mini-grid thead th {
+  height: 6cqw;
+}
+.lf-mini-grid tr > :first-child {
+  border-left: 0;
+}
+.lf-mini-grid thead tr > * {
+  border-top: 0;
+}
+.lf-mini-grid td.is-b {
+  font-weight: 700;
+}
+.lf-mini-grid td[data-align="r"] {
+  text-align: right;
+}
+.lf-mini-grid td[data-align="c"] {
+  text-align: center;
+}
+/* The list's small thumbnail: the grid's lines only, under a sunken header row. */
+.lf-cover--tiny {
+  background-color: var(--surface-raised);
+  background-image:
+    linear-gradient(var(--surface-sunken), var(--surface-sunken)), linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:
+    100% 20%,
+    33.4% 20%,
+    33.4% 20%;
+  background-repeat: no-repeat, repeat, repeat;
+}
+/* A presentation: its first slide on the sunken ground, with the slide's own corners and lift. */
+.lf-cover--slides {
+  display: grid;
+  place-items: center;
+  padding: 8cqw;
+  box-sizing: border-box;
+  background: var(--surface-sunken);
+}
+.lf-cover__slide {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 1.6cqw;
+  box-shadow:
+    0 0 0 1px var(--line),
+    var(--e1);
+}
+.drive-pv--sm .lf-cover--slides {
+  padding: 3px;
+}
+/* A canvas: its map, on its own dotted plane (`CanvasMini`). */
+.lf-cover--canvas > * {
+  position: absolute;
+  inset: 0;
+}
+/* Who is in the file now: up to three faces at the cover's bottom right, ringed in the cover's ground. */
+.lf-here {
+  --stack-ring: var(--surface-raised);
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  z-index: var(--z-raised);
+  pointer-events: none;
+}
+
+/* ── Uploaded Office files in the viewer (ADR 0193) ─────────────────────────────────────────────────────────────── */
+
+/* A box of its own in the viewer, tall enough to read in, its edge a hairline. */
+.lf-office {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: min(72vh, 760px);
+  min-height: 360px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--pane);
+}
+.lf-office--state {
+  height: auto;
+  justify-content: center;
+}
+/* What the file is, and its editable copy: the quiet line the spreadsheet's read-only view has over its grid. */
+.lf-office__bar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  min-height: var(--control-h-md);
+  padding: var(--space-1) var(--space-4);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.lf-office__kind {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+.lf-office__kind .ac-icon {
+  flex: none;
+}
+/* The spreadsheet's own view fills the box; its quiet line holds the bar's words and button. */
+.lf-office__sheet {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.lf-office__sheet .sheet-quiet {
+  justify-content: space-between;
+}
+.lf-office__view {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--surface-sunken);
+}
+.lf-office__view--doc {
+  display: flex;
+  overflow: hidden;
+  background: var(--pane);
+}
+/* A Word document's page in the isolated frame, edge to edge in the box. */
+.lf-office__doc {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: #fff;
+}
+.lf-office__slides {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-4);
+}
+.lf-office__page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+}
+.lf-office__skel--office-doc {
+  background: var(--pane);
+}
+
+/* ── Compact: a phone, or the desktop app zoomed in (≤ 760) ─────────────────────────────────────────────────────── */
+
+@media (max-width: 760px) {
+  .lf-head {
+    align-items: flex-start;
+  }
+  .lf-head__acts {
+    padding-top: 0;
+  }
+  .lf-title {
+    max-width: 100%;
+  }
+}

@@ -1,5 +1,5 @@
-import { deflateRawSync } from "node:zlib";
 import { type MarkdownBlock, parseMarkdown } from "./pdf";
+import { zip } from "./zip";
 
 /**
  * Markdown → Word (.docx), in pure TypeScript: a minimal OOXML package
@@ -174,78 +174,3 @@ const style = (id: string, name: string, pPr: string, rPr: string, basedOn = "No
 
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="${W}"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Onest" w:hAnsi="Onest" w:eastAsia="Onest" w:cs="Onest"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="140" w:line="300" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${style("Title", "Title", '<w:spacing w:after="240"/>', '<w:b/><w:sz w:val="44"/>')}${style("Heading1", "heading 1", '<w:keepNext/><w:spacing w:before="320" w:after="120"/><w:outlineLvl w:val="0"/>', '<w:b/><w:sz w:val="36"/>')}${style("Heading2", "heading 2", '<w:keepNext/><w:spacing w:before="280" w:after="100"/><w:outlineLvl w:val="1"/>', '<w:b/><w:sz w:val="30"/>')}${style("Heading3", "heading 3", '<w:keepNext/><w:spacing w:before="240" w:after="80"/><w:outlineLvl w:val="2"/>', '<w:b/><w:sz w:val="25"/>')}${style("Quote", "Quote", '<w:ind w:left="567"/><w:pBdr><w:left w:val="single" w:sz="12" w:space="8" w:color="BFBFBF"/></w:pBdr>', '<w:color w:val="555555"/>')}${style("ListParagraph", "List Paragraph", '<w:spacing w:after="60"/><w:ind w:left="720"/>', "")}${style("Code", "Code", '<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>', '<w:rFonts w:ascii="Martian Mono" w:hAnsi="Martian Mono" w:cs="Martian Mono"/><w:sz w:val="19"/>')}<w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="1F5FBF"/><w:u w:val="single"/></w:rPr></w:style></w:styles>`;
-
-// ── Zip (deflate) ────────────────────────────────────────────────────────────
-
-const CRC_TABLE = (() => {
-  const t = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c >>> 0;
-  }
-  return t;
-})();
-
-export function crc32(data: Uint8Array) {
-  let c = 0xffffffff;
-  for (const byte of data) c = (CRC_TABLE[(c ^ byte) & 0xff] as number) ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
-
-/** A zip of files (UTF-8 names; text as UTF-8 or bytes as they are, deflated). */
-export function zip(files: [string, string | Uint8Array][]): Uint8Array {
-  const enc = new TextEncoder();
-  const locals: Uint8Array[] = [];
-  const centrals: Uint8Array[] = [];
-  let offset = 0;
-  for (const [path, content] of files) {
-    const name = enc.encode(path);
-    const raw = typeof content === "string" ? enc.encode(content) : content;
-    const data = new Uint8Array(deflateRawSync(raw));
-    const crc = crc32(raw);
-    const local = new Uint8Array(30 + name.length + data.length);
-    const lv = new DataView(local.buffer);
-    lv.setUint32(0, 0x04034b50, true);
-    lv.setUint16(4, 20, true);
-    lv.setUint16(6, 0x0800, true); // UTF-8 names
-    lv.setUint16(8, 8, true); // deflate
-    lv.setUint32(14, crc, true);
-    lv.setUint32(18, data.length, true);
-    lv.setUint32(22, raw.length, true);
-    lv.setUint16(26, name.length, true);
-    local.set(name, 30);
-    local.set(data, 30 + name.length);
-    const central = new Uint8Array(46 + name.length);
-    const cv = new DataView(central.buffer);
-    cv.setUint32(0, 0x02014b50, true);
-    cv.setUint16(4, 20, true);
-    cv.setUint16(6, 20, true);
-    cv.setUint16(8, 0x0800, true);
-    cv.setUint16(10, 8, true);
-    cv.setUint32(16, crc, true);
-    cv.setUint32(20, data.length, true);
-    cv.setUint32(24, raw.length, true);
-    cv.setUint16(28, name.length, true);
-    cv.setUint32(42, offset, true);
-    central.set(name, 46);
-    locals.push(local);
-    centrals.push(central);
-    offset += local.length;
-  }
-  const size = centrals.reduce((n, c) => n + c.length, 0);
-  const end = new Uint8Array(22);
-  const ev = new DataView(end.buffer);
-  ev.setUint32(0, 0x06054b50, true);
-  ev.setUint16(8, centrals.length, true);
-  ev.setUint16(10, centrals.length, true);
-  ev.setUint32(12, size, true);
-  ev.setUint32(16, offset, true);
-  const out = new Uint8Array(offset + size + 22);
-  let at = 0;
-  for (const part of [...locals, ...centrals, end]) {
-    out.set(part, at);
-    at += part.length;
-  }
-  return out;
-}

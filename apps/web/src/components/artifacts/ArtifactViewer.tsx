@@ -1,5 +1,6 @@
 import type { ArtifactAuthor, ArtifactContent, ArtifactDetail, ArtifactRef } from "@agenteschat/client";
 import {
+  isLiveFileKind,
   keys,
   useArtifact,
   useArtifactBlob,
@@ -28,9 +29,11 @@ import {
   Textarea,
 } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { knownLive, openLivePage } from "@/components/live/open";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useMatchMedia } from "@/hooks/useMatchMedia";
@@ -72,9 +75,17 @@ const ViewerContext = createContext<{
 /** Opens artifacts in the side panel from anywhere in the workspace (chat cards, Drive). */
 export function ArtifactViewerProvider({ children }: { children: ReactNode }) {
   const [target, setTarget] = useState<ViewerTarget | null>(null);
+  const { org } = useOrg();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const orgId = org.id;
   const open = useCallback(
-    (id: string, version?: number, set?: ViewerItem[]) => setTarget({ id, version, set, key: id }),
-    [],
+    (id: string, version?: number, set?: ViewerItem[]) => {
+      // A spreadsheet, a presentation or a canvas opens on its own page (ADR 0191 §9), not in the viewer.
+      if (knownLive(qc, orgId, id)) openLivePage(navigate, orgId, id, { version });
+      else setTarget({ id, version, set, key: id });
+    },
+    [qc, orgId, navigate],
   );
   const close = useCallback(() => setTarget(null), []);
   const value = useMemo(() => ({ open, close }), [open, close]);
@@ -160,6 +171,17 @@ export function ArtifactViewer({
   const [editing, setEditing] = useState(false);
   const remover = useDeleteArtifact(onClose);
   const a = query.data;
+  const navigate = useNavigate();
+  const search = useRouterState({ select: (s) => s.location.search }) as Record<string, unknown>;
+  const searchArtifact = search.artifact;
+  // Opened before its kind was known (a link, a notification): a live file goes to its own page (ADR 0191 §9), in
+  // place of the Drive's link to it when that is what opened it.
+  const liveId = a && isLiveFileKind(a.kind) ? a.id : null;
+  useEffect(() => {
+    if (!liveId) return;
+    onClose();
+    openLivePage(navigate, org.id, liveId, { version, replace: searchArtifact === liveId });
+  }, [liveId, onClose, navigate, org.id, version, searchArtifact]);
   const channel = a?.channelId ? channels.data?.find((c) => c.id === a.channelId) : undefined;
   const old = a ? a.shownVersion < a.version : false;
   const uploader = useDriveUpload((saved) => {
@@ -341,6 +363,8 @@ export function ArtifactViewer({
       />
     </>
   );
+  // On its way to its own page.
+  if (liveId) return null;
   return (
     <DetailsDialog
       open

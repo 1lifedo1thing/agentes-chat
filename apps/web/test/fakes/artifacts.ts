@@ -75,6 +75,11 @@ export function serializeContent(content: ArtifactContent): { text: string; type
       return { text: content.question, type: "text/plain" };
     case "choices":
       return { text: content.questions.map((q) => q.question).join("\n"), type: "text/plain" };
+    // A live file's content is its card's preview (ADR 0191 §7); the server exports the document itself.
+    case "spreadsheet":
+    case "slides":
+    case "canvas":
+      return { text: JSON.stringify(content.preview), type: "application/json" };
   }
 }
 

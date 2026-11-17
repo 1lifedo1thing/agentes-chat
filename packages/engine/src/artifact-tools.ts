@@ -12,6 +12,7 @@ import {
   fileReach,
   getArtifact,
   listArtifacts,
+  liveFileHint,
   moveToSharedDrive,
   shareArtifact,
   TEXT_ARTIFACT_KINDS,
@@ -104,6 +105,11 @@ function asText(content: ArtifactContent, opened?: ModelFile): string {
       return [content.question, ...content.options.map((o) => `- ${o}`)].join("\n");
     case "choices":
       return choicesText(content.questions);
+    // Live files (ADR 0191): what `getArtifact` gives is their card's preview; their own tools read them whole.
+    case "spreadsheet":
+    case "slides":
+    case "canvas":
+      return liveFileHint(content.kind);
   }
 }
 

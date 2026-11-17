@@ -232,6 +232,29 @@ export const ICONS = {
     r(14.7, 15.3, 6.6, 5.1, 1.2),
     p("M16.2 15.3v-1.32a1.8 1.8 0 0 1 3.6 0v1.32"),
   ],
+  // Live files (ADR 0191), the web's drawings on this grid: a spreadsheet (cells under a header row), a presentation
+  // (a slide on its stand), a canvas (a board with a round and a square shape on it).
+  spreadsheet: [r(3.6, 4.2, 16.8, 15.6, 2.4), p("M3.6 9h16.8M3.6 14.4h16.8M9 4.2v15.6M14.7 9v10.8")],
+  slides: [r(3, 4.2, 18, 12, 2.1), p("M12 16.2v3.6M8.4 19.8h7.2M7.2 8.7h6M7.2 12h9.6")],
+  canvas: [r(3.6, 3.6, 16.8, 16.8, 3), c(9.3, 9.6, 2.4), r(12.9, 13.2, 4.5, 4.2, 0.9)],
+  // A canvas's tools: a frame (the lines crossing at its corners), a note (its corner folded), a shape (a square and
+  // a circle), text (a T).
+  frame: [p("M7.8 3.6v16.8M16.2 3.6v16.8M3.6 7.8h16.8M3.6 16.2h16.8")],
+  note: [
+    p("M5.5 4.5h13a1 1 0 0 1 1 1V14l-5.5 5.5H5.5a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1Z"),
+    p("M19.5 14H15a1 1 0 0 0-1 1v4.5"),
+  ],
+  shape: [r(3.6, 9.6, 10.2, 10.2, 1.8), p("M13.8 13.68a5.4 5.4 0 1 0-4.08-4.08")],
+  textTool: [p("M5.4 7.2V5.4h13.2v1.8M12 5.4v13.2M9 18.6h6")],
+  // Following someone in a file (a pointer going ahead, the lines it leaves), and presenting a deck.
+  follow: [p("M10.8 4.8v12.24l3.12-2.88 2.16 4.8 2.04-.96-2.16-4.68h4.32ZM3.6 18.6h3.6M4.2 14.4h3M5.4 10.2h2.4")],
+  present: [r(3, 4.2, 18, 12, 2.1), p("M12 16.2v3.6M8.4 19.8h7.2M10.2 7.8v4.8l3.9-2.4Z")],
+  // `undo` mirrored, and a clipboard: a spreadsheet's Refazer and Colar.
+  redo: [p("M15 7l4.5 4.5L15 16"), p("M19 11.5H9.5a5 5 0 0 0 0 10H13")],
+  paste: [
+    r(8.5, 2.5, 7, 4, 1.2),
+    p("M15.5 4.5H17a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2h1.5"),
+  ],
 } satisfies Record<string, IconShape[]>;
 
 export type IconName = keyof typeof ICONS;

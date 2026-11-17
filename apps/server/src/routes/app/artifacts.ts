@@ -1,3 +1,4 @@
+import { and, eq, schema } from "@agenteschat/db";
 import {
   ARTIFACT_LIMITS,
   ARTIFACT_PAGE_MAX,
@@ -27,6 +28,7 @@ import {
   MAX_MESSAGE_LENGTH,
   purgeArtifactNow,
   replyToBlock,
+  requireLiveFile,
   restoreArtifact,
   setBlockState,
   setFileSharing,
@@ -51,9 +53,23 @@ import {
   requireSession,
   security,
 } from "./context";
+import { exportLive, exportsLive } from "./live-engine";
 
 const tags = ["Drive"];
-const Kind = z.enum(["document", "table", "diff", "html", "diagram", "file", "block", "poll", "choices"]);
+const Kind = z.enum([
+  "document",
+  "table",
+  "diff",
+  "html",
+  "diagram",
+  "file",
+  "block",
+  "poll",
+  "choices",
+  "spreadsheet",
+  "slides",
+  "canvas",
+]);
 const Author = z.object({ type: z.enum(["agent", "person"]), id: z.string() });
 
 /** A comma-separated list in a query string, each item read by `item` (at most 50). */
@@ -104,6 +120,11 @@ const FileContent = z
     description: "An uploaded file as is: metadata only; the bytes come from the download link.",
   });
 
+/** A live file's preview (`@agenteschat/live`'s, typed there): what the apps draw on its card. */
+function livePreview(what: string) {
+  return z.any().openapi({ type: "object", description: `What its card draws: ${what}.` });
+}
+
 const Content = z
   .discriminatedUnion("kind", [
     ...textContents,
@@ -136,6 +157,10 @@ const Content = z
         }),
       ),
     }),
+    // Live files (ADR 0191 §7): a small preview for cards and the Drive, never the whole document (`…/live`).
+    z.object({ kind: z.literal("spreadsheet"), preview: livePreview("the top-left cells of its first sheet") }),
+    z.object({ kind: z.literal("slides"), preview: livePreview("its theme, how many slides and the first one") }),
+    z.object({ kind: z.literal("canvas"), preview: livePreview("its bounds and its first shapes") }),
   ])
   .openapi("ArtifactContent");
 
@@ -181,7 +206,7 @@ const Sharing = z
       "Who sees it on top of its conversation (ADR 0157): nobody more, the people and roles listed (and administrators), or the whole workspace.",
   });
 
-const Artifact = z
+export const Artifact = z
   .object({
     id: z.uuid(),
     kind: Kind,
@@ -269,6 +294,16 @@ const ArtifactParams = OrgParams.extend({ artifactId: z.uuid() });
 const VersionQuery = z.object({ version: z.coerce.number().int().min(1).optional() });
 
 /**
+ * What a download may be turned into: a table's CSV, a diff's patch, a document's PDF or Word file, and a live file's
+ * Office file, CSV, PDF or (a canvas) JSON (ADR 0193).
+ */
+const FILE_FORMATS = ["csv", "patch", "pdf", "docx", "xlsx", "pptx", "json"] as const;
+/** What a live file downloads as when no format is asked: what other apps open (ADR 0193); a canvas, its JSON. */
+const LIVE_DOWNLOAD: Partial<Record<string, "xlsx" | "pptx">> = { spreadsheet: "xlsx", slides: "pptx" };
+/** What `exportLive` writes of a live file as it stands now (ADR 0193). */
+const LIVE_EXPORTS = ["xlsx", "csv", "pptx", "pdf"] as const;
+
+/**
  * The Drive: files people and agents make (documents, tables, diffs, HTML
  * pages, diagrams, uploaded files), visible like the channel they came
  * from. Content lives in the org's storage; downloads are short-lived
@@ -301,6 +336,11 @@ export function artifactRoutes(deps: AppDeps) {
   const artifacts = (): ArtifactDeps => {
     const a = deps.extras?.artifacts;
     if (!a) throw new Error("artifacts are not configured on this server");
+    return a;
+  };
+  const liveDeps = () => {
+    const a = deps.extras?.liveDeps;
+    if (!a) throw new Error("live files are not configured on this server");
     return a;
   };
   const person = (userId: string) => ({ type: "person" as const, userId });
@@ -573,14 +613,42 @@ export function artifactRoutes(deps: AppDeps) {
     },
   );
 
-  // The bytes, always as an attachment (HTML and uploaded files are never rendered on our origin).
+  /**
+   * A live file (ADR 0191) as it stands now, as an Office file, a CSV or a PDF (`exportLive`, ADR 0193): the format
+   * asked, else its kind's own. Null for any other file, a canvas's own JSON and a version, which `artifactFile`
+   * writes (as it does every export where the engine writes none itself). Who doesn't read the file gets "not found"
+   * here too.
+   */
+  const liveExport = async (userId: string, orgId: string, artifactId: string, asked: string | undefined) => {
+    if (asked === "patch" || asked === "docx" || asked === "json" || !exportsLive()) return null;
+    if (!z.uuid().safeParse(orgId).success || !z.uuid().safeParse(artifactId).success) return null;
+    const [row] = await db
+      .select({ kind: schema.artifacts.kind })
+      .from(schema.artifacts)
+      .where(and(eq(schema.artifacts.id, artifactId), eq(schema.artifacts.orgId, orgId)));
+    const kind = row?.kind as string | undefined;
+    if (kind !== "spreadsheet" && kind !== "slides" && kind !== "canvas") return null;
+    const format = LIVE_EXPORTS.find((f) => f === asked) ?? LIVE_DOWNLOAD[kind];
+    if (!format) return null;
+    await requireLiveFile(artifacts(), person(userId), orgId, artifactId);
+    return exportLive(liveDeps(), userId, orgId, artifactId, format);
+  };
+
+  // The bytes, always as an attachment (HTML and uploaded files are never rendered on our origin). A live file
+  // downloads as an Office file, a CSV or a PDF of how it stands now (ADR 0193).
   app.get("/organizations/:orgId/artifacts/:artifactId/file", async (c) => {
     const version = c.req.query("version");
-    const format = c.req.query("format");
-    const file = await artifactFile(artifacts(), c.get("user").id, c.req.param("orgId"), c.req.param("artifactId"), {
-      version: version ? Number(version) : undefined,
-      format: format === "csv" || format === "patch" || format === "pdf" || format === "docx" ? format : undefined,
-    });
+    const asked = FILE_FORMATS.find((f) => f === c.req.query("format"));
+    const userId = c.get("user").id;
+    const orgId = c.req.param("orgId");
+    const artifactId = c.req.param("artifactId");
+    const exported = version ? null : await liveExport(userId, orgId, artifactId, asked);
+    const file =
+      exported ??
+      (await artifactFile(artifacts(), userId, orgId, artifactId, {
+        version: version ? Number(version) : undefined,
+        format: asked,
+      }));
     // In parts when asked (a video starts at once and jumps without the whole file first).
     return rangedResponse(file.body, c.req.header("range"), {
       "content-type": file.contentType,

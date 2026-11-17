@@ -88,6 +88,22 @@ export default function MainStack() {
       },
       // A file: pushed with its bar opaque over the file itself (a web view lays out below it, as a block does).
       "file/[id]": solid,
+      // A live spreadsheet (ADR 0191): the grid, its bars and the keyboard's cell bar lay out below an opaque bar.
+      "spreadsheet/[id]": solid,
+      // A live presentation and a live canvas (ADR 0191): their slides, their plane and their tools lay out below an
+      // opaque bar, as the words of a text box do over the keyboard.
+      "slides/[id]": solid,
+      "canvas/[id]": solid,
+      "slide-text/[id]": solid,
+      "slide-layout/[id]": solid,
+      // Presenting: no bar, black around the slides, faded in; the edge swipe is the pager's (× leaves). Never a
+      // modal, as the computer's screen below (the app's toasts present over it).
+      "slides-show/[id]": {
+        ...base,
+        animation: "fade",
+        gestureEnabled: false,
+        contentStyle: { backgroundColor: "#000000" },
+      },
       // An agent's computer and a shared browser profile's live view: pushed with the opaque bar, their picture laid
       // out below it. Never a modal: the app's sheets, pickers and toasts they open present over them, where under a
       // modal they opened hidden and the screen stopped answering.

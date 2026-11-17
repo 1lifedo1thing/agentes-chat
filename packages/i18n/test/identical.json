@@ -1,6 +1,17 @@
 {
   "app": {
     "pt-BR": [
+      "live.sheet.colors.magenta",
+      "live.sheet.args.a1",
+      "live.sheet.args.base",
+      "live.sheet.args.cols",
+      "live.sheet.args.divisor",
+      "live.sheet.args.k",
+      "live.sheet.args.nper",
+      "live.sheet.args.ref",
+      "live.sheet.args.ref1",
+      "live.sheet.args.ref2",
+      "live.sheet.args.x",
       "usageViews.logins",
       "chat.wait.said",
       "access.area.skills",
@@ -301,7 +312,17 @@
       "storage.connect.provider.s3",
       "storage.connect.provider.b2",
       "storage.connect.awsRegion.il-central-1",
-      "onboarding.import.choose.skill"
+      "onboarding.import.choose.skill",
+      "live.canvas.sizes.short.m",
+      "live.slides.rail.label",
+      "live.slides.rail.slide",
+      "live.slides.stage.role",
+      "live.slides.selection.slide",
+      "live.slides.tools.layout",
+      "live.slides.tools.link",
+      "live.slides.link.placeholder",
+      "live.slides.chart.item",
+      "live.slides.deck.number"
     ],
     "es": [
       "devices.iphone.path.general",
@@ -3973,7 +3994,9 @@
       "devices.cpus",
       "devices.memory",
       "devices.connect.windows",
-      "roles.icons.pullRequest"
+      "roles.icons.pullRequest",
+      "live.card.slides",
+      "live.card.shapes"
     ],
     "es": [
       "devices.os.android",

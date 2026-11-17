@@ -15,6 +15,7 @@ import {
   schema,
   sql,
 } from "@agenteschat/db";
+import type { LiveMode } from "@agenteschat/live/protocol";
 import {
   type BlockSpec,
   BlockSpecError,
@@ -22,6 +23,7 @@ import {
   dryRunBlock,
   parseBlockSpec,
 } from "@agenteschat/ui/blocks/spec";
+import * as Y from "yjs";
 import { type AgentsDmReads, agentsDmReads, readerOfRun } from "./agents-dm-reads";
 import { recordAudit } from "./audit";
 import { runAuthorityById, runPerson, UUID } from "./authority";
@@ -34,6 +36,8 @@ import { publishChannelEvent, publishListChanged } from "./events";
 import { MODEL_FILE_READ_BYTES, type ModelFile, readForModel, tooBigToReadNote, transcriptKey } from "./file-reader";
 import { formatBytes, tableToCsv } from "./format";
 import { imageSize } from "./image-size";
+import { LIVE_SNAPSHOT_TYPE, type LiveContent, liveContentOf, liveExcerpt, snapshotContent } from "./live/preview";
+import { docOf, liveDocRow, loadStored, toB64 } from "./live/store";
 
 export { tableToCsv };
 
@@ -44,7 +48,7 @@ import { markdownToPdf } from "./pdf";
 import { maySql } from "./permissions";
 import { routineCreatorOf } from "./requester";
 import { agentSearchChannels, enqueueIndex, registerDocumentBuilder } from "./search";
-import { accountInUse } from "./standing";
+import { accountInUse, closedRefusal, readRefusal } from "./standing";
 import {
   AUDIENCE_MAX,
   adminChannelSql,
@@ -57,7 +61,17 @@ import {
 
 const { artifacts, artifactVersions, channels, channelMembers } = schema;
 
-export type ArtifactKind = "document" | "table" | "diff" | "html" | "diagram" | "file" | "block" | "poll" | "choices";
+export type ArtifactKind =
+  | "document"
+  | "table"
+  | "diff"
+  | "html"
+  | "diagram"
+  | "file"
+  | "block"
+  | "poll"
+  | "choices"
+  | LiveArtifactKind;
 export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
   "document",
   "table",
@@ -68,14 +82,43 @@ export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
   "block",
   "poll",
   "choices",
+  "spreadsheet",
+  "slides",
+  "canvas",
 ];
 /**
  * What lives in a conversation and not in the Drive (ADR 0113, 0124): made only through `show_block`, `start_poll`
  * and `ask_choices`, never by `create_artifact` or a person.
  */
 export type ConversationKind = "block" | "poll" | "choices";
+/**
+ * Live files (ADR 0191): one Yjs document people and agents change together, through a socket or the agents' own
+ * tools, never by saving whole content (`updateArtifact` refuses them). Each version is a snapshot of the document.
+ */
+export type LiveArtifactKind = "spreadsheet" | "slides" | "canvas";
+export const LIVE_ARTIFACT_KINDS: readonly LiveArtifactKind[] = ["spreadsheet", "slides", "canvas"];
+export const isLiveArtifactKind = (kind: string): kind is LiveArtifactKind =>
+  (LIVE_ARTIFACT_KINDS as readonly string[]).includes(kind);
+/** The agents' tools for each live kind, for a refusal that says which one to use instead. */
+const LIVE_TOOLS: Record<LiveArtifactKind, { create: string; read: string; edit: string }> = {
+  spreadsheet: { create: "create_spreadsheet", read: "read_spreadsheet", edit: "edit_spreadsheet" },
+  slides: { create: "create_presentation", read: "read_presentation", edit: "edit_presentation" },
+  canvas: { create: "create_canvas", read: "read_canvas", edit: "edit_canvas" },
+};
+/**
+ * What an agent is told of a live file where a tool shows it no whole (`read_artifact`): the tools that read and
+ * change it.
+ */
+export const liveFileHint = (kind: LiveArtifactKind) =>
+  `This is a live ${kind === "slides" ? "presentation" : kind}, changed together by people and agents: read it with ${LIVE_TOOLS[kind].read} and change it with ${LIVE_TOOLS[kind].edit}.`;
+/** Whole content for a live file: refused, with the tools that change one. */
+const liveOnly = (kind: LiveArtifactKind) =>
+  new ValidationError(
+    `This is a live ${kind === "slides" ? "presentation" : kind}: it changes only through its own tools (${LIVE_TOOLS[kind].create}, ${LIVE_TOOLS[kind].read}, ${LIVE_TOOLS[kind].edit}), never as whole content.`,
+    "artifact.live_only",
+  );
 /** Kinds made from content (JSON); `file` is made only from bytes (`createFileArtifact`, ADR 0025). */
-export const TEXT_ARTIFACT_KINDS: readonly Exclude<ArtifactKind, "file" | ConversationKind>[] = [
+export const TEXT_ARTIFACT_KINDS: readonly Exclude<ArtifactKind, "file" | ConversationKind | LiveArtifactKind>[] = [
   "document",
   "table",
   "diff",
@@ -109,7 +152,9 @@ export type ArtifactContent =
   | { kind: "block"; spec?: BlockSpec; html?: string; subtitle?: string }
   | { kind: "poll"; question: string; options: string[]; multiple: boolean }
   | { kind: "choices"; questions: ChoiceQuestion[] }
-  | FileContent;
+  | FileContent
+  /** A live file (ADR 0191 §7): its preview (the top-left cells, the first slide, the canvas's first shapes). */
+  | LiveContent;
 
 /**
  * One question of a choice card (ADR 0124): its options are shown as A, B, C…, and after them "Outra resposta", a
@@ -142,7 +187,9 @@ export function choicesText(questions: ChoiceQuestion[]): string {
     .join("\n\n");
 }
 
-type TextContent = Exclude<ArtifactContent, FileContent>;
+type TextContent = Exclude<ArtifactContent, FileContent | LiveContent>;
+
+const isLiveContent = (content: ArtifactContent): content is LiveContent => isLiveArtifactKind(content.kind);
 
 export interface ArtifactAuthor {
   type: "agent" | "person";
@@ -368,6 +415,10 @@ export function validateContent(raw: unknown): TextContent {
     }
     case "file":
       throw new ValidationError("files are uploaded as bytes (upload_file, or an upload in the Drive), not as content");
+    case "spreadsheet":
+    case "slides":
+    case "canvas":
+      throw liveOnly(c.kind as LiveArtifactKind);
     default:
       throw new ValidationError(`kind must be one of ${TEXT_ARTIFACT_KINDS.join(", ")}`);
   }
@@ -402,7 +453,7 @@ function encode(content: TextContent): { body: Uint8Array; contentType: string }
   }
 }
 
-function decode(kind: Exclude<ArtifactKind, "file">, body: Uint8Array): TextContent {
+function decode(kind: Exclude<ArtifactKind, "file" | LiveArtifactKind>, body: Uint8Array): TextContent {
   const s = new TextDecoder().decode(body);
   switch (kind) {
     case "document":
@@ -436,6 +487,10 @@ const EXTENSIONS: Record<ArtifactKind, string> = {
   block: "json",
   poll: "json",
   choices: "json",
+  // What a live file downloads as when no format is asked (ADR 0193): its export.
+  spreadsheet: "xlsx",
+  slides: "pptx",
+  canvas: "json",
 };
 
 // ── Files (ADR 0025) ─────────────────────────────────────────────────────────
@@ -631,8 +686,12 @@ const storedFileContent = (
   return fileContent(v, wantsFileText(v) ? body : null);
 };
 
-/** Plain text for search: what a person would look for in the file (a `file`: its name only). */
+/**
+ * Plain text for search: what a person would look for in the file (a `file`: its name only). A live file's comes from
+ * its whole document (`liveExcerpt`), never its preview: written when it is made, compacted or checkpointed.
+ */
 function excerptOf(content: ArtifactContent): string {
+  if (isLiveContent(content)) return "";
   const s =
     content.kind === "file"
       ? content.name
@@ -1044,10 +1103,14 @@ async function insertArtifact(
     note?: string | null;
     /** Whose file it is, when not the actor's (an imported agent's own files); the audit keeps the actor. */
     author?: ArtifactAuthor;
+    /** Its id, chosen before (a live file's pictures are stored under it first). */
+    id?: string;
+    /** More rows of the same file, in the same transaction (a live file's document and pictures, ADR 0191). */
+    inTx?: (tx: Executor, row: ArtifactRow) => Promise<void>;
   },
 ) {
   const { db } = deps;
-  const id = Bun.randomUUIDv7();
+  const id = input.id ?? Bun.randomUUIDv7();
   const blob = await writeBlob(deps, orgId, id, 1, input.stored);
   const author = input.author ?? authorOf(actor);
   const row = await db.transaction(async (tx) => {
@@ -1088,6 +1151,7 @@ async function insertArtifact(
       authorId: author.id,
       runId: actor.type === "agent" ? (actor.runId ?? null) : null,
     });
+    await input.inTx?.(tx, a);
     if (input.inDrive !== false) await enqueueIndex(tx, { orgId, kind: "file", sourceId: id });
     await recordAudit(tx, {
       orgId,
@@ -1112,7 +1176,14 @@ export async function insertVersion(
   actor: ArtifactActor,
   orgId: string,
   current: ArtifactRow,
-  input: { stored: Stored; excerpt: string; note?: string | null; title?: string },
+  input: {
+    stored: Stored;
+    excerpt: string;
+    note?: string | null;
+    title?: string;
+    /** More rows in the same transaction (a live file's checkpoint mark, ADR 0191 §7). */
+    inTx?: (tx: Executor) => Promise<void>;
+  },
 ) {
   const { db } = deps;
   const artifactId = current.id;
@@ -1152,6 +1223,7 @@ export async function insertVersion(
       authorId: author.id,
       runId: actor.type === "agent" ? (actor.runId ?? null) : null,
     });
+    await input.inTx?.(tx);
     await enqueueIndex(tx, { orgId, kind: "file", sourceId: artifactId });
     await recordAudit(tx, {
       orgId,
@@ -1180,7 +1252,14 @@ export async function createArtifact(
   deps: ArtifactDeps,
   actor: ArtifactActor,
   orgId: string,
-  input: { title: string; content: unknown; channelId?: string | null; threadId?: string | null },
+  input: {
+    title: string;
+    content: unknown;
+    channelId?: string | null;
+    threadId?: string | null;
+    /** Version 1's note (where it came from, ADR 0193). */
+    note?: string | null;
+  },
 ): Promise<ArtifactDetailView> {
   const place = await placeFile(deps.db, actor, orgId, input);
   const content = validateContent(input.content);
@@ -1190,6 +1269,7 @@ export async function createArtifact(
     untrusted: content.kind === "html",
     excerpt: excerptOf(content),
     stored: encode(content),
+    note: input.note ?? null,
   });
   return detail(artifact, 1, content);
 }
@@ -1256,6 +1336,7 @@ export async function updateArtifact(
   if (current.kind === "file") {
     throw new ValidationError("this artifact is an uploaded file: send a new version of the file instead");
   }
+  if (isLiveArtifactKind(current.kind)) throw liveOnly(current.kind);
   const content = validateContent(input.content);
   if (content.kind !== current.kind) throw new ValidationError(`this artifact is a ${current.kind}`);
   if (actor.type === "person" && !editableKind(current.kind)) {
@@ -1534,6 +1615,8 @@ async function readVersion(deps: ArtifactDeps, a: ArtifactRow, v: VersionRow) {
 /** A version's content: decoded text kinds; a `file`'s metadata (its bytes read only for a small text file). */
 async function contentOf(deps: ArtifactDeps, a: ArtifactRow, v: VersionRow): Promise<ArtifactContent> {
   if (a.kind === "file") return fileContent(v, wantsFileText(v) ? (await readVersion(deps, a, v)).body : null);
+  // A live file's version is a snapshot of its document: its preview, as the head's (ADR 0191 §7).
+  if (isLiveArtifactKind(a.kind)) return snapshotContent(a.kind, (await readVersion(deps, a, v)).body);
   return decode(a.kind, (await readVersion(deps, a, v)).body);
 }
 
@@ -1653,8 +1736,40 @@ export async function getArtifact(
   version?: number,
 ): Promise<ArtifactDetailView> {
   const a = await readable(deps, actor, orgId, artifactId);
+  // A live file without a version asked: its head, newer than any version (ADR 0191 §7).
+  if (version === undefined && isLiveArtifactKind(a.kind)) {
+    const head = await liveHeadContent(deps, a, a.kind);
+    if (head) return detail(view(a, editableKind(a.kind)), a.currentVersion, head);
+  }
   const v = await versionRow(deps.db, a, version);
   return detail(view(a, editableKind(a.kind)), v.version, await contentOf(deps, a, v));
+}
+
+/**
+ * A live file's head as cards draw it: the preview its last compaction kept, or, before the first one, made from the
+ * head itself (and kept). Null when it has no live document (its latest version stands in).
+ */
+async function liveHeadContent(
+  deps: ArtifactDeps,
+  a: ArtifactRow,
+  kind: LiveArtifactKind,
+): Promise<LiveContent | null> {
+  const row = await liveDocRow(deps.db, a.orgId, a.id);
+  if (!row) return null;
+  if (row.preview) return { kind, preview: row.preview } as unknown as LiveContent;
+  const stored = await loadStored(deps.db, a.orgId, a.id);
+  if (!stored) return null;
+  const doc = docOf(stored.state, stored.changes);
+  try {
+    const content = liveContentOf(doc, kind);
+    await deps.db
+      .update(schema.liveDocs)
+      .set({ preview: content.preview as unknown as Record<string, unknown> })
+      .where(eq(schema.liveDocs.artifactId, a.id));
+    return content;
+  } finally {
+    doc.destroy();
+  }
 }
 
 /** What a file's pill in a text shows (`idRef`): its name and type, only for a person who may read it; else null. */
@@ -1720,7 +1835,7 @@ export type ArtifactSort = "recent" | "name" | "kind";
 export const ARTIFACT_PAGE_MAX = 200;
 
 /** The order of `sort: "kind"`, as the apps list the kinds (mirror of `ARTIFACT_KINDS` in `@agenteschat/client`). */
-const KIND_ORDER = ["document", "table", "diff", "diagram", "html", "file"];
+const KIND_ORDER = ["document", "spreadsheet", "slides", "canvas", "table", "diff", "diagram", "html", "file"];
 
 /** The files the actor can see that pass `filters` (all but the kinds), as SQL, and what an agent's DM reads. */
 async function artifactScope(db: Database, actor: ArtifactActor, orgId: string, filters: ArtifactFilters) {
@@ -1975,17 +2090,23 @@ export async function shareArtifact(
   let shared: ArtifactView = view(a, editableKind(a.kind));
   let copied = false;
   if (!openHere) {
-    const v = await versionRow(db, a, undefined);
-    const body = (await readVersion(deps, a, v)).body;
-    shared =
-      a.kind === "file"
-        ? await createFileArtifact(deps, actor, orgId, {
-            title: a.title,
-            name: v.fileName ?? "file",
-            bytes: body,
-            contentType: v.contentType,
-          })
-        : await createArtifact(deps, actor, orgId, { title: a.title, content: decode(a.kind, body) });
+    const kind = a.kind;
+    if (isLiveArtifactKind(kind)) {
+      // A live file is copied whole: its document at its head and its pictures (ADR 0191 §8).
+      shared = await copyLiveArtifact(deps, actor, orgId, a, kind, {});
+    } else {
+      const v = await versionRow(db, a, undefined);
+      const body = (await readVersion(deps, a, v)).body;
+      shared =
+        kind === "file"
+          ? await createFileArtifact(deps, actor, orgId, {
+              title: a.title,
+              name: v.fileName ?? "file",
+              bytes: body,
+              contentType: v.contentType,
+            })
+          : await createArtifact(deps, actor, orgId, { title: a.title, content: decode(kind, body) });
+    }
     copied = true;
   }
   await recordAudit(db, {
@@ -2474,7 +2595,7 @@ export async function restoreArtifact(deps: ArtifactDeps, userId: string, orgId:
     .select({ bytes: sql<string>`coalesce(sum(${artifactVersions.size}), 0)` })
     .from(artifactVersions)
     .where(and(eq(artifactVersions.artifactId, a.id), isNull(artifactVersions.storageConfigId)));
-  const bytes = Number(kept?.bytes ?? 0);
+  const bytes = Number(kept?.bytes ?? 0) + (isLiveArtifactKind(a.kind) ? await liveKeptBytes(deps.db, a.id) : 0);
   if (bytes > 0) await assertStorageRoom(deps.db, orgId, bytes, { daily: false });
   const [row] = await deps.db.transaction(async (tx) => {
     // Conditional: a "delete for good" that committed since the read above wins.
@@ -2512,18 +2633,34 @@ async function dropVersions(deps: ArtifactDeps, list: { version: VersionRow; org
 
 /**
  * Job: files deleted more than 30 days ago lose their contents (every
- * version's blob and row). The artifact row stays as a tombstone, so old
+ * version's blob and row, and a live file's document and pictures). The artifact row stays as a tombstone, so old
  * messages can still say "File removed" with its title.
  */
 export async function purgeDeletedArtifacts(deps: ArtifactDeps, now = new Date()) {
   const cutoff = new Date(now.getTime() - ARTIFACT_TRASH_DAYS * 86_400_000);
+  const gone = sql`${artifacts.deletedAt} < ${cutoff.toISOString()}::timestamptz`;
   const versions = await deps.db
     .select({ version: artifactVersions, orgId: artifacts.orgId })
     .from(artifactVersions)
     .innerJoin(artifacts, eq(artifacts.id, artifactVersions.artifactId))
-    .where(sql`${artifacts.deletedAt} is not null and ${artifacts.deletedAt} < ${cutoff.toISOString()}::timestamptz`)
+    .where(gone)
     .limit(500);
-  return dropVersions(deps, versions);
+  const live = await deps.db
+    .select({ id: artifacts.id, orgId: artifacts.orgId })
+    .from(artifacts)
+    .where(
+      and(
+        gone,
+        inArray(artifacts.kind, [...LIVE_ARTIFACT_KINDS]),
+        or(
+          sql`exists (select 1 from ${schema.liveDocs} where ${schema.liveDocs.artifactId} = ${artifacts.id})`,
+          sql`exists (select 1 from ${schema.liveAssets} where ${schema.liveAssets.artifactId} = ${artifacts.id})`,
+        ),
+      ),
+    )
+    .limit(100);
+  for (const file of live) await dropLiveContent(deps, file.orgId, file.id);
+  return (await dropVersions(deps, versions)) + live.length;
 }
 
 /**
@@ -2563,6 +2700,7 @@ export async function purgeArtifactNow(deps: ArtifactDeps, userId: string, orgId
     .innerJoin(artifacts, eq(artifacts.id, artifactVersions.artifactId))
     .where(eq(artifactVersions.artifactId, a.id));
   await dropVersions(deps, versions);
+  if (isLiveArtifactKind(a.kind)) await dropLiveContent(deps, orgId, a.id);
   await publishListChanged(deps.pubsub, orgId, "artifacts");
 }
 
@@ -2634,6 +2772,12 @@ export async function artifactDownload(
 ): Promise<{ url: string; expiresAt: string }> {
   const a = await readable(deps, { type: "person", userId }, orgId, artifactId);
   const v = await versionRow(deps.db, a, version);
+  if (isLiveArtifactKind(a.kind)) {
+    // A version holds the document, not what it downloads as: the export is made by our own endpoint (ADR 0193).
+    const at = version === undefined ? "" : `?version=${v.version}`;
+    const url = `/api/app/organizations/${orgId}/artifacts/${artifactId}/file${at}`;
+    return { url, expiresAt: new Date(Date.now() + DOWNLOAD_URL_TTL_SECONDS * 1000).toISOString() };
+  }
   const store = await deps.blobs.forConfig(orgId, v.storageConfigId);
   const filename =
     a.kind === "file"
@@ -2654,10 +2798,11 @@ export async function artifactFile(
   userId: string,
   orgId: string,
   artifactId: string,
-  options: { version?: number; format?: "csv" | "patch" | "pdf" | "docx" } = {},
+  options: { version?: number; format?: ArtifactFileFormat } = {},
 ): Promise<{ body: Uint8Array; contentType: string; filename: string }> {
   const a = await readable(deps, { type: "person", userId }, orgId, artifactId);
   const v = await versionRow(deps.db, a, options.version);
+  if (isLiveArtifactKind(a.kind)) return liveFile(deps, a, a.kind, v, options);
   if (a.kind === "file") {
     // Uploaded files download as they are: original bytes, name and type.
     if (options.format) {
@@ -2699,12 +2844,506 @@ export async function artifactFile(
     const body = markdownToPdf(markdown, { title: a.title });
     return { body, contentType: "application/pdf", filename: fileName(a, v.version, "pdf") };
   }
+  if (options.format === "xlsx" || options.format === "pptx" || options.format === "json") {
+    throw new ValidationError(
+      `${options.format.toUpperCase()} export is for live files`,
+      "artifact.format_unavailable",
+    );
+  }
   if (options.format === "patch") {
     if (content.kind !== "diff") throw new ValidationError("Patch export is for diffs", "artifact.format_unavailable");
     const body = new TextEncoder().encode(diffToPatch(content.files));
     return { body, contentType: "text/x-diff; charset=utf-8", filename: fileName(a, v.version, "patch") };
   }
   return { body: object.body, contentType: object.contentType, filename: fileName(a, v.version, EXTENSIONS[a.kind]) };
+}
+
+// ── Live files (ADR 0191) ────────────────────────────────────────────────────
+
+/** What `artifactFile` makes: tables' CSV, diffs' patch, PDF and docx, and live files' exports (ADR 0193). */
+export type ArtifactFileFormat = "csv" | "patch" | "pdf" | "docx" | "xlsx" | "pptx" | "json";
+
+/** A live file as it downloads (ADR 0193). */
+export interface LiveExport {
+  body: Uint8Array;
+  contentType: string;
+  /** The file name's extension: `xlsx`, `csv`, `pptx`, `pdf`, `json`. */
+  ext: string;
+}
+
+/**
+ * Turns a live document into a download; `format` null: the kind's own (a spreadsheet's xlsx, a presentation's pptx).
+ * Set at boot by what writes those formats (`setLiveExporter`), so the Drive imports none of them.
+ */
+export type LiveExporter = (input: {
+  deps: ArtifactDeps;
+  artifact: ArtifactRow;
+  kind: LiveArtifactKind;
+  doc: Y.Doc;
+  format: ArtifactFileFormat | null;
+}) => Promise<LiveExport>;
+
+let liveExporter: LiveExporter | null = null;
+
+/** What makes live files' downloads (ADR 0193); without one only a canvas downloads, as its JSON. */
+export function setLiveExporter(exporter: LiveExporter | null) {
+  liveExporter = exporter;
+}
+
+/** A version's snapshot as a document. */
+function snapshotDoc(snapshot: Uint8Array): Y.Doc {
+  const doc = new Y.Doc();
+  Y.applyUpdate(doc, snapshot);
+  return doc;
+}
+
+/** A live file's document at its head, or at its latest version when it has no live document (never one made here). */
+async function liveHeadDoc(deps: ArtifactDeps, a: ArtifactRow): Promise<Y.Doc> {
+  const stored = await loadStored(deps.db, a.orgId, a.id);
+  if (stored) return docOf(stored.state, stored.changes);
+  const v = await versionRow(deps.db, a);
+  return snapshotDoc((await readVersion(deps, a, v)).body);
+}
+
+/** A live file's download: its head (no version asked) or a version's snapshot, as the exporter writes it. */
+async function liveFile(
+  deps: ArtifactDeps,
+  a: ArtifactRow,
+  kind: LiveArtifactKind,
+  v: VersionRow,
+  options: { version?: number; format?: ArtifactFileFormat },
+): Promise<{ body: Uint8Array; contentType: string; filename: string }> {
+  const doc =
+    options.version === undefined ? await liveHeadDoc(deps, a) : snapshotDoc((await readVersion(deps, a, v)).body);
+  try {
+    const format = options.format ?? null;
+    if (liveExporter) {
+      const out = await liveExporter({ deps, artifact: a, kind, doc, format });
+      return { body: out.body, contentType: out.contentType, filename: fileName(a, v.version, out.ext) };
+    }
+    if (kind === "canvas" && (format === null || format === "json")) {
+      const body = new TextEncoder().encode(JSON.stringify(doc.toJSON()));
+      return { body, contentType: "application/json", filename: fileName(a, v.version, "json") };
+    }
+    const asked = (format ?? EXTENSIONS[kind]).toUpperCase();
+    throw new ValidationError(`${asked} export is not available on this server`, "artifact.format_unavailable");
+  } finally {
+    doc.destroy();
+  }
+}
+
+/** How a live file opens for someone (ADR 0191 §1). */
+export interface LiveFileAccess {
+  /** Its row, deleted ones included (in the trash it opens read-only). */
+  artifact: ArtifactRow;
+  kind: LiveArtifactKind;
+  /** `edit`, or `view`: in the trash, a workspace being deleted, or (an agent) out of its reach to change. */
+  mode: LiveMode;
+}
+
+/**
+ * Whether `actor` may open this live file, and how (ADR 0191 §1): null when it isn't a live file they read (a wrong
+ * id, another kind, out of their reach, gone from the trash), since every refusal of a file reads as "not found".
+ * People change what they read (`writable` is `readable` for them, ADR 0157), except in the trash and while the
+ * workspace is being deleted; agents change what they reach (`agentReaches`) and only read the rest. Only a person
+ * who still reads it opens one in the trash.
+ */
+export async function liveFileAccess(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  fileId: string,
+): Promise<LiveFileAccess | null> {
+  if (!UUID.test(fileId) || !UUID.test(orgId)) return null;
+  const { db } = deps;
+  let closed = false;
+  if (actor.type === "person") {
+    const membership = await getMembership(db, actor.userId, orgId);
+    if (!membership || readRefusal(membership.standing)) return null;
+    closed = closedRefusal(membership.standing) !== null;
+  }
+  const [a] = await db
+    .select()
+    .from(artifacts)
+    .where(and(eq(artifacts.id, fileId), eq(artifacts.orgId, orgId)));
+  const kind = a?.kind;
+  if (!a || !kind || !isLiveArtifactKind(kind)) return null;
+  if (a.deletedAt) {
+    if (actor.type !== "person" || purgeAt(a.deletedAt).getTime() <= Date.now()) return null;
+    return (await personCanRead(db, actor.userId, orgId, a)) ? { artifact: a, kind, mode: "view" } : null;
+  }
+  if (!(await canRead(db, actor, orgId, a))) return null;
+  if (actor.type === "agent") {
+    return { artifact: a, kind, mode: (await agentReaches(db, actor, orgId, a)) ? "edit" : "view" };
+  }
+  return { artifact: a, kind, mode: closed ? "view" : "edit" };
+}
+
+/**
+ * `liveFileAccess` for a tool or a route acting on the file, refused as `readable` and `writable` refuse (an agent
+ * hears what to do instead): not found, not a live file, or (`write`) not one this actor may change now.
+ */
+export async function requireLiveFile(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  fileId: string,
+  options: { write?: boolean } = {},
+): Promise<LiveFileAccess> {
+  const access = await liveFileAccess(deps, actor, orgId, fileId);
+  if (!access) {
+    // Not one they read (the right refusal, an agent's with what to do), or one they read of another kind.
+    const a = await readable(deps, actor, orgId, fileId);
+    if (actor.type === "agent") {
+      throw new ValidationError(
+        `This file is a ${a.kind}, not a spreadsheet, presentation or canvas: read or change it with read_artifact and update_artifact.`,
+      );
+    }
+    throw new NotFoundError("Artifact not found", "artifact.not_found");
+  }
+  if (!options.write || access.mode === "edit") return access;
+  if (actor.type === "agent") {
+    throw new ForbiddenError(
+      `You can read this file but not change it: it is in a conversation you aren't in. Make your own with ${LIVE_TOOLS[access.kind].create} instead.`,
+    );
+  }
+  throw new ConflictError(
+    access.artifact.deletedAt
+      ? "This file is in the trash: restore it to change it"
+      : "The workspace is being deleted: its files can only be read",
+    "live.read_only",
+  );
+}
+
+/** A live file's version as its snapshot (the Yjs state), as a restore writes it back. No access check: the caller's. */
+export async function liveSnapshotOf(deps: ArtifactDeps, orgId: string, fileId: string, version: number) {
+  const a = await loadArtifact(deps.db, orgId, fileId);
+  if (!a || !isLiveArtifactKind(a.kind)) throw new NotFoundError("Artifact not found", "artifact.not_found");
+  const v = await versionRow(deps.db, a, version);
+  if (v.contentType !== LIVE_SNAPSHOT_TYPE) {
+    throw new NotFoundError("Version not found", "artifact.version_not_found", { latest: a.currentVersion });
+  }
+  return (await readVersion(deps, a, v)).body;
+}
+
+/**
+ * Stores a picture of a live file where the workspace keeps its files, refused past its storage limits like any
+ * version (`writeBlob`, ADR 0191 §8). Under the file's own key prefix, so a workspace's deletion takes it too.
+ */
+export async function writeLiveAssetBlob(
+  deps: ArtifactDeps,
+  orgId: string,
+  fileId: string,
+  assetId: string,
+  body: Uint8Array,
+  contentType: string,
+) {
+  const location = await deps.blobs.forOrg(orgId);
+  if (location.storageConfigId === null) await assertStorageRoom(deps.db, orgId, body.byteLength);
+  const key = `${location.prefix}artifacts/${fileId}/assets/${assetId}-${Bun.randomUUIDv7()}`;
+  await location.store.put(key, body, { contentType });
+  return { storageConfigId: location.storageConfigId, key };
+}
+
+/**
+ * Copies a live file's pictures to another, keeping their ids (the copied document points at them): blobs first,
+ * rows for the caller's transaction. A picture missing from storage is left out (the copy draws its placeholder).
+ */
+async function copyLiveAssets(deps: ArtifactDeps, orgId: string, fromId: string, toId: string) {
+  const rows = await deps.db.select().from(schema.liveAssets).where(eq(schema.liveAssets.artifactId, fromId));
+  if (rows.length === 0) return [];
+  const location = await deps.blobs.forOrg(orgId);
+  const total = rows.reduce((n, r) => n + r.size, 0);
+  if (location.storageConfigId === null) await assertStorageRoom(deps.db, orgId, total);
+  const copies: (typeof schema.liveAssets.$inferInsert)[] = [];
+  for (const r of rows) {
+    const source = await deps.blobs.forConfig(orgId, r.storageConfigId).catch(() => null);
+    const object = await source?.get(r.blobKey).catch(() => null);
+    if (!object) continue;
+    const key = `${location.prefix}artifacts/${toId}/assets/${r.id}-${Bun.randomUUIDv7()}`;
+    await location.store.put(key, object.body, { contentType: r.contentType });
+    copies.push({
+      id: r.id,
+      orgId,
+      artifactId: toId,
+      storageConfigId: location.storageConfigId,
+      blobKey: key,
+      contentType: r.contentType,
+      size: r.size,
+      sha256: r.sha256,
+      width: r.width,
+      height: r.height,
+      source: "copied",
+      createdByType: r.createdByType,
+      createdById: r.createdById,
+      runId: r.runId,
+    });
+  }
+  return copies;
+}
+
+/** A picture a new live file starts with: its id (what the document names), bytes and what they are. */
+export interface LivePicture {
+  id: string;
+  bytes: Uint8Array;
+  contentType: string;
+  width: number | null;
+  height: number | null;
+}
+
+/** A new live file's own pictures (an imported deck's, ADR 0193): blobs first, rows for the caller's transaction. */
+async function storeLivePictures(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  fileId: string,
+  pictures: readonly LivePicture[],
+) {
+  const location = await deps.blobs.forOrg(orgId);
+  const total = pictures.reduce((n, p) => n + p.bytes.byteLength, 0);
+  if (location.storageConfigId === null) await assertStorageRoom(deps.db, orgId, total);
+  const by = actor.type === "person" ? { type: "person", id: actor.userId } : { type: "agent", id: actor.agentId };
+  const runId = actor.type === "agent" && actor.runId && UUID.test(actor.runId) ? actor.runId : null;
+  const rows: (typeof schema.liveAssets.$inferInsert)[] = [];
+  for (const p of pictures) {
+    const key = `${location.prefix}artifacts/${fileId}/assets/${p.id}-${Bun.randomUUIDv7()}`;
+    await location.store.put(key, p.bytes, { contentType: p.contentType });
+    rows.push({
+      id: p.id,
+      orgId,
+      artifactId: fileId,
+      storageConfigId: location.storageConfigId,
+      blobKey: key,
+      contentType: p.contentType,
+      size: p.bytes.byteLength,
+      sha256: sha256Hex(p.bytes),
+      width: p.width,
+      height: p.height,
+      source: "imported",
+      createdByType: by.type,
+      createdById: by.id,
+      runId,
+    });
+  }
+  return rows;
+}
+
+/**
+ * A new live file (ADR 0191 §7): placed like any Drive file (`placeFile`), version 1 a snapshot of `doc`, its
+ * `live_docs` row the same state with its preview, and (a copy) the pictures of `assetsFrom`, all in the artifact's
+ * transaction. The caller made the document and checked it.
+ */
+export async function insertLiveArtifact(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  input: {
+    kind: LiveArtifactKind;
+    title: string;
+    channelId?: string | null;
+    threadId?: string | null;
+    doc: Y.Doc;
+    note?: string | null;
+    /** A live file of this workspace whose pictures the new one takes (its copy). */
+    assetsFrom?: string | null;
+    /** Pictures it starts with, under the ids its document names (an imported deck's, ADR 0193). */
+    pictures?: readonly LivePicture[];
+  },
+): Promise<ArtifactView> {
+  const place = await placeFile(deps.db, actor, orgId, input);
+  const id = Bun.randomUUIDv7();
+  const state = Y.encodeStateAsUpdate(input.doc);
+  const content = liveContentOf(input.doc, input.kind);
+  const assets: (typeof schema.liveAssets.$inferInsert)[] = input.assetsFrom
+    ? await copyLiveAssets(deps, orgId, input.assetsFrom, id)
+    : [];
+  if (input.pictures?.length) assets.push(...(await storeLivePictures(deps, actor, orgId, id, input.pictures)));
+  const at = new Date();
+  const { artifact } = await insertArtifact(deps, actor, orgId, {
+    ...place,
+    id,
+    kind: input.kind,
+    untrusted: false,
+    excerpt: liveExcerpt(input.doc),
+    stored: { body: state, contentType: LIVE_SNAPSHOT_TYPE },
+    note: input.note,
+    inTx: async (tx) => {
+      await tx.insert(schema.liveDocs).values({
+        artifactId: id,
+        orgId,
+        kind: input.kind,
+        state: toB64(state),
+        stateBytes: state.byteLength,
+        preview: content.preview as unknown as Record<string, unknown>,
+        editedAt: at,
+        checkpointAt: at,
+        createdAt: at,
+        updatedAt: at,
+      });
+      if (assets.length > 0) await tx.insert(schema.liveAssets).values(assets);
+    },
+  });
+  return artifact;
+}
+
+/** A copy of a live file at its head, with its pictures (`shareArtifact`, Duplicate), placed for `actor`. */
+export async function copyLiveArtifact(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  a: ArtifactRow,
+  kind: LiveArtifactKind,
+  input: { title?: string; channelId?: string | null; threadId?: string | null; note?: string | null },
+): Promise<ArtifactView> {
+  const doc = await liveHeadDoc(deps, a);
+  try {
+    return await insertLiveArtifact(deps, actor, orgId, {
+      kind,
+      title: input.title ?? a.title,
+      channelId: input.channelId,
+      threadId: input.threadId,
+      doc,
+      note: input.note,
+      assetsFrom: a.id,
+    });
+  } finally {
+    doc.destroy();
+  }
+}
+
+/**
+ * Renames a live file from its page (ADR 0191 §9): the title only, never its document, so no version is written.
+ * Whoever may change the file may rename it; a file read-only now (in the trash, its workspace closing) can't be.
+ */
+export async function renameLiveFile(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  fileId: string,
+  title: string,
+): Promise<ArtifactView> {
+  const access = await requireLiveFile(deps, actor, orgId, fileId, { write: true });
+  const name = title.trim().slice(0, ARTIFACT_LIMITS.titleChars);
+  if (!name) throw new ValidationError("title is required");
+  const was = access.artifact;
+  if (name === was.title) return view(was, editableKind(was.kind));
+  const author = authorOf(actor);
+  const row = await deps.db.transaction(async (tx) => {
+    const [saved] = await tx
+      .update(artifacts)
+      .set({ title: name, updatedByType: author.type, updatedById: author.id, updatedAt: new Date() })
+      .where(and(eq(artifacts.id, fileId), eq(artifacts.orgId, orgId), isNull(artifacts.deletedAt)))
+      .returning();
+    if (!saved) throw new NotFoundError("Artifact not found", "artifact.not_found");
+    await enqueueIndex(tx, { orgId, kind: "file", sourceId: fileId });
+    await recordAudit(tx, {
+      orgId,
+      actor: author,
+      action: "artifact.renamed",
+      target: { type: "artifact", id: fileId },
+      details: { from: was.title, to: name },
+    });
+    return saved;
+  });
+  const artifact = view(row, editableKind(row.kind));
+  if (row.channelId) {
+    await publishChannelEvent(deps.pubsub, { type: "artifact.updated", channelId: row.channelId, artifact });
+  }
+  if (row.inDrive) await publishListChanged(deps.pubsub, orgId, "artifacts");
+  return artifact;
+}
+
+/**
+ * Duplicate, from a live file's page: a copy at its head with its pictures, beside it (the same conversation and
+ * thread), never anywhere more people see. Someone the file was shared with who doesn't read its conversation gets
+ * "not found" for that place, as when making a file there.
+ */
+export async function duplicateLiveFile(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  fileId: string,
+  input: { title?: string } = {},
+): Promise<ArtifactView> {
+  const access = await requireLiveFile(deps, actor, orgId, fileId);
+  const a = access.artifact;
+  if (a.deletedAt) throw new ConflictError("This file is in the trash: restore it to copy it", "live.read_only");
+  return copyLiveArtifact(deps, actor, orgId, a, access.kind, {
+    title: input.title?.trim() || a.title,
+    channelId: a.channelId,
+    threadId: a.threadId,
+  });
+}
+
+/**
+ * A live file's row after its document changed (compaction, ADR 0191 §4): its search text, and when and by whom it
+ * was last changed, for the Drive's order and "last edited by". The time moves at most once a minute: each move has
+ * every viewer of its conversation fetch the file again.
+ */
+export async function touchLiveArtifact(
+  deps: ArtifactDeps,
+  orgId: string,
+  fileId: string,
+  input: { excerpt: string; editedAt: Date | null; by: ArtifactAuthor | null; now: Date },
+) {
+  const a = await loadArtifact(deps.db, orgId, fileId);
+  if (!a) return;
+  const edited = input.editedAt;
+  const bump = edited !== null && edited > a.updatedAt && input.now.getTime() - a.updatedAt.getTime() >= 60_000;
+  const retext = input.excerpt !== a.excerpt;
+  if (!bump && !retext) return;
+  const row = await deps.db.transaction(async (tx) => {
+    const [saved] = await tx
+      .update(artifacts)
+      .set({
+        excerpt: input.excerpt,
+        ...(bump ? { updatedAt: edited } : {}),
+        ...(bump && input.by ? { updatedByType: input.by.type, updatedById: input.by.id } : {}),
+      })
+      .where(and(eq(artifacts.id, a.id), isNull(artifacts.deletedAt)))
+      .returning();
+    if (saved && retext) await enqueueIndex(tx, { orgId, kind: "file", sourceId: a.id });
+    return saved;
+  });
+  if (!row || !bump) return;
+  const artifact = view(row, editableKind(row.kind));
+  if (row.channelId) {
+    await publishChannelEvent(deps.pubsub, { type: "artifact.updated", channelId: row.channelId, artifact });
+  }
+  if (row.inDrive) await publishListChanged(deps.pubsub, orgId, "artifacts");
+}
+
+/** What a live file keeps on this server's storage besides its versions: its pictures there and its document. */
+async function liveKeptBytes(db: Database, fileId: string) {
+  const [[assets], [doc]] = await Promise.all([
+    db
+      .select({ bytes: sql<string>`coalesce(sum(${schema.liveAssets.size}), 0)` })
+      .from(schema.liveAssets)
+      .where(and(eq(schema.liveAssets.artifactId, fileId), isNull(schema.liveAssets.storageConfigId))),
+    db
+      .select({ bytes: schema.liveDocs.stateBytes })
+      .from(schema.liveDocs)
+      .where(eq(schema.liveDocs.artifactId, fileId)),
+  ]);
+  return Number(assets?.bytes ?? 0) + (doc?.bytes ?? 0);
+}
+
+/** Removes a live file's document, its changes, its picture requests and its pictures (blobs first); the row stays. */
+async function dropLiveContent(deps: ArtifactDeps, orgId: string, fileId: string) {
+  const assets = await deps.db
+    .select({ storageConfigId: schema.liveAssets.storageConfigId, blobKey: schema.liveAssets.blobKey })
+    .from(schema.liveAssets)
+    .where(eq(schema.liveAssets.artifactId, fileId));
+  for (const asset of assets) {
+    const store = await deps.blobs.forConfig(orgId, asset.storageConfigId).catch(() => null);
+    await store?.delete(asset.blobKey).catch(() => undefined);
+  }
+  await deps.db.transaction(async (tx) => {
+    await tx.delete(schema.liveAssets).where(eq(schema.liveAssets.artifactId, fileId));
+    await tx.delete(schema.liveImageRequests).where(eq(schema.liveImageRequests.artifactId, fileId));
+    await tx.delete(schema.liveDocUpdates).where(eq(schema.liveDocUpdates.artifactId, fileId));
+    await tx.delete(schema.liveDocs).where(eq(schema.liveDocs.artifactId, fileId));
+  });
 }
 
 /**

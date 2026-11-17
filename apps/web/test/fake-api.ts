@@ -126,6 +126,7 @@ import { createMockCustomConnectors } from "./fakes/custom-connectors";
 import { createFakeDashboards, type FakeDashboards } from "./fakes/dashboards";
 import { createFakeDatabases, type FakeDatabases } from "./fakes/databases";
 import { createFakeDevices, type FakeDevices } from "./fakes/devices";
+import { createFakeLive, type FakeLive } from "./fakes/live";
 import { createFakeMachines, type FakeMachines } from "./fakes/machines";
 import { createFakeMail, type FakeMail } from "./fakes/mail";
 import { createFakeMissions } from "./fakes/missions";
@@ -1270,7 +1271,8 @@ type FakedParts =
   | "mail"
   | "databases"
   | "browser"
-  | "desktop";
+  | "desktop"
+  | "live";
 
 /** The core of the fake backend, over `FakeState`. Records every call in `state.calls`. */
 /** A member as the signed-in person sees them: hidden reads as offline to everyone else (ADR 0084). */
@@ -4047,6 +4049,12 @@ export const fakeAppsOf = new WeakMap<ApiClient, FakeApps>();
 /** The boards and widgets fake behind each `createFakeApi` client (tests add boards and finish widgets with it). */
 export const fakeDashboardsOf = new WeakMap<ApiClient, FakeDashboards>();
 
+/**
+ * The live files fake behind each `createFakeApi` client (ADR 0191): its in-memory live server, the files' pictures,
+ * image requests (`finishImages`) and Office previews. `render.tsx` routes the app's live sockets to its server.
+ */
+export const fakeLiveOf = new WeakMap<ApiClient, FakeLive>();
+
 /** Full client: fake HTTP + the real in-memory mocks (seeded like development). */
 export function createFakeApi(state: FakeState = seedState(), options: { seed?: boolean } = {}): ApiClient {
   const http = createFakeHttpApi(state);
@@ -4098,6 +4106,7 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
   const apps = createFakeApps((method, ...args) => state.calls.push({ method, args }), ctx.now);
   const artifacts = createMockArtifacts(ctx, (method, ...args) => state.calls.push({ method, args }));
   state.drive = artifacts;
+  const live = createFakeLive(ctx, (method, ...args) => state.calls.push({ method, args }), artifacts);
   const client: ApiClient = {
     ...http,
     apps: apps.client,
@@ -4339,6 +4348,7 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
     mail: mail.client,
     databases: databases.client,
     dashboards: dashboards.client,
+    live: live.client,
     browser: browser.client,
     desktop: browser.desktop,
     // "Trabalhando agora" and the task manager only for a test that gives the task manager (`state.taskManager`).
@@ -4408,6 +4418,7 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
   fakeMailOf.set(client, mail);
   fakeDatabasesOf.set(client, databases);
   fakeDashboardsOf.set(client, dashboards);
+  fakeLiveOf.set(client, live);
   fakeBrowserOf.set(client, browser);
   fakeAppsOf.set(client, apps);
   return client;

@@ -39,6 +39,9 @@ import { rememberPlace, showWorkspace } from "@/lib/start";
 import { STORAGE_KEYS, storage } from "@/lib/storage";
 import { RealtimeProvider } from "@/realtime/context";
 
+/** A live file's own page (`org.$orgId.drive_.$fileId`): `/org/<org>/drive/<file>`. */
+const LIVE_FILE_PATH = /\/drive\/[^/]+\/?$/;
+
 /** The workspace shell of an organization: sidebar + page, and its WebSocket. */
 export const Route = createFileRoute("/org/$orgId")({
   beforeLoad: async ({ context, location, params }) => {
@@ -63,7 +66,8 @@ function OrgLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const href = useRouterState({ select: (s) => s.location.href });
   // "Criar agente" is a focused flow with its own rail: no sidebar while it's open (admins only; others see why not).
-  const focused = /\/agents\/new\/?$/.test(path) && can(membership, "create_agents");
+  // A live file's page is full bleed too (ADR 0191 §9): its editor takes the whole window.
+  const focused = (/\/agents\/new\/?$/.test(path) && can(membership, "create_agents")) || LIVE_FILE_PATH.test(path);
   // Notifications in this browser (ADR 0071), when already on: the server hears of them again, quietly.
   useWebPushRefresh(me.user.id);
   useServerLocale(me.user);

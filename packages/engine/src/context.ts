@@ -544,6 +544,18 @@ export interface RunContext {
 }
 
 /**
+ * When a live file fits better than a reply (ADR 0191 §6), and where pictures go (ADR 0192): ours puts them on a canvas
+ * and counts them in the budget, which a computer brain's own image tool doesn't.
+ */
+export const liveFilesLine = (images: boolean) =>
+  [
+    "- Data people keep and work on (a budget, a tracker, a list to fill in or sort) goes in a spreadsheet (create_spreadsheet, formulas in English), not a Markdown table; slides to present in a presentation (create_presentation); ideas and images laid out side by side on a canvas (create_canvas). A message that carries a live file: work in that file with its read_ and edit_ tools, where its people watch you.",
+    images
+      ? " Images: generate_image puts them on a canvas everyone here sees and counts them in your budget; prefer it to an image tool of your own."
+      : "",
+  ].join("");
+
+/**
  * Builds the fixed context of a run (ADR 0008): organization context,
  * agent instructions, channel and members, and the recent conversation up to
  * the trigger message. Search, memory and summaries (layers 2–4) come later as
@@ -567,6 +579,11 @@ export async function buildRunContext(
     work?: boolean;
     /** `show_block` and `start_poll` are available: when to use them (a routine's run is refused them). */
     blocks?: boolean;
+    /**
+     * Live files' tools are granted (ADR 0191 §6): when a spreadsheet, a presentation or a canvas fits; `images`:
+     * `generate_image` too (ADR 0192), which a workspace has only with an image model.
+     */
+    liveFiles?: { images: boolean };
     /** Reads a block's parts, so the agent reads what its blocks show and not only what people set in them. */
     blockSpec?: BlockSpecReader;
     /** `ask_choices` is available (ADR 0124): a short decision goes on a card instead of a numbered list. */
@@ -1046,6 +1063,7 @@ export async function buildRunContext(
           PLAIN_WORDS_LINE,
           `- Write like ${personal ? "a trusted assistant texting the person" : "a colleague texting the team"}, not a report: short paragraphs in a natural spoken tone. No headings, no bold, no labeled bullets ('Size:', 'Cause:', 'Logs:') and no numbered recommendations: say each thing in a sentence. A list only for steps or a plain enumeration.`,
           '- Numbers you compare (categories, periods, a trend, a ranking, parts of a whole) get a chart without being asked: a ```chart block holding only JSON data, like {"type":"bar","title":"Conversion by trigger","subtitle":"Purchases ÷ views, week of Oct 18","unit":"%","labels":["a","b"],"series":[{"name":"Rate","values":[15,6.7]}]}. Types: bar (rankings), line (over time), pie (parts of a whole), number (one big figure: "value" and an optional "delta" like "+0.8 pp vs last week", with labels/series for a small trend line or empty). Every series has one value per label, at most 24 labels; people can flip the chart to a table, so don\'t repeat every number in your text: say the takeaway around it. A few rows of several columns go in a Markdown table. More data than that belongs in a table saved to the Drive.',
+          options.liveFiles ? liveFilesLine(options.liveFiles.images) : "",
           options.blocks && !options.routine && !run.background
             ? "- Something to use rather than read (a what-if, options to see side by side, a view to filter, a short form): show it yourself with show_block, inside your reply; what the person picks comes back to you. A group deciding together: start_poll. Plain numbers stay a table or a chart, and reports and anything to keep stay files."
             : "",

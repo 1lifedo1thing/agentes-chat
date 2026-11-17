@@ -9,6 +9,7 @@ import type { TeamWeekAct } from "../lib/team-week";
 import type { AudienceChoice } from "../lib/who-sees";
 import type { WikiAccess } from "../lib/wiki";
 import type { WorkAreaAnswer } from "../lib/work-area";
+import type { LiveApi } from "../live/api";
 import type {
   SecretToVaultInput,
   VaultConnectInput,
@@ -1484,6 +1485,8 @@ export interface ApiClient {
   };
   /** Boards and widgets (ADR 0135). */
   dashboards: DashboardsApi;
+  /** Spreadsheets, presentations and canvases edited together (ADR 0191), their pictures and Office previews. */
+  live: LiveApi;
   /** Missions (ADR 0029): long work by the agent's executor on a connected computer, in one thread. */
   missions: {
     /** Missions you can see (the Missões tab), most recently changed first, with the counts for the tabs. */
@@ -1812,11 +1815,14 @@ export interface ApiClient {
     versions(orgId: string, id: string): Promise<ArtifactVersion[]>;
     /** Short-lived signed URL for the stored file. */
     download(orgId: string, id: string, version?: number): Promise<{ url: string; expiresAt: string }>;
-    /** Same-origin URL of the file as an attachment, optionally converted (CSV, .patch, PDF). */
+    /**
+     * Same-origin URL of the file as an attachment, optionally converted (CSV, .patch, PDF, Word; a live file as Excel
+     * or PowerPoint, ADR 0193).
+     */
     fileUrl(
       orgId: string,
       id: string,
-      options?: { version?: number; format?: "csv" | "patch" | "pdf" | "docx" },
+      options?: { version?: number; format?: "csv" | "patch" | "pdf" | "docx" | "xlsx" | "pptx" },
     ): string;
     create(
       orgId: string,
