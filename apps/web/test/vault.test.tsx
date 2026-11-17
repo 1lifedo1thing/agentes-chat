@@ -417,7 +417,11 @@ describe("Settings › Vault (ADR 0144)", () => {
     await settle(2);
     const create = screen().getByRole("dialog", { name: t("vault.new.title") });
     const who = within(create).getByRole("radiogroup", { name: t("vault.new.who") });
-    for (const option of within(who).getAllByRole("radio")) expect((option as HTMLButtonElement).disabled).toBe(true);
+    // Only Equipe can't be chosen: the chosen Pessoal stays a choice, not faded with it.
+    const team = within(who).getByRole("radio", { checked: false });
+    expect((team as HTMLButtonElement).disabled).toBe(true);
+    expect((within(who).getByRole("radio", { checked: true }) as HTMLButtonElement).disabled).toBe(false);
+    expect(who.hasAttribute("aria-disabled")).toBe(false);
     expect(within(who).getByRole("radio", { checked: true }).textContent).toContain(t("vault.scope.personal"));
     expect(create.textContent).toContain(t("vault.new.teamLocked"));
   });

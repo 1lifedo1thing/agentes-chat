@@ -62,11 +62,10 @@ export function ForWhom({
         block
         label={label}
         value={value}
-        disabled={locked}
         onValueChange={onValueChange}
         options={[
           { value: "personal", label: t("vault.tab.personal") },
-          { value: "team", label: t(modeKey(org, "vault.tab.team")) },
+          { value: "team", label: t(modeKey(org, "vault.tab.team")), disabled: locked },
         ]}
       />
       {locked && <SettingNote icon="lock">{note}</SettingNote>}

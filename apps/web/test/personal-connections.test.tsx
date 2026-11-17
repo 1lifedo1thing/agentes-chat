@@ -80,6 +80,9 @@ describe("Conectores: Equipe | Pessoal", () => {
     const forWhom = within(dialog).getByRole("radiogroup", { name: "Para quem" });
     expect(within(forWhom).getByRole("radio", { name: "Pessoal" }).getAttribute("aria-checked")).toBe("true");
     expect(within(forWhom).getByRole("radio", { name: "Equipe" }).hasAttribute("disabled")).toBe(true);
+    // The chosen one still reads as chosen: only Equipe fades.
+    expect(within(forWhom).getByRole("radio", { name: "Pessoal" }).hasAttribute("disabled")).toBe(false);
+    expect(forWhom.hasAttribute("aria-disabled")).toBe(false);
     expect(dialog.textContent).toContain("Só quem gerencia conectores adiciona os da equipe.");
     expect(dialog.textContent).toContain("Seus agentes usam quando você pede, na sua conversa com eles.");
     await type(within(dialog).getByLabelText("Endereço do servidor MCP"), "https://mcp.example.com/mcp");
