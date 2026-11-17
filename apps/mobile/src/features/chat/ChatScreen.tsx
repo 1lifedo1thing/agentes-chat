@@ -212,6 +212,7 @@ import { ChannelPicker } from "./ChannelPicker";
 import { ChannelWelcome } from "./ChannelWelcome";
 import { ChatPeek, usePullPastEnd } from "./ChatPeek";
 import { ChatSkeleton } from "./ChatSkeleton";
+import { ChatWallpaper, WallpaperBand, WallpaperUnder } from "./ChatWallpaper";
 import { type OpenedMessages, OpenedMessagesContext } from "./ClippedMessage";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { takeComposerRequest, useComposerRequest } from "./composer-request";
@@ -241,7 +242,7 @@ import {
   stoppableInLine,
   workingEntries,
 } from "./logic";
-import { RowLookContext, useConversationLook, useRhythm } from "./look";
+import { RowLookContext, useConversationLook, useConversationWallpaper, useRhythm } from "./look";
 import { MediaPickerSheet } from "./MediaPickerSheet";
 import { MentionPicker, useMentionMembers } from "./MentionPicker";
 import { MessageMenuFor } from "./MessageMenu";
@@ -460,10 +461,18 @@ function Chat({
   const dmAgentId = dm?.with.type === "agent" ? dm.with.id : null;
   const dmAgent = dmAgentId ? dir.agentById.get(dmAgentId) : undefined;
   const rightHandId = useMemo(() => dir.agents.find(isRightHand)?.id, [dir.agents]);
-  const rowLook = useConversationLook(
-    Boolean(dm) || thread.data?.channelKind === "dm",
-    dmAgent ? agentLook(dmAgent).color : undefined,
-  );
+  const convoDm = Boolean(dm) || thread.data?.channelKind === "dm";
+  const dmAgentColor = dmAgent ? agentLook(dmAgent).color : undefined;
+  const rowLook = useConversationLook(convoDm, dmAgentColor, channelId);
+  // Mine alone: this conversation's background, behind the list, the clear bar and the composer.
+  const backdrop = useConversationWallpaper(convoDm, channelId, dmAgentColor);
+  const walled = rowLook.wallpaper === true;
+  // The screen's size: the background and its band under the bar are one picture, cut to the same place.
+  const [wallSize, setWallSize] = useState<{ width: number; height: number } | null>(null);
+  const onScreenLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setWallSize((now) => (now && now.width === width && now.height === height ? now : { width, height }));
+  }, []);
   const rhythm = CHAT_RHYTHM[rowLook.style];
   const quiet = quietInset(rowLook);
   // The right hand (ADR 0137): its own line and composer hint, no computer, and its greeting on top.
@@ -2270,21 +2279,30 @@ function Chat({
     [onReply, onMission, onRemind, onLongPress, onRetry, onQuote, onResend, onOfferDone],
   );
 
+  // A day's line in the list: faint words, or over a background a glass plate they read on (as the floating date's).
+  const dayLine = useCallback(
+    (words: string) =>
+      walled ? (
+        <View style={[styles.dayPlate, { marginTop: rhythm.turn, backgroundColor: c.glass, borderColor: c.line2 }]}>
+          <Text variant="footnote" tone="muted" style={styles.dayOn}>
+            {words}
+          </Text>
+        </View>
+      ) : (
+        <Text variant="footnote" tone="faint" style={[styles.day, { marginTop: rhythm.turn }]}>
+          {words}
+        </Text>
+      ),
+    [walled, rhythm.turn, c.glass, c.line2],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: Row }) => {
       switch (item.kind) {
         case "day":
-          return (
-            <Text variant="footnote" tone="faint" style={[styles.day, { marginTop: rhythm.turn }]}>
-              {when.day(item.iso)}
-            </Text>
-          );
+          return dayLine(when.day(item.iso));
         case "marker":
-          return (
-            <Text variant="footnote" tone="faint" style={[styles.day, { marginTop: rhythm.turn }]}>
-              {item.text}
-            </Text>
-          );
+          return dayLine(item.text);
         case "wait":
           return <QueueWaitRow channelId={channelId} wait={item.wait} />;
         case "unseen":
@@ -2386,6 +2404,7 @@ function Chat({
       offerAt,
       hands,
       dir,
+      dayLine,
     ],
   );
 
@@ -2856,14 +2875,24 @@ function Chat({
       <View
         style={[styles.screen, { backgroundColor: c.bg }]}
         onTouchStart={touched ? undefined : () => setTouched(true)}
+        onLayout={onScreenLayout}
       >
+        {walled && wallSize ? (
+          <ChatWallpaper
+            wallpaper={backdrop.wallpaper}
+            strength={backdrop.strength}
+            width={wallSize.width}
+            height={wallSize.height}
+            style={styles.wallpaper}
+          />
+        ) : null}
         {/* A clear bar on every conversation (DM, channel, thread): the band behind it is ours, below, so the
             system's scroll edge never makes one look different from another. */}
         <PushedHeader title={pill ?? title} plate solid={false} right={right} />
         {hasPin ? (
           // The bar is see-through (the conversation runs under it): an open mission's card starts below it. Pinned
           // messages have no bar here: they wait above the first message, revealed by pulling down (`PinnedLines`).
-          <View style={{ backgroundColor: c.bg, paddingTop: headerHeight }}>
+          <View style={{ backgroundColor: walled ? "transparent" : c.bg, paddingTop: headerHeight }}>
             {pinned ? (
               <View style={styles.pin}>
                 <MissionCardView mission={pinned} pinned />
@@ -2988,6 +3017,7 @@ function Chat({
                             bottomInset={dockHeight}
                             keyboardLift={lift}
                             onAsk={onSend}
+                            channelId={channelId}
                           />
                         ) : channel && helloAgent && !dm && !isThread ? (
                           <ChannelHello
@@ -3024,13 +3054,25 @@ function Chat({
             // The conversation fades under the floating header, as it does under the box. Not under a pinned bar
             // or card: the list already starts below them, and a header-tall fade there was a dark band over the
             // first messages (the pinned bar's own hairline is the edge). Solid behind the status bar: a message
-            // passing there showed through the clock and the indicators, its words cut by them.
-            <LinearGradient
-              pointerEvents="none"
-              colors={[c.bg, c.bg, withOpacity(c.bg, 0.86), withOpacity(c.bg, 0)]}
-              locations={[0, topFadeSolid, Math.max(0.62, topFadeSolid), 1]}
-              style={[styles.topFade, { height: headerHeight + 28 }]}
-            />
+            // passing there showed through the clock and the indicators, its words cut by them. Over a background
+            // it fades into the background itself, never into a band of the page's color.
+            walled && wallSize ? (
+              <WallpaperBand
+                wallpaper={backdrop.wallpaper}
+                strength={backdrop.strength}
+                width={wallSize.width}
+                height={wallSize.height}
+                band={headerHeight + 28}
+                solid={topFadeSolid}
+              />
+            ) : (
+              <LinearGradient
+                pointerEvents="none"
+                colors={[c.bg, c.bg, withOpacity(c.bg, 0.86), withOpacity(c.bg, 0)]}
+                locations={[0, topFadeSolid, Math.max(0.62, topFadeSolid), 1]}
+                style={[styles.topFade, { height: headerHeight + 28 }]}
+              />
+            )
           ) : null}
           {channel && !dm && !isThread && member && showList ? (
             // The channel greets you under the bar, as the web's: a newcomer's #general, or the first channel of a day.
@@ -3065,13 +3107,26 @@ function Chat({
                 onLayout={onComposerBoxLayout}
                 style={[styles.composer, { paddingBottom: bottomPad }]}
               >
-                {/* The conversation fades under the box: no hard edge above it. */}
-                <LinearGradient
-                  pointerEvents="none"
-                  colors={[withOpacity(c.bg, 0), withOpacity(c.bg, 0.9), c.bg]}
-                  locations={[0, 0.3, 1]}
-                  style={StyleSheet.absoluteFill}
-                />
+                {/* The conversation fades under the box: no hard edge above it. Over a background, into the
+                    background itself. */}
+                {walled && wallSize ? (
+                  <WallpaperUnder
+                    wallpaper={backdrop.wallpaper}
+                    strength={backdrop.strength}
+                    width={wallSize.width}
+                    height={wallSize.height}
+                    box={endInset}
+                    keyboard={keyboardAt}
+                    lift={lift}
+                  />
+                ) : (
+                  <LinearGradient
+                    pointerEvents="none"
+                    colors={[withOpacity(c.bg, 0), withOpacity(c.bg, 0.9), c.bg]}
+                    locations={[0, 0.3, 1]}
+                    style={StyleSheet.absoluteFill}
+                  />
+                )}
                 <Connection status={realtime} />
                 {banner && !org?.deletion ? <NoAiBanner banner={banner} /> : null}
                 <UnavailableLines notices={notices} />
@@ -3576,6 +3631,16 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   pin: { paddingHorizontal: 12, paddingBottom: 10 },
   day: { alignSelf: "center", textAlign: "center", fontWeight: "600" },
+  // A day's line over a background: a small glass plate (as the design's).
+  dayPlate: {
+    alignSelf: "center",
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 11,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  dayOn: { textAlign: "center", fontWeight: "600" },
+  wallpaper: { position: "absolute", top: 0, left: 0 },
   listPad: { paddingTop: 8, paddingBottom: 8 },
   composer: { paddingHorizontal: 10, paddingTop: 6 },
   readOnly: { textAlign: "center", paddingHorizontal: 16, paddingVertical: 12 },

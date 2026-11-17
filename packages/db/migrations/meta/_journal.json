@@ -1972,8 +1972,29 @@
     {
       "idx": 283,
       "version": "7",
-      "when": 1794867209067,
-      "tag": "0286_support_requests",
+      "when": 1794867197842,
+      "tag": "0286_confidential_threads",
+      "breakpoints": true
+    },
+    {
+      "idx": 284,
+      "version": "7",
+      "when": 1794867198842,
+      "tag": "0287_confidential_thread_ai",
+      "breakpoints": true
+    },
+    {
+      "idx": 285,
+      "version": "7",
+      "when": 1794867298842,
+      "tag": "0288_next_account_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 286,
+      "version": "7",
+      "when": 1794913917288,
+      "tag": "0289_support_requests",
       "breakpoints": true
     }
   ]

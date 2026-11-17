@@ -56,7 +56,8 @@ import { usagePauseCardOf, usageWaitOf } from "@agenteschat/client/lib/usage-pau
 import { appVia } from "@agenteschat/client/lib/via";
 import { listedText, voiceOf } from "@agenteschat/client/lib/voice";
 import { type ReplyStop, showsActivity, splitCanceled } from "@agenteschat/client/lib/work";
-import type { AgentColorName } from "@agenteschat/ui/agent/engine";
+import { type AgentColorName, mixHex } from "@agenteschat/ui/agent/engine";
+import { WALLPAPER_LIFT } from "@agenteschat/ui/sky/wallpaper";
 import { useQueryClient } from "@tanstack/react-query";
 import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -460,7 +461,11 @@ function RowBody({
   const onRight = mine && mineOnRight(look.style);
   const bubbled = look.style === "bubbles";
   const compact = look.style === "compact";
-  const { scheme } = useTheme();
+  const { scheme, shadows } = useTheme();
+  // Over a background: someone else's bubble lifted off it, every bubble with the cards' light shadow.
+  const lifted = look.wallpaper === true;
+  const lift = WALLPAPER_LIFT[scheme === "dark" ? "dark" : "light"];
+  const bubbleShadow = lifted ? { boxShadow: shadows.e1 } : null;
   const roles = useRoles(orgId).data?.roles;
   const member = m.author.type === "person" && m.author.id ? dir.memberById.get(m.author.id) : undefined;
   const roleColor = member ? memberRoleColor(member, roles ?? []) : undefined;
@@ -561,6 +566,7 @@ function RowBody({
           styles.bubbleEnd,
           BUBBLE_RUN[run],
           { backgroundColor: (bubbled && look.fill) || c.bubble },
+          bubbleShadow,
         ]}
       >
         {quote ? <QuotePlate reply={quote} onJump={onQuote} {...(solidInk ? { ink: solidInk } : {})} /> : null}
@@ -758,9 +764,15 @@ function RowBody({
         </Text>
       </View>
     ) : null;
+  // Someone else's bubble: the gray, lifted off a background; a mention of me tints it amber.
+  const otherFill = lifted ? lift : c.bubble;
+  const mentionFill = lifted ? mixHex(lift, c.amber, AMBER_TINT) : `${c.amber}21`;
+  const otherBubble = mentionsMe ? mentionFill : otherFill;
   // What is painted behind someone else's words, bottom first: the screen, then the bubble or a mention's tint.
   const tinted = mentionsMe ? [c.bg, `${c.amber}${bubbled ? "21" : "17"}`] : null;
-  const behindWords = tinted ?? [bubbled ? c.bubble : c.bg];
+  const plainBehind = tinted ?? [bubbled ? c.bubble : c.bg];
+  // A lifted bubble is solid: its own color is all there is behind its words.
+  const behindWords = bubbled && lifted ? [otherBubble] : plainBehind;
   const messageWords = body ? (
     <MessageText
       body={body}
@@ -862,13 +874,7 @@ function RowBody({
                   <>
                     {pinLine}
                     {reportOpened}
-                    <View
-                      style={[
-                        lookRows.bubble,
-                        OTHER_RUN[run],
-                        { backgroundColor: mentionsMe ? `${c.amber}21` : c.bubble },
-                      ]}
-                    >
+                    <View style={[lookRows.bubble, OTHER_RUN[run], { backgroundColor: otherBubble }, bubbleShadow]}>
                       {!grouped && (look.names || tagged) ? who(true) : null}
                       {quote ? <QuotePlate reply={quote} onJump={onQuote} /> : null}
                       {opener}
@@ -1386,6 +1392,9 @@ const QUOTE_GAP = 2;
 const PIN_GAP = 2;
 
 /** The bubble's corners by its place in a run of my rows: the sides it shares with its neighbours square off. */
+/** A mention's amber over a lifted bubble, as much as its tint (`21`, hex) shows over the gray. */
+const AMBER_TINT = 0x21 / 0xff;
+
 const BUBBLE_RUN: Record<RunPosition, { borderTopRightRadius?: number; borderBottomRightRadius?: number }> = {
   solo: { borderBottomRightRadius: BUBBLE_CUT },
   start: { borderBottomRightRadius: 6 },
