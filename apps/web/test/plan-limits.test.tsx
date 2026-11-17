@@ -543,9 +543,9 @@ describe("IA e uso › Contas: the order of use at a limit (ADR 0041 §6)", () =
 
   test("an account signed in once per agent is one row with one place; moving it moves all its logins", async () => {
     const state = onPlans();
-    // Trabalho signed in three times, once per agent, with Pessoal placed between two of its logins.
+    // Trabalho signed in three times for all agents (a run may move to each), with Pessoal placed between two of them.
     const team = (id: string, useOrder: number) =>
-      claude(id, "Trabalho", { email: "trabalho@example.com", sameAs: "acct_t1", useOrder, shared: false });
+      claude(id, "Trabalho", { email: "trabalho@example.com", sameAs: "acct_t1", useOrder, shared: true });
     await go("settings/usage", state, [
       team("acct_t1", 0),
       claude("acct_p", "Pessoal", { useOrder: 1, sameAs: "acct_p" }),

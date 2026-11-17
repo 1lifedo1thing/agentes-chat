@@ -137,6 +137,12 @@ test("in the order of use, moving one login of an account signed in once per age
     createdAt: new Date(Date.UTC(2026, 10, 1, 13)),
   });
   const team = Array.from({ length: 13 }, (_, i) => id(i + 1));
+  // Only a login a run may move to has a place: the thirteen are made for all agents and signed in.
+  for (const accountId of team)
+    await t.db
+      .update(schema.machineAccounts)
+      .set({ shared: true, status: "active" })
+      .where(eq(schema.machineAccounts.id, accountId));
   const put = async (accountId: string, index: number) => {
     const res = await asWalter(`/ai-accounts/${accountId}/order`, { method: "PUT", json: { index } });
     expect(res.status).toBe(200);
