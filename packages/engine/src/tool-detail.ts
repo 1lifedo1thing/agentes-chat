@@ -241,8 +241,12 @@ export function scrubSignIns(text: string, note: string): { text: string; found:
   return { text: out, found };
 }
 
-/** An address's user and password (`postgres://user:pass@host`). */
-const USERINFO = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@'"]+@/gi;
+/**
+ * An address's user and password (`postgres://user:pass@host`), found from its `://` with its scheme checked behind
+ * it. Looked for from each letter a scheme could start at, one long word of dots or dashes costs the square of its
+ * length.
+ */
+const USERINFO = /:\/\/(?<=\b[a-z][a-z0-9+.-]*:\/\/)[^\s/?#@'"]+@/gi;
 /**
  * The value after an option named for a secret (`--password hunter2`, `--api-key k`), a quoted one whole, also where
  * its quotes are written with backslashes: the option may open a quoted command (`sh -c "--token …"`), and a command
@@ -261,7 +265,7 @@ const SECRET_OPTION =
  * `token=` values) and the value after a secret-named option (`--password ***`): text that leaves its place.
  */
 export const redactCredentials = (text: string) =>
-  maskValuesAfter(redactCommon(maskCredentials(text).replace(USERINFO, "$1***@")), SECRET_OPTION);
+  maskValuesAfter(redactCommon(maskCredentials(text).replace(USERINFO, "://***@")), SECRET_OPTION);
 
 /** An absolute path two parts deep or more (`/home/ada/x.jsonl`, `~/x/y`, `C:\Users\x`), never a URL's. */
 const ABSOLUTE_PATH = /(?<![\w:/.~\\-])(?:~|[A-Za-z]:)?(?:[\\/][^\s\\/:"'()<>,;]+){2,}[\\/]?/g;

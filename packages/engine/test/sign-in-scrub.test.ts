@@ -59,12 +59,16 @@ test("scrubbed twice it reads the same, and a value that only starts like the no
   }
 });
 
-test("an option with a long name is read in linear time", () => {
+test("an option with a long name and an address with a long scheme are read in linear time", () => {
   // One word of 200,000 characters, each `token` of it a place where the option's name could hold a secret's.
   const option = `--${"token".repeat(40_000)}`;
+  // And one where each letter could start an address's scheme.
+  const scheme = "a.".repeat(100_000);
   const started = performance.now();
   expect(redactCredentials(option)).toBe(option);
   expect(redactCredentials(`${option} fake-value`)).toBe(`${option} ***`);
   expect(redactCredentials(`${option}s 4096`)).toBe(`${option}s 4096`);
+  expect(redactCredentials(scheme)).toBe(scheme);
+  expect(redactCredentials(`${scheme}b://ana:fake-value@db.example.com/x`)).toBe(`${scheme}b://***@db.example.com/x`);
   expect(performance.now() - started).toBeLessThan(250);
 });
