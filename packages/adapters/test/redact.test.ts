@@ -230,6 +230,50 @@ test("the same credential as other writers spell it", () => {
     ["DB_PASSWORD:\n  API_TOKEN: fake-next-line\n  PORT: 5432", "DB_PASSWORD:\n  API_TOKEN: ***\n  PORT: 5432"],
     // A value on several lines.
     ['"token":\n  "fake first\nfake second",\n"n": 1', '"token":\n  ***,\n"n": 1'],
+    // `=` as a JSON writer that escapes HTML writes it.
+    [
+      '{"body":"grant_type\\u003drefresh_token\\u0026refresh_token\\u003dfake-form ok"}',
+      '{"body":"grant_type\\u003drefresh_token\\u0026refresh_token\\u003d*** ok"}',
+    ],
+    // A bearer value whose slashes are written `\/`.
+    [
+      String.raw`{"h":"Authorization: Bearer ab\/cdefgh\/fake+bearer==","n":1}`,
+      '{"h":"Authorization: Bearer ***","n":1}',
+    ],
+    // What is glued to a quoted value is one word with it, up to what ends a word.
+    [String.raw`export TOKEN=\"fake-a\"fake-b && run`, "export TOKEN=*** && run"],
+    [
+      `TOKEN='fake a'fake-b; n=1 (token="fake-a") {token: "fake-a", n: 1}`,
+      "TOKEN=***; n=1 (token=***) {token: ***, n: 1}",
+    ],
   ];
   for (const [text, masked] of spelled) expect(redactCommon(text)).toBe(masked);
+});
+
+test("a value ends at a line end or a tab as JSON writes them, and the next line's name and value are read on their own", () => {
+  // Text that holds JSON and is not JSON itself: a message quoting a record, a command, a result cut off.
+  const written: [text: string, masked: string][] = [
+    [
+      String.raw`it sent {"content":"token: fake-a\npassword: fake-b\nport: 1"} and failed`,
+      String.raw`it sent {"content":"token: ***\npassword: ***\nport: 1"} and failed`,
+    ],
+    [
+      String.raw`printf 'token: fake-a\npassword: fake-b\n' > .env`,
+      String.raw`printf 'token: ***\npassword: ***\n' > .env`,
+    ],
+    [
+      String.raw`{"raw":"x-api-key: fake-a\r\nx-auth-token: fake-b\r\naccept: text/plain`,
+      String.raw`{"raw":"x-api-key: ***\r\nx-auth-token: ***\r\naccept: text/plain`,
+    ],
+    [
+      String.raw`{"raw":"token: fake-a\tpassword: fake-b\tport: 1`,
+      String.raw`{"raw":"token: ***\tpassword: ***\tport: 1`,
+    ],
+    // Written twice, and four times over.
+    [
+      String.raw`API_TOKEN = fake-a\\nDB_PASSWORD = fake-b\\\\nPORT = 1`,
+      String.raw`API_TOKEN = ***\\nDB_PASSWORD = ***\\\\nPORT = 1`,
+    ],
+  ];
+  for (const [text, masked] of written) expect(redactCommon(text)).toBe(masked);
 });

@@ -1330,6 +1330,24 @@ test("masking: a credential written as JSON inside a string is gone, at any dept
   });
 });
 
+test("masking: in text that can't be opened, a value ends at a written line end, and an option's value goes whole behind written quotes", async () => {
+  const quoting = [
+    String.raw`it sent {"file":{"path":"config.yml","content":"token: fake-first\npassword: fake-second\nport: 1"}} and`,
+    String.raw`ran printf 'token: fake-first\npassword: fake-second\n' > .env then`,
+    String.raw`{"exec":{"command":"mysql --password \"fake-first fake-second\" -u ana"}}`,
+    `sh -c '--token fake-first run' and {"args":"--api-key fake-second -v"}`,
+  ].join("\n");
+  await db.update(schema.messages).set({ body: quoting }).where(eq(schema.messages.id, messages.other));
+  expect(await text(ask("message", messages.other, "text", { requestId: requests.owner }))).toBe(
+    [
+      String.raw`it sent {"file":{"path":"config.yml","content":"token: ***\npassword: ***\nport: 1"}} and`,
+      String.raw`ran printf 'token: ***\npassword: ***\n' > .env then`,
+      '{"exec":{"command":"mysql --password *** -u ana"}}',
+      `sh -c '--token *** run' and {"args":"--api-key *** -v"}`,
+    ].join("\n"),
+  );
+});
+
 test("masking: a record's texts are read as they are, not as JSON writes them, in a call's input and in a result kept as a string", async () => {
   const mine = { requestId: requests.owner };
   const put = (seq: number, data: Record<string, unknown>) =>

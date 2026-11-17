@@ -10,14 +10,22 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
   [
     "a file's lines",
     { file: { path: "config.yml", content: `token: ${first}\npassword: ${second}\nport: 1` } },
-    ["config.yml", "port: 1"],
+    ['"path":"config.yml"', String.raw`"content":"token: ***\npassword: ***\nport: 1"`],
   ],
-  ["headers as one text", { req: { raw: `x-api-key: ${first}\r\nx-auth-token: ${second}\r\n` } }, ["x-api-key: "]],
-  ["a tab between two", { req: { raw: `token: ${first}\tpassword: ${second}` } }, ["token: "]],
+  [
+    "headers as one text",
+    { req: { raw: `x-api-key: ${first}\r\nx-auth-token: ${second}\r\n` } },
+    [String.raw`"x-api-key: ***\r\nx-auth-token: ***\r\n"`],
+  ],
+  [
+    "a tab between two",
+    { req: { raw: `token: ${first}\tpassword: ${second}` } },
+    [String.raw`"token: ***\tpassword: ***`],
+  ],
   [
     "an env file in a list",
     { files: [{ path: ".env", content: `API_TOKEN = ${first}\nDB_PASSWORD = ${second}\n` }] },
-    [".env", "API_TOKEN = "],
+    ['"path":".env"', String.raw`"content":"API_TOKEN = ***\nDB_PASSWORD = ***\n"`],
   ],
   ["an option's value", { exec: { args: `--password ${first} -u ana` } }, ["--password *** -u ana"]],
   [

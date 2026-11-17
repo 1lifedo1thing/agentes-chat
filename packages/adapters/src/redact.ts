@@ -20,24 +20,30 @@ const FIELD_NAME = new RegExp(`${FIELD}$`, "i");
  * A quoted value, whole, however many times the text it sits in was itself written as a JSON string: each time
  * doubles the backslashes before a quote and adds one. So the value ends at the quote with as many backslashes as
  * the one that opened it (or that many and escaped backslashes of its own), or with fewer: the string around it
- * ended first. One with no such end is masked as far as its next quote, an unquoted value up to its first space.
- * `group` is the number of its first capturing group.
+ * ended first. One with no such end is masked as far as its next quote. An unquoted value goes up to its first
+ * space, or to a line end or a tab as JSON writes them (`\n`, `\r`, `\t`): the next line's name and value are then
+ * read on their own. `group` is the number of its first capturing group, `glued` what a quoted value takes with it.
  */
-function valueAt(group: number) {
+function valueAt(group: number, glued = "") {
   const [slashes, quote] = [`\\${group}`, `\\${group + 1}`];
   const quoted = String.raw`(\\*)(["'])[\s\S]*?(?<!\\)(?:${slashes}(?:${slashes}${slashes}\\\\)*|(?!${slashes})\\*)${quote}`;
-  return String.raw`(?:${quoted}|"[^"]*"|'[^']*'|\S+)`;
+  return String.raw`(?:(?:${quoted}|"[^"]*"|'[^']*')${glued}|(?:[^\s\\]|\\+(?![nrt\\]))+)`;
 }
 
-/** What stands between a name and its value: `=` or `:`, also as an address writes them (`%3D`). */
-const IS = "(?:[=:]|%(?:25)*3[AD])";
+/**
+ * What stands between a name and its value: `=` or `:`, also as an address writes them (`%3D`) and `=` as a code
+ * point (`\u003d`, as a JSON writer that escapes HTML writes it).
+ */
+const IS = String.raw`(?:[=:]|%(?:25)*3[AD]|\\+u003d)`;
+/** What a shell reads as one word with the quoted value before it (`TOKEN="abc"def`). */
+const GLUED = String.raw`[^\s"'\\,;&|<>()[\]{}]*`;
 /**
  * `password=…`, `token: …`: the value up to its first space, or a quoted one whole. A name with nothing after it on
  * its line takes the next line as its value, unless that line names a credential of its own: masking that name
  * would leave its value.
  */
 const NAMED_VALUE = new RegExp(
-  String.raw`((?:${NAME})\s*${IS}(?:[^\S\n]*(?=\S)|\s*(?![\w.-]*(?:${NAME})\s*${IS})))${valueAt(2)}`,
+  String.raw`((?:${NAME})\s*${IS}(?:[^\S\n]*(?=\S)|\s*(?![\w.-]*(?:${NAME})\s*${IS})))${valueAt(2, GLUED)}`,
   "gi",
 );
 /**
@@ -63,16 +69,19 @@ const WRITTEN_FIELD_VALUE = new RegExp(
  * depth of JSON inside a JSON string. The agent's own secrets are masked by their values (ADR 0027) before this.
  */
 export function redactCommon(text: string): string {
-  return text
-    .replace(/\bagm_[A-Za-z0-9_-]{6,}/g, "agm_***")
-    .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi, "$1 ***")
-    .replace(/\b(sk-(?:ant-)?[A-Za-z0-9_-]{12,})/g, "sk-***")
-    .replace(/\b(gh[pousr]_[A-Za-z0-9._-]{20,}|github_pat_[A-Za-z0-9_]{20,})/g, "gh_***")
-    .replace(/\b(xox[abposr]-[A-Za-z0-9-]{10,})/g, "xox-***")
-    .replace(/\b(AKIA[0-9A-Z]{16})\b/g, "AKIA***")
-    .replace(FIELD_VALUE, "$1***")
-    .replace(WRITTEN_FIELD_VALUE, "$1***")
-    .replace(NAMED_VALUE, "$1***");
+  return (
+    text
+      .replace(/\bagm_[A-Za-z0-9_-]{6,}/g, "agm_***")
+      // A `/` may be written `\/`, as a JSON writer may.
+      .replace(/\b(Bearer|Basic)\s+(?:[A-Za-z0-9._~+/=-]|\\+\/){8,}/gi, "$1 ***")
+      .replace(/\b(sk-(?:ant-)?[A-Za-z0-9_-]{12,})/g, "sk-***")
+      .replace(/\b(gh[pousr]_[A-Za-z0-9._-]{20,}|github_pat_[A-Za-z0-9_]{20,})/g, "gh_***")
+      .replace(/\b(xox[abposr]-[A-Za-z0-9-]{10,})/g, "xox-***")
+      .replace(/\b(AKIA[0-9A-Z]{16})\b/g, "AKIA***")
+      .replace(FIELD_VALUE, "$1***")
+      .replace(WRITTEN_FIELD_VALUE, "$1***")
+      .replace(NAMED_VALUE, "$1***")
+  );
 }
 
 /** An option named for a secret, as one text of a list of arguments (`--password`, `-api-key`). */
