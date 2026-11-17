@@ -647,6 +647,19 @@ export async function setAgentAccess(
   if (!admin && widens(current, widening)) {
     throw new ForbiddenError("Only an admin can give an agent new access. Its owner can only take access away.");
   }
+  // The audit line: what the save says of the team's connections and built-ins, and of the actor's own connections
+  // apart (`own`), which only they read (`listAudit`). What it says of someone else's own changes nothing: left out.
+  const ownerOf = new Map(live.map((c) => [c.id, c.ownerUserId]));
+  const said = (owner: string | null) => {
+    const of = (id: string | null | undefined) => (id ? (ownerOf.get(id) ?? null) : null) === owner;
+    return {
+      connectors: Object.keys(input.connectors ?? {}).filter((k) => input.connectors[k] && of(k)),
+      scopes: (input.scopes ?? []).filter((g) => of(g.connectionId)).map((g) => g.scope),
+      allow: (input.tools?.allow ?? []).filter((t) => of(t.connectionId)).map((t) => t.name),
+      deny: (input.tools?.deny ?? []).filter((t) => of(t.connectionId)).map((t) => t.name),
+    };
+  };
+  const own = said(actorId);
   await db.transaction(async (tx) => {
     // The right hand's shared seat on the workspace's computer (ADR 0175) goes with its last computer grant: the
     // computer stops what runs there, and a grant given again starts an empty one. A tool left on by name is a grant.
@@ -676,10 +689,8 @@ export async function setAgentAccess(
       target: { type: "agent", id: agentId },
       details: {
         all: input.all,
-        connectors: Object.keys(input.connectors ?? {}).filter((k) => input.connectors[k]),
-        scopes: (input.scopes ?? []).map((s) => s.scope),
-        allow: (input.tools?.allow ?? []).map((t) => t.name),
-        deny: (input.tools?.deny ?? []).map((t) => t.name),
+        ...said(null),
+        ...(Object.values(own).some((l) => l.length) ? { own, personalOf: actorId } : {}),
       },
     });
   });

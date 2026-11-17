@@ -172,13 +172,20 @@ export async function dropAgentRules(
     .delete(approvalRules)
     .where(and(eq(approvalRules.orgId, orgId), inArray(approvalRules.agentId, agentIds)))
     .returning();
+  const owners = await personalOwners(tx, gone);
   for (const rule of gone) {
     await recordAudit(tx, {
       orgId,
       actor,
       action: RULE_REMOVED_AUDIT,
       target: { type: "agent", id: rule.agentId },
-      details: { connectionId: rule.connectionId, tool: rule.tool, action: rule.action, reason: "owner_changed" },
+      details: {
+        connectionId: rule.connectionId,
+        tool: rule.tool,
+        action: rule.action,
+        reason: "owner_changed",
+        ...personalOf(owners, rule),
+      },
     });
   }
   // "Merge without asking" is the same kind of word, and goes with it.
@@ -281,7 +288,28 @@ export async function removeApprovalRule(
       actor: { type: "person", id: actorId },
       action: RULE_REMOVED_AUDIT,
       target: { type: "agent", id: agentId },
-      details: { connectionId: gone.connectionId, tool: gone.tool, action: gone.action },
+      details: {
+        connectionId: gone.connectionId,
+        tool: gone.tool,
+        action: gone.action,
+        ...personalOf(await personalOwners(tx, [gone]), gone),
+      },
     });
   });
 }
+
+/** The person each rule's own connection is of, for its audit line's `personalOf` (`listAudit`). */
+async function personalOwners(tx: Executor, rules: { connectionId: string | null }[]) {
+  const ids = [...new Set(rules.flatMap((r) => (r.connectionId ? [r.connectionId] : [])))];
+  if (ids.length === 0) return new Map<string, string>();
+  const rows = await tx
+    .select({ id: connectorConnections.id, owner: connectorConnections.ownerUserId })
+    .from(connectorConnections)
+    .where(inArray(connectorConnections.id, ids));
+  return new Map(rows.flatMap((r) => (r.owner ? [[r.id, r.owner] as const] : [])));
+}
+
+const personalOf = (owners: Map<string, string>, rule: { connectionId: string | null }) => {
+  const owner = rule.connectionId ? owners.get(rule.connectionId) : undefined;
+  return owner ? { personalOf: owner } : {};
+};

@@ -41,7 +41,7 @@ import {
   syncCustomTools,
   type ToolAccess,
 } from "./custom";
-import { personalTool, usableConnections } from "./personal";
+import { auditLabel, personalTool, usableConnections } from "./personal";
 import { applyToolPins } from "./pins";
 import { presetForServer } from "./presets";
 import type { McpServerInfo } from "./server-icon";
@@ -468,6 +468,7 @@ export function createConnectorToolSource(
     const prefix = toolPrefixOfConnection(connection);
     // Never Composio's: no server at its address ever reads a request of ours, so none is the operator's own.
     const vouched = !composio && listedSecret(connection) !== undefined;
+    const named = auditLabel(connection);
     return classified.flatMap((row): ToolDefinition[] => {
       const tool = byName.get(row.name);
       const access = row.access as ToolAccess;
@@ -482,7 +483,7 @@ export function createConnectorToolSource(
         : (tool.description ?? tool.name);
       const built: ToolDefinition = {
         name: exposedToolName(prefix, tool.name),
-        description: cutText(`[${connection.label}] ${row.label}: ${said}`, 1024),
+        description: cutText(`[${named}] ${row.label}: ${said}`, 1024),
         inputSchema: tool.inputSchema?.type === "object" ? tool.inputSchema : { type: "object" },
         scope: customScope(connection.id, access),
         connectionId: connection.id,
@@ -490,7 +491,7 @@ export function createConnectorToolSource(
         connector: composio
           ? { key: connectorKeyOf({ toolkit: composio.way.toolkit }), via: "composio", tool: tool.name }
           : { key: connectorKeyOf(connection), via: "mcp", tool: tool.name },
-        connectorLabel: connection.label,
+        connectorLabel: named,
         service: preset,
         serviceIcon: connection.icon ?? undefined,
         toolPrefix: prefix,
@@ -508,7 +509,7 @@ export function createConnectorToolSource(
         describe: (input) => {
           const actions = executor ? composioActions(input) : null;
           return {
-            title: `${connection.label}: ${actions ? actions.join(", ") : row.label}`,
+            title: `${named}: ${actions ? actions.join(", ") : row.label}`,
             detail: `${tool.name} · ${Object.entries(input)
               .map(([k, v]) => `${k}=${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
               .join(" · ")}`,
@@ -529,7 +530,7 @@ export function createConnectorToolSource(
               { client: deps.composio.client, artifacts: deps.artifacts, resolveHost: deps.resolveHost },
               ctx,
               result,
-              connection.label,
+              named,
             );
             result = { ...result, content: kept };
           }
@@ -539,7 +540,12 @@ export function createConnectorToolSource(
               actor: { type: "agent", id: ctx.agentId },
               action: "connector.tool_changed",
               target: { type: "connector_connection", id: connection.id },
-              details: { tool: tool.name, runId: ctx.runId, isError: result.isError },
+              details: {
+                tool: tool.name,
+                runId: ctx.runId,
+                isError: result.isError,
+                ...(connection.ownerUserId ? { label: named, personalOf: connection.ownerUserId } : {}),
+              },
             }).catch(() => {});
           }
           return {
@@ -570,6 +576,7 @@ export function createConnectorToolSource(
         // A sign-in that stopped working has no tools until Reconectar.
         if (!def || connection.status === "needs_reconnect") continue;
         const prefix = toolPrefixOfConnection(connection);
+        const named = auditLabel(connection);
         let listed: McpTool[];
         try {
           listed = await serverTools(connection);
@@ -581,12 +588,12 @@ export function createConnectorToolSource(
           if (!mapped || mapped.ours) continue; // not in our catalog, or one we serve: never exposed
           const built: ToolDefinition = {
             name: exposedToolName(prefix, tool.name),
-            description: cutText(`[${connection.label}] ${tool.description ?? tool.name}`, 1024),
+            description: cutText(`[${named}] ${tool.description ?? tool.name}`, 1024),
             inputSchema: tool.inputSchema?.type === "object" ? tool.inputSchema : { type: "object" },
             scope: connectorScope(def.id, mapped.scope),
             connectionId: connection.id,
             connector: { key: def.id, via: "mcp", tool: tool.name },
-            connectorLabel: connection.label,
+            connectorLabel: named,
             service: def.id,
             toolPrefix: prefix,
             sensitive: mapped.sensitive === true,

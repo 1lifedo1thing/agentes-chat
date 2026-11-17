@@ -54,6 +54,7 @@ import {
 } from "./oauth-mcp";
 import { oauthReturnTo } from "./oauth-return";
 import {
+  auditLabel,
   connectionFor,
   connectionsOf,
   othersLabel,
@@ -1092,7 +1093,10 @@ export async function saveCustomTools(
       actor: { type: "person", id: actorId },
       action: "connector.custom_tools_classified",
       target: { type: "connector_connection", id: c.id },
-      details: { tools: input.tools.map((t) => ({ name: t.name, access: t.access })) },
+      details: {
+        tools: input.tools.map((t) => ({ name: t.name, access: t.access })),
+        ...(c.ownerUserId ? { label: auditLabel({ ...c, label }), personalOf: c.ownerUserId } : {}),
+      },
     });
   });
   caches.connections.delete(`${orgId}:active`);

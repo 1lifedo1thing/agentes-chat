@@ -1447,7 +1447,10 @@ describe("what a call and a card of it leave for others", () => {
         input: { email: `c${n}@example.com`, title: `Note ${n}`, why: "Walter asked me to note this in his own CRM." },
       });
       if (asked.type !== "approval") throw new Error(`expected a card, got ${asked.type}`);
-      expect(asked.approval.title).toStartWith(`CRM (${ACCOUNT}): `);
+      // Stored as others read it; its person's own list gives it whole.
+      expect(asked.approval.title).toStartWith("CRM: ");
+      const [his] = (await listApprovals(f.db, walter.id, f.org.id)).filter((a) => a.id === asked.approval.id);
+      expect(his?.title).toStartWith(`CRM (${ACCOUNT}): `);
       return asked.approval.id;
     };
     const first = await card(1);
@@ -1477,8 +1480,10 @@ describe("what a call and a card of it leave for others", () => {
       "approval.expired",
       "approval.refused",
     ]);
-    for (const r of lines) expect(String(r.details.title)).toMatch(/^(CRM|Work CRM): /);
-    expect(lines.filter((r) => String(r.details.title).startsWith("Work CRM: "))).toHaveLength(2);
+    // Anyone but its person reads the connection's name and the agent only.
+    for (const r of lines) expect(Object.keys(r.details).sort()).toEqual(["agentId", "label"]);
+    for (const r of lines) expect(String(r.details.label)).toMatch(/^(CRM|Work CRM)$/);
+    expect(lines.filter((r) => r.details.label === "Work CRM")).toHaveLength(2);
     expect(JSON.stringify(lines)).not.toContain(ACCOUNT);
   });
 

@@ -315,6 +315,19 @@ async function hiddenFrom(db: Database, orgId: string, userId: string, rows: Aud
 const CUSTOM_SERVER_ACTIONS: readonly string[] = ["connector.custom_connected", "connector.custom_reconnected"];
 
 /**
+ * What a line about someone else's own connection (`personalOf`) keeps for anyone else: its name as others read it
+ * (written so, `auditLabel`) and what a save says of the team's, never its tools, their levels or descriptions.
+ */
+const OTHERS_KEEP: readonly string[] = [
+  ...["label", "connection", "from", "to", "level", "connector", "connectionId", "personal", "agentId"],
+  ...["all", "connectors", "scopes", "allow", "deny"],
+];
+const othersOwn = (details: Record<string, unknown>, actorId: string) =>
+  typeof details.personalOf === "string" && details.personalOf !== actorId
+    ? Object.fromEntries(Object.entries(details).filter(([k]) => OTHERS_KEEP.includes(k)))
+    : details;
+
+/**
  * The org's audit log, newest first, for admins (`configure`): what people
  * changed and what agents did, with names (an agent or person since removed
  * keeps its id and a null name).
@@ -446,7 +459,7 @@ export async function listAudit(
           ? r.details
           : auditInput(
               !CUSTOM_SERVER_ACTIONS.includes(r.action)
-                ? r.details
+                ? othersOwn(r.details, actorId)
                 : r.details.personal === true && r.actorId !== actorId
                   ? // Someone else's own server: its address and account stay theirs, as on the lists.
                     {

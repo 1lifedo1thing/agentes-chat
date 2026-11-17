@@ -59,7 +59,11 @@ export function othersLabel(label: string, account: string | null | undefined) {
   return named ? `${named[1]}${named[3] ?? ""}` : label;
 }
 
-/** A connection's name as an audit line keeps it: every reader of the log is "someone else" to a personal one. */
+/**
+ * A connection's name as anyone but its person reads it, so the name everything outside its own rows carries: audit
+ * lines, and its tools' name, which every step, chip, status and card of a run copies. Its person's own rows and card
+ * read the whole name from the connection itself.
+ */
 export const auditLabel = (c: Pick<ConnectorConnection, "label" | "accountLabel" | "ownerUserId">) =>
   c.ownerUserId ? othersLabel(c.label, c.accountLabel) : c.label;
 

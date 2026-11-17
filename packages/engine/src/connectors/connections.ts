@@ -358,9 +358,9 @@ async function storeConnection(
         target: { type: "connector", id: row.id },
         details: {
           connector: input.connector,
-          label: row.label,
+          label: auditLabel(row),
           auth: input.authType,
-          ...(owner ? { personal: true } : {}),
+          ...(owner ? { personal: true, personalOf: owner } : {}),
         },
       });
     }
@@ -456,7 +456,12 @@ export async function renameConnection(db: Database, actorId: string, orgId: str
       actor: { type: "person", id: actorId },
       action: "connector.renamed",
       target: { type: "connector_connection", id: c.id },
-      details: { from: auditLabel(c), to: name, label: name },
+      details: {
+        from: auditLabel(c),
+        to: auditLabel(row),
+        label: auditLabel(row),
+        ...(c.ownerUserId ? { personalOf: c.ownerUserId } : {}),
+      },
     });
     return row;
   });
