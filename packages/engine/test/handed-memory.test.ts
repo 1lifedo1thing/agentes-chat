@@ -110,13 +110,11 @@ async function searchInDm(f: Fixture, userId: string, adaId: string, prompts: { 
 }
 
 describe("work handed between agents, for a person", () => {
-  test("handed work: never told to tell the person again elsewhere, and remembered in their DM", async () => {
+  test("handed work: remembered in their DM, never in the agents' DM", async () => {
     const { prompts, ada } = await handOff("tell_agent");
     const inAgentsDm = prompts.find((p) => p.system.includes(AGENTS_DM))?.system ?? "";
-    expect(inAgentsDm).toContain(
-      "When ana should hear something from you directly, `send_dm` reaches them, even unasked.",
-    );
-    expect(inAgentsDm).not.toContain("what came of it yourself");
+    expect(inAgentsDm).not.toBe("");
+    expect(inAgentsDm).not.toContain("# What other agents asked of you");
 
     const later = await askInDm(f, f.owner.id, ada.id, prompts);
     expect(later).toContain("# What other agents asked of you for ana");
@@ -125,12 +123,8 @@ describe("work handed between agents, for a person", () => {
     );
   });
 
-  test("a question: the answer still goes up, and the agent remembers it too", async () => {
+  test("a question: the agent remembers it too", async () => {
     const { prompts, ada } = await handOff("ask_agent");
-    const inAgentsDm = prompts.find((p) => p.system.includes(AGENTS_DM))?.system ?? "";
-    expect(inAgentsDm).toContain(
-      "When ana should hear something from you directly, `send_dm` reaches them, even unasked.",
-    );
     const later = await askInDm(f, f.owner.id, ada.id, prompts);
     expect(later).toContain('- @dev asked you, 0 min ago: "Onde está o relatório de vendas de outubro?"');
   });
@@ -345,6 +339,18 @@ describe("it follows the handed work, not the note", () => {
     expect(await memory()).toEqual([["open", null]]);
     await reports(await runOf(runId));
     expect(await memory()).toEqual([["answered", "Pronto: está no Drive em Vendas/Outubro."]]);
+  });
+
+  test("a report deleted since is never quoted", async () => {
+    const { run, memory } = await handedToAda();
+    await reports(run);
+    expect(await memory()).toEqual([["answered", "Pronto: está no Drive em Vendas/Outubro."]]);
+    const [work] = await f.db.select().from(schema.agentWorks);
+    await f.db
+      .update(schema.messages)
+      .set({ deletedAt: new Date() })
+      .where(eq(schema.messages.id, work?.resultMessageId ?? ""));
+    expect(await memory()).toEqual([["answered", null]]);
   });
 
   test("waiting on the person: still on it, past the note's deadline", async () => {

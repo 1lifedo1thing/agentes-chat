@@ -826,7 +826,7 @@ export async function buildRunContext(
   const samePerson = agentsDm ? await forSamePerson(db, run, fullHistory, trigger.id) : null;
   const history = samePerson ? samePerson.history : fullHistory;
 
-  // What other agents handed it for the person of this DM happened where no person reads, which this DM never shows.
+  // What other agents handed it for the person of this DM happened elsewhere (the agents' DM, a task), never shown here.
   const handedHere =
     channel.kind === "dm" && !agentsDm && !background && !options.routine && trigger.authorUserId
       ? handedFor(db, run.orgId, agent.id, trigger.authorUserId).catch(() => [])

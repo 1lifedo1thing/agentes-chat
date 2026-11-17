@@ -2431,7 +2431,7 @@ export const agentsDmsOf = (db: Executor, agentId: string, options: { tasks?: bo
 
 /**
  * What other agents asked or handed `agentId` for `personId` lately, latest first: in its DMs with them, and tasks the
- * right hand handed it. That work happened where no person reads it, which its DM with that person never shows:
+ * right hand handed it. That work happened away from its DM with that person, which never shows it:
  * without this, the agent asked about it there doesn't know what they mean. "For the person" as its reads in the
  * agents' DM count it: the person behind the run that asked (a routine's work never counts). A heads-up is news, not
  * a request: left out.
@@ -2537,7 +2537,7 @@ async function handedWorkState(
     ? await db
         .select({ body: messages.body, meta: messages.meta, runId: messages.agentRunId })
         .from(messages)
-        .where(and(eq(messages.orgId, orgId), eq(messages.id, work.resultMessageId)))
+        .where(and(eq(messages.orgId, orgId), eq(messages.id, work.resultMessageId), isNull(messages.deletedAt)))
     : [];
   const words = report && !String(report.meta.bodyCode ?? "").startsWith("work_end_") ? report.body : null;
   const answerHidden = !!words && !!report?.runId && (await runReadOutsideById(db, orgId, report.runId));
