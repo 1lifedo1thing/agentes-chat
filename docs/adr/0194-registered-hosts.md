@@ -60,11 +60,16 @@ stay exact and be written once.
    request's own registered host (`humanCheckRefusal` passes `hostLook`'s host to the check), never on another
    registered host, and never on one for the waiting lists.
 6. **The links that bring a person back.** `baseUrlFor(requestHost)` gives the registered host's address on a request
-   for one, else `PUBLIC_URL`. The password reset link and the email confirmation link (the host the request came in
-   on), an invitation's link and its email (the host it was created or re-sent from), the invitation links' list and
-   the join code's email use it. Nothing is kept on the invitation row: a re-send goes back to the host it is re-sent
-   from, and there are no automatic reminders. Everything else keeps the server's own address, left for later:
-   notifications and their emails, a join request's emails to admins and its answer, invitations agents send,
+   for one, else `PUBLIC_URL`. The confirmation link of an account signed up on that host, an invitation's link and its
+   email (the host it was created or re-sent from, by someone signed in there), the invitation links' list and the join
+   code's email (a link to the page, the code in the text) use it. Nothing is kept on the invitation row: a re-send goes
+   back to the host it is re-sent from, and there are no automatic reminders. The password reset link, and a
+   confirmation link asked for later or for a new address, always go to `PUBLIC_URL`: anyone may ask for them for any
+   account, without a session, and nothing ties an account to a host, so following the request's host would hand a token
+   that takes over the account, on every host, to whoever serves that registered host's traffic (its owner, or whoever
+   holds the domain once it lapses). Sending a reset back to its host would need the account's own host kept (where it
+   signed up), and the request's host used only when the two match. Everything else keeps the server's own address, left
+   for later: notifications and their emails, a join request's emails to admins and its answer, invitations agents send,
    connectors' and apps' OAuth returns, devices and computers, and the phone's links.
 7. **The logo** is served without a session at `GET /api/host-look/logo` for the request's own host only (no
    parameter names a host), with the image checks a workspace's logo has and a five-minute cache lifetime;

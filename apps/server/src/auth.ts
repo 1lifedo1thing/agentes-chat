@@ -247,9 +247,9 @@ export function createAuth(deps: {
               if (!(await emailAllowed("reset-email", user.email))) return;
               // Straight to our page (not Better Auth's redirect): the same link opens the phone app when it is
               // installed (universal link / App Link, app-links.ts) and the website otherwise; both reset with it.
-              // On a registered host, back to it (ADR 0194).
-              const base = await baseUrlFor(db, config.PUBLIC_URL, request?.headers.get("host"));
-              const url = `${base}/reset-password?token=${encodeURIComponent(token)}`;
+              // Always the main address, whatever host asked (ADR 0194): anyone may ask for any account's reset, and a
+              // registered host's traffic is its owner's to read.
+              const url = `${config.PUBLIC_URL.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(token)}`;
               // An account with no language yet (made by the owner link, or before sign-up kept one): the request's.
               const locale = emailLocale(user.locale ?? requestLocale(request?.headers.get("accept-language")));
               await queueEmail(db, {
@@ -312,7 +312,11 @@ export function createAuth(deps: {
                 .from(schema.users)
                 .where(eq(schema.users.id, user.id));
               const change = stored !== undefined && stored.email !== user.email.toLowerCase();
-              const base = await baseUrlFor(db, config.PUBLIC_URL, request?.headers.get("host"));
+              // Back to a registered host only for the account just made there; a link asked for later or a new
+              // address goes to the main address, as a reset does (ADR 0194).
+              const base = signingUp
+                ? await baseUrlFor(db, config.PUBLIC_URL, request?.headers.get("host"))
+                : config.PUBLIC_URL;
               await queueEmail(db, {
                 orgId: null,
                 key: `verify-email:${sha256(token)}`,

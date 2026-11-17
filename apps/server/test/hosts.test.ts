@@ -236,7 +236,7 @@ test("auth-config: unchanged on the main address; on a registered host its look 
   expect((await social(browser(s))).status).toBe(200);
 });
 
-test("the reset link and an invitation go back to the host they were asked on", async () => {
+test("a reset link goes to the main address wherever it was asked; a confirmation back to a host only for its sign-up", async () => {
   const s = await server();
   const owner = browser(s);
   await signUp(owner, "owner@example.com");
@@ -251,8 +251,24 @@ test("the reset link and an invitation go back to the host they were asked on", 
     await s.drain();
     return new URL(/https?:\/\/\S+\/reset-password\S*/.exec(s.email.sent.at(-1)?.text ?? "")?.[0] ?? "").origin;
   };
-  expect(await resetLink(on(browser(s), HOST))).toBe(HOST_ORIGIN);
+  // Anyone may ask for any account's reset: a registered host, whose traffic its owner reads, never gets its token.
+  expect(await resetLink(on(browser(s), HOST))).toBe(ORIGIN);
   expect(await resetLink(browser(s))).toBe(ORIGIN);
+
+  const confirmation = async (email: string) => {
+    await s.drain();
+    const text = s.email.sent.filter((m) => m.to[0] === email).at(-1)?.text ?? "";
+    return new URL(/https?:\/\/\S+\/api\/auth\/verify-email\S*/.exec(text)?.[0] ?? "").origin;
+  };
+  await signUp(on(browser(s), HOST), "dani@example.com");
+  expect(await confirmation("dani@example.com")).toBe(HOST_ORIGIN);
+  // A link is stamped to the second: asked for within the sign-up's, it would be the same email.
+  await Bun.sleep(1000 - (Date.now() % 1000));
+  const again = await on(browser(s), HOST)("/api/auth/send-verification-email", {
+    json: { email: "dani@example.com" },
+  });
+  expect(again.status).toBe(200);
+  expect(await confirmation("dani@example.com")).toBe(ORIGIN);
 
   const invite = async (b: Browser, email: string) => {
     const res = await b(`/api/app/organizations/${orgId}/invitations`, { json: { email, roleIds: [] } });
