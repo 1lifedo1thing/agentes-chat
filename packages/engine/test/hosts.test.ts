@@ -97,9 +97,9 @@ test("refusals: not a hostname, the server's own, too many; and a logo's own", a
   expect(await put("app.northwind.example:443")).toBe("host.invalid");
   expect(await put("localhost")).toBe("host.invalid");
   expect(await put("Chat.Example.com.")).toBe("host.own");
-  expect(await put("app.northwind.example", { name: "N", logo: { contentType: "image/png", base64: "PHN2Zy8+" } })).toBe(
-    "logo.type",
-  );
+  expect(
+    await put("app.northwind.example", { name: "N", logo: { contentType: "image/png", base64: "PHN2Zy8+" } }),
+  ).toBe("logo.type");
   expect(await db.select().from(schema.hosts)).toEqual([]);
 
   await db
@@ -116,7 +116,7 @@ test("the logo: stored, replaced, kept when left out, deleted with the host", as
   const host = "app.northwind.example";
   await putHost(deps, OWN, host, { name: "Northwind Studio", logo: { contentType: "image/png", base64: PNG } });
   const first = (await hostLook(db, host))?.logo;
-  expect(first).toMatch(/^host-logos\/app\.northwind\.example\/[0-9a-f]{16}\.png$/);
+  expect(first).toMatch(/^host-logos\/app\.northwind\.example\/[0-9a-f]{8}-[0-9a-f]{16}\.png$/);
   expect((await hostLogoFile(deps, host))?.contentType).toBe("image/png");
   expect(await hostLogoFile(deps, "other.northwind.example")).toBeNull();
 
@@ -148,28 +148,25 @@ test("the cache: kept per process, dropped at once on a write here", async () =>
   expect(await hostLook(db, host)).toBeNull();
 });
 
-test("the cache: a lookup that read before a delete here doesn't keep the deleted host", async () => {
-  const { db, blobs } = await world();
-  enableCaches(true);
-  const host = "app.northwind.example";
-  await putHost({ db, blobs }, OWN, host, { name: "Northwind Studio" });
+/** A database whose `select … from … where` reads its rows, then answers only when released. */
+function heldSelects(db: Database) {
   let release = () => {};
   const gate = new Promise<void>((r) => {
     release = r;
   });
-  let read = () => {};
-  const readDone = new Promise<void>((r) => {
-    read = r;
+  let readNow = () => {};
+  const read = new Promise<void>((r) => {
+    readNow = r;
   });
-  // Reads the row, then is held open until the delete has finished.
+  type Where = Parameters<ReturnType<ReturnType<Database["select"]>["from"]>["where"]>[0];
   const held = new Proxy(db, {
     get: (target, prop) =>
       prop === "select"
-        ? () => ({
+        ? (fields?: Parameters<Database["select"]>[0]) => ({
             from: (table: typeof schema.hosts) => ({
-              where: async (where: Parameters<ReturnType<ReturnType<Database["select"]>["from"]>["where"]>[0]) => {
-                const rows = await target.select().from(table).where(where);
-                read();
+              where: async (where: Where) => {
+                const rows = await (fields ? target.select(fields) : target.select()).from(table).where(where);
+                readNow();
                 await gate;
                 return rows;
               },
@@ -177,10 +174,88 @@ test("the cache: a lookup that read before a delete here doesn't keep the delete
           })
         : Reflect.get(target, prop),
   }) as Database;
-  const lookup = hostLook(held, host);
-  await readDone;
+  return { db: held, read, release };
+}
+
+/** A blob store whose writes, once written, answer only when released: one gate per write, in order. */
+function heldPuts(blobs: ReturnType<typeof createMemoryBlobStore>) {
+  const gates: (() => void)[] = [];
+  const store: typeof blobs = {
+    ...blobs,
+    put: async (...args: Parameters<typeof blobs.put>) => {
+      await blobs.put(...args);
+      await new Promise<void>((r) => gates.push(r));
+    },
+  };
+  return { store, release: (i: number) => gates[i]?.() };
+}
+
+test("the cache: a lookup that read before a delete here doesn't keep the deleted host", async () => {
+  const { db, blobs } = await world();
+  enableCaches(true);
+  const host = "app.northwind.example";
+  await putHost({ db, blobs }, OWN, host, { name: "Northwind Studio" });
+  const held = heldSelects(db);
+  const lookup = hostLook(held.db, host);
+  await held.read;
   expect(await deleteHost({ db, blobs }, host)).toBe(true);
-  release();
+  held.release();
   expect((await lookup)?.name).toBe("Northwind Studio");
   expect(await hostLook(db, host)).toBeNull();
+});
+
+test("a replace and a delete never interleave: the delete stays deleted, no logo left dangling", async () => {
+  const { db, blobs } = await world();
+  const host = "app.northwind.example";
+  await putHost({ db, blobs }, OWN, host, { name: "Northwind", logo: { contentType: "image/png", base64: PNG } });
+  const held = heldSelects(db);
+  // A rename that would read the row before the delete, if it read it outside the write's lock.
+  const rename = putHost({ db: held.db, blobs }, OWN, host, { name: "Renamed" });
+  await Promise.race([held.read, rename]);
+  const deleted = deleteHost({ db, blobs }, host);
+  held.release();
+  await rename;
+  expect(await deleted).toBe(true);
+  expect(await db.select().from(schema.hosts)).toEqual([]);
+  expect(await blobs.list("host-logos/")).toEqual([]);
+});
+
+test("two replaces with new logos: the last one's file stays, every other one is removed", async () => {
+  const { db, blobs } = await world();
+  const host = "app.northwind.example";
+  await putHost({ db, blobs }, OWN, host, { name: "Northwind", logo: { contentType: "image/png", base64: PNG } });
+  const slow = heldPuts(blobs);
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xda, 0x00, 0x02, 0x01, 0xff, 0xd9]).toString("base64");
+  const a = putHost({ db, blobs: slow.store }, OWN, host, {
+    name: "A",
+    logo: { contentType: "image/jpeg", base64: jpeg },
+  });
+  const b = putHost({ db, blobs: slow.store }, OWN, host, {
+    name: "B",
+    logo: { contentType: "image/png", base64: PNG },
+  });
+  await Bun.sleep(10);
+  slow.release(0);
+  await a;
+  slow.release(1);
+  const last = await b;
+  expect(await blobs.list("host-logos/")).toEqual([last.logo ?? ""]);
+});
+
+test("a replace that began before a delete: the logo it stored never outlives the host", async () => {
+  const { db, blobs } = await world();
+  const host = "app.northwind.example";
+  await putHost({ db, blobs }, OWN, host, { name: "Northwind", logo: { contentType: "image/png", base64: PNG } });
+  const slow = heldPuts(blobs);
+  const replace = putHost({ db, blobs: slow.store }, OWN, host, {
+    name: "Northwind",
+    logo: { contentType: "image/png", base64: PNG },
+  });
+  await Bun.sleep(10);
+  expect(await deleteHost({ db, blobs }, host)).toBe(true);
+  slow.release(0);
+  // The replace lands after the delete: a host of its own again, whose logo is there.
+  const row = await replace;
+  expect(await hostLogoFile({ db, blobs }, host)).not.toBeNull();
+  expect(await blobs.list("host-logos/")).toEqual([row.logo ?? ""]);
 });

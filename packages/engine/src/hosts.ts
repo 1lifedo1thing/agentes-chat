@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import type { BlobStore } from "@agenteschat/adapters";
 import { count, type Database, eq, schema, sql } from "@agenteschat/db";
 import { isAccentHex } from "@agenteschat/tokens/accent";
@@ -51,8 +52,16 @@ function registrable(host: string, own: ReadonlySet<string>) {
 }
 
 /**
+ * Every write of `hosts` holds this one transaction lock: a replace and a delete of the same host never interleave
+ * (a delete never comes back with a logo it removed), and two creates never both pass `HOSTS_MAX`.
+ */
+const lockHosts = (tx: Pick<Database, "execute">) => tx.execute(sql`select pg_advisory_xact_lock(hashtext('hosts'))`);
+
+/**
  * Registers a host or replaces its look (the operator's `PUT /hosts/{host}`). `accent` and `logo` left out are left as
- * they are (none on a new host); null clears them. The logo takes a workspace logo's checks (`readImage`).
+ * they are (none on a new host); null clears them. The logo takes a workspace logo's checks (`readImage`). A new logo
+ * is stored under a name of its own before the row, so no other write's cleanup can remove it; a file no committed row
+ * holds any more is removed only after the commit.
  */
 export async function putHost(
   deps: { db: Database; blobs: BlobStore },
@@ -66,34 +75,52 @@ export async function putHost(
 ): Promise<HostLook> {
   const h = registrable(host, own);
   if (input.accent && !isAccentHex(input.accent)) throw new ValidationError("accent must be a #rrggbb color");
-  const [before] = await deps.db.select().from(hosts).where(eq(hosts.host, h));
-  if (!before) {
-    const [{ n } = { n: 0 }] = await deps.db.select({ n: count() }).from(hosts);
-    if (n >= HOSTS_MAX) throw new ConflictError(`At most ${HOSTS_MAX} hosts`, "host.too_many", { max: HOSTS_MAX });
-  }
-  let logo = before?.logo ?? null;
+  let stored: string | null = null;
   if (input.logo) {
-    const { body, type, file } = readImage({ imageBase64: input.logo.base64, contentType: input.logo.contentType }, "logo");
-    logo = `host-logos/${h}/${file}`;
-    await deps.blobs.put(logo, body, { contentType: type });
-  } else if (input.logo === null) logo = null;
-  const accent = input.accent === undefined ? (before?.accent ?? null) : (input.accent?.toLowerCase() ?? null);
-  const [row] = await deps.db
-    .insert(hosts)
-    .values({ host: h, name: input.name, accent, logo })
-    .onConflictDoUpdate({ target: hosts.host, set: { name: input.name, accent, logo, updatedAt: sql`now()` } })
-    .returning();
+    const { body, type, file } = readImage(
+      { imageBase64: input.logo.base64, contentType: input.logo.contentType },
+      "logo",
+    );
+    stored = `host-logos/${h}/${randomBytes(4).toString("hex")}-${file}`;
+    await deps.blobs.put(stored, body, { contentType: type });
+  }
+  let saved: { row: HostLook; before?: HostLook };
+  try {
+    saved = await deps.db.transaction(async (tx) => {
+      await lockHosts(tx);
+      const [before] = await tx.select().from(hosts).where(eq(hosts.host, h));
+      if (!before) {
+        const [{ n } = { n: 0 }] = await tx.select({ n: count() }).from(hosts);
+        if (n >= HOSTS_MAX) throw new ConflictError(`At most ${HOSTS_MAX} hosts`, "host.too_many", { max: HOSTS_MAX });
+      }
+      const logo = input.logo === undefined ? (before?.logo ?? null) : stored;
+      const accent = input.accent === undefined ? (before?.accent ?? null) : (input.accent?.toLowerCase() ?? null);
+      const [row] = await tx
+        .insert(hosts)
+        .values({ host: h, name: input.name, accent, logo })
+        .onConflictDoUpdate({ target: hosts.host, set: { name: input.name, accent, logo, updatedAt: sql`now()` } })
+        .returning();
+      if (!row) throw new Error("host not saved");
+      return { row, before };
+    });
+  } catch (error) {
+    if (stored) await deps.blobs.delete(stored).catch(() => undefined);
+    throw error;
+  }
   caches.hosts.delete(h);
-  if (before?.logo && before.logo !== logo) await deps.blobs.delete(before.logo).catch(() => undefined);
-  if (!row) throw new Error("host not saved");
-  return row;
+  const old = saved.before?.logo;
+  if (old && old !== saved.row.logo) await deps.blobs.delete(old).catch(() => undefined);
+  return saved.row;
 }
 
 /** Forgets a host and its stored logo (the operator's `DELETE /hosts/{host}`). False when it wasn't registered. */
 export async function deleteHost(deps: { db: Database; blobs: BlobStore }, host: string): Promise<boolean> {
   const h = normalizeHost(host);
   if (!h) return false;
-  const [gone] = await deps.db.delete(hosts).where(eq(hosts.host, h)).returning();
+  const gone = await deps.db.transaction(async (tx) => {
+    await lockHosts(tx);
+    return (await tx.delete(hosts).where(eq(hosts.host, h)).returning())[0];
+  });
   caches.hosts.delete(h);
   if (gone?.logo) await deps.blobs.delete(gone.logo).catch(() => undefined);
   return Boolean(gone);

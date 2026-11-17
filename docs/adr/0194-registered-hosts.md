@@ -31,7 +31,10 @@ stay exact and be written once.
    `GET /hosts`, `PUT /hosts/{host}` (creates or replaces; `accent` and `logo` left out are left as they are, null
    clears them; the logo takes a workspace logo's checks) and `DELETE /hosts/{host}` (also deletes its logo).
    Refusals: `host.invalid` (not a hostname), `host.own` (`PUBLIC_URL`'s host or one of `EXTRA_TRUSTED_ORIGINS`'),
-   `host.too_many` (past 1,000). A server with none behaves exactly as before.
+   `host.too_many` (past 1,000). Every write of the table holds one transaction lock, so a replace and a delete never
+   interleave (a deleted host never comes back pointing at a logo the delete removed) and two creates never both pass
+   1,000. A new logo is stored under a name of its own before its row is written, and a logo no row holds any more is
+   removed only after the write commits. A server with none behaves exactly as before.
 2. **One resolver.** `normalizeHost` reads a `Host` header (or a host an operator typed) as one comparable name or
    nothing: lower case, one trailing dot dropped, and anything with a port, an IP address, a single label, a scheme,
    a path or a user refused. `hostLook(db, host)` returns the registered row for it or null. Every check below goes
