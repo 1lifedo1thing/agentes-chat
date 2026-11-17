@@ -83,7 +83,11 @@ export function linkReturnPath(returnTo: string | undefined): string | null {
 }
 
 /** `<base>/link?t=<token>`, keeping any path in the base, with no doubled slash. */
-export const linkUrl = (baseUrl: string, token: string) => `${baseUrl.replace(/\/+$/, "")}/link?t=${token}`;
+export function linkUrl(baseUrl: string, token: string) {
+  let end = baseUrl.length;
+  while (end > 0 && baseUrl[end - 1] === "/") end--;
+  return `${baseUrl.slice(0, end)}/link?t=${token}`;
+}
 
 /** Where under the workspace each entry point sends people back (the onboarding's opens it again at its AI step). */
 const RETURN_TO: Partial<Record<BillingFrom, string>> = {
