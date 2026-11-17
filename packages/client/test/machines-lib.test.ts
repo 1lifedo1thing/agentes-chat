@@ -265,6 +265,19 @@ describe("connected computers helpers (ADR 0036)", () => {
     expect(qc.getQueryState(picture)?.isInvalidated).toBe(false);
   });
 
+  test("a computer in standby going quiet reads online still; its hello ends the standby", () => {
+    const qc = new QueryClient();
+    const list = keys.machines("o1");
+    qc.setQueryData(list, [{ id: "m1", kind: "managed", online: true, standby: true, lastSeenAt: null }]);
+    const m1 = () => (qc.getQueryData(list) as { online: boolean; standby: boolean }[])[0];
+    applyMachineEvent(qc, "o1", { type: "machine.status", machineId: "m1", online: false } as { type: string });
+    expect(m1()).toMatchObject({ online: true, standby: true });
+    applyMachineEvent(qc, "o1", { type: "machine.status", machineId: "m1", online: true } as { type: string });
+    expect(m1()).toMatchObject({ online: true, standby: false });
+    applyMachineEvent(qc, "o1", { type: "machine.status", machineId: "m1", online: false } as { type: string });
+    expect(m1()?.online).toBe(false);
+  });
+
   test("a plan's usage moving on a computer refetches the agent list, which carries each plan's limits", () => {
     const qc = new QueryClient();
     const agents = keys.agents("o1");

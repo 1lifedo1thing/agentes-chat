@@ -142,11 +142,21 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
   if (accounts) void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
   switch (e.type) {
     case "machine.status": {
-      const online = e.online === true;
+      // A computer gone into standby reads online still (ADR 0161); its hello ends the standby.
+      const asleep = e.online !== true && qc.getQueryData<Machine[]>(list)?.find((m) => m.id === machineId)?.standby;
+      const online = e.online === true || asleep === true;
       const now = new Date().toISOString();
       qc.setQueryData<Machine[]>(list, (old) =>
         old?.map((m) =>
-          m.id === machineId ? { ...m, online, egress: null, lastSeenAt: online ? now : m.lastSeenAt } : m,
+          m.id === machineId
+            ? {
+                ...m,
+                online,
+                egress: null,
+                lastSeenAt: e.online === true ? now : m.lastSeenAt,
+                ...(e.online === true && m.standby ? { standby: false } : {}),
+              }
+            : m,
         ),
       );
       patchTargets(qc, orgId, machineId, { online });

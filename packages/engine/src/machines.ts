@@ -158,6 +158,15 @@ export function machineOnline(row: Pick<MachineRow, "online" | "lastSeenAt" | "d
 export const inStandby = (row: Pick<MachineRow, "kind" | "standbyAt">) =>
   row.kind === "managed" && row.standbyAt !== null;
 
+/**
+ * Online as people see it: a computer in standby reads as online and ready, never asleep or seen at a time (ADR
+ * 0161); it wakes when wanted. Operators' views and the run logic use `machineOnline` and `inStandby`.
+ */
+export const shownOnline = (
+  row: Pick<MachineRow, "online" | "lastSeenAt" | "deletedAt" | "kind" | "standbyAt">,
+  now = new Date(),
+) => machineOnline(row, now) || (!row.deletedAt && inStandby(row));
+
 /** The pause in force now (a past `until` is over); null when not paused. */
 export function machinePause(
   row: Pick<MachineRow, "paused" | "pausedUntil">,
@@ -507,7 +516,7 @@ async function machineViews(db: Database, actorId: string, orgId: string, only?:
       name: m.name,
       /** `connected` (a person paired it), `host` (the server's own) or `managed` (the workspace's, never removed here). */
       kind: m.kind,
-      online: machineOnline(m, now),
+      online: shownOnline(m, now),
       /** The workspace's own computer is asleep in standby (ADR 0161): it wakes when wanted, nothing is wrong. */
       standby: inStandby(m),
       networkTransition: managed ? m.networkTransition : null,
@@ -940,7 +949,7 @@ export async function computerTarget(db: Database, orgId: string, agentId: strin
   if (!agent?.machineId) return { kind: "none" };
   const machine = await getMachine(db, orgId, agent.machineId);
   if (!machine) return { kind: "none" };
-  return { kind: "machine", machineId: machine.id, name: machine.name, online: machineOnline(machine) };
+  return { kind: "machine", machineId: machine.id, name: machine.name, online: shownOnline(machine) };
 }
 
 let workspaceComputers = false;
@@ -1014,7 +1023,7 @@ export async function setAgentComputerTarget(
     details: { from: agent.machineId, to: machine?.id ?? null, name: machine?.name ?? null },
   });
   const target: ComputerTarget = machine
-    ? { kind: "machine", machineId: machine.id, name: machine.name, online: machineOnline(machine) }
+    ? { kind: "machine", machineId: machine.id, name: machine.name, online: shownOnline(machine) }
     : { kind: "none" };
   await publishOrgEvent(deps.pubsub, {
     type: "org.broadcast",

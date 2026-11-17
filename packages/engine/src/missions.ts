@@ -43,7 +43,7 @@ import {
   taskScope,
   taskSeconds,
 } from "./machine-tasks";
-import { MachineOfflineError, machineOnline } from "./machines";
+import { MachineOfflineError, type MachineRow, shownOnline } from "./machines";
 import { insertMessage, type Message, messageView } from "./messages";
 import { missionAllowRules, pendingCommandCounts, pendingCommandsSql } from "./mission-command-rules";
 import { MISSION_LIMITS } from "./mission-limits";
@@ -708,6 +708,7 @@ export async function missionViews(
             online: machines.online,
             lastSeenAt: machines.lastSeenAt,
             kind: machines.kind,
+            standbyAt: machines.standbyAt,
             pairedBy: machines.pairedByUserId,
             deletedAt: machines.deletedAt,
             protocol: machines.protocol,
@@ -813,7 +814,7 @@ export async function missionViews(
         ? {
             id: m.id,
             name: m.name,
-            online: machineOnline(m),
+            online: shownOnline(m),
             lentBy: r.machineLentBy,
             executors: missionExecutors(m).available,
             codexTooOld: missionExecutors(m).codexTooOld,
@@ -3340,6 +3341,8 @@ export async function eligibleMissionAgents(deps: Pick<MissionDeps, "db">, userI
     machine_name: string | null;
     online: boolean | null;
     last_seen_at: Date | string | null;
+    kind: MachineRow["kind"] | null;
+    standby_at: Date | string | null;
     protocol: number | null;
     exec_allowed: boolean | null;
     executors: schema.MachineExecutors | string | null;
@@ -3348,7 +3351,7 @@ export async function eligibleMissionAgents(deps: Pick<MissionDeps, "db">, userI
     await deps.db.execute(sql`select agents.id, agents.handle, agents.name, agents.owner_user_id,
         agents.mission_command_approval,
         ${audienceSql("agents", sql`${userId}::text`)} as can_talk,
-        mc.id as machine_id, mc.name as machine_name, mc.online, mc.last_seen_at, mc.protocol,
+        mc.id as machine_id, mc.name as machine_name, mc.online, mc.last_seen_at, mc.kind, mc.standby_at, mc.protocol,
         mc.exec_allowed, mc.executors, mc.os
       from ${schema.agents} agents
       left join ${machines} mc on mc.id = agents.machine_id and mc.org_id = agents.org_id and mc.deleted_at is null
@@ -3361,10 +3364,12 @@ export async function eligibleMissionAgents(deps: Pick<MissionDeps, "db">, userI
       ? {
           id: r.machine_id,
           name: r.machine_name ?? "",
-          online: machineOnline({
+          online: shownOnline({
             online: Boolean(r.online),
             lastSeenAt: r.last_seen_at ? new Date(r.last_seen_at) : null,
             deletedAt: null,
+            kind: r.kind ?? "connected",
+            standbyAt: r.standby_at ? new Date(r.standby_at) : null,
           }),
         }
       : null;

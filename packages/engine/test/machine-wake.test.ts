@@ -107,7 +107,12 @@ describe("standby", () => {
       { type: "machine.updated", machineId, standby: true },
       { type: "machine.updated", machineId, standby: true },
     ]);
-    expect((await listMachines(f.db, f.owner.id, f.org.id))[0]).toMatchObject({ id: machineId, standby: true });
+    // Asleep, it reads as online and ready to its people: never offline (ADR 0161).
+    expect((await listMachines(f.db, f.owner.id, f.org.id))[0]).toMatchObject({
+      id: machineId,
+      standby: true,
+      online: true,
+    });
 
     // A computer someone connected, another workspace's id, or no such computer: nothing.
     const paired = await pairMachine(deps(), f.owner.id, f.org.id, { name: "Laptop" });
