@@ -787,11 +787,12 @@ function NewAgentDialog({
       // The rest one part at a time: what fails is said, and it still ends on the new agent.
       const failures: unknown[] = [];
       await savePart(failures, () => brain.apply(agent.id));
-      // A proposal's channels as the card left them, and the one its routine reports in while the routine stays.
+      // A proposal's channels as the card shows them (only where I may put an agent), and the one its routine reports in
+      // while the routine stays.
       const joinIds = reviewing
         ? [
             ...new Set([
-              ...(draft.channels ?? []),
+              ...inChannels.map((c) => c.id),
               ...(draft.routine && proposed.routine?.reportsIn ? [proposed.routine.reportsIn] : []),
             ]),
           ]

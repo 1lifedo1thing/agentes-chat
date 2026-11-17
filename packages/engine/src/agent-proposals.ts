@@ -20,6 +20,7 @@ import { type AgentAppearance, setAgentAppearance, validateAppearance } from "./
 import { canTalkTo, speakerFor } from "./audience";
 import { setAgentBrain } from "./brain-settings";
 import { requireChannelAccess } from "./channels";
+import { CONNECTOR_CATALOG } from "./connectors/catalog";
 import { prefixService, toolPrefixOf, toolPrefixOfConnection } from "./connectors/connections";
 import { customScope, isCustom } from "./connectors/custom";
 import { MCP_PRESETS } from "./connectors/presets";
@@ -194,6 +195,12 @@ export const agentProposalOf = (meta: Record<string, unknown> | null | undefined
   const card = meta?.actionCard as Partial<AgentProposalCard> | undefined;
   return card?.kind === "agent_proposal" && card.params?.draft ? (card as AgentProposalCard) : null;
 };
+
+/** Every app the catalog offers by id: the built-in connectors and the MCP presets. */
+const CATALOG_APPS = (): { id: string; label: string; soon?: true }[] => [
+  ...Object.values(CONNECTOR_CATALOG).map((c) => ({ id: c.id, label: c.label })),
+  ...MCP_PRESETS,
+];
 
 /** The apps a draft still needs connected, for its new agent's checklist (they are read until someone says more). */
 const laterApps = (draft: AgentDraft) =>
@@ -521,7 +528,7 @@ export async function checkAgentDraft(
   const later: string[] = [];
   for (const raw of list(input.connect_later)) {
     const asked = str(raw).toLowerCase();
-    const preset = MCP_PRESETS.find((p) => p.id === asked || p.label.toLowerCase() === asked);
+    const preset = CATALOG_APPS().find((p) => p.id === asked || p.label.toLowerCase() === asked);
     if (!preset) throw new ValidationError(`No app "${asked}" in the catalog: leave it out of \`connect_later\`.`);
     if (preset.soon) {
       throw new ValidationError(`${preset.label} can't be connected yet: leave it out and tell the person.`);

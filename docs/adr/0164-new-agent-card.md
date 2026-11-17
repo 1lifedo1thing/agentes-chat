@@ -116,8 +116,28 @@ gap to their names.
 
 ### 6. What stays
 
-`/agents/new` stays for an agent's proposal (`?proposal=`, ADR 0155 §5), the import and old links. The phone app keeps
-its screens until it gets the same card.
+`/agents/new` stays for the import and old links. The phone app keeps its screens until it gets the same card.
+
+### 7. An agent's proposal, reviewed on the same card
+
+"Edit first" on an agent's proposal card (ADR 0081) opens this dialog, not the old seven steps: the card filled in with
+the draft (its name, the line it introduces itself with, its look, the apps it named at their levels, its instructions),
+and in the list's place the proposal itself, in text and hairlines: who proposed it and why, what the person changed
+from it (each line with Undo), the first task that waits in the new agent's chat, unsent ("Create and try it" when there
+is one), and what is left for after it is created (an AI when nothing can think yet, the apps it needs that aren't
+connected). A proposal's own lines change on the card too: its channels (the ones it names and the person's own where
+they may put an agent, each opening what the agent does there), the asker's mailboxes when they are the person's
+(only a mailbox's owner gives an agent access to it), and its routine, kept or taken out. Who proposed it is the
+proposal's: the dialog closes when it is decided elsewhere, and Discard proposal says no from it.
+
+Creating sends the card with the proposal (`proposal` on the create call, which marks the card created), then its
+channels, apps, mailboxes and skills one part at a time, as any new agent; the routine comes last, once the agent is
+where it reports. On a narrow screen the card is alone, the reason in the dialog's line.
+
+So that the card reads as it does for any new agent, `propose_agent` takes `hello` (how the agent introduces itself,
+in its own voice) and `connect_later` (catalog apps its job needs that the workspace hasn't connected; a connected one
+goes in `access`, one that can't be connected yet is refused). Both go into the new agent's checklist, whether it is
+created from the review or in one click on the card.
 
 ## Consequences
 
