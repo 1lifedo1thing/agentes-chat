@@ -2577,7 +2577,13 @@ export const en = {
       unpin: "Unpin {{name}}'s message",
       empty: "Nothing pinned here yet",
     },
-    header: { pins: "Pinned messages", showMembers: "Show members", hideMembers: "Hide members" },
+    header: {
+      pins: "Pinned messages",
+      showMembers: "Show members",
+      hideMembers: "Hide members",
+      /** The header's ⋯: the conversation's own actions, its background among them. */
+      more: "More options",
+    },
     membersButton_one: "Channel members ({{count}})",
     membersButton_other: "Channel members ({{count}})",
     membersAgents: "Agents",
@@ -16987,6 +16993,8 @@ export const en = {
           dim: "Darken in dark mode",
           sending: "Sending the photo…",
           failed: "Couldn't save the background. Try again.",
+          /** The web's picker: closes it (each choice is already saved). */
+          done: "Done",
         },
       },
       agentStyle: "How agents talk to you",
