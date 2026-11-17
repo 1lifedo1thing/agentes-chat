@@ -130,3 +130,17 @@ describe("a row pressed as the system's lists press theirs", () => {
     }
   });
 });
+
+describe("the app's shared row data", () => {
+  test("stands at the app's root before any workspace is chosen: its reads mount only with one", () => {
+    const rows = src("src/features/chat/row-data.tsx");
+    // `useOrg` throws until a workspace is chosen, and the root is drawn before that (it crashed the app at launch).
+    const root = rows.slice(rows.indexOf("export function WorkspaceRowData"), rows.indexOf("function WorkspaceReads"));
+    expect(root).toContain("const org = useOrgMaybe();");
+    expect(root).not.toContain("useOrgId()");
+    expect(root).toContain(
+      "{org ? <WorkspaceReads key={org.orgId} onDirectory={setDir} onPeople={setPeople} /> : null}",
+    );
+    expect(src("src/providers/AppProviders.tsx")).toContain("<WorkspaceRowData>");
+  });
+});

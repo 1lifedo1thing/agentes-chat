@@ -1,6 +1,7 @@
 import { type OrgRole, type RunConsultation, useConsultations, useRoles } from "@agenteschat/client";
 import { asExchanges, groupsByRun } from "@agenteschat/client/lib/consult-group";
-import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { createContext, type ReactNode, useContext, useLayoutEffect, useMemo, useState } from "react";
+import { useOrgMaybe } from "@/providers/org";
 import { type Directory, useDirectory, useMeId, useMyHandle, useNamesComputers, useOrgId } from "../shared/hooks";
 
 /**
@@ -68,8 +69,34 @@ export function consultsOf(channelId: string, list: RunConsultation[] | undefine
  * Reads what the rows of conversation `channelId` share, once, for everything under it (its list, its sheets). Mounted
  * once per conversation screen, above the sheets it opens.
  */
-/** The workspace's part, once for the whole app (`AppProviders`, under the organization). */
+/**
+ * The workspace's part, once for the whole app (`AppProviders`, under the organization). It stands there before any
+ * workspace is chosen (signing in, the first launch): nobody until one is, read by `WorkspaceReads`, a leaf that mounts
+ * only with a workspace (the reads need one). The app under it keeps its place either way: a workspace coming or going
+ * never remounts the screens.
+ */
 export function WorkspaceRowData({ children }: { children: ReactNode }) {
+  const org = useOrgMaybe();
+  const [dir, setDir] = useState<Directory>(NO_ONE);
+  const [people, setPeople] = useState<RowPeople>(NO_PEOPLE);
+  return (
+    <RowDirectoryContext.Provider value={dir}>
+      <RowPeopleContext.Provider value={people}>
+        {org ? <WorkspaceReads key={org.orgId} onDirectory={setDir} onPeople={setPeople} /> : null}
+        {children}
+      </RowPeopleContext.Provider>
+    </RowDirectoryContext.Provider>
+  );
+}
+
+/** Reads the workspace's directory and people and hands them up, before the frame is drawn; nobody again when it goes. */
+function WorkspaceReads({
+  onDirectory,
+  onPeople,
+}: {
+  onDirectory: (dir: Directory) => void;
+  onPeople: (people: RowPeople) => void;
+}) {
   const orgId = useOrgId();
   const dir = useDirectory();
   const meId = useMeId();
@@ -80,11 +107,16 @@ export function WorkspaceRowData({ children }: { children: ReactNode }) {
     () => ({ meId, myHandle, roles, namesComputers }),
     [meId, myHandle, roles, namesComputers],
   );
-  return (
-    <RowDirectoryContext.Provider value={dir}>
-      <RowPeopleContext.Provider value={people}>{children}</RowPeopleContext.Provider>
-    </RowDirectoryContext.Provider>
+  useLayoutEffect(() => onDirectory(dir), [dir, onDirectory]);
+  useLayoutEffect(() => onPeople(people), [people, onPeople]);
+  useLayoutEffect(
+    () => () => {
+      onDirectory(NO_ONE);
+      onPeople(NO_PEOPLE);
+    },
+    [onDirectory, onPeople],
   );
+  return null;
 }
 
 /** A conversation's part: the questions its agents asked, read once for its rows. */
