@@ -119,3 +119,13 @@ export function accentPalette(hex: string): AccentPalette {
   if (!isAccentHex(color) || color === DEFAULT_ACCENT) return DEFAULT_ACCENT_PALETTE;
   return { light: tokensFor(color, light), dark: tokensFor(color, dark) };
 }
+
+/**
+ * The accent as the agents' engine draws it (`sky`, ADR 0193): [top, bottom], the light theme's `agent2` and `agent`
+ * in both themes, as the landing's sky is one pair in both. That `agent` carries white at 4.5:1, which keeps agents'
+ * white eyes readable on it whatever was picked.
+ */
+export function accentSky(hex: string): [string, string] {
+  const { agent, agent2 } = accentPalette(hex).light;
+  return [agent2, agent];
+}

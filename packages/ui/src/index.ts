@@ -10,6 +10,7 @@ export {
   type AccentPalette,
   type AccentTokens,
   accentPalette,
+  accentSky,
   contrastRatio,
   DEFAULT_ACCENT,
   isAccentHex,
@@ -551,7 +552,14 @@ export {
   workspaceInk,
   workspaceTones,
 } from "./sky/workspace";
-export { onThemeChange, switchTheme, THEME_SWITCHING_ATTR, type Theme } from "./theme";
+export {
+  ACCENT_ATTR,
+  onThemeChange,
+  PAINT_ATTRS,
+  switchTheme,
+  THEME_SWITCHING_ATTR,
+  type Theme,
+} from "./theme";
 export {
   allZones,
   cityOf,

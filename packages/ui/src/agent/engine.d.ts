@@ -79,6 +79,7 @@ export type Ctx2D = Pick<
 >;
 
 export const AGENT_GRADIENTS: Record<AgentPresetColor, [string, string]>;
+export function setSkyColors(pair: [string, string] | null): void;
 export const EYE_COLOR: string;
 export const BODY_RADIUS: number;
 export const BODY_CUT: number;

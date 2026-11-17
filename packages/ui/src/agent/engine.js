@@ -22,6 +22,17 @@ export const AGENT_GRADIENTS = {
   graphite: ["#9a9a95", "#4a4a47"],
 };
 
+const SKY = AGENT_GRADIENTS.sky;
+
+/**
+ * A workspace's accent (ADR 0193) is its default agent color: while one is shown, `sky` (every agent with no color of
+ * its own, and the sky art) resolves to the accent's [top, bottom], or back to the landing's blue with null. Set by the
+ * apps' workspace shell, which also tells the canvases to repaint.
+ */
+export function setSkyColors(pair) {
+  AGENT_GRADIENTS.sky = pair ?? SKY;
+}
+
 /** Eyes are white on every agent, everywhere. */
 export const EYE_COLOR = "#ffffff";
 
@@ -199,7 +210,9 @@ export function bodyTones(color, deep = false) {
 
 /** The small pixel agents' body: deep enough for white eyes (navy on the sky). */
 export function spriteBody(color) {
-  return !color || color === "sky" ? "#04203f" : mixHex(gradientOf(color)[1], "#000000", 0.45);
+  return (!color || color === "sky") && AGENT_GRADIENTS.sky === SKY
+    ? "#04203f"
+    : mixHex(gradientOf(color || "sky")[1], "#000000", 0.45);
 }
 
 /** Dither cells per side for a body of `px` pixels: about 2.5–15 screen pixels per cell. */
