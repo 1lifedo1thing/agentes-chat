@@ -385,16 +385,12 @@ export function Composer({
     setSelection({ start: at, end: at });
     retoken(next, at);
   };
-  /** The words went: the field empties and its caret goes back to the start by itself, the focus kept. */
-  const clear = () => {
-    textRef.current = "";
-    caret.current = 0;
-    range.current = { start: 0, end: 0 };
-    unselect();
-    setText("");
-    setSelection(undefined);
-    retoken("", 0);
-  };
+  /**
+   * The words went: the field empties, its caret at the start, the focus kept. The caret is set with the words, as
+   * `put` does: on iOS a multiline field emptied from code with no selection kept the height of the lines it had (a
+   * two-line message left an empty two-line field after it was sent).
+   */
+  const clear = () => put("", 0);
 
   const send = (how: SendHow) => {
     const value = textRef.current.trim();

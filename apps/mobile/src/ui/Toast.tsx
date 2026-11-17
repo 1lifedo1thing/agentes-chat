@@ -65,6 +65,14 @@ const ACTION_SLOP = 10;
 const noop: ToastFn = () => {};
 
 /** `const toast = useToast(); toast({ title, subtitle?, icon?, agentId?, action? })`: a glass note from the top. */
+/** A toast's haptic by its tone (`toastToneOf`): the system's own failure, warning and success patterns, else a tap. */
+export function toastHaptic(tone: ToastTone) {
+  if (tone === "danger") haptics.error();
+  else if (tone === "warning") haptics.warning();
+  else if (tone === "success") haptics.success();
+  else haptics.light();
+}
+
 export function useToast(): ToastFn {
   return useContext(ToastContext) ?? noop;
 }
@@ -167,6 +175,13 @@ function ToastView({ item, replaced, onGone }: { item: Shown; replaced: boolean;
     if (leaving.current || hideTimer.current) return;
     arm(Math.max(RESUME_MS, left.current));
   }, [arm]);
+
+  // Felt as it comes in, in the same frame, by what it says: a failure buzzes as one, a done thing as one, the rest a
+  // light tap. Once per toast (a toast replaced before it shows still came).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the toast arrives
+  useEffect(() => {
+    toastHaptic(item.tone ?? toastToneOf(item.icon));
+  }, []);
 
   useEffect(() => {
     if (leaving.current) return;
