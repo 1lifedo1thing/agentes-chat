@@ -640,6 +640,7 @@ export const ptBR = {
     termsMiddle: " e a ",
     privacy: "Política de privacidade",
     termsAfter: ".",
+    poweredBy: "Feito com agentes.chat",
     signOut: "Sair",
     earlyAccess: {
       otherEmail: "Este convite é para outro endereço. Cadastre-se com o endereço que recebeu o convite.",
@@ -4074,7 +4075,6 @@ export const ptBR = {
       aiAccount: "Pensa com {{account}}",
       aiModel: "Pensa pela API",
       aiNone: "Sem IA ainda. Conecte uma depois de criar",
-      reviewTitle: "Revisar {{name}}",
       lines: "O que {{name}} recebe",
       aChannel: "um canal",
       anApp: "um app",
@@ -7613,7 +7613,6 @@ export const ptBR = {
     adminsOnlyPersonal: "Peça a quem cuida daqui para deixar você criar agentes.",
     proposalClosed: "Esta proposta já foi decidida ou expirou.",
     proposalNoAccess: "Só quem está na conversa vê esta proposta.",
-    backToChat: "Voltar para a conversa",
     and: " e ",
     routine: "Rotina",
     routineKeep: "Criar a rotina {{name}}",
@@ -7804,6 +7803,64 @@ export const ptBR = {
     otherSkill: "Outra skill",
     namesLead: "Que tal",
     namesRoll: "Outros nomes",
+    /**
+     * "Edit first" on an agent's proposal: the card filled in with the draft, and in the list's place the proposal
+     * (who proposed it and why, what the person changed, the first task, what is left for after it is created).
+     */
+    proposal: {
+      lead: "Ajuste o que o {{name}} propôs. Dá para mudar tudo depois.",
+      lead_female: "Ajuste o que a {{name}} propôs. Dá para mudar tudo depois.",
+      leadNarrow: "Proposta do {{name}}: {{why}}",
+      leadNarrow_female: "Proposta da {{name}}: {{why}}",
+      side: "A proposta",
+      from: "Proposto pelo {{name}}",
+      from_female: "Proposto pela {{name}}",
+      changed: "O que você mudou",
+      changedNone: "Nada ainda. O que você mudar no cartão aparece aqui, com Desfazer.",
+      undo: "Desfazer",
+      changes: {
+        changed: "mudou",
+        added: "entrou",
+        removed: "saiu",
+        how: "Como trabalha",
+      },
+      firstTask: "Primeira tarefa",
+      firstTaskPlaceholder: "O que pedir primeiro (opcional)",
+      firstTaskHint: "Vai pronta na conversa com o {{name}}. É só enviar.",
+      firstTaskHint_female: "Vai pronta na conversa com a {{name}}. É só enviar.",
+      firstTaskHintBlank: "Vai pronta na conversa com ele. É só enviar.",
+      firstTaskNone: "Sem uma tarefa, a conversa abre em branco.",
+      after: "Depois de criar",
+      afterAi: "Conectar uma IA para o {{name}} pensar",
+      afterAi_female: "Conectar uma IA para a {{name}} pensar",
+      afterAiBlank: "Conectar uma IA para ele pensar",
+      afterApp: "Conectar {{app}}",
+      afterNone: "Nada. O {{name}} começa a trabalhar assim que for criado.",
+      afterNone_female: "Nada. A {{name}} começa a trabalhar assim que for criada.",
+      afterNoneBlank: "Nada. Ele começa a trabalhar assim que for criado.",
+      discard: "Descartar proposta",
+      otherChannel: "Outro canal",
+      chooseChannels: "Escolher canais",
+      channelsNone: "Só na conversa com você.",
+      channel: {
+        lead: "Onde o {{name}} vai trabalhar.",
+        lead_female: "Onde a {{name}} vai trabalhar.",
+        leadBlank: "Onde ele vai trabalhar.",
+        does: "O {{name}} responde quando chamam no {{channel}} e lê o que passa por lá.",
+        does_female: "A {{name}} responde quando chamam no {{channel}} e lê o que passa por lá.",
+        doesBlank: "Ele responde quando chamam no {{channel}} e lê o que passa por lá.",
+        remove: "Tirar do {{channel}}",
+      },
+      routine: {
+        label: "Rotina",
+        lead: "{{when}}, no {{channel}}.",
+        leadDm: "{{when}}, na conversa com você.",
+        starts: "Começa quando o {{name}} for criado. Horário e texto você muda em Rotinas.",
+        starts_female: "Começa quando a {{name}} for criada. Horário e texto você muda em Rotinas.",
+        startsBlank: "Começa quando ele for criado. Horário e texto você muda em Rotinas.",
+        remove: "Tirar a rotina",
+      },
+    },
     /** One skill on the card. */
     skill: {
       opens: "O {{name}} abre este manual quando o assunto aparece. Você edita em Skills.",
@@ -15227,6 +15284,8 @@ export const ptBR = {
       neverHappens: "Este agendamento nunca acontece.",
       soleOwner:
         "Você é a única pessoa dona de um workspace com outros membros. Passe a posse a alguém, ou apague o workspace, antes.",
+      soleOwnerOutside:
+        "Você é a única pessoa dona de um workspace em que as outras pessoas são colaboradores externos, que não podem ser donos. Convide um membro e torne essa pessoa dona, ou apague o workspace, antes.",
       testFirst: "Teste a conexão com estes dados antes de ligar.",
       voiceLength: "A gravação está longa ou curta demais.",
       sendAgain: "O arquivo não chegou inteiro. Envie de novo.",
@@ -15350,6 +15409,7 @@ export const ptBR = {
       answered: "Alguém já respondeu este pedido.",
       expired: "Este pedido expirou: ninguém respondeu em 14 dias.",
       codeNeeded: "Verifique seu e-mail primeiro.",
+      outsideClosed: "Esta conta foi bloqueada ou está sendo excluída, então não pode entrar. O pedido foi fechado.",
     },
     /** An emailed code refused: asking to join (ADR 0072) and deleting (ADR 0088) alike. */
     code: {
@@ -16881,6 +16941,34 @@ export const ptBR = {
     },
     system: "Sistema",
     removed: "Removido",
+    operatorRead: {
+      sentence: "{{who}} leu {{what}}",
+      who: {
+        server: "Quem cuida deste servidor",
+        cloud: "O suporte do agentes.chat",
+      },
+      what: {
+        message: "uma mensagem",
+        run_step: "uma etapa do trabalho de um agente",
+        agent: "as instruções de um agente",
+        routine: "uma rotina",
+        task: "uma tarefa em segundo plano",
+        channel: "o nome de um canal",
+        connection: "os dados de uma conexão",
+        support_request: "um pedido de suporte",
+        direct: "algo em uma conversa privada",
+        other: "algo no workspace",
+      },
+      request: {
+        plain: "a pedido de {{name}}",
+        app: "a pedido de {{name}}, enviado pelo app",
+        email: "a pedido de {{name}}, enviado por e-mail",
+        operator: "a pedido de {{name}}, registrado por quem cuida deste servidor",
+        support: "a pedido de {{name}}, registrado pelo suporte",
+      },
+      fault: "para diagnosticar uma execução que falhou ou travou",
+      ai: "com um assistente de IA",
+    },
     change: {
       mergedWithoutAsking: "Fez o merge em {{repo}} sem perguntar",
       accentChanged: "Mudou a cor de destaque do workspace",
@@ -19478,6 +19566,8 @@ export const ptBR = {
     serverOwner: "Você instalou este servidor. As configurações dele vão ficar sem dono aqui, só no ambiente dele.",
     blockers: "Antes de apagar",
     soleOwner: "Você é a única pessoa dona de {{name}}. Torne outra pessoa dona, ou apague {{name}}.",
+    soleOwnerOutside:
+      "Você é a única pessoa dona de {{name}}, e as outras pessoas lá são colaboradores externos, que não podem ser donos. Convide um membro e torne essa pessoa dona, ou apague {{name}}.",
     soleOwnerSettingUp:
       "Você é a única pessoa dona de {{name}}. Termine de configurar para tornar outra pessoa dona, ou apague {{name}}.",
     openPeople: "Abrir Pessoas",

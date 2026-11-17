@@ -232,6 +232,7 @@ const KNOWN = {
   "join.denied": "errors.join.denied",
   "join.answered": "errors.join.answered",
   "join.expired": "errors.join.expired",
+  "outside_access.account_closed": "errors.join.outsideClosed",
   "join.code_wrong": "errors.code.wrong",
   "join.code_expired": "errors.code.expired",
   "join.code_tries": "errors.code.tries",
@@ -825,6 +826,8 @@ export function knownErrorText(t: TFunction, error: unknown, locale = "en"): str
   // The person who connected the mailbox is gone or unnamed: no blank name in the sentence.
   if (error.code === "mail.owner_only" && !error.params?.ownerName)
     return t("errors.mail.ownerOnlyUnknown", error.params);
+  // Everyone else in the workspaces that keep the account is an outside collaborator, who can't own one (ADR 0191).
+  if (error.code === "sole_owner" && error.params?.onlyOutside === true) return t("errors.said.soleOwnerOutside");
   if (error.code === "browser_profile.unavailable")
     return t("browser.profiles.notOpened", { machine: error.params?.machineName ?? "" });
   // `provider`: the provider whose key is missing, when the server could name it.

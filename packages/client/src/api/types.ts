@@ -177,6 +177,18 @@ export interface AuthConfig {
   mobileErrorReports?: ErrorReportsConfig | null;
   /** An outside chat surface is bridged (ADR 0187); whether I may link it is `surfaces.list().allowed`. */
   surface?: boolean;
+  /**
+   * This address is one the server's operator registered (ADR 0194): the pages before sign-in show its look, and sign-in
+   * is by email alone. Null or absent on any other address.
+   */
+  host?: HostLook | null;
+}
+
+/** A registered host's look (`AuthConfig.host`): `accent` a `#rrggbb` or null, `logoUrl` on that host or null. */
+export interface HostLook {
+  name: string;
+  accent: string | null;
+  logoUrl: string | null;
 }
 
 export interface ErrorReportsConfig {
@@ -428,7 +440,8 @@ export interface AccountDeletionPlan {
   /** Others are in them: I leave. */
   leaves: { id: string; name: string; role: Role }[];
   /** I'm their only owner, others are in them and they aren't being deleted: the account can't go yet (`sole_owner`). */
-  soleOwner: { id: string; name: string }[];
+  /** `onlyOutside`: everyone else is an outside collaborator (ADR 0191); optional, an older server doesn't say. */
+  soleOwner: { id: string; name: string; onlyOutside?: boolean }[];
   /** Computers I connected in the workspaces I leave, not in system mode: removed with the account. */
   computers: { orgId: string; id: string; name: string }[];
   /** Keys, connections and mailboxes I added to the workspaces I leave: the workspace's, so they stay. */
@@ -1135,6 +1148,10 @@ export interface AgentDraft {
   mail?: { accountId: string; address: string; level: "read" | "write"; ownerUserId: string }[];
   /** A routine of its own, created with it. */
   routine?: ProposedRoutine | null;
+  /** How it introduces itself, in its own voice (ADR 0164): the speech bubble on its card. */
+  hello?: string;
+  /** Catalog apps its job needs that aren't connected yet (preset ids): its chat asks to connect them. */
+  later?: string[];
   ai: SuggestedAi;
 }
 

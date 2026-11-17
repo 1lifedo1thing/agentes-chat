@@ -5,7 +5,7 @@
 - Extends: ADR 0002 (nothing private runs in the server process), ADR 0056 (the operator API's listener; hooks are pulled), ADR 0117 (outside content), ADR 0119 (`meta.via`), ADR 0177 (the right hand acts first)
 - Code: config `packages/config/src/schema.ts` (`SURFACE_BRIDGE_TOKEN`, `SURFACE_NAME`, `SURFACE_OPEN_URL`,
   `SURFACE_ONLY`) and its rules in `index.ts`; db `packages/db/src/schema/surfaces.ts` (`surface_links`,
-  `surface_deliveries`, `surface_calls`) and `voice_clips.via`, migration 0291; engine
+  `surface_deliveries`, `surface_calls`) and `voice_clips.via`, migration 0293; engine
   `packages/engine/src/surfaces/config.ts` (`setSurface`, `surfaceOn`, `surfaceAllowed`) and `links.ts` (codes,
   claim, confirm, unlink; revoked with `revokeUserApps` and `setUserBlocked`) and `inbound.ts` (`postFromSurface`,
   with `voice_clips.via` carried by the voice job) and `deliveries.ts` (`queueSurfaceDelivery` from the
@@ -32,7 +32,7 @@ the `notifications.message` job runs once for every message a run posts; `meta.v
 ## Decision
 
 ### 1. Off unless configured, served apart, its own token
-- `SURFACE_BRIDGE_TOKEN` (at least 32 characters, different from both operator tokens) turns the bridge on.
+- `SURFACE_BRIDGE_TOKEN` (at least 32 characters, different from every operator token) turns the bridge on.
   `SURFACE_NAME` (what people and the agent read, e.g. "Example Chat") and `SURFACE_OPEN_URL` (`https://`, holding `{text}`
   once: opens a chat with the surface's account with a text typed in) are required with it; `SURFACE_ONLY` (emails)
   limits linking to some accounts while the operator tests. Unset: no route below answers, nothing is written, no row
