@@ -363,7 +363,7 @@ html:not([data-pointer]) .auth__quiet:focus-visible {
 .auth--host .auth__logo {
   position: static;
   align-self: stretch;
-  padding: 0 152px 44px 12px;
+  padding: 0 192px 44px 12px;
 }
 .auth__host-logo {
   display: block;
@@ -395,7 +395,7 @@ html:not([data-pointer]) .auth__quiet:focus-visible {
 }
 @media (max-width: 560px) {
   .auth--host .auth__logo {
-    padding: 0 136px 28px 0;
+    padding: 0 184px 28px 0;
   }
 }
 
