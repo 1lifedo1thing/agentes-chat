@@ -141,7 +141,7 @@ function socketsFor() {
     desktops.push(s);
     return s as unknown as ReturnType<SocketFactory>;
   };
-  return { factory, desktops };
+  return { factory, desktops, realtime };
 }
 
 /** Ada on a Linux computer of the workspace's, which serves screens; self-host, or with `cloud` the Cloud's own. */
@@ -437,6 +437,21 @@ describe("the agent's screen in the computer dialog", () => {
     expect(view().queryByRole("button", { name: "Recolher" })).toBeNull();
     // Watching gives no way to type into it.
     expect(view().queryByRole("textbox", { name: "Digitar no computador da Ada" })).toBeNull();
+  });
+
+  test("watching, the agent's pointer from the realtime socket draws its cursor over the screen", async () => {
+    const t = await dialog();
+    await connected();
+    const socket = t.sockets.realtime.last();
+    await act(async () => socket.open());
+    const pointer = { x: 640, y: 450, width: 1280, height: 900, act: "click" };
+    await act(async () =>
+      socket.push({ type: "event", scope: "user", event: { type: "agent.desktop.pointer", agentId: ADA_ID, pointer } }),
+    );
+    await settle(4);
+    const cursor = document.querySelector(".dsk-screen .brw-cur") as HTMLElement | null;
+    expect(cursor).not.toBeNull();
+    expect(cursor?.textContent).toContain("Ada");
   });
 
   test("Live once a picture is there: a screen that just started stays black a moment, and says Opening meanwhile", async () => {

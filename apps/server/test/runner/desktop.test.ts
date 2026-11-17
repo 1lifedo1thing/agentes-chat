@@ -342,6 +342,17 @@ describe("desktop use", () => {
     expect(t.requests("input")[1]).toEqual({ id: expect.any(Number), op: "input", steps: [{ move: [83, 46] }] });
   });
 
+  test("where the pointer goes is said before the input, for whoever watches (none for keys)", async () => {
+    const said: { agentId: string; to: unknown; inputs: number }[] = [];
+    const t = setup({ pointer: (agentId, to) => said.push({ agentId, to, inputs: t.requests("input").length }) });
+    const item = refOf(await t.manager.look(AGENT), "menuitem", "Terminal Emulator");
+    await t.manager.act(AGENT, { kind: "click", at: { ref: item } }, false, t.where);
+    await t.manager.act(AGENT, { kind: "press", key: "Return" }, false, t.where);
+    expect(said).toEqual([
+      { agentId: AGENT.id, to: { x: 83, y: 46, width: 1280, height: 900, act: "click" }, inputs: 0 },
+    ]);
+  });
+
   test("an element gone, moved or covered isn't acted on; the errors are in the plan's words", async () => {
     const t = setup();
     const look = await t.manager.look(AGENT);
