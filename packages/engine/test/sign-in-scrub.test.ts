@@ -70,5 +70,9 @@ test("an option with a long name and an address with a long scheme are read in l
   expect(redactCredentials(`${option}s 4096`)).toBe(`${option}s 4096`);
   expect(redactCredentials(scheme)).toBe(scheme);
   expect(redactCredentials(`${scheme}b://ana:fake-value@db.example.com/x`)).toBe(`${scheme}b://***@db.example.com/x`);
+  // And a list of arguments where no option's value ends: each opens with a quote written as no other is.
+  let list = "";
+  for (let n = 1; list.length < 200_000; n++) list += `"--token",${"\\".repeat(n)}"x `;
+  expect(redactCredentials(list)).not.toBe(list);
   expect(performance.now() - started).toBeLessThan(250);
 });

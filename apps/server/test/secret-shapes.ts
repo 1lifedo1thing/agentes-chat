@@ -1,7 +1,8 @@
 /**
  * Records that hold a credential below their top level, where JSON writes a line end, a tab and a quote as
  * backslashes and a rule for text reads one long word. Wherever such a record is read out as text, `HIDDEN` is gone
- * and what the shape names stays.
+ * and what the shape names stays. Written as text the record is read once more by the rule for text, where a masked
+ * value loses its quotes (`"--password",***`).
  */
 export const HIDDEN = ["fake-first-value", "fake-second-value"] as const;
 const [first, second] = HIDDEN;
@@ -60,13 +61,13 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
       command: `llm --max-tokens 4096 --tokens ${first} -m x`,
       argv: ["llm", "--max-tokens", "4096", "--api-keys", second],
     },
-    ["llm --max-tokens 4096 --tokens *** -m x", '"--max-tokens","4096","--api-keys","***"'],
+    ["llm --max-tokens 4096 --tokens *** -m x", '"--max-tokens","4096","--api-keys",***'],
   ],
   // Three shapes only a record can tell.
   [
     "a list of arguments",
     { argv: ["mysql", "--password", first, "--verbose", "-u", "ana"] },
-    ['"--password","***","--verbose","-u","ana"'],
+    ['"--password",***,"--verbose","-u","ana"'],
   ],
   [
     "a pair of name and value",
@@ -76,7 +77,7 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
         ["accept", "text/plain"],
       ],
     },
-    ['["x-api-key","***"],["accept","text/plain"]'],
+    ['["x-api-key",***],["accept","text/plain"]'],
   ],
   // A list of two texts is a name and its value only in a list of such lists: alone it is two names.
   [
@@ -97,7 +98,7 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
         ["api_key", "text"],
       ],
     },
-    ['[["password","***"],["api_key","***"]]'],
+    ['[["password",***],["api_key",***]]'],
   ],
   [
     "a record that names its value",
@@ -108,14 +109,14 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
         { name: "Accept", value: "text/plain" },
       ],
     },
-    ['"name":"Authorization","value":"***"', '"key":"Cookie","value":"***"', '"name":"Accept","value":"text/plain"'],
+    ['"name":"Authorization","value":***', '"key":"Cookie","value":***', '"name":"Accept","value":"text/plain"'],
   ],
 ];
 
 /**
  * Text that holds a record and can't be opened as one: a message quoting it, a result with words before it, a result
  * cut off. An unquoted value in one of its strings ends at that string's closing quote, and the next string's is
- * read on its own.
+ * read on its own. The three shapes only a record can tell are read where the text keeps them as JSON wrote them.
  */
 export const UNOPENED: [shape: string, text: string, stays: string[]][] = [
   [
@@ -144,6 +145,25 @@ export const UNOPENED: [shape: string, text: string, stays: string[]][] = [
     "a result with words before it",
     `exit 0\n{"stdout":"token: ${first}","stderr":"password: ${second}"}`,
     ['{"stdout":"token: ***","stderr":"password: ***"}'],
+  ],
+  [
+    "an option's value in a list of arguments, quoted",
+    String.raw`ran ["mysql","--password","${first}","-u","ana"] and {"args":"[\"psql\",\"--api-key\",\"${second}\"]"} then ["llm","--max-tokens","4096"]`,
+    [
+      '["mysql","--password",***,"-u","ana"]',
+      String.raw`[\"psql\",\"--api-key\",***]`,
+      '["llm","--max-tokens","4096"]',
+    ],
+  ],
+  [
+    "records that name their values, quoted",
+    `it sent [{"name":"X-Api-Key","value":"${first}"},{"key":"Cookie","value":"${second}"},{"name":"Accept","value":"text/plain"}] and failed`,
+    ['{"name":"X-Api-Key","value":***},{"key":"Cookie","value":***},{"name":"Accept","value":"text/plain"}'],
+  ],
+  [
+    "a list of pairs, quoted",
+    `headers [["x-api-key","${first}"],["accept","text/plain"],["Authorization","${second}"]] and "required":["password","email"]`,
+    ['[["x-api-key",***],["accept","text/plain"],["Authorization",***]]', '"required":["password","email"]'],
   ],
 ];
 

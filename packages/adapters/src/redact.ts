@@ -147,6 +147,18 @@ const NAMED = new RegExp(
  * empty one. A number, `true`, `false` or `null` under such a name is no credential.
  */
 const FIELD_NAMED = new RegExp(String.raw`${FIELD}\\*["']\s*(?:=>?|:)\s*(?=\\*["'])(?!(\\*)(["'])\1\2)`, "gi");
+/** A quoted text that ends as a credential's field does, as JSON writes it (`"X-Api-Key"`). */
+const NAME_TEXT = String.raw`\\*["'][^"'\\]*${FIELD}\\*["']`;
+/**
+ * Two shapes only a record can tell, where text keeps the record as JSON wrote it and can't be opened (a message that
+ * quotes it, a result cut off), before the value: the `value` of a record that names it
+ * (`"name":"X-Api-Key","value":"…"`), and the second text of a pair that starts a list or follows another
+ * (`[["x-api-key","…"],["cookie","…"]]`).
+ */
+const RECORD_NAMED = new RegExp(
+  String.raw`(?:(?<=["'])(?:name|key|header)\\*["']\s*:\s*${NAME_TEXT}\s*,\s*\\*["']value\\*["']\s*:|(?:\[|\]\s*,)\s*\[\s*${NAME_TEXT}\s*,)\s*(?=\\*["'])`,
+  "gi",
+);
 /** The same field with its quotes written out: percent-encoded in an address, an HTML entity, a log's code point. */
 const WRITTEN_QUOTE = String.raw`%(?:25)*2[27]|&(?:amp;)*(?:quot|apos|#0*3[49]|#x0*2[27]);|\\+(?:u00|x)2[27]`;
 const WRITTEN_GAP = String.raw`(?:\s|\+|%(?:25)*20)*`;
@@ -198,7 +210,7 @@ export function redactCommon(text: string): string {
     .replace(/\b(xox[abposr]-[A-Za-z0-9-]{10,})/g, "xox-***")
     .replace(/\b(AKIA[0-9A-Z]{16})\b/g, "AKIA***");
   const fields = maskAfter(maskAfter(shaped, FIELD_NAMED, valueEnds()), WRITTEN_FIELD_NAMED, writtenEnds);
-  return maskAfter(fields, NAMED, valueEnds(true));
+  return maskAfter(maskAfter(fields, RECORD_NAMED, valueEnds()), NAMED, valueEnds(true));
 }
 
 /** An option named for a secret, as one text of a list of arguments (`--password`, `-api-key`). */

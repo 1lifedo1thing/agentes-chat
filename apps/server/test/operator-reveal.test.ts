@@ -1370,7 +1370,7 @@ test("masking: a record's texts are read as they are, not as JSON writes them, i
   expect(wrong).toEqual([]);
 });
 
-test("masking: in text that can't be opened, an unquoted value ends at the quote that closes its string, in a message and in a result", async () => {
+test("masking: in text that holds a record and can't be opened, a value ends at its string's closing quote and a record's three shapes are read, in a message and in a result", async () => {
   const mine = { requestId: requests.owner };
   const wrong: unknown[] = [];
   for (const [shape, quoting, stays] of UNOPENED) {

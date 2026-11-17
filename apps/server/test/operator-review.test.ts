@@ -266,7 +266,7 @@ test("a run's review: a record's texts are read as they are, not as JSON writes 
   expect(wrong).toEqual([]);
 });
 
-test("a run's review: in a result that can't be opened, an unquoted value ends at the quote that closes its string", async () => {
+test("a run's review: in a result that holds a record and can't be opened, a value ends at its string's closing quote and a record's three shapes are read", async () => {
   const runId = await runFor("@dev look it up a third time");
   const wrong: unknown[] = [];
   for (const [shape, quoting, stays] of UNOPENED) {

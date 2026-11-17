@@ -41,6 +41,8 @@ test("text made of values that never end is masked in linear time", () => {
     filled((n) => `"token":${"\\".repeat(2 * n)}'x `),
     filled((n) => `token%${"25".repeat(n)}22:%${"25".repeat(n)}22x `),
     filled((n) => `token&#${"0".repeat(n)}34;:&#${"0".repeat(n)}34;x `),
+    filled((n) => `[["token",${"\\".repeat(n)}"x `),
+    filled((n) => `"name":"token","value":${"\\".repeat(2 * n)}'x `),
     filled(
       (n) => `{"id":${n},"token":"fake-${n}","body":"{\\"password\\":\\"fake ${n}\\"}","env":"API_KEY=fake${n}"}\n`,
     ),
@@ -377,4 +379,32 @@ test("an unquoted value ends at the quote that closes the string it sits in, and
     ['{"access_token":",fake-cut-off', '{"access_token":***'],
   ];
   for (const [text, masked] of strings) expect(redactCommon(text)).toBe(masked);
+});
+
+test("a record that names its value and a list of pairs are read in text that keeps them as JSON wrote them", () => {
+  const records: [text: string, masked: string][] = [
+    [
+      'it sent [{"name":"X-Api-Key","value":"fake a"},{"Key":"Cookie","Value":"sid=fake"},{"header":"authorization", "value": "fake-b"}] and',
+      'it sent [{"name":"X-Api-Key","value":***},{"Key":"Cookie","Value":***},{"header":"authorization", "value": ***}] and',
+    ],
+    [
+      'headers [["x-api-key","fake a"],["accept","text/plain"], [ "Set-Cookie" , "sid=fake" ]] sent',
+      'headers [["x-api-key",***],["accept","text/plain"], [ "Set-Cookie" , *** ]] sent',
+    ],
+    // Behind quotes written with backslashes.
+    [
+      String.raw`{"body":"{\"name\":\"Authorization\",\"value\":\"fake a\"}","rows":"[[\"api_key\",\"fake b\"]]"`,
+      String.raw`{"body":"{\"name\":\"Authorization\",\"value\":***}","rows":"[[\"api_key\",***]]"`,
+    ],
+  ];
+  for (const [text, masked] of records) expect(redactCommon(text)).toBe(masked);
+  // A name that is no credential's, a page cursor, a value that is no text, another field's name, and a list of two
+  // texts that neither starts a list nor follows another.
+  const plain = [
+    '{"name":"Accept","value":"text/plain"},{"name":"next_page_token","value":"fake-cursor"}',
+    '{"name":"token","value":5},{"title":"password","value":"of another field"},{"username":"secret","value":"x"}',
+    '{"required":["password","email"],"sort":["token","asc"],"allowedHeaders":["Authorization","Content-Type"]}',
+    '[["accept","text/plain"],["max_tokens","4096"]]',
+  ];
+  for (const text of plain) expect(redactCommon(text)).toBe(text);
 });
