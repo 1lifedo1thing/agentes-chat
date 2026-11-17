@@ -348,6 +348,27 @@ describe("phone tools", () => {
     expect(told[0]?.source).toMatchObject({ phoneId: w.phone.id, label: "Pixel 8", runId: ctx.runId });
   });
 
+  test("from a confidential thread a phone read is said in the tool's own words: the run's label reaches neither the host nor the owner", async () => {
+    const w = await world();
+    await f.db
+      .update(schema.machinePhones)
+      .set({ audienceMode: "everyone" })
+      .where(eq(schema.machinePhones.id, w.phone.id));
+    w.answer((req) =>
+      req.op === "phone.logs" ? ({ text: "I/app: started" } satisfies MachineReplies["phone.logs"]) : {},
+    );
+    const ctx = await runCtx();
+    await f.db.transaction((tx) =>
+      markThreadConfidential(tx, { orgId: f.org.id, channelId: f.general.id, rootId: ctx.threadRootId }),
+    );
+    const out = await call(ctx, "phone_logs", { phone: "pixel 8", label: "what the record said" });
+    expect(out.isError).toBeFalsy();
+    const told = (await notificationsOf(w.sam.id)).filter((n) => n.kind === "device.in_use");
+    expect(w.asked).toMatchObject([{ op: "phone.logs", holder: { label: "Reading the log" } }]);
+    expect(told).toMatchObject([{ latest: { text: "Reading the log" } }]);
+    expect(JSON.stringify([w.asked, told])).not.toContain("the record said");
+  });
+
   test("busy, missing and offline answers name the cause and point at wait_for_device", async () => {
     const w = await world();
     await f.db

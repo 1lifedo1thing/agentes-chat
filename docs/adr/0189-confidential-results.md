@@ -128,7 +128,9 @@ runs only when it is on this list:
   tool the run policy sorts as a read. Not `web_search`, `web_fetch` or `search_wiki`: their words leave the server
   (the wiki's search embeds its query). `search_context` searches by words only, with no call to an embeddings
   provider, and shows the stub for a sealed message; from any thread it leaves out the steps of a run of a
-  confidential one;
+  confidential one. `phone_screenshot` and `phone_logs` are reads too, and are said in the tool's own words: a
+  label the run gives would be read by the phone's owner in their notification, kept by the computer the phone is
+  plugged into and shown with the phone's status;
 - a connected app's read, only on a catalog connector or on a server the operator listed. A custom server by
   address, a tool reached through a connections broker, a mailbox and a workspace's database are refused: a read's
   arguments go to whoever runs the server. A read an admin marked to ask is no read;
