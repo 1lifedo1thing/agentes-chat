@@ -90,6 +90,34 @@ export function groupPlans<A extends MachineAccount & { machineId?: string }>(
   }));
 }
 
+/**
+ * What an account's row says of its sign-ins (Contas de IA, web and phone), read from every login of it
+ * (`groupPlans`): the agents whose login ended while others still think with it ("Ada ficou sem login."), else that
+ * it is signed out (a key account: its key was refused); while none is out, that one couldn't be checked. Null while
+ * all are signed in.
+ */
+export function signInNote(
+  t: TFunction,
+  g: Pick<PlanAccount<MachineAccount>, "logins" | "signedOut" | "unknown">,
+  key: boolean,
+): { state: "out" | "unknown"; text: string } | null {
+  if (g.signedOut.length > 0) {
+    const outFor = g.signedOut.length === g.logins.length ? [] : g.signedOut.flatMap((l) => l.usedBy);
+    return {
+      state: "out",
+      text:
+        outFor.length > 0
+          ? t("aiAccounts.page.signedOutFor", { count: outFor.length, agents: joinNames(outFor, t) })
+          : t(key ? "aiAccounts.page.keyRefused" : "aiAccounts.page.signedOut"),
+    };
+  }
+  return g.unknown.length > 0 ? { state: "unknown", text: t("aiAccounts.page.statusUnknown") } : null;
+}
+
+/** The login "Entrar de novo" signs in again (`signInNote`): a signed-out one, else one couldn't be checked, else the first. */
+export const againLogin = <A extends MachineAccount>(g: Pick<PlanAccount<A>, "logins" | "signedOut" | "unknown">) =>
+  g.signedOut[0] ?? g.unknown[0] ?? g.logins[0];
+
 /** One account in an agent's account choice: the login it offers, and the agents on any of its logins. */
 export interface AccountChoice<A extends MachineAccount> {
   login: A;

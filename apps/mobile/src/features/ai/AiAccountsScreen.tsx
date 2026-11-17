@@ -16,6 +16,7 @@ import {
   accountSub,
   accountTitle,
   agentsToGive,
+  againLogin,
   endsOnClaude,
   identityUnknown,
   keyRemovalText,
@@ -26,7 +27,7 @@ import {
   orderPlaces,
   ownSignIns,
   ownSignInTitle,
-  signInOf,
+  signInNote,
   unnamedAccount,
 } from "@agenteschat/client/lib/ai-accounts";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
@@ -142,7 +143,9 @@ function AiAccounts() {
   // The viewer's logins of one account (one per agent) are one row; disconnecting it removes every one of them.
   const owned = ownAccountRows(ai.data?.accounts ?? []);
   const rows = owned.map((o) => o.account);
-  const loginsOf = (a: Account) => owned.find((o) => o.account.id === a.id)?.logins ?? [a];
+  const ownOf = (a: Account) =>
+    owned.find((o) => o.account.id === a.id) ?? { logins: [a], signedOut: [], unknown: [] };
+  const loginsOf = (a: Account) => ownOf(a).logins;
   const own = ownSignIns(ai.data);
   const several = onSeveralComputers(rows);
   const refetch = () => void qc.invalidateQueries({ queryKey: keys.aiAccounts(orgId) });
@@ -239,7 +242,7 @@ function AiAccounts() {
   const actions = (a: Account, g?: AccountOrderGroup) => {
     const plan = planOf(a.provider);
     const placedAs = g?.accounts.find((x) => x.id === a.id);
-    const out = offersSignInAgain(a);
+    const out = loginsOf(a).some(offersSignInAgain);
     const toGive = meId
       ? agentsToGive({
           account: a,
@@ -265,7 +268,7 @@ function AiAccounts() {
           ? [
               {
                 label: plan ? t("aiAccounts.page.newKey") : t("aiAccounts.page.signInAgain"),
-                onPress: () => signInAgain(a),
+                onPress: () => signInAgain(againLogin(ownOf(a)) ?? a),
               },
             ]
           : []),
@@ -281,8 +284,9 @@ function AiAccounts() {
    */
   const accountRow = (a: Account, g?: AccountOrderGroup, n?: number | null) => {
     const plan = planOf(a.provider);
-    const out = signInOf(a) === "signed_out";
-    const unknown = signInOf(a) === "unknown";
+    // Every login of the account: one agent's sign-in may have ended while the row goes by another's.
+    const note = signInNote(t, ownOf(a), Boolean(plan));
+    const off = ownOf(a).signedOut.length === loginsOf(a).length;
     const facts = [
       accountSub(a) ??
         (a.keyHint
@@ -304,7 +308,7 @@ function AiAccounts() {
               {n ?? ""}
             </Text>
           ) : (
-            <ProviderLogo id={a.provider ?? a.kind} size="sm" off={out} />
+            <ProviderLogo id={a.provider ?? a.kind} size="sm" off={off} />
           )
         }
         leadingSaid={n?.toString()}
@@ -316,12 +320,9 @@ function AiAccounts() {
         disabled={g !== undefined && move.isPending}
         onPress={() => actions(a, g)}
         below={
-          out || unknown || a.usage || (plan && !plan.usage) ? (
+          note || a.usage || (plan && !plan.usage) ? (
             <View style={styles.below}>
-              {out ? (
-                <Note icon="x">{plan ? t("aiAccounts.page.keyRefused") : t("aiAccounts.page.signedOut")}</Note>
-              ) : null}
-              {unknown ? <Note icon="info">{t("aiAccounts.page.statusUnknown")}</Note> : null}
+              {note ? <Note icon={note.state === "out" ? "x" : "info"}>{note.text}</Note> : null}
               {a.usage ? (
                 <PlanMeter usage={a.usage} compact />
               ) : plan && !plan.usage ? (

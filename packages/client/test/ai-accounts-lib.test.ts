@@ -8,6 +8,7 @@ import {
   accountSub,
   accountTitle,
   agentsToGive,
+  againLogin,
   chainHasRoom,
   endsOnClaude,
   existingAi,
@@ -35,6 +36,7 @@ import {
   planWordOf,
   removableLogins,
   reusableAccount,
+  signInNote,
   signInOf,
   signInPlan,
   unnamedAccount,
@@ -834,5 +836,39 @@ describe("a batch removal takes only what the viewer may remove (`removableLogin
     expect(removableLogins(accounts, "grok").map((a) => a.id)).toEqual(["mine"]);
     expect(removableLogins(accounts, "codex").map((a) => a.id)).toEqual(["chatgpt"]);
     expect(removableLogins([], "grok")).toEqual([]);
+  });
+});
+
+describe("an account's sign-ins, read from every login of it", () => {
+  const t = ((key: string, o?: Record<string, unknown>) =>
+    o ? `${key}(${Object.values(o).join(",")})` : key) as unknown as TFunction;
+  const team = (id: string, over: Partial<MachineAccount> = {}) =>
+    login(id, { provider: null, keyHint: null, email: "ana@example.com", ...over });
+
+  test("one login of several signed out says whose sign-in ended and is the one signed in again", () => {
+    const [g] = groupPlans([
+      team("a1", { usedBy: ["Theo"], shared: true }),
+      team("a2", { usedBy: ["Ada"], status: "signed_out" }),
+    ]);
+    if (!g) throw new Error("group");
+    expect(signInNote(t, g, false)).toEqual({ state: "out", text: "aiAccounts.page.signedOutFor(1,format.list(Ada))" });
+    expect(againLogin(g)?.id).toBe("a2");
+  });
+
+  test("every login out says the account is signed out (a key: refused); one unknown says so while none is out", () => {
+    const [out] = groupPlans([team("b1", { usedBy: ["Ada"], status: "signed_out" })]);
+    const [key] = groupPlans([login("k1", { status: "signed_out", keyHint: "AbCd" })]);
+    const [unknown] = groupPlans([
+      team("c1", { usedBy: ["Theo"] }),
+      team("c2", { usedBy: ["Ada"], status: "signed_out", statusKnown: false }),
+    ]);
+    const [fine] = groupPlans([team("d1")]);
+    if (!out || !key || !unknown || !fine) throw new Error("groups");
+    expect(signInNote(t, out, false)).toEqual({ state: "out", text: "aiAccounts.page.signedOut" });
+    expect(signInNote(t, key, true)).toEqual({ state: "out", text: "aiAccounts.page.keyRefused" });
+    expect(signInNote(t, unknown, false)).toEqual({ state: "unknown", text: "aiAccounts.page.statusUnknown" });
+    expect(againLogin(unknown)?.id).toBe("c2");
+    expect(signInNote(t, fine, false)).toBeNull();
+    expect(againLogin(fine)?.id).toBe("d1");
   });
 });

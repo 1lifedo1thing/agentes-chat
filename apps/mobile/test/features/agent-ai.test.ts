@@ -1399,6 +1399,8 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
       ["t2", ["Ada", "Theo"], ["t1", "t2", "t3"]],
       ["p", [], ["p"]],
     ]);
+    // The row reads every login of it: Ada's ended though the row goes by Theo's.
+    expect(rows.map((r) => r.signedOut.map((l) => l.id))).toEqual([["t1"], []]);
     const order = [
       { id: "t1", sameAs: "t1" },
       { id: "p", sameAs: "p" },
@@ -1466,6 +1468,10 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     expect(accounts).toContain("filter((g) => orderAccounts(g.accounts).length > 1)");
     expect(accounts).toContain("{orderAccounts(g.accounts).map((block, i) => {");
     expect(accounts).toContain("const owned = ownAccountRows(ai.data?.accounts ?? []);");
+    // The note and "Entrar de novo" of a row come from every login of its account, as the web's.
+    expect(accounts).toContain("const note = signInNote(t, ownOf(a), Boolean(plan));");
+    expect(accounts).toContain("onPress: () => signInAgain(againLogin(ownOf(a)) ?? a),");
+    expect(accounts).toContain("loginsOf(a).some(offersSignInAgain)");
     expect(accounts).toContain("disabled={g !== undefined && move.isPending}");
     expect(ai).toContain("const offers = waits && kind && view ?");
     expect(ai).toContain('chain.moves && !waits ? t("agentPage.work.brain.movesOn") : null');
