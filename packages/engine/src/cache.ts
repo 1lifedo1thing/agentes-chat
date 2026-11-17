@@ -113,6 +113,8 @@ export const caches = {
   readOutsideRuns: new TtlCache<true>(3600_000, 20_000),
   /** The workspace's devices by name (`deviceRoster`): a run's prompt and its tool lists read it once. */
   deviceRoster: new TtlCache<unknown>(5_000),
+  /** Registered hosts by name (`hostLook`, ADR 0194), read by the origin check of every write. */
+  hosts: new TtlCache<unknown>(TTL_MS),
 };
 
 /** `caches.contextPresence`'s key for whether an agent holds a rule people gave (`rulesForRun`). */
