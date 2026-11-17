@@ -89,8 +89,11 @@ stay exact and be written once.
    with one quiet "Powered by agentes.chat" line linking to the product's site. The tab's title names the host where it
    names the product, on every page of that host, and the tab's icon is its logo unless the browser picked another icon.
    The About screen and its license notice are unchanged.
-9. **Phone and desktop.** Nothing changes. The phone app is built for one address; the desktop app reaches a
-   registered host as it reaches any other server.
+9. **Phone and desktop.** Nothing changes. The phone app is built for one address. The desktop app's server check
+   (`checkServer`, shared with the phone) asks `GET /api/instance`, whose `url` is `PUBLIC_URL`'s origin on every
+   host, and uses a server at the address it names: a registered host typed in its server field opens the main
+   address, with the product's own look and sign-in. `url` stays the main address on purpose: the phone app and the
+   desktop app's check for a server on this computer read it as the server's one address.
 
 ## Consequences
 
