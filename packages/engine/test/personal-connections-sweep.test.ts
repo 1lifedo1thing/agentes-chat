@@ -5,6 +5,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
   addChannelMember,
+  agentScopeNames,
   agentStatuses,
   connectionViewFor,
   createAgentRuns,
@@ -23,6 +24,7 @@ import {
   listCustomServers,
   listMessages,
   listNotifications,
+  listRoutines,
   listRuns,
   type McpConnect,
   mcpSessionOver,
@@ -382,5 +384,46 @@ describe("what a person's own connection leaves for everyone else", () => {
     if (!seen) throw new Error("the router was not asked");
     expect((seen as RoutingInput).candidates.map((c) => c.agentId)).toContain(f.agent.id);
     expect(JSON.stringify((seen as RoutingInput).candidates)).not.toContain("CRM");
+  });
+
+  test("the roster names none of its grants, and a routine's trigger on it keeps its filter and error for its readers", async () => {
+    const s = await walterUsedHisCrm();
+    const scopes = (await agentScopeNames(f.db, f.org.id, [f.agent.id])).map((r) => r.scope);
+    expect(scopes.some((scope) => scope.startsWith(`${s.crm.connector}:`))).toBe(false);
+
+    const [routine] = await f.db
+      .insert(schema.routines)
+      .values({
+        orgId: f.org.id,
+        agentId: f.agent.id,
+        name: "Mail",
+        prompt: "Read it",
+        target: { type: "dm" },
+        triggerType: "event",
+        event: "webhook.received",
+        createdByUserId: s.walter.id,
+      })
+      .returning();
+    if (!routine) throw new Error("no routine");
+    await f.db.insert(schema.routineHooks).values({
+      routineId: routine.id,
+      orgId: f.org.id,
+      keyId: "k1",
+      tokenHash: "h1",
+      source: {
+        connectionId: s.crm.id,
+        event: "millionsend.email.received",
+        filter: { from: ["boss@example.com"] },
+        status: "error",
+        lastError: `Refused for ${ACCOUNT}`,
+      },
+    });
+    const triggerFor = async (userId: string) =>
+      JSON.stringify((await listRoutines(f.db, userId, f.org.id)).find((r) => r.id === routine.id)?.trigger ?? null);
+    const caios = await triggerFor(s.caio.id);
+    expect(caios).toContain("millionsend.email.received");
+    expect(caios).not.toContain(ACCOUNT);
+    expect(caios).not.toContain("boss@example.com");
+    expect(await triggerFor(s.walter.id)).toContain(ACCOUNT);
   });
 });

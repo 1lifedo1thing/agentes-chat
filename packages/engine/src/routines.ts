@@ -1029,7 +1029,11 @@ async function views(
           url: hookUrls.get(r.id) ?? null,
           signed: hookKey.signed,
           methods: hookKey.methods,
-          source: hookKey.source,
+          // What its creator typed (filter, inbox) and the provider's refusal go, as its prompt does, to readers only.
+          source:
+            hookKey.source && !right.reads
+              ? { ...hookKey.source, inboxId: undefined, filter: {}, lastError: null }
+              : hookKey.source,
         },
       ),
       active: r.active,
