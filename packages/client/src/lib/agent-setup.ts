@@ -131,10 +131,10 @@ export type NewAgentStart = (
       brain: "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
       machineId: string;
       computer: string;
-      /** Its title is `accountTitle`'s, as everywhere. */
+      /** Said as everywhere (`accountTitle`, `accountInLine` for an unnamed one: its maker). */
       account: Pick<
         MachineAccount,
-        "id" | "label" | "named" | "email" | "plan" | "mine" | "keyHint" | "provider"
+        "id" | "kind" | "label" | "named" | "email" | "plan" | "mine" | "keyHint" | "provider"
       > | null;
       /** Saved as its "Quem pensa" once the agent exists. */
       input: AgentBrainInput;
@@ -171,6 +171,7 @@ export function newAgentStart(
     account: s.account
       ? {
           id: s.account.id,
+          kind: s.brain,
           label: s.account.label,
           named: s.account.named,
           email: s.account.email ?? null,

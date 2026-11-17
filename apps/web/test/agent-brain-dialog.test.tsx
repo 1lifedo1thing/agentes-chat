@@ -870,7 +870,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     // The account it signed in thinks for Ada at once: the last screen says so.
     expect(within(d).queryByRole("region", { name: "Adicionar conta do ChatGPT" })).toBeNull();
     expect(brainScreen(d)).toBe("Pronto");
-    expect(shownText(d)).toContain("A Ada agora pensa com Pessoal · Plus.");
+    expect(shownText(d)).toContain("A Ada agora pensa com Pessoal.");
     expect(state.calls.some((c) => c.method === "machines.cancelAccountLogin")).toBe(false);
     expect(brainCalls(state)).toEqual([{ brain: "codex", account: "acct_codex" }]);
   });
@@ -929,7 +929,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     fakeMachinesOf.get(api)?.endLogin("login_1", { state: "done", account: codex });
     await ask(22_000);
     expect(brainScreen(d)).toBe("Pronto");
-    expect(shownText(d)).toContain("A Ada agora pensa com Pessoal · Plus.");
+    expect(shownText(d)).toContain("A Ada agora pensa com Pessoal.");
     expect(d.textContent).not.toMatch(/Não deu para entrar|não respondeu/);
     expect(state.calls.filter((c) => c.method === "machines.beginAccountLogin")).toHaveLength(1);
     expect(state.calls.some((c) => c.method === "machines.cancelAccountLogin")).toBe(false);
@@ -1000,25 +1000,26 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     await toScreen(d, "Trocar de conta");
     const best = brainRows(d).filter((r) => r.group === "Com mais folga agora");
     expect(best.map((r) => [r.title, r.room])).toEqual([
-      ["Folga · Max", "5%"],
-      ["Pessoal · Max", "40%"],
-      ["Trabalho · Max", "70%"],
+      // Names their owner gave them: the name alone, the email and plan on the line under it.
+      ["Folga", "5%"],
+      ["Pessoal", "40%"],
+      ["Trabalho", "70%"],
     ]);
     // How full each one is is read with its row, below 80% too: only the bar is hidden from a screen reader.
-    expect(within(d).getByRole("radio", { name: /Pessoal · Max.*40\s?%/ })).toBeTruthy();
+    expect(within(d).getByRole("radio", { name: /Pessoal.*40\s?%/ })).toBeTruthy();
     for (const pct of d.querySelectorAll(".arrival-have__pct")) expect(pct.closest("[aria-hidden]")).toBeNull();
     expect(best[0]?.checked).toBe(true);
-    expect(mainButton(d)?.textContent).toBe("Trocar para Folga · Max");
+    expect(mainButton(d)?.textContent).toBe("Trocar para Folga");
     await toScreen(d, "Ver as");
     expect(brainScreen(d)).toBe("Todas as contas");
-    expect(brainRows(d).some((r) => r.title === "Reserva · Max")).toBe(true);
+    expect(brainRows(d).some((r) => r.title === "Reserva")).toBe(true);
     await act(async () =>
       fireEvent.change(within(d).getByRole("searchbox", { name: "Buscar conta ou pessoa" }), {
         target: { value: "reserva" },
       }),
     );
     await settle(2);
-    expect(brainRows(d).map((r) => r.title)).toEqual(["Reserva · Max"]);
+    expect(brainRows(d).map((r) => r.title)).toEqual(["Reserva"]);
     await pickRow(d, "Reserva");
     await confirmScreen(d);
     await settle(6);
@@ -1059,7 +1060,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     const line = within(d).getByText(/Nesta conta a Ada espera até o plano renovar\./);
     const link = within(line.closest("p") as HTMLElement).getByRole("link", { name: "Ver uso" });
     expect(link.getAttribute("href")).toBe(`/org/${ORG_ID}/settings/usage`);
-    expect(mainButton(d)?.textContent).toBe("Trocar para Cheia · Team");
+    expect(mainButton(d)?.textContent).toBe("Trocar para Cheia");
     expect((mainButton(d) as HTMLButtonElement).disabled).toBe(false);
     await confirmScreen(d);
     await settle(6);

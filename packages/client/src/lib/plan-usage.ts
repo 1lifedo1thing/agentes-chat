@@ -623,7 +623,8 @@ export const accountName = (
 ) =>
   a.label === null
     ? ownSignInName(t, a.mine, a.machineName, a.kind)
-    : accountTitle(t, { ...a, label: a.label, keyHint: null });
+    : // The usage views carry no key's end: an OpenCode account is a key account, read by its name as everywhere.
+      accountTitle(t, { ...a, label: a.label, keyHint: a.kind === "opencode" ? "" : null });
 
 /** Who makes what an account thinks with: a coding plan's maker, else Claude Code or Codex. */
 export const brandOf = (a: Pick<PlanAccountInfo, "kind" | "provider">) =>

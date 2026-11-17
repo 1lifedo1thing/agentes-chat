@@ -142,7 +142,16 @@ describe("a new agent starts with the last setup", () => {
     key: null,
     contextTokens: null,
     computer: { machineId: "m1", name: "MacBook" },
-    account: { id: "acc", label: "Claude", named: false, email: "ana@acme.com", plan: "max", provider: null, mine: true, free: true },
+    account: {
+      id: "acc",
+      label: "Claude",
+      named: false,
+      email: "ana@acme.com",
+      plan: "max",
+      provider: null,
+      mine: true,
+      free: true,
+    },
     ownSignIn: false,
     effort: "high",
     fallback: true,
@@ -173,6 +182,7 @@ describe("a new agent starts with the last setup", () => {
       computer: "MacBook",
       account: {
         id: "acc",
+        kind: "claude_code",
         label: "Claude",
         named: false,
         email: "ana@acme.com",
@@ -231,6 +241,7 @@ describe("a new agent starts with the last setup", () => {
       computer: "MacBook",
       account: {
         id: "acc",
+        kind: "claude_code",
         label: "GLM Coding",
         named: false,
         email: null,

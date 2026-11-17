@@ -145,11 +145,12 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     expect(brainRows(d).map((r) => [r.group, r.title, r.lines])).toEqual([
       ["Em uso", "A conta que os seus agentes dividem", []],
       // Grouped by AI, the workspace's keys last.
-      ["Claude", "Trabalho · Team", ["walt@acme.com"]],
+      // A name its owner gave it, its email and plan on the line under it.
+      ["Claude", "Trabalho", ["walt@acme.com · Team"]],
       ["Chaves de API", "Chave padrão do workspace", ["Claude · termina em 7f2a"]],
     ]);
     await pickRow(d, "Trabalho");
-    expect(mainButton(d)?.textContent).toBe("Trocar para Trabalho · Team");
+    expect(mainButton(d)?.textContent).toBe("Trocar para Trabalho");
     await click(mainButton(d) as HTMLElement);
     await settle(6);
     expect(brainCalls(state).at(-1)).toEqual({ brain: "claude_code", account: "acct_work" });
@@ -169,9 +170,11 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     const { state } = await onMac({ accounts: [work, shared] });
     const d = await brainDialog();
     await toScreen(d, "Trocar de conta");
-    expect(brainRows(d).find((r) => r.title === "Pessoal · Max")?.lines).toEqual(["Também usada por Theo"]);
+    expect(brainRows(d).find((r) => r.title === "Pessoal")?.lines).toEqual([
+      "walt@pessoal.com · Max · Também usada por Theo",
+    ]);
     await pickRow(d, "Pessoal");
-    expect(mainButton(d)?.textContent).toBe("Trocar para Pessoal · Max");
+    expect(mainButton(d)?.textContent).toBe("Trocar para Pessoal");
     await click(mainButton(d) as HTMLElement);
     await settle(6);
     expect(within(d).queryByRole("region", { name: "Adicionar conta do Claude" })).toBeNull();
@@ -216,7 +219,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     // The computer's own sign-in says its plan under its name, as "Seus planos" titles it; Ana's other account,
     // thinking for nobody here, isn't Ada's to pick.
     expect(rows.find((r) => r.title === "A conta que os seus agentes dividem")?.lines).toEqual(["Claude · Max"]);
-    expect(rows.find((r) => r.title === "Pessoal · Max")?.lines).toEqual(["Também usada por Theo"]);
+    expect(rows.find((r) => r.title === "Pessoal")?.lines).toEqual(["walt@pessoal.com · Max · Também usada por Theo"]);
     expect(rows.map((r) => r.title)).not.toContain("Claude Team 3");
     await pickRow(d, "Pessoal");
     expect(mainButton(d)?.textContent).toBe("Fazer login para a Ada");
@@ -266,7 +269,9 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     const { state } = await onMac({ brain: "codex", effectiveModel: "gpt-6-sol", accounts: [theo] });
     const d = await brainDialog();
     await toScreen(d, "Trocar de conta");
-    expect(brainRows(d).find((r) => r.title === "Pessoal · Plus")?.lines).toEqual(["Também usada por Theo"]);
+    expect(brainRows(d).find((r) => r.title === "Pessoal")?.lines).toEqual([
+      "walt@pessoal.com · Plus · Também usada por Theo",
+    ]);
     await pickRow(d, "Pessoal");
     expect(mainButton(d)?.textContent).toBe("Fazer login para a Ada");
     await click(mainButton(d) as HTMLElement);
@@ -287,7 +292,14 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
       source: "probe",
       at: now,
     });
-    const roomy: MachineAccount = { ...work, id: "acct_roomy", label: "Claude Team 2", usage: some(12) };
+    // Automatic names: each goes by its email.
+    const roomy: MachineAccount = {
+      ...work,
+      id: "acct_roomy",
+      label: "Claude Team 2",
+      email: "walt@reserva.com",
+      usage: some(12),
+    };
     const busy: MachineAccount = { ...work, id: "acct_busy", label: "Claude Team 3", usedBy: ["Theo"], usage: some(3) };
     const { state } = await onMac({
       account: "acct_work",
@@ -299,13 +311,13 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     expect(brainScreen(d)).toBe("A conta da Ada está no limite");
     // Opening it looks the plans up again.
     expect(state.calls.some((c) => c.method === "machines.refreshAccountUsage")).toBe(true);
-    expect(d.textContent).toContain("Trabalho · Team volta");
+    expect(d.textContent).toContain("Trabalho volta");
     expect(brainRows(d).map((r) => [r.group, r.title, r.room])).toEqual([
-      ["Com mais folga agora", "Claude Team 2", "12%"],
+      ["Com mais folga agora", "walt@reserva.com", "12%"],
     ]);
     expect(within(d).getByRole("button", { name: "Esperar" })).toBeTruthy();
     expect(within(d).queryByRole("button", { name: /^Conectar outra IA/ })).toBeNull();
-    expect(mainButton(d)?.textContent).toBe("Usar Claude Team 2");
+    expect(mainButton(d)?.textContent).toBe("Usar walt@reserva.com");
     await click(mainButton(d) as HTMLElement);
     await settle(6);
     expect(brainCalls(state).at(-1)).toEqual({ brain: "claude_code", account: "acct_roomy" });
@@ -326,7 +338,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
       canManageAccounts: false,
     });
     const d = await brainDialog(/no limite$/);
-    expect(d.textContent).toContain("Trabalho · Team volta");
+    expect(d.textContent).toContain("Trabalho volta");
     expect(brainRows(d)).toEqual([]);
     expect(mainButton(d)).toBeNull();
     expect(within(d).queryByRole("button", { name: /^Usar Claude/ })).toBeNull();
@@ -407,7 +419,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
   test("a signed-out account says so and offers to sign in again, its own email going to Claude's sign-in unasked", async () => {
     const { state } = await onMac({ account: "acct_work", accounts: [{ ...work, status: "signed_out" }] });
     const d = await brainDialog();
-    expect(brainRows(d)[0]?.lines).toContain("Saiu da conta, entre de novo");
+    expect(brainRows(d)[0]?.lines).toEqual(["walt@acme.com · Team · Saiu da conta, entre de novo"]);
     expect(mainButton(d)?.textContent).toBe("Entrar de novo");
     await click(mainButton(d) as HTMLElement);
     expect(brainScreen(d)).toBe("Entrar de novo");
@@ -528,7 +540,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     // Codex's own sign-in is reported on the MacBook its owner connected: the account the agents share. Claude Code's
     // isn't, and nothing of Claude's is there: no row of Claude's.
     const openai = brainRows(d).filter((r) => r.mark === "openai");
-    expect(openai.map((r) => r.title).sort()).toEqual(["A conta que os seus agentes dividem", "Pessoal · Plus"]);
+    expect(openai.map((r) => r.title).sort()).toEqual(["A conta que os seus agentes dividem", "Pessoal"]);
     expect(brainRows(d).some((r) => r.mark === "claude" && r.group !== "Em uso")).toBe(false);
     await pickRow(d, (r) => r.mark === "openai" && r.title === "A conta que os seus agentes dividem");
     await click(mainButton(d) as HTMLElement);
@@ -544,8 +556,8 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
       brainRows(d)
         .filter((r) => r.mark === "openai")
         .map((r) => r.title),
-    ).toEqual(["Pessoal · Plus"]);
-    await pickRow(d, "Pessoal · Plus");
+    ).toEqual(["Pessoal"]);
+    await pickRow(d, "Pessoal");
     await click(mainButton(d) as HTMLElement);
     await settle(6);
     expect(brainCalls(second.state).at(-1)).toMatchObject({ brain: "codex", account: "acct_plus" });
@@ -577,7 +589,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     };
     const { state } = await onMac({ account: "acct_work", accounts: [{ ...work, usedBy: ["Ada"], usage: full }] });
     const d = await brainDialog(/no limite$/);
-    expect(d.textContent).toContain("Trabalho · Team volta quando o plano renovar");
+    expect(d.textContent).toContain("Trabalho volta quando o plano renovar");
     await click(within(d).getByRole("button", { name: "Esperar" }));
     expect(screen().queryByRole("dialog")).toBeNull();
     expect(brainCalls(state)).toEqual([]);

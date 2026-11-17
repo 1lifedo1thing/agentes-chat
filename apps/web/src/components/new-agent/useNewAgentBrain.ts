@@ -7,7 +7,7 @@ import {
   usePlatformKey,
 } from "@agenteschat/client";
 import { newAgentStart } from "@agenteschat/client/lib/agent-setup";
-import { accountTitle } from "@agenteschat/client/lib/ai-accounts";
+import { accountInLine } from "@agenteschat/client/lib/ai-accounts";
 import {
   brainPickInput,
   brainPickOptions,
@@ -70,7 +70,7 @@ export function useNewAgentBrain(accountId?: string) {
       ? {
           kind: last.brain,
           machineId: last.machineId,
-          ...(last.account ? { accountId: last.account.id, label: accountTitle(t, last.account) } : {}),
+          ...(last.account ? { accountId: last.account.id, label: accountInLine(t, last.account) } : {}),
         }
       : own && "accountId" in own && own.accountId
         ? { kind: own.kind, machineId: own.machineId, accountId: own.accountId, label: own.account, model: AUTO }
