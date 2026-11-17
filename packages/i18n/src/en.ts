@@ -2603,7 +2603,10 @@ export const en = {
     row: {
       hint: "Talk with {{assistant}} and get its replies on {{surface}}.",
       link: "Link",
-      /** Under the app's name while nothing is linked. {{assistant}} is the workspace's built-in assistant by name. */
+      /**
+       * Behind the ⓘ beside the app's name while nothing is linked. {{assistant}} is the workspace's built-in assistant
+       * by name.
+       */
       none: "{{assistant}} can message you there",
       pending: "A sender is waiting for you to confirm",
       unlink: "Unlink",

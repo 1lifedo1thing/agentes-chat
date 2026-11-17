@@ -168,8 +168,11 @@ describe("Configurações do workspace", () => {
 
   test("Notificações: no phone gets them yet, so the row opens the phone app with a code", async () => {
     await go(seedState(), "settings/notifications");
-    const row = document.getElementById("notice-phone-status")?.closest(".settings-row") as HTMLElement;
-    expect(row.textContent).toContain("Ative no app do celular");
+    // How to turn them on is the ⓘ's, as on the rows beside it; the button keeps the name's line.
+    const row = document.getElementById("notice-phone-help")?.closest(".settings-row") as HTMLElement;
+    expect(document.getElementById("notice-phone-help")?.textContent).toBe("Ative no app do celular");
+    expect(document.getElementById("notice-phone-status")).toBeNull();
+    expect(row.classList.contains("settings-row--button")).toBe(true);
     expect(row.textContent).not.toContain("›");
     await click(within(row).getByRole("button", { name: "Abrir no celular" }));
     await settle(4);

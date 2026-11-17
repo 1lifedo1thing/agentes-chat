@@ -70,9 +70,13 @@ describe("the outside chat app's row in Notificações", () => {
     const { state, app, row } = await notifications({ name: "Example Chat", links: [] });
     const r = row() as HTMLElement;
     expect(r.querySelector(".settings-row__label")?.textContent).toBe("Example Chat");
-    expect(document.getElementById("notice-surface-status")?.textContent).toBe(
+    // What linking does is the ⓘ's, as on the rows beside it; nothing under the name while nothing is linked, and the
+    // button keeps the name's line.
+    expect(document.getElementById("notice-surface-help")?.textContent).toBe(
       "Seu braço direito pode mandar mensagens para você lá",
     );
+    expect(document.getElementById("notice-surface-status")).toBeNull();
+    expect(r.classList.contains("settings-row--button")).toBe(true);
     await click(within(r).getByRole("button", { name: "Vincular" }));
     expect(app.router.state.location.search).toMatchObject({ link: 1 });
     expect(calls(state, "surfaces.mintCode")).toEqual([[ORG_ID]]);
@@ -298,7 +302,7 @@ describe("the outside chat app's row in Notificações", () => {
       await settle(4);
       const glyphOf = (id: string) =>
         document.getElementById(id)?.closest(".settings-row")?.querySelector<SVGElement>(".settings-row__icon > svg");
-      const mark = glyphOf("notice-surface-status");
+      const mark = glyphOf("notice-surface-help");
       const beside = glyphOf("notice-mac-help");
       expect(mark?.querySelector("image")?.getAttribute("href")).toBe("/connectors/examplechat.svg");
       expect(mark?.querySelector("rect")?.getAttribute("fill")).toBe("currentColor");
@@ -309,8 +313,8 @@ describe("the outside chat app's row in Notificações", () => {
       cleanup();
       await notifications({ name: "Example Chat", links: [] });
       await settle(4);
-      expect(glyphOf("notice-surface-status")?.querySelector("image")).toBeNull();
-      expect(glyphOf("notice-surface-status")?.style.width).toBe(beside?.style.width ?? "");
+      expect(glyphOf("notice-surface-help")?.querySelector("image")).toBeNull();
+      expect(glyphOf("notice-surface-help")?.style.width).toBe(beside?.style.width ?? "");
     } finally {
       globalThis.Image = RealImage;
     }

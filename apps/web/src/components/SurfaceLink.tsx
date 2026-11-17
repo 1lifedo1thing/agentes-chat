@@ -102,12 +102,16 @@ export function SurfacePrefRow() {
         id="notice-surface"
         lead={<SurfaceMark name={surface} />}
         label={surface}
-        hint={row.kind === "active" ? t("surface.row.hint", { assistant, surface }) : undefined}
+        hint={
+          row.kind === "active"
+            ? t("surface.row.hint", { assistant, surface })
+            : row.kind === "none"
+              ? t("surface.row.none", { assistant })
+              : undefined
+        }
         status={
           row.kind === "pending" ? (
             t("surface.row.pending")
-          ) : row.kind === "none" ? (
-            t("surface.row.none", { assistant })
           ) : sender.length > 0 ? (
             <span className="surface-sender__line">
               {sender.map((s, i) => (
