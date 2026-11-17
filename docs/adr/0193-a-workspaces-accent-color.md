@@ -24,7 +24,8 @@ by hand.
 
 1. **The accent is the agent color family.** The design system has one color with a meaning, the agent color
    (`--agent`, `--agent2`, `--agent-soft`, `--on-agent`): agents' frames, mentions, links, focus and selected states.
-   A workspace's accent replaces exactly those four tokens, nothing else. A second brand color beside it would need its
+   A workspace's accent replaces those four tokens and the default agent color they stand for (§5), nothing else. A
+   second brand color beside it would need its
    own place on every screen and would compete with the agents' color; ink, surfaces, amber ("waits on you") and the
    danger and success colors keep their meanings in every workspace.
 2. **Stored once, derived everywhere.** `organizations.accent` holds a lower-case `#rrggbb`, null for the default.
@@ -51,7 +52,19 @@ by hand.
    shell is mounted, so dialogs and menus portaled out of the shell carry them too, and takes them away when the shell
    goes; pages outside a workspace (sign-in, onboarding, the account's pages) keep the design system's blue. The
    desktop app shows the web. The phone swaps the agent colors of its palette under the active workspace.
-5. **The operator may set a workspace's look.** `PUT /api/operator/v1/orgs/{orgId}/look` with
+5. **The accent is the workspace's default agent color.** An agent with no color of its own paints with the named
+   color `sky`, and so does the sky art (the sidebar's sky, a channel's sky band, an approval card's band, the logo
+   mark). Inside a workspace with an accent, the agents' engine resolves `sky` to the accent (`setSkyColors` in
+   `packages/ui/src/agent/engine.js`, the one place every drawing reads a named color through, `gradientOf`), so those
+   agents' tiles, frames, mention chips, pixel faces and portraits and the sky art take the workspace's color. An agent
+   given its own color keeps it. The pair handed to the engine is `accentSky(hex)`: the light theme's `agent2` and
+   `agent` in both themes, as the landing's sky is one pair in both, so the agents' white eyes and text keep 4.5:1 on
+   it whatever was picked (mention chips work out their own contrast per theme, as for any agent color). The web's
+   shell sets it before its children render and clears it when it goes, with `data-accent` on `<html>`, which every
+   drawing that repaints on a theme switch also watches (`PAINT_ATTRS` in `packages/ui/src/theme.ts`); the drawings'
+   caches are keyed by the colors `sky` resolves to. The phone's `AccentProvider` does the same (`paintSky` in
+   `apps/mobile/src/ui/palette.ts`).
+6. **The operator may set a workspace's look.** `PUT /api/operator/v1/orgs/{orgId}/look` with
    `{ accent?, logo?: { contentType, base64 } | null }`: an absent field is left alone, null clears it. It goes through
    the same setters as the app with the system as the actor: the logo's type, size and metadata checks, the same
    storage, the same audit entries and the same `org.look` announcement. A hosted service can then give several
@@ -61,8 +74,10 @@ by hand.
 ## Consequences
 
 - A workspace with no accent looks exactly as before; nothing changes for self-hosters who never pick one.
-- Places that draw an agent's own color (its avatar, its mention tone) keep that color: the accent is the workspace's,
-  an agent's look is the agent's.
+- Agents' own colors win: an agent given a color keeps it in every workspace; only the ones without a color, and the
+  sky art, follow the accent.
+- With a near-black accent in the dark theme, the agents' bodies sit close to the page's own dark: their eyes and the
+  lighter dither tones keep them visible, but the tile reads quieter than the default blue's.
 - An accent picked on the phone shows on the web at once, and the other way around.
 
 ## Left out
