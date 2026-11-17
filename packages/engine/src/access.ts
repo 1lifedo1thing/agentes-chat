@@ -7,7 +7,7 @@ import { CONNECTOR_CATALOG } from "./connectors/catalog";
 import { connectorGrantValidator, toolPrefixOfConnection } from "./connectors/connections";
 import { classifiedTools, customScope, isCustom, type ToolAccess } from "./connectors/custom";
 import { exposedToolName } from "./connectors/mcp";
-import { othersPersonal, seesOthersOnAgent } from "./connectors/personal";
+import { othersLabel, othersPersonal, seesOthersOnAgent } from "./connectors/personal";
 import { sha256 } from "./crypto";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { can, requirePermission } from "./organizations";
@@ -375,7 +375,7 @@ export async function orgToolCatalog(db: Database, orgId: string, options: { vie
       out.push({
         connectionId: c.id,
         connector: isCustom(c) ? "custom" : c.connector,
-        label: c.label,
+        label: othersLabel(c.label, c.accountLabel),
         custom: isCustom(c),
         scopes: [],
         ownerUserId: c.ownerUserId,

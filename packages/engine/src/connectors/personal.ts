@@ -48,6 +48,19 @@ export const othersPersonal = (c: Pick<ConnectorConnection, "ownerUserId">, acto
   c.ownerUserId !== null && c.ownerUserId !== actorId;
 
 /**
+ * Someone else's own connection's name as others read it: one that kept its default form, the service and the account
+ * its sign-in reached ("CRM (walter@example.com)"), goes by the service alone, as a mailbox's name that holds its
+ * address does.
+ */
+export function othersLabel(label: string, account: string | null | undefined) {
+  const named = account ? /^(.+) \((.+)\)$/.exec(label) : null;
+  if (!account || !named) return label;
+  const [, service = label, inside = ""] = named;
+  const flat = account.replace(/\s+/g, " ").trim().toLowerCase();
+  return flat.startsWith(inside.replace(/…$/, "").toLowerCase()) ? service : label;
+}
+
+/**
  * Whether `actorId` sees that someone else's personal connection is on this agent (and may take it off): who manages
  * connectors or agents, and the agent's owner. Never its details.
  */
@@ -113,11 +126,10 @@ export async function usableConnections(ctx: ToolContext, connections: Connector
 }
 
 /**
- * A personal connection's tool as its person's run holds it: only what the agent's own grants on it allow; a card it
+ * A personal connection's tool as its person's run holds it: only what the agent's own grants on it allow. A card it
  * opens is its person's alone to decide and to list (`ownerApprovers` with `personal`), never the agent's owner's or
- * admins'; what it reads is marked as from
- * outside, as a mailbox's is. `ownerUserId` lets the gateway refuse it to any other run. A team connection's tool as
- * it is. Null: not allowed.
+ * admins'. What it reads is marked as from outside, as a mailbox's is. `ownerUserId` lets the gateway refuse it to
+ * any other run. A team connection's tool comes back as it is. Null: not allowed.
  */
 export function personalTool(
   tool: ToolDefinition,

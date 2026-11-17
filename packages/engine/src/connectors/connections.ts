@@ -18,7 +18,7 @@ import { offersCatalog } from "./listing";
 import type { McpConnect } from "./mcp";
 import { clientAuth, getOAuthClient, type McpOAuthDeps, probeMcpServer } from "./oauth-mcp";
 import { oauthReturnTo } from "./oauth-return";
-import { connectionFor, connectionsOf, othersPersonal, requireConnect, seenBy } from "./personal";
+import { connectionFor, connectionsOf, othersLabel, othersPersonal, requireConnect, seenBy } from "./personal";
 import { presetForServer } from "./presets";
 
 const { connectorConnections, oauthStates, agentScopes, agents, approvalRules, githubAppInstallations } = schema;
@@ -247,7 +247,14 @@ export const connectionView = (c: ConnectorConnection) => ({
 export function connectionViewFor(c: ConnectorConnection, actorId: string, agents?: Map<string, string[]>) {
   const v = { ...connectionView(c), ...(c.ownerUserId ? { agentIds: agents?.get(c.id) ?? [] } : {}) };
   if (!othersPersonal(c, actorId)) return v;
-  return { ...v, serverUrl: "", accountLabel: null, tokenExpiresAt: null, reconnectAdds: [] };
+  return {
+    ...v,
+    label: othersLabel(v.label, c.accountLabel),
+    serverUrl: "",
+    accountLabel: null,
+    tokenExpiresAt: null,
+    reconnectAdds: [],
+  };
 }
 
 function checkServerUrl(url: string) {

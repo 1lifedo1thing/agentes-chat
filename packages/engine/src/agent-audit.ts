@@ -2,6 +2,7 @@ import { and, type Database, desc, type Executor, eq, inArray, lt, ne, or, schem
 import { recordAudit } from "./audit";
 import type { RunAuthority } from "./authority";
 import { readableChannelIds } from "./channels";
+import { othersLabel } from "./connectors/personal";
 import { serverUrlShown } from "./connectors/presets";
 import { cutText } from "./format";
 import { can, requirePermission } from "./organizations";
@@ -448,7 +449,15 @@ export async function listAudit(
                 ? r.details
                 : r.details.personal === true && r.actorId !== actorId
                   ? // Someone else's own server: its address and account stay theirs, as on the lists.
-                    { ...r.details, serverUrl: "", account: null }
+                    {
+                      ...r.details,
+                      serverUrl: "",
+                      account: null,
+                      label: othersLabel(
+                        String(r.details.label ?? ""),
+                        typeof r.details.account === "string" ? r.details.account : null,
+                      ),
+                    }
                   : typeof r.details.serverUrl === "string"
                     ? { ...r.details, serverUrl: serverUrlShown(r.details.serverUrl) }
                     : r.details,

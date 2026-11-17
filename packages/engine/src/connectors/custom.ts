@@ -53,7 +53,15 @@ import {
   serverKey,
 } from "./oauth-mcp";
 import { oauthReturnTo } from "./oauth-return";
-import { connectionFor, connectionsOf, othersPersonal, personalAgents, requireConnect, seenBy } from "./personal";
+import {
+  connectionFor,
+  connectionsOf,
+  othersLabel,
+  othersPersonal,
+  personalAgents,
+  requireConnect,
+  seenBy,
+} from "./personal";
 import { seedToolPins } from "./pins";
 import {
   composioToolkitOf,
@@ -280,7 +288,7 @@ function view(c: ConnectorConnection, tools: ToolRow[], whole = true, actorId?: 
     return {
       id: c.id,
       serverUrl: "",
-      label: c.label,
+      label: othersLabel(c.label, c.accountLabel),
       accountLabel: null,
       authType: c.authType === "oauth" ? "oauth" : "api_key",
       headerNames: [],
