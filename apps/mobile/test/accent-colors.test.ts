@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { accentPalette } from "@agenteschat/tokens/accent";
+import { accentPalette, accentSky } from "@agenteschat/tokens/accent";
+import { gradientOf } from "@agenteschat/ui/agent/engine";
 import { contrastRatio } from "../src/lib/nav";
-import { appColors, sheetColors, withAccent } from "../src/ui/palette";
+import { appColors, paintSky, sheetColors, skyAccent, withAccent } from "../src/ui/palette";
 
 describe("a workspace's accent on the phone (ADR 0193)", () => {
   test("its agent colors take the place of the theme's, in both themes, and nothing else moves", () => {
@@ -34,5 +35,20 @@ describe("a workspace's accent on the phone (ADR 0193)", () => {
     expect(withAccent(base, "light", null)).toBe(base);
     expect(withAccent(base, "light", undefined)).toBe(base);
     expect(withAccent(base, "light", "orange")).toBe(base);
+  });
+
+  test("the provider's sky: the accent's pair while one is shown, the default again once cleared", () => {
+    const sky = gradientOf("sky");
+    const rose = gradientOf("rose");
+    paintSky("#f97316");
+    try {
+      expect(skyAccent()).toBe("#f97316");
+      expect(gradientOf("sky")).toEqual(accentSky("#f97316"));
+      expect(gradientOf("rose")).toEqual(rose);
+    } finally {
+      paintSky(null);
+    }
+    expect(skyAccent()).toBeNull();
+    expect(gradientOf("sky")).toEqual(sky);
   });
 });
