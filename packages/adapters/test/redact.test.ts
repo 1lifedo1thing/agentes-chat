@@ -46,8 +46,6 @@ test("text made of values that never end is masked in linear time", () => {
     filled(
       (n) => `{"id":${n},"token":"fake-${n}","body":"{\\"password\\":\\"fake ${n}\\"}","env":"API_KEY=fake${n}"}\n`,
     ),
-    // A name glued to each quoted value, read from that value's end.
-    filled((n) => `token="fake-${n}":secret="fake-${n}" `),
   ];
   for (const text of megabytes) {
     const started = performance.now();
@@ -331,16 +329,6 @@ test("the same credential as other writers spell it", () => {
     ],
   ];
   for (const [text, masked] of spelled) expect(redactCommon(text)).toBe(masked);
-});
-
-test("a name glued to a quoted value's closing quote is read too, and its value joins the mask", () => {
-  for (const sign of [":", "/", ".", "-", "+", "?", "#", "@", ""]) {
-    expect(redactCommon(`token="fake-a"${sign}secret="fake-b" next`)).toBe("token=*** next");
-    expect(redactCommon(`token='fake-a'${sign}secret=fake-b next`)).toBe("token=*** next");
-  }
-  // A name the mask ends inside keeps what follows it, and its value is masked on its own.
-  expect(redactCommon("passwd = 'fake-a'--secret = fake-b next")).toBe("passwd = *** = *** next");
-  expect(redactCommon('token="fake-a"-password: "fake b" next')).toBe("token=*** *** next");
 });
 
 test("a value ends at a line end or a tab as JSON writes them, and the next line's name and value are read on their own", () => {

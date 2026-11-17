@@ -99,71 +99,69 @@ type Ends = (at: number, opener: RegExpExecArray) => number;
  * says, and ends at a quote only inside a string: where a quote written the same way stands open before the value
  * (`"line":"token: …"},{"line":"password: …"}`), so the next string's name and value are read on their own. With none
  * open the quote is the value's own (`PASSWORD=ab",cd`), and so is a written quote that would open one after a bare
- * name.
+ * name. `glued`: a quoted value takes with it what a shell reads as one word with it.
  *
  * The quotes are listed once, so a value with no end costs its quotes, never the rest of the text: a quote that does
  * not end a value has more backslashes than the one that opened it, and the time stays linear in the text.
  */
-const valueEnds = (text: string): Ends => {
-  const kinds = new Map<string, Quotes>();
-  const listed = (quote: string) => {
-    const quotes = kinds.get(quote) ?? quotesOf(text, quote);
-    kinds.set(quote, quotes);
-    return quotes;
-  };
-  const unquoted = (from: number) => {
-    let end = unquotedEnd(text, from);
-    for (;;) {
-      let quote = end;
-      while (text.charCodeAt(quote) === BACKSLASH) quote++;
-      const kind = text[quote];
-      if (kind !== '"' && kind !== "'") return end;
-      const quotes = listed(kind);
-      pass(quotes, from - 1);
-      if (quotes.open.has(quote - end)) return end;
-      end = unquotedEnd(text, quote + 1);
-    }
-  };
-  /** Whether a string whose quotes are written with `slashes` backslashes stands open before `at`. */
-  const inString = (slashes: number, at: number) =>
-    ['"', "'"].some((kind) => {
-      const quotes = listed(kind);
-      pass(quotes, at - 1);
-      return quotes.open.has(slashes);
-    });
-  return (at, opener) => {
-    let open = at;
-    while (text.charCodeAt(open) === BACKSLASH) open++;
-    const quote = text[open];
-    if (quote === '"' || quote === "'") {
-      const depth = open - at;
-      // A quote written with backslashes is one only inside a string, whose own quotes are written with half as
-      // many. After a bare name with none open it is a character of the value (`PASSWORD=\"ab\",cd`).
-      if (depth > 0 && !/["']/.test(opener[0]) && !inString((depth - 1) >> 1, at)) return unquoted(at);
-      const quotes = listed(quote);
-      pass(quotes, open);
-      let close = depth === 0 ? quotes.at[quotes.next] : undefined;
-      for (let i = quotes.next; i < quotes.at.length; i++) {
-        const slashes = quotes.slashes[i] ?? 0;
-        if (slashes < depth || (slashes - depth) % (2 * depth + 2) === 0) {
-          close = quotes.at[i];
-          break;
-        }
+const valueEnds =
+  (glued = false) =>
+  (text: string): Ends => {
+    const kinds = new Map<string, Quotes>();
+    const listed = (quote: string) => {
+      const quotes = kinds.get(quote) ?? quotesOf(text, quote);
+      kinds.set(quote, quotes);
+      return quotes;
+    };
+    const unquoted = (from: number) => {
+      let end = unquotedEnd(text, from);
+      for (;;) {
+        let quote = end;
+        while (text.charCodeAt(quote) === BACKSLASH) quote++;
+        const kind = text[quote];
+        if (kind !== '"' && kind !== "'") return end;
+        const quotes = listed(kind);
+        pass(quotes, from - 1);
+        if (quotes.open.has(quote - end)) return end;
+        end = unquotedEnd(text, quote + 1);
       }
-      if (close !== undefined) return close + 1;
-      // Cut off before its closing quote: the quote that opens it ends nothing.
-      return unquoted(open + 1);
-    }
-    return unquoted(at);
+    };
+    /** Whether a string whose quotes are written with `slashes` backslashes stands open before `at`. */
+    const inString = (slashes: number, at: number) =>
+      ['"', "'"].some((kind) => {
+        const quotes = listed(kind);
+        pass(quotes, at - 1);
+        return quotes.open.has(slashes);
+      });
+    return (at, opener) => {
+      let open = at;
+      while (text.charCodeAt(open) === BACKSLASH) open++;
+      const quote = text[open];
+      if (quote === '"' || quote === "'") {
+        const depth = open - at;
+        // A quote written with backslashes is one only inside a string, whose own quotes are written with half as
+        // many. After a bare name with none open it is a character of the value (`PASSWORD=\"ab\",cd`).
+        if (depth > 0 && !/["']/.test(opener[0]) && !inString((depth - 1) >> 1, at)) return unquoted(at);
+        const quotes = listed(quote);
+        pass(quotes, open);
+        let close = depth === 0 ? quotes.at[quotes.next] : undefined;
+        for (let i = quotes.next; i < quotes.at.length; i++) {
+          const slashes = quotes.slashes[i] ?? 0;
+          if (slashes < depth || (slashes - depth) % (2 * depth + 2) === 0) {
+            close = quotes.at[i];
+            break;
+          }
+        }
+        if (close !== undefined) return glued ? endAt(GLUED, text, close + 1) : close + 1;
+        // Cut off before its closing quote: the quote that opens it ends nothing.
+        return unquoted(open + 1);
+      }
+      return unquoted(at);
+    };
   };
-};
 
-/**
- * `text` with the value after each match of `opener` masked, as far as `endsOf` says it goes. `glued`: what a shell
- * reads as one word with a quoted value is masked with it, and reading goes on from the value's own end: a name
- * glued there has a value too (`token="…":secret="…"`), which joins the same mask.
- */
-function maskAfter(text: string, opener: RegExp, endsOf: (text: string) => Ends, glued = false): string {
+/** `text` with the value after each match of `opener` masked, as far as `endsOf` says it goes. */
+function maskAfter(text: string, opener: RegExp, endsOf: (text: string) => Ends): string {
   let ends: Ends | undefined;
   let masked = "";
   let done = 0;
@@ -173,8 +171,8 @@ function maskAfter(text: string, opener: RegExp, endsOf: (text: string) => Ends,
     ends ??= endsOf(text);
     const end = ends(at, found);
     if (end > at) {
-      if (at > done) masked += `${text.slice(done, at)}***`;
-      done = Math.max(done, glued ? endAt(GLUED, text, end) : end);
+      masked += `${text.slice(done, at)}***`;
+      done = end;
     }
     opener.lastIndex = Math.max(end, found.index + 1);
   }
@@ -186,7 +184,7 @@ function maskAfter(text: string, opener: RegExp, endsOf: (text: string) => Ends,
  * at any depth of writing, an unquoted one up to its first space. `name` is a global pattern that ends where the
  * value starts.
  */
-export const maskValuesAfter = (text: string, name: RegExp) => maskAfter(text, name, valueEnds);
+export const maskValuesAfter = (text: string, name: RegExp) => maskAfter(text, name, valueEnds());
 
 /**
  * What stands between a name and its value: `=` or `:`, also as an address writes them (`%3D`) and `=` as a code
@@ -273,8 +271,8 @@ export function redactCommon(text: string): string {
     .replace(/\b(gh[pousr]_[A-Za-z0-9._-]{20,}|github_pat_[A-Za-z0-9_]{20,})/g, "gh_***")
     .replace(/\b(xox[abposr]-[A-Za-z0-9-]{10,})/g, "xox-***")
     .replace(/\b(AKIA[0-9A-Z]{16})\b/g, "AKIA***");
-  const fields = maskAfter(maskAfter(shaped, FIELD_NAMED, valueEnds), WRITTEN_FIELD_NAMED, writtenEnds);
-  return maskAfter(maskAfter(fields, RECORD_NAMED, valueEnds), NAMED, valueEnds, true);
+  const fields = maskAfter(maskAfter(shaped, FIELD_NAMED, valueEnds()), WRITTEN_FIELD_NAMED, writtenEnds);
+  return maskAfter(maskAfter(fields, RECORD_NAMED, valueEnds()), NAMED, valueEnds(true));
 }
 
 /** An option named for a secret, as one text of a list of arguments (`--password`, `-api-key`). */
