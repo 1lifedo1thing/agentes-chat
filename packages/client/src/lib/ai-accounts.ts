@@ -12,7 +12,7 @@ import type {
   MachineAccountKind,
   PlanUsage,
 } from "../api/types";
-import { firstName, joinNames } from "./format";
+import { firstName, joinNames, namesText } from "./format";
 import { isPlanId, loginPerAgent, planName } from "./plans";
 import { shownKeys } from "./providers";
 import { isRightHand } from "./right-hand";
@@ -408,10 +408,10 @@ export function haveGroup(t: TFunction, r: ExistingAi): { key: string; label: st
 
 /**
  * The line under an account in a list of what the person has, what tells two accounts apart: one's own says what its
- * title leaves out (`accountSub`: the email under a name they gave it, the plan) or its key's end, then how many other
- * agents think with it where it thinks for all of them; one that would move, sign in again or is signed out says so
- * (`accountAbout`). Someone else's says whose it is and nothing else: never its email, and not its plan, which its
- * title already says (`accountTitle`).
+ * title leaves out (`accountSub`: the email under a name they gave it, the plan) or its key's end, then the other
+ * agents that think with it where it thinks for all of them (two names, then how many more); one that would move,
+ * sign in again or is signed out says so (`accountAbout`). Someone else's says whose it is and nothing else: never its
+ * email, and not its plan, which its title already says (`accountTitle`).
  */
 export function haveAbout(t: TFunction, r: ExistingAccount, agentName: string): string | undefined {
   const a = r.choice.login;
@@ -420,8 +420,7 @@ export function haveAbout(t: TFunction, r: ExistingAccount, agentName: string): 
   const others = [...new Set(r.choice.usedBy)].filter((n) => n !== agentName);
   const who = withSub(a, a.keyHint ? t("aiAccounts.page.keyEnds", { hint: a.keyHint }) : null);
   if (!others.length || a.shared !== true) return who ?? accountAbout(t, r.choice, agentName);
-  if (!who) return t("agentPage.work.brain.accountAlso", { agents: joinNames(others, t) });
-  return `${who} · ${t("connectAi.have.moreAgents", { count: others.length })}`;
+  return [who, t("agentPage.work.brain.accountAlso", { agents: namesText(t, others, 2) })].filter(Boolean).join(" · ");
 }
 
 /**

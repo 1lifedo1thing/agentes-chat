@@ -373,7 +373,7 @@ describe("one account signed in once per agent is one row, whoever looks", () =>
     const theirs = existingAi({ accounts: team(false), account: null, canUseOthersPlans: true }, [])[0];
     if (own?.kind !== "account" || theirs?.kind !== "account") throw new Error("rows");
     // Made for all of Walter's agents, Atlas on it: its title is its email, so the line says the plan, then one more agent.
-    expect(haveAbout(t, own, "Lia")).toBe("Team · connectAi.have.moreAgents(1)");
+    expect(haveAbout(t, own, "Lia")).toBe("Team · agentPage.work.brain.accountAlso(format.list(Atlas))");
     expect(haveAbout(t, own, "Atlas")).toBe("Team");
     const named = { ...own, choice: { ...own.choice, login: { ...own.choice.login, named: true, label: "Trabalho" } } };
     expect(haveAbout(t, named, "Atlas")).toBe("walter.ops@example.com · Team");

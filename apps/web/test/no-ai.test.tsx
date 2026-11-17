@@ -1316,7 +1316,8 @@ describe("Conectar uma IA for an agent with no AI: what the person already has, 
     expect(calls(state, "agents.setBrain").map((c) => c.args)).toEqual([
       [ORG_ID, ADA_ID, { brain: "claude_code", account: "acct_t13" }],
     ]);
-    expect(box.textContent).toContain("Ada agora pensa com Claude.");
+    // Someone else's account by its name with its plan, as main says it.
+    expect(box.textContent).toContain("Ada agora pensa com Claude · Team.");
   });
 
   test("who may use other people's plans picks a teammate's in one click; one another agent has is counted, not listed", async () => {
