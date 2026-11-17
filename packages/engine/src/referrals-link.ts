@@ -3,6 +3,7 @@ import { type Database, eq, schema } from "@agenteschat/db";
 import { appLocale } from "@agenteschat/i18n/locale";
 import { BILLING_LINK_SECONDS, linkReturnPath, linkUrl, signLinkToken } from "./billing-link";
 import { can, listMemberships, type UserLocale } from "./organizations";
+import { closedRefusal } from "./standing";
 
 export interface ReferralsLinkClaims {
   aud: "agentes-referrals";
@@ -55,7 +56,7 @@ export async function mintReferralsLink(
     name: user.name,
     locale: appLocale([user.locale], true) ?? "en",
     orgs: memberships
-      .filter((m) => !m.standing?.deletionDueAt && m.standing?.state !== "suspended")
+      .filter((m) => !closedRefusal(m.standing))
       .slice(0, REFERRALS_ORGS)
       .map((m) => ({
         id: m.orgId,
