@@ -238,6 +238,13 @@ export function accountTitle(t: TFunction, a: TitledAccount): string {
 export const unnamedAccount = (a: TitledAccount) => !byLabel(a) && a.named !== true && !a.email;
 
 /**
+ * An account inside a sentence ("Ada agora pensa com …", "Você já tem … aqui"): its title, or for an unnamed one its
+ * maker ("Claude"), never "Unnamed account" mid-sentence.
+ */
+export const accountInLine = (t: TFunction, a: TitledAccount & Pick<MachineAccount, "kind">) =>
+  unnamedAccount(a) ? t(`aiAccounts.connect.${a.kind}`) : accountTitle(t, a);
+
+/**
  * What an account's line starts with, where its title doesn't say it: the email under a name its owner gave it, then
  * its plan ("ana@acme.com · Max"). Nothing for an account read by its name (`labelTitle` says the plan).
  */

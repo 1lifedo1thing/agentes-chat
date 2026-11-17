@@ -2,7 +2,7 @@ import type { AgentBrain, AgentBrainInput, AgentSetup, BrainKind, MachineAccount
 import { keys, useAgents, useApi, useSetComputerTarget, useUpdateAgent } from "@agenteschat/client";
 import type { BrainScreen } from "@agenteschat/client/lib/agent-edit";
 import { autonomyWords, setupOutcome } from "@agenteschat/client/lib/agent-setup";
-import { accountTitle, signInPlan } from "@agenteschat/client/lib/ai-accounts";
+import { accountInLine, signInPlan } from "@agenteschat/client/lib/ai-accounts";
 import { EVERYONE_AUDIENCE, setupPlanQuestion } from "@agenteschat/client/lib/audience";
 import { thinksWith } from "@agenteschat/client/lib/brain";
 import {
@@ -312,9 +312,11 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
           : null;
       const movedTo = row.moves ? s.nameOf(row.moves.name) : null;
       const names = [agent.name, ...others.map((o) => o.name)];
+      // In the sentence an unnamed account goes by its maker ("Claude"), never "Unnamed account".
+      const said = row.account ? accountInLine(t, row.account) : row.title;
       const line =
         names.length > 1
-          ? t("connectAi.doneAll", { names: namesText(t, names, 2), label: row.title })
+          ? t("connectAi.doneAll", { names: namesText(t, names, 2), label: said })
           : t(
               owner
                 ? movedTo
@@ -323,7 +325,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
                 : movedTo
                   ? "agentPage.work.saved.brainMoved"
                   : "agentPage.work.saved.brain",
-              { ...g, brain: row.title, computer: movedTo ?? "", owner: owner ?? "" },
+              { ...g, brain: said, computer: movedTo ?? "", owner: owner ?? "" },
             );
       setSwitched({ row, before, others, line, missed, onlyOwnerAfter: result?.onlyOwner ?? view.onlyOwner });
       setPicked(undefined);
@@ -725,7 +727,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
           </div>
           {arrived && (
             <SettingNote icon="check" live>
-              {t("agentPage.work.brain.add.done", { account: accountTitle(t, arrived), computer: s.computerName })}
+              {t("agentPage.work.brain.add.done", { account: accountInLine(t, arrived), computer: s.computerName })}
             </SettingNote>
           )}
           {s.kind !== "model" && !view.canUsePlans && ownerFirst && (
@@ -854,7 +856,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
     }
     if (screen === "limit") {
       const until = s.usage ? planState(s.usage).until : null;
-      const account = s.currentRow?.title ?? "";
+      const account = s.currentAccount ? accountInLine(t, s.currentAccount) : (s.currentRow?.title ?? "");
       return (
         <>
           <div className="bd-step">

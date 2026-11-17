@@ -13,6 +13,7 @@ import { autonomyWords, type NewAgentStart } from "@agenteschat/client/lib/agent
 import {
   type AccountChoice,
   accountAbout,
+  accountInLine,
   accountTitle,
   type ExistingAi,
   existingAi,
@@ -183,7 +184,7 @@ export function accountSaved(
   const g = agentGrammar(agentName);
   if ("model" in input) return t("agentPage.work.saved.brain", { ...g, brain: thinksNow(t, saved) ?? "" });
   return a
-    ? t("agentPage.work.saved.account", { ...g, account: accountTitle(t, a) })
+    ? t("agentPage.work.saved.account", { ...g, account: accountInLine(t, a) })
     : t("aiAccounts.done.savedAgent", { agent: agentName, label: ownSignInLower(t, saved.brain) });
 }
 

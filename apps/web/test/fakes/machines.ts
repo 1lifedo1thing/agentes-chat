@@ -39,6 +39,7 @@ import type {
   DeviceRequest,
   HostComputer,
   Machine,
+  MachineAccount,
   MachineAccountKind,
   MachineOutages,
   MoveAgentsResult,
@@ -47,6 +48,32 @@ import type {
 import { ApiError } from "@agenteschat/client";
 import { isPlanId, planOf } from "@agenteschat/client/lib/plans";
 import { clone, type MockContext, MockNotFoundError } from "./context";
+
+/** The server's automatic names (`defaultAccountLabel`): the maker, or a coding plan's name. */
+const AUTO_NAMES: Record<string, string> = {
+  claude_code: "Claude",
+  codex: "ChatGPT",
+  cursor: "Cursor",
+  opencode: "OpenCode",
+  grok: "Grok",
+  antigravity: "Gemini",
+};
+const OLD_LABEL_WORDS = /^(code|pro\+?|max|ultra|team|teams|enterprise|plus|business|free)$/i;
+
+/**
+ * An account as the server sends it (`isDefaultAccountLabel`): `named` false while its name is the automatic one
+ * ("Claude", "Claude 2", an older "Claude Max 2"), true for any other. A test that sets `named` keeps it.
+ */
+export function withNamed<A extends Pick<MachineAccount, "label" | "kind" | "provider" | "named">>(a: A): A {
+  if (a.named !== undefined) return a;
+  const base = planOf(a.provider)?.label ?? AUTO_NAMES[a.kind] ?? "";
+  const rest = a.label.startsWith(base) ? a.label.slice(base.length).trim().split(/\s+/).filter(Boolean) : null;
+  if (rest && rest.length > 0 && /^\d+$/.test(rest[rest.length - 1] ?? "")) rest.pop();
+  const auto =
+    rest !== null &&
+    (rest.length === 0 || (rest.length === 1 && OLD_LABEL_WORDS.test(rest[0] ?? "") && a.label[base.length] === " "));
+  return { ...a, named: !auto };
+}
 
 export interface FakeMachines {
   client: ApiClient["machines"];
@@ -326,7 +353,10 @@ export function createFakeMachines(ctx: MockContext, log: (method: string, ...ar
         log("machines.refreshAccountUsage", orgId);
       },
       // Read whenever an accounts screen renders: not logged.
-      aiAccounts: async () => clone(ai),
+      aiAccounts: async () => {
+        const all = clone(ai);
+        return { ...all, accounts: all.accounts.map(withNamed) };
+      },
       takeBackPlan: async (orgId, accountId, agentId) => {
         log("machines.takeBackPlan", orgId, accountId, agentId);
         return { agentIds: agentId ? [agentId] : [] };
@@ -343,6 +373,7 @@ export function createFakeMachines(ctx: MockContext, log: (method: string, ...ar
           [...loginStatus.values()].find((st) => st.account?.id === accountId)?.account;
         if (!a) throw new MockNotFoundError("Conta não encontrada.");
         a.label = label;
+        a.named = true;
         return clone(a);
       },
       removeAccount: async (orgId, machineId, accountId) => {

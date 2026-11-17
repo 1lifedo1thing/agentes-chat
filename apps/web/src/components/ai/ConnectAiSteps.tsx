@@ -12,6 +12,7 @@ import {
 import {
   type AccountChoice,
   accountAbout,
+  accountInLine,
   accountTitle,
   existingAi,
   groupPlans,
@@ -363,7 +364,7 @@ export function useExistingAi({
         ...(toEveryone ? { onlyOwner: false } : {}),
       });
       return {
-        label: accountTitle(t, a),
+        label: accountInLine(t, a),
         choice: planOfAccount(a),
         account: a,
         onlyOwner: next.onlyOwner,
@@ -1317,9 +1318,9 @@ function PlanSteps({
                   forWhom.filter((a) => a.done || assigned[a.id]).map((a) => a.name),
                   NAMES_SHOWN,
                 ),
-                label: account ? accountTitle(t, account) : brand,
+                label: account ? accountInLine(t, account) : brand,
               })
-            : thinksWithLine(t, view?.scope, agent.name, account ? accountTitle(t, account) : "")}
+            : thinksWithLine(t, view?.scope, agent.name, account ? accountInLine(t, account) : "")}
         </SettingNote>
         {foot}
       </>
@@ -1351,7 +1352,7 @@ function PlanSteps({
     <div className="ai-panel__row">
       <SettingNote icon="alert" live>
         {t("connectAi.assignFailed", {
-          label: accountTitle(t, failed.account),
+          label: accountInLine(t, failed.account),
           agent: forWhom.find((a) => a.id === failed.agentId)?.name ?? "",
         })}
       </SettingNote>

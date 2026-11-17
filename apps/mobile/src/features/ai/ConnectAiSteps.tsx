@@ -13,6 +13,7 @@ import {
   useModels,
 } from "@agenteschat/client";
 import {
+  accountInLine,
   accountTitle,
   type ExistingAi,
   groupPlans,
@@ -938,7 +939,7 @@ function PlanPage(
               setDone({
                 agentId: agent.id,
                 agent: agent.name,
-                label: account ? accountTitle(t, account) : planLabel(t, choice),
+                label: account ? accountInLine(t, account) : planLabel(t, choice),
               });
               props.onPlanDone(agent.id);
             }}

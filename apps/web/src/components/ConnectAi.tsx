@@ -1011,7 +1011,8 @@ function ConnectAiDialog({
     // A personal workspace has no team (ADR 0159): its agents, in its own words.
     const personal = isPersonal(org);
     // What they think with: the account signed in, else the plan's name.
-    const plan = choice === "key" ? "" : thinksWith ? accountTitle(t, thinksWith) : planLabel(t, choice);
+    // "o seu {{plan}}": the name its owner gave it, else the plan's.
+    const plan = choice === "key" ? "" : thinksWith?.named === true ? thinksWith.label : planLabel(t, choice);
     const screen = !ready
       ? "loading"
       : choosing
