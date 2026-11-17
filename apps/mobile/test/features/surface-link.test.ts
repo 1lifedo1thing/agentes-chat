@@ -53,7 +53,7 @@ describe("the row in Notificações", () => {
     const t = await translator("en");
     const none = surfaceRowOf(links([]), NOW);
     if (none.kind === "hidden") throw new Error("hidden");
-    expect(surfaceRowText(t, none, "Lodi")).toEqual({ sub: "Lodi can message you there", value: "Link" });
+    expect(surfaceRowText(t, none, "Lodi")).toEqual({ hint: "Lodi can message you there", value: "Link" });
     expect(surfaceRowText(t, none, null)).toEqual({ value: "Link" });
 
     const pending = surfaceRowOf(links([link()]), NOW);
@@ -95,6 +95,8 @@ describe("the row in Notificações", () => {
     const src = readFileSync(join(import.meta.dir, "../../src/features/me/SurfaceLink.tsx"), "utf8");
     expect(src).toContain("labelLines={0}");
     expect(src).toContain("subLines: 0");
+    // What linking does is the ⓘ's beside the name, as on the phone switch's row above it.
+    expect(src).toContain('hint: { name: t("common.about", { label: row.surface }), text: text.hint }');
     expect(src).toContain("confirmAction({");
     const page = readFileSync(join(import.meta.dir, "../../src/features/me/PreferencePages.tsx"), "utf8");
     expect(page).toContain("<SurfaceLinkRow />");
