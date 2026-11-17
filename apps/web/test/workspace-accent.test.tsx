@@ -3,7 +3,8 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
-import { accentPalette } from "@agenteschat/ui";
+import { accentPalette, accentSky } from "@agenteschat/ui";
+import { gradientOf } from "@agenteschat/ui/agent/engine";
 import { act, cleanup, fireEvent, render, within } from "@testing-library/react";
 import { ThemeProvider, useTheme, useWorkspaceAccent } from "@/lib/theme";
 import { createFakeApi, type FakeState, ORG_ID, seedState } from "./fake-api";
@@ -13,6 +14,8 @@ afterEach(() => cleanup());
 
 const OTHER_ID = "00000000-0000-4000-8000-0000000000aa";
 const PURPLE = "#7c3aed";
+const DEFAULT_SKY: [string, string] = ["#8cc3ff", "#0063d1"];
+const accentAttr = () => document.documentElement.getAttribute("data-accent");
 const agentVar = () => document.documentElement.style.getPropertyValue("--agent");
 const vars = () =>
   ["--agent", "--agent2", "--agent-soft", "--on-agent"].map((n) => document.documentElement.style.getPropertyValue(n));
@@ -40,10 +43,15 @@ describe("the workspace shell paints its accent", () => {
     await settle(6);
     const light = accentPalette(PURPLE).light;
     expect(vars()).toEqual([light.agent, light.agent2, light.agentSoft, light.onAgent]);
+    // Agents with no color of their own and the sky art: the accent's pair; canvases told to repaint.
+    expect(gradientOf("sky")).toEqual(accentSky(PURPLE));
+    expect(accentAttr()).toBe(PURPLE);
 
     await act(() => r.router.navigate({ to: "/org/$orgId/home", params: { orgId: OTHER_ID } }));
     await settle(8);
     expect(vars()).toEqual(["", "", "", ""]);
+    expect(gradientOf("sky")).toEqual(DEFAULT_SKY);
+    expect(accentAttr()).toBeNull();
 
     await act(() => r.router.navigate({ to: "/org/$orgId/home", params: { orgId: ORG_ID } }));
     await settle(8);
@@ -53,6 +61,8 @@ describe("the workspace shell paints its accent", () => {
     await act(() => r.router.navigate({ to: "/download" }));
     await settle(8);
     expect(vars()).toEqual(["", "", "", ""]);
+    expect(gradientOf("sky")).toEqual(DEFAULT_SKY);
+    expect(accentAttr()).toBeNull();
   });
 
   test("it follows the theme as it switches", async () => {
@@ -72,10 +82,13 @@ describe("the workspace shell paints its accent", () => {
     expect(agentVar()).toBe(accentPalette("#f97316").light.agent);
     act(() => switchTo("dark"));
     expect(agentVar()).toBe(accentPalette("#f97316").dark.agent);
+    // The engine's sky is one pair in both themes, as the landing's is.
+    expect(gradientOf("sky")).toEqual(accentSky("#f97316"));
     expect(document.documentElement.dataset.theme).toBe("dark");
     act(() => switchTo("light"));
     cleanup();
     expect(agentVar()).toBe("");
+    expect(gradientOf("sky")).toEqual(DEFAULT_SKY);
   });
 
   test("anything not a #rrggbb sets nothing", () => {

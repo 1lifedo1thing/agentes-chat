@@ -9,8 +9,14 @@ import { useOrg } from "@/components/org-context";
 import { ACCENT_VARS, useTheme } from "@/lib/theme";
 import { useToast } from "@/lib/toast";
 
-/** The suggestions: the agent presets' own tones, sky (the design system's blue, the default) first. */
-const PRESETS = Object.entries(AGENT_GRADIENTS).map(([name, [, bottom]]) => ({ name, hex: bottom }));
+/**
+ * The suggestions: the agent presets' own tones, sky (the design system's blue, the default) first. Sky is named
+ * outright: inside a workspace with an accent, the engine's sky is that accent.
+ */
+const PRESETS = Object.entries(AGENT_GRADIENTS).map(([name, [, bottom]]) => ({
+  name,
+  hex: name === "sky" ? DEFAULT_ACCENT : bottom,
+}));
 
 const paint = (tokens: AccentTokens) =>
   Object.fromEntries(

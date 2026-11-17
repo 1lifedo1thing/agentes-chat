@@ -1,4 +1,5 @@
-import { type AccentTokens, accentPalette, isAccentHex, switchTheme } from "@agenteschat/ui";
+import { ACCENT_ATTR, type AccentTokens, accentPalette, accentSky, isAccentHex, switchTheme } from "@agenteschat/ui";
+import { setSkyColors } from "@agenteschat/ui/agent/engine";
 import {
   createContext,
   type ReactNode,
@@ -70,14 +71,30 @@ export const ACCENT_VARS: Record<keyof AccentTokens, string> = {
   onAgent: "--on-agent",
 };
 
+/** The engine's `sky` and <html>'s `data-accent` for an accent, or back to the default with null. */
+function paintSky(color: string | null) {
+  setSkyColors(color ? accentSky(color) : null);
+  const root = document.documentElement;
+  if (color) root.setAttribute(ACCENT_ATTR, color);
+  else root.removeAttribute(ACCENT_ATTR);
+}
+
 /**
  * Paints the workspace's accent (ADR 0193) for the current theme, on <html> so dialogs and menus portaled out of the
- * shell carry it too. Called by the workspace shell alone: leaving it takes the colors away, and no accent sets
- * nothing, so tokens.css's own blue shows.
+ * shell carry it too, and makes it the engine's `sky`, the color of every agent with none of its own and of the sky
+ * art. Called by the workspace shell alone: leaving it takes the colors away, and no accent sets nothing, so the
+ * design system's own blue shows.
  */
 export function useWorkspaceAccent(accent: string | null | undefined) {
   const { resolved } = useTheme();
   const color = isAccentHex(accent) ? accent.toLowerCase() : null;
+  // Before the shell's children render (its effects run after theirs): faces and mentions drawn in this render
+  // already take it. Idempotent; the effect below keeps it and takes it away.
+  if (typeof document !== "undefined" && document.documentElement.getAttribute(ACCENT_ATTR) !== color) paintSky(color);
+  useLayoutEffect(() => {
+    paintSky(color);
+    return () => paintSky(null);
+  }, [color]);
   useLayoutEffect(() => {
     if (!color) return;
     const style = document.documentElement.style;
