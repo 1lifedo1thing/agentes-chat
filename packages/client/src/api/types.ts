@@ -449,6 +449,11 @@ export interface Member {
   /** Their roles (`OrgRole` ids), not `everyone`. */
   roleIds?: string[];
   joinedAt: string;
+  /**
+   * Who the person works for, when they come from outside the workspace (ADR 0189): shown beside their name, and they
+   * never count toward its limit of people. Null (absent on a server from before it) for everyone else.
+   */
+  outsideOf?: string | null;
   /** `@ana`: unique in the organization; mentions resolve by it. */
   handle: string;
   /** IANA zone (the organization's if the person didn't pick one). */
@@ -708,6 +713,11 @@ export interface JoinRequest {
   confirmed: boolean;
   /** The member who suggested this person (their name, ADR 0090): it came through no link. */
   suggestedBy?: string | null;
+  /**
+   * Who the person works for, on a request the server's operator filed for an outside collaborator (ADR 0189):
+   * approving lets them in at once, even into a full workspace.
+   */
+  outsideOf?: string | null;
   /**
    * The link it came through (ADR 0184): who made it, and the cargos, channels and agents an approval starts on.
    * `full`: it took all its people, so approving is refused (`join.link_full_approval`) until its maximum grows.
@@ -2549,6 +2559,8 @@ export interface Person {
   roleIds?: string[];
   joinedAt: string;
   lastSeenAt: string | null;
+  /** Who an outside collaborator works for (ADR 0189), as on `Member`. */
+  outsideOf?: string | null;
   /** Seen as connected: `presence` is online, away or busy. */
   online: boolean;
   /** `hidden` only for yourself; everyone else sees a hidden person as `offline` (ADR 0084). */
