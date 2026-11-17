@@ -1,5 +1,5 @@
 import type { BrowserTrailKind } from "@agenteschat/client";
-import type { AgentColorName } from "@agenteschat/ui/agent/engine";
+import { type AgentColorName, gradientOf } from "@agenteschat/ui/agent/engine";
 import { Canvas, createPicture, PaintStyle, Picture, Skia, type SkPaint } from "@shopify/react-native-skia";
 import { memo, useMemo } from "react";
 import { View } from "react-native";
@@ -78,8 +78,10 @@ export const TrailStrip = memo(function TrailStrip({
 }) {
   const { raised, danger } = useTones();
   const key = kinds.join(",");
+  // By the colors it resolves to: `sky` follows the workspace's accent.
+  const [top, bottom] = gradientOf(color);
   // biome-ignore lint/correctness/useExhaustiveDependencies: `key` stands for the kinds
-  const runs = useMemo(() => stripCells(kinds, color, { raised, danger }), [key, color, raised, danger]);
+  const runs = useMemo(() => stripCells(kinds, [top, bottom], { raised, danger }), [key, top, bottom, raised, danger]);
   const w = stripWidth(kinds.length) * TRAIL_CELL;
   const h = STRIP_ROWS * TRAIL_CELL;
   return (
@@ -92,7 +94,8 @@ export const TrailStrip = memo(function TrailStrip({
 /** One step's column, marking its line in the list. */
 export const TrailMark = memo(function TrailMark({ kind, color }: { kind: BrowserTrailKind; color: AgentColorName }) {
   const { raised, danger } = useTones();
-  const runs = useMemo(() => markCells(kind, color, { raised, danger }), [kind, color, raised, danger]);
+  const [top, bottom] = gradientOf(color);
+  const runs = useMemo(() => markCells(kind, [top, bottom], { raised, danger }), [kind, top, bottom, raised, danger]);
   const w = MARK_W * TRAIL_CELL;
   const h = STRIP_ROWS * TRAIL_CELL;
   return (

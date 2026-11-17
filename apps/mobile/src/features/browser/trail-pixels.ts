@@ -1,5 +1,5 @@
 import type { BrowserTrailKind } from "@agenteschat/client";
-import { type AgentColorName, bodyTones, mixHex } from "@agenteschat/ui/agent/engine";
+import { type AgentColorName, bodyTones, mixHex, type SkyPair } from "@agenteschat/ui/agent/engine";
 import type { CellRun } from "../../computer/cells";
 
 /**
@@ -56,7 +56,7 @@ export interface TrailTones {
   danger: string;
 }
 
-function trailPalette(color: AgentColorName, tones: TrailTones): Record<BrowserTrailKind, string[]> {
+function trailPalette(color: AgentColorName | SkyPair, tones: TrailTones): Record<BrowserTrailKind, string[]> {
   const t = bodyTones(color);
   const at = (i: number) => t[i] ?? "#888888";
   return {
@@ -76,7 +76,7 @@ const rowsOf = (kind: BrowserTrailKind, rows: number) =>
 export const stripWidth = (steps: number) => Math.max(1, steps * (COLUMN_W + COLUMN_GAP) - COLUMN_GAP);
 
 /** The steps in order, oldest left: an open the whole column, a read most of it, an action a stub, a print two cells. */
-export function stripCells(kinds: BrowserTrailKind[], color: AgentColorName, tones: TrailTones): CellRun[] {
+export function stripCells(kinds: BrowserTrailKind[], color: AgentColorName | SkyPair, tones: TrailTones): CellRun[] {
   const pal = trailPalette(color, tones);
   const out = new CellGrid();
   kinds.forEach((k, i) => {
@@ -87,7 +87,7 @@ export function stripCells(kinds: BrowserTrailKind[], color: AgentColorName, ton
 
 /** One step's column, marking its line in the list (3 × 7 cells). */
 export const MARK_W = COLUMN_W;
-export function markCells(kind: BrowserTrailKind, color: AgentColorName, tones: TrailTones): CellRun[] {
+export function markCells(kind: BrowserTrailKind, color: AgentColorName | SkyPair, tones: TrailTones): CellRun[] {
   const out = new CellGrid();
   column(out, 0, COLUMN_W, rowsOf(kind, STRIP_ROWS), STRIP_ROWS - 1, trailPalette(color, tones)[kind]);
   return out.runs();
