@@ -544,7 +544,7 @@ function FlowSteps({
   const line = (s: FlowStep, i: number): ReactNode => {
     const icon = (name: IconName) => <Icon name={name} size={16} />;
     const say = (lead: ReactNode, head: string, rest?: ReactNode, sub?: ReactNode) => (
-      <li key={i}>
+      <li key={i} className="ac-iconline">
         {lead}
         <span>
           <b>{head}</b>
@@ -596,7 +596,7 @@ function FlowSteps({
   };
   return (
     <ol className="imp-flow">
-      <li>
+      <li className="ac-iconline">
         <Icon name={when ? "routines" : "bulb"} size={16} />
         <span>
           {when ? (

@@ -261,14 +261,10 @@ html:not([data-pointer]) .imp-row__open:focus-visible {
   color: var(--ink2);
   overflow-wrap: anywhere;
 }
-/* An icon as wide as a face (18px), so every step's words start in one column, both centred on the first line. */
+/* Each step is an `.ac-iconline`; an icon as wide as a face (18px), so every step's words start in one column. */
 .imp-flow > li > .ac-icon {
-  flex: none;
-  margin: 2px 1px 0;
+  margin-inline: 1px;
   color: var(--muted);
-}
-.imp-flow > li > .ac-avatar {
-  margin-top: 1px;
 }
 .imp-flow b {
   color: var(--ink);
