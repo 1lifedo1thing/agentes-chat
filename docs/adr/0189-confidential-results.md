@@ -10,9 +10,10 @@
   `context.ts` (`buildRunContext`'s `unseal`), `live-steer.ts` (`renderSteered`), `executor.ts` (`followThread`,
   `CONFIDENTIAL_AI_CHANGED`), `routine-ledger.ts` (`closeRoutineRun`), `judge.ts` (`refuseConfidential`), `format.ts`
   (`inertLinks`, `inertJson`), `apps/tools.ts` (`stubOf` for a person's connected AI app), `operator-review.ts`
-  (`runReview`); schema `packages/db/src/schema/chat.ts` (`confidential_threads`, migrations 0286 and 0287); server
-  `apps/server/src/workers.ts` (`confidentialPrune`); tests `packages/engine/test/confidential-results.test.ts`,
-  `confidential-lock.test.ts`, `confidential-copies.test.ts`, `confidential-prune.test.ts`
+  (`runReview`), `operator-runs.ts` (`runOf`); schema `packages/db/src/schema/chat.ts` (`confidential_threads`,
+  migrations 0286 and 0287); server `apps/server/src/workers.ts` (`confidentialPrune`); tests
+  `packages/engine/test/confidential-results.test.ts`, `confidential-lock.test.ts`, `confidential-copies.test.ts`,
+  `confidential-prune.test.ts`
 
 ## Context
 
@@ -48,8 +49,14 @@ server must not be able to lock a run.
 The step and its thread's mark are written in one transaction (`markedStep`): a row in `confidential_threads`, keyed
 by the root message of the run's thread, with the connections whose results marked it and what thought for the run
 that read the first one (`thinks_with`, as `model:<provider>`). The mark follows the thread alone. It never looks at the channel's newest messages, as `runReadOutside` does: one finding would then lock every
-later run of the channel. A run is confidential when its thread is, and a run never leaves such a thread (it is not
-moved to the background, and the tool that moves a run elsewhere is refused).
+later run of the channel. A run is confidential when its thread is, and a run does not leave such a thread: it is not
+moved to the background, and the tool that moves a run elsewhere is refused.
+
+One move is left as it is. A run another agent asked becomes handed work by itself (`handOverWork`), in a
+confidential thread as in any other, and handed work shows where the person behind that agent asked. No words leave
+by it: the work's title is the asking agent's own note, the run's updates and its questions are refused by the lock
+(section 5), the copy of its report posted there is the stub, and the prune takes that copy with the thread
+(section 8).
 
 Every message of a confidential thread is **sealed**, the root included, since the root may hold what a person pasted
 before any mark existed: `messages.body` holds a stub (`[confidential: readable only in its own thread]`), the words
@@ -103,8 +110,9 @@ place and does not mark the run that reads it: in the rest of the channel that e
 a `search_context` hit, in a message read by its link, in an open question listed for the agent in another thread,
 in what a person's connected AI app is answered, and in the lines about what other runs did
 (`(confidential, not shown)`). The operator API's review of a run (ADR 0056) says the same of each call of a run of
-a confidential thread: which tool, how it ended, and nothing that went in or came back. So a run asked by another message of the
-same channel is neither given the words nor locked by them.
+a confidential thread: which tool, how it ended, and nothing that went in or came back. Its list of runs, and every
+other answer that holds a run, says such a run's error by its code, with none of its words (`runOf`). So a run asked
+by another message of the same channel is neither given the words nor locked by them.
 
 ### 5. The lock
 
@@ -126,13 +134,17 @@ runs only when it is on this list:
   arguments go to whoever runs the server. A read an admin marked to ask is no read;
 - in the run's own conversation: `react`, `send_sticker`, `ask_user`, `ask_choices`, `show_block`, `start_poll`,
   `follow_up`, `cancel_follow_up`, `release_waiting_agent`. `show_block` replaces only a block shown in that thread:
-  one shown anywhere else is read and indexed outside it. What a run asks a person is not always posted where it
-  answers (`asksOutside`): a routine's own run asks where the routine reports, and a run another agent asked asks
-  where the person behind that agent is. When that is outside the thread, its question and any tool that would ask
-  for an approval are refused: other people read the card, and a reply under it starts a run the lock does not hold;
+  one shown anywhere else is read and indexed outside it. `release_waiting_agent` carries no reason: it would be
+  written in a step of the other agent's run, which may belong to another thread. What a run asks a person is not
+  always posted where it answers (`asksOutside`): a routine's own run asks where the routine reports, and a run
+  another agent asked asks where the person behind that agent is. When that is outside the thread, its question and
+  any tool that would ask for an approval are refused: other people read the card, and a reply under it starts a run
+  the lock does not hold;
 - on the run or its agent alone: `withdraw_request`, `set_reply_style`, `wait_for_device`, `commit_co_author`.
   `withdraw_request` takes back only a request of that same thread, and carries no reason: the reason is read by the
-  run that waits and by the people at the card;
+  run that waits and by the people at the card. `wait_for_device` asks a device's owner with none of its note: the
+  owner may not be in the conversation, and the request and its notification are not the prune's to take. The card
+  in the thread keeps the note;
 - `pass`; `find_tools`, `use_tool` and `run_approved_action`, with the lock judging the tool they reach.
 
 Everything else is refused, a tool added later included, with the code `confidential.outbound`. It is among the
@@ -244,6 +256,9 @@ accept, or what is asked from another conversation than the one it serves.
   in progress, which a connected AI app can read too).
 - An approval's page shows the action's arguments as the agent typed them, a link in them included: what a person
   approves is what runs, to the letter.
+- A block a person keeps in the Drive ("Guardar no Drive", `keepBlock`; a poll cannot be kept) is kept by that
+  person's own hand, as a message copied by hand is. From then on it is listed, read and shared like any file of its
+  channel. Search still leaves it out, and the prune takes it with the thread.
 - A routine's own run that read a confidential result reports nothing: what it found stays in its run.
 
 ## Consequences
