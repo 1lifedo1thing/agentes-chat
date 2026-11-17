@@ -10,10 +10,8 @@ import {
   type ScreenKind,
   type ThreadInfo,
   useApi,
-  useConsultations,
   useContinuedRun,
   useReactions,
-  useRoles,
   useToggleReaction,
   useWaiting,
 } from "@agenteschat/client";
@@ -110,7 +108,7 @@ import { SettingsProposals } from "../right-hand/SettingsCard";
 import { ReplyChips, TeamCard } from "../right-hand/TeamCard";
 import { TeamWeek } from "../right-hand/TeamWeekCard";
 import { AgentFace, Face, withAgentFaces } from "../shared/Face";
-import { useColors, useDirectory, useMeId, useMyHandle, useNamesComputers, useOrgId, useWhen } from "../shared/hooks";
+import { useColors, useOrgId, useWhen } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { tapHaptic } from "../shared/parts";
 import { VoiceMessage } from "../voice/VoiceMessage";
@@ -147,11 +145,19 @@ import {
   rowFrame,
   workStepsOf,
 } from "./logic";
-import { lookRows, RowPartContext, useRhythm, useRowLook } from "./look";
+import { liftedEdge, lookRows, RowPartContext, useRhythm, useRowLook } from "./look";
 import { MessageText } from "./MessageText";
 import { QuoteAbove, QuotePlate } from "./QuoteLine";
 import { ReachLines } from "./ReachLines";
 import { Receipts } from "./Receipts";
+import {
+  useRowConsults,
+  useRowDirectory,
+  useRowMeId,
+  useRowMyHandle,
+  useRowNamesComputers,
+  useRowRoles,
+} from "./row-data";
 import { SecretCard } from "./SecretCard";
 import { ModelStandInLine, SpeedFallbackLine, StopPill } from "./StoppedLine";
 import { useStopMovedOn, useStoppedRun } from "./stopped-runs";
@@ -233,7 +239,7 @@ function RowBody({
   const { t, i18n } = useTranslation();
   // Mine and not sent for lack of a connection: it waits and goes by itself when the connection is back.
   const offline = useWaiting(m.local === "failed" ? m.clientId : null);
-  const dir = useDirectory();
+  const dir = useRowDirectory();
   const c = useColors();
   const when = useWhen();
   const isAgent = m.author.type === "agent";
@@ -268,7 +274,7 @@ function RowBody({
   const viaMark = via?.brand ? APP_BRANDS[via.brand] : undefined;
   // What the server wrote itself is said in the person's language; a stopped reply drops the server's note. Where a
   // task ran is said only where the workspace has more than one computer.
-  const names = useNamesComputers();
+  const names = useRowNamesComputers();
   const said = hidesBody(m)
     ? ""
     : reminderBody(splitCanceled(serverBody(t, listedText(m.body, meta), meta, i18n.language, names), meta).body, meta);
@@ -319,15 +325,9 @@ function RowBody({
   const ownWork = isAgent && Boolean(m.agentRunId) && !meta?.consultation && !mediaAfter;
   const steps = ownWork ? workStepsOf(meta) : null;
   // Posted by a run answering another agent's question from here (its approval, question, secret): whom it helps.
-  const consultations = useConsultations(
-    orgId,
-    m.channelId,
-    isAgent && Boolean(m.agentRunId) && !readOnly && !mediaAfter,
-  );
+  const consultations = useRowConsults(m.channelId);
   const helping =
-    isAgent && m.agentRunId && !readOnly && !mediaAfter
-      ? consultations.data?.find((x) => x.consultedRunId === m.agentRunId)
-      : undefined;
+    isAgent && m.agentRunId && !readOnly && !mediaAfter ? consultations.byConsultedRun.get(m.agentRunId) : undefined;
   // No `onLongPress` where the system's menu takes the hold (iOS): the row adds nothing of its own to it.
   const press =
     readOnly || !onLongPress
@@ -340,8 +340,10 @@ function RowBody({
   // finger was and the pill grows in under the words; holding still opens the menu with every reaction. The line
   // "Toque duplo = 👍" sits under one agent's message until it has been seen once.
   const reduced = useReducedMotion();
+  // Read once for the row: its pills (`Reactions`), the double tap and the run's corners all take these.
   const cachedReactions = useReactions(orgId, m.id, false);
-  const toggleThumbs = useToggleReaction(orgId, m.id);
+  const reactions = cachedReactions.data ?? m.reactions;
+  const toggle = useToggleReaction(orgId, m.id);
   const lastTap = useRef(0);
   const [pop, setPop] = useState<{ x: number; y: number; at: number } | null>(null);
   const canReact = !readOnly && !m.local;
@@ -354,9 +356,8 @@ function RowBody({
         }
         lastTap.current = 0;
         haptics.light();
-        const mine =
-          reactionPills(cachedReactions.data ?? m.reactions, meId).find((p) => p.reaction === THUMBS)?.mine ?? false;
-        toggleThumbs.mutate({ reaction: THUMBS, on: !mine });
+        const mine = reactionPills(reactions, meId).find((p) => p.reaction === THUMBS)?.mine ?? false;
+        toggle.mutate({ reaction: THUMBS, on: !mine });
         setPop({ x: e.nativeEvent.locationX, y: e.nativeEvent.locationY, at });
         teachDoubleTap();
       }
@@ -461,12 +462,12 @@ function RowBody({
   const onRight = mine && mineOnRight(look.style);
   const bubbled = look.style === "bubbles";
   const compact = look.style === "compact";
-  const { scheme, shadows } = useTheme();
-  // Over a background: someone else's bubble lifted off it, every bubble with the cards' light shadow.
+  const { scheme } = useTheme();
+  // Over a background: someone else's bubble lifted off it, every bubble with the cards' light edge (`liftedEdge`).
   const lifted = look.wallpaper === true;
   const lift = WALLPAPER_LIFT[scheme === "dark" ? "dark" : "light"];
-  const bubbleShadow = lifted ? { boxShadow: shadows.e1 } : null;
-  const roles = useRoles(orgId).data?.roles;
+  const bubbleEdge = lifted ? liftedEdge(scheme) : null;
+  const roles = useRowRoles();
   const member = m.author.type === "person" && m.author.id ? dir.memberById.get(m.author.id) : undefined;
   const roleColor = member ? memberRoleColor(member, roles ?? []) : undefined;
   const nameColor = !bubbled
@@ -478,7 +479,7 @@ function RowBody({
         : undefined;
   const solidInk = bubbled && look.tone === "strong" ? ON_SOLID : undefined;
   const quote = replyOf(meta);
-  const myHandle = useMyHandle();
+  const myHandle = useRowMyHandle();
   const mentionsMe = !mine && mentionsReader({ body, meta }, myHandle);
 
   // The cards it carries: above an agent's tools, which come last.
@@ -510,7 +511,9 @@ function RowBody({
           <ThreadLink thread={thread} />
         </View>
       ) : null}
-      {readOnly ? null : <Reactions message={m} meId={meId} end={onRight} />}
+      {readOnly ? null : (
+        <Reactions message={m} reactions={reactions} meId={meId} end={onRight} onToggle={toggle.mutate} />
+      )}
       {m.local === "pending" && meta?.voiceAccepted === true ? null : m.local === "pending" ||
         (m.local === "failed" && offline) ? (
         <Sending offline={offline} end={onRight} />
@@ -566,7 +569,7 @@ function RowBody({
           styles.bubbleEnd,
           BUBBLE_RUN[run],
           { backgroundColor: (bubbled && look.fill) || c.bubble },
-          bubbleShadow,
+          bubbleEdge,
         ]}
       >
         {quote ? <QuotePlate reply={quote} onJump={onQuote} {...(solidInk ? { ink: solidInk } : {})} /> : null}
@@ -876,7 +879,7 @@ function RowBody({
                   <>
                     {pinLine}
                     {reportOpened}
-                    <View style={[lookRows.bubble, OTHER_RUN[run], { backgroundColor: otherBubble }, bubbleShadow]}>
+                    <View style={[lookRows.bubble, OTHER_RUN[run], { backgroundColor: otherBubble }, bubbleEdge]}>
                       {!grouped && (look.names || tagged) ? who(true) : null}
                       {quote ? <QuotePlate reply={quote} onJump={onQuote} /> : null}
                       {opener}
@@ -1113,8 +1116,8 @@ function StoppedLine({
   const api = useApi();
   const qc = useQueryClient();
   const toast = useToast();
-  const meId = useMeId();
-  const dir = useDirectory();
+  const meId = useRowMeId();
+  const dir = useRowDirectory();
   const org = useOrg().org;
   const [busy, setBusy] = useState(false);
   // The stop's notice, when it is in this conversation: who stopped it, the reason, its time.
@@ -1264,7 +1267,7 @@ function Tag({
 /** On a card this agent posted while answering another agent's question: "ajudando o Theo · Ver conversa". */
 function HelpingTag({ consultation: c, channelId }: { consultation: RunConsultation; channelId: string }) {
   const { t } = useTranslation();
-  const dir = useDirectory();
+  const dir = useRowDirectory();
   const from = agentGrammar(dir.agentById.get(c.agentId)?.name ?? t("mobile.chat.someone"));
   return (
     <>
@@ -1300,14 +1303,26 @@ function PinMark() {
   );
 }
 
-/** People's pills show a count (mine outlined); an agent that reacted shows its face. */
-function Reactions({ message: m, meId, end }: { message: Message; meId: string | null; end: boolean }) {
+/**
+ * People's pills show a count (mine outlined); an agent that reacted shows its face. Handed the row's reactions and
+ * its toggle: the row reads them once.
+ */
+function Reactions({
+  message: m,
+  reactions,
+  meId,
+  end,
+  onToggle,
+}: {
+  message: Message;
+  reactions: Message["reactions"];
+  meId: string | null;
+  end: boolean;
+  onToggle: (input: { reaction: string; on: boolean }) => void;
+}) {
   const { t } = useTranslation();
-  const orgId = useOrgId();
   const { colors: c, reducedMotion: reduced } = useTheme();
-  const cached = useReactions(orgId, m.id, false);
-  const toggle = useToggleReaction(orgId, m.id);
-  const pills = reactionPills(cached.data ?? m.reactions, meId);
+  const pills = reactionPills(reactions, meId);
   const shown = pills.length > 0 && !m.local;
   // A pill someone adds or takes back while the row shows fades and the others slide aside; those there when the row
   // mounts (scrolling to it) just show, and none lingers when the row goes.
@@ -1322,7 +1337,7 @@ function Reactions({ message: m, meId, end }: { message: Message; meId: string |
                   <Animated.View key={`p:${p.reaction}`} {...motion}>
                     {/* The press's own light tap is the toggle's haptic. */}
                     <PressScale
-                      onPress={() => toggle.mutate({ reaction: p.reaction, on: !p.mine })}
+                      onPress={() => onToggle({ reaction: p.reaction, on: !p.mine })}
                       fill={false}
                       // 30 drawn, 44 to the finger; not sideways, where the next pill is 6 away.
                       hitSlop={REACT_SLOP}

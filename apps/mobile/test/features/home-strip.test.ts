@@ -154,7 +154,7 @@ describe("Conversas with the strip and one list", () => {
     expect(row).toContain("<OpensConversation");
     expect(strip).toContain("<OpensConversation");
     expect(strip).toContain('onStart={r.kind === "dm" && !r.channelId ? onStart : undefined}');
-    expect(strip).toContain("onPressIn={warm}");
+    expect(strip).toContain("onTouchStart={warm}");
     expect(strip).toContain("{...hold}");
   });
 

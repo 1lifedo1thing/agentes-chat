@@ -9,6 +9,7 @@ import { chatHref } from "../links/logic";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useMeId, useOrgId, useWhen } from "../shared/hooks";
 import { useSurface } from "../shared/parts";
+import { usePresenceOf } from "../status/hooks";
 import { useCardTop, useQuietInset } from "./look";
 
 /**
@@ -112,6 +113,8 @@ function HandedTaskChip({ task }: { task: HandedTask }) {
   const issue = useIssue(orgId, task.number);
   const current = issue.data?.id === task.issueId ? issue.data : null;
   const agent = dir.agentById.get(task.agentId);
+  // A chip's face lives only while its agent works: still, it costs nothing as the conversation scrolls.
+  const working = usePresenceOf().agent(task.agentId)?.presence === "working";
   const title = current?.title ?? task.title;
   return (
     <PressScale
@@ -128,7 +131,7 @@ function HandedTaskChip({ task }: { task: HandedTask }) {
       <Text variant="small" tone="ink" style={[styles.fit, styles.bold]} numberOfLines={1}>
         #{task.number} {title}
       </Text>
-      {agent ? <AgentFace agentId={agent.id} size={18} /> : null}
+      {agent ? <AgentFace agentId={agent.id} size={18} live={working} /> : null}
       {current ? <StateChip issue={current} /> : null}
     </PressScale>
   );

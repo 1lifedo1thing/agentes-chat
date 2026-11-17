@@ -1,6 +1,6 @@
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { NativeTabs } from "expo-router/native-tabs";
-import { useMemo } from "react";
+import { memo, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform } from "react-native";
 import { useUnreadConversations, useUnreadThreads, useWaitingCount } from "@/features/shared/queries";
@@ -70,6 +70,35 @@ const ICONS = Object.fromEntries(
 /** iOS 26 holds the work-along line in the bar's own accessory; elsewhere it is a strip on the tab roots. */
 const ACCESSORY = alongInAccessory(Platform.OS, Platform.Version);
 
+/** What the bar shows besides its tabs: each badge's count, and whether a work line goes along. */
+interface BarState {
+  chats: number;
+  threads: number;
+  waiting: number;
+  along: boolean;
+}
+
+const QUIET_BAR: BarState = { chats: 0, threads: 0, waiting: 0, along: false };
+
+/**
+ * Reads what the bar shows, in a leaf of its own that draws nothing. The lists behind it (conversations, threads,
+ * runs) refresh at every message and step: each refresh redraws this leaf alone, and the layout (and the system bar
+ * it configures) only when a count or the line itself changes. Handed over before the frame is shown, so a badge
+ * never comes in a frame late.
+ */
+const BarSources = memo(function BarSources({ onChange }: { onChange: (bar: BarState) => void }) {
+  const chats = useUnreadConversations();
+  const threads = useUnreadThreads();
+  const waiting = useWaitingCount();
+  // Long work and what waits on you go with you across the tabs, the phone's Agora (iOS 26: the bar's accessory, the
+  // system's glass; Android and older iOS: a strip over the bar, on the tab roots). "Esperando você" only where
+  // something really waits on me (the home's strip and Atividade read the same list). The layout only knows whether
+  // there is a line: the line reads its own words and clock, so its ticks never redraw the tab bar.
+  const along = useHasWorkAlong();
+  useLayoutEffect(() => onChange({ chats, threads, waiting, along }), [onChange, chats, threads, waiting, along]);
+  return null;
+});
+
 /**
  * Conversas (the home), Threads (threads and missions), Agentes, Atividade and Buscar in the system tab bar
  * (UITabBarController on iOS, Liquid Glass on iOS 26; Material bottom navigation on Android). The system's symbols on
@@ -84,15 +113,9 @@ export default function TabsLayout() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const personal = isPersonal(useOrg().org);
-  const unread = useUnreadConversations();
-  const unreadThreads = useUnreadThreads();
-  const waiting = useWaitingCount();
-  const counts: Record<string, number> = { "(chats)": unread, threads: unreadThreads, activity: waiting };
-  // Long work and what waits on you go with you across the tabs, the phone's Agora (iOS 26: the bar's accessory, the
-  // system's glass; Android and older iOS: a strip over the bar, on the tab roots). "Esperando você" only where
-  // something really waits on me (the home's strip and Atividade read the same list). The layout only knows whether
-  // there is a line: the line reads its own words and clock, so its ticks never redraw the tab bar.
-  const along = useHasWorkAlong();
+  const [bar, setBar] = useState(QUIET_BAR);
+  const { along } = bar;
+  const counts: Record<string, number> = { "(chats)": bar.chats, threads: bar.threads, activity: bar.waiting };
   const foot = useMemo(() => (along && !ACCESSORY ? { node: <AlongStrip />, height: ALONG_STRIP } : null), [along]);
   // The bar's colors, built once per theme (the system bar is configured again whenever these change).
   const look = useMemo(
@@ -105,6 +128,7 @@ export default function TabsLayout() {
   );
   return (
     <TabFoot.Provider value={foot}>
+      <BarSources onChange={setBar} />
       <NativeTabs
         tintColor={colors.ink}
         iconColor={look.iconColor}
