@@ -51,18 +51,23 @@ const barIcon = ({ sf }: { sf: SFSymbolName }) => ({ type: "sfSymbol" as const, 
 /**
  * Header options for a screen's actions. On iOS the right actions are native `UIBarButtonItem`s
  * (`unstable_headerRightItems`): UIKit places, sizes and groups them in the bar, where a React view in
- * `headerRight` could be laid out in the wrong place on iOS 26. `left` is a custom element (the avatar on
+ * `headerRight` could be laid out in the wrong place on iOS 26. `lead` is a view of our own that has no system form (a
+ * count beside a mark: an agent's tasks, a computer's line), first in the same group: a custom item that shares the
+ * buttons' glass, so the bar is one capsule whether it shows or not. `left` is a custom element (the avatar on
  * Início), shown without the shared glass behind it. On Android both are React views in the bar, the right ones
- * in a `HeaderCapsule` (the floating plate iOS 26 puts them in).
+ * (`lead` first) in a `HeaderCapsule` (the floating plate iOS 26 puts them in).
  * The options only change when the actions' icons or labels change; presses always reach the latest
  * handlers.
  */
 export function useHeaderActionOptions({
   right,
+  lead,
   left,
   leftActions,
 }: {
   right?: HeaderAction[] | undefined;
+  /** Our own view first among the right actions, in their group (see above). */
+  lead?: ReactNode;
   left?: ReactNode;
   /** Native buttons on the left (iOS): unlike a custom `left` view, they keep the large title collapsing. */
   leftActions?: HeaderAction[] | undefined;
@@ -75,6 +80,8 @@ export function useHeaderActionOptions({
   });
   const leftSlot = useHeaderSlot(left ?? null);
   const hasLeft = left != null;
+  const leadSlot = useHeaderSlot(lead ?? null);
+  const hasLead = lead != null;
   const describe = (list: HeaderAction[] | undefined) =>
     (list ?? []).map(({ icon, sf, label, disabled, menu }) => ({
       icon,
@@ -91,35 +98,47 @@ export function useHeaderActionOptions({
     const pressLeft = (i: number) => () => latestLeft.current?.[i]?.onPress();
     const options: NativeStackNavigationOptions = {};
     if (IOS) {
-      options.unstable_headerRightItems = actions.length
-        ? () =>
-            actions.map((a, i) =>
-              a.menu
-                ? {
-                    type: "menu" as const,
-                    label: a.label,
-                    accessibilityLabel: a.label,
-                    icon: barIcon(a),
-                    menu: {
-                      items: a.menu.map((m, j) => ({
-                        type: "action" as const,
-                        label: m.label,
-                        icon: { type: "sfSymbol" as const, name: m.sf },
-                        destructive: m.destructive,
-                        onPress: pick(i, j),
-                      })),
+      // Shares the buttons' glass (no `hidesSharedBackground`): one capsule with them.
+      const leadItem = {
+        type: "custom" as const,
+        element: (
+          <BarPressable>
+            <HeaderSlot slot={leadSlot} />
+          </BarPressable>
+        ),
+      };
+      options.unstable_headerRightItems =
+        actions.length || hasLead
+          ? () => [
+              ...(hasLead ? [leadItem] : []),
+              ...actions.map((a, i) =>
+                a.menu
+                  ? {
+                      type: "menu" as const,
+                      label: a.label,
+                      accessibilityLabel: a.label,
+                      icon: barIcon(a),
+                      menu: {
+                        items: a.menu.map((m, j) => ({
+                          type: "action" as const,
+                          label: m.label,
+                          icon: { type: "sfSymbol" as const, name: m.sf },
+                          destructive: m.destructive,
+                          onPress: pick(i, j),
+                        })),
+                      },
+                    }
+                  : {
+                      type: "button" as const,
+                      label: a.label,
+                      accessibilityLabel: a.label,
+                      icon: barIcon(a),
+                      disabled: a.disabled,
+                      onPress: press(i),
                     },
-                  }
-                : {
-                    type: "button" as const,
-                    label: a.label,
-                    accessibilityLabel: a.label,
-                    icon: barIcon(a),
-                    disabled: a.disabled,
-                    onPress: press(i),
-                  },
-            )
-        : undefined;
+              ),
+            ]
+          : undefined;
       options.unstable_headerLeftItems = lefts.length
         ? () =>
             lefts.map((a, i) => ({
@@ -143,25 +162,27 @@ export function useHeaderActionOptions({
             ]
           : undefined;
     } else {
-      options.headerRight = actions.length
-        ? () => (
-            <HeaderCapsule>
-              {actions.map((a, i) => (
-                <IconButton
-                  key={`${a.icon}:${a.label}`}
-                  icon={a.icon}
-                  label={a.label}
-                  disabled={a.disabled ?? false}
-                  onPress={press(i)}
-                />
-              ))}
-            </HeaderCapsule>
-          )
-        : undefined;
+      options.headerRight =
+        actions.length || hasLead
+          ? () => (
+              <HeaderCapsule>
+                {hasLead ? <HeaderSlot slot={leadSlot} /> : null}
+                {actions.map((a, i) => (
+                  <IconButton
+                    key={`${a.icon}:${a.label}`}
+                    icon={a.icon}
+                    label={a.label}
+                    disabled={a.disabled ?? false}
+                    onPress={press(i)}
+                  />
+                ))}
+              </HeaderCapsule>
+            )
+          : undefined;
       options.headerLeft = hasLeft ? () => <HeaderSlot slot={leftSlot} /> : undefined;
     }
     return options;
-  }, [signature, hasLeft, leftSlot]);
+  }, [signature, hasLeft, leftSlot, hasLead, leadSlot]);
 }
 
 /**

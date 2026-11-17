@@ -823,7 +823,10 @@ function RowBody({
     ) : null;
 
   const quoteAbove = Boolean(quote && !inBubble);
-  const nameOrWords = Boolean(inBubble || !grouped || pinLine || reportOpened || opener || words);
+  // A DM's bubbles name nobody (`look.names` off): a card that comes alone (a question, the browser) carries no name
+  // line either, unless a tag has something to say.
+  const nameLine = !grouped && !(bubbled && !look.names && !tagged);
+  const nameOrWords = Boolean(inBubble || nameLine || pinLine || reportOpened || opener || words);
   return (
     <>
       {pair}
@@ -902,7 +905,7 @@ function RowBody({
                   </>
                 ) : (
                   <>
-                    {grouped ? null : who(false)}
+                    {nameLine ? who(false) : null}
                     {pinLine}
                     {reportOpened}
                     {openerPart}

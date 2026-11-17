@@ -157,7 +157,6 @@ import {
   Count,
   type HeaderAction,
   Icon,
-  IconButton,
   LineIcon,
   motion,
   PressScale,
@@ -218,7 +217,7 @@ import { type OpenedMessages, OpenedMessagesContext } from "./ClippedMessage";
 import { ConversationSwitcher } from "./ConversationSwitcher";
 import { takeComposerRequest, useComposerRequest } from "./composer-request";
 import { DATE_PILL_IDLE_MS, DatePill } from "./DatePill";
-import { DmComputerButton, DmComputerWords, dmComputerAction } from "./DmComputerButton";
+import { DmComputerWords, dmComputerAction } from "./DmComputerButton";
 import { createDockHeight, type DockHeight } from "./dock-height";
 import { EventLine } from "./EventLine";
 import { FirstDay } from "./FirstDay";
@@ -360,8 +359,6 @@ const NATIVE_MENU = Platform.OS === "ios";
  * end; Android's list stops at it (its stretch is drawn, never in the offset).
  */
 const PEEK = Platform.OS === "ios";
-/** The bar's plain buttons are the system's own on iOS (`barActions`). */
-const IOS_BAR = Platform.OS === "ios";
 /** The notifications line was shown and answered here: it doesn't come back on this screen. */
 const OFFER_DONE = "done";
 /** How long the list keeps ignoring the keyboard after what covered it closed (its closing animation, ms). */
@@ -669,16 +666,6 @@ function Chat({
       rememberTurn(run.runId, { items, quotes, at: Date.now() });
     }
   }, [workKey]);
-  const [openBrowsers, setOpenBrowsers] = useState<ReadonlySet<string>>(() => new Set());
-  const toggleBrowser = useCallback((agentId: string, open: boolean) => {
-    setOpenBrowsers((prev) => {
-      if (prev.has(agentId) === open) return prev;
-      const next = new Set(prev);
-      if (open) next.add(agentId);
-      else next.delete(agentId);
-      return next;
-    });
-  }, []);
 
   // ── Rows ──
   // One waiting card per agent and computer: an older "my computer is away" gives way to the newer one.
@@ -2141,62 +2128,63 @@ function Chat({
   // web's DM header) for whoever may watch it: one entry, the line while turns wait for the computer (the way on to
   // it inside), else the computer.
   const dmComputer = dmAgentId && !isThread && !rightHand ? { agentId: dmAgentId, onOpen: leavePlace } : undefined;
-  const right =
-    (isThread && info) || dm || channel ? (
-      <>
-        {dmAgentId && agentTasks ? (
-          <AgentTasksButton
-            agentId={dmAgentId}
-            view={agentTasks}
-            onPress={() => {
-              leavePlace();
-              router.push(agentTasksHref(dmAgentId, { channelId, threadId }));
-            }}
-          />
-        ) : null}
-        {/* Its AI and model are changed on its profile ("Pensa com"), not from the bar. */}
-        {queueShown && barQueue && queueMachineId ? (
-          dmComputer ? (
-            <DmQueueButton
-              agentId={dmComputer.agentId}
-              queue={barQueue}
-              onPress={() => openQueue(queueMachineId, dmComputer)}
-            />
-          ) : (
-            <QueueButton queue={barQueue} onPress={() => openQueue(queueMachineId)} />
-          )
-        ) : dmComputer ? (
-          <DmComputerButton agentId={dmComputer.agentId} onOpen={leavePlace} />
-        ) : null}
-        {/* A DM searches from its "…" (its name and the agent's own buttons keep the room). */}
-        {searchPlace && !dm ? (
-          <IconButton icon="search" label={t("searchPage.searchHere")} onPress={openSearch} />
-        ) : null}
-        <IconButton icon="more" label={t("mobile.chat.options")} onPress={openOptions} />
-      </>
-    ) : null;
-  // On iOS the plain buttons (the computer, search, "…") are the system's own bar buttons: UIKit places them and takes
-  // the tap anywhere on them, where our views in the bar answered only a still tap right on the icon. A counted button
-  // (the agent's tasks, the computer's line) has no system form, so while one shows the bar stays ours (`right`).
+  // The bar's buttons: one group on every platform, whatever shows. First our own counted views, which have no system
+  // button (the agent's tasks, the computer's line; `lead`), then the system's own buttons (the computer, search, "…";
+  // our icon buttons in the same capsule on Android). Never two ways of drawing it: a bar that switched to our views
+  // while a count showed drew its buttons apart one moment and together the next.
   const [computerWords, setComputerWords] = useState<string | null>(null);
-  const counted = Boolean((dmAgentId && agentTasks) || (queueShown && barQueue && queueMachineId));
-  const barActions: HeaderAction[] | undefined =
-    IOS_BAR && !counted && ((isThread && info) || dm || channel)
-      ? [
-          ...(dmComputer && computerWords ? [dmComputerAction(dmComputer.agentId, computerWords, leavePlace)] : []),
-          ...(searchPlace && !dm
-            ? [
-                {
-                  icon: "search" as const,
-                  sf: "magnifyingglass" as const,
-                  label: t("searchPage.searchHere"),
-                  onPress: openSearch,
-                },
-              ]
-            : []),
-          { icon: "more", sf: "ellipsis", label: t("mobile.chat.options"), onPress: openOptions },
-        ]
-      : undefined;
+  const hasBar = Boolean((isThread && info) || dm || channel);
+  const queueButton =
+    queueShown && barQueue && queueMachineId ? (
+      dmComputer ? (
+        <DmQueueButton
+          agentId={dmComputer.agentId}
+          queue={barQueue}
+          onPress={() => openQueue(queueMachineId, dmComputer)}
+        />
+      ) : (
+        <QueueButton queue={barQueue} onPress={() => openQueue(queueMachineId)} />
+      )
+    ) : null;
+  const tasksButton =
+    dmAgentId && agentTasks ? (
+      <AgentTasksButton
+        agentId={dmAgentId}
+        view={agentTasks}
+        onPress={() => {
+          leavePlace();
+          router.push(agentTasksHref(dmAgentId, { channelId, threadId }));
+        }}
+      />
+    ) : null;
+  const barLead =
+    hasBar && (tasksButton || queueButton) ? (
+      <View style={styles.barLead}>
+        {tasksButton}
+        {queueButton}
+      </View>
+    ) : undefined;
+  const barActions: HeaderAction[] | undefined = hasBar
+    ? [
+        // Its AI and model are changed on its profile ("Pensa com"), not from the bar. The computer's line, while it
+        // shows, is the way to the computer.
+        ...(dmComputer && computerWords && !queueButton
+          ? [dmComputerAction(dmComputer.agentId, computerWords, leavePlace)]
+          : []),
+        // A DM searches from its "…" (its name and the agent's own buttons keep the room).
+        ...(searchPlace && !dm
+          ? [
+              {
+                icon: "search" as const,
+                sf: "magnifyingglass" as const,
+                label: t("searchPage.searchHere"),
+                onPress: openSearch,
+              },
+            ]
+          : []),
+        { icon: "more", sf: "ellipsis", label: t("mobile.chat.options"), onPress: openOptions },
+      ]
+    : undefined;
 
   const placeholder = isThread
     ? rootTask
@@ -2339,20 +2327,7 @@ function Chat({
               entering={isFresh(item.key) ? ENTER : undefined}
               style={[styles.browserRow, { paddingLeft: quiet, marginTop: rhythm.turn }]}
             >
-              {item.run ? (
-                <BrowserRunCard
-                  run={item.run}
-                  open={openBrowsers.has(agentId)}
-                  onToggle={(open) => toggleBrowser(agentId, open)}
-                />
-              ) : (
-                <BrowserCard
-                  agentId={agentId}
-                  handoff={item.handoff}
-                  open={openBrowsers.has(agentId)}
-                  onToggle={(open) => toggleBrowser(agentId, open)}
-                />
-              )}
+              {item.run ? <BrowserRunCard run={item.run} /> : <BrowserCard agentId={agentId} handoff={item.handoff} />}
             </Animated.View>
           );
         }
@@ -2412,8 +2387,6 @@ function Chat({
       isThread,
       channelId,
       isFresh,
-      openBrowsers,
-      toggleBrowser,
       receiptId,
       receipt,
       markAt,
@@ -2917,9 +2890,9 @@ function Chat({
           title={pill ?? title}
           plate
           solid={false}
-          {...(barActions ? { actions: barActions } : { right })}
+          {...(barActions ? { actions: barActions, lead: barLead } : {})}
         />
-        {IOS_BAR && dmComputer ? <DmComputerWords agentId={dmComputer.agentId} onWords={setComputerWords} /> : null}
+        {dmComputer ? <DmComputerWords agentId={dmComputer.agentId} onWords={setComputerWords} /> : null}
         {hasPin ? (
           // The bar is see-through (the conversation runs under it): an open mission's card starts below it. Pinned
           // messages have no bar here: they wait above the first message, revealed by pulling down (`PinnedLines`).
@@ -3186,11 +3159,8 @@ function Chat({
                     consults={lineConsults}
                     typing={typing}
                     onSeeConsult={(id) => router.push(consultationHref(id, channelId))}
-                    onOpenBrowser={(agentId) => {
-                      // The agent's browser card opens in the conversation (at the end), not another screen.
-                      toggleBrowser(agentId, true);
-                      toEnd();
-                    }}
+                    // The agent's browser card is in the conversation, its page always in view: go to it at the end.
+                    onOpenBrowser={() => toEnd()}
                     stop={lineStop}
                     rest={returns.length > 0 ? <ReturnLine returns={returns} onOpen={openReturns} /> : null}
                   />
@@ -3654,6 +3624,8 @@ function Connection({ status }: { status: ConnectionStatus }) {
 }
 
 const styles = StyleSheet.create({
+  // The counted buttons side by side, first in the bar's group (`barLead`).
+  barLead: { flexDirection: "row", alignItems: "center" },
   topFade: { position: "absolute", top: 0, left: 0, right: 0 },
   // Under the agent's words, like a card on its message.
   browserRow: { paddingRight: 16 },

@@ -252,8 +252,6 @@
       "mute": "Sourdine",
       "unmute": "Réactiver"
     },
-    "firstRunLine": "{{name}} constitue l'équipe · {{done}} sur {{total}}",
-    "firstRunLinePersonal": "{{name}} prépare vos agents · {{done}} sur {{total}}",
     "first": {
       "title": "Commencez par votre premier agent",
       "subtitle": "Donnez-lui un nom et dites ce qu'il fait. Il apparaît ici, comme une discussion.",
@@ -1761,18 +1759,9 @@
   },
   "browser": {
     "card": {
-      "needs": "{{name}} a besoin d'aide",
-      "needsFor": "{{name}} a besoin d'aide · {{time}}",
-      "inControlAt": "Vous avez la main · {{host}}",
-      "doing": "{{name}} · {{doing}}",
-      "startingF": "Ouverture du navigateur de {{name}}…",
-      "startingM": "Ouverture du navigateur de {{name}}…",
       "stopAskF": "Fermer le navigateur de {{name}} ?",
       "stopAskM": "Fermer le navigateur de {{name}} ?",
-      "whereF": "Dans le navigateur de {{name}}",
-      "whereM": "Dans le navigateur de {{name}}",
       "open": "Ouvrir",
-      "expandHint": "Touchez pour agrandir",
       "stop": "Arrêter",
       "giveUp": "Abandonner"
     },
@@ -1780,7 +1769,6 @@
       "inControl": "Vous avez la main",
       "helping": "{{name}} a la main",
       "watchOnly": "{{name}} a la main. Vous regardez seulement.",
-      "takeOver": "Prendre la main",
       "done": "Terminé",
       "handBack": "Rendre la main",
       "couldnt": "Je n'ai pas pu",
@@ -1801,7 +1789,6 @@
       "closedHelpM": "Les identifiants restent enregistrés pour la prochaine fois.",
       "stuckHelpF": "Réessayer redémarre le navigateur. Les identifiants restent enregistrés.",
       "stuckHelpM": "Réessayer redémarre le navigateur. Les identifiants restent enregistrés.",
-      "hidden": "{{name}} a la main · écran masqué",
       "key": {
         "Tab": "Tabulation",
         "Enter": "Entrée",

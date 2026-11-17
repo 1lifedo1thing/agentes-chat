@@ -215,6 +215,7 @@ export function PushedHeader({
   grouped = false,
   largeTitle = false,
   actions,
+  lead,
 }: {
   title?: ReactNode;
   subtitle?: string;
@@ -225,6 +226,11 @@ export function PushedHeader({
    * icon buttons in a capsule on Android (`useHeaderActionOptions`). In place of `right`.
    */
   actions?: HeaderAction[];
+  /**
+   * Our own view first among `actions`, in their group: a count beside a mark, which has no system button
+   * (`useHeaderActionOptions`).
+   */
+  lead?: ReactNode;
   /** Over a sky cover: a clear bar, the back button over the art. */
   plate?: boolean;
   solid?: boolean;
@@ -251,8 +257,8 @@ export function PushedHeader({
   });
   const word = action?.label ?? null;
   const wordOff = action?.disabled ?? false;
-  const actionOptions = useHeaderActionOptions({ right: actions });
-  const hasActions = (actions?.length ?? 0) > 0;
+  const actionOptions = useHeaderActionOptions({ right: actions, lead });
+  const hasActions = (actions?.length ?? 0) > 0 || lead != null;
   // Stable options: `setOptions` runs when the title, subtitle or the presence of actions change, not on
   // every render of the screen (a conversation re-renders while agents stream).
   const options = useMemo<NativeStackNavigationOptions>(
@@ -282,8 +288,8 @@ export function PushedHeader({
               },
             ],
           }
-        : // Said either way, as the large title: a bar that drops its system buttons for `right` (a conversation's bar
-          // when a counted button shows) kept them from the earlier options, and they hide `right` on iOS.
+        : // Said either way, as the large title: a screen's options merge, so a bar that drops its system buttons for
+          // `right` would keep them from the earlier options, and they hide `right` on iOS.
           IOS
           ? { unstable_headerRightItems: undefined }
           : null),
