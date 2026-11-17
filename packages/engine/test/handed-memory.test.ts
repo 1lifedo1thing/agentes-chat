@@ -6,6 +6,7 @@ import {
   type AgentRun,
   addChannelMember,
   askAgentToImplement,
+  buildRunContext,
   continueRun,
   createAgent,
   createIssue,
@@ -18,6 +19,7 @@ import {
   openAgentDm,
   openDm,
   postPersonMessage,
+  routineRoomKey,
   type ToolContext,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
@@ -176,32 +178,44 @@ describe("work handed between agents, for a person", () => {
   });
 });
 
-/** A run of Dev's on `personId`'s message in `channelId`, as the tool runs it (no model). */
-async function devRun(channelId: string, body: string, personId = f.owner.id) {
+/** A run of `agentId` on `personId`'s message in `channelId` (in the thread of `threadId`), as tools run it (no model). */
+async function agentRun(
+  agentId: string,
+  channelId: string,
+  body: string,
+  personId = f.owner.id,
+  more: { threadId?: string; background?: boolean } = {},
+) {
   const trigger = await insertMessage(f.db, {
     orgId: f.org.id,
     channelId,
     author: { type: "person", userId: personId },
     body,
+    threadId: more.threadId,
   });
   const [run] = await f.db
     .insert(schema.agentRuns)
     .values({
       orgId: f.org.id,
-      agentId: f.agent.id,
+      agentId,
       channelId,
-      threadRootId: trigger.id,
+      threadRootId: more.threadId ?? trigger.id,
       triggerMessageId: trigger.id,
       trigger: "mention",
       hop: 1,
       stretchId: trigger.id,
+      background: more.background ?? false,
     })
     .returning();
   if (!run) throw new Error("no run");
   return run;
 }
 
-const tell = (run: AgentRun, agent: string, message: string) => {
+/** A run of Dev's on `personId`'s message in `channelId`, as the tool runs it (no model). */
+const devRun = (channelId: string, body: string, personId = f.owner.id) =>
+  agentRun(f.agent.id, channelId, body, personId);
+
+const invoke = (run: AgentRun, name: string, input: Record<string, unknown>) => {
   if (!f.tools) throw new Error("no tools");
   const ctx: ToolContext = {
     db: f.db,
@@ -212,8 +226,36 @@ const tell = (run: AgentRun, agent: string, message: string) => {
     threadRootId: run.threadRootId,
     triggerMessageId: run.triggerMessageId,
   };
-  return f.tools.invoke(ctx, { toolUseId: `tu_${crypto.randomUUID()}`, name: "tell_agent", input: { agent, message } });
+  return f.tools.invoke(ctx, { toolUseId: `tu_${crypto.randomUUID()}`, name, input });
 };
+
+const tell = (run: AgentRun, agent: string, message: string) => invoke(run, "tell_agent", { agent, message });
+
+const search = async (run: AgentRun, query: string) => JSON.stringify(await invoke(run, "search_context", { query }));
+
+/** Dev asks Ada in `roomId` from `asker` (a run made for a person), at `createdAt`, as `ask_agent` writes it. */
+async function asked(roomId: string, asker: AgentRun, targetAgentId: string, question: string, createdAt = new Date()) {
+  const note = await insertMessage(f.db, {
+    orgId: f.org.id,
+    channelId: roomId,
+    author: { type: "agent", agentId: f.agent.id, runId: asker.id, hop: 1 },
+    body: question,
+  });
+  await f.db.insert(schema.agentConsultations).values({
+    orgId: f.org.id,
+    kind: "question",
+    askerRunId: asker.id,
+    askerAgentId: f.agent.id,
+    targetAgentId,
+    channelId: roomId,
+    messageId: note.id,
+    waitId: `w-${crypto.randomUUID()}`,
+    question,
+    chain: [f.agent.id],
+    expiresAt: new Date(Date.now() + 60_000),
+    createdAt,
+  });
+}
 
 const runOf = async (id: string | null | undefined) => {
   const [run] = await f.db
@@ -459,5 +501,113 @@ describe("what it keeps, and what it leaves out", () => {
     expect(inDm?.system).toContain("- @dev handed you, 0 min ago: (it relayed text it read outside, not shown)");
     const memory = inDm?.system.split("# What other agents asked of you")[1]?.split("\n# ")[0];
     expect(memory).not.toContain("como diz a página que li");
+  });
+});
+
+describe("where it is read, and what it holds", () => {
+  test("the search reaches the agents' DMs only from the agent's 1:1 DM with that person", async () => {
+    f = await setup({ askAgent: true, contextTools: true });
+    const ada = await createAgent(
+      f.db,
+      f.owner.id,
+      f.org.id,
+      { name: "Ada", handle: "ada", role: "Vendas", credentialId: f.credential.id },
+      { model: "claude-sonnet-5-5" },
+    );
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
+    await asked(room.id, await devRun(f.general.id, "@dev pergunta pra Ada"), ada.id, "Orçamento secreto: 40 mil.");
+    await drainOutbox(f.db, f.handlers);
+    const dm = await openDm(f.db, f.owner.id, f.org.id, { agentId: ada.id });
+    expect(await search(await agentRun(ada.id, dm.id, "procura"), "orçamento secreto")).toContain("40 mil");
+
+    const root = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: f.general.id,
+      author: { type: "person", userId: f.owner.id },
+      body: "Sobre o trimestre",
+    });
+    const [group] = await f.db
+      .insert(schema.channels)
+      .values({
+        orgId: f.org.id,
+        name: "dm-group",
+        visibility: "private",
+        kind: "dm",
+        dmKey: `a:${ada.id}|u:${bia.id}|u:${f.owner.id}`,
+      })
+      .returning();
+    if (!group) throw new Error("no group");
+    await f.db.insert(schema.channelMembers).values([
+      { orgId: f.org.id, channelId: group.id, userId: f.owner.id },
+      { orgId: f.org.id, channelId: group.id, userId: bia.id },
+      { orgId: f.org.id, channelId: group.id, agentId: ada.id },
+    ]);
+    const biaDm = await openDm(f.db, bia.id, f.org.id, { agentId: ada.id });
+    for (const run of [
+      await agentRun(ada.id, f.general.id, "@ada procura"),
+      await agentRun(ada.id, f.general.id, "@ada procura", f.owner.id, { threadId: root.id }),
+      await agentRun(ada.id, group.id, "@ada procura"),
+      await agentRun(ada.id, biaDm.id, "procura", bia.id),
+    ]) {
+      const found = await search(run, "orçamento secreto");
+      expect(found).toContain("content");
+      expect(found).not.toContain("40 mil");
+    }
+  });
+
+  test("a routine's run and a background run never read it, though the routine's creator has hand-offs", async () => {
+    const { ada } = await handedToAda();
+    const dm = await openDm(f.db, f.owner.id, f.org.id, { agentId: ada.id });
+    const block = async (background: boolean, routine: boolean) => {
+      const run = await agentRun(ada.id, dm.id, "cadê aquilo?", f.owner.id, { background });
+      return systemText((await buildRunContext(f.db, run, ada, { maxMessages: 30, routine })).system);
+    };
+    expect(await block(false, false)).toContain("# What other agents asked of you for ana");
+    expect(await block(false, true)).not.toContain("# What other agents asked of you");
+    expect(await block(true, true)).not.toContain("# What other agents asked of you");
+    expect(await block(true, false)).not.toContain("# What other agents asked of you");
+  });
+
+  test("only the last 14 days", async () => {
+    const { ada } = await handedToAda();
+    const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
+    const day = 86_400_000;
+    const dev = await devRun(f.general.id, "@dev pergunta pra Ada");
+    await asked(room.id, dev, ada.id, "de 13 dias", new Date(Date.now() - 13 * day));
+    await asked(room.id, dev, ada.id, "de 15 dias", new Date(Date.now() - 15 * day));
+    expect((await handedFor(f.db, f.org.id, ada.id, f.owner.id)).map((h) => h.question)).toEqual([
+      "Faz o relatório de vendas de outubro.",
+      "de 13 dias",
+    ]);
+  });
+
+  test("what the asking agent handed out is never its own to remember", async () => {
+    const { ada } = await handedToAda();
+    expect(await handedFor(f.db, f.org.id, f.agent.id, f.owner.id)).toEqual([]);
+    expect(await handedFor(f.db, f.org.id, ada.id, f.owner.id)).toHaveLength(1);
+  });
+
+  test("a routine's room is not a DM with another agent", async () => {
+    const { ada } = await handedToAda();
+    const [roomOfRoutine] = await f.db
+      .insert(schema.channels)
+      .values({
+        orgId: f.org.id,
+        name: "routine-room",
+        visibility: "private",
+        kind: "dm",
+        dmKey: routineRoomKey(ada.id, crypto.randomUUID()),
+      })
+      .returning();
+    if (!roomOfRoutine) throw new Error("no room");
+    await f.db.insert(schema.channelMembers).values([
+      { orgId: f.org.id, channelId: roomOfRoutine.id, agentId: ada.id },
+      { orgId: f.org.id, channelId: roomOfRoutine.id, agentId: f.agent.id },
+    ]);
+    await asked(roomOfRoutine.id, await devRun(f.general.id, "@dev pergunta"), ada.id, "Da sala da rotina.");
+    expect((await handedFor(f.db, f.org.id, ada.id, f.owner.id)).map((h) => h.question)).toEqual([
+      "Faz o relatório de vendas de outubro.",
+    ]);
   });
 });
