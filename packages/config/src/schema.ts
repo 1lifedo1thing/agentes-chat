@@ -1162,9 +1162,20 @@ export const envVars = {
   REFERRALS_URL: {
     schema: z.url({ protocol: /^https$/ }).optional(),
     description:
-      "Your referral service's address (ADR 0192). Signed-in people get Refer and earn in their menu, and `/refer`, which open it signed in as them. It shares `BILLING_LINK_SECRET` with this server, which signs the link, so it needs that set. Unset (default): no referrals anywhere.",
+      "Your referral service's address (ADR 0192). Signed-in people get Refer and earn in their menu, and `/refer`, which open it signed in as them. Needs `REFERRALS_LINK_SECRET`, or `BILLING_LINK_SECRET` when this server also has a billing service, to sign the link. Unset (default): no referrals anywhere.",
     section: "Operator",
     example: "https://refer.example.com",
+  },
+  REFERRALS_LINK_SECRET: {
+    schema: z
+      .string()
+      .min(32, "must be at least 32 characters; generate one with `openssl rand -base64 48`")
+      .optional(),
+    description:
+      "Signs the link to the referral service (HMAC-SHA256, 5 minutes). The referral service holds the same value. Unset (default): `BILLING_LINK_SECRET` signs it. Generate with `openssl rand -base64 48`.",
+    section: "Operator",
+    example: "<output of openssl rand -base64 48>",
+    secret: true,
   },
   BILLING_HOLD_NEW_WORKSPACES: {
     schema: z.stringbool().default(false),
