@@ -326,3 +326,25 @@ test("a value ends at a line end or a tab as JSON writes them, and the next line
   ];
   for (const [text, masked] of written) expect(redactCommon(text)).toBe(masked);
 });
+
+test("an unquoted value ends at the quote that closes the string it sits in, and the next string's is read on its own", () => {
+  const strings: [text: string, masked: string][] = [
+    [
+      'it sent {"old":"password: fake-a","new":"password: fake-b"} and failed',
+      'it sent {"old":"password: ***","new":"password: ***"} and failed',
+    ],
+    ['["-H","X-Api-Key: fake-a","-H","X-Auth-Token: fake-b"]', '["-H","X-Api-Key: ***","-H","X-Auth-Token: ***"]'],
+    ['{"token: fake-a":"password: fake-b"', '{"token: ***":"password: ***"'],
+    // Behind quotes written with backslashes, and in single quotes.
+    [
+      String.raw`{\"a\":\"token: fake-a\",\"b\":\\\"password: fake-b\\\"}`,
+      String.raw`{\"a\":\"token: ***\",\"b\":\\\"password: ***\\\"}`,
+    ],
+    ["{'a': 'token: fake-a', 'b': 'password: fake-b'}", "{'a': 'token: ***', 'b': 'password: ***'}"],
+    // A quote with the value going on after it ends nothing.
+    ['password=fake"a token=fake\\"b next', "password=*** token=*** next"],
+    // A quoted value cut off before its closing quote goes as far as it did, whatever it starts with.
+    ['{"access_token":",fake-cut-off', '{"access_token":***'],
+  ];
+  for (const [text, masked] of strings) expect(redactCommon(text)).toBe(masked);
+});

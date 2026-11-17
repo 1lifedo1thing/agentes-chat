@@ -13,7 +13,7 @@ import { createLogger } from "../src/logger";
 import { createOperatorApp, type OperatorDeps } from "../src/operator/app";
 import { poison } from "./canary";
 import { browser, createTestServer, joinByInvitation, seedOrg, signUp, type TestServer } from "./harness";
-import { SECRET_SHAPES, shownIn } from "./secret-shapes";
+import { SECRET_SHAPES, shownIn, UNOPENED } from "./secret-shapes";
 
 /**
  * The operator API's reveal door (ADR 0056): one field of one record, with a reason, for a member who asked for
@@ -1364,6 +1364,27 @@ test("masking: a record's texts are read as they are, not as JSON writes them, i
       [2, "result"],
     ] as const) {
       const { shows, lacks } = shownIn(await text(step(runs.failed, seq, field, mine)), stays);
+      if (shows.length + lacks.length > 0) wrong.push({ shape, field, shows, lacks });
+    }
+  }
+  expect(wrong).toEqual([]);
+});
+
+test("masking: in text that can't be opened, an unquoted value ends at the quote that closes its string, in a message and in a result", async () => {
+  const mine = { requestId: requests.owner };
+  const wrong: unknown[] = [];
+  for (const [shape, quoting, stays] of UNOPENED) {
+    await db.update(schema.messages).set({ body: quoting }).where(eq(schema.messages.id, messages.other));
+    await db
+      .update(schema.agentRunSteps)
+      .set({ data: { toolUseId: "a", name: "fetch", content: quoting } })
+      .where(and(eq(schema.agentRunSteps.runId, runs.failed), eq(schema.agentRunSteps.seq, 2)));
+    const asked = {
+      message: ask("message", messages.other, "text", mine),
+      result: step(runs.failed, 2, "result", mine),
+    };
+    for (const [field, json] of Object.entries(asked)) {
+      const { shows, lacks } = shownIn(await text(json), stays);
       if (shows.length + lacks.length > 0) wrong.push({ shape, field, shows, lacks });
     }
   }

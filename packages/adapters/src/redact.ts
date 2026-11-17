@@ -41,8 +41,13 @@ function quotesOf(text: string, quote: string): Quotes {
   return quotes;
 }
 
-/** An unquoted value: up to its first space, or to a line end or a tab as JSON writes them (`\n`, `\r`, `\t`). */
-const UNQUOTED = /(?:[^\s\\]|\\+(?![nrt\\]))*/y;
+/**
+ * An unquoted value: up to its first space, to a line end or a tab as JSON writes them (`\n`, `\r`, `\t`), or to the
+ * quote that closes the string it sits in (`"line":"token: …"},{"line":"password: …"}`): a quote, plain or written
+ * with backslashes, before `,`, `}`, `]`, `:`, a space or the text's end. Past that quote the next string's name
+ * would be taken for this value, and its own value shown.
+ */
+const UNQUOTED = /(?:[^\s\\"']|\\+(?![nrt\\"'])|\\*["'](?![,}\]:\s]|$))*/y;
 /** What a shell reads as one word with the quoted value before it (`TOKEN="abc"def`). */
 const GLUED = /[^\s"'\\,;&|<>()[\]{}]*/y;
 const NO_SPACE = /\S*/y;
@@ -61,9 +66,9 @@ type Ends = (at: number, opener: RegExpExecArray) => number;
  * A quoted value, whole, however many times the text it sits in was itself written as a JSON string: each time
  * doubles the backslashes before a quote and adds one. So the value ends at the quote with as many backslashes as
  * the one that opened it (or that many and escaped backslashes of its own), or with fewer: the string around it
- * ended first. One with no such end is masked as far as its next quote. An unquoted value goes up to its first
- * space, or to a line end or a tab as JSON writes them: the next line's name and value are then read on their own.
- * `glued`: a quoted value takes with it what a shell reads as one word with it.
+ * ended first. One with no such end is masked as far as its next quote. An unquoted value goes as far as `UNQUOTED`
+ * says: the next line's or the next string's name and value are then read on their own. `glued`: a quoted value
+ * takes with it what a shell reads as one word with it.
  *
  * The quotes are listed once, so a value with no end costs its quotes, never the rest of the text: a quote that does
  * not end a value has more backslashes than the one that opened it, and the time stays linear in the text.
@@ -90,6 +95,8 @@ const valueEnds =
           }
         }
         if (close !== undefined) return glued ? endAt(GLUED, text, close + 1) : close + 1;
+        // Cut off before its closing quote: the quote that opens it ends nothing.
+        return endAt(UNQUOTED, text, open + 1);
       }
       return endAt(UNQUOTED, text, at);
     };

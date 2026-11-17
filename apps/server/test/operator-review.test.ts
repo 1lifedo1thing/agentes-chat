@@ -14,7 +14,7 @@ import {
 import { createLogger } from "../src/logger";
 import { createOperatorApp } from "../src/operator/app";
 import { type Browser, browser, createTestServer, ORIGIN, seedOrg, signUp, type TestServer } from "./harness";
-import { SECRET_SHAPES, shownIn } from "./secret-shapes";
+import { SECRET_SHAPES, shownIn, UNOPENED } from "./secret-shapes";
 
 const TOKEN = "operator-test-token-".padEnd(48, "x");
 
@@ -262,6 +262,21 @@ test("a run's review: a record's texts are read as they are, not as JSON writes 
       const { shows, lacks } = shownIn(said, stays);
       if (shows.length + lacks.length > 0) wrong.push({ shape, field, shows, lacks });
     }
+  }
+  expect(wrong).toEqual([]);
+});
+
+test("a run's review: in a result that can't be opened, an unquoted value ends at the quote that closes its string", async () => {
+  const runId = await runFor("@dev look it up a third time");
+  const wrong: unknown[] = [];
+  for (const [shape, quoting, stays] of UNOPENED) {
+    await t.db.delete(schema.agentRunSteps).where(eq(schema.agentRunSteps.runId, runId));
+    const run = { id: runId, orgId: org.orgId };
+    await addRunStep(t.db, run, "tool_call", { toolUseId: "s", name: "fetch", input: {} });
+    await addRunStep(t.db, run, "tool_result", { toolUseId: "s", name: "fetch", content: quoting });
+    const { text } = await body<{ text: string }>(await review(`run/${runId}`));
+    const { shows, lacks } = shownIn(text.split('<external_data source="tool result">')[1] ?? "", stays);
+    if (shows.length + lacks.length > 0) wrong.push({ shape, shows, lacks });
   }
   expect(wrong).toEqual([]);
 });

@@ -39,6 +39,20 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
     { config: { yaml: `password:\n  ${first}\nport: 1` } },
     [String.raw`"yaml":"password:\n  ***\nport: 1"`],
   ],
+  // A text that holds a record of its own and is not one: each of its strings ends at its closing quote.
+  [
+    "a log line that quotes a record",
+    {
+      path: "app.log",
+      content: `12:00:01 INFO sent {"lines":["token: ${first}","password: ${second}"]}\n12:00:02 INFO ok\n`,
+    },
+    ["token: ***", "password: ***", "12:00:02 INFO ok"],
+  ],
+  [
+    "a command that sends a record",
+    { command: `curl -d '{"a":"token: ${first}","b":"password: ${second}"}' https://example.com` },
+    ["token: ***", "password: ***", "https://example.com"],
+  ],
   // Three shapes only a record can tell.
   [
     "a list of arguments",
@@ -65,6 +79,41 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
       ],
     },
     ['"name":"Authorization","value":"***"', '"key":"Cookie","value":"***"', '"name":"Accept","value":"text/plain"'],
+  ],
+];
+
+/**
+ * Text that holds a record and can't be opened as one: a message quoting it, a result with words before it, a result
+ * cut off. An unquoted value in one of its strings ends at that string's closing quote, and the next string's is
+ * read on its own.
+ */
+export const UNOPENED: [shape: string, text: string, stays: string[]][] = [
+  [
+    "an edit, quoted",
+    `it sent {"path":"config.yml","old_string":"password: ${first}","new_string":"password: ${second}"} and failed`,
+    ['"old_string":"password: ***","new_string":"password: ***"} and failed'],
+  ],
+  [
+    "a list of arguments, quoted",
+    `ran ["curl","-H","X-Api-Key: ${first}","-H","X-Auth-Token: ${second}","https://example.com"]`,
+    ['"-H","X-Api-Key: ***","-H","X-Auth-Token: ***","https://example.com"]'],
+  ],
+  [
+    // A step keeps a tool's result as text, its first 4,000 characters: a long one that is JSON ends before its end.
+    "a result cut off",
+    JSON.stringify({
+      matches: [
+        { file: "config/a.yml", line: `password: ${first}` },
+        { file: "config/b.yml", line: `token: ${second}` },
+        ...Array.from({ length: 80 }, (_, n) => ({ file: `config/${n}.yml`, line: `port: ${n} of the lines found` })),
+      ],
+    }).slice(0, 4000),
+    ['"line":"password: ***"},{"file":"config/b.yml","line":"token: ***"},{"file":"config/0.yml"'],
+  ],
+  [
+    "a result with words before it",
+    `exit 0\n{"stdout":"token: ${first}","stderr":"password: ${second}"}`,
+    ['{"stdout":"token: ***","stderr":"password: ***"}'],
   ],
 ];
 
