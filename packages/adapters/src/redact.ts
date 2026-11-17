@@ -54,9 +54,29 @@ function pass(quotes: Quotes, until: number) {
 /**
  * An unquoted value: up to its first space, to a line end or a tab as JSON writes them (`\n`, `\r`, `\t`), or to a
  * quote, plain or written with backslashes, before `,`, `}`, `]`, `:`, a space or the text's end. Such a quote ends
- * the value only where it closes the string the value sits in (`valueEnds`).
+ * the value only where it closes the string the value sits in (`valueEnds`). Read one character at a time: a run of
+ * backslashes is passed over once, wherever the reading starts.
  */
-const UNQUOTED = /(?:[^\s\\"']|\\+(?![nrt\\"'])|\\*["'](?![,}\]:\s]|$))*/y;
+function unquotedEnd(text: string, from: number) {
+  let at = from;
+  for (;;) {
+    const char = text[at];
+    if (char === undefined || SPACE.test(char)) return at;
+    let run = at;
+    while (text.charCodeAt(run) === BACKSLASH) run++;
+    const next = text[run];
+    if (next === '"' || next === "'") {
+      const after = text[run + 1];
+      if (after === undefined || ENDS_A_STRING.test(after)) return at;
+      at = run + 1;
+    } else if (run > at) {
+      if (next === "n" || next === "r" || next === "t") return at;
+      at = run;
+    } else at++;
+  }
+}
+const SPACE = /\s/;
+const ENDS_A_STRING = /[,}\]:\s]/;
 /** What a shell reads as one word with the quoted value before it (`TOKEN="abc"def`). */
 const GLUED = /[^\s"'\\,;&|<>()[\]{}]*/y;
 const NO_SPACE = /\S*/y;
@@ -75,7 +95,7 @@ type Ends = (at: number, opener: RegExpExecArray) => number;
  * A quoted value, whole, however many times the text it sits in was itself written as a JSON string: each time
  * doubles the backslashes before a quote and adds one. So the value ends at the quote with as many backslashes as
  * the one that opened it (or that many and escaped backslashes of its own), or with fewer: the string around it
- * ended first. One with no such end is masked as far as its next quote. An unquoted value goes as far as `UNQUOTED`
+ * ended first. One with no such end is masked as far as its next quote. An unquoted value goes as far as `unquotedEnd`
  * says, and ends at a quote only inside a string: where a quote written the same way stands open before the value
  * (`"line":"token: …"},{"line":"password: …"}`), so the next string's name and value are read on their own. With none
  * open the quote is the value's own (`PASSWORD=ab",cd`), and so is a written quote that would open one after a bare
@@ -94,7 +114,7 @@ const valueEnds =
       return quotes;
     };
     const unquoted = (from: number) => {
-      let end = endAt(UNQUOTED, text, from);
+      let end = unquotedEnd(text, from);
       for (;;) {
         let quote = end;
         while (text.charCodeAt(quote) === BACKSLASH) quote++;
@@ -103,7 +123,7 @@ const valueEnds =
         const quotes = listed(kind);
         pass(quotes, from - 1);
         if (quotes.open.has(quote - end)) return end;
-        end = endAt(UNQUOTED, text, quote + 1);
+        end = unquotedEnd(text, quote + 1);
       }
     };
     /** Whether a string whose quotes are written with `slashes` backslashes stands open before `at`. */

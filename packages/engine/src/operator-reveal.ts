@@ -105,7 +105,7 @@ export interface Revealed {
 }
 
 // An address of a person or of a page: a reason is kept where others read it, and names ids, never people.
-const ADDRESS = /[^\s@]+@[^\s@]+\.[^\s@]+|\b(?:[a-z][a-z0-9+.-]*:\/\/|www\.)\S/i;
+const ADDRESS = /[^\s@]@[^\s@][^\s@.]*\.[^\s@]|:\/\/\S|\bwww\.\S/i;
 const MORE_THAN_A_LINE = /[\p{Cc}\p{Zl}\p{Zp}]/u;
 
 /** What a request's shape must also hold, beyond its types. */
