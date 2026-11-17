@@ -92,7 +92,7 @@ else's, perhaps only some of them, and whose own log should say which agent aske
 ## Addendum (2026-11-16): what thinks for the run, and where it answers
 
 The statement gains four claims, so that a server can refuse to hand out what the caller could not keep to itself
-(ADR 0189):
+(ADR 0190):
 
 | Claim | What it is |
 | --- | --- |

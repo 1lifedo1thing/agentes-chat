@@ -4,7 +4,7 @@ import { toolKind } from "./run-policy";
 import type { ToolDefinition, ToolOutput } from "./types";
 
 /**
- * The lock of a confidential thread (ADR 0189): after a run read a confidential result, it and every later run of
+ * The lock of a confidential thread (ADR 0190): after a run read a confidential result, it and every later run of
  * its thread keep reading, answer in the thread, and send nothing elsewhere. By name, never by kind alone: a kind is
  * wider than its name (`here` holds a GIF search and cards that make things; `self` holds the status line every
  * member sees), and a tool added later is refused until someone reads its handler and adds its name.

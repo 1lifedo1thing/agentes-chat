@@ -142,7 +142,7 @@ export async function renderSteered(
     .leftJoin(users, eq(users.id, messages.authorUserId))
     .leftJoin(agents, eq(agents.id, messages.authorAgentId))
     .where(and(eq(messages.orgId, orgId), inArray(messages.id, ids), isNull(messages.deletedAt)));
-  // A confidential message (ADR 0189): its words only for a run of its own thread that the lock holds and that
+  // A confidential message (ADR 0190): its words only for a run of its own thread that the lock holds and that
   // thinks with what first read the thread. For any other reader the stub, with nothing of its meta (a notice's
   // text is there).
   const own = options.unseal;

@@ -163,7 +163,7 @@ export async function notifyMessage(deps: NotificationDeps, orgId: string, messa
   const authorUser = message.authorUserId;
   // A reminder's own words, without the English prefix the chat replaces with its own label.
   const said = typeof meta.reminderText === "string" ? meta.reminderText : await quotedBody(deps, orgId, message);
-  // A message of a confidential thread (ADR 0189) is told with no word of it: the inbox, the push and a mail that
+  // A message of a confidential thread (ADR 0190) is told with no word of it: the inbox, the push and a mail that
   // quote this say only that there is something to open.
   const text = isConfidential(meta) ? "" : notificationSnippet(readableBody(said, meta));
   // Only a GIF or a sticker (ADR 0091): the apps and the push say which, in the person's language.
@@ -422,7 +422,7 @@ export async function notifyQuestion(deps: NotificationDeps, q: QuestionRow) {
       ...(channel?.kind === "channel" ? { label: channel.name } : {}),
       questionId: q.id,
     },
-    // Asked in a confidential thread (ADR 0189): what the agent typed stays on its card there.
+    // Asked in a confidential thread (ADR 0190): what the agent typed stays on its card there.
     latest: (await sealedPlace(deps, q.orgId, q.threadId ?? q.messageId, q.runId))
       ? { text: "" }
       : { text: notificationSnippet(q.text), suggestions: q.choices ?? undefined },
@@ -545,7 +545,7 @@ export async function notifyApproval(deps: NotificationDeps, approval: ApprovalR
   });
 }
 
-/** `sealed`: asked in a confidential thread (ADR 0189), so neither its title nor its why leaves its card. */
+/** `sealed`: asked in a confidential thread (ADR 0190), so neither its title nor its why leaves its card. */
 const approvalLatest = (approval: ApprovalRow, sealed: boolean) => ({
   title: sealed ? "" : notificationSnippet(approval.title, 200),
   text: sealed ? "" : notificationSnippet(approval.why, 200),
@@ -780,7 +780,7 @@ async function notifyTaskMessage(deps: NotificationDeps, message: typeof message
   const author =
     message.authorType === "person" ? message.authorUserId : message.authorAgentId ? message.authorAgentId : null;
   if (!issue || !author) return;
-  // A message of a confidential thread (ADR 0189) is told with no word of it.
+  // A message of a confidential thread (ADR 0190) is told with no word of it.
   const sealed = isConfidential(message.meta);
   const text = sealed ? "" : readableBody(message.body, message.meta);
   if (!text.trim() && !sealed) return;

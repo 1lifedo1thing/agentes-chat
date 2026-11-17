@@ -246,7 +246,7 @@ export function createTalker(deps: TalkerDeps): Talker {
       // The run as it is now (a wait may have moved it); the policy judged it as the message found it.
       const [run] = await deps.db.select().from(agentRuns).where(eq(agentRuns.id, landed.id));
       if (!run || isTerminal(run.status)) return decide("ended");
-      // The snapshot is made of the run's own steps and words: in a confidential thread (ADR 0189) those go to the
+      // The snapshot is made of the run's own steps and words: in a confidential thread (ADR 0190) those go to the
       // run's model and to no other, so nobody answers for it meanwhile.
       if (await threadIsConfidential(deps.db, run.orgId, run.threadRootId)) return decide("confidential");
       // No model call for a reply that can't be posted (checked again before posting: it may pause meanwhile).

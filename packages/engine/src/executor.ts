@@ -1368,7 +1368,7 @@ async function executeRunInner(
     topLevel ? getMessage(db, run.orgId, run.triggerMessageId) : Promise.resolve(null),
   ]);
   let channelRow = firstChannel;
-  // Asked by the root of a confidential thread (ADR 0189): every message of such a thread carries the mark, so the
+  // Asked by the root of a confidential thread (ADR 0190): every message of such a thread carries the mark, so the
   // thread's row is read only for a message that carries it (a marked message can also sit outside such a thread).
   const sealedAtClaim =
     isConfidential(topTrigger?.meta) && (await threadIsConfidential(db, run.orgId, run.threadRootId));
@@ -1741,7 +1741,7 @@ async function executeRunInner(
       : {}),
   };
   /**
-   * A result this run read made its thread confidential (the gateway says so on `ctx`, ADR 0189): from then on it
+   * A result this run read made its thread confidential (the gateway says so on `ctx`, ADR 0190): from then on it
    * answers under the message that asked it, its cards and events with it.
    */
   const followThread = () => {
@@ -3112,7 +3112,7 @@ async function executeRunInner(
   }
   // The context budget reads the model's window: an OpenRouter model's comes with its list.
   const thinkerModel = await modelInfoFor(db, thinker.model, run.orgId);
-  // One provider for a confidential thread's words (ADR 0189). A run that may hold them in its transcript goes on
+  // One provider for a confidential thread's words (ADR 0190). A run that may hold them in its transcript goes on
   // with what it thought with before or not at all, and one whose context was read whole (`unseal`) thinks through
   // the Model Gateway or not at all: any other brain or provider would be handed the words. So would a run that
   // thinks with another provider than the thread's first reader: another agent named there, or this one after its
@@ -5791,7 +5791,7 @@ async function executeRunInner(
           if (view) await publishMessageCreated(deps.pubsub, view);
           // Work handed to it shows moving where it was handed from (its line's `progress`, ADR 0097).
           if (betweenAgents) await announceConsultationChange({ db, pubsub: deps.pubsub }, run).catch(() => {});
-          // Nothing of a confidential thread is copied onto its task (ADR 0189).
+          // Nothing of a confidential thread is copied onto its task (ADR 0190).
           if (typeof issueId === "string" && !isConfidential(posted.meta))
             await mirrorReplyToIssue({ db, pubsub: deps.pubsub }, run, issueId, posted.body).catch(() => {});
         }

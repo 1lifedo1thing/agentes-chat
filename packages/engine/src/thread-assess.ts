@@ -182,7 +182,7 @@ export async function nameConversation(
     .select()
     .from(messages)
     .where(and(eq(messages.orgId, input.orgId), eq(messages.id, input.rootId), isNull(messages.deletedAt)));
-  // A confidential thread (ADR 0189) gets no name from a model: a title is read outside the thread.
+  // A confidential thread (ADR 0190) gets no name from a model: a title is read outside the thread.
   if (!root || isConfidential(root.meta)) return null;
   const { text } = await conversationLines(deps.db, input.orgId, root, true);
   const about = { agentId: input.agentId, runId: input.runId };

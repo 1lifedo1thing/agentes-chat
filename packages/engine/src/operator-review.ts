@@ -136,7 +136,7 @@ async function runReview(db: Database, runId: string): Promise<OperatorReview | 
     .map((s, i): Part => {
       const result = results.get(s.data.toolUseId);
       const name = `Tool call ${i + 1}: ${String(s.data.name ?? "?").slice(0, 100)}`;
-      // A run of a confidential thread (ADR 0189): which tools it called and how each ended, never what went in or
+      // A run of a confidential thread (ADR 0190): which tools it called and how each ended, never what went in or
       // came back. Whoever reads this block is outside the thread. Its request and reply are stored as the stub.
       if (run.confidential) {
         const ended = result ? (result.isError ? "failed" : "answered") : "no result";

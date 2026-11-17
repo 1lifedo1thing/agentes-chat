@@ -32,7 +32,7 @@ export async function learnFromRefusal(
   approval: Approval,
 ): Promise<ConsolidateResult | null> {
   if (approval.status !== "refused") return null;
-  // Nothing of a confidential thread becomes memory (ADR 0189): the card's title and the reason given quote it.
+  // Nothing of a confidential thread becomes memory (ADR 0190): the card's title and the reason given quote it.
   if (await threadIsConfidential(deps.db, approval.orgId, approval.threadRootId)) return null;
   const outcome = await recordOutcome(deps.db, {
     orgId: approval.orgId,

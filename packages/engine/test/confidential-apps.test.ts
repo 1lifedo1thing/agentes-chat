@@ -5,7 +5,7 @@ import { type AppPrincipal, CONFIDENTIAL_STUB, createAppsMcpHandler } from "../s
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, type VaultWorld, vaultWorld } from "./confidential-fixtures";
 
-// ADR 0189: a person's connected AI app acts as the person, and what its tools answer is read by the app's model,
+// ADR 0190: a person's connected AI app acts as the person, and what its tools answer is read by the app's model,
 // which is outside every thread. So a confidential message reaches it as the stub, with nothing attached.
 
 afterEach(closeWorlds);

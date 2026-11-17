@@ -16,7 +16,7 @@ import {
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, type VaultWorld, vaultWorld } from "./confidential-fixtures";
 
-// ADR 0189: what the product kept of a confidential thread goes after `CONFIDENTIAL_KEEP_DAYS`: every message of the
+// ADR 0190: what the product kept of a confidential thread goes after `CONFIDENTIAL_KEEP_DAYS`: every message of the
 // thread, and what its ended runs kept. The rows stay, and nothing outside such a thread is touched.
 
 afterEach(closeWorlds);

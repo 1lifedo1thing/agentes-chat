@@ -106,7 +106,7 @@ export const judgeCallOf = (error: unknown): Partial<JudgeCallTags> =>
   (error as { judgeCall?: JudgeCallTags } | null)?.judgeCall ?? {};
 
 /**
- * No judge answers for a run of a confidential thread (ADR 0189): what such a run read goes to its own model and to
+ * No judge answers for a run of a confidential thread (ADR 0190): what such a run read goes to its own model and to
  * no other, and a judgment's `state` is made of the run's words. It fails like a judge that is off, before anything
  * leaves: every caller already does without an answer.
  */

@@ -67,6 +67,7 @@ import type { TeamWeekAct } from "../lib/team-week";
 import { threadStartOf } from "../lib/threads";
 import { upsertMessage, withLocalCopies } from "../lib/timeline";
 import { listedText } from "../lib/voice";
+import type { Wallpaper } from "../lib/wallpaper";
 import type { AudienceChoice } from "../lib/who-sees";
 import type { WikiAccess } from "../lib/wiki";
 import type { RealtimeConnection } from "../realtime/connection";
@@ -3006,6 +3007,46 @@ export function useSetChatPrefs(orgId: string) {
       if (ctx?.before !== undefined) qc.setQueryData(keys.me, ctx.before);
     },
     onSuccess: put,
+  });
+}
+
+/** My choices here as the server answered them (another device's change, or a conversation's background). */
+function putChatPrefs(qc: QueryClient, orgId: string, chatPrefs: ChatPrefs) {
+  qc.setQueryData<Me | null>(keys.me, (me) =>
+    me ? { ...me, organizations: me.organizations.map((o) => (o.id === orgId ? { ...o, chatPrefs } : o)) } : me,
+  );
+}
+
+/**
+ * A conversation's own background, for me (null: it follows the channels' or DMs' again). Shown at once; on a
+ * failure the choice before comes back.
+ */
+export function useSetConversationWallpaper(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ channelId, wallpaper }: { channelId: string; wallpaper: Wallpaper | null }) =>
+      api.orgs.setConversationWallpaper(orgId, channelId, wallpaper),
+    onMutate: async ({ channelId, wallpaper }) => {
+      await qc.cancelQueries({ queryKey: keys.me });
+      const before = qc.getQueryData<Me | null>(keys.me);
+      const prefs = before?.organizations.find((o) => o.id === orgId)?.chatPrefs ?? {};
+      const { [channelId]: _old, ...rest } = prefs.wallpapers ?? {};
+      putChatPrefs(qc, orgId, { ...prefs, wallpapers: wallpaper ? { ...rest, [channelId]: wallpaper } : rest });
+      return { before };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.before !== undefined) qc.setQueryData(keys.me, ctx.before);
+    },
+    onSuccess: (prefs) => putChatPrefs(qc, orgId, prefs),
+  });
+}
+
+/** Sends a photo for a background (already shrunk); its address goes into a background with one of the two above. */
+export function useUploadWallpaperPhoto(orgId: string) {
+  const api = useApi();
+  return useMutation({
+    mutationFn: (input: { imageBase64: string; contentType: string }) => api.orgs.uploadWallpaperPhoto(orgId, input),
   });
 }
 
@@ -6819,6 +6860,7 @@ export function applyUnreadEvent(qc: QueryClient, orgId: string, event: { type: 
     void qc.invalidateQueries({ queryKey: keys.dms(orgId) });
     void qc.invalidateQueries({ queryKey: keys.unreadThreads(orgId) });
   } else if (e.type === "channel.muted") setMuted(qc, orgId, e.channelId, e.muted);
+  else if (e.type === "chat.prefs") putChatPrefs(qc, orgId, e.chatPrefs);
   else if (e.type === "thread.read") {
     clearThreadUnread(qc, orgId, e.threadId);
     refreshThreadUnread(qc, orgId);

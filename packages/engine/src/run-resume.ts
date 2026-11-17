@@ -208,7 +208,7 @@ export async function deliverNoticeToRun(
     : run.background
       ? (await routineBriefOfRun(tx, run))?.deliverTo
       : await workHome(tx, run);
-  // What a run of a confidential thread is told stays in that thread (ADR 0189), whoever reads the other place.
+  // What a run of a confidential thread is told stays in that thread (ADR 0190), whoever reads the other place.
   const report = elsewhere && (await threadIsConfidential(tx, run.orgId, run.threadRootId)) ? undefined : elsewhere;
   const into = {
     orgId: run.orgId,

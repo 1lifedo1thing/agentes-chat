@@ -101,7 +101,7 @@ describe("message Markdown", () => {
     expect(el.querySelector("strong")?.textContent).toBe("<iframe src=//evil.example>");
   });
 
-  test("a confidential thread's message as the server stores it (`inertLinks`, ADR 0189) holds no link", () => {
+  test("a confidential thread's message as the server stores it (`inertLinks`, ADR 0190) holds no link", () => {
     const links = (text: string) => body(text).querySelectorAll("a").length;
     // A fence in the middle of a line is no code block here, and the first two lone backticks pair: the link after
     // them is live as typed.

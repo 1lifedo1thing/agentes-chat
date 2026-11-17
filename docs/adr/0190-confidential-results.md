@@ -1,4 +1,4 @@
-# 0189. Confidential results: a listed server's answer seals the thread that read it
+# 0190. Confidential results: a listed server's answer seals the thread that read it
 
 - Status: Accepted
 - Date: 2026-11-16

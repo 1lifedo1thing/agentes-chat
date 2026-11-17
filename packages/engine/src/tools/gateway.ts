@@ -573,7 +573,7 @@ const readsOutsideText = (tool: ToolDefinition, output: ToolOutput) =>
   Boolean(tool.external || tool.readsOutside) && output.content.trim() !== "";
 
 /**
- * Whether a run may be handed a confidential answer (ADR 0189): only one that thinks through the Model Gateway, which
+ * Whether a run may be handed a confidential answer (ADR 0190): only one that thinks through the Model Gateway, which
  * the lock below holds. A program on a computer keeps what it reads and has a shell and a web fetch of its own that
  * never pass here, and a call with no run has no thread to keep the words in: both get the stub. So does a run that
  * thinks with another provider than the one its thread's words already stay with (`thinksAsThread`).
@@ -1108,7 +1108,7 @@ export function createToolGateway(deps: {
   }
 
   /**
-   * A confidential result's step, written with its thread's mark or not at all (ADR 0189): a step that carried the
+   * A confidential result's step, written with its thread's mark or not at all (ADR 0190): a step that carried the
    * mark in a thread that didn't would leave the words readable from outside it.
    */
   async function markedStep(ctx: ToolContext, connectionId: string | null, data: Record<string, unknown>) {
@@ -1140,7 +1140,7 @@ export function createToolGateway(deps: {
       params: approval.params,
     });
     const tool = (await allTools(ctx)).get(approval.tool);
-    /** The run's thread was confidential before this action ran (ADR 0189). */
+    /** The run's thread was confidential before this action ran (ADR 0190). */
     let locked = false;
     // Why the approved action can't run any more; null = it may.
     const refusal = async (): Promise<string | null> => {
@@ -1150,7 +1150,7 @@ export function createToolGateway(deps: {
       const access = accessWithNeeds(await freshGrantedKeys(ctx.db, ctx.orgId, ctx.agentId), tool);
       if (!isAllowed(access.state))
         return `Not allowed: this agent lost the scope ${access.of.scope} since the approval. An admin can give it back on the agent's page in Tools and access (in Portuguese, Ferramentas e acesso); then asking again runs it`;
-      // Approved before its thread turned confidential (ADR 0189): the lock decides now, as for a call made now.
+      // Approved before its thread turned confidential (ADR 0190): the lock decides now, as for a call made now.
       const sealed = ctx.runId ? await runConfidentiality(ctx.db, ctx.orgId, ctx.runId) : null;
       if (sealed?.connectionIds) {
         ctx.confidential = true;
@@ -1199,7 +1199,7 @@ export function createToolGateway(deps: {
       }
       outside = readsOutsideText(tool, output);
       // Team actions (ADR 0064): what a person approved and went out is the team's too. Not a call of a confidential
-      // thread (ADR 0189): its arguments would be kept for good and searched by every agent.
+      // thread (ADR 0190): its arguments would be kept for good and searched by every agent.
       if (isOutsideTool(tool) && !output.isError && !locked) {
         await recordTeamAction(ctx.db, {
           orgId: ctx.orgId,
@@ -1379,7 +1379,7 @@ export function createToolGateway(deps: {
        * tool itself answered (not a gateway refusal).
        */
       const finish = async (answer: ToolOutput, outcome?: AuditOutcome, ran = false) => {
-        // A confidential answer (ADR 0189): read, it marks the step and the run's thread; else the stub stands in.
+        // A confidential answer (ADR 0190): read, it marks the step and the run's thread; else the stub stands in.
         const confidential = ran && answer.confidential === true && readsConfidential(ctx, sealed);
         const output = answer.confidential && !confidential ? stubbed(answer) : answer;
         // A result read from outside marks the run (`runReadOutside`, ADR 0117), an error too: its text came from there.
@@ -1448,7 +1448,7 @@ export function createToolGateway(deps: {
           "refused",
         );
       }
-      // A confidential thread's lock (ADR 0189), before anything asks a person: a card is what an agent that never
+      // A confidential thread's lock (ADR 0190), before anything asks a person: a card is what an agent that never
       // asks would have lifted.
       if (sealed?.connectionIds && !lockAllows(tool, sealed.connectionIds, asksOut)) {
         return finish(confidentialRefusal(), "refused");
@@ -1653,7 +1653,7 @@ export function createToolGateway(deps: {
       const prompt = tool.name === PERMISSION_TOOL && builtIn ? promptQuestion(call.input) : null;
       const targets = outside ? callTargets(call.input) : (prompt?.action?.targets ?? []);
       let teamReason: string | null = null;
-      // Neither asked nor kept for a call of a confidential thread (ADR 0189): the check and the record hold the
+      // Neither asked nor kept for a call of a confidential thread (ADR 0190): the check and the record hold the
       // call's targets and words for good, outside the thread, and the record is searched by every agent.
       const teamKnows = !sealed?.connectionIds;
       if (teamKnows && (outside || prompt?.action)) {
@@ -1702,7 +1702,7 @@ export function createToolGateway(deps: {
           authority?.kind === "routine" && !(ctx.runId && (await answersAgentsOnly(ctx.db, ctx.orgId, ctx.runId)))
             ? authority.brief?.deliverTo
             : undefined;
-        // Out of a confidential thread (ADR 0189): a refusal, as for any tool that sends its words elsewhere. Its
+        // Out of a confidential thread (ADR 0190): a refusal, as for any tool that sends its words elsewhere. Its
         // card would be read by other people, and a reply under it starts a run the lock does not hold.
         if (asksOut) return finish(confidentialRefusal(), "refused");
         const origin = deliverTo

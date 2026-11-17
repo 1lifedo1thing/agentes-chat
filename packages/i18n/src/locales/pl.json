@@ -2826,7 +2826,8 @@
     "header": {
       "pins": "Przypięte wiadomości",
       "showMembers": "Pokaż członków",
-      "hideMembers": "Ukryj członków"
+      "hideMembers": "Ukryj członków",
+      "more": "Więcej opcji"
     },
     "membersButton_one": "Członkowie kanału ({{count}})",
     "membersButton_few": "Członkowie kanału ({{count}})",
@@ -15953,6 +15954,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "To zdjęcie nie jest twoje.",
+      "invalid": "Takie tło nie istnieje.",
+      "tooLarge": "Zdjęcie może mieć maksymalnie 2 MB.",
+      "type": "Użyj zdjęcia JPEG, PNG lub WebP."
+    },
     "tooLarge": "To więcej, niż przyjmuje serwer.",
     "tooLargeMax": "To więcej, niż przyjmuje serwer: do {{max}} MB.",
     "passwordLink": {
@@ -17908,6 +17915,51 @@
           "new3": "Zostały 2, zadzwonię jutro.",
           "new4": "Raport zaktualizowany na Drive.",
           "newCount": "4 nowe"
+        },
+        "wallpaper": {
+          "title": "Tło",
+          "help": "Zmienia się tylko dla ciebie, na wszystkich twoich urządzeniach",
+          "rowHelp": "Za każdą rozmową, tylko dla ciebie. Rozmowa może mieć własne tło w swoim menu.",
+          "rowSub": "Tylko dla ciebie, w każdej rozmowie",
+          "onlyHere": "Tylko w {{name}}, tylko dla ciebie",
+          "none": "Bez tła",
+          "sameAsOthers": "Jak w innych rozmowach",
+          "sameShort": "Jak w innych",
+          "sky": "Niebo",
+          "drawings": "Rysunki",
+          "color": "Kolor",
+          "photos": "Twoje zdjęcia",
+          "choosePhoto": "Wybierz zdjęcie",
+          "skyAutoHelp": "Pierwsze zmienia się z rozmową: w wiadomości bezpośredniej niebo w kolorze agenta, na kanałach niebo przestrzeni roboczej.",
+          "skyAutoHelpDms": "Pierwsze to niebo w kolorze agenta.",
+          "skyAutoHelpChannels": "Pierwsze to niebo przestrzeni roboczej.",
+          "neutral": {
+            "paper": "Papier",
+            "mist": "Mgła",
+            "sand": "Piasek"
+          },
+          "name": {
+            "skyAuto": "Niebo rozmowy",
+            "skyAgent": "Niebo agenta",
+            "skyWorkspace": "Niebo przestrzeni roboczej",
+            "sky": "Niebo · {{color}}",
+            "drawingsAuto": "Rysunki rozmowy",
+            "drawingsAgent": "Rysunki agenta",
+            "drawingsWorkspace": "Rysunki przestrzeni roboczej",
+            "drawings": "Rysunki · {{color}}",
+            "crowd": "Agenci",
+            "color": "Kolor · {{color}}",
+            "photo": "Twoje zdjęcie"
+          },
+          "choose": "Wybierz…",
+          "menu": "Tło rozmowy…",
+          "preview": "Podgląd",
+          "usePhoto": "Użyj tego zdjęcia",
+          "dragHint": "Przeciągnij zdjęcie, aby wybrać widoczną część",
+          "dim": "Przyciemnij w trybie ciemnym",
+          "sending": "Wysyłanie zdjęcia…",
+          "failed": "Nie udało się zapisać tła. Spróbuj ponownie.",
+          "done": "Gotowe"
         }
       },
       "agentStyle": "Jak agenci do ciebie mówią",

@@ -43,7 +43,7 @@ const { agentRuns, appSends, approvals, messages, users, agents, channels } = sc
  * The tools an AI app gets on `/mcp` (ADR 0119 §3). They act as the person, through the same engine calls the web
  * app makes, so every permission is the person's own. None decides an approval, changes a setting or manages
  * people: approvals stay a human action inside agentes.chat. What they answer is read by the app's model, not by
- * the person, so a confidential message is its stub with nothing attached (`stubOf`, ADR 0189).
+ * the person, so a confidential message is its stub with nothing attached (`stubOf`, ADR 0190).
  */
 
 export interface AppsToolDeps {

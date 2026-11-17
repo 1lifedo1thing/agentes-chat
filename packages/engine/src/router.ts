@@ -964,7 +964,7 @@ export async function routeMessage(
           and r.trigger_message_id = ${messages.id} and ${inArray(sql`r.status`, [...ACTIVE_RUN_STATUSES])})`,
         threadId: messages.threadId,
         // As text, which every driver reads the same way.
-        // The quote a message carries is a copy of the quoted words: none out of a confidential thread (ADR 0189).
+        // The quote a message carries is a copy of the quoted words: none out of a confidential thread (ADR 0190).
         replyTo: sql<string | null>`case when coalesce(${messages.meta}->>'confidential', '') = 'true' then null
           else (${messages.meta}->'replyTo')::text end`,
         createdAt: messages.createdAt,

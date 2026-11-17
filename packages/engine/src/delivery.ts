@@ -24,7 +24,7 @@ export interface DeliverNoticeInput {
   trigger?: RunTrigger;
   /** It relays what a run read outside (`meta.readOutside`, ADR 0117). */
   readOutside?: boolean;
-  /** The run it is for or about: a notice of a confidential thread's run is that thread's (ADR 0189). */
+  /** The run it is for or about: a notice of a confidential thread's run is that thread's (ADR 0190). */
   forRunId?: string;
 }
 

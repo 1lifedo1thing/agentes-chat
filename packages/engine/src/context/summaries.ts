@@ -107,7 +107,7 @@ export async function loadThread(
     .select()
     .from(messages)
     .where(and(eq(messages.orgId, orgId), eq(messages.id, threadRootId), isNull(messages.deletedAt)));
-  // A confidential thread (ADR 0189) is nothing to summarize, reflect on or learn from: no other model reads it.
+  // A confidential thread (ADR 0190) is nothing to summarize, reflect on or learn from: no other model reads it.
   if (!root || isConfidential(root.meta)) return null;
   const replies = await db
     .select()
@@ -269,7 +269,7 @@ export async function ensurePeriodSummary(
         isNull(messages.deletedAt),
         gte(messages.createdAt, period.from),
         lt(messages.createdAt, period.to),
-        // A confidential thread's messages (ADR 0189) are in no period's summary.
+        // A confidential thread's messages (ADR 0190) are in no period's summary.
         sql`coalesce(${messages.meta}->>'confidential', '') <> 'true'`,
       ),
     )

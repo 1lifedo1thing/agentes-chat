@@ -157,7 +157,7 @@ const runColumns = {
   waitPlan: sql<string | null>`${WAIT}->>'waitKey'`,
   waitingMachineId: agentRuns.waitingMachineId,
   error: agentRuns.error,
-  // Read by `runOf` and never answered: of a confidential thread (ADR 0189).
+  // Read by `runOf` and never answered: of a confidential thread (ADR 0190).
   confidential: sql<boolean>`${confidentialThreadSql(sql`${agentRuns.orgId}`, sql`${agentRuns.threadRootId}`)}`,
   createdAt: ms(agentRuns.createdAt),
   startedAt: agentRuns.startedAt,

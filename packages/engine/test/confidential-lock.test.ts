@@ -31,7 +31,7 @@ import { asksOutside, confidentialLockAllows } from "../src/tools/confidential-l
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, type VaultWorld, vaultWorld } from "./confidential-fixtures";
 
-// ADR 0189: after a run read a confidential result, it and every later run of its thread keep a short list of tools
+// ADR 0190: after a run read a confidential result, it and every later run of its thread keep a short list of tools
 // by name and are refused every other, with a code the turn's judge reads as final.
 
 afterEach(closeWorlds);

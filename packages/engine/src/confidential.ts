@@ -5,7 +5,7 @@ import { enqueue } from "./outbox";
 const { agentRuns, confidentialThreads, contextItems, messages, notifications, searchDocuments } = schema;
 
 /**
- * Confidential results (ADR 0189). A server the operator vouches for (`MCP_CALLER_IDENTITY`) marks a tool result as
+ * Confidential results (ADR 0190). A server the operator vouches for (`MCP_CALLER_IDENTITY`) marks a tool result as
  * confidential; the thread of the run that read it becomes a confidential thread (`confidential_threads`), from its
  * root. In such a thread:
  *

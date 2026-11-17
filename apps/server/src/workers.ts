@@ -179,7 +179,7 @@ export const WORKER_INTERVALS_MS = {
   /** Wiki pages in the trash past 30 days are removed with their history. */
   wikiPurge: 6 * 3600_000,
   voiceExpiry: 24 * 3600_000,
-  /** Confidential threads past their time lose their words (ADR 0189). */
+  /** Confidential threads past their time lose their words (ADR 0190). */
   confidentialPrune: 24 * 3600_000,
   /** How often watched IMAP folders are looked at (each is checked every `MAIL_POLL_SECONDS`). */
   mailPoll: 30_000,

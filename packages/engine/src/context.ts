@@ -295,7 +295,7 @@ type ActionRow = {
   kind: string;
   name: string;
   run_id: string;
-  /** Its run answers in a confidential thread (ADR 0189). */
+  /** Its run answers in a confidential thread (ADR 0190). */
   confidential: boolean;
 };
 
@@ -551,7 +551,7 @@ export interface RunContext {
   sessionPrompt: string[];
   /** A personal workspace (ADR 0159): the blocks the executor adds speak of one person and their agents too. */
   personal: boolean;
-  /** The run's own thread is a confidential one (ADR 0189), as read when this was built. */
+  /** The run's own thread is a confidential one (ADR 0190), as read when this was built. */
   confidential: boolean;
 }
 
@@ -609,7 +609,7 @@ export async function buildRunContext(
     workspaceComputer?: WorkspaceComputer;
     /**
      * The run thinks through the Model Gateway, so it reads the words of its own thread when that thread is
-     * confidential (ADR 0189). Any other run, and every run outside that thread, reads the stub.
+     * confidential (ADR 0190). Any other run, and every run outside that thread, reads the stub.
      */
     unseal?: boolean;
   },
@@ -782,7 +782,7 @@ export async function buildRunContext(
     ? [trigger]
     : [...before.reverse(), ...(root ? [rangeRoot(root, range !== null)] : []), ...thread.reverse()];
   if (!everything.some((m) => m.id === trigger.id)) everything.push(trigger);
-  // A confidential message (ADR 0189) is read whole only in its own thread, by a run the lock holds. Anywhere else
+  // A confidential message (ADR 0190) is read whole only in its own thread, by a run the lock holds. Anywhere else
   // the stub stands in its place, with nothing of its meta: a card keeps what its agent typed there.
   const ownThread = (m: Message) => m.id === run.threadRootId || m.threadId === run.threadRootId;
   // By the thread's own row, never by a message's mark alone: a run of a confidential thread can write a marked
@@ -904,7 +904,7 @@ export async function buildRunContext(
         order by s.created_at desc limit 30)`),
   );
   // A result read from outside never shows here (ADR 0117): only that the tool read it. Nor does anything a run of
-  // a confidential thread did (ADR 0189): what it called next may repeat what it read.
+  // a confidential thread did (ADR 0190): what it called next may repeat what it read.
   const firstLine = (d: { content?: unknown; data?: { outside?: unknown } }, confidential: boolean) =>
     confidential
       ? CONFIDENTIAL_NOT_SHOWN

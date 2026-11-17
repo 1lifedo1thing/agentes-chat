@@ -2629,7 +2629,8 @@
     "header": {
       "pins": "Angeheftete Nachrichten",
       "showMembers": "Mitglieder zeigen",
-      "hideMembers": "Mitglieder ausblenden"
+      "hideMembers": "Mitglieder ausblenden",
+      "more": "Weitere Optionen"
     },
     "membersButton_one": "Mitglieder des Kanals ({{count}})",
     "membersButton_other": "Mitglieder des Kanals ({{count}})",
@@ -14896,6 +14897,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Dieses Foto gehört nicht dir.",
+      "invalid": "Diesen Hintergrund gibt es nicht.",
+      "tooLarge": "Das Foto darf höchstens 2 MB groß sein.",
+      "type": "Verwende ein JPEG-, PNG- oder WebP-Foto."
+    },
     "tooLarge": "Das ist größer, als der Server annimmt.",
     "tooLargeMax": "Das ist größer, als der Server annimmt: bis zu {{max}} MB.",
     "passwordLink": {
@@ -16812,6 +16819,51 @@
           "new3": "Noch 2, ich rufe morgen an.",
           "new4": "Bericht im Drive aktualisiert.",
           "newCount": "4 neu"
+        },
+        "wallpaper": {
+          "title": "Hintergrund",
+          "help": "Ändert sich nur für dich, auf all deinen Geräten",
+          "rowHelp": "Hinter jeder Unterhaltung, nur für dich. Eine Unterhaltung kann über ihr Menü einen eigenen haben.",
+          "rowSub": "Nur für dich, in jeder Unterhaltung",
+          "onlyHere": "Nur in {{name}}, nur für dich",
+          "none": "Kein Hintergrund",
+          "sameAsOthers": "Wie die anderen Unterhaltungen",
+          "sameShort": "Wie die anderen",
+          "sky": "Himmel",
+          "drawings": "Zeichnungen",
+          "color": "Farbe",
+          "photos": "Deine Fotos",
+          "choosePhoto": "Foto auswählen",
+          "skyAutoHelp": "Der erste richtet sich nach der Unterhaltung: in einer Direktnachricht ein Himmel in der Farbe des Agenten, in Kanälen der Himmel des Workspace.",
+          "skyAutoHelpDms": "Der erste ist ein Himmel in der Farbe des Agenten.",
+          "skyAutoHelpChannels": "Der erste ist der Himmel des Workspace.",
+          "neutral": {
+            "paper": "Papier",
+            "mist": "Nebel",
+            "sand": "Sand"
+          },
+          "name": {
+            "skyAuto": "Himmel der Unterhaltung",
+            "skyAgent": "Himmel des Agenten",
+            "skyWorkspace": "Himmel des Workspace",
+            "sky": "Himmel · {{color}}",
+            "drawingsAuto": "Zeichnungen der Unterhaltung",
+            "drawingsAgent": "Zeichnungen des Agenten",
+            "drawingsWorkspace": "Zeichnungen des Workspace",
+            "drawings": "Zeichnungen · {{color}}",
+            "crowd": "Agenten",
+            "color": "Farbe · {{color}}",
+            "photo": "Dein Foto"
+          },
+          "choose": "Auswählen…",
+          "menu": "Hintergrund der Unterhaltung…",
+          "preview": "Vorschau",
+          "usePhoto": "Dieses Foto verwenden",
+          "dragHint": "Ziehe das Foto, um den sichtbaren Ausschnitt zu wählen",
+          "dim": "Im dunklen Modus abdunkeln",
+          "sending": "Foto wird gesendet…",
+          "failed": "Der Hintergrund konnte nicht gespeichert werden. Versuch es noch einmal.",
+          "done": "Fertig"
         }
       },
       "agentStyle": "Wie die Agenten mit dir sprechen",

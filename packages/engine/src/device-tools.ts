@@ -207,7 +207,7 @@ export function createDeviceToolSource(deps: DeviceToolDeps): ToolSource {
     ) =>
     async (input: Record<string, unknown>, ctx: ToolContext): Promise<ToolOutput> => {
       try {
-        // From a confidential thread (ADR 0189) the label is the tool's own words: the run's would be read by the
+        // From a confidential thread (ADR 0190) the label is the tool's own words: the run's would be read by the
         // phone's owner (their notification), by the computer the phone is on and by whoever reads the phone's status.
         const label = (ctx.confidential ? "" : str(input.label).trim()) || defaultLabel;
         const r = await reach(ctx, str(input.phone), label);

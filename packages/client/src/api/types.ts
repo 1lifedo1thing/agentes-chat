@@ -7185,7 +7185,9 @@ export type UnreadEvent =
   | { type: "channel.activity"; channelId: string; threadId: string | null; dm?: boolean }
   | { type: "channel.read"; channelId: string; userId: string; lastReadAt: string }
   | { type: "channel.muted"; channelId: string; muted: boolean }
-  | { type: "thread.read"; threadId: string; channelId: string; lastReadAt: string };
+  | { type: "thread.read"; threadId: string; channelId: string; lastReadAt: string }
+  /** How my conversations look here, changed on another device (`chatPrefs` as the server keeps it). */
+  | { type: "chat.prefs"; chatPrefs: ChatPrefs };
 
 /** A pinned message (`GET …/channels/{id}/pins`, newest pin first). */
 export interface MessagePin {

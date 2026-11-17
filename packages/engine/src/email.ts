@@ -1452,7 +1452,7 @@ export async function queueApprovalDigests(db: Database, publicUrl: string, afte
     .from(agents)
     .where(inArray(agents.id, [...new Set(due.map((a) => a.agentId))]));
   const agentOf = new Map(agentRows.map((a) => [a.id, a]));
-  // A request made in a confidential thread (ADR 0189) is counted and never quoted: its title is the agent's words.
+  // A request made in a confidential thread (ADR 0190) is counted and never quoted: its title is the agent's words.
   const sealed = await confidentialRoots(db, [...new Set(due.map((a) => a.threadRootId))]);
   let queued = 0;
   for (const orgId of new Set(due.map((a) => a.orgId))) {

@@ -309,7 +309,7 @@ const publishLine = async (pubsub: PubSub | undefined, line: Message) => {
 
 /**
  * The run a tool call belongs to: a conversation's run, never a routine's background work or a mission task.
- * `confidential`: its lines live where it answers, under its thread's root (`replyThreadOf`, ADR 0189).
+ * `confidential`: its lines live where it answers, under its thread's root (`replyThreadOf`, ADR 0190).
  */
 async function conversationRun(ctx: ToolContext) {
   if (!ctx.runId || ctx.background || ctx.bridge?.taskId) return null;

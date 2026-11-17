@@ -24,7 +24,7 @@ import { renderPush } from "../src/push-messages";
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, type VaultWorld, vaultWorld } from "./confidential-fixtures";
 
-// ADR 0189: what a run read as confidential, and what its thread says, reach its own model and the people who read
+// ADR 0190: what a run read as confidential, and what its thread says, reach its own model and the people who read
 // the thread, and nothing else. Each test plants words no other text holds and then looks for them everywhere.
 
 afterEach(closeWorlds);

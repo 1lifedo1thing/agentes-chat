@@ -40,7 +40,7 @@ const REMOVED_META = {
 const DAY_MS = 86_400_000;
 
 /**
- * The daily prune of confidential threads (ADR 0189). A thread marked more than `CONFIDENTIAL_KEEP_DAYS` ago loses the
+ * The daily prune of confidential threads (ADR 0190). A thread marked more than `CONFIDENTIAL_KEEP_DAYS` ago loses the
  * words of every message it holds, its root and whatever was written since included, and of what its runs reported
  * outside it, with what was attached to them, and the summaries made of it before its mark;
  * a run of it that ended and is older than that loses what it kept of them (its steps, its transcript, its error's

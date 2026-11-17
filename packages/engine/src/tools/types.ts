@@ -66,7 +66,7 @@ export interface ToolContext {
   thinksWith?: string;
   /**
    * Set by the gateway and the executor, never from a call's input: the run's thread holds a confidential result
-   * (ADR 0189), so what it posts goes under the message that asked it (`replyThreadOf`).
+   * (ADR 0190), so what it posts goes under the message that asked it (`replyThreadOf`).
    */
   confidential?: boolean;
 }
@@ -89,7 +89,7 @@ export interface ToolOutput {
   waitForApproval?: ApprovalRow;
   /**
    * The connector source alone sets it, for an answer its server marked confidential when that server is one the
-   * operator listed (ADR 0189): the gateway marks the step and the run's thread, or hands a stub to a run that
+   * operator listed (ADR 0190): the gateway marks the step and the run's thread, or hands a stub to a run that
    * can't be held to the lock.
    */
   confidential?: true;
@@ -178,7 +178,7 @@ export interface ToolDefinition {
    */
   readsOutside?: true;
   /**
-   * Whose server a connected app's tool runs on, when that says who reads its arguments (ADR 0189): `catalog`, a
+   * Whose server a connected app's tool runs on, when that says who reads its arguments (ADR 0190): `catalog`, a
    * connector of our catalog on its vendor's own server; `vouched`, a server by address the operator listed in
    * `MCP_CALLER_IDENTITY`. Unset: anyone's (a custom server by address, a connections broker, a mailbox, a database).
    */

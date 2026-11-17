@@ -215,7 +215,7 @@ export async function afterTurnDone(
 ) {
   try {
     const { db } = deps;
-    // Nothing is learned from a run of a confidential thread (ADR 0189): the job's model would read what it read.
+    // Nothing is learned from a run of a confidential thread (ADR 0190): the job's model would read what it read.
     if (isConfidentialRun(run.id)) return false;
     const cfg = learnConfig(deps);
     const [calls, { ids: usedHowTos, counted }] = await Promise.all([runCalls(db, run), injectedHowTos(db, run)]);
@@ -461,7 +461,7 @@ export async function learnRun(deps: ContextDeps, input: { orgId: string; runId:
     )
     .limit(1);
   if (busy) return { ...out, skipped: "busy" };
-  // Queued by a turn that ended before the thread turned confidential (ADR 0189): the job reads the whole run.
+  // Queued by a turn that ended before the thread turned confidential (ADR 0190): the job reads the whole run.
   if (await threadIsConfidential(db, run.orgId, run.threadRootId)) return { ...out, skipped: "confidential" };
   const [agent] = await db.select().from(agents).where(eq(agents.id, run.agentId));
   if (!agent || agent.archivedAt) return { ...out, skipped: "missing" };

@@ -846,7 +846,7 @@ export async function postPauseCards(tx: Executor, run: AgentRun, requests: Paus
   const trigger = await runTriggerOf(tx, run);
   const extra = runMessageMeta(run, trigger);
   const brief = run.background ? routineBriefOf(trigger?.meta) : null;
-  // A question is answered by a reply where it was asked: in a confidential thread (ADR 0189) that is under its
+  // A question is answered by a reply where it was asked: in a confidential thread (ADR 0190) that is under its
   // root. The message that asked carries the thread's mark, and only then is the thread's row read.
   const confidential = isConfidential(trigger?.meta) && (await threadIsConfidential(tx, run.orgId, run.threadRootId));
   const home = brief?.deliverTo ?? { channelId: run.channelId, threadId: replyThreadOf({ ...run, confidential }) };

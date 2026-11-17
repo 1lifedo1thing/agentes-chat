@@ -220,7 +220,7 @@ export async function closeRoutineRun(
     })
     .from(agentRuns)
     .where(and(eq(agentRuns.id, run.id), eq(agentRuns.orgId, run.orgId)));
-  // A run of a confidential thread (ADR 0189) leaves no record and delivers no report: the record is handed to the
+  // A run of a confidential thread (ADR 0190) leaves no record and delivers no report: the record is handed to the
   // routine's next run and the report is read where the routine reports, both outside that thread.
   const sealed = agentRun?.confidential === true;
   let final: RoutineRunEnd = sealed && end.status === "done" ? { status: "done", text: "" } : end;

@@ -951,7 +951,7 @@ A program on a computer (Claude Code, Codex) can't be held to that, so it gets a
 the answer: check `brain` in the statement above before you hand such text out. The thread's text also
 stays with the `provider` that first read it: an agent named there that thinks with another one stops
 before it reads anything, and says so. A routine's own run that read such an answer delivers no report.
-The same key from a server you did not list changes nothing. [ADR 0189](docs/adr/0189-confidential-results.md) has the rest.
+The same key from a server you did not list changes nothing. [ADR 0190](docs/adr/0190-confidential-results.md) has the rest.
 
 **Deleting workspaces and accounts.** An owner deletes a workspace in **Settings → General**, with a
 code emailed to them (with no email set up, their password instead): it turns read-only for everyone at

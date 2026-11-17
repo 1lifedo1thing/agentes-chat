@@ -75,7 +75,7 @@ describe("a link pill on the phone (`Spans`: a link whose words are its address)
   });
 });
 
-describe("a confidential thread's message, as the server stores it (`inertLinks`, ADR 0189)", () => {
+describe("a confidential thread's message, as the server stores it (`inertLinks`, ADR 0190)", () => {
   const links = (text: string) => JSON.stringify(parseBlocks(text)).split('"kind":"link"').length - 1;
 
   test("no `](` and nothing right after a `://`: no link, whether the phone reads the place as code or as words", () => {

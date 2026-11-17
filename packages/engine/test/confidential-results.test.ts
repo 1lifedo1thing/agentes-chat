@@ -24,7 +24,7 @@ import { renderSteered } from "../src/live-steer";
 import { closeWorlds } from "./autonomy/harness";
 import { CANARY, VAULT_HOST, type VaultWorld, vaultWorld } from "./confidential-fixtures";
 
-// ADR 0189: a server the operator vouches for marks a tool result as confidential. The run that read it goes on
+// ADR 0190: a server the operator vouches for marks a tool result as confidential. The run that read it goes on
 // reading and answers under the message that asked it, and outside that thread no reader of a message is given the
 // thread's words. Fixtures only (no real model): what is checked is what the engine stores and hands on.
 

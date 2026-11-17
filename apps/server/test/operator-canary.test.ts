@@ -393,7 +393,7 @@ beforeAll(async () => {
       },
     },
   });
-  // A run of a confidential thread (ADR 0189) that failed on what it read: its error's words are not returned.
+  // A run of a confidential thread (ADR 0190) that failed on what it read: its error's words are not returned.
   const confidentialRoot = crypto.randomUUID();
   await db.insert(schema.confidentialThreads).values({ orgId, channelId, rootMessageId: confidentialRoot });
   await db.insert(schema.agentRuns).values({

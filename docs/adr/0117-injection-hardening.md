@@ -142,4 +142,4 @@ What still protects the agent: a custom server's new tools stay hidden until an 
 
 ## Addendum: a second mark, for confidential results
 
-ADR 0189 adds `confidential` beside `outside`, set and carried at the same places (the step, then every message the run posts). Where `readOutside` lowers trust, `confidential` also locks the run's tools, hides the thread's text from every reader outside it and dates it. A confidential result is still text from outside: its step carries both marks.
+ADR 0190 adds `confidential` beside `outside`, set and carried at the same places (the step, then every message the run posts). Where `readOutside` lowers trust, `confidential` also locks the run's tools, hides the thread's text from every reader outside it and dates it. A confidential result is still text from outside: its step carries both marks.

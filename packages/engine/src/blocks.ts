@@ -484,7 +484,7 @@ export function createBlockToolSource(deps: ArtifactDeps): ToolSource {
         const title = str(input.title);
         const subtitle = str(input.subtitle).trim() || undefined;
         const blockId = str(input.block_id);
-        // In a confidential thread (ADR 0189) only a block of that thread is replaced: one shown anywhere else is
+        // In a confidential thread (ADR 0190) only a block of that thread is replaced: one shown anywhere else is
         // read, indexed and kept outside it.
         if (blockId && ctx.confidential && !(await shownInRunThread(deps.db, ctx, blockId))) {
           return confidentialRefusal();

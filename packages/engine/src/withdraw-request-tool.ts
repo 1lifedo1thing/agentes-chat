@@ -38,7 +38,7 @@ export function createWithdrawRequestToolSource(deps: { pubsub?: PubSub } = {}):
           content:
             "No open request of yours has that id: it was answered, ended, isn't yours or is in another conversation.",
         };
-      // From a confidential thread (ADR 0189) no reason goes with it: the run that waits reads it, and so do the
+      // From a confidential thread (ADR 0190) no reason goes with it: the run that waits reads it, and so do the
       // people at the card.
       const reason =
         !ctx.confidential && typeof input.reason === "string" && input.reason.trim()
