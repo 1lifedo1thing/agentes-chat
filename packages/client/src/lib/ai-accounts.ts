@@ -1,9 +1,11 @@
+import { NEXT_ACCOUNT_KINDS } from "@agenteschat/providers/plans";
 import type { TFunction } from "i18next";
 import type {
   Agent,
   AgentBrain,
   AiAccounts,
   AiComputer,
+  BrainScope,
   Credential,
   Machine,
   MachineAccount,
@@ -433,4 +435,71 @@ export function keyRemovalText(
       t,
     ),
   });
+}
+
+/**
+ * The accounts a run of an agent goes through at its plan's limit (ADR 0041 §6, the server's `nextAccountPlan`): its
+ * own account, then the others of its kind with the CLI's own sign-in (never a key, `movable`) that are signed in and shared
+ * between agents (a login made for one agent is lent to that agent only), its owner's first and then those that serve
+ * everyone, each by `useOrder` (the unplaced after, in the order given: oldest first). Only its own account when it is
+ * pinned ("Só esta conta"), a key's, or of a kind that never moves (Gemini, Grok, Cursor, OpenCode). The right hand's
+ * `scope`: its person's own AI goes on only with that person's accounts (`mine`), and never on a plan someone else
+ * gave it, the workspace's included.
+ */
+export function accountChain<A extends MachineAccount>(
+  accounts: readonly A[],
+  agent: { id: string; ownerId: string | null; account: string | null; pinned?: boolean; scope?: BrainScope },
+): A[] {
+  const own = accounts.find((a) => a.id === agent.account);
+  if (!own) return [];
+  const lent = agent.scope === "workspace" || (agent.scope === "mine" && !own.mine);
+  if (agent.pinned || lent || own.provider || !NEXT_ACCOUNT_KINDS.includes(own.kind)) return [own];
+  const mine = (a: A) => (agent.scope === "mine" ? a.mine : agent.ownerId !== null && a.ownerId === agent.ownerId);
+  const serves = (a: A) => mine(a) || (agent.scope !== "mine" && (a.serves ?? "everyone") === "everyone");
+  const place = (a: A) => a.useOrder ?? Number.POSITIVE_INFINITY;
+  const next = accounts
+    .map((a, i) => ({ a, i }))
+    .filter(
+      ({ a }) =>
+        a.id !== own.id &&
+        a.kind === own.kind &&
+        a.provider === null &&
+        a.status === "active" &&
+        a.shared === true &&
+        runMayMoveTo(a) &&
+        serves(a),
+    )
+    .sort((x, y) => Number(mine(y.a)) - Number(mine(x.a)) || place(x.a) - place(y.a) || x.i - y.i);
+  return [own, ...next.map(({ a }) => a)];
+}
+
+/**
+ * At its own account's limit, whether the agent's runs go on with another account of its `accountChain` that `limited`
+ * doesn't hold. Only when none does is it the agent that waits (the limit screen, a sleeping face, "it waits").
+ */
+export const chainHasRoom = <A>(chain: readonly A[], limited: (a: A) => boolean) =>
+  chain.slice(1).some((a) => !limited(a));
+
+/** A run at another account's limit may go on with it (the server's `movable`; absent: an older server, which says yes). */
+export const runMayMoveTo = (a: { movable?: boolean }) => a.movable !== false;
+
+/** Each account's place in its order of use, 1 first: only those a run may move to (`runMayMoveTo`), null the rest. */
+export function orderPlaces(accounts: readonly { movable?: boolean }[]): (number | null)[] {
+  let n = 0;
+  return accounts.map((a) => (runMayMoveTo(a) ? ++n : null));
+}
+
+/**
+ * "Subir" and "Descer" in an order of use: the place to move the account to among those that have one
+ * (`moveAccountInOrder`), null at that end or for an account with no place.
+ */
+export function orderStep(
+  accounts: readonly { id: string; movable?: boolean }[],
+  id: string,
+  step: -1 | 1,
+): number | null {
+  const placed = accounts.filter(runMayMoveTo);
+  const from = placed.findIndex((a) => a.id === id);
+  const to = from + step;
+  return from < 0 || to < 0 || to >= placed.length ? null : to;
 }

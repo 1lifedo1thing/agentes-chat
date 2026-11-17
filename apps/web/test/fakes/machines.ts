@@ -30,6 +30,7 @@
  */
 import type {
   AccountLoginStatus,
+  AccountOrderGroup,
   AiAccounts,
   ApiClient,
   CliInstall,
@@ -47,6 +48,36 @@ import type {
 import { ApiError } from "@agenteschat/client";
 import { isPlanId, planOf } from "@agenteschat/client/lib/plans";
 import { clone, type MockContext, MockNotFoundError } from "./context";
+
+/** A run may move to it (`movable`): a fixture's own say, else shared and signed in. */
+const movable = (a: AiAccounts["accounts"][number]) => a.movable ?? (a.shared === true && a.status === "active");
+
+/**
+ * The order of use as the server lists it: the viewer's Claude and ChatGPT sign-ins, by computer and kind, those a run
+ * never moves to last.
+ */
+function orderGroups(ai: AiAccounts): AccountOrderGroup[] {
+  const groups: AccountOrderGroup[] = [];
+  const listed = ai.accounts
+    .map((a, i) => ({ a, i }))
+    .filter(({ a }) => (a.kind === "claude_code" || a.kind === "codex") && a.provider === null)
+    .sort(
+      (x, y) =>
+        Number(movable(y.a)) - Number(movable(x.a)) ||
+        (x.a.useOrder ?? Infinity) - (y.a.useOrder ?? Infinity) ||
+        x.i - y.i,
+    );
+  for (const { a } of listed) {
+    let g = groups.find((x) => x.machineId === a.machineId && x.kind === a.kind);
+    if (!g) {
+      g = { machineId: a.machineId, computer: a.computer, kind: a.kind, accounts: [] };
+      groups.push(g);
+    }
+    // An admin may move anyone's: a fixture says so with its own `canMove`.
+    g.accounts.push({ ...a, movable: movable(a), canMove: (a as { canMove?: boolean }).canMove ?? a.mine });
+  }
+  return groups;
+}
 
 export interface FakeMachines {
   client: ApiClient["machines"];
@@ -334,6 +365,20 @@ export function createFakeMachines(ctx: MockContext, log: (method: string, ...ar
       setAccountServes: async (orgId, accountId, serves) => {
         log("machines.setAccountServes", orgId, accountId, serves);
         return { serves, agentIds: [] };
+      },
+      // Read whenever an order renders: not logged.
+      accountOrder: async () => ({ groups: clone(orderGroups(ai)) }),
+      moveAccountInOrder: async (orgId, accountId, index) => {
+        log("machines.moveAccountInOrder", orgId, accountId, index);
+        const group = orderGroups(ai).find((g) => g.accounts.some((a) => a.id === accountId && a.movable));
+        if (!group) throw new MockNotFoundError("Conta não encontrada.");
+        const ids = group.accounts
+          .filter((a) => a.movable)
+          .map((a) => a.id)
+          .filter((id) => id !== accountId);
+        ids.splice(Math.min(index, ids.length), 0, accountId);
+        for (const a of ai.accounts) if (ids.includes(a.id)) a.useOrder = ids.indexOf(a.id);
+        return clone(orderGroups(ai).find((g) => g.machineId === group.machineId && g.kind === group.kind) ?? group);
       },
       renameAccount: async (orgId, machineId, accountId, label) => {
         log("machines.renameAccount", orgId, machineId, accountId, label);
