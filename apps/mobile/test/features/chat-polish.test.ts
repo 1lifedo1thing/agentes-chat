@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { applyReceiptEvent, receiptTicks } from "@agenteschat/client";
 import { dayInView } from "../../src/features/chat/logic";
-import { appColors, toastGlow, toastToneOf, toneColor, withAlpha } from "../../src/ui/palette";
+import { appColors, toastToneOf, toneColor } from "../../src/ui/palette";
 import { message } from "./fixtures";
 
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src", file), "utf8");
@@ -59,7 +59,7 @@ describe("the floating date while the conversation scrolls", () => {
   });
 });
 
-describe("toasts glow in their tone, as the web's", () => {
+describe("toasts carry their tone in the icon", () => {
   test("a failure is danger, a done check success, any other icon neutral; a tone given wins", () => {
     expect(toastToneOf("x")).toBe("danger");
     expect(toastToneOf("alert")).toBe("danger");
@@ -69,28 +69,14 @@ describe("toasts glow in their tone, as the web's", () => {
     expect(src("ui/Toast.tsx")).toContain("item.tone ?? toastToneOf(item.icon)");
   });
 
-  test("the glow is the tone's color from the right, 24% in light and 30% in dark, clear over the left 55%", () => {
-    for (const scheme of ["light", "dark"] as const) {
-      const colors = appColors(scheme);
-      const end = scheme === "dark" ? "4d" : "3d";
-      expect(toastGlow(colors, "success", scheme).colors).toEqual([
-        withAlpha(colors.ok, 0),
-        withAlpha(colors.ok, 0),
-        `${colors.ok.slice(0, 7)}${end}`,
-      ]);
-      expect(toastGlow(colors, "info", scheme).colors[2]).toBe(withAlpha(colors.agent, scheme === "dark" ? 0.3 : 0.24));
-      expect(toastGlow(colors, "warning", scheme).colors[2]).toBe(
-        withAlpha(colors.warn, scheme === "dark" ? 0.3 : 0.24),
-      );
-      expect(toastGlow(colors, "danger", scheme).colors[2]).toBe(
-        withAlpha(colors.danger, scheme === "dark" ? 0.3 : 0.24),
-      );
-      expect(toastGlow(colors, "neutral", scheme).colors[2]).toBe(
-        withAlpha(colors.faint, scheme === "dark" ? 0.3 : 0.24),
-      );
-      expect(toastGlow(colors, "info", scheme).locations).toEqual([0, 0.55, 1]);
-      expect(toneColor(colors, "danger")).toBe(colors.danger);
-    }
+  test("the toast is a calm capsule: the tone is its icon's color alone, no plate and no tint", () => {
+    const toast = src("ui/Toast.tsx");
+    expect(toast).toContain('<Icon name={item.icon ?? "check"} size={18} color={toneColor(colors, tone)} />');
+    expect(toast).not.toContain("LinearGradient");
+    expect(toast).not.toContain("styles.tile");
+    expect(toast).toContain('box: { borderRadius: TOAST_R, maxWidth: "100%" },');
+    for (const scheme of ["light", "dark"] as const)
+      expect(toneColor(appColors(scheme), "danger")).toBe(appColors(scheme).danger);
   });
 });
 

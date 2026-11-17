@@ -102,8 +102,8 @@ describe("words set from the composer leave nothing selected", () => {
     expect(composer).toMatch(
       /const unselect = \(\) => \{\s*if \(!selectingRef\.current\) return;\s*selectingRef\.current = false;\s*setSelecting\(false\);/,
     );
-    expect(between("const clear = () => {", "const send = ")).toContain("unselect();");
-    expect(between("const put = (next: string", "const clear = () => {")).toContain("unselect();");
+    expect(composer).toContain('const clear = () => put("", 0);');
+    expect(between("const put = (next: string", "const clear = ")).toContain("unselect();");
   });
 
   test("words handed back (a draft to fix, a take that didn't go) move the caret and the '@' token with them", () => {

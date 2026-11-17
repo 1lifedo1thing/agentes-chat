@@ -9,6 +9,7 @@ import {
   useChannelCategories,
   useChannels,
   useCloseMission,
+  useDms,
   useFollowThread,
   useMissionControl,
   usePinMessage,
@@ -22,12 +23,14 @@ import { textOrMedia } from "@agenteschat/client/lib/media";
 import { messagePath } from "@agenteschat/client/lib/message-links";
 import { summaryParts } from "@agenteschat/client/lib/missions";
 import { listedText } from "@agenteschat/client/lib/voice";
+import { conversationWallpaperOf } from "@agenteschat/client/lib/wallpaper";
 import { chartBlocksOf } from "@agenteschat/ui/widgets/spec";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { serverUrl } from "@/lib/server";
+import { useOrg } from "@/providers/org";
 import { CHROME_MAX_SCALE, Count, GroupedList, GroupedRow, Icon, PressScale, SkeletonList, Text, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useMovesChannel } from "../categories/CategoryScreens";
@@ -41,8 +44,10 @@ import { genderOf, previewOf } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
 import { type ActionItem, ActionList, copyText, successHaptic, Tile, tapHaptic, useSurface } from "../shared/parts";
 import { useSheet } from "../shared/SheetHost";
+import { useWallpaperName } from "./ChatWallpaper";
 import { QUICK_REACTIONS, reactionName, reactionPills } from "./logic";
 import type { MenuSymbol } from "./MessageMenu";
+import { wallpaperHrefs } from "./wallpaper-logic";
 
 // ── Long press on a message ──────────────────────────────────────────────────
 
@@ -617,6 +622,11 @@ export function ChannelOptions({
   const categoryName = channel?.categoryId
     ? categories.data?.find((c) => c.id === channel.categoryId)?.name
     : undefined;
+  // This conversation's own background, mine alone; none of its own: it follows the others.
+  const { org } = useOrg();
+  const dm = Boolean(useDms(orgId).data?.some((d) => d.channelId === channelId));
+  const ownWallpaper = conversationWallpaperOf(org?.chatPrefs, channelId);
+  const nameOf = useWallpaperName();
   return (
     <>
       <SheetTitle leading={leading} title={title} {...(subtitle ? { subtitle } : {})} />
@@ -651,6 +661,16 @@ export function ChannelOptions({
                 },
               ]
             : []),
+          {
+            key: "wallpaper",
+            icon: "image",
+            label: t("settings.account.chat.wallpaper.title"),
+            hint: ownWallpaper ? nameOf(ownWallpaper, dm) : t("settings.account.chat.wallpaper.sameShort"),
+            onPress: () => {
+              sheet.close();
+              router.push(wallpaperHrefs.choose({ channelId }));
+            },
+          },
           ...(agentId
             ? [
                 {

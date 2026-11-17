@@ -678,6 +678,13 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         (await request<{ style: AgentStyle }>(`${org(orgId)}/me/agent-style`, { method: "PUT", json: { style } }))
           .style,
       setChatPrefs: (orgId, patch) => request<ChatPrefs>(`${org(orgId)}/me/chat`, { method: "PUT", json: patch }),
+      setConversationWallpaper: (orgId, channelId, wallpaper) =>
+        request<ChatPrefs>(
+          `${org(orgId)}/channels/${enc(channelId)}/wallpaper`,
+          wallpaper ? { method: "PUT", json: { wallpaper } } : { method: "DELETE" },
+        ),
+      uploadWallpaperPhoto: (orgId, input) =>
+        request<{ url: string }>(`${org(orgId)}/me/wallpaper-photo`, { method: "PUT", json: input }),
       sidebarItems: async (orgId) => (await request<{ items: SidebarItems }>(`${org(orgId)}/me/sidebar`)).items,
       setSidebarItem: async (orgId, item, place) =>
         (await request<{ items: SidebarItems }>(`${org(orgId)}/me/sidebar`, { method: "PATCH", json: { item, place } }))
