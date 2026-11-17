@@ -552,7 +552,6 @@ function KeyPrompt({
   );
 }
 
-
 /**
  * Renaming an AI account, pushed from its row's actions: what the name is for, the name (one line, however it is typed
  * or pasted), Save in the bar. The field waits for a tap: a screen that opens never raises the keyboard by itself.
@@ -593,7 +592,9 @@ export function RenameAiAccountScreen({ machineId, accountId }: { machineId: str
   };
   return (
     <SettingsPage
-      title={account ? t("aiAccounts.page.renameTitle", { label: accountTitle(t, account) }) : t("aiAccounts.page.rename")}
+      title={
+        account ? t("aiAccounts.page.renameTitle", { label: accountTitle(t, account) }) : t("aiAccounts.page.rename")
+      }
       action={{ label: t("common.save"), disabled: !ready, onPress: () => void save() }}
       busy={busy}
     >

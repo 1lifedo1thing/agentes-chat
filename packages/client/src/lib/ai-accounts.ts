@@ -261,7 +261,11 @@ export const onSeveralComputers = (accounts: readonly { machineId: string }[]) =
  * One the computer couldn't check says so, never signed out. After what the title leaves out of the viewer's own
  * (`accountSub`: the email under a name they gave it, the plan).
  */
-export function accountAbout(t: TFunction, choice: AccountChoice<MachineAccount>, agentName: string): string | undefined {
+export function accountAbout(
+  t: TFunction,
+  choice: AccountChoice<MachineAccount>,
+  agentName: string,
+): string | undefined {
   return withSub(choice.login, aboutRest(t, choice, agentName));
 }
 

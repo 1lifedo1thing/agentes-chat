@@ -1,5 +1,11 @@
 import type { MachineAccount, PlanUsage } from "@agenteschat/client";
-import { accountAbout, accountTitle, type ExistingAi, unnamedAccount, withSub } from "@agenteschat/client/lib/ai-accounts";
+import {
+  accountAbout,
+  accountTitle,
+  type ExistingAi,
+  unnamedAccount,
+  withSub,
+} from "@agenteschat/client/lib/ai-accounts";
 import { namesText } from "@agenteschat/client/lib/format";
 import { type PlanChoice, planOfAccount } from "@agenteschat/client/lib/no-ai";
 import { keyLine } from "@agenteschat/client/lib/providers";
@@ -284,7 +290,6 @@ function RenameRow({ item, onDone }: { item: HaveItem; onDone: () => void }) {
         >
           <Input
             value={name}
-            // biome-ignore lint/a11y/noAutofocus: the pencil just asked for this field
             autoFocus
             maxLength={40}
             placeholder={rename.placeholder}

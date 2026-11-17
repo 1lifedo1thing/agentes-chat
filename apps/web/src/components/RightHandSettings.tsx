@@ -67,7 +67,6 @@ import { LookRows, modelOptions } from "@/components/AgentFields";
 import { RightHandApprovalsCard } from "@/components/ApprovalCover";
 import { PlanHold, usePlanHold } from "@/components/ai/ConnectAiSteps";
 import { type HaveItem, renameOf } from "@/components/arrival/ConnectHave";
-import { useRenameAccount } from "@/hooks/useRenameAccount";
 import { useConnectAi } from "@/components/ConnectAi";
 import { useAgentComputer } from "@/components/computer/facts";
 import { useOpenComputer } from "@/components/computer/open";
@@ -80,6 +79,7 @@ import { TeamWeekSchedule } from "@/components/TeamWeekSchedule";
 import { useComputerEdition } from "@/components/WorkspaceComputer";
 import { useDirectory } from "@/hooks/useDirectory";
 import { usePersonalView } from "@/hooks/usePersonalView";
+import { useRenameAccount } from "@/hooks/useRenameAccount";
 import { fullLook, lookOf } from "@/lib/look";
 import { useToast } from "@/lib/toast";
 

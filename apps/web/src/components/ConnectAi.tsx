@@ -299,7 +299,9 @@ const panelTitle = (t: TFunction, choice: AiChoice, stage: PlanStage | null, age
   if (choice === "key" || !stage) return stepTitle(t, choice);
   const brand = planLabel(t, choice);
   if (stage.kind === "other") return t("connectAi.which.other", { brand });
-  return agent ? t("connectAi.which.title", { brand, ...agentGrammar(agent) }) : t("connectAi.which.titleAll", { brand });
+  return agent
+    ? t("connectAi.which.title", { brand, ...agentGrammar(agent) })
+    : t("connectAi.which.titleAll", { brand });
 };
 
 /** A footer's note: its icon on the words' first line, the footer's buttons outside it, centred with the line. */

@@ -381,9 +381,7 @@ function AddAccountFlow({
           ? plan
             ? t("aiAccounts.add.duplicateKey", { account: result.duplicate.label })
             : t(`agentPage.work.brain.add.duplicate.${kind}`, {
-                account: result.duplicate.account
-                  ? accountTitle(t, result.duplicate.account)
-                  : result.duplicate.label,
+                account: result.duplicate.account ? accountTitle(t, result.duplicate.account) : result.duplicate.label,
               })
           : notShared
             ? t("agentPage.work.brain.add.geminiNotShared", { computer })

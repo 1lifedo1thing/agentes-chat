@@ -87,7 +87,11 @@ export function AiRow({
       {...(row.below ? { belowText: row.below } : {})}
       {...(checked !== undefined ? { checked } : {})}
       {...(onRename
-        ? { buttons: [{ icon: "pen" as const, label: t("aiAccounts.rename.action", { label: row.label }), onPress: onRename }] }
+        ? {
+            buttons: [
+              { icon: "pen" as const, label: t("aiAccounts.rename.action", { label: row.label }), onPress: onRename },
+            ],
+          }
         : {})}
       disabled={disabled}
       onPress={onPress}

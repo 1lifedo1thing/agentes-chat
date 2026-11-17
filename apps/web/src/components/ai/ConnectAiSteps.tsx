@@ -1553,11 +1553,7 @@ function PlanSteps({
               <HaveRow key={i.id} item={i} checked={i.id === picked?.id} />
             ))}
           </RadioGroup>
-          <button
-            type="button"
-            className="arrival-have__link arrival-have__link--other"
-            onClick={() => setOther(true)}
-          >
+          <button type="button" className="arrival-have__link arrival-have__link--other" onClick={() => setOther(true)}>
             <Icon name="plus" size={16} />
             <span>{t("connectAi.which.other", { brand })}</span>
             <Icon name="chevronRight" size={16} />
@@ -1565,10 +1561,7 @@ function PlanSteps({
           {actionsAt &&
             picked &&
             createPortal(
-              <Button
-                variant="primary"
-                onClick={() => void (everyone ? assignAll(picked) : assign(agent.id, picked))}
-              >
+              <Button variant="primary" onClick={() => void (everyone ? assignAll(picked) : assign(agent.id, picked))}>
                 <span className="ai-panel__use">{t("connectAi.use", { label: accountTitle(t, picked) })}</span>
               </Button>,
               actionsAt,

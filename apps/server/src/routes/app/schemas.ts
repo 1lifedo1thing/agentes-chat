@@ -1026,7 +1026,7 @@ export const MachineAccount = z
     label: z.string(),
     named: z.boolean().openapi({
       description:
-        "Its owner gave it its name; false: the name is the automatic one (\"Claude 2\"), and the apps show the account by its email.",
+        'Its owner gave it its name; false: the name is the automatic one ("Claude 2"), and the apps show the account by its email.',
     }),
     email: z.string().nullable().openapi({ description: "Only for its owner." }),
     plan: z

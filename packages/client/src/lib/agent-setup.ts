@@ -132,7 +132,10 @@ export type NewAgentStart = (
       machineId: string;
       computer: string;
       /** Its title is `accountTitle`'s, as everywhere. */
-      account: Pick<MachineAccount, "id" | "label" | "named" | "email" | "plan" | "mine" | "keyHint" | "provider"> | null;
+      account: Pick<
+        MachineAccount,
+        "id" | "label" | "named" | "email" | "plan" | "mine" | "keyHint" | "provider"
+      > | null;
       /** Saved as its "Quem pensa" once the agent exists. */
       input: AgentBrainInput;
     }
