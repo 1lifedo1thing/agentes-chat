@@ -3,7 +3,7 @@
   "info": {
     "title": "agentes.chat operator API",
     "version": "test",
-    "description": "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, workspace standing, billing holds and limits (ADR 0079), outside collaborators (ADR 0189), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056)."
+    "description": "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, workspace standing, billing holds and limits (ADR 0079), outside collaborators (ADR 0190), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056)."
   },
   "servers": [
     {
@@ -197,7 +197,7 @@
             "properties": {
               "members": {
                 "type": "integer",
-                "description": "The people its `members` limit counts: no outside collaborators (ADR 0189)."
+                "description": "The people its `members` limit counts: no outside collaborators (ADR 0190)."
               },
               "agents": {
                 "type": "integer",
@@ -326,7 +326,7 @@
             "type": ["integer", "null"],
             "minimum": 1,
             "maximum": 100000,
-            "description": "People in it, blocked accounts included; agents, invitations, requests to join and outside collaborators (ADR 0189) never count."
+            "description": "People in it, blocked accounts included; agents, invitations, requests to join and outside collaborators (ADR 0190) never count."
           },
           "membersMax": {
             "type": ["integer", "null"],
@@ -604,7 +604,7 @@
           },
           "type": {
             "type": "string",
-            "description": "`user.signed_up`, `session.created`, `user.deletion_requested`, `user.deletion_canceled`, `user.deleted`, `organization.created`, `organization.deletion_requested`, `organization.deletion_canceled`, `organization.deleted`, `invitation.created`, `agent.created`, `agent.deleted`, `mail.sent`, `run.finished`, `run.hop_limit`, `task.finished`, `desktop_control.ended`, `content.viewed`, `platform_ai.threshold`, `account.failure`, `outside_access.granted`, `outside_access.denied` or `outside_access.ended` (ADR 0056 §5 lists each one's `data`; ADR 0189 the last three's). Ignore types you don't know: new ones keep v1."
+            "description": "`user.signed_up`, `session.created`, `user.deletion_requested`, `user.deletion_canceled`, `user.deleted`, `organization.created`, `organization.deletion_requested`, `organization.deletion_canceled`, `organization.deleted`, `invitation.created`, `agent.created`, `agent.deleted`, `mail.sent`, `run.finished`, `run.hop_limit`, `task.finished`, `desktop_control.ended`, `content.viewed`, `platform_ai.threshold`, `account.failure`, `outside_access.granted`, `outside_access.denied` or `outside_access.ended` (ADR 0056 §5 lists each one's `data`; ADR 0190 the last three's). Ignore types you don't know: new ones keep v1."
           },
           "orgId": {
             "type": ["string", "null"],

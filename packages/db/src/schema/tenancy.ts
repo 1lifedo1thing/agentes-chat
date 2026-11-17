@@ -180,7 +180,7 @@ export const organizationMembers = pgTable(
      */
     teamWeek: jsonb().$type<Record<string, unknown>>().notNull().default({}),
     /**
-     * Who the person works for, when they come from outside the workspace (ADR 0189): shown beside their name. Not
+     * Who the person works for, when they come from outside the workspace (ADR 0190): shown beside their name. Not
      * null marks an outside collaborator, who never counts toward the workspace's limit of people (`limits.ts`).
      */
     outsideOf: text(),
@@ -373,7 +373,7 @@ export const organizationJoinRequests = pgTable(
     /** sha256 of the key the asking page keeps, traded once for a sign-in after an approval (ADR 0090). */
     claimHash: text(),
     /**
-     * Who the person works for, on a request the operator API filed for an outside collaborator (ADR 0189): an
+     * Who the person works for, on a request the operator API filed for an outside collaborator (ADR 0190): an
      * approval lets `userId` in with it, past the workspace's limit of people.
      */
     outsideOf: text(),

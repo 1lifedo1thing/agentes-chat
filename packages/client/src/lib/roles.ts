@@ -543,7 +543,7 @@ export const removes = (
   roles: readonly OrgRole[],
 ) => person.userId !== viewer.userId && can(viewer, "manage_members") && isBelow(viewer, person, roles);
 
-/** Who can be made an owner: not one already, nor an outside collaborator (`member.outside_owner`, ADR 0189). */
+/** Who can be made an owner: not one already, nor an outside collaborator (`member.outside_owner`, ADR 0190). */
 export const ownerCandidates = <P extends Pick<Person, "role" | "outsideOf">>(people: readonly P[]) =>
   people.filter((p) => p.role !== "owner" && !p.outsideOf);
 

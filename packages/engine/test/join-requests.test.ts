@@ -944,7 +944,7 @@ describe("links with choices (ADR 0184)", () => {
   });
 });
 
-describe("outside collaborators (ADR 0189)", () => {
+describe("outside collaborators (ADR 0190)", () => {
   const outside = (userId: string, outsideOf = "Example Consulting", orgId = f.org.id) =>
     requestOutsideAccess(
       { ...deps(), publicUrl: PUBLIC },

@@ -33,7 +33,7 @@ export function approvalNews(result: JoinApproval): { said: "joined" | "invited"
 
 /**
  * Whether a full workspace (`full`: `membersFull`) holds this request until there is room: any but an outside
- * collaborator's (ADR 0189), who takes no seat.
+ * collaborator's (ADR 0190), who takes no seat.
  */
 export const waitsForRoom = (r: Pick<JoinRequest, "outsideOf">, full: boolean) => full && !r.outsideOf;
 

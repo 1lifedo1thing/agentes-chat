@@ -885,7 +885,7 @@ test("limits: set them all, read back with what the workspace uses; any standing
   await body(await put(`/orgs/${orgId}/billing-hold`, { hold: null }));
 });
 
-test("outside collaborators (ADR 0189): asked for here, answered in the workspace, never counted, ended here", async () => {
+test("outside collaborators (ADR 0190): asked for here, answered in the workspace, never counted, ended here", async () => {
   const READ = "operator-read-token-".padEnd(48, "x");
   const app = createOperatorApp(deps, TOKEN, READ);
   const call = (method: string, path: string, json?: unknown, authorization: string | null = BEARER) =>

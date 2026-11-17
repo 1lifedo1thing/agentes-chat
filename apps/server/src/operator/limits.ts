@@ -31,7 +31,7 @@ export const Limits = z
   .object({
     members: z.number().int().min(1).max(100_000).nullable().openapi({
       description:
-        "People in it, blocked accounts included; agents, invitations, requests to join and outside collaborators (ADR 0189) never count.",
+        "People in it, blocked accounts included; agents, invitations, requests to join and outside collaborators (ADR 0190) never count.",
     }),
     membersMax: z.number().int().min(1).max(100_000).nullable().default(null).openapi({
       description:

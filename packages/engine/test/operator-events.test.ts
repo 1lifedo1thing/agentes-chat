@@ -386,7 +386,7 @@ test("account failures: one per account and cause every 10 minutes, none while e
   });
 });
 
-test("outside access (ADR 0189): granted, denied and ended, each with its workspace and the person", async () => {
+test("outside access (ADR 0190): granted, denied and ended, each with its workspace and the person", async () => {
   const f = await setup();
   close = f.close;
   enableOperatorEvents();

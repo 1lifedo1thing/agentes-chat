@@ -161,7 +161,7 @@ describe("Auditoria in words (web and phone)", () => {
   });
 });
 
-test("an outside collaborator's approval, removal and leaving say who they work for (ADR 0189)", () => {
+test("an outside collaborator's approval, removal and leaving say who they work for (ADR 0190)", () => {
   const person = { type: "person" as const, id: "u1", name: "Bia" };
   const of = (action: string, details: Record<string, unknown>, actor: AuditRow["actor"] = person) =>
     auditSentence(t, row({ actor, action, target: { type: "person", id: "u2" }, details }), "en");

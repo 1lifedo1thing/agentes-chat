@@ -398,7 +398,7 @@ export interface NotificationLatest {
   names?: string[];
   /** `join_request` from a member's suggestion (ADR 0090): who suggested, so a row of one says so. */
   suggestedBy?: string;
-  /** `join_request` for an outside collaborator (ADR 0189): who they work for, so a row of one says so. */
+  /** `join_request` for an outside collaborator (ADR 0190): who they work for, so a row of one says so. */
   outsideOf?: string;
   /** `composio_limit`: the calls a month allows. */
   calls?: number;

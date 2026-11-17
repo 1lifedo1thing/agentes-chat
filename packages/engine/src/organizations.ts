@@ -670,7 +670,7 @@ export async function listMembers(db: Database, orgId: string) {
         roleIds: MEMBER_ROLE_IDS,
         joinedAt: organizationMembers.createdAt,
         lastSeenAt: organizationMembers.lastSeenAt,
-        /** Who an outside collaborator works for (ADR 0189); null for everyone else. */
+        /** Who an outside collaborator works for (ADR 0190); null for everyone else. */
         outsideOf: organizationMembers.outsideOf,
         handle: organizationMembers.handle,
         availability: organizationMembers.availability,
@@ -1030,7 +1030,7 @@ export async function announceProfile(db: Database, pubsub: PubSub | undefined, 
 /** The server itself, acting for its operator. */
 const SYSTEM = { type: "system", id: null } as const;
 
-/** Who an outside collaborator works for (ADR 0189); null for an ordinary member, and for someone who isn't in. */
+/** Who an outside collaborator works for (ADR 0190); null for an ordinary member, and for someone who isn't in. */
 async function outsideOfMember(db: Executor, orgId: string, userId: string) {
   const [row] = await db
     .select({ outsideOf: organizationMembers.outsideOf })
@@ -1065,7 +1065,7 @@ async function auditMember(
 /**
  * Makes a member an owner or takes it back (ADR 0085): only an owner does it, and nobody can demote the last
  * owner. What anyone else may do is their roles (`setMemberRoles`). An outside collaborator never owns the
- * workspace (`member.outside_owner`, ADR 0189).
+ * workspace (`member.outside_owner`, ADR 0190).
  */
 export async function changeMemberRole(
   db: Database,
@@ -1255,7 +1255,7 @@ export async function removeMember(
 }
 
 /**
- * The server takes an outside collaborator out for its operator (ADR 0189), with everything `removeMember` does; the
+ * The server takes an outside collaborator out for its operator (ADR 0190), with everything `removeMember` does; the
  * audit log's entry is the system's. Never an ordinary member (`outside_access.member`): only someone in the workspace
  * removes one. False when the person isn't in the workspace.
  */
@@ -2410,7 +2410,7 @@ export const spentClaimHash = (claimHash: string) => `spent:${sha256(claimHash)}
  * answers it next finds it answered. A full workspace refuses a new member (`org.members_full`), and a closed one
  * (`closedRefusal`) anyone, under the lock role changes, removals and a deletion take, so two people taking the last
  * seat at once can't both get in, and nobody gets in once a deletion committed. `outsideOf`: who a new outside
- * collaborator works for (ADR 0189); they take no seat, so a full workspace lets them in. Someone already in keeps
+ * collaborator works for (ADR 0190); they take no seat, so a full workspace lets them in. Someone already in keeps
  * their row as it is.
  */
 export async function joinOrganization(

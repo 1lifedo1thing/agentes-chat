@@ -50,7 +50,7 @@ const OutsidePeople = z
 const OutsideParams = OrgParams.extend(UserParams.shape);
 
 /**
- * Outside collaborators (ADR 0189): people working for a workspace from outside it, who never count toward its limit
+ * Outside collaborators (ADR 0190): people working for a workspace from outside it, who never count toward its limit
  * of people. Only this API asks for one; the workspace answers the request and removes them like anyone.
  */
 export function registerOperatorOutsideAccess(api: OpenAPIHono, { db, pubsub, config }: OperatorDeps) {

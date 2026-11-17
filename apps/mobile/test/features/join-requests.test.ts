@@ -154,7 +154,7 @@ describe("a request to join, in the Requests sheet", () => {
   });
 });
 
-describe("an outside collaborator (ADR 0189)", () => {
+describe("an outside collaborator (ADR 0190)", () => {
   const now = new Date("2026-10-26T15:00:00.000Z");
   const createdAt = "2026-10-26T13:00:00.000Z";
   const outsideOf = "Northwind Consulting";

@@ -124,7 +124,7 @@ export type EmailTemplate =
       email: string;
       url: string;
       denyUrl: string;
-      /** An outside collaborator's request (ADR 0189): who they work for, said in place of the link they came by. */
+      /** An outside collaborator's request (ADR 0190): who they work for, said in place of the link they came by. */
       outsideOf?: string;
       personal?: true;
     }

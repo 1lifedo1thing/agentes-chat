@@ -46,7 +46,7 @@ const KEPT: Record<string, string[]> = {
     "deletion_hold_reason",
   ],
   // `role` never comes back as stored: the reads work a member's role out from it. `outside_of`, here and on a join
-  // request, is who an outside collaborator works for: only this API writes it, never the workspace (ADR 0189).
+  // request, is who an outside collaborator works for: only this API writes it, never the workspace (ADR 0190).
   organization_members: ["handle", "role", "outside_of"],
   // Not returned either: the database holds both to three words, which decide who may talk to an agent.
   channel_permission_overrides: ["allow", "deny"],
@@ -540,7 +540,7 @@ beforeAll(async () => {
     claimHash: "canary-claim-hash",
     expiresAt: soon,
   });
-  // Outside collaborators (ADR 0189): one waiting for an answer, one in.
+  // Outside collaborators (ADR 0190): one waiting for an answer, one in.
   await db.insert(schema.organizationJoinRequests).values({
     orgId,
     userId: ownerId,
