@@ -1307,7 +1307,12 @@ describe("outside collaborators and the operator's reveal door", () => {
       data: { toolUseId: "t1", name: "linear_create_issue", input },
     });
     const read = async (who: string, kind: "connection" | "run_step", field: string) => {
-      const requestId = await recordSupportRequest(f.db, { orgId: f.org.id, userId: who, source: "form" });
+      const requestId = await recordSupportRequest(f.db, {
+        orgId: f.org.id,
+        userId: who,
+        source: "form",
+        keepWords: false,
+      });
       return operatorReveal(f.db, f.org.id, {
         kind,
         id: kind === "connection" ? mine.id : ctx.runId,
@@ -1469,7 +1474,7 @@ describe("what a call and a card of it leave for others", () => {
   });
 
   test("after a teammate joins, the note names the service alone, and only for a tool this agent holds", async () => {
-    const { walter, bia, mine, source } = await walterWithLinear();
+    const { walter, bia, ops, mine, source } = await walterWithLinear();
     await f.db
       .update(schema.connectorConnections)
       .set({ label: `Linear (${ACCOUNT})`, accountLabel: ACCOUNT })
@@ -1501,7 +1506,11 @@ describe("what a call and a card of it leave for others", () => {
     expect(text(note)).toContain("stopped being available");
     expect(text(note)).toStartWith("Linear is the own connection");
     expect(text(note)).not.toContain(ACCOUNT);
-    await f.db.delete(schema.agentScopes).where(eq(schema.agentScopes.connectionId, mine.id));
+    // Held by another agent, not this one.
+    await f.db
+      .update(schema.agentScopes)
+      .set({ agentId: ops.id })
+      .where(and(eq(schema.agentScopes.connectionId, mine.id), eq(schema.agentScopes.agentId, f.agent.id)));
     const unknown = text(await gateway.invoke(ctx, { toolUseId: "t2", name: "linear_list_issues", input: {} }));
     expect(unknown).not.toContain("stopped being available");
     expect(unknown).toContain("Unknown tool");
