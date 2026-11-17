@@ -151,7 +151,7 @@ describe("Pessoal on the phone: one's mailboxes keep their own rule", () => {
   test("the words are true of the code: the mailbox rule, and who gives a team connection to agents", async () => {
     const pt = await translator("pt-BR");
     expect(pt("connectors.personal.mailNote")).toContain("também para quem fala direto com eles");
-    expect(pt("connectors.personal.moveText")).toContain("Quem gerencia agentes, e o dono de cada agente");
+    expect(pt("connectors.personal.moveText")).toContain("Quem gerencia agentes escolhe quais agentes usam, e o dono de um agente pode desligar no seu");
   });
 });
 
