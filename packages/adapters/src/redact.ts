@@ -203,6 +203,8 @@ export function redactCommon(text: string): string {
 
 /** An option named for a secret, as one text of a list of arguments (`--password`, `-api-key`). */
 const OPTION = new RegExp(`^--?[\\w-]*(?:${NAME})[\\w-]*$`, "i");
+/** A number after an option named in the plural sets a count (`--max-tokens`, `4096`), and is no credential. */
+const setsCount = (option: string, value: string) => /s$/i.test(option) && /^\d+$/.test(value);
 /** The fields of a record that hold the name its `value` goes by (`{"name": "Authorization", "value": "…"}`). */
 const NAMING = /^(?:name|key|header)$/i;
 /** How many times a text that is itself JSON is opened, and the longest text opened: the time stays linear. */
@@ -248,7 +250,11 @@ export function maskSecretFields(
     return value.map((v, i) => {
       const before: unknown = value[i - 1];
       const optionValue =
-        typeof v === "string" && !v.startsWith("-") && typeof before === "string" && OPTION.test(before);
+        typeof v === "string" &&
+        !v.startsWith("-") &&
+        typeof before === "string" &&
+        OPTION.test(before) &&
+        !setsCount(before, v);
       return inner(v, optionValue || (pair && i === 1));
     });
   }

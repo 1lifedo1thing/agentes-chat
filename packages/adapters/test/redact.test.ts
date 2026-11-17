@@ -122,6 +122,16 @@ test("three shapes only a record can tell: an option's value in a list, a pair, 
   expect(maskSecretFields({ argv: ["mysql", "--password", "fake a", "--api-key", "--verbose", "-token", 5] })).toEqual({
     argv: ["mysql", "--password", "***", "--api-key", "--verbose", "-token", 5],
   });
+  // A number after a name in the plural sets a count.
+  expect(maskSecretFields(["llm", "--max-tokens", "4096", "--tokens", "fake a", "--token", "1234"])).toEqual([
+    "llm",
+    "--max-tokens",
+    "4096",
+    "--tokens",
+    "***",
+    "--token",
+    "***",
+  ]);
   expect(
     maskSecretFields([
       ["x-api-key", "fake a"],

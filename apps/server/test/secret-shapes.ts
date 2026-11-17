@@ -53,6 +53,15 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
     { command: `curl -d '{"a":"token: ${first}","b":"password: ${second}"}' https://example.com` },
     ["token: ***", "password: ***", "https://example.com"],
   ],
+  // A number after an option named in the plural sets a count; any other text there is a credential.
+  [
+    "a count given as an option",
+    {
+      command: `llm --max-tokens 4096 --tokens ${first} -m x`,
+      argv: ["llm", "--max-tokens", "4096", "--api-keys", second],
+    },
+    ["llm --max-tokens 4096 --tokens *** -m x", '"--max-tokens","4096","--api-keys","***"'],
+  ],
   // Three shapes only a record can tell.
   [
     "a list of arguments",

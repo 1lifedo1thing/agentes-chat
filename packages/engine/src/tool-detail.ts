@@ -246,9 +246,11 @@ const USERINFO = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@'"]+@/gi;
 /**
  * The value after an option named for a secret (`--password hunter2`, `--api-key k`), a quoted one whole, also where
  * its quotes are written with backslashes: the option may open a quoted command (`sh -c "--token …"`), and a command
- * kept in JSON has its quotes written so.
+ * kept in JSON has its quotes written so. Never a number after a name in the plural, which sets a count
+ * (`--max-tokens 4096`).
  */
-const SECRET_OPTION = /(?<![^\s"'])--?[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*\s+(?=[^\s-])/gi;
+const SECRET_OPTION =
+  /(?<![^\s"'])--?(?![\w-]*s\s+\d+(?![^\s"'\\]))[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*\s+(?=[^\s-])/gi;
 
 /**
  * `maskCredentials`, an address's user and password (`postgres://***@host`, first: `redactCommon` would read a
