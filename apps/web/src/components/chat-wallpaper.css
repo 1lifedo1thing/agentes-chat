@@ -190,15 +190,14 @@
     0 0 0 2px var(--raised),
     0 0 0 4px var(--ink);
 }
-html:not([data-pointer]) .wallpaper-tile:focus-visible {
+html:not([data-pointer]) .wallpaper-tile:not([aria-pressed="true"]):focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
+/* The chosen tile keeps its ink ring; the keys' ring goes around it, in the focus color. */
 html:not([data-pointer]) .wallpaper-tile[aria-pressed="true"]:focus-visible {
-  box-shadow:
-    0 0 0 2px var(--raised),
-    0 0 0 4px var(--ink),
-    0 0 0 6px var(--focus-color);
+  outline: 2px solid var(--focus-color);
+  outline-offset: 4px;
 }
 .wallpaper-tile__bubble {
   position: absolute;
