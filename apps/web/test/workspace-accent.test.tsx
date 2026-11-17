@@ -3,7 +3,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
-import { accentPalette, accentSky } from "@agenteschat/ui";
+import { accentPalette, accentSky, ditherUrl } from "@agenteschat/ui";
 import { gradientOf } from "@agenteschat/ui/agent/engine";
 import { act, cleanup, fireEvent, render, within } from "@testing-library/react";
 import { ThemeProvider, useTheme, useWorkspaceAccent } from "@/lib/theme";
@@ -62,6 +62,27 @@ describe("the workspace shell paints its accent", () => {
     expect(vars()).toEqual(["", "", "", ""]);
     expect(gradientOf("sky")).toEqual(DEFAULT_SKY);
     expect(accentAttr()).toBeNull();
+  });
+
+  test("in the workspace menu, every other workspace's mark is in its own accent, or the default blue", async () => {
+    const state = twoWorkspaces();
+    state.me?.organizations.push({
+      id: "00000000-0000-4000-8000-0000000000bb",
+      name: "Initech",
+      role: "member",
+      accent: "#f97316",
+    });
+    await renderApp(`/org/${ORG_ID}/home`, { api: createFakeApi(state) });
+    await settle(6);
+    await click(screen().getByRole("button", { name: "Menu do workspace Acme" }));
+    const dither = (name: string) =>
+      screen()
+        .getByRole("menuitem", { name: new RegExp(name) })
+        .querySelector(".ac-logo__dither")
+        ?.getAttribute("href");
+    expect(dither("Acme")).toBe(ditherUrl(accentSky(PURPLE), 12));
+    expect(dither("Globex")).toBe(ditherUrl(DEFAULT_SKY, 12));
+    expect(dither("Initech")).toBe(ditherUrl(accentSky("#f97316"), 12));
   });
 
   test("it follows the theme as it switches", async () => {

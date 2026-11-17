@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { accentPalette, accentSky } from "@agenteschat/tokens/accent";
-import { gradientOf } from "@agenteschat/ui/agent/engine";
+import { bodyTones, gradientOf } from "@agenteschat/ui/agent/engine";
 import { contrastRatio } from "../src/lib/nav";
 import { appColors, paintSky, sheetColors, skyAccent, withAccent } from "../src/ui/palette";
+import { ditherPaths } from "../src/ui/role-mark";
 
 describe("a workspace's accent on the phone (ADR 0193)", () => {
   test("its agent colors take the place of the theme's, in both themes, and nothing else moves", () => {
@@ -50,5 +51,19 @@ describe("a workspace's accent on the phone (ADR 0193)", () => {
     }
     expect(skyAccent()).toBeNull();
     expect(gradientOf("sky")).toEqual(sky);
+  });
+
+  test("a role mark in `sky` is drawn in the accent once it changes, not from a cache kept by the name", () => {
+    const fills = () => ditherPaths("sky", 8).map((p) => p.fill);
+    for (const fill of fills()) expect(bodyTones("sky")).toContain(fill);
+    paintSky("#f97316");
+    try {
+      const painted = fills();
+      expect(painted.length).toBeGreaterThan(0);
+      for (const fill of painted) expect(bodyTones(accentSky("#f97316"))).toContain(fill);
+    } finally {
+      paintSky(null);
+    }
+    for (const fill of fills()) expect(bodyTones("sky")).toContain(fill);
   });
 });

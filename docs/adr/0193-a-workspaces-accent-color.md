@@ -47,7 +47,8 @@ by hand.
    and a link painted in it before saving, and "Use the default". The phone has the same row. Each change is audited
    (`organization.accent_changed`, with `from` and `to`) and announced to the workspace (`org.look`, as the logo now
    is too), so every open app repaints without a reload. `accent` rides wherever `logo` does: `GET /me` and
-   `GET …/organizations/{orgId}`.
+   `GET …/organizations/{orgId}`. Changes are limited to 20 an hour per workspace (429 `rate_limited`), as each one makes
+   every member's open apps fetch again; the operator's route (§6) is not limited.
 4. **Where it shows.** The web sets the four custom properties for the current theme on `<html>` while the workspace
    shell is mounted, so dialogs and menus portaled out of the shell carry them too, and takes them away when the shell
    goes; pages outside a workspace (sign-in, onboarding, the account's pages) keep the design system's blue. The
@@ -62,8 +63,10 @@ by hand.
    it whatever was picked (mention chips work out their own contrast per theme, as for any agent color). The web's
    shell sets it before its children render and clears it when it goes, with `data-accent` on `<html>`, which every
    drawing that repaints on a theme switch also watches (`PAINT_ATTRS` in `packages/ui/src/theme.ts`); the drawings'
-   caches are keyed by the colors `sky` resolves to. The phone's `AccentProvider` does the same (`paintSky` in
-   `apps/mobile/src/ui/palette.ts`).
+   caches and memos are keyed by the colors `sky` resolves to (`drawnKey`). The phone's `AccentProvider` does the same
+   (`paintSky` in `apps/mobile/src/ui/palette.ts`). As the engine's `sky` is the active workspace's, a list of several
+   workspaces (the workspace menu, the phone's workspaces) draws each one's mark from its own accent, or the default
+   blue (`workspaceSky` in `packages/ui/src/sky/accent.ts`).
 6. **The operator may set a workspace's look.** `PUT /api/operator/v1/orgs/{orgId}/look` with
    `{ accent?, logo?: { contentType, base64 } | null }`: an absent field is left alone, null clears it. It goes through
    the same setters as the app with the system as the actor: the logo's type, size and metadata checks, the same
