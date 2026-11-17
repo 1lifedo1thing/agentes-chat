@@ -3,7 +3,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import { AccessibilityInfo, Platform, useColorScheme } from "react-native";
 import { Easing } from "react-native-reanimated";
 import { readValue, STORED, writeValue } from "@/lib/storage";
-import { type AppColors, appColors, appShadows, type Scheme } from "./palette";
+import { type AppColors, appColors, appShadows, type Scheme, withAccent } from "./palette";
 
 /**
  * The theme for React Native, from `@agenteschat/tokens` (tokens.css is the source of truth), with the light
@@ -119,6 +119,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export function ThemeColorsOverride({ colors, children }: { colors: AppColors; children: ReactNode }) {
   const theme = useTheme();
   const value = useMemo(() => ({ ...theme, colors }), [theme, colors]);
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+/** The active workspace's accent (ADR 0192) on the agent colors of everything under it; none: the theme's own. */
+export function AccentProvider({ accent, children }: { accent: string | null | undefined; children: ReactNode }) {
+  const theme = useTheme();
+  const value = useMemo(() => ({ ...theme, colors: withAccent(theme.colors, theme.scheme, accent) }), [theme, accent]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 

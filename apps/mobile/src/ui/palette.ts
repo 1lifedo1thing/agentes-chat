@@ -6,6 +6,7 @@ import {
   type ThemeColors,
   shadows as tokenShadows,
 } from "@agenteschat/tokens";
+import { accentPalette, isAccentHex } from "@agenteschat/tokens/accent";
 
 /**
  * The phone app's colors (pure: no React Native import, so it is unit-tested). The design system's tokens,
@@ -83,6 +84,11 @@ export function appColors(scheme: Scheme): AppColors {
     badge: "#ff3b30",
     grabber: "rgba(60, 60, 67, 0.3)",
   };
+}
+
+/** The workspace's accent (ADR 0192) in place of the agent colors; the theme's own without one. */
+export function withAccent(colors: AppColors, scheme: Scheme, accent: string | null | undefined): AppColors {
+  return isAccentHex(accent) ? { ...colors, ...accentPalette(accent)[scheme] } : colors;
 }
 
 /** A card inside a dark sheet: one step above the sheet, as the sheet is one above the screen. */
