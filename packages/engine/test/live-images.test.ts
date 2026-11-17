@@ -101,8 +101,8 @@ describe("a person's request on a canvas", () => {
         status: "queued",
         prompt: "a lighthouse at dusk",
         by: { kind: "person", id: f.owner.id },
-        w: 512,
-        h: 288,
+        w: 384,
+        h: 216,
       });
     }
     // Inside the frame, never on top of each other.
@@ -130,8 +130,8 @@ describe("a person's request on a canvas", () => {
         parent: view.frameId,
         nw: 96,
         nh: 54,
-        w: 512,
-        h: 288,
+        w: 384,
+        h: 216,
         gen: {
           prompt: "a lighthouse at dusk",
           model: "gemini-nano-banana-2.1",

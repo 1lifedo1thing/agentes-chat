@@ -14,6 +14,7 @@ import { useToast } from "@/lib/toast";
 import { openLivePage } from "../open";
 import { DeckView } from "../slides";
 import { WorkbookView } from "../spreadsheet";
+import "../covers.css";
 
 /** What kind of file it is, in words ("Arquivo do Excel"): by its name first, then its type. */
 type OfficeWord = "excel" | "ods" | "csv" | "powerpoint" | "word";

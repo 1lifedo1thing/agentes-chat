@@ -58,7 +58,7 @@ export const IMAGE_CALL_TIMEOUT_MS = 180_000;
 /** The most an agent waits for its pictures (ADR 0192): two minutes. */
 export const AGENT_IMAGE_WAIT_MS = 120_000;
 /** A placeholder's longest side on the canvas, in world units. */
-const PLACEHOLDER_SIDE = 512;
+const PLACEHOLDER_SIDE = 384;
 /** The frame around a request is titled with its prompt, this long at most. */
 const FRAME_NAME_CHARS = 60;
 

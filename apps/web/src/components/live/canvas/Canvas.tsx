@@ -110,6 +110,10 @@ import { ArrowShape, ShapeBody } from "./shapes";
 import { useCanvasShapes } from "./store";
 import "./canvas.css";
 
+/** The plane's height the dock covers at its bottom, and the prompt bar while it is open (world fits stay above). */
+const DOCK_ROOM = 88;
+const GENERATE_BAR_ROOM = 200;
+
 /**
  * The canvas ("Quadro", ADR 0191 §2, ADR 0192): an endless plane people and agents fill together with pictures,
  * notes, text, frames, shapes, arrows between them, Drive files and agents' pages, and pictures generated in place.
@@ -589,14 +593,18 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     reveal.current = null;
     const bounds = boundsOf(ids, byId);
     if (!bounds) return;
-    const view = visibleWorld(camRef.current, stageRef.current);
+    // The new pictures go where they are seen whole: above the dock, or above the prompt bar while it stays open for
+    // the next request, never under it.
+    const stage = stageRef.current;
+    const room = { w: stage.w, h: Math.max(1, stage.h - (generating ? GENERATE_BAR_ROOM : DOCK_ROOM)) };
+    const view = visibleWorld(camRef.current, room);
     const inside =
       bounds.x >= view.x &&
       bounds.y >= view.y &&
       bounds.x + bounds.w <= view.x + view.w &&
       bounds.y + bounds.h <= view.y + view.h;
-    if (!inside) glideTo(fitCamera(bounds, stageRef.current, FIT_PADDING * 2, camRef.current.z));
-  }, [list, byId, glideTo]);
+    if (!inside) glideTo(fitCamera(bounds, room, FIT_PADDING, camRef.current.z));
+  }, [list, byId, glideTo, generating]);
 
   // ── Edits ───────────────────────────────────────────────────────────────────────────────────────────────────────
 

@@ -50,6 +50,7 @@ import { Spreadsheet } from "./spreadsheet";
 import { useLiveRoomWeb, useLiveVersionRoom } from "./useLiveRoomWeb";
 import { SaveVersionDialog, VersionsPanel } from "./VersionsPanel";
 import "./live.css";
+import "./covers.css";
 
 /** The page's address: a version to look at (`v`), and the editor's own place (a sheet, a slide, presenting). */
 export interface LiveFileSearch extends LiveEditorSearch {

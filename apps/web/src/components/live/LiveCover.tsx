@@ -19,6 +19,7 @@ import { useOrg } from "@/components/org-context";
 import { CanvasMini } from "./canvas";
 import { PeerFace, usePeerLooks } from "./peers";
 import { SlideThumb } from "./slides";
+import "./covers.css";
 
 /**
  * Live files drawn small (ADR 0191 §7, §9), from the preview the server keeps with each file: a spreadsheet's first

@@ -158,7 +158,13 @@ export function textColorOf(cell: DrawCell, theme: GridTheme): string {
     if (contrast >= 1.6) return chosen;
   }
   if (!cell.style?.bg) return theme.ink;
-  return back > 0.36 ? "#151514" : "#f4f4f1";
+  // Automatic text on a fill: whichever of the dark and the light ink stands out more on it, so a light fill softened
+  // by the dark theme never carries light text.
+  const contrastOn = (ink: string) => {
+    const fore = luminance(ink);
+    return (Math.max(fore, back) + 0.05) / (Math.min(fore, back) + 0.05);
+  };
+  return contrastOn("#151514") >= contrastOn("#f4f4f1") ? "#151514" : "#f4f4f1";
 }
 
 // ── Text ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -192,14 +198,17 @@ export function measure(ctx: Ctx, font: string, text: string): number {
 }
 
 function fontMetrics(ctx: Ctx, font: string, px: number): { ascent: number; descent: number } {
-  const known = metrics.get(font);
+  // Measured on the regular face of the size, whatever the weight or slant: every cell of a row then shares one
+  // baseline, even while a bold face is still loading and a stand-in would measure differently.
+  const regular = `400 ${px}px ${font.slice(font.indexOf("px ") + 3)}`;
+  const known = metrics.get(regular);
   if (known) return known;
-  ctx.font = font;
+  ctx.font = regular;
   const m = ctx.measureText("Hg");
   const ascent = m.actualBoundingBoxAscent > 0 ? m.actualBoundingBoxAscent : px * 0.72;
   const descent = m.actualBoundingBoxDescent > 0 ? m.actualBoundingBoxDescent : px * 0.22;
   const out = { ascent, descent };
-  metrics.set(font, out);
+  metrics.set(regular, out);
   return out;
 }
 
