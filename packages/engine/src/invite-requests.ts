@@ -516,7 +516,8 @@ export async function fileJoinRequest(deps: Deps, payload: Record<string, unknow
 
 /**
  * Who to tell of a new request: the people who may answer it, as a notice merged per workspace. A suggestion names
- * who suggested it (ADR 0090), so a row of one reads "Carla suggested …", not "… asks to join".
+ * who suggested it (ADR 0090), so a row of one reads "Carla suggested …", not "… asks to join"; an outside
+ * collaborator's request (ADR 0189) who they work for.
  */
 async function noticeAdmins(
   deps: Deps,
@@ -525,7 +526,7 @@ async function noticeAdmins(
   orgName: string,
   name: string,
   now: Date,
-  suggestedBy?: string,
+  about: { suggestedBy?: string; outsideOf?: string } = {},
 ) {
   await notify(
     { ...deps, now: () => now },
@@ -536,7 +537,12 @@ async function noticeAdmins(
       groupKey: group(orgId),
       waiting: true,
       source: { label: orgName },
-      latest: { title: name, names: [name], ...(suggestedBy ? { suggestedBy } : {}) },
+      latest: {
+        title: name,
+        names: [name],
+        ...(about.suggestedBy ? { suggestedBy: about.suggestedBy } : {}),
+        ...(about.outsideOf ? { outsideOf: about.outsideOf } : {}),
+      },
     },
   ).catch(() => []);
 }
@@ -548,7 +554,7 @@ async function noticeAdmins(
 async function emailAdmins(
   tx: Executor,
   publicUrl: string,
-  request: Pick<RequestRow, "id" | "orgId" | "name" | "email">,
+  request: Pick<RequestRow, "id" | "orgId" | "name" | "email" | "outsideOf">,
   orgName: string,
   admins: string[],
   now: Date,
@@ -577,6 +583,7 @@ async function emailAdmins(
         email: request.email,
         url: answerUrl(publicUrl, orgId, request.id, "approve"),
         denyUrl: answerUrl(publicUrl, orgId, request.id, "deny"),
+        ...(request.outsideOf ? { outsideOf: request.outsideOf } : {}),
         ...(await modeStamp(tx, orgId)),
       },
     });
@@ -1455,7 +1462,7 @@ export async function suggestPerson(
     });
     return saved;
   });
-  await noticeAdmins(deps, orgId, admins, org?.name ?? "", email, now, me?.name || undefined);
+  await noticeAdmins(deps, orgId, admins, org?.name ?? "", email, now, me?.name ? { suggestedBy: me.name } : {});
   return { id: row.id };
 }
 
@@ -1571,7 +1578,7 @@ export async function requestOutsideAccess(
     await emailAdmins(tx, deps.publicUrl, row, org.name, admins, now);
     return { row, created: true };
   });
-  if (filed.created) await noticeAdmins(deps, orgId, admins, org.name, name, now);
+  if (filed.created) await noticeAdmins(deps, orgId, admins, org.name, name, now, { outsideOf });
   return filed.row;
 }
 
