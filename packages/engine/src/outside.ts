@@ -151,6 +151,46 @@ async function outsideRun(db: Executor, orgId: string, runId: string) {
   return run ?? null;
 }
 
+/**
+ * `runReadOutside` for many runs in one statement, for runs a person is behind (`RunAuthority` "person": no routine
+ * feeds them): the ids of those that read outside content. Its own calls, then its conversation, as there.
+ */
+export async function personRunsReadOutside(db: Executor, orgId: string, runIds: string[]): Promise<Set<string>> {
+  const ids = [...new Set(runIds)].filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+  const read = new Set(ids.filter((id) => caches.readOutsideRuns.get(`${orgId}:${id}`)));
+  const ask = ids.filter((id) => !read.has(id));
+  if (ask.length === 0) return read;
+  // The trigger is `messages` itself; the conversation's marked messages are `mk`, the newest top-level ones `w`.
+  const rows = await db
+    .select({
+      id: agentRuns.id,
+      transcript: transcriptKeys("harnessTried"),
+      marked: sql<boolean>`(coalesce(${messages.meta} ->> 'readOutside' = 'true', false)
+        or exists (select 1 from ${agentRunSteps} s where s.run_id = ${agentRuns.id} and s.kind = 'tool_result'
+          and s.data -> 'data' ->> 'outside' = 'true')
+        or exists (select 1 from ${messages} mk where mk.org_id = ${orgId} and mk.channel_id = ${messages.channelId}
+          and mk.deleted_at is null and mk.meta ->> 'readOutside' = 'true'
+          and ((${messages.threadId} is not null and (mk.id = ${messages.threadId} or mk.thread_id = ${messages.threadId}))
+            or mk.id in (select w.id from ${messages} w where w.org_id = ${orgId} and w.channel_id = ${messages.channelId}
+              and w.thread_id is null and ${postedBySql(
+                { createdAt: sql`w.created_at`, id: sql`w.id` },
+                { createdAt: sql`${messages.createdAt}`, id: sql`${messages.id}` },
+              )}
+              order by w.created_at desc limit ${CONVERSATION_WINDOW}))))`,
+    })
+    .from(agentRuns)
+    .leftJoin(messages, and(eq(messages.orgId, agentRuns.orgId), eq(messages.id, agentRuns.triggerMessageId)))
+    .where(and(eq(agentRuns.orgId, orgId), inArray(agentRuns.id, ask)));
+  for (const row of rows) {
+    const tried = row.transcript?.harnessTried;
+    const harness = Array.isArray(tried) && tried.some((l) => typeof l === "string" && HARNESS_OUTSIDE.test(l));
+    if (!harness && !row.marked) continue;
+    read.add(row.id);
+    if (cachesEnabled()) caches.readOutsideRuns.set(`${orgId}:${row.id}`, true);
+  }
+  return read;
+}
+
 /** The refusal code of a remembered rule naming an address no person wrote (`remember`). */
 export const UNASKED_DESTINATION = "memory.unasked_destination";
 

@@ -227,8 +227,18 @@ const tell = (run: AgentRun, agent: string, message: string) => invoke(run, "tel
 
 const search = async (run: AgentRun, query: string) => JSON.stringify(await invoke(run, "search_context", { query }));
 
-/** Dev asks Ada in `roomId` from `asker` (a run made for a person), at `createdAt`, as `ask_agent` writes it. */
-async function asked(roomId: string, asker: AgentRun, targetAgentId: string, question: string, createdAt = new Date()) {
+/**
+ * Dev asks Ada in `roomId` from `asker` (a run made for a person), at `createdAt`, as `ask_agent` writes it (for the
+ * owner unless `more` says otherwise).
+ */
+async function asked(
+  roomId: string,
+  asker: AgentRun,
+  targetAgentId: string,
+  question: string,
+  createdAt = new Date(),
+  more: Partial<typeof schema.agentConsultations.$inferInsert> = {},
+) {
   const note = await insertMessage(f.db, {
     orgId: f.org.id,
     channelId: roomId,
@@ -248,6 +258,8 @@ async function asked(roomId: string, asker: AgentRun, targetAgentId: string, que
     chain: [f.agent.id],
     expiresAt: new Date(Date.now() + 60_000),
     createdAt,
+    forUserId: f.owner.id,
+    ...more,
   });
 }
 
@@ -423,7 +435,7 @@ describe("what it keeps, and what it leaves out", () => {
     expect(await memory()).toEqual([]);
   });
 
-  test("the person's six newest, even behind many newer hand-offs for someone else", async () => {
+  test("the person's own come back among many newer hand-offs for someone else", async () => {
     const { ada, memory } = await handedToAda();
     const bia = await addMember(f.db, f.org.id, "member", "bia");
     const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
@@ -449,6 +461,7 @@ describe("what it keeps, and what it leaves out", () => {
         chain: [f.agent.id],
         expiresAt: new Date(at + 60_000),
         createdAt: new Date(at + (i + 1) * 1000),
+        forUserId: bia.id,
       });
     }
     expect(await memory()).toEqual([["open", null]]);
@@ -632,3 +645,4 @@ describe("where it is read, and what it holds", () => {
     ]);
   });
 });
+

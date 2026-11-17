@@ -35,7 +35,7 @@ import { machineOnline } from "./machines";
 import { getMessage, insertMessage, type Message, type MessageView, withMessageDetails } from "./messages";
 import type { Notice } from "./notices";
 import { notifyAgentUnreached } from "./notification-producers";
-import { runReadOutsideById } from "./outside";
+import { personRunsReadOutside, runReadOutsideById } from "./outside";
 import { actingRoutineOfCall, personBehindCall, routineCreatorOf } from "./requester";
 import { isRoutineRoomKey } from "./routine-brief";
 import { stoppedToSend } from "./run-inbox";
@@ -2388,14 +2388,6 @@ export async function consultedFor(
 /** How far back, and how many, of what other agents handed an agent for a person it remembers in their DM. */
 export const HANDED_REMEMBERED_DAYS = 14;
 const HANDED_REMEMBERED = 6;
-/**
- * How many of the agent's latest hand-offs (every person's) are looked through for one person's: who is behind each
- * is the walk up its chain (`runAuthorityById`, remembered per message), which no index answers.
- */
-// ponytail: a person's hand-offs behind 60 newer ones of other people are not remembered, and every DM turn with a
-// person walks up to 60 chains (about one statement each, two with caches off) when that person has fewer than six;
-// a person column on agent_consultations, set as it is asked, removes both.
-const HANDED_LOOKED_AT = 60;
 
 export interface HandedFor {
   kind: AgentConsultationRow["kind"];
@@ -2434,92 +2426,95 @@ export const agentsDmsOf = (db: Executor, agentId: string, options: { tasks?: bo
 /**
  * What other agents asked or handed `agentId` for `personId` lately, latest first: in its DMs with them, and tasks the
  * right hand handed it. That work happened away from its DM with that person, which never shows it:
- * without this, the agent asked about it there doesn't know what they mean. "For the person" as its reads in the
- * agents' DM count it: the person behind the run that asked (a routine's work never counts). A heads-up is news, not
- * a request: left out.
+ * without this, the agent asked about it there doesn't know what they mean. "For the person" is the row's
+ * `forUserId`, the person behind the run that asked when it was made (a routine's work is nobody's). A heads-up is
+ * news, not a request: left out. Two statements whatever the number of hand-offs: it runs on every DM turn.
  */
 export async function handedFor(db: Executor, orgId: string, agentId: string, personId: string): Promise<HandedFor[]> {
   const rows = await db
     .select({
-      row: agentConsultations,
+      kind: agentConsultations.kind,
+      status: agentConsultations.status,
+      question: agentConsultations.question,
+      answer: agentConsultations.answer,
+      askerRunId: agentConsultations.askerRunId,
+      targetRunId: agentConsultations.targetRunId,
+      createdAt: agentConsultations.createdAt,
       askerHandle: agents.handle,
-      work: {
-        status: agentWorks.status,
-        finishedAt: agentWorks.finishedAt,
-        resultMessageId: agentWorks.resultMessageId,
-      },
+      work: { status: agentWorks.status, finishedAt: agentWorks.finishedAt },
+      report: { body: messages.body, meta: messages.meta, runId: messages.agentRunId },
     })
     .from(agentConsultations)
     .innerJoin(agents, eq(agents.id, agentConsultations.askerAgentId))
     // A note that joined another hand-off's run follows that run's work too: Continuar keeps its work, not its run.
     .leftJoin(agentRuns, eq(agentRuns.id, agentConsultations.targetRunId))
     .leftJoin(agentWorks, and(eq(agentWorks.id, agentRuns.workId), eq(agentWorks.how, "handed")))
+    .leftJoin(
+      messages,
+      and(
+        eq(messages.orgId, agentWorks.orgId),
+        eq(messages.id, agentWorks.resultMessageId),
+        isNull(messages.deletedAt),
+      ),
+    )
     .where(
       and(
         eq(agentConsultations.orgId, orgId),
-        // By the rooms it is handed work in: the (org, channel) index, not every consultation of the workspace.
-        inArray(agentConsultations.channelId, agentsDmsOf(db, agentId, { tasks: true })),
         eq(agentConsultations.targetAgentId, agentId),
+        eq(agentConsultations.forUserId, personId),
         gte(agentConsultations.createdAt, new Date(Date.now() - HANDED_REMEMBERED_DAYS * 86_400_000)),
+        inArray(agentConsultations.channelId, agentsDmsOf(db, agentId, { tasks: true })),
         sql`not ${headsUpSql(sql`${agentConsultations}`)}`,
       ),
     )
     .orderBy(desc(agentConsultations.createdAt))
-    .limit(HANDED_LOOKED_AT);
-  const mine: typeof rows = [];
-  // Newest first, a few at a time, until this person's latest are found.
-  for (let i = 0; i < rows.length && mine.length < HANDED_REMEMBERED; i += HANDED_REMEMBERED) {
-    const some = rows.slice(i, i + HANDED_REMEMBERED);
-    const behind = await Promise.all(some.map(({ row }) => runAuthorityById(db, orgId, row.askerRunId)));
-    mine.push(...some.filter((_, j) => behind[j]?.personId === personId));
-  }
-  return Promise.all(
-    mine.slice(0, HANDED_REMEMBERED).map(async ({ row, askerHandle, work }) => ({
-      kind: row.kind,
-      ...(work?.status ? await handedWorkState(db, orgId, work) : await noteState(db, row)),
-      question: (await runReadOutsideById(db, orgId, row.askerRunId)) ? null : row.question,
-      askerHandle,
-      createdAt: row.createdAt,
-    })),
-  );
+    .limit(HANDED_REMEMBERED);
+  const states = rows.map((r) => (r.work?.status ? handedWorkState(r.work, r.report) : noteState(r)));
+  // Every run here works for that person (a note joins only a run for the same person), so no routine feeds them.
+  const outside = await personRunsReadOutside(db, orgId, [
+    ...rows.map((r) => r.askerRunId),
+    ...states.flatMap((s) => (s.answeredBy ? [s.answeredBy] : [])),
+  ]);
+  return rows.map((r, i) => {
+    const { answeredBy, words, ...state } = states[i] as HandedState;
+    const answerHidden = !!answeredBy && outside.has(answeredBy);
+    return {
+      kind: r.kind,
+      ...state,
+      answer: words && !answerHidden ? answerForPeople(words) : null,
+      answerHidden,
+      question: outside.has(r.askerRunId) ? null : r.question,
+      askerHandle: r.askerHandle,
+      createdAt: r.createdAt,
+    };
+  });
 }
 
-type HandedState = Pick<HandedFor, "status" | "answer" | "answerHidden" | "stopped">;
+/** How a hand-off went, and the words that answered it with the run that wrote them (hidden if it read outside). */
+type HandedState = Pick<HandedFor, "status" | "stopped"> & { words: string | null; answeredBy: string | null };
 
 /** A hand-off no work came of: its own row says how it went. */
-async function noteState(db: Executor, row: AgentConsultationRow): Promise<HandedState> {
-  const answerHidden = row.status === "answered" && !!row.answer && (await answerReadOutside(db, row));
-  return {
-    status: row.status,
-    answer: row.status === "answered" && row.answer && !answerHidden ? answerForPeople(row.answer) : null,
-    answerHidden,
-  };
+function noteState(row: Pick<AgentConsultationRow, "status" | "answer" | "targetRunId">): HandedState {
+  const words = row.status === "answered" && row.answer ? row.answer : null;
+  return { status: row.status, words, answeredBy: words ? row.targetRunId : null };
 }
 
 /**
  * A hand-off whose run became handed work: that work says how it went, as Continuar reopens it after its note closed.
- * Its report's words once done; none for the server's own end line.
+ * Its report's words once done (none once deleted, none for the server's own end line).
  */
-async function handedWorkState(
-  db: Executor,
-  orgId: string,
-  work: { status: string; finishedAt: Date | null; resultMessageId: string | null },
-): Promise<HandedState> {
-  if (!work.finishedAt) return { status: "open", answer: null, answerHidden: false };
+function handedWorkState(
+  work: { status: string | null; finishedAt: Date | null },
+  report: { body: string; meta: Message["meta"]; runId: string | null } | null,
+): HandedState {
+  if (!work.finishedAt) return { status: "open", words: null, answeredBy: null };
   if (work.status !== "done")
     return {
       status: "failed",
-      answer: null,
-      answerHidden: false,
+      words: null,
+      answeredBy: null,
       ...(work.status === "canceled" ? { stopped: true } : {}),
     };
-  const [report] = work.resultMessageId
-    ? await db
-        .select({ body: messages.body, meta: messages.meta, runId: messages.agentRunId })
-        .from(messages)
-        .where(and(eq(messages.orgId, orgId), eq(messages.id, work.resultMessageId), isNull(messages.deletedAt)))
-    : [];
   const words = report && !String(report.meta.bodyCode ?? "").startsWith("work_end_") ? report.body : null;
-  const answerHidden = !!words && !!report?.runId && (await runReadOutsideById(db, orgId, report.runId));
-  return { status: "answered", answer: words && !answerHidden ? answerForPeople(words) : null, answerHidden };
+  return { status: "answered", words, answeredBy: words ? (report?.runId ?? null) : null };
 }
