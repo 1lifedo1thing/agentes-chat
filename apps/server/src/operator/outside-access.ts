@@ -98,7 +98,7 @@ export function registerOperatorOutsideAccess(api: OpenAPIHono, { db, pubsub, co
       tags,
       summary: "End an account's outside access to a workspace",
       description:
-        "Closes its request still waiting, or removes the outside collaborator as anyone removed from a workspace is. With neither, nothing changes. 409 `outside_access.member` for an ordinary member: only someone in the workspace removes one.",
+        "Closes its request still waiting, or removes the outside collaborator as anyone removed from a workspace is. With neither, nothing changes. 409 `outside_access.member` for an ordinary member, before anything changes: only someone in the workspace removes one.",
       request: { params: OutsideParams },
       responses: { 200: json(z.object({ state: z.literal("none") })), ...errors, ...refused },
     }),

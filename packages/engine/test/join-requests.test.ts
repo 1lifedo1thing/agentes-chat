@@ -1089,6 +1089,15 @@ describe("outside collaborators (ADR 0191)", () => {
     expect(await rows()).toEqual([row]);
   });
 
+  test("ended by the operator after the request ran out: nothing is left waiting to close", async () => {
+    await start();
+    const cai = await person("cai@example.com");
+    await outside(cai.id);
+    const after = later(JOIN_REQUEST_TTL_DAYS + 1);
+    expect(await endOutsideAccess(deps(), f.org.id, cai.id, after)).toEqual({ closed: false, removed: false });
+    expect((await rows()).map((r) => r.status)).toEqual(["pending"]);
+  });
+
   test("ended by the operator: a waiting request closes, an outside collaborator is removed by the system, an ordinary member never", async () => {
     await start();
     const cai = await person("cai@example.com");

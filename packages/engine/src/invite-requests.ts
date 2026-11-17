@@ -72,6 +72,7 @@ import {
   inviteLink,
   inviteLinkOpen,
   joinOrganization,
+  lockOrgMembers,
   type Membership,
   onUserCreated,
   removeOutsideMember,
@@ -1609,12 +1610,23 @@ export async function requestOutsideAccess(
 /**
  * The operator API ends an account's outside access to a workspace (ADR 0191): its request still waiting closes, and
  * an outside collaborator is taken out as anyone removed is (`removeOutsideMember`). Never an ordinary member
- * (`outside_access.member`). With neither, nothing changes.
+ * (`outside_access.member`), refused before anything changes. With neither, nothing changes.
  */
 export async function endOutsideAccess(deps: Deps, orgId: string, userId: string, now = new Date()) {
   if (!(await orgExists(deps.db, orgId))) throw new NotFoundError("No workspace with this id");
   const closed = await deps.db.transaction(async (tx) => {
     await lockRequests(tx, orgId);
+    await lockOrgMembers(tx, orgId);
+    const [member] = await tx
+      .select({ outsideOf: organizationMembers.outsideOf })
+      .from(organizationMembers)
+      .where(and(eq(organizationMembers.orgId, orgId), eq(organizationMembers.userId, userId)));
+    if (member && member.outsideOf === null) {
+      throw new ConflictError(
+        "This person is a member of the workspace, not an outside collaborator: someone in the workspace removes them.",
+        "outside_access.member",
+      );
+    }
     const rows = await tx
       .update(requests)
       .set({ status: "closed", decidedAt: now, passwordHash: null })
@@ -1623,6 +1635,7 @@ export async function endOutsideAccess(deps: Deps, orgId: string, userId: string
           eq(requests.orgId, orgId),
           eq(requests.userId, userId),
           eq(requests.status, "pending"),
+          gt(requests.expiresAt, now),
           isNotNull(requests.outsideOf),
         ),
       )

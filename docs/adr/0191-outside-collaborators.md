@@ -51,7 +51,8 @@ workspace could not let them in at all. A self-hosted server sets no limit, so i
 5. **Leaving.** Whoever may remove members removes an outside collaborator like anyone, and they may leave. The
    operator ends it with `DELETE /orgs/{orgId}/outside-access/{userId}`: a request still waiting closes, and a member
    is taken out with everything a removal does, the audit log's entry being the system's. It refuses an ordinary member
-   (`outside_access.member`): only the workspace removes one of its own.
+   (`outside_access.member`) before it changes anything, a request still waiting for them included: only the workspace
+   removes one of its own.
 6. **Never an owner.** Making an outside collaborator an owner is refused (`member.outside_owner`): they answer to
    whoever they work for, not to the workspace.
 7. **What the operator reads.** `GET /orgs/{orgId}/outside-access` lists `{ userId, outsideOf, state, since }`,

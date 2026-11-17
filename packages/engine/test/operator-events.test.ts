@@ -431,3 +431,21 @@ test("outside access (ADR 0191): granted, denied and ended, each with its worksp
     ["outside_access.ended", orgId, { userId: eve.id }],
   ]);
 });
+
+test("outside access (ADR 0191): ending an ordinary member's is refused before anything changes", async () => {
+  const f = await setup();
+  close = f.close;
+  enableOperatorEvents();
+  const deps = { db: f.db, pubsub: f.pubsub, publicUrl: "https://agentes.test" };
+  const gil = await addUser(f.db, "gil");
+  const request = await requestOutsideAccess(deps, { orgId: f.org.id, userId: gil.id, outsideOf: "Example Consulting" });
+  // In the workspace as an ordinary member while the request still waits.
+  await f.db.insert(schema.organizationMembers).values({ orgId: f.org.id, userId: gil.id, role: "member" });
+  await expect(endOutsideAccess(deps, f.org.id, gil.id)).rejects.toMatchObject({ code: "outside_access.member" });
+  const [row] = await f.db
+    .select({ status: schema.organizationJoinRequests.status })
+    .from(schema.organizationJoinRequests)
+    .where(eq(schema.organizationJoinRequests.id, request.id));
+  expect(row?.status).toBe("pending");
+  expect((await allEvents(f.db)).filter((e) => e.type.startsWith("outside_access."))).toEqual([]);
+});
