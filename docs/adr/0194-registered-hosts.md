@@ -74,12 +74,13 @@ stay exact and be written once.
 7. **The logo** is served without a session at `GET /api/host-look/logo` for the request's own host only (no
    parameter names a host), with the image checks a workspace's logo has and a five-minute cache lifetime;
    `auth-config`'s `logoUrl` carries the file's name so a new logo is fetched at once.
-8. **The web.** On a registered host the pages before sign-in (sign-in, sign-up, an invitation, a new password) show
-   its logo, or its name alone in the heading face, where the product's lockup is, set its accent's four tokens on the
-   document while they show (the workspace shell does the same with the workspace's own accent, and the two never
-   show at once), and end with one quiet "Powered by agentes.chat" line linking to the product's site. The tab's title
-   names the host where it names the product, on every page of that host, and the tab's icon is its logo unless the
-   browser picked another icon. The About screen and its license notice are unchanged.
+8. **The web.** On a registered host the pages before sign-in (sign-in, sign-up, an invitation, a new password) show its
+   logo, or its name alone in the heading face, where the product's lockup is, set its accent's four tokens on the
+   document while they show (the workspace shell does the same with the workspace's own accent; the screens in that look
+   shown inside a workspace, such as a suspended one's, take no host accent, so the two never show at once), and end
+   with one quiet "Powered by agentes.chat" line linking to the product's site. The tab's title names the host where it
+   names the product, on every page of that host, and the tab's icon is its logo unless the browser picked another icon.
+   The About screen and its license notice are unchanged.
 9. **Phone and desktop.** Nothing changes. The phone app is built for one address; the desktop app reaches a
    registered host as it reaches any other server.
 

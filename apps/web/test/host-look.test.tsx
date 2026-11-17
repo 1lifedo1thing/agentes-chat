@@ -3,6 +3,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
+import type { HostLook } from "@agenteschat/client";
 import { PRODUCT_SITE_URL } from "@agenteschat/client/lib/about";
 import { accentPalette } from "@agenteschat/ui";
 import { act, cleanup } from "@testing-library/react";
@@ -21,7 +22,7 @@ afterEach(() => {
 
 const agentVar = () => document.documentElement.style.getPropertyValue("--agent");
 
-async function signInPage(host: typeof NORTHWIND | null, social = true) {
+async function signInPage(host: HostLook | null, social = true) {
   const state = seedState({ me: null });
   state.authConfig = { host, socialProviders: { google: social, github: social } };
   await renderApp("/login", { api: createFakeApi(state) });
@@ -62,6 +63,40 @@ test("inside a workspace the host's accent is gone: the workspace's own or the d
   await renderApp(`/org/${ORG_ID}/home`, { api: createFakeApi(state) });
   await settle();
   expect(agentVar()).not.toBe(accentPalette(NORTHWIND.accent).light.agent);
+});
+
+test("a suspended workspace's screen keeps the workspace's accent, on any host, while it shows and once lifted", async () => {
+  const WORKSPACE = "#aa00ff";
+  const workspaceAgent = accentPalette(WORKSPACE).light.agent;
+  for (const host of [null, NORTHWIND]) {
+    const state = seedState();
+    state.authConfig = { host };
+    if (state.me) {
+      state.me.organizations = [
+        { id: ORG_ID, name: "Acme", role: "owner", accent: WORKSPACE, standing: { state: "suspended", reason: null } },
+      ];
+    }
+    const r = await renderApp(`/org/${ORG_ID}/home`, { api: createFakeApi(state) });
+    await settle(8);
+    const socket = r.sockets.last();
+    await act(async () => socket.open());
+    const standing = async (next: Record<string, unknown>) => {
+      await act(async () =>
+        socket.push({ type: "event", scope: "org", event: { type: "org.standing", orgId: ORG_ID, ...next } }),
+      );
+      await settle(6);
+    };
+    expect(screen().getByRole("heading", { name: "Acme está indisponível" })).toBeTruthy();
+    // A new reason renders the screen again.
+    await standing({ state: "suspended", reason: "uso fora dos termos" });
+    expect(document.documentElement.getAttribute("data-accent")).toBe(WORKSPACE);
+    expect(agentVar()).toBe(workspaceAgent);
+    await standing({ state: "active", reason: null });
+    expect(screen().queryByRole("heading", { name: "Acme está indisponível" })).toBeNull();
+    expect(document.documentElement.getAttribute("data-accent")).toBe(WORKSPACE);
+    expect(agentVar()).toBe(workspaceAgent);
+    cleanup();
+  }
 });
 
 test("the tab's title names the host where it names the product, in every language and on every page", async () => {
