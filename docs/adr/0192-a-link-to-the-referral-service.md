@@ -43,4 +43,4 @@ Whoever runs an instance may run a referral program: people bring others in and 
 - A self-hosted server changes nothing: without `REFERRALS_URL` there is no route, no row and no word of it.
 - The server knows nothing of the program: no rates, codes or money, and nothing comes back from the referral service.
 - The link is a credential for five minutes, minted only on a click or a visit to `/refer`, carried only in the address bar, and used once by the referral service.
-- One secret signs both links; `aud` keeps them apart. Rotating it means setting the new value on this server, the billing service and the referral service together: links minted just before fail once and are minted again.
+- One secret signs both links; `aud` keeps them apart, and both services check it: the referral service refuses `agentes-billing` (§3) and the billing service refuses anything but its own `agentes-billing` (ADR 0079 §3). Rotating it means setting the new value on this server, the billing service and the referral service together: links minted just before fail once and are minted again.
