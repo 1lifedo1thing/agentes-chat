@@ -147,3 +147,40 @@ test("the cache: kept per process, dropped at once on a write here", async () =>
   await deleteHost({ db, blobs }, host);
   expect(await hostLook(db, host)).toBeNull();
 });
+
+test("the cache: a lookup that read before a delete here doesn't keep the deleted host", async () => {
+  const { db, blobs } = await world();
+  enableCaches(true);
+  const host = "app.northwind.example";
+  await putHost({ db, blobs }, OWN, host, { name: "Northwind Studio" });
+  let release = () => {};
+  const gate = new Promise<void>((r) => {
+    release = r;
+  });
+  let read = () => {};
+  const readDone = new Promise<void>((r) => {
+    read = r;
+  });
+  // Reads the row, then is held open until the delete has finished.
+  const held = new Proxy(db, {
+    get: (target, prop) =>
+      prop === "select"
+        ? () => ({
+            from: (table: typeof schema.hosts) => ({
+              where: async (where: Parameters<ReturnType<ReturnType<Database["select"]>["from"]>["where"]>[0]) => {
+                const rows = await target.select().from(table).where(where);
+                read();
+                await gate;
+                return rows;
+              },
+            }),
+          })
+        : Reflect.get(target, prop),
+  }) as Database;
+  const lookup = hostLook(held, host);
+  await readDone;
+  expect(await deleteHost({ db, blobs }, host)).toBe(true);
+  release();
+  expect((await lookup)?.name).toBe("Northwind Studio");
+  expect(await hostLook(db, host)).toBeNull();
+});

@@ -37,6 +37,8 @@ stay exact and be written once.
    a path or a user refused. `hostLook(db, host)` returns the registered row for it or null. Every check below goes
    through it. It is kept per process for 30 seconds (`caches.hosts`) and dropped at once on a write in this process,
    so a change applies here at once and on the other processes within 30 seconds; the same holds for a deleted host.
+   A lookup that began before an invalidation (here, or one another process sent) answers but keeps nothing, so a read
+   from before a write never stays in the cache after it.
 3. **The origin rule.** An origin is allowed when it was allowed before, or when it is exactly `https://<host>` for a
    registered host **and** the request's own `Host` is that host (`hostOrigin`). The app API's CSRF check
    (`requestOriginAllowed`), the WebSocket upgrades (`personUpgrade`, also the desktop and terminal streams) and Better
