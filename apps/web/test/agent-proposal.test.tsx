@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
@@ -19,7 +19,23 @@ import {
 import { typeIn } from "./new-agent-flow";
 import { renderApp, screen, settle } from "./render";
 
+/** A narrow screen (the new agent's two steps, NEW_AGENT_STEPS_QUERY): only that query matches. */
+let media: { mockRestore: () => void } | null = null;
+const narrowScreen = () => {
+  media = spyOn(window, "matchMedia").mockImplementation(
+    (q: string) =>
+      ({
+        matches: q === "(max-width: 959px)",
+        media: q,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList,
+  );
+};
+
 afterEach(() => {
+  media?.mockRestore();
+  media = null;
   cleanup();
   sessionStorage.clear();
 });
@@ -399,13 +415,13 @@ describe("one request, one card: what it gets, created in one click", () => {
 
 describe("Review: the new agent's card filled in with the proposal", () => {
   /** The proposal's card in #eng, its new agent's dialog open on it. */
-  const review = async (state: State) => {
+  const review = async (state: State, title = "Novo agente") => {
     const rendered = await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(state) });
     await settle(6);
     const [card] = cardOf("@nina");
     if (!card) throw new Error("no card");
     await click(within(card).getByRole("button", { name: "Revisar" }), 10);
-    return { ...rendered, dialog: screen().getByRole("dialog", { name: "Novo agente" }) };
+    return { ...rendered, dialog: screen().getByRole("dialog", { name: title }) };
   };
   const side = (dialog: HTMLElement) => within(dialog).getByRole("region", { name: "A proposta" });
 
@@ -516,6 +532,27 @@ describe("Review: the new agent's card filled in with the proposal", () => {
     const box = screen().getByRole("combobox", { name: "Mensagem para Nina" }) as HTMLTextAreaElement;
     expect(box.value).toBe("Desenhe a tela de login");
     expect(state.calls.some((c) => c.method === "chat.post")).toBe(false);
+  });
+
+  test("on a narrow screen, one column: the card, the proposal under it, Discard proposal beside Create", async () => {
+    narrowScreen();
+    const state = seedState();
+    state.messages.push(proposal("p-1"));
+    // Its card's step from the start, titled with its name: no list to go back to.
+    const { dialog } = await review(state, "Nina");
+    expect(within(dialog).queryByRole("button", { name: "Voltar" })).toBeNull();
+    const card = dialog.querySelector(".nac__card") as HTMLElement;
+    expect(card.compareDocumentPosition(side(dialog)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Why it was proposed, once: on the line under the title.
+    expect(dialog.textContent?.split("Você pediu alguém para o design.")).toHaveLength(2);
+    expect(side(dialog).textContent).not.toContain("Proposto pelo");
+    await typeIn(within(dialog).getByLabelText("Primeira tarefa"), "Desenhe a tela de login");
+    await settle(2);
+    expect(within(dialog).getByRole("button", { name: "Criar e testar" })).toBeTruthy();
+    expect(within(dialog).queryByRole("button", { name: "Cancelar" })).toBeNull();
+    await click(within(dialog).getByRole("button", { name: "Descartar proposta" }), 8);
+    expect(state.calls.some((c) => c.method === "agents.denyProposal" && c.args[1] === "p-1")).toBe(true);
+    expect(state.calls.some((c) => c.method === "agents.create")).toBe(false);
   });
 
   test("Discard proposal says no and closes the dialog, nothing created", async () => {

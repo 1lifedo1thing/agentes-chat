@@ -1029,6 +1029,23 @@ function NewAgentDialog({
       onSuccess: onClose,
       onError: (error) => toast.show(failureText(t, error), "error"),
     });
+  const discardLink = review ? (
+    <button type="button" className="ac-link" disabled={busy || deny.isPending} onClick={discard}>
+      {t("newAgentCard.proposal.discard")}
+    </button>
+  ) : undefined;
+  /** The proposal beside the card; narrow, under it, in the card's one column (there is no list step to show it in). */
+  const side = review ? (
+    <ProposalSide
+      review={review}
+      withWhy={!steps}
+      agentName={name}
+      changes={changes}
+      later={afterRows}
+      task={task}
+      onTask={setTask}
+    />
+  ) : null;
   const createLabel =
     reviewing && task.trim()
       ? t("rightHand.card.createTest")
@@ -1093,16 +1110,7 @@ function NewAgentDialog({
       >
         <DialogBody>
           <div className="nac__grid">
-            {onList && review && (
-              <ProposalSide
-                review={review}
-                agentName={name}
-                changes={changes}
-                later={afterRows}
-                task={task}
-                onTask={setTask}
-              />
-            )}
+            {!steps && side}
             {onList && !review && (
               <div className="nac__list" role="listbox" aria-label={t("newAgentCard.list")} ref={list}>
                 <ListRow
@@ -1527,11 +1535,12 @@ function NewAgentDialog({
                 </div>
               </div>
             )}
+            {steps && side}
           </div>
         </DialogBody>
         {steps && step === "card" ? (
-          // Narrow, the card's step ends on Create alone, the width of the sheet.
-          <DialogFooter className="nac__foot nac__foot--create">
+          // Narrow, the card's step ends on Create alone, the width of the sheet; a proposal's, Discard before it.
+          <DialogFooter className="nac__foot nac__foot--create" note={discardLink}>
             <Button variant="primary" block loading={busy} disabled={!ready} onClick={() => void submit()}>
               {createLabel}
             </Button>
@@ -1543,11 +1552,7 @@ function NewAgentDialog({
             className="nac__foot"
             note={
               <span className="nac__foot-left">
-                {review ? (
-                  <button type="button" className="ac-link" disabled={busy || deny.isPending} onClick={discard}>
-                    {t("newAgentCard.proposal.discard")}
-                  </button>
-                ) : (
+                {discardLink ?? (
                   <button type="button" className="ac-link nac__import" onClick={() => setImporting(true)}>
                     <Icon name="download" size={16} />
                     {t("newAgentCard.import")}

@@ -50,8 +50,11 @@ export function ProposalSide({
   later,
   task,
   onTask,
+  withWhy = true,
 }: {
   review: ProposalReview;
+  /** Who proposed it and why; narrow, the dialog's line under its title says it already. */
+  withWhy?: boolean;
   /** The agent's name as written on the card now ("" while it has none). */
   agentName: string;
   changes: ProposalChange[];
@@ -66,13 +69,15 @@ export function ProposalSide({
   const g = agentGrammar(agentName);
   return (
     <section className="nac-review" aria-label={t("newAgentCard.proposal.side")}>
-      <section className="nac-review__sec">
-        <span className="nac__label">{t("newAgentCard.proposal.from", agentGrammar(review.proposerName))}</span>
-        <div className="nac-review__from">
-          <AgentAvatar agent={proposer} name={review.proposerName} size="sm" />
-          <p className="nac-review__why">{review.card.params.why}</p>
-        </div>
-      </section>
+      {withWhy && (
+        <section className="nac-review__sec">
+          <span className="nac__label">{t("newAgentCard.proposal.from", agentGrammar(review.proposerName))}</span>
+          <div className="nac-review__from">
+            <AgentAvatar agent={proposer} name={review.proposerName} size="sm" />
+            <p className="nac-review__why">{review.card.params.why}</p>
+          </div>
+        </section>
+      )}
       <section className="nac-review__sec">
         <span className="nac__label">{t("newAgentCard.proposal.changed")}</span>
         {changes.length === 0 ? (

@@ -132,7 +132,9 @@ proposal's: the dialog closes when it is decided elsewhere, and Discard proposal
 
 Creating sends the card with the proposal (`proposal` on the create call, which marks the card created), then its
 channels, apps, mailboxes and skills one part at a time, as any new agent; the routine comes last, once the agent is
-where it reports. On a narrow screen the card is alone, the reason in the dialog's line.
+where it reports. On a narrow screen there is no list step: the card comes first, the reason in the dialog's line, and
+the rest of the proposal under it in the same column (what was changed, the first task, what is left), with Discard
+proposal over Create.
 
 So that the card reads as it does for any new agent, `propose_agent` takes `hello` (how the agent introduces itself,
 in its own voice) and `connect_later` (catalog apps its job needs that the workspace hasn't connected; a connected one
