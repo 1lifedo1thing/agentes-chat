@@ -66,6 +66,72 @@ test("a credential is masked as JSON writes it too, and under a field named for 
   expect(maskSecretFields("password: x")).toBe("password: x");
 });
 
+test("a record's texts go through the text rule as themselves, and a text that is itself JSON is opened", () => {
+  // Written as JSON the three lines are one word; read as they are, each name has its value.
+  const file = { path: "config.yml", content: "token: fake-a\npassword: fake-b\nport: 1" };
+  const masked = { path: "config.yml", content: "token: ***\npassword: ***\nport: 1" };
+  expect(maskSecretFields({ files: [file] }, redactCommon)).toEqual({ files: [masked] });
+  expect(maskSecretFields(JSON.stringify({ files: [file] }), redactCommon)).toBe(JSON.stringify({ files: [masked] }));
+  expect(maskSecretFields({ body: `{"a": {"password": "fake x y"}, "n": 1}` })).toEqual({
+    body: '{"a":{"password":"***"},"n":1}',
+  });
+  // One that holds no credential stays as it was written, its layout and its long number too.
+  const plain = '{ "id": 12345678901234567890, "note": "kept" }';
+  expect(maskSecretFields(plain, redactCommon)).toBe(plain);
+  expect(maskSecretFields("[not json, token: fake-a", redactCommon)).toBe("[not json, token: ***");
+
+  // A body inside a body is opened four times over, a text of up to a million characters, one nested too deep to
+  // walk never: what is not opened is left to the text rule.
+  const nested = (times: number): string =>
+    times === 0 ? '{"note":"token: fake-a\\nport: 1"}' : JSON.stringify({ body: nested(times - 1) });
+  // A rule that knows a text read as itself by its real line end.
+  const asItself = (text: string) => (text.includes("\n") ? "***" : text);
+  const opened = (text: string) => !String(maskSecretFields(text, asItself)).includes("fake-a");
+  expect([3, 4].map((times) => opened(nested(times)))).toEqual([true, false]);
+  const long = (chars: number) => `{"note":"token: fake-a\\nport: 1","pad":"${"x".repeat(chars)}"}`;
+  expect([900_000, 1_000_000].map((chars) => opened(long(chars)))).toEqual([true, false]);
+  const deep = `${"[".repeat(200_000)}{"password":"fake deep"}${"]".repeat(200_000)}`;
+  expect(String(maskSecretFields(deep, redactCommon))).not.toContain("fake deep");
+});
+
+test("three shapes only a record can tell: an option's value in a list, a pair, and a record that names its value", () => {
+  expect(maskSecretFields({ argv: ["mysql", "--password", "fake a", "--api-key", "--verbose", "-token", 5] })).toEqual({
+    argv: ["mysql", "--password", "***", "--api-key", "--verbose", "-token", 5],
+  });
+  expect(
+    maskSecretFields([
+      ["x-api-key", "fake a"],
+      ["Set-Cookie", "sid=fake"],
+      ["accept", "text/plain"],
+      ["token", "of three", "stays"],
+      ["max_tokens", "4096"],
+    ]),
+  ).toEqual([
+    ["x-api-key", "***"],
+    ["Set-Cookie", "***"],
+    ["accept", "text/plain"],
+    ["token", "of three", "stays"],
+    ["max_tokens", "4096"],
+  ]);
+  expect(
+    maskSecretFields([
+      { name: "Authorization", value: "fake a" },
+      { Key: "x-api-key", Value: { raw: "fake b", n: 1 } },
+      { header: "Cookie", value: "sid=fake", sent: true },
+      { name: "Accept", value: "text/plain" },
+      { name: "next_page_token", value: "fake-cursor" },
+      { title: "password", value: "of another field" },
+    ]),
+  ).toEqual([
+    { name: "Authorization", value: "***" },
+    { Key: "x-api-key", Value: { raw: "***", n: 1 } },
+    { header: "Cookie", value: "***", sent: true },
+    { name: "Accept", value: "text/plain" },
+    { name: "next_page_token", value: "fake-cursor" },
+    { title: "password", value: "of another field" },
+  ]);
+});
+
 test("a credential written as JSON inside a string is masked, however many times that string was written as JSON", () => {
   // One backslash before each quote, then three, then seven: JSON in JSON in JSON.
   for (const name of ["token", "access_token", "api_key", "password", "secret"]) {

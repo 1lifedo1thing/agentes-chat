@@ -13,6 +13,7 @@ import { createLogger } from "../src/logger";
 import { createOperatorApp, type OperatorDeps } from "../src/operator/app";
 import { poison } from "./canary";
 import { browser, createTestServer, joinByInvitation, seedOrg, signUp, type TestServer } from "./harness";
+import { SECRET_SHAPES, shownIn } from "./secret-shapes";
 
 /**
  * The operator API's reveal door (ADR 0056): one field of one record, with a reason, for a member who asked for
@@ -1327,6 +1328,28 @@ test("masking: a credential written as JSON inside a string is gone, at any dept
       String.raw`its copy {\\\\\\\"secret\\\\\\\":***,\\\\\\\"n\\\\\\\":1}`,
     ].join("\n"),
   });
+});
+
+test("masking: a record's texts are read as they are, not as JSON writes them, in a call's input and in a result kept as a string", async () => {
+  const mine = { requestId: requests.owner };
+  const put = (seq: number, data: Record<string, unknown>) =>
+    db
+      .update(schema.agentRunSteps)
+      .set({ data: { toolUseId: "a", name: "fetch", ...data } })
+      .where(and(eq(schema.agentRunSteps.runId, runs.failed), eq(schema.agentRunSteps.seq, seq)));
+  const wrong: unknown[] = [];
+  for (const [shape, record, stays] of SECRET_SHAPES) {
+    await put(1, { input: record });
+    await put(2, { content: JSON.stringify(record) });
+    for (const [seq, field] of [
+      [1, "input"],
+      [2, "result"],
+    ] as const) {
+      const { shows, lacks } = shownIn(await text(step(runs.failed, seq, field, mine)), stays);
+      if (shows.length + lacks.length > 0) wrong.push({ shape, field, shows, lacks });
+    }
+  }
+  expect(wrong).toEqual([]);
 });
 
 test("a window of one never stops before a pair; a character the record can't hold is left out of it, not a failure", async () => {

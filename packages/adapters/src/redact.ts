@@ -75,16 +75,62 @@ export function redactCommon(text: string): string {
     .replace(NAMED_VALUE, "$1***");
 }
 
+/** An option named for a secret, as one text of a list of arguments (`--password`, `-api-key`). */
+const OPTION = new RegExp(`^--?[\\w-]*(?:${NAME})[\\w-]*$`, "i");
+/** The fields of a record that hold the name its `value` goes by (`{"name": "Authorization", "value": "…"}`). */
+const NAMING = /^(?:name|key|header)$/i;
+/** How many times a text that is itself JSON is opened, and the longest text opened: the time stays linear. */
+const JSON_DEPTH = 4;
+const JSON_CHARS = 1_000_000;
+
+/** A text that is itself a JSON record or list, its credentials masked; undefined when it is not one, or holds none. */
+function maskedJson(text: string, rule: (text: string) => string, depth: number): string | undefined {
+  if (depth >= JSON_DEPTH || text.length > JSON_CHARS || !/^\s*[[{]/.test(text)) return undefined;
+  try {
+    const record: unknown = JSON.parse(text);
+    const masked = JSON.stringify(maskSecretFields(record, rule, false, depth + 1));
+    // Written back only when something was masked: writing it again drops its layout and rounds its long numbers.
+    return masked === JSON.stringify(record) ? undefined : masked;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
- * A value with every text under a field named for a credential masked, at any depth: in text, a value with spaces
- * is masked only up to its first space. A number, `true`, `false` or `null` stays: it is a count or a switch.
+ * A record with its credentials masked at any depth, before it is written as text. Under a field named for a
+ * credential every text is masked: in text, a value with spaces is masked only up to its first space. A number,
+ * `true`, `false` or `null` stays: it is a count or a switch. So is the text after an option named for a secret in a
+ * list (`["--password", "…"]`), the second of a pair and the `value` of a record whose name is a credential's
+ * (`["x-api-key", "…"]`, `{"name": "Authorization", "value": "…"}`). Every other text goes through `rule` as itself:
+ * written as JSON its line ends and quotes are backslashes, and a rule for text reads one long word. A text that is
+ * itself JSON (a result kept as a string, a body inside a body) is opened, masked the same way and written back.
  */
-export function maskSecretFields(value: unknown, named = false): unknown {
-  if (typeof value === "string") return named && value ? "***" : value;
-  if (Array.isArray(value)) return value.map((v) => maskSecretFields(v, named));
+export function maskSecretFields(
+  value: unknown,
+  rule: (text: string) => string = (text) => text,
+  named = false,
+  depth = 0,
+): unknown {
+  const inner = (v: unknown, secret: boolean) => maskSecretFields(v, rule, named || secret, depth);
+  if (typeof value === "string") {
+    if (named) return value && "***";
+    return maskedJson(value, rule, depth) ?? rule(value);
+  }
+  if (Array.isArray(value)) {
+    const [name, second] = value;
+    const pair = value.length === 2 && typeof name === "string" && typeof second === "string" && FIELD_NAME.test(name);
+    return value.map((v, i) => {
+      const before: unknown = value[i - 1];
+      const optionValue =
+        typeof v === "string" && !v.startsWith("-") && typeof before === "string" && OPTION.test(before);
+      return inner(v, optionValue || (pair && i === 1));
+    });
+  }
   if (!value || typeof value !== "object") return value;
+  const entries = Object.entries(value);
+  const namesOne = entries.some(([key, v]) => NAMING.test(key) && typeof v === "string" && FIELD_NAME.test(v));
   return Object.fromEntries(
-    Object.entries(value).map(([key, v]) => [key, maskSecretFields(v, named || FIELD_NAME.test(key))]),
+    entries.map(([key, v]) => [key, inner(v, FIELD_NAME.test(key) || (namesOne && /^value$/i.test(key)))]),
   );
 }
 

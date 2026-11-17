@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { DESKTOP_TEXT_PROTOCOL } from "@agenteschat/adapters";
-import { schema } from "@agenteschat/db";
+import { eq, schema } from "@agenteschat/db";
 import {
+  addRunStep,
   createSessionScreening,
   enableOperatorEvents,
   grantScopes,
@@ -13,6 +14,7 @@ import {
 import { createLogger } from "../src/logger";
 import { createOperatorApp } from "../src/operator/app";
 import { type Browser, browser, createTestServer, ORIGIN, seedOrg, signUp, type TestServer } from "./harness";
+import { SECRET_SHAPES, shownIn } from "./secret-shapes";
 
 const TOKEN = "operator-test-token-".padEnd(48, "x");
 
@@ -242,6 +244,26 @@ test("a run's review: a count of tokens reads as it is, and a credential written
     expect(text).toContain(shown);
   }
   expectNoSecret(text);
+});
+
+test("a run's review: a record's texts are read as they are, not as JSON writes them, in a call's input and in a result kept as a string", async () => {
+  const runId = await runFor("@dev look it up once more");
+  const wrong: unknown[] = [];
+  for (const [shape, record, stays] of SECRET_SHAPES) {
+    // Each shape alone in the run: the block cuts a call's input at 600 characters.
+    await t.db.delete(schema.agentRunSteps).where(eq(schema.agentRunSteps.runId, runId));
+    const run = { id: runId, orgId: org.orgId };
+    await addRunStep(t.db, run, "tool_call", { toolUseId: "s", name: "fetch", input: record });
+    await addRunStep(t.db, run, "tool_result", { toolUseId: "s", name: "fetch", content: JSON.stringify(record) });
+    const { text } = await body<{ text: string }>(await review(`run/${runId}`));
+    const [input = "", result = ""] =
+      text.split("Tool call 1: fetch")[1]?.split('<external_data source="tool result">') ?? [];
+    for (const [field, said] of Object.entries({ input, result })) {
+      const { shows, lacks } = shownIn(said, stays);
+      if (shows.length + lacks.length > 0) wrong.push({ shape, field, shows, lacks });
+    }
+  }
+  expect(wrong).toEqual([]);
 });
 
 test("the review block holds at most 12 KB, keeps the request and the reply, and says what it left out", async () => {

@@ -1,4 +1,3 @@
-import { maskSecretFields } from "@agenteschat/adapters";
 import { and, type Database, eq, gt, isNull, rowsOf, schema, sql } from "@agenteschat/db";
 import { requireAgentDetails } from "./audience";
 import { recordAudit } from "./audit";
@@ -8,7 +7,7 @@ import { cutText, pgSafeText } from "./format";
 import { requireUsageAccess } from "./management";
 import { recordContentViewed } from "./operator-events";
 import { listedOf } from "./operator-paging";
-import { inputLines } from "./operator-review";
+import { inputLines, keptText } from "./operator-review";
 import { runShownSql } from "./operator-runs";
 import { getMembership, requirePermission } from "./organizations";
 import { ROUTINE_ROOM_PREFIX } from "./routine-brief";
@@ -233,12 +232,11 @@ const findMessage: Find = async (db, orgId, { id }) => {
 
 /** What a step holds under each field; null where its kind has no such field. */
 function stepText(kind: string, data: Record<string, unknown>, field: string): string | null {
-  const said = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : JSON.stringify(maskSecretFields(v)));
   if (field === "input") return kind === "tool_call" ? inputLines(data.input) : null;
-  if (field === "result") return kind === "tool_result" ? said(data.content) : null;
-  if (field === "narration") return kind === "model_call" ? said(data.narration) : null;
-  if (kind === "tool_result") return data.isError === true ? said(data.content) : null;
-  return kind === "error" ? [data.reason, data.message].filter(Boolean).map(said).join(": ") : null;
+  if (field === "result") return kind === "tool_result" ? keptText(data.content) : null;
+  if (field === "narration") return kind === "model_call" ? keptText(data.narration) : null;
+  if (kind === "tool_result") return data.isError === true ? keptText(data.content) : null;
+  return kind === "error" ? [data.reason, data.message].filter(Boolean).map(keptText).join(": ") : null;
 }
 
 const findStep: Find = async (db, orgId, { id, seq, field }) => {
