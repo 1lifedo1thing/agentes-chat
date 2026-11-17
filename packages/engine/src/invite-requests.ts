@@ -1750,8 +1750,9 @@ export async function turnOffInviteLink(deps: Deps, actorId: string, orgId: stri
 }
 
 /**
- * Daily: deletes requests answered, closed or run out more than 90 days ago, and closes the admins' notices of
- * workspaces where nothing waits anymore (requests that ran out). Codes go a day after both their times pass, their
+ * Daily: closes the outside collaborators' requests that ran out, each told once to the operator
+ * (`outside_access.ended`, ADR 0191), deletes requests answered, closed or run out more than 90 days ago, and closes
+ * the admins' notices of workspaces where nothing waits anymore (requests that ran out). Codes go a day after both their times pass, their
  * counts after a day, and so does a code's email the job couldn't delete (a worker that died sending it). Returns
  * how many requests were deleted.
  */
@@ -1786,6 +1787,17 @@ export async function pruneJoinRequests(deps: Deps, now = new Date()) {
         and(ne(requests.status, "pending"), lt(requests.decidedAt, dayAgo), isNotNull(requests.claimHash)),
       ),
     );
+  await deps.db.transaction(async (tx) => {
+    const ranOut = await tx
+      .update(requests)
+      .set({ status: "closed", decidedAt: requests.expiresAt, passwordHash: null })
+      .where(and(pending, lt(requests.expiresAt, now), isNotNull(requests.outsideOf), isNotNull(requests.userId)))
+      .returning({ orgId: requests.orgId, userId: requests.userId });
+    await recordOperatorEvent(
+      tx,
+      ...ranOut.map((r) => ({ type: "outside_access.ended" as const, orgId: r.orgId, data: { userId: r.userId } })),
+    );
+  });
   const cutoff = new Date(now.getTime() - JOIN_REQUEST_KEEP_DAYS * DAY_MS);
   const gone = await deps.db
     .delete(requests)

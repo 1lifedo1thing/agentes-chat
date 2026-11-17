@@ -40,7 +40,8 @@ workspace could not let them in at all. A self-hosted server sets no limit, so i
    operator named the account, so nothing is left for its address to prove. Whoever may invite people is told the way
    they are told of someone asking through a link (the merged notice, its push, the hour's email) and approves, with
    the roles, channels and agents they choose, or denies. An approval lets that account in at once, into a full
-   workspace too, and never sends an email invitation. The request closes unanswered after 14 days, as any does.
+   workspace too, and never sends an email invitation. The request closes unanswered after 14 days, as any does; the
+   daily sweep of requests to join (`pruneJoinRequests`) then marks it `closed`, so the operator is told once.
    Asking again while it waits changes nothing and answers the same request; an account already in the workspace is
    refused (`join.member`), and so is one whose address has another request waiting (`join.waiting`), which is
    answered first. An account blocked or waiting for its deletion is refused (`outside_access.account_closed`), as
@@ -58,8 +59,10 @@ workspace could not let them in at all. A self-hosted server sets no limit, so i
 7. **What the operator reads.** `GET /orgs/{orgId}/outside-access` lists `{ userId, outsideOf, state, since }`,
    `state` being `pending` or `member`. The events feed (ADR 0056 §5) gets `outside_access.granted` when a request is
    approved, `outside_access.denied` when it is denied, and `outside_access.ended` when an outside collaborator leaves,
-   is removed by anyone or deletes their account, and when their waiting request is closed through the `DELETE`
-   above; each with `orgId` and `data: { userId }`.
+   is removed by anyone or deletes their account, and when their waiting request is over without an answer: closed
+   through the `DELETE` above, closed at an approval because the account was blocked or is being deleted, run out
+   (told by the daily sweep, so up to a day late) or gone with the account's deletion; each with `orgId` and
+   `data: { userId }`, once per request.
 8. **What the workspace reads.** `outsideOf` on a member (`GET …/members`, `GET …/people`) and on a request to join
    (`GET …/join-requests`), optional so that an app reading an older server still parses. In the audit log,
    `join_request.approved`, `member.removed` and `member.left` carry `outsideOf` in their details for these people.

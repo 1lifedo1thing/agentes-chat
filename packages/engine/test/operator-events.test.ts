@@ -18,6 +18,7 @@ import {
   listOperatorEvents,
   type OperatorEvent,
   postPersonMessage,
+  pruneJoinRequests,
   pruneOperatorEvents,
   recordAccountFailure,
   recordOperatorEvent,
@@ -448,4 +449,35 @@ test("outside access (ADR 0191): ending an ordinary member's is refused before a
     .where(eq(schema.organizationJoinRequests.id, request.id));
   expect(row?.status).toBe("pending");
   expect((await allEvents(f.db)).filter((e) => e.type.startsWith("outside_access."))).toEqual([]);
+});
+
+test("outside access (ADR 0191): a request that runs out, or goes with its account, is told as ended once", async () => {
+  const f = await setup();
+  close = f.close;
+  enableOperatorEvents();
+  const deps = { db: f.db, pubsub: f.pubsub, publicUrl: "https://agentes.test" };
+  const now = new Date();
+  const [hal, ivy] = [await addUser(f.db, "hal"), await addUser(f.db, "ivy")];
+  for (const u of [hal, ivy]) {
+    await requestOutsideAccess(deps, { orgId: f.org.id, userId: u.id, outsideOf: "Example Consulting" }, now);
+  }
+  const ended = async () =>
+    (await allEvents(f.db)).filter((e) => e.type === "outside_access.ended").map((e) => [e.orgId, e.data]);
+
+  await pruneJoinRequests(deps, now);
+  expect(await ended()).toEqual([]);
+  const after = new Date(now.getTime() + 15 * 86_400_000);
+  await pruneJoinRequests(deps, after);
+  await pruneJoinRequests(deps, after);
+  expect(await ended()).toEqual([
+    [f.org.id, { userId: hal.id }],
+    [f.org.id, { userId: ivy.id }],
+  ]);
+
+  const jon = await addUser(f.db, "jon");
+  await requestOutsideAccess(deps, { orgId: f.org.id, userId: jon.id, outsideOf: "Example Consulting" });
+  await deleteAccount(f.db, jon.id);
+  // Told as over already: the account going says nothing more.
+  await deleteAccount(f.db, hal.id);
+  expect((await ended()).slice(2)).toEqual([[f.org.id, { userId: jon.id }]]);
 });
