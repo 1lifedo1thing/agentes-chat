@@ -21,6 +21,7 @@ import {
   DialogFooter,
   Field,
   Icon,
+  type IconName,
   InfoHint,
   JourneyScene,
   normalizeAppearance,
@@ -42,6 +43,7 @@ import type { ImportFlowState } from "@/components/ImportFlow";
 import { EXPORT_PROMPT, IMPORT_ACCEPT } from "@/lib/import";
 import {
   cardName,
+  computerPaths,
   defaultMethod,
   droppedFiles,
   type ImportCard,
@@ -85,30 +87,43 @@ const STUCK_MS = 2 * 60_000;
 /**
  * This server's MCP way in and the way on screen for a source (the flow's own by default), which an embedder reads to
  * say what the step asks. Prompt only for an app that takes no MCP, where MCP can't work now (`aiAppImport`), or when
- * this server's address couldn't be read. An app on the person's computer brings its team with the command, never
- * MCP (ADR 0055, addendum 2026-11-16). Null while it loads, so the default never changes under the person.
+ * this server's address couldn't be read. An app on the person's computer lists its ways (`paths`: the command, its own
+ * agent through MCP, its agent writing the export) and has none until the person picks one, unless the command is its
+ * only one (ADR 0055, addenda 2026-11-16). Null while it loads, so the default never changes under the person.
  */
 export function useImportMethod(flow: ImportFlowState, orgId: string, of: ImportCard | null = flow.card) {
   const { t } = useTranslation();
   const apps = useApps(orgId);
   const standing = useMe().data?.organizations.find((o) => o.id === orgId)?.standing;
   const mcp = aiAppImport(t, apps.data, standing);
-  const card = isComputerCard(of) ? null : of;
-  const method: ImportMethod | null =
-    !card || !mcpClient(card)
-      ? "prompt"
-      : mcp
-        ? ((mcp.available ? flow.methods[card] : undefined) ?? defaultMethod(card, mcp.available))
-        : apps.isError
-          ? "prompt"
+  // Whether apps on the internet reach this server: unknown while it loads, no when that read failed.
+  const reachable = mcp ? mcp.available : apps.isError ? false : null;
+  if (isComputerCard(of)) {
+    const paths = reachable === null && mcpClient(of) ? null : computerPaths(of, reachable === true);
+    const picked = flow.methods[of];
+    const method: ImportMethod | null = !paths
+      ? null
+      : picked && paths.includes(picked)
+        ? picked
+        : paths.length === 1
+          ? "command"
           : null;
-  return { mcp, method };
+    return { mcp, method, paths };
+  }
+  const method: ImportMethod | null =
+    !of || !mcpClient(of)
+      ? "prompt"
+      : reachable === null
+        ? null
+        : ((reachable ? flow.methods[of] : undefined) ?? defaultMethod(of, reachable));
+  return { mcp, method, paths: null };
 }
 
 /**
  * Bringing a team in, as one sheet over the import whatever the source (ADR 0055, addendum 2026-11-16). Before
  * anything is read, the source's own way: the MCP steps where the app makes the agents itself, the request and its
- * answer where it doesn't, the request for a coding assistant (or the command) for an app on the person's computer,
+ * answer where it doesn't, the ways of an app on the person's computer (the command, its own agent through MCP, or
+ * the request) as a list that opens each one's steps,
  * where to download the file for another workspace, and a drop zone and a paste field for a file or link from any
  * app. Then who is coming and the arrival, the same for all. The crossing on top follows along: the team waits in the
  * desert, walks while the person looks at what comes, and is here once it's made. The reading, the plan and the apply
@@ -141,14 +156,16 @@ export function ImportSheet({
   // Choosing what comes, a step at a time, once there is a plan.
   const choice = useChoiceSheet({ flow, standalone, todos, apply, onClose });
   const card = shown === "file" ? null : shown;
-  const { mcp, method } = useImportMethod(flow, orgId, card);
+  const { mcp, method, paths } = useImportMethod(flow, orgId, card);
+  const client = card ? mcpClient(card) : undefined;
 
   const planned = flow.planned;
   // The MCP steps of an app that makes the agents here itself: what it made since they showed.
-  const viaMcp = !planned && isRequestCard(card) && method === "mcp" && mcp?.available === true;
+  const viaMcp = !planned && method === "mcp" && mcp?.available === true && client !== undefined;
   const arrived = viaMcp ? flow.arrived : [];
   const stage = planned ? (flow.report ? "here" : "go") : arrived.length > 0 ? "here" : "wait";
   const names = new Intl.ListFormat(i18n.language, { style: "long", type: "conjunction" });
+  const app = card === null ? "" : isComputerCard(card) ? computerApp(card) : cardName(t, card);
 
   let title =
     shown === "file"
@@ -157,100 +174,120 @@ export function ImportSheet({
         ? t("onboarding.import.sheet.workspaceTitle")
         : shown === "other"
           ? t("onboarding.import.sheet.otherTitle")
-          : t("onboarding.import.sheet.title", {
-              app: isComputerCard(shown) ? computerApp(shown) : cardName(t, shown),
-            });
+          : t("onboarding.import.sheet.title", { app });
   let body: ReactNode = null;
   let foot: ReactNode = null;
+  // A way an app on the computer offers among others: Back goes to the list of them.
+  const back =
+    isComputerCard(card) && (paths?.length ?? 0) > 1 ? (
+      <DialogFooter>
+        <Button size="lg" block icon="chevronLeft" onClick={() => flow.setMethod(card, null)}>
+          {t("common.back")}
+        </Button>
+      </DialogFooter>
+    ) : null;
+  const loading = (
+    <p className="imp-sheet__wait" role="status">
+      <Spinner />
+    </p>
+  );
 
   if (!planned) {
-    if (isComputerCard(card)) {
-      body = <ComputerAsk flow={flow} card={card} app={computerApp(card)} />;
+    if (viaMcp && mcp && client && card && arrived.length > 0) {
+      title = t("onboarding.import.aiApp.arrived", { count: arrived.length });
+      body = (
+        <>
+          <McpWatch flow={flow} />
+          <p className="imp-sheet__text">
+            {card === "other"
+              ? t("onboarding.import.sheet.arrivedMoreAny")
+              : t("onboarding.import.sheet.arrivedMore", { app })}
+          </p>
+          <ul className="imp-team">
+            {arrived.map((a) => (
+              <li key={a.id} className="ac-mediarow ac-mediarow--row">
+                <span className="ac-mediarow__face">
+                  <AgentAvatar name={a.name} appearance={normalizeAppearance(a.appearance)} size="sm" />
+                </span>
+                <span className="ac-mediarow__head">
+                  <b>
+                    {standalone ? (
+                      <Link
+                        to="/org/$orgId/agents/$agentId"
+                        params={{ orgId, agentId: a.id }}
+                        className="imp-team__link"
+                      >
+                        {a.name}
+                      </Link>
+                    ) : (
+                      a.name
+                    )}
+                  </b>
+                  {a.role && <span className="ac-mediarow__meta">{a.role}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Waiting flow={flow} more />
+        </>
+      );
+      foot = (
+        <DialogFooter>
+          {standalone ? (
+            <Button asChild variant="primary" size="lg" block>
+              <Link to="/org/$orgId/team" params={{ orgId }}>
+                {t("onboarding.import.sheet.see")}
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="primary" size="lg" block onClick={onClose}>
+              {t("common.continue")}
+            </Button>
+          )}
+        </DialogFooter>
+      );
+    } else if (viaMcp && mcp && client && card) {
+      if (isComputerCard(card)) title = t("onboarding.import.sheet.paths.mcp.title", { app });
+      body = (
+        <>
+          <McpWatch flow={flow} />
+          <McpAsk flow={flow} card={card} app={app} client={client} url={mcp.url} prompt={mcp.prompt} />
+        </>
+      );
+      foot = isComputerCard(card) ? (
+        back
+      ) : (
+        <DialogFooter>
+          <p className="imp-sheet__alt">
+            <button type="button" className="ac-link" onClick={() => flow.setMethod(card, "prompt")}>
+              {t("onboarding.import.sheet.useRequest")}
+            </button>
+          </p>
+        </DialogFooter>
+      );
+    } else if (isComputerCard(card)) {
+      if (paths === null) body = loading;
+      else if (method === null) {
+        body = <PathList app={app} paths={paths} onPick={(path) => flow.setMethod(card, path)} />;
+      } else if (method === "prompt") {
+        title = t("onboarding.import.sheet.paths.prompt.title", { app });
+        body = <RequestAsk flow={flow} card={card} app={app} note={null} />;
+        foot = back;
+      } else {
+        if (back) title = t("onboarding.import.sheet.paths.command.title");
+        body = <ComputerAsk flow={flow} card={card} app={app} />;
+        foot = back;
+      }
     } else if (shown === "file") {
       body = <FileAsk flow={flow} />;
     } else if (shown === "agenteschat") {
       body = <WorkspaceAsk flow={flow} orgId={orgId} />;
     } else if (isRequestCard(shown)) {
-      const client = mcpClient(shown);
-      if (method === null) {
+      if (method === null) body = loading;
+      else {
         body = (
-          <p className="imp-sheet__wait" role="status">
-            <Spinner />
-          </p>
+          <RequestAsk flow={flow} card={shown} app={app} note={client && mcp && !mcp.available ? mcp.note : null} />
         );
-      } else if (viaMcp && client && mcp?.available) {
-        if (arrived.length === 0) {
-          body = (
-            <>
-              <McpWatch flow={flow} />
-              <McpAsk flow={flow} card={shown} client={client} url={mcp.url} prompt={mcp.prompt} />
-            </>
-          );
-          foot = (
-            <DialogFooter>
-              <p className="imp-sheet__alt">
-                <button type="button" className="ac-link" onClick={() => flow.setMethod(shown, "prompt")}>
-                  {t("onboarding.import.sheet.useRequest")}
-                </button>
-              </p>
-            </DialogFooter>
-          );
-        } else {
-          title = t("onboarding.import.aiApp.arrived", { count: arrived.length });
-          body = (
-            <>
-              <McpWatch flow={flow} />
-              <p className="imp-sheet__text">
-                {shown === "other"
-                  ? t("onboarding.import.sheet.arrivedMoreAny")
-                  : t("onboarding.import.sheet.arrivedMore", { app: cardName(t, shown) })}
-              </p>
-              <ul className="imp-team">
-                {arrived.map((a) => (
-                  <li key={a.id} className="ac-mediarow ac-mediarow--row">
-                    <span className="ac-mediarow__face">
-                      <AgentAvatar name={a.name} appearance={normalizeAppearance(a.appearance)} size="sm" />
-                    </span>
-                    <span className="ac-mediarow__head">
-                      <b>
-                        {standalone ? (
-                          <Link
-                            to="/org/$orgId/agents/$agentId"
-                            params={{ orgId, agentId: a.id }}
-                            className="imp-team__link"
-                          >
-                            {a.name}
-                          </Link>
-                        ) : (
-                          a.name
-                        )}
-                      </b>
-                      {a.role && <span className="ac-mediarow__meta">{a.role}</span>}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <Waiting flow={flow} more />
-            </>
-          );
-          foot = (
-            <DialogFooter>
-              {standalone ? (
-                <Button asChild variant="primary" size="lg" block>
-                  <Link to="/org/$orgId/team" params={{ orgId }}>
-                    {t("onboarding.import.sheet.see")}
-                  </Link>
-                </Button>
-              ) : (
-                <Button variant="primary" size="lg" block onClick={onClose}>
-                  {t("common.continue")}
-                </Button>
-              )}
-            </DialogFooter>
-          );
-        }
-      } else {
-        body = <RequestAsk flow={flow} card={shown} note={client && mcp && !mcp.available ? mcp.note : null} />;
         if (client && mcp?.available) {
           foot = (
             <DialogFooter>
@@ -622,12 +659,15 @@ function Waiting({ flow, more = false }: { flow: ImportFlowState; more?: boolean
 function McpAsk({
   flow,
   card,
+  app,
   client,
   url,
   prompt,
 }: {
   flow: ImportFlowState;
-  card: RequestCard;
+  card: ImportCard;
+  /** The app's name in a sentence. */
+  app: string;
   client: NonNullable<ReturnType<typeof mcpClient>>;
   url: string;
   prompt: string;
@@ -642,7 +682,7 @@ function McpAsk({
           ? t("onboarding.import.aiApp.leadAny")
           : card === "chatgpt-dots"
             ? t("onboarding.import.aiApp.leadDots")
-            : t("onboarding.import.aiApp.lead", { app: cardName(t, card) })}
+            : t("onboarding.import.aiApp.lead", { app })}
       </p>
       {guide.lead && <p className="small muted">{t(`apps.dialog.${guide.lead}`)}</p>}
       <GuideInstalls steps={guide.steps} />
@@ -676,20 +716,36 @@ function McpAsk({
 
 /**
  * The export request to paste in the app, then what it gives back: Grok Bot answers in its chat (pasted here), a dot
- * makes a file (dropped here), any other app either. `note`: why MCP isn't offered, where the app takes it.
+ * makes a file (dropped here), any other app (and one on the computer, asked in a chat with one of its agents) either.
+ * `note`: why MCP isn't offered, where the app takes it.
  */
-function RequestAsk({ flow, card, note }: { flow: ImportFlowState; card: RequestCard; note: string | null }) {
+function RequestAsk({
+  flow,
+  card,
+  app,
+  note,
+}: {
+  flow: ImportFlowState;
+  card: RequestCard | ComputerCard;
+  /** The app's name in a sentence. */
+  app: string;
+  note: string | null;
+}) {
   const { t } = useTranslation();
+  const words = isComputerCard(card) ? "computer" : card;
+  const copied = isComputerCard(card) ? "other" : card;
   return (
     <>
-      {card !== "other" && <p className="imp-sheet__text">{t(`onboarding.import.sheet.request.${card}.lead`)}</p>}
+      {words !== "other" && (
+        <p className="imp-sheet__text">{t(`onboarding.import.sheet.request.${words}.lead`, { app })}</p>
+      )}
       <ol className="imp-do">
-        <Step n={1} title={t(`onboarding.import.sheet.request.${card}.copyStep`)}>
+        <Step n={1} title={t(`onboarding.import.sheet.request.${words}.copyStep`, { app })}>
           <RequestBox
             text={EXPORT_PROMPT}
             label={t("onboarding.import.request.prompt")}
             copy={t("onboarding.import.request.copy")}
-            copied={t(`onboarding.import.request.${card}.copied`)}
+            copied={t(`onboarding.import.request.${copied}.copied`)}
           />
           {card === "other" && (
             <span className="imp-do__alt">
@@ -699,7 +755,7 @@ function RequestAsk({ flow, card, note }: { flow: ImportFlowState; card: Request
             </span>
           )}
         </Step>
-        <Step n={2} title={t(`onboarding.import.sheet.request.${card}.answerStep`)}>
+        <Step n={2} title={t(`onboarding.import.sheet.request.${words}.answerStep`)}>
           {flow.busy !== null ? (
             <Reading flow={flow} />
           ) : (
@@ -711,11 +767,11 @@ function RequestAsk({ flow, card, note }: { flow: ImportFlowState; card: Request
                   help={t("onboarding.import.dropHelp")}
                 />
               )}
-              {card !== "chatgpt-dots" && (
+              {words !== "chatgpt-dots" && (
                 <PasteInput
                   flow={flow}
-                  label={t(`onboarding.import.sheet.request.${card}.answerStep`)}
-                  placeholder={t(`onboarding.import.sheet.request.${card}.answerPlaceholder`)}
+                  label={t(`onboarding.import.sheet.request.${words}.answerStep`)}
+                  placeholder={t(`onboarding.import.sheet.request.${words}.answerPlaceholder`, { app })}
                 />
               )}
             </>
@@ -732,6 +788,57 @@ function RequestAsk({ flow, card, note }: { flow: ImportFlowState; card: Request
       <p className="imp-note ac-iconline">
         <Icon name="lock" size={16} />
         <span>{t("onboarding.import.sheet.readHere")}</span>
+      </p>
+    </>
+  );
+}
+
+/** What each way of an app on the computer looks like in its list. */
+const PATH_ICON: Record<ImportMethod, IconName> = { command: "code", mcp: "plug", prompt: "message" };
+
+/**
+ * An app on the computer's ways, each a row that opens its steps: what it brings and what it needs on its line, the
+ * command (the one that brings the most) first.
+ */
+function PathList({
+  app,
+  paths,
+  onPick,
+}: {
+  app: string;
+  paths: readonly ImportMethod[];
+  onPick: (path: ImportMethod) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <p className="imp-sheet__text">{t("onboarding.import.sheet.paths.lead")}</p>
+      <ul className="imp-rows imp-choice imp-paths">
+        {paths.map((path) => (
+          <li key={path} className="imp-row imp-row--opens">
+            <button type="button" className="imp-row__open" onClick={() => onPick(path)}>
+              <span className="imp-row__lead" aria-hidden="true">
+                <Icon name={PATH_ICON[path]} size={16} />
+              </span>
+              <span className="imp-row__text">
+                <span className="imp-row__title">
+                  {t(`onboarding.import.sheet.paths.${path}.title`, { app })}
+                  {path === "command" && (
+                    <span className="imp-paths__best"> {t("onboarding.import.sheet.paths.best")}</span>
+                  )}
+                </span>
+                <span className="imp-row__line">{t(`onboarding.import.sheet.paths.${path}.line`)}</span>
+              </span>
+              <span className="imp-row__go" aria-hidden="true">
+                <Icon name="chevronRight" size={16} />
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <p className="imp-note ac-iconline">
+        <Icon name="lock" size={16} />
+        <span>{t("onboarding.import.sheet.paths.safe", { app })}</span>
       </p>
     </>
   );

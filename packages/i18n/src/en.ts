@@ -1329,6 +1329,23 @@ export const en = {
         workspaceTitle: "Bring them from another workspace",
         fileTitle: "Bring them from a file or link",
         fileLead: "The file from any app we know. It is recognized on its own.",
+        paths: {
+          lead: "Choose how to bring them. You check everything before anything is made.",
+          best: "the most complete",
+          safe: "{{app}}'s keys, passwords and sessions never come, whichever way you pick.",
+          command: {
+            title: "With a command",
+            line: "Brings everything, files and workflows too. Through a coding assistant or the terminal",
+          },
+          mcp: {
+            title: "Connecting {{app}}",
+            line: "It creates the agents here through MCP. No files or workflows",
+          },
+          prompt: {
+            title: "Asking {{app}}",
+            line: "It writes down what it knows and you paste it here. No files or workflows",
+          },
+        },
         useRequest: "I'd rather paste the request and bring back the answer",
         backToMcp: "Back to MCP",
         waitingMore: "Waiting for the next ones…",
@@ -1351,6 +1368,12 @@ export const en = {
             copyStep: "Paste it in a new conversation in the other app",
             answerStep: "Drop the file it gives back, or paste its answer",
             answerPlaceholder: "The answer, or a GitHub link",
+          },
+          computer: {
+            lead: "An agent of {{app}} writes down what it knows in a file, and you check it before anything is made.",
+            copyStep: "In a chat with an agent of {{app}}, paste this request",
+            answerStep: "Drop the file it makes, or paste its answer",
+            answerPlaceholder: "{{app}}'s answer",
           },
         },
         workspace: {

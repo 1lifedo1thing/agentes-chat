@@ -1203,6 +1203,23 @@
         "workspaceTitle": "Aus einem anderen Workspace holen",
         "fileTitle": "Aus einer Datei oder einem Link holen",
         "fileLead": "Die Datei aus jeder App, die wir kennen. Sie wird von selbst erkannt.",
+        "paths": {
+          "lead": "Wähle, wie du sie holst. Du prüfst alles, bevor etwas angelegt wird.",
+          "best": "am vollständigsten",
+          "safe": "Schlüssel, Passwörter und Sitzungen aus {{app}} kommen nie mit, egal auf welchem Weg.",
+          "command": {
+            "title": "Mit einem Befehl",
+            "line": "Bringt alles mit, auch Dateien und Workflows. Über einen Coding-Assistenten oder das Terminal"
+          },
+          "mcp": {
+            "title": "{{app}} verbinden",
+            "line": "Es legt die Agenten hier über MCP an. Ohne Dateien und Workflows"
+          },
+          "prompt": {
+            "title": "{{app}} fragen",
+            "line": "Es schreibt auf, was es weiß, und du fügst es hier ein. Ohne Dateien und Workflows"
+          }
+        },
         "useRequest": "Ich füge lieber die Anfrage ein und bringe die Antwort zurück",
         "backToMcp": "Zurück zu MCP",
         "waitingMore": "Warte auf die nächsten…",
@@ -1225,6 +1242,12 @@
             "copyStep": "Füge sie in eine neue Unterhaltung in der anderen App ein",
             "answerStep": "Leg die Datei ab, die sie liefert, oder füge ihre Antwort ein",
             "answerPlaceholder": "Die Antwort oder ein GitHub-Link"
+          },
+          "computer": {
+            "lead": "Ein Agent in {{app}} schreibt in eine Datei, was er weiß, und du prüfst sie, bevor etwas angelegt wird.",
+            "copyStep": "Füge diese Anfrage in eine Unterhaltung mit einem Agenten in {{app}} ein",
+            "answerStep": "Leg die Datei ab, die er erstellt, oder füge seine Antwort ein",
+            "answerPlaceholder": "Die Antwort aus {{app}}"
           }
         },
         "workspace": {

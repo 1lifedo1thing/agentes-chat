@@ -1250,6 +1250,23 @@ export const ptBR = {
         workspaceTitle: "Trazer de outro workspace",
         fileTitle: "Trazer de um arquivo ou link",
         fileLead: "O arquivo de qualquer app que a gente conhece. Ele é reconhecido sozinho.",
+        paths: {
+          lead: "Escolha como trazer. Você confere tudo antes de criar.",
+          best: "o mais completo",
+          safe: "Chaves, senhas e sessões do {{app}} nunca vêm, por nenhum caminho.",
+          command: {
+            title: "Com um comando",
+            line: "Traz tudo, até arquivos e workflows. Pelo assistente de código ou terminal",
+          },
+          mcp: {
+            title: "Conectando o {{app}}",
+            line: "Ele cria os agentes aqui pelo MCP. Sem arquivos nem workflows",
+          },
+          prompt: {
+            title: "Pedindo ao {{app}}",
+            line: "Ele escreve o que sabe, você cola aqui. Sem arquivos nem workflows",
+          },
+        },
         useRequest: "Prefiro colar o pedido e trazer a resposta",
         backToMcp: "Voltar para o MCP",
         waitingMore: "Esperando os próximos…",
@@ -1272,6 +1289,12 @@ export const ptBR = {
             copyStep: "Cole numa conversa nova no outro app",
             answerStep: "Solte o arquivo que ele devolver, ou cole a resposta",
             answerPlaceholder: "A resposta, ou um link do GitHub",
+          },
+          computer: {
+            lead: "Um agente do {{app}} escreve o que sabe num arquivo, e você confere antes de criar.",
+            copyStep: "Numa conversa com um agente do {{app}}, cole este pedido",
+            answerStep: "Solte o arquivo que ele criar, ou cole a resposta",
+            answerPlaceholder: "A resposta do {{app}}",
           },
         },
         workspace: {

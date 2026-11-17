@@ -1203,6 +1203,23 @@
         "workspaceTitle": "Başka bir çalışma alanından getirin",
         "fileTitle": "Bir dosyadan veya bağlantıdan getirin",
         "fileLead": "Tanıdığımız herhangi bir uygulamanın dosyası. Kendiliğinden tanınır.",
+        "paths": {
+          "lead": "Nasıl getireceğinizi seçin. Bir şey oluşturulmadan önce her şeyi kontrol edersiniz.",
+          "best": "en eksiksizi",
+          "safe": "{{app}} anahtarları, şifreleri ve oturumları hiçbir yolla gelmez.",
+          "command": {
+            "title": "Bir komutla",
+            "line": "Dosyalar ve iş akışları dahil her şeyi getirir. Bir kodlama asistanı ya da terminal üzerinden"
+          },
+          "mcp": {
+            "title": "{{app}} uygulamasını bağlayarak",
+            "line": "Ajanları MCP üzerinden burada oluşturur. Dosyalar ve iş akışları olmadan"
+          },
+          "prompt": {
+            "title": "{{app}} uygulamasından isteyerek",
+            "line": "Bildiklerini yazar, siz de buraya yapıştırırsınız. Dosyalar ve iş akışları olmadan"
+          }
+        },
         "useRequest": "İsteği yapıştırıp yanıtı getirmeyi tercih ederim",
         "backToMcp": "MCP'ye dön",
         "waitingMore": "Sıradakiler bekleniyor…",
@@ -1225,6 +1242,12 @@
             "copyStep": "Diğer uygulamada yeni bir sohbete yapıştırın",
             "answerStep": "Döndürdüğü dosyayı bırakın ya da yanıtını yapıştırın",
             "answerPlaceholder": "Yanıt ya da bir GitHub bağlantısı"
+          },
+          "computer": {
+            "lead": "{{app}} uygulamasındaki bir ajan bildiklerini bir dosyaya yazar, siz de bir şey oluşturulmadan önce kontrol edersiniz.",
+            "copyStep": "{{app}} uygulamasındaki bir ajanla bir sohbette bu isteği yapıştırın",
+            "answerStep": "Oluşturduğu dosyayı bırakın ya da yanıtını yapıştırın",
+            "answerPlaceholder": "{{app}} yanıtı"
           }
         },
         "workspace": {

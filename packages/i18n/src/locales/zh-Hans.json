@@ -1177,6 +1177,23 @@
         "workspaceTitle": "从另一个工作区导入",
         "fileTitle": "从文件或链接导入",
         "fileLead": "支持的任何应用的文件都可以，会自动识别。",
+        "paths": {
+          "lead": "选择导入方式。创建之前，你会先检查所有内容。",
+          "best": "最完整",
+          "safe": "无论选哪种方式，{{app}} 的密钥、密码和会话都不会导入。",
+          "command": {
+            "title": "用一条命令",
+            "line": "全部导入，包括文件和工作流。通过编程助手或终端"
+          },
+          "mcp": {
+            "title": "连接 {{app}}",
+            "line": "它通过 MCP 在这里创建智能体。不含文件和工作流"
+          },
+          "prompt": {
+            "title": "让 {{app}} 导出",
+            "line": "它写下所知道的内容，你粘贴到这里。不含文件和工作流"
+          }
+        },
         "useRequest": "我想改为粘贴请求，再把回复带回来",
         "backToMcp": "返回 MCP",
         "waitingMore": "正在等待后续智能体…",
@@ -1199,6 +1216,12 @@
             "copyStep": "粘贴到另一个应用的新对话中",
             "answerStep": "拖入它返回的文件，或粘贴它的回复",
             "answerPlaceholder": "回复，或 GitHub 链接"
+          },
+          "computer": {
+            "lead": "{{app}} 的智能体把它知道的内容写进一个文件，创建之前由你检查。",
+            "copyStep": "在与 {{app}} 智能体的对话中，粘贴这个请求",
+            "answerStep": "拖入它生成的文件，或粘贴它的回复",
+            "answerPlaceholder": "{{app}} 的回复"
           }
         },
         "workspace": {

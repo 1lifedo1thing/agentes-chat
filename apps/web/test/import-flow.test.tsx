@@ -1098,10 +1098,45 @@ describe("Configurações → Importar e exportar", () => {
       );
     const field = (sheet: HTMLElement, label: string) => within(sheet).getByLabelText(label) as HTMLTextAreaElement;
 
-    test("its card opens a sheet: the request for a coding assistant, or the command, for this computer's system", async () => {
+    test("its card opens its ways, the command first: each one's steps, and Back to them; the pick stays", async () => {
       await go();
       await click(button("OpenBot.run"), 6);
-      const sheet = sheetOf("Trazer o time do OpenBot");
+      const ways = sheetOf("Trazer o time do OpenBot");
+      const rows = [...ways.querySelectorAll(".imp-paths .imp-row__open")].map((b) => b.textContent);
+      expect(rows).toEqual([
+        "Com um comando o mais completoTraz tudo, até arquivos e workflows. Pelo assistente de código ou terminal",
+        "Conectando o OpenBotEle cria os agentes aqui pelo MCP. Sem arquivos nem workflows",
+        "Pedindo ao OpenBotEle escreve o que sabe, você cola aqui. Sem arquivos nem workflows",
+      ]);
+      expect(ways.textContent).toContain("Chaves, senhas e sessões do OpenBot nunca vêm, por nenhum caminho.");
+      // Nothing to drop before a way is picked.
+      expect(ways.querySelector(".imp-drop")).toBeNull();
+
+      // Its own agent creates them here through MCP: the app's steps, the request, and the wait.
+      await click(within(ways).getByRole("button", { name: /^Conectando o OpenBot/ }), 4);
+      const mcp = sheetOf("Conectando o OpenBot");
+      expect(mcp.querySelector(".imp-sheet__text")?.textContent).toBe(
+        "O MCP deixa o OpenBot acessar este workspace, e ele cria os agentes aqui sozinho.",
+      );
+      expect(within(mcp).getByLabelText("Pedido para o seu app de IA")).toBeTruthy();
+      expect(mcp.textContent).toContain("Esperando os agentes chegarem…");
+      await click(within(mcp).getByRole("button", { name: "Voltar" }), 4);
+
+      // Its agent writes the export: the request, then the file or the answer.
+      await click(within(sheetOf("Trazer o time do OpenBot")).getByRole("button", { name: /^Pedindo ao OpenBot/ }), 4);
+      const ask = sheetOf("Pedindo ao OpenBot");
+      expect(ask.textContent).toContain("Numa conversa com um agente do OpenBot, cole este pedido");
+      expect((within(ask).getByLabelText("Pedido de exportação") as HTMLTextAreaElement).value).toBe(EXPORT_PROMPT);
+      expect(within(ask).getByLabelText("Solte o arquivo que ele criar, ou cole a resposta")).toBeTruthy();
+      expect(ask.querySelector(".imp-drop")).toBeTruthy();
+      // Closed and opened again, the card is where it was left.
+      await closeSheet();
+      await click(button("OpenBot.run"), 6);
+      expect(sheetOf("Pedindo ao OpenBot")).toBeTruthy();
+      await click(within(sheetOf("Pedindo ao OpenBot")).getByRole("button", { name: "Voltar" }), 4);
+
+      await click(within(sheetOf("Trazer o time do OpenBot")).getByRole("button", { name: /^Com um comando/ }), 4);
+      const sheet = sheetOf("Com um comando");
       const request = field(sheet, "Pedido para o assistente de código").value;
       expect(request).toContain("Move my OpenBot agents to agentes.chat.");
       expect(request).toContain("Ask me where to save the export file.");
@@ -1129,15 +1164,21 @@ describe("Configurações → Importar e exportar", () => {
       expect(button("OpenBot.run").getAttribute("aria-pressed")).toBe("false");
       expect(button("Tenho um arquivo ou link")).toBeTruthy();
       await click(button("Hermes Agent"), 6);
-      expect(field(sheetOf("Trazer o time do Hermes"), "Pedido para o assistente de código").value).toContain(
-        "--from hermes",
-      );
+      await click(within(sheetOf("Trazer o time do Hermes")).getByRole("button", { name: /^Com um comando/ }), 4);
+      expect(field(sheetOf("Com um comando"), "Pedido para o assistente de código").value).toContain("--from hermes");
+      await closeSheet();
+      // Paperclip has no chat to ask in nor MCP: the command is its only way, with nothing to go back to.
+      await click(button("Paperclip"), 6);
+      const paperclip = sheetOf("Trazer o time do Paperclip");
+      expect(field(paperclip, "Pedido para o assistente de código").value).toContain("--from paperclip");
+      expect(within(paperclip).queryByRole("button", { name: "Voltar" })).toBeNull();
     });
 
     test("the file dropped there: who comes, what comes with them, the workflows; then they arrive", async () => {
       const { state } = await go();
       await click(button("OpenBot.run"), 6);
-      const input = within(sheetOf("Trazer o time do OpenBot")).getByLabelText("Arquivos para importar");
+      await click(within(sheetOf("Trazer o time do OpenBot")).getByRole("button", { name: /^Com um comando/ }), 4);
+      const input = within(sheetOf("Com um comando")).getByLabelText("Arquivos para importar");
       Object.defineProperty(input, "files", { configurable: true, value: [migrated()] });
       await act(async () => fireEvent.change(input));
       await settle(12);
@@ -1202,7 +1243,8 @@ describe("Configurações → Importar e exportar", () => {
     test("closing the sheet at a step leaves the full preview, with nothing made", async () => {
       const { state } = await go();
       await click(button("OpenBot.run"), 6);
-      const input = within(sheetOf("Trazer o time do OpenBot")).getByLabelText("Arquivos para importar");
+      await click(within(sheetOf("Trazer o time do OpenBot")).getByRole("button", { name: /^Com um comando/ }), 4);
+      const input = within(sheetOf("Com um comando")).getByLabelText("Arquivos para importar");
       Object.defineProperty(input, "files", { configurable: true, value: [migrated()] });
       await act(async () => fireEvent.change(input));
       await settle(12);

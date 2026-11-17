@@ -7,14 +7,17 @@ import type { ImportCard } from "./flow";
  * screen. Nothing is sent by the command.
  */
 
-/** The apps `migrate` reads, by their card: what `--from` takes, and the app's name in a sentence. */
+/**
+ * The apps `migrate` reads, by their card: what `--from` takes, the app's name in a sentence, and whether one of its
+ * agents can be asked for the export in a chat (Paperclip runs a company's agents, with no chat to ask in).
+ */
 const SOURCES = {
-  openbotrun: { from: "openbot", app: "OpenBot" },
-  openmausbot: { from: "openmausbot", app: "OpenMausBot" },
-  hermes: { from: "hermes", app: "Hermes" },
-  openclaw: { from: "openclaw", app: "OpenClaw" },
-  paperclip: { from: "paperclip", app: "Paperclip" },
-} as const satisfies Partial<Record<ImportCard, { from: string; app: string }>>;
+  openbotrun: { from: "openbot", app: "OpenBot", chat: true },
+  openmausbot: { from: "openmausbot", app: "OpenMausBot", chat: true },
+  hermes: { from: "hermes", app: "Hermes", chat: true },
+  openclaw: { from: "openclaw", app: "OpenClaw", chat: true },
+  paperclip: { from: "paperclip", app: "Paperclip", chat: false },
+} as const satisfies Partial<Record<ImportCard, { from: string; app: string; chat: boolean }>>;
 
 export type ComputerCard = keyof typeof SOURCES;
 
@@ -22,6 +25,9 @@ export type ComputerCard = keyof typeof SOURCES;
 export const isComputerCard = (card: ImportCard | null): card is ComputerCard => card !== null && card in SOURCES;
 
 export const computerApp = (card: ComputerCard): string => SOURCES[card].app;
+
+/** Whether the app's own agent can be asked, in a chat, to write the export. */
+export const computerChat = (card: ComputerCard): boolean => SOURCES[card].chat;
 
 /** The file `migrate` writes for a card's app. */
 export const migrateFile = (card: ComputerCard): string => `agentes-chat-import-${SOURCES[card].from}.zip`;

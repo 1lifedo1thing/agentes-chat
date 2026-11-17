@@ -1230,6 +1230,23 @@
         "workspaceTitle": "Traerlos de otro espacio de trabajo",
         "fileTitle": "Traerlos de un archivo o enlace",
         "fileLead": "El archivo de cualquier app que conocemos. Se reconoce solo.",
+        "paths": {
+          "lead": "Elige cómo traerlos. Revisas todo antes de que se cree nada.",
+          "best": "el más completo",
+          "safe": "Las claves, contraseñas y sesiones de {{app}} nunca vienen, por ningún camino.",
+          "command": {
+            "title": "Con un comando",
+            "line": "Trae todo, incluso archivos y workflows. Con un asistente de código o la terminal"
+          },
+          "mcp": {
+            "title": "Conectando {{app}}",
+            "line": "Crea los agentes aquí por MCP. Sin archivos ni workflows"
+          },
+          "prompt": {
+            "title": "Pidiéndoselo a {{app}}",
+            "line": "Escribe lo que sabe y tú lo pegas aquí. Sin archivos ni workflows"
+          }
+        },
         "useRequest": "Prefiero pegar el pedido y traer la respuesta",
         "backToMcp": "Volver a MCP",
         "waitingMore": "Esperando a los siguientes…",
@@ -1252,6 +1269,12 @@
             "copyStep": "Pégalo en una conversación nueva en la otra app",
             "answerStep": "Suelta el archivo que te devuelva, o pega su respuesta",
             "answerPlaceholder": "La respuesta, o un enlace de GitHub"
+          },
+          "computer": {
+            "lead": "Un agente de {{app}} escribe lo que sabe en un archivo, y tú lo revisas antes de que se cree nada.",
+            "copyStep": "En una conversación con un agente de {{app}}, pega este pedido",
+            "answerStep": "Suelta el archivo que cree, o pega su respuesta",
+            "answerPlaceholder": "La respuesta de {{app}}"
           }
         },
         "workspace": {

@@ -376,9 +376,15 @@ export function useImportFlow(orgId: string | null) {
     card,
     setCard,
     methods,
-    setMethod: (c: ImportCard, method: ImportMethod) => {
+    /** Picks a way for a source; null goes back to choosing one (an app on the computer's list of ways). */
+    setMethod: (c: ImportCard, method: ImportMethod | null) => {
       setFailure(null);
-      setMethods((m) => ({ ...m, [c]: method }));
+      setMethods((m) => {
+        const next = { ...m };
+        if (method) next[c] = method;
+        else delete next[c];
+        return next;
+      });
     },
     watch,
     /** The person's agents made since the source's MCP steps first showed: an embedder's way on, as `report` is. */

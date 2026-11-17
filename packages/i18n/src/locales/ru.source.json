@@ -2960,6 +2960,33 @@
   "onboarding.import.sheet.fileLead": {
     "value": "The file from any app we know. It is recognized on its own."
   },
+  "onboarding.import.sheet.paths.lead": {
+    "value": "Choose how to bring them. You check everything before anything is made."
+  },
+  "onboarding.import.sheet.paths.best": {
+    "value": "the most complete"
+  },
+  "onboarding.import.sheet.paths.safe": {
+    "value": "{{app}}'s keys, passwords and sessions never come, whichever way you pick."
+  },
+  "onboarding.import.sheet.paths.command.title": {
+    "value": "With a command"
+  },
+  "onboarding.import.sheet.paths.command.line": {
+    "value": "Brings everything, files and workflows too. Through a coding assistant or the terminal"
+  },
+  "onboarding.import.sheet.paths.mcp.title": {
+    "value": "Connecting {{app}}"
+  },
+  "onboarding.import.sheet.paths.mcp.line": {
+    "value": "It creates the agents here through MCP. No files or workflows"
+  },
+  "onboarding.import.sheet.paths.prompt.title": {
+    "value": "Asking {{app}}"
+  },
+  "onboarding.import.sheet.paths.prompt.line": {
+    "value": "It writes down what it knows and you paste it here. No files or workflows"
+  },
   "onboarding.import.sheet.useRequest": {
     "value": "I'd rather paste the request and bring back the answer"
   },
@@ -3007,6 +3034,18 @@
   },
   "onboarding.import.sheet.request.other.answerPlaceholder": {
     "value": "The answer, or a GitHub link"
+  },
+  "onboarding.import.sheet.request.computer.lead": {
+    "value": "An agent of {{app}} writes down what it knows in a file, and you check it before anything is made."
+  },
+  "onboarding.import.sheet.request.computer.copyStep": {
+    "value": "In a chat with an agent of {{app}}, paste this request"
+  },
+  "onboarding.import.sheet.request.computer.answerStep": {
+    "value": "Drop the file it makes, or paste its answer"
+  },
+  "onboarding.import.sheet.request.computer.answerPlaceholder": {
+    "value": "{{app}}'s answer"
   },
   "onboarding.import.sheet.workspace.download": {
     "value": "Download the other workspace's file"

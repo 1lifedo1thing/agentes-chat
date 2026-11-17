@@ -1177,6 +1177,23 @@
         "workspaceTitle": "Bawa dari ruang kerja lain",
         "fileTitle": "Bawa dari file atau tautan",
         "fileLead": "File dari aplikasi apa pun yang kami kenal. File itu dikenali dengan sendirinya.",
+        "paths": {
+          "lead": "Pilih cara membawanya. Kamu memeriksa semuanya sebelum apa pun dibuat.",
+          "best": "paling lengkap",
+          "safe": "Kunci, kata sandi, dan sesi {{app}} tidak pernah ikut, lewat cara apa pun.",
+          "command": {
+            "title": "Dengan perintah",
+            "line": "Membawa semuanya, termasuk file dan workflow. Lewat asisten coding atau terminal"
+          },
+          "mcp": {
+            "title": "Menghubungkan {{app}}",
+            "line": "Ia membuat agen di sini lewat MCP. Tanpa file dan workflow"
+          },
+          "prompt": {
+            "title": "Meminta ke {{app}}",
+            "line": "Ia menulis apa yang diketahuinya, lalu kamu menempelnya di sini. Tanpa file dan workflow"
+          }
+        },
         "useRequest": "Aku lebih suka menempel permintaannya dan membawa balasannya",
         "backToMcp": "Kembali ke MCP",
         "waitingMore": "Menunggu yang berikutnya…",
@@ -1199,6 +1216,12 @@
             "copyStep": "Tempel di percakapan baru di aplikasi lain itu",
             "answerStep": "Letakkan file yang dikembalikannya, atau tempel balasannya",
             "answerPlaceholder": "Balasannya, atau tautan GitHub"
+          },
+          "computer": {
+            "lead": "Agen {{app}} menulis apa yang diketahuinya ke sebuah file, dan kamu memeriksanya sebelum apa pun dibuat.",
+            "copyStep": "Di percakapan dengan agen {{app}}, tempel permintaan ini",
+            "answerStep": "Letakkan file yang dibuatnya, atau tempel balasannya",
+            "answerPlaceholder": "Balasan {{app}}"
           }
         },
         "workspace": {

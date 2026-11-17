@@ -1231,6 +1231,23 @@
         "workspaceTitle": "Les importer depuis un autre espace de travail",
         "fileTitle": "Les importer depuis un fichier ou un lien",
         "fileLead": "Le fichier de n'importe quelle app que nous connaissons. Il est reconnu tout seul.",
+        "paths": {
+          "lead": "Choisissez comment les importer. Vous vérifiez tout avant que rien ne soit créé.",
+          "best": "le plus complet",
+          "safe": "Les clés, mots de passe et sessions de {{app}} ne viennent jamais, quel que soit le chemin.",
+          "command": {
+            "title": "Avec une commande",
+            "line": "Importe tout, même les fichiers et les workflows. Via un assistant de code ou le terminal"
+          },
+          "mcp": {
+            "title": "En connectant {{app}}",
+            "line": "Il crée les agents ici via MCP. Sans fichiers ni workflows"
+          },
+          "prompt": {
+            "title": "En demandant à {{app}}",
+            "line": "Il écrit ce qu'il sait, et vous le collez ici. Sans fichiers ni workflows"
+          }
+        },
         "useRequest": "Je préfère coller la demande et rapporter la réponse",
         "backToMcp": "Retour à MCP",
         "waitingMore": "En attente des suivants…",
@@ -1253,6 +1270,12 @@
             "copyStep": "Collez-la dans une nouvelle conversation dans l'autre app",
             "answerStep": "Déposez le fichier qu'elle renvoie, ou collez sa réponse",
             "answerPlaceholder": "La réponse, ou un lien GitHub"
+          },
+          "computer": {
+            "lead": "Un agent de {{app}} écrit ce qu'il sait dans un fichier, et vous le vérifiez avant que rien ne soit créé.",
+            "copyStep": "Dans une conversation avec un agent de {{app}}, collez cette demande",
+            "answerStep": "Déposez le fichier qu'il crée, ou collez sa réponse",
+            "answerPlaceholder": "La réponse de {{app}}"
           }
         },
         "workspace": {

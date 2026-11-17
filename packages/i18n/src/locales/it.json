@@ -1231,6 +1231,23 @@
         "workspaceTitle": "Portali da un altro spazio di lavoro",
         "fileTitle": "Portali da un file o un link",
         "fileLead": "Il file di qualsiasi app che conosciamo. Viene riconosciuto da solo.",
+        "paths": {
+          "lead": "Scegli come portarli. Controlli tutto prima che venga creato qualcosa.",
+          "best": "il più completo",
+          "safe": "Chiavi, password e sessioni di {{app}} non arrivano mai, in nessun modo.",
+          "command": {
+            "title": "Con un comando",
+            "line": "Porta tutto, anche file e workflow. Con un assistente di programmazione o il terminale"
+          },
+          "mcp": {
+            "title": "Collegando {{app}}",
+            "line": "Crea gli agenti qui tramite MCP. Senza file né workflow"
+          },
+          "prompt": {
+            "title": "Chiedendo a {{app}}",
+            "line": "Scrive quello che sa e tu lo incolli qui. Senza file né workflow"
+          }
+        },
         "useRequest": "Preferisco incollare la richiesta e riportare qui la risposta",
         "backToMcp": "Torna a MCP",
         "waitingMore": "In attesa dei prossimi…",
@@ -1253,6 +1270,12 @@
             "copyStep": "Incollala in una nuova conversazione nell'altra app",
             "answerStep": "Trascina qui il file che restituisce o incolla la sua risposta",
             "answerPlaceholder": "La risposta o un link GitHub"
+          },
+          "computer": {
+            "lead": "Un agente di {{app}} scrive quello che sa in un file, e tu lo controlli prima che venga creato qualcosa.",
+            "copyStep": "In una conversazione con un agente di {{app}}, incolla questa richiesta",
+            "answerStep": "Trascina qui il file che crea o incolla la sua risposta",
+            "answerPlaceholder": "La risposta di {{app}}"
           }
         },
         "workspace": {

@@ -1258,6 +1258,23 @@
         "workspaceTitle": "Przenieś ich z innej przestrzeni roboczej",
         "fileTitle": "Przenieś ich z pliku lub linku",
         "fileLead": "Plik z dowolnej znanej nam aplikacji. Zostanie rozpoznany automatycznie.",
+        "paths": {
+          "lead": "Wybierz, jak je przenieść. Sprawdzisz wszystko, zanim cokolwiek powstanie.",
+          "best": "najpełniejszy",
+          "safe": "Klucze, hasła i sesje z {{app}} nigdy nie są przenoszone, żadną drogą.",
+          "command": {
+            "title": "Poleceniem",
+            "line": "Przenosi wszystko, także pliki i przepływy pracy. Przez asystenta kodowania lub terminal"
+          },
+          "mcp": {
+            "title": "Łącząc {{app}}",
+            "line": "Tworzy tu agentów przez MCP. Bez plików i przepływów pracy"
+          },
+          "prompt": {
+            "title": "Prosząc {{app}}",
+            "line": "Zapisuje, co wie, a ty wklejasz to tutaj. Bez plików i przepływów pracy"
+          }
+        },
         "useRequest": "Wolę wkleić prośbę i przynieść tu odpowiedź",
         "backToMcp": "Wróć do MCP",
         "waitingMore": "Czekamy na kolejnych…",
@@ -1280,6 +1297,12 @@
             "copyStep": "Wklej to w nowej rozmowie w drugiej aplikacji",
             "answerStep": "Upuść plik, który zwróci, albo wklej jej odpowiedź",
             "answerPlaceholder": "Odpowiedź albo link do GitHub"
+          },
+          "computer": {
+            "lead": "Agent z {{app}} zapisuje w pliku, co wie, a ty sprawdzasz to, zanim cokolwiek powstanie.",
+            "copyStep": "W rozmowie z agentem z {{app}} wklej tę prośbę",
+            "answerStep": "Upuść plik, który utworzy, albo wklej jego odpowiedź",
+            "answerPlaceholder": "Odpowiedź z {{app}}"
           }
         },
         "workspace": {

@@ -1203,6 +1203,23 @@
         "workspaceTitle": "Haal ze op uit een andere werkruimte",
         "fileTitle": "Haal ze op uit een bestand of link",
         "fileLead": "Het bestand uit elke app die we kennen. Het wordt vanzelf herkend.",
+        "paths": {
+          "lead": "Kies hoe je ze ophaalt. Je controleert alles voordat er iets wordt aangemaakt.",
+          "best": "het meest volledig",
+          "safe": "Sleutels, wachtwoorden en sessies uit {{app}} komen nooit mee, welke weg je ook kiest.",
+          "command": {
+            "title": "Met een opdracht",
+            "line": "Haalt alles op, ook bestanden en workflows. Via een codeerassistent of de terminal"
+          },
+          "mcp": {
+            "title": "Door {{app}} te verbinden",
+            "line": "Het maakt de agents hier aan via MCP. Zonder bestanden of workflows"
+          },
+          "prompt": {
+            "title": "Door het aan {{app}} te vragen",
+            "line": "Het schrijft op wat het weet en jij plakt het hier. Zonder bestanden of workflows"
+          }
+        },
         "useRequest": "Ik plak liever het verzoek en breng het antwoord terug",
         "backToMcp": "Terug naar MCP",
         "waitingMore": "Wachten op de volgende…",
@@ -1225,6 +1242,12 @@
             "copyStep": "Plak het in een nieuw gesprek in de andere app",
             "answerStep": "Sleep het bestand dat hij teruggeeft hierheen, of plak zijn antwoord",
             "answerPlaceholder": "Het antwoord, of een GitHub-link"
+          },
+          "computer": {
+            "lead": "Een agent van {{app}} schrijft op wat hij weet in een bestand, en jij controleert het voordat er iets wordt aangemaakt.",
+            "copyStep": "Plak dit verzoek in een gesprek met een agent van {{app}}",
+            "answerStep": "Sleep het bestand dat hij maakt hierheen, of plak zijn antwoord",
+            "answerPlaceholder": "Het antwoord van {{app}}"
           }
         },
         "workspace": {
