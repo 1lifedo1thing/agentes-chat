@@ -45,7 +45,9 @@ workspace could not let them in at all. A self-hosted server sets no limit, so i
    refused (`join.member`), and so is one whose address has another request waiting (`join.waiting`), which is
    answered first. An account blocked or waiting for its deletion is refused (`outside_access.account_closed`), as
    every other way into a workspace refuses it; one that becomes so while its request waits has the request closed
-   when someone approves it, and the approval answers that same code.
+   when someone approves it, and the approval answers that same code. While it waits, an ask through an invitation
+   link for its address never takes it over: that ask is answered as one for an address someone already asked for
+   (`join.waiting`), and the request keeps the account the operator named.
 5. **Leaving.** Whoever may remove members removes an outside collaborator like anyone, and they may leave. The
    operator ends it with `DELETE /orgs/{orgId}/outside-access/{userId}`: a request still waiting closes, and a member
    is taken out with everything a removal does, the audit log's entry being the system's. It refuses an ordinary member

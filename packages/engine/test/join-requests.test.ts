@@ -1077,6 +1077,18 @@ describe("outside collaborators (ADR 0191)", () => {
     expect((await notices()).every((n) => n.doneAt !== null)).toBe(true);
   });
 
+  test("an ask through a link for the address of a waiting outside request leaves that request as it is", async () => {
+    const { token } = await start();
+    const cai = await person("cai@example.com", { verified: true });
+    const row = await outside(cai.id);
+    await expect(signedIn(token, cai, "Through the link")).rejects.toMatchObject({ code: "join.waiting" });
+    // Another account holds the address now: it never takes over the request the operator filed for the first.
+    await f.db.update(schema.users).set({ email: "cai.lima@example.com" }).where(eq(schema.users.id, cai.id));
+    await f.db.insert(schema.users).values({ id: "user_vic", name: "Vic", email: "cai@example.com", emailVerified: true });
+    await expect(signedIn(token, { id: "user_vic" })).rejects.toMatchObject({ code: "join.waiting" });
+    expect(await rows()).toEqual([row]);
+  });
+
   test("ended by the operator: a waiting request closes, an outside collaborator is removed by the system, an ordinary member never", async () => {
     await start();
     const cai = await person("cai@example.com");

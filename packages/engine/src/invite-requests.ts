@@ -596,7 +596,8 @@ async function emailAdmins(
  * Files a request under the workspace's lock, the link read again under it. `proven`: a confirmed account asking
  * for its own address, or an address proven with a code (`usedCode`, the code's hash, used up here). A proven ask
  * hears where it stands (`join.link_closed`, `join.member`, `join.denied`, `join.full`, which leave the code
- * good) and takes over a request still waiting for that address. An unproven ask changes nothing that exists: a
+ * good) and takes over a request still waiting for that address, unless it is an outside collaborator's
+ * (`join.waiting`). An unproven ask changes nothing that exists: a
  * member's, a waiting or a denied address files nothing. Admins are told of a new request by an email at most once
  * an hour per workspace and a notice merged while unread (one push per burst). `keep` (a proven ask signed out,
  * ADR 0090) goes on the request it files or takes over. Returns whether a new request waits, and the request a
@@ -650,6 +651,10 @@ async function file(
       if (await addressIsMember(tx, orgId, ask.email))
         throw new ConflictError("You're already in this workspace", "join.member");
       if (denied) throw new ConflictError("Your request wasn't approved", "join.denied");
+      // An outside collaborator's request (ADR 0191) names the account the operator vouched for: never taken over.
+      if (waiting?.outsideOf != null) {
+        throw new ConflictError("A request to join already waits for this address", "join.waiting");
+      }
       if (waiting) {
         // A member's suggestion becomes the person's own ask (ADR 0090): through this link, answered to them,
         // and its page signs in once approved, as any ask's.
