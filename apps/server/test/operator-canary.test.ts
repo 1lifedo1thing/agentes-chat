@@ -128,6 +128,8 @@ const KEPT: Record<string, string[]> = {
   connector_connections: ["connector", "label", "auth_type", "status", "last_error"],
   mail_accounts: ["provider", "via", "preset", "label", "status", "last_error"],
   db_connections: ["label", "status", "last_error"],
+  // A registered host and its look: only this API writes them, never a workspace (ADR 0194).
+  hosts: ["host", "name", "accent"],
 };
 
 /** The places the proof is about: each holds a canary before any read, and after every column got one. */
@@ -425,6 +427,7 @@ beforeAll(async () => {
     title: "canary memory title",
     content: "canary memory",
   });
+  await db.insert(schema.hosts).values({ host: "app.northwind.example", name: "Northwind Studio", accent: "#7c3aed" });
   await db.insert(schema.auditLog).values({
     orgId,
     actorType: "agent",
@@ -881,6 +884,7 @@ beforeAll(async () => {
     `/analytics/ai-accounts?${days}`,
     "/ai-accounts?limit=200",
     "/claude-auth",
+    "/hosts",
     "/users?q=acme&limit=200",
     "/users?email=owner%40acme.test",
     "/jobs?limit=200",
