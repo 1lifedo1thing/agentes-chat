@@ -3,7 +3,7 @@
   "info": {
     "title": "agentes.chat operator API",
     "version": "test",
-    "description": "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, workspace standing, billing holds and limits (ADR 0079), a workspace's logo and accent color (ADR 0193), outside collaborators (ADR 0191), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056)."
+    "description": "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, workspace standing, billing holds and limits (ADR 0079), a workspace's logo and accent color (ADR 0193), the extra hostnames this server answers on with their look (ADR 0194), outside collaborators (ADR 0191), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056)."
   },
   "servers": [
     {
@@ -6794,6 +6794,70 @@
           }
         },
         "required": ["userId", "targetKind", "targetId", "allowed", "rule"]
+      },
+      "OperatorHost": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Lower case, no trailing dot.",
+            "example": "app.northwind.example"
+          },
+          "name": {
+            "type": "string"
+          },
+          "accent": {
+            "$ref": "#/components/schemas/AccentColor"
+          },
+          "logo": {
+            "type": "boolean",
+            "description": "It has a logo."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["host", "name", "accent", "logo", "createdAt", "updatedAt"]
+      },
+      "OperatorHostLook": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "description": "Shown where the product's name stands."
+          },
+          "accent": {
+            "type": ["string", "null"],
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "description": "Its accent color; null: the default. Left out: left as it is (none on a new host).",
+            "example": "#7c3aed"
+          },
+          "logo": {
+            "type": ["object", "null"],
+            "properties": {
+              "contentType": {
+                "type": "string",
+                "enum": ["image/jpeg", "image/png", "image/webp"]
+              },
+              "base64": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 3000000,
+                "description": "The image's bytes in base64, up to 2 MB."
+              }
+            },
+            "required": ["contentType", "base64"],
+            "description": "Its logo, checked by its bytes, metadata removed; shown at the sign-in page's lockup height. Null: the name alone. Left out: left as it is."
+          }
+        },
+        "required": ["name"]
       }
     },
     "parameters": {}
@@ -11956,6 +12020,176 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts": {
+      "get": {
+        "tags": ["Operator"],
+        "summary": "The extra hostnames this server answers on (ADR 0194)",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hosts": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OperatorHost"
+                      }
+                    }
+                  },
+                  "required": ["hosts"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hosts/{host}": {
+      "put": {
+        "tags": ["Operator"],
+        "summary": "Register a hostname, or replace its look (ADR 0194)",
+        "description": "On that host the pages before sign-in show its name, logo and accent, and sign-in is by email alone. Point the hostname at this server and serve a certificate for it first: the server only answers what reaches it. Applies at once on this process and within 30 s on the others. Refusals: `host.invalid` (not a hostname: no scheme, port or path, at least one dot), `host.own` (`PUBLIC_URL`'s host or one of `EXTRA_TRUSTED_ORIGINS`), `host.too_many` (409, past 1000), and a logo's as for a workspace's (`logo.type`, `logo.too_large`, `logo.not_base64`, `logo.empty`).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 260,
+              "example": "app.northwind.example"
+            },
+            "required": true,
+            "name": "host",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperatorHostLook"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorHost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Too many hosts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Operator"],
+        "summary": "Stop treating a hostname as registered, and delete its logo (ADR 0194)",
+        "description": "Its origin is no longer trusted and its pages show the product's own look. Sessions people hold there are not ended: they stop being reachable there once its traffic stops reaching this server. 404 when it isn't registered.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 260,
+              "example": "app.northwind.example"
+            },
+            "required": true,
+            "name": "host",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
           },
           "400": {
             "description": "Invalid request",
