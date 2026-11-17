@@ -394,6 +394,30 @@ test("a provider failure on the turn never moves: the run fails on its own accou
   expect(moveOf((await runs(fx))[0])).toBeUndefined();
 });
 
+for (const [cause, failure] of [
+  ["an outage that may pass", { code: "claude_failed", message: "Overloaded", retryable: true }],
+  ["a sign-in that ended", { code: "not_logged_in", message: "Please run /login", retryable: false }],
+  ["its computer dropping", { code: "machine_offline", message: "The computer is offline.", retryable: true }],
+] as const) {
+  test(`${cause}, found on the turn, never moves the run, though another account of its owner has room`, async () => {
+    const { fx, account } = await world();
+    // Both have answered before: a sign-in that never worked ends at once on its own.
+    await fx.db
+      .update(schema.machineAccounts)
+      .set({ lastSuccessAt: new Date() })
+      .where(eq(schema.machineAccounts.id, OWN1));
+    await account(OWN2, fx.owner.id, { lastSuccessAt: new Date() });
+    const { brain, seen } = scripted(() => [{ type: "error", ...failure }]);
+    await ask(fx);
+    await drainOutbox(fx.db, handlersWith(fx, brain)).catch(() => {});
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.filter((t) => t.account?.id !== OWN1)).toEqual([]);
+    const [run] = await runs(fx);
+    expect(moveOf(run)).toBeUndefined();
+    expect(await notes(fx, "plan_account_moved")).toHaveLength(0);
+  });
+}
+
 test("a turn the plan cut after it worked waits on its own account: a fresh session couldn't see what it did", async () => {
   const { fx, account } = await world();
   await account(OWN2, fx.owner.id);
@@ -799,8 +823,11 @@ const goesOn = {
     kind === "follow_through" ? (String(state.reply).includes("vou seguir") ? "continue" : "done") : undefined,
 };
 
-/** Each of its first `turns` turns runs a step, puts the account it ran on at 96% of its week, then says it goes on. */
-function fillsTheWeek(fx: Fixture, turns = 1) {
+/**
+ * Each of its first `turns` turns runs a step, puts the account it ran on at 96% of its week (`extra`: with that plan's
+ * paid extra usage open), then says it goes on.
+ */
+function fillsTheWeek(fx: Fixture, turns = 1, extra = false) {
   const seen: BrainTurn[] = [];
   const brain: Brain = {
     kind: "claude_code",
@@ -814,7 +841,10 @@ function fillsTheWeek(fx: Fixture, turns = 1) {
         .update(schema.machineAccounts)
         .set({
           usage: {
-            windows: [{ kind: "seven_day", usedPercent: 96, resetsAt: iso(5 * 24 * 3600_000) }],
+            windows: [
+              { kind: "seven_day", usedPercent: 96, resetsAt: iso(5 * 24 * 3600_000) },
+              ...(extra ? [{ kind: "other", label: "Extra usage", usedPercent: 10 }] : []),
+            ],
             source: "turn",
             at: new Date().toISOString(),
           } as never,
@@ -867,6 +897,22 @@ test("long work moved onto a teammate's account that reaches the line there wait
   // Its next claim starts on its own account, at its own reset, not at the end of the teammate's week.
   expect(moveOf(run)).toBeUndefined();
   expect(Date.parse(waiting?.until ?? "")).toBeLessThan(Date.now() + 4 * 3600_000);
+});
+
+test("long work on a teammate's account it moved to stops at that plan's line, though its paid extra usage is open", async () => {
+  const { fx, walter, account, usage } = await world({}, goesOn);
+  await account(WALTER_ALL, walter.id);
+  await usage(WALTER_ALL, 40);
+  await usage(OWN1, 97, iso(3 * 3600_000));
+  const { brain, seen } = fillsTheWeek(fx, 1, true);
+  await scheduledSlot(fx);
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+  // One turn on Walter's account, then a wait: never a second turn there on Walter's paid extra usage.
+  expect(seen.map((t) => t.account?.id)).toEqual([WALTER_ALL]);
+  const [run] = await runs(fx);
+  expect((run?.transcript as { waitingForBrain?: { code: string } } | undefined)?.waitingForBrain?.code).toBe(
+    "usage_pause",
+  );
 });
 
 test("a run that moves twice in one claim: each fresh session is told what the run already ran", async () => {
@@ -1341,4 +1387,82 @@ test("Lodi at its person's limit with no other account of theirs: a plan that se
   expect(said.filter((m) => m.meta.bodyCode === STAND_IN_LINE).map((m) => m.body)).toEqual([
     "Answered with b001: a001 reached its limit.",
   ]);
+});
+
+test("Lodi's long work on its person's other account it moved to stops at that plan's line, though its paid extra usage is open", async () => {
+  f = await setup({ rightHand: true, ...goesOn });
+  const fx = f;
+  const { machineId } = await pairMachine({ db: fx.db, pubsub: fx.pubsub }, fx.owner.id, fx.org.id, {
+    name: "Mac",
+    protocol: MACHINE_PROTOCOL_VERSION,
+    exec: true,
+  });
+  for (const id of [OWN1, OWN2])
+    await fx.db.insert(schema.machineAccounts).values({
+      id,
+      orgId: fx.org.id,
+      machineId,
+      kind: "claude_code",
+      label: id.slice(-4),
+      status: "active",
+      createdBy: fx.owner.id,
+      shared: true,
+      usage: reading(id === OWN1 ? 97 : 40, iso(3 * 3600_000)) as never,
+    });
+  const [lodi] = await fx.db
+    .select()
+    .from(schema.agents)
+    .where(and(eq(schema.agents.orgId, fx.org.id), eq(schema.agents.builtin, "right_hand")));
+  if (!lodi) throw new Error("no right hand");
+  await setAgentBrain({ db: fx.db }, fx.owner.id, fx.org.id, lodi.id, { brain: "claude_code", account: OWN1 });
+  await fx.db.insert(schema.channelMembers).values({ orgId: fx.org.id, channelId: fx.general.id, agentId: lodi.id });
+  const { brain, seen } = fillsTheWeek(fx, 1, true);
+  const deps = { db: fx.db, pubsub: fx.pubsub, context: fx.context };
+  const routine = await createRoutine(deps, fx.owner.id, fx.org.id, {
+    name: "Deploys",
+    agentId: lodi.id,
+    prompt: "Check the deploys.",
+    target: { type: "channel", channelId: fx.general.id },
+    trigger: { type: "schedule", phrase: "todo dia às 8h" },
+  });
+  await runRoutineNow(deps, fx.owner.id, fx.org.id, routine.id);
+  await fx.db
+    .update(schema.routineRuns)
+    .set({ trigger: "schedule" })
+    .where(eq(schema.routineRuns.routineId, routine.id));
+  await drainOutbox(fx.db, handlersWith(fx, brain));
+  // Its person's own account, yet the right hand's long work never spends paid extra usage: one turn, then a wait.
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN2]);
+  const [run] = await fx.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, lodi.id));
+  expect((run?.transcript as { waitingForBrain?: { code: string } } | undefined)?.waitingForBrain?.code).toBe(
+    "usage_pause",
+  );
+});
+
+test("the next account never answered a turn and its CLI fails there: the run ends at once on the CLI's words", async () => {
+  const { fx, account, usage } = await world();
+  await fx.db
+    .update(schema.machineAccounts)
+    .set({ lastSuccessAt: new Date() })
+    .where(eq(schema.machineAccounts.id, OWN1));
+  await usage(OWN1, 100);
+  await account(OWN2, fx.owner.id);
+  const { brain, seen } = scripted(() => [
+    {
+      type: "error",
+      code: "claude_failed",
+      message: "Claude Code exited with code 1: error: unexpected response from the model endpoint",
+      retryable: true,
+    },
+  ]);
+  await ask(fx);
+  await drainOutbox(fx.db, handlersWith(fx, brain)).catch(() => {});
+  expect(seen.map((t) => t.account?.id)).toEqual([OWN2]);
+  const [run] = await runs(fx);
+  expect(run?.status).toBe("failed");
+  expect(run?.error ?? "").toStartWith("cli_failed:");
+  expect(moveOf(run)).toMatchObject({ from: OWN1, to: OWN2 });
+  // Nothing answered for its plan, and it never waits for its own account's reset.
+  expect(fx.provider.calls).toHaveLength(0);
+  expect((run?.transcript as { waitingForBrain?: unknown } | undefined)?.waitingForBrain).toBeUndefined();
 });
