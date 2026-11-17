@@ -381,6 +381,30 @@ test("an unquoted value ends at the quote that closes the string it sits in, and
   for (const [text, masked] of strings) expect(redactCommon(text)).toBe(masked);
 });
 
+test("a quote ends an unquoted value only inside a string: with none open before it, the quote is the value's own", () => {
+  const whole: [text: string, masked: string][] = [
+    ['export DB_PASSWORD=fake-ab",cd-tail', "export DB_PASSWORD=***"],
+    ["export DB_PASSWORD=fake-ab',cd-tail", "export DB_PASSWORD=***"],
+    ['password: fake-ab"}cd-tail next', "password: *** next"],
+    ['token=fake-ab"]cd-tail', "token=***"],
+    ['api_key: fake-ab":cd-tail', "api_key: ***"],
+    // A quote of the other kind, or written another way, is not the one that is open.
+    [`{"env":"PASSWORD=fake-ab',cd-tail"}`, '{"env":"PASSWORD=***"}'],
+    [
+      String.raw`it sent {"note":"password=fake-ab\",cd-tail"} and failed`,
+      'it sent {"note":"password=***"} and failed',
+    ],
+    // A written quote after a bare name opens a value only inside a string: with none open it is the value's own.
+    [String.raw`export DB_PASSWORD=\"fake-ab\",cd-tail`, "export DB_PASSWORD=***"],
+    [String.raw`API_TOKEN: \'fake-ab\'}cd-tail next`, "API_TOKEN: *** next"],
+    [
+      String.raw`it sent {"cmd":"export DB_PASSWORD=\"fake a\" && run"} and failed`,
+      'it sent {"cmd":"export DB_PASSWORD=*** && run"} and failed',
+    ],
+  ];
+  for (const [text, masked] of whole) expect(redactCommon(text)).toBe(masked);
+});
+
 test("a record that names its value and a list of pairs are read in text that keeps them as JSON wrote them", () => {
   const records: [text: string, masked: string][] = [
     [

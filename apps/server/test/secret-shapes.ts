@@ -165,6 +165,17 @@ export const UNOPENED: [shape: string, text: string, stays: string[]][] = [
     `headers [["x-api-key","${first}"],["accept","text/plain"],["Authorization","${second}"]] and "required":["password","email"]`,
     ['[["x-api-key",***],["accept","text/plain"],["Authorization",***]]', '"required":["password","email"]'],
   ],
+  // Outside a string a quote closes nothing: it is the value's own, and what follows it is the credential still.
+  [
+    "a value that holds a quote, in no string",
+    `export DB_PASSWORD=${first}",${second} then mysql --password ${first}'}${second} -u ana`,
+    ["export DB_PASSWORD=*** then mysql --password *** -u ana"],
+  ],
+  [
+    "a value that opens with a written quote, in no string",
+    String.raw`export API_TOKEN=\"${first}\",${second} then mysql --password \"${first}\"]${second} -u ana`,
+    ["export API_TOKEN=*** then mysql --password *** -u ana"],
+  ],
 ];
 
 /** What a text shows of `HIDDEN`, and what it lacks of what stays. */

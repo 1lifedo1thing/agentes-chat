@@ -28,10 +28,12 @@ interface Quotes {
   slashes: number[];
   /** The first of them not yet passed: values are asked for from the text's start to its end. */
   next: number;
+  /** Of those passed, the ways of writing one (its backslashes) met an odd number of times: a string is open. */
+  open: Set<number>;
 }
 
 function quotesOf(text: string, quote: string): Quotes {
-  const quotes: Quotes = { at: [], slashes: [], next: 0 };
+  const quotes: Quotes = { at: [], slashes: [], next: 0, open: new Set() };
   for (let at = text.indexOf(quote); at >= 0; at = text.indexOf(quote, at + 1)) {
     let run = at;
     while (text.charCodeAt(run - 1) === BACKSLASH) run--;
@@ -41,11 +43,18 @@ function quotesOf(text: string, quote: string): Quotes {
   return quotes;
 }
 
+/** Passes the quotes up to `until`, keeping which ways of writing one stand open there. */
+function pass(quotes: Quotes, until: number) {
+  for (; (quotes.at[quotes.next] ?? Number.POSITIVE_INFINITY) <= until; quotes.next++) {
+    const slashes = quotes.slashes[quotes.next] ?? 0;
+    if (!quotes.open.delete(slashes)) quotes.open.add(slashes);
+  }
+}
+
 /**
- * An unquoted value: up to its first space, to a line end or a tab as JSON writes them (`\n`, `\r`, `\t`), or to the
- * quote that closes the string it sits in (`"line":"token: …"},{"line":"password: …"}`): a quote, plain or written
- * with backslashes, before `,`, `}`, `]`, `:`, a space or the text's end. Past that quote the next string's name
- * would be taken for this value, and its own value shown.
+ * An unquoted value: up to its first space, to a line end or a tab as JSON writes them (`\n`, `\r`, `\t`), or to a
+ * quote, plain or written with backslashes, before `,`, `}`, `]`, `:`, a space or the text's end. Such a quote ends
+ * the value only where it closes the string the value sits in (`valueEnds`).
  */
 const UNQUOTED = /(?:[^\s\\"']|\\+(?![nrt\\"'])|\\*["'](?![,}\]:\s]|$))*/y;
 /** What a shell reads as one word with the quoted value before it (`TOKEN="abc"def`). */
@@ -67,8 +76,10 @@ type Ends = (at: number, opener: RegExpExecArray) => number;
  * doubles the backslashes before a quote and adds one. So the value ends at the quote with as many backslashes as
  * the one that opened it (or that many and escaped backslashes of its own), or with fewer: the string around it
  * ended first. One with no such end is masked as far as its next quote. An unquoted value goes as far as `UNQUOTED`
- * says: the next line's or the next string's name and value are then read on their own. `glued`: a quoted value
- * takes with it what a shell reads as one word with it.
+ * says, and ends at a quote only inside a string: where a quote written the same way stands open before the value
+ * (`"line":"token: …"},{"line":"password: …"}`), so the next string's name and value are read on their own. With none
+ * open the quote is the value's own (`PASSWORD=ab",cd`), and so is a written quote that would open one after a bare
+ * name. `glued`: a quoted value takes with it what a shell reads as one word with it.
  *
  * The quotes are listed once, so a value with no end costs its quotes, never the rest of the text: a quote that does
  * not end a value has more backslashes than the one that opened it, and the time stays linear in the text.
@@ -77,15 +88,42 @@ const valueEnds =
   (glued = false) =>
   (text: string): Ends => {
     const kinds = new Map<string, Quotes>();
-    return (at) => {
+    const listed = (quote: string) => {
+      const quotes = kinds.get(quote) ?? quotesOf(text, quote);
+      kinds.set(quote, quotes);
+      return quotes;
+    };
+    const unquoted = (from: number) => {
+      let end = endAt(UNQUOTED, text, from);
+      for (;;) {
+        let quote = end;
+        while (text.charCodeAt(quote) === BACKSLASH) quote++;
+        const kind = text[quote];
+        if (kind !== '"' && kind !== "'") return end;
+        const quotes = listed(kind);
+        pass(quotes, from - 1);
+        if (quotes.open.has(quote - end)) return end;
+        end = endAt(UNQUOTED, text, quote + 1);
+      }
+    };
+    /** Whether a string whose quotes are written with `slashes` backslashes stands open before `at`. */
+    const inString = (slashes: number, at: number) =>
+      ['"', "'"].some((kind) => {
+        const quotes = listed(kind);
+        pass(quotes, at - 1);
+        return quotes.open.has(slashes);
+      });
+    return (at, opener) => {
       let open = at;
       while (text.charCodeAt(open) === BACKSLASH) open++;
       const quote = text[open];
       if (quote === '"' || quote === "'") {
         const depth = open - at;
-        const quotes = kinds.get(quote) ?? quotesOf(text, quote);
-        kinds.set(quote, quotes);
-        while ((quotes.at[quotes.next] ?? Number.POSITIVE_INFINITY) <= open) quotes.next++;
+        // A quote written with backslashes is one only inside a string, whose own quotes are written with half as
+        // many. After a bare name with none open it is a character of the value (`PASSWORD=\"ab\",cd`).
+        if (depth > 0 && !/["']/.test(opener[0]) && !inString((depth - 1) >> 1, at)) return unquoted(at);
+        const quotes = listed(quote);
+        pass(quotes, open);
         let close = depth === 0 ? quotes.at[quotes.next] : undefined;
         for (let i = quotes.next; i < quotes.at.length; i++) {
           const slashes = quotes.slashes[i] ?? 0;
@@ -96,9 +134,9 @@ const valueEnds =
         }
         if (close !== undefined) return glued ? endAt(GLUED, text, close + 1) : close + 1;
         // Cut off before its closing quote: the quote that opens it ends nothing.
-        return endAt(UNQUOTED, text, open + 1);
+        return unquoted(open + 1);
       }
-      return endAt(UNQUOTED, text, at);
+      return unquoted(at);
     };
   };
 
