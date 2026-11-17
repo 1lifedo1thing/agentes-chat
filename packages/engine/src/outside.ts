@@ -178,8 +178,11 @@ export async function personRunsReadOutside(db: Executor, orgId: string, runIds:
       id: agentRuns.id,
       transcript: transcriptKeys("harnessTried"),
       marked: sql<boolean>`(coalesce(${messages.meta} -> 'readOutside' = 'true'::jsonb, false)
-        or exists (select 1 from ${agentRunSteps} s where s.run_id = ${agentRuns.id} and s.kind = 'tool_result'
-          and s.data -> 'data' ->> 'outside' = 'true')
+        or exists (select 1 from ${agentRunSteps} s where s.run_id = ${agentRuns.id}
+          and ((s.kind = 'tool_result' and s.data -> 'data' ->> 'outside' = 'true')
+            or (s.kind = 'context' and exists (select 1 from ${messages} sm where sm.org_id = ${orgId}
+              and sm.meta ->> 'readOutside' = 'true'
+              and sm.id in (select jsonb_array_elements_text(s.data -> 'steeredMessageIds')::uuid)))))
         or (${messages.threadId} is not null and exists (select 1 from ${messages} mk where mk.org_id = ${orgId}
           and mk.channel_id = ${messages.channelId} and mk.deleted_at is null and mk.meta ->> 'readOutside' = 'true'
           and (mk.id = ${messages.threadId} or mk.thread_id = ${messages.threadId})))

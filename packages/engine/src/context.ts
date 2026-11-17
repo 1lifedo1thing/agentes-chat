@@ -361,7 +361,7 @@ function handedLine(h: HandedFor) {
         ? h.answer
           ? `you answered ${quotedUntrusted(h.answer, 300)}`
           : h.answerHidden
-            ? "you answered (read outside text, not shown)"
+            ? "you answered (not shown: it may carry text read outside)"
             : "you finished it"
         : h.status === "expired"
           ? "you never got to it"

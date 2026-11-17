@@ -5,6 +5,7 @@ import { systemText } from "@agenteschat/providers";
 import {
   type AgentRun,
   addChannelMember,
+  addRunStep,
   askAgentToImplement,
   buildRunContext,
   continueRun,
@@ -834,9 +835,14 @@ describe("whose it is, and what it costs", () => {
     const gone = await marked(goneRoom);
     await f.db.update(schema.messages).set({ deletedAt: new Date() }).where(eq(schema.messages.id, gone.id));
     const deleted = await agentRun(f.agent.id, goneRoom, "apagado");
-    const runs = [plain, step, harness, trigger, inThread, topLevel, deleted];
+    const steered = await agentRun(f.agent.id, await room("h"), "no meio");
+    const forwarded = await marked(await room("i"));
+    await addRunStep(f.db, steered, "context", { steeredMessageIds: [forwarded.id] });
+    const steeredPlain = await agentRun(f.agent.id, await room("j"), "no meio, sem nada");
+    await addRunStep(f.db, steeredPlain, "context", { steeredMessageIds: [plain.triggerMessageId] });
+    const runs = [plain, step, harness, trigger, inThread, topLevel, deleted, steered, steeredPlain];
     const one = await Promise.all(runs.map((r) => runReadOutsideById(f.db, f.org.id, r.id)));
-    expect(one).toEqual([false, true, true, true, true, true, false]);
+    expect(one).toEqual([false, true, true, true, true, true, false, true, false]);
     const many = await personRunsReadOutside(
       f.db,
       f.org.id,
