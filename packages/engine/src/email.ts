@@ -25,6 +25,7 @@ import { confidentialRoots } from "./confidential";
 import { invitationMailProof } from "./crypto";
 import { inertText } from "./email/inert";
 import {
+  ASSISTANT_LOOK,
   type Block,
   EMAIL_PICTURES,
   type EmailArt,
@@ -195,9 +196,16 @@ export type EmailTemplate =
    * An outside chat surface was linked to the account (ADR 0187): `display` is how the surface shows the sender, `url`
    * the undo page that unlinks it, for 7 days.
    */
-  | { kind: "surface_linked"; locale: EmailLocale; surface: string; display: string; orgName: string; url: string }
+  | ({
+      kind: "surface_linked";
+      locale: EmailLocale;
+      surface: string;
+      display: string;
+      orgName: string;
+      url: string;
+    } & Beside)
   /** The surface unlinked the account because the sender's identity there changed. `url`: the server, for the pictures. */
-  | { kind: "surface_unlinked"; locale: EmailLocale; surface: string; display: string; url: string }
+  | ({ kind: "surface_unlinked"; locale: EmailLocale; surface: string; display: string; url: string } & Beside)
   /**
    * Double opt-in for the landing page's waiting list, in the language they
    * joined in. `email` is the address being confirmed (absent in jobs queued
@@ -406,6 +414,29 @@ async function readPictures(dir: string) {
     return null;
   }
 }
+
+/** The workspace's assistant beside the phone in the surface emails' picture (`emailAssistant`); none: its default look. */
+interface Beside {
+  assistant?: Look;
+}
+
+/** The look of the workspace's assistant (ADR 0137), when it has one of its own. */
+export async function emailAssistant(db: Executor, orgId: string | null): Promise<Look | undefined> {
+  if (!orgId) return undefined;
+  const { RIGHT_HAND } = await import("./right-hand");
+  const [row] = await db
+    .select({ appearance: agents.appearance })
+    .from(agents)
+    .where(and(eq(agents.orgId, orgId), eq(agents.builtin, RIGHT_HAND), isNull(agents.archivedAt)));
+  const a = row?.appearance;
+  return a ? { color: a.color, eyes: a.eyes, accessory: a.accessory } : undefined;
+}
+
+/** The surface emails' stage: the assistant beside the phone, between two of the onboarding's agents. */
+const surfaceCrew = (assistant: Look | undefined): Look[] => {
+  const [theo, ada] = ONBOARDING_CREW;
+  return [theo, assistant ?? ASSISTANT_LOOK, ada];
+};
 
 /** How many agents a picture shows: two on each side of the computer still fit a 320 px phone. */
 const CREW = 4;
@@ -869,6 +900,7 @@ function docOf(t: EmailTemplate, sender: string | null): EmailDoc {
           fallback(t.url),
         ],
         c.why(t.surface),
+        { crew: surfaceCrew(t.assistant), phone: { alt: c.picture, on: true } },
       );
     }
     case "surface_unlinked": {
@@ -879,6 +911,7 @@ function docOf(t: EmailTemplate, sender: string | null): EmailDoc {
         c.headline(t.surface),
         [{ p: c.body(t.surface, inertText(t.display)) }, { small: c.small }],
         c.why(t.surface),
+        { crew: surfaceCrew(t.assistant), phone: { alt: c.picture, on: false } },
       );
     }
     case "autonomy_report": {
