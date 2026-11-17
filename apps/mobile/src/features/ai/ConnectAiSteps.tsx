@@ -492,6 +492,7 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
       <AllHave
         have={picked?.have ?? have}
         picked={picked?.key}
+        haveNotes={haveNotes}
         dims={dims}
         busy={busy || picked !== undefined}
         onHave={pickHave}
@@ -638,28 +639,33 @@ function Home({
 function AllHave({
   have,
   picked,
+  haveNotes,
   dims,
   busy,
   onHave,
 }: {
   have: ReturnType<typeof existingRows>;
   picked: string | undefined;
+  haveNotes: readonly { key: string; text: string }[];
   dims: (choice: PlanChoice) => boolean;
   busy: boolean;
   onHave: (row: ExistingAi) => void;
 }) {
   const { t } = useTranslation();
   const [tapped, setTapped] = useState<string>();
-  const rows = haveLayout(have, [], true).groups.flatMap((g) => g.rows);
+  const layout = haveLayout(have, haveNotes, true);
+  const rows = layout.groups.flatMap((g) => g.rows);
   return (
     <PickList
       options={rows.map((r) => ({
         value: r.key,
         label: r.label,
         group: r.group.label,
+        groupKey: r.group.key,
         mark: r.mark,
         off: r.off,
-        ...(r.sub || r.below ? { description: [r.below, r.sub].filter(Boolean).join(" · ") } : {}),
+        ...(r.sub ? { description: r.sub } : {}),
+        ...(r.below ? { below: r.below } : {}),
         keywords: `${r.label} ${r.group.label}`,
         disabled: busy || (r.row.kind === "account" && dims(planOfAccount(r.row.choice.login))),
       }))}
@@ -672,6 +678,7 @@ function AllHave({
       placeholder={t("connectAi.chat.search")}
       searchLabel={t("connectAi.chat.search")}
       noResults={t("connectAi.chat.none")}
+      notes={layout.groups.flatMap((g) => (g.note ? [{ key: g.key, text: g.note }] : []))}
     />
   );
 }

@@ -556,7 +556,18 @@ describe("the agent's AI", () => {
     expect(home.indexOf('t("connectAi.have.pickLine"')).toBeLessThan(home.indexOf('t("mobile.ai.planRow")'));
     expect(home).toContain("<AiRow");
     // "Ver as N contas" opens every row, not the three, and the line over the list only when there is one to pick.
-    expect(connect).toContain("haveLayout(have, [], true)");
+    expect(connect).toContain("haveLayout(have, haveNotes, true)");
+    // "Todas as contas" draws each row as the first page does: what tells it apart on its line, the room word under it,
+    // grouped by owner (never by a first name two owners share), each owner's line of accounts they can't give under it.
+    const all = connect.slice(connect.indexOf("function AllHave("), connect.indexOf("function Plans("));
+    expect(all).toContain("...(r.sub ? { description: r.sub } : {}),");
+    expect(all).toContain("...(r.below ? { below: r.below } : {}),");
+    expect(all).toContain("groupKey: r.group.key,");
+    expect(all).not.toContain('join(" · ")');
+    expect(connect).toContain("haveNotes={haveNotes}\n        dims={dims}");
+    const pick = await Bun.file(new URL("../../src/features/shared/PickList.tsx", import.meta.url).pathname).text();
+    expect(pick).toContain("{...(o.below ? { belowText: o.below } : {})}");
+    expect(pick).toContain("<GroupedFooter key={n.key}>{n.text}</GroupedFooter>");
     expect(home).toContain("agentName && have.length > 0 ?");
     // A plan or a key, one row each; whose is one searched list, the plan's page and the key's steps as before.
     expect(home).toContain('onView({ page: "plans" })');
