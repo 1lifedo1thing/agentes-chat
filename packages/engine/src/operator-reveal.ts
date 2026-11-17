@@ -8,7 +8,7 @@ import { cutText, pgSafeText } from "./format";
 import { requireUsageAccess } from "./management";
 import { recordContentViewed } from "./operator-events";
 import { listedOf } from "./operator-paging";
-import { inputLines, keptText } from "./operator-review";
+import { inputLines, keptText, taskRunSql } from "./operator-review";
 import { runShownSql } from "./operator-runs";
 import { getMembership, requirePermission } from "./organizations";
 import { ROUTINE_ROOM_PREFIX } from "./routine-brief";
@@ -156,7 +156,10 @@ interface FaultRun {
 interface Found {
   /** It is of a direct conversation. */
   direct: boolean;
-  /** It holds what a run of a confidential thread read or wrote (ADR 0190): the run's step, a task it started. */
+  /**
+   * It holds what a run of a confidential thread read or wrote (ADR 0190): the run's step, a task it started, a task
+   * the server started again from that one.
+   */
   confidential: boolean;
   /** The field holds text (measured in the database). */
   has: boolean;
@@ -352,7 +355,7 @@ const findTask: Find = async (db, orgId, { id, field }) => {
       runId: machineTasks.runId,
       direct: directOf('"machine_tasks"."channel_id"', firingOf('"machine_tasks"."run_id"')),
       confidential: sql<boolean>`exists (
-        select 1 from ${agentRuns} r where r.id = "machine_tasks"."run_id" and ${confidentialRun})`,
+        select 1 from ${agentRuns} r where r.id = ${taskRunSql(sql`"machine_tasks"."id"`)} and ${confidentialRun})`,
       has: filled(column),
     })
     .from(machineTasks)

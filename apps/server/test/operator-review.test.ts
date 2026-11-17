@@ -382,6 +382,54 @@ test("a task's review: of one that a run of a confidential thread started, its f
   }
 });
 
+test("a task's review: one the server started again by itself is its first task's run's, after any number of restarts", async () => {
+  const runId = await runFor("@dev canary-request: deploy the staging site again");
+  const [run] = await t.db
+    .select({ rootId: schema.agentRuns.threadRootId })
+    .from(schema.agentRuns)
+    .where(eq(schema.agentRuns.id, runId));
+  const [machine] = await t.db.insert(schema.machines).values({ orgId: org.orgId, name: "Box two" }).returning();
+  const start = async (over: Partial<typeof schema.machineTasks.$inferInsert>) => {
+    const [task] = await t.db
+      .insert(schema.machineTasks)
+      .values({
+        orgId: org.orgId,
+        agentId: org.agentId,
+        machineId: machine?.id ?? "",
+        channelId: org.channelId,
+        title: "canary-title",
+        executor: "claude",
+        prompt: "canary-prompt",
+        command: "canary-command",
+        result: "canary-result",
+        recentLines: ["canary-line"],
+        files: ["canary-file.txt"],
+        status: "done",
+        ...over,
+      })
+      .returning({ id: schema.machineTasks.id });
+    return task?.id ?? "";
+  };
+  // Started by the run, then twice by the server: each of those a row with no run, which names the task it resumes.
+  const once = await start({ resumedFromId: await start({ runId }), resumeCount: 1 });
+  const again = await start({ resumedFromId: once, resumeCount: 2 });
+  const read = async () => (await body<{ text: string }>(await review(`task/${again}`))).text;
+  const open = await read();
+  for (const word of ["title", "prompt", "command", "result", "line", "file.txt"]) {
+    expect(open).toContain(`canary-${word}`);
+  }
+  // The request is shown with the task its run started.
+  expect(open).not.toContain("canary-request");
+
+  await markThreadConfidential(t.db, { orgId: org.orgId, channelId: org.channelId, rootId: run?.rootId ?? "" });
+  const kept = await read();
+  expect(kept).not.toContain("canary");
+  expect(kept).toContain(`Task ${again} of agent ${org.agentId}`);
+  for (const label of ["Title", "Prompt", "Command", "Result", "Last lines", "Files touched"]) {
+    expect(kept).toContain(`${label}:\n${CONFIDENTIAL_NOT_SHOWN}`);
+  }
+});
+
 test("a screened session's review: its first and latest screens, credentials masked, gone 10 minutes after it ends", async () => {
   // A person in control of Dev's screen, read by a computer the test plays, on the test's own clock.
   let now = Date.now();

@@ -59,7 +59,8 @@ const w = {} as Record<
   | "dmRoutineId"
   | "taskId"
   | "goneTaskId"
-  | "sealedTaskId",
+  | "sealedTaskId"
+  | "againTaskId",
   string
 >;
 const messages = {} as Record<"asked" | "written" | "other" | "secret" | "dm" | "deleted" | "gone" | "foreign", string>;
@@ -82,6 +83,7 @@ const runs = {} as Record<
   | "parked"
   | "dmRoom"
   | "sealed"
+  | "again"
   | "foreign",
   string
 >;
@@ -498,6 +500,29 @@ beforeAll(async () => {
       })
       .returning({ id: schema.machineTasks.id }),
   );
+  // A task the server started again by itself, twice: each a row with no run, which names the task it resumes.
+  runs.again = await run("failed");
+  const again = {
+    orgId,
+    agentId: w.devId,
+    machineId,
+    channelId: w.generalId,
+    title: "canary-again-title",
+    executor: "claude",
+    command: "canary-again-command",
+    prompt: "canary-again-prompt",
+    result: "canary-again-result",
+    status: "done" as const,
+  };
+  const started = (over: Partial<typeof schema.machineTasks.$inferInsert>) =>
+    one(
+      db
+        .insert(schema.machineTasks)
+        .values({ ...again, ...over })
+        .returning({ id: schema.machineTasks.id }),
+    );
+  const once = await started({ resumedFromId: await started({ runId: runs.again }), resumeCount: 1 });
+  w.againTaskId = await started({ resumedFromId: once, resumeCount: 2 });
   w.goneTaskId = await one(
     db
       .insert(schema.machineTasks)
@@ -1631,6 +1656,29 @@ test("a confidential thread: its run's steps and the task it started open under 
       body: nobody,
     });
   }
+});
+
+test("a task the server started again by itself is its first task's run's: a confidential thread keeps it after any number of restarts", async () => {
+  const mine = { requestId: requests.owner };
+  const read = async () => {
+    const answers: unknown[] = [];
+    for (const field of REVEAL_FIELDS.task) {
+      const res = await call(ask("task", w.againTaskId, field, mine));
+      const body = (await res.json()) as Answer & Refusal;
+      answers.push(res.status === 200 ? body.text : [res.status, body.error.code]);
+    }
+    return answers;
+  };
+  // It has no run of its own: no run's fault opens it, whatever its thread.
+  const fault = ask("task", w.againTaskId, "command", { runId: runs.again });
+  expect(await read()).toEqual(["canary-again-command", "canary-again-prompt", "canary-again-result"]);
+  expect(await outcome(fault)).toEqual([403, "reveal.not_the_fault"]);
+
+  await forget();
+  await markThreadConfidential(db, { orgId: w.orgId, channelId: w.generalId, rootId: asking.get(runs.again) ?? "" });
+  expect(await read()).toEqual(REVEAL_FIELDS.task.map(() => [403, "reveal.confidential"]));
+  expect(await outcome(fault)).toEqual([403, "reveal.not_the_fault"]);
+  expect([await events(), await auditLines()]).toEqual([[], []]);
 });
 
 test("a canary in every text column of the database: each answer holds its own field's and no other", async () => {
