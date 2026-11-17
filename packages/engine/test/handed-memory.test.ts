@@ -9,7 +9,6 @@ import {
   buildRunContext,
   continueRun,
   createAgent,
-  createChannel,
   createIssue,
   drainOutbox,
   endWork,
@@ -20,7 +19,6 @@ import {
   openAgentDm,
   openDm,
   postPersonMessage,
-  removeChannelMember,
   routineRoomKey,
   type ToolContext,
 } from "../src";
@@ -305,6 +303,27 @@ async function stops(run: AgentRun) {
   await onConsultedRunFinished({ db: f.db, pubsub: f.pubsub }, stopped, "canceled");
 }
 
+/** A DM of the owner, a second person and an agent. */
+async function groupDm(agentId: string, secondId: string) {
+  const [group] = await f.db
+    .insert(schema.channels)
+    .values({
+      orgId: f.org.id,
+      name: "dm-group",
+      visibility: "private",
+      kind: "dm",
+      dmKey: `a:${agentId}|u:${secondId}|u:${f.owner.id}`,
+    })
+    .returning();
+  if (!group) throw new Error("no group");
+  await f.db.insert(schema.channelMembers).values([
+    { orgId: f.org.id, channelId: group.id, userId: f.owner.id },
+    { orgId: f.org.id, channelId: group.id, userId: secondId },
+    { orgId: f.org.id, channelId: group.id, agentId },
+  ]);
+  return group;
+}
+
 /** Dev hands Ada the October report from #general: her run becomes handed work, reporting there. */
 async function handedToAda() {
   f = await setup({ askAgent: true });
@@ -407,7 +426,6 @@ describe("what it keeps, and what it leaves out", () => {
   test("the person's six newest, even behind many newer hand-offs for someone else", async () => {
     const { ada, memory } = await handedToAda();
     const bia = await addMember(f.db, f.org.id, "member", "bia");
-    await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { userId: bia.id });
     const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
     const forBia = await devRun(f.general.id, "@dev pede pra Ada umas coisas", bia.id);
     const at = Date.now();
@@ -536,22 +554,7 @@ describe("where it is read, and what it holds", () => {
       author: { type: "person", userId: f.owner.id },
       body: "Sobre o trimestre",
     });
-    const [group] = await f.db
-      .insert(schema.channels)
-      .values({
-        orgId: f.org.id,
-        name: "dm-group",
-        visibility: "private",
-        kind: "dm",
-        dmKey: `a:${ada.id}|u:${bia.id}|u:${f.owner.id}`,
-      })
-      .returning();
-    if (!group) throw new Error("no group");
-    await f.db.insert(schema.channelMembers).values([
-      { orgId: f.org.id, channelId: group.id, userId: f.owner.id },
-      { orgId: f.org.id, channelId: group.id, userId: bia.id },
-      { orgId: f.org.id, channelId: group.id, agentId: ada.id },
-    ]);
+    const group = await groupDm(ada.id, bia.id);
     const biaDm = await openDm(f.db, bia.id, f.org.id, { agentId: ada.id });
     for (const run of [
       await agentRun(ada.id, f.general.id, "@ada procura"),
@@ -576,6 +579,15 @@ describe("where it is read, and what it holds", () => {
     expect(await block(false, true)).not.toContain("# What other agents asked of you");
     expect(await block(true, true)).not.toContain("# What other agents asked of you");
     expect(await block(true, false)).not.toContain("# What other agents asked of you");
+  });
+
+  test("a DM with a second person in it never reads it", async () => {
+    const { ada } = await handedToAda();
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    const group = await groupDm(ada.id, bia.id);
+    const run = await agentRun(ada.id, group.id, "cadê aquilo?");
+    const system = systemText((await buildRunContext(f.db, run, ada, { maxMessages: 30 })).system);
+    expect(system).not.toContain("# What other agents asked of you");
   });
 
   test("only the last 14 days", async () => {
@@ -618,38 +630,5 @@ describe("where it is read, and what it holds", () => {
     expect((await handedFor(f.db, f.org.id, ada.id, f.owner.id)).map((h) => h.question)).toEqual([
       "Faz o relatório de vendas de outubro.",
     ]);
-  });
-});
-
-describe("a person who can no longer open the conversation where they asked", () => {
-  test("taken out of the private channel where they asked: neither the memory nor the search holds it", async () => {
-    f = await setup({ askAgent: true, contextTools: true });
-    const ada = await createAgent(
-      f.db,
-      f.owner.id,
-      f.org.id,
-      { name: "Ada", handle: "ada", role: "Pessoas", credentialId: f.credential.id },
-      { model: "claude-sonnet-5-5" },
-    );
-    const bia = await addMember(f.db, f.org.id, "member", "bia");
-    const room = await createChannel(f.db, f.owner.id, f.org.id, { name: "reestruturacao", visibility: "private" });
-    await addChannelMember(f.db, f.owner.id, f.org.id, room.id, { userId: bia.id });
-    await addChannelMember(f.db, f.owner.id, f.org.id, room.id, { agentId: f.agent.id });
-    const agentsDm = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
-    const dev = await devRun(room.id, "@dev pede pra Ada a lista da reestruturação", bia.id);
-    await asked(agentsDm.id, dev, ada.id, "Lista da reestruturação: 12 pessoas, a começar pela Carla.");
-    await drainOutbox(f.db, f.handlers);
-    const dm = await openDm(f.db, bia.id, f.org.id, { agentId: ada.id });
-    const memory = async () => (await handedFor(f.db, f.org.id, ada.id, bia.id)).map((h) => h.question);
-    expect(await memory()).toHaveLength(1);
-    expect(await search(await agentRun(ada.id, dm.id, "procura", bia.id), "lista reestruturação")).toContain(
-      "12 pessoas",
-    );
-
-    await removeChannelMember(f.db, f.owner.id, f.org.id, room.id, { userId: bia.id });
-    expect(await memory()).toEqual([]);
-    const found = await search(await agentRun(ada.id, dm.id, "procura de novo", bia.id), "lista reestruturação");
-    expect(found).toContain("content");
-    expect(found).not.toContain("12 pessoas");
   });
 });

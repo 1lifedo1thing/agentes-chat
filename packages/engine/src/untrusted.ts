@@ -55,4 +55,11 @@ export function untrustedBlock(source: string, text: string, maxChars = UNTRUSTE
  * quotes escaped so they cannot close the quote: read as data, never as a block.
  */
 export const quotedUntrusted = (text: string, max: number) =>
-  JSON.stringify(cutMarked(neutralizeUntrusted(text).replace(/\s+/g, " ").trim(), max));
+  JSON.stringify(
+    cutMarked(
+      neutralizeUntrusted(text)
+        .replace(/[\s\u0085]+/g, " ")
+        .trim(),
+      max,
+    ),
+  );

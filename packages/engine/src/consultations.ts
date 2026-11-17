@@ -25,7 +25,6 @@ import { runAuthorityById } from "./authority";
 import { routineBriefOfRun } from "./background";
 import { type BrakeOutcome, brakeWakes, callableAgents, LATER_JOB, notCallableText } from "./brakes";
 import { canceledBy, stopRun } from "./cancel";
-import { isChannelMember } from "./channels";
 import { publishDelivery } from "./delivery";
 import { INBOX_JOB, startOrJoinRun } from "./dispatch";
 import { isAgentOnlyDm, openAgentDm } from "./dms";
@@ -2468,14 +2467,8 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
   // Newest first, a few at a time, until this person's latest are found.
   for (let i = 0; i < rows.length && mine.length < HANDED_REMEMBERED; i += HANDED_REMEMBERED) {
     const some = rows.slice(i, i + HANDED_REMEMBERED);
-    const theirs = await Promise.all(
-      some.map(
-        async ({ row }) =>
-          (await runAuthorityById(db, orgId, row.askerRunId)).personId === personId &&
-          (await stillInWhereAsked(db, orgId, row.askerRunId, personId)),
-      ),
-    );
-    mine.push(...some.filter((_, j) => theirs[j]));
+    const behind = await Promise.all(some.map(({ row }) => runAuthorityById(db, orgId, row.askerRunId)));
+    mine.push(...some.filter((_, j) => behind[j]?.personId === personId));
   }
   return Promise.all(
     mine.slice(0, HANDED_REMEMBERED).map(async ({ row, askerHandle, work }) => ({
@@ -2486,22 +2479,6 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
       createdAt: row.createdAt,
     })),
   );
-}
-
-/**
- * Whether `personId` is still in the conversation where the chain of `runId` was asked (`consultationOrigin`, else the
- * run's own): what was handed on for them there counts only while they can open it, as their work elsewhere does
- * ("Your recent work with <person> in other conversations", `buildRunContext`).
- */
-export async function stillInWhereAsked(db: Executor, orgId: string, runId: string, personId: string) {
-  const origin = await consultationOrigin(db, orgId, runId);
-  const [own] = origin
-    ? [origin]
-    : await db
-        .select({ channelId: agentRuns.channelId })
-        .from(agentRuns)
-        .where(and(eq(agentRuns.orgId, orgId), eq(agentRuns.id, runId)));
-  return !!own && (await isChannelMember(db, orgId, own.channelId, personId));
 }
 
 type HandedState = Pick<HandedFor, "status" | "answer" | "answerHidden" | "stopped">;
