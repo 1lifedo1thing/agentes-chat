@@ -3048,6 +3048,14 @@ export const featureKeysEn = {
       text: "When an agent does something outside the conversation, it shows up here.",
     },
   },
+  /** Linking the outside chat app in Notificações (ADR 0187). {{surface}} is that app's name, as the server sets it. */
+  surface: {
+    /** The row's state while a sender is linked. */
+    on: "On",
+    codeText: "Send the message that opens there, then come back here.",
+    openFailed: "Couldn't open {{surface}} on this phone. Send it the code below instead.",
+    orType: "Or send this code there",
+  },
 };
 
 /** Every language of these strings has this shape (English is the source). */

@@ -2980,5 +2980,11 @@
       "title": "Nada que revisar",
       "text": "Cuando un agente haga algo fuera de la conversación, aparecerá aquí."
     }
+  },
+  "surface": {
+    "on": "Activado",
+    "codeText": "Envía el mensaje que se abre allí y vuelve aquí.",
+    "openFailed": "No se pudo abrir {{surface}} en este teléfono. Envíale el código de abajo.",
+    "orType": "O envía este código allí"
   }
 }

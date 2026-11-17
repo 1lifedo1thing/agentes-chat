@@ -3114,5 +3114,11 @@
       "title": "Nic do sprawdzenia",
       "text": "Gdy agent zrobi coś poza rozmową, pojawi się to tutaj."
     }
+  },
+  "surface": {
+    "on": "Włączone",
+    "codeText": "Wyślij wiadomość, która się tam otworzy, a potem wróć tutaj.",
+    "openFailed": "Nie udało się otworzyć {{surface}} na tym telefonie. Zamiast tego wyślij tam kod poniżej.",
+    "orType": "Albo wyślij tam ten kod"
   }
 }

@@ -2872,5 +2872,11 @@
       "title": "İncelenecek bir şey yok",
       "text": "Bir ajan sohbet dışında bir şey yaptığında burada görünür."
     }
+  },
+  "surface": {
+    "on": "Açık",
+    "codeText": "Orada açılan mesajı gönderin, sonra buraya dönün.",
+    "openFailed": "{{surface}} bu telefonda açılamadı. Bunun yerine aşağıdaki kodu oraya gönderin.",
+    "orType": "Ya da bu kodu oraya gönderin"
   }
 }

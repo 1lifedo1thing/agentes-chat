@@ -2980,5 +2980,11 @@
       "title": "Rien à vérifier",
       "text": "Quand un agent fait quelque chose hors de la discussion, cela apparaît ici."
     }
+  },
+  "surface": {
+    "on": "Activé",
+    "codeText": "Envoyez le message qui s'ouvre là-bas, puis revenez ici.",
+    "openFailed": "Impossible d'ouvrir {{surface}} sur ce téléphone. Envoyez-lui plutôt le code ci-dessous.",
+    "orType": "Ou envoyez ce code là-bas"
   }
 }

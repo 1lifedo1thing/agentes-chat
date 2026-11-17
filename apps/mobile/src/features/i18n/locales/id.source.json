@@ -6981,5 +6981,17 @@
   },
   "empty.audit.text": {
     "value": "When an agent does something outside the conversation, it shows up here."
+  },
+  "surface.on": {
+    "value": "On"
+  },
+  "surface.codeText": {
+    "value": "Send the message that opens there, then come back here."
+  },
+  "surface.openFailed": {
+    "value": "Couldn't open {{surface}} on this phone. Send it the code below instead."
+  },
+  "surface.orType": {
+    "value": "Or send this code there"
   }
 }
