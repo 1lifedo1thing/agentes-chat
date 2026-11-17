@@ -2261,7 +2261,6 @@ export const featureKeysPtBR = {
     planRowSub: "Entra pelo computador do agente, sem chave",
     keyRow: "Uma chave",
     keyRowSub: "Você paga pelo uso, direto ao provedor",
-    already: "Já na {{org}}",
     stepOf: "{{step}} de {{total}}",
   },
   crash: {

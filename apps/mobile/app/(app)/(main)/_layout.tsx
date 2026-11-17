@@ -77,6 +77,7 @@ export default function MainStack() {
       link: { ...solid, animation: "none" },
       // Connect an AI: one pushed screen per question, on the grouped gray (its bar counts the steps).
       "connect-ai/index": connectAi,
+      "connect-ai/have": connectAi,
       "connect-ai/plans": connectAi,
       "connect-ai/plan": connectAi,
       "connect-ai/key": connectAi,

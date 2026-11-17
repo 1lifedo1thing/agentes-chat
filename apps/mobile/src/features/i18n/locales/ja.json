@@ -2103,7 +2103,6 @@
     "planRowSub": "エージェントのコンピューターでログイン、キー不要",
     "keyRow": "キー",
     "keyRowSub": "使った分だけ、提供元に直接支払います",
-    "already": "{{org}}にすでにあるもの",
     "stepOf": "{{step}}/{{total}}"
   },
   "crash": {

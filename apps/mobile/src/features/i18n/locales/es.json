@@ -2308,7 +2308,6 @@
     "planRowSub": "Inicia sesión en la computadora del agente, sin clave",
     "keyRow": "Una clave",
     "keyRowSub": "Pagas por uso, directo al proveedor",
-    "already": "Ya en {{org}}",
     "stepOf": "{{step}} de {{total}}"
   },
   "crash": {

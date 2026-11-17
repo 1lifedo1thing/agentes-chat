@@ -3450,9 +3450,14 @@
     "titleFor": "Eine KI für {{name}} verbinden",
     "have": {
       "title": "Bereits verbunden",
-      "titleFor": "Bereits verbunden, für {{name}}",
       "other": "Oder eine andere verbinden",
-      "manageKeys": "Schlüssel verwalten oder löschen"
+      "manageKeys": "Schlüssel verwalten oder löschen",
+      "pickLine": "Wähle ein Konto, das hier schon verbunden ist. {{name}} denkt damit.",
+      "onlyOwner_one": "Noch {{count}} Konto, das nur {{name}} vergeben kann.",
+      "onlyOwner_other": "Noch {{count}} Konten, die nur {{name}} vergeben kann.",
+      "moreAgents_one": "und {{count}} weiterer Agent",
+      "moreAgents_other": "und {{count}} weitere Agenten",
+      "plenty": "Noch viel Luft"
     },
     "chat": {
       "mine": "Deine",

@@ -2209,7 +2209,6 @@
     "planRowSub": "Ajanın bilgisayarında oturum açar, anahtar gerekmez",
     "keyRow": "Bir anahtar",
     "keyRowSub": "Kullandıkça doğrudan sağlayıcıya ödersiniz",
-    "already": "{{org}} çalışma alanında zaten var",
     "stepOf": "{{step}} / {{total}}"
   },
   "crash": {

@@ -2421,7 +2421,6 @@
     "planRowSub": "Logowanie na komputerze agenta, bez klucza",
     "keyRow": "Klucz",
     "keyRowSub": "Płacisz za użycie, bezpośrednio dostawcy",
-    "already": "Już w {{org}}",
     "stepOf": "{{step}} z {{total}}"
   },
   "crash": {

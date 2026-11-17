@@ -3440,9 +3440,14 @@
     "titleFor": "{{name}} için bir yapay zeka bağlayın",
     "have": {
       "title": "Zaten bağlı",
-      "titleFor": "Zaten bağlı, {{name}} için",
       "other": "Ya da başka birini bağlayın",
-      "manageKeys": "Anahtarları yönet veya sil"
+      "manageKeys": "Anahtarları yönet veya sil",
+      "pickLine": "Burada zaten bağlı bir hesap seçin. {{name}} onunla düşünür.",
+      "onlyOwner_one": "Yalnızca {{name}} tarafından verilebilecek {{count}} hesap daha var.",
+      "onlyOwner_other": "Yalnızca {{name}} tarafından verilebilecek {{count}} hesap daha var.",
+      "moreAgents_one": "ve {{count}} ajan daha",
+      "moreAgents_other": "ve {{count}} ajan daha",
+      "plenty": "Bolca yer var"
     },
     "chat": {
       "mine": "Sizinkiler",

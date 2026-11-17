@@ -2308,7 +2308,6 @@
     "planRowSub": "Se connecte sur l'ordinateur de l'agent, sans clé",
     "keyRow": "Une clé",
     "keyRowSub": "Vous payez à l'usage, directement au fournisseur",
-    "already": "Déjà dans {{org}}",
     "stepOf": "{{step}} sur {{total}}"
   },
   "crash": {

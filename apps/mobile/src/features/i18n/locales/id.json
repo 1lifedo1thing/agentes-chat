@@ -2103,7 +2103,6 @@
     "planRowSub": "Masuk di komputer agen, tanpa kunci",
     "keyRow": "Kunci API",
     "keyRowSub": "Kamu bayar per pemakaian, langsung ke penyedia",
-    "already": "Sudah ada di {{org}}",
     "stepOf": "{{step}} dari {{total}}"
   },
   "crash": {

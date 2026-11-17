@@ -3719,10 +3719,18 @@
     "titleFor_female": "Подключить ИИ для {{name}}",
     "have": {
       "title": "Уже подключены",
-      "titleFor": "Уже подключены для {{name}}",
-      "titleFor_female": "Уже подключены для {{name}}",
       "other": "Или подключите другой",
-      "manageKeys": "Управлять ключами или удалить их"
+      "manageKeys": "Управлять ключами или удалить их",
+      "pickLine": "Выберите аккаунт, уже подключённый здесь. {{name}} думает с ним.",
+      "onlyOwner_one": "Ещё {{count}} аккаунт, который может дать только {{name}}.",
+      "onlyOwner_few": "Ещё {{count}} аккаунта, которые может дать только {{name}}.",
+      "onlyOwner_many": "Ещё {{count}} аккаунтов, которые может дать только {{name}}.",
+      "onlyOwner_other": "Ещё {{count}} аккаунта, которые может дать только {{name}}.",
+      "moreAgents_one": "и ещё {{count}} агент",
+      "moreAgents_few": "и ещё {{count}} агента",
+      "moreAgents_many": "и ещё {{count}} агентов",
+      "moreAgents_other": "и ещё {{count}} агента",
+      "plenty": "Запас есть"
     },
     "chat": {
       "mine": "Ваши",
