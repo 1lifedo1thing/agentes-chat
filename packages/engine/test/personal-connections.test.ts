@@ -17,6 +17,7 @@ import {
   composioUserId,
   connectionFor,
   connectionViewFor,
+  connectorScope,
   connectorStates,
   connectorTriggerAllowed,
   createAgent,
@@ -330,7 +331,12 @@ describe("a personal connection serves only its own person, as a personal Vault 
     for (const u of [walter, bia]) await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { userId: u.id });
     const asked = await insertMessageWithRuns(
       f.db,
-      { orgId: f.org.id, channelId: f.general.id, author: { type: "person", userId: walter.id }, body: "@dev my issues" },
+      {
+        orgId: f.org.id,
+        channelId: f.general.id,
+        author: { type: "person", userId: walter.id },
+        body: "@dev my issues",
+      },
       { startRuns: true },
     );
     const run = asked.runs[0];
@@ -381,6 +387,49 @@ describe("a personal connection serves only its own person, as a personal Vault 
     await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, ops.id));
     expect(await names(source, await runOf(ops.id, walter.id))).toEqual([]);
     expect(await names(source, await runOf(ops.id, bia.id))).toEqual([]);
+  });
+
+  test('its tools obey the agent\'s own grants on it: "all tools" and a read-only grant never give its writes', async () => {
+    const { walter, mine, source } = await walterWithLinear();
+    await f.db.delete(schema.agentScopes).where(eq(schema.agentScopes.connectionId, mine.id));
+    await f.db.insert(schema.agentScopes).values([
+      { orgId: f.org.id, agentId: f.agent.id, connectionId: null, scope: "*" },
+      { orgId: f.org.id, agentId: f.agent.id, connectionId: mine.id, scope: connectorScope("linear", "issues.read") },
+    ]);
+    expect(await names(source, await runOf(f.agent.id, walter.id))).toEqual(["linear_list_issues"]);
+  });
+
+  test("a card waiting on its tool is canceled when its person leaves", async () => {
+    const { walter, linear, source } = await walterWithLinear();
+    await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, { approvalsLevel: "always" });
+    await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { userId: walter.id });
+    const message = await insertMessageWithRuns(
+      f.db,
+      { orgId: f.org.id, channelId: f.general.id, author: { type: "person", userId: walter.id }, body: "@dev file it" },
+      { startRuns: true },
+    );
+    const run = message.runs[0];
+    if (!run) throw new Error("no run");
+    const gateway = createToolGateway({ sources: [source] });
+    const ctx: ToolContext = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: run.id,
+      channelId: f.general.id,
+      threadRootId: message.message.id,
+      triggerMessageId: message.message.id,
+    };
+    const asked = await gateway.invoke(ctx, {
+      toolUseId: "t1",
+      name: "linear_create_issue",
+      input: { title: "Quarterly plan", why: "Walter asked me to file the quarterly plan in his own Linear today." },
+    });
+    if (asked.type !== "approval") throw new Error(`expected a card, got ${asked.type}`);
+    await removeMember(f.db, f.owner.id, f.org.id, walter.id);
+    const [card] = await f.db.select().from(schema.approvals).where(eq(schema.approvals.id, asked.approval.id));
+    expect(card?.status).toBe("canceled");
+    expect(linear.calls).toEqual([]);
   });
 
   test("the right hand uses it only for its owner, in their own DM", async () => {
@@ -799,12 +848,52 @@ describe("a person's own server by address", () => {
     expect(JSON.stringify(bare)).not.toContain("fake-");
   });
 
-  test("the audit log keeps its address and account from anyone but its person", async () => {
-    await walterWithCrm();
+  test("the audit log keeps its address and account from anyone but its person, reconnected too", async () => {
+    const { walter, crm } = await walterWithCrm();
+    await storeCustomConnection(depsOf(f), {
+      orgId: f.org.id,
+      actorId: walter.id,
+      serverUrl: ADDRESS,
+      label: "Walter CRM",
+      authType: "api_key",
+      secret: { apiKey: "crm_FAKE_key_5678", headers: { "X-Fake-Team": "fake-team" } },
+      connectionId: crm.id,
+      owner: walter.id,
+    });
+    const rows = (await listAudit(f.db, f.owner.id, f.org.id)).rows;
+    for (const action of ["connector.custom_connected", "connector.custom_reconnected"]) {
+      const row = rows.find((r) => r.action === action);
+      expect(row?.details).toMatchObject({ label: "Walter CRM", serverUrl: "", account: null, personal: true });
+    }
+  });
+
+  test("a name that kept its account goes by the service alone for anyone but its person", async () => {
+    const { walter } = await walterWithLinear();
+    const { connection } = await storeCustomConnection(depsOf(f), {
+      orgId: f.org.id,
+      actorId: walter.id,
+      serverUrl: "https://crm.example.com/mcp",
+      label: "CRM",
+      authType: "oauth",
+      secret: null,
+      composio: { accountId: "ca_FAKE_walter_crm", name: "walter@example.com" },
+      owner: walter.id,
+    });
+    expect(connection.label).toBe("CRM (walter@example.com)");
+    const [bare] = await listCustomServers(f.db, f.owner.id, f.org.id, { others: true });
+    expect(bare).toMatchObject({ id: connection.id, label: "CRM", serverUrl: "", accountLabel: null });
     const [row] = (await listAudit(f.db, f.owner.id, f.org.id)).rows.filter(
       (r) => r.action === "connector.custom_connected",
     );
-    expect(row?.details).toMatchObject({ label: "Walter CRM", serverUrl: "", account: null, personal: true });
+    expect(row?.details).toMatchObject({ label: "CRM", serverUrl: "", account: null, personal: true });
+    expect(JSON.stringify(await listConnections(f.db, f.owner.id, f.org.id, { others: true }))).not.toContain(
+      "walter@example.com",
+    );
+    const tree = await getAgentAccess(f.db, f.owner.id, f.org.id, f.agent.id, { others: true });
+    expect(JSON.stringify(tree)).not.toContain("walter@example.com");
+    // Its person still reads the whole name.
+    const [his] = await listCustomServers(f.db, walter.id, f.org.id);
+    expect(his?.label).toBe("CRM (walter@example.com)");
   });
 
   test("Reconectar finds only its person's own", async () => {
@@ -860,7 +949,7 @@ describe("what the team's paths never name nor hand out", () => {
   });
 
   test("nobody else grants it on an agent, and a new agent with every app doesn't get it", async () => {
-    const { mine, ops } = await walterWithLinear();
+    const { walter, mine, ops } = await walterWithLinear();
     await expect(
       setAgentScopes(f.db, f.owner.id, f.org.id, ops.id, [{ connectionId: mine.id, scope: "connector:*" }]),
     ).rejects.toBeInstanceOf(ForbiddenError);
@@ -869,6 +958,16 @@ describe("what the team's paths never name nor hand out", () => {
     const grants = await f.db.select().from(schema.agentScopes).where(eq(schema.agentScopes.agentId, fresh.id));
     expect(grants.length).toBeGreaterThan(0);
     expect(grants.map((g) => g.connectionId)).not.toContain(mine.id);
+    // An agent made in its person's name holds it at once (a known limit of the decision record).
+    const his = await createAgent(
+      f.db,
+      f.owner.id,
+      f.org.id,
+      { name: "Helper", handle: "helper", ownerUserId: walter.id },
+      NEW_AGENT_DEFAULTS,
+    );
+    const held = await f.db.select().from(schema.agentScopes).where(eq(schema.agentScopes.agentId, his.id));
+    expect(held.map((g) => g.connectionId)).toContain(mine.id);
   });
 
   test("a person's own connections go with their account; only its member person's routines take its events", async () => {
