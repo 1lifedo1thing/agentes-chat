@@ -136,12 +136,12 @@ export function NoticeIsland() {
     if (!snap.items.length) setOpen(false);
   }, [snap.items.length]);
 
-  // A new arrival: a light tap.
+  // A new arrival: a firm tap, felt in a pocket too (the light one passed unnoticed).
   const seen = useRef(snap.seq);
   useEffect(() => {
     if (snap.seq === seen.current) return;
     seen.current = snap.seq;
-    if (snap.items.length) haptics.light();
+    if (snap.items.length) haptics.medium();
   }, [snap.seq, snap.items.length]);
 
   const camera = Platform.OS === "ios" && insets.top >= CAMERA_INSET;
