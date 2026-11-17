@@ -1,5 +1,13 @@
 import type { Config } from "@agenteschat/config";
-import { deleteHost, HOSTS_MAX, type HostLook, listHosts, normalizeHost, putHost } from "@agenteschat/engine";
+import {
+  ConflictError,
+  deleteHost,
+  HOSTS_MAX,
+  type HostLook,
+  listHosts,
+  normalizeHost,
+  putHost,
+} from "@agenteschat/engine";
 import { createRoute, type OpenAPIHono, z } from "@hono/zod-openapi";
 import { apiError, errorResponse } from "../http/errors";
 import { body, json, noContent } from "../routes/app/context";
@@ -71,6 +79,8 @@ const ownHosts = (config: Config) =>
 /** Extra hostnames this server answers on, each with the look of its pages before sign-in (ADR 0194). */
 export function registerOperatorHosts(api: OpenAPIHono, { db, config, blobs }: OperatorDeps) {
   const own = ownHosts(config);
+  // Better Auth marks its cookies Secure from `PUBLIC_URL` (its baseURL), on every host alike.
+  const https = new URL(config.PUBLIC_URL).protocol === "https:";
   const store = () => {
     if (!blobs) throw new Error("the operator API needs the platform's blob store for a host's logo");
     return { db, blobs };
@@ -93,11 +103,17 @@ export function registerOperatorHosts(api: OpenAPIHono, { db, config, blobs }: O
       path: "/hosts/{host}",
       tags,
       summary: "Register a hostname, or replace its look (ADR 0194)",
-      description: `On that host the pages before sign-in show its name, logo and accent, and sign-in is by email alone. Point the hostname at this server and serve a certificate for it first: the server only answers what reaches it. With the bot check on, also add it to the Turnstile widget's domains in Cloudflare. Applies at once on this process and within 30 s on the others. Refusals: \`host.invalid\` (not a hostname: no scheme, port or path, at least one dot), \`host.own\` (\`PUBLIC_URL\`'s host or one of \`EXTRA_TRUSTED_ORIGINS\`), \`host.too_many\` (409, past ${HOSTS_MAX}), and a logo's as for a workspace's (\`logo.type\`, \`logo.too_large\`, \`logo.not_base64\`, \`logo.empty\`).`,
+      description: `On that host the pages before sign-in show its name, logo and accent, and sign-in is by email alone. Point the hostname at this server and serve a certificate for it first: the server only answers what reaches it. With the bot check on, also add it to the Turnstile widget's domains in Cloudflare. Applies at once on this process and within 30 s on the others. Refusals: \`host.invalid\` (not a hostname: no scheme, port or path, at least one dot), \`host.own\` (\`PUBLIC_URL\`'s host or one of \`EXTRA_TRUSTED_ORIGINS\`), \`host.too_many\` (409, past ${HOSTS_MAX}), \`host.needs_https\` (409, \`PUBLIC_URL\` isn't https, so the session cookies a registered host sets would carry no Secure flag), and a logo's as for a workspace's (\`logo.type\`, \`logo.too_large\`, \`logo.not_base64\`, \`logo.empty\`).`,
       request: { params: HostParams, body: body(HostLookBody) },
-      responses: { 200: json(Host), ...errors, 409: errorResponse("Too many hosts") },
+      responses: { 200: json(Host), ...errors, 409: errorResponse("Too many hosts, or `PUBLIC_URL` isn't https") },
     }),
     async (c) => {
+      if (!https) {
+        throw new ConflictError(
+          "PUBLIC_URL isn't https: session cookies on a registered host would carry no Secure flag. Serve PUBLIC_URL over https first.",
+          "host.needs_https",
+        );
+      }
       const look = await putHost(store(), own, c.req.valid("param").host, c.req.valid("json"));
       return c.json(hostJson(look), 200);
     },

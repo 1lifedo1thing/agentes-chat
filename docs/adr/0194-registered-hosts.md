@@ -31,7 +31,7 @@ stay exact and be written once.
    `GET /hosts`, `PUT /hosts/{host}` (creates or replaces; `accent` and `logo` left out are left as they are, null
    clears them; the logo takes a workspace logo's checks) and `DELETE /hosts/{host}` (also deletes its logo).
    Refusals: `host.invalid` (not a hostname), `host.own` (`PUBLIC_URL`'s host or one of `EXTRA_TRUSTED_ORIGINS`'),
-   `host.too_many` (past 1,000). Every write of the table holds one transaction lock, so a replace and a delete never
+   `host.too_many` (past 1,000), `host.needs_https` (409: `PUBLIC_URL` isn't https; see 4). Every write of the table holds one transaction lock, so a replace and a delete never
    interleave (a deleted host never comes back pointing at a logo the delete removed) and two creates never both pass
    1,000. A new logo is stored under a name of its own before its row is written, and a logo no row holds any more is
    removed only after the write commits. A server with none behaves exactly as before.
@@ -53,7 +53,10 @@ stay exact and be written once.
    receive.
 4. **A session per host.** Better Auth's cookies carry no `Domain`, so a browser keeps a registered host's session to
    that host alone: signing in there signs in nowhere else, and the main address's session never reaches it. `baseURL`
-   stays `PUBLIC_URL`.
+   stays `PUBLIC_URL`, and Better Auth marks its cookies `Secure` (with the `__Secure-` prefix) from it, on every host
+   alike. A registered host is always https, so a server whose `PUBLIC_URL` is plain http (one on a LAN address)
+   registers none (`host.needs_https`): its cookies on a registered host would go without `Secure`, and a browser would
+   send them over plain http to that host.
 5. **Email only on a registered host.** There `GET /api/app/auth-config` says every provider is off and adds
    `host: { name, accent, logoUrl }` (null everywhere else; `GET /api/instance` says the same of the providers), and
    Better Auth's `before` hook refuses to start or link a provider's sign-in (`/sign-in/social`, `/link-social`) with

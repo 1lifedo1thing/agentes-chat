@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import type { HumanAction, HumanCheck } from "@agenteschat/adapters";
 import { schema } from "@agenteschat/db";
-import { enableCaches, putHost } from "@agenteschat/engine";
+import { enableCaches, listHosts, putHost } from "@agenteschat/engine";
 import { createLogger } from "../src/logger";
 import { createOperatorApp } from "../src/operator/app";
 import { personUpgrade } from "../src/realtime/ws";
@@ -217,7 +217,7 @@ test("auth-config: unchanged on the main address; on a registered host its look 
   expect(there.host).toEqual({
     name: "Northwind Studio",
     accent: "#7c3aed",
-    logoUrl: expect.stringMatching(/^\/api\/host-look\/logo\?v=[0-9a-f]{16}\.png$/),
+    logoUrl: expect.stringMatching(/^\/api\/host-look\/logo\?v=[0-9a-f]{8}-[0-9a-f]{16}\.png$/),
   });
   const { host: _main, socialProviders: _a, ...mainRest } = main;
   const { host: _there, socialProviders: _b, ...thereRest } = there;
@@ -300,11 +300,8 @@ test("the logo route serves the request's own host's logo, never another's", asy
   expect((await logo(on(browser(s), "app.unregistered.example"))).status).toBe(404);
 });
 
-test("the operator's routes: auth, shapes, refusals, and the cache dropped on a write", async () => {
-  const s = await server({ EXTRA_TRUSTED_ORIGINS: OWN_EXTRA });
-  enableCaches(true);
-  const READ = "operator-read-token-".padEnd(48, "x");
-  const app = createOperatorApp(
+const operatorApp = (s: TestServer, read?: string) =>
+  createOperatorApp(
     {
       db: s.db,
       config: s.config,
@@ -313,8 +310,25 @@ test("the operator's routes: auth, shapes, refusals, and the cache dropped on a 
       blobs: s.adapters.platformBlobs,
     },
     TOKEN,
-    READ,
+    read,
   );
+
+test("a server whose PUBLIC_URL isn't https registers no host: its cookies there would carry no Secure flag", async () => {
+  const s = await server();
+  const res = await operatorApp(s).request(`/api/operator/v1/hosts/b.northwind.example`, {
+    method: "PUT",
+    headers: { authorization: `Bearer ${TOKEN}`, "content-type": "application/json" },
+    body: JSON.stringify({ name: "B" }),
+  });
+  expect([res.status, await codeOf(res)]).toEqual([409, "host.needs_https"]);
+  expect((await listHosts(s.db)).map((h) => h.host)).toEqual([OTHER, HOST]);
+});
+
+test("the operator's routes: auth, shapes, refusals, and the cache dropped on a write", async () => {
+  const s = await server({ EXTRA_TRUSTED_ORIGINS: OWN_EXTRA, PUBLIC_URL: "https://chat.example.com" });
+  enableCaches(true);
+  const READ = "operator-read-token-".padEnd(48, "x");
+  const app = operatorApp(s, READ);
   const call = (method: string, path: string, json?: unknown, token: string | null = TOKEN) =>
     app.request(`/api/operator/v1${path}`, {
       method,

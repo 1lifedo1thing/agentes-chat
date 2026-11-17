@@ -395,6 +395,7 @@ const PLAIN_LINE = new Set([
   "host.invalid",
   "host.own",
   "host.too_many",
+  "host.needs_https",
   // Only an agent names a project by a name that isn't one, and the pickers offer only projects that exist.
   "issue_project.unknown",
   "issue_project.not_found",
