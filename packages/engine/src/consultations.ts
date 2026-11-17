@@ -2492,8 +2492,10 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
   });
 }
 
-/** How a hand-off went, and the words that answered it with the run that wrote them (hidden if it read outside). */
-/** `relayed`: the words come from a run that had read outside content, or whose reply is not there to say. */
+/**
+ * How a hand-off went and the words that answered it. `relayed`: those words come from a run that had read outside
+ * content, or whose reply is not there to say.
+ */
 type HandedState = Pick<HandedFor, "status" | "stopped"> & { words: string | null; relayed: boolean };
 
 /**

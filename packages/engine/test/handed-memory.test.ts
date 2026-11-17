@@ -126,7 +126,9 @@ describe("work handed between agents, for a person", () => {
   test("a question: the agent remembers it too", async () => {
     const { prompts, ada } = await handOff("ask_agent");
     const later = await askInDm(f, f.owner.id, ada.id, prompts);
-    expect(later).toContain('- @dev asked you, 0 min ago: "Onde está o relatório de vendas de outubro?"');
+    expect(later).toContain(
+      '- @dev asked you, 0 min ago: "Onde está o relatório de vendas de outubro?" → you answered "Pronto: está no Drive em Vendas/Outubro, subiu 12%."',
+    );
   });
 
   test("another person's DM with the same agent never shows it", async () => {
