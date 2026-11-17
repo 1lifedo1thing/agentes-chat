@@ -4,6 +4,7 @@ import Animated, { FadeIn, LayoutAnimationConfig } from "react-native-reanimated
 import { haptics } from "./haptics";
 import { Icon, type IconName } from "./Icon";
 import { InfoHint, useInfoHint } from "./InfoHint";
+import { MarkIcon } from "./MarkIcon";
 import { MEDIA_ROW } from "./media-row";
 import { PRESS_DELAY, ROW_PRESS_DELAY } from "./PressScale";
 import { GROUPED_ROW, TOUCH } from "./rhythm";
@@ -187,6 +188,8 @@ export interface GroupedRowProps {
   belowText?: string;
   /** A rounded tile with this icon on the left. */
   icon?: IconName;
+  /** On `icon`'s tile in its place: a brand's one-color logo at this address, in the icon's box and color. */
+  mark?: string | null;
   /** Anything else on the left (an organization's tile). */
   leading?: ReactNode;
   /** What `leading` says when it is words (an account's place in an order): VoiceOver reads it before the label. */
@@ -271,6 +274,7 @@ function Row({
   below,
   belowText,
   icon,
+  mark,
   leading,
   leadingSaid,
   value,
@@ -318,7 +322,7 @@ function Row({
       {icon ? (
         <View style={styles.lead}>
           <View style={[styles.tile, { backgroundColor: danger ? c.plate : c.sunken }]}>
-            <Icon name={icon} size={16} color={danger ? c.danger : c.ink2} />
+            <MarkIcon uri={mark ?? null} fallback={icon} size={16} color={danger ? c.danger : c.ink2} />
           </View>
         </View>
       ) : null}

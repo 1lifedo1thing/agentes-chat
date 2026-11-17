@@ -284,6 +284,38 @@ describe("the outside chat app's row in Notificações", () => {
     expect(document.getElementById("notice-surface-status")?.textContent).toBe(`${LONG_DISPLAY} · ${LONG_PROFILE}`);
   });
 
+  test("the app's logo takes the box of the glyphs on the rows beside it, in their color, a plain glyph without one", async () => {
+    // The test DOM loads no image: this one says every logo loaded, as a browser does for a file that exists.
+    const RealImage = globalThis.Image;
+    globalThis.Image = class {
+      onload: (() => void) | null = null;
+      set src(_: string) {
+        queueMicrotask(() => this.onload?.());
+      }
+    } as unknown as typeof Image;
+    try {
+      await notifications({ name: "Examplechat", links: [] });
+      await settle(4);
+      const glyphOf = (id: string) =>
+        document.getElementById(id)?.closest(".settings-row")?.querySelector<SVGElement>(".settings-row__icon > svg");
+      const mark = glyphOf("notice-surface-status");
+      const beside = glyphOf("notice-mac-help");
+      expect(mark?.querySelector("image")?.getAttribute("href")).toBe("/connectors/examplechat.svg");
+      expect(mark?.querySelector("rect")?.getAttribute("fill")).toBe("currentColor");
+      expect(beside).toBeTruthy();
+      for (const el of [mark, beside]) expect(el?.getAttribute("class")).toBe("ac-icon");
+      expect([mark?.style.width, mark?.style.height]).toEqual([beside?.style.width ?? "", beside?.style.height ?? ""]);
+      expect(document.querySelector(".settings-row__icon .connector-icon")).toBeNull();
+      cleanup();
+      await notifications({ name: "Example Chat", links: [] });
+      await settle(4);
+      expect(glyphOf("notice-surface-status")?.querySelector("image")).toBeNull();
+      expect(glyphOf("notice-surface-status")?.style.width).toBe(beside?.style.width ?? "");
+    } finally {
+      globalThis.Image = RealImage;
+    }
+  });
+
   test("at the longest name, in every language: the steps leave the name to the button under them", async () => {
     const { app, row } = await notifications({ name: LONG_SURFACE, links: [] });
     await click(

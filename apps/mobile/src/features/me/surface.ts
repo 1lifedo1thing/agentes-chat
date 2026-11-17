@@ -1,7 +1,12 @@
 import type { Agent, SurfaceLink, SurfaceLinks } from "@agenteschat/client";
 import { formatTimeLeft } from "@agenteschat/client/lib/actions";
 import { rightHandName } from "@agenteschat/client/lib/right-hand";
-import { RENEW_BEFORE_MS, type SurfaceRow, surfaceViaName } from "@agenteschat/client/lib/surface-links";
+import {
+  RENEW_BEFORE_MS,
+  type SurfaceRow,
+  surfaceMarkUrl,
+  surfaceViaName,
+} from "@agenteschat/client/lib/surface-links";
 import { surfaceVia } from "@agenteschat/client/lib/via";
 import { formatPhone } from "@agenteschat/i18n/format";
 import type { TFunction } from "i18next";
@@ -55,18 +60,25 @@ export function surfaceRowText(
   return { ...(assistant ? { sub: t("surface.row.none", { assistant }) } : {}), value: t("surface.row.link") };
 }
 
-/** The tag on a person's message written on the surface, or null. `data`: the links answer, for the surface's name. */
+/**
+ * The tag on a person's message written on the surface, or null. `data`: the links answer, for the surface's name.
+ * `mark`: the surface's logo's path, for one written there (a forwarded one keeps the quote glyph).
+ */
 export function surfaceTagText(
   t: TFunction,
   meta: Record<string, unknown> | null | undefined,
   person: string,
   data: SurfaceLinks | null | undefined,
   locale?: string,
-): { label: string; hint: string } | null {
+): { label: string; hint: string; mark: string | null } | null {
   const via = surfaceVia(meta);
   if (!via) return null;
   const surface = surfaceViaName(via.surface, data?.surface?.name, locale);
   return via.forwarded
-    ? { label: t("surface.forwarded", { surface }), hint: t("surface.forwardedTip", { person, surface }) }
-    : { label: t("surface.via", { surface }), hint: t("surface.viaTip", { person, surface }) };
+    ? { label: t("surface.forwarded", { surface }), hint: t("surface.forwardedTip", { person, surface }), mark: null }
+    : {
+        label: t("surface.via", { surface }),
+        hint: t("surface.viaTip", { person, surface }),
+        mark: surfaceMarkUrl(via.surface),
+      };
 }

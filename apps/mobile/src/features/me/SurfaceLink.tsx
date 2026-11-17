@@ -16,6 +16,7 @@ import {
   LINK_POLL_MS,
   newlyLinked,
   type SurfaceRow,
+  surfaceMarkUrl,
   surfaceRowOf,
 } from "@agenteschat/client/lib/surface-links";
 import { formatPhone } from "@agenteschat/i18n/format";
@@ -23,9 +24,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Linking, StyleSheet, View } from "react-native";
+import { serverUrl } from "@/lib/server";
 import { useAppActive } from "@/lib/useAppActive";
 import { useOrg } from "@/providers/org";
 import { Button, GroupedList, GroupedRow, haptics, Sheet, Text, useToast } from "@/ui";
+import { iconUri } from "../connectors/logic";
 import { confirmAction } from "../settings/parts";
 import { useColors, useNow } from "../shared/hooks";
 import { MONO } from "../shared/parts";
@@ -67,6 +70,7 @@ export function SurfaceLinkRow() {
         <GroupedRow
           media
           icon="chat"
+          mark={iconUri(serverUrl(), surfaceMarkUrl(row.surface))}
           label={row.surface}
           labelLines={0}
           {...(text.sub ? { sub: text.sub, subLines: 0 } : {})}

@@ -2438,6 +2438,37 @@
         });
       }
     },
+    /**
+     * The glyphs on a list's row tiles (`.settings-row__icon` with a surface of its own: a face or a maker's mark brings
+     * its own tile) are one size, within 1px: a brand's logo drawn on that tile takes the box of the kit's glyphs beside
+     * it, never a tile of its own inside the tile. A glyph is the tile's one svg, or its one masked mark.
+     */
+    tileglyph(out) {
+      const lists = new Map();
+      for (const tile of document.body.querySelectorAll(".settings-row__icon")) {
+        if (!seen(tile) || !hasSurface(style(tile))) continue;
+        const ink = [...tile.querySelectorAll("*")].filter(
+          (el) =>
+            seen(el) &&
+            (el.tagName.toLowerCase() === "svg"
+              ? !el.parentElement.closest("svg")
+              : !el.closest("svg") && (style(el).maskImage || style(el).webkitMaskImage || "none") !== "none"),
+        );
+        if (ink.length !== 1) continue;
+        const list = tile.closest(".settings-row, li")?.parentElement ?? tile.parentElement;
+        lists.set(list, [...(lists.get(list) ?? []), ink[0]]);
+      }
+      for (const [list, glyphs] of lists) {
+        const sizes = glyphs.map((g) => g.getBoundingClientRect()).map((r) => [r.width, r.height]);
+        const count = (a) => sizes.filter((b) => Math.abs(a[0] - b[0]) <= 1 && Math.abs(a[1] - b[1]) <= 1).length;
+        const usual = sizes.reduce((best, a) => (count(a) > count(best) ? a : best), sizes[0]);
+        glyphs.forEach((g, i) => {
+          const [w, h] = sizes[i];
+          const px = Math.max(Math.abs(w - usual[0]), Math.abs(h - usual[1]));
+          if (px > 1) out.push({ rule: "tileglyph", node: g, el: sig(g), box: sig(list), px: +px.toFixed(1) });
+        });
+      }
+    },
   };
 
   /**

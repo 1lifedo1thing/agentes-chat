@@ -211,7 +211,12 @@ describe("the mark on messages", () => {
     expect(surfaceTagText(t, via, "Ana", data)).toEqual({
       label: "via Example Chat",
       hint: "Sent by Ana on Example Chat",
+      mark: null,
     });
+    // The logo named like the surface, for one written there; a forwarded one keeps its own glyph.
+    const named = { via: { kind: "surface", surface: "examplechat", linkId: "l1" } };
+    expect(surfaceTagText(t, named, "Ana", data)?.mark).toBe("/connectors/examplechat.svg");
+    expect(surfaceTagText(t, { via: { ...named.via, forwarded: true } }, "Ana", data)?.mark).toBeNull();
     expect(surfaceTagText(t, { via: { ...via.via, forwarded: true } }, "Ana", data)?.label).toBe(
       "forwarded via Example Chat",
     );
@@ -235,7 +240,26 @@ describe("the mark on messages", () => {
     expect(own.indexOf("<SurfaceMark")).toBeLessThan(own.indexOf("when.time(m.createdAt)"));
     expect(src).toMatch(/accessibilityLabel=\{tag\.label\} accessibilityHint=\{tag\.hint\}/);
     // Others' rows: the tag counts as one, so a bubble with no names still shows its line, and wraps a long name.
-    expect(src).toContain('<Tag icon="chat" label={surfaceTag.label} hint={surfaceTag.hint} wrap />');
+    expect(src).toMatch(/<Tag\s+icon="chat"\s+lead=\{<MarkIcon uri=\{iconUri\(serverUrl\(\), surfaceTag\.mark\)\}/);
     expect(src).toMatch(/const tagged = Boolean\([^)]*surfaceTag/);
+  });
+});
+
+describe("the surface's logo beside the line icons", () => {
+  const read = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
+
+  test("the row's tile draws it in the icon's box and color, the chat icon without one", () => {
+    const grouped = read("ui/Grouped.tsx");
+    expect(grouped).toContain(
+      "<MarkIcon uri={mark ?? null} fallback={icon} size={16} color={danger ? c.danger : c.ink2} />",
+    );
+    expect(read("features/me/SurfaceLink.tsx")).toMatch(
+      /icon="chat"\s+mark=\{iconUri\(serverUrl\(\), surfaceMarkUrl\(row\.surface\)\)\}/,
+    );
+    const mark = read("ui/MarkIcon.tsx");
+    // The box is the icon's own size; the logo sits where the icons' strokes do on their 24 grid.
+    expect(mark).toContain("style={{ width: size, height: size,");
+    expect(mark).toContain("Math.round((size * 16) / 24)");
+    expect(mark).toContain("<Icon name={fallback} size={size}");
   });
 });
