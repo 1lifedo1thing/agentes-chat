@@ -1,7 +1,8 @@
 import type { PubSub } from "@agenteschat/adapters";
-import { and, type Database, eq, isNull, schema, sql } from "@agenteschat/db";
-import { type MachineRow, publishMachineUpdated } from "./machines";
+import { and, type Database, eq, isNotNull, isNull, schema, sql } from "@agenteschat/db";
+import { type MachineRow, machineOnline, publishMachineUpdated, shownStandby, TASK_OFFLINE_GRACE_MS } from "./machines";
 import { recordWakeWanted } from "./operator-events";
+import { enqueue } from "./outbox";
 
 const { machines, agents, agentRuns, machineTasks, machineHolds, browserHandoffs, organizationMembers } = schema;
 
@@ -47,7 +48,35 @@ export async function wantMachine(db: Database, machineId: string, why: WakeWhy,
         .where(managedRow(machineId))
         .returning(columns)
     : await db.select(columns).from(machines).where(managedRow(machineId));
-  if (row?.standbyAt) await recordWakeWanted(db, { orgId: row.orgId, machineId, why }, now);
+  if (!row?.standbyAt) return;
+  await recordWakeWanted(db, { orgId: row.orgId, machineId, why }, now);
+  // The first want since it slept starts the wake's clock (`shownStandby`): past it, the apps hear it is down.
+  const [first] = await db
+    .update(machines)
+    .set({ wakeWantedAt: new Date(now) })
+    .where(and(managedRow(machineId), isNotNull(machines.standbyAt), isNull(machines.wakeWantedAt)))
+    .returning({ id: machines.id });
+  if (first) {
+    await enqueue(db, {
+      orgId: row.orgId,
+      kind: WAKE_OVERDUE_JOB,
+      payload: { machineId },
+      dedupeKey: `${WAKE_OVERDUE_JOB}:${machineId}:${now}`,
+      runAt: new Date(now + TASK_OFFLINE_GRACE_MS),
+    });
+  }
+}
+
+export const WAKE_OVERDUE_JOB = "machine.wake_overdue";
+
+/**
+ * `machine.wake_overdue`: a computer wanted awake a grace ago. Still asleep, it no longer reads online to people
+ * (`shownStandby`), and their apps refetch it (`standby: false`).
+ */
+export async function wakeOverdue(deps: { db: Database; pubsub?: PubSub }, machineId: string, now = new Date()) {
+  const [row] = await deps.db.select().from(machines).where(managedRow(machineId));
+  if (!row?.standbyAt || !row.wakeWantedAt || machineOnline(row, now) || shownStandby(row, now)) return;
+  await publishMachineUpdated(deps.pubsub, row.orgId, machineId, { standby: false });
 }
 
 /**
@@ -62,7 +91,7 @@ export async function setMachineStandby(
 ) {
   const [row] = await deps.db
     .update(machines)
-    .set({ standbyAt: standby ? sql`coalesce(${machines.standbyAt}, now())` : null })
+    .set({ standbyAt: standby ? sql`coalesce(${machines.standbyAt}, now())` : null, wakeWantedAt: null })
     .where(and(eq(machines.orgId, orgId), managedRow(machineId)))
     .returning({ id: machines.id });
   if (!row) return null;

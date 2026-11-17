@@ -4794,7 +4794,8 @@ export interface Machine {
   online: boolean;
   /**
    * ADR 0161: the workspace's own computer is asleep in standby: it wakes when something wants it, and its screen
-   * opens as it does. Absent from an older server: not in standby.
+   * opens as it does. False again (and `online` the runner's) once a wake failed to bring it back in time. Absent
+   * from an older server: not in standby.
    */
   standby?: boolean;
   lastSeenAt: string | null;

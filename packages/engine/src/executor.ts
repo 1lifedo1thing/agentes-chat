@@ -5112,10 +5112,12 @@ async function executeRunInner(
             touchedAccount = account.id;
             later(() => touchMachineAccount(db, run.orgId, account.id));
           }
-          // A turn cut off by its computer is finished now, and one that found room ends that wait.
+          // A turn cut off by its computer is finished now, and one that found room ends that wait; its computer is
+          // awake, so a later sleep's wait starts its own clock.
           delete transcript.interruptedTurn;
           delete transcript.roomWaitSince;
           delete transcript.roomOrderSince;
+          delete transcript.standbyWaitSince;
           // The plan had room for this turn: the runs parked on its limit go on now, not at their own timers.
           const planMachine = turnPlan.session?.machineId;
           if (planMachine && !turnLimited) {

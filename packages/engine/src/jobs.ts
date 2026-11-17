@@ -86,6 +86,7 @@ import {
   type TaskCall,
   wakeConversationForTask,
 } from "./machine-tasks";
+import { WAKE_OVERDUE_JOB, wakeOverdue } from "./machine-wake";
 import { isMediaAfterReply, isMediaOnly } from "./media";
 import { getMessage, referencedOf } from "./messages";
 import { checkMissionDone } from "./mission-delivery";
@@ -1085,6 +1086,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       await interruptOfflineMachineTasks({ db: deps.db, pubsub: deps.pubsub }, String(job.payload.machineId), {
         statusOnly: job.payload.statusOnly === true,
       });
+    },
+    // A computer in standby wanted awake a grace ago: still asleep, people see it down (ADR 0161).
+    [WAKE_OVERDUE_JOB]: async (job) => {
+      await wakeOverdue({ db: deps.db, pubsub: deps.pubsub }, String(job.payload.machineId));
     },
     // A task start cut by a drop, once it can't still be underway: the agent's journal on its computer settles it.
     "machine.task_start_check": async (job) => {

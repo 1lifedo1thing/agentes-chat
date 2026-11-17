@@ -294,6 +294,18 @@ describe("connected computers helpers (ADR 0036)", () => {
     expect(t1().online).toBe(true);
   });
 
+  test("a wake that failed (or the standby taken back): no longer waking, and the list and its agents' computer refetch", () => {
+    const qc = new QueryClient();
+    const list = keys.machines("o1");
+    const target = keys.computers("o1");
+    qc.setQueryData(list, [{ id: "m1", kind: "managed", online: true, standby: true, lastSeenAt: null }]);
+    qc.setQueryData(target, { target: { kind: "machine", machineId: "m1", name: "Box", online: true } });
+    applyMachineEvent(qc, "o1", { type: "machine.updated", machineId: "m1", standby: false } as { type: string });
+    expect((qc.getQueryData(list) as { standby: boolean }[])[0]?.standby).toBe(false);
+    expect(qc.getQueryState(list)?.isInvalidated).toBe(true);
+    expect(qc.getQueryState(target)?.isInvalidated).toBe(true);
+  });
+
   test("a plan's usage moving on a computer refetches the agent list, which carries each plan's limits", () => {
     const qc = new QueryClient();
     const agents = keys.agents("o1");

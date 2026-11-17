@@ -29,7 +29,7 @@ import { ConflictError, ForbiddenError, isUniqueViolation, NotFoundError, Valida
 import { publishChannelEvent, publishMessageCreated, publishUserEvent } from "./events";
 import { cutText } from "./format";
 import type { Judge } from "./judge";
-import { computerBackSoon, type MachineCaller, MachineRequestError } from "./machine-hub";
+import { awakeForPerson, type MachineCaller, MachineRequestError } from "./machine-hub";
 import {
   formatDuration,
   isLiveTaskRow,
@@ -709,6 +709,7 @@ export async function missionViews(
             lastSeenAt: machines.lastSeenAt,
             kind: machines.kind,
             standbyAt: machines.standbyAt,
+            wakeWantedAt: machines.wakeWantedAt,
             pairedBy: machines.pairedByUserId,
             deletedAt: machines.deletedAt,
             protocol: machines.protocol,
@@ -1012,9 +1013,7 @@ async function usableMachine(
     );
   }
   // One in standby reads ready to people (ADR 0161): it is woken and waited for.
-  const awake =
-    status.online || (status.standby === true && (await computerBackSoon(hubOf(deps), machineId, { justGone: false })));
-  if (!awake) {
+  if (!(await awakeForPerson(hubOf(deps), status))) {
     throw new ConflictError(`The computer ${status.name} is offline`, "mission.computer_offline", {
       computer: status.name,
     });
@@ -3346,6 +3345,7 @@ export async function eligibleMissionAgents(deps: Pick<MissionDeps, "db">, userI
     last_seen_at: Date | string | null;
     kind: MachineRow["kind"] | null;
     standby_at: Date | string | null;
+    wake_wanted_at: Date | string | null;
     protocol: number | null;
     exec_allowed: boolean | null;
     executors: schema.MachineExecutors | string | null;
@@ -3354,7 +3354,8 @@ export async function eligibleMissionAgents(deps: Pick<MissionDeps, "db">, userI
     await deps.db.execute(sql`select agents.id, agents.handle, agents.name, agents.owner_user_id,
         agents.mission_command_approval,
         ${audienceSql("agents", sql`${userId}::text`)} as can_talk,
-        mc.id as machine_id, mc.name as machine_name, mc.online, mc.last_seen_at, mc.kind, mc.standby_at, mc.protocol,
+        mc.id as machine_id, mc.name as machine_name, mc.online, mc.last_seen_at, mc.kind, mc.standby_at,
+        mc.wake_wanted_at, mc.protocol,
         mc.exec_allowed, mc.executors, mc.os
       from ${schema.agents} agents
       left join ${machines} mc on mc.id = agents.machine_id and mc.org_id = agents.org_id and mc.deleted_at is null
@@ -3373,6 +3374,7 @@ export async function eligibleMissionAgents(deps: Pick<MissionDeps, "db">, userI
             deletedAt: null,
             kind: r.kind ?? "connected",
             standbyAt: r.standby_at ? new Date(r.standby_at) : null,
+            wakeWantedAt: r.wake_wanted_at ? new Date(r.wake_wanted_at) : null,
           }),
         }
       : null;

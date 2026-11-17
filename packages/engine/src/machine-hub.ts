@@ -222,6 +222,7 @@ export async function computerBackSoon(
     justGone?: boolean;
     signal?: AbortSignal;
     canceled?: () => boolean | Promise<boolean>;
+    why?: WakeWhy;
   } = {},
 ): Promise<boolean | null> {
   let until = Date.now() + (options.waitMs ?? COMPUTER_BLIP_WAIT_MS);
@@ -232,7 +233,7 @@ export async function computerBackSoon(
     if (status?.standby && !waking) {
       waking = true;
       until = Date.now() + (options.wakeWaitMs ?? COMPUTER_WAKE_WAIT_MS);
-      void machines?.wake?.(machineId, "run").catch(() => {});
+      void machines?.wake?.(machineId, options.why ?? "run").catch(() => {});
     }
     const gone = status?.lastSeenAt ? Date.now() - Date.parse(status.lastSeenAt) : Number.POSITIVE_INFINITY;
     if (!waking && (options.justGone === false || gone >= TASK_OFFLINE_GRACE_MS)) return false;
@@ -260,6 +261,31 @@ export async function callWhenBack<T>(
     if (!back) throw error;
     return send();
   }
+}
+
+/**
+ * How long a person's request waits for a computer in standby to wake: well under the server's 120 s idle timeout
+ * (`start.ts`), leaving room for the request itself.
+ */
+export const PERSON_WAKE_WAIT_MS = 45_000;
+
+/**
+ * Whether a person's request may go to the computer now: online, or in standby and woken for it within
+ * `PERSON_WAKE_WAIT_MS` (people never see it sleep, ADR 0161). Once per request; jobs never wait.
+ */
+export async function awakeForPerson(
+  machines: Pick<MachineCaller, "status" | "wake">,
+  status: Pick<MachineStatus, "id" | "online" | "standby"> | null | undefined,
+): Promise<boolean> {
+  if (!status) return false;
+  if (status.online) return true;
+  if (!status.standby) return false;
+  const back = await computerBackSoon(machines, status.id, {
+    justGone: false,
+    wakeWaitMs: PERSON_WAKE_WAIT_MS,
+    why: "call",
+  });
+  return back === true;
 }
 
 interface Pending {
@@ -304,8 +330,6 @@ export interface MachineHubDeps {
   rpcPollMs?: number;
   /** A machine offline this long has its running tasks interrupted (default `TASK_OFFLINE_GRACE_MS`). */
   taskOfflineGraceMs?: number;
-  /** A request to a computer in standby waits this long for it to wake (default `COMPUTER_WAKE_WAIT_MS`). */
-  wakeWaitMs?: number;
   /** A repeated `mcp.call` whose first run is in another process waits this long for its answer (default 30 s). */
   mcpRepeatWaitMs?: number;
   /** A brain turn with no frame of its own (event, tool call) for this long fails (default `BRAIN_IDLE_TIMEOUT_MS`). */
@@ -716,6 +740,7 @@ export function createMachineHub(deps: MachineHubDeps) {
         lastSeenAt: now,
         // Awake: whatever put it in standby is over (ADR 0161).
         standbyAt: null,
+        wakeWantedAt: null,
         hostname: frame.hostname,
         os: frame.os,
         arch: frame.arch,
@@ -1612,17 +1637,9 @@ export function createMachineHub(deps: MachineHubDeps) {
       const row = await getMachineById(db, machineId);
       if (!row || row.deletedAt) throw new MachineOfflineError(row?.name ?? "computer", row?.kind);
       if (!machineOnline(row) || !row.connectedReplica || row.connectedReplica === replicaId) {
-        // Asleep by design: whatever asks for it wakes it and waits, as people never see it sleep (ADR 0161).
-        if (inStandby(row)) {
-          const caller = { status: hub.status, wake: (id: string) => wantMachine(db, id, "call") };
-          const back = await computerBackSoon(caller, machineId, {
-            justGone: false,
-            wakeWaitMs: deps.wakeWaitMs,
-            signal: options.signal,
-            canceled: () => options.signal?.aborted === true,
-          });
-          if (back) return hub.call(machineId, request, options);
-        }
+        // Asleep by design: whatever asks for it wakes it. Who waits for that does it once, outside: a run's tool
+        // (`callWhenBack`), a person's request (`awakeForPerson`); a job fails now.
+        if (inStandby(row)) void wantMachine(db, machineId, "call").catch(() => {});
         throw new MachineOfflineError(row.name, row.kind);
       }
       if (phoneOp && row.protocol < phonesNeed) throw phonesTooOld(row.name);

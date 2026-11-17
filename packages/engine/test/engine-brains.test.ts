@@ -2011,6 +2011,20 @@ test("still asleep after the wake's wait: quiet for the outage grace, then the n
     bodyCode: "brain_unavailable",
     brainUnavailable: { code: "machine_offline", machineId },
   });
+
+  // It wakes after all: the run answers, and a later sleep's quiet wait starts its own clock.
+  const awake = createJobHandlers({
+    ...f.jobDeps,
+    computerBlipWaitMs: 10,
+    computerWakeWaitMs: 10_000,
+    brains: { claude_code: () => brain },
+    machines: sleepingComputer(true).machines,
+  });
+  await resumeRunsWaitingForMachine(f.db, machineId);
+  await drainOutbox(f.db, awake);
+  [run] = await f.db.select().from(schema.agentRuns);
+  expect(run?.status).toBe("done");
+  expect((run?.transcript as { standbyWaitSince?: number } | undefined)?.standbyWaitSince).toBeUndefined();
 });
 
 test("a run back from another wait finds its computer fallen asleep: it asks it to wake and waits again", async () => {
