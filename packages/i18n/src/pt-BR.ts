@@ -640,6 +640,7 @@ export const ptBR = {
     termsMiddle: " e a ",
     privacy: "Política de privacidade",
     termsAfter: ".",
+    poweredBy: "Feito com agentes.chat",
     signOut: "Sair",
     earlyAccess: {
       otherEmail: "Este convite é para outro endereço. Cadastre-se com o endereço que recebeu o convite.",

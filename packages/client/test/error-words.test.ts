@@ -391,6 +391,11 @@ test("a provider refused this server's own OAuth app: what's wrong and who fixes
 const PLAIN_LINE = new Set([
   // Only the operator API ends an outside collaborator's access (ADR 0191): no person in the apps meets its refusal.
   "outside_access.member",
+  // Only the operator API registers the hosts a server answers on (ADR 0194): no person in the apps meets these.
+  "host.invalid",
+  "host.own",
+  "host.too_many",
+  "host.needs_https",
   // Only an agent names a project by a name that isn't one, and the pickers offer only projects that exist.
   "issue_project.unknown",
   "issue_project.not_found",

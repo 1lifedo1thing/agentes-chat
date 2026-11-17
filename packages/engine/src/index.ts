@@ -156,6 +156,7 @@ export * from "./git/signature";
 export * from "./git/tools";
 export * from "./hand-off";
 export * from "./host-computer";
+export * from "./hosts";
 export * from "./id-refs";
 export * from "./imports";
 export * from "./invite-choices";
