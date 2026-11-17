@@ -765,7 +765,8 @@ export function OnboardingProgress({ progress }: { progress: number }) {
     },
     base: (u, v, t) => {
       const now = level.current.now;
-      if (u > now) return 0.12;
+      // What is still to go is the bare track: no dotted fill, and no lit first column before a step is done.
+      if (now < 0.01 || u > now) return 0;
       const head = Math.max(0, 1 - (now - u) * 12);
       return Math.min(1, 0.45 + 0.4 * v + 0.08 * S(u * 22 + t * 1.2) + 0.2 * head);
     },

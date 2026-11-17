@@ -113,6 +113,26 @@ html:not([data-pointer]) .onb__me:focus-visible {
   align-items: flex-start;
   min-width: 0;
 }
+/*
+ * A window wider than the rail and the step's widest room (1160px, the room the column and the preview get at 1440px)
+ * keeps them one group: what is left over goes to both sides, never between the steps and the question. The rail's
+ * surface runs to the window's left edge with its contents at its right, beside the column; Lodi's line too.
+ */
+@media (min-width: 761px) {
+  .onb--rail {
+    grid-template-columns: minmax(280px, 1fr) minmax(0, 1160px) minmax(0, 1fr);
+  }
+  .onb--rail .onb__top,
+  .onb--rail .onb__progress,
+  .onb--rail .onb__rail > nav {
+    width: 100%;
+    max-width: 248px;
+    margin-left: auto;
+  }
+  .onb--rail .onb__lodi {
+    left: max(var(--space-4), calc(100% - 264px));
+  }
+}
 /* The step's column and, on wide screens, the workspace's preview beside it. */
 .onb__cols {
   --onb-gutter: clamp(16px, 4vw, 32px);
