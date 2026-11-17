@@ -177,7 +177,7 @@ export function accountSaved(
   t: TFunction,
   _language: string,
   agentName: string,
-  a: Pick<MachineAccount, "label" | "plan" | "email" | "mine" | "named" | "keyHint" | "provider"> | null,
+  a: Pick<MachineAccount, "kind" | "label" | "plan" | "email" | "mine" | "named" | "keyHint" | "provider"> | null,
   input: Pick<AgentBrainInput, "model">,
   saved: ThinkingView,
 ): string {

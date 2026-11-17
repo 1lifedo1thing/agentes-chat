@@ -241,7 +241,7 @@ describe("a new agent starts with the last setup", () => {
       computer: "MacBook",
       account: {
         id: "acc",
-        kind: "claude_code",
+        kind: "claude_code" as const,
         label: "GLM Coding",
         named: false,
         email: null,
