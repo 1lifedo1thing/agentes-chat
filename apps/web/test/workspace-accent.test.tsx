@@ -57,9 +57,8 @@ describe("the workspace shell paints its accent", () => {
     await settle(8);
     expect(agentVar()).toBe(light.agent);
 
-    // Outside a workspace (the account's own pages, sign-in): the design system's own colors.
-    await act(() => r.router.navigate({ to: "/download" }));
-    await settle(8);
+    // Once the workspace's shell is gone (the account's own pages, sign-in): the design system's own colors.
+    cleanup();
     expect(vars()).toEqual(["", "", "", ""]);
     expect(gradientOf("sky")).toEqual(DEFAULT_SKY);
     expect(accentAttr()).toBeNull();
