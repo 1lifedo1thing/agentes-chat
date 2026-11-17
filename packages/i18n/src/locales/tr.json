@@ -18886,6 +18886,10 @@
     "noLimit": "Sınırsız",
     "ownBucket": "Kendi depolama alanınızda, bizden bir sınır olmadan"
   },
+  "referrals": {
+    "open": "Önerin ve kazanın",
+    "failed": "Şu anda açılamadı. Birazdan tekrar deneyin."
+  },
   "limits": {
     "members": {
       "full": "Bu çalışma alanında {{limit}} kişiden {{members}} kişi var.",

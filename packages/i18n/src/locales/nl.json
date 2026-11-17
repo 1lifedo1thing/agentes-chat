@@ -19071,6 +19071,10 @@
     "noLimit": "Geen limiet",
     "ownBucket": "Op je eigen bucket, zonder limiet van ons"
   },
+  "referrals": {
+    "open": "Aanbevelen en verdienen",
+    "failed": "Kon het nu niet openen. Probeer het zo opnieuw."
+  },
   "limits": {
     "members": {
       "full": "Deze werkruimte heeft {{members}} van de {{limit}} mensen.",
