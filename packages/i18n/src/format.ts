@@ -121,8 +121,8 @@ function genericPhonePattern(length: number): string {
   return groups.join(" ");
 }
 
-/** A phone number as a surface stores it: 8 to 15 digits, a leading "+" optional. */
-export const isPhoneNumber = (value: string) => /^\+?\d{8,15}$/.test(value);
+/** A phone number as a surface stores it: 8 to 15 digits, a leading "+" optional. No calling code starts with 0. */
+export const isPhoneNumber = (value: string) => /^\+?[1-9]\d{7,14}$/.test(value);
 
 function printPhone(value: string, masked: boolean): string {
   if (!isPhoneNumber(value)) return value;
@@ -153,5 +153,8 @@ function printPhone(value: string, masked: boolean): string {
 /** "+55 (11) 90000-0001" from "5511900000001"; anything that isn't a phone number (a handle) comes back as given. */
 export const formatPhone = (value: string) => printPhone(value, false);
 
-/** "+55 (11) •••••-0001": the country code, the area code and the last four digits, the rest dots. */
+/**
+ * "+55 (11) •••••-0001": the country code, the area code and the last four digits, the rest dots. A value that isn't a
+ * phone number comes back as given, unmasked: the caller masks it some other way.
+ */
 export const maskPhone = (value: string) => printPhone(value, true);

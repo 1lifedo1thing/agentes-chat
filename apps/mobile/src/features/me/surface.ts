@@ -42,6 +42,12 @@ export const linkAssistant = (
 export const linkRanOut = (link: Pick<SurfaceLink, "expiresAt">, now: number) =>
   link.expiresAt !== null && Date.parse(link.expiresAt) <= now;
 
+/** The sender the confirm step names: the number formatted, and the surface's profile name. */
+export const surfaceSenderText = (link: Pick<SurfaceLink, "display" | "profileName">) => ({
+  display: link.display ? formatPhone(link.display) : null,
+  profileName: link.profileName,
+});
+
 /** What the row says beside the surface's name. */
 export function surfaceRowText(
   t: TFunction,

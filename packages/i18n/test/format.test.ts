@@ -94,6 +94,7 @@ describe("phone numbers", () => {
     expect(formatPhone("ana.example")).toBe("ana.example");
     expect(formatPhone("@ana")).toBe("@ana");
     expect(formatPhone("1234567890123456")).toBe("1234567890123456");
+    expect(formatPhone("+0012345678")).toBe("+0012345678");
   });
 
   test("masked: the country and area codes and the last four digits", () => {

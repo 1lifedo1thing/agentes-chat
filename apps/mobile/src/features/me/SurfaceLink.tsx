@@ -19,7 +19,6 @@ import {
   surfaceMarkUrl,
   surfaceRowOf,
 } from "@agenteschat/client/lib/surface-links";
-import { formatPhone } from "@agenteschat/i18n/format";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,7 +31,15 @@ import { iconUri } from "../connectors/logic";
 import { confirmAction } from "../settings/parts";
 import { useColors, useNow } from "../shared/hooks";
 import { MONO } from "../shared/parts";
-import { codeIsStale, codeLeftText, linkAssistant, linkRanOut, linkStep, surfaceRowText } from "./surface";
+import {
+  codeIsStale,
+  codeLeftText,
+  linkAssistant,
+  linkRanOut,
+  linkStep,
+  surfaceRowText,
+  surfaceSenderText,
+} from "./surface";
 
 /**
  * The outside chat surface's row in Notificações (ADR 0187), only where this account may link it: none opens the
@@ -332,6 +339,7 @@ function ConfirmStep({
       onError: (e) => (errorCode(e) === "surface.link_gone" ? fresh() : setError(errorText(t, e))),
     });
   };
+  const sender = surfaceSenderText(link);
   return (
     <View style={styles.col}>
       <Text variant="title">{t("surface.link.confirmTitle", { surface })}</Text>
@@ -339,14 +347,14 @@ function ConfirmStep({
         <Text variant="small" tone="muted">
           {t("surface.link.sentBy")}
         </Text>
-        {link.display ? (
+        {sender.display ? (
           <Text variant="body" selectable style={styles.strong}>
-            {formatPhone(link.display)}
+            {sender.display}
           </Text>
         ) : null}
-        {link.profileName ? (
+        {sender.profileName ? (
           <Text variant="body" tone="ink2" selectable>
-            {link.profileName}
+            {sender.profileName}
           </Text>
         ) : null}
       </View>

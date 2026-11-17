@@ -11,6 +11,7 @@ import {
   linkRanOut,
   linkStep,
   surfaceRowText,
+  surfaceSenderText,
   surfaceTagText,
 } from "../../src/features/me/surface";
 import { translator } from "./fixtures";
@@ -63,6 +64,14 @@ describe("the row in Notificações", () => {
     const active = surfaceRowOf(links([link({ status: "active", expiresAt: null })]), NOW);
     if (active.kind === "hidden") throw new Error("hidden");
     expect(surfaceRowText(t, active, "Lodi")).toEqual({ sub: "+55 (11) 90000-0001", below: "Ana", value: "On" });
+  });
+
+  test("the sheet's confirm step names the sender formatted, and only through the shared helper", () => {
+    expect(surfaceSenderText(link())).toEqual({ display: "+55 (11) 90000-0001", profileName: "Ana" });
+    expect(surfaceSenderText(link({ display: null }))).toEqual({ display: null, profileName: "Ana" });
+    const src = readFileSync(join(import.meta.dir, "../../src/features/me/SurfaceLink.tsx"), "utf8");
+    expect(src).toContain("surfaceSenderText(link)");
+    expect(src).not.toMatch(/\{link\.(display|profileName)\}/);
   });
 
   test("worst case: the whole display and profile name, never cut, and only one line when the other is missing", async () => {
