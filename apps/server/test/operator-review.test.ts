@@ -430,6 +430,54 @@ test("a task's review: one the server started again by itself is its first task'
   }
 });
 
+test("a review block reads a message of a confidential thread as the stub, whatever its stored body: a run's request and reply, a task's request", async () => {
+  const runId = await runFor("@dev canary-request: check the staging site");
+  const [run] = await t.db
+    .select({ rootId: schema.agentRuns.threadRootId, askedId: schema.agentRuns.triggerMessageId })
+    .from(schema.agentRuns)
+    .where(eq(schema.agentRuns.id, runId));
+  if (!run) throw new Error("no run");
+  const [machine] = await t.db.insert(schema.machines).values({ orgId: org.orgId, name: "Box three" }).returning();
+  const [task] = await t.db
+    .insert(schema.machineTasks)
+    .values({
+      orgId: org.orgId,
+      agentId: org.agentId,
+      machineId: machine?.id ?? "",
+      channelId: org.channelId,
+      runId,
+      title: "Check",
+      executor: "claude",
+      status: "done",
+    })
+    .returning({ id: schema.machineTasks.id });
+  await markThreadConfidential(t.db, { orgId: org.orgId, channelId: org.channelId, rootId: run.rootId });
+  // As a message written while the mark was being committed is stored: in the thread, with its words.
+  await t.db
+    .update(schema.messages)
+    .set({ body: "canary-unsealed-request", meta: {} })
+    .where(eq(schema.messages.id, run.askedId));
+  const [reply] = await t.db
+    .insert(schema.messages)
+    .values({
+      orgId: org.orgId,
+      channelId: org.channelId,
+      threadId: run.rootId,
+      authorType: "agent",
+      authorAgentId: org.agentId,
+      agentRunId: runId,
+      body: "canary-unsealed-reply",
+    })
+    .returning({ id: schema.messages.id });
+  await t.db.update(schema.agentRuns).set({ replyMessageId: reply?.id }).where(eq(schema.agentRuns.id, runId));
+
+  const read = async (path: string) => (await body<{ text: string }>(await review(path))).text;
+  const blocks = [await read(`run/${runId}`), await read(`task/${task?.id}`)];
+  expect(blocks.join("\n")).not.toContain("canary");
+  // The run's request and its reply; the task's request.
+  expect(blocks.map((text) => text.split(CONFIDENTIAL_STUB).length - 1)).toEqual([2, 1]);
+});
+
 test("a screened session's review: its first and latest screens, credentials masked, gone 10 minutes after it ends", async () => {
   // A person in control of Dev's screen, read by a computer the test plays, on the test's own clock.
   let now = Date.now();

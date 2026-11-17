@@ -1681,6 +1681,32 @@ test("a task the server started again by itself is its first task's run's: a con
   expect([await events(), await auditLines()]).toEqual([[], []]);
 });
 
+test("a message of a confidential thread that is not sealed yet reads as the stub, under both purposes", async () => {
+  const root = asking.get(runs.sealed) ?? "";
+  await markThreadConfidential(db, { orgId: w.orgId, channelId: w.generalId, rootId: root });
+  // As a message written while the mark was being committed is stored: in the thread, with its words.
+  const [reply] = await db
+    .insert(schema.messages)
+    .values({
+      orgId: w.orgId,
+      channelId: w.generalId,
+      threadId: root,
+      authorType: "agent",
+      authorAgentId: w.devId,
+      agentRunId: runs.sealed,
+      body: "canary-unsealed reply",
+    })
+    .returning({ id: schema.messages.id, body: schema.messages.body });
+  expect(reply?.body).toBe("canary-unsealed reply");
+  for (const proof of [{ requestId: requests.owner }, { runId: runs.sealed }]) {
+    expect(await text(ask("message", reply?.id ?? "", "text", proof))).toBe(CONFIDENTIAL_STUB);
+  }
+  // A message of any other thread reads as it is stored.
+  expect(await text(ask("message", messages.secret, "text", { requestId: requests.owner }))).toBe(
+    "canary-secret plans",
+  );
+});
+
 test("a canary in every text column of the database: each answer holds its own field's and no other", async () => {
   await forget();
   // Kept as they are: what makes the owner an owner, and an address a host can be read from.

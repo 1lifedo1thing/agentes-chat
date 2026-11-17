@@ -2,7 +2,7 @@ import { and, type Database, eq, gt, isNull, rowsOf, schema, sql } from "@agente
 import { requireAgentDetails } from "./audience";
 import { recordAudit } from "./audit";
 import { readableChannelIds, requireChannelAccess } from "./channels";
-import { confidentialThreadSql } from "./confidential";
+import { CONFIDENTIAL_STUB, confidentialThreadSql } from "./confidential";
 import { ConflictError, ForbiddenError, NotFoundError, TooManyError, ValidationError } from "./errors";
 import { cutText, pgSafeText } from "./format";
 import { requireUsageAccess } from "./management";
@@ -206,6 +206,11 @@ const conversationStands = (channelId: string) =>
 const filled = (column: unknown) => sql<boolean>`coalesce(length(${column}), 0) > 0`;
 /** Whether the run aliased `r` is of a confidential thread, as the run review asks it. */
 const confidentialRun = confidentialThreadSql(sql`r.org_id`, sql`r.thread_root_id`);
+/** Whether a message is of a confidential thread: the one it answers in, or the one it starts. */
+const confidentialMessage = confidentialThreadSql(
+  sql`${messages.orgId}`,
+  sql`coalesce(${messages.threadId}, ${messages.id})`,
+);
 
 /** Who the app gives a run's steps to: who may see the agent's runs, and reads the conversation it ran in. */
 const readsRunsOf = async (db: Database, orgId: string, userId: string, agentId: string, channelId: string) =>
@@ -231,12 +236,21 @@ const findMessage: Find = async (db, orgId, { id }) => {
   if (!m) return null;
   return {
     ...m,
-    // A confidential thread's message is stored as the stub, which is all `text` reads.
+    // Never refused: of a confidential thread `text` reads the stub, whatever is stored (one written while the
+    // thread's mark was being committed keeps its words until `sealStragglers` seals it).
     confidential: false,
     failure: false,
     seenBy: (userId) => passes(() => requireChannelAccess(db, userId, orgId, m.channelId)),
     ofRun: (run) => id === run.triggerMessageId || m.agentRunId === run.id,
-    text: async () => (await db.select({ text: messages.body }).from(messages).where(where))[0]?.text ?? null,
+    text: async () =>
+      (
+        await db
+          .select({
+            text: sql<string>`case when ${confidentialMessage} then ${CONFIDENTIAL_STUB} else ${messages.body} end`,
+          })
+          .from(messages)
+          .where(where)
+      )[0]?.text ?? null,
   };
 };
 

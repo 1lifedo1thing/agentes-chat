@@ -1,6 +1,6 @@
 import { maskSecretFields } from "@agenteschat/adapters";
 import { and, asc, type Database, eq, inArray, type SQL, schema, sql } from "@agenteschat/db";
-import { CONFIDENTIAL_NOT_SHOWN, confidentialThreadSql } from "./confidential";
+import { CONFIDENTIAL_NOT_SHOWN, CONFIDENTIAL_STUB, confidentialThreadSql, threadIsConfidential } from "./confidential";
 import { getMessage, type Message } from "./messages";
 import { recordContentViewed } from "./operator-events";
 import { runErrorDetail } from "./runs";
@@ -78,6 +78,16 @@ export function keptText(kept: unknown) {
 const labeled = (rank: number, label: string, source: string, text: string | null | undefined, max: number): Part[] =>
   text ? [{ rank, text: `${label}:\n${quoted(source, text, max)}` }] : [];
 
+/**
+ * A message as a block carries it. Of a confidential thread (ADR 0190) it is the stub whatever its stored body: one
+ * written while the thread's mark was being committed keeps its words until `sealStragglers` seals it.
+ */
+async function messageOf(db: Database, orgId: string, id: string): Promise<Message | null> {
+  const message = await getMessage(db, orgId, id);
+  if (!message?.body || !(await threadIsConfidential(db, orgId, message.threadId ?? message.id))) return message;
+  return { ...message, body: CONFIDENTIAL_STUB };
+}
+
 /** The message that started the work: what was asked, the strongest sign of intent. */
 const request = (message: Message | null) =>
   message
@@ -128,8 +138,8 @@ async function runReview(db: Database, runId: string): Promise<OperatorReview | 
     .where(eq(agentRuns.id, runId));
   if (!run) return null;
   const [trigger, reply, steps] = await Promise.all([
-    getMessage(db, run.orgId, run.triggerMessageId),
-    run.replyMessageId ? getMessage(db, run.orgId, run.replyMessageId) : null,
+    messageOf(db, run.orgId, run.triggerMessageId),
+    run.replyMessageId ? messageOf(db, run.orgId, run.replyMessageId) : null,
     db
       .select({ kind: agentRunSteps.kind, data: agentRunSteps.data })
       .from(agentRunSteps)
@@ -144,7 +154,7 @@ async function runReview(db: Database, runId: string): Promise<OperatorReview | 
       const result = results.get(s.data.toolUseId);
       const name = `Tool call ${i + 1}: ${String(s.data.name ?? "?").slice(0, 100)}`;
       // A run of a confidential thread (ADR 0190): which tools it called and how each ended, never what went in or
-      // came back. Whoever reads this block is outside the thread. Its request and reply are stored as the stub.
+      // came back. Whoever reads this block is outside the thread. Its request and reply read as the stub.
       if (run.confidential) {
         const ended = result ? (result.isError ? "failed" : "answered") : "no result";
         return { rank: 3, text: `${name} (${ended})\n${CONFIDENTIAL_NOT_SHOWN}` };
@@ -198,9 +208,9 @@ async function taskReview(db: Database, taskId: string): Promise<OperatorReview 
     .from(agentRuns)
     .where(sql`${agentRuns.id} = ${taskRunSql(sql`${task.id}::uuid`)}`);
   // The request is shown of the task's own run: one started again has none.
-  const trigger = origin?.id === task.runId ? await getMessage(db, task.orgId, origin.triggerMessageId) : null;
+  const trigger = origin?.id === task.runId ? await messageOf(db, task.orgId, origin.triggerMessageId) : null;
   // A task that a run of a confidential thread started (ADR 0190), or that the server started again from one, is
-  // that run's work: which texts it holds, never the texts. Its request is stored as the stub.
+  // that run's work: which texts it holds, never the texts. Its request reads as the stub.
   const part: typeof labeled = origin?.confidential
     ? (rank, label, _source, text) => (text ? [{ rank, text: `${label}:\n${CONFIDENTIAL_NOT_SHOWN}` }] : [])
     : labeled;
