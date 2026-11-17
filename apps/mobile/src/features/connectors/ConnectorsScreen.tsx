@@ -30,7 +30,7 @@ import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useLocalSearchParams } from "expo-router";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -53,7 +53,7 @@ import {
   LineIcon,
   Locked,
   PressScale,
-  ROW_PRESS_DELAY,
+  RowPressable,
   SearchField,
   SectionHeader,
   Segmented,
@@ -828,12 +828,11 @@ function ServiceRow({
   const c = useColors();
   return (
     // A row of a list: it lights as the settings' rows do, a beat late so a scroll never flashes it.
-    <Pressable
+    <RowPressable
       onPress={onPress}
-      unstable_pressDelay={ROW_PRESS_DELAY}
       accessibilityRole="button"
       accessibilityLabel={`${name}. ${text}`}
-      style={({ pressed }) => [styles.service, pressed && { backgroundColor: c.sunken }]}
+      style={styles.service}
     >
       {divider ? <View style={[styles.serviceLine, { backgroundColor: c.line2 }]} /> : null}
       <ConnectorIcon def={def} label={name} size={ROW_MARK} check={connected} />
@@ -846,7 +845,7 @@ function ServiceRow({
         </Text>
       </View>
       {connected ? null : <ConnectWord />}
-    </Pressable>
+    </RowPressable>
   );
 }
 
