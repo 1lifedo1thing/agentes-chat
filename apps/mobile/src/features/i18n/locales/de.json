@@ -2873,5 +2873,11 @@
       "title": "Nichts zu prüfen",
       "text": "Wenn ein Agent außerhalb des Gesprächs etwas tut, erscheint es hier."
     }
+  },
+  "surface": {
+    "on": "An",
+    "codeText": "Sende die Nachricht, die sich dort öffnet, und komm dann hierher zurück.",
+    "openFailed": "{{surface}} ließ sich auf diesem Telefon nicht öffnen. Sende stattdessen den Code unten dorthin.",
+    "orType": "Oder sende diesen Code dort"
   }
 }

@@ -2752,5 +2752,11 @@
       "title": "Tidak ada yang perlu ditinjau",
       "text": "Saat agen melakukan sesuatu di luar percakapan, itu muncul di sini."
     }
+  },
+  "surface": {
+    "on": "Aktif",
+    "codeText": "Kirim pesan yang terbuka di sana, lalu kembali ke sini.",
+    "openFailed": "Tidak bisa membuka {{surface}} di ponsel ini. Kirim kode di bawah ke sana.",
+    "orType": "Atau kirim kode ini di sana"
   }
 }

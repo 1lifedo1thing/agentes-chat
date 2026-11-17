@@ -2564,6 +2564,73 @@ export const en = {
       "In the agentes.chat app on that computer, turn on Reach it from your phone and teammates in Preferences › Servers. Then come back here.",
     localOnlyHere: "Turn on Reach it from your phone and teammates. Then come back here.",
   },
+  /** An outside chat app linked to a person's account (ADR 0187). {{surface}} is that app's name, as the server sets it. */
+  surface: {
+    link: {
+      /**
+       * The words are a recorded consent: a change of meaning needs a new key, never an edit. {{assistant}} is the
+       * workspace's built-in assistant by name. "stop" stays in English in every language: the chat app's service
+       * recognises it (and "parar" in Portuguese).
+       */
+      consent:
+        "{{assistant}} by agentes.chat may message you on {{surface}} about your workspaces, and call you only when something is urgent and you allow it. Write stop to turn this off.",
+      /** The link dialog's title. {{assistant}} is the workspace's built-in assistant by name. */
+      title: "Talk to {{assistant}} on {{surface}}",
+      qr: "QR code that opens {{surface}} with your code typed in",
+      making: "Making your code",
+      /** Under the QR code: the code itself, for typing it by hand. */
+      code: "Your code {{code}}",
+      open: "Open {{surface}}",
+      stepScan: "Scan the code with your phone, or open the app",
+      stepSend: "Send the message as it is",
+      stepSendText: "This moves on by itself once your message arrives.",
+      stepConfirm: "Check the sender and confirm here",
+      showCode: "Show the code again",
+      confirmTitle: "Is this your {{surface}}?",
+      sentBy: "This sender sent your code",
+      /** Under the sender: the one line that says to stop before linking someone else's sender. */
+      onlyYou: "Link it only if this is you.",
+      /** The workspace whose assistant answers on the chat app. */
+      workspace: "Answers in {{workspace}}",
+      confirm: "Yes, link it",
+      notMe: "Not me",
+      doneTitle: "{{surface}} is linked",
+      doneText: "{{assistant}} answers you there from now on.",
+      newCode: "Make a new code",
+      done: "Done",
+    },
+    /** Settings › Notifications › Where they arrive: the chat app's row. */
+    row: {
+      hint: "Talk with {{assistant}} and get its replies on {{surface}}.",
+      link: "Link",
+      /** Under the app's name while nothing is linked. {{assistant}} is the workspace's built-in assistant by name. */
+      none: "{{assistant}} can message you there",
+      pending: "A sender is waiting for you to confirm",
+      unlink: "Unlink",
+      unlinkTitle: "Unlink {{surface}}?",
+      unlinkText: "{{assistant}} stops answering you there. You can link it again any time.",
+      unlinked: "{{surface}} unlinked",
+    },
+    /** The page the "linked" email's undo opens. Signed out, so it learns the app's name only from the answer. */
+    undo: {
+      title: "Unlink the chat app?",
+      lead: "Your account was just linked to a chat app. If that wasn't you, unlink it here.",
+      button: "Unlink",
+      done: "{{surface}} unlinked",
+      doneLead: "{{display}} can't reach your account anymore.",
+      ended: "Already unlinked",
+      endedLead: "{{display}} on {{surface}} was unlinked before. Nothing else to do.",
+      gone: "This undo link no longer works",
+      /** In place of the sender's name when the server has none. */
+      sender: "That sender",
+    },
+    /** The tag on a person's message written in the chat app. */
+    via: "via {{surface}}",
+    viaTip: "Sent by {{person}} on {{surface}}",
+    /** The same, for a message the person forwarded there: someone else's words. */
+    forwarded: "forwarded via {{surface}}",
+    forwardedTip: "{{person}} forwarded this from {{surface}}. The words are someone else's.",
+  },
   team: {
     title: "Team",
     people_one: "{{count}} person",
@@ -15187,6 +15254,18 @@ export const en = {
     },
   },
   errors: {
+    /** Linking an outside chat app (ADR 0187). The server's refusals carry no app name, so none is said. */
+    surface: {
+      off: "Linking chat apps was turned off. Reload to see your settings as they are now.",
+      notAllowed: "Linking a chat app isn't open to your account yet. Keep using the app here until it opens.",
+      noAssistant: "The assistant in this workspace isn't set to talk with you. Pick another workspace to link.",
+      noWorkspace: "You're no longer in this workspace. Pick another workspace to link.",
+      linkGone:
+        "This link isn't waiting anymore: it ran out after 10 minutes or was canceled. Make a new code to start again.",
+      taken: "That sender is linked to another agentes.chat account. Unlink it there, then send a new code.",
+      undoGone: "This undo link was already used or ran out. Unlink in your notification settings instead.",
+      codeGone: "This code is wrong, used or ran out after 10 minutes. Make a new code and send it again.",
+    },
     wallpaper: {
       notYours: "That photo isn't yours.",
       invalid: "That background doesn't exist.",
@@ -15248,6 +15327,9 @@ export const en = {
       neverHappens: "This schedule never happens.",
       soleOwner:
         "You're the only owner of a workspace with other members. Make someone else an owner, or delete the workspace, first.",
+      /** The same, when everyone else there is an outside collaborator, who can't be an owner (ADR 0191). */
+      soleOwnerOutside:
+        "You're the only owner of a workspace whose other people are outside collaborators, who can't be owners. Invite a member and make them an owner, or delete the workspace, first.",
       testFirst: "Test the connection with these settings before turning it on.",
       voiceLength: "The recording is too long or too short.",
       sendAgain: "The file didn't arrive whole. Send it again.",
@@ -15377,6 +15459,8 @@ export const en = {
       answered: "Someone already answered this request.",
       expired: "This request expired: nobody answered it in 14 days.",
       codeNeeded: "Verify your email first.",
+      /** Approving an outside collaborator's request (ADR 0191) whose account was blocked or is being deleted. */
+      outsideClosed: "This account was blocked or is being deleted, so it can't join. The request is closed.",
     },
     /** An emailed code refused: asking to join (ADR 0072) and deleting (ADR 0088) alike. */
     code: {
@@ -18635,6 +18719,11 @@ export const en = {
       file_saved: "File saved.",
       issue_work_start: "Please do task #{{number}}.",
       issue_taken: "Took task #{{number}}.",
+      /** An outside chat surface (ADR 0187) unlinked the account on its own; the surface no longer reaches them. */
+      surfaceUnlinked:
+        "{{surface}} was unlinked because its identity changed. Link it again in Settings if it was you.",
+      /** A voice note sent from an outside chat surface had no words to post; the line goes back out there. */
+      surfaceVoiceDropped: "I couldn't make out that voice note. Could you send it again, or type it?",
       done: "Done.",
       stretch_paused_runs_one: "{{agents}} paused to check with you before going on",
       stretch_paused_runs_other: "{{agents}} paused to check with you before going on",
@@ -19563,6 +19652,9 @@ export const en = {
     serverOwner: "You set up this server. Its own settings will have no owner here, only in its environment.",
     blockers: "Before you can delete it",
     soleOwner: "You're the only owner of {{name}}. Make someone else an owner, or delete {{name}}.",
+    /** Everyone else in it is an outside collaborator, who can't be an owner (ADR 0191). */
+    soleOwnerOutside:
+      "You're the only owner of {{name}}, and its other people are outside collaborators, who can't be owners. Invite a member and make them an owner, or delete {{name}}.",
     /** The same, for a workspace still in its onboarding: it has no People page yet. */
     soleOwnerSettingUp:
       "You're the only owner of {{name}}. Finish setting it up to make someone else an owner, or delete {{name}}.",
