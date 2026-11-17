@@ -130,7 +130,15 @@ async function routineRunOf(agentId: string, creator: string | null): Promise<To
     createAgentRuns(tx, message, [agentId], "mention", { background: true }),
   );
   if (!run) throw new Error("no run");
-  return { db: f.db, orgId: f.org.id, agentId, runId: run.id, channelId: f.general.id, triggerMessageId: message.id };
+  return {
+    db: f.db,
+    orgId: f.org.id,
+    agentId,
+    runId: run.id,
+    channelId: f.general.id,
+    threadRootId: message.id,
+    triggerMessageId: message.id,
+  };
 }
 
 /** Walter owns `@dev`, which answers only him, and connects his own Linear: it goes on for his agents alone. */

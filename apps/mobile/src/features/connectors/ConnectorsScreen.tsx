@@ -418,7 +418,7 @@ function Gallery() {
   );
 }
 
-/**
+/** The Pessoal side's own empty words. */
 const PERSONAL_EMPTY = { title: "connectors.personal.emptyTitle", text: "connectors.personal.emptyText" };
 
 /**
