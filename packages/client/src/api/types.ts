@@ -6162,6 +6162,11 @@ export interface MachineAccount {
    */
   useOrder?: number | null;
   /**
+   * The id of the oldest login of the same account on its computer: the same for every login of one account (Claude
+   * signs in once per agent), whoever looks, where its email and key's end are its owner's (absent: an older server).
+   */
+  sameAs?: string;
+  /**
    * A run at another account's limit may go on with it: Claude Code's or Codex's own sign-in (never a key), shared
    * between agents and signed in. Only these have a place in the order of use (absent: an older server).
    */

@@ -3307,9 +3307,12 @@
     "titleFor": "{{name}}のAIを接続",
     "have": {
       "title": "接続済み",
-      "titleFor": "接続済み（{{name}}用）",
       "other": "または別のものを接続",
-      "manageKeys": "キーを管理または削除"
+      "manageKeys": "キーを管理または削除",
+      "pickLine": "ここで接続済みのアカウントを選んでください。{{name}}はそのアカウントで考えます。",
+      "onlyOwner_other": "{{name}}だけが渡せるアカウントがあと{{count}}件あります。",
+      "moreAgents_other": "ほか{{count}}体のエージェント",
+      "plenty": "余裕あり"
     },
     "chat": {
       "mine": "あなたのアカウント",

@@ -1,5 +1,5 @@
 import type { AgentColorName } from "@agenteschat/ui/agent/engine";
-import { type ReactNode, useEffect, useState } from "react";
+import { memo, type ReactNode, useEffect, useState } from "react";
 import { type LayoutChangeEvent, Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
   cancelAnimation,
@@ -74,8 +74,11 @@ const rollOut: EntryExitAnimationFunction = () => {
  * messages. While an agent works its quiet line says each step, many a minute: the pill then holds the room's width
  * (any step fits, cut with "…"), so a step only rolls its line in and never springs the width, and the line never
  * slides to show its end; only a new title or closing moves the width. The sky sweeps meanwhile.
+ *
+ * Memoized: the bar draws it outside the screen, and a screen that redraws often (a conversation while agents work)
+ * hands it the same props most of the time.
  */
-export function HeaderPill({
+export const HeaderPill = memo(function HeaderPill({
   lead,
   title,
   subtitle,
@@ -237,7 +240,7 @@ export function HeaderPill({
       </PressScale>
     </View>
   );
-}
+});
 
 /** The quiet line: each new one rolls in over the last. `still`: it never slides to show its end. */
 function StatusLine({

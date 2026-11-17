@@ -3722,9 +3722,18 @@
     "titleFor": "Połącz AI dla: {{name}}",
     "have": {
       "title": "Już połączone",
-      "titleFor": "Już połączone dla: {{name}}",
       "other": "Albo połącz inne",
-      "manageKeys": "Zarządzaj kluczami lub je usuń"
+      "manageKeys": "Zarządzaj kluczami lub je usuń",
+      "pickLine": "Wybierz konto już tu połączone. {{name}} myśli z jego pomocą.",
+      "onlyOwner_one": "Jeszcze {{count}} konto, które może przekazać tylko {{name}}.",
+      "onlyOwner_few": "Jeszcze {{count}} konta, które może przekazać tylko {{name}}.",
+      "onlyOwner_many": "Jeszcze {{count}} kont, które może przekazać tylko {{name}}.",
+      "onlyOwner_other": "Jeszcze {{count}} konta, które może przekazać tylko {{name}}.",
+      "moreAgents_one": "i jeszcze {{count}} agent",
+      "moreAgents_few": "i jeszcze {{count}} agentów",
+      "moreAgents_many": "i jeszcze {{count}} agentów",
+      "moreAgents_other": "i jeszcze {{count}} agenta",
+      "plenty": "Spory zapas"
     },
     "chat": {
       "mine": "Twoje",
