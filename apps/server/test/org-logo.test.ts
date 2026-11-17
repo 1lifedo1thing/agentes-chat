@@ -263,3 +263,18 @@ test("workspace accent (ADR 0193): admins set and clear it; it rides /me and the
     ["person", { from: "#7c3aed", to: null }],
   ]);
 });
+
+test("workspace accent: 20 changes an hour per workspace, then 429 rate_limited", async () => {
+  const owner = browser(t);
+  await signUp(owner, "owner@example.com");
+  const { orgId } = await seedOrg(owner);
+  const put = (i: number) =>
+    owner(`/api/app/organizations/${orgId}/accent`, {
+      method: "PUT",
+      json: { accent: `#0000${i.toString(16).padStart(2, "0")}` },
+    });
+  for (let i = 0; i < 20; i++) expect((await put(i)).status).toBe(200);
+  const limited = await put(20);
+  expect(limited.status).toBe(429);
+  expect(((await limited.json()) as { error: { code: string } }).error.code).toBe("rate_limited");
+});

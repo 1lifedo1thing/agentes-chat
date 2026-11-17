@@ -1358,12 +1358,21 @@ export function accountRoutes(deps: AppDeps) {
       security,
       summary: "Set the workspace's accent color, or null for the default. Admins.",
       request: { params: OrgParams, body: body(z.object({ accent: AccentColor.nullable() })) },
-      responses: { 200: json(z.object({ accent: AccentColor.nullable() })), ...errors },
+      responses: {
+        200: json(z.object({ accent: AccentColor.nullable() })),
+        429: errorResponse("Too many accent changes (`rate_limited`)"),
+        ...errors,
+      },
     }),
     async (c) => {
+      const user = c.get("user");
       const { orgId } = c.req.valid("param");
       const { accent } = c.req.valid("json");
-      return c.json(await setOrgAccent({ db, pubsub: deps.adapters.pubsub }, c.get("user").id, orgId, accent), 200);
+      await requirePermission(db, user.id, orgId, "configure");
+      // Each change makes every member's open apps refetch.
+      const limit = await deps.adapters.rateLimiter.consume(`org-accent:${orgId}`, { limit: 20, windowMs: 3600_000 });
+      if (!limit.allowed) return apiError(c, 429, "rate_limited", "Too many color changes. Try again later.");
+      return c.json(await setOrgAccent({ db, pubsub: deps.adapters.pubsub }, user.id, orgId, accent), 200);
     },
   );
 
