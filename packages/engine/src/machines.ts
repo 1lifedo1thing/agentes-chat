@@ -165,15 +165,17 @@ export const inStandby = (row: Pick<MachineRow, "kind" | "standbyAt">) =>
   row.kind === "managed" && row.standbyAt !== null;
 
 /**
- * Asleep in standby as people see it (ADR 0161): waking as it should. One wanted awake (`wake_wanted_at`) that hasn't
- * said hello within the outage grace is down, and shows so (`machine.wake_overdue` tells the apps).
+ * Asleep in standby as people see it (ADR 0161): waking as it should. Taken out of standby before its runner's hello
+ * (it is starting), it still is until that hello (`wake_wanted_at` set). One wanted awake (`wake_wanted_at`) that
+ * hasn't said hello within the outage grace is down, and shows so (`machine.wake_overdue` tells the apps).
  */
 export const shownStandby = (
   row: Pick<MachineRow, "deletedAt" | "kind" | "standbyAt" | "wakeWantedAt">,
   now = new Date(),
 ) =>
   !row.deletedAt &&
-  inStandby(row) &&
+  row.kind === "managed" &&
+  (row.standbyAt !== null || row.wakeWantedAt !== null) &&
   (row.wakeWantedAt === null || now.getTime() - row.wakeWantedAt.getTime() < TASK_OFFLINE_GRACE_MS);
 
 /**

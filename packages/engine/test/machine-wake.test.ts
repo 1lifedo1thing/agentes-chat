@@ -139,7 +139,8 @@ describe("standby", () => {
     await setMachineStandby(deps(), f.org.id, machineId, true);
     expect((await awake.status(machineId))?.standby).toBe(true);
     expect(await setMachineStandby(deps(), f.org.id, machineId, false)).toEqual({ standby: false });
-    expect((await machineRow(machineId)).standbyAt).toBeNull();
+    // Awake already: nothing starting, no wake's clock.
+    expect(await machineRow(machineId)).toMatchObject({ standbyAt: null, wakeWantedAt: null });
 
     // Removed: no longer the workspace's, and not asleep when it is issued again.
     await setMachineStandby(deps(), f.org.id, machineId, true);
@@ -247,6 +248,54 @@ describe("what wants it", () => {
     await until(async () => (await wakeEvents()).length > 0, "the wake");
     expect(await wakeEvents()).toEqual([{ orgId: f.org.id, data: { machineId, why: "call" } }]);
     expect((await machineRow(machineId)).wantedAt).toBeInstanceOf(Date);
+  });
+
+  test("standby said again keeps the wake's clock; taken out asleep, it reads waking until its hello, for one grace", async () => {
+    f = await setup();
+    const { machineId, token } = await managedComputer();
+    const heard: unknown[] = [];
+    f.pubsub.subscribe(orgTopic(f.org.id), (e) => {
+      const event = (e as { event?: { type?: string } }).event;
+      if (e.type === "org.broadcast" && event?.type === "machine.updated") heard.push(event);
+    });
+    await setMachineStandby(deps(), f.org.id, machineId, true);
+    const t = Date.now();
+    await wantMachine(f.db, machineId, "view", t);
+    // Said again while it wakes: the clock goes on.
+    await setMachineStandby(deps(), f.org.id, machineId, true);
+    expect((await machineRow(machineId)).wakeWantedAt?.getTime()).toBe(t);
+    // Said again once the wake is overdue: still down to people, and their apps hear so.
+    const old = new Date(t - TASK_OFFLINE_GRACE_MS - 1_000);
+    await f.db.update(schema.machines).set({ wakeWantedAt: old }).where(eq(schema.machines.id, machineId));
+    heard.length = 0;
+    await setMachineStandby(deps(), f.org.id, machineId, true);
+    expect(heard).toEqual([{ type: "machine.updated", machineId, standby: false }]);
+    expect((await listMachines(f.db, f.owner.id, f.org.id))[0]).toMatchObject({ online: false, standby: false });
+
+    // Taken out of standby while asleep: it is starting, and reads waking until its runner's hello.
+    await f.db.update(schema.machines).set({ wakeWantedAt: null }).where(eq(schema.machines.id, machineId));
+    heard.length = 0;
+    await setMachineStandby(deps(), f.org.id, machineId, false);
+    const row = await machineRow(machineId);
+    expect(row.standbyAt).toBeNull();
+    expect(row.wakeWantedAt).toBeInstanceOf(Date);
+    expect(heard).toEqual([{ type: "machine.updated", machineId, standby: true }]);
+    expect((await listMachines(f.db, f.owner.id, f.org.id))[0]).toMatchObject({ online: true, standby: true });
+    hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-a" });
+    // What waits for it waits on; operators see it out of standby.
+    expect(await hub.status(machineId)).toMatchObject({ online: false, standby: true });
+    expect((await operatorMachines(f.db, f.org.id))?.machines.find((m) => m.id === machineId)?.standby).toBe(false);
+    const at = row.wakeWantedAt?.getTime() ?? 0;
+    const jobs = await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, WAKE_OVERDUE_JOB));
+    expect(jobs.map((j) => j.nextAttemptAt.getTime())).toContain(at + TASK_OFFLINE_GRACE_MS);
+    // Never started: down after one grace, and the apps hear so.
+    expect(shownOnline(row, new Date(at + TASK_OFFLINE_GRACE_MS))).toBe(false);
+    heard.length = 0;
+    await wakeOverdue(deps(), machineId, new Date(at + TASK_OFFLINE_GRACE_MS));
+    expect(heard).toEqual([{ type: "machine.updated", machineId, standby: false }]);
+
+    await hello(token);
+    expect(await machineRow(machineId)).toMatchObject({ standbyAt: null, wakeWantedAt: null });
   });
 
   test("a wake that never comes: online to people for one grace from the first want, then down; hello clears it", async () => {

@@ -87,6 +87,7 @@ import {
   publishMachineAgentsChanged,
   publishMachineStatus,
   publishMachineUpdated,
+  shownStandby,
 } from "./machines";
 import {
   DISK_REARM_USE,
@@ -1671,7 +1672,8 @@ export function createMachineHub(deps: MachineHubDeps) {
         executors: row.executors ?? {},
         paused: pause ? { until: pause.until, timezone: await machineOwnerTimezone(db, row).catch(() => null) } : null,
         access: row.access ?? null,
-        standby: inStandby(row),
+        // Still starting after its standby ended counts too: what waits for it waits on (`shownStandby`).
+        standby: inStandby(row) || shownStandby(row),
         ...(row.executors?.mode === "system" ? { mode: "system" as const } : {}),
       };
     },
