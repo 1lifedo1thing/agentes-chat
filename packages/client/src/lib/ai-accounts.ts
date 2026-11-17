@@ -498,7 +498,7 @@ export function keyRemovalText(
 
 /**
  * The accounts a run of an agent goes through at its plan's limit (ADR 0041 §6, the server's `nextAccountPlan`): its
- * own account, then the others of its kind with the CLI's own sign-in (never a key) that are signed in and shared
+ * own account, then the others of its kind with the CLI's own sign-in (never a key, `movable`) that are signed in and shared
  * between agents (a login made for one agent is lent to that agent only), its owner's first and then those that serve
  * everyone, each by `useOrder` (the unplaced after, in the order given: oldest first). Only its own account when it is
  * pinned ("Só esta conta"), a key's, or of a kind that never moves (Gemini, Grok, Cursor, OpenCode). The right hand's
@@ -525,6 +525,7 @@ export function accountChain<A extends MachineAccount>(
         a.provider === null &&
         a.status === "active" &&
         a.shared === true &&
+        runMayMoveTo(a) &&
         serves(a),
     )
     .sort((x, y) => Number(mine(y.a)) - Number(mine(x.a)) || place(x.a) - place(y.a) || x.i - y.i);
@@ -537,6 +538,9 @@ export function accountChain<A extends MachineAccount>(
  */
 export const chainHasRoom = <A>(chain: readonly A[], limited: (a: A) => boolean) =>
   chain.slice(1).some((a) => !limited(a));
+
+/** A run at another account's limit may go on with it (the server's `movable`; absent: an older server, which says yes). */
+export const runMayMoveTo = (a: { movable?: boolean }) => a.movable !== false;
 
 /**
  * The accounts of an order of use, each once: the logins of one account signed in once per agent (`sameAs`) together,
@@ -552,29 +556,52 @@ export function orderAccounts<A extends { id: string; sameAs?: string }>(logins:
   return out;
 }
 
+/** The accounts of an order of use (`orderAccounts`) that have a place in it: one of their logins a run may move to. */
+const placedAccounts = <A extends { id: string; sameAs?: string; movable?: boolean }>(logins: readonly A[]) =>
+  orderAccounts(logins).filter((b) => b.some(runMayMoveTo));
+
+/** The login the server moves an account by (`moveAccountInOrder`): one of the account's logins that has a place. */
+export const orderMover = (logins: readonly { id: string; sameAs?: string; movable?: boolean }[], id: string) =>
+  orderAccounts(logins)
+    .find((b) => b.some((a) => a.id === id))
+    ?.find(runMayMoveTo)?.id ?? id;
+
 /**
- * "Subir" and "Descer" in an order of use: the account's place to move it to (`moveAccountInOrder`, which counts
- * accounts and moves their logins together, `orderAccounts`), null at that end.
+ * Each account's place in its order of use (`orderAccounts`, one entry per account), 1 first: only those a run may
+ * move to (`runMayMoveTo`), null the rest.
+ */
+export function orderPlaces(logins: readonly { id: string; sameAs?: string; movable?: boolean }[]): (number | null)[] {
+  let n = 0;
+  return orderAccounts(logins).map((b) => (b.some(runMayMoveTo) ? ++n : null));
+}
+
+/**
+ * "Subir" and "Descer" in an order of use: the account's place to move it to among those that have one
+ * (`moveAccountInOrder`, which counts accounts and moves their logins together), null at that end or for an account
+ * with no place.
  */
 export function orderStep(
-  accounts: readonly { id: string; sameAs?: string }[],
+  logins: readonly { id: string; sameAs?: string; movable?: boolean }[],
   id: string,
   step: -1 | 1,
 ): number | null {
-  const blocks = orderAccounts(accounts);
-  const from = blocks.findIndex((b) => b.some((a) => a.id === id));
+  const placed = placedAccounts(logins);
+  const from = placed.findIndex((b) => b.some((a) => a.id === id));
   const to = from + step;
-  return from < 0 || to < 0 || to >= blocks.length ? null : to;
+  return from < 0 || to < 0 || to >= placed.length ? null : to;
 }
 
-/** A dragged account dropped before or after another's row: its place among the other accounts, null onto itself. */
+/**
+ * A dragged account dropped before or after another's row: its place among the other accounts that have one, null
+ * onto itself or onto an account with no place.
+ */
 export function orderDrop(
-  accounts: readonly { id: string; sameAs?: string }[],
+  logins: readonly { id: string; sameAs?: string; movable?: boolean }[],
   id: string,
   onto: string,
   where: "before" | "after",
 ): number | null {
-  const others = orderAccounts(accounts).filter((b) => !b.some((a) => a.id === id));
+  const others = placedAccounts(logins).filter((b) => !b.some((a) => a.id === id));
   const at = others.findIndex((b) => b.some((a) => a.id === onto));
   return at < 0 ? null : at + (where === "after" ? 1 : 0);
 }

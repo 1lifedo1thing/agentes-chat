@@ -6,9 +6,13 @@ import {
   CHAT_STYLES,
   CHAT_TEXT_SIZES,
   CHAT_TONES,
+  MAX_PHOTO_DIM,
   ONBOARDING_STEPS,
   STANDING_STATES,
   START_PAGES,
+  WALLPAPER_HUES,
+  WALLPAPER_NEUTRALS,
+  WALLPAPER_PHOTO_PATH,
   WORKSPACE_MODES,
 } from "@agenteschat/engine";
 import { CONTEXT_LIMITS, ENDPOINT_STYLES, MODEL_TIERS, PROVIDER_IDS } from "@agenteschat/providers";
@@ -112,6 +116,29 @@ export const StartChoice = z
       "What opens when the app starts here (ADR 0108): `home` (Início, Conversas on the phone), `last` (where the person was, kept on each device) or `channel` (open the home when they are no longer in it).",
   });
 
+const WallpaperHue = z.enum(WALLPAPER_HUES);
+const WallpaperNeutral = z.enum(WALLPAPER_NEUTRALS);
+/** A conversation's background: packages/client/src/lib/wallpaper.ts says what each kind is. */
+export const Wallpaper = z
+  .discriminatedUnion("kind", [
+    z.object({ kind: z.literal("none") }),
+    z.object({ kind: z.literal("sky"), color: z.union([z.literal("auto"), WallpaperHue]) }),
+    z.object({ kind: z.literal("drawings"), color: z.union([z.literal("auto"), WallpaperNeutral, WallpaperHue]) }),
+    z.object({ kind: z.literal("agents") }),
+    z.object({ kind: z.literal("color"), color: z.union([WallpaperNeutral, WallpaperHue]) }),
+    z.object({
+      kind: z.literal("photo"),
+      url: z.string().regex(WALLPAPER_PHOTO_PATH).openapi({ description: "From `PUT …/me/wallpaper-photo`." }),
+      dim: z.number().min(0).max(MAX_PHOTO_DIM).openapi({ description: "How dark it goes in the dark theme." }),
+      x: z.number().min(0).max(1),
+      y: z.number().min(0).max(1),
+    }),
+  ])
+  .openapi("Wallpaper", {
+    description:
+      "`auto` is the conversation's own color: the agent's in a DM with it, the workspace's sky elsewhere. `none`: no background.",
+  });
+
 export const ChatPrefs = z
   .object({
     channelStyle: z.enum(CHAT_STYLES).optional(),
@@ -129,6 +156,11 @@ export const ChatPrefs = z
     feedbackAuto: z.boolean().optional().openapi({
       description:
         "Always send: a report an agent offers about the app goes with its reply, without asking; absent: it asks.",
+    }),
+    wallpaper: Wallpaper.optional().openapi({ description: "The background behind every conversation; absent: none." }),
+    wallpapers: z.record(z.uuid(), Wallpaper).optional().openapi({
+      description:
+        "A conversation's own background, by channel id (`PUT`/`DELETE …/channels/{channelId}/wallpaper`); ignored in `PUT …/me/chat`.",
     }),
   })
   .openapi("ChatPrefs");
@@ -692,7 +724,9 @@ export const WorkView = z
       .enum(["working", "waiting_approval", "waiting_input", "paused", "waiting_computer", "queued"])
       .nullable()
       .openapi({ description: "While live: what its run does now." }),
-    how: z.enum(["agent", "auto"]),
+    how: z.enum(["agent", "auto", "handed"]).openapi({
+      description: "`handed`: another agent handed it over; it reports where the person asked.",
+    }),
     anchorMessageId: z.uuid(),
     threadId: z.uuid().nullable().openapi({ description: "Where its updates are." }),
     homeThreadId: z.uuid().nullable().openapi({ description: "Where it was asked (its report goes there)." }),
@@ -719,6 +753,22 @@ export const WorkView = z
     canceledByUserId: z.string().nullable(),
     canceledByAgentId: z.string().nullable(),
     errorCode: z.string().nullable(),
+    handedBy: z
+      .object({ agentId: z.uuid(), consultationId: z.uuid() })
+      .nullable()
+      .openapi({ description: "Handed over by another agent: that agent and its hand-off." }),
+    askerRunId: z
+      .uuid()
+      .nullable()
+      .openapi({ description: "A handed work: the run that handed it; its line goes under that run's last message." }),
+    planStep: z
+      .object({ current: z.number(), total: z.number() })
+      .nullable()
+      .openapi({ description: "The first step of its plan not done, 1-based, never past the last." }),
+    result: z
+      .object({ text: z.string(), messageId: z.uuid() })
+      .nullable()
+      .openapi({ description: "Done: the first line of its report." }),
   })
   .openapi("WorkView");
 
@@ -845,6 +895,9 @@ const MessageBase = z.object({
   }),
   longWork: WorkView.optional().openapi({
     description: "A long work's anchor (`meta.longWork`, ADR 0121): its line; live via `agent.work`.",
+  }),
+  handedWorks: z.array(WorkView).optional().openapi({
+    description: "On a run's last message here: the works it handed over to other agents, each with its line.",
   }),
   createdAt: z.string(),
 });
@@ -1044,6 +1097,10 @@ export const MachineAccount = z
     sameAs: z.uuid().openapi({
       description:
         "The id of the oldest login of the same account on its computer (one account may be signed in once per agent); its own id where it is the oldest or nothing tells it apart. Logins with the same `sameAs` are one account, whoever looks: the email and key's end that tell them apart stay its owner's.",
+    }),
+    movable: z.boolean().openapi({
+      description:
+        "A run at another account's limit may go on with it: Claude Code's or Codex's own sign-in (never a key), shared between agents and signed in (ADR 0041 §6). Only these have a place in the order of use.",
     }),
   })
   .openapi("MachineAccount", {

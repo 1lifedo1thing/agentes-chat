@@ -6,6 +6,7 @@ import type { OnboardingStepId } from "../lib/onboarding";
 import type { LegacyPrefsPatch, LodiPrefs, LodiPrefsPatch } from "../lib/right-hand-prefs";
 import type { Seat } from "../lib/seat";
 import type { TeamWeekAct } from "../lib/team-week";
+import type { Wallpaper } from "../lib/wallpaper";
 import type { AudienceChoice } from "../lib/who-sees";
 import type { WikiAccess } from "../lib/wiki";
 import type { WorkAreaAnswer } from "../lib/work-area";
@@ -563,6 +564,10 @@ export interface ApiClient {
     /** How agents talk to me here (ADR 0147), for every agent. */
     setAgentStyle(orgId: string, style: AgentStyle): Promise<AgentStyle>;
     setChatPrefs(orgId: string, patch: ChatPrefs): Promise<ChatPrefs>;
+    /** A conversation's own background, for me (null: back to the channels' or DMs'); answers with all my choices. */
+    setConversationWallpaper(orgId: string, channelId: string, wallpaper: Wallpaper | null): Promise<ChatPrefs>;
+    /** A photo for a background, only mine (JSON only: base64), already shrunk; its address goes into a background. */
+    uploadWallpaperPhoto(orgId: string, input: { imageBase64: string; contentType: string }): Promise<{ url: string }>;
     /** Where I put the tools at the top of my sidebar here (only the ones I moved). */
     sidebarItems(orgId: string): Promise<SidebarItems>;
     /** Moves one tool (`null`: back on its default), my others as the server has them. Answers with every choice. */

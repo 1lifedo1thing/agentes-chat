@@ -1,5 +1,5 @@
 {
-  "id": "71f614ad-f86b-4dba-a0ff-63c32f8b359e",
+  "id": "0034e02b-3657-470a-975e-547337bb184f",
   "prevId": "3ed711ce-65d1-40e6-b020-c98d8ae7485c",
   "version": "7",
   "dialect": "postgresql",
@@ -330,13 +330,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "brain_account_pinned": {
-          "name": "brain_account_pinned",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "brain_effort": {
           "name": "brain_effort",
@@ -10096,12 +10089,6 @@
           "notNull": true,
           "default": "'everyone'"
         },
-        "use_order": {
-          "name": "use_order",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "auth_method": {
           "name": "auth_method",
           "type": "text",
@@ -18069,6 +18056,12 @@
         "last_error": {
           "name": "last_error",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_status": {
+          "name": "last_error_status",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },

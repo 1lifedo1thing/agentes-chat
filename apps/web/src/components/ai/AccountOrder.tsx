@@ -1,6 +1,6 @@
 import type { AccountOrderGroup } from "@agenteschat/client";
 import { useMoveAccountInOrder } from "@agenteschat/client";
-import { orderAccounts, orderDrop, orderStep } from "@agenteschat/client/lib/ai-accounts";
+import { orderAccounts, orderDrop, orderMover, orderPlaces, orderStep } from "@agenteschat/client/lib/ai-accounts";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { HintLine, Icon, ProviderLogo } from "@agenteschat/ui";
 import { type DragEvent, type HTMLAttributes, type ReactNode, useRef, useState } from "react";
@@ -32,7 +32,7 @@ export function OrderHead({ group, computer }: { group: AccountOrderGroup; compu
       </div>
       <HintLine
         className="plan-order__terms"
-        name={t("usageViews.order.termsAbout", { plan })}
+        name={t("common.about", { label: t("usageViews.order.termsLabel", { plan }) })}
         hint={t("usageViews.order.termsHint", { plan })}
       >
         {t("usageViews.order.terms", { plan })}
@@ -42,8 +42,8 @@ export function OrderHead({ group, computer }: { group: AccountOrderGroup; compu
 }
 
 /**
- * Moving the accounts of `group`: `place` is a row's number (a grip for whoever may move it), `drop` what makes a row
- * take a dragged account before or after it.
+ * Moving the accounts of `group`: `place` is a row's number (a grip for whoever may move it), blank for an account a
+ * run never moves to, `drop` what makes a row with a place take a dragged account before or after it.
  */
 export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
   const { t } = useTranslation();
@@ -51,12 +51,16 @@ export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
   const move = useMoveAccountInOrder(orgId);
   const dragging = useRef<string | null>(null);
   const [mark, setMark] = useState<{ id: string; where: "before" | "after" } | null>(null);
-  // A place is an account's: the logins of one signed in once per agent move together.
-  const at = (accountId: string) => orderAccounts(group.accounts).findIndex((b) => b.some((a) => a.id === accountId));
+  // A place is an account's: the logins of one signed in once per agent move together, under one number.
+  const accounts = orderAccounts(group.accounts);
+  const places = orderPlaces(group.accounts);
+  const blockOf = (accountId: string) => accounts.findIndex((b) => b.some((a) => a.id === accountId));
+  const placeOf = (accountId: string) => places[blockOf(accountId)] ?? null;
   const put = (accountId: string, index: number | null) => {
-    if (index === null || at(accountId) === index) return;
+    const n = placeOf(accountId);
+    if (index === null || n === null || n - 1 === index) return;
     move.mutate(
-      { accountId, index },
+      { accountId: orderMover(group.accounts, accountId), index },
       {
         onError: (e) => toast.show(errorText(t, e), "error"),
         // Back on the moved account's grip, whose name carries its new place: a keyboard or a screen reader stays there.
@@ -72,8 +76,11 @@ export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
     setMark(null);
   };
 
-  const place = (accountId: string, n: number, name: string): ReactNode => {
+  const place = (accountId: string, name: string): ReactNode => {
     const account = group.accounts.find((a) => a.id === accountId);
+    const n = placeOf(accountId);
+    // No place: the slot stays, so its row starts where the numbered ones do.
+    if (n === null) return <span className="plan-row__place" aria-hidden="true" />;
     if (!account?.canMove) return <span className="plan-row__place">{n}</span>;
     const label = t("usageViews.order.move", { name, n });
     return (
@@ -132,29 +139,32 @@ export function useOrderMoves(orgId: string, group: AccountOrderGroup) {
   };
 
   /** A row's own box: it takes an account of this order dragged onto it. */
-  const drop = (accountId: string): HTMLAttributes<HTMLDivElement> & { "data-drop"?: string } => ({
-    "data-drop": mark?.id === accountId ? mark.where : undefined,
-    onDragOver: (e: DragEvent<HTMLDivElement>) => {
-      const from = dragging.current;
-      if (!from || from === accountId) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      const r = e.currentTarget.getBoundingClientRect();
-      const where = e.clientY > r.top + r.height / 2 ? "after" : "before";
-      if (mark?.id !== accountId || mark.where !== where) setMark({ id: accountId, where });
-    },
-    onDragLeave: (e: DragEvent<HTMLDivElement>) => {
-      if (!e.currentTarget.contains(e.relatedTarget as Node | null) && mark?.id === accountId) setMark(null);
-    },
-    onDrop: (e: DragEvent<HTMLDivElement>) => {
-      const from = dragging.current;
-      const m = mark;
-      end();
-      if (!from || !m) return;
-      e.preventDefault();
-      put(from, orderDrop(group.accounts, from, m.id, m.where));
-    },
-  });
+  const drop = (accountId: string): HTMLAttributes<HTMLDivElement> & { "data-drop"?: string } =>
+    placeOf(accountId) === null
+      ? {}
+      : {
+          "data-drop": mark?.id === accountId ? mark.where : undefined,
+          onDragOver: (e: DragEvent<HTMLDivElement>) => {
+            const from = dragging.current;
+            if (!from || from === accountId) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            const r = e.currentTarget.getBoundingClientRect();
+            const where = e.clientY > r.top + r.height / 2 ? "after" : "before";
+            if (mark?.id !== accountId || mark.where !== where) setMark({ id: accountId, where });
+          },
+          onDragLeave: (e: DragEvent<HTMLDivElement>) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null) && mark?.id === accountId) setMark(null);
+          },
+          onDrop: (e: DragEvent<HTMLDivElement>) => {
+            const from = dragging.current;
+            const m = mark;
+            end();
+            if (!from || !m) return;
+            e.preventDefault();
+            put(from, orderDrop(group.accounts, from, m.id, m.where));
+          },
+        };
 
   return { place, drop };
 }

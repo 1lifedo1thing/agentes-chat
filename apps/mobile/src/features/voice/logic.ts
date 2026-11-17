@@ -1,5 +1,5 @@
 import type { Message } from "@agenteschat/client";
-import { VOICE_COUNTDOWN_MS, VOICE_MAX_MS, voiceParts } from "@agenteschat/client/lib/voice";
+import { VOICE_COUNTDOWN_MS, VOICE_MAX_MS, VOICE_SPEEDS, voiceParts } from "@agenteschat/client/lib/voice";
 import type { VoiceSend } from "./outbox";
 
 /**
@@ -11,7 +11,6 @@ export const HOLD_MS = 220;
 /** How far left deletes, and how far up locks. */
 export const CANCEL_X = -110;
 export const LOCK_Y = -70;
-export const VOICE_SPEEDS = [1, 1.5, 2] as const;
 
 /** A level from 0 to 1 from the recorder's decibels (-160 to 0); what is below -50 is silence. */
 export function levelOf(db: number | undefined): number {
@@ -48,7 +47,7 @@ export function columnsIn(width: number): number {
 /**
  * A played wave's columns on `width`: how many, and where the first starts. They leave the handle's width and 2 at
  * both ends, centred on whole points, so at 0:00 the handle stands before the first column and at the end after the
- * last, flush with the wave's ends, as WhatsApp's dot does.
+ * last, flush with the wave's ends: the handle never covers a column at either end.
  */
 export function playedColumns(width: number): { count: number; start: number } {
   const count = columnsIn(width - 2 * (WAVE_HANDLE + 2));

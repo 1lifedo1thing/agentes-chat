@@ -25,12 +25,19 @@ import { revokeMemberApps } from "./apps/revoke";
 import { recordAudit } from "./audit";
 import { caches } from "./cache";
 import { memberCardVia } from "./card-via";
-import { type ChatPrefs, chatPrefsOf, saveChatPrefs } from "./chat-prefs";
+import {
+  assertOwnWallpaper,
+  type ChatPrefs,
+  chatPrefsOf,
+  saveChatPrefs,
+  saveConversationWallpaper,
+  wallpaperOf,
+} from "./chat-prefs";
 import { invitationMailProof, invitationToken, inviteLinkToken, randomToken, safeEqual, sha256 } from "./crypto";
 import { restoreDms } from "./dms";
 import { earlyAccessLink, hasWorkspaceAllowance, recordFirstWorkspace, signupMode } from "./early-access";
-import { ConflictError, ForbiddenError, UnauthorizedError, ValidationError } from "./errors";
-import { publishOrgEvent } from "./events";
+import { ConflictError, ForbiddenError, NotFoundError, UnauthorizedError, ValidationError } from "./errors";
+import { publishOrgEvent, publishUserEvent } from "./events";
 import { deleteGifKey } from "./gif-key";
 import { deleteGitHubAppSettings } from "./git/github-app-settings";
 import {
@@ -43,6 +50,7 @@ import {
   stillInvitableAgentIds,
   stillInvitableChannelIds,
 } from "./invite-choices";
+import { dropAssignee } from "./issue-assignees";
 import { deleteJevKey } from "./jev-key";
 import { assertMemberRoom } from "./limits";
 import { followWorkspaceName } from "./machine-provisioning";
@@ -848,9 +856,43 @@ export async function setAgentStyle(db: Database, userId: string, orgId: string,
 }
 
 /** How conversations look to the person in this workspace, on every device. Only the keys in `patch` change. */
-export async function setChatPrefs(db: Database, userId: string, orgId: string, patch: ChatPrefs) {
+export async function setChatPrefs(db: Database, userId: string, orgId: string, patch: ChatPrefs, pubsub?: PubSub) {
   await requirePermission(db, userId, orgId, "read");
-  return (await saveChatPrefs(db, orgId, userId, chatPrefsOf(patch))) ?? {};
+  // A conversation's own background changes one at a time (`setConversationWallpaper`): the map is never replaced.
+  const { wallpapers: _one, ...known } = chatPrefsOf(patch);
+  assertOwnWallpaper(known.wallpaper, userId);
+  const prefs = (await saveChatPrefs(db, orgId, userId, known)) ?? {};
+  // My other devices take it at once (`chat.prefs` on my topic).
+  await publishUserEvent(pubsub, orgId, userId, { type: "chat.prefs", chatPrefs: prefs });
+  return prefs;
+}
+
+/**
+ * Gives a conversation I'm in a background of its own, for me (null: back to the channels' or DMs'). My other devices
+ * hear `chat.prefs` with what I chose now.
+ */
+export async function setConversationWallpaper(
+  db: Database,
+  userId: string,
+  orgId: string,
+  channelId: string,
+  input: unknown,
+  pubsub?: PubSub,
+) {
+  await requirePermission(db, userId, orgId, "read");
+  const wallpaper = input === null ? null : wallpaperOf(input);
+  if (wallpaper === undefined) throw new ValidationError("That isn't a background", "wallpaper.invalid");
+  assertOwnWallpaper(wallpaper ?? undefined, userId);
+  const [member] = await db
+    .select({ id: channelMembers.id })
+    .from(channelMembers)
+    .where(
+      and(eq(channelMembers.orgId, orgId), eq(channelMembers.channelId, channelId), eq(channelMembers.userId, userId)),
+    );
+  if (!member) throw new NotFoundError("Channel not found");
+  const prefs = (await saveConversationWallpaper(db, orgId, userId, channelId, wallpaper)) ?? {};
+  await publishUserEvent(pubsub, orgId, userId, { type: "chat.prefs", chatPrefs: prefs });
+  return prefs;
 }
 
 /** The languages of the app (`users.locale`): emails and pushes are written in it. */
@@ -1205,122 +1247,134 @@ export async function removeMember(
   const { dropMailOfOwner } = await import("./tools/scopes");
   const { removeSeat } = await import("./right-hand-seats");
   const { dropMemberDashboards } = await import("./dashboards/service");
-  const { released, removed, handed, changed, heir, secrets, mailActions, toApi } = await db.transaction(async (tx) => {
-    await lockOrgMembers(tx, orgId);
-    if (target.role === "owner" && (await ownerCount(tx, orgId)) <= 1) {
-      throw new ConflictError("An organization needs at least one owner. Transfer ownership first.");
-    }
-    await tx
-      .delete(organizationMembers)
-      .where(and(eq(organizationMembers.orgId, orgId), eq(organizationMembers.userId, targetUserId)));
-    // Leaving the organization also leaves its channels.
-    await tx
-      .delete(channelMembers)
-      .where(and(eq(channelMembers.orgId, orgId), eq(channelMembers.userId, targetUserId)));
-    // And their inbox here, snippets included: invited back later, nothing from before returns.
-    await tx
-      .delete(schema.notifications)
-      .where(and(eq(schema.notifications.orgId, orgId), eq(schema.notifications.userId, targetUserId)));
-    // And the wiki pages and folders they were named on: rejoining later doesn't give a restricted page back.
-    await tx
-      .update(schema.wikiPages)
-      .set({
-        audienceUserIds: sql`array_remove(${schema.wikiPages.audienceUserIds}, ${targetUserId})`,
-        editorUserIds: sql`array_remove(${schema.wikiPages.editorUserIds}, ${targetUserId})`,
-      })
-      .where(
-        and(
-          eq(schema.wikiPages.orgId, orgId),
-          sql`${targetUserId} = any(${schema.wikiPages.audienceUserIds} || ${schema.wikiPages.editorUserIds})`,
-        ),
+  const { released, removed, handed, changed, heir, secrets, mailActions, toApi, tasks } = await db.transaction(
+    async (tx) => {
+      await lockOrgMembers(tx, orgId);
+      if (target.role === "owner" && (await ownerCount(tx, orgId)) <= 1) {
+        throw new ConflictError("An organization needs at least one owner. Transfer ownership first.");
+      }
+      await tx
+        .delete(organizationMembers)
+        .where(and(eq(organizationMembers.orgId, orgId), eq(organizationMembers.userId, targetUserId)));
+      // Leaving the organization also leaves its channels.
+      await tx
+        .delete(channelMembers)
+        .where(and(eq(channelMembers.orgId, orgId), eq(channelMembers.userId, targetUserId)));
+      // And their inbox here, snippets included: invited back later, nothing from before returns.
+      await tx
+        .delete(schema.notifications)
+        .where(and(eq(schema.notifications.orgId, orgId), eq(schema.notifications.userId, targetUserId)));
+      // And the wiki pages and folders they were named on: rejoining later doesn't give a restricted page back.
+      await tx
+        .update(schema.wikiPages)
+        .set({
+          audienceUserIds: sql`array_remove(${schema.wikiPages.audienceUserIds}, ${targetUserId})`,
+          editorUserIds: sql`array_remove(${schema.wikiPages.editorUserIds}, ${targetUserId})`,
+        })
+        .where(
+          and(
+            eq(schema.wikiPages.orgId, orgId),
+            sql`${targetUserId} = any(${schema.wikiPages.audienceUserIds} || ${schema.wikiPages.editorUserIds})`,
+          ),
+        );
+      await tx
+        .update(schema.wikiFolderAudiences)
+        .set({
+          audienceUserIds: sql`array_remove(${schema.wikiFolderAudiences.audienceUserIds}, ${targetUserId})`,
+          editorUserIds: sql`array_remove(${schema.wikiFolderAudiences.editorUserIds}, ${targetUserId})`,
+        })
+        .where(
+          and(
+            eq(schema.wikiFolderAudiences.orgId, orgId),
+            sql`${targetUserId} = any(${schema.wikiFolderAudiences.audienceUserIds} || ${schema.wikiFolderAudiences.editorUserIds})`,
+          ),
+        );
+      // And the agents' "only some people" lists, for the same reason.
+      const unlisted = await tx
+        .update(schema.agents)
+        .set({ audienceUserIds: sql`array_remove(${schema.agents.audienceUserIds}, ${targetUserId})` })
+        .where(and(eq(schema.agents.orgId, orgId), sql`${targetUserId} = any(${schema.agents.audienceUserIds})`))
+        .returning({ id: schema.agents.id });
+      for (const a of unlisted) caches.agents.delete(`${orgId}:${a.id}`);
+      if (unlisted.length > 0) caches.agents.delete(`${orgId}:team`);
+      // Their AI apps and personal tokens here stop now (ADR 0119).
+      await revokeMemberApps(tx, orgId, targetUserId);
+      // Their personal Vault goes with them, and they leave the team items' audiences (ADR 0144 §2). A personal
+      // connection's items cascade with it.
+      await tx
+        .delete(schema.vaultConnections)
+        .where(and(eq(schema.vaultConnections.orgId, orgId), eq(schema.vaultConnections.ownerUserId, targetUserId)));
+      await tx
+        .delete(schema.vaultItems)
+        .where(and(eq(schema.vaultItems.orgId, orgId), eq(schema.vaultItems.ownerUserId, targetUserId)));
+      await tx
+        .update(schema.vaultItems)
+        .set({ audienceUserIds: sql`array_remove(${schema.vaultItems.audienceUserIds}, ${targetUserId})` })
+        .where(
+          and(eq(schema.vaultItems.orgId, orgId), sql`${targetUserId} = any(${schema.vaultItems.audienceUserIds})`),
+        );
+      await tx
+        .update(schema.vaultConnections)
+        .set({ audienceUserIds: sql`array_remove(${schema.vaultConnections.audienceUserIds}, ${targetUserId})` })
+        .where(
+          and(
+            eq(schema.vaultConnections.orgId, orgId),
+            sql`${targetUserId} = any(${schema.vaultConnections.audienceUserIds})`,
+          ),
+        );
+      // Their home and private dashboards go, with their widgets' routines (ADR 0135).
+      await dropMemberDashboards(tx, orgId, targetUserId);
+      // They leave every task they were on (ADR 0188): a task is never assigned to someone who can't open it.
+      const tasks = await dropAssignee(tx, orgId, { type: "person", id: targetUserId });
+      // The secrets agents are waiting on from them won't come.
+      const secrets = await cancelSecretRequestsFor(tx, orgId, targetUserId);
+      // Their agents keep someone answering for them (approvals, budget alerts), before their plans are released: an
+      // agent on a computer of theirs then goes back to the API too (`releaseAgents`).
+      const heir = await heirOf(tx, actorId, orgId, targetUserId);
+      const handed = heir
+        ? await tx
+            .update(agents)
+            .set({ ownerUserId: heir, updatedAt: new Date() })
+            .where(and(eq(agents.orgId, orgId), eq(agents.ownerUserId, targetUserId)))
+            .returning()
+        : [];
+      await dropAgentRules(
+        tx,
+        orgId,
+        handed.map((a) => a.id),
+        { type: "person", id: actorId },
       );
-    await tx
-      .update(schema.wikiFolderAudiences)
-      .set({
-        audienceUserIds: sql`array_remove(${schema.wikiFolderAudiences.audienceUserIds}, ${targetUserId})`,
-        editorUserIds: sql`array_remove(${schema.wikiFolderAudiences.editorUserIds}, ${targetUserId})`,
-      })
-      .where(
-        and(
-          eq(schema.wikiFolderAudiences.orgId, orgId),
-          sql`${targetUserId} = any(${schema.wikiFolderAudiences.audienceUserIds} || ${schema.wikiFolderAudiences.editorUserIds})`,
-        ),
-      );
-    // And the agents' "only some people" lists, for the same reason.
-    const unlisted = await tx
-      .update(schema.agents)
-      .set({ audienceUserIds: sql`array_remove(${schema.agents.audienceUserIds}, ${targetUserId})` })
-      .where(and(eq(schema.agents.orgId, orgId), sql`${targetUserId} = any(${schema.agents.audienceUserIds})`))
-      .returning({ id: schema.agents.id });
-    for (const a of unlisted) caches.agents.delete(`${orgId}:${a.id}`);
-    if (unlisted.length > 0) caches.agents.delete(`${orgId}:team`);
-    // Their AI apps and personal tokens here stop now (ADR 0119).
-    await revokeMemberApps(tx, orgId, targetUserId);
-    // Their personal Vault goes with them, and they leave the team items' audiences (ADR 0144 §2). A personal
-    // connection's items cascade with it.
-    await tx
-      .delete(schema.vaultConnections)
-      .where(and(eq(schema.vaultConnections.orgId, orgId), eq(schema.vaultConnections.ownerUserId, targetUserId)));
-    await tx
-      .delete(schema.vaultItems)
-      .where(and(eq(schema.vaultItems.orgId, orgId), eq(schema.vaultItems.ownerUserId, targetUserId)));
-    await tx
-      .update(schema.vaultItems)
-      .set({ audienceUserIds: sql`array_remove(${schema.vaultItems.audienceUserIds}, ${targetUserId})` })
-      .where(and(eq(schema.vaultItems.orgId, orgId), sql`${targetUserId} = any(${schema.vaultItems.audienceUserIds})`));
-    await tx
-      .update(schema.vaultConnections)
-      .set({ audienceUserIds: sql`array_remove(${schema.vaultConnections.audienceUserIds}, ${targetUserId})` })
-      .where(
-        and(
-          eq(schema.vaultConnections.orgId, orgId),
-          sql`${targetUserId} = any(${schema.vaultConnections.audienceUserIds})`,
-        ),
-      );
-    // Their home and private dashboards go, with their widgets' routines (ADR 0135).
-    await dropMemberDashboards(tx, orgId, targetUserId);
-    // The secrets agents are waiting on from them won't come.
-    const secrets = await cancelSecretRequestsFor(tx, orgId, targetUserId);
-    // Their agents keep someone answering for them (approvals, budget alerts), before their plans are released: an
-    // agent on a computer of theirs then goes back to the API too (`releaseAgents`).
-    const heir = await heirOf(tx, actorId, orgId, targetUserId);
-    const handed = heir
-      ? await tx
-          .update(agents)
-          .set({ ownerUserId: heir, updatedAt: new Date() })
-          .where(and(eq(agents.orgId, orgId), eq(agents.ownerUserId, targetUserId)))
-          .returning()
-      : [];
-    await dropAgentRules(
-      tx,
-      orgId,
-      handed.map((a) => a.id),
-      { type: "person", id: actorId },
+      const action = actorId === targetUserId ? "member.left" : "member.removed";
+      await auditMember(tx, orgId, actorId, action, targetUserId, {
+        role: target.role,
+        ...(handed.length ? { agentsTo: heir, agents: handed.map((a) => a.id) } : {}),
+        ...(via ? { via } : {}),
+      });
+      // No agent goes on reading or sending in their name: their mailboxes leave every agent, and what waits to run there doesn't.
+      await dropMailOfOwner(tx, orgId, targetUserId, actorId);
+      // Their place on the workspace's computer for the right hand goes too (ADR 0175): coming back starts a new one.
+      await removeSeat(tx, orgId, targetUserId);
+      const mailActions = await cancelMailboxApprovals(tx, orgId, targetUserId, actorId);
+      // Their AI accounts on the organization's computers are signed out and removed (ADR 0059 §1).
+      const released = await releaseMemberAccounts(tx, targetUserId, orgId);
+      const removed = [];
+      for (const computer of await personalMachines(tx, targetUserId, [orgId])) {
+        removed.push({ computer, freed: await detachMachine(tx, computer) });
+      }
+      await releaseLeaverDevices(tx, orgId, targetUserId);
+      const touched = [...new Set([...handed.map((a) => a.id), ...removed.flatMap((r) => r.freed)])];
+      const toApi = await offPlansNotOwners(tx, orgId, touched);
+      const changed = [...new Set([...touched, ...released.agents.flatMap((a) => a.agentIds)])];
+      await followOwner(tx, orgId);
+      return { released, removed, handed, changed, heir, secrets, mailActions, toApi, tasks };
+    },
+  );
+  if (tasks.length > 0) {
+    const { unassignGone } = await import("./issues");
+    await unassignGone({ db, pubsub: options.pubsub }, orgId, { type: "person", id: targetUserId }, tasks).catch(
+      () => {},
     );
-    const action = actorId === targetUserId ? "member.left" : "member.removed";
-    await auditMember(tx, orgId, actorId, action, targetUserId, {
-      role: target.role,
-      ...(handed.length ? { agentsTo: heir, agents: handed.map((a) => a.id) } : {}),
-      ...(via ? { via } : {}),
-    });
-    // No agent goes on reading or sending in their name: their mailboxes leave every agent, and what waits to run there doesn't.
-    await dropMailOfOwner(tx, orgId, targetUserId, actorId);
-    // Their place on the workspace's computer for the right hand goes too (ADR 0175): coming back starts a new one.
-    await removeSeat(tx, orgId, targetUserId);
-    const mailActions = await cancelMailboxApprovals(tx, orgId, targetUserId, actorId);
-    // Their AI accounts on the organization's computers are signed out and removed (ADR 0059 §1).
-    const released = await releaseMemberAccounts(tx, targetUserId, orgId);
-    const removed = [];
-    for (const computer of await personalMachines(tx, targetUserId, [orgId])) {
-      removed.push({ computer, freed: await detachMachine(tx, computer) });
-    }
-    await releaseLeaverDevices(tx, orgId, targetUserId);
-    const touched = [...new Set([...handed.map((a) => a.id), ...removed.flatMap((r) => r.freed)])];
-    const toApi = await offPlansNotOwners(tx, orgId, touched);
-    const changed = [...new Set([...touched, ...released.agents.flatMap((a) => a.agentIds)])];
-    await followOwner(tx, orgId);
-    return { released, removed, handed, changed, heir, secrets, mailActions, toApi };
-  });
+  }
   for (const row of secrets) await publishSecret({ db, pubsub: options.pubsub }, row, "secret.updated");
   for (const row of mailActions) await publishApproval({ db, pubsub: options.pubsub }, row, "approval.decided");
   forgetAgents(
@@ -1440,6 +1494,8 @@ export async function deleteAccount(
     // Their mailboxes leave every agent there too (`removeMember`); a mailbox without an owner would be anyone's.
     const mailActions = [];
     for (const m of mine) {
+      // They leave every task they were on, as someone removed from a workspace does (ADR 0188).
+      await dropAssignee(tx, m.orgId, { type: "person", id: userId });
       await dropMailOfOwner(tx, m.orgId, userId, userId);
       await removeSeat(tx, m.orgId, userId);
       mailActions.push(...(await cancelMailboxApprovals(tx, m.orgId, userId, userId)));

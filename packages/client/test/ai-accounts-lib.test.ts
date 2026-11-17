@@ -21,6 +21,8 @@ import {
   offersSignInAgain,
   orderAccounts,
   orderDrop,
+  orderMover,
+  orderPlaces,
   orderStep,
   ownSignInListed,
   ownSignInLower,
@@ -730,6 +732,37 @@ describe("accountChain: the accounts a run goes through at its plan's limit", ()
     expect(orderDrop(order, "bia", "t2", "before")).toBe(0);
     expect(orderDrop(order, "t1", "bia", "after")).toBe(2);
     expect(orderDrop(order, "t1", "t3", "after")).toBeNull();
+  });
+
+  test("an account has a place when one of its logins does, and one number for all of them", () => {
+    // Walter's Team: t2 is signed out (no place of its own), still one account with t1. Bia's only login has no place.
+    const order = [
+      { id: "t1", sameAs: "t1" },
+      { id: "ada", sameAs: "ada" },
+      { id: "t2", sameAs: "t1", movable: false },
+      { id: "bia", sameAs: "bia", movable: false },
+    ];
+    expect(orderPlaces(order)).toEqual([1, 2, null]);
+    expect(orderStep(order, "t2", 1)).toBe(1);
+    expect(orderStep(order, "ada", 1)).toBeNull();
+    expect(orderStep(order, "bia", -1)).toBeNull();
+    expect(orderDrop(order, "ada", "bia", "before")).toBeNull();
+    // The server moves an account by a login with a place: t2's row moves by t1.
+    expect(orderMover(order, "t2")).toBe("t1");
+    expect(orderMover(order, "ada")).toBe("ada");
+  });
+
+  test("a CLI login by API key is never a next account: the server says so with `movable`", () => {
+    expect(chainOf([claude("own1"), claude("cli-key", { movable: false }), claude("own2")])).toEqual(["own1", "own2"]);
+  });
+
+  test("only accounts a run may move to have a place: the others keep their row with no number, and no Subir or Descer", () => {
+    const order = [{ id: "a" }, { id: "solo", movable: false }, { id: "b" }, { id: "out", movable: false }];
+    expect(orderPlaces(order)).toEqual([1, null, 2, null]);
+    expect(orderStep(order, "a", 1)).toBe(1);
+    expect(orderStep(order, "b", -1)).toBe(0);
+    expect(orderStep(order, "b", 1)).toBeNull();
+    expect(orderStep(order, "solo", -1)).toBeNull();
   });
 });
 

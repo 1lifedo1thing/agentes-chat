@@ -3,7 +3,7 @@ import { and, type Executor, eq, inArray, isNull, ne, or, schema, sql } from "@a
 import { isAutoModel } from "@agenteschat/providers";
 import { autoPlanModel, claudeCodeModel, NEXT_ACCOUNT_KINDS, planOf } from "@agenteschat/providers/plans";
 import type { Agent } from "./agents";
-import { type BrainPlan, computerBrainUnavailable, planIsOwners, storedPlanUsage } from "./brains/select";
+import { type BrainPlan, computerBrainUnavailable, NO_AI_CODES, planIsOwners, storedPlanUsage } from "./brains/select";
 import type { BrainAccount, BrainSession } from "./brains/types";
 import { machineRule, mayUseDevice } from "./devices";
 import type { MachineStatus } from "./machine-hub";
@@ -145,7 +145,7 @@ const ownerIsMember = and(
  * (`chainWhere`): its owner's own first and then the others that serve everyone, each by `use_order`. Never an account
  * `tried` or one of their seats, nor one limited by what is stored: unknown usage is worth a try (a setup token can't
  * read its usage without a turn). `own`: the agent's own account, which takes the run back when it has room. `room`:
- * what long work also needs of the stored usage. Null plan: no such account, with how many accounts are limited (the
+ * what long work also needs of an account's stored usage. Null plan: no such account, with how many accounts are limited (the
  * tried ones counted) and the earliest reset.
  */
 export async function nextAccountPlan(
@@ -153,7 +153,11 @@ export async function nextAccountPlan(
   agent: ChainAgent,
   plan: BrainPlan,
   tried: readonly string[],
-  options: { room?: (usage: PlanUsage | null) => boolean; forPerson?: string | null; own?: string } = {},
+  options: {
+    room?: (usage: PlanUsage | null, accountId: string) => boolean;
+    forPerson?: string | null;
+    own?: string;
+  } = {},
 ): Promise<NextAccount> {
   const machineId = plan.session?.machineId;
   const owner = agent.ownerUserId;
@@ -205,7 +209,7 @@ export async function nextAccountPlan(
       if (limited && at > now && (earliest === null || at < earliest)) earliest = at;
     }
     if (why || tried.includes(r.id) || triedRows.some((t) => sameSeat(t, r))) continue;
-    if (options.room && !options.room(usage)) continue;
+    if (options.room && !options.room(usage, r.id)) continue;
     const { unavailable: _, usage: _usage, ...rest } = plan;
     return {
       plan: {
@@ -256,9 +260,13 @@ export async function movedAccountPlan(
     storedPlanUsage(deps.db, agent.orgId, machineId, plan.kind, row.id).catch(() => null),
   ]);
   const model = isAutoModel(plan.model) ? autoPlanModel(undefined, plan.model, usage) : plan.model;
+  // Of its own account's refusal only what holds for the run on any account (the right hand's, say): its limit,
+  // its sign-in or its owner's sharing belong to that account.
+  const own = plan.unavailable;
+  const carried =
+    own && own.code !== "plan_limit" && own.code !== "plan_not_owner" && !NO_AI_CODES.has(own.code) ? own : null;
   const why =
-    computerBrainUnavailable(plan.kind, machineId, status, Date.now(), account, true, usage, model) ??
-    (plan.unavailable?.code === "plan_limit" ? null : (plan.unavailable ?? null));
+    computerBrainUnavailable(plan.kind, machineId, status, Date.now(), account, true, usage, model) ?? carried;
   const { unavailable: _, usage: _usage, ...rest } = plan;
   return { ...rest, account, ...(usage ? { usage } : {}), ...(why ? { unavailable: why } : {}) };
 }

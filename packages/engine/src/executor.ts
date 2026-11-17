@@ -13,6 +13,7 @@ import {
   desc,
   type Executor,
   eq,
+  gt,
   inArray,
   isNull,
   ne,
@@ -136,6 +137,15 @@ import {
 import { REACT_TOOL } from "./chat-tools";
 import { kickRoomQueue, publishQueueChanged, roomGate, roomHead } from "./computer-queue";
 import {
+  CONFIDENTIAL_AI_CHANGED,
+  confidentialThread,
+  isConfidential,
+  isConfidentialRun,
+  noteConfidentialRun,
+  thinksAsThread,
+  threadIsConfidential,
+} from "./confidential";
+import {
   announceConsultationChange,
   answersHandOffs,
   answersOpen,
@@ -226,6 +236,7 @@ import {
 } from "./key-line";
 import { answerNoTurn, deliverLive, listenLiveSteering, renderSteered } from "./live-steer";
 import {
+  accountEverWorked,
   accountFailureCause,
   noteAccountFailure,
   publishAccountsChanged,
@@ -235,6 +246,7 @@ import { computerBackSoon, type MachineCaller } from "./machine-hub";
 import { TASK_OFFLINE_GRACE_MS } from "./machine-tasks";
 import { getMachine } from "./machines";
 import { MEDIA_TOOLS } from "./media";
+import { PLACE_KEPT_MS } from "./message-place";
 import {
   getMessage,
   insertMessage,
@@ -245,7 +257,7 @@ import {
   unreachedPeople,
 } from "./messages";
 import { missionAsksPerson, missionReportSince, scheduleKeepGoing } from "./missions-engine";
-import { type NoAiCardReason, postNoAiCard } from "./no-ai";
+import { type NoAiCardReason, postNoAiCard, postStandInLine } from "./no-ai";
 import {
   notifyCatchUpClosed,
   notifyCatchUpClosedAsker,
@@ -273,8 +285,10 @@ import { routineCreatorOf, wikiPersonOf } from "./requester";
 import {
   isRightHand,
   RIGHT_HAND_AUTO,
+  type RightHandStandIn,
   rightHandNoAiReason,
   rightHandPerson,
+  rightHandStandIn,
   scrubRightHandReply,
   thinkingAgent,
   withPersonalBrain,
@@ -316,6 +330,7 @@ import {
   cliRefusedStart,
   cliWords,
   isTerminal,
+  keyRefused,
   NO_AI,
   OUR_ERROR,
   PERSON_LIMIT,
@@ -435,6 +450,7 @@ const {
   outbox,
   routineRuns,
   secretRequests,
+  machineAccounts,
   users,
 } = schema;
 /** A bridged call can land a moment after the text the brain streamed before it: its text up to this much later counts as before. */
@@ -560,6 +576,8 @@ export interface Transcript {
   messages: ModelMessage[];
   /** Tools on demand (ADR 0043): the tool groups this run listed up front; absent = every tool. */
   toolGroups?: string[];
+  /** What thinks for the run, as its last claim found it: `model:<provider>`, or a computer brain's kind. */
+  thinksWith?: string;
   /** The trigger's message: the model brain reads the per-turn notes after it (`turnNotes`, token-trim B8). */
   notesAt?: number;
   /** Hash of what its computer session's system prompt depends on (`RunContext.sessionPrompt`, granted scopes). */
@@ -656,6 +674,16 @@ export interface Transcript {
    * the judges read this as the request instead.
    */
   request?: string;
+  /**
+   * The right hand's own plan couldn't answer and the workspace's key did (`rightHandStandIn`, ADR 0137 §7 amended
+   * 2026-11-15): its own line says so (`postStandInLine`), never a note on the reply. No other agent stands in on the API.
+   */
+  fallback?: { from: BrainKind; code: string; message: string; resetsAt?: string; quiet?: true };
+  /**
+   * The key that stood in for the right hand's plan was refused (no credit, a wrong key) before it answered a turn: the
+   * run went back to its own brain, and no key stands in for it again.
+   */
+  standInRefused?: true;
   /** Fast was refused on a turn of this run, which went on at standard speed (`meta.speedFallback`). */
   speedFallback?: boolean;
   /**
@@ -736,10 +764,12 @@ export interface Transcript {
   /** Its plan's limit moved it to the next account in the workspace's order (ADR 0041 §6), in a session of its own there. */
   accountMove?: AccountMove;
   /**
-   * The fresh session a move to another account (or back) gave this run: until a turn goes out in it, it is never
-   * resumed and its first prompt says what the run already did (`movedSessionNote`).
+   * The fresh session a move to another account (or back) gave this run: until a turn runs in it, it is never resumed
+   * and its first prompt says what the run already did (`movedSessionNote`).
    */
   freshSession?: string;
+  /** The conversation heard that this run went on with another account: once per run, whatever moved it since. */
+  accountMoveSaid?: true;
   /** Caught up after a long wait on its plan or budget (`catch-up.ts`): since when it paused; whether it may pass. */
   catchUp?: { since: number; mayPass?: true };
   /** The check before that catch-up (`catch-up-triage.ts`): its last verdict, reused while nothing new came in. */
@@ -754,6 +784,12 @@ export interface Transcript {
    */
   mootRequests?: Record<string, string>;
   requestMoot?: true;
+  /**
+   * Its own newer run here withdrew what it waited on (`withdraw_request`) and answers the person: the calls this one
+   * had made by then. Woken with no call made since, its words would only answer them a second time, so it ends
+   * without them (a person's message to it since makes it owe an answer again).
+   */
+  takenOver?: number;
   /** Time spent working before this claim (ms), without its waits: the long-work safety net counts it (ADR 0121). */
   activeMs?: number;
   /** The "unavailable" note already posted in this run (its code): not repeated while it waits. */
@@ -845,8 +881,9 @@ export const sessionLostNote = (folder: string) =>
  * What a computer brain reads first in the fresh session of the account its run moved to (`Transcript.accountMove`):
  * `done`, what the run already ran, as a dropped turn's resume names it.
  */
+const MOVED_NOTE_HEAD = "# Your session\nYour plan's account hit its limit";
 export const movedSessionNote = (done: readonly string[]) =>
-  `# Your session\nYour plan's account hit its limit, so this run goes on with another account, in a fresh session: it knows this conversation, not what you ran before in this run.${done.length > 0 ? ` Already done in this run, do not repeat: ${[...new Set(done)].join(", ")}.` : ""} Look at what is on disk before you go on.`;
+  `${MOVED_NOTE_HEAD}, so this run goes on with another account, in a fresh session: it knows this conversation, not what you ran before in this run.${done.length > 0 ? ` Already done in this run, do not repeat: ${[...new Set(done)].join(", ")}.` : ""} Look at what is on disk before you go on.`;
 
 /**
  * What a mission's main session reads when its agent's settings changed since it started (`BrainPlan.settingsChanged`);
@@ -1364,9 +1401,14 @@ async function executeRunInner(
     topLevel ? getMessage(db, run.orgId, run.triggerMessageId) : Promise.resolve(null),
   ]);
   let channelRow = firstChannel;
+  // Asked by the root of a confidential thread (ADR 0190): every message of such a thread carries the mark, so the
+  // thread's row is read only for a message that carries it (a marked message can also sit outside such a thread).
+  const sealedAtClaim =
+    isConfidential(topTrigger?.meta) && (await threadIsConfidential(db, run.orgId, run.threadRootId));
+  if (sealedAtClaim) noteConfidentialRun(run.id);
   // Where it answers. Long work (ADR 0121) moves it to its anchor's thread mid-run, a move a person asked for to
-  // another place (`adoptWork`).
-  let replyThreadId = replyThreadOf(run);
+  // another place (`adoptWork`). In a confidential thread that is under the thread's root, whatever asked.
+  let replyThreadId = replyThreadOf({ ...run, confidential: sealedAtClaim });
   const where = { channelId: run.channelId, threadId: replyThreadId, agentId: run.agentId, runId: run.id };
   // Background work (a routine's run, or long work) says so: the apps keep it out of the conversation's "working" row.
   let bg: { background?: true } = run.background || run.workId ? { background: true as const } : {};
@@ -1392,6 +1434,8 @@ async function executeRunInner(
   let transcript = run.transcript as unknown as Transcript | null;
   /** Who thinks for this run (set before the first turn). */
   let brainPlan: BrainPlan | null = null;
+  /** What thought for the right hand in place of its own plan (`rightHandStandIn`): its reply gets one line saying so. */
+  let standInUsed: RightHandStandIn | null = null;
   /** How its last turn ended (`decideTurnEnd`); every other way to `done` is recorded as `ended` (I2). */
   let turnEnd: TurnEndDecision | null = null;
   /** A failure's own code when the run error's prefix is too broad (`brain_unavailable: …`), and the plan it names. */
@@ -1434,6 +1478,13 @@ async function executeRunInner(
     if (brainPlan && brainPlan.kind !== "model") await revokeRunToolTokens(db, { runId: run.id }).catch(() => {});
     if (status === "done" || status === "failed" || status === "canceled")
       await deps.releaseRunPhones?.(run).catch(() => {});
+    if (status === "done" && standInUsed && !run.background) {
+      const line = standInUsed;
+      standInUsed = null;
+      await postStandInLine({ db, pubsub: deps.pubsub }, run, line).catch((error) =>
+        addRunStep(db, run, "error", { reason: "stand_in_line", message: String(error) }),
+      );
+    }
     await publishChannelEvent(deps.pubsub, { type: "agent.idle", ...where, ...bg });
     await publishChannelEvent(deps.pubsub, {
       type: "run.finished",
@@ -1587,6 +1638,8 @@ async function executeRunInner(
     later(() => afterTurnDone(context, run, { judged, signal }));
   };
   const reportJudgeLearn = (judge: Judge, error: unknown) => {
+    // No judge is asked for a run of a confidential thread: that refusal is no failure to report.
+    if (isConfidentialRun(run.id)) return;
     if (deps.context && agent)
       reportLearnFailure(deps.context, "judge_learn_question", error, {
         ...learnTags(agent),
@@ -1617,7 +1670,11 @@ async function executeRunInner(
     await deferred;
     const plan = brainPlan && isComputerBrain(brainPlan.kind) ? BRAIN_PLAN_NAMES[brainPlan.kind] : undefined;
     failCause = { ...(ledger ? { code: ledger.code } : {}), ...(plan ? { plan } : {}) };
-    await addRunStep(db, run, "error", { reason });
+    // With `no_ai`, why (`failNoAi`): the run's own error says only that, and the card that says more may not be posted.
+    await addRunStep(db, run, "error", {
+      reason,
+      ...(reason === NO_AI && ledger?.detail ? { code: ledger.detail } : {}),
+    });
     const failed = await transitionRun(db, run.id, "running", "failed", {
       error: reason,
       ...(brainFailure ? { failure: brainFailure } : {}),
@@ -1709,6 +1766,21 @@ async function executeRunInner(
     // A resumed run keeps the tools it started with (the list, and the prompt cache, stay the same).
     loadedGroups: (run.transcript as unknown as Transcript | null)?.toolGroups ?? null,
     ...(run.background ? { background: true } : {}),
+    ...(sealedAtClaim ? { confidential: true } : {}),
+    // A resumed run says what it thought with before this claim settles it again: an action a person approved runs
+    // before then, and its server is told too (ADR 0181).
+    ...((run.transcript as unknown as Transcript | null)?.thinksWith
+      ? { thinksWith: (run.transcript as unknown as Transcript).thinksWith }
+      : {}),
+  };
+  /**
+   * A result this run read made its thread confidential (the gateway says so on `ctx`, ADR 0190): from then on it
+   * answers under the message that asked it, its cards and events with it.
+   */
+  const followThread = () => {
+    if (!ctx.confidential || replyThreadId !== null) return;
+    replyThreadId = run.threadRootId;
+    where.threadId = replyThreadId;
   };
   /** Its long work (ADR 0121): where the report goes home. */
   let workHome: { id: string; homeThreadId: string | null } | null = null;
@@ -1737,7 +1809,7 @@ async function executeRunInner(
     run.workId = row.workId;
     run.threadRootId = row.threadRootId;
     ctx.threadRootId = row.threadRootId;
-    replyThreadId = replyThreadOf(run);
+    replyThreadId = replyThreadOf({ ...run, confidential: ctx.confidential });
     where.threadId = replyThreadId;
     if (row.channelId !== ctx.channelId) {
       run.channelId = row.channelId;
@@ -1765,11 +1837,10 @@ async function executeRunInner(
   /** What the run's policy refused of the tools the agent's scopes grant: who is behind it held them back. */
   const heldBack: string[] = [];
   const stored = await getAgentCached(db, run.orgId, run.agentId);
+  /** Whose AI the right hand's run thinks with (ADR 0137 §11); null for any other agent. */
+  const thinksFor = stored ? await rightHandPerson(db, stored, run) : null;
   // The right hand thinks with the AI of the person whose DM this is, when they chose their own (ADR 0137 §11).
-  const agent =
-    stored && isRightHand(stored)
-      ? (await withPersonalBrain(db, stored, await rightHandPerson(db, stored, run))).agent
-      : stored;
+  const agent = stored && isRightHand(stored) ? (await withPersonalBrain(db, stored, thinksFor)).agent : stored;
   // Claude Code defers our tools itself (its ToolSearch): a new run lists every tool the agent has, the same in every
   // run, instead of the groups a judge picks, so its cached prefix holds across runs and sessions (ADR 0043).
   if (needsContext && deps.toolsOnDemand && agent && brainOf(agent.brain) === "claude_code") {
@@ -1898,6 +1969,14 @@ async function executeRunInner(
   // Started by a routine: its answer carries the routine (the app shows a small tag on the
   // agent's message, since the routine's own call isn't shown), and it may end in silence.
   const triggerMessage = trigger ?? topTrigger ?? (await getMessage(db, run.orgId, run.triggerMessageId));
+  if (
+    !ctx.confidential &&
+    isConfidential(triggerMessage?.meta) &&
+    (await threadIsConfidential(db, run.orgId, run.threadRootId))
+  ) {
+    ctx.confidential = true;
+    noteConfidentialRun(run.id);
+  }
   // The routine that called it (`viaRoutine`) and whether the router brought it in after another agent
   // spoke (`joined`, ADR 0034): every message it posts says so, cards included (`runMessageMeta`).
   const runMeta = runMessageMeta(run, triggerMessage);
@@ -2098,6 +2177,9 @@ async function executeRunInner(
     const { [FEEDBACK_SEND]: feedbackSend, ...shown } = (meta ?? {}) as Record<string, unknown> & {
       [FEEDBACK_SEND]?: { key: string; feedback: Feedback };
     };
+    // The caller read where the run answers before its last tool call may have moved it.
+    followThread();
+    if (ctx.confidential && threadId === null) threadId = replyThreadId;
     const tagged = report && !note ? { routine: report } : {};
     const said = note ? body : await publishable(tx, threadId, body);
     // Team actions (ADR 0064): what the run didn't repeat because the team already did it rides on its reply.
@@ -2303,6 +2385,7 @@ async function executeRunInner(
         machines: deps.machines,
         ai: { gateway: deps.gateway, machines: deps.machines },
         workspaceComputer: deps.workspaceComputer,
+        unseal: brainOf(agent.brain) === "model",
       }),
       contextDeps
         ? // A person's own message already names who is behind the run: no read for it.
@@ -2341,6 +2424,11 @@ async function executeRunInner(
       rulesForRun(db, run, agent).catch(() => ({ text: "", itemIds: [] as string[] })),
     ]);
     await judging;
+    // Its thread turned confidential after the claim read the message that asked: it is a run of that thread now.
+    if (context.confidential && !ctx.confidential) {
+      ctx.confidential = true;
+      noteConfidentialRun(run.id);
+    }
     const issueId = context.issueId;
     if (issueId) later(() => linkRunToIssue({ db, pubsub: deps.pubsub }, run, issueId));
     const system: ContextBlock[] = [...context.system];
@@ -2857,7 +2945,13 @@ async function executeRunInner(
     if (ids.length === 0) return null;
     for (const id of ids) readIds.add(id);
     // Rendered as live steering renders them mid-turn (`live-steer.ts`).
-    const rows = await renderSteered(db, run.orgId, ids, { beforeStart, workId: run.workId });
+    const rows = await renderSteered(db, run.orgId, ids, {
+      beforeStart,
+      workId: run.workId,
+      ...(brainPlan?.kind === "model"
+        ? { unseal: { threadRootId: run.threadRootId, thinksWith: ctx.thinksWith } }
+        : {}),
+    });
     if (rows.length === 0) return null;
     const text = rows.map((m) => m.text).join("\n\n");
     const t = transcript as Transcript;
@@ -2924,6 +3018,18 @@ async function executeRunInner(
     fresh: Boolean(viaRoutine) || run.background,
     promptKey: transcript.promptKey,
   });
+  if (brainPlan.standIn) {
+    standInUsed = brainPlan.standIn;
+    const fallback = {
+      from: brainOf(agent.brain),
+      code: brainPlan.standIn.code,
+      message: `${brainPlan.standIn.via} stood in`,
+      quiet: true as const,
+    };
+    // On the key it keeps the key when it resumes, as a fallback does: its transcript is the model's.
+    if (brainPlan.kind === "model") transcript.fallback = fallback;
+    await addRunStep(db, run, "context", { brainFallback: fallback });
+  }
   // The agent's model left its plan's live list, so this turn runs another: its owner hears it, never silently.
   const dropped =
     brainPlan.kind === "claude_code" && !brainPlan.missionId && agent.brain === "claude_code"
@@ -3000,6 +3106,11 @@ async function executeRunInner(
       } as ContextBlock,
     ];
   }
+  // The right hand's run the key stood in for keeps it when it resumes (an approval, an answer): its transcript is the
+  // model's, and its plan would start the task again from the trigger.
+  if (isRightHand(agent) && brainPlan.kind !== "model" && run.brain === "model" && transcript.fallback) {
+    brainPlan = { kind: "model", ...(brainPlan.missionId ? { missionId: brainPlan.missionId } : {}) };
+  }
   if (brainPlan.kind !== "claude_code") onDemandForOtherBrain(transcript);
   // The run's effective brain (ADR 0053 §10): shared code reads it, never the agent's stored brain.
   if (run.brain !== brainPlan.kind) {
@@ -3065,7 +3176,30 @@ async function executeRunInner(
     }
   }
   // The context budget reads the model's window: an OpenRouter model's comes with its list.
-  await modelInfoFor(db, thinker.model, run.orgId);
+  const thinkerModel = await modelInfoFor(db, thinker.model, run.orgId);
+  // One provider for a confidential thread's words (ADR 0190). A run that may hold them in its transcript goes on
+  // with what it thought with before or not at all, and one whose context was read whole (`unseal`) thinks through
+  // the Model Gateway or not at all: any other brain or provider would be handed the words. So would a run that
+  // thinks with another provider than the thread's first reader: another agent named there, or this one after its
+  // model changed.
+  const thinksOf = (kind: BrainPlan["kind"]) => (kind === "model" ? `model:${thinkerModel?.provider ?? ""}` : kind);
+  const thinksWith = thinksOf(brainPlan.kind);
+  const sealedThread =
+    ctx.confidential && brainPlan.kind === "model" ? await confidentialThread(db, run.orgId, run.threadRootId) : null;
+  if (
+    ctx.confidential &&
+    ((transcript.thinksWith?.startsWith("model:") && transcript.thinksWith !== thinksWith) ||
+      (brainPlan.kind !== "model" && brainOf(agent.brain) === "model") ||
+      (sealedThread !== null && !thinksAsThread(sealedThread, thinksWith)))
+  ) {
+    return fail(CONFIDENTIAL_AI_CHANGED);
+  }
+  /** What thinks for the run from here on: kept with it, and told to a server the operator listed (ADR 0181). */
+  const thinksAs = (kind: BrainPlan["kind"]) => {
+    transcript.thinksWith = thinksOf(kind);
+    ctx.thinksWith = transcript.thinksWith;
+  };
+  thinksAs(brainPlan.kind);
   let plan: BrainPlan = brainPlan;
   /**
    * What the turn-end judge reads (ADR 0109), filled only when it runs: the run's general means (`turnMeans`, its
@@ -3094,7 +3228,17 @@ async function executeRunInner(
     };
     return { evidence, gather };
   };
-  const brain = createBrain(deps, thinker, run, plan.kind, turnToken, () => transcript as Transcript);
+  let brain = createBrain(deps, thinker, run, plan.kind, turnToken, () => transcript as Transcript);
+  /**
+   * What the key stands in for since this claim's stand-in for the right hand, until it answers a turn: the plan and
+   * the tools it listed, taken back if the key is refused first (`backToOwnBrain`).
+   */
+  let standIn: {
+    plan: BrainPlan;
+    brain: typeof brain;
+    toolGroups: Transcript["toolGroups"];
+    loadedGroups: ToolContext["loadedGroups"];
+  } | null = null;
   let triggerText = trigger?.body ?? topTrigger?.body ?? "";
   if (plan.kind !== "model" && !triggerText) {
     triggerText = (await getMessage(db, run.orgId, run.triggerMessageId))?.body ?? "";
@@ -3319,27 +3463,68 @@ async function executeRunInner(
     ...(await executedSince(db, run.id, 0, [])).map((c) => c.label),
     ...((transcript as Transcript).harnessTried ?? []),
   ];
-  /** The fresh session of a move in this claim was told what the run already did (`movedSessionNote`). */
-  let movedNoted = false;
-  /** The fresh session reads what the run already did first, when it did anything. */
+  /** The session last told what the run already did (`movedSessionNote`). */
+  let notedFor: string | null = null;
+  /** Each fresh session reads what the run already did first, when it did anything, once. */
   const noteMoved = async () => {
+    const session = plan.session?.id;
+    if (plan.kind === "model" || !session || notedFor === session) return;
     const done = await doneInRun();
-    if (movedNoted || plan.kind === "model" || (run.turns === 0 && done.length === 0)) return;
-    movedNoted = true;
-    nextPrompt = [movedSessionNote(done), nextPrompt ?? triggerText].join("\n\n");
+    if (run.turns === 0 && done.length === 0) return;
+    notedFor = session;
+    // A note an earlier move left on a prompt that never went through is replaced: never two of them stacked.
+    const before = nextPrompt?.startsWith(MOVED_NOTE_HEAD)
+      ? nextPrompt.slice(nextPrompt.indexOf("\n\n") + 2) || null
+      : nextPrompt;
+    nextPrompt = [movedSessionNote(done), before ?? triggerText].join("\n\n");
   };
   if (transcript.freshSession !== undefined && plan.kind !== "model" && transcript.freshSession === plan.session?.id)
     await noteMoved();
   else delete transcript.freshSession;
+  /**
+   * A routine's run started by Rodar agora (a person just asked for it) or one that refreshes a widget isn't long by
+   * kind: read once.
+   */
+  let notLongByKind: boolean | null = null;
+  /**
+   * A mission's work is long by kind; a person's message in its thread starts a quick reply (it roots in that
+   * person), not more of the mission's work: read once.
+   */
+  let missionWork: boolean | null = null;
+  /** Whether this run is long work now (ADR 0118): by kind, after a pause, or by its size in this claim. */
+  const longNow = async () => {
+    if (run.background && notLongByKind === null) {
+      notLongByKind =
+        (await routineRunByHand(db, run.id).catch(() => false)) ||
+        (await routineRunRefreshesWidget(db, run.id).catch(() => false));
+    }
+    if (plan.missionId && missionWork === null)
+      missionWork = !(await personOfMessage(db, run.orgId, run.triggerMessageId).catch(() => null));
+    return isLongWork({
+      routine: run.background && !notLongByKind,
+      // Background work (ADR 0121) is long work by kind.
+      mission: Boolean(missionWork) || Boolean(run.workId),
+      pausedBefore: Boolean((transcript as Transcript).usagePause?.paused),
+      computer: plan.kind !== "model",
+      calls: plan.kind === "model" ? run.turns - turnsAtClaim : computerTurns,
+      elapsedMs: Date.now() - claimedAt,
+    });
+  };
+  /** Long work goes on only with an account under the pause line, never into a lent plan's extra usage. */
+  const underTheLine = (usage: PlanUsage | null) => longWorkHasRoom(planReading(usage, plan.model ?? null, false));
   /** Accounts this claim thought with or was refused on: each at most once (a park with a timer separates claims). */
   const triedThisClaim = new Set<string>();
   /**
    * At its plan's limit the run goes on with the next account of the workspace's order (ADR 0041 §6), in a fresh
    * session there with the conversation so far, and says so once per run. Never a turn the plan cut after it worked
    * (`turnStaysOnItsComputer`: a fresh session can't see what it did there), nor a spilled run. `room`: long work also
-   * needs the next account under the pause line. What `nextAccountPlan` found; null where no move is looked for.
+   * needs the next account under the pause line. `cause`: what moved it, as its line says (the plan's limit, the pause
+   * line or the paid extra usage it would go into). What `nextAccountPlan` found; null where no move is looked for.
    */
-  const moveToNextAccount = async (room?: (usage: PlanUsage | null) => boolean): Promise<NextAccount | null> => {
+  const moveToNextAccount = async (
+    cause: "limit" | "line" | "extra",
+    room?: (usage: PlanUsage | null, accountId: string) => boolean,
+  ): Promise<NextAccount | null> => {
     const t = transcript as Transcript;
     const home = plan.account;
     if (plan.kind === "model" || !home || t.spill) return null;
@@ -3372,22 +3557,37 @@ async function executeRunInner(
     await noteMoved();
     later(() => addRunStep(db, run, "context", { accountMove: t.accountMove }));
     await deferred;
-    // One line per run, never a routine's (Rotinas says what it thinks with): a refusal by the next account moves on
-    // without another. A teammate's account is named with its owner: two people's accounts often share a label.
-    const toName = next.lenderName ? `${to.label} (${next.lenderName})` : to.label;
-    const note =
-      prev || run.background || viaRoutine !== null
-        ? null
-        : await db.transaction((tx) =>
-            post(
-              tx,
-              replyThreadId,
-              `The ${home.label} account hit its limit. I'm going on with the ${toName} account.`,
-              bodyCode("plan_account_moved", { from: home.label, to: toName }),
-              undefined,
-              true,
-            ),
-          );
+    // One line per run, never a routine's (Rotinas says what it thinks with), nor a move back to its own account.
+    // Someone else's account is named with its owner, either side: two people's accounts often share a label.
+    const say = !t.accountMoveSaid && to.id !== own && !run.background && viaRoutine === null;
+    let note: Message | null = null;
+    if (say) {
+      t.accountMoveSaid = true;
+      const ownerId = (await planAgent()).ownerUserId;
+      const [from] = await db
+        .select({ createdBy: machineAccounts.createdBy, name: users.name })
+        .from(machineAccounts)
+        .leftJoin(users, eq(users.id, machineAccounts.createdBy))
+        .where(and(eq(machineAccounts.id, home.id), eq(machineAccounts.orgId, run.orgId)));
+      const fromName = from?.name && from.createdBy !== ownerId ? `${home.label} (${from.name})` : home.label;
+      const toName = next.lenderName ? `${to.label} (${next.lenderName})` : to.label;
+      const [code, why] =
+        cause === "line"
+          ? (["plan_account_moved_line", "is near its limit"] as const)
+          : cause === "extra"
+            ? (["plan_account_moved_extra", "would go into paid extra usage"] as const)
+            : (["plan_account_moved", "hit its limit"] as const);
+      note = await db.transaction((tx) =>
+        post(
+          tx,
+          replyThreadId,
+          `The ${fromName} account ${why}. I'm going on with the ${toName} account.`,
+          bodyCode(code, { from: fromName, to: toName }),
+          undefined,
+          true,
+        ),
+      );
+    }
     await saveTranscript(db, t);
     if (note) {
       const [view] = await withWikiLinks(db, run.orgId, [messageView(note)]);
@@ -3395,22 +3595,33 @@ async function executeRunInner(
     }
     return next;
   };
+  /** The run is no longer moved: its next claim starts on its agent's own account, in a fresh session. */
+  const leaveMovedAccount = async () => {
+    const t = transcript as Transcript;
+    delete t.accountMove;
+    t.freshSession = Bun.randomUUIDv7();
+    await db.update(agentRuns).set({ brainSessionId: t.freshSession }).where(eq(agentRuns.id, run.id));
+  };
 
   /**
    * The computer brain can't answer. At the run's start (`look`), a computer in standby is woken and waited for, and on
    * its first look one just gone too (`computerBackSoon`). Still away: the run waits for the computer (the API never
-   * stands in, ADR 0032's 2026-11-15 addendum), or (nothing to think with) it fails with `no_ai`. A computer with no
+   * stands in, ADR 0032's 2026-11-15 addendum, but for the right hand's key, ADR 0137 §7 amended 2026-11-15), or
+   * (nothing to think with) it fails with `no_ai`. A computer with no
    * room for the turn (`busy`) is asked again every `COMPUTER_BUSY_RETRY_MS` until it runs.
    */
   const brainUnavailable = async (
     u: BrainUnavailability & { queued?: boolean; retryAt?: number },
     look?: "first" | "again",
-  ): Promise<"waited" | "failed" | "no" | "back" | "canceled" | "moved"> => {
+  ): Promise<"fallback" | "waited" | "failed" | "no" | "back" | "canceled" | "moved"> => {
     const from = plan.kind;
     if (from === "model") return "no";
     const t = transcript as Transcript;
     // The account's limit (not one model's): the next account in the order takes the turn, the right hand's too.
-    const next = u.code === "plan_limit" && !u.scope ? await moveToNextAccount() : null;
+    const next =
+      u.code === "plan_limit" && !u.scope
+        ? await moveToNextAccount("limit", (await longNow()) ? underTheLine : undefined)
+        : null;
     if (next?.plan) return "moved";
     const machineId = plan.session?.machineId ?? agent.machineId ?? null;
     if (look && machineId && u.code === "machine_offline") {
@@ -3424,9 +3635,24 @@ async function executeRunInner(
       if (back === null) return "canceled";
       if (back) return "back";
     }
-    // The team's right hand on a plan (ADR 0137 §7): one line says why, with the way to an API key; it never waits
-    // for the computer. Only waiting its turn for room stays a wait.
-    if (isRightHand(agent) && u.code !== "busy" && !u.queued) {
+    // Only the computer that cut the turn may finish it, so the run waits for it.
+    const onlyThisComputer = turnStaysOnItsComputer(t.interruptedTurn?.executed.length ?? 0, t.interruptedTurn?.cause);
+    // The team's right hand on a plan (ADR 0137 §7, amended 2026-11-15): with no next account of the person it answers
+    // (above), the workspace's key takes the turn over when it can (its reply gets one line saying so); else one line
+    // says why. Only waiting its turn for room stays a wait.
+    const rightHandKey =
+      isRightHand(agent) &&
+      u.code !== "busy" &&
+      // Its CLI killed for tools of its own: the turn stops there, nothing takes it over.
+      u.code !== "tools_not_locked" &&
+      !u.queued &&
+      !onlyThisComputer &&
+      !t.standInRefused
+        ? await rightHandStandIn({ db, gateway: deps.gateway }, agent, thinksFor, u.code, { keyOnly: true }).catch(
+            () => null,
+          )
+        : null;
+    if (isRightHand(agent) && u.code !== "busy" && !u.queued && !rightHandKey) {
       const ownModel = u.scope ? ownLimitsModel(plan.account?.provider, plan.model) : null;
       const line = rightHandNoAiReason(u.code, ownModel ? u.scope : undefined);
       // What the plan's CLI or its computer said is kept in the run and reported, as any agent's CLI failure is, and the
@@ -3439,8 +3665,34 @@ async function executeRunInner(
       await failNoAi(line, undefined, ownModel?.label, said || undefined);
       return "failed";
     }
-    // Only the computer that cut the turn may finish it, so the run waits for it.
-    const onlyThisComputer = turnStaysOnItsComputer(t.interruptedTurn?.executed.length ?? 0, t.interruptedTurn?.cause);
+    // Only the right hand stands in on the key (the API never stands in for any other agent's computer brain).
+    if (rightHandKey && (await deps.gateway.hasModelCredential(thinker).catch(() => false))) {
+      await leaveLine();
+      standIn = { plan, brain, toolGroups: t.toolGroups, loadedGroups: ctx.loadedGroups };
+      t.fallback = {
+        from,
+        code: u.code,
+        message: u.message,
+        ...(u.resetsAt ? { resetsAt: u.resetsAt } : {}),
+        quiet: true,
+      };
+      // On "Automático" the API answers with the model and effort chosen for this run.
+      const autoEffort = isAutoModel(agent.model) ? t.autoModel?.effort : undefined;
+      plan = {
+        kind: "model",
+        ...(plan.missionId ? { missionId: plan.missionId } : {}),
+        ...(autoEffort ? { effort: autoEffort } : {}),
+      };
+      brain = createBrain(deps, thinker, run, "model", turnToken, () => transcript as Transcript);
+      onDemandForOtherBrain(t);
+      await saveTranscript(db, t);
+      await recordRunBrain(db, run.id, "model");
+      run = { ...run, brain: "model" };
+      thinksAs("model");
+      await addRunStep(db, run, "context", { brainFallback: { from, code: u.code, message: u.message } });
+      standInUsed = rightHandKey;
+      return "fallback";
+    }
     // Signed out, the command-line tool missing, no computer: nothing signals that it's fixed (only the
     // computer coming back online would), so a wait would never end.
     if (!onlyThisComputer && NO_AI_CODES.has(u.code)) {
@@ -3451,11 +3703,7 @@ async function executeRunInner(
     // the order limited too: until the first of them resets, and its next claim starts on its agent's own account.
     if (u.code === "plan_limit") {
       const all = next && !next.plan && next.chain > 1 ? next : null;
-      if (all && t.accountMove && !onlyThisComputer) {
-        delete t.accountMove;
-        t.freshSession = Bun.randomUUIDv7();
-        await db.update(agentRuns).set({ brainSessionId: t.freshSession }).where(eq(agentRuns.id, run.id));
-      }
+      if (all && t.accountMove && !onlyThisComputer) await leaveMovedAccount();
       const resetsAt = [u.resetsAt, all?.resetsAt]
         .filter((at): at is string => Boolean(at))
         .sort((a, b) => Date.parse(a) - Date.parse(b))[0];
@@ -3607,6 +3855,37 @@ async function executeRunInner(
     return "waited";
   };
 
+  /**
+   * The key standing in for the right hand's plan was refused (no credit, a wrong key) before it answered a turn: the
+   * run is its own brain's again, as when no key can stand in. The person never reads the error of a key it doesn't
+   * think with. Null when the key isn't standing in since this claim, or answered a turn already (its transcript is the
+   * model's).
+   */
+  const backToOwnBrain = async (error: ProviderError) => {
+    const t = transcript as Transcript;
+    const was = t.fallback;
+    if (!standIn || !was) return null;
+    ({ plan, brain } = standIn);
+    ctx.loadedGroups = standIn.loadedGroups;
+    if (standIn.toolGroups) t.toolGroups = standIn.toolGroups;
+    else delete t.toolGroups;
+    tools = presentTools(granted, isSensitive, ctx.loadedGroups);
+    standIn = null;
+    delete t.fallback;
+    t.standInRefused = true;
+    await recordRunBrain(db, run.id, plan.kind);
+    run = { ...run, brain: plan.kind };
+    thinksAs(plan.kind);
+    const { cause, provider } = providerFailureOf(error);
+    await addRunStep(db, run, "context", { standInRefused: { cause, provider } });
+    const handled = await brainUnavailable({
+      code: was.code,
+      message: was.message,
+      ...(was.resetsAt ? { resetsAt: was.resetsAt } : {}),
+    });
+    return { handled, was };
+  };
+
   /** The first question a computer brain asked through the bridge in this pause: when, and when its card was posted. */
   const bridgedQuestionCard = async (t: Transcript): Promise<{ askedAt: number; cardAt: Date } | null> => {
     const calls = (t.pending?.calls ?? []).filter((c) => c.bridged && c.questionId && typeof c.askedAt === "number");
@@ -3621,6 +3900,50 @@ async function executeRunInner(
       .innerJoin(messages, eq(messages.id, agentQuestions.messageId))
       .where(eq(agentQuestions.id, first.questionId));
     return card ? { askedAt: first.askedAt as number, cardAt: card.at } : null;
+  };
+
+  /**
+   * When the first secret or approval card a computer brain's bridged call posted in this run went up: the brain asks
+   * mid-turn and writes after the call what the card is for ("I left a secure field here for the key"), so that text
+   * is placed just before the card and reads first. A card another run posted (an approval joining an older card),
+   * one older than a place can be kept (`PLACE_KEPT_MS`), or one someone else wrote after (a reply takes no place
+   * before what people sent while it worked, ADR 0010): null, and the text goes at the end as before.
+   */
+  const bridgedCardAt = async (t: Transcript): Promise<Date | null> => {
+    const calls = (t.pending?.calls ?? []).filter((c) => c.bridged);
+    const secretIds = calls.flatMap((c) => (c.secretRequestId ? [c.secretRequestId] : []));
+    const approvalIds = calls.flatMap((c) => (c.approvalId ? [c.approvalId] : []));
+    const cards = [
+      ...(secretIds.length > 0
+        ? await db
+            .select({ at: messages.createdAt, channelId: messages.channelId })
+            .from(secretRequests)
+            .innerJoin(messages, and(eq(messages.id, secretRequests.messageId), eq(messages.agentRunId, run.id)))
+            .where(inArray(secretRequests.id, secretIds))
+        : []),
+      ...(approvalIds.length > 0
+        ? await db
+            .select({ at: messages.createdAt, channelId: messages.channelId })
+            .from(approvals)
+            .innerJoin(messages, and(eq(messages.id, approvals.messageId), eq(messages.agentRunId, run.id)))
+            .where(inArray(approvals.id, approvalIds))
+        : []),
+    ];
+    const first = cards.reduce<(typeof cards)[number] | null>((a, c) => (a && a.at <= c.at ? a : c), null);
+    if (!first || Date.now() - first.at.getTime() >= PLACE_KEPT_MS) return null;
+    const [after] = await db
+      .select({ id: messages.id })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.orgId, run.orgId),
+          eq(messages.channelId, first.channelId),
+          gt(messages.createdAt, first.at),
+          or(isNull(messages.agentRunId), ne(messages.agentRunId, run.id)),
+        ),
+      )
+      .limit(1);
+    return after ? null : first.at;
   };
 
   /**
@@ -3650,6 +3973,10 @@ async function executeRunInner(
     if (asked && textBefore) {
       text = stripSentinel(textBefore(asked.askedAt, ASKED_GRACE_MS));
       at = new Date(asked.cardAt.getTime() - 1);
+    } else if (text) {
+      // A secret or an approval: what it wrote says what the card is for, so it reads before the card.
+      const cardAt = await bridgedCardAt(t);
+      if (cardAt) at = new Date(cardAt.getTime() - 1);
     }
     // A background run never posts by itself (ADR 0053 §5): its cards speak for it.
     if (run.background || repeatsLastPost(text)) text = "";
@@ -3934,6 +4261,12 @@ async function executeRunInner(
       wait.step++;
     } else if (!known) at = now + LINE_SAFETY_MS;
     const resetsAt = known ? new Date(at).toISOString() : undefined;
+    // The right hand thinking on the key only because its plan couldn't: that plan may be back (its limit reset) long
+    // before the budget renews, and a resume picks it again. The note still says when the budget renews.
+    if (budget && t.fallback && !u.soon) {
+      const brainBack = Date.parse(t.fallback.resetsAt ?? "");
+      at = Math.min(at, brainBack > now ? brainBack : now + ladderDelay(wait.step++));
+    }
     const runAt = new Date(at + RESUME_AFTER_MS + RESUME_GAP_MS * line.place);
     // The region a model needs, a model switched off or no subscription has no reset: its note says what to do.
     const tellOwner =
@@ -4169,16 +4502,6 @@ async function executeRunInner(
     const payer = move ? { builtin: agent.builtin, brainAccountLentBy: move.lentBy ?? null } : agent;
     return planReading(usage, plan.model ?? null, paysExtraUsage(payer));
   };
-  /**
-   * A routine's run started by Rodar agora (a person just asked for it) or one that refreshes a widget isn't long by
-   * kind: read once.
-   */
-  let notLongByKind: boolean | null = null;
-  /**
-   * A mission's work is long by kind; a person's message in its thread starts a quick reply (it roots in that
-   * person), not more of the mission's work: read once.
-   */
-  let missionWork: boolean | null = null;
   /** Long work past its caps (ADR 0121 §7) waits in line, parked like a usage wait; ending work releases it. */
   const parkInWorkQueue = async () => {
     const t = transcript as Transcript;
@@ -4234,23 +4557,7 @@ async function executeRunInner(
       const now = await usageReading();
       return now && continuesPastPlan(now) ? now : null;
     }
-    if (run.background && notLongByKind === null) {
-      notLongByKind =
-        (await routineRunByHand(db, run.id).catch(() => false)) ||
-        (await routineRunRefreshesWidget(db, run.id).catch(() => false));
-    }
-    if (plan.missionId && missionWork === null)
-      missionWork = !(await personOfMessage(db, run.orgId, run.triggerMessageId).catch(() => null));
-    const long = isLongWork({
-      routine: run.background && !notLongByKind,
-      // Background work (ADR 0121) is long work by kind.
-      mission: Boolean(missionWork) || Boolean(run.workId),
-      pausedBefore: Boolean(t.usagePause?.paused),
-      computer: plan.kind !== "model",
-      calls: plan.kind === "model" ? run.turns - turnsAtClaim : computerTurns,
-      elapsedMs: Date.now() - claimedAt,
-    });
-    if (!long) return null;
+    if (!(await longNow())) return null;
     const now = await usageReading();
     intoExtra = now?.source === "plan" && now.used >= PLAN_PAUSE && now.extra === true;
     return longWorkHasRoom(now) ? null : now;
@@ -4417,15 +4724,44 @@ async function executeRunInner(
       // At the plan's pause line long work goes on with the next account under it: it pauses on the last one. A free
       // account comes before its owner's paid extra usage too.
       const nextAccount =
-        pause?.source === "plan" || intoExtra
-          ? await moveToNextAccount((usage) => longWorkHasRoom(planReading(usage, plan.model ?? null, false)))
-          : null;
+        pause?.source === "plan" || intoExtra ? await moveToNextAccount(pause ? "line" : "extra", underTheLine) : null;
       if (nextAccount?.plan) continue;
+      // On another account at the line there: its own (tried already) takes it back into its owner's paid extra
+      // usage. Otherwise the run is no longer moved and waits for the first reset of the two. A turn the plan cut there
+      // after it worked waits there: only its session may finish it.
+      let ownReset: number | null = null;
+      const moved = transcript.accountMove;
+      const cut = turnStaysOnItsComputer(
+        transcript.interruptedTurn?.executed.length ?? 0,
+        transcript.interruptedTurn?.cause,
+      );
+      if (pause?.source === "plan" && moved && !cut) {
+        triedThisClaim.delete(moved.from);
+        const back = await moveToNextAccount(
+          "line",
+          (usage, id) =>
+            id === moved.from && longWorkHasRoom(planReading(usage, plan.model ?? null, paysExtraUsage(agent))),
+        );
+        if (back?.plan) continue;
+        const machineId = plan.session?.machineId ?? agent.machineId;
+        const own = machineId
+          ? await storedPlanUsage(db, run.orgId, machineId, plan.kind, moved.from).catch(() => null)
+          : null;
+        ownReset = bindingReset(own, Date.now());
+        await leaveMovedAccount();
+      }
       if (pause) {
+        const pauseReset = "resetsAt" in pause && pause.resetsAt ? Date.parse(pause.resetsAt) : null;
+        const resetsAt =
+          ownReset !== null && (pauseReset === null || ownReset < pauseReset)
+            ? new Date(ownReset).toISOString()
+            : "resetsAt" in pause
+              ? pause.resetsAt
+              : undefined;
         return waitForUsage({
           code: "usage_pause",
           message: `Long work paused at ${pause.used}% of the ${pause.source}.`,
-          ...("resetsAt" in pause && pause.resetsAt ? { resetsAt: pause.resetsAt } : {}),
+          ...(resetsAt ? { resetsAt } : {}),
           ...("soon" in pause ? { soon: true } : {}),
           pause: { source: pause.source, used: pause.used, ...("window" in pause ? { window: pause.window } : {}) },
         });
@@ -4573,7 +4909,6 @@ async function executeRunInner(
           runId: run.id,
         });
         transcript.turnPrompt = prompt;
-        delete transcript.freshSession;
         await saveTranscript(db, transcript);
         if (admitted && !admitted.fromLine) await publishQueueChanged(deps.pubsub, run.orgId, admitted.machineId);
       }
@@ -4761,6 +5096,8 @@ async function executeRunInner(
           computerTurns++;
           nextPrompt = null;
           carried = null;
+          // The fresh session answered a turn: from now on it is one to resume, its note read.
+          delete transcript.freshSession;
           // The account it ran with (ADR 0041): when it was last used and last answered, after the turn.
           const account = turnPlan.account;
           if (account && account.id !== touchedAccount) {
@@ -4822,6 +5159,8 @@ async function executeRunInner(
           delete transcript.roomWaitSince;
           delete transcript.roomOrderSince;
         }
+        // A turn that said or did something there made the fresh session one only it may go on in.
+        if (executedNow.length > 0 || deltas.text()) delete transcript.freshSession;
         if (turnAbort?.signal.aborted) {
           await interruptedTurn(turn, deltas.text());
           continue;
@@ -4947,8 +5286,8 @@ async function executeRunInner(
             }
           }
           const handled = await brainUnavailable({ code: error.code, message: error.message, ...refusal });
+          if (handled === "fallback" || handled === "moved") continue;
           if (handled === "waited" || handled === "failed") return;
-          if (handled === "moved") continue;
         }
         // The person behind it is at their monthly limit (ADR 0141): the agent says so with "Pedir mais" and stops.
         if (error instanceof PersonLimitError) return failPersonLimit(error.personId);
@@ -4959,11 +5298,41 @@ async function executeRunInner(
         // Held or suspended meanwhile: that is why, whatever the brain made of the refusal.
         const paused = await standingRefusal(db, run.orgId, run.agentId);
         if (paused) return fail(paused.message);
+        // The key standing in for the right hand's plan was refused before it answered: back to that plan.
+        if (turnPlan.kind === "model" && error instanceof ProviderError && keyRefused(error)) {
+          const back = await backToOwnBrain(error);
+          if (back?.handled === "waited" || back?.handled === "failed") return;
+          // Nothing to wait for either: the run ends on why its own plan couldn't answer, never on the key's error.
+          if (back) {
+            const { code, message } = back.was;
+            return fail(`brain_unavailable: ${message}`, { code, detail: message });
+          }
+        }
         // A CLI's failure says who failed it and what it said; the computer only ran it. One that refused to start
         // would fail every retry the same way: it ends here too.
         // A code the apps don't word (a runner's `unsupported`) reads as that brain's program's error, never bare.
+        // A sign-in that never answered a turn, with nothing to stand in: its CLI's own failure is how it is set up,
+        // not an outage that passes, so the run ends now on what the CLI said instead of waiting it out for a day.
+        const signIn = turnPlan.kind !== "model" ? turnPlan.account : undefined;
+        const neverWorked =
+          error instanceof BrainFailure &&
+          error.retryable &&
+          signIn !== undefined &&
+          computerTurns === 0 &&
+          "brain" in (cliFailureOf(error, signIn) ?? {}) &&
+          !(await accountEverWorked(db, run.orgId, signIn.id).catch(() => true));
+        // Not noted above (only a Claude Code sign-in with a known cause is): noted here, so its row says it failed.
+        if (neverWorked && signIn && !(turnPlan.kind === "claude_code" && brainFailure?.cause)) {
+          const failure = {
+            orgId: run.orgId,
+            accountId: signIn.id,
+            code: error.code,
+            cause: brainFailure?.cause ?? "unknown",
+          };
+          later(() => noteAccountFailure(db, failure));
+        }
         const cli =
-          error instanceof BrainFailure && (!error.retryable || cliRefusedStart(error))
+          error instanceof BrainFailure && (!error.retryable || cliRefusedStart(error) || neverWorked)
             ? (cliFailureText(error, turnPlan.account) ??
               (!error.retryable && isComputerBrain(turnPlan.kind) ? brainFailureText(error, turnPlan.kind) : null))
             : null;
@@ -5003,6 +5372,8 @@ async function executeRunInner(
         }
       }
       await deltas.flush();
+      // The key answered a turn: from here the transcript is its own, and the run stays with it.
+      if (turnPlan.kind === "model") standIn = null;
       if (transcript.outage?.noteId) await outageOver(transcript.outage.noteId).catch(() => {});
       const passedLine = transcript.outage?.line;
       delete transcript.outage;
@@ -5087,6 +5458,7 @@ async function executeRunInner(
           // Canceled during a tool, or the server is shutting down: the rest never run.
           if (signal.aborted) break;
           const outcome = await invokeWithChip(toolScope, use);
+          followThread();
           // The shutdown aborted it while it ran: its error may hide work it already did.
           const cutShort = shuttingDown();
           await absorbToolOutcome(use, outcome);
@@ -5362,6 +5734,10 @@ async function executeRunInner(
         !transcript.reacted &&
         !transcript.mediaSent &&
         (transcript.passed ||
+          (transcript.takenOver !== undefined &&
+            (transcript.executedCalls ?? 0) <= transcript.takenOver &&
+            updates.length === 0 &&
+            !saved) ||
           (!anythingPosted && (wantsQuiet || !said) && updates.length === 0 && !saved && !transcript.reported))
       ) {
         const how = transcript.passed ? "pass" : wantsQuiet ? "sentinel" : "empty";
@@ -5663,7 +6039,8 @@ async function executeRunInner(
           if (view) await publishMessageCreated(deps.pubsub, view);
           // Work handed to it shows moving where it was handed from (its line's `progress`, ADR 0097).
           if (betweenAgents) await announceConsultationChange({ db, pubsub: deps.pubsub }, run).catch(() => {});
-          if (typeof issueId === "string")
+          // Nothing of a confidential thread is copied onto its task (ADR 0190).
+          if (typeof issueId === "string" && !isConfidential(posted.meta))
             await mirrorReplyToIssue({ db, pubsub: deps.pubsub }, run, issueId, posted.body).catch(() => {});
         }
         continue;
@@ -5710,7 +6087,7 @@ async function executeRunInner(
         const [view] = await withWikiLinks(db, run.orgId, [messageView(reply)]);
         if (view) await publishMessageCreated(deps.pubsub, view);
       }
-      if (reply && typeof issueId === "string") {
+      if (reply && typeof issueId === "string" && !isConfidential(reply.meta)) {
         await mirrorReplyToIssue({ db, pubsub: deps.pubsub }, run, issueId, reply.body).catch(() => {});
       }
       await publishChannelEvent(deps.pubsub, event("done"));

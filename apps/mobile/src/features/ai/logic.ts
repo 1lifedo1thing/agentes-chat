@@ -68,7 +68,10 @@ export const offersKeyNow = (gate: PlanGate, held: boolean) =>
     ? gate.view !== null && !held
     : !held && (gate.state === "offline" || gate.state === "missing" || gate.state === "unsupported");
 
-/** Where the flow is: the first page, every account already connected, the plans, one plan's page, the API key's, or that key's makers. */
+/**
+ * A page of the flow, each its own pushed screen: the first page (the two ways), every account already connected
+ * ("Todas as contas"), the plans, one plan's page, the API key's, or that key's makers.
+ */
 export type FlowView =
   | { page: "home" }
   | { page: "have" }
@@ -77,13 +80,12 @@ export type FlowView =
   | { page: "key" }
   | { page: "makers" };
 
-/** What Back opens: a list's pick goes back to its list, and a sign-in from a row of what the person has to that row. */
-export const flowBack = (view: FlowView, fromRow: boolean): FlowView | null => {
-  if (view.page === "home") return null;
-  if (view.page === "have") return { page: "home" };
-  if (view.page === "makers") return { page: "key" };
-  return view.page === "plan" && !fromRow ? { page: "plans" } : { page: "home" };
-};
+/** The flow's steps, counted in its bar's subtitle ("1 de 3"): the way, the sign-in or the key, done. */
+export const FLOW_STEPS = 3;
+
+/** The step a page stands for: the two ways and what the person has first, any page after them second, done last. */
+export const flowStep = (view: FlowView, done: boolean) =>
+  done ? FLOW_STEPS : view.page === "home" || view.page === "have" ? 1 : 2;
 
 /** How often a plan's page asks again while it waits (the web's first run asks as often). */
 export const PLAN_POLL_MS = 5000;
@@ -434,8 +436,14 @@ export function pickedAi(
   };
 }
 
-/** Move up and Move down for `account` in its order of use (`orderStep`): only for whoever may move it, none at an end. */
-export function orderMoves(accounts: readonly { id: string }[], account: { id: string; canMove: boolean }) {
+/**
+ * Move up and Move down for `account` in its order of use (`orderStep`): only for whoever may move it, none at an end
+ * nor for an account with no place.
+ */
+export function orderMoves(
+  accounts: readonly { id: string; movable?: boolean }[],
+  account: { id: string; canMove: boolean },
+) {
   if (!account.canMove) return [];
   return ([-1, 1] as const).flatMap((step) => {
     const index = orderStep(accounts, account.id, step);

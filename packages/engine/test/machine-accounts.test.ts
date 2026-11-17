@@ -479,6 +479,8 @@ test("signing in: the person who connected the computer; the code is sealed to i
       serves: "everyone",
       useOrder: null,
       sameAs: login.loginId,
+      // A login for one agent is never a next account.
+      movable: false,
     },
   });
   // Polled again: the same account, added once.
