@@ -379,6 +379,10 @@ export function accountRoutes(deps: AppDeps) {
               description:
                 "The billing service (BILLING_URL, ADR 0079): owners and admins open a workspace's plan and billing there through `POST …/billing-link`. Null: no billing.",
             }),
+            referralsUrl: z.string().nullable().openapi({
+              description:
+                "The referral service (REFERRALS_URL, ADR 0192): a signed-in person opens it through `POST /api/app/referrals-link`. Null: no referrals.",
+            }),
             cloud: z.boolean().openapi({
               description:
                 "One of agentes.chat's own servers (`cloud` in `GET /api/instance`): the apps show no About screen there, which every other server shows.",
@@ -435,6 +439,7 @@ export function accountRoutes(deps: AppDeps) {
           passwordReset: deps.adapters.email.delivers === true,
           workspaceComputer: config.MACHINE_PROVISIONING === "external",
           billingUrl: config.BILLING_URL ?? null,
+          referralsUrl: config.REFERRALS_URL ?? null,
           cloud: isAgentesCloud(config.PUBLIC_URL),
           turnstileSiteKey: deps.adapters.humanCheck?.siteKey ?? null,
           errorReports: reportsTo(config.SENTRY_WEB_DSN),
@@ -1377,12 +1382,21 @@ export function accountRoutes(deps: AppDeps) {
       security,
       summary: "Set the workspace's accent color, or null for the default. Admins.",
       request: { params: OrgParams, body: body(z.object({ accent: AccentColor.nullable() })) },
-      responses: { 200: json(z.object({ accent: AccentColor.nullable() })), ...errors },
+      responses: {
+        200: json(z.object({ accent: AccentColor.nullable() })),
+        429: errorResponse("Too many accent changes (`rate_limited`)"),
+        ...errors,
+      },
     }),
     async (c) => {
+      const user = c.get("user");
       const { orgId } = c.req.valid("param");
       const { accent } = c.req.valid("json");
-      return c.json(await setOrgAccent({ db, pubsub: deps.adapters.pubsub }, c.get("user").id, orgId, accent), 200);
+      await requirePermission(db, user.id, orgId, "configure");
+      // Each change makes every member's open apps refetch.
+      const limit = await deps.adapters.rateLimiter.consume(`org-accent:${orgId}`, { limit: 20, windowMs: 3600_000 });
+      if (!limit.allowed) return apiError(c, 429, "rate_limited", "Too many color changes. Try again later.");
+      return c.json(await setOrgAccent({ db, pubsub: deps.adapters.pubsub }, user.id, orgId, accent), 200);
     },
   );
 

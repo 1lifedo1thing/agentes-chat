@@ -22,7 +22,8 @@ export const AGENT_GRADIENTS = {
   graphite: ["#9a9a95", "#4a4a47"],
 };
 
-const SKY = AGENT_GRADIENTS.sky;
+/** The landing's sky: what `sky` is in a workspace without an accent. */
+export const DEFAULT_SKY = AGENT_GRADIENTS.sky;
 
 /**
  * A workspace's accent (ADR 0193) is its default agent color: while one is shown, `sky` (every agent with no color of
@@ -30,7 +31,15 @@ const SKY = AGENT_GRADIENTS.sky;
  * apps' workspace shell, which also tells the canvases to repaint.
  */
 export function setSkyColors(pair) {
-  AGENT_GRADIENTS.sky = pair ?? SKY;
+  AGENT_GRADIENTS.sky = pair ?? DEFAULT_SKY;
+}
+
+/**
+ * A color as it is drawn now, for a cache's or a memo's key: `sky` (and no color) by the pair it resolves to, which
+ * follows the workspace's accent; any other color as is.
+ */
+export function drawnKey(color) {
+  return !color || color === "sky" ? AGENT_GRADIENTS.sky.join() : color;
 }
 
 /** Eyes are white on every agent, everywhere. */
@@ -192,8 +201,9 @@ export function nearestPreset(color) {
   return best;
 }
 
-/** An agent color's [top, bottom]: a preset, a custom "#rrggbb", or sky for anything else. */
+/** An agent color's [top, bottom]: a preset, a custom "#rrggbb", a [top, bottom] pair as is, or sky for anything else. */
 export function gradientOf(color) {
+  if (Array.isArray(color)) return color;
   return AGENT_GRADIENTS[color] ?? (isHexColor(color) ? customGradient(color.toLowerCase()) : AGENT_GRADIENTS.sky);
 }
 
@@ -210,7 +220,7 @@ export function bodyTones(color, deep = false) {
 
 /** The small pixel agents' body: deep enough for white eyes (navy on the sky). */
 export function spriteBody(color) {
-  return (!color || color === "sky") && AGENT_GRADIENTS.sky === SKY
+  return (!color || color === "sky") && AGENT_GRADIENTS.sky === DEFAULT_SKY
     ? "#04203f"
     : mixHex(gradientOf(color || "sky")[1], "#000000", 0.45);
 }

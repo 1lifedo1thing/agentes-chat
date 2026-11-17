@@ -19614,6 +19614,10 @@
     "noLimit": "Sans limite",
     "ownBucket": "Sur votre propre bucket, sans limite de notre part"
   },
+  "referrals": {
+    "open": "Parrainer et gagner",
+    "failed": "Impossible de l'ouvrir pour le moment. Réessayez dans un instant."
+  },
   "limits": {
     "members": {
       "full": "Cet espace de travail compte {{members}} personnes sur {{limit}}.",

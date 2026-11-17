@@ -19620,6 +19620,10 @@
     "noLimit": "Nessun limite",
     "ownBucket": "Sul tuo bucket, senza limiti da parte nostra"
   },
+  "referrals": {
+    "open": "Invita e guadagna",
+    "failed": "Impossibile aprirlo ora. Riprova tra un attimo."
+  },
   "limits": {
     "members": {
       "full": "Questo spazio di lavoro ha {{members}} persone su {{limit}}.",

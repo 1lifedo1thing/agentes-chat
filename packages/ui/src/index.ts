@@ -28,6 +28,7 @@ export {
   drawAccessory,
   drawAgent,
   drawEyes,
+  drawnKey,
   EXPRESSIONS,
   type Expression,
   EYE_STYLES,
@@ -512,6 +513,7 @@ export {
   zonedInstant,
 } from "./recurrence";
 export { fold, matchesWords } from "./search";
+export { workspaceSky } from "./sky/accent";
 export { pixelBurst, pixelConfetti } from "./sky/burst";
 export { ditherCells, ditherSvg, ditherTones, ditherUrl } from "./sky/dither";
 export {

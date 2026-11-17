@@ -46631,6 +46631,12 @@
   "billing.ownBucket": {
     "value": "On your own bucket, with no limit from us"
   },
+  "referrals.open": {
+    "value": "Refer and earn"
+  },
+  "referrals.failed": {
+    "value": "Couldn't open it now. Try again in a moment."
+  },
   "limits.members.full": {
     "value": "This workspace has {{members}} of {{limit}} people."
   },
