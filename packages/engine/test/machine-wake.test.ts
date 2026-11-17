@@ -223,18 +223,20 @@ describe("what wants it", () => {
     expect(await wakeEvents()).toHaveLength(2);
   });
 
-  test("the hub: its status says standby, and a request to it asleep asks for a wake before it fails", async () => {
+  test("the hub: its status says standby, and a request to it asleep wakes it and waits before it fails", async () => {
     f = await setup();
     enableOperatorEvents();
     const { machineId } = await managedComputer();
-    hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-a" });
+    hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-a", wakeWaitMs: 300 });
     expect((await hub.status(machineId))?.standby).toBe(false);
     // Offline and awake as far as anyone knows: a plain failure, nothing told.
     await expect(hub.call(machineId, { op: "list", path: "", depth: 1 })).rejects.toBeInstanceOf(MachineOfflineError);
 
     await setMachineStandby(deps(), f.org.id, machineId, true);
     expect(await hub.status(machineId)).toMatchObject({ online: false, standby: true, kind: "managed" });
+    const asked = Date.now();
     await expect(hub.call(machineId, { op: "list", path: "", depth: 1 })).rejects.toBeInstanceOf(MachineOfflineError);
+    expect(Date.now() - asked).toBeGreaterThanOrEqual(250);
     await until(async () => (await wakeEvents()).length > 0, "the wake");
     expect(await wakeEvents()).toEqual([{ orgId: f.org.id, data: { machineId, why: "call" } }]);
     expect((await machineRow(machineId)).wantedAt).toBeInstanceOf(Date);

@@ -304,6 +304,8 @@ export interface MachineHubDeps {
   rpcPollMs?: number;
   /** A machine offline this long has its running tasks interrupted (default `TASK_OFFLINE_GRACE_MS`). */
   taskOfflineGraceMs?: number;
+  /** A request to a computer in standby waits this long for it to wake (default `COMPUTER_WAKE_WAIT_MS`). */
+  wakeWaitMs?: number;
   /** A repeated `mcp.call` whose first run is in another process waits this long for its answer (default 30 s). */
   mcpRepeatWaitMs?: number;
   /** A brain turn with no frame of its own (event, tool call) for this long fails (default `BRAIN_IDLE_TIMEOUT_MS`). */
@@ -1610,8 +1612,17 @@ export function createMachineHub(deps: MachineHubDeps) {
       const row = await getMachineById(db, machineId);
       if (!row || row.deletedAt) throw new MachineOfflineError(row?.name ?? "computer", row?.kind);
       if (!machineOnline(row) || !row.connectedReplica || row.connectedReplica === replicaId) {
-        // Asleep by design: whatever asks for it wakes it (`callWhenBack` waits for that).
-        if (inStandby(row)) void wantMachine(db, machineId, "call").catch(() => {});
+        // Asleep by design: whatever asks for it wakes it and waits, as people never see it sleep (ADR 0161).
+        if (inStandby(row)) {
+          const caller = { status: hub.status, wake: (id: string) => wantMachine(db, id, "call") };
+          const back = await computerBackSoon(caller, machineId, {
+            justGone: false,
+            wakeWaitMs: deps.wakeWaitMs,
+            signal: options.signal,
+            canceled: () => options.signal?.aborted === true,
+          });
+          if (back) return hub.call(machineId, request, options);
+        }
         throw new MachineOfflineError(row.name, row.kind);
       }
       if (phoneOp && row.protocol < phonesNeed) throw phonesTooOld(row.name);

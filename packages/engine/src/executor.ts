@@ -753,6 +753,8 @@ export interface Transcript {
   roomWaitSince?: number;
   /** A wake that waited outside any run first (`StartRunOptions.park`): its place in the line counts from then. */
   roomOrderSince?: number;
+  /** When this run first waited for its computer in standby to wake (ms): past the outage grace it is down. */
+  standbyWaitSince?: number;
   /** A person waits on this run: it goes first in the computer's line (`computer-queue.ts`). */
   roomPeople?: boolean;
   /** Its stretch is work a person asked for lately (`personAskedLately`): next in the line after people's runs. */
@@ -3735,13 +3737,17 @@ async function executeRunInner(
       }
     }
     // Just gone (our own deploy, a runner dialing again): it waits without a word until the outage grace is over.
-    // Asleep in standby, waking: without a word too, looked at again after the grace (ADR 0161).
+    // Asleep in standby, waking: without a word too, for one grace from its first such wait (ADR 0161); one that
+    // never wakes is down, and says so.
     let quietUntil: number | null = null;
     if (u.code === "machine_offline") {
       const status = await deps.machines?.status(machineId).catch(() => null);
       const seen = status?.lastSeenAt ? Date.parse(status.lastSeenAt) : Number.NaN;
-      if (status && !status.online && status.standby) quietUntil = Date.now() + TASK_OFFLINE_GRACE_MS;
-      else if (status && !status.online && Date.now() - seen < TASK_OFFLINE_GRACE_MS)
+      if (status && !status.online && status.standby) {
+        t.standbyWaitSince ??= Date.now();
+        const until = t.standbyWaitSince + TASK_OFFLINE_GRACE_MS;
+        if (Date.now() < until) quietUntil = until;
+      } else if (status && !status.online && Date.now() - seen < TASK_OFFLINE_GRACE_MS)
         quietUntil = seen + TASK_OFFLINE_GRACE_MS;
     }
     // Only a blip keeps its place in the line: after a real outage the wait for room starts over, or its clock

@@ -29,7 +29,7 @@ import { ConflictError, ForbiddenError, isUniqueViolation, NotFoundError, Valida
 import { publishChannelEvent, publishMessageCreated, publishUserEvent } from "./events";
 import { cutText } from "./format";
 import type { Judge } from "./judge";
-import { type MachineCaller, MachineRequestError } from "./machine-hub";
+import { computerBackSoon, type MachineCaller, MachineRequestError } from "./machine-hub";
 import {
   formatDuration,
   isLiveTaskRow,
@@ -1011,7 +1011,10 @@ async function usableMachine(
       { computer: status.name, executor: asked, ...(asked === "codex" ? { minVersion: CODEX_MIN_VERSION } : {}) },
     );
   }
-  if (!status.online) {
+  // One in standby reads ready to people (ADR 0161): it is woken and waited for.
+  const awake =
+    status.online || (status.standby === true && (await computerBackSoon(hubOf(deps), machineId, { justGone: false })));
+  if (!awake) {
     throw new ConflictError(`The computer ${status.name} is offline`, "mission.computer_offline", {
       computer: status.name,
     });

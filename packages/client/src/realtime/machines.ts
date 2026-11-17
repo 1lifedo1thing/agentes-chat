@@ -108,6 +108,7 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
     executors?: unknown;
     egress?: unknown;
     networkTransition?: unknown;
+    standby?: unknown;
   };
   if (typeof e.machineId !== "string") return true;
   const machineId = e.machineId;
@@ -203,6 +204,9 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
         };
       }
       if (typeof e.name === "string") patch.name = e.name;
+      // Put in standby once it is asleep (ADR 0161): online again to people, its agents' computer too.
+      if (e.standby === true) Object.assign(patch, { standby: true, online: true });
+      else if (e.standby === false) patch.standby = false;
       const paused = pauseOf(e.paused);
       if (paused) patch.paused = paused;
       const access = accessOf(e.access);
@@ -216,9 +220,15 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
           ),
         );
         if (patch.name) patchTargets(qc, orgId, machineId, { name: patch.name });
+        if (patch.online) patchTargets(qc, orgId, machineId, { online: true });
       }
       // Nothing to patch, or `access: true` (it changed, and who may see it differs per person): refetch.
       if (Object.keys(patch).length === 0 || e.access === true) void qc.invalidateQueries({ queryKey: list });
+      // Out of standby: whether it is online is the server's again.
+      if (e.standby === false) {
+        void qc.invalidateQueries({ queryKey: list });
+        void qc.invalidateQueries({ queryKey: keys.computers(orgId) });
+      }
       break;
     }
     case "machine.agents_moved":
