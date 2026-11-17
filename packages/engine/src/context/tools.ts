@@ -211,16 +211,13 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
         const handed = !reader && !dm && person ? await handedReach(ctx, person) : [];
         const kinds = Array.isArray(input.kinds) ? (input.kinds as never[]) : undefined;
         const limit = typeof input.limit === "number" ? input.limit : 8;
-        const [found, steps] = await Promise.all([
+        const [usual, steps, handedHits] = await Promise.all([
           (reader
             ? searchForUser(deps, reader, ctx.orgId, { text: str(input.query), kinds, limit, reach: channels })
             : searchVisible(deps, {
                 orgId: ctx.orgId,
                 text: str(input.query),
-                visibleChannelIds: [
-                  ...(theirDm && !channels.includes(theirDm) ? [...channels, theirDm] : channels),
-                  ...handed,
-                ],
+                visibleChannelIds: theirDm && !channels.includes(theirDm) ? [...channels, theirDm] : channels,
                 kinds,
                 limit,
               })
@@ -228,7 +225,12 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
           kinds
             ? []
             : ownPastSteps(ctx.db, ctx.orgId, ctx.agentId, ctx.runId, ownScope ?? channels, str(input.query), dm),
+          handed.length > 0 && person && (!kinds || kinds.includes("message" as never))
+            ? searchHandedFor(deps, ctx, handed, person, str(input.query), limit)
+            : [],
         ]);
+        const usualIds = new Set(usual.map((h) => h.sourceId));
+        const found = [...usual, ...handedHits.filter((h) => !usualIds.has(h.sourceId))];
         if (found.length === 0 && steps.length === 0) return { content: "No results." };
         const items = new Map(
           (
@@ -250,21 +252,6 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
               }),
             )
           : null;
-        // From the agents' DMs, only messages made for this person: every person's hand-offs share those DMs.
-        const handedReadable =
-          handed.length > 0
-            ? await Promise.all(
-                found.map((h) =>
-                  !h.channelIds.some((c) => handed.includes(c))
-                    ? true
-                    : h.kind === "message" &&
-                      readerOfMessage(ctx.db, ctx.orgId, h.sourceId).then(
-                        (r) => r === person,
-                        () => false,
-                      ),
-                ),
-              )
-            : null;
         // A routine's run reads the conversation it reports to, never its creator's files there (`files: true`).
         const fileReach =
           reader || !found.some((h) => h.kind === "file")
@@ -276,7 +263,6 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
         const hits = found.filter(
           (h, i) =>
             dmReadable?.[i] !== false &&
-            handedReadable?.[i] !== false &&
             (h.kind !== "file" ||
               !fileReach ||
               h.channelIds.length === 0 ||
@@ -308,6 +294,7 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
             const inside = item ? item.trust === "low" : m ? m.meta?.readOutside === true : h.kind !== "wiki";
             return { text, inside };
           });
+        if (shown.length === 0 && steps.length === 0) return { content: "No results." };
         const own = shown.filter((l) => !l.inside).map((l) => neutralizeUntrusted(l.text));
         const outside = [...shown.filter((l) => l.inside).map((l) => l.text), ...steps];
         return {
@@ -1101,6 +1088,40 @@ async function dmWithRunPerson(ctx: ToolContext): Promise<string | null> {
   // The asking agent relays the answer where it was asked: it stays out unless everyone there is in this DM.
   const asked = await consultationOrigin(ctx.db, ctx.orgId, ctx.runId);
   return !asked || (await peopleAllIn(ctx.db, ctx.orgId, asked.channelId, row.id)) ? row.id : null;
+}
+
+/** How many hits of the agents' DMs are read before keeping this person's: every person's exchanges share them. */
+const HANDED_SEARCH_POOL = 20;
+
+/**
+ * Messages of the agents' DMs `handed` made for `person`, at most `limit`, searched apart from the usual reach so
+ * other people's exchanges there never take its places.
+ */
+async function searchHandedFor(
+  deps: ContextDeps,
+  ctx: ToolContext,
+  handed: string[],
+  person: string,
+  text: string,
+  limit: number,
+) {
+  // ponytail: a person's hit behind HANDED_SEARCH_POOL better ones of other people is missed; filter in SQL if it bites.
+  const pool = await searchVisible(deps, {
+    orgId: ctx.orgId,
+    text,
+    visibleChannelIds: handed,
+    kinds: ["message"],
+    limit: HANDED_SEARCH_POOL,
+  });
+  const theirs = await Promise.all(
+    pool.map((h) =>
+      readerOfMessage(ctx.db, ctx.orgId, h.sourceId).then(
+        (r) => r === person,
+        () => false,
+      ),
+    ),
+  );
+  return pool.filter((_, i) => theirs[i]).slice(0, limit);
 }
 
 /**

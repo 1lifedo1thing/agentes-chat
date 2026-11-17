@@ -2389,12 +2389,12 @@ const HANDED_REMEMBERED = 6;
  * How many of the agent's latest hand-offs (every person's) are looked through for one person's: who is behind each
  * is the walk up its chain (`runAuthorityById`, remembered per message), which no index answers.
  */
-// ponytail: a person's hand-offs behind 60 newer ones of other people are not remembered; a person column on
-// agent_consultations, set as it is asked, if one agent ever gets that many.
+// ponytail: a person's hand-offs behind 60 newer ones of other people are not remembered, and every DM turn with a
+// person walks up to 60 chains (about one statement each, two with caches off) when that person has fewer than six;
+// a person column on agent_consultations, set as it is asked, removes both.
 const HANDED_LOOKED_AT = 60;
 
 export interface HandedFor {
-  id: string;
   kind: AgentConsultationRow["kind"];
   /** The handed work's state when its run became one (`agent_works.how = 'handed'`), else the note's or question's. */
   status: AgentConsultationRow["status"];
@@ -2404,6 +2404,8 @@ export interface HandedFor {
   answer: string | null;
   /** The answer is left out: the run that gave it read outside content. */
   answerHidden: boolean;
+  /** Its handed work was stopped (by a person or the agent that handed it) before it finished. */
+  stopped?: true;
   askerHandle: string;
   createdAt: Date;
 }
@@ -2470,7 +2472,6 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
   }
   return Promise.all(
     mine.slice(0, HANDED_REMEMBERED).map(async ({ row, askerHandle, work }) => ({
-      id: row.id,
       kind: row.kind,
       ...(work?.status ? await handedWorkState(db, orgId, work) : await noteState(db, row)),
       question: (await runReadOutsideById(db, orgId, row.askerRunId)) ? null : row.question,
@@ -2480,7 +2481,7 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
   );
 }
 
-type HandedState = Pick<HandedFor, "status" | "answer" | "answerHidden">;
+type HandedState = Pick<HandedFor, "status" | "answer" | "answerHidden" | "stopped">;
 
 /** A hand-off no work came of: its own row says how it went. */
 async function noteState(db: Executor, row: AgentConsultationRow): Promise<HandedState> {
@@ -2502,7 +2503,13 @@ async function handedWorkState(
   work: { status: string; finishedAt: Date | null; resultMessageId: string | null },
 ): Promise<HandedState> {
   if (!work.finishedAt) return { status: "open", answer: null, answerHidden: false };
-  if (work.status !== "done") return { status: "failed", answer: null, answerHidden: false };
+  if (work.status !== "done")
+    return {
+      status: "failed",
+      answer: null,
+      answerHidden: false,
+      ...(work.status === "canceled" ? { stopped: true } : {}),
+    };
   const [report] = work.resultMessageId
     ? await db
         .select({ body: messages.body, meta: messages.meta, runId: messages.agentRunId })

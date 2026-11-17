@@ -353,7 +353,9 @@ function handedLine(h: HandedFor) {
             : "you finished it"
         : h.status === "expired"
           ? "you never got to it"
-          : "you couldn't finish it";
+          : h.stopped
+            ? "it was stopped before you finished"
+            : "you couldn't finish it";
   const asked = h.question === null ? "(it relayed text it read outside, not shown)" : quotedUntrusted(h.question, 200);
   return `- @${h.askerHandle} ${what}, ${ago(h.createdAt)}: ${asked} → ${came}`;
 }
@@ -799,7 +801,7 @@ export async function buildRunContext(
   // What other agents handed it for the person of this DM happened where no person reads, which this DM never shows.
   const handedHere =
     channel.kind === "dm" && !agentsDm && !background && !options.routine && trigger.authorUserId
-      ? handedFor(db, run.orgId, agent.id, trigger.authorUserId)
+      ? handedFor(db, run.orgId, agent.id, trigger.authorUserId).catch(() => [])
       : Promise.resolve([]);
   const [names, members, zone, talks, personLines, origins, handedRows] = await Promise.all([
     authorNames(db, history),

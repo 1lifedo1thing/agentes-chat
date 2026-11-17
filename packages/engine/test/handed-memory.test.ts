@@ -4,6 +4,7 @@ import type { ModelRequest } from "@agenteschat/providers";
 import { systemText } from "@agenteschat/providers";
 import {
   type AgentRun,
+  addChannelMember,
   askAgentToImplement,
   continueRun,
   createAgent,
@@ -147,6 +148,32 @@ describe("work handed between agents, for a person", () => {
     expect(theirs).toContain("tool_result");
     expect(theirs).not.toContain("subiu 12%");
   });
+
+  test("another person's exchanges in the agents' DM never take the places of what the search found before", async () => {
+    const { prompts, ada } = await handOff("tell_agent");
+    await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { agentId: ada.id });
+    await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: f.general.id,
+      author: { type: "person", userId: f.owner.id },
+      body: "O pronto do drive compartilhado foi aprovado na reunião de segunda.",
+    });
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    const forBia = await devRun(f.general.id, "@dev pede pra Ada umas coisas", bia.id);
+    const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
+    for (let i = 0; i < 9; i++)
+      await insertMessage(f.db, {
+        orgId: f.org.id,
+        channelId: room.id,
+        author: { type: "agent", agentId: f.agent.id, runId: forBia.id, hop: 1 },
+        body: `Pronto, drive: item ${i}.`,
+      });
+    await drainOutbox(f.db, f.handlers);
+    const found = await searchInDm(f, f.owner.id, ada.id, prompts);
+    expect(found).toContain("aprovado na reunião de segunda");
+    expect(found).toContain("Vendas/Outubro, subiu 12%");
+    expect(found).not.toContain("drive: item");
+  });
 });
 
 /** A run of Dev's on `personId`'s message in `channelId`, as the tool runs it (no model). */
@@ -267,6 +294,7 @@ describe("it follows the handed work, not the note", () => {
     await stops(run);
     expect((await notes())[0]?.status).not.toBe("open");
     expect(await memory()).toEqual([["failed", null]]);
+    expect((await handedFor(f.db, f.org.id, run.agentId, f.owner.id))[0]?.stopped).toBe(true);
     const { runId } = await continueRun({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, run.id);
     // The note stays closed; the work runs again.
     expect((await notes())[0]?.status).not.toBe("open");

@@ -8,9 +8,6 @@ export const cutText = (text: string, max: number) => text.slice(0, max).replace
 /** `cutText` for text people read: a cut ends in "…", never passing for the whole. */
 export const cutMarked = (text: string, max: number) => (text.length > max ? `${cutText(text, max - 1)}…` : text);
 
-/** `cutText` of `text` on one line, its runs of whitespace one space. */
-export const oneLineCut = (text: string, max: number) => cutText(text.replace(/\s+/g, " ").trim(), max);
-
 /** "Ana's", for the English the agents read. */
 export const possessive = (name: string) => `${name}'s`;
 
