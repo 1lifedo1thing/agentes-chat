@@ -19375,6 +19375,12 @@ export const ptBR = {
     noLimit: "Sem limite",
     ownBucket: "No seu próprio bucket, sem limite nosso",
   },
+  /** The referral service (ADR 0191): this server knows nothing of the program, only the way there. */
+  referrals: {
+    /** In the person's own menu, under Settings. */
+    open: "Indique e ganhe",
+    failed: "Não deu para abrir agora. Tente de novo em instantes.",
+  },
   /** A workspace's limits, set by the billing service (ADR 0079): people and files. */
   limits: {
     members: {

@@ -20143,6 +20143,10 @@
     "noLimit": "Bez limitu",
     "ownBucket": "Na twoim własnym buckecie, bez limitu z naszej strony"
   },
+  "referrals": {
+    "open": "Poleć i zarabiaj",
+    "failed": "Nie udało się teraz otworzyć. Spróbuj ponownie za chwilę."
+  },
   "limits": {
     "members": {
       "full": "Ta przestrzeń robocza ma {{members}} z {{limit}} osób.",
