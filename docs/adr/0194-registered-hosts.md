@@ -1,0 +1,86 @@
+# 0194. The same server on extra hostnames, each with its own look before sign-in
+
+- Status: Accepted
+- Date: 2026-11-17
+- Extends: ADR 0056 (the operator API), ADR 0193 (a workspace's accent), `EXTRA_TRUSTED_ORIGINS`
+- Code: schema `packages/db/src/schema/hosts.ts` (migration 0291); engine `packages/engine/src/hosts.ts` (`hostLook`,
+  `hostOrigin`, `baseUrlFor`, `putHost`, `deleteHost`), `net-guard.ts` (`normalizeHost`), `cache.ts`
+  (`caches.hosts`); server `apps/server/src/routes/app/context.ts` (`requestOriginAllowed`, `requestBaseUrl`),
+  `realtime/ws.ts` (`personUpgrade`), `auth.ts` (`trustedOrigins`, `SOCIAL_STARTS`, the reset and confirmation links,
+  `authUiConfig`), `routes/app/account.ts` (`GET /api/app/auth-config`'s `host`), `routes/instance.ts`
+  (`GET /api/host-look/logo`), `operator/hosts.ts`; web `apps/web/src/components/AuthLayout.tsx` (`AuthShell`),
+  `i18n/index.ts` (`brandTabTitle`), `lib/app-icon.ts` (`showHostIcon`); tests `packages/engine/test/hosts.test.ts`,
+  `apps/server/test/hosts.test.ts`, `apps/web/test/host-look.test.tsx`
+
+## Context
+
+A server answers at `PUBLIC_URL` (and at the addresses in `EXTRA_TRUSTED_ORIGINS`, for one installation opened from a
+LAN or a tunnel). Whoever runs a server for several groups of people may want each group to reach it at an address of
+its own, with that group's name, logo and color on the pages people see before they sign in. Inside a workspace a
+workspace's own logo and accent (ADR 0193) already decide the look.
+
+Answering on another hostname widens which browser origins may hold a session and send writes, so every check has to
+stay exact and be written once.
+
+## Decision
+
+1. **A table of hosts, kept by the operator.** `hosts`: `host` (the primary key: lower case, a hostname only, no
+   scheme, port, path or trailing dot, at most 253 characters and at least one dot), `name` (1 to 60), `accent`
+   (`#rrggbb` or null), `logo` (a stored file's key in the platform's bucket, as a workspace's logo is kept, or null)
+   and the times. It is the server's, not a tenant's: no `org_id`. Only the operator API writes it:
+   `GET /hosts`, `PUT /hosts/{host}` (creates or replaces; `accent` and `logo` left out are left as they are, null
+   clears them; the logo takes a workspace logo's checks) and `DELETE /hosts/{host}` (also deletes its logo).
+   Refusals: `host.invalid` (not a hostname), `host.own` (`PUBLIC_URL`'s host or one of `EXTRA_TRUSTED_ORIGINS`'),
+   `host.too_many` (past 1,000). A server with none behaves exactly as before.
+2. **One resolver.** `normalizeHost` reads a `Host` header (or a host an operator typed) as one comparable name or
+   nothing: lower case, one trailing dot dropped, and anything with a port, an IP address, a single label, a scheme,
+   a path or a user refused. `hostLook(db, host)` returns the registered row for it or null. Every check below goes
+   through it. It is kept per process for 30 seconds (`caches.hosts`) and dropped at once on a write in this process,
+   so a change applies here at once and on the other processes within 30 seconds; the same holds for a deleted host.
+3. **The origin rule.** An origin is allowed when it was allowed before, or when it is exactly `https://<host>` for a
+   registered host **and** the request's own `Host` is that host (`hostOrigin`). The app API's CSRF check
+   (`requestOriginAllowed`), the WebSocket upgrades (`personUpgrade`, also the desktop and terminal streams) and Better
+   Auth's `trustedOrigins` (a function of the request; with none, Better Auth's start, the list it had before) all
+   take that one function. The request's own host must match because a registered host's pages belong to whoever it
+   was registered for: an origin trusted on every request would let one host's pages write with a session held on
+   another host or on the main address. Plain `http://`, another port and a trailing dot in the origin are refused;
+   `X-Forwarded-Host` and `Forwarded` are never read, so nothing in front of the server can name a host it did not
+   receive.
+4. **A session per host.** Better Auth's cookies carry no `Domain`, so a browser keeps a registered host's session to
+   that host alone: signing in there signs in nowhere else, and the main address's session never reaches it. `baseURL`
+   stays `PUBLIC_URL`.
+5. **Email only on a registered host.** There `GET /api/app/auth-config` says every provider is off and adds
+   `host: { name, accent, logoUrl }` (null everywhere else; `GET /api/instance` says the same of the providers), and
+   Better Auth's `before` hook refuses to start or link a provider's sign-in (`/sign-in/social`, `/link-social`) with
+   the 404 `PROVIDER_NOT_FOUND` a server without that provider answers. A provider sends people back to the one
+   callback address it knows, `PUBLIC_URL`'s, whose session the registered host can't read. Social sign-in there
+   would need a hand-over: the main address finishes the sign-in, then passes a one-time code back to the registered
+   host, which turns it into a session of its own. It is left for later.
+6. **The links that bring a person back.** `baseUrlFor(requestHost)` gives the registered host's address on a request
+   for one, else `PUBLIC_URL`. The password reset link and the email confirmation link (the host the request came in
+   on), an invitation's link and its email (the host it was created or re-sent from), the invitation links' list and
+   the join code's email use it. Nothing is kept on the invitation row: a re-send goes back to the host it is re-sent
+   from, and there are no automatic reminders. Everything else keeps the server's own address, left for later:
+   notifications and their emails, a join request's emails to admins and its answer, invitations agents send,
+   connectors' and apps' OAuth returns, devices and computers, and the phone's links.
+7. **The logo** is served without a session at `GET /api/host-look/logo` for the request's own host only (no
+   parameter names a host), with the image checks a workspace's logo has and a five-minute cache lifetime;
+   `auth-config`'s `logoUrl` carries the file's name so a new logo is fetched at once.
+8. **The web.** On a registered host the pages before sign-in (sign-in, sign-up, an invitation, a new password) show
+   its logo, or its name alone in the heading face, where the product's lockup is, set its accent's four tokens on the
+   document while they show (the workspace shell does the same with the workspace's own accent, and the two never
+   show at once), and end with one quiet "Powered by agentes.chat" line linking to the product's site. The tab's title
+   names the host where it names the product, on every page of that host, and the tab's icon is its logo unless the
+   browser picked another icon. The About screen and its license notice are unchanged.
+9. **Phone and desktop.** Nothing changes. The phone app is built for one address; the desktop app reaches a
+   registered host as it reaches any other server.
+
+## Consequences
+
+- An operator registers a host only after pointing the hostname at the server and serving a certificate for it (the
+  server only answers what reaches it, over HTTPS). A proxy in front must pass the `Host` the browser sent; one that
+  rewrites it makes the host look unregistered, which fails closed.
+- Deleting a host does not end the sessions people hold there: they stop being reachable there once its traffic stops
+  reaching the server, and its origin is no longer trusted at once on this process and within 30 seconds elsewhere.
+- Every request to Better Auth, and every write and WebSocket upgrade with an origin outside the old list, reads the
+  cache: the database once per host per 30 seconds per process.
