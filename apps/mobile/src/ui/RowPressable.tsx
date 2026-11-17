@@ -23,13 +23,13 @@ const OUT: Fade = {
   transitionTimingFunction: EASE_OUT,
 };
 
-type Held = "no" | "waiting" | "away";
+type Held = "no" | "waiting";
 
 export interface RowPressableProps extends Omit<PressableProps, "style" | "children"> {
   style?: StyleProp<ViewStyle>;
   /**
-   * The row opens a screen: it stays lit while that screen comes in and goes out when the person comes back, as the
-   * system's lists keep the row you came from lit (`clearsSelectionOnViewWillAppear`).
+   * The row opens a screen: it stays lit until that screen covers it, then goes out underneath, so the list is plain
+   * again when the person comes back (a row lit until the way back ended read as stuck).
    */
   hold?: boolean;
   /** Lights under the finger (default true); off where the control in it answers on its own (a switch's row). */
@@ -78,19 +78,10 @@ export function RowPressable({
 
   useEffect(() => {
     if (!hold || !navigation) return;
-    const offBlur = navigation.addListener("blur", () => {
-      if (held.current !== "waiting") return;
-      held.current = "away";
-      stopWaiting();
+    return navigation.addListener("blur", () => {
+      if (held.current === "waiting") release();
     });
-    const offFocus = navigation.addListener("focus", () => {
-      if (held.current === "away") release();
-    });
-    return () => {
-      offBlur();
-      offFocus();
-    };
-  }, [hold, navigation, release, stopWaiting]);
+  }, [hold, navigation, release]);
   useEffect(() => stopWaiting, [stopWaiting]);
 
   return (

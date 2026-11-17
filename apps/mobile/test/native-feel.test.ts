@@ -102,9 +102,10 @@ describe("a row pressed as the system's lists press theirs", () => {
     expect(row).toContain("requestAnimationFrame(() => {");
   });
 
-  test("a row that opens a screen stays lit until the person comes back", () => {
-    expect(row).toContain('const offBlur = navigation.addListener("blur", () => {');
-    expect(row).toContain('if (held.current === "away") release();');
+  test("a row that opens a screen stays lit until that screen covers it, never after the way back", () => {
+    expect(row).toContain('return navigation.addListener("blur", () => {');
+    expect(row).toContain('if (held.current === "waiting") release();');
+    expect(row).not.toContain('addListener("focus"');
     expect(row).toContain("wait.current = setTimeout(release, HOLD_WAIT);");
     // The screen's navigation without following its state: a row never redraws when the stack moves.
     expect(row).toContain("const navigation = useContext(NavigationContext);");

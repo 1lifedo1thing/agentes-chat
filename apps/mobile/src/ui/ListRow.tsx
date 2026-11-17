@@ -61,7 +61,8 @@ export interface ListRowProps extends Omit<PressableProps, "style" | "children">
   chevron?: boolean;
   /**
    * The row opens a screen (default true: a conversation, an agent, what happened): it stays lit while that screen
-   * comes in and goes out when the person comes back, as the system's lists do. A press that opens nothing lets it go.
+   * comes in and goes out once covered, so the list is plain again on the way back. A press that opens nothing lets it
+   * go.
    */
   opens?: boolean;
   /** Pinned on top: a small pin before the time, so what the person pinned reads as pinned. */

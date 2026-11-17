@@ -485,7 +485,7 @@ function Row({
   return (
     <RowPressable
       onPress={press}
-      // A row that opens a screen stays lit until the person comes back; a switch's row answers with its switch.
+      // A row that opens a screen stays lit until that screen covers it; a switch's row answers with its switch.
       hold={chevron}
       light={toggle === undefined}
       // A row of buttons stays enabled with nothing to press itself: VoiceOver still offers its actions.

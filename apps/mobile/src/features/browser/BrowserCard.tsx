@@ -1,4 +1,5 @@
 import {
+  BROWSER_FPS,
   type BrowserFrame,
   type BrowserHandoff,
   browserSiteUrl,
@@ -182,7 +183,8 @@ export function BrowserCard({
   useEffect(() => {
     if (!screenMounted) setPageState("connecting");
   }, [screenMounted]);
-  // The page at the stream's own rate: it is how people follow the agent's work (ADR 0040 §7.1).
+  // In the conversation the page is a small picture among the messages: two frames a second follow the agent's work
+  // without loading the scroll. Full screen and in control, the stream's own rate (ADR 0040 §7.1).
   const live = useLiveConnection(
     profile ? profileLiveKey(profile.id) : agentId,
     framesWanted({
@@ -192,6 +194,7 @@ export function BrowserCard({
       settled: screen.settled,
       desktop: onScreen,
     }),
+    surface || holding ? undefined : BROWSER_FPS.card,
   );
   // A profile whose browser is off on its computer: the switch in the page's place (ADR 0036 §8).
   const offHere = Boolean(profile) && live.unavailable === "unavailable" && browserOffMessage(live.message);

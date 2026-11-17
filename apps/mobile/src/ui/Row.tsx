@@ -101,7 +101,7 @@ export function Row({
     </View>
   );
   if (!onPress) return body;
-  // Lit as the system's lists light a row; one that opens a screen stays lit until the person comes back.
+  // Lit as the system's lists light a row; one that opens a screen stays lit until that screen covers it.
   return (
     <RowPressable
       onPress={onPress}
