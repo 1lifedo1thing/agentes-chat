@@ -716,12 +716,10 @@ html:not([data-pointer]) button.arrival-have__row[data-state="checked"]:focus-vi
   gap: 1px;
   min-width: 0;
 }
-/* A row's name and its email or owner stay one line each: a long one ends in an ellipsis. */
+/* What tells one account from the next (its name, its email, whose it is) wraps whole, never cut. */
 .arrival-have__title,
 .arrival-have__line {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .arrival-have__title {
   font-size: 15px;
@@ -779,10 +777,6 @@ html:not([data-pointer]) .arrival-have__edit:focus-visible {
 .arrival-have__rename > :first-child {
   flex: 1;
   min-width: 0;
-}
-/* A sentence under a name (a key's "paid by use", a plan's room, a model's need) wraps whole: cut, it reads broken. */
-.arrival-have__line--words {
-  white-space: normal;
 }
 /* The state is the words; the colour only follows them. */
 .arrival-have__line[data-plan="almost"] {
