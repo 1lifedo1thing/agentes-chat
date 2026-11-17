@@ -12958,9 +12958,9 @@ export const ptBR = {
     },
     /** Connections split as the Vault splits its items: the team's and each person's (ADR 0099 addendum). */
     personal: {
-      note: "Só você abre estas conexões. Ações que outras pessoas pedem esperam sua aprovação.",
+      note: "Só você abre estas conexões. Seus agentes só usam quando você pede.",
       emptyTitle: "Conecte suas próprias contas",
-      emptyText: "Só você abre, e ações que outras pessoas pedem esperam sua aprovação.",
+      emptyText: "Só você abre estas conexões, e seus agentes só usam quando você pede.",
       others: "Pessoais de outras pessoas",
       of: "Pessoal de {{name}}",
       seeAll: "Ver todas as {{count}}",

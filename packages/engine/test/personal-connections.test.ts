@@ -41,9 +41,9 @@ import {
   removeMember,
   renameConnection,
   revokeConnection,
+  rightHandPrompt,
   setAgentAccess,
   type ToolContext,
-  unaskedAtNever,
   ValidationError,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
@@ -102,6 +102,35 @@ async function runOf(agentId: string, author: string | null, channelId = f.gener
     threadRootId: message.id,
     triggerMessageId: message.id,
   };
+}
+
+/** A routine's run of `agentId`, set up by `creator` (null: a routine nobody set up). */
+async function routineRunOf(agentId: string, creator: string | null): Promise<ToolContext> {
+  const message = await insertMessage(f.db, {
+    orgId: f.org.id,
+    channelId: f.general.id,
+    author: { type: "person", userId: creator ?? f.owner.id },
+    body: "Check the board",
+    meta: {
+      routineBrief: {
+        routineId: crypto.randomUUID(),
+        routineRunId: crypto.randomUUID(),
+        name: "Daily check",
+        creatorUserId: creator,
+        deliverTo: { channelId: f.general.id, threadId: null },
+        access: "act",
+        report: "when_new",
+        trigger: "schedule",
+        dueAt: new Date().toISOString(),
+      },
+      background: true,
+    },
+  });
+  const [run] = await f.db.transaction((tx) =>
+    createAgentRuns(tx, message, [agentId], "mention", { background: true }),
+  );
+  if (!run) throw new Error("no run");
+  return { db: f.db, orgId: f.org.id, agentId, runId: run.id, channelId: f.general.id, triggerMessageId: message.id };
 }
 
 /** Walter owns `@dev`, which answers only him, and connects his own Linear: it goes on for his agents alone. */
@@ -211,7 +240,7 @@ describe("who may add, see and change a personal connection", () => {
   });
 });
 
-describe("a personal connection serves runs as a person's mailbox does", () => {
+describe("a personal connection serves only its own person, as a personal Vault item or skill does", () => {
   test("its person's run gets its tools; a run nobody is behind gets nothing personal", async () => {
     const { walter, source } = await walterWithLinear();
     expect(await names(source, await runOf(f.agent.id, walter.id))).toEqual([
@@ -221,36 +250,58 @@ describe("a personal connection serves runs as a person's mailbox does", () => {
     expect(await names(source, await runOf(f.agent.id, null))).toEqual([]);
   });
 
-  test("someone the agent doesn't answer gets nothing; one it answers needs the owner's approval to act", async () => {
-    const { walter, bia, source } = await walterWithLinear();
-    expect(await names(source, await runOf(f.agent.id, bia.id))).toEqual([]);
-    // Walter opens `@dev` to everyone: Bia may use his Linear through it, and its actions ask Walter alone.
+  test("a teammate the agent answers directly gets nothing of it, nor does an admin", async () => {
+    const { walter, bia, mine, source } = await walterWithLinear();
+    // Walter opens `@dev` to everyone: Bia and the owner talk to it, and still nothing of his Linear reaches them.
     await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
-    const ctx = await runOf(f.agent.id, bia.id);
+    expect(await names(source, await runOf(f.agent.id, bia.id))).toEqual([]);
+    expect(await names(source, await runOf(f.agent.id, f.owner.id))).toEqual([]);
+    // Nor its name among what the run holds.
+    const held = await connectorStates(f.db, f.org.id, { oauthApps: {} }, { usable: [], listed: [] }, bia.id);
+    expect(held.flatMap((c) => c.connectionIds)).not.toContain(mine.id);
+    expect(held.find((c) => c.names.includes("linear"))?.state).toBe("not_connected");
+    // His own run acts as his: no card for a plain write, its reads marked as from outside, its cards his.
+    const ctx = await runOf(f.agent.id, walter.id);
     const tools = await source.tools(ctx);
     const write = tools.find((t) => t.name === "linear_create_issue");
     const read = tools.find((t) => t.name === "linear_list_issues");
-    expect(write).toMatchObject({ sensitive: true, asksOwner: true, ownerUserId: walter.id });
-    expect(read?.sensitive).toBe(false);
+    expect(write).toMatchObject({ sensitive: false, ownerUserId: walter.id });
     expect(read?.readsOutside).toBe(true);
-    const asked = await write?.approvers?.({}, ctx, bia.id);
-    expect(asked).toMatchObject({ ok: true, approvers: { userIds: [walter.id], required: true, requestedBy: bia.id } });
-    // Even an agent that never asks asks him.
-    if (write) expect(unaskedAtNever("never", write, { kind: "person", personId: bia.id } as never)).toBe(false);
-
-    const gateway = createToolGateway({ sources: [source] });
-    const result = await gateway.invoke(ctx, {
-      toolUseId: "t1",
-      name: "linear_create_issue",
-      input: { title: "Ship it", why: "Bia asked for this issue so the sign-in bug is tracked on the board." },
+    expect(await write?.approvers?.({}, ctx, walter.id)).toMatchObject({
+      ok: true,
+      approvers: { userIds: [walter.id] },
     });
-    expect(result).toMatchObject({ type: "approval" });
-    if (result.type === "approval") expect(result.approval.approvers).toMatchObject({ userIds: [walter.id] });
+  });
 
-    // His own run acts as his: no card for a plain write.
-    const own = (await source.tools(await runOf(f.agent.id, walter.id))).find((t) => t.name === "linear_create_issue");
-    expect(own?.sensitive).toBe(false);
-    expect(own?.asksOwner).toBeUndefined();
+  test("the gateway refuses a call into it from a run whose person is not its owner", async () => {
+    const { walter, bia, linear, source } = await walterWithLinear();
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
+    // A source that lists his tools to any run, as a bug upstream of the gateway would.
+    const his = await source.tools(await runOf(f.agent.id, walter.id));
+    const gateway = createToolGateway({ sources: [{ name: "leaky", tools: async () => his }] });
+    const call = { toolUseId: "t1", name: "linear_list_issues", input: {} };
+    for (const ctx of [await runOf(f.agent.id, bia.id), await runOf(f.agent.id, null)]) {
+      const result = await gateway.invoke(ctx, call);
+      expect(result).toMatchObject({
+        type: "result",
+        output: { isError: true, content: "Unknown tool linear_list_issues" },
+      });
+    }
+    expect(linear.calls).toEqual([]);
+    const own = await gateway.invoke(await runOf(f.agent.id, walter.id), call);
+    expect(own).toMatchObject({ type: "result", output: { content: expect.stringContaining("ENG-1") } });
+    expect(linear.calls).toEqual(["list_issues"]);
+  });
+
+  test("a routine its person set up gets it; one someone else set up gets nothing", async () => {
+    const { walter, bia, source } = await walterWithLinear();
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
+    expect(await names(source, await routineRunOf(f.agent.id, walter.id))).toEqual([
+      "linear_create_issue",
+      "linear_list_issues",
+    ]);
+    expect(await names(source, await routineRunOf(f.agent.id, bia.id))).toEqual([]);
+    expect(await names(source, await routineRunOf(f.agent.id, null))).toEqual([]);
   });
 
   test('"all tools" on an agent never reaches someone\'s personal connection', async () => {
@@ -280,6 +331,13 @@ describe("a personal connection serves runs as a person's mailbox does", () => {
     expect(await names(source, await runOf(lodi.id, walter.id, f.general.id))).toEqual([]);
     const biaDm = await openPersonAgentDm(f.db, f.org.id, bia.id, lodi.id);
     expect(await names(source, await runOf(lodi.id, bia.id, biaDm.id))).toEqual([]);
+    // Its snapshot names his connection to him in his DM only, never in a channel, never to Bia.
+    await renameConnection(f.db, walter.id, f.org.id, mine.id, "Walter's Linear");
+    const snapshot = (personId: string, inDm: boolean) =>
+      rightHandPrompt({ db: f.db }, { orgId: f.org.id, agent: lodi, personId, inDm });
+    expect(await snapshot(walter.id, true)).toContain("Walter's Linear");
+    expect(await snapshot(walter.id, false)).not.toContain("Walter's Linear");
+    expect(await snapshot(bia.id, true)).not.toContain("Walter's Linear");
   });
 
   test("a person who leaves takes their connections with them; the team's keep serving runs", async () => {
@@ -475,32 +533,38 @@ describe("routines that wait on a person's connection", () => {
     expect((await checkConnectorTrigger(f.db, f.org.id, lodi.id, input, walter.id)).id).toBe(ms.id);
   });
 
-  test("on another agent, its owner or someone it answers; a creator who left gets nothing", async () => {
+  test("on another agent, only its owner's own routine, and only while they are a member", async () => {
     const { walter, bia } = await walterWithLinear();
     const ms = await millionSendOf(walter.id, f.agent.id);
     const input = { connectionId: ms.id, event };
-    // `@dev` answers only Walter.
+    // `@dev` answers everyone: someone it answers still isn't its owner.
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
     await expect(checkConnectorTrigger(f.db, f.org.id, f.agent.id, input, bia.id)).rejects.toBeInstanceOf(
       ValidationError,
     );
-    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
-    expect((await checkConnectorTrigger(f.db, f.org.id, f.agent.id, input, bia.id)).id).toBe(ms.id);
-    const [routine] = await f.db
-      .insert(schema.routines)
-      .values({
-        orgId: f.org.id,
-        agentId: f.agent.id,
-        name: "Mail",
-        prompt: "Read it",
-        target: { type: "dm" },
-        triggerType: "webhook",
-        createdByUserId: bia.id,
-      })
-      .returning();
-    if (!routine) throw new Error("no routine");
-    expect(await connectorTriggerAllowed(f.db, f.org.id, routine.id, { ...input, filter: {} })).toBe(true);
-    await removeMember(f.db, f.owner.id, f.org.id, bia.id);
-    expect(await connectorTriggerAllowed(f.db, f.org.id, routine.id, { ...input, filter: {} })).toBe(false);
+    expect((await checkConnectorTrigger(f.db, f.org.id, f.agent.id, input, walter.id)).id).toBe(ms.id);
+    const routineBy = async (creator: string) => {
+      const [routine] = await f.db
+        .insert(schema.routines)
+        .values({
+          orgId: f.org.id,
+          agentId: f.agent.id,
+          name: "Mail",
+          prompt: "Read it",
+          target: { type: "dm" },
+          triggerType: "webhook",
+          createdByUserId: creator,
+        })
+        .returning();
+      if (!routine) throw new Error("no routine");
+      return routine;
+    };
+    const hers = await routineBy(bia.id);
+    const his = await routineBy(walter.id);
+    expect(await connectorTriggerAllowed(f.db, f.org.id, hers.id, { ...input, filter: {} })).toBe(false);
+    expect(await connectorTriggerAllowed(f.db, f.org.id, his.id, { ...input, filter: {} })).toBe(true);
+    await removeMember(f.db, f.owner.id, f.org.id, walter.id);
+    expect(await connectorTriggerAllowed(f.db, f.org.id, his.id, { ...input, filter: {} })).toBe(false);
   });
 });
 

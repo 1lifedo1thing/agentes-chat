@@ -5,7 +5,7 @@ import { runAuthorityById } from "../authority";
 import { caches } from "../cache";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors";
 import { can, type Membership, requirePermission } from "../organizations";
-import { ownerApprovers, personalUseCheck, personOfRun } from "../personal-use";
+import { ownerApprovers, personalUseCheck } from "../personal-use";
 import { ALL_TOOLS, grantedScopeKeys, grantKey, isAllowed, listAgentScopes, toolAccess } from "../tools/scopes";
 import type { ToolContext, ToolDefinition } from "../tools/types";
 
@@ -92,50 +92,46 @@ export async function connectionFor(db: Database, actorId: string, orgId: string
 }
 
 /**
- * Of a workspace's connections, those a run may use (ADR 0099 addendum, the mailbox rule of ADR 0038): the team's,
- * and a personal one only on an agent with a grant of its own on it ("all tools" never covers someone's personal
- * connection) and only when `personalUseCheck` lets the run's person use it (never with nobody behind the run). The
+ * Of a workspace's connections, those a run may use (ADR 0099 addendum): the team's, and a personal one only on an
+ * agent with a grant of its own on it ("all tools" never covers someone's personal connection) and only when its
+ * person is behind the run (`personalUseCheck` with `ownerOnly`): anyone else, or nobody, gets nothing of it. The
  * person and grants are read only when a personal connection is among them, so the usual run pays nothing.
- * `person`: who the run answers for, which decides how its tools ask (`personalTool`).
  */
 export async function usableConnections(ctx: ToolContext, connections: ConnectorConnection[]) {
-  if (!connections.some((c) => c.ownerUserId)) return { connections, person: null, ownGrants: null };
+  if (!connections.some((c) => c.ownerUserId)) return { connections, ownGrants: null };
   const authority = ctx.runId ? await runAuthorityById(ctx.db, ctx.orgId, ctx.runId) : null;
   const [check, keys] = await Promise.all([
-    personalUseCheck(ctx, authority, { nobody: false, rightHandTeam: true }),
+    personalUseCheck(ctx, authority, { ownerOnly: true }),
     grantedScopeKeys(ctx.db, ctx.orgId, ctx.agentId),
   ]);
   const ownGrants = new Set([...keys].filter((k) => k !== grantKey(null, ALL_TOOLS)));
   const held = (id: string) => [...ownGrants].some((k) => k.startsWith(`${id}|`) && !k.includes("|deny:"));
   return {
     connections: connections.filter((c) => !c.ownerUserId || (held(c.id) && check(c.ownerUserId))),
-    person: personOfRun(authority),
     ownGrants,
   };
 }
 
 /**
- * A personal connection's tool as a run may hold it: only what the agent's own grants on it allow; its approvals are
- * its person's (`ownerApprovers`); someone else's call of a tool that isn't a read asks that person first, whatever
- * the agent's level (`asksOwner`); what it reads is marked as from outside, as a mailbox's is. A team connection's
- * tool as it is. Null: not allowed.
+ * A personal connection's tool as its person's run holds it: only what the agent's own grants on it allow; a card it
+ * opens goes to its person (`ownerApprovers`), not to the agent's owner or admins; what it reads is marked as from
+ * outside, as a mailbox's is. `ownerUserId` lets the gateway refuse it to any other run. A team connection's tool as
+ * it is. Null: not allowed.
  */
 export function personalTool(
   tool: ToolDefinition,
   connection: Pick<ConnectorConnection, "ownerUserId">,
-  run: { person: string | null; ownGrants: Set<string> | null },
+  run: { ownGrants: Set<string> | null },
   reads: boolean,
 ): ToolDefinition | null {
   const owner = connection.ownerUserId;
   if (!owner) return tool;
   if (!run.ownGrants || !isAllowed(toolAccess(run.ownGrants, tool))) return null;
-  const others = run.person !== owner && !reads;
   return {
     ...tool,
     ownerUserId: owner,
     approvers: (_input, ctx, requestedBy) => ownerApprovers(ctx.db, ctx.orgId, owner, requestedBy),
     ...(reads ? { readsOutside: true as const } : {}),
-    ...(others ? { sensitive: true, asksOwner: true as const } : {}),
   };
 }
 

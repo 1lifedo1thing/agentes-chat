@@ -12939,9 +12939,9 @@ export const en = {
     },
     /** Connections split as the Vault splits its items: the team's and each person's (ADR 0099 addendum). */
     personal: {
-      note: "Only you open these. Actions others ask for wait for your approval.",
+      note: "Only you open these connections. Your agents use them only when you ask.",
       emptyTitle: "Connect your own accounts",
-      emptyText: "Only you open them, and actions others ask for wait for your approval.",
+      emptyText: "Only you open these connections, and your agents use them only when you ask.",
       others: "Others' personal connections",
       of: "Personal to {{name}}",
       seeAll: "See all {{count}}",

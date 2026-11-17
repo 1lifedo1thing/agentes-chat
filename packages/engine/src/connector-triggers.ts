@@ -164,7 +164,7 @@ export function connectorCallPasses(source: ConnectorTriggerSource, body: Uint8A
 /**
  * The connection a routine's agent may take this event from: active in the workspace, made from the event's
  * service, and one whose tools its owner let the agent read (ADR 0016 §2), so the agent never learns of mail it
- * couldn't read itself. A person's own connection only for a routine its creator may use it through (`creatorMayUse`).
+ * couldn't read itself. A person's own connection only for a routine its owner set up (`creatorMayUse`).
  */
 export async function checkConnectorTrigger(
   db: Database,
@@ -188,7 +188,7 @@ export async function checkConnectorTrigger(
   }
   if (
     !(await hasScope(db, orgId, agentId, connection.id, customScope(connection.id, "read"))) ||
-    (connection.ownerUserId && !(await creatorMayUse(db, orgId, agentId, connection.ownerUserId, creatorId)))
+    (connection.ownerUserId && !(await creatorMayUse(db, orgId, connection.ownerUserId, creatorId)))
   ) {
     throw new ValidationError(
       "Let the agent read this connection before a routine can wait on it",

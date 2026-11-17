@@ -44,7 +44,7 @@ import { errorNumber, isUnexpectedError, ToolOffError } from "../errors";
 import { cutMarked, cutText, pgSafeJson, pgSafeText } from "../format";
 import { mergeReposOfCall, recordMergeDone, reposOfGithubCall } from "../git/repos";
 import { recordRead } from "../outbound";
-import { personOfRun } from "../personal-use";
+import { ownerOnlyPerson } from "../personal-use";
 import { routineCreatorOf } from "../requester";
 import { isRightHand, RIGHT_HAND_NOT_OFFERED } from "../right-hand";
 import { type RoutineBrief, routineBriefOf } from "../routine-brief";
@@ -207,12 +207,12 @@ export const asksByChoice = (tool: Pick<ToolDefinition, "name" | "scope" | "conn
  * runs without any card, on every run that has one (a person's, the agent's own, a routine's, one a routine's reading
  * feeds). Everything the agent may already use: merge, deploy, rollback, a tool that runs whatever its arguments say,
  * someone's mailbox, a command the computer holds, a workspace where every command asks. Only our tools whose job is
- * asking keep their card, and someone else's call in a person's own connection (`asksOwner`). It is the one place that says so: the call, the listing, a held command and the autonomy
+ * asking keep their card. It is the one place that says so: the call, the listing, a held command and the autonomy
  * brakes all read it. It lifts asking and nothing else: the policy's refusals, scopes, a tool turned off, the budget
  * and the tools' own checks all come before or apart from it. A call outside a run (a mission task's) has no level.
  */
 export function unaskedAtNever(level: ApprovalsLevel, tool: ToolDefinition, authority: RunAuthority | null): boolean {
-  return level === "never" && authority !== null && !asksByChoice(tool) && !tool.asksOwner;
+  return level === "never" && authority !== null && !asksByChoice(tool);
 }
 
 /**
@@ -1214,7 +1214,7 @@ export function createToolGateway(deps: {
                   ctx.orgId,
                   deps.catalog,
                   { usable, listed: all.values() },
-                  personOfRun(authority),
+                  await ownerOnlyPerson(ctx),
                 ).catch(() => [])
               : [],
           ]);
@@ -1325,6 +1325,10 @@ export function createToolGateway(deps: {
       const unknown = { code: "tool.unknown" };
       if (unknownInDirectory) return finish({ content: unknownInDirectory, isError: true, data: unknown });
       if (!tool) return finish({ content: `Unknown tool ${call.name}`, isError: true, data: unknown });
+      // A person's own connection serves only them (ADR 0099 addendum): a call of its tool from any other run is a tool
+      // this run doesn't have, whatever listed it.
+      if (tool.ownerUserId && tool.ownerUserId !== (await ownerOnlyPerson(ctx)))
+        return finish({ content: `Unknown tool ${call.name}`, isError: true, data: unknown });
       // A tool that runs other actions (Composio's executor): a call whose actions all only read is the
       // connection's read, when the agent may read the connection. Everything below then sees a read.
       if (tool.actions && tool.readScope) {
@@ -1457,7 +1461,7 @@ export function createToolGateway(deps: {
         }
         return false;
       };
-      const kinds = approves && !tool.asksOwner ? await rememberKinds(tool, call.input, authority, level) : [];
+      const kinds = approves ? await rememberKinds(tool, call.input, authority, level) : [];
       const remember = kinds[0] ?? null;
       if (await coveredBy(kinds)) approves = false;
       // The routine's own job: an action its creator allowed when they set it up runs like an allowed one, every run,
@@ -1466,7 +1470,7 @@ export function createToolGateway(deps: {
       // joined it (the end of a task, another routine's report, another agent's message) is not the job the person
       // set up, and would choose an allowed action's arguments.
       const ownJobBrief =
-        !approves || level === "always" || tool.asksOwner
+        !approves || level === "always"
           ? null
           : authority?.kind === "routine"
             ? authority.brief

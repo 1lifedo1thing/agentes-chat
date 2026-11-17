@@ -161,11 +161,9 @@ export interface ToolDefinition {
    */
   readsOutside?: true;
   /**
-   * Someone else's call in one person's own connection (ADR 0099 addendum): it asks that person whatever the agent's
-   * level, and no "Aprovar sempre" rule or routine allowance runs it in their place.
+   * A person's own connection's tool: that person, the only run it serves (the gateway refuses it to any other) and
+   * the only one who reads its calls in the audit log.
    */
-  asksOwner?: true;
-  /** A person's own connection's tool: that person, the only one who reads its calls in the audit log. */
   ownerUserId?: string;
   /** A mission's tool (agent mode, ADR 0029): its approvals are bound to that mission too. */
   missionId?: string;

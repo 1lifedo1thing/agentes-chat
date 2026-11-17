@@ -1,7 +1,6 @@
 import { and, desc, eq, gt, isNull, or, schema, sql } from "@agenteschat/db";
-import { runAuthorityById } from "../authority";
 import { type ConnectorState, connectorStates, type ServerCatalog } from "../connectors/listing";
-import { personOfRun } from "../personal-use";
+import { ownerOnlyPerson } from "../personal-use";
 import { secretSite } from "../secret-request-tool";
 import { REQUEST_SECRET_TOOL, secretStillHeld } from "../secrets";
 import { HOW_TO_GET } from "./directory";
@@ -171,7 +170,7 @@ export async function connectorFirst(
   tools: { usable: ToolDefinition[]; all: ToolDefinition[] },
 ): Promise<string | null> {
   if (input.code !== undefined || input.target === "file") return null;
-  const person = ctx.runId ? personOfRun(await runAuthorityById(ctx.db, ctx.orgId, ctx.runId)) : null;
+  const person = await ownerOnlyPerson(ctx);
   const states = await connectorStates(ctx.db, ctx.orgId, catalog, { usable: tools.usable, listed: tools.all }, person);
   const service = serviceAsked(input, states);
   if (!service || service.state === "soon" || service.state === "unavailable") return null;
