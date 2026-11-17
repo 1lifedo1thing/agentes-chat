@@ -11,7 +11,9 @@ describe("the system's bar buttons draw our line icons", () => {
     // The rasterizer sizes the document by this exact width and height.
     expect(laptop).toMatch(/\swidth="24"\s+height="24"/);
     expect(laptop).toContain('viewBox="0 0 24 24"');
-    expect(laptop).toContain('<rect x="5" y="5" width="14" height="10" rx="1.8" fill="none" stroke="#000" stroke-width="1.7"/>');
+    expect(laptop).toContain(
+      '<rect x="5" y="5" width="14" height="10" rx="1.8" fill="none" stroke="#000" stroke-width="1.7"/>',
+    );
     expect(laptop).toContain(
       '<path d="M3 18.5h18" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
     );
@@ -23,7 +25,9 @@ describe("the system's bar buttons draw our line icons", () => {
     const bar = src("ui/headerActions.tsx");
     expect(bar.match(/icon: barIcon\(a\),/g)).toHaveLength(3);
     expect(bar).toContain('icon: { type: "sfSymbol" as const, name: m.sf },');
-    expect(bar).toContain('return glyph ? { type: "image" as const, source: glyph } : { type: "sfSymbol" as const, name: sf };');
+    expect(bar).toContain(
+      'return glyph ? { type: "image" as const, source: glyph } : { type: "sfSymbol" as const, name: sf };',
+    );
     // The same size as an IconButton's icon, so a bar of ours (a counted button showing) looks the same.
     expect(src("ui/barGlyphs.ts")).toContain("const BAR_GLYPH_PT = 20;");
   });
