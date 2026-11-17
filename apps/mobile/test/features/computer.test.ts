@@ -199,6 +199,8 @@ describe("the agent's computer full screen on the phone: what its stage shows", 
     expect(phoneStage(facts({ machine: { ...ACME, online: false } }))).toBe("offline");
     // Asleep in standby: it opens as it wakes, like one about to say its first hello.
     expect(phoneStage(facts({ machine: { ...ACME, online: false, standby: true } }))).toBe("joining");
+    // The server says one in standby is online: it still opens as it wakes.
+    expect(phoneStage(facts({ machine: { ...ACME, online: true, standby: true } }))).toBe("joining");
     // Ready, and the agent gets it at its next hello: a moment more.
     expect(phoneStage(facts({ machine: null, desktop: null, browser: false }))).toBe("joining");
     expect(phoneStage(facts({ edition: "selfhost", machine: null, desktop: null, browser: false }))).toBe("noComputer");
