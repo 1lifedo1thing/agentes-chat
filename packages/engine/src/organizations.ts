@@ -43,6 +43,7 @@ import {
   stillInvitableAgentIds,
   stillInvitableChannelIds,
 } from "./invite-choices";
+import { dropAssignee } from "./issue-assignees";
 import { deleteJevKey } from "./jev-key";
 import { assertMemberRoom } from "./limits";
 import { followWorkspaceName } from "./machine-provisioning";
@@ -1203,7 +1204,7 @@ export async function removeMember(
   const { dropPersonalConnections, forgetConnectionCaches } = await import("./connectors/connections");
   const { removeSeat } = await import("./right-hand-seats");
   const { dropMemberDashboards } = await import("./dashboards/service");
-  const { released, removed, handed, changed, heir, secrets, mailActions } = await db.transaction(async (tx) => {
+  const { released, removed, handed, changed, heir, secrets, mailActions, tasks } = await db.transaction(async (tx) => {
     await lockOrgMembers(tx, orgId);
     if (target.role === "owner" && (await ownerCount(tx, orgId)) <= 1) {
       throw new ConflictError("An organization needs at least one owner. Transfer ownership first.");
@@ -1277,6 +1278,8 @@ export async function removeMember(
       );
     // Their home and private dashboards go, with their widgets' routines (ADR 0135).
     await dropMemberDashboards(tx, orgId, targetUserId);
+    // They leave every task they were on (ADR 0188): a task is never assigned to someone who can't open it.
+    const tasks = await dropAssignee(tx, orgId, { type: "person", id: targetUserId });
     // The secrets agents are waiting on from them won't come.
     const secrets = await cancelSecretRequestsFor(tx, orgId, targetUserId);
     // Their agents keep someone answering for them (approvals, budget alerts), before their plans are released: an
@@ -1319,9 +1322,15 @@ export async function removeMember(
     await offPlansNotOwners(tx, orgId, touched);
     const changed = [...new Set([...touched, ...released.agents.flatMap((a) => a.agentIds)])];
     await followOwner(tx, orgId);
-    return { released, removed, handed, changed, heir, secrets, mailActions };
+    return { released, removed, handed, changed, heir, secrets, mailActions, tasks };
   });
   forgetConnectionCaches(orgId);
+  if (tasks.length > 0) {
+    const { unassignGone } = await import("./issues");
+    await unassignGone({ db, pubsub: options.pubsub }, orgId, { type: "person", id: targetUserId }, tasks).catch(
+      () => {},
+    );
+  }
   for (const row of secrets) await publishSecret({ db, pubsub: options.pubsub }, row, "secret.updated");
   for (const row of mailActions) await publishApproval({ db, pubsub: options.pubsub }, row, "approval.decided");
   forgetAgents(
@@ -1440,6 +1449,8 @@ export async function deleteAccount(
     // Their mailboxes leave every agent there too (`removeMember`); a mailbox without an owner would be anyone's.
     const mailActions = [];
     for (const m of mine) {
+      // They leave every task they were on, as someone removed from a workspace does (ADR 0188).
+      await dropAssignee(tx, m.orgId, { type: "person", id: userId });
       await dropMailOfOwner(tx, m.orgId, userId, userId);
       // Before the user row: the foreign key would delete their connections with no audit and no adapter forget.
       await dropPersonalConnections(tx, m.orgId, userId, userId);

@@ -789,7 +789,7 @@ ones a self-hosted instance usually touches:
 | `POSTGRES_PASSWORD` | required | Database password. Read by the compose file only. |
 | `AGENTES_IMAGE` | `ghcr.io/agentes-chat/agentes:latest` | The image to run. A version tag or a digest holds a version. |
 | `BIND_ADDRESS`, `HOST_PORT` | `127.0.0.1`, `3000` | Where the compose file publishes the app. |
-| `AGENTES_MEMORY` | `8g` | The most memory the app's container may take, swap included. Over it, the kernel stops the app alone and Docker restarts it, instead of the machine swapping until something else is killed. The speech server's is `SPEECH_MEMORY` (Voice messages). |
+| `AGENTES_MEMORY` | `8g` | The most memory the app's container may take, swap included. Over it, the kernel stops the app alone and Docker restarts it, instead of the machine swapping until something else is killed. On a machine with less than 10 GiB of memory, the setup writes three quarters of it here instead: a limit above the machine's memory never fires. The speech server's is `SPEECH_MEMORY` (Voice messages). |
 | `COMPOSE_PROFILES` | | How people reach it: `tailscale` (the setup's default), `https` (Caddy for `DOMAIN`), or neither (this machine only). Comma-separated, with other optional services: `backup` (Backups and restore), `speech` (Voice messages), `embeddings` (Search across languages). |
 | `DOMAIN` | | The public domain Caddy gets a certificate for. |
 | `TS_AUTHKEY` | | The auth key or OAuth client secret the server joins your tailnet with, read only until it has joined. The setup empties it then. |
@@ -1365,7 +1365,8 @@ own files, browser, desktop and sign-ins, which only that person can watch or ta
 page. A computer that runs every agent as one user (the simple mode, a Mac, a computer a person connected)
 can't keep people's places apart, so Lodi has no computer there, and its page says so. Turn its commands,
 browser or desktop off for everyone on its page, under what it can use. The computer's shared folder is
-still shared: every agent and every person's Lodi reads and writes it.
+still shared: every agent and every person's Lodi reads and writes it. Lodi's browser needs that setup
+(This server as the agents' computer, below): without it, Lodi has no browser, and its page links here.
 
 Where others read what Lodi does (a channel, a dashboard widget, a routine that reports to a channel) it works in
 one more place, shared by the whole workspace: one more user on that computer, "Lodi (shared)". Nothing of a
@@ -1536,9 +1537,11 @@ a terminal, yes). System mode's installer brings the browser and the screens its
 and Codex are asked about there. It installs them as root with the computers' installer
 (`curl -fsSL http://127.0.0.1:3000/api/machines/install.sh | sh -s -- --requirements browser,desktop,claude,codex`,
 which also works by hand): Chromium from Debian's apt, or Ubuntu's snap where apt has none; Claude Code
-with Anthropic's installer, copied to `/usr/local/bin`; Codex from the latest release of OpenAI's
-`codex` on GitHub, to `/usr/local/bin`. Running the setup again installs nothing that's there; Claude
-Code and Codex update themselves where they can, or with that command.
+with Anthropic's installer, copied to `/usr/local/bin`; Codex's whole package from the latest release
+of OpenAI's `codex` on GitHub, in `/usr/local/lib/codex`, linked from `/usr/local/bin`. Running the
+setup again installs nothing that's there; Claude Code and Codex update themselves where they can, or
+with that command. A Codex an earlier setup installed as its lone binary can't run code mode (its
+agents fail on a missing `codex-code-mode-host`): `--requirements codex` installs it again, whole.
 
 By hand on Linux (a server set up before, say): set a token in `.env` and give the same one to the
 agents' computer, as root, in the folder with `.env` (3000 is the app's port, `HOST_PORT` if you
