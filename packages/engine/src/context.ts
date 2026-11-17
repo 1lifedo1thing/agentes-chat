@@ -79,7 +79,7 @@ import { loadTeam, rosterScopeNames, TEAM_IN_PROMPT, teammatesFor, teammatesNowP
 import { rangeStillVisible, threadRunInfo } from "./threads";
 import { HAND_OVER_STEP } from "./tools/directory";
 import type { ApprovalsLevel } from "./tools/run-policy";
-import { neutralizeUntrusted, untrustedBlock } from "./untrusted";
+import { neutralizeUntrusted, quotedUntrusted, untrustedBlock } from "./untrusted";
 import { waitingOnPerson, waitingOnPersonBlock } from "./waiting";
 import { workBrief } from "./works";
 import { workspaceMode } from "./workspace-mode";
@@ -341,20 +341,20 @@ const QUIET_TOOLS = [
 
 /** One line of "# What other agents asked of you" (`handedFor`): the other agent's words never read as instructions. */
 function handedLine(h: HandedFor) {
-  const quote = (text: string, max: number) =>
-    `"${neutralizeUntrusted(cutText(text.replace(/\s+/g, " ").trim(), max))}"`;
   const what = h.kind === "note" ? "handed you" : "asked you";
   const came =
     h.status === "open"
       ? "you are still on it"
       : h.status === "answered"
         ? h.answer
-          ? `you answered ${quote(h.answer, 300)}`
-          : "you answered (read outside text, not shown)"
+          ? `you answered ${quotedUntrusted(h.answer, 300)}`
+          : h.answerHidden
+            ? "you answered (read outside text, not shown)"
+            : "you finished it"
         : h.status === "expired"
           ? "you never got to it"
           : "you couldn't finish it";
-  const asked = h.question === null ? "(it relayed text it read outside, not shown)" : quote(h.question, 200);
+  const asked = h.question === null ? "(it relayed text it read outside, not shown)" : quotedUntrusted(h.question, 200);
   return `- @${h.askerHandle} ${what}, ${ago(h.createdAt)}: ${asked} → ${came}`;
 }
 
@@ -796,7 +796,7 @@ export async function buildRunContext(
   const samePerson = agentsDm ? await forSamePerson(db, run, fullHistory, trigger.id) : null;
   const history = samePerson ? samePerson.history : fullHistory;
 
-  // What other agents handed it for the person of this DM happened in the agents' DM, which this one never shows.
+  // What other agents handed it for the person of this DM happened where no person reads, which this DM never shows.
   const handedHere =
     channel.kind === "dm" && !agentsDm && !background && !options.routine && trigger.authorUserId
       ? handedFor(db, run.orgId, agent.id, trigger.authorUserId)
@@ -1187,7 +1187,7 @@ export async function buildRunContext(
             found: true,
             text: [
               `# What other agents asked of you for ${requesterName}`,
-              `In your private conversations with other agents, in the last ${HANDED_REMEMBERED_DAYS} days, latest first. It is your own work for this person: when they ask about it, answer from it as yours.`,
+              `In your private conversations with other agents, and tasks they handed you, in the last ${HANDED_REMEMBERED_DAYS} days, latest first. It is your own work for this person: when they ask about it, answer from it as yours.`,
               ...handed,
             ].join("\n"),
           },

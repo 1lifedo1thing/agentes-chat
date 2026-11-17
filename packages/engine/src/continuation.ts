@@ -10,7 +10,7 @@ import { getChannelCached } from "./context";
 import { publishDelivery } from "./delivery";
 import { isAgentOnlyDm } from "./dms";
 import { decisionNudge, FOLLOW_THROUGH_NUDGE, FOLLOW_THROUGH_NUDGE_DM, MISSION_ASK_NUDGE } from "./follow-through";
-import { cutText, cutTextEnd } from "./format";
+import { cutText, cutTextEnd, oneLineCut } from "./format";
 import type { Judge } from "./judge";
 import type { NoticeKind } from "./notices";
 import { notifyRunFailed } from "./notification-producers";
@@ -475,8 +475,6 @@ export function callLine(name: string, input: unknown, result?: { content: strin
   const outcome = !result ? "" : ` → ${result.isError ? "failed: " : ""}${oneLineCut(result.content, 90) || "(empty)"}`;
   return `${name}${arg ? `(${oneLineCut(arg, 80)})` : ""}${outcome}`;
 }
-
-const oneLineCut = (text: string, max: number) => cutText(text.replace(/\s+/g, " ").trim(), max);
 
 /**
  * Every tool call of a run, oldest first (the last 20), as the judge reads them (`tried`): the gateway's run steps

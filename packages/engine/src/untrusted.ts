@@ -1,5 +1,5 @@
 import { cleanOutside, replaceDisguised } from "@agenteschat/adapters";
-import { cutText } from "./format";
+import { cutText, oneLineCut } from "./format";
 
 export { cleanOutside };
 
@@ -49,3 +49,6 @@ export function untrustedBlock(source: string, text: string, maxChars = UNTRUSTE
     clean.length > maxChars ? `${cutText(clean, maxChars)}\n[… ${clean.length - maxChars} more characters cut]` : clean;
   return `<external_data source="${sourceLabel(source)}">\n${body}\n</external_data>`;
 }
+
+/** Another agent's words quoted on one line of a prompt, cut to `max` and neutralised: read as data, never as a block. */
+export const quotedUntrusted = (text: string, max: number) => `"${neutralizeUntrusted(oneLineCut(text, max))}"`;
