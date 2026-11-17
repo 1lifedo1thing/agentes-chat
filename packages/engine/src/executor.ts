@@ -138,6 +138,15 @@ import {
 import { REACT_TOOL } from "./chat-tools";
 import { kickRoomQueue, publishQueueChanged, roomGate, roomHead } from "./computer-queue";
 import {
+  CONFIDENTIAL_AI_CHANGED,
+  confidentialThread,
+  isConfidential,
+  isConfidentialRun,
+  noteConfidentialRun,
+  thinksAsThread,
+  threadIsConfidential,
+} from "./confidential";
+import {
   announceConsultationChange,
   answersHandOffs,
   answersOpen,
@@ -555,6 +564,8 @@ export interface Transcript {
   messages: ModelMessage[];
   /** Tools on demand (ADR 0043): the tool groups this run listed up front; absent = every tool. */
   toolGroups?: string[];
+  /** What thinks for the run, as its last claim found it: `model:<provider>`, or a computer brain's kind. */
+  thinksWith?: string;
   /** The trigger's message: the model brain reads the per-turn notes after it (`turnNotes`, token-trim B8). */
   notesAt?: number;
   /** Hash of what its computer session's system prompt depends on (`RunContext.sessionPrompt`, granted scopes). */
@@ -1357,9 +1368,14 @@ async function executeRunInner(
     topLevel ? getMessage(db, run.orgId, run.triggerMessageId) : Promise.resolve(null),
   ]);
   let channelRow = firstChannel;
+  // Asked by the root of a confidential thread (ADR 0190): every message of such a thread carries the mark, so the
+  // thread's row is read only for a message that carries it (a marked message can also sit outside such a thread).
+  const sealedAtClaim =
+    isConfidential(topTrigger?.meta) && (await threadIsConfidential(db, run.orgId, run.threadRootId));
+  if (sealedAtClaim) noteConfidentialRun(run.id);
   // Where it answers. Long work (ADR 0121) moves it to its anchor's thread mid-run, a move a person asked for to
-  // another place (`adoptWork`).
-  let replyThreadId = replyThreadOf(run);
+  // another place (`adoptWork`). In a confidential thread that is under the thread's root, whatever asked.
+  let replyThreadId = replyThreadOf({ ...run, confidential: sealedAtClaim });
   const where = { channelId: run.channelId, threadId: replyThreadId, agentId: run.agentId, runId: run.id };
   // Background work (a routine's run, or long work) says so: the apps keep it out of the conversation's "working" row.
   let bg: { background?: true } = run.background || run.workId ? { background: true as const } : {};
@@ -1589,6 +1605,8 @@ async function executeRunInner(
     later(() => afterTurnDone(context, run, { judged, signal }));
   };
   const reportJudgeLearn = (judge: Judge, error: unknown) => {
+    // No judge is asked for a run of a confidential thread: that refusal is no failure to report.
+    if (isConfidentialRun(run.id)) return;
     if (deps.context && agent)
       reportLearnFailure(deps.context, "judge_learn_question", error, {
         ...learnTags(agent),
@@ -1715,6 +1733,21 @@ async function executeRunInner(
     // A resumed run keeps the tools it started with (the list, and the prompt cache, stay the same).
     loadedGroups: (run.transcript as unknown as Transcript | null)?.toolGroups ?? null,
     ...(run.background ? { background: true } : {}),
+    ...(sealedAtClaim ? { confidential: true } : {}),
+    // A resumed run says what it thought with before this claim settles it again: an action a person approved runs
+    // before then, and its server is told too (ADR 0181).
+    ...((run.transcript as unknown as Transcript | null)?.thinksWith
+      ? { thinksWith: (run.transcript as unknown as Transcript).thinksWith }
+      : {}),
+  };
+  /**
+   * A result this run read made its thread confidential (the gateway says so on `ctx`, ADR 0190): from then on it
+   * answers under the message that asked it, its cards and events with it.
+   */
+  const followThread = () => {
+    if (!ctx.confidential || replyThreadId !== null) return;
+    replyThreadId = run.threadRootId;
+    where.threadId = replyThreadId;
   };
   /** Its long work (ADR 0121): where the report goes home. */
   let workHome: { id: string; homeThreadId: string | null } | null = null;
@@ -1743,7 +1776,7 @@ async function executeRunInner(
     run.workId = row.workId;
     run.threadRootId = row.threadRootId;
     ctx.threadRootId = row.threadRootId;
-    replyThreadId = replyThreadOf(run);
+    replyThreadId = replyThreadOf({ ...run, confidential: ctx.confidential });
     where.threadId = replyThreadId;
     if (row.channelId !== ctx.channelId) {
       run.channelId = row.channelId;
@@ -1903,6 +1936,14 @@ async function executeRunInner(
   // Started by a routine: its answer carries the routine (the app shows a small tag on the
   // agent's message, since the routine's own call isn't shown), and it may end in silence.
   const triggerMessage = trigger ?? topTrigger ?? (await getMessage(db, run.orgId, run.triggerMessageId));
+  if (
+    !ctx.confidential &&
+    isConfidential(triggerMessage?.meta) &&
+    (await threadIsConfidential(db, run.orgId, run.threadRootId))
+  ) {
+    ctx.confidential = true;
+    noteConfidentialRun(run.id);
+  }
   // The routine that called it (`viaRoutine`) and whether the router brought it in after another agent
   // spoke (`joined`, ADR 0034): every message it posts says so, cards included (`runMessageMeta`).
   const runMeta = runMessageMeta(run, triggerMessage);
@@ -2103,6 +2144,9 @@ async function executeRunInner(
     const { [FEEDBACK_SEND]: feedbackSend, ...shown } = (meta ?? {}) as Record<string, unknown> & {
       [FEEDBACK_SEND]?: { key: string; feedback: Feedback };
     };
+    // The caller read where the run answers before its last tool call may have moved it.
+    followThread();
+    if (ctx.confidential && threadId === null) threadId = replyThreadId;
     const tagged = report && !note ? { routine: report } : {};
     const said = note ? body : await publishable(tx, threadId, body);
     // Team actions (ADR 0064): what the run didn't repeat because the team already did it rides on its reply.
@@ -2308,6 +2352,7 @@ async function executeRunInner(
         machines: deps.machines,
         ai: { gateway: deps.gateway, machines: deps.machines },
         workspaceComputer: deps.workspaceComputer,
+        unseal: brainOf(agent.brain) === "model",
       }),
       contextDeps
         ? // A person's own message already names who is behind the run: no read for it.
@@ -2346,6 +2391,11 @@ async function executeRunInner(
       rulesForRun(db, run, agent).catch(() => ({ text: "", itemIds: [] as string[] })),
     ]);
     await judging;
+    // Its thread turned confidential after the claim read the message that asked: it is a run of that thread now.
+    if (context.confidential && !ctx.confidential) {
+      ctx.confidential = true;
+      noteConfidentialRun(run.id);
+    }
     const issueId = context.issueId;
     if (issueId) later(() => linkRunToIssue({ db, pubsub: deps.pubsub }, run, issueId));
     const system: ContextBlock[] = [...context.system];
@@ -2862,7 +2912,13 @@ async function executeRunInner(
     if (ids.length === 0) return null;
     for (const id of ids) readIds.add(id);
     // Rendered as live steering renders them mid-turn (`live-steer.ts`).
-    const rows = await renderSteered(db, run.orgId, ids, { beforeStart, workId: run.workId });
+    const rows = await renderSteered(db, run.orgId, ids, {
+      beforeStart,
+      workId: run.workId,
+      ...(brainPlan?.kind === "model"
+        ? { unseal: { threadRootId: run.threadRootId, thinksWith: ctx.thinksWith } }
+        : {}),
+    });
     if (rows.length === 0) return null;
     const text = rows.map((m) => m.text).join("\n\n");
     const t = transcript as Transcript;
@@ -3055,7 +3111,30 @@ async function executeRunInner(
     }
   }
   // The context budget reads the model's window: an OpenRouter model's comes with its list.
-  await modelInfoFor(db, thinker.model, run.orgId);
+  const thinkerModel = await modelInfoFor(db, thinker.model, run.orgId);
+  // One provider for a confidential thread's words (ADR 0190). A run that may hold them in its transcript goes on
+  // with what it thought with before or not at all, and one whose context was read whole (`unseal`) thinks through
+  // the Model Gateway or not at all: any other brain or provider would be handed the words. So would a run that
+  // thinks with another provider than the thread's first reader: another agent named there, or this one after its
+  // model changed.
+  const thinksOf = (kind: BrainPlan["kind"]) => (kind === "model" ? `model:${thinkerModel?.provider ?? ""}` : kind);
+  const thinksWith = thinksOf(brainPlan.kind);
+  const sealedThread =
+    ctx.confidential && brainPlan.kind === "model" ? await confidentialThread(db, run.orgId, run.threadRootId) : null;
+  if (
+    ctx.confidential &&
+    ((transcript.thinksWith?.startsWith("model:") && transcript.thinksWith !== thinksWith) ||
+      (brainPlan.kind !== "model" && brainOf(agent.brain) === "model") ||
+      (sealedThread !== null && !thinksAsThread(sealedThread, thinksWith)))
+  ) {
+    return fail(CONFIDENTIAL_AI_CHANGED);
+  }
+  /** What thinks for the run from here on: kept with it, and told to a server the operator listed (ADR 0181). */
+  const thinksAs = (kind: BrainPlan["kind"]) => {
+    transcript.thinksWith = thinksOf(kind);
+    ctx.thinksWith = transcript.thinksWith;
+  };
+  thinksAs(brainPlan.kind);
   let plan: BrainPlan = brainPlan;
   /**
    * What the turn-end judge reads (ADR 0109), filled only when it runs: the run's general means (`turnMeans`, its
@@ -3399,6 +3478,7 @@ async function executeRunInner(
       await saveTranscript(db, t);
       await recordRunBrain(db, run.id, "model");
       run = { ...run, brain: "model" };
+      thinksAs("model");
       await addRunStep(db, run, "context", { brainFallback: { from, code: u.code, message: u.message } });
       if (rightHandKey) standInUsed = rightHandKey;
       return "fallback";
@@ -3579,6 +3659,7 @@ async function executeRunInner(
     t.standInRefused = true;
     await recordRunBrain(db, run.id, plan.kind);
     run = { ...run, brain: plan.kind };
+    thinksAs(plan.kind);
     const { cause, provider } = providerFailureOf(error);
     await addRunStep(db, run, "context", { standInRefused: { cause, provider } });
     const handled = await brainUnavailable({
@@ -5129,6 +5210,7 @@ async function executeRunInner(
           // Canceled during a tool, or the server is shutting down: the rest never run.
           if (signal.aborted) break;
           const outcome = await invokeWithChip(toolScope, use);
+          followThread();
           // The shutdown aborted it while it ran: its error may hide work it already did.
           const cutShort = shuttingDown();
           await absorbToolOutcome(use, outcome);
@@ -5709,7 +5791,8 @@ async function executeRunInner(
           if (view) await publishMessageCreated(deps.pubsub, view);
           // Work handed to it shows moving where it was handed from (its line's `progress`, ADR 0097).
           if (betweenAgents) await announceConsultationChange({ db, pubsub: deps.pubsub }, run).catch(() => {});
-          if (typeof issueId === "string")
+          // Nothing of a confidential thread is copied onto its task (ADR 0190).
+          if (typeof issueId === "string" && !isConfidential(posted.meta))
             await mirrorReplyToIssue({ db, pubsub: deps.pubsub }, run, issueId, posted.body).catch(() => {});
         }
         continue;
@@ -5756,7 +5839,7 @@ async function executeRunInner(
         const [view] = await withWikiLinks(db, run.orgId, [messageView(reply)]);
         if (view) await publishMessageCreated(deps.pubsub, view);
       }
-      if (reply && typeof issueId === "string") {
+      if (reply && typeof issueId === "string" && !isConfidential(reply.meta)) {
         await mirrorReplyToIssue({ db, pubsub: deps.pubsub }, run, issueId, reply.body).catch(() => {});
       }
       await publishChannelEvent(deps.pubsub, event("done"));
