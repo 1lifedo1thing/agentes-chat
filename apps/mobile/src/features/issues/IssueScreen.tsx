@@ -677,12 +677,7 @@ function LinkRow({
 }) {
   const c = useColors();
   return (
-    <RowPressable
-      hold
-      onPress={onPress}
-      accessibilityRole="link"
-      style={styles.link}
-    >
+    <RowPressable hold onPress={onPress} accessibilityRole="link" style={styles.link}>
       {!first ? <View style={[styles.linkLine, { backgroundColor: c.line }]} /> : null}
       <View style={[styles.tile, { backgroundColor: c.sunken }]}>
         <Icon name={icon} size={16} color={c.muted} />

@@ -430,6 +430,7 @@ function Arrivals({ imp }: { imp: AgentImport }) {
       </Text>
       {arrived.map((a) => (
         <RowPressable
+          radius={8}
           hold
           key={a.id}
           onPress={() => router.push(`/agent/${a.id}`)}

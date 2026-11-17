@@ -390,11 +390,7 @@ function Writer({
               style={[styles.suggest, { backgroundColor: c.raised, borderColor: c.line2 }]}
             >
               {suggestions.map((p) => (
-                <RowPressable
-                  key={p.id}
-                  onPress={() => pick(p.title)}
-                  style={styles.suggestRow}
-                >
+                <RowPressable key={p.id} onPress={() => pick(p.title)} style={styles.suggestRow}>
                   <Tile icon="file" size={30} />
                   <View style={styles.grow}>
                     <Text variant="callout" numberOfLines={1}>

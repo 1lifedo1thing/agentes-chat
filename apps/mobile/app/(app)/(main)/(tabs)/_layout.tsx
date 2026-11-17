@@ -39,7 +39,12 @@ const TABS: {
     teamOnly: true,
   },
   { name: "agents", glyph: "agents", label: "mobile.tabs.agents" },
-  { name: "activity", glyph: "activity", label: "mobile.tabs.activity", sf: { default: "bell", selected: "bell.fill" } },
+  {
+    name: "activity",
+    glyph: "activity",
+    label: "mobile.tabs.activity",
+    sf: { default: "bell", selected: "bell.fill" },
+  },
   // The search role: on iOS 26 the round button apart at the bar's end (like Music); a plain tab on Android. The
   // magnifier never fills, as the system's search tab.
   {

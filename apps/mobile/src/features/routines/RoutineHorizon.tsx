@@ -208,6 +208,7 @@ function Lane({
     : t("routines.horizon.laneNone", { name });
   return (
     <RowPressable
+      radius={6}
       hold
       onPress={target ? () => open(target) : undefined}
       accessibilityRole="button"

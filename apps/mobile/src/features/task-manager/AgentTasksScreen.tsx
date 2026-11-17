@@ -197,12 +197,7 @@ function ActionRow({
 }) {
   const c = useColors();
   return (
-    <RowPressable
-      hold
-      onPress={onPress}
-      accessibilityRole="button"
-      style={styles.action}
-    >
+    <RowPressable hold onPress={onPress} accessibilityRole="button" style={styles.action}>
       {divider ? <View style={[styles.divider, { backgroundColor: c.line2 }]} /> : null}
       <Text variant="body" style={[styles.grow, danger ? { color: c.danger } : null]} numberOfLines={1}>
         {label}

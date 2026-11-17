@@ -1,7 +1,7 @@
 import { NavigationContext } from "expo-router/react-navigation";
 import { type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Pressable, type PressableProps, type StyleProp, StyleSheet, type ViewStyle } from "react-native";
-import Animated, { cubicBezier } from "react-native-reanimated";
+import Animated, { type CSSTransitionProperties, cubicBezier } from "react-native-reanimated";
 import { ROW_PRESS_DELAY } from "./PressScale";
 import { useTheme } from "./theme";
 
@@ -14,13 +14,14 @@ const EASE_OUT = cubicBezier(0.23, 1, 0.32, 1);
 /** How long a held row waits for the screen it opens before it goes out anyway (a tap that opened nothing). */
 const HOLD_WAIT = 450;
 
-const LIT = { opacity: 1, transitionProperty: "opacity", transitionDuration: 0 } as const;
-const OUT = {
+type Fade = Pick<ViewStyle, "opacity"> & CSSTransitionProperties<ViewStyle>;
+const LIT: Fade = { opacity: 1, transitionProperty: "opacity", transitionDuration: 0 };
+const OUT: Fade = {
   opacity: 0,
   transitionProperty: "opacity",
   transitionDuration: ROW_OUT_MS,
   transitionTimingFunction: EASE_OUT,
-} as const;
+};
 
 type Held = "no" | "waiting" | "away";
 
@@ -35,6 +36,8 @@ export interface RowPressableProps extends Omit<PressableProps, "style" | "child
   light?: boolean;
   /** The lit color where the row doesn't sit on a list's card (default the system's `rowLit`). */
   litColor?: string;
+  /** The row's own corner, when it is a rounded box of its own: the light keeps it. */
+  radius?: number;
   children?: ReactNode;
 }
 
@@ -49,6 +52,7 @@ export function RowPressable({
   hold = false,
   light = true,
   litColor,
+  radius,
   children,
   onPressIn,
   onPressOut,
@@ -89,7 +93,6 @@ export function RowPressable({
   }, [hold, navigation, release, stopWaiting]);
   useEffect(() => stopWaiting, [stopWaiting]);
 
-  const radius = StyleSheet.flatten(style)?.borderRadius;
   return (
     <Pressable
       unstable_pressDelay={unstable_pressDelay}

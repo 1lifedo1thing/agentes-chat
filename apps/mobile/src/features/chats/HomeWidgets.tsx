@@ -76,11 +76,8 @@ export function HomeWidgets({ collapsed, onToggle }: { collapsed: boolean; onTog
           // A full-width row: it lights a beat after the finger lands, as the list's rows do.
           onPress={add}
           accessibilityRole="button"
-          style={({ pressed }) => [
-            styles.empty,
-            { borderColor: c.line2 ?? c.line },
-            pressed && { backgroundColor: c.sunken },
-          ]}
+          radius={EMPTY_RADIUS}
+          style={[styles.empty, { borderColor: c.line2 ?? c.line }]}
         >
           <Icon name="plus" size={18} color={c.muted} />
           <Text variant="subhead" tone="muted" style={styles.medium}>
@@ -94,6 +91,9 @@ export function HomeWidgets({ collapsed, onToggle }: { collapsed: boolean; onTog
 
 /** Between the cards: the lists' 12. */
 const GAP = 12;
+
+/** The "add a widget" box's corner; its press light keeps it. */
+const EMPTY_RADIUS = 20;
 
 const styles = StyleSheet.create({
   medium: { fontWeight: "500" },
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginHorizontal: 16,
     paddingVertical: 20,
-    borderRadius: 20,
+    borderRadius: EMPTY_RADIUS,
     borderWidth: 1.5,
     borderStyle: "dashed",
   },

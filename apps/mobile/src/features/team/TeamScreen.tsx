@@ -318,10 +318,7 @@ function OrgChart({
                   onPress={() => router.push(`/agent/${a.id}`)}
                   accessibilityRole="button"
                   accessibilityLabel={[a.name, a.role].filter(Boolean).join(", ")}
-                  style={[
-                    styles.node,
-                    { paddingLeft: depth * INDENT },
-                  ]}
+                  style={[styles.node, { paddingLeft: depth * INDENT }]}
                 >
                   {i > 0 ? <View style={[styles.nodeLine, stem, { left: depth * INDENT + AGENT + 8 }]} /> : null}
                   <AgentFace agentId={a.id} size={AGENT} mode={a.busy ? "run" : "idle"} live={false} />
