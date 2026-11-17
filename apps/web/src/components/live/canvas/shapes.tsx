@@ -1,6 +1,6 @@
 import type { ImageFailure } from "@agenteschat/client";
 import { useArtifact } from "@agenteschat/client";
-import type { ShapeView } from "@agenteschat/live/canvas";
+import { arrowHeadPoints, type Point, routeArrow, type ShapeView, strokePath } from "@agenteschat/live/canvas";
 import { Button, Icon, PixelSpinner, Tip } from "@agenteschat/ui";
 import { type CSSProperties, memo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,15 +11,15 @@ import { useOrg } from "@/components/org-context";
 import { colorOf, ImageSky } from "@/components/Sky";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useCanvasEnv } from "./context";
-import { arrowHead } from "./edit-math";
-import { fillStyle } from "./palette";
+import { fillStyle, strokeStyle } from "./palette";
 import { CanvasRich } from "./text";
 
 /**
  * The shapes of a canvas as the plane draws them (ADR 0194 §2, ADR 0195), each in world units inside the plane's
- * moving layer: pictures, notes, text, frames, shapes with their label, a Drive file's card, an agent's page (a picture
- * of it until someone presses Interact), and the placeholder of a picture being made. Arrows are drawn apart
- * (`ArrowShape`), from their ends.
+ * moving layer: pictures (the part a crop shows), notes, text, frames, shapes with their label and border, pen
+ * strokes, a Drive file's card, an agent's page (a picture of it until someone presses Interact), and the placeholder
+ * of a picture being made. Arrows and lines are drawn apart (`ArrowShape`), from their ends. Hidden shapes (the layers'
+ * eye) aren't drawn.
  */
 
 export interface ShapeBodyProps {
@@ -44,6 +44,7 @@ function boxStyle(s: ShapeView): CSSProperties {
 }
 
 export const ShapeBody = memo(function ShapeBody({ shape, editing, interacting, fresh }: ShapeBodyProps) {
+  if (shape.hidden) return null;
   return (
     <div
       className="cnv-shape"
@@ -86,6 +87,8 @@ function ShapeInside({ shape, editing, interacting, fresh }: ShapeBodyProps) {
       return <div className="cnv-frame" style={shape.fill ? fillStyle(shape.fill) : undefined} />;
     case "shape":
       return <GeometricShape shape={shape} editing={editing} />;
+    case "draw":
+      return <DrawShape shape={shape} />;
     case "html":
       return <PageShape shape={shape} interacting={interacting} />;
     case "file":
@@ -103,8 +106,18 @@ function ImageShape({ shape, fresh }: { shape: ShapeView; fresh: boolean }) {
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
   if (!shape.asset) return <div className="cnv-img cnv-img--missing" />;
   const alt = shape.alt ?? shape.gen?.prompt ?? t("live.canvas.kinds.image");
+  const crop = shape.crop;
+  // A crop shows that part of the picture filling the box: the picture scaled up and moved so the part sits in it.
+  const cropped: CSSProperties | undefined = crop
+    ? {
+        width: `${100 / crop.w}%`,
+        height: `${100 / crop.h}%`,
+        left: `${(-crop.x / crop.w) * 100}%`,
+        top: `${(-crop.y / crop.h) * 100}%`,
+      }
+    : undefined;
   return (
-    <div className="cnv-img" data-state={state}>
+    <div className="cnv-img" data-state={state} data-crop={crop ? true : undefined}>
       {state === "failed" ? (
         <span className="cnv-img__failed small muted ac-iconline">
           <Icon name="image" size={16} />
@@ -117,6 +130,7 @@ function ImageShape({ shape, fresh }: { shape: ShapeView; fresh: boolean }) {
           draggable={false}
           decoding="async"
           data-fresh={fresh || undefined}
+          style={cropped}
           onLoad={() => setState("ready")}
           onError={() => setState("failed")}
         />
@@ -125,28 +139,79 @@ function ImageShape({ shape, fresh }: { shape: ShapeView; fresh: boolean }) {
   );
 }
 
-/** A rectangle, an ellipse or a diamond, with its label in the middle. */
+/** A star's corners on a 100 × 100 square (stretched to the box). */
+const STAR = [
+  [50, 3],
+  [62, 36],
+  [97, 37],
+  [69, 58],
+  [79, 93],
+  [50, 72],
+  [21, 93],
+  [31, 58],
+  [3, 37],
+  [38, 36],
+] as const;
+
+/** A rectangle's corners when it names none, in world units. */
+const RECT_RADIUS = 8;
+
+/** A form's outline in its box (world units, `w` × `h`), a unit in from the edge so its border isn't cut. */
+function geoOutline(kind: string, w: number, h: number, radius: number | undefined) {
+  switch (kind) {
+    case "ellipse":
+      return <ellipse cx={w / 2} cy={h / 2} rx={Math.max(0, w / 2 - 1)} ry={Math.max(0, h / 2 - 1)} />;
+    case "diamond":
+      return <polygon points={`${w / 2},1 ${w - 1},${h / 2} ${w / 2},${h - 1} 1,${h / 2}`} />;
+    case "triangle":
+      return <polygon points={`${w / 2},1 ${w - 1},${h - 1} 1,${h - 1}`} />;
+    case "star":
+      return <polygon points={STAR.map(([x, y]) => `${(x / 100) * w},${(y / 100) * h}`).join(" ")} />;
+    default: {
+      const r = Math.max(0, Math.min(radius ?? RECT_RADIUS, w / 2 - 1, h / 2 - 1));
+      return <rect x={1} y={1} width={Math.max(0, w - 2)} height={Math.max(0, h - 2)} rx={r} />;
+    }
+  }
+}
+
+/** A rectangle, an ellipse, a diamond, a triangle or a star, with its border and its label in the middle. */
 function GeometricShape({ shape, editing }: { shape: ShapeView; editing: boolean }) {
   const kind = shape.kind ?? "rect";
   const fill = shape.fill && shape.fill !== "none" ? fillStyle(shape.fill) : undefined;
+  const stroke = strokeStyle(shape.stroke, shape.strokeWidth);
+  const w = Math.max(1, shape.w);
+  const h = Math.max(1, shape.h);
   return (
     <div
       className="cnv-geo"
       data-kind={kind}
       data-fill={shape.fill ? (shape.fill === "none" ? "none" : "custom") : undefined}
-      style={fill}
+      data-stroke={shape.stroke ? (shape.stroke === "none" ? "none" : "custom") : undefined}
+      data-stroke-width={shape.strokeWidth ? true : undefined}
+      style={fill || stroke ? { ...fill, ...stroke } : undefined}
     >
-      <svg className="cnv-geo__svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        {kind === "ellipse" ? (
-          <ellipse cx="50" cy="50" rx="49" ry="49" vectorEffect="non-scaling-stroke" />
-        ) : kind === "diamond" ? (
-          <polygon points="50,1 99,50 50,99 1,50" vectorEffect="non-scaling-stroke" />
-        ) : (
-          <rect x="1" y="1" width="98" height="98" rx="4" vectorEffect="non-scaling-stroke" />
-        )}
+      <svg className="cnv-geo__svg" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" aria-hidden="true">
+        {geoOutline(kind, w, h, shape.radius)}
       </svg>
       <CanvasRich shape={shape} editing={editing} className="cnv-geo__text" />
     </div>
+  );
+}
+
+/** A pen stroke (its points from its box's corner), the marker's wide and see-through. */
+function DrawShape({ shape }: { shape: ShapeView }) {
+  if (!shape.points?.length) return null;
+  return (
+    <svg
+      className="cnv-draw"
+      data-tool={shape.tool ?? "pen"}
+      width={Math.max(1, shape.w)}
+      height={Math.max(1, shape.h)}
+      style={strokeStyle(shape.stroke, shape.strokeWidth)}
+      aria-hidden="true"
+    >
+      <path d={strokePath(shape.points)} />
+    </svg>
   );
 }
 
@@ -274,9 +339,18 @@ export interface ArrowLine {
 /** Room around an arrow's line inside its own drawing (its head and its stroke). */
 const ARROW_PAD = 24;
 
+/** How an arrow looks past its line: its route, its heads (a line has none), its color and width. */
+export type ArrowLook = Pick<ShapeView, "route" | "heads" | "stroke" | "strokeWidth">;
+
+const headPoints = (tip: Point, dir: Point, size: number) =>
+  arrowHeadPoints(tip, dir, size)
+    .map((p) => `${p.x},${p.y}`)
+    .join(" ");
+
 /**
  * An arrow from its line (worked out by the plane from its ends: bound ends follow their shapes), drawn in its own
- * small SVG so it stacks among the shapes by its stacking key; its label on a plate in the middle.
+ * small SVG so it stacks among the shapes by its stacking key: straight, curved or in right angles, with a head at
+ * either end or none (a line); its label on a plate in the middle of its path.
  */
 export const ArrowShape = memo(function ArrowShape({
   id,
@@ -284,12 +358,14 @@ export const ArrowShape = memo(function ArrowShape({
   dashed,
   label,
   editingLabel,
+  look,
 }: {
   id: string;
   line: ArrowLine;
   dashed: boolean;
   label: string | undefined;
   editingLabel: boolean;
+  look?: ArrowLook;
 }) {
   const x = Math.min(line.x1, line.x2) - ARROW_PAD;
   const y = Math.min(line.y1, line.y2) - ARROW_PAD;
@@ -297,25 +373,31 @@ export const ArrowShape = memo(function ArrowShape({
   const h = Math.abs(line.y2 - line.y1) + 2 * ARROW_PAD;
   const local = { x1: line.x1 - x, y1: line.y1 - y, x2: line.x2 - x, y2: line.y2 - y };
   const len = Math.hypot(local.x2 - local.x1, local.y2 - local.y1);
-  // The line stops at the head's base, so a thick stroke doesn't poke through its tip.
-  const head = 14;
-  const k = len > head ? (len - head * 0.8) / len : 0;
-  const end = { x: local.x1 + (local.x2 - local.x1) * k, y: local.y1 + (local.y2 - local.y1) * k };
+  const width = look?.strokeWidth ?? 2;
+  const head = 12 + width;
+  const atStart = look?.heads?.start === "arrow" && len > 1;
+  const atEnd = (look?.heads?.end ?? "arrow") === "arrow" && len > 1;
+  // The line stops at a head's base, so a thick stroke doesn't poke through its tip.
+  const routed = routeArrow(local, look?.route ?? "straight", {
+    start: atStart ? head * 0.8 : 0,
+    end: atEnd ? head * 0.8 : 0,
+  });
+  const backwards = { x: -routed.startDir.x, y: -routed.startDir.y };
   return (
-    <div className="cnv-arrow" data-shape={id} data-type="arrow" style={{ left: x, top: y, width: w, height: h }}>
+    <div
+      className="cnv-arrow"
+      data-shape={id}
+      data-type="arrow"
+      data-stroke={look?.stroke && look.stroke !== "none" ? "custom" : undefined}
+      style={{ left: x, top: y, width: w, height: h, ...strokeStyle(look?.stroke, look?.strokeWidth) }}
+    >
       <svg className="cnv-arrow__svg" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
-        <line
-          x1={local.x1}
-          y1={local.y1}
-          x2={end.x}
-          y2={end.y}
-          strokeDasharray={dashed ? "8 7" : undefined}
-          className="cnv-arrow__line"
-        />
-        {len > 1 && <polygon className="cnv-arrow__head" points={arrowHead(local, head)} />}
+        <path d={routed.d} strokeDasharray={dashed ? "8 7" : undefined} className="cnv-arrow__line" />
+        {atEnd && <polygon className="cnv-arrow__head" points={headPoints(routed.end, routed.endDir, head)} />}
+        {atStart && <polygon className="cnv-arrow__head" points={headPoints(routed.start, backwards, head)} />}
       </svg>
       {label && !editingLabel && (
-        <span className="cnv-arrow__label" style={{ left: (local.x1 + local.x2) / 2, top: (local.y1 + local.y2) / 2 }}>
+        <span className="cnv-arrow__label" style={{ left: routed.mid.x, top: routed.mid.y }}>
           {label}
         </span>
       )}

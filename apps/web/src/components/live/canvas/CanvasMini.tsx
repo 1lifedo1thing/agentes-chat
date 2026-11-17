@@ -1,15 +1,16 @@
 import { useApi } from "@agenteschat/client";
 import type { CanvasPreview, CanvasPreviewShape, NoteColor } from "@agenteschat/live/canvas";
-import { NOTE_COLORS } from "@agenteschat/live/canvas";
+import { NOTE_COLORS, routeArrow, strokePath } from "@agenteschat/live/canvas";
 import { useDarkTheme } from "@agenteschat/ui";
 import { useOrgIfAny } from "@/components/org-context";
-import { SOFT } from "./palette";
+import { isInk, SOFT } from "./palette";
 import "./canvas.css";
 
 /**
  * A canvas drawn small, for its cards (the Drive, a message, Ask an agent's context) from the preview the server
  * keeps (ADR 0194 §7: the bounds and up to 40 of the biggest shapes): frames, notes in their color, pictures (when
- * the card says which file they belong to), text as lines, shapes, arrows. Decoration: the card's words name it.
+ * the card says which file they belong to, the part a crop shows), text as lines, shapes in their form, arrows and
+ * lines along their route, pen strokes. Decoration: the card's words name it.
  */
 export function CanvasMini({ preview, fileId }: { preview: CanvasPreview; fileId?: string }) {
   const api = useApi();
@@ -45,6 +46,31 @@ function noteFill(color: string | undefined, dark: boolean): string {
   return dark ? SOFT[name].dark : SOFT[name].light;
 }
 
+/** A star's corners on a 100 × 100 square. */
+const STAR = [50, 3, 62, 36, 97, 37, 69, 58, 79, 93, 50, 72, 21, 93, 31, 58, 3, 37, 38, 36];
+
+/** A form's corners in world units (`null`: a rectangle or an ellipse, drawn as themselves). */
+function formPoints(s: CanvasPreviewShape): string | null {
+  const at = (fx: number, fy: number) => `${s.x + fx * s.w},${s.y + fy * s.h}`;
+  switch (s.kind) {
+    case "diamond":
+      return [at(0.5, 0), at(1, 0.5), at(0.5, 1), at(0, 0.5)].join(" ");
+    case "triangle":
+      return [at(0.5, 0), at(1, 1), at(0, 1)].join(" ");
+    case "star": {
+      const out: string[] = [];
+      for (let i = 0; i < STAR.length; i += 2) out.push(at((STAR[i] ?? 0) / 100, (STAR[i + 1] ?? 0) / 100));
+      return out.join(" ");
+    }
+    default:
+      return null;
+  }
+}
+
+/** A line's own color, unless it's the ink on the dark theme (drawn by the theme's ink then). */
+const lineColor = (stroke: string | undefined, dark: boolean) =>
+  stroke && stroke !== "none" && !(dark && isInk(stroke)) ? { stroke } : undefined;
+
 function MiniShape({
   shape: s,
   dark,
@@ -74,6 +100,22 @@ function MiniShape({
     case "note":
       return <rect x={s.x} y={s.y} width={s.w} height={s.h} rx={6} fill={noteFill(s.color, dark)} transform={turn} />;
     case "image":
+      if (url && s.crop) {
+        // The picture stretched over a unit square, of which the crop's part fills the box.
+        return (
+          <svg
+            x={s.x}
+            y={s.y}
+            width={s.w}
+            height={s.h}
+            viewBox={`${s.crop.x} ${s.crop.y} ${s.crop.w} ${s.crop.h}`}
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <image href={url} x={0} y={0} width={1} height={1} preserveAspectRatio="none" />
+          </svg>
+        );
+      }
       return url ? (
         <image
           href={url}
@@ -112,17 +154,53 @@ function MiniShape({
     }
     case "arrow":
       return s.line ? (
-        <line
+        <path
           className="cnv-mini__arrow"
-          x1={s.line.x1}
-          y1={s.line.y1}
-          x2={s.line.x2}
-          y2={s.line.y2}
+          d={routeArrow(s.line, s.route ?? "straight").d}
+          style={lineColor(s.stroke, dark)}
           vectorEffect="non-scaling-stroke"
         />
       ) : null;
-    case "shape":
-      return (
+    case "draw":
+      return s.points?.length ? (
+        <path
+          className="cnv-mini__draw"
+          data-tool={s.tool ?? "pen"}
+          d={strokePath(s.points)}
+          transform={`${turn ? `${turn} ` : ""}translate(${s.x} ${s.y})`}
+          style={lineColor(s.stroke, dark)}
+          vectorEffect="non-scaling-stroke"
+        />
+      ) : null;
+    case "shape": {
+      const look = {
+        ...(s.color ? { fill: dark ? undefined : s.color === "none" ? "none" : s.color } : {}),
+        ...lineColor(s.stroke, dark),
+      };
+      const points = formPoints(s);
+      if (points) {
+        return (
+          <polygon
+            className="cnv-mini__shape"
+            points={points}
+            style={look}
+            transform={turn}
+            vectorEffect="non-scaling-stroke"
+          />
+        );
+      }
+      return s.kind === "ellipse" ? (
+        <ellipse
+          className="cnv-mini__shape"
+          cx={s.x + s.w / 2}
+          cy={s.y + s.h / 2}
+          rx={s.w / 2}
+          ry={s.h / 2}
+          style={look}
+          transform={turn}
+          vectorEffect="non-scaling-stroke"
+        />
+      ) : (
         <rect
           className="cnv-mini__shape"
           x={s.x}
@@ -130,11 +208,12 @@ function MiniShape({
           width={s.w}
           height={s.h}
           rx={4}
-          style={s.color ? { fill: dark ? undefined : s.color } : undefined}
+          style={look}
           transform={turn}
           vectorEffect="non-scaling-stroke"
         />
       );
+    }
     default:
       return (
         <rect

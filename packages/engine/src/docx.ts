@@ -27,10 +27,10 @@ export function markdownToDocx(markdown: string, options: { title?: string } = {
   return zip([
     ["[Content_Types].xml", CONTENT_TYPES],
     ["_rels/.rels", ROOT_RELS],
-    ["docProps/core.xml", core(options.title ?? "Documento")],
+    ["docProps/core.xml", docxCore(options.title ?? "Documento")],
     ["word/document.xml", document],
     ["word/_rels/document.xml.rels", rels],
-    ["word/styles.xml", STYLES],
+    ["word/styles.xml", DOCX_STYLES],
     ["word/numbering.xml", numbering(list)],
   ]);
 }
@@ -166,11 +166,13 @@ const CONTENT_TYPES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 const ROOT_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`;
 
-const core = (title: string) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+/** The package's properties (its title); shared with the live documents' writer (`office/docx-write.ts`). */
+export const docxCore = (title: string) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${esc(title)}</dc:title><dc:creator>agentes.chat</dc:creator></cp:coreProperties>`;
 
 const style = (id: string, name: string, pPr: string, rPr: string, basedOn = "Normal") =>
   `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="${basedOn}"/><w:qFormat/><w:pPr>${pPr}</w:pPr><w:rPr>${rPr}</w:rPr></w:style>`;
 
-const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+/** Paragraph and character styles; shared with the live documents' writer (`office/docx-write.ts`). */
+export const DOCX_STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="${W}"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Onest" w:hAnsi="Onest" w:eastAsia="Onest" w:cs="Onest"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="140" w:line="300" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${style("Title", "Title", '<w:spacing w:after="240"/>', '<w:b/><w:sz w:val="44"/>')}${style("Heading1", "heading 1", '<w:keepNext/><w:spacing w:before="320" w:after="120"/><w:outlineLvl w:val="0"/>', '<w:b/><w:sz w:val="36"/>')}${style("Heading2", "heading 2", '<w:keepNext/><w:spacing w:before="280" w:after="100"/><w:outlineLvl w:val="1"/>', '<w:b/><w:sz w:val="30"/>')}${style("Heading3", "heading 3", '<w:keepNext/><w:spacing w:before="240" w:after="80"/><w:outlineLvl w:val="2"/>', '<w:b/><w:sz w:val="25"/>')}${style("Quote", "Quote", '<w:ind w:left="567"/><w:pBdr><w:left w:val="single" w:sz="12" w:space="8" w:color="BFBFBF"/></w:pBdr>', '<w:color w:val="555555"/>')}${style("ListParagraph", "List Paragraph", '<w:spacing w:after="60"/><w:ind w:left="720"/>', "")}${style("Code", "Code", '<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>', '<w:rFonts w:ascii="Martian Mono" w:hAnsi="Martian Mono" w:cs="Martian Mono"/><w:sz w:val="19"/>')}<w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="1F5FBF"/><w:u w:val="single"/></w:rPr></w:style></w:styles>`;

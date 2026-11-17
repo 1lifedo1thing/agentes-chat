@@ -189,7 +189,8 @@ export function fileName(title: string, content: ArtifactContent | { kind: Artif
       .replace(/^-|-$/g, "")
       .toLowerCase() || "arquivo";
   const ext = {
-    document: "md",
+    // A document is a live file (ADR 0198): it downloads as Word unless another format is asked for.
+    document: "docx",
     table,
     diff: "patch",
     diagram: "mmd",

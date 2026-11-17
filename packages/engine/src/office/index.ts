@@ -8,11 +8,14 @@ import { readXlsx } from "./xlsx-read";
 
 /**
  * Office files on the server (ADR 0196): uploaded workbooks, decks and Word documents read into what the apps draw
- * (`WorkbookData`, `DeckData`, clean HTML), and live files written out as `.xlsx`, `.csv`, `.pptx` and PDF.
+ * (`WorkbookData`, `DeckData`, clean HTML, a live document's blocks), and live files written out as `.xlsx`, `.csv`,
+ * `.pptx`, `.docx` and PDF.
  */
 
 export { readCsv, writeCsv } from "./csv";
+export { type DocxDocument, type DocxDocumentPicture, docxToDocument } from "./docx-document";
 export { docxToHtml, docxToMarkdown } from "./docx-html";
+export { type DocxMediaReader, writeDocx } from "./docx-write";
 export {
   isOfficeError,
   OFFICE_LIMITS,

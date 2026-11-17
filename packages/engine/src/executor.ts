@@ -1925,8 +1925,9 @@ async function executeRunInner(
           const [recent, kept, live] = await Promise.all([
             recentMessages(),
             keptToolGroups(db, run, granted).catch(() => [] as string[]),
-            // Asked from inside a live file, or one attached: its own tools come with it (ADR 0194 §6).
-            carriesLiveFile(db, run.orgId, trigger?.meta).catch(() => false),
+            // Asked from inside a live file, one attached, or in a file's own conversation: its own tools come with
+            // it (ADR 0194 §6, ADR 0197).
+            carriesLiveFile(db, run.orgId, trigger?.meta, run.channelId).catch(() => false),
           ]);
           const keep = live ? [...kept, LIVE_FILES_GROUP] : kept;
           const choice = await chooseToolGroups(judge, {

@@ -4,6 +4,7 @@ import {
   awarenessUpdateMessage,
   isLivePing,
   LIVE_PONG,
+  LIVE_PONG_UNSAVED,
   type LiveControl,
   type LiveErrorCode,
   type LiveMode,
@@ -347,7 +348,8 @@ export class FakeLiveServer {
       if (data.charCodeAt(0) === 123) {
         const ping = isLivePing(data);
         socket.frames.push(ping ? { type: "ping" } : { type: "text", text: data });
-        if (ping && this.options.pong) this.queue(socket, LIVE_PONG);
+        // Still storing what came before it (`savedDelayMs`): the pong says so, as the real server's does.
+        if (ping && this.options.pong) this.queue(socket, this.storing.has(socket) ? LIVE_PONG_UNSAVED : LIVE_PONG);
         return;
       }
       if (!socket.text) return this.control(socket, { type: "live.error", code: "invalid" });
@@ -464,7 +466,10 @@ export class FakeLiveServer {
     socket.onclose?.({ code: 1006 });
   }
 
-  /** A socket went (its socket calls this): its presence goes for everyone else. */
+  /**
+   * A socket went (its socket calls this): its presence goes for everyone else, at the clock it last had, as the real
+   * server removes it (y-protocols' `removeAwarenessStates` keeps a remote client's clock).
+   */
   left(socket: FakeLiveSocket) {
     const file = this.files.get(socket.fileId);
     if (!file) return;
@@ -472,7 +477,7 @@ export class FakeLiveServer {
     for (const [clientId, p] of [...file.peers]) {
       if (p.socket !== socket) continue;
       file.peers.delete(clientId);
-      gone.push({ clientId, clock: p.clock + 1, state: null });
+      gone.push({ clientId, clock: p.clock, state: null });
     }
     if (gone.length === 0) return;
     const message = awarenessUpdateMessage(writeAwarenessUpdate(gone));

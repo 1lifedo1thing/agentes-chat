@@ -180,10 +180,11 @@ describe("colors", () => {
 });
 
 describe("kinds, limits and origins", () => {
-  test("the three kinds", () => {
-    expect(LIVE_KINDS).toEqual(["spreadsheet", "slides", "canvas"]);
+  test("the four kinds", () => {
+    expect(LIVE_KINDS).toEqual(["spreadsheet", "slides", "canvas", "document"]);
     expect(isLiveKind("slides")).toBe(true);
-    expect(isLiveKind("document")).toBe(false);
+    expect(isLiveKind("document")).toBe(true);
+    expect(isLiveKind("deck")).toBe(false);
     expect(LIVE_LIMITS.awarenessBytes).toBe(4096);
     expect(LIVE_LIMITS.slides.elements).toBe(200);
   });

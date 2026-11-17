@@ -465,7 +465,7 @@ const ManagedTask = z
         from: z
           .object({
             channelId: z.uuid(),
-            channelKind: z.enum(["channel", "dm", "task"]),
+            channelKind: z.enum(["channel", "dm", "task", "file"]),
             channelName: z.string().nullable(),
             threadId: z.uuid().nullable(),
             messageId: z.uuid().nullable(),

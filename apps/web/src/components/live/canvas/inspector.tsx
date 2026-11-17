@@ -8,18 +8,15 @@ import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 
 /**
- * A chosen picture's side column (ADR 0195): the picture, how it was made (its prompt, model, who asked and when, the
- * pictures it started from), and what to do with it: Variations and Edit with AI (another request, with this picture
- * as the reference), Download, Copy image, Open (full size, with zoom). Beside the plane, never over it, so the
- * picture stays in sight; on a narrow window it covers the plane's right side.
+ * A picture's details (ADR 0195), opened from its bar's ⋯: the picture, how it was made (its prompt, model, who asked
+ * and when, the pictures it started from), and Download, Copy image, Open (full size, with zoom). Variations and
+ * asking about it are on the picture's bar, through the file's conversation (ADR 0197). Beside the plane, never over
+ * it, so the picture stays in sight; on a narrow window it covers the plane's right side.
  */
 export function ImageInspector({
   shape,
   readOnly,
-  canGenerate,
   assetUrl,
-  onVariations,
-  onEdit,
   onDownload,
   onCopy,
   onOpen,
@@ -27,11 +24,7 @@ export function ImageInspector({
 }: {
   shape: ShapeView;
   readOnly: boolean;
-  /** An image model is there (Variations and Edit with AI need one that takes references). */
-  canGenerate: boolean;
   assetUrl(assetId: string): string;
-  onVariations(): void;
-  onEdit(): void;
   onDownload(): void;
   onCopy(): void;
   onOpen(): void;
@@ -49,7 +42,6 @@ export function ImageInspector({
       : (dir.memberById.get(by.id)?.name ?? t("channel.unknownPerson"))
     : "";
   const model = gen ? (models.data?.find((m) => m.id === gen.model)?.label ?? gen.model) : null;
-  const refsOk = canGenerate && (models.data?.some((m) => m.refs) ?? false);
   return (
     <aside className="cnv-insp" aria-label={t("live.canvas.inspector.title")}>
       <header className="cnv-insp__head">
@@ -120,18 +112,6 @@ export function ImageInspector({
               })}
             </p>
           )
-        )}
-        {!readOnly && refsOk && (
-          <div className="cnv-insp__ai">
-            {gen && (
-              <Button variant="agent" size="sm" icon="sparkle" onClick={onVariations}>
-                {t("live.canvas.inspector.variations")}
-              </Button>
-            )}
-            <Button size="sm" icon="edit" onClick={onEdit}>
-              {t("live.canvas.inspector.edit")}
-            </Button>
-          </div>
         )}
         <div className="cnv-insp__acts">
           <Button size="sm" icon="download" onClick={onDownload}>

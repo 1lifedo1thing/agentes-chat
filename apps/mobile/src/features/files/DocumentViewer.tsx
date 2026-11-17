@@ -1,4 +1,4 @@
-import { type ArtifactDetail, useApi, useArtifact } from "@agenteschat/client";
+import { type ArtifactDetail, isLiveFileKind, useApi, useArtifact } from "@agenteschat/client";
 import { formatJson, highlightCode } from "@agenteschat/client/lib/code";
 import { isJsonFile } from "@agenteschat/client/lib/files";
 import { isolatedPage } from "@agenteschat/client/lib/isolated-page";
@@ -9,10 +9,12 @@ import { Platform, Text as RNText, ScrollView, StyleSheet, View } from "react-na
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { Button, EmptyState, type HeaderAction, type HeaderMenuItem, SCREEN_X, useToast } from "@/ui";
+import { router } from "@/ui/navigation";
 import { ISOLATED_WEB_VIEW, STORAGE_STANDINS } from "../blocks/logic";
 import { CodeText, RawToggle } from "../chat/CodeCard";
 import { MessageText } from "../chat/MessageText";
 import { DeckPage, EditAs, SheetPage, useOfficeHtml } from "../live-files/office/OfficePages";
+import { liveRoute } from "../live-files/routes";
 import { chooseAction } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
@@ -35,7 +37,16 @@ import { fileText, useRemoteFile } from "./source";
  * Pictures and videos open straight in the picture viewer (`openFile`), live files on their own screens (ADR 0194);
  * one reached here anyway (a file's link that didn't say what it was) goes on there.
  */
-export function DocumentViewer({ id, version }: { id: string; version?: number }) {
+export function DocumentViewer({
+  id,
+  version,
+  focusId = null,
+}: {
+  id: string;
+  version?: number;
+  /** A live file's conversation message to open at (`?m=`, ADR 0197), handed on to the file's own screen. */
+  focusId?: string | null;
+}) {
   const { t } = useTranslation();
   const orgId = useOrgId();
   const dir = useDirectory();
@@ -55,8 +66,10 @@ export function DocumentViewer({ id, version }: { id: string; version?: number }
   // screen gives way to the right one.
   const media = info?.view === "image" || info?.view === "video" || info?.view === "live";
   useEffect(() => {
-    if (media && detail) openFile({ id: detail.id, detail }, undefined, { replace: true });
-  }, [media, detail]);
+    if (!media || !detail) return;
+    if (isLiveFileKind(detail.kind)) router.replace(liveRoute(detail.kind, detail.id, focusId));
+    else openFile({ id: detail.id, detail }, undefined, { replace: true });
+  }, [media, detail, focusId]);
 
   const copy = () => {
     if (text.data === undefined) return;

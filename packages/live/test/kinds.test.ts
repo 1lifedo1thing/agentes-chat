@@ -59,7 +59,7 @@ describe("a new live document", () => {
     mine.on("afterTransaction", (tr: Y.Transaction) => seen.push(tr.origin));
     initLiveDoc(mine, "canvas", { origin: LOCAL });
     expect(seen).toEqual([LOCAL]);
-    expect(() => initLiveDoc(new Y.Doc(), "document" as never)).toThrow(LiveEditError);
+    expect(() => initLiveDoc(new Y.Doc(), "board" as never)).toThrow(LiveEditError);
   });
 });
 
@@ -94,6 +94,17 @@ describe("previews, text and rules of shape for every kind", () => {
     expect(liveText(board)).toBe("Idea");
   });
 
+  test("a document", () => {
+    const doc = make("document");
+    expect(live.readDocument(doc)).toHaveLength(1);
+    live.writeDocument(doc, live.markdownToBlocks("# Plan\n\nShip it"), LOCAL);
+    const preview = livePreview(doc) as live.DocumentPreview;
+    expect(preview.count).toBe(2);
+    expect(preview.blocks[0]).toMatchObject({ type: "heading", level: 1 });
+    expect(liveText(doc)).toBe("Plan\nShip it");
+    expect(validateLive(doc)).toEqual([]);
+  });
+
   test("a document of no known kind", () => {
     const doc = new Y.Doc();
     expect(() => livePreview(doc)).toThrow(LiveEditError);
@@ -108,7 +119,7 @@ describe("previews, text and rules of shape for every kind", () => {
 });
 
 describe("restoring a version, whatever the kind", () => {
-  test.each(["spreadsheet", "slides", "canvas"] as const)("%s", (kind) => {
+  test.each(["spreadsheet", "slides", "canvas", "document"] as const)("%s", (kind) => {
     const doc = make(kind);
     const snapshot = Y.encodeStateAsUpdate(doc);
     if (kind === "spreadsheet") {
@@ -116,6 +127,8 @@ describe("restoring a version, whatever the kind", () => {
       live.setInput(doc, { sheet, row: 2, col: 2 }, "changed", live.sheetLocale("en-US"), LOCAL);
     } else if (kind === "slides") {
       live.addSlide(doc, { title: "extra" }, LOCAL);
+    } else if (kind === "document") {
+      live.insertBlocks(doc, [{ type: "paragraph", runs: [{ text: "extra" }] }], {}, LOCAL);
     } else {
       live.addShape(doc, { type: "note", text: "extra", x: 0, y: 0 }, LOCAL);
     }
@@ -154,6 +167,8 @@ describe("the package's entry", () => {
       "overwriteMap",
       "arrangeShapes",
       "arrangeElements",
+      "markdownToBlocks",
+      "readDocument",
     ]) {
       expect(typeof (live as Record<string, unknown>)[name]).toBe("function");
     }

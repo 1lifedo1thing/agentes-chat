@@ -29,15 +29,21 @@ import {
 import {
   arrowLine,
   boxFrom,
+  cropFrom,
+  dragCrop,
+  fullImageBox,
   handlePoint,
   hitShape,
   marqueeHits,
   resizeBox,
   rotationAt,
+  routePoints,
   scaleGroup,
+  thinStroke,
   topLevelOf,
 } from "@/components/live/canvas/edit-math";
 import { selectionOf } from "@/components/live/canvas/selection";
+import { canvasShortcuts, headsFor, headsOf, PEN_WIDTHS, penSizeOf } from "@/components/live/canvas/tools";
 
 /**
  * The canvas editor's own math, apart from the screen (ADR 0194 §2): the camera (zoom at a point, fit, follow someone
@@ -305,5 +311,102 @@ describe("the selection in words", () => {
     expect(selectionOf(t, [shape("a", "note"), shape("b", "image"), shape("c", "frame")])?.label).toBe(
       "live.canvas.count.items:3",
     );
+  });
+});
+
+describe("the tools' own math (ADR 0194 §2)", () => {
+  const shape = (over: Partial<ShapeView>): ShapeView => ({
+    id: "s",
+    type: "note",
+    x: 0,
+    y: 0,
+    w: 100,
+    h: 100,
+    z: "a",
+    ...over,
+  });
+
+  test("a pen stroke keeps its corners and drops the points on a straight run, at most so many numbers", () => {
+    // A straight run with a corner: the middle points of each run go.
+    const points = [0, 0, 10, 0.1, 20, 0, 30, 0, 30, 10, 30, 20];
+    expect(thinStroke(points, 0.5)).toEqual([0, 0, 30, 0, 30, 20]);
+    // One point stays a dot.
+    expect(thinStroke([5.123, 6.456], 0.5)).toEqual([5.12, 6.46]);
+    // A long zigzag past the cap keeps its ends and the cap.
+    const zig = Array.from({ length: 5000 }, (_, i) => [i, i % 2 ? 10 : 0]).flat();
+    const kept = thinStroke(zig, 0.5, 400);
+    expect(kept.length).toBe(400);
+    expect(kept.slice(0, 2)).toEqual([0, 0]);
+    expect(kept.slice(-2)).toEqual([4999, 10]);
+  });
+
+  test("a pen stroke is taken near its line, not anywhere in its box", () => {
+    const ring = shape({ id: "ring", type: "draw", points: [0, 0, 100, 0, 100, 100, 0, 100, 0, 0] });
+    const list = [ring];
+    const byId = shapeIndex(list) as ReadonlyMap<string, ShapeView>;
+    expect(hitShape(list, byId, { x: 50, y: 1 }, 1)?.id).toBe("ring");
+    expect(hitShape(list, byId, { x: 50, y: 50 }, 1)).toBeNull();
+  });
+
+  test("a curved arrow runs through its bow; an elbow through its corners", () => {
+    const line = { x1: 0, y1: 0, x2: 100, y2: 0 };
+    expect(routePoints(line, undefined)).toEqual([
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ]);
+    const curve = routePoints(line, "curve");
+    expect(curve.length).toBeGreaterThan(8);
+    // It bows a quarter of its length off the line at its control point: half that at its middle.
+    const mid = curve[Math.floor(curve.length / 2)] as { x: number; y: number };
+    near(Math.abs(mid.y), 12.5, 3);
+    const elbow = routePoints({ x1: 0, y1: 0, x2: 100, y2: 40 }, "elbow");
+    expect(elbow).toEqual([
+      { x: 0, y: 0 },
+      { x: 50, y: 0 },
+      { x: 50, y: 40 },
+      { x: 100, y: 40 },
+    ]);
+  });
+
+  test("a crop's window moves and resizes inside the whole picture; applied, it is the box and the part shown", () => {
+    const picture = { x: 100, y: 100, w: 200, h: 100, crop: { x: 0.5, y: 0, w: 0.5, h: 1 } };
+    const full = fullImageBox(picture);
+    expect(full).toEqual({ x: -100, y: 100, w: 400, h: 100 });
+    const rect = { x: 100, y: 100, w: 200, h: 100 };
+    // Moved whole: never past the picture's edge.
+    expect(dragCrop(rect, full, "move", { x: 500, y: 0 })).toEqual({ x: 100, y: 100, w: 200, h: 100 });
+    expect(dragCrop(rect, full, "move", { x: -50, y: 30 })).toEqual({ x: 50, y: 100, w: 200, h: 100 });
+    // A side's handle: the other side stays; it never goes under the smallest side or past the edge.
+    expect(dragCrop(rect, full, "w", { x: -400, y: 0 })).toEqual({ x: -100, y: 100, w: 400, h: 100 });
+    expect(dragCrop(rect, full, "e", { x: -500, y: 0 })).toEqual({ x: 100, y: 100, w: 16, h: 100 });
+    const kept = cropFrom({ x: 0, y: 100, w: 100, h: 50 }, full);
+    expect(kept.box).toEqual({ x: 0, y: 100, w: 100, h: 50 });
+    expect(kept.crop).toEqual({ x: 0.25, y: 0, w: 0.25, h: 0.5 });
+    // The whole picture again: no crop.
+    expect(cropFrom(full, full).crop).toBeNull();
+  });
+
+  test("an arrow's heads in one word and back; pen sizes by their nearest width", () => {
+    expect(headsOf({})).toBe("end");
+    expect(headsOf({ heads: { start: "arrow", end: "arrow" } })).toBe("both");
+    expect(headsOf({ heads: { start: "arrow", end: "none" } })).toBe("start");
+    expect(headsOf({ heads: { start: "none", end: "none" } })).toBe("none");
+    for (const h of ["none", "end", "start", "both"] as const) {
+      expect(headsOf({ heads: headsFor(h) ?? undefined })).toBe(h);
+    }
+    expect(penSizeOf("pen", PEN_WIDTHS.pen.l)).toBe("l");
+    expect(penSizeOf("marker", 15)).toBe("m");
+    expect(penSizeOf("pen", undefined)).toBe("m");
+  });
+
+  test("the shortcuts list names every tool with the key the plane reads", () => {
+    const t = ((key: string) => key) as unknown as TFunction;
+    const keys = new Map(canvasShortcuts(t, "⌘"));
+    expect(keys.get("live.canvas.tools.select")).toEqual(["V"]);
+    expect(keys.get("live.canvas.shapeKinds.triangle")).toEqual(["⇧", "T"]);
+    expect(keys.get("live.canvas.shapeKinds.line")).toEqual(["L"]);
+    expect(keys.get("live.canvas.tools.pen")).toEqual(["P"]);
+    expect(keys.get("live.canvas.tools.comment")).toEqual(["C"]);
+    expect(keys.get("live.shell.shortcuts.duplicate")).toEqual(["⌘", "D"]);
   });
 });

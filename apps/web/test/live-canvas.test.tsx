@@ -17,16 +17,16 @@ import type { Peer, PeerUser } from "@agenteschat/live/awareness";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
 import * as Y from "yjs";
 import { Canvas, CanvasMini } from "@/components/live/canvas";
-import type { LiveSelection } from "@/components/live/editor";
+import type { LiveReveal, LiveSelection } from "@/components/live/editor";
 import { createFakeApi, fakeLiveOf, ORG_ID, seedState } from "./fake-api";
 import { renderPage, screen, settle } from "./render";
 
 /**
  * The canvas editor ("Quadro", ADR 0194 §2, ADR 0195) on a live file of the fake server: the tools add notes and
- * frames, a drag moves and its handles resize, Delete and ⌘Z, a frame carries what was drawn around it, Generate
- * places a frame of placeholders that turn into pictures (or say why they failed, with Try again), the bar explains
- * itself with no image key, others' selections and pointers show, Follow moves the view, and a read-only canvas
- * changes nothing.
+ * frames, a drag moves and its handles resize, Delete and ⌘Z, a frame carries what was drawn around it, pictures asked
+ * for show as placeholders that turn into pictures (or say why they failed, with Try again), others' selections and
+ * pointers show, Follow moves the view, a message's line about some shapes chooses them (ADR 0197), and a read-only
+ * canvas changes nothing.
  */
 
 afterEach(() => {
@@ -56,6 +56,7 @@ function Harness({
   following = null,
   onRoom,
   onSelection,
+  reveal = null,
 }: {
   file: Artifact;
   socketFactory: Parameters<typeof useLiveRoom>[2]["socketFactory"];
@@ -63,6 +64,7 @@ function Harness({
   following?: Peer | null;
   onRoom?: (room: LiveRoom) => void;
   onSelection?: (selection: LiveSelection | null) => void;
+  reveal?: LiveReveal | null;
 }) {
   const live = useLiveRoom(ORG_ID, file.id, { socketFactory, baseUrl: "https://app.example.com", me: ME });
   if (!live.room || !live.loaded) return null;
@@ -79,6 +81,7 @@ function Harness({
       following={following}
       onStopFollowing={() => {}}
       onSelection={onSelection ?? (() => {})}
+      reveal={reveal}
     />
   );
 }
@@ -90,6 +93,7 @@ async function open(
     following?: Peer | null;
     api?: ApiClient;
     models?: "none";
+    reveal?: LiveReveal | null;
   } = {},
 ) {
   const state = seedState();
@@ -114,6 +118,7 @@ async function open(
         room = r;
       }}
       onSelection={(s) => selections.push(s)}
+      reveal={options.reveal ?? null}
     />,
     { api, org: true },
   );
@@ -272,25 +277,20 @@ describe("the canvas editor", () => {
     expect(only(readShapes(room().doc), "note")).toMatchObject({ x: 100, y: 0, parent: frame.id });
   });
 
-  test("Generate places a frame of placeholders near the view's middle; they turn into pictures", async () => {
-    const { plane, state, live, onServer } = await open();
-    const dock = screen().getByRole("toolbar", { name: "Ferramentas" });
-    await act(async () => void fireEvent.click(within(dock).getByRole("button", { name: /Gerar imagem/ })));
-    const bar = await waitFor(() => screen().getByRole("group", { name: "Gerar imagem" }));
-    const prompt = await waitFor(() => within(bar).getByRole("textbox", { name: "Descrição da imagem" }));
-    await act(async () => void fireEvent.change(prompt, { target: { value: "Uma raposa na neve" } }));
-    await act(async () => void fireEvent.click(within(bar).getByRole("radio", { name: "2" })));
-    await act(async () => void fireEvent.click(within(bar).getByRole("button", { name: "Gerar" })));
-    await settle();
-
-    const call = state.calls.find((c) => c.method === "live.generateImages");
-    expect(call?.args[2]).toEqual({
-      prompt: "Uma raposa na neve",
-      count: 2,
-      aspect: "1:1",
-      model: "fake-image",
-      at: { x: 0, y: 0 },
+  test("pictures asked for show as placeholders in a frame near the view's middle; they turn into pictures", async () => {
+    const { api, file, live, onServer } = await open();
+    // An agent asked in the file's conversation (ADR 0197): the request goes through the same route.
+    await act(async () => {
+      await api.live.generateImages(ORG_ID, file.id, {
+        prompt: "Uma raposa na neve",
+        count: 2,
+        aspect: "1:1",
+        model: "fake-image",
+        at: { x: 0, y: 0 },
+      });
+      await live.server.settle();
     });
+    await settle();
     // The placeholders show at once, with who asked and the prompt, in a frame named with it.
     await waitFor(() => expect(document.querySelectorAll(".cnv-pending")).toHaveLength(2));
     expect(screen().getAllByText("Na fila…")).toHaveLength(2);
@@ -312,17 +312,14 @@ describe("the canvas editor", () => {
     }
     const images = (await onServer()).filter((s) => s.type === "image");
     expect(images.map((s) => s.id).sort()).toEqual([...request.shapeIds].sort());
-    expect(plane).toBeTruthy();
   });
 
   test("a failed request says why and tries again", async () => {
-    const { state, live } = await open();
-    const dock = screen().getByRole("toolbar", { name: "Ferramentas" });
-    await act(async () => void fireEvent.click(within(dock).getByRole("button", { name: /Gerar imagem/ })));
-    const bar = await waitFor(() => screen().getByRole("group", { name: "Gerar imagem" }));
-    const prompt = await waitFor(() => within(bar).getByRole("textbox", { name: "Descrição da imagem" }));
-    await act(async () => void fireEvent.change(prompt, { target: { value: "Um farol" } }));
-    await act(async () => void fireEvent.keyDown(prompt, { key: "Enter", metaKey: true }));
+    const { api, file, state, live } = await open();
+    await act(async () => {
+      await api.live.generateImages(ORG_ID, file.id, { prompt: "Um farol", count: 1, at: { x: 0, y: 0 } });
+      await live.server.settle();
+    });
     await settle();
     const request = live.requests[0];
     if (!request) throw new Error("no request");
@@ -334,19 +331,25 @@ describe("the canvas editor", () => {
     await waitFor(() => expect(screen().getByText("Na fila…")).toBeTruthy());
   });
 
-  test("with no image key, the bar says how to connect one", async () => {
-    await open({ models: "none" });
+  test("the dock has no prompt bar of its own: pictures are asked for in the file's conversation", async () => {
+    const { plane } = await open();
     const dock = screen().getByRole("toolbar", { name: "Ferramentas" });
-    await act(async () => void fireEvent.click(within(dock).getByRole("button", { name: /Gerar imagem/ })));
-    const bar = await waitFor(() => screen().getByRole("group", { name: "Gerar imagem" }));
-    await waitFor(() =>
-      expect(
-        within(bar).getByText("Para gerar imagens, conecte uma chave da OpenAI, do Google ou do OpenRouter."),
-      ).toBeTruthy(),
-    );
-    const connect = within(bar).getByRole("link", { name: "Conectar" });
-    expect(connect.getAttribute("href")).toBe(`/org/${ORG_ID}/settings/usage`);
-    expect(within(bar).queryByRole("textbox")).toBeNull();
+    expect(within(dock).queryByRole("button", { name: /Gerar imagem/ })).toBeNull();
+    // G no longer opens a bar.
+    await key(plane, "g");
+    await settle();
+    expect(screen().queryByRole("group", { name: "Gerar imagem" })).toBeNull();
+  });
+
+  test("a message's line about some shapes chooses them (ADR 0197)", async () => {
+    // The note's id is known once the file is made (`init` runs first); the reveal reads the same list.
+    const shapes: string[] = [];
+    const { selections } = await open({
+      init: (doc) => void shapes.push(addShape(doc, { type: "note", x: 0, y: 0, w: 200, h: 200 }, null)),
+      reveal: { selection: { label: "1 nota", shapes }, key: 1 },
+    });
+    await waitFor(() => expect(selections.at(-1)?.shapes).toEqual(shapes));
+    expect(document.querySelector("[data-handle]")).toBeTruthy();
   });
 
   test("others' selections and pointers show in their color; this person's choice reaches them", async () => {
@@ -390,7 +393,7 @@ describe("the canvas editor", () => {
     }
   });
 
-  test("a read-only canvas only looks: two tools, no Generate, no handles, keys change nothing", async () => {
+  test("a read-only canvas only looks: two tools, no handles, keys change nothing", async () => {
     const { plane, room } = await open({
       readOnly: true,
       init: (doc) => void addShape(doc, { type: "note", x: 0, y: 0, w: 200, h: 200 }, null),

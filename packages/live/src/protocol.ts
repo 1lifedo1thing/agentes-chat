@@ -258,6 +258,11 @@ function readAwareness(decoder: decoding.Decoder, ctx: ReadContext): ReadResult 
 /** The client's keep-alive and the server's answer (JSON text frames, as on `/api/ws`). */
 export const LIVE_PING = '{"type":"ping"}';
 export const LIVE_PONG = '{"type":"pong"}';
+/**
+ * The answer while some of the changes the socket sent before its ping still wait to be stored: the app keeps them
+ * as unsent until `live.saved`. A plain `LIVE_PONG` says every one of them is stored, or held nothing new.
+ */
+export const LIVE_PONG_UNSAVED = '{"type":"pong","unsaved":true}';
 
 /** Whether a text frame is the keep-alive ping (the only control a client sends). */
 export function isLivePing(text: string): boolean {
@@ -267,6 +272,16 @@ export function isLivePing(text: string): boolean {
 /** Whether a text frame is the server's answer to a ping. */
 export function isLivePong(text: string): boolean {
   return controlType(text) === "pong";
+}
+
+/** Whether a pong says changes sent before its ping still wait to be stored (`LIVE_PONG_UNSAVED`). */
+export function pongUnsaved(text: string): boolean {
+  try {
+    const raw: unknown = JSON.parse(text);
+    return typeof raw === "object" && raw !== null && (raw as { unsaved?: unknown }).unsaved === true;
+  } catch {
+    return false;
+  }
 }
 
 /** A control message as its text frame. */

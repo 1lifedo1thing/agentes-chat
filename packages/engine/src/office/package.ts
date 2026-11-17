@@ -1,7 +1,7 @@
 import { ValidationError } from "../errors";
 import { inflateZipEntry, listZip, type ZipListing } from "../zip";
 import { OFFICE_LIMITS, officeEncrypted, officeTooLarge, officeUnreadable } from "./limits";
-import { attr, type Element, kids, parseXml } from "./xml";
+import { attr, type Element, kids, MAX_PACKAGE_TAGS, parseXml, tagCount } from "./xml";
 
 /**
  * An Office file as a package of parts (ADR 0196): the zip's entries by name, read on demand within one budget of
@@ -79,6 +79,8 @@ export class OfficePackage {
   private readonly xmlCache = new Map<string, Element | null>();
   private readonly relsCache = new Map<string, Map<string, Relationship>>();
   private used = 0;
+  /** Tags of the parts parsed so far (`MAX_PACKAGE_TAGS`). */
+  private tags = 0;
 
   private constructor(private readonly buffer: Uint8Array) {
     let listing: ZipListing[];
@@ -149,6 +151,10 @@ export class OfficePackage {
     const key = normalizePath(path)?.toLowerCase() ?? "";
     if (this.xmlCache.has(key)) return this.xmlCache.get(key) ?? null;
     const text = this.text(path);
+    if (text !== null) {
+      this.tags += tagCount(text);
+      if (this.tags > MAX_PACKAGE_TAGS) throw officeUnreadable("it is too large to read");
+    }
     const root = text === null ? null : parseXml(text, path);
     this.xmlCache.set(key, root);
     return root;

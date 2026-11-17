@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ImageModelOption } from "@agenteschat/client";
 import { initLiveDoc, LOCAL } from "@agenteschat/live";
 import type { Peer, PeerState } from "@agenteschat/live/awareness";
 import { addShape, arrowPath, readShapes, rectsIntersect, type ShapeView, shapeIndex } from "@agenteschat/live/canvas";
@@ -35,7 +34,6 @@ import {
   zoomAt,
 } from "../../src/features/live-files/canvas/camera";
 import { colorFloats } from "../../src/features/live-files/canvas/dots";
-import { aspectChoices, countChoices, pickModel } from "../../src/features/live-files/canvas/generate";
 import {
   arrowDraws,
   arrowHead,
@@ -55,8 +53,6 @@ import {
   shapesIn,
   stretchable,
 } from "../../src/features/live-files/canvas/logic";
-import { revealed, revealLater, toReveal } from "../../src/features/live-files/canvas/reveal";
-import { generateRoute, pointOf, refsOf } from "../../src/features/live-files/canvas/routes";
 import { MAIN, ownOptionsOf } from "../main-stack";
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
@@ -304,15 +300,6 @@ describe("arrows, new things and pictures being made", () => {
     expect(retryable({ type: "pending", status: "running", request: "r1" })).toBe(false);
     expect(retryable({ type: "pending", status: "failed" })).toBe(false);
   });
-
-  test("the pictures asked for wait to be shown when the canvas comes back", () => {
-    revealLater("f1", ["p1", "p2"]);
-    expect(toReveal("f1")).toEqual(["p1", "p2"]);
-    revealLater("f2", []);
-    expect(toReveal("f2")).toBeNull();
-    revealed("f1");
-    expect(toReveal("f1")).toBeNull();
-  });
 });
 
 describe("everyone else on the plane", () => {
@@ -335,44 +322,7 @@ describe("everyone else on the plane", () => {
   });
 });
 
-describe("Gerar: its choices and its route", () => {
-  const model = (m: Partial<ImageModelOption>): ImageModelOption => ({
-    id: "m",
-    label: "M",
-    provider: "gemini",
-    aspects: [],
-    maxCount: 4,
-    refs: true,
-    ...m,
-  });
-
-  test("the default model first; the shapes and counts it allows", () => {
-    const models = [model({ id: "a" }), model({ id: "b", aspects: ["1:1", "16:9", "4:3"], maxCount: 2 })];
-    expect(pickModel(models, null)?.id).toBe("a");
-    expect(pickModel(models, "b")?.id).toBe("b");
-    expect(pickModel(models, "zz")?.id).toBe("a");
-    expect(pickModel([], null)).toBeNull();
-    expect(aspectChoices(models[0] ?? null)).toEqual(["1:1", "3:2", "2:3", "16:9", "9:16"]);
-    expect(aspectChoices(models[1] ?? null)).toEqual(["1:1", "16:9"]);
-    expect(aspectChoices(model({ aspects: ["4:3"] }))).toEqual(["1:1"]);
-    expect(countChoices(models[1] ?? null, 4)).toEqual([1, 2]);
-    expect(countChoices(model({ maxCount: 10 }), 4)).toEqual([1, 2, 3, 4]);
-    expect(countChoices(null, 4)).toEqual([1, 2, 3, 4]);
-  });
-
-  test("its route carries the chosen pictures and where the person looked, safely", () => {
-    expect(generateRoute("f1", { refs: ["a", "b"], at: { x: 10.4, y: -3.6 } })).toEqual({
-      pathname: "/generate/[id]",
-      params: { id: "f1", refs: "a,b", x: "10", y: "-4" },
-    });
-    expect(generateRoute("f1").params).toEqual({ id: "f1" });
-    expect(refsOf("a,b,../x,c,d,e")).toEqual(["a", "b", "c", "d"]);
-    expect(refsOf(undefined)).toEqual([]);
-    expect(pointOf("10", "-4")).toEqual({ x: 10, y: -4 });
-    expect(pointOf("x", "1")).toBeNull();
-    expect(pointOf(undefined, "1")).toBeNull();
-  });
-
+describe("the plane's dots", () => {
   test("the dots' color reads every way a theme writes one", () => {
     expect(colorFloats("#ffffff")).toEqual([1, 1, 1, 1]);
     expect(colorFloats("#000")).toEqual([0, 0, 0, 1]);
@@ -385,13 +335,12 @@ describe("Gerar: its choices and its route", () => {
 
 describe("the canvas's screens", () => {
   test("each is its own push; the plane lays out below an opaque bar", () => {
-    for (const name of ["canvas/[id]", "generate/[id]"]) {
-      const file = join(MAIN, `${name}.tsx`);
-      expect({ name, exists: existsSync(file) }).toEqual({ name, exists: true });
-      expect(readFileSync(file, "utf8")).toContain("isSafeId(id)");
-    }
+    const file = join(MAIN, "canvas/[id].tsx");
+    expect(existsSync(file)).toBe(true);
+    expect(readFileSync(file, "utf8")).toContain("isSafeId(id)");
     expect(ownOptionsOf("canvas/[id]")).toBe("solid,");
-    expect(ownOptionsOf("generate/[id]")).toBeNull();
+    // Pictures come from the agents in the file's conversation now (ADR 0197): no screen of its own to make them.
+    expect(existsSync(join(MAIN, "generate/[id].tsx"))).toBe(false);
   });
 
   test("the plane moves on the UI thread and writes the file once a finger lifts", () => {
@@ -405,6 +354,6 @@ describe("the canvas's screens", () => {
     expect(plane).toContain("const GLIDE = { duration: motion.panel, easing: motion.easeInOut };");
     const screen = src("features/live-files/canvas/CanvasScreen.tsx");
     expect(screen).toContain("usePhotoPick(room.orgId, fileId)");
-    expect(screen).toContain("generateRoute(fileId, { refs, at: middle() })");
+    expect(screen).not.toContain("generateRoute");
   });
 });

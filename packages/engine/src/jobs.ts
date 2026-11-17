@@ -586,9 +586,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       if (!message) return;
       if (deps.context && message.threadId) await maybeEnqueueReflection(deps, message.orgId, message.threadId);
       // An issue's work card, its start (the run is already started) and the "took issue #N" line route to nobody.
-      // A task conversation's root (ADR 0145) stands for the task: nobody is routed either.
+      // A task conversation's root (ADR 0145) stands for the task, a file conversation's (ADR 0197) for the file:
+      // nobody is routed either.
       if (message.meta.issueWork || message.meta.issueWorkStart || message.meta.issueTaken) return;
-      if (message.meta.taskConversation) return;
+      if (message.meta.taskConversation || message.meta.fileConversation) return;
       // A fast reply while the task works (talker.ts): its task reads it; it starts nobody, not even by mention.
       if (message.meta.talker) return;
       // A GIF or a sticker alone (ADR 0091), an agent's silent one after its reply too: it starts nobody, routes

@@ -173,6 +173,8 @@ const FILE_FIELD: Readonly<Record<string, string>> = {
   edit_presentation: "file",
   read_canvas: "file",
   edit_canvas: "file",
+  read_document: "file",
+  edit_document: "file",
   generate_image: "canvas",
 };
 

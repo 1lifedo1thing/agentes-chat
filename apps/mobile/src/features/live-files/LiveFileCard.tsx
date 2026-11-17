@@ -1,4 +1,4 @@
-import { type ArtifactDetail, isLiveFileKind, useLivePresence } from "@agenteschat/client";
+import { type ArtifactDetail, useLivePresence } from "@agenteschat/client";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
@@ -8,7 +8,7 @@ import { useDirectory, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { LIVE_ICON, liveRoute } from "./routes";
 import { PresentFaces } from "./shared/HereFaces";
-import { LiveCover } from "./shared/LiveCover";
+import { LiveCover, liveCoverContent } from "./shared/LiveCover";
 
 /** The cover's height on a message, and on a message holding nothing else. */
 const COVER = 132;
@@ -24,17 +24,20 @@ export const LiveFileCard = memo(function LiveFileCard({ detail, width }: { deta
   const { colors: c } = useTheme();
   const orgId = useOrgId();
   const dir = useDirectory();
-  const content = detail.content;
   const presence = useLivePresence(orgId, [detail.id]);
-  if (!isLiveFileKind(content.kind) || !("preview" in content)) return null;
+  const content = liveCoverContent(detail.content);
+  if (!content) return null;
   const kind = content.kind;
+  // A document (ADR 0198) says only what it is; the others how big they are.
   const meta =
     content.kind === "spreadsheet"
       ? t("mobile.live.card.sheets", { count: content.preview.sheets })
       : content.kind === "slides"
         ? t("mobile.live.card.slides", { count: content.preview.count })
-        : t("mobile.live.card.shapes", { count: content.preview.count });
-  const label = `${t(`artifacts.kind.${kind}`)} · ${meta}`;
+        : content.kind === "canvas"
+          ? t("mobile.live.card.shapes", { count: content.preview.count })
+          : null;
+  const label = meta ? `${t(`artifacts.kind.${kind}`)} · ${meta}` : t(`artifacts.kind.${kind}`);
   const byAgent = detail.createdBy.type === "agent" ? detail.createdBy.id : null;
   return (
     <PressScale

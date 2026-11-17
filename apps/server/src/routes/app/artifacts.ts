@@ -26,6 +26,7 @@ import {
   listArtifactVersions,
   listDeletedArtifacts,
   MAX_MESSAGE_LENGTH,
+  openFileConversation,
   purgeArtifactNow,
   replyToBlock,
   requireLiveFile,
@@ -94,6 +95,7 @@ const AuthorKey = z
     return { type, id };
   });
 
+/** What people send as a file's content; the document stays first (`Content` returns it as a live file's). */
 const textContents = [
   z.object({ kind: z.literal("document"), markdown: z.string() }),
   z.object({ kind: z.literal("table"), columns: z.array(z.string()), rows: z.array(z.array(z.string())) }),
@@ -127,7 +129,13 @@ function livePreview(what: string) {
 
 const Content = z
   .discriminatedUnion("kind", [
-    ...textContents,
+    // A document is a live file (ADR 0198): its card's preview, and its Markdown for the apps that show it read-only.
+    z.object({
+      kind: z.literal("document"),
+      markdown: z.string(),
+      preview: livePreview("its first blocks, how many it has and where it came from"),
+    }),
+    ...textContents.slice(1),
     FileContent,
     z.object({
       kind: z.literal("block"),
@@ -206,6 +214,21 @@ const Sharing = z
       "Who sees it on top of its conversation (ADR 0157): nobody more, the people and roles listed (and administrators), or the whole workspace.",
   });
 
+/** Where a live file's conversation lives (ADR 0197): the chat's routes read and post to this thread. */
+const FileConversationRef = z
+  .object({
+    channelId: z.uuid().openapi({ description: "The conversation's own channel (kind `file`): the chat's routes." }),
+    rootId: z.uuid().openapi({ description: "The thread's root: replies go to it (`threadId`)." }),
+  })
+  .openapi("FileConversationRef");
+
+const FileConversation = FileConversationRef.extend({
+  count: z.number().int().openapi({ description: "Messages in it." }),
+  lastAt: z.string().nullable(),
+  participants: z.array(Author).openapi({ description: "The first ones to write, oldest first (at most 5)." }),
+  working: z.boolean().openapi({ description: "An agent's turn is live in it." }),
+}).openapi("FileConversation");
+
 export const Artifact = z
   .object({
     id: z.uuid(),
@@ -230,6 +253,12 @@ export const Artifact = z
     canShare: z.boolean().openapi({
       description: "I may change its sharing: it lives in a conversation not everyone reads, and I read it there.",
     }),
+    conversation: FileConversation.nullable()
+      .optional()
+      .openapi({
+        description:
+          "A live file's conversation (ADR 0197), once someone opened or wrote in it; null until then and for other kinds.",
+      }),
   })
   .openapi("Artifact");
 
@@ -294,10 +323,10 @@ const ArtifactParams = OrgParams.extend({ artifactId: z.uuid() });
 const VersionQuery = z.object({ version: z.coerce.number().int().min(1).optional() });
 
 /**
- * What a download may be turned into: a table's CSV, a diff's patch, a document's PDF or Word file, and a live file's
- * Office file, CSV, PDF or (a canvas) JSON (ADR 0196).
+ * What a download may be turned into: a table's CSV, a diff's patch, a document's PDF, Word or Markdown file (ADR
+ * 0198), and a live file's Office file, CSV, PDF or (a canvas) JSON (ADR 0196).
  */
-const FILE_FORMATS = ["csv", "patch", "pdf", "docx", "xlsx", "pptx", "json"] as const;
+const FILE_FORMATS = ["csv", "patch", "pdf", "docx", "xlsx", "pptx", "json", "md"] as const;
 /** What a live file downloads as when no format is asked: what other apps open (ADR 0196); a canvas, its JSON. */
 const LIVE_DOWNLOAD: Partial<Record<string, "xlsx" | "pptx">> = { spreadsheet: "xlsx", slides: "pptx" };
 /** What `exportLive` writes of a live file as it stands now (ADR 0196). */
@@ -539,6 +568,24 @@ export function artifactRoutes(deps: AppDeps) {
         await withFacts(userId, orgId, await getArtifact(artifacts(), person(userId), orgId, artifactId, version)),
         200,
       );
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/organizations/{orgId}/artifacts/{artifactId}/conversation",
+      tags,
+      security,
+      summary: "Open a live file's conversation (made on first use): its channel and thread root, for the chat's routes",
+      description:
+        "Whoever reads the file reads and writes there (ADR 0197). 404 for a file you don't read or in the trash, 400 `artifact.no_conversation` for a kind without one.",
+      request: { params: ArtifactParams },
+      responses: { 200: json(FileConversationRef), ...errors },
+    }),
+    async (c) => {
+      const { orgId, artifactId } = c.req.valid("param");
+      return c.json(await openFileConversation(artifacts(), c.get("user").id, orgId, artifactId), 200);
     },
   );
 

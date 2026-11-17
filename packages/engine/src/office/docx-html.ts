@@ -11,7 +11,7 @@ import { attr, boolAttr, dig, type Element, intAttr, kid, kids, nameOf, relAttr,
  * comments, headers and footers are left out. The same model gives the Markdown of "Edit as document".
  */
 
-interface Text {
+export interface DocxText {
   kind: "text";
   text: string;
   b?: boolean;
@@ -21,9 +21,21 @@ interface Text {
   href?: string;
 }
 
-type Inline = Text | { kind: "br" } | { kind: "img"; src: string; alt: string };
+type Text = DocxText;
 
-interface Paragraph {
+/** A picture as read: its data address (for the HTML), and its bytes and type (for a live document, ADR 0198). */
+export interface DocxPicture {
+  kind: "img";
+  src: string;
+  alt: string;
+  bytes: Uint8Array;
+  type: string;
+}
+
+export type DocxInline = Text | { kind: "br" } | DocxPicture;
+type Inline = DocxInline;
+
+export interface DocxParagraph {
   kind: "p";
   /** 1–6 for a heading, 0 for a paragraph. */
   heading: number;
@@ -31,19 +43,25 @@ interface Paragraph {
   inlines: Inline[];
 }
 
-interface Cell {
+type Paragraph = DocxParagraph;
+
+export interface DocxCell {
   blocks: Block[];
   colspan: number;
   rowspan: number;
   header: boolean;
 }
 
-interface Table {
+type Cell = DocxCell;
+
+export interface DocxTable {
   kind: "table";
   rows: Cell[][];
 }
 
-type Block = Paragraph | Table;
+export type DocxBlock = Paragraph | DocxTable;
+type Block = DocxBlock;
+type Table = DocxTable;
 
 /** The largest document part read into a tree (the text of thousands of pages). */
 const DOCUMENT_PART_BYTES = 20 * 1024 * 1024;
@@ -161,7 +179,13 @@ class DocxReader {
     const type = bytes ? imageTypeOf(bytes) : null;
     if (!bytes || !type || !PICTURE_TYPES.has(type)) return null;
     this.pictureBytes += bytes.byteLength;
-    return { kind: "img", src: `data:${type};base64,${Buffer.from(bytes).toString("base64")}`, alt: alt.slice(0, 500) };
+    return {
+      kind: "img",
+      src: `data:${type};base64,${Buffer.from(bytes).toString("base64")}`,
+      alt: alt.slice(0, 500),
+      bytes,
+      type,
+    };
   }
 
   private hrefOf(el: Element): string | undefined {
@@ -383,8 +407,8 @@ class DocxReader {
   }
 }
 
-/** A Word document's content as blocks. */
-function readDocx(bytes: Uint8Array, pictures: boolean): Block[] {
+/** A Word document's content as blocks (with its pictures when `pictures`): the HTML, the Markdown and a document's. */
+export function readDocx(bytes: Uint8Array, pictures: boolean): Block[] {
   const pkg = OfficePackage.open(bytes);
   const part = pkg.mainPart("word/document.xml");
   const size = pkg.sizeOf(part);

@@ -24,6 +24,8 @@ export function livePeer(
   awareness.setLocalState({ mode: "viewing" });
   const controls: Record<string, unknown>[] = [];
   const errors: string[] = [];
+  /** Everything the server sent, in order: each control's type, `sync:<kind>`, or `message:<type>`. */
+  const inbox: string[] = [];
   const ws = new WebSocket(url, { headers } as unknown as string[]);
   ws.binaryType = "arraybuffer";
   const send = (bytes: Uint8Array) => {
@@ -38,6 +40,8 @@ export function livePeer(
   const read = (bytes: Uint8Array) => {
     const decoder = decoding.createDecoder(bytes);
     const type = decoding.readVarUint(decoder);
+    // A sync message's kind is its second byte (0 step 1, 1 step 2, 2 update).
+    inbox.push(type === 0 ? `sync:${bytes[1]}` : `message:${type}`);
     if (type === 0) {
       const encoder = encoding.createEncoder();
       encoding.writeVarUint(encoder, 0);
@@ -55,6 +59,7 @@ export function livePeer(
     if (!data.startsWith("{")) return read(new Uint8Array(Buffer.from(data, "base64")));
     const control = JSON.parse(data) as Record<string, unknown>;
     controls.push(control);
+    inbox.push(String(control.type));
     if (control.type === "live.error") errors.push(String(control.code));
     if (control.type !== "live.ready") return;
     const encoder = encoding.createEncoder();
@@ -110,6 +115,7 @@ export function livePeer(
     doc,
     awareness,
     controls,
+    inbox,
     /** `live.error` codes, in order. */
     errors,
     opened,

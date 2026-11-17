@@ -2,6 +2,7 @@ import {
   type ArtifactDetail,
   isLiveFileKind,
   type LiveRoom,
+  type LiveSelection,
   nextFrame,
   useArtifact,
   useLiveDocVersion,
@@ -9,9 +10,12 @@ import {
   useRetryImages,
 } from "@agenteschat/client";
 import { LOCAL } from "@agenteschat/live";
+import type { PeerUser } from "@agenteschat/live/awareness";
 import {
+  type ArrowRoute,
   addShape,
   arrangeShapes,
+  type CanvasShapeKind,
   deleteShapes,
   frameAt,
   NOTE_COLORS,
@@ -23,26 +27,29 @@ import {
   union,
   updateShape,
 } from "@agenteschat/live/canvas";
-import { useIsFocused } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Platform, StyleSheet, View } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import {
   EmptyState,
+  Glass,
   type HeaderMenuItem,
+  haptics,
   Icon,
   type IconName,
+  motion,
   PressScale,
   SCREEN_X,
   Text,
   usePulse,
+  useReducedMotion,
   useTheme,
   useToast,
 } from "@/ui";
 import { router } from "@/ui/navigation";
 import { openFile } from "../../files/open";
+import { Face } from "../../shared/Face";
 import { useErrorToast } from "../../shared/hooks";
 import { pickOne, showActionSheet } from "../../shared/PickerSheet";
 import { errorHaptic } from "../../shared/parts";
@@ -55,25 +62,48 @@ import { type LiveDoc, useLiveDoc } from "../shared/useLiveDoc";
 import { HereIsland } from "../slides/Island";
 import { usePhotoPick } from "../slides/photos";
 import { textRoute } from "../slides/routes";
-import { CanvasPlane, type PlaneHandle } from "./CanvasPlane";
-import type { PeerView, Pt } from "./camera";
-import { type AddKind, chosenPictures, holdsWords, newSize, pictureSize, placeNear, retryable } from "./logic";
-import { revealed, toReveal } from "./reveal";
-import { generateRoute } from "./routes";
+import { useAskAgent, useOpenFileTalk, useRevealHere, useTalkFocus, useTalkPins } from "../talk/hooks";
+import { FileTalkLine, useTalkLineRoom } from "../talk/TalkLine";
+import { CanvasPlane, type PlaneHandle, type PlaneTool } from "./CanvasPlane";
+import { CropOverlay } from "./CropOverlay";
+import type { PeerView, Pt, WBox } from "./camera";
+import {
+  type AddKind,
+  canvasSelection,
+  chosenPictures,
+  croppedPicture,
+  DEFAULT_PEN,
+  holdsWords,
+  isInk,
+  newSize,
+  PEN_INKS,
+  PEN_SIZES,
+  PEN_WIDTHS,
+  type PenStyle,
+  pictureSize,
+  placeNear,
+  retryable,
+  shapeAt,
+  strokeOf,
+  strokeShape,
+  thinPoints,
+} from "./logic";
 
 /**
- * A canvas on the phone (ADR 0194 §9, 0195), pushed with the file's bar (`LiveBar`): the plane with everything on it
- * (`CanvasPlane`), and under it the tools to add a note, a text, photos from the library, or to generate pictures
- * (the agent's look: an AI makes them) on a screen of their own, from the chosen pictures. A long press asks for a
- * shape's menu (its words, its color, variations, front and back, delete) or the plane's. Following someone (from the
- * faces' list) moves the view with theirs.
+ * A canvas on the phone (ADR 0194 §9), pushed with the file's bar (`LiveBar`): the plane with everything on it
+ * (`CanvasPlane`), the tools in a glass dock over it (select, the pen, the shapes' menu, an arrow, text, a note, photos
+ * from the library, a comment), and under them the file's conversation (`FileTalkLine`, ADR 0197). Pictures come from
+ * the agents in the conversation ("Variations" and "Ask Atlas" on a chosen picture's glass bar). A long press asks
+ * for a shape's menu (its words, its color, ask the agent, front and back, delete) or the plane's. Following someone
+ * (from the faces' list) moves the view with theirs. `focusId`: a message of the conversation to open at.
  */
-export function CanvasScreen({ id }: { id: string }) {
+export function CanvasScreen({ id, focusId = null }: { id: string; focusId?: string | null }) {
   const live = useLiveDoc(id, { kind: "canvas" });
   const query = useArtifact(live.orgId, id);
   const detail = query.data;
   const title = detail?.title ?? "";
   const closed = liveClosed(live);
+  useTalkFocus(detail, focusId);
 
   // A link that named the wrong screen (or a file that isn't a canvas) gives way to the right one.
   const docKind = live.room && live.loaded ? live.room.kind : null;
@@ -101,6 +131,21 @@ export function CanvasScreen({ id }: { id: string }) {
   return <LiveCanvas live={live} room={live.room} fileId={id} title={title} detail={detail} />;
 }
 
+/** The shapes' menu, in the web's order: the five forms, then a line. */
+const SHAPE_CHOICES: readonly (CanvasShapeKind | "line")[] = ["rect", "ellipse", "diamond", "triangle", "star", "line"];
+const SHAPE_ICON: Record<CanvasShapeKind | "line", IconName> = {
+  rect: "rect",
+  ellipse: "ellipse",
+  diamond: "diamond",
+  triangle: "triangle",
+  star: "star",
+  line: "line",
+};
+/** A new form's size (world units): square for the round and pointed forms, wider for a rectangle. */
+const shapeSize = (kind: CanvasShapeKind) => (kind === "rect" ? { w: 240, h: 160 } : { w: 200, h: 200 });
+/** How long a new line is (world units). */
+const LINE_W = 240;
+
 function LiveCanvas({
   live,
   room,
@@ -115,13 +160,17 @@ function LiveCanvas({
   detail: ArtifactDetail | undefined;
 }) {
   const { t } = useTranslation();
-  const { colors: c } = useTheme();
+  const { colors: c, shadows } = useTheme();
   const toast = useToast();
   const failed = useErrorToast();
-  const insets = useSafeAreaInsets();
+  const reduced = useReducedMotion();
+  const lineRoom = useTalkLineRoom();
   const doc = room.doc;
   const readOnly = live.mode !== "edit";
   const plane = useRef<PlaneHandle>(null);
+  // Who made what this phone adds: the apps' own changes carry no author, so each new shape names its person.
+  const me: PeerUser | null = live.me;
+  const by = useMemo(() => (me ? { by: me } : {}), [me]);
 
   const version = useLiveDocVersion(room, nextFrame);
   // biome-ignore lint/correctness/useExhaustiveDependencies: read again after every change (`version`).
@@ -147,6 +196,19 @@ function LiveCanvas({
     [room],
   );
 
+  // ── The dock's tool: what one finger does on the plane until another is picked ─────────────────────────────────
+  const [tool, setTool] = useState<PlaneTool>("select");
+  // The pen as the person set it on its bar, and how the next arrow runs (the arrow tool's menu).
+  const [pen, setPen] = useState<PenStyle>(DEFAULT_PEN);
+  const [route, setRoute] = useState<ArrowRoute>("straight");
+  // A picture being cropped: its id, and where it shows on screen as the crop starts.
+  const [cropping, setCropping] = useState<{ id: string; box: WBox } | null>(null);
+  const pick = (next: PlaneTool) => {
+    haptics.selection();
+    setTool(next);
+    if (next !== "select") setChosen([]);
+  };
+
   // ── Following someone ──────────────────────────────────────────────────────────────────────────────────────────
   const peers = useLivePeers(room);
   const look = usePeerLook();
@@ -161,21 +223,32 @@ function LiveCanvas({
     if (followId !== null) setFollowing(fileId, null);
   }, [followId, fileId]);
 
-  // ── Pictures asked for on "Gerar": shown once their placeholders are here ─────────────────────────────────────
-  const focused = useIsFocused();
-  useEffect(() => {
-    if (!focused) return;
-    const ids = toReveal(fileId);
-    if (!ids) return;
-    const boxes = ids.flatMap((id) => {
-      const s = byId.get(id);
-      return s ? [shapeBounds(s, byId)] : [];
-    });
-    const box = union(boxes);
-    if (!box) return;
-    revealed(fileId);
-    plane.current?.reveal(box);
-  }, [focused, byId, fileId]);
+  // ── The file's conversation (ADR 0197) ─────────────────────────────────────────────────────────────────────────
+  const asking = useAskAgent(detail);
+  const openTalk = useOpenFileTalk(detail);
+  const pins = useTalkPins(fileId, asking.messages);
+  const selectionOf = useCallback(
+    (ids: readonly string[]): LiveSelection | null =>
+      canvasSelection(
+        t,
+        ids.flatMap((id) => {
+          const s = byId.get(id);
+          return s ? [s] : [];
+        }),
+      ),
+    [t, byId],
+  );
+  // A message's line (or a pin) brings what it is about into view, chosen.
+  useRevealHere(fileId, true, (sel) => {
+    stopFollowing();
+    const ids = (sel.shapes ?? []).filter((id) => byId.has(id));
+    const box = union(ids.flatMap((id) => (byId.get(id) ? [shapeBounds(byId.get(id) as ShapeView, byId)] : [])));
+    if (box) {
+      setTool("select");
+      setChosen(ids);
+      plane.current?.reveal(box);
+    } else if (sel.point) plane.current?.reveal({ x: sel.point.x - 120, y: sel.point.y - 120, w: 240, h: 240 });
+  });
 
   // ── Adding ─────────────────────────────────────────────────────────────────────────────────────────────────────
   const attempt = useCallback(
@@ -190,25 +263,60 @@ function LiveCanvas({
     [toast, t],
   );
   const middle = (): Pt => plane.current?.center() ?? { x: 0, y: 0 };
+  /** The new shape chosen and in view, the dock back on Select. */
+  const showMade = (made: string) => {
+    setTool("select");
+    setChosen([made]);
+    const shape = shapeIndex(readShapes(doc, { text: false })).get(made);
+    if (shape) plane.current?.reveal(shapeBounds(shape, byId));
+  };
   const addWords = (type: AddKind, at: Pt = middle()) => {
     try {
       const frame = frameAt(doc, at.x, at.y);
       const size = newSize(type);
       let made: string;
-      if (frame) made = addShape(doc, { type, parent: frame, w: size.w, h: size.h }, LOCAL);
+      if (frame) made = addShape(doc, { type, parent: frame, w: size.w, h: size.h, ...by }, LOCAL);
       else {
         const [box] = placeNear(doc, at, [size]);
-        made = addShape(doc, { type, ...(box ?? { x: at.x - size.w / 2, y: at.y - size.h / 2, ...size }) }, LOCAL);
+        made = addShape(
+          doc,
+          { type, ...(box ?? { x: at.x - size.w / 2, y: at.y - size.h / 2, ...size }), ...by },
+          LOCAL,
+        );
       }
-      setChosen([made]);
-      const shape = shapeIndex(readShapes(doc, { text: false })).get(made);
-      if (shape) plane.current?.reveal(shape);
+      showMade(made);
       router.push(textRoute(fileId, { shape: made }));
     } catch {
       errorHaptic();
       toast({ title: t("live.canvas.errors.tooMany"), icon: "x" });
     }
   };
+  // A form from the shapes' menu (or a line), in free room near the middle of the view.
+  const addForm = (kind: CanvasShapeKind | "line") =>
+    attempt(() => {
+      const at = middle();
+      if (kind === "line") {
+        const [box] = placeNear(doc, at, [{ w: LINE_W, h: 24 }]);
+        const x = box?.x ?? at.x - LINE_W / 2;
+        const y = (box?.y ?? at.y) + 12;
+        const heads = { start: "none" as const, end: "none" as const };
+        showMade(addShape(doc, { type: "arrow", from: { x, y }, to: { x: x + LINE_W, y }, heads, ...by }, LOCAL));
+        return;
+      }
+      const size = shapeSize(kind);
+      const [box] = placeNear(doc, at, [size]);
+      const place = box ?? { x: at.x - size.w / 2, y: at.y - size.h / 2, ...size };
+      showMade(addShape(doc, { type: "shape", kind, ...place, ...by }, LOCAL));
+    });
+  const chooseForm = () =>
+    showActionSheet(
+      t("mobile.live.canvas.tools.shapes"),
+      SHAPE_CHOICES.map((kind) => ({
+        label: t(`mobile.live.canvas.shapes.${kind}`),
+        icon: SHAPE_ICON[kind],
+        onPress: () => addForm(kind),
+      })),
+    );
   const photos = usePhotoPick(room.orgId, fileId);
   const addPhotos = async () => {
     const assets = await photos.pick(10);
@@ -221,17 +329,67 @@ function LiveCanvas({
         const box = boxes[i] ?? { x: at.x, y: at.y, ...(sizes[i] ?? { w: 320, h: 320 }) };
         return addShape(
           doc,
-          { type: "image", asset: a.id, nw: a.width ?? box.w, nh: a.height ?? box.h, ...box },
+          { type: "image", asset: a.id, nw: a.width ?? box.w, nh: a.height ?? box.h, ...box, ...by },
           LOCAL,
         );
       });
+      setTool("select");
       setChosen(made);
       const all = union(boxes);
       if (all) plane.current?.reveal(all);
     });
   };
-  const generate = (refs: readonly string[] = chosenPictures(selected, byId)) =>
-    router.push(generateRoute(fileId, { refs, at: middle() }));
+  // The pen: the stroke as few points as draw it (a screen point apart), in the bar's color, size and tool, written
+  // once the finger lifts.
+  const draw = (points: number[]) =>
+    attempt(() => {
+      const stroke = strokeShape(thinPoints(points, 1 / (plane.current?.zoom() ?? 1)));
+      if (stroke) addShape(doc, { type: "draw", ...stroke, ...strokeOf(pen), ...by }, LOCAL);
+    });
+  // The arrow: from where the finger landed to where it lifted, each end bound to the shape there (if any).
+  const drawArrow = (from: Pt, to: Pt) =>
+    attempt(() => {
+      const zoom = plane.current?.zoom() ?? 1;
+      const endOf = (p: Pt) => {
+        const id = shapeAt(shapes, byId, p, zoom);
+        const shape = id ? byId.get(id) : undefined;
+        return shape && shape.type !== "arrow" ? { shape: shape.id } : { x: p.x, y: p.y };
+      };
+      const how = route === "straight" ? {} : { route };
+      showMade(addShape(doc, { type: "arrow", from: endOf(from), to: endOf(to), ...how, ...by }, LOCAL));
+    });
+  // The arrow tool: how the next arrows run first (straight, a curve, right angles), as the shapes' menu.
+  const chooseRoute = () =>
+    showActionSheet(
+      t("mobile.live.canvas.tools.arrow"),
+      ARROW_ROUTES.map((r) => ({
+        label: t(`live.canvas.routes.${r}`),
+        icon: ROUTE_ICON[r],
+        checked: r === route,
+        onPress: () => {
+          setRoute(r);
+          pick("arrow");
+        },
+      })),
+    );
+  // Cropping the one picture chosen: where it shows now, its part kept on Apply.
+  const startCrop = (id: string) => {
+    const shape = byId.get(id);
+    const box = shape ? plane.current?.screenBox({ x: shape.x, y: shape.y, w: shape.w, h: shape.h }) : null;
+    if (box) setCropping({ id, box });
+  };
+  const crop = (part: { x: number; y: number; w: number; h: number }) => {
+    const id = cropping?.id;
+    const shape = id ? byId.get(id) : undefined;
+    setCropping(null);
+    if (id && shape) attempt(() => updateShape(doc, id, croppedPicture(shape, part), LOCAL));
+  };
+  // A comment pinned where the finger tapped: the conversation opens with that spot over its composer.
+  const comment = (at: Pt) => {
+    setTool("select");
+    const point = { x: Math.round(at.x), y: Math.round(at.y) };
+    openTalk({ selection: { label: t("mobile.live.talk.comment"), point } });
+  };
 
   // ── A shape's menu, the plane's menu ──────────────────────────────────────────────────────────────────────────
   const retry = useRetryImages(room.orgId, fileId);
@@ -262,6 +420,12 @@ function LiveCanvas({
         if (byId.get(id)?.type === "note") updateShape(doc, id, { color: picked as NoteColor }, LOCAL);
     });
   };
+  // "Variations" of a picture (ADR 0197): asked of the agent in the conversation, the picture over its composer.
+  const variations = (ids: readonly string[]) => {
+    const sel = selectionOf(ids);
+    if (sel) asking.ask(sel, t("mobile.live.talk.variationsText"));
+  };
+  const askAbout = (ids: readonly string[]) => asking.ask(selectionOf(ids));
   const hold = (id: string | null, at: Pt) => {
     if (!id) {
       const actions: { label: string; icon: IconName; onPress: () => void }[] = [
@@ -275,6 +439,7 @@ function LiveCanvas({
                 onPress: () => addWords("text", at),
               },
             ]),
+        { label: t("mobile.live.canvas.tools.comment"), icon: "comment", onPress: () => comment(at) },
         { label: t("live.canvas.zoom.fitAll"), icon: "expand", onPress: () => plane.current?.fitAll() },
       ];
       showActionSheet(t("live.canvas.label"), actions);
@@ -289,6 +454,13 @@ function LiveCanvas({
     const pictures = chosenPictures(targets, byId);
     const notes = targets.filter((x) => byId.get(x)?.type === "note");
     const actions: { label: string; icon: IconName; destructive?: boolean; onPress: () => void }[] = [];
+    if (asking.label) actions.push({ label: asking.label, icon: "sparkle", onPress: () => askAbout(targets) });
+    if (pictures.length > 0 && asking.label)
+      actions.push({
+        label: t("live.canvas.inspector.variations"),
+        icon: "sparkle",
+        onPress: () => variations(pictures),
+      });
     if (!among && selected.length > 0 && !readOnly)
       actions.push({
         label: t("mobile.live.canvas.addToSelection"),
@@ -307,12 +479,6 @@ function LiveCanvas({
           label: t("live.canvas.bar.color"),
           icon: "sparkle",
           onPress: () => void pickColor(notes, notes.length === 1 ? byId.get(notes[0] ?? "")?.color : undefined),
-        });
-      if (pictures.length > 0)
-        actions.push({
-          label: t("live.canvas.inspector.variations"),
-          icon: "sparkle",
-          onPress: () => generate(pictures),
         });
       actions.push(
         {
@@ -355,7 +521,19 @@ function LiveCanvas({
     },
   ];
 
-  const pictures = chosenPictures(selected, byId);
+  // One picture chosen: its glass bar (Variations, Ask Atlas, its menu); a drawing tool: what it does.
+  const only = selected.length === 1 ? byId.get(selected[0] ?? "") : undefined;
+  const onePicture = only?.type === "image" ? only.id : null;
+  const hint =
+    tool === "pen"
+      ? t("mobile.live.canvas.penHint")
+      : tool === "arrow"
+        ? t("mobile.live.canvas.arrowHint")
+        : tool === "comment"
+          ? t("mobile.live.canvas.commentHint")
+          : null;
+  const fade = reduced ? {} : { entering: FadeIn.duration(motion.fast), exiting: FadeOut.duration(motion.fast) };
+  const toggle = (next: PlaneTool) => pick(tool === next ? "select" : next);
   return (
     <>
       <LiveBar live={live} fileId={fileId} title={title} detail={detail} menu={menu} />
@@ -374,9 +552,16 @@ function LiveCanvas({
           onHold={hold}
           follow={theirView}
           onMoved={stopFollowing}
+          tool={tool}
+          onDraw={draw}
+          pen={{ color: pen.color, width: PEN_WIDTHS[pen.tool][pen.size], marker: pen.tool === "marker" }}
+          onArrow={drawArrow}
+          onComment={comment}
+          pins={pins}
+          onPin={(pin) => openTalk({ messageId: pin.messageId, selection: null })}
         />
-        {shapes.length === 0 ? (
-          <View style={styles.empty} pointerEvents="none">
+        {shapes.length === 0 && tool === "select" ? (
+          <View style={[styles.empty, { paddingBottom: lineRoom + DOCK_H }]} pointerEvents="none">
             <EmptyState
               size="panel"
               icon="canvas"
@@ -392,30 +577,180 @@ function LiveCanvas({
             action={t("mobile.live.here.stop")}
             onAction={stopFollowing}
           />
+        ) : onePicture ? (
+          <Animated.View {...fade} style={styles.barAt} pointerEvents="box-none">
+            <GlassBar>
+              {asking.label ? (
+                <BarButton
+                  icon="sparkle"
+                  label={t("live.canvas.inspector.variations")}
+                  onPress={() => variations([onePicture])}
+                />
+              ) : null}
+              {asking.label && asking.agent ? (
+                <BarButton face={asking.agent.id} label={asking.label} onPress={() => askAbout([onePicture])} />
+              ) : null}
+              {readOnly ? null : (
+                <BarButton
+                  icon="crop"
+                  label={t("live.canvas.image.crop")}
+                  iconOnly
+                  onPress={() => startCrop(onePicture)}
+                />
+              )}
+              <BarButton
+                icon="more"
+                label={t("mobile.files.more")}
+                iconOnly
+                onPress={() => hold(onePicture, middle())}
+              />
+            </GlassBar>
+          </Animated.View>
+        ) : hint ? (
+          <Animated.View {...fade} style={styles.barAt} pointerEvents="none">
+            <GlassBar>
+              <Text variant="footnote" tone="ink2" style={styles.hint} numberOfLines={2}>
+                {hint}
+              </Text>
+            </GlassBar>
+          </Animated.View>
         ) : null}
-      </View>
-      {readOnly ? null : (
-        <View
-          style={[styles.tools, { paddingBottom: insets.bottom + 4, borderTopColor: c.line2, backgroundColor: c.bg }]}
-        >
-          <Tool icon="note" label={t("mobile.live.canvas.tools.note")} onPress={() => addWords("note")} />
-          <Tool icon="textTool" label={t("mobile.live.canvas.tools.text")} onPress={() => addWords("text")} />
-          <Tool
-            icon="photos"
-            label={photos.busy > 0 ? t("mobile.live.slides.tools.sending") : t("mobile.live.canvas.tools.photo")}
-            disabled={photos.busy > 0}
-            onPress={() => void addPhotos()}
-          />
-          <Tool
-            icon="sparkle"
-            agent
-            label={t("mobile.live.canvas.tools.generate")}
-            hint={pictures.length > 0 ? t("mobile.live.canvas.generateFrom", { count: pictures.length }) : undefined}
-            onPress={() => generate()}
-          />
+        <View style={[styles.dockAt, { bottom: lineRoom }]} pointerEvents="box-none">
+          <View style={Platform.OS === "android" ? { borderRadius: DOCK_H / 2, boxShadow: shadows.e2 } : undefined}>
+            <Glass liquid interactive={false} intensity={70} style={[styles.dock, { borderColor: c.line2 }]}>
+              <View
+                accessibilityRole="toolbar"
+                accessibilityLabel={t("mobile.live.canvas.tools.label")}
+                style={styles.dockRow}
+              >
+                <DockButton
+                  icon="pointer"
+                  label={t("mobile.live.canvas.tools.select")}
+                  on={tool === "select"}
+                  onPress={() => pick("select")}
+                />
+                {readOnly ? null : (
+                  <>
+                    <DockButton
+                      icon="pen"
+                      label={t("mobile.live.canvas.tools.pen")}
+                      on={tool === "pen"}
+                      onPress={() => toggle("pen")}
+                    />
+                    <DockButton icon="rect" label={t("mobile.live.canvas.tools.shapes")} onPress={chooseForm} />
+                    <DockButton
+                      icon="arrowTool"
+                      label={t("mobile.live.canvas.tools.arrow")}
+                      on={tool === "arrow"}
+                      onPress={() => (tool === "arrow" ? pick("select") : chooseRoute())}
+                    />
+                    <DockButton
+                      icon="textTool"
+                      label={t("mobile.live.canvas.tools.text")}
+                      onPress={() => addWords("text")}
+                    />
+                    <DockButton
+                      icon="note"
+                      label={t("mobile.live.canvas.tools.note")}
+                      onPress={() => addWords("note")}
+                    />
+                    <DockButton
+                      icon="photos"
+                      label={
+                        photos.busy > 0 ? t("mobile.live.slides.tools.sending") : t("mobile.live.canvas.tools.photo")
+                      }
+                      disabled={photos.busy > 0}
+                      onPress={() => void addPhotos()}
+                    />
+                  </>
+                )}
+                <DockButton
+                  icon="comment"
+                  label={t("mobile.live.canvas.tools.comment")}
+                  on={tool === "comment"}
+                  onPress={() => toggle("comment")}
+                />
+              </View>
+            </Glass>
+          </View>
         </View>
-      )}
+        {tool === "pen" && !readOnly ? (
+          <Animated.View {...fade} style={[styles.dockAt, { bottom: lineRoom + DOCK_H + 8 }]} pointerEvents="box-none">
+            <PenBar pen={pen} onPen={setPen} />
+          </Animated.View>
+        ) : null}
+        <FileTalkLine file={detail} floating />
+        {cropping ? <CropOverlay box={cropping.box} onApply={crop} onCancel={() => setCropping(null)} /> : null}
+      </View>
     </>
+  );
+}
+
+/** The arrow tool's routes, in the web's order, with their marks. */
+const ARROW_ROUTES: readonly ArrowRoute[] = ["straight", "curve", "elbow"];
+const ROUTE_ICON: Record<ArrowRoute, IconName> = { straight: "line", curve: "curve", elbow: "elbow" };
+
+/**
+ * The pen's bar over the dock while drawing (the web's): the pen or the highlighter, the five colors, and three sizes
+ * (F, M, G). What it sets is what the next strokes take.
+ */
+function PenBar({ pen, onPen }: { pen: PenStyle; onPen: (next: PenStyle) => void }) {
+  const { t } = useTranslation();
+  const { colors: c, scheme } = useTheme();
+  return (
+    <GlassBar>
+      <View accessibilityRole="toolbar" accessibilityLabel={t("live.canvas.pen.label")} style={styles.penRow}>
+        {(["pen", "marker"] as const).map((tool) => (
+          <PressScale
+            key={tool}
+            haptic={false}
+            onPress={() => onPen({ ...pen, tool })}
+            accessibilityRole="button"
+            accessibilityLabel={t(`live.canvas.pen.${tool}`)}
+            accessibilityState={{ selected: pen.tool === tool }}
+            style={[styles.penTool, pen.tool === tool && { backgroundColor: c.plate }]}
+          >
+            <Icon name={tool === "pen" ? "pen" : "marker"} size={20} color={c.ink} />
+          </PressScale>
+        ))}
+        <View style={[styles.divider, { backgroundColor: c.line2 }]} />
+        {PEN_INKS.map((ink) => {
+          const on = pen.color.toLowerCase() === ink.color;
+          const shown = scheme === "dark" && isInk(ink.color) ? c.ink : ink.color;
+          return (
+            <PressScale
+              key={ink.key}
+              haptic={false}
+              onPress={() => onPen({ ...pen, color: ink.color })}
+              accessibilityRole="radio"
+              accessibilityLabel={t(`live.canvas.inks.${ink.key}`)}
+              accessibilityState={{ checked: on }}
+              style={styles.penSwatchAt}
+            >
+              <View
+                style={[styles.penSwatch, { backgroundColor: shown }, on && [styles.penOn, { borderColor: c.ink }]]}
+              />
+            </PressScale>
+          );
+        })}
+        <View style={[styles.divider, { backgroundColor: c.line2 }]} />
+        {PEN_SIZES.map((size) => (
+          <PressScale
+            key={size}
+            haptic={false}
+            onPress={() => onPen({ ...pen, size })}
+            accessibilityRole="radio"
+            accessibilityLabel={t(`live.canvas.pen.sizes.${size}`)}
+            accessibilityState={{ checked: pen.size === size }}
+            style={[styles.penSize, pen.size === size && { backgroundColor: c.plate }]}
+          >
+            <Text variant="footnote" style={styles.penSizeWord}>
+              {t(`live.canvas.pen.short.${size}`)}
+            </Text>
+          </PressScale>
+        ))}
+      </View>
+    </GlassBar>
   );
 }
 
@@ -454,40 +789,83 @@ function NoteSwatch({ color }: { color: NoteColor }) {
   );
 }
 
-/**
- * A tool under the plane: its icon over its word. "Gerar" wears the agent's look (an AI makes the pictures): the
- * app's cut corner and its mark in the agent's color.
- */
-function Tool({
+/** The dock: its buttons (a finger's 44) and its padding. */
+const DOCK_BUTTON = 44;
+const DOCK_PAD = 4;
+const DOCK_H = DOCK_BUTTON + DOCK_PAD * 2;
+
+/** One of the dock's tools: its icon, the one in use in ink (the app's chosen look), its name for VoiceOver. */
+function DockButton({
   icon,
   label,
-  onPress,
-  agent = false,
-  hint,
+  on = false,
   disabled = false,
+  onPress,
 }: {
   icon: IconName;
   label: string;
-  onPress: () => void;
-  agent?: boolean;
-  hint?: string | undefined;
+  on?: boolean;
   disabled?: boolean;
+  onPress: () => void;
 }) {
   const { colors: c } = useTheme();
   return (
     <PressScale
+      haptic={false}
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
-      {...(hint ? { accessibilityHint: hint } : {})}
-      accessibilityState={{ disabled }}
-      style={[styles.tool, agent && [styles.agent, { backgroundColor: c.plate }], disabled && styles.off]}
+      accessibilityState={{ selected: on, disabled }}
+      style={[styles.dockButton, on && { backgroundColor: c.ink }, disabled && styles.off]}
     >
-      <Icon name={icon} size={22} color={agent ? c.agent : c.ink} />
-      <Text variant="caption" tone="ink2" numberOfLines={1}>
-        {label}
-      </Text>
+      <Icon name={icon} size={22} color={on ? c.bg : c.ink} />
+    </PressScale>
+  );
+}
+
+/** The glass bar over the plane's top: a chosen picture's actions, or what the tool in use does. */
+function GlassBar({ children }: { children: ReactNode }) {
+  const { colors: c, shadows } = useTheme();
+  return (
+    <View style={Platform.OS === "android" ? { borderRadius: 16, boxShadow: shadows.e2 } : undefined}>
+      <Glass liquid interactive={false} intensity={70} style={[styles.bar, { borderColor: c.line2 }]}>
+        {children}
+      </Glass>
+    </View>
+  );
+}
+
+/** One of the glass bar's actions: an icon (or the agent's face) and its words; `iconOnly` for "…". */
+function BarButton({
+  icon,
+  face,
+  label,
+  iconOnly = false,
+  onPress,
+}: {
+  icon?: IconName;
+  face?: string;
+  label: string;
+  iconOnly?: boolean;
+  onPress: () => void;
+}) {
+  const { colors: c } = useTheme();
+  return (
+    <PressScale
+      haptic={false}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={[styles.barButton, iconOnly && styles.barIcon]}
+    >
+      {face ? <Face who={{ type: "agent", id: face }} size={20} live={false} /> : null}
+      {icon ? <Icon name={icon} size={18} color={c.ink} /> : null}
+      {iconOnly ? null : (
+        <Text variant="subhead" numberOfLines={1} style={styles.barWords}>
+          {label}
+        </Text>
+      )}
     </PressScale>
   );
 }
@@ -529,25 +907,54 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: SCREEN_X,
   },
-  tools: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 8,
-    paddingTop: 4,
-    borderTopWidth: StyleSheet.hairlineWidth,
+  dockAt: { position: "absolute", left: 0, right: 0, alignItems: "center", paddingBottom: 8 },
+  dock: {
+    height: DOCK_H,
+    padding: DOCK_PAD,
+    borderRadius: DOCK_H / 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
   },
-  tool: {
-    minWidth: 72,
-    minHeight: 52,
+  dockRow: { flexDirection: "row", alignItems: "center" },
+  dockButton: {
+    width: DOCK_BUTTON,
+    height: DOCK_BUTTON,
+    borderRadius: DOCK_BUTTON / 2,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
-    paddingHorizontal: 8,
-    borderRadius: 14,
   },
-  // The agent's look: the app's cut corner at the bottom left.
-  agent: { borderBottomLeftRadius: 4 },
   off: { opacity: 0.4 },
+  barAt: { position: "absolute", top: 12, left: 12, right: 12, alignItems: "flex-start" },
+  bar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    minHeight: 48,
+    padding: 4,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+  },
+  barButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 40,
+    minWidth: 44,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  barIcon: { paddingHorizontal: 0, justifyContent: "center" },
+  barWords: { fontWeight: "600" },
+  hint: { paddingHorizontal: 10, paddingVertical: 8 },
+  penRow: { flexDirection: "row", alignItems: "center" },
+  penTool: { width: 40, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  penSwatchAt: { width: 30, height: 44, alignItems: "center", justifyContent: "center" },
+  penSwatch: { width: 22, height: 22, borderRadius: 11 },
+  penOn: { borderWidth: 2 },
+  penSize: { width: 30, height: 44, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  penSizeWord: { fontWeight: "600" },
+  divider: { width: StyleSheet.hairlineWidth, height: 24, marginHorizontal: 4 },
   swatch: { width: 24, height: 24, borderRadius: 6, borderWidth: StyleSheet.hairlineWidth },
   bones: { paddingTop: 24, gap: 24, alignItems: "center" },
   boneRow: { flexDirection: "row", gap: 40 },

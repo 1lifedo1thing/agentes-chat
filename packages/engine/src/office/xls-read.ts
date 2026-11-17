@@ -29,6 +29,73 @@ const ERRORS: Record<number, ErrorCode> = {
 /** The parts of an `.ods` SheetJS reads (pictures and thumbnails are never inflated). */
 const ODS_PARTS = /^(?:mimetype|content\.xml|styles\.xml|meta\.xml|settings\.xml|META-INF\/manifest\.xml)$/i;
 
+/**
+ * SheetJS's own patterns (xlsx 0.20.3) for the tags of an `.ods` part and their attributes: `odsCells` walks the tags
+ * exactly as the library will, after taking out the comments the same way (`withoutComments`).
+ */
+const ODS_TAG = /<(\/?)([^\s?><!/:"]*:|)([^\s?<>:/"]+)(?:\s+[^<>=?"'\s]+="[^"]*?")*\s*\/?>/g;
+const ODS_ATTR = /\s([^"\s?>/]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^'">\s]+))/g;
+
+/** The text without its `<!-- -->` comments, as SheetJS takes them out (an unclosed one ends the text). */
+function withoutComments(text: string): string {
+  let si = text.indexOf("<!--");
+  if (si === -1) return text;
+  const out: string[] = [];
+  let last = 0;
+  while (si > -1) {
+    out.push(text.slice(last, si));
+    const ei = text.indexOf("-->", si + 4);
+    if (ei === -1) break;
+    last = ei + 3;
+    si = text.indexOf("<!--", last);
+    if (si === -1) out.push(text.slice(last));
+  }
+  return out.join("");
+}
+
+/** The largest repeat a tag asks for in `attribute` (by its local name, as SheetJS keys it), read the way it reads it. */
+function repeatOf(tag: string, attribute: string, read: (value: string) => number): number {
+  let most = 1;
+  for (const m of tag.matchAll(ODS_ATTR)) {
+    const name = m[1] ?? "";
+    const colon = name.indexOf(":");
+    let local = colon >= 0 ? name.slice(colon + 1) : name;
+    if (colon < 0 && local.indexOf("_") > 0) local = local.slice(0, local.indexOf("_"));
+    if (local.toLowerCase() !== attribute) continue;
+    // Not a number, or below one, leaves it at one, as the library counts it; `Infinity` stays endless.
+    const n = read(m[2] ?? m[3] ?? m[4] ?? "");
+    if (n > most) most = n;
+  }
+  return most;
+}
+
+/**
+ * How many cells SheetJS writes out for an `.ods` content part: each cell that ends (`</table:table-cell>`) is written
+ * once per column it repeats (`number-columns-repeated`) and per row its row repeats (`number-rows-repeated`), all
+ * held at once before anything is returned. A few bytes asking for a million rows of a thousand cells would fill the
+ * server's memory, so the cells are counted first, as the library will see them (its tag pattern, its comments taken
+ * out, a cell's repeat from the last cell tag, a row's until the row ends); a cell that turns out empty is counted
+ * too, which only errs toward refusing. Counting stops past `stopAt`.
+ */
+function odsCells(content: string, stopAt: number): number {
+  let rows = 1;
+  let cols = 1;
+  let cells = 0;
+  for (const m of withoutComments(content).matchAll(ODS_TAG)) {
+    const close = m[1] === "/";
+    const raw = m[3] ?? "";
+    const name = raw.indexOf("_") >= 0 ? raw.slice(0, raw.indexOf("_")) : raw;
+    if (name === "table-row" || name === "行") {
+      rows = close ? 1 : repeatOf(m[0], "number-rows-repeated", (v) => +v);
+    } else if (name === "table-cell" || name === "数据" || name === "covered-table-cell") {
+      if (!close) cols = repeatOf(m[0], "number-columns-repeated", (v) => Number.parseInt(v, 10));
+      else if (name !== "covered-table-cell") cells += rows * cols;
+    }
+    if (cells > stopAt) return cells;
+  }
+  return cells;
+}
+
 /** An `.ods` rebuilt from its parts as the server's zip reader inflated them (each at most its declared size). */
 function repackOds(bytes: Uint8Array): Uint8Array {
   const pkg = OfficePackage.open(bytes);
@@ -38,7 +105,18 @@ function repackOds(bytes: Uint8Array): Uint8Array {
     const part = pkg.bytes(name);
     if (part) files.push([name === "meta-inf/manifest.xml" ? "META-INF/manifest.xml" : name, part]);
   }
-  if (!files.some(([name]) => name === "content.xml")) throw officeUnreadable("it has no content");
+  const content = files.find(([name]) => name === "content.xml")?.[1];
+  if (!content) throw officeUnreadable("it has no content");
+  // The cells the library would expand, counted before it runs (`odsCells`). The part must be UTF-8 without a
+  // document type, so it reads here exactly as the library reads it.
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(content);
+  } catch {
+    throw officeUnreadable("its content is not UTF-8");
+  }
+  if (/<!DOCTYPE/i.test(text)) throw officeUnreadable("content.xml declares a document type");
+  if (odsCells(text, OFFICE_LIMITS.cells) > OFFICE_LIMITS.cells) throw officeTooLarge("cells");
   // `mimetype` first and stored, as the format asks.
   files.sort((a, b) => (a[0] === "mimetype" ? -1 : b[0] === "mimetype" ? 1 : 0));
   return zip(files, { store: (path) => path === "mimetype" });

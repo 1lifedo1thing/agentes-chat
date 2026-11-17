@@ -43,6 +43,7 @@ import { isAgentOnlyDm } from "./dms";
 import { cutText, stringsOf } from "./format";
 import { issueWorkBrief, issueWorkOf } from "./issue-work";
 import { openTasksBrief } from "./issues";
+import { fileConversationBrief, liveRefLine } from "./live/conversation";
 import type { MachineCaller } from "./machine-hub";
 import { type TaskEnd, taskEndText } from "./machine-task-text";
 import { type MessageMedia, mediaOf } from "./media";
@@ -556,14 +557,14 @@ export interface RunContext {
 }
 
 /**
- * When a live file fits better than a reply (ADR 0194 §6), and where pictures go (ADR 0195): ours puts them on a canvas
- * and counts them in the budget, which a computer brain's own image tool doesn't.
+ * When a live file fits better than a reply (ADR 0194 §6, documents ADR 0198), and where pictures go (ADR 0195): ours posts them in the
+ * conversation (or on a canvas) and counts them in the budget, which a computer brain's own image tool doesn't.
  */
 export const liveFilesLine = (images: boolean) =>
   [
-    "- Data people keep and work on (a budget, a tracker, a list to fill in or sort) goes in a spreadsheet (create_spreadsheet, formulas in English), not a Markdown table; slides to present in a presentation (create_presentation); ideas and images laid out side by side on a canvas (create_canvas). A message that carries a live file: work in that file with its read_ and edit_ tools, where its people watch you.",
+    "- Data people keep and work on (a budget, a tracker, a list to fill in or sort) goes in a spreadsheet (create_spreadsheet, formulas in English), not a Markdown table; slides to present in a presentation (create_presentation); ideas and images laid out side by side on a canvas (create_canvas); documents (create_artifact kind document) are live too: change them with edit_document. A message that carries a live file: work in that file with its read_ and edit_ tools, where its people watch you.",
     images
-      ? " Images: generate_image puts them on a canvas everyone here sees and counts them in your budget; prefer it to an image tool of your own."
+      ? " Images: generate_image posts them here as pictures (or on a canvas you name) and counts them in your budget; prefer it to an image tool of your own. A canvas with pictures from the conversation: create_canvas with their file ids as images."
       : "",
   ].join("");
 
@@ -1044,6 +1045,11 @@ export async function buildRunContext(
     : taskHere
       ? await issueWorkBrief(db, run.orgId, taskHere.issueId, { asked: taskAsked, personal }).catch(() => null)
       : null;
+  // A live file's conversation (ADR 0197): the file in focus, read from the artifact now.
+  const fileBrief =
+    root && channel.kind === "file"
+      ? await fileConversationBrief(db, run.orgId, root.meta, agent.id).catch(() => null)
+      : null;
 
   // A routine's background run: its routine block, time line and where it reports (ADR 0053 §4).
   const routine = background ? await routineContext(db, run, agent, trigger, zone, personal) : null;
@@ -1214,6 +1220,7 @@ export async function buildRunContext(
       : []),
     ...(briefing ? await briefing.then((text) => (text ? [{ conversation: true, text }] : [])) : []),
     ...(issueBrief ? [{ conversation: true, text: issueBrief }] : []),
+    ...(fileBrief ? [{ conversation: true, text: fileBrief }] : []),
     ...(machineAccess
       ? await machineAccess.then((a) =>
           a
@@ -1295,7 +1302,7 @@ export async function buildRunContext(
             ].join("\n")
           : channel.kind === "dm"
             ? `# Where you are\nA direct conversation. Participants: ${memberList}. Answer every message here; you don't need to be mentioned.`
-            : `# Where you are\nChannel #${channel.name}${channel.topic ? ` (topic: ${channel.topic})` : ""}, replying ${flat ? "in the channel" : "in a thread"}. Members: ${memberList}.${
+            : `# Where you are\n${channel.kind === "file" ? "A live file's own conversation (# This conversation says which)" : `Channel #${channel.name}${channel.topic ? ` (topic: ${channel.topic})` : ""}`}, replying ${flat ? "in the channel" : "in a thread"}. Members: ${memberList}.${
                 otherAgents
                   ? `\nOther agents here and what they can do: ${otherAgents}. Never answer for another agent or guess its permissions: say what this list shows, or ask it yourself (ask_agent) when you need its answer, or hand it work or news (tell_agent): what comes of either reaches you here by itself. Never relay to another agent what the person asked that agent directly: it got the message and answers it itself. Ask another agent with ask_agent and hand it work with tell_agent, not with an @mention here: a mention is credit or a reference, and wakes it only when it plainly asks it to act${options.followUp ? " (to wait for something use follow_up, not a mention)" : ""}. Never restate or confirm another agent's answer to the person: add only what is new, linking its message, and tell an agent whose answer is wrong privately (tell_agent), not here. Never name your tools to people.`
                   : ""
@@ -2049,13 +2056,15 @@ function fileList(meta: Message["meta"] | undefined): string {
 
 /**
  * Files attached to someone else's message (a person's or another agent's): titles and ids, so the agent can open or
- * send them with its file tools instead of searching the Drive for a file by name.
+ * send them with its file tools instead of searching the Drive for a file by name. Then what the message points at in
+ * a live file (`meta.liveRef`, ADR 0197).
  */
 export function attachedLine(m: Pick<Message, "meta">): string {
   const list = fileList(m.meta);
-  return list
+  const files = list
     ? `\n(attached files: ${list}; open each with read_artifact before you answer about it; if one is unreadable to you, give the reason and way out the tool gave)`
     : "";
+  return `${files}${liveRefLine(m.meta)}`;
 }
 
 /**

@@ -21,7 +21,6 @@ import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, type FlatListInstance, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Button,
   EmptyState,
@@ -41,6 +40,8 @@ import { PresentFaces } from "../shared/HereFaces";
 import { LiveBar, LiveUnavailable } from "../shared/LiveBar";
 import { usePeerLook } from "../shared/peers";
 import { type LiveDoc, useLiveDoc } from "../shared/useLiveDoc";
+import { useAskAgent, useRevealHere, useTalkFocus } from "../talk/hooks";
+import { FileTalkLine } from "../talk/TalkLine";
 import { HereIsland } from "./Island";
 import { moveTarget, peersBySlide, presenterOf, shownSlides, slideHeight } from "./logic";
 import { chooseSlideAction, confirmDelete, pickTheme } from "./menus";
@@ -57,10 +58,19 @@ import { useDeck } from "./useDeck";
  * delete); "Novo slide" picks a layout on a screen of its own, "Apresentar" plays it sideways. Someone presenting shows
  * on top with "Seguir"; following someone (from the faces' list) keeps their slide in view.
  */
-export function SlidesScreen({ id, slide }: { id: string; slide: string | null }) {
+export function SlidesScreen({
+  id,
+  slide,
+  focusId = null,
+}: {
+  id: string;
+  slide: string | null;
+  focusId?: string | null;
+}) {
   const live = useLiveDoc(id, { kind: "slides" });
   const query = useArtifact(live.orgId, id);
   const detail = query.data;
+  useTalkFocus(detail, focusId);
   const title = detail?.title ?? "";
   const closed = liveClosed(live);
 
@@ -112,7 +122,6 @@ function SlideList({
   const { t } = useTranslation();
   const { colors: c } = useTheme();
   const toast = useToast();
-  const insets = useSafeAreaInsets();
   const { width: screen } = useWindowDimensions();
   const deck = useDeck(room);
   const doc = room.doc;
@@ -166,6 +175,16 @@ function SlideList({
     [fileId],
   );
 
+  // The file's conversation (ADR 0197): "Ask Atlas" about a slide; a message's line about one brings it in view.
+  const asking = useAskAgent(detail);
+  const { label: askLabel, ask } = asking;
+  useRevealHere(fileId, deck.slides.length > 0, (sel) => {
+    const at = sel.slide ? deck.slides.findIndex((s) => s.id === sel.slide) : -1;
+    if (at < 0) return;
+    stopFollowing();
+    list.current?.scrollToIndex({ index: at, animated: true, viewPosition: 0.3 });
+  });
+
   const hold = useCallback(
     (slide: SlideData) => {
       const n = slide.index + 1;
@@ -173,6 +192,15 @@ function SlideList({
       const up = moveTarget(slide.index, count, -1);
       const down = moveTarget(slide.index, count, 1);
       chooseSlideAction(t("live.slides.rail.slide", { n }), [
+        ...(askLabel
+          ? [
+              {
+                label: askLabel,
+                icon: "sparkle" as const,
+                onPress: () => ask({ label: t("live.slides.selection.slide", { n }), slide: slide.id }),
+              },
+            ]
+          : []),
         ...(slide.hidden
           ? []
           : [
@@ -227,7 +255,7 @@ function SlideList({
           : []),
       ]);
     },
-    [deck.slides.length, edit, fileId, doc, attempt, t, present],
+    [deck.slides.length, edit, fileId, doc, attempt, t, present, askLabel, ask],
   );
 
   const menu: HeaderMenuItem[] = edit
@@ -303,7 +331,7 @@ function SlideList({
           />
         ) : null}
       </View>
-      <View style={[styles.bar, { paddingBottom: insets.bottom + 8, borderTopColor: c.line2, backgroundColor: c.bg }]}>
+      <View style={[styles.bar, { borderTopColor: c.line2, backgroundColor: c.bg }]}>
         {edit ? (
           <View style={styles.barItem}>
             <Button
@@ -324,6 +352,7 @@ function SlideList({
           />
         </View>
       </View>
+      <FileTalkLine file={detail} />
     </>
   );
 }

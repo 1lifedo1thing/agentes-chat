@@ -24,6 +24,7 @@ import {
   browserFrameBase64,
   browserFrameBytes,
   closesWorkspace,
+  fileConversationReaderSql,
   ForbiddenError,
   getMembership,
   isConnected,
@@ -289,6 +290,11 @@ export async function currentSubscriptions(
           isNotNull(schema.channelMembers.id),
           // A task's conversation: whoever sees the task (ADR 0145).
           and(eq(schema.channels.kind, "task"), taskReaderSql(sql`${schema.channels.id}`, sql`${userId}::text`)),
+          // A live file's conversation: whoever reads the file (ADR 0197).
+          and(
+            eq(schema.channels.kind, "file"),
+            fileConversationReaderSql(sql`${schema.channels.id}`, sql`${userId}::text`),
+          ),
           adminChannelSql(sql`${orgId}::uuid`, sql`${userId}::text`),
         ),
       ),

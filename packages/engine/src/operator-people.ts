@@ -143,6 +143,7 @@ const ALLOWS = [
   "public_channel",
   "administrator",
   "task_reader",
+  "file_reader",
   "shared_everyone",
   "shared_person",
   "shared_role",
@@ -159,6 +160,7 @@ const REFUSES = [
   "not_joined",
   "not_channel_member",
   "not_task_reader",
+  "not_file_reader",
   "not_shared",
   "unknown",
 ] as const;
@@ -249,13 +251,17 @@ const channelAccess: Explain = async (db, orgId, userId, channelId, member) => {
       ? c.reads
         ? "task_reader"
         : "not_task_reader"
-      : c.inIt
-        ? "channel_member"
-        : c.kind === "channel" && can(member, "administrator")
-          ? "administrator"
-          : c.kind === "channel" && c.visibility === "public"
-            ? "not_joined"
-            : "not_channel_member";
+      : c.kind === "file"
+        ? c.reads
+          ? "file_reader"
+          : "not_file_reader"
+        : c.inIt
+          ? "channel_member"
+          : c.kind === "channel" && can(member, "administrator")
+            ? "administrator"
+            : c.kind === "channel" && c.visibility === "public"
+              ? "not_joined"
+              : "not_channel_member";
   return answered(!c.archivedAt && c.reads, rule);
 };
 
@@ -330,11 +336,13 @@ const fileAccess: Explain = async (db, orgId, userId, fileId, member) => {
               ? "public_channel"
               : f.channelKind === "task" && f.readsChannel
                 ? "task_reader"
-                : admin
-                  ? "administrator"
-                  : listed && f.shareRoleIds.some((id) => member?.roleIds.includes(id))
-                    ? "shared_role"
-                    : "not_shared";
+                : f.channelKind === "file" && f.readsChannel
+                  ? "file_reader"
+                  : admin
+                    ? "administrator"
+                    : listed && f.shareRoleIds.some((id) => member?.roleIds.includes(id))
+                      ? "shared_role"
+                      : "not_shared";
   return answered(!f.deletedAt && f.sees, rule);
 };
 

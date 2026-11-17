@@ -1,4 +1,5 @@
 import { richText } from "@agenteschat/live";
+import type { PeerUser } from "@agenteschat/live/awareness";
 import {
   type ArrowEnd,
   addShape,
@@ -175,9 +176,16 @@ const DROPPED_KEYS = ["id", "z", "ends", "parent", "text", "type"] as const;
  * them, arrows last and tied to the new copies of their shapes (an end whose shape didn't come stays where it was).
  * A shape whose frame didn't come goes into the frame under it, if any. One transaction, so one undo step. Returns
  * the new ids of the top-level shapes (what to select): not the arrows tied at both ends to pasted shapes, which go
- * wherever those go.
+ * wherever those go. `by`: who pastes, whom the copies say made them (the apps' own edits carry no author).
  */
-export function pasteClip(doc: Y.Doc, clip: CanvasClip, dx: number, dy: number, origin: unknown): string[] {
+export function pasteClip(
+  doc: Y.Doc,
+  clip: CanvasClip,
+  dx: number,
+  dy: number,
+  origin: unknown,
+  by?: PeerUser,
+): string[] {
   const byOld = new Map(clip.shapes.map((s) => [s.id, s]));
   const depth = (s: ClipShape) => ancestorsOf(s.id, byOld).length;
   const ordered = [
@@ -194,6 +202,7 @@ export function pasteClip(doc: Y.Doc, clip: CanvasClip, dx: number, dy: number, 
       for (const key of DROPPED_KEYS) delete rest[key];
       const shape = { type: s.type, ...rest } as NewShape;
       if (s.text) shape.text = s.text;
+      if (by) shape.by = by;
       const parent = s.parent ? made.get(s.parent) : undefined;
       let follows = false;
       if (s.type === "arrow") {

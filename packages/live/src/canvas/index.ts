@@ -1,6 +1,7 @@
 /** Canvases (ADR 0194 §2, ADR 0195): shapes, frames, arrows, placement, edits, preview and text. */
 export { canvasPreview, canvasText, replaceCanvas, validateCanvas } from "./content";
 export {
+  arrowHeadPoints,
   arrowPath,
   type Box,
   center,
@@ -11,9 +12,14 @@ export {
   isBoxEnd,
   isPoint,
   type Point,
+  pointsBounds,
+  type RoutedArrow,
   rectsIntersect,
   rotatedBounds,
+  routeArrow,
+  type Segment,
   snapLines,
+  strokePath,
   union,
 } from "./geometry";
 export {
@@ -37,6 +43,7 @@ export { contentBounds, FRAME_LABEL, frameAt, placeBoxes } from "./place";
 export {
   ancestorsOf,
   CANVAS_COORD_MAX,
+  COMMON_PROPS,
   canvasBackground,
   descendantsOf,
   readShape,

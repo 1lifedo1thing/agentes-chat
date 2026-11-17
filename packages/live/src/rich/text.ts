@@ -338,8 +338,9 @@ function runMarkdown(run: RichRun): string {
   const text = run.text;
   if (!text.trim()) return text;
   // Marks go around the words, never around the spaces next to them (Markdown wouldn't read them).
-  const lead = /^\s*/.exec(text)?.[0] ?? "";
-  const trail = /\s*$/.exec(text)?.[0] ?? "";
+  // Sliced by trim, not by an end-anchored pattern (which is quadratic on a long run of spaces).
+  const lead = text.slice(0, text.length - text.trimStart().length);
+  const trail = text.slice(text.trimEnd().length);
   let core = escapeMarkdown(text.slice(lead.length, text.length - trail.length));
   if (run.strike) core = `~~${core}~~`;
   if (run.italic) core = `*${core}*`;

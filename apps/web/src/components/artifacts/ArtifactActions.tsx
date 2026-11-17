@@ -113,7 +113,7 @@ export function useDeleteArtifact(onDeleted?: (ids: string[]) => void) {
   return { ask, dialog, restore };
 }
 
-export type DownloadFormat = "pdf" | "docx" | "csv" | "xlsx" | "pptx";
+export type DownloadFormat = "pdf" | "docx" | "csv" | "xlsx" | "pptx" | "md";
 type Downloadable = Pick<Artifact, "id" | "kind" | "title">;
 
 /**
@@ -150,10 +150,12 @@ export function useArtifactDownload() {
   };
   /** What a kind can be saved as ("Original" for all but tables, whose original is the CSV). */
   const formats = (kind: ArtifactKind): { key: string; format?: DownloadFormat; icon: IconName; label: string }[] => [
+    // A document (a live file, ADR 0198): Word, its Markdown, or a PDF.
     ...(kind === "document"
       ? [
-          { key: "pdf", format: "pdf" as const, icon: "document" as const, label: t("artifacts.formatPdf") },
-          { key: "docx", format: "docx" as const, icon: "page" as const, label: t("artifacts.formatDocx") },
+          { key: "docx", format: "docx" as const, icon: "page" as const, label: t("live.shell.formats.docx") },
+          { key: "md", format: "md" as const, icon: "document" as const, label: t("live.shell.formats.md") },
+          { key: "pdf", format: "pdf" as const, icon: "document" as const, label: t("live.shell.formats.pdf") },
         ]
       : []),
     ...(kind === "table"

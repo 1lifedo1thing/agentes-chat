@@ -1,11 +1,13 @@
 import type { Peer } from "@agenteschat/live/awareness";
 import {
+  type ArrowRoute,
   arrowPath,
   type Box,
   containsPoint,
   descendantsOf,
   type NoteColor,
   placeBoxes,
+  pointsBounds,
   resolveEnd,
   type ShapeType,
   type ShapeView,
@@ -29,6 +31,8 @@ export function shapesIn(
   keep: ReadonlySet<string> = new Set(),
 ): ShapeView[] {
   return shapes.filter((s) => {
+    // Hidden from view (the layers' eye, ADR 0194 §2): never drawn here.
+    if (s.hidden) return false;
     if (keep.has(s.id)) return true;
     const b = shapeBounds(s, byId);
     return b.x <= box.x + box.w && box.x <= b.x + b.w && b.y <= box.y + box.h && box.y <= b.y + b.h;
@@ -128,12 +132,17 @@ export function arrowLine(
   return from && to ? arrowPath(from, to) : null;
 }
 
-/** An arrow as the UI thread draws it: its ends (each a shape's box, by id, or a free point) and its dashes. */
+/** An arrow as the UI thread draws it: its ends (each a shape's box, by id, or a free point), dashes and heads. */
 export interface ArrowDraw {
   id: string;
   from: ArrowEndW & { shape: string | null };
   to: ArrowEndW & { shape: string | null };
   dashed: boolean;
+  /** Heads at its start and end (a line has none). */
+  startHead: boolean;
+  endHead: boolean;
+  /** How it runs: straight, curved or with right angles (a moving one is drawn straight until it lands). */
+  route: ArrowRoute;
 }
 
 /** The arrows to draw, their ends where their shapes are now; an arrow whose shape is gone isn't drawn. */
@@ -150,7 +159,17 @@ export function arrowDraws(shapes: readonly ShapeView[], byId: ReadonlyMap<strin
         : { x: at.x, y: at.y, w: 0, h: 0, box: false, shape };
     });
     const [from, to] = ends;
-    if (from && to) out.push({ id: arrow.id, from, to, dashed: arrow.dashed === true });
+    if (from && to) {
+      out.push({
+        id: arrow.id,
+        from,
+        to,
+        dashed: arrow.dashed === true,
+        startHead: arrow.heads?.start === "arrow",
+        endHead: (arrow.heads?.end ?? "arrow") === "arrow",
+        route: arrow.route ?? "straight",
+      });
+    }
   }
   return out;
 }
@@ -278,3 +297,171 @@ export function chosenPictures(ids: readonly string[], byId: ReadonlyMap<string,
 
 /** The types the bottom bar adds. */
 export type AddKind = Extract<ShapeType, "note" | "text">;
+
+// ── Drawing with a finger (ADR 0194 §2) ──────────────────────────────────────────────────────────────────────────
+
+/** The most numbers (x, y, x, y…) one pen stroke keeps: the canvas's limit. */
+export const STROKE_MAX = 4000;
+
+/**
+ * A finger's stroke (world x, y pairs, as the screen heard it) as few points as draw it: a point closer than `min` to
+ * the last one kept goes (the last always stays, so the line ends where the finger lifted); while it is still over
+ * `max` numbers, the spacing doubles.
+ */
+export function thinPoints(points: readonly number[], min: number, max = STROKE_MAX): number[] {
+  const n = Math.floor(points.length / 2) * 2;
+  if (n === 0) return [];
+  let step = Math.max(0, min);
+  for (let round = 0; round < 24; round++) {
+    const kept: number[] = [points[0] as number, points[1] as number];
+    for (let i = 2; i < n; i += 2) {
+      const x = points[i] as number;
+      const y = points[i + 1] as number;
+      const lx = kept[kept.length - 2] as number;
+      const ly = kept[kept.length - 1] as number;
+      const last = i === n - 2;
+      if (Math.hypot(x - lx, y - ly) >= step) kept.push(x, y);
+      else if (last && (x !== lx || y !== ly)) {
+        // The finger's last place replaces the last one kept (too close to keep both).
+        if (kept.length > 2) kept.splice(kept.length - 2, 2, x, y);
+        else kept.push(x, y);
+      }
+    }
+    if (kept.length <= max) return kept;
+    step = Math.max(step * 2, 1);
+  }
+  return points.slice(0, Math.min(max, n));
+}
+
+/** A stroke as a pen shape: its box (world units) and its points from the box's top-left corner; null for none. */
+export function strokeShape(
+  points: readonly number[],
+): { x: number; y: number; w: number; h: number; points: number[] } | null {
+  const box = pointsBounds(points);
+  if (!box) return null;
+  const rel: number[] = [];
+  for (let i = 0; i + 1 < points.length; i += 2) {
+    rel.push(round2((points[i] as number) - box.x), round2((points[i + 1] as number) - box.y));
+  }
+  return { x: box.x, y: box.y, w: Math.max(1, box.w), h: Math.max(1, box.h), points: rel };
+}
+
+const round2 = (v: number) => Math.round(v * 100) / 100;
+
+/** Kinds as a selection's words count them (`live.canvas.count.*`): a picture on its way counts as a picture. */
+const COUNTED: Record<ShapeType, string> = {
+  image: "image",
+  pending: "image",
+  note: "note",
+  text: "text",
+  frame: "frame",
+  shape: "shape",
+  arrow: "arrow",
+  draw: "draw",
+  html: "html",
+  file: "file",
+};
+
+/**
+ * What a person has chosen on a canvas, in words for the conversation's quote and the agent (ADR 0197): "1 imagem",
+ * "2 notas", "3 elementos" for a mix, with the shapes' ids; null for nothing chosen.
+ */
+export function canvasSelection(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  shapes: readonly Pick<ShapeView, "id" | "type">[],
+): { label: string; shapes: string[] } | null {
+  if (shapes.length === 0) return null;
+  const kinds = new Set(shapes.map((s) => COUNTED[s.type]));
+  const count = shapes.length;
+  const [only] = kinds;
+  const label =
+    kinds.size === 1 && only ? t(`live.canvas.count.${only}`, { count }) : t("live.canvas.count.items", { count });
+  return { label, shapes: shapes.map((s) => s.id) };
+}
+
+// ── The pen's bar (ADR 0194 §2, the web's own choices) ───────────────────────────────────────────────────────────
+
+/** The colors people draw with, in the pen bar's order. */
+export const PEN_INKS = [
+  { key: "red", color: "#e5484d" },
+  { key: "ink", color: "#151514" },
+  { key: "blue", color: "#0063d1" },
+  { key: "green", color: "#2f9e44" },
+  { key: "orange", color: "#f2a33a" },
+] as const;
+
+export type PenSize = "s" | "m" | "l";
+export const PEN_SIZES: readonly PenSize[] = ["s", "m", "l"];
+
+/** Each size's width in world units: the pen's lines, the highlighter's wide bands. */
+export const PEN_WIDTHS: Record<"pen" | "marker", Record<PenSize, number>> = {
+  pen: { s: 2, m: 4, l: 8 },
+  marker: { s: 8, m: 16, l: 24 },
+};
+
+/** The pen as the person set it: pen or highlighter, a color, a size. */
+export interface PenStyle {
+  tool: "pen" | "marker";
+  color: string;
+  size: PenSize;
+}
+
+export const DEFAULT_PEN: PenStyle = { tool: "pen", color: "#151514", size: "m" };
+
+/** What a stroke stores for a pen: its color, its width, and the highlighter (the pen is the default tool). */
+export const strokeOf = (pen: PenStyle) => ({
+  stroke: pen.color,
+  strokeWidth: PEN_WIDTHS[pen.tool][pen.size],
+  ...(pen.tool === "marker" ? { tool: "marker" as const } : {}),
+});
+
+/** Whether a color is near black (the ink people draw with), which the dark theme draws light. */
+export function isInk(color: string): boolean {
+  const hex = color.replace("#", "");
+  const full = hex.length === 3 ? [...hex].map((ch) => ch + ch).join("") : hex.slice(0, 6);
+  if (!/^[0-9a-f]{6}$/i.test(full)) return false;
+  const n = Number.parseInt(full, 16);
+  return 0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255) < 48;
+}
+
+// ── Cropping a picture ──────────────────────────────────────────────────────────────────────────────────────────
+
+/** A part of a picture, as fractions (0 to 1) of what it shows. */
+export interface CropRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The least a crop's frame keeps on screen, in points (a finger's mark). */
+export const MIN_CROP = 32;
+
+const unit = (v: number) => Math.min(1, Math.max(0, Number.isFinite(v) ? v : 0));
+const round4 = (v: number) => Math.round(v * 10_000) / 10_000;
+
+/** A part kept inside the picture, never empty. */
+export function clampCrop(part: CropRect): CropRect {
+  const x = unit(part.x);
+  const y = unit(part.y);
+  return { x, y, w: Math.max(0.01, Math.min(1 - x, unit(part.w))), h: Math.max(0.01, Math.min(1 - y, unit(part.h))) };
+}
+
+/**
+ * A picture cropped to `part` of what it shows: its crop (fractions of the whole picture, inside the crop it had) and
+ * its box (the part kept stays where it was on the canvas, at the same size).
+ */
+export function croppedPicture(
+  shape: Pick<ShapeView, "x" | "y" | "w" | "h" | "crop">,
+  part: CropRect,
+): { crop: CropRect; x: number; y: number; w: number; h: number } {
+  const p = clampCrop(part);
+  const c = shape.crop ?? { x: 0, y: 0, w: 1, h: 1 };
+  return {
+    crop: { x: round4(c.x + p.x * c.w), y: round4(c.y + p.y * c.h), w: round4(p.w * c.w), h: round4(p.h * c.h) },
+    x: shape.x + p.x * shape.w,
+    y: shape.y + p.y * shape.h,
+    w: p.w * shape.w,
+    h: p.h * shape.h,
+  };
+}

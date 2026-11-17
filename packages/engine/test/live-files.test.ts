@@ -73,7 +73,7 @@ describe("making one", () => {
       NotFoundError,
     );
     await expect(
-      createLiveFile(f.artifactDeps, owner(), f.org.id, { kind: "document" as never, title: "No" }),
+      createLiveFile(f.artifactDeps, owner(), f.org.id, { kind: "table" as never, title: "No" }),
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
@@ -120,11 +120,11 @@ describe("who opens it, and how", () => {
     expect(await liveFileAccess(f.artifactDeps, personActor(ana.id), f.org.id, hidden.id)).toMatchObject({
       mode: "edit",
     });
-    const document = await createArtifact(f.artifactDeps, owner(), f.org.id, {
+    const table = await createArtifact(f.artifactDeps, owner(), f.org.id, {
       title: "Notes",
-      content: { kind: "document", markdown: "# Notes" },
+      content: { kind: "table", columns: ["a"], rows: [["1"]] },
     });
-    expect(await liveFileAccess(f.artifactDeps, owner(), f.org.id, document.id)).toBeNull();
+    expect(await liveFileAccess(f.artifactDeps, owner(), f.org.id, table.id)).toBeNull();
     expect(await liveFileAccess(f.artifactDeps, owner(), f.org.id, "nope")).toBeNull();
     expect(await liveFileAccess(f.artifactDeps, owner(), f.org.id, crypto.randomUUID())).toBeNull();
     const stranger = await addMember(f.db, f.org.id, "member", "zed");
@@ -162,11 +162,11 @@ describe("who opens it, and how", () => {
       requireLiveFile(f.artifactDeps, agent(f.general.id), f.org.id, theirs.id, { write: true }),
     ).rejects.toThrow(/File not found/);
     // Another kind: told which tools read and change it.
-    const document = await createArtifact(f.artifactDeps, owner(), f.org.id, {
+    const table = await createArtifact(f.artifactDeps, owner(), f.org.id, {
       title: "Notes",
-      content: { kind: "document", markdown: "# Notes" },
+      content: { kind: "table", columns: ["a"], rows: [["1"]] },
     });
-    await expect(requireLiveFile(f.artifactDeps, agent(f.general.id), f.org.id, document.id)).rejects.toThrow(
+    await expect(requireLiveFile(f.artifactDeps, agent(f.general.id), f.org.id, table.id)).rejects.toThrow(
       /read_artifact/,
     );
   });
@@ -191,14 +191,16 @@ describe("the Drive around it", () => {
     const deck = await makeLiveFile(f, "slides", { title: "Pitch" });
     await createArtifact(f.artifactDeps, owner(), f.org.id, {
       title: "Notes",
-      content: { kind: "document", markdown: "# Notes" },
+      content: { kind: "table", columns: ["a"], rows: [["1"]] },
     });
     const live = await listArtifacts(f.db, owner(), f.org.id, { kinds: ["spreadsheet", "slides", "canvas"] });
     expect(live.map((a) => a.id).sort()).toEqual([sheet.id, deck.id].sort());
     const byKind = await listArtifacts(f.db, owner(), f.org.id, { sort: "kind" });
-    expect(byKind.map((a) => a.kind)).toEqual(["document", "spreadsheet", "slides"]);
+    expect(byKind.map((a) => a.kind)).toEqual(["spreadsheet", "slides", "table"]);
     expect(isLiveArtifactKind("canvas")).toBe(true);
-    expect(isLiveArtifactKind("document")).toBe(false);
+    // A document is a live file too (ADR 0198).
+    expect(isLiveArtifactKind("document")).toBe(true);
+    expect(isLiveArtifactKind("table")).toBe(false);
   });
 
   test("shared into another conversation, it is copied whole at its head, pictures and all", async () => {

@@ -45,10 +45,26 @@ function declarePrefixes(text: string): string {
 }
 
 /** The root element of a part, or `officeUnreadable` when it isn't well-formed XML. */
+/**
+ * The most tags one part may hold (ADR 0196): a few megabytes of empty tags would build a tree of a gigabyte in the
+ * server's memory, while real Word and PowerPoint parts stay far below this.
+ */
+export const MAX_XML_TAGS = 1_000_000;
+/** The same for all the parts one package's reader parses, together. */
+export const MAX_PACKAGE_TAGS = 2_000_000;
+
+/** The tags a part's text holds (its `<`), counted without building anything. */
+export function tagCount(text: string): number {
+  let n = 0;
+  for (let i = text.indexOf("<"); i !== -1; i = text.indexOf("<", i + 1)) n++;
+  return n;
+}
+
 export function parseXml(text: string, part: string): Element {
   if (/<!DOCTYPE/i.test(text.slice(0, 4096)) || text.includes("<!ENTITY")) {
     throw officeUnreadable(`${part} declares a document type`);
   }
+  if (tagCount(text) > MAX_XML_TAGS) throw officeUnreadable(`${part} is too large to read`);
   let root: Element | null = null;
   try {
     const parser = new DOMParser({

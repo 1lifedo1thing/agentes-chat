@@ -1,6 +1,7 @@
-/* The canvas ("Quadro", ADR 0194 §2, ADR 0195): the plane, its shapes, what is drawn over them in screen pixels, the
-   dock, the zoom island, the shape bar, the generate bar and the picture's side column. Tokens only; motion only
-   inside `prefers-reduced-motion: no-preference`. */
+/* The canvas ("Quadro", ADR 0194 §2, ADR 0195, ADR 0197): the plane, its shapes, what is drawn over them in screen
+   pixels, the dock with its menus and the pen's bar, the zoom island, the bar over the selection with its size, the
+   layers, the crop, the comments' pins and the picture's details. Tokens only; motion only inside
+   `prefers-reduced-motion: no-preference`. */
 
 .cnv {
   /* Notes' soft colors: the light theme's pale tones, the dark theme's deep ones (palette.ts keeps the same pairs). */
@@ -77,7 +78,16 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
 .cnv__plane[data-panning] {
   cursor: grabbing;
 }
-.cnv__plane:is([data-tool="note"], [data-tool="text"], [data-tool="shape"], [data-tool="frame"], [data-tool="arrow"]) {
+.cnv__plane:is(
+  [data-tool="note"],
+  [data-tool="text"],
+  [data-tool="shape"],
+  [data-tool="line"],
+  [data-tool="frame"],
+  [data-tool="arrow"],
+  [data-tool="draw"],
+  [data-tool="comment"]
+) {
   cursor: crosshair;
 }
 
@@ -402,6 +412,79 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
   overflow-wrap: anywhere;
 }
 
+/*
+ * Borders, lines and pen strokes in a color of their own (`strokeStyle`): the ink is drawn light on the dark canvas,
+ * any other color as it is; their width in world units.
+ */
+.cnv-arrow .cnv-arrow__line {
+  fill: none;
+  stroke-width: var(--stroke-width, 2);
+  stroke-linejoin: round;
+}
+.cnv-arrow[data-stroke] .cnv-arrow__line {
+  stroke: var(--stroke-light);
+}
+.cnv-arrow[data-stroke] .cnv-arrow__head {
+  fill: var(--stroke-light);
+  stroke: var(--stroke-light);
+}
+[data-theme="dark"] .cnv-arrow[data-stroke] .cnv-arrow__line {
+  stroke: var(--stroke-dark);
+}
+[data-theme="dark"] .cnv-arrow[data-stroke] .cnv-arrow__head {
+  fill: var(--stroke-dark);
+  stroke: var(--stroke-dark);
+}
+.cnv-geo[data-stroke="custom"] .cnv-geo__svg :is(rect, ellipse, polygon) {
+  stroke: var(--stroke-light);
+}
+[data-theme="dark"] .cnv-geo[data-stroke="custom"] .cnv-geo__svg :is(rect, ellipse, polygon) {
+  stroke: var(--stroke-dark);
+}
+.cnv-geo[data-stroke="none"] .cnv-geo__svg :is(rect, ellipse, polygon) {
+  stroke: none;
+}
+.cnv-geo[data-stroke-width] .cnv-geo__svg :is(rect, ellipse, polygon) {
+  stroke-width: var(--stroke-width);
+}
+.cnv-draw {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.cnv-draw path {
+  fill: none;
+  stroke: var(--stroke-light, var(--ink));
+  stroke-width: var(--stroke-width, 4);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+[data-theme="dark"] .cnv-draw path {
+  stroke: var(--stroke-dark, var(--ink));
+}
+.cnv-draw[data-tool="marker"] path {
+  stroke-width: var(--stroke-width, 16);
+  opacity: 0.4;
+}
+/* The stroke being drawn: in world units at the world's corner, its points where they are. */
+.cnv-draw--ink {
+  inset: auto;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+/* A cropped picture: the part shown fills the box (its picture placed by `ImageShape`). */
+.cnv-img[data-crop] {
+  position: relative;
+}
+.cnv-img[data-crop] img {
+  position: absolute;
+  max-width: none;
+  object-fit: fill;
+}
+
 /* A picture being uploaded, where it will land. */
 .cnv-upload {
   position: absolute;
@@ -610,6 +693,28 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
 .cnv-over__peer .cnv-over__line {
   background: color-mix(in srgb, var(--peer) 35%, transparent);
 }
+/* A curved or elbowed arrow's outline, along its route. */
+.cnv-over__route {
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  box-shadow: none;
+}
+.cnv-over__route polyline {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 18%, transparent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cnv-over__hover.cnv-over__route polyline {
+  stroke: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.cnv-over__psel.cnv-over__route polyline {
+  stroke: color-mix(in srgb, var(--peer) 35%, transparent);
+}
 .cnv-over__ptag-at {
   transform: translate(-100%, calc(-100% - 4px));
   white-space: nowrap;
@@ -670,6 +775,9 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
   bottom: var(--space-4);
   z-index: var(--z-raised);
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
   justify-content: center;
   width: max-content;
   max-width: calc(100% - 2 * var(--space-4));
@@ -695,6 +803,34 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
   background: var(--action);
   color: var(--on-action);
 }
+/* A tool with a menu of its kinds: a small ▾ in its corner. */
+.cnv-dock__tool--menu {
+  position: relative;
+}
+.cnv-dock__caret {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  display: inline-flex;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.cnv-dock__caret .ac-icon {
+  width: 10px;
+  height: 10px;
+}
+.cnv-dock__menu {
+  min-width: 220px;
+}
+/* "Pedir ao Atlas": the file's agent's face and the words. */
+.cnv-dock__agent {
+  gap: var(--space-2);
+  padding-inline: var(--space-2) var(--space-3);
+  font-weight: 600;
+}
+.cnv-dock__agent .ac-avatar {
+  flex: none;
+}
 .cnv-dock__divider,
 .cnv-bar__divider {
   flex: none;
@@ -713,21 +849,10 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
   border-radius: 16px;
   transform: translateX(-50%);
 }
-@media (max-width: 520px) {
-  .cnv-dock__gen-words {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-}
-
 .cnv-zoom {
   position: absolute;
+  top: var(--space-4);
   right: var(--space-4);
-  bottom: var(--space-4);
   z-index: var(--z-raised);
   display: flex;
   align-items: center;
@@ -739,16 +864,17 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
 .cnv-zoom__level {
   min-width: 56px;
 }
-@media (max-width: 760px) {
-  .cnv-zoom {
-    top: var(--space-4);
-    bottom: auto;
-  }
+.cnv-zoom [aria-pressed="true"] {
+  background: var(--chosen-bg);
+  box-shadow: var(--chosen-shadow);
 }
 
-.cnv-bar {
+/* A bar over the selection is placed by its spot (`BarSpot`), kept inside the plane. */
+.cnv-barspot {
   position: absolute;
   z-index: var(--z-raised);
+}
+.cnv-bar {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -817,132 +943,330 @@ html:not([data-pointer]) :is(.cnv-bar__swatch, .cnv-bar__size):focus-visible {
   background: var(--chosen-bg);
   box-shadow: var(--chosen-shadow);
 }
+/* Fill and border: a dot of the color (a ring for a border), its width, and ▾. */
+.cnv-bar__pick {
+  gap: var(--space-1);
+  padding-inline: var(--space-2);
+}
+.cnv-bar__pick .ac-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+.cnv-bar__num {
+  min-width: 12px;
+  color: var(--ink2);
+  font-size: 13px;
+  font-weight: 600;
+}
+.cnv-dot {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--dot, var(--raised));
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+[data-theme="dark"] .cnv-dot {
+  background: var(--dot-dark, var(--dot, var(--raised)));
+}
+.cnv-dot[data-ring] {
+  background: none;
+  box-shadow: inset 0 0 0 2.5px var(--dot, var(--line-strong));
+}
+[data-theme="dark"] .cnv-dot[data-ring] {
+  background: none;
+  box-shadow: inset 0 0 0 2.5px var(--dot-dark, var(--dot, var(--line-strong)));
+}
+/* None: crossed out. */
+.cnv-dot[data-none],
+.cnv-colors__swatch[data-none]::before {
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 1px),
+    var(--danger) calc(50% - 1px),
+    var(--danger) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
 
-/* ── Generate ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* The pen's bar: above the dock, in the bottom's column. */
+.cnv-penbar {
+  max-width: 100%;
+}
 
-.cnv-gen {
+/* Fill and border popovers: their swatches and widths. */
+.cnv-colors {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  width: 600px;
-  max-width: 100%;
-  padding: var(--space-3);
-  border-radius: 20px;
+  padding: var(--space-2);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .cnv-gen {
-    animation: cnv-grow var(--dur-base) var(--out) both;
-  }
+.cnv-colors__grid {
+  display: grid;
+  grid-template-columns: repeat(6, 32px);
+  gap: 2px;
 }
-@keyframes cnv-grow {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.98);
-  }
-}
-.cnv-gen__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1)) 0 0;
-}
-.cnv-gen__title {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-weight: 600;
-}
-.cnv-gen__prompt {
-  max-height: calc(5lh + 2 * var(--space-2));
-  resize: none;
-}
-.cnv-gen__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-.cnv-gen__model {
-  min-width: 140px;
-  max-width: 200px;
-}
-.cnv-gen__one-model {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-.cnv-gen__go {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-left: auto;
-}
-.cnv-gen__ratio {
-  display: inline-block;
-  width: calc(14px * var(--rw));
-  height: calc(14px * var(--rh));
-  border: 1.6px solid currentColor;
-  border-radius: 2px;
-  vertical-align: middle;
-}
-.cnv-gen__refs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.cnv-gen__ref {
+.cnv-colors__swatch {
   position: relative;
   width: 32px;
   height: 32px;
-  border-radius: 6px;
-  overflow: visible;
-}
-.cnv-gen__ref img {
-  display: block;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  object-fit: cover;
-  box-shadow: 0 0 0 1px var(--line2);
-}
-.cnv-gen__unref {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  display: grid;
-  width: 18px;
-  height: 18px;
-  place-items: center;
-  padding: 0;
   border: 0;
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--on-action);
+  border-radius: var(--radius-item);
+  background: none;
   cursor: pointer;
 }
-.cnv-gen__unref::after {
+.cnv-colors__swatch::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px var(--line2);
+}
+[data-theme="dark"] .cnv-colors__swatch::before {
+  background: var(--swatch-dark, var(--swatch));
+}
+[data-theme="dark"] .cnv-colors__swatch[data-none]::before {
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 1px),
+    var(--danger) calc(50% - 1px),
+    var(--danger) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+.cnv-colors__swatch:hover {
+  background: var(--plate);
+}
+.cnv-colors__swatch[aria-checked="true"]::before {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 3.5px var(--ink);
+}
+html:not([data-pointer]) .cnv-colors__swatch:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.cnv-colors__numbers {
+  display: flex;
+  gap: 2px;
+}
+
+/* The selection's size, under it: "1024 × 1024". */
+.cnv-sizetag {
+  position: absolute;
+  z-index: var(--z-raised);
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--action);
+  color: var(--on-action);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ── Comments' pins: a face and a number where a message points (screen pixels) ───────────────────────────────── */
+
+.cnv-pins {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cnv-pin {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px 2px 2px;
+  border: 0;
+  border-radius: 14px 14px 14px 3px;
+  background: var(--raised);
+  box-shadow:
+    var(--e2),
+    0 0 0 1px var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  transform: translate(0, -100%);
+  pointer-events: auto;
+  cursor: pointer;
+}
+/* A bigger target than it looks, for a finger. */
+.cnv-pin::after {
   content: "";
   position: absolute;
   inset: -8px;
 }
-.cnv-gen__note {
-  margin: 0;
-  color: var(--ink);
+.cnv-pin:hover {
+  box-shadow:
+    var(--e2),
+    0 0 0 1.5px var(--ink);
 }
-.cnv-gen__hint {
-  margin: 0;
+html:not([data-pointer]) .cnv-pin:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
-.cnv-gen__use {
-  align-self: flex-start;
+.cnv-pin__n {
+  padding: 0 2px;
 }
-.cnv-gen__loading {
+
+/* ── Layers: the canvas as a list, on the plane's left ────────────────────────────────────────────────────────── */
+
+.cnv-layers {
+  position: absolute;
+  left: var(--space-4);
+  top: var(--space-4);
+  bottom: 84px;
+  z-index: var(--z-raised);
   display: flex;
   flex-direction: column;
+  width: 248px;
+  max-width: calc(100% - 2 * var(--space-4));
+  padding: var(--space-1);
+  border-radius: 16px;
+}
+.cnv-layers__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+}
+.cnv-layers__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+.cnv-layers__empty {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+}
+.cnv-layers__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 2px var(--space-1);
+  overflow: auto;
+  list-style: none;
+}
+.cnv-layer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 32px;
+  padding-right: var(--space-1);
+  border-radius: var(--radius-item);
+  color: var(--ink2);
+  font-size: 13.5px;
+}
+.cnv-layer:hover {
+  background: var(--plate);
+}
+.cnv-layer.is-on {
+  background: var(--plate);
+  color: var(--ink);
+  font-weight: 600;
+}
+.cnv-layer[data-hidden] .cnv-layer__pick {
+  color: var(--muted);
+}
+.cnv-layer__pick {
+  display: flex;
+  flex: 1;
+  align-items: center;
   gap: var(--space-2);
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 var(--space-1) 0 calc(var(--space-2) + var(--depth, 0) * 18px);
+  border: 0;
+  border-radius: var(--radius-item);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cnv-layer__pick .ac-icon {
+  flex: none;
+  color: var(--muted);
+}
+html:not([data-pointer]) .cnv-layer__pick:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.cnv-layer__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cnv-layer__who {
+  display: inline-flex;
+  flex: none;
+}
+/* The eye shows on the row under the pointer, on a hidden one always, and to the keys. */
+.cnv-layer__eye {
+  flex: none;
+  opacity: 0;
+}
+.cnv-layer:hover .cnv-layer__eye,
+.cnv-layer[data-hidden] .cnv-layer__eye,
+.cnv-layer__eye:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .cnv-layer__eye {
+    opacity: 1;
+  }
+}
+
+/* ── Crop: the whole picture faint, the window kept at full strength with its handles ─────────────────────────── */
+
+.cnv-crop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cnv-crop__ghost {
+  position: absolute;
+  max-width: none;
+  opacity: 0.35;
+  object-fit: fill;
+  pointer-events: none;
+}
+.cnv-crop__window {
+  position: absolute;
+  box-shadow: 0 0 0 1.5px var(--ink);
+  cursor: move;
+  pointer-events: auto;
+  touch-action: none;
+}
+/* Only what the window covers of the whole picture shows at full strength; its handles sit on its edges, uncut. */
+.cnv-crop__view {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cnv-crop__picture {
+  position: absolute;
+  max-width: none;
+  object-fit: fill;
+}
+.cnv-crop__handle {
+  touch-action: none;
 }
 
 /* ── The picture's side column ────────────────────────────────────────────────────────────────────────────────── */
@@ -1109,4 +1433,18 @@ html:not([data-pointer]) :is(.cnv-bar__swatch, .cnv-bar__size):focus-visible {
   fill: var(--raised);
   stroke: var(--line2);
   stroke-width: 1;
+}
+.cnv-mini__arrow,
+.cnv-mini__draw {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cnv-mini__draw {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.cnv-mini__draw[data-tool="marker"] {
+  stroke-width: 4;
+  opacity: 0.4;
 }

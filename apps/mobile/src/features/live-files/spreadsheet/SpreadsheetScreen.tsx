@@ -22,6 +22,7 @@ import {
   insertCols,
   insertRows,
   nextSheetName,
+  parseA1Range,
   pasteCells,
   type RangeIds,
   type SheetLocale,
@@ -47,6 +48,8 @@ import { setFollowing, useFollowing } from "../shared/follow";
 import { LiveBar, LiveUnavailable } from "../shared/LiveBar";
 import { usePeerLook } from "../shared/peers";
 import { type LiveDoc, useLiveDoc } from "../shared/useLiveDoc";
+import { useAskAgent, useRevealHere, useTalkFocus } from "../talk/hooks";
+import { FileTalkLine } from "../talk/TalkLine";
 import { type Caret, CellBar, type CellEditing } from "./CellBar";
 import { boxLabel, cellLabel, commitCell, formulaKeys, insertReference, takesReference } from "./edit";
 import type { GridBox } from "./grid-view";
@@ -59,11 +62,12 @@ import { GridBones, type GridPeer, type GridSelection, SheetGrid } from "./Sheet
  * person's language. Everyone else's selection shows in their color with their face; following someone (from the
  * faces' list) moves the view to wherever they select, until the person moves it themselves.
  */
-export function SpreadsheetScreen({ id }: { id: string }) {
+export function SpreadsheetScreen({ id, focusId = null }: { id: string; focusId?: string | null }) {
   const { i18n } = useTranslation();
   const live = useLiveDoc(id, { kind: "spreadsheet" });
   const query = useArtifact(live.orgId, id);
   const detail = query.data;
+  useTalkFocus(detail, focusId);
   const title = detail?.title ?? "";
   const closed = liveClosed(live);
   const locale = useMemo(() => sheetLocale(i18n.language || "en"), [i18n.language]);
@@ -359,6 +363,26 @@ function LiveSheet({
     if (followId !== null) setFollowing(fileId, null);
   }, [followId, fileId]);
 
+  // ── The file's conversation (ADR 0197) ─────────────────────────────────────────────────────────────────────────
+  const asking = useAskAgent(detail);
+  // A message's line about some cells: their sheet, the cells chosen and in view.
+  useRevealHere(fileId, Boolean(layout), (sel) => {
+    const range = sel.range ? parseA1Range(sel.range) : null;
+    if (!range) return;
+    stopFollowing();
+    if (sel.sheet && sel.sheet !== sheetId && tabs.some((tab) => tab.id === sel.sheet)) setPicked(sel.sheet);
+    const rows = Math.max(1, layout?.rows ?? 1);
+    const cols = Math.max(1, layout?.cols ?? 1);
+    const box = {
+      r1: Math.min(range.r1, rows - 1),
+      c1: Math.min(range.c1, cols - 1),
+      r2: Math.min(range.r2, rows - 1),
+      c2: Math.min(range.c2, cols - 1),
+    };
+    setSelection({ row: box.r1, col: box.c1, box });
+    revealBox(box);
+  });
+
   // ── Menus ──────────────────────────────────────────────────────────────────────────────────────────────────────
   const rangeOf = (box: GridBox): RangeIds | null => (sheetId ? { sheet: sheetId, ...box } : null);
   const attempt = (run: () => void) => {
@@ -410,6 +434,16 @@ function LiveSheet({
     const label = layout ? boxLabel(box, layout) : cellLabel(row, col);
     showActionSheet(label, [
       { label: t("mobile.live.sheet.menu.copy"), icon: "copy", onPress: copy },
+      // "Ask Atlas" (ADR 0197): the conversation opens with these cells over its composer.
+      ...(asking.label
+        ? [
+            {
+              label: asking.label,
+              icon: "sparkle" as const,
+              onPress: () => asking.ask({ label: `${sheetName(doc, sheetId)}!${label}`, sheet: sheetId, range: label }),
+            },
+          ]
+        : []),
       ...(readOnly
         ? []
         : [
@@ -603,7 +637,7 @@ function LiveSheet({
           onDone={done}
           onCancel={cancel}
         />
-        <Animated.View style={[homeRoom, { backgroundColor: c.bg }]} />
+        {typing ? <Animated.View style={[homeRoom, { backgroundColor: c.bg }]} /> : <FileTalkLine file={detail} />}
       </KeyboardAvoidingView>
     </>
   );

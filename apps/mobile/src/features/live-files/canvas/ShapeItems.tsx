@@ -1,5 +1,5 @@
 import { useArtifact } from "@agenteschat/client";
-import type { ShapeView } from "@agenteschat/live/canvas";
+import { type ShapeView, strokePath } from "@agenteschat/live/canvas";
 import type { RichDoc } from "@agenteschat/live/rich";
 import type { TextLook } from "@agenteschat/live/slides";
 import { Image, type ImageSource } from "expo-image";
@@ -7,7 +7,7 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Text as RNText, StyleSheet, View } from "react-native";
 import Animated, { type SharedValue, useAnimatedStyle } from "react-native-reanimated";
-import Svg, { Ellipse, Polygon, Rect } from "react-native-svg";
+import Svg, { Ellipse, Path, Polygon, Rect } from "react-native-svg";
 import { PixelOrbit } from "@/agent/PixelOrbit";
 import { Dither } from "@/sky/Dither";
 import { softTones } from "@/sky/math";
@@ -18,14 +18,14 @@ import { agentLook } from "../../shared/logic";
 import { NOTE_TINTS } from "../shared/LiveCover";
 import { RichBlock } from "../slides/SlideView";
 import type { Pt, WBox } from "./camera";
-import { NOTE_PAD, NOTE_TEXT, pendingWords, retryable } from "./logic";
+import { isInk, NOTE_PAD, NOTE_TEXT, pendingWords, retryable } from "./logic";
 
 /**
  * What a canvas's shapes look like on the phone (ADR 0194 §2, 0195), the web's look in world units laid out at `k`
- * points per unit: pictures (corners 8), notes in their soft colors, bare text, shapes with their label, pictures being
- * made (the sky forming, who asked, the prompt; failed, why and "Tentar de novo"), an agent's page and any file as a
- * card. Frames and arrows are drawn on the plane itself (Skia). A shape being moved or stretched follows the finger
- * on the UI thread (`Motion`) until the change is written.
+ * points per unit: pictures (corners 8, the part a crop shows), notes in their soft colors, bare text, shapes in their
+ * form with their border and label, pen strokes, pictures being made (the sky forming, who asked, the prompt; failed,
+ * why and "Tentar de novo"), an agent's page and any file as a card. Frames and arrows are drawn on the plane itself
+ * (Skia). A shape being moved or stretched follows the finger on the UI thread (`Motion`) until the change is written.
  */
 
 /** What moves on the UI thread while a finger drags: the shapes moved (and by how much), the one stretched. */
@@ -106,6 +106,8 @@ function ShapeBody({
       return <Words shape={shape} k={k} />;
     case "shape":
       return <Geo shape={shape} k={k} />;
+    case "draw":
+      return <Stroke shape={shape} />;
     case "pending":
       return <Pending shape={shape} k={k} readOnly={readOnly} />;
     case "html":
@@ -120,16 +122,27 @@ function Picture({ shape, k, picture }: { shape: ShapeView; k: number; picture: 
   const { colors: c } = useTheme();
   const reduced = useReducedMotion();
   const radius = 8 * k;
+  const crop = shape.crop;
+  // A crop: the picture scaled up and moved so its part fills the box.
+  const placed = crop
+    ? {
+        position: "absolute" as const,
+        width: (shape.w * k) / crop.w,
+        height: (shape.h * k) / crop.h,
+        left: (-crop.x / crop.w) * shape.w * k,
+        top: (-crop.y / crop.h) * shape.h * k,
+      }
+    : StyleSheet.absoluteFill;
   return (
     <View style={[styles.fill, styles.clip, { borderRadius: radius, backgroundColor: c.sunken }]}>
       {shape.asset ? (
         <Image
           source={picture(shape.asset)}
           recyclingKey={shape.asset}
-          contentFit="cover"
+          contentFit={crop ? "fill" : "cover"}
           // A picture that just came (a generated one) fades in where its placeholder was.
           transition={reduced ? 0 : 200}
-          style={StyleSheet.absoluteFill}
+          style={placed}
           accessible={false}
         />
       ) : null}
@@ -189,14 +202,29 @@ function Words({ shape, k }: { shape: ShapeView; k: number }) {
   );
 }
 
+/** A star's corners on a 100 × 100 square. */
+const STAR = [50, 3, 62, 36, 97, 37, 69, 58, 79, 93, 50, 72, 21, 93, 31, 58, 3, 37, 38, 36];
+
 function Geo({ shape, k }: { shape: ShapeView; k: number }) {
   const { colors: c } = useTheme();
   const w = Math.max(1, shape.w);
   const h = Math.max(1, shape.h);
   const fill = shape.fill ?? c.raised;
   const stroke = shape.stroke ?? c.lineStrong;
+  const width = shape.strokeWidth ?? 2;
   const kind = shape.kind ?? "rect";
   const rich: RichDoc = shape.text ?? [];
+  const corners =
+    kind === "triangle"
+      ? `${w / 2},1 ${w - 1},${h - 1} 1,${h - 1}`
+      : kind === "star"
+        ? STAR.reduce<string[]>((out, v, i) => {
+            if (i % 2 === 0) out.push(`${(v / 100) * w},${((STAR[i + 1] ?? 0) / 100) * h}`);
+            return out;
+          }, []).join(" ")
+        : kind === "diamond"
+          ? `${w / 2},1 ${w - 1},${h / 2} ${w / 2},${h - 1} 1,${h / 2}`
+          : null;
   return (
     <>
       <Svg
@@ -214,25 +242,20 @@ function Geo({ shape, k }: { shape: ShapeView; k: number }) {
             ry={Math.max(0, h / 2 - 1)}
             fill={fill}
             stroke={stroke}
-            strokeWidth={2}
+            strokeWidth={width}
           />
-        ) : kind === "diamond" ? (
-          <Polygon
-            points={`${w / 2},1 ${w - 1},${h / 2} ${w / 2},${h - 1} 1,${h / 2}`}
-            fill={fill}
-            stroke={stroke}
-            strokeWidth={2}
-          />
+        ) : corners ? (
+          <Polygon points={corners} fill={fill} stroke={stroke} strokeWidth={width} />
         ) : (
           <Rect
             x={1}
             y={1}
             width={w - 2}
             height={h - 2}
-            rx={Math.min(8, w / 2, h / 2)}
+            rx={Math.max(0, Math.min(shape.radius ?? 8, w / 2, h / 2))}
             fill={fill}
             stroke={stroke}
-            strokeWidth={2}
+            strokeWidth={width}
           />
         )}
       </Svg>
@@ -240,6 +263,37 @@ function Geo({ shape, k }: { shape: ShapeView; k: number }) {
         <RichBlock rich={rich} look={look(18, c.ink, { align: "center", valign: "middle", lineHeight: 1.35 })} k={k} />
       </View>
     </>
+  );
+}
+
+/** A pen stroke (its points from its box's corner, in world units); the marker wide and see-through. */
+function Stroke({ shape }: { shape: ShapeView }) {
+  const { colors: c, scheme } = useTheme();
+  if (!shape.points?.length) return null;
+  const marker = shape.tool === "marker";
+  const w = Math.max(1, shape.w);
+  const h = Math.max(1, shape.h);
+  return (
+    <Svg
+      width="100%"
+      height="100%"
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      style={[StyleSheet.absoluteFill, styles.visible]}
+    >
+      <Path
+        d={strokePath(shape.points)}
+        fill="none"
+        // The ink people draw with reads light on the dark canvas, as on the web.
+        stroke={
+          shape.stroke && shape.stroke !== "none" && !(scheme === "dark" && isInk(shape.stroke)) ? shape.stroke : c.ink
+        }
+        strokeWidth={shape.strokeWidth ?? (marker ? 16 : 4)}
+        strokeOpacity={marker ? 0.4 : 1}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
   );
 }
 
@@ -441,6 +495,7 @@ const styles = StyleSheet.create({
   abs: { position: "absolute" },
   fill: { flex: 1 },
   clip: { overflow: "hidden" },
+  visible: { overflow: "visible" },
   edge: { borderWidth: StyleSheet.hairlineWidth },
   strong: { fontWeight: "600" },
   line: { flexDirection: "row", alignItems: "center" },

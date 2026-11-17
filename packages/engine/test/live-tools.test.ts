@@ -22,6 +22,7 @@ import {
   type LiveImages,
   liveFilesLine,
   liveImageJobHandlers,
+  openFileConversation,
   postPersonMessage,
   type ToolContext,
   type ToolOutput,
@@ -165,14 +166,14 @@ describe("the tools and their group", () => {
     const system = systemText(f.provider.calls[0]?.request.system ?? "");
     expect(system).toContain(liveFilesLine(false));
     expect(system).not.toContain("generate_image");
-    expect(liveFilesLine(true)).toContain("generate_image puts them on a canvas");
+    expect(liveFilesLine(true)).toContain("generate_image posts them here as pictures");
   });
 
   test("a message carries a live file when it was asked from one, or one is attached", async () => {
     const sheet = await makeLiveFile(f, "spreadsheet");
     const notes = await createArtifact(f.artifactDeps, personActor(f.owner.id), f.org.id, {
       title: "Notes",
-      content: { kind: "document", markdown: "Plain notes" },
+      content: { kind: "table", columns: ["Plain"], rows: [["notes"]] },
     });
     expect(await carriesLiveFile(f.db, f.org.id, { liveRef: { artifactId: sheet.id } })).toBe(true);
     expect(await carriesLiveFile(f.db, f.org.id, { artifacts: [{ id: notes.id }, { id: sheet.id }] })).toBe(true);
@@ -190,6 +191,21 @@ describe("the tools and their group", () => {
     );
     const other = await createChannel(f.db, f.owner.id, f.org.id, { name: "elsewhere" });
     expect(await artifactToolDetail(f.db, f.org.id, other.id, "read_spreadsheet", { file: made.id })).toBeUndefined();
+  });
+
+  test("in a file's own conversation (ADR 0197) the tools act on its file when none is named", async () => {
+    const sheet = await makeLiveFile(f, "spreadsheet", { title: "Custos", channelId: f.general.id });
+    const at = await openFileConversation(f.artifactDeps, f.owner.id, f.org.id, sheet.id);
+    expect(await carriesLiveFile(f.db, f.org.id, null, at.channelId)).toBe(true);
+    expect(await carriesLiveFile(f.db, f.org.id, null, f.general.id)).toBe(false);
+    const run = await runFor(at.channelId);
+    await ok(run, "edit_spreadsheet", { ops: [{ op: "set", range: "A1", values: [[42]] }] });
+    expect(await shown(sheet.id, "A1")).toBe("42");
+    expect((await ok(run, "read_spreadsheet", {})).content).toContain("Custos");
+    // Elsewhere a call must name its file.
+    const out = await call(await runFor(), "read_spreadsheet", {});
+    expect(out.isError).toBe(true);
+    expect(out.content).toContain("Name the file");
   });
 });
 

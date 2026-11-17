@@ -46,11 +46,11 @@ async function drive() {
   const report = await api.artifacts.create(ORG_ID, {
     title: "Relatório de visitas",
     channelId: "dm-atlas",
-    content: { kind: "document", markdown: "# Visitas" },
+    content: { kind: "table", columns: ["Dia", "Visitas"], rows: [["Segunda", "3"]] },
   });
   const manual = await api.artifacts.create(ORG_ID, {
     title: "Manual do time",
-    content: { kind: "document", markdown: "# Manual" },
+    content: { kind: "table", columns: ["Passo", "Quem"], rows: [["Abrir o turno", "Walter"]] },
   });
   const r = await renderApp(`/org/${ORG_ID}/drive`, { api });
   await settle(8);
@@ -186,7 +186,7 @@ describe("Compartilhar (ADR 0157)", () => {
     const report = await api.artifacts.create(ORG_ID, {
       title: "Relatório de visitas",
       channelId: GENERAL_ID,
-      content: { kind: "document", markdown: "# Visitas" },
+      content: { kind: "table", columns: ["Dia", "Visitas"], rows: [["Segunda", "3"]] },
     });
     // As the server answers someone João's DM with Atlas was shared with (ADR 0157).
     const outsider = <T extends Artifact>(a: T): T =>
@@ -251,7 +251,8 @@ describe("a file's link pasted in a message", () => {
   test("the API's address and the app's both show as the file's pill, never the raw address", async () => {
     const state = seedState();
     const api: ApiClient = createFakeApi(state);
-    const doc = (await api.artifacts.list(ORG_ID)).find((a) => a.kind === "document") as Artifact;
+    // A file the viewer opens (a document is a live file with a page of its own, ADR 0198).
+    const doc = (await api.artifacts.list(ORG_ID)).find((a) => a.kind === "table") as Artifact;
     // The server's ids are UUIDs (and only those parse as a file's link); the fake's aren't.
     const id = "00000000-0000-4000-8000-0000000000f2";
     const get = api.artifacts.get;

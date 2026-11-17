@@ -16,10 +16,12 @@ import type { LiveFileStatus, LiveMode, LiveRoomError } from "./types";
  */
 
 /** The top-level types each kind keeps its content in (ADR 0194 §2): what the person's undo covers. */
-const ROOTS: Record<LiveKind, (doc: Y.Doc) => (Y.Map<unknown> | Y.Array<unknown>)[]> = {
+const ROOTS: Record<LiveKind, (doc: Y.Doc) => (Y.Map<unknown> | Y.Array<unknown> | Y.XmlFragment)[]> = {
   spreadsheet: (doc) => [doc.getArray("sheetOrder"), doc.getMap("sheets")],
   slides: (doc) => [doc.getMap("deck"), doc.getArray("slideOrder"), doc.getMap("slides")],
   canvas: (doc) => [doc.getMap("canvas"), doc.getMap("shapes")],
+  // A document's body (ADR 0198).
+  document: (doc) => [doc.getXmlFragment("body")],
 };
 
 /** How long the person's undo merges changes into one step. */

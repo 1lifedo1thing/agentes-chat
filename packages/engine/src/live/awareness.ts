@@ -44,6 +44,13 @@ export const FROM_AGENT = Symbol("live.awareness.agent");
 /** The most bytes of awareness relayed in one pub/sub event, once in base64: NOTIFY takes under 7900 in all. */
 export const AWARENESS_RELAY_BYTES = 6000;
 
+/**
+ * The client ids one socket may speak for (ADR 0194 §5). An app's socket carries one file and one awareness (one id);
+ * a few more leave room for an app that makes its document again. Past this a socket's new ids are dropped, so one
+ * socket can't fill the file with thousands of states, each relayed to everyone in it and to the other processes.
+ */
+export const MAX_SOCKET_CLIENTS = 4;
+
 export interface DocPresenceHooks {
   /** States changed: `message` goes to this process's sockets on the file, all but `except` (the one it came from). */
   broadcast(message: Uint8Array, except: object | null): void;
@@ -138,6 +145,7 @@ export class DocPresence {
       // Someone else's client: only this same person's own tab, come over from another socket or process.
       if (owner.kind === "agent" || owner.user.kind !== "person" || owner.user.id !== who.user.id) return null;
     }
+    if (!own && this.socketClients(socket).length >= MAX_SOCKET_CLIENTS) return null;
     const state = sanitizePeerState(entry.state, { user: who.user, viewOnly: who.viewOnly });
     if (!state) return null;
     this.owners.set(entry.clientId, { kind: "socket", socket, user: who.user });

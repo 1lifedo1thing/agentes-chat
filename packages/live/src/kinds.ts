@@ -2,6 +2,8 @@ import * as random from "lib0/random";
 import type * as Y from "yjs";
 import { canvasPreview, canvasText, initCanvas, replaceCanvas, validateCanvas } from "./canvas";
 import type { CanvasPreview } from "./canvas/types";
+import { documentPreview, documentText, initDocument, replaceDocument, validateDocument } from "./document";
+import type { DocumentPreview } from "./document/types";
 import { LiveEditError } from "./errors";
 import { isLiveKind, LIVE_KINDS, LIVE_LIMITS, type LiveKind } from "./limits";
 import { SYSTEM } from "./origins";
@@ -60,8 +62,8 @@ function newSeed(): string {
 /**
  * Makes `doc` a new live document of `kind`: `meta` ({ kind, v: 1, seed }) and the kind's default content (a
  * spreadsheet's one sheet, named in the person's language by the caller, of 100 rows by 26 columns; a presentation's
- * theme and title slide; a canvas's dotted background), in one transaction (`SYSTEM` unless `origin` is given). A
- * document that already is a live document is refused.
+ * theme and title slide; a canvas's dotted background; a document's one empty paragraph), in one transaction
+ * (`SYSTEM` unless `origin` is given). A document that already is a live document is refused.
  */
 export function initLiveDoc(
   doc: Y.Doc,
@@ -79,6 +81,7 @@ export function initLiveDoc(
     meta.set("seed", seed);
     if (kind === "spreadsheet") initSpreadsheet(doc, opts.sheetName || "Sheet 1", origin);
     else if (kind === "slides") initSlides(doc, origin);
+    else if (kind === "document") initDocument(doc, origin);
     else initCanvas(doc, origin);
   }, origin);
 }
@@ -106,12 +109,13 @@ export function replaceLiveContent(doc: Y.Doc, from: Y.Doc, origin: unknown): vo
     }
     if (kind === "spreadsheet") replaceSpreadsheet(doc, from, origin);
     else if (kind === "slides") replaceSlides(doc, from, origin);
+    else if (kind === "document") replaceDocument(doc, from, origin);
     else replaceCanvas(doc, from, origin);
   }, origin);
 }
 
 /** A preview of any kind: what cards and the Drive draw, small enough to go with every listing. */
-export type LivePreview = SheetPreview | SlidesPreview | CanvasPreview;
+export type LivePreview = SheetPreview | SlidesPreview | CanvasPreview | DocumentPreview;
 
 export interface LiveReadOptions {
   /** The kind, when the caller knows it (else the document's own `meta.kind`). */
@@ -137,12 +141,13 @@ function withEngine<T>(doc: Y.Doc, engine: SheetEngine | undefined, read: (engin
   }
 }
 
-/** The document's preview (a spreadsheet's top-left cells, a deck's first slide, a canvas's shapes). */
+/** The preview: a spreadsheet's top-left cells, a deck's first slide, a canvas's shapes, a document's first blocks. */
 export function livePreview(doc: Y.Doc, opts: LiveReadOptions = {}): LivePreview {
   const kind = kindOrThrow(doc, opts.kind);
   if (kind === "spreadsheet") {
     return withEngine(doc, opts.engine, (engine) => spreadsheetPreview(doc, engine, localeOf(opts.locale)));
   }
+  if (kind === "document") return documentPreview(doc);
   return kind === "slides" ? slidesPreview(doc) : canvasPreview(doc);
 }
 
@@ -152,6 +157,7 @@ export function liveText(doc: Y.Doc, opts: LiveReadOptions = {}): string {
   if (kind === "spreadsheet") {
     return withEngine(doc, opts.engine, (engine) => spreadsheetText(doc, engine, localeOf(opts.locale)));
   }
+  if (kind === "document") return documentText(doc);
   return kind === "slides" ? slidesText(doc) : canvasText(doc);
 }
 
@@ -165,6 +171,7 @@ export function validateLive(doc: Y.Doc): string[] {
     problems.push("The document has no shape version");
   }
   if (kind === "spreadsheet") problems.push(...validateSpreadsheet(doc));
+  else if (kind === "document") problems.push(...validateDocument(doc));
   else problems.push(...(kind === "slides" ? validateSlides(doc) : validateCanvas(doc)));
   return problems;
 }

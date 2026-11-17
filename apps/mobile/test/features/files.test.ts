@@ -112,7 +112,8 @@ describe("file kind, tile and size", () => {
       title: "Resumo da home",
       content: { kind: "document", markdown: "Olá é" },
     });
-    expect(doc).toMatchObject({ name: "Resumo da home.md", view: "markdown", type: "document", ext: "MD", size: 7 });
+    // A document is a live file (ADR 0198): it opens on its own screen.
+    expect(doc).toMatchObject({ name: "Resumo da home.md", view: "live", type: "document", ext: "MD", size: 7 });
     const table = fileInfo({ kind: "table", title: "Vendas", content: { kind: "table", columns: [], rows: [] } });
     // An old table opens read-only in the spreadsheet's grid.
     expect(table).toMatchObject({ name: "Vendas.csv", view: "sheet", type: "table", size: null });
@@ -345,7 +346,7 @@ describe("viewer", () => {
       params: { files: "x", at: "0" },
     });
     expect(fileRoute({ id: "d", title: "Plano", kind: "document" }, media)).toEqual({
-      pathname: "/file/[id]",
+      pathname: "/document/[id]",
       params: { id: "d" },
     });
     // The file screen at an older version only when that's the one shown.

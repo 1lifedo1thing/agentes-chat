@@ -1,7 +1,7 @@
-import { type ArtifactDetail, type ArtifactKind, isLiveFileKind, type LiveKind } from "@agenteschat/client";
+import type { ArtifactDetail, ArtifactKind } from "@agenteschat/client";
 import { fileIcon, previewKind, previewType } from "@agenteschat/client/lib/files";
 import { filePath } from "@agenteschat/client/lib/message-links";
-import { type LiveScreen, liveRoute } from "../live-files/routes";
+import { type LiveScreen, liveRoute, opensLive, type PhoneLiveKind } from "../live-files/routes";
 
 /**
  * Files on a message: which ones show as pictures, the card's tile and
@@ -152,15 +152,14 @@ export function fileInfo(a: Pick<ArtifactDetail, "kind" | "title" | "content">):
   }
   const ext = KIND_EXT[c.kind];
   const name = withExtension(a.title, ext);
-  const view: FileView = isLiveFileKind(c.kind)
+  // A document is a live file (ADR 0198): it opens on its own screen as every live kind.
+  const view: FileView = opensLive(c.kind)
     ? "live"
-    : c.kind === "document"
-      ? "markdown"
-      : c.kind === "html"
-        ? "html"
-        : c.kind === "table"
-          ? "sheet"
-          : "other";
+    : c.kind === "html"
+      ? "html"
+      : c.kind === "table"
+        ? "sheet"
+        : "other";
   const size = c.kind === "document" ? utf8Bytes(c.markdown) : null;
   return { name, view, type: KIND_TYPE[c.kind], ext: extLabel(ext), size, mime: "" };
 }
@@ -371,9 +370,9 @@ export type FileRoute =
   | { pathname: LiveScreen; params: { id: string } };
 
 /** A live file's kind, from its details or from the kind the place names (ADR 0194). */
-export function liveKindOfRef(ref: FileRef): LiveKind | null {
+export function liveKindOfRef(ref: FileRef): PhoneLiveKind | null {
   const kind = ref.detail?.kind ?? ref.kind;
-  return isLiveFileKind(kind) ? kind : null;
+  return opensLive(kind) ? kind : null;
 }
 
 /**

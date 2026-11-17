@@ -1,4 +1,11 @@
-import type { CanvasPreview, LiveKind, LiveOrigin, SheetPreview, SlidesPreview } from "@agenteschat/live";
+import type {
+  CanvasPreview,
+  DocumentPreview,
+  LiveKind,
+  LiveOrigin,
+  SheetPreview,
+  SlidesPreview,
+} from "@agenteschat/live";
 import * as live from "@agenteschat/live";
 import * as Y from "yjs";
 
@@ -8,11 +15,16 @@ import * as Y from "yjs";
  * after every change. The document's shape itself is `@agenteschat/live`'s; this is the engine's one door to it.
  */
 
-/** A live file's `content` as `getArtifact` returns it: its kind and preview, never the whole document. */
+/** A live file's `content` as `getArtifact` returns it: its kind and preview (and a document's Markdown). */
 export type LiveContent =
   | { kind: "spreadsheet"; preview: SheetPreview }
   | { kind: "slides"; preview: SlidesPreview }
-  | { kind: "canvas"; preview: CanvasPreview };
+  | { kind: "canvas"; preview: CanvasPreview }
+  /**
+   * A document (ADR 0198): its card's preview, and its whole text as Markdown, which the apps that don't edit
+   * documents yet show read-only and `read_artifact` gives agents.
+   */
+  | { kind: "document"; preview: DocumentPreview; markdown: string };
 
 /** The type of a version's snapshot: the whole Yjs state as one update (ADR 0194 §7). */
 export const LIVE_SNAPSHOT_TYPE = "application/vnd.agentes.live";
@@ -32,21 +44,48 @@ export const kindOfDoc = (doc: Y.Doc): LiveKind | null => live.liveKindOf(doc);
 
 /** The preview of a document of `kind` (the file's kind, whatever the document says of itself). */
 export function liveContentOf(doc: Y.Doc, kind: LiveKind): LiveContent {
+  if (kind === "document") {
+    const markdown = live.blocksMarkdown(live.readDocument(doc));
+    return { kind, preview: live.documentPreview(doc), markdown };
+  }
   return { kind, preview: live.livePreview(doc, { kind }) } as LiveContent;
 }
 
-/** The preview of a version's snapshot (`LIVE_SNAPSHOT_TYPE` bytes). */
-export function snapshotContent(kind: LiveKind, snapshot: Uint8Array): LiveContent {
+/**
+ * A document made from Markdown (ADR 0198): what `create_artifact` and an upload's "Edit as document" make, and what
+ * a document saved before documents were live files opens as (its latest version's Markdown). Its pictures stay
+ * words: a new document has none of its own yet.
+ */
+export function documentFromMarkdown(markdown: string, origin: unknown = live.SYSTEM): Y.Doc {
+  const doc = newLiveDoc("document");
+  live.writeDocument(doc, live.markdownToBlocks(markdown, { images: () => null }), origin);
+  return doc;
+}
+
+/**
+ * A version's content as a document: a snapshot (`LIVE_SNAPSHOT_TYPE`) applied, or, for a document saved as
+ * Markdown before documents were live files, made from that Markdown.
+ */
+export function versionDoc(kind: LiveKind, body: Uint8Array, contentType: string): Y.Doc {
+  if (kind === "document" && !contentType.startsWith(LIVE_SNAPSHOT_TYPE)) {
+    return documentFromMarkdown(new TextDecoder().decode(body));
+  }
   const doc = new Y.Doc();
+  Y.applyUpdate(doc, body);
+  return doc;
+}
+
+/** The preview of a version (a snapshot, or an older document's Markdown). */
+export function snapshotContent(kind: LiveKind, snapshot: Uint8Array, contentType = LIVE_SNAPSHOT_TYPE): LiveContent {
+  const doc = versionDoc(kind, snapshot, contentType);
   try {
-    Y.applyUpdate(doc, snapshot);
     return liveContentOf(doc, kind);
   } finally {
     doc.destroy();
   }
 }
 
-/** The text search finds a live file by: sheet names and cells, slides' text and notes, the canvas's words. */
+/** What search finds a live file by: sheet names and cells, slides' text and notes, a canvas's or a document's words. */
 export function liveExcerpt(doc: Y.Doc): string {
   return live.liveText(doc).replace(/\s+/g, " ").trim().slice(0, EXCERPT_CHARS);
 }
@@ -99,5 +138,6 @@ export function overLimit(doc: Y.Doc, kind: LiveKind): string | null {
     }
     return null;
   }
+  if (kind === "document") return live.documentBody(doc).length > limits.document.blocks ? "blocks" : null;
   return sizeOf(doc.getMap("shapes"), limits.canvas.shapes) > limits.canvas.shapes ? "shapes" : null;
 }

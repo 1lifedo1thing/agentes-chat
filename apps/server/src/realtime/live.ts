@@ -21,7 +21,7 @@ import {
   readRefusal,
 } from "@agenteschat/engine";
 import { LIVE_LIMITS } from "@agenteschat/live";
-import { isLivePing, LIVE_CLOSE, LIVE_PONG, type LiveMode } from "@agenteschat/live/protocol";
+import { isLivePing, LIVE_CLOSE, LIVE_PONG, LIVE_PONG_UNSAVED, type LiveMode } from "@agenteschat/live/protocol";
 import type { Auth } from "../auth";
 import type { Logger } from "../logger";
 import { allowedOrigins } from "../routes/app/context";
@@ -38,7 +38,8 @@ import { personUpgrade, UUID } from "./ws";
  *   frames: the phone's React Native hands binary frames to JavaScript as base64 anyway. JSON text frames are control:
  *   the server's (`live.ready`, `live.mode`, `live.saved`, `live.versions`, `live.error`, `pong`) and the app's
  *   `{"type":"ping"}`, nothing else. A ping waits in line behind the frames sent before it, so its pong says the
- *   document got every one of them; pongs go at most once a second.
+ *   document got every one of them, and whether what they brought is stored yet (`unsaved` when not); pongs go at
+ *   most once a second. `live.saved` goes only once no frame of the socket waits in its line.
  * - A frame is at most `frameBytes` (bigger: `live.error` `too_large`, dropped). A socket sends `bytesPerSecond` on
  *   average: frames past it wait their turn, in order (past `frameBytes` waiting the app hears `live.error` `rate`
  *   and slows down), up to `waitingBytes` (then 4429). One that falls `behindBytes` behind on what it is sent closes
@@ -212,6 +213,7 @@ export function createLiveSockets(deps: LiveSocketDeps) {
       send: (data: Uint8Array | string) => send(ws, data),
       close: (code: number, reason?: string) => shut(ws, code, reason ?? ""),
       buffered: () => ws.getBufferedAmount(),
+      idle: () => d.waiting === 0,
     };
   }
 
@@ -260,8 +262,16 @@ export function createLiveSockets(deps: LiveSocketDeps) {
     d.mode = mode;
     // Not joined yet: `open` applies it to the session it gets.
     if (!d.session) return;
-    d.session.setMode(mode);
+    modeTo(ws, d.session, mode);
+  }
+
+  /**
+   * The app hears `live.mode` before the document applies it: back to `edit`, the document asks the app what it lacks
+   * (its sync step 1), and an app answers that only once it knows it may change the file (ADR 0194 §3).
+   */
+  function modeTo(ws: Socket, session: LiveSession, mode: LiveMode) {
     send(ws, JSON.stringify({ type: "live.mode", mode }));
+    session.setMode(mode);
   }
 
   /** The file's conversation, whose events say when the file was shared differently or went to the trash. */
@@ -443,7 +453,8 @@ export function createLiveSockets(deps: LiveSocketDeps) {
           d.queue.shift();
           d.pinged = false;
           d.lastPong = Date.now();
-          send(ws, LIVE_PONG);
+          // Whether every change the frames before it brought is stored: the app counts them stored only then.
+          send(ws, d.session.allStored() ? LIVE_PONG : LIVE_PONG_UNSAVED);
           continue;
         }
         const wait = take(d, item.byteLength);
@@ -457,6 +468,8 @@ export function createLiveSockets(deps: LiveSocketDeps) {
           deps.log?.warn("live frame refused", { orgId: d.orgId, fileId: d.fileId, error: String(error) });
           sendError(ws, "invalid");
         }
+        // Its last frame in: a `live.saved` held back while frames waited goes now.
+        if (d.waiting === 0) d.session?.drained();
       }
       if (d.queue.length === 0) d.slowed = false;
     } finally {
@@ -589,10 +602,7 @@ export function createLiveSockets(deps: LiveSocketDeps) {
           return;
         }
         d.session = session;
-        if (session.mode !== d.mode) {
-          session.setMode(d.mode);
-          send(ws, JSON.stringify({ type: "live.mode", mode: d.mode }));
-        }
+        if (session.mode !== d.mode) modeTo(ws, session, d.mode);
       } catch (error) {
         // Nothing half open stays: the app hears why (or that it was our side) and opens it again if it may.
         if (!d.ended) refusedJoin(ws, error);

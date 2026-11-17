@@ -11,7 +11,7 @@ import { and, asc, eq, schema } from "@agenteschat/db";
 import { agentClientId, agentOrigin, LIVE_LIMITS, SYSTEM } from "@agenteschat/live";
 import * as encoding from "lib0/encoding";
 import * as Y from "yjs";
-import { createChannel, type LiveDocs, NotFoundError, ValidationError } from "../src";
+import { createChannel, type LiveDocs, type LiveTiming, NotFoundError, ValidationError } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
 import {
   cellValue,
@@ -20,6 +20,7 @@ import {
   liveDocsFor,
   makeLiveFile,
   openApp,
+  quietLog,
   setCell,
   stateIn,
   until,
@@ -75,6 +76,47 @@ function awarenessFrame(entries: { clientId: number; clock: number; state: unkno
   encoding.writeVarUint(outer, 1);
   encoding.writeVarUint8Array(outer, encoding.toUint8Array(inner));
   return encoding.toUint8Array(outer);
+}
+
+/** A sync update frame, as an app sends a change. */
+function updateFrame(update: Uint8Array) {
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, 0);
+  encoding.writeVarUint(encoder, 2);
+  encoding.writeVarUint8Array(encoder, update);
+  return encoding.toUint8Array(encoder);
+}
+
+/** The database refusing the next `n` transactions it is asked for (`refuse(n)`): a connection that drops. */
+function flakyDb() {
+  let refusing = 0;
+  const db = new Proxy(f.db, {
+    get(target, prop) {
+      if (prop === "transaction" && refusing > 0) {
+        refusing--;
+        return () => Promise.reject(new Error("connection lost"));
+      }
+      const value = Reflect.get(target, prop, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+  return {
+    db,
+    refuse: (n: number) => {
+      refusing = n;
+    },
+  };
+}
+
+/** A process that hears nothing of other processes' changes: only its tail (`read`, the tail check) brings them. */
+function deafPubSub(): PubSub {
+  return {
+    publish: (topic, event) => f.pubsub.publish(topic, event),
+    subscribe: (topic, handler) =>
+      f.pubsub.subscribe(topic, (event: RealtimeEvent) => {
+        if (event.type !== "live.update") handler(event);
+      }),
+  };
 }
 
 describe("joining a document", () => {
@@ -568,5 +610,120 @@ describe("leaving and stopping", () => {
     setCell(web.doc, 0, 0, "lost");
     await until(() => web.closed.length > 0, "closed");
     expect(web.closed[0]?.code).toBe(4404);
+  });
+
+  test("a document nobody uses keeps what the database refused once, stores it on the retry, then goes", async () => {
+    const file = await makeLiveFile(f);
+    const flaky = flakyDb();
+    // Deaf to other processes' changes, so its state says whether it still holds the file.
+    const a = process("a", {
+      db: flaky.db,
+      pubsub: deafPubSub(),
+      timing: { coalesceMs: 60_000, lingerMs: 20, retryMs: [30, 60] },
+    });
+    const web = await app(a, file.id);
+    setCell(web.doc, 0, 0, "kept");
+    await Bun.sleep(30);
+    // The person leaves before the change is stored (the tab closed): only this process holds it now. The store
+    // `unload` tries first is refused.
+    flaky.refuse(1);
+    web.leave();
+    for (let i = 0; i < 100 && (await stored(file.id)).length === 0; i++) await Bun.sleep(10);
+    expect(await stored(file.id)).toHaveLength(1);
+    // Stored, it let the file go: what another process writes now is what its state reads.
+    await Bun.sleep(100);
+    await process("b").edit(f.org.id, file.id, SYSTEM, (doc) => setCell(doc, 1, 1, "later"));
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, (await a.state(f.org.id, file.id)).state);
+    expect([cellValue(doc, 0, 0), cellValue(doc, 1, 1)]).toEqual(["kept", "later"]);
+    doc.destroy();
+  });
+});
+
+describe("stopping while the database refuses", () => {
+  /** A change an app sent and left before it was stored: what a process holds alone when it stops. */
+  async function heldAlone(timing: Partial<LiveTiming> = {}) {
+    const file = await makeLiveFile(f);
+    const flaky = flakyDb();
+    const errors: { message: string; data?: Record<string, unknown> }[] = [];
+    const a = process("a", {
+      db: flaky.db,
+      log: { ...quietLog, error: (message, data) => errors.push({ message, data }) },
+      timing: { coalesceMs: 60_000, lingerMs: 60_000, ...timing },
+    });
+    const web = await app(a, file.id);
+    setCell(web.doc, 0, 0, "last words");
+    await Bun.sleep(30);
+    // Its socket went long before the stop, as a server's do (they close first).
+    web.leave();
+    return { file, a, flaky, errors };
+  }
+
+  test("a store refused just then is tried once more before the document goes", async () => {
+    const { file, a, flaky, errors } = await heldAlone();
+    flaky.refuse(1);
+    await a.stop();
+    expect(await stored(file.id)).toHaveLength(1);
+    expect(errors).toEqual([]);
+  });
+
+  test("one still refused is given up within the stop's grace, said loudly with the file and its bytes", async () => {
+    const { file, a, flaky, errors } = await heldAlone({ stopRetryMs: 500 });
+    flaky.refuse(100);
+    const started = Date.now();
+    await a.stop();
+    expect(Date.now() - started).toBeLessThan(500);
+    expect(await stored(file.id)).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.message).toBe("live changes lost at shutdown");
+    expect(errors[0]?.data).toMatchObject({ orgId: f.org.id, fileId: file.id, changes: 1 });
+    expect(errors[0]?.data?.bytes).toBeGreaterThan(0);
+  });
+});
+
+describe("changes that wait on others", () => {
+  test("one waiting on a change this process doesn't hold yet is stored as it came, and reaches everyone", async () => {
+    const file = await makeLiveFile(f);
+    // Process a hears nothing of b's changes until it reads its tail.
+    const a = process("a", { pubsub: deafPubSub() });
+    const b = process("b");
+    const web = await app(a, file.id);
+    const phone = await app(a, file.id);
+    await b.edit(f.org.id, file.id, SYSTEM, (doc) => setCell(doc, 0, 0, "first"));
+    // An app that loaded the file elsewhere writes over b's change: in a, its change waits on b's.
+    const { doc: elsewhere } = await b.read(f.org.id, file.id);
+    const updates: Uint8Array[] = [];
+    elsewhere.on("update", (update: Uint8Array) => updates.push(update));
+    setCell(elsewhere, 0, 0, "second");
+    elsewhere.destroy();
+    web.raw(updateFrame(updates[0] as Uint8Array));
+    await until(() => web.saved() > 0, "stored");
+    // Stored as it came: the file's head has it, whatever becomes of process a.
+    expect(await stored(file.id)).toHaveLength(2);
+    const { doc: head } = await process("c").read(f.org.id, file.id);
+    expect(cellValue(head, 0, 0)).toBe("second");
+    head.destroy();
+    // Once a reads its tail, the other socket gets b's change and, sent to it already, the one that waited on it.
+    (await a.read(f.org.id, file.id)).doc.destroy();
+    await until(() => cellValue(phone.doc, 0, 0) === "second", "the change on the other socket");
+  });
+});
+
+describe("compaction the documents ask for", () => {
+  const compactions = () => f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "live.compact"));
+
+  test("a young file's changes past the bytes ask at once; asked again only once that one ran", async () => {
+    const file = await makeLiveFile(f);
+    const a = process("a");
+    const big = (c: number, ch: string) => (doc: Y.Doc) => setCell(doc, 0, c, ch.repeat(600 * 1024));
+    await a.edit(f.org.id, file.id, SYSTEM, big(0, "x"));
+    expect((await compactions()).map((job) => job.payload)).toEqual([{ fileId: file.id }]);
+    // Asked and not run yet: not asked again so soon.
+    await a.edit(f.org.id, file.id, SYSTEM, big(1, "y"));
+    expect(await compactions()).toHaveLength(1);
+    // Once it ran, the next heavy change asks again.
+    await a.compact(f.org.id, file.id);
+    await a.edit(f.org.id, file.id, SYSTEM, big(2, "z"));
+    expect(await compactions()).toHaveLength(2);
   });
 });

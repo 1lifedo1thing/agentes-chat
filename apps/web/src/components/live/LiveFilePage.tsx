@@ -1,16 +1,14 @@
-import type { Artifact, LiveKind, LiveRoomError, LiveSelection } from "@agenteschat/client";
+import type { LiveKind, LiveRoomError, LiveSelection } from "@agenteschat/client";
 import {
   ApiError,
   isLiveFileKind,
   useArtifact,
   useArtifactVersions,
-  useDuplicateLiveFile,
+  useFileConversation,
   useLivePeers,
-  useRenameLiveFile,
   useRestoreLiveVersion,
   useSaveLiveVersion,
 } from "@agenteschat/client";
-import { KIND_ICON } from "@agenteschat/client/lib/artifacts";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { clockHour, dayLabel, formatTime } from "@agenteschat/client/lib/format";
 import type { Peer } from "@agenteschat/live/awareness";
@@ -19,60 +17,76 @@ import {
   cx,
   Dialog,
   EmptyState,
-  Icon,
   Kbd,
-  Menu,
-  MenuItem,
-  MenuSeparator,
   modKey,
   Skeleton,
   SkeletonGroup,
   typingInField,
-  useDelayed,
   useMatchMedia,
 } from "@agenteschat/ui";
-import { useNavigate, useRouter } from "@tanstack/react-router";
-import { type ComponentType, useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { type ComponentType, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useArtifactDownload, useDeleteArtifact } from "@/components/artifacts/ArtifactActions";
+import { useDeleteArtifact } from "@/components/artifacts/ArtifactActions";
 import { useFileShare } from "@/components/artifacts/ShareDialog";
 import { useOrg } from "@/components/org-context";
-import { contextMenuHandler, type MenuEntry } from "@/lib/context-menu";
+import { useDirectory } from "@/hooks/useDirectory";
 import { useDocumentTitle } from "@/lib/desktop";
 import { useToast } from "@/lib/toast";
-import { AskAgentButton, AskAgentForm } from "./AskAgent";
 import { Canvas } from "./canvas";
-import type { LiveEditorProps, LiveEditorSearch } from "./editor";
-import { forgetJustCreated, wasJustCreated } from "./just-created";
-import { FollowingIsland, PresenceStack, usePeerLooks } from "./peers";
+import { canvasShortcuts } from "./canvas/tools";
+import { DocumentEditor } from "./document";
+import { documentShortcuts } from "./document/shortcuts";
+import type { LiveAskRequest, LiveEditorProps, LiveEditorSearch, LiveReveal } from "./editor";
+import {
+  FileConversationButton,
+  FileConversationPanel,
+  LIVE_TALK_DOCKED,
+  useFileAgent,
+  useFileTalkColumn,
+  useFileTalkLive,
+} from "./FileConversation";
+import { LiveHeader } from "./LiveHeader";
+import { FollowingIsland, usePeerLooks } from "./peers";
 import { Slides } from "./slides";
 import { Spreadsheet } from "./spreadsheet";
+import {
+  FileAgentContext,
+  type FileTalk,
+  FileTalkContext,
+  LiveAskContext,
+  selectionKey,
+  takeRevealOnOpen,
+} from "./talk";
 import { useLiveRoomWeb, useLiveVersionRoom } from "./useLiveRoomWeb";
 import { SaveVersionDialog, VersionsPanel } from "./VersionsPanel";
 import "./live.css";
 import "./covers.css";
 
-/** The page's address: a version to look at (`v`), and the editor's own place (a sheet, a slide, presenting). */
+/** The page's address: a version to look at (`v`), and the editor's own (a sheet, a slide, presenting, a message). */
 export interface LiveFileSearch extends LiveEditorSearch {
   v?: number;
 }
 
 /** Under this width the header keeps its faces and its one primary action; the rest goes into ⋯ (ADR 0194 §9). */
 export const LIVE_COMPACT_QUERY = "(max-width: 760px)";
-/** "Salvando…" only once a change has waited this long: a burst of keys never blinks it. */
-const SAVING_AFTER_MS = 400;
 
-const EDITORS: Record<LiveKind, ComponentType<LiveEditorProps>> = {
+/** The editor of each kind; a kind this build has none for says so instead of opening. */
+const EDITORS: Partial<Record<LiveKind, ComponentType<LiveEditorProps>>> = {
   spreadsheet: Spreadsheet,
   slides: Slides,
   canvas: Canvas,
+  document: DocumentEditor,
 };
 
 /**
- * A spreadsheet, a presentation or a canvas on a page of its own (ADR 0194 §9), full bleed with no sidebar: a header
- * (back, the kind, the title to rename, whether it's saved, who is here, Ask an agent, Share, Present for slides,
- * Download, ⋯) over the kind's editor, which draws everything below it. The page opens the file's room, says when it
- * is offline or read-only, shows a saved version read-only in place (`?v=`), and keeps whom the person follows.
+ * A spreadsheet, a presentation, a canvas or a document (ADR 0198) on a page of the app (ADR 0194 §9, ADR 0197): the
+ * sidebar stays, the header (`LiveHeader`: where it lives, who is here, Compartilhar, Apresentar, ⋯, the conversation's
+ * toggle, the title, who made it and who sees it) over the kind's editor, and the file's own conversation beside it,
+ * the page keeping its width so it never covers the file. What the person selects in the file shows over that
+ * conversation's composer and rides on the next message; a message's line about part of the file selects it here. The
+ * page opens the file's room, says when it is offline or read-only, shows a saved version read-only in place (`?v=`),
+ * and keeps whom the person follows.
  */
 export function LiveFilePage({
   fileId,
@@ -87,7 +101,9 @@ export function LiveFilePage({
   const { org } = useOrg();
   const navigate = useNavigate();
   const toast = useToast();
+  const dir = useDirectory(org.id);
   const compact = useMatchMedia(LIVE_COMPACT_QUERY);
+  const wide = useMatchMedia(LIVE_TALK_DOCKED);
   const query = useArtifact(org.id, fileId);
   const artifact = query.data;
   const kind: LiveKind | null = artifact && isLiveFileKind(artifact.kind) ? artifact.kind : null;
@@ -99,7 +115,6 @@ export function LiveFilePage({
   const [selection, setSelection] = useState<LiveSelection | null>(null);
   const [versionsOpen, setVersionsOpen] = useState(() => Boolean(search.v));
   const [saveOpen, setSaveOpen] = useState(false);
-  const [askOpen, setAskOpen] = useState(false);
   const [keysOpen, setKeysOpen] = useState(false);
   const [followId, setFollowId] = useState<number | null>(null);
   const save = useSaveLiveVersion(org.id, fileId);
@@ -200,8 +215,89 @@ export function LiveFilePage({
     }
   }, [presenting]);
 
+  // ── The file's conversation (ADR 0197) ────────────────────────────────────────────────────────────────────────
+
   // On its way to the Drive's viewer (not a live file): its socket was refused, which says nothing about the file.
   const leaving = Boolean(artifact) && !kind;
+  const column = useFileTalkColumn(artifact);
+  const talkOpen = column.open && Boolean(artifact && kind) && !presenting;
+  const docked = talkOpen && wide;
+  const at = useFileConversation(org.id, artifact ?? { id: fileId, conversation: null }, talkOpen);
+  const fileAgent = useFileAgent(artifact);
+  // "Conversa N" follows the conversation with the panel closed too.
+  useFileTalkLive(fileId, artifact?.conversation?.channelId ?? at?.channelId);
+  // A link or a notice named one of its messages: the conversation opens there.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once per message named; the column's state is read then
+  useEffect(() => {
+    if (search.m && !column.open) column.toggle();
+  }, [search.m]);
+  const closeTalk = () => (column.sheet ? column.closeSheet() : column.toggle());
+
+  // What the person selected, as the quote over the composer: until they drop it (or a message carries it), and never
+  // the cell a spreadsheet simply opens on.
+  const [dropped, setDropped] = useState<string | null>(null);
+  const [asked, setAsked] = useState<{ selection: LiveSelection | null } | null>(null);
+  // The editor shown (the file, or a saved version): each one's first selection is where it opened.
+  const editorKey = previewing ? `v${search.v}` : "live";
+  const opened = useRef<string | null>(null);
+  const onSelection = useCallback(
+    (next: LiveSelection | null) => {
+      setSelection(next);
+      if (opened.current === editorKey || !next) return;
+      opened.current = editorKey;
+      if (kind === "spreadsheet") setDropped(selectionKey(next));
+    },
+    [kind, editorKey],
+  );
+  const selected = selectionKey(selection);
+  // Another selection: what was asked about before ("Variações" on one picture) gives way to it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the selection's key stands for it
+  useEffect(() => setAsked(null), [selected]);
+  const about = previewing ? null : asked ? asked.selection : selection && selected !== dropped ? selection : null;
+  const [prefill, setPrefill] = useState<{ text: string; key: number } | null>(null);
+  const [reveal, setReveal] = useState<LiveReveal | null>(null);
+  // A message's line elsewhere opened this file at part of it.
+  useEffect(() => {
+    const waiting = takeRevealOnOpen(fileId);
+    if (waiting) setReveal({ selection: waiting, key: Date.now() });
+  }, [fileId]);
+
+  /** "Pedir ao Atlas", "Variações": the conversation opens with the agent's @ and the words, about the selection. */
+  const ask = useCallback(
+    (request: LiveAskRequest = {}) => {
+      const agent =
+        request.agentId === null ? null : request.agentId ? (dir.agentById.get(request.agentId) ?? null) : fileAgent;
+      const words = [agent ? `@${agent.handle}` : "", request.text?.trim() ?? ""].filter(Boolean).join(" ");
+      if (words) setPrefill({ text: `${words} `, key: Date.now() });
+      // A request about something in particular; else what is selected now rides along, even after its ×.
+      if (request.selection !== undefined) setAsked({ selection: request.selection });
+      else setDropped(null);
+      if (!column.open) column.toggle();
+    },
+    [dir.agentById, fileAgent, column],
+  );
+
+  const talk = useMemo<FileTalk | null>(
+    () =>
+      artifact && kind
+        ? {
+            artifactId: artifact.id,
+            kind,
+            title: artifact.title,
+            rootId: at?.rootId ?? null,
+            about,
+            dropAbout: () => {
+              setAsked(null);
+              setDropped(selected);
+            },
+            prefill,
+            tookPrefill: () => setPrefill(null),
+            reveal: (part) => setReveal({ selection: part, key: Date.now() }),
+          }
+        : null,
+    [artifact, kind, at?.rootId, about, selected, prefill],
+  );
+
   const notFound =
     (query.isError && query.error instanceof ApiError && (query.error.status === 404 || query.error.status === 403)) ||
     (!leaving && live.status === "closed" && (live.error === "not_found" || live.error === "forbidden"));
@@ -250,457 +346,148 @@ export function LiveFilePage({
 
   const room = previewing ? version.room : live.room;
   const ready = Boolean(artifact && kind && room && (previewing ? version.room : live.loaded));
-  const Editor = kind ? EDITORS[kind] : null;
+  const Editor = kind ? (EDITORS[kind] ?? null) : null;
   return (
-    <div
-      ref={pageRef}
-      className={cx("lf-page", presenting && "lf-page--presenting")}
-      data-kind={kind ?? undefined}
-      data-compact={compact || undefined}
-    >
-      {!presenting && (
-        <LiveHeader
-          artifact={artifact ?? null}
-          kind={kind}
-          live={live}
-          previewing={previewing}
-          compact={compact}
-          peers={peers}
-          followId={followId}
-          onFollow={follow}
-          selection={selection}
-          onAsk={() => setAskOpen(true)}
-          onShare={() => artifact && share.open(artifact)}
-          onPresent={present}
-          onVersions={() => setVersionsOpen((o) => !o)}
-          onSave={openSave}
-          onShortcuts={() => setKeysOpen(true)}
-          onDelete={() => artifact && remover.ask(artifact)}
-        />
-      )}
-      <div className="lf-body">
-        <div className="lf-stage">
-          {previewing && artifact && (
-            <VersionBanner
-              fileId={fileId}
-              version={search.v ?? 0}
-              canRestore={!readOnlyNow}
-              busy={restore.isPending}
-              onRestore={() => {
-                const v = search.v;
-                if (!v) return;
-                restore.mutate(v, {
-                  onSuccess: () => {
-                    toast.show(t("live.shell.versions.restored", { version: v }));
-                    onSearch({ v: undefined });
-                  },
-                  onError: (error) => toast.show(errorText(t, error, i18n.language), "error"),
-                });
-              }}
-              onBack={() => onSearch({ v: undefined })}
-            />
-          )}
-          {following && !previewing && !presenting && <FollowingIsland peer={following} onStop={stopFollowing} />}
-          {previewing && version.failed ? (
-            <EmptyState
-              size="panel"
-              icon="alert"
-              title={t("live.shell.versions.openFailed")}
-              actions={<Button onClick={version.retry}>{t("live.shell.versions.retry")}</Button>}
-            />
-          ) : ready && Editor && room && artifact ? (
-            <div className="lf-editor" data-kind={kind}>
-              <Editor
-                key={previewing ? `v${search.v}` : "live"}
-                room={room}
-                orgId={org.id}
-                artifact={artifact}
-                readOnly={previewing || readOnlyNow}
-                locale={i18n.language}
-                search={search}
-                onSearch={onSearch}
-                following={previewing ? null : following}
-                onStopFollowing={stopFollowing}
-                onSelection={setSelection}
-                onAsk={previewing ? undefined : () => setAskOpen(true)}
+    <FileTalkContext.Provider value={talk}>
+      <FileAgentContext.Provider value={fileAgent}>
+        <LiveAskContext.Provider value={previewing ? null : ask}>
+          <div
+            ref={pageRef}
+            className={cx("lf-page", presenting && "lf-page--presenting")}
+            data-kind={kind ?? undefined}
+            data-compact={compact || undefined}
+            data-talk={docked || undefined}
+          >
+            {!presenting && (
+              <LiveHeader
+                artifact={artifact ?? null}
+                kind={kind}
+                live={live}
+                previewing={previewing}
+                compact={compact}
+                peers={peers}
+                followId={followId}
+                onFollow={follow}
+                talk={
+                  artifact && kind ? (
+                    <FileConversationButton artifact={artifact} open={talkOpen} onToggle={column.toggle} />
+                  ) : null
+                }
+                onShare={() => artifact && share.open(artifact)}
+                onCopyLink={() => artifact && share.copyLink(artifact)}
+                onPresent={present}
+                onVersions={() => setVersionsOpen((o) => !o)}
+                onSave={openSave}
+                onShortcuts={() => setKeysOpen(true)}
+                onDelete={() => artifact && remover.ask(artifact)}
               />
+            )}
+            <div className="lf-body">
+              <div className="lf-stage">
+                {previewing && artifact && (
+                  <VersionBanner
+                    fileId={fileId}
+                    version={search.v ?? 0}
+                    canRestore={!readOnlyNow}
+                    busy={restore.isPending}
+                    onRestore={() => {
+                      const v = search.v;
+                      if (!v) return;
+                      restore.mutate(v, {
+                        onSuccess: () => {
+                          toast.show(t("live.shell.versions.restored", { version: v }));
+                          onSearch({ v: undefined });
+                        },
+                        onError: (error) => toast.show(errorText(t, error, i18n.language), "error"),
+                      });
+                    }}
+                    onBack={() => onSearch({ v: undefined })}
+                  />
+                )}
+                {following && !previewing && !presenting && <FollowingIsland peer={following} onStop={stopFollowing} />}
+                {previewing && version.failed ? (
+                  <EmptyState
+                    size="panel"
+                    icon="alert"
+                    title={t("live.shell.versions.openFailed")}
+                    actions={<Button onClick={version.retry}>{t("live.shell.versions.retry")}</Button>}
+                  />
+                ) : ready && kind && !Editor ? (
+                  <EmptyState size="panel" icon="file" title={t("live.shell.notHere")} />
+                ) : ready && Editor && room && artifact ? (
+                  <div className="lf-editor" data-kind={kind}>
+                    <Editor
+                      key={editorKey}
+                      room={room}
+                      orgId={org.id}
+                      artifact={artifact}
+                      readOnly={previewing || readOnlyNow}
+                      locale={i18n.language}
+                      search={search}
+                      onSearch={onSearch}
+                      following={previewing ? null : following}
+                      onStopFollowing={stopFollowing}
+                      onSelection={onSelection}
+                      onAsk={previewing ? undefined : ask}
+                      reveal={previewing ? null : reveal}
+                      onVersions={() => setVersionsOpen((o) => !o)}
+                      onShare={() => share.open(artifact)}
+                    />
+                  </div>
+                ) : (
+                  <EditorSkeleton
+                    kind={kind}
+                    label={previewing ? t("live.shell.versions.opening") : t("live.shell.loading")}
+                  />
+                )}
+              </div>
+              {versionsOpen && artifact && !presenting && (
+                <VersionsPanel
+                  artifact={artifact}
+                  room={live.room}
+                  shown={search.v}
+                  onShow={(v) => onSearch({ v })}
+                  onSave={openSave}
+                  canSave={!readOnlyNow}
+                  onClose={() => {
+                    setVersionsOpen(false);
+                    if (previewing) onSearch({ v: undefined });
+                  }}
+                />
+              )}
             </div>
-          ) : (
-            <EditorSkeleton
-              kind={kind}
-              label={previewing ? t("live.shell.versions.opening") : t("live.shell.loading")}
-            />
-          )}
-        </div>
-        {versionsOpen && artifact && !presenting && (
-          <VersionsPanel
-            artifact={artifact}
-            room={live.room}
-            shown={search.v}
-            onShow={(v) => onSearch({ v })}
-            onSave={openSave}
-            canSave={!readOnlyNow}
-            onClose={() => {
-              setVersionsOpen(false);
-              if (previewing) onSearch({ v: undefined });
-            }}
-          />
-        )}
-      </div>
-      <SaveVersionDialog
-        open={saveOpen}
-        busy={save.isPending}
-        onClose={() => setSaveOpen(false)}
-        onSave={(name) =>
-          save.mutate(name || null, {
-            onSuccess: (done) => {
-              setSaveOpen(false);
-              toast.show(done.version === null ? t("live.shell.versions.nothingNew") : t("live.shell.versions.saved"));
-            },
-            onError: (error) => toast.show(errorText(t, error, i18n.language), "error"),
-          })
-        }
-      />
-      {artifact && (
-        <Dialog
-          open={askOpen}
-          onOpenChange={setAskOpen}
-          title={t("live.shell.askAgent.title")}
-          closeLabel={t("common.close")}
-          width={440}
-        >
-          {askOpen && <AskAgentForm artifact={artifact} selection={selection} onDone={() => setAskOpen(false)} />}
-        </Dialog>
-      )}
-      <ShortcutsDialog open={keysOpen} kind={kind} onClose={() => setKeysOpen(false)} />
-      {remover.dialog}
-      {share.dialog}
-    </div>
-  );
-}
-
-/** The page's top bar: back, the kind, the title and how it's saved, then who is here and the file's actions. */
-function LiveHeader({
-  artifact,
-  kind,
-  live,
-  previewing,
-  compact,
-  peers,
-  followId,
-  onFollow,
-  selection,
-  onAsk,
-  onShare,
-  onPresent,
-  onVersions,
-  onSave,
-  onShortcuts,
-  onDelete,
-}: {
-  artifact: Artifact | null;
-  kind: LiveKind | null;
-  live: ReturnType<typeof useLiveRoomWeb>;
-  previewing: boolean;
-  compact: boolean;
-  peers: Peer[];
-  followId: number | null;
-  onFollow: (peer: Peer | null) => void;
-  selection: LiveSelection | null;
-  onAsk: () => void;
-  onShare: () => void;
-  onPresent: () => void;
-  onVersions: () => void;
-  onSave: () => void;
-  onShortcuts: () => void;
-  onDelete: () => void;
-}) {
-  const { t, i18n } = useTranslation();
-  const { org } = useOrg();
-  const router = useRouter();
-  const navigate = useNavigate();
-  const toast = useToast();
-  const downloads = useArtifactDownload();
-  const duplicate = useDuplicateLiveFile(org.id, artifact?.id ?? "");
-  const rename = useRenameLiveFile(org.id, artifact?.id ?? "");
-  const readOnly = live.loaded && live.mode === "view";
-  const status = useStatusWords(live, previewing);
-  const toDrive = () => void navigate({ to: "/org/$orgId/drive", params: { orgId: org.id } });
-  const back = () => {
-    // Where the person came from in the app, else the Drive.
-    if (router.history.canGoBack()) router.history.back();
-    else toDrive();
-  };
-  const copy = () => {
-    if (!artifact) return;
-    duplicate.mutate(t("live.shell.copyTitle", { title: artifact.title }), {
-      onSuccess: (made) =>
-        toast.show(t("live.shell.duplicated", { title: made.title }), "success", {
-          label: t("live.shell.open"),
-          run: () =>
-            void navigate({ to: "/org/$orgId/drive/$fileId", params: { orgId: org.id, fileId: made.id }, search: {} }),
-        }),
-      onError: (error) => toast.show(errorText(t, error, i18n.language), "error"),
-    });
-  };
-  const formats = kind ? downloads.formats(kind) : [];
-  // The header's right click (the desktop app's own menu when the person chose it): the file's actions, as ⋯ has them.
-  const menu = (): MenuEntry[] =>
-    artifact
-      ? [
-          { kind: "header", label: artifact.title },
-          ...(artifact.inDrive !== false
-            ? [{ kind: "item", id: "share", label: t("share.button"), icon: "personAdd", run: onShare } as const]
-            : []),
-          { kind: "item", id: "versions", label: t("live.shell.menu.versions"), icon: "clock", run: onVersions },
-          {
-            kind: "item",
-            id: "save-version",
-            label: t("live.shell.menu.saveVersion"),
-            icon: "flag",
-            disabled: readOnly || previewing,
-            run: onSave,
-          },
-          { kind: "item", id: "duplicate", label: t("live.shell.menu.duplicate"), icon: "copy", run: copy },
-          { kind: "item", id: "drive", label: t("live.shell.menu.showInDrive"), icon: "drive", run: toDrive },
-          {
-            kind: "item",
-            id: "shortcuts",
-            label: t("live.shell.menu.shortcuts"),
-            icon: "keyboard",
-            run: onShortcuts,
-          },
-          ...(artifact.canDelete
-            ? ([
-                { kind: "separator" },
-                {
-                  kind: "item",
-                  id: "trash",
-                  label: t("live.shell.menu.trash"),
-                  icon: "trash",
-                  danger: true,
-                  run: onDelete,
-                },
-              ] as const)
-            : []),
-        ]
-      : [];
-  return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: right click only; every action is also in ⋯ and the buttons
-    <header className="lf-head" onContextMenu={contextMenuHandler(menu)}>
-      <div className="lf-head__lead">
-        <Button
-          variant="ghost"
-          size="sm"
-          iconOnly
-          icon="chevronLeft"
-          className="lf-head__back"
-          aria-label={t("live.shell.back")}
-          title={t("live.shell.back")}
-          onClick={back}
-        />
-        <Icon name={kind ? KIND_ICON[kind] : "file"} className="lf-head__kind" />
-        <div className="lf-head__titles">
-          {artifact ? (
-            <TitleField
-              key={artifact.id}
-              value={artifact.title}
-              canRename={!readOnly && !previewing}
-              fileId={artifact.id}
-              onRename={(title) =>
-                rename.mutate(title, {
+            {talkOpen && artifact && kind && (
+              <FileConversationPanel
+                kind={kind}
+                rootId={at?.rootId ?? null}
+                docked={docked}
+                focusMessageId={search.m}
+                onClose={closeTalk}
+              />
+            )}
+            <SaveVersionDialog
+              open={saveOpen}
+              busy={save.isPending}
+              onClose={() => setSaveOpen(false)}
+              onSave={(name) =>
+                save.mutate(name || null, {
+                  onSuccess: (done) => {
+                    setSaveOpen(false);
+                    toast.show(
+                      done.version === null ? t("live.shell.versions.nothingNew") : t("live.shell.versions.saved"),
+                    );
+                  },
                   onError: (error) => toast.show(errorText(t, error, i18n.language), "error"),
                 })
               }
             />
-          ) : (
-            <Skeleton width={180} height={16} />
-          )}
-          {status && (
-            <span className={cx("lf-head__status", status.tone === "warn" && "is-offline")} role="status">
-              {status.text}
-            </span>
-          )}
-        </div>
-      </div>
-      {artifact && (
-        <div className="lf-head__acts">
-          <PresenceStack room={live.room} peers={peers} followingId={followId} onFollow={onFollow} />
-          {!compact && <AskAgentButton artifact={artifact} selection={selection} />}
-          {!compact && artifact.inDrive !== false && (
-            <Button size="sm" icon="personAdd" onClick={onShare}>
-              {t("share.button")}
-            </Button>
-          )}
-          {kind === "slides" && (
-            <Button size="sm" variant="primary" icon="present" onClick={onPresent}>
-              {t("live.shell.present")}
-            </Button>
-          )}
-          {formats.length > 0 && (
-            <Menu
-              align="end"
-              label={t("live.shell.download")}
-              trigger={
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  iconOnly
-                  icon="download"
-                  aria-label={t("live.shell.download")}
-                  title={t("live.shell.download")}
-                />
-              }
-            >
-              {formats.map((f) => (
-                <MenuItem key={f.key} icon={f.icon} onSelect={() => void downloads.save(artifact, f.format)}>
-                  {f.label}
-                </MenuItem>
-              ))}
-            </Menu>
-          )}
-          <Menu
-            align="end"
-            label={t("live.shell.more")}
-            trigger={
-              <Button
-                size="sm"
-                variant="ghost"
-                iconOnly
-                icon="more"
-                aria-label={t("live.shell.more")}
-                title={t("live.shell.more")}
-              />
-            }
-          >
-            {compact && (
-              <MenuItem icon="agent" onSelect={onAsk}>
-                {t("live.shell.ask")}
-              </MenuItem>
-            )}
-            {compact && artifact.inDrive !== false && (
-              <MenuItem icon="personAdd" onSelect={onShare}>
-                {t("share.button")}
-              </MenuItem>
-            )}
-            {compact && <MenuSeparator />}
-            <MenuItem icon="clock" onSelect={onVersions}>
-              {t("live.shell.menu.versions")}
-            </MenuItem>
-            <MenuItem icon="flag" disabled={readOnly || previewing} onSelect={onSave}>
-              {t("live.shell.menu.saveVersion")}
-            </MenuItem>
-            <MenuItem icon="copy" disabled={duplicate.isPending} onSelect={copy}>
-              {t("live.shell.menu.duplicate")}
-            </MenuItem>
-            <MenuItem icon="drive" onSelect={toDrive}>
-              {t("live.shell.menu.showInDrive")}
-            </MenuItem>
-            <MenuItem icon="keyboard" onSelect={onShortcuts}>
-              {t("live.shell.menu.shortcuts")}
-            </MenuItem>
-            {artifact.canDelete && (
-              <>
-                <MenuSeparator />
-                <MenuItem icon="trash" danger onSelect={onDelete}>
-                  {t("live.shell.menu.trash")}
-                </MenuItem>
-              </>
-            )}
-          </Menu>
-        </div>
-      )}
-    </header>
-  );
-}
-
-/** "Salvo" / "Salvando…" / offline / read-only, in quiet words beside the title. */
-function useStatusWords(
-  live: ReturnType<typeof useLiveRoomWeb>,
-  previewing: boolean,
-): { text: string; tone: "quiet" | "warn" } | null {
-  const { t } = useTranslation();
-  const { org } = useOrg();
-  const saving = useDelayed(live.unsent, SAVING_AFTER_MS);
-  if (previewing) return null;
-  if (live.status === "offline") return { text: t("live.shell.status.offline"), tone: "warn" };
-  if (!live.loaded) return live.status === "closed" ? null : { text: t("live.shell.status.connecting"), tone: "quiet" };
-  if (live.mode === "view") {
-    return { text: org.deletion ? t("live.shell.status.closing") : t("live.shell.status.readOnly"), tone: "quiet" };
-  }
-  return { text: saving ? t("live.shell.status.saving") : t("live.shell.status.saved"), tone: "quiet" };
-}
-
-/**
- * The title, renamed where it is: it reads as the page's title and turns into its field on a click or Tab; Enter or
- * leaving it renames, Esc puts it back. A new file opens with it selected, ready to be named.
- */
-function TitleField({
-  fileId,
-  value,
-  canRename,
-  onRename,
-}: {
-  fileId: string;
-  value: string;
-  canRename: boolean;
-  onRename: (title: string) => void;
-}) {
-  const { t } = useTranslation();
-  const [draft, setDraft] = useState(value);
-  const [editing, setEditing] = useState(false);
-  const field = useRef<HTMLInputElement>(null);
-  // Renamed elsewhere (another person, an agent) while not editing: the new name.
-  useEffect(() => {
-    if (!editing) setDraft(value);
-  }, [value, editing]);
-  // A file just made from "New": its title selected, ready to be named (once; kept a moment for a remount).
-  useEffect(() => {
-    if (!canRename || !wasJustCreated(fileId)) return;
-    field.current?.focus();
-    field.current?.select();
-    const id = setTimeout(() => forgetJustCreated(fileId), 1000);
-    return () => clearTimeout(id);
-  }, [canRename, fileId]);
-  if (!canRename) {
-    return <h1 className="lf-title lf-title--still">{value}</h1>;
-  }
-  const commit = () => {
-    const next = draft.trim();
-    setEditing(false);
-    if (next && next !== value) onRename(next);
-    else setDraft(value);
-  };
-  return (
-    <h1 className="lf-title">
-      <span className="lf-title__mirror" aria-hidden="true">
-        {draft || " "}
-      </span>
-      <input
-        ref={field}
-        className="lf-title__field"
-        aria-label={t("live.shell.title")}
-        value={draft}
-        maxLength={200}
-        spellCheck={false}
-        onFocus={() => setEditing(true)}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            e.currentTarget.blur();
-          } else if (e.key === "Escape") {
-            e.preventDefault();
-            e.stopPropagation();
-            setDraft(value);
-            setEditing(false);
-            // Blurring now would rename with the old draft: put it back first, then leave.
-            requestAnimationFrame(() => field.current?.blur());
-          }
-        }}
-      />
-    </h1>
+            <ShortcutsDialog open={keysOpen} kind={kind} onClose={() => setKeysOpen(false)} />
+            {remover.dialog}
+            {share.dialog}
+          </div>
+        </LiveAskContext.Provider>
+      </FileAgentContext.Provider>
+    </FileTalkContext.Provider>
   );
 }
 
@@ -773,6 +560,17 @@ function EditorSkeleton({ kind, label }: { kind: LiveKind | null; label: string 
         <span className="lf-skel__plane">
           <Skeleton shape="block" className="lf-skel__dock" />
         </span>
+      ) : kind === "document" ? (
+        <>
+          <span className="lf-skel__bar" />
+          <span className="lf-skel__page">
+            <Skeleton shape="block" width="55%" height={44} />
+            <Skeleton shape="block" width="40%" height={16} />
+            <Skeleton shape="block" width="100%" height={14} />
+            <Skeleton shape="block" width="92%" height={14} />
+            <Skeleton shape="block" width="96%" height={14} />
+          </span>
+        </>
       ) : (
         <>
           <span className="lf-skel__bar">
@@ -796,7 +594,7 @@ function ShortcutsDialog({ open, kind, onClose }: { open: boolean; kind: LiveKin
     [t("live.shell.shortcuts.show"), ["?"]],
     [t("live.shell.shortcuts.stopFollowing"), ["Esc"]],
   ];
-  const own: Record<LiveKind, { title: string; keys: [string, string[]][] }> = {
+  const own: Partial<Record<LiveKind, { title: string; keys: [string, string[]][] }>> = {
     spreadsheet: {
       title: t("live.shell.shortcuts.spreadsheet"),
       keys: [
@@ -821,21 +619,11 @@ function ShortcutsDialog({ open, kind, onClose }: { open: boolean; kind: LiveKin
         [t("live.shell.shortcuts.italic"), [mod, "I"]],
       ],
     },
-    canvas: {
-      title: t("live.shell.shortcuts.canvas"),
-      keys: [
-        [t("live.shell.shortcuts.select"), ["V"]],
-        [t("live.shell.shortcuts.hand"), ["H"]],
-        [t("live.shell.shortcuts.note"), ["N"]],
-        [t("live.shell.shortcuts.text"), ["T"]],
-        [t("live.shell.shortcuts.generate"), ["G"]],
-        [t("live.shell.shortcuts.zoom"), ["=", "-"]],
-        [t("live.shell.shortcuts.fit"), ["⇧", "1"]],
-        [t("live.shell.shortcuts.duplicate"), [mod, "D"]],
-      ],
-    },
+    canvas: { title: t("live.shell.shortcuts.canvas"), keys: canvasShortcuts(t, mod) },
+    document: { title: t("live.doc.keys.title"), keys: documentShortcuts(t, mod) },
   };
-  const groups = [{ title: t("live.shell.shortcuts.general"), keys: general }, ...(kind ? [own[kind]] : [])];
+  const mine = kind ? own[kind] : undefined;
+  const groups = [{ title: t("live.shell.shortcuts.general"), keys: general }, ...(mine ? [mine] : [])];
   return (
     <Dialog
       open={open}

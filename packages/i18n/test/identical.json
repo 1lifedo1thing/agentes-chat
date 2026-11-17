@@ -314,6 +314,7 @@
       "storage.connect.awsRegion.il-central-1",
       "onboarding.import.choose.skill",
       "live.canvas.sizes.short.m",
+      "live.canvas.pen.short.m",
       "live.slides.rail.label",
       "live.slides.rail.slide",
       "live.slides.stage.role",
@@ -322,7 +323,11 @@
       "live.slides.tools.link",
       "live.slides.link.placeholder",
       "live.slides.chart.item",
-      "live.slides.deck.number"
+      "live.slides.deck.number",
+      "live.shell.formats.docx",
+      "live.shell.formats.md",
+      "live.doc.link.title",
+      "live.doc.keys.link"
     ],
     "es": [
       "devices.iphone.path.general",

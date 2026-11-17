@@ -712,4 +712,49 @@ export const extraIcons = {
     ["rect", { x: "3.5", y: "3.5", width: "9.5", height: "9.5", rx: "1.75" }],
     ["path", { d: "M13 7h2.25c.69 0 1.25.56 1.25 1.25v7c0 .69-.56 1.25-1.25 1.25h-7c-.69 0-1.25-.56-1.25-1.25V13" }],
   ],
+  /** A canvas's forms (ADR 0194 §2): a rectangle. */
+  rectangle: [["rect", { x: "3.5", y: "5", width: "13", height: "10", rx: "1.5" }]],
+  /** An ellipse. */
+  ellipse: [["path", { d: "M3.25 10a6.75 5.75 0 1 0 13.5 0a6.75 5.75 0 1 0-13.5 0z" }]],
+  /** A diamond. */
+  diamond: [["path", { d: "M10 3.25 16.75 10 10 16.75 3.25 10z" }]],
+  /** A triangle. */
+  triangle: [["path", { d: "M10 4.25 16.5 15.5h-13z" }]],
+  /** A star. */
+  star: [["path", { d: "m10 3.5 1.95 4.05 4.45.55-3.3 3.05.88 4.4L10 13.35l-3.98 2.2.88-4.4-3.3-3.05 4.45-.55z" }]],
+  /** A line with no heads. */
+  line: [["path", { d: "M4.5 15.5 15.5 4.5" }]],
+  /** An arrow with a head at each end. */
+  arrowBoth: [["path", { d: "m4.5 15.5 11-11M9 4.5h6.5V11M11 15.5H4.5V9" }]],
+  /** An arrow with its head at its start. */
+  arrowStart: [["path", { d: "m4.5 15.5 11-11M11 15.5H4.5V9" }]],
+  /** An arrow's route: a curve. */
+  curve: [
+    ["path", { d: "M4 15.5C5.5 8.5 9.5 5 15.5 4.75" }],
+    ["path", { d: "m12.75 2.75 2.9 2-2.4 2.6" }],
+  ],
+  /** An arrow's route: right angles. */
+  elbow: [
+    ["path", { d: "M4 15.5h6v-11h5.5" }],
+    ["path", { d: "m13 2.25 2.75 2.25L13 6.75" }],
+  ],
+  /** A dashed line. */
+  dashed: [["path", { d: "M3.5 16.5 5.5 14.5M8 12l2-2M12.5 7.5l2-2" }]],
+  /** The pen: a stroke drawn by hand. */
+  pen: [
+    ["path", { d: "M4 16.25 5 12.4l8.4-8.4a1.9 1.9 0 0 1 2.7 2.7L7.7 15.1z" }],
+    ["path", { d: "m12 5.4 2.7 2.7" }],
+  ],
+  /** The highlighter: a wide, see-through stroke. */
+  marker: [
+    ["path", { d: "m6.5 13.5 7.4-7.4a1.6 1.6 0 0 1 2.3 2.3L8.8 15.8" }],
+    ["path", { d: "m6.5 13.5-1.2 3.2 3.5-.9" }],
+    ["path", { d: "M3 17h5" }],
+  ],
+  /** Crop a picture: the two corners of its frame. */
+  crop: [["path", { d: "M6 2.75v11.25h11.25M2.75 6H14v11.25" }]],
+  /** A rectangle's rounded corners. */
+  corners: [["path", { d: "M4 16V9a5 5 0 0 1 5-5h7" }]],
+  /** A comment pinned to a spot: a speech bubble with its tail at the spot. */
+  comment: [["path", { d: "M10 3.5a6 6 0 0 1 0 12H4.5V10a6.5 6.5 0 0 1 5.5-6.5z" }]],
 } satisfies Record<string, IconShape[]>;

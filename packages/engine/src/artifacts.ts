@@ -37,7 +37,20 @@ import { publishChannelEvent, publishListChanged } from "./events";
 import { MODEL_FILE_READ_BYTES, type ModelFile, readForModel, tooBigToReadNote, transcriptKey } from "./file-reader";
 import { formatBytes, tableToCsv } from "./format";
 import { imageSize } from "./image-size";
-import { LIVE_SNAPSHOT_TYPE, type LiveContent, liveContentOf, liveExcerpt, snapshotContent } from "./live/preview";
+import { originOfActor } from "./live/access";
+import { type FileConversationSummary, fileConversationSummaries } from "./live/conversation";
+import { documentExport } from "./live/document-export";
+import {
+  documentFromMarkdown,
+  LIVE_SNAPSHOT_TYPE,
+  type LiveContent,
+  liveContentOf,
+  liveExcerpt,
+  liveProblems,
+  overLimit,
+  snapshotContent,
+  versionDoc,
+} from "./live/preview";
 import { docOf, liveDocRow, loadStored, toB64 } from "./live/store";
 
 export { tableToCsv };
@@ -55,6 +68,7 @@ import {
   adminChannelSql,
   artifactCol,
   channelReaderSql,
+  fileConversationReaderSql,
   fileSeenSql,
   fileSharedSql,
   taskReaderSql,
@@ -96,8 +110,8 @@ export type ConversationKind = "block" | "poll" | "choices";
  * Live files (ADR 0194): one Yjs document people and agents change together, through a socket or the agents' own
  * tools, never by saving whole content (`updateArtifact` refuses them). Each version is a snapshot of the document.
  */
-export type LiveArtifactKind = "spreadsheet" | "slides" | "canvas";
-export const LIVE_ARTIFACT_KINDS: readonly LiveArtifactKind[] = ["spreadsheet", "slides", "canvas"];
+export type LiveArtifactKind = "spreadsheet" | "slides" | "canvas" | "document";
+export const LIVE_ARTIFACT_KINDS: readonly LiveArtifactKind[] = ["spreadsheet", "slides", "canvas", "document"];
 export const isLiveArtifactKind = (kind: string): kind is LiveArtifactKind =>
   (LIVE_ARTIFACT_KINDS as readonly string[]).includes(kind);
 /** The agents' tools for each live kind, for a refusal that says which one to use instead. */
@@ -105,6 +119,8 @@ const LIVE_TOOLS: Record<LiveArtifactKind, { create: string; read: string; edit:
   spreadsheet: { create: "create_spreadsheet", read: "read_spreadsheet", edit: "edit_spreadsheet" },
   slides: { create: "create_presentation", read: "read_presentation", edit: "edit_presentation" },
   canvas: { create: "create_canvas", read: "read_canvas", edit: "edit_canvas" },
+  // A document is made from Markdown with the tool agents already know (ADR 0198).
+  document: { create: "create_artifact", read: "read_document", edit: "edit_document" },
 };
 /**
  * What an agent is told of a live file where a tool shows it no whole (`read_artifact`): the tools that read and
@@ -120,7 +136,6 @@ const liveOnly = (kind: LiveArtifactKind) =>
   );
 /** Kinds made from content (JSON); `file` is made only from bytes (`createFileArtifact`, ADR 0025). */
 export const TEXT_ARTIFACT_KINDS: readonly Exclude<ArtifactKind, "file" | ConversationKind | LiveArtifactKind>[] = [
-  "document",
   "table",
   "diff",
   "html",
@@ -141,7 +156,6 @@ export interface FileContent {
 }
 
 export type ArtifactContent =
-  | { kind: "document"; markdown: string }
   | { kind: "table"; columns: string[]; rows: string[][] }
   | { kind: "diff"; files: { path: string; patch: string }[] }
   | { kind: "diagram"; mermaid: string }
@@ -154,7 +168,10 @@ export type ArtifactContent =
   | { kind: "poll"; question: string; options: string[]; multiple: boolean }
   | { kind: "choices"; questions: ChoiceQuestion[] }
   | FileContent
-  /** A live file (ADR 0194 §7): its preview (the top-left cells, the first slide, the canvas's first shapes). */
+  /**
+   * A live file (ADR 0194 §7): its preview (the top-left cells, the first slide, the canvas's first shapes, a
+   * document's first blocks; a document also its Markdown, ADR 0198).
+   */
   | LiveContent;
 
 /**
@@ -313,11 +330,10 @@ export function validateContent(raw: unknown): TextContent {
   const c = (raw ?? {}) as Record<string, unknown>;
   const tooBig = (what: string) => new ValidationError(`${what} is too large`);
   switch (c.kind) {
-    case "document": {
-      if (typeof c.markdown !== "string") throw new ValidationError("document needs markdown");
-      if (bytes(c.markdown) > ARTIFACT_LIMITS.documentBytes) throw tooBig("document");
-      return { kind: "document", markdown: c.markdown };
-    }
+    case "document":
+      // A live file made from Markdown (`createArtifact`, ADR 0198): checked here, never stored as text.
+      documentMarkdown(c);
+      throw liveOnly("document");
     case "html": {
       if (typeof c.html !== "string") throw new ValidationError("html needs html");
       if (bytes(c.html) > ARTIFACT_LIMITS.htmlBytes) throw tooBig("html page");
@@ -425,12 +441,17 @@ export function validateContent(raw: unknown): TextContent {
   }
 }
 
-/** How each kind is stored: documents, pages and diagrams as text; tables and diffs as JSON. */
+/** A document's Markdown as `create_artifact` and people send it (ADR 0198): there, and not too large. */
+function documentMarkdown(c: Record<string, unknown>): string {
+  if (typeof c.markdown !== "string") throw new ValidationError("document needs markdown");
+  if (bytes(c.markdown) > ARTIFACT_LIMITS.documentBytes) throw new ValidationError("document is too large");
+  return c.markdown;
+}
+
+/** How each kind is stored: pages and diagrams as text; tables and diffs as JSON. */
 function encode(content: TextContent): { body: Uint8Array; contentType: string } {
   const text = (s: string, contentType: string) => ({ body: new TextEncoder().encode(s), contentType });
   switch (content.kind) {
-    case "document":
-      return text(content.markdown, "text/markdown; charset=utf-8");
     case "html":
       return text(content.html, "text/html; charset=utf-8");
     case "block":
@@ -457,8 +478,6 @@ function encode(content: TextContent): { body: Uint8Array; contentType: string }
 function decode(kind: Exclude<ArtifactKind, "file" | LiveArtifactKind>, body: Uint8Array): TextContent {
   const s = new TextDecoder().decode(body);
   switch (kind) {
-    case "document":
-      return { kind, markdown: s };
     case "html":
       return { kind, html: s };
     case "block":
@@ -696,21 +715,19 @@ function excerptOf(content: ArtifactContent): string {
   const s =
     content.kind === "file"
       ? content.name
-      : content.kind === "document"
-        ? content.markdown
-        : content.kind === "block" && content.spec
-          ? blockSpecText(content.spec)
-          : content.kind === "html" || content.kind === "block"
-            ? (content.html ?? "").replace(/<[^>]+>/g, " ")
-            : content.kind === "poll"
-              ? [content.question, ...content.options].join("\n")
-              : content.kind === "choices"
-                ? choicesText(content.questions)
-                : content.kind === "diagram"
-                  ? content.mermaid
-                  : content.kind === "table"
-                    ? [content.columns.join(" "), ...content.rows.map((r) => r.join(" "))].join("\n")
-                    : content.files.map((f) => f.path).join("\n");
+      : content.kind === "block" && content.spec
+        ? blockSpecText(content.spec)
+        : content.kind === "html" || content.kind === "block"
+          ? (content.html ?? "").replace(/<[^>]+>/g, " ")
+          : content.kind === "poll"
+            ? [content.question, ...content.options].join("\n")
+            : content.kind === "choices"
+              ? choicesText(content.questions)
+              : content.kind === "diagram"
+                ? content.mermaid
+                : content.kind === "table"
+                  ? [content.columns.join(" "), ...content.rows.map((r) => r.join(" "))].join("\n")
+                  : content.files.map((f) => f.path).join("\n");
   return s.replace(/\s+/g, " ").trim().slice(0, 20_000);
 }
 
@@ -747,8 +764,12 @@ function runSharedSql(personId: string | null, channelId: string) {
   ) as SQL;
 }
 
-/** What decides who reads a file: where it lives and its sharing (absent for a conversation alone, as `placeNew` asks). */
-type Readable = Pick<ArtifactRow, "channelId"> & Partial<Pick<ArtifactRow, "share" | "shareUserIds" | "shareRoleIds">>;
+/**
+ * What decides who reads a file: where it lives and its sharing (absent for a conversation alone, as `placeNew` asks),
+ * and for an agent its own conversation (ADR 0197).
+ */
+type Readable = Pick<ArtifactRow, "channelId"> &
+  Partial<Pick<ArtifactRow, "share" | "shareUserIds" | "shareRoleIds" | "conversationChannelId">>;
 
 const sharingOf = (a: Pick<ArtifactRow, "share" | "shareUserIds" | "shareRoleIds">): FileSharing => ({
   mode: a.share,
@@ -785,7 +806,7 @@ async function sharedWith(db: Database, userId: string, ids: string[]) {
 
 /**
  * Whether a person reads a conversation's files: a member, anyone for a public channel, an administrator for any
- * channel, whoever sees the task of a task's conversation.
+ * channel, whoever sees the task of a task's conversation, whoever reads the file of a live file's conversation.
  */
 async function readsWhereItLives(db: Database, userId: string, orgId: string, channelId: string) {
   const [row] = await db
@@ -795,6 +816,8 @@ async function readsWhereItLives(db: Database, userId: string, orgId: string, ch
       memberId: channelMembers.id,
       // A task's conversation: whoever sees the task (ADR 0145).
       taskReader: taskReaderSql(sql`${channels.id}`, sql`${userId}::text`),
+      // A live file's conversation: whoever reads the file (ADR 0197).
+      fileReader: sql<boolean>`${channels.kind} = 'file' and ${fileConversationReaderSql(sql`${channels.id}`, sql`${userId}::text`)}`,
       admin: sql<boolean>`${adminChannelSql(sql`${orgId}::uuid`, sql`${userId}::text`)}`,
     })
     .from(channels)
@@ -802,6 +825,7 @@ async function readsWhereItLives(db: Database, userId: string, orgId: string, ch
     .where(and(eq(channels.id, channelId), eq(channels.orgId, orgId)));
   if (!row) return false;
   if (row.kind === "task") return row.taskReader === true || String(row.taskReader) === "t";
+  if (row.kind === "file") return row.fileReader === true || String(row.fileReader) === "t";
   return (
     row.memberId !== null ||
     (row.visibility === "public" && row.kind === "channel") ||
@@ -810,7 +834,10 @@ async function readsWhereItLives(db: Database, userId: string, orgId: string, ch
   );
 }
 
-/** The channels whose files this person may read: those they belong to, public channels, tasks they see, and for an administrator every channel. */
+/**
+ * The channels whose files this person may read: those they belong to, public channels, tasks they see, the
+ * conversations of live files they read, and for an administrator every channel.
+ */
 async function personReadableChannels(db: Database, userId: string, orgId: string): Promise<string[]> {
   const member = and(eq(channelMembers.channelId, channels.id), eq(channelMembers.userId, userId));
   const open = and(eq(channels.visibility, "public"), eq(channels.kind, "channel"));
@@ -825,6 +852,7 @@ async function personReadableChannels(db: Database, userId: string, orgId: strin
           sql`${channelMembers.id} is not null`,
           open,
           and(eq(channels.kind, "task"), taskReaderSql(sql`${channels.id}`, sql`${userId}::text`)),
+          and(eq(channels.kind, "file"), fileConversationReaderSql(sql`${channels.id}`, sql`${userId}::text`)),
           adminChannelSql(sql`${orgId}::uuid`, sql`${userId}::text`),
         ),
       ),
@@ -880,15 +908,17 @@ async function ownRoomFile(db: Database, actor: Extract<ArtifactActor, { type: "
 /**
  * An agent's own reach, what `listArtifacts` lists and what it may change: org-wide files, its run's conversation and
  * public channels it is in (in the agents' DM, only those made for the same person), the conversations it shares
- * with the person behind the run, and what its room saved elsewhere.
+ * with the person behind the run, what its room saved elsewhere, and the live file whose own conversation its run is
+ * in (ADR 0197: only agents that may work on the file are members there, `admitFileAgents`).
  */
 async function agentReaches(
   db: Database,
   actor: Extract<ArtifactActor, { type: "agent" }>,
   orgId: string,
-  a: Pick<ArtifactRow, "id" | "channelId">,
+  a: Pick<ArtifactRow, "id" | "channelId"> & Partial<Pick<ArtifactRow, "conversationChannelId">>,
 ) {
   if (!a.channelId) return true;
+  if (a.conversationChannelId && a.conversationChannelId === actor.channelId) return true;
   if (!(await agentSearchChannels(db, orgId, actor.agentId, actor.channelId, { files: true })).includes(a.channelId)) {
     const person = await runPerson(db, orgId, actor.runId ?? undefined);
     if (person !== null && (await requesterSharedChannels(db, orgId, actor.agentId, person)).includes(a.channelId))
@@ -916,7 +946,8 @@ async function runReachesShared(db: Database, channelId: string, person: string 
  */
 async function canRead(db: Database, actor: ArtifactActor, orgId: string, a: Pick<ArtifactRow, "id"> & Readable) {
   if (actor.type === "person") return personCanRead(db, actor.userId, orgId, a);
-  if (!a.channelId || (await agentReaches(db, actor, orgId, { id: a.id, channelId: a.channelId }))) return true;
+  const reach = { id: a.id, channelId: a.channelId, conversationChannelId: a.conversationChannelId };
+  if (!a.channelId || (await agentReaches(db, actor, orgId, reach))) return true;
   const person = await runPerson(db, orgId, actor.runId ?? undefined);
   if (person !== null && (await readsWhereItLives(db, person, orgId, a.channelId))) return true;
   if (await runReachesShared(db, actor.channelId, person, a.id)) return true;
@@ -953,8 +984,8 @@ function view(a: ArtifactRow, canEdit: boolean): ArtifactView {
   };
 }
 
-/** People save new versions of documents and tables (editor) and of files (an upload). */
-const editableKind = (kind: ArtifactKind) => kind === "document" || kind === "table" || kind === "file";
+/** People save new versions of tables (editor) and of files (an upload); documents are live files (ADR 0198). */
+const editableKind = (kind: ArtifactKind) => kind === "table" || kind === "file";
 
 async function loadArtifact(db: Database, orgId: string, id: string) {
   // A model can send any 36 characters: Postgres would answer with an error about the uuid type.
@@ -1262,6 +1293,8 @@ export async function createArtifact(
     note?: string | null;
   },
 ): Promise<ArtifactDetailView> {
+  const raw = (input.content ?? {}) as Record<string, unknown>;
+  if (raw.kind === "document") return createDocument(deps, actor, orgId, { ...input, markdown: documentMarkdown(raw) });
   const place = await placeFile(deps.db, actor, orgId, input);
   const content = validateContent(input.content);
   const { artifact } = await insertArtifact(deps, actor, orgId, {
@@ -1273,6 +1306,36 @@ export async function createArtifact(
     note: input.note ?? null,
   });
   return detail(artifact, 1, content);
+}
+
+/**
+ * A document from Markdown (ADR 0198): a live file people and agents then edit together, made where `createArtifact`
+ * makes any file. Refused past the documents' limits, as a live file is.
+ */
+async function createDocument(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  input: { title: string; markdown: string; channelId?: string | null; threadId?: string | null; note?: string | null },
+): Promise<ArtifactDetailView> {
+  const doc = documentFromMarkdown(input.markdown, originOfActor(actor));
+  try {
+    const over = overLimit(doc, "document");
+    if (over) throw new ValidationError(`The file would be too large (${over})`, "live.too_large", { limit: over });
+    const problems = liveProblems(doc);
+    if (problems.length > 0) throw new ValidationError(`The file can't be made: ${problems[0]}`);
+    const artifact = await insertLiveArtifact(deps, actor, orgId, {
+      kind: "document",
+      title: input.title,
+      channelId: input.channelId,
+      threadId: input.threadId,
+      doc,
+      note: input.note ?? null,
+    });
+    return detail(artifact, 1, liveContentOf(doc, "document"));
+  } finally {
+    doc.destroy();
+  }
 }
 
 /**
@@ -1617,7 +1680,7 @@ async function readVersion(deps: ArtifactDeps, a: ArtifactRow, v: VersionRow) {
 async function contentOf(deps: ArtifactDeps, a: ArtifactRow, v: VersionRow): Promise<ArtifactContent> {
   if (a.kind === "file") return fileContent(v, wantsFileText(v) ? (await readVersion(deps, a, v)).body : null);
   // A live file's version is a snapshot of its document: its preview, as the head's (ADR 0194 §7).
-  if (isLiveArtifactKind(a.kind)) return snapshotContent(a.kind, (await readVersion(deps, a, v)).body);
+  if (isLiveArtifactKind(a.kind)) return snapshotContent(a.kind, (await readVersion(deps, a, v)).body, v.contentType);
   return decode(a.kind, (await readVersion(deps, a, v)).body);
 }
 
@@ -1757,12 +1820,14 @@ async function liveHeadContent(
 ): Promise<LiveContent | null> {
   const row = await liveDocRow(deps.db, a.orgId, a.id);
   if (!row) return null;
-  if (row.preview) return { kind, preview: row.preview } as unknown as LiveContent;
+  // A document's content also carries its whole Markdown (ADR 0198), so it is read from the head every time.
+  if (row.preview && kind !== "document") return { kind, preview: row.preview } as unknown as LiveContent;
   const stored = await loadStored(deps.db, a.orgId, a.id);
   if (!stored) return null;
   const doc = docOf(stored.state, stored.changes);
   try {
     const content = liveContentOf(doc, kind);
+    if (row.preview) return content;
     await deps.db
       .update(schema.liveDocs)
       .set({ preview: content.preview as unknown as Record<string, unknown> })
@@ -2273,6 +2338,8 @@ export interface PersonArtifactFacts {
    * there. False for what the whole workspace sees already.
    */
   canShare: boolean;
+  /** A live file's conversation (ADR 0197) once someone opened or wrote in it; null otherwise. */
+  conversation: FileConversationSummary | null;
 }
 
 export async function withPersonFacts<T extends Pick<ArtifactView, "id" | "channelId" | "createdBy" | "inDrive">>(
@@ -2283,7 +2350,7 @@ export async function withPersonFacts<T extends Pick<ArtifactView, "id" | "chann
 ): Promise<(T & PersonArtifactFacts)[]> {
   if (list.length === 0) return [];
   const channelIds = [...new Set(list.flatMap((a) => (a.channelId ? [a.channelId] : [])))];
-  const [deletable, chans] = await Promise.all([
+  const [deletable, chans, conversations] = await Promise.all([
     deletableIds(
       db,
       userId,
@@ -2296,6 +2363,11 @@ export async function withPersonFacts<T extends Pick<ArtifactView, "id" | "chann
           .from(channels)
           .where(and(eq(channels.orgId, orgId), inArray(channels.id, channelIds)))
       : Promise.resolve([]),
+    fileConversationSummaries(
+      db,
+      orgId,
+      list.map((a) => a.id),
+    ),
   ]);
   const dmIds = chans.filter((c) => c.kind === "dm").map((c) => c.id);
   const dmMembers = dmIds.length
@@ -2370,6 +2442,7 @@ export async function withPersonFacts<T extends Pick<ArtifactView, "id" | "chann
     canDelete: a.inDrive && deletable.has(a.id),
     audience: a.channelId ? (audience.get(a.channelId) ?? { kind: "dm", with: null }) : { kind: "workspace" },
     canShare: a.inDrive && a.channelId !== null && closed.has(a.channelId) && readsThere.has(a.channelId),
+    conversation: conversations.get(a.id) ?? null,
   }));
 }
 
@@ -2824,12 +2897,8 @@ export async function artifactFile(
     return { body, contentType: "text/csv; charset=utf-8", filename: fileName(a, v.version, "csv") };
   }
   if (options.format === "pdf" || options.format === "docx") {
-    const markdown =
-      content.kind === "document"
-        ? content.markdown
-        : content.kind === "table"
-          ? tableToMarkdown(content.columns, content.rows)
-          : null;
+    // A document's are its live file's (`liveFile`, ADR 0198); here, a table's.
+    const markdown = content.kind === "table" ? tableToMarkdown(content.columns, content.rows) : null;
     if (markdown === null)
       throw new ValidationError(
         `${options.format.toUpperCase()} export is for documents and tables`,
@@ -2845,7 +2914,7 @@ export async function artifactFile(
     const body = markdownToPdf(markdown, { title: a.title });
     return { body, contentType: "application/pdf", filename: fileName(a, v.version, "pdf") };
   }
-  if (options.format === "xlsx" || options.format === "pptx" || options.format === "json") {
+  if (options.format === "xlsx" || options.format === "pptx" || options.format === "json" || options.format === "md") {
     throw new ValidationError(
       `${options.format.toUpperCase()} export is for live files`,
       "artifact.format_unavailable",
@@ -2861,8 +2930,8 @@ export async function artifactFile(
 
 // ── Live files (ADR 0194) ────────────────────────────────────────────────────
 
-/** What `artifactFile` makes: tables' CSV, diffs' patch, PDF and docx, and live files' exports (ADR 0196). */
-export type ArtifactFileFormat = "csv" | "patch" | "pdf" | "docx" | "xlsx" | "pptx" | "json";
+/** What `artifactFile` makes: tables' CSV, diffs' patch, PDF and docx, and live files' exports (ADR 0196, 0198). */
+export type ArtifactFileFormat = "csv" | "patch" | "pdf" | "docx" | "xlsx" | "pptx" | "json" | "md";
 
 /** A live file as it downloads (ADR 0196). */
 export interface LiveExport {
@@ -2891,19 +2960,12 @@ export function setLiveExporter(exporter: LiveExporter | null) {
   liveExporter = exporter;
 }
 
-/** A version's snapshot as a document. */
-function snapshotDoc(snapshot: Uint8Array): Y.Doc {
-  const doc = new Y.Doc();
-  Y.applyUpdate(doc, snapshot);
-  return doc;
-}
-
 /** A live file's document at its head, or at its latest version when it has no live document (never one made here). */
 async function liveHeadDoc(deps: ArtifactDeps, a: ArtifactRow): Promise<Y.Doc> {
   const stored = await loadStored(deps.db, a.orgId, a.id);
   if (stored) return docOf(stored.state, stored.changes);
   const v = await versionRow(deps.db, a);
-  return snapshotDoc((await readVersion(deps, a, v)).body);
+  return versionDoc(a.kind as LiveArtifactKind, (await readVersion(deps, a, v)).body, v.contentType);
 }
 
 /** A live file's download: its head (no version asked) or a version's snapshot, as the exporter writes it. */
@@ -2915,9 +2977,16 @@ async function liveFile(
   options: { version?: number; format?: ArtifactFileFormat },
 ): Promise<{ body: Uint8Array; contentType: string; filename: string }> {
   const doc =
-    options.version === undefined ? await liveHeadDoc(deps, a) : snapshotDoc((await readVersion(deps, a, v)).body);
+    options.version === undefined
+      ? await liveHeadDoc(deps, a)
+      : versionDoc(kind, (await readVersion(deps, a, v)).body, v.contentType);
   try {
     const format = options.format ?? null;
+    if (kind === "document") {
+      // Written here, with or without the Office exporter (ADR 0198).
+      const out = await documentExport(deps, a, doc, format);
+      return { body: out.body, contentType: out.contentType, filename: fileName(a, v.version, out.ext) };
+    }
     if (liveExporter) {
       const out = await liveExporter({ deps, artifact: a, kind, doc, format });
       return { body: out.body, contentType: out.contentType, filename: fileName(a, v.version, out.ext) };
@@ -2997,7 +3066,7 @@ export async function requireLiveFile(
     const a = await readable(deps, actor, orgId, fileId);
     if (actor.type === "agent") {
       throw new ValidationError(
-        `This file is a ${a.kind}, not a spreadsheet, presentation or canvas: read or change it with read_artifact and update_artifact.`,
+        `This file is a ${a.kind}, not a spreadsheet, presentation, canvas or document: read or change it with read_artifact and update_artifact.`,
       );
     }
     throw new NotFoundError("Artifact not found", "artifact.not_found");
@@ -3022,9 +3091,52 @@ export async function liveSnapshotOf(deps: ArtifactDeps, orgId: string, fileId: 
   if (!a || !isLiveArtifactKind(a.kind)) throw new NotFoundError("Artifact not found", "artifact.not_found");
   const v = await versionRow(deps.db, a, version);
   if (v.contentType !== LIVE_SNAPSHOT_TYPE) {
+    // A document saved as Markdown before documents were live files: that Markdown as a document (ADR 0198).
+    if (a.kind === "document") {
+      const doc = versionDoc(a.kind, (await readVersion(deps, a, v)).body, v.contentType);
+      try {
+        return Y.encodeStateAsUpdate(doc);
+      } finally {
+        doc.destroy();
+      }
+    }
     throw new NotFoundError("Version not found", "artifact.version_not_found", { latest: a.currentVersion });
   }
   return (await readVersion(deps, a, v)).body;
+}
+
+/**
+ * Gives a document saved as Markdown before documents were live files (ADR 0198) its live document: made from its
+ * latest version, as `createArtifact` makes one, and stored once (whoever gets there first; the others read theirs).
+ * False for anything else (no such file, another kind, one that has its live document already).
+ */
+export async function adoptMarkdownDocument(deps: ArtifactDeps, orgId: string, fileId: string): Promise<boolean> {
+  const a = await loadArtifact(deps.db, orgId, fileId);
+  if (a?.kind !== "document" || (await liveDocRow(deps.db, orgId, fileId))) return false;
+  const v = await versionRow(deps.db, a);
+  const doc = versionDoc("document", (await readVersion(deps, a, v)).body, v.contentType);
+  try {
+    const state = Y.encodeStateAsUpdate(doc);
+    const at = new Date();
+    await deps.db
+      .insert(schema.liveDocs)
+      .values({
+        artifactId: a.id,
+        orgId,
+        kind: "document",
+        state: toB64(state),
+        stateBytes: state.byteLength,
+        preview: liveContentOf(doc, "document").preview as unknown as Record<string, unknown>,
+        editedAt: at,
+        checkpointAt: at,
+        createdAt: at,
+        updatedAt: at,
+      })
+      .onConflictDoNothing();
+    return true;
+  } finally {
+    doc.destroy();
+  }
 }
 
 /**

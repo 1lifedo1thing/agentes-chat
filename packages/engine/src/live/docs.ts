@@ -29,7 +29,7 @@ import {
 } from "@agenteschat/live/protocol";
 import * as decoding from "lib0/decoding";
 import * as Y from "yjs";
-import { type ArtifactAuthor, type ArtifactDeps, liveSnapshotOf } from "../artifacts";
+import { type ArtifactAuthor, type ArtifactDeps, adoptMarkdownDocument, liveSnapshotOf } from "../artifacts";
 import { recordAudit } from "../audit";
 import { NotFoundError, ValidationError } from "../errors";
 import { assertStorageRoom } from "../limits";
@@ -105,6 +105,8 @@ export interface LiveTiming {
   maxPendingBytes: number;
   /** A document's exact size is measured at most this often (when its estimate passes `docBytes`). */
   measureMs: number;
+  /** Stopping, a store the database just refused is tried once more within this long, then given up loudly. */
+  stopRetryMs: number;
   board: Partial<PresenceBoardTiming>;
 }
 
@@ -121,6 +123,7 @@ export const LIVE_TIMING: LiveTiming = {
   retryMs: [200, 1000, 3000, 10_000],
   maxPendingBytes: 16 * 1024 * 1024,
   measureMs: 10_000,
+  stopRetryMs: 2000,
   board: PRESENCE_BOARD_TIMING,
 };
 
@@ -149,6 +152,11 @@ export interface LiveConn {
   userId?: string;
   /** The mode it opens with (`liveFileAccess`); `edit` when absent. */
   readonly mode?: LiveMode;
+  /**
+   * No frame of this socket waits to reach the document (the socket's own line, under its pace): `live.saved` waits
+   * for that, then goes when the socket says `drained`. Absent: always.
+   */
+  idle?(): boolean;
 }
 
 /** A socket joined to a document. */
@@ -159,6 +167,10 @@ export interface LiveSession {
   leave(): void;
   /** What access allows now (the socket tells the app with `live.mode`). */
   setMode(mode: LiveMode): void;
+  /** Every change the socket's frames so far brought is stored (what its pong says: `LIVE_PONG_UNSAVED` if not). */
+  allStored(): boolean;
+  /** The socket's line of frames emptied: a `live.saved` held back for it goes now. */
+  drained(): void;
 }
 
 export interface LiveEditOptions {
@@ -244,6 +256,8 @@ interface Hosted {
   linger: ReturnType<typeof setTimeout> | null;
   pending: Pending[];
   pendingBytes: number;
+  /** Bytes of the batch being stored now. */
+  inFlight: number;
   flushTimer: ReturnType<typeof setTimeout> | null;
   /** Batches are stored one at a time, in order. */
   storing: Promise<unknown>;
@@ -265,6 +279,8 @@ interface Hosted {
   dead: boolean;
   /** Dropped because its file has no live document any more (purged, or its workspace deleted). */
   gone: boolean;
+  /** What `drop` let go of unstored (changes, bytes), for shutdown's account of it. */
+  discarded: { changes: number; bytes: number } | null;
 }
 
 /** An agent's presence this process keeps saying. */
@@ -284,6 +300,10 @@ interface AgentHere {
 class Session implements LiveSession {
   left = false;
   hidden = false;
+  /** Changes it brought that aren't stored yet (waiting, or in a batch being stored). */
+  unsaved = 0;
+  /** All stored while frames still waited in its line: `live.saved` goes once they are in (`drained`). */
+  savedDue = false;
   constructor(
     readonly hosted: Hosted,
     readonly conn: LiveConn,
@@ -293,8 +313,15 @@ class Session implements LiveSession {
       message(s: Session, bytes: Uint8Array): void;
       leave(s: Session): void;
       setMode(s: Session, mode: LiveMode): void;
+      drained(s: Session): void;
     },
   ) {}
+  allStored() {
+    return this.unsaved === 0;
+  }
+  drained() {
+    this.owner.drained(this);
+  }
   message(bytes: Uint8Array) {
     this.owner.message(this, bytes);
   }
@@ -316,6 +343,28 @@ function writtenUpdate(bytes: Uint8Array): Uint8Array | null {
     return decoding.readVarUint8Array(decoder);
   } catch {
     return null;
+  }
+}
+
+/**
+ * Whether part of `update`, just applied, waits in `doc` for changes it doesn't hold yet: Yjs keeps such structs and
+ * deletions aside (`pendingStructs`, `pendingDs`) and joins them in later, inside whichever transaction brings what
+ * they wait for. Read only while something waits aside, so an ordinary frame costs nothing.
+ */
+function setAside(doc: Y.Doc, update: Uint8Array): boolean {
+  if (doc.store.pendingStructs === null && doc.store.pendingDs === null) return false;
+  try {
+    const held = Y.decodeStateVector(Y.encodeStateVector(doc));
+    for (const [client, clock] of Y.decodeStateVector(Y.encodeStateVectorFromUpdate(update))) {
+      if ((held.get(client) ?? 0) < clock) return true;
+    }
+    for (const [client, deletions] of Y.decodeUpdate(update).ds.clients) {
+      const known = held.get(client) ?? 0;
+      if (deletions.some((d) => d.clock + d.len > known)) return true;
+    }
+    return false;
+  } catch {
+    return false;
   }
 }
 
@@ -343,6 +392,13 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
   const agentChannels = new Map<string, string | null>();
   const orgWatch = new Map<string, { off: Unsubscribe; docs: number }>();
   let stopped = false;
+  /** Database work started without anyone waiting on it (a compaction asked as the last person leaves): `stop` does. */
+  const background = new Set<Promise<unknown>>();
+  function inBackground(work: Promise<unknown>) {
+    background.add(work);
+    const done = () => background.delete(work);
+    work.then(done, done);
+  }
 
   const hostedOf = (fileId: string) => {
     const h = entries.get(fileId)?.hosted;
@@ -437,7 +493,9 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
       else early.push(event);
     });
     try {
-      const stored = await loadStored(db, orgId, fileId);
+      let stored = await loadStored(db, orgId, fileId);
+      // A document saved as Markdown before documents were live files gets its live document now (ADR 0198).
+      if (!stored && (await adoptMarkdownDocument(deps, orgId, fileId))) stored = await loadStored(db, orgId, fileId);
       if (!stored) throw new NotFoundError("Artifact not found", "artifact.not_found");
       const kind = stored.row.kind as LiveKind;
       const [artifact] = await db
@@ -474,6 +532,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
         linger: null,
         pending: [],
         pendingBytes: 0,
+        inFlight: 0,
         flushTimer: null,
         storing: Promise.resolve(),
         failures: 0,
@@ -490,6 +549,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
         off: [offTopic],
         dead: false,
         gone: false,
+        discarded: null,
       };
       ref.hosted = h;
       grew(h, 0);
@@ -563,7 +623,9 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
     if (busy(h)) return;
     // What sockets that left sent and isn't stored yet goes first.
     if (h.pending.length > 0) await flushAll(h);
-    if (busy(h) || h.linger) return;
+    // Still waiting (the database refused it just now): the retry `flushAll` armed stores it and lingers again.
+    // Letting go here would drop changes whose sockets are gone, so nobody would send them again (ADR 0194 §4).
+    if (busy(h) || h.linger || h.pending.length > 0) return;
     dispose(h);
   }
 
@@ -594,6 +656,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
   function drop(h: Hosted, code: number, reason: string) {
     if (h.dead) return;
     h.gone = code === LIVE_CLOSE.notFound;
+    h.discarded = { changes: h.pending.length, bytes: h.pendingBytes };
     const sessions = [...h.sessions];
     h.sessions.clear();
     h.pending = [];
@@ -619,7 +682,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
       const event = raw as { type?: string; event?: { type?: string; userId?: unknown } };
       if (event.type !== "org.broadcast" || event.event?.type !== "member.status") return;
       const userId = event.event.userId;
-      if (typeof userId === "string") void hideAgain(h.orgId, userId);
+      if (typeof userId === "string") inBackground(hideAgain(h.orgId, userId));
     });
     orgWatch.set(h.orgId, { off, docs: 1 });
   }
@@ -883,9 +946,13 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
   async function armJobs(tx: Executor, h: Hosted, appended: Appended, at: Date, bytes: number) {
     if (h.armedWindow !== checkpointWindow(at)) await armIdleCheckpoint(tx, h.orgId, h.fileId, at);
     const waiting = appended.headSeq - appended.compactedSeq;
-    const heavy = h.sinceCompaction + bytes >= LIVE_COMPACTION.bytes;
-    // Asked again only after half as many more changes, while the one asked hasn't run.
-    const askedLately = appended.headSeq - h.compactAsked < LIVE_COMPACTION.changes / 2;
+    // A compaction this process hasn't seen yet folded what it counted.
+    const since = appended.compactedSeq > h.compactedSeq ? 0 : h.sinceCompaction;
+    const heavy = since + bytes >= LIVE_COMPACTION.bytes;
+    // Asked again only after half as many more changes, while the one asked hasn't run (its compaction would have
+    // moved `compactedSeq` up to it). Never asked here yet: nothing holds a document's first ask back.
+    const askedLately =
+      h.compactAsked > appended.compactedSeq && appended.headSeq - h.compactAsked < LIVE_COMPACTION.changes / 2;
     if ((waiting >= LIVE_COMPACTION.changes || heavy) && !askedLately) {
       await enqueueCompaction(tx, h.orgId, h.fileId, appended.headSeq);
       h.compactAsked = appended.headSeq;
@@ -912,11 +979,13 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
     }));
     const at = now();
     let appended: Appended;
+    h.inFlight = bytes;
     try {
       appended = await appendChanges(db, h.orgId, h.fileId, changes, at, {
         inTx: (tx, a) => armJobs(tx, h, a, at, bytes),
       });
     } catch (error) {
+      h.inFlight = 0;
       if (error instanceof NotFoundError) {
         drop(h, LIVE_CLOSE.notFound, "file gone");
         return false;
@@ -930,16 +999,31 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
       }
       return false;
     }
+    h.inFlight = 0;
     h.failures = 0;
+    for (const p of batch) if (p.session) p.session.unsaved--;
     stored(h, appended, changes, at);
     // Stored: now the file's other sockets see them, each frame as it came.
     for (const p of batch) broadcastUpdate(h, p.update, p.session);
     // A socket whose changes are all stored hears so.
     const senders = new Set(batch.map((p) => p.session).filter((s): s is Session => s !== null));
-    for (const s of senders) {
-      if (!h.pending.some((p) => p.session === s)) control(s, { type: "live.saved", seq: appended.headSeq });
-    }
+    for (const s of senders) savedTo(s, appended.headSeq);
     return true;
+  }
+
+  /**
+   * `live.saved` ("everything this socket sent up to now is stored"), once it is true: none of its changes waits to be
+   * stored, and none of its frames still waits in the socket's line to reach the document (else it goes when the line
+   * empties, `drained`). The app counts what it sent before as stored on it (ADR 0194 §4).
+   */
+  function savedTo(s: Session, seq: number) {
+    if (s.left || s.unsaved > 0) return;
+    if (s.conn.idle && !s.conn.idle()) {
+      s.savedDue = true;
+      return;
+    }
+    s.savedDue = false;
+    control(s, { type: "live.saved", seq });
   }
 
   /** One batch, after any before it. */
@@ -957,7 +1041,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
         if (h.pending.length > 0) {
           const wait = ok ? timing.coalesceMs : (timing.retryMs[Math.max(0, h.failures - 1)] ?? timing.coalesceMs);
           scheduleFlush(h, wait);
-        }
+        } else lingerOn(h); // All stored: a document `unload` kept for its retry may go now.
       });
     }, delay);
     unref(h.flushTimer);
@@ -982,6 +1066,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
   /** A socket's change, applied already: it waits `coalesceMs` to be stored with what follows it. */
   function took(h: Hosted, update: Uint8Array, s: Session) {
     h.pending.push({ update, actor: { type: "person", id: s.user.id }, session: s });
+    s.unsaved++;
     h.pendingBytes += update.byteLength;
     grew(h, update.byteLength);
     if (h.pendingBytes > timing.maxPendingBytes) {
@@ -1012,7 +1097,11 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
     });
     if (result.rejected) control(s, { type: "live.error", code: "read_only" });
     if (result.reply) send(s, result.reply);
-    if (result.type === "sync" && result.update) took(h, result.update, s);
+    if (written && !result.rejected && setAside(h.doc, written)) {
+      // Part of it waits for changes this process doesn't hold yet: once they come (stored already, applied under
+      // `STORE`), it would join the document unstored and unsent. Stored as it came, it is in the log for everyone.
+      took(h, written, s);
+    } else if (result.type === "sync" && result.update) took(h, result.update, s);
     if (result.error) {
       log.warn("live change applied with an observer error", { fileId: h.fileId, error: String(result.error) });
     }
@@ -1029,8 +1118,10 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
       // A minute after the last person leaves, what they did is folded in.
       if (h.seq > h.compactedSeq) {
         const at = new Date(now().getTime() + LIVE_COMPACTION.afterLeaveMs);
-        void enqueueCompaction(db, h.orgId, h.fileId, h.seq, at).catch((error: unknown) =>
-          log.warn("live compaction not asked", { fileId: h.fileId, error: String(error) }),
+        inBackground(
+          enqueueCompaction(db, h.orgId, h.fileId, h.seq, at).catch((error: unknown) =>
+            log.warn("live compaction not asked", { fileId: h.fileId, error: String(error) }),
+          ),
         );
       }
       lingerOn(h);
@@ -1048,7 +1139,12 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
     if (was === "view" && mode === "edit" && !s.left && !s.hosted.dead) send(s, syncStep1(s.hosted.doc));
   }
 
-  const sessionOwner = { message, leave, setMode };
+  /** The socket's line of frames emptied: a `live.saved` held back for it (`savedTo`) goes now. */
+  function drained(s: Session) {
+    if (s.savedDue && !s.hosted.dead) savedTo(s, s.hosted.seq);
+  }
+
+  const sessionOwner = { message, leave, setMode, drained };
 
   // ── Edits ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -1217,6 +1313,37 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
     void pubsub.publish(liveTopic(fileId), { type: "live.versions", id: fileId, from: replicaId }).catch(() => {});
   }
 
+  /**
+   * Shutdown's store of what a document holds: one more try, `retryMs[0]` later, when the database refused it just
+   * now, all within `stopRetryMs` (the stop has a grace to keep); what still isn't stored then is lost, said loudly.
+   */
+  async function lastStore(h: Hosted) {
+    const deadline = Date.now() + timing.stopRetryMs;
+    const within = (work: Promise<unknown>) =>
+      Promise.race([work, Bun.sleep(Math.max(0, deadline - Date.now()))]).catch((error: unknown) =>
+        log.warn("live changes not stored at shutdown", { fileId: h.fileId, error: String(error) }),
+      );
+    // A read of the tail in progress ends first: the database closes after the stop.
+    if (h.catching) await within(h.catching);
+    await within(flushAll(h));
+    if (!h.dead && h.pending.length > 0) {
+      // This one try instead of the retry `flushAll` armed (which the document's end would cancel anyway).
+      if (h.flushTimer) clearTimeout(h.flushTimer);
+      h.flushTimer = null;
+      await Bun.sleep(Math.min(timing.retryMs[0] ?? 0, Math.max(0, deadline - Date.now())));
+      await within(flushAll(h));
+    }
+    // Still held, or let go of by `drop` (the database refused once too often); a file that is gone loses nothing.
+    const lost = h.dead
+      ? h.gone
+        ? null
+        : h.discarded
+      : { changes: h.pending.length, bytes: h.pendingBytes + h.inFlight };
+    if (lost && lost.bytes > 0) {
+      log.error("live changes lost at shutdown", { orgId: h.orgId, fileId: h.fileId, ...lost });
+    }
+  }
+
   // ── The documents ─────────────────────────────────────────────────────────────────────────────────────────────
 
   const docs: LiveDocs = {
@@ -1268,7 +1395,8 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
     async state(orgId, fileId) {
       const h = hostedOf(fileId);
       if (h && h.orgId === orgId) return { state: Y.encodeStateAsUpdate(h.doc), seq: h.seq };
-      const head = await loadHeadState(db, orgId, fileId);
+      let head = await loadHeadState(db, orgId, fileId);
+      if (!head && (await adoptMarkdownDocument(deps, orgId, fileId))) head = await loadHeadState(db, orgId, fileId);
       if (!head) throw new NotFoundError("Artifact not found", "artifact.not_found");
       return { state: head.state, seq: head.seq };
     },
@@ -1367,13 +1495,9 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
           leave(s);
         }
       }
-      await Promise.all(
-        held.map((h) =>
-          flushAll(h).catch((error: unknown) =>
-            log.warn("live changes not stored at shutdown", { fileId: h.fileId, error: String(error) }),
-          ),
-        ),
-      );
+      await Promise.all(held.map((h) => lastStore(h)));
+      // What the documents started on their own ends before the database closes after this (`startServer`'s stop).
+      await Promise.race([Promise.allSettled([...background]), Bun.sleep(timing.stopRetryMs)]);
       for (const list of [...agents.values()]) for (const a of [...list.values()]) removeAgent(a);
       await board.stop();
       for (const h of held) if (h.users === 0) dispose(h);

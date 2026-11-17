@@ -3,9 +3,12 @@ import { CanvasScreen } from "@/features/live-files/canvas/CanvasScreen";
 import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
-/** A live canvas (`/canvas/<id>`, ADR 0194): from the Drive, a message's card, a link or New; none: the Drive. */
+/**
+ * A live canvas (`/canvas/<id>`, ADR 0194): from the Drive, a message's card, a link or New; none: the Drive. `m`: a
+ * message of its conversation to open at (ADR 0197).
+ */
 export default function CanvasRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, m } = useLocalSearchParams<{ id: string; m?: string }>();
   if (!isSafeId(id)) return <LandOn href="/drive" />;
-  return <CanvasScreen key={id} id={id} />;
+  return <CanvasScreen key={id} id={id} focusId={isSafeId(m) ? m : null} />;
 }

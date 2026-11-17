@@ -434,6 +434,8 @@ export const LIVE_FILE_TOOLS: ReadonlySet<string> = new Set([
   "create_canvas",
   "read_canvas",
   "edit_canvas",
+  "read_document",
+  "edit_document",
   "generate_image",
 ]);
 export const LIVE_FILES_GROUP = "files";

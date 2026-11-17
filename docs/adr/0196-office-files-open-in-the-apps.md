@@ -3,6 +3,8 @@
 - Status: Accepted
 - Date: 2026-11-17
 - Amends: 0025 §3 (uploads past images, PDF and video were download only)
+- Amended by: 0198 (a Word document opens as a live document, its pictures kept; documents download as `.docx`,
+  `.md` and PDF)
 - Code: engine `packages/engine/src/office/*` (`readXlsx`, `writeXlsx`, `readCsv`, `readXls`, `readPptx`,
   `writePptx`, `docxToHtml`, `slidesPdf`), routes in `apps/server/src/routes/app/live.ts` (`…/preview`,
   `…/open-as`, export formats), the readers' shared shapes `WorkbookData` and `DeckData` in `@agenteschat/live`
@@ -28,8 +30,8 @@ Reading is bounded: files up to 25 MB, 200,000 cells, 300 slides, 40 MB unpacked
 guards against zip bombs. The result is cached per version in the process, since versions never change.
 
 **Open as a live file.** Editar como planilha, Editar como apresentação and Editar como documento make a new live
-file (or a Markdown document) from the upload, beside it: same conversation, same sharing, a note saying where it
-came from. The upload stays as it was.
+file from the upload (a Word document becomes a live document, ADR 0198), beside it: same conversation, same
+sharing, a note saying where it came from. The upload stays as it was.
 
 **Live files export to Office.** A spreadsheet downloads as `xlsx` (values and formulas, styles, merges, widths,
 frozen panes) or `csv`; a presentation as `pptx` (text boxes with their formatting, pictures, shapes, tables,

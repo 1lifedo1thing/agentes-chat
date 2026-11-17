@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./awareness": "./src/awareness.ts",
     "./canvas": "./src/canvas/index.ts",
+    "./document": "./src/document/index.ts",
     "./office": "./src/office.ts",
     "./protocol": "./src/protocol.ts",
     "./rich": "./src/rich/index.ts",

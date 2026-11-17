@@ -1,7 +1,7 @@
 /**
  * Live files (ADR 0194): what the server, the web, the desktop app and the phone must agree on about spreadsheets,
- * presentations and canvases edited together: the documents' shape, formulas, number formats, rich text, the sync
- * protocol and presence. Pure TypeScript: no DOM, no React, no Node built-ins.
+ * presentations, canvases and documents (ADR 0198) edited together: the documents' shape, formulas, number formats,
+ * rich text, the sync protocol and presence. Pure TypeScript: no DOM, no React, no Node built-ins.
  *
  * Presentations and canvases both have an `arrange`: here it is the slides' (also `arrangeElements`), and the canvas's
  * is `arrangeShapes` (each is plain `arrange` in its own entry, "./slides" and "./canvas").
@@ -10,6 +10,7 @@ export * from "./awareness";
 export * from "./base64";
 export * from "./canvas";
 export * from "./colors";
+export * from "./document";
 export * from "./errors";
 export * from "./fractional";
 export * from "./ids";

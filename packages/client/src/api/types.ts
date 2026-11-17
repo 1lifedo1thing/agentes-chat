@@ -1,7 +1,8 @@
 /** Types of the private web-app API (`/api/app/*`, apps/server/src/routes/app). */
 
-import type { CanvasPreview, SheetPreview, SlidesPreview } from "@agenteschat/live";
+import type { CanvasPreview, DocumentPreview, SheetPreview, SlidesPreview } from "@agenteschat/live";
 import type { ChatPrefs } from "../lib/chat-look";
+import type { LiveRef } from "../live/types";
 import type { RoleId } from "../lib/new-agent";
 import type { OnboardingStepId } from "../lib/onboarding";
 import type { Permission } from "../lib/permissions";
@@ -1446,6 +1447,11 @@ export interface Message {
   longWork?: WorkView;
   /** On a run's last message here: the works it handed over to other agents, each with its line; live via `agent.work`. */
   handedWorks?: WorkView[];
+  /**
+   * `meta.liveRef` (ADR 0197): the live file the message is about and what its writer had selected in it, shown as a
+   * line above it. An older server leaves it in `meta` only: `liveRefOf(message.meta)` reads it there.
+   */
+  liveRef?: LiveRef;
   /** Client only: an optimistic message waiting for the server, or one that failed to send. */
   local?: "pending" | "failed";
   /** Client only, on a `failed` one the server refused: why (`sendFailureText`). */
@@ -2723,7 +2729,7 @@ export interface AgentWork {
   runId: string;
   /** Where it shows, when you read that conversation: null otherwise. */
   channelId: string | null;
-  channelKind: "channel" | "dm" | "task" | null;
+  channelKind: "channel" | "dm" | "task" | "file" | null;
   channelName: string | null;
   threadId: string | null;
   /** The reply that handed it off, once posted. */
@@ -2747,7 +2753,7 @@ export interface PendingReturn {
   messageId: string;
   agentId: string;
   channelId: string;
-  channelKind: "channel" | "dm" | "task";
+  channelKind: "channel" | "dm" | "task" | "file";
   channelName: string | null;
   /** Null: the conversation's main timeline. */
   threadId: string | null;
@@ -2768,7 +2774,7 @@ export interface CanceledReturn {
   messageId: string;
   agentId: string;
   channelId: string;
-  channelKind: "channel" | "dm" | "task";
+  channelKind: "channel" | "dm" | "task" | "file";
   channelName: string | null;
   threadId: string | null;
   at: string;
@@ -3683,7 +3689,11 @@ export interface ArtifactDiffFile {
 }
 
 export type ArtifactContent =
-  | { kind: "document"; markdown: string }
+  /**
+   * A document (ADR 0198): a live file, sent as its whole text in Markdown (what the apps show until they edit it
+   * live) and its card's preview.
+   */
+  | { kind: "document"; markdown: string; preview?: DocumentPreview }
   | { kind: "table"; columns: string[]; rows: string[][] }
   | { kind: "diff"; files: ArtifactDiffFile[] }
   | { kind: "diagram"; mermaid: string }
@@ -3788,6 +3798,31 @@ export interface Artifact {
   sharing?: ArtifactSharing;
   /** I may change `sharing`: it lives in a conversation not everyone reads, and I read it there. */
   canShare?: boolean;
+  /** A live file's conversation (ADR 0197), once someone opened or wrote in it; null until then and for other kinds. */
+  conversation?: FileConversation | null;
+}
+
+/** Where a live file's conversation lives (ADR 0197): the chat's routes read and post to this thread. */
+export interface FileConversationRef {
+  channelId: string;
+  rootId: string;
+}
+
+/** A live file's conversation as its page shows it: its messages, who took part, an agent at work now. */
+export interface FileConversation extends FileConversationRef {
+  count: number;
+  lastAt: string | null;
+  /** The first ones to write, oldest first (at most 5). */
+  participants: Actor[];
+  working: boolean;
+}
+
+/** A live file's conversation with something I haven't read (`GET …/unread-files`, ADR 0197). */
+export interface UnreadFile {
+  artifactId: string;
+  /** Replies I haven't read: every one where I follow the conversation, else only those that mention me. */
+  unread: number;
+  mentions: number;
 }
 
 /**
@@ -5634,7 +5669,7 @@ export interface ThreadInfo {
   id: string;
   channelId: string;
   channelName: string;
-  channelKind: "channel" | "dm" | "task";
+  channelKind: "channel" | "dm" | "task" | "file";
   /** Null: show `rootText`. */
   title: string | null;
   rootText: string;
@@ -6957,6 +6992,8 @@ export interface NotificationSource {
   dashboardId?: string;
   /** `widget_alert`, `widget_failed`: the widget. */
   widgetId?: string;
+  /** A message in a live file's conversation (ADR 0197): the file, opened with it at `messageId`. */
+  artifactId?: string;
   /** Channel name, thread title, issue title, topic title, mission or routine name (or the computer's name). */
   label?: string;
 }
@@ -7077,7 +7114,7 @@ export interface AuditRow {
   details: Record<string, unknown>;
   runId: string | null;
   channelId: string | null;
-  channel: { id: string; name: string; kind: "channel" | "dm" | "task" } | null;
+  channel: { id: string; name: string; kind: "channel" | "dm" | "task" | "file" } | null;
   onBehalfOf: { id: string; name: string | null } | null;
   outcome: AuditOutcome | null;
   /** The approval the call waited for or ran after, as it stands now. */
@@ -7324,7 +7361,7 @@ export interface TaskDelegation {
   /** Where it was handed off, when you read that conversation. Older servers send none. */
   from?: {
     channelId: string;
-    channelKind: "channel" | "dm" | "task";
+    channelKind: "channel" | "dm" | "task" | "file";
     channelName: string | null;
     threadId: string | null;
     messageId: string | null;

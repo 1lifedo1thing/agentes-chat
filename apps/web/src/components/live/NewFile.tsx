@@ -11,11 +11,11 @@ import { markJustCreated } from "./just-created";
 import { openLivePage } from "./open";
 
 /** The kinds "New" makes, in the menu's order. */
-export const NEW_KINDS: readonly LiveKind[] = ["spreadsheet", "slides", "canvas"];
+export const NEW_KINDS: readonly LiveKind[] = ["document", "spreadsheet", "slides", "canvas"];
 
 /**
- * Makes a live file and opens it (ADR 0194 §9): an untitled spreadsheet, presentation or canvas, in the Drive or in a
- * conversation, whose page opens with its title selected to be named.
+ * Makes a live file and opens it (ADR 0194 §9, ADR 0198): an untitled document, spreadsheet, presentation or canvas, in
+ * the Drive or in a conversation, whose page opens with its title selected to be named.
  */
 export function useNewLiveFile(where: { channelId?: string | null; threadId?: string | null } = {}) {
   const { t, i18n } = useTranslation();
@@ -40,8 +40,8 @@ export function useNewLiveFile(where: { channelId?: string | null; threadId?: st
 }
 
 /**
- * "Novo" beside Upload in the Drive (and in its empty state): a menu of the three live kinds, each with its icon and
- * one quiet line on what it is for.
+ * "New" beside Upload in the Drive (and in its empty state): a menu of the live kinds, each with its icon and one
+ * quiet line on what it is for.
  */
 export function NewFileMenu({
   size = "md",

@@ -13,7 +13,9 @@ export {
   type LiveAsset,
   type LiveAssetFile,
   listAssets,
+  type PictureFile,
   putAsset,
+  readPictureFile,
 } from "./assets";
 export type { PresencePeer } from "./awareness";
 export {
@@ -23,6 +25,24 @@ export {
   LIVE_CHECKPOINTS,
   writeCheckpoint,
 } from "./checkpoints";
+export {
+  admitFileAgents,
+  conversationFileId,
+  ensureFileConversation,
+  type FileConversationMeta,
+  type FileConversationRef,
+  type FileConversationSummary,
+  fileConversationBrief,
+  fileConversationOf,
+  fileConversationSummaries,
+  fileOfConversation,
+  fileReadersAmong,
+  type LiveRef,
+  liveRefFor,
+  liveRefLine,
+  liveRefOf,
+  openFileConversation,
+} from "./conversation";
 export { createLiveFile } from "./create";
 export {
   createLiveDocs,
@@ -36,12 +56,17 @@ export {
   type LiveSession,
   type LiveTiming,
 } from "./docs";
+export { DOCUMENT_TOOL_LIMITS, documentTools } from "./document-tools";
 export {
   AGENT_IMAGE_WAIT_MS,
   type AgentImageContext,
   type AgentImageInput,
+  type ChatImageFile,
+  type ChatImageInput,
+  type ChatImagesView,
   createLiveImages,
   generateForAgent,
+  generateInChat,
   IMAGE_CALL_TIMEOUT_MS,
   type ImageFailure,
   type ImageModelOption,
@@ -83,6 +108,7 @@ export {
   writeLiveExport,
 } from "./office";
 export {
+  documentFromMarkdown,
   kindOfDoc,
   LIVE_SNAPSHOT_TYPE,
   type LiveContent,
@@ -93,6 +119,7 @@ export {
   overLimit,
   replaceLiveDoc,
   snapshotContent,
+  versionDoc,
 } from "./preview";
 export { type LiveChangeActor, loadHeadDoc, loadHeadState, type StoredChange } from "./store";
 export {

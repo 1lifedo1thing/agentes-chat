@@ -49,6 +49,7 @@ export const BUILTIN_TOOLS: Record<string, string[]> = {
     "read_spreadsheet",
     "read_presentation",
     "read_canvas",
+    "read_document",
   ],
   "drive:write": [
     "create_artifact",
@@ -59,6 +60,7 @@ export const BUILTIN_TOOLS: Record<string, string[]> = {
     "edit_presentation",
     "create_canvas",
     "edit_canvas",
+    "edit_document",
     "generate_image",
   ],
   "issues:read": ["list_issues"],
@@ -210,9 +212,16 @@ export const BUILTIN_TOOL_INFO: Record<string, { label: string; description: str
   },
   create_canvas: { label: "Create canvas", description: "Makes a canvas for images, notes and ideas." },
   edit_canvas: { label: "Edit canvas", description: "Adds and moves notes, text, pictures and arrows." },
+  // Documents (ADR 0198): made with create_artifact.
+  read_document: { label: "Read document", description: "Reads a document's text, block by block." },
+  edit_document: {
+    label: "Edit document",
+    description: "Writes, rewrites and formats a document's text while people watch.",
+  },
   generate_image: {
     label: "Generate images",
-    description: "Makes images with the workspace's image AI and puts them on a canvas. Paid from its budget.",
+    description:
+      "Makes images with the workspace's image AI, in the conversation or on a canvas. Paid from its budget.",
   },
   list_issues: { label: "View issues", description: "Lists and opens issues." },
   create_issue: { label: "Create issue", description: "Creates an issue with acceptance criteria." },

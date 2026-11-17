@@ -187,6 +187,12 @@ export function Slides(props: LiveEditorProps) {
   useEffect(() => {
     if (currentId && currentId !== search.slide) onSearch({ slide: currentId });
   }, [currentId]);
+  // A message's line about a slide (ADR 0197): that slide, shown (the address follows).
+  const revealSlide = props.reveal?.selection.slide;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once per click (its key)
+  useEffect(() => {
+    if (revealSlide && ids.includes(revealSlide)) setPicked(revealSlide);
+  }, [props.reveal?.key]);
 
   const byId = useMemo(() => new Map((slide?.elements ?? []).map((el) => [el.id, el])), [slide]);
   const chosen = selected.map((id) => byId.get(id)).filter((el): el is ElementView => !!el);

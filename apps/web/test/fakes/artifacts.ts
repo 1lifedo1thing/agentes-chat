@@ -244,6 +244,12 @@ export function createMockArtifacts(
       };
     },
     get: async (orgId, id, version) => detail(orgId, await find(orgId, id), version),
+    // A live file's conversation (ADR 0197): a stable channel and root per file, as the server makes on first use.
+    conversation: async (orgId, id) => {
+      record("artifacts.conversation", orgId, id);
+      await find(orgId, id);
+      return { channelId: `file-conversation-${id}`, rootId: `file-root-${id}` };
+    },
     keep: async (orgId, id) => {
       const s = await find(orgId, id);
       s.meta.inDrive = true;

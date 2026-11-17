@@ -1,5 +1,6 @@
-import type { ArtifactLiveContent } from "@agenteschat/client";
-import type { CanvasPreview, NoteColor } from "@agenteschat/live/canvas";
+import { type ArtifactContent, type ArtifactLiveContent, isLiveFileKind } from "@agenteschat/client";
+import { type CanvasPreview, type NoteColor, strokePath } from "@agenteschat/live/canvas";
+import { blockText, type DocBlock, type DocumentPreview, markdownToBlocks } from "@agenteschat/live/document";
 import { richText } from "@agenteschat/live/rich";
 import {
   type ElementView,
@@ -16,7 +17,7 @@ import type { SheetPreview } from "@agenteschat/live/spreadsheet";
 import { Image } from "expo-image";
 import { memo } from "react";
 import { Text as RNText, StyleSheet, View } from "react-native";
-import Svg, { Line, Rect } from "react-native-svg";
+import Svg, { G, Line, Path, Rect } from "react-native-svg";
 import { Icon, useTheme } from "@/ui";
 
 /**
@@ -37,17 +38,26 @@ export const NOTE_TINTS: Record<NoteColor, { light: string; dark: string }> = {
 
 const isNoteColor = (v: string | undefined): v is NoteColor => !!v && v in NOTE_TINTS;
 
+/** A document's content as its card has it (ADR 0198): its preview, else its whole text in Markdown. */
+export type DocumentCoverContent = { kind: "document"; markdown: string; preview?: DocumentPreview };
+
+/** A file's content when it is a live file's (its card draws it), else null. */
+export const liveCoverContent = (content: ArtifactContent): ArtifactLiveContent | DocumentCoverContent | null =>
+  isLiveFileKind(content.kind) ? (content as ArtifactLiveContent | DocumentCoverContent) : null;
+
 /** Whatever a live file's card draws on top, by its kind. */
 export const LiveCover = memo(function LiveCover({
   content,
   width,
   height,
 }: {
-  content: ArtifactLiveContent;
+  content: ArtifactLiveContent | DocumentCoverContent;
   width: number;
   height: number;
 }) {
   switch (content.kind) {
+    case "document":
+      return <DocumentCover content={content} />;
     case "spreadsheet":
       return <SheetCover preview={content.preview} />;
     case "slides":
@@ -55,6 +65,47 @@ export const LiveCover = memo(function LiveCover({
     case "canvas":
       return <CanvasCover preview={content.preview} width={width} height={height} />;
   }
+});
+
+/** The most blocks a document's cover draws. */
+const COVER_BLOCKS = 8;
+
+/**
+ * A document's first blocks as a small page (ADR 0198): headings bold, paragraphs and list items in lines, a quote
+ * with its bar, a picture or a table as their shape; from its preview, else from its Markdown.
+ */
+export const DocumentCover = memo(function DocumentCover({ content }: { content: DocumentCoverContent }) {
+  const { colors: c } = useTheme();
+  const blocks: DocBlock[] = (content.preview?.blocks ?? markdownToBlocks(content.markdown)).slice(0, COVER_BLOCKS);
+  return (
+    <View style={[styles.fill, styles.docPage, { backgroundColor: c.raised }]}>
+      {blocks.map((block, i) => {
+        const key = block.id ?? String(i);
+        if (block.type === "image")
+          return <View key={key} style={[styles.docPicture, { backgroundColor: c.sunken }]} />;
+        if (block.type === "table") return <View key={key} style={[styles.docTable, { borderColor: c.line2 }]} />;
+        if (block.type === "horizontal_rule")
+          return <View key={key} style={[styles.docRule, { backgroundColor: c.line2 }]} />;
+        const heading = block.type === "heading";
+        const listed = block.type === "paragraph" && block.list;
+        return (
+          <RNText
+            key={key}
+            allowFontScaling={false}
+            numberOfLines={heading ? 1 : 2}
+            style={[
+              heading ? styles.docHeading : styles.docText,
+              { color: heading ? c.ink : c.ink2 },
+              block.type === "blockquote" && [styles.docQuote, { borderLeftColor: c.line2 }],
+            ]}
+          >
+            {listed ? (block.list === "ordered" ? "1. " : "• ") : ""}
+            {blockText(block)}
+          </RNText>
+        );
+      })}
+    </View>
+  );
 });
 
 /** The cover's grid: this many rows and columns at most (the rest is in the file). */
@@ -403,6 +454,21 @@ export const CanvasCover = memo(function CanvasCover({
             return (
               <Rect key={s.id} x={x} y={y + h * 0.3} width={w} height={Math.max(1.5, h * 0.4)} rx={1} fill={c.line2} />
             );
+          case "draw":
+            // A pen stroke: its points, from its box's corner, at the cover's scale.
+            return s.points?.length ? (
+              <G key={s.id} transform={`translate(${x} ${y}) scale(${k})`}>
+                <Path
+                  d={strokePath(s.points)}
+                  fill="none"
+                  stroke={s.stroke && s.stroke !== "none" ? s.stroke : c.ink2}
+                  strokeWidth={(s.tool === "marker" ? 3 : 1) / k}
+                  strokeOpacity={s.tool === "marker" ? 0.4 : 1}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </G>
+            ) : null;
           case "shape":
             return (
               <Rect
@@ -434,6 +500,13 @@ const styles = StyleSheet.create({
   fill: { flex: 1, overflow: "hidden" },
   center: { alignItems: "center", justifyContent: "center" },
   bold: { fontWeight: "700" },
+  docPage: { paddingHorizontal: 12, paddingTop: 10, gap: 4 },
+  docHeading: { fontSize: 12, fontWeight: "700" },
+  docText: { fontSize: 9.5, lineHeight: 13 },
+  docQuote: { borderLeftWidth: 2, paddingLeft: 6 },
+  docPicture: { height: 28, borderRadius: 3 },
+  docTable: { height: 22, borderWidth: StyleSheet.hairlineWidth, borderRadius: 3 },
+  docRule: { height: StyleSheet.hairlineWidth },
   sheetRow: { flexDirection: "row", height: 18, borderBottomWidth: StyleSheet.hairlineWidth },
   sheetHead: { height: 14 },
   sheetCell: { justifyContent: "center", paddingHorizontal: 4, borderRightWidth: StyleSheet.hairlineWidth },

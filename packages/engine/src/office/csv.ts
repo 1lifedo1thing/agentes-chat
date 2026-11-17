@@ -1,4 +1,4 @@
-import { isDateFormat, type SheetData, type WorkbookData } from "@agenteschat/live";
+import { isDateFormat, MAX_A1_ROWS, type SheetData, type WorkbookData } from "@agenteschat/live";
 import { OFFICE_LIMITS, officeTooLarge } from "./limits";
 
 /**
@@ -129,7 +129,10 @@ export function readCsv(input: Uint8Array | string, name = "Sheet 1"): WorkbookD
   const text = typeof input === "string" ? input : decodeText(input);
   const sep = guessSeparator(text, name);
   const commaDecimal = sep === ";";
-  const records = splitRecords(text, sep);
+  // At most a grid's rows (Excel's), read before the rest is split: every line is a record held in memory, so a file
+  // of nothing but line breaks would cost dozens of times its size before a single cell is counted.
+  const records = splitRecords(text, sep, MAX_A1_ROWS + 1);
+  if (records.length > MAX_A1_ROWS) throw officeTooLarge("rows");
   const cells: SheetData["cells"] = [];
   let cols = 0;
   records.forEach((record, r) => {

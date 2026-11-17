@@ -1,14 +1,17 @@
 import * as Y from "yjs";
+import type { PeerUser } from "../awareness";
 import { LiveEditError } from "../errors";
 import { isOrderKey, keyBetween, restack, type StackMove } from "../fractional";
 import { newId } from "../ids";
 import { LIVE_LIMITS } from "../limits";
+import { isLiveOrigin } from "../origins";
 import { richFromText, richLength } from "../rich/text";
 import type { RichDoc } from "../rich/types";
 import { writeRich } from "../rich/yjs";
-import { arrowPath, type Box, center, type Point, union } from "./geometry";
+import { arrowPath, type Box, center, type Point, pointsBounds, union } from "./geometry";
 import { placeBoxes } from "./place";
 import {
+  COMMON_PROPS,
   canvasMapOf,
   cleanProp,
   descendantsOf,
@@ -90,8 +93,30 @@ export function defaultSize(type: ShapeType): { w: number; h: number } {
     case "file":
       return { w: 320, h: 120 };
     case "arrow":
+    case "draw":
       return { w: 0, h: 0 };
   }
+}
+
+/** Who a change's origin says made it: the agent, or the person (ADR 0194 §6); undefined for the app's own edits. */
+function makerOf(origin: unknown): PeerUser | undefined {
+  if (!isLiveOrigin(origin)) return undefined;
+  const user = origin.agentId
+    ? { kind: "agent", id: origin.agentId }
+    : origin.userId
+      ? { kind: "person", id: origin.userId }
+      : undefined;
+  return user ? (cleanProp("by", user) as PeerUser | undefined) : undefined;
+}
+
+/**
+ * A pen stroke's points made to start at its box's corner: the box moves to where they are and takes their extent, so
+ * `points` are always from the box's top-left (`base` is where they were measured from).
+ */
+function strokeBox(points: readonly number[], base: Point): { box: Box; points: number[] } {
+  const b = pointsBounds(points) ?? { x: 0, y: 0, w: 0, h: 0 };
+  const shifted = points.map((v, i) => (i % 2 === 0 ? v - b.x : v - b.y));
+  return { box: { x: base.x + b.x, y: base.y + b.y, w: b.w, h: b.h }, points: shifted };
 }
 
 /** The longest side an image takes when it lands on the canvas at its natural size. */
@@ -111,18 +136,26 @@ function topKey(doc: Y.Doc, frame: boolean): string {
   return keyBetween(top, null);
 }
 
-/** Checked values for a new shape's keys (all but its id, `z` and `text`). */
-function checkedShape(doc: Y.Doc, shape: NewShape): { values: Map<string, unknown>; text?: RichDoc } {
+/**
+ * Checked values for a new shape's keys (all but its id, `z` and `text`). Who made it is the one given, else the
+ * origin's person or agent.
+ */
+function checkedShape(doc: Y.Doc, shape: NewShape, origin: unknown): { values: Map<string, unknown>; text?: RichDoc } {
   if (!isShapeType(shape.type)) throw invalid(`Unknown shape type ${String(shape.type)}`);
   const type = shape.type;
   const values = new Map<string, unknown>([["type", type]]);
   const raw = shape as unknown as Record<string, unknown>;
-  for (const key of ["rot", "parent", "locked", ...TYPE_PROPS[type]]) {
+  for (const key of [...COMMON_PROPS, ...TYPE_PROPS[type]]) {
     if (raw[key] === undefined || raw[key] === null) continue;
     const value = cleanProp(key, raw[key]);
     if (value === undefined) throw invalid(`Bad ${key}`);
     values.set(key, value);
   }
+  if (!values.has("by")) {
+    const maker = makerOf(origin);
+    if (maker) values.set("by", maker);
+  }
+  if (type === "draw" && !values.has("points")) throw invalid("A pen stroke needs its points");
   if (type === "arrow") {
     const from = values.get("from") as ArrowEnd | undefined;
     const to = values.get("to") as ArrowEnd | undefined;
@@ -157,6 +190,14 @@ function checkedShape(doc: Y.Doc, shape: NewShape): { values: Map<string, unknow
  */
 function boxFor(doc: Y.Doc, shape: NewShape, values: Map<string, unknown>): { box: Box; grow?: Placement["grow"] } {
   const type = shape.type;
+  if (type === "draw") {
+    // Its points from (x, y) when given, else where they are on the canvas.
+    const at = (key: "x" | "y") => (cleanProp(key, shape[key]) as number | undefined) ?? 0;
+    const base = { x: at("x"), y: at("y") };
+    const stroke = strokeBox(values.get("points") as number[], base);
+    values.set("points", stroke.points);
+    return { box: stroke.box };
+  }
   if (type === "arrow") {
     const a = endOf(doc, values.get("from") as ArrowEnd);
     const b = endOf(doc, values.get("to") as ArrowEnd);
@@ -204,7 +245,7 @@ export function addShape(doc: Y.Doc, shape: NewShape, origin: unknown): string {
   if (shapesMapOf(doc).size >= limits.shapes) {
     throw new LiveEditError("too_many", `A canvas holds at most ${limits.shapes} shapes`);
   }
-  const { values, text } = checkedShape(doc, shape);
+  const { values, text } = checkedShape(doc, shape, origin);
   const { box, grow } = boxFor(doc, shape, values);
   const id = newId();
   doc.transact(() => {
@@ -240,7 +281,7 @@ export function updateShape(doc: Y.Doc, id: string, patch: ShapePatch, origin: u
   if (!map || !view) throw new LiveEditError("not_found", `No shape ${id}`);
   const sets: [string, unknown][] = [];
   const deletes: string[] = [];
-  const allowed = new Set(["x", "y", "w", "h", "rot", "z", "parent", "locked", ...TYPE_PROPS[view.type]]);
+  const allowed = new Set(["x", "y", "w", "h", "z", ...COMMON_PROPS, ...TYPE_PROPS[view.type]]);
   for (const [key, value] of Object.entries(patch)) {
     if (key === "text" || value === undefined) continue;
     if (!allowed.has(key)) throw invalid(`A ${view.type} has no ${key}`);
@@ -257,7 +298,7 @@ export function updateShape(doc: Y.Doc, id: string, patch: ShapePatch, origin: u
     const clean = cleanProp(key, value);
     if (clean === undefined) {
       // `false` for a flag is its absence.
-      if ((key === "locked" || key === "dashed") && value === false) deletes.push(key);
+      if ((key === "locked" || key === "dashed" || key === "hidden") && value === false) deletes.push(key);
       else throw invalid(`Bad ${key}`);
       continue;
     }
@@ -265,6 +306,24 @@ export function updateShape(doc: Y.Doc, id: string, patch: ShapePatch, origin: u
   }
   const parent = sets.find(([key]) => key === "parent")?.[1];
   if (typeof parent === "string") checkParent(doc, [id], parent);
+  const points = sets.find(([key]) => key === "points")?.[1] as number[] | undefined;
+  if (points) {
+    // New points are from the box's corner (where it is after this change): the box takes their extent.
+    const given = (key: "x" | "y") => sets.find(([k]) => k === key)?.[1] as number | undefined;
+    const stroke = strokeBox(points, { x: given("x") ?? view.x, y: given("y") ?? view.y });
+    const box: [string, unknown][] = [
+      ["points", stroke.points],
+      ["x", stroke.box.x],
+      ["y", stroke.box.y],
+      ["w", stroke.box.w],
+      ["h", stroke.box.h],
+    ];
+    for (const [key, value] of box) {
+      const at = sets.findIndex(([k]) => k === key);
+      if (at >= 0) sets[at] = [key, value];
+      else sets.push([key, value]);
+    }
+  }
   for (const [key, value] of sets) {
     if ((key === "from" || key === "to") && "shape" in (value as ArrowEnd)) {
       const target = (value as { shape: string }).shape;
@@ -356,7 +415,10 @@ export function moveShapes(doc: Y.Doc, ids: readonly string[], dx: number, dy: n
   }, origin);
 }
 
-/** Sets a shape's box (an arrow's free ends follow its box). What's in a frame stays where it is. */
+/**
+ * Sets a shape's box (an arrow's free ends follow its box, a pen stroke's points stretch with it). What's in a frame
+ * stays where it is.
+ */
 export function resizeShape(doc: Y.Doc, id: string, box: Box, origin: unknown): void {
   const map = shapeMapOf(doc, id);
   const shape = readShapeById(doc, id);
@@ -371,6 +433,16 @@ export function resizeShape(doc: Y.Doc, id: string, box: Box, origin: unknown): 
     map.set("y", y);
     map.set("w", w);
     map.set("h", h);
+    if (shape.type === "draw" && shape.points) {
+      const fx = shape.w ? w / shape.w : 1;
+      const fy = shape.h ? h / shape.h : 1;
+      if (fx !== 1 || fy !== 1)
+        map.set(
+          "points",
+          shape.points.map((v, i) => (i % 2 === 0 ? v * fx : v * fy)),
+        );
+      return;
+    }
     if (shape.type !== "arrow") return;
     const old = shapeBounds(shape, shapeIndex([shape]));
     const fx = old.w ? w / old.w : 1;

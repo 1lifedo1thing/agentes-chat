@@ -105,7 +105,10 @@ describe("making and opening live files", () => {
     expect(deck).toMatchObject({ kind: "slides", channelId: org.channelId, audience: { kind: "channel" } });
     const canvas = await make(api, { kind: "canvas", title: "Ideas" });
     expect(canvas).toMatchObject({ kind: "canvas" });
-    expect((await api("/live-files", { json: { kind: "document", title: "No" } })).status).toBe(400);
+    // A document is a live file too (ADR 0198): one empty paragraph to start.
+    const document = await make(api, { kind: "document", title: "Notes" });
+    expect(document).toMatchObject({ kind: "document" });
+    expect((await api("/live-files", { json: { kind: "board", title: "No" } })).status).toBe(400);
     expect((await api("/live-files", { json: { kind: "canvas", title: "  " } })).status).toBe(400);
     // They are files like any other: listed in the Drive, filtered by kind.
     const listed = (await (await api("/artifacts?kinds=spreadsheet,slides,canvas")).json()) as {
@@ -123,10 +126,17 @@ describe("making and opening live files", () => {
     const deck = await opened(api, (await make(api, { kind: "slides", title: "Pitch" })).id);
     expect(deck.doc.getArray("slideOrder").length).toBe(1);
 
+    // A file of another kind has no live document; a document has one (ADR 0198).
+    const table = await api("/artifacts", {
+      json: { title: "Notes", content: { kind: "table", columns: ["a"], rows: [["1"]] } },
+    });
+    expect((await api(`/artifacts/${((await table.json()) as { id: string }).id}/live`)).status).toBe(404);
     const doc = await api("/artifacts", {
       json: { title: "Notes", content: { kind: "document", markdown: "# Notes" } },
     });
-    expect((await api(`/artifacts/${((await doc.json()) as { id: string }).id}/live`)).status).toBe(404);
+    const notes = await opened(api, ((await doc.json()) as { id: string }).id);
+    expect(notes).toMatchObject({ mode: "edit", kind: "document" });
+    expect(notes.doc.getXmlFragment("body").length).toBe(1);
     // In a private conversation another member isn't in: not found for them.
     const channel = (await (await api("/channels", { json: { name: "eng", visibility: "private" } })).json()) as {
       id: string;
@@ -401,7 +411,8 @@ describe("asking an agent from inside a file", () => {
     expect(blank.status).toBe(400);
   });
 
-  // The agents' side of it (`askAgentAbout`) comes with their tools for live files (ADR 0194 §6).
+  // The agents' side of it (`askAgentAbout`) comes with their tools for live files (ADR 0194 §6); the message goes in
+  // the file's own conversation (ADR 0197), the one `…/conversation` opens.
   test("the message goes to the agent with the file and what was selected", async () => {
     const { api, org } = await seeded();
     const sheet = await make(api, { kind: "spreadsheet", title: "Budget", channelId: org.channelId });
@@ -414,8 +425,12 @@ describe("asking an agent from inside a file", () => {
     });
     expect(asked.status).toBe(201);
     const sent = (await asked.json()) as { id: string; channelId: string; threadId: string | null };
-    expect(sent.channelId).toBe(org.channelId);
-    const messages = (await (await api(`/channels/${org.channelId}/messages`)).json()) as {
+    const at = (await (await api(`/artifacts/${sheet.id}/conversation`, { json: {} })).json()) as {
+      channelId: string;
+      rootId: string;
+    };
+    expect(sent).toMatchObject({ channelId: at.channelId, threadId: at.rootId });
+    const messages = (await (await api(`/channels/${at.channelId}/messages?threadId=${at.rootId}`)).json()) as {
       messages: { id: string; meta?: Record<string, unknown> }[];
     };
     const message = messages.messages.find((m) => m.id === sent.id);

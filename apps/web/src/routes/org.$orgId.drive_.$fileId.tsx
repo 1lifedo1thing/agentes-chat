@@ -6,9 +6,10 @@ import { LiveFilePage, type LiveFileSearch } from "@/components/live/LiveFilePag
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /**
- * A spreadsheet, a presentation or a canvas on a page of its own (ADR 0194 §9), with no sidebar (the org layout's
- * `focused`): `?v=` shows a saved version read-only, `?sheet=` and `?slide=` where the editor is, `?present` presents.
- * Links to files stay `/drive?artifact=…` (`filePath`): the Drive sends live files here.
+ * A spreadsheet, a presentation or a canvas on a page of the app (ADR 0194 §9, ADR 0197), the sidebar beside it:
+ * `?v=` shows a saved version read-only, `?sheet=` and `?slide=` where the editor is, `?present` presents (then the
+ * window is the slide's alone), `?m=` opens the file's conversation at that message. Links to files stay
+ * `/drive?artifact=…` (`filePath`): the Drive sends live files here.
  */
 export const Route = createFileRoute("/org/$orgId/drive_/$fileId")({
   validateSearch: (search: Record<string, unknown>): LiveFileSearch => ({
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/org/$orgId/drive_/$fileId")({
     sheet: typeof search.sheet === "string" && ID.test(search.sheet) ? search.sheet : undefined,
     slide: typeof search.slide === "string" && ID.test(search.slide) ? search.slide : undefined,
     present: search.present === true || search.present === "true" || search.present === 1 ? true : undefined,
+    m: typeof search.m === "string" && ID.test(search.m) ? search.m : undefined,
   }),
   component: function Page() {
     const { fileId } = Route.useParams();

@@ -52,7 +52,12 @@ const upload = (name: string, contentType: string): Detail => ({
 
 describe("live files open on their own screens (ADR 0194 §9)", () => {
   test("each kind has its screen, its icon (drawn on the phone's grid) and a route file", () => {
-    expect(LIVE_SCREENS).toEqual({ spreadsheet: "/spreadsheet/[id]", slides: "/slides/[id]", canvas: "/canvas/[id]" });
+    expect(LIVE_SCREENS).toEqual({
+      spreadsheet: "/spreadsheet/[id]",
+      slides: "/slides/[id]",
+      canvas: "/canvas/[id]",
+      document: "/document/[id]",
+    });
     for (const icon of Object.values(LIVE_ICON)) expect(ICONS[icon]).toBeDefined();
     for (const name of ["frame", "note", "shape", "textTool", "follow", "present", "redo", "paste"])
       expect(Object.keys(ICONS)).toContain(name);
@@ -71,6 +76,9 @@ describe("live files open on their own screens (ADR 0194 §9)", () => {
       pathname: "/canvas/[id]",
       params: { id: "f3" },
     });
+    // A document opens on its own screen (ADR 0198), at a message of its conversation when one is named (ADR 0197).
+    expect(fileRoute({ id: "d1", kind: "document" })).toEqual({ pathname: "/document/[id]", params: { id: "d1" } });
+    expect(liveRoute("canvas", "c1", "m1")).toEqual({ pathname: "/canvas/[id]", params: { id: "c1", m: "m1" } });
     // Known before its details load: no wait for them.
     expect(whereKnown({ id: "f1", kind: "spreadsheet", title: "Vendas" })).toBe(true);
     // An upload is still the file screen.
@@ -146,7 +154,7 @@ describe("the Drive and messages know the three kinds", () => {
 
   test("a message's live file is its own card, opening no document", () => {
     const files = src("features/files/MessageFiles.tsx");
-    expect(files).toContain("if (detail && isLiveFileKind(detail.kind)) {");
+    expect(files).toContain("if (detail && opensLive(detail.kind)) {");
     expect(files).toContain("<LiveFileCard key={d.id} detail={d} width={blockWidth} />");
     const card = src("features/live-files/LiveFileCard.tsx");
     expect(card).not.toContain("useLiveDoc");

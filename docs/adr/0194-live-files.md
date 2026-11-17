@@ -68,10 +68,22 @@ the desktop app, the phone (Hermes, with `crypto.getRandomValues` from `expo-cry
   `Y.XmlFragment` in the ProseMirror encoding of `y-prosemirror`, so the web edits it with ProseMirror and live
   text cursors, while the phone and the server read and write it with our own reader and writer, which tests keep
   equal to `y-prosemirror`'s.
-- **Canvas.** Shapes in a map: images, notes, text, frames, shapes, arrows between shapes, a file's card, an
-  agent's page (an `html` file) and a placeholder for an image being generated. Each has a position and size in
-  world units, a stacking key (fractional indexing, so two people bringing things forward never collide) and the
-  frame it sits in.
+- **Canvas.** Shapes in a map: images, notes, text, frames, shapes, arrows and lines, pen strokes, a file's card,
+  an agent's page (an `html` file) and a placeholder for an image being generated. Each has a position and size in
+  world units, a stacking key (fractional indexing, so two people bringing things forward never collide), the frame
+  it sits in, who made it (`by`: a person or an agent, set from the change's origin when it is made; the apps' own
+  edits name the person) and whether it is hidden (the layers' eye: kept and read, never drawn, left out of covers).
+  - A shape is a rectangle, an ellipse, a diamond, a triangle or a star, with a fill, a border's color and width
+    (1–24) and, on a rectangle, a corner radius (0–200).
+  - An arrow runs between two shapes (it follows them) or free points, straight, curved or in right angles, with a
+    head at either end or none: a line is an arrow without heads. It may be dashed, and has a color and a width.
+  - A pen stroke (`draw`) is its points (x, y pairs from its box's corner, at most 4,000 numbers), a color, a width
+    and its tool, the pen or the marker (wide, 40% opacity). Its box is its points' extent: stretching the box
+    stretches the stroke. People draw them; agents rarely do.
+  - A picture may show part of itself (`crop`: fractions of the natural picture).
+  - Comments pinned on the canvas aren't shapes: they are messages of the file's conversation that point at a spot
+    (ADR 0197).
+  - A document written before any of these fields reads as before: what isn't there is the default.
 - **Rules of shape** (`validate*`) and limits (`LIVE_LIMITS`: sheets, rows, columns, cells, slides, elements,
   shapes, bytes): the server refuses an update that would break them, so a buggy or hostile client can't leave a
   document no app can open.
@@ -86,6 +98,12 @@ JavaScript anyway. The upgrade is checked like every person socket (`personUpgra
 session, membership, standing), then the file (`liveFileAccess`: read, and the mode). The first state comes over
 HTTP as bytes (`GET …/artifacts/{id}/live`), so a large file never waits behind the socket, and the socket only
 catches up from its state vector.
+
+An app counts its changes as unsent until the server says they are stored: `live.saved` ("everything
+this socket sent up to now is stored") goes only once none of the socket's frames still waits in its line, and the
+pong to an app's ping, which waits in that line behind the frames sent before it, says `unsaved` while what they
+brought still waits to be stored. A change that waits on another one the hosting process doesn't hold yet (Yjs
+keeps it aside) is stored as it came, so it never depends on that process staying up.
 
 While it is open the server checks the session every 15 seconds and the file every 30, and at once on
 `membership.revoked`, the file's sharing changing, the file going to the trash and the workspace closing. A frame
@@ -131,6 +149,13 @@ write lands in steps over at most three seconds, so people see it being filled i
 undoes the person's own changes (`UndoManager` tracking local origins), never an agent's. What an agent reads of a
 live file comes through `untrustedBlock`, like any text people typed.
 
+On a canvas, `edit_canvas` adds every kind of shape, lines between points and, when asked, pen strokes, and restyles
+what is there (`style`: fill, border, corners, form, route, heads, crop, hidden); `read_canvas` says each shape's
+look and who made it (the workspace's people and other agents; never a name a client wrote), and reads pen strokes as
+people's marks pointing at what they cover. `create_canvas` may start with pictures the agent reads (`images`: picture
+files, such as the ones posted in the conversation), checked and copied into the new canvas before it is made (§8),
+side by side in the order given, so "make a canvas with the third image" is one call.
+
 People ask an agent from inside the file: Ask an agent sends a message to it, in the file's conversation (a DM
 when the file lives in the shared Drive), carrying the file and a description of the selection
 (`meta.liveRef`), and the agent's tools act on that file while everyone in it watches.
@@ -145,8 +170,9 @@ go on; when someone saves a version with a name; and when one is restored. A sna
 skipped. The history lists them with who changed what; restoring writes the old content into the live document as
 one change, so everyone in it sees the file go back, and records a version saying so. `GET …/artifacts/{id}` with
 no version returns the head; `content` for these kinds is a small preview (the top-left cells, the first slide,
-the canvas's first shapes) that cards and the Drive draw, refreshed with the compaction, never the whole document.
-Exports turn the head into `xlsx` or `csv`, `pptx` and `pdf`.
+the canvas's biggest shapes, hidden ones left out, a pen stroke's points thinned) that cards and the Drive draw,
+refreshed with the compaction, never the whole document. Exports turn the head into `xlsx` or `csv`, `pptx` and
+`pdf`.
 
 ### 8. Pictures belong to the file
 
@@ -161,7 +187,8 @@ picture taken from elsewhere in the Drive is copied in under the reader's check 
 The web opens a live file on a page of its own, without the sidebar (`/org/<org>/drive/<id>`); every link to a file
 stays `filePath`, and the Drive sends live kinds to that page. The desktop app is the same page. The phone opens
 pushed screens of its own for each kind, with the same presence, light editing (cells, a slide's text and order,
-moving and adding on the canvas, generating images) and follow mode. The Drive's New menu makes each kind, and the
+moving, adding and drawing on the canvas, a document's blocks) and follow mode; pictures come from the agents in the
+file's conversation (ADR 0197). The Drive's New menu makes each kind, and the
 three kinds join the Drive's filters, its cards and message cards with a live preview and the faces of who is in.
 
 ## Consequences

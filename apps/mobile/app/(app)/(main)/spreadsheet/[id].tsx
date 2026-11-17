@@ -3,9 +3,12 @@ import { SpreadsheetScreen } from "@/features/live-files/spreadsheet/Spreadsheet
 import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
-/** A live spreadsheet (`/spreadsheet/<id>`, ADR 0194): from the Drive, a message's card, a link or New; none: the Drive. */
+/**
+ * A live spreadsheet (`/spreadsheet/<id>`, ADR 0194): from the Drive, a message's card, a link or New; none: the Drive.
+ * `m`: a message of its conversation to open at (ADR 0197).
+ */
 export default function SpreadsheetRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, m } = useLocalSearchParams<{ id: string; m?: string }>();
   if (!isSafeId(id)) return <LandOn href="/drive" />;
-  return <SpreadsheetScreen key={id} id={id} />;
+  return <SpreadsheetScreen key={id} id={id} focusId={isSafeId(m) ? m : null} />;
 }

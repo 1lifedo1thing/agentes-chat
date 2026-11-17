@@ -1,11 +1,11 @@
 /*
- * Live files' page (ADR 0194 §9): the header over the kind's editor, the faces of who is here, their cursors, the
- * history beside the file, Ask an agent, and the Drive's covers of live files. The editors' own sheets sit in their
- * folders. People's colors come in as `--peer` (and `--peer-on` for words on it); the person's own selection and
- * focus stay ink (the agents' blue is only an agent's own).
+ * Live files' page (ADR 0194 §9, ADR 0197): the header over the kind's editor, the faces of who is here, their cursors,
+ * the history beside the file, the file's conversation beside the page, and the Drive's covers of live files. The
+ * editors' own sheets sit in their folders. People's colors come in as `--peer` (and `--peer-on` for words on it); the
+ * person's own selection and focus stay ink (the agents' blue is only an agent's own).
  */
 
-/* The page: full bleed (the org layout's `focused`), a column that never scrolls; the editor scrolls inside. */
+/* The page: a column of the work area that never scrolls; the editor scrolls inside. */
 .shell__pages > .shell__main.lf-main {
   height: 100%;
 }
@@ -38,68 +38,91 @@
   background: #000;
 }
 
-/* ── Header ────────────────────────────────────────────────────────────────────────────────────────────────────────── */
+/* ── Header (ADR 0197): the Wiki's top over a task's title ─────────────────────────────────────────────────────────── */
 
+/* Where it lives and the actions on one row, the kind and the title under it, then who made it and who sees it. No
+   line under it: the canvas draws its own edge, a sheet's and a deck's toolbars start their own band. */
 .lf-head {
   flex: none;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  min-height: var(--control-h-lg);
-  padding: var(--space-2) var(--page-x);
+  padding: var(--space-3) var(--page-x);
   box-sizing: border-box;
-  border-bottom: 1px solid var(--line);
   background: var(--pane);
 }
-.lf-head__lead {
-  flex: 1 1 auto;
-  min-width: 0;
+/* A document's title and meta are on its page (Wiki style, ADR 0198): the top row alone, close over its toolbar. */
+.lf-head[data-kind="document"] {
+  padding-bottom: var(--space-1);
+}
+.lf-top {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  min-height: 36px;
 }
-.lf-head__back {
-  flex: none;
-}
-.lf-head__kind {
-  flex: none;
-  color: var(--ink-muted);
-}
-.lf-head__titles {
+.wiki-crumbs.lf-crumbs {
+  flex: 1;
   min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: var(--space-3);
-  row-gap: 0;
+  margin: 0;
 }
-.lf-head__status {
-  font-size: var(--text-sm);
-  color: var(--ink-muted);
+.lf-crumbs a {
+  white-space: nowrap;
+}
+/* The conversation's name can be long ("Mensagem direta entre Ana, Bruno e Atlas"): it wraps, never cut. */
+.lf-crumbs__folder {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+a.lf-crumbs__folder {
   white-space: normal;
 }
-/* No connection: the same quiet words, a step stronger, so they're read. */
-.lf-head__status.is-offline {
-  color: var(--ink);
-}
-.lf-head__acts {
+.lf-top__acts {
   flex: none;
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
+/* "Salvo", "Salvando…", offline, read-only: the Wiki's quiet status before the faces. */
+.lf-top__status {
+  margin-right: var(--space-1);
+  color: var(--faint);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+/* No connection: the same quiet words, a step stronger, so they're read; long, they wrap. */
+.lf-top__status.is-offline {
+  color: var(--ink);
+  white-space: normal;
+}
+/* The kind (24, quiet, no tile) on the title's first line; the title a task's (26/650). */
+.lf-titleline {
+  gap: var(--icon-gap-lg);
+  margin-top: var(--space-2);
+  font-size: 26px;
+  line-height: 1.2;
+}
+.lf-kind.ac-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--muted);
+}
+.lf-meta.wiki-meta {
+  margin: var(--space-2) 0 0;
+}
+.lf-meta .ac-link {
+  font-weight: 600;
+}
 
-/* The title: reads as the page's title, turns into its field under the pointer and the keys. */
+/* The title: reads as the page's title, turns into its field under the pointer and the keys, and wraps as it does. */
 .lf-title {
   position: relative;
   display: inline-grid;
   min-width: 0;
-  max-width: min(520px, 100%);
+  max-width: 100%;
   margin: 0;
   font-family: var(--font-sans);
-  font-size: var(--text-lg);
-  font-weight: 600;
-  line-height: 1.25;
+  font-size: inherit;
+  font-weight: 650;
+  line-height: inherit;
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 .lf-title--still {
@@ -112,24 +135,27 @@
   grid-area: 1 / 1;
   font: inherit;
   letter-spacing: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   padding: var(--space-1) var(--space-2);
-  margin: 0 calc(-1 * var(--space-2));
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2));
   border-radius: var(--radius-sm);
   box-sizing: border-box;
 }
 .lf-title__mirror {
   visibility: hidden;
-  white-space: pre;
-  overflow: hidden;
 }
 .lf-title__field {
-  width: 100%;
+  display: block;
+  width: auto;
+  height: auto;
   min-width: 2ch;
   border: 1px solid transparent;
   background: transparent;
   color: inherit;
   outline: none;
-  text-overflow: ellipsis;
+  resize: none;
+  overflow: hidden;
 }
 .lf-title__field:hover {
   border-color: var(--line);
@@ -137,7 +163,45 @@
 .lf-title__field:focus {
   border-color: var(--line-strong);
   background: var(--surface);
-  text-overflow: clip;
+}
+
+/* The canvas meets the header on a hairline: its dotted plane starts under it. */
+.lf-editor[data-kind="canvas"] {
+  border-top: 1px solid var(--line);
+}
+
+/* ── The file's conversation beside it (ADR 0197) ─────────────────────────────────────────────────────────────────── */
+
+/* The work area keeps the conversation's width on its right: the page's card ends 8 before it, never under it. */
+.shell__work:has(> .shell__pages .lf-page[data-talk]) {
+  padding-right: calc(var(--lf-talk-w) + var(--space-4));
+}
+.shell__work {
+  /* The task's panel's width on a wide window, a little less on a narrow one so the file keeps room. */
+  --lf-talk-w: clamp(360px, 32vw, 460px);
+}
+/* The task's panel, as a card of its own on the sidebar's paper beside the page's (the work area's 8 around it):
+   hung from the work area, so it holds still while the page runs its entrance, and nothing dims behind it. */
+.thread-panel.lf-talk {
+  position: absolute;
+  z-index: var(--z-raised);
+  top: var(--space-2);
+  right: var(--space-2);
+  bottom: var(--space-2);
+  width: var(--lf-talk-w);
+  border-radius: var(--radius-section) var(--radius-section) var(--radius-section) 4px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+[data-theme="light"] .thread-panel.lf-talk {
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 1px 3px rgba(9, 20, 34, 0.05);
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* It opens with the page's room already made for it: no slide in from the window's edge. */
+  .thread-panel.lf-talk {
+    animation: none;
+  }
 }
 
 /* ── Body: the editor, and the history beside it ─────────────────────────────────────────────────────────────────── */
@@ -595,53 +659,16 @@ html:not([data-pointer]) .lf-version:focus-visible {
   }
 }
 
-/* ── Ask an agent ───────────────────────────────────────────────────────────────────────────────────────────────── */
-
-.lf-ask-pop {
-  width: 360px;
-  max-width: calc(100vw - 2 * var(--space-4));
-}
-.lf-ask {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3);
-}
-.lf-ask__about {
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-.lf-ask__actions {
-  display: flex;
-  justify-content: flex-end;
-}
-.lf-ask--sent {
-  align-items: flex-start;
-  gap: var(--space-2);
-}
-.lf-ask__sent {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-.ac-dialog .lf-ask {
-  padding: 0;
-}
-
 /* ── Compact: a phone, or the desktop app zoomed in (≤ 760) ─────────────────────────────────────────────────────── */
 
 @media (max-width: 760px) {
-  .lf-head {
+  .lf-top {
     align-items: flex-start;
   }
-  .lf-head__acts {
-    padding-top: 0;
+  .lf-top__status {
+    display: none;
   }
-  .lf-title {
-    max-width: 100%;
+  .lf-titleline {
+    font-size: 22px;
   }
 }

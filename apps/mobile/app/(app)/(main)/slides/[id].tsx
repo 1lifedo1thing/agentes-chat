@@ -5,11 +5,12 @@ import { LandOn } from "@/ui/navigation";
 
 /**
  * A live presentation (`/slides/<id>`, ADR 0194): its slides; with `slide`, that slide opened large (its own push, so
- * the system's back returns to the list). From the Drive, a message's card, a link or New; none: the Drive.
+ * the system's back returns to the list). From the Drive, a message's card, a link or New; none: the Drive. `m`: a
+ * message of its conversation to open at (ADR 0197).
  */
 export default function SlidesRoute() {
-  const { id, slide } = useLocalSearchParams<{ id: string; slide?: string }>();
+  const { id, slide, m } = useLocalSearchParams<{ id: string; slide?: string; m?: string }>();
   if (!isSafeId(id)) return <LandOn href="/drive" />;
   const open = isSafeId(slide) ? slide : null;
-  return <SlidesScreen key={`${id}:${open ?? ""}`} id={id} slide={open} />;
+  return <SlidesScreen key={`${id}:${open ?? ""}`} id={id} slide={open} focusId={isSafeId(m) ? m : null} />;
 }

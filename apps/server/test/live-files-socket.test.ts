@@ -117,9 +117,9 @@ describe("opening a live file's socket", () => {
     const hidden = await makeFile(owner, org.orgId, { kind: "canvas", title: "Roadmap", channelId });
     const ana = await joinByInvitation(t, owner, org.orgId, "ana@example.com");
     expect(await upgradeStatus(liveUrl(port, org.orgId, hidden.id), headersOf(ana))).toBe(404);
-    // A document is no live file.
+    // A table is no live file.
     const doc = await owner(`/api/app/organizations/${org.orgId}/artifacts`, {
-      json: { title: "Notes", content: { kind: "document", markdown: "# Notes" } },
+      json: { title: "Notes", content: { kind: "table", columns: ["a"], rows: [["1"]] } },
     });
     const { id: docId } = (await doc.json()) as { id: string };
     expect(await upgradeStatus(liveUrl(port, org.orgId, docId), { origin: ORIGIN, cookie })).toBe(404);
@@ -230,6 +230,27 @@ describe("editing together", () => {
       web.close();
     }
   });
+
+  test("editable again, the app hears so before the server asks what it lacks, so it can answer", async () => {
+    const { owner, org, file, url } = await seeded();
+    const web = livePeer(url(), headersOf(owner));
+    try {
+      await web.ready();
+      await web.until(() => web.sheet() !== null, "the sheet");
+      const artifact = `/api/app/organizations/${org.orgId}/artifacts/${file.id}`;
+      expect((await owner(artifact, { method: "DELETE" })).status).toBe(204);
+      await web.until(() => modeOf(web) === "view", "live.mode view");
+      const from = web.inbox.length;
+      expect((await owner(`${artifact}/restore`, { json: {} })).status).toBe(200);
+      await web.until(() => web.inbox.slice(from).includes("sync:0"), "the server's sync step 1");
+      // An app answers a step 1 only in `edit` (ours holds back while read-only), so `live.mode` must come first.
+      const after = web.inbox.slice(from);
+      expect(after.indexOf("live.mode")).toBeGreaterThanOrEqual(0);
+      expect(after.indexOf("live.mode")).toBeLessThan(after.indexOf("sync:0"));
+    } finally {
+      web.close();
+    }
+  });
 });
 
 describe("presence", () => {
@@ -311,6 +332,32 @@ describe("the pace a socket sends at", () => {
       await web.control((c) => c.type === "pong", "pong");
       // The second frame waited about half a second for its turn, and the ping waited behind it.
       expect(Date.now() - sent).toBeGreaterThanOrEqual(400);
+    } finally {
+      await slow.stop();
+    }
+  });
+
+  test("`live.saved` waits for the frames still in line, and a pong says whether what came before it is stored", async () => {
+    const { owner, file, url } = await seeded();
+    const slow = liveServer({ frameBytes: 4096, bytesPerSecond: 4096 });
+    try {
+      const web = livePeer(url().replace(`:${server.port}/`, `:${slow.port}/`), headersOf(owner));
+      await web.ready();
+      await web.until(() => web.sheet() !== null, "the sheet");
+      // The pace's allowance full again, then two changes of about 3 KB: the second waits about half a second.
+      await Bun.sleep(1100);
+      setCell(web.doc, 0, 0, "a".repeat(3000));
+      setCell(web.doc, 0, 1, "b".repeat(3000));
+      web.raw('{"type":"ping"}');
+      await web.control((c) => c.type === "live.saved", "live.saved");
+      // Said only once both are stored: never while the second still waited in line.
+      const rows = await t.db
+        .select({ seq: schema.liveDocUpdates.seq })
+        .from(schema.liveDocUpdates)
+        .where(eq(schema.liveDocUpdates.artifactId, file.id));
+      expect(rows).toHaveLength(2);
+      // The pong came once the second was in, still being stored: it says so.
+      expect(web.controls.find((c) => c.type === "pong")).toEqual({ type: "pong", unsaved: true });
     } finally {
       await slow.stop();
     }

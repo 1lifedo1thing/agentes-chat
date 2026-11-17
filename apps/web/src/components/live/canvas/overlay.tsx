@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { PeerCursors } from "../PeerCursor";
 import { type PeerLook, PeerTag, usePeerLooks } from "../peers";
 import { boxToScreen, type Camera, type Size, toScreen } from "./camera";
-import { arrowLine, boundsOf, CORNERS, HANDLES, type Handle } from "./edit-math";
+import { arrowLine, boundsOf, CORNERS, HANDLES, type Handle, routePoints } from "./edit-math";
 
 /**
  * What the canvas draws over its shapes in screen pixels (ADR 0194 §5), so it keeps one size at any zoom: frames'
@@ -46,7 +46,8 @@ export const Overlay = memo(function Overlay(props: OverlayProps) {
   const view: Box = { x: -cam.x / cam.z, y: -cam.y / cam.z, w: stage.w / cam.z, h: stage.h / cam.z };
   const onScreen = (s: ShapeView) =>
     rectsIntersect({ x: s.x, y: s.y - LABEL_LIFT / cam.z, w: s.w, h: s.h + LABEL_LIFT / cam.z }, view, 40 / cam.z);
-  const frames = shapes.filter((s) => s.type === "frame" && onScreen(s));
+  // A hidden frame (the layers' eye) has no name on the plane either.
+  const frames = shapes.filter((s) => s.type === "frame" && !s.hidden && onScreen(s));
   const chosen = selected.map((id) => byId.get(id)).filter((s): s is ShapeView => !!s);
   const single = chosen.length === 1 ? chosen[0] : null;
   const toScreenPoint = (p: Point) => toScreen(cam, p);
@@ -117,7 +118,19 @@ function ShapeOutline({
     if (!line) return null;
     const a = toScreen(cam, { x: line.x1, y: line.y1 });
     const b = toScreen(cam, { x: line.x2, y: line.y2 });
-    return <DraftLine from={a} to={b} className={`${className} cnv-over__line`} style={style} />;
+    if (!shape.route || shape.route === "straight") {
+      return <DraftLine from={a} to={b} className={`${className} cnv-over__line`} style={style} />;
+    }
+    // A curve or an elbow: its outline follows its route.
+    const points = routePoints(line, shape.route)
+      .map((p) => toScreen(cam, p))
+      .map((p) => `${p.x},${p.y}`)
+      .join(" ");
+    return (
+      <svg className={`${className} cnv-over__route`} style={style} aria-hidden="true">
+        <polyline points={points} />
+      </svg>
+    );
   }
   const b = boxToScreen(cam, shape);
   return (

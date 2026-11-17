@@ -10,6 +10,7 @@ import {
   MSG_QUERY_AWARENESS,
   MSG_SYNC,
   parseControl,
+  pongUnsaved,
   readMessage,
   SYNC_STEP1,
   SYNC_STEP2,
@@ -34,9 +35,10 @@ import type { LiveFileStatus, LiveRoomError } from "./types";
  * - Every change made here (any origin but `REMOTE`) goes out, merged over `sendDelayMs`, in frames under the
  *   server's cap and at a pace under its rate, in order. Nothing is sent in `view` mode: changes wait for `edit`.
  * - Changes stay counted as unsent (`unsent`, `unsentUpdate()`) until the server has them stored, as far as this side
- *   can tell: a `live.saved` ("everything this socket sent up to now is stored") covers what the server had received
- *   when it said so, which a pong proves for what was sent before its ping, or the round trip for what was sent long
- *   enough before it came; what reached the server and heard nothing more for `savedSettleMs` needed nothing more. A
+ *   can tell: a `live.saved` ("everything this socket sent up to now is stored", said only once none of its frames
+ *   waits in the server's line) covers what the server had received when it said so, which a pong proves for what was
+ *   sent before its ping, or the round trip for what was sent long enough before it came; a pong without `unsaved`
+ *   says what came before its ping is stored (or held nothing new), one with it says to wait for `live.saved`. A
  *   change the server refused (`live.error`) stays unsent until a new socket offers it again.
  * - It reconnects with backoff after any close but 4403 and 4404 (`closed` with `forbidden` / `not_found`); when
  *   sockets keep failing before they open (the upgrade's own 401/403/404 look like a dropped connection), the HTTP
@@ -78,7 +80,7 @@ export const LIVE_TIMING = {
   awarenessMs: 60,
   /** Changes made within this window go as one frame. */
   sendDelayMs: 20,
-  /** After a pong or a `live.saved`, how long silence means what reached the server needed nothing more. */
+  /** After a pong or a `live.saved`, when to look again at what they proved stored (never silence alone). */
   savedSettleMs: 1000,
 };
 
@@ -272,6 +274,8 @@ export class LiveConnection {
   private lastHeardAt = Number.NEGATIVE_INFINITY;
   /** Change frames up to this one reached the server (a pong after them came). */
   private receivedThrough = 0;
+  /** Change frames up to this one are stored (a pong after them said nothing of ours waited to be stored). */
+  private storedThrough = 0;
   private lastSavedAt = Number.NEGATIVE_INFINITY;
   /** The round trip, measured by pings (smoothed). */
   private rtt: number | null = null;
@@ -605,6 +609,7 @@ export class LiveConnection {
     this.pingQueued = false;
     this.wantPing = false;
     this.receivedThrough = 0;
+    this.storedThrough = 0;
     this.lastSavedAt = Number.NEGATIVE_INFINITY;
     // What wasn't confirmed goes again on the next socket (its step 2 carries it).
     for (const e of this.pending) {
@@ -645,7 +650,7 @@ export class LiveConnection {
   }
 
   private control(text: string) {
-    if (isLivePong(text)) return this.pong();
+    if (isLivePong(text)) return this.pong(pongUnsaved(text));
     const control = parseControl(text);
     if (!control) return;
     switch (control.type) {
@@ -664,6 +669,11 @@ export class LiveConnection {
   }
 
   private onReady(mode: LiveMode, seq: number) {
+    // Who we are goes below at a newer clock than the last one sent: when an earlier socket of ours went, the server
+    // and the apps in the file removed our state at that clock, and y-protocols takes a state only at a newer one, so
+    // the same clock again would leave us out until we next moved. Bumped before `ready`, so nothing is sent yet.
+    const local = this.awareness.getLocalState();
+    if (local !== null) this.awareness.setLocalState(local);
     this.ready = true;
     this.clear("ready");
     this.set({ mode, seq: Math.max(this.snapshot.seq, seq), ...this.clearedRefusal(mode) });
@@ -999,7 +1009,7 @@ export class LiveConnection {
     }, this.timing.pongTimeoutMs);
   }
 
-  private pong() {
+  private pong(unsaved: boolean) {
     const p = this.ping;
     if (!p) return;
     this.ping = null;
@@ -1009,6 +1019,7 @@ export class LiveConnection {
     const sample = Math.max(0, now - p.at);
     this.rtt = this.rtt === null ? sample : Math.round(this.rtt * 0.75 + sample * 0.25);
     if (p.frame > this.receivedThrough) this.receivedThrough = p.frame;
+    if (!unsaved && p.frame > this.storedThrough) this.storedThrough = p.frame;
     this.acknowledge("pong");
     if (this.wantPing) this.sendPing();
   }
@@ -1023,10 +1034,11 @@ export class LiveConnection {
    * Drops the changes the server has stored, by what it just said:
    * - `saved`: a `live.saved` covers what reached the server before it (a pong proved it) and what was sent at least
    *   a round trip before it came;
-   * - `pong`: what this pong proves reached the server is covered by the last `live.saved` if that came at least a
-   *   round trip after it was sent;
-   * - `settle`: what reached the server and heard nothing more for `savedSettleMs` needed nothing more (it held
-   *   nothing new), or was stored (a `live.saved` would have said otherwise by now).
+   * - `pong`: what came before a pong that says nothing waits to be stored; and what this pong proves reached the
+   *   server is covered by the last `live.saved` if that came at least a round trip after it was sent;
+   * - `settle`, `savedSettleMs` after: only what a pong said was stored. Silence alone proves nothing: the server may
+   *   still be storing it (a slow database, frames waiting in its line), and says so with `unsaved`.
+   * Anything any of them says was stored counts at the others too.
    */
   private acknowledge(cause: "saved" | "pong" | "settle") {
     const now = this.now();
@@ -1034,10 +1046,11 @@ export class LiveConnection {
     const before = this.pending.length;
     this.pending = this.pending.filter((e) => {
       if (e.frame === 0 || e.sentAt === null || e.refused) return true;
+      const stored = e.frame <= this.storedThrough;
       const received = e.frame <= this.receivedThrough;
-      if (cause === "saved") return !(received || (margin !== null && e.sentAt + margin <= now));
-      if (cause === "pong") return !(received && margin !== null && e.sentAt + margin <= this.lastSavedAt);
-      return !received;
+      if (cause === "saved") return !(stored || received || (margin !== null && e.sentAt + margin <= now));
+      if (cause === "pong") return !(stored || (received && margin !== null && e.sentAt + margin <= this.lastSavedAt));
+      return !stored;
     });
     if (this.pending.length !== before) this.syncUnsent();
     if (cause === "settle") return;

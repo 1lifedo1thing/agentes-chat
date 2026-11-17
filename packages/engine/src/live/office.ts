@@ -1,17 +1,19 @@
-import { and, eq, schema } from "@agenteschat/db";
 import { serverText } from "@agenteschat/i18n";
 import {
   canvasBackground,
   type DeckData,
   readDeck as deckOfDoc,
+  LiveEditError,
   readShapes,
   SheetEngine,
   SheetError,
   SYSTEM,
+  setDocumentSource,
   slidesFromData,
   spreadsheetFromData,
   spreadsheetToData,
   type WorkbookData,
+  writeDocument,
 } from "@agenteschat/live";
 import * as Y from "yjs";
 import {
@@ -19,7 +21,6 @@ import {
   type ArtifactDeps,
   type ArtifactFileFormat,
   type ArtifactView,
-  createArtifact,
   getArtifact,
   type LiveArtifactKind,
   type LiveExport,
@@ -30,12 +31,11 @@ import {
   setFileSharing,
   storedFileOfArtifact,
 } from "../artifacts";
-import { UUID } from "../authority";
 import { NotFoundError, ValidationError } from "../errors";
 import { imageSize } from "../image-size";
 import {
+  docxToDocument,
   docxToHtml,
-  docxToMarkdown,
   isOfficeError,
   OFFICE_LIMITS,
   type OfficeFileKind,
@@ -57,13 +57,15 @@ import { lineLocale, personLocale } from "../requester";
 import { LIVE_ASSET_BYTES } from "./assets";
 import { createLiveFile } from "./create";
 import type { LiveDocs } from "./docs";
+import { documentExport, liveAssetBytes } from "./document-export";
 import { loadHeadDoc } from "./store";
 
 /**
  * Office files and live files meeting (ADR 0196): an uploaded workbook, deck or Word document as the apps draw it
- * (`officePreview`, read once per version and kept a while: versions never change), made into a live file or a
- * document beside it (`openAsLive`), and a live file written out as Excel, CSV, PowerPoint or PDF (`exportLive`, also
- * what the Drive's downloads of live files use, `officeLiveExporter`).
+ * (`officePreview`, read once per version and kept a while: versions never change), made into a live file beside it
+ * (`openAsLive`: a spreadsheet, a presentation or a document, ADR 0198), and a live file written out as Excel, CSV,
+ * PowerPoint, Word, Markdown or PDF (`exportLive`, also what the Drive's downloads of live files use,
+ * `officeLiveExporter`).
  */
 
 /** An uploaded Office file as the apps draw it: a workbook or a deck in their views, a document as clean HTML. */
@@ -72,8 +74,8 @@ export type OfficePreview =
   | { kind: "deck"; deck: DeckData }
   | { kind: "document"; html: string };
 
-/** What a live file downloads as (ADR 0196). */
-export type LiveExportFormat = "xlsx" | "csv" | "pptx" | "pdf";
+/** What a live file downloads as (ADR 0196; a document's `.docx`, `.md` and PDF, ADR 0198). */
+export type LiveExportFormat = "xlsx" | "csv" | "pptx" | "pdf" | "docx" | "md";
 
 /**
  * Previews by file, version and content, kept ten minutes and within a budget of bytes (a deck holds its pictures):
@@ -217,8 +219,9 @@ function deckPictures(deck: DeckData): LivePicture[] {
 
 /**
  * Makes an uploaded Office file editable beside it (ADR 0196): a workbook becomes a spreadsheet, a deck a
- * presentation (its pictures stored with it), a Word document a Markdown document; in the same conversation and
- * thread, shared as the upload is, with a note saying which file it came from. The upload stays as it was.
+ * presentation and a Word document a live document (their pictures stored with them, ADR 0198); in the same
+ * conversation and thread, shared as the upload is, with a note saying which file it came from (a document also keeps
+ * the upload's name, "Importado de X.docx"). The upload stays as it was.
  */
 export async function openAsLive(
   deps: ArtifactDeps,
@@ -259,18 +262,32 @@ export async function openAsLive(
         init: (doc) => slidesFromData(doc, deck, SYSTEM),
       });
     } else {
-      const markdown = await docxToMarkdown(bytes);
-      if (new TextEncoder().encode(markdown).byteLength > 1_000_000) throw officeTooLargeToEdit("document");
-      const {
-        content: _content,
-        shownVersion: _shown,
-        versioned: _versioned,
-        ...view
-      } = await createArtifact(deps, actor, orgId, { title, content: { kind: "document", markdown }, ...place, note });
-      made = view;
+      const read = docxToDocument(bytes, {
+        pictureId: () => Bun.randomUUIDv7(),
+        maxPictureBytes: OFFICE_LIMITS.inlineImageBytes,
+        maxEachBytes: LIVE_ASSET_BYTES,
+      });
+      const pictures: LivePicture[] = read.pictures.map((p) => {
+        const size = imageSize(p.bytes);
+        return { ...p, width: size?.width ?? null, height: size?.height ?? null };
+      });
+      made = await createLiveFile(deps, actor, orgId, {
+        kind: "document",
+        title,
+        ...place,
+        note,
+        pictures,
+        init: (doc) => {
+          writeDocument(doc, read.blocks, SYSTEM);
+          setDocumentSource(doc, { name, file: fileId }, SYSTEM);
+        },
+      });
     }
   } catch (error) {
     if (error instanceof SheetError && error.reason === "limit") throw officeTooLargeToEdit(error.message);
+    if (error instanceof LiveEditError && (error.code === "too_many" || error.code === "too_large")) {
+      throw officeTooLargeToEdit(error.message);
+    }
     if (error instanceof ValidationError && error.code === "live.too_large") throw officeTooLargeToEdit("size");
     if (error instanceof ValidationError || error instanceof NotFoundError) throw error;
     throw asOfficeError(error);
@@ -281,25 +298,6 @@ export async function openAsLive(
     await setFileSharing(deps, actor.userId, orgId, made.id, sharing).catch(() => undefined);
   }
   return made;
-}
-
-/** A live file's picture by its id, for an export the caller already let through. */
-async function assetBytes(deps: ArtifactDeps, orgId: string, fileId: string, assetId: string) {
-  if (!UUID.test(assetId)) return null;
-  const [row] = await deps.db
-    .select()
-    .from(schema.liveAssets)
-    .where(
-      and(
-        eq(schema.liveAssets.orgId, orgId),
-        eq(schema.liveAssets.artifactId, fileId),
-        eq(schema.liveAssets.id, assetId),
-      ),
-    );
-  if (!row) return null;
-  const store = await deps.blobs.forConfig(orgId, row.storageConfigId).catch(() => null);
-  const object = await store?.get(row.blobKey).catch(() => null);
-  return object ? { bytes: object.body, type: row.contentType } : null;
 }
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -335,10 +333,11 @@ export async function writeLiveExport(
   }
   if (kind === "slides" && (format === null || format === "pptx" || format === "pdf")) {
     const deck = deckOfDoc(doc);
-    const media = (asset: string) => assetBytes(deps, file.orgId, file.id, asset);
+    const media = (asset: string) => liveAssetBytes(deps, file.orgId, file.id, asset);
     if (format === "pdf") return out("pdf", await slidesPdf(deck, media, file.title));
     return out("pptx", await writePptx(deck, media));
   }
+  if (kind === "document") return documentExport(deps, file, doc, format);
   if (kind === "canvas" && (format === null || format === "json")) {
     // Plain data: its background and its shapes (text as rich paragraphs), the way the apps read them.
     const canvas = { kind: "canvas", v: 1, bg: canvasBackground(doc), shapes: readShapes(doc) };

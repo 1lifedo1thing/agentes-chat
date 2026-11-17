@@ -137,7 +137,10 @@ export type OfficePreview =
   | { kind: "deck"; deck: DeckData }
   | { kind: "document"; html: string };
 
-/** What a person had selected when they asked an agent, as they see it ("Planilha 1!B2:E9", "slide 3", "2 imagens"). */
+/**
+ * What a person had selected in a file when they wrote, as they see it ("Planilha 1!B2:E9", "slide 3", "2 imagens"):
+ * the quote bar of the file's conversation, sent as the message's `liveRef` (ADR 0197).
+ */
 export interface LiveSelection {
   label: string;
   /** The sheet's id. */
@@ -148,6 +151,12 @@ export interface LiveSelection {
   slide?: string;
   /** Canvas shape ids. */
   shapes?: string[];
+  /** A comment pinned on a canvas, in its world units. */
+  point?: { x: number; y: number };
+  /** A document's quoted words (at most 200 characters). */
+  text?: string;
+  /** A document's block id. */
+  block?: string;
 }
 
 /** "Perguntar a um agente" from inside a file (ADR 0194 §6). */
@@ -164,7 +173,10 @@ export interface AskAgentResult {
   threadId: string | null;
 }
 
-/** `message.meta.liveRef`: the file a person asked an agent about, and what they had selected. */
+/**
+ * `message.liveRef` (from `meta.liveRef`, ADR 0197): the file a message is about and what its writer had selected in
+ * it. The server fills `kind` and `title`; a message sends only `LiveRefInput`.
+ */
 export interface LiveRef {
   artifactId: string;
   kind: LiveKind;
@@ -172,8 +184,24 @@ export interface LiveRef {
   selection?: LiveSelection;
 }
 
+/** What a message in a file's conversation sends of its `liveRef`: the server adds the file's kind and title. */
+export interface LiveRefInput {
+  artifactId: string;
+  selection?: LiveSelection;
+}
+
+/**
+ * `meta.fileConversation`: the root of a live file's conversation (ADR 0197). It stands for the file and is never
+ * drawn: the file is right there. `kind` names the panel ("Canvas conversation").
+ */
+export interface FileConversationRoot {
+  artifactId: string;
+  kind: LiveKind;
+  title: string;
+}
+
 /** The live kinds, as the client knows them without loading the package's code (types only come from it here). */
-const LIVE_KIND_NAMES: readonly string[] = ["spreadsheet", "slides", "canvas"] satisfies readonly LiveKind[];
+const LIVE_KIND_NAMES: readonly string[] = ["spreadsheet", "slides", "canvas", "document"] satisfies readonly LiveKind[];
 
 /** Whether an artifact kind is a live file's (`isLiveKind` of `@agenteschat/live`, without importing its code). */
 export const isLiveFileKind = (kind: unknown): kind is LiveKind =>
@@ -199,8 +227,33 @@ export function liveSelectionOf(raw: unknown): LiveSelection | undefined {
     const shapes = o.shapes.filter((s): s is string => typeof s === "string" && s.length > 0).slice(0, 200);
     if (shapes.length) sel.shapes = shapes;
   }
+  const point = o.point && typeof o.point === "object" ? (o.point as Record<string, unknown>) : null;
+  if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) {
+    sel.point = { x: point.x as number, y: point.y as number };
+  }
+  const quote = text(o.text, 200);
+  const block = text(o.block, 64);
+  if (quote) sel.text = quote;
+  if (block) sel.block = block;
   return sel;
 }
+
+/** `meta.fileConversation` of a file conversation's root, when it reads right; null for any other message. */
+export function fileConversationOf(meta: Record<string, unknown> | null | undefined): FileConversationRoot | null {
+  const raw = meta?.fileConversation;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const artifactId = text(o.artifactId, 100);
+  if (!artifactId || !isLiveFileKind(o.kind)) return null;
+  return { artifactId, kind: o.kind, title: typeof o.title === "string" ? o.title.slice(0, 200) : "" };
+}
+
+/**
+ * What a message points at in its file (ADR 0197): the server's `liveRef`, else its `meta.liveRef` (an optimistic copy
+ * or an older server). Null for a message about no file.
+ */
+export const messageLiveRef = (m: { liveRef?: LiveRef; meta?: Record<string, unknown> }): LiveRef | null =>
+  m.liveRef ?? liveRefOf(m.meta);
 
 /** `message.meta.liveRef`, when a message has one that reads right; null otherwise. */
 export function liveRefOf(meta: Record<string, unknown> | null | undefined): LiveRef | null {

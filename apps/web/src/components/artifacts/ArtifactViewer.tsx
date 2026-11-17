@@ -26,7 +26,6 @@ import {
   Locked,
   Menu,
   MenuItem,
-  Textarea,
 } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -197,7 +196,8 @@ export function ArtifactViewer({
   const formats = a ? downloads.formats(a.kind) : [];
   // The whole text of what's shown (a text or code file, a document, a page's source), copied in one click.
   const text = a && !editing ? artifactText(a.content) : undefined;
-  const canEditNow = Boolean(a?.canEdit && !old && !editing && (a?.kind === "document" || a?.kind === "table"));
+  // A table is saved whole as a new version; a document is a live file edited on its own page (ADR 0198).
+  const canEditNow = Boolean(a?.canEdit && !old && !editing && a?.kind === "table");
   // A snapshot (a screenshot, a photo) has no versions: no history beside it, no "Enviar nova versão" (ADR 0019).
   const versioned = a?.versioned !== false;
   const canUploadVersion = Boolean(a?.canEdit && !old && a?.kind === "file" && versioned);
@@ -561,15 +561,6 @@ function Editor({ artifact, onDone }: { artifact: ArtifactDetail; onDone: (saved
     >
       <p className="small muted">{t("artifacts.editing", { version: artifact.version + 1 })}</p>
       <Locked when={save.isPending}>
-        {content.kind === "document" && (
-          <Field label={t("artifacts.markdownSource")} id="artifact-md">
-            <Textarea
-              rows={18}
-              value={content.markdown}
-              onChange={(e) => setContent({ kind: "document", markdown: e.target.value })}
-            />
-          </Field>
-        )}
         {content.kind === "table" && (
           <TableEditor
             columns={content.columns}

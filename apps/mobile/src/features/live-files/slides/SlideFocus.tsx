@@ -24,7 +24,6 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import PagerView from "react-native-pager-view";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type * as Y from "yjs";
 import {
   type HeaderMenuItem,
@@ -46,6 +45,8 @@ import { PresentFaces } from "../shared/HereFaces";
 import { LiveBar } from "../shared/LiveBar";
 import { usePeerLook } from "../shared/peers";
 import type { LiveDoc } from "../shared/useLiveDoc";
+import { useAskAgent } from "../talk/hooks";
+import { FileTalkLine } from "../talk/TalkLine";
 import { HereIsland } from "./Island";
 import {
   elementFrame,
@@ -93,7 +94,6 @@ export function SlideFocus({
   const { colors: c } = useTheme();
   const toast = useToast();
   const reduced = useReducedMotion();
-  const insets = useSafeAreaInsets();
   const { width: screen } = useWindowDimensions();
   const deck = useDeck(room);
   const doc = room.doc;
@@ -254,9 +254,21 @@ export function SlideFocus({
     else elementMenu(slide, el);
   };
 
-  // The slide's own menu, in the bar's "…".
+  // The slide's own menu, in the bar's "…": "Ask Atlas" about it first (ADR 0197), for whoever reads the file.
   const count = deck.slides.length;
-  const menu: HeaderMenuItem[] =
+  const asking = useAskAgent(detail);
+  const ask: HeaderMenuItem[] =
+    current && asking.label
+      ? [
+          {
+            icon: "sparkle",
+            sf: "sparkles",
+            label: asking.label,
+            onPress: () => asking.ask({ label: t("live.slides.selection.slide", { n: index + 1 }), slide: current.id }),
+          },
+        ]
+      : [];
+  const edits: HeaderMenuItem[] =
     edit && current
       ? [
           {
@@ -304,6 +316,7 @@ export function SlideFocus({
           },
         ]
       : [];
+  const menu: HeaderMenuItem[] = [...ask, ...edits];
 
   return (
     <>
@@ -363,9 +376,7 @@ export function SlideFocus({
         ) : null}
       </View>
       {current ? (
-        <View
-          style={[styles.tools, { paddingBottom: insets.bottom + 4, borderTopColor: c.line2, backgroundColor: c.bg }]}
-        >
+        <View style={[styles.tools, { borderTopColor: c.line2, backgroundColor: c.bg }]}>
           {edit ? (
             <>
               <Tool icon="textTool" label={t("mobile.live.slides.tools.text")} onPress={() => addText(current)} />
@@ -390,6 +401,7 @@ export function SlideFocus({
           />
         </View>
       ) : null}
+      <FileTalkLine file={detail} />
     </>
   );
 }

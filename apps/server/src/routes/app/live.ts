@@ -34,9 +34,10 @@ import {
   security,
 } from "./context";
 import { askAgentAbout, officePreview, openAsLive } from "./live-engine";
+import { LiveSelection } from "./schemas";
 
 const tags = ["Live files"];
-const LiveKind = z.enum(["spreadsheet", "slides", "canvas"]);
+const LiveKind = z.enum(["spreadsheet", "slides", "canvas", "document"]);
 const ArtifactParams = OrgParams.extend({ artifactId: z.uuid() });
 const isUuid = (value: string) => z.uuid().safeParse(value).success;
 const base64 = (bytes: Uint8Array) => Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString("base64");
@@ -80,16 +81,6 @@ const PresenceEntry = z
   .openapi("LivePresenceEntry");
 
 type Present = z.infer<typeof PresenceEntry>;
-
-const Selection = z
-  .object({
-    label: z.string().min(1).max(200).openapi({ description: 'How the person sees it: "Sheet 1!B2:E9", "slide 3".' }),
-    sheet: z.string().max(100).optional(),
-    range: z.string().max(100).optional(),
-    slide: z.string().max(100).optional(),
-    shapes: z.array(z.string().max(100)).max(200).optional(),
-  })
-  .openapi("LiveSelection");
 
 /** Where a picture comes from: a Drive file the person reads (a version of it), or another live file's picture. */
 const AssetSource = z.union([
@@ -510,15 +501,16 @@ export function liveRoutes(deps: AppDeps) {
       security,
       summary: "Ask an agent about a live file, from inside it (Ask an agent)",
       description:
-        "Sends the person's message to the agent where the file lives (a DM when it lives in the Drive), carrying the " +
-        "file and what is selected, so the agent's tools act on it while everyone in it watches (ADR 0194 §6).",
+        "Sends the person's message to the agent in the file's own conversation (ADR 0197; a DM carrying the file when " +
+        "the agent can't work on it there), with what is selected, so the agent's tools act on it while everyone in it " +
+        "watches (ADR 0194 §6). Kept for older apps: the apps write in the file's conversation themselves.",
       request: {
         params: ArtifactParams,
         body: body(
           z.object({
             agentId: z.uuid(),
             text: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
-            selection: Selection.optional(),
+            selection: LiveSelection.optional(),
           }),
         ),
       },

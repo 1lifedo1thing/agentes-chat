@@ -1,6 +1,6 @@
 import type { Artifact, ArtifactContent, ArtifactFileContent } from "@agenteschat/client";
 import { isLiveFileKind, useArtifact } from "@agenteschat/client";
-import { documentPreview, parsePatch, patchCounts } from "@agenteschat/client/lib/artifacts";
+import { parsePatch, patchCounts } from "@agenteschat/client/lib/artifacts";
 import { previewKind } from "@agenteschat/client/lib/files";
 import { cx } from "@agenteschat/ui";
 import { useEffect, useState } from "react";
@@ -80,20 +80,6 @@ function PreviewBody({
   const { t } = useTranslation();
   // The small list thumbnail stays simple: diagrams and pages by their shape.
   switch (content.kind) {
-    case "document": {
-      const [head, ...lines] = documentPreview(content.markdown, DOC_LINES);
-      return (
-        <div className="drive-pv__sheet drive-pv__paper">
-          {head && <span className="drive-pv__h">{head}</span>}
-          {lines.map((l, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static preview
-            <span key={i} className="drive-pv__p">
-              {l}
-            </span>
-          ))}
-        </div>
-      );
-    }
     case "table": {
       const cols = content.columns.slice(0, TABLE_COLS);
       return (
@@ -180,6 +166,8 @@ function PreviewBody({
       );
     case "file":
       return <FilePreview content={content} artifact={artifact} />;
+    // Live files (ADR 0194 §7), documents too (ADR 0198): drawn from the preview the server keeps.
+    case "document":
     case "spreadsheet":
     case "slides":
     case "canvas":

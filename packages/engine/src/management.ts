@@ -474,6 +474,20 @@ export async function setAgentChannels(
   const inIt = new Set(current.map((c) => c.id));
   const adding = found.filter((c) => !inIt.has(c.id));
   if (adding.some((c) => c.kind === "dm")) throw new ValidationError("A direct conversation keeps its participants");
+  // An agent joins a live file's conversation only when it may work on the file (`admitFileAgents`, ADR 0197 §2).
+  if (adding.some((c) => c.kind === "file")) {
+    throw new ValidationError(
+      "An agent joins a file's conversation when someone there names it",
+      "channel.file_conversation",
+    );
+  }
+  // And a task's only through a mention there (ADR 0145, `admitTaskAgents`).
+  if (adding.some((c) => c.kind === "task")) {
+    throw new ValidationError(
+      "An agent joins a task's conversation when someone there names it",
+      "channel.task_conversation",
+    );
+  }
   const actorIn = new Set(mine.map((c) => c.id));
   const removing = current.filter(
     (c) => c.kind === "channel" && !wanted.has(c.id) && (actorIn.has(c.id) || c.visibility === "public" || admin),

@@ -172,6 +172,39 @@ export async function copyAssetFrom(
   return storeAsset(deps, actor, orgId, fileId, { bytes: object.body, source: "copied" });
 }
 
+/** A picture from the Drive as its bytes say it is: PNG, JPEG, WebP or GIF, and its size when the bytes tell it. */
+export interface PictureFile {
+  bytes: Uint8Array;
+  contentType: string;
+  width: number | null;
+  height: number | null;
+}
+
+/**
+ * A Drive file's picture (an uploaded image, a picture posted in a conversation), under the actor's own check that
+ * they read it (not found otherwise); refused when it isn't a picture by its bytes or is over `LIVE_ASSET_MB`.
+ */
+export async function readPictureFile(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  artifactId: string,
+): Promise<PictureFile> {
+  const file = await storedFileOfArtifact(deps, actor, orgId, artifactId);
+  if (file.size > LIVE_ASSET_BYTES) {
+    throw new ValidationError(`The picture is too large (max ${LIVE_ASSET_MB} MB)`, "live.asset_too_large", {
+      max: LIVE_ASSET_MB,
+    });
+  }
+  const store = await deps.blobs.forConfig(orgId, file.storageConfigId);
+  const object = await store.get(file.blobKey);
+  if (!object) throw new NotFoundError("File not found", "artifact.not_found");
+  const contentType = sniffModelImage(object.body);
+  if (!contentType) throw new ValidationError("This file isn't a picture: PNG, JPEG, WebP or GIF", "live.asset_type");
+  const size = imageSize(object.body);
+  return { bytes: object.body, contentType, width: size?.width ?? null, height: size?.height ?? null };
+}
+
 /** A picture's row and bytes, for whoever reads its file (null otherwise, as for none). */
 async function readAsset(deps: ArtifactDeps, actor: ArtifactActor, orgId: string, fileId: string, assetId: string) {
   if (!UUID.test(assetId)) return null;

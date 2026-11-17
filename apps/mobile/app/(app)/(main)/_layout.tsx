@@ -96,6 +96,8 @@ export default function MainStack() {
       // opaque bar, as the words of a text box do over the keyboard.
       "slides/[id]": solid,
       "canvas/[id]": solid,
+      // A live document (ADR 0198): its page and the format bar over the keyboard lay out below an opaque bar.
+      "document/[id]": solid,
       "slide-text/[id]": solid,
       "slide-layout/[id]": solid,
       // Presenting: no bar, black around the slides, faded in; the edge swipe is the pager's (× leaves). Never a

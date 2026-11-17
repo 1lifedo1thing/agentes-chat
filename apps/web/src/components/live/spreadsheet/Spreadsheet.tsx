@@ -1262,6 +1262,11 @@ export function Spreadsheet(props: LiveEditorProps) {
       target = found;
     }
     if (!target) return false;
+    selectRange(target, parsed);
+    return true;
+  };
+  /** Chooses a range on a sheet (switching to it) and brings it into view. */
+  const selectRange = (target: string, parsed: NonNullable<ReturnType<typeof parseA1Range>>) => {
     const there = target === sheet ? size : sheetSize(doc, target);
     const r1 = Math.min(parsed.r1, there.rows - 1);
     const c1 = Math.min(parsed.c1, there.cols - 1);
@@ -1272,8 +1277,21 @@ export function Spreadsheet(props: LiveEditorProps) {
     if (parsed.whole === "rows") next.whole = "rows";
     if (parsed.whole === "cols") next.whole = "cols";
     setSel(next, { reveal: { r1, c1, r2, c2 }, sheet: target });
-    return true;
   };
+  // A message's line about a range here (ADR 0197): its sheet, the range chosen and in view, once per click.
+  const revealPart = props.reveal;
+  const revealed = useRef<number | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once per click (its key), as soon as a sheet can show it
+  useEffect(() => {
+    if (!revealPart || revealed.current === revealPart.key || !source) return;
+    const { sheet: id, range: text } = revealPart.selection;
+    const parsed = text ? parseA1Range(text) : null;
+    const target = id && sheets.some((s) => s.id === id) ? id : sheet;
+    if (!parsed || !target) return;
+    revealed.current = revealPart.key;
+    if (edit && !commit()) return;
+    selectRange(target, parsed);
+  }, [revealPart?.key, source !== null]);
 
   // ── Sheets ──────────────────────────────────────────────────────────────────────────────────────────────────────
   const switchSheet = (id: string) => {

@@ -43,3 +43,30 @@ export function fillStyle(fill: string): CSSProperties {
     "--fill-ink-dark": readableOn(dark, DARK_INKS),
   } as CSSProperties;
 }
+
+/** Whether a color is near black (the ink people draw with), which the dark theme draws light. */
+export function isInk(color: string): boolean {
+  const hex = color.replace("#", "");
+  const full = hex.length === 3 ? [...hex].map((c) => c + c).join("") : hex.slice(0, 6);
+  const n = Number.parseInt(full, 16);
+  if (!/^[0-9a-f]{6}$/i.test(full) || !Number.isFinite(n)) return false;
+  return 0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255) < 48;
+}
+
+/** The ink's tone on the dark canvas. */
+export const DARK_INK = "#efefec";
+
+/**
+ * A border's, a line's or a pen stroke's color and width as CSS variables (`--stroke-light`, `--stroke-dark`,
+ * `--stroke-width`, read by canvas.css): the ink drawn light on the dark canvas, any other color as it is.
+ */
+export function strokeStyle(stroke: string | undefined, width?: number): CSSProperties | undefined {
+  if (!stroke && !width) return undefined;
+  const style: Record<string, string> = {};
+  if (stroke && stroke !== "none") {
+    style["--stroke-light"] = stroke;
+    style["--stroke-dark"] = isInk(stroke) ? DARK_INK : stroke;
+  }
+  if (width) style["--stroke-width"] = String(width);
+  return style as CSSProperties;
+}

@@ -14379,6 +14379,8 @@ export const en = {
       create_canvas: "Create canvas",
       read_canvas: "Read canvas",
       edit_canvas: "Edit canvas",
+      read_document: "Read document",
+      edit_document: "Edit document",
       upload_file: "Upload file",
       import_file: "Import file",
       export_file: "Export file",
@@ -18729,9 +18731,17 @@ export const en = {
       label: "Edit canvas",
       description: "Adds and moves notes, text, pictures and arrows.",
     },
+    read_document: {
+      label: "Read document",
+      description: "Reads a document's text, block by block.",
+    },
+    edit_document: {
+      label: "Edit document",
+      description: "Writes, rewrites and formats a document's text while people watch.",
+    },
     generate_image: {
       label: "Generate images",
-      description: "Makes images with the workspace's image AI and puts them on a canvas. Paid from its budget.",
+      description: "Makes images with the workspace's image AI, in the conversation or on a canvas. Paid from its budget.",
     },
     list_issues: {
       label: "View tasks",
@@ -21496,20 +21506,112 @@ export const en = {
         hiddenNumber: "Slide {{n}} · hidden",
       },
     },
+    /** Documents (ADR 0198): the page's toolbar, its text, pictures, tables and links, and its keys. */
+    doc: {
+      /** The text's name for screen readers. */
+      body: "Document text",
+      /** The title field's name (it renames the document). */
+      title: "Document title",
+      /** An empty document's hint. */
+      placeholder: "Start writing, or ask an agent in the conversation",
+      toolbar: "Document tools",
+      undo: "Undo",
+      redo: "Redo",
+      /** "Text ▾": the block's style. */
+      style: {
+        label: "Text style",
+        text: "Text",
+        h1: "Heading 1",
+        h2: "Heading 2",
+        h3: "Heading 3",
+        quote: "Quote",
+        code: "Code",
+      },
+      bold: "Bold",
+      italic: "Italic",
+      underline: "Underline",
+      strike: "Strikethrough",
+      bulletList: "Bulleted list",
+      numberedList: "Numbered list",
+      quote: "Quote",
+      codeBlock: "Code block",
+      link: {
+        title: "Link",
+        address: "Link address",
+        placeholder: "Paste or type an address",
+        apply: "Apply",
+        remove: "Remove link",
+      },
+      image: {
+        /** The toolbar's button: where a picture comes from. */
+        add: "Image",
+        upload: "From your computer",
+        drive: "From the Drive",
+        /** With a picture selected: its size. */
+        menu: "Image size",
+        small: "Small",
+        medium: "Medium",
+        large: "Large",
+        full: "Page width",
+        natural: "Original size",
+        remove: "Remove image",
+        uploading_one: "Sending {{count}} image…",
+        uploading_other: "Sending {{count}} images…",
+        onlyImages: "Only PNG, JPEG, WebP or GIF images go in a document.",
+        tooBig: "An image is larger than 25 MB and was left out.",
+        /** In place of a picture that won't load. */
+        missing: "Image unavailable",
+      },
+      table: {
+        insert: "Table",
+        /** With the caret in a table: what to do with it. */
+        menu: "Table",
+        rowAbove: "Insert row above",
+        rowBelow: "Insert row below",
+        columnLeft: "Insert column to the left",
+        columnRight: "Insert column to the right",
+        header: "Header row",
+        deleteRow: "Delete row",
+        deleteColumn: "Delete column",
+        deleteTable: "Delete table",
+      },
+      /** What is selected, on the line of a message about the document. */
+      selection: {
+        text: "Selected text",
+        image: "Image",
+        table: "Table",
+      },
+      /** The keys, in "Keyboard shortcuts". */
+      keys: {
+        title: "In the document",
+        text: "Normal text",
+        heading: "Heading 1, 2 or 3",
+        strike: "Strikethrough",
+        code: "Code in the text",
+        bulletList: "Bulleted list",
+        numberedList: "Numbered list",
+        link: "Link",
+        lineBreak: "Line break",
+        nextCell: "Next cell of a table",
+      },
+    },
     /** The three kinds, as the Drive's New menu offers them (ADR 0194 §9). */
     kinds: {
       spreadsheet: "Spreadsheet",
       slides: "Presentation",
       canvas: "Canvas",
+      document: "Document",
       /** One quiet line under each in the New menu. */
       spreadsheetHint: "Numbers and formulas, as a team",
       slidesHint: "Slides to show",
       canvasHint: "Images, notes and loose ideas",
+      documentHint: "Text written together",
       /** The name a new file starts with, selected so the person types its own. */
       untitled: {
         spreadsheet: "Untitled spreadsheet",
         slides: "Untitled presentation",
         canvas: "Untitled canvas",
+        document: "Untitled document",
       },
       /** The Drive's button beside Upload. */
       new: "New",
@@ -21520,9 +21622,10 @@ export const en = {
       slideCount_one: "{{count}} slide",
       slideCount_other: "{{count}} slides",
     },
-    /** The live file's own page: its header, its states, versions, presence and Ask an agent. */
+    /** The live file's own page: its header, its states, versions and presence (ADR 0197). */
     shell: {
-      back: "Back",
+      /** The header's trail: the Drive, then where the file lives. */
+      crumbs: "Where it is",
       /** The title field's name (it renames the file). */
       title: "File name",
       rename: "Rename",
@@ -21535,7 +21638,6 @@ export const en = {
         inTrash: "In the trash. Restore it to change it.",
         closing: "The workspace is being deleted. Its files can only be read.",
       },
-      ask: "Ask an agent",
       present: "Present",
       download: "Download",
       /** What a live file downloads as (ADR 0196). */
@@ -21545,6 +21647,8 @@ export const en = {
         pptx: "PowerPoint (.pptx)",
         pdf: "PDF (.pdf)",
         json: "JSON (.json)",
+        docx: "Word (.docx)",
+        md: "Markdown (.md)",
       },
       more: "More",
       menu: {
@@ -21552,9 +21656,33 @@ export const en = {
         saveVersion: "Save version…",
         duplicate: "Duplicate",
         showInDrive: "Show in the Drive",
+        copyLink: "Copy link",
         trash: "Move to the trash",
         shortcuts: "Keyboard shortcuts",
       },
+      /** The line under the title: who made it and where, when it changed, who sees it. */
+      meta: {
+        madeFrom: "<0>{{name}}</0> made it from the <1>{{place}}</1>",
+        made: "<0>{{name}}</0> made it",
+        /** A document opened from an uploaded Word file (ADR 0198). */
+        imported: "<0>{{name}}</0> imported it from <1>{{file}}</1>",
+        inChannel: "conversation in #{{channel}}",
+        with: "conversation with {{name}}",
+        between: "conversation between {{names}}",
+        inConversation: "conversation",
+        edited: "edited {{when}}",
+        /** The chip's accessible name. */
+        audience: "Who sees it: {{who}}",
+        audienceHint: "Change who sees this file",
+        everyone: "The whole workspace",
+        everyonePersonal: "Everyone here",
+        people: "People you chose",
+        channel: "Only #{{name}}",
+        dm: "Only you and {{name}}",
+        conversation: "Only its conversation",
+      },
+      /** A kind this app has no editor for yet. */
+      notHere: "This kind of file doesn't open here yet.",
       /** A duplicate's name. */
       copyTitle: "{{title}} (copy)",
       duplicated: "Copy made: {{title}}",
@@ -21623,28 +21751,6 @@ export const en = {
         opening: "Opening this version…",
         openFailed: "Couldn't open this version.",
       },
-      /** Ask an agent, from inside the file (ADR 0194 §6). */
-      askAgent: {
-        title: "Ask an agent",
-        agent: "Agent",
-        pick: "Choose an agent",
-        search: "Search agents",
-        searchPlaceholder: "Agent's name",
-        noResults: "No agent found",
-        list: "Agents",
-        here: "In this file's conversation",
-        others: "Other agents",
-        prompt: "What do you want the agent to do?",
-        /** Before the selection's words ("Sheet 1!B2:D9", "Slide 3", "The whole file"). */
-        about: "About",
-        wholeFile: "The whole file",
-        send: "Ask {{name}}",
-        sendNone: "Ask",
-        sent: "Request sent",
-        sentBody: "{{name}} opens the file and starts. You'll see it here.",
-        see: "See the conversation",
-        none: "No agent you can talk to yet.",
-      },
       shortcuts: {
         title: "Keyboard shortcuts",
         general: "General",
@@ -21673,10 +21779,60 @@ export const en = {
         hand: "Move around",
         note: "Note",
         text: "Text",
-        generate: "Generate images",
         zoom: "Zoom in and out",
         fit: "Fit everything",
       },
+    },
+    /** A live file's own conversation, beside it (ADR 0197): the task's, for a file. */
+    conversation: {
+      /** The header's toggle. */
+      button: "Conversation",
+      toggle_one: "Conversation, {{count}} message",
+      toggle_other: "Conversation, {{count}} messages",
+      close: "Close the conversation",
+      title: {
+        canvas: "Canvas conversation",
+        spreadsheet: "Spreadsheet conversation",
+        slides: "Presentation conversation",
+        document: "Document conversation",
+        file: "File conversation",
+      },
+      placeholder: {
+        canvas: "Write about this canvas · use @ to call an agent",
+        spreadsheet: "Write about this spreadsheet · use @ to call an agent",
+        slides: "Write about this presentation · use @ to call an agent",
+        document: "Write about this document · use @ to call an agent",
+        file: "Write about this file · use @ to call an agent",
+      },
+      /** In the origin line: what was made. */
+      this: {
+        canvas: "this canvas",
+        spreadsheet: "this spreadsheet",
+        slides: "this presentation",
+        document: "this document",
+      },
+      /** At the conversation's top: where the file was made. */
+      origin: {
+        from: "<0>{{name}}</0> made {{what}} from the <1>{{place}}</1>",
+        made: "<0>{{name}}</0> made {{what}}",
+        /** A document opened from an uploaded Word file (ADR 0198). */
+        imported: "Imported from <1>{{file}}</1> by {{name}}",
+      },
+      /** Over the composer: what is selected in the file, sent with the message. */
+      about: {
+        range: "About {{range}} in {{sheet}}",
+        slide: "About slide {{n}}",
+        canvas: "About {{label}} on the canvas",
+        text: "About the selected text",
+        point: "About a spot on the canvas",
+        other: "About {{label}}",
+      },
+      drop: "Don't send the selection",
+      /** The line over a message about part of a file. */
+      aboutLine: "Show {{what}} ({{where}}) in the file",
+      untitled: "Untitled file",
+      /** The file's agent, called into the conversation ("Pedir ao Atlas"). */
+      ask: "Ask {{name}}",
     },
     /** Uploaded Office files, drawn from the server's reading of them (ADR 0196). */
     office: {
@@ -21724,6 +21880,7 @@ export const en = {
       placingImages: "placing images",
       generatingImages: "making images",
       creatingCanvas: "setting up the canvas",
+      writingDocument: "writing in the document",
     },
     /** What the server writes into a live file or its history, in the language of whoever made the change. */
     defaults: {
@@ -21731,8 +21888,6 @@ export const en = {
       sheetName: "Sheet {{n}}",
       /** The note of the version written when an earlier one is brought back. */
       restored: "Restored version {{version}}",
-      /** The canvas a conversation's generated images go to when none is named (ADR 0195). */
-      imagesCanvas: "Images",
       /** The note of the first version of a file made editable from an uploaded Office file (ADR 0196). */
       fromFile: "Made from {{name}}",
     },
@@ -21756,6 +21911,8 @@ export const en = {
         shape_other: "{{count}} shapes",
         arrow_one: "{{count}} arrow",
         arrow_other: "{{count}} arrows",
+        draw_one: "{{count}} drawing",
+        draw_other: "{{count}} drawings",
         html_one: "{{count}} page",
         html_other: "{{count}} pages",
         file_one: "{{count}} file",
@@ -21767,6 +21924,12 @@ export const en = {
         image: "Image",
         frame: "Frame",
         html: "Page",
+        note: "Note",
+        text: "Text",
+        arrow: "Arrow",
+        line: "Line",
+        draw: "Drawing",
+        file: "File",
       },
       /** The tools dock, each with its key. */
       tools: {
@@ -21779,7 +21942,10 @@ export const en = {
         arrow: "Arrow",
         frame: "Frame",
         image: "Upload an image",
-        generate: "Generate image",
+        shapes: "Shapes",
+        pen: "Pen",
+        comment: "Comment",
+        ask: "Ask the file's agent",
       },
       zoom: {
         label: "Zoom",
@@ -21788,6 +21954,9 @@ export const en = {
         actual: "Zoom to 100%",
         fit: "Fit",
         fitAll: "Fit everything",
+        selection: "Fit the selection",
+        /** The zoom's own button, which opens the fits. */
+        menu: "Zoom {{percent}}",
       },
       actions: {
         cut: "Cut",
@@ -21819,6 +21988,17 @@ export const en = {
         dashed: "Dashed",
         label: "Label",
         rename: "Rename",
+        noFill: "No fill",
+        auto: "Automatic",
+        soft: "Soft tones",
+        strong: "Strong tones",
+        stroke: "Border",
+        noStroke: "No border",
+        lineColor: "Color",
+        strokeWidth: "Width",
+        corners: "Corners",
+        editText: "Text",
+        more: "More",
       },
       colors: {
         yellow: "Yellow",
@@ -21832,6 +22012,9 @@ export const en = {
         rect: "Rectangle",
         ellipse: "Ellipse",
         diamond: "Diamond",
+        triangle: "Triangle",
+        star: "Star",
+        line: "Line",
       },
       sizes: {
         s: "Small",
@@ -21849,11 +22032,10 @@ export const en = {
       },
       empty: {
         title: "Blank canvas",
-        text: "Drag images here, add notes or generate images with AI.",
+        text: "Drag images here, add notes or ask an agent for images in the conversation.",
         readOnly: "Nothing on this canvas yet.",
         note: "New note",
         upload: "Upload an image",
-        generate: "Generate image",
       },
       /** What a shape's text box says while it is empty, and its name for screen readers. */
       placeholders: {
@@ -21889,6 +22071,67 @@ export const en = {
       /** On an agent's page: it takes the pointer until a press outside it. */
       interact: "Interact",
       /** The side column of a chosen image. */
+      /** How an arrow runs. */
+      routes: {
+        straight: "Straight",
+        curve: "Curved",
+        elbow: "Elbow",
+      },
+      /** An arrow's heads. */
+      heads: {
+        label: "Arrowheads",
+        end: "At the end",
+        both: "At both ends",
+        start: "At the start",
+        none: "None",
+      },
+      /** The pen and its bar. */
+      pen: {
+        label: "Pen",
+        pen: "Pen",
+        marker: "Highlighter",
+        color: "Color",
+        size: "Thickness",
+        sizes: { s: "Thin", m: "Medium", l: "Thick" },
+        /** On the size buttons themselves. */
+        short: { s: "S", m: "M", l: "L" },
+      },
+      /** The colors people draw and outline with. */
+      inks: {
+        red: "Red",
+        ink: "Black",
+        blue: "Blue",
+        green: "Green",
+        orange: "Orange",
+      },
+      /** A picture's bar. */
+      image: {
+        crop: "Crop",
+        replace: "Replace image",
+        details: "Details",
+      },
+      /** What a picture's bar puts after the agent's @ in the file's conversation. */
+      ask: {
+        variations: "make variations of this image",
+      },
+      crop: {
+        label: "Crop the image",
+        apply: "Apply",
+        cancel: "Cancel",
+      },
+      /** The layers panel: every shape, who made it, an eye to hide it. */
+      layers: {
+        title: "Layers",
+        close: "Close layers",
+        empty: "Nothing on this canvas yet.",
+        hide: "Hide {{name}}",
+        show: "Show {{name}}",
+      },
+      /** A comment pinned on a spot of the canvas (a message in its conversation). */
+      comment: {
+        label: "Comment",
+        pin: "Comment {{n}} by {{name}}",
+      },
       inspector: {
         title: "Image",
         generated: "Generated image",
@@ -21910,9 +22153,7 @@ export const en = {
     /** Generating images onto a canvas (ADR 0195). */
     images: {
       title: "Generate image",
-      close: "Close",
       prompt: "Describe the image you want",
-      promptEdit: "Say what to change in the chosen images",
       promptLabel: "Image description",
       model: "Model",
       aspect: "Shape",
@@ -21922,12 +22163,9 @@ export const en = {
       price: "about {{price}}",
       references: "Images to start from",
       removeReference: "Remove this image",
-      useSelection: "Use the selection as a reference",
       noKey: "To generate images, connect an OpenAI, Google or OpenRouter key.",
       connect: "Connect",
       loadingModels: "Loading the image models…",
-      modelsFailed: "The image models couldn't be loaded.",
-      tryAgain: "Try again",
       offline: "No connection. You can generate once it's back.",
       noRefs: "This model doesn't start from images.",
       /** On a placeholder. */

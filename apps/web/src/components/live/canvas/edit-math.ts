@@ -1,11 +1,14 @@
 import {
+  type ArrowRoute,
   type Box,
   center,
   containsPoint,
   descendantsOf,
+  type ImageCrop,
   type Point,
   rectsIntersect,
   resolveEnd,
+  routeArrow,
   type ShapeView,
   shapeBounds,
   union,
@@ -140,6 +143,153 @@ export function distanceToSegment(p: Point, a: Point, b: Point): number {
   return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 
+/** How far `p` is from a line through `points` (one point: from it; none: endless). */
+export function distanceToPolyline(p: Point, points: readonly Point[]): number {
+  if (points.length === 1) {
+    const only = points[0] as Point;
+    return Math.hypot(p.x - only.x, p.y - only.y);
+  }
+  let best = Number.POSITIVE_INFINITY;
+  for (let i = 0; i + 1 < points.length; i++) {
+    best = Math.min(best, distanceToSegment(p, points[i] as Point, points[i + 1] as Point));
+  }
+  return best;
+}
+
+/** A point in a turned shape's own (unturned) frame. */
+function unturned(s: Box & { rot?: number }, p: Point): Point {
+  if (!s.rot) return p;
+  const c = center(s);
+  const q = rotate({ x: p.x - c.x, y: p.y - c.y }, -s.rot);
+  return { x: c.x + q.x, y: c.y + q.y };
+}
+
+/** A pen stroke's points in the world (they are kept from its box's corner). */
+export function strokePoints(s: Pick<ShapeView, "x" | "y" | "points">): Point[] {
+  const pts = s.points ?? [];
+  const out: Point[] = [];
+  for (let i = 0; i + 1 < pts.length; i += 2) {
+    out.push({ x: s.x + (pts[i] as number), y: s.y + (pts[i + 1] as number) });
+  }
+  return out;
+}
+
+/** Points a curve is drawn through, to take and outline it (`routeArrow`'s path, which every app draws). */
+const CURVE_STEPS = 16;
+
+/** The points along an arrow's route: its two ends, the corners of an elbow, or a curve's points. */
+export function routePoints(
+  line: { x1: number; y1: number; x2: number; y2: number },
+  route: ArrowRoute | undefined,
+): Point[] {
+  const a = { x: line.x1, y: line.y1 };
+  const b = { x: line.x2, y: line.y2 };
+  if (!route || route === "straight") return [a, b];
+  const d = routeArrow(line, route).d;
+  const n = (d.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi) ?? []).map(Number);
+  if (d.includes("Q")) {
+    const [sx = a.x, sy = a.y, cx = a.x, cy = a.y, ex = b.x, ey = b.y] = n;
+    const out: Point[] = [];
+    for (let i = 0; i <= CURVE_STEPS; i++) {
+      const t = i / CURVE_STEPS;
+      const u = 1 - t;
+      out.push({ x: u * u * sx + 2 * u * t * cx + t * t * ex, y: u * u * sy + 2 * u * t * cy + t * t * ey });
+    }
+    return out;
+  }
+  const out: Point[] = [];
+  for (let i = 0; i + 1 < n.length; i += 2) out.push({ x: n[i] as number, y: n[i + 1] as number });
+  return out.length >= 2 ? out : [a, b];
+}
+
+/**
+ * A pen stroke's points (x, y pairs) made lighter to keep: points nearer than `tolerance` to the line between the
+ * ones kept around them go (Ramer-Douglas-Peucker), at most `max` numbers are left (every so many kept past that),
+ * each rounded to a hundredth. The stroke still reads the same: its path is smoothed when drawn (`strokePath`).
+ */
+export function thinStroke(points: readonly number[], tolerance: number, max = 4000): number[] {
+  const n = Math.floor(points.length / 2);
+  const at = (i: number): Point => ({ x: points[2 * i] as number, y: points[2 * i + 1] as number });
+  const r = (v: number) => Math.round(v * 100) / 100;
+  let kept: number[];
+  if (n <= 2) kept = Array.from({ length: n }, (_, i) => i);
+  else {
+    const keep = new Uint8Array(n);
+    keep[0] = 1;
+    keep[n - 1] = 1;
+    const spans: [number, number][] = [[0, n - 1]];
+    while (spans.length) {
+      const [i, j] = spans.pop() as [number, number];
+      let far = tolerance;
+      let pick = -1;
+      for (let k = i + 1; k < j; k++) {
+        const d = distanceToSegment(at(k), at(i), at(j));
+        if (d > far) {
+          far = d;
+          pick = k;
+        }
+      }
+      if (pick >= 0) {
+        keep[pick] = 1;
+        spans.push([i, pick], [pick, j]);
+      }
+    }
+    kept = [];
+    for (let i = 0; i < n; i++) if (keep[i]) kept.push(i);
+  }
+  const most = Math.max(2, Math.floor(max / 2));
+  if (kept.length > most) {
+    const step = (kept.length - 1) / (most - 1);
+    const all = kept;
+    kept = Array.from({ length: most }, (_, i) => all[Math.round(i * step)] as number);
+  }
+  return kept.flatMap((i) => [r(points[2 * i] as number), r(points[2 * i + 1] as number)]);
+}
+
+/** A picture's whole extent in the world, of which its box shows the part its crop says (ADR 0194 §2). */
+export function fullImageBox(shape: Box & { crop?: ImageCrop }): Box {
+  const c = shape.crop ?? { x: 0, y: 0, w: 1, h: 1 };
+  const w = shape.w / c.w;
+  const h = shape.h / c.h;
+  return { x: shape.x - c.x * w, y: shape.y - c.y * h, w, h };
+}
+
+/**
+ * The crop window dragged by `delta` (world units): by a handle, the opposite side staying put, or moved whole, always
+ * inside the picture and never smaller than `min` on a side.
+ */
+export function dragCrop(rect: Box, full: Box, handle: Handle | "move", delta: Point, min = MIN_SIDE): Box {
+  const right = full.x + full.w;
+  const bottom = full.y + full.h;
+  if (handle === "move") {
+    const x = Math.min(Math.max(rect.x + delta.x, full.x), right - rect.w);
+    const y = Math.min(Math.max(rect.y + delta.y, full.y), bottom - rect.h);
+    return { x, y, w: rect.w, h: rect.h };
+  }
+  const side = Math.min(min, full.w, full.h);
+  const [hx, hy] = HANDLE_DIR[handle];
+  let x1 = rect.x;
+  let y1 = rect.y;
+  let x2 = rect.x + rect.w;
+  let y2 = rect.y + rect.h;
+  if (hx < 0) x1 = Math.min(Math.max(x1 + delta.x, full.x), x2 - side);
+  if (hx > 0) x2 = Math.max(Math.min(x2 + delta.x, right), x1 + side);
+  if (hy < 0) y1 = Math.min(Math.max(y1 + delta.y, full.y), y2 - side);
+  if (hy > 0) y2 = Math.max(Math.min(y2 + delta.y, bottom), y1 + side);
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+}
+
+/** What a crop window makes of a picture: its new box (the window) and the part shown (null: the whole picture). */
+export function cropFrom(rect: Box, full: Box): { box: Box; crop: ImageCrop | null } {
+  const clamp = (v: number) => Math.min(1, Math.max(0, v));
+  const x = clamp((rect.x - full.x) / full.w);
+  const y = clamp((rect.y - full.y) / full.h);
+  const w = Math.min(clamp(rect.w / full.w), 1 - x);
+  const h = Math.min(clamp(rect.h / full.h), 1 - y);
+  const whole = x < 1e-3 && y < 1e-3 && w > 1 - 2e-3 && h > 1 - 2e-3;
+  return { box: { x: rect.x, y: rect.y, w: rect.w, h: rect.h }, crop: whole ? null : { x, y, w, h } };
+}
+
 /** An arrow's line now: its ends' boxes from border to border (bound ends follow their shapes), or null. */
 export function arrowLine(
   arrow: ShapeView,
@@ -202,9 +352,14 @@ export function hitShape(
     if (!s) continue;
     if (s.type === "arrow") {
       const line = arrowLine(s, byId);
-      if (line && distanceToSegment(p, { x: line.x1, y: line.y1 }, { x: line.x2, y: line.y2 }) <= slop) {
-        return { id: s.id, part: "body" };
-      }
+      const reach = slop + (s.strokeWidth ?? 2) / 2;
+      if (line && distanceToPolyline(p, routePoints(line, s.route)) <= reach) return { id: s.id, part: "body" };
+      continue;
+    }
+    if (s.type === "draw") {
+      // A pen stroke is taken near its line, not anywhere in its box (a circle drawn round a picture leaves it free).
+      const reach = slop + (s.strokeWidth ?? (s.tool === "marker" ? 16 : 4)) / 2;
+      if (distanceToPolyline(unturned(s, p), strokePoints(s)) <= reach) return { id: s.id, part: "body" };
       continue;
     }
     if (s.type === "frame") {

@@ -1,4 +1,4 @@
-import type { ArtifactLiveContent, LivePresent, PresenceSummary } from "@agenteschat/client";
+import type { ArtifactContent, ArtifactLiveContent, LivePresent, PresenceSummary } from "@agenteschat/client";
 import { useApi, useLivePresence } from "@agenteschat/client";
 import { joinNames } from "@agenteschat/client/lib/format";
 import { colName } from "@agenteschat/live";
@@ -17,14 +17,16 @@ import { type CSSProperties, createContext, type ReactNode, useContext, useEffec
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
 import { CanvasMini } from "./canvas";
+import { DocCover } from "./document/DocCover";
 import { PeerFace, usePeerLooks } from "./peers";
 import { SlideThumb } from "./slides";
 import "./covers.css";
 
 /**
  * Live files drawn small (ADR 0194 §7, §9), from the preview the server keeps with each file: a spreadsheet's first
- * cells on its grid, a presentation's first slide, a canvas's map; and the faces of who is in the file now. The Drive's
- * cards and rows (`DrivePreview`) and the cards in messages (`ArtifactCard`) draw these.
+ * cells on its grid, a presentation's first slide, a canvas's map, a document's first page (ADR 0198); and the faces
+ * of who is in the file now. The Drive's cards and rows (`DrivePreview`) and the cards in messages (`ArtifactCard`)
+ * draw these.
  */
 
 export type LiveCoverSize = "sm" | "md" | "lg" | "tile";
@@ -86,6 +88,9 @@ export function HereFaces({ fileId, className }: { fileId: string; className?: s
   );
 }
 
+/** What a live file's cover draws from: a kind's preview, or a document's (ADR 0198). */
+export type LiveCoverContent = ArtifactLiveContent | Extract<ArtifactContent, { kind: "document" }>;
+
 /** A live file's cover: what it holds, drawn small, and who is in it now. */
 export function LiveCover({
   content,
@@ -93,14 +98,16 @@ export function LiveCover({
   size = "md",
   here = true,
 }: {
-  content: ArtifactLiveContent;
+  content: LiveCoverContent;
   fileId: string;
   size?: LiveCoverSize;
   /** The faces of who is in it (off where the row shows them itself, or the box is too small). */
   here?: boolean;
 }) {
   const body =
-    content.kind === "spreadsheet" ? (
+    content.kind === "document" ? (
+      <DocCover preview={content.preview} markdown={content.markdown} fileId={fileId} tiny={size === "sm"} />
+    ) : content.kind === "spreadsheet" ? (
       <SheetCover preview={content.preview} tiny={size === "sm"} />
     ) : content.kind === "slides" ? (
       <SlidesCover preview={content.preview} fileId={fileId} />

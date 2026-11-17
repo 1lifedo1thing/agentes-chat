@@ -16,12 +16,14 @@ import {
   LIVE_CLOSE,
   LIVE_PING,
   LIVE_PONG,
+  LIVE_PONG_UNSAVED,
   LiveProtocolError,
   liveShouldReconnect,
   MSG_AWARENESS,
   MSG_QUERY_AWARENESS,
   MSG_SYNC,
   parseControl,
+  pongUnsaved,
   queryAwarenessMessage,
   type ReadContext,
   readAwarenessUpdate,
@@ -307,6 +309,11 @@ describe("control messages", () => {
     expect(isLivePong(LIVE_PONG)).toBe(true);
     expect(isLivePing(LIVE_PONG)).toBe(false);
     expect(isLivePing("garbage")).toBe(false);
+    // A pong may say changes before its ping still wait to be stored; it is a pong all the same.
+    expect(isLivePong(LIVE_PONG_UNSAVED)).toBe(true);
+    expect(pongUnsaved(LIVE_PONG_UNSAVED)).toBe(true);
+    expect(pongUnsaved(LIVE_PONG)).toBe(false);
+    expect(pongUnsaved("garbage")).toBe(false);
     expect(liveShouldReconnect(LIVE_CLOSE.behind)).toBe(true);
     expect(liveShouldReconnect(LIVE_CLOSE.goingAway)).toBe(true);
     expect(liveShouldReconnect(LIVE_CLOSE.forbidden)).toBe(false);

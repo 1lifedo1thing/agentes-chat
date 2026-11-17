@@ -1,4 +1,4 @@
-import { type ArtifactDetail, isLiveFileKind } from "@agenteschat/client";
+import type { ArtifactDetail } from "@agenteschat/client";
 import { formatBytes, pictureRatio } from "@agenteschat/client/lib/files";
 import { keepWhole } from "@agenteschat/client/lib/format";
 import { Image } from "expo-image";
@@ -11,6 +11,7 @@ import { LiveBlockCard } from "../blocks/LiveBlock";
 import { PollCard } from "../blocks/PollCard";
 import { useKeptWidth } from "../chat/look";
 import { LiveFileCard } from "../live-files/LiveFileCard";
+import { opensLive } from "../live-files/routes";
 import { useColors, useOrgId } from "../shared/hooks";
 import { useSurface } from "../shared/parts";
 import { AttachmentTile } from "./AttachmentTile";
@@ -81,7 +82,7 @@ export function MessageFiles({ files, align = "start" }: { files: MessageFile[];
       blocks.push(detail);
       return;
     }
-    if (detail && isLiveFileKind(detail.kind)) {
+    if (detail && opensLive(detail.kind)) {
       liveFiles.push(detail);
       return;
     }

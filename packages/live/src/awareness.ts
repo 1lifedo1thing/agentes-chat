@@ -38,8 +38,8 @@ export interface PeerState {
   user: PeerUser;
   mode: "viewing" | "editing";
   at?: { sheet?: string; slide?: string };
-  /** Selected cells, slide element ids, canvas shape ids. */
-  sel?: { sheet?: SheetSel; slide?: string[]; canvas?: string[] };
+  /** Selected cells, slide element ids, canvas shape ids, a document's block ids (an agent at work, ADR 0198). */
+  sel?: { sheet?: SheetSel; slide?: string[]; canvas?: string[]; document?: string[] };
   /** The pointer, in canvas world units or slide units. */
   cursor?: { x: number; y: number; space: "canvas" | "slide" };
   /** What they see (to follow them). */
@@ -215,11 +215,13 @@ export function sanitizePeerState(input: unknown, forced: { user: PeerUser; view
     const sheet = sheetSelOf(sel.sheet);
     const slide = idsOf(sel.slide);
     const canvas = idsOf(sel.canvas);
-    if (sheet || slide || canvas) {
+    const document = idsOf(sel.document);
+    if (sheet || slide || canvas || document) {
       state.sel = {
         ...(sheet ? { sheet } : {}),
         ...(slide ? { slide } : {}),
         ...(canvas ? { canvas } : {}),
+        ...(document ? { document } : {}),
       };
     }
   }
@@ -266,6 +268,7 @@ function fitBytes(state: PeerState): PeerState {
     (s) => {
       if (s.sel?.slide && s.sel.slide.length > 20) s.sel.slide = s.sel.slide.slice(0, 20);
       if (s.sel?.canvas && s.sel.canvas.length > 20) s.sel.canvas = s.sel.canvas.slice(0, 20);
+      if (s.sel?.document && s.sel.document.length > 20) s.sel.document = s.sel.document.slice(0, 20);
     },
     (s) => {
       delete s.cursorPm;

@@ -13,8 +13,8 @@ import { addMember, type Fixture, setup } from "./fixtures";
 import { makeLiveFile, personActor } from "./live-fixtures";
 
 /**
- * Ask an agent from inside a live file (ADR 0194 §6): the person's own message, where the agent can work on the file
- * while everyone in it watches, carrying the file and what was selected.
+ * Ask an agent from inside a live file (ADR 0194 §6, ADR 0197): the person's own message, in the file's own
+ * conversation when the agent may work on the file there, carrying what was selected; else their DM with the agent.
  */
 
 let f: Fixture;
@@ -41,14 +41,16 @@ const runsFor = (messageId: string) =>
   f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.triggerMessageId, messageId));
 
 describe("where the message goes", () => {
-  test("the file's own channel, naming the agent, with the file and the selection; the agent's run starts", async () => {
+  test("the file's own conversation, naming the agent, with the selection; the agent's run starts there", async () => {
     const sheet = await makeLiveFile(f, "spreadsheet", { title: "Budget", channelId: f.general.id });
     const sent = await askAgentAbout(deps, f.owner.id, f.org.id, sheet.id, {
       agentId: f.agent.id,
       text: "Sum this column",
       selection: { label: "Sheet 1!B2:B9", sheet: "Sheet 1", range: "B2:B9" },
     });
-    expect(sent).toMatchObject({ channelId: f.general.id, threadId: null });
+    const channel = await channelOf(sent.channelId);
+    expect(channel.kind).toBe("file");
+    expect(sent.threadId).not.toBeNull();
     const message = await messageOf(sent.id);
     expect(message.body).toBe("@dev Sum this column");
     expect(message.meta).toMatchObject({
@@ -58,13 +60,14 @@ describe("where the message goes", () => {
         title: "Budget",
         selection: { label: "Sheet 1!B2:B9", sheet: "Sheet 1", range: "B2:B9" },
       },
-      artifacts: [{ id: sheet.id, title: "Budget" }],
     });
+    // The file is right there: no card of it in its own conversation.
+    expect(message.meta.artifacts).toBeUndefined();
     const runs = await runsFor(sent.id);
     expect(runs.map((r) => r.agentId)).toEqual([f.agent.id]);
   });
 
-  test("a file in the shared Drive: the person's DM with the agent, no mention needed", async () => {
+  test("a file in the shared Drive: its conversation too, which the agent joins", async () => {
     const canvas = await makeLiveFile(f, "canvas", { title: "Moodboard" });
     const sent = await askAgentAbout(deps, f.owner.id, f.org.id, canvas.id, {
       agentId: f.agent.id,
@@ -72,9 +75,9 @@ describe("where the message goes", () => {
       selection: { label: "2 images", shapes: ["abc123", "def456"] },
     });
     const channel = await channelOf(sent.channelId);
-    expect(channel.kind).toBe("dm");
+    expect(channel.kind).toBe("file");
     const message = await messageOf(sent.id);
-    expect(message.body).toBe("Make two more like these");
+    expect(message.body).toBe("@dev Make two more like these");
     expect(message.meta).toMatchObject({
       liveRef: {
         artifactId: canvas.id,
@@ -85,7 +88,7 @@ describe("where the message goes", () => {
     expect((await runsFor(sent.id)).map((r) => r.agentId)).toEqual([f.agent.id]);
   });
 
-  test("a channel the agent isn't in: the DM too, never a mention that can't reach it", async () => {
+  test("a channel the agent isn't in: its DM, carrying the file, never a mention that can't reach it", async () => {
     const room = await createChannel(f.db, f.owner.id, f.org.id, { name: "planning", visibility: "private" });
     const deck = await makeLiveFile(f, "slides", { title: "Pitch", channelId: room.id });
     const sent = await askAgentAbout(deps, f.owner.id, f.org.id, deck.id, {
@@ -95,6 +98,8 @@ describe("where the message goes", () => {
     });
     expect(sent.channelId).not.toBe(room.id);
     expect((await channelOf(sent.channelId)).kind).toBe("dm");
+    const message = await messageOf(sent.id);
+    expect(message.meta).toMatchObject({ liveRef: { artifactId: deck.id }, artifacts: [{ id: deck.id }] });
   });
 });
 
@@ -109,7 +114,7 @@ describe("refusals", () => {
 
     const notes = await createArtifact(f.artifactDeps, personActor(f.owner.id), f.org.id, {
       title: "Notes",
-      content: { kind: "document", markdown: "Plain notes" },
+      content: { kind: "table", columns: ["what"], rows: [["Plain notes"]] },
     });
     await expect(
       askAgentAbout(deps, f.owner.id, f.org.id, notes.id, { agentId: f.agent.id, text: "Read it" }),

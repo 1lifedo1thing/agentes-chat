@@ -255,6 +255,23 @@ export const ICONS = {
     r(8.5, 2.5, 7, 4, 1.2),
     p("M15.5 4.5H17a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2h1.5"),
   ],
+  // A canvas's dock (ADR 0194 §2): select (the pointer), an arrow, the shapes' menu (rectangle, ellipse, diamond,
+  // triangle, star, line), a comment pinned on a spot, cropping a picture; a document's heading.
+  pointer: [p("M6.5 4.5v13.8l3.7-3.4 2.5 5.4 2.3-1.05-2.45-5.3h5.15Z")],
+  arrowTool: [p("M5.5 18.5 18 6"), p("M10.5 6H18v7.5")],
+  rect: [r(4.2, 6, 15.6, 12, 1.8)],
+  ellipse: [p("M12 6.5c4.4 0 8 2.46 8 5.5s-3.6 5.5-8 5.5-8-2.46-8-5.5 3.6-5.5 8-5.5Z")],
+  diamond: [p("M12 3.8 20.2 12 12 20.2 3.8 12Z")],
+  triangle: [p("M12 4.6 20.4 19H3.6Z")],
+  star: [p("m12 3.8 2.45 5.1 5.55.75-4.05 3.85 1 5.5L12 16.3 7.05 19l1-5.5L4 9.65l5.55-.75Z")],
+  line: [p("M5 19 19 5")],
+  comment: [p("M12 4.2a7.2 7.2 0 0 1 0 14.4H5.4V12A7.8 7.8 0 0 1 12 4.2Z")],
+  crop: [p("M7.2 3.3v13.5h13.5M3.3 7.2h13.5v13.5")],
+  // The pen's highlighter, and an arrow's routes: a curve, right angles.
+  marker: [p("M14.6 4.2 19.8 9.4 12 17.2H6.8V12Z"), p("M4.2 20.4h7.2")],
+  curve: [p("M5 18.5C6.5 10 11 6 19 5.5")],
+  elbow: [p("M5 18.5h7v-13h7")],
+  heading: [p("M6 5.4v13.2M15.6 5.4v13.2M6 12h9.6")],
 } satisfies Record<string, IconShape[]>;
 
 export type IconName = keyof typeof ICONS;

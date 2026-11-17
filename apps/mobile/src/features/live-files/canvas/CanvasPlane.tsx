@@ -1,6 +1,15 @@
 import { type LiveRoom, useLivePeers } from "@agenteschat/client";
 import { LOCAL } from "@agenteschat/live";
-import { moveShapes, resizeShape, rotatedBounds, type ShapeView, shapeBounds, union } from "@agenteschat/live/canvas";
+import {
+  arrowHeadPoints,
+  moveShapes,
+  resizeShape,
+  rotatedBounds,
+  routeArrow,
+  type ShapeView,
+  shapeBounds,
+  union,
+} from "@agenteschat/live/canvas";
 import { Canvas, DashPathEffect, Fill, Group, Path, RoundedRect, Shader, Skia } from "@shopify/react-native-skia";
 import {
   type Ref,
@@ -33,10 +42,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { motion, useReducedMotion, useTheme } from "@/ui";
+import { motion, Text, useReducedMotion, useTheme } from "@/ui";
+import { Face } from "../../shared/Face";
+import { useDirectory } from "../../shared/hooks";
 import { LivePointer } from "../shared/LivePointer";
 import { usePeerLook } from "../shared/peers";
 import { useFilePictures } from "../slides/pictures";
+import type { TalkPin } from "../talk/logic";
 import {
   arrowLineW,
   boxOnScreen,
@@ -59,6 +71,7 @@ import {
   panBy,
   peerViewOf,
   stretchBox,
+  toScreen,
   toWorld,
   viewBox,
   viewCenter,
@@ -66,7 +79,19 @@ import {
   zoomAt,
 } from "./camera";
 import { colorFloats, DOTS_SHADER } from "./dots";
-import { arrowDraws, keepsRatio, movingIds, peerPicks, peerPointers, shapeAt, shapesIn, stretchable } from "./logic";
+import {
+  type ArrowDraw,
+  arrowDraws,
+  isInk,
+  keepsRatio,
+  movingIds,
+  peerPicks,
+  peerPointers,
+  STROKE_MAX,
+  shapeAt,
+  shapesIn,
+  stretchable,
+} from "./logic";
 import { ArrowLabel, FrameName, type Motion, ShapeItem } from "./ShapeItems";
 
 /**
@@ -80,7 +105,15 @@ import { ArrowLabel, FrameName, type Motion, ShapeItem } from "./ShapeItems";
  * shape moves it (a frame with what is in it), its round corner stretches it (a picture keeping its shape); a long
  * press asks for its menu (or the plane's). Moving and stretching follow the finger on the UI thread and are written to
  * the file once, when it lifts. Everyone else's pointer glides over the plane with their name.
+ *
+ * The dock's tools (ADR 0194 §2) change what one finger does: the pen draws (the stroke follows the finger on the UI
+ * thread and is written once it lifts), the arrow drags from one place to another, a comment pins where the finger
+ * taps (ADR 0197); two fingers still move and zoom. The conversation's comments show as pins (author's face and
+ * number), a tap on one opens its message.
  */
+/** What one finger does on the plane. */
+export type PlaneTool = "select" | "pen" | "arrow" | "comment";
+
 export interface PlaneHandle {
   /** The world point in the middle of what the person sees. */
   center(): Pt;
@@ -92,6 +125,10 @@ export interface PlaneHandle {
   fitAll(): void;
   /** 100%, around the middle. */
   actualSize(): void;
+  /** The zoom now (screen points per world unit). */
+  zoom(): number;
+  /** Where a world box is on screen now. */
+  screenBox(box: WBox): WBox;
 }
 
 export interface CanvasPlaneProps {
@@ -112,6 +149,20 @@ export interface CanvasPlaneProps {
   follow: PeerView | null;
   /** The person moved the view themselves (following someone stops). */
   onMoved: () => void;
+  /** The dock's tool (default: picking). */
+  tool?: PlaneTool;
+  /** A pen stroke drawn (world x, y pairs), once the finger lifts. */
+  onDraw?: (points: number[]) => void;
+  /** How the pen draws while the finger is down: its color, its width (world units), the highlighter. */
+  pen?: { color: string; width: number; marker: boolean };
+  /** An arrow dragged from one place to another (world points), once the finger lifts. */
+  onArrow?: (from: Pt, to: Pt) => void;
+  /** A tap with the comment tool: where, in the world. */
+  onComment?: (at: Pt) => void;
+  /** The conversation's comments pinned on the canvas (ADR 0197 §3). */
+  pins?: readonly TalkPin[];
+  /** A tap on a pin. */
+  onPin?: (pin: TalkPin) => void;
   ref?: Ref<PlaneHandle>;
 }
 
@@ -147,10 +198,17 @@ export function CanvasPlane({
   onHold,
   follow,
   onMoved,
+  tool = "select",
+  onDraw,
+  pen = PEN_PREVIEW,
+  onArrow,
+  onComment,
+  pins = [],
+  onPin,
   ref,
 }: CanvasPlaneProps) {
   const { t } = useTranslation();
-  const { colors: c } = useTheme();
+  const { colors: c, scheme } = useTheme();
   const reduced = useReducedMotion();
   const doc = room.doc;
   const picture = useFilePictures(room.orgId, fileId);
@@ -259,6 +317,8 @@ export function CanvasPlane({
         const f = frame.value;
         if (f.width > 0) goTo(centerOn(viewCenter(cam(), f), f, 1));
       },
+      zoom: () => cs.value,
+      screenBox: (box) => boxOnScreen(box, cam()),
     }),
     [cam, frame, cs, goTo, shapes, byId],
   );
@@ -399,10 +459,21 @@ export function CanvasPlane({
   const frames = visible.filter((s) => s.type === "frame");
   const items = visible.filter((s) => s.type !== "frame" && s.type !== "arrow");
   const arrows = useMemo(() => arrowDraws(visible, byId), [visible, byId]);
-  const arrowsSv = useSharedValue(arrows);
+  // An arrow a finger moves (itself or a shape it binds) follows it on the UI thread, straight, until it lands; the
+  // others are drawn on their route (a curve, right angles) from the canvas's own geometry, at the zoom laid out.
+  const movingArrows = useMemo(() => arrows.filter((a) => liftsArrow(a, lifted)), [arrows, lifted]);
+  const routed = useMemo(
+    () =>
+      routedArrows(
+        arrows.filter((a) => !liftsArrow(a, lifted)),
+        ARROW_HEAD / k,
+      ),
+    [arrows, lifted, k],
+  );
+  const arrowsSv = useSharedValue(movingArrows);
   useEffect(() => {
-    arrowsSv.value = arrows;
-  }, [arrows, arrowsSv]);
+    arrowsSv.value = movingArrows;
+  }, [movingArrows, arrowsSv]);
   const labels = visible.flatMap((s) => {
     if (s.type !== "arrow" || !s.label) return [];
     const a = arrows.find((d) => d.id === s.id);
@@ -411,11 +482,61 @@ export function CanvasPlane({
     return [{ id: s.id, label: s.label, at: { x: (l.x1 + l.x2) / 2, y: (l.y1 + l.y2) / 2 } }];
   });
 
+  // ── Drawing: the pen's stroke and the arrow being dragged, on the UI thread until the finger lifts ──────────────
+  const toolSv = useSharedValue<PlaneTool>(tool);
+  useEffect(() => {
+    toolSv.value = readOnly && (tool === "pen" || tool === "arrow") ? "select" : tool;
+  }, [tool, readOnly, toolSv]);
+  const ink = useSharedValue<number[]>([]);
+  const inking = useSharedValue(false);
+  const arrowFrom = useSharedValue<Pt>({ x: 0, y: 0 });
+  const arrowTo = useSharedValue<Pt>({ x: 0, y: 0 });
+  const drawn = useRef(false);
+  const clearInk = useCallback(() => {
+    inking.value = false;
+    ink.value = [];
+  }, [inking, ink]);
+  // The stroke written: drawn as a shape now, the finger's copy goes (a moment later when nothing came back).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: after each new drawing of the shapes.
+  useLayoutEffect(() => {
+    if (!drawn.current) return;
+    drawn.current = false;
+    clearInk();
+  }, [shapes]);
+  const endDraw = useCallback(
+    (points: number[], arrow: boolean) => {
+      drawn.current = true;
+      setTimeout(() => {
+        if (!drawn.current) return;
+        drawn.current = false;
+        clearInk();
+      }, 300);
+      if (arrow) {
+        const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = points;
+        // A drag too short to mean an arrow (on screen) draws none.
+        if (Math.hypot(x2 - x1, y2 - y1) * cs.value < 12) return clearInk();
+        onArrow?.({ x: x1, y: y1 }, { x: x2, y: y2 });
+      } else if (points.length >= 2) onDraw?.(points);
+    },
+    [onArrow, onDraw, cs, clearInk],
+  );
+
   // ── Gestures ───────────────────────────────────────────────────────────────────────────────────────────────────
   const moved = useCallback(() => onMoved(), [onMoved]);
   const tapped = useCallback(
     (x: number, y: number) => {
       const at = toWorld({ x, y }, cam());
+      // A pin under the finger opens its message, whatever the tool.
+      const pin = pinAt(pins, { x, y }, cam());
+      if (pin) {
+        onPin?.(pin);
+        return;
+      }
+      if (tool === "comment") {
+        onComment?.(at);
+        return;
+      }
+      if (tool === "pen" || tool === "arrow") return;
       const id = shapeAt(visibleRef.current, byId, at, cs.value);
       const shape = id ? byId.get(id) : undefined;
       room.setLocal({ cursor: { x: Math.round(at.x), y: Math.round(at.y), space: "canvas" } });
@@ -433,17 +554,18 @@ export function CanvasPlane({
       }
       onSelect([shape.id]);
     },
-    [cam, byId, cs, room, onSelect, onRetry, onOpen, selected, readOnly],
+    [cam, byId, cs, room, onSelect, onRetry, onOpen, selected, readOnly, pins, onPin, tool, onComment],
   );
   const held = useCallback(
     (x: number, y: number) => {
+      if (tool !== "select") return;
       const at = toWorld({ x, y }, cam());
       onHold(shapeAt(visibleRef.current, byId, at, cs.value), at);
     },
-    [cam, byId, cs, onHold],
+    [cam, byId, cs, onHold, tool],
   );
 
-  const mode = useSharedValue<"pan" | "move" | "stretch">("pan");
+  const mode = useSharedValue<"pan" | "move" | "stretch" | "draw" | "arrow">("pan");
   const from = useSharedValue<WBox>(NO_BOX);
   const pan = usePanGesture({
     maxPointers: 2,
@@ -454,7 +576,17 @@ export function CanvasPlane({
       cancelAnimation(cy);
       const now = { x: cx.value, y: cy.value, s: cs.value };
       const p = { x: e.x, y: e.y };
-      if (e.numberOfPointers <= 1 && canStretch.value && onHandle(p, selUnion.value, now)) {
+      const drawing = toolSv.value === "pen" || toolSv.value === "arrow";
+      if (drawing && e.numberOfPointers <= 1) {
+        // One finger draws with the pen or drags an arrow; two still move the canvas.
+        const w = toWorld(p, now);
+        mode.value = toolSv.value === "pen" ? "draw" : "arrow";
+        inking.value = false;
+        ink.value = [w.x, w.y];
+        arrowFrom.value = w;
+        arrowTo.value = w;
+      } else if (drawing) mode.value = "pan";
+      else if (e.numberOfPointers <= 1 && canStretch.value && onHandle(p, selUnion.value, now)) {
         mode.value = "stretch";
         from.value = oneBox.value;
         stretch.value = oneBox.value;
@@ -463,13 +595,36 @@ export function CanvasPlane({
     },
     onActivate: () => {
       "worklet";
-      if (mode.value === "move") scheduleOnRN(startMove);
+      if (mode.value === "draw" || mode.value === "arrow") inking.value = true;
+      else if (mode.value === "move") scheduleOnRN(startMove);
       else if (mode.value === "stretch") scheduleOnRN(startStretch);
       else scheduleOnRN(moved);
     },
     onUpdate: (e) => {
       "worklet";
       const s = cs.value;
+      if ((mode.value === "draw" || mode.value === "arrow") && e.numberOfPointers > 1) {
+        // A second finger: it was a move of the canvas, never a line.
+        mode.value = "pan";
+        inking.value = false;
+        ink.value = [];
+      }
+      if (mode.value === "draw") {
+        const w = toWorld({ x: e.x, y: e.y }, { x: cx.value, y: cy.value, s });
+        ink.modify((points) => {
+          "worklet";
+          const n = points.length;
+          // A point a hair from the last adds nothing (and the stroke has room for so many).
+          if (n < STROKE_MAX - 2 && Math.hypot(w.x - (points[n - 2] ?? 0), w.y - (points[n - 1] ?? 0)) * s >= 1.5)
+            points.push(w.x, w.y);
+          return points;
+        });
+        return;
+      }
+      if (mode.value === "arrow") {
+        arrowTo.value = toWorld({ x: e.x, y: e.y }, { x: cx.value, y: cy.value, s });
+        return;
+      }
       if (mode.value === "move") {
         drag.value = { x: drag.value.x + e.changeX / s, y: drag.value.y + e.changeY / s };
         return;
@@ -484,6 +639,16 @@ export function CanvasPlane({
     },
     onDeactivate: (e) => {
       "worklet";
+      if (mode.value === "draw") {
+        scheduleOnRN(endDraw, ink.value.slice(), false);
+        return;
+      }
+      if (mode.value === "arrow") {
+        const a = arrowFrom.value;
+        const b = arrowTo.value;
+        scheduleOnRN(endDraw, [a.x, a.y, b.x, b.y], true);
+        return;
+      }
       if (mode.value === "move") {
         scheduleOnRN(endMove, drag.value.x, drag.value.y);
         return;
@@ -578,7 +743,7 @@ export function CanvasPlane({
     const d = drag.value;
     const sid = stretchId.value;
     const st = stretch.value;
-    const head = 12 / cs.value;
+    const head = ARROW_HEAD / cs.value;
     for (const a of arrowsSv.value) {
       const endOf = (e: (typeof a)["from"]) => {
         if (e.shape && e.shape === sid) return { x: st.x, y: st.y, w: st.w, h: st.h, box: e.box };
@@ -591,20 +756,74 @@ export function CanvasPlane({
       const ux = (l.x2 - l.x1) / len;
       const uy = (l.y2 - l.y1) / len;
       const path = a.dashed ? dashed : solid;
-      path.moveTo(l.x1, l.y1);
-      path.lineTo(l.x2 - ux * head * 0.8, l.y2 - uy * head * 0.8);
-      const bx = l.x2 - ux * head;
-      const by = l.y2 - uy * head;
-      heads.moveTo(l.x2, l.y2);
-      heads.lineTo(bx - uy * head * 0.55, by + ux * head * 0.55);
-      heads.lineTo(bx + uy * head * 0.55, by - ux * head * 0.55);
-      heads.close();
+      const s0 = a.startHead ? head * 0.8 : 0;
+      const e0 = a.endHead ? head * 0.8 : 0;
+      path.moveTo(l.x1 + ux * s0, l.y1 + uy * s0);
+      path.lineTo(l.x2 - ux * e0, l.y2 - uy * e0);
+      if (a.endHead) {
+        const bx = l.x2 - ux * head;
+        const by = l.y2 - uy * head;
+        heads.moveTo(l.x2, l.y2);
+        heads.lineTo(bx - uy * head * 0.55, by + ux * head * 0.55);
+        heads.lineTo(bx + uy * head * 0.55, by - ux * head * 0.55);
+        heads.close();
+      }
+      if (a.startHead) {
+        const bx = l.x1 + ux * head;
+        const by = l.y1 + uy * head;
+        heads.moveTo(l.x1, l.y1);
+        heads.lineTo(bx - uy * head * 0.55, by + ux * head * 0.55);
+        heads.lineTo(bx + uy * head * 0.55, by - ux * head * 0.55);
+        heads.close();
+      }
     }
     return { solid: solid.build(), dashed: dashed.build(), heads: heads.build() };
   });
   const solidArrows = useDerivedValue(() => arrowPaths.value.solid);
   const dashedArrows = useDerivedValue(() => arrowPaths.value.dashed);
   const arrowHeads = useDerivedValue(() => arrowPaths.value.heads);
+  // The pen's stroke as the finger draws it, and the arrow being dragged (with its head).
+  const inkPath = useDerivedValue(() => {
+    const p = Skia.PathBuilder.Make();
+    const points = ink.value;
+    if (!inking.value || points.length < 2) return p.build();
+    p.moveTo(points[0] ?? 0, points[1] ?? 0);
+    for (let i = 2; i + 1 < points.length; i += 2) p.lineTo(points[i] ?? 0, points[i + 1] ?? 0);
+    if (points.length === 2) p.lineTo((points[0] ?? 0) + 0.01, points[1] ?? 0);
+    return p.build();
+  });
+  const draggedArrow = useDerivedValue(() => {
+    const p = Skia.PathBuilder.Make();
+    if (!inking.value || mode.value !== "arrow") return p.build();
+    const a = arrowFrom.value;
+    const b = arrowTo.value;
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len < 1e-6) return p.build();
+    const head = ARROW_HEAD / cs.value;
+    const ux = (b.x - a.x) / len;
+    const uy = (b.y - a.y) / len;
+    p.moveTo(a.x, a.y);
+    p.lineTo(b.x - ux * head * 0.8, b.y - uy * head * 0.8);
+    return p.build();
+  });
+  const draggedHead = useDerivedValue(() => {
+    const p = Skia.PathBuilder.Make();
+    if (!inking.value || mode.value !== "arrow") return p.build();
+    const a = arrowFrom.value;
+    const b = arrowTo.value;
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len < 1e-6) return p.build();
+    const head = ARROW_HEAD / cs.value;
+    const ux = (b.x - a.x) / len;
+    const uy = (b.y - a.y) / len;
+    const bx = b.x - ux * head;
+    const by = b.y - uy * head;
+    p.moveTo(b.x, b.y);
+    p.lineTo(bx - uy * head * 0.55, by + ux * head * 0.55);
+    p.lineTo(bx + uy * head * 0.55, by - ux * head * 0.55);
+    p.close();
+    return p.build();
+  });
   const selOutline = useDerivedValue(() => {
     const p = Skia.PathBuilder.Make();
     const u = selUnion.value;
@@ -694,6 +913,24 @@ export function CanvasPlane({
         {size ? (
           <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
             <Group transform={world}>
+              {routed.paths.map((a) =>
+                a.dashed ? (
+                  <Path key={a.id} path={a.path} style="stroke" strokeWidth={line2} color={c.ink}>
+                    <DashPathEffect intervals={DASHES} />
+                  </Path>
+                ) : (
+                  <Path
+                    key={a.id}
+                    path={a.path}
+                    style="stroke"
+                    strokeWidth={line2}
+                    strokeCap="round"
+                    strokeJoin="round"
+                    color={c.ink}
+                  />
+                ),
+              )}
+              <Path path={routed.heads} color={c.ink} />
               <Path path={solidArrows} style="stroke" strokeWidth={line2} strokeCap="round" color={c.ink} />
               <Path path={dashedArrows} style="stroke" strokeWidth={line2} color={c.ink}>
                 <DashPathEffect intervals={DASHES} />
@@ -723,9 +960,24 @@ export function CanvasPlane({
               {selected.length > 0 ? (
                 <Path path={selOutline} style="stroke" strokeWidth={line15} color={c.ink} />
               ) : null}
+              <Path
+                path={inkPath}
+                style="stroke"
+                strokeWidth={pen.width}
+                strokeCap="round"
+                strokeJoin="round"
+                color={scheme === "dark" && isInk(pen.color) ? c.ink : pen.color}
+                opacity={pen.marker ? 0.4 : 1}
+              />
+              <Path path={draggedArrow} style="stroke" strokeWidth={line2} strokeCap="round" color={c.ink} />
+              <Path path={draggedHead} color={c.ink} />
             </Group>
           </Canvas>
         ) : null}
+
+        {pins.map((pin) => (
+          <PinMark key={pin.messageId} pin={pin} cx={cx} cy={cy} cs={cs} />
+        ))}
 
         {readOnly ? null : (
           <Animated.View
@@ -754,6 +1006,92 @@ export function CanvasPlane({
 
 /** The selection's corner handle, in points. */
 const HANDLE = 12;
+/** The pen as it draws until the screen says otherwise: ink, 4 world units. */
+const PEN_PREVIEW = { color: "#151514", width: 4, marker: false };
+/** An arrow's head on screen, in points. */
+const ARROW_HEAD = 12;
+/** A comment pin on screen: its height and the most width a tap reaches it by (face, number, padding). */
+const PIN_H = 24;
+const PIN_W = 48;
+
+/** Whether a finger moves this arrow now: itself, or a shape at one of its ends. */
+const liftsArrow = (a: ArrowDraw, lifted: ReadonlySet<string>) =>
+  lifted.has(a.id) ||
+  (a.from.shape !== null && lifted.has(a.from.shape)) ||
+  (a.to.shape !== null && lifted.has(a.to.shape));
+
+/** The resting arrows on their routes (the canvas's `routeArrow`), with their heads `head` world units long. */
+function routedArrows(list: readonly ArrowDraw[], head: number) {
+  const heads = Skia.PathBuilder.Make();
+  const paths: { id: string; dashed: boolean; path: NonNullable<ReturnType<typeof Skia.Path.MakeFromSVGString>> }[] =
+    [];
+  const addHead = ([tip, a, b]: [Pt, Pt, Pt]) => {
+    heads.moveTo(tip.x, tip.y);
+    heads.lineTo(a.x, a.y);
+    heads.lineTo(b.x, b.y);
+    heads.close();
+  };
+  for (const a of list) {
+    const line = arrowLineW(a.from, a.to);
+    if (Math.hypot(line.x2 - line.x1, line.y2 - line.y1) < 1e-6) continue;
+    const r = routeArrow(line, a.route, { start: a.startHead ? head * 0.8 : 0, end: a.endHead ? head * 0.8 : 0 });
+    const path = Skia.Path.MakeFromSVGString(r.d);
+    if (path) paths.push({ id: a.id, dashed: a.dashed, path });
+    if (a.endHead) addHead(arrowHeadPoints(r.end, r.endDir, head));
+    if (a.startHead) addHead(arrowHeadPoints(r.start, { x: -r.startDir.x, y: -r.startDir.y }, head));
+  }
+  return { paths, heads: heads.build() };
+}
+
+/** The pin under a finger at `p` (screen), the newest on top; null for none. */
+function pinAt(pins: readonly TalkPin[], p: Pt, cam: { x: number; y: number; s: number }): TalkPin | null {
+  for (let i = pins.length - 1; i >= 0; i--) {
+    const pin = pins[i];
+    if (!pin) continue;
+    const at = toScreen(pin.at, cam);
+    if (p.x >= at.x - 6 && p.x <= at.x + PIN_W + 6 && p.y >= at.y - PIN_H - 10 && p.y <= at.y + 10) return pin;
+  }
+  return null;
+}
+
+/**
+ * A comment pinned on the canvas (ADR 0197): a raised bubble with its author's face and its number, its cut corner on
+ * the spot it points at; it rides with the camera on the UI thread at the screen's own size.
+ */
+function PinMark({
+  pin,
+  cx,
+  cy,
+  cs,
+}: {
+  pin: TalkPin;
+  cx: SharedValue<number>;
+  cy: SharedValue<number>;
+  cs: SharedValue<number>;
+}) {
+  const { t } = useTranslation();
+  const { colors: c, shadows } = useTheme();
+  const name = useDirectory().nameOf(pin.author);
+  const at = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: (pin.at.x - cx.value) * cs.value },
+      { translateY: (pin.at.y - cy.value) * cs.value - PIN_H },
+    ],
+  }));
+  return (
+    <Animated.View
+      pointerEvents="none"
+      accessible
+      accessibilityLabel={t("mobile.live.canvas.pin", { n: pin.n, name })}
+      style={[styles.pin, { backgroundColor: c.raised, boxShadow: shadows.e2 }, at]}
+    >
+      <Face who={pin.author} size={18} live={false} />
+      <Text variant="caption" style={styles.pinN}>
+        {pin.n}
+      </Text>
+    </Animated.View>
+  );
+}
 /** A dashed arrow's dashes, in world units. */
 const DASHES = [10, 8];
 
@@ -814,4 +1152,19 @@ const styles = StyleSheet.create({
   fill: { flex: 1, overflow: "hidden" },
   world: { position: "absolute", left: 0, top: 0, width: 0, height: 0, transformOrigin: "left top" },
   handle: { position: "absolute", left: 0, top: 0, width: HANDLE, height: HANDLE, borderRadius: 3, borderWidth: 1.5 },
+  pin: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    height: PIN_H,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingLeft: 3,
+    paddingRight: 7,
+    borderRadius: PIN_H / 2,
+    // The corner on the spot it points at, cut as the app's cards are.
+    borderBottomLeftRadius: 3,
+  },
+  pinN: { fontWeight: "700" },
 });

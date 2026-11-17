@@ -120,7 +120,12 @@ export function ArtifactCard({ artifact: ref }: { artifact: ArtifactRef }) {
     </>
   );
   const content = live ? (head?.content ?? a.content) : a.content;
-  if (content.kind === "spreadsheet" || content.kind === "slides" || content.kind === "canvas")
+  if (
+    content.kind === "document" ||
+    content.kind === "spreadsheet" ||
+    content.kind === "slides" ||
+    content.kind === "canvas"
+  )
     return tile({
       icon: KIND_ICON[a.kind],
       meta: metaOf(t, content, a.shownVersion),
@@ -244,6 +249,8 @@ function metaOf(t: TFunction, content: ArtifactContent, version: number) {
     case "slides":
       return `${kind} · ${t("live.kinds.slideCount", { count: content.preview.count })}`;
     case "canvas":
+    // A document is a live file (ADR 0198): no versions to count on its card.
+    case "document":
       return kind;
     default:
       return `${kind} · ${t("artifacts.version", { version })}`;
@@ -353,17 +360,6 @@ function TileActions({
 function Cover({ content, title }: { content: ArtifactContent; title: string }) {
   const { t } = useTranslation();
   switch (content.kind) {
-    case "document":
-      // Its own headings, paragraphs and lists, smaller, fading at the foot; a first heading equal to the title isn't
-      // drawn again.
-      return (
-        <Markdown
-          source={documentStart(content.markdown, COVER_CHARS)}
-          title={title}
-          excerpt
-          className="artifact-tile__doc"
-        />
-      );
     case "table":
       return <CoverTable columns={content.columns} rows={content.rows} />;
     case "diff":

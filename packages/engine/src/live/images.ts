@@ -1,5 +1,4 @@
-import { and, desc, type Executor, eq, inArray, isNull, schema } from "@agenteschat/db";
-import { serverText } from "@agenteschat/i18n";
+import { and, type Executor, eq, inArray, schema } from "@agenteschat/db";
 import type { PeerUser } from "@agenteschat/live/awareness";
 import { addShape, deleteShapes, fillPending, placeBoxes, readShapes, updateShape } from "@agenteschat/live/canvas";
 import {
@@ -19,7 +18,7 @@ import {
   typicalImageCostNanoUsd,
 } from "@agenteschat/providers";
 import type * as Y from "yjs";
-import { type ArtifactActor, type ArtifactDeps, requireLiveFile } from "../artifacts";
+import { type ArtifactActor, type ArtifactDeps, createFileArtifact, requireLiveFile } from "../artifacts";
 import { accountablePerson, runAuthorityById, UUID } from "../authority";
 import { MODEL_IMAGE_BYTES } from "../avatars";
 import {
@@ -30,22 +29,25 @@ import {
   ValidationError,
 } from "../errors";
 import type { ModelGateway } from "../gateway";
+import { pictureSize } from "../image-size";
 import { enqueue, type JobHandlers } from "../outbox";
-import { lineLocale, personLocale } from "../requester";
 import { replyThreadOf } from "../runs";
 import { originFor } from "./access";
-import { getAsset, type LiveAsset, putAsset } from "./assets";
-import { createLiveFile } from "./create";
+import { getAsset, type LiveAsset, putAsset, readPictureFile } from "./assets";
 import type { LiveDocs } from "./docs";
 
 /**
- * Pictures made onto a canvas (ADR 0195). A request names the canvas it was made from, or none: then the
- * conversation's own canvas is used, made on first use ("Images", in that conversation, with its audience). The
- * request first places a frame titled with the prompt and one placeholder per picture, so everyone in the canvas sees
- * what is coming and who asked; the `live.image` job calls the Model Gateway, stores each picture as an asset of the
- * canvas and turns each placeholder into its picture (same id, same place), with its prompt, model, who asked and the
- * pictures it started from. A failure leaves the placeholders saying why (`ImageFailure`), with Try again
- * (`retryImages`). Agents wait for theirs (`generateForAgent`).
+ * Pictures made with the workspace's image AI (ADR 0195), on a canvas or in a conversation.
+ *
+ * On a canvas, a request first places a frame titled with the prompt and one placeholder per picture, so everyone in
+ * the canvas sees what is coming and who asked; the `live.image` job calls the Model Gateway, stores each picture as an
+ * asset of the canvas and turns each placeholder into its picture (same id, same place), with its prompt, model, who
+ * asked and the pictures it started from. A failure leaves the placeholders saying why (`ImageFailure`), with Try
+ * again (`retryImages`). Agents wait for theirs (`generateForAgent`).
+ *
+ * In a conversation, an agent asked for pictures gets them as image files on its reply (`generateInChat`): made
+ * through the gateway while it waits, each saved as a Drive file where its run posts, so people see them in the chat
+ * and can put one on a canvas later (`create_canvas` with `images`).
  */
 
 const { liveImageRequests, artifacts, agentRuns } = schema;
@@ -104,9 +106,6 @@ export interface ImageRequestInput {
   references?: string[];
   /** Where on the canvas (world units) the new pictures go; else where there's room. */
   at?: { x: number; y: number } | null;
-  /** The conversation whose own canvas takes them when no canvas is named (an agent's: its run's). */
-  channelId?: string | null;
-  threadId?: string | null;
 }
 
 /** A request as the apps and tools see it: its placeholders are on the canvas already. */
@@ -233,56 +232,6 @@ async function writableCanvas(deps: LiveImageDeps, actor: ArtifactActor, orgId: 
   return access;
 }
 
-/**
- * The conversation's own canvas for pictures (ADR 0195): the newest canvas in it that pictures were made on, which
- * the actor may change, else a new one ("Images", in the conversation, so it has the conversation's audience).
- */
-async function conversationCanvas(
-  deps: LiveImageDeps,
-  actor: ArtifactActor,
-  orgId: string,
-  where: { channelId: string | null; threadId: string | null },
-): Promise<string> {
-  const { db } = deps.artifacts;
-  if (where.channelId) {
-    const rows = await db
-      .select({ id: artifacts.id })
-      .from(liveImageRequests)
-      .innerJoin(artifacts, eq(artifacts.id, liveImageRequests.artifactId))
-      .where(
-        and(
-          eq(liveImageRequests.orgId, orgId),
-          eq(artifacts.orgId, orgId),
-          eq(artifacts.channelId, where.channelId),
-          where.threadId ? eq(artifacts.threadId, where.threadId) : isNull(artifacts.threadId),
-          eq(artifacts.kind, "canvas"),
-          isNull(artifacts.deletedAt),
-        ),
-      )
-      .orderBy(desc(liveImageRequests.createdAt))
-      .limit(10);
-    for (const id of new Set(rows.map((r) => r.id))) {
-      try {
-        await writableCanvas(deps, actor, orgId, id);
-        return id;
-      } catch {
-        // Not one this actor may change any more: the next, or a new one.
-      }
-    }
-  }
-  const locale =
-    actor.type === "person"
-      ? await personLocale(db, actor.userId)
-      : await lineLocale(db, orgId, null, actor.runId ?? null);
-  const made = await createLiveFile(deps.artifacts, actor, orgId, {
-    kind: "canvas",
-    title: serverText(locale, "live.defaults.imagesCanvas"),
-    channelId: where.channelId,
-    threadId: where.threadId,
-  });
-  return made.id;
-}
-
 /** The canvas's pictures a request starts from: image shapes (or the canvas's asset ids), as asset ids. */
 async function referenceAssets(
   deps: LiveImageDeps,
@@ -377,17 +326,17 @@ async function queueJob(db: Executor, orgId: string, requestId: string, attempt:
 }
 
 /**
- * Asks for pictures on a canvas (`canvasId`) the actor may change, or on the conversation's own canvas (`null`): the
- * frame and its placeholders land at once, the request is recorded and its job queued, and the request comes back as
- * the apps and tools see it. Refused before anything lands when the workspace has no image model
- * (`images.no_model`), the model asked isn't one it can use (`images.model_unavailable`), the file isn't a canvas
- * (`images.not_canvas`) or a reference isn't one of its pictures (`images.reference`).
+ * Asks for pictures on a canvas the actor may change: the frame and its placeholders land at once, the request is
+ * recorded and its job queued, and the request comes back as the apps and tools see it. Refused before anything lands
+ * when the workspace has no image model (`images.no_model`), the model asked isn't one it can use
+ * (`images.model_unavailable`), the file isn't a canvas (`images.not_canvas`) or a reference isn't one of its pictures
+ * (`images.reference`).
  */
 export async function requestImages(
   deps: LiveImageDeps,
   actor: ArtifactActor,
   orgId: string,
-  canvasId: string | null,
+  canvasId: string,
   input: ImageRequestInput,
 ): Promise<ImageRequestView> {
   const prompt = input.prompt.trim();
@@ -399,12 +348,7 @@ export async function requestImages(
   const asked = Number.isFinite(input.count) ? Math.floor(input.count as number) : 1;
   const count = Math.min(info.maxCount, Math.max(1, asked));
   const aspect = nearestAspect(info, input.aspect && IMAGE_ASPECTS.includes(input.aspect) ? input.aspect : "1:1");
-  const fileId = canvasId
-    ? (await writableCanvas(deps, actor, orgId, canvasId)).artifact.id
-    : await conversationCanvas(deps, actor, orgId, {
-        channelId: input.channelId ?? (actor.type === "agent" ? actor.channelId : null),
-        threadId: input.threadId ?? (actor.type === "agent" ? (actor.threadId ?? null) : null),
-      });
+  const fileId = (await writableCanvas(deps, actor, orgId, canvasId)).artifact.id;
   const references = await referenceAssets(deps, orgId, fileId, input.references ?? []);
   if (references.length > 0 && !info.refs) {
     throw new ValidationError(`${info.label} takes no pictures to start from`, "images.reference");
@@ -820,19 +764,42 @@ export interface AgentImageInput {
   count?: number;
   aspect?: ImageAspect;
   model?: string | null;
-  /** The canvas to put them on (a file id); absent: the conversation's own. */
-  canvas?: string | null;
+  /** The canvas to put them on (a file id). */
+  canvas: string;
   /** The canvas's pictures to start from (shape or asset ids). */
   references?: string[];
   /** At most `AGENT_IMAGE_WAIT_MS`. */
   timeoutMs?: number;
 }
 
+/** The agent behind a context, as the Drive's rules see it, in its reply's conversation. */
+function agentActorOf(ctx: AgentImageContext): Extract<ArtifactActor, { type: "agent" }> {
+  return {
+    type: "agent",
+    agentId: ctx.agentId,
+    channelId: ctx.channelId,
+    threadId: threadOfContext(ctx),
+    runId: ctx.runId ?? null,
+  };
+}
+
+/** Pictures for the model to look at, as many as fit what a model is shown (`MODEL_IMAGE_BYTES`). */
+function forTheModel(pictures: readonly { bytes: Uint8Array; contentType: string }[]): ToolImage[] {
+  const out: ToolImage[] = [];
+  let bytes = 0;
+  for (const p of pictures) {
+    if (bytes + p.bytes.byteLength > MODEL_IMAGE_BYTES) continue;
+    bytes += p.bytes.byteLength;
+    out.push({ mediaType: p.contentType, data: bytesToBase64(p.bytes) });
+  }
+  return out;
+}
+
 /**
- * An agent's pictures (the `generate_image` tool, ADR 0195): asked like a person's (`requestImages`, on the canvas
- * named or the conversation's own), then waited for, at most two minutes. Returns the canvas as the reply's card
- * (`artifact`), the pictures made, base64, as long as they fit what a model is shown (`MODEL_IMAGE_BYTES`), the
- * request as it stood, and whether the wait ran out (the pictures still come to the canvas then).
+ * An agent's pictures on a canvas (the `generate_image` tool with a canvas, ADR 0195): asked like a person's
+ * (`requestImages`), then waited for, at most two minutes. Returns the canvas as the reply's card (`artifact`), the
+ * pictures made, base64, as long as they fit what a model is shown (`MODEL_IMAGE_BYTES`), the request as it stood, and
+ * whether the wait ran out (the pictures still come to the canvas then).
  */
 export async function generateForAgent(
   deps: LiveImageDeps,
@@ -844,22 +811,13 @@ export async function generateForAgent(
   request: ImageRequestView;
   timedOut: boolean;
 }> {
-  const threadId = threadOfContext(ctx);
-  const actor: ArtifactActor = {
-    type: "agent",
-    agentId: ctx.agentId,
-    channelId: ctx.channelId,
-    threadId,
-    runId: ctx.runId ?? null,
-  };
-  const asked = await requestImages(deps, actor, ctx.orgId, input.canvas ?? null, {
+  const actor = agentActorOf(ctx);
+  const asked = await requestImages(deps, actor, ctx.orgId, input.canvas, {
     prompt: input.prompt,
     count: input.count,
     aspect: input.aspect,
     model: input.model,
     references: input.references,
-    channelId: ctx.channelId,
-    threadId,
   });
   const { db } = deps.artifacts;
   const ended = await waitForImageRequest(db, ctx.orgId, asked.requestId, {
@@ -871,31 +829,180 @@ export async function generateForAgent(
     .select({ id: artifacts.id, title: artifacts.title, version: artifacts.currentVersion })
     .from(artifacts)
     .where(and(eq(artifacts.id, request.artifactId), eq(artifacts.orgId, ctx.orgId)));
-  const images: ToolImage[] = [];
+  const pictures: { bytes: Uint8Array; contentType: string }[] = [];
   let bytes = 0;
   for (const assetId of request.assetIds) {
     const stored = await getAsset(deps.artifacts, actor, ctx.orgId, request.artifactId, assetId).catch(() => null);
+    // Read only what can be shown: past that, the bytes would be read for nothing.
     if (!stored || bytes + stored.size > MODEL_IMAGE_BYTES) continue;
     bytes += stored.size;
-    images.push({ mediaType: stored.contentType, data: bytesToBase64(await bytesOf(stored)) });
+    pictures.push({ bytes: await bytesOf(stored), contentType: stored.contentType });
   }
   return {
     artifact: { id: request.artifactId, version: file?.version ?? 1, title: file?.title ?? "" },
-    images,
+    images: forTheModel(pictures),
     request,
     timedOut: request.status === "queued" || request.status === "running",
   };
 }
 
+/** What an agent asks for in a conversation (`generateInChat`). */
+export interface ChatImageInput {
+  prompt: string;
+  count?: number;
+  aspect?: ImageAspect;
+  model?: string | null;
+  /** Pictures to start from: Drive files' ids (pictures posted in a conversation) the agent reads. */
+  references?: string[];
+}
+
+/** A picture made in a conversation: a Drive file on the agent's reply (`meta.artifacts`). */
+export interface ChatImageFile {
+  id: string;
+  version: number;
+  title: string;
+  width?: number;
+  height?: number;
+}
+
+/** Pictures made in a conversation, as the tool tells the agent. */
+export interface ChatImagesView {
+  files: ChatImageFile[];
+  /** The pictures for the model to look at (as many as fit `MODEL_IMAGE_BYTES`). */
+  images: ToolImage[];
+  model: string;
+  /** How many were asked for; fewer were made when `failure` says why. */
+  count: number;
+  failure: ImageFailure | null;
+  costNanoUsd: number;
+}
+
+/** Tries of one call in a conversation: a provider down or limiting gets one more, the agent waiting meanwhile. */
+const CHAT_ATTEMPTS = 2;
+
+const EXTENSIONS: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+/** A picture file's name from its prompt: `a-lighthouse-at-dusk-2.png`. */
+function pictureName(prompt: string, index: number, count: number, mediaType: string): string {
+  const slug =
+    prompt
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+/, "")
+      .slice(0, 48)
+      .replace(/-+$/, "") || "image";
+  return `${slug}${count > 1 ? `-${index + 1}` : ""}.${EXTENSIONS[mediaType] ?? "png"}`;
+}
+
+/**
+ * An agent's pictures in its conversation (the `generate_image` tool with no canvas, ADR 0195): made through the
+ * Model Gateway while the agent waits (budget, standing and usage as every image call), each saved as a picture file
+ * where its run posts (`createFileArtifact`, so its reply carries them as pictures in the chat), and handed back to
+ * the model to look at. `references` are pictures the agent reads (a picture posted in the conversation), for
+ * variations and edits. What wasn't made says why (`failure`); refused before any call when the workspace has no
+ * image model, the model asked isn't one it can use, or a picture to start from isn't one.
+ */
+export async function generateInChat(
+  deps: LiveImageDeps,
+  ctx: AgentImageContext,
+  input: ChatImageInput,
+): Promise<ChatImagesView> {
+  const prompt = input.prompt.trim();
+  if (!prompt) throw new ValidationError("Say what the pictures should show");
+  if (prompt.length > MAX_IMAGE_PROMPT_CHARS) {
+    throw new ValidationError(`The prompt is over ${MAX_IMAGE_PROMPT_CHARS} characters`);
+  }
+  const { model, info } = await modelFor(deps, ctx.orgId, input.model);
+  const asked = Number.isFinite(input.count) ? Math.floor(input.count as number) : 1;
+  const count = Math.min(info.maxCount, Math.max(1, asked));
+  const aspect = nearestAspect(info, input.aspect && IMAGE_ASPECTS.includes(input.aspect) ? input.aspect : "1:1");
+  const actor = agentActorOf(ctx);
+  const { db } = deps.artifacts;
+
+  const wanted = [...new Set(input.references ?? [])];
+  if (wanted.length > MAX_IMAGE_REFERENCES) {
+    throw new ValidationError(`At most ${MAX_IMAGE_REFERENCES} pictures to start from`, "images.reference");
+  }
+  if (wanted.length > 0 && !info.refs) {
+    throw new ValidationError(`${info.label} takes no pictures to start from`, "images.reference");
+  }
+  const references: ImageReference[] = [];
+  for (const id of wanted) {
+    const picture = await readPictureFile(deps.artifacts, actor, ctx.orgId, id).catch((error: unknown) => {
+      throw new ValidationError(
+        `The picture ${id} can't be used to start from: ${error instanceof Error ? error.message : String(error)}`,
+        "images.reference",
+      );
+    });
+    references.push({ mediaType: picture.contentType, data: bytesToBase64(picture.bytes) });
+  }
+
+  const runId = runOf(actor);
+  const personId = runId ? accountablePerson(await runAuthorityById(db, ctx.orgId, runId)) : null;
+  const limit = AbortSignal.timeout(IMAGE_CALL_TIMEOUT_MS);
+  const signal = ctx.signal ? AbortSignal.any([ctx.signal, limit]) : limit;
+  const none = (failure: ImageFailure): ChatImagesView => ({
+    files: [],
+    images: [],
+    model,
+    count,
+    failure,
+    costNanoUsd: 0,
+  });
+  let result: Awaited<ReturnType<ModelGateway["generateImages"]>> | null = null;
+  for (let attempt = 1; !result; attempt++) {
+    try {
+      result = await deps.gateway.generateImages({
+        orgId: ctx.orgId,
+        agentId: ctx.agentId,
+        personId,
+        runId,
+        request: { model, prompt, count, aspect, size: "1K", ...(references.length ? { references } : {}) },
+        signal,
+      });
+    } catch (error) {
+      if (error instanceof ProviderError && error.retryable && attempt < CHAT_ATTEMPTS && !signal.aborted) continue;
+      deps.log?.warn("chat images failed", { error: error instanceof Error ? error.message : String(error) });
+      return none(imageFailureOf(error));
+    }
+  }
+
+  const files: ChatImageFile[] = [];
+  const kept: { bytes: Uint8Array; contentType: string }[] = [];
+  let failure: ImageFailure | null = null;
+  const made = result.images.slice(0, count);
+  const title = frameName(prompt);
+  for (const [index, image] of made.entries()) {
+    try {
+      const file = await createFileArtifact(deps.artifacts, actor, ctx.orgId, {
+        title: made.length > 1 ? `${title} ${index + 1}` : title,
+        name: pictureName(prompt, index, made.length, image.mediaType),
+        bytes: image.bytes,
+        contentType: image.mediaType,
+      });
+      const content = file.content.kind === "file" ? file.content : null;
+      files.push({ id: file.id, version: file.version, title: file.title, ...pictureSize(content ?? {}) });
+      kept.push({ bytes: image.bytes, contentType: image.mediaType });
+    } catch (error) {
+      failure = imageFailureOf(error);
+      break;
+    }
+  }
+  if (!failure && files.length < count) failure = result.error ? imageFailureOf(result.error) : "provider";
+  return { files, images: forTheModel(kept), model, count, failure, costNanoUsd: result.costNanoUsd };
+}
+
 /** The deps bound once: what the routes, the tools and the jobs call. */
 export interface LiveImages {
   models(orgId: string, options?: { prices?: boolean }): Promise<ImageModelOption[]>;
-  request(
-    actor: ArtifactActor,
-    orgId: string,
-    canvasId: string | null,
-    input: ImageRequestInput,
-  ): Promise<ImageRequestView>;
+  request(actor: ArtifactActor, orgId: string, canvasId: string, input: ImageRequestInput): Promise<ImageRequestView>;
   retry(actor: ArtifactActor, orgId: string, canvasId: string, requestId: string): Promise<ImageRequestView>;
   get(orgId: string, requestId: string): Promise<ImageRequestView | null>;
   wait(
@@ -904,6 +1011,7 @@ export interface LiveImages {
     options?: { timeoutMs?: number; signal?: AbortSignal },
   ): Promise<ImageRequestView | null>;
   generateForAgent(ctx: AgentImageContext, input: AgentImageInput): ReturnType<typeof generateForAgent>;
+  generateInChat(ctx: AgentImageContext, input: ChatImageInput): Promise<ChatImagesView>;
 }
 
 export function createLiveImages(deps: LiveImageDeps): LiveImages {
@@ -914,5 +1022,6 @@ export function createLiveImages(deps: LiveImageDeps): LiveImages {
     get: (orgId, requestId) => imageRequestOf(deps.artifacts.db, orgId, requestId),
     wait: (orgId, requestId, options) => waitForImageRequest(deps.artifacts.db, orgId, requestId, options),
     generateForAgent: (ctx, input) => generateForAgent(deps, ctx, input),
+    generateInChat: (ctx, input) => generateInChat(deps, ctx, input),
   };
 }

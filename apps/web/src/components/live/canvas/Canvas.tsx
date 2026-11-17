@@ -1,34 +1,32 @@
-import {
-  type GenerateImagesInput,
-  type ImageAspect,
-  useApi,
-  useGenerateImages,
-  useImageModels,
-  useLivePeers,
-  useLiveSelector,
-  useRetryImages,
-} from "@agenteschat/client";
+import { useApi, useLivePeers, useLiveSelector, useRetryImages } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
+import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { LOCAL } from "@agenteschat/live";
-import type { Peer } from "@agenteschat/live/awareness";
+import type { Peer, PeerUser } from "@agenteschat/live/awareness";
 import {
   type ArrowEnd,
+  type ArrowRoute,
   addShape,
   arrangeShapes,
   type Box,
+  type CanvasShapeKind,
   canvasBackground,
   defaultSize,
   deleteShapes,
   frameAt,
   moveShapes,
+  type NewShape,
   type Point,
   rectsIntersect,
   resizeShape,
+  SHAPE_TYPES,
+  type ShapePatch,
   type ShapeView,
   setCanvasBackground,
   setParent,
   shapeBounds,
   snapLines,
+  strokePath,
   union,
   updateShape,
 } from "@agenteschat/live/canvas";
@@ -51,10 +49,13 @@ import { useTranslation } from "react-i18next";
 import { useMaybeArtifactViewer } from "@/components/artifacts/ArtifactViewer";
 import { fileSaver } from "@/components/artifacts/fileSaver";
 import { ImageZoom } from "@/components/artifacts/ImageZoom";
+import { useOrg } from "@/components/org-context";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { type MenuEntry, openContextMenu } from "@/lib/context-menu";
 import { useToast } from "@/lib/toast";
 import type { LiveEditorProps } from "../editor";
+import { useFileAgentHere } from "../talk";
+import { type Anchor, type BarAction, BarSpot, CropBar, SelectionBar, SizeTag, sizeOf } from "./bars";
 import {
   type Camera,
   centerOn,
@@ -73,7 +74,7 @@ import {
   visibleWorld,
   zoomCameraAt,
 } from "./camera";
-import { Dock, ShapeBar, type ShapeBarAction, type Tool, ZoomIsland } from "./chrome";
+import { Dock, PenBar, type Tool, ZoomIsland } from "./chrome";
 import {
   assetsToCopy,
   type CanvasClip,
@@ -86,10 +87,13 @@ import {
   withAssets,
 } from "./clipboard";
 import { CanvasContext, type CanvasEnv } from "./context";
+import { CropOverlay } from "./crop";
 import {
   arrowLine,
   boundsOf,
   boxFrom,
+  cropFrom,
+  fullImageBox,
   HANDLES,
   type Handle,
   type HitPart,
@@ -99,20 +103,37 @@ import {
   rotationAt,
   scaleGroup,
   snapTargets,
+  thinStroke,
   topLevelOf,
 } from "./edit-math";
-import { GenerateBar, type GenerateDraft } from "./generate";
 import { ImageInspector } from "./inspector";
+import { LayersPanel } from "./layers";
 import { type Draft, Overlay } from "./overlay";
-import { SOFT } from "./palette";
+import { strokeStyle } from "./palette";
+import { CommentPins } from "./pins";
 import { selectionOf } from "./selection";
 import { ArrowShape, ShapeBody } from "./shapes";
 import { useCanvasShapes } from "./store";
+import {
+  ASK_KEY,
+  DEFAULT_PEN,
+  headsFor,
+  IMAGE_KEY,
+  PEN_WIDTHS,
+  type PenStyle,
+  SHAPE_CHOICES,
+  TOOL_KEYS,
+} from "./tools";
 import "./canvas.css";
 
-/** The plane's height the dock covers at its bottom, and the prompt bar while it is open (world fits stay above). */
+/** The plane's height the dock covers at its bottom (world fits stay above). */
 const DOCK_ROOM = 88;
-const GENERATE_BAR_ROOM = 200;
+/** Where bars and fits start from the left while the layers panel is open (its width and margins). */
+const LAYERS_ROOM = 276;
+/** A pen stroke takes a point when the pointer has moved this far (screen pixels), and keeps points this far off its
+ * line when thinned. */
+const PEN_STEP = 1.5;
+const PEN_TOLERANCE = 0.6;
 
 /**
  * The canvas ("Quadro", ADR 0194 §2, ADR 0195): an endless plane people and agents fill together with pictures,
@@ -179,8 +200,9 @@ type Gesture =
   | { kind: "resize"; id: string; handle: Handle; box: Box; rot: number; startWorld: Point; ratio: boolean }
   | { kind: "group"; handle: Handle; bounds: Box; boxes: Map<string, Box>; startWorld: Point }
   | { kind: "rotate"; id: string; center: Point }
-  | { kind: "draw"; tool: "note" | "text" | "shape" | "frame"; startWorld: Point; startScreen: Point }
+  | { kind: "box"; tool: "note" | "text" | "shape" | "frame"; startWorld: Point; startScreen: Point }
   | { kind: "arrow"; from: ArrowEnd; fromShape: string | null; startWorld: Point; startScreen: Point }
+  | { kind: "pen"; points: number[]; last: Point; style: PenStyle }
   | { kind: "end"; arrow: string; end: "from" | "to" }
   | { kind: "pinch"; startDist: number; startMid: Point; cam: Camera };
 
@@ -252,23 +274,19 @@ function fileNameOf(words: string | undefined, fallback: string): string {
   return `${slug || fallback}.png`;
 }
 
-/** The aspect among `aspects` nearest to a picture's proportions. */
-function nearestAspect(w: number, h: number, aspects: readonly ImageAspect[]): ImageAspect | undefined {
-  const ratio = w / h;
-  let best: ImageAspect | undefined;
-  let gap = Number.POSITIVE_INFINITY;
-  for (const a of aspects) {
-    const [aw = 1, ah = 1] = a.split(":").map(Number);
-    const d = Math.abs(Math.log(aw / ah / ratio));
-    if (d < gap) {
-      gap = d;
-      best = a;
-    }
-  }
-  return best;
-}
-
-function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSelection }: LiveEditorProps) {
+function CanvasEditor({
+  room,
+  orgId,
+  artifact,
+  readOnly,
+  search,
+  onSearch,
+  following,
+  onStopFollowing,
+  onSelection,
+  onAsk,
+  reveal: revealPart,
+}: LiveEditorProps) {
   const { t, i18n } = useTranslation();
   const api = useApi();
   const toast = useToast();
@@ -280,12 +298,12 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
   const { list, byId } = snapshot;
   const peers = useLivePeers(room);
   const bg = useLiveSelector(room, canvasBackground) ?? "dots";
-  const connection = useSyncExternalStore(room.subscribe, room.getState, room.getState);
-  const offline = connection.status === "offline";
-  const models = useImageModels(orgId, { enabled: !readOnly });
-  const canGenerate = !readOnly;
-  const generate = useGenerateImages(orgId, fileId);
+  const fileAgent = useFileAgentHere();
   const retry = useRetryImages(orgId, fileId);
+  // Who adds what this person draws (ADR 0194 §6): the app's own edits carry no author, so each new shape says it.
+  const { me: account } = useOrg();
+  const userId = account.user.id;
+  const me = useMemo<PeerUser>(() => ({ kind: "person", id: userId }), [userId]);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const planeRef = useRef<HTMLDivElement>(null);
@@ -296,6 +314,19 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
   const [cam, setCamState] = useState<Camera>(HOME);
   const camRef = useRef(cam);
   const [tool, setTool] = useState<Tool>("select");
+  const [shapeKind, setShapeKind] = useState<CanvasShapeKind>("rect");
+  const [route, setRoute] = useState<ArrowRoute>("straight");
+  const [pen, setPen] = useState<PenStyle>(DEFAULT_PEN);
+  const [layersOpen, setLayersOpen] = useState(false);
+  /** A picture being cropped, its window in world units. */
+  const [cropping, setCropping] = useState<{ id: string; rect: Box } | null>(null);
+  /** A picture whose details (⋯ › Details) show beside the plane. */
+  const [details, setDetails] = useState<string | null>(null);
+  /** The pen stroke being drawn: its path is written straight into the drawing, not through a render per point. */
+  const [inking, setInking] = useState<PenStyle | null>(null);
+  const inkPath = useRef<SVGPathElement>(null);
+  const replaceInput = useRef<HTMLInputElement>(null);
+  const replacing = useRef<string | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [hover, setHover] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -307,9 +338,6 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
   const [panning, setPanning] = useState(false);
   const [dropping, setDropping] = useState(false);
   const [uploads, setUploads] = useState<{ key: number; box: Box }[]>([]);
-  const [generating, setGenerating] = useState(false);
-  const [genDraft, setGenDraft] = useState<GenerateDraft | null>(null);
-  const [inspectorOff, setInspectorOff] = useState<string | null>(null);
   const [zoomed, setZoomed] = useState<ShapeView | null>(null);
   const gesture = useRef<Gesture | null>(null);
   const pointers = useRef(new Map<number, Point>());
@@ -318,7 +346,6 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
   const writeFrame = useRef(0);
   const placed = useRef(false);
   const pasteCount = useRef(0);
-  const reveal = useRef<string[] | null>(null);
   const uploadKey = useRef(0);
   const glide = useRef(0);
   /** Shapes that were placeholders: when they turn into pictures, those fade in. */
@@ -579,7 +606,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     onSelection(selectionOf(t, selShapes));
   }, [chosenKey, selShapes.map((s) => s.type).join(","), t]);
 
-  // Placeholders turned pictures fade in (once); new pictures from Generate come into view.
+  // Placeholders turned pictures fade in (once).
   useEffect(() => {
     for (const s of list) {
       if (s.type === "pending") wasPending.current.add(s.id);
@@ -588,23 +615,44 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         setTimeout(() => wasPending.current.delete(id), 1500);
       }
     }
-    const ids = reveal.current;
-    if (!ids?.length || !ids.every((id) => byId.has(id))) return;
-    reveal.current = null;
-    const bounds = boundsOf(ids, byId);
-    if (!bounds) return;
-    // The new pictures go where they are seen whole: above the dock, or above the prompt bar while it stays open for
-    // the next request, never under it.
+  }, [list]);
+
+  /** Brings shapes into view when any of them is off it (above the dock, at this zoom). */
+  const showShapes = useCallback(
+    (ids: readonly string[]) => {
+      const bounds = boundsOf(ids, store.now().byId);
+      if (!bounds) return;
+      const stage = stageRef.current;
+      const room = { w: stage.w, h: Math.max(1, stage.h - DOCK_ROOM) };
+      const view = visibleWorld(camRef.current, room);
+      const inside =
+        bounds.x >= view.x &&
+        bounds.y >= view.y &&
+        bounds.x + bounds.w <= view.x + view.w &&
+        bounds.y + bounds.h <= view.y + view.h;
+      if (!inside) glideTo(fitCamera(bounds, room, FIT_PADDING, camRef.current.z), { user: true });
+    },
+    [store, glideTo],
+  );
+
+  // A message's line about some of these shapes, or a point (ADR 0197): chosen, and brought into view.
+  const revealed = useRef<number | null>(null);
+  useEffect(() => {
+    if (!revealPart || revealed.current === revealPart.key) return;
+    const { shapes, point } = revealPart.selection;
+    const ids = (shapes ?? []).filter((id) => byId.has(id));
     const stage = stageRef.current;
-    const room = { w: stage.w, h: Math.max(1, stage.h - (generating ? GENERATE_BAR_ROOM : DOCK_ROOM)) };
-    const view = visibleWorld(camRef.current, room);
-    const inside =
-      bounds.x >= view.x &&
-      bounds.y >= view.y &&
-      bounds.x + bounds.w <= view.x + view.w &&
-      bounds.y + bounds.h <= view.y + view.h;
-    if (!inside) glideTo(fitCamera(bounds, room, FIT_PADDING, camRef.current.z));
-  }, [list, byId, glideTo, generating]);
+    const room = { w: stage.w, h: Math.max(1, stage.h - DOCK_ROOM) };
+    if (ids.length) {
+      revealed.current = revealPart.key;
+      setSelected(ids);
+      const bounds = boundsOf(ids, byId);
+      if (bounds) glideTo(fitCamera(bounds, room, FIT_PADDING, Math.max(1, camRef.current.z)));
+    } else if (point) {
+      revealed.current = revealPart.key;
+      glideTo(centerOn(point, room, camRef.current.z));
+    }
+  }, [revealPart, byId, glideTo]);
 
   // ── Edits ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -666,17 +714,20 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
       if (readOnly) return [];
       const clip = copyShapes(doc, fileId, ids);
       if (!clip) return [];
-      const made = safely(() => pasteClip(doc, clip, offset, offset, LOCAL)) ?? [];
+      const made = safely(() => pasteClip(doc, clip, offset, offset, LOCAL, me)) ?? [];
       endStep();
       setSelected(made);
       return made;
     },
-    [readOnly, doc, fileId, safely, endStep],
+    [readOnly, doc, fileId, safely, endStep, me],
   );
 
-  /** A new shape where the person pointed, inside the frame under it; chosen, and its text open for typing. */
+  /**
+   * A new shape where the person pointed, inside the frame under it, said to be theirs; chosen, and its text open for
+   * typing. `extra`: what else it starts with (a shape's form).
+   */
   const create = useCallback(
-    (type: "note" | "text" | "shape" | "frame", box: Box, text?: string) => {
+    (type: "note" | "text" | "shape" | "frame", box: Box, text?: string, extra: Partial<NewShape> = {}) => {
       const c = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
       const parent = frameAt(doc, c.x, c.y);
       const id = safely(() =>
@@ -685,6 +736,8 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
           {
             type,
             ...box,
+            ...extra,
+            by: me,
             ...(parent ? { parent } : {}),
             ...(type === "frame" ? { name: t("live.canvas.newFrame") } : {}),
             ...(text !== undefined ? { text } : {}),
@@ -711,7 +764,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
       if (type === "frame") setNaming({ id, kind: "frame" });
       return id;
     },
-    [doc, safely, endStep, store, t],
+    [doc, safely, endStep, store, t, me],
   );
 
   /** A shape of its default size centered on a world point. */
@@ -774,6 +827,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
                   ...ghost.box,
                   ...(parent ? { parent } : {}),
                   alt: file.name.replace(/\.[a-z0-9]+$/i, "").slice(0, 200),
+                  by: me,
                 },
                 LOCAL,
               ),
@@ -788,6 +842,38 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
       );
       endStep();
       if (made.length) setSelected(made);
+    },
+    [readOnly, toast, t, i18n.language, api, orgId, fileId, doc, safely, endStep, me],
+  );
+
+  /** "Trocar imagem": another picture from the computer in the same box (its crop and how it was made go). */
+  const replaceImage = useCallback(
+    async (id: string, file: File) => {
+      if (readOnly) return;
+      if (!IMAGE_TYPES.has(file.type)) return void toast.show(t("live.canvas.errors.onlyImages"), "error");
+      if (file.size > MAX_ASSET_BYTES) return void toast.show(t("live.canvas.errors.imageTooBig"), "error");
+      try {
+        const size = await naturalSize(file);
+        const asset = await api.live.uploadAsset(orgId, fileId, file);
+        safely(() =>
+          updateShape(
+            doc,
+            id,
+            {
+              asset: asset.id,
+              nw: asset.width ?? size.w,
+              nh: asset.height ?? size.h,
+              alt: file.name.replace(/\.[a-z0-9]+$/i, "").slice(0, 200),
+              crop: null,
+              gen: null,
+            },
+            LOCAL,
+          ),
+        );
+        endStep();
+      } catch (error) {
+        toast.show(errorText(t, error, i18n.language, { maxMb: 25 }), "error");
+      }
     },
     [readOnly, toast, t, i18n.language, api, orgId, fileId, doc, safely, endStep],
   );
@@ -833,11 +919,11 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         dx = c.x - (bounds.x + bounds.w / 2);
         dy = c.y - (bounds.y + bounds.h / 2);
       }
-      const made = safely(() => pasteClip(doc, here, dx, dy, LOCAL)) ?? [];
+      const made = safely(() => pasteClip(doc, here, dx, dy, LOCAL, me)) ?? [];
       endStep();
       setSelected(made);
     },
-    [readOnly, fileId, api, orgId, toast, t, pasteAt, viewCenter, safely, doc, endStep],
+    [readOnly, fileId, api, orgId, toast, t, pasteAt, viewCenter, safely, doc, endStep, me],
   );
 
   /** Paste from the context menu: the system's clipboard when the browser lets it be read, else this tab's copy. */
@@ -923,46 +1009,27 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     [assetUrl, toast, t],
   );
 
-  const runGenerate = useCallback(
-    async (input: Omit<GenerateImagesInput, "at">, at?: Point) => {
-      try {
-        const res = await generate.mutateAsync({ ...input, at: at ?? viewCenter() });
-        const ids = res.frameId ? [res.frameId] : res.shapeIds;
-        reveal.current = ids;
-        setSelected(ids);
-        return true;
-      } catch {
-        // The query client says what went wrong.
-        return false;
-      }
-    },
-    [generate, viewCenter],
+  /** "Pedir ao Atlas" about a picture: the file's conversation, its agent called, about it (ADR 0197). */
+  const askAbout = useCallback((shape: ShapeView) => onAsk?.({ selection: selectionOf(t, [shape]) }), [onAsk, t]);
+
+  /** "Variações": the file's agent asked, in the file's conversation, for variations of this picture (ADR 0197). */
+  const askVariations = useCallback(
+    (shape: ShapeView) => onAsk?.({ text: t("live.canvas.ask.variations"), selection: selectionOf(t, [shape]) }),
+    [onAsk, t],
   );
 
-  const variations = useCallback(
-    (shape: ShapeView) => {
-      const list = models.data ?? [];
-      const model = list.find((m) => m.id === shape.gen?.model && m.refs) ?? list.find((m) => m.refs);
-      if (!model || !shape.gen) return;
-      const aspect = shape.nw && shape.nh ? nearestAspect(shape.nw, shape.nh, model.aspects) : undefined;
-      void runGenerate(
-        {
-          prompt: shape.gen.prompt,
-          count: Math.min(2, model.maxCount),
-          model: model.id,
-          references: [shape.id],
-          ...(aspect ? { aspect } : {}),
-        },
-        { x: shape.x + shape.w * 1.5 + 40, y: shape.y + shape.h / 2 },
-      );
+  /**
+   * A message of the file's conversation opened there (a comment's pin): the page's `?m=`. The same one again (its
+   * conversation closed meanwhile, or scrolled away) is named afresh, so it opens and shows it again.
+   */
+  const openMessage = useCallback(
+    (id: string) => {
+      if (search.m !== id) return onSearch({ m: id });
+      onSearch({ m: undefined });
+      requestAnimationFrame(() => onSearch({ m: id }));
     },
-    [models.data, runGenerate],
+    [search.m, onSearch],
   );
-
-  const openGenerate = useCallback((d: GenerateDraft | null = null) => {
-    setGenDraft(d);
-    setGenerating(true);
-  }, []);
 
   /** Stable for the hook's life, so the shapes' shared env stays one object while the canvas is open. */
   const retryImages = retry.mutate;
@@ -1011,9 +1078,50 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     return { x: e.clientX - (r?.left ?? 0), y: e.clientY - (r?.top ?? 0) };
   };
   const worldOf = (e: { clientX: number; clientY: number }) => toWorld(camRef.current, local(e));
-  const hitAt = (p: Point) => {
-    const now = store.now();
-    return hitShape(now.list, now.byId, p, camRef.current.z);
+  /** What the plane can press: hidden shapes (the layers' eye) aren't there to take. */
+  const visibleNow = () => store.now().list.filter((s) => !s.hidden);
+  const hitAt = (p: Point) => hitShape(visibleNow(), store.now().byId, p, camRef.current.z);
+
+  /** The crop as it is now, applied: the picture's box becomes the window, and its crop the part it shows. */
+  const applyCrop = useCallback(() => {
+    const c = cropping;
+    setCropping(null);
+    const shape = c ? store.now().byId.get(c.id) : undefined;
+    if (!c || !shape || readOnly) return;
+    const { box, crop } = cropFrom(c.rect, fullImageBox(shape));
+    safely(() => updateShape(doc, c.id, { ...box, crop }, LOCAL));
+    endStep();
+    planeRef.current?.focus({ preventScroll: true });
+  }, [cropping, store, readOnly, safely, doc, endStep]);
+
+  const cancelCrop = useCallback(() => {
+    setCropping(null);
+    planeRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  /** A pen stroke ended: its points thinned and kept as a stroke of this person's, in the frame it was drawn in. */
+  const endStroke = (points: number[], style: PenStyle) => {
+    const thin = thinStroke(points, PEN_TOLERANCE / camRef.current.z);
+    if (!thin.length) return;
+    const xs = thin.filter((_, i) => i % 2 === 0);
+    const ys = thin.filter((_, i) => i % 2 === 1);
+    const parent = frameAt(doc, (Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2);
+    safely(() =>
+      addShape(
+        doc,
+        {
+          type: "draw",
+          points: thin,
+          stroke: style.color,
+          strokeWidth: PEN_WIDTHS[style.tool][style.size],
+          ...(style.tool === "marker" ? { tool: "marker" as const } : {}),
+          ...(parent ? { parent } : {}),
+          by: me,
+        },
+        LOCAL,
+      ),
+    );
+    endStep();
   };
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -1022,7 +1130,17 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     // A shape's own buttons, the open text box, a page in use, the bars over the plane: theirs.
     if (editing && target.closest(`[data-shape="${editing}"]`)) return;
     if (interacting && target.closest(`[data-shape="${interacting}"]`)) return;
-    if (target.closest(".cnv-bar, .cnv-over__name-input, .cnv-over__label-input") || isControl(target)) return;
+    if (
+      target.closest(".cnv-bar, .cnv-over__name-input, .cnv-over__label-input, [data-crop-part]") ||
+      isControl(target)
+    ) {
+      return;
+    }
+    // A press away from the picture being cropped keeps the crop as it is.
+    if (cropping) {
+      applyCrop();
+      return;
+    }
     if (editing) setEditing(null);
     if (interacting) setInteracting(null);
     planeRef.current?.focus({ preventScroll: true });
@@ -1043,6 +1161,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         };
         setDraft(null);
         setBusy(false);
+        setInking(null);
       }
       return;
     }
@@ -1053,9 +1172,23 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     const label = target.closest("[data-frame-label]")?.getAttribute("data-frame-label") ?? null;
     const hit = label ? { id: label, part: "frameEdge" as HitPart } : hitAt(world);
 
-    if (e.button === 1 || tool === "hand" || space || (e.pointerType === "touch" && !hit && !handle)) {
+    // A finger on empty room moves the view (with the select tool: the others draw where a finger goes).
+    const fingerPan = e.pointerType === "touch" && tool === "select" && !hit && !handle;
+    if (e.button === 1 || tool === "hand" || space || fingerPan) {
       gesture.current = { kind: "pan", last: screen };
       setPanning(true);
+      return;
+    }
+    // Comment: the file's conversation opens about this point (its message is the pin, ADR 0197).
+    if (tool === "comment") {
+      setTool("select");
+      onAsk?.({
+        agentId: null,
+        selection: {
+          label: t("live.canvas.comment.label"),
+          point: { x: Math.round(world.x), y: Math.round(world.y) },
+        },
+      });
       return;
     }
     if (readOnly && tool !== "select") return;
@@ -1110,10 +1243,15 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     }
 
     if (tool === "note" || tool === "text" || tool === "shape" || tool === "frame") {
-      gesture.current = { kind: "draw", tool, startWorld: world, startScreen: screen };
+      gesture.current = { kind: "box", tool, startWorld: world, startScreen: screen };
       return;
     }
-    if (tool === "arrow") {
+    if (tool === "draw") {
+      gesture.current = { kind: "pen", points: [world.x, world.y], last: screen, style: pen };
+      setInking(pen);
+      return;
+    }
+    if (tool === "arrow" || tool === "line") {
       const from = hit && store.now().byId.get(hit.id)?.type !== "arrow" ? hit.id : null;
       gesture.current = {
         kind: "arrow",
@@ -1195,7 +1333,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         }
         if (g.alt) {
           const clip = copyShapes(doc, fileId, ids);
-          const made = clip ? (safely(() => pasteClip(doc, clip, 0, 0, LOCAL)) ?? []) : [];
+          const made = clip ? (safely(() => pasteClip(doc, clip, 0, 0, LOCAL, me)) ?? []) : [];
           if (made.length) {
             ids = made;
             setSelected(made);
@@ -1241,8 +1379,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
       case "marquee": {
         const rect = boxFrom(g.startWorld, world);
         setDraft({ marquee: rect });
-        const now = store.now();
-        const hits = marqueeHits(now.list, now.byId, rect);
+        const hits = marqueeHits(visibleNow(), store.now().byId, rect);
         setSelected([...new Set([...g.base, ...hits])]);
         return;
       }
@@ -1281,7 +1418,14 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         scheduleWrite(() => safely(() => updateShape(doc, g.id, { rot }, LOCAL)));
         return;
       }
-      case "draw": {
+      case "pen": {
+        if (distance(screen, g.last) < PEN_STEP) return;
+        g.last = screen;
+        if (g.points.length < 20_000) g.points.push(world.x, world.y);
+        inkPath.current?.setAttribute("d", strokePath(g.points));
+        return;
+      }
+      case "box": {
         if (distance(screen, g.startScreen) <= CLICK_SLOP) return;
         let box = boxFrom(g.startWorld, world);
         if (e.shiftKey || g.tool === "note") {
@@ -1341,8 +1485,14 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     setPanning(false);
     setBusy(false);
     setDraft(null);
+    setInking(null);
     const world = worldOf(e);
     switch (g.kind) {
+      case "pen": {
+        if (cancelled) return;
+        endStroke(g.points, g.style);
+        return;
+      }
       case "press": {
         if (cancelled || !g.hit) return;
         const id = g.hit.id;
@@ -1373,7 +1523,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         flushWrite();
         endStep();
         return;
-      case "draw": {
+      case "box": {
         if (cancelled) return;
         const small = distance(local(e), g.startScreen) <= CLICK_SLOP;
         let box: Box;
@@ -1393,7 +1543,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
           }
           box = { ...box, w: Math.max(box.w, 24), h: Math.max(box.h, g.tool === "text" ? 40 : 24) };
         }
-        create(g.tool, box);
+        create(g.tool, box, undefined, g.tool === "shape" ? { kind: shapeKind } : {});
         setTool("select");
         return;
       }
@@ -1402,10 +1552,19 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         if (cancelled || distance(local(e), g.startScreen) <= CLICK_SLOP) return;
         const hit = hitAt(world);
         const toShape = hit && hit.id !== g.fromShape && store.now().byId.get(hit.id)?.type !== "arrow" ? hit.id : null;
+        // A line has no heads; an arrow runs the way the Arrow menu says.
+        const look: Partial<NewShape> =
+          tool === "line" ? { heads: headsFor("none") ?? undefined } : route !== "straight" ? { route } : {};
         const id = safely(() =>
           addShape(
             doc,
-            { type: "arrow", from: g.from, to: toShape ? { shape: toShape } : { x: world.x, y: world.y } },
+            {
+              type: "arrow",
+              from: g.from,
+              to: toShape ? { shape: toShape } : { x: world.x, y: world.y },
+              ...look,
+              by: me,
+            },
             LOCAL,
           ),
         );
@@ -1503,9 +1662,33 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     if (next !== "select") setHover(null);
   }, []);
 
+  /** The Shapes menu's choice: a form for the Shapes tool, or the line. */
+  const pickShape = useCallback(
+    (kind: CanvasShapeKind | "line") => {
+      if (kind !== "line") setShapeKind(kind);
+      pickTool(kind === "line" ? "line" : "shape");
+    },
+    [pickTool],
+  );
+
+  const pickRoute = useCallback(
+    (next: ArrowRoute) => {
+      setRoute(next);
+      pickTool("arrow");
+    },
+    [pickTool],
+  );
+
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.defaultPrevented) return;
     const typing = isEditable(e.target);
+    // Cropping: Enter keeps it, Esc leaves the picture as it was.
+    if (cropping && !typing && (e.key === "Enter" || e.key === "Escape")) {
+      e.preventDefault();
+      if (e.key === "Enter") applyCrop();
+      else cancelCrop();
+      return;
+    }
     if (e.key === "Escape") {
       if (typing && editing) {
         e.preventDefault();
@@ -1552,7 +1735,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         e.preventDefault();
         setSelected(
           topLevelOf(
-            store.now().list.map((s) => s.id),
+            visibleNow().map((s) => s.id),
             store.now().list,
           ),
         );
@@ -1627,29 +1810,32 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
       safely(() => moveShapes(doc, ids, dx, dy, LOCAL));
       return;
     }
+    // The forms of the Shapes menu: R, O, D, L, and ⇧T, ⇧S.
+    const form = SHAPE_CHOICES.find((c) => c.key.key === key && !!c.key.shift === e.shiftKey);
+    if (form && !mod) {
+      if (readOnly) return;
+      e.preventDefault();
+      pickShape(form.kind);
+      return;
+    }
     if (e.shiftKey || mod) return;
-    const toolKeys: Record<string, Tool> = { v: "select", h: "hand" };
-    const editKeys: Record<string, Tool> = { n: "note", t: "text", r: "shape", a: "arrow", f: "frame" };
-    if (toolKeys[key]) {
+    if (key === ASK_KEY.key && onAsk) {
       e.preventDefault();
-      pickTool(toolKeys[key]);
+      onAsk();
       return;
     }
-    if (readOnly) return;
-    if (editKeys[key]) {
-      e.preventDefault();
-      pickTool(editKeys[key]);
+    const picked = (Object.entries(TOOL_KEYS) as [Tool, { key: string }][]).find(([, k]) => k.key === key)?.[0];
+    if (!picked) {
+      if (key === IMAGE_KEY.key && !readOnly) {
+        e.preventDefault();
+        fileInput.current?.click();
+      }
       return;
     }
-    if (key === "i") {
-      e.preventDefault();
-      fileInput.current?.click();
-      return;
-    }
-    if (key === "g" && canGenerate) {
-      e.preventDefault();
-      openGenerate();
-    }
+    // Looking around and commenting take no edit; the rest do.
+    if (picked === "comment" ? !onAsk : readOnly && picked !== "select" && picked !== "hand") return;
+    e.preventDefault();
+    pickTool(picked);
   };
 
   const onKeyUp = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -1726,52 +1912,103 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
 
   // ── Menus ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
-  const shapeBarAction = (action: ShapeBarAction) => {
-    if (readOnly) return;
+  /** Sets a change on each chosen shape of the given types, in one step of undo. */
+  const patchEach = (
+    ids: readonly string[],
+    types: readonly ShapeView["type"][],
+    patch: (s: ShapeView) => ShapePatch,
+  ) =>
+    doc.transact(() => {
+      for (const id of ids) {
+        const s = byId.get(id);
+        if (s && types.includes(s.type)) safely(() => updateShape(doc, id, patch(s), LOCAL));
+      }
+    }, LOCAL);
+
+  const barAction = (action: BarAction) => {
     const ids = sel;
+    const single = selShapes.length === 1 ? selShapes[0] : undefined;
+    // What only reads or asks, open to whoever sees the canvas.
+    switch (action.kind) {
+      case "variations":
+        if (single) askVariations(single);
+        return;
+      case "ask":
+        onAsk?.();
+        return;
+      case "download":
+        if (single) downloadImage(single);
+        return;
+      case "copyImage":
+        if (single) copyImage(single);
+        return;
+      case "open":
+        if (single) setZoomed(single);
+        return;
+      case "details":
+        if (single) setDetails(single.id);
+        return;
+      default:
+        break;
+    }
+    if (readOnly) return;
     switch (action.kind) {
       case "color":
-        doc.transact(() => {
-          for (const id of ids)
-            if (byId.get(id)?.type === "note") safely(() => updateShape(doc, id, { color: action.color }, LOCAL));
-        }, LOCAL);
+        patchEach(ids, ["note"], () => ({ color: action.color }));
         break;
       case "fill":
-        doc.transact(() => {
-          for (const id of ids) {
-            if (byId.get(id)?.type !== "shape") continue;
-            const fill = action.color ? SOFT[action.color].light : null;
-            safely(() => updateShape(doc, id, { fill }, LOCAL));
-          }
-        }, LOCAL);
+        patchEach(ids, ["shape"], () => ({ fill: action.fill }));
+        break;
+      case "stroke":
+        patchEach(ids, ["shape", "arrow", "draw"], () => ({ stroke: action.stroke }));
+        break;
+      case "strokeWidth":
+        patchEach(ids, ["shape", "arrow"], () => ({ strokeWidth: action.width }));
+        break;
+      case "penSize":
+        patchEach(ids, ["draw"], (s) => ({ strokeWidth: PEN_WIDTHS[s.tool ?? "pen"][action.size] }));
+        break;
+      case "radius":
+        patchEach(ids, ["shape"], () => ({ radius: action.radius }));
         break;
       case "size":
-        doc.transact(() => {
-          for (const id of ids) {
-            const s = byId.get(id);
-            if (s?.type !== "text") continue;
-            safely(() => updateShape(doc, id, { style: { ...s.style, size: action.size } }, LOCAL));
-          }
-        }, LOCAL);
+        patchEach(ids, ["text"], (s) => ({ style: { ...s.style, size: action.size } }));
         break;
       case "shapeKind":
-        doc.transact(() => {
-          for (const id of ids)
-            if (byId.get(id)?.type === "shape") safely(() => updateShape(doc, id, { kind: action.shapeKind }, LOCAL));
-        }, LOCAL);
+        patchEach(ids, ["shape"], () => ({ kind: action.shapeKind }));
+        break;
+      case "route":
+        patchEach(ids, ["arrow"], () => ({ route: action.route === "straight" ? null : action.route }));
+        break;
+      case "heads":
+        patchEach(ids, ["arrow"], () => ({ heads: headsFor(action.heads) }));
         break;
       case "dashed":
-        doc.transact(() => {
-          for (const id of ids)
-            if (byId.get(id)?.type === "arrow")
-              safely(() => updateShape(doc, id, { dashed: action.dashed || null }, LOCAL));
-        }, LOCAL);
+        patchEach(ids, ["arrow"], () => ({ dashed: action.dashed || null }));
         break;
+      case "editText":
+        if (single && (single.type === "note" || single.type === "text" || single.type === "shape")) {
+          setEditing(single.id);
+        }
+        return;
       case "label":
         if (ids[0]) setNaming({ id: ids[0], kind: "label" });
         return;
       case "rename":
         if (ids[0]) setNaming({ id: ids[0], kind: "frame" });
+        return;
+      case "crop":
+        if (single?.type === "image" && single.asset && !single.rot) {
+          setEditing(null);
+          setTool("select");
+          setCropping({ id: single.id, rect: { x: single.x, y: single.y, w: single.w, h: single.h } });
+        }
+        return;
+      case "replace":
+        if (single?.type === "image") {
+          replacing.current = single.id;
+          replaceInput.current?.click();
+        }
         return;
       case "arrange":
         arrange(action.how);
@@ -1780,9 +2017,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         duplicate(ids);
         return;
       case "lock":
-        doc.transact(() => {
-          for (const id of ids) safely(() => updateShape(doc, id, { locked: action.locked || null }, LOCAL));
-        }, LOCAL);
+        patchEach(ids, SHAPE_TYPES, () => ({ locked: action.locked || null }));
         break;
       case "delete":
         removeShapes(ids);
@@ -1791,11 +2026,32 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
     endStep();
   };
 
+  /** The layers' eye: hidden from the plane (and from its presses), or back. */
+  const hideShape = useCallback(
+    (id: string, hidden: boolean) => {
+      if (readOnly) return;
+      safely(() => updateShape(doc, id, { hidden: hidden || null }, LOCAL));
+      endStep();
+      // A shape that goes out of sight leaves the selection made on the plane.
+      if (hidden) setSelected((now) => now.filter((x) => x !== id));
+    },
+    [readOnly, safely, doc, endStep],
+  );
+
+  /** A row of the layers pressed: chosen (a hidden one too), and brought into view. */
+  const pickLayer = useCallback(
+    (id: string, add: boolean) => {
+      setSelected((now) => (add ? (now.includes(id) ? now.filter((x) => x !== id) : [...now, id]) : [id]));
+      if (!add) showShapes([id]);
+    },
+    [showShapes],
+  );
+
   const onContextMenu = (e: MouseEvent<HTMLDivElement>) => {
     if (e.defaultPrevented || isEditable(e.target)) return;
     const target = e.target as Element;
     if (interacting && target.closest(`[data-shape="${interacting}"]`)) return;
-    if (target.closest(".cnv-dock, .cnv-zoom, .cnv-gen, .cnv-insp, .cnv-bar")) return;
+    if (target.closest(".cnv-dock, .cnv-zoom, .cnv-insp, .cnv-bar, .cnv-layers, .cnv-pin, [data-crop-part]")) return;
     e.preventDefault();
     const world = worldOf(e);
     const label = target.closest("[data-frame-label]")?.getAttribute("data-frame-label");
@@ -1833,13 +2089,13 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         item("download", t("live.canvas.inspector.download"), () => downloadImage(shape), { icon: "download" });
         item("copyImage", t("live.canvas.inspector.copy"), () => copyImage(shape), { icon: "image" });
         item("open", t("live.canvas.inspector.open"), () => setZoomed(shape), { icon: "expand" });
-        if (!readOnly && shape.gen && (models.data ?? []).some((m) => m.refs)) {
-          item("variations", t("live.canvas.inspector.variations"), () => variations(shape), { icon: "sparkle" });
-        }
-        if (!readOnly && (models.data ?? []).some((m) => m.refs)) {
-          item("editAi", t("live.canvas.inspector.edit"), () => openGenerate({ prompt: "", references: [shape.id] }), {
-            icon: "edit",
-          });
+        if (onAsk) {
+          item("variations", t("live.canvas.inspector.variations"), () => askVariations(shape), { icon: "sparkle" });
+          if (fileAgent) {
+            item("ask", t("live.conversation.ask", agentGrammar(fileAgent.name)), () => askAbout(shape), {
+              icon: "message",
+            });
+          }
         }
       }
       if (!readOnly && shape && ids.length === 1) {
@@ -1863,7 +2119,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
         item(
           "lock",
           locked ? t("live.canvas.actions.unlock") : t("live.canvas.actions.lock"),
-          () => shapeBarAction({ kind: "lock", locked: !locked }),
+          () => barAction({ kind: "lock", locked: !locked }),
           { icon: "lock" },
         );
         item("delete", t("live.canvas.actions.delete"), () => removeShapes(ids), { icon: "trash", danger: true });
@@ -1878,7 +2134,7 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
       item("all", t("live.canvas.actions.selectAll"), () =>
         setSelected(
           topLevelOf(
-            store.now().list.map((s) => s.id),
+            visibleNow().map((s) => s.id),
             store.now().list,
           ),
         ),
@@ -1909,32 +2165,28 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
       : list;
 
   const single = selShapes.length === 1 ? selShapes[0] : null;
-  const inspected = single?.type === "image" && inspectorOff !== single.id ? single : null;
-  const selectedImages = selShapes.filter((s) => s.type === "image");
-  const imageShapes = useMemo(() => new Map(list.filter((s) => s.type === "image").map((s) => [s.id, s])), [list]);
+  const inspected = single?.type === "image" && details === single.id ? single : null;
   const empty = list.length === 0 && uploads.length === 0;
-  const barShapes =
-    !readOnly &&
-    !busy &&
-    !editing &&
-    !naming &&
-    selShapes.length > 0 &&
-    !selShapes.some((s) => s.type === "image" || s.type === "pending" || s.type === "html" || s.type === "file")
-      ? selShapes
-      : [];
-  const barBounds = barShapes.length ? boundsOf(sel, byId) : null;
-  const barStyle: CSSProperties | null = barBounds
-    ? (() => {
-        const top = barBounds.y * cam.z + cam.y;
-        const left = (barBounds.x + barBounds.w / 2) * cam.z + cam.x;
-        const below = top < 72;
-        return {
-          left: Math.min(Math.max(left, 160), stage.w - 160),
-          top: below ? (barBounds.y + barBounds.h) * cam.z + cam.y + 16 : top - 16,
-          transform: below ? "translate(-50%, 0)" : "translate(-50%, -100%)",
-        };
-      })()
-    : null;
+  const cropShape = cropping ? byId.get(cropping.id) : undefined;
+  const calm = !busy && !editing && !naming && !cropping;
+  // Where the selection is on screen: the bar goes above it, its size under it.
+  const selBounds = calm && sel.length ? boundsOf(sel, byId) : null;
+  const toAnchor = (b: Box): Anchor => ({
+    x: (b.x + b.w / 2) * cam.z + cam.x,
+    top: b.y * cam.z + cam.y,
+    bottom: (b.y + b.h) * cam.z + cam.y,
+  });
+  const selAnchor = selBounds ? toAnchor(selBounds) : null;
+  const barLeft = layersOpen ? LAYERS_ROOM : undefined;
+  const sized = selBounds && !selShapes.every((s) => s.type === "arrow") ? sizeOf(selShapes, selBounds) : null;
+  // Cropping: the size the window keeps of the picture, in its pixels.
+  const cropSize =
+    cropping && cropShape?.nw && cropShape.nh
+      ? (() => {
+          const full = fullImageBox(cropShape);
+          return { w: (cropping.rect.w / full.w) * cropShape.nw, h: (cropping.rect.h / full.h) * cropShape.nh };
+        })()
+      : null;
 
   const spacing = dotSpacing(cam.z);
   const planeStyle = {
@@ -2015,13 +2267,23 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
                   style={{ left: u.box.x, top: u.box.y, width: u.box.w, height: u.box.h }}
                 />
               ))}
+              {inking && (
+                <svg
+                  className="cnv-draw cnv-draw--ink"
+                  data-tool={inking.tool}
+                  style={strokeStyle(inking.color, PEN_WIDTHS[inking.tool][inking.size])}
+                  aria-hidden="true"
+                >
+                  <path ref={inkPath} />
+                </svg>
+              )}
             </div>
             <Overlay
               cam={cam}
               stage={stage}
               shapes={list}
               byId={byId}
-              selected={sel}
+              selected={cropping ? [] : sel}
               hover={hover}
               draft={draft}
               peers={peers}
@@ -2030,6 +2292,16 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
               onName={onName}
               busy={busy}
             />
+            <CommentPins artifact={artifact} cam={cam} stage={stage} onOpen={openMessage} />
+            {cropping && cropShape?.asset && (
+              <CropOverlay
+                shape={cropShape}
+                rect={cropping.rect}
+                cam={cam}
+                src={assetUrl(cropShape.asset)}
+                onChange={(rect) => setCropping({ id: cropping.id, rect })}
+              />
+            )}
             {empty && (
               <div className="cnv__empty">
                 <EmptyState
@@ -2048,13 +2320,11 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
                         <button type="button" className="ac-btn ac-btn--sm" onClick={() => fileInput.current?.click()}>
                           {t("live.canvas.empty.upload")}
                         </button>
-                        <button
-                          type="button"
-                          className="ac-btn ac-btn--agent ac-btn--sm"
-                          onClick={() => openGenerate()}
-                        >
-                          {t("live.canvas.empty.generate")}
-                        </button>
+                        {onAsk && fileAgent && (
+                          <button type="button" className="ac-btn ac-btn--agent ac-btn--sm" onClick={() => onAsk()}>
+                            {t("live.conversation.ask", agentGrammar(fileAgent.name))}
+                          </button>
+                        )}
                       </>
                     )
                   }
@@ -2069,38 +2339,77 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
               </div>
             )}
           </div>
-          {barShapes.length > 0 && barStyle && (
-            <ShapeBar shapes={barShapes} style={barStyle} onAction={shapeBarAction} />
+          {selAnchor && sized && (
+            <SizeTag anchor={selAnchor} stage={stage} w={Math.round(sized.w)} h={Math.round(sized.h)} />
+          )}
+          {cropping && cropSize && (
+            <SizeTag
+              anchor={toAnchor(cropping.rect)}
+              stage={stage}
+              w={Math.round(cropSize.w)}
+              h={Math.round(cropSize.h)}
+            />
+          )}
+          {!readOnly && selAnchor && (
+            <BarSpot anchor={selAnchor} stage={stage} left={barLeft}>
+              <SelectionBar shapes={selShapes} agent={fileAgent} canAsk={!!onAsk} onAction={barAction} />
+            </BarSpot>
+          )}
+          {cropping && (
+            <BarSpot anchor={toAnchor(cropping.rect)} stage={stage} left={barLeft}>
+              <CropBar onApply={applyCrop} onCancel={cancelCrop} />
+            </BarSpot>
+          )}
+          {layersOpen && (
+            <LayersPanel
+              shapes={list}
+              selected={sel}
+              readOnly={readOnly}
+              onPick={pickLayer}
+              onHide={hideShape}
+              onClose={() => setLayersOpen(false)}
+            />
           )}
           <div className="cnv__bottom">
-            {generating && !readOnly ? (
-              <GenerateBar
-                orgId={orgId}
-                images={imageShapes}
-                selectedImages={selectedImages}
-                draft={genDraft}
-                offline={offline}
-                pending={generate.isPending}
-                assetUrl={assetUrl}
-                onGenerate={(input) => runGenerate(input)}
-                onClose={() => {
-                  setGenerating(false);
-                  setGenDraft(null);
-                  planeRef.current?.focus({ preventScroll: true });
-                }}
-              />
-            ) : (
-              <Dock
-                tool={tool}
-                readOnly={readOnly}
-                canGenerate={canGenerate}
-                onTool={pickTool}
-                onImage={() => fileInput.current?.click()}
-                onGenerate={() => openGenerate()}
-              />
-            )}
+            {tool === "draw" && <PenBar pen={pen} onPen={setPen} />}
+            <Dock
+              tool={tool}
+              shapeKind={shapeKind}
+              route={route}
+              readOnly={readOnly}
+              canComment={!!onAsk}
+              agent={fileAgent}
+              onTool={pickTool}
+              onShape={pickShape}
+              onRoute={pickRoute}
+              onImage={() => fileInput.current?.click()}
+              onAsk={() => onAsk?.()}
+            />
           </div>
-          <ZoomIsland zoom={cam.z} onStep={zoomStep} onActual={zoomActual} onFit={fitAll} canFit={list.length > 0} />
+          <ZoomIsland
+            zoom={cam.z}
+            layers={layersOpen}
+            onLayers={() => setLayersOpen((open) => !open)}
+            onStep={zoomStep}
+            onActual={zoomActual}
+            onFit={fitAll}
+            onFitSelection={fitSelection}
+            canFit={list.length > 0}
+            hasSelection={sel.length > 0}
+          />
+          <input
+            ref={replaceInput}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              const id = replacing.current;
+              e.target.value = "";
+              replacing.current = null;
+              if (file && id) void replaceImage(id, file);
+            }}
+          />
           <input
             ref={fileInput}
             type="file"
@@ -2118,14 +2427,11 @@ function CanvasEditor({ room, orgId, readOnly, following, onStopFollowing, onSel
           <ImageInspector
             shape={inspected}
             readOnly={readOnly}
-            canGenerate={canGenerate}
             assetUrl={assetUrl}
-            onVariations={() => variations(inspected)}
-            onEdit={() => openGenerate({ prompt: "", references: [inspected.id] })}
             onDownload={() => downloadImage(inspected)}
             onCopy={() => copyImage(inspected)}
             onOpen={() => setZoomed(inspected)}
-            onClose={() => setInspectorOff(inspected.id)}
+            onClose={() => setDetails(null)}
           />
         )}
         {zoomed?.asset && (
@@ -2168,8 +2474,15 @@ function ArrowOf({
   editingLabel: boolean;
 }) {
   const line = arrowLine(arrow, byId);
-  if (!line) return null;
+  if (!line || arrow.hidden) return null;
   return (
-    <ArrowShape id={arrow.id} line={line} dashed={!!arrow.dashed} label={arrow.label} editingLabel={editingLabel} />
+    <ArrowShape
+      id={arrow.id}
+      line={line}
+      dashed={!!arrow.dashed}
+      label={arrow.label}
+      editingLabel={editingLabel}
+      look={arrow}
+    />
   );
 }

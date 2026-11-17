@@ -1,35 +1,35 @@
+import type { Agent } from "@agenteschat/client";
 import { formatPercent } from "@agenteschat/client/lib/format";
-import { type CanvasShapeKind, NOTE_COLORS, type NoteColor, type ShapeView } from "@agenteschat/live/canvas";
-import { Button, cx, type IconName, Menu, MenuItem, MenuSeparator } from "@agenteschat/ui";
-import { type CSSProperties, type KeyboardEvent, useRef } from "react";
+import { agentGrammar } from "@agenteschat/client/lib/grammar";
+import type { ArrowRoute, CanvasShapeKind, DrawTool } from "@agenteschat/live/canvas";
+import { Button, Icon, type IconName, Kbd, Menu, MenuItem } from "@agenteschat/ui";
+import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { AgentAvatar } from "@/components/AgentAvatar";
 import { CAMERA_MAX, CAMERA_MIN } from "./camera";
-import { SOFT, softName } from "./palette";
+import { DARK_INK, isInk } from "./palette";
+import {
+  ASK_KEY,
+  IMAGE_KEY,
+  INKS,
+  KIND_ICONS,
+  keyLabel,
+  PEN_SIZES,
+  type PenStyle,
+  ROUTE_CHOICES,
+  SHAPE_CHOICES,
+  TOOL_KEYS,
+  type Tool,
+} from "./tools";
 
 /**
- * The canvas's floating controls (ADR 0194 §2): the tools dock at the bottom, the zoom island at the bottom right, and
- * the small bar over a chosen note, text, shape, frame or arrow. Glass, over the plane, out of the way of the shapes.
+ * The canvas's floating controls (ADR 0194 §2): the tools dock at the bottom (Select and Move around; Frame, the
+ * Shapes and Arrow menus, the pen, text, note and image; Comment; and the file's agent, "Pedir ao Atlas"), the pen's
+ * own bar above it while drawing, and the zoom island at the top right with the layers' toggle first. Glass, over the
+ * plane, out of the way of the shapes.
  */
 
-export type Tool = "select" | "hand" | "note" | "text" | "shape" | "arrow" | "frame";
-
-interface ToolDef {
-  tool: Tool | "image";
-  icon: IconName;
-  key: string;
-}
-
-/** The tools in the dock, with their keys (single letters: the desktop app keeps the ⌘ ones). */
-export const TOOLS: readonly ToolDef[] = [
-  { tool: "select", icon: "pointerTool", key: "V" },
-  { tool: "hand", icon: "hand", key: "H" },
-  { tool: "note", icon: "sticky", key: "N" },
-  { tool: "text", icon: "textTool", key: "T" },
-  { tool: "shape", icon: "shape", key: "R" },
-  { tool: "arrow", icon: "arrowTool", key: "A" },
-  { tool: "frame", icon: "frame", key: "F" },
-  { tool: "image", icon: "image", key: "I" },
-];
+export type { Tool };
 
 /** Arrow keys move along a toolbar's buttons (one tab stop for the whole bar). */
 export function rovingKeys(e: KeyboardEvent<HTMLElement>) {
@@ -47,57 +47,92 @@ export function rovingKeys(e: KeyboardEvent<HTMLElement>) {
   items[next]?.focus();
 }
 
-export function Dock({
-  tool,
-  readOnly,
-  canGenerate,
-  onTool,
-  onImage,
-  onGenerate,
-}: {
+const Divider = () => <span className="cnv-dock__divider" aria-hidden="true" />;
+
+export interface DockProps {
   tool: Tool;
+  /** The form the Shapes tool draws (its icon on the dock). */
+  shapeKind: CanvasShapeKind;
+  /** How the Arrow tool's arrows run. */
+  route: ArrowRoute;
   readOnly: boolean;
-  /** Whether "Generate image" shows (it explains itself when there is no key). */
-  canGenerate: boolean;
+  /** Comment (a message in the file's conversation) is there: the page asks in it. */
+  canComment: boolean;
+  /** The file's agent "Pedir ao …" calls (null: none to ask). */
+  agent: Agent | null;
   onTool(tool: Tool): void;
+  onShape(kind: CanvasShapeKind | "line"): void;
+  onRoute(route: ArrowRoute): void;
   onImage(): void;
-  onGenerate(): void;
-}) {
+  onAsk(): void;
+}
+
+/** The tools at the bottom of the plane; a read-only canvas keeps Select, Move around, Comment and the agent. */
+export function Dock(props: DockProps) {
+  const { tool, readOnly } = props;
   const { t } = useTranslation();
-  const tools = readOnly ? TOOLS.filter((d) => d.tool === "select" || d.tool === "hand") : TOOLS;
+  const button = (which: Exclude<Tool, "shape" | "line">, icon: IconName, name: string) => {
+    const active = tool === which;
+    return (
+      <Button
+        key={which}
+        variant="ghost"
+        iconOnly
+        icon={icon}
+        className="cnv-dock__tool"
+        aria-label={name}
+        title={`${name} (${keyLabel(TOOL_KEYS[which])})`}
+        aria-pressed={active}
+        data-active={active || undefined}
+        tabIndex={active ? 0 : -1}
+        onClick={() => props.onTool(which)}
+      />
+    );
+  };
+  const ask = props.agent ? t("live.conversation.ask", agentGrammar(props.agent.name)) : "";
   return (
     <div className="cnv-dock ac-glass" role="toolbar" aria-label={t("live.canvas.tools.label")} onKeyDown={rovingKeys}>
-      {tools.map((d) => {
-        const name = t(`live.canvas.tools.${d.tool}`);
-        const active = d.tool === tool;
-        return (
+      {button("select", "pointerTool", t("live.canvas.tools.select"))}
+      {button("hand", "hand", t("live.canvas.tools.hand"))}
+      {!readOnly && (
+        <>
+          <Divider />
+          {button("frame", "frame", t("live.canvas.tools.frame"))}
+          <ShapesTool {...props} />
+          <ArrowTool {...props} />
+          {button("draw", "pen", t("live.canvas.tools.pen"))}
+          {button("text", "textTool", t("live.canvas.tools.text"))}
+          {button("note", "sticky", t("live.canvas.tools.note"))}
           <Button
-            key={d.tool}
             variant="ghost"
             iconOnly
-            icon={d.icon}
+            icon="image"
             className="cnv-dock__tool"
-            aria-label={name}
-            title={`${name} (${d.key})`}
-            aria-pressed={d.tool === "image" ? undefined : active}
-            data-active={active || undefined}
-            tabIndex={active || (d.tool === "select" && tool === "hand" && readOnly) ? 0 : -1}
-            onClick={() => (d.tool === "image" ? onImage() : onTool(d.tool))}
-          />
-        );
-      })}
-      {!readOnly && canGenerate && (
-        <>
-          <span className="cnv-dock__divider" aria-hidden="true" />
-          <Button
-            variant="agent"
-            icon="sparkle"
-            className="cnv-dock__gen"
-            title={`${t("live.canvas.tools.generate")} (G)`}
+            aria-label={t("live.canvas.tools.image")}
+            title={`${t("live.canvas.tools.image")} (${keyLabel(IMAGE_KEY)})`}
             tabIndex={-1}
-            onClick={onGenerate}
+            onClick={props.onImage}
+          />
+        </>
+      )}
+      {props.canComment && (
+        <>
+          <Divider />
+          {button("comment", "comment", t("live.canvas.tools.comment"))}
+        </>
+      )}
+      {props.canComment && props.agent && (
+        <>
+          <Divider />
+          <Button
+            variant="ghost"
+            className="cnv-dock__agent"
+            title={`${ask} (${keyLabel(ASK_KEY)})`}
+            tabIndex={-1}
+            onClick={props.onAsk}
           >
-            <span className="cnv-dock__gen-words">{t("live.canvas.tools.generate")}</span>
+            <AgentAvatar agentId={props.agent.id} name={props.agent.name} size="xs" />
+            <span className="ac-btn__label">{ask}</span>
           </Button>
         </>
       )}
@@ -105,18 +140,184 @@ export function Dock({
   );
 }
 
+/** A dock button that also opens a menu of its kinds: a press takes the tool (as last set) and shows the menu. */
+function MenuTool({
+  name,
+  keyHint,
+  icon,
+  active,
+  onPress,
+  children,
+}: {
+  name: string;
+  keyHint: string;
+  icon: IconName;
+  active: boolean;
+  onPress(): void;
+  children: ReactNode;
+}) {
+  return (
+    <Menu
+      side="top"
+      align="start"
+      label={name}
+      className="cnv-dock__menu"
+      trigger={
+        <Button
+          variant="ghost"
+          iconOnly
+          className="cnv-dock__tool cnv-dock__tool--menu"
+          aria-label={name}
+          title={`${name} (${keyHint})`}
+          aria-pressed={active}
+          data-active={active || undefined}
+          tabIndex={active ? 0 : -1}
+          onClick={onPress}
+        >
+          <Icon name={icon} />
+          <span className="cnv-dock__caret" aria-hidden="true">
+            <Icon name="chevronDown" size={14} />
+          </span>
+        </Button>
+      }
+    >
+      {children}
+    </Menu>
+  );
+}
+
+function ShapesTool({ tool, shapeKind, onShape }: DockProps) {
+  const { t } = useTranslation();
+  const line = tool === "line";
+  return (
+    <MenuTool
+      name={t("live.canvas.tools.shapes")}
+      keyHint={keyLabel(SHAPE_CHOICES[0]?.key ?? { key: "r" })}
+      icon={line ? "line" : KIND_ICONS[shapeKind]}
+      active={tool === "shape" || line}
+      onPress={() => onShape(line ? "line" : shapeKind)}
+    >
+      {SHAPE_CHOICES.map((c) => (
+        <MenuItem key={c.kind} icon={c.icon} hint={<Kbd>{keyLabel(c.key)}</Kbd>} onSelect={() => onShape(c.kind)}>
+          {t(`live.canvas.shapeKinds.${c.kind}` as "live.canvas.shapeKinds.rect")}
+        </MenuItem>
+      ))}
+    </MenuTool>
+  );
+}
+
+function ArrowTool({ tool, route, onRoute }: DockProps) {
+  const { t } = useTranslation();
+  const icon = ROUTE_CHOICES.find((r) => r.route === route)?.icon ?? "arrowTool";
+  return (
+    <MenuTool
+      name={t("live.canvas.tools.arrow")}
+      keyHint={keyLabel(TOOL_KEYS.arrow)}
+      icon={icon}
+      active={tool === "arrow"}
+      onPress={() => onRoute(route)}
+    >
+      {ROUTE_CHOICES.map((r) => (
+        <MenuItem key={r.route} icon={r.icon} onSelect={() => onRoute(r.route)}>
+          {t(`live.canvas.routes.${r.route}` as "live.canvas.routes.straight")}
+        </MenuItem>
+      ))}
+    </MenuTool>
+  );
+}
+
+/** An ink's look on a swatch: the ink's own color, drawn light on the dark canvas as the strokes are. */
+export const inkSwatch = (color: string) =>
+  ({ "--swatch": color, "--swatch-dark": isInk(color) ? DARK_INK : color }) as CSSProperties;
+
+/** The pen's bar while drawing: pen or highlighter, five colors, three sizes (ADR 0194 §2). */
+export function PenBar({ pen, onPen }: { pen: PenStyle; onPen(next: PenStyle): void }) {
+  const { t } = useTranslation();
+  const tools: { tool: DrawTool; icon: IconName }[] = [
+    { tool: "pen", icon: "pen" },
+    { tool: "marker", icon: "marker" },
+  ];
+  return (
+    <div
+      className="cnv-bar cnv-penbar ac-glass"
+      role="toolbar"
+      aria-label={t("live.canvas.pen.label")}
+      onKeyDown={rovingKeys}
+    >
+      {tools.map((d) => (
+        <Button
+          key={d.tool}
+          size="sm"
+          variant="ghost"
+          iconOnly
+          icon={d.icon}
+          aria-label={t(`live.canvas.pen.${d.tool}`)}
+          title={t(`live.canvas.pen.${d.tool}`)}
+          aria-pressed={pen.tool === d.tool}
+          onClick={() => onPen({ ...pen, tool: d.tool })}
+        />
+      ))}
+      <span className="cnv-bar__divider" aria-hidden="true" />
+      <div className="cnv-bar__swatches" role="radiogroup" aria-label={t("live.canvas.pen.color")}>
+        {INKS.map((ink) => (
+          // biome-ignore lint/a11y/useSemanticElements: a swatch button in a radio group
+          <button
+            key={ink.key}
+            type="button"
+            role="radio"
+            className="cnv-bar__swatch"
+            aria-checked={pen.color.toLowerCase() === ink.color}
+            aria-label={t(`live.canvas.inks.${ink.key}`)}
+            title={t(`live.canvas.inks.${ink.key}`)}
+            style={inkSwatch(ink.color)}
+            onClick={() => onPen({ ...pen, color: ink.color })}
+          />
+        ))}
+      </div>
+      <span className="cnv-bar__divider" aria-hidden="true" />
+      <div className="cnv-bar__sizes" role="radiogroup" aria-label={t("live.canvas.pen.size")}>
+        {PEN_SIZES.map((s) => (
+          // biome-ignore lint/a11y/useSemanticElements: a size button in a radio group
+          <button
+            key={s}
+            type="button"
+            role="radio"
+            className="cnv-bar__size"
+            aria-checked={pen.size === s}
+            aria-label={t(`live.canvas.pen.sizes.${s}`)}
+            title={t(`live.canvas.pen.sizes.${s}`)}
+            onClick={() => onPen({ ...pen, size: s })}
+          >
+            {t(`live.canvas.pen.short.${s}`)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The zoom island at the top right: Layers, then −, the zoom (a menu: fit everything, the selection, 100%) and +. */
 export function ZoomIsland({
   zoom,
+  layers,
+  onLayers,
   onStep,
   onActual,
   onFit,
+  onFitSelection,
   canFit,
+  hasSelection,
 }: {
   zoom: number;
+  /** The layers panel is open. */
+  layers: boolean;
+  onLayers(): void;
   onStep(dir: 1 | -1): void;
   onActual(): void;
   onFit(): void;
+  onFitSelection(): void;
   canFit: boolean;
+  hasSelection: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const percent = formatPercent(i18n.language, Math.round(zoom * 100));
@@ -126,23 +327,50 @@ export function ZoomIsland({
         size="sm"
         variant="ghost"
         iconOnly
-        icon="dash"
-        aria-label={t("live.canvas.zoom.out")}
-        title={`${t("live.canvas.zoom.out")} (-)`}
-        disabled={zoom <= CAMERA_MIN + 1e-3}
-        onClick={() => onStep(-1)}
+        icon="layers"
+        aria-label={t("live.canvas.layers.title")}
+        title={t("live.canvas.layers.title")}
+        aria-pressed={layers}
+        onClick={onLayers}
       />
+      <span className="cnv-bar__divider" aria-hidden="true" />
       <Button
         size="sm"
         variant="ghost"
-        className="cnv-zoom__level tabular"
-        aria-label={t("live.canvas.zoom.actual")}
-        title={t("live.canvas.zoom.actual")}
+        iconOnly
+        icon="dash"
+        aria-label={t("live.canvas.zoom.out")}
+        title={`${t("live.canvas.zoom.out")} (-)`}
         tabIndex={-1}
-        onClick={onActual}
+        disabled={zoom <= CAMERA_MIN + 1e-3}
+        onClick={() => onStep(-1)}
+      />
+      <Menu
+        side="bottom"
+        align="center"
+        label={t("live.canvas.zoom.label")}
+        trigger={
+          <Button
+            size="sm"
+            variant="ghost"
+            className="cnv-zoom__level tabular"
+            aria-label={t("live.canvas.zoom.menu", { percent })}
+            tabIndex={-1}
+          >
+            {percent}
+          </Button>
+        }
       >
-        {percent}
-      </Button>
+        <MenuItem disabled={!canFit} hint={<Kbd>⇧1</Kbd>} onSelect={onFit}>
+          {t("live.canvas.zoom.fitAll")}
+        </MenuItem>
+        <MenuItem disabled={!hasSelection} hint={<Kbd>⇧2</Kbd>} onSelect={onFitSelection}>
+          {t("live.canvas.zoom.selection")}
+        </MenuItem>
+        <MenuItem hint={<Kbd>⇧0</Kbd>} onSelect={onActual}>
+          {t("live.canvas.zoom.actual")}
+        </MenuItem>
+      </Menu>
       <Button
         size="sm"
         variant="ghost"
@@ -154,216 +382,6 @@ export function ZoomIsland({
         disabled={zoom >= CAMERA_MAX - 1e-3}
         onClick={() => onStep(1)}
       />
-      <Button
-        size="sm"
-        variant="ghost"
-        tabIndex={-1}
-        disabled={!canFit}
-        title={`${t("live.canvas.zoom.fitAll")} (⇧1)`}
-        onClick={onFit}
-      >
-        {t("live.canvas.zoom.fit")}
-      </Button>
     </div>
-  );
-}
-
-/** Text sizes a text box offers (world units). */
-export const TEXT_SIZES = [
-  { size: 16, key: "s" },
-  { size: 24, key: "m" },
-  { size: 40, key: "l" },
-  { size: 64, key: "xl" },
-] as const;
-
-export type ShapeBarAction =
-  | { kind: "color"; color: NoteColor }
-  | { kind: "fill"; color: NoteColor | null }
-  | { kind: "size"; size: number }
-  | { kind: "shapeKind"; shapeKind: CanvasShapeKind }
-  | { kind: "dashed"; dashed: boolean }
-  | { kind: "label" }
-  | { kind: "rename" }
-  | { kind: "arrange"; how: "front" | "forward" | "backward" | "back" }
-  | { kind: "duplicate" }
-  | { kind: "lock"; locked: boolean }
-  | { kind: "delete" };
-
-/**
- * The small bar over a chosen shape (or a few of one type): a note's color, a text's size, a shape's form and fill,
- * an arrow's line and words, a frame's name; then the stacking menu and delete.
- */
-export function ShapeBar({
-  shapes,
-  style,
-  onAction,
-}: {
-  shapes: ShapeView[];
-  style: CSSProperties;
-  onAction(action: ShapeBarAction): void;
-}) {
-  const { t } = useTranslation();
-  const bar = useRef<HTMLDivElement>(null);
-  const first = shapes[0];
-  if (!first) return null;
-  const same = shapes.every((s) => s.type === first.type);
-  const type = same ? first.type : null;
-  const locked = shapes.every((s) => s.locked);
-  const swatches = (current: NoteColor | null, pick: (c: NoteColor) => void, label: string) => (
-    <div className="cnv-bar__swatches" role="radiogroup" aria-label={label}>
-      {NOTE_COLORS.map((c) => (
-        // biome-ignore lint/a11y/useSemanticElements: a swatch button in a radio group
-        <button
-          key={c}
-          type="button"
-          role="radio"
-          aria-checked={current === c}
-          aria-label={t(`live.canvas.colors.${c}`)}
-          title={t(`live.canvas.colors.${c}`)}
-          className="cnv-bar__swatch"
-          data-color={c}
-          style={{ "--swatch": SOFT[c].light, "--swatch-dark": SOFT[c].dark } as CSSProperties}
-          onClick={() => pick(c)}
-        />
-      ))}
-    </div>
-  );
-  return (
-    <div
-      ref={bar}
-      className="cnv-bar ac-glass"
-      role="toolbar"
-      aria-label={t("live.canvas.bar.title")}
-      style={style}
-      onKeyDown={rovingKeys}
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      {type === "note" &&
-        swatches(
-          same && shapes.every((s) => s.color === first.color) ? (first.color ?? "yellow") : null,
-          (c) => onAction({ kind: "color", color: c }),
-          t("live.canvas.bar.color"),
-        )}
-      {type === "shape" && (
-        <>
-          {(["rect", "ellipse", "diamond"] as const).map((k) => (
-            <Button
-              key={k}
-              size="sm"
-              variant="ghost"
-              iconOnly
-              className="cnv-bar__kind"
-              aria-label={t(`live.canvas.shapeKinds.${k}`)}
-              title={t(`live.canvas.shapeKinds.${k}`)}
-              aria-pressed={shapes.every((s) => (s.kind ?? "rect") === k)}
-              onClick={() => onAction({ kind: "shapeKind", shapeKind: k })}
-            >
-              <KindGlyph kind={k} />
-            </Button>
-          ))}
-          <span className="cnv-bar__divider" aria-hidden="true" />
-          {swatches(softName(first.fill), (c) => onAction({ kind: "fill", color: c }), t("live.canvas.bar.fill"))}
-        </>
-      )}
-      {type === "text" && (
-        <div className="cnv-bar__sizes" role="radiogroup" aria-label={t("live.canvas.bar.size")}>
-          {TEXT_SIZES.map((s) => (
-            // biome-ignore lint/a11y/useSemanticElements: a size button in a radio group
-            <button
-              key={s.key}
-              type="button"
-              role="radio"
-              className="cnv-bar__size"
-              aria-checked={shapes.every((sh) => (sh.style?.size ?? 24) === s.size)}
-              aria-label={t(`live.canvas.sizes.${s.key}`)}
-              title={t(`live.canvas.sizes.${s.key}`)}
-              onClick={() => onAction({ kind: "size", size: s.size })}
-            >
-              {t(`live.canvas.sizes.short.${s.key}`)}
-            </button>
-          ))}
-        </div>
-      )}
-      {type === "arrow" && (
-        <>
-          <Button
-            size="sm"
-            variant="ghost"
-            aria-pressed={shapes.every((s) => s.dashed)}
-            onClick={() => onAction({ kind: "dashed", dashed: !shapes.every((s) => s.dashed) })}
-          >
-            {t("live.canvas.bar.dashed")}
-          </Button>
-          {shapes.length === 1 && (
-            <Button size="sm" variant="ghost" onClick={() => onAction({ kind: "label" })}>
-              {t("live.canvas.bar.label")}
-            </Button>
-          )}
-        </>
-      )}
-      {type === "frame" && shapes.length === 1 && (
-        <Button size="sm" variant="ghost" icon="edit" onClick={() => onAction({ kind: "rename" })}>
-          {t("live.canvas.bar.rename")}
-        </Button>
-      )}
-      {type && type !== "arrow" && <span className="cnv-bar__divider" aria-hidden="true" />}
-      <Menu
-        label={t("live.canvas.arrange.label")}
-        align="end"
-        trigger={
-          <Button
-            size="sm"
-            variant="ghost"
-            iconOnly
-            icon="layers"
-            aria-label={t("live.canvas.arrange.label")}
-            title={t("live.canvas.arrange.label")}
-          />
-        }
-      >
-        <MenuItem onSelect={() => onAction({ kind: "arrange", how: "front" })}>
-          {t("live.canvas.arrange.front")}
-        </MenuItem>
-        <MenuItem onSelect={() => onAction({ kind: "arrange", how: "forward" })}>
-          {t("live.canvas.arrange.forward")}
-        </MenuItem>
-        <MenuItem onSelect={() => onAction({ kind: "arrange", how: "backward" })}>
-          {t("live.canvas.arrange.backward")}
-        </MenuItem>
-        <MenuItem onSelect={() => onAction({ kind: "arrange", how: "back" })}>{t("live.canvas.arrange.back")}</MenuItem>
-        <MenuSeparator />
-        <MenuItem icon="copy" onSelect={() => onAction({ kind: "duplicate" })}>
-          {t("live.canvas.actions.duplicate")}
-        </MenuItem>
-        <MenuItem icon="lock" onSelect={() => onAction({ kind: "lock", locked: !locked })}>
-          {locked ? t("live.canvas.actions.unlock") : t("live.canvas.actions.lock")}
-        </MenuItem>
-      </Menu>
-      <Button
-        size="sm"
-        variant="ghost"
-        iconOnly
-        icon="trash"
-        className={cx("cnv-bar__delete")}
-        aria-label={t("live.canvas.actions.delete")}
-        title={t("live.canvas.actions.delete")}
-        onClick={() => onAction({ kind: "delete" })}
-      />
-    </div>
-  );
-}
-
-/** A shape's form as a glyph in the icons' grid (20, stroke 1.6). */
-function KindGlyph({ kind }: { kind: CanvasShapeKind }) {
-  return (
-    <svg className="ac-icon" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-      {kind === "ellipse" ? (
-        <ellipse cx="10" cy="10" rx="6.5" ry="5.5" />
-      ) : kind === "diamond" ? (
-        <path d="M10 3.5 16.5 10 10 16.5 3.5 10z" />
-      ) : (
-        <rect x="3.5" y="5" width="13" height="10" rx="1.75" />
-      )}
-    </svg>
   );
 }

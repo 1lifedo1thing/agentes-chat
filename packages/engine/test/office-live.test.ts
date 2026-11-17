@@ -1,5 +1,15 @@
 import { afterAll, afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { readDeck, SheetEngine, SYSTEM, setValues, sheetIds, sheetLocale, type WorkbookData } from "@agenteschat/live";
+import {
+  documentSource,
+  readDeck,
+  readDocument,
+  SheetEngine,
+  SYSTEM,
+  setValues,
+  sheetIds,
+  sheetLocale,
+  type WorkbookData,
+} from "@agenteschat/live";
 import {
   addFileVersion,
   artifactFile,
@@ -149,12 +159,23 @@ describe("opening an Office file as a live file", () => {
     expect(deck?.slides[0]?.notes).toBe("Mention the Acme deal.\nThank Ada.");
   });
 
-  test("a Word document becomes a Markdown document; a workbook past what a live file holds is refused", async () => {
+  test("a Word document becomes a live document with its pictures; a workbook too large is refused", async () => {
     const file = await upload("plan.docx", docxDocument(), null);
     const made = await openAsLive(f.artifactDeps, owner(), f.org.id, file.id);
     expect(made).toMatchObject({ kind: "document", title: "plan", channelId: null });
     const detail = await getArtifact(f.artifactDeps, owner(), f.org.id, made.id);
     expect(detail.content.kind === "document" && detail.content.markdown.startsWith("# Plano & metas")).toBe(true);
+    // Its PNG is the document's own picture (the SVG is left out, ADR 0196), and it says where it came from.
+    const assets = await listAssets(f.artifactDeps, owner(), f.org.id, made.id);
+    expect(assets).toHaveLength(1);
+    const head = await loadHeadDoc(f.db, f.org.id, made.id);
+    if (!head) throw new Error("no live document");
+    const blocks = readDocument(head.doc);
+    expect(blocks.filter((b) => b.type === "image").map((b) => (b.type === "image" ? b.asset : ""))).toEqual([
+      assets[0]?.id as string,
+    ]);
+    expect(documentSource(head.doc)).toEqual({ name: "plan.docx", file: file.id });
+    head.doc.destroy();
     const tall: WorkbookData = { sheets: [{ name: "A", rows: 1, cols: 1, cells: [{ r: 20_000, c: 0, v: "far" }] }] };
     const big = await upload("tall.xlsx", writeXlsx(tall));
     await expect(openAsLive(f.artifactDeps, owner(), f.org.id, big.id)).rejects.toMatchObject({

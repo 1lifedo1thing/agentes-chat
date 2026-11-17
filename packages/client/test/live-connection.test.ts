@@ -134,16 +134,32 @@ describe("live file connection", () => {
     expect(a.connection.unsentUpdate()).toBeNull();
   });
 
-  test("with no `live.saved` at all, what reached the server settles as saved", async () => {
+  test("with no `live.saved` at all, a pong that says nothing waits to be stored clears what came before it", async () => {
     const { join, step } = setup({ saved: false });
     const a = join();
     await step();
     a.doc.getMap<string>("cells").set("B1", "1");
     await step(LIVE_TIMING.sendDelayMs);
     expect(a.connection.state.unsent).toBe(true);
-    // Its ping waits out the gap since the last answer, its pong proves the frame arrived, then the settle.
+    // Its ping waits out the gap since the last answer; its pong proves the frame arrived and nothing waits.
     await step(LIVE_TIMING.pingGapMs);
     await step(LIVE_TIMING.savedSettleMs);
+    expect(a.connection.state.unsent).toBe(false);
+  });
+
+  test("a pong that says changes still wait to be stored keeps them unsent past the settle, until `live.saved`", async () => {
+    // Storing takes 3 s (a slow database): the server's pong says `unsaved` meanwhile.
+    const { join, step } = setup({ savedDelayMs: 3000 });
+    const a = join();
+    await step();
+    a.doc.getMap<string>("cells").set("B1", "1");
+    await step(LIVE_TIMING.sendDelayMs);
+    await step(LIVE_TIMING.pingGapMs);
+    // The pong came and a second of silence went by: that proves nothing while the server says it is still storing.
+    await step(LIVE_TIMING.savedSettleMs);
+    expect(a.connection.state.unsent).toBe(true);
+    expect(a.connection.unsentUpdate()).not.toBeNull();
+    await step(3000);
     expect(a.connection.state.unsent).toBe(false);
   });
 
@@ -382,6 +398,27 @@ describe("live file connection", () => {
     expect(a.awareness.getStates().has(b.awareness.clientID)).toBe(false);
     await step(LIVE_BACKOFF_MS[0] as number);
     expect(a.awareness.getStates().has(b.awareness.clientID)).toBe(true);
+  });
+
+  test("back on a new socket, this side shows to the others again at once, without moving", async () => {
+    const { server, join, step } = setup();
+    const a = join();
+    const b = join();
+    await step();
+    b.awareness.setLocalStateField("at", { sheet: "s1" });
+    await step();
+    expect(a.awareness.getStates().has(b.awareness.clientID)).toBe(true);
+    // B's socket drops: the server takes B out at B's last clock, as the real one does.
+    const bSocket = server.sockets.find((s) =>
+      s.frames.some((f) => f.type === "awareness" && f.entries.some((e) => e.clientId === b.awareness.clientID)),
+    );
+    server.closeSocket(bSocket as FakeLiveSocket, 1006);
+    await step();
+    expect(a.awareness.getStates().has(b.awareness.clientID)).toBe(false);
+    // A clock A already knows would be ignored: B comes back at a newer one, where it was.
+    await step(LIVE_BACKOFF_MS[0] as number);
+    expect(b.connection.state.status).toBe("live");
+    expect(a.awareness.getStates().get(b.awareness.clientID)).toMatchObject({ at: { sheet: "s1" } });
   });
 
   test("an agent's presence from the server shows and goes", async () => {

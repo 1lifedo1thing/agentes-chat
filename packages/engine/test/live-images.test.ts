@@ -5,9 +5,11 @@ import { PROVIDER_IDS, ProviderError } from "@agenteschat/providers";
 import { createFakeProvider, type FakeImageReply } from "@agenteschat/providers/testing";
 import {
   createCredential,
+  createFileArtifact,
   createModelGateway,
   drainOutbox,
   generateForAgent,
+  generateInChat,
   getAsset,
   imageModelsFor,
   type JobHandlers,
@@ -278,10 +280,11 @@ describe("when pictures aren't made", () => {
   });
 });
 
-describe("an agent's pictures", () => {
-  test("no canvas named: the conversation's own is made, used again, and the pictures come back to the model", async () => {
+describe("an agent's pictures on a canvas", () => {
+  test("on the canvas named: placed, made by a worker, back to the model", async () => {
+    const canvas = await makeLiveFile(f, "canvas", { title: "Moodboard" });
     const ctx = { orgId: f.org.id, agentId: f.agent.id, channelId: f.general.id, threadId: null };
-    const working = generateForAgent(deps, ctx, { prompt: "a lighthouse", count: 1, timeoutMs: 20_000 });
+    const working = generateForAgent(deps, ctx, { prompt: "a lighthouse", canvas: canvas.id, timeoutMs: 20_000 });
     let requestId = "";
     // The request lands, then a worker makes it (here: the drain).
     for (let i = 0; i < 500 && !requestId; i++) {
@@ -292,36 +295,91 @@ describe("an agent's pictures", () => {
     await drainOutbox(f.db, handlers);
     const out = await working;
     expect(out.timedOut).toBe(false);
-    expect(out.request).toMatchObject({ requestId, status: "done" });
+    expect(out.request).toMatchObject({ requestId, status: "done", artifactId: canvas.id });
+    expect(out.artifact).toMatchObject({ id: canvas.id, title: "Moodboard" });
     expect(out.images).toHaveLength(1);
-    expect(out.images[0]?.mediaType).toBe("image/png");
-    const [file] = await f.db.select().from(schema.artifacts).where(eq(schema.artifacts.id, out.artifact.id));
-    expect(file).toMatchObject({ kind: "canvas", title: "Images", channelId: f.general.id, threadId: null });
-    expect(out.artifact.title).toBe("Images");
-    const [image] = (await shapesOf(out.artifact.id)).filter((s) => s.type === "image");
+    const [image] = (await shapesOf(canvas.id)).filter((s) => s.type === "image");
     expect(image?.gen?.by).toEqual({ kind: "agent", id: f.agent.id });
-    // Its pictures were billed to the agent's budget.
-    const [usage] = await f.db.select().from(schema.usageRecords).where(eq(schema.usageRecords.kind, "image"));
-    expect(usage?.agentId).toBe(f.agent.id);
-
-    // The next request in the same conversation goes to the same canvas.
-    const next = await requestImages(
-      deps,
-      { type: "agent", agentId: f.agent.id, channelId: f.general.id, threadId: null },
-      f.org.id,
-      null,
-      { prompt: "another lighthouse" },
-    );
-    expect(next.artifactId).toBe(out.artifact.id);
+    expect(image?.by).toEqual({ kind: "agent", id: f.agent.id });
   });
 
   test("the wait runs out: the request comes back still pending, and the pictures still come later", async () => {
+    const canvas = await makeLiveFile(f, "canvas");
     const ctx = { orgId: f.org.id, agentId: f.agent.id, channelId: f.general.id, threadId: null };
-    const out = await generateForAgent(deps, ctx, { prompt: "a lighthouse", timeoutMs: 50 });
+    const out = await generateForAgent(deps, ctx, { prompt: "a lighthouse", canvas: canvas.id, timeoutMs: 50 });
     expect(out.timedOut).toBe(true);
     expect(out.images).toEqual([]);
     expect(out.request.status).toBe("queued");
     await drainOutbox(f.db, handlers);
     expect(await requestRow(out.request.requestId)).toMatchObject({ status: "done" });
+  });
+});
+
+describe("an agent's pictures in a conversation", () => {
+  const ctx = () => ({ orgId: f.org.id, agentId: f.agent.id, channelId: f.general.id, threadId: null });
+
+  test("each a picture file where its run posts, back to the model, billed to the agent; no canvas made", async () => {
+    const out = await generateInChat(deps, ctx(), { prompt: "A lighthouse at dusk!", count: 2, aspect: "16:9" });
+    expect(out).toMatchObject({ model: "gemini-nano-banana-2.1", count: 2, failure: null, costNanoUsd: 2 * BANANA });
+    expect(out.files).toHaveLength(2);
+    expect(out.images).toHaveLength(2);
+    expect(out.images[0]?.mediaType).toBe("image/png");
+    const rows = await f.db.select().from(schema.artifacts).where(eq(schema.artifacts.orgId, f.org.id));
+    expect(rows.some((r) => r.kind === "canvas")).toBe(false);
+    for (const [i, made] of out.files.entries()) {
+      const row = rows.find((r) => r.id === made.id);
+      expect(row).toMatchObject({ kind: "file", channelId: f.general.id, threadId: null, createdByType: "agent" });
+      expect(made).toMatchObject({ title: `A lighthouse at dusk! ${i + 1}`, version: 1, width: 96, height: 54 });
+      const [version] = await f.db
+        .select()
+        .from(schema.artifactVersions)
+        .where(eq(schema.artifactVersions.artifactId, made.id));
+      expect(version).toMatchObject({ contentType: "image/png", fileName: `a-lighthouse-at-dusk-${i + 1}.png` });
+    }
+    expect(await f.db.select().from(schema.liveImageRequests)).toHaveLength(0);
+    const [usage] = await f.db.select().from(schema.usageRecords).where(eq(schema.usageRecords.kind, "image"));
+    expect(usage).toMatchObject({ agentId: f.agent.id, costNanoUsd: 2 * BANANA });
+  });
+
+  test("variations start from a picture in the conversation; a file that isn't a picture is refused", async () => {
+    const [first] = (await generateInChat(deps, ctx(), { prompt: "a red fox" })).files;
+    if (!first) throw new Error("no picture");
+    const out = await generateInChat(deps, ctx(), { prompt: "the same fox, in snow", references: [first.id] });
+    expect(out.files).toHaveLength(1);
+    const sent = provider.imageCalls.at(-1)?.request;
+    expect(sent?.references).toHaveLength(1);
+    expect(sent?.references?.[0]?.mediaType).toBe("image/png");
+    const notes = await createFileArtifact(f.artifactDeps, owner(), f.org.id, {
+      title: "notes",
+      name: "notes.txt",
+      bytes: new TextEncoder().encode("plain words"),
+      channelId: f.general.id,
+    });
+    await expect(generateInChat(deps, ctx(), { prompt: "x", references: [notes.id] })).rejects.toMatchObject({
+      code: "images.reference",
+    });
+  });
+
+  test("what wasn't made says why: refused, stopped midway, a provider down twice", async () => {
+    script = () => new ProviderError("the provider refused to make this image: unsafe", false, 400);
+    const refused = await generateInChat(deps, ctx(), { prompt: "something" });
+    expect(refused).toMatchObject({ files: [], images: [], failure: "blocked" });
+
+    script = () => ({ count: 1, error: new ProviderError("rate limited by provider", true, 429) });
+    const half = await generateInChat(deps, ctx(), { prompt: "two foxes", count: 2 });
+    expect(half.files).toHaveLength(1);
+    expect(half.failure).toBe("provider");
+
+    let calls = 0;
+    script = () => {
+      calls++;
+      return new ProviderError("provider error", true, 503);
+    };
+    const down = await generateInChat(deps, ctx(), { prompt: "a fox" });
+    expect(down).toMatchObject({ files: [], failure: "provider" });
+    expect(calls).toBe(2);
+
+    await revokeCredential(f.db, f.owner.id, f.org.id, geminiKey);
+    await expect(generateInChat(deps, ctx(), { prompt: "a fox" })).rejects.toBeInstanceOf(ValidationError);
   });
 });

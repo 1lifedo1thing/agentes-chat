@@ -16,6 +16,7 @@ const COUNTED: Record<ShapeType, string> = {
   frame: "frame",
   shape: "shape",
   arrow: "arrow",
+  draw: "draw",
   html: "html",
   file: "file",
 };

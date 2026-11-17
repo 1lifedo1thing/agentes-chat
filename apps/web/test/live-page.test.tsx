@@ -6,10 +6,12 @@ setupDom();
 import type { LiveEditorProps } from "@/components/live/editor";
 
 /**
- * The live file's page (ADR 0194 §9): its header (back, the title to rename, how it's saved, who is here, Ask an agent,
- * Share, Present, Download, ⋯), the editor it draws for the file's kind, versions beside it and shown in place,
+ * The live file's page (ADR 0194 §9, ADR 0197): a page of the app, the sidebar beside it, and its header (where it
+ * lives, how it's saved, who is here, Share, Present, ⋯ with Download, the kind and the title to rename, who made it,
+ * when it was edited and who sees it), the editor it draws for the file's kind, versions beside it and shown in place,
  * following someone, and its states (loading, offline, read-only, not found). The editors are stand-ins here (each has
- * its own tests): one that shows what the page hands it.
+ * its own tests): one that shows what the page hands it. The file's conversation has its own tests
+ * (`live-conversation.test.tsx`).
  */
 
 function EditorStub(props: LiveEditorProps) {
@@ -94,15 +96,19 @@ const editor = () => screen().getByTestId("editor");
 const header = () => within(document.querySelector(".lf-head") as HTMLElement);
 
 describe("the live file's page", () => {
-  test("opens on its own page, full bleed: back, the kind, the title, Saved, and the kind's editor", async () => {
+  test("opens as a page of the app: the sidebar, Drive / where it lives, the title, Saved, and the kind's editor", async () => {
     const { app } = await setup();
     await waitFor(() => expect(editor().dataset.kind).toBe("spreadsheet"));
     expect(editor().dataset.readonly).toBe("false");
     expect(editor().dataset.locale).toBe("pt-BR");
-    // No sidebar: the page is the window's.
-    expect(document.querySelector(".sidebar")).toBeNull();
-    expect(header().getByRole("button", { name: "Voltar" })).toBeTruthy();
-    expect((header().getByRole("textbox", { name: "Nome do arquivo" }) as HTMLInputElement).value).toBe("Orçamento");
+    // The app's sidebar stays: the file is a page of the workspace, not the whole window.
+    expect(document.querySelector(".sidebar")).toBeTruthy();
+    expect(document.querySelector(".shell__work--bare")).toBeNull();
+    // The trail: the Drive (a way back), then where the file lives (made in the Drive: no conversation).
+    const crumbs = within(header().getByRole("navigation", { name: "Onde está" }));
+    expect(crumbs.getByRole("link", { name: "Drive" }).getAttribute("href")).toBe(`/org/${ORG_ID}/drive`);
+    expect(crumbs.getByText("Sem canal")).toBeTruthy();
+    expect((header().getByRole("textbox", { name: "Nome do arquivo" }) as HTMLTextAreaElement).value).toBe("Orçamento");
     await waitFor(() => expect(header().getByRole("status").textContent).toBe("Salvo"));
     // The browser tab and the desktop app's window are named after the file.
     expect(document.title).toBe("Orçamento");
@@ -207,23 +213,22 @@ describe("the live file's page", () => {
     expect(screen().getByText("João saiu do arquivo.")).toBeTruthy();
   });
 
-  test("Ask an agent: whom, what, about the selection; the request goes and says so", async () => {
-    const { live } = await setup();
-    await click(within(editor()).getByRole("button", { name: "select cells" }));
-    await click(header().getByRole("button", { name: "Pedir a um agente" }));
+  test("the line under the title: who made it, edited when (the versions), who sees it (the sharing)", async () => {
+    await setup();
+    const meta = within(document.querySelector(".lf-meta") as HTMLElement);
+    // Made in the Drive by this person: no conversation to name.
+    expect(meta.getByText("Walter")).toBeTruthy();
+    expect((document.querySelector(".lf-meta") as HTMLElement).textContent).toContain("Walter criou");
+    // "editado agora" opens the versions beside the file.
+    await click(meta.getByRole("button", { name: "editado agora" }));
     await settle(4);
-    const form = within(screen().getByRole("dialog", { name: "Pedir a um agente" }));
-    expect(form.getByText("Planilha 1!B2:C3")).toBeTruthy();
-    const box = form.getByRole("textbox", { name: "O que você quer que o agente faça?" });
-    await type(box, "Some a coluna C");
-    const send = form.getAllByRole("button").find((b) => /^Pedir (à|ao) /.test(b.textContent ?? "")) as HTMLElement;
-    expect(send).toBeTruthy();
-    await click(send);
+    expect(screen().getByRole("complementary", { name: "Versões" })).toBeTruthy();
+    // The whole workspace sees it: the chip opens the sharing.
+    await click(meta.getByRole("button", { name: "Quem vê: Todo o workspace" }));
     await settle(4);
-    expect(live.asks).toHaveLength(1);
-    expect(live.asks[0]?.input.text).toBe("Some a coluna C");
-    expect(live.asks[0]?.input.selection?.label).toBe("Planilha 1!B2:C3");
-    expect(screen().getByText("Pedido enviado")).toBeTruthy();
+    expect(screen().getByRole("dialog", { name: /Compartilhar/ })).toBeTruthy();
+    // No "Pedir a um agente" popover any more: the file's conversation takes its place.
+    expect(header().queryByRole("button", { name: "Pedir a um agente" })).toBeNull();
   });
 
   test("versions: ⌘S saves a named one, the list shows it, a version opens read-only in place and comes back", async () => {
@@ -297,8 +302,9 @@ describe("the live file's page", () => {
     await click(present);
     await settle(4);
     expect(app.router.state.location.search.present).toBe(true);
-    // Presenting, the header steps aside.
+    // Presenting, the header and the sidebar step aside: the slide has the window.
     expect(document.querySelector(".lf-head")).toBeNull();
+    expect(document.querySelector(".sidebar")).toBeNull();
   });
 
   test("the header's right click has the file's actions (the desktop app's menu)", async () => {
@@ -315,14 +321,24 @@ describe("the live file's page", () => {
     expect(screen().getByRole("complementary", { name: "Versões" })).toBeTruthy();
   });
 
-  test("Download offers the kind's formats", async () => {
+  test("⋯ › Download offers the kind's formats", async () => {
     await setup();
-    const menu = await openMenu(header().getByRole("button", { name: "Baixar" }));
-    await click(menu.getByRole("menuitem", { name: "Excel (.xlsx)" }));
+    /** ⋯, then Baixar's own menu beside it (→ from the item). */
+    const formats = async () => {
+      const menu = await openMenu(header().getByRole("button", { name: "Mais" }));
+      menu.getByRole("menuitem", { name: "Baixar" }).focus();
+      await act(async () => {
+        fireEvent.keyDown(document.activeElement ?? document.body, { key: "ArrowRight" });
+        fireEvent.keyUp(document.activeElement ?? document.body, { key: "ArrowRight" });
+      });
+      await settle(2);
+      return within(screen().getAllByRole("menu").at(-1) as HTMLElement);
+    };
+    await click((await formats()).getByRole("menuitem", { name: "Excel (.xlsx)" }));
     expect(saved.at(-1)?.url).toContain("format=xlsx");
     expect(saved.at(-1)?.name).toBe("orcamento.xlsx");
     // A spreadsheet also goes as CSV; never as a canvas's JSON.
-    const again = await openMenu(header().getByRole("button", { name: "Baixar" }));
+    const again = await formats();
     expect(again.getByRole("menuitem", { name: "CSV (.csv, primeira aba)" })).toBeTruthy();
     expect(again.queryByRole("menuitem", { name: "JSON (.json)" })).toBeNull();
   });

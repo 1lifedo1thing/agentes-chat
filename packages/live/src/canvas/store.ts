@@ -1,14 +1,21 @@
 import * as Y from "yjs";
 import type { PeerUser } from "../awareness";
 import { compareStack } from "../fractional";
+import { LIVE_LIMITS } from "../limits";
 import { readRich } from "../rich/yjs";
 import { type Box, center, isBoxEnd, isPoint, type Point, rotatedBounds, union } from "./geometry";
 import {
+  ARROW_ROUTES,
   type ArrowEnd,
+  type ArrowHeads,
   CANVAS_BACKGROUNDS,
+  CANVAS_SHAPE_KINDS,
   type CanvasBackground,
   type CanvasShapeKind,
   type CanvasTextStyle,
+  CORNER_RADIUS,
+  DRAW_TOOLS,
+  type ImageCrop,
   type ImageGen,
   isShapeType,
   NOTE_COLORS,
@@ -16,6 +23,7 @@ import {
   type PendingStatus,
   type ShapeType,
   type ShapeView,
+  STROKE_WIDTH,
 } from "./types";
 
 /**
@@ -46,7 +54,7 @@ export function canvasBackground(doc: Y.Doc): CanvasBackground {
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
-const SHAPE_KINDS: readonly string[] = ["rect", "ellipse", "diamond"];
+const SHAPE_KINDS: readonly string[] = CANVAS_SHAPE_KINDS;
 const STATUSES: readonly string[] = ["queued", "running", "failed"];
 /** Coordinates past this are a broken shape, not a big canvas. */
 export const CANVAS_COORD_MAX = 1e7;
@@ -67,6 +75,52 @@ function colorOf(value: unknown, allowNone = false): string | undefined {
   if (typeof value !== "string") return undefined;
   if (allowNone && (value === "none" || value === "transparent")) return "none";
   return COLOR.test(value) ? value : undefined;
+}
+
+/** A number within [min, max], or undefined. */
+function within(value: unknown, min: number, max: number): number | undefined {
+  const n = finite(value);
+  return n !== undefined && n >= min && n <= max ? n : undefined;
+}
+
+function headsOf(value: unknown): ArrowHeads | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const o = value as Record<string, unknown>;
+  const heads: ArrowHeads = {};
+  for (const key of ["start", "end"] as const) {
+    const head = o[key];
+    if (head === undefined) continue;
+    if (head !== "none" && head !== "arrow") return undefined;
+    heads[key] = head;
+  }
+  return heads;
+}
+
+/** A pen stroke's points: an even count of finite numbers, at least one point, at most `drawPoints` numbers. */
+function pointsOf(value: unknown): number[] | undefined {
+  if (!Array.isArray(value) || value.length < 2 || value.length % 2 !== 0) return undefined;
+  if (value.length > LIVE_LIMITS.canvas.drawPoints) return undefined;
+  const out: number[] = [];
+  for (const v of value) {
+    const n = finite(v);
+    if (n === undefined) return undefined;
+    out.push(n);
+  }
+  return out;
+}
+
+/** Fractions of the natural image, inside it, never empty. */
+function cropOf(value: unknown): ImageCrop | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const o = value as Record<string, unknown>;
+  const x = within(o.x, 0, 1);
+  const y = within(o.y, 0, 1);
+  const w = within(o.w, 0, 1);
+  const h = within(o.h, 0, 1);
+  if (x === undefined || y === undefined || w === undefined || h === undefined || w <= 0 || h <= 0) return undefined;
+  // A hair past the edge is rounding, not a crop outside the picture.
+  if (x + w > 1 + 1e-6 || y + h > 1 + 1e-6) return undefined;
+  return { x, y, w: Math.min(w, 1 - x), h: Math.min(h, 1 - y) };
 }
 
 function userOf(value: unknown): PeerUser | undefined {
@@ -122,17 +176,21 @@ function styleOf(value: unknown): CanvasTextStyle | undefined {
   return Object.keys(style).length ? style : undefined;
 }
 
+/** Keys every shape may hold besides its box and stacking key: turn, frame, lock, who made it, hidden. */
+export const COMMON_PROPS: readonly string[] = ["rot", "parent", "locked", "by", "hidden"];
+
 /** Keys each type holds besides the common ones. */
 export const TYPE_PROPS: Record<ShapeType, readonly string[]> = {
-  image: ["asset", "nw", "nh", "alt", "gen"],
+  image: ["asset", "nw", "nh", "alt", "gen", "crop"],
   note: ["color"],
   text: ["style"],
   frame: ["name", "fill"],
-  shape: ["kind", "fill", "stroke"],
-  arrow: ["from", "to", "label", "dashed"],
+  shape: ["kind", "fill", "stroke", "strokeWidth", "radius"],
+  arrow: ["from", "to", "label", "dashed", "route", "heads", "stroke", "strokeWidth"],
+  draw: ["points", "stroke", "strokeWidth", "tool"],
   html: ["artifact"],
   file: ["artifact"],
-  pending: ["request", "index", "status", "error", "prompt", "by"],
+  pending: ["request", "index", "status", "error", "prompt"],
 };
 
 /** Types whose shape carries rich text (`text`). */
@@ -160,6 +218,7 @@ export function cleanProp(key: string, value: unknown): unknown {
       return isShapeOrAssetId(value) ? value : undefined;
     case "locked":
     case "dashed":
+    case "hidden":
       return value === true ? true : undefined;
     case "nw":
     case "nh": {
@@ -180,8 +239,22 @@ export function cleanProp(key: string, value: unknown): unknown {
       return colorOf(value, true);
     case "stroke":
       return colorOf(value, true);
+    case "strokeWidth":
+      return within(value, STROKE_WIDTH.min, STROKE_WIDTH.max);
+    case "radius":
+      return within(value, CORNER_RADIUS.min, CORNER_RADIUS.max);
     case "kind":
       return typeof value === "string" && SHAPE_KINDS.includes(value) ? value : undefined;
+    case "route":
+      return typeof value === "string" && (ARROW_ROUTES as readonly string[]).includes(value) ? value : undefined;
+    case "heads":
+      return headsOf(value);
+    case "points":
+      return pointsOf(value);
+    case "tool":
+      return typeof value === "string" && (DRAW_TOOLS as readonly string[]).includes(value) ? value : undefined;
+    case "crop":
+      return cropOf(value);
     case "from":
     case "to":
       return endOf(value);
@@ -228,6 +301,9 @@ export function readShape(id: string, map: Y.Map<unknown>, opts: ReadShapesOptio
   const parent = cleanProp("parent", map.get("parent"));
   if (typeof parent === "string" && parent !== id) view.parent = parent;
   if (map.get("locked") === true) view.locked = true;
+  const by = cleanProp("by", map.get("by"));
+  if (by) view.by = by as PeerUser;
+  if (map.get("hidden") === true) view.hidden = true;
   const fragment = opts.text === false ? undefined : map.get("text");
   if (fragment instanceof Y.XmlFragment) view.text = readRich(fragment);
   const props = view as unknown as Record<string, unknown>;

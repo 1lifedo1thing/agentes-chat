@@ -5,8 +5,9 @@
 - Amends: 0012 (a usage kind `image`), 0018 (providers: images beside text)
 - Code: `packages/providers/src/images.ts` (`IMAGE_CATALOG`, `ImageRequest`, `ImageResult`, costs) and each adapter's
   `generateImage` (`openai.ts`, `gemini.ts`, `openrouter.ts`, `custom.ts`, the fake in `fake.ts`), engine
-  `gateway.ts` (`generateImages`), `packages/engine/src/live/images.ts` (requests, the `live.image` job, placement),
-  the `generate_image` tool, routes `apps/server/src/routes/app/images.ts`; migration adding `usage_kind` `image`
+  `gateway.ts` (`generateImages`), `packages/engine/src/live/images.ts` (requests on a canvas, the `live.image` job,
+  placement; `generateInChat` for pictures in a conversation), the `generate_image` tool, routes
+  `apps/server/src/routes/app/images.ts`; migration adding `usage_kind` `image`
 
 ## Context
 
@@ -39,22 +40,34 @@ provider), the call, and one `usage_records` row of the new kind `image` with th
 catalog's, the run, the agent or the person. Readers of "what an agent's budget paid" count `agent` and `image`.
 A failed call is settled at what the provider billed, usually nothing.
 
-**Images land on a canvas.** A request names a canvas (the one it was made from) or none, and then the
-conversation's own canvas is used, made on first use ("Imagens", in that conversation, so it has the
-conversation's audience). The request first places a frame titled with the prompt and one placeholder per image
-in the canvas, so everyone in it sees what is coming and who asked; a job (`live.image`, ADR 0005) calls the
-gateway, stores each image as an asset of the canvas (ADR 0194 §8) and turns each placeholder into the image, with
-its prompt, model, who asked and the images it started from. A failure leaves the placeholder saying why, with
-Try again. Variations and edits send the selected images as references.
+**Images land where they were asked for.**
 
-**People and agents.** People generate from the canvas (`POST …/artifacts/{id}/images`: a person who may upload
-files, at most 30 requests an hour, four images a request). Agents call `generate_image` (`drive:write`), which
-waits for the images (at most two minutes), answers with the canvas as the reply's card, and hands the images to a
-model that can see them. In Codex's turns both tools exist; the prompt says ours puts the images on the canvas and
-counts them in the budget.
+- *In a conversation*, an agent posts them in it: each image is a picture file (a `file` artifact of its image type,
+  in the Drive where the run posts, ADR 0019) on the agent's reply, so people see the pictures in the chat like any
+  picture someone posted, with that conversation's audience. They are made through the gateway while the agent
+  waits (a provider that is down or limiting gets one more try), and handed back to the model to look at. Asked
+  for "a canvas with the third one", the agent makes it with `create_canvas` and that file, whose bytes are copied
+  into the canvas (ADR 0194 §8). No canvas is made behind people's backs.
+- *On a canvas* (the one named; in a canvas's own conversation, ADR 0197, that canvas by default), the request
+  first places a frame titled with the prompt and one placeholder per image, so everyone in it sees what is coming
+  and who asked; a job (`live.image`, ADR 0005) calls the gateway, stores each image as an asset of the canvas
+  (ADR 0194 §8) and turns each placeholder into the image, with its prompt, model, who asked and the images it
+  started from. A failure leaves the placeholder saying why, with Try again.
+
+Variations and edits send the images to start from as references: on a canvas its pictures, in a conversation
+picture files the agent reads (a picture posted there).
+
+**People and agents.** People generate on a canvas (`POST …/artifacts/{id}/images`: a person who may upload
+files, at most 30 requests an hour, four images a request), and ask the canvas's agent for more in its conversation
+(Variations, ADR 0197). Agents call `generate_image` (`drive:write`), which waits for the images (at most two
+minutes), hands them to a model that can see them, and answers with the pictures as the reply's cards
+(`meta.artifacts`, one per picture) or, on a canvas, the canvas as the reply's card. In Codex's turns both tools
+exist; the prompt says ours posts the images in the conversation (or on a canvas) and counts them in the budget.
 
 ## Consequences
 
 - Image spend shows in Usage with its own kind, and budgets stop it like any other spend.
 - Prices change often: they are dated in the catalog like text models' (ADR 0018), each call priced at its time.
 - A workspace with only an Anthropic key can't generate images, and the canvas says so instead of offering it.
+- Pictures made in a conversation are Drive files like an upload: counted in the workspace's storage, seen by who
+  sees the conversation, and one call away from a canvas.

@@ -111,6 +111,7 @@ import type {
   EndpointModel,
   FeedbackFile,
   FeedbackOffer,
+  FileConversationRef,
   ForeignMailbox,
   FormerAgent,
   GifKey,
@@ -249,6 +250,7 @@ import type {
   ThreadPage,
   TrashedArtifact,
   UndoAllResult,
+  UnreadFile,
   UnreadTask,
   UsageQueue,
   UsageReport,
@@ -377,6 +379,7 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       markThreadRead: (orgId, threadId) => request<void>(`${org(orgId)}/threads/${enc(threadId)}/read`, { json: {} }),
       unreadThreads: async (orgId) => (await request<{ count: number }>(`${org(orgId)}/unread-threads`)).count,
       unreadTasks: async (orgId) => (await request<{ tasks: UnreadTask[] }>(`${org(orgId)}/unread-tasks`)).tasks,
+      unreadFiles: async (orgId) => (await request<{ files: UnreadFile[] }>(`${org(orgId)}/unread-files`)).files,
     },
     working: {
       list: async (orgId) => (await request<{ runs: WorkingRun[] }>(`${org(orgId)}/active-runs`)).runs,
@@ -1532,6 +1535,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<ArtifactPage>(`${org(orgId)}/artifacts`, { query: { ...artifactQuery(filters), cursor } }),
       get: (orgId, id, version) =>
         request<ArtifactDetail>(`${org(orgId)}/artifacts/${enc(id)}`, { query: { version } }),
+      conversation: (orgId, id) =>
+        request<FileConversationRef>(`${org(orgId)}/artifacts/${enc(id)}/conversation`, { method: "POST" }),
       keep: (orgId, id) => request<Artifact>(`${org(orgId)}/artifacts/${enc(id)}/keep`, { method: "POST" }),
       reply: (orgId, id, text, clientId) =>
         request<{ id: string }>(`${org(orgId)}/artifacts/${enc(id)}/reply`, {

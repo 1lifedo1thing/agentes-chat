@@ -7,6 +7,7 @@ import { arrowPath, union } from "./geometry";
 import {
   canvasBackground,
   canvasMapOf,
+  cleanProp,
   finite,
   readShapes,
   resolveEnd,
@@ -25,6 +26,21 @@ import { type CanvasPreview, type CanvasPreviewShape, isShapeType, type ShapeVie
 /** The most shapes a preview draws. */
 const PREVIEW_SHAPES = 40;
 const PREVIEW_TEXT = 80;
+/** The most numbers of a pen stroke a preview keeps (enough to draw it small). */
+const PREVIEW_POINTS = 120;
+
+/** A pen stroke's points thinned to at most `max` numbers, its first and last point kept. */
+function thinPoints(points: readonly number[], max: number): number[] {
+  const n = points.length / 2;
+  if (points.length <= max) return points.map((v) => Math.round(v));
+  const keep = Math.max(2, Math.floor(max / 2));
+  const out: number[] = [];
+  for (let i = 0; i < keep; i++) {
+    const at = Math.round((i * (n - 1)) / (keep - 1));
+    out.push(Math.round(points[2 * at] as number), Math.round(points[2 * at + 1] as number));
+  }
+  return out;
+}
 
 /** The words a shape shows: its text, a frame's name, an arrow's label, an image's description or prompt. */
 function wordsOf(shape: ShapeView): string {
@@ -33,12 +49,14 @@ function wordsOf(shape: ShapeView): string {
 }
 
 /**
- * What a canvas card draws: the bounds of everything, the shape count, and up to 40 shapes (frames first, then the
- * biggest), in drawing order, each with its box, its color, its picture and its first words.
+ * What a canvas card draws: the bounds of what is shown, the shape count, and up to 40 shapes (frames first, then the
+ * biggest; hidden ones left out), in drawing order, each with its box, its colors, its form, its picture and its first
+ * words; an arrow its line, route and heads; a pen stroke a few of its points.
  */
 export function canvasPreview(doc: Y.Doc): CanvasPreview {
-  const shapes = readShapes(doc);
-  const byId = shapeIndex(shapes);
+  const all = readShapes(doc);
+  const byId = shapeIndex(all);
+  const shapes = all.filter((shape) => !shape.hidden);
   const bounds = union(shapes.map((shape) => shapeBounds(shape, byId)));
   const area = new Map(
     shapes.map((shape) => {
@@ -62,17 +80,27 @@ export function canvasPreview(doc: Y.Doc): CanvasPreview {
     if (shape.rot) item.rot = shape.rot;
     const color = shape.color ?? shape.fill;
     if (color) item.color = color;
+    if (shape.stroke) item.stroke = shape.stroke;
+    if (shape.strokeWidth) item.strokeWidth = shape.strokeWidth;
+    if (shape.kind) item.kind = shape.kind;
     if (shape.asset) item.asset = shape.asset;
+    if (shape.crop) item.crop = shape.crop;
     const words = wordsOf(shape).replace(/\s+/g, " ").trim();
     if (words) item.text = words.slice(0, PREVIEW_TEXT);
     if (shape.type === "arrow") {
       const from = resolveEnd(shape.from, byId);
       const to = resolveEnd(shape.to, byId);
       if (from && to) item.line = arrowPath(from, to);
+      if (shape.route && shape.route !== "straight") item.route = shape.route;
+      if (shape.heads) item.heads = shape.heads;
+    }
+    if (shape.type === "draw" && shape.points) {
+      item.points = thinPoints(shape.points, PREVIEW_POINTS);
+      if (shape.tool) item.tool = shape.tool;
     }
     out.push(item);
   }
-  return { bg: canvasBackground(doc), bounds, count: shapes.length, shapes: out };
+  return { bg: canvasBackground(doc), bounds, count: all.length, shapes: out };
 }
 
 /** The most text `canvasText` gives (search reads the first 20,000 characters). */
@@ -141,6 +169,13 @@ export function validateCanvas(doc: Y.Doc): string[] {
         const end = shape.get(key);
         if (!end || typeof end !== "object") problems.push(`${where} has no ${key} end`);
       }
+    }
+    // A pen stroke's points are its only content, and the one value that can grow: checked as written.
+    if (type === "draw") {
+      const points = shape.get("points");
+      if (!Array.isArray(points)) problems.push(`${where} has no points`);
+      else if (points.length > limits.drawPoints) problems.push(`${where} has over ${limits.drawPoints} points`);
+      else if (cleanProp("points", points) === undefined) problems.push(`${where} has broken points`);
     }
   });
   return problems;
