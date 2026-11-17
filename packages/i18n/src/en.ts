@@ -11580,6 +11580,17 @@ export const en = {
     saved: "Logo updated.",
     removed: "Logo removed.",
   },
+  orgAccent: {
+    label: "Accent color",
+    change: "Change color",
+    useDefault: "Use the default",
+    suggested: "Suggested colors",
+    sampleMention: "@Agent",
+    sampleLink: "A link",
+    save: "Save color",
+    saved: "Accent color updated.",
+    reset: "Back to the default color.",
+  },
   look: {
     previous: "Previous",
     next: "Next",
@@ -16891,6 +16902,7 @@ export const en = {
     removed: "Removed",
     change: {
       mergedWithoutAsking: "Merged in {{repo}} without asking",
+      accentChanged: "Changed the workspace's accent color",
       pattern: "{{verb}} {{area}}",
       approval: {
         approved: "Approved a request",
