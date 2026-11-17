@@ -3581,10 +3581,16 @@
     "titleFor_female": "Conecta una IA para {{name}}",
     "have": {
       "title": "Ya conectadas",
-      "titleFor": "Ya conectadas, para {{name}}",
-      "titleFor_female": "Ya conectadas, para {{name}}",
       "other": "O conecta otra",
-      "manageKeys": "Gestionar o eliminar claves"
+      "manageKeys": "Gestionar o eliminar claves",
+      "pickLine": "Elige una cuenta ya conectada aquí. {{name}} piensa con ella.",
+      "onlyOwner_one": "{{count}} cuenta más que solo {{name}} puede dar.",
+      "onlyOwner_many": "{{count}} cuentas más que solo {{name}} puede dar.",
+      "onlyOwner_other": "{{count}} cuentas más que solo {{name}} puede dar.",
+      "moreAgents_one": "y {{count}} agente más",
+      "moreAgents_many": "y {{count}} agentes más",
+      "moreAgents_other": "y {{count}} agentes más",
+      "plenty": "Con margen"
     },
     "chat": {
       "mine": "Tuyas",

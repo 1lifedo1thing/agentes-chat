@@ -3314,10 +3314,12 @@
     "titleFor_female": "Hubungkan AI untuk {{name}}",
     "have": {
       "title": "Sudah terhubung",
-      "titleFor": "Sudah terhubung, untuk {{name}}",
-      "titleFor_female": "Sudah terhubung, untuk {{name}}",
       "other": "Atau hubungkan yang lain",
-      "manageKeys": "Kelola atau hapus kunci"
+      "manageKeys": "Kelola atau hapus kunci",
+      "pickLine": "Pilih akun yang sudah terhubung di sini. {{name}} berpikir dengannya.",
+      "onlyOwner_other": "{{count}} akun lagi yang hanya bisa diberikan {{name}}.",
+      "moreAgents_other": "dan {{count}} agen lagi",
+      "plenty": "Masih longgar"
     },
     "chat": {
       "mine": "Milikmu",

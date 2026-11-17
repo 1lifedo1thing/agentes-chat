@@ -3450,10 +3450,14 @@
     "titleFor_female": "Een AI koppelen voor {{name}}",
     "have": {
       "title": "Al gekoppeld",
-      "titleFor": "Al gekoppeld, voor {{name}}",
-      "titleFor_female": "Al gekoppeld, voor {{name}}",
       "other": "Of koppel een ander",
-      "manageKeys": "Sleutels beheren of verwijderen"
+      "manageKeys": "Sleutels beheren of verwijderen",
+      "pickLine": "Kies een account dat hier al verbonden is. {{name}} denkt ermee.",
+      "onlyOwner_one": "Nog {{count}} account dat alleen {{name}} kan geven.",
+      "onlyOwner_other": "Nog {{count}} accounts die alleen {{name}} kan geven.",
+      "moreAgents_one": "en nog {{count}} agent",
+      "moreAgents_other": "en nog {{count}} agents",
+      "plenty": "Ruim genoeg"
     },
     "chat": {
       "mine": "Van jou",

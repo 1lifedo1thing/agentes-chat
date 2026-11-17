@@ -258,10 +258,11 @@ describe("the surface's logo beside the line icons", () => {
   const read = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
 
   test("the row's tile draws it in the icon's box and color, the chat icon without one", () => {
-    const grouped = read("ui/Grouped.tsx");
-    expect(grouped).toContain(
-      "<MarkIcon uri={mark ?? null} fallback={icon} size={16} color={danger ? c.danger : c.ink2} />",
-    );
+    // The row hands the logo to its tile, which draws it where the symbol goes: same box, same color.
+    expect(read("ui/Grouped.tsx")).toContain("<IconTile icon={icon} danger={danger} mark={mark ?? null} />");
+    const tile = read("ui/IconTile.tsx");
+    expect(tile).toContain("<MarkIcon uri={mark} fallback={icon} size={glyph} color={ON_TILE} />");
+    expect(tile).toContain("<Icon name={icon} size={glyph} color={ON_TILE} filled />");
     expect(read("features/me/SurfaceLink.tsx")).toMatch(
       /icon="chat"\s+mark=\{iconUri\(serverUrl\(\), surfaceMarkUrl\(row\.surface\)\)\}/,
     );
