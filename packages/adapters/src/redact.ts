@@ -242,11 +242,12 @@ function maskedJson(text: string, rule: (text: string) => string, depth: number)
 /**
  * A record with its credentials masked at any depth, before it is written as text. Under a field named for a
  * credential every text is masked: in text, a value with spaces is masked only up to its first space. A number,
- * `true`, `false` or `null` stays: it is a count or a switch. So is the text after an option named for a secret in a
- * list (`["--password", "…"]`), the second of a pair in a list of pairs and the `value` of a record whose name is a
- * credential's (`[["x-api-key", "…"]]`, `{"name": "Authorization", "value": "…"}`). Every other text goes through `rule` as itself:
- * written as JSON its line ends and quotes are backslashes, and a rule for text reads one long word. A text that is
- * itself JSON (a result kept as a string, a body inside a body) is opened, masked the same way and written back.
+ * `true`, `false` or `null` stays: it is a count or a switch. Masked too: the text after an option named for a
+ * secret in a list (`["--password", "…"]`), the second of a pair in a list of pairs (`[["x-api-key", "…"]]`) and the
+ * `value` of a record whose name is a credential's (`{"name": "Authorization", "value": "…"}`). Every other text goes
+ * through `rule` as itself: written as JSON its line ends and quotes are backslashes, and a rule for text reads one
+ * long word. A text that is itself JSON (a result kept as a string, a body inside a body) is opened, masked the same
+ * way and written back.
  */
 export function maskSecretFields(
   value: unknown,
