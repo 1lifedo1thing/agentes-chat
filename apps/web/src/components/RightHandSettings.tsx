@@ -399,7 +399,7 @@ export function useRightHandMineHint(agent: Agent) {
 
 function RightHandForm({ agent }: { agent: Agent }) {
   const { t, i18n } = useTranslation();
-  const rename = useRenameAccount();
+  const renameAccount = useRenameAccount();
   const { org, me } = useOrg();
   const toast = useToast();
   const update = useUpdateAgent(org.id, agent.id);
@@ -494,7 +494,8 @@ function RightHandForm({ agent }: { agent: Agent }) {
       id: a.id,
       title: accountTitle(t, a),
       unnamed: unnamedAccount(a),
-      rename: renameOf(t, a, a.machineId, rename),
+      // The accounts listed here are on the right hand's computer.
+      rename: renameOf(t, a, view?.computer?.machineId, renameAccount),
       about: accountAbout(t, c, agent.name),
       whose,
       group: owner ? { key: `owner:${a.ownerId}`, label: whose } : mineGroup,

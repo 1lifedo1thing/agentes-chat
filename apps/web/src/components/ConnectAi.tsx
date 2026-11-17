@@ -653,7 +653,7 @@ function ConnectAiDialog({
   const [used, setUsed] = useState<ExistingUsed | null>(null);
   const [login, setLogin] = useState<ExistingSignIn | null>(null);
   // Where a plain plan panel is (its list of the person's accounts, or another sign-in): the title asks it.
-  const [stage, setStage] = useState<PlanStage | null>(null);
+  const [planStage, setPlanStage] = useState<PlanStage | null>(null);
   const [picked, setPicked] = useState<AiChoice | null>(request.start ?? null);
   const choice =
     picked ??
@@ -897,7 +897,7 @@ function ConnectAiDialog({
         {...(use && planOfAccount(use) === choice ? { use } : {})}
         plain={band || team}
         actionsAt={footAt}
-        onStage={setStage}
+        onStage={setPlanStage}
         onKey={() => {
           setPicked("key");
           setLogin(null);
@@ -1033,7 +1033,7 @@ function ConnectAiDialog({
               ? t(personal ? "connectAi.team.wokeAllPersonal" : "connectAi.team.wokeAll")
               : t("connectAi.team.woke", { count: woke.length })
           : chosen
-            ? panelTitle(t, choice, stage)
+            ? panelTitle(t, choice, planStage)
             : listing
               ? t("connectAi.chat.allTitle")
               : adding && rows.length > 0
@@ -1098,7 +1098,7 @@ function ConnectAiDialog({
           back
             ? () => {
                 if (choosing) setDraftPick(null);
-                else if (chosen && stage?.back) stage.back();
+                else if (chosen && planStage?.back) planStage.back();
                 else if (chosen) {
                   setChosen(false);
                   setLogin(null);
@@ -1332,7 +1332,7 @@ function ConnectAiDialog({
     };
     const listing = picking && allOpen;
     const title = chosen
-      ? panelTitle(t, choice, stage, wide ? undefined : asked.name)
+      ? panelTitle(t, choice, planStage, wide ? undefined : asked.name)
       : listing
         ? t("connectAi.chat.allTitle")
         : adding && rows.length > 0
@@ -1363,7 +1363,7 @@ function ConnectAiDialog({
         onBack={
           back
             ? () => {
-                if (chosen && stage?.back) stage.back();
+                if (chosen && planStage?.back) planStage.back();
                 else if (chosen) {
                   setChosen(false);
                   setLogin(null);
