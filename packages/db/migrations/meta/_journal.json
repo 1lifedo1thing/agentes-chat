@@ -1972,8 +1972,36 @@
     {
       "idx": 283,
       "version": "7",
-      "when": 1794863847323,
-      "tag": "0286_chat_surfaces",
+      "when": 1794867197842,
+      "tag": "0286_confidential_threads",
+      "breakpoints": true
+    },
+    {
+      "idx": 284,
+      "version": "7",
+      "when": 1794867198842,
+      "tag": "0287_confidential_thread_ai",
+      "breakpoints": true
+    },
+    {
+      "idx": 285,
+      "version": "7",
+      "when": 1794867298842,
+      "tag": "0288_next_account_order",
+      "breakpoints": true
+    },
+    {
+      "idx": 286,
+      "version": "7",
+      "when": 1794917194719,
+      "tag": "0289_outside_collaborators",
+      "breakpoints": true
+    },
+    {
+      "idx": 287,
+      "version": "7",
+      "when": 1794933862393,
+      "tag": "0290_chat_surfaces",
       "breakpoints": true
     }
   ]

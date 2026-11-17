@@ -113,7 +113,6 @@ function SurfaceLinkSheet({
         setLinked(null);
         setBefore(null);
       }}
-      solid
     >
       <LinkSteps row={row} linked={done} onLinked={setLinked} onClose={onClose} />
     </Sheet>

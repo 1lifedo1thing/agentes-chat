@@ -41,7 +41,10 @@ export type OperatorEventType =
   | "platform_ai.threshold"
   | "account.failure"
   | "machine.wake_wanted"
-  | "surface.cap_reached";
+  | "surface.cap_reached"
+  | "outside_access.granted"
+  | "outside_access.denied"
+  | "outside_access.ended";
 
 export interface OperatorEvent {
   type: OperatorEventType;
