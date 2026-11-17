@@ -16,6 +16,7 @@ import {
   loadThread,
   notifyQuestion,
   operatorReview,
+  operatorRuns,
   queueApprovalDigests,
   runRoutineNow,
 } from "../src";
@@ -379,6 +380,28 @@ test("the operator's review of a run of a confidential thread names its calls an
   expect(review?.text).toContain("Tool call 1: vault_read_record (answered)");
   expect(review?.text).toContain(CONFIDENTIAL_NOT_SHOWN);
   for (const word of [CANARY, ROOT, "r1"]) expect(review?.text).not.toContain(word);
+});
+
+test("the operator's list of runs says a failed run of a confidential thread by its code, with none of its error's words", async () => {
+  const w = await vaultWorld({
+    agents: ["kai", "mira"],
+    script: { kai: [{ calls: [READ] }, { text: "Read." }], mira: [{ text: "Fine." }] },
+  });
+  await w.say("@kai read record r1.");
+  await w.say("@mira and you?");
+  await w.settle();
+  // As a run that failed on what it read keeps it: another program's words.
+  const error = `The server answered: ${CANARY}`;
+  await w.db.update(schema.agentRuns).set({ status: "failed", error });
+  const listed = (await operatorRuns(w.db, w.org.id, { limit: 10 }))?.runs ?? [];
+  const told = async (handle: string) => {
+    const [run] = await w.runs(handle);
+    const said = listed.find((r) => r.id === run?.id);
+    return [said?.errorCode, said?.error];
+  };
+  expect(await told("kai")).toEqual(["run.failed", null]);
+  // A run of the plain thread beside it reads as before.
+  expect(await told("mira")).toEqual(["run.failed", error]);
 });
 
 test("a mail about requests left waiting counts one made in a confidential thread and quotes nothing of it", async () => {
