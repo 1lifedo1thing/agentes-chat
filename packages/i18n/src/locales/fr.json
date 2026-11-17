@@ -3586,10 +3586,16 @@
     "titleFor_female": "Connecter une IA pour {{name}}",
     "have": {
       "title": "Déjà connecté",
-      "titleFor": "Déjà connecté, pour {{name}}",
-      "titleFor_female": "Déjà connecté, pour {{name}}",
       "other": "Ou en connecter un autre",
-      "manageKeys": "Gérer ou supprimer les clés"
+      "manageKeys": "Gérer ou supprimer les clés",
+      "pickLine": "Choisissez un compte déjà connecté ici. {{name}} réfléchit avec.",
+      "onlyOwner_one": "Encore {{count}} compte, à donner par {{name}} uniquement.",
+      "onlyOwner_many": "Encore {{count}} comptes, à donner par {{name}} uniquement.",
+      "onlyOwner_other": "Encore {{count}} comptes, à donner par {{name}} uniquement.",
+      "moreAgents_one": "et {{count}} autre agent",
+      "moreAgents_many": "et {{count}} autres agents",
+      "moreAgents_other": "et {{count}} autres agents",
+      "plenty": "Bonne marge"
     },
     "chat": {
       "mine": "Les vôtres",

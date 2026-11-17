@@ -8524,14 +8524,29 @@
   "connectAi.have.title": {
     "value": "Already connected"
   },
-  "connectAi.have.titleFor": {
-    "value": "Already connected, for {{name}}"
-  },
   "connectAi.have.other": {
     "value": "Or connect another"
   },
   "connectAi.have.manageKeys": {
     "value": "Manage or delete keys"
+  },
+  "connectAi.have.pickLine": {
+    "value": "Pick an account already connected here. {{name}} thinks with it."
+  },
+  "connectAi.have.onlyOwner": {
+    "value": {
+      "one": "{{count}} more of {{name}}'s accounts only {{name}} can give.",
+      "other": "{{count}} more of {{name}}'s accounts only {{name}} can give."
+    }
+  },
+  "connectAi.have.moreAgents": {
+    "value": {
+      "one": "and {{count}} more agent",
+      "other": "and {{count}} more agents"
+    }
+  },
+  "connectAi.have.plenty": {
+    "value": "Plenty left"
   },
   "connectAi.chat.mine": {
     "value": "Yours"

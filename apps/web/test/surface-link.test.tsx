@@ -26,7 +26,7 @@ const LONG_WORKSPACE = "Northwind Industries Holdings and Partners Worldwide Ope
 const link = (over: Partial<SurfaceLink> = {}): SurfaceLink => ({
   id: "link-1",
   status: "pending",
-  display: "+1 555 0100",
+  display: "5511900000001",
   profileName: "Ana",
   orgId: ORG_ID,
   orgName: "Acme",
@@ -108,7 +108,7 @@ describe("the outside chat app's row in Notificações", () => {
     await reload(app);
     const confirm = dialogOf("Este é o seu Example Chat?");
     expect(confirm.querySelector(".surface-sender")?.textContent).toBe(
-      "Este remetente enviou seu código+1 555 0100AnaResponde em Acme",
+      "Este remetente enviou seu código+55 (11) 90000-0001AnaResponde em Acme",
     );
     expect(confirm.querySelector(".surface-sender + p")?.textContent).toBe("Vincule só se for você.");
     const consent = confirm.querySelector(".surface-link > p:last-child")?.textContent;
@@ -124,7 +124,7 @@ describe("the outside chat app's row in Notificações", () => {
     expect(app.router.state.location.search).not.toHaveProperty("link");
 
     // Linked: the sender, with Desvincular.
-    expect(document.getElementById("notice-surface-status")?.textContent).toBe("+1 555 0100 · Ana");
+    expect(document.getElementById("notice-surface-status")?.textContent).toBe("+55 (11) 90000-0001 · Ana");
     expect(within(row() as HTMLElement).getByRole("button", { name: "Desvincular" })).toBeTruthy();
   });
 
@@ -284,6 +284,38 @@ describe("the outside chat app's row in Notificações", () => {
     expect(document.getElementById("notice-surface-status")?.textContent).toBe(`${LONG_DISPLAY} · ${LONG_PROFILE}`);
   });
 
+  test("the app's logo takes the box of the glyphs on the rows beside it, in their color, a plain glyph without one", async () => {
+    // The test DOM loads no image: this one says every logo loaded, as a browser does for a file that exists.
+    const RealImage = globalThis.Image;
+    globalThis.Image = class {
+      onload: (() => void) | null = null;
+      set src(_: string) {
+        queueMicrotask(() => this.onload?.());
+      }
+    } as unknown as typeof Image;
+    try {
+      await notifications({ name: "Examplechat", links: [] });
+      await settle(4);
+      const glyphOf = (id: string) =>
+        document.getElementById(id)?.closest(".settings-row")?.querySelector<SVGElement>(".settings-row__icon > svg");
+      const mark = glyphOf("notice-surface-status");
+      const beside = glyphOf("notice-mac-help");
+      expect(mark?.querySelector("image")?.getAttribute("href")).toBe("/connectors/examplechat.svg");
+      expect(mark?.querySelector("rect")?.getAttribute("fill")).toBe("currentColor");
+      expect(beside).toBeTruthy();
+      for (const el of [mark, beside]) expect(el?.getAttribute("class")).toBe("ac-icon");
+      expect([mark?.style.width, mark?.style.height]).toEqual([beside?.style.width ?? "", beside?.style.height ?? ""]);
+      expect(document.querySelector(".settings-row__icon .connector-icon")).toBeNull();
+      cleanup();
+      await notifications({ name: "Example Chat", links: [] });
+      await settle(4);
+      expect(glyphOf("notice-surface-status")?.querySelector("image")).toBeNull();
+      expect(glyphOf("notice-surface-status")?.style.width).toBe(beside?.style.width ?? "");
+    } finally {
+      globalThis.Image = RealImage;
+    }
+  });
+
   test("at the longest name, in every language: the steps leave the name to the button under them", async () => {
     const { app, row } = await notifications({ name: LONG_SURFACE, links: [] });
     await click(
@@ -368,13 +400,13 @@ describe("the linked email's undo", () => {
   };
 
   test("only its button unlinks; it names the app and the sender", async () => {
-    const state = await undoPage({ unlinked: true, display: "+1 555 0100" });
+    const state = await undoPage({ unlinked: true, display: "5511900000001" });
     expect(screen().getByRole("heading", { name: "Desvincular o app de chat?" })).toBeTruthy();
     expect(calls(state, "surfaces.undo")).toEqual([]);
     await click(screen().getByRole("button", { name: /Desvincular/ }));
     expect(calls(state, "surfaces.undo")).toHaveLength(1);
     expect(screen().getByRole("heading", { name: "Example Chat desvinculado" })).toBeTruthy();
-    expect(document.body.textContent).toContain("+1 555 0100 não alcança mais a sua conta.");
+    expect(document.body.textContent).toContain("+55 (11) 90000-0001 não alcança mais a sua conta.");
     expect(screen().getByRole("link", { name: "Entrar" })).toBeTruthy();
   });
 
