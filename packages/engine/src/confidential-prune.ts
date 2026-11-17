@@ -17,6 +17,7 @@ const {
   artifacts,
   artifactVersions,
   confidentialThreads,
+  contextItems,
   messages,
   threads,
 } = schema;
@@ -41,7 +42,7 @@ const DAY_MS = 86_400_000;
 /**
  * The daily prune of confidential threads (ADR 0189). A thread marked more than `CONFIDENTIAL_KEEP_DAYS` ago loses the
  * words of every message it holds, its root and whatever was written since included, and of what its runs reported
- * outside it, with what was attached to them;
+ * outside it, with what was attached to them, and the summaries made of it before its mark;
  * a run of it that ended and is older than that loses what it kept of them (its steps, its transcript, its error's
  * text, its questions, its approvals, the blocks and polls it showed). The rows stay. Each blanked message goes to the
  * apps as a message written again in place, so a copy an app kept goes too. Every pass looks at every old thread
@@ -100,6 +101,18 @@ export async function pruneConfidential(
             eq(threads.orgId, thread.orgId),
             eq(threads.rootMessageId, thread.rootMessageId),
             isNotNull(threads.title),
+          ),
+        );
+      // A summary of the thread made before its mark, which the mark archived (out of the index since), and every
+      // older version of it.
+      await tx
+        .delete(contextItems)
+        .where(
+          and(
+            eq(contextItems.orgId, thread.orgId),
+            eq(contextItems.scopeType, "thread"),
+            eq(contextItems.scopeId, thread.rootMessageId),
+            eq(contextItems.kind, "thread_summary"),
           ),
         );
       // A tombstone older than the trash keeps: out of the trash and of restore, and the purge of deleted files

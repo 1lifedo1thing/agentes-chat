@@ -161,7 +161,8 @@ back to another provider's model, or to a program on a computer, ends there with
 - **Learning.** No learning job is queued for a run of a confidential thread, a job queued before the mark does
   nothing, and a refused approval of such a thread leaves no lesson.
 - **Summaries, reflection, the thread's name and assessment** skip a confidential thread whole (`loadThread`,
-  `ensurePeriodSummary`, `nameConversation`, `assessThread`); a summary made before the mark is archived with it.
+  `ensurePeriodSummary`, `nameConversation`, `assessThread`); a summary made before the mark is archived with it,
+  and deleted by the prune.
 - **The small judge.** No judge answers for a run of a confidential thread (`refuseConfidential`): it fails like a
   judge that is off, which every caller already does without. That covers the turn's end, a held reply, the stuck
   check, the context budget, the tool loader, the status line, a question's check, the automatic model and the
@@ -206,8 +207,9 @@ A daily job (`confidentialPrune`), with `CONFIDENTIAL_KEEP_DAYS = 60` in code.
   its text in every column that holds it and reads as removed (`meta.bodyCode` `confidential_removed`, worded by the
   apps). So does what a run of the thread reported outside it, found by the run's reply and its long work's result:
   a report that was posted where the work was asked, and the copy of a handed work's report. Files its messages carried, and the blocks and polls shown in it, become tombstones whose contents the
-  purge of deleted files takes; a voice message loses its words and its recording; the thread's title goes. A
-  message added later is blanked by the next pass.
+  purge of deleted files takes; a voice message loses its words and its recording; the thread's title goes, and
+  the summaries made of the thread before its mark are deleted, every version. A message added later is blanked by
+  the next pass.
 - **A run** of such a thread that ended and is older than that loses the kept text of its steps (a step keeps its
   tool's name, how it ended and its code), its transcript, the words of its error after the code, its questions'
   text and answers, and its approvals' title, detail, why, arguments and result. The rows remain. A run still at

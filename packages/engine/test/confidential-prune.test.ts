@@ -8,6 +8,7 @@ import {
   CONFIDENTIAL_STUB,
   continueRun,
   decideApproval,
+  ensureThreadSummary,
   messageView,
   pruneConfidential,
   stopError,
@@ -262,6 +263,37 @@ test("a run still at work is left alone until it ends", async () => {
   await w.db.update(schema.agentRuns).set({ status: "canceled" });
   expect((await pruneConfidential({ db: w.db })).runs).toBe(1);
   expect(await w.tablesHolding(CANARY)).toEqual([]);
+});
+
+test("the summaries made of the thread before its mark go with it, every version; another thread's stays", async () => {
+  const w = await vaultWorld({
+    agents: ["kai", "mira"],
+    script: {
+      mira: [{ text: "The plain thread says plainwords." }],
+      kai: ({ n }) => (n < 3 ? { text: "Noted." } : n === 3 ? { calls: [READ] } : { text: typed("It says") }),
+    },
+  });
+  const plain = await w.say("@mira say something plain");
+  await w.settle();
+  const asked = await w.say(`@kai a customer pasted this: ${ROOT}`);
+  await w.settle();
+  const summarize = (rootId: string, text: string) => ensureThreadSummary(w.f.context, w.org.id, rootId, { text });
+  await summarize(plain.id, "Mira said plainwords.");
+  await summarize(asked.id, `A customer pasted ${ROOT}.`);
+  await w.say("@kai keep that in mind", { threadId: asked.id });
+  await w.settle();
+  await summarize(asked.id, `A customer pasted ${ROOT}, and asked to keep it in mind.`);
+  await w.say("@kai now read record r1", { threadId: asked.id });
+  await w.settle();
+  const summaries = async () =>
+    (await w.db.select().from(schema.contextItems)).map((i) => `${i.scopeId} ${i.status}`).sort();
+  // The mark archived the current one; the version before it was archived when it was replaced.
+  expect(await summaries()).toEqual([`${asked.id} archived`, `${asked.id} archived`, `${plain.id} active`].sort());
+  expect(await w.tablesHolding(ROOT)).toContain("context_items");
+  await age(w, CONFIDENTIAL_KEEP_DAYS + 1);
+  await pruneConfidential({ db: w.db });
+  expect(await summaries()).toEqual([`${plain.id} active`]);
+  expect(await w.tablesHolding(ROOT)).toEqual([]);
 });
 
 test("what a run of the thread reported outside it goes with the thread: its long work's report, wherever that was posted", async () => {
