@@ -503,7 +503,7 @@ describe("tools through Composio", () => {
     });
     w.fake.answer("GOOGLEDRIVE_FIND_FILE", { files: [{ id: "f1", name: "Notes" }] });
     const found = await call(gateway, await runOf(f, walter.id), "google_drive_find_file", { q: "notes" });
-    expect(found.type).toBe("result");
+    expect(found).toMatchObject({ type: "result", output: { content: expect.stringContaining("Notes") } });
     expect(w.fake.state.executions.at(-1)?.account).toEqual({
       connectedAccountId: code,
       userId: his,

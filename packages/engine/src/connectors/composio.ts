@@ -13,7 +13,7 @@ import { and, type Database, eq, isNotNull, isNull, schema, sql } from "@agentes
 import { caches } from "../cache";
 import { randomToken, sha256 } from "../crypto";
 import { ConflictError, ValidationError } from "../errors";
-import { composioUserId } from "../mail/accounts";
+import { composioUserId, orgOfComposioUser } from "../mail/accounts";
 import { notifyComposioLimit } from "../notification-producers";
 import { requirePermission } from "../organizations";
 import { actionLevel, POSTING_ACTIONS } from "./classify";
@@ -387,8 +387,9 @@ export function meterComposio(deps: {
   now?: () => Date;
 }): (call: { slug: string; userId: string }) => Promise<void> {
   return async ({ userId }) => {
-    if (!userId.startsWith("org_")) return;
-    const orgId = userId.slice("org_".length);
+    // A person's own account counts for their workspace too (`composioUserId` with a person).
+    const orgId = orgOfComposioUser(userId);
+    if (!orgId) return;
     const now = deps.now?.() ?? new Date();
     const month = monthOf(now);
     const [counted] = await deps.db

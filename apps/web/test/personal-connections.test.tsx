@@ -283,8 +283,8 @@ describe("Conectores: the split covers both cards", () => {
     await openConnectors(api);
     const box = screen().getByRole("region", { name: "Suas caixas de email" });
     expect(box.textContent).toContain("Quando outra pessoa pede algo que precisa de aprovação, quem aprova é você.");
-    expect(box.textContent).toContain("Trabalho");
-    expect(section().textContent).not.toContain("Trabalho");
+    expect(box.textContent).toContain("walter@example.com");
+    expect(section().textContent).not.toContain("walter@example.com");
     // Nothing but a mailbox: the connections' note has nothing under it, so it isn't there.
     expect(document.body.textContent).not.toContain("Só você abre estas conexões.");
     cleanup();
