@@ -354,7 +354,8 @@ function handedLine(h: HandedFor) {
         : h.status === "expired"
           ? "you never got to it"
           : "you couldn't finish it";
-  return `- @${h.askerHandle} ${what}, ${ago(h.createdAt)}: ${quote(h.question, 200)} → ${came}`;
+  const asked = h.question === null ? "(it relayed text it read outside, not shown)" : quote(h.question, 200);
+  return `- @${h.askerHandle} ${what}, ${ago(h.createdAt)}: ${asked} → ${came}`;
 }
 
 /** "13 min ago", "2 h ago", "3 days ago". */

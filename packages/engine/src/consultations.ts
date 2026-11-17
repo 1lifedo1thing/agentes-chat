@@ -27,7 +27,7 @@ import { type BrakeOutcome, brakeWakes, callableAgents, LATER_JOB, notCallableTe
 import { canceledBy, stopRun } from "./cancel";
 import { deliverNotice, publishDelivery } from "./delivery";
 import { INBOX_JOB, startOrJoinRun } from "./dispatch";
-import { isAgentOnlyDm, openAgentDm, openPersonAgentDm, personAgentDmKey } from "./dms";
+import { isAgentOnlyDm, openAgentDm, personAgentDmKey } from "./dms";
 import { publishChannelEvent, publishMessageCreated } from "./events";
 import { cutText } from "./format";
 import type { Judge } from "./judge";
@@ -2400,7 +2400,8 @@ export interface HandedFor {
   id: string;
   kind: AgentConsultationRow["kind"];
   status: AgentConsultationRow["status"];
-  question: string;
+  /** Null when the run that asked read outside content (its note relays it). */
+  question: string | null;
   /** People's words of it (`answerForPeople`); null while open, or when its run read outside content. */
   answer: string | null;
   askerHandle: string;
@@ -2453,7 +2454,7 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
       id: row.id,
       kind: row.kind,
       status: row.status,
-      question: row.question,
+      question: (await runReadOutsideById(db, orgId, row.askerRunId)) ? null : row.question,
       answer:
         row.status === "answered" && row.answer && !(await answerReadOutside(db, row))
           ? answerForPeople(row.answer)
@@ -2467,7 +2468,10 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
 /** How much of the question the trace keeps (`NOTICE_QUESTION_MAX`, as the asker's notice). */
 const TRACE_QUESTION_MAX = NOTICE_QUESTION_MAX;
 
-/** Where the person behind a hand-off asked: the asking run's conversation, or up its chain from an agents' DM. */
+/**
+ * Where the person behind a hand-off asked: the asking run's conversation, or up its chain from where a run answers
+ * hand-offs (`answersHandOffs`), as handed work reports there (`consultationOrigin`).
+ */
 async function handOffAskedIn(db: Executor, orgId: string, askerRunId: string) {
   const [asker] = await db
     .select({ channelId: agentRuns.channelId, kind: channels.kind, dmKey: channels.dmKey })
@@ -2475,7 +2479,7 @@ async function handOffAskedIn(db: Executor, orgId: string, askerRunId: string) {
     .innerJoin(channels, eq(channels.id, agentRuns.channelId))
     .where(and(eq(agentRuns.orgId, orgId), eq(agentRuns.id, askerRunId)));
   if (!asker) return null;
-  return isAgentOnlyDm(asker)
+  return answersHandOffs(asker)
     ? ((await consultationOrigin(db, orgId, askerRunId))?.channelId ?? null)
     : asker.channelId;
 }
@@ -2508,8 +2512,9 @@ async function traceDm(tx: Executor, c: Pick<AgentConsultationRow, "orgId" | "as
 /**
  * The quiet row a hand-off leaves in the DM of the agent that got it with the person behind it (`hand_off`, a quiet
  * notice: no unread, no notification), so that DM shows the request and opens the exchange. Written once, as it is
- * asked; its state changes in place as it closes (`settleHandOffTrace`). Returns the message to publish after the
- * commit, or null when no person would read it there (`traceDm`).
+ * asked; its state changes in place as it closes (`settleHandOffTrace`). Marked `readOutside` like the note it copies.
+ * Returns the message to publish after the commit, or null when no person would read it there (`traceDm`) or they
+ * have no DM with that agent.
  */
 export async function traceHandOff(
   tx: Executor,
@@ -2520,7 +2525,18 @@ export async function traceHandOff(
 ) {
   const to = await traceDm(tx, c);
   if (!to) return null;
-  const dm = await openPersonAgentDm(tx, c.orgId, to.person, c.targetAgentId);
+  // Only a DM the person already has: opening one would put an empty conversation at the top of their lists.
+  const [dm] = await tx
+    .select({ id: channels.id })
+    .from(channels)
+    .where(
+      and(
+        eq(channels.orgId, c.orgId),
+        eq(channels.dmKey, personAgentDmKey(to.person, c.targetAgentId)),
+        isNull(channels.archivedAt),
+      ),
+    );
+  if (!dm) return null;
   const notice: Notice = {
     kind: "hand_off",
     text: `"${cutText(c.question, 300)}"`,
@@ -2544,6 +2560,7 @@ export async function traceHandOff(
     stretchId: null,
     notice,
     wake: false,
+    readOutside: await runReadOutsideById(tx, c.orgId, c.askerRunId),
   });
   return message;
 }

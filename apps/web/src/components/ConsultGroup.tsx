@@ -220,7 +220,11 @@ export function ConsultPairRow({
       <Tip button look="ac-msg__tip tm-tip" tip={rowTip(title, question ? [question] : [])}>
         <button
           type="button"
-          className={cx("consult-pair__row", pair.tone && `consult-pair__row--${pair.tone}`)}
+          className={cx(
+            "consult-pair__row",
+            pair.tone && `consult-pair__row--${pair.tone}`,
+            handed && "consult-pair__row--handed",
+          )}
           aria-description={question || undefined}
           {...(seeCard && !handed
             ? { onClick: seeCard }

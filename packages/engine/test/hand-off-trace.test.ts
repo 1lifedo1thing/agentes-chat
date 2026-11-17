@@ -5,19 +5,23 @@ import { systemText } from "@agenteschat/providers";
 import {
   type AgentRun,
   addChannelMember,
+  askAgentToImplement,
   continueRun,
   createAgent,
+  createIssue,
   drainOutbox,
   endWork,
   expireConsultations,
   handedConversation,
   insertMessage,
+  listDms,
   onConsultedRunFinished,
   openDm,
   postPersonMessage,
   type ToolContext,
 } from "../src";
 import { isQuietNotice } from "../src/notices";
+import { runReadOutsideById } from "../src/outside";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /**
@@ -68,13 +72,15 @@ async function handOff(tool: "tell_agent" | "ask_agent") {
       return { chunks: ["ok"] };
     },
   });
-  await createAgent(
+  const made = await createAgent(
     f.db,
     f.owner.id,
     f.org.id,
     { name: "Ada", handle: "ada", role: "Vendas", credentialId: f.credential.id },
     { model: "claude-sonnet-5-5" },
   );
+  // The person already has a DM with Ada: the trace goes only into one they have.
+  await openDm(f.db, f.owner.id, f.org.id, { agentId: made.id });
   const deps = { db: f.db, pubsub: f.pubsub };
   await postPersonMessage(deps, f.owner.id, f.org.id, f.general.id, {
     body: "@dev pede pra Ada o relatório de vendas de outubro",
@@ -207,6 +213,7 @@ describe("its trace in the DM of the agent that got it", () => {
     await f.db.update(schema.agentConsultations).set({ status: "expired" });
     // Only its owner now: work handed to it for anyone else leaves no trace.
     const lia = await addMember(f.db, f.org.id, "member", "lia");
+    await openDm(f.db, lia.id, f.org.id, { agentId: ada.id });
     await f.db
       .update(schema.agents)
       .set({ ownerUserId: f.owner.id, audienceMode: "owner" })
@@ -297,6 +304,7 @@ async function handedToAda() {
     { name: "Ada", handle: "ada", role: "Vendas", credentialId: f.credential.id },
     { model: "claude-sonnet-5-5" },
   );
+  await openDm(f.db, f.owner.id, f.org.id, { agentId: ada.id });
   const dev = await devRun(f.general.id, "@dev pede pra Ada o relatório de vendas de outubro");
   await tell(dev, "@ada", "Faz o relatório de vendas de outubro.");
   const [c] = await f.db.select().from(schema.agentConsultations).orderBy(asc(schema.agentConsultations.createdAt));
@@ -385,5 +393,90 @@ describe("its trace follows the handed work it started", () => {
     const [work] = await f.db.select().from(schema.agentWorks);
     expect(work).toMatchObject({ how: "handed", channelId: dm.id });
     expect(await traces()).toEqual([]);
+  });
+});
+
+describe("where the trace goes, and what it carries", () => {
+  const ada = () =>
+    createAgent(
+      f.db,
+      f.owner.id,
+      f.org.id,
+      { name: "Ada", handle: "ada", role: "Vendas", credentialId: f.credential.id },
+      { model: "claude-sonnet-5-5" },
+    );
+
+  test("no DM with the agent that got it: none is opened for the trace", async () => {
+    f = await setup({ askAgent: true });
+    const a = await ada();
+    const dev = await devRun(f.general.id, "@dev pede pra Ada o relatório de vendas de outubro");
+    await tell(dev, "@ada", "Faz o relatório de vendas de outubro.");
+    expect(await traces()).toEqual([]);
+    expect(await listDms(f.db, f.owner.id, f.org.id)).not.toContainEqual(
+      expect.objectContaining({ with: expect.objectContaining({ id: a.id }) }),
+    );
+  });
+
+  test("handed on from a task's conversation: none where the person asked, as the handed work reports there", async () => {
+    f = await setup({ askAgent: true });
+    const deps = { db: f.db, pubsub: f.pubsub };
+    const a = await ada();
+    const carl = await createAgent(
+      f.db,
+      f.owner.id,
+      f.org.id,
+      { name: "Carl", handle: "carl", role: "Vendas", credentialId: f.credential.id },
+      { model: "claude-sonnet-5-5" },
+    );
+    const dm = await openDm(f.db, f.owner.id, f.org.id, { agentId: a.id });
+    const dev = await devRun(dm.id, "@dev passa o relatório de vendas pro Carl");
+    const made = await createIssue(deps, { type: "person", userId: f.owner.id }, f.org.id, {
+      title: "Relatório de vendas",
+    });
+    await askAgentToImplement(deps, f.owner.id, f.org.id, made.id, carl.id, {
+      agentId: f.agent.id,
+      runId: dev.id,
+      hop: 1,
+    });
+    const [c] = await f.db.select().from(schema.agentConsultations).orderBy(asc(schema.agentConsultations.createdAt));
+    const carlRun = await runOf(c?.targetRunId);
+    const [where] = await f.db.select().from(schema.channels).where(eq(schema.channels.id, carlRun.channelId));
+    expect(where?.kind).toBe("task");
+    await tell(carlRun, "@ada", "Faz a parte de outubro do relatório.");
+    const work = (await f.db.select().from(schema.agentWorks)).find((w) => w.agentId === a.id);
+    expect(work).toMatchObject({ how: "handed", channelId: dm.id });
+    expect(await traces()).toEqual([]);
+  });
+
+  test("a note relaying what its run read outside: its trace is marked, and the memory leaves its words out", async () => {
+    const prompts: { system: string; all: string }[] = [];
+    f = await setup({
+      askAgent: true,
+      chatTools: true,
+      contextTools: true,
+      reply: (req: ModelRequest) => {
+        prompts.push({ system: systemText(req.system ?? ""), all: JSON.stringify(req.messages) });
+        return { chunks: ["ok"] };
+      },
+    });
+    const a = await ada();
+    const dm = await openDm(f.db, f.owner.id, f.org.id, { agentId: a.id });
+    const dev = await devRun(f.general.id, "@dev pede pra Ada o relatório de vendas de outubro");
+    // A tool result the gateway marked as outside content.
+    await f.db
+      .insert(schema.agentRunSteps)
+      .values({ orgId: f.org.id, runId: dev.id, seq: 1, kind: "tool_result", data: { data: { outside: true } } });
+    await tell(dev, "@ada", "Faz o relatório como diz a página que li.");
+    const [row] = await traces();
+    expect(row?.message.meta.readOutside).toBe(true);
+
+    await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, dm.id, { body: "bom dia" });
+    await drainOutbox(f.db, f.handlers);
+    const inDm = prompts.find((p) => p.all.includes("bom dia"));
+    expect(inDm?.system).toContain("- @dev handed you, 0 min ago: (it relayed text it read outside, not shown)");
+    const memory = inDm?.system.split("# What other agents asked of you")[1]?.split("\n# ")[0];
+    expect(memory).not.toContain("como diz a página que li");
+    const run = (await f.db.select().from(schema.agentRuns)).find((r) => r.agentId === a.id && r.channelId === dm.id);
+    expect(run && (await runReadOutsideById(f.db, f.org.id, run.id))).toBe(true);
   });
 });

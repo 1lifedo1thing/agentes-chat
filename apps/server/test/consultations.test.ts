@@ -151,6 +151,8 @@ test("a hand-off opens from the DM of the agent it was handed to, where it left 
       json: { name: "Infra", handle: "infra", instructions: "Cuida do deploy e dos servidores.", credentialId },
     })
   ).json()) as { id: string };
+  // The owner has a DM with Infra: the trace goes only into one they have.
+  await owner(`/api/app/organizations/${orgId}/dms`, { json: { agentId: infra.id } });
   // The owner asked Dev in the channel; Dev's run handed it to Infra.
   const asked = await insertMessage(t.db, {
     orgId,

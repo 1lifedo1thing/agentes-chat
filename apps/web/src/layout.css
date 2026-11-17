@@ -435,7 +435,8 @@ p {
 }
 /* A phone's line has room for the names, the count and the time only: the subject would be a letter and its "…". */
 @container (max-width: 420px) {
-  .consult-pair__subject {
+  /* Except another agent's request in this agent's DM: nothing else there says what was asked. */
+  .consult-pair__row:not(.consult-pair__row--handed) .consult-pair__subject {
     display: none;
   }
 }

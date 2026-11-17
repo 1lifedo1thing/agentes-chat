@@ -96,6 +96,8 @@ describe("another agent's request in my DM with the agent it went to", () => {
     expect(row()?.querySelector(".consult-pair__asked")?.textContent).toBe("pediu à");
     expect(row()?.textContent).toContain("Relatório de vendas de outubro");
     expect(row()?.textContent).toContain("levou 3 min");
+    // Keeps its subject on a phone-wide line, where other pair rows drop theirs (layout.css).
+    expect(row()?.className).toContain("consult-pair__row--handed");
     await act(async () => fireEvent.click(row() as HTMLElement));
     await settle(3);
     const dialog = document.querySelector(".ac-dialog.consult-dialog");
