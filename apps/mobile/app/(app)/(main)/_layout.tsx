@@ -1,5 +1,6 @@
 import { type ErrorBoundaryProps, type NativeStackNavigationOptions, Stack } from "expo-router";
 import { useMemo } from "react";
+import { slideListeners } from "@/agent/live";
 import { isStill } from "@/features/links/landing";
 import { ScreenError } from "@/features/shared/ScreenError";
 import { coverBarOptions, usePushedOptions, useScrollUnderPushedOptions, useTheme } from "@/ui";
@@ -102,7 +103,7 @@ export default function MainStack() {
     };
   }, [colors, pushed, scrollUnder]);
   return (
-    <Stack screenOptions={screenOptions}>
+    <Stack screenOptions={screenOptions} screenListeners={slideListeners}>
       <Stack.Screen name="(tabs)" />
     </Stack>
   );
