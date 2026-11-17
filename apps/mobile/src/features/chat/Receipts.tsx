@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 import { type GestureResponderEvent, Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, LayoutAnimationConfig } from "react-native-reanimated";
 import { useOrg } from "@/providers/org";
-import { GroupedFooter, Icon, LineIcon, Text, useReducedMotion, useToast } from "@/ui";
+import { Disclosure, GroupedFooter, LineIcon, Text, useReducedMotion, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { agoOf } from "../agents/logic";
 import { agoText } from "../agents/work";
@@ -232,7 +232,6 @@ function ChangesSheet({
 }) {
   const { t } = useTranslation();
   const meId = useMeId();
-  const c = useColors();
   return (
     <>
       <SheetTitle title={title} />
@@ -247,7 +246,7 @@ function ChangesSheet({
             // A change that opens its own thing says so with the chevron; one with nowhere to go is only read.
             ...(href
               ? {
-                  trailing: <Icon name="right" size={15} color={c.faint} />,
+                  trailing: <Disclosure />,
                   onPress: () => close(() => router.push(href)),
                 }
               : {}),

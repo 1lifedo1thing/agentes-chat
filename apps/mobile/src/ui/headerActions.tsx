@@ -1,16 +1,14 @@
 import type { NativeStackNavigationOptions } from "expo-router";
-import type { SFSymbolIcon } from "expo-router/native-tabs";
 import { type ReactNode, useLayoutEffect, useMemo, useRef } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { ScrollToTopGuard } from "react-native-screens/experimental";
-import { barGlyph } from "./barGlyphs";
 import { IconButton, usePlateEdge } from "./IconButton";
 import type { IconName } from "./icons.data";
+import type { SFSymbolName } from "./icons.sf";
 import { HeaderSlot, useHeaderSlot } from "./navigation";
 import { useTheme } from "./theme";
 
-/** An SF Symbol name (the bar buttons on iOS). */
-export type SFSymbolName = Extract<NonNullable<SFSymbolIcon["sf"]>, string>;
+export type { SFSymbolName };
 
 /** One choice in a bar button's menu (`HeaderAction.menu`). */
 export interface HeaderMenuItem {
@@ -45,14 +43,10 @@ const IOS = Platform.OS === "ios";
 type Described = Omit<HeaderAction, "onPress" | "menu"> & { menu?: Omit<HeaderMenuItem, "onPress">[] };
 
 /**
- * A system bar button's image (iOS): our line icon, as the tab bar's glyphs are ours, so a bar of system buttons and
- * one of our own views look the same; its SF Symbol only if the icon couldn't be drawn. A menu's rows keep the
- * system's symbols, as its own menus do.
+ * A system bar button's image (iOS): the system's own symbol, as every icon of the app on iOS (`Icon`), so a bar of
+ * system buttons, a bar of our own views and a menu's rows show the same drawings.
  */
-const barIcon = ({ icon, sf }: { icon: IconName; sf: SFSymbolName }) => {
-  const glyph = barGlyph(icon);
-  return glyph ? { type: "image" as const, source: glyph } : { type: "sfSymbol" as const, name: sf };
-};
+const barIcon = ({ sf }: { sf: SFSymbolName }) => ({ type: "sfSymbol" as const, name: sf });
 
 /**
  * Header options for a screen's actions. On iOS the right actions are native `UIBarButtonItem`s

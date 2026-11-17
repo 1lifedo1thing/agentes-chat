@@ -2,7 +2,7 @@ import { type Message, useIssue } from "@agenteschat/client";
 import { type HandedTask, handedTasksOf, type IssueWorkRef, issueTakenOf } from "@agenteschat/client/lib/issues";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
-import { CARD_PAD, EventPill, Icon, PressScale, Text, TOUCH } from "@/ui";
+import { CARD_PAD, Disclosure, EventPill, Icon, PressScale, Text, TOUCH } from "@/ui";
 import { router } from "@/ui/navigation";
 import { StateChip } from "../issues/parts";
 import { chatHref } from "../links/logic";
@@ -53,7 +53,7 @@ export function IssueWorkCard({ work, authorId }: { work: IssueWorkRef; authorId
         <Text variant="small" tone="ink2" style={styles.bold}>
           {t("chat.issueWork.view")}
         </Text>
-        <Icon name="right" size={15} color={c.faint} />
+        <Disclosure />
       </View>
     </PressScale>
   );

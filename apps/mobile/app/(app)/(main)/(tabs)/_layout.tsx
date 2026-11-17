@@ -8,18 +8,47 @@ import { ALONG_STRIP, alongInAccessory } from "@/features/work-along/logic";
 import { AccessoryLine, AlongStrip, useHasWorkAlong } from "@/features/work-along/WorkAlong";
 import { TAB_BADGE, tabBadge } from "@/lib/nav";
 import { useOrg } from "@/providers/org";
-import { TabFoot, useTheme } from "@/ui";
+import { type SFSymbolName, TabFoot, useTheme } from "@/ui";
 import { type TabGlyph, tabGlyphKey } from "@/ui/tabGlyphs";
 import { tabGlyphFamily } from "@/ui/tabIcons";
 
-const TABS: { name: string; glyph: TabGlyph; label: string; role?: "search"; teamOnly?: true }[] = [
-  { name: "(chats)", glyph: "chats", label: "mobile.tabs.chats" },
+/**
+ * The tabs. `sf`: the system's symbols on iOS, outline and filled when selected (as the system's own apps); Agentes
+ * keeps our agent, which the system has no drawing of. Android draws our glyphs.
+ */
+const TABS: {
+  name: string;
+  glyph: TabGlyph;
+  label: string;
+  sf?: { default: SFSymbolName; selected: SFSymbolName };
+  role?: "search";
+  teamOnly?: true;
+}[] = [
+  {
+    name: "(chats)",
+    glyph: "chats",
+    label: "mobile.tabs.chats",
+    sf: { default: "bubble.left.and.bubble.right", selected: "bubble.left.and.bubble.right.fill" },
+  },
   // A conversation that branches is rare for one person: a personal workspace (ADR 0159) opens Threads from You › Work.
-  { name: "threads", glyph: "threads", label: "mobile.tabs.threads", teamOnly: true },
+  {
+    name: "threads",
+    glyph: "threads",
+    label: "mobile.tabs.threads",
+    sf: { default: "bubble.left.and.text.bubble.right", selected: "bubble.left.and.text.bubble.right.fill" },
+    teamOnly: true,
+  },
   { name: "agents", glyph: "agents", label: "mobile.tabs.agents" },
-  { name: "activity", glyph: "activity", label: "mobile.tabs.activity" },
-  // The search role: on iOS 26 the round button apart at the bar's end (like Music); a plain tab on Android.
-  { name: "search", glyph: "search", label: "mobile.tabs.search", role: "search" },
+  { name: "activity", glyph: "activity", label: "mobile.tabs.activity", sf: { default: "bell", selected: "bell.fill" } },
+  // The search role: on iOS 26 the round button apart at the bar's end (like Music); a plain tab on Android. The
+  // magnifier never fills, as the system's search tab.
+  {
+    name: "search",
+    glyph: "search",
+    label: "mobile.tabs.search",
+    sf: { default: "magnifyingglass", selected: "magnifyingglass" },
+    role: "search",
+  },
 ];
 
 /** Each tab's glyph, outline and filled when selected, made once: the bar is not handed new icons on every draw. */
@@ -38,8 +67,9 @@ const ACCESSORY = alongInAccessory(Platform.OS, Platform.Version);
 
 /**
  * Conversas (the home), Threads (threads and missions), Agentes, Atividade and Buscar in the system tab bar
- * (UITabBarController on iOS, Liquid Glass on iOS 26; Material bottom navigation on Android). Our own glyphs on both platforms (outline, filled when
- * selected), drawn as template images the bar tints. Badges for unread conversations (Conversas: channels
+ * (UITabBarController on iOS, Liquid Glass on iOS 26; Material bottom navigation on Android). The system's symbols on
+ * iOS (Agentes: our agent) and our own glyphs on Android, outline, filled when selected, as template images the bar
+ * tints. Badges for unread conversations (Conversas: channels
  * and DMs; Threads: its rows, never both) and what waits on you. Every tab holds a stack with a native header. A
  * personal workspace (ADR 0159) leaves Threads out of the bar (`hidden`, the system bar's own way: changing it redraws
  * the tabs from Conversas); its row in You › Work opens the same list, pushed. A tab change is the system's own: no
@@ -102,7 +132,12 @@ export default function TabsLayout() {
               accessibilityLabel={badge ? t("mobile.tabs.withCount", { label, count }) : label}
               contentStyle={look.content}
             >
-              <NativeTabs.Trigger.Icon renderingMode="template" src={ICONS[tab.name]} />
+              {/* `sf` wins on iOS; `src` is Android's (and Agentes' on iOS). */}
+              <NativeTabs.Trigger.Icon
+                renderingMode="template"
+                src={ICONS[tab.name]}
+                {...(tab.sf ? { sf: tab.sf } : {})}
+              />
               <NativeTabs.Trigger.Label>{label}</NativeTabs.Trigger.Label>
               {badge ? <NativeTabs.Trigger.Badge>{badge}</NativeTabs.Trigger.Badge> : null}
             </NativeTabs.Trigger>

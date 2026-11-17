@@ -39,6 +39,7 @@ import {
   Icon,
   type IconName,
   Locked,
+  RowPressable,
   SCREEN_X,
   Segmented,
   SheetScreen,
@@ -389,10 +390,10 @@ function Writer({
               style={[styles.suggest, { backgroundColor: c.raised, borderColor: c.line2 }]}
             >
               {suggestions.map((p) => (
-                <Pressable
+                <RowPressable
                   key={p.id}
                   onPress={() => pick(p.title)}
-                  style={({ pressed }) => [styles.suggestRow, pressed && { backgroundColor: c.sunken }]}
+                  style={styles.suggestRow}
                 >
                   <Tile icon="file" size={30} />
                   <View style={styles.grow}>
@@ -405,7 +406,7 @@ function Writer({
                       </Text>
                     ) : null}
                   </View>
-                </Pressable>
+                </RowPressable>
               ))}
               {token?.query.trim() && !suggestions.some((p) => p.title === token.query.trim()) ? (
                 <Pressable

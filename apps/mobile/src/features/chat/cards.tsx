@@ -56,6 +56,7 @@ import {
   ACT_LINE,
   Button,
   Count,
+  Disclosure,
   HoldButton,
   Icon,
   PixelOrbit,
@@ -979,7 +980,7 @@ export function ThreadLink({ thread }: { thread: ThreadInfo }) {
               : ""
             : ` · ${when.short(thread.lastActivityAt)}`}
       </Text>
-      <Icon name="right" size={15} color={c.faint} />
+      <Disclosure />
     </PressScale>
   );
 }
