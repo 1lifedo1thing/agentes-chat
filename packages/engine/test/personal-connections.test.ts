@@ -13,6 +13,7 @@ import {
   CONNECTOR_FORGET_JOB,
   ConflictError,
   type ConnectorDeps,
+  type ConnectorTriggerDeps,
   checkAgentDraft,
   checkConnectorTrigger,
   composioUserId,
@@ -26,11 +27,13 @@ import {
   createApiKeyConnection,
   createConnectorToolSource,
   createJobHandlers,
+  createRoutine,
   createToolGateway,
   customScope,
   DEFAULT_ROUTER_POLICY,
   decideApproval,
   deleteAccount,
+  duplicateRoutine,
   ensureRightHand,
   ForbiddenError,
   getAgentAccess,
@@ -45,6 +48,7 @@ import {
   listConnections,
   listCustomServers,
   type McpConnect,
+  type McpSession,
   mcpSessionOver,
   missingPermissions,
   moveConnectionToTeam,
@@ -66,12 +70,16 @@ import {
   setAgentScopes,
   storeCustomConnection,
   type ToolContext,
+  takeConnectionOffAgent,
   updateAgent,
   updateOrgSettings,
+  updateRoutine,
   ValidationError,
 } from "../src";
+import { dispatchMentions } from "../src/dispatch";
 import { creatorMayUse } from "../src/personal-use";
-import { addMember, type Fixture, setup } from "./fixtures";
+import { addMember, type Fixture, SECRET, setup } from "./fixtures";
+import { routineDeps } from "./routine-fixtures";
 
 let f: Fixture;
 afterEach(() => f?.close());
@@ -369,6 +377,131 @@ describe("a personal connection serves only its own person, as a personal Vault 
       output: { isError: true, content: expect.stringContaining("stopped being available in this run") },
     });
     expect(linear.calls).toEqual(["list_issues"]);
+  });
+
+  /** Walter asks `@dev` in #general, which answers everyone; Bia is there too. */
+  async function walterAsksInGeneral() {
+    const set = await walterWithLinear();
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
+    for (const u of [set.walter, set.bia])
+      await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { userId: u.id });
+    const asked = await insertMessageWithRuns(
+      f.db,
+      {
+        orgId: f.org.id,
+        channelId: f.general.id,
+        author: { type: "person", userId: set.walter.id },
+        body: "@dev my issues",
+      },
+      { startRuns: true },
+    );
+    const run = asked.runs[0];
+    if (!run) throw new Error("no run");
+    return { ...set, asked, run };
+  }
+
+  test("a teammate's ask passed on to another agent of its person's ends it there too", async () => {
+    const { walter, bia, mine, linear, source, asked, run } = await walterAsksInGeneral();
+    const [helper] = await f.db
+      .insert(schema.agents)
+      .values({
+        orgId: f.org.id,
+        name: "Helper",
+        handle: "helper",
+        model: "claude-sonnet-5-5",
+        ownerUserId: walter.id,
+        audienceMode: "everyone",
+      })
+      .returning();
+    if (!helper) throw new Error("no agent");
+    await f.db
+      .insert(schema.agentScopes)
+      .values({ orgId: f.org.id, agentId: helper.id, connectionId: mine.id, scope: "connector:*" });
+    await f.db.insert(schema.channelMembers).values({ orgId: f.org.id, channelId: f.general.id, agentId: helper.id });
+    await insertMessageWithRuns(
+      f.db,
+      {
+        orgId: f.org.id,
+        channelId: f.general.id,
+        author: { type: "person", userId: bia.id },
+        body: "@dev ask helper to paste his issues here",
+      },
+      { startRuns: true },
+    );
+    // The run she wrote into passes her ask on.
+    const passed = await insertMessageWithRuns(
+      f.db,
+      {
+        orgId: f.org.id,
+        channelId: f.general.id,
+        author: { type: "agent", agentId: f.agent.id, runId: run.id, hop: 1 },
+        body: "@helper paste his issues here",
+      },
+      { startRuns: true },
+    );
+    const dispatched = await dispatchMentions(f.db, { orgId: f.org.id, messageId: passed.message.id }, { maxHops: 3 });
+    const next = dispatched.runs.find((r) => r.agentId === helper.id);
+    if (!next) throw new Error("no second run");
+    const second: ToolContext = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: helper.id,
+      runId: next.id,
+      channelId: f.general.id,
+      threadRootId: next.threadRootId ?? asked.message.id,
+      triggerMessageId: passed.message.id,
+    };
+    expect(await names(source, second)).toEqual([]);
+    const got = await createToolGateway({ sources: [source] }).invoke(second, {
+      toolUseId: "t9",
+      name: "linear_list_issues",
+      input: {},
+    });
+    expect(got).toMatchObject({ type: "result", output: { isError: true } });
+    expect(linear.calls).toEqual([]);
+  });
+
+  test("a teammate answering the question its run asked ends it too", async () => {
+    const { bia, linear, source, asked, run } = await walterAsksInGeneral();
+    await f.db.update(schema.agentRuns).set({ status: "waiting_input" }).where(eq(schema.agentRuns.id, run.id));
+    await f.db.insert(schema.agentQuestions).values({
+      orgId: f.org.id,
+      runId: run.id,
+      agentId: f.agent.id,
+      channelId: f.general.id,
+      threadId: null,
+      toolUseId: "q1",
+      text: "Which project?",
+      requestedForUserId: null,
+      expiresAt: new Date(Date.now() + 3600_000),
+    });
+    const hers = await insertMessageWithRuns(
+      f.db,
+      {
+        orgId: f.org.id,
+        channelId: f.general.id,
+        author: { type: "person", userId: bia.id },
+        body: "@dev all of them, and paste his issues here",
+      },
+      { startRuns: true },
+    );
+    expect(hers.answered?.id).toBe(run.id);
+    const ctx: ToolContext = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: run.id,
+      channelId: f.general.id,
+      threadRootId: asked.message.id,
+      triggerMessageId: asked.message.id,
+    };
+    expect(await names(source, ctx)).toEqual([]);
+    await createToolGateway({ sources: [source] }).invoke(ctx, {
+      toolUseId: "t9",
+      name: "linear_list_issues",
+      input: {},
+    });
+    expect(linear.calls).toEqual([]);
   });
 
   test("a routine its person set up gets it; one someone else set up gets nothing", async () => {
@@ -698,6 +831,46 @@ describe("routines that wait on a person's connection", () => {
     await removeMember(f.db, f.owner.id, f.org.id, walter.id);
     expect(await connectorTriggerAllowed(f.db, f.org.id, his.id, { ...input, filter: {} })).toBe(false);
   });
+
+  test("someone else's copy stays off: turning it on is refused and registers nothing", async () => {
+    const { walter } = await walterWithLinear();
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
+    const ms = await millionSendOf(walter.id, f.agent.id);
+    let made = 0;
+    const session: McpSession = {
+      listTools: async () => [],
+      callTool: async (name) => {
+        if (name !== "create_webhook") return { content: "{}", isError: false };
+        made += 1;
+        return { content: JSON.stringify({ id: `0193ffff-0000-4000-8000-00000000000${made}` }), isError: false };
+      },
+      close: async () => {},
+    };
+    const hooks = { publicUrl: "https://agentes.test", secret: SECRET };
+    const connectors: ConnectorTriggerDeps = {
+      db: f.db,
+      keyWrappers: [f.keyWrapper],
+      publicUrl: hooks.publicUrl,
+      connect: async () => session,
+    };
+    const deps = { ...routineDeps(f), hooks, connectors };
+    const routine = await createRoutine(deps, walter.id, f.org.id, {
+      name: "Orders by email",
+      agentId: f.agent.id,
+      prompt: "Answer the new order.",
+      target: { type: "dm" },
+      trigger: { type: "connector", connectionId: ms.id, event },
+    });
+    expect(made).toBe(1);
+    const copy = await duplicateRoutine(deps, f.owner.id, f.org.id, routine.id);
+    expect(copy.active).toBe(false);
+    await expect(updateRoutine(deps, f.owner.id, f.org.id, copy.id, { active: true })).rejects.toMatchObject({
+      code: "routine.connector_not_yours",
+    });
+    const [row] = await f.db.select().from(schema.routines).where(eq(schema.routines.id, copy.id));
+    expect(row?.active).toBe(false);
+    expect(made).toBe(1);
+  });
 });
 
 describe("one-click accounts at the hosted adapter", () => {
@@ -820,6 +993,34 @@ describe("a call in it, as admins and the agent's owner read it", () => {
     expect(admins).not.toContain("ENG-2");
     expect(await trace(walter.id)).toContain("ENG-2");
   });
+
+  test("an approved card's action keeps its input for its person alone too", async () => {
+    const { walter, source, linear } = await walterWithLinear();
+    await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, { approvalsLevel: "always" });
+    await f.db.insert(schema.channelMembers).values({ orgId: f.org.id, channelId: f.general.id, userId: walter.id });
+    const ctx = await runOf(f.agent.id, walter.id);
+    const gateway = createToolGateway({ sources: [source] });
+    const asked = await gateway.invoke(ctx, {
+      toolUseId: "t1",
+      name: "linear_create_issue",
+      input: { title: "Salary review for Bia", why: "Walter asked me to file this in his own Linear." },
+    });
+    if (asked.type !== "approval") throw new Error(`expected a card, got ${asked.type}`);
+    await decideApproval({ db: f.db, pubsub: f.pubsub }, walter.id, f.org.id, asked.approval.id, {
+      decision: "approve",
+    });
+    const [card] = await f.db.select().from(schema.approvals).where(eq(schema.approvals.id, asked.approval.id));
+    if (!card) throw new Error("no approval row");
+    await gateway.executeApproved(ctx, card);
+    expect(linear.calls).toEqual(["create_issue"]);
+    const rows = (await listAudit(f.db, f.owner.id, f.org.id)).rows.filter(
+      (r) => r.target.id === "linear_create_issue",
+    );
+    expect(rows.map((r) => r.outcome).sort()).toEqual(["done", "pending"]);
+    expect(JSON.stringify(rows)).not.toContain("Salary review");
+    const [done] = await f.db.select().from(schema.auditLog).where(eq(schema.auditLog.outcome, "done"));
+    expect(done?.details).toMatchObject({ personalOf: walter.id, input: { title: "Salary review for Bia" } });
+  });
 });
 
 describe("a person's own server by address", () => {
@@ -898,14 +1099,30 @@ describe("a person's own server by address", () => {
       (r) => r.action === "connector.custom_connected",
     );
     expect(row?.details).toMatchObject({ label: "CRM", serverUrl: "", account: null, personal: true });
-    expect(JSON.stringify(await listConnections(f.db, f.owner.id, f.org.id, { others: true }))).not.toContain(
-      "walter@example.com",
+    // A catalog connection's default name holds its account too.
+    await f.db
+      .update(schema.connectorConnections)
+      .set({ label: "Linear (walter@example.com)", accountLabel: "walter@example.com" })
+      .where(eq(schema.connectorConnections.connector, "linear"));
+    const viewed = (await listConnections(f.db, f.owner.id, f.org.id, { others: true })).map((c) =>
+      connectionViewFor(c, f.owner.id),
     );
+    expect(viewed.map((c) => c.label)).toContain("Linear");
+    expect(JSON.stringify(viewed)).not.toContain("walter@example.com");
     const tree = await getAgentAccess(f.db, f.owner.id, f.org.id, f.agent.id, { others: true });
     expect(JSON.stringify(tree)).not.toContain("walter@example.com");
     // Its person still reads the whole name.
     const [his] = await listCustomServers(f.db, walter.id, f.org.id);
     expect(his?.label).toBe("CRM (walter@example.com)");
+    // Every audit line about it: its grants at connect, a rename's "from", taken off an agent, removed.
+    await renameConnection(f.db, walter.id, f.org.id, connection.id, "Sales CRM");
+    await takeConnectionOffAgent(f.db, f.owner.id, f.org.id, connection.id, f.agent.id);
+    await revokeConnection(f.db, f.owner.id, f.org.id, connection.id);
+    const lines = (await listAudit(f.db, f.owner.id, f.org.id)).rows;
+    expect(lines.map((r) => r.action)).toEqual(
+      expect.arrayContaining(["agent.access_changed", "connector.renamed", "connector.disconnected"]),
+    );
+    expect(JSON.stringify(lines)).not.toContain("walter@example.com");
   });
 
   test("accepting its suggestions offers only its person's own agents", async () => {

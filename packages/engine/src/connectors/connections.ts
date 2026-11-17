@@ -18,7 +18,15 @@ import { offersCatalog } from "./listing";
 import type { McpConnect } from "./mcp";
 import { clientAuth, getOAuthClient, type McpOAuthDeps, probeMcpServer } from "./oauth-mcp";
 import { oauthReturnTo } from "./oauth-return";
-import { connectionFor, connectionsOf, othersLabel, othersPersonal, requireConnect, seenBy } from "./personal";
+import {
+  auditLabel,
+  connectionFor,
+  connectionsOf,
+  othersLabel,
+  othersPersonal,
+  requireConnect,
+  seenBy,
+} from "./personal";
 import { presetForServer } from "./presets";
 
 const { connectorConnections, oauthStates, agentScopes, agents, approvalRules, githubAppInstallations } = schema;
@@ -130,7 +138,8 @@ export async function grantToEveryAgent(
   tx: Executor,
   orgId: string,
   actorId: string,
-  connection: Pick<ConnectorConnection, "id" | "label"> & Partial<Pick<ConnectorConnection, "ownerUserId">>,
+  connection: Pick<ConnectorConnection, "id" | "label"> &
+    Partial<Pick<ConnectorConnection, "ownerUserId" | "accountLabel">>,
 ) {
   const owner = connection.ownerUserId ?? null;
   const everyone = await tx
@@ -161,7 +170,7 @@ export async function grantToEveryAgent(
       target: { type: "agent", id: a.id },
       details: {
         connectionId: connection.id,
-        label: connection.label,
+        label: auditLabel({ ownerUserId: null, accountLabel: null, ...connection }),
         level: "write",
         ...(owner ? { personal: true } : {}),
       },
@@ -447,7 +456,7 @@ export async function renameConnection(db: Database, actorId: string, orgId: str
       actor: { type: "person", id: actorId },
       action: "connector.renamed",
       target: { type: "connector_connection", id: c.id },
-      details: { from: c.label, to: name, label: name },
+      details: { from: auditLabel(c), to: name, label: name },
     });
     return row;
   });
@@ -625,7 +634,7 @@ async function dropConnection(tx: Executor, orgId: string, row: ConnectorConnect
     actor,
     action: "connector.disconnected",
     target: { type: "connector", id: row.id },
-    details: { connector: row.connector, label: row.label },
+    details: { connector: row.connector, label: auditLabel(row) },
   });
   return row;
 }

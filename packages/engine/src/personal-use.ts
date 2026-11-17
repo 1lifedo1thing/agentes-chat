@@ -1,8 +1,8 @@
-import { and, type Database, eq, isNull, schema } from "@agenteschat/db";
+import { and, type Database, eq, inArray, isNull, ne, schema } from "@agenteschat/db";
 import { getAgent } from "./agents";
 import { namesLabel, namesOf } from "./approvals";
 import { canTalkTo, speakerFor } from "./audience";
-import { accountablePerson, type RunAuthority, steeredByOthers } from "./authority";
+import { accountablePerson, type RunAuthority, runChain, steeredByOthers } from "./authority";
 import { getMembership } from "./organizations";
 import { routineCreatorOf } from "./requester";
 import { isRightHandId, rightHandReader } from "./right-hand";
@@ -51,15 +51,36 @@ type RunRef = Pick<ToolContext, "db" | "orgId" | "agentId" | "runId">;
 /**
  * Who a person's own connection serves in a run (ADR 0099 addendum): the person a personal Vault item or skill serves
  * (`vaultPersonOfRun`): who asked, else a routine's creator, while an active member, and for the right hand only in
- * their own DM with it. Once someone else wrote into the run (`steeredByOthers`) it serves nobody for the rest of it:
+ * their own DM with it. Once someone else's words reached the run (`othersSpoke`) it serves nobody for the rest of it:
  * `joined` is then the person it served until that moment. `person` null: nobody.
  */
 async function ownerOnlyUse(ctx: RunRef): Promise<{ person: string | null; joined: string | null }> {
   if (!ctx.runId) return { person: null, joined: null };
   const { personId } = await vaultPersonOfRun(ctx.db, { orgId: ctx.orgId, agentId: ctx.agentId, runId: ctx.runId });
-  if (personId && (await steeredByOthers(ctx.db, ctx.orgId, personId, [ctx.runId])))
+  if (personId && (await othersSpoke(ctx.db, ctx.orgId, personId, ctx.runId)))
     return { person: null, joined: personId };
   return { person: personId, joined: null };
+}
+
+/**
+ * Whether someone else's words reached a run of the chain `runId` is the end of (an agent passing an ask on to another
+ * carries it): written into one of its runs, or an answer to a question one of them asked.
+ */
+async function othersSpoke(db: Database, orgId: string, personId: string, runId: string) {
+  const runIds = (await runChain(db, orgId, runId))?.runIds ?? [runId];
+  if (await steeredByOthers(db, orgId, personId, runIds)) return true;
+  const [answered] = await db
+    .select({ id: schema.agentQuestions.id })
+    .from(schema.agentQuestions)
+    .where(
+      and(
+        eq(schema.agentQuestions.orgId, orgId),
+        inArray(schema.agentQuestions.runId, runIds),
+        ne(schema.agentQuestions.answeredByUserId, personId),
+      ),
+    )
+    .limit(1);
+  return Boolean(answered);
 }
 
 export const ownerOnlyPerson = async (ctx: RunRef) => (await ownerOnlyUse(ctx)).person;

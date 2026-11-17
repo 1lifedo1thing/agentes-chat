@@ -60,6 +60,10 @@ export function othersLabel(label: string, account: string | null | undefined) {
   return flat.startsWith(inside.replace(/…$/, "").toLowerCase()) ? service : label;
 }
 
+/** A connection's name as an audit line keeps it: every reader of the log is "someone else" to a personal one. */
+export const auditLabel = (c: Pick<ConnectorConnection, "label" | "accountLabel" | "ownerUserId">) =>
+  c.ownerUserId ? othersLabel(c.label, c.accountLabel) : c.label;
+
 /**
  * Whether `actorId` sees that someone else's personal connection is on this agent (and may take it off): who manages
  * connectors or agents, and the agent's owner. Never its details.
@@ -193,7 +197,7 @@ export async function takeConnectionOffAgent(
         actor: { type: "person", id: actorId },
         action: "agent.access_changed",
         target: { type: "agent", id: agentId },
-        details: { connectionId: c.id, label: c.label, level: "none" },
+        details: { connectionId: c.id, label: auditLabel(c), level: "none" },
       });
     return rows.length;
   });

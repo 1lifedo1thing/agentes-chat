@@ -1716,6 +1716,11 @@ export async function updateRoutine(
   if (connectorTrigger && (patch.trigger?.type === "connector" || set.agentId)) {
     await checkConnectorTrigger(db, orgId, agentId, connectorTrigger, current.createdByUserId);
   }
+  // A routine waiting on a person's own connection stays off unless it is theirs (`syncConnector` won't register it).
+  if (patch.active === true && connectorTrigger) {
+    const refusal = await connectorRefusal(db, current, connectorTrigger.connectionId);
+    if (refusal) throw refusal;
+  }
   const active = patch.active ?? current.active;
   if (patch.active !== undefined) set.active = active;
   // A person resumes it: whatever paused it is behind it.

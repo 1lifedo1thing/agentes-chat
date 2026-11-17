@@ -1256,6 +1256,7 @@ export function createToolGateway(deps: {
           outcome,
           reason: outcome === "done" ? null : shown(output.content),
           approvalId: approval.id,
+          personalOf: tool.ownerUserId ?? null,
           confidential: ctx.confidential === true,
         });
       }
