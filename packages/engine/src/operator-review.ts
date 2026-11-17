@@ -177,11 +177,19 @@ async function taskReview(db: Database, taskId: string): Promise<OperatorReview 
   if (!task) return null;
   const [origin] = task.runId
     ? await db
-        .select({ triggerMessageId: agentRuns.triggerMessageId })
+        .select({
+          triggerMessageId: agentRuns.triggerMessageId,
+          confidential: sql<boolean>`${confidentialThreadSql(sql`${agentRuns.orgId}`, sql`${agentRuns.threadRootId}`)}`,
+        })
         .from(agentRuns)
         .where(eq(agentRuns.id, task.runId))
     : [];
   const trigger = origin ? await getMessage(db, task.orgId, origin.triggerMessageId) : null;
+  // A task that a run of a confidential thread started (ADR 0190) is that run's work: which texts it holds, never
+  // the texts. Its request is stored as the stub.
+  const part: typeof labeled = origin?.confidential
+    ? (rank, label, _source, text) => (text ? [{ rank, text: `${label}:\n${CONFIDENTIAL_NOT_SHOWN}` }] : [])
+    : labeled;
   const header = [
     `Task ${task.id} of agent ${task.agentId}, workspace ${task.orgId}, on computer ${task.machineId}.`,
     `Executor: ${task.executor} · status: ${task.status}${task.exitCode !== null ? ` · exit code ${task.exitCode}` : ""}${task.seconds !== null ? ` · ${task.seconds} s` : ""} · created ${task.createdAt.toISOString()}${task.endedAt ? ` · ended ${task.endedAt.toISOString()}` : ""}.`,
@@ -189,13 +197,13 @@ async function taskReview(db: Database, taskId: string): Promise<OperatorReview 
   ].join("\n");
   const text = assemble([
     { rank: 0, text: header },
-    ...labeled(1, "Title", "task title", task.title, CUT.title),
+    ...part(1, "Title", "task title", task.title, CUT.title),
     ...request(trigger),
-    ...labeled(2, "Prompt", "task prompt", task.prompt, CUT.prompt),
-    ...labeled(2, "Command", "task command", task.command, CUT.command),
-    ...labeled(2, "Result", "task output", task.result, CUT.output),
-    ...labeled(3, "Last lines", "task output", task.recentLines.slice(-OUTPUT_LINES).join("\n"), CUT.output),
-    ...labeled(4, "Files touched", "task files", task.files.slice(0, FILES_SHOWN).join("\n"), CUT.output),
+    ...part(2, "Prompt", "task prompt", task.prompt, CUT.prompt),
+    ...part(2, "Command", "task command", task.command, CUT.command),
+    ...part(2, "Result", "task output", task.result, CUT.output),
+    ...part(3, "Last lines", "task output", task.recentLines.slice(-OUTPUT_LINES).join("\n"), CUT.output),
+    ...part(4, "Files touched", "task files", task.files.slice(0, FILES_SHOWN).join("\n"), CUT.output),
   ]);
   return { kind: "task", id: task.id, orgId: task.orgId, agentId: task.agentId, text };
 }

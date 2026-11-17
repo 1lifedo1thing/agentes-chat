@@ -3,9 +3,12 @@ import { DESKTOP_TEXT_PROTOCOL } from "@agenteschat/adapters";
 import { eq, schema } from "@agenteschat/db";
 import {
   addRunStep,
+  CONFIDENTIAL_NOT_SHOWN,
+  CONFIDENTIAL_STUB,
   createSessionScreening,
   enableOperatorEvents,
   grantScopes,
+  markThreadConfidential,
   REVIEW_MAX_BYTES,
   SESSION_KEEP_MS,
   type Stream,
@@ -333,6 +336,50 @@ test("a task's review: what it was asked and what it printed, credentials masked
   expectNoSecret(text);
   const viewed = (await feed()).events.filter((e) => e.type === "content.viewed");
   expect(viewed.at(-1)).toMatchObject({ data: { ref: `task:${task.id}`, reason: "report", operator: "ana" } });
+});
+
+test("a task's review: of one that a run of a confidential thread started, its facts and none of its texts", async () => {
+  const runId = await runFor("@dev canary-request: deploy the staging site");
+  const [run] = await t.db
+    .select({ rootId: schema.agentRuns.threadRootId })
+    .from(schema.agentRuns)
+    .where(eq(schema.agentRuns.id, runId));
+  const [machine] = await t.db.insert(schema.machines).values({ orgId: org.orgId, name: "Box" }).returning();
+  const [task] = await t.db
+    .insert(schema.machineTasks)
+    .values({
+      orgId: org.orgId,
+      agentId: org.agentId,
+      machineId: machine?.id ?? "",
+      channelId: org.channelId,
+      runId,
+      title: "canary-title",
+      executor: "claude",
+      prompt: "canary-prompt",
+      command: "canary-command",
+      result: "canary-result",
+      recentLines: ["canary-line"],
+      files: ["canary-file.txt"],
+      status: "done",
+      exitCode: 0,
+      seconds: 7,
+      endedAt: new Date(),
+    })
+    .returning();
+  const read = async () => (await body<{ text: string }>(await review(`task/${task?.id}`))).text;
+  const texts = ["request", "title", "prompt", "command", "result", "line", "file.txt"].map((word) => `canary-${word}`);
+  const open = await read();
+  for (const text of texts) expect(open).toContain(text);
+
+  await markThreadConfidential(t.db, { orgId: org.orgId, channelId: org.channelId, rootId: run?.rootId ?? "" });
+  const kept = await read();
+  expect(kept).not.toContain("canary");
+  expect(kept).toContain(`Task ${task?.id} of agent ${org.agentId}`);
+  expect(kept).toContain("Executor: claude · status: done · exit code 0 · 7 s");
+  expect(kept).toContain(CONFIDENTIAL_STUB);
+  for (const label of ["Title", "Prompt", "Command", "Result", "Last lines", "Files touched"]) {
+    expect(kept).toContain(`${label}:\n${CONFIDENTIAL_NOT_SHOWN}`);
+  }
 });
 
 test("a screened session's review: its first and latest screens, credentials masked, gone 10 minutes after it ends", async () => {
