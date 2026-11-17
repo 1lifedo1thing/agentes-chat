@@ -154,9 +154,7 @@ export function operatorFetch(deps: OperatorDeps): ((req: Request) => Response |
   const { OPERATOR_API_TOKEN: token, SURFACE_BRIDGE_TOKEN: bridgeToken } = deps.config;
   if (!token && !bridgeToken) return null;
   const { OPERATOR_API_READ_TOKEN, OPERATOR_API_REVEAL_TOKEN } = deps.config;
-  const operator = token
-    ? createOperatorApp(deps, token, OPERATOR_API_READ_TOKEN, OPERATOR_API_REVEAL_TOKEN)
-    : null;
+  const operator = token ? createOperatorApp(deps, token, OPERATOR_API_READ_TOKEN, OPERATOR_API_REVEAL_TOKEN) : null;
   const surface = bridgeToken && deps.surface ? createSurfaceApp(deps.surface, bridgeToken, deps.version) : null;
   const missing = () => Response.json({ error: { code: "not_found", message: "Route not found" } }, { status: 404 });
   return (req) => {
