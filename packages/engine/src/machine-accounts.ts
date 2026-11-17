@@ -72,7 +72,7 @@ import { BRAIN_PLAN_NAMES } from "./brains/types";
 import { caches } from "./cache";
 import { claudeAuthMethodFor, claudeAuthPolicy } from "./claude-auth-policy";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "./errors";
-import { type MachineCaller, MachineRequestError } from "./machine-hub";
+import { awakeForPerson, type MachineCaller, MachineRequestError } from "./machine-hub";
 import {
   getMachine,
   MACHINE_CONTROL_TOPIC,
@@ -198,7 +198,7 @@ export interface MachineAccountDeps {
 }
 
 export interface MachineAccountHubDeps extends MachineAccountDeps {
-  hub: Pick<MachineCaller, "call" | "status">;
+  hub: Pick<MachineCaller, "call" | "status" | "wake">;
   /** A sign-in that failed on the computer is logged here (an error line is reported, ADR 0104). */
   log?: {
     error(message: string, data?: Record<string, unknown>): void;
@@ -1299,11 +1299,14 @@ const runnerOld = (machine: Pick<MachineRow, "name" | "kind" | "executors">) =>
     { name: machine.name },
   );
 
-/** On a runner that knows accounts (`protocol`: and what is asked of it), and online now: the protocol it speaks. */
+/**
+ * On a runner that knows accounts (`protocol`: and what is asked of it), and online now (one in standby woken for it):
+ * the protocol it speaks.
+ */
 async function requireLive(deps: MachineAccountHubDeps, machine: MachineRow, protocol = ACCOUNTS_PROTOCOL) {
   if (machine.protocol < protocol) throw runnerOld(machine);
   const status = await deps.hub.status(machine.id);
-  if (!status?.online) throw new MachineOfflineError(machine.name, machine.kind);
+  if (!status || !(await awakeForPerson(deps.hub, status))) throw new MachineOfflineError(machine.name, machine.kind);
   if (status.protocol < protocol) throw runnerOld(machine);
   return status.protocol;
 }

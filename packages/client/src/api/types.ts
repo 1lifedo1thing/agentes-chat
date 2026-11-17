@@ -4828,11 +4828,12 @@ export interface Machine {
    * OS and arch are blank.
    */
   kind?: MachineKind;
-  /** Runner connected now (`machine.status` events). */
+  /** Runner connected now (`machine.status` events), or asleep in standby: people never see it sleep. */
   online: boolean;
   /**
-   * ADR 0161: the workspace's own computer is asleep in standby, offline by design: it wakes when something wants it,
-   * and opens as it does. Absent from an older server: not in standby.
+   * ADR 0161: the workspace's own computer is asleep in standby: it wakes when something wants it, and its screen
+   * opens as it does. False again (and `online` the runner's) once a wake failed to bring it back in time. Absent
+   * from an older server: not in standby.
    */
   standby?: boolean;
   lastSeenAt: string | null;
