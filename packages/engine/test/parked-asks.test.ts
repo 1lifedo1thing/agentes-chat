@@ -449,6 +449,20 @@ describe("release_waiting_agent: an agent that handled the ask lets the one wait
     });
   }
 
+  test("its reason is kept in a step of the released run; from a confidential thread's run, no reason is", async () => {
+    const stepOf = async (runId: string) =>
+      (await f.db.select().from(schema.agentRunSteps).where(eq(schema.agentRunSteps.runId, runId)))
+        .map((s) => s.data.releasedBy)
+        .find(Boolean);
+    const plain = await waitingBeside("plan");
+    await plain.tool.execute({ agent: "@dev", reason: "I said it shipped." }, plain.ctx);
+    expect(await stepOf(plain.dev.id)).toEqual({ agentId: plain.ada.id, reason: "I said it shipped." });
+    await f.close();
+    const sealed = await waitingBeside("plan");
+    await sealed.tool.execute({ agent: "@dev", reason: "The record said so." }, { ...sealed.ctx, confidential: true });
+    expect(await stepOf(sealed.dev.id)).toEqual({ agentId: sealed.ada.id, reason: "" });
+  });
+
   test("nothing running is stopped, and nobody else's wait is touched", async () => {
     const { dev, ctx, tool } = await waitingBeside("plan");
     expect((await tool.execute({ agent: "Eva", reason: "x" }, ctx)).content).toStartWith('No agent called "Eva"');
