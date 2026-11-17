@@ -10,8 +10,9 @@
   `context.ts` (`buildRunContext`'s `unseal`), `live-steer.ts` (`renderSteered`), `executor.ts` (`followThread`,
   `CONFIDENTIAL_AI_CHANGED`), `routine-ledger.ts` (`closeRoutineRun`), `judge.ts` (`refuseConfidential`), `format.ts`
   (`inertLinks`, `inertJson`), `apps/tools.ts` (`stubOf` for a person's connected AI app), `operator-review.ts`
-  (`runReview`), `operator-runs.ts` (`runOf`); schema `packages/db/src/schema/chat.ts` (`confidential_threads`,
-  migrations 0286 and 0287); server `apps/server/src/workers.ts` (`confidentialPrune`); tests
+  (`runReview`, `taskReview`), `operator-runs.ts` (`runOf`), `operator-reveal.ts` (`findStep`, `findTask`); schema
+  `packages/db/src/schema/chat.ts` (`confidential_threads`, migrations 0286 and 0287); server
+  `apps/server/src/workers.ts` (`confidentialPrune`); tests
   `packages/engine/test/confidential-results.test.ts`, `confidential-lock.test.ts`, `confidential-copies.test.ts`,
   `confidential-prune.test.ts`
 
@@ -110,9 +111,12 @@ place and does not mark the run that reads it: in the rest of the channel that e
 a `search_context` hit, in a message read by its link, in an open question listed for the agent in another thread,
 in what a person's connected AI app is answered, and in the lines about what other runs did
 (`(confidential, not shown)`). The operator API's review of a run (ADR 0056) says the same of each call of a run of
-a confidential thread: which tool, how it ended, and nothing that went in or came back. Its list of runs, and every
-other answer that holds a run, says such a run's error by its code, with none of its words (`runOf`). So a run asked
-by another message of the same channel is neither given the words nor locked by them.
+a confidential thread: which tool, how it ended, and nothing that went in or came back. Its review of a task such a
+run started gives the task's facts and says the same of each text the task holds. Its reveal door (ADR 0056's
+addendum) refuses such a run's steps and such a task under either purpose (403 `reveal.confidential`), and reads a
+message of the thread as the stub its stored body is. Its list of runs, and every other answer that holds a run,
+says such a run's error by its code, with none of its words (`runOf`). So a run asked by another message of the same
+channel is neither given the words nor locked by them.
 
 ### 5. The lock
 
