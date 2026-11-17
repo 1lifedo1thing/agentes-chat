@@ -3585,6 +3585,13 @@
     "onceHint": "Alle teilen sich die Limits deines Abos.",
     "use": "{{label}} nutzen",
     "another": "Anderes Konto",
+    "which": {
+      "title": "Welches {{brand}}-Konto nutzt {{name}}?",
+      "title_female": "Welches {{brand}}-Konto nutzt {{name}}?",
+      "titleAll": "Welches {{brand}}-Konto nutzen sie?",
+      "mine": "Deine {{brand}}-Konten auf {{computer}}",
+      "other": "Mit einem anderen {{brand}}-Konto anmelden"
+    },
     "reuse": {
       "active": "Du hast {{label}} hier schon. Melde dich erneut an oder nimm ein anderes Konto.",
       "signedOut": "{{label}} ist hier abgemeldet. Melde dich erneut an, und seine Agenten behalten es."
@@ -3724,9 +3731,7 @@
     "dontRunForbidden": "Nur wer gefragt hat, der Inhaber des Agenten oder ein Admin kann es abbrechen",
     "answerAnyway": "Trotzdem antworten",
     "answerAnywayHint": "Antwortet jetzt und liest alles, was seitdem geschrieben wurde",
-    "answerAnywayForbidden": "Nur wer gefragt hat, der Inhaber des Agenten oder ein Admin kann darum bitten",
-    "extraTitle": "Längere Arbeit darf bezahlte Zusatznutzung verwenden",
-    "extraHint": "Mit eingeschalteter Zusatznutzung im Abo läuft längere Arbeit über 95 % hinaus weiter. Ausgeschaltet pausiert sie bei 95 % und geht weiter, wenn sich das Abo zurücksetzt."
+    "answerAnywayForbidden": "Nur wer gefragt hat, der Inhaber des Agenten oder ein Admin kann darum bitten"
   },
   "usageQueue": {
     "back": "{{agent}} ist {{when}} zurück",
@@ -3736,6 +3741,7 @@
     "shared_one": "{{agents}} nutzt dasselbe {{plan}}-Abo. Die Unterhaltungen beider kommen in dieselbe Warteschlange.",
     "shared_other": "{{agents}} nutzen dasselbe {{plan}}-Abo. Alle ihre Unterhaltungen kommen in dieselbe Warteschlange.",
     "about": "Über die Warteschlange",
+    "chain": "Alle {{accounts}} {{plan}}-Konten haben ihr Limit erreicht.",
     "lists": "Unterhaltungen",
     "queuedTab": "In der Warteschlange",
     "skippedTab": "Übersprungen",
@@ -5240,6 +5246,7 @@
       "joinRequest_other": "{{name}} und andere möchten beitreten",
       "joinRequestNames": "{{names}} möchten beitreten",
       "joinSuggestion": "{{by}} hat {{name}} vorgeschlagen",
+      "joinOutside": "{{name}} möchte als externe Person für {{outsideOf}} beitreten, ohne einen Platz zu belegen",
       "doing": {
         "merge": "mergen",
         "deploy": "deployen",
@@ -5303,6 +5310,7 @@
       "joinRequest": "<b>{{name}}</b> möchte beitreten",
       "joinRequestMany": "<b>{{names}}</b> möchten beitreten",
       "joinSuggestion": "<b>{{by}}</b> hat <b>{{name}}</b> vorgeschlagen",
+      "joinOutside": "<b>{{name}}</b> möchte als externe Person für <b>{{outsideOf}}</b> beitreten, ohne einen Platz zu belegen",
       "changeRequest": "<b>{{name}}</b> bittet um eine Änderung an <b>{{agent}}</b>",
       "proposalWaiting": "Verbesserungsvorschläge von <b>{{names}}</b>",
       "changeRequestAgent": "<b>{{name}}</b> bittet um einen neuen Agenten: <b>{{agent}}</b>",
@@ -5726,11 +5734,12 @@
         "accountAlso": "Auch genutzt von {{agents}}",
         "accountOf": "Von {{name}}",
         "accountOthers": "Abos, die dem ganzen Workspace dienen, zeigen, wem sie gehören.",
+        "movesOn": "Macht am Limit mit dem nächsten Konto weiter",
+        "pinned": "Nur dieses Konto",
+        "pinnedHint": "Wartet am Limit, bis sich dieses Konto zurücksetzt, statt zum nächsten zu wechseln.",
         "addAccount": "Konto hinzufügen",
         "signInAgain": "Erneut anmelden",
         "connectPlan": "Weiteres Abo verbinden",
-        "fallbackTitle": "Wenn {{computer}} nicht mehr antwortet, über die API antworten",
-        "fallbackHint": "Die Antwort kommt dann über die API und zählt zum Budget von {{name}}. Sonst sagt {{name}} der Person, die gefragt hat, Bescheid und wartet, bis der Computer zurück ist.",
         "effort": "Aufwand",
         "efforts": {
           "auto": "Automatisch",
@@ -5791,8 +5800,7 @@
           "effort": "Aufwand: {{level}}",
           "speed": "Geschwindigkeit: schnell",
           "context": "Kontext: {{size}}",
-          "sharing": "Antwortet anderen Personen",
-          "waits": "Wartet auf den Computer"
+          "sharing": "Antwortet anderen Personen"
         },
         "copy": {
           "row": "Für andere Agenten verwenden",
@@ -5936,7 +5944,6 @@
           "wait": "Warten",
           "modelTitle": "Modell von {{name}}",
           "moreTitle": "Weitere Optionen für {{name}}",
-          "fallback": "Den API-Schlüssel nutzen, wenn das Abo stoppt",
           "computer": "Computer",
           "doneTitle": "Alles erledigt",
           "doneSub": "Was gerade lief, geht mit dem neuen Konto weiter.",
@@ -7362,6 +7369,10 @@
     "rolesAdd": "Rolle hinzufügen",
     "rolesChange": "Rollen ändern",
     "moreOf": "Mehr zu {{name}}",
+    "outside": {
+      "chip": "Extern",
+      "title": "Externe Person"
+    },
     "passwordLink": {
       "item": "Link für neues Passwort erstellen",
       "hint": "Wenn die Person ihr Passwort vergessen hat",
@@ -7575,6 +7586,8 @@
       "viaLink": "Über den Link angefragt {{when}}",
       "suggested": "Vorgeschlagen von {{name}} {{when}}",
       "suggestedLabel": "{{by}} hat {{name}} vorgeschlagen",
+      "outside": "Hat {{when}} angefragt, als externe Person für {{outsideOf}} beizutreten",
+      "outsideSeat": "Externe Personen zählen nicht zu den Personen deines Tarifs, und du kannst sie jederzeit entfernen.",
       "asked": "Angefragt {{ago}}",
       "askedNow": "Gerade eben angefragt",
       "askedOn": "Angefragt am {{date}}",
@@ -8988,7 +9001,7 @@
       "canceledToast": "Abgebrochen. Es läuft nicht, wenn das Limit zurückgesetzt ist.",
       "continuedToast": "Ausführung geht weiter.",
       "forbidden": "Nur wer die Routine erstellt hat, der Inhaber des Agenten oder ein Admin kann sie jetzt fortsetzen",
-      "extra_off": "Das Zeitfenster dieses Abos ist aufgebraucht und die längere Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung. Schalte sie in seinen KI-Einstellungen ein, um jetzt weiterzumachen, sonst geht es nach dem Zurücksetzen weiter",
+      "extra_off": "Das Zeitfenster dieses Abos ist aufgebraucht und die längere Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung des Abos. Sie geht nach dem Zurücksetzen weiter",
       "extra_used_up": "Das Zeitfenster dieses Abos ist aufgebraucht und seine bezahlte Zusatznutzung ist verbraucht oder nicht verfügbar. Es geht nach dem Zurücksetzen weiter"
     },
     "pausedRunningToast": "Routine pausiert. Die laufende Ausführung wurde auch gestoppt.",
@@ -10493,6 +10506,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Konto ohne Namen",
+    "rename": {
+      "action": "{{label}} umbenennen",
+      "label": "Kontoname",
+      "placeholder": "z. B. Arbeit, Privat"
+    },
     "share": {
       "switch": "Antwortet anderen Personen",
       "switchAll": "Anderen Personen antworten",
@@ -11924,8 +11943,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, ohne API als Ersatz"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "Modell",
@@ -15029,7 +15047,8 @@
       "aboveYou": "Nur jemand über dieser Rolle kann sie ändern.",
       "base": "Jeder Workspace behält die Rolle „Alle“.",
       "unknown": "Diese Rolle gibt es nicht mehr.",
-      "orderIncomplete": "Die Rollen haben sich geändert, während du sie verschoben hast. Lad neu und versuch es noch einmal."
+      "orderIncomplete": "Die Rollen haben sich geändert, während du sie verschoben hast. Lad neu und versuch es noch einmal.",
+      "outsideOwner": "Eine externe Person kann nicht Inhaber sein."
     },
     "teamProposal": {
       "undoExpired": "Seit der Erstellung dieses Teams ist mehr als ein Tag vergangen, daher lässt es sich hier nicht rückgängig machen. Archiviere die Agenten auf ihren Seiten."
@@ -15147,7 +15166,7 @@
       "takeOverNoAccess": "Tritt der Unterhaltung der Routine bei, bevor du sie übernimmst.",
       "agentNotInChannel": "Füg den Agent zuerst zur Unterhaltung hinzu.",
       "webhookPaused": "Schalte die Routine ein, um sie zu testen.",
-      "continueExtraOff": "Das Zeitfenster dieses Abos ist aufgebraucht, und die lange Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung. Schalte sie in seinen KI-Einstellungen ein, um jetzt weiterzumachen, sonst geht es nach dem Zurücksetzen weiter.",
+      "continueExtraOff": "Das Zeitfenster dieses Abos ist aufgebraucht, und die lange Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung des Abos. Sie geht nach dem Zurücksetzen weiter.",
       "continueExtraUsedUp": "Das Zeitfenster dieses Abos ist aufgebraucht, und seine bezahlte Zusatznutzung ist aufgebraucht oder nicht verfügbar. Es geht nach dem Zurücksetzen weiter.",
       "actionsNeedApprover": "Nur der Inhaber des Agenten oder wer seine Aktionen genehmigt, kann eine Routine selbstständig handeln lassen.",
       "editorOnly": "Nur wer die Routine erstellt hat, der Inhaber des Agenten oder ein Admin kann sie ändern.",
@@ -15244,13 +15263,13 @@
     "agent": {
       "ownerOrAdmin": "Nur der Inhaber des Agenten oder ein Admin kann das tun.",
       "detailsHidden": "Nur wer mit {{agentName}} spricht, sieht, wie es funktioniert.",
-      "extraOwnerOnly": "Nur der Inhaber des Agenten schaltet die bezahlte Zusatznutzung des Abos ein oder aus.",
       "undoForbidden": "Nur die Person, für die der Agent gearbeitet hat, sein Inhaber oder ein Admin kann das rückgängig machen.",
       "undoSkillsAdmins": "Nur ein Admin kann eine Änderung an den Skills eines Agenten rückgängig machen oder wiederholen."
     },
     "account": {
       "notRestorable": "Dieses Konto kann nicht mehr wiederhergestellt werden.",
-      "notOwner": "Nur wer dieses Konto oder Abo verbunden hat, kann das tun."
+      "notOwner": "Nur wer dieses Konto oder Abo verbunden hat, kann das tun.",
+      "orderForbidden": "Nur wer dieses Konto verbunden hat oder ein Admin kann seinen Platz in der Reihenfolge ändern."
     },
     "channel": {
       "membersForbidden": "Nur wer den Kanal erstellt hat oder ein Admin kann Personen hinzufügen oder entfernen."
@@ -16557,6 +16576,11 @@
         "role_changed": "Hat die Rolle eines Mitglieds geändert",
         "password_link": "Hat einen Link für ein neues Passwort für ein Mitglied erstellt"
       },
+      "outside": {
+        "approved": "Hat eine externe Person für {{outsideOf}} hereingelassen",
+        "removed": "Hat eine externe Person für {{outsideOf}} entfernt",
+        "left": "Hat den Workspace verlassen, als externe Person für {{outsideOf}}"
+      },
       "role": {
         "permission_set": "Hat geändert, wer {{short}} darf",
         "permission_set_computers": "Hat geändert, wer die Computer der Agenten nutzt"
@@ -17265,6 +17289,14 @@
   "usageViews": {
     "signedOut": "Abgemeldet",
     "whose": "von {{name}}",
+    "order": {
+      "title": "{{plan}} · Nutzungsreihenfolge",
+      "hint": "Am Limit machen die Agenten mit dem nächsten Konto weiter, das noch Spielraum hat, und kehren zum ersten zurück, wenn es sich zurücksetzt.",
+      "terms": "Mehrere {{plan}}-Konten zu nutzen ist in den Bedingungen von {{plan}} eine Grauzone.",
+      "termsLabel": "die Bedingungen von {{plan}}",
+      "termsHint": "Ein Abo ist für eine Person gedacht, also prüfe die Bedingungen von {{plan}}, bevor sich deine Agenten auf mehrere verlassen.",
+      "move": "{{name}} verschieben, Nummer {{n}} in der Reihenfolge"
+    },
     "serves": {
       "everyone": "Alle nutzen es",
       "onlyYou": "Nur du nutzt es",
@@ -17333,7 +17365,7 @@
       "api": "API",
       "apiMain": "{{name}} denkt über die API",
       "apiMain_female": "{{name}} denkt über die API",
-      "apiFallback": "Außerhalb des Abos: schnelle Entscheidungen und wenn das Abo nicht antworten konnte",
+      "apiFallback": "Außerhalb des Abos: schnelle Entscheidungen",
       "removed": "Entferntes Konto",
       "removedSub": "Auf keinem Computer mehr",
       "old": "{{brand}}, aus der Zeit vor den Konten",
@@ -17972,6 +18004,11 @@
       "plan_limit_cut_unknown": "Ich habe am Limit des {{plan}}-Abos aufgehört. Ich mache dort weiter, wo ich war, sobald es sich zurücksetzt.",
       "plan_limit_wait": "Das {{plan}}-Abo hat sein Limit erreicht. Ich antworte {{when}}, wenn es sich zurücksetzt. Wird es in {{plan}} früher freigegeben, merke ich das und antworte sofort.",
       "plan_limit_wait_unknown": "Das {{plan}}-Abo hat sein Limit erreicht. Ich antworte, sobald es sich zurücksetzt.",
+      "plan_account_moved": "Das Konto {{from}} hat sein Limit erreicht. Ich mache mit dem Konto {{to}} weiter.",
+      "plan_account_moved_line": "Das Konto {{from}} ist fast am Limit. Ich mache mit dem Konto {{to}} weiter.",
+      "plan_account_moved_extra": "Das Konto {{from}} würde bezahlte Zusatznutzung verbrauchen. Ich mache mit dem Konto {{to}} weiter.",
+      "plan_limit_all_wait": "Alle {{accounts}} {{plan}}-Konten haben ihr Limit erreicht. Ich antworte {{when}}, wenn sich das erste zurücksetzt.",
+      "plan_limit_all_wait_unknown": "Alle {{accounts}} {{plan}}-Konten haben ihr Limit erreicht. Ich antworte, sobald sich eines zurücksetzt.",
       "plan_model_limit_wait": "{{model}} hat sein eigenes Limit bei {{plan}} erreicht. Die anderen Modelle des Abos funktionieren weiter: Wechsle das Modell von {{agent}} oder warte, bis es sich {{when}} zurücksetzt.",
       "plan_model_limit_wait_unknown": "{{model}} hat sein eigenes Limit bei {{plan}} erreicht. Die anderen Modelle des Abos funktionieren weiter: Wechsle das Modell von {{agent}} oder warte, bis es sich zurücksetzt.",
       "plan_model_region_wait": "Dieses Modell ({{model}}) braucht die Global-Region in OpenCode (Settings › Privacy).",
@@ -18931,6 +18968,10 @@
     "seatsPaid_other": "{{count}} bezahlte Plätze",
     "noLimit": "Kein Limit",
     "ownBucket": "In deinem eigenen Bucket, ohne Limit von uns"
+  },
+  "referrals": {
+    "open": "Empfehlen und verdienen",
+    "failed": "Konnte gerade nicht geöffnet werden. Versuch es gleich noch einmal."
   },
   "limits": {
     "members": {

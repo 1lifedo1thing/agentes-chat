@@ -245,7 +245,7 @@ export function forPeople(notice: Notice) {
 
 /**
  * The agent's computer is back (ADR 0032 §5): runs that waited for its
- * computer brain (no model credential to fall back on) are queued again.
+ * computer brain are queued again.
  * Found by `agent_runs.waiting_machine_id` (indexed, set only while a run
  * waits for its computer); one job per wait (`waitingForBrain.waitId`), so
  * reconnects while the job is still queued don't add more. A routine's run

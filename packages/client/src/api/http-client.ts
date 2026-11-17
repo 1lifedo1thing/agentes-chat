@@ -20,6 +20,7 @@ import type {
   AccountDeletionPlan,
   AccountLoginStart,
   AccountLoginStatus,
+  AccountOrderGroup,
   ActiveRun,
   Agent,
   AgentAccess,
@@ -605,6 +606,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
     },
     account: {
       authConfig: () => request<AuthConfig>("/api/app/auth-config"),
+      referralsLink: (returnTo) =>
+        request<{ url: string; expiresAt: string }>("/api/app/referrals-link", { json: { returnTo } }),
       signInOptions: (input, humanCheck) =>
         request<SignInOptions>("/api/app/sign-in-options", { json: input, headers: humanCheckHeaders(humanCheck) }),
       me: () => nullOn(401, () => request<Me>("/api/app/me")),
@@ -1405,6 +1408,12 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<{ serves: PlanServes; agentIds: string[] }>(`${org(orgId)}/ai-accounts/${enc(accountId)}/serves`, {
           method: "PUT",
           json: { serves },
+        }),
+      accountOrder: (orgId) => request<{ groups: AccountOrderGroup[] }>(`${org(orgId)}/ai-accounts/order`),
+      moveAccountInOrder: (orgId, accountId, index) =>
+        request<AccountOrderGroup>(`${org(orgId)}/ai-accounts/${enc(accountId)}/order`, {
+          method: "PUT",
+          json: { index },
         }),
       renameAccount: (orgId, machineId, accountId, label) =>
         request<MachineAccount>(`${org(orgId)}/machines/${enc(machineId)}/accounts/${enc(accountId)}`, {

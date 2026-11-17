@@ -31,6 +31,7 @@ import type {
   AccountDeletionPlan,
   AccountLoginStart,
   AccountLoginStatus,
+  AccountOrderGroup,
   ActiveRun,
   AdminAsk,
   Agent,
@@ -442,6 +443,12 @@ export interface ApiClient {
   };
   account: {
     authConfig(): Promise<AuthConfig>;
+    /**
+     * A signed link that opens the referral service as me (ADR 0192). Navigate to it at once and keep it nowhere else:
+     * it lasts 5 minutes and opens once. `referrals.off` 404 on a server without one. `returnTo`: the page it was
+     * opened from, where the service sends me back.
+     */
+    referralsLink(returnTo?: string): Promise<{ url: string; expiresAt: string }>;
     /**
      * Whether the e-mail has an account and how it signs in (rate limited: `rate_limited` 429). `access`: the
      * early-access link's token, when the page has one. `humanCheck`: the bot check's token, when the server has one
@@ -1261,6 +1268,10 @@ export interface ApiClient {
       accountId: string,
       serves: PlanServes,
     ): Promise<{ serves: PlanServes; agentIds: string[] }>;
+    /** "Ordem de uso" (ADR 0041 §6): every computer's Claude and ChatGPT accounts in their order, by computer and kind. */
+    accountOrder(orgId: string): Promise<{ groups: AccountOrderGroup[] }>;
+    /** Moves the account to `index` (0 first) in its order: its owner or an admin (`account.order_forbidden`). */
+    moveAccountInOrder(orgId: string, accountId: string, index: number): Promise<AccountOrderGroup>;
     /** Its owner names it (1 to 40 characters). */
     renameAccount(orgId: string, machineId: string, accountId: string, label: string): Promise<MachineAccount>;
     /** Its owner (or whoever connected the computer) disconnects it; the computer signs it out and deletes it. */

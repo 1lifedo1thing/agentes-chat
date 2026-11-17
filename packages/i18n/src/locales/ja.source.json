@@ -8803,6 +8803,19 @@
   "connectAi.another": {
     "value": "Another account"
   },
+  "connectAi.which.title": {
+    "value": "Which {{brand}} account will {{name}} use?",
+    "female": "Which {{brand}} account will {{name}} use?"
+  },
+  "connectAi.which.titleAll": {
+    "value": "Which {{brand}} account will they use?"
+  },
+  "connectAi.which.mine": {
+    "value": "Your {{brand}} accounts on {{computer}}"
+  },
+  "connectAi.which.other": {
+    "value": "Sign in with another {{brand}} account"
+  },
   "connectAi.reuse.active": {
     "value": "You already have {{label}} here. Sign in to it again, or use another account."
   },
@@ -9139,12 +9152,6 @@
   "usageCard.answerAnywayForbidden": {
     "value": "Only who asked, the agent's owner or an admin can ask for this"
   },
-  "usageCard.extraTitle": {
-    "value": "Long work may use paid extra usage"
-  },
-  "usageCard.extraHint": {
-    "value": "With extra usage on in the plan, long work goes on past 95%. Off, it pauses at 95% and picks up when the plan resets."
-  },
   "usageQueue.back": {
     "value": "{{agent}} is back {{when}}"
   },
@@ -9165,6 +9172,9 @@
   },
   "usageQueue.about": {
     "value": "About the line"
+  },
+  "usageQueue.chain": {
+    "value": "All {{accounts}} {{plan}} accounts hit their limit."
   },
   "usageQueue.lists": {
     "value": "Conversations"
@@ -12807,6 +12817,9 @@
   "notifications.wait.joinSuggestion": {
     "value": "{{by}} suggested {{name}}"
   },
+  "notifications.wait.joinOutside": {
+    "value": "{{name}} asks to join as an outside collaborator for {{outsideOf}}, taking no seat"
+  },
   "notifications.wait.doing.merge": {
     "value": "merge"
   },
@@ -12980,6 +12993,9 @@
   },
   "notifications.what.joinSuggestion": {
     "value": "<b>{{by}}</b> suggested <b>{{name}}</b>"
+  },
+  "notifications.what.joinOutside": {
+    "value": "<b>{{name}}</b> asks to join as an outside collaborator for <b>{{outsideOf}}</b>, taking no seat"
   },
   "notifications.what.changeRequest": {
     "value": "<b>{{name}}</b> asks for a change to <b>{{agent}}</b>"
@@ -14088,6 +14104,15 @@
   "agentPage.work.brain.accountOthers": {
     "value": "Plans that serve the whole workspace show whose they are."
   },
+  "agentPage.work.brain.movesOn": {
+    "value": "Goes on with the next account at a limit"
+  },
+  "agentPage.work.brain.pinned": {
+    "value": "This account only"
+  },
+  "agentPage.work.brain.pinnedHint": {
+    "value": "At a limit, waits for this account to reset instead of moving to the next."
+  },
   "agentPage.work.brain.addAccount": {
     "value": "Add account"
   },
@@ -14096,12 +14121,6 @@
   },
   "agentPage.work.brain.connectPlan": {
     "value": "Connect another plan"
-  },
-  "agentPage.work.brain.fallbackTitle": {
-    "value": "If {{computer}} stops answering, answer through the API"
-  },
-  "agentPage.work.brain.fallbackHint": {
-    "value": "It answers through the API and counts against {{name}}'s budget. Otherwise {{name}} tells whoever asked and waits for the computer to come back."
   },
   "agentPage.work.brain.effort": {
     "value": "Effort"
@@ -14240,9 +14259,6 @@
   },
   "agentPage.work.brain.advanced.sharing": {
     "value": "Answers other people"
-  },
-  "agentPage.work.brain.advanced.waits": {
-    "value": "Waits for the computer"
   },
   "agentPage.work.brain.copy.row": {
     "value": "Use on other agents"
@@ -14618,9 +14634,6 @@
   },
   "agentPage.work.brain.v2.moreTitle": {
     "value": "More options for {{name}}"
-  },
-  "agentPage.work.brain.v2.fallback": {
-    "value": "Use the API key if the plan stops"
   },
   "agentPage.work.brain.v2.computer": {
     "value": "Computer"
@@ -17977,6 +17990,12 @@
   "members.moreOf": {
     "value": "More for {{name}}"
   },
+  "members.outside.chip": {
+    "value": "Outside"
+  },
+  "members.outside.title": {
+    "value": "Outside collaborator"
+  },
   "members.passwordLink.item": {
     "value": "Make a new-password link"
   },
@@ -18528,6 +18547,12 @@
   },
   "members.requests.suggestedLabel": {
     "value": "{{by}} suggested {{name}}"
+  },
+  "members.requests.outside": {
+    "value": "Asked {{when}} to join as an outside collaborator for {{outsideOf}}"
+  },
+  "members.requests.outsideSeat": {
+    "value": "Outside collaborators don't count toward your plan's people, and you can remove them at any time."
   },
   "members.requests.asked": {
     "value": "Asked {{ago}}"
@@ -21826,7 +21851,7 @@
     "value": "Only who created the routine, the agent's owner or an admin can continue it now"
   },
   "routines.usagePause.extra_off": {
-    "value": "This plan's window is used up and this agent's long work doesn't use paid extra usage. Turn that on in its AI settings to continue now, or it picks up after the reset"
+    "value": "This plan's window is used up and this agent's long work doesn't use the plan's paid extra usage. It picks up after the reset"
   },
   "routines.usagePause.extra_used_up": {
     "value": "This plan's window is used up and its paid extra usage is used up or unavailable. It picks up after the reset"
@@ -25552,6 +25577,18 @@
   "jev.remove.text": {
     "value": "Agents keep working without it."
   },
+  "aiAccounts.unnamed": {
+    "value": "Unnamed account"
+  },
+  "aiAccounts.rename.action": {
+    "value": "Rename {{label}}"
+  },
+  "aiAccounts.rename.label": {
+    "value": "Account name"
+  },
+  "aiAccounts.rename.placeholder": {
+    "value": "E.g. Work, Personal"
+  },
   "aiAccounts.share.switch": {
     "value": "Answers other people"
   },
@@ -29181,9 +29218,6 @@
   },
   "brain.summary.opencode": {
     "value": "OpenCode · {{model}}"
-  },
-  "brain.summary.noFallback": {
-    "value": "{{brain}}, no API fallback"
   },
   "brain.mission.modelLabel": {
     "value": "Model"
@@ -36953,6 +36987,9 @@
   "errors.role.orderIncomplete": {
     "value": "The roles changed while you were moving them. Reload and try again."
   },
+  "errors.role.outsideOwner": {
+    "value": "An outside collaborator can't be an owner."
+  },
   "errors.teamProposal.undoExpired": {
     "value": "It is more than a day since this team was created, so it can't be undone here. Archive its agents on their pages."
   },
@@ -37227,7 +37264,7 @@
     "value": "Turn the routine on to test it."
   },
   "errors.routine.continueExtraOff": {
-    "value": "This plan's window is used up and this agent's long work doesn't use paid extra usage. Turn that on in its AI settings to continue now, or it picks up after the reset."
+    "value": "This plan's window is used up and this agent's long work doesn't use the plan's paid extra usage. It picks up after the reset."
   },
   "errors.routine.continueExtraUsedUp": {
     "value": "This plan's window is used up and its paid extra usage is used up or unavailable. It picks up after the reset."
@@ -37463,9 +37500,6 @@
   "errors.agent.detailsHidden": {
     "value": "Only who talks to {{agentName}} sees how it works."
   },
-  "errors.agent.extraOwnerOnly": {
-    "value": "Only the agent's owner turns its plan's paid extra usage on or off."
-  },
   "errors.agent.undoForbidden": {
     "value": "Only the person the agent worked for, its owner or an admin can undo this."
   },
@@ -37477,6 +37511,9 @@
   },
   "errors.account.notOwner": {
     "value": "Only the person who connected this account or plan can do this."
+  },
+  "errors.account.orderForbidden": {
+    "value": "Only the person who connected this account or an admin can change its place in the order."
   },
   "errors.channel.membersForbidden": {
     "value": "Only the channel's creator or an admin can add or remove people."
@@ -40750,6 +40787,15 @@
   "audit.change.member.password_link": {
     "value": "Made a new-password link for a member"
   },
+  "audit.change.outside.approved": {
+    "value": "Let in an outside collaborator for {{outsideOf}}"
+  },
+  "audit.change.outside.removed": {
+    "value": "Removed an outside collaborator for {{outsideOf}}"
+  },
+  "audit.change.outside.left": {
+    "value": "Left the workspace, an outside collaborator for {{outsideOf}}"
+  },
   "audit.change.role.permission_set": {
     "value": "Changed who can {{short}}"
   },
@@ -42523,6 +42569,24 @@
   "usageViews.whose": {
     "value": "{{name}}'s"
   },
+  "usageViews.order.title": {
+    "value": "{{plan}} · Order of use"
+  },
+  "usageViews.order.hint": {
+    "value": "At a limit, agents go on with the next account that has room and go back to the first when it resets."
+  },
+  "usageViews.order.terms": {
+    "value": "Using several {{plan}} accounts is a gray area in {{plan}}'s terms."
+  },
+  "usageViews.order.termsLabel": {
+    "value": "{{plan}}'s terms"
+  },
+  "usageViews.order.termsHint": {
+    "value": "A plan is meant for one person, so check {{plan}}'s terms before your agents rely on several."
+  },
+  "usageViews.order.move": {
+    "value": "Move {{name}}, number {{n}} in the order"
+  },
   "usageViews.serves.everyone": {
     "value": "Everyone uses it"
   },
@@ -42683,7 +42747,7 @@
     "value": "{{name}} thinks through the API"
   },
   "usageViews.agent.apiFallback": {
-    "value": "Outside the plan: quick decisions, and when the plan couldn't answer"
+    "value": "Outside the plan: quick decisions"
   },
   "usageViews.agent.removed": {
     "value": "Removed account"
@@ -44396,6 +44460,21 @@
   },
   "chat.body.plan_limit_wait_unknown": {
     "value": "The {{plan}} plan hit its limit. I'll answer as soon as it resets."
+  },
+  "chat.body.plan_account_moved": {
+    "value": "The {{from}} account hit its limit. I'm going on with the {{to}} account."
+  },
+  "chat.body.plan_account_moved_line": {
+    "value": "The {{from}} account is near its limit. I'm going on with the {{to}} account."
+  },
+  "chat.body.plan_account_moved_extra": {
+    "value": "The {{from}} account would go into paid extra usage. I'm going on with the {{to}} account."
+  },
+  "chat.body.plan_limit_all_wait": {
+    "value": "All {{accounts}} {{plan}} accounts hit their limit. I'll answer {{when}}, when the first one resets."
+  },
+  "chat.body.plan_limit_all_wait_unknown": {
+    "value": "All {{accounts}} {{plan}} accounts hit their limit. I'll answer as soon as one resets."
   },
   "chat.body.plan_model_limit_wait": {
     "value": "{{model}} hit its own limit on {{plan}}. The plan's other models keep working: change {{agent}}'s model or wait for it to reset {{when}}."
@@ -46518,6 +46597,12 @@
   },
   "billing.ownBucket": {
     "value": "On your own bucket, with no limit from us"
+  },
+  "referrals.open": {
+    "value": "Refer and earn"
+  },
+  "referrals.failed": {
+    "value": "Couldn't open it now. Try again in a moment."
   },
   "limits.members.full": {
     "value": "This workspace has {{members}} of {{limit}} people."
