@@ -204,7 +204,7 @@ import { RetryLine } from "../shared/TeamSkyEmpty";
 import { useDmStatusLine, usePresenceOf, usePresenceWord } from "../status/hooks";
 import { PersonStatusCard } from "../status/StatusCard";
 import { AgentTasksButton, useDmAgentTasks } from "../task-manager/AgentTasksButton";
-import { agentTasksHref, tasksBadge } from "../task-manager/logic";
+import { agentTasksHref } from "../task-manager/logic";
 import { retryVoice, type VoiceRefusal } from "../voice/outbox";
 import { useVoiceComposer } from "../voice/useVoiceComposer";
 import type { VoiceTarget } from "../voice/useVoiceTake";
@@ -2077,8 +2077,16 @@ function Chat({
   // An agent's DM says what the agent does from the work here: only its pill is handed that work.
   const pillRuns = pillKind === "dm" && dmAgentId ? runs : NO_RUNS;
   const pillConsults = pillKind === "dm" && dmAgentId ? lineBase : NO_LINE;
-  const dmExtra = (dmAgentId ? 1 : 0) + (queueShown ? 1 : 0) + (agentTasks ? tasksBadge(agentTasks).room : 0);
-  const channelExtra = (queueShown ? 1 : 0) + (searchPlace ? 1 : 0);
+  // What stands in the bar beside "…", which the pill makes room for (`pillRoom`): our counted views first, as wide as
+  // they lay out (`barLead`, measured), then the system's buttons (the computer, search).
+  const [computerWords, setComputerWords] = useState<string | null>(null);
+  const queueInBar = Boolean(queueShown && barQueue && queueMachineId);
+  const tasksInBar = Boolean(dmAgentId && agentTasks);
+  const [leadWidth, setLeadWidth] = useState(0);
+  const leadRoom = queueInBar || tasksInBar ? leadWidth : 0;
+  const computerInBar = Boolean(dmAgentId && !isThread && !rightHand && computerWords && !queueInBar);
+  const dmExtra = computerInBar ? 1 : 0;
+  const channelExtra = searchPlace ? 1 : 0;
   // The channel's sky in the pill, as an agent's DM: the color of the first agent in it.
   const channelColor = agentLook(dir.agentById.get(roster.data?.find((r) => r.type === "agent")?.id ?? "")).color;
   const dmColor = dmAgentId ? agentLook(dmAgent).color : undefined;
@@ -2093,6 +2101,8 @@ function Chat({
           title={title}
           subtitle={subtitle}
           onPress={pressOptions}
+          extraActions={channelExtra}
+          leadRoom={leadRoom}
           onHold={onHoldPill}
           holdHint={holdHint}
           label={t("mobile.chat.headerChannel", { who: who(title, subtitle ?? "") })}
@@ -2112,6 +2122,7 @@ function Chat({
           far={far}
           quietBelow={quietBelow}
           extraActions={dmExtra}
+          leadRoom={leadRoom}
           inView={pillInView}
           onPress={dmAgentId ? pressAgent : pressOptions}
           onHold={onHoldPill}
@@ -2125,6 +2136,7 @@ function Chat({
           roster={roster.data}
           onPress={pressMembers}
           extraActions={channelExtra}
+          leadRoom={leadRoom}
           onHold={onHoldPill}
           holdHint={holdHint}
           // A channel's pill opens who is in it, and says so (its "…" holds the options).
@@ -2157,6 +2169,7 @@ function Chat({
       roster.data,
       pressMembers,
       channelExtra,
+      leadRoom,
     ],
   );
   // An agent's DM also opens its tasks while it has some (ADR 0128), pushed like a thread, and its computer (as the
@@ -2167,7 +2180,6 @@ function Chat({
   // button (the agent's tasks, the computer's line; `lead`), then the system's own buttons (the computer, search, "…";
   // our icon buttons in the same capsule on Android). Never two ways of drawing it: a bar that switched to our views
   // while a count showed drew its buttons apart one moment and together the next.
-  const [computerWords, setComputerWords] = useState<string | null>(null);
   const hasBar = Boolean((isThread && info) || dm || channel);
   const queueButton =
     queueShown && barQueue && queueMachineId ? (
@@ -2194,7 +2206,7 @@ function Chat({
     ) : null;
   const barLead =
     hasBar && (tasksButton || queueButton) ? (
-      <View style={styles.barLead}>
+      <View style={styles.barLead} onLayout={(e) => setLeadWidth(Math.round(e.nativeEvent.layout.width))}>
         {tasksButton}
         {queueButton}
       </View>
@@ -3844,6 +3856,8 @@ function ConversationOptions({
 /** What every header pill of a conversation is handed: its presses keep their identity (`useLatest`). */
 interface PillHands {
   onPress: () => void;
+  /** Our counted views' width first in the bar's buttons (`pillRoom`). */
+  leadRoom: number;
   /** The conversation switcher ("Switch conversation"). */
   onHold: () => void;
   holdHint: string;
@@ -3859,7 +3873,7 @@ const ThreadPill = memo(function ThreadPill({
   subtitle,
   label,
   ...hands
-}: PillHands & { title: string; subtitle: string | undefined; label: string }) {
+}: PillHands & { title: string; subtitle: string | undefined; label: string; extraActions: number }) {
   const c = useColors();
   const lead = useMemo(() => <Icon name="reply" size={18} color={c.muted} />, [c.muted]);
   return <HeaderPill lead={lead} title={title} subtitle={subtitle} label={label} {...hands} />;

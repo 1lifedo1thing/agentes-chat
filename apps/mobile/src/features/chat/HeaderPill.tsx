@@ -13,10 +13,14 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
+import { needsHeaderBlur } from "@/lib/nav";
 import { Dither } from "@/sky/Dither";
 import { softTones } from "@/sky/math";
 import { Glass, haptics, motion, PressScale, Text, useReducedMotion, useTheme } from "@/ui";
+import { pillRoom } from "./pill-room";
 
+/** iOS 26's bar, whose buttons are the system's glass ones; elsewhere our own 44-point buttons side by side. */
+const LIQUID = Platform.OS === "ios" && !needsHeaderBlur(Platform.OS, Platform.Version);
 /** The pill's own padding, the face's box and the gaps: the face sits in the capsule's curve. */
 const PAD_LEFT = 6;
 const PAD_RIGHT = 16;
@@ -88,6 +92,7 @@ export const HeaderPill = memo(function HeaderPill({
   onPress,
   label,
   extraActions = 0,
+  leadRoom = 0,
   onHold,
   holdHint,
   collapsed = false,
@@ -105,8 +110,10 @@ export const HeaderPill = memo(function HeaderPill({
   onPress?: () => void;
   /** What a screen reader says (name, state and what a tap does). */
   label: string;
-  /** Bar buttons beside "…" (an agent's computer): the pill gives up their 44 points each. */
+  /** The system's bar buttons beside "…" (an agent's computer, search): the pill makes room for each (`pillRoom`). */
   extraActions?: number;
+  /** The width of our own counted views first in the buttons' group (an agent's tasks, a computer's line), measured. */
+  leadRoom?: number;
   onHold?: () => void;
   /** What a screen reader says the hold does. */
   holdHint?: string;
@@ -114,8 +121,7 @@ export const HeaderPill = memo(function HeaderPill({
   const { colors, shadows } = useTheme();
   const reduced = useReducedMotion();
   const { width: screen } = useWindowDimensions();
-  // The bar's margins, the back and "…" circles and a gap on each side.
-  const room = Math.max(160, screen - 152 - extraActions * 44);
+  const room = pillRoom(screen, extraActions, leadRoom, LIQUID);
 
   const [nameWidth, setNameWidth] = useState<number | null>(null);
   const [lineWidth, setLineWidth] = useState(0);
