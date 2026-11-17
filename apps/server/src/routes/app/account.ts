@@ -376,7 +376,7 @@ export function accountRoutes(deps: AppDeps) {
             }),
             referralsUrl: z.string().nullable().openapi({
               description:
-                "The referral service (REFERRALS_URL, ADR 0191): a signed-in person opens it through `POST /api/app/referrals-link`. Null: no referrals.",
+                "The referral service (REFERRALS_URL, ADR 0192): a signed-in person opens it through `POST /api/app/referrals-link`. Null: no referrals.",
             }),
             cloud: z.boolean().openapi({
               description:

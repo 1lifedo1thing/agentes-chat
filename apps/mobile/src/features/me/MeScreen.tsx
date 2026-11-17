@@ -143,7 +143,7 @@ export function MeScreen() {
   const about = showsAbout(server);
   const toast = useToast();
   const api = useApi();
-  // Minted on the tap and opened at once: the link lasts minutes and opens once (ADR 0191).
+  // Minted on the tap and opened at once: the link lasts minutes and opens once (ADR 0192).
   const referrals = useMutation({
     mutationFn: () => api.account.referralsLink(),
     onSuccess: ({ url }) => openPage(url),

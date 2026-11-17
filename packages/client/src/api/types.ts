@@ -165,7 +165,7 @@ export interface AuthConfig {
   workspaceComputer?: boolean;
   /** The billing service (ADR 0079): owners and admins open a workspace's plan there; null or absent: no billing. */
   billingUrl?: string | null;
-  /** The referral service (ADR 0191): "Refer and earn" opens it (`account.referralsLink`); null or absent: none. */
+  /** The referral service (ADR 0192): "Refer and earn" opens it (`account.referralsLink`); null or absent: none. */
   referralsUrl?: string | null;
   /** One of agentes.chat's own servers (`Instance.cloud`); absent: a self-hosted server too old to say. */
   cloud?: boolean;

@@ -2126,7 +2126,7 @@ function UnreadCount({
  * opening down, also holds what the workspace menu held for one person: Your account, Settings and the person's
  * workspaces. Mounted once either way: the dialogs live here.
  */
-/** Mints the person's link to the referral service and leaves for it (ADR 0191), as `useOpenBilling` does. */
+/** Mints the person's link to the referral service and leaves for it (ADR 0192), as `useOpenBilling` does. */
 function useOpenReferrals() {
   const { t } = useTranslation();
   const api = useApi();

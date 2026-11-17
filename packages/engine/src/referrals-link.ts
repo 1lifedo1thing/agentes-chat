@@ -24,7 +24,7 @@ export interface ReferralsLinkClaims {
 export const REFERRALS_ORGS = 50;
 
 /**
- * A signed link to the referral service (ADR 0191), the person's own: no workspace's permission is needed. Owner and
+ * A signed link to the referral service (ADR 0192), the person's own: no workspace's permission is needed. Owner and
  * admin are decided as the billing link decides them (owner, else `manage_billing`).
  */
 export async function mintReferralsLink(

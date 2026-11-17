@@ -162,5 +162,5 @@ export function workspacesBeyond(
   return { others, servers };
 }
 
-/** Refer and earn shows only where the server has a referral service (ADR 0191). */
+/** Refer and earn shows only where the server has a referral service (ADR 0192). */
 export const offersReferrals = (server: AuthConfig | undefined) => Boolean(server?.referralsUrl);

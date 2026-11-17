@@ -18381,6 +18381,7 @@ export const en = {
       provider_wait_ours:
         "Something on our side is blocking my AI, not your account. I'll answer as soon as it's fixed.",
       provider_back: "My AI is back.",
+      confidential_removed: "Removed: confidential text is kept for {{days}} days.",
       brain_busy: "My computer is busy with other tasks right now. I'll answer as soon as it's free.",
       brain_queued: "Still in line for the computer. I'll answer as soon as it has free memory.",
       brain_interrupted: "{{brain}} stopped before finishing. Already done, not repeated: {{tools}}.",
@@ -19435,7 +19436,7 @@ export const en = {
     noLimit: "No limit",
     ownBucket: "On your own bucket, with no limit from us",
   },
-  /** The referral service (ADR 0191): this server knows nothing of the program, only the way there. */
+  /** The referral service (ADR 0192): this server knows nothing of the program, only the way there. */
   referrals: {
     /** In the person's own menu, under Settings. */
     open: "Refer and earn",

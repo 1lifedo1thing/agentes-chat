@@ -7,7 +7,7 @@ import { type AppDeps, body, createAppRouter, errors, json, requireSession, secu
 const LINKS_PER_HOUR = { limit: 30, windowMs: 3600_000 };
 
 /**
- * The person's way to the referral service (ADR 0191): this server knows nothing of the program, only a link that
+ * The person's way to the referral service (ADR 0192): this server knows nothing of the program, only a link that
  * opens the service signed in as them.
  */
 export function referralRoutes(deps: AppDeps) {

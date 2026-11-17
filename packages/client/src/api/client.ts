@@ -443,7 +443,7 @@ export interface ApiClient {
   account: {
     authConfig(): Promise<AuthConfig>;
     /**
-     * A signed link that opens the referral service as me (ADR 0191). Navigate to it at once and keep it nowhere else:
+     * A signed link that opens the referral service as me (ADR 0192). Navigate to it at once and keep it nowhere else:
      * it lasts 5 minutes and opens once. `referrals.off` 404 on a server without one. `returnTo`: the page it was
      * opened from, where the service sends me back.
      */
