@@ -33,6 +33,12 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
     { exec: { command: `mysql --password "${first} ${second}" -u ana` } },
     ["mysql --password *** -u ana"],
   ],
+  // A written line end between a name and its value hides the value from a rule that reads the record as JSON.
+  [
+    "a value on the line after its name",
+    { config: { yaml: `password:\n  ${first}\nport: 1` } },
+    [String.raw`"yaml":"password:\n  ***\nport: 1"`],
+  ],
   // Three shapes only a record can tell.
   [
     "a list of arguments",
