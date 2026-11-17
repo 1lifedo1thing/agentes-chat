@@ -337,7 +337,14 @@ export function ownAccountRows<A extends MachineAccount & { machineId: string }>
   return groupPlans(accounts).flatMap(({ logins, usedBy, usage, signedOut, unknown }) => {
     const first = logins.find((l) => l.shared === true) ?? logins.find((l) => l.status === "active") ?? logins[0];
     return first
-      ? [{ account: { ...first, usedBy: [...new Set(usedBy)], usage: usage ?? first.usage }, logins, signedOut, unknown }]
+      ? [
+          {
+            account: { ...first, usedBy: [...new Set(usedBy)], usage: usage ?? first.usage },
+            logins,
+            signedOut,
+            unknown,
+          },
+        ]
       : [];
   });
 }

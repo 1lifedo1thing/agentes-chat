@@ -54,7 +54,8 @@ const newest = (usages: (PlanUsage | null)[]) =>
   );
 
 /** The newest usage read of an account's logins (an order's block, `orderAccounts`): one login's may be old. */
-export const newestUsage = (logins: readonly { usage?: PlanUsage | null }[]) => newest(logins.map((l) => l.usage ?? null));
+export const newestUsage = (logins: readonly { usage?: PlanUsage | null }[]) =>
+  newest(logins.map((l) => l.usage ?? null));
 
 /**
  * The logins of one account together, as the server tells them apart: the same computer, owner, CLI and plan, and

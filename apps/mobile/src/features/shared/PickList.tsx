@@ -3,7 +3,16 @@ import { matchesWords } from "@agenteschat/ui/search";
 import { Fragment, type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
-import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, type IconName, ProviderLogo, SearchField, Text } from "@/ui";
+import {
+  GroupedFooter,
+  GroupedHeader,
+  GroupedList,
+  GroupedRow,
+  type IconName,
+  ProviderLogo,
+  SearchField,
+  Text,
+} from "@/ui";
 
 export type PickRow = Pick<BrainPickOption, "value" | "label" | "keywords"> &
   Partial<Pick<BrainPickOption, "group" | "mark" | "description" | "hint" | "disabled">> & {

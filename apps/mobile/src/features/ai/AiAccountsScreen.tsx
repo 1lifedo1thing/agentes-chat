@@ -15,8 +15,8 @@ import {
 import {
   accountSub,
   accountTitle,
-  agentsToGive,
   againLogin,
+  agentsToGive,
   endsOnClaude,
   identityUnknown,
   keyRemovalText,
@@ -144,8 +144,7 @@ function AiAccounts() {
   // The viewer's logins of one account (one per agent) are one row; disconnecting it removes every one of them.
   const owned = ownAccountRows(ai.data?.accounts ?? []);
   const rows = owned.map((o) => o.account);
-  const ownOf = (a: Account) =>
-    owned.find((o) => o.account.id === a.id) ?? { logins: [a], signedOut: [], unknown: [] };
+  const ownOf = (a: Account) => owned.find((o) => o.account.id === a.id) ?? { logins: [a], signedOut: [], unknown: [] };
   const loginsOf = (a: Account) => ownOf(a).logins;
   const own = ownSignIns(ai.data);
   const several = onSeveralComputers(rows);

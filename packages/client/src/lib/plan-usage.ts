@@ -12,7 +12,15 @@ import type {
   PlanUseKind,
   PlanWindowParts,
 } from "../api/types";
-import { accountSub, accountTitle, groupPlans, orderAccounts, ownSignInName, ownSignIns, ownSignInTitle } from "./ai-accounts";
+import {
+  accountSub,
+  accountTitle,
+  groupPlans,
+  orderAccounts,
+  ownSignInName,
+  ownSignIns,
+  ownSignInTitle,
+} from "./ai-accounts";
 import {
   daysBetween,
   firstName,
