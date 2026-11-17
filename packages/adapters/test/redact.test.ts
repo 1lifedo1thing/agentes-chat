@@ -420,11 +420,19 @@ test("a record that names its value and a list of pairs are read in text that ke
       String.raw`{"body":"{\"name\":\"Authorization\",\"value\":\"fake a\"}","rows":"[[\"api_key\",\"fake b\"]]"`,
       String.raw`{"body":"{\"name\":\"Authorization\",\"value\":***}","rows":"[[\"api_key\",***]]"`,
     ],
+    // Beside a list whose texts hold quotes of their own, and before one the text was cut in: still a pair.
+    [
+      String.raw`[["sec-ch-ua","\"Chromium\";v=\"120\""],["cookie","sid=fake"],["accept","*/*"]] then [["x-api-key","fake a"],["acc`,
+      String.raw`[["sec-ch-ua","\"Chromium\";v=\"120\""],["cookie",***],["accept","*/*"]] then [["x-api-key",***],["acc`,
+    ],
   ];
   for (const [text, masked] of records) expect(redactCommon(text)).toBe(masked);
-  // A name that is no credential's, a page cursor, a value that is no text, another field's name, and a list of two
-  // texts that neither starts a list nor follows another.
+  // A name that is no credential's, a page cursor, a value that is no text, another field's name, a list of two
+  // texts that neither starts a list nor follows another, a list that goes on past its second text, and a list of
+  // two texts beside one that has one text or three.
   const plain = [
+    '{"rows":[["token","name","date"]],"fields":[["id"],["token","asc"]],"sort":[["secret","desc"],["id"]]}',
+    '[["a","b","c"],["password","text"]]',
     '{"name":"Accept","value":"text/plain"},{"name":"next_page_token","value":"fake-cursor"}',
     '{"name":"token","value":5},{"title":"password","value":"of another field"},{"username":"secret","value":"x"}',
     '{"required":["password","email"],"sort":["token","asc"],"allowedHeaders":["Authorization","Content-Type"]}',

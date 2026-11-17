@@ -187,14 +187,18 @@ const NAMED = new RegExp(
 const FIELD_NAMED = new RegExp(String.raw`${FIELD}\\*["']\s*(?:=>?|:)\s*(?=\\*["'])(?!(\\*)(["'])\1\2)`, "gi");
 /** A quoted text that ends as a credential's field does, as JSON writes it (`"X-Api-Key"`). */
 const NAME_TEXT = String.raw`\\*["'][^"'\\]*${FIELD}\\*["']`;
+/** A quoted text with no quote of its own inside, as a list keeps a name. */
+const PLAIN_TEXT = String.raw`\\*["'](?:[^"'\\]|\\+[^"'\\])*\\*["']`;
 /**
  * Two shapes only a record can tell, where text keeps the record as JSON wrote it and can't be opened (a message that
  * quotes it, a result cut off), before the value: the `value` of a record that names it
  * (`"name":"X-Api-Key","value":"…"`), and the second text of a pair that starts a list or follows another
- * (`[["x-api-key","…"],["cookie","…"]]`).
+ * (`[["x-api-key","…"],["cookie","…"]]`). A pair is a name and its value among lists of two texts, as in a record:
+ * never where its own list goes on past its second text (`[["token","name","date"]]`), nor beside a list that
+ * plainly has one text or more than two (`[["id"],["token","asc"]]`).
  */
 const RECORD_NAMED = new RegExp(
-  String.raw`(?:(?<=["'])(?:name|key|header)\\*["']\s*:\s*${NAME_TEXT}\s*,\s*\\*["']value\\*["']\s*:|(?:\[|\]\s*,)\s*\[\s*${NAME_TEXT}\s*,)\s*(?=\\*["'])`,
+  String.raw`(?:(?<=["'])(?:name|key|header)\\*["']\s*:\s*${NAME_TEXT}\s*,\s*\\*["']value\\*["']\s*:|(?:\[|\]\s*,(?<!(?:\[\s*${PLAIN_TEXT}|,\s*${PLAIN_TEXT}\s*,\s*${PLAIN_TEXT})\s*\]\s*,))\s*\[\s*${NAME_TEXT}\s*,\s*(?!${PLAIN_TEXT}\s*(?:,|\]\s*,\s*\[\s*${PLAIN_TEXT}\s*(?:\]|,\s*${PLAIN_TEXT}\s*,))))\s*(?=\\*["'])`,
   "gi",
 );
 /** The same field with its quotes written out: percent-encoded in an address, an HTML entity, a log's code point. */

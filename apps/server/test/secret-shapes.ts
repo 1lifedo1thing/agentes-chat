@@ -100,6 +100,17 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
     },
     ['[["password",***],["api_key",***]]'],
   ],
+  // A list of two texts is a pair among lists of two texts: beside a list of another length, or going on past its
+  // second text, it is names. Written as text, the record is read once more, and stays as the record was read.
+  [
+    "lists that are no pairs",
+    {
+      fields: [["id"], ["token", "asc"]],
+      rows: [["token", "name", "date"]],
+      sort: [["secret", "desc"], ["id"]],
+    },
+    ['[["id"],["token","asc"]]', '[["token","name","date"]]', '[["secret","desc"],["id"]]'],
+  ],
   [
     "a record that names its value",
     {
