@@ -581,7 +581,6 @@ export async function suggestAgentAi(
       model: AUTO_MODEL,
       credentialId: null,
       brain: "model",
-      brainFallback: false,
       brainAccountId: null,
       machineId: null,
     };
@@ -1024,7 +1023,7 @@ async function giveLines(
     ai.kind !== "account" ||
     (
       await attempt(async () => {
-        await setAgentComputerTarget(deps, userId, orgId, agent.id, ai.machineId);
+        await setAgentComputerTarget(deps, userId, orgId, agent.id, ai.machineId, { wakeWaits: false });
         await setAgentBrain(deps, userId, orgId, agent.id, { brain: ai.brain, account: ai.accountId });
         // Who may talk to it moves with its AI, after the apps read it as it was made.
         await publishAgentsChanged(deps.pubsub, orgId);

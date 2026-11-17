@@ -13,12 +13,17 @@ import { autonomyWords, type NewAgentStart } from "@agenteschat/client/lib/agent
 import {
   type AccountChoice,
   accountAbout,
+  accountChain,
+  accountInLine,
   accountTitle,
+  chainHasRoom,
   type ExistingAi,
   existingAi,
   lendable,
+  orderStep,
   ownSignInLower,
   signInOf,
+  unnamedAccount,
 } from "@agenteschat/client/lib/ai-accounts";
 import { thinksWith } from "@agenteschat/client/lib/brain";
 import { type Advanced, advancedDefaults, advancedParts } from "@agenteschat/client/lib/brain-advanced";
@@ -113,6 +118,27 @@ export const agentAccounts = (
         (view.canUseOthersPlans === true && a.ownerId !== ownerUserId && lendable(a, agentName))),
   );
 
+/**
+ * Where its runs go at a limit (ADR 0041 §6, as the web's "Quem pensa"): `moves`, another account follows its own in
+ * the order; `waits`, its own is at its limit and none of the others has room, so it is the agent that waits.
+ */
+export function agentChain(
+  view: Pick<AgentBrain, "accounts" | "account" | "accountPinned" | "scope">,
+  agentId: string,
+  ownerUserId: string | null | undefined,
+) {
+  const chain = accountChain(view.accounts, {
+    id: agentId,
+    ownerId: ownerUserId ?? null,
+    account: view.account,
+    pinned: view.accountPinned === true,
+    ...(view.scope ? { scope: view.scope } : {}),
+  });
+  const limited = (a: MachineAccount) => (a.usage ? planState(a.usage).state === "limited" : false);
+  const own = chain[0];
+  return { moves: chain.length > 1, waits: own !== undefined && limited(own) && !chainHasRoom(chain, limited) };
+}
+
 /** The plan usage of what it thinks with: its account's, or the computer's own sign-in's where that thinks for it. */
 export function thinkingUsage(
   view: Pick<AgentBrain, "accounts" | "account" | "ownSignIn" | "ownUsage">,
@@ -175,14 +201,14 @@ export function accountSaved(
   t: TFunction,
   _language: string,
   agentName: string,
-  a: Pick<MachineAccount, "label"> | null,
+  a: Pick<MachineAccount, "kind" | "label" | "plan" | "email" | "mine" | "named" | "keyHint" | "provider"> | null,
   input: Pick<AgentBrainInput, "model">,
   saved: ThinkingView,
 ): string {
   const g = agentGrammar(agentName);
   if ("model" in input) return t("agentPage.work.saved.brain", { ...g, brain: thinksNow(t, saved) ?? "" });
   return a
-    ? t("agentPage.work.saved.account", { ...g, account: a.label })
+    ? t("agentPage.work.saved.account", { ...g, account: accountInLine(t, a) })
     : t("aiAccounts.done.savedAgent", { agent: agentName, label: ownSignInLower(t, saved.brain) });
 }
 
@@ -194,7 +220,8 @@ export const accountRow = (t: TFunction, choice: AccountChoice<MachineAccount>, 
   const usage = choice.login.usage;
   const word = planWord(t, locale, usage ? planState(usage, Date.now()) : null);
   return {
-    label: accountTitle(choice.login),
+    label: accountTitle(t, choice.login),
+    unnamed: unnamedAccount(choice.login),
     sub: accountAbout(t, choice, agentName),
     ...(word ? { below: word } : {}),
     mark: choice.login.provider ?? choice.login.kind,
@@ -237,12 +264,11 @@ export function setupWords(
   t: TFunction,
   language: string,
   view: Pick<AgentBrain, "brain" | "effectiveModel" | "options" | "accounts" | "account" | "autonomy">,
-  o: { apiKey: boolean; now: Advanced },
+  o: { now: Advanced },
 ): string {
   const parts = advancedParts(t, language, {
     kind: view.brain,
     autoModel: isAuto(view.effectiveModel),
-    apiKey: o.apiKey,
     // The workspace's setup for a key carries no effort yet (ADR 0041, amended 2026-11-12): its words name none.
     now: view.brain === "model" ? { ...o.now, effort: null } : o.now,
   });
@@ -270,7 +296,7 @@ export function advancedResetInput(
           ...(autoModel ? {} : { effort: to.effort }),
           ...(to.speed !== now.speed ? { speed: to.speed } : {}),
           ...(to.onlyOwner !== view.onlyOwner ? { onlyOwner: to.onlyOwner } : {}),
-          fallback: to.fallback,
+          ...(now.accountPinned ? { accountPinned: false } : {}),
         }),
   };
 }
@@ -328,4 +354,19 @@ export function pickedAi(
     plan: { machineId: pick.machineId, input: brainPickInput(pick) },
     connect: needsOwnSignIn(computers, pick) ? planOfKind(pick.kind) : null,
   };
+}
+
+/**
+ * Move up and Move down for `account` in its order of use (`orderStep`): only for whoever may move it, none at an end
+ * nor for an account with no place.
+ */
+export function orderMoves(
+  accounts: readonly { id: string; movable?: boolean }[],
+  account: { id: string; canMove: boolean },
+) {
+  if (!account.canMove) return [];
+  return ([-1, 1] as const).flatMap((step) => {
+    const index = orderStep(accounts, account.id, step);
+    return index === null ? [] : [{ step, index }];
+  });
 }
