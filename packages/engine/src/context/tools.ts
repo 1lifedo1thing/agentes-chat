@@ -24,7 +24,7 @@ import { runAuthorityById, UUID } from "../authority";
 import { caches } from "../cache";
 import { isChannelMember, peopleAllIn, personReach } from "../channels";
 import { CONFIDENTIAL_STUB, confidentialThreadSql, isConfidential } from "../confidential";
-import { agentsDmsOf, consultationOrigin } from "../consultations";
+import { agentsDmsOf, consultationOrigin, stillInWhereAsked } from "../consultations";
 import { personAgentDmKey } from "../dms";
 import type { MemoryUpdate } from "../events";
 import { cutText } from "../format";
@@ -1105,8 +1105,8 @@ async function dmWithRunPerson(ctx: ToolContext): Promise<string | null> {
 const HANDED_SEARCH_POOL = 20;
 
 /**
- * Messages of the agents' DMs `handed` made for `person`, at most `limit`, searched apart from the usual reach so
- * other people's exchanges there never take its places.
+ * Messages of the agents' DMs `handed` made for `person` where they still are (`stillInWhereAsked`), at most `limit`,
+ * searched apart from the usual reach so other people's exchanges there never take its places.
  */
 async function searchHandedFor(
   deps: ContextDeps,
@@ -1125,12 +1125,16 @@ async function searchHandedFor(
     wordsOnly,
   });
   const theirs = await Promise.all(
-    pool.map((h) =>
-      readerOfMessage(ctx.db, ctx.orgId, h.sourceId).then(
-        (r) => r === person,
-        () => false,
-      ),
-    ),
+    pool
+      .map(async (h) => {
+        if ((await readerOfMessage(ctx.db, ctx.orgId, h.sourceId)) !== person) return false;
+        const [m] = await ctx.db
+          .select({ runId: schema.messages.agentRunId })
+          .from(schema.messages)
+          .where(and(eq(schema.messages.orgId, ctx.orgId), eq(schema.messages.id, h.sourceId)));
+        return !!m?.runId && (await stillInWhereAsked(ctx.db, ctx.orgId, m.runId, person));
+      })
+      .map((p) => p.catch(() => false)),
   );
   return pool.filter((_, i) => theirs[i]).slice(0, limit);
 }
