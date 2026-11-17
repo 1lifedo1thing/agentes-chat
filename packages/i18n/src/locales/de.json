@@ -16619,7 +16619,7 @@
           "color": "Farbe",
           "photos": "Deine Fotos",
           "choosePhoto": "Foto auswählen",
-          "skyAutoHelp": "Der erste richtet sich nach der Unterhaltung: in einer Direktnachricht ein Himmel in der Farbe des Agenten, in Kanälen der des Workspace.",
+          "skyAutoHelp": "Der erste richtet sich nach der Unterhaltung: in einer Direktnachricht ein Himmel in der Farbe des Agenten, in Kanälen der Himmel des Workspace.",
           "skyAutoHelpDms": "Der erste ist ein Himmel in der Farbe des Agenten.",
           "skyAutoHelpChannels": "Der erste ist der Himmel des Workspace.",
           "neutral": {

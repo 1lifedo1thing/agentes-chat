@@ -17069,7 +17069,7 @@
           "color": "Color",
           "photos": "Tus fotos",
           "choosePhoto": "Elegir una foto",
-          "skyAutoHelp": "El primero cambia con la conversación: en un mensaje directo, un cielo del color del agente; en los canales, el del espacio de trabajo.",
+          "skyAutoHelp": "El primero cambia con la conversación: un cielo del color del agente en un mensaje directo y el del espacio de trabajo en los canales.",
           "skyAutoHelpDms": "El primero es un cielo del color del agente.",
           "skyAutoHelpChannels": "El primero es el cielo del espacio de trabajo.",
           "neutral": {

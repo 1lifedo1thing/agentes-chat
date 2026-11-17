@@ -17152,7 +17152,7 @@
           "color": "Colore",
           "photos": "Le tue foto",
           "choosePhoto": "Scegli una foto",
-          "skyAutoHelp": "Il primo segue la conversazione: in un messaggio diretto, un cielo del colore dell'agente; nei canali, quello dello spazio di lavoro.",
+          "skyAutoHelp": "Il primo segue la conversazione: un cielo del colore dell'agente in un messaggio diretto e quello dello spazio di lavoro nei canali.",
           "skyAutoHelpDms": "Il primo è un cielo del colore dell'agente.",
           "skyAutoHelpChannels": "Il primo è il cielo dello spazio di lavoro.",
           "neutral": {

@@ -40943,7 +40943,7 @@
     "value": "Choose a photo"
   },
   "settings.account.chat.wallpaper.skyAutoHelp": {
-    "value": "The first one follows the conversation: in a DM, a sky of the agent's color; in channels, the workspace's."
+    "value": "The first one follows the conversation: a sky of the agent's color in a DM, the workspace's sky in channels."
   },
   "settings.account.chat.wallpaper.skyAutoHelpDms": {
     "value": "The first one is a sky of the agent's color."

@@ -16115,7 +16115,7 @@
           "color": "Warna",
           "photos": "Fotomu",
           "choosePhoto": "Pilih foto",
-          "skyAutoHelp": "Yang pertama mengikuti percakapan: di pesan langsung, langit dengan warna agen; di kanal, langit ruang kerja.",
+          "skyAutoHelp": "Yang pertama mengikuti percakapan: langit dengan warna agen di pesan langsung, langit ruang kerja di kanal.",
           "skyAutoHelpDms": "Yang pertama adalah langit dengan warna agen.",
           "skyAutoHelpChannels": "Yang pertama adalah langit ruang kerja.",
           "neutral": {

@@ -17140,7 +17140,7 @@
           "color": "Couleur",
           "photos": "Vos photos",
           "choosePhoto": "Choisir une photo",
-          "skyAutoHelp": "Le premier suit la conversation : dans un message direct, un ciel de la couleur de l'agent ; dans les canaux, celui de l'espace de travail.",
+          "skyAutoHelp": "Le premier suit la conversation : un ciel de la couleur de l'agent dans un message direct et celui de l'espace de travail dans les canaux.",
           "skyAutoHelpDms": "Le premier est un ciel de la couleur de l'agent.",
           "skyAutoHelpChannels": "Le premier est le ciel de l'espace de travail.",
           "neutral": {

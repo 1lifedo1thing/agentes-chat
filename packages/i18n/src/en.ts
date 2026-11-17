@@ -16966,7 +16966,7 @@ export const en = {
           color: "Color",
           photos: "Your photos",
           choosePhoto: "Choose a photo",
-          skyAutoHelp: "The first one follows the conversation: in a DM, a sky of the agent's color; in channels, the workspace's.",
+          skyAutoHelp: "The first one follows the conversation: a sky of the agent's color in a DM, the workspace's sky in channels.",
           skyAutoHelpDms: "The first one is a sky of the agent's color.",
           skyAutoHelpChannels: "The first one is the workspace's sky.",
           neutral: { paper: "Paper", mist: "Mist", sand: "Sand" },

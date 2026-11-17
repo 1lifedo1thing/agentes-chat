@@ -16683,7 +16683,7 @@
           "color": "Kleur",
           "photos": "Je foto's",
           "choosePhoto": "Kies een foto",
-          "skyAutoHelp": "De eerste volgt het gesprek: in een direct bericht een lucht in de kleur van de agent, in kanalen die van de werkruimte.",
+          "skyAutoHelp": "De eerste volgt het gesprek: in een direct bericht een lucht in de kleur van de agent, in kanalen de lucht van de werkruimte.",
           "skyAutoHelpDms": "De eerste is een lucht in de kleur van de agent.",
           "skyAutoHelpChannels": "De eerste is de lucht van de werkruimte.",
           "neutral": {
