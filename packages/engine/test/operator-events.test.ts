@@ -439,7 +439,11 @@ test("outside access (ADR 0191): ending an ordinary member's is refused before a
   enableOperatorEvents();
   const deps = { db: f.db, pubsub: f.pubsub, publicUrl: "https://agentes.test" };
   const gil = await addUser(f.db, "gil");
-  const request = await requestOutsideAccess(deps, { orgId: f.org.id, userId: gil.id, outsideOf: "Example Consulting" });
+  const request = await requestOutsideAccess(deps, {
+    orgId: f.org.id,
+    userId: gil.id,
+    outsideOf: "Example Consulting",
+  });
   // In the workspace as an ordinary member while the request still waits.
   await f.db.insert(schema.organizationMembers).values({ orgId: f.org.id, userId: gil.id, role: "member" });
   await expect(endOutsideAccess(deps, f.org.id, gil.id)).rejects.toMatchObject({ code: "outside_access.member" });

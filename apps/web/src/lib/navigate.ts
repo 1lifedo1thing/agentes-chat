@@ -6,8 +6,7 @@ type Leave = (url: string, options?: { replace?: boolean }) => void;
  * Leaves the app for an external URL (OAuth providers). `replace`: the page leaving stays out of the history, so Back
  * from there doesn't land on it again. Replaceable in tests.
  */
-let impl: Leave = (url, options) =>
-  options?.replace ? window.location.replace(url) : window.location.assign(url);
+let impl: Leave = (url, options) => (options?.replace ? window.location.replace(url) : window.location.assign(url));
 
 export const navigateAway: Leave = (url, options) => impl(url, options);
 

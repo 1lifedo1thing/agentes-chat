@@ -68,8 +68,9 @@ describe("the referrals link", () => {
     await signUp(person, "ana@example.com");
     const res = await link(person);
     expect(res.status).toBe(200);
-    const [v, payload, signature] = (new URL(((await res.json()) as { url: string }).url).searchParams.get("t") ?? "")
-      .split(".");
+    const [v, payload, signature] = (
+      new URL(((await res.json()) as { url: string }).url).searchParams.get("t") ?? ""
+    ).split(".");
     expect(signature).toBe(createHmac("sha256", secret).update(`${v}.${payload}`).digest("base64url"));
     expect(await (await browser(t)("/api/app/auth-config")).json()).toMatchObject({ billingUrl: null });
   });

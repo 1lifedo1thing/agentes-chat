@@ -43,7 +43,8 @@ export function referralRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const secret = referralsLinkSecret(config);
-      if (!config.REFERRALS_URL || !secret) return apiError(c, 404, "referrals.off", "This server has no referral service");
+      if (!config.REFERRALS_URL || !secret)
+        return apiError(c, 404, "referrals.off", "This server has no referral service");
       const userId = c.get("user").id;
       if (!(await deps.adapters.rateLimiter.consume(`referrals-link:${userId}`, LINKS_PER_HOUR)).allowed)
         return apiError(c, 429, "rate_limited", "Too many links. Try again later.");

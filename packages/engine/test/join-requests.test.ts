@@ -1062,7 +1062,10 @@ describe("outside collaborators (ADR 0191)", () => {
     const dan = await person("dan@example.com");
     await f.db.update(schema.users).set({ blockedAt: NOW }).where(eq(schema.users.id, dan.id));
     await expect(outside(dan.id)).rejects.toMatchObject({ code: "outside_access.account_closed" });
-    await f.db.update(schema.users).set({ blockedAt: null, deletionDueAt: later(7) }).where(eq(schema.users.id, dan.id));
+    await f.db
+      .update(schema.users)
+      .set({ blockedAt: null, deletionDueAt: later(7) })
+      .where(eq(schema.users.id, dan.id));
     await expect(outside(dan.id)).rejects.toMatchObject({ code: "outside_access.account_closed" });
     expect(await rows()).toHaveLength(0);
 
@@ -1085,7 +1088,9 @@ describe("outside collaborators (ADR 0191)", () => {
     await expect(signedIn(token, cai, "Through the link")).rejects.toMatchObject({ code: "join.waiting" });
     // Another account holds the address now: it never takes over the request the operator filed for the first.
     await f.db.update(schema.users).set({ email: "cai.lima@example.com" }).where(eq(schema.users.id, cai.id));
-    await f.db.insert(schema.users).values({ id: "user_vic", name: "Vic", email: "cai@example.com", emailVerified: true });
+    await f.db
+      .insert(schema.users)
+      .values({ id: "user_vic", name: "Vic", email: "cai@example.com", emailVerified: true });
     await expect(signedIn(token, { id: "user_vic" })).rejects.toMatchObject({ code: "join.waiting" });
     expect(await rows()).toEqual([row]);
   });

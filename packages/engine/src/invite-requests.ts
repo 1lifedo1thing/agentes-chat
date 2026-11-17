@@ -147,7 +147,8 @@ const fullLinkApproval = () =>
   );
 const fullError = () => new ConflictError("This workspace has many requests waiting", "join.full");
 /** An outside collaborator's account blocked or waiting for its deletion (ADR 0191): it joins nowhere. */
-const outsideClosed = () => new ConflictError("This account is blocked or being deleted", "outside_access.account_closed");
+const outsideClosed = () =>
+  new ConflictError("This account is blocked or being deleted", "outside_access.account_closed");
 /** A link's hour used up, by asks or by codes: everyone asking through it shares it, unlike `join.rate_limited`. */
 export const linkBusy = () =>
   new TooManyError("Many people asked through this link in the last hour. Try again later.", "join.link_busy");
@@ -961,7 +962,13 @@ export async function approveJoinRequest(
     if (outside && !already && (await accountClosed(tx, outside.userId))) {
       await tx
         .update(requests)
-        .set({ status: "closed", reason: "account_closed", decidedByUserId: actorId, decidedAt: now, passwordHash: null })
+        .set({
+          status: "closed",
+          reason: "account_closed",
+          decidedByUserId: actorId,
+          decidedAt: now,
+          passwordHash: null,
+        })
         .where(eq(requests.id, row.id));
       await recordOperatorEvent(tx, { type: "outside_access.ended", orgId, data: { userId: outside.userId } });
       return "closed";
