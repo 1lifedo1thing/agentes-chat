@@ -191,15 +191,17 @@ describe("a screen of rows", () => {
   test("a finger only starting a scroll lights no row and asks for no conversation", () => {
     const section = src("chats/HomeSection.tsx");
     const seeAll = section.slice(section.indexOf("export function SeeAllRow"));
-    expect(seeAll).toContain("unstable_pressDelay={ROW_PRESS_DELAY}");
+    // A list row: `RowPressable` holds its light back by the row press delay.
+    expect(seeAll).toContain("<RowPressable onPress={onPress} hold");
     expect(section.slice(0, section.indexOf("export function SeeAllRow"))).toContain(
       "unstable_pressDelay={ROW_PRESS_DELAY}",
     );
-    // The prefetch rides the row's press-in, which `ListRow` holds back by its press delay.
+    // The prefetch rides the row's press-in, which `ListRow` (a `RowPressable`) holds back by its press delay.
     expect(src("chats/ConversationRowView.tsx")).toContain("onPressIn={warm}");
-    expect(readFileSync(join(import.meta.dir, "../../src/ui/ListRow.tsx"), "utf8")).toContain(
-      "unstable_pressDelay={ROW_PRESS_DELAY}",
-    );
+    const ui = (file: string) => readFileSync(join(import.meta.dir, "../../src/ui", file), "utf8");
+    expect(ui("ListRow.tsx")).toContain("<RowPressable {...press} hold={opens}");
+    expect(ui("RowPressable.tsx")).toContain("unstable_pressDelay = ROW_PRESS_DELAY,");
+    expect(ui("RowPressable.tsx")).toContain("onPressIn?.(e);");
   });
 
   test("the home's sky comes up within 300 ms of the splash leaving", () => {
