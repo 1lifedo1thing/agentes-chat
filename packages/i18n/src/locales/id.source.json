@@ -12817,6 +12817,9 @@
   "notifications.wait.joinSuggestion": {
     "value": "{{by}} suggested {{name}}"
   },
+  "notifications.wait.joinOutside": {
+    "value": "{{name}} asks to join as an outside collaborator for {{outsideOf}}, taking no seat"
+  },
   "notifications.wait.doing.merge": {
     "value": "merge"
   },
@@ -12990,6 +12993,9 @@
   },
   "notifications.what.joinSuggestion": {
     "value": "<b>{{by}}</b> suggested <b>{{name}}</b>"
+  },
+  "notifications.what.joinOutside": {
+    "value": "<b>{{name}}</b> asks to join as an outside collaborator for <b>{{outsideOf}}</b>, taking no seat"
   },
   "notifications.what.changeRequest": {
     "value": "<b>{{name}}</b> asks for a change to <b>{{agent}}</b>"
@@ -17984,6 +17990,12 @@
   "members.moreOf": {
     "value": "More for {{name}}"
   },
+  "members.outside.chip": {
+    "value": "Outside"
+  },
+  "members.outside.title": {
+    "value": "Outside collaborator"
+  },
   "members.passwordLink.item": {
     "value": "Make a new-password link"
   },
@@ -18535,6 +18547,12 @@
   },
   "members.requests.suggestedLabel": {
     "value": "{{by}} suggested {{name}}"
+  },
+  "members.requests.outside": {
+    "value": "Asked {{when}} to join as an outside collaborator for {{outsideOf}}"
+  },
+  "members.requests.outsideSeat": {
+    "value": "Outside collaborators don't count toward your plan's people, and you can remove them at any time."
   },
   "members.requests.asked": {
     "value": "Asked {{ago}}"
@@ -27328,6 +27346,33 @@
   },
   "orgLogo.removed": {
     "value": "Logo removed."
+  },
+  "orgAccent.label": {
+    "value": "Accent color"
+  },
+  "orgAccent.change": {
+    "value": "Change color"
+  },
+  "orgAccent.useDefault": {
+    "value": "Use the default"
+  },
+  "orgAccent.suggested": {
+    "value": "Suggested colors"
+  },
+  "orgAccent.sampleMention": {
+    "value": "@Agent"
+  },
+  "orgAccent.sampleLink": {
+    "value": "A link"
+  },
+  "orgAccent.save": {
+    "value": "Save color"
+  },
+  "orgAccent.saved": {
+    "value": "Accent color updated."
+  },
+  "orgAccent.reset": {
+    "value": "Back to the default color."
   },
   "look.previous": {
     "value": "Previous"
@@ -37056,6 +37101,9 @@
   "errors.role.orderIncomplete": {
     "value": "The roles changed while you were moving them. Reload and try again."
   },
+  "errors.role.outsideOwner": {
+    "value": "An outside collaborator can't be an owner."
+  },
   "errors.teamProposal.undoExpired": {
     "value": "It is more than a day since this team was created, so it can't be undone here. Archive its agents on their pages."
   },
@@ -40826,8 +40874,71 @@
   "audit.removed": {
     "value": "Removed"
   },
+  "audit.operatorRead.sentence": {
+    "value": "{{who}} read {{what}}"
+  },
+  "audit.operatorRead.who.server": {
+    "value": "Whoever runs this server"
+  },
+  "audit.operatorRead.who.cloud": {
+    "value": "agentes.chat support"
+  },
+  "audit.operatorRead.what.message": {
+    "value": "a message"
+  },
+  "audit.operatorRead.what.run_step": {
+    "value": "a step of an agent's work"
+  },
+  "audit.operatorRead.what.agent": {
+    "value": "an agent's instructions"
+  },
+  "audit.operatorRead.what.routine": {
+    "value": "a routine"
+  },
+  "audit.operatorRead.what.task": {
+    "value": "a background task"
+  },
+  "audit.operatorRead.what.channel": {
+    "value": "a channel's name"
+  },
+  "audit.operatorRead.what.connection": {
+    "value": "a connection's details"
+  },
+  "audit.operatorRead.what.support_request": {
+    "value": "a support request"
+  },
+  "audit.operatorRead.what.direct": {
+    "value": "something in a private conversation"
+  },
+  "audit.operatorRead.what.other": {
+    "value": "something in the workspace"
+  },
+  "audit.operatorRead.request.plain": {
+    "value": "at {{name}}'s request"
+  },
+  "audit.operatorRead.request.app": {
+    "value": "at {{name}}'s request, sent from the app"
+  },
+  "audit.operatorRead.request.email": {
+    "value": "at {{name}}'s request, sent by email"
+  },
+  "audit.operatorRead.request.operator": {
+    "value": "at {{name}}'s request, recorded by whoever runs this server"
+  },
+  "audit.operatorRead.request.support": {
+    "value": "at {{name}}'s request, recorded by support"
+  },
+  "audit.operatorRead.fault": {
+    "value": "to diagnose a failed or stuck run"
+  },
+  "audit.operatorRead.ai": {
+    "value": "with an AI assistant"
+  },
   "audit.change.mergedWithoutAsking": {
     "value": "Merged in {{repo}} without asking"
+  },
+  "audit.change.accentChanged": {
+    "value": "Changed the workspace's accent color"
   },
   "audit.change.pattern": {
     "value": "{{verb}} {{area}}"
@@ -40852,6 +40963,15 @@
   },
   "audit.change.member.password_link": {
     "value": "Made a new-password link for a member"
+  },
+  "audit.change.outside.approved": {
+    "value": "Let in an outside collaborator for {{outsideOf}}"
+  },
+  "audit.change.outside.removed": {
+    "value": "Removed an outside collaborator for {{outsideOf}}"
+  },
+  "audit.change.outside.left": {
+    "value": "Left the workspace, an outside collaborator for {{outsideOf}}"
   },
   "audit.change.role.permission_set": {
     "value": "Changed who can {{short}}"
@@ -46654,6 +46774,12 @@
   },
   "billing.ownBucket": {
     "value": "On your own bucket, with no limit from us"
+  },
+  "referrals.open": {
+    "value": "Refer and earn"
+  },
+  "referrals.failed": {
+    "value": "Couldn't open it now. Try again in a moment."
   },
   "limits.members.full": {
     "value": "This workspace has {{members}} of {{limit}} people."

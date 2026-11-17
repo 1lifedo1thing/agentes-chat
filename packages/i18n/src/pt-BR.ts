@@ -5514,6 +5514,7 @@ export const ptBR = {
       joinRequest_other: "{{name}} e outras pessoas pedem para entrar",
       joinRequestNames: "{{names}} pedem para entrar",
       joinSuggestion: "{{by}} sugeriu {{name}}",
+      joinOutside: "{{name}} pede para entrar como colaborador externo de {{outsideOf}}, sem ocupar vaga",
       doing: {
         merge: "fazer um merge",
         deploy: "fazer um deploy",
@@ -5585,6 +5586,7 @@ export const ptBR = {
       joinRequest: "<b>{{name}}</b> pede para entrar",
       joinRequestMany: "<b>{{names}}</b> pedem para entrar",
       joinSuggestion: "<b>{{by}}</b> sugeriu <b>{{name}}</b>",
+      joinOutside: "<b>{{name}}</b> pede para entrar como colaborador externo de <b>{{outsideOf}}</b>, sem ocupar vaga",
       changeRequest: "<b>{{name}}</b> pede uma mudança em <b>{{agent}}</b>",
       proposalWaiting: "Propostas de melhoria de <b>{{names}}</b>",
       changeRequestAgent: "<b>{{name}}</b> pede um novo agente: <b>{{agent}}</b>",
@@ -7797,6 +7799,10 @@ export const ptBR = {
     rolesAdd: "Adicionar cargo",
     rolesChange: "Mudar cargos",
     moreOf: "Mais de {{name}}",
+    outside: {
+      chip: "Externo",
+      title: "Colaborador externo",
+    },
     /** On a server that sends no email, an owner's new-password link for a member (ADR 0158). */
     passwordLink: {
       item: "Gerar link de senha nova",
@@ -8025,6 +8031,9 @@ export const ptBR = {
       viaLink: "Pediu pelo link {{when}}",
       suggested: "{{name}} sugeriu {{when}}",
       suggestedLabel: "{{by}} sugeriu {{name}}",
+      outside: "Pediu {{when}} para entrar como colaborador externo de {{outsideOf}}",
+      outsideSeat:
+        "Colaboradores externos não contam nas pessoas do seu plano, e você pode removê-los a qualquer momento.",
       asked: "Pediu {{ago}}",
       askedNow: "Pediu agora",
       askedOn: "Pediu em {{date}}",
@@ -11599,6 +11608,17 @@ export const ptBR = {
     remove: "Remover logo",
     saved: "Logo atualizado.",
     removed: "Logo removido.",
+  },
+  orgAccent: {
+    label: "Cor de destaque",
+    change: "Trocar cor",
+    useDefault: "Usar a padrão",
+    suggested: "Cores sugeridas",
+    sampleMention: "@Agente",
+    sampleLink: "Um link",
+    save: "Salvar cor",
+    saved: "Cor de destaque atualizada.",
+    reset: "De volta à cor padrão.",
   },
   look: {
     previous: "Anteriores",
@@ -15265,6 +15285,7 @@ export const ptBR = {
       base: "Todo workspace mantém o cargo Todos.",
       unknown: "Esse cargo não existe mais.",
       orderIncomplete: "A lista de cargos mudou enquanto você mexia. Recarregue e tente de novo.",
+      outsideOwner: "Um colaborador externo não pode ser dono.",
     },
     teamProposal: {
       undoExpired:
@@ -16830,8 +16851,37 @@ export const ptBR = {
     },
     system: "Sistema",
     removed: "Removido",
+    operatorRead: {
+      sentence: "{{who}} leu {{what}}",
+      who: {
+        server: "Quem cuida deste servidor",
+        cloud: "O suporte do agentes.chat",
+      },
+      what: {
+        message: "uma mensagem",
+        run_step: "uma etapa do trabalho de um agente",
+        agent: "as instruções de um agente",
+        routine: "uma rotina",
+        task: "uma tarefa em segundo plano",
+        channel: "o nome de um canal",
+        connection: "os dados de uma conexão",
+        support_request: "um pedido de suporte",
+        direct: "algo em uma conversa privada",
+        other: "algo no workspace",
+      },
+      request: {
+        plain: "a pedido de {{name}}",
+        app: "a pedido de {{name}}, enviado pelo app",
+        email: "a pedido de {{name}}, enviado por e-mail",
+        operator: "a pedido de {{name}}, registrado por quem cuida deste servidor",
+        support: "a pedido de {{name}}, registrado pelo suporte",
+      },
+      fault: "para diagnosticar uma execução que falhou ou travou",
+      ai: "com um assistente de IA",
+    },
     change: {
       mergedWithoutAsking: "Fez o merge em {{repo}} sem perguntar",
+      accentChanged: "Mudou a cor de destaque do workspace",
       pattern: "{{verb}} {{area}}",
       approval: {
         approved: "Aprovou um pedido",
@@ -16843,6 +16893,11 @@ export const ptBR = {
         left: "Saiu do workspace",
         role_changed: "Mudou o cargo de um membro",
         password_link: "Gerou um link de senha nova para um membro",
+      },
+      outside: {
+        approved: "Deixou entrar um colaborador externo de {{outsideOf}}",
+        removed: "Removeu um colaborador externo de {{outsideOf}}",
+        left: "Saiu do workspace, colaborador externo de {{outsideOf}}",
       },
       role: {
         /** Todos and the roles at once ("Quem pode…"). `short`: the permission (`permissions.*.short`). */
@@ -19441,6 +19496,12 @@ export const ptBR = {
     seatsPaid_other: "{{count}} vagas pagas",
     noLimit: "Sem limite",
     ownBucket: "No seu próprio bucket, sem limite nosso",
+  },
+  /** The referral service (ADR 0192): this server knows nothing of the program, only the way there. */
+  referrals: {
+    /** In the person's own menu, under Settings. */
+    open: "Indique e ganhe",
+    failed: "Não deu para abrir agora. Tente de novo em instantes.",
   },
   /** A workspace's limits, set by the billing service (ADR 0079): people and files. */
   limits: {

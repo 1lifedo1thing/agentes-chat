@@ -444,6 +444,12 @@ export interface ApiClient {
   account: {
     authConfig(): Promise<AuthConfig>;
     /**
+     * A signed link that opens the referral service as me (ADR 0192). Navigate to it at once and keep it nowhere else:
+     * it lasts 5 minutes and opens once. `referrals.off` 404 on a server without one. `returnTo`: the page it was
+     * opened from, where the service sends me back.
+     */
+    referralsLink(returnTo?: string): Promise<{ url: string; expiresAt: string }>;
+    /**
      * Whether the e-mail has an account and how it signs in (rate limited: `rate_limited` 429). `access`: the
      * early-access link's token, when the page has one. `humanCheck`: the bot check's token, when the server has one
      * (`human_check` 403 without it).
@@ -600,6 +606,8 @@ export interface ApiClient {
     /** The workspace logo (admins): a square image (JSON only: base64), already cropped. */
     setLogo(orgId: string, input: { imageBase64: string; contentType: string }): Promise<{ logo: string }>;
     removeLogo(orgId: string): Promise<void>;
+    /** The workspace's accent color (admins, ADR 0193): a "#rrggbb", or null for the default. */
+    setAccent(orgId: string, accent: string | null): Promise<{ accent: string | null }>;
     /**
      * A signed link that opens the workspace's plan and billing on the billing service (owners and admins; ADR
      * 0079). Navigate to it at once and keep it nowhere else: it lasts 5 minutes and opens once. `billing.off` 404

@@ -5640,6 +5640,8 @@ export const en = {
       joinRequest_other: "{{name}} and others ask to join",
       joinRequestNames: "{{names}} ask to join",
       joinSuggestion: "{{by}} suggested {{name}}",
+      /** A request the server's operator filed for someone working for `outsideOf` (ADR 0191). */
+      joinOutside: "{{name}} asks to join as an outside collaborator for {{outsideOf}}, taking no seat",
       doing: {
         merge: "merge",
         deploy: "deploy",
@@ -5706,6 +5708,8 @@ export const en = {
       joinRequest: "<b>{{name}}</b> asks to join",
       joinRequestMany: "<b>{{names}}</b> ask to join",
       joinSuggestion: "<b>{{by}}</b> suggested <b>{{name}}</b>",
+      /** A request the server's operator filed for someone working for `outsideOf` (ADR 0191). */
+      joinOutside: "<b>{{name}}</b> asks to join as an outside collaborator for <b>{{outsideOf}}</b>, taking no seat",
       /** ADR 0137: someone sent a change they can't make to the people who may ("Pedir a um admin"). */
       changeRequest: "<b>{{name}}</b> asks for a change to <b>{{agent}}</b>",
       /** Proposals wait on this person: `names`, the agents that made them. */
@@ -7819,6 +7823,14 @@ export const en = {
     rolesAdd: "Add role",
     rolesChange: "Change roles",
     moreOf: "More for {{name}}",
+    /**
+     * Someone working for the workspace from outside it (ADR 0191): `chip` beside their name, `title` as the fact on
+     * their profile card, with who they work for.
+     */
+    outside: {
+      chip: "Outside",
+      title: "Outside collaborator",
+    },
     /** On a server that sends no email, an owner's new-password link for a member (ADR 0158). */
     passwordLink: {
       item: "Make a new-password link",
@@ -8054,6 +8066,10 @@ export const en = {
       viaLink: "Asked through the link {{when}}",
       suggested: "Suggested by {{name}} {{when}}",
       suggestedLabel: "{{by}} suggested {{name}}",
+      /** A request for an outside collaborator (ADR 0191): `outsideOf`, who they work for. */
+      outside: "Asked {{when}} to join as an outside collaborator for {{outsideOf}}",
+      /** Before the answer to an outside collaborator's request: approving works even when the workspace is full. */
+      outsideSeat: "Outside collaborators don't count toward your plan's people, and you can remove them at any time.",
       asked: "Asked {{ago}}",
       askedNow: "Asked just now",
       askedOn: "Asked on {{date}}",
@@ -11577,6 +11593,17 @@ export const en = {
     remove: "Remove logo",
     saved: "Logo updated.",
     removed: "Logo removed.",
+  },
+  orgAccent: {
+    label: "Accent color",
+    change: "Change color",
+    useDefault: "Use the default",
+    suggested: "Suggested colors",
+    sampleMention: "@Agent",
+    sampleLink: "A link",
+    save: "Save color",
+    saved: "Accent color updated.",
+    reset: "Back to the default color.",
   },
   look: {
     previous: "Previous",
@@ -15302,6 +15329,7 @@ export const en = {
       base: "Every workspace keeps the Everyone role.",
       unknown: "That role isn't there anymore.",
       orderIncomplete: "The roles changed while you were moving them. Reload and try again.",
+      outsideOwner: "An outside collaborator can't be an owner.",
     },
     teamProposal: {
       undoExpired:
@@ -16922,8 +16950,40 @@ export const en = {
     },
     system: "System",
     removed: "Removed",
+    /** Whoever runs the server read one piece of what the workspace wrote. The row's sentence, then why under it. */
+    operatorRead: {
+      /** `who`: one of `who.*`. `what`: one of `what.*`, written to follow "read". */
+      sentence: "{{who}} read {{what}}",
+      who: {
+        server: "Whoever runs this server",
+        cloud: "agentes.chat support",
+      },
+      what: {
+        message: "a message",
+        run_step: "a step of an agent's work",
+        agent: "an agent's instructions",
+        routine: "a routine",
+        task: "a background task",
+        channel: "a channel's name",
+        connection: "a connection's details",
+        support_request: "a support request",
+        direct: "something in a private conversation",
+        other: "something in the workspace",
+      },
+      /** Under the sentence, and after "Reason:" in the entry's panel. `name`: the member who asked for help. */
+      request: {
+        plain: "at {{name}}'s request",
+        app: "at {{name}}'s request, sent from the app",
+        email: "at {{name}}'s request, sent by email",
+        operator: "at {{name}}'s request, recorded by whoever runs this server",
+        support: "at {{name}}'s request, recorded by support",
+      },
+      fault: "to diagnose a failed or stuck run",
+      ai: "with an AI assistant",
+    },
     change: {
       mergedWithoutAsking: "Merged in {{repo}} without asking",
+      accentChanged: "Changed the workspace's accent color",
       pattern: "{{verb}} {{area}}",
       approval: {
         approved: "Approved a request",
@@ -16935,6 +16995,12 @@ export const en = {
         left: "Left the workspace",
         role_changed: "Changed a member's role",
         password_link: "Made a new-password link for a member",
+      },
+      /** An approval, removal or leaving of someone working for `outsideOf` (ADR 0191). */
+      outside: {
+        approved: "Let in an outside collaborator for {{outsideOf}}",
+        removed: "Removed an outside collaborator for {{outsideOf}}",
+        left: "Left the workspace, an outside collaborator for {{outsideOf}}",
       },
       role: {
         /** Everyone and the roles at once ("Who can…"). `short`: the permission (`permissions.*.short`). */
@@ -19508,6 +19574,12 @@ export const en = {
     seatsPaid_other: "{{count}} paid seats",
     noLimit: "No limit",
     ownBucket: "On your own bucket, with no limit from us",
+  },
+  /** The referral service (ADR 0192): this server knows nothing of the program, only the way there. */
+  referrals: {
+    /** In the person's own menu, under Settings. */
+    open: "Refer and earn",
+    failed: "Couldn't open it now. Try again in a moment.",
   },
   /** A workspace's limits, set by the billing service (ADR 0079): people and files. */
   limits: {
