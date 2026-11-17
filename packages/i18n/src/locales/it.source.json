@@ -8800,6 +8800,19 @@
   "connectAi.another": {
     "value": "Another account"
   },
+  "connectAi.which.title": {
+    "value": "Which {{brand}} account will {{name}} use?",
+    "female": "Which {{brand}} account will {{name}} use?"
+  },
+  "connectAi.which.titleAll": {
+    "value": "Which {{brand}} account will they use?"
+  },
+  "connectAi.which.mine": {
+    "value": "Your {{brand}} accounts on {{computer}}"
+  },
+  "connectAi.which.other": {
+    "value": "Sign in with another {{brand}} account"
+  },
   "connectAi.reuse.active": {
     "value": "You already have {{label}} here. Sign in to it again, or use another account."
   },
@@ -25548,6 +25561,18 @@
   },
   "jev.remove.text": {
     "value": "Agents keep working without it."
+  },
+  "aiAccounts.unnamed": {
+    "value": "Unnamed account"
+  },
+  "aiAccounts.rename.action": {
+    "value": "Rename {{label}}"
+  },
+  "aiAccounts.rename.label": {
+    "value": "Account name"
+  },
+  "aiAccounts.rename.placeholder": {
+    "value": "E.g. Work, Personal"
   },
   "aiAccounts.share.switch": {
     "value": "Answers other people"

@@ -3724,6 +3724,13 @@
     "onceHint": "Ils partagent tous les limites de votre abonnement.",
     "use": "Utiliser {{label}}",
     "another": "Un autre compte",
+    "which": {
+      "title": "Quel compte {{brand}} pour {{name}} ?",
+      "title_female": "Quel compte {{brand}} pour {{name}} ?",
+      "titleAll": "Quel compte {{brand}} vont-ils utiliser ?",
+      "mine": "Vos comptes {{brand}} sur {{computer}}",
+      "other": "Se connecter avec un autre compte {{brand}}"
+    },
     "reuse": {
       "active": "Vous avez déjà {{label}} ici. Reconnectez-vous à ce compte, ou utilisez-en un autre.",
       "signedOut": "{{label}} est déconnecté ici. Reconnectez-vous, et ses agents le gardent."
@@ -10893,6 +10900,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Compte sans nom",
+    "rename": {
+      "action": "Renommer {{label}}",
+      "label": "Nom du compte",
+      "placeholder": "Ex. : Travail, Perso"
+    },
     "share": {
       "switch": "Répond aux autres personnes",
       "switchAll": "Répondre aux autres personnes",

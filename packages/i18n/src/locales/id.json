@@ -3446,6 +3446,13 @@
     "onceHint": "Semuanya berbagi batas paketmu.",
     "use": "Pakai {{label}}",
     "another": "Akun lain",
+    "which": {
+      "title": "Akun {{brand}} mana yang akan dipakai {{name}}?",
+      "title_female": "Akun {{brand}} mana yang akan dipakai {{name}}?",
+      "titleAll": "Akun {{brand}} mana yang akan mereka pakai?",
+      "mine": "Akun {{brand}} Anda di {{computer}}",
+      "other": "Masuk dengan akun {{brand}} lain"
+    },
     "reuse": {
       "active": "Kamu sudah punya {{label}} di sini. Masuk lagi ke akun itu, atau pakai akun lain.",
       "signedOut": "{{label}} sudah keluar di sini. Masuk lagi dan agennya tetap memakainya."
@@ -10114,6 +10121,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Akun tanpa nama",
+    "rename": {
+      "action": "Ganti nama {{label}}",
+      "label": "Nama akun",
+      "placeholder": "Mis.: Kerja, Pribadi"
+    },
     "share": {
       "switch": "Menjawab orang lain",
       "switchAll": "Jawab orang lain",

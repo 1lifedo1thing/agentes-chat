@@ -3584,6 +3584,13 @@
     "onceHint": "Alle teilen sich die Limits deines Abos.",
     "use": "{{label}} nutzen",
     "another": "Anderes Konto",
+    "which": {
+      "title": "Welches {{brand}}-Konto nutzt {{name}}?",
+      "title_female": "Welches {{brand}}-Konto nutzt {{name}}?",
+      "titleAll": "Welches {{brand}}-Konto nutzen sie?",
+      "mine": "Deine {{brand}}-Konten auf {{computer}}",
+      "other": "Mit einem anderen {{brand}}-Konto anmelden"
+    },
     "reuse": {
       "active": "Du hast {{label}} hier schon. Melde dich erneut an oder nimm ein anderes Konto.",
       "signedOut": "{{label}} ist hier abgemeldet. Melde dich erneut an, und seine Agenten behalten es."
@@ -10492,6 +10499,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Konto ohne Namen",
+    "rename": {
+      "action": "{{label}} umbenennen",
+      "label": "Kontoname",
+      "placeholder": "z. B. Arbeit, Privat"
+    },
     "share": {
       "switch": "Antwortet anderen Personen",
       "switchAll": "Anderen Personen antworten",

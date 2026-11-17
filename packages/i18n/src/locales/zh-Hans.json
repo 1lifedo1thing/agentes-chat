@@ -3439,6 +3439,13 @@
     "onceHint": "它们共享你套餐的用量上限。",
     "use": "使用 {{label}}",
     "another": "其他账号",
+    "which": {
+      "title": "{{name}} 要用哪个 {{brand}} 账号？",
+      "title_female": "{{name}} 要用哪个 {{brand}} 账号？",
+      "titleAll": "他们要用哪个 {{brand}} 账号？",
+      "mine": "你在 {{computer}} 上的 {{brand}} 账号",
+      "other": "用另一个 {{brand}} 账号登录"
+    },
     "reuse": {
       "active": "你在这里已经有 {{label}}。重新登录它，或使用其他账号。",
       "signedOut": "{{label}} 在这里已退出登录。重新登录后，它的智能体会继续使用它。"
@@ -10110,6 +10117,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "未命名账号",
+    "rename": {
+      "action": "重命名 {{label}}",
+      "label": "账号名称",
+      "placeholder": "例如：工作、个人"
+    },
     "share": {
       "switch": "回复其他成员",
       "switchAll": "回复其他成员",

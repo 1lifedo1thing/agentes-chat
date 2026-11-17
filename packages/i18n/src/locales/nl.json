@@ -3586,6 +3586,13 @@
     "onceHint": "Ze delen allemaal de limieten van je abonnement.",
     "use": "{{label}} gebruiken",
     "another": "Een ander account",
+    "which": {
+      "title": "Welk {{brand}}-account gebruikt {{name}}?",
+      "title_female": "Welk {{brand}}-account gebruikt {{name}}?",
+      "titleAll": "Welk {{brand}}-account gebruiken ze?",
+      "mine": "Je {{brand}}-accounts op {{computer}}",
+      "other": "Inloggen met een ander {{brand}}-account"
+    },
     "reuse": {
       "active": "Je hebt {{label}} hier al. Log er opnieuw op in, of gebruik een ander account.",
       "signedOut": "{{label}} is hier uitgelogd. Log opnieuw in en de agents ervan houden het."
@@ -10538,6 +10545,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Account zonder naam",
+    "rename": {
+      "action": "{{label}} hernoemen",
+      "label": "Accountnaam",
+      "placeholder": "Bijv. Werk, Privé"
+    },
     "share": {
       "switch": "Antwoordt andere mensen",
       "switchAll": "Andere mensen antwoorden",

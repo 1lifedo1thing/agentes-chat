@@ -3726,6 +3726,13 @@
     "onceHint": "Tutti condividono i limiti del tuo piano.",
     "use": "Usa {{label}}",
     "another": "Un altro account",
+    "which": {
+      "title": "Quale account {{brand}} userà {{name}}?",
+      "title_female": "Quale account {{brand}} userà {{name}}?",
+      "titleAll": "Quale account {{brand}} useranno?",
+      "mine": "I tuoi account {{brand}} su {{computer}}",
+      "other": "Accedi con un altro account {{brand}}"
+    },
     "reuse": {
       "active": "Hai già {{label}} qui. Accedi di nuovo a questo account, oppure usane un altro.",
       "signedOut": "{{label}} è disconnesso qui. Accedi di nuovo e i suoi agenti continuano a usarlo."
@@ -10909,6 +10916,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Account senza nome",
+    "rename": {
+      "action": "Rinomina {{label}}",
+      "label": "Nome dell'account",
+      "placeholder": "Es.: Lavoro, Personale"
+    },
     "share": {
       "switch": "Risponde ad altre persone",
       "switchAll": "Rispondono ad altre persone",

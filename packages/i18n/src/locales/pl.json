@@ -3862,6 +3862,13 @@
     "onceHint": "Wszyscy dzielą limity twojego planu.",
     "use": "Użyj {{label}}",
     "another": "Inne konto",
+    "which": {
+      "title": "Którego konta {{brand}} użyje {{name}}?",
+      "title_female": "Którego konta {{brand}} użyje {{name}}?",
+      "titleAll": "Którego konta {{brand}} użyją?",
+      "mine": "Twoje konta {{brand}} na {{computer}}",
+      "other": "Zaloguj się innym kontem {{brand}}"
+    },
     "reuse": {
       "active": "Masz już tu {{label}}. Zaloguj się na nie ponownie albo użyj innego konta.",
       "signedOut": "{{label}} jest tu wylogowane. Zaloguj się ponownie, a jego agenci dalej z niego korzystają."
@@ -11273,6 +11280,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Konto bez nazwy",
+    "rename": {
+      "action": "Zmień nazwę {{label}}",
+      "label": "Nazwa konta",
+      "placeholder": "Np. Praca, Prywatne"
+    },
     "share": {
       "switch": "Odpowiada innym osobom",
       "switchAll": "Odpowiadają innym osobom",

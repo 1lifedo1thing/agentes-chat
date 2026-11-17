@@ -3435,6 +3435,13 @@
     "onceHint": "모두 요금제 한도를 함께 써요.",
     "use": "{{label}} 사용",
     "another": "다른 계정",
+    "which": {
+      "title": "{{name}}이(가) 사용할 {{brand}} 계정은?",
+      "title_female": "{{name}}이(가) 사용할 {{brand}} 계정은?",
+      "titleAll": "사용할 {{brand}} 계정은?",
+      "mine": "{{computer}}의 내 {{brand}} 계정",
+      "other": "다른 {{brand}} 계정으로 로그인"
+    },
     "reuse": {
       "active": "여기에 이미 {{label}}이(가) 있어요. 그 계정에 다시 로그인하거나 다른 계정을 쓰세요.",
       "signedOut": "여기서 {{label}}이(가) 로그아웃됐어요. 다시 로그인하면 에이전트가 계속 써요."
@@ -10059,6 +10066,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "이름 없는 계정",
+    "rename": {
+      "action": "{{label}} 이름 바꾸기",
+      "label": "계정 이름",
+      "placeholder": "예: 업무, 개인"
+    },
     "share": {
       "switch": "다른 사람에게도 답해요",
       "switchAll": "다른 사람에게도 답하기",

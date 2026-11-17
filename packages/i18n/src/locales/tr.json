@@ -3573,6 +3573,13 @@
     "onceHint": "Hepsi planınızın limitlerini paylaşır.",
     "use": "{{label}} kullan",
     "another": "Başka bir hesap",
+    "which": {
+      "title": "{{name}} hangi {{brand}} hesabını kullanacak?",
+      "title_female": "{{name}} hangi {{brand}} hesabını kullanacak?",
+      "titleAll": "Hangi {{brand}} hesabını kullanacaklar?",
+      "mine": "{{computer}} üzerindeki {{brand}} hesapların",
+      "other": "Başka bir {{brand}} hesabıyla giriş yap"
+    },
     "reuse": {
       "active": "{{label}} burada zaten var. Ona yeniden giriş yapın ya da başka bir hesap kullanın.",
       "signedOut": "{{label}} burada oturumu kapattı. Yeniden giriş yapın, ajanları onu kullanmaya devam eder."
@@ -10437,6 +10444,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Adsız hesap",
+    "rename": {
+      "action": "{{label}} adını değiştir",
+      "label": "Hesap adı",
+      "placeholder": "Örn. İş, Kişisel"
+    },
     "share": {
       "switch": "Başka kişilere de yanıt verir",
       "switchAll": "Başka kişilere de yanıt ver",
