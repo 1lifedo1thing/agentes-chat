@@ -128,6 +128,7 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
  * Text that holds a record and can't be opened as one: a message quoting it, a result with words before it, a result
  * cut off. An unquoted value in one of its strings ends at that string's closing quote, and the next string's is
  * read on its own. The three shapes only a record can tell are read where the text keeps them as JSON wrote them.
+ * And text that holds no record: a quote there closes no string, and a count is one with a sign after it.
  */
 export const UNOPENED: [shape: string, text: string, stays: string[]][] = [
   [
