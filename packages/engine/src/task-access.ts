@@ -86,11 +86,18 @@ export const channelReadersSql = (orgId: SQL, channelId: SQL) => sql`(select cr.
 export async function audienceOfConversation(db: Executor, channelId: string, depth = 0): Promise<Audience> {
   // A live file's conversation (ADR 0197): who reads the file, as where it lives says (its sharing only widens it).
   const [file] = await db
-    .select({ channelId: artifacts.channelId, share: artifacts.share })
+    .select({
+      channelId: artifacts.channelId,
+      share: artifacts.share,
+      createdByType: artifacts.createdByType,
+      createdById: artifacts.createdById,
+    })
     .from(artifacts)
     .where(eq(artifacts.conversationChannelId, channelId));
   if (file) {
-    if (!file.channelId || file.share === "everyone") return { mode: "everyone" };
+    if (file.share === "everyone") return { mode: "everyone" };
+    // A file of the Drive itself not shared with everyone lives with its maker (ADR 0157, amendment 2026-11-17).
+    if (!file.channelId) return { mode: "people", userIds: file.createdByType === "person" ? [file.createdById] : [] };
     // Files made in each other's conversations go a few levels at most; past them, the narrowest audience.
     if (depth >= 4) return { mode: "people", userIds: [] };
     return audienceOfConversation(db, file.channelId, depth + 1);
@@ -196,6 +203,17 @@ export async function admitTaskAgents(
 export const artifactCol = (name: string) => sql.raw(`"artifacts"."${name}"`);
 
 /**
+ * Whether `userId` reads a file of the Drive itself (no conversation) where it lives, as a condition over `artifacts`
+ * (ADR 0157, amendment 2026-11-17): its maker and administrators. Its sharing (`fileSharedSql`) widens it, and a new
+ * one is shared with everyone. `userId` may be a column.
+ */
+export function driveKeeperSql(userId: SQL) {
+  const c = artifactCol;
+  return sql<boolean>`((${c("created_by_type")} = 'person' and ${c("created_by_id")} = ${userId})
+    or ${maySql(c("org_id"), userId, "administrator")})`;
+}
+
+/**
  * Whether a file's sharing (ADR 0157) shows it to `userId` past its conversation, as a condition over `artifacts`: the
  * whole workspace, or a list that names them, holds a role of theirs, or them as an administrator. The workspace
  * membership is the caller's check. `userId` may be a column.
@@ -209,13 +227,13 @@ export function fileSharedSql(userId: SQL) {
 }
 
 /**
- * Whether `userId` reads a file at all, where it lives (`channelReaderSql`, or a public channel) or through its
- * sharing, as a condition over `artifacts`. Mirrors `personCanRead` in `artifacts.ts`. `depth`: how many live files'
- * conversations deep where it lives may be (`FILE_CONVERSATION_DEPTH`).
+ * Whether `userId` reads a file at all, where it lives (`channelReaderSql`, or a public channel; for a file of the
+ * Drive itself, `driveKeeperSql`) or through its sharing, as a condition over `artifacts`. Mirrors `personCanRead` in
+ * `artifacts.ts`. `depth`: how many live files' conversations deep where it lives may be (`FILE_CONVERSATION_DEPTH`).
  */
 export function fileSeenSql(userId: SQL, depth = FILE_CONVERSATION_DEPTH) {
   const c = artifactCol;
-  return sql<boolean>`(${c("channel_id")} is null or ${fileSharedSql(userId)}
+  return sql<boolean>`((${c("channel_id")} is null and ${driveKeeperSql(userId)}) or ${fileSharedSql(userId)}
     or ${channelReaderSql(c("channel_id"), userId, depth)}
     or exists (select 1 from ${channels} pc where pc.id = ${c("channel_id")} and pc.kind = 'channel'
       and pc.visibility = 'public'))`;

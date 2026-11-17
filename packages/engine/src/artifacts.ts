@@ -68,6 +68,7 @@ import {
   adminChannelSql,
   artifactCol,
   channelReaderSql,
+  driveKeeperSql,
   fileConversationReaderSql,
   fileSeenSql,
   fileSharedSql,
@@ -765,11 +766,14 @@ function runSharedSql(personId: string | null, channelId: string) {
 }
 
 /**
- * What decides who reads a file: where it lives and its sharing (absent for a conversation alone, as `placeNew` asks),
- * and for an agent its own conversation (ADR 0197).
+ * What decides who reads a file: where it lives (a file of the Drive itself, with its maker), its sharing, and for an
+ * agent its own conversation (ADR 0197).
  */
-type Readable = Pick<ArtifactRow, "channelId"> &
-  Partial<Pick<ArtifactRow, "share" | "shareUserIds" | "shareRoleIds" | "conversationChannelId">>;
+type Readable = Pick<ArtifactRow, ReadsBy> & Partial<Pick<ArtifactRow, "conversationChannelId">>;
+type ReadsBy = "channelId" | "share" | "shareUserIds" | "shareRoleIds" | "createdByType" | "createdById";
+
+const CONVERSATION_ALONE: FileSharing = { mode: "conversation", userIds: [], roleIds: [] };
+const SHARED_WITH_EVERYONE: FileSharing = { mode: "everyone", userIds: [], roleIds: [] };
 
 const sharingOf = (a: Pick<ArtifactRow, "share" | "shareUserIds" | "shareRoleIds">): FileSharing => ({
   mode: a.share,
@@ -777,11 +781,38 @@ const sharingOf = (a: Pick<ArtifactRow, "share" | "shareUserIds" | "shareRoleIds
   roleIds: a.share === "people" ? a.shareRoleIds : [],
 });
 
-/** Whether a person reads a file: where it lives (`readsWhereItLives`), or through its sharing (ADR 0157). */
+/**
+ * Whether a person reads a file: where it lives (`readsWhereItLives`; a file of the Drive itself, its maker and
+ * administrators), or through its sharing (ADR 0157). Mirrors `fileSeenSql`.
+ */
 async function personCanRead(db: Database, userId: string, orgId: string, a: Readable) {
-  if (!a.channelId || a.share === "everyone" || (a.share === "people" && a.shareUserIds?.includes(userId))) return true;
-  if (await readsWhereItLives(db, userId, orgId, a.channelId)) return true;
-  return a.share === "people" && sharedByRole(db, userId, orgId, a.shareRoleIds ?? []);
+  if (a.share === "everyone" || (a.share === "people" && a.shareUserIds.includes(userId))) return true;
+  if (a.channelId ? await readsWhereItLives(db, userId, orgId, a.channelId) : madeByPerson(a, userId)) return true;
+  // A list's roles, and administrators, who always see a list and a file of the Drive itself.
+  const roles = a.share === "people" ? a.shareRoleIds : [];
+  return (a.share === "people" || !a.channelId) && sharedByRole(db, userId, orgId, roles);
+}
+
+/** Whether a person reads the file where it lives: its conversation, or keeping a file of the Drive itself. */
+const readsItThere = (db: Database, userId: string, orgId: string, a: Readable) =>
+  a.channelId ? readsWhereItLives(db, userId, orgId, a.channelId) : keepsDriveFile(db, userId, orgId, a);
+
+/** The person made the file. */
+const madeByPerson = (a: Pick<ArtifactRow, "createdByType" | "createdById">, userId: string) =>
+  a.createdByType === "person" && a.createdById === userId;
+
+/**
+ * Whether a person keeps a file of the Drive itself (no conversation), which lives with its maker (ADR 0157,
+ * amendment 2026-11-17): they and administrators read it whatever its sharing, and change who else sees it.
+ * Mirrors `driveKeeperSql`.
+ */
+async function keepsDriveFile(
+  db: Database,
+  userId: string,
+  orgId: string,
+  a: Pick<ArtifactRow, "createdByType" | "createdById">,
+) {
+  return madeByPerson(a, userId) || sharedByRole(db, userId, orgId, []);
 }
 
 /** Whether a people list's roles reach this person: one they hold, or administrator, who always sees a list. */
@@ -906,19 +937,21 @@ async function ownRoomFile(db: Database, actor: Extract<ArtifactActor, { type: "
 }
 
 /**
- * An agent's own reach, what `listArtifacts` lists and what it may change: org-wide files, its run's conversation and
- * public channels it is in (in the agents' DM, only those made for the same person), the conversations it shares
- * with the person behind the run, what its room saved elsewhere, and the live file whose own conversation its run is
- * in (ADR 0197: only agents that may work on the file are members there, `admitFileAgents`).
+ * An agent's own reach, what `listArtifacts` lists and what it may change: the Drive's files shared with everyone and
+ * those it made there (a file of the Drive itself lives with its maker, ADR 0157 amendment 2026-11-17), its run's
+ * conversation and public channels it is in (in the agents' DM, only those made for the same person), the
+ * conversations it shares with the person behind the run, what its room saved elsewhere, and the live file whose own
+ * conversation its run is in (ADR 0197: only agents that may work on the file are members there, `admitFileAgents`).
  */
 async function agentReaches(
   db: Database,
   actor: Extract<ArtifactActor, { type: "agent" }>,
   orgId: string,
-  a: Pick<ArtifactRow, "id" | "channelId"> & Partial<Pick<ArtifactRow, "conversationChannelId">>,
+  a: Pick<ArtifactRow, "id" | "channelId" | "share" | "createdByType" | "createdById"> &
+    Partial<Pick<ArtifactRow, "conversationChannelId">>,
 ) {
-  if (!a.channelId) return true;
   if (a.conversationChannelId && a.conversationChannelId === actor.channelId) return true;
+  if (!a.channelId) return a.share === "everyone" || (a.createdByType === "agent" && a.createdById === actor.agentId);
   if (!(await agentSearchChannels(db, orgId, actor.agentId, actor.channelId, { files: true })).includes(a.channelId)) {
     const person = await runPerson(db, orgId, actor.runId ?? undefined);
     if (person !== null && (await requesterSharedChannels(db, orgId, actor.agentId, person)).includes(a.channelId))
@@ -946,12 +979,11 @@ async function runReachesShared(db: Database, channelId: string, person: string 
  */
 async function canRead(db: Database, actor: ArtifactActor, orgId: string, a: Pick<ArtifactRow, "id"> & Readable) {
   if (actor.type === "person") return personCanRead(db, actor.userId, orgId, a);
-  const reach = { id: a.id, channelId: a.channelId, conversationChannelId: a.conversationChannelId };
-  if (!a.channelId || (await agentReaches(db, actor, orgId, reach))) return true;
+  if (await agentReaches(db, actor, orgId, a)) return true;
   const person = await runPerson(db, orgId, actor.runId ?? undefined);
-  if (person !== null && (await readsWhereItLives(db, person, orgId, a.channelId))) return true;
+  if (person !== null && (await readsItThere(db, person, orgId, a))) return true;
   if (await runReachesShared(db, actor.channelId, person, a.id)) return true;
-  if (person === null) return false;
+  if (person === null || !a.channelId) return false;
   const dm = await agentsDmReads(db, orgId, a.channelId, () => Promise.resolve(person));
   return dm !== null && madeForSamePerson(db, dm, a.id);
 }
@@ -1004,7 +1036,7 @@ async function loadArtifact(db: Database, orgId: string, id: string) {
 async function agentRefusal(db: Database, actor: Extract<ArtifactActor, { type: "agent" }>, orgId: string, id: string) {
   const [gone] = UUID.test(id)
     ? await db
-        .select({ id: artifacts.id, channelId: artifacts.channelId })
+        .select()
         .from(artifacts)
         .where(and(eq(artifacts.id, id), eq(artifacts.orgId, orgId), sql`${artifacts.deletedAt} is not null`))
     : [];
@@ -1015,7 +1047,7 @@ async function agentRefusal(db: Database, actor: Extract<ArtifactActor, { type: 
   }
   const nobody = (await runPerson(db, orgId, actor.runId ?? undefined))
     ? ""
-    : " Nobody is behind this run, so you only reach this conversation, public channels you are in and the Drive.";
+    : " Nobody is behind this run, so you only reach this conversation, public channels you are in and what the whole workspace sees in the Drive.";
   return new NotFoundError(
     `File not found: ${id} is no file you can open from here. The id may be wrong, or the file is in a conversation out of your reach.${nobody} Copy the whole id from list_artifacts or an "(attached files: …)" line, never from memory. If that isn't it, say so and ask someone who sees the file to attach it here or put it in the Drive. This id won't work again.`,
   );
@@ -1030,12 +1062,22 @@ async function readable(deps: ArtifactDeps, actor: ArtifactActor, orgId: string,
   throw new NotFoundError("Artifact not found");
 }
 
+/**
+ * Why an agent reads a file it may not change (`agentReaches`): a conversation it isn't in, or a file of the Drive
+ * itself not shared with everyone (ADR 0157, amendment 2026-11-17), which a person asks it about in the file's own
+ * conversation.
+ */
+const outOfReach = (a: Pick<ArtifactRow, "channelId">) =>
+  a.channelId
+    ? "it is in a conversation you aren't in"
+    : "it is in the Drive, not shared with the whole workspace (who sees it may mention you in its conversation)";
+
 /** `readable` to save a version: reading follows the person behind the run, changing a file only the agent's own reach. */
 async function writable(deps: ArtifactDeps, actor: ArtifactActor, orgId: string, id: string) {
   const a = await readable(deps, actor, orgId, id);
   if (actor.type === "agent" && !(await agentReaches(deps.db, actor, orgId, a))) {
     throw new ForbiddenError(
-      "You can read this file but not change it: it is in a conversation you aren't in. Save your version as a new file with create_artifact.",
+      `You can read this file but not change it: ${outOfReach(a)}. Save your version as a new file with create_artifact.`,
     );
   }
   return a;
@@ -1139,10 +1181,16 @@ async function insertArtifact(
     id?: string;
     /** More rows of the same file, in the same transaction (a live file's document and pictures, ADR 0194). */
     inTx?: (tx: Executor, row: ArtifactRow) => Promise<void>;
+    /**
+     * Who else sees it (ADR 0157): by default its conversation alone, and a file of the Drive itself the whole
+     * workspace (amendment 2026-11-17). A copy of a Drive file takes the original's, so it reaches nobody more.
+     */
+    sharing?: FileSharing;
   },
 ) {
   const { db } = deps;
   const id = input.id ?? Bun.randomUUIDv7();
+  const sharing = input.sharing ?? (input.channelId ? CONVERSATION_ALONE : SHARED_WITH_EVERYONE);
   const blob = await writeBlob(deps, orgId, id, 1, input.stored);
   const author = input.author ?? authorOf(actor);
   const row = await db.transaction(async (tx) => {
@@ -1158,6 +1206,9 @@ async function insertArtifact(
         untrusted: input.untrusted,
         inDrive: input.inDrive ?? true,
         excerpt: input.excerpt,
+        share: sharing.mode,
+        shareUserIds: sharing.userIds,
+        shareRoleIds: sharing.roleIds,
         currentVersion: 1,
         createdByType: author.type,
         createdById: author.id,
@@ -1549,8 +1600,9 @@ async function sharedDriveRefusal(
 }
 
 /**
- * `shared_drive`: the file leaves its conversation for the workspace's shared Drive (no channel), so everyone there
- * sees it (`sharedDriveRefusal`). Links and cards keep working, since it is the same file.
+ * `shared_drive`: the file leaves its conversation for the workspace's shared Drive (no channel), shared with
+ * everyone there (`sharedDriveRefusal`; ADR 0157, amendment 2026-11-17). Links and cards keep working, since it is
+ * the same file.
  */
 export async function moveToSharedDrive(
   deps: ArtifactDeps,
@@ -1566,7 +1618,7 @@ export async function moveToSharedDrive(
   const row = await deps.db.transaction(async (tx) => {
     const [moved] = await tx
       .update(artifacts)
-      .set({ channelId: null, threadId: null })
+      .set({ channelId: null, threadId: null, share: "everyone", shareUserIds: [], shareRoleIds: [] })
       .where(and(eq(artifacts.id, a.id), eq(artifacts.orgId, orgId)))
       .returning();
     if (!moved) throw new NotFoundError("Artifact not found");
@@ -1598,11 +1650,24 @@ export async function fileReach(db: Database, orgId: string, artifactId: string,
       share: artifacts.share,
       userIds: artifacts.shareUserIds,
       roleIds: artifacts.shareRoleIds,
+      createdByType: artifacts.createdByType,
+      createdById: artifacts.createdById,
     })
     .from(artifacts)
     .leftJoin(channels, eq(channels.id, artifacts.channelId))
     .where(and(eq(artifacts.id, artifactId), eq(artifacts.orgId, orgId)));
-  if (!a?.channelId) return "It is in the workspace's shared Drive: everyone in the workspace sees it.";
+  if (!a || (!a.channelId && a.share === "everyone")) {
+    return "It is in the workspace's shared Drive: everyone in the workspace sees it.";
+  }
+  if (!a.channelId) {
+    // A file of the Drive itself lives with its maker (ADR 0157, amendment 2026-11-17).
+    const maker = await makerName(db, orgId, a.createdByType, a.createdById);
+    const who =
+      a.share === "people"
+        ? `${maker}, ${await sharedList(db, orgId, a.userIds, a.roleIds)}`
+        : `${maker} and administrators`;
+    return `It is in the Drive, not shared with the whole workspace: only ${who} see it.`;
+  }
   if (a.share === "everyone") return "It was shared with the whole workspace: everyone in the workspace sees it.";
   const notShared = `in the Drive's private section, not in the shared Drive. ${hint}`.trimEnd();
   if (a.share === "people") {
@@ -1622,6 +1687,21 @@ export async function fileReach(db: Database, orgId: string, artifactId: string,
   return `No person sees it: it is in a conversation between agents, not in the shared Drive. Don't say it is saved for people. ${hint}`.trimEnd();
 }
 
+/** Who made a file, for `fileReach`: a person's name, an agent's handle. */
+async function makerName(db: Database, orgId: string, type: string, id: string) {
+  if (type === "agent") {
+    const [agent] = UUID.test(id)
+      ? await db
+          .select({ handle: schema.agents.handle })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.orgId, orgId), eq(schema.agents.id, id)))
+      : [];
+    return agent ? `@${agent.handle}` : "the agent that made it";
+  }
+  const [person] = await db.select({ name: schema.users.name }).from(schema.users).where(eq(schema.users.id, id));
+  return person?.name ?? "the person who made it";
+}
+
 /** Who a people list adds, for `fileReach`: "Ana, the role Finance and administrators". */
 async function sharedList(db: Database, orgId: string, userIds: string[], roleIds: string[]) {
   const [people, roles] = await Promise.all([
@@ -1639,7 +1719,10 @@ async function sharedList(db: Database, orgId: string, userIds: string[], roleId
   return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }
 
-/** The Drive files a run saved, as a message carries them, of those the people of `channelId` see (or everyone does). */
+/**
+ * The Drive files a run saved, as a message carries them, of those the people of `channelId` see (or everyone does: a
+ * file of the Drive itself only when shared with everyone, ADR 0157 amendment 2026-11-17).
+ */
 export function filesOfRun(db: Executor, orgId: string, runId: string, channelId: string) {
   return db
     .selectDistinct({ id: artifacts.id, version: artifacts.currentVersion, title: artifacts.title })
@@ -1651,7 +1734,7 @@ export function filesOfRun(db: Executor, orgId: string, runId: string, channelId
         eq(artifactVersions.runId, runId),
         isNull(artifacts.deletedAt),
         eq(artifacts.inDrive, true),
-        or(isNull(artifacts.channelId), eq(artifacts.channelId, channelId)),
+        or(and(isNull(artifacts.channelId), eq(artifacts.share, "everyone")), eq(artifacts.channelId, channelId)),
       ),
     );
 }
@@ -1911,8 +1994,16 @@ async function artifactScope(db: Database, actor: ArtifactActor, orgId: string, 
   let ownRoom: SQL | undefined;
   // What a file's sharing adds (ADR 0157).
   let widened: SQL;
+  // The Drive's own files they read where they live (ADR 0157, amendment 2026-11-17).
+  let drive: SQL | undefined;
   if (actor.type === "agent") {
     widened = runSharedSql(filters.requesterUserId ?? null, actor.channelId);
+    drive = or(
+      eq(artifacts.share, "everyone"),
+      and(eq(artifacts.createdByType, "agent"), eq(artifacts.createdById, actor.agentId)),
+      // The live file whose own conversation the run is in (`agentReaches`).
+      eq(artifacts.conversationChannelId, actor.channelId),
+    );
     dm = await agentsDmReads(db, orgId, actor.channelId, () => readerOfRun(db, orgId, actor.runId));
     visible = await agentSearchChannels(db, orgId, actor.agentId, actor.channelId, { files: true });
     if (await agentRoom(db, orgId, actor.channelId)) ownRoom = madeInRoomSql(actor.channelId);
@@ -1927,6 +2018,7 @@ async function artifactScope(db: Database, actor: ArtifactActor, orgId: string, 
   } else {
     visible = await personReadableChannels(db, actor.userId, orgId);
     widened = fileSharedSql(sql`${actor.userId}::text`);
+    drive = driveKeeperSql(sql`${actor.userId}::text`);
   }
   const q = filters.q?.trim();
   const madeBy = (a: ArtifactAuthor) => and(eq(artifacts.createdByType, a.type), eq(artifacts.createdById, a.id));
@@ -1935,7 +2027,7 @@ async function artifactScope(db: Database, actor: ArtifactActor, orgId: string, 
     isNull(artifacts.deletedAt),
     eq(artifacts.inDrive, true),
     or(
-      isNull(artifacts.channelId),
+      and(isNull(artifacts.channelId), drive),
       visible.length > 0 ? inArray(artifacts.channelId, visible) : undefined,
       ownRoom,
       widened,
@@ -2135,19 +2227,24 @@ export async function shareArtifact(
         .where(and(eq(channels.id, a.channelId), eq(channels.orgId, orgId)))
     : [];
   const openHere =
-    !a.channelId ||
-    a.channelId === actor.channelId ||
+    (a.channelId !== null && a.channelId === actor.channelId) ||
     a.share === "everyone" ||
     (origin?.kind === "channel" && origin.visibility === "public");
   if (!openHere) {
     // From a DM or a private channel: the requester and the agent must both be in it. Reading for a person is no
-    // reason to carry a file into another audience.
+    // reason to carry a file into another audience. From the Drive itself, not shared with everyone: its maker asks
+    // (ADR 0157, amendment 2026-11-17).
     const requester = input.requesterUserId;
-    const dm = requester ? await agentsDmReads(db, orgId, a.channelId as string, async () => requester) : null;
+    const where = a.channelId;
+    const dm = requester && where ? await agentsDmReads(db, orgId, where, async () => requester) : null;
+    const theirs =
+      requester !== null &&
+      (where
+        ? (await requesterSharedChannels(db, orgId, actor.agentId, requester)).includes(where)
+        : madeByPerson(a, requester));
     const allowed =
-      (input.alsoFrom != null && (a.channelId === input.alsoFrom || (await madeInRoom(db, a.id, input.alsoFrom)))) ||
-      (requester !== null &&
-        (await requesterSharedChannels(db, orgId, actor.agentId, requester)).includes(a.channelId as string)) ||
+      (input.alsoFrom != null && (where === input.alsoFrom || (await madeInRoom(db, a.id, input.alsoFrom)))) ||
+      theirs ||
       // No person is in the agents' DM: what a teammate made there for the person asking is theirs to have, unless
       // that teammate may only answer agents (`answersAgentsOnly`).
       (dm !== null && (await madeForSamePerson(db, dm, a.id)) && !(await madeForAgentsOnly(db, orgId, a.id)));
@@ -2335,7 +2432,8 @@ export interface PersonArtifactFacts {
   audience: ArtifactAudience;
   /**
    * They may change its sharing (`setFileSharing`): it lives in a conversation not everyone reads, and they read it
-   * there. False for what the whole workspace sees already.
+   * there; or it is a file of the Drive itself, and they made it or are an administrator (ADR 0157, amendment
+   * 2026-11-17). False for what a public channel holds.
    */
   canShare: boolean;
   /** A live file's conversation (ADR 0197) once someone opened or wrote in it; null otherwise. */
@@ -2408,6 +2506,10 @@ export async function withPersonFacts<T extends Pick<ArtifactView, "id" | "chann
       : Promise.resolve([]),
   ]);
   const live = new Set([...liveAgents, ...livePeople].map((r) => r.id));
+  // The Drive's own files: whoever made one and administrators change who sees it (`setFileSharing`).
+  const mine = (a: T) => a.createdBy.type === "person" && a.createdBy.id === userId;
+  const admin = list.some((a) => a.inDrive && !a.channelId && !mine(a)) && (await sharedByRole(db, userId, orgId, []));
+  const keeps = (a: T) => mine(a) || admin;
   const closed = new Set(chans.filter((c) => c.kind !== "channel" || c.visibility !== "public").map((c) => c.id));
   const readsThere = closed.size ? new Set(await personReadableChannels(db, userId, orgId)) : closed;
   // Shared with them from a conversation they don't read (ADR 0157): what's said is never "you and …", and there's no
@@ -2441,7 +2543,7 @@ export async function withPersonFacts<T extends Pick<ArtifactView, "id" | "chann
     // What lives in its conversation was never in the Drive, so it has no trash to go to (ADR 0113).
     canDelete: a.inDrive && deletable.has(a.id),
     audience: a.channelId ? (audience.get(a.channelId) ?? { kind: "dm", with: null }) : { kind: "workspace" },
-    canShare: a.inDrive && a.channelId !== null && closed.has(a.channelId) && readsThere.has(a.channelId),
+    canShare: a.inDrive && (a.channelId ? closed.has(a.channelId) && readsThere.has(a.channelId) : keeps(a)),
     conversation: conversations.get(a.id) ?? null,
   }));
 }
@@ -2499,8 +2601,9 @@ async function cleanSharing(db: Database, orgId: string, input: Partial<FileShar
 /**
  * "Compartilhar" (ADR 0157): who sees a file on top of the conversation it lives in. Whoever reads it there may change
  * it (a DM's participants, a channel's members and administrators, whoever sees a task for its conversation); someone
- * it was shared with may not. A file the whole workspace sees already (the shared Drive, a public channel) has nothing
- * to widen. Audited, and its conversation hears of it.
+ * it was shared with may not. A file of the Drive itself lives with its maker (amendment 2026-11-17): `conversation`
+ * is its maker alone, and its maker and administrators change it. A public channel's file has nothing to widen.
+ * Audited; its conversation and the workspace's Drive lists hear of it.
  */
 export async function setFileSharing(
   deps: ArtifactDeps,
@@ -2518,12 +2621,14 @@ export async function setFileSharing(
         .from(channels)
         .where(eq(channels.id, a.channelId))
     : [];
-  if (!a.channelId || (where?.kind === "channel" && where.visibility === "public")) {
+  if (where?.kind === "channel" && where.visibility === "public") {
     throw new ValidationError("Everyone in the workspace sees this file already", "artifact.sharing_open");
   }
-  if (!(await readsWhereItLives(db, userId, orgId, a.channelId))) {
+  if (!(await readsItThere(db, userId, orgId, a))) {
     throw new ForbiddenError(
-      "Only who is in the conversation the file is in changes who sees it",
+      a.channelId
+        ? "Only who is in the conversation the file is in changes who sees it"
+        : "Only who made the file and administrators change who sees it",
       "artifact.sharing_forbidden",
     );
   }
@@ -2547,7 +2652,11 @@ export async function setFileSharing(
     return saved;
   });
   const artifact = view(row, editableKind(row.kind));
-  await publishChannelEvent(deps.pubsub, { type: "artifact.updated", channelId: a.channelId, artifact });
+  if (a.channelId) {
+    await publishChannelEvent(deps.pubsub, { type: "artifact.updated", channelId: a.channelId, artifact });
+  }
+  // Who sees it changed: the Drive lists, and the open pages of a file of the Drive itself, read it again.
+  await publishListChanged(deps.pubsub, orgId, "artifacts");
   return artifact;
 }
 
@@ -2630,12 +2739,12 @@ export async function listDeletedArtifacts(
     userId,
     rows.filter((a) => a.share !== "conversation").map((a) => a.id),
   );
-  const deletable = await deletableIds(
-    db,
-    userId,
-    orgId,
-    rows.filter((a) => !a.channelId || readable.has(a.channelId) || sharedIds.has(a.id)),
-  );
+  // A file of the Drive itself: its maker's and administrators' (ADR 0157, amendment 2026-11-17).
+  const othersDrive = rows.some((a) => !a.channelId && !madeByPerson(a, userId));
+  const admin = othersDrive && (await sharedByRole(db, userId, orgId, []));
+  const reads = (a: ArtifactRow) =>
+    (a.channelId ? readable.has(a.channelId) : admin || madeByPerson(a, userId)) || sharedIds.has(a.id);
+  const deletable = await deletableIds(db, userId, orgId, rows.filter(reads));
   const out: TrashedArtifactView[] = [];
   for (const a of rows) {
     if (!deletable.has(a.id)) continue;
@@ -3074,7 +3183,7 @@ export async function requireLiveFile(
   if (!options.write || access.mode === "edit") return access;
   if (actor.type === "agent") {
     throw new ForbiddenError(
-      `You can read this file but not change it: it is in a conversation you aren't in. Make your own with ${LIVE_TOOLS[access.kind].create} instead.`,
+      `You can read this file but not change it: ${outOfReach(access.artifact)}. Make your own with ${LIVE_TOOLS[access.kind].create} instead.`,
     );
   }
   throw new ConflictError(
@@ -3262,6 +3371,8 @@ export async function insertLiveArtifact(
     assetsFrom?: string | null;
     /** Pictures it starts with, under the ids its document names (an imported deck's, ADR 0196). */
     pictures?: readonly LivePicture[];
+    /** Who else sees it, when not the default of where it is placed (`insertArtifact`). */
+    sharing?: FileSharing;
   },
 ): Promise<ArtifactView> {
   const place = await placeFile(deps.db, actor, orgId, input);
@@ -3281,6 +3392,8 @@ export async function insertLiveArtifact(
     excerpt: liveExcerpt(input.doc),
     stored: { body: state, contentType: LIVE_SNAPSHOT_TYPE },
     note: input.note,
+    // Placed where it was asked (an agent's run lands in its own conversation): a sharing only for that place.
+    sharing: (place.channelId ?? null) === (input.channelId ?? null) ? input.sharing : undefined,
     inTx: async (tx) => {
       await tx.insert(schema.liveDocs).values({
         artifactId: id,
@@ -3307,7 +3420,13 @@ export async function copyLiveArtifact(
   orgId: string,
   a: ArtifactRow,
   kind: LiveArtifactKind,
-  input: { title?: string; channelId?: string | null; threadId?: string | null; note?: string | null },
+  input: {
+    title?: string;
+    channelId?: string | null;
+    threadId?: string | null;
+    note?: string | null;
+    sharing?: FileSharing;
+  },
 ): Promise<ArtifactView> {
   const doc = await liveHeadDoc(deps, a);
   try {
@@ -3319,6 +3438,7 @@ export async function copyLiveArtifact(
       doc,
       note: input.note,
       assetsFrom: a.id,
+      sharing: input.sharing,
     });
   } finally {
     doc.destroy();
@@ -3370,7 +3490,8 @@ export async function renameLiveFile(
 /**
  * Duplicate, from a live file's page: a copy at its head with its pictures, beside it (the same conversation and
  * thread), never anywhere more people see. Someone the file was shared with who doesn't read its conversation gets
- * "not found" for that place, as when making a file there.
+ * "not found" for that place, as when making a file there. A file of the Drive itself keeps its sharing on the copy
+ * (ADR 0157, amendment 2026-11-17), whose maker is who copied it.
  */
 export async function duplicateLiveFile(
   deps: ArtifactDeps,
@@ -3386,6 +3507,7 @@ export async function duplicateLiveFile(
     title: input.title?.trim() || a.title,
     channelId: a.channelId,
     threadId: a.threadId,
+    sharing: a.channelId ? undefined : sharingOf(a),
   });
 }
 
@@ -3476,8 +3598,10 @@ async function dropLiveContent(deps: ArtifactDeps, orgId: string, fileId: string
 
 /**
  * Search: title and excerpt, visible like the channel it came from (shared with people too: its conversation and its
- * agents keep finding it); shared with the workspace, the whole org. Who it's shared with finds it by its own id
- * (`visibleFileScopes`), which only `searchForUser` passes.
+ * agents keep finding it); shared with the workspace, the whole org. A file of the Drive itself not shared with
+ * everyone takes its own id as its scope, which no conversation is (ADR 0157, amendment 2026-11-17). Who it's shared
+ * with, and a Drive file's maker and administrators, find it by its own id (`visibleFileScopes`), which only
+ * `searchForUser` passes.
  */
 registerDocumentBuilder("file", async (db, orgId, id) => {
   const [a] = await db
@@ -3491,7 +3615,7 @@ registerDocumentBuilder("file", async (db, orgId, id) => {
     orgId,
     kind: "file",
     sourceId: a.id,
-    channelIds: a.share === "everyone" || !a.channelId ? [] : [a.channelId],
+    channelIds: a.share === "everyone" ? [] : [a.channelId ?? a.id],
     title: a.title,
     body: a.excerpt,
     createdAt: a.createdAt,

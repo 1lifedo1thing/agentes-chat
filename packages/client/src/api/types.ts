@@ -3796,7 +3796,10 @@ export interface Artifact {
   audience: ArtifactAudience;
   /** Who sees it on top of that conversation (ADR 0157); absent from an older server. */
   sharing?: ArtifactSharing;
-  /** I may change `sharing`: it lives in a conversation not everyone reads, and I read it there. */
+  /**
+   * I may change `sharing`: it lives in a conversation not everyone reads, and I read it there; or it is a file of the
+   * Drive itself (ADR 0157, amendment 2026-11-17), and I made it or I'm an administrator.
+   */
   canShare?: boolean;
   /** A live file's conversation (ADR 0197), once someone opened or wrote in it; null until then and for other kinds. */
   conversation?: FileConversation | null;
@@ -3827,7 +3830,8 @@ export interface UnreadFile {
 
 /**
  * Who sees a file past where it lives (ADR 0157): nobody more (`conversation`), the people and roles listed and
- * administrators (`people`), or the whole workspace (`everyone`).
+ * administrators (`people`), or the whole workspace (`everyone`). A file of the Drive itself lives with its maker, so
+ * `conversation` is its maker alone (and administrators).
  */
 export interface ArtifactSharing {
   mode: "conversation" | "people" | "everyone";
