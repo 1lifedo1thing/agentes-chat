@@ -7,6 +7,14 @@
  */
 
 export {
+  type AccentPalette,
+  type AccentTokens,
+  accentPalette,
+  contrastRatio,
+  DEFAULT_ACCENT,
+  isAccentHex,
+} from "@agenteschat/tokens/accent";
+export {
   ACCESSORIES,
   ACCESSORY_REACH,
   AGENT_GRADIENTS,
