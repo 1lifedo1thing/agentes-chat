@@ -15613,7 +15613,8 @@
       "denied": "Votre demande n'a pas été approuvée. Demandez à quelqu'un sur place de vous inviter.",
       "answered": "Quelqu'un a déjà répondu à cette demande.",
       "expired": "Cette demande a expiré : personne n'y a répondu en 14 jours.",
-      "codeNeeded": "Vérifiez d'abord votre e-mail."
+      "codeNeeded": "Vérifiez d'abord votre e-mail.",
+      "outsideClosed": "Ce compte a été bloqué ou est en cours de suppression : il ne peut pas rejoindre. La demande est fermée."
     },
     "code": {
       "wrong": "Code incorrect. Réessayez.",

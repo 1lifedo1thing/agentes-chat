@@ -15284,6 +15284,7 @@ export const ptBR = {
       answered: "Alguém já respondeu este pedido.",
       expired: "Este pedido expirou: ninguém respondeu em 14 dias.",
       codeNeeded: "Verifique seu e-mail primeiro.",
+      outsideClosed: "Esta conta foi bloqueada ou está sendo excluída, então não pode entrar. O pedido foi fechado.",
     },
     /** An emailed code refused: asking to join (ADR 0072) and deleting (ADR 0088) alike. */
     code: {

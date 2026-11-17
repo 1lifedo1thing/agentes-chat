@@ -15328,6 +15328,8 @@ export const en = {
       answered: "Someone already answered this request.",
       expired: "This request expired: nobody answered it in 14 days.",
       codeNeeded: "Verify your email first.",
+      /** Approving an outside collaborator's request (ADR 0191) whose account was blocked or is being deleted. */
+      outsideClosed: "This account was blocked or is being deleted, so it can't join. The request is closed.",
     },
     /** An emailed code refused: asking to join (ADR 0072) and deleting (ADR 0088) alike. */
     code: {

@@ -43,7 +43,9 @@ workspace could not let them in at all. A self-hosted server sets no limit, so i
    workspace too, and never sends an email invitation. The request closes unanswered after 14 days, as any does.
    Asking again while it waits changes nothing and answers the same request; an account already in the workspace is
    refused (`join.member`), and so is one whose address has another request waiting (`join.waiting`), which is
-   answered first.
+   answered first. An account blocked or waiting for its deletion is refused (`outside_access.account_closed`), as
+   every other way into a workspace refuses it; one that becomes so while its request waits has the request closed
+   when someone approves it, and the approval answers that same code.
 5. **Leaving.** Whoever may remove members removes an outside collaborator like anyone, and they may leave. The
    operator ends it with `DELETE /orgs/{orgId}/outside-access/{userId}`: a request still waiting closes, and a member
    is taken out with everything a removal does, the audit log's entry being the system's. It refuses an ordinary member

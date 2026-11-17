@@ -223,6 +223,7 @@ const KNOWN = {
   "join.denied": "errors.join.denied",
   "join.answered": "errors.join.answered",
   "join.expired": "errors.join.expired",
+  "outside_access.account_closed": "errors.join.outsideClosed",
   "join.code_wrong": "errors.code.wrong",
   "join.code_expired": "errors.code.expired",
   "join.code_tries": "errors.code.tries",

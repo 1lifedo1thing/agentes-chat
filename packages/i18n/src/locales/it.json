@@ -15625,7 +15625,8 @@
       "denied": "La tua richiesta non è stata approvata. Chiedi a qualcuno lì di invitarti.",
       "answered": "Qualcuno ha già risposto a questa richiesta.",
       "expired": "Questa richiesta è scaduta: nessuno ha risposto entro 14 giorni.",
-      "codeNeeded": "Prima verifica la tua email."
+      "codeNeeded": "Prima verifica la tua email.",
+      "outsideClosed": "Questo account è stato bloccato o è in corso di eliminazione, quindi non può entrare. La richiesta è chiusa."
     },
     "code": {
       "wrong": "Codice errato. Riprova.",

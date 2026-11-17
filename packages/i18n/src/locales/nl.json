@@ -15154,7 +15154,8 @@
       "denied": "Je verzoek is niet goedgekeurd. Vraag iemand daar om je uit te nodigen.",
       "answered": "Iemand heeft dit verzoek al beantwoord.",
       "expired": "Dit verzoek is verlopen: niemand heeft het binnen 14 dagen beantwoord.",
-      "codeNeeded": "Bevestig eerst je e-mailadres."
+      "codeNeeded": "Bevestig eerst je e-mailadres.",
+      "outsideClosed": "Dit account is geblokkeerd of wordt verwijderd, dus het kan niet meedoen. Het verzoek is gesloten."
     },
     "code": {
       "wrong": "Verkeerde code. Probeer het opnieuw.",

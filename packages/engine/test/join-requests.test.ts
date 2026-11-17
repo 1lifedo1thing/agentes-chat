@@ -1055,6 +1055,28 @@ describe("outside collaborators (ADR 0191)", () => {
     expect((await memberOf(bob.id))?.role).toBe("owner");
   });
 
+  test("a blocked account, or one waiting for its deletion, is refused when asked for, and its waiting request closes at approval", async () => {
+    await start();
+    const cai = await person("cai@example.com");
+    const dan = await person("dan@example.com");
+    await f.db.update(schema.users).set({ blockedAt: NOW }).where(eq(schema.users.id, dan.id));
+    await expect(outside(dan.id)).rejects.toMatchObject({ code: "outside_access.account_closed" });
+    await f.db.update(schema.users).set({ blockedAt: null, deletionDueAt: later(7) }).where(eq(schema.users.id, dan.id));
+    await expect(outside(dan.id)).rejects.toMatchObject({ code: "outside_access.account_closed" });
+    expect(await rows()).toHaveLength(0);
+
+    const row = await outside(cai.id);
+    await f.db.update(schema.users).set({ blockedAt: NOW }).where(eq(schema.users.id, cai.id));
+    await expect(approveJoinRequest(deps(), PUBLIC, f.owner.id, f.org.id, row.id, [], NOW)).rejects.toMatchObject({
+      name: "ConflictError",
+      code: "outside_access.account_closed",
+    });
+    expect(await memberOf(cai.id)).toBeUndefined();
+    expect((await rows()).map((r) => [r.status, r.reason])).toEqual([["closed", "account_closed"]]);
+    expect(await listOutsideAccess(f.db, f.org.id, NOW)).toEqual([]);
+    expect((await notices()).every((n) => n.doneAt !== null)).toBe(true);
+  });
+
   test("ended by the operator: a waiting request closes, an outside collaborator is removed by the system, an ordinary member never", async () => {
     await start();
     const cai = await person("cai@example.com");

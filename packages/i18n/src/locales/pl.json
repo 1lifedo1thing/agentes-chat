@@ -16147,7 +16147,8 @@
       "denied": "Twoja prośba nie została zatwierdzona. Poproś kogoś stamtąd o zaproszenie.",
       "answered": "Ktoś już odpowiedział na tę prośbę.",
       "expired": "Ta prośba wygasła: nikt na nią nie odpowiedział przez 14 dni.",
-      "codeNeeded": "Najpierw potwierdź swój e-mail."
+      "codeNeeded": "Najpierw potwierdź swój e-mail.",
+      "outsideClosed": "To konto zostało zablokowane lub jest usuwane, więc nie może dołączyć. Prośba została zamknięta."
     },
     "code": {
       "wrong": "Błędny kod. Spróbuj ponownie.",

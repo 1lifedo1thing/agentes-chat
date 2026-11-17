@@ -15091,7 +15091,8 @@
       "denied": "Deine Anfrage wurde nicht angenommen. Bitte jemanden dort, dich einzuladen.",
       "answered": "Auf diese Anfrage hat schon jemand geantwortet.",
       "expired": "Diese Anfrage ist abgelaufen: Niemand hat innerhalb von 14 Tagen geantwortet.",
-      "codeNeeded": "Bestätige zuerst deine E-Mail-Adresse."
+      "codeNeeded": "Bestätige zuerst deine E-Mail-Adresse.",
+      "outsideClosed": "Dieses Konto wurde gesperrt oder wird gerade gelöscht und kann deshalb nicht beitreten. Die Anfrage ist geschlossen."
     },
     "code": {
       "wrong": "Falscher Code. Versuch es noch einmal.",

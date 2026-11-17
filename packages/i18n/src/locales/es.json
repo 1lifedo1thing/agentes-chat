@@ -15543,7 +15543,8 @@
       "denied": "Tu solicitud no fue aprobada. Pídele a alguien de ahí que te invite.",
       "answered": "Alguien ya respondió esta solicitud.",
       "expired": "Esta solicitud venció: nadie la respondió en 14 días.",
-      "codeNeeded": "Primero verifica tu correo."
+      "codeNeeded": "Primero verifica tu correo.",
+      "outsideClosed": "Esta cuenta fue bloqueada o se está eliminando, así que no puede entrar. La solicitud quedó cerrada."
     },
     "code": {
       "wrong": "Código incorrecto. Intenta de nuevo.",

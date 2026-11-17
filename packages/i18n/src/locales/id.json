@@ -14585,7 +14585,8 @@
       "denied": "Permintaanmu tidak disetujui. Minta seseorang di sana mengundangmu.",
       "answered": "Seseorang sudah menjawab permintaan ini.",
       "expired": "Permintaan ini kedaluwarsa: tidak ada yang menjawabnya dalam 14 hari.",
-      "codeNeeded": "Verifikasi email-mu dulu."
+      "codeNeeded": "Verifikasi email-mu dulu.",
+      "outsideClosed": "Akun ini diblokir atau sedang dihapus, jadi tidak bisa bergabung. Permintaannya sudah ditutup."
     },
     "code": {
       "wrong": "Kode salah. Coba lagi.",

@@ -15028,7 +15028,8 @@
       "denied": "İsteğiniz onaylanmadı. Oradan birinin sizi davet etmesini isteyin.",
       "answered": "Bu isteği zaten biri yanıtladı.",
       "expired": "Bu isteğin süresi doldu: 14 gün içinde kimse yanıtlamadı.",
-      "codeNeeded": "Önce e-postanızı doğrulayın."
+      "codeNeeded": "Önce e-postanızı doğrulayın.",
+      "outsideClosed": "Bu hesap engellendi ya da siliniyor, bu yüzden katılamaz. İstek kapatıldı."
     },
     "code": {
       "wrong": "Kod yanlış. Tekrar deneyin.",

@@ -81,7 +81,7 @@ import {
 } from "./organizations";
 import { enqueue } from "./outbox";
 import { givableRoleIds } from "./roles";
-import { accountInUse, closedOrg } from "./standing";
+import { accountClosed, accountInUse, closedOrg } from "./standing";
 
 const {
   accounts,
@@ -143,6 +143,8 @@ const fullLinkApproval = () =>
     "join.link_full_approval",
   );
 const fullError = () => new ConflictError("This workspace has many requests waiting", "join.full");
+/** An outside collaborator's account blocked or waiting for its deletion (ADR 0191): it joins nowhere. */
+const outsideClosed = () => new ConflictError("This account is blocked or being deleted", "outside_access.account_closed");
 /** A link's hour used up, by asks or by codes: everyone asking through it shares it, unlike `join.rate_limited`. */
 export const linkBusy = () =>
   new TooManyError("Many people asked through this link in the last hour. Try again later.", "join.link_busy");
@@ -899,7 +901,9 @@ export type JoinApproval = { outcome: "joined" } | { outcome: "invited"; url: st
  * suggestion gets the invitation email itself, since nobody at that address asked (ADR 0090). The channels and agents
  * they start with (ADR 0184): `start`'s, checked as an invitation's, else the link's, as far as the approver may give
  * them at that moment. A link that took all its people takes no more approvals (`join.link_full_approval`). An
- * outside collaborator's request (ADR 0191) lets in the account it names at once, even into a full workspace.
+ * outside collaborator's request (ADR 0191) lets in the account it names at once, even into a full workspace; once
+ * that account is blocked or waits for its deletion, the request closes instead (`outside_access.ended`) and the
+ * approval is refused (`outside_access.account_closed`).
  */
 export async function approveJoinRequest(
   /** `secret`: `AGENTES_SECRET`, so an invitation an approval sends has a link that can be copied again. */
@@ -923,7 +927,7 @@ export async function approveJoinRequest(
   };
   let made: string | null = null;
   let opened: string[] = [];
-  const result = await deps.db.transaction(async (tx): Promise<JoinApproval> => {
+  const result = await deps.db.transaction(async (tx): Promise<JoinApproval | "closed"> => {
     // Two approvals through one link take turns, so its uses never pass its maximum.
     await lockRequests(tx, orgId);
     const row = await waitingRequest(tx, orgId, id, now);
@@ -941,6 +945,15 @@ export async function approveJoinRequest(
       row.outsideOf !== null && row.userId !== null ? { userId: row.userId, outsideOf: row.outsideOf } : null;
     // Someone with this address got in meanwhile: nothing to send.
     const already = outside ? await isMember(tx, orgId, outside.userId) : await addressIsMember(tx, orgId, row.email);
+    // Blocked or being deleted since the operator asked: the request closes, as every other way in refuses them.
+    if (outside && !already && (await accountClosed(tx, outside.userId))) {
+      await tx
+        .update(requests)
+        .set({ status: "closed", reason: "account_closed", decidedByUserId: actorId, decidedAt: now, passwordHash: null })
+        .where(eq(requests.id, row.id));
+      await recordOperatorEvent(tx, { type: "outside_access.ended", orgId, data: { userId: outside.userId } });
+      return "closed";
+    }
     // Full: nobody joins, and no invitation goes out that couldn't be accepted. An outside collaborator takes no seat.
     if (!already && !outside) await assertMemberRoom(tx, orgId);
     if (!already && !outside && !context.hasAccount && row.passwordHash && row.verifiedAt) {
@@ -1052,6 +1065,10 @@ export async function approveJoinRequest(
     }
     return approval;
   });
+  if (result === "closed") {
+    await settleJoinRequests(deps, orgId, now);
+    throw outsideClosed();
+  }
   if (made) await welcomeAccount(deps.db, made);
   forgetStarted(orgId, opened);
   if (result.outcome === "joined") await announceMembers(deps.pubsub, orgId, opened);
@@ -1505,8 +1522,9 @@ export async function cancelSuggestion(deps: Deps, actorId: string, orgId: strin
  * The operator API asks to let an account in as an outside collaborator (ADR 0191): someone working for the workspace
  * from outside it (`outsideOf`: who they work for), who takes no seat. It files a request the people who may invite
  * answer as any other, and tells them the way `askToJoin` does. Asking again while it waits returns the request as it
- * is. Refused for someone already in (`join.member`), and while another request waits for their address
- * (`join.waiting`): that one is answered first.
+ * is. Refused for someone already in (`join.member`), while another request waits for their address
+ * (`join.waiting`): that one is answered first, and for an account blocked or waiting for its deletion
+ * (`outside_access.account_closed`).
  */
 export async function requestOutsideAccess(
   /** `publicUrl`: this server's address, for the links in the email to the people who answer. */
@@ -1524,6 +1542,7 @@ export async function requestOutsideAccess(
   if (!org) throw new NotFoundError("No workspace with this id");
   const account = await accountOf(db, userId);
   if (!account) throw new NotFoundError("No account with this id");
+  if (!account.open) throw outsideClosed();
   const email = account.email.toLowerCase();
   const name = oneLine(account.name, JOIN_NAME_MAX) || oneLine(email.split("@")[0] ?? "", JOIN_NAME_MAX);
   const admins = await adminIds(db, orgId, "invite_people");

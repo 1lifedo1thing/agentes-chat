@@ -37083,6 +37083,9 @@
   "errors.join.codeNeeded": {
     "value": "Verify your email first."
   },
+  "errors.join.outsideClosed": {
+    "value": "This account was blocked or is being deleted, so it can't join. The request is closed."
+  },
   "errors.code.wrong": {
     "value": "Wrong code. Try again."
   },
