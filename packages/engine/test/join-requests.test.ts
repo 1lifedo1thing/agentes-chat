@@ -28,6 +28,7 @@ import {
   listOutsideAccess,
   listWaitingJoinRequests,
   MAX_PENDING_JOIN_REQUESTS,
+  MAX_PENDING_OUTSIDE_REQUESTS,
   memberRoleIds,
   NotFoundError,
   previewInvitation,
@@ -1087,6 +1088,25 @@ describe("outside collaborators (ADR 0191)", () => {
     await f.db.insert(schema.users).values({ id: "user_vic", name: "Vic", email: "cai@example.com", emailVerified: true });
     await expect(signedIn(token, { id: "user_vic" })).rejects.toMatchObject({ code: "join.waiting" });
     expect(await rows()).toEqual([row]);
+  });
+
+  test("outside requests wait apart from the asks through a link: 50 of each", async () => {
+    const { token } = await start();
+    const waiting = (prefix: string, outsideOf: string | null) =>
+      Array.from({ length: MAX_PENDING_OUTSIDE_REQUESTS }, (_, i) => ({
+        orgId: f.org.id,
+        email: `${prefix}${i}@example.com`,
+        name: `${prefix}${i}`,
+        outsideOf,
+        expiresAt: later(1),
+      }));
+    await f.db.insert(schema.organizationJoinRequests).values(waiting("o", "Example Consulting"));
+    expect(await typed(token, "Ana", "ana@example.com")).toMatchObject({ created: true });
+    await expect(outside((await person("cai@example.com")).id)).rejects.toMatchObject({ code: "join.full" });
+    // The asks full: the operator still files one.
+    await f.db.delete(schema.organizationJoinRequests);
+    await f.db.insert(schema.organizationJoinRequests).values(waiting("p", null));
+    expect(await outside("user_cai")).toMatchObject({ status: "pending" });
   });
 
   test("ended by the operator after the request ran out: nothing is left waiting to close", async () => {

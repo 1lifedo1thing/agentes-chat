@@ -44,7 +44,8 @@ workspace could not let them in at all. A self-hosted server sets no limit, so i
    daily sweep of requests to join (`pruneJoinRequests`) then marks it `closed`, so the operator is told once.
    Asking again while it waits changes nothing and answers the same request; an account already in the workspace is
    refused (`join.member`), and so is one whose address has another request waiting (`join.waiting`), which is
-   answered first. An account blocked or waiting for its deletion is refused (`outside_access.account_closed`), as
+   answered first. At most 50 outside requests wait in a workspace (`join.full`), counted apart from the 50 asks
+   through its links, so the operator's requests never use those up. An account blocked or waiting for its deletion is refused (`outside_access.account_closed`), as
    every other way into a workspace refuses it; one that becomes so while its request waits has the request closed
    when someone approves it, and the approval answers that same code. While it waits, an ask through an invitation
    link for its address never takes it over: that ask is answered as one for an address someone already asked for

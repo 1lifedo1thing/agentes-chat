@@ -102,6 +102,8 @@ const {
 export const JOIN_REQUEST_TTL_DAYS = 14;
 /** At most this many asks through a link wait in one workspace; the next ask is refused (`join.full`). */
 export const MAX_PENDING_JOIN_REQUESTS = 50;
+/** At most this many outside collaborators' requests (ADR 0191) wait in one workspace, apart from the asks. */
+export const MAX_PENDING_OUTSIDE_REQUESTS = 50;
 /**
  * Members' suggestions waiting in one workspace (ADR 0090), counted apart from the asks so neither crowds out the
  * other; the next is refused (`join.full`).
@@ -188,12 +190,16 @@ async function addressIsMember(db: Executor, orgId: string, email: string) {
   return row !== undefined;
 }
 
-/** Members' suggestions (ADR 0090), and the asks: every other request, made through a link. */
+/**
+ * Members' suggestions (ADR 0090), outside collaborators' requests (ADR 0191), and the asks: every other request,
+ * made through a link.
+ */
 const suggestions = isNotNull(requests.suggestedByUserId);
-const asks = isNull(requests.suggestedByUserId);
+const outsideRequests = isNotNull(requests.outsideOf);
+const asks = and(isNull(requests.suggestedByUserId), isNull(requests.outsideOf));
 
 /** Requests waiting in a workspace: all of them, or only those `which` picks (`asks`, `suggestions`). */
-async function waitingCount(db: Executor, orgId: string, now: Date, which?: SQL) {
+async function waitingCount(db: Executor, orgId: string, now: Date, which?: SQL | undefined) {
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(requests)
@@ -1529,8 +1535,9 @@ export async function cancelSuggestion(deps: Deps, actorId: string, orgId: strin
  * from outside it (`outsideOf`: who they work for), who takes no seat. It files a request the people who may invite
  * answer as any other, and tells them the way `askToJoin` does. Asking again while it waits returns the request as it
  * is. Refused for someone already in (`join.member`), while another request waits for their address
- * (`join.waiting`): that one is answered first, and for an account blocked or waiting for its deletion
- * (`outside_access.account_closed`).
+ * (`join.waiting`): that one is answered first, for an account blocked or waiting for its deletion
+ * (`outside_access.account_closed`), and once 50 outside requests wait in the workspace (`join.full`), counted apart
+ * from the asks through a link.
  */
 export async function requestOutsideAccess(
   /** `publicUrl`: this server's address, for the links in the email to the people who answer. */
@@ -1569,6 +1576,7 @@ export async function requestOutsideAccess(
       }
       return { row: latest, created: false };
     }
+    if ((await waitingCount(tx, orgId, now, outsideRequests)) >= MAX_PENDING_OUTSIDE_REQUESTS) throw fullError();
     const values = {
       linkId: null,
       userId,
