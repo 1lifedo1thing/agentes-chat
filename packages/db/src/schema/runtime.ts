@@ -967,6 +967,11 @@ export const agentConsultations = pgTable(
     reportedAt: timestamp({ withTimezone: true }),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    /**
+     * The person behind the asking run when it was made (`runAuthorityById`), never changed; null with nobody behind
+     * it (a routine's work) and on rows made before the column.
+     */
+    forUserId: text(),
   },
   (t) => [
     foreignKey({ columns: [t.orgId, t.askerAgentId], foreignColumns: [agents.orgId, agents.id] }).onDelete("cascade"),
@@ -978,6 +983,8 @@ export const agentConsultations = pgTable(
     index().on(t.orgId, t.askerAgentId, t.createdAt),
     // The hand-over of a task, found by the task's conversation.
     index().on(t.orgId, t.channelId),
+    // What other agents handed an agent for a person, newest first (`handedFor`).
+    index("agent_consultations_handed_for_idx").on(t.orgId, t.targetAgentId, t.forUserId, t.createdAt),
   ],
 );
 

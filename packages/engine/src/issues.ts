@@ -1733,6 +1733,7 @@ export async function askAgentToImplement(
         question: `Work on task #${issue.number}: ${issue.title}`.slice(0, 2_000),
         chain: [by.agentId],
         expiresAt: new Date(Date.now() + TASK_HAND_OFF_TTL_MS),
+        forUserId: (await runAuthorityById(tx, orgId, by.runId)).personId,
       });
       // The right hand looks at it again a day later, for the person it handed it over for.
       await queueTaskCheck(tx, orgId, consultationId);

@@ -237,6 +237,7 @@ export function createAskAgentToolSource(
       const waitId = `${ASYNC_WAIT}${Bun.randomUUIDv7()}`;
       const consultationId = Bun.randomUUIDv7();
       const relays = await runReadOutsideById(db, ctx.orgId, ctx.runId);
+      const forUserId = (await runAuthorityById(db, ctx.orgId, ctx.runId)).personId;
       const created = await db.transaction(async (tx) => {
         const channel = await openAgentDm(tx, ctx.orgId, ctx.agentId, target.id);
         const message = await insertMessage(tx, {
@@ -265,6 +266,7 @@ export function createAskAgentToolSource(
             question,
             chain,
             expiresAt: new Date(Date.now() + CONSULTATION_TTL_MS),
+            forUserId,
           })
           .returning();
         return row;
@@ -577,6 +579,7 @@ export async function sendNote(
       question: input.body,
       chain: input.chain,
       expiresAt: new Date(Date.now() + CONSULTATION_TTL_MS),
+      forUserId: (await runAuthorityById(tx, input.orgId, input.runId)).personId,
     });
     return { message, consultationId };
   });
