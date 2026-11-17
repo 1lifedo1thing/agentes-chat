@@ -3,9 +3,9 @@ import { keys, useFileUnread, useThreadMessages } from "@agenteschat/client";
 import { mayAsk } from "@agenteschat/client/lib/audience";
 import { rightHandOf } from "@agenteschat/client/lib/right-hand";
 import { badgeCount } from "@agenteschat/client/lib/unread";
-import { Button, CountBadge, CountChip } from "@agenteschat/ui";
+import { Button, CountBadge, CountChip, cx } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
-import { type KeyboardEvent, useEffect, useRef } from "react";
+import { type KeyboardEvent, type PointerEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
@@ -13,7 +13,7 @@ import { SidePanel } from "@/components/SidePanel";
 import { useDirectory } from "@/hooks/useDirectory";
 import { nearerEsc } from "@/hooks/useEscClose";
 import { useSideColumn } from "@/hooks/useMembersColumn";
-import { STORAGE_KEYS } from "@/lib/storage";
+import { STORAGE_KEYS, storage } from "@/lib/storage";
 import { ChannelSkeleton } from "@/pages/ChannelPage";
 import { ThreadPage } from "@/pages/ThreadPage";
 import { useChannelEvents } from "@/realtime/context";
@@ -40,15 +40,18 @@ export function useFileTalkColumn(artifact: Pick<Artifact, "conversation"> | nul
 
 /**
  * "Conversa 4" in the file's header (the task's `TaskConversationButton`): opens or closes the conversation. A reply I
- * haven't read there lights it like an unread channel; a mention of me adds its red number.
+ * haven't read there lights it like an unread channel; a mention of me adds its red number. `compact` (a narrow
+ * header): its glyph and count without the word.
  */
 export function FileConversationButton({
   artifact,
   open,
+  compact = false,
   onToggle,
 }: {
   artifact: Artifact;
   open: boolean;
+  compact?: boolean;
   onToggle: () => void;
 }) {
   const { t } = useTranslation();
@@ -62,11 +65,14 @@ export function FileConversationButton({
       icon="message"
       aria-pressed={open}
       aria-label={count > 0 ? t("live.conversation.toggle", { count }) : t("live.conversation.button")}
-      className="task-talk__toggle"
+      // Narrow and nothing to count: the glyph alone, square.
+      iconOnly={compact && count === 0 && mentions === 0}
+      title={compact ? t("live.conversation.button") : undefined}
+      className={cx("task-talk__toggle", compact && "lf-talk-toggle--glyph")}
       data-unread={unread > 0 || undefined}
       onClick={onToggle}
     >
-      {t("live.conversation.button")}
+      {!compact && t("live.conversation.button")}
       {count > 0 && <CountChip size="sm">{count}</CountChip>}
       {mentions > 0 && (
         <CountBadge
@@ -149,12 +155,150 @@ export function FileConversationPanel({
     onClose();
   };
   // Hung from the work area (the page's own box runs an entrance that would hold a fixed panel inside it).
+  const work = document.querySelector<HTMLElement>(".shell__work");
   return createPortal(
-    <aside className="thread-panel lf-talk" aria-label={label} onKeyDownCapture={onKey}>
-      {body}
-    </aside>,
-    document.querySelector(".shell__work") ?? document.body,
+    <>
+      {work && <TalkGrip work={work} />}
+      <aside className="thread-panel lf-talk" aria-label={label} onKeyDownCapture={onKey}>
+        {body}
+      </aside>
+    </>,
+    work ?? document.body,
   );
+}
+
+/** The docked conversation's narrowest width, and its widest (and never more than half the window). */
+export const TALK_MIN = 340;
+export const TALK_MAX = 720;
+/** An arrow key's step. */
+const TALK_STEP = 16;
+const talkMax = () => Math.max(TALK_MIN, Math.min(TALK_MAX, Math.round(window.innerWidth / 2)));
+/** A width within the bounds the window allows now. */
+export const clampTalk = (width: number) => Math.round(Math.min(talkMax(), Math.max(TALK_MIN, width)));
+
+/**
+ * The handle on the docked conversation's left edge (ADR 0197): dragged, the conversation takes that width and the
+ * file beside it follows as it moves; ←/→ change it a step, Home and End go to the narrowest and the widest, a double
+ * click gives back the default (`--lf-talk-w` in live.css). The width is the person's, kept per person and workspace,
+ * and set on the work area, whose right padding keeps the file clear of it.
+ */
+function TalkGrip({ work }: { work: HTMLElement }) {
+  const { t } = useTranslation();
+  const { org, me } = useOrg();
+  const key = `${STORAGE_KEYS.liveTalkWidth}.${me.user.id}.${org.id}`;
+  const [saved, setSaved] = useState<number | null>(() => readWidth(storage.get(key)));
+  const [shown, setShown] = useState<number | null>(null);
+  const drag = useRef<{ pointer: number; x: number; from: number; to: number } | null>(null);
+  const frame = useRef(0);
+  const now = () => talkWidth(work);
+  const show = (width: number | null) => showTalkWidth(work, width);
+
+  // The person's width while docked (within what the window allows now, again as it resizes); the default after.
+  useEffect(() => {
+    const apply = () => {
+      if (drag.current) return;
+      showTalkWidth(work, saved === null ? null : clampTalk(saved));
+      setShown(talkWidth(work));
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      cancelAnimationFrame(frame.current);
+      showTalkWidth(work, null);
+    };
+  }, [saved, work]);
+
+  const save = (width: number | null) => {
+    if (width === null) storage.remove(key);
+    else storage.set(key, String(width));
+    setSaved(width);
+  };
+  const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    const from = now();
+    drag.current = { pointer: e.pointerId, x: e.clientX, from, to: from };
+    e.currentTarget.dataset.active = "";
+  };
+  const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || d.pointer !== e.pointerId) return;
+    // The handle is the panel's left edge: leftwards widens it.
+    const to = clampTalk(d.from + d.x - e.clientX);
+    if (to === d.to) return;
+    d.to = to;
+    e.currentTarget.setAttribute("aria-valuenow", String(to));
+    // One layout a frame, however fast the pointer reports.
+    cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(() => show(to));
+  };
+  const end = (e: PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || d.pointer !== e.pointerId) return;
+    drag.current = null;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    delete e.currentTarget.dataset.active;
+    cancelAnimationFrame(frame.current);
+    if (d.to === d.from) return;
+    show(d.to);
+    save(d.to);
+  };
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const next =
+      e.key === "ArrowLeft"
+        ? now() + TALK_STEP
+        : e.key === "ArrowRight"
+          ? now() - TALK_STEP
+          : e.key === "Home"
+            ? TALK_MIN
+            : e.key === "End"
+              ? talkMax()
+              : null;
+    if (next === null) return;
+    e.preventDefault();
+    const width = clampTalk(next);
+    show(width);
+    save(width);
+  };
+  const label = t("live.conversation.resize");
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: a separator that moves is a control with a value, which `hr` is not.
+    <div
+      className="lf-talk-grip"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={label}
+      aria-valuenow={shown ?? undefined}
+      aria-valuemin={TALK_MIN}
+      aria-valuemax={TALK_MAX}
+      title={t("live.conversation.resizeHint")}
+      tabIndex={0}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={end}
+      onPointerCancel={end}
+      onDoubleClick={() => save(null)}
+      onKeyDown={onKeyDown}
+    />
+  );
+}
+
+/** The docked conversation's width on screen now. */
+const talkWidth = (work: HTMLElement) =>
+  Math.round(work.querySelector<HTMLElement>(":scope > .lf-talk")?.getBoundingClientRect().width ?? TALK_MIN);
+
+/** Sets the conversation's width on the work area (`--lf-talk-w`: the panel's width and the room kept for it). */
+function showTalkWidth(work: HTMLElement, width: number | null) {
+  if (width === null) work.style.removeProperty("--lf-talk-w");
+  else work.style.setProperty("--lf-talk-w", `${width}px`);
+}
+
+/** A stored width, or null for none (or one that isn't a width). */
+function readWidth(value: string | null): number | null {
+  const width = value === null ? Number.NaN : Number(value);
+  return Number.isFinite(width) && width > 0 ? Math.round(width) : null;
 }
 
 /**

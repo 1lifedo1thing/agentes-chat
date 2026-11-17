@@ -12,6 +12,7 @@ export {
   LIVE_ASSET_MB,
   type LiveAsset,
   type LiveAssetFile,
+  type LiveAssetOrigin,
   listAssets,
   type PictureFile,
   putAsset,
@@ -108,6 +109,13 @@ export {
   writeLiveExport,
 } from "./office";
 export {
+  bringMadePicture,
+  type MadePicture,
+  PICTURE_CHOICE,
+  PICTURE_LIMITS,
+  pictureProblem,
+} from "./pictures";
+export {
   documentFromMarkdown,
   kindOfDoc,
   LIVE_SNAPSHOT_TYPE,
@@ -123,9 +131,20 @@ export {
 } from "./preview";
 export { type LiveChangeActor, loadHeadDoc, loadHeadState, type StoredChange } from "./store";
 export {
+  type CleanSvg,
+  looksLikeSvg,
+  rasterPicture,
+  SVG_LIMITS,
+  SVG_TYPE,
+  type SvgRasterizer,
+  sanitizeSvg,
+  setSvgRasterizer,
+} from "./svg";
+export {
   carriesLiveFile,
   createLiveFileToolSource,
   LIVE_ACTIVITY,
   LIVE_TOOL_LIMITS,
   type LiveFileToolDeps,
 } from "./tools";
+export { fetchWebPicture, WEB_PICTURE_LIMITS, type WebPicture, type WebPictureDeps } from "./web-pictures";

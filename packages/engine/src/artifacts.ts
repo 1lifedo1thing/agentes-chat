@@ -3187,6 +3187,7 @@ async function copyLiveAssets(deps: ArtifactDeps, orgId: string, fromId: string,
       width: r.width,
       height: r.height,
       source: "copied",
+      origin: r.origin,
       createdByType: r.createdByType,
       createdById: r.createdById,
       runId: r.runId,
@@ -3424,6 +3425,20 @@ export async function touchLiveArtifact(
     await publishChannelEvent(deps.pubsub, { type: "artifact.updated", channelId: row.channelId, artifact });
   }
   if (row.inDrive) await publishListChanged(deps.pubsub, orgId, "artifacts");
+}
+
+/**
+ * A live file's preview was drawn again (ADR 0194 §7): the conversation it lives in hears `artifact.updated`, so the
+ * cards there read the file again and draw what it holds now. Its "last edited" stays `touchLiveArtifact`'s.
+ */
+export async function announceLivePreview(deps: ArtifactDeps, orgId: string, fileId: string) {
+  const row = await loadArtifact(deps.db, orgId, fileId);
+  if (!row?.channelId) return;
+  await publishChannelEvent(deps.pubsub, {
+    type: "artifact.updated",
+    channelId: row.channelId,
+    artifact: view(row, editableKind(row.kind)),
+  });
 }
 
 /** What a live file keeps on this server's storage besides its versions: its pictures there and its document. */

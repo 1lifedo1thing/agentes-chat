@@ -533,7 +533,7 @@ describe("covers and the meta line", () => {
       audience: { kind: "workspace" },
       content: { kind: "document", markdown: "", preview: { ...preview, source: { name: "Campanha.docx" } } },
     };
-    await renderPage(<LiveMeta artifact={artifact} onVersions={() => {}} onShare={() => {}} />, { api, org: true });
+    await renderPage(<LiveMeta artifact={artifact} onVersions={() => {}} />, { api, org: true });
     await settle(2);
     expect(document.querySelector(".lf-meta")?.textContent).toContain("João importou de Campanha.docx");
   });

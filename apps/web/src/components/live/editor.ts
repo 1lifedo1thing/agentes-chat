@@ -46,11 +46,10 @@ export interface LiveEditorProps {
    */
   reveal?: LiveReveal | null;
   /**
-   * The page's versions and sharing, for an editor that draws the file's meta line itself (a document's page, Wiki
-   * style, ADR 0198): "edited now" opens the versions, the audience chip the sharing.
+   * The page's versions, for an editor that draws the file's meta line itself (a document's page, Wiki style, ADR
+   * 0198): "edited now" opens them. Sharing is the header's "Share" alone.
    */
   onVersions?(): void;
-  onShare?(): void;
 }
 
 /** The page's address parameters an editor reads and writes. */

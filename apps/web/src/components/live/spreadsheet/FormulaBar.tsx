@@ -4,8 +4,9 @@ import { useTranslation } from "react-i18next";
 import { type ColoredSpan, FormulaInput } from "./FormulaInput";
 
 /**
- * The formula bar (ADR 0194): the name box with the selection's address (type one and Enter to go there), the fx mark,
- * and the active cell's content as typed, in the person's language, editable here as in the cell.
+ * The formula bar (ADR 0194), on one line with no boxes: the selection's address as quiet text (a click turns it into
+ * its field: type a cell or a range and Enter goes there, Esc comes back), a hairline, the fx mark, and the active
+ * cell's content as typed, in the person's language, editable here as in the cell; a formula in the code face.
  */
 export interface FormulaBarProps {
   /** "B4", "B2:E9". */
@@ -35,7 +36,7 @@ export function FormulaBar(props: FormulaBarProps) {
   return (
     <div className="sheet-bar">
       <input
-        className="ac-input sheet-bar__name"
+        className="sheet-bar__name"
         aria-label={t("live.sheet.nameBox")}
         title={t("live.sheet.nameBox")}
         aria-invalid={wrong || undefined}
@@ -70,8 +71,9 @@ export function FormulaBar(props: FormulaBarProps) {
           }
         }}
       />
+      <span className="sheet-bar__sep" aria-hidden="true" />
       <span className="sheet-bar__fx" title={t("live.sheet.fx")}>
-        <Icon name="formula" size={20} label={t("live.sheet.fx")} />
+        <Icon name="formula" size={18} label={t("live.sheet.fx")} />
       </span>
       <div ref={props.boxRef} className="sheet-bar__field">
         <FormulaInput

@@ -2367,8 +2367,9 @@ async function executeRunInner(
         followUp: tools.some((t) => t.name === FOLLOW_UP_TOOL),
         work: workApplies && tools.some((t) => t.name === WORK_IN_BACKGROUND_TOOL),
         blocks: tools.some((t) => t.name === SHOW_BLOCK_TOOL),
-        // Granted is enough: on demand their group is one `use_tool` away (ADR 0194 §6).
-        ...(granted.some((t) => LIVE_FILE_TOOLS.has(t.name) && !t.connectionId)
+        // Granted is enough: on demand their group is one `use_tool` away (ADR 0194 §6). `image_search` is every
+        // agent's (no scope), so it says nothing about the Drive's.
+        ...(granted.some((t) => LIVE_FILE_TOOLS.has(t.name) && t.name !== "image_search" && !t.connectionId)
           ? { liveFiles: { images: granted.some((t) => t.name === "generate_image" && !t.connectionId) } }
           : {}),
         ...(deps.blockSpec ? { blockSpec: deps.blockSpec } : {}),

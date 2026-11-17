@@ -437,6 +437,8 @@ export const LIVE_FILE_TOOLS: ReadonlySet<string> = new Set([
   "read_document",
   "edit_document",
   "generate_image",
+  // Pictures from the web to put in a live file (ADR 0194 §8): no scope, like the web's other tools.
+  "image_search",
 ]);
 export const LIVE_FILES_GROUP = "files";
 
@@ -457,7 +459,7 @@ const GROUP_LABELS: Record<string, string> = {
   drive: "Files (Drive)",
   [DASHBOARD_GROUP]: "Dashboards and widgets (numbers and charts kept up to date, boards to share)",
   [LIVE_FILES_GROUP]:
-    "Spreadsheets, presentations (slides) and canvases made, read and edited live with people; images generated onto a canvas",
+    "Spreadsheets, presentations (slides), canvases and documents made, read and edited live with people; pictures in them: SVGs drawn, pictures found on the web, images generated",
   issues: "Issues",
   calendar: "Calendar",
   schedule: "Schedule, reminders and routines",

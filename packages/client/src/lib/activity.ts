@@ -261,6 +261,7 @@ const BUILTIN: Record<string, ActivityKind> = {
   cancel_follow_up: "cancelingFollowUp",
   web_search: "searchingWeb",
   web_fetch: "readingWeb",
+  image_search: "searchingWeb",
   read_conversation: "readingConversation",
   // A card of ours in the conversation: the card itself says what it holds.
   show_block: "preparingCard",

@@ -29,7 +29,13 @@ import {
 } from "@agenteschat/live/protocol";
 import * as decoding from "lib0/decoding";
 import * as Y from "yjs";
-import { type ArtifactAuthor, type ArtifactDeps, adoptMarkdownDocument, liveSnapshotOf } from "../artifacts";
+import {
+  type ArtifactAuthor,
+  type ArtifactDeps,
+  adoptMarkdownDocument,
+  announceLivePreview,
+  liveSnapshotOf,
+} from "../artifacts";
 import { recordAudit } from "../audit";
 import { NotFoundError, ValidationError } from "../errors";
 import { assertStorageRoom } from "../limits";
@@ -38,7 +44,7 @@ import { DocPresence, type PresencePeer } from "./awareness";
 import { agentCheckpointDue, restoredNote, writeCheckpoint } from "./checkpoints";
 import { armIdleCheckpoint, checkpointWindow, compactLiveDoc, enqueueCompaction, LIVE_COMPACTION } from "./jobs";
 import { createPresenceBoard, PRESENCE_BOARD_TIMING, type PresenceBoardTiming, unref } from "./presence";
-import { overLimit, replaceLiveDoc } from "./preview";
+import { liveContentOf, overLimit, replaceLiveDoc } from "./preview";
 import {
   type Appended,
   appendChanges,
@@ -105,6 +111,8 @@ export interface LiveTiming {
   maxPendingBytes: number;
   /** A document's exact size is measured at most this often (when its estimate passes `docBytes`). */
   measureMs: number;
+  /** The cards' preview is drawn again from a held document this long after its changes (at most once per span). */
+  previewMs: number;
   /** Stopping, a store the database just refused is tried once more within this long, then given up loudly. */
   stopRetryMs: number;
   board: Partial<PresenceBoardTiming>;
@@ -123,6 +131,7 @@ export const LIVE_TIMING: LiveTiming = {
   retryMs: [200, 1000, 3000, 10_000],
   maxPendingBytes: 16 * 1024 * 1024,
   measureMs: 10_000,
+  previewMs: 2500,
   stopRetryMs: 2000,
   board: PRESENCE_BOARD_TIMING,
 };
@@ -271,6 +280,12 @@ interface Hosted {
   measuredAt: number;
   /** The limit it is past, or null. */
   over: string | null;
+  /** The cards' preview drawn again soon (`schedulePreview`). */
+  previewTimer: ReturnType<typeof setTimeout> | null;
+  /** The preview stored now (`previewKey`: its last write, or the row's when loaded): an unchanged one isn't written. */
+  previewJson: string | null;
+  /** Previews are drawn one at a time, in order: an older one never lands over a newer one. */
+  previewing: Promise<unknown>;
   relayDue: Set<number>;
   relayTimer: ReturnType<typeof setTimeout> | null;
   answeredAt: number;
@@ -381,6 +396,20 @@ function editRefusal(error: unknown): unknown {
 }
 
 const actorKey = (a: LiveChangeActor) => `${a.type}:${a.id ?? ""}:${a.runId ?? ""}`;
+
+/**
+ * A preview as text with its keys in order, so the one drawn here and the one read back from the database (whose
+ * JSON keeps its keys in its own order) compare equal when they say the same.
+ */
+function previewKey(value: unknown): string {
+  return JSON.stringify(value, (_key, v: unknown) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(
+          Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+        )
+      : v,
+  );
+}
 
 export function createLiveDocs(deps: LiveDeps): LiveDocs {
   const { db, pubsub, replicaId, log } = deps;
@@ -542,6 +571,9 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
         bytes: stored.row.stateBytes + stored.changes.reduce((n, c) => n + c.bytes, 0),
         measuredAt: 0,
         over: null,
+        previewTimer: null,
+        previewJson: stored.row.preview ? previewKey(stored.row.preview) : null,
+        previewing: Promise.resolve(),
         relayDue: new Set(),
         relayTimer: null,
         answeredAt: 0,
@@ -637,7 +669,8 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
     if (h.linger) clearTimeout(h.linger);
     if (h.flushTimer) clearTimeout(h.flushTimer);
     if (h.relayTimer) clearTimeout(h.relayTimer);
-    h.linger = h.flushTimer = h.relayTimer = null;
+    if (h.previewTimer) clearTimeout(h.previewTimer);
+    h.linger = h.flushTimer = h.relayTimer = h.previewTimer = null;
     for (const timer of h.timers) clearInterval(timer);
     h.timers = [];
     for (const off of h.off) off();
@@ -940,6 +973,37 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
       const fits = inline !== null && JSON.stringify(inline).length < INLINE_BYTES;
       void pubsub.publish(liveTopic(h.fileId), fits ? inline : event).catch(() => {});
     }
+    if (appended.seqs.length > 0) schedulePreview(h);
+  }
+
+  /**
+   * The cards' preview (ADR 0194 §7), drawn again from the document held here `previewMs` after changes were stored:
+   * the Drive's and the chat's covers of a canvas, a sheet or a presentation show what an agent or a person just put
+   * in it, not what it held at its last compaction (which waits for 200 changes, or a minute after the last person
+   * leaves). Once per span per document, written only when it changed, then the file's conversation is told
+   * (`announceLivePreview`) so its cards read the file again. A document's cover reads its head each time already.
+   */
+  function schedulePreview(h: Hosted) {
+    if (h.kind === "document" || h.previewTimer || h.dead || stopped) return;
+    h.previewTimer = setTimeout(() => {
+      h.previewTimer = null;
+      const run = h.previewing
+        .then(() => refreshPreview(h))
+        .catch((error: unknown) => log.warn("live preview not refreshed", { fileId: h.fileId, error: String(error) }));
+      h.previewing = run;
+      inBackground(run);
+    }, timing.previewMs);
+    unref(h.previewTimer);
+  }
+
+  async function refreshPreview(h: Hosted) {
+    if (h.dead) return;
+    const preview = liveContentOf(h.doc, h.kind).preview as unknown as Record<string, unknown>;
+    const json = previewKey(preview);
+    if (json === h.previewJson) return;
+    await db.update(schema.liveDocs).set({ preview }).where(eq(schema.liveDocs.artifactId, h.fileId));
+    h.previewJson = json;
+    await announceLivePreview(deps, h.orgId, h.fileId);
   }
 
   /** In the changes' transaction: the quiet-spell version (once a window) and a compaction once enough waits. */

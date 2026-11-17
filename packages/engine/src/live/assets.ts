@@ -13,17 +13,26 @@ import { UUID } from "../authority";
 import { sniffModelImage } from "../avatars";
 import { NotFoundError, ValidationError } from "../errors";
 import { imageSize } from "../image-size";
+import { looksLikeSvg, SVG_TYPE, sanitizeSvg } from "./svg";
 
 /**
  * Pictures that belong to a live file (ADR 0194 §8): on a canvas or a slide, dropped by a person, made by the image
- * job, copied from the Drive or from another live file. Each is stored through the workspace's storage like a
- * version's bytes (`writeLiveAssetBlob`: counted in its storage, refused past its limits), served only to whoever
- * reads the file and purged with it. Only pictures, told by their bytes, never by the type a client declared.
+ * job, copied from the Drive or from another live file, drawn by an agent as an SVG or downloaded from the web. Each
+ * is stored through the workspace's storage like a version's bytes (`writeLiveAssetBlob`: counted in its storage,
+ * refused past its limits), served only to whoever reads the file and purged with it. Only pictures, told by their
+ * bytes, never by the type a client declared; an SVG is stored as the sanitizer rebuilt it (`svg.ts`), never as sent.
  */
 
 const { liveAssets } = schema;
 
-export type AssetSource = "upload" | "generated" | "copied" | "imported";
+/** `drawn`: an SVG an agent wrote; `web`: downloaded from a public address (`origin` says which). */
+export type AssetSource = "upload" | "generated" | "copied" | "imported" | "drawn" | "web";
+
+/** Where a picture from the web came from: its address, and the credit an agent gave it (author, license, site). */
+export interface LiveAssetOrigin {
+  url: string;
+  credit?: string;
+}
 
 /** A picture as the apps and tools see it. */
 export interface LiveAsset {
@@ -32,6 +41,8 @@ export interface LiveAsset {
   size: number;
   width: number | null;
   height: number | null;
+  /** A picture from the web: where it came from. */
+  origin?: LiveAssetOrigin | null;
 }
 
 /** The largest picture a live file takes. */
@@ -46,6 +57,7 @@ const viewOf = (row: typeof liveAssets.$inferSelect): LiveAsset => ({
   size: row.size,
   width: row.width,
   height: row.height,
+  origin: row.origin ?? null,
 });
 
 const actorRef = (actor: ArtifactActor) =>
@@ -62,7 +74,13 @@ export async function putAsset(
   actor: ArtifactActor,
   orgId: string,
   fileId: string,
-  input: { bytes: Uint8Array; contentType: string; source: AssetSource; runId?: string | null },
+  input: {
+    bytes: Uint8Array;
+    contentType: string;
+    source: AssetSource;
+    runId?: string | null;
+    origin?: LiveAssetOrigin | null;
+  },
 ): Promise<LiveAsset> {
   await requireLiveFile(deps, actor, orgId, fileId, { write: true });
   return storeAsset(deps, actor, orgId, fileId, input);
@@ -74,18 +92,26 @@ async function storeAsset(
   actor: ArtifactActor,
   orgId: string,
   fileId: string,
-  input: { bytes: Uint8Array; source: AssetSource; runId?: string | null },
+  input: { bytes: Uint8Array; source: AssetSource; runId?: string | null; origin?: LiveAssetOrigin | null },
 ): Promise<LiveAsset> {
-  const { bytes } = input;
+  let { bytes } = input;
   if (bytes.byteLength > LIVE_ASSET_BYTES) {
     throw new ValidationError(`The picture is too large (max ${LIVE_ASSET_MB} MB)`, "live.asset_too_large", {
       max: LIVE_ASSET_MB,
     });
   }
   // Told by its bytes (PNG, JPEG, WebP or GIF), never by what the client said: nothing else is ever served from here.
-  const contentType = sniffModelImage(bytes);
+  // An SVG is rebuilt by the sanitizer and stored as it came out, with the natural size it wrote.
+  let contentType: string | null = sniffModelImage(bytes);
+  let size = contentType ? imageSize(bytes) : null;
+  if (!contentType && looksLikeSvg(bytes)) {
+    const clean = sanitizeSvg(bytes);
+    bytes = clean.bytes;
+    contentType = SVG_TYPE;
+    size = { width: clean.width, height: clean.height };
+  }
   if (!contentType) {
-    throw new ValidationError("Only pictures go in a live file: PNG, JPEG, WebP or GIF", "live.asset_type");
+    throw new ValidationError("Only pictures go in a live file: PNG, JPEG, WebP, GIF or SVG", "live.asset_type");
   }
   const sha256 = sha256Hex(bytes);
   const [same] = await deps.db
@@ -97,7 +123,7 @@ async function storeAsset(
   if (same) return viewOf(same);
   const id = Bun.randomUUIDv7();
   const blob = await writeLiveAssetBlob(deps, orgId, fileId, id, bytes, contentType);
-  const size = imageSize(bytes);
+  const origin = input.origin ? cleanOrigin(input.origin) : null;
   const by = actorRef(actor);
   const asked = input.runId ?? (by.type === "agent" ? by.runId : null);
   const runId = asked && UUID.test(asked) ? asked : null;
@@ -117,6 +143,7 @@ async function storeAsset(
           width: size?.width ?? null,
           height: size?.height ?? null,
           source: input.source,
+          origin,
           createdByType: by.type,
           createdById: by.id,
           runId,
@@ -127,7 +154,13 @@ async function storeAsset(
         actor: { type: by.type, id: by.id },
         action: "artifact.asset_added",
         target: { type: "artifact", id: fileId },
-        details: { asset: id, source: input.source, contentType, size: bytes.byteLength },
+        details: {
+          asset: id,
+          source: input.source,
+          contentType,
+          size: bytes.byteLength,
+          ...(origin ? { url: origin.url } : {}),
+        },
         runId,
       });
       return rows;
@@ -140,6 +173,12 @@ async function storeAsset(
     await store?.delete(blob.key).catch(() => undefined);
     throw error;
   }
+}
+
+/** An origin as stored: an https address and a short credit, both cut to a sane length. */
+function cleanOrigin(origin: LiveAssetOrigin): LiveAssetOrigin {
+  const credit = origin.credit?.replace(/\s+/g, " ").trim().slice(0, 300);
+  return { url: origin.url.slice(0, 2048), ...(credit ? { credit } : {}) };
 }
 
 /**
@@ -158,7 +197,7 @@ export async function copyAssetFrom(
     const source = await readAsset(deps, actor, orgId, from.fileId, from.assetId);
     if (!source) throw new NotFoundError("Picture not found", "artifact.not_found");
     if (from.fileId === fileId) return viewOf(source.row);
-    return storeAsset(deps, actor, orgId, fileId, { bytes: source.bytes, source: "copied" });
+    return storeAsset(deps, actor, orgId, fileId, { bytes: source.bytes, source: "copied", origin: source.row.origin });
   }
   const file = await storedFileOfArtifact(deps, actor, orgId, from.artifactId, from.version);
   if (file.size > LIVE_ASSET_BYTES) {

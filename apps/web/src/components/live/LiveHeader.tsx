@@ -1,23 +1,11 @@
 import type { Artifact, LiveKind } from "@agenteschat/client";
 import { useDuplicateLiveFile, useRenameLiveFile } from "@agenteschat/client";
 import { KIND_ICON } from "@agenteschat/client/lib/artifacts";
-import { artifactPlace, isPrivateArtifact } from "@agenteschat/client/lib/drive";
+import { artifactPlace } from "@agenteschat/client/lib/drive";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { joinNames, relativeTime, whenAt } from "@agenteschat/client/lib/format";
-import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import type { Peer } from "@agenteschat/live/awareness";
-import {
-  Button,
-  cx,
-  Icon,
-  type IconName,
-  Menu,
-  MenuItem,
-  MenuSeparator,
-  MenuSub,
-  Skeleton,
-  useDelayed,
-} from "@agenteschat/ui";
+import { Button, cx, Icon, Menu, MenuItem, MenuSeparator, MenuSub, Skeleton, useDelayed } from "@agenteschat/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -163,11 +151,22 @@ export function LiveHeader({
                   {t("share.button")}
                 </Button>
               )}
-              {kind === "slides" && (
-                <Button size="sm" variant="primary" icon="present" onClick={onPresent}>
-                  {t("live.shell.present")}
-                </Button>
-              )}
+              {kind === "slides" &&
+                (compact ? (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    iconOnly
+                    icon="present"
+                    aria-label={t("live.shell.present")}
+                    title={t("live.shell.present")}
+                    onClick={onPresent}
+                  />
+                ) : (
+                  <Button size="sm" variant="primary" icon="present" onClick={onPresent}>
+                    {t("live.shell.present")}
+                  </Button>
+                ))}
               <Menu
                 align="end"
                 label={t("live.shell.more")}
@@ -253,7 +252,7 @@ export function LiveHeader({
               <Skeleton width={240} height={26} />
             )}
           </div>
-          {artifact ? <LiveMeta artifact={artifact} onVersions={onVersions} onShare={onShare} /> : null}
+          {artifact ? <LiveMeta artifact={artifact} onVersions={onVersions} /> : null}
         </>
       )}
     </header>
@@ -292,11 +291,14 @@ function LiveCrumbs({ artifact }: { artifact: Artifact | null }) {
               to={place.to as never}
               params={{ orgId: org.id, ...("params" in place ? place.params : {}) } as never}
               className="lf-crumbs__folder"
+              title={folder}
             >
               {folder}
             </Link>
           ) : (
-            <span className="lf-crumbs__folder">{folder}</span>
+            <span className="lf-crumbs__folder" title={folder}>
+              {folder}
+            </span>
           )}
         </>
       )}
@@ -306,21 +308,12 @@ function LiveCrumbs({ artifact }: { artifact: Artifact | null }) {
 
 /**
  * The line under the title (the Wiki's `wiki-meta`): who made it and where ("Atlas criou a partir da conversa com
- * Ana"), "editado agora" (the versions) and who sees it ("Todo o workspace", the sharing). A document's page shows it
- * under its own title.
+ * Ana") and "editado agora" (the versions). Who sees it is the header's "Share" alone, one way to the sharing. A
+ * document's page shows it under its own title.
  */
-export function LiveMeta({
-  artifact,
-  onVersions,
-  onShare,
-}: {
-  artifact: Artifact;
-  onVersions: () => void;
-  onShare: () => void;
-}) {
+export function LiveMeta({ artifact, onVersions }: { artifact: Artifact; onVersions: () => void }) {
   const { t, i18n } = useTranslation();
   const made = useMadeFrom(artifact);
-  const audience = useAudienceChip(artifact);
   return (
     <div className="wiki-meta lf-meta">
       {made && (
@@ -342,46 +335,8 @@ export function LiveMeta({
       >
         {t("live.shell.meta.edited", { when: relativeTime(t, i18n.language, artifact.updatedAt) })}
       </button>
-      {artifact.inDrive !== false && (
-        <>
-          <span className="wiki-meta__dot" aria-hidden="true" />
-          <button
-            type="button"
-            className="wiki-chip wiki-chip--line"
-            data-limited={audience.limited || undefined}
-            aria-label={t("live.shell.meta.audience", { who: audience.label })}
-            title={t("live.shell.meta.audienceHint")}
-            onClick={onShare}
-          >
-            <Icon name={audience.icon} size={14} />
-            {audience.label}
-          </button>
-        </>
-      )}
     </div>
   );
-}
-
-/** Who sees the file, in the chip's words: the whole workspace, the people chosen, or only its conversation. */
-function useAudienceChip(artifact: Artifact): { label: string; icon: IconName; limited: boolean } {
-  const { t } = useTranslation();
-  const { org } = useOrg();
-  const dir = useDirectory(org.id);
-  const sharing = artifact.sharing?.mode ?? "conversation";
-  if (!isPrivateArtifact(artifact)) {
-    return {
-      label: isPersonal(org) ? t("live.shell.meta.everyonePersonal") : t("live.shell.meta.everyone"),
-      icon: "audienceEveryone",
-      limited: false,
-    };
-  }
-  if (sharing === "people") return { label: t("live.shell.meta.people"), icon: "personAdd", limited: true };
-  const aud = artifact.audience;
-  if (aud.kind === "channel")
-    return { label: t("live.shell.meta.channel", { name: aud.name }), icon: "lock", limited: true };
-  if (aud.kind === "dm" && aud.with)
-    return { label: t("live.shell.meta.dm", { name: dir.authorName(aud.with) }), icon: "lock", limited: true };
-  return { label: t("live.shell.meta.conversation"), icon: "lock", limited: true };
 }
 
 /** "Salvo" / "Salvando…" / offline / read-only, in quiet words before the faces (the Wiki's status). */
@@ -402,9 +357,9 @@ function useStatusWords(
 }
 
 /**
- * The title (26/650, a task's), renamed where it is: it reads as the page's title and turns into its field on a click
- * or Tab, wrapping as the title does; Enter or leaving it renames, Esc puts it back. A new file opens with it
- * selected, ready to be named.
+ * The title (26/650, a task's), renamed where it is: it reads as the page's title on one line (an ellipsis when it's
+ * longer than the page) and turns into its field on a click or Tab, wrapping as it is written; Enter or leaving it
+ * renames, Esc puts it back. A new file opens with it selected, ready to be named.
  */
 function TitleField({
   fileId,
@@ -434,7 +389,11 @@ function TitleField({
     return () => clearTimeout(id);
   }, [canRename, fileId]);
   if (!canRename) {
-    return <h1 className="lf-title lf-title--still">{value}</h1>;
+    return (
+      <h1 className="lf-title lf-title--still" title={value}>
+        {value}
+      </h1>
+    );
   }
   const commit = () => {
     const next = draft.replace(/\s+/g, " ").trim();
@@ -443,7 +402,7 @@ function TitleField({
     else setDraft(value);
   };
   return (
-    <h1 className="lf-title">
+    <h1 className={cx("lf-title", editing && "is-editing")} title={editing ? undefined : value}>
       <span className="lf-title__mirror" aria-hidden="true">
         {`${draft || " "} `}
       </span>

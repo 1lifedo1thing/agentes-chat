@@ -6,7 +6,13 @@ import * as cv from "@agenteschat/live/canvas";
 import { type RichDoc, richToMarkdown } from "@agenteschat/live/rich";
 import * as sl from "@agenteschat/live/slides";
 import * as ss from "@agenteschat/live/spreadsheet";
-import { IMAGE_ASPECTS, type ImageAspect, MAX_IMAGE_PROMPT_CHARS, MAX_IMAGE_REFERENCES } from "@agenteschat/providers";
+import {
+  IMAGE_ASPECTS,
+  type ImageAspect,
+  MAX_IMAGE_PROMPT_CHARS,
+  MAX_IMAGE_REFERENCES,
+  type ToolImage,
+} from "@agenteschat/providers";
 import * as Y from "yjs";
 import { fileLanded, SHARED_DRIVE_INPUT } from "../artifact-tools";
 import {
@@ -33,6 +39,17 @@ import { createLiveFile } from "./create";
 import type { LiveDocs } from "./docs";
 import { documentTools } from "./document-tools";
 import type { ImageFailure, LiveImages } from "./images";
+import {
+  bringMadePicture,
+  madePictureKey,
+  PICTURE_CHOICE,
+  PICTURE_INPUTS,
+  PICTURE_OP_WORDS,
+  pictureProblem,
+  picturesProblem,
+  picturesToShow,
+} from "./pictures";
+import type { WebPictureDeps } from "./web-pictures";
 
 /**
  * Agents' tools for live files (ADR 0194 §6) and their pictures (ADR 0195): agents are participants. Each tool reads
@@ -50,6 +67,8 @@ export interface LiveFileToolDeps {
   live: LiveDocs;
   /** Pictures (`generate_image`); absent: the tool isn't offered. */
   images?: LiveImages;
+  /** How pictures from the web are downloaded (`url` on an op that places a picture); tests give their own. */
+  web?: WebPictureDeps;
 }
 
 /** What a read gives at most per call (the gateway cuts a result at 50,000 characters). */
@@ -891,6 +910,7 @@ const SLIDE_OP_SCHEMA: JsonSchema = {
     role: { enum: sl.SLIDE_ROLES },
     image: { type: "string", maxLength: 64 },
     from_file: ID_TEXT,
+    ...PICTURE_INPUTS,
     chart: CHART_INPUT,
     rows: TABLE_ROWS,
     header: { type: "boolean" },
@@ -908,7 +928,7 @@ function slideOpProblem(op: Json): string | null {
   };
   switch (name) {
     case "add_slide":
-      return null;
+      return op.image || op.svg || op.url ? pictureProblem(op) : null;
     case "duplicate_slide":
     case "delete_slide":
       return needs("slide");
@@ -923,7 +943,7 @@ function slideOpProblem(op: Json): string | null {
     case "set_theme":
       return needs("theme");
     case "add_image":
-      return needs("slide", "image");
+      return needs("slide") ?? pictureProblem(op);
     case "add_chart": {
       const missing = needs("slide", "chart");
       if (missing) return missing;
@@ -953,7 +973,7 @@ function opsProblem(ops: unknown, check: (op: Json) => string | null): string | 
     const problem = check(op);
     if (problem) return `ops[${i}] (${String(op.op)}): ${problem}`;
   }
-  return null;
+  return picturesProblem(ops as Json[]);
 }
 
 /** A box an agent sends, in slide or canvas units; undefined when not given. */
@@ -980,13 +1000,35 @@ function slideOf(doc: Y.Doc, ref: unknown, refs: Map<string, string>): string {
   throw new ValidationError(`There is no slide "${named(str(ref), 40)}": name a slide by its number or id`);
 }
 
-/** The image a call names: an asset of this file, or one copied in first (`imageAssets`). */
-type AssetsByRef = Map<string, LiveAsset>;
-const imageKey = (op: Json) => `${str(op.from_file)}|${str(op.image)}`;
+/**
+ * The image a call names: an asset of this file, or one brought in first (`imageAssets`), with the alt text it
+ * suggests (an SVG's own title).
+ */
+type AssetsByRef = Map<string, LiveAsset & { title?: string | null }>;
+const imageKey = (op: Json) => madePictureKey(op) ?? `${str(op.from_file)}|${str(op.image)}`;
+/** The alt text a placed picture gets: the op's, else what the picture suggests. */
+const altOf = (op: Json, asset: { title?: string | null }) => str(op.alt).trim() || asset.title || undefined;
+
+/** What `image` names on a canvas or a slide. */
+const FILE_IMAGE_WORDS = "`image`: a picture's Drive file id, or an image's asset id from the live file `from_file`.";
+
+/** What a batch brought in besides the file's own pictures: what to tell the agent, and what it may look at. */
+interface Brought {
+  notes: string[];
+  looks: (ToolImage | null)[];
+}
+
+/** The tool's answer about the pictures it drew or downloaded, and those it shows the model. */
+const broughtText = (brought: Brought) => (brought.notes.length > 0 ? ` Pictures: ${brought.notes.join("; ")}.` : "");
+const broughtImages = (brought: Brought) => {
+  const images = picturesToShow(brought.looks);
+  return images.length > 0 ? { images } : {};
+};
 
 /**
- * The pictures a batch puts in the file, copied in before it runs: a Drive file's picture, or another live file's
- * picture (`from_file`), each under the agent's own check that it reads where it comes from. An asset the file has
+ * The pictures a batch puts in the file, brought in before it runs: a Drive file's picture, or another live file's
+ * picture (`from_file`), each under the agent's own check that it reads where it comes from; an SVG the agent wrote
+ * (`svg`) or a picture from the web (`url`), stored as assets of the file (`pictures.ts`). An asset the file has
  * already is itself.
  */
 async function imageAssets(
@@ -995,9 +1037,22 @@ async function imageAssets(
   fileId: string,
   ops: Json[],
   adds: readonly string[],
+  brought: Brought = { notes: [], looks: [] },
 ) {
   const out: AssetsByRef = new Map();
-  const wanted = ops.filter((op) => adds.includes(str(op.op)) && op.image);
+  for (const [index, op] of ops.entries()) {
+    const key = adds.includes(str(op.op)) ? madePictureKey(op) : null;
+    if (!key || out.has(key)) continue;
+    const made = await bringMadePicture({ artifacts: deps.artifacts, web: deps.web }, ctx, fileId, op).catch(
+      (error: unknown) => {
+        throw new OpError(index, str(op.op), error);
+      },
+    );
+    out.set(key, { ...made.asset, title: made.alt });
+    brought.notes.push(made.note);
+    brought.looks.push(made.look);
+  }
+  const wanted = ops.filter((op) => adds.includes(str(op.op)) && op.image && !madePictureKey(op));
   if (wanted.length === 0) return out;
   const ids = wanted.map((op) => str(op.image)).filter((id) => /^[0-9a-f-]{36}$/i.test(id));
   const own =
@@ -1085,7 +1140,7 @@ async function applySlideOps(doc: Y.Doc, ops: Json[], batch: SlideBatch) {
       };
       switch (name) {
         case "add_slide": {
-          const asset = op.image ? batch.assets.get(imageKey(op)) : undefined;
+          const asset = op.image || op.svg || op.url ? batch.assets.get(imageKey(op)) : undefined;
           const id = sl.addSlide(
             doc,
             {
@@ -1161,15 +1216,16 @@ async function applySlideOps(doc: Y.Doc, ops: Json[], batch: SlideBatch) {
           if (!asset) throw new ValidationError("That picture wasn't brought in");
           const box = boxOf(op.box);
           const empty = box ? undefined : emptyPicture(doc, slide);
+          const alt = altOf(op, asset);
           let element: string;
           if (empty) {
-            sl.updateElement(doc, slide, empty.id, { asset: asset.id }, origin);
+            sl.updateElement(doc, slide, empty.id, { asset: asset.id, ...(alt ? { alt } : {}) }, origin);
             element = empty.id;
           } else {
             element = sl.addElement(
               doc,
               slide,
-              { type: "image", asset: asset.id, fit: "contain", ...(box ? { box } : {}) },
+              { type: "image", asset: asset.id, fit: "contain", ...(alt ? { alt } : {}), ...(box ? { box } : {}) },
               origin,
             );
           }
@@ -1341,6 +1397,7 @@ const CANVAS_OP_SCHEMA: JsonSchema = {
     label: { type: "string", maxLength: 500 },
     image: { type: "string", maxLength: 64 },
     from_file: ID_TEXT,
+    ...PICTURE_INPUTS,
     page: ID_TEXT,
     file: ID_TEXT,
     x: { type: "number" },
@@ -1391,7 +1448,7 @@ function canvasOpProblem(op: Json): string | null {
     case "add_frame":
       return name === "add_frame" ? needs("name") : null;
     case "add_image":
-      return needs("image");
+      return pictureProblem(op);
     case "add_page":
       return needs("page");
     case "add_file":
@@ -1548,11 +1605,13 @@ async function applyCanvasOps(doc: Y.Doc, ops: Json[], batch: CanvasBatch) {
         case "add_image": {
           const asset = batch.assets.get(imageKey(op));
           if (!asset) throw new ValidationError("That picture wasn't brought in");
+          const alt = altOf(op, asset);
           await add(
             {
               type: "image",
               asset: asset.id,
               ...(asset.width && asset.height ? { nw: asset.width, nh: asset.height } : {}),
+              ...(alt ? { alt } : {}),
               ...place(),
             },
             "a picture",
@@ -2271,10 +2330,11 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
     name: "edit_presentation",
     description: [
       `Change a live presentation in one batch while people in it watch (at most ${LIVE_TOOL_LIMITS.ops} ops). \`slide\` is a number (1 is the first) or a slide's id; give an op \`ref\` to name what it adds for later ops of the batch. Ops:`,
-      "- add_slide {at?, layout?, title?, body?, notes?, image?}; duplicate_slide / delete_slide {slide}; move_slide {slide, to}.",
+      "- add_slide {at?, layout?, title?, body?, notes?, image? | svg? | url?}; duplicate_slide / delete_slide {slide}; move_slide {slide, to}.",
       "- set_text {slide, element (its id) or role (title, subtitle, body, body2, caption, number, quote), text in light Markdown}; set_notes {slide, text}; set_layout {slide, layout}; set_theme {theme}.",
-      "- add_image {slide, image, from_file?, box?}: a picture's Drive file id, or an image's asset id from the live file `from_file` (a canvas); it fills the slide's empty picture placeholder when it has one.",
+      `- add_image {slide, image | svg | url, alt?, box?}: a picture; it fills the slide's empty picture placeholder when it has one. ${FILE_IMAGE_WORDS} ${PICTURE_OP_WORDS}`,
       "- add_chart {slide, chart: {type: bar|line|pie|number, title, labels, series: [{name, values}], unit?}, box?}; add_table {slide, rows, header?, box?}; delete_element {slide, element}.",
+      PICTURE_CHOICE,
       "`box` is {x, y, w, h} on the 1920×1080 slide. If any op fails nothing changes.",
     ].join("\n"),
     scope: "drive:write",
@@ -2312,7 +2372,8 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
         const fileId = access.artifact.id;
         const ops = input.ops as Json[];
         const origin = originOfActor(actorOf(ctx));
-        const assets = await imageAssets(deps, ctx, fileId, ops, ["add_slide", "add_image"]);
+        const brought: Brought = { notes: [], looks: [] };
+        const assets = await imageAssets(deps, ctx, fileId, ops, ["add_slide", "add_image"], brought);
         const progressive = ops.length >= LIVE_TOOL_LIMITS.progressiveOps;
         const slidePresence = (doc: Y.Doc, slide: string, elements: string[], key: string): Partial<PeerState> => ({
           mode: "editing",
@@ -2348,7 +2409,8 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
         );
         const card = await cardOf(deps.artifacts.db, ctx.orgId, fileId);
         return {
-          content: `Changed "${named(card.title)}" (presentation, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.`,
+          content: `Changed "${named(card.title)}" (presentation, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.${broughtText(brought)}`,
+          ...broughtImages(brought),
           data: { artifact: card },
         };
       } catch (error) {
@@ -2437,11 +2499,13 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
       `Change a live canvas in one batch while people in it watch (at most ${LIVE_TOOL_LIMITS.ops} ops). New shapes go at x, y (canvas units) or else into free room, inside \`frame\` (a frame's id or name) when given; give an op \`ref\` to name what it adds for later ops of the batch. Ops:`,
       "- add_note {text, color (yellow|pink|blue|green|purple|gray)}; add_text {text, size?}; add_frame {name, w?, h?}: a section that groups what is in it.",
       "- add_shape {kind (rect|ellipse|diamond|triangle|star), text?, fill?, stroke?, stroke_width?, radius?}: a form with its label, to mark or group things in a diagram; colors are #rrggbb or none; radius rounds a rect's corners.",
-      "- add_image {image, from_file?}: a picture's Drive file id, or an image's asset id from the live file `from_file`; add_page {page}: an HTML file's id, shown live; add_file {file}: any Drive file as a card.",
+      `- add_image {image | svg | url, alt?}: a picture. ${FILE_IMAGE_WORDS} ${PICTURE_OP_WORDS}`,
+      "- add_page {page}: an HTML file's id, shown live; add_file {file}: any Drive file as a card.",
       "- connect {from, to, label?, route?, heads?, dashed?, stroke?, stroke_width?}: an arrow between two shapes that follows them when they move (the way to show a flow or a relation); add_line {x1, y1, x2, y2, heads?, …}: a line between two points (no heads unless asked), for underlining or dividing. route: straight|curve|elbow; heads: end (default for connect)|start|both|none.",
       "- draw {points, x?, y?, stroke?, stroke_width?, tool (pen|marker)?}: a freehand stroke, points x, y, x, y… (from x, y when given). Pen strokes are people's own marks: draw one only when asked to draw or circle by hand; a shape or an arrow says it better.",
       "- move {shape, x, y, frame?}; resize {shape, w, h}; set_text {shape, text}; rename_frame {frame, name}; delete {shapes}.",
       "- style {shapes, fill?, color?, stroke?, stroke_width?, radius?, kind?, route?, heads?, dashed?, tool?, crop?, hidden?}: changes how shapes look, each where its type has it; crop {x, y, w, h} in fractions of a picture shows part of it (null shows it whole); hidden hides a shape from view without deleting it.",
+      PICTURE_CHOICE,
       "If any op fails nothing changes.",
     ].join("\n"),
     scope: "drive:write",
@@ -2489,7 +2553,8 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
             throw new ValidationError(`${other} is a ${file.kind}, not an HTML page: put it on with add_file`);
           }
         }
-        const assets = await imageAssets(deps, ctx, fileId, ops, ["add_image"]);
+        const brought: Brought = { notes: [], looks: [] };
+        const assets = await imageAssets(deps, ctx, fileId, ops, ["add_image"], brought);
         const progressive = ops.length >= LIVE_TOOL_LIMITS.progressiveOps;
         const canvasPresence = (shapes: cv.ShapeView[], key: string): Partial<PeerState> => {
           const last = shapes.at(-1);
@@ -2517,7 +2582,8 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
         );
         const card = await cardOf(deps.artifacts.db, ctx.orgId, fileId);
         return {
-          content: `Changed "${named(card.title)}" (canvas, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.`,
+          content: `Changed "${named(card.title)}" (canvas, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.${broughtText(brought)}`,
+          ...broughtImages(brought),
           data: { artifact: card },
         };
       } catch (error) {
@@ -2551,7 +2617,7 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
   const generateImage = (models: string[]): ToolDefinition => ({
     name: "generate_image",
     description: [
-      "Make images with the workspace's image AI; they come back to you to look at, and are paid from your budget. Write a concrete prompt (subject, style, light, framing, any text to show).",
+      "Make images with the workspace's image AI; they come back to you to look at, and are paid from your budget. Write a concrete prompt (subject, style, light, framing, any text to show). For new artwork or photos: an icon, a logo, a diagram or a simple illustration is better as an SVG you write (add_image with svg), and a real photo or an existing picture is one from the web (image_search, then add_image with url).",
       "- In a conversation: the images go on your reply as pictures people see in the chat (each a file in the Drive). Asked later to put one on a canvas (“make a canvas with the third image”), call create_canvas with images: [its file id].",
       "- On a canvas: name it (`canvas`, a file id); in a canvas's own conversation that canvas is the default. A frame titled with the prompt and a placeholder per image land at once there, so people watch them come.",
       "- Variations and edits (“variations of this image”, “make it warmer”): `references` are the images to start from: on a canvas, its images' ids (from read_canvas); in a conversation, the picture files' ids.",

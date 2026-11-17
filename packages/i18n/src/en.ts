@@ -14394,6 +14394,7 @@ export const en = {
       commit_co_author: "Turn the agents' line on commits on or off",
       web_search: "Search the web",
       web_fetch: "Read web page",
+      image_search: "Search for pictures",
       create_routine: "Create routine",
       update_routine: "Change routine",
       delete_routine: "Delete routine",
@@ -21660,7 +21661,7 @@ export const en = {
         trash: "Move to the trash",
         shortcuts: "Keyboard shortcuts",
       },
-      /** The line under the title: who made it and where, when it changed, who sees it. */
+      /** The line under the title: who made it and where, and when it changed. */
       meta: {
         madeFrom: "<0>{{name}}</0> made it from the <1>{{place}}</1>",
         made: "<0>{{name}}</0> made it",
@@ -21671,15 +21672,6 @@ export const en = {
         between: "conversation between {{names}}",
         inConversation: "conversation",
         edited: "edited {{when}}",
-        /** The chip's accessible name. */
-        audience: "Who sees it: {{who}}",
-        audienceHint: "Change who sees this file",
-        everyone: "The whole workspace",
-        everyonePersonal: "Everyone here",
-        people: "People you chose",
-        channel: "Only #{{name}}",
-        dm: "Only you and {{name}}",
-        conversation: "Only its conversation",
       },
       /** A kind this app has no editor for yet. */
       notHere: "This kind of file doesn't open here yet.",
@@ -21790,6 +21782,9 @@ export const en = {
       toggle_one: "Conversation, {{count}} message",
       toggle_other: "Conversation, {{count}} messages",
       close: "Close the conversation",
+      /** The handle on the docked conversation's left edge: drag, arrows, Home/End; a double click resets it. */
+      resize: "Conversation width",
+      resizeHint: "Drag to resize · double-click to reset",
       title: {
         canvas: "Canvas conversation",
         spreadsheet: "Spreadsheet conversation",

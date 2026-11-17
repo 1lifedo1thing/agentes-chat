@@ -1,17 +1,27 @@
 import type { Peer, PeerUser } from "@agenteschat/live/awareness";
 import type { DeckView, SlideTheme } from "@agenteschat/live/slides";
 import { Button, cx, Icon, Menu, MenuItem, MenuSeparator, useMatchMedia } from "@agenteschat/ui";
-import { type KeyboardEvent, type MouseEvent, type PointerEvent, useEffect, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { type MenuEntry, openContextMenu } from "@/lib/context-menu";
 import { PeerFace, type PeerLook, peerWorking } from "../peers";
 import { SlideThumb } from "./SlideThumb";
+import { useBoxSize } from "./useBoxSize";
 
 /**
  * The slides of a presentation down the editor's left side (ADR 0194 §2), each drawn small and live (a slide an agent
  * writes changes here as it writes), numbered, the current one outlined in ink, hidden ones dimmed, with the faces of
- * who is on each. A drag moves a slide (Alt+↑/↓ too); ⋯ and a right click hold New slide, Duplicate, Hide, Present
- * from here, Move and Delete. Under 760 px it is a strip under the slide.
+ * who is on each. A drag moves a slide (Alt+↑/↓ too); ⋯ beside its number (never over the slide) and a right click
+ * hold New slide, Duplicate, Hide, Present from here, Move and Delete. The thumbnails take the rail's width as it is
+ * (a scrollbar's room taken out), so they are never cut. Under 760 px it is a strip under the slide.
  */
 
 export interface RailProps {
@@ -31,9 +41,14 @@ export interface RailProps {
   onPresentFrom(id: string): void;
 }
 
-/** A thumbnail's width in page pixels: beside the slide, and in the narrow strip under it. */
+/** A thumbnail's width in page pixels: beside the slide (at most; the rail's room decides), and in the strip under it. */
 export const THUMB_W = 176;
 export const THUMB_W_COMPACT = 112;
+/** The number's column beside a thumbnail, and the list's right edge (the rail's CSS). */
+const NUM_COL = 32;
+const LIST_END = 8;
+/** The narrowest a thumbnail gets beside the slide. */
+const THUMB_MIN = 96;
 /** A press that moves this far is a drag. */
 const DRAG_SLOP = 4;
 /** Faces shown on a thumbnail. */
@@ -52,8 +67,21 @@ export function Rail(props: RailProps) {
   const { t } = useTranslation();
   const { deck, current, readOnly } = props;
   const compact = useMatchMedia("(max-width: 760px)");
-  const width = compact ? THUMB_W_COMPACT : THUMB_W;
   const list = useRef<HTMLOListElement>(null);
+  // The list's inner width (without its scrollbar, which a mouse's system draws in the rail's own room).
+  const [measure, box] = useBoxSize<HTMLOListElement>();
+  const placeList = useCallback(
+    (el: HTMLOListElement | null) => {
+      list.current = el;
+      measure(el);
+    },
+    [measure],
+  );
+  const width = compact
+    ? THUMB_W_COMPACT
+    : box.w > 0
+      ? Math.max(THUMB_MIN, Math.min(THUMB_W, box.w - NUM_COL - LIST_END))
+      : THUMB_W;
   const press = useRef<{ id: string; x: number; y: number; pointer: number } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null);
@@ -234,7 +262,7 @@ export function Rail(props: RailProps) {
 
   return (
     <nav className="sl-rail" aria-label={t("live.slides.rail.label")} data-dragging={drag ? "true" : undefined}>
-      <ol ref={list} className="sl-rail__list">
+      <ol ref={placeList} className="sl-rail__list">
         {deck.slides.map((slide, index) => {
           const here = props.peersBySlide.get(slide.id) ?? [];
           const isCurrent = slide.id === current;
@@ -257,9 +285,44 @@ export function Rail(props: RailProps) {
                 openContextMenu(e.clientX, e.clientY, entries(slide.id, index, !!slide.hidden), e.target);
               }}
             >
-              <span className="sl-rail__num tabular" aria-hidden="true">
-                {index + 1}
-                {slide.hidden && <Icon name="eyeOff" size={14} className="sl-rail__hidden" />}
+              <span className="sl-rail__side">
+                <span className="sl-rail__num tabular" aria-hidden="true">
+                  {index + 1}
+                  {slide.hidden && <Icon name="eyeOff" size={14} className="sl-rail__hidden" />}
+                </span>
+                <Menu
+                  label={t("live.slides.rail.more", { n: index + 1 })}
+                  align="start"
+                  trigger={
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      iconOnly
+                      icon="more"
+                      className="sl-rail__more"
+                      aria-label={t("live.slides.rail.more", { n: index + 1 })}
+                      title={t("live.slides.rail.more", { n: index + 1 })}
+                      tabIndex={-1}
+                    />
+                  }
+                >
+                  {entries(slide.id, index, !!slide.hidden).map((entry, i) =>
+                    entry.kind === "separator" ? (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: separators of one fixed menu
+                      <MenuSeparator key={`sep${i}`} />
+                    ) : entry.kind === "item" ? (
+                      <MenuItem
+                        key={entry.id}
+                        icon={entry.icon}
+                        danger={entry.danger}
+                        disabled={entry.disabled}
+                        onSelect={entry.run}
+                      >
+                        {entry.label}
+                      </MenuItem>
+                    ) : null,
+                  )}
+                </Menu>
               </span>
               <span className="sl-rail__frame">
                 <button
@@ -282,38 +345,6 @@ export function Rail(props: RailProps) {
                 >
                   <SlideThumb slide={slide} theme={props.theme} width={width} deck={deck} />
                 </button>
-                <Menu
-                  label={t("live.slides.rail.more", { n: index + 1 })}
-                  align="end"
-                  trigger={
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      iconOnly
-                      icon="more"
-                      className="sl-rail__more ac-glass"
-                      aria-label={t("live.slides.rail.more", { n: index + 1 })}
-                      tabIndex={-1}
-                    />
-                  }
-                >
-                  {entries(slide.id, index, !!slide.hidden).map((entry, i) =>
-                    entry.kind === "separator" ? (
-                      // biome-ignore lint/suspicious/noArrayIndexKey: separators of one fixed menu
-                      <MenuSeparator key={`sep${i}`} />
-                    ) : entry.kind === "item" ? (
-                      <MenuItem
-                        key={entry.id}
-                        icon={entry.icon}
-                        danger={entry.danger}
-                        disabled={entry.disabled}
-                        onSelect={entry.run}
-                      >
-                        {entry.label}
-                      </MenuItem>
-                    ) : null,
-                  )}
-                </Menu>
                 {here.length > 0 && (
                   <span className="sl-rail__faces">
                     {here.slice(0, THUMB_FACES).map((p) => {

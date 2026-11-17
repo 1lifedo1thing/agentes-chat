@@ -572,7 +572,7 @@ export function DocumentEditor(props: LiveEditorProps) {
             canRename={!readOnly}
             onEnter={() => run(toStart)}
           />
-          <LiveMeta artifact={artifact} onVersions={props.onVersions ?? noop} onShare={props.onShare ?? noop} />
+          <LiveMeta artifact={artifact} onVersions={props.onVersions ?? noop} />
           <div className="wiki-page__body wiki-prose lf-doc__prose">
             <div ref={host} className="lf-doc__host" />
           </div>

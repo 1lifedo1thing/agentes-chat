@@ -228,8 +228,14 @@ describe("the spreadsheet editor", () => {
     expect(s.cell(1, 0)?.f).toContain("SUM(");
     await key("ArrowUp");
     expect(bar().value).toBe("=SOMA(A1;10)");
+    // The bar on one line, no boxes: the address as text (a field only while it holds the focus), a hairline, fx, and
+    // a formula in the code face (its field says it holds one); a plain value doesn't.
+    expect(nameBox().classList.contains("ac-input")).toBe(false);
+    expect(document.querySelector(".sheet-bar__sep")).toBeTruthy();
+    expect(bar().closest(".sheet-fx")?.classList.contains("sheet-fx--formula")).toBe(true);
     await key("ArrowUp");
     expect(bar().value).toBe("1234,5");
+    expect(bar().closest(".sheet-fx")?.classList.contains("sheet-fx--formula")).toBe(false);
     // A screen reader hears the cell and what it shows.
     expect(field().getAttribute("aria-label")).toBe("Célula A1, 1234,5");
 

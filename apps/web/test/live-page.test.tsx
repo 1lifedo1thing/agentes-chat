@@ -213,7 +213,7 @@ describe("the live file's page", () => {
     expect(screen().getByText("João saiu do arquivo.")).toBeTruthy();
   });
 
-  test("the line under the title: who made it, edited when (the versions), who sees it (the sharing)", async () => {
+  test("the line under the title: who made it, edited when (the versions); sharing is the header's Share alone", async () => {
     await setup();
     const meta = within(document.querySelector(".lf-meta") as HTMLElement);
     // Made in the Drive by this person: no conversation to name.
@@ -223,8 +223,9 @@ describe("the live file's page", () => {
     await click(meta.getByRole("button", { name: "editado agora" }));
     await settle(4);
     expect(screen().getByRole("complementary", { name: "Versões" })).toBeTruthy();
-    // The whole workspace sees it: the chip opens the sharing.
-    await click(meta.getByRole("button", { name: "Quem vê: Todo o workspace" }));
+    // One way to the sharing: no audience chip on the line; the header's "Share" opens it.
+    expect(meta.getAllByRole("button").map((b) => b.textContent)).toEqual(["editado agora"]);
+    await click(header().getByRole("button", { name: "Compartilhar" }));
     await settle(4);
     expect(screen().getByRole("dialog", { name: /Compartilhar/ })).toBeTruthy();
     // No "Pedir a um agente" popover any more: the file's conversation takes its place.

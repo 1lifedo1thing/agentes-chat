@@ -484,8 +484,9 @@ export function buildEngine(o: EngineOptions) {
       // Runs nobody called by name may stay quiet (reply-policy.ts): listed only for them.
       createPassToolSource(),
       createArtifactToolSource(artifacts),
-      // Spreadsheets, presentations and canvases agents edit with people, and images onto a canvas (ADR 0194, 0195).
-      createLiveFileToolSource({ artifacts, live, images }),
+      // Spreadsheets, presentations and canvases agents edit with people, and images onto a canvas (ADR 0194, 0195);
+      // pictures from the web are downloaded through the public-address guard (ADR 0194 §8).
+      createLiveFileToolSource({ artifacts, live, images, web: { resolveHost: o.resolveHost } }),
       // Live blocks and votes in the agent's own conversation (ADR 0113).
       createBlockToolSource(artifacts),
       createChatToolSource({ pubsub: adapters.pubsub, artifacts, gif: createAgentGifPoster(adapters.gifs) }),

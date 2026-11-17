@@ -61,7 +61,11 @@ insert (after or before a block, at the start or the end), append, replace a blo
 the same kind changes in place, so a person typing in it keeps their place), delete, replace text (found in place,
 its formatting kept), and rewrite (the whole document, blocks that say the same keep their ids and place). Content
 is Markdown (CommonMark's blocks, GitHub's tables, `<u>` for underline); a picture is a Drive image (`file:<id>`,
-copied in under the agent's own check that it reads it) or one of the document's own (`asset:<id>`). The agent's
+copied in under the agent's own check that it reads it), one of the document's own (`asset:<id>`) or, on a line of
+its own, a picture on the web (`![a sky](https://…)`, downloaded into the document as ADR 0194 §8 says; an address
+inside a paragraph stays a link). The op `add_image` places one picture as a block (after or before a block, at the
+start or the end) the way the canvas and the slides take one: `image`, an SVG the agent writes (`svg`) or a web
+picture (`url`), with its alt text. The agent's
 face shows on the blocks it works on, as on the other kinds. `read_artifact` still reads a document whole, as its
 Markdown.
 

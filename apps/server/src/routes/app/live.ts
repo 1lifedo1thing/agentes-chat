@@ -44,6 +44,12 @@ const base64 = (bytes: Uint8Array) => Buffer.from(bytes.buffer, bytes.byteOffset
 
 /** What an asset may be: pictures only, whatever was stored, so nothing else is ever served from here. */
 const ASSET_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+/**
+ * An SVG picture (stored as the sanitizer rebuilt it, ADR 0194 §8) is served with a CSP that runs and loads nothing,
+ * also when it is opened on its own in a tab: the apps only ever show it as a picture.
+ */
+const SVG_ASSET = "image/svg+xml";
+const SVG_CSP = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
 /** Files whose presence one request asks for (a Drive page's cards). */
 const PRESENCE_IDS = 100;
 
@@ -468,12 +474,13 @@ export function liveRoutes(deps: AppDeps) {
     const notFound = () => apiError(c, 404, "artifact.not_found", "Picture not found");
     if (!isUuid(orgId) || !isUuid(artifactId) || !isUuid(assetId)) return notFound();
     const asset = await getAsset(liveDeps(), person(c.get("user").id), orgId, artifactId, assetId);
-    if (!asset || !ASSET_TYPES.has(asset.contentType)) return notFound();
+    const svg = asset?.contentType === SVG_ASSET;
+    if (!asset || !(ASSET_TYPES.has(asset.contentType) || svg)) return notFound();
     const etag = `"${asset.sha256}"`;
     const headers: Record<string, string> = {
       "content-type": asset.contentType,
       "x-content-type-options": "nosniff",
-      "content-security-policy": "sandbox",
+      "content-security-policy": svg ? SVG_CSP : "sandbox",
       "cache-control": "private, max-age=31536000, immutable",
       etag,
     };

@@ -16,6 +16,7 @@ import {
   Button,
   cx,
   Dialog,
+  DialogBody,
   EmptyState,
   Kbd,
   modKey,
@@ -48,6 +49,7 @@ import {
 } from "./FileConversation";
 import { LiveHeader } from "./LiveHeader";
 import { FollowingIsland, usePeerLooks } from "./peers";
+import { usePageRoom } from "./room";
 import { Slides } from "./slides";
 import { Spreadsheet } from "./spreadsheet";
 import {
@@ -68,7 +70,10 @@ export interface LiveFileSearch extends LiveEditorSearch {
   v?: number;
 }
 
-/** Under this width the header keeps its faces and its one primary action; the rest goes into ⋯ (ADR 0194 §9). */
+/**
+ * Under this window width the header keeps its faces and glyphs and the rest goes into ⋯ (ADR 0194 §9); a page made
+ * narrow by the conversation beside it folds the same way (`usePageRoom`).
+ */
 export const LIVE_COMPACT_QUERY = "(max-width: 760px)";
 
 /** The editor of each kind; a kind this build has none for says so instead of opening. */
@@ -111,7 +116,13 @@ export function LiveFilePage({
   const version = useLiveVersionRoom(org.id, fileId, search.v, kind);
   const peers = useLivePeers(live.room);
   const looks = usePeerLooks();
-  const pageRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  // The page's element as state too: its width is watched once it is there (`usePageRoom`).
+  const [pageEl, setPageEl] = useState<HTMLDivElement | null>(null);
+  const placePage = useCallback((el: HTMLDivElement | null) => {
+    pageRef.current = el;
+    setPageEl(el);
+  }, []);
   const [selection, setSelection] = useState<LiveSelection | null>(null);
   const [versionsOpen, setVersionsOpen] = useState(() => Boolean(search.v));
   const [saveOpen, setSaveOpen] = useState(false);
@@ -222,6 +233,10 @@ export function LiveFilePage({
   const column = useFileTalkColumn(artifact);
   const talkOpen = column.open && Boolean(artifact && kind) && !presenting;
   const docked = talkOpen && wide;
+  // Its own width decides the header's folding (the conversation beside it takes its part) and, docked, whether the
+  // sidebar folds to its rail to give the file room.
+  const pageRoom = usePageRoom(pageEl, docked);
+  const folded = compact || pageRoom.narrow;
   const at = useFileConversation(org.id, artifact ?? { id: fileId, conversation: null }, talkOpen);
   const fileAgent = useFileAgent(artifact);
   // "Conversa N" follows the conversation with the panel closed too.
@@ -352,10 +367,10 @@ export function LiveFilePage({
       <FileAgentContext.Provider value={fileAgent}>
         <LiveAskContext.Provider value={previewing ? null : ask}>
           <div
-            ref={pageRef}
+            ref={placePage}
             className={cx("lf-page", presenting && "lf-page--presenting")}
             data-kind={kind ?? undefined}
-            data-compact={compact || undefined}
+            data-compact={folded || undefined}
             data-talk={docked || undefined}
           >
             {!presenting && (
@@ -364,13 +379,18 @@ export function LiveFilePage({
                 kind={kind}
                 live={live}
                 previewing={previewing}
-                compact={compact}
+                compact={folded}
                 peers={peers}
                 followId={followId}
                 onFollow={follow}
                 talk={
                   artifact && kind ? (
-                    <FileConversationButton artifact={artifact} open={talkOpen} onToggle={column.toggle} />
+                    <FileConversationButton
+                      artifact={artifact}
+                      open={talkOpen}
+                      compact={folded}
+                      onToggle={column.toggle}
+                    />
                   ) : null
                 }
                 onShare={() => artifact && share.open(artifact)}
@@ -431,7 +451,6 @@ export function LiveFilePage({
                       onAsk={previewing ? undefined : ask}
                       reveal={previewing ? null : reveal}
                       onVersions={() => setVersionsOpen((o) => !o)}
-                      onShare={() => share.open(artifact)}
                     />
                   </div>
                 ) : (
@@ -623,7 +642,8 @@ function ShortcutsDialog({ open, kind, onClose }: { open: boolean; kind: LiveKin
     document: { title: t("live.doc.keys.title"), keys: documentShortcuts(t, mod) },
   };
   const mine = kind ? own[kind] : undefined;
-  const groups = [{ title: t("live.shell.shortcuts.general"), keys: general }, ...(mine ? [mine] : [])];
+  // The editor's own keys first (what the person came to look up), then the page's.
+  const groups = [...(mine ? [mine] : []), { title: t("live.shell.shortcuts.general"), keys: general }];
   return (
     <Dialog
       open={open}
@@ -632,15 +652,16 @@ function ShortcutsDialog({ open, kind, onClose }: { open: boolean; kind: LiveKin
       closeLabel={t("common.close")}
       width={440}
     >
-      <div className="lf-keys">
+      {/* The dialog's body: its padding, and the one part that scrolls when the list is taller than the window. */}
+      <DialogBody className="lf-keys">
         {groups.map((g) => (
           <section key={g.title} className="lf-keys__group">
             <h3 className="lf-keys__title">{g.title}</h3>
             <dl className="lf-keys__list">
               {g.keys.map(([what, keys]) => (
                 <div key={what} className="lf-keys__row">
-                  <dt>{what}</dt>
-                  <dd>
+                  <dt className="lf-keys__what">{what}</dt>
+                  <dd className="lf-keys__keys">
                     {keys.map((k) => (
                       <Kbd key={k}>{k}</Kbd>
                     ))}
@@ -650,7 +671,7 @@ function ShortcutsDialog({ open, kind, onClose }: { open: boolean; kind: LiveKin
             </dl>
           </section>
         ))}
-      </div>
+      </DialogBody>
     </Dialog>
   );
 }

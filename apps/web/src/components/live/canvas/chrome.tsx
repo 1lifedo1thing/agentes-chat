@@ -2,8 +2,8 @@ import type { Agent } from "@agenteschat/client";
 import { formatPercent } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import type { ArrowRoute, CanvasShapeKind, DrawTool } from "@agenteschat/live/canvas";
-import { Button, Icon, type IconName, Kbd, Menu, MenuItem } from "@agenteschat/ui";
-import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
+import { Button, Icon, type IconName, Kbd, Menu, MenuItem, useScrollSides } from "@agenteschat/ui";
+import { type CSSProperties, type KeyboardEvent, type ReactNode, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { CAMERA_MAX, CAMERA_MIN } from "./camera";
@@ -71,6 +71,9 @@ export interface DockProps {
 export function Dock(props: DockProps) {
   const { tool, readOnly } = props;
   const { t } = useTranslation();
+  // Narrower than its tools (a phone), it scrolls sideways and fades where more waits, as the editors' toolbars.
+  const bar = useRef<HTMLDivElement>(null);
+  const sides = useScrollSides(bar);
   const button = (which: Exclude<Tool, "shape" | "line">, icon: IconName, name: string) => {
     const active = tool === which;
     return (
@@ -91,7 +94,14 @@ export function Dock(props: DockProps) {
   };
   const ask = props.agent ? t("live.conversation.ask", agentGrammar(props.agent.name)) : "";
   return (
-    <div className="cnv-dock ac-glass" role="toolbar" aria-label={t("live.canvas.tools.label")} onKeyDown={rovingKeys}>
+    <div
+      ref={bar}
+      className="cnv-dock ac-glass"
+      role="toolbar"
+      aria-label={t("live.canvas.tools.label")}
+      data-sides={sides}
+      onKeyDown={rovingKeys}
+    >
       {button("select", "pointerTool", t("live.canvas.tools.select"))}
       {button("hand", "hand", t("live.canvas.tools.hand"))}
       {!readOnly && (
@@ -127,6 +137,7 @@ export function Dock(props: DockProps) {
           <Button
             variant="ghost"
             className="cnv-dock__agent"
+            aria-label={ask}
             title={`${ask} (${keyLabel(ASK_KEY)})`}
             tabIndex={-1}
             onClick={props.onAsk}

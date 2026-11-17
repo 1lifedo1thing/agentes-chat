@@ -81,7 +81,7 @@ describe("a live file's pictures", () => {
 
   test("anything but a picture is refused, as is one too large", async () => {
     const canvas = await makeLiveFile(f, "canvas");
-    const page = new TextEncoder().encode("<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>");
+    const page = new TextEncoder().encode("<html><script>alert(1)</script></html>");
     await expect(
       putAsset(f.artifactDeps, owner(), f.org.id, canvas.id, {
         bytes: page,
@@ -89,6 +89,17 @@ describe("a live file's pictures", () => {
         source: "upload",
       }),
     ).rejects.toMatchObject({ code: "live.asset_type" });
+    // An SVG goes through the sanitizer (ADR 0194 §8): one it can't use is refused with its reason.
+    const sizeless = new TextEncoder().encode(
+      "<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>",
+    );
+    await expect(
+      putAsset(f.artifactDeps, owner(), f.org.id, canvas.id, {
+        bytes: sizeless,
+        contentType: "image/png",
+        source: "upload",
+      }),
+    ).rejects.toMatchObject({ code: "live.svg_invalid" });
     const big = new Uint8Array(LIVE_ASSET_BYTES + 1);
     big.set(PNG);
     await expect(

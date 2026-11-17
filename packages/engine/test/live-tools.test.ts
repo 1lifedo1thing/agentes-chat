@@ -150,8 +150,9 @@ describe("the tools and their group", () => {
     const run = await runFor();
     const listed = await lazy.tools(ctxOf(run));
     const names = listed.map((t) => t.name).sort();
-    // No image model in this workspace (an Anthropic key only): generate_image isn't offered.
-    expect(names).toEqual([...LIVE_FILE_TOOLS].filter((n) => n !== "generate_image").sort());
+    // No image model in this workspace (an Anthropic key only): generate_image isn't offered. `image_search` is in the
+    // group too, but the web's tool source offers it.
+    expect(names).toEqual([...LIVE_FILE_TOOLS].filter((n) => n !== "generate_image" && n !== "image_search").sort());
     for (const tool of listed) {
       expect(toolGroupKey(tool)).toBe(LIVE_FILES_GROUP);
       const read = tool.name.startsWith("read_");

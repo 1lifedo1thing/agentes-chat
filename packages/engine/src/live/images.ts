@@ -35,6 +35,7 @@ import { replyThreadOf } from "../runs";
 import { originFor } from "./access";
 import { getAsset, type LiveAsset, putAsset, readPictureFile } from "./assets";
 import type { LiveDocs } from "./docs";
+import { rasterPicture } from "./svg";
 
 /**
  * Pictures made with the workspace's image AI (ADR 0195), on a canvas or in a conversation.
@@ -618,11 +619,15 @@ export async function runImageRequest(
     return finish({ status: made ? "done" : "failed", error: failure });
   };
 
-  // The pictures it starts from, as the requester reads them (one gone since is left out).
+  // The pictures it starts from, as the requester reads them (one gone since is left out, and an SVG the server
+  // can't draw as a PNG: image AIs take only those).
   const references: ImageReference[] = [];
   for (const assetId of row.references) {
     const stored = await getAsset(deps.artifacts, actor, orgId, fileId, assetId).catch(() => null);
-    if (stored) references.push({ mediaType: stored.contentType, data: bytesToBase64(await bytesOf(stored)) });
+    const picture = stored
+      ? await rasterPicture({ bytes: await bytesOf(stored), contentType: stored.contentType })
+      : null;
+    if (picture) references.push({ mediaType: picture.contentType, data: bytesToBase64(picture.bytes) });
   }
   const personId =
     actor.type === "person" ? actor.userId : runId ? accountablePerson(await runAuthorityById(db, orgId, runId)) : null;

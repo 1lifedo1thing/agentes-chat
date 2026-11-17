@@ -118,6 +118,13 @@ page follows its conversation's channel while open (its message events), and a n
 (`notification.upserted` with `source.artifactId`) reads the file's unread marks and its head again
 (`applyIssueEvent`).
 
+On the web the conversation docks beside the file from 1100 px wide (the page keeps its width, so it never covers
+the file) and opens over the page below that, full screen on a phone. Its left edge is a handle (a separator with a
+value: drag, ←/→, Home/End, a double click for the default) that sets its width between 340 px and the lesser of
+720 px and half the window, kept per person and workspace. When the file itself would get less than 680 px beside it,
+the app's sidebar folds to its rail (never stored as the person's choice) and comes back once 48 px more than that
+fits with it open; once the person uses the sidebar's toggle on the page, the page leaves it to them.
+
 ### 7. "Ask an agent" goes to the file's conversation
 
 `askAgentAbout` (`POST …/artifacts/{id}/live/ask`, kept for older apps) now posts in the file's conversation, naming

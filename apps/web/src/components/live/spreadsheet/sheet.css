@@ -109,6 +109,7 @@
 
 /* ── Formula bar ────────────────────────────────────────────────────────────────────────────────────────────────── */
 
+/* One line, no boxes: the address as quiet text, a hairline, the fx mark, the cell's content. */
 .sheet-bar {
   flex: none;
   display: flex;
@@ -119,19 +120,52 @@
   border-bottom: 1px solid var(--line);
   background: var(--surface);
 }
-.ac-input.sheet-bar__name {
+/* The address reads as text (76 wide); its field shows only while it holds the focus. Its padding sits in the bar's
+   own edge (the negative margin), so the words line up with the toolbar's first glyph. */
+.sheet-bar__name {
   flex: none;
-  width: 112px;
+  box-sizing: border-box;
+  width: calc(76px + var(--space-2));
   height: var(--control-h-sm);
-  padding: 0 var(--control-px-sm);
+  margin: 0 0 0 calc(-1 * var(--space-2));
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border: 0;
   border-radius: var(--control-r-sm);
-  font-size: var(--control-fs-sm);
+  background: transparent;
+  color: var(--ink2);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  outline: none;
+  cursor: text;
+}
+.sheet-bar__name:hover {
+  background: var(--plate-soft);
+}
+.sheet-bar__name:focus {
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1px var(--line2),
+    0 0 0 4px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.sheet-bar__name[aria-invalid="true"] {
+  box-shadow:
+    0 0 0 1px var(--danger),
+    0 0 0 4px color-mix(in srgb, var(--danger) 14%, transparent);
+}
+.sheet-bar__sep {
+  flex: none;
+  width: 1px;
+  height: 20px;
+  background: var(--line2);
 }
 .sheet-bar__fx {
   flex: none;
   display: inline-flex;
-  color: var(--ink-muted);
+  color: var(--faint);
 }
 .sheet-bar__field {
   position: relative;
@@ -186,15 +220,19 @@
   color: transparent;
 }
 
-/* The bar's field: one line that scrolls sideways. */
+/* The bar's field: one line that scrolls sideways; a value in the page's face, a formula in the code face (it is code). */
 .sheet-bar__input,
 .sheet-bar__fx-box .sheet-fx__back {
   height: var(--control-h-sm);
   padding: 0 var(--space-1);
-  font-size: var(--text-sm);
+  font-size: var(--control-fs-md);
   line-height: var(--control-h-sm);
   white-space: pre;
   overflow: hidden;
+}
+.sheet-bar__fx-box.sheet-fx--formula :is(.sheet-bar__input, .sheet-fx__back) {
+  font-family: var(--font-mono);
+  font-size: 13px;
 }
 .sheet-bar__input[readonly] {
   color: var(--ink);

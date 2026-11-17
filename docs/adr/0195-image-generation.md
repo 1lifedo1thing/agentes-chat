@@ -64,6 +64,12 @@ minutes), hands them to a model that can see them, and answers with the pictures
 (`meta.artifacts`, one per picture) or, on a canvas, the canvas as the reply's card. In Codex's turns both tools
 exist; the prompt says ours posts the images in the conversation (or on a canvas) and counts them in the budget.
 
+*Amended 2026-11-17.* Generating is one of three ways an agent puts a picture in a live file (ADR 0194 §8): it writes
+an SVG for icons, logos, diagrams and simple illustrations, places a picture from the web (`image_search`) when
+someone asks for a real photo or a specific existing image, and generates new artwork or photos here. An SVG on a
+canvas used as a reference is sent to the image AI as a PNG when the server can draw one, and left out otherwise:
+image AIs take only raster pictures.
+
 ## Consequences
 
 - Image spend shows in Usage with its own kind, and budgets stop it like any other spend.

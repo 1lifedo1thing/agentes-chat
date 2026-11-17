@@ -90,14 +90,19 @@ export const liveAssets = pgTable(
     /** The storage it was written to (null = platform). */
     storageConfigId: uuid(),
     blobKey: text().notNull(),
-    /** Sniffed from the bytes, never the type a client declared: `image/png`, `image/jpeg`, `image/webp`, `image/gif`. */
+    /**
+     * Sniffed from the bytes, never the type a client declared: `image/png`, `image/jpeg`, `image/webp`, `image/gif`,
+     * or `image/svg+xml` for an SVG stored as the sanitizer rebuilt it.
+     */
     contentType: text().notNull(),
     size: integer().notNull(),
     sha256: text().notNull(),
     width: integer(),
     height: integer(),
-    /** `upload` | `generated` | `copied` | `imported`. */
+    /** `upload` | `generated` | `copied` | `imported` | `drawn` (an agent's SVG) | `web` (downloaded). */
     source: text().notNull(),
+    /** A picture from the web: its address and the credit an agent gave it (author, license, site). */
+    origin: jsonb().$type<{ url: string; credit?: string }>(),
     /** `person` | `agent` | `system`. */
     createdByType: text(),
     createdById: text(),

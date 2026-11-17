@@ -58,27 +58,37 @@
   gap: var(--space-3);
   min-height: 36px;
 }
+/* One line, as the Wiki's top: the Drive stays whole, the conversation's name ("Mensagem direta entre Ana, Bruno e
+   Atlas") ends in an ellipsis when the actions need the room (its whole name in its tooltip). */
 .wiki-crumbs.lf-crumbs {
   flex: 1;
   min-width: 0;
+  flex-wrap: nowrap;
   margin: 0;
-}
-.lf-crumbs a {
   white-space: nowrap;
 }
-/* The conversation's name can be long ("Mensagem direta entre Ana, Bruno e Atlas"): it wraps, never cut. */
-.lf-crumbs__folder {
-  min-width: 0;
-  overflow-wrap: anywhere;
+.lf-crumbs > * {
+  flex: none;
 }
-a.lf-crumbs__folder {
-  white-space: normal;
+.wiki-crumbs .lf-crumbs__folder {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .lf-top__acts {
   flex: none;
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+/* Narrow (a phone, or the conversation open beside a small window): Present and the conversation's toggle keep
+   their glyphs (the toggle its count too), Share goes into ⋯, the quiet status gives way. */
+.lf-page[data-compact] .lf-top__acts {
+  gap: var(--space-1);
+}
+.lf-page[data-compact] .lf-top__status {
+  display: none;
 }
 /* "Salvo", "Salvando…", offline, read-only: the Wiki's quiet status before the faces. */
 .lf-top__status {
@@ -111,7 +121,11 @@ a.lf-crumbs__folder {
   font-weight: 600;
 }
 
-/* The title: reads as the page's title, turns into its field under the pointer and the keys, and wraps as it does. */
+/* The title: reads as the page's title on one line (an ellipsis when it's longer than the page, the whole title in its
+   tooltip), turns into its field under the pointer and the keys, and wraps there while it is written. */
+.lf-titleline > .lf-title {
+  flex: 0 1 auto;
+}
 .lf-title {
   position: relative;
   display: inline-grid;
@@ -127,7 +141,9 @@ a.lf-crumbs__folder {
 }
 .lf-title--still {
   display: block;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 /* The field grows with its words: an invisible copy of them sizes the cell the field fills. */
 .lf-title__mirror,
@@ -144,6 +160,19 @@ a.lf-crumbs__folder {
 }
 .lf-title__mirror {
   visibility: hidden;
+}
+/* At rest the copy is what shows, on one line with its ellipsis; the field over it stays (clear) to take the click,
+   the keys and the selection, and shows itself while it is written. */
+.lf-title:not(.is-editing) > .lf-title__mirror {
+  visibility: visible;
+  min-width: 0;
+  overflow: hidden;
+  white-space: pre;
+  text-overflow: ellipsis;
+}
+.lf-title:not(.is-editing) > .lf-title__field {
+  color: transparent;
+  white-space: pre;
 }
 .lf-title__field {
   display: block;
@@ -202,6 +231,65 @@ a.lf-crumbs__folder {
   .thread-panel.lf-talk {
     animation: none;
   }
+}
+/*
+ * The handle that sizes it (`TalkGrip`), over the 8 between the page's card and the conversation's (the work area
+ * keeps the conversation's width plus 16 on its right; the panel stands 8 from its edge): 12 wide, centered there.
+ * Nothing shows until the pointer is on it; then a bar of ink down the gap, whole while it moves or holds the keys
+ * (the issue table's column handle). It takes the touch for itself, so a finger sizes instead of scrolling.
+ */
+.lf-talk-grip {
+  position: absolute;
+  z-index: var(--z-raised);
+  top: var(--space-2);
+  bottom: var(--space-2);
+  right: calc(var(--lf-talk-w) + 6px);
+  width: var(--space-3);
+  cursor: col-resize;
+  touch-action: none;
+}
+.lf-talk-grip::after {
+  content: "";
+  position: absolute;
+  inset-block: var(--space-6);
+  left: calc(50% - 1.5px);
+  width: 3px;
+  border-radius: var(--radius-full);
+  background: transparent;
+}
+.lf-talk-grip:hover::after {
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+.lf-talk-grip[data-active]::after {
+  background: var(--ink);
+}
+html:not([data-pointer]) .lf-talk-grip:focus-visible {
+  outline: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--focus-ring);
+}
+html:not([data-pointer]) .lf-talk-grip:focus-visible::after {
+  background: var(--ink);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lf-talk-grip::after {
+    transition: background-color var(--dur-fast);
+  }
+}
+/* Under a finger there is no hover to find it by: the bar always shows, faint, in a wider place to press. */
+@media (hover: none) {
+  .lf-talk-grip {
+    right: var(--lf-talk-w);
+    width: var(--space-6);
+  }
+  .lf-talk-grip::after {
+    background: color-mix(in srgb, var(--ink) 18%, transparent);
+  }
+}
+/* The conversation's toggle on a narrow header: its glyph and count, closer. */
+.ac-btn.lf-talk-toggle--glyph:not(.ac-btn--icon) {
+  gap: var(--space-1);
+  padding-inline: var(--space-2);
 }
 
 /* ── Body: the editor, and the history beside it ─────────────────────────────────────────────────────────────────── */
@@ -293,35 +381,50 @@ a.lf-crumbs__folder {
 
 /* ── Shortcuts ──────────────────────────────────────────────────────────────────────────────────────────────────── */
 
-.lf-keys {
-  display: flex;
-  flex-direction: column;
+/* The dialog's body (`ac-dialog__body`: its padding, the part that scrolls); groups 24 apart, each titled as a
+   panel's section, its rows 32 high with the words on the left and the keys on the right, on one line each. */
+.ac-dialog__body.lf-keys {
   gap: var(--space-6);
 }
+.lf-keys__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
 .lf-keys__title {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-sm);
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 16px;
   font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
   color: var(--ink-muted);
 }
 .lf-keys__list {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
 }
 .lf-keys__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
+  min-height: var(--control-h-sm);
 }
-.lf-keys__row dt {
+.lf-keys__row + .lf-keys__row {
+  border-top: 1px solid var(--line);
+}
+.lf-keys__what {
+  flex: 1 1 auto;
+  min-width: 0;
   color: var(--ink);
+  overflow-wrap: anywhere;
 }
-.lf-keys__row dd {
+.lf-keys__keys {
+  flex: none;
   margin: 0;
   display: flex;
+  align-items: center;
   gap: var(--space-1);
 }
 
@@ -662,12 +765,6 @@ html:not([data-pointer]) .lf-version:focus-visible {
 /* ── Compact: a phone, or the desktop app zoomed in (≤ 760) ─────────────────────────────────────────────────────── */
 
 @media (max-width: 760px) {
-  .lf-top {
-    align-items: flex-start;
-  }
-  .lf-top__status {
-    display: none;
-  }
   .lf-titleline {
     font-size: 22px;
   }

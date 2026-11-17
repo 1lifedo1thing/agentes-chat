@@ -8,7 +8,9 @@
   protocol, presence), engine `packages/engine/src/live/*` (`createLiveDocs`, tools, assets, checkpoints), server
   `apps/server/src/realtime/live.ts` (`/api/live`) and `apps/server/src/routes/app/live.ts`, client
   `packages/client/src/live/*`, web `apps/web/src/components/live/*` and the route `org.$orgId.drive_.$fileId`,
-  phone `apps/mobile/src/features/live-files/*`; tables `live_docs`, `live_doc_updates`, `live_assets`
+  phone `apps/mobile/src/features/live-files/*`; tables `live_docs`, `live_doc_updates`, `live_assets`; pictures an
+  agent draws or finds (§8): `live/svg.ts` (`sanitizeSvg`, `rasterPicture`), `live/web-pictures.ts`
+  (`fetchWebPicture`), `live/pictures.ts`, `image_search` in `web-tools.ts`, migration `0293_live_asset_origin`
 
 ## Context
 
@@ -171,7 +173,10 @@ skipped. The history lists them with who changed what; restoring writes the old 
 one change, so everyone in it sees the file go back, and records a version saying so. `GET …/artifacts/{id}` with
 no version returns the head; `content` for these kinds is a small preview (the top-left cells, the first slide,
 the canvas's biggest shapes, hidden ones left out, a pen stroke's points thinned) that cards and the Drive draw,
-refreshed with the compaction, never the whole document. Exports turn the head into `xlsx` or `csv`, `pptx` and
+never the whole document. It is refreshed with the compaction and, so a card shows what an agent just drew within
+seconds, by the process holding the document 2.5 seconds after its changes are stored (once per span, written only
+when it changed, one at a time per document), which then tells the file's conversation (`artifact.updated`) so its
+cards read the file again. Exports turn the head into `xlsx` or `csv`, `pptx` and
 `pdf`.
 
 ### 8. Pictures belong to the file
@@ -181,6 +186,41 @@ came from), stored through the workspace's storage (ADR 0019) and counted in its
 reads the file (`GET …/artifacts/{id}/assets/{assetId}`, immutable, sandboxed type headers) and purged with it. So
 an image someone drops or an agent generates is seen by exactly who sees the canvas, also after it is shared, and a
 picture taken from elsewhere in the Drive is copied in under the reader's check of where it came from.
+
+*Amended 2026-11-17: pictures an agent draws or finds.* Asked to "draw a computer icon", an agent built one out of
+rectangles and ellipses; asked for "a picture of a sky", it had nothing to place. The edit tools now take a picture
+three ways, on a canvas, on a slide (an image element) and in a document (an image block), with `add_image`:
+
+- `image`: a Drive picture's file id or one of the file's own assets, as before.
+- `svg`: an SVG the agent writes, for icons, logos, diagrams and simple illustrations. What is stored is never the
+  text sent: it is parsed (a document type with declarations, the way to entity bombs and outside files, is refused
+  first) and rebuilt from an allowlist of SVG's static drawing elements and attributes, so scripts, event handlers,
+  `foreignObject`, embedded or linked pictures, animations, links, any address that isn't a reference inside the
+  picture (`#id`), CSS at-rules, escapes and outside references go, and the agent is told what was left out. Sizes
+  are capped (1 MB of text, 10,000 elements 48 deep, 300,000 characters per attribute, 50,000 elements drawn once
+  `<use>` is expanded, which also refuses a `<use>` that draws itself). It is written with explicit `width`, `height`
+  and `viewBox`, its natural size between 512 and 4096 on its longer side, and stored as `image/svg+xml` (source
+  `drawn`). The same sanitizer takes an SVG a person uploads or one downloaded from the web.
+- `url`: a picture on the public web, typically one `image_search` found (Brave's image search with
+  `BRAVE_SEARCH_API_KEY`, SearXNG's images with `SEARXNG_URL`, else Wikimedia Commons, which needs no key and gives
+  each picture's author and license; one usage row per search, like `web_search`, ADR 0109). It passes the outbound
+  check (ADR 0117) and is downloaded by the server one GET at a time through the public-address guard (https only,
+  every address the host resolves to public, the socket pinned), each redirect checked the same way, at most 15 MB
+  read while it streams, and kept only when the server calls it a picture and its bytes are a PNG, JPEG, WebP or GIF
+  (or an SVG, sanitized). It is stored with where it came from (`live_assets.origin`: its address and the credit the
+  agent gave, author and license) and the audit row says it too.
+
+`alt` gives the placed picture its alt text (an SVG's own `<title>` when none is given). The agent sees a web
+picture it placed, so it can tell whether it fits. The apps only ever show an SVG as a picture (`<img>`, an SVG
+`<image>`, the phone's image view), where nothing runs or loads, and the server serves it with `nosniff` and
+`default-src 'none'; style-src 'unsafe-inline'; sandbox`. What can't take an SVG (a model looking at a picture,
+references sent to an image AI, Word, PowerPoint and our PDFs) gets a PNG drawn from it when the server has a
+rasterizer (`setSvgRasterizer`), and leaves it out otherwise.
+
+Which picture, as the tools and the prompt say it: an SVG for icons, logos, diagrams and simple illustrations; a
+picture from the web when someone asks for a real photo or a specific existing image; `generate_image` (ADR 0195) for
+new artwork or photos where the workspace has an image model; shapes and notes only for a diagram people will keep
+editing piece by piece.
 
 ### 9. Where they open
 

@@ -12,6 +12,8 @@
   --note-purple: #e5dbfa;
   --note-gray: #ebebe8;
   --cnv-dot: var(--line2);
+  /* Its own width decides the dock's look (the conversation beside the page takes part of the window). */
+  container: cnv / inline-size;
   position: relative;
   display: flex;
   width: 100%;
@@ -799,6 +801,19 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
 .cnv-dock > * {
   flex: none;
 }
+/* More tools past an edge: that edge fades (the editors' toolbars do the same). */
+.cnv-dock[data-sides="end"] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+}
+.cnv-dock[data-sides="start"] {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 40px);
+  mask-image: linear-gradient(to right, transparent, #000 40px);
+}
+.cnv-dock[data-sides="both"] {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+}
 .cnv-dock__tool[data-active] {
   background: var(--action);
   color: var(--on-action);
@@ -830,6 +845,17 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
 }
 .cnv-dock__agent .ac-avatar {
   flex: none;
+}
+/* A narrow plane: "Pedir ao Atlas" keeps the agent's face (its name in the tooltip), so the dock's tools fit. */
+@container cnv (max-width: 680px) {
+  .ac-btn.cnv-dock__agent {
+    width: var(--control-h-md);
+    padding-inline: 0;
+    justify-content: center;
+  }
+  .cnv-dock__agent .ac-btn__label {
+    display: none;
+  }
 }
 .cnv-dock__divider,
 .cnv-bar__divider {

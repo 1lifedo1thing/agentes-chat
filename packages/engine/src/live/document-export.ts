@@ -6,6 +6,7 @@ import { UUID } from "../authority";
 import { ValidationError } from "../errors";
 import { writeDocx } from "../office/docx-write";
 import { markdownToPdf } from "../pdf";
+import { rasterPicture } from "./svg";
 
 /**
  * What a document downloads as (ADR 0198): a Word file (its own writer, pictures included; the default), Markdown or a
@@ -29,7 +30,10 @@ export async function liveAssetBytes(deps: ArtifactDeps, orgId: string, fileId: 
   if (!row) return null;
   const store = await deps.blobs.forConfig(orgId, row.storageConfigId).catch(() => null);
   const object = await store?.get(row.blobKey).catch(() => null);
-  return object ? { bytes: object.body, type: row.contentType } : null;
+  if (!object) return null;
+  // Word, PowerPoint and our PDFs take PNG and JPEG: an SVG goes as a PNG when the server can draw one, else not.
+  const picture = await rasterPicture({ bytes: object.body, contentType: row.contentType });
+  return picture ? { bytes: picture.bytes, type: picture.contentType } : null;
 }
 
 const TYPES = {
