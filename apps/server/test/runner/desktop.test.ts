@@ -342,14 +342,22 @@ describe("desktop use", () => {
     expect(t.requests("input")[1]).toEqual({ id: expect.any(Number), op: "input", steps: [{ move: [83, 46] }] });
   });
 
-  test("where the pointer goes is said before the input, for whoever watches (none for keys)", async () => {
+  test("where the pointer goes is said before the input, for whoever watches: none for keys or a window brought forward", async () => {
     const said: { agentId: string; to: unknown; inputs: number }[] = [];
     const t = setup({ pointer: (agentId, to) => said.push({ agentId, to, inputs: t.requests("input").length }) });
-    const item = refOf(await t.manager.look(AGENT), "menuitem", "Terminal Emulator");
-    await t.manager.act(AGENT, { kind: "click", at: { ref: item } }, false, t.where);
-    await t.manager.act(AGENT, { kind: "press", key: "Return" }, false, t.where);
+    const look = await t.manager.look(AGENT);
+    const act = (action: unknown) => t.manager.act(AGENT, action, false, t.where);
+    await act({ kind: "click", at: { ref: refOf(look, "menuitem", "Terminal Emulator") } });
+    await act({ kind: "press", key: "Return" });
+    // The wheel turns where the pointer goes: no element, the active window's visible part.
+    await act({ kind: "scroll", direction: "up", pixels: 300 });
+    // A window comes forward by its id and no pointer moves: the cursor stays where it was (it went to 0, 0).
+    await act({ kind: "focus", at: { ref: refOf(look, "button", "Terminal - agent@desktop: ~") } });
+    await act({ kind: "click", at: { ref: refOf(look, "window", "agent - Thunar") } });
+    expect(t.requests("input")).toHaveLength(5);
     expect(said).toEqual([
       { agentId: AGENT.id, to: { x: 83, y: 46, width: 1280, height: 900, act: "click" }, inputs: 0 },
+      { agentId: AGENT.id, to: { x: 993, y: 236, width: 1280, height: 900, act: "move" }, inputs: 2 },
     ]);
   });
 
