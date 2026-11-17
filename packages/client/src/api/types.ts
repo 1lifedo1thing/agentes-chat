@@ -403,7 +403,8 @@ export interface AccountDeletionPlan {
   /** Others are in them: I leave. */
   leaves: { id: string; name: string; role: Role }[];
   /** I'm their only owner, others are in them and they aren't being deleted: the account can't go yet (`sole_owner`). */
-  soleOwner: { id: string; name: string }[];
+  /** `onlyOutside`: everyone else is an outside collaborator (ADR 0191); optional, an older server doesn't say. */
+  soleOwner: { id: string; name: string; onlyOutside?: boolean }[];
   /** Computers I connected in the workspaces I leave, not in system mode: removed with the account. */
   computers: { orgId: string; id: string; name: string }[];
   /** Keys, connections and mailboxes I added to the workspaces I leave: the workspace's, so they stay. */

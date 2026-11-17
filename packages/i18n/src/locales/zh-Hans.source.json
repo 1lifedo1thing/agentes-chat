@@ -36933,6 +36933,9 @@
   "errors.said.soleOwner": {
     "value": "You're the only owner of a workspace with other members. Make someone else an owner, or delete the workspace, first."
   },
+  "errors.said.soleOwnerOutside": {
+    "value": "You're the only owner of a workspace whose other people are outside collaborators, who can't be owners. Invite a member and make them an owner, or delete the workspace, first."
+  },
   "errors.said.testFirst": {
     "value": "Test the connection with these settings before turning it on."
   },
@@ -37190,6 +37193,9 @@
   },
   "errors.join.codeNeeded": {
     "value": "Verify your email first."
+  },
+  "errors.join.outsideClosed": {
+    "value": "This account was blocked or is being deleted, so it can't join. The request is closed."
   },
   "errors.code.wrong": {
     "value": "Wrong code. Try again."
@@ -46741,6 +46747,9 @@
   },
   "deleteAccount.soleOwner": {
     "value": "You're the only owner of {{name}}. Make someone else an owner, or delete {{name}}."
+  },
+  "deleteAccount.soleOwnerOutside": {
+    "value": "You're the only owner of {{name}}, and its other people are outside collaborators, who can't be owners. Invite a member and make them an owner, or delete {{name}}."
   },
   "deleteAccount.soleOwnerSettingUp": {
     "value": "You're the only owner of {{name}}. Finish setting it up to make someone else an owner, or delete {{name}}."

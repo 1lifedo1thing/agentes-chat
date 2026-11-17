@@ -15218,6 +15218,8 @@ export const ptBR = {
       neverHappens: "Este agendamento nunca acontece.",
       soleOwner:
         "Você é a única pessoa dona de um workspace com outros membros. Passe a posse a alguém, ou apague o workspace, antes.",
+      soleOwnerOutside:
+        "Você é a única pessoa dona de um workspace em que as outras pessoas são colaboradores externos, que não podem ser donos. Convide um membro e torne essa pessoa dona, ou apague o workspace, antes.",
       testFirst: "Teste a conexão com estes dados antes de ligar.",
       voiceLength: "A gravação está longa ou curta demais.",
       sendAgain: "O arquivo não chegou inteiro. Envie de novo.",
@@ -15341,6 +15343,7 @@ export const ptBR = {
       answered: "Alguém já respondeu este pedido.",
       expired: "Este pedido expirou: ninguém respondeu em 14 dias.",
       codeNeeded: "Verifique seu e-mail primeiro.",
+      outsideClosed: "Esta conta foi bloqueada ou está sendo excluída, então não pode entrar. O pedido foi fechado.",
     },
     /** An emailed code refused: asking to join (ADR 0072) and deleting (ADR 0088) alike. */
     code: {
@@ -19494,6 +19497,8 @@ export const ptBR = {
     serverOwner: "Você instalou este servidor. As configurações dele vão ficar sem dono aqui, só no ambiente dele.",
     blockers: "Antes de apagar",
     soleOwner: "Você é a única pessoa dona de {{name}}. Torne outra pessoa dona, ou apague {{name}}.",
+    soleOwnerOutside:
+      "Você é a única pessoa dona de {{name}}, e as outras pessoas lá são colaboradores externos, que não podem ser donos. Convide um membro e torne essa pessoa dona, ou apague {{name}}.",
     soleOwnerSettingUp:
       "Você é a única pessoa dona de {{name}}. Termine de configurar para tornar outra pessoa dona, ou apague {{name}}.",
     openPeople: "Abrir Pessoas",

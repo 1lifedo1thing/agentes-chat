@@ -15563,6 +15563,7 @@
       "agentCantRead": "Lascia prima che l'agente legga questo, nei suoi accessi.",
       "neverHappens": "Questa pianificazione non si verifica mai.",
       "soleOwner": "Sei l'unico proprietario di uno spazio di lavoro con altri membri. Prima nomina un altro proprietario o elimina lo spazio di lavoro.",
+      "soleOwnerOutside": "Sei l'unico proprietario di uno spazio di lavoro in cui le altre persone sono collaboratori esterni, che non possono essere proprietari. Prima invita un membro e rendilo proprietario, o elimina lo spazio di lavoro.",
       "testFirst": "Prova la connessione con queste impostazioni prima di attivarla.",
       "voiceLength": "La registrazione è troppo lunga o troppo corta.",
       "sendAgain": "Il file non è arrivato intero. Invialo di nuovo.",
@@ -15672,7 +15673,8 @@
       "denied": "La tua richiesta non è stata approvata. Chiedi a qualcuno lì di invitarti.",
       "answered": "Qualcuno ha già risposto a questa richiesta.",
       "expired": "Questa richiesta è scaduta: nessuno ha risposto entro 14 giorni.",
-      "codeNeeded": "Prima verifica la tua email."
+      "codeNeeded": "Prima verifica la tua email.",
+      "outsideClosed": "Questo account è stato bloccato o è in corso di eliminazione, quindi non può entrare. La richiesta è chiusa."
     },
     "code": {
       "wrong": "Codice errato. Riprova.",
@@ -19672,6 +19674,7 @@
     "serverOwner": "Hai configurato tu questo server. Le sue impostazioni non avranno un proprietario qui, solo nel suo ambiente.",
     "blockers": "Prima di poterlo eliminare",
     "soleOwner": "Sei l'unico Proprietario di {{name}}. Rendi Proprietario qualcun altro, oppure elimina {{name}}.",
+    "soleOwnerOutside": "Sei l'unico Proprietario di {{name}}, e le altre persone lì sono collaboratori esterni, che non possono essere proprietari. Invita un membro e rendilo Proprietario, oppure elimina {{name}}.",
     "soleOwnerSettingUp": "Sei l'unico Proprietario di {{name}}. Completa la configurazione per rendere Proprietario qualcun altro, oppure elimina {{name}}.",
     "openPeople": "Apri Persone",
     "finishSetup": "Completa la configurazione",
