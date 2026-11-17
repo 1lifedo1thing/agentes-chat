@@ -3,6 +3,7 @@ import { formatTimeLeft } from "@agenteschat/client/lib/actions";
 import { rightHandName } from "@agenteschat/client/lib/right-hand";
 import { RENEW_BEFORE_MS, type SurfaceRow, surfaceViaName } from "@agenteschat/client/lib/surface-links";
 import { surfaceVia } from "@agenteschat/client/lib/via";
+import { formatPhone } from "@agenteschat/i18n/format";
 import type { TFunction } from "i18next";
 
 /** Linking the outside chat surface (ADR 0187) on the phone: the row in Notificações and its sheet. */
@@ -46,7 +47,7 @@ export function surfaceRowText(
   if (row.kind === "active") {
     const { display, profileName } = row.link;
     return {
-      sub: display ?? profileName ?? undefined,
+      sub: display ? formatPhone(display) : (profileName ?? undefined),
       ...(display && profileName ? { below: profileName } : {}),
       value: t("mobile.surface.on"),
     };

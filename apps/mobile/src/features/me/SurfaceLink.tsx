@@ -18,6 +18,7 @@ import {
   type SurfaceRow,
   surfaceRowOf,
 } from "@agenteschat/client/lib/surface-links";
+import { formatPhone } from "@agenteschat/i18n/format";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -336,7 +337,7 @@ function ConfirmStep({
         </Text>
         {link.display ? (
           <Text variant="body" selectable style={styles.strong}>
-            {link.display}
+            {formatPhone(link.display)}
           </Text>
         ) : null}
         {link.profileName ? (

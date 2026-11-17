@@ -25,7 +25,7 @@ const LONG_SURFACE = "Example Chat Longunbrokenwordxyz";
 const link = (over: Partial<SurfaceLink> = {}): SurfaceLink => ({
   id: "l1",
   status: "pending",
-  display: "+1 555 0100",
+  display: "5511900000001",
   profileName: "Ana",
   orgId: "o1",
   orgName: "Acme",
@@ -62,7 +62,7 @@ describe("the row in Notificações", () => {
 
     const active = surfaceRowOf(links([link({ status: "active", expiresAt: null })]), NOW);
     if (active.kind === "hidden") throw new Error("hidden");
-    expect(surfaceRowText(t, active, "Lodi")).toEqual({ sub: "+1 555 0100", below: "Ana", value: "On" });
+    expect(surfaceRowText(t, active, "Lodi")).toEqual({ sub: "+55 (11) 90000-0001", below: "Ana", value: "On" });
   });
 
   test("worst case: the whole display and profile name, never cut, and only one line when the other is missing", async () => {

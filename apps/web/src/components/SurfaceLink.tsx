@@ -19,6 +19,7 @@ import {
   RENEW_BEFORE_MS,
   surfaceRowOf,
 } from "@agenteschat/client/lib/surface-links";
+import { formatPhone } from "@agenteschat/i18n/format";
 import { Alert, Button, Dialog, DialogBody, DialogFooter, Icon, PixelSpinner, QrCode, useNow } from "@agenteschat/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -76,7 +77,10 @@ export function SurfacePrefRow() {
   const row = surfaceRowOf(links.data);
   if (row.kind === "hidden") return null;
   const { surface } = row;
-  const sender = row.kind === "active" ? [row.link.display, row.link.profileName].filter(Boolean) : [];
+  const sender =
+    row.kind === "active"
+      ? [row.link.display && formatPhone(row.link.display), row.link.profileName].filter(Boolean)
+      : [];
 
   return (
     <>
@@ -289,7 +293,7 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
               <span className="small muted">{t("surface.link.sentBy")}</span>
               {pending.display && (
                 <bdi className="surface-sender__display" dir="auto">
-                  {pending.display}
+                  {formatPhone(pending.display)}
                 </bdi>
               )}
               {pending.profileName && (
