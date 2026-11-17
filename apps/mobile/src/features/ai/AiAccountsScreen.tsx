@@ -76,9 +76,9 @@ import { alertKeyRefused, Note, PasteField, PlanHoldNote, usePlanHold } from "./
  * connected ("Conta deste computador", the agents there think with them), then their own accounts on every computer,
  * each with its plan's meter and the agents it thinks for, renamed (on a screen of its own), signed in again (a new key
  * for a coding plan) on its plan's page of Connect an AI, given to one more agent where it thinks for all of them, or
- * disconnected here; "Conectar uma IA" ends the list (the same picker as everywhere). An account a run may move to at
- * a limit sits instead in its plan's "Ordem de uso" (ADR 0041 §6), numbered. Then the workspace's API keys (admins), the
- * default one, a key swapped (in a sheet) or deleted, and "Adicionar chave" ending theirs.
+ * disconnected here. An account a run may move to at a limit sits instead in its plan's "Ordem de uso" (ADR 0041
+ * §6), numbered. "Conectar uma IA" comes after every account (the same picker as everywhere). Then the workspace's API
+ * keys (admins), the default one, a key swapped (in a sheet) or deleted, and "Adicionar chave" ending theirs.
  */
 
 type Account = AiAccountsView["accounts"][number];
@@ -293,6 +293,7 @@ function AiAccounts() {
             <ProviderLogo id={a.provider ?? a.kind} size="sm" off={out} />
           )
         }
+        leadingSaid={n?.toString()}
         label={accountTitle(a)}
         sub={facts.join(" · ")}
         subLines={2}
@@ -323,6 +324,10 @@ function AiAccounts() {
   // Under a hold its note says what comes first: an invitation to connect a plan would contradict it.
   const none = !hold && ai.isSuccess && rows.length === 0 && own.length === 0;
   const adds = !none && !hold;
+  const connect =
+    adds && ai.isSuccess ? (
+      <GroupedRow icon="plus" label={t("aiAccounts.page.connect")} onPress={() => openConnectAi()} />
+    ) : null;
   return (
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
       <PushedHeader
@@ -345,8 +350,9 @@ function AiAccounts() {
         {none ? (
           <FirstUse place="ai" size="panel" acts label={t("aiAccounts.page.connect")} onPress={() => openConnectAi()} />
         ) : null}
-        {/* One list, as Settings' own: the computers' sign-ins, the person's accounts, then the way to one more. The
-            mark sits in the rows' leading column and the hairlines start at the words. */}
+        {/* One list, as Settings' own: the computers' sign-ins, the person's accounts not in an order, then the way to
+            one more, which follows the orders when there are any. The mark sits in the rows' leading column and the
+            hairlines start at the words. */}
         <GroupedList>
           {own.map((o) => (
             <GroupedRow
@@ -364,9 +370,7 @@ function AiAccounts() {
             />
           ))}
           {rows.filter((a) => !placed.has(a.id)).map((a) => accountRow(a))}
-          {adds && ai.isSuccess ? (
-            <GroupedRow icon="plus" label={t("aiAccounts.page.connect")} onPress={() => openConnectAi()} />
-          ) : null}
+          {groups.length === 0 ? connect : null}
         </GroupedList>
         {hold ? <PlanHoldNote org={org} inset /> : null}
         {groups.map((g) => (
@@ -388,6 +392,7 @@ function AiAccounts() {
                       {n ?? ""}
                     </Text>
                   }
+                  leadingSaid={n?.toString()}
                   label={accountTitle(a)}
                   sub={a.ownerName ?? undefined}
                   more={them.length > 0}
@@ -405,6 +410,13 @@ function AiAccounts() {
             })}
           </OrderSection>
         ))}
+        {ai.isSuccess && order.isError && !order.data ? <LoadFailed onRetry={() => void order.refetch()} /> : null}
+        {groups.length > 0 && connect ? (
+          <>
+            <Gap />
+            <GroupedList>{connect}</GroupedList>
+          </>
+        ) : null}
         {can(org, "manage_credentials") ? <KeysSection locale={i18n.language} /> : null}
         <PersonalParts />
       </ScrollView>

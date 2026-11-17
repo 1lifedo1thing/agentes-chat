@@ -299,10 +299,6 @@ const WINDOW_MS: Partial<Record<string, number>> = {
   other: 7 * 86_400_000,
 };
 
-/** The paid extra usage the account has turned on with the provider (only Claude's plans report it). */
-export const extraUsageOn = (usage: { windows: readonly PlanMeterWindow[] } | null | undefined) =>
-  usage?.windows.some((w) => w.kind === "other" && w.label === EXTRA_USAGE_LABEL) ?? false;
-
 /** Extra usage that is on and still has room under its own cap: what long work may go on into. */
 export const extraUsageLeft = (usage: { windows: readonly PlanMeterWindow[] } | null | undefined) =>
   usage?.windows.some((w) => w.kind === "other" && w.label === EXTRA_USAGE_LABEL && w.usedPercent < PLAN_PAUSE) ??

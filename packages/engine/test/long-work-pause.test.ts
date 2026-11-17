@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { MACHINE_PROTOCOL_VERSION, userTopic } from "@agenteschat/adapters";
 import { and, eq, schema } from "@agenteschat/db";
-import { extraUsageLeft, extraUsageOn, planBinding } from "@agenteschat/ui/plan-state";
+import { extraUsageLeft, planBinding } from "@agenteschat/ui/plan-state";
 import {
   addChannelMember,
   answerNow,
@@ -79,9 +79,7 @@ test("the window that binds long work: live, of this model, never extra usage", 
   expect(planBinding(old, { now })).toBeNull();
   expect(planBinding(reading([{ kind: "five_hour", usedPercent: 96 }]), { now })?.used).toBe(96);
   expect(planBinding(null)).toBeNull();
-  expect(extraUsageOn(u)).toBe(true);
-  expect(extraUsageOn(reading([{ kind: "five_hour", usedPercent: 1 }]))).toBe(false);
-  // Extra usage whose own cap is spent leaves long work nothing to go on into; the switch still shows.
+  // Extra usage whose own cap is spent leaves long work nothing to go on into.
   expect(extraUsageLeft(u)).toBe(false);
   expect(extraUsageLeft(reading([{ kind: "other", label: "Extra usage", usedPercent: 140 }]))).toBe(false);
   expect(extraUsageLeft(reading([{ kind: "other", label: "Extra usage", usedPercent: 10 }]))).toBe(true);

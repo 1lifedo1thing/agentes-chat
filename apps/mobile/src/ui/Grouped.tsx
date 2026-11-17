@@ -189,6 +189,8 @@ export interface GroupedRowProps {
   icon?: IconName;
   /** Anything else on the left (an organization's tile). */
   leading?: ReactNode;
+  /** What `leading` says when it is words (an account's place in an order): VoiceOver reads it before the label. */
+  leadingSaid?: string;
   /** The value on the right, faint ("Ligadas"). */
   value?: string;
   /** A short fact about the value, after it on its line ("Pela API"); a sentence goes in `sub`. */
@@ -270,6 +272,7 @@ function Row({
   belowText,
   icon,
   leading,
+  leadingSaid,
   value,
   valueNote,
   valueLeading,
@@ -484,7 +487,7 @@ function Row({
       disabled={disabled || (!onPress && !actions.length)}
       accessibilityRole={toggle !== undefined ? "switch" : "button"}
       // The row is one element to VoiceOver: its own label stands for every word inside, its small line too.
-      accessibilityLabel={[label, sub, belowText, said, value, valueNote].filter(Boolean).join(", ")}
+      accessibilityLabel={[leadingSaid, label, sub, belowText, said, value, valueNote].filter(Boolean).join(", ")}
       {...(actions.length
         ? {
             accessibilityActions: actions.map(({ name, label }) => ({ name, label })),
