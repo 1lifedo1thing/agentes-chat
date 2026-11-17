@@ -23,7 +23,7 @@ import {
   relativeTime,
 } from "./format";
 import { brainName } from "./outages";
-import { modelLimitOf, ownLimitsModel, planOf, planReplies } from "./plans";
+import { isPlanId, modelLimitOf, ownLimitsModel, planOf, planReplies } from "./plans";
 
 /**
  * The words of the plan usage views (ADR 0063), shared by the web and the phone: a plan meter's text, an
@@ -661,8 +661,11 @@ export const accountName = (
 ) =>
   a.label === null
     ? ownSignInName(t, a.mine, a.machineName, a.kind)
-    : // The usage views carry no key's end: an OpenCode account is a key account, read by its name as everywhere.
-      accountTitle(t, { ...a, label: a.label, keyHint: a.kind === "opencode" ? "" : null });
+    : // Someone else's and a key account (an OpenCode one is too: the usage views carry no key's end) by their name
+      // alone, as before: the row's chip says the plan.
+      a.mine && a.kind !== "opencode" && !isPlanId(a.provider)
+      ? accountTitle(t, { ...a, label: a.label, keyHint: null })
+      : a.label;
 
 /** Who makes what an account thinks with: a coding plan's maker, else Claude Code or Codex. */
 export const brandOf = (a: Pick<PlanAccountInfo, "kind" | "provider">) =>

@@ -443,7 +443,8 @@ describe("IA e uso › Contas: the order of use at a limit (ADR 0041 §6)", () =
     expect(grips).toEqual(["Mover Trabalho, número 1 na ordem", "Mover Pessoal, número 2 na ordem"]);
     // ChatGPT has one account: a row like any other, no place, no heading.
     expect(plans().querySelectorAll(".plan-order")).toHaveLength(1);
-    const codex = [...plans().querySelectorAll(".plan-row")].find((r) => r.textContent?.includes("ChatGPT Plus"));
+    // Its automatic name ("ChatGPT Plus") says nothing: the row goes by its email.
+    const codex = [...plans().querySelectorAll(".plan-row")].find((r) => r.textContent?.includes("acct_x@example.com"));
     expect(codex?.querySelector(".plan-row__place")).toBeNull();
   });
 
