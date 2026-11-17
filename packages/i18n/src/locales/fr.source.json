@@ -31327,7 +31327,7 @@
     "value": "Move {{name}} to the team?"
   },
   "connectors.personal.moveText": {
-    "value": "Everyone in the workspace sees it. People who manage agents, and each agent's owner, choose which agents use it."
+    "value": "Everyone in the workspace sees it. People who manage agents choose which agents use it, and an agent's owner can turn it off on theirs."
   },
   "connectors.personal.moved": {
     "value": "{{name}} now belongs to the team."

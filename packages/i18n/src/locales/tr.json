@@ -12722,7 +12722,7 @@
       "turnOffName": "Bu ajan için {{name}} kapat",
       "moveToTeam": "Ekibe taşı",
       "moveTitle": "{{name}} ekibe taşınsın mı?",
-      "moveText": "Çalışma alanındaki herkes görür. Hangi ajanların kullanacağını ajanları yöneten kişiler ve her ajanın sahibi seçer.",
+      "moveText": "Workspace'teki herkes görür. Hangi ajanların kullanacağını ajanları yöneten kişiler seçer, bir ajanın sahibi de kendi ajanında kapatabilir.",
       "moved": "{{name}} artık ekibin."
     },
     "addTitle": "Bağlayıcı ekle",

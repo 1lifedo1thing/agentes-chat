@@ -12848,7 +12848,7 @@
       "turnOffName": "{{name}} uitzetten voor deze agent",
       "moveToTeam": "Naar het team",
       "moveTitle": "{{name}} naar het team?",
-      "moveText": "Iedereen in de workspace ziet het. Wie agenten beheert, en de eigenaar van elke agent, kiezen welke agenten het gebruiken.",
+      "moveText": "Iedereen in de workspace ziet het. Wie agenten beheert, kiest welke agenten het gebruiken, en de eigenaar van een agent kan het bij die van hem uitzetten.",
       "moved": "{{name}} is nu van het team."
     },
     "addTitle": "Connector toevoegen",

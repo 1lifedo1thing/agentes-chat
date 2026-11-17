@@ -12785,7 +12785,7 @@
       "turnOffName": "{{name}} für diesen Agenten ausschalten",
       "moveToTeam": "Ins Team verschieben",
       "moveTitle": "{{name}} ins Team verschieben?",
-      "moveText": "Alle im Workspace sehen es. Wer Agenten verwaltet, und der Besitzer jedes Agenten, wählen, welche Agenten es nutzen.",
+      "moveText": "Alle im Workspace sehen es. Wer Agenten verwaltet, wählt, welche Agenten es nutzen, und der Besitzer eines Agenten kann es bei seinem ausschalten.",
       "moved": "{{name}} gehört jetzt dem Team."
     },
     "addTitle": "Konnektor hinzufügen",

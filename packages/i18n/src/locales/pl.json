@@ -13763,7 +13763,7 @@
       "turnOffName": "Wyłącz {{name}} dla tego agenta",
       "moveToTeam": "Przenieś do zespołu",
       "moveTitle": "Przenieść {{name}} do zespołu?",
-      "moveText": "Wszyscy w workspace to widzą. Kto zarządza agentami, oraz właściciel każdego agenta, wybierają, którzy agenci z tego korzystają.",
+      "moveText": "Wszyscy w workspace go widzą. Osoby zarządzające agentami wybierają, które agenty z niego korzystają, a właściciel agenta może go wyłączyć u swojego.",
       "moved": "{{name}} należy teraz do zespołu."
     },
     "addTitle": "Dodaj konektor",

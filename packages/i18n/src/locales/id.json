@@ -12318,7 +12318,7 @@
       "turnOffName": "Matikan {{name}} untuk agen ini",
       "moveToTeam": "Pindahkan ke tim",
       "moveTitle": "Pindahkan {{name}} ke tim?",
-      "moveText": "Semua orang di workspace bisa melihatnya. Orang yang mengelola agen, dan pemilik setiap agen, memilih agen mana yang memakainya.",
+      "moveText": "Semua orang di workspace melihatnya. Yang mengelola agen memilih agen mana yang memakainya, dan pemilik agen bisa mematikannya di agennya.",
       "moved": "{{name}} sekarang milik tim."
     },
     "addTitle": "Tambah konektor",

@@ -13201,7 +13201,7 @@ export const en = {
       moveToTeam: "Move to the team",
       moveTitle: "Move {{name}} to the team?",
       moveText:
-        "Everyone in the workspace sees it. People who manage agents, and each agent's owner, choose which agents use it.",
+        "Everyone in the workspace sees it. People who manage agents choose which agents use it, and an agent's owner can turn it off on theirs.",
       moved: "{{name}} now belongs to the team.",
     },
     addTitle: "Add connector",

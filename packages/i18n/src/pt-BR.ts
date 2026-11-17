@@ -13214,7 +13214,7 @@ export const ptBR = {
       moveToTeam: "Passar para a equipe",
       moveTitle: "Passar {{name}} para a equipe?",
       moveText:
-        "Todos do workspace passam a ver. Quem gerencia agentes, e o dono de cada agente, escolhem quais agentes usam.",
+        "Todos do workspace passam a ver. Quem gerencia agentes escolhe quais agentes usam, e o dono de um agente pode desligar no seu.",
       moved: "{{name}} agora é da equipe.",
     },
     addTitle: "Adicionar conector",

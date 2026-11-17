@@ -13270,7 +13270,7 @@
       "turnOffName": "Désactiver {{name}} pour cet agent",
       "moveToTeam": "Passer à l’équipe",
       "moveTitle": "Passer {{name}} à l’équipe ?",
-      "moveText": "Tout le monde dans le workspace la voit. Les personnes qui gèrent les agents, et le propriétaire de chaque agent, choisissent quels agents l'utilisent.",
+      "moveText": "Tout le workspace le voit. Les personnes qui gèrent les agents choisissent quels agents l'utilisent, et le propriétaire d'un agent peut le désactiver sur le sien.",
       "moved": "{{name}} appartient maintenant à l’équipe."
     },
     "addTitle": "Ajouter un connecteur",
