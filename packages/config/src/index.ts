@@ -74,6 +74,18 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
       throw new ConfigError([`OPERATOR_API_REVEAL_TOKEN must differ from ${other}`]);
     }
   }
+  if (config.SURFACE_BRIDGE_TOKEN && !(config.SURFACE_NAME && config.SURFACE_OPEN_URL)) {
+    throw new ConfigError(["SURFACE_BRIDGE_TOKEN needs SURFACE_NAME and SURFACE_OPEN_URL"]);
+  }
+  if (!config.SURFACE_BRIDGE_TOKEN && (config.SURFACE_NAME || config.SURFACE_OPEN_URL || config.SURFACE_ONLY)) {
+    throw new ConfigError(["SURFACE_NAME, SURFACE_OPEN_URL and SURFACE_ONLY need SURFACE_BRIDGE_TOKEN"]);
+  }
+  // Equal to one of them, a single token would open both doors, and each must reach only its own.
+  for (const other of ["OPERATOR_API_TOKEN", "OPERATOR_API_READ_TOKEN", "OPERATOR_API_REVEAL_TOKEN"] as const) {
+    if (config.SURFACE_BRIDGE_TOKEN && config.SURFACE_BRIDGE_TOKEN === config[other]) {
+      throw new ConfigError([`SURFACE_BRIDGE_TOKEN must differ from ${other}`]);
+    }
+  }
   if (config.MACHINE_PROVISIONING === "external" && config.HOST_COMPUTER_TOKEN) {
     throw new ConfigError([
       "HOST_COMPUTER_TOKEN can't be set with MACHINE_PROVISIONING=external: every workspace gets its own computer, and no other computer joins it",

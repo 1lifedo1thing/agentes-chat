@@ -2873,5 +2873,11 @@
       "title": "Niets te controleren",
       "text": "Als een agent iets buiten het gesprek doet, verschijnt het hier."
     }
+  },
+  "surface": {
+    "on": "Aan",
+    "codeText": "Stuur het bericht dat daar opent en kom dan hier terug.",
+    "openFailed": "{{surface}} kon niet openen op deze telefoon. Stuur de code hieronder er zelf heen.",
+    "orType": "Of stuur deze code daar"
   }
 }

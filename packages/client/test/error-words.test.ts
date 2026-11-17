@@ -396,6 +396,12 @@ test("a provider refused this server's own OAuth app: what's wrong and who fixes
  * hit goes in `KNOWN` instead.
  */
 const PLAIN_LINE = new Set([
+  // Only the outside chat surface's service meets these, on its own bridge routes (ADR 0187).
+  "surface.busy",
+  "surface.claim_limit",
+  "surface.file_gone",
+  "surface.rate_limited",
+  "surface.unlinked",
   // Only the operator API ends an outside collaborator's access (ADR 0191): no person in the apps meets its refusal.
   "outside_access.member",
   // Only the operator API registers the hosts a server answers on (ADR 0194): no person in the apps meets these.
