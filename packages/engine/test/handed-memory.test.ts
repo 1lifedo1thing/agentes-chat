@@ -512,6 +512,51 @@ describe("what it keeps, and what it leaves out", () => {
     });
   });
 
+  test("an answer from a run a routine feeds is left out, though a person wrote into the run that asked", async () => {
+    f = await setup({ askAgent: true });
+    const ada = await createAgent(
+      f.db,
+      f.owner.id,
+      f.org.id,
+      { name: "Ada", handle: "ada", role: "Vendas", credentialId: f.credential.id },
+      { model: "claude-sonnet-5-5" },
+    );
+    const routine = await agentRun(f.agent.id, f.general.id, "rotina", f.owner.id, { background: true });
+    // What a person decided on the routine's proposal comes back to its run, unmarked, and wakes a run nobody is behind.
+    const notice = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: f.general.id,
+      author: { type: "agent", agentId: f.agent.id, runId: null, hop: 0, stretchId: null },
+      body: "Criado.",
+      meta: { notice: { kind: "proposal_result", from: "Proposta", text: "Criado.", refs: { runId: routine.id } } },
+    });
+    const [woken] = await f.db
+      .insert(schema.agentRuns)
+      .values({
+        orgId: f.org.id,
+        agentId: f.agent.id,
+        channelId: f.general.id,
+        threadRootId: notice.id,
+        triggerMessageId: notice.id,
+        trigger: "mention",
+        hop: 1,
+        stretchId: notice.id,
+        transcript: { system: "", messages: [], steeredBy: f.owner.id } as never,
+      })
+      .returning();
+    if (!woken) throw new Error("no run");
+    await invoke(woken, "ask_agent", { agent: "@ada", question: "Quanto vendemos?" });
+    const [c] = await notes();
+    expect(c?.forUserId).toBe(f.owner.id);
+    await f.db
+      .update(schema.agentConsultations)
+      .set({ status: "answered", answer: "Vendemos 40 mil.", answeredAt: new Date() })
+      .where(eq(schema.agentConsultations.id, c?.id ?? ""));
+    expect(await runReadOutsideById(f.db, f.org.id, c?.targetRunId ?? "")).toBe(true);
+    const [h] = await handedFor(f.db, f.org.id, ada.id, f.owner.id);
+    expect([h?.question, h?.answer, h?.answerHidden]).toEqual(["Quanto vendemos?", null, true]);
+  });
+
   test("a note relaying what its run read outside: the memory leaves its words out", async () => {
     const prompts: { system: string; all: string }[] = [];
     f = await setup({
@@ -650,7 +695,8 @@ describe("where it is read, and what it holds", () => {
 
 describe("whose it is, and what it costs", () => {
   test("a fixed number of statements: one hand-off, six, or six behind sixty of someone else's", async () => {
-    const { ada } = await handedToAda();
+    const { ada, run } = await handedToAda();
+    await reports(run);
     const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
     const dev = await devRun(f.general.id, "@dev pergunta pra Ada");
     const answering = await agentRun(ada.id, room.id, "responde");
@@ -676,7 +722,7 @@ describe("whose it is, and what it costs", () => {
       ...[5, 4, 3, 2, 1].map((i) => `Coisa ${i}.`),
     ]);
     expect([six, behind]).toEqual([one, one]);
-    expect(one).toBeLessThanOrEqual(3);
+    expect(one).toBe(2);
   });
 
   test("a hand-off with nobody behind it is never anyone's", async () => {

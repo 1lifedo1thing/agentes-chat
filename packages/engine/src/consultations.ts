@@ -2441,6 +2441,9 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
       targetRunId: agentConsultations.targetRunId,
       createdAt: agentConsultations.createdAt,
       askerHandle: agents.handle,
+      // A person wrote into an asking run nobody was behind (`steeredBy`): that made it theirs, not the run that answers.
+      askerSteered: sql<boolean>`exists (select 1 from ${agentRuns} ar where ar.org_id = ${orgId}
+        and ar.id = ${agentConsultations.askerRunId} and ar.transcript -> 'steeredBy' is not null)`,
       work: { status: agentWorks.status, finishedAt: agentWorks.finishedAt },
       report: { body: messages.body, meta: messages.meta, runId: messages.agentRunId },
     })
@@ -2470,14 +2473,15 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
     .orderBy(desc(agentConsultations.createdAt))
     .limit(HANDED_REMEMBERED);
   const states = rows.map((r) => (r.work?.status ? handedWorkState(r.work, r.report) : noteState(r)));
-  // Every run here works for that person (a note joins only a run for the same person), so no routine feeds them.
+  // The asking runs work for that person, so no routine feeds them. So do the answering ones, unless the asking run was
+  // nobody's until the person wrote into it: then the answer may come from a run a routine feeds, and stays out.
   const outside = await personRunsReadOutside(db, orgId, [
     ...rows.map((r) => r.askerRunId),
     ...states.flatMap((s) => (s.answeredBy ? [s.answeredBy] : [])),
   ]);
   return rows.map((r, i) => {
     const { answeredBy, words, ...state } = states[i] as HandedState;
-    const answerHidden = !!answeredBy && outside.has(answeredBy);
+    const answerHidden = !!answeredBy && (r.askerSteered || outside.has(answeredBy));
     return {
       kind: r.kind,
       ...state,

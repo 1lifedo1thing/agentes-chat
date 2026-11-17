@@ -160,23 +160,25 @@ export async function personRunsReadOutside(db: Executor, orgId: string, runIds:
   const read = new Set(ids.filter((id) => caches.readOutsideRuns.get(`${orgId}:${id}`)));
   const ask = ids.filter((id) => !read.has(id));
   if (ask.length === 0) return read;
-  // The trigger is `messages` itself; the conversation's marked messages are `mk`, the newest top-level ones `w`.
+  // The trigger is `messages` itself. The thread and the top-level window are separate `exists`: under one OR the
+  // window's `in` cannot become a join, and the whole channel is filtered instead of thirty rows.
   const rows = await db
     .select({
       id: agentRuns.id,
       transcript: transcriptKeys("harnessTried"),
-      marked: sql<boolean>`(coalesce(${messages.meta} ->> 'readOutside' = 'true', false)
+      marked: sql<boolean>`(coalesce(${messages.meta} -> 'readOutside' = 'true'::jsonb, false)
         or exists (select 1 from ${agentRunSteps} s where s.run_id = ${agentRuns.id} and s.kind = 'tool_result'
           and s.data -> 'data' ->> 'outside' = 'true')
-        or exists (select 1 from ${messages} mk where mk.org_id = ${orgId} and mk.channel_id = ${messages.channelId}
-          and mk.deleted_at is null and mk.meta ->> 'readOutside' = 'true'
-          and ((${messages.threadId} is not null and (mk.id = ${messages.threadId} or mk.thread_id = ${messages.threadId}))
-            or mk.id in (select w.id from ${messages} w where w.org_id = ${orgId} and w.channel_id = ${messages.channelId}
-              and w.thread_id is null and ${postedBySql(
-                { createdAt: sql`w.created_at`, id: sql`w.id` },
-                { createdAt: sql`${messages.createdAt}`, id: sql`${messages.id}` },
-              )}
-              order by w.created_at desc limit ${CONVERSATION_WINDOW}))))`,
+        or (${messages.threadId} is not null and exists (select 1 from ${messages} mk where mk.org_id = ${orgId}
+          and mk.channel_id = ${messages.channelId} and mk.deleted_at is null and mk.meta ->> 'readOutside' = 'true'
+          and (mk.id = ${messages.threadId} or mk.thread_id = ${messages.threadId})))
+        or exists (select 1 from (select w.meta, w.deleted_at from ${messages} w where w.org_id = ${orgId}
+            and w.channel_id = ${messages.channelId} and w.thread_id is null and ${postedBySql(
+              { createdAt: sql`w.created_at`, id: sql`w.id` },
+              { createdAt: sql`${messages.createdAt}`, id: sql`${messages.id}` },
+            )}
+            order by w.created_at desc limit ${CONVERSATION_WINDOW}) top
+          where top.deleted_at is null and top.meta ->> 'readOutside' = 'true'))`,
     })
     .from(agentRuns)
     .leftJoin(messages, and(eq(messages.orgId, agentRuns.orgId), eq(messages.id, agentRuns.triggerMessageId)))
