@@ -2547,6 +2547,9 @@ async function executeRunInner(
               ...(deps.tools ? await grantedScopeKeys(db, run.orgId, agent.id) : []),
             ]),
           ].sort(),
+          // A session a person's own connection was offered in holds what it read: only their runs resume it
+          // (ADR 0099 addendum). Absent otherwise, so no other session's key changes.
+          ...[...new Set(granted.flatMap((t) => (t.ownerUserId ? [`personal:${t.ownerUserId}`] : [])))],
         ]),
       ),
       postedUpTo: context.messages.length,
