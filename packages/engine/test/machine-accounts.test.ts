@@ -56,8 +56,8 @@ import {
   syncMachineAccounts,
   ValidationError,
 } from "../src";
-import { addMember, addUser, type Fixture, setup } from "./fixtures";
 import { isDefaultAccountLabel } from "../src/machine-accounts";
+import { addMember, addUser, type Fixture, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
 
 /**
