@@ -13194,8 +13194,9 @@
     },
     "personal": {
       "note": "Solo tú abres estas conexiones. Tus agentes las usan solo cuando se lo pides.",
+      "noteOne": "Solo tú abres esta conexión. Tus agentes la usan solo cuando se lo pides.",
       "emptyTitle": "Conecta tus propias cuentas",
-      "emptyText": "Solo tú abres estas conexiones, y tus agentes las usan solo cuando se lo pides.",
+      "emptyText": "Solo tú abres tus conexiones, y tus agentes las usan solo cuando se lo pides. Los buzones siguen su propia regla.",
       "noApps": "Los servicios que conectes solo para ti aparecen aquí.",
       "mailTitle": "Tus buzones",
       "mailNote": "Los agentes a los que diste permiso usan tus buzones como lo configuraste, también para quien habla directamente con ellos. Cuando otra persona pide algo que necesita aprobación, quien aprueba eres tú.",
@@ -13219,7 +13220,7 @@
       "turnOffName": "Desactivar {{name}} para este agente",
       "moveToTeam": "Pasar al equipo",
       "moveTitle": "¿Pasar {{name}} al equipo?",
-      "moveText": "Todos en el workspace lo ven. Quien gestiona agentes elige qué agentes lo usan, y el dueño de un agente puede desactivarlo en el suyo.",
+      "moveText": "Todos en el workspace lo ven. Quien gestiona agentes elige qué agentes lo usan, y el dueño de un agente puede desactivarlo en el suyo. Un agente que usa todas las apps conectadas lo recibe al instante.",
       "moved": "{{name}} ahora es del equipo."
     },
     "addTitle": "Agregar conector",

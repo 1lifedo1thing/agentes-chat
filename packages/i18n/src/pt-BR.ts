@@ -13206,8 +13206,11 @@ export const ptBR = {
     /** Connections split as the Vault splits its items: the team's and each person's (ADR 0099 addendum). */
     personal: {
       note: "Só você abre estas conexões. Seus agentes só usam quando você pede.",
+      /** Over one connection's own screen on the phone. */
+      noteOne: "Só você abre esta conexão. Seus agentes só usam quando você pede.",
       emptyTitle: "Conecte suas próprias contas",
-      emptyText: "Só você abre estas conexões, e seus agentes só usam quando você pede.",
+      emptyText:
+        "Só você abre suas conexões, e seus agentes só usam quando você pede. Caixas de email seguem a regra delas.",
       noApps: "Os serviços que você conectar só para você aparecem aqui.",
       /** Over the person's own mailboxes on Pessoal: their rule (ADR 0038), not the connections' one. */
       mailTitle: "Suas caixas de email",
@@ -13234,7 +13237,7 @@ export const ptBR = {
       moveToTeam: "Passar para a equipe",
       moveTitle: "Passar {{name}} para a equipe?",
       moveText:
-        "Todos do workspace passam a ver. Quem gerencia agentes escolhe quais agentes usam, e o dono de um agente pode desligar no seu.",
+        "Todos do workspace passam a ver. Quem gerencia agentes escolhe quais agentes usam, e o dono de um agente pode desligar no seu. Um agente que usa todos os apps conectados passa a usar na hora.",
       moved: "{{name}} agora é da equipe.",
     },
     addTitle: "Adicionar conector",

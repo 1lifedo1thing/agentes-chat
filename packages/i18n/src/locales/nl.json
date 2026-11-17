@@ -12842,8 +12842,9 @@
     },
     "personal": {
       "note": "Alleen jij opent deze verbindingen. Je agenten gebruiken ze alleen als je erom vraagt.",
+      "noteOne": "Alleen jij opent deze verbinding. Je agenten gebruiken haar alleen als je erom vraagt.",
       "emptyTitle": "Verbind je eigen accounts",
-      "emptyText": "Alleen jij opent deze verbindingen, en je agenten gebruiken ze alleen als je erom vraagt.",
+      "emptyText": "Alleen jij opent je verbindingen, en je agenten gebruiken ze alleen als je erom vraagt. Voor mailboxen geldt hun eigen regel.",
       "noApps": "Diensten die je alleen voor jezelf koppelt, verschijnen hier.",
       "mailTitle": "Je mailboxen",
       "mailNote": "Agenten die je toestemming gaf gebruiken je mailboxen zoals je het instelde, ook voor mensen die rechtstreeks met ze praten. Vraagt iemand anders iets waarvoor goedkeuring nodig is, dan keur jij het goed.",
@@ -12867,7 +12868,7 @@
       "turnOffName": "{{name}} uitzetten voor deze agent",
       "moveToTeam": "Naar het team",
       "moveTitle": "{{name}} naar het team?",
-      "moveText": "Iedereen in de workspace ziet het. Wie agenten beheert, kiest welke agenten het gebruiken, en de eigenaar van een agent kan het bij die van hem uitzetten.",
+      "moveText": "Iedereen in de workspace ziet het. Wie agenten beheert, kiest welke agenten het gebruiken, en de eigenaar van een agent kan het bij die van hem uitzetten. Een agent die alle gekoppelde apps gebruikt, krijgt het meteen.",
       "moved": "{{name}} is nu van het team."
     },
     "addTitle": "Connector toevoegen",

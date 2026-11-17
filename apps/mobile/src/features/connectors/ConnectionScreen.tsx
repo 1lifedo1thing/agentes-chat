@@ -223,7 +223,7 @@ function Connection({ id }: { id: string }) {
 
         {item?.ownerUserId ? (
           <View style={styles.personal}>
-            <Note icon="lock">{t("connectors.personal.note")}</Note>
+            <Note icon="lock">{t("connectors.personal.noteOne")}</Note>
           </View>
         ) : null}
         {loading ? (

@@ -13200,8 +13200,11 @@ export const en = {
     /** Connections split as the Vault splits its items: the team's and each person's (ADR 0099 addendum). */
     personal: {
       note: "Only you open these connections. Your agents use them only when you ask.",
+      /** Over one connection's own screen on the phone. */
+      noteOne: "Only you open this connection. Your agents use it only when you ask.",
       emptyTitle: "Connect your own accounts",
-      emptyText: "Only you open these connections, and your agents use them only when you ask.",
+      emptyText:
+        "Only you open your connections, and your agents use them only when you ask. Mailboxes follow their own rule.",
       noApps: "Services you connect just for yourself show up here.",
       /** Over the person's own mailboxes on Pessoal: their rule (ADR 0038), not the connections' one. */
       mailTitle: "Your mailboxes",
@@ -13228,7 +13231,7 @@ export const en = {
       moveToTeam: "Move to the team",
       moveTitle: "Move {{name}} to the team?",
       moveText:
-        "Everyone in the workspace sees it. People who manage agents choose which agents use it, and an agent's owner can turn it off on theirs.",
+        "Everyone in the workspace sees it. People who manage agents choose which agents use it, and an agent's owner can turn it off on theirs. An agent that uses every connected app gets it right away.",
       moved: "{{name}} now belongs to the team.",
     },
     addTitle: "Add connector",

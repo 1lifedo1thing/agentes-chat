@@ -13757,8 +13757,9 @@
     },
     "personal": {
       "note": "Te połączenia otwierasz tylko ty. Twoi agenci używają ich tylko wtedy, gdy o to poprosisz.",
+      "noteOne": "To połączenie otwierasz tylko ty, a twoi agenci używają go tylko wtedy, gdy o to poprosisz.",
       "emptyTitle": "Połącz własne konta",
-      "emptyText": "Te połączenia otwierasz tylko ty, a twoi agenci używają ich tylko wtedy, gdy o to poprosisz.",
+      "emptyText": "Swoje połączenia otwierasz tylko ty, a twoi agenci używają ich tylko wtedy, gdy o to poprosisz. Skrzynki pocztowe mają własną zasadę.",
       "noApps": "Usługi, które połączysz tylko dla siebie, pojawią się tutaj.",
       "mailTitle": "Twoje skrzynki",
       "mailNote": "Agenci, którym na to pozwolono, używają Twoich skrzynek tak, jak ustawiono, także dla osób, które rozmawiają z nimi bezpośrednio. Gdy ktoś inny prosi o coś, co wymaga zatwierdzenia, zatwierdzasz Ty.",
@@ -13782,7 +13783,7 @@
       "turnOffName": "Wyłącz {{name}} dla tego agenta",
       "moveToTeam": "Przenieś do zespołu",
       "moveTitle": "Przenieść {{name}} do zespołu?",
-      "moveText": "Wszyscy w workspace go widzą. Osoby zarządzające agentami wybierają, które agenty z niego korzystają, a właściciel agenta może go wyłączyć u swojego.",
+      "moveText": "Wszyscy w workspace go widzą. Osoby zarządzające agentami wybierają, które agenty z niego korzystają, a właściciel agenta może go wyłączyć u swojego. Agent, który korzysta ze wszystkich połączonych aplikacji, dostaje go od razu.",
       "moved": "{{name}} należy teraz do zespołu."
     },
     "addTitle": "Dodaj konektor",

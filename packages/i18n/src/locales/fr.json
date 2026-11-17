@@ -13264,8 +13264,9 @@
     },
     "personal": {
       "note": "Vous seul ouvrez ces connexions. Vos agents les utilisent seulement quand vous le demandez.",
+      "noteOne": "Vous seul ouvrez cette connexion. Vos agents l'utilisent seulement quand vous le demandez.",
       "emptyTitle": "Connectez vos propres comptes",
-      "emptyText": "Vous seul ouvrez ces connexions, et vos agents les utilisent seulement quand vous le demandez.",
+      "emptyText": "Vous seul ouvrez vos connexions, et vos agents les utilisent seulement quand vous le demandez. Les boîtes mail suivent leur propre règle.",
       "noApps": "Les services que vous connectez rien que pour vous apparaissent ici.",
       "mailTitle": "Tes boîtes mail",
       "mailNote": "Les agents que tu as autorisés utilisent tes boîtes comme tu l'as réglé, aussi pour les personnes qui leur parlent directement. Quand quelqu'un d'autre demande quelque chose qui doit être approuvé, c'est toi qui approuves.",
@@ -13289,7 +13290,7 @@
       "turnOffName": "Désactiver {{name}} pour cet agent",
       "moveToTeam": "Passer à l’équipe",
       "moveTitle": "Passer {{name}} à l’équipe ?",
-      "moveText": "Tout le workspace le voit. Les personnes qui gèrent les agents choisissent quels agents l'utilisent, et le propriétaire d'un agent peut le désactiver sur le sien.",
+      "moveText": "Tout le workspace le voit. Les personnes qui gèrent les agents choisissent quels agents l'utilisent, et le propriétaire d'un agent peut le désactiver sur le sien. Un agent qui utilise toutes les apps connectées la reçoit tout de suite.",
       "moved": "{{name}} appartient maintenant à l’équipe."
     },
     "addTitle": "Ajouter un connecteur",

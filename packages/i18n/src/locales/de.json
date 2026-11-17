@@ -12779,8 +12779,9 @@
     },
     "personal": {
       "note": "Nur du öffnest diese Verbindungen. Deine Agenten verwenden sie nur, wenn du sie darum bittest.",
+      "noteOne": "Nur du öffnest diese Verbindung. Deine Agenten verwenden sie nur, wenn du sie darum bittest.",
       "emptyTitle": "Verbinde deine eigenen Konten",
-      "emptyText": "Nur du öffnest diese Verbindungen, und deine Agenten verwenden sie nur, wenn du sie darum bittest.",
+      "emptyText": "Nur du öffnest deine Verbindungen, und deine Agenten verwenden sie nur, wenn du sie darum bittest. Für Postfächer gilt ihre eigene Regel.",
       "noApps": "Dienste, die du nur für dich verbindest, erscheinen hier.",
       "mailTitle": "Deine Postfächer",
       "mailNote": "Agenten, denen du es erlaubt hast, nutzen deine Postfächer so, wie du es eingestellt hast, auch für Personen, die direkt mit ihnen sprechen. Wenn jemand anderes um etwas bittet, das eine Freigabe braucht, gibst du es frei.",
@@ -12804,7 +12805,7 @@
       "turnOffName": "{{name}} für diesen Agenten ausschalten",
       "moveToTeam": "Ins Team verschieben",
       "moveTitle": "{{name}} ins Team verschieben?",
-      "moveText": "Alle im Workspace sehen es. Wer Agenten verwaltet, wählt, welche Agenten es nutzen, und der Besitzer eines Agenten kann es bei seinem ausschalten.",
+      "moveText": "Alle im Workspace sehen es. Wer Agenten verwaltet, wählt, welche Agenten es nutzen, und der Besitzer eines Agenten kann es bei seinem ausschalten. Ein Agent, der alle verbundenen Apps nutzt, bekommt es sofort.",
       "moved": "{{name}} gehört jetzt dem Team."
     },
     "addTitle": "Konnektor hinzufügen",

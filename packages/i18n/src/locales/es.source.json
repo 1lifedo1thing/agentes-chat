@@ -31296,11 +31296,14 @@
   "connectors.personal.note": {
     "value": "Only you open these connections. Your agents use them only when you ask."
   },
+  "connectors.personal.noteOne": {
+    "value": "Only you open this connection. Your agents use it only when you ask."
+  },
   "connectors.personal.emptyTitle": {
     "value": "Connect your own accounts"
   },
   "connectors.personal.emptyText": {
-    "value": "Only you open these connections, and your agents use them only when you ask."
+    "value": "Only you open your connections, and your agents use them only when you ask. Mailboxes follow their own rule."
   },
   "connectors.personal.noApps": {
     "value": "Services you connect just for yourself show up here."
@@ -31372,7 +31375,7 @@
     "value": "Move {{name}} to the team?"
   },
   "connectors.personal.moveText": {
-    "value": "Everyone in the workspace sees it. People who manage agents choose which agents use it, and an agent's owner can turn it off on theirs."
+    "value": "Everyone in the workspace sees it. People who manage agents choose which agents use it, and an agent's owner can turn it off on theirs. An agent that uses every connected app gets it right away."
   },
   "connectors.personal.moved": {
     "value": "{{name}} now belongs to the team."

@@ -12312,8 +12312,9 @@
     },
     "personal": {
       "note": "Hanya kamu yang membuka koneksi ini. Agenmu hanya menggunakannya saat kamu minta.",
+      "noteOne": "Hanya kamu yang membuka koneksi ini. Agenmu hanya menggunakannya saat kamu minta.",
       "emptyTitle": "Hubungkan akunmu sendiri",
-      "emptyText": "Hanya kamu yang membuka koneksi ini, dan agenmu hanya menggunakannya saat kamu minta.",
+      "emptyText": "Hanya kamu yang membuka koneksimu, dan agenmu hanya menggunakannya saat kamu minta. Kotak email punya aturannya sendiri.",
       "noApps": "Layanan yang kamu hubungkan hanya untuk dirimu muncul di sini.",
       "mailTitle": "Kotak surat kamu",
       "mailNote": "Agen yang kamu izinkan memakai kotak surat kamu sesuai pengaturanmu, juga untuk orang yang berbicara langsung dengan mereka. Saat orang lain meminta sesuatu yang perlu persetujuan, kamu yang menyetujuinya.",
@@ -12337,7 +12338,7 @@
       "turnOffName": "Matikan {{name}} untuk agen ini",
       "moveToTeam": "Pindahkan ke tim",
       "moveTitle": "Pindahkan {{name}} ke tim?",
-      "moveText": "Semua orang di workspace melihatnya. Yang mengelola agen memilih agen mana yang memakainya, dan pemilik agen bisa mematikannya di agennya.",
+      "moveText": "Semua orang di workspace melihatnya. Yang mengelola agen memilih agen mana yang memakainya, dan pemilik agen bisa mematikannya di agennya. Agen yang memakai semua aplikasi terhubung langsung mendapatkannya.",
       "moved": "{{name}} sekarang milik tim."
     },
     "addTitle": "Tambah konektor",

@@ -12716,8 +12716,9 @@
     },
     "personal": {
       "note": "Bu bağlantıları yalnızca sen açarsın. Ajanların bunları yalnızca sen istediğinde kullanır.",
+      "noteOne": "Bu bağlantıyı yalnızca sen açarsın ve ajanların onu yalnızca sen istediğinde kullanır.",
       "emptyTitle": "Kendi hesaplarını bağla",
-      "emptyText": "Bu bağlantıları yalnızca sen açarsın ve ajanların bunları yalnızca sen istediğinde kullanır.",
+      "emptyText": "Bağlantılarını yalnızca sen açarsın ve ajanların bunları yalnızca sen istediğinde kullanır. E-posta kutularının kendi kuralı vardır.",
       "noApps": "Yalnızca kendin için bağladığın hizmetler burada görünür.",
       "mailTitle": "Posta kutuların",
       "mailNote": "İzin verdiğin ajanlar posta kutularını ayarladığın gibi kullanır, onlarla doğrudan konuşan kişiler için de. Başka biri onay gerektiren bir şey istediğinde onaylayan sensin.",
@@ -12741,7 +12742,7 @@
       "turnOffName": "Bu ajan için {{name}} kapat",
       "moveToTeam": "Ekibe taşı",
       "moveTitle": "{{name}} ekibe taşınsın mı?",
-      "moveText": "Workspace'teki herkes görür. Hangi ajanların kullanacağını ajanları yöneten kişiler seçer, bir ajanın sahibi de kendi ajanında kapatabilir.",
+      "moveText": "Workspace'teki herkes görür. Hangi ajanların kullanacağını ajanları yöneten kişiler seçer, bir ajanın sahibi de kendi ajanında kapatabilir. Bağlı tüm uygulamaları kullanan bir ajan onu hemen alır.",
       "moved": "{{name}} artık ekibin."
     },
     "addTitle": "Bağlayıcı ekle",

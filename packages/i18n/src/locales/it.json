@@ -13276,8 +13276,9 @@
     },
     "personal": {
       "note": "Solo tu apri queste connessioni. I tuoi agenti le usano solo quando glielo chiedi.",
+      "noteOne": "Solo tu apri questa connessione. I tuoi agenti la usano solo quando glielo chiedi.",
       "emptyTitle": "Collega i tuoi account",
-      "emptyText": "Solo tu apri queste connessioni, e i tuoi agenti le usano solo quando glielo chiedi.",
+      "emptyText": "Solo tu apri le tue connessioni, e i tuoi agenti le usano solo quando glielo chiedi. Le caselle email seguono la loro regola.",
       "noApps": "I servizi che colleghi solo per te compaiono qui.",
       "mailTitle": "Le tue caselle email",
       "mailNote": "Gli agenti a cui l'hai permesso usano le tue caselle come hai impostato, anche per chi parla direttamente con loro. Quando un'altra persona chiede qualcosa che richiede approvazione, sei tu ad approvare.",
@@ -13301,7 +13302,7 @@
       "turnOffName": "Disattiva {{name}} per questo agente",
       "moveToTeam": "Passa al team",
       "moveTitle": "Passare {{name}} al team?",
-      "moveText": "Tutti nel workspace lo vedono. Chi gestisce gli agenti sceglie quali agenti lo usano, e il proprietario di un agente può disattivarlo sul suo.",
+      "moveText": "Tutti nel workspace lo vedono. Chi gestisce gli agenti sceglie quali agenti lo usano, e il proprietario di un agente può disattivarlo sul suo. Un agente che usa tutte le app collegate lo riceve subito.",
       "moved": "{{name}} ora è del team."
     },
     "addTitle": "Aggiungi connettore",
