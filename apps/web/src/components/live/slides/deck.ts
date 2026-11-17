@@ -64,8 +64,8 @@ export class DeckReader {
     this.changed = true;
   };
 
-  /** The deck now: unchanged slides are the same objects as last time. */
-  read(): DeckView {
+  /** The deck now: unchanged slides are the same objects as last time. `_at`: the room's version asked for. */
+  read(_at?: number): DeckView {
     if (this.attached && !this.changed && this.last) return this.last;
     if (!this.attached) this.cache.clear();
     const ids = slideIdsOf(this.doc);
@@ -105,6 +105,7 @@ export function useDeck(room: LiveRoom): DeckView {
     return () => reader.detach();
   }, [reader]);
   const version = useLiveDocVersion(room, nextFrame);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `version` is the signal to read again
-  return useMemo(() => reader.read(), [reader, version]);
+  // `version` is read inside the memo, not only listed: the React Compiler keys a memo on what its body reads and drops
+  // a dependency it doesn't, which kept the first deck on screen until a reload.
+  return useMemo(() => reader.read(version), [reader, version]);
 }
