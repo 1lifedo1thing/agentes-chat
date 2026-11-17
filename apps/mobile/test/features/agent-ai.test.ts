@@ -921,12 +921,13 @@ describe("the agent's AI", () => {
     }
     expect(screen).toContain("const account = pending.account !== undefined ? pending.account : view?.account;");
     expect(screen).toContain("checked={c.login.id === account}");
-    expect(screen).toContain("if (pending.extraUsage !== undefined) return;");
     expect(screen).toContain("const checked = picked !== null ? r.value === picked : r.checked;");
     expect(advanced).toContain("const shown = view && now ? withPending(view, now, pending) : null;");
     expect(advanced).toContain("checked={shown.contextTokens === n}");
     expect(advanced).toContain("if (pending.onlyOwner !== undefined) return;");
-    expect(advanced).toContain("pending.fallback === undefined && void save({ fallback: !shown.fallback })");
+    expect(advanced).toContain(
+      "pending.accountPinned === undefined && void save({ accountPinned: !shown.accountPinned })",
+    );
   });
 
   test("an AI that didn't load asks again, and the dock and the effort settle on the drawer's spring", async () => {
@@ -1376,7 +1377,7 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     expect(accounts).toContain("disabled={g !== undefined && move.isPending}");
     expect(ai).toContain("const offers = waits && kind && view ?");
     expect(ai).toContain('chain.moves && !waits ? t("agentPage.work.brain.movesOn") : null');
-    expect(advanced).toContain("toggle={now.accountPinned}");
-    expect(advanced).toContain("onPress={() => void save({ accountPinned: !now.accountPinned })}");
+    expect(advanced).toContain("toggle={shown.accountPinned}");
+    expect(advanced).toContain("accountPinned: pending.accountPinned ?? now.accountPinned");
   });
 });
