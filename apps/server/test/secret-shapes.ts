@@ -78,6 +78,27 @@ export const SECRET_SHAPES: [shape: string, record: Record<string, unknown>, sta
     },
     ['["x-api-key","***"],["accept","text/plain"]'],
   ],
+  // A list of two texts is a name and its value only in a list of such lists: alone it is two names.
+  [
+    "lists of names",
+    {
+      required: ["password", "email"],
+      sort: ["token", "asc"],
+      labels: ["secret", "ops"],
+      allowedHeaders: ["Authorization", "Content-Type"],
+    },
+    ['["password","email"]', '["token","asc"]', '["secret","ops"]', '["Authorization","Content-Type"]'],
+  ],
+  [
+    "a table's columns",
+    {
+      columns: [
+        ["password", "character varying"],
+        ["api_key", "text"],
+      ],
+    },
+    ['[["password","***"],["api_key","***"]]'],
+  ],
   [
     "a record that names its value",
     {

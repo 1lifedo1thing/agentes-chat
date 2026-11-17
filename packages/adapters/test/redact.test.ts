@@ -137,16 +137,36 @@ test("three shapes only a record can tell: an option's value in a list, a pair, 
       ["x-api-key", "fake a"],
       ["Set-Cookie", "sid=fake"],
       ["accept", "text/plain"],
-      ["token", "of three", "stays"],
       ["max_tokens", "4096"],
     ]),
   ).toEqual([
     ["x-api-key", "***"],
     ["Set-Cookie", "***"],
     ["accept", "text/plain"],
-    ["token", "of three", "stays"],
     ["max_tokens", "4096"],
   ]);
+  // A list of two texts is a name and its value only in a list of such lists: alone it is two names.
+  const names = {
+    required: ["password", "email"],
+    sort: ["token", "asc"],
+    labels: ["secret", "ops"],
+    allowedHeaders: ["Authorization", "Content-Type"],
+    rows: [["token", "of three", "stays"]],
+  };
+  expect(maskSecretFields(names)).toEqual(names);
+  expect(
+    maskSecretFields({
+      columns: [
+        ["password", "character varying"],
+        ["api_key", "text"],
+      ],
+    }),
+  ).toEqual({
+    columns: [
+      ["password", "***"],
+      ["api_key", "***"],
+    ],
+  });
   expect(
     maskSecretFields([
       { name: "Authorization", value: "fake a" },

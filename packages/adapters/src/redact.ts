@@ -205,6 +205,9 @@ export function redactCommon(text: string): string {
 const OPTION = new RegExp(`^--?[\\w-]*(?:${NAME})[\\w-]*$`, "i");
 /** A number after an option named in the plural sets a count (`--max-tokens`, `4096`), and is no credential. */
 const setsCount = (option: string, value: string) => /s$/i.test(option) && /^\d+$/.test(value);
+/** A list of two texts: among others like it a name and its value, as headers are kept (`[["x-api-key", "…"], …]`). */
+const isPair = (value: unknown): value is [string, string] =>
+  Array.isArray(value) && value.length === 2 && value.every((v) => typeof v === "string");
 /** The fields of a record that hold the name its `value` goes by (`{"name": "Authorization", "value": "…"}`). */
 const NAMING = /^(?:name|key|header)$/i;
 /** How many times a text that is itself JSON is opened, and the longest text opened: the time stays linear. */
@@ -228,8 +231,8 @@ function maskedJson(text: string, rule: (text: string) => string, depth: number)
  * A record with its credentials masked at any depth, before it is written as text. Under a field named for a
  * credential every text is masked: in text, a value with spaces is masked only up to its first space. A number,
  * `true`, `false` or `null` stays: it is a count or a switch. So is the text after an option named for a secret in a
- * list (`["--password", "…"]`), the second of a pair and the `value` of a record whose name is a credential's
- * (`["x-api-key", "…"]`, `{"name": "Authorization", "value": "…"}`). Every other text goes through `rule` as itself:
+ * list (`["--password", "…"]`), the second of a pair in a list of pairs and the `value` of a record whose name is a
+ * credential's (`[["x-api-key", "…"]]`, `{"name": "Authorization", "value": "…"}`). Every other text goes through `rule` as itself:
  * written as JSON its line ends and quotes are backslashes, and a rule for text reads one long word. A text that is
  * itself JSON (a result kept as a string, a body inside a body) is opened, masked the same way and written back.
  */
@@ -245,8 +248,10 @@ export function maskSecretFields(
     return maskedJson(value, rule, depth) ?? rule(value);
   }
   if (Array.isArray(value)) {
-    const [name, second] = value;
-    const pair = value.length === 2 && typeof name === "string" && typeof second === "string" && FIELD_NAME.test(name);
+    // Alone, a list of two texts is two names (`"required": ["password", "email"]`).
+    if (value.every(isPair)) {
+      return value.map(([name, second]) => [inner(name, false), inner(second, FIELD_NAME.test(name))]);
+    }
     return value.map((v, i) => {
       const before: unknown = value[i - 1];
       const optionValue =
@@ -255,7 +260,7 @@ export function maskSecretFields(
         typeof before === "string" &&
         OPTION.test(before) &&
         !setsCount(before, v);
-      return inner(v, optionValue || (pair && i === 1));
+      return inner(v, optionValue);
     });
   }
   if (!value || typeof value !== "object") return value;
