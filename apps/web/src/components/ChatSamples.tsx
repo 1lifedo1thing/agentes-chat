@@ -49,7 +49,13 @@ export function SampleRows({
           )
         }
         author={
-          agent && !names ? <span className="ac-visually-hidden">{SAMPLE_AGENT.name}</span> : agent ? SAMPLE_AGENT.name : me.user.name
+          agent && !names ? (
+            <span className="ac-visually-hidden">{SAMPLE_AGENT.name}</span>
+          ) : agent ? (
+            SAMPLE_AGENT.name
+          ) : (
+            me.user.name
+          )
         }
         time={line.time}
       >

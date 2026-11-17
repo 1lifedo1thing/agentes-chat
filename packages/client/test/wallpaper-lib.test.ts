@@ -32,7 +32,9 @@ describe("wallpaperOf", () => {
       x: 0,
       y: 0.25,
     });
-    expect(wallpaperOf({ kind: "photo", url: "https://elsewhere.example/a.jpg", dim: 0.4, x: 0.5, y: 0.5 })).toBeUndefined();
+    expect(
+      wallpaperOf({ kind: "photo", url: "https://elsewhere.example/a.jpg", dim: 0.4, x: 0.5, y: 0.5 }),
+    ).toBeUndefined();
   });
 });
 
@@ -76,7 +78,9 @@ describe("the picker", () => {
     expect(wallpaperName(say, { kind: "color", color: "sand" }, null)).toBe(
       `${base}.name.color {"color":"${base}.neutral.sand"}`,
     );
-    expect(wallpaperName(say, { kind: "sky", color: "rose" }, null)).toBe(`${base}.name.sky {"color":"look.colors.rose"}`);
+    expect(wallpaperName(say, { kind: "sky", color: "rose" }, null)).toBe(
+      `${base}.name.sky {"color":"look.colors.rose"}`,
+    );
     expect(wallpaperName(say, NO_WALLPAPER, null)).toBe(`${base}.none`);
   });
 });

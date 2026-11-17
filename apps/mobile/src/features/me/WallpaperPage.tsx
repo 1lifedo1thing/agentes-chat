@@ -230,7 +230,9 @@ export function WallpaperPage({ target }: { target: WallpaperTarget }) {
           <GroupedRow
             icon="image"
             label={t("settings.account.chat.wallpaper.choosePhoto")}
-            {...(photoOn ? { value: nameOf(photoOn, scope), valueLeading: <WallpaperThumb wallpaper={photoOn} /> } : {})}
+            {...(photoOn
+              ? { value: nameOf(photoOn, scope), valueLeading: <WallpaperThumb wallpaper={photoOn} /> }
+              : {})}
             chevron
             disabled={preparing}
             onPress={() => void choosePhoto()}

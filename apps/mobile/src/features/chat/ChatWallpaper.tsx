@@ -1,16 +1,16 @@
 import { type Wallpaper, type WallpaperHue, wallpaperName } from "@agenteschat/client/lib/wallpaper";
 import { rgbOf } from "@agenteschat/ui/agent/engine";
 import {
-  DRAWINGS,
-  DRAWING_ICONS,
-  DRAWINGS_TILE,
   CROWD,
   CROWD_EYES,
   CROWD_TILE,
-  drawingsColors,
   crowdAgents,
   crowdShape,
   crowdTones,
+  DRAWING_ICONS,
+  DRAWINGS,
+  DRAWINGS_TILE,
+  drawingsColors,
   WALLPAPER_PAGE,
   WALLPAPER_SKY_PIXEL,
   wallpaperFill,

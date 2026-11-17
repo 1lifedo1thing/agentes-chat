@@ -16868,7 +16868,8 @@ export const ptBR = {
           color: "Cor",
           photos: "Suas fotos",
           choosePhoto: "Escolher uma foto",
-          skyAutoHelp: "O primeiro acompanha a conversa: o céu da cor do agente numa DM e o céu do workspace nos canais.",
+          skyAutoHelp:
+            "O primeiro acompanha a conversa: o céu da cor do agente numa DM e o céu do workspace nos canais.",
           skyAutoHelpDms: "O primeiro é o céu da cor do agente.",
           skyAutoHelpChannels: "O primeiro é o céu do workspace.",
           neutral: { paper: "Papel", mist: "Névoa", sand: "Areia" },

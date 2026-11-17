@@ -202,7 +202,9 @@ export function ChatLookSettings() {
           </span>
           <div className="settings-row__end wallpaper-row__end">
             {/* "auto" in the samples' agent's color. */}
-            <WallpaperThumb wallpaper={resolveWallpaper(defaultWallpaperOf(prefs), wallpaperHueOf(SAMPLE_AGENT.color))} />
+            <WallpaperThumb
+              wallpaper={resolveWallpaper(defaultWallpaperOf(prefs), wallpaperHueOf(SAMPLE_AGENT.color))}
+            />
             <span className="wallpaper-row__name">{wallpaperName(defaultWallpaperOf(prefs), null)}</span>
             <Button size="sm" onClick={() => setChoosingWallpaper(true)}>
               {t("settings.account.chat.wallpaper.choose")}

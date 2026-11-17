@@ -7,15 +7,15 @@
 import type { Wallpaper, WallpaperHue, WallpaperNeutral } from "@agenteschat/client/lib/wallpaper";
 import { parseColor } from "@agenteschat/ui/sky/math";
 import {
-  DRAWINGS,
-  DRAWING_ICONS,
-  DRAWINGS_TILE,
   CROWD,
   CROWD_TILE,
-  drawingsColors,
   crowdAgents,
   crowdShape,
   crowdTones,
+  DRAWING_ICONS,
+  DRAWINGS,
+  DRAWINGS_TILE,
+  drawingsColors,
   WALLPAPER_GLINTS,
   WALLPAPER_LIFT,
   WALLPAPER_PAGE,

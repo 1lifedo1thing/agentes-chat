@@ -149,13 +149,7 @@ export function WallpaperDialog({
  * The dialog's content, mounted while it is open: each opening starts with nothing half framed. A
  * photo being framed holds the dialog open against a press outside or Esc.
  */
-function WallpaperPicker({
-  conversation,
-  onDone,
-}: {
-  conversation?: WallpaperConversation;
-  onDone: () => void;
-}) {
+function WallpaperPicker({ conversation, onDone }: { conversation?: WallpaperConversation; onDone: () => void }) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
   const toast = useToast();

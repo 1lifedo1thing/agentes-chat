@@ -73,7 +73,9 @@ export function wallpaperOf(v: unknown): Wallpaper | undefined {
     case "sky":
       return o.color === "auto" || isHue(o.color) ? { kind: "sky", color: o.color } : undefined;
     case "drawings":
-      return o.color === "auto" || isHue(o.color) || isNeutral(o.color) ? { kind: "drawings", color: o.color } : undefined;
+      return o.color === "auto" || isHue(o.color) || isNeutral(o.color)
+        ? { kind: "drawings", color: o.color }
+        : undefined;
     case "agents":
       return { kind: "agents" };
     case "color":

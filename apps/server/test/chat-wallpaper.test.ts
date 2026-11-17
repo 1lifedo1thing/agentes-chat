@@ -67,7 +67,10 @@ test("a conversation's own background: set, kept beside the others, cleared; mem
 
   // The background for every conversation changes beside it, and the map stays.
   await api(owner, "/me/chat", { method: "PUT", json: { wallpaper: { kind: "agents" } } });
-  expect(await prefsOf(owner)).toMatchObject({ wallpaper: { kind: "agents" }, wallpapers: { [channelId]: { kind: "none" } } });
+  expect(await prefsOf(owner)).toMatchObject({
+    wallpaper: { kind: "agents" },
+    wallpapers: { [channelId]: { kind: "none" } },
+  });
 
   const cleared = await api(owner, `/channels/${channelId}/wallpaper`, { method: "DELETE" });
   expect(cleared.status).toBe(200);
@@ -116,7 +119,9 @@ test("a background's photo: only its owner sees it, only its owner can use it, u
   expect((await owner(b.url)).status).toBe(200);
 
   // One a background shows stays when another comes.
-  expect((await api(owner, `/channels/${channelId}/wallpaper`, { method: "PUT", json: { wallpaper: photo(b.url) } })).status).toBe(200);
+  expect(
+    (await api(owner, `/channels/${channelId}/wallpaper`, { method: "PUT", json: { wallpaper: photo(b.url) } })).status,
+  ).toBe(200);
   expect((await prefsOf(owner)).wallpapers?.[channelId]).toEqual(photo(b.url));
   const c = (await (await send(owner, 3)).json()) as { url: string };
   expect((await owner(b.url)).status).toBe(200);
