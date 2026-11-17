@@ -35,7 +35,7 @@ Whoever runs an instance may run a referral program: people bring others in and 
 
 ### 4. Where people find it
 
-- Web: "Refer and earn" in the person's own menu, right under Settings, where `referralsUrl` is set. `/refer` mints the link and leaves at once, showing the app's start splash meanwhile; signed out, it goes through sign-in and back; off or failing, it shows the page that doesn't exist, with its way back. Other sites link to `/refer`.
+- Web: "Refer and earn" in the person's own menu, right under Settings, where `referralsUrl` is set. `/refer` mints the link and leaves at once, replacing its own entry in the history so Back from the referral service goes to the page before it (not to `/refer`, which would mint a link and leave again), showing the app's start splash meanwhile; signed out, it goes through sign-in and back; off or failing, it shows the page that doesn't exist, with its way back. Other sites link to `/refer`.
 - Phone: the same row in Você's preferences, opened in the in-app browser.
 
 ## Consequences
