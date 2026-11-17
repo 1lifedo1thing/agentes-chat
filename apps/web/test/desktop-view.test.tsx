@@ -417,7 +417,6 @@ describe("the agent's screen in the computer dialog", () => {
     expect(rfb().options).toEqual({ shared: true });
     expect(rfb()).toMatchObject({
       viewOnly: true,
-      showDotCursor: false,
       qualityLevel: 3,
       compressionLevel: 2,
       scaleViewport: true,
@@ -627,7 +626,7 @@ describe("the agent's screen in the computer dialog", () => {
     await settle(4);
     expect(t.sockets.desktops.at(-1)?.url).toEndWith("&mode=control");
     expect(t.sockets.desktops[0]?.closed).toBe(true);
-    expect(rfb()).toMatchObject({ viewOnly: false, showDotCursor: true, qualityLevel: 6, focusOnClick: false });
+    expect(rfb()).toMatchObject({ viewOnly: false, qualityLevel: 6, focusOnClick: false });
     await connected();
     // The person's keys go to the screen at once, through a field over it.
     expect(document.activeElement === view().getByRole("textbox", { name: "Digitar no computador da Ada" })).toBe(true);
@@ -791,7 +790,7 @@ describe("the agent's screen in the computer dialog", () => {
     expect(ws.sent).toEqual([MODE("control")]);
     expect(rfb()).not.toBe(watching);
     expect(watching.canvas.isConnected).toBe(false);
-    expect(rfb()).toMatchObject({ viewOnly: false, showDotCursor: true, qualityLevel: 6, got: [[82, 70, 66]] });
+    expect(rfb()).toMatchObject({ viewOnly: false, qualityLevel: 6, got: [[82, 70, 66]] });
     expect(still()).not.toBeNull();
     expect(screen().getByText("Assumindo o controle…")).toBeTruthy();
     await connected();
@@ -847,7 +846,7 @@ describe("the agent's screen in the computer dialog", () => {
     await settle(4);
     expect(t.sockets.desktops).toHaveLength(1);
     expect(ws.sent).toEqual([MODE("control"), MODE("watch")]);
-    expect(rfb()).toMatchObject({ viewOnly: true, showDotCursor: false, qualityLevel: 3 });
+    expect(rfb()).toMatchObject({ viewOnly: true, qualityLevel: 3 });
     expect(sub()).toBe("Ao vivo · você está assistindo");
     expect(still()).not.toBeNull();
     expect(screen().queryByText("Abrindo o computador da Ada…")).toBeNull();
