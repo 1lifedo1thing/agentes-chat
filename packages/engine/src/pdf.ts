@@ -77,6 +77,19 @@ interface Brand {
 
 let brand: Brand | null | undefined;
 
+/** The brand fonts' files as they are, for drawing SVG pictures (ADR 0194 §8); the ones missing are left out. */
+export function brandFontFiles(): Uint8Array[] {
+  const out: Uint8Array[] = [];
+  for (const file of ["Onest-Regular.ttf", "Onest-Bold.ttf", "MartianMono-Regular.ttf"]) {
+    try {
+      out.push(new Uint8Array(readFileSync(fileURLToPath(new URL(`../assets/fonts/${file}`, import.meta.url)))));
+    } catch {
+      // Not shipped here: resvg draws text with what it has.
+    }
+  }
+  return out;
+}
+
 /** Onest Regular/Bold and Martian Mono, read once; null when the files aren't there (fallback: standard fonts). */
 export function brandFonts(): Brand | null {
   if (brand !== undefined) return brand;

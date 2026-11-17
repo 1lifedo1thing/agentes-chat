@@ -62,6 +62,7 @@ import {
   enableAccountContacts,
   enableCaches,
   enableOperatorEvents,
+  enableSvgRasterizer,
   ensureRightHands,
   type GifKey,
   isAgentesCloud,
@@ -495,6 +496,8 @@ async function boot(
     }),
   };
   log.info("job slots", { start: slots, upTo: outbox.limits ?? "fixed", memoryBytes, role: config.SERVER_ROLE });
+  // SVG pictures drawn as PNGs for exports and models (ADR 0194 §8); without it they are left out of those.
+  if (!(await enableSvgRasterizer())) log.warn("svg pictures", { drawn: false, because: "resvg didn't load" });
   const workers = startWorkers({
     db: database.db,
     handlers: engine.handlers,

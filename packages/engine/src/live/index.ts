@@ -140,6 +140,7 @@ export {
   sanitizeSvg,
   setSvgRasterizer,
 } from "./svg";
+export { enableSvgRasterizer } from "./svg-raster";
 export {
   carriesLiveFile,
   createLiveFileToolSource,

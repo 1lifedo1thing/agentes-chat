@@ -21,6 +21,7 @@
     "@agenteschat/ui": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.32.1",
     "@modelcontextprotocol/server": "2.3.1",
+    "@resvg/resvg-wasm": "2.6.2",
     "@xmldom/xmldom": "0.9.12",
     "lib0": "0.2.120",
     "libpg-query": "17",
