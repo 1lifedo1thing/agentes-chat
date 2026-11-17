@@ -2533,7 +2533,8 @@
     "header": {
       "pins": "고정된 메시지",
       "showMembers": "멤버 보기",
-      "hideMembers": "멤버 숨기기"
+      "hideMembers": "멤버 숨기기",
+      "more": "옵션 더보기"
     },
     "membersButton_other": "채널 멤버({{count}})",
     "membersAgents": "에이전트",
@@ -14330,6 +14331,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "내 사진이 아니에요.",
+      "invalid": "없는 배경이에요.",
+      "tooLarge": "사진은 최대 2MB까지 가능해요.",
+      "type": "JPEG, PNG 또는 WebP 사진을 사용하세요."
+    },
     "tooLarge": "서버가 받을 수 있는 크기보다 커요.",
     "tooLargeMax": "서버가 받을 수 있는 크기보다 커요. 최대 {{max}}MB예요.",
     "passwordLink": {
@@ -16225,6 +16232,51 @@
           "new3": "2곳 남았어요, 내일 전화할게요.",
           "new4": "Drive의 보고서를 업데이트했어요.",
           "newCount": "새 메시지 4개"
+        },
+        "wallpaper": {
+          "title": "배경",
+          "help": "나에게만 바뀌고, 모든 기기에 적용돼요",
+          "rowHelp": "모든 대화 뒤에 나에게만 보여요. 대화마다 메뉴에서 따로 고를 수도 있어요.",
+          "rowSub": "나에게만, 모든 대화에서",
+          "onlyHere": "{{name}}에서만, 나에게만",
+          "none": "배경 없음",
+          "sameAsOthers": "다른 대화와 같게",
+          "sameShort": "다른 대화와 같음",
+          "sky": "하늘",
+          "drawings": "그림",
+          "color": "색상",
+          "photos": "내 사진",
+          "choosePhoto": "사진 선택",
+          "skyAutoHelp": "첫 번째는 대화에 따라 바뀌어요. 다이렉트 메시지에서는 에이전트 색의 하늘, 채널에서는 워크스페이스의 하늘이에요.",
+          "skyAutoHelpDms": "첫 번째는 에이전트 색의 하늘이에요.",
+          "skyAutoHelpChannels": "첫 번째는 워크스페이스의 하늘이에요.",
+          "neutral": {
+            "paper": "종이",
+            "mist": "안개",
+            "sand": "모래"
+          },
+          "name": {
+            "skyAuto": "대화의 하늘",
+            "skyAgent": "에이전트의 하늘",
+            "skyWorkspace": "워크스페이스의 하늘",
+            "sky": "하늘 · {{color}}",
+            "drawingsAuto": "대화의 그림",
+            "drawingsAgent": "에이전트의 그림",
+            "drawingsWorkspace": "워크스페이스의 그림",
+            "drawings": "그림 · {{color}}",
+            "crowd": "에이전트",
+            "color": "색상 · {{color}}",
+            "photo": "내 사진"
+          },
+          "choose": "선택…",
+          "menu": "대화 배경…",
+          "preview": "미리보기",
+          "usePhoto": "이 사진 사용",
+          "dragHint": "사진을 끌어서 보이는 부분을 고르세요",
+          "dim": "다크 모드에서 어둡게",
+          "sending": "사진 보내는 중…",
+          "failed": "배경을 저장하지 못했어요. 다시 시도하세요.",
+          "done": "완료"
         }
       },
       "agentStyle": "에이전트가 말하는 방식",

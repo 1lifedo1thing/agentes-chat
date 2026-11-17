@@ -2533,7 +2533,8 @@
     "header": {
       "pins": "置顶消息",
       "showMembers": "显示成员",
-      "hideMembers": "隐藏成员"
+      "hideMembers": "隐藏成员",
+      "more": "更多选项"
     },
     "membersButton_other": "频道成员（{{count}}）",
     "membersAgents": "智能体",
@@ -14400,6 +14401,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "这张照片不是你的。",
+      "invalid": "该背景不存在。",
+      "tooLarge": "照片最大 2 MB。",
+      "type": "请使用 JPEG、PNG 或 WebP 照片。"
+    },
     "tooLarge": "超出了服务器接受的大小。",
     "tooLargeMax": "超出了服务器接受的大小：最大 {{max}} MB。",
     "passwordLink": {
@@ -16297,6 +16304,51 @@
           "new3": "还剩 2 家，我明天打电话。",
           "new4": "Drive 中的报告已更新。",
           "newCount": "4 条新消息"
+        },
+        "wallpaper": {
+          "title": "背景",
+          "help": "只对你生效，并同步到你的所有设备",
+          "rowHelp": "显示在所有对话后面，只有你能看到。单个对话可以在它的菜单里设置自己的背景。",
+          "rowSub": "只对你，所有对话",
+          "onlyHere": "仅在 {{name}}，只对你",
+          "none": "无背景",
+          "sameAsOthers": "与其他对话相同",
+          "sameShort": "与其他相同",
+          "sky": "天空",
+          "drawings": "图案",
+          "color": "颜色",
+          "photos": "你的照片",
+          "choosePhoto": "选择照片",
+          "skyAutoHelp": "第一个随对话变化：在私信中是智能体颜色的天空，在频道中是工作区的天空。",
+          "skyAutoHelpDms": "第一个是智能体颜色的天空。",
+          "skyAutoHelpChannels": "第一个是工作区的天空。",
+          "neutral": {
+            "paper": "纸",
+            "mist": "雾",
+            "sand": "沙"
+          },
+          "name": {
+            "skyAuto": "对话的天空",
+            "skyAgent": "智能体的天空",
+            "skyWorkspace": "工作区的天空",
+            "sky": "天空 · {{color}}",
+            "drawingsAuto": "对话的图案",
+            "drawingsAgent": "智能体的图案",
+            "drawingsWorkspace": "工作区的图案",
+            "drawings": "图案 · {{color}}",
+            "crowd": "智能体",
+            "color": "颜色 · {{color}}",
+            "photo": "你的照片"
+          },
+          "choose": "选择…",
+          "menu": "对话背景…",
+          "preview": "预览",
+          "usePhoto": "使用这张照片",
+          "dragHint": "拖动照片，选择显示的部分",
+          "dim": "在深色模式下调暗",
+          "sending": "正在发送照片…",
+          "failed": "无法保存背景，请重试。",
+          "done": "完成"
         }
       },
       "agentStyle": "智能体如何跟你说话",

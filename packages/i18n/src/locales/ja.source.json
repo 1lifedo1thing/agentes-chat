@@ -6500,6 +6500,9 @@
   "channel.header.hideMembers": {
     "value": "Hide members"
   },
+  "channel.header.more": {
+    "value": "More options"
+  },
   "channel.membersButton": {
     "value": {
       "one": "Channel members ({{count}})",
@@ -36608,6 +36611,18 @@
   "files.nav.place": {
     "value": "{{index}} of {{count}}"
   },
+  "errors.wallpaper.notYours": {
+    "value": "That photo isn't yours."
+  },
+  "errors.wallpaper.invalid": {
+    "value": "That background doesn't exist."
+  },
+  "errors.wallpaper.tooLarge": {
+    "value": "The photo can be up to 2 MB."
+  },
+  "errors.wallpaper.type": {
+    "value": "Use a JPEG, PNG or WebP photo."
+  },
   "errors.tooLarge": {
     "value": "This is bigger than the server takes."
   },
@@ -41430,6 +41445,123 @@
   },
   "settings.account.chat.sample.newCount": {
     "value": "4 new"
+  },
+  "settings.account.chat.wallpaper.title": {
+    "value": "Background"
+  },
+  "settings.account.chat.wallpaper.help": {
+    "value": "Changes only for you, on all your devices"
+  },
+  "settings.account.chat.wallpaper.rowHelp": {
+    "value": "Behind every conversation, only for you. A conversation can have its own from its menu."
+  },
+  "settings.account.chat.wallpaper.rowSub": {
+    "value": "Only for you, in every conversation"
+  },
+  "settings.account.chat.wallpaper.onlyHere": {
+    "value": "Only in {{name}}, only for you"
+  },
+  "settings.account.chat.wallpaper.none": {
+    "value": "No background"
+  },
+  "settings.account.chat.wallpaper.sameAsOthers": {
+    "value": "Same as other conversations"
+  },
+  "settings.account.chat.wallpaper.sameShort": {
+    "value": "Same as others"
+  },
+  "settings.account.chat.wallpaper.sky": {
+    "value": "Sky"
+  },
+  "settings.account.chat.wallpaper.drawings": {
+    "value": "Drawings"
+  },
+  "settings.account.chat.wallpaper.color": {
+    "value": "Color"
+  },
+  "settings.account.chat.wallpaper.photos": {
+    "value": "Your photos"
+  },
+  "settings.account.chat.wallpaper.choosePhoto": {
+    "value": "Choose a photo"
+  },
+  "settings.account.chat.wallpaper.skyAutoHelp": {
+    "value": "The first one follows the conversation: a sky of the agent's color in a DM, the workspace's sky in channels."
+  },
+  "settings.account.chat.wallpaper.skyAutoHelpDms": {
+    "value": "The first one is a sky of the agent's color."
+  },
+  "settings.account.chat.wallpaper.skyAutoHelpChannels": {
+    "value": "The first one is the workspace's sky."
+  },
+  "settings.account.chat.wallpaper.neutral.paper": {
+    "value": "Paper"
+  },
+  "settings.account.chat.wallpaper.neutral.mist": {
+    "value": "Mist"
+  },
+  "settings.account.chat.wallpaper.neutral.sand": {
+    "value": "Sand"
+  },
+  "settings.account.chat.wallpaper.name.skyAuto": {
+    "value": "The conversation's sky"
+  },
+  "settings.account.chat.wallpaper.name.skyAgent": {
+    "value": "Agent's sky"
+  },
+  "settings.account.chat.wallpaper.name.skyWorkspace": {
+    "value": "Workspace's sky"
+  },
+  "settings.account.chat.wallpaper.name.sky": {
+    "value": "Sky · {{color}}"
+  },
+  "settings.account.chat.wallpaper.name.drawingsAuto": {
+    "value": "The conversation's drawings"
+  },
+  "settings.account.chat.wallpaper.name.drawingsAgent": {
+    "value": "Agent's drawings"
+  },
+  "settings.account.chat.wallpaper.name.drawingsWorkspace": {
+    "value": "Workspace's drawings"
+  },
+  "settings.account.chat.wallpaper.name.drawings": {
+    "value": "Drawings · {{color}}"
+  },
+  "settings.account.chat.wallpaper.name.crowd": {
+    "value": "Agents"
+  },
+  "settings.account.chat.wallpaper.name.color": {
+    "value": "Color · {{color}}"
+  },
+  "settings.account.chat.wallpaper.name.photo": {
+    "value": "Your photo"
+  },
+  "settings.account.chat.wallpaper.choose": {
+    "value": "Choose…"
+  },
+  "settings.account.chat.wallpaper.menu": {
+    "value": "Conversation background…"
+  },
+  "settings.account.chat.wallpaper.preview": {
+    "value": "Preview"
+  },
+  "settings.account.chat.wallpaper.usePhoto": {
+    "value": "Use this photo"
+  },
+  "settings.account.chat.wallpaper.dragHint": {
+    "value": "Drag the photo to choose the part that shows"
+  },
+  "settings.account.chat.wallpaper.dim": {
+    "value": "Darken in dark mode"
+  },
+  "settings.account.chat.wallpaper.sending": {
+    "value": "Sending the photo…"
+  },
+  "settings.account.chat.wallpaper.failed": {
+    "value": "Couldn't save the background. Try again."
+  },
+  "settings.account.chat.wallpaper.done": {
+    "value": "Done"
   },
   "settings.account.agentStyle": {
     "value": "How agents talk to you"

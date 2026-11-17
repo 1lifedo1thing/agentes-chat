@@ -2533,7 +2533,8 @@
     "header": {
       "pins": "ピン留めしたメッセージ",
       "showMembers": "メンバーを表示",
-      "hideMembers": "メンバーを隠す"
+      "hideMembers": "メンバーを隠す",
+      "more": "その他のオプション"
     },
     "membersButton_other": "チャンネルのメンバー（{{count}}）",
     "membersAgents": "エージェント",
@@ -14336,6 +14337,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "その写真はあなたのものではありません。",
+      "invalid": "その背景はありません。",
+      "tooLarge": "写真は2 MBまでです。",
+      "type": "JPEG、PNG、WebPの写真を使ってください。"
+    },
     "tooLarge": "サーバーが受け付けるサイズを超えています。",
     "tooLargeMax": "サーバーが受け付けるサイズを超えています。上限は{{max}} MBです。",
     "passwordLink": {
@@ -16233,6 +16240,51 @@
           "new3": "あと2件、明日電話します。",
           "new4": "Driveのレポートを更新しました。",
           "newCount": "新着4件"
+        },
+        "wallpaper": {
+          "title": "背景",
+          "help": "あなただけに反映され、すべてのデバイスで同じになります",
+          "rowHelp": "すべての会話の背景で、あなただけに表示されます。会話ごとにメニューから別の背景も選べます。",
+          "rowSub": "あなただけ、すべての会話で",
+          "onlyHere": "{{name}} だけ、あなただけに",
+          "none": "背景なし",
+          "sameAsOthers": "ほかの会話と同じ",
+          "sameShort": "ほかと同じ",
+          "sky": "空",
+          "drawings": "イラスト",
+          "color": "カラー",
+          "photos": "あなたの写真",
+          "choosePhoto": "写真を選ぶ",
+          "skyAutoHelp": "最初のものは会話に合わせて変わります。ダイレクトメッセージではエージェントの色の空、チャンネルではワークスペースの空です。",
+          "skyAutoHelpDms": "最初のものはエージェントの色の空です。",
+          "skyAutoHelpChannels": "最初のものはワークスペースの空です。",
+          "neutral": {
+            "paper": "紙",
+            "mist": "霧",
+            "sand": "砂"
+          },
+          "name": {
+            "skyAuto": "会話の空",
+            "skyAgent": "エージェントの空",
+            "skyWorkspace": "ワークスペースの空",
+            "sky": "空 · {{color}}",
+            "drawingsAuto": "会話のイラスト",
+            "drawingsAgent": "エージェントのイラスト",
+            "drawingsWorkspace": "ワークスペースのイラスト",
+            "drawings": "イラスト · {{color}}",
+            "crowd": "エージェント",
+            "color": "カラー · {{color}}",
+            "photo": "あなたの写真"
+          },
+          "choose": "選ぶ…",
+          "menu": "会話の背景…",
+          "preview": "プレビュー",
+          "usePhoto": "この写真を使う",
+          "dragHint": "写真をドラッグして表示する部分を選びます",
+          "dim": "ダークモードで暗くする",
+          "sending": "写真を送信中…",
+          "failed": "背景を保存できませんでした。もう一度お試しください。",
+          "done": "完了"
         }
       },
       "agentStyle": "エージェントの話し方",

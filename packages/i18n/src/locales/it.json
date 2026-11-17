@@ -2727,7 +2727,8 @@
     "header": {
       "pins": "Messaggi fissati",
       "showMembers": "Mostra i membri",
-      "hideMembers": "Nascondi i membri"
+      "hideMembers": "Nascondi i membri",
+      "more": "Altre opzioni"
     },
     "membersButton_one": "Membri del canale ({{count}})",
     "membersButton_many": "Membri del canale ({{count}})",
@@ -15431,6 +15432,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Quella foto non è tua.",
+      "invalid": "Quello sfondo non esiste.",
+      "tooLarge": "La foto può pesare fino a 2 MB.",
+      "type": "Usa una foto JPEG, PNG o WebP."
+    },
     "tooLarge": "È più grande di quanto il server accetti.",
     "tooLargeMax": "È più grande di quanto il server accetti: fino a {{max}} MB.",
     "passwordLink": {
@@ -17366,6 +17373,51 @@
           "new3": "Ne mancano 2, chiamo domani.",
           "new4": "Report aggiornato nel Drive.",
           "newCount": "4 nuovi"
+        },
+        "wallpaper": {
+          "title": "Sfondo",
+          "help": "Cambia solo per te, su tutti i tuoi dispositivi",
+          "rowHelp": "Dietro ogni conversazione, solo per te. Una conversazione può averne uno suo dal proprio menu.",
+          "rowSub": "Solo per te, in ogni conversazione",
+          "onlyHere": "Solo in {{name}}, solo per te",
+          "none": "Nessuno sfondo",
+          "sameAsOthers": "Come le altre conversazioni",
+          "sameShort": "Come le altre",
+          "sky": "Cielo",
+          "drawings": "Disegni",
+          "color": "Colore",
+          "photos": "Le tue foto",
+          "choosePhoto": "Scegli una foto",
+          "skyAutoHelp": "Il primo segue la conversazione: un cielo del colore dell'agente in un messaggio diretto e quello dello spazio di lavoro nei canali.",
+          "skyAutoHelpDms": "Il primo è un cielo del colore dell'agente.",
+          "skyAutoHelpChannels": "Il primo è il cielo dello spazio di lavoro.",
+          "neutral": {
+            "paper": "Carta",
+            "mist": "Nebbia",
+            "sand": "Sabbia"
+          },
+          "name": {
+            "skyAuto": "Cielo della conversazione",
+            "skyAgent": "Cielo dell'agente",
+            "skyWorkspace": "Cielo dello spazio di lavoro",
+            "sky": "Cielo · {{color}}",
+            "drawingsAuto": "Disegni della conversazione",
+            "drawingsAgent": "Disegni dell'agente",
+            "drawingsWorkspace": "Disegni dello spazio di lavoro",
+            "drawings": "Disegni · {{color}}",
+            "crowd": "Agenti",
+            "color": "Colore · {{color}}",
+            "photo": "La tua foto"
+          },
+          "choose": "Scegli…",
+          "menu": "Sfondo della conversazione…",
+          "preview": "Anteprima",
+          "usePhoto": "Usa questa foto",
+          "dragHint": "Trascina la foto per scegliere la parte visibile",
+          "dim": "Scurisci in modalità scura",
+          "sending": "Invio della foto…",
+          "failed": "Impossibile salvare lo sfondo. Riprova.",
+          "done": "Fatto"
         }
       },
       "agentStyle": "Come ti parlano gli agenti",

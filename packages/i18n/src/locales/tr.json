@@ -2629,7 +2629,8 @@
     "header": {
       "pins": "Sabitlenen mesajlar",
       "showMembers": "Üyeleri göster",
-      "hideMembers": "Üyeleri gizle"
+      "hideMembers": "Üyeleri gizle",
+      "more": "Diğer seçenekler"
     },
     "membersButton_one": "Kanal üyeleri ({{count}})",
     "membersButton_other": "Kanal üyeleri ({{count}})",
@@ -14833,6 +14834,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Bu fotoğraf sizin değil.",
+      "invalid": "Böyle bir arka plan yok.",
+      "tooLarge": "Fotoğraf en fazla 2 MB olabilir.",
+      "type": "JPEG, PNG veya WebP bir fotoğraf kullanın."
+    },
     "tooLarge": "Bu, sunucunun kabul ettiğinden büyük.",
     "tooLargeMax": "Bu, sunucunun kabul ettiğinden büyük: en fazla {{max}} MB.",
     "passwordLink": {
@@ -16749,6 +16756,51 @@
           "new3": "2 kaldı, yarın ararım.",
           "new4": "Rapor Drive'da güncellendi.",
           "newCount": "4 yeni"
+        },
+        "wallpaper": {
+          "title": "Arka plan",
+          "help": "Yalnızca sizin için değişir, tüm cihazlarınızda",
+          "rowHelp": "Tüm sohbetlerin arkasında, yalnızca sizin için. Bir sohbet, menüsünden kendi arka planını alabilir.",
+          "rowSub": "Yalnızca sizin için, tüm sohbetlerde",
+          "onlyHere": "Yalnızca {{name}} içinde, yalnızca sizin için",
+          "none": "Arka plan yok",
+          "sameAsOthers": "Diğer sohbetlerle aynı",
+          "sameShort": "Diğerleriyle aynı",
+          "sky": "Gökyüzü",
+          "drawings": "Çizimler",
+          "color": "Renk",
+          "photos": "Fotoğraflarınız",
+          "choosePhoto": "Fotoğraf seçin",
+          "skyAutoHelp": "İlki sohbete göre değişir: doğrudan mesajda ajanın renginde bir gökyüzü, kanallarda çalışma alanının gökyüzü.",
+          "skyAutoHelpDms": "İlki ajanın renginde bir gökyüzü.",
+          "skyAutoHelpChannels": "İlki çalışma alanının gökyüzü.",
+          "neutral": {
+            "paper": "Kâğıt",
+            "mist": "Sis",
+            "sand": "Kum"
+          },
+          "name": {
+            "skyAuto": "Sohbetin gökyüzü",
+            "skyAgent": "Ajanın gökyüzü",
+            "skyWorkspace": "Çalışma alanının gökyüzü",
+            "sky": "Gökyüzü · {{color}}",
+            "drawingsAuto": "Sohbetin çizimleri",
+            "drawingsAgent": "Ajanın çizimleri",
+            "drawingsWorkspace": "Çalışma alanının çizimleri",
+            "drawings": "Çizimler · {{color}}",
+            "crowd": "Ajanlar",
+            "color": "Renk · {{color}}",
+            "photo": "Fotoğrafınız"
+          },
+          "choose": "Seçin…",
+          "menu": "Sohbet arka planı…",
+          "preview": "Önizleme",
+          "usePhoto": "Bu fotoğrafı kullan",
+          "dragHint": "Görünen kısmı seçmek için fotoğrafı sürükleyin",
+          "dim": "Karanlık modda koyulaştır",
+          "sending": "Fotoğraf gönderiliyor…",
+          "failed": "Arka plan kaydedilemedi. Tekrar deneyin.",
+          "done": "Bitti"
         }
       },
       "agentStyle": "Ajanların sizinle nasıl konuştuğu",

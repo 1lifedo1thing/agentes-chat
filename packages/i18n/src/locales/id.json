@@ -2533,7 +2533,8 @@
     "header": {
       "pins": "Pesan yang disematkan",
       "showMembers": "Tampilkan anggota",
-      "hideMembers": "Sembunyikan anggota"
+      "hideMembers": "Sembunyikan anggota",
+      "more": "Opsi lainnya"
     },
     "membersButton_other": "Anggota kanal ({{count}})",
     "membersAgents": "Agen",
@@ -14390,6 +14391,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Foto itu bukan milikmu.",
+      "invalid": "Latar itu tidak ada.",
+      "tooLarge": "Ukuran foto maksimal 2 MB.",
+      "type": "Gunakan foto JPEG, PNG, atau WebP."
+    },
     "tooLarge": "Ini lebih besar dari yang diterima server.",
     "tooLargeMax": "Ini lebih besar dari yang diterima server: maksimal {{max}} MB.",
     "passwordLink": {
@@ -16287,6 +16294,51 @@
           "new3": "Tersisa 2, kutelepon besok.",
           "new4": "Laporan diperbarui di Drive.",
           "newCount": "4 baru"
+        },
+        "wallpaper": {
+          "title": "Latar",
+          "help": "Berubah hanya untukmu, di semua perangkatmu",
+          "rowHelp": "Di balik semua percakapan, hanya untukmu. Sebuah percakapan bisa punya latar sendiri lewat menunya.",
+          "rowSub": "Hanya untukmu, di semua percakapan",
+          "onlyHere": "Hanya di {{name}}, hanya untukmu",
+          "none": "Tanpa latar",
+          "sameAsOthers": "Sama seperti percakapan lain",
+          "sameShort": "Sama seperti yang lain",
+          "sky": "Langit",
+          "drawings": "Gambar",
+          "color": "Warna",
+          "photos": "Fotomu",
+          "choosePhoto": "Pilih foto",
+          "skyAutoHelp": "Yang pertama mengikuti percakapan: langit dengan warna agen di pesan langsung, langit ruang kerja di kanal.",
+          "skyAutoHelpDms": "Yang pertama adalah langit dengan warna agen.",
+          "skyAutoHelpChannels": "Yang pertama adalah langit ruang kerja.",
+          "neutral": {
+            "paper": "Kertas",
+            "mist": "Kabut",
+            "sand": "Pasir"
+          },
+          "name": {
+            "skyAuto": "Langit percakapan",
+            "skyAgent": "Langit agen",
+            "skyWorkspace": "Langit ruang kerja",
+            "sky": "Langit · {{color}}",
+            "drawingsAuto": "Gambar percakapan",
+            "drawingsAgent": "Gambar agen",
+            "drawingsWorkspace": "Gambar ruang kerja",
+            "drawings": "Gambar · {{color}}",
+            "crowd": "Agen",
+            "color": "Warna · {{color}}",
+            "photo": "Fotomu"
+          },
+          "choose": "Pilih…",
+          "menu": "Latar percakapan…",
+          "preview": "Pratinjau",
+          "usePhoto": "Gunakan foto ini",
+          "dragHint": "Seret foto untuk memilih bagian yang terlihat",
+          "dim": "Gelapkan di mode gelap",
+          "sending": "Mengirim foto…",
+          "failed": "Tidak bisa menyimpan latar. Coba lagi.",
+          "done": "Selesai"
         }
       },
       "agentStyle": "Cara agen berbicara denganmu",
