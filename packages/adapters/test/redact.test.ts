@@ -190,6 +190,31 @@ test("a count of tokens is no credential, nor is a number, a switch, nothing or 
   expect(maskSecretFields(record)).toEqual(record);
 });
 
+test("a page cursor reads as it is, as a JSON field and as a record's, in any case", () => {
+  const cursors = [
+    "next_page_token",
+    "nextPageToken",
+    "pagination_token",
+    "paging_token",
+    "skipToken",
+    "$skiptoken",
+    "deltaToken",
+    "resumeToken",
+    "StartingToken",
+    "scroll_token",
+    "after_token",
+    "before_token",
+    "offset_token",
+  ];
+  for (const name of cursors.flatMap((cursor) => [cursor, cursor.toLowerCase(), cursor.toUpperCase()])) {
+    const record = { items: [], [name]: "fake-cursor" };
+    expect({ name, text: redactCommon(JSON.stringify(record)) }).toEqual({ name, text: JSON.stringify(record) });
+    expect(maskSecretFields(record)).toEqual(record);
+  }
+  // A credential's name that only holds such a word is still one.
+  expect(redactCommon('{"reset_token":"fake-a","api_token":"fake-b"}')).toBe('{"reset_token":***,"api_token":***}');
+});
+
 test("the same credential as other writers spell it", () => {
   const spelled: [text: string, masked: string][] = [
     // A Python dict, a Ruby hash.

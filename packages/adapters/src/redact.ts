@@ -1,5 +1,8 @@
 /** How a credential's name ends where a shell or a header writes it (`PASSWORD=`, `x-api-key:`). */
 const NAME = "password|passwd|secret|token|api[_-]?key";
+/** What comes before `token` in a page cursor's name (`next_page_token`, `$skiptoken`, `StartingToken`). */
+const CURSOR =
+  "page|next|prev(?:ious)?|continuation|cursor|sync|pagination|paging|skip|delta|resume|starting|scroll|after|before|offset";
 /**
  * How a field's own name ends when its value is a credential: `NAME`'s words, and those that are prose anywhere but
  * in a field's name (`Authorization`, `Set-Cookie`). Never a plural, which is how a count is named (`max_tokens`),
@@ -8,7 +11,7 @@ const NAME = "password|passwd|secret|token|api[_-]?key";
 const FIELD = `(?:${[
   "pass(?:word|wd|phrase)",
   "secret(?:[_-]?(?:access[_-]?)?key)?",
-  "(?<!(?:page|next|prev(?:ious)?|continuation|cursor|sync)[_-]?)token",
+  `(?<!(?:${CURSOR})[_-]?)token`,
   "api[_-]?key",
   "private[_-]?key",
   "authorization",
