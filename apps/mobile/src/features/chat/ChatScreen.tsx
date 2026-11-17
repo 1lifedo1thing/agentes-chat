@@ -2185,7 +2185,14 @@ function Chat({
       ? [
           ...(dmComputer && computerWords ? [dmComputerAction(dmComputer.agentId, computerWords, leavePlace)] : []),
           ...(searchPlace && !dm
-            ? [{ icon: "search" as const, sf: "magnifyingglass" as const, label: t("searchPage.searchHere"), onPress: openSearch }]
+            ? [
+                {
+                  icon: "search" as const,
+                  sf: "magnifyingglass" as const,
+                  label: t("searchPage.searchHere"),
+                  onPress: openSearch,
+                },
+              ]
             : []),
           { icon: "more", sf: "ellipsis", label: t("mobile.chat.options"), onPress: openOptions },
         ]
