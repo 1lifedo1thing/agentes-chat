@@ -647,6 +647,8 @@ export const en = {
     termsMiddle: " and the ",
     privacy: "Privacy policy",
     termsAfter: ".",
+    // Under the sign-in on a registered host (ADR 0194): "agentes.chat" is the product's name, never translated.
+    poweredBy: "Powered by agentes.chat",
     signOut: "Sign out",
     earlyAccess: {
       otherEmail: "This invitation is for another address. Sign up with the address it was sent to.",

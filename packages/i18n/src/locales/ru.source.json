@@ -1478,6 +1478,9 @@
   "auth.termsAfter": {
     "value": "."
   },
+  "auth.poweredBy": {
+    "value": "Powered by agentes.chat"
+  },
   "auth.signOut": {
     "value": "Sign out"
   },

@@ -1,6 +1,10 @@
+import { type HostLook, useAuthConfig } from "@agenteschat/client";
+import { PRODUCT_SITE_URL } from "@agenteschat/client/lib/about";
 import { Logo } from "@agenteschat/ui";
 import { type ReactNode, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { AuthHorizon } from "@/components/Sky";
+import { useWorkspaceAccent } from "@/lib/theme";
 import { LanguageSelect } from "./LanguageSelect";
 import "./auth.css";
 
@@ -11,12 +15,15 @@ import "./auth.css";
  */
 export function AuthShell({ children, languages = true }: { children: ReactNode; languages?: boolean }) {
   const col = useRef<HTMLElement>(null);
+  const { t } = useTranslation();
+  // A registered host (ADR 0194): its look in place of the product's, here only. Its accent goes with this shell, as a
+  // workspace's goes with the workspace's.
+  const host = useAuthConfig().data?.host ?? null;
+  useWorkspaceAccent(host?.accent);
   return (
-    <div className="auth">
+    <div className={host ? "auth auth--host" : "auth"}>
       <AuthHorizon clear={() => [col.current]} />
-      <span className="auth__logo">
-        <Logo size={24} />
-      </span>
+      <span className="auth__logo">{host ? <HostLockup host={host} /> : <Logo size={24} />}</span>
       {languages && (
         <span className="auth__lang">
           <LanguageSelect signedIn={false} align="end" />
@@ -24,8 +31,24 @@ export function AuthShell({ children, languages = true }: { children: ReactNode;
       )}
       <main className="auth__col" ref={col}>
         {children}
+        {host && (
+          <p className="auth__powered">
+            <a className="ac-link" href={PRODUCT_SITE_URL}>
+              {t("auth.poweredBy")}
+            </a>
+          </p>
+        )}
       </main>
     </div>
+  );
+}
+
+/** A registered host's logo, or its name alone in the heading face when it has none. */
+function HostLockup({ host }: { host: HostLook }) {
+  return host.logoUrl ? (
+    <img className="auth__host-logo" src={host.logoUrl} alt={host.name} />
+  ) : (
+    <span className="auth__host-name">{host.name}</span>
   );
 }
 

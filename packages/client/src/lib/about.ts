@@ -9,6 +9,9 @@ export const LICENSE_URL = "https://www.gnu.org/licenses/agpl-3.0.html";
 /** Mirror of `SOURCE_URL`'s default (packages/config/src/schema.ts), for a server too old to send `sourceUrl`. */
 export const PUBLIC_SOURCE_URL = "https://github.com/agentes-chat/agentes-chat";
 
+/** The product's own site, linked from the "Powered by" line on a registered host's pages (ADR 0194). */
+export const PRODUCT_SITE_URL = "https://agentes.chat";
+
 /**
  * A self-hosted server: never agentes.chat Cloud, nor before the server's config arrives, so the Cloud never shows
  * what is only for self-hosting for a moment.

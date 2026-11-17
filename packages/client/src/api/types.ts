@@ -173,6 +173,18 @@ export interface AuthConfig {
   errorReports?: ErrorReportsConfig | null;
   /** The same for the phone app; null or absent (a server from before it): nowhere. */
   mobileErrorReports?: ErrorReportsConfig | null;
+  /**
+   * This address is one the server's operator registered (ADR 0194): the pages before sign-in show its look, and sign-in
+   * is by email alone. Null or absent on any other address.
+   */
+  host?: HostLook | null;
+}
+
+/** A registered host's look (`AuthConfig.host`): `accent` a `#rrggbb` or null, `logoUrl` on that host or null. */
+export interface HostLook {
+  name: string;
+  accent: string | null;
+  logoUrl: string | null;
 }
 
 export interface ErrorReportsConfig {
