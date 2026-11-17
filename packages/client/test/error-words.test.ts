@@ -99,6 +99,13 @@ describe("a failed request in the person's words (errorText)", () => {
     expect(errorText(en, error)).toBe("common.ourSide");
   });
 
+  test("the only owner whose others are all outside collaborators hears the way out that works", () => {
+    const refusal = (onlyOutside: boolean) =>
+      new ApiError(409, "sole_owner", "You are the only owner", { organizations: ["Acme"], onlyOutside });
+    expect(errorText(pt, refusal(true))).toBe("errors.said.soleOwnerOutside");
+    expect(errorText(pt, refusal(false))).toBe("errors.said.soleOwner");
+  });
+
   test("a computer that can't take it: offline, paused, too slow or commands off in words; its own refusal as said", () => {
     expect(errorText(pt, new ApiError(409, "machine.offline", "Mac is offline", { name: "Mac" }))).toBe(
       "errors.machine.offline",

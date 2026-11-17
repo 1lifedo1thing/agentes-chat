@@ -967,10 +967,21 @@ export function accountRoutes(deps: AppDeps) {
             leaves: z
               .array(z.object({ id: z.uuid(), name: z.string(), role: Role }))
               .openapi({ description: "Workspaces with others in them, which they leave." }),
-            soleOwner: z.array(z.object({ id: z.uuid(), name: z.string() })).openapi({
-              description:
-                "Workspaces they are the only owner of, with others in them and not being deleted: make someone else an owner, or delete the workspace, first (`sole_owner`).",
-            }),
+            soleOwner: z
+              .array(
+                z.object({
+                  id: z.uuid(),
+                  name: z.string(),
+                  onlyOutside: z.boolean().openapi({
+                    description:
+                      "Everyone else in it is an outside collaborator, who can't be an owner: invite a member and make them an owner first.",
+                  }),
+                }),
+              )
+              .openapi({
+                description:
+                  "Workspaces they are the only owner of, with others in them and not being deleted: make someone else an owner, or delete the workspace, first (`sole_owner`, with `params.onlyOutside` when every one has only outside collaborators besides them).",
+              }),
             computers: z.array(z.object({ orgId: z.uuid(), id: z.uuid(), name: z.string() })).openapi({
               description:
                 "Computers they connected in the workspaces they leave, not in system mode: removed with the account.",

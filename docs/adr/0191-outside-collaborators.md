@@ -55,7 +55,10 @@ workspace could not let them in at all. A self-hosted server sets no limit, so i
    (`outside_access.member`) before it changes anything, a request still waiting for them included: only the workspace
    removes one of its own.
 6. **Never an owner.** Making an outside collaborator an owner is refused (`member.outside_owner`): they answer to
-   whoever they work for, not to the workspace.
+   whoever they work for, not to the workspace. So a sole owner whose only other people are outside collaborators,
+   refused their account's deletion (`sole_owner`), is told that the way out is to invite a member and make them an
+   owner, or to delete the workspace: the plan marks such a workspace `onlyOutside`, and the refusal carries
+   `params.onlyOutside` when every workspace that keeps the account is one.
 7. **What the operator reads.** `GET /orgs/{orgId}/outside-access` lists `{ userId, outsideOf, state, since }`,
    `state` being `pending` or `member`. The events feed (ADR 0056 §5) gets `outside_access.granted` when a request is
    approved, `outside_access.denied` when it is denied, and `outside_access.ended` when an outside collaborator leaves,

@@ -36825,6 +36825,9 @@
   "errors.said.soleOwner": {
     "value": "You're the only owner of a workspace with other members. Make someone else an owner, or delete the workspace, first."
   },
+  "errors.said.soleOwnerOutside": {
+    "value": "You're the only owner of a workspace whose other people are outside collaborators, who can't be owners. Invite a member and make them an owner, or delete the workspace, first."
+  },
   "errors.said.testFirst": {
     "value": "Test the connection with these settings before turning it on."
   },
@@ -46576,6 +46579,9 @@
   },
   "deleteAccount.soleOwner": {
     "value": "You're the only owner of {{name}}. Make someone else an owner, or delete {{name}}."
+  },
+  "deleteAccount.soleOwnerOutside": {
+    "value": "You're the only owner of {{name}}, and its other people are outside collaborators, who can't be owners. Invite a member and make them an owner, or delete {{name}}."
   },
   "deleteAccount.soleOwnerSettingUp": {
     "value": "You're the only owner of {{name}}. Finish setting it up to make someone else an owner, or delete {{name}}."
