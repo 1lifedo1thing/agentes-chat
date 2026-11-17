@@ -2,13 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PEEK_AT, PEEK_RISE, PEEK_SIZE } from "../../src/features/chat/peek";
-import {
-  TEAM_PEEK_MAX,
-  TEAM_PEEK_STEP,
-  teamFacePose,
-  teamPeekers,
-  teamRow,
-} from "../../src/features/chats/team-peek";
+import { TEAM_PEEK_MAX, TEAM_PEEK_STEP, teamFacePose, teamPeekers, teamRow } from "../../src/features/chats/team-peek";
 
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src", file), "utf8");
 

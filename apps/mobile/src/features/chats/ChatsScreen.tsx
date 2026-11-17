@@ -27,6 +27,8 @@ import { Tile } from "../shared/parts";
 import { useActiveWork, useHiddenAgents, useWorkingNow } from "../shared/queries";
 import { SheetHostProvider } from "../shared/SheetHost";
 import { useTabHeader } from "../shared/tabHeader";
+import { alongInAccessory } from "../work-along/logic";
+import { useHasWorkAlong } from "../work-along/WorkAlong";
 import { DeletingNotice } from "./DeletingNotice";
 import { FirstRunLine } from "./FirstRunLine";
 import { FirstAgentEmpty, Greeting, GreetingSky } from "./Greeting";
@@ -47,13 +49,11 @@ import {
 } from "./logic";
 import { type PinnedItem, PinnedStrip } from "./PinnedStrip";
 import { usePins } from "./pins";
+import { TeamPeek } from "./TeamPeek";
+import { teamPeekers } from "./team-peek";
 import { useAgentRowStates, useFinished } from "./useHomeNow";
 import { useConversationRows, useRowFacts } from "./useRows";
 import { useWaitingItems } from "./useWaitingItems";
-import { TeamPeek } from "./TeamPeek";
-import { teamPeekers } from "./team-peek";
-import { useHasWorkAlong } from "../work-along/WorkAlong";
-import { alongInAccessory } from "../work-along/logic";
 
 /** Faces of the home that move, the pinned ones at work first, then the first rows (a long list stays light). */
 const LIVE_ROWS = 6;

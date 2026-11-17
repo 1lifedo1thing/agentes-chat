@@ -40,7 +40,7 @@ export function useLargeTitleScroll(rest: number, { snap = true }: { snap?: bool
       const to = titleSnap(contentOffset.y + rest, end);
       if (to !== null) ref.current?.scrollTo({ y: to - rest, animated: true });
     },
-    [rest, snap],
+    [rest, snap, ref],
   );
   // iOS says where a released scroll will stop: one that won't glide on (no momentum event follows) settles at once.
   // Android follows every release with the end of its momentum.
