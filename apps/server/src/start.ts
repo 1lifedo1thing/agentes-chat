@@ -631,6 +631,7 @@ async function boot(
         version: release,
         log,
         pubsub: adapters.pubsub,
+        blobs: adapters.platformBlobs,
         hub: engine.machineHub,
         emails: adapters.email.delivers,
         humanCheck: adapters.humanCheck,
