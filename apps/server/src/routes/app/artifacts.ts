@@ -211,7 +211,7 @@ const Sharing = z
   })
   .openapi("ArtifactSharing", {
     description:
-      "Who sees it on top of its conversation (ADR 0157): nobody more, the people and roles listed (and administrators), or the whole workspace.",
+      "Who sees it on top of its conversation (ADR 0157): nobody more, the people and roles listed (and administrators), or the whole workspace. A file of the Drive itself lives with its maker: `conversation` is its maker alone (and administrators).",
   });
 
 /** Where a live file's conversation lives (ADR 0199): the chat's routes read and post to this thread. */
@@ -251,7 +251,8 @@ export const Artifact = z
     audience: Audience,
     sharing: Sharing,
     canShare: z.boolean().openapi({
-      description: "I may change its sharing: it lives in a conversation not everyone reads, and I read it there.",
+      description:
+        "I may change its sharing: it lives in a conversation not everyone reads, and I read it there; or it is a file of the Drive itself, and I made it or I'm an administrator.",
     }),
     conversation: FileConversation.nullable()
       .optional()
@@ -713,7 +714,8 @@ export function artifactRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/artifacts/{artifactId}/sharing",
       tags,
       security,
-      summary: "Who sees a file on top of its conversation (Compartilhar); whoever reads it there may change it",
+      summary:
+        "Who sees a file on top of its conversation (Compartilhar); whoever reads it there may change it, a Drive file's maker and administrators",
       request: {
         params: ArtifactParams,
         body: body(

@@ -12914,7 +12914,8 @@ export const ptBR = {
       dmBetween: "Só {{names}} podem ver: veio de uma mensagem direta",
     },
     private: "Privado",
-    privateHint: "Só quem está na conversa vê estes arquivos. Num canal, os administradores também.",
+    privateHint:
+      "Só quem está na conversa, ou quem criou o arquivo, vê estes arquivos. Num canal e no Drive, os administradores também.",
     downloadAs: "Baixar como",
     uploading_one: "Enviando {{count}} arquivo",
     uploading_other: "Enviando {{count}} arquivos",
@@ -20967,13 +20968,24 @@ export const ptBR = {
     savedEveryonePersonal: "Agora todos daqui veem o arquivo.",
     savedPeople: "Agora as pessoas escolhidas veem o arquivo.",
     savedConversation: "Agora só a conversa vê o arquivo.",
+    /**
+     * Um arquivo do próprio Drive fica com quem o criou (ADR 0157): a primeira escolha, quem tem acesso, o aviso do
+     * link, quem pode mudar e o aviso de salvo. `Maker`: outra pessoa abre (um administrador), `name` é quem criou.
+     */
+    onlyYou: "Só você",
+    onlyMaker: "Só {{name}}",
+    onlyYouLink: "Só você abre este link.",
+    onlyMakerLink: "Só {{name}} abre este link.",
+    readOnlyDrive: "Só quem criou o arquivo e os administradores mudam quem vê.",
+    savedOnlyYou: "Agora só você vê o arquivo.",
+    savedOnlyMaker: "Agora só {{name}} vê o arquivo.",
     undo: "Desfazer",
     fileRef: "Arquivo {{title}}",
     fileRefNone: "Arquivo sem acesso",
     /** Quem vê o arquivo (`text`, sem ponto final) e quem o Compartilhar acrescentou. */
     also: "{{text}}. Também compartilhado com {{who}}.",
     /** Copiar links de vários arquivos, alguns abertos só na própria conversa: o aviso, com Compartilhar. */
-    someOnlyHere: "Alguns desses links só abrem para quem está na conversa do arquivo.",
+    someOnlyHere: "Alguns desses links só abrem para quem já vê o arquivo.",
   },
   /**
    * Um link aberto no navegador que o servidor recusa (ADR 0157): o título e o texto de cada causa, o botão que leva

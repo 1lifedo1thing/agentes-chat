@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, mock, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, describe, expect, mock, spyOn, test } from "bun:test";
 import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
@@ -306,6 +306,36 @@ describe("the live file's page", () => {
     // Presenting, the header and the sidebar step aside: the slide has the window.
     expect(document.querySelector(".lf-head")).toBeNull();
     expect(document.querySelector(".sidebar")).toBeNull();
+  });
+
+  test("the header's controls: Compartilhar, Apresentar, Conversa, then ⋯ last, wide and narrow alike", async () => {
+    const button = (name: string | RegExp) => header().getByRole("button", { name });
+    const follows = (a: HTMLElement, b: HTMLElement) =>
+      (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    const inOrder = (els: HTMLElement[]) => els.every((el, i) => i === 0 || follows(els[i - 1] as HTMLElement, el));
+    const last = () => [...document.querySelectorAll(".lf-top__acts button")].at(-1);
+    await setup("slides", "Pitch");
+    await waitFor(() => expect(editor().dataset.kind).toBe("slides"));
+    expect(inOrder([button("Compartilhar"), button("Apresentar"), button(/^Conversa/), button("Mais")])).toBe(true);
+    expect(last()).toBe(button("Mais"));
+    cleanup();
+    closeAllLiveRooms();
+    // Narrow (a phone, or the conversation beside a small window): Compartilhar goes into ⋯, which stays last.
+    const real = window.matchMedia.bind(window);
+    const narrow = { matches: true, addEventListener() {}, removeEventListener() {} } as unknown as MediaQueryList;
+    const impl = (query: string) => (query === "(max-width: 760px)" ? narrow : real(query));
+    const media = spyOn(window, "matchMedia").mockImplementation(impl);
+    try {
+      await setup("slides", "Pitch");
+      await waitFor(() => expect(document.querySelector(".lf-page[data-compact]")).toBeTruthy());
+      expect(header().queryByRole("button", { name: "Compartilhar" })).toBeNull();
+      expect(inOrder([button("Apresentar"), button(/^Conversa/), button("Mais")])).toBe(true);
+      expect(last()).toBe(button("Mais"));
+      const menu = await openMenu(button("Mais"));
+      expect(menu.getByRole("menuitem", { name: "Compartilhar" })).toBeTruthy();
+    } finally {
+      media.mockRestore();
+    }
   });
 
   test("the header's right click has the file's actions (the desktop app's menu)", async () => {

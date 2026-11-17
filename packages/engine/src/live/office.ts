@@ -238,7 +238,13 @@ export async function openAsLive(
       ? await personLocale(deps.db, actor.userId)
       : await lineLocale(deps.db, orgId, null, actor.runId ?? null);
   const note = serverText(locale, "live.defaults.fromFile", { name });
-  const place = { channelId: source.detail.channelId, threadId: source.detail.threadId };
+  // A Drive upload's sharing comes along from the start: a file of the Drive itself is the workspace's by default
+  // (ADR 0157, amendment 2026-11-17), which the upload may not be.
+  const place = {
+    channelId: source.detail.channelId,
+    threadId: source.detail.threadId,
+    sharing: source.detail.channelId ? undefined : source.detail.sharing,
+  };
   let made: ArtifactView;
   try {
     if (source.kind === "workbook") {

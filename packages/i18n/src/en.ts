@@ -12922,7 +12922,8 @@ export const en = {
       dmBetween: "Only {{names}} can see it: it came from a direct message",
     },
     private: "Private",
-    privateHint: "Only the people in the conversation see these files. In a channel, administrators do too.",
+    privateHint:
+      "Only the people in the conversation, or who made the file, see these files. In a channel and in the Drive, administrators do too.",
     downloadAs: "Download as",
     uploading_one: "Uploading {{count}} file",
     uploading_other: "Uploading {{count}} files",
@@ -21037,13 +21038,24 @@ export const en = {
     savedEveryonePersonal: "Everyone here sees the file now.",
     savedPeople: "The people you chose see the file now.",
     savedConversation: "Only the conversation sees the file now.",
+    /**
+     * A file of the Drive itself lives with its maker (ADR 0157): its first choice, who has access, the link's warning,
+     * who may change it and the saved toast. `Maker`: someone else opens it (an administrator), `name` is its maker.
+     */
+    onlyYou: "Only you",
+    onlyMaker: "Only {{name}}",
+    onlyYouLink: "Only you can open this link.",
+    onlyMakerLink: "Only {{name}} can open this link.",
+    readOnlyDrive: "Only who made the file and administrators change who sees it.",
+    savedOnlyYou: "Only you see the file now.",
+    savedOnlyMaker: "Only {{name}} sees the file now.",
     undo: "Undo",
     fileRef: "File {{title}}",
     fileRefNone: "File without access",
     /** Who sees the file (`text`, no full stop) and who Compartilhar added. */
     also: "{{text}}. Also shared with {{who}}.",
     /** Copiar links of several files, some only their conversation opens: the toast, with Compartilhar. */
-    someOnlyHere: "Some of these links open only for who's in the file's conversation.",
+    someOnlyHere: "Some of these links open only for who already sees the file.",
   },
   /**
    * A link a person opens in a browser that the server refuses (ADR 0157): each cause's title and words, the button

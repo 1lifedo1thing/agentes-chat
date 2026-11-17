@@ -4,6 +4,7 @@ import {
   type ArtifactActor,
   type ArtifactDeps,
   type ArtifactView,
+  type FileSharing,
   insertLiveArtifact,
   isLiveArtifactKind,
   type LiveArtifactKind,
@@ -38,6 +39,8 @@ export async function createLiveFile(
     locale?: string | null;
     /** Pictures it starts with, under the ids `init` names them by (an imported deck's, ADR 0198). */
     pictures?: readonly LivePicture[];
+    /** Who else sees it, when not where it is placed's default (a Drive file opened from a Drive upload, ADR 0157). */
+    sharing?: FileSharing;
   },
 ): Promise<ArtifactView> {
   if (!isLiveArtifactKind(input.kind))
@@ -59,11 +62,12 @@ export async function createLiveFile(
       doc,
       note: input.note ?? null,
       pictures: input.pictures,
+      sharing: input.sharing,
     });
     if (actor.type === "agent" && input.shared_drive === true && made.channelId) {
       try {
         await moveToSharedDrive(deps, actor, orgId, made.id);
-        return { ...made, channelId: null, threadId: null };
+        return { ...made, channelId: null, threadId: null, sharing: { mode: "everyone", userIds: [], roleIds: [] } };
       } catch {
         // Saved either way: where it landed is the tool's to say.
       }

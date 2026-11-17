@@ -298,9 +298,10 @@ export async function openFileConversation(
 /**
  * Agents join a file's conversation as members (so a mention there reaches them like anywhere else) when they may
  * work on the file: the agent that made it (`maker`), by id (the server's own choice), and by current handle (a
- * person's or an agent's mention) when the file is where the agent is too: the shared Drive, shared past its
- * conversation (who mentioned it reads it, and an agent reaches what they reach), or a conversation the agent is in or
- * a public channel. Mirrors `admitTaskAgents`. Returns the agents added now.
+ * person's or an agent's mention) when the file is where the agent is too: the Drive itself or shared past its
+ * conversation (who mentioned it reads it, and an agent reaches what they reach; a Drive file not shared with
+ * everyone is its maker's, who asks, ADR 0157 amendment 2026-11-17), or a conversation the agent is in or a public
+ * channel. Mirrors `admitTaskAgents`. Returns the agents added now.
  */
 export async function admitFileAgents(
   db: Executor,

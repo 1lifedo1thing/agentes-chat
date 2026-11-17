@@ -29,9 +29,10 @@ const TITLED_ON_THE_PAGE: ReadonlySet<string> = new Set(["document"]);
 
 /**
  * The live file's header (ADR 0196 §9, ADR 0199), the Wiki's top over a task's title: where the file lives
- * ("Drive / #eng") on the left and, on the right, how it's saved, who is here, Compartilhar, Apresentar (slides), ⋯
- * and the conversation's toggle; then the kind's icon and the title to rename; then who made it and where, when it
- * was edited (the versions) and who sees it (the sharing). A document shows the top row alone.
+ * ("Drive / #eng") on the left and, on the right, how it's saved, who is here, Compartilhar, Apresentar (slides), the
+ * conversation's toggle and ⋯, always the last one (narrow, Compartilhar goes into it and the rest keep that order);
+ * then the kind's icon and the title to rename; then who made it and where, when it was edited (the versions) and who
+ * sees it (the sharing). A document shows the top row alone.
  */
 export function LiveHeader({
   artifact,
@@ -167,6 +168,7 @@ export function LiveHeader({
                     {t("live.shell.present")}
                   </Button>
                 ))}
+              {talk}
               <Menu
                 align="end"
                 label={t("live.shell.more")}
@@ -227,7 +229,6 @@ export function LiveHeader({
                   </>
                 )}
               </Menu>
-              {talk}
             </>
           )}
         </div>

@@ -422,6 +422,36 @@ describe("losing access while it's open", () => {
     }
   });
 
+  test("a Drive file kept to its maker: another member's socket closes (4404), the maker's stays", async () => {
+    // A file of the Drive itself has no conversation to hear from: the Drive's change says so (ADR 0157, amendment).
+    const { owner, org, file, url } = await seeded();
+    const ana = await joinByInvitation(t, owner, org.orgId, "ana@example.com");
+    const sharing = (body: Record<string, unknown>) =>
+      owner(`/api/app/organizations/${org.orgId}/artifacts/${file.id}/sharing`, { method: "PUT", json: body });
+    const hers = livePeer(url(), headersOf(ana));
+    const mine = livePeer(url(), headersOf(owner));
+    try {
+      expect((await hers.ready()).mode).toBe("edit");
+      await mine.ready();
+      expect((await sharing({ mode: "conversation" })).status).toBe(200);
+      expect((await Promise.race([hers.closed, Bun.sleep(3000).then(() => null)]))?.code).toBe(4404);
+      await Bun.sleep(100);
+      expect(mine.ws.readyState).toBe(WebSocket.OPEN);
+      expect(await upgradeStatus(url(), headersOf(ana))).toBe(404);
+      // Shared with her by name: she opens it again.
+      expect((await sharing({ mode: "people", userIds: [await meOf(ana)] })).status).toBe(200);
+      const again = livePeer(url(), headersOf(ana));
+      try {
+        expect((await again.ready()).mode).toBe("edit");
+      } finally {
+        again.close();
+      }
+    } finally {
+      hers.close();
+      mine.close();
+    }
+  });
+
   test("after pub/sub was deaf a while, every socket reads its access again at once", async () => {
     const { owner, file, url } = await seeded();
     const web = livePeer(url(), headersOf(owner));

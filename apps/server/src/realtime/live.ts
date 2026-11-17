@@ -88,6 +88,11 @@ export interface LiveSocketData {
   channelId: string | null;
   /** In the trash at the last check: the Drive's changes say when that flips. */
   trashed: boolean;
+  /**
+   * Who it was shared with at the last check (`sharingKey`): the Drive's changes say when that changes, the only word
+   * of it for a file of the Drive itself, which has no conversation (ADR 0157, amendment 2026-11-17).
+   */
+  sharing: string;
   /** The document's side, once joined. */
   session: LiveSession | null;
   /** Frames and pings in the order they came, waiting for the session or their turn under the rate. */
@@ -140,6 +145,10 @@ export interface LiveSocketDeps {
   /** Tests: shorter waits, smaller caps. */
   limits?: Partial<LiveSocketLimits>;
 }
+
+/** Who a file is shared with, as one string to compare (`LiveSocketData.sharing`). */
+const sharingKey = (a: { share: string; shareUserIds: string[]; shareRoleIds: string[] }) =>
+  `${a.share}:${a.shareUserIds.join(",")}:${a.shareRoleIds.join(",")}`;
 
 /** A ping in line with the frames (`LiveSocketData.queue`). */
 const PING = "ping";
@@ -330,6 +339,7 @@ export function createLiveSockets(deps: LiveSocketDeps) {
         return shut(ws, LIVE_CLOSE.notFound, "file not found");
       }
       d.trashed = Boolean(access.artifact.deletedAt);
+      d.sharing = sharingKey(access.artifact);
       watchChannel(ws, access.artifact.channelId ?? null);
       setMode(ws, access.mode);
     } catch (error) {
@@ -351,8 +361,8 @@ export function createLiveSockets(deps: LiveSocketDeps) {
 
   /**
    * The Drive changed somewhere in `orgId` (ids aren't said): once a `filesChangedMs`, this process's sockets of that
-   * workspace look at their files' rows, and those whose file went to the trash, came back, moved or is gone read
-   * their access again. One query for all of them, however many changes came.
+   * workspace look at their files' rows, and those whose file went to the trash, came back, moved, was shared
+   * differently or is gone read their access again. One query for all of them, however many changes came.
    */
   function filesChanged(orgId: string) {
     if (drives.has(orgId)) return;
@@ -370,13 +380,23 @@ export function createLiveSockets(deps: LiveSocketDeps) {
     if (open.length === 0) return;
     const ids = [...new Set(open.map((ws) => ws.data.fileId))];
     const rows = await deps.db
-      .select({ id: schema.artifacts.id, channelId: schema.artifacts.channelId, deletedAt: schema.artifacts.deletedAt })
+      .select({
+        id: schema.artifacts.id,
+        channelId: schema.artifacts.channelId,
+        deletedAt: schema.artifacts.deletedAt,
+        share: schema.artifacts.share,
+        shareUserIds: schema.artifacts.shareUserIds,
+        shareRoleIds: schema.artifacts.shareRoleIds,
+      })
       .from(schema.artifacts)
       .where(and(eq(schema.artifacts.orgId, orgId), inArray(schema.artifacts.id, ids)));
     const byId = new Map(rows.map((row) => [row.id, row]));
     for (const ws of open) {
-      const row = byId.get(ws.data.fileId);
-      if (!row || row.channelId !== ws.data.channelId || (row.deletedAt !== null) !== ws.data.trashed) soon(ws);
+      const d = ws.data;
+      const row = byId.get(d.fileId);
+      const same =
+        row && row.channelId === d.channelId && (row.deletedAt !== null) === d.trashed && sharingKey(row) === d.sharing;
+      if (!same) soon(ws);
     }
   }
 
@@ -551,6 +571,7 @@ export function createLiveSockets(deps: LiveSocketDeps) {
         mode: access.mode,
         channelId: access.artifact.channelId ?? null,
         trashed: Boolean(access.artifact.deletedAt),
+        sharing: sharingKey(access.artifact),
         session: null,
         queue: [],
         waiting: 0,

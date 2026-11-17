@@ -291,9 +291,10 @@ async function checkAssignee(db: Database, orgId: string, a: WorkActor, scope: T
 
 /**
  * What a task made from `channelId` is limited to: the people of a DM or a private channel (`tiedTo`); from a task's
- * own conversation (`scope`), whoever sees that task; from a live file's conversation (ADR 0199), where the file lives.
- * Nothing where the whole workspace may see it: a public channel, a file of the shared Drive or shared with everyone,
- * and a room no person reads (a routine's), whose task would otherwise be nobody's.
+ * own conversation (`scope`), whoever sees that task; from a live file's conversation (ADR 0199), where the file lives
+ * (a file of the Drive itself, its maker: ADR 0157 amendment 2026-11-17). Nothing where the whole workspace may see
+ * it: a public channel, a file shared with everyone, and a room no person reads (a routine's), whose task would
+ * otherwise be nobody's.
  */
 async function conversationOf(
   db: Database,
@@ -302,11 +303,20 @@ async function conversationOf(
   depth = 0,
 ): Promise<{ tiedTo: string | null; scope: TaskScope | null }> {
   const [file] = await db
-    .select({ channelId: schema.artifacts.channelId, share: schema.artifacts.share })
+    .select({
+      channelId: schema.artifacts.channelId,
+      share: schema.artifacts.share,
+      createdByType: schema.artifacts.createdByType,
+      createdById: schema.artifacts.createdById,
+    })
     .from(schema.artifacts)
     .where(and(eq(schema.artifacts.orgId, orgId), eq(schema.artifacts.conversationChannelId, channelId)));
   if (file) {
-    if (!file.channelId || file.share === "everyone") return { tiedTo: null, scope: null };
+    if (file.share === "everyone") return { tiedTo: null, scope: null };
+    if (!file.channelId) {
+      const maker = file.createdByType === "person" ? [file.createdById] : [];
+      return { tiedTo: null, scope: { channelId: null, restricted: true, audienceUserIds: maker } };
+    }
     // Files made in each other's conversations go a few levels at most; past them, tied to the conversation itself.
     return depth < 4 ? conversationOf(db, orgId, file.channelId, depth + 1) : { tiedTo: channelId, scope: null };
   }
@@ -1486,7 +1496,9 @@ async function liveFiles(db: Executor, orgId: string, ids: string[], by: WorkAct
 
 /**
  * A limited task's files stay with it: a file its author brings that isn't in any conversation would be the whole
- * workspace's in the Drive, so it moves to the task's conversation, read by who sees the task (ADR 0151).
+ * workspace's in the Drive, so it moves to the task's conversation, read by who sees the task (ADR 0151). One shared
+ * with everyone there is then its conversation's alone; a list it was shared with stays (ADR 0157, amendment
+ * 2026-11-17).
  */
 async function keepFilesWithTask(
   deps: IssueDeps,
@@ -1500,7 +1512,10 @@ async function keepFilesWithTask(
   const by = actorOf(actor);
   const moved = await db
     .update(artifacts)
-    .set({ channelId })
+    .set({
+      channelId,
+      share: sql`(case when ${artifacts.share} = 'everyone' then 'conversation' else ${artifacts.share} end)`,
+    })
     .where(
       and(
         eq(artifacts.orgId, task.orgId),
