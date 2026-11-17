@@ -6,9 +6,13 @@ import {
   CHAT_STYLES,
   CHAT_TEXT_SIZES,
   CHAT_TONES,
+  MAX_PHOTO_DIM,
   ONBOARDING_STEPS,
   STANDING_STATES,
   START_PAGES,
+  WALLPAPER_HUES,
+  WALLPAPER_NEUTRALS,
+  WALLPAPER_PHOTO_PATH,
   WORKSPACE_MODES,
 } from "@agenteschat/engine";
 import { CONTEXT_LIMITS, ENDPOINT_STYLES, MODEL_TIERS, PROVIDER_IDS } from "@agenteschat/providers";
@@ -112,6 +116,29 @@ export const StartChoice = z
       "What opens when the app starts here (ADR 0108): `home` (Início, Conversas on the phone), `last` (where the person was, kept on each device) or `channel` (open the home when they are no longer in it).",
   });
 
+const WallpaperHue = z.enum(WALLPAPER_HUES);
+const WallpaperNeutral = z.enum(WALLPAPER_NEUTRALS);
+/** A conversation's background (Fundo): packages/client/src/lib/wallpaper.ts says what each kind is. */
+export const Wallpaper = z
+  .discriminatedUnion("kind", [
+    z.object({ kind: z.literal("none") }),
+    z.object({ kind: z.literal("sky"), color: z.union([z.literal("auto"), WallpaperHue]) }),
+    z.object({ kind: z.literal("trama"), color: z.union([z.literal("auto"), WallpaperNeutral, WallpaperHue]) }),
+    z.object({ kind: z.literal("turma") }),
+    z.object({ kind: z.literal("color"), color: z.union([WallpaperNeutral, WallpaperHue]) }),
+    z.object({
+      kind: z.literal("photo"),
+      url: z.string().regex(WALLPAPER_PHOTO_PATH).openapi({ description: "From `PUT …/me/wallpaper-photo`." }),
+      dim: z.number().min(0).max(MAX_PHOTO_DIM).openapi({ description: "How dark it goes in the dark theme." }),
+      x: z.number().min(0).max(1),
+      y: z.number().min(0).max(1),
+    }),
+  ])
+  .openapi("Wallpaper", {
+    description:
+      "`auto` is the conversation's own color: the agent's in a DM with it, the workspace's sky elsewhere. `none`: no background.",
+  });
+
 export const ChatPrefs = z
   .object({
     channelStyle: z.enum(CHAT_STYLES).optional(),
@@ -129,6 +156,12 @@ export const ChatPrefs = z
     feedbackAuto: z.boolean().optional().openapi({
       description:
         "Always send: a report an agent offers about the app goes with its reply, without asking; absent: it asks.",
+    }),
+    channelWallpaper: Wallpaper.optional().openapi({ description: "The channels' background; absent: none." }),
+    dmWallpaper: Wallpaper.optional().openapi({ description: "The DMs' background; absent: none." }),
+    wallpapers: z.record(z.uuid(), Wallpaper).optional().openapi({
+      description:
+        "A conversation's own background, by channel id (`PUT`/`DELETE …/channels/{channelId}/wallpaper`); ignored in `PUT …/me/chat`.",
     }),
   })
   .openapi("ChatPrefs");
