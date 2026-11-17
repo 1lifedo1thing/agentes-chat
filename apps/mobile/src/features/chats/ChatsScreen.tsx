@@ -94,7 +94,7 @@ export function useHidesQuietGeneral(): boolean {
  * hand's conversation. When the server doesn't answer it says so (`HomeServerError`), over the kept rows as a card,
  * and tries again on its own. A personal workspace (ADR 0159), while its person is alone in it, leaves a quiet #general
  * out. Pulled past its last row, the team peeks up from behind the tab bar (iOS, `TeamPeek`); archived channels are in
- * Você › Trabalho.
+ * You › Work.
  */
 export function ChatsScreen() {
   return (
