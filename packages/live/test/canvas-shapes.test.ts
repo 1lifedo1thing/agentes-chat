@@ -21,7 +21,7 @@ import { LIVE_LIMITS } from "../src/limits";
 import { agentOrigin, LOCAL, SYSTEM } from "../src/origins";
 
 /**
- * The canvas's shapes beyond the first ones (ADR 0194 §2): triangles and stars, borders and corners, arrows that curve
+ * The canvas's shapes beyond the first ones (ADR 0196 §2): triangles and stars, borders and corners, arrows that curve
  * or bend and lines without heads, pen strokes, a picture's crop, who made each shape and the layers' eye.
  */
 

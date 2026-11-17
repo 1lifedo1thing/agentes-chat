@@ -259,9 +259,6 @@ export const featureKeysPtBR = {
     workingOne: "{{name}} está trabalhando",
     /** A conversation's row swiped left: the pane beside Pin, short so the word fits the pane. */
     swipe: { mute: "Silenciar", unmute: "Reativar" },
-    /** Conversas' one line back to the right hand's first-run checklist (ADR 0155 §6). */
-    firstRunLine: "{{name}} está montando o time · {{done}} de {{total}}",
-    firstRunLinePersonal: "{{name}} está preparando os seus agentes · {{done}} de {{total}}",
     first: {
       title: "Comece pelo seu primeiro agente",
       subtitle: "Dê um nome e diga o que ele faz. Ele aparece aqui, como uma conversa.",
@@ -1729,18 +1726,9 @@ export const featureKeysPtBR = {
   // The agent's browser (ADR 0040).
   browser: {
     card: {
-      needs: "{{name}} precisa de ajuda",
-      needsFor: "{{name}} precisa de ajuda · {{time}}",
-      inControlAt: "Você no controle · {{host}}",
-      doing: "{{name}} · {{doing}}",
-      startingF: "Abrindo o navegador da {{name}}…",
-      startingM: "Abrindo o navegador do {{name}}…",
       stopAskF: "Fechar o navegador da {{name}}?",
       stopAskM: "Fechar o navegador do {{name}}?",
-      whereF: "No navegador da {{name}}",
-      whereM: "No navegador do {{name}}",
       open: "Abrir",
-      expandHint: "Toque para expandir",
       stop: "Parar",
       giveUp: "Desistir",
     },
@@ -1748,7 +1736,6 @@ export const featureKeysPtBR = {
       inControl: "Você está no controle",
       helping: "{{name}} está no controle",
       watchOnly: "{{name}} está no controle. Você só assiste.",
-      takeOver: "Assumir",
       done: "Pronto",
       handBack: "Devolver",
       couldnt: "Não consegui",
@@ -1769,7 +1756,6 @@ export const featureKeysPtBR = {
       closedHelpM: "Os logins continuam salvos para a próxima vez.",
       stuckHelpF: "Tentar de novo reinicia o navegador. Os logins continuam salvos.",
       stuckHelpM: "Tentar de novo reinicia o navegador. Os logins continuam salvos.",
-      hidden: "{{name}} está no controle · tela oculta",
       key: {
         Tab: "Tab",
         Enter: "Enter",
@@ -2296,7 +2282,6 @@ export const featureKeysPtBR = {
     planRowSub: "Entra pelo computador do agente, sem chave",
     keyRow: "Uma chave",
     keyRowSub: "Você paga pelo uso, direto ao provedor",
-    already: "Já na {{org}}",
     stepOf: "{{step}} de {{total}}",
   },
   crash: {
@@ -2958,7 +2943,7 @@ export const featureKeysPtBR = {
       text: "Quando um agente fizer algo fora da conversa, aparece aqui.",
     },
   },
-  /** Live files on the phone (ADR 0194): their bar, who is here, the spreadsheet. */
+  /** Live files on the phone (ADR 0196): their bar, who is here, the spreadsheet. */
   live: {
     status: {
       opening: "Abrindo…",
@@ -3152,7 +3137,7 @@ export const featureKeysPtBR = {
       imported: "Importado de {{file}} por <0>{{name}}</0>",
       variationsText: "faz variações desta imagem",
     },
-    /** A document on the phone (ADR 0198): its blocks, edited one at a time, and the bar over the keyboard. */
+    /** A document on the phone (ADR 0200): its blocks, edited one at a time, and the bar over the keyboard. */
     doc: {
       styles: {
         paragraph: "Texto",
@@ -3178,5 +3163,11 @@ export const featureKeysPtBR = {
       editHint: "Edita esta parte",
       notHere: "Esta parte se edita no computador",
     },
+  },
+  surface: {
+    on: "Ligado",
+    codeText: "Envie a mensagem que abre lá e depois volte aqui.",
+    openFailed: "Não deu para abrir o {{surface}} neste celular. Envie o código abaixo para ele.",
+    orType: "Ou envie este código lá",
   },
 } satisfies LocaleStrings;

@@ -15,7 +15,7 @@ import {
 } from "@agenteschat/live/canvas";
 
 /**
- * The canvas editor's geometry (ADR 0194 §2), apart from React so it is tested on its own: what a press lands on,
+ * The canvas editor's geometry (ADR 0196 §2), apart from React so it is tested on its own: what a press lands on,
  * what a marquee takes, how a box follows a resize handle (turned shapes too), the angle a rotation handle gives, and
  * where an arrow's line runs.
  */
@@ -246,7 +246,7 @@ export function thinStroke(points: readonly number[], tolerance: number, max = 4
   return kept.flatMap((i) => [r(points[2 * i] as number), r(points[2 * i + 1] as number)]);
 }
 
-/** A picture's whole extent in the world, of which its box shows the part its crop says (ADR 0194 §2). */
+/** A picture's whole extent in the world, of which its box shows the part its crop says (ADR 0196 §2). */
 export function fullImageBox(shape: Box & { crop?: ImageCrop }): Box {
   const c = shape.crop ?? { x: 0, y: 0, w: 1, h: 1 };
   const w = shape.w / c.w;

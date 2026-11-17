@@ -1,5 +1,5 @@
 /**
- * Test fake — live files (ADR 0194, 0195, 0196): spreadsheets, presentations and canvases. Same shapes as the server's
+ * Test fake — live files (ADR 0196, 0197, 0198): spreadsheets, presentations and canvases. Same shapes as the server's
  * `…/live-files`, `…/artifacts/{id}/live*`, `…/assets*`, `…/preview*`, `…/open-as` and `…/images*` routes, over an
  * in-memory live server (`FakeLiveServer`) that speaks the socket's protocol, so a test opens a live file as the app
  * does: `render.tsx` routes the app's `/api/live` sockets to `fake.server`.

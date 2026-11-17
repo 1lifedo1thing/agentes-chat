@@ -42,7 +42,7 @@ import { RealtimeProvider } from "@/realtime/context";
 
 /** A live file's own page (`org.$orgId.drive_.$fileId`): `/org/<org>/drive/<file>`. */
 const LIVE_FILE_PATH = /\/drive\/[^/]+\/?$/;
-/** That page presenting (`?present`): the slide takes the window, the sidebar steps aside (ADR 0194 §9). */
+/** That page presenting (`?present`): the slide takes the window, the sidebar steps aside (ADR 0196 §9). */
 const PRESENTING = /[?&]present=(true|1)(&|$)/;
 
 /** The workspace shell of an organization: sidebar + page, and its WebSocket. */
@@ -69,7 +69,7 @@ function OrgLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const href = useRouterState({ select: (s) => s.location.href });
   // "Criar agente" is a focused flow with its own rail: no sidebar while it's open (admins only; others see why not).
-  // A live file's page is a page of the app with the sidebar (ADR 0197), but presenting takes the whole window.
+  // A live file's page is a page of the app with the sidebar (ADR 0199), but presenting takes the whole window.
   const focused =
     (/\/agents\/new\/?$/.test(path) && can(membership, "create_agents")) ||
     (LIVE_FILE_PATH.test(path) && PRESENTING.test(href));

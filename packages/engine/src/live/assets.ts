@@ -16,7 +16,7 @@ import { imageSize } from "../image-size";
 import { looksLikeSvg, SVG_TYPE, sanitizeSvg } from "./svg";
 
 /**
- * Pictures that belong to a live file (ADR 0194 §8): on a canvas or a slide, dropped by a person, made by the image
+ * Pictures that belong to a live file (ADR 0196 §8): on a canvas or a slide, dropped by a person, made by the image
  * job, copied from the Drive or from another live file, drawn by an agent as an SVG or downloaded from the web. Each
  * is stored through the workspace's storage like a version's bytes (`writeLiveAssetBlob`: counted in its storage,
  * refused past its limits), served only to whoever reads the file and purged with it. Only pictures, told by their

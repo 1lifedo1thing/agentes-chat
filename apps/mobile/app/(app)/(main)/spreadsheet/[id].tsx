@@ -4,8 +4,8 @@ import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
 /**
- * A live spreadsheet (`/spreadsheet/<id>`, ADR 0194): from the Drive, a message's card, a link or New; none: the Drive.
- * `m`: a message of its conversation to open at (ADR 0197).
+ * A live spreadsheet (`/spreadsheet/<id>`, ADR 0196): from the Drive, a message's card, a link or New; none: the Drive.
+ * `m`: a message of its conversation to open at (ADR 0199).
  */
 export default function SpreadsheetRoute() {
   const { id, m } = useLocalSearchParams<{ id: string; m?: string }>();

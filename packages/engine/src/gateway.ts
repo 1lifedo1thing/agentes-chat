@@ -170,7 +170,7 @@ export interface GatewayResult extends ModelResult {
 }
 
 /**
- * Pictures asked for (ADR 0195): by an agent (billed to its budget, with the person behind its run) or by a person
+ * Pictures asked for (ADR 0197): by an agent (billed to its budget, with the person behind its run) or by a person
  * from a canvas (`agentId` null: their own monthly limit, ADR 0141).
  */
 export interface ImageCall {
@@ -656,7 +656,7 @@ export function createModelGateway(deps: ModelGatewayDeps) {
     model: string;
     usage: ModelUsage;
     reportedCost?: number;
-    /** `image`: pictures (ADR 0195), recorded at the image model asked for; absent: a model call (`agent`). */
+    /** `image`: pictures (ADR 0197), recorded at the image model asked for; absent: a model call (`agent`). */
     kind?: "agent" | "image";
     requestedModel?: string;
   }) {
@@ -749,7 +749,7 @@ export function createModelGateway(deps: ModelGatewayDeps) {
   }
 
   /**
-   * The key for an image model's provider (ADR 0195): a workspace endpoint's own, else the agent's credential when it
+   * The key for an image model's provider (ADR 0197): a workspace endpoint's own, else the agent's credential when it
    * is of that provider (never another provider's: an agent on Claude makes pictures on the workspace's Gemini key),
    * else the workspace's default for it, else the platform's.
    */
@@ -945,7 +945,7 @@ export function createModelGateway(deps: ModelGatewayDeps) {
     },
 
     /**
-     * Pictures (ADR 0195), mirroring `stream`: the workspace's standing (and the agent's hold), the model checked
+     * Pictures (ADR 0197), mirroring `stream`: the workspace's standing (and the agent's hold), the model checked
      * against the image catalog (or the workspace's endpoint), the key for the image model's provider (`imageKey`),
      * the person's limit when someone is behind the call, the agent's budget reserved at the request's worst case
      * (`maxImageCostNanoUsd`) before the call, then the call, and one `usage_records` row of kind `image` with the
@@ -1080,7 +1080,7 @@ export function createModelGateway(deps: ModelGatewayDeps) {
     },
 
     /**
-     * The image models a workspace can use now (ADR 0195), in the catalog's order (its default first), then its own
+     * The image models a workspace can use now (ADR 0197), in the catalog's order (its default first), then its own
      * endpoints' image models: those whose provider has a key it would call with (its own or the platform's) and an
      * adapter that makes pictures. No key is decrypted.
      */

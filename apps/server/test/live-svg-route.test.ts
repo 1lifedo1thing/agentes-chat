@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { type Browser, browser, createTestServer, seedOrg, signUp, type TestServer } from "./harness";
 
 /**
- * An SVG picture of a live file (ADR 0194 §8) is stored as the sanitizer rebuilt it and served as a picture only: its
+ * An SVG picture of a live file (ADR 0196 §8) is stored as the sanitizer rebuilt it and served as a picture only: its
  * own type, `nosniff`, and a CSP that runs and loads nothing, also when opened on its own in a tab.
  */
 

@@ -6,7 +6,7 @@ setupDom();
 import type { LiveEditorProps } from "@/components/live/editor";
 
 /**
- * The live file's page (ADR 0194 §9, ADR 0197): a page of the app, the sidebar beside it, and its header (where it
+ * The live file's page (ADR 0196 §9, ADR 0199): a page of the app, the sidebar beside it, and its header (where it
  * lives, how it's saved, who is here, Share, Present, ⋯ with Download, the kind and the title to rename, who made it,
  * when it was edited and who sees it), the editor it draws for the file's kind, versions beside it and shown in place,
  * following someone, and its states (loading, offline, read-only, not found). The editors are stand-ins here (each has

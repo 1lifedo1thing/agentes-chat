@@ -18,7 +18,7 @@ import "../slides/slides.css";
 import "../spreadsheet/sheet.css";
 
 /**
- * The document's toolbar (ADR 0198), in the spreadsheet's look (`sheet-tools`): undo and redo | the block's style
+ * The document's toolbar (ADR 0200), in the spreadsheet's look (`sheet-tools`): undo and redo | the block's style
  * ("Text ▾": text, headings 1 to 3, quote, code) | bold, italic, underline, strikethrough | lists, quote, code |
  * link, picture, table. One row of 32 px buttons scrolling sideways when it doesn't fit, a single tab stop moved with
  * the arrow keys; every tip says the button's name and its keys. The picture and table buttons turn into menus of what

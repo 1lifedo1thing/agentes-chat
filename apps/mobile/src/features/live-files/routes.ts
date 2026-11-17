@@ -3,11 +3,11 @@ import type { SFSymbolName } from "../../ui/headerActions";
 import type { IconName } from "../../ui/icons.data";
 
 /**
- * Where live files open on the phone (ADR 0194 §9), and their marks: kept apart from the screens' logic so the files'
+ * Where live files open on the phone (ADR 0196 §9), and their marks: kept apart from the screens' logic so the files'
  * routing (`fileRoute`) reads it without loading the documents' code.
  */
 
-/** The screen each kind of live file opens on (a document's: ADR 0198). */
+/** The screen each kind of live file opens on (a document's: ADR 0200). */
 export const LIVE_SCREENS = {
   spreadsheet: "/spreadsheet/[id]",
   slides: "/slides/[id]",
@@ -25,7 +25,7 @@ export const opensLive = (kind: unknown): kind is PhoneLiveKind => isLiveFileKin
 
 /**
  * A live file's own screen: it always opens as it is now (its versions are the web's history). `m`: a message of its
- * conversation to open at (a notice, a link: ADR 0197), pushed over the file once the file is known.
+ * conversation to open at (a notice, a link: ADR 0199), pushed over the file once the file is known.
  */
 export const liveRoute = (
   kind: LiveKind,
@@ -39,7 +39,7 @@ export const liveRoute = (
 /** Who is in a live file, and following one of them (`here/[id]`). */
 export const hereRoute = (id: string) => ({ pathname: "/here/[id]" as const, params: { id } });
 
-/** The kinds "New" makes, in its order (ADR 0194 §9, a document: ADR 0198). */
+/** The kinds "New" makes, in its order (ADR 0196 §9, a document: ADR 0200). */
 export const LIVE_KINDS_MADE: readonly LiveKind[] = ["document", "spreadsheet", "slides", "canvas"];
 
 /** Each kind's line icon (the Drive, cards, New) and its SF Symbol (bar buttons and menus on iOS). */

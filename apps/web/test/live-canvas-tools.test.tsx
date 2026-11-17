@@ -23,7 +23,7 @@ import { ADA_ID, createFakeApi, fakeLiveOf, ORG_ID, seedState } from "./fake-api
 import { renderPage, screen, settle } from "./render";
 
 /**
- * The canvas's tools (ADR 0194 §2, ADR 0197) on a live file of the fake server: the dock switches tools by press and
+ * The canvas's tools (ADR 0196 §2, ADR 0199) on a live file of the fake server: the dock switches tools by press and
  * by key, the Shapes menu draws each form (and the line), the pen draws strokes said to be the person's, the layers
  * list every shape and hide one from the plane, the bars over a selection change it and ask the file's agent, a crop
  * keeps part of a picture, a comment asks about a spot, and the conversation's messages about spots are pins.

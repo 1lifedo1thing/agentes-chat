@@ -1,7 +1,7 @@
 import { attr, dig, type Element, kids, nameOf } from "./xml";
 
 /**
- * Colors in Office files (ADR 0196): SpreadsheetML's ARGB, theme and indexed colors with Excel's tint, and
+ * Colors in Office files (ADR 0198): SpreadsheetML's ARGB, theme and indexed colors with Excel's tint, and
  * DrawingML's color elements (sRGB, scheme, system and preset colors) with their modifiers (luminance, tint, shade,
  * saturation, alpha). Everything comes out as `#rrggbb`.
  */

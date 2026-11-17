@@ -12,7 +12,7 @@ import { HereFaces } from "./HereFaces";
 import type { LiveDoc } from "./useLiveDoc";
 
 /**
- * A live file's bar on the phone (ADR 0194), the same for a spreadsheet, a presentation and a canvas: the system's
+ * A live file's bar on the phone (ADR 0196), the same for a spreadsheet, a presentation and a canvas: the system's
  * back, the file's name with how it stands under it ("Salvo", "Salvando…", "Sem conexão · guardado no celular", "Só
  * leitura") beside the faces of who else is in it, then Compartilhar (who sees it, ADR 0157) and the "…": the screen's
  * own choices first, then Desfazer and Refazer (only this person's changes, never an agent's), Enviar cópia (as the

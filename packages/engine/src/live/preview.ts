@@ -10,7 +10,7 @@ import * as live from "@agenteschat/live";
 import * as Y from "yjs";
 
 /**
- * What the server reads out of a live document (ADR 0194 §7): the small preview cards and the Drive draw, the text
+ * What the server reads out of a live document (ADR 0196 §7): the small preview cards and the Drive draw, the text
  * search finds it by, the rules of shape it must keep, and the cheap count of what it holds that the sockets check
  * after every change. The document's shape itself is `@agenteschat/live`'s; this is the engine's one door to it.
  */
@@ -21,12 +21,12 @@ export type LiveContent =
   | { kind: "slides"; preview: SlidesPreview }
   | { kind: "canvas"; preview: CanvasPreview }
   /**
-   * A document (ADR 0198): its card's preview, and its whole text as Markdown, which the apps that don't edit
+   * A document (ADR 0200): its card's preview, and its whole text as Markdown, which the apps that don't edit
    * documents yet show read-only and `read_artifact` gives agents.
    */
   | { kind: "document"; preview: DocumentPreview; markdown: string };
 
-/** The type of a version's snapshot: the whole Yjs state as one update (ADR 0194 §7). */
+/** The type of a version's snapshot: the whole Yjs state as one update (ADR 0196 §7). */
 export const LIVE_SNAPSHOT_TYPE = "application/vnd.agentes.live";
 
 /** The most search text a live file gives (`artifacts.excerpt`). */
@@ -52,7 +52,7 @@ export function liveContentOf(doc: Y.Doc, kind: LiveKind): LiveContent {
 }
 
 /**
- * A document made from Markdown (ADR 0198): what `create_artifact` and an upload's "Edit as document" make, and what
+ * A document made from Markdown (ADR 0200): what `create_artifact` and an upload's "Edit as document" make, and what
  * a document saved before documents were live files opens as (its latest version's Markdown). Its pictures stay
  * words: a new document has none of its own yet.
  */
@@ -93,7 +93,7 @@ export function liveExcerpt(doc: Y.Doc): string {
 /** What breaks the document's rules of shape or its limits, as sentences (empty: nothing). */
 export const liveProblems = (doc: Y.Doc): string[] => live.validateLive(doc);
 
-/** Writes `from`'s content over `doc`'s in one transaction with `origin` (a version restored, ADR 0194 §7). */
+/** Writes `from`'s content over `doc`'s in one transaction with `origin` (a version restored, ADR 0196 §7). */
 export function replaceLiveDoc(doc: Y.Doc, from: Y.Doc, origin: LiveOrigin): void {
   live.replaceLiveContent(doc, from, origin);
 }
@@ -112,7 +112,7 @@ const lengthOf = (value: unknown) => (value instanceof Y.Array ? value.length : 
 
 /**
  * The first of `LIVE_LIMITS` a document is past, or null: counts read in constant time per sheet, slide or the canvas,
- * so the server can look after every change from a socket (ADR 0194 §2). The bytes are the caller's to count.
+ * so the server can look after every change from a socket (ADR 0196 §2). The bytes are the caller's to count.
  */
 export function overLimit(doc: Y.Doc, kind: LiveKind): string | null {
   const limits = live.LIVE_LIMITS;

@@ -9,7 +9,7 @@ import { neutralizeUntrusted, untrustedBlock } from "../untrusted";
 const { artifacts, channels, channelMembers, messages, users, agents } = schema;
 
 /**
- * A live file's conversation (ADR 0197), the task's (ADR 0145) for a file: a channel of kind `file` of its own, read by
+ * A live file's conversation (ADR 0199), the task's (ADR 0145) for a file: a channel of kind `file` of its own, read by
  * whoever reads the file, and one thread in it, whose root (`meta.fileConversation`) stands for the file and is never
  * shown; the conversation is that thread's replies, so posting, mentions, runs, receipts, reactions and the thread's
  * screens are the chat's. A message there may point at what its writer had selected in the file (`meta.liveRef`).
@@ -137,7 +137,7 @@ const KIND_WORD: Record<string, string> = {
   canvas: "canvas",
   document: "document",
 };
-/** The tools that read and change each kind (the agent's own, ADR 0194 §6). */
+/** The tools that read and change each kind (the agent's own, ADR 0196 §6). */
 const KIND_TOOLS: Record<string, { read: string; edit: string }> = {
   spreadsheet: { read: "read_spreadsheet", edit: "edit_spreadsheet" },
   slides: { read: "read_presentation", edit: "edit_presentation" },
@@ -407,7 +407,7 @@ export async function fileConversationSummaries(
 // ── The agent's context ─────────────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * The block a run in a file's conversation gets (ADR 0197): the file in focus, read from the artifact now, and that
+ * The block a run in a file's conversation gets (ADR 0199): the file in focus, read from the artifact now, and that
  * its tools act on it without an id. What each message points at comes under it (`liveRefLine`).
  */
 export async function fileConversationBrief(
@@ -447,7 +447,7 @@ export async function fileConversationBrief(
     .join("\n");
 }
 
-/** The live file of the conversation a run is in, for its tools' default (ADR 0197): null outside one. */
+/** The live file of the conversation a run is in, for its tools' default (ADR 0199): null outside one. */
 export async function conversationFileId(
   db: Executor,
   orgId: string,

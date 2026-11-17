@@ -35,7 +35,7 @@ import { addMember, type Fixture, setup } from "./fixtures";
 import { liveDocsFor, makeLiveFile, openApp, personActor, until } from "./live-fixtures";
 
 /**
- * The agents' tools for live files (ADR 0194 §6) and their images (ADR 0195), through the Tool Gateway as a run calls
+ * The agents' tools for live files (ADR 0196 §6) and their images (ADR 0197), through the Tool Gateway as a run calls
  * them: each write one edit whose origin is the agent and its run, its presence in the file while it works, versions
  * with the run, reads inside `untrustedBlock`, and the Drive's rules of who reads and who changes what.
  */
@@ -194,7 +194,7 @@ describe("the tools and their group", () => {
     expect(await artifactToolDetail(f.db, f.org.id, other.id, "read_spreadsheet", { file: made.id })).toBeUndefined();
   });
 
-  test("in a file's own conversation (ADR 0197) the tools act on its file when none is named", async () => {
+  test("in a file's own conversation (ADR 0199) the tools act on its file when none is named", async () => {
     const sheet = await makeLiveFile(f, "spreadsheet", { title: "Custos", channelId: f.general.id });
     const at = await openFileConversation(f.artifactDeps, f.owner.id, f.org.id, sheet.id);
     expect(await carriesLiveFile(f.db, f.org.id, null, at.channelId)).toBe(true);

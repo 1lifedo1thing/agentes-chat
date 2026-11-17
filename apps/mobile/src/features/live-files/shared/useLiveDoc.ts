@@ -11,7 +11,7 @@ import { useMeId, useOrgId } from "../../shared/hooks";
 import { keptChangesFor } from "./kept";
 
 /**
- * A live file open on the phone (ADR 0194): its document over HTTP, then its own socket (`/api/live`, bytes as base64
+ * A live file open on the phone (ADR 0196): its document over HTTP, then its own socket (`/api/live`, bytes as base64
  * text, since React Native hands binary frames to JavaScript as base64 anyway), with the session cookie and the app's
  * header on the upgrade. Every screen showing the file shares one room (`useLiveRoom`), connected while any of them is
  * on screen with the app in front: a screen pushed over it, or the app in the background, lets it go after a moment

@@ -13,7 +13,7 @@ import { useEffect, useMemo } from "react";
 import type * as Y from "yjs";
 
 /**
- * A presentation as plain data for drawing, read again only where it changed (ADR 0194 §2): a slide nobody touched
+ * A presentation as plain data for drawing, read again only where it changed (ADR 0196 §2): a slide nobody touched
  * keeps the same `SlideView` object, so its thumbnail doesn't redraw while an agent writes a slide further down, and a
  * long deck stays quick to edit. While it isn't listening (before `attach`) every read reads everything.
  */

@@ -649,7 +649,7 @@ export function chatRoutes(deps: AppDeps) {
               .optional()
               .openapi({
                 description:
-                  "In a live file's conversation (ADR 0197): what you had selected in the file. Stored as `meta.liveRef` ({ artifactId, kind, title, selection? }) and shown as the message's `liveRef`. Only that conversation's own file (400 `message.live_ref`).",
+                  "In a live file's conversation (ADR 0199): what you had selected in the file. Stored as `meta.liveRef` ({ artifactId, kind, title, selection? }) and shown as the message's `liveRef`. Only that conversation's own file (400 `message.live_ref`).",
               }),
             clientId: z
               .string()

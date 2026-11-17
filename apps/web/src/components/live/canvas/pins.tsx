@@ -9,7 +9,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { type Camera, type Size, toScreen } from "./camera";
 
 /**
- * Comments pinned on the canvas (ADR 0197): each is a message of the file's own conversation whose `liveRef` names a
+ * Comments pinned on the canvas (ADR 0199): each is a message of the file's own conversation whose `liveRef` names a
  * point of this canvas. The plane draws them where they point (in world units, so a pin follows the view as it pans
  * and zooms), as the face of who wrote it and its number, oldest first; a press opens the conversation at it.
  */

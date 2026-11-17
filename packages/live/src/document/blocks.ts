@@ -17,7 +17,7 @@ import type {
 } from "./types";
 
 /**
- * Documents as plain data (ADR 0198): their canonical form (what every reader returns and every writer stores), ids,
+ * Documents as plain data (ADR 0200): their canonical form (what every reader returns and every writer stores), ids,
  * plain text and sizes.
  */
 

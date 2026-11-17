@@ -59,7 +59,7 @@ export const NotificationSource = z.object({
     .openapi({ description: "`widget_alert`, `widget_failed`, `dashboard_proposal`: the board (ADR 0135)." }),
   widgetId: z.string().optional().openapi({ description: "`widget_alert`, `widget_failed`: the widget." }),
   artifactId: z.string().optional().openapi({
-    description: "A message in a live file's conversation (ADR 0197): the file, opened with it at `messageId`.",
+    description: "A message in a live file's conversation (ADR 0199): the file, opened with it at `messageId`.",
   }),
   accountId: z
     .string()

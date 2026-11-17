@@ -1,1 +1,0 @@
-ALTER TABLE "live_assets" ADD COLUMN "origin" jsonb;

@@ -367,7 +367,7 @@ export function threadRoutes(deps: AppDeps) {
       security,
       summary: "Live files whose conversation has a reply you haven't read, with the ones that mention you",
       description:
-        "Only files you read (ADR 0197). A reply counts when you follow the conversation or it mentions you, at most 100 each.",
+        "Only files you read (ADR 0199). A reply counts when you follow the conversation or it mentions you, at most 100 each.",
       request: { params: OrgParams },
       responses: { 200: json(z.object({ files: z.array(UnreadFile) })), ...errors },
     }),

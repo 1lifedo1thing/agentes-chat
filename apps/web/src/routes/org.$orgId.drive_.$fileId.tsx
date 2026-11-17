@@ -6,7 +6,7 @@ import { LiveFilePage, type LiveFileSearch } from "@/components/live/LiveFilePag
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /**
- * A spreadsheet, a presentation or a canvas on a page of the app (ADR 0194 §9, ADR 0197), the sidebar beside it:
+ * A spreadsheet, a presentation or a canvas on a page of the app (ADR 0196 §9, ADR 0199), the sidebar beside it:
  * `?v=` shows a saved version read-only, `?sheet=` and `?slide=` where the editor is, `?present` presents (then the
  * window is the slide's alone), `?m=` opens the file's conversation at that message. Links to files stay
  * `/drive?artifact=…` (`filePath`): the Drive sends live files here.

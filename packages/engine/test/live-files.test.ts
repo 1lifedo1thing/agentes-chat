@@ -198,7 +198,7 @@ describe("the Drive around it", () => {
     const byKind = await listArtifacts(f.db, owner(), f.org.id, { sort: "kind" });
     expect(byKind.map((a) => a.kind)).toEqual(["spreadsheet", "slides", "table"]);
     expect(isLiveArtifactKind("canvas")).toBe(true);
-    // A document is a live file too (ADR 0198).
+    // A document is a live file too (ADR 0200).
     expect(isLiveArtifactKind("document")).toBe(true);
     expect(isLiveArtifactKind("table")).toBe(false);
   });

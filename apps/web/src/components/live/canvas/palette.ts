@@ -3,7 +3,7 @@ import type { NoteColor } from "@agenteschat/live/canvas";
 import type { CSSProperties } from "react";
 
 /**
- * The canvas's soft colors (ADR 0194 §2): notes keep a color's name (`yellow`), drawn by the theme's own tone; shapes
+ * The canvas's soft colors (ADR 0196 §2): notes keep a color's name (`yellow`), drawn by the theme's own tone; shapes
  * and frames keep a hex fill (any app or agent may write one), so the light tones of this palette are what they store,
  * and the dark theme swaps each for its own deep tone. A fill from outside the palette shows as it is, with whichever
  * ink reads on it.

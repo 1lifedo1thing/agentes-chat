@@ -26,7 +26,7 @@ export function ArtifactContentView({
 }) {
   const { t } = useTranslation();
   switch (content.kind) {
-    // A live file, a document included (ADR 0198), opens on its own page, never here.
+    // A live file, a document included (ADR 0200), opens on its own page, never here.
     case "document":
     case "spreadsheet":
     case "slides":

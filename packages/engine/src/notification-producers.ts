@@ -77,7 +77,7 @@ function handlesIn(text: string): string[] {
 async function inChannel(deps: NotificationDeps, channelId: string, userIds: string[]) {
   const ids = [...new Set(userIds.filter(Boolean))];
   if (ids.length === 0) return [];
-  // A live file's conversation (ADR 0197) has no people in it: whoever reads the file is there.
+  // A live file's conversation (ADR 0199) has no people in it: whoever reads the file is there.
   const rows = rowsOf<{ id: string }>(
     await deps.db.execute(sql`select u.id from ${schema.users} u join ${channels} on ${channels.id} = ${channelId}::uuid
       where u.id = any(${`{${ids.join(",")}}`}::text[]) and (exists (select 1 from ${channelMembers} m
@@ -132,6 +132,13 @@ export const agentReplyGroup = (channelId: string, threadId: string | null) =>
   `agent_reply:${channelId}:${threadId ?? "top"}`;
 
 /**
+ * Never news for a person: a notice only for its agent or never news (a follow-up's lines, whose reply notifies
+ * instead; a stopped task's receipt; a mention its message's own line explains), or a long work's progress line
+ * (ADR 0121), unread only for who follows its thread. Outside chat surfaces skip the same messages (ADR 0187).
+ */
+export const quietForPeople = (meta: Record<string, unknown>) => isQuietNotice(meta) || Boolean(meta.workUpdate);
+
+/**
  * Job `notifications.message` (enqueued in the message's own statement):
  * people mentioned (`mention`), the other person of a DM (`dm`), the person
  * an agent answers (`agent_reply`, merged per conversation, ADR 0071), and
@@ -150,11 +157,7 @@ export async function notifyMessage(deps: NotificationDeps, orgId: string, messa
   if (meta.questionId || meta.approvalId || meta.secretRequestId) return;
   // An agent's sticker or GIF after its own reply (ADR 0091) is silent: the reply already told whoever it was for.
   if (isMediaAfterReply(meta)) return;
-  // Only for its agent, or never news (a follow-up's lines: the reply it brings notifies instead; a stopped task's
-  // receipt; a mention its message's own line explains).
-  if (isQuietNotice(meta)) return;
-  // A long work's progress line (ADR 0121) never pushes: it counts as unread only for who follows its thread.
-  if (meta.workUpdate) return;
+  if (quietForPeople(meta)) return;
   const [channel] = await db
     .select({ kind: channels.kind, name: channels.name, visibility: channels.visibility })
     .from(channels)
@@ -178,7 +181,7 @@ export async function notifyMessage(deps: NotificationDeps, orgId: string, messa
   // inbox and the push quote it as it is.
   const unasked = message.authorType === "agent" && !message.agentRunId && typeof meta.forUserId === "string";
   const latest = { text, ...(media ? { media } : {}), ...(written && !unasked ? { meta: written } : {}) };
-  // A live file's conversation (ADR 0197): named by its file, and the apps open the file with it at this message.
+  // A live file's conversation (ADR 0199): named by its file, and the apps open the file with it at this message.
   const file = channel.kind === "file" ? await fileOfConversation(db, orgId, message.channelId) : null;
   if (channel.kind === "file" && !file) return;
   const label = channel.kind === "channel" ? channel.name : file?.title;

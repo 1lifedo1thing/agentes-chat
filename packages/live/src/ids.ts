@@ -8,7 +8,7 @@ const FIVE_DIGITS = 36 ** 5;
 const FAIR_LIMIT = Math.floor(2 ** 32 / FIVE_DIGITS) * FIVE_DIGITS;
 
 /**
- * A new id for a sheet, row, column, slide, element or shape (ADR 0194 §2): 10 characters of [0-9a-z] from lib0's
+ * A new id for a sheet, row, column, slide, element or shape (ADR 0196 §2): 10 characters of [0-9a-z] from lib0's
  * crypto-backed randomness, which works on the server, the web and the phone (Hermes, through the Metro alias of
  * `lib0/webcrypto`). 36^10 ids make a collision between two people adding rows at once vanishingly unlikely.
  */

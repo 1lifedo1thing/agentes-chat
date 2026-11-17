@@ -90,9 +90,9 @@ import {
 } from "./logic";
 
 /**
- * A canvas on the phone (ADR 0194 §9), pushed with the file's bar (`LiveBar`): the plane with everything on it
+ * A canvas on the phone (ADR 0196 §9), pushed with the file's bar (`LiveBar`): the plane with everything on it
  * (`CanvasPlane`), the tools in a glass dock over it (select, the pen, the shapes' menu, an arrow, text, a note, photos
- * from the library, a comment), and under them the file's conversation (`FileTalkLine`, ADR 0197). Pictures come from
+ * from the library, a comment), and under them the file's conversation (`FileTalkLine`, ADR 0199). Pictures come from
  * the agents in the conversation ("Variations" and "Ask Atlas" on a chosen picture's glass bar). A long press asks
  * for a shape's menu (its words, its color, ask the agent, front and back, delete) or the plane's. Following someone
  * (from the faces' list) moves the view with theirs. `focusId`: a message of the conversation to open at.
@@ -223,7 +223,7 @@ function LiveCanvas({
     if (followId !== null) setFollowing(fileId, null);
   }, [followId, fileId]);
 
-  // ── The file's conversation (ADR 0197) ─────────────────────────────────────────────────────────────────────────
+  // ── The file's conversation (ADR 0199) ─────────────────────────────────────────────────────────────────────────
   const asking = useAskAgent(detail);
   const openTalk = useOpenFileTalk(detail);
   const pins = useTalkPins(fileId, asking.messages);
@@ -420,7 +420,7 @@ function LiveCanvas({
         if (byId.get(id)?.type === "note") updateShape(doc, id, { color: picked as NoteColor }, LOCAL);
     });
   };
-  // "Variations" of a picture (ADR 0197): asked of the agent in the conversation, the picture over its composer.
+  // "Variations" of a picture (ADR 0199): asked of the agent in the conversation, the picture over its composer.
   const variations = (ids: readonly string[]) => {
     const sel = selectionOf(ids);
     if (sel) asking.ask(sel, t("mobile.live.talk.variationsText"));

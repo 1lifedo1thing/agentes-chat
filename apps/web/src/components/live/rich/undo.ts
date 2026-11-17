@@ -3,7 +3,7 @@ import { getRelativeSelection, ySyncPluginKey } from "y-prosemirror";
 import type * as Y from "yjs";
 
 /**
- * Undo inside a text box with the file's own undo (ADR 0194): what is typed joins the same history as moving a box or
+ * Undo inside a text box with the file's own undo (ADR 0196): what is typed joins the same history as moving a box or
  * adding a slide, so ⌘Z takes back the last thing this person did wherever it was, and never anything someone else
  * or an agent did. It does what y-prosemirror's `yUndoPlugin` does for the caret (each step remembers where the caret
  * was, and undoing puts it back there), on an `UndoManager` the box doesn't own: the stock plugin destroys its manager

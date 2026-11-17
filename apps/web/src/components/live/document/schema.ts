@@ -12,7 +12,7 @@ import {
 import { cssColorHex } from "../rich/schema";
 
 /**
- * The document schema as ProseMirror's (ADR 0198): node and mark names and attributes come from `DOC_SCHEMA_SPEC` of
+ * The document schema as ProseMirror's (ADR 0200): node and mark names and attributes come from `DOC_SCHEMA_SPEC` of
  * `@agenteschat/live` (what is stored, read and written the same way by the phone and the server); only how they
  * look on the page and how pasted HTML maps onto them is added here. A block's `id` never goes to the page nor comes
  * back from a paste: pasted blocks are new blocks and get their own (`blockIds`). What a document says is checked again

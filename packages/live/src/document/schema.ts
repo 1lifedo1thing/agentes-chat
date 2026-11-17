@@ -1,10 +1,10 @@
 /**
- * The document schema (ADR 0198) as plain data: the web turns it into a ProseMirror `Schema` (adding only how nodes
+ * The document schema (ADR 0200) as plain data: the web turns it into a ProseMirror `Schema` (adding only how nodes
  * and marks look in the DOM, and its own editing rules), and the phone and the server read and write the same
  * encoding without ProseMirror (`readDocument`/`writeDocument`). Changing a name or an attribute here changes what is
  * stored in every document.
  *
- * As in the rich text schema (ADR 0194 §2): every mark keeps ProseMirror's default `excludes` (a mark excludes itself),
+ * As in the rich text schema (ADR 0196 §2): every mark keeps ProseMirror's default `excludes` (a mark excludes itself),
  * so y-prosemirror stores it under its plain name, and no node attribute is required and none has a `validate`, since
  * y-prosemirror deletes a node it can't build and a value one app didn't expect must never fail another.
  *
@@ -88,7 +88,7 @@ const id = { default: null };
  * - paragraph `align` (left, center, right), `level` (indent 0..4) and `list` (bullet, ordered), as rich text;
  *   heading `level` (1..3) and `align`.
  * - code_block `language` (a word, or null).
- * - image `asset` (the id of a picture of this file, ADR 0194 §8), `alt`, `width` (a fraction of the page's width,
+ * - image `asset` (the id of a picture of this file, ADR 0196 §8), `alt`, `width` (a fraction of the page's width,
  *   0.1..1; null: its natural size up to the page).
  * - table `header`: true when its first row is a header row.
  */

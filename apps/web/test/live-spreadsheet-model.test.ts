@@ -56,9 +56,9 @@ import { cursorPoint } from "@/components/live/spreadsheet/presence";
 import { DocSource, WorkbookSource } from "@/components/live/spreadsheet/source";
 
 /**
- * The spreadsheet editor's pure parts (ADR 0194): positions on screen, the selection and the keys that move it, the
+ * The spreadsheet editor's pure parts (ADR 0196): positions on screen, the selection and the keys that move it, the
  * formula bar's help, the canvas drawing of the visible window, and the sources the grid draws from (a live document
- * and an uploaded workbook, ADR 0196).
+ * and an uploaded workbook, ADR 0198).
  */
 
 const PT = sheetLocale("pt-BR");

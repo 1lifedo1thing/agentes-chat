@@ -11,7 +11,7 @@ import type * as Y from "yjs";
 import type { GridBox } from "./grid-view";
 
 /**
- * Typing into a spreadsheet on the phone (ADR 0194): what the person typed goes in as they would type it in their
+ * Typing into a spreadsheet on the phone (ADR 0196): what the person typed goes in as they would type it in their
  * language (`setInput`: "=SOMA(B2:B9;C1)", "12,5", "17/11/2026" in Portuguese), as one change of theirs that their
  * undo takes back. A formula that can't be read is not written: the bar says why, in words.
  */

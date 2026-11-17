@@ -1,7 +1,7 @@
 import { colIndexOf, colName, MAX_A1_COLS, MAX_A1_ROWS } from "@agenteschat/live";
 
 /**
- * Excel's formulas as files hold them (ADR 0196): A1 references, English names, `,` between arguments, no "=". A
+ * Excel's formulas as files hold them (ADR 0198): A1 references, English names, `,` between arguments, no "=". A
  * shared formula is written once and reused down a range, each copy moved by its offset (`shiftA1`); functions newer
  * than Excel 2007 carry a `_xlfn.` prefix in the file (`stripFunctionPrefixes` when reading, `addFunctionPrefixes`
  * when writing, or Excel shows `#NAME?`).

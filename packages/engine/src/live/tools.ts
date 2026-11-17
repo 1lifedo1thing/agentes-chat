@@ -52,7 +52,7 @@ import {
 import type { WebPictureDeps } from "./web-pictures";
 
 /**
- * Agents' tools for live files (ADR 0194 §6) and their pictures (ADR 0195): agents are participants. Each tool reads
+ * Agents' tools for live files (ADR 0196 §6) and their pictures (ADR 0197): agents are participants. Each tool reads
  * the file at its head or applies one batch as one `LiveDocs.edit` whose origin is the agent and its run, so people in
  * the file see the change land (in steps for a big one), the agent's face in the header and its cursor where it
  * works (`live.activity.*` says what it does), and the history gets a version with the run. Inputs are compact (A1
@@ -76,7 +76,7 @@ const MAX_OUT = 40_000;
 /** A cell's text in a read, at most. */
 const CELL_CHARS = 300;
 export const LIVE_TOOL_LIMITS = {
-  /** Ops in one spreadsheet batch, and cells it writes (ADR 0194 §6). */
+  /** Ops in one spreadsheet batch, and cells it writes (ADR 0196 §6). */
   sheetOps: 200,
   cells: 20_000,
   /** Ops in one presentation or canvas batch. */
@@ -118,7 +118,7 @@ const TOOL_OF: Record<LiveArtifactKind, { read: string; edit: string }> = {
   spreadsheet: { read: "read_spreadsheet", edit: "edit_spreadsheet" },
   slides: { read: "read_presentation", edit: "edit_presentation" },
   canvas: { read: "read_canvas", edit: "edit_canvas" },
-  // Documents (ADR 0198): `document-tools.ts`.
+  // Documents (ADR 0200): `document-tools.ts`.
   document: { read: "read_document", edit: "edit_document" },
 };
 
@@ -152,7 +152,7 @@ const refused = (message: string): CallCheck => ({ ok: false, message });
 
 /**
  * The live file a call names, of the kind the tool is for; refused as `requireLiveFile` refuses otherwise. Named none,
- * the file of the conversation the run is in (ADR 0197).
+ * the file of the conversation the run is in (ADR 0199).
  */
 async function openFile(
   deps: LiveFileToolDeps,
@@ -172,7 +172,7 @@ async function openFile(
   return access;
 }
 
-/** The agent's presence in a file (ADR 0194 §5); a failure never fails the tool (presence is only shown). */
+/** The agent's presence in a file (ADR 0196 §5); a failure never fails the tool (presence is only shown). */
 async function present(deps: LiveFileToolDeps, ctx: ToolContext, fileId: string, state: Partial<PeerState>) {
   await deps.live
     .setAgentPresence(ctx.orgId, fileId, { agentId: ctx.agentId, runId: ctx.runId }, state)
@@ -431,7 +431,7 @@ const labelOf = (r: ss.RangeIds) => ss.formatA1Range(r.r1, r.c1, r.r2, r.c2);
 /**
  * Refuses a range of more cells than a spreadsheet holds (as far as `size`, the sheet's, when given): filling or
  * styling one lists every cell before the spreadsheet's own limit refuses it, so a call naming a whole grown sheet
- * would make the process hold millions of them first (ADR 0194 §2).
+ * would make the process hold millions of them first (ADR 0196 §2).
  */
 function tooManyCells(r: ss.RangeIds, size?: { rows: number; cols: number }) {
   const rows = (size ? Math.min(r.r2, size.rows - 1) : r.r2) - r.r1 + 1;
@@ -444,7 +444,7 @@ function tooManyCells(r: ss.RangeIds, size?: { rows: number; cols: number }) {
   }
 }
 
-/** A range as presence names it (ids, ADR 0194 §5), clamped to the cells the sheet has. */
+/** A range as presence names it (ids, ADR 0196 §5), clamped to the cells the sheet has. */
 function sheetSel(doc: Y.Doc, r: ss.RangeIds): SheetSel | undefined {
   const rows = ss.rowIds(doc, r.sheet);
   const cols = ss.colIds(doc, r.sheet);
@@ -1878,7 +1878,7 @@ const CANVAS_IMAGES = 20;
 /**
  * Pictures a new canvas starts with (`create_canvas` `images`): Drive files the agent reads (pictures posted in a
  * conversation, uploads), each read and checked before the canvas is made, so a picture that can't be used refuses
- * the call and nothing is made. Each becomes a picture of the canvas under a new id (ADR 0194 §8).
+ * the call and nothing is made. Each becomes a picture of the canvas under a new id (ADR 0196 §8).
  */
 async function startingPictures(deps: LiveFileToolDeps, ctx: ToolContext, ids: readonly string[]) {
   const out: LivePicture[] = [];
@@ -1933,7 +1933,7 @@ const imageModelsCache = new TtlCache<string[]>(30_000);
 
 /**
  * Whether a message carries a live file (it points at one, `meta.liveRef`, or one is attached) or is written in a live
- * file's own conversation (ADR 0197, `channelId`): its run loads `files` tools.
+ * file's own conversation (ADR 0199, `channelId`): its run loads `files` tools.
  */
 export async function carriesLiveFile(
   db: Database,
@@ -2260,7 +2260,7 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
             sl.deleteSlides(doc, blank, origin);
           },
         });
-        // Pictures are the file's own (ADR 0194 §8): copied in once it exists, each into its slide's picture slot.
+        // Pictures are the file's own (ADR 0196 §8): copied in once it exists, each into its slide's picture slot.
         const pictures = slides.flatMap((s, i) => (s.image ? [{ op: "add_image", slide: i + 1, image: s.image }] : []));
         let missing = "";
         if (pictures.length > 0) {
@@ -2592,7 +2592,7 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
     },
   };
 
-  /** `generate_image` in a conversation: the pictures on the reply, each a picture file (ADR 0195). */
+  /** `generate_image` in a conversation: the pictures on the reply, each a picture file (ADR 0197). */
   const chatImages = async (images: LiveImages, input: Json, ctx: ToolContext): Promise<ToolOutput> => {
     const out = await images.generateInChat(ctx, {
       prompt: str(input.prompt),
@@ -2659,8 +2659,8 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
       const images = deps.images;
       if (!images) return failed(new Error("This server makes no images"));
       try {
-        // In a canvas's own conversation (ADR 0197) the pictures go on that canvas when none is named; elsewhere,
-        // with none named, they go on the reply as pictures in the chat (ADR 0195).
+        // In a canvas's own conversation (ADR 0199) the pictures go on that canvas when none is named; elsewhere,
+        // with none named, they go on the reply as pictures in the chat (ADR 0197).
         const canvas =
           str(input.canvas) || (await conversationFileId(deps.artifacts.db, ctx.orgId, ctx.channelId, "canvas"));
         if (!canvas) return await chatImages(images, input, ctx);
@@ -2709,7 +2709,7 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
     createCanvas,
     readCanvas,
     editCanvas,
-    // Documents (ADR 0198): `document-tools.ts`.
+    // Documents (ADR 0200): `document-tools.ts`.
     ...documentTools(deps),
   ];
   return {
@@ -2717,7 +2717,7 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
     async tools(ctx) {
       const images = deps.images;
       if (!images) return always;
-      // Offered only where the workspace has an image model (ADR 0195): elsewhere it could only fail.
+      // Offered only where the workspace has an image model (ADR 0197): elsewhere it could only fail.
       const models = await imageModelsCache
         .getOrLoad(ctx.orgId, async () => (await images.models(ctx.orgId)).map((m) => m.id))
         .catch(() => [] as string[]);

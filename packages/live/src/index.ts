@@ -1,6 +1,6 @@
 /**
- * Live files (ADR 0194): what the server, the web, the desktop app and the phone must agree on about spreadsheets,
- * presentations, canvases and documents (ADR 0198) edited together: the documents' shape, formulas, number formats,
+ * Live files (ADR 0196): what the server, the web, the desktop app and the phone must agree on about spreadsheets,
+ * presentations, canvases and documents (ADR 0200) edited together: the documents' shape, formulas, number formats,
  * rich text, the sync protocol and presence. Pure TypeScript: no DOM, no React, no Node built-ins.
  *
  * Presentations and canvases both have an `arrange`: here it is the slides' (also `arrangeElements`), and the canvas's

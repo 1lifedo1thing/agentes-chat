@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import type { LiveEditorProps } from "@/components/live/editor";
 
 /**
- * A live file's own conversation (ADR 0197), the task's beside a file: "Conversa N" in the header (unread lights it,
+ * A live file's own conversation (ADR 0199), the task's beside a file: "Conversa N" in the header (unread lights it,
  * mentions add their red count), the thread panel docked beside the file (the page keeps its width; Esc closes it
  * only from inside), named after the file's kind with where the file was made on top; what is selected in the file
  * shows over the composer ("Sobre C2:D6 em Custos") and rides on the message (`liveRef`); the file's buttons ask in it

@@ -19,7 +19,7 @@ import {
 } from "../../src/features/live-files/document/text";
 
 /**
- * A document's block edited character by character on the phone (ADR 0198): a change of the field's text becomes one
+ * A document's block edited character by character on the phone (ADR 0200): a change of the field's text becomes one
  * delete and one insert across the block's texts and line breaks, the marks of untouched words stay, typed words take
  * the marks before the caret, and two people typing in the same block both keep what they wrote.
  */

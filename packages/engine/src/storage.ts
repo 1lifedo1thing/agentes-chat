@@ -493,7 +493,7 @@ export const storedBytesQueries = (db: Executor, orgId: string) =>
       })
       .from(voiceClips)
       .where(and(eq(voiceClips.orgId, orgId), isNull(voiceClips.audioDeletedAt))),
-    // Live files' pictures (ADR 0194 §8), out of the trash like the versions.
+    // Live files' pictures (ADR 0196 §8), out of the trash like the versions.
     db
       .select({
         platform: sql<string>`coalesce(sum(${liveAssets.size}) filter (where ${liveAssets.storageConfigId} is null), 0)`,
@@ -502,7 +502,7 @@ export const storedBytesQueries = (db: Executor, orgId: string) =>
       .from(liveAssets)
       .innerJoin(artifacts, eq(artifacts.id, liveAssets.artifactId))
       .where(and(eq(liveAssets.orgId, orgId), eq(artifacts.orgId, orgId), isNull(artifacts.deletedAt))),
-    // Live files' documents, kept in this server's database whatever storage the workspace uses (ADR 0194 §4).
+    // Live files' documents, kept in this server's database whatever storage the workspace uses (ADR 0196 §4).
     db
       .select({ platform: sql<string>`coalesce(sum(${liveDocs.stateBytes}), 0)`, own: sql<string>`0` })
       .from(liveDocs)
@@ -514,7 +514,7 @@ export const storedBytesQueries = (db: Executor, orgId: string) =>
  * What a workspace's files take, summed from the size each one recorded when it was written: no bucket is listed and
  * no folder walked. It counts every version kept of the Drive's files (uploads, what agents make or bring from their
  * computers, files attached to messages, issues and wiki pages) and every stored file of its skills, deleted skills'
- * included, as their files stay, the voice recordings still kept, and live files' pictures and documents (ADR 0194).
+ * included, as their files stay, the voice recordings still kept, and live files' pictures and documents (ADR 0196).
  * Left out: the Drive's trash, which goes for good after 30 days; the workspace's
  * logo, connectors' icons and people's photos, small and with no size on record; the old copies a copy between
  * storages (`runMigration`) leaves where the files were.
@@ -546,7 +546,7 @@ const notAt = (orgId: string, target: string | null) =>
     target ? undefined : sql`${artifactVersions.storageConfigId} is not null`,
   );
 
-/** Live files' pictures not yet where new files go, those of files out of the trash (ADR 0194 §8). */
+/** Live files' pictures not yet where new files go, those of files out of the trash (ADR 0196 §8). */
 const assetsNotAt = (orgId: string, target: string | null) =>
   and(
     eq(liveAssets.orgId, orgId),

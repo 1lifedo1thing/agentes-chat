@@ -3,7 +3,7 @@ import { publishChannelEvent } from "../events";
 import type { PresencePeer } from "./awareness";
 
 /**
- * Who is in each live file, for the Drive's and messages' cards (ADR 0194 §5): `GET …/live/presence` may land on a
+ * Who is in each live file, for the Drive's and messages' cards (ADR 0196 §5): `GET …/live/presence` may land on a
  * process that hosts none of the files it asks about, so each process tells the others, on one server-side topic,
  * who its own sockets and agents are in each file it holds: when that changes (at most once a `debounceMs` per file),
  * again every `announceMs`, and when a process that just started asks. What another process said lasts `ttlMs`

@@ -328,6 +328,9 @@ import type {
   StorageMigration,
   StorageTestResult,
   SuggestedAi,
+  SurfaceLink,
+  SurfaceLinkCode,
+  SurfaceLinks,
   TaskManagerView,
   TaskOutput,
   TaskSteps,
@@ -512,6 +515,22 @@ export interface ApiClient {
      * session ends. `email.undo_gone` (404), `email.undo_taken` (409).
      */
     undoEmailChange(token: string): Promise<{ email: string }>;
+  };
+  /** Linking an outside chat surface to my account (ADR 0187). Per person, not per organization. */
+  surfaces: {
+    /** The surface, whether I may link it, and my links; the "off" shape when the server bridges none. */
+    list(): Promise<SurfaceLinks>;
+    /**
+     * A code to type on the surface, answering in `orgId` once confirmed. `surface.off` (404), `surface.not_allowed`
+     * or `forbidden` (403), `surface.no_assistant` (409), `rate_limited` (429).
+     */
+    mintCode(orgId: string): Promise<SurfaceLinkCode>;
+    /** The pending link's sender is me. `surface.link_gone` (404), `surface.taken` and the workspace's refusals (409). */
+    confirm(linkId: string): Promise<SurfaceLink>;
+    /** Cancels a pending link or unlinks an active one. `surface.link_gone` (404). */
+    remove(linkId: string): Promise<void>;
+    /** "Not you? Unlink it" from the "linked" email: no session needed. `surface.undo_gone` (404), `rate_limited` (429). */
+    undo(token: string): Promise<{ unlinked: boolean; surface: string; display: string | null }>;
   };
   /** Where my pushes go: phones (ADR 0035) and browsers (ADR 0071). Per person, not per organization. */
   push: {
@@ -1024,7 +1043,7 @@ export interface ApiClient {
          */
         media?: PostMedia;
         /**
-         * In a live file's conversation (ADR 0197): what the person had selected in the file (the composer's quote
+         * In a live file's conversation (ADR 0199): what the person had selected in the file (the composer's quote
          * bar). The server adds the file's kind and title and stores `meta.liveRef`; 400 `message.live_ref` for
          * another file or another conversation.
          */
@@ -1512,7 +1531,7 @@ export interface ApiClient {
   };
   /** Boards and widgets (ADR 0135). */
   dashboards: DashboardsApi;
-  /** Spreadsheets, presentations and canvases edited together (ADR 0194), their pictures and Office previews. */
+  /** Spreadsheets, presentations and canvases edited together (ADR 0196), their pictures and Office previews. */
   live: LiveApi;
   /** Missions (ADR 0029): long work by the agent's executor on a connected computer, in one thread. */
   missions: {
@@ -1814,7 +1833,7 @@ export interface ApiClient {
     /** One artifact at `version` (default: latest), with content. */
     get(orgId: string, id: string, version?: number): Promise<ArtifactDetail>;
     /**
-     * A live file's conversation (ADR 0197), made on first use: its channel and thread root, for the chat's routes.
+     * A live file's conversation (ADR 0199), made on first use: its channel and thread root, for the chat's routes.
      * 404 for a file the person doesn't read, 400 `artifact.no_conversation` for a kind without one.
      */
     conversation(orgId: string, id: string): Promise<FileConversationRef>;
@@ -1849,7 +1868,7 @@ export interface ApiClient {
     download(orgId: string, id: string, version?: number): Promise<{ url: string; expiresAt: string }>;
     /**
      * Same-origin URL of the file as an attachment, optionally converted (CSV, .patch, PDF, Word; a live file as Excel
-     * or PowerPoint, ADR 0196; a document as Markdown, ADR 0198).
+     * or PowerPoint, ADR 0198; a document as Markdown, ADR 0200).
      */
     fileUrl(
       orgId: string,
@@ -2014,7 +2033,7 @@ export interface ApiClient {
     unreadThreads(orgId: string): Promise<number>;
     /** The tasks whose conversation has a reply I haven't read, with the ones that mention me (ADR 0145). */
     unreadTasks?(orgId: string): Promise<UnreadTask[]>;
-    /** The live files whose conversation has a reply I haven't read, with the ones that mention me (ADR 0197). */
+    /** The live files whose conversation has a reply I haven't read, with the ones that mention me (ADR 0199). */
     unreadFiles?(orgId: string): Promise<UnreadFile[]>;
   };
   /** "Trabalhando agora": agent runs in progress in the conversations you are in (any member). */

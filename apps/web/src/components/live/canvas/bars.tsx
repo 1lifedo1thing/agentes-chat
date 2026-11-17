@@ -30,7 +30,7 @@ import {
 } from "./tools";
 
 /**
- * The bar over what is selected on a canvas (ADR 0194 §2), with what that kind of thing takes: a picture asks its
+ * The bar over what is selected on a canvas (ADR 0196 §2), with what that kind of thing takes: a picture asks its
  * agent for variations or about it, is cropped, replaced or downloaded; a shape changes form, fill, border and corners
  * and takes a label; an arrow or a line its route, dash, ends, color and label; a note its color; a text its size; a
  * pen stroke its color and size; several kinds what they share. Then Arrange and ⋯ (duplicate, lock, delete) for all.

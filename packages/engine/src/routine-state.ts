@@ -72,7 +72,7 @@ export const routineJobAlive = (routineRunId: typeof routineRuns.id | SQL) => {
 /**
  * Whether this person can still post in that conversation: a member of the organization and of it who may post there
  * (ADR 0134). A task's conversation has no people as members: whoever reads the task may post there (ADR 0145); a
- * live file's, whoever reads the file (ADR 0197).
+ * live file's, whoever reads the file (ADR 0199).
  */
 export async function personCanPost(db: Executor, orgId: string, userId: string, channelId: string): Promise<boolean> {
   const [row] = await db

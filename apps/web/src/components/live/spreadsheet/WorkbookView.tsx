@@ -42,7 +42,7 @@ import { SelectionStatus } from "./status";
 import "./sheet.css";
 
 /**
- * An uploaded workbook drawn read-only (ADR 0196): the same grid, formula bar and sheet tabs as a live spreadsheet,
+ * An uploaded workbook drawn read-only (ADR 0198): the same grid, formula bar and sheet tabs as a live spreadsheet,
  * over what the server read from the file (values as the file saved them, in the reader's language and formats).
  * Cells can be selected, walked with the keys and copied; nothing can be changed. `notice` takes the toolbar's place
  * ("Arquivo do Excel · Editar como planilha"); without it the line says the file is read-only.

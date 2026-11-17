@@ -8,7 +8,7 @@ import type { Peer } from "@agenteschat/live/awareness";
 export type { LiveSelection };
 
 /**
- * What the live file page hands every editor (ADR 0194): the spreadsheet, the presentation and the canvas each get
+ * What the live file page hands every editor (ADR 0196): the spreadsheet, the presentation and the canvas each get
  * these props from `LiveFilePage` and draw everything below the page's header.
  */
 export interface LiveEditorProps {
@@ -30,24 +30,24 @@ export interface LiveEditorProps {
   /** The person moved the view themselves, or the one they follow left: stop following. */
   onStopFollowing(): void;
   /**
-   * What is selected now (ADR 0197): it shows over the file's conversation's composer and rides on the next message
+   * What is selected now (ADR 0199): it shows over the file's conversation's composer and rides on the next message
    * there (`meta.liveRef`). Null: nothing in particular (the whole file).
    */
   onSelection(selection: LiveSelection | null): void;
   /**
-   * Asks in the file's conversation (ADR 0197): the conversation opens, its composer starts with the file's agent's @
+   * Asks in the file's conversation (ADR 0199): the conversation opens, its composer starts with the file's agent's @
    * and `text`, and the selection (the request's, else what is selected now) rides along. Absent: the page doesn't (a
    * saved version shown read-only). The same function `useAskInConversation()` gives.
    */
   onAsk?(request?: LiveAskRequest): void;
   /**
-   * A message's line about part of this file was clicked (ADR 0197): select that part and bring it into view. A new
+   * A message's line about part of this file was clicked (ADR 0199): select that part and bring it into view. A new
    * `key` for each click, so the same part shown twice moves there twice.
    */
   reveal?: LiveReveal | null;
   /**
    * The page's versions, for an editor that draws the file's meta line itself (a document's page, Wiki style, ADR
-   * 0198): "edited now" opens them. Sharing is the header's "Share" alone.
+   * 0200): "edited now" opens them. Sharing is the header's "Share" alone.
    */
   onVersions?(): void;
 }
@@ -60,11 +60,11 @@ export interface LiveEditorSearch {
   slide?: string;
   /** The presentation opens presenting. */
   present?: boolean;
-  /** A message of the file's conversation to open at (a link, a notice, a canvas's comment pin, ADR 0197). */
+  /** A message of the file's conversation to open at (a link, a notice, a canvas's comment pin, ADR 0199). */
   m?: string;
 }
 
-/** "Pedir ao Atlas", "Variações" (ADR 0197): what goes to the file's conversation's composer. */
+/** "Pedir ao Atlas", "Variações" (ADR 0199): what goes to the file's conversation's composer. */
 export interface LiveAskRequest {
   /** The agent whose @ starts the message; absent: the file's agent (`useFileAgent`); null: none (a comment). */
   agentId?: string | null;

@@ -7,7 +7,7 @@ import type { Awareness } from "y-protocols/awareness";
 import * as Y from "yjs";
 
 /**
- * Who else is writing in the document (ADR 0194 §5, ADR 0198): a person's caret in their color with their name on a
+ * Who else is writing in the document (ADR 0196 §5, ADR 0200): a person's caret in their color with their name on a
  * flag, their selection tinted; an agent's caret with its face and name (the `lf-cur__who` tag of its pointer
  * elsewhere) at the end of the blocks it works on, those blocks lit in its color while it writes. People's carets
  * travel in the presence field `cursorPm` (y-prosemirror's relative positions, as in rich text); agents say the blocks

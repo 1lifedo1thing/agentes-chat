@@ -1,5 +1,5 @@
 /**
- * Math and trigonometry (ADR 0194 §2), with Excel's results: rounding half away from zero without binary noise
+ * Math and trigonometry (ADR 0196 §2), with Excel's results: rounding half away from zero without binary noise
  * (`ROUND(2.675,2)` is 2.68), CEILING and FLOOR by the signs of both arguments, MOD with the divisor's sign, and
  * RAND seeded per cell from the document so every device shows the same numbers.
  */

@@ -327,7 +327,7 @@ export function buildEngine(o: EngineOptions) {
     readyEmail: adapters.email.delivers ? { publicUrl: config.PUBLIC_URL, gateway } : null,
     errors: o.errors,
   });
-  // Live files (ADR 0194): the documents this process hosts, for people's sockets and for agents' tools, which may run
+  // Live files (ADR 0196): the documents this process hosts, for people's sockets and for agents' tools, which may run
   // in any process. A change crosses processes through the database and pub/sub, so it names this one (`replicaId`).
   const liveDeps: LiveDeps = {
     ...artifacts,
@@ -341,9 +341,9 @@ export function buildEngine(o: EngineOptions) {
     },
   };
   const live = createLiveDocs(liveDeps);
-  // Live files' downloads as Excel, PowerPoint, CSV and PDF, versions included (ADR 0196).
+  // Live files' downloads as Excel, PowerPoint, CSV and PDF, versions included (ADR 0198).
   setLiveExporter(officeLiveExporter);
-  // Pictures on canvases (ADR 0195): asked by people's routes and agents' tools, made by the `live.image` job, whose
+  // Pictures on canvases (ADR 0197): asked by people's routes and agents' tools, made by the `live.image` job, whose
   // workers in any process are woken as soon as one is asked.
   const images = createLiveImages({
     artifacts,
@@ -484,8 +484,8 @@ export function buildEngine(o: EngineOptions) {
       // Runs nobody called by name may stay quiet (reply-policy.ts): listed only for them.
       createPassToolSource(),
       createArtifactToolSource(artifacts),
-      // Spreadsheets, presentations and canvases agents edit with people, and images onto a canvas (ADR 0194, 0195);
-      // pictures from the web are downloaded through the public-address guard (ADR 0194 §8).
+      // Spreadsheets, presentations and canvases agents edit with people, and images onto a canvas (ADR 0196, 0197);
+      // pictures from the web are downloaded through the public-address guard (ADR 0196 §8).
       createLiveFileToolSource({ artifacts, live, images, web: { resolveHost: o.resolveHost } }),
       // Live blocks and votes in the agent's own conversation (ADR 0113).
       createBlockToolSource(artifacts),
@@ -828,7 +828,7 @@ export function buildEngine(o: EngineOptions) {
     pushServer: new URL(config.PUBLIC_URL).origin,
     storage,
     artifacts,
-    // The image job places pictures on canvases through the documents this process hosts (ADR 0195).
+    // The image job places pictures on canvases through the documents this process hosts (ADR 0197).
     live,
     sandbox,
     skills: skillDeps,
@@ -919,11 +919,11 @@ export function buildEngine(o: EngineOptions) {
     machineHub,
     browserLive,
     streams,
-    /** Live files (ADR 0194): the documents this process hosts (its sockets, agents' tools, the routes). */
+    /** Live files (ADR 0196): the documents this process hosts (its sockets, agents' tools, the routes). */
     live,
     /** What live files' engine functions take (making one, its pictures, office files). */
     liveDeps,
-    /** Pictures on canvases (ADR 0195): the image routes and the agents' `generate_image`. */
+    /** Pictures on canvases (ADR 0197): the image routes and the agents' `generate_image`. */
     images,
     /** Screened sessions (ADR 0076), for the operator API's review door; null where nothing is screened. */
     sessions,

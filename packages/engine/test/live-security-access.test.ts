@@ -18,7 +18,7 @@ import { addMember, type Fixture, setup } from "./fixtures";
 import { makeLiveFile } from "./live-fixtures";
 
 /**
- * A live file's conversation is read by whoever reads the file, never by membership (ADR 0197 §2): nobody is added to
+ * A live file's conversation is read by whoever reads the file, never by membership (ADR 0199 §2): nobody is added to
  * it, joins it or puts an agent in it by the channels' own routes, not even someone who manages channels, or they
  * would read it (search, notifications, run history) without reading the file, and keep reading it after losing it.
  */
@@ -33,7 +33,7 @@ afterEach(async () => {
 const membersOf = (channelId: string) =>
   f.db.select().from(schema.channelMembers).where(eq(schema.channelMembers.channelId, channelId));
 
-describe("a live file's conversation keeps its readers to the file's (ADR 0197 §2)", () => {
+describe("a live file's conversation keeps its readers to the file's (ADR 0199 §2)", () => {
   test("someone who manages channels can't add themselves, join it or put an agent in it", async () => {
     f = await setup();
     // Ana manages channels and agents, but the file lives in a DM she isn't in: she doesn't read it.

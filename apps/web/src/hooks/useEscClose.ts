@@ -7,7 +7,7 @@ const LAYERS = '[role="dialog"], [role="menu"], [role="listbox"], dialog[open], 
 /**
  * Something nearer than a panel has a use for this Esc: a dialog, menu or picker open, anything `data-esc-layer`, a
  * field holding text (unless `data-esc-free`) or one marked `data-esc-own`. A panel that closes on Esc only from
- * inside itself (a live file's conversation beside the file, ADR 0197) asks this too.
+ * inside itself (a live file's conversation beside the file, ADR 0199) asks this too.
  */
 export function nearerEsc(e: KeyboardEvent): boolean {
   if (document.querySelector(LAYERS)) return true;

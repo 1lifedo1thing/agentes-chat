@@ -21,7 +21,7 @@ import "@/components/threads/threads.css";
 import "@/pages/issues.css";
 
 /*
- * A live file's own conversation (ADR 0197), the task's (ADR 0145) beside a file: "Conversa 4" in the page's header
+ * A live file's own conversation (ADR 0199), the task's (ADR 0145) beside a file: "Conversa 4" in the page's header
  * opens it, the app's thread panel shows it, and the file's page keeps its width for it so it never covers the file.
  */
 
@@ -93,7 +93,7 @@ const TALK_EVENTS: ReadonlySet<string> = new Set(["message.created", "agent.thin
 const TALK_REFRESH_MS = 1000;
 
 /**
- * While the file's page is open, "Conversa N" stays true with the conversation closed (ADR 0197 §6): its channel's
+ * While the file's page is open, "Conversa N" stays true with the conversation closed (ADR 0199 §6): its channel's
  * events read the file's summary (`Artifact.conversation`) again, once per burst.
  */
 export function useFileTalkLive(artifactId: string, channelId: string | null | undefined) {
@@ -177,7 +177,7 @@ const talkMax = () => Math.max(TALK_MIN, Math.min(TALK_MAX, Math.round(window.in
 export const clampTalk = (width: number) => Math.round(Math.min(talkMax(), Math.max(TALK_MIN, width)));
 
 /**
- * The handle on the docked conversation's left edge (ADR 0197): dragged, the conversation takes that width and the
+ * The handle on the docked conversation's left edge (ADR 0199): dragged, the conversation takes that width and the
  * file beside it follows as it moves; ←/→ change it a step, Home and End go to the narrowest and the widest, a double
  * click gives back the default (`--lf-talk-w` in live.css). The width is the person's, kept per person and workspace,
  * and set on the work area, whose right padding keeps the file clear of it.
@@ -302,7 +302,7 @@ function readWidth(value: string | null): number | null {
 }
 
 /**
- * The file's agent (ADR 0197), whom "Pedir ao Atlas" calls: the one that made it, else the last agent that spoke in
+ * The file's agent (ADR 0199), whom "Pedir ao Atlas" calls: the one that made it, else the last agent that spoke in
  * its conversation, else the workspace's right hand; only one this person may ask. Null: none.
  */
 export function useFileAgent(artifact: Pick<Artifact, "createdBy" | "conversation"> | null | undefined): Agent | null {

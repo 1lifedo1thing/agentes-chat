@@ -1,5 +1,5 @@
 /**
- * Edits to a spreadsheet (ADR 0194 §2), shared by the web, the phone and the agents' tools. Each one runs in one
+ * Edits to a spreadsheet (ADR 0196 §2), shared by the web, the phone and the agents' tools. Each one runs in one
  * transaction with the caller's origin (so undo in the apps takes back exactly one edit, and only the person's own),
  * checks `LIVE_LIMITS` and its input before it writes anything, and keeps every invariant kept by id: inserting rows
  * or columns moves cells, widths, heights and merges with them, deleting them takes their cells, widths and heights

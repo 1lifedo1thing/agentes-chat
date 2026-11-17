@@ -3,7 +3,7 @@ import { decodeXmlEntities } from "../format";
 import { officeUnreadable } from "./limits";
 
 /**
- * XML for the Office readers and writers (ADR 0196). Parts are parsed with @xmldom/xmldom and read by local names, so
+ * XML for the Office readers and writers (ADR 0198). Parts are parsed with @xmldom/xmldom and read by local names, so
  * whatever prefixes a writer chose read the same; a document type declaration is refused before parsing (Office never
  * writes one, and none of its entities is ever expanded). The parts that can be large (a worksheet's cells, a
  * workbook's strings) go through `sax`, a linear scanner that builds no tree. The writers escape through `xmlText` and
@@ -46,7 +46,7 @@ function declarePrefixes(text: string): string {
 
 /** The root element of a part, or `officeUnreadable` when it isn't well-formed XML. */
 /**
- * The most tags one part may hold (ADR 0196): a few megabytes of empty tags would build a tree of a gigabyte in the
+ * The most tags one part may hold (ADR 0198): a few megabytes of empty tags would build a tree of a gigabyte in the
  * server's memory, while real Word and PowerPoint parts stay far below this.
  */
 export const MAX_XML_TAGS = 1_000_000;

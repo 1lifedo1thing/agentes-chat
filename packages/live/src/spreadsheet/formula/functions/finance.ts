@@ -1,5 +1,5 @@
 /**
- * Finance (ADR 0194 §2) with Excel's sign conventions: money paid out is negative, so `=PMT(1%,12,1000)` is -88.85.
+ * Finance (ADR 0196 §2) with Excel's sign conventions: money paid out is negative, so `=PMT(1%,12,1000)` is -88.85.
  * IRR, RATE and XIRR solve by Newton's method from the guess, falling back to bisection over a bracketing interval
  * when Newton wanders off, so they find the root Excel finds and also converge where Excel's 20 iterations give up.
  */

@@ -17,7 +17,7 @@ import {
 } from "./types";
 
 /**
- * Where a presentation lives in its document and how its values are read and checked (ADR 0194 §2): `deck` (a map:
+ * Where a presentation lives in its document and how its values are read and checked (ADR 0196 §2): `deck` (a map:
  * `theme`, `w`, `h`), `slideOrder` (slide ids in order) and `slides` (a map of slide id to a `Y.Map` with `layout`,
  * `bg`, `hidden`, `notes` (`Y.Text`) and `elements`, a map of element id to a `Y.Map` per element).
  *

@@ -33,7 +33,7 @@ export function createFakeThreads(
       id: root.id,
       channelId: root.channelId,
       channelName: channel?.name ?? "",
-      // A task's conversation (ADR 0145), and a live file's (ADR 0197): its own channel, never listed.
+      // A task's conversation (ADR 0145), and a live file's (ADR 0199): its own channel, never listed.
       channelKind: root.meta?.taskConversation ? "task" : root.meta?.fileConversation ? "file" : "channel",
       title: null,
       rootText: root.body,

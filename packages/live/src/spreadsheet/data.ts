@@ -1,5 +1,5 @@
 /**
- * Workbooks as plain data (ADR 0196): the shape the server's Office readers produce (an uploaded `xlsx`, `csv`…)
+ * Workbooks as plain data (ADR 0198): the shape the server's Office readers produce (an uploaded `xlsx`, `csv`…)
  * and its writers consume (exports), and what turns one into a live spreadsheet and back. Formulas in this shape are
  * Excel's own: A1, English names, `,` between arguments, no "=", read against the workbook's sheets by name.
  */

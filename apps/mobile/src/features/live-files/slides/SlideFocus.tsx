@@ -68,7 +68,7 @@ import { type PictureOf, SlideView } from "./SlideView";
 import { useDeck } from "./useDeck";
 
 /**
- * A slide opened large on the phone (ADR 0194 §9): the presentation's slides side by side on the system's pager, from
+ * A slide opened large on the phone (ADR 0196 §9): the presentation's slides side by side on the system's pager, from
  * the one tapped, each at the screen's width with its number, who is on it and its speaker notes under it. A tap on a
  * text box (or a shape's label) opens its words on a screen of their own; on a picture, its choices (another photo, how
  * it fills its box); a long press, an element's menu (front, back, delete). The bar's "…" has the slide's own menu, and
@@ -254,7 +254,7 @@ export function SlideFocus({
     else elementMenu(slide, el);
   };
 
-  // The slide's own menu, in the bar's "…": "Ask Atlas" about it first (ADR 0197), for whoever reads the file.
+  // The slide's own menu, in the bar's "…": "Ask Atlas" about it first (ADR 0199), for whoever reads the file.
   const count = deck.slides.length;
   const asking = useAskAgent(detail);
   const ask: HeaderMenuItem[] =

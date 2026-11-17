@@ -75,7 +75,7 @@ export function serializeContent(content: ArtifactContent): { text: string; type
       return { text: content.question, type: "text/plain" };
     case "choices":
       return { text: content.questions.map((q) => q.question).join("\n"), type: "text/plain" };
-    // A live file's content is its card's preview (ADR 0194 §7); the server exports the document itself.
+    // A live file's content is its card's preview (ADR 0196 §7); the server exports the document itself.
     case "spreadsheet":
     case "slides":
     case "canvas":
@@ -244,7 +244,7 @@ export function createMockArtifacts(
       };
     },
     get: async (orgId, id, version) => detail(orgId, await find(orgId, id), version),
-    // A live file's conversation (ADR 0197): a stable channel and root per file, as the server makes on first use.
+    // A live file's conversation (ADR 0199): a stable channel and root per file, as the server makes on first use.
     conversation: async (orgId, id) => {
       record("artifacts.conversation", orgId, id);
       await find(orgId, id);

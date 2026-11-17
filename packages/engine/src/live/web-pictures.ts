@@ -6,7 +6,7 @@ import { assertPublicHttpsUrl, outboundFetch, type ResolveHost } from "../net-gu
 import { looksLikeSvg, SVG_TYPE } from "./svg";
 
 /**
- * A picture from the public web, for a live file (ADR 0194 §8): what an agent found with `image_search` or was given
+ * A picture from the public web, for a live file (ADR 0196 §8): what an agent found with `image_search` or was given
  * by a person, downloaded by the server. One GET at a time through the public-address guard (https only, no
  * internal name, every address the host resolves to public, the socket pinned to one of them), each redirect checked
  * the same way before it is followed, at most `WEB_PICTURE_LIMITS.bytes` read while it streams, and kept only when

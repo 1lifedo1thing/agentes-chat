@@ -22,10 +22,10 @@ import { createFakeApi, fakeLiveOf, ORG_ID, seedState } from "./fake-api";
 import { renderPage, screen, settle } from "./render";
 
 /**
- * The canvas editor ("Quadro", ADR 0194 §2, ADR 0195) on a live file of the fake server: the tools add notes and
+ * The canvas editor ("Quadro", ADR 0196 §2, ADR 0197) on a live file of the fake server: the tools add notes and
  * frames, a drag moves and its handles resize, Delete and ⌘Z, a frame carries what was drawn around it, pictures asked
  * for show as placeholders that turn into pictures (or say why they failed, with Try again), others' selections and
- * pointers show, Follow moves the view, a message's line about some shapes chooses them (ADR 0197), and a read-only
+ * pointers show, Follow moves the view, a message's line about some shapes chooses them (ADR 0199), and a read-only
  * canvas changes nothing.
  */
 
@@ -279,7 +279,7 @@ describe("the canvas editor", () => {
 
   test("pictures asked for show as placeholders in a frame near the view's middle; they turn into pictures", async () => {
     const { api, file, live, onServer } = await open();
-    // An agent asked in the file's conversation (ADR 0197): the request goes through the same route.
+    // An agent asked in the file's conversation (ADR 0199): the request goes through the same route.
     await act(async () => {
       await api.live.generateImages(ORG_ID, file.id, {
         prompt: "Uma raposa na neve",
@@ -341,7 +341,7 @@ describe("the canvas editor", () => {
     expect(screen().queryByRole("group", { name: "Gerar imagem" })).toBeNull();
   });
 
-  test("a message's line about some shapes chooses them (ADR 0197)", async () => {
+  test("a message's line about some shapes chooses them (ADR 0199)", async () => {
     // The note's id is known once the file is made (`init` runs first); the reveal reads the same list.
     const shapes: string[] = [];
     const { selections } = await open({

@@ -13,7 +13,7 @@ export const DM_SIDE_WIDE_QUERY = "(min-width: 1100px)";
  * in this workspace wins. A personal workspace starts it closed at every width (ADR 0159 §3): only a choice never
  * saved follows the mode, so a saved one (from either mode) still wins. At `sheetQuery` it isn't a column: it opens
  * over the conversation, and stays only until it closes. `opensByDefault`: what a choice never saved does at
- * `openQuery` instead (a live file's conversation opens by itself only once it has one, ADR 0197).
+ * `openQuery` instead (a live file's conversation opens by itself only once it has one, ADR 0199).
  */
 export function useSideColumn(prefix: string, sheetQuery: string, openQuery: string, opensByDefault?: boolean) {
   const { org, me } = useOrg();

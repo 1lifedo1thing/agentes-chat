@@ -54,7 +54,7 @@ import "@/pages/wiki.css";
 import "./document.css";
 
 /**
- * A document (ADR 0198) on its page: the Wiki's page (its title, who made it and who sees it, its text in the Wiki's
+ * A document (ADR 0200) on its page: the Wiki's page (its title, who made it and who sees it, its text in the Wiki's
  * type at the Wiki's reading width) that everyone edits at once. ProseMirror bound to the document's body through
  * y-prosemirror: what is typed is the person's own change (their undo takes it back, never what someone else or an
  * agent wrote), other people's carets show with their names, an agent's with its face where it writes, every
@@ -322,7 +322,7 @@ export function DocumentEditor(props: LiveEditorProps) {
     if (!el) return;
     const undoManager = room.undo;
     // What the person types reaches the document as y-prosemirror's own transactions (origin `ySyncPluginKey`): the
-    // file's undo takes them back with everything else they did, and never what came from others (ADR 0194 §6).
+    // file's undo takes them back with everything else they did, and never what came from others (ADR 0196 §6).
     if (!undoManager.trackedOrigins.has(ySyncPluginKey)) undoManager.trackedOrigins.add(ySyncPluginKey);
     const undo = undoWith(undoManager);
     const redo = redoWith(undoManager);

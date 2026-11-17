@@ -5,7 +5,7 @@ import { BUILTIN_NUMBER_FORMATS } from "./xlsx-read";
 import { XML_HEAD, xmlAttr, xmlText } from "./xml";
 
 /**
- * Workbooks written as Excel files (ADR 0196): values and formulas (with the values our engine computed cached in
+ * Workbooks written as Excel files (ADR 0198): values and formulas (with the values our engine computed cached in
  * them, and Excel told to compute again on open), styles (fonts, fills, borders, alignment, wrapping, number formats,
  * each distinct one written once), merged cells, column widths, row heights, frozen panes and tab colors, in a
  * package Excel, LibreOffice and Google Sheets open as is.

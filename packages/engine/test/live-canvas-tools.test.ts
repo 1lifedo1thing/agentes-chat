@@ -20,9 +20,9 @@ import { type Fixture, setup } from "./fixtures";
 import { liveDocsFor, personActor } from "./live-fixtures";
 
 /**
- * The canvas tools on the canvas's newer shapes (ADR 0194 §2, §6): forms, borders, lines and curved arrows, pen
+ * The canvas tools on the canvas's newer shapes (ADR 0196 §2, §6): forms, borders, lines and curved arrows, pen
  * strokes, a picture's crop, hiding, a canvas that starts with pictures from the conversation; and pictures made in a
- * conversation going on the agent's reply as picture files (ADR 0195).
+ * conversation going on the agent's reply as picture files (ADR 0197).
  */
 
 let f: Fixture;

@@ -24,11 +24,11 @@ import "@/pages/wiki.css";
 /** "Salvando…" only once a change has waited this long: a burst of keys never blinks it. */
 const SAVING_AFTER_MS = 400;
 
-/** Kinds whose page carries its own title and meta row, Wiki style (a document, ADR 0198): only the top row here. */
+/** Kinds whose page carries its own title and meta row, Wiki style (a document, ADR 0200): only the top row here. */
 const TITLED_ON_THE_PAGE: ReadonlySet<string> = new Set(["document"]);
 
 /**
- * The live file's header (ADR 0194 §9, ADR 0197), the Wiki's top over a task's title: where the file lives
+ * The live file's header (ADR 0196 §9, ADR 0199), the Wiki's top over a task's title: where the file lives
  * ("Drive / #eng") on the left and, on the right, how it's saved, who is here, Compartilhar, Apresentar (slides), ⋯
  * and the conversation's toggle; then the kind's icon and the title to rename; then who made it and where, when it
  * was edited (the versions) and who sees it (the sharing). A document shows the top row alone.

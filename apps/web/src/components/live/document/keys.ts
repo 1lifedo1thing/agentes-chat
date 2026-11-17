@@ -17,7 +17,7 @@ import {
 } from "./commands";
 
 /**
- * The document's keys (ADR 0198), before ProseMirror's own: marks (⌘B ⌘I ⌘U, ⌘⇧X strikethrough, ⌘E code), styles
+ * The document's keys (ADR 0200), before ProseMirror's own: marks (⌘B ⌘I ⌘U, ⌘⇧X strikethrough, ⌘E code), styles
  * (⌘⌥0 text, ⌘⌥1–3 headings), lists (⌘⇧8 bullets, ⌘⇧7 numbers), ⌘K link, Enter that keeps a list going and leaves
  * code after two empty lines, Shift-Enter a line break, Tab and Shift-Tab between a table's cells or a list's levels,
  * and the arrows out past a table or a picture at either end.

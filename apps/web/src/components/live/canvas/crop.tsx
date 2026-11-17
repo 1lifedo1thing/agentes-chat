@@ -4,7 +4,7 @@ import { boxToScreen, type Camera } from "./camera";
 import { dragCrop, fullImageBox, HANDLES, type Handle } from "./edit-math";
 
 /**
- * Cropping a picture on the canvas (ADR 0194 §2): the whole picture shows faint around the window that keeps a part of
+ * Cropping a picture on the canvas (ADR 0196 §2): the whole picture shows faint around the window that keeps a part of
  * it; the window's handles and the window itself (dragged whole) move inside the picture, never past it. The plane
  * applies it (Enter, ✓, a press elsewhere) as the picture's new box and `crop`, or leaves it as it was (Esc).
  */

@@ -8,7 +8,7 @@ import { NavToggle } from "@/components/NavDrawer";
 /**
  * The conversation's header in the panel: who is in it, "Conversa da tarefa", "Bruno, Walter e Theo · 5 mensagens
  * · agora", and close. No title to rename and no thread states: the task is its title and its state. A live file's
- * conversation is the same (ADR 0197) with its own `title` ("Conversa do quadro") and close words.
+ * conversation is the same (ADR 0199) with its own `title` ("Conversa do quadro") and close words.
  */
 export function TaskConversationHeader({
   thread,

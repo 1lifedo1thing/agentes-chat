@@ -10,7 +10,7 @@ import { rasterPicture, SVG_LIMITS, SVG_TYPE, sanitizeSvg } from "./svg";
 import { fetchWebPicture, type WebPictureDeps } from "./web-pictures";
 
 /**
- * Pictures an agent puts in a live file besides the Drive's and the file's own (ADR 0194 §8): an SVG it writes
+ * Pictures an agent puts in a live file besides the Drive's and the file's own (ADR 0196 §8): an SVG it writes
  * (`svg`: an icon, a logo, a diagram, a simple illustration), stored as the sanitizer rebuilt it, and a picture from
  * the public web (`url`: one `image_search` found, or one a person linked), downloaded through the public-address
  * guard and stored with where it came from. Both become assets of the file under the agent's own write access, before
@@ -46,7 +46,7 @@ export const PICTURE_INPUTS = {
   },
 } as const;
 
-/** How an op names its picture, as the edit tools say it (ADR 0194 §8). */
+/** How an op names its picture, as the edit tools say it (ADR 0196 §8). */
 export const PICTURE_OP_WORDS =
   '`svg`: an SVG you write (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 W H">, paths and shapes with fill and stroke attributes, text in common fonts; scripts, links and outside files are removed). `url`: a picture\'s own address on the web (from image_search, or one a person gave), downloaded into the file; give its `credit` (author, license) when its source asks for one. `alt`: what it shows.';
 

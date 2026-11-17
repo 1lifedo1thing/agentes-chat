@@ -1,5 +1,5 @@
 /**
- * Plane geometry for canvases and slides (ADR 0194 §2): boxes in world (or slide) units, y down, rotation in degrees
+ * Plane geometry for canvases and slides (ADR 0196 §2): boxes in world (or slide) units, y down, rotation in degrees
  * clockwise around a box's center.
  */
 
@@ -203,7 +203,7 @@ export interface Segment {
 /** How an arrow runs (`ArrowRoute` in types.ts, repeated here so geometry imports nothing). */
 type Route = "straight" | "curve" | "elbow";
 
-/** An arrow's path between its ends, as every app draws it (ADR 0194 §2). */
+/** An arrow's path between its ends, as every app draws it (ADR 0196 §2). */
 export interface RoutedArrow {
   /** SVG path data, in the same units as the line. */
   d: string;

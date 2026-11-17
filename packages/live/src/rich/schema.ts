@@ -1,5 +1,5 @@
 /**
- * The rich text schema (ADR 0194 §2) as plain data: the web turns it into a ProseMirror `Schema` (adding only how
+ * The rich text schema (ADR 0196 §2) as plain data: the web turns it into a ProseMirror `Schema` (adding only how
  * nodes and marks look in the DOM), and the phone and the server read and write the same encoding without
  * ProseMirror (`readRich`/`writeRich`). Changing a name or an attribute here changes what is stored in every file.
  *

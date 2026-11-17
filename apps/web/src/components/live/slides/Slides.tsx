@@ -86,7 +86,7 @@ import { type ShapeTools, SlideToolbar, type TableOp, type TextTools } from "./T
 import "./slides.css";
 
 /**
- * The presentation editor of a live file (ADR 0194 §2, §5, §6), the page's editor for `slides`: the toolbar, the rail
+ * The presentation editor of a live file (ADR 0196 §2, §5, §6), the page's editor for `slides`: the toolbar, the rail
  * of slides on the left, the current slide on its stage and its speaker notes under it, presenting, and everyone in
  * the file (their faces on the slides they are on, what they chose, their pointers and carets, "Ada está apresentando
  * · Seguir"). Every change is an edit of `@agenteschat/live` with the `LOCAL` origin, so the person's undo takes back
@@ -187,7 +187,7 @@ export function Slides(props: LiveEditorProps) {
   useEffect(() => {
     if (currentId && currentId !== search.slide) onSearch({ slide: currentId });
   }, [currentId]);
-  // A message's line about a slide (ADR 0197): that slide, shown (the address follows).
+  // A message's line about a slide (ADR 0199): that slide, shown (the address follows).
   const revealSlide = props.reveal?.selection.slide;
   // biome-ignore lint/correctness/useExhaustiveDependencies: once per click (its key)
   useEffect(() => {

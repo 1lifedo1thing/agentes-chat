@@ -1,4 +1,4 @@
-# 0195. Image generation through the Model Gateway
+# 0197. Image generation through the Model Gateway
 
 - Status: Accepted
 - Date: 2026-11-17
@@ -13,7 +13,7 @@
 
 People ask agents for images all the time, and the only images made today come from Codex's own tool on a
 computer, billed to a ChatGPT plan and invisible to the workspace's budget. A canvas that groups generated images
-(ADR 0194) needs images made on request, by people from the canvas and by any agent from a conversation, priced
+(ADR 0196) needs images made on request, by people from the canvas and by any agent from a conversation, priced
 and limited like every other model call.
 
 ## Decision
@@ -47,11 +47,11 @@ A failed call is settled at what the provider billed, usually nothing.
   picture someone posted, with that conversation's audience. They are made through the gateway while the agent
   waits (a provider that is down or limiting gets one more try), and handed back to the model to look at. Asked
   for "a canvas with the third one", the agent makes it with `create_canvas` and that file, whose bytes are copied
-  into the canvas (ADR 0194 §8). No canvas is made behind people's backs.
-- *On a canvas* (the one named; in a canvas's own conversation, ADR 0197, that canvas by default), the request
+  into the canvas (ADR 0196 §8). No canvas is made behind people's backs.
+- *On a canvas* (the one named; in a canvas's own conversation, ADR 0199, that canvas by default), the request
   first places a frame titled with the prompt and one placeholder per image, so everyone in it sees what is coming
   and who asked; a job (`live.image`, ADR 0005) calls the gateway, stores each image as an asset of the canvas
-  (ADR 0194 §8) and turns each placeholder into the image, with its prompt, model, who asked and the images it
+  (ADR 0196 §8) and turns each placeholder into the image, with its prompt, model, who asked and the images it
   started from. A failure leaves the placeholder saying why, with Try again.
 
 Variations and edits send the images to start from as references: on a canvas its pictures, in a conversation
@@ -59,12 +59,12 @@ picture files the agent reads (a picture posted there).
 
 **People and agents.** People generate on a canvas (`POST …/artifacts/{id}/images`: a person who may upload
 files, at most 30 requests an hour, four images a request), and ask the canvas's agent for more in its conversation
-(Variations, ADR 0197). Agents call `generate_image` (`drive:write`), which waits for the images (at most two
+(Variations, ADR 0199). Agents call `generate_image` (`drive:write`), which waits for the images (at most two
 minutes), hands them to a model that can see them, and answers with the pictures as the reply's cards
 (`meta.artifacts`, one per picture) or, on a canvas, the canvas as the reply's card. In Codex's turns both tools
 exist; the prompt says ours posts the images in the conversation (or on a canvas) and counts them in the budget.
 
-*Amended 2026-11-17.* Generating is one of three ways an agent puts a picture in a live file (ADR 0194 §8): it writes
+*Amended 2026-11-17.* Generating is one of three ways an agent puts a picture in a live file (ADR 0196 §8): it writes
 an SVG for icons, logos, diagrams and simple illustrations, places a picture from the web (`image_search`) when
 someone asks for a real photo or a specific existing image, and generates new artwork or photos here. An SVG on a
 canvas used as a reference is sent to the image AI as a PNG when the server can draw one, and left out otherwise:

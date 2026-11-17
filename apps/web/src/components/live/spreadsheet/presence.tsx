@@ -9,7 +9,7 @@ import { normalize } from "./model";
 import type { DocSource } from "./source";
 
 /**
- * Other people and agents on the sheet being shown (ADR 0194 §5): each one's range outlined in their color. A person's
+ * Other people and agents on the sheet being shown (ADR 0196 §5): each one's range outlined in their color. A person's
  * name tag sits at its top-right corner while they type, for a moment after they move, and while the pointer is over
  * it; an agent's cursor (its pixel arrow, face and name) glides to the range it works on, as over its browser (ADR
  * 0040 §7.2). An agent writing washes its range in its own color, and the range it leaves fades out over 1.2 s (at

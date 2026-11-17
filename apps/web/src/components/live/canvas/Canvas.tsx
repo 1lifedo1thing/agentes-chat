@@ -136,7 +136,7 @@ const PEN_STEP = 1.5;
 const PEN_TOLERANCE = 0.6;
 
 /**
- * The canvas ("Quadro", ADR 0194 §2, ADR 0195): an endless plane people and agents fill together with pictures,
+ * The canvas ("Quadro", ADR 0196 §2, ADR 0197): an endless plane people and agents fill together with pictures,
  * notes, text, frames, shapes, arrows between them, Drive files and agents' pages, and pictures generated in place.
  *
  * Shapes are DOM in a world layer the camera moves (pan and zoom by trackpad, wheel, pinch, keys and the zoom island);
@@ -168,7 +168,7 @@ const CLICK_SLOP = 4;
 const SNAP_PX = 6;
 /** The arrows nudge this far (world units); with Shift, ten times as far. */
 const NUDGE = 1;
-/** Pictures over this don't upload (ADR 0194 §8). */
+/** Pictures over this don't upload (ADR 0196 §8). */
 const MAX_ASSET_BYTES = 25 * 1024 * 1024;
 const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 /** A picture lands no bigger than this on its longest side (as `addShape` places one). */
@@ -300,7 +300,7 @@ function CanvasEditor({
   const bg = useLiveSelector(room, canvasBackground) ?? "dots";
   const fileAgent = useFileAgentHere();
   const retry = useRetryImages(orgId, fileId);
-  // Who adds what this person draws (ADR 0194 §6): the app's own edits carry no author, so each new shape says it.
+  // Who adds what this person draws (ADR 0196 §6): the app's own edits carry no author, so each new shape says it.
   const { me: account } = useOrg();
   const userId = account.user.id;
   const me = useMemo<PeerUser>(() => ({ kind: "person", id: userId }), [userId]);
@@ -635,7 +635,7 @@ function CanvasEditor({
     [store, glideTo],
   );
 
-  // A message's line about some of these shapes, or a point (ADR 0197): chosen, and brought into view.
+  // A message's line about some of these shapes, or a point (ADR 0199): chosen, and brought into view.
   const revealed = useRef<number | null>(null);
   useEffect(() => {
     if (!revealPart || revealed.current === revealPart.key) return;
@@ -1009,10 +1009,10 @@ function CanvasEditor({
     [assetUrl, toast, t],
   );
 
-  /** "Pedir ao Atlas" about a picture: the file's conversation, its agent called, about it (ADR 0197). */
+  /** "Pedir ao Atlas" about a picture: the file's conversation, its agent called, about it (ADR 0199). */
   const askAbout = useCallback((shape: ShapeView) => onAsk?.({ selection: selectionOf(t, [shape]) }), [onAsk, t]);
 
-  /** "Variações": the file's agent asked, in the file's conversation, for variations of this picture (ADR 0197). */
+  /** "Variações": the file's agent asked, in the file's conversation, for variations of this picture (ADR 0199). */
   const askVariations = useCallback(
     (shape: ShapeView) => onAsk?.({ text: t("live.canvas.ask.variations"), selection: selectionOf(t, [shape]) }),
     [onAsk, t],
@@ -1179,7 +1179,7 @@ function CanvasEditor({
       setPanning(true);
       return;
     }
-    // Comment: the file's conversation opens about this point (its message is the pin, ADR 0197).
+    // Comment: the file's conversation opens about this point (its message is the pin, ADR 0199).
     if (tool === "comment") {
       setTool("select");
       onAsk?.({

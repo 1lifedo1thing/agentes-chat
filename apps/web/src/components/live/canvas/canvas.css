@@ -1,4 +1,4 @@
-/* The canvas ("Quadro", ADR 0194 §2, ADR 0195, ADR 0197): the plane, its shapes, what is drawn over them in screen
+/* The canvas ("Quadro", ADR 0196 §2, ADR 0197, ADR 0199): the plane, its shapes, what is drawn over them in screen
    pixels, the dock with its menus and the pen's bar, the zoom island, the bar over the selection with its size, the
    layers, the crop, the comments' pins and the picture's details. Tokens only; motion only inside
    `prefers-reduced-motion: no-preference`. */

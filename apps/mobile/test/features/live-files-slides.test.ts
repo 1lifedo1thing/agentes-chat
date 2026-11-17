@@ -48,7 +48,7 @@ const peer = (clientId: number, id: string, state: Partial<PeerState>, self = fa
   state: { user: { kind: "person", id }, mode: "viewing", ...state },
 });
 
-describe("a slide drawn on the phone, in its own units scaled to the screen (ADR 0194 §9)", () => {
+describe("a slide drawn on the phone, in its own units scaled to the screen (ADR 0196 §9)", () => {
   test("its scale and height follow the width, 16:9", () => {
     expect(slideScale(384)).toBeCloseTo(0.2, 6);
     expect(slideHeight(384)).toBeCloseTo(216, 6);
@@ -280,7 +280,7 @@ describe("layouts, routes and screens", () => {
     expect(text).toContain("editParagraphTexts(fragment, texts, LOCAL)");
     // Photos go up as parts with their bytes (Expo's fetch refuses `{ uri }` parts).
     expect(src("features/live-files/slides/photos.ts")).toContain("uploadPart(file)");
-    // An uploaded deck (ADR 0196) is drawn by the same slide view, at its own size (a 4:3 deck stays 4:3).
+    // An uploaded deck (ADR 0198) is drawn by the same slide view, at its own size (a 4:3 deck stays 4:3).
     const office = src("features/live-files/office/OfficePages.tsx");
     expect(office).toMatch(/<SlideView[^>]*deck=\{deck\}[^>]*mode="thumb"/);
     // Presenting lies the phone down, through the app's one way to landscape.

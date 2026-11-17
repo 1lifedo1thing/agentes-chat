@@ -28,7 +28,7 @@ import { allowedOrigins } from "../routes/app/context";
 import { personUpgrade, UUID } from "./ws";
 
 /**
- * Live files' sockets (ADR 0194 §3): `GET /api/live?orgId=<uuid>&fileId=<uuid>[&text=1]` carries one spreadsheet,
+ * Live files' sockets (ADR 0196 §3): `GET /api/live?orgId=<uuid>&fileId=<uuid>[&text=1]` carries one spreadsheet,
  * presentation or canvas between a person's app and the document this process hosts for it (`LiveDocs.join`).
  *
  * - Refused before the upgrade like every person socket (`personUpgrade`: 403 for a foreign Origin or a non-member, 401
@@ -53,7 +53,7 @@ import { personUpgrade, UUID } from "./ws";
  */
 export const LIVE_PATH = "/api/live";
 
-/** The sockets' limits (ADR 0194 §3); tests make the waits shorter. */
+/** The sockets' limits (ADR 0196 §3); tests make the waits shorter. */
 export const LIVE_SOCKET_LIMITS = {
   opensPerMinute: 30,
   perPerson: 12,
@@ -267,7 +267,7 @@ export function createLiveSockets(deps: LiveSocketDeps) {
 
   /**
    * The app hears `live.mode` before the document applies it: back to `edit`, the document asks the app what it lacks
-   * (its sync step 1), and an app answers that only once it knows it may change the file (ADR 0194 §3).
+   * (its sync step 1), and an app answers that only once it knows it may change the file (ADR 0196 §3).
    */
   function modeTo(ws: Socket, session: LiveSession, mode: LiveMode) {
     send(ws, JSON.stringify({ type: "live.mode", mode }));

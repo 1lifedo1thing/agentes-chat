@@ -21,7 +21,7 @@ import Svg, { G, Line, Path, Rect } from "react-native-svg";
 import { Icon, useTheme } from "@/ui";
 
 /**
- * A live file drawn small (ADR 0194 §7), from the preview its card carries (never the whole document): a
+ * A live file drawn small (ADR 0196 §7), from the preview its card carries (never the whole document): a
  * spreadsheet's top-left cells, a presentation's first slide, a canvas's shapes as a map. The Drive's cards, a
  * message's card and the uploaded decks' list draw with these; nothing here opens the file.
  */
@@ -38,7 +38,7 @@ export const NOTE_TINTS: Record<NoteColor, { light: string; dark: string }> = {
 
 const isNoteColor = (v: string | undefined): v is NoteColor => !!v && v in NOTE_TINTS;
 
-/** A document's content as its card has it (ADR 0198): its preview, else its whole text in Markdown. */
+/** A document's content as its card has it (ADR 0200): its preview, else its whole text in Markdown. */
 export type DocumentCoverContent = { kind: "document"; markdown: string; preview?: DocumentPreview };
 
 /** A file's content when it is a live file's (its card draws it), else null. */
@@ -71,7 +71,7 @@ export const LiveCover = memo(function LiveCover({
 const COVER_BLOCKS = 8;
 
 /**
- * A document's first blocks as a small page (ADR 0198): headings bold, paragraphs and list items in lines, a quote
+ * A document's first blocks as a small page (ADR 0200): headings bold, paragraphs and list items in lines, a quote
  * with its bar, a picture or a table as their shape; from its preview, else from its Markdown.
  */
 export const DocumentCover = memo(function DocumentCover({ content }: { content: DocumentCoverContent }) {
@@ -196,7 +196,7 @@ export interface SketchSlide {
   elements: readonly SketchElement[];
 }
 
-/** A picture's address and the session's headers (a live file's pictures are the file's, ADR 0194 §8). */
+/** A picture's address and the session's headers (a live file's pictures are the file's, ADR 0196 §8). */
 export type SketchPicture = (ref: string) => { uri: string; headers?: Record<string, string> } | null;
 
 /**

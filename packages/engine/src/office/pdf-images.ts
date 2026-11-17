@@ -1,7 +1,7 @@
 import { deflateSync, inflateSync } from "node:zlib";
 
 /**
- * Pictures as PDF image objects (ADR 0196), in pure TypeScript: a JPEG goes in as it is (DCT, the reader decodes it),
+ * Pictures as PDF image objects (ADR 0198), in pure TypeScript: a JPEG goes in as it is (DCT, the reader decodes it),
  * with its size, color space and EXIF turn read from its markers; a PNG is decoded (every color type, bit depth,
  * filter and interlacing) into 8-bit RGB with its transparency as a separate soft mask, both deflated; a GIF's first
  * frame likewise. Anything else (WebP has no decoder here), or a picture past `PIXELS_MAX`, isn't drawn.

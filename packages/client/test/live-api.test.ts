@@ -15,7 +15,7 @@ import {
 import { ARTIFACT_KINDS, artifactRefs, fileName, isArtifactKind, KIND_ICON } from "../src/lib/artifacts";
 import { fileIcon, isOfficePreview, previewKind, previewKindOfName } from "../src/lib/files";
 
-/** The live files' routes (ADR 0194, 0195, 0196) as the client calls them, and the lists that learned the new kinds. */
+/** The live files' routes (ADR 0196, 0197, 0198) as the client calls them, and the lists that learned the new kinds. */
 
 type Call = { path: string; options: RequestOptions };
 

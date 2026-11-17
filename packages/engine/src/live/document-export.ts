@@ -9,7 +9,7 @@ import { markdownToPdf } from "../pdf";
 import { rasterPicture } from "./svg";
 
 /**
- * What a document downloads as (ADR 0198): a Word file (its own writer, pictures included; the default), Markdown or a
+ * What a document downloads as (ADR 0200): a Word file (its own writer, pictures included; the default), Markdown or a
  * PDF (the Drive's Markdown PDF, pictures left out). The Drive's downloads and `exportLive` both write it here, so a
  * document downloads the same whether a process holds it or not.
  */

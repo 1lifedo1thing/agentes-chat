@@ -1,9 +1,9 @@
-# 0198. Documents become live files
+# 0200. Documents become live files
 
 - Status: Accepted (built)
 - Date: 2026-11-17
-- Extends: 0194 (live files), 0196 (Office files open in the apps)
-- Amends: 0019 (a document is no longer Markdown saved whole as a new version), 0196 ("Edit as document" makes a live
+- Extends: 0196 (live files), 0198 (Office files open in the apps)
+- Amends: 0019 (a document is no longer Markdown saved whole as a new version), 0198 ("Edit as document" makes a live
   document)
 - Code: `packages/live/src/document/*` (`@agenteschat/live/document`: `DOC_SCHEMA_SPEC`, `DocBlock`,
   `readDocument`/`writeDocument`, `blockElement`/`readBlocks`, `insertBlocks`, `replaceBlocks`, `deleteBlocks`,
@@ -20,7 +20,7 @@
 The Drive has had documents from the start: an agent's report or plan, written in Markdown and saved whole, each
 save a new version (ADR 0019). People can't write in one while an agent does, two people saving at once get "someone
 saved a newer version", and nothing shows who is changing what. Spreadsheets, presentations and canvases are now
-live files people and agents edit together (ADR 0194). A document is the file teams write together most, and the
+live files people and agents edit together (ADR 0196). A document is the file teams write together most, and the
 Wiki already shows what a written page should look like. Keeping a second, older kind of document next to a live one
 would give the Drive two things called "Documento" that behave differently.
 
@@ -29,7 +29,7 @@ would give the Drive two things called "Documento" that behave differently.
 ### 1. One kind of document, and it is live
 
 `document` is a live kind (`LIVE_KINDS`, `LIVE_ARTIFACT_KINDS`): one Yjs document per file, synced, versioned and
-shared exactly as ADR 0194 says for the other kinds. The Markdown document is gone: there is no other path that
+shared exactly as ADR 0196 says for the other kinds. The Markdown document is gone: there is no other path that
 writes one. `create_artifact` with kind `document` (the tool agents already know) and `POST …/artifacts` with a
 document's Markdown make a live document from that Markdown; `POST …/live-files` makes an empty one ("Novo ›
 Documento"). `updateArtifact` refuses a document like any live file (`artifact.live_only`, naming the tools that
@@ -43,7 +43,7 @@ Nothing else changes for those files.
 `meta` as every kind; `body`, a `Y.XmlFragment` in y-prosemirror's encoding of the document schema
 (`DOC_SCHEMA_SPEC`, plain data the web turns into a ProseMirror `Schema`): paragraph (alignment, and the rich text's
 list model: `list` + `level` on the paragraph), heading 1 to 3, blockquote, code block (a language word),
-horizontal rule, image (a picture of the file, ADR 0194 §8, its description and a width as a fraction of the page),
+horizontal rule, image (a picture of the file, ADR 0196 §8, its description and a width as a fraction of the page),
 table → row → cell (paragraphs; a header row), line break; marks bold, italic, underline, strike, code, color, link
 (https, http, mailto). Every top-level block carries an `id`, so agents, a message's quote
 (`liveRef.selection.block`) and an agent's presence (`sel.document`) can name a block. The phone and the server read
@@ -62,7 +62,7 @@ the same kind changes in place, so a person typing in it keeps their place), del
 its formatting kept), and rewrite (the whole document, blocks that say the same keep their ids and place). Content
 is Markdown (CommonMark's blocks, GitHub's tables, `<u>` for underline); a picture is a Drive image (`file:<id>`,
 copied in under the agent's own check that it reads it), one of the document's own (`asset:<id>`) or, on a line of
-its own, a picture on the web (`![a sky](https://…)`, downloaded into the document as ADR 0194 §8 says; an address
+its own, a picture on the web (`![a sky](https://…)`, downloaded into the document as ADR 0196 §8 says; an address
 inside a paragraph stays a link). The op `add_image` places one picture as a block (after or before a block, at the
 start or the end) the way the canvas and the slides take one: `image`, an SVG the agent writes (`svg`) or a web
 picture (`url`), with its alt text. The agent's
@@ -71,7 +71,7 @@ Markdown.
 
 ### 4. Word in and out
 
-An uploaded `.docx` opened to edit (ADR 0196's "Edit as document") becomes a live document read by the same safe
+An uploaded `.docx` opened to edit (ADR 0198's "Edit as document") becomes a live document read by the same safe
 reader as its preview (`readDocx`): headings, paragraphs and their marks, lists by level, tables laid flat, links,
 and its pictures stored as the document's own. A document downloads as `.docx` by default (its own writer: headings,
 paragraphs with their alignment, numbered and bullet lists by level, quotes, code, rules, tables with a repeating

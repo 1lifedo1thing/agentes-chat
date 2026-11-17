@@ -584,7 +584,7 @@ export async function readableChannelIds(
         or(
           isNotNull(channelMembers.id),
           and(eq(channels.kind, "task"), taskReaderSql(sql`${channels.id}`, sql`${userId}::text`)),
-          // A live file's conversation: whoever reads the file (ADR 0197).
+          // A live file's conversation: whoever reads the file (ADR 0199).
           and(eq(channels.kind, "file"), fileConversationReaderSql(sql`${channels.id}`, sql`${userId}::text`)),
           adminChannelSql(sql`${orgId}::uuid`, sql`${userId}::text`),
         ),
@@ -633,7 +633,7 @@ export async function requireChannelAccess(db: Database, userId: string, orgId: 
   const permissions = resolvePermissions(row.role === "owner", row.keys);
   const reads = row.memberId || (channel.kind === "channel" && permissions.has("administrator"));
   // A task's conversation is read by whoever sees the task (ADR 0145), a live file's by whoever reads the file (ADR
-  // 0197), always checked again: people are never their members.
+  // 0199), always checked again: people are never their members.
   const conversationReader =
     channel.kind === "task"
       ? row.taskReader === true || String(row.taskReader) === "t"
@@ -685,7 +685,7 @@ export async function joinChannel(
     .where(and(eq(channels.id, channelId), eq(channels.orgId, orgId)));
   if (!channel) throw new NotFoundError("Channel not found");
   const admin = channel.kind === "channel" && can(membership, "administrator");
-  // A live file's conversation is read by whoever reads the file, never by membership (ADR 0197 §2).
+  // A live file's conversation is read by whoever reads the file, never by membership (ADR 0199 §2).
   if (
     channel.kind === "dm" ||
     channel.kind === "file" ||
@@ -814,7 +814,7 @@ export async function addChannelMember(
     .where(and(eq(channels.id, channelId), eq(channels.orgId, orgId), isNull(channels.archivedAt)));
   if (!channel) throw new NotFoundError("Channel not found");
   if (channel.kind === "dm") throw new ValidationError("A direct conversation keeps its participants");
-  // A live file's conversation (ADR 0197 §2): read by whoever reads the file, never by membership (a member would read
+  // A live file's conversation (ADR 0199 §2): read by whoever reads the file, never by membership (a member would read
   // it after losing the file, in search and notifications), and agents join it only when they may work on the file
   // (`admitFileAgents`).
   if (channel.kind === "file") {

@@ -10,7 +10,7 @@ import { dataGridSource, selectionStats, workbookTabs } from "./model";
 import { type GridSelection, SheetGrid } from "./SheetGrid";
 
 /**
- * A workbook shown read-only on the phone (ADR 0196): an uploaded Excel, OpenDocument or CSV file as the server read
+ * A workbook shown read-only on the phone (ADR 0198): an uploaded Excel, OpenDocument or CSV file as the server read
  * it, or an old table, drawn by the same grid as a live spreadsheet, with its sheets as chips and the cell bar saying
  * what the selected cell holds (a sum, average and count for several). `footer`: what the screen offers under it (Edit
  * as a spreadsheet).

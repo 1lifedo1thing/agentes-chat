@@ -1,4 +1,4 @@
-/** Documents (ADR 0198): the schema, plain blocks, their Yjs encoding, edits by block, Markdown, preview and text. */
+/** Documents (ADR 0200): the schema, plain blocks, their Yjs encoding, edits by block, Markdown, preview and text. */
 export {
   blocksLength,
   blocksText,

@@ -77,7 +77,7 @@ interface Brand {
 
 let brand: Brand | null | undefined;
 
-/** The brand fonts' files as they are, for drawing SVG pictures (ADR 0194 §8); the ones missing are left out. */
+/** The brand fonts' files as they are, for drawing SVG pictures (ADR 0196 §8); the ones missing are left out. */
 export function brandFontFiles(): Uint8Array[] {
   const out: Uint8Array[] = [];
   for (const file of ["Onest-Regular.ttf", "Onest-Bold.ttf", "MartianMono-Regular.ttf"]) {

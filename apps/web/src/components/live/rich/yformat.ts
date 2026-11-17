@@ -3,7 +3,7 @@ import * as Y from "yjs";
 import type { RichFormat, RichMarkKey } from "./commands";
 
 /**
- * Formatting a whole text box at once (ADR 0194 §2), when it is selected on a slide or a canvas but not being typed
+ * Formatting a whole text box at once (ADR 0196 §2), when it is selected on a slide or a canvas but not being typed
  * in: the marks and paragraph attributes are changed in place in the box's `Y.XmlFragment`, in y-prosemirror's
  * encoding, so someone typing in the same box keeps their caret and their words. Each call is one transaction with the
  * caller's origin (`LOCAL` for the person's own undo).

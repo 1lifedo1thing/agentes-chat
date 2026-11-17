@@ -2,7 +2,7 @@ import { ZOOM_STEPS } from "@agenteschat/client/lib/zoom";
 import type { Box, Point } from "@agenteschat/live/canvas";
 
 /**
- * Where a canvas is looked at from (ADR 0194 §2): the world (shapes in world units) drawn at `z` screen pixels per
+ * Where a canvas is looked at from (ADR 0196 §2): the world (shapes in world units) drawn at `z` screen pixels per
  * world unit, its origin at (`x`, `y`) in the plane's own pixels. A world point `p` is on screen at `p * z + (x, y)`.
  * The plane is endless: unlike a picture's zoom (`lib/zoom.ts`), nothing keeps the view inside bounds, only the zoom
  * between `CAMERA_MIN` and `CAMERA_MAX`; − and + stop at the same steps as the picture viewer's.

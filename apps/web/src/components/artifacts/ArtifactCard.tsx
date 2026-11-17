@@ -50,7 +50,7 @@ export function ArtifactCard({ artifact: ref }: { artifact: ArtifactRef }) {
   const query = useArtifact(org.id, ref.deleted ? null : ref.id, ref.version);
   const a = query.data;
   const navigate = useNavigate();
-  // A live file is the file as it is now (ADR 0194 §7), whichever version the message named: its head's preview.
+  // A live file is the file as it is now (ADR 0196 §7), whichever version the message named: its head's preview.
   const live = Boolean(a && isLiveFileKind(a.kind));
   const head = useArtifact(org.id, live && ref.version ? ref.id : null).data;
   // Deleted (to the trash): a quiet placeholder, never a broken card.
@@ -74,12 +74,12 @@ export function ArtifactCard({ artifact: ref }: { artifact: ArtifactRef }) {
   if (a.kind === "block") return <LiveBlockCard id={a.id} version={a.shownVersion} />;
   if (a.kind === "poll") return <PollCard id={a.id} version={a.shownVersion} />;
   if (a.kind === "choices") return <ChoicesCard id={a.id} version={a.shownVersion} />;
-  // A live file opens on its own page, as it is now (ADR 0194 §9); the rest in the viewer, at the version they name.
+  // A live file opens on its own page, as it is now (ADR 0196 §9); the rest in the viewer, at the version they name.
   const open = () => {
     if (live) openLivePage(navigate, org.id, a.id);
     else viewer.open(a.id, a.shownVersion < a.version ? a.shownVersion : undefined);
   };
-  // A live file downloads as it is now (its versions are checkpoints behind it, ADR 0194 §7).
+  // A live file downloads as it is now (its versions are checkpoints behind it, ADR 0196 §7).
   const save = () => void download.save(a, undefined, live ? undefined : a.shownVersion, a.content);
   // Open, download, Compartilhar, its link (through the share dialog while only its conversation sees it), and the
   // trash for who may delete it: the right click and the More menu.
@@ -241,7 +241,7 @@ function metaOf(t: TFunction, content: ArtifactContent, version: number) {
       }
       return `${t("artifacts.files", { count: content.files.length })} · ${t("artifacts.counts", total)}`;
     }
-    // Live files (ADR 0194): how many sheets or slides; a canvas by its kind alone.
+    // Live files (ADR 0196): how many sheets or slides; a canvas by its kind alone.
     case "spreadsheet":
       return content.preview.sheets > 1
         ? `${kind} · ${t("live.kinds.sheetCount", { count: content.preview.sheets })}`
@@ -249,7 +249,7 @@ function metaOf(t: TFunction, content: ArtifactContent, version: number) {
     case "slides":
       return `${kind} · ${t("live.kinds.slideCount", { count: content.preview.count })}`;
     case "canvas":
-    // A document is a live file (ADR 0198): no versions to count on its card.
+    // A document is a live file (ADR 0200): no versions to count on its card.
     case "document":
       return kind;
     default:

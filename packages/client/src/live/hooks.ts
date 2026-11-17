@@ -11,7 +11,7 @@ import { type LiveSchedule, scheduleSignal, throttleSignal } from "./signals";
 import type { LiveFileStatus, LiveKind, LiveMode, LiveRoomError } from "./types";
 
 /**
- * React hooks over a live file's room (ADR 0194), the same in React DOM and React Native: no DOM here, the platform's
+ * React hooks over a live file's room (ADR 0196), the same in React DOM and React Native: no DOM here, the platform's
  * pieces (its socket, its server's address, animation frames) come in as options.
  */
 

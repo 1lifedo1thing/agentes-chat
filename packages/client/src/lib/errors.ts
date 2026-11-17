@@ -20,6 +20,15 @@ export const REAUTH_PASSWORD = "reauth.password";
  * takes `untranslatedText`; a guard test (`error-words.test.ts`) fails on a new code that isn't here or on its list.
  */
 const KNOWN = {
+  // Linking an outside chat surface (ADR 0187). The lines name no surface: the server's errors carry no name.
+  "surface.off": "errors.surface.off",
+  "surface.not_allowed": "errors.surface.notAllowed",
+  "surface.no_assistant": "errors.surface.noAssistant",
+  "surface.no_workspace": "errors.surface.noWorkspace",
+  "surface.link_gone": "errors.surface.linkGone",
+  "surface.taken": "errors.surface.taken",
+  "surface.undo_gone": "errors.surface.undoGone",
+  "surface.code_gone": "errors.surface.codeGone",
   // A new-password link an owner can't make (ADR 0158).
   "password_link.email": "errors.passwordLink.email",
   "password_link.server_owner": "errors.passwordLink.serverOwner",
@@ -77,7 +86,7 @@ const KNOWN = {
   "artifact.sharing_empty": "errors.artifact.sharingEmpty",
   "artifact.sharing_too_many": "errors.artifact.sharingTooMany",
   "artifact.not_in_drive": "errors.artifact.notInDrive",
-  // Live files (ADR 0194): a change to a file that is read-only now (in the trash, its workspace closing), a picture
+  // Live files (ADR 0196): a change to a file that is read-only now (in the trash, its workspace closing), a picture
   // over the size a file takes or that is no picture, a file past what it may hold, a whole new content sent for one
   // (it changes only in place).
   "live.read_only": "errors.live.readOnly",
@@ -85,14 +94,14 @@ const KNOWN = {
   "live.asset_too_large": "errors.live.assetTooLarge",
   "live.asset_type": "errors.live.assetType",
   "artifact.live_only": "errors.live.liveOnly",
-  // Uploaded Office files (ADR 0196): damaged, past what the server reads, of a kind only downloaded, locked with a
+  // Uploaded Office files (ADR 0198): damaged, past what the server reads, of a kind only downloaded, locked with a
   // password, or past what a live file holds.
   "office.unreadable": "errors.office.unreadable",
   "office.too_large": "errors.office.tooLarge",
   "office.unsupported": "errors.office.unsupported",
   "office.encrypted": "errors.office.encrypted",
   "office.too_large_to_edit": "errors.office.tooLargeToEdit",
-  // Images made on a canvas (ADR 0195).
+  // Images made on a canvas (ADR 0197).
   "images.no_model": "errors.images.noModel",
   "images.model_unavailable": "errors.images.modelUnavailable",
   "images.reference": "errors.images.reference",
@@ -246,6 +255,7 @@ const KNOWN = {
   "join.denied": "errors.join.denied",
   "join.answered": "errors.join.answered",
   "join.expired": "errors.join.expired",
+  "outside_access.account_closed": "errors.join.outsideClosed",
   "join.code_wrong": "errors.code.wrong",
   "join.code_expired": "errors.code.expired",
   "join.code_tries": "errors.code.tries",
@@ -839,6 +849,8 @@ export function knownErrorText(t: TFunction, error: unknown, locale = "en"): str
   // The person who connected the mailbox is gone or unnamed: no blank name in the sentence.
   if (error.code === "mail.owner_only" && !error.params?.ownerName)
     return t("errors.mail.ownerOnlyUnknown", error.params);
+  // Everyone else in the workspaces that keep the account is an outside collaborator, who can't own one (ADR 0191).
+  if (error.code === "sole_owner" && error.params?.onlyOutside === true) return t("errors.said.soleOwnerOutside");
   if (error.code === "browser_profile.unavailable")
     return t("browser.profiles.notOpened", { machine: error.params?.machineName ?? "" });
   // `provider`: the provider whose key is missing, when the server could name it.

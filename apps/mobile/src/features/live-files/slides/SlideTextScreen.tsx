@@ -23,7 +23,7 @@ import { SlideView } from "./SlideView";
 export type TextTarget = { slide: string; el: string } | { shape: string };
 
 /**
- * The words of a text box on the phone (ADR 0194 §9), on a screen of their own: the slide drawn small with the box
+ * The words of a text box on the phone (ADR 0196 §9), on a screen of their own: the slide drawn small with the box
  * outlined (a canvas's note has no slide), then the box's words in a field over the keyboard, one paragraph a line.
  * Each change goes into the file as it is typed (`editParagraphTexts`: only the paragraphs that changed, keeping their
  * look, so someone typing in another paragraph of the same box merges), and Desfazer takes it back. What others type

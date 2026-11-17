@@ -9,7 +9,7 @@ import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate, removeAwareness
 import type * as Y from "yjs";
 
 /**
- * Who is in one live file, as the process that hosts it sees it (ADR 0194 §5): Yjs awareness, never stored. The
+ * Who is in one live file, as the process that hosts it sees it (ADR 0196 §5): Yjs awareness, never stored. The
  * server owns identity. Each awareness client id belongs to the socket that first spoke for it (or to another process,
  * or to an agent's presence); a socket that claims a client id someone else holds is ignored, unless it is the same
  * person's own tab arriving from another socket or process. Every state a socket sends is rewritten by
@@ -45,7 +45,7 @@ export const FROM_AGENT = Symbol("live.awareness.agent");
 export const AWARENESS_RELAY_BYTES = 6000;
 
 /**
- * The client ids one socket may speak for (ADR 0194 §5). An app's socket carries one file and one awareness (one id);
+ * The client ids one socket may speak for (ADR 0196 §5). An app's socket carries one file and one awareness (one id);
  * a few more leave room for an app that makes its document again. Past this a socket's new ids are dropped, so one
  * socket can't fill the file with thousands of states, each relayed to everyone in it and to the other processes.
  */

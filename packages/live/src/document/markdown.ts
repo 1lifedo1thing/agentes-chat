@@ -7,7 +7,7 @@ import { DOC_MAX_HEADING } from "./schema";
 import type { DocBlock, DocCell, DocHeadingLevel, DocParagraph, DocRun } from "./types";
 
 /**
- * Documents and Markdown (ADR 0198): what agents write and read, what a document downloads as (`.md`), and how an
+ * Documents and Markdown (ADR 0200): what agents write and read, what a document downloads as (`.md`), and how an
  * older Markdown file becomes a document. CommonMark's blocks (headings, paragraphs, lists nested by indent, quotes,
  * fenced code, rules) and GitHub's tables, strikethrough and bare links; inline **bold**, *italic*, ~~strike~~,
  * `code`, [links](https://…) (https, http and mailto only), <u>underline</u> and <br> line breaks. A picture on a line
@@ -25,7 +25,7 @@ const BARE_URL = /^https?:\/\/[^\s<>"'`]+/i;
 /**
  * How far the inline reader may still look ahead for where a mark, a link, a code span or an address ends. Each look
  * scans forward, so a text full of openers that never close (`[[[[`, ` _a _a`) would cost the square of its length on
- * the server's thread, which reads the Markdown people and agents send (ADR 0198). `parseInlineMarkdown` gives each
+ * the server's thread, which reads the Markdown people and agents send (ADR 0200). `parseInlineMarkdown` gives each
  * text a budget in proportion to its length; once it is spent, the rest reads as plain words.
  */
 let lookahead = Number.POSITIVE_INFINITY;
@@ -299,7 +299,7 @@ function parseInline(src: string, marks: Marks, out: DocRun[]): void {
 
 // The block patterns run on whole lines of text people and agents send, on the server's thread: none may leave two
 // quantifiers free to split the same run of characters when a line then fails, which costs the square (or the cube)
-// of the line's length (ADR 0198). So a fence's "no backtick after it" is a lookahead, a heading's closing `#`s and a
+// of the line's length (ADR 0200). So a fence's "no backtick after it" is a lookahead, a heading's closing `#`s and a
 // table rule's outer spaces are taken off by hand (`atxOf`, `isTableRule`), and an item's text is anything to the end.
 const FENCE = /^( {0,3})(`{3,}|~{3,})(?=[^`]*$)[ \t]*([^`\s]*)/;
 const ATX_HEAD = /^ {0,3}(#{1,6})(?![^ \t])/;

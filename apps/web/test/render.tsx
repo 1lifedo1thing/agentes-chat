@@ -141,7 +141,7 @@ export async function renderPage(
   },
 ) {
   forgetExits();
-  // A live file's socket reaches the fake API's live server (ADR 0194); the rest are the test's to drive.
+  // A live file's socket reaches the fake API's live server (ADR 0196); the rest are the test's to drive.
   const sockets = fakeSockets({ live: fakeLiveOf.get(options.api)?.server });
   const createSocket = options.createSocket ?? sockets.factory;
   const services = makeServices(options.api, options.auth, createSocket);

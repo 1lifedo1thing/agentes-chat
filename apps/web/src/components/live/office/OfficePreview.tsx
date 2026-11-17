@@ -41,7 +41,7 @@ const ICON: Record<OfficePreviewKind, IconName> = {
 };
 
 /**
- * An uploaded Office file in the viewer (ADR 0196), drawn from the server's reading of it, never from its bytes here: a
+ * An uploaded Office file in the viewer (ADR 0198), drawn from the server's reading of it, never from its bytes here: a
  * workbook on the spreadsheet's own grid (read-only), a deck as its slides one under another, a Word document as clean
  * HTML in the isolated frame. A quiet line over it says what the file is, with "Editar como planilha / apresentação /
  * documento", which makes an editable copy beside it (the upload stays as it was).

@@ -23,7 +23,7 @@ import {
 } from "./tools";
 
 /**
- * The canvas's floating controls (ADR 0194 §2): the tools dock at the bottom (Select and Move around; Frame, the
+ * The canvas's floating controls (ADR 0196 §2): the tools dock at the bottom (Select and Move around; Frame, the
  * Shapes and Arrow menus, the pen, text, note and image; Comment; and the file's agent, "Pedir ao Atlas"), the pen's
  * own bar above it while drawing, and the zoom island at the top right with the layers' toggle first. Glass, over the
  * plane, out of the way of the shapes.
@@ -241,7 +241,7 @@ function ArrowTool({ tool, route, onRoute }: DockProps) {
 export const inkSwatch = (color: string) =>
   ({ "--swatch": color, "--swatch-dark": isInk(color) ? DARK_INK : color }) as CSSProperties;
 
-/** The pen's bar while drawing: pen or highlighter, five colors, three sizes (ADR 0194 §2). */
+/** The pen's bar while drawing: pen or highlighter, five colors, three sizes (ADR 0196 §2). */
 export function PenBar({ pen, onPen }: { pen: PenStyle; onPen(next: PenStyle): void }) {
   const { t } = useTranslation();
   const tools: { tool: DrawTool; icon: IconName }[] = [

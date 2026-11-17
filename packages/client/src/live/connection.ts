@@ -26,7 +26,7 @@ import type { LiveLoadedState } from "./api";
 import type { LiveFileStatus, LiveRoomError } from "./types";
 
 /**
- * One live file's connection (ADR 0194 §3), the same in the browser, the desktop app and the phone:
+ * One live file's connection (ADR 0196 §3), the same in the browser, the desktop app and the phone:
  *
  * - The document comes first over HTTP (`loadState`, applied as `REMOTE`), so a large file never waits behind the
  *   socket, which then only catches up from its state vector: on `live.ready` this side sends its sync step 1 and its

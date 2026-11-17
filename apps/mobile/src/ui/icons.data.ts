@@ -200,6 +200,8 @@ export const ICONS = {
   replyTo: [p("M9.6 6 4.8 10.8l4.8 4.8M4.8 10.8h8.4a6 6 0 0 1 6 6v1.8")],
   // The web's swap arrows on this grid: one agent asking another, between their faces.
   swap: [p("M4.8 8.4h13.8M15.6 5.4l3 3-3 3M19.2 15.6H5.4M8.4 12.6l-3 3 3 3")],
+  // A menu's mark after a row's value (the system's pop-up button): a chevron up over a chevron down.
+  updown: [p("m8 9.5 4-4 4 4M8 14.5l4 4 4-4")],
   // `down` turned over: Ordenar's ▲ on a cargo.
   up: [p("M12 19V5M6 11l6-6 6 6")],
   // The cargos' icons (ADR 0085 `ROLE_ICONS`) the phone didn't draw yet, the web's on this grid, and Todos' and the
@@ -232,7 +234,7 @@ export const ICONS = {
     r(14.7, 15.3, 6.6, 5.1, 1.2),
     p("M16.2 15.3v-1.32a1.8 1.8 0 0 1 3.6 0v1.32"),
   ],
-  // Live files (ADR 0194), the web's drawings on this grid: a spreadsheet (cells under a header row), a presentation
+  // Live files (ADR 0196), the web's drawings on this grid: a spreadsheet (cells under a header row), a presentation
   // (a slide on its stand), a canvas (a board with a round and a square shape on it).
   spreadsheet: [r(3.6, 4.2, 16.8, 15.6, 2.4), p("M3.6 9h16.8M3.6 14.4h16.8M9 4.2v15.6M14.7 9v10.8")],
   slides: [r(3, 4.2, 18, 12, 2.1), p("M12 16.2v3.6M8.4 19.8h7.2M7.2 8.7h6M7.2 12h9.6")],
@@ -255,7 +257,7 @@ export const ICONS = {
     r(8.5, 2.5, 7, 4, 1.2),
     p("M15.5 4.5H17a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2h1.5"),
   ],
-  // A canvas's dock (ADR 0194 §2): select (the pointer), an arrow, the shapes' menu (rectangle, ellipse, diamond,
+  // A canvas's dock (ADR 0196 §2): select (the pointer), an arrow, the shapes' menu (rectangle, ellipse, diamond,
   // triangle, star, line), a comment pinned on a spot, cropping a picture; a document's heading.
   pointer: [p("M6.5 4.5v13.8l3.7-3.4 2.5 5.4 2.3-1.05-2.45-5.3h5.15Z")],
   arrowTool: [p("M5.5 18.5 18 6"), p("M10.5 6H18v7.5")],

@@ -9,7 +9,7 @@ import type { DocBlock, DocumentSource } from "./types";
 import { blockElement, readBlockNode, readBlocks, writeBlocks } from "./yjs";
 
 /**
- * Changing a document (ADR 0198): whole blocks by their ids (insert, replace, delete), text found and replaced in
+ * Changing a document (ADR 0200): whole blocks by their ids (insert, replace, delete), text found and replaced in
  * place (its marks kept), and the ids every top-level block must carry. Each runs in one transaction with `origin`, so
  * the apps' undo skips other people's and agents' changes, and leaves blocks it didn't name untouched, so whoever is
  * typing elsewhere in the document keeps their place.
@@ -345,7 +345,7 @@ export function ensureBlockIds(doc: Y.Doc, origin: unknown): boolean {
   return true;
 }
 
-/** Where the document came from (an uploaded `.docx`, ADR 0196), kept in its `meta`. */
+/** Where the document came from (an uploaded `.docx`, ADR 0198), kept in its `meta`. */
 export function setDocumentSource(doc: Y.Doc, source: DocumentSource, origin: unknown): void {
   const clean: DocumentSource = { name: source.name.slice(0, 255) };
   if (source.file) clean.file = source.file;

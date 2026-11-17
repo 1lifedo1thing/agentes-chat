@@ -3,7 +3,7 @@ import { normalizeBlock, normalizeRuns } from "./blocks";
 import type { DocBlock, DocCell, DocParagraph, DocRun } from "./types";
 
 /**
- * Documents in a `Y.XmlFragment` in y-prosemirror's encoding (ADR 0198), read and written without ProseMirror so the
+ * Documents in a `Y.XmlFragment` in y-prosemirror's encoding (ADR 0200), read and written without ProseMirror so the
  * phone and the server share the web editor's documents. What `blockElement` builds is what y-prosemirror 1.3.7's
  * `prosemirrorJSONToYXmlFragment` stores for the same content under `DOC_SCHEMA_SPEC` (tests prove it both ways):
  *

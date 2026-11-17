@@ -1,3 +1,4 @@
+ALTER TYPE "public"."channel_kind" ADD VALUE 'file';--> statement-breakpoint
 ALTER TYPE "public"."usage_kind" ADD VALUE 'image';--> statement-breakpoint
 ALTER TYPE "public"."artifact_kind" ADD VALUE 'spreadsheet';--> statement-breakpoint
 ALTER TYPE "public"."artifact_kind" ADD VALUE 'slides';--> statement-breakpoint
@@ -14,6 +15,7 @@ CREATE TABLE "live_assets" (
 	"width" integer,
 	"height" integer,
 	"source" text NOT NULL,
+	"origin" jsonb,
 	"created_by_type" text,
 	"created_by_id" text,
 	"run_id" uuid,
@@ -75,6 +77,8 @@ CREATE TABLE "live_image_requests" (
 	"finished_at" timestamp with time zone
 );
 --> statement-breakpoint
+ALTER TABLE "artifacts" ADD COLUMN "conversation_channel_id" uuid;--> statement-breakpoint
+ALTER TABLE "artifacts" ADD COLUMN "conversation_root_id" uuid;--> statement-breakpoint
 ALTER TABLE "live_assets" ADD CONSTRAINT "live_assets_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "live_assets" ADD CONSTRAINT "live_assets_artifact_id_artifacts_id_fk" FOREIGN KEY ("artifact_id") REFERENCES "public"."artifacts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "live_doc_updates" ADD CONSTRAINT "live_doc_updates_artifact_id_artifacts_id_fk" FOREIGN KEY ("artifact_id") REFERENCES "public"."artifacts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -87,4 +91,6 @@ CREATE INDEX "live_assets_org_id_index" ON "live_assets" USING btree ("org_id");
 CREATE INDEX "live_doc_updates_org_id_index" ON "live_doc_updates" USING btree ("org_id");--> statement-breakpoint
 CREATE INDEX "live_docs_org_id_index" ON "live_docs" USING btree ("org_id");--> statement-breakpoint
 CREATE INDEX "live_image_requests_org_id_requested_by_id_created_at_index" ON "live_image_requests" USING btree ("org_id","requested_by_id","created_at");--> statement-breakpoint
-CREATE INDEX "live_image_requests_artifact_id_index" ON "live_image_requests" USING btree ("artifact_id");
+CREATE INDEX "live_image_requests_artifact_id_index" ON "live_image_requests" USING btree ("artifact_id");--> statement-breakpoint
+ALTER TABLE "artifacts" ADD CONSTRAINT "artifacts_conversation_channel_id_channels_id_fk" FOREIGN KEY ("conversation_channel_id") REFERENCES "public"."channels"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "artifacts_conversation_channel_id_index" ON "artifacts" USING btree ("conversation_channel_id");

@@ -32,7 +32,7 @@ export function useTalkLineRoom(): number {
 }
 
 /**
- * The conversation under a live file (ADR 0197, the task's conversation row in glass): the faces of who took part,
+ * The conversation under a live file (ADR 0199, the task's conversation row in glass): the faces of who took part,
  * then what an agent is doing there now in its color with the pixel orbit ("Atlas is making images…"), else the
  * last message ("Atlas: Done, summed by status."), else "Talk about this canvas"; how many, my mentions in
  * red, and the chevron. A tap pushes the conversation. It floats over the file at the bottom (`floating`) or closes

@@ -33,7 +33,7 @@ function axes(rows = 100, cols = 26, frozen = { rows: 0, cols: 0 }): GridAxes {
 
 const PHONE = { width: 390, height: 600 };
 
-describe("live spreadsheet on the phone: the grid's axes (ADR 0194)", () => {
+describe("live spreadsheet on the phone: the grid's axes (ADR 0196)", () => {
   test("where rows start, and the row under a point, clamped to the sheet", () => {
     const starts = axisStarts([24, 30, 24]);
     expect(starts).toEqual([0, 24, 54, 78]);

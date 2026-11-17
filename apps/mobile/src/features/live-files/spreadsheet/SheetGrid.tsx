@@ -46,7 +46,7 @@ import {
 import type { GridCellView, GridLayout, GridSource } from "./model";
 
 /**
- * A spreadsheet on the phone (ADR 0194, 0196): a live file's sheet or a workbook read from an upload, drawn the same
+ * A spreadsheet on the phone (ADR 0196, 0198): a live file's sheet or a workbook read from an upload, drawn the same
  * way. The grid's lines are drawn on the UI thread for every frame of a pan (Skia), the cells' text and looks are views
  * laid over them for the rows and columns on screen only (in whole blocks, so a pan redraws them a few times a second
  * at most), and the column letters and row numbers stay on the edges at their own size at any zoom. Frozen rows and

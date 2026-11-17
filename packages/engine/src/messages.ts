@@ -113,7 +113,7 @@ export interface MessageView {
   longWork?: WorkView;
   /** On the last message here of a run that handed work over (`handOverWork`): each work's line, live via `agent.work`. */
   handedWorks?: WorkView[];
-  /** `meta.liveRef` as the chat reads it (ADR 0197): the live file the message is about and what was selected in it. */
+  /** `meta.liveRef` as the chat reads it (ADR 0199): the live file the message is about and what was selected in it. */
   liveRef?: LiveRef;
   createdAt: string;
 }
@@ -482,7 +482,7 @@ function channelRefsSql(orgId: string, channelId: string, names: string[]) {
  * The org's agents an agent's text @mentions that aren't members of `channelId`: a mention reaches only members
  * (`insertMessageWithRuns`), so for them it is plain text that wakes nobody. Handles, lower case; never the author,
  * an archived agent or a handle a person holds (the @ is theirs). In a task's conversation (ADR 0145) the ones that see
- * the task join it first, as `insertMessageWithRuns` does, so they are reached; in a live file's (ADR 0197), the ones
+ * the task join it first, as `insertMessageWithRuns` does, so they are reached; in a live file's (ADR 0199), the ones
  * that may work on the file.
  */
 export async function unreachedAgents(
@@ -737,7 +737,7 @@ export async function insertMessageWithRuns(
   const mentions = await currentHandles(tx, input.orgId, parseMentionHandles(body));
   const person = input.author.type === "person";
   // A task's conversation (ADR 0145): an agent another agent mentions there joins it when it sees the task, as with a
-  // person's mention (`postPersonMessage`), so the mention wakes it (hop limits as anywhere); a live file's (ADR 0197)
+  // person's mention (`postPersonMessage`), so the mention wakes it (hop limits as anywhere); a live file's (ADR 0199)
   // when it may work on the file. Elsewhere it adds no one.
   if (!person && mentions.length > 0) {
     await admitTaskAgents(tx, input.orgId, input.channelId, { handles: mentions });
@@ -823,7 +823,7 @@ export async function insertMessageWithRuns(
         -- The write goes ahead: no client id, or this send claimed it.
         select 1 where ${clientId}::text is null or exists (select 1 from claimed)
       ), task_readers_named as (
-        -- A task's conversation (ADR 0145) and a live file's (ADR 0197) have no people in them: who is named there and
+        -- A task's conversation (ADR 0145) and a live file's (ADR 0199) have no people in them: who is named there and
         -- sees the task, or reads the file, is mentioned.
         select om.user_id from ${schema.organizationMembers} om
         where om.org_id = ${input.orgId}::uuid and om.user_id is distinct from ${userId}
@@ -1210,7 +1210,7 @@ export async function insertMessageWithRuns(
 }
 
 /** The message this person already sent with this `clientId` (a resend's lookup). */
-async function sentWithClientId(db: Executor, orgId: string, userId: string, clientId: string) {
+export async function sentWithClientId(db: Executor, orgId: string, userId: string, clientId: string) {
   const { messageClientIds } = schema;
   const [claim] = await db
     .select({ messageId: messageClientIds.messageId })
@@ -1302,7 +1302,7 @@ export async function postPersonMessage(
     /** A GIF or an agent's sticker (ADR 0091), looked up here and stored as `meta.media`; `body` may be empty. */
     media?: MessageMediaInput;
     /**
-     * In a live file's conversation (ADR 0197): what the person had selected in the file, stored as `meta.liveRef`
+     * In a live file's conversation (ADR 0199): what the person had selected in the file, stored as `meta.liveRef`
      * with the file's kind and title. Only that conversation's own file (`message.live_ref` otherwise).
      */
     liveRef?: { artifactId: string; selection?: LiveAskSelection } | null;
@@ -1322,7 +1322,7 @@ export async function postPersonMessage(
       taskAgent: true,
     });
   }
-  // A live file's conversation (ADR 0197): an agent mentioned there joins it when it may work on the file.
+  // A live file's conversation (ADR 0199): an agent mentioned there joins it when it may work on the file.
   if (channel.kind === "file") {
     await admitFileAgents(deps.db, orgId, channelId, {
       handles: await currentHandles(deps.db, orgId, parseMentionHandles(input.body)),

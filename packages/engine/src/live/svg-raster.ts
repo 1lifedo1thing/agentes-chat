@@ -4,7 +4,7 @@ import { brandFontFiles } from "../pdf";
 import { setSvgRasterizer } from "./svg";
 
 /**
- * Turns on drawing SVG pictures as PNGs (ADR 0194 §8) with resvg's WebAssembly build and the brand fonts, for what
+ * Turns on drawing SVG pictures as PNGs (ADR 0196 §8) with resvg's WebAssembly build and the brand fonts, for what
  * can't show an SVG: exports, a model looking at a picture, references sent to an image AI. False when it can't load:
  * those then leave SVG pictures out, as without it. The SVG is already sanitized and bounded when it gets here.
  */

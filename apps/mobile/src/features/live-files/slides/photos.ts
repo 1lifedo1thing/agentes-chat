@@ -7,7 +7,7 @@ import { uploadPart } from "../../files/upload-part";
 import { useErrorToast } from "../../shared/hooks";
 
 /**
- * "Foto" in a presentation or on a canvas (ADR 0194 §8): the phone's photo library, then each picked photo up as a
+ * "Foto" in a presentation or on a canvas (ADR 0196 §8): the phone's photo library, then each picked photo up as a
  * picture of the file, its bytes read as the request is built (Expo's `fetch` refuses React Native's `{ uri }` parts,
  * `uploadPart`). The screen places what came back. `busy`: how many are on their way, for the screen to say so.
  */

@@ -5,7 +5,7 @@ import { zip } from "../zip";
 import { imageTypeOf } from "./package";
 
 /**
- * A live document as a Word file (ADR 0198): headings, paragraphs with their alignment and indent, bullet and
+ * A live document as a Word file (ADR 0200): headings, paragraphs with their alignment and indent, bullet and
  * numbered lists by level, quotes, code, rules, tables (a header row repeats on each page), pictures at the width the
  * document gives them, links, and every mark (bold, italic, underline, strike, code, color). The styles are the
  * Drive's Markdown export's (`docx.ts`), so both look the same; pictures come from the file (`media`).

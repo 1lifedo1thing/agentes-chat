@@ -1,4 +1,4 @@
-# 0194. Live files: spreadsheets, presentations and canvases people and agents edit together
+# 0196. Live files: spreadsheets, presentations and canvases people and agents edit together
 
 - Status: Accepted
 - Date: 2026-11-17
@@ -10,7 +10,7 @@
   `packages/client/src/live/*`, web `apps/web/src/components/live/*` and the route `org.$orgId.drive_.$fileId`,
   phone `apps/mobile/src/features/live-files/*`; tables `live_docs`, `live_doc_updates`, `live_assets`; pictures an
   agent draws or finds (§8): `live/svg.ts` (`sanitizeSvg`, `rasterPicture`), `live/web-pictures.ts`
-  (`fetchWebPicture`), `live/pictures.ts`, `image_search` in `web-tools.ts`, migration `0293_live_asset_origin`
+  (`fetchWebPicture`), `live/pictures.ts`, `image_search` in `web-tools.ts`, migration `0295_live_files`
 
 ## Context
 
@@ -84,7 +84,7 @@ the desktop app, the phone (Hermes, with `crypto.getRandomValues` from `expo-cry
     stretches the stroke. People draw them; agents rarely do.
   - A picture may show part of itself (`crop`: fractions of the natural picture).
   - Comments pinned on the canvas aren't shapes: they are messages of the file's conversation that point at a spot
-    (ADR 0197).
+    (ADR 0199).
   - A document written before any of these fields reads as before: what isn't there is the default.
 - **Rules of shape** (`validate*`) and limits (`LIVE_LIMITS`: sheets, rows, columns, cells, slides, elements,
   shapes, bytes): the server refuses an update that would break them, so a buggy or hostile client can't leave a
@@ -218,7 +218,7 @@ references sent to an image AI, Word, PowerPoint and our PDFs) gets a PNG drawn 
 rasterizer (`setSvgRasterizer`), and leaves it out otherwise.
 
 Which picture, as the tools and the prompt say it: an SVG for icons, logos, diagrams and simple illustrations; a
-picture from the web when someone asks for a real photo or a specific existing image; `generate_image` (ADR 0195) for
+picture from the web when someone asks for a real photo or a specific existing image; `generate_image` (ADR 0197) for
 new artwork or photos where the workspace has an image model; shapes and notes only for a diagram people will keep
 editing piece by piece.
 
@@ -228,7 +228,7 @@ The web opens a live file on a page of its own, without the sidebar (`/org/<org>
 stays `filePath`, and the Drive sends live kinds to that page. The desktop app is the same page. The phone opens
 pushed screens of its own for each kind, with the same presence, light editing (cells, a slide's text and order,
 moving, adding and drawing on the canvas, a document's blocks) and follow mode; pictures come from the agents in the
-file's conversation (ADR 0197). The Drive's New menu makes each kind, and the
+file's conversation (ADR 0199). The Drive's New menu makes each kind, and the
 three kinds join the Drive's filters, its cards and message cards with a live preview and the faces of who is in.
 
 ## Consequences

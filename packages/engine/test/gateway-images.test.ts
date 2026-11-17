@@ -24,7 +24,7 @@ afterEach(async () => {
   f = undefined;
 });
 
-/** Nano Banana 2.1 at 1K, per picture (ADR 0195's catalog). */
+/** Nano Banana 2.1 at 1K, per picture (ADR 0197's catalog). */
 const BANANA = 33_600_000;
 
 const gemini = (fx: Fixture, apiKey = "AQ.gemini-test-key-1234") =>

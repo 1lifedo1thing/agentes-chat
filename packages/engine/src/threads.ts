@@ -1579,7 +1579,7 @@ export async function unreadTaskConversations(db: Database, userId: string, orgI
   }));
 }
 
-/** A live file's conversation with something I haven't read (ADR 0197): replies, and of them those that mention me. */
+/** A live file's conversation with something I haven't read (ADR 0199): replies, and of them those that mention me. */
 export interface UnreadFile {
   artifactId: string;
   /** Replies I haven't read: every one in a conversation I follow, else only those that mention me. */

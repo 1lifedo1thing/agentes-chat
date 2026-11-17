@@ -10,7 +10,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { isLine, KIND_ICONS } from "./tools";
 
 /**
- * Layers ("Camadas", ADR 0194 §2): every shape of the canvas in a list, inside the frame it sits in, the top of the
+ * Layers ("Camadas", ADR 0196 §2): every shape of the canvas in a list, inside the frame it sits in, the top of the
  * stack first (frames before what is loose, as they hold it), each with its kind's icon, its name, the face of who
  * made it and an eye that hides it from the plane or brings it back. A press chooses it, a hidden one too (the plane
  * can't, as nothing of it is drawn to press).

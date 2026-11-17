@@ -38,7 +38,7 @@ import {
 } from "./types";
 
 /**
- * Edits to a canvas (ADR 0194 §2), the same for the web, the phone, the agents' tools and the image jobs. Each runs in
+ * Edits to a canvas (ADR 0196 §2), the same for the web, the phone, the agents' tools and the image jobs. Each runs in
  * one `doc.transact(fn, origin)` and checks what it was given before it changes anything, so a refused edit leaves
  * the canvas as it was: `LiveEditError` `not_found`, `too_many` / `too_large` past `LIVE_LIMITS`, `invalid`.
  */
@@ -98,7 +98,7 @@ export function defaultSize(type: ShapeType): { w: number; h: number } {
   }
 }
 
-/** Who a change's origin says made it: the agent, or the person (ADR 0194 §6); undefined for the app's own edits. */
+/** Who a change's origin says made it: the agent, or the person (ADR 0196 §6); undefined for the app's own edits. */
 function makerOf(origin: unknown): PeerUser | undefined {
   if (!isLiveOrigin(origin)) return undefined;
   const user = origin.agentId
@@ -499,7 +499,7 @@ export function setParent(doc: Y.Doc, ids: readonly string[], frameId: string | 
 }
 
 /**
- * Turns a placeholder into the image it was waiting for (ADR 0195), keeping its id, its place in the stack and its
+ * Turns a placeholder into the image it was waiting for (ADR 0197), keeping its id, its place in the stack and its
  * frame; the box keeps its width and center and takes the image's proportions. False when there is no such
  * placeholder (someone deleted it): the image then has nowhere to go.
  */

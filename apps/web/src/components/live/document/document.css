@@ -1,5 +1,5 @@
 /*
- * A document's page (ADR 0198): the toolbar in the spreadsheet's look, then the Wiki's page (its title, its meta line,
+ * A document's page (ADR 0200): the toolbar in the spreadsheet's look, then the Wiki's page (its title, its meta line,
  * its prose at the Wiki's reading width) that everyone edits at once, with others' carets, an agent's face where it
  * writes, and "Ask Atlas" over a selection. Lists use the rich text's model (`data-list`, `data-level` on a
  * paragraph, the numbers in `data-n`). People's colors come in as `--peer` (`--peer-on` for words on them); the

@@ -4,7 +4,7 @@ import { createContext, useContext } from "react";
 import type { LiveAskRequest } from "./editor";
 
 /*
- * A live file's own conversation, seen from the file (ADR 0197): the chat shown beside the file reads what the person
+ * A live file's own conversation, seen from the file (ADR 0199): the chat shown beside the file reads what the person
  * selected there (the quote over its composer, `meta.liveRef` on the next message), takes the text the file's buttons
  * put in it ("Pedir ao Atlas"), and sends a message's line about the file back to it. A module of its own, with no
  * editor in it, so every conversation can read it without loading the file's page.
@@ -37,7 +37,7 @@ export const useFileTalk = () => useContext(FileTalkContext);
 export const LiveAskContext = createContext<((request?: LiveAskRequest) => void) | null>(null);
 
 /**
- * Asks in the open file's conversation (ADR 0197): it opens, its composer starts with the agent's @ and the words, and
+ * Asks in the open file's conversation (ADR 0199): it opens, its composer starts with the agent's @ and the words, and
  * the selection rides along. What "Pedir ao Atlas" and "Variações" call; null outside a file's page (or on a saved
  * version, which asks nothing).
  */
@@ -99,7 +99,7 @@ export function aboutParts(t: TFunction, ref: LiveRef): { what: string; where: s
 export const FileAgentContext = createContext<Agent | null>(null);
 
 /**
- * The open file's agent (`useFileAgent` on the page, ADR 0197): whose face and name "Pedir ao Atlas" shows. Null
+ * The open file's agent (`useFileAgent` on the page, ADR 0199): whose face and name "Pedir ao Atlas" shows. Null
  * outside a file's page, or with no agent this person may ask.
  */
 export const useFileAgentHere = () => useContext(FileAgentContext);

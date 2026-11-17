@@ -37,7 +37,7 @@ import {
 import type { LiveFileToolDeps } from "./tools";
 
 /**
- * Agents' tools for documents (ADR 0198), beside the other live files' (ADR 0194 §6): `read_document` gives the
+ * Agents' tools for documents (ADR 0200), beside the other live files' (ADR 0196 §6): `read_document` gives the
  * document as Markdown with each block's id, `edit_document` changes it in one batch of ops by block id (insert,
  * replace, delete, append, find and replace, rewrite the whole), written in Markdown, while people in it watch the
  * agent's face on the blocks it works on. A document is made with `create_artifact` (kind document), the tool agents
@@ -420,7 +420,7 @@ async function openDocument(deps: LiveFileToolDeps, ctx: ToolContext, file: unkn
   return access;
 }
 
-/** The agent's presence in a document (ADR 0194 §5); a failure never fails the tool. */
+/** The agent's presence in a document (ADR 0196 §5); a failure never fails the tool. */
 async function present(deps: LiveFileToolDeps, ctx: ToolContext, fileId: string, state: Partial<PeerState>) {
   await deps.live
     .setAgentPresence(ctx.orgId, fileId, { agentId: ctx.agentId, runId: ctx.runId }, state)

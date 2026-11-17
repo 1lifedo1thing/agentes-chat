@@ -13,7 +13,7 @@ import {
 } from "../src";
 
 /**
- * Pictures from the web (ADR 0194 §8): the download guard (public addresses only, every redirect checked, a size cap,
+ * Pictures from the web (ADR 0196 §8): the download guard (public addresses only, every redirect checked, a size cap,
  * pictures only by their type and their bytes) and `image_search` (Brave, SearXNG, Wikimedia Commons with no key).
  */
 

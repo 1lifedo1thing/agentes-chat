@@ -23,7 +23,7 @@ export type DriveType =
   | "images"
   | "tables"
   | "diffs";
-/** The chips in their order: the live files (ADR 0194 §9) after documents, as the New menu lists them. */
+/** The chips in their order: the live files (ADR 0196 §9) after documents, as the New menu lists them. */
 export const DRIVE_TYPES: DriveType[] = [
   "all",
   "documents",
@@ -72,7 +72,7 @@ export function matchesType(a: Pick<Artifact, "kind" | "title">, type: DriveType
       return a.kind === "diff";
     case "spreadsheets":
       return a.kind === "spreadsheet";
-    // An uploaded deck is a presentation too (it opens as its slides, ADR 0196).
+    // An uploaded deck is a presentation too (it opens as its slides, ADR 0198).
     case "presentations":
       return a.kind === "slides" || icon === "slides";
     case "canvases":
@@ -203,7 +203,7 @@ export type CardPreview =
   | { kind: "table"; columns: string[]; rows: string[][] }
   | { kind: "diff"; lines: { kind: "add" | "del" | "same"; text: string }[] }
   | { kind: "image" }
-  /** A live file: its card draws the preview it carries (ADR 0194 §7). */
+  /** A live file: its card draws the preview it carries (ADR 0196 §7). */
   | { kind: "live"; content: ArtifactLiveContent }
   | { kind: "file"; ext: string };
 

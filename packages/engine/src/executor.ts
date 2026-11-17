@@ -756,6 +756,8 @@ export interface Transcript {
   roomWaitSince?: number;
   /** A wake that waited outside any run first (`StartRunOptions.park`): its place in the line counts from then. */
   roomOrderSince?: number;
+  /** When this run first waited for its computer in standby to wake (ms): past the outage grace it is down. */
+  standbyWaitSince?: number;
   /** A person waits on this run: it goes first in the computer's line (`computer-queue.ts`). */
   roomPeople?: boolean;
   /** Its stretch is work a person asked for lately (`personAskedLately`): next in the line after people's runs. */
@@ -1926,7 +1928,7 @@ async function executeRunInner(
             recentMessages(),
             keptToolGroups(db, run, granted).catch(() => [] as string[]),
             // Asked from inside a live file, one attached, or in a file's own conversation: its own tools come with
-            // it (ADR 0194 §6, ADR 0197).
+            // it (ADR 0196 §6, ADR 0199).
             carriesLiveFile(db, run.orgId, trigger?.meta, run.channelId).catch(() => false),
           ]);
           const keep = live ? [...kept, LIVE_FILES_GROUP] : kept;
@@ -2367,7 +2369,7 @@ async function executeRunInner(
         followUp: tools.some((t) => t.name === FOLLOW_UP_TOOL),
         work: workApplies && tools.some((t) => t.name === WORK_IN_BACKGROUND_TOOL),
         blocks: tools.some((t) => t.name === SHOW_BLOCK_TOOL),
-        // Granted is enough: on demand their group is one `use_tool` away (ADR 0194 §6). `image_search` is every
+        // Granted is enough: on demand their group is one `use_tool` away (ADR 0196 §6). `image_search` is every
         // agent's (no scope), so it says nothing about the Drive's.
         ...(granted.some((t) => LIVE_FILE_TOOLS.has(t.name) && t.name !== "image_search" && !t.connectionId)
           ? { liveFiles: { images: granted.some((t) => t.name === "generate_image" && !t.connectionId) } }
@@ -3747,11 +3749,17 @@ async function executeRunInner(
       }
     }
     // Just gone (our own deploy, a runner dialing again): it waits without a word until the outage grace is over.
+    // Asleep in standby, waking: without a word too, for one grace from its first such wait (ADR 0161); one that
+    // never wakes is down, and says so.
     let quietUntil: number | null = null;
     if (u.code === "machine_offline") {
       const status = await deps.machines?.status(machineId).catch(() => null);
       const seen = status?.lastSeenAt ? Date.parse(status.lastSeenAt) : Number.NaN;
-      if (status && !status.online && Date.now() - seen < TASK_OFFLINE_GRACE_MS)
+      if (status && !status.online && status.standby) {
+        t.standbyWaitSince ??= Date.now();
+        const until = t.standbyWaitSince + TASK_OFFLINE_GRACE_MS;
+        if (Date.now() < until) quietUntil = until;
+      } else if (status && !status.online && Date.now() - seen < TASK_OFFLINE_GRACE_MS)
         quietUntil = seen + TASK_OFFLINE_GRACE_MS;
     }
     // Only a blip keeps its place in the line: after a real outage the wait for room starts over, or its clock
@@ -5116,10 +5124,12 @@ async function executeRunInner(
             touchedAccount = account.id;
             later(() => touchMachineAccount(db, run.orgId, account.id));
           }
-          // A turn cut off by its computer is finished now, and one that found room ends that wait.
+          // A turn cut off by its computer is finished now, and one that found room ends that wait; its computer is
+          // awake, so a later sleep's wait starts its own clock.
           delete transcript.interruptedTurn;
           delete transcript.roomWaitSince;
           delete transcript.roomOrderSince;
+          delete transcript.standbyWaitSince;
           // The plan had room for this turn: the runs parked on its limit go on now, not at their own timers.
           const planMachine = turnPlan.session?.machineId;
           if (planMachine && !turnLimited) {

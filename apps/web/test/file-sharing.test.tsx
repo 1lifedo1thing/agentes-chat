@@ -251,7 +251,7 @@ describe("a file's link pasted in a message", () => {
   test("the API's address and the app's both show as the file's pill, never the raw address", async () => {
     const state = seedState();
     const api: ApiClient = createFakeApi(state);
-    // A file the viewer opens (a document is a live file with a page of its own, ADR 0198).
+    // A file the viewer opens (a document is a live file with a page of its own, ADR 0200).
     const doc = (await api.artifacts.list(ORG_ID)).find((a) => a.kind === "table") as Artifact;
     // The server's ids are UUIDs (and only those parse as a file's link); the fake's aren't.
     const id = "00000000-0000-4000-8000-0000000000f2";

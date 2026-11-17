@@ -1,7 +1,7 @@
 import { isApple } from "@agenteschat/ui";
 import type { TFunction } from "i18next";
 
-/** The document's keys in "Keyboard shortcuts" (ADR 0198): what `docKeymap` binds, as the platform writes it. */
+/** The document's keys in "Keyboard shortcuts" (ADR 0200): what `docKeymap` binds, as the platform writes it. */
 export function documentShortcuts(t: TFunction, mod: string): [string, string[]][] {
   const alt = isApple() ? "⌥" : "Alt";
   return [

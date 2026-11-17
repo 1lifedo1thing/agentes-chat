@@ -2,7 +2,7 @@
 const JUST_CREATED_MS = 60_000;
 
 /**
- * Files just made from "New" (ADR 0194 §9): their page opens with the title selected, ready to be named. A module of
+ * Files just made from "New" (ADR 0196 §9): their page opens with the title selected, ready to be named. A module of
  * its own so the Drive's New menu marks a file without loading the page's code.
  */
 const justCreated = new Set<string>();

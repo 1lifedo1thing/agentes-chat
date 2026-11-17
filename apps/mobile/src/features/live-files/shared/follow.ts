@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Whom this phone follows in each open live file (ADR 0194 §5), by the awareness client id the file's people list
+ * Whom this phone follows in each open live file (ADR 0196 §5), by the awareness client id the file's people list
  * gives: the "who's here" screen sets it, the file's own screen moves its view along with that person's and says so,
  * and any move of the person's own stops it. In memory only: following ends with the app.
  */

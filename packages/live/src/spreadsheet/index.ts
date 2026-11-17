@@ -1,5 +1,5 @@
 /**
- * Spreadsheets (ADR 0194 §2, ADR 0196): the document's shape and how to read it, A1 addresses, values and errors,
+ * Spreadsheets (ADR 0196 §2, ADR 0198): the document's shape and how to read it, A1 addresses, values and errors,
  * locales, number formats, typed input, edits (cells, formats, rows and columns, sorting, the fill handle, copy and
  * paste), workbooks as plain data, previews, the rules of shape, restoring a version, and the formula engine.
  */

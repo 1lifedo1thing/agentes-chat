@@ -18,7 +18,7 @@ import type * as Y from "yjs";
 import type { ArrowEndW, WBox } from "./camera";
 
 /**
- * A canvas on the phone (ADR 0194 §2, 0195): which shapes are laid out, what a finger lands on, what moves with what,
+ * A canvas on the phone (ADR 0196 §2, 0197): which shapes are laid out, what a finger lands on, what moves with what,
  * where something new goes, how arrows are drawn and what a picture being made says. Pure: the screen draws it and
  * the tests read it.
  */
@@ -31,7 +31,7 @@ export function shapesIn(
   keep: ReadonlySet<string> = new Set(),
 ): ShapeView[] {
   return shapes.filter((s) => {
-    // Hidden from view (the layers' eye, ADR 0194 §2): never drawn here.
+    // Hidden from view (the layers' eye, ADR 0196 §2): never drawn here.
     if (s.hidden) return false;
     if (keep.has(s.id)) return true;
     const b = shapeBounds(s, byId);
@@ -225,7 +225,7 @@ export function placeNear(
   });
 }
 
-// ── Pictures being made (ADR 0195) ───────────────────────────────────────────────────────────────────────────────
+// ── Pictures being made (ADR 0197) ───────────────────────────────────────────────────────────────────────────────
 
 /** What a placeholder says, as a key: waiting, being made, or why it failed (`live.images.*`). */
 export function pendingWords(s: Pick<ShapeView, "status" | "error">): string {
@@ -298,7 +298,7 @@ export function chosenPictures(ids: readonly string[], byId: ReadonlyMap<string,
 /** The types the bottom bar adds. */
 export type AddKind = Extract<ShapeType, "note" | "text">;
 
-// ── Drawing with a finger (ADR 0194 §2) ──────────────────────────────────────────────────────────────────────────
+// ── Drawing with a finger (ADR 0196 §2) ──────────────────────────────────────────────────────────────────────────
 
 /** The most numbers (x, y, x, y…) one pen stroke keeps: the canvas's limit. */
 export const STROKE_MAX = 4000;
@@ -363,7 +363,7 @@ const COUNTED: Record<ShapeType, string> = {
 };
 
 /**
- * What a person has chosen on a canvas, in words for the conversation's quote and the agent (ADR 0197): "1 imagem",
+ * What a person has chosen on a canvas, in words for the conversation's quote and the agent (ADR 0199): "1 imagem",
  * "2 notas", "3 elementos" for a mix, with the shapes' ids; null for nothing chosen.
  */
 export function canvasSelection(
@@ -379,7 +379,7 @@ export function canvasSelection(
   return { label, shapes: shapes.map((s) => s.id) };
 }
 
-// ── The pen's bar (ADR 0194 §2, the web's own choices) ───────────────────────────────────────────────────────────
+// ── The pen's bar (ADR 0196 §2, the web's own choices) ───────────────────────────────────────────────────────────
 
 /** The colors people draw with, in the pen bar's order. */
 export const PEN_INKS = [

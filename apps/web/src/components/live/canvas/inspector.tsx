@@ -8,9 +8,9 @@ import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 
 /**
- * A picture's details (ADR 0195), opened from its bar's ⋯: the picture, how it was made (its prompt, model, who asked
+ * A picture's details (ADR 0197), opened from its bar's ⋯: the picture, how it was made (its prompt, model, who asked
  * and when, the pictures it started from), and Download, Copy image, Open (full size, with zoom). Variations and
- * asking about it are on the picture's bar, through the file's conversation (ADR 0197). Beside the plane, never over
+ * asking about it are on the picture's bar, through the file's conversation (ADR 0199). Beside the plane, never over
  * it, so the picture stays in sight; on a narrow window it covers the plane's right side.
  */
 export function ImageInspector({

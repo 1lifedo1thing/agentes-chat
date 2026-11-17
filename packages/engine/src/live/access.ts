@@ -5,7 +5,7 @@ import { availabilityNow } from "../member-status";
 import type { LiveChangeActor } from "./store";
 
 /**
- * Who changes a live file, as the server records it (ADR 0194 §1, §6). Whether someone may open or change one is
+ * Who changes a live file, as the server records it (ADR 0196 §1, §6). Whether someone may open or change one is
  * `liveFileAccess` / `requireLiveFile` in `artifacts.ts`, next to every other rule of who reads a Drive file; here is
  * how a change's origin becomes the author stored with it, and whether a person's presence may be shown.
  */

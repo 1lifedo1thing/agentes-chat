@@ -105,7 +105,7 @@ describe("making and opening live files", () => {
     expect(deck).toMatchObject({ kind: "slides", channelId: org.channelId, audience: { kind: "channel" } });
     const canvas = await make(api, { kind: "canvas", title: "Ideas" });
     expect(canvas).toMatchObject({ kind: "canvas" });
-    // A document is a live file too (ADR 0198): one empty paragraph to start.
+    // A document is a live file too (ADR 0200): one empty paragraph to start.
     const document = await make(api, { kind: "document", title: "Notes" });
     expect(document).toMatchObject({ kind: "document" });
     expect((await api("/live-files", { json: { kind: "board", title: "No" } })).status).toBe(400);
@@ -126,7 +126,7 @@ describe("making and opening live files", () => {
     const deck = await opened(api, (await make(api, { kind: "slides", title: "Pitch" })).id);
     expect(deck.doc.getArray("slideOrder").length).toBe(1);
 
-    // A file of another kind has no live document; a document has one (ADR 0198).
+    // A file of another kind has no live document; a document has one (ADR 0200).
     const table = await api("/artifacts", {
       json: { title: "Notes", content: { kind: "table", columns: ["a"], rows: [["1"]] } },
     });
@@ -324,7 +324,7 @@ describe("presence", () => {
   });
 });
 
-describe("Office files (ADR 0196)", () => {
+describe("Office files (ADR 0198)", () => {
   // Reading and writing them comes with the engine's Office files (`officePreview`, `openAsLive`, `exportLive`).
   const withOffice = test.skipIf(!readsOffice());
 
@@ -411,8 +411,8 @@ describe("asking an agent from inside a file", () => {
     expect(blank.status).toBe(400);
   });
 
-  // The agents' side of it (`askAgentAbout`) comes with their tools for live files (ADR 0194 §6); the message goes in
-  // the file's own conversation (ADR 0197), the one `…/conversation` opens.
+  // The agents' side of it (`askAgentAbout`) comes with their tools for live files (ADR 0196 §6); the message goes in
+  // the file's own conversation (ADR 0199), the one `…/conversation` opens.
   test("the message goes to the agent with the file and what was selected", async () => {
     const { api, org } = await seeded();
     const sheet = await make(api, { kind: "spreadsheet", title: "Budget", channelId: org.channelId });

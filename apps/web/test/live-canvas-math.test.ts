@@ -46,7 +46,7 @@ import { selectionOf } from "@/components/live/canvas/selection";
 import { canvasShortcuts, headsFor, headsOf, PEN_WIDTHS, penSizeOf } from "@/components/live/canvas/tools";
 
 /**
- * The canvas editor's own math, apart from the screen (ADR 0194 §2): the camera (zoom at a point, fit, follow someone
+ * The canvas editor's own math, apart from the screen (ADR 0196 §2): the camera (zoom at a point, fit, follow someone
  * else's view), what a press or a marquee takes, how a box follows its handles (turned boxes too), copying and pasting
  * shapes with what they carry, and the selection's words for Ask an agent.
  */
@@ -314,7 +314,7 @@ describe("the selection in words", () => {
   });
 });
 
-describe("the tools' own math (ADR 0194 §2)", () => {
+describe("the tools' own math (ADR 0196 §2)", () => {
   const shape = (over: Partial<ShapeView>): ShapeView => ({
     id: "s",
     type: "note",

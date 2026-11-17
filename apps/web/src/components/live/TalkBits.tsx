@@ -25,7 +25,7 @@ import { aboutParts, aboutWords, revealOnOpen, useFileTalk } from "./talk";
 import "./talk.css";
 
 /*
- * The pieces of a live file's conversation that the chat draws (ADR 0197): the quote over the composer, the line over
+ * The pieces of a live file's conversation that the chat draws (ADR 0199): the quote over the composer, the line over
  * a message about part of a file, and where the file was made. Light on purpose: every conversation loads them.
  */
 
@@ -94,11 +94,11 @@ export interface MadeFrom {
   /** "conversa com Ana", "conversa no #eng"; null: made in the Drive. */
   place: string | null;
   link: OpenTarget | null;
-  /** The uploaded file a document was opened from ("Plano.docx", ADR 0198); null for anything made here. */
+  /** The uploaded file a document was opened from ("Plano.docx", ADR 0200); null for anything made here. */
   imported: string | null;
 }
 
-/** The upload a document came from (its preview says, ADR 0198), when the artifact at hand carries its content. */
+/** The upload a document came from (its preview says, ADR 0200), when the artifact at hand carries its content. */
 function importedFrom(artifact: Artifact): string | null {
   const content = (artifact as Partial<ArtifactDetail>).content;
   return content?.kind === "document" ? (content.preview?.source?.name ?? null) : null;
@@ -229,12 +229,12 @@ export function FileOrigin({ artifactId, kind }: { artifactId: string; kind: Liv
   );
 }
 
-/** Whether a thread is a live file's conversation (its own channel, ADR 0197). */
+/** Whether a thread is a live file's conversation (its own channel, ADR 0199). */
 export const isFileThread = (thread: Pick<ThreadInfo, "channelKind"> | null | undefined) =>
   String(thread?.channelKind ?? "") === "file";
 
 /**
- * The file a conversation stands for (ADR 0197): the file open beside it, else what its root says. Null for any
+ * The file a conversation stands for (ADR 0199): the file open beside it, else what its root says. Null for any
  * other thread, and while a file's root is still on its way.
  */
 export function useFileThread(thread: ThreadInfo | undefined): FileConversationRoot | null {

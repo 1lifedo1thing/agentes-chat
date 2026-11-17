@@ -71,7 +71,7 @@ export interface LiveFileSearch extends LiveEditorSearch {
 }
 
 /**
- * Under this window width the header keeps its faces and glyphs and the rest goes into ⋯ (ADR 0194 §9); a page made
+ * Under this window width the header keeps its faces and glyphs and the rest goes into ⋯ (ADR 0196 §9); a page made
  * narrow by the conversation beside it folds the same way (`usePageRoom`).
  */
 export const LIVE_COMPACT_QUERY = "(max-width: 760px)";
@@ -85,7 +85,7 @@ const EDITORS: Partial<Record<LiveKind, ComponentType<LiveEditorProps>>> = {
 };
 
 /**
- * A spreadsheet, a presentation, a canvas or a document (ADR 0198) on a page of the app (ADR 0194 §9, ADR 0197): the
+ * A spreadsheet, a presentation, a canvas or a document (ADR 0200) on a page of the app (ADR 0196 §9, ADR 0199): the
  * sidebar stays, the header (`LiveHeader`: where it lives, who is here, Compartilhar, Apresentar, ⋯, the conversation's
  * toggle, the title, who made it and who sees it) over the kind's editor, and the file's own conversation beside it,
  * the page keeping its width so it never covers the file. What the person selects in the file shows over that
@@ -226,7 +226,7 @@ export function LiveFilePage({
     }
   }, [presenting]);
 
-  // ── The file's conversation (ADR 0197) ────────────────────────────────────────────────────────────────────────
+  // ── The file's conversation (ADR 0199) ────────────────────────────────────────────────────────────────────────
 
   // On its way to the Drive's viewer (not a live file): its socket was refused, which says nothing about the file.
   const leaving = Boolean(artifact) && !kind;

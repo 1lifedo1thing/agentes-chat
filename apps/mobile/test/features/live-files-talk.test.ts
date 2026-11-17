@@ -36,9 +36,9 @@ import {
 } from "../../src/features/live-files/talk/logic";
 
 /**
- * A live file's own conversation on the phone (ADR 0197) and the tools around it: the line under the file, the quote
+ * A live file's own conversation on the phone (ADR 0199) and the tools around it: the line under the file, the quote
  * over the composer and the line over a message, the file's agent, the canvas's comment pins and pen, the document's
- * blocks edited one at a time (ADR 0198), and the links and notices that open a file at a message.
+ * blocks edited one at a time (ADR 0200), and the links and notices that open a file at a message.
  */
 
 /** The words' keys with what they were given, so a test reads which words and values were picked. */

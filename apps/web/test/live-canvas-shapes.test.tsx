@@ -13,7 +13,7 @@ import { createFakeApi, seedState } from "./fake-api";
 import { renderPage } from "./render";
 
 /**
- * The canvas's newer shapes as the web draws them (ADR 0194 §2): pen strokes as a path (the marker see-through), hidden
+ * The canvas's newer shapes as the web draws them (ADR 0196 §2): pen strokes as a path (the marker see-through), hidden
  * shapes not at all, arrows along their route with their heads (a line has none) in their own color, and the small
  * map on cards drawing forms, strokes and routes.
  */

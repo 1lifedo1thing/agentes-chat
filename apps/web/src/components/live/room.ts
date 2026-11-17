@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { askSidebarRoom, onSidebarChange, sidebarHandToggles } from "@/components/Sidebar";
 
 /*
- * The room a live file's page has (ADR 0194 §9, ADR 0197), measured on the page itself, since the window alone doesn't
+ * The room a live file's page has (ADR 0196 §9, ADR 0199), measured on the page itself, since the window alone doesn't
  * say it: the conversation docked beside it and the sidebar take their part. Narrow, the header folds; squeezed by a
  * docked conversation, the app's sidebar folds to its rail until the room comes back.
  */

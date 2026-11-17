@@ -31,7 +31,7 @@ const GROUPS: Record<string, string> = {
   github: "GitHub",
   sentry: "Sentry",
   linear: "Linear",
-  // Live files' tools (ADR 0194 §6): under the Drive's scopes, named apart (`LIVE_FILE_TOOLS`).
+  // Live files' tools (ADR 0196 §6): under the Drive's scopes, named apart (`LIVE_FILE_TOOLS`).
   [LIVE_FILES_GROUP]: "Spreadsheets, presentations and canvases",
 };
 

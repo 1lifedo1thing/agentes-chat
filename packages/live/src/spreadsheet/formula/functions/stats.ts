@@ -1,5 +1,5 @@
 /**
- * Statistics (ADR 0194 §2), counting the way Excel does: in ranges only numbers count (the "A" variants also count
+ * Statistics (ADR 0196 §2), counting the way Excel does: in ranges only numbers count (the "A" variants also count
  * TRUE as 1 and text as 0), values typed as arguments are coerced, the *IF and *IFS functions read criteria, and the
  * sample measures need two numbers (`#DIV/0!` otherwise).
  */

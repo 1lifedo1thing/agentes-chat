@@ -3,7 +3,7 @@ import { fakeImagePng } from "@agenteschat/providers/testing";
 import { looksLikeSvg, rasterPicture, SVG_LIMITS, SVG_TYPE, sanitizeSvg, setSvgRasterizer } from "../src";
 
 /**
- * SVG pictures in live files (ADR 0194 §8): what the sanitizer keeps (shapes, paths, text, gradients, references inside
+ * SVG pictures in live files (ADR 0196 §8): what the sanitizer keeps (shapes, paths, text, gradients, references inside
  * the picture) and what it takes out or refuses, from a corpus of hostile SVGs: scripts, handlers, foreignObject,
  * outside references, entity bombs, `<use>` bombs, huge paths, deep nesting.
  */

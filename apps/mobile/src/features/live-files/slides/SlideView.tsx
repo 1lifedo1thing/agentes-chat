@@ -30,7 +30,7 @@ import {
 } from "./logic";
 
 /**
- * A slide drawn on the phone as it looks (ADR 0194 §2, 0196): in the deck's own units, scaled to `width`, every size
+ * A slide drawn on the phone as it looks (ADR 0196 §2, 0198): in the deck's own units, scaled to `width`, every size
  * the theme's or the element's own, so it reads the same in the list, opened large, presenting and in an uploaded
  * deck. Texts are the app's text (never scaled by the person's text size: a slide is a picture with words), shapes
  * and lines are drawn, pictures come from the file with the session (`picture`), charts are the chat's own charts in

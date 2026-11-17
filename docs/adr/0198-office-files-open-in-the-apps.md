@@ -1,9 +1,9 @@
-# 0196. Office files open in the apps
+# 0198. Office files open in the apps
 
 - Status: Accepted
 - Date: 2026-11-17
 - Amends: 0025 §3 (uploads past images, PDF and video were download only)
-- Amended by: 0198 (a Word document opens as a live document, its pictures kept; documents download as `.docx`,
+- Amended by: 0200 (a Word document opens as a live document, its pictures kept; documents download as `.docx`,
   `.md` and PDF)
 - Code: engine `packages/engine/src/office/*` (`readXlsx`, `writeXlsx`, `readCsv`, `readXls`, `readPptx`,
   `writePptx`, `docxToHtml`, `slidesPdf`), routes in `apps/server/src/routes/app/live.ts` (`…/preview`,
@@ -12,7 +12,7 @@
 ## Context
 
 Spreadsheets, presentations and Word documents are most of what people upload, and the apps only offer to
-download them. Since ADR 0194 the apps draw spreadsheets and slides themselves, so they can draw uploaded ones too.
+download them. Since ADR 0196 the apps draw spreadsheets and slides themselves, so they can draw uploaded ones too.
 
 ## Decision
 
@@ -30,7 +30,7 @@ Reading is bounded: files up to 25 MB, 200,000 cells, 300 slides, 40 MB unpacked
 guards against zip bombs. The result is cached per version in the process, since versions never change.
 
 **Open as a live file.** Editar como planilha, Editar como apresentação and Editar como documento make a new live
-file from the upload (a Word document becomes a live document, ADR 0198), beside it: same conversation, same
+file from the upload (a Word document becomes a live document, ADR 0200), beside it: same conversation, same
 sharing, a note saying where it came from. The upload stays as it was.
 
 **Live files export to Office.** A spreadsheet downloads as `xlsx` (values and formulas, styles, merges, widths,

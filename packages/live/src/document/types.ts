@@ -1,7 +1,7 @@
 import type { RichAlign, RichList, RichRun } from "../rich/types";
 
 /**
- * Documents (ADR 0198) as plain data: the blocks of the body in order, each top-level block with its id. What the
+ * Documents (ADR 0200) as plain data: the blocks of the body in order, each top-level block with its id. What the
  * server, the agents' tools, the phone and Markdown read and write; the web edits the same content in ProseMirror
  * (`DOC_SCHEMA_SPEC`).
  */
@@ -56,7 +56,7 @@ export interface DocRule {
 export interface DocImage {
   type: "image";
   id?: string;
-  /** A picture of this file (`live_assets`, ADR 0194 §8). */
+  /** A picture of this file (`live_assets`, ADR 0196 §8). */
   asset: string;
   alt?: string;
   /** A fraction of the page's width, 0.1..1; none: its natural size up to the page's width. */
@@ -78,7 +78,7 @@ export interface DocTable {
 
 export type DocBlock = DocParagraph | DocHeading | DocQuote | DocCode | DocRule | DocImage | DocTable;
 
-/** Where a document came from, when it wasn't made here (an uploaded `.docx` opened to edit, ADR 0196). */
+/** Where a document came from, when it wasn't made here (an uploaded `.docx` opened to edit, ADR 0198). */
 export interface DocumentSource {
   /** The uploaded file's name ("Plano.docx"). */
   name: string;
@@ -87,7 +87,7 @@ export interface DocumentSource {
 }
 
 /**
- * What a document's card and the Drive draw (ADR 0194 §7): its first blocks (clipped: a few hundred words, the first
+ * What a document's card and the Drive draw (ADR 0196 §7): its first blocks (clipped: a few hundred words, the first
  * rows of a table), how many blocks and characters it holds, and where it came from. Titles are the file's own.
  */
 export interface DocumentPreview {

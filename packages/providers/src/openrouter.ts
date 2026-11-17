@@ -680,7 +680,7 @@ export function createOpenRouterProvider(
 const IMAGE_REFUSED = /moderation|flagged|content policy|safety|prohibited|blocked/i;
 
 /**
- * Pictures over OpenRouter's Images API (ADR 0195): `POST /api/v1/images` with the aspect, 1K, `n` pictures and the
+ * Pictures over OpenRouter's Images API (ADR 0197): `POST /api/v1/images` with the aspect, 1K, `n` pictures and the
  * references as data URLs, answered in base64 with what it charged (`usage.cost`, its upstream's too on the person's
  * own provider key). Called again for the rest when a model makes fewer than `n`. A refused prompt is
  * `imageBlockedError`; a failure after some pictures came returns those, with the failure in `error`.

@@ -16,7 +16,7 @@ import { OfficePackage, REL } from "./package";
 import { attr, boolAttr, dig, type Element, intAttr, kid, kids, numAttr, relAttr, type SaxAttrs, sax } from "./xml";
 
 /**
- * Excel workbooks (`.xlsx`, `.xlsm`) read into `WorkbookData` (ADR 0196), on the server's own zip reader and XML
+ * Excel workbooks (`.xlsx`, `.xlsm`) read into `WorkbookData` (ADR 0198), on the server's own zip reader and XML
  * parser: every visible sheet with its values (shared and inline strings, numbers, booleans, errors, dates), formulas
  * (shared ones expanded to each cell), styles (fonts, solid fills, borders, alignment, wrapping, number formats with
  * Excel's built-in ones), theme and indexed colors, merged cells, column widths, row heights, frozen panes and tab

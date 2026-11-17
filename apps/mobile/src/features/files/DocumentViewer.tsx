@@ -32,9 +32,9 @@ import { fileText, useRemoteFile } from "./source";
  * system's share sheet with the file) and the "…" with Compartilhar (who sees it and its link, ADR 0157), Copiar texto
  * and Ver no Drive (the system's own menu on iOS, the app's list of the same choices on Android). Under it the file
  * itself, the screen's whole width: Markdown and text drawn by the app, a page or a PDF in a web view (iOS draws PDFs
- * natively there), an Office file as the server read it (ADR 0196: a workbook in the spreadsheet's grid, a deck's
+ * natively there), an Office file as the server read it (ADR 0198: a workbook in the spreadsheet's grid, a deck's
  * slides, a Word document's page) and an old table in the same grid, anything else says it opens in another app.
- * Pictures and videos open straight in the picture viewer (`openFile`), live files on their own screens (ADR 0194);
+ * Pictures and videos open straight in the picture viewer (`openFile`), live files on their own screens (ADR 0196);
  * one reached here anyway (a file's link that didn't say what it was) goes on there.
  */
 export function DocumentViewer({
@@ -44,7 +44,7 @@ export function DocumentViewer({
 }: {
   id: string;
   version?: number;
-  /** A live file's conversation message to open at (`?m=`, ADR 0197), handed on to the file's own screen. */
+  /** A live file's conversation message to open at (`?m=`, ADR 0199), handed on to the file's own screen. */
   focusId?: string | null;
 }) {
   const { t } = useTranslation();
@@ -270,7 +270,7 @@ function HtmlPage({ detail }: { detail: ArtifactDetail }) {
 }
 
 /**
- * A Word document as the server read it (ADR 0196): clean HTML, drawn in the same isolated page as an agent's, with
+ * A Word document as the server read it (ADR 0198): clean HTML, drawn in the same isolated page as an agent's, with
  * what it is and "Editar como documento" under it.
  */
 function WordPage({ detail }: { detail: ArtifactDetail }) {

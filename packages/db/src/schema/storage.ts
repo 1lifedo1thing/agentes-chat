@@ -176,7 +176,7 @@ export const artifactKindEnum = pgEnum("artifact_kind", [
   "block",
   "poll",
   "choices",
-  // Live files, edited together through `live_docs` (ADR 0194).
+  // Live files, edited together through `live_docs` (ADR 0196).
   "spreadsheet",
   "slides",
   "canvas",
@@ -216,7 +216,7 @@ export const artifacts = pgTable(
     shareRoleIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
     currentVersion: integer().notNull().default(1),
     /**
-     * A live file's conversation (ADR 0197): a channel of kind `file` and the thread root in it, made on first use. No
+     * A live file's conversation (ADR 0199): a channel of kind `file` and the thread root in it, made on first use. No
      * foreign key to the root (`messages` is partitioned).
      */
     conversationChannelId: uuid().references((): AnyPgColumn => channels.id, { onDelete: "set null" }),

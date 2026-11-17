@@ -5,7 +5,7 @@ import { ancestorsOf, descendantsOf, readShapes, shapeBounds, shapeIndex } from 
 import type { Placement, PlaceOptions, ShapeView } from "./types";
 
 /**
- * Where things go on a canvas (ADR 0194 §2, ADR 0195): the bounds of what's there, the frame under a point, and free
+ * Where things go on a canvas (ADR 0196 §2, ADR 0197): the bounds of what's there, the frame under a point, and free
  * room for new shapes (a batch of generated images, an agent's notes) that never lands on anything already there.
  */
 

@@ -15,7 +15,7 @@ import { fillStyle, strokeStyle } from "./palette";
 import { CanvasRich } from "./text";
 
 /**
- * The shapes of a canvas as the plane draws them (ADR 0194 §2, ADR 0195), each in world units inside the plane's
+ * The shapes of a canvas as the plane draws them (ADR 0196 §2, ADR 0197), each in world units inside the plane's
  * moving layer: pictures (the part a crop shows), notes, text, frames, shapes with their label and border, pen
  * strokes, a Drive file's card, an agent's page (a picture of it until someone presses Interact), and the placeholder
  * of a picture being made. Arrows and lines are drawn apart (`ArrowShape`), from their ends. Hidden shapes (the layers'
@@ -270,7 +270,7 @@ export function failureKey(error: string | undefined) {
 }
 
 /**
- * A picture on its way (ADR 0195): the sky forming in the requester's tone (an agent's own, the sky's for a person),
+ * A picture on its way (ADR 0197): the sky forming in the requester's tone (an agent's own, the sky's for a person),
  * who asked and the prompt; failed, why, with Try again for who may edit.
  */
 function PendingShape({ shape }: { shape: ShapeView }) {

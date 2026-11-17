@@ -76,7 +76,7 @@ const SIDEWAYS: Record<string, "strip" | "content"> = {
   ".sheet-tabs__strip": "strip",
   ".sheet-tools": "strip",
   ".sl-tools": "strip",
-  // A document's code block with long lines keeps our scrollbar (ADR 0198).
+  // A document's code block with long lines keeps our scrollbar (ADR 0200).
   ".lf-doc__body pre.lf-doc__code": "content",
   ".sl-rail__list": "strip",
   ".code-card__code": "content",

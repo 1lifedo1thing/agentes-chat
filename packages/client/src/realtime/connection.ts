@@ -55,7 +55,7 @@ export type ConnectionStatus = "idle" | "connecting" | "open" | "reconnecting" |
 
 /**
  * The part of the browser WebSocket we use (tests pass a fake). Text frames here; bytes too on the sockets that carry
- * them (a watched browser's frames, a live file's sync, ADR 0194 §3), which set `binaryType` to "arraybuffer".
+ * them (a watched browser's frames, a live file's sync, ADR 0196 §3), which set `binaryType` to "arraybuffer".
  */
 export interface SocketLike {
   readonly readyState: number;

@@ -107,7 +107,7 @@ export const ARTIFACT_KINDS: readonly ArtifactKind[] = [
  */
 export type ConversationKind = "block" | "poll" | "choices";
 /**
- * Live files (ADR 0194): one Yjs document people and agents change together, through a socket or the agents' own
+ * Live files (ADR 0196): one Yjs document people and agents change together, through a socket or the agents' own
  * tools, never by saving whole content (`updateArtifact` refuses them). Each version is a snapshot of the document.
  */
 export type LiveArtifactKind = "spreadsheet" | "slides" | "canvas" | "document";
@@ -119,7 +119,7 @@ const LIVE_TOOLS: Record<LiveArtifactKind, { create: string; read: string; edit:
   spreadsheet: { create: "create_spreadsheet", read: "read_spreadsheet", edit: "edit_spreadsheet" },
   slides: { create: "create_presentation", read: "read_presentation", edit: "edit_presentation" },
   canvas: { create: "create_canvas", read: "read_canvas", edit: "edit_canvas" },
-  // A document is made from Markdown with the tool agents already know (ADR 0198).
+  // A document is made from Markdown with the tool agents already know (ADR 0200).
   document: { create: "create_artifact", read: "read_document", edit: "edit_document" },
 };
 /**
@@ -169,8 +169,8 @@ export type ArtifactContent =
   | { kind: "choices"; questions: ChoiceQuestion[] }
   | FileContent
   /**
-   * A live file (ADR 0194 §7): its preview (the top-left cells, the first slide, the canvas's first shapes, a
-   * document's first blocks; a document also its Markdown, ADR 0198).
+   * A live file (ADR 0196 §7): its preview (the top-left cells, the first slide, the canvas's first shapes, a
+   * document's first blocks; a document also its Markdown, ADR 0200).
    */
   | LiveContent;
 
@@ -331,7 +331,7 @@ export function validateContent(raw: unknown): TextContent {
   const tooBig = (what: string) => new ValidationError(`${what} is too large`);
   switch (c.kind) {
     case "document":
-      // A live file made from Markdown (`createArtifact`, ADR 0198): checked here, never stored as text.
+      // A live file made from Markdown (`createArtifact`, ADR 0200): checked here, never stored as text.
       documentMarkdown(c);
       throw liveOnly("document");
     case "html": {
@@ -441,7 +441,7 @@ export function validateContent(raw: unknown): TextContent {
   }
 }
 
-/** A document's Markdown as `create_artifact` and people send it (ADR 0198): there, and not too large. */
+/** A document's Markdown as `create_artifact` and people send it (ADR 0200): there, and not too large. */
 function documentMarkdown(c: Record<string, unknown>): string {
   if (typeof c.markdown !== "string") throw new ValidationError("document needs markdown");
   if (bytes(c.markdown) > ARTIFACT_LIMITS.documentBytes) throw new ValidationError("document is too large");
@@ -507,7 +507,7 @@ const EXTENSIONS: Record<ArtifactKind, string> = {
   block: "json",
   poll: "json",
   choices: "json",
-  // What a live file downloads as when no format is asked (ADR 0196): its export.
+  // What a live file downloads as when no format is asked (ADR 0198): its export.
   spreadsheet: "xlsx",
   slides: "pptx",
   canvas: "json",
@@ -766,7 +766,7 @@ function runSharedSql(personId: string | null, channelId: string) {
 
 /**
  * What decides who reads a file: where it lives and its sharing (absent for a conversation alone, as `placeNew` asks),
- * and for an agent its own conversation (ADR 0197).
+ * and for an agent its own conversation (ADR 0199).
  */
 type Readable = Pick<ArtifactRow, "channelId"> &
   Partial<Pick<ArtifactRow, "share" | "shareUserIds" | "shareRoleIds" | "conversationChannelId">>;
@@ -816,7 +816,7 @@ async function readsWhereItLives(db: Database, userId: string, orgId: string, ch
       memberId: channelMembers.id,
       // A task's conversation: whoever sees the task (ADR 0145).
       taskReader: taskReaderSql(sql`${channels.id}`, sql`${userId}::text`),
-      // A live file's conversation: whoever reads the file (ADR 0197).
+      // A live file's conversation: whoever reads the file (ADR 0199).
       fileReader: sql<boolean>`${channels.kind} = 'file' and ${fileConversationReaderSql(sql`${channels.id}`, sql`${userId}::text`)}`,
       admin: sql<boolean>`${adminChannelSql(sql`${orgId}::uuid`, sql`${userId}::text`)}`,
     })
@@ -909,7 +909,7 @@ async function ownRoomFile(db: Database, actor: Extract<ArtifactActor, { type: "
  * An agent's own reach, what `listArtifacts` lists and what it may change: org-wide files, its run's conversation and
  * public channels it is in (in the agents' DM, only those made for the same person), the conversations it shares
  * with the person behind the run, what its room saved elsewhere, and the live file whose own conversation its run is
- * in (ADR 0197: only agents that may work on the file are members there, `admitFileAgents`).
+ * in (ADR 0199: only agents that may work on the file are members there, `admitFileAgents`).
  */
 async function agentReaches(
   db: Database,
@@ -984,7 +984,7 @@ function view(a: ArtifactRow, canEdit: boolean): ArtifactView {
   };
 }
 
-/** People save new versions of tables (editor) and of files (an upload); documents are live files (ADR 0198). */
+/** People save new versions of tables (editor) and of files (an upload); documents are live files (ADR 0200). */
 const editableKind = (kind: ArtifactKind) => kind === "table" || kind === "file";
 
 async function loadArtifact(db: Database, orgId: string, id: string) {
@@ -1137,7 +1137,7 @@ async function insertArtifact(
     author?: ArtifactAuthor;
     /** Its id, chosen before (a live file's pictures are stored under it first). */
     id?: string;
-    /** More rows of the same file, in the same transaction (a live file's document and pictures, ADR 0194). */
+    /** More rows of the same file, in the same transaction (a live file's document and pictures, ADR 0196). */
     inTx?: (tx: Executor, row: ArtifactRow) => Promise<void>;
   },
 ) {
@@ -1213,7 +1213,7 @@ export async function insertVersion(
     excerpt: string;
     note?: string | null;
     title?: string;
-    /** More rows in the same transaction (a live file's checkpoint mark, ADR 0194 §7). */
+    /** More rows in the same transaction (a live file's checkpoint mark, ADR 0196 §7). */
     inTx?: (tx: Executor) => Promise<void>;
   },
 ) {
@@ -1289,7 +1289,7 @@ export async function createArtifact(
     content: unknown;
     channelId?: string | null;
     threadId?: string | null;
-    /** Version 1's note (where it came from, ADR 0196). */
+    /** Version 1's note (where it came from, ADR 0198). */
     note?: string | null;
   },
 ): Promise<ArtifactDetailView> {
@@ -1309,7 +1309,7 @@ export async function createArtifact(
 }
 
 /**
- * A document from Markdown (ADR 0198): a live file people and agents then edit together, made where `createArtifact`
+ * A document from Markdown (ADR 0200): a live file people and agents then edit together, made where `createArtifact`
  * makes any file. Refused past the documents' limits, as a live file is.
  */
 async function createDocument(
@@ -1679,7 +1679,7 @@ async function readVersion(deps: ArtifactDeps, a: ArtifactRow, v: VersionRow) {
 /** A version's content: decoded text kinds; a `file`'s metadata (its bytes read only for a small text file). */
 async function contentOf(deps: ArtifactDeps, a: ArtifactRow, v: VersionRow): Promise<ArtifactContent> {
   if (a.kind === "file") return fileContent(v, wantsFileText(v) ? (await readVersion(deps, a, v)).body : null);
-  // A live file's version is a snapshot of its document: its preview, as the head's (ADR 0194 §7).
+  // A live file's version is a snapshot of its document: its preview, as the head's (ADR 0196 §7).
   if (isLiveArtifactKind(a.kind)) return snapshotContent(a.kind, (await readVersion(deps, a, v)).body, v.contentType);
   return decode(a.kind, (await readVersion(deps, a, v)).body);
 }
@@ -1800,7 +1800,7 @@ export async function getArtifact(
   version?: number,
 ): Promise<ArtifactDetailView> {
   const a = await readable(deps, actor, orgId, artifactId);
-  // A live file without a version asked: its head, newer than any version (ADR 0194 §7).
+  // A live file without a version asked: its head, newer than any version (ADR 0196 §7).
   if (version === undefined && isLiveArtifactKind(a.kind)) {
     const head = await liveHeadContent(deps, a, a.kind);
     if (head) return detail(view(a, editableKind(a.kind)), a.currentVersion, head);
@@ -1820,7 +1820,7 @@ async function liveHeadContent(
 ): Promise<LiveContent | null> {
   const row = await liveDocRow(deps.db, a.orgId, a.id);
   if (!row) return null;
-  // A document's content also carries its whole Markdown (ADR 0198), so it is read from the head every time.
+  // A document's content also carries its whole Markdown (ADR 0200), so it is read from the head every time.
   if (row.preview && kind !== "document") return { kind, preview: row.preview } as unknown as LiveContent;
   const stored = await loadStored(deps.db, a.orgId, a.id);
   if (!stored) return null;
@@ -2158,7 +2158,7 @@ export async function shareArtifact(
   if (!openHere) {
     const kind = a.kind;
     if (isLiveArtifactKind(kind)) {
-      // A live file is copied whole: its document at its head and its pictures (ADR 0194 §8).
+      // A live file is copied whole: its document at its head and its pictures (ADR 0196 §8).
       shared = await copyLiveArtifact(deps, actor, orgId, a, kind, {});
     } else {
       const v = await versionRow(db, a, undefined);
@@ -2338,7 +2338,7 @@ export interface PersonArtifactFacts {
    * there. False for what the whole workspace sees already.
    */
   canShare: boolean;
-  /** A live file's conversation (ADR 0197) once someone opened or wrote in it; null otherwise. */
+  /** A live file's conversation (ADR 0199) once someone opened or wrote in it; null otherwise. */
   conversation: FileConversationSummary | null;
 }
 
@@ -2847,7 +2847,7 @@ export async function artifactDownload(
   const a = await readable(deps, { type: "person", userId }, orgId, artifactId);
   const v = await versionRow(deps.db, a, version);
   if (isLiveArtifactKind(a.kind)) {
-    // A version holds the document, not what it downloads as: the export is made by our own endpoint (ADR 0196).
+    // A version holds the document, not what it downloads as: the export is made by our own endpoint (ADR 0198).
     const at = version === undefined ? "" : `?version=${v.version}`;
     const url = `/api/app/organizations/${orgId}/artifacts/${artifactId}/file${at}`;
     return { url, expiresAt: new Date(Date.now() + DOWNLOAD_URL_TTL_SECONDS * 1000).toISOString() };
@@ -2897,7 +2897,7 @@ export async function artifactFile(
     return { body, contentType: "text/csv; charset=utf-8", filename: fileName(a, v.version, "csv") };
   }
   if (options.format === "pdf" || options.format === "docx") {
-    // A document's are its live file's (`liveFile`, ADR 0198); here, a table's.
+    // A document's are its live file's (`liveFile`, ADR 0200); here, a table's.
     const markdown = content.kind === "table" ? tableToMarkdown(content.columns, content.rows) : null;
     if (markdown === null)
       throw new ValidationError(
@@ -2928,12 +2928,12 @@ export async function artifactFile(
   return { body: object.body, contentType: object.contentType, filename: fileName(a, v.version, EXTENSIONS[a.kind]) };
 }
 
-// ── Live files (ADR 0194) ────────────────────────────────────────────────────
+// ── Live files (ADR 0196) ────────────────────────────────────────────────────
 
-/** What `artifactFile` makes: tables' CSV, diffs' patch, PDF and docx, and live files' exports (ADR 0196, 0198). */
+/** What `artifactFile` makes: tables' CSV, diffs' patch, PDF and docx, and live files' exports (ADR 0198, 0200). */
 export type ArtifactFileFormat = "csv" | "patch" | "pdf" | "docx" | "xlsx" | "pptx" | "json" | "md";
 
-/** A live file as it downloads (ADR 0196). */
+/** A live file as it downloads (ADR 0198). */
 export interface LiveExport {
   body: Uint8Array;
   contentType: string;
@@ -2955,7 +2955,7 @@ export type LiveExporter = (input: {
 
 let liveExporter: LiveExporter | null = null;
 
-/** What makes live files' downloads (ADR 0196); without one only a canvas downloads, as its JSON. */
+/** What makes live files' downloads (ADR 0198); without one only a canvas downloads, as its JSON. */
 export function setLiveExporter(exporter: LiveExporter | null) {
   liveExporter = exporter;
 }
@@ -2983,7 +2983,7 @@ async function liveFile(
   try {
     const format = options.format ?? null;
     if (kind === "document") {
-      // Written here, with or without the Office exporter (ADR 0198).
+      // Written here, with or without the Office exporter (ADR 0200).
       const out = await documentExport(deps, a, doc, format);
       return { body: out.body, contentType: out.contentType, filename: fileName(a, v.version, out.ext) };
     }
@@ -3002,7 +3002,7 @@ async function liveFile(
   }
 }
 
-/** How a live file opens for someone (ADR 0194 §1). */
+/** How a live file opens for someone (ADR 0196 §1). */
 export interface LiveFileAccess {
   /** Its row, deleted ones included (in the trash it opens read-only). */
   artifact: ArtifactRow;
@@ -3012,7 +3012,7 @@ export interface LiveFileAccess {
 }
 
 /**
- * Whether `actor` may open this live file, and how (ADR 0194 §1): null when it isn't a live file they read (a wrong
+ * Whether `actor` may open this live file, and how (ADR 0196 §1): null when it isn't a live file they read (a wrong
  * id, another kind, out of their reach, gone from the trash), since every refusal of a file reads as "not found".
  * People change what they read (`writable` is `readable` for them, ADR 0157), except in the trash and while the
  * workspace is being deleted; agents change what they reach (`agentReaches`) and only read the rest. Only a person
@@ -3091,7 +3091,7 @@ export async function liveSnapshotOf(deps: ArtifactDeps, orgId: string, fileId: 
   if (!a || !isLiveArtifactKind(a.kind)) throw new NotFoundError("Artifact not found", "artifact.not_found");
   const v = await versionRow(deps.db, a, version);
   if (v.contentType !== LIVE_SNAPSHOT_TYPE) {
-    // A document saved as Markdown before documents were live files: that Markdown as a document (ADR 0198).
+    // A document saved as Markdown before documents were live files: that Markdown as a document (ADR 0200).
     if (a.kind === "document") {
       const doc = versionDoc(a.kind, (await readVersion(deps, a, v)).body, v.contentType);
       try {
@@ -3106,7 +3106,7 @@ export async function liveSnapshotOf(deps: ArtifactDeps, orgId: string, fileId: 
 }
 
 /**
- * Gives a document saved as Markdown before documents were live files (ADR 0198) its live document: made from its
+ * Gives a document saved as Markdown before documents were live files (ADR 0200) its live document: made from its
  * latest version, as `createArtifact` makes one, and stored once (whoever gets there first; the others read theirs).
  * False for anything else (no such file, another kind, one that has its live document already).
  */
@@ -3141,7 +3141,7 @@ export async function adoptMarkdownDocument(deps: ArtifactDeps, orgId: string, f
 
 /**
  * Stores a picture of a live file where the workspace keeps its files, refused past its storage limits like any
- * version (`writeBlob`, ADR 0194 §8). Under the file's own key prefix, so a workspace's deletion takes it too.
+ * version (`writeBlob`, ADR 0196 §8). Under the file's own key prefix, so a workspace's deletion takes it too.
  */
 export async function writeLiveAssetBlob(
   deps: ArtifactDeps,
@@ -3205,7 +3205,7 @@ export interface LivePicture {
   height: number | null;
 }
 
-/** A new live file's own pictures (an imported deck's, ADR 0196): blobs first, rows for the caller's transaction. */
+/** A new live file's own pictures (an imported deck's, ADR 0198): blobs first, rows for the caller's transaction. */
 async function storeLivePictures(
   deps: ArtifactDeps,
   actor: ArtifactActor,
@@ -3243,7 +3243,7 @@ async function storeLivePictures(
 }
 
 /**
- * A new live file (ADR 0194 §7): placed like any Drive file (`placeFile`), version 1 a snapshot of `doc`, its
+ * A new live file (ADR 0196 §7): placed like any Drive file (`placeFile`), version 1 a snapshot of `doc`, its
  * `live_docs` row the same state with its preview, and (a copy) the pictures of `assetsFrom`, all in the artifact's
  * transaction. The caller made the document and checked it.
  */
@@ -3260,7 +3260,7 @@ export async function insertLiveArtifact(
     note?: string | null;
     /** A live file of this workspace whose pictures the new one takes (its copy). */
     assetsFrom?: string | null;
-    /** Pictures it starts with, under the ids its document names (an imported deck's, ADR 0196). */
+    /** Pictures it starts with, under the ids its document names (an imported deck's, ADR 0198). */
     pictures?: readonly LivePicture[];
   },
 ): Promise<ArtifactView> {
@@ -3326,7 +3326,7 @@ export async function copyLiveArtifact(
 }
 
 /**
- * Renames a live file from its page (ADR 0194 §9): the title only, never its document, so no version is written.
+ * Renames a live file from its page (ADR 0196 §9): the title only, never its document, so no version is written.
  * Whoever may change the file may rename it; a file read-only now (in the trash, its workspace closing) can't be.
  */
 export async function renameLiveFile(
@@ -3390,7 +3390,7 @@ export async function duplicateLiveFile(
 }
 
 /**
- * A live file's row after its document changed (compaction, ADR 0194 §4): its search text, and when and by whom it
+ * A live file's row after its document changed (compaction, ADR 0196 §4): its search text, and when and by whom it
  * was last changed, for the Drive's order and "last edited by". The time moves at most once a minute: each move has
  * every viewer of its conversation fetch the file again.
  */
@@ -3428,7 +3428,7 @@ export async function touchLiveArtifact(
 }
 
 /**
- * A live file's preview was drawn again (ADR 0194 §7): the conversation it lives in hears `artifact.updated`, so the
+ * A live file's preview was drawn again (ADR 0196 §7): the conversation it lives in hears `artifact.updated`, so the
  * cards there read the file again and draw what it holds now. Its "last edited" stays `touchLiveArtifact`'s.
  */
 export async function announceLivePreview(deps: ArtifactDeps, orgId: string, fileId: string) {

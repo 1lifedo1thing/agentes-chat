@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import type * as Y from "yjs";
 
 /**
- * A slide's speaker notes (ADR 0194 §2), typed by several people at once: the field is bound to the slide's `Y.Text`.
+ * A slide's speaker notes (ADR 0196 §2), typed by several people at once: the field is bound to the slide's `Y.Text`.
  * What this person types changes only the characters that differ (`setNotes`), with their own undo; what others type
  * comes in where they typed it, and this person's caret keeps its place in the words around it.
  */

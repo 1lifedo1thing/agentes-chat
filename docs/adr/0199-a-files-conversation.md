@@ -1,10 +1,10 @@
-# 0197. A live file's conversation is a chat thread of its own
+# 0199. A live file's conversation is a chat thread of its own
 
 - Status: Accepted (built)
 - Date: 2026-11-17
-- Extends: 0145 (a task's conversation is a chat thread of its own), 0194 (live files), 0157 (who sees a file), 0029
+- Extends: 0145 (a task's conversation is a chat thread of its own), 0196 (live files), 0157 (who sees a file), 0029
   (threads), 0071 (agent replies notify)
-- Amends: 0194 §6 ("Ask an agent" posts in the file's own conversation)
+- Amends: 0196 §6 ("Ask an agent" posts in the file's own conversation)
 - Code: engine `packages/engine/src/live/conversation.ts` (`ensureFileConversation`, `openFileConversation`,
   `admitFileAgents`, `fileConversationSummaries`, `fileConversationBrief`, `fileConversationOf`, `cleanSelection`,
   `liveRefFor`, `liveRefOf`, `liveRefLine`, `conversationFileId`), `task-access.ts` (`fileConversationReaderSql`,
@@ -22,12 +22,12 @@
   `api/client.ts` and `http-client.ts` (`artifacts.conversation`, `reads.unreadFiles`, the post's `liveRef`),
   `api/queries.ts` (`useFileConversation`, `useUnreadFiles`, `useFileUnread`, `applyIssueEvent`), `live/types.ts`
   (`fileConversationOf`, `LiveRefInput`, `messageLiveRef`), `lib/notifications.ts` (`openTarget`); migration
-  `0292_file_conversations.sql`; tests `packages/engine/test/file-conversation.test.ts`,
+  `0295_live_files.sql`; tests `packages/engine/test/file-conversation.test.ts`,
   `apps/server/test/file-conversation.test.ts`
 
 ## Context
 
-ADR 0194 put agents inside live files, but talking to one went through "Ask an agent": a box that sent one message
+ADR 0196 put agents inside live files, but talking to one went through "Ask an agent": a box that sent one message
 to wherever the file lived (a channel's timeline, a task's conversation, or the asker's DM with the agent when the
 file was in the shared Drive). The talk about a file ended up scattered across conversations, out of sight of the
 others in the file, and nothing showed under the file what had been said about it. People expect a file's page to
@@ -131,9 +131,9 @@ fits with it open; once the person uses the sidebar's toggle on the page, the pa
 the agent, with the selection as `meta.liveRef` and no card of the file; when the agent can't work on the file there
 (a private channel it isn't in) it still goes to the person's DM with the agent, carrying the file, as before.
 
-### 8. Migration 0292
+### 8. Migration 0295
 
-`0292_file_conversations.sql` adds `file` to `channel_kind` and the two columns of `artifacts` with their unique
+`0295_live_files.sql` adds `file` to `channel_kind` and the two columns of `artifacts` with their unique
 index and foreign key. Nothing moves: conversations are made on first use.
 
 ### 9. On the phone

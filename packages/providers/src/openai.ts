@@ -147,7 +147,7 @@ function imageError(error: unknown): ProviderError {
 const takesThreeSizes = (model: string) => /^gpt-image-1/.test(model) || /^dall-e/.test(model);
 
 /**
- * Pictures over OpenAI's Images API, also any server that speaks it (ADR 0195, a workspace's endpoint, ADR 0146):
+ * Pictures over OpenAI's Images API, also any server that speaks it (ADR 0197, a workspace's endpoint, ADR 0146):
  * `images.generate`, or `images.edit` with the references as the pictures to start from; `n` pictures a call, called
  * again for the rest when a server makes fewer. GPT Image answers in base64 with token usage, asked here for medium
  * quality WebP; another server (`compatible`) is asked for base64 (`response_format`) and sent one reference, the most

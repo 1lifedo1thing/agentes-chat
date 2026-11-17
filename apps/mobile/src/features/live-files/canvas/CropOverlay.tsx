@@ -13,7 +13,7 @@ const REACH = 44;
 type Edge = "l" | "t" | "r" | "b";
 
 /**
- * Cropping a picture on the canvas (ADR 0194 §2): the picture as it shows (`box`, on screen), the part to keep framed
+ * Cropping a picture on the canvas (ADR 0196 §2): the picture as it shows (`box`, on screen), the part to keep framed
  * by four corner handles inside it (a drag in the frame moves it), the rest dimmed; Apply keeps that part (as fractions
  * of what shows, `onApply`), Cancel leaves the picture as it was. The frame follows the finger on the UI thread; the
  * picture changes once, on Apply. It covers the canvas meanwhile, so nothing else moves.

@@ -45,7 +45,7 @@ const base64 = (bytes: Uint8Array) => Buffer.from(bytes.buffer, bytes.byteOffset
 /** What an asset may be: pictures only, whatever was stored, so nothing else is ever served from here. */
 const ASSET_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 /**
- * An SVG picture (stored as the sanitizer rebuilt it, ADR 0194 §8) is served with a CSP that runs and loads nothing,
+ * An SVG picture (stored as the sanitizer rebuilt it, ADR 0196 §8) is served with a CSP that runs and loads nothing,
  * also when it is opened on its own in a tab: the apps only ever show it as a picture.
  */
 const SVG_ASSET = "image/svg+xml";
@@ -100,9 +100,9 @@ const fileField = z
   .openapi({ type: "string", format: "binary", description: `The picture (≤ ${LIVE_ASSET_MB} MB).` });
 
 /**
- * Live files (ADR 0194): spreadsheets, presentations and canvases people and agents edit together. Made here, opened
+ * Live files (ADR 0196): spreadsheets, presentations and canvases people and agents edit together. Made here, opened
  * here (their state, then the socket at `/api/live` keeps them in step), saved as versions, given pictures, and asked
- * about. Uploaded Office files open here too (ADR 0196): their preview, and a live file made from them.
+ * about. Uploaded Office files open here too (ADR 0198): their preview, and a live file made from them.
  */
 export function liveRoutes(deps: AppDeps) {
   const { db } = deps;
@@ -199,7 +199,7 @@ export function liveRoutes(deps: AppDeps) {
         params: ArtifactParams,
         query: z.object({
           version: z.coerce.number().int().min(1).optional().openapi({
-            description: "A saved version instead, to look at read-only (its history, ADR 0194 §7): `seq` 0, `view`.",
+            description: "A saved version instead, to look at read-only (its history, ADR 0196 §7): `seq` 0, `view`.",
           }),
         }),
       },
@@ -263,7 +263,7 @@ export function liveRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/artifacts/{artifactId}/live/versions",
       tags,
       security,
-      summary: "Save a version of a live file now, with a name (ADR 0194 §7)",
+      summary: "Save a version of a live file now, with a name (ADR 0196 §7)",
       request: {
         params: ArtifactParams,
         body: body(z.object({ note: z.string().trim().max(500).nullable().optional() })),
@@ -508,9 +508,9 @@ export function liveRoutes(deps: AppDeps) {
       security,
       summary: "Ask an agent about a live file, from inside it (Ask an agent)",
       description:
-        "Sends the person's message to the agent in the file's own conversation (ADR 0197; a DM carrying the file when " +
+        "Sends the person's message to the agent in the file's own conversation (ADR 0199; a DM carrying the file when " +
         "the agent can't work on it there), with what is selected, so the agent's tools act on it while everyone in it " +
-        "watches (ADR 0194 §6). Kept for older apps: the apps write in the file's conversation themselves.",
+        "watches (ADR 0196 §6). Kept for older apps: the apps write in the file's conversation themselves.",
       request: {
         params: ArtifactParams,
         body: body(
@@ -563,7 +563,7 @@ export function liveRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/artifacts/{artifactId}/preview",
       tags,
       security,
-      summary: "An uploaded Office file as the apps draw it (ADR 0196): a workbook, a deck or a document's HTML",
+      summary: "An uploaded Office file as the apps draw it (ADR 0198): a workbook, a deck or a document's HTML",
       description:
         "Read by the server, never run: the apps draw a workbook with their spreadsheet view, a deck with their " +
         "slides view, and a document's clean HTML only in an isolated frame. A deck's pictures come from …/preview/media.",
@@ -589,7 +589,7 @@ export function liveRoutes(deps: AppDeps) {
     },
   );
 
-  // A picture inside an uploaded deck (ADR 0196), as the preview names it: only ever served as a picture.
+  // A picture inside an uploaded deck (ADR 0198), as the preview names it: only ever served as a picture.
   app.get("/organizations/:orgId/artifacts/:artifactId/preview/media/:name", async (c) => {
     const orgId = c.req.param("orgId");
     const artifactId = c.req.param("artifactId");
@@ -620,7 +620,7 @@ export function liveRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/artifacts/{artifactId}/open-as",
       tags,
       security,
-      summary: "Edit an uploaded Office file as a live file (ADR 0196): a new spreadsheet, presentation or document",
+      summary: "Edit an uploaded Office file as a live file (ADR 0198): a new spreadsheet, presentation or document",
       description:
         "Made beside the upload (same conversation, same sharing) with a note saying where it came from; the upload " +
         "stays as it was.",

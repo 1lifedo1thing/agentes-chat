@@ -3,7 +3,7 @@ import type { IconName } from "@agenteschat/ui";
 import type { TFunction } from "i18next";
 
 /**
- * The canvas's tools (ADR 0194 §2) as data: what the dock holds, each one's key, the forms and the arrows' routes its
+ * The canvas's tools (ADR 0196 §2) as data: what the dock holds, each one's key, the forms and the arrows' routes its
  * menus offer, the pen's colors and sizes, and the shortcuts list ("?") built from the same table, so a key shown on
  * a button, in the list and the one the plane listens to never part ways. No React here: the file's page reads the
  * list without loading the canvas.

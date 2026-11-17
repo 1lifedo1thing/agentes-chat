@@ -4,7 +4,7 @@ import type { DeckData, WorkbookData } from "@agenteschat/live/office";
 import type { LiveMode } from "@agenteschat/live/protocol";
 
 /**
- * What the apps share about live files (ADR 0194): spreadsheets, presentations and canvases people and agents edit
+ * What the apps share about live files (ADR 0196): spreadsheets, presentations and canvases people and agents edit
  * together. The document itself is `@agenteschat/live`'s; these are the shapes of the routes around it
  * (`apps/server/src/routes/app/live.ts`) and of the apps' own connection to it.
  */
@@ -62,7 +62,7 @@ export interface LivePresenceEvent {
   artifactId: string;
 }
 
-/** A picture that belongs to a live file (ADR 0194 §8): its type is read from its bytes. */
+/** A picture that belongs to a live file (ADR 0196 §8): its type is read from its bytes. */
 export interface LiveAsset {
   id: string;
   contentType: string;
@@ -74,15 +74,15 @@ export interface LiveAsset {
 /** Where a copied picture comes from: a Drive file the person reads (one of its versions), or another live file's. */
 export type LiveAssetSource = { artifactId: string; version?: number } | { fileId: string; assetId: string };
 
-/** A version saved or restored (ADR 0194 §7); `null`: nothing changed since the last one, so none was written. */
+/** A version saved or restored (ADR 0196 §7); `null`: nothing changed since the last one, so none was written. */
 export interface LiveVersionSaved {
   version: number | null;
 }
 
-/** The shapes a generated picture can take (ADR 0195). */
+/** The shapes a generated picture can take (ADR 0197). */
 export type ImageAspect = "1:1" | "3:2" | "2:3" | "4:3" | "3:4" | "16:9" | "9:16";
 export const IMAGE_ASPECTS: readonly ImageAspect[] = ["1:1", "3:2", "2:3", "4:3", "3:4", "16:9", "9:16"];
-/** At most this many pictures a request (ADR 0195). */
+/** At most this many pictures a request (ADR 0197). */
 export const MAX_IMAGES_PER_REQUEST = 4;
 
 /** An image model the workspace can use now (`GET …/images/models`), the default first. */
@@ -128,7 +128,7 @@ export interface ImageRequestResult {
 }
 
 /**
- * An uploaded Office file as the server read it (ADR 0196): a workbook (`.xlsx`, `.xls`, `.ods`, `.csv`, `.tsv`) the
+ * An uploaded Office file as the server read it (ADR 0198): a workbook (`.xlsx`, `.xls`, `.ods`, `.csv`, `.tsv`) the
  * spreadsheet view draws read-only, a deck (`.pptx`) the slides view draws (its pictures by `media[name].url`), or a
  * Word document as clean HTML, drawn only in an isolated frame.
  */
@@ -139,7 +139,7 @@ export type OfficePreview =
 
 /**
  * What a person had selected in a file when they wrote, as they see it ("Planilha 1!B2:E9", "slide 3", "2 imagens"):
- * the quote bar of the file's conversation, sent as the message's `liveRef` (ADR 0197).
+ * the quote bar of the file's conversation, sent as the message's `liveRef` (ADR 0199).
  */
 export interface LiveSelection {
   label: string;
@@ -159,7 +159,7 @@ export interface LiveSelection {
   block?: string;
 }
 
-/** "Perguntar a um agente" from inside a file (ADR 0194 §6). */
+/** "Perguntar a um agente" from inside a file (ADR 0196 §6). */
 export interface AskAgentInput {
   agentId: string;
   text: string;
@@ -174,7 +174,7 @@ export interface AskAgentResult {
 }
 
 /**
- * `message.liveRef` (from `meta.liveRef`, ADR 0197): the file a message is about and what its writer had selected in
+ * `message.liveRef` (from `meta.liveRef`, ADR 0199): the file a message is about and what its writer had selected in
  * it. The server fills `kind` and `title`; a message sends only `LiveRefInput`.
  */
 export interface LiveRef {
@@ -191,7 +191,7 @@ export interface LiveRefInput {
 }
 
 /**
- * `meta.fileConversation`: the root of a live file's conversation (ADR 0197). It stands for the file and is never
+ * `meta.fileConversation`: the root of a live file's conversation (ADR 0199). It stands for the file and is never
  * drawn: the file is right there. `kind` names the panel ("Canvas conversation").
  */
 export interface FileConversationRoot {
@@ -249,7 +249,7 @@ export function fileConversationOf(meta: Record<string, unknown> | null | undefi
 }
 
 /**
- * What a message points at in its file (ADR 0197): the server's `liveRef`, else its `meta.liveRef` (an optimistic copy
+ * What a message points at in its file (ADR 0199): the server's `liveRef`, else its `meta.liveRef` (an optimistic copy
  * or an older server). Null for a message about no file.
  */
 export const messageLiveRef = (m: { liveRef?: LiveRef; meta?: Record<string, unknown> }): LiveRef | null =>

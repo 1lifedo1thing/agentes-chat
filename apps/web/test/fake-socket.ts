@@ -45,7 +45,7 @@ export class FakeSocket implements SocketLike {
 
 /**
  * The app's sockets in a test. With `live` (the fake API's live server, `fakeLiveOf.get(api)?.server`), a live file's
- * socket (`/api/live`) reaches it and syncs as with the real server (ADR 0194); every other socket is a `FakeSocket`
+ * socket (`/api/live`) reaches it and syncs as with the real server (ADR 0196); every other socket is a `FakeSocket`
  * the test drives.
  */
 export function fakeSockets(options: { live?: FakeLiveServer } = {}) {

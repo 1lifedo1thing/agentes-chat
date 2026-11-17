@@ -1,5 +1,5 @@
 /*
- * The spreadsheet editor (ADR 0194): toolbar, formula bar, the canvas grid with its DOM overlay, the sheet tabs.
+ * The spreadsheet editor (ADR 0196): toolbar, formula bar, the canvas grid with its DOM overlay, the sheet tabs.
  * Neutral first: the person's own selection and focus are ink, other people and agents bring their own color, and
  * cells stay white (the theme's raised surface) under a calm page.
  */

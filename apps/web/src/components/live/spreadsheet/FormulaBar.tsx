@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { type ColoredSpan, FormulaInput } from "./FormulaInput";
 
 /**
- * The formula bar (ADR 0194), on one line with no boxes: the selection's address as quiet text (a click turns it into
+ * The formula bar (ADR 0196), on one line with no boxes: the selection's address as quiet text (a click turns it into
  * its field: type a cell or a range and Enter goes there, Esc comes back), a hairline, the fx mark, and the active
  * cell's content as typed, in the person's language, editable here as in the cell; a formula in the code face.
  */

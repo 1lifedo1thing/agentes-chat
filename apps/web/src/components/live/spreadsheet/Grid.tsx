@@ -36,7 +36,7 @@ import {
 import type { DrawCell, GridSource } from "./source";
 
 /**
- * The spreadsheet's grid (ADR 0194): a scroller sized to the whole sheet gives native scrollbars, momentum and
+ * The spreadsheet's grid (ADR 0196): a scroller sized to the whole sheet gives native scrollbars, momentum and
  * keyboard scrolling, a canvas pinned over it draws only the visible window each frame (DPR-aware, so lines stay one
  * device pixel), and a layer of DOM on top holds what needs to be real elements: the cell's editor, people's name
  * tags, a cell's tip and "Add rows". Pointer gestures (select, drag, headers, resizing, the fill handle) are read off

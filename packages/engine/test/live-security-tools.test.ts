@@ -15,7 +15,7 @@ import { type Fixture, setup } from "./fixtures";
 import { liveDocsFor } from "./live-fixtures";
 
 /**
- * Limits that keep one caller from exhausting a process (ADR 0194 §2 and §5): a socket speaks for a few awareness
+ * Limits that keep one caller from exhausting a process (ADR 0196 §2 and §5): a socket speaks for a few awareness
  * client ids at most, and an agent's spreadsheet batch can't fill or style more cells than a spreadsheet holds.
  */
 

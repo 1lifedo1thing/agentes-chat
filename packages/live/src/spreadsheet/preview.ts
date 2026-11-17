@@ -1,5 +1,5 @@
 /**
- * What a spreadsheet looks like from outside (ADR 0194 §7): the small preview cards, the Drive and message cards draw
+ * What a spreadsheet looks like from outside (ADR 0196 §7): the small preview cards, the Drive and message cards draw
  * (the first sheet's top-left cells as they show), and the text search finds the file by. Both read computed values
  * through the engine, since values are never stored.
  */

@@ -2,7 +2,7 @@ import type { Box } from "../canvas/geometry";
 import type { ElementStyle, SlideLayout, SlideRole } from "./types";
 
 /**
- * Slide layouts (ADR 0194 §2): where a new slide's placeholders sit on the 1920×1080 slide. Proportions follow good
+ * Slide layouts (ADR 0196 §2): where a new slide's placeholders sit on the 1920×1080 slide. Proportions follow good
  * keynote templates: generous margins (120 to 200 units at the sides, never text closer than 80 to an edge), titles
  * that grow upwards from a fixed baseline area so one or two lines both sit right, body text starting at the same
  * height on every content layout, and pictures that bleed to the edge.

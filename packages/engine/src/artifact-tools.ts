@@ -94,7 +94,7 @@ function asText(content: ArtifactContent, opened?: ModelFile): string {
       return [`${head}${opened?.note ? ` ${opened.note}` : ""}`, text].filter((t) => t !== undefined).join("\n");
     }
     case "document":
-      // A live document (ADR 0198): its Markdown, and the tools that read it by block and change it.
+      // A live document (ADR 0200): its Markdown, and the tools that read it by block and change it.
       return `${liveFileHint(content.kind)}\n\n${content.markdown}`;
     case "table":
       return tableToCsv(content.columns, content.rows);
@@ -110,7 +110,7 @@ function asText(content: ArtifactContent, opened?: ModelFile): string {
       return [content.question, ...content.options.map((o) => `- ${o}`)].join("\n");
     case "choices":
       return choicesText(content.questions);
-    // Live files (ADR 0194): what `getArtifact` gives is their card's preview; their own tools read them whole.
+    // Live files (ADR 0196): what `getArtifact` gives is their card's preview; their own tools read them whole.
     case "spreadsheet":
     case "slides":
     case "canvas":

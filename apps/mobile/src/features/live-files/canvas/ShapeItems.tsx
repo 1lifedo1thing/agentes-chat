@@ -21,7 +21,7 @@ import type { Pt, WBox } from "./camera";
 import { isInk, NOTE_PAD, NOTE_TEXT, pendingWords, retryable } from "./logic";
 
 /**
- * What a canvas's shapes look like on the phone (ADR 0194 §2, 0195), the web's look in world units laid out at `k`
+ * What a canvas's shapes look like on the phone (ADR 0196 §2, 0197), the web's look in world units laid out at `k`
  * points per unit: pictures (corners 8, the part a crop shows), notes in their soft colors, bare text, shapes in their
  * form with their border and label, pen strokes, pictures being made (the sky forming, who asked, the prompt; failed,
  * why and "Tentar de novo"), an agent's page and any file as a card. Frames and arrows are drawn on the plane itself
@@ -297,7 +297,7 @@ function Stroke({ shape }: { shape: ShapeView }) {
   );
 }
 
-/** A picture on its way (ADR 0195): the sky forming in the asker's tone, who asked and the prompt; failed, why. */
+/** A picture on its way (ADR 0197): the sky forming in the asker's tone, who asked and the prompt; failed, why. */
 function Pending({ shape, k, readOnly }: { shape: ShapeView; k: number; readOnly: boolean }) {
   const { t } = useTranslation();
   const { colors: c } = useTheme();

@@ -8,7 +8,7 @@ import { listNumbers } from "../rich/schema";
 import { N } from "./schema";
 
 /**
- * The document editor's own plugins (ADR 0198): every top-level block keeps an id of its own, numbered items show
+ * The document editor's own plugins (ADR 0200): every top-level block keeps an id of its own, numbered items show
  * their numbers, an empty document shows its hint, and a part of the document a message pointed at lights up a moment.
  */
 
@@ -41,7 +41,7 @@ function touched(trs: readonly Transaction[]): [number, number] | null {
 }
 
 /**
- * Block ids (ADR 0198): after a change typed here, a top-level block without an id, or with one an earlier block
+ * Block ids (ADR 0200): after a change typed here, a top-level block without an id, or with one an earlier block
  * has (a split, a paste, a copy), gets a new one, and a block that went inside a quote or a table drops its own (only
  * top-level blocks are named). Changes that come in from the document are left alone: whoever made them names their
  * blocks, and the server names any left without one.

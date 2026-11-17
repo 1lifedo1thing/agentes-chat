@@ -1,5 +1,5 @@
 /**
- * Excel number format codes (ADR 0194): `#,##0.00`, `0%`, `"R$" #,##0.00`, `0.00E+00`, `# ?/?`, `dd/mm/yyyy`,
+ * Excel number format codes (ADR 0196): `#,##0.00`, `0%`, `"R$" #,##0.00`, `0.00E+00`, `# ?/?`, `dd/mm/yyyy`,
  * `[h]:mm`, `[Red]…;…`, so a file imported from Excel keeps its look. A code is stored the way Excel stores it, with
  * "." as the decimal point and "," for thousands; the text comes out with the reader's separators and month names.
  *

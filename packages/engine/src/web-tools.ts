@@ -22,7 +22,7 @@ export const WEB_USAGE_PROVIDER = "web";
 export const WEB_SEARCH_TOOL = "web_search";
 export const WEB_FETCH_TOOL = "web_fetch";
 /**
- * Pictures on the public web (ADR 0194 §8), to put in a live file by their address: Brave's image search
+ * Pictures on the public web (ADR 0196 §8), to put in a live file by their address: Brave's image search
  * (`BRAVE_SEARCH_API_KEY`), SearXNG's images (`SEARXNG_URL`), else Wikimedia Commons, which needs no key and says
  * each picture's author and license. Results give the picture's own address, its size, its page and a credit; `look`
  * shows the model the first ones' thumbnails, fetched through the same guard as a picture.

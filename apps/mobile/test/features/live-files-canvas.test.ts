@@ -70,7 +70,7 @@ const shape = (s: Partial<ShapeView> & { id: string; type: ShapeView["type"] }):
   ...s,
 });
 
-describe("the canvas's camera (ADR 0194 §2)", () => {
+describe("the canvas's camera (ADR 0196 §2)", () => {
   test("world and screen points go back and forth", () => {
     const cam: Cam = { x: -120, y: 40, s: 0.75 };
     const p = { x: 333, y: -47 };
@@ -339,7 +339,7 @@ describe("the canvas's screens", () => {
     expect(existsSync(file)).toBe(true);
     expect(readFileSync(file, "utf8")).toContain("isSafeId(id)");
     expect(ownOptionsOf("canvas/[id]")).toBe("solid,");
-    // Pictures come from the agents in the file's conversation now (ADR 0197): no screen of its own to make them.
+    // Pictures come from the agents in the file's conversation now (ADR 0199): no screen of its own to make them.
     expect(existsSync(join(MAIN, "generate/[id].tsx"))).toBe(false);
   });
 

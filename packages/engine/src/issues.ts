@@ -291,7 +291,7 @@ async function checkAssignee(db: Database, orgId: string, a: WorkActor, scope: T
 
 /**
  * What a task made from `channelId` is limited to: the people of a DM or a private channel (`tiedTo`); from a task's
- * own conversation (`scope`), whoever sees that task; from a live file's conversation (ADR 0197), where the file lives.
+ * own conversation (`scope`), whoever sees that task; from a live file's conversation (ADR 0199), where the file lives.
  * Nothing where the whole workspace may see it: a public channel, a file of the shared Drive or shared with everyone,
  * and a room no person reads (a routine's), whose task would otherwise be nobody's.
  */
@@ -441,7 +441,7 @@ async function seenByConversation(db: Database, person: string | null, channelId
         ${person ? sql`and ${taskSeenSql("t", sql`${person}::text`)}` : sql``}
         and not exists (select 1 from ${channelMembers} h where h.channel_id = c.id and h.user_id is not null
           and not ${taskSeenSql("t", sql`h.user_id`)})
-        -- A live file's conversation has no people in it: whoever reads the file reads it (ADR 0197).
+        -- A live file's conversation has no people in it: whoever reads the file reads it (ADR 0199).
         and not (c.kind = 'file' and exists (select 1 from organization_members fh where fh.org_id = c.org_id
           and ${fileConversationReaderSql(sql`c.id`, sql`fh.user_id`)} and not ${taskSeenSql("t", sql`fh.user_id`)}))`),
   );

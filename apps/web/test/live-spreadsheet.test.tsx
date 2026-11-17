@@ -27,10 +27,10 @@ import { createFakeApi, fakeLiveOf, ORG_ID, seedState } from "./fake-api";
 import { renderPage, screen } from "./render";
 
 /**
- * The spreadsheet editor of a live file (ADR 0194) on the fake live server, in Portuguese: typing values and formulas
+ * The spreadsheet editor of a live file (ADR 0196) on the fake live server, in Portuguese: typing values and formulas
  * as a person in Brazil does, the keys that move the selection, the clipboard with our own cells and other apps'
  * text, the fill handle and ⌘D, rows from the menu, the toolbar, sheet tabs, people and agents in the file, and the
- * read-only states, plus an uploaded workbook drawn read-only (ADR 0196). The canvas draws nothing here: what the
+ * read-only states, plus an uploaded workbook drawn read-only (ADR 0198). The canvas draws nothing here: what the
  * cells hold is read from the document and the formula bar, and the drawing is tested on its own.
  */
 

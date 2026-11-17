@@ -5,7 +5,7 @@ import { writeSyncStep1, writeSyncStep2, writeUpdate } from "y-protocols/sync";
 import * as Y from "yjs";
 
 /**
- * The live file socket's messages (ADR 0194 §3), the same on the server and in every app. Binary frames use
+ * The live file socket's messages (ADR 0196 §3), the same on the server and in every app. Binary frames use
  * y-websocket's framing, so they interoperate with any y-protocols peer: an outer varuint (0 sync, 1 awareness,
  * 3 query awareness; no auth message, since the upgrade is the authorization) and then y-protocols' own messages
  * (sync step 1, step 2, update; an awareness update). Control messages are JSON text frames.
@@ -33,7 +33,7 @@ export type LiveControl =
   | { type: "live.versions" }
   | { type: "live.error"; code: LiveErrorCode };
 
-/** Close codes, the desktop streams' numbers (ADR 0194 §3): the apps reconnect after any but 4403 and 4404. */
+/** Close codes, the desktop streams' numbers (ADR 0196 §3): the apps reconnect after any but 4403 and 4404. */
 export const LIVE_CLOSE = {
   badRequest: 4400,
   forbidden: 4403,
@@ -148,7 +148,7 @@ export interface ReadContext {
   /** False on a read-only socket: sync step 2 and updates are refused without touching the document. */
   allowWrite: boolean;
   /**
-   * The server's say over awareness (ADR 0194 §5): each entry goes through it before it is applied, and comes back
+   * The server's say over awareness (ADR 0196 §5): each entry goes through it before it is applied, and comes back
    * rewritten (the person's identity forced, the state sanitized) or `null` to drop it.
    */
   filterAwareness?: (entry: AwarenessEntry) => AwarenessEntry | null;

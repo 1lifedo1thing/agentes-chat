@@ -21,7 +21,7 @@ import { SlideView } from "./SlideView";
 import { useDeck } from "./useDeck";
 
 /**
- * Presenting on the phone (ADR 0194 §9): the shown slides (hidden ones skipped) one at a time on black, fitted to the
+ * Presenting on the phone (ADR 0196 §9): the shown slides (hidden ones skipped) one at a time on black, fitted to the
  * screen, on the system's pager; the phone lies down for it (and stands up again with a button or when it ends). A tap
  * shows or hides the controls: ×, "3 / 12", ‹ ›, the slide's notes and turning the phone. While this person presents,
  * everyone in the file sees it ("Ada está apresentando · Seguir"); with `follow`, this screen goes with whoever

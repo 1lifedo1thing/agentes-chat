@@ -1,7 +1,7 @@
 import { afterAll, expect, test } from "bun:test";
 import { enableSvgRasterizer, rasterPicture, sanitizeSvg, setSvgRasterizer } from "../src/live";
 
-/** SVG pictures become PNGs for exports and models once resvg is on (ADR 0194 §8). */
+/** SVG pictures become PNGs for exports and models once resvg is on (ADR 0196 §8). */
 afterAll(() => setSvgRasterizer(null));
 
 test("a sanitized SVG draws as a PNG with the brand fonts", async () => {

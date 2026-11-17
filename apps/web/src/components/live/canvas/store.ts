@@ -7,7 +7,7 @@ import * as Y from "yjs";
 
 /**
  * A canvas's shapes as plain data, kept in step with the document by re-reading only the shapes a change touched
- * (ADR 0194 §2: a canvas holds up to 5,000 shapes, and an agent or a person moving one shouldn't re-read them all).
+ * (ADR 0196 §2: a canvas holds up to 5,000 shapes, and an agent or a person moving one shouldn't re-read them all).
  * Each unchanged shape keeps its object, so the shapes drawn from it don't redraw. Redraws wait for the next frame,
  * so a burst of changes (a drag, an agent placing images) draws once a frame.
  */

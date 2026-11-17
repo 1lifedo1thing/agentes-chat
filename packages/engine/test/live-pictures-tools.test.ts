@@ -22,7 +22,7 @@ import { type Fixture, setup } from "./fixtures";
 import { liveDocsFor, personActor } from "./live-fixtures";
 
 /**
- * Real pictures in live files (ADR 0194 §8): an SVG an agent writes and a picture from the web, placed on a canvas, on
+ * Real pictures in live files (ADR 0196 §8): an SVG an agent writes and a picture from the web, placed on a canvas, on
  * a slide and in a document by the edit tools, stored as assets of the file (the SVG as the sanitizer rebuilt it, the
  * web picture with where it came from), and refused before anything changes when the SVG or the address is bad.
  */

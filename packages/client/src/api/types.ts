@@ -177,6 +177,20 @@ export interface AuthConfig {
   errorReports?: ErrorReportsConfig | null;
   /** The same for the phone app; null or absent (a server from before it): nowhere. */
   mobileErrorReports?: ErrorReportsConfig | null;
+  /** An outside chat surface is bridged (ADR 0187); whether I may link it is `surfaces.list().allowed`. */
+  surface?: boolean;
+  /**
+   * This address is one the server's operator registered (ADR 0194): the pages before sign-in show its look, and sign-in
+   * is by email alone. Null or absent on any other address.
+   */
+  host?: HostLook | null;
+}
+
+/** A registered host's look (`AuthConfig.host`): `accent` a `#rrggbb` or null, `logoUrl` on that host or null. */
+export interface HostLook {
+  name: string;
+  accent: string | null;
+  logoUrl: string | null;
 }
 
 export interface ErrorReportsConfig {
@@ -261,6 +275,41 @@ export interface PhoneSignIn {
   server: string;
   /** Seconds it lasts from the answer: counted on the device's clock, which may disagree with the server's. */
   expiresIn: number;
+}
+
+/** A sender on the outside chat surface linked to my account (ADR 0187). */
+export interface SurfaceLink {
+  id: string;
+  status: "pending" | "active";
+  /** What the surface shows of the sender (a number, a handle): shown in full, never trusted. */
+  display: string | null;
+  /** The sender's own name on the surface. Untrusted. */
+  profileName: string | null;
+  /** The workspace it answers in; null when that workspace is gone. */
+  orgId: string | null;
+  orgName: string | null;
+  createdAt: string;
+  confirmedAt: string | null;
+  /** Pending only: when it stops counting. */
+  expiresAt: string | null;
+}
+
+/** `GET /me/surface-links`: `allowed`, never `AuthConfig.surface`, decides whether the apps offer linking. */
+export interface SurfaceLinks {
+  /** Null when this server bridges no surface. */
+  surface: { name: string } | null;
+  allowed: boolean;
+  /** Active first, then pending. */
+  links: SurfaceLink[];
+}
+
+/** A code to type on the surface, 10 minutes, once. */
+export interface SurfaceLinkCode {
+  /** As shown: `KQ7M-3XPF`. */
+  code: string;
+  /** Opens the surface with the code typed. */
+  openUrl: string;
+  expiresAt: string;
 }
 
 export interface User {
@@ -393,7 +442,8 @@ export interface AccountDeletionPlan {
   /** Others are in them: I leave. */
   leaves: { id: string; name: string; role: Role }[];
   /** I'm their only owner, others are in them and they aren't being deleted: the account can't go yet (`sole_owner`). */
-  soleOwner: { id: string; name: string }[];
+  /** `onlyOutside`: everyone else is an outside collaborator (ADR 0191); optional, an older server doesn't say. */
+  soleOwner: { id: string; name: string; onlyOutside?: boolean }[];
   /** Computers I connected in the workspaces I leave, not in system mode: removed with the account. */
   computers: { orgId: string; id: string; name: string }[];
   /** Keys, connections and mailboxes I added to the workspaces I leave: the workspace's, so they stay. */
@@ -1100,6 +1150,10 @@ export interface AgentDraft {
   mail?: { accountId: string; address: string; level: "read" | "write"; ownerUserId: string }[];
   /** A routine of its own, created with it. */
   routine?: ProposedRoutine | null;
+  /** How it introduces itself, in its own voice (ADR 0164): the speech bubble on its card. */
+  hello?: string;
+  /** Catalog apps its job needs that aren't connected yet (preset ids): its chat asks to connect them. */
+  later?: string[];
   ai: SuggestedAi;
 }
 
@@ -1448,7 +1502,7 @@ export interface Message {
   /** On a run's last message here: the works it handed over to other agents, each with its line; live via `agent.work`. */
   handedWorks?: WorkView[];
   /**
-   * `meta.liveRef` (ADR 0197): the live file the message is about and what its writer had selected in it, shown as a
+   * `meta.liveRef` (ADR 0199): the live file the message is about and what its writer had selected in it, shown as a
    * line above it. An older server leaves it in `meta` only: `liveRefOf(message.meta)` reads it there.
    */
   liveRef?: LiveRef;
@@ -3655,7 +3709,7 @@ export type ArtifactKind =
   | "block"
   | "poll"
   | "choices"
-  /** Live files people and agents edit together (ADR 0194): their content here is a small preview. */
+  /** Live files people and agents edit together (ADR 0196): their content here is a small preview. */
   | "spreadsheet"
   | "slides"
   | "canvas";
@@ -3690,7 +3744,7 @@ export interface ArtifactDiffFile {
 
 export type ArtifactContent =
   /**
-   * A document (ADR 0198): a live file, sent as its whole text in Markdown (what the apps show until they edit it
+   * A document (ADR 0200): a live file, sent as its whole text in Markdown (what the apps show until they edit it
    * live) and its card's preview.
    */
   | { kind: "document"; markdown: string; preview?: DocumentPreview }
@@ -3709,7 +3763,7 @@ export type ArtifactContent =
   | ArtifactLiveContent;
 
 /**
- * A live file's content (ADR 0194 §7): the small preview cards and the Drive draw (the top-left cells, the first slide,
+ * A live file's content (ADR 0196 §7): the small preview cards and the Drive draw (the top-left cells, the first slide,
  * the canvas's first shapes), never the whole document, which only the room (`useLiveRoom`) holds.
  */
 export type ArtifactLiveContent =
@@ -3798,11 +3852,11 @@ export interface Artifact {
   sharing?: ArtifactSharing;
   /** I may change `sharing`: it lives in a conversation not everyone reads, and I read it there. */
   canShare?: boolean;
-  /** A live file's conversation (ADR 0197), once someone opened or wrote in it; null until then and for other kinds. */
+  /** A live file's conversation (ADR 0199), once someone opened or wrote in it; null until then and for other kinds. */
   conversation?: FileConversation | null;
 }
 
-/** Where a live file's conversation lives (ADR 0197): the chat's routes read and post to this thread. */
+/** Where a live file's conversation lives (ADR 0199): the chat's routes read and post to this thread. */
 export interface FileConversationRef {
   channelId: string;
   rootId: string;
@@ -3817,7 +3871,7 @@ export interface FileConversation extends FileConversationRef {
   working: boolean;
 }
 
-/** A live file's conversation with something I haven't read (`GET …/unread-files`, ADR 0197). */
+/** A live file's conversation with something I haven't read (`GET …/unread-files`, ADR 0199). */
 export interface UnreadFile {
   artifactId: string;
   /** Replies I haven't read: every one where I follow the conversation, else only those that mention me. */
@@ -4833,11 +4887,12 @@ export interface Machine {
    * OS and arch are blank.
    */
   kind?: MachineKind;
-  /** Runner connected now (`machine.status` events). */
+  /** Runner connected now (`machine.status` events), or asleep in standby: people never see it sleep. */
   online: boolean;
   /**
-   * ADR 0161: the workspace's own computer is asleep in standby, offline by design: it wakes when something wants it,
-   * and opens as it does. Absent from an older server: not in standby.
+   * ADR 0161: the workspace's own computer is asleep in standby: it wakes when something wants it, and its screen
+   * opens as it does. False again (and `online` the runner's) once a wake failed to bring it back in time. Absent
+   * from an older server: not in standby.
    */
   standby?: boolean;
   lastSeenAt: string | null;
@@ -6166,6 +6221,11 @@ export interface MachineAccount {
    */
   useOrder?: number | null;
   /**
+   * The id of the oldest login of the same account on its computer: the same for every login of one account (Claude
+   * signs in once per agent), whoever looks, where its email and key's end are its owner's (absent: an older server).
+   */
+  sameAs?: string;
+  /**
    * A run at another account's limit may go on with it: Claude Code's or Codex's own sign-in (never a key), shared
    * between agents and signed in. Only these have a place in the order of use (absent: an older server).
    */
@@ -6992,7 +7052,7 @@ export interface NotificationSource {
   dashboardId?: string;
   /** `widget_alert`, `widget_failed`: the widget. */
   widgetId?: string;
-  /** A message in a live file's conversation (ADR 0197): the file, opened with it at `messageId`. */
+  /** A message in a live file's conversation (ADR 0199): the file, opened with it at `messageId`. */
   artifactId?: string;
   /** Channel name, thread title, issue title, topic title, mission or routine name (or the computer's name). */
   label?: string;
@@ -7302,6 +7362,8 @@ export type UnreadEvent =
   | { type: "channel.read"; channelId: string; userId: string; lastReadAt: string }
   | { type: "channel.muted"; channelId: string; muted: boolean }
   | { type: "thread.read"; threadId: string; channelId: string; lastReadAt: string }
+  /** One of my outside chat surface links changed (ADR 0187): `surfaces.list` reads again. */
+  | { type: "surface_link.changed"; linkId: string; status: "pending" | "active" | "gone" }
   /** How my conversations look here, changed on another device (`chatPrefs` as the server keeps it). */
   | { type: "chat.prefs"; chatPrefs: ChatPrefs };
 

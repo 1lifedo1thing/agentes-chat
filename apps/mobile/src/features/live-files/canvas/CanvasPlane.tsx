@@ -95,7 +95,7 @@ import {
 import { ArrowLabel, FrameName, type Motion, ShapeItem } from "./ShapeItems";
 
 /**
- * A canvas's plane on the phone (ADR 0194 §2, §9): an endless world under a camera (`camera.ts`), panned with a finger
+ * A canvas's plane on the phone (ADR 0196 §2, §9): an endless world under a camera (`camera.ts`), panned with a finger
  * (it glides on when let go), zoomed with two from 10% to 400% around them. The dots and the frames are drawn on the UI
  * thread (Skia) for every frame; the shapes are views laid out at the zoom they were last settled at and moved and
  * scaled with the camera, laid out again sharp when the fingers lift, and only those around what the screen shows.
@@ -106,9 +106,9 @@ import { ArrowLabel, FrameName, type Motion, ShapeItem } from "./ShapeItems";
  * press asks for its menu (or the plane's). Moving and stretching follow the finger on the UI thread and are written to
  * the file once, when it lifts. Everyone else's pointer glides over the plane with their name.
  *
- * The dock's tools (ADR 0194 §2) change what one finger does: the pen draws (the stroke follows the finger on the UI
+ * The dock's tools (ADR 0196 §2) change what one finger does: the pen draws (the stroke follows the finger on the UI
  * thread and is written once it lifts), the arrow drags from one place to another, a comment pins where the finger
- * taps (ADR 0197); two fingers still move and zoom. The conversation's comments show as pins (author's face and
+ * taps (ADR 0199); two fingers still move and zoom. The conversation's comments show as pins (author's face and
  * number), a tap on one opens its message.
  */
 /** What one finger does on the plane. */
@@ -159,7 +159,7 @@ export interface CanvasPlaneProps {
   onArrow?: (from: Pt, to: Pt) => void;
   /** A tap with the comment tool: where, in the world. */
   onComment?: (at: Pt) => void;
-  /** The conversation's comments pinned on the canvas (ADR 0197 §3). */
+  /** The conversation's comments pinned on the canvas (ADR 0199 §3). */
   pins?: readonly TalkPin[];
   /** A tap on a pin. */
   onPin?: (pin: TalkPin) => void;
@@ -1055,7 +1055,7 @@ function pinAt(pins: readonly TalkPin[], p: Pt, cam: { x: number; y: number; s: 
 }
 
 /**
- * A comment pinned on the canvas (ADR 0197): a raised bubble with its author's face and its number, its cut corner on
+ * A comment pinned on the canvas (ADR 0199): a raised bubble with its author's face and its number, its cut corner on
  * the spot it points at; it rides with the camera on the UI thread at the screen's own size.
  */
 function PinMark({

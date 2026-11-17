@@ -7,7 +7,7 @@ import { readXls } from "./xls-read";
 import { readXlsx } from "./xlsx-read";
 
 /**
- * Office files on the server (ADR 0196): uploaded workbooks, decks and Word documents read into what the apps draw
+ * Office files on the server (ADR 0198): uploaded workbooks, decks and Word documents read into what the apps draw
  * (`WorkbookData`, `DeckData`, clean HTML, a live document's blocks), and live files written out as `.xlsx`, `.csv`,
  * `.pptx`, `.docx` and PDF.
  */

@@ -1,5 +1,5 @@
 /**
- * Draws a spreadsheet's visible window on a canvas (ADR 0194): cells with their fills, borders, text (overflowing
+ * Draws a spreadsheet's visible window on a canvas (ADR 0196): cells with their fills, borders, text (overflowing
  * into empty neighbors, clipped or wrapped), gridlines a device pixel wide, frozen panes, the headers, and on top the
  * selection, other people's and agents' ranges, a formula's references while it is typed, and the fill handle. Only
  * what is on screen is read and drawn, so a sheet of 100,000 cells scrolls as fast as an empty one.

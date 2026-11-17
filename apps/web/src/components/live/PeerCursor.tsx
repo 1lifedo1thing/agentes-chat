@@ -5,7 +5,7 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { PeerFace, peerWorking, usePeerLook } from "./peers";
 
 /**
- * Someone's pointer over a live file (ADR 0194 §5), in any editor: a person's classic arrow in their color with their
+ * Someone's pointer over a live file (ADR 0196 §5), in any editor: a person's classic arrow in their color with their
  * name on a tag beside it, an agent's pixel arrow with its face and name, as its cursor over its browser (ADR 0040
  * §7.2). The editor gives the point in its own units (canvas world, slide units, sheet pixels) and how they land on
  * its layer (`toScreen`, its pan, zoom and scroll): the cursor glides between the points it is given, in those units,

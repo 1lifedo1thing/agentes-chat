@@ -165,7 +165,7 @@ describe("opening an Office file as a live file", () => {
     expect(made).toMatchObject({ kind: "document", title: "plan", channelId: null });
     const detail = await getArtifact(f.artifactDeps, owner(), f.org.id, made.id);
     expect(detail.content.kind === "document" && detail.content.markdown.startsWith("# Plano & metas")).toBe(true);
-    // Its PNG is the document's own picture (the SVG is left out, ADR 0196), and it says where it came from.
+    // Its PNG is the document's own picture (the SVG is left out, ADR 0198), and it says where it came from.
     const assets = await listAssets(f.artifactDeps, owner(), f.org.id, made.id);
     expect(assets).toHaveLength(1);
     const head = await loadHeadDoc(f.db, f.org.id, made.id);

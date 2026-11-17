@@ -4,7 +4,7 @@ import { ValidationError } from "../errors";
 import { xmlAttr, xmlText } from "../office/xml";
 
 /**
- * SVG pictures in live files (ADR 0194 §8): an icon, a logo, a diagram or an illustration an agent writes, or an SVG
+ * SVG pictures in live files (ADR 0196 §8): an icon, a logo, a diagram or an illustration an agent writes, or an SVG
  * found on the web. What is stored is never the text that came in: it is parsed, rebuilt from an allowlist of SVG's
  * static drawing elements and attributes, and written out again, so only shapes, paths, text, gradients, patterns,
  * masks, clips, markers and filters remain. Gone are scripts, event handlers, `foreignObject`, embedded or linked

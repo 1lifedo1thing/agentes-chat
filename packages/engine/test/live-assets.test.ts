@@ -89,7 +89,7 @@ describe("a live file's pictures", () => {
         source: "upload",
       }),
     ).rejects.toMatchObject({ code: "live.asset_type" });
-    // An SVG goes through the sanitizer (ADR 0194 §8): one it can't use is refused with its reason.
+    // An SVG goes through the sanitizer (ADR 0196 §8): one it can't use is refused with its reason.
     const sizeless = new TextEncoder().encode(
       "<svg xmlns='http://www.w3.org/2000/svg'><script>alert(1)</script></svg>",
     );

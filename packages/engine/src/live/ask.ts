@@ -9,7 +9,7 @@ import type { Talker } from "../talker";
 import { admitFileAgents, cleanSelection, ensureFileConversation, type LiveAskSelection } from "./conversation";
 
 /**
- * "Ask an agent" from inside a live file (ADR 0194 §6, ADR 0197): the person's own message to the agent, carrying
+ * "Ask an agent" from inside a live file (ADR 0196 §6, ADR 0199): the person's own message to the agent, carrying
  * what they had selected (`meta.liveRef`), posted in the file's own conversation, where the agent works on the file
  * while everyone in it watches. Kept for older apps: the apps now write in the file's conversation themselves.
  */

@@ -38,7 +38,7 @@ import type { LiveDocs } from "./docs";
 import { rasterPicture } from "./svg";
 
 /**
- * Pictures made with the workspace's image AI (ADR 0195), on a canvas or in a conversation.
+ * Pictures made with the workspace's image AI (ADR 0197), on a canvas or in a conversation.
  *
  * On a canvas, a request first places a frame titled with the prompt and one placeholder per picture, so everyone in
  * the canvas sees what is coming and who asked; the `live.image` job calls the Model Gateway, stores each picture as an
@@ -58,7 +58,7 @@ export const LIVE_IMAGE_JOB = "live.image";
 const JOB_ATTEMPTS = 3;
 /** The most one provider call may take before the request fails (`provider`). */
 export const IMAGE_CALL_TIMEOUT_MS = 180_000;
-/** The most an agent waits for its pictures (ADR 0195): two minutes. */
+/** The most an agent waits for its pictures (ADR 0197): two minutes. */
 export const AGENT_IMAGE_WAIT_MS = 120_000;
 /** A placeholder's longest side on the canvas, in world units. */
 const PLACEHOLDER_SIDE = 384;
@@ -398,7 +398,7 @@ export async function requestImages(
 }
 
 /**
- * Try again (ADR 0195): the request's failed placeholders wait again (or new ones are placed when they were all
+ * Try again (ADR 0197): the request's failed placeholders wait again (or new ones are placed when they were all
  * deleted), its job is queued anew, and the request is now the actor's (their budget or limit, their name on the
  * pictures). A request still waiting or running, or one that made every picture, comes back as it is.
  */
@@ -548,7 +548,7 @@ async function actorOfRequest(db: Executor, row: RequestRow, channelOfFile: stri
 }
 
 /**
- * The `live.image` job's work (ADR 0195), idempotent: the request's placeholders still waiting are made through the
+ * The `live.image` job's work (ADR 0197), idempotent: the request's placeholders still waiting are made through the
  * gateway, stored as the canvas's assets and turned into their pictures; what wasn't made says why. A provider that
  * is down or limiting is tried again by the outbox (the placeholders keep "running") until the last attempt.
  */
@@ -801,7 +801,7 @@ function forTheModel(pictures: readonly { bytes: Uint8Array; contentType: string
 }
 
 /**
- * An agent's pictures on a canvas (the `generate_image` tool with a canvas, ADR 0195): asked like a person's
+ * An agent's pictures on a canvas (the `generate_image` tool with a canvas, ADR 0197): asked like a person's
  * (`requestImages`), then waited for, at most two minutes. Returns the canvas as the reply's card (`artifact`), the
  * pictures made, base64, as long as they fit what a model is shown (`MODEL_IMAGE_BYTES`), the request as it stood, and
  * whether the wait ran out (the pictures still come to the canvas then).
@@ -907,7 +907,7 @@ function pictureName(prompt: string, index: number, count: number, mediaType: st
 }
 
 /**
- * An agent's pictures in its conversation (the `generate_image` tool with no canvas, ADR 0195): made through the
+ * An agent's pictures in its conversation (the `generate_image` tool with no canvas, ADR 0197): made through the
  * Model Gateway while the agent waits (budget, standing and usage as every image call), each saved as a picture file
  * where its run posts (`createFileArtifact`, so its reply carries them as pictures in the chat), and handed back to
  * the model to look at. `references` are pictures the agent reads (a picture posted in the conversation), for

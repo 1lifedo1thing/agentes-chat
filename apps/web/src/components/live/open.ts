@@ -6,7 +6,7 @@ import type { useNavigate } from "@tanstack/react-router";
 type Navigate = ReturnType<typeof useNavigate>;
 
 /**
- * Opens a live file on its own page (ADR 0194 §9): at a saved version read-only (`version`), or as it is now. Every
+ * Opens a live file on its own page (ADR 0196 §9): at a saved version read-only (`version`), or as it is now. Every
  * link to a file stays the Drive's (`filePath`); whatever opens one (the Drive, a message's card, a link) comes here
  * for the live kinds instead of the viewer.
  */

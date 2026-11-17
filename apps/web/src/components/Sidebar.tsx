@@ -224,7 +224,7 @@ const SIDEBAR_EVENT = "agentes:sidebar";
 let sidebarCollapsed = storage.get(STORAGE_KEYS.sidebarCollapsed) === "1";
 let tabletOpen = false;
 /**
- * A page that runs out of room asked for the rail (a live file with its conversation beside it, ADR 0197): shown as
+ * A page that runs out of room asked for the rail (a live file with its conversation beside it, ADR 0199): shown as
  * the rail on desktop widths, never stored, so the person's own choice comes back when the page lets go.
  */
 let roomAsked = false;

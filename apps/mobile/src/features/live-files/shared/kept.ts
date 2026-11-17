@@ -3,7 +3,7 @@ import { Directory, File, Paths } from "expo-file-system";
 import { perServer } from "@/lib/server";
 
 /**
- * Changes made to a live file on this phone that the server hasn't stored yet (ADR 0194 §2), kept across the app being
+ * Changes made to a live file on this phone that the server hasn't stored yet (ADR 0196 §2), kept across the app being
  * closed: one file per live file and server, in the app's own documents (not the cache, which the system may clear),
  * as `lib/outbox.ts` keeps unsent messages. They go back into the file the next time it opens, and leave once the
  * server has them. Never throws: a phone that can't keep them still sends them while the app stays open.

@@ -100,7 +100,7 @@ export interface RealtimeDeps {
   browserLive?: BrowserLive;
   /** Agents' desktops and terminals (ADR 0058): people's stream sockets and the runners' data sockets. */
   streams?: StreamSockets;
-  /** Live files (ADR 0194): one socket per open spreadsheet, presentation or canvas (`/api/live`). */
+  /** Live files (ADR 0196): one socket per open spreadsheet, presentation or canvas (`/api/live`). */
   live?: LiveSockets;
   /** How often an open socket checks its session and channels again (`SESSION_RECHECK_MS`; tests go faster). */
   sessionRecheckMs?: number;
@@ -152,7 +152,7 @@ export interface FrameSocketData {
 
 /**
  * Every socket of the server: browsers (`/api/ws`), runners (`/api/machines/connect`), streams (ADR 0058) and live
- * files (ADR 0194).
+ * files (ADR 0196).
  */
 export type SocketData = BrowserSocketData | MachineSocketData | StreamSocketData | FrameSocketData | LiveSocketData;
 
@@ -193,7 +193,7 @@ export async function personUpgrade(
   req: Request,
   orgId: string,
 ): Promise<(SessionUser & { sessionToken: string }) | Response> {
-  if (!requestOriginAllowed(origins, req.headers)) {
+  if (!(await requestOriginAllowed(deps.db, origins, req.headers))) {
     return new Response("Cross-origin WebSocket refused", { status: 403 });
   }
   if (!UUID.test(orgId)) return new Response("orgId is required", { status: 400 });
@@ -290,7 +290,7 @@ export async function currentSubscriptions(
           isNotNull(schema.channelMembers.id),
           // A task's conversation: whoever sees the task (ADR 0145).
           and(eq(schema.channels.kind, "task"), taskReaderSql(sql`${schema.channels.id}`, sql`${userId}::text`)),
-          // A live file's conversation: whoever reads the file (ADR 0197).
+          // A live file's conversation: whoever reads the file (ADR 0199).
           and(
             eq(schema.channels.kind, "file"),
             fileConversationReaderSql(sql`${schema.channels.id}`, sql`${userId}::text`),

@@ -2,7 +2,7 @@ import type { DocRun } from "@agenteschat/live/document";
 import * as Y from "yjs";
 
 /**
- * A document block's words edited character by character on the phone (ADR 0198): the field's text is the block's
+ * A document block's words edited character by character on the phone (ADR 0200): the field's text is the block's
  * texts and line breaks laid end to end, and each change typed there becomes the smallest edit of the block's own
  * `Y.XmlText`s (one delete, one insert, at the place it happened), so two people typing in the same block both keep
  * what they wrote, and the marks of the words nobody touched stay. Words typed take the marks of the character before

@@ -27,7 +27,7 @@ import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef, 
 import { useTranslation } from "react-i18next";
 
 /**
- * The spreadsheet's toolbar (ADR 0194): undo and redo, number formats and decimals, bold, italic, underline and
+ * The spreadsheet's toolbar (ADR 0196): undo and redo, number formats and decimals, bold, italic, underline and
  * strikethrough, text and fill colors, alignment and wrapping, merging and borders, frozen panes, sorting and the
  * common functions. One row of 32 px icon buttons in groups, scrolling sideways with faded edges when it doesn't
  * fit, a single tab stop moved with the arrow keys (`role="toolbar"`). Every tip says the button's name and its keys.

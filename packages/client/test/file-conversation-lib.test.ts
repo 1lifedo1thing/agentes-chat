@@ -4,7 +4,7 @@ import { createHttpApi, fileConversationOf, liveRefOf, liveSelectionOf, messageL
 import { openTarget } from "../src/lib/notifications";
 
 /**
- * A live file's conversation as the apps read it (ADR 0197): its root, what a message points at in the file, the
+ * A live file's conversation as the apps read it (ADR 0199): its root, what a message points at in the file, the
  * routes that open it and count it, and where a notice about it opens.
  */
 

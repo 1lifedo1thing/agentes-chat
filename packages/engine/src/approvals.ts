@@ -1376,7 +1376,7 @@ const seenBy = (db: Database, orgId: string, actorId: string) =>
         .where(and(eq(channelMembers.orgId, orgId), eq(channelMembers.userId, actorId))),
     ),
     // A task's conversation (ADR 0145): people are never its members; whoever sees the task sees its cards. A live
-    // file's (ADR 0197): whoever reads the file.
+    // file's (ADR 0199): whoever reads the file.
     taskReaderSql(sql`${approvals.channelId}`, sql`${actorId}::text`),
     fileConversationReaderSql(sql`${approvals.channelId}`, sql`${actorId}::text`),
   );

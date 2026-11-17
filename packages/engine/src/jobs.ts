@@ -89,6 +89,7 @@ import {
   type TaskCall,
   wakeConversationForTask,
 } from "./machine-tasks";
+import { WAKE_OVERDUE_JOB, wakeOverdue } from "./machine-wake";
 import { isMediaAfterReply, isMediaOnly } from "./media";
 import { getMessage, referencedOf } from "./messages";
 import { checkMissionDone } from "./mission-delivery";
@@ -128,6 +129,7 @@ import type { SkillDeps } from "./skills";
 import { TEAM_HELLO_JOB } from "./standing";
 import { purgeOrgFiles, purgeUserFiles, runMigration, type StorageDeps } from "./storage";
 import { postStretchCard, STRETCH_JOB, type StretchHold } from "./stretch";
+import { fallBack, queueSurfaceDelivery, SURFACE_FALLBACK_JOB } from "./surfaces/deliveries";
 import { sayTeamHello } from "./team-templates";
 import { postTeamWeek, TEAM_DAY_JOB, TEAM_WEEK_JOB } from "./team-week";
 import { isAgentesCloud } from "./telemetry";
@@ -210,7 +212,7 @@ export interface JobDeps extends RunExecutorDeps {
   };
   /** Drive (routines' reports, polls). */
   artifacts?: ArtifactDeps;
-  /** Live files this process hosts (ADR 0194): the image job places pictures on canvases through them (ADR 0195). */
+  /** Live files this process hosts (ADR 0196): the image job places pictures on canvases through them (ADR 0197). */
   live?: LiveDocs;
   /** Agents' computers: the hub and public URL missions use. */
   sandbox?: SandboxDeps | null;
@@ -586,7 +588,7 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       if (!message) return;
       if (deps.context && message.threadId) await maybeEnqueueReflection(deps, message.orgId, message.threadId);
       // An issue's work card, its start (the run is already started) and the "took issue #N" line route to nobody.
-      // A task conversation's root (ADR 0145) stands for the task, a file conversation's (ADR 0197) for the file:
+      // A task conversation's root (ADR 0145) stands for the task, a file conversation's (ADR 0199) for the file:
       // nobody is routed either.
       if (message.meta.issueWork || message.meta.issueWorkStart || message.meta.issueTaken) return;
       if (message.meta.taskConversation || message.meta.fileConversation) return;
@@ -1092,6 +1094,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         statusOnly: job.payload.statusOnly === true,
       });
     },
+    // A computer in standby wanted awake a grace ago: still asleep, people see it down (ADR 0161).
+    [WAKE_OVERDUE_JOB]: async (job) => {
+      await wakeOverdue({ db: deps.db, pubsub: deps.pubsub }, String(job.payload.machineId));
+    },
     // A task start cut by a drop, once it can't still be underway: the agent's journal on its computer settles it.
     "machine.task_start_check": async (job) => {
       const hub = missions.hub;
@@ -1128,9 +1134,9 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     },
     // What else the right hand does by itself: each lane's own jobs (`right-hand-lane.ts`).
     ...lodiLaneHandlers(deps),
-    // Live files (ADR 0194): their changes folded into the state, and a version after a quiet spell.
+    // Live files (ADR 0196): their changes folded into the state, and a version after a quiet spell.
     ...liveJobHandlers({ artifacts: deps.artifacts, pubsub: deps.pubsub, log: deps.log }),
-    // Pictures asked for on a canvas (ADR 0195): made through the gateway, placed where their placeholders wait.
+    // Pictures asked for on a canvas (ADR 0197): made through the gateway, placed where their placeholders wait.
     ...liveImageJobHandlers({ artifacts: deps.artifacts, live: deps.live, gateway: deps.gateway, log: deps.log }),
     // A person's monthly AI limit neared or reached (ADR 0141): the person hears 80%, who decides hears 100%.
     [PERSON_LIMIT_JOB]: async (job) => {
@@ -1142,10 +1148,15 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     },
     // In-app notifications of a message: mentions, thread replies, DMs.
     "notifications.message": async (job) => {
-      await notifyMessage({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), String(job.payload.messageId));
+      const messageId = String(job.payload.messageId);
+      // A reply read on an outside chat surface goes there instead (ADR 0187); it falls back to this if not sent.
+      if (!(await queueSurfaceDelivery(deps.db, orgOf(job), messageId))) {
+        await notifyMessage({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), messageId);
+      }
       // A reply in a task's conversation (ADR 0145): the board's card counts it.
-      await announceTaskConversation({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), String(job.payload.messageId));
+      await announceTaskConversation({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), messageId);
     },
+    [SURFACE_FALLBACK_JOB]: (job) => fallBack({ db: deps.db, pubsub: deps.pubsub }, String(job.payload.deliveryId)),
     // A request for help in an agent's browser nobody answered within the hour: the people asked hear it again, once.
     [HANDOFF_REMIND_JOB]: async (job) => {
       await remindBrowserHandoff({ db: deps.db, pubsub: deps.pubsub }, orgOf(job), String(job.payload.handoffId));

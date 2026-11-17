@@ -6,7 +6,7 @@ import { useToast } from "@/lib/toast";
 import { forgetJustCreated, wasJustCreated } from "../just-created";
 
 /**
- * A document's title on its page (ADR 0198), the Wiki's (`wiki-title`): the file's own name, renamed where it is. It
+ * A document's title on its page (ADR 0200), the Wiki's (`wiki-title`): the file's own name, renamed where it is. It
  * reads as the page's title and turns into its field on a click or Tab, wrapping as the title does; Enter renames and
  * goes on to the text, leaving it renames, Esc puts it back. A new document opens with it selected, ready to be named.
  */

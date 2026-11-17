@@ -267,7 +267,7 @@ function imagesOf(body: Record<string, unknown>): { images: string[]; text: stri
 }
 
 /**
- * Pictures over the Interactions API (ADR 0195): an image `response_format` (aspect and size), the prompt and the
+ * Pictures over the Interactions API (ADR 0197): an image `response_format` (aspect and size), the prompt and the
  * references as the input's items, one picture per call, so `count` calls one after another. A prompt Google blocks
  * (its safety codes, or an answer in words with no picture) is `imageBlockedError`; a failure after some pictures came
  * returns those, with the failure in `error`.

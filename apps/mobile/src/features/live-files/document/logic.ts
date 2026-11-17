@@ -2,7 +2,7 @@ import type { LiveSelection } from "@agenteschat/client";
 import { blockText, type DocBlock, type DocParagraph, runsText } from "@agenteschat/live/document";
 
 /**
- * A document on the phone (ADR 0198), the pure part: which blocks the phone edits, a block's style changed (text,
+ * A document on the phone (ADR 0200), the pure part: which blocks the phone edits, a block's style changed (text,
  * headings, quote, code) and its list toggled, the numbers of a numbered list, and what "Ask Atlas" quotes. The words
  * themselves are edited character by character (`text.ts`). The screen draws it; the tests read it.
  */
@@ -100,7 +100,7 @@ export function listNumbers(blocks: readonly DocBlock[]): Map<string, number> {
   return out;
 }
 
-/** The most words a quote carries to the conversation (ADR 0197 §3), and the most its label shows. */
+/** The most words a quote carries to the conversation (ADR 0199 §3), and the most its label shows. */
 const QUOTE_MAX = 200;
 const LABEL_MAX = 60;
 

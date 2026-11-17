@@ -7,7 +7,7 @@ import { readZip, zip } from "../src/zip";
 import { docxDocument } from "./office-fixtures";
 
 /**
- * What a hostile file or text can make the server do while it reads one (ADR 0196, 0198): Markdown, Word tables,
+ * What a hostile file or text can make the server do while it reads one (ADR 0198, 0200): Markdown, Word tables,
  * OpenDocument repeats and CSV lines that would cost the square of their size, or millions of cells, on the server's
  * own thread. Each case would take minutes or fill the memory without its bound; here it is refused or read in a
  * blink, and ordinary input reads as before.

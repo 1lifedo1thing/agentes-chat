@@ -10,7 +10,7 @@ import {
 } from "./harness";
 
 /**
- * A live file's conversation over HTTP (ADR 0197): opened on first use by whoever reads the file, written with the
+ * A live file's conversation over HTTP (ADR 0199): opened on first use by whoever reads the file, written with the
  * chat's own routes, a message pointing at what was selected (`liveRef`), and the file's unread marks.
  */
 

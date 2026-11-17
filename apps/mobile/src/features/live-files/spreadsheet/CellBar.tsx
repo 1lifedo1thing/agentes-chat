@@ -13,7 +13,7 @@ import {
 import { Button, IconButton, Text, useFieldText, useTheme } from "@/ui";
 
 /**
- * The cell bar under a spreadsheet (ADR 0194): the active cell's address and what it holds as the person would type it
+ * The cell bar under a spreadsheet (ADR 0196): the active cell's address and what it holds as the person would type it
  * ("B4 · =SOMA(B2:B3)"), or the selection's sum, average and count, with Editar. Editing, it is a field riding the
  * keyboard, in the person's language; Enter writes the cell and moves to the one under it, keeping the keyboard up
  * for the next; ✓ writes and closes; × leaves the cell as it was. Over the keys while a formula is typed, the keys

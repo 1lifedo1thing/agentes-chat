@@ -17,7 +17,7 @@ import {
 import type { Fixture } from "./fixtures";
 
 /**
- * Live files in engine tests (ADR 0194): `LiveDocs` instances standing for processes on one database, and a person's
+ * Live files in engine tests (ADR 0196): `LiveDocs` instances standing for processes on one database, and a person's
  * app held in memory that talks to a session the way a socket would (y-protocols framing, asynchronously both ways).
  */
 

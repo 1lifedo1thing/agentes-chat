@@ -409,7 +409,7 @@ describe("losing access while it's open", () => {
     const hers = livePeer(url, headersOf(ana));
     const mine = livePeer(url, headersOf(owner));
     try {
-      // Who it is shared with edits it like who it lives with (ADR 0194 §1).
+      // Who it is shared with edits it like who it lives with (ADR 0196 §1).
       expect((await hers.ready()).mode).toBe("edit");
       await mine.ready();
       expect((await sharing({ mode: "conversation" })).status).toBe(200);

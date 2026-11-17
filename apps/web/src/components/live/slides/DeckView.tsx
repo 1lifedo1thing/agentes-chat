@@ -14,7 +14,7 @@ import { Scaled, SlideBody, SlideImages, type SlideImageUrl, themeFrom } from ".
 import { useBoxSize } from "./useBoxSize";
 
 /**
- * A presentation to look at, not to edit (ADR 0196): an uploaded `.pptx` as its preview reads it (`DeckData`), or a
+ * A presentation to look at, not to edit (ADR 0198): an uploaded `.pptx` as its preview reads it (`DeckData`), or a
  * live file's deck (`DeckView`, a version, a file in the trash). Slides one under another at the width of the room,
  * numbered, hidden ones marked, as a long document reads; each is drawn only once it comes near the screen.
  */

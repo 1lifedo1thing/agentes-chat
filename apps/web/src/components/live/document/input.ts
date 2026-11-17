@@ -6,7 +6,7 @@ import type { Plugin, Transaction } from "prosemirror-state";
 import { docSchema, M, N, widthFraction } from "./schema";
 
 /**
- * What typing and pasting turn into in a document (ADR 0198): the Markdown people already type ("# " a heading, "- " a
+ * What typing and pasting turn into in a document (ADR 0200): the Markdown people already type ("# " a heading, "- " a
  * list, "> " a quote, "```" code, "---" a rule, **bold**, *italic*, `code`, ~~strike~~), and Markdown pasted as
  * plain text read as the document's blocks (the same reader agents write through).
  */

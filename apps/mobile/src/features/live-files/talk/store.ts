@@ -2,7 +2,7 @@ import type { LiveRef, LiveSelection } from "@agenteschat/client";
 import { useSyncExternalStore } from "react";
 
 /*
- * What travels between a live file's screen and its conversation's (ADR 0197), which a route can't carry: the part
+ * What travels between a live file's screen and its conversation's (ADR 0199), which a route can't carry: the part
  * of the file the conversation opens about (the quote over its composer, sent as the next message's `meta.liveRef`),
  * and the part a message's line names, shown when the file's screen is in view again.
  */

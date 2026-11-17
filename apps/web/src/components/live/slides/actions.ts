@@ -23,7 +23,7 @@ import type * as Y from "yjs";
 import { boundsOf, elementBox, roundBox } from "./geometry";
 
 /**
- * The presentation's edits as the editor makes them (ADR 0194 §2): each one goes through `@agenteschat/live`'s slide
+ * The presentation's edits as the editor makes them (ADR 0196 §2): each one goes through `@agenteschat/live`'s slide
  * edits with the `LOCAL` origin (so the person's undo takes it back, and only theirs), several at once in one
  * transaction. A refused edit (past a limit, a slide someone else just deleted) comes back as its code for the words.
  */

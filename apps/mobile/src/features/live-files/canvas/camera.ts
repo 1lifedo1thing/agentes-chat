@@ -1,5 +1,5 @@
 /*
- * The camera over a canvas on the phone (ADR 0194 §2): `x`, `y` the world point at the plane's top left, `s` points
+ * The camera over a canvas on the phone (ADR 0196 §2): `x`, `y` the world point at the plane's top left, `s` points
  * per world unit, so a world point `p` is on screen at `(p - (x, y)) * s`, as the agents' screens and the spreadsheet's
  * grid count it (and as `LivePointer` reads a view). The plane is endless: only the zoom is bounded. Worklets, run on
  * the UI thread by the gestures, and plain functions in the tests.

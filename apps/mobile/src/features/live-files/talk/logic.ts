@@ -1,7 +1,7 @@
 import type { LiveKind, LiveRef, LiveSelection } from "@agenteschat/client";
 
 /**
- * A live file's own conversation on the phone (ADR 0197), the pure part: the line under the file (who took part, an
+ * A live file's own conversation on the phone (ADR 0199), the pure part: the line under the file (who took part, an
  * agent at work there or the last message, how many), the quote over the composer and the line over a message about
  * part of the file, and which agent "Ask Atlas" calls. The screens draw it; the tests read it.
  */
@@ -108,7 +108,7 @@ export function oneLine(text: string): string {
 type Who = { type: string; id: string | null };
 
 /**
- * The file's agent (ADR 0197), whom "Ask Atlas" calls: the one that made it, else the last agent that spoke in
+ * The file's agent (ADR 0199), whom "Ask Atlas" calls: the one that made it, else the last agent that spoke in
  * its conversation, else the last agent among those who took part, else the workspace's right hand, else the first
  * agent this person may ask. Only agents `askable` says this person may ask; null: none.
  */
@@ -147,7 +147,7 @@ export interface TalkPin {
 }
 
 /**
- * The pins a canvas draws (ADR 0197 §3): the conversation's messages about this file with a point, numbered in the
+ * The pins a canvas draws (ADR 0199 §3): the conversation's messages about this file with a point, numbered in the
  * order they were written.
  */
 export function talkPins(

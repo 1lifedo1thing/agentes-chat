@@ -18,7 +18,7 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
     preloadLocale(),
   ],
-  // One copy of Yjs: it checks its own types with instanceof (live files, ADR 0194).
+  // One copy of Yjs: it checks its own types with instanceof (live files, ADR 0196).
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
     dedupe: ["yjs", "lib0", "y-protocols", "prosemirror-model", "prosemirror-state", "prosemirror-view"],

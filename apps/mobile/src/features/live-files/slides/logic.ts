@@ -11,7 +11,7 @@ import {
 } from "@agenteschat/live/slides";
 
 /**
- * Presentations on the phone (ADR 0194 §9): a slide drawn in its own units (the deck's 1920×1080) scaled to the
+ * Presentations on the phone (ADR 0196 §9): a slide drawn in its own units (the deck's 1920×1080) scaled to the
  * screen, its texts as the web draws them (lists, levels, marks), the phone's text editor (one paragraph a line), who
  * is on which slide, who presents, and which slides a presentation shows. Pure: the screens draw it and the tests read
  * it.

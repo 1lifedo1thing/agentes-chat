@@ -61,9 +61,9 @@ import { documentExport, liveAssetBytes } from "./document-export";
 import { loadHeadDoc } from "./store";
 
 /**
- * Office files and live files meeting (ADR 0196): an uploaded workbook, deck or Word document as the apps draw it
+ * Office files and live files meeting (ADR 0198): an uploaded workbook, deck or Word document as the apps draw it
  * (`officePreview`, read once per version and kept a while: versions never change), made into a live file beside it
- * (`openAsLive`: a spreadsheet, a presentation or a document, ADR 0198), and a live file written out as Excel, CSV,
+ * (`openAsLive`: a spreadsheet, a presentation or a document, ADR 0200), and a live file written out as Excel, CSV,
  * PowerPoint, Word, Markdown or PDF (`exportLive`, also what the Drive's downloads of live files use,
  * `officeLiveExporter`).
  */
@@ -74,7 +74,7 @@ export type OfficePreview =
   | { kind: "deck"; deck: DeckData }
   | { kind: "document"; html: string };
 
-/** What a live file downloads as (ADR 0196; a document's `.docx`, `.md` and PDF, ADR 0198). */
+/** What a live file downloads as (ADR 0198; a document's `.docx`, `.md` and PDF, ADR 0200). */
 export type LiveExportFormat = "xlsx" | "csv" | "pptx" | "pdf" | "docx" | "md";
 
 /**
@@ -218,8 +218,8 @@ function deckPictures(deck: DeckData): LivePicture[] {
 }
 
 /**
- * Makes an uploaded Office file editable beside it (ADR 0196): a workbook becomes a spreadsheet, a deck a
- * presentation and a Word document a live document (their pictures stored with them, ADR 0198); in the same
+ * Makes an uploaded Office file editable beside it (ADR 0198): a workbook becomes a spreadsheet, a deck a
+ * presentation and a Word document a live document (their pictures stored with them, ADR 0200); in the same
  * conversation and thread, shared as the upload is, with a note saying which file it came from (a document also keeps
  * the upload's name, "Importado de X.docx"). The upload stays as it was.
  */
@@ -364,7 +364,7 @@ function exportName(title: string, ext: string) {
 }
 
 /**
- * A live file as it stands now, as an Office file, a CSV or a PDF (ADR 0196), for whoever reads it: what the
+ * A live file as it stands now, as an Office file, a CSV or a PDF (ADR 0198), for whoever reads it: what the
  * process holding it has (`deps.live`) or, without one, what is stored.
  */
 export async function exportLive(

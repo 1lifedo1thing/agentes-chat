@@ -1,5 +1,5 @@
 /**
- * What formulas read of a spreadsheet document (ADR 0194 §2): its sheets by id and name, and each sheet's rows and
+ * What formulas read of a spreadsheet document (ADR 0196 §2): its sheets by id and name, and each sheet's rows and
  * columns in order. A row's or column's position comes from an index kept per array, so turning thousands of formulas
  * into A1 (or back) costs one pass per sheet.
  *

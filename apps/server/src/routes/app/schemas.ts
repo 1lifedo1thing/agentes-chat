@@ -27,7 +27,7 @@ export const AudienceChoice = z
   .openapi("AudienceChoice");
 
 /**
- * What a person had selected in a live file (ADR 0194 §6, ADR 0197): a sheet's range, a slide, canvas shapes, a
+ * What a person had selected in a live file (ADR 0196 §6, ADR 0199): a sheet's range, a slide, canvas shapes, a
  * canvas comment's pin (world units), a document's quoted words and block.
  */
 export const LiveSelection = z
@@ -46,7 +46,7 @@ export const LiveSelection = z
   })
   .openapi("LiveSelection");
 
-/** `meta.liveRef` as the chat reads it (ADR 0197): the live file a message is about and what was selected in it. */
+/** `meta.liveRef` as the chat reads it (ADR 0199): the live file a message is about and what was selected in it. */
 export const LiveRef = z
   .object({
     artifactId: z.string(),
@@ -827,7 +827,7 @@ const MessageBase = z.object({
   agentRunId: z.uuid().nullable(),
   clientId: z.string().nullable().openapi({ description: "Echo of the sender's `clientId`." }),
   liveRef: LiveRef.optional().openapi({
-    description: "`meta.liveRef`: the live file the message is about and what was selected in it (ADR 0197).",
+    description: "`meta.liveRef`: the live file the message is about and what was selected in it (ADR 0199).",
   }),
   receipts: z
     .object({
@@ -1144,6 +1144,10 @@ export const MachineAccount = z
     useOrder: z.number().int().nullable().openapi({
       description:
         "Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6), 0 first; null: after the placed ones, oldest first. A run at its plan's limit goes on with its agent's owner's next account, then the others that serve everyone.",
+    }),
+    sameAs: z.uuid().openapi({
+      description:
+        "The id of the oldest login of the same account on its computer (one account may be signed in once per agent); its own id where it is the oldest or nothing tells it apart. Logins with the same `sameAs` are one account, whoever looks: the email and key's end that tell them apart stay its owner's.",
     }),
     movable: z.boolean().openapi({
       description:

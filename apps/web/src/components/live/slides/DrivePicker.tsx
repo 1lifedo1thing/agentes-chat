@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { DrivePreview } from "@/components/drive/DrivePreview";
 
 /**
- * "Do Drive": a picture already in the workspace's Drive, put on the slide (ADR 0194 §8). The file is copied into the
+ * "Do Drive": a picture already in the workspace's Drive, put on the slide (ADR 0196 §8). The file is copied into the
  * presentation (the server checks the person reads it), so the slide keeps showing it to whoever reads the deck.
  */
 

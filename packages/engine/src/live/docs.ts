@@ -59,7 +59,7 @@ import {
 } from "./store";
 
 /**
- * The live documents a process holds (ADR 0194 §3–§6): people's sockets join them, agents' tools and the server's
+ * The live documents a process holds (ADR 0196 §3–§6): people's sockets join them, agents' tools and the server's
  * jobs edit them, from any process.
  *
  * - **Every change is stored before anyone else sees it.** A socket's changes are applied to the document this
@@ -523,7 +523,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
     });
     try {
       let stored = await loadStored(db, orgId, fileId);
-      // A document saved as Markdown before documents were live files gets its live document now (ADR 0198).
+      // A document saved as Markdown before documents were live files gets its live document now (ADR 0200).
       if (!stored && (await adoptMarkdownDocument(deps, orgId, fileId))) stored = await loadStored(db, orgId, fileId);
       if (!stored) throw new NotFoundError("Artifact not found", "artifact.not_found");
       const kind = stored.row.kind as LiveKind;
@@ -656,7 +656,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
     // What sockets that left sent and isn't stored yet goes first.
     if (h.pending.length > 0) await flushAll(h);
     // Still waiting (the database refused it just now): the retry `flushAll` armed stores it and lingers again.
-    // Letting go here would drop changes whose sockets are gone, so nobody would send them again (ADR 0194 §4).
+    // Letting go here would drop changes whose sockets are gone, so nobody would send them again (ADR 0196 §4).
     if (busy(h) || h.linger || h.pending.length > 0) return;
     dispose(h);
   }
@@ -977,7 +977,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
   }
 
   /**
-   * The cards' preview (ADR 0194 §7), drawn again from the document held here `previewMs` after changes were stored:
+   * The cards' preview (ADR 0196 §7), drawn again from the document held here `previewMs` after changes were stored:
    * the Drive's and the chat's covers of a canvas, a sheet or a presentation show what an agent or a person just put
    * in it, not what it held at its last compaction (which waits for 200 changes, or a minute after the last person
    * leaves). Once per span per document, written only when it changed, then the file's conversation is told
@@ -1078,7 +1078,7 @@ export function createLiveDocs(deps: LiveDeps): LiveDocs {
   /**
    * `live.saved` ("everything this socket sent up to now is stored"), once it is true: none of its changes waits to be
    * stored, and none of its frames still waits in the socket's line to reach the document (else it goes when the line
-   * empties, `drained`). The app counts what it sent before as stored on it (ADR 0194 §4).
+   * empties, `drained`). The app counts what it sent before as stored on it (ADR 0196 §4).
    */
   function savedTo(s: Session, seq: number) {
     if (s.left || s.unsaved > 0) return;

@@ -8,7 +8,7 @@ import type { DocumentPreview } from "./types";
 import { readBlocks } from "./yjs";
 
 /**
- * A document as a whole (ADR 0198, ADR 0194 §7): its preview (what cards and the Drive draw), its text (what search
+ * A document as a whole (ADR 0200, ADR 0196 §7): its preview (what cards and the Drive draw), its text (what search
  * finds it by), its rules of shape (what the server checks) and a version's content written over it.
  */
 

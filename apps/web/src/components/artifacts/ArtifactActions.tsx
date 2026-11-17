@@ -127,7 +127,7 @@ export function useArtifactDownload() {
   const { org } = useOrg();
   const api = useApi();
   const original = async (a: Downloadable, version?: number, content?: ArtifactContent) => {
-    // A live file's version holds its document: what it downloads as is written by the server (ADR 0196).
+    // A live file's version holds its document: what it downloads as is written by the server (ADR 0198).
     if (isLiveFileKind(a.kind)) {
       const url = api.artifacts.fileUrl(org.id, a.id, version ? { version } : {});
       fileSaver.save(url, fileName(a.title, { kind: a.kind }));
@@ -150,7 +150,7 @@ export function useArtifactDownload() {
   };
   /** What a kind can be saved as ("Original" for all but tables, whose original is the CSV). */
   const formats = (kind: ArtifactKind): { key: string; format?: DownloadFormat; icon: IconName; label: string }[] => [
-    // A document (a live file, ADR 0198): Word, its Markdown, or a PDF.
+    // A document (a live file, ADR 0200): Word, its Markdown, or a PDF.
     ...(kind === "document"
       ? [
           { key: "docx", format: "docx" as const, icon: "page" as const, label: t("live.shell.formats.docx") },
@@ -161,7 +161,7 @@ export function useArtifactDownload() {
     ...(kind === "table"
       ? [{ key: "csv", format: "csv" as const, icon: "table" as const, label: t("artifacts.formatCsv") }]
       : []),
-    // Live files (ADR 0196): a spreadsheet as Excel or CSV, a presentation as PowerPoint or PDF, a canvas as JSON.
+    // Live files (ADR 0198): a spreadsheet as Excel or CSV, a presentation as PowerPoint or PDF, a canvas as JSON.
     ...(kind === "spreadsheet"
       ? [
           { key: "xlsx", format: "xlsx" as const, icon: "spreadsheet" as const, label: t("live.shell.formats.xlsx") },

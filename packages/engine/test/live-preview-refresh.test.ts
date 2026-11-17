@@ -7,7 +7,7 @@ import { type Fixture, setup } from "./fixtures";
 import { liveDocsFor, makeLiveFile, personActor, setCell } from "./live-fixtures";
 
 /**
- * A live file's preview (ADR 0194 §7) is drawn again from the document a process holds shortly after its changes are
+ * A live file's preview (ADR 0196 §7) is drawn again from the document a process holds shortly after its changes are
  * stored, not only at a compaction (200 changes, or a minute after the last person leaves): a canvas an agent draws on
  * shows those shapes on its cards within seconds, and the conversation the file lives in hears it.
  */

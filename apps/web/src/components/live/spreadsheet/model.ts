@@ -1,5 +1,5 @@
 /**
- * The spreadsheet editor's pure parts (ADR 0194): where rows and columns sit, the selection and how keys move it, the
+ * The spreadsheet editor's pure parts (ADR 0196): where rows and columns sit, the selection and how keys move it, the
  * labels the name box and "Ask an agent" show, what the fill handle reaches, and the status line's sum. No DOM, so
  * they are tested on their own and drawn by `draw.ts`.
  */

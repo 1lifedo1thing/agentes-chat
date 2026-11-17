@@ -95,13 +95,13 @@ import {
 } from "./text";
 
 /**
- * A document on the phone (ADR 0198), pushed with the file's bar (`LiveBar`): the page as the Wiki reads it, its title
+ * A document on the phone (ADR 0200), pushed with the file's bar (`LiveBar`): the page as the Wiki reads it, its title
  * and where it came from ("Ada imported Plan.docx") over its headings, paragraphs, lists, quotes, code, tables and
  * pictures, with whoever else is in it shown at the block they are on (an agent with its face). A tap on a block edits
  * it in place, its words with their marks, each change written into the file as the smallest edit of that block's
  * text (`text.ts`), so two people typing in one block both keep their words; over the keyboard, the format
  * bar (style, bold, italic, lists, quote, link) ends with the file's agent ("Ask Atlas", the block quoted in its
- * conversation, ADR 0197). Pictures and tables are edited on a computer. Under the page, the file's conversation.
+ * conversation, ADR 0199). Pictures and tables are edited on a computer. Under the page, the file's conversation.
  * `focusId`: a message of the conversation to open at.
  */
 export function DocumentScreen({ id, focusId = null }: { id: string; focusId?: string | null }) {
@@ -243,7 +243,7 @@ function LiveDocument({
     if (readOnly) setEditing(null);
   }, [readOnly]);
 
-  // Presence: the block being edited, for everyone else's screens (ADR 0198).
+  // Presence: the block being edited, for everyone else's screens (ADR 0200).
   const editingId = editing?.id ?? null;
   useEffect(() => {
     room.setLocal({
@@ -894,7 +894,7 @@ function BlockField({
   );
 }
 
-/** Who else is at a block: a person's name on their color, an agent's face and name (ADR 0198). */
+/** Who else is at a block: a person's name on their color, an agent's face and name (ADR 0200). */
 function BlockFlags({ peers }: { peers: Peer[] | undefined }) {
   const { colors: c } = useTheme();
   const look = usePeerLook();

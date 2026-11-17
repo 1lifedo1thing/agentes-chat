@@ -52,7 +52,7 @@ export function DrivePreview({ artifact, size = "md" }: { artifact: Artifact; si
   const { org } = useOrg();
   const [ref, seen] = useSeen<HTMLDivElement>();
   // At its exact version: never stale, and shared by every card of that version. A live file's preview is its head's
-  // (ADR 0194 §7), which changes between versions: the latest.
+  // (ADR 0196 §7), which changes between versions: the latest.
   const live = isLiveFileKind(artifact.kind);
   const query = useArtifact(org.id, seen || size === "lg" ? artifact.id : null, live ? undefined : artifact.version);
   const content = query.data?.content;
@@ -166,7 +166,7 @@ function PreviewBody({
       );
     case "file":
       return <FilePreview content={content} artifact={artifact} />;
-    // Live files (ADR 0194 §7), documents too (ADR 0198): drawn from the preview the server keeps.
+    // Live files (ADR 0196 §7), documents too (ADR 0200): drawn from the preview the server keeps.
     case "document":
     case "spreadsheet":
     case "slides":

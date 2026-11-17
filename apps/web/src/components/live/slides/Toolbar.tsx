@@ -21,7 +21,7 @@ import { LayoutPicker, Swatches, TableSizePicker, ThemePicker } from "./pickers"
 import { useRoving } from "./roving";
 
 /**
- * The presentation's toolbar (ADR 0194 §2): undo and redo; a new slide (with its layout), the slide's layout and the
+ * The presentation's toolbar (ADR 0196 §2): undo and redo; a new slide (with its layout), the slide's layout and the
  * deck's theme; text, pictures, shapes, charts and tables; the text group while a text is chosen (size, bold, italic,
  * underline, strikethrough, color, alignment, lists, indent, link); a shape's fill and outline, a line's arrow, a
  * table's rows and columns; arranging; deleting. One row of 32 px buttons in groups, scrolling sideways with faded

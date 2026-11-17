@@ -14,7 +14,7 @@ import { LiveCover, liveCoverContent } from "./shared/LiveCover";
 const COVER = 132;
 
 /**
- * A live file on its message (ADR 0194 §9), as a block's card is (a hairline, the bottom-left corner cut, the agent's
+ * A live file on its message (ADR 0196 §9), as a block's card is (a hairline, the bottom-left corner cut, the agent's
  * sky along its top when an agent made it): what it holds drawn small from its preview (never the document itself, so
  * a conversation opens no file), its name, its kind and size, and the faces of who is in it now. A tap opens it on its
  * own screen, as it is now.
@@ -28,7 +28,7 @@ export const LiveFileCard = memo(function LiveFileCard({ detail, width }: { deta
   const content = liveCoverContent(detail.content);
   if (!content) return null;
   const kind = content.kind;
-  // A document (ADR 0198) says only what it is; the others how big they are.
+  // A document (ADR 0200) says only what it is; the others how big they are.
   const meta =
     content.kind === "spreadsheet"
       ? t("mobile.live.card.sheets", { count: content.preview.sheets })

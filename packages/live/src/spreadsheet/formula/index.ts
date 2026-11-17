@@ -1,5 +1,5 @@
 /**
- * The spreadsheet formula language (ADR 0194 §2). A formula is stored canonically, with English names, `,` between
+ * The spreadsheet formula language (ADR 0196 §2). A formula is stored canonically, with English names, `,` between
  * arguments, `.` for decimals and references by row and column ids (`SUM({r8k2,c3xa}:{r9b1,c3xa})`), so inserting or
  * moving rows never rewrites it and a deleted row turns its references into `#REF!`. People type and read it in A1
  * and their language (`=SOMA(B2:B9;C1)` in Portuguese, `=SUM(B2:B9,C1)` in English), worked out from the sheet's

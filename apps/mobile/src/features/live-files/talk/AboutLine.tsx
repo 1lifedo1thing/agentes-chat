@@ -12,7 +12,7 @@ import { useOpenLiveRef } from "./hooks";
 import { aboutParts, aboutWords } from "./logic";
 
 /*
- * What the chat draws of a live file's conversation (ADR 0197): the line over a message about part of a file, the
+ * What the chat draws of a live file's conversation (ADR 0199): the line over a message about part of a file, the
  * quote over the composer, and where the file was made, at the top of its conversation.
  */
 

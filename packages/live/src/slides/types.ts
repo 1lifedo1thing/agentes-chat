@@ -2,7 +2,7 @@ import type { Box } from "../canvas/geometry";
 import type { RichDoc } from "../rich/types";
 
 /**
- * Presentations (ADR 0194 §2): a deck (theme, 1920×1080 units), slides in order, each with a layout, a background,
+ * Presentations (ADR 0196 §2): a deck (theme, 1920×1080 units), slides in order, each with a layout, a background,
  * speaker notes and elements placed in slide units.
  */
 
@@ -199,7 +199,7 @@ export interface SlidesPreview {
   first: SlideView | null;
 }
 
-/** An element of an office deck (ADR 0196), in the deck's own units (`DeckData.w`×`h`). */
+/** An element of an office deck (ADR 0198), in the deck's own units (`DeckData.w`×`h`). */
 export interface DeckElementData {
   type: "text" | "shape" | "image" | "table" | "line" | "chart";
   x: number;
@@ -239,7 +239,7 @@ export interface DeckMedia {
   asset?: string;
 }
 
-/** A deck as plain data: what the office readers produce and the writers consume (ADR 0196). */
+/** A deck as plain data: what the office readers produce and the writers consume (ADR 0198). */
 export interface DeckData {
   w: number;
   h: number;

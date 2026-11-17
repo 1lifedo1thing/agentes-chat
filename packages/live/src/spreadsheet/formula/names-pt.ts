@@ -1,5 +1,5 @@
 /**
- * Excel's Brazilian Portuguese function names (ADR 0194 §2): formulas are typed and shown with them in Portuguese
+ * Excel's Brazilian Portuguese function names (ADR 0196 §2): formulas are typed and shown with them in Portuguese
  * (`=SOMA(B2:B9;C2)`) and stored with the English ones. Typing in Portuguese also accepts the English names, a few
  * names other spreadsheet apps use, and every name without its accents (`MEDIA`, `MAXIMO`), since many keyboards
  * make accents slow to type.

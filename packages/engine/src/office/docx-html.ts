@@ -3,7 +3,7 @@ import { imageTypeOf, OfficePackage, REL } from "./package";
 import { attr, boolAttr, dig, type Element, intAttr, kid, kids, nameOf, relAttr, textOf } from "./xml";
 
 /**
- * Word documents (`.docx`) as clean HTML (ADR 0196), safe by construction: what is read becomes a small model
+ * Word documents (`.docx`) as clean HTML (ADR 0198), safe by construction: what is read becomes a small model
  * (headings, paragraphs, runs bold, italic, underlined or struck, links, line breaks, lists from the document's
  * numbering, tables with merged cells, pictures) and only that model is written out, with a fixed set of tags and
  * attributes, every text escaped, links only to https and mailto addresses and pictures only as PNG, JPEG or GIF data
@@ -23,7 +23,7 @@ export interface DocxText {
 
 type Text = DocxText;
 
-/** A picture as read: its data address (for the HTML), and its bytes and type (for a live document, ADR 0198). */
+/** A picture as read: its data address (for the HTML), and its bytes and type (for a live document, ADR 0200). */
 export interface DocxPicture {
   kind: "img";
   src: string;

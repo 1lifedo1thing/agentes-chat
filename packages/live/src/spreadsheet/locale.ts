@@ -1,5 +1,5 @@
 /**
- * How a person reads and types numbers, dates and formulas (ADR 0194): "1.234,5", "17/11/2026" and `=SOMA(A1;B1)` in
+ * How a person reads and types numbers, dates and formulas (ADR 0196): "1.234,5", "17/11/2026" and `=SOMA(A1;B1)` in
  * Brazil, "1,234.5", "11/17/2026" and `=SUM(A1,B1)` in the US. The document keeps one invariant form; these settings
  * only shape what is shown and typed. The app's languages are in a fixed table, so the server and every device read
  * them the same; other tags fall back to `Intl`.

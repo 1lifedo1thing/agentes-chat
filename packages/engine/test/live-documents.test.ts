@@ -29,7 +29,7 @@ import { liveDocsFor, personActor } from "./live-fixtures";
 import { DOC_PICTURE, docxDocument, packageProblems, partsOf } from "./office-fixtures";
 
 /**
- * Documents are live files (ADR 0198): made from Markdown by `create_artifact`, read and changed by block by agents
+ * Documents are live files (ADR 0200): made from Markdown by `create_artifact`, read and changed by block by agents
  * (`read_document`, `edit_document`), an older Markdown document opened as one, Word files in and out.
  */
 

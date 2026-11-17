@@ -17,7 +17,7 @@ import { FakeLiveServer } from "../src/live/testing";
 import { type Clock, FILE, fakeClock, ORG, QUICK } from "./live-helpers";
 
 /**
- * A live file's room (ADR 0194): its document, presence and the person's own undo over the connection, and the
+ * A live file's room (ADR 0196): its document, presence and the person's own undo over the connection, and the
  * registry that shares one room per file between screens.
  */
 

@@ -37,7 +37,7 @@ export const taskReaderSql = (channelId: SQL, userId: SQL) => sql`exists (
   select 1 from ${issues} ti where ti.conversation_channel_id = ${channelId} and ${taskSeenSql("ti", userId)})`;
 
 /**
- * How many files' conversations deep a file may live and still be read where it lives (ADR 0197): a file made in a live
+ * How many files' conversations deep a file may live and still be read where it lives (ADR 0199): a file made in a live
  * file's conversation is read by who reads that file, and so is that file's own conversation. Past it only a file's
  * sharing reaches it. The reading rules nest (a file's conversation is read by who reads the file, which may live in
  * another file's conversation), and this keeps each statement finite.
@@ -45,7 +45,7 @@ export const taskReaderSql = (channelId: SQL, userId: SQL) => sql`exists (
 export const FILE_CONVERSATION_DEPTH = 1;
 
 /**
- * A live file's conversation (ADR 0197) is read by whoever reads the file (`fileSeenSql`), never by its own membership:
+ * A live file's conversation (ADR 0199) is read by whoever reads the file (`fileSeenSql`), never by its own membership:
  * people are never members of a `file` channel. True when `channelId` is a live file's conversation, the file is not in
  * the trash and `userId` reads it. `channelId` must not name a column of `artifacts` (the subquery's own row hides it).
  */
@@ -55,7 +55,7 @@ export const fileConversationReaderSql = (channelId: SQL, userId: SQL, depth = F
 
 /**
  * Whether `userId` reads a conversation no person is a member of, by what it stands for: a task's (ADR 0145), read by
- * whoever sees the task, or a live file's (ADR 0197), read by whoever reads the file. False for any other channel.
+ * whoever sees the task, or a live file's (ADR 0199), read by whoever reads the file. False for any other channel.
  */
 export const conversationReaderSql = (channelId: SQL, userId: SQL) =>
   sql`(${taskReaderSql(channelId, userId)} or ${fileConversationReaderSql(channelId, userId)})`;
@@ -84,7 +84,7 @@ export const channelReadersSql = (orgId: SQL, channelId: SQL) => sql`(select cr.
  * conversation, who sees that task.
  */
 export async function audienceOfConversation(db: Executor, channelId: string, depth = 0): Promise<Audience> {
-  // A live file's conversation (ADR 0197): who reads the file, as where it lives says (its sharing only widens it).
+  // A live file's conversation (ADR 0199): who reads the file, as where it lives says (its sharing only widens it).
   const [file] = await db
     .select({ channelId: artifacts.channelId, share: artifacts.share })
     .from(artifacts)

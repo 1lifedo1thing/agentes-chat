@@ -109,7 +109,7 @@ import { type QuickFunction, SheetToolbar } from "./Toolbar";
 import "./sheet.css";
 
 /**
- * The spreadsheet editor (ADR 0194): the toolbar, the formula bar, the grid and the sheet tabs, over a live document
+ * The spreadsheet editor (ADR 0196): the toolbar, the formula bar, the grid and the sheet tabs, over a live document
  * everyone in the file edits at once. Every change goes through `@agenteschat/live`'s edits with the `LOCAL` origin
  * (what the person's undo takes back), values come from the room's engine computing in the person's language, and
  * the person's selection and typing go out as their presence while everyone else's comes in and is drawn.
@@ -1278,7 +1278,7 @@ export function Spreadsheet(props: LiveEditorProps) {
     if (parsed.whole === "cols") next.whole = "cols";
     setSel(next, { reveal: { r1, c1, r2, c2 }, sheet: target });
   };
-  // A message's line about a range here (ADR 0197): its sheet, the range chosen and in view, once per click.
+  // A message's line about a range here (ADR 0199): its sheet, the range chosen and in view, once per click.
   const revealPart = props.reveal;
   const revealed = useRef<number | null>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: once per click (its key), as soon as a sheet can show it

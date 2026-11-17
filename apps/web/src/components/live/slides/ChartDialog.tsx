@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ChartView } from "@/components/ChartBlock";
 
 /**
- * A chart's data, typed in a small table (ADR 0194 §2): its kind, its title, one row per label and one column per
+ * A chart's data, typed in a small table (ADR 0196 §2): its kind, its title, one row per label and one column per
  * series, numbers in the person's own way of writing them ("1.234,5" in Portuguese). The chart below draws as it is
  * typed; a chart that can't be drawn honestly (a value that isn't a number) can't be saved.
  */

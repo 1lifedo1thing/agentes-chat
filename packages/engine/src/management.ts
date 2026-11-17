@@ -474,7 +474,7 @@ export async function setAgentChannels(
   const inIt = new Set(current.map((c) => c.id));
   const adding = found.filter((c) => !inIt.has(c.id));
   if (adding.some((c) => c.kind === "dm")) throw new ValidationError("A direct conversation keeps its participants");
-  // An agent joins a live file's conversation only when it may work on the file (`admitFileAgents`, ADR 0197 §2).
+  // An agent joins a live file's conversation only when it may work on the file (`admitFileAgents`, ADR 0199 §2).
   if (adding.some((c) => c.kind === "file")) {
     throw new ValidationError(
       "An agent joins a file's conversation when someone there names it",
@@ -651,7 +651,7 @@ export async function channelMembersDetail(db: Database, orgId: string, channelI
 // ── Runs and usage ───────────────────────────────────────────────────────────
 
 /** Who may see runs and usage: admins (`view_usage`), or the agent's owner for that agent. */
-async function requireUsageAccess(db: Database, actorId: string, orgId: string, agentId?: string) {
+export async function requireUsageAccess(db: Database, actorId: string, orgId: string, agentId?: string) {
   const membership = await requirePermission(db, actorId, orgId, "read");
   if (can(membership, "view_usage")) return;
   if (agentId) {

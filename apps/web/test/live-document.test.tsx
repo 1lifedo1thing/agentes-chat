@@ -32,7 +32,7 @@ import { ATLAS_ID, createFakeApi, fakeLiveOf, ORG_ID, seedState } from "./fake-a
 import { renderPage, screen, settle } from "./render";
 
 /**
- * Documents on the web (ADR 0198): the editor bound to the document's body (typing, Enter and the ids of blocks, the
+ * Documents on the web (ADR 0200): the editor bound to the document's body (typing, Enter and the ids of blocks, the
  * typed shortcuts, the toolbar's style menu and marks, tables, pasted Markdown, undo of only this person's own
  * changes), read-only, others' carets from presence (a person's name, an agent's face on the blocks it writes), the
  * selection that goes to the file's conversation, "Ask Atlas" over it, a message's line shown in place, the cover and

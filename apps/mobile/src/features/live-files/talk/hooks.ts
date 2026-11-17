@@ -35,7 +35,7 @@ import { askText, fileAgentId, fileUnder, type TalkPin, talkPins } from "./logic
 import { dropTalkAbout, revealOnOpen, setTalkAbout, takeReveal, useRevealFor } from "./store";
 
 /*
- * A live file's own conversation on the phone (ADR 0197): opening it from the file (made on first use), what it holds
+ * A live file's own conversation on the phone (ADR 0199): opening it from the file (made on first use), what it holds
  * live for the line under the file, the file's agent, the canvas's comment pins, and the way back to the file from a
  * message's line about it.
  */
@@ -85,7 +85,7 @@ export function useOpenFileTalk(file: TalkFile | undefined) {
 }
 
 /**
- * A notice or a link named a message of the file's conversation (`?m=`, ADR 0197): the conversation opens over the
+ * A notice or a link named a message of the file's conversation (`?m=`, ADR 0199): the conversation opens over the
  * file at that message, once the file is known (as a task's, ADR 0145).
  */
 export function useTalkFocus(file: TalkFile | undefined, messageId: string | null | undefined) {
@@ -128,7 +128,7 @@ export function useTalkMessages(talk: FileConversationRef | null | undefined): M
 }
 
 /**
- * The file's agent (ADR 0197), whom "Ask Atlas" calls: the one that made it, else the last agent that spoke in
+ * The file's agent (ADR 0199), whom "Ask Atlas" calls: the one that made it, else the last agent that spoke in
  * its conversation, else the workspace's right hand; only one this person may ask. Null: none.
  */
 export function useFileAgent(file: TalkFile | undefined, messages: readonly Message[]): Agent | null {
@@ -153,7 +153,7 @@ export function useFileAgent(file: TalkFile | undefined, messages: readonly Mess
 }
 
 /**
- * "Ask Atlas" from a file (ADR 0197): the file's agent, its button's words ("Ask Atlas", "Ask Iris"),
+ * "Ask Atlas" from a file (ADR 0199): the file's agent, its button's words ("Ask Atlas", "Ask Iris"),
  * and the ask itself: the conversation opens with "@atlas " (and `words`) in its composer and the selection over it.
  * No agent this person may ask: no button (`label` null), and `ask` opens the conversation with the selection alone.
  */
@@ -175,7 +175,7 @@ export function useAskAgent(file: TalkFile | undefined) {
   return { agent, label, ask, messages };
 }
 
-/** The canvas's comment pins: its conversation's messages with a point (ADR 0197 §3). */
+/** The canvas's comment pins: its conversation's messages with a point (ADR 0199 §3). */
 export function useTalkPins(fileId: string, messages: readonly Message[]): TalkPin[] {
   return useMemo(
     () =>

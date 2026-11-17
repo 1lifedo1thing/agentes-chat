@@ -6,7 +6,7 @@ import { normalizeHref } from "../rich/commands";
 import { M, N } from "./schema";
 
 /**
- * What the document editor does to its text (ADR 0198): the block's style (text, headings 1 to 3, quote, code), marks,
+ * What the document editor does to its text (ADR 0200): the block's style (text, headings 1 to 3, quote, code), marks,
  * links, lists and levels (the rich text's model: `list` + `level` on a paragraph), pictures, rules and tables. Every
  * command keeps a block's `id` where the block stays the same block (a paragraph turned into a heading is still the
  * block an agent or a message named); new blocks get theirs from `blockIds`.

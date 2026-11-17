@@ -11,7 +11,7 @@ import { type DocxBlock, type DocxCell, type DocxInline, type DocxParagraph, rea
 import { OFFICE_LIMITS, officeTooLargeToEdit } from "./limits";
 
 /**
- * A Word document as a live document's blocks (ADR 0198, "Edit as document" of ADR 0196): the same safe reading as
+ * A Word document as a live document's blocks (ADR 0200, "Edit as document" of ADR 0198): the same safe reading as
  * its HTML (`readDocx`: headings, paragraphs, runs bold, italic, underlined or struck, links, line breaks, lists,
  * tables with merged cells laid flat, pictures), into `DocBlock`s, its pictures as files the document then keeps.
  */

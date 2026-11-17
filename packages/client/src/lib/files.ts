@@ -14,7 +14,7 @@ export const SKILL_ZIP_MB = Math.floor(SKILL_ZIP_BYTES / 1024 / 1024);
 export const MAX_PREVIEW_BYTES = 25 * 1024 * 1024;
 
 /**
- * How a file shows inline: from its bytes (`image`, `pdf`, `video`), or as the server read it (ADR 0196): a workbook
+ * How a file shows inline: from its bytes (`image`, `pdf`, `video`), or as the server read it (ADR 0198): a workbook
  * drawn by the spreadsheet view (`office-sheet`), a deck by the slides view (`office-slides`), a Word document's HTML in
  * an isolated frame (`office-doc`).
  */
@@ -31,7 +31,7 @@ export const isOfficePreview = (kind: PreviewKind | null | undefined): kind is O
  * The only types previewed inline (ADR 0025): raster images and PDF, loaded
  * from the download as a blob of exactly this type; videos, played by a video
  * player straight from the download (in parts), never as a page; and Office
- * files the server reads for the apps to draw (ADR 0196). SVG, HTML and the
+ * files the server reads for the apps to draw (ADR 0198). SVG, HTML and the
  * rest are download-only.
  */
 const PREVIEW: Record<string, PreviewKind> = {

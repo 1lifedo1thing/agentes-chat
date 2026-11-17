@@ -31,7 +31,7 @@ import { addMember, type Fixture, setup } from "./fixtures";
 import { makeLiveFile, personActor } from "./live-fixtures";
 
 /**
- * A live file's conversation (ADR 0197): a `file` channel of its own with one hidden root, read by whoever reads the
+ * A live file's conversation (ADR 0199): a `file` channel of its own with one hidden root, read by whoever reads the
  * file, where a mention admits and wakes an agent that may work on the file, and a message may point at what its
  * writer had selected (`meta.liveRef`).
  */
@@ -53,7 +53,7 @@ const runsIn = (channelId: string) =>
 const membersOf = (channelId: string) =>
   f.db.select().from(schema.channelMembers).where(eq(schema.channelMembers.channelId, channelId));
 
-describe("a live file's conversation (ADR 0197)", () => {
+describe("a live file's conversation (ADR 0199)", () => {
   test("made once on first use with the maker agent in it; a mention wakes the agent with the file in focus", async () => {
     f = await setup({ reply: () => ({ chunks: ["Fiz duas variações ao lado."] }) });
     const deps = { db: f.db, pubsub: f.pubsub };

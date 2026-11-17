@@ -1,5 +1,5 @@
 /**
- * A1 addresses (ADR 0194): how people and agents name cells and ranges ("B2", "A1:C9", "'Sheet 2'!B:B"). The document
+ * A1 addresses (ADR 0196): how people and agents name cells and ranges ("B2", "A1:C9", "'Sheet 2'!B:B"). The document
  * itself keeps rows and columns by id; A1 is worked out from their current order. Rows and columns here are 0-based
  * indexes.
  */

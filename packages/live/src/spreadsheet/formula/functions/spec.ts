@@ -1,5 +1,5 @@
 /**
- * How a spreadsheet function is described (ADR 0194 §2) and the helpers the categories share: reading numbers the way
+ * How a spreadsheet function is described (ADR 0196 §2) and the helpers the categories share: reading numbers the way
  * SUM does, arguments that take one value each, criteria (">=10", "maçã*") over ranges, and results that must be
  * finite.
  */

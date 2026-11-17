@@ -17,9 +17,9 @@ import type * as Y from "yjs";
 import { arrowLine } from "./edit-math";
 
 /**
- * Copying shapes between canvases and within one (ADR 0194 §2): the shapes as plain data, with what they need to come
+ * Copying shapes between canvases and within one (ADR 0196 §2): the shapes as plain data, with what they need to come
  * back whole somewhere else (what's inside a copied frame, the arrows between copied shapes, where an arrow's ends
- * were in case what they were tied to stays behind). Pictures belong to their file (ADR 0194 §8): pasted into another
+ * were in case what they were tied to stays behind). Pictures belong to their file (ADR 0196 §8): pasted into another
  * canvas they are copied into it first (`assetsToCopy`, then `withAssets`).
  */
 

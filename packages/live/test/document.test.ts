@@ -631,7 +631,7 @@ describe("the document as a whole", () => {
   });
 });
 
-describe("tables in all (ADR 0198)", () => {
+describe("tables in all (ADR 0200)", () => {
   const cell = (text: string): DocCell => ({ blocks: [{ type: "paragraph", runs: text ? [{ text }] : [] }] });
   const table = (rows: number, cols: number): DocBlock => ({
     type: "table",

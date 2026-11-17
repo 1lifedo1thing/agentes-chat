@@ -17,7 +17,7 @@ import { SlideThumb } from "./SlideThumb";
 import { useBoxSize } from "./useBoxSize";
 
 /**
- * The slides of a presentation down the editor's left side (ADR 0194 §2), each drawn small and live (a slide an agent
+ * The slides of a presentation down the editor's left side (ADR 0196 §2), each drawn small and live (a slide an agent
  * writes changes here as it writes), numbered, the current one outlined in ink, hidden ones dimmed, with the faces of
  * who is on each. A drag moves a slide (Alt+↑/↓ too); ⋯ beside its number (never over the slide) and a right click
  * hold New slide, Duplicate, Hide, Present from here, Move and Delete. The thumbnails take the rail's width as it is

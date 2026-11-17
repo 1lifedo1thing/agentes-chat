@@ -9,7 +9,7 @@ import { useOrg } from "@/components/org-context";
 import { PeerFace } from "./peers";
 
 /**
- * The file's history beside it (ADR 0194 §7), a column that never covers the editor's controls: the current file on
+ * The file's history beside it (ADR 0196 §7), a column that never covers the editor's controls: the current file on
  * top, then the saved versions by day, newest first (who made each, its name in bold when it has one, its time on the
  * right edge). Picking one shows it read-only in place of the file; "Salvar versão" names the file as it is now. The
  * list refreshes when a version is written (`live.versions`).

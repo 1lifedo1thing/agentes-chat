@@ -3,7 +3,7 @@ import { normalizeRich, paragraphAttrs, richFromText, runMarks } from "./text";
 import type { RichDoc, RichParagraph, RichRun } from "./types";
 
 /**
- * Rich text in a `Y.XmlFragment` in y-prosemirror's encoding (ADR 0194 §2), read and written without ProseMirror so
+ * Rich text in a `Y.XmlFragment` in y-prosemirror's encoding (ADR 0196 §2), read and written without ProseMirror so
  * the phone and the server share the web editor's documents. What `writeRich` stores is what y-prosemirror 1.3.7's
  * `prosemirrorJSONToYXmlFragment` stores for the same text under `RICH_SCHEMA_SPEC` (tests prove it both ways):
  *
@@ -185,7 +185,7 @@ function plainOf(node: Y.XmlElement | Y.XmlText): string {
 }
 
 /**
- * The phone's editor (ADR 0194 §9): sets the paragraphs' texts to `texts`, touching as little as it can so other
+ * The phone's editor (ADR 0196 §9): sets the paragraphs' texts to `texts`, touching as little as it can so other
  * people's edits in the same box merge. Paragraphs whose text didn't change keep everything; a changed paragraph is
  * matched to the old one it most resembles and keeps its attributes and the marks of the words around the change
  * (typed text takes the marks before it); new paragraphs take the attributes of the one before them (a new line in a

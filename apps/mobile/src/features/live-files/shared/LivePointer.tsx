@@ -25,7 +25,7 @@ import { motion, useReducedMotion } from "@/ui";
 import { AgentFace } from "../../shared/Face";
 
 /**
- * Someone's pointer in a live file (ADR 0194 §5), over a canvas or a slide: generalized from the agent's cursor on its
+ * Someone's pointer in a live file (ADR 0196 §5), over a canvas or a slide: generalized from the agent's cursor on its
  * computer (`AgentPointer`, ADR 0040 §7.2). A person's is a classic arrow in their color with their name on a tag of
  * that color; an agent's is its pixel arrow in its deep tone with its face and name on a light tag. It glides to each
  * new point on a slight arc, rests dimmed after a quiet while, and its name fades out until it moves again; with

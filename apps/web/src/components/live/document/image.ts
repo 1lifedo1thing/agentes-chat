@@ -3,7 +3,7 @@ import type { NodeView } from "prosemirror-view";
 import { N, widthFraction } from "./schema";
 
 /**
- * A picture in a document (ADR 0198, ADR 0194 §8): one of the file's own pictures, by its id, at its width (a share of
+ * A picture in a document (ADR 0200, ADR 0196 §8): one of the file's own pictures, by its id, at its width (a share of
  * the page) or its natural size up to the page's, its description read aloud. A picture that won't load (taken away,
  * no connection) keeps its place, quiet, with its description.
  */

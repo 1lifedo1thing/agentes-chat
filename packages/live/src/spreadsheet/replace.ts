@@ -1,5 +1,5 @@
 /**
- * Writing one spreadsheet's content over another's (ADR 0194 §7: restoring a version), in one transaction. Only what
+ * Writing one spreadsheet's content over another's (ADR 0196 §7: restoring a version), in one transaction. Only what
  * differs is written, by the same ids, so the change is as small as the difference, the people in the file keep their
  * selections on rows and sheets that are still there, and an edit someone makes at the same moment still lands.
  */

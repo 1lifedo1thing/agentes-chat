@@ -174,7 +174,7 @@ import { hiddenCount, tasksOf, todayStart } from "@agenteschat/client/lib/task-m
 import { contextMarks, hiddenByThreads, rangeCandidates, threadStartOf } from "@agenteschat/client/lib/threads";
 import { buildTimeline, lastPostedId, mergeTimeline, type TimelineItem } from "@agenteschat/client/lib/timeline";
 import { usageWaitOf } from "@agenteschat/client/lib/usage-pause";
-import { appVia } from "@agenteschat/client/lib/via";
+import { appVia, surfaceVia } from "@agenteschat/client/lib/via";
 import { listedText, voiceOf } from "@agenteschat/client/lib/voice";
 import { waitingAway, waitingNotification } from "@agenteschat/client/lib/waiting";
 import { barStep, makingImage, showsActivity, splitCanceled } from "@agenteschat/client/lib/work";
@@ -294,6 +294,7 @@ import {
   SpeedFallbackLine,
   StopPill,
   StopsProvider,
+  SurfaceViaMark,
   stopsOf,
   UnshownLine,
   useStopMovedOn,
@@ -1111,7 +1112,7 @@ function ChannelView({
   );
   const channelSearch = useChannelSearch();
   const composer = useRef<HTMLTextAreaElement>(null);
-  // The live file beside its own conversation (ADR 0197): what is selected there rides on the next message, and its
+  // The live file beside its own conversation (ADR 0199): what is selected there rides on the next message, and its
   // buttons ("Pedir ao Atlas") put their words in this composer.
   const fileTalk = useFileTalk();
   const fileHere = fileTalk && thread && fileTalk.rootId === thread.id ? fileTalk : null;
@@ -1364,7 +1365,7 @@ function ChannelView({
       // moved messages (written before the root; the context block lists them).
       const mine = (channelMessages.data ?? []).filter((m) => m.local && m.threadId === thread.id);
       // A task's conversation: not its root, which stands for the task beside it (ADR 0145); a live file's the same
-      // (ADR 0197).
+      // (ADR 0199).
       const list = mergeTimeline(threadMessages.data ?? [], [mine]).filter(
         (m) =>
           !taskConversationOf(m.meta) &&
@@ -2155,7 +2156,7 @@ function ChannelView({
     setDraft("");
     const meta = localMeta(quote, quote ? dir.authorName(quote.author) : "", attached);
     setQuote(null);
-    // About what is selected in the file beside it (ADR 0197): the message carries it, then the quote goes.
+    // About what is selected in the file beside it (ADR 0199): the message carries it, then the quote goes.
     if (fileHere?.about) {
       meta.liveRef = {
         artifactId: fileHere.artifactId,
@@ -4424,6 +4425,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   // A plain reminder: the agent's own message, with a small "Reminder" label.
   const reminder = isReminderMessage(m.meta);
   const via = m.author.type === "person" ? appVia(m.meta) : null;
+  const viaSurface = m.author.type === "person" ? surfaceVia(m.meta) : null;
   const myHandle = dir.memberById.get(me.user.id)?.handle?.toLowerCase();
   const mentionsMe =
     !(m.author.type === "person" && m.author.id === me.user.id) && mentionsReader({ body, meta: m.meta }, myHandle);
@@ -4490,7 +4492,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   const replyRun = mediaAfter ? null : m.agentRunId;
   // "Responder": the message this one quotes.
   const quoted = useMemo(() => replyOf(m.meta) ?? replyContext ?? null, [m.meta, replyContext]);
-  // About part of a live file (ADR 0197): its line in the same place, opening that part in the file.
+  // About part of a live file (ADR 0199): its line in the same place, opening that part in the file.
   const liveRef = useMemo(() => messageLiveRef(m), [m]);
   // A mission's cards (ADR 0029): the plan, a decision, a review; a report says where it ran.
   const missionPlan = m.author.type === "agent" ? missionPlanOf(meta) : null;
@@ -4727,6 +4729,7 @@ export const TimelineMessage = memo(function TimelineMessage({
         gutterTime={live ? undefined : <time dateTime={m.createdAt}>{formatClock(i18n.language, m.createdAt)}</time>}
         meta={m.local || live ? undefined : details}
         note={joinedTip ? { label: t("chat.joined.label"), tip: joinedTip } : undefined}
+        mark={viaSurface ? <SurfaceViaMark via={viaSurface} person={name} /> : undefined}
         // Its words arriving: its time and its stop after the time it started (the bar no longer says them).
         status={
           liveWaiting

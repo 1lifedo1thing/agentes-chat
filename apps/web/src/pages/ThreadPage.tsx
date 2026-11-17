@@ -42,7 +42,7 @@ export function ThreadPage({
   /** In the panel: "Ver em #canal" jumps to this message in the channel beside it instead of navigating (false: not
    * that channel's thread). */
   onSeeInChannel?: (messageId: string, channelId: string) => boolean;
-  /** Docked beside what it is about (a live file's conversation, ADR 0197): Esc closes it only from inside it. */
+  /** Docked beside what it is about (a live file's conversation, ADR 0199): Esc closes it only from inside it. */
   escInside?: boolean;
 }) {
   const { t } = useTranslation();
@@ -50,7 +50,7 @@ export function ThreadPage({
   useEscClose(escInside ? undefined : (onBack ?? onClose));
   const info = useThreadInfo(org.id, threadId);
   const thread = info.data;
-  // A live file's conversation (ADR 0197): named after the file's kind, with where the file was made on top.
+  // A live file's conversation (ADR 0199): named after the file's kind, with where the file was made on top.
   const file = useFileThread(thread);
   // A thread with a mission (ADR 0029): the mission header; who only reads gets a note.
   const mission = useThreadMission(org.id, threadId).data ?? null;
@@ -85,7 +85,7 @@ export function ThreadPage({
   }
   const archived = thread.state === "archived";
   // A task's conversation (ADR 0145): its own header and box; the task's screen around it is its title and state.
-  // A live file's is the same (ADR 0197), the file beside it.
+  // A live file's is the same (ADR 0199), the file beside it.
   const task = thread.channelKind === "task";
   const isFile = isFileThread(thread);
   const kind = file?.kind ?? "file";

@@ -3,7 +3,7 @@ import { isLiveFileKind } from "../live/types";
 
 /**
  * What the Drive filters by, in its order (the server's `sort: "kind"` mirrors it): a block or a poll lives in its
- * conversation (ADR 0113); spreadsheets, presentations and canvases are files like the rest (ADR 0194 §9).
+ * conversation (ADR 0113); spreadsheets, presentations and canvases are files like the rest (ADR 0196 §9).
  */
 export const ARTIFACT_KINDS: ArtifactKind[] = [
   "document",
@@ -38,7 +38,7 @@ export const isArtifactKind = (v: unknown): v is ArtifactKind => ARTIFACT_KINDS.
 /**
  * The whole text a viewer's "Copiar texto" takes: a document's Markdown, an HTML page's source, a diagram's Mermaid,
  * a text file's text (code, JSON, Markdown, HTML…, as the server sends it for a file small enough to show). None for
- * anything else: a live file's content is only its card's preview, never its whole text (ADR 0194 §7).
+ * anything else: a live file's content is only its card's preview, never its whole text (ADR 0196 §7).
  */
 export function artifactText(content: ArtifactContent): string | undefined {
   if (content.kind === "document") return content.markdown;
@@ -49,7 +49,7 @@ export function artifactText(content: ArtifactContent): string | undefined {
 
 /**
  * `message.meta.artifacts` entries we can show: each file once, at its newest version (where it first came). A live
- * file may come without one (it is drawn as it is now, ADR 0194 §7) when the entry says its kind.
+ * file may come without one (it is drawn as it is now, ADR 0196 §7) when the entry says its kind.
  */
 export function artifactRefs(meta: Record<string, unknown> | undefined): ArtifactRef[] {
   const list = meta?.artifacts;
@@ -189,7 +189,7 @@ export function fileName(title: string, content: ArtifactContent | { kind: Artif
       .replace(/^-|-$/g, "")
       .toLowerCase() || "arquivo";
   const ext = {
-    // A document is a live file (ADR 0198): it downloads as Word unless another format is asked for.
+    // A document is a live file (ADR 0200): it downloads as Word unless another format is asked for.
     document: "docx",
     table,
     diff: "patch",
@@ -198,7 +198,7 @@ export function fileName(title: string, content: ArtifactContent | { kind: Artif
     block: "html",
     poll: "json",
     choices: "json",
-    // A live file downloads as what other apps open (ADR 0196).
+    // A live file downloads as what other apps open (ADR 0198).
     spreadsheet: "xlsx",
     slides: "pptx",
     canvas: "json",

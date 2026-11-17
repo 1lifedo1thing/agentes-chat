@@ -3,7 +3,7 @@ import { type ShapeView, shapeIndex } from "@agenteschat/live/canvas";
 import { arrowDraws, shapesIn } from "../../src/features/live-files/canvas/logic";
 
 /**
- * The phone on a canvas's newer shapes (ADR 0194 §2), until it gets their tools: hidden shapes aren't drawn, a line has
+ * The phone on a canvas's newer shapes (ADR 0196 §2), until it gets their tools: hidden shapes aren't drawn, a line has
  * no heads, an arrow may have one at each end.
  */
 

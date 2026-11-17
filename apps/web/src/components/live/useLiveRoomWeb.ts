@@ -14,7 +14,7 @@ import { useOrg } from "@/components/org-context";
 import { SocketFactoryContext } from "@/realtime/context";
 
 /**
- * A live file's room on the web and in the desktop app (ADR 0194 §3): the app's own sockets (`SocketFactoryContext`,
+ * A live file's room on the web and in the desktop app (ADR 0196 §3): the app's own sockets (`SocketFactoryContext`,
  * a test's fake server), this page's server, and the signed-in person. A page that comes back into view or a network
  * that comes back pings the socket at once, so a laptop that slept doesn't sit on a dead connection until the next
  * ping.
@@ -67,7 +67,7 @@ function stillSocket(): SocketLike {
 }
 
 /**
- * A saved version of the file as a room of its own, read-only (the history's look at it, ADR 0194 §7): the editors
+ * A saved version of the file as a room of its own, read-only (the history's look at it, ADR 0196 §7): the editors
  * draw it as they draw the file, with nothing to send and no one else in it. Null until it loaded, or without
  * `version`.
  */

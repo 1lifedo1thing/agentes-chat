@@ -56,7 +56,7 @@ export type AppHref =
 
 /**
  * A live file, opened on its own screen (the file screen sends it on to its kind's); with `messageId`, its
- * conversation pushed over it at that message (ADR 0197).
+ * conversation pushed over it at that message (ADR 0199).
  */
 export const fileHref = (fileId: string, messageId?: string | null): AppHref =>
   isSafeId(messageId) ? `/file/${fileId}?m=${messageId}` : `/file/${fileId}`;
@@ -141,7 +141,7 @@ const PUSH_IDS = [
   "topicId",
   "dashboardId",
   "widgetId",
-  // A message in a live file's conversation (ADR 0197): the file.
+  // A message in a live file's conversation (ADR 0199): the file.
   "artifactId",
   // A device's notifications (`device.*`): the phone, and the join or access request.
   "phoneId",
@@ -225,7 +225,7 @@ export function hrefFromUrl(url: string): AppHref | null {
     case "board":
       return isSafeId(id) ? `/board/${id}` : null;
     case "drive": {
-      // A live file, at a message of its conversation when named (ADR 0197).
+      // A live file, at a message of its conversation when named (ADR 0199).
       if (!isSafeId(id)) return null;
       return fileHref(id, queryParam(query, "m"));
     }
@@ -325,7 +325,7 @@ export function notificationHref(
   }
   if ((n.kind === "mission_finished" || n.kind === "mission_stopped") && isSafeId(s.missionId))
     return `/mission/${s.missionId}`;
-  // A message in a live file's conversation (ADR 0197): the file, which opens its conversation at that message.
+  // A message in a live file's conversation (ADR 0199): the file, which opens its conversation at that message.
   if (isSafeId(s.artifactId)) return fileHref(s.artifactId, isSafeId(s.messageId) ? s.messageId : null);
   // A reply in a task's conversation (ADR 0145): the task, which opens its conversation at that message.
   if (s.issueNumber != null && Number.isSafeInteger(s.issueNumber))

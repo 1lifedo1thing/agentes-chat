@@ -1,5 +1,5 @@
 /**
- * Splits a formula into tokens (ADR 0194 §2), in either of its two forms: as a person types it, with A1 references
+ * Splits a formula into tokens (ADR 0196 §2), in either of its two forms: as a person types it, with A1 references
  * and the separators of their language (`SOMA(B2:B9;C1)`, `1,5`), or canonical, as the document stores it, with
  * references by ids (`SUM({r1,c2}:{r9,c2},{r1,c3})`, `1.5`).
  */

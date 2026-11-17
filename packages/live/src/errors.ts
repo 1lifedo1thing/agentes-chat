@@ -1,5 +1,5 @@
 /**
- * Why an edit to a live document was refused (ADR 0194 §2): the thing it names isn't there, the document would pass
+ * Why an edit to a live document was refused (ADR 0196 §2): the thing it names isn't there, the document would pass
  * `LIVE_LIMITS`, or the input isn't something the document can hold. The engine turns these into its own coded
  * errors; the apps check the same limits before they write.
  */

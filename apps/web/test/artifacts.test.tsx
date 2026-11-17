@@ -126,7 +126,7 @@ describe("artifact cards in the chat", () => {
     await openChannel();
     const meta = (tile: HTMLElement) => tile.querySelector(".artifact-tile__meta")?.textContent;
     const doc = card("Relatório de incidente: checkout");
-    // A document is a live file (ADR 0198): its first page drawn small, its headings and lists as in the document,
+    // A document is a live file (ADR 0200): its first page drawn small, its headings and lists as in the document,
     // its kind alone under its name (no versions to count); no "made by" (the message says who).
     expect(doc.querySelector(".lf-doc-mini__h")?.textContent).toBe("Incidente no checkout");
     expect(doc.querySelector(".lf-doc-mini__p[data-list='bullet']")?.textContent).toBe("142 eventos desde ontem");
@@ -175,7 +175,7 @@ describe("a tile's actions", () => {
     const acts = doc.querySelector(".artifact-tile__acts") as HTMLElement;
     await click(within(acts).getByRole("button", { name: "Baixar" }));
     await settle(2);
-    // A document downloads as Word (ADR 0198).
+    // A document downloads as Word (ADR 0200).
     expect(saved.at(-1)?.name).toMatch(/\.docx$/);
     await pick(acts, "Mais ações: Relatório de incidente: checkout", "Copiar link");
     await settle(2);
@@ -703,7 +703,7 @@ describe("Drive", () => {
     await api.artifacts.create(ORG_ID, {
       title: "Rascunho da proposta",
       channelId: "dm-atlas",
-      // A file the viewer opens (a document is a live file with a page of its own, ADR 0198).
+      // A file the viewer opens (a document is a live file with a page of its own, ADR 0200).
       content: { kind: "table", columns: ["Item", "Valor"], rows: [["Proposta", "1"]] },
     });
     await api.artifacts.create(ORG_ID, {

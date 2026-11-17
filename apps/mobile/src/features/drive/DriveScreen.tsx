@@ -43,7 +43,7 @@ const PAGE = 24;
  * Drive, pushed from Você: the search, the type chips (Tudo, Documentos, Planilhas, Apresentações, Quadros, Imagens,
  * Tabelas, Diffs), and everything the person can see grouped by day (Hoje, Esta semana, then by month) in a two-column
  * grid of real previews, with the faces of who is in each live file now, and a file sent from the phone. "+" makes a
- * spreadsheet, a presentation or a canvas (ADR 0194 §9) or sends a file. A card opens the file as every file opens.
+ * spreadsheet, a presentation or a canvas (ADR 0196 §9) or sends a file. A card opens the file as every file opens.
  * `highlightId`: the item "Ver no Drive" came from, outlined.
  *
  * A chip narrows the list on the server to the kinds that can hold its type (`driveFilters`); an uploaded file is one

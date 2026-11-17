@@ -12,7 +12,7 @@ import { useOrg } from "@/components/org-context";
 import "./doc-cover.css";
 
 /**
- * A document drawn small (ADR 0198, ADR 0194 §7): its first blocks on a page of the Wiki's look, in the Drive's cards
+ * A document drawn small (ADR 0200, ADR 0196 §7): its first blocks on a page of the Wiki's look, in the Drive's cards
  * and rows and the cards in messages. Words only as plain text (marks are too small to read here), headings bold,
  * list items with their marks, a table's first rows on a grid, pictures as they are. No editor in it: the Drive and
  * the chat load it alone.

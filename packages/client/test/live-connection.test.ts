@@ -13,7 +13,7 @@ import type { FakeLiveServer, FakeLiveSocket } from "../src/live/testing";
 import { cells, connect, FILE, fakeClock, ORG, type Peer, serverWithFile } from "./live-helpers";
 
 /**
- * The live file connection (ADR 0194 §3) against an in-memory server speaking the same protocol: HTTP state first,
+ * The live file connection (ADR 0196 §3) against an in-memory server speaking the same protocol: HTTP state first,
  * sync over the socket, changes both ways, presence, unsent changes, reconnects, read-only, the phone's text frames.
  */
 

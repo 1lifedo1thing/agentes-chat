@@ -4,8 +4,8 @@ import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
 /**
- * A live document (`/document/<id>`, ADR 0198): from the Drive, a message's card, a link or New; none: the Drive. `m`: a
- * message of its conversation to open at (ADR 0197).
+ * A live document (`/document/<id>`, ADR 0200): from the Drive, a message's card, a link or New; none: the Drive. `m`: a
+ * message of its conversation to open at (ADR 0199).
  */
 export default function DocumentRoute() {
   const { id, m } = useLocalSearchParams<{ id: string; m?: string }>();
