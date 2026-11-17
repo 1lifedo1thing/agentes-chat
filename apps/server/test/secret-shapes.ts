@@ -176,6 +176,15 @@ export const UNOPENED: [shape: string, text: string, stays: string[]][] = [
     String.raw`export API_TOKEN=\"${first}\",${second} then mysql --password \"${first}\"]${second} -u ana`,
     ["export API_TOKEN=*** then mysql --password *** -u ana"],
   ],
+  // A count is one still with what closes or ends its command right after it; a text that starts as a number is none.
+  [
+    "a count with a sign after it",
+    `echo $(llm --max-tokens 4096) and llm --max-tokens 4096; echo done, it used --max-tokens 4096. ran llm with --max-tokens 4096, then --tokens 123456:${first} --tokens 12,${second} --api-keys 1234.${first}`,
+    [
+      "echo $(llm --max-tokens 4096) and llm --max-tokens 4096; echo done, it used --max-tokens 4096. ran llm with --max-tokens 4096, then",
+      "--tokens *** --tokens *** --api-keys ***",
+    ],
+  ],
 ];
 
 /** What a text shows of `HIDDEN`, and what it lacks of what stays. */

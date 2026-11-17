@@ -253,13 +253,14 @@ const NEXT_ARGUMENT = String.raw`\\*["']\s*,\s*`;
  * The value after an option named for a secret (`--password hunter2`, `--api-key k`), a quoted one whole, also where
  * its quotes are written with backslashes: the option may open a quoted command (`sh -c "--token …"`), and a command
  * kept in JSON has its quotes written so. In a list of arguments kept as text, the value is the next one
- * (`"--password","…"`). Never a number after a name in the plural, which sets a count (`--max-tokens 4096`).
+ * (`"--password","…"`). Never a number after a name in the plural, which sets a count (`--max-tokens 4096`), also
+ * with what closes or ends its command right after it (`$(llm --max-tokens 4096)`, `--max-tokens 4096; echo`).
  *
  * The first lookahead lets an option through only where a value follows its name. Without it, in one long word after
  * `--` every `token` is tried as the name's last and the rest of the word read again: the square of its length.
  */
 const SECRET_OPTION = new RegExp(
-  String.raw`(?<![^\s"'])(?=--?[\w-]+(?:\s+[^\s-]|${NEXT_ARGUMENT}\\*["'][^-]))--?(?![\w-]*s(?:\s+|${NEXT_ARGUMENT}\\*["'])\d+(?![^\s"'\\]))[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*(?:\s+|${NEXT_ARGUMENT}(?=\\*["']))(?=[^\s-])`,
+  String.raw`(?<![^\s"'])(?=--?[\w-]+(?:\s+[^\s-]|${NEXT_ARGUMENT}\\*["'][^-]))--?(?![\w-]*s(?:\s+|${NEXT_ARGUMENT}\\*["'])\d+[)\]};|&<>,.]*(?![^\s"'\\]))[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*(?:\s+|${NEXT_ARGUMENT}(?=\\*["']))(?=[^\s-])`,
   "gi",
 );
 
