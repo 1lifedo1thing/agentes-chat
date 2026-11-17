@@ -52,7 +52,7 @@ import { errorNumber, isUnexpectedError, ToolOffError } from "../errors";
 import { cutMarked, cutText, inertJson, inertLinks, pgSafeJson, pgSafeText } from "../format";
 import { mergeReposOfCall, recordMergeDone, reposOfGithubCall } from "../git/repos";
 import { recordRead } from "../outbound";
-import { ownerOnlyPerson } from "../personal-use";
+import { ownerOnlyPerson, personalLostNote } from "../personal-use";
 import { routineCreatorOf } from "../requester";
 import { isRightHand, RIGHT_HAND_NOT_OFFERED } from "../right-hand";
 import { type RoutineBrief, routineBriefOf } from "../routine-brief";
@@ -1146,6 +1146,10 @@ export function createToolGateway(deps: {
     // Why the approved action can't run any more; null = it may.
     const refusal = async (): Promise<string | null> => {
       if (expected !== approval.actionHash) return "Approval does not match the action";
+      if (!tool) {
+        const lost = await personalLostNote(ctx, approval.tool);
+        if (lost) return lost;
+      }
       if (!tool || tool.scope !== approval.scope || (tool.connectionId ?? null) !== approval.connectionId)
         return `The tool ${approval.tool} is no longer available (its connector was removed or changed since the approval): say so, and that once it's connected again, asking again runs it`;
       const access = accessWithNeeds(await freshGrantedKeys(ctx.db, ctx.orgId, ctx.agentId), tool);
@@ -1419,12 +1423,13 @@ export function createToolGateway(deps: {
       };
 
       const unknown = { code: "tool.unknown" };
-      if (unknownInDirectory) return finish({ content: unknownInDirectory, isError: true, data: unknown });
-      if (!tool) return finish({ content: `Unknown tool ${call.name}`, isError: true, data: unknown });
       // A person's own connection serves only them (ADR 0099 addendum): a call of its tool from any other run is a tool
-      // this run doesn't have, whatever listed it.
-      if (tool.ownerUserId && tool.ownerUserId !== (await ownerOnlyPerson(ctx)))
-        return finish({ content: `Unknown tool ${call.name}`, isError: true, data: unknown });
+      // this run doesn't have, whatever listed it. A run someone else wrote into lost it: the model hears why.
+      if (unknownInDirectory || !tool || (tool.ownerUserId && tool.ownerUserId !== (await ownerOnlyPerson(ctx)))) {
+        const lost = await personalLostNote(ctx, call.name);
+        if (lost) return finish({ content: lost, isError: true, data: { code: "tool.personal_lost" } });
+        return finish({ content: unknownInDirectory ?? `Unknown tool ${call.name}`, isError: true, data: unknown });
+      }
       // A tool that runs other actions (Composio's executor): a call whose actions all only read is the
       // connection's read, when the agent may read the connection. Everything below then sees a read.
       if (tool.actions && tool.readScope) {

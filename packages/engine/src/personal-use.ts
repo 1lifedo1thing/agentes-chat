@@ -1,8 +1,8 @@
-import { and, type Database, eq, schema } from "@agenteschat/db";
+import { and, type Database, eq, isNull, schema } from "@agenteschat/db";
 import { getAgent } from "./agents";
 import { namesLabel, namesOf } from "./approvals";
 import { canTalkTo, speakerFor } from "./audience";
-import { accountablePerson, type RunAuthority } from "./authority";
+import { accountablePerson, type RunAuthority, steeredByOthers } from "./authority";
 import { getMembership } from "./organizations";
 import { routineCreatorOf } from "./requester";
 import { isRightHandId, rightHandReader } from "./right-hand";
@@ -46,15 +46,45 @@ export async function ownerApprovers(
 const personOfRun = (authority: RunAuthority | null) =>
   authority ? (accountablePerson(authority) ?? routineCreatorOf(authority)) : null;
 
+type RunRef = Pick<ToolContext, "db" | "orgId" | "agentId" | "runId">;
+
 /**
  * Who a person's own connection serves in a run (ADR 0099 addendum): the person a personal Vault item or skill serves
  * (`vaultPersonOfRun`): who asked, else a routine's creator, while an active member, and for the right hand only in
- * their own DM with it. Null: nobody.
+ * their own DM with it. Once someone else wrote into the run (`steeredByOthers`) it serves nobody for the rest of it:
+ * `joined` is then the person it served until that moment. `person` null: nobody.
  */
-export const ownerOnlyPerson = async (ctx: Pick<ToolContext, "db" | "orgId" | "agentId" | "runId">) =>
-  ctx.runId
-    ? (await vaultPersonOfRun(ctx.db, { orgId: ctx.orgId, agentId: ctx.agentId, runId: ctx.runId })).personId
-    : null;
+async function ownerOnlyUse(ctx: RunRef): Promise<{ person: string | null; joined: string | null }> {
+  if (!ctx.runId) return { person: null, joined: null };
+  const { personId } = await vaultPersonOfRun(ctx.db, { orgId: ctx.orgId, agentId: ctx.agentId, runId: ctx.runId });
+  if (personId && (await steeredByOthers(ctx.db, ctx.orgId, personId, [ctx.runId])))
+    return { person: null, joined: personId };
+  return { person: personId, joined: null };
+}
+
+export const ownerOnlyPerson = async (ctx: RunRef) => (await ownerOnlyUse(ctx)).person;
+
+/**
+ * What the model tells its person when a call names a tool of their own connection that this run lost because someone
+ * else wrote into it; null when that isn't why the tool is missing.
+ */
+export async function personalLostNote(ctx: RunRef, toolName: string): Promise<string | null> {
+  const { joined } = await ownerOnlyUse(ctx);
+  if (!joined) return null;
+  const own = await ctx.db
+    .select({ label: schema.connectorConnections.label, prefix: schema.connectorConnections.toolPrefix })
+    .from(schema.connectorConnections)
+    .where(
+      and(
+        eq(schema.connectorConnections.orgId, ctx.orgId),
+        eq(schema.connectorConnections.ownerUserId, joined),
+        isNull(schema.connectorConnections.revokedAt),
+      ),
+    );
+  const hit = own.find((c) => toolName.startsWith(`${c.prefix}_`));
+  if (!hit) return null;
+  return `${hit.label} is the own connection of the person who asked you. It stopped being available in this run when someone else wrote into it, because it serves only its person's own requests. Tell them that plainly: they can ask again on their own after this reply. Do not use it, or anything you read from it, for anyone else.`;
+}
 
 /**
  * Whether the person behind a run may use one person's own thing through this agent. A mailbox (ADR 0038): its

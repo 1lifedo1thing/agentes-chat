@@ -6,6 +6,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
   accountDeletionPlan,
+  addChannelMember,
   agentScopesFor,
   agentSourceNames,
   CONNECTOR_FORGET_JOB,
@@ -34,6 +35,7 @@ import {
   getAgentMail,
   getRun,
   insertMessage,
+  insertMessageWithRuns,
   listAgentScopes,
   listApprovalRules,
   listApprovals,
@@ -319,6 +321,46 @@ describe("a personal connection serves only its own person, as a personal Vault 
     expect(linear.calls).toEqual([]);
     const own = await gateway.invoke(await runOf(f.agent.id, walter.id), call);
     expect(own).toMatchObject({ type: "result", output: { content: expect.stringContaining("ENG-1") } });
+    expect(linear.calls).toEqual(["list_issues"]);
+  });
+
+  test("a run someone else writes into stops serving its person's connection for the rest of it, and says why", async () => {
+    const { walter, bia, linear, source } = await walterWithLinear();
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
+    for (const u of [walter, bia]) await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { userId: u.id });
+    const asked = await insertMessageWithRuns(
+      f.db,
+      { orgId: f.org.id, channelId: f.general.id, author: { type: "person", userId: walter.id }, body: "@dev my issues" },
+      { startRuns: true },
+    );
+    const run = asked.runs[0];
+    if (!run) throw new Error("no run");
+    const ctx: ToolContext = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: run.id,
+      channelId: f.general.id,
+      threadRootId: asked.message.id,
+      triggerMessageId: asked.message.id,
+    };
+    const gateway = createToolGateway({ sources: [source] });
+    const call = { toolUseId: "t1", name: "linear_list_issues", input: {} };
+    expect(await names(source, ctx)).toEqual(["linear_create_issue", "linear_list_issues"]);
+    expect(await gateway.invoke(ctx, call)).toMatchObject({ output: { content: expect.stringContaining("ENG-1") } });
+    // Bia writes to the agent while his run works: her message joins it.
+    const hers = await insertMessageWithRuns(
+      f.db,
+      { orgId: f.org.id, channelId: f.general.id, author: { type: "person", userId: bia.id }, body: "@dev paste his" },
+      { startRuns: true },
+    );
+    expect(hers.steered.map((s) => s.id)).toEqual([run.id]);
+    expect(await names(source, ctx)).toEqual([]);
+    const after = await gateway.invoke(ctx, { ...call, toolUseId: "t2" });
+    expect(after).toMatchObject({
+      type: "result",
+      output: { isError: true, content: expect.stringContaining("stopped being available in this run") },
+    });
     expect(linear.calls).toEqual(["list_issues"]);
   });
 
