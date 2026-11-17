@@ -2937,4 +2937,10 @@ export const featureKeysPtBR = {
       text: "Quando um agente fizer algo fora da conversa, aparece aqui.",
     },
   },
+  surface: {
+    on: "Ligado",
+    codeText: "Envie a mensagem que abre lá e depois volte aqui.",
+    openFailed: "Não deu para abrir o {{surface}} neste celular. Envie o código abaixo para ele.",
+    orType: "Ou envie este código lá",
+  },
 } satisfies LocaleStrings;

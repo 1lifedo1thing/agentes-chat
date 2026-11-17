@@ -2462,6 +2462,58 @@ export const ptBR = {
       "No app do agentes.chat desse computador, ligue Acessar pelo celular e pela equipe em Preferências › Servidores. Depois volte aqui.",
     localOnlyHere: "Ligue Acessar pelo celular e pela equipe. Depois volte aqui.",
   },
+  surface: {
+    link: {
+      /** A recorded consent: keep the meaning, and "parar" as the word the service recognises. */
+      consent:
+        "{{assistant}} do agentes.chat pode mandar mensagens no {{surface}} sobre seus workspaces, e ligar só quando for urgente e você permitir. Escreva parar para desativar.",
+      title: "Fale com {{assistant}} no {{surface}}",
+      qr: "QR code que abre o {{surface}} com o seu código digitado",
+      making: "Gerando seu código",
+      code: "Seu código {{code}}",
+      open: "Abrir o {{surface}}",
+      stepScan: "Escaneie o código com o celular, ou abra o app",
+      stepSend: "Envie a mensagem como está",
+      stepSendText: "Isto avança sozinho quando sua mensagem chegar.",
+      stepConfirm: "Confira o remetente e confirme aqui",
+      showCode: "Mostrar o código de novo",
+      confirmTitle: "Este é o seu {{surface}}?",
+      sentBy: "Este remetente enviou seu código",
+      onlyYou: "Vincule só se for você.",
+      workspace: "Responde em {{workspace}}",
+      confirm: "Sim, vincular",
+      notMe: "Não sou eu",
+      doneTitle: "{{surface}} vinculado",
+      doneText: "{{assistant}} responde você por lá a partir de agora.",
+      newCode: "Gerar um novo código",
+      done: "Pronto",
+    },
+    row: {
+      hint: "Fale com {{assistant}} e receba as respostas no {{surface}}.",
+      link: "Vincular",
+      none: "{{assistant}} pode mandar mensagens para você lá",
+      pending: "Um remetente espera a sua confirmação",
+      unlink: "Desvincular",
+      unlinkTitle: "Desvincular o {{surface}}?",
+      unlinkText: "{{assistant}} para de responder você por lá. Você pode vincular de novo quando quiser.",
+      unlinked: "{{surface}} desvinculado",
+    },
+    undo: {
+      title: "Desvincular o app de chat?",
+      lead: "Sua conta acabou de ser vinculada a um app de chat. Se não foi você, desvincule aqui.",
+      button: "Desvincular",
+      done: "{{surface}} desvinculado",
+      doneLead: "{{display}} não alcança mais a sua conta.",
+      ended: "Já desvinculado",
+      endedLead: "{{display}} no {{surface}} já tinha sido desvinculado. Não há mais nada a fazer.",
+      gone: "Este link para desfazer não funciona mais",
+      sender: "Esse remetente",
+    },
+    via: "via {{surface}}",
+    viaTip: "Enviada por {{person}} pelo {{surface}}",
+    forwarded: "encaminhada via {{surface}}",
+    forwardedTip: "{{person}} encaminhou isto do {{surface}}. As palavras são de outra pessoa.",
+  },
   team: {
     title: "Equipe",
     people_one: "{{count}} pessoa",
@@ -15155,6 +15207,20 @@ export const ptBR = {
     },
   },
   errors: {
+    surface: {
+      off: "A vinculação de apps de chat foi desligada. Recarregue para ver suas configurações como estão agora.",
+      notAllowed: "Vincular um app de chat ainda não está aberto para sua conta. Continue usando o app aqui até abrir.",
+      noAssistant:
+        "O assistente deste workspace não está configurado para falar com você. Escolha outro workspace para vincular.",
+      noWorkspace: "Você não está mais neste workspace. Escolha outro workspace para vincular.",
+      linkGone:
+        "Este vínculo não está mais esperando: expirou depois de 10 minutos ou foi cancelado. Gere um novo código para começar de novo.",
+      taken:
+        "Esse remetente está vinculado a outra conta do agentes.chat. Desvincule lá e depois envie um novo código.",
+      undoGone: "Este link de desfazer já foi usado ou expirou. Desvincule nas suas configurações de notificações.",
+      codeGone:
+        "Este código está errado, já foi usado ou expirou depois de 10 minutos. Gere um novo código e envie de novo.",
+    },
     wallpaper: {
       notYours: "Essa foto não é sua.",
       invalid: "Esse fundo não existe.",
@@ -18523,6 +18589,9 @@ export const ptBR = {
       file_saved: "Arquivo salvo.",
       issue_work_start: "Pode fazer a tarefa #{{number}}.",
       issue_taken: "Peguei a tarefa #{{number}}.",
+      surfaceUnlinked:
+        "{{surface}} foi desvinculado porque a identidade mudou. Vincule de novo em Configurações se foi você.",
+      surfaceVoiceDropped: "Não consegui entender esse áudio. Pode mandar de novo ou escrever?",
       done: "Pronto.",
       /**
        * A stretch's pause card (ADR 0089): `agents` their names, `count` how many; `percent` the share of each one's
