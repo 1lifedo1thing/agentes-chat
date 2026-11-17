@@ -13250,6 +13250,7 @@
       "note": "Solo tu apri queste connessioni. I tuoi agenti le usano solo quando glielo chiedi.",
       "emptyTitle": "Collega i tuoi account",
       "emptyText": "Solo tu apri queste connessioni, e i tuoi agenti le usano solo quando glielo chiedi.",
+      "noApps": "I servizi che colleghi solo per te compaiono qui.",
       "others": "Connessioni personali di altre persone",
       "of": "Personale di {{name}}",
       "seeAll": "Vedi tutte e {{count}}",

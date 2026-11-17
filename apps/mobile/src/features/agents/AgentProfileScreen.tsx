@@ -660,8 +660,9 @@ function Profile({ id }: { id: string }) {
                       />
                     }
                     label={c.label}
+                    labelLines={0}
                     sub={personalOfText(t, dir.memberById.get(c.ownerUserId ?? "")?.name ?? t("channel.unknownPerson"))}
-                    subLines={1}
+                    subLines={0}
                     // Its × takes it off this agent (gone while that save is on its way), as a mailbox's does.
                     {...(takeOff.isPending
                       ? {}

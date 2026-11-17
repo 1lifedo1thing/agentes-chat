@@ -13731,6 +13731,7 @@
       "note": "Te połączenia otwierasz tylko ty. Twoi agenci używają ich tylko wtedy, gdy o to poprosisz.",
       "emptyTitle": "Połącz własne konta",
       "emptyText": "Te połączenia otwierasz tylko ty, a twoi agenci używają ich tylko wtedy, gdy o to poprosisz.",
+      "noApps": "Usługi, które połączysz tylko dla siebie, pojawią się tutaj.",
       "others": "Osobiste połączenia innych osób",
       "of": "Osobiste: {{name}}",
       "seeAll": "Zobacz wszystkie ({{count}})",

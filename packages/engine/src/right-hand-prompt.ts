@@ -149,11 +149,8 @@ export async function rightHandPrompt(
         and(
           eq(connectorConnections.orgId, orgId),
           isNull(connectorConnections.revokedAt),
-          // The team's, and the person's own only in their own DM with it: someone else's personal connection isn't
-          // theirs to know of, and a channel's other readers aren't theirs to tell.
-          input.inDm
-            ? or(isNull(connectorConnections.ownerUserId), eq(connectorConnections.ownerUserId, personId))
-            : isNull(connectorConnections.ownerUserId),
+          // The team's and the person's own: someone else's personal connection isn't theirs to know of.
+          or(isNull(connectorConnections.ownerUserId), eq(connectorConnections.ownerUserId, personId)),
         ),
       ),
     db.select({ context: organizations.context }).from(organizations).where(eq(organizations.id, orgId)),

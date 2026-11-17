@@ -221,7 +221,7 @@ describe("Conectores: Equipe | Pessoal", () => {
     );
     const forWhom = within(flow()).getByRole("radiogroup", { name: "Para quem" });
     expect(within(forWhom).getByRole("radio", { name: "Pessoal" }).getAttribute("aria-checked")).toBe("true");
-    expect(flow().textContent).toContain("Uma caixa de e-mail é sempre de quem a conecta.");
+    expect(flow().textContent).toContain("Uma caixa de email é sempre de quem a conecta.");
   });
 });
 

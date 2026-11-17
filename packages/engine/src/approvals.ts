@@ -1385,6 +1385,20 @@ const seenBy = (db: Database, orgId: string, actorId: string) =>
     taskReaderSql(sql`${approvals.channelId}`, sql`${actorId}::text`),
   );
 
+/** One in someone's own connection (`approvers.personal`): only they and who is in its conversation list it. */
+const personalSeenBy = (db: Database, orgId: string, actorId: string) =>
+  or(
+    sql`not coalesce((${approvals.approvers} ->> 'personal')::boolean, false)`,
+    sql`${approvals.approvers} -> 'userIds' @> to_jsonb(${actorId}::text)`,
+    inArray(
+      approvals.channelId,
+      db
+        .select({ id: channelMembers.channelId })
+        .from(channelMembers)
+        .where(and(eq(channelMembers.orgId, orgId), eq(channelMembers.userId, actorId))),
+    ),
+  );
+
 /**
  * Approvals a person can see: admins see all; others see those of agents they
  * own and those in channels they belong to. Each carries `canDecide`.
@@ -1411,6 +1425,7 @@ export async function listApprovals(
         options.agentId ? eq(approvals.agentId, options.agentId) : undefined,
         options.messageId ? eq(approvals.messageId, options.messageId) : undefined,
         admin ? undefined : seenBy(db, orgId, actorId),
+        personalSeenBy(db, orgId, actorId),
       ),
     )
     .orderBy(desc(approvals.createdAt))

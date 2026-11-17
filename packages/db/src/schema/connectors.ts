@@ -95,7 +95,7 @@ export const connectorConnections = pgTable(
     createdByUserId: text().references(() => users.id, { onDelete: "set null" }),
     /**
      * A personal connection's person (the Vault's split, ADR 0144; ADR 0099 addendum): only they see its details and
-     * give it to agents, and its tools serve runs as a person's mailbox does. Null: the team's. It leaves with them.
+     * give it to agents, and its tools serve only runs they are behind. Null: the team's. It leaves with them.
      */
     ownerUserId: text().references(() => users.id, { onDelete: "cascade" }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

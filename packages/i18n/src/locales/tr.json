@@ -12689,6 +12689,7 @@
       "note": "Bu bağlantıları yalnızca sen açarsın. Ajanların bunları yalnızca sen istediğinde kullanır.",
       "emptyTitle": "Kendi hesaplarını bağla",
       "emptyText": "Bu bağlantıları yalnızca sen açarsın ve ajanların bunları yalnızca sen istediğinde kullanır.",
+      "noApps": "Yalnızca kendin için bağladığın hizmetler burada görünür.",
       "others": "Başkalarının kişisel bağlantıları",
       "of": "{{name}} kişisel",
       "seeAll": "{{count}} tanesini gör",

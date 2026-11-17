@@ -31241,6 +31241,9 @@
   "connectors.personal.emptyText": {
     "value": "Only you open these connections, and your agents use them only when you ask."
   },
+  "connectors.personal.noApps": {
+    "value": "Services you connect just for yourself show up here."
+  },
   "connectors.personal.others": {
     "value": "Others' personal connections"
   },

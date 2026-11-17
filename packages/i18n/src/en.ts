@@ -13162,6 +13162,7 @@ export const en = {
       note: "Only you open these connections. Your agents use them only when you ask.",
       emptyTitle: "Connect your own accounts",
       emptyText: "Only you open these connections, and your agents use them only when you ask.",
+      noApps: "Services you connect just for yourself show up here.",
       others: "Others' personal connections",
       of: "Personal to {{name}}",
       seeAll: "See all {{count}}",

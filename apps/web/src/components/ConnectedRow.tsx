@@ -25,7 +25,7 @@ export function ConnectedRow({
   icon: ReactNode;
   name: string;
   chips: ReactNode;
-  /** One line under the name, cut at the row's edge (whose personal connection it is); the name is cut too. */
+  /** A line under the name at the row's full width (whose personal connection it is). */
   meta?: ReactNode;
   using: Agent[];
   total: number;
@@ -36,17 +36,15 @@ export function ConnectedRow({
   const { t } = useTranslation();
   return (
     <FoldRow
-      className={meta ? "connected-row connected-row--meta" : "connected-row"}
+      className="connected-row"
       face={icon}
       title={
-        <>
-          <span className="list-title">
-            <span>{name}</span>
-            {chips}
-          </span>
-          {meta && <MetaLine>{meta}</MetaLine>}
-        </>
+        <span className="list-title">
+          <span>{name}</span>
+          {chips}
+        </span>
       }
+      body={meta && <MetaLine>{meta}</MetaLine>}
       end={
         <span className="connected-row__who small muted">
           {using.length > 0 && (

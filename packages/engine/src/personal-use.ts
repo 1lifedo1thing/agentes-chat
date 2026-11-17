@@ -10,11 +10,19 @@ import type { ToolContext } from "./tools/types";
 import { vaultPersonOfRun } from "./vault/access";
 
 /**
- * Who decides an action in one person's own mailbox or connection: that person (ADR 0038, ADR 0099 addendum). Asked
- * by them, admins may decide it too; asked by anyone else (or nobody), only they do: an action in their name is theirs
- * to approve. Once they left the workspace nobody could, so the usual rule (the agent's owner, admins) applies.
+ * Who decides an action in one person's own mailbox or connection: that person (ADR 0038, ADR 0099 addendum). In a
+ * mailbox asked by them, admins may decide it too; asked by anyone else (or nobody), only they do: an action in their
+ * name is theirs to approve. A connection's (`personal`) is theirs alone, and only they and who is in its
+ * conversation list it. Once they left the workspace nobody could, so the usual rule (the agent's owner, admins)
+ * applies.
  */
-export async function ownerApprovers(db: Database, orgId: string, ownerId: string, requestedBy: string | null) {
+export async function ownerApprovers(
+  db: Database,
+  orgId: string,
+  ownerId: string,
+  requestedBy: string | null,
+  personal = false,
+) {
   const [member] = await db
     .select({ id: schema.organizationMembers.userId })
     .from(schema.organizationMembers)
@@ -28,7 +36,8 @@ export async function ownerApprovers(db: Database, orgId: string, ownerId: strin
       label: namesLabel(await namesOf(db, [ownerId])),
       requestedBy: own ? null : requestedBy,
       requesterDecides: false,
-      ...(own ? {} : { required: true }),
+      ...(own && !personal ? {} : { required: true }),
+      ...(personal ? { personal: true } : {}),
     },
   };
 }

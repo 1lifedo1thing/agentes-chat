@@ -80,17 +80,15 @@ export function PersonalChip() {
   return <Chip icon="lock">{t("vault.tab.personal")}</Chip>;
 }
 
-/** "Pessoal de <name>" on one line: only the name is cut, in its own direction, so a right-to-left name keeps its start. */
+/** "Pessoal de <name>", wrapping as words do; the name in its own direction, so a right-to-left name keeps its start. */
 export function PersonalOf({ name }: { name: string }) {
   const { t } = useTranslation();
   const { before, after } = personalOfParts(t);
   return (
     <span className="owner-of">
-      {before && <span className="owner-of__words">{before}</span>}
-      <bdi dir="auto" className="owner-of__name">
-        {name}
-      </bdi>
-      {after && <span className="owner-of__words">{after}</span>}
+      {before}
+      <bdi dir="auto">{name}</bdi>
+      {after}
     </span>
   );
 }

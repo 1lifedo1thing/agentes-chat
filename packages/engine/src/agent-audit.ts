@@ -173,6 +173,25 @@ export async function recordToolCall(
 // ── Reading it ────────────────────────────────────────────────────────────
 
 /**
+ * The tools of someone else's own connection a run called (`personalOf` other than `actorId`): a run's steps keep
+ * their name only, as this log keeps only that the call happened.
+ */
+export async function othersPersonalTools(db: Database, orgId: string, runId: string, actorId: string) {
+  const rows = await db
+    .selectDistinct({ tool: auditLog.targetId })
+    .from(auditLog)
+    .where(
+      and(
+        eq(auditLog.orgId, orgId),
+        eq(auditLog.runId, runId),
+        eq(auditLog.action, TOOL_CALL),
+        sql`${auditLog.details} ->> 'personalOf' <> ${actorId}`,
+      ),
+    );
+  return new Set(rows.flatMap((r) => (r.tool ? [r.tool] : [])));
+}
+
+/**
  * Rows a tool writes about itself while the gateway records the same call (`tool.call`): the reader leaves
  * them out so one action is one row. They stay in the table for whoever reads it raw.
  */
@@ -415,9 +434,14 @@ export async function listAudit(
         : r.action === TOOL_CALL
           ? r.details
           : auditInput(
-              CUSTOM_SERVER_ACTIONS.includes(r.action) && typeof r.details.serverUrl === "string"
-                ? { ...r.details, serverUrl: serverUrlShown(r.details.serverUrl) }
-                : r.details,
+              !CUSTOM_SERVER_ACTIONS.includes(r.action)
+                ? r.details
+                : r.details.personal === true && r.actorId !== actorId
+                  ? // Someone else's own server: its address and account stay theirs, as on the lists.
+                    { ...r.details, serverUrl: "", account: null }
+                  : typeof r.details.serverUrl === "string"
+                    ? { ...r.details, serverUrl: serverUrlShown(r.details.serverUrl) }
+                    : r.details,
             ),
       runId: r.runId,
       channelId: r.channelId,

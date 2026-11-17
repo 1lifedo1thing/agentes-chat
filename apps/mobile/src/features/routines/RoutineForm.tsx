@@ -813,7 +813,11 @@ function Form({ routine }: { routine: Routine | undefined }) {
               <GroupedRow
                 icon="mail"
                 label={t("mail.routine.mailbox")}
-                value={mailbox?.address}
+                value={
+                  mailbox?.address ??
+                  // Someone else's mailbox the routine already watches isn't listed to the viewer: it stays, unnamed.
+                  (d.email.accountId ? upperFirst(t("mail.routine.unknownMailbox"), i18n.language) : undefined)
+                }
                 chevron={mailList.length > 1}
                 {...(mailList.length > 1 ? { onPress: pickMailbox } : {})}
               />

@@ -512,6 +512,8 @@ function OthersPersonal({
                 icon="mail"
                 label={name}
                 sub={ownerOf(m.ownerUserId)}
+                labelLines={0}
+                subLines={0}
                 {...(m.agents.length > 0 ? { below: <UsedBy names={usedBy(m.agents.map((a) => a.agentId))} /> } : {})}
                 more
                 disabled={busy}
@@ -538,6 +540,8 @@ function OthersPersonal({
               leading={<ConnectorIcon def={item.def} image={item.image} label={itemName(t, item)} size={30} />}
               label={itemName(t, item)}
               sub={ownerOf(item.ownerUserId)}
+              labelLines={0}
+              subLines={0}
               {...(item.agentIds.length > 0 ? { below: <UsedBy names={usedBy(item.agentIds)} /> } : {})}
               more
               disabled={busy}
@@ -550,10 +554,10 @@ function OthersPersonal({
   );
 }
 
-/** The agents that hold someone else's connection, on one line cut at the row's edge. */
+/** The agents that hold someone else's connection, wrapping as the row needs. */
 function UsedBy({ names }: { names: string }) {
   return (
-    <Text variant="footnote" tone="faint" numberOfLines={1}>
+    <Text variant="footnote" tone="faint">
       {names}
     </Text>
   );

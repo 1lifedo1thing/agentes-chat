@@ -5197,39 +5197,15 @@ html:not([data-pointer]) .catalog-tile:focus-visible {
   min-width: 0;
   white-space: nowrap;
 }
-/* Someone else's personal connection: its name and whose it is, each one line cut at the row's edge. */
-.level-row__name--cut,
-.level-row__owner > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.level-row__name--cut,
+/* Someone else's personal connection on an agent: whose it is, under its name at the row's width. */
 .level-row__owner {
-  max-width: 100%;
-}
-/* After .level-row__name's flex, which would keep its text from ending in an ellipsis. */
-.level-row__name.level-row__name--cut {
-  display: block;
-}
-.level-row__owner {
-  flex-basis: 100%;
-  min-width: 0;
   gap: var(--space-1);
 }
-.connected-row--meta .list-title {
-  flex-wrap: nowrap;
-}
-.connected-row--meta .list-title > span:first-child,
-.connected-row__meta > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Desligar ends on the list's edge, as the level controls do, at every width. */
+.level-row > .ac-mediarow__end:not(.ac-mediarow__end--wrap) {
+  grid-area: 1 / 4;
 }
 .connected-row__meta {
-  flex-basis: 100%;
   gap: var(--space-1);
 }
 .connected-others {
@@ -5244,22 +5220,10 @@ html:not([data-pointer]) .catalog-tile:focus-visible {
 .connected-note {
   margin: 0;
 }
-/* "Pessoal de <name>": the words stay whole, the name alone ends in an ellipsis on its own side. */
+/* "Pessoal de <name>": one run of words that wraps, the name isolated in its own direction (`bdi`). */
 .owner-of {
-  display: inline-flex;
   min-width: 0;
-  max-width: 100%;
-  white-space: pre;
-}
-/* Its own white-space: a row's nowrap would drop the space between the words and the name. */
-.owner-of > span.owner-of__words {
-  flex: none;
-  white-space: pre;
-}
-.owner-of__name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 /* Tirar de um agente: one agent per line, its face, its name cut at the edge, Tirar at the end. */
 .connected-takeoff {

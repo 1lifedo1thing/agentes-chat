@@ -12285,6 +12285,7 @@
       "note": "Hanya kamu yang membuka koneksi ini. Agenmu hanya menggunakannya saat kamu minta.",
       "emptyTitle": "Hubungkan akunmu sendiri",
       "emptyText": "Hanya kamu yang membuka koneksi ini, dan agenmu hanya menggunakannya saat kamu minta.",
+      "noApps": "Layanan yang kamu hubungkan hanya untuk dirimu muncul di sini.",
       "others": "Koneksi pribadi orang lain",
       "of": "Pribadi milik {{name}}",
       "seeAll": "Lihat semua {{count}}",

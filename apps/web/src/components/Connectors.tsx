@@ -347,6 +347,9 @@ export function ConnectorsSection({
             {t(personal ? "connectors.personal.emptyText" : admin ? "connectors.none" : "access.noConnectorsViewer")}
           </EmptyState>
         )}
+        {personal && loaded && !noneYet && apps.length + accounts.length === 0 && (
+          <p className="small muted">{t("connectors.personal.noApps")}</p>
+        )}
         {apps.length + accounts.length + dbList.length > 0 && (
           <List className="connected-list" aria-label={t("connectors.connectedList")}>
             {accounts.map((account) => (

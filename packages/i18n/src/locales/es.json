@@ -13167,6 +13167,7 @@
       "note": "Solo tú abres estas conexiones. Tus agentes las usan solo cuando se lo pides.",
       "emptyTitle": "Conecta tus propias cuentas",
       "emptyText": "Solo tú abres estas conexiones, y tus agentes las usan solo cuando se lo pides.",
+      "noApps": "Los servicios que conectes solo para ti aparecen aquí.",
       "others": "Conexiones personales de otras personas",
       "of": "Personal de {{name}}",
       "seeAll": "Ver las {{count}}",

@@ -12752,6 +12752,7 @@
       "note": "Nur du öffnest diese Verbindungen. Deine Agenten verwenden sie nur, wenn du sie darum bittest.",
       "emptyTitle": "Verbinde deine eigenen Konten",
       "emptyText": "Nur du öffnest diese Verbindungen, und deine Agenten verwenden sie nur, wenn du sie darum bittest.",
+      "noApps": "Dienste, die du nur für dich verbindest, erscheinen hier.",
       "others": "Persönliche Verbindungen anderer",
       "of": "Persönlich von {{name}}",
       "seeAll": "Alle {{count}} ansehen",

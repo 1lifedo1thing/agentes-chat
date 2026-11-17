@@ -238,3 +238,9 @@ describe("An agent's screen: the viewer's own marked Pessoal, someone else's onl
     expect(mailSection).toContain("address: account.address || mailboxName(t, account)");
   });
 });
+
+test("a routine watching a teammate's mailbox, which the viewer's list doesn't hold, still names one on its row", () => {
+  expect(src("features/routines/RoutineForm.tsx")).toContain(
+    'upperFirst(t("mail.routine.unknownMailbox"), i18n.language)',
+  );
+});

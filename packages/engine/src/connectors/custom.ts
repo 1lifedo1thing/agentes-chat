@@ -571,6 +571,7 @@ export async function storeCustomConnection(
         label: row.label,
         account: row.accountLabel,
         sameAccount: outcome === "same_account",
+        ...(row.ownerUserId ? { personal: true } : {}),
       },
     });
     return { connection: row, outcome };

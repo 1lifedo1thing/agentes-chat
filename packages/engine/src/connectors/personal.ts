@@ -114,7 +114,8 @@ export async function usableConnections(ctx: ToolContext, connections: Connector
 
 /**
  * A personal connection's tool as its person's run holds it: only what the agent's own grants on it allow; a card it
- * opens goes to its person (`ownerApprovers`), not to the agent's owner or admins; what it reads is marked as from
+ * opens is its person's alone to decide and to list (`ownerApprovers` with `personal`), never the agent's owner's or
+ * admins'; what it reads is marked as from
  * outside, as a mailbox's is. `ownerUserId` lets the gateway refuse it to any other run. A team connection's tool as
  * it is. Null: not allowed.
  */
@@ -130,7 +131,7 @@ export function personalTool(
   return {
     ...tool,
     ownerUserId: owner,
-    approvers: (_input, ctx, requestedBy) => ownerApprovers(ctx.db, ctx.orgId, owner, requestedBy),
+    approvers: (_input, ctx, requestedBy) => ownerApprovers(ctx.db, ctx.orgId, owner, requestedBy, true),
     ...(reads ? { readsOutside: true as const } : {}),
   };
 }

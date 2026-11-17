@@ -13238,6 +13238,7 @@
       "note": "Vous seul ouvrez ces connexions. Vos agents les utilisent seulement quand vous le demandez.",
       "emptyTitle": "Connectez vos propres comptes",
       "emptyText": "Vous seul ouvrez ces connexions, et vos agents les utilisent seulement quand vous le demandez.",
+      "noApps": "Les services que vous connectez rien que pour vous apparaissent ici.",
       "others": "Connexions personnelles des autres",
       "of": "Personnel de {{name}}",
       "seeAll": "Voir les {{count}}",
