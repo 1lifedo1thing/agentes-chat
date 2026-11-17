@@ -241,10 +241,14 @@ accept, or what is asked from another conversation than the one it serves.
 ## Accepted
 
 - The lock bounds where words go, not what the agent concludes or writes in its own thread.
-- A read's own arguments reach the catalog app or the listed server it reads.
+- A read's own arguments reach what it reads: the catalog app or the listed server, and for a read on a computer or
+  on a phone the computer it runs on, which keeps a local list of what agents did there for the person at it
+  (`read <path>`, `looked at <path>`).
 - A person can still copy a confidential message by hand, and a person's own voice message is made out by the
   speech engine before it is posted.
-- What left before the mark stays where it went: a push already sent for the root, and a judgment made on it.
+- What left before the mark stays where it went: a push already sent for the root, a judgment made on it, and what
+  was written from its messages while they were plain (a channel's summary of its week, a memory an earlier run of
+  the thread learned). Of those only the thread's own summary is archived with the mark and deleted by the prune.
 - A stop said in words is not recognized in a confidential thread (the judge reads the stub): the stop button is.
 - An agent's message keeps `meta` that is not its body (a card's fields, a notice's text); it reaches no model outside
   the thread (the stub carries none of it) and is blanked by the prune.
