@@ -403,8 +403,12 @@ export function Composer({
       return;
     }
     if ((!value && !sendEmpty) || tooLong) return;
-    onSend(value, working ? how : "join");
+    // The tap answers at once (its haptic is the press's): the field emptied and the button gone in this frame. The
+    // send itself (the copy in the conversation, which redraws the whole list) follows on the next one: done in the
+    // same render, the field waited for the conversation's redraw and the button felt slow on a long conversation.
     clear();
+    const joining = working ? how : "join";
+    requestAnimationFrame(() => onSend(value, joining));
   };
 
   const wasTaught = () => {
