@@ -21,6 +21,7 @@ import type {
   AccountDeletionPlan,
   AccountLoginStart,
   AccountLoginStatus,
+  AccountOrderGroup,
   ActiveRun,
   Agent,
   AgentAccess,
@@ -606,6 +607,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
     },
     account: {
       authConfig: () => request<AuthConfig>("/api/app/auth-config"),
+      referralsLink: (returnTo) =>
+        request<{ url: string; expiresAt: string }>("/api/app/referrals-link", { json: { returnTo } }),
       signInOptions: (input, humanCheck) =>
         request<SignInOptions>("/api/app/sign-in-options", { json: input, headers: humanCheckHeaders(humanCheck) }),
       me: () => nullOn(401, () => request<Me>("/api/app/me")),
@@ -676,6 +679,13 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         (await request<{ style: AgentStyle }>(`${org(orgId)}/me/agent-style`, { method: "PUT", json: { style } }))
           .style,
       setChatPrefs: (orgId, patch) => request<ChatPrefs>(`${org(orgId)}/me/chat`, { method: "PUT", json: patch }),
+      setConversationWallpaper: (orgId, channelId, wallpaper) =>
+        request<ChatPrefs>(
+          `${org(orgId)}/channels/${enc(channelId)}/wallpaper`,
+          wallpaper ? { method: "PUT", json: { wallpaper } } : { method: "DELETE" },
+        ),
+      uploadWallpaperPhoto: (orgId, input) =>
+        request<{ url: string }>(`${org(orgId)}/me/wallpaper-photo`, { method: "PUT", json: input }),
       sidebarItems: async (orgId) => (await request<{ items: SidebarItems }>(`${org(orgId)}/me/sidebar`)).items,
       setSidebarItem: async (orgId, item, place) =>
         (await request<{ items: SidebarItems }>(`${org(orgId)}/me/sidebar`, { method: "PATCH", json: { item, place } }))
@@ -1399,6 +1409,12 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<{ serves: PlanServes; agentIds: string[] }>(`${org(orgId)}/ai-accounts/${enc(accountId)}/serves`, {
           method: "PUT",
           json: { serves },
+        }),
+      accountOrder: (orgId) => request<{ groups: AccountOrderGroup[] }>(`${org(orgId)}/ai-accounts/order`),
+      moveAccountInOrder: (orgId, accountId, index) =>
+        request<AccountOrderGroup>(`${org(orgId)}/ai-accounts/${enc(accountId)}/order`, {
+          method: "PUT",
+          json: { index },
         }),
       renameAccount: (orgId, machineId, accountId, label) =>
         request<MachineAccount>(`${org(orgId)}/machines/${enc(machineId)}/accounts/${enc(accountId)}`, {

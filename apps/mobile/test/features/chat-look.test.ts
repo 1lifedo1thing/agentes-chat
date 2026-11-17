@@ -171,9 +171,9 @@ describe("the rows follow the same choice as the web", () => {
     expect(page).toContain("save(dm ? { dmStyle: s } : { channelStyle: s })");
   });
 
-  test("a conversation opens at the last read message until the person picks the newest, as on the web", async () => {
-    expect(openAtOf(undefined)).toBe("read");
-    expect(openAtOf({ openAt: "latest" })).toBe("latest");
+  test("a conversation opens at the newest message until the person picks the last read, as on the web", async () => {
+    expect(openAtOf(undefined)).toBe("latest");
+    expect(openAtOf({ openAt: "read" })).toBe("read");
     expect(await read("me/ChatLookPage.tsx")).toContain("const openAt = openAtOf(prefs);");
     expect(await read("chat/ChatScreen.tsx")).toContain("opensAtLastRead(org?.chatPrefs");
   });
@@ -226,7 +226,9 @@ describe("Tamanho do texto on the phone", () => {
     const page = await read("me/ChatLookPage.tsx");
     // A stepped slider (small A, five steps, big A) the preview follows while it moves; saved when it lands.
     expect(page).toContain("save({ textSize: v })");
-    expect(page).toContain("<ChatPreview style={style} tone={tone} size={shownSize} dm={dm} />");
+    expect(page).toContain(
+      "<ChatPreview style={style} tone={tone} size={shownSize} dm={dm} wallpaper={shownWallpaper} />",
+    );
     expect(page).toContain('accessibilityRole="adjustable"');
     expect(page).toContain("accessibilityValue={{ text: labels[value] }}");
     expect(page).toContain("{labels[DEFAULT_TEXT_SIZE]}");

@@ -578,7 +578,9 @@
       "storage.connect.provider.s3",
       "storage.connect.provider.b2",
       "storage.connect.awsRegion.il-central-1",
-      "onboarding.import.choose.step.video"
+      "onboarding.import.choose.step.video",
+      "settings.account.chat.wallpaper.color",
+      "settings.account.chat.wallpaper.name.color"
     ],
     "fr": [
       "usage.kinds.routines",
@@ -1017,7 +1019,8 @@
       "storage.connect.awsRegion.eu-south-1",
       "storage.connect.awsRegion.eu-north-1",
       "onboarding.import.choose.routine",
-      "onboarding.import.choose.step.image"
+      "onboarding.import.choose.step.image",
+      "settings.account.chat.wallpaper.name.crowd"
     ],
     "de": [
       "devices.iphone.steps.account",
@@ -1481,7 +1484,8 @@
       "storage.connect.awsRegion.il-central-1",
       "onboarding.import.choose.routine",
       "onboarding.import.choose.skill",
-      "onboarding.import.choose.step.video"
+      "onboarding.import.choose.step.video",
+      "settings.account.chat.wallpaper.neutral.sand"
     ],
     "it": [
       "shell.email.label",
@@ -2474,7 +2478,8 @@
       "storage.connect.theirName.b2Secret",
       "onboarding.import.choose.routine",
       "onboarding.import.choose.skill",
-      "onboarding.import.choose.step.video"
+      "onboarding.import.choose.step.video",
+      "settings.account.chat.wallpaper.name.crowd"
     ],
     "ja": [
       "channel.tooLong.fileName",

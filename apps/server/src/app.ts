@@ -57,6 +57,7 @@ import { personUsageRoutes } from "./routes/app/person-usage";
 import { planUsageRoutes } from "./routes/app/plan-usage";
 import { pushRoutes } from "./routes/app/push";
 import { questionRoutes } from "./routes/app/questions";
+import { referralRoutes } from "./routes/app/referrals";
 import { roleRoutes } from "./routes/app/roles";
 import { routineRoutes } from "./routes/app/routines";
 import { sandboxRoutes } from "./routes/app/sandboxes";
@@ -210,6 +211,7 @@ export function createApp(options: AppOptions) {
     api.route("/app", roleRoutes(deps));
     api.route("/app", storageRoutes(deps));
     api.route("/app", billingRoutes(deps));
+    api.route("/app", referralRoutes(deps));
     api.route("/app", artifactRoutes(deps));
     api.route("/app", liveRoutes(deps));
     // Pictures on canvases (ADR 0192): the image models, requests and Try again.
