@@ -1118,10 +1118,12 @@ async function auditDecision(
         .from(connectorConnections)
         .where(eq(connectorConnections.id, row.connectionId))
     : [];
-  const title =
-    c?.ownerUserId && row.title.startsWith(`${c.label}: `)
+  // A card opened before its connection was renamed starts with a name no longer known: the tool stands for the rest.
+  const title = !c?.ownerUserId
+    ? row.title
+    : row.title.startsWith(`${c.label}: `)
       ? auditLabel(c) + row.title.slice(c.label.length)
-      : row.title;
+      : `${auditLabel(c)}: ${row.tool}`;
   return recordAudit(tx, {
     orgId: row.orgId,
     actor: personId ? { type: "person", id: personId } : { type: "system", id: null },

@@ -1421,6 +1421,10 @@ describe("what a call and a card of it leave for others", () => {
     expect(othersLabel(`CRM (${ACCOUNT}) 2`, ACCOUNT)).toBe("CRM 2");
     expect(othersLabel(`CRM (${ACCOUNT}) 13`, ACCOUNT)).toBe("CRM 13");
     expect(othersLabel("CRM 2", ACCOUNT)).toBe("CRM 2");
+    // An account's name with brackets of its own, and one the provider renamed since the name was made.
+    expect(othersLabel("Stripe (Example Ltd (Brazil))", "Example Ltd (Brazil)")).toBe("Stripe");
+    expect(othersLabel("Stripe (Example Ltd (Brazil)) 2", "Example Ltd (Brazil)")).toBe("Stripe 2");
+    expect(othersLabel("CRM (old@example.com)", "new@example.com")).toBe("CRM");
     expect(auditLabel({ label: `CRM (${ACCOUNT}) 2`, accountLabel: ACCOUNT, ownerUserId: "u1" })).toBe("CRM 2");
     expect(auditLabel({ label: `CRM (${ACCOUNT}) 2`, accountLabel: ACCOUNT, ownerUserId: null })).toBe(
       `CRM (${ACCOUNT}) 2`,
@@ -1461,6 +1465,10 @@ describe("what a call and a card of it leave for others", () => {
       .where(eq(schema.approvals.id, third));
     await expireApprovals(deps);
     await card(4);
+    // Renamed while a card waits: the card's title holds the old name.
+    const fifth = await card(5);
+    await renameConnection(f.db, walter.id, f.org.id, crm.id, "Work CRM");
+    await decideApproval(deps, walter.id, f.org.id, fifth, { decision: "refuse" });
     await removeMember(f.db, f.owner.id, f.org.id, walter.id);
     const lines = (await listAudit(f.db, f.owner.id, f.org.id)).rows.filter((r) => r.action.startsWith("approval."));
     expect([...new Set(lines.map((r) => r.action))].sort()).toEqual([
@@ -1469,11 +1477,12 @@ describe("what a call and a card of it leave for others", () => {
       "approval.expired",
       "approval.refused",
     ]);
-    for (const r of lines) expect(String(r.details.title)).toStartWith("CRM: ");
+    for (const r of lines) expect(String(r.details.title)).toMatch(/^(CRM|Work CRM): /);
+    expect(lines.filter((r) => String(r.details.title).startsWith("Work CRM: "))).toHaveLength(2);
     expect(JSON.stringify(lines)).not.toContain(ACCOUNT);
   });
 
-  test("after a teammate joins, the note names the service alone, and only for a tool this agent holds", async () => {
+  test("after a teammate joins, the note names the service alone, and only for a tool this agent holds (a denial is no hold)", async () => {
     const { walter, bia, ops, mine, source } = await walterWithLinear();
     await f.db
       .update(schema.connectorConnections)
@@ -1514,5 +1523,11 @@ describe("what a call and a card of it leave for others", () => {
     const unknown = text(await gateway.invoke(ctx, { toolUseId: "t2", name: "linear_list_issues", input: {} }));
     expect(unknown).not.toContain("stopped being available");
     expect(unknown).toContain("Unknown tool");
+    // A denial alone is no grant.
+    await f.db
+      .insert(schema.agentScopes)
+      .values({ orgId: f.org.id, agentId: f.agent.id, connectionId: mine.id, scope: "deny:linear_list_issues" });
+    const denied = text(await gateway.invoke(ctx, { toolUseId: "t3", name: "linear_list_issues", input: {} }));
+    expect(denied).not.toContain("stopped being available");
   });
 });

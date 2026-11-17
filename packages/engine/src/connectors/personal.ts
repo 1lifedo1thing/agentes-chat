@@ -48,16 +48,15 @@ export const othersPersonal = (c: Pick<ConnectorConnection, "ownerUserId">, acto
   c.ownerUserId !== null && c.ownerUserId !== actorId;
 
 /**
- * Someone else's own connection's name as others read it: one that kept its default form, the service and the account
- * its sign-in reached ("CRM (walter@example.com)"), goes by the service alone, as a mailbox's name that holds its
- * address does. A number `freeLabel` added stays ("CRM (walter@example.com) 2" reads "CRM 2"), so two rows stay apart.
+ * Someone else's own connection's name as others read it: once its sign-in reached an account, a name in the default
+ * form, the service and that account ("CRM (walter@example.com)"), goes by the service alone, as a mailbox's name that
+ * holds its address does. Whatever the brackets hold is dropped, as an account's name may hold brackets of its own
+ * ("Stripe (Example Ltd (Brazil))") and the provider may have renamed the account since. A number `freeLabel` added
+ * stays ("CRM (walter@example.com) 2" reads "CRM 2"), so two rows stay apart.
  */
 export function othersLabel(label: string, account: string | null | undefined) {
-  const named = account ? /^(.+) \((.+)\)( \d+)?$/.exec(label) : null;
-  if (!account || !named) return label;
-  const [, service = label, inside = "", number = ""] = named;
-  const flat = account.replace(/\s+/g, " ").trim().toLowerCase();
-  return flat.startsWith(inside.replace(/…$/, "").toLowerCase()) ? `${service}${number}` : label;
+  const named = account ? /^(.+?) \((.+)\)( \d+)?$/.exec(label) : null;
+  return named ? `${named[1]}${named[3] ?? ""}` : label;
 }
 
 /** A connection's name as an audit line keeps it: every reader of the log is "someone else" to a personal one. */
