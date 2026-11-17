@@ -18398,6 +18398,10 @@
     "noLimit": "Tanpa batas",
     "ownBucket": "Di bucket milikmu sendiri, tanpa batas dari kami"
   },
+  "referrals": {
+    "open": "Ajak teman dan dapatkan hadiah",
+    "failed": "Tidak bisa membukanya sekarang. Coba lagi sebentar lagi."
+  },
   "limits": {
     "members": {
       "full": "Ruang kerja ini berisi {{members}} dari {{limit}} orang.",

@@ -1,8 +1,9 @@
-import { useArchivedChannels, useAuthConfig, useIssues, useMe, useOverview } from "@agenteschat/client";
+import { useApi, useArchivedChannels, useAuthConfig, useIssues, useMe, useOverview } from "@agenteschat/client";
 import { showsAbout } from "@agenteschat/client/lib/about";
 import { PHONE_APP_ICON } from "@agenteschat/client/lib/app-icons";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { isAppLocale, localeInfo } from "@agenteschat/i18n/locale";
+import { useMutation } from "@tanstack/react-query";
 import Constants from "expo-constants";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { type ReactNode, useEffect, useState } from "react";
@@ -27,10 +28,12 @@ import {
   Text,
   type ThemePreference,
   useTheme,
+  useToast,
   WithPresence,
 } from "@/ui";
 import { CoverBarBackdrop, CoverParallax, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
+import { openPage } from "../ai/parts";
 import { confirmAction, Uploading } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useMeId } from "../shared/hooks";
@@ -44,7 +47,7 @@ import { personLine } from "../status/logic";
 import { openStatus } from "../status/StatusScreen";
 import { AppIconPicture, useAppIconName } from "./AppIconPage";
 import { useAppIcon } from "./app-icon";
-import { openIssuesWithMe, workspacesBeyond } from "./logic";
+import { offersReferrals, openIssuesWithMe, workspacesBeyond } from "./logic";
 import { usePushSwitch, useSoundLabel, useStartLabel } from "./PreferencePages";
 import { useChangePhoto } from "./parts";
 import { useWorkspacesAcross, WorkspaceMark } from "./WorkspacesPages";
@@ -151,7 +154,17 @@ export function MeScreen() {
   const proposals = useOverview(org.orgId).data?.proposalsWaitingForMe ?? 0;
   const archived = useArchivedChannels(org.orgId).data?.length ?? 0;
   const push = usePushSwitch().on;
-  const about = showsAbout(useAuthConfig().data);
+  const server = useAuthConfig().data;
+  const about = showsAbout(server);
+  const toast = useToast();
+  const api = useApi();
+  // Minted on the tap and opened at once: the link lasts minutes and opens once (ADR 0192).
+  const referrals = useMutation({
+    mutationFn: () => api.account.referralsLink(),
+    onSuccess: ({ url }) => openPage(url),
+    onError: () => toast({ title: t("referrals.failed"), tone: "danger" }),
+    meta: { silent: true },
+  });
   const mine = meId ? dir.memberById.get(meId) : undefined;
   // How you appear (to yourself: hidden stays hidden), on your photo's corner (ADR 0084).
   const myPresence = useMyPerson()?.presence;
@@ -499,6 +512,16 @@ export function MeScreen() {
               chevron
               onPress={() => open("/me/language")}
             />
+            {offersReferrals(server) ? (
+              <GroupedRow
+                key="referrals"
+                icon="wallet"
+                label={t("referrals.open")}
+                chevron
+                disabled={referrals.isPending}
+                onPress={() => referrals.mutate()}
+              />
+            ) : null}
             {about ? (
               <GroupedRow
                 key="about"
